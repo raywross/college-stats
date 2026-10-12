@@ -212,6 +212,10 @@ test("nameTokens and coreTokens: abbreviations spelled out, punctuation gone, 'H
   assert.deepEqual(nameTokens("Plano East Sr H S"), ["plano", "east", "senior", "high", "school"]);
   assert.deepEqual(nameTokens("Half Hollow Hills High School E"), ["half", "hollow", "hills", "high", "school", "east"]);
   assert.deepEqual(nameTokens("James E Taylor High School"), ["james", "e", "taylor", "high", "school"]);
+  // South Dakota's numbering and a K-12 grade span are not part of the name.
+  assert.deepEqual(nameTokens("Brookings High School - 01"), ["brookings", "high", "school"]);
+  assert.deepEqual(nameTokens("Ennis K 12 School"), ["ennis", "school"]);
+  assert.deepEqual(nameTokens("Ennis K-12 School"), ["ennis", "school"]);
   assert.deepEqual([...coreTokens("Plano East Sr H S")], ["plano", "east"]);
   assert.deepEqual([...coreTokens("St. Anthony's High School")], ["saint", "anthonys"]);
   assert.deepEqual([...coreTokens("Harmony Science Academy - Carrollton")], ["harmony", "science", "academy", "carrollton"]);
@@ -264,6 +268,11 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
     row("480000200020", "Syosset Senior High School", { city: "Syosset", zip: "11791" }),
     row("480000200021", "Half Hollow Hills High School East", { city: "Dix Hills", zip: "11746" }),
     row("480000200022", "Half Hollow Hills High School West", { city: "Dix Hills", zip: "11746" }),
+    row("480000200023", "Brookings High School - 01", { city: "Brookings", zip: "57006" }),
+    row("480000200024", "Baker High School", { city: "Baker", zip: "59313" }),
+    row("480000200025", "Belt High School", { city: "Belt", zip: "59412" }),
+    row("480000200026", "Ennis High School", { city: "Ennis", zip: "59729" }),
+    row("480000200027", "Gardiner High School", { city: "Gardiner", zip: "59030" }),
   ];
   const ledger = [
     rec("000001", "Azle High School", "Azle", "76020"),
@@ -311,6 +320,15 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
     // East and West abbreviated to a trailing letter.
     rec("000029", "Half Hollow Hills High School E", "Dix Hills", "11746"),
     rec("000030", "Half Hollow Hills High School W", "Dix Hills", "11746"),
+    // South Dakota's directory numbers its schools.
+    rec("000031", "Brookings High School", "Brookings", "57006"),
+    // A city-named school with a level word that doesn't count: a middle-high school is a high school.
+    rec("000032", "Baker Middle High School", "Baker", "59313"),
+    // A town's one K-12 school, listed by the town's name alone, is the town's high school in the same ZIP…
+    rec("000033", "Belt School", "Belt", "59412"),
+    rec("000034", "Ennis K 12 School", "Ennis", "59729"),
+    // …but not in another ZIP.
+    rec("000035", "Gardiner School", "Gardiner", "59031"),
   ];
   const r = matchLedgerSchools(rows, ledger);
   assert.deepEqual(
@@ -334,6 +352,10 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
       ["480000200020", "000028", "exact"],
       ["480000200021", "000029", "exact"],
       ["480000200022", "000030", "exact"],
+      ["480000200023", "000031", "exact"],
+      ["480000200024", "000032", "exact"],
+      ["480000200025", "000033", "zip"],
+      ["480000200026", "000034", "zip"],
       ["A9900001", "000008", "exact"],
       ["A9900002", "000009", "exact"],
       ["A9900003", "000009", "exact"],
@@ -342,8 +364,8 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
     ],
   );
   assert.deepEqual(r.ambiguousRows.map((a) => a.id), ["480000200015", "480000200019"]);
-  assert.deepEqual(r.unmatchedRows, ["480000200006", "480000200011", "480000200013", "480000200017", "A9900004"]);
-  assert.deepEqual(r.unusedLedger, ["000002", "000007", "000010", "000012", "000014", "000017", "000020", "000021", "000024", "000026", "000027"]);
+  assert.deepEqual(r.unmatchedRows, ["480000200006", "480000200011", "480000200013", "480000200017", "480000200027", "A9900004"]);
+  assert.deepEqual(r.unusedLedger, ["000002", "000007", "000010", "000012", "000014", "000017", "000020", "000021", "000024", "000026", "000027", "000035"]);
 });
 
 /* ------------------------------------------------------------------ */

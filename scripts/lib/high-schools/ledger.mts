@@ -90,6 +90,10 @@ const LEVEL = new Set(["junior", "middle", "intermediate", "elementary", "freshm
 export function nameTokens(name: string): string[] {
   const raw = name
     .toLowerCase()
+    // South Dakota's directory numbers every school ("Brookings High School - 01"); a K-12 school's grade span
+    // ("Ennis K 12 School", "Ennis K-12") is not its name.
+    .replace(/\s+-\s*\d{1,2}$/, "")
+    .replace(/\bp?k\s*-?\s*12\b/g, " ")
     .replace(/&/g, " and ")
     .replace(/[’']/g, "")
     .replace(/[^a-z0-9]+/g, " ")
@@ -160,13 +164,20 @@ const jaccard = (a: Set<string>, b: Set<string>) => {
 };
 const minus = (a: Set<string>, b: Set<string>) => new Set([...a].filter((t) => !b.has(t)));
 
-/** Words that say nothing about which school it is, even in a name that is otherwise its city's ("The School of Los Angeles"). */
-const GENERIC = new Set(["school", "schools", "senior", "the", "of", "and", "at", "for", "a", "an", "campus", "program", "area"]);
+/**
+ * Words that say nothing about which school it is, even in a name that is otherwise its city's ("The School of Los
+ * Angeles"). Level words are left out too: they are compared on their own, and "Baker Middle High School" is "Baker
+ * High School".
+ */
+const GENERIC = new Set(["school", "schools", "public", "senior", "the", "of", "and", "at", "for", "a", "an", "campus", "program", "area", ...LEVEL]);
 
 /**
  * How alike two names are once the words they share with their cities are set aside: "Marymount High School Los
  * Angeles" has nothing in common with "Los Angeles Senior High School" but the city. When a name is nothing but its
- * city ("Los Angeles Senior High"), it matches only a name with the same words beyond the generic ones.
+ * city ("Los Angeles Senior High"), it matches only a name with the same words beyond the generic ones; the one
+ * exception is a town's single K-12 school, which the Ledger lists by the town's name alone ("Belt School", "Ennis
+ * K 12 School", "Hebron Public School") and the directory as the town's high school ("Belt High School"). That
+ * is `townSchool`, and it needs the ZIP as well.
  */
 function compareNames(row: NameInfo, ledger: NameInfo, cityTokens: Set<string>): NameComparison {
   const rd = minus(row.core, cityTokens);
@@ -175,7 +186,10 @@ function compareNames(row: NameInfo, ledger: NameInfo, cityTokens: Set<string>):
     const rs = minus(row.tokens, GENERIC);
     const ls = minus(ledger.tokens, GENERIC);
     const exact = rs.size === ls.size && isSubset(rs, ls);
-    return { score: exact ? 1 : 0, subset: false, rowWithin: false, exact };
+    if (exact) return { score: 1, subset: false, rowWithin: false, exact };
+    const rowBeyondCity = minus(rs, cityTokens);
+    const townSchool = !minus(ls, cityTokens).size && rowBeyondCity.size === 1 && rowBeyondCity.has("high");
+    return { score: townSchool ? 1 : 0, subset: townSchool, rowWithin: townSchool, exact: false, townSchool };
   }
   const score = jaccard(rd, ld);
   const rowWithin = isSubset(rd, ld);
@@ -189,6 +203,8 @@ interface NameComparison {
   /** The row's distinguishing words are all in the Ledger's: "Taylor High School" within "James E Taylor High School". */
   rowWithin: boolean;
   exact: boolean;
+  /** The Ledger's name is the town's alone and the row is the town's high school: a match only in one ZIP. */
+  townSchool?: boolean;
 }
 
 interface NameInfo {
@@ -226,6 +242,7 @@ export interface LedgerMatchResult {
  */
 function ruleFor(cmp: NameComparison, sameZip: boolean, sameCity: boolean, sameLevel: boolean): LedgerMatchRule | null {
   if (!sameLevel || (!sameZip && !sameCity)) return null;
+  if (cmp.townSchool && !sameZip) return null;
   if (cmp.exact) return "exact";
   if (sameZip && cmp.score >= 0.75) return "zip";
   if (sameZip && cmp.score >= 0.5 && cmp.subset) return "subset";

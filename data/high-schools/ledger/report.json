@@ -4,18 +4,18 @@
   "states": 51,
   "ledger_schools": 22785,
   "rows": 35390,
-  "matched": 17065,
+  "matched": 17632,
   "by_rule": {
-    "exact": 15614,
-    "zip": 298,
-    "subset": 1003,
+    "exact": 15998,
+    "zip": 522,
+    "subset": 961,
     "city": 20,
     "subset-city": 25,
-    "within": 105
+    "within": 106
   },
-  "unmatched_rows": 18315,
+  "unmatched_rows": 17748,
   "ambiguous_rows": 10,
-  "unused_ledger": 5826,
+  "unused_ledger": 5259,
   "unused": [
     {
       "ai": "020012",
@@ -39,14 +39,6 @@
       "city": "Eielson Afb",
       "state": "AK",
       "zip": "99702",
-      "courses": 0
-    },
-    {
-      "ai": "020039",
-      "name": "Glennallen School",
-      "city": "Glennallen",
-      "state": "AK",
-      "zip": "99588",
       "courses": 0
     },
     {
@@ -122,14 +114,6 @@
       "courses": 0
     },
     {
-      "ai": "010000",
-      "name": "Abbeville Middle High School",
-      "city": "Abbeville",
-      "state": "AL",
-      "zip": "36310",
-      "courses": 0
-    },
-    {
       "ai": "010003",
       "name": "Saint Michael Catholic High School",
       "city": "Fairhope",
@@ -152,14 +136,6 @@
       "state": "AL",
       "zip": "36561",
       "courses": 14
-    },
-    {
-      "ai": "010325",
-      "name": "Billingsley School",
-      "city": "Billingsley",
-      "state": "AL",
-      "zip": "36006",
-      "courses": 0
     },
     {
       "ai": "010326",
@@ -226,14 +202,6 @@
       "courses": 0
     },
     {
-      "ai": "010610",
-      "name": "Cedar Bluff School",
-      "city": "Cedar Bluff",
-      "state": "AL",
-      "zip": "35959",
-      "courses": 0
-    },
-    {
       "ai": "010657",
       "name": "Chickasaw Middle/High School",
       "city": "Mobile",
@@ -266,14 +234,6 @@
       "courses": 0
     },
     {
-      "ai": "011040",
-      "name": "Excel School",
-      "city": "Excel",
-      "state": "AL",
-      "zip": "36439",
-      "courses": 3
-    },
-    {
       "ai": "011042",
       "name": "Bayshore Christian School",
       "city": "Daphne",
@@ -304,14 +264,6 @@
       "state": "AL",
       "zip": "35906",
       "courses": 1
-    },
-    {
-      "ai": "011210",
-      "name": "Gaylesville School",
-      "city": "Gaylesville",
-      "state": "AL",
-      "zip": "35973",
-      "courses": 0
     },
     {
       "ai": "011235",
@@ -362,22 +314,6 @@
       "courses": 0
     },
     {
-      "ai": "011610",
-      "name": "Sand Rock School",
-      "city": "Leesburg",
-      "state": "AL",
-      "zip": "35983",
-      "courses": 0
-    },
-    {
-      "ai": "011630",
-      "name": "Lexington School",
-      "city": "Lexington",
-      "state": "AL",
-      "zip": "35648",
-      "courses": 1
-    },
-    {
       "ai": "011655",
       "name": "Central High School",
       "city": "Lineville",
@@ -407,14 +343,6 @@
       "city": "New Market",
       "state": "AL",
       "zip": "35761",
-      "courses": 0
-    },
-    {
-      "ai": "011740",
-      "name": "McKenzie School",
-      "city": "Mc Kenzie",
-      "state": "AL",
-      "zip": "36456",
       "courses": 0
     },
     {
@@ -488,14 +416,6 @@
       "state": "AL",
       "zip": "36106",
       "courses": 11
-    },
-    {
-      "ai": "012013",
-      "name": "Notasulga School",
-      "city": "Notasulga",
-      "state": "AL",
-      "zip": "36866",
-      "courses": 2
     },
     {
       "ai": "012040",
@@ -786,14 +706,6 @@
       "courses": 13
     },
     {
-      "ai": "040130",
-      "name": "Bay Junior Senior High School",
-      "city": "Bay",
-      "state": "AR",
-      "zip": "72411",
-      "courses": 3
-    },
-    {
       "ai": "040177",
       "name": "Founders Classical Academy Rogers",
       "city": "Rogers",
@@ -834,14 +746,6 @@
       "courses": 0
     },
     {
-      "ai": "040380",
-      "name": "Carlisle Junior Senior High School",
-      "city": "Carlisle",
-      "state": "AR",
-      "zip": "72024",
-      "courses": 4
-    },
-    {
       "ai": "040405",
       "name": "Cave City High School Career And College Preparatory",
       "city": "Cave City",
@@ -866,28 +770,12 @@
       "courses": 0
     },
     {
-      "ai": "040615",
-      "name": "Dermott Junior Senior High School",
-      "city": "Dermott",
-      "state": "AR",
-      "zip": "71638",
-      "courses": 0
-    },
-    {
       "ai": "040620",
       "name": "Des Arcade Junior Senior High School",
       "city": "Des Arc",
       "state": "AR",
       "zip": "72040",
       "courses": 3
-    },
-    {
-      "ai": "040730",
-      "name": "England Junior Senior High School",
-      "city": "England",
-      "state": "AR",
-      "zip": "72046",
-      "courses": 5
     },
     {
       "ai": "040885",
@@ -906,27 +794,11 @@
       "courses": 0
     },
     {
-      "ai": "041175",
-      "name": "Hoxie School",
-      "city": "Hoxie",
-      "state": "AR",
-      "zip": "72433",
-      "courses": 6
-    },
-    {
       "ai": "041232",
       "name": "Jacksonville Lighthouse Charter School College Preparatory Academy",
       "city": "Jacksonville",
       "state": "AR",
       "zip": "72076",
-      "courses": 0
-    },
-    {
-      "ai": "041310",
-      "name": "Kingston Public School",
-      "city": "Kingston",
-      "state": "AR",
-      "zip": "72742",
       "courses": 0
     },
     {
@@ -954,14 +826,6 @@
       "courses": 5
     },
     {
-      "ai": "041600",
-      "name": "Maynard Junior Senior High School",
-      "city": "Maynard",
-      "state": "AR",
-      "zip": "72444",
-      "courses": 5
-    },
-    {
       "ai": "041740",
       "name": "Mountain Home High School Career Academy",
       "city": "Mountain Home",
@@ -986,14 +850,6 @@
       "courses": 0
     },
     {
-      "ai": "041875",
-      "name": "Oark School",
-      "city": "Oark",
-      "state": "AR",
-      "zip": "72852",
-      "courses": 0
-    },
-    {
       "ai": "041880",
       "name": "Oden High School",
       "city": "Oden",
@@ -1002,44 +858,12 @@
       "courses": 2
     },
     {
-      "ai": "041905",
-      "name": "Omaha Junior Senior High School",
-      "city": "Omaha",
-      "state": "AR",
-      "zip": "72662",
-      "courses": 0
-    },
-    {
-      "ai": "041930",
-      "name": "Ozark High School",
-      "city": "Ozark",
-      "state": "AR",
-      "zip": "72949",
-      "courses": 6
-    },
-    {
-      "ai": "041940",
-      "name": "Pangburn Middle High School",
-      "city": "Pangburn",
-      "state": "AR",
-      "zip": "72121",
-      "courses": 0
-    },
-    {
       "ai": "042012",
       "name": "Dollarway High School",
       "city": "Pine Bluff",
       "state": "AR",
       "zip": "71601",
       "courses": 0
-    },
-    {
-      "ai": "042135",
-      "name": "Quitman Junior Senior High School",
-      "city": "Quitman",
-      "state": "AR",
-      "zip": "72131",
-      "courses": 5
     },
     {
       "ai": "042171",
@@ -1104,22 +928,6 @@
       "state": "AR",
       "zip": "71765",
       "courses": 3
-    },
-    {
-      "ai": "042440",
-      "name": "Timbo School",
-      "city": "Timbo",
-      "state": "AR",
-      "zip": "72680",
-      "courses": 0
-    },
-    {
-      "ai": "042575",
-      "name": "Walnut Ridge Middle High School",
-      "city": "Walnut Ridge",
-      "state": "AR",
-      "zip": "72476",
-      "courses": 7
     },
     {
       "ai": "049005",
@@ -1602,22 +1410,6 @@
       "courses": 0
     },
     {
-      "ai": "030000",
-      "name": "Ajo School",
-      "city": "Ajo",
-      "state": "AZ",
-      "zip": "85321",
-      "courses": 2
-    },
-    {
-      "ai": "030005",
-      "name": "Ash Fork School",
-      "city": "Ash Fork",
-      "state": "AZ",
-      "zip": "86320",
-      "courses": 0
-    },
-    {
       "ai": "030027",
       "name": "Arizona Compass Preparatory School",
       "city": "Chandler",
@@ -1656,14 +1448,6 @@
       "state": "AZ",
       "zip": "86004",
       "courses": 0
-    },
-    {
-      "ai": "030136",
-      "name": "American Leadership Academy Gilbert North 7-12",
-      "city": "Gilbert",
-      "state": "AZ",
-      "zip": "85296",
-      "courses": 12
     },
     {
       "ai": "030158",
@@ -1930,14 +1714,6 @@
       "courses": 0
     },
     {
-      "ai": "030771",
-      "name": "American Leadership Academy Ironwood 7-12",
-      "city": "San Tan Valley",
-      "state": "AZ",
-      "zip": "85140",
-      "courses": 3
-    },
-    {
       "ai": "030773",
       "name": "Brightmont Academy - Deer Valley",
       "city": "Phoenix",
@@ -2008,14 +1784,6 @@
       "state": "AZ",
       "zip": "85224",
       "courses": 0
-    },
-    {
-      "ai": "485789",
-      "name": "American Leadership Academy- Mesa North 7-12",
-      "city": "Mesa",
-      "state": "AZ",
-      "zip": "85215",
-      "courses": 9
     },
     {
       "ai": "797878",
@@ -2210,14 +1978,6 @@
       "courses": 0
     },
     {
-      "ai": "050180",
-      "name": "Avalon School",
-      "city": "Avalon",
-      "state": "CA",
-      "zip": "90704",
-      "courses": 4
-    },
-    {
       "ai": "050190",
       "name": "Gladstone High School",
       "city": "Covina",
@@ -2232,14 +1992,6 @@
       "state": "CA",
       "zip": "93307",
       "courses": 0
-    },
-    {
-      "ai": "050255",
-      "name": "Bellflower Middle-High School",
-      "city": "Bellflower",
-      "state": "CA",
-      "zip": "90706",
-      "courses": 14
     },
     {
       "ai": "050267",
@@ -2418,27 +2170,11 @@
       "courses": 0
     },
     {
-      "ai": "050683",
-      "name": "Costa Mesa Middle High School",
-      "city": "Costa Mesa",
-      "state": "CA",
-      "zip": "92626",
-      "courses": 22
-    },
-    {
       "ai": "050742",
       "name": "Fairmont International School",
       "city": "Anaheim",
       "state": "CA",
       "zip": "92802",
-      "courses": 0
-    },
-    {
-      "ai": "050780",
-      "name": "Downieville School",
-      "city": "Downieville",
-      "state": "CA",
-      "zip": "95936",
       "courses": 0
     },
     {
@@ -3242,14 +2978,6 @@
       "courses": 23
     },
     {
-      "ai": "052445",
-      "name": "Pescadero Middle High School",
-      "city": "Pescadero",
-      "state": "CA",
-      "zip": "94060",
-      "courses": 1
-    },
-    {
       "ai": "052491",
       "name": "Knight High School",
       "city": "Palmdale",
@@ -3887,14 +3615,6 @@
       "city": "Huntington Beach",
       "state": "CA",
       "zip": "92647",
-      "courses": 0
-    },
-    {
-      "ai": "053745",
-      "name": "Westwood Junior Senior High School",
-      "city": "Westwood",
-      "state": "CA",
-      "zip": "96137",
       "courses": 0
     },
     {
@@ -6426,14 +6146,6 @@
       "courses": 16
     },
     {
-      "ai": "060150",
-      "name": "Brush Middle High School",
-      "city": "Brush",
-      "state": "CO",
-      "zip": "80723",
-      "courses": 0
-    },
-    {
       "ai": "060173",
       "name": "Calhan School",
       "city": "Calhan",
@@ -6495,14 +6207,6 @@
       "city": "Colorado Springs",
       "state": "CO",
       "zip": "80909",
-      "courses": 0
-    },
-    {
-      "ai": "060310",
-      "name": "Cotopaxi School",
-      "city": "Cotopaxi",
-      "state": "CO",
-      "zip": "81223",
       "courses": 0
     },
     {
@@ -6576,14 +6280,6 @@
       "state": "CO",
       "zip": "80249",
       "courses": 1
-    },
-    {
-      "ai": "060505",
-      "name": "Elbert School",
-      "city": "Elbert",
-      "state": "CO",
-      "zip": "80106",
-      "courses": 0
     },
     {
       "ai": "060506",
@@ -6666,22 +6362,6 @@
       "courses": 11
     },
     {
-      "ai": "060760",
-      "name": "Holyoke Junior Senior High School",
-      "city": "Holyoke",
-      "state": "CO",
-      "zip": "80734",
-      "courses": 0
-    },
-    {
-      "ai": "060845",
-      "name": "Kiowa School",
-      "city": "Kiowa",
-      "state": "CO",
-      "zip": "80117",
-      "courses": 2
-    },
-    {
       "ai": "060867",
       "name": "Dawson School",
       "city": "Lafayette",
@@ -6746,14 +6426,6 @@
       "courses": 0
     },
     {
-      "ai": "061120",
-      "name": "Ouray School",
-      "city": "Ouray",
-      "state": "CO",
-      "zip": "81427",
-      "courses": 6
-    },
-    {
       "ai": "061145",
       "name": "Paonia Senior High School",
       "city": "Paonia",
@@ -6794,14 +6466,6 @@
       "courses": 13
     },
     {
-      "ai": "061255",
-      "name": "Sanford School",
-      "city": "Sanford",
-      "state": "CO",
-      "zip": "81151",
-      "courses": 0
-    },
-    {
       "ai": "061308",
       "name": "Christian Heritage School",
       "city": "Steamboat Springs",
@@ -6810,28 +6474,12 @@
       "courses": 0
     },
     {
-      "ai": "061350",
-      "name": "Telluride Middle High School",
-      "city": "Telluride",
-      "state": "CO",
-      "zip": "81435",
-      "courses": 17
-    },
-    {
       "ai": "061422",
       "name": "Ridgeview Academy Charter School",
       "city": "Watkins",
       "state": "CO",
       "zip": "80137",
       "courses": 0
-    },
-    {
-      "ai": "061475",
-      "name": "Woodland Park Junior Senior High School",
-      "city": "Woodland Park",
-      "state": "CO",
-      "zip": "80863",
-      "courses": 16
     },
     {
       "ai": "069014",
@@ -7810,14 +7458,6 @@
       "courses": 6
     },
     {
-      "ai": "080025",
-      "name": "Delmar Middle Senior High School",
-      "city": "Delmar",
-      "state": "DE",
-      "zip": "19940",
-      "courses": 6
-    },
-    {
       "ai": "080038",
       "name": "Early College School At Delaware State University",
       "city": "Dover",
@@ -8034,14 +7674,6 @@
       "courses": 22
     },
     {
-      "ai": "100095",
-      "name": "Bell Middle High School",
-      "city": "Bell",
-      "state": "FL",
-      "zip": "32619",
-      "courses": 1
-    },
-    {
       "ai": "100110",
       "name": "Somerset Academy Key Charter School",
       "city": "Deerfield Beach",
@@ -8090,14 +7722,6 @@
       "courses": 22
     },
     {
-      "ai": "100225",
-      "name": "Cedar Key School",
-      "city": "Cedar Key",
-      "state": "FL",
-      "zip": "32625",
-      "courses": 4
-    },
-    {
       "ai": "100248",
       "name": "Calvary Christian High School",
       "city": "Clearwater",
@@ -8120,14 +7744,6 @@
       "state": "FL",
       "zip": "33765",
       "courses": 0
-    },
-    {
-      "ai": "100282",
-      "name": "Cocoa Junior Senior High School",
-      "city": "Cocoa",
-      "state": "FL",
-      "zip": "32926",
-      "courses": 11
     },
     {
       "ai": "100306",
@@ -8530,14 +8146,6 @@
       "courses": 5
     },
     {
-      "ai": "101190",
-      "name": "Moore Haven Junior Senior High School",
-      "city": "Moore Haven",
-      "state": "FL",
-      "zip": "33471",
-      "courses": 4
-    },
-    {
       "ai": "101234",
       "name": "Scheck Hillel Community School",
       "city": "Miami",
@@ -8568,14 +8176,6 @@
       "state": "FL",
       "zip": "32806",
       "courses": 28
-    },
-    {
-      "ai": "101320",
-      "name": "Pahokee High School",
-      "city": "Pahokee",
-      "state": "FL",
-      "zip": "33476",
-      "courses": 4
     },
     {
       "ai": "101329",
@@ -8616,14 +8216,6 @@
       "state": "FL",
       "zip": "32180",
       "courses": 7
-    },
-    {
-      "ai": "101440",
-      "name": "Port St Joe Junior Senior High School",
-      "city": "Port Saint Joe",
-      "state": "FL",
-      "zip": "32456",
-      "courses": 0
     },
     {
       "ai": "101447",
@@ -9184,14 +8776,6 @@
       "state": "FL",
       "zip": "34211",
       "courses": 13
-    },
-    {
-      "ai": "102822",
-      "name": "KIPP Bold City High School",
-      "city": "Jacksonville",
-      "state": "FL",
-      "zip": "32254",
-      "courses": 3
     },
     {
       "ai": "102831",
@@ -11938,14 +11522,6 @@
       "courses": 28
     },
     {
-      "ai": "160810",
-      "name": "Clarksville School",
-      "city": "Clarksville",
-      "state": "IA",
-      "zip": "50619",
-      "courses": 0
-    },
-    {
       "ai": "160900",
       "name": "South Page Community School",
       "city": "College Springs",
@@ -12026,14 +11602,6 @@
       "courses": 12
     },
     {
-      "ai": "161370",
-      "name": "Durant High School",
-      "city": "Durant",
-      "state": "IA",
-      "zip": "52747",
-      "courses": 0
-    },
-    {
       "ai": "161385",
       "name": "Eagle Grove Community High School",
       "city": "Eagle Grove",
@@ -12058,14 +11626,6 @@
       "courses": 0
     },
     {
-      "ai": "161675",
-      "name": "Fort Madison High School",
-      "city": "Fort Madison",
-      "state": "IA",
-      "zip": "52627",
-      "courses": 2
-    },
-    {
       "ai": "161748",
       "name": "Don Bosco High School",
       "city": "Gilbertville",
@@ -12082,14 +11642,6 @@
       "courses": 6
     },
     {
-      "ai": "161900",
-      "name": "Grundy Center Junior Senior High School",
-      "city": "Grundy Center",
-      "state": "IA",
-      "zip": "50638",
-      "courses": 0
-    },
-    {
       "ai": "161915",
       "name": "Adair Casey And Guthrie Center High School",
       "city": "Guthrie Center",
@@ -12104,14 +11656,6 @@
       "state": "IA",
       "zip": "51537",
       "courses": 0
-    },
-    {
-      "ai": "162040",
-      "name": "Hinton Middle High School",
-      "city": "Hinton",
-      "state": "IA",
-      "zip": "51024",
-      "courses": 1
     },
     {
       "ai": "162095",
@@ -12146,14 +11690,6 @@
       "courses": 4
     },
     {
-      "ai": "162277",
-      "name": "Keota Junior Senior High School",
-      "city": "Keota",
-      "state": "IA",
-      "zip": "52248",
-      "courses": 0
-    },
-    {
       "ai": "162430",
       "name": "Laurens Marathon School",
       "city": "Laurens",
@@ -12162,36 +11698,12 @@
       "courses": 0
     },
     {
-      "ai": "162485",
-      "name": "Lenox Junior Senior High School",
-      "city": "Lenox",
-      "state": "IA",
-      "zip": "50851",
-      "courses": 1
-    },
-    {
       "ai": "162550",
       "name": "Lisbon School",
       "city": "Lisbon",
       "state": "IA",
       "zip": "52253",
       "courses": 0
-    },
-    {
-      "ai": "162605",
-      "name": "Lone Tree School",
-      "city": "Lone Tree",
-      "state": "IA",
-      "zip": "52755",
-      "courses": 3
-    },
-    {
-      "ai": "162675",
-      "name": "Madrid Junior Senior High School",
-      "city": "Madrid",
-      "state": "IA",
-      "zip": "50156",
-      "courses": 1
     },
     {
       "ai": "162750",
@@ -12232,30 +11744,6 @@
       "state": "IA",
       "zip": "50171",
       "courses": 1
-    },
-    {
-      "ai": "163030",
-      "name": "Moravia School",
-      "city": "Moravia",
-      "state": "IA",
-      "zip": "52571",
-      "courses": 0
-    },
-    {
-      "ai": "163075",
-      "name": "Murray School",
-      "city": "Murray",
-      "state": "IA",
-      "zip": "50174",
-      "courses": 0
-    },
-    {
-      "ai": "163165",
-      "name": "New London Middle High School",
-      "city": "New London",
-      "state": "IA",
-      "zip": "52645",
-      "courses": 0
     },
     {
       "ai": "163295",
@@ -12322,14 +11810,6 @@
       "courses": 0
     },
     {
-      "ai": "164390",
-      "name": "Van Meter School",
-      "city": "Van Meter",
-      "state": "IA",
-      "zip": "50261",
-      "courses": 2
-    },
-    {
       "ai": "164410",
       "name": "HLV School",
       "city": "Victor",
@@ -12343,14 +11823,6 @@
       "city": "Walker",
       "state": "IA",
       "zip": "52352",
-      "courses": 0
-    },
-    {
-      "ai": "164470",
-      "name": "Wapello Junior Senior High School",
-      "city": "Wapello",
-      "state": "IA",
-      "zip": "52653",
       "courses": 0
     },
     {
@@ -12522,14 +11994,6 @@
       "courses": 0
     },
     {
-      "ai": "130090",
-      "name": "Carey School",
-      "city": "Carey",
-      "state": "ID",
-      "zip": "83320",
-      "courses": 0
-    },
-    {
       "ai": "130096",
       "name": "Alzar School",
       "city": "Cascade",
@@ -12546,36 +12010,12 @@
       "courses": 0
     },
     {
-      "ai": "130470",
-      "name": "Orofino Junior Senior High School",
-      "city": "Orofino",
-      "state": "ID",
-      "zip": "83544",
-      "courses": 0
-    },
-    {
       "ai": "130507",
       "name": "Saint Dominic's Girl's School",
       "city": "Post Falls",
       "state": "ID",
       "zip": "83854",
       "courses": 0
-    },
-    {
-      "ai": "130565",
-      "name": "Rockland School",
-      "city": "Rockland",
-      "state": "ID",
-      "zip": "83271",
-      "courses": 6
-    },
-    {
-      "ai": "130590",
-      "name": "Salmon High School",
-      "city": "Salmon",
-      "state": "ID",
-      "zip": "83467",
-      "courses": 3
     },
     {
       "ai": "139008",
@@ -12728,14 +12168,6 @@
       "state": "IL",
       "zip": "60623",
       "courses": 1
-    },
-    {
-      "ai": "140225",
-      "name": "Beardstown Middle High School",
-      "city": "Beardstown",
-      "state": "IL",
-      "zip": "62618",
-      "courses": 5
     },
     {
       "ai": "140300",
@@ -13338,28 +12770,12 @@
       "courses": 1
     },
     {
-      "ai": "141450",
-      "name": "Cobden Junior Senior High School",
-      "city": "Cobden",
-      "state": "IL",
-      "zip": "62920",
-      "courses": 0
-    },
-    {
       "ai": "141567",
       "name": "Lutheran Assoc School",
       "city": "Decatur",
       "state": "IL",
       "zip": "62526",
       "courses": 0
-    },
-    {
-      "ai": "141625",
-      "name": "Donovan Junior Senior High School",
-      "city": "Donovan",
-      "state": "IL",
-      "zip": "60931",
-      "courses": 1
     },
     {
       "ai": "141630",
@@ -13378,28 +12794,12 @@
       "courses": 23
     },
     {
-      "ai": "141650",
-      "name": "Dupo Junior Senior High School",
-      "city": "Dupo",
-      "state": "IL",
-      "zip": "62239",
-      "courses": 2
-    },
-    {
       "ai": "141655",
       "name": "Duquoin High School",
       "city": "Du Quoin",
       "state": "IL",
       "zip": "62832",
       "courses": 2
-    },
-    {
-      "ai": "141680",
-      "name": "East Dubuque Junior Senior High School",
-      "city": "East Dubuque",
-      "state": "IL",
-      "zip": "61025",
-      "courses": 3
     },
     {
       "ai": "141700",
@@ -13416,14 +12816,6 @@
       "state": "IL",
       "zip": "60123",
       "courses": 0
-    },
-    {
-      "ai": "141810",
-      "name": "Elmwood Junior Senior High School",
-      "city": "Elmwood",
-      "state": "IL",
-      "zip": "61529",
-      "courses": 1
     },
     {
       "ai": "141865",
@@ -13448,14 +12840,6 @@
       "state": "IL",
       "zip": "61032",
       "courses": 0
-    },
-    {
-      "ai": "142000",
-      "name": "Galesburg Junior Senior High School",
-      "city": "Galesburg",
-      "state": "IL",
-      "zip": "61401",
-      "courses": 9
     },
     {
       "ai": "142010",
@@ -13490,14 +12874,6 @@
       "courses": 0
     },
     {
-      "ai": "142180",
-      "name": "Hamilton Junior Senior High School",
-      "city": "Hamilton",
-      "state": "IL",
-      "zip": "62341",
-      "courses": 2
-    },
-    {
       "ai": "142547",
       "name": "Thornton Fractional South High School",
       "city": "Lansing",
@@ -13519,14 +12895,6 @@
       "city": "Le Roy",
       "state": "IL",
       "zip": "61752",
-      "courses": 1
-    },
-    {
-      "ai": "142615",
-      "name": "Liberty School",
-      "city": "Liberty",
-      "state": "IL",
-      "zip": "62347",
       "courses": 1
     },
     {
@@ -13586,14 +12954,6 @@
       "courses": 23
     },
     {
-      "ai": "143005",
-      "name": "Morrisonville Junior Senior High School",
-      "city": "Morrisonville",
-      "state": "IL",
-      "zip": "62546",
-      "courses": 0
-    },
-    {
       "ai": "143096",
       "name": "Carmel High School",
       "city": "Mundelein",
@@ -13608,14 +12968,6 @@
       "state": "IL",
       "zip": "60060",
       "courses": 24
-    },
-    {
-      "ai": "143145",
-      "name": "New Athens School",
-      "city": "New Athens",
-      "state": "IL",
-      "zip": "62264",
-      "courses": 0
     },
     {
       "ai": "143188",
@@ -13640,14 +12992,6 @@
       "state": "IL",
       "zip": "62269",
       "courses": 19
-    },
-    {
-      "ai": "143310",
-      "name": "Orangeville School",
-      "city": "Orangeville",
-      "state": "IL",
-      "zip": "61060",
-      "courses": 0
     },
     {
       "ai": "143343",
@@ -13682,14 +13026,6 @@
       "courses": 0
     },
     {
-      "ai": "143405",
-      "name": "Pearl City School",
-      "city": "Pearl City",
-      "state": "IL",
-      "zip": "61062",
-      "courses": 1
-    },
-    {
       "ai": "143429",
       "name": "Quest Charter Academy",
       "city": "Peoria",
@@ -13712,14 +13048,6 @@
       "state": "IL",
       "zip": "61764",
       "courses": 8
-    },
-    {
-      "ai": "143565",
-      "name": "Princeville Junior Senior High School",
-      "city": "Princeville",
-      "state": "IL",
-      "zip": "61559",
-      "courses": 3
     },
     {
       "ai": "143575",
@@ -13762,14 +13090,6 @@
       "courses": 24
     },
     {
-      "ai": "143800",
-      "name": "St Elmo Junior Senior High School",
-      "city": "Saint Elmo",
-      "state": "IL",
-      "zip": "62458",
-      "courses": 0
-    },
-    {
       "ai": "143830",
       "name": "Sandwich High School",
       "city": "Sandwich",
@@ -13786,28 +13106,12 @@
       "courses": 3
     },
     {
-      "ai": "143855",
-      "name": "Scales Mound Junior Senior High School",
-      "city": "Scales Mound",
-      "state": "IL",
-      "zip": "61075",
-      "courses": 1
-    },
-    {
       "ai": "143865",
       "name": "Seneca Township High School",
       "city": "Seneca",
       "state": "IL",
       "zip": "61360",
       "courses": 1
-    },
-    {
-      "ai": "143910",
-      "name": "Sherrard Junior Senior High School",
-      "city": "Sherrard",
-      "state": "IL",
-      "zip": "61281",
-      "courses": 9
     },
     {
       "ai": "144061",
@@ -13834,14 +13138,6 @@
       "courses": 0
     },
     {
-      "ai": "144195",
-      "name": "Valmeyer School",
-      "city": "Valmeyer",
-      "state": "IL",
-      "zip": "62295",
-      "courses": 0
-    },
-    {
       "ai": "144245",
       "name": "Virginia Community Unit 64 School",
       "city": "Virginia",
@@ -13864,14 +13160,6 @@
       "state": "IL",
       "zip": "60084",
       "courses": 20
-    },
-    {
-      "ai": "144325",
-      "name": "Waverly High School",
-      "city": "Waverly",
-      "state": "IL",
-      "zip": "62692",
-      "courses": 3
     },
     {
       "ai": "144348",
@@ -14266,14 +13554,6 @@
       "courses": 0
     },
     {
-      "ai": "150205",
-      "name": "Bloomfield Junior Senior High School",
-      "city": "Bloomfield",
-      "state": "IN",
-      "zip": "47424",
-      "courses": 3
-    },
-    {
       "ai": "150216",
       "name": "Academy of Science and Entp",
       "city": "Bloomington",
@@ -14490,14 +13770,6 @@
       "courses": 0
     },
     {
-      "ai": "152250",
-      "name": "Medora School",
-      "city": "Medora",
-      "state": "IN",
-      "zip": "47260",
-      "courses": 3
-    },
-    {
       "ai": "152355",
       "name": "Union Junior Senior High School",
       "city": "Modoc",
@@ -14530,14 +13802,6 @@
       "courses": 11
     },
     {
-      "ai": "152805",
-      "name": "Peru High School",
-      "city": "Peru",
-      "state": "IN",
-      "zip": "46970",
-      "courses": 6
-    },
-    {
       "ai": "152894",
       "name": "Portage Christian School",
       "city": "Portage",
@@ -14560,14 +13824,6 @@
       "state": "IN",
       "zip": "47374",
       "courses": 4
-    },
-    {
-      "ai": "153065",
-      "name": "Rossville School",
-      "city": "Rossville",
-      "state": "IN",
-      "zip": "46065",
-      "courses": 5
     },
     {
       "ai": "153215",
@@ -14608,22 +13864,6 @@
       "state": "IN",
       "zip": "47390",
       "courses": 2
-    },
-    {
-      "ai": "153625",
-      "name": "Wabash Middle High School",
-      "city": "Wabash",
-      "state": "IN",
-      "zip": "46992",
-      "courses": 1
-    },
-    {
-      "ai": "153775",
-      "name": "Westville Junior Senior High School",
-      "city": "Westville",
-      "state": "IN",
-      "zip": "46391",
-      "courses": 5
     },
     {
       "ai": "153900",
@@ -14906,28 +14146,12 @@
       "courses": 0
     },
     {
-      "ai": "170190",
-      "name": "Axtell School",
-      "city": "Axtell",
-      "state": "KS",
-      "zip": "66403",
-      "courses": 0
-    },
-    {
       "ai": "170445",
       "name": "Burrton School",
       "city": "Burrton",
       "state": "KS",
       "zip": "67020",
       "courses": 0
-    },
-    {
-      "ai": "171130",
-      "name": "Goessel Junior Senior High School",
-      "city": "Goessel",
-      "state": "KS",
-      "zip": "67053",
-      "courses": 1
     },
     {
       "ai": "171531",
@@ -14952,14 +14176,6 @@
       "state": "KS",
       "zip": "66227",
       "courses": 16
-    },
-    {
-      "ai": "171835",
-      "name": "Centre K 12 School",
-      "city": "Lost Springs",
-      "state": "KS",
-      "zip": "66859",
-      "courses": 0
     },
     {
       "ai": "171889",
@@ -14999,14 +14215,6 @@
       "city": "Scott City",
       "state": "KS",
       "zip": "67871",
-      "courses": 0
-    },
-    {
-      "ai": "172815",
-      "name": "Stafford High School",
-      "city": "Stafford",
-      "state": "KS",
-      "zip": "67578",
       "courses": 0
     },
     {
@@ -15106,14 +14314,6 @@
       "courses": 19
     },
     {
-      "ai": "180760",
-      "name": "Eminence Middle High School",
-      "city": "Eminence",
-      "state": "KY",
-      "zip": "40019",
-      "courses": 1
-    },
-    {
       "ai": "180786",
       "name": "Georgia Chaffee Tapp",
       "city": "Fairdale",
@@ -15144,14 +14344,6 @@
       "state": "KY",
       "zip": "40121",
       "courses": 15
-    },
-    {
-      "ai": "181065",
-      "name": "Harlan Junior Senior High School",
-      "city": "Harlan",
-      "state": "KY",
-      "zip": "40831",
-      "courses": 7
     },
     {
       "ai": "181300",
@@ -15218,30 +14410,6 @@
       "courses": 10
     },
     {
-      "ai": "182073",
-      "name": "Community Christian Acad-Mhs",
-      "city": "Paducah",
-      "state": "KY",
-      "zip": "42003",
-      "courses": 0
-    },
-    {
-      "ai": "182115",
-      "name": "Paintsville Junior Senior High School",
-      "city": "Paintsville",
-      "state": "KY",
-      "zip": "41240",
-      "courses": 11
-    },
-    {
-      "ai": "182185",
-      "name": "Pikeville Junior/Senior High School",
-      "city": "Pikeville",
-      "state": "KY",
-      "zip": "41501",
-      "courses": 10
-    },
-    {
       "ai": "182200",
       "name": "Pineville High School",
       "city": "Pineville",
@@ -15271,14 +14439,6 @@
       "city": "Silver Grove",
       "state": "KY",
       "zip": "41085",
-      "courses": 0
-    },
-    {
-      "ai": "182725",
-      "name": "Williamstown Junior Senior High School",
-      "city": "Williamstown",
-      "state": "KY",
-      "zip": "41097",
       "courses": 0
     },
     {
@@ -15466,14 +14626,6 @@
       "courses": 0
     },
     {
-      "ai": "190255",
-      "name": "Bell City School",
-      "city": "Bell City",
-      "state": "LA",
-      "zip": "70630",
-      "courses": 1
-    },
-    {
       "ai": "190293",
       "name": "Northshore Charter School",
       "city": "Bogalusa",
@@ -15538,14 +14690,6 @@
       "courses": 7
     },
     {
-      "ai": "191125",
-      "name": "Hackberry School",
-      "city": "Hackberry",
-      "state": "LA",
-      "zip": "70645",
-      "courses": 0
-    },
-    {
       "ai": "191154",
       "name": "Saint Thomas Aquinas High School",
       "city": "Hammond",
@@ -15560,14 +14704,6 @@
       "state": "LA",
       "zip": "70058",
       "courses": 0
-    },
-    {
-      "ai": "191195",
-      "name": "Holden School",
-      "city": "Holden",
-      "state": "LA",
-      "zip": "70744",
-      "courses": 2
     },
     {
       "ai": "191417",
@@ -15752,14 +14888,6 @@
       "state": "LA",
       "zip": "71129",
       "courses": 1
-    },
-    {
-      "ai": "192740",
-      "name": "Simsboro School",
-      "city": "Simsboro",
-      "state": "LA",
-      "zip": "71275",
-      "courses": 0
     },
     {
       "ai": "192745",
@@ -16434,14 +15562,6 @@
       "courses": 23
     },
     {
-      "ai": "221720",
-      "name": "Palmer Middle High School",
-      "city": "Palmer",
-      "state": "MA",
-      "zip": "01069",
-      "courses": 11
-    },
-    {
       "ai": "221721",
       "name": "Pathfinder Regional Vocational High School",
       "city": "Palmer",
@@ -16464,22 +15584,6 @@
       "state": "MA",
       "zip": "02370",
       "courses": 1
-    },
-    {
-      "ai": "221840",
-      "name": "Rockport High School",
-      "city": "Rockport",
-      "state": "MA",
-      "zip": "01966",
-      "courses": 12
-    },
-    {
-      "ai": "221885",
-      "name": "Saugus Middle High School",
-      "city": "Saugus",
-      "state": "MA",
-      "zip": "01906",
-      "courses": 12
     },
     {
       "ai": "222007",
@@ -16560,14 +15664,6 @@
       "state": "MA",
       "zip": "01351",
       "courses": 3
-    },
-    {
-      "ai": "222307",
-      "name": "West Boylston Middle-High School",
-      "city": "West Boylston",
-      "state": "MA",
-      "zip": "01583",
-      "courses": 13
     },
     {
       "ai": "222320",
@@ -17186,14 +16282,6 @@
       "courses": 6
     },
     {
-      "ai": "210435",
-      "name": "Bishop Walsh School",
-      "city": "Cumberland",
-      "state": "MD",
-      "zip": "21502",
-      "courses": 12
-    },
-    {
       "ai": "210487",
       "name": "Maritime Industries Academy",
       "city": "Brooklyn",
@@ -17674,14 +16762,6 @@
       "courses": 0
     },
     {
-      "ai": "200465",
-      "name": "Houlton Middle High School",
-      "city": "Houlton",
-      "state": "ME",
-      "zip": "04730",
-      "courses": 4
-    },
-    {
       "ai": "200480",
       "name": "Southern Aroostook Community School",
       "city": "Dyer Brook",
@@ -17728,14 +16808,6 @@
       "state": "ME",
       "zip": "04101",
       "courses": 3
-    },
-    {
-      "ai": "200850",
-      "name": "Richmond Middle High School",
-      "city": "Richmond",
-      "state": "ME",
-      "zip": "04357",
-      "courses": 0
     },
     {
       "ai": "200875",
@@ -17858,14 +16930,6 @@
       "courses": 2
     },
     {
-      "ai": "230145",
-      "name": "Baldwin Junior Senior High School",
-      "city": "Baldwin",
-      "state": "MI",
-      "zip": "49304",
-      "courses": 0
-    },
-    {
       "ai": "230174",
       "name": "Battle Creek Area Mathematics and Science Center",
       "city": "Battle Creek",
@@ -17978,14 +17042,6 @@
       "courses": 0
     },
     {
-      "ai": "230420",
-      "name": "Brown City Junior-Senior High School",
-      "city": "Brown City",
-      "state": "MI",
-      "zip": "48416",
-      "courses": 0
-    },
-    {
       "ai": "230465",
       "name": "Camden Frontier School",
       "city": "Camden",
@@ -18023,14 +17079,6 @@
       "city": "Carsonville",
       "state": "MI",
       "zip": "48419",
-      "courses": 0
-    },
-    {
-      "ai": "230503",
-      "name": "Caseville School",
-      "city": "Caseville",
-      "state": "MI",
-      "zip": "48725",
       "courses": 0
     },
     {
@@ -18096,14 +17144,6 @@
       "state": "MI",
       "zip": "48237",
       "courses": 30
-    },
-    {
-      "ai": "230680",
-      "name": "Colon Junior Senior High School",
-      "city": "Colon",
-      "state": "MI",
-      "zip": "49040",
-      "courses": 2
     },
     {
       "ai": "230735",
@@ -18194,14 +17234,6 @@
       "courses": 9
     },
     {
-      "ai": "231310",
-      "name": "Eau Claire Middle High School",
-      "city": "Eau Claire",
-      "state": "MI",
-      "zip": "49111",
-      "courses": 2
-    },
-    {
       "ai": "231355",
       "name": "Ovid-Elsie High School",
       "city": "Elsie",
@@ -18234,14 +17266,6 @@
       "courses": 7
     },
     {
-      "ai": "231420",
-      "name": "Fennville High School",
-      "city": "Fennville",
-      "state": "MI",
-      "zip": "49408",
-      "courses": 2
-    },
-    {
       "ai": "231445",
       "name": "Flat Rock High School",
       "city": "Flat Rock",
@@ -18266,14 +17290,6 @@
       "courses": 0
     },
     {
-      "ai": "231570",
-      "name": "Frankfort Junior Senior High School",
-      "city": "Frankfort",
-      "state": "MI",
-      "zip": "49635",
-      "courses": 3
-    },
-    {
       "ai": "231583",
       "name": "Freeland Middle High School",
       "city": "Freeland",
@@ -18296,22 +17312,6 @@
       "state": "MI",
       "zip": "49735",
       "courses": 9
-    },
-    {
-      "ai": "231628",
-      "name": "Genesee Junior Senior High School",
-      "city": "Genesee",
-      "state": "MI",
-      "zip": "48437",
-      "courses": 2
-    },
-    {
-      "ai": "231655",
-      "name": "Gobles Middle/High School",
-      "city": "Gobles",
-      "state": "MI",
-      "zip": "49055",
-      "courses": 5
     },
     {
       "ai": "231665",
@@ -18442,22 +17442,6 @@
       "courses": 0
     },
     {
-      "ai": "232110",
-      "name": "Luther L Wright K-12 School",
-      "city": "Ironwood",
-      "state": "MI",
-      "zip": "49938",
-      "courses": 6
-    },
-    {
-      "ai": "232125",
-      "name": "Ithaca Junior Senior High School",
-      "city": "Ithaca",
-      "state": "MI",
-      "zip": "48847",
-      "courses": 3
-    },
-    {
       "ai": "232155",
       "name": "Johannesburg-Lewiston High School",
       "city": "Johannesburg",
@@ -18480,14 +17464,6 @@
       "state": "MI",
       "zip": "49548",
       "courses": 7
-    },
-    {
-      "ai": "232225",
-      "name": "Kingston Junior Senior High School",
-      "city": "Kingston",
-      "state": "MI",
-      "zip": "48741",
-      "courses": 3
     },
     {
       "ai": "232255",
@@ -18530,22 +17506,6 @@
       "courses": 2
     },
     {
-      "ai": "232393",
-      "name": "Mackinac Island Public School",
-      "city": "Mackinac Is",
-      "state": "MI",
-      "zip": "49757",
-      "courses": 2
-    },
-    {
-      "ai": "232395",
-      "name": "Mackinaw City Public School",
-      "city": "Mackinaw City",
-      "state": "MI",
-      "zip": "49701",
-      "courses": 1
-    },
-    {
       "ai": "232415",
       "name": "Manton School",
       "city": "Manton",
@@ -18562,35 +17522,11 @@
       "courses": 6
     },
     {
-      "ai": "232425",
-      "name": "Marcellus Middle Senior High School",
-      "city": "Marcellus",
-      "state": "MI",
-      "zip": "49067",
-      "courses": 2
-    },
-    {
       "ai": "232450",
       "name": "Marlette Junior/Senior High School",
       "city": "Marlette",
       "state": "MI",
       "zip": "48453",
-      "courses": 0
-    },
-    {
-      "ai": "232480",
-      "name": "Martin Junior Senior High School",
-      "city": "Martin",
-      "state": "MI",
-      "zip": "49070",
-      "courses": 0
-    },
-    {
-      "ai": "232505",
-      "name": "Mayville High School",
-      "city": "Mayville",
-      "state": "MI",
-      "zip": "48744",
       "courses": 0
     },
     {
@@ -18642,22 +17578,6 @@
       "courses": 0
     },
     {
-      "ai": "232640",
-      "name": "Morenci High School",
-      "city": "Morenci",
-      "state": "MI",
-      "zip": "49256",
-      "courses": 0
-    },
-    {
-      "ai": "232650",
-      "name": "Morrice Junior Senior High School",
-      "city": "Morrice",
-      "state": "MI",
-      "zip": "48857",
-      "courses": 0
-    },
-    {
       "ai": "232653",
       "name": "L'Anse Creuse High School North",
       "city": "Macomb",
@@ -18695,14 +17615,6 @@
       "city": "Newberry",
       "state": "MI",
       "zip": "49868",
-      "courses": 0
-    },
-    {
-      "ai": "232790",
-      "name": "New Lothrop Junior Senior High School",
-      "city": "New Lothrop",
-      "state": "MI",
-      "zip": "48460",
       "courses": 0
     },
     {
@@ -18746,14 +17658,6 @@
       "courses": 9
     },
     {
-      "ai": "232890",
-      "name": "Oscoda Middle High School",
-      "city": "Oscoda",
-      "state": "MI",
-      "zip": "48750",
-      "courses": 0
-    },
-    {
       "ai": "232910",
       "name": "Owendale Gagetown Area School",
       "city": "Owendale",
@@ -18786,14 +17690,6 @@
       "courses": 0
     },
     {
-      "ai": "233020",
-      "name": "Pinconning Middle High School",
-      "city": "Pinconning",
-      "state": "MI",
-      "zip": "48650",
-      "courses": 5
-    },
-    {
       "ai": "233036",
       "name": "Starkweather Alternative Academy",
       "city": "Plymouth",
@@ -18807,14 +17703,6 @@
       "city": "Portland",
       "state": "MI",
       "zip": "48875",
-      "courses": 2
-    },
-    {
-      "ai": "233150",
-      "name": "Reese Middle High School",
-      "city": "Reese",
-      "state": "MI",
-      "zip": "48757",
       "courses": 2
     },
     {
@@ -18866,14 +17754,6 @@
       "courses": 11
     },
     {
-      "ai": "233400",
-      "name": "Sand Creek Junior Senior High School",
-      "city": "Sand Creek",
-      "state": "MI",
-      "zip": "49279",
-      "courses": 1
-    },
-    {
       "ai": "233410",
       "name": "Sandusky Junior/Senior High School",
       "city": "Sandusky",
@@ -18888,14 +17768,6 @@
       "state": "MI",
       "zip": "48881",
       "courses": 7
-    },
-    {
-      "ai": "233420",
-      "name": "Saugatuck Middle High School",
-      "city": "Saugatuck",
-      "state": "MI",
-      "zip": "49453",
-      "courses": 13
     },
     {
       "ai": "233458",
@@ -18970,14 +17842,6 @@
       "courses": 9
     },
     {
-      "ai": "233650",
-      "name": "Vassar Middle High School",
-      "city": "Vassar",
-      "state": "MI",
-      "zip": "48768",
-      "courses": 0
-    },
-    {
       "ai": "233655",
       "name": "Maple Valley Junior-Senior High School",
       "city": "Vermontville",
@@ -19018,28 +17882,12 @@
       "courses": 5
     },
     {
-      "ai": "233750",
-      "name": "White Cloud Junior Senior High School",
-      "city": "White Cloud",
-      "state": "MI",
-      "zip": "49349",
-      "courses": 0
-    },
-    {
       "ai": "233760",
       "name": "White Pigeon Junior Senior High School",
       "city": "White Pigeon",
       "state": "MI",
       "zip": "49099",
       "courses": 1
-    },
-    {
-      "ai": "233763",
-      "name": "Whitmore Lake Middle And High School",
-      "city": "Whitmore Lake",
-      "state": "MI",
-      "zip": "48189",
-      "courses": 8
     },
     {
       "ai": "233780",
@@ -19410,14 +18258,6 @@
       "courses": 6
     },
     {
-      "ai": "240030",
-      "name": "Albany Middle High School",
-      "city": "Albany",
-      "state": "MN",
-      "zip": "56307",
-      "courses": 1
-    },
-    {
       "ai": "240051",
       "name": "Trilogy STEM Academy",
       "city": "Rogers",
@@ -19482,14 +18322,6 @@
       "courses": 0
     },
     {
-      "ai": "240260",
-      "name": "Blooming Prairie Junior Senior High School",
-      "city": "Blooming Prairie",
-      "state": "MN",
-      "zip": "55917",
-      "courses": 0
-    },
-    {
       "ai": "240270",
       "name": "Blue Earth Area High School",
       "city": "Blue Earth",
@@ -19519,14 +18351,6 @@
       "city": "Minneapolis",
       "state": "MN",
       "zip": "55428",
-      "courses": 0
-    },
-    {
-      "ai": "240375",
-      "name": "Caledonia Middle-High School",
-      "city": "Caledonia",
-      "state": "MN",
-      "zip": "55921",
       "courses": 0
     },
     {
@@ -19642,14 +18466,6 @@
       "courses": 0
     },
     {
-      "ai": "240985",
-      "name": "Grand Meadow Public School",
-      "city": "Grand Meadow",
-      "state": "MN",
-      "zip": "55936",
-      "courses": 1
-    },
-    {
       "ai": "241055",
       "name": "Hawley High School",
       "city": "Hawley",
@@ -19664,14 +18480,6 @@
       "state": "MN",
       "zip": "55940",
       "courses": 0
-    },
-    {
-      "ai": "241075",
-      "name": "Hendricks Public School",
-      "city": "Hendricks",
-      "state": "MN",
-      "zip": "56136",
-      "courses": 1
     },
     {
       "ai": "241160",
@@ -19720,22 +18528,6 @@
       "state": "MN",
       "zip": "56345",
       "courses": 1
-    },
-    {
-      "ai": "241425",
-      "name": "Luverne Middle High School",
-      "city": "Luverne",
-      "state": "MN",
-      "zip": "56156",
-      "courses": 5
-    },
-    {
-      "ai": "241430",
-      "name": "Lyle School",
-      "city": "Lyle",
-      "state": "MN",
-      "zip": "55953",
-      "courses": 0
     },
     {
       "ai": "241502",
@@ -19874,14 +18666,6 @@
       "courses": 0
     },
     {
-      "ai": "242010",
-      "name": "Pipestone Area School",
-      "city": "Pipestone",
-      "state": "MN",
-      "zip": "56164",
-      "courses": 2
-    },
-    {
       "ai": "242015",
       "name": "Pem High School",
       "city": "Plainview",
@@ -19930,14 +18714,6 @@
       "courses": 0
     },
     {
-      "ai": "242140",
-      "name": "Royalton Middle High School",
-      "city": "Royalton",
-      "state": "MN",
-      "zip": "56373",
-      "courses": 0
-    },
-    {
       "ai": "242145",
       "name": "Rush City High School",
       "city": "Rush City",
@@ -19959,14 +18735,6 @@
       "city": "Saint Clair",
       "state": "MN",
       "zip": "56080",
-      "courses": 0
-    },
-    {
-      "ai": "242195",
-      "name": "St James Junior Senior High School",
-      "city": "Saint James",
-      "state": "MN",
-      "zip": "56081",
       "courses": 0
     },
     {
@@ -20138,14 +18906,6 @@
       "courses": 0
     },
     {
-      "ai": "242628",
-      "name": "Waseca Junior Senior High School",
-      "city": "Waseca",
-      "state": "MN",
-      "zip": "56093",
-      "courses": 0
-    },
-    {
       "ai": "242635",
       "name": "Waterville High School",
       "city": "Waterville",
@@ -20298,14 +19058,6 @@
       "courses": 3
     },
     {
-      "ai": "260005",
-      "name": "Advance School",
-      "city": "Advance",
-      "state": "MO",
-      "zip": "63730",
-      "courses": 0
-    },
-    {
       "ai": "260007",
       "name": "Yeshivat Kadimah High School",
       "city": "Saint Louis",
@@ -20319,22 +19071,6 @@
       "city": "Saint Louis",
       "state": "MO",
       "zip": "63113",
-      "courses": 0
-    },
-    {
-      "ai": "260040",
-      "name": "Alton Junior Senior High School",
-      "city": "Alton",
-      "state": "MO",
-      "zip": "65606",
-      "courses": 0
-    },
-    {
-      "ai": "260090",
-      "name": "Ash Grove Junior Senior High School",
-      "city": "Ash Grove",
-      "state": "MO",
-      "zip": "65604",
       "courses": 0
     },
     {
@@ -20367,22 +19103,6 @@
       "city": "Braymer",
       "state": "MO",
       "zip": "64624",
-      "courses": 0
-    },
-    {
-      "ai": "260470",
-      "name": "Campbell School",
-      "city": "Campbell",
-      "state": "MO",
-      "zip": "63933",
-      "courses": 0
-    },
-    {
-      "ai": "260480",
-      "name": "Canton School",
-      "city": "Canton",
-      "state": "MO",
-      "zip": "63435",
       "courses": 0
     },
     {
@@ -20474,46 +19194,6 @@
       "courses": 0
     },
     {
-      "ai": "261035",
-      "name": "Fair Play Junior Senior High School",
-      "city": "Fair Play",
-      "state": "MO",
-      "zip": "65649",
-      "courses": 0
-    },
-    {
-      "ai": "261155",
-      "name": "Galena Junior Senior High School",
-      "city": "Galena",
-      "state": "MO",
-      "zip": "65656",
-      "courses": 7
-    },
-    {
-      "ai": "261395",
-      "name": "Higbee School",
-      "city": "Higbee",
-      "state": "MO",
-      "zip": "65257",
-      "courses": 0
-    },
-    {
-      "ai": "261460",
-      "name": "Humansville Middle High School",
-      "city": "Humansville",
-      "state": "MO",
-      "zip": "65674",
-      "courses": 0
-    },
-    {
-      "ai": "261495",
-      "name": "Iberia Junior Senior High School",
-      "city": "Iberia",
-      "state": "MO",
-      "zip": "65486",
-      "courses": 0
-    },
-    {
       "ai": "261578",
       "name": "New Heights Christian Academy",
       "city": "Joplin",
@@ -20554,22 +19234,6 @@
       "courses": 4
     },
     {
-      "ai": "261770",
-      "name": "Kingsville Junior Senior High School",
-      "city": "Kingsville",
-      "state": "MO",
-      "zip": "64061",
-      "courses": 0
-    },
-    {
-      "ai": "261835",
-      "name": "School of the Osage",
-      "city": "Osage Beach",
-      "state": "MO",
-      "zip": "65065",
-      "courses": 7
-    },
-    {
       "ai": "261853",
       "name": "Laquey Junior Senior High School",
       "city": "Laquey",
@@ -20583,22 +19247,6 @@
       "city": "Lesterville",
       "state": "MO",
       "zip": "63654",
-      "courses": 0
-    },
-    {
-      "ai": "261975",
-      "name": "Licking Junior Senior High School",
-      "city": "Licking",
-      "state": "MO",
-      "zip": "65542",
-      "courses": 0
-    },
-    {
-      "ai": "262040",
-      "name": "Macks Creek School",
-      "city": "Macks Creek",
-      "state": "MO",
-      "zip": "65786",
       "courses": 0
     },
     {
@@ -20626,22 +19274,6 @@
       "courses": 0
     },
     {
-      "ai": "262370",
-      "name": "Newburg Junior Senior High School",
-      "city": "Newburg",
-      "state": "MO",
-      "zip": "65550",
-      "courses": 0
-    },
-    {
-      "ai": "262415",
-      "name": "Niangua School",
-      "city": "Niangua",
-      "state": "MO",
-      "zip": "65713",
-      "courses": 0
-    },
-    {
       "ai": "262483",
       "name": "North High School",
       "city": "O Fallon",
@@ -20656,22 +19288,6 @@
       "state": "MO",
       "zip": "63366",
       "courses": 20
-    },
-    {
-      "ai": "262500",
-      "name": "Osborn School",
-      "city": "Osborn",
-      "state": "MO",
-      "zip": "64474",
-      "courses": 0
-    },
-    {
-      "ai": "262635",
-      "name": "Plato Middle High School",
-      "city": "Plato",
-      "state": "MO",
-      "zip": "65552",
-      "courses": 0
     },
     {
       "ai": "262835",
@@ -20802,14 +19418,6 @@
       "courses": 23
     },
     {
-      "ai": "263152",
-      "name": "Salisbury Junior Senior High School",
-      "city": "Salisbury",
-      "state": "MO",
-      "zip": "65281",
-      "courses": 0
-    },
-    {
       "ai": "263165",
       "name": "Northeast Vernon County R1 High School",
       "city": "Walker",
@@ -20834,35 +19442,11 @@
       "courses": 0
     },
     {
-      "ai": "263335",
-      "name": "Stewartsville School",
-      "city": "Stewartsville",
-      "state": "MO",
-      "zip": "64490",
-      "courses": 0
-    },
-    {
       "ai": "263350",
       "name": "Morgan County R1 School",
       "city": "Stover",
       "state": "MO",
       "zip": "65078",
-      "courses": 0
-    },
-    {
-      "ai": "263400",
-      "name": "Tipton Middle High School",
-      "city": "Tipton",
-      "state": "MO",
-      "zip": "65081",
-      "courses": 1
-    },
-    {
-      "ai": "263480",
-      "name": "Verona Junior Senior High School",
-      "city": "Verona",
-      "state": "MO",
-      "zip": "65769",
       "courses": 0
     },
     {
@@ -20896,14 +19480,6 @@
       "state": "MO",
       "zip": "63026",
       "courses": 2
-    },
-    {
-      "ai": "263650",
-      "name": "Windsor Junior Senior High School",
-      "city": "Windsor",
-      "state": "MO",
-      "zip": "65360",
-      "courses": 0
     },
     {
       "ai": "269020",
@@ -21218,36 +19794,12 @@
       "courses": 0
     },
     {
-      "ai": "252210",
-      "name": "Okolona Middle High School",
-      "city": "Okolona",
-      "state": "MS",
-      "zip": "38860",
-      "courses": 2
-    },
-    {
       "ai": "252222",
       "name": "Northpoint Christian School",
       "city": "Southaven",
       "state": "MS",
       "zip": "38672",
       "courses": 9
-    },
-    {
-      "ai": "252495",
-      "name": "Potts Camp Middle High School",
-      "city": "Potts Camp",
-      "state": "MS",
-      "zip": "38659",
-      "courses": 0
-    },
-    {
-      "ai": "252550",
-      "name": "Raleigh Junior Senior High School",
-      "city": "Raleigh",
-      "state": "MS",
-      "zip": "39153",
-      "courses": 3
     },
     {
       "ai": "252730",
@@ -21426,115 +19978,11 @@
       "courses": 0
     },
     {
-      "ai": "270000",
-      "name": "Absarokee Junior Senior High School",
-      "city": "Absarokee",
-      "state": "MT",
-      "zip": "59001",
-      "courses": 0
-    },
-    {
       "ai": "270008",
       "name": "Big Sky Academy",
       "city": "Clinton",
       "state": "MT",
       "zip": "59825",
-      "courses": 0
-    },
-    {
-      "ai": "270035",
-      "name": "Augusta School",
-      "city": "Augusta",
-      "state": "MT",
-      "zip": "59410",
-      "courses": 1
-    },
-    {
-      "ai": "270040",
-      "name": "Bainville Public School",
-      "city": "Bainville",
-      "state": "MT",
-      "zip": "59212",
-      "courses": 0
-    },
-    {
-      "ai": "270045",
-      "name": "Baker Middle High School",
-      "city": "Baker",
-      "state": "MT",
-      "zip": "59313",
-      "courses": 8
-    },
-    {
-      "ai": "270060",
-      "name": "Belt School",
-      "city": "Belt",
-      "state": "MT",
-      "zip": "59412",
-      "courses": 3
-    },
-    {
-      "ai": "270070",
-      "name": "Big Sandy Junior Senior High School",
-      "city": "Big Sandy",
-      "state": "MT",
-      "zip": "59520",
-      "courses": 0
-    },
-    {
-      "ai": "270180",
-      "name": "Charlo School",
-      "city": "Charlo",
-      "state": "MT",
-      "zip": "59824",
-      "courses": 0
-    },
-    {
-      "ai": "270190",
-      "name": "Chinook Junior Senior High School",
-      "city": "Chinook",
-      "state": "MT",
-      "zip": "59523",
-      "courses": 2
-    },
-    {
-      "ai": "270225",
-      "name": "Conrad Junior Senior High School",
-      "city": "Conrad",
-      "state": "MT",
-      "zip": "59425",
-      "courses": 0
-    },
-    {
-      "ai": "270300",
-      "name": "Ennis K 12 School",
-      "city": "Ennis",
-      "state": "MT",
-      "zip": "59729",
-      "courses": 2
-    },
-    {
-      "ai": "270335",
-      "name": "Fort Benton Middle High School",
-      "city": "Fort Benton",
-      "state": "MT",
-      "zip": "59442",
-      "courses": 1
-    },
-    {
-      "ai": "270360",
-      "name": "Gardiner School",
-      "city": "Gardiner",
-      "state": "MT",
-      "zip": "59030",
-      "courses": 3
-    },
-    {
-      "ai": "270365",
-      "name": "Geraldine School",
-      "city": "Geraldine",
-      "state": "MT",
-      "zip": "59446",
       "courses": 0
     },
     {
@@ -21554,180 +20002,12 @@
       "courses": 2
     },
     {
-      "ai": "270425",
-      "name": "Harlowton Junior Senior High School",
-      "city": "Harlowton",
-      "state": "MT",
-      "zip": "59036",
-      "courses": 0
-    },
-    {
-      "ai": "270430",
-      "name": "Harrison School",
-      "city": "Harrison",
-      "state": "MT",
-      "zip": "59735",
-      "courses": 0
-    },
-    {
-      "ai": "270442",
-      "name": "Heart Butte School",
-      "city": "Heart Butte",
-      "state": "MT",
-      "zip": "59448",
-      "courses": 0
-    },
-    {
       "ai": "270464",
       "name": "Monarch School",
       "city": "Heron",
       "state": "MT",
       "zip": "59844",
       "courses": 0
-    },
-    {
-      "ai": "270465",
-      "name": "Highwood School",
-      "city": "Highwood",
-      "state": "MT",
-      "zip": "59450",
-      "courses": 0
-    },
-    {
-      "ai": "270480",
-      "name": "Hobson School",
-      "city": "Hobson",
-      "state": "MT",
-      "zip": "59452",
-      "courses": 2
-    },
-    {
-      "ai": "270520",
-      "name": "Judith Gap School",
-      "city": "Judith Gap",
-      "state": "MT",
-      "zip": "59453",
-      "courses": 0
-    },
-    {
-      "ai": "270565",
-      "name": "Libby Middle High School",
-      "city": "Libby",
-      "state": "MT",
-      "zip": "59923",
-      "courses": 0
-    },
-    {
-      "ai": "270570",
-      "name": "Lima School",
-      "city": "Lima",
-      "state": "MT",
-      "zip": "59739",
-      "courses": 0
-    },
-    {
-      "ai": "270572",
-      "name": "Lincoln Public School",
-      "city": "Lincoln",
-      "state": "MT",
-      "zip": "59639",
-      "courses": 0
-    },
-    {
-      "ai": "270640",
-      "name": "Moore School",
-      "city": "Moore",
-      "state": "MT",
-      "zip": "59464",
-      "courses": 0
-    },
-    {
-      "ai": "270660",
-      "name": "Noxon School",
-      "city": "Noxon",
-      "state": "MT",
-      "zip": "59853",
-      "courses": 2
-    },
-    {
-      "ai": "270695",
-      "name": "Plains Public School",
-      "city": "Plains",
-      "state": "MT",
-      "zip": "59859",
-      "courses": 1
-    },
-    {
-      "ai": "270700",
-      "name": "Plentywood School",
-      "city": "Plentywood",
-      "state": "MT",
-      "zip": "59254",
-      "courses": 0
-    },
-    {
-      "ai": "270705",
-      "name": "Plevna School",
-      "city": "Plevna",
-      "state": "MT",
-      "zip": "59344",
-      "courses": 0
-    },
-    {
-      "ai": "270725",
-      "name": "Rapelje School",
-      "city": "Rapelje",
-      "state": "MT",
-      "zip": "59067",
-      "courses": 0
-    },
-    {
-      "ai": "270735",
-      "name": "Reed Point Junior Senior High School",
-      "city": "Reed Point",
-      "state": "MT",
-      "zip": "59069",
-      "courses": 0
-    },
-    {
-      "ai": "270745",
-      "name": "Roberts School",
-      "city": "Roberts",
-      "state": "MT",
-      "zip": "59070",
-      "courses": 0
-    },
-    {
-      "ai": "270760",
-      "name": "Roundup Junior Senior High School",
-      "city": "Roundup",
-      "state": "MT",
-      "zip": "59072",
-      "courses": 0
-    },
-    {
-      "ai": "270765",
-      "name": "Roy School",
-      "city": "Roy",
-      "state": "MT",
-      "zip": "59471",
-      "courses": 0
-    },
-    {
-      "ai": "270790",
-      "name": "St Regis Public School",
-      "city": "Saint Regis",
-      "state": "MT",
-      "zip": "59866",
-      "courses": 0
-    },
-    {
-      "ai": "270815",
-      "name": "Shelby Junior Senior High School",
-      "city": "Shelby",
-      "state": "MT",
-      "zip": "59474",
-      "courses": 4
     },
     {
       "ai": "270835",
@@ -21744,78 +20024,6 @@
       "state": "MT",
       "zip": "59482",
       "courses": 4
-    },
-    {
-      "ai": "270885",
-      "name": "Troy Junior Senior High School",
-      "city": "Troy",
-      "state": "MT",
-      "zip": "59935",
-      "courses": 0
-    },
-    {
-      "ai": "270895",
-      "name": "Twin Bridges School",
-      "city": "Twin Bridges",
-      "state": "MT",
-      "zip": "59754",
-      "courses": 0
-    },
-    {
-      "ai": "270905",
-      "name": "Victor School",
-      "city": "Victor",
-      "state": "MT",
-      "zip": "59875",
-      "courses": 0
-    },
-    {
-      "ai": "270918",
-      "name": "West Yellowstone School",
-      "city": "West Yellowstone",
-      "state": "MT",
-      "zip": "59758",
-      "courses": 1
-    },
-    {
-      "ai": "270930",
-      "name": "White Sulphur Springs Junior Senior High School",
-      "city": "Wht Sphr Spgs",
-      "state": "MT",
-      "zip": "59645",
-      "courses": 0
-    },
-    {
-      "ai": "270935",
-      "name": "Whitewater School",
-      "city": "Whitewater",
-      "state": "MT",
-      "zip": "59544",
-      "courses": 0
-    },
-    {
-      "ai": "270955",
-      "name": "Winifred School",
-      "city": "Winifred",
-      "state": "MT",
-      "zip": "59489",
-      "courses": 0
-    },
-    {
-      "ai": "270960",
-      "name": "Winnett School",
-      "city": "Winnett",
-      "state": "MT",
-      "zip": "59087",
-      "courses": 0
-    },
-    {
-      "ai": "270965",
-      "name": "Wolf Point Junior Senior High School",
-      "city": "Wolf Point",
-      "state": "MT",
-      "zip": "59201",
-      "courses": 0
     },
     {
       "ai": "992703",
@@ -22440,14 +20648,6 @@
       "state": "NC",
       "zip": "27565",
       "courses": 0
-    },
-    {
-      "ai": "343180",
-      "name": "Princeton Middle/High School",
-      "city": "Princeton",
-      "state": "NC",
-      "zip": "27569",
-      "courses": 4
     },
     {
       "ai": "343204",
@@ -23162,131 +21362,11 @@
       "courses": 0
     },
     {
-      "ai": "350135",
-      "name": "Berthold School",
-      "city": "Berthold",
-      "state": "ND",
-      "zip": "58718",
-      "courses": 0
-    },
-    {
-      "ai": "350260",
-      "name": "Carrington Junior Senior High School",
-      "city": "Carrington",
-      "state": "ND",
-      "zip": "58421",
-      "courses": 1
-    },
-    {
-      "ai": "350280",
-      "name": "Cavalier Public School",
-      "city": "Cavalier",
-      "state": "ND",
-      "zip": "58220",
-      "courses": 1
-    },
-    {
-      "ai": "350520",
-      "name": "Ellendale School",
-      "city": "Ellendale",
-      "state": "ND",
-      "zip": "58436",
-      "courses": 0
-    },
-    {
-      "ai": "350600",
-      "name": "Flasher School",
-      "city": "Flasher",
-      "state": "ND",
-      "zip": "58535",
-      "courses": 0
-    },
-    {
-      "ai": "350740",
-      "name": "Grafton Jr Senior High School",
-      "city": "Grafton",
-      "state": "ND",
-      "zip": "58237",
-      "courses": 0
-    },
-    {
-      "ai": "350805",
-      "name": "Hankinson Public School",
-      "city": "Hankinson",
-      "state": "ND",
-      "zip": "58041",
-      "courses": 1
-    },
-    {
-      "ai": "350870",
-      "name": "Hebron Public School",
-      "city": "Hebron",
-      "state": "ND",
-      "zip": "58638",
-      "courses": 0
-    },
-    {
-      "ai": "350980",
-      "name": "Killdeer School",
-      "city": "Killdeer",
-      "state": "ND",
-      "zip": "58640",
-      "courses": 0
-    },
-    {
-      "ai": "351005",
-      "name": "Kulm School",
-      "city": "Kulm",
-      "state": "ND",
-      "zip": "58456",
-      "courses": 0
-    },
-    {
-      "ai": "351025",
-      "name": "Langdon Area Middle High School",
-      "city": "Langdon",
-      "state": "ND",
-      "zip": "58249",
-      "courses": 1
-    },
-    {
-      "ai": "351045",
-      "name": "Larimore Junior Senior High School",
-      "city": "Larimore",
-      "state": "ND",
-      "zip": "58251",
-      "courses": 0
-    },
-    {
-      "ai": "351095",
-      "name": "Linton Public School",
-      "city": "Linton",
-      "state": "ND",
-      "zip": "58552",
-      "courses": 0
-    },
-    {
       "ai": "351125",
       "name": "North Shore Plaza High School",
       "city": "Makoti",
       "state": "ND",
       "zip": "58756",
-      "courses": 0
-    },
-    {
-      "ai": "351215",
-      "name": "Milnor Public School",
-      "city": "Milnor",
-      "state": "ND",
-      "zip": "58060",
-      "courses": 0
-    },
-    {
-      "ai": "351255",
-      "name": "Minto School",
-      "city": "Minto",
-      "state": "ND",
-      "zip": "58261",
       "courses": 0
     },
     {
@@ -23298,108 +21378,12 @@
       "courses": 0
     },
     {
-      "ai": "351268",
-      "name": "Montpelier School",
-      "city": "Montpelier",
-      "state": "ND",
-      "zip": "58472",
-      "courses": 0
-    },
-    {
-      "ai": "351335",
-      "name": "New Town Junior Senior High School",
-      "city": "New Town",
-      "state": "ND",
-      "zip": "58763",
-      "courses": 0
-    },
-    {
-      "ai": "351355",
-      "name": "Northwood School",
-      "city": "Northwood",
-      "state": "ND",
-      "zip": "58267",
-      "courses": 1
-    },
-    {
-      "ai": "351475",
-      "name": "Ray Public School",
-      "city": "Ray",
-      "state": "ND",
-      "zip": "58849",
-      "courses": 1
-    },
-    {
-      "ai": "351535",
-      "name": "Rolette Public School",
-      "city": "Rolette",
-      "state": "ND",
-      "zip": "58366",
-      "courses": 0
-    },
-    {
-      "ai": "351645",
-      "name": "South Heart School",
-      "city": "South Heart",
-      "state": "ND",
-      "zip": "58655",
-      "courses": 0
-    },
-    {
-      "ai": "351650",
-      "name": "Stanley Junior Senior High School",
-      "city": "Stanley",
-      "state": "ND",
-      "zip": "58784",
-      "courses": 3
-    },
-    {
       "ai": "351740",
       "name": "Towner School",
       "city": "Towner",
       "state": "ND",
       "zip": "58788",
       "courses": 2
-    },
-    {
-      "ai": "351788",
-      "name": "Valley City Junior Senior High School",
-      "city": "Valley City",
-      "state": "ND",
-      "zip": "58072",
-      "courses": 0
-    },
-    {
-      "ai": "351790",
-      "name": "Velva School",
-      "city": "Velva",
-      "state": "ND",
-      "zip": "58790",
-      "courses": 0
-    },
-    {
-      "ai": "351825",
-      "name": "Washburn Public School",
-      "city": "Washburn",
-      "state": "ND",
-      "zip": "58577",
-      "courses": 2
-    },
-    {
-      "ai": "351895",
-      "name": "Wilton Public School",
-      "city": "Wilton",
-      "state": "ND",
-      "zip": "58579",
-      "courses": 1
-    },
-    {
-      "ai": "351905",
-      "name": "Wing Public School",
-      "city": "Wing",
-      "state": "ND",
-      "zip": "58494",
-      "courses": 0
     },
     {
       "ai": "280203",
@@ -23418,43 +21402,11 @@
       "courses": 0
     },
     {
-      "ai": "280425",
-      "name": "Cedar Bluffs School",
-      "city": "Cedar Bluffs",
-      "state": "NE",
-      "zip": "68015",
-      "courses": 0
-    },
-    {
-      "ai": "280650",
-      "name": "Deshler School",
-      "city": "Deshler",
-      "state": "NE",
-      "zip": "68340",
-      "courses": 0
-    },
-    {
-      "ai": "280760",
-      "name": "Elm Creek School",
-      "city": "Elm Creek",
-      "state": "NE",
-      "zip": "68836",
-      "courses": 0
-    },
-    {
       "ai": "280940",
       "name": "Gothenburg Junior Senior High School",
       "city": "Gothenburg",
       "state": "NE",
       "zip": "69138",
-      "courses": 0
-    },
-    {
-      "ai": "281075",
-      "name": "Hemingford Junior Senior High School",
-      "city": "Hemingford",
-      "state": "NE",
-      "zip": "69348",
       "courses": 0
     },
     {
@@ -23472,14 +21424,6 @@
       "state": "NE",
       "zip": "68642",
       "courses": 0
-    },
-    {
-      "ai": "281180",
-      "name": "Hyannis School",
-      "city": "Hyannis",
-      "state": "NE",
-      "zip": "69350",
-      "courses": 1
     },
     {
       "ai": "281240",
@@ -23506,14 +21450,6 @@
       "courses": 0
     },
     {
-      "ai": "281440",
-      "name": "Maxwell School",
-      "city": "Maxwell",
-      "state": "NE",
-      "zip": "69151",
-      "courses": 0
-    },
-    {
       "ai": "281455",
       "name": "McCook Senior High School",
       "city": "Mc Cook",
@@ -23530,14 +21466,6 @@
       "courses": 0
     },
     {
-      "ai": "281995",
-      "name": "Ravenna Junior Senior High School",
-      "city": "Ravenna",
-      "state": "NE",
-      "zip": "68869",
-      "courses": 1
-    },
-    {
       "ai": "282110",
       "name": "Scribner-Snyder Community School",
       "city": "Scribner",
@@ -23546,27 +21474,11 @@
       "courses": 1
     },
     {
-      "ai": "282135",
-      "name": "Shelton Public School",
-      "city": "Shelton",
-      "state": "NE",
-      "zip": "68876",
-      "courses": 0
-    },
-    {
       "ai": "282180",
       "name": "South Sioux City High School",
       "city": "South Sioux City",
       "state": "NE",
       "zip": "68776",
-      "courses": 0
-    },
-    {
-      "ai": "282275",
-      "name": "Superior Middle High School",
-      "city": "Superior",
-      "state": "NE",
-      "zip": "68978",
       "courses": 0
     },
     {
@@ -23584,14 +21496,6 @@
       "state": "NH",
       "zip": "03062",
       "courses": 1
-    },
-    {
-      "ai": "300040",
-      "name": "Berlin Middle High School",
-      "city": "Berlin",
-      "state": "NH",
-      "zip": "03570",
-      "courses": 6
     },
     {
       "ai": "300041",
@@ -23618,30 +21522,6 @@
       "courses": 14
     },
     {
-      "ai": "300175",
-      "name": "Epping Middle High School",
-      "city": "Epping",
-      "state": "NH",
-      "zip": "03042",
-      "courses": 4
-    },
-    {
-      "ai": "300220",
-      "name": "Gorham Middle-High School",
-      "city": "Gorham",
-      "state": "NH",
-      "zip": "03581",
-      "courses": 7
-    },
-    {
-      "ai": "300270",
-      "name": "Hinsdale Middle High School",
-      "city": "Hinsdale",
-      "state": "NH",
-      "zip": "03451",
-      "courses": 5
-    },
-    {
       "ai": "300358",
       "name": "Derryfield School",
       "city": "Manchester",
@@ -23658,14 +21538,6 @@
       "courses": 26
     },
     {
-      "ai": "300505",
-      "name": "Pittsfield Middle High School",
-      "city": "Pittsfield",
-      "state": "NH",
-      "zip": "03263",
-      "courses": 0
-    },
-    {
       "ai": "300515",
       "name": "Holderness School",
       "city": "Holderness",
@@ -23680,14 +21552,6 @@
       "state": "NH",
       "zip": "03820",
       "courses": 4
-    },
-    {
-      "ai": "300560",
-      "name": "Sunapee Middle High School",
-      "city": "Sunapee",
-      "state": "NH",
-      "zip": "03782",
-      "courses": 7
     },
     {
       "ai": "300635",
@@ -24200,14 +22064,6 @@
       "state": "NJ",
       "zip": "08840",
       "courses": 22
-    },
-    {
-      "ai": "310794",
-      "name": "Midland Park High School",
-      "city": "Midland Park",
-      "state": "NJ",
-      "zip": "07432",
-      "courses": 18
     },
     {
       "ai": "310845",
@@ -24914,14 +22770,6 @@
       "courses": 10
     },
     {
-      "ai": "320140",
-      "name": "Cliff School",
-      "city": "Cliff",
-      "state": "NM",
-      "zip": "88028",
-      "courses": 1
-    },
-    {
       "ai": "320142",
       "name": "Mission Achievement And Success Old Coors Campus",
       "city": "Albuquerque",
@@ -24978,35 +22826,11 @@
       "courses": 0
     },
     {
-      "ai": "320510",
-      "name": "Quemado School",
-      "city": "Quemado",
-      "state": "NM",
-      "zip": "87829",
-      "courses": 0
-    },
-    {
-      "ai": "320519",
-      "name": "Ramah Middle High School",
-      "city": "Ramah",
-      "state": "NM",
-      "zip": "87321",
-      "courses": 0
-    },
-    {
       "ai": "320523",
       "name": "Pine Hill Schools",
       "city": "Pinehill",
       "state": "NM",
       "zip": "87357",
-      "courses": 0
-    },
-    {
-      "ai": "320535",
-      "name": "Reserve Junior Senior High School",
-      "city": "Reserve",
-      "state": "NM",
-      "zip": "87830",
       "courses": 0
     },
     {
@@ -25178,14 +23002,6 @@
       "courses": 0
     },
     {
-      "ai": "290093",
-      "name": "Indian Springs School",
-      "city": "Indian Springs",
-      "state": "NV",
-      "zip": "89018",
-      "courses": 12
-    },
-    {
       "ai": "290097",
       "name": "Edward W Clark High School",
       "city": "Las Vegas",
@@ -25216,14 +23032,6 @@
       "state": "NV",
       "zip": "89029",
       "courses": 1
-    },
-    {
-      "ai": "290139",
-      "name": "Round Mountain Junior-Senior High School",
-      "city": "Round Mountain",
-      "state": "NV",
-      "zip": "89045",
-      "courses": 0
     },
     {
       "ai": "290161",
@@ -26410,14 +24218,6 @@
       "courses": 1
     },
     {
-      "ai": "331280",
-      "name": "Cazenovia Junior Senior High School",
-      "city": "Cazenovia",
-      "state": "NY",
-      "zip": "13035",
-      "courses": 12
-    },
-    {
       "ai": "331304",
       "name": "Shalhevet High School for Girls",
       "city": "Valley Stream",
@@ -26434,14 +24234,6 @@
       "courses": 3
     },
     {
-      "ai": "331437",
-      "name": "Cold Spring Harbor Junior-Senior High School",
-      "city": "Cold Spring Harbor",
-      "state": "NY",
-      "zip": "11724",
-      "courses": 31
-    },
-    {
       "ai": "331445",
       "name": "Saint Agnes Academic High School",
       "city": "College Point",
@@ -26456,14 +24248,6 @@
       "state": "NY",
       "zip": "12520",
       "courses": 11
-    },
-    {
-      "ai": "331525",
-      "name": "Cortland Junior-Senior High School",
-      "city": "Cortland",
-      "state": "NY",
-      "zip": "13045",
-      "courses": 2
     },
     {
       "ai": "331569",
@@ -26498,22 +24282,6 @@
       "courses": 0
     },
     {
-      "ai": "331690",
-      "name": "Bloomfield Junior Senior High School",
-      "city": "Bloomfield",
-      "state": "NY",
-      "zip": "14469",
-      "courses": 8
-    },
-    {
-      "ai": "331730",
-      "name": "East Rochester High School",
-      "city": "East Rochester",
-      "state": "NY",
-      "zip": "14445",
-      "courses": 10
-    },
-    {
       "ai": "331770",
       "name": "Buffalo Academy Of Sacred Heart",
       "city": "Buffalo",
@@ -26527,14 +24295,6 @@
       "city": "Elba",
       "state": "NY",
       "zip": "14058",
-      "courses": 2
-    },
-    {
-      "ai": "331800",
-      "name": "Ellenville High School",
-      "city": "Ellenville",
-      "state": "NY",
-      "zip": "12428",
       "courses": 2
     },
     {
@@ -26594,22 +24354,6 @@
       "courses": 5
     },
     {
-      "ai": "331955",
-      "name": "Fort Ann Junior Senior High School",
-      "city": "Fort Ann",
-      "state": "NY",
-      "zip": "12827",
-      "courses": 0
-    },
-    {
-      "ai": "331970",
-      "name": "Fort Plain High School",
-      "city": "Fort Plain",
-      "state": "NY",
-      "zip": "13339",
-      "courses": 0
-    },
-    {
       "ai": "331990",
       "name": "Ten Broeck Academy",
       "city": "Franklinville",
@@ -26650,14 +24394,6 @@
       "courses": 8
     },
     {
-      "ai": "332185",
-      "name": "Greenport School",
-      "city": "Greenport",
-      "state": "NY",
-      "zip": "11944",
-      "courses": 10
-    },
-    {
       "ai": "332235",
       "name": "Immaculata Academy",
       "city": "Hamburg",
@@ -26682,14 +24418,6 @@
       "courses": 0
     },
     {
-      "ai": "332345",
-      "name": "Herkimer Junior Senior High School",
-      "city": "Herkimer",
-      "state": "NY",
-      "zip": "13350",
-      "courses": 5
-    },
-    {
       "ai": "332363",
       "name": "Holy Trinity Diocesan High School",
       "city": "Hicksville",
@@ -26711,14 +24439,6 @@
       "city": "Honeoye",
       "state": "NY",
       "zip": "14471",
-      "courses": 4
-    },
-    {
-      "ai": "332460",
-      "name": "Hornell High School",
-      "city": "Hornell",
-      "state": "NY",
-      "zip": "14843",
       "courses": 4
     },
     {
@@ -26826,14 +24546,6 @@
       "courses": 0
     },
     {
-      "ai": "332755",
-      "name": "Lake Placid Middle High School",
-      "city": "Lake Placid",
-      "state": "NY",
-      "zip": "12946",
-      "courses": 7
-    },
-    {
       "ai": "332760",
       "name": "Northwood School",
       "city": "Lake Placid",
@@ -26912,14 +24624,6 @@
       "state": "NY",
       "zip": "10019",
       "courses": 0
-    },
-    {
-      "ai": "333035",
-      "name": "Marathon Junior Senior High School",
-      "city": "Marathon",
-      "state": "NY",
-      "zip": "13803",
-      "courses": 2
     },
     {
       "ai": "333055",
@@ -27008,14 +24712,6 @@
       "state": "NY",
       "zip": "14510",
       "courses": 0
-    },
-    {
-      "ai": "333275",
-      "name": "Naples Junior Senior High School",
-      "city": "Naples",
-      "state": "NY",
-      "zip": "14512",
-      "courses": 7
     },
     {
       "ai": "333408",
@@ -27426,14 +25122,6 @@
       "courses": 5
     },
     {
-      "ai": "334490",
-      "name": "Peru Junior Senior High School",
-      "city": "Peru",
-      "state": "NY",
-      "zip": "12972",
-      "courses": 11
-    },
-    {
       "ai": "334505",
       "name": "Taconic Hills Central High School",
       "city": "Craryville",
@@ -27674,14 +25362,6 @@
       "courses": 0
     },
     {
-      "ai": "335190",
-      "name": "Sidney Junior Senior High School",
-      "city": "Sidney",
-      "state": "NY",
-      "zip": "13838",
-      "courses": 0
-    },
-    {
       "ai": "335208",
       "name": "Minisink Valley High School",
       "city": "Slate Hill",
@@ -27768,14 +25448,6 @@
       "state": "NY",
       "zip": "13160",
       "courses": 0
-    },
-    {
-      "ai": "335707",
-      "name": "Valhalla Middle High School",
-      "city": "Valhalla",
-      "state": "NY",
-      "zip": "10595",
-      "courses": 14
     },
     {
       "ai": "335740",
@@ -27880,14 +25552,6 @@
       "state": "NY",
       "zip": "12197",
       "courses": 0
-    },
-    {
-      "ai": "336074",
-      "name": "Yonkers Middle High School",
-      "city": "Yonkers",
-      "state": "NY",
-      "zip": "10705",
-      "courses": 6
     },
     {
       "ai": "336075",
@@ -28730,14 +26394,6 @@
       "courses": 3
     },
     {
-      "ai": "360005",
-      "name": "ADA School",
-      "city": "Ada",
-      "state": "OH",
-      "zip": "45810",
-      "courses": 1
-    },
-    {
       "ai": "360039",
       "name": "Lincoln West High School",
       "city": "Cleveland",
@@ -28786,30 +26442,6 @@
       "courses": 12
     },
     {
-      "ai": "360170",
-      "name": "Anna Middle High School",
-      "city": "Anna",
-      "state": "OH",
-      "zip": "45302",
-      "courses": 4
-    },
-    {
-      "ai": "360175",
-      "name": "Ansonia Junior Senior High School",
-      "city": "Ansonia",
-      "state": "OH",
-      "zip": "45303",
-      "courses": 0
-    },
-    {
-      "ai": "360195",
-      "name": "Arcadia School",
-      "city": "Arcadia",
-      "state": "OH",
-      "zip": "44804",
-      "courses": 0
-    },
-    {
       "ai": "360232",
       "name": "Saint John School",
       "city": "Ashtabula",
@@ -28856,38 +26488,6 @@
       "state": "OH",
       "zip": "44820",
       "courses": 0
-    },
-    {
-      "ai": "360810",
-      "name": "Carlisle Junior Senior High School",
-      "city": "Franklin",
-      "state": "OH",
-      "zip": "45005",
-      "courses": 2
-    },
-    {
-      "ai": "360820",
-      "name": "Carrollton Middle High School",
-      "city": "Carrollton",
-      "state": "OH",
-      "zip": "44615",
-      "courses": 5
-    },
-    {
-      "ai": "360830",
-      "name": "Cedarville Middle High School",
-      "city": "Cedarville",
-      "state": "OH",
-      "zip": "45314",
-      "courses": 3
-    },
-    {
-      "ai": "360845",
-      "name": "Centerburg Middle High School",
-      "city": "Centerburg",
-      "state": "OH",
-      "zip": "43011",
-      "courses": 1
     },
     {
       "ai": "360892",
@@ -29090,14 +26690,6 @@
       "courses": 0
     },
     {
-      "ai": "361725",
-      "name": "Crestline School",
-      "city": "Crestline",
-      "state": "OH",
-      "zip": "44827",
-      "courses": 0
-    },
-    {
       "ai": "361771",
       "name": "Cuyahoga Valley Christian Academy",
       "city": "Stow",
@@ -29128,14 +26720,6 @@
       "state": "OH",
       "zip": "43920",
       "courses": 0
-    },
-    {
-      "ai": "362030",
-      "name": "East Liverpool Junior Senior High School",
-      "city": "East Liverpool",
-      "state": "OH",
-      "zip": "43920",
-      "courses": 5
     },
     {
       "ai": "362060",
@@ -29186,14 +26770,6 @@
       "courses": 3
     },
     {
-      "ai": "362565",
-      "name": "Hicksville Junior Senior High School",
-      "city": "Hicksville",
-      "state": "OH",
-      "zip": "43526",
-      "courses": 2
-    },
-    {
       "ai": "362740",
       "name": "Hillsdale High School",
       "city": "Jeromesville",
@@ -29234,36 +26810,12 @@
       "courses": 1
     },
     {
-      "ai": "362925",
-      "name": "Leetonia School",
-      "city": "Leetonia",
-      "state": "OH",
-      "zip": "44431",
-      "courses": 0
-    },
-    {
-      "ai": "362930",
-      "name": "Leipsic Middle High School",
-      "city": "Leipsic",
-      "state": "OH",
-      "zip": "45856",
-      "courses": 3
-    },
-    {
       "ai": "363010",
       "name": "Cloverleaf High School",
       "city": "Lodi",
       "state": "OH",
       "zip": "44254",
       "courses": 14
-    },
-    {
-      "ai": "363095",
-      "name": "Lowellville K 12 School",
-      "city": "Lowellville",
-      "state": "OH",
-      "zip": "44436",
-      "courses": 2
     },
     {
       "ai": "363160",
@@ -29322,22 +26874,6 @@
       "courses": 14
     },
     {
-      "ai": "363490",
-      "name": "Mogadore Junior Senior High School",
-      "city": "Mogadore",
-      "state": "OH",
-      "zip": "44260",
-      "courses": 2
-    },
-    {
-      "ai": "363505",
-      "name": "Montpelier School",
-      "city": "Montpelier",
-      "state": "OH",
-      "zip": "43543",
-      "courses": 0
-    },
-    {
       "ai": "363528",
       "name": "Toledo Pre Medical And Health Science Academy",
       "city": "Toledo",
@@ -29360,14 +26896,6 @@
       "state": "OH",
       "zip": "44065",
       "courses": 0
-    },
-    {
-      "ai": "363695",
-      "name": "New Knoxville School",
-      "city": "New Knoxville",
-      "state": "OH",
-      "zip": "45871",
-      "courses": 2
     },
     {
       "ai": "363880",
@@ -29480,14 +27008,6 @@
       "state": "OH",
       "zip": "44106",
       "courses": 6
-    },
-    {
-      "ai": "365050",
-      "name": "Ottawa Hills Junior-Senior High School",
-      "city": "Ottawa Hills",
-      "state": "OH",
-      "zip": "43606",
-      "courses": 21
     },
     {
       "ai": "365053",
@@ -29616,22 +27136,6 @@
       "state": "OH",
       "zip": "44070",
       "courses": 0
-    },
-    {
-      "ai": "365545",
-      "name": "Willard Middle High School",
-      "city": "Willard",
-      "state": "OH",
-      "zip": "44890",
-      "courses": 2
-    },
-    {
-      "ai": "365550",
-      "name": "Williamsburg Middle High School",
-      "city": "Williamsburg",
-      "state": "OH",
-      "zip": "45176",
-      "courses": 2
     },
     {
       "ai": "365565",
@@ -30018,14 +27522,6 @@
       "courses": 0
     },
     {
-      "ai": "370000",
-      "name": "Achille Public School",
-      "city": "Achille",
-      "state": "OK",
-      "zip": "74720",
-      "courses": 0
-    },
-    {
       "ai": "370001",
       "name": "Wes Watkins Technical Center",
       "city": "Wetumka",
@@ -30074,14 +27570,6 @@
       "courses": 6
     },
     {
-      "ai": "370055",
-      "name": "Agra Junior Senior High School",
-      "city": "Agra",
-      "state": "OK",
-      "zip": "74824",
-      "courses": 0
-    },
-    {
       "ai": "370116",
       "name": "Northwest Technical Center Alva",
       "city": "Alva",
@@ -30114,22 +27602,6 @@
       "courses": 0
     },
     {
-      "ai": "370255",
-      "name": "Balko Public School",
-      "city": "Balko",
-      "state": "OK",
-      "zip": "73931",
-      "courses": 0
-    },
-    {
-      "ai": "370260",
-      "name": "Barnsdall Junior Senior High School",
-      "city": "Barnsdall",
-      "state": "OK",
-      "zip": "74002",
-      "courses": 3
-    },
-    {
       "ai": "370268",
       "name": "Bartlesville Mid-High School",
       "city": "Bartlesville",
@@ -30154,68 +27626,12 @@
       "courses": 1
     },
     {
-      "ai": "370285",
-      "name": "Beaver Junior Senior High School",
-      "city": "Beaver",
-      "state": "OK",
-      "zip": "73932",
-      "courses": 0
-    },
-    {
-      "ai": "370345",
-      "name": "Blair School",
-      "city": "Blair",
-      "state": "OK",
-      "zip": "73526",
-      "courses": 0
-    },
-    {
-      "ai": "370495",
-      "name": "Buffalo Public School",
-      "city": "Buffalo",
-      "state": "OK",
-      "zip": "73834",
-      "courses": 0
-    },
-    {
       "ai": "370516",
       "name": "Western Technology Center",
       "city": "Burns Flat",
       "state": "OK",
       "zip": "73624",
       "courses": 1
-    },
-    {
-      "ai": "370565",
-      "name": "Cameron School",
-      "city": "Cameron",
-      "state": "OK",
-      "zip": "74932",
-      "courses": 0
-    },
-    {
-      "ai": "370570",
-      "name": "Canadian School",
-      "city": "Canadian",
-      "state": "OK",
-      "zip": "74425",
-      "courses": 0
-    },
-    {
-      "ai": "370620",
-      "name": "Carney School",
-      "city": "Carney",
-      "state": "OK",
-      "zip": "74832",
-      "courses": 0
-    },
-    {
-      "ai": "370680",
-      "name": "Chattanooga Junior Senior High School",
-      "city": "Chattanooga",
-      "state": "OK",
-      "zip": "73528",
-      "courses": 0
     },
     {
       "ai": "370717",
@@ -30242,27 +27658,11 @@
       "courses": 0
     },
     {
-      "ai": "370980",
-      "name": "Cyril Junior Senior High School",
-      "city": "Cyril",
-      "state": "OK",
-      "zip": "73029",
-      "courses": 1
-    },
-    {
       "ai": "371029",
       "name": "Middle Del Technology Center",
       "city": "Oklahoma City",
       "state": "OK",
       "zip": "73110",
-      "courses": 0
-    },
-    {
-      "ai": "371045",
-      "name": "Depew Middle High School",
-      "city": "Depew",
-      "state": "OK",
-      "zip": "74028",
       "courses": 0
     },
     {
@@ -30274,28 +27674,12 @@
       "courses": 0
     },
     {
-      "ai": "371080",
-      "name": "Dover Public School",
-      "city": "Dover",
-      "state": "OK",
-      "zip": "73734",
-      "courses": 0
-    },
-    {
       "ai": "371094",
       "name": "Central Technical Center",
       "city": "Drumright",
       "state": "OK",
       "zip": "74030",
       "courses": 2
-    },
-    {
-      "ai": "371105",
-      "name": "Duke School",
-      "city": "Duke",
-      "state": "OK",
-      "zip": "73532",
-      "courses": 0
     },
     {
       "ai": "371119",
@@ -30338,27 +27722,11 @@
       "courses": 1
     },
     {
-      "ai": "371320",
-      "name": "Fletcher Junior Senior High School",
-      "city": "Fletcher",
-      "state": "OK",
-      "zip": "73541",
-      "courses": 0
-    },
-    {
       "ai": "371333",
       "name": "Caddo-Kiowa Technology Center",
       "city": "FORT COBB",
       "state": "OK",
       "zip": "73038",
-      "courses": 0
-    },
-    {
-      "ai": "371360",
-      "name": "Fort Towson Junior Senior High School",
-      "city": "Fort Towson",
-      "state": "OK",
-      "zip": "74735",
       "courses": 0
     },
     {
@@ -30370,83 +27738,11 @@
       "courses": 0
     },
     {
-      "ai": "371405",
-      "name": "Freedom Public School",
-      "city": "Freedom",
-      "state": "OK",
-      "zip": "73842",
-      "courses": 0
-    },
-    {
-      "ai": "371435",
-      "name": "Geary Junior Senior High School",
-      "city": "Geary",
-      "state": "OK",
-      "zip": "73040",
-      "courses": 0
-    },
-    {
-      "ai": "371480",
-      "name": "Goodwell Public School",
-      "city": "Goodwell",
-      "state": "OK",
-      "zip": "73939",
-      "courses": 0
-    },
-    {
-      "ai": "371580",
-      "name": "Haileyville School",
-      "city": "Haileyville",
-      "state": "OK",
-      "zip": "74546",
-      "courses": 0
-    },
-    {
-      "ai": "371585",
-      "name": "Hammon School",
-      "city": "Hammon",
-      "state": "OK",
-      "zip": "73650",
-      "courses": 0
-    },
-    {
-      "ai": "371625",
-      "name": "Haskell Middle High School",
-      "city": "Haskell",
-      "state": "OK",
-      "zip": "74436",
-      "courses": 0
-    },
-    {
-      "ai": "371775",
-      "name": "Hollis Junior Senior High School",
-      "city": "Hollis",
-      "state": "OK",
-      "zip": "73550",
-      "courses": 0
-    },
-    {
-      "ai": "371820",
-      "name": "Hooker Junior Senior High School",
-      "city": "HOOKER",
-      "state": "OK",
-      "zip": "73945",
-      "courses": 2
-    },
-    {
       "ai": "371841",
       "name": "Kiamichi Technology Center Hugo",
       "city": "Hugo",
       "state": "OK",
       "zip": "74743",
-      "courses": 0
-    },
-    {
-      "ai": "371845",
-      "name": "Hulbert Middle High School",
-      "city": "Hulbert",
-      "state": "OK",
-      "zip": "74441",
       "courses": 0
     },
     {
@@ -30456,22 +27752,6 @@
       "state": "OK",
       "zip": "74745",
       "courses": 3
-    },
-    {
-      "ai": "371965",
-      "name": "Keota School",
-      "city": "Keota",
-      "state": "OK",
-      "zip": "74941",
-      "courses": 0
-    },
-    {
-      "ai": "372005",
-      "name": "Kinta Public School",
-      "city": "Kinta",
-      "state": "OK",
-      "zip": "74552",
-      "courses": 0
     },
     {
       "ai": "372072",
@@ -30488,22 +27768,6 @@
       "state": "OK",
       "zip": "73505",
       "courses": 3
-    },
-    {
-      "ai": "372420",
-      "name": "Mooreland Junior Senior High School",
-      "city": "Mooreland",
-      "state": "OK",
-      "zip": "73852",
-      "courses": 0
-    },
-    {
-      "ai": "372440",
-      "name": "Mounds School",
-      "city": "Mounds",
-      "state": "OK",
-      "zip": "74047",
-      "courses": 0
     },
     {
       "ai": "372545",
@@ -30610,14 +27874,6 @@
       "courses": 4
     },
     {
-      "ai": "372875",
-      "name": "Pittsburg School",
-      "city": "Pittsburg",
-      "state": "OK",
-      "zip": "74560",
-      "courses": 0
-    },
-    {
       "ai": "372920",
       "name": "Porter Junior Senior High Schools",
       "city": "Porter",
@@ -30658,52 +27914,12 @@
       "courses": 0
     },
     {
-      "ai": "372990",
-      "name": "Quinton Junior Senior High School",
-      "city": "Quinton",
-      "state": "OK",
-      "zip": "74561",
-      "courses": 0
-    },
-    {
-      "ai": "373030",
-      "name": "Red Oak Public School",
-      "city": "Red Oak",
-      "state": "OK",
-      "zip": "74563",
-      "courses": 0
-    },
-    {
-      "ai": "373060",
-      "name": "Ringling Junior Senior High School",
-      "city": "Ringling",
-      "state": "OK",
-      "zip": "73456",
-      "courses": 0
-    },
-    {
-      "ai": "373175",
-      "name": "Sasakwa School",
-      "city": "Sasakwa",
-      "state": "OK",
-      "zip": "74867",
-      "courses": 0
-    },
-    {
       "ai": "373230",
       "name": "Blanche Thomas High School",
       "city": "Rocky",
       "state": "OK",
       "zip": "73661",
       "courses": 0
-    },
-    {
-      "ai": "373250",
-      "name": "Shattuck Junior Senior High School",
-      "city": "Shattuck",
-      "state": "OK",
-      "zip": "73858",
-      "courses": 1
     },
     {
       "ai": "373254",
@@ -30720,30 +27936,6 @@
       "state": "OK",
       "zip": "74074",
       "courses": 7
-    },
-    {
-      "ai": "373405",
-      "name": "Stratford School",
-      "city": "Stratford",
-      "state": "OK",
-      "zip": "74872",
-      "courses": 0
-    },
-    {
-      "ai": "373410",
-      "name": "Stringtown Junior Senior High School",
-      "city": "Stringtown",
-      "state": "OK",
-      "zip": "74569",
-      "courses": 0
-    },
-    {
-      "ai": "373425",
-      "name": "Stuart School",
-      "city": "Stuart",
-      "state": "OK",
-      "zip": "74570",
-      "courses": 0
     },
     {
       "ai": "373457",
@@ -30802,14 +27994,6 @@
       "courses": 4
     },
     {
-      "ai": "373650",
-      "name": "Turpin School",
-      "city": "Turpin",
-      "state": "OK",
-      "zip": "73950",
-      "courses": 0
-    },
-    {
       "ai": "373659",
       "name": "Regent Preparatory School",
       "city": "Tulsa",
@@ -30826,60 +28010,12 @@
       "courses": 0
     },
     {
-      "ai": "373675",
-      "name": "Tyrone School",
-      "city": "Tyrone",
-      "state": "OK",
-      "zip": "73951",
-      "courses": 0
-    },
-    {
-      "ai": "373680",
-      "name": "Union City School",
-      "city": "Union City",
-      "state": "OK",
-      "zip": "73090",
-      "courses": 0
-    },
-    {
-      "ai": "373840",
-      "name": "Wayne Public School",
-      "city": "Wayne",
-      "state": "OK",
-      "zip": "73095",
-      "courses": 0
-    },
-    {
       "ai": "373841",
       "name": "Middle America Technology Center",
       "city": "Wayne",
       "state": "OK",
       "zip": "73095",
       "courses": 0
-    },
-    {
-      "ai": "373885",
-      "name": "Wellston Middle High School",
-      "city": "Wellston",
-      "state": "OK",
-      "zip": "74881",
-      "courses": 0
-    },
-    {
-      "ai": "373980",
-      "name": "Wright City Junior Senior High School",
-      "city": "Wright City",
-      "state": "OK",
-      "zip": "74766",
-      "courses": 1
-    },
-    {
-      "ai": "373985",
-      "name": "Wyandotte Middle High School",
-      "city": "Wyandotte",
-      "state": "OK",
-      "zip": "74370",
-      "courses": 3
     },
     {
       "ai": "379005",
@@ -31002,14 +28138,6 @@
       "courses": 0
     },
     {
-      "ai": "380165",
-      "name": "Chiloquin Junior Senior High School",
-      "city": "Chiloquin",
-      "state": "OR",
-      "zip": "97624",
-      "courses": 0
-    },
-    {
       "ai": "380205",
       "name": "Corbett High School",
       "city": "Corbett",
@@ -31058,14 +28186,6 @@
       "courses": 0
     },
     {
-      "ai": "380460",
-      "name": "Heppner High School",
-      "city": "Heppner",
-      "state": "OR",
-      "zip": "97836",
-      "courses": 0
-    },
-    {
       "ai": "380581",
       "name": "Christa McAuliffe Academy: School of Arts and Science",
       "city": "Lake Oswego",
@@ -31095,22 +28215,6 @@
       "city": "Newberg",
       "state": "OR",
       "zip": "97132",
-      "courses": 0
-    },
-    {
-      "ai": "380770",
-      "name": "Oakridge Junior Senior High School",
-      "city": "Oakridge",
-      "state": "OR",
-      "zip": "97463",
-      "courses": 0
-    },
-    {
-      "ai": "380830",
-      "name": "Pilot Rock Junior Senior High School",
-      "city": "Pilot Rock",
-      "state": "OR",
-      "zip": "97868",
       "courses": 0
     },
     {
@@ -31162,14 +28266,6 @@
       "courses": 1
     },
     {
-      "ai": "381020",
-      "name": "St Paul Middle High School",
-      "city": "Saint Paul",
-      "state": "OR",
-      "zip": "97137",
-      "courses": 3
-    },
-    {
       "ai": "381031",
       "name": "Salem Academy Christian School",
       "city": "Salem",
@@ -31208,22 +28304,6 @@
       "state": "OR",
       "zip": "97383",
       "courses": 1
-    },
-    {
-      "ai": "381175",
-      "name": "Toledo Junior Senior High School",
-      "city": "Toledo",
-      "state": "OR",
-      "zip": "97391",
-      "courses": 0
-    },
-    {
-      "ai": "381225",
-      "name": "Wallowa Junior Senior High School",
-      "city": "Wallowa",
-      "state": "OR",
-      "zip": "97885",
-      "courses": 0
     },
     {
       "ai": "381257",
@@ -31506,14 +28586,6 @@
       "courses": 0
     },
     {
-      "ai": "390270",
-      "name": "Benton Middle Senior High School",
-      "city": "Benton",
-      "state": "PA",
-      "zip": "17814",
-      "courses": 8
-    },
-    {
       "ai": "390275",
       "name": "Berlin Brothers Valley High School",
       "city": "Berlin",
@@ -31568,14 +28640,6 @@
       "state": "PA",
       "zip": "15017",
       "courses": 0
-    },
-    {
-      "ai": "390428",
-      "name": "Bristol Middle High School",
-      "city": "Bristol",
-      "state": "PA",
-      "zip": "19007",
-      "courses": 2
     },
     {
       "ai": "390435",
@@ -31690,14 +28754,6 @@
       "courses": 21
     },
     {
-      "ai": "390875",
-      "name": "Corry Area Middle High School",
-      "city": "Corry",
-      "state": "PA",
-      "zip": "16407",
-      "courses": 6
-    },
-    {
       "ai": "390923",
       "name": "Dallas Senior High School",
       "city": "Dallas",
@@ -31754,14 +28810,6 @@
       "courses": 13
     },
     {
-      "ai": "391080",
-      "name": "Dunmore High School",
-      "city": "Dunmore",
-      "state": "PA",
-      "zip": "18512",
-      "courses": 12
-    },
-    {
       "ai": "391200",
       "name": "Elizabethtown Area High School",
       "city": "Elizabethtown",
@@ -31784,14 +28832,6 @@
       "state": "PA",
       "zip": "16508",
       "courses": 26
-    },
-    {
-      "ai": "391335",
-      "name": "Everett Area Middle High School",
-      "city": "Everett",
-      "state": "PA",
-      "zip": "15537",
-      "courses": 2
     },
     {
       "ai": "391370",
@@ -31834,28 +28874,12 @@
       "courses": 10
     },
     {
-      "ai": "391485",
-      "name": "Galeton Area School",
-      "city": "Galeton",
-      "state": "PA",
-      "zip": "16922",
-      "courses": 0
-    },
-    {
       "ai": "391574",
       "name": "Greensburg Central Catholic Jr HS",
       "city": "Greensburg",
       "state": "PA",
       "zip": "15601",
       "courses": 11
-    },
-    {
-      "ai": "391580",
-      "name": "Greenville High School",
-      "city": "Greenville",
-      "state": "PA",
-      "zip": "16125",
-      "courses": 1
     },
     {
       "ai": "391600",
@@ -31904,14 +28928,6 @@
       "state": "PA",
       "zip": "15701",
       "courses": 14
-    },
-    {
-      "ai": "391905",
-      "name": "Jeannette Junior Senior High School",
-      "city": "Jeannette",
-      "state": "PA",
-      "zip": "15644",
-      "courses": 4
     },
     {
       "ai": "391915",
@@ -32010,14 +29026,6 @@
       "courses": 0
     },
     {
-      "ai": "392205",
-      "name": "Leechburg Middle Senior High School",
-      "city": "Leechburg",
-      "state": "PA",
-      "zip": "15656",
-      "courses": 1
-    },
-    {
       "ai": "392207",
       "name": "Kiski Area High School",
       "city": "Leechburg",
@@ -32056,22 +29064,6 @@
       "state": "PA",
       "zip": "17340",
       "courses": 16
-    },
-    {
-      "ai": "392355",
-      "name": "Mahanoy Area High School",
-      "city": "Mahanoy City",
-      "state": "PA",
-      "zip": "17948",
-      "courses": 5
-    },
-    {
-      "ai": "392410",
-      "name": "Marion Center High School",
-      "city": "Marion Center",
-      "state": "PA",
-      "zip": "15759",
-      "courses": 7
     },
     {
       "ai": "392415",
@@ -32162,14 +29154,6 @@
       "courses": 1
     },
     {
-      "ai": "392715",
-      "name": "Montgomery High School",
-      "city": "Montgomery",
-      "state": "PA",
-      "zip": "17752",
-      "courses": 10
-    },
-    {
       "ai": "392720",
       "name": "Montoursville Area High School",
       "city": "Montoursville",
@@ -32202,14 +29186,6 @@
       "courses": 10
     },
     {
-      "ai": "392790",
-      "name": "Mount Carmel Area Junior-Senior High School",
-      "city": "Mount Carmel",
-      "state": "PA",
-      "zip": "17851",
-      "courses": 5
-    },
-    {
       "ai": "392792",
       "name": "Kensington Health Science Academy",
       "city": "Philadelphia",
@@ -32224,14 +29200,6 @@
       "state": "PA",
       "zip": "19136",
       "courses": 6
-    },
-    {
-      "ai": "392812",
-      "name": "Mount Pleasant Area Junior Senior High School",
-      "city": "Mount Pleasant",
-      "state": "PA",
-      "zip": "15666",
-      "courses": 7
     },
     {
       "ai": "392815",
@@ -32280,14 +29248,6 @@
       "state": "PA",
       "zip": "17350",
       "courses": 11
-    },
-    {
-      "ai": "393010",
-      "name": "Wilmington Area High School",
-      "city": "New Wilmington",
-      "state": "PA",
-      "zip": "16142",
-      "courses": 9
     },
     {
       "ai": "393083",
@@ -32802,30 +29762,6 @@
       "courses": 15
     },
     {
-      "ai": "394228",
-      "name": "Ridgway Middle High School",
-      "city": "Ridgway",
-      "state": "PA",
-      "zip": "15853",
-      "courses": 2
-    },
-    {
-      "ai": "394270",
-      "name": "Rochester Area School",
-      "city": "Rochester",
-      "state": "PA",
-      "zip": "15074",
-      "courses": 0
-    },
-    {
-      "ai": "394280",
-      "name": "Rockwood Area High School",
-      "city": "Rockwood",
-      "state": "PA",
-      "zip": "15557",
-      "courses": 0
-    },
-    {
       "ai": "394300",
       "name": "Spring-Ford Area High School",
       "city": "Royersford",
@@ -32842,14 +29778,6 @@
       "courses": 3
     },
     {
-      "ai": "394375",
-      "name": "Sayre Area Junior-Senior High School",
-      "city": "Sayre",
-      "state": "PA",
-      "zip": "18840",
-      "courses": 1
-    },
-    {
       "ai": "394385",
       "name": "Schuylkill Haven High School",
       "city": "Schuylkill Haven",
@@ -32864,14 +29792,6 @@
       "state": "PA",
       "zip": "18960",
       "courses": 3
-    },
-    {
-      "ai": "394505",
-      "name": "Sharon Middle High School",
-      "city": "Sharon",
-      "state": "PA",
-      "zip": "16146",
-      "courses": 7
     },
     {
       "ai": "394525",
@@ -32954,14 +29874,6 @@
       "courses": 0
     },
     {
-      "ai": "394910",
-      "name": "Tyrone Area Middle High School",
-      "city": "Tyrone",
-      "state": "PA",
-      "zip": "16686",
-      "courses": 0
-    },
-    {
       "ai": "394951",
       "name": "Uniontown Area High School",
       "city": "Uniontown",
@@ -32976,14 +29888,6 @@
       "state": "PA",
       "zip": "15301",
       "courses": 0
-    },
-    {
-      "ai": "395065",
-      "name": "Washington Junior Senior High School",
-      "city": "Washington",
-      "state": "PA",
-      "zip": "15301",
-      "courses": 8
     },
     {
       "ai": "395163",
@@ -33762,14 +30666,6 @@
       "courses": 1
     },
     {
-      "ai": "410865",
-      "name": "Great Falls Middle High School",
-      "city": "Great Falls",
-      "state": "SC",
-      "zip": "29055",
-      "courses": 0
-    },
-    {
       "ai": "410898",
       "name": "Fine Arts Center",
       "city": "Greenville",
@@ -34090,299 +30986,11 @@
       "courses": 0
     },
     {
-      "ai": "420006",
-      "name": "Sioux Falls Jefferson High School",
-      "city": "Sioux Falls",
-      "state": "SD",
-      "zip": "57107",
-      "courses": 21
-    },
-    {
-      "ai": "420035",
-      "name": "Arlington School",
-      "city": "Arlington",
-      "state": "SD",
-      "zip": "57212",
-      "courses": 1
-    },
-    {
-      "ai": "420070",
-      "name": "Baltic High School",
-      "city": "Baltic",
-      "state": "SD",
-      "zip": "57003",
-      "courses": 0
-    },
-    {
-      "ai": "420090",
-      "name": "Belle Fourche High School",
-      "city": "Belle Fourche",
-      "state": "SD",
-      "zip": "57717",
-      "courses": 0
-    },
-    {
-      "ai": "420100",
-      "name": "Beresford High School",
-      "city": "Beresford",
-      "state": "SD",
-      "zip": "57004",
-      "courses": 0
-    },
-    {
-      "ai": "420110",
-      "name": "Bison School",
-      "city": "Bison",
-      "state": "SD",
-      "zip": "57620",
-      "courses": 0
-    },
-    {
-      "ai": "420170",
-      "name": "Brookings High School",
-      "city": "Brookings",
-      "state": "SD",
-      "zip": "57006",
-      "courses": 9
-    },
-    {
-      "ai": "420195",
-      "name": "Burke School",
-      "city": "Burke",
-      "state": "SD",
-      "zip": "57523",
-      "courses": 0
-    },
-    {
-      "ai": "420200",
-      "name": "Canistota School",
-      "city": "Canistota",
-      "state": "SD",
-      "zip": "57012",
-      "courses": 0
-    },
-    {
-      "ai": "420215",
-      "name": "Canton High School",
-      "city": "Canton",
-      "state": "SD",
-      "zip": "57013",
-      "courses": 2
-    },
-    {
-      "ai": "420225",
-      "name": "Castlewood School",
-      "city": "Castlewood",
-      "state": "SD",
-      "zip": "57223",
-      "courses": 0
-    },
-    {
-      "ai": "420235",
-      "name": "Centerville School",
-      "city": "Centerville",
-      "state": "SD",
-      "zip": "57014",
-      "courses": 0
-    },
-    {
-      "ai": "420240",
-      "name": "Chamberlain High School",
-      "city": "Chamberlain",
-      "state": "SD",
-      "zip": "57325",
-      "courses": 2
-    },
-    {
-      "ai": "420265",
-      "name": "Clark Junior Senior High School",
-      "city": "Clark",
-      "state": "SD",
-      "zip": "57225",
-      "courses": 0
-    },
-    {
-      "ai": "420315",
-      "name": "Custer Junior Senior High School",
-      "city": "Custer",
-      "state": "SD",
-      "zip": "57730",
-      "courses": 1
-    },
-    {
-      "ai": "420325",
-      "name": "Dell Rapids Middle High School",
-      "city": "Dell Rapids",
-      "state": "SD",
-      "zip": "57022",
-      "courses": 1
-    },
-    {
-      "ai": "420345",
-      "name": "Doland School",
-      "city": "Doland",
-      "state": "SD",
-      "zip": "57436",
-      "courses": 0
-    },
-    {
       "ai": "420360",
       "name": "Cheyenne-Eagle Butte High School",
       "city": "Eagle Butte",
       "state": "SD",
       "zip": "57625",
-      "courses": 0
-    },
-    {
-      "ai": "420380",
-      "name": "Elkton School",
-      "city": "Elkton",
-      "state": "SD",
-      "zip": "57026",
-      "courses": 0
-    },
-    {
-      "ai": "420395",
-      "name": "Estelline High School",
-      "city": "Estelline",
-      "state": "SD",
-      "zip": "57234",
-      "courses": 0
-    },
-    {
-      "ai": "420415",
-      "name": "Faith School",
-      "city": "Faith",
-      "state": "SD",
-      "zip": "57626",
-      "courses": 0
-    },
-    {
-      "ai": "420425",
-      "name": "Faulkton High School",
-      "city": "Faulkton",
-      "state": "SD",
-      "zip": "57438",
-      "courses": 0
-    },
-    {
-      "ai": "420433",
-      "name": "Flandreau High School",
-      "city": "Flandreau",
-      "state": "SD",
-      "zip": "57028",
-      "courses": 1
-    },
-    {
-      "ai": "420465",
-      "name": "Frederick Area School",
-      "city": "Frederick",
-      "state": "SD",
-      "zip": "57441",
-      "courses": 0
-    },
-    {
-      "ai": "420477",
-      "name": "Freeman Junior Senior High School",
-      "city": "Freeman",
-      "state": "SD",
-      "zip": "57029",
-      "courses": 0
-    },
-    {
-      "ai": "420505",
-      "name": "Garretson School",
-      "city": "Garretson",
-      "state": "SD",
-      "zip": "57030",
-      "courses": 1
-    },
-    {
-      "ai": "420530",
-      "name": "Gettysburg Senior High School",
-      "city": "Gettysburg",
-      "state": "SD",
-      "zip": "57442",
-      "courses": 1
-    },
-    {
-      "ai": "420560",
-      "name": "Harrisburg High School",
-      "city": "Harrisburg",
-      "state": "SD",
-      "zip": "57032",
-      "courses": 16
-    },
-    {
-      "ai": "420575",
-      "name": "Hamlin Education Center",
-      "city": "Hayti",
-      "state": "SD",
-      "zip": "57241",
-      "courses": 0
-    },
-    {
-      "ai": "420590",
-      "name": "Henry School",
-      "city": "Henry",
-      "state": "SD",
-      "zip": "57243",
-      "courses": 0
-    },
-    {
-      "ai": "420600",
-      "name": "Highmore Junior Senior High School",
-      "city": "Highmore",
-      "state": "SD",
-      "zip": "57345",
-      "courses": 1
-    },
-    {
-      "ai": "420605",
-      "name": "Hill City High School",
-      "city": "Hill City",
-      "state": "SD",
-      "zip": "57745",
-      "courses": 4
-    },
-    {
-      "ai": "420625",
-      "name": "Hot Springs High School",
-      "city": "Hot Springs",
-      "state": "SD",
-      "zip": "57747",
-      "courses": 0
-    },
-    {
-      "ai": "420630",
-      "name": "Hoven Junior Senior High School",
-      "city": "Hoven",
-      "state": "SD",
-      "zip": "57450",
-      "courses": 0
-    },
-    {
-      "ai": "420656",
-      "name": "Huron High School",
-      "city": "Huron",
-      "state": "SD",
-      "zip": "57350",
-      "courses": 0
-    },
-    {
-      "ai": "420710",
-      "name": "Kadoka Area School",
-      "city": "Kadoka",
-      "state": "SD",
-      "zip": "57543",
-      "courses": 0
-    },
-    {
-      "ai": "420725",
-      "name": "Kimball High School",
-      "city": "Kimball",
-      "state": "SD",
-      "zip": "57355",
       "courses": 0
     },
     {
@@ -34394,123 +31002,11 @@
       "courses": 0
     },
     {
-      "ai": "420745",
-      "name": "Lake Preston School",
-      "city": "Lake Preston",
-      "state": "SD",
-      "zip": "57249",
-      "courses": 0
-    },
-    {
-      "ai": "420775",
-      "name": "Lemmon High School",
-      "city": "Lemmon",
-      "state": "SD",
-      "zip": "57638",
-      "courses": 0
-    },
-    {
-      "ai": "420780",
-      "name": "Lennox High School",
-      "city": "Lennox",
-      "state": "SD",
-      "zip": "57039",
-      "courses": 0
-    },
-    {
-      "ai": "420805",
-      "name": "Madison High School",
-      "city": "Madison",
-      "state": "SD",
-      "zip": "57042",
-      "courses": 0
-    },
-    {
-      "ai": "420825",
-      "name": "Marion School",
-      "city": "Marion",
-      "state": "SD",
-      "zip": "57043",
-      "courses": 0
-    },
-    {
-      "ai": "420840",
-      "name": "McIntosh School",
-      "city": "Mc Intosh",
-      "state": "SD",
-      "zip": "57641",
-      "courses": 0
-    },
-    {
-      "ai": "420860",
-      "name": "Menno School",
-      "city": "Menno",
-      "state": "SD",
-      "zip": "57045",
-      "courses": 0
-    },
-    {
-      "ai": "420870",
-      "name": "Milbank High School",
-      "city": "Milbank",
-      "state": "SD",
-      "zip": "57252",
-      "courses": 0
-    },
-    {
-      "ai": "420875",
-      "name": "Miller Junior Senior High School",
-      "city": "Miller",
-      "state": "SD",
-      "zip": "57362",
-      "courses": 1
-    },
-    {
-      "ai": "420890",
-      "name": "Mitchell Senior High School",
-      "city": "Mitchell",
-      "state": "SD",
-      "zip": "57301",
-      "courses": 0
-    },
-    {
-      "ai": "420900",
-      "name": "Mobridge High School",
-      "city": "Mobridge",
-      "state": "SD",
-      "zip": "57601",
-      "courses": 0
-    },
-    {
       "ai": "420920",
       "name": "Mount Vernon School",
       "city": "Mount Vernon",
       "state": "SD",
       "zip": "57363",
-      "courses": 0
-    },
-    {
-      "ai": "420940",
-      "name": "New Underwood School",
-      "city": "New Underwood",
-      "state": "SD",
-      "zip": "57761",
-      "courses": 0
-    },
-    {
-      "ai": "420980",
-      "name": "Parker School",
-      "city": "Parker",
-      "state": "SD",
-      "zip": "57053",
-      "courses": 0
-    },
-    {
-      "ai": "420985",
-      "name": "Parkston Junior-Senior High School",
-      "city": "Parkston",
-      "state": "SD",
-      "zip": "57366",
       "courses": 0
     },
     {
@@ -34522,35 +31018,11 @@
       "courses": 1
     },
     {
-      "ai": "421030",
-      "name": "Plankinton School",
-      "city": "Plankinton",
-      "state": "SD",
-      "zip": "57368",
-      "courses": 0
-    },
-    {
       "ai": "421073",
       "name": "Rapid City Christian School",
       "city": "Rapid City",
       "state": "SD",
       "zip": "57702",
-      "courses": 0
-    },
-    {
-      "ai": "421095",
-      "name": "Redfield School",
-      "city": "Redfield",
-      "state": "SD",
-      "zip": "57469",
-      "courses": 0
-    },
-    {
-      "ai": "421120",
-      "name": "Rosholt School",
-      "city": "Rosholt",
-      "state": "SD",
-      "zip": "57260",
       "courses": 0
     },
     {
@@ -34562,36 +31034,12 @@
       "courses": 0
     },
     {
-      "ai": "421160",
-      "name": "Selby Area School",
-      "city": "Selby",
-      "state": "SD",
-      "zip": "57472",
-      "courses": 0
-    },
-    {
       "ai": "421175",
       "name": "O'Gorman High School",
       "city": "Sioux Falls",
       "state": "SD",
       "zip": "57105",
       "courses": 13
-    },
-    {
-      "ai": "421190",
-      "name": "Sisseton High School",
-      "city": "Sisseton",
-      "state": "SD",
-      "zip": "57262",
-      "courses": 0
-    },
-    {
-      "ai": "421200",
-      "name": "Spearfish High School",
-      "city": "Spearfish",
-      "state": "SD",
-      "zip": "57783",
-      "courses": 3
     },
     {
       "ai": "421245",
@@ -34602,84 +31050,12 @@
       "courses": 7
     },
     {
-      "ai": "421259",
-      "name": "Tea Area High School",
-      "city": "Tea",
-      "state": "SD",
-      "zip": "57064",
-      "courses": 3
-    },
-    {
-      "ai": "421315",
-      "name": "Vermillion High School",
-      "city": "Vermillion",
-      "state": "SD",
-      "zip": "57069",
-      "courses": 0
-    },
-    {
-      "ai": "421365",
-      "name": "Wall School",
-      "city": "Wall",
-      "state": "SD",
-      "zip": "57790",
-      "courses": 0
-    },
-    {
-      "ai": "421375",
-      "name": "Warner School",
-      "city": "Warner",
-      "state": "SD",
-      "zip": "57479",
-      "courses": 1
-    },
-    {
-      "ai": "421385",
-      "name": "Watertown High School",
-      "city": "Watertown",
-      "state": "SD",
-      "zip": "57201",
-      "courses": 4
-    },
-    {
-      "ai": "421400",
-      "name": "Webster High School",
-      "city": "Webster",
-      "state": "SD",
-      "zip": "57274",
-      "courses": 0
-    },
-    {
       "ai": "421415",
       "name": "Wessington Springs Midle High School",
       "city": "Wessington Springs",
       "state": "SD",
       "zip": "57382",
       "courses": 0
-    },
-    {
-      "ai": "421440",
-      "name": "Willow Lake School",
-      "city": "Willow Lake",
-      "state": "SD",
-      "zip": "57278",
-      "courses": 0
-    },
-    {
-      "ai": "421455",
-      "name": "Winner High School",
-      "city": "Winner",
-      "state": "SD",
-      "zip": "57580",
-      "courses": 0
-    },
-    {
-      "ai": "421500",
-      "name": "Yankton High School",
-      "city": "Yankton",
-      "state": "SD",
-      "zip": "57078",
-      "courses": 9
     },
     {
       "ai": "org-125114",
@@ -34786,14 +31162,6 @@
       "courses": 7
     },
     {
-      "ai": "430160",
-      "name": "Bradford Junior Senior High School",
-      "city": "Bradford",
-      "state": "TN",
-      "zip": "38316",
-      "courses": 1
-    },
-    {
       "ai": "430163",
       "name": "Brentwood Academy",
       "city": "Brentwood",
@@ -34880,14 +31248,6 @@
       "state": "TN",
       "zip": "37069",
       "courses": 23
-    },
-    {
-      "ai": "430790",
-      "name": "Greenback Public School",
-      "city": "Greenback",
-      "state": "TN",
-      "zip": "37742",
-      "courses": 0
     },
     {
       "ai": "430799",
@@ -35850,14 +32210,6 @@
       "courses": 18
     },
     {
-      "ai": "440535",
-      "name": "Beckville High School",
-      "city": "Beckville",
-      "state": "TX",
-      "zip": "75631",
-      "courses": 0
-    },
-    {
       "ai": "440553",
       "name": "Jordan High School",
       "city": "Fulshear",
@@ -35904,14 +32256,6 @@
       "state": "TX",
       "zip": "78537",
       "courses": 0
-    },
-    {
-      "ai": "440605",
-      "name": "Martin's Mill School",
-      "city": "Ben Wheeler",
-      "state": "TX",
-      "zip": "75754",
-      "courses": 2
     },
     {
       "ai": "440638",
@@ -36058,14 +32402,6 @@
       "courses": 0
     },
     {
-      "ai": "441285",
-      "name": "Chireno School",
-      "city": "Chireno",
-      "state": "TX",
-      "zip": "75937",
-      "courses": 0
-    },
-    {
       "ai": "441400",
       "name": "A And M Consolidated High School",
       "city": "College Station",
@@ -36120,14 +32456,6 @@
       "state": "TX",
       "zip": "75110",
       "courses": 11
-    },
-    {
-      "ai": "441480",
-      "name": "Cooper Junior Senior High School",
-      "city": "Cooper",
-      "state": "TX",
-      "zip": "75432",
-      "courses": 0
     },
     {
       "ai": "441504",
@@ -36200,14 +32528,6 @@
       "state": "TX",
       "zip": "75201",
       "courses": 25
-    },
-    {
-      "ai": "441734",
-      "name": "The Episcopal School of Dallas",
-      "city": "Dallas",
-      "state": "TX",
-      "zip": "75229",
-      "courses": 33
     },
     {
       "ai": "441735",
@@ -36562,14 +32882,6 @@
       "courses": 2
     },
     {
-      "ai": "442660",
-      "name": "Callisburg Middle High School",
-      "city": "Callisburg",
-      "state": "TX",
-      "zip": "76240",
-      "courses": 0
-    },
-    {
       "ai": "442668",
       "name": "Mesivta Of Houston",
       "city": "Houston",
@@ -36624,14 +32936,6 @@
       "state": "TX",
       "zip": "78753",
       "courses": 14
-    },
-    {
-      "ai": "442885",
-      "name": "Goodrich Middle High School",
-      "city": "Goodrich",
-      "state": "TX",
-      "zip": "77335",
-      "courses": 0
     },
     {
       "ai": "442936",
@@ -36794,14 +33098,6 @@
       "courses": 0
     },
     {
-      "ai": "443530",
-      "name": "Iola Junior Senior High School",
-      "city": "Iola",
-      "state": "TX",
-      "zip": "77861",
-      "courses": 1
-    },
-    {
       "ai": "443537",
       "name": "Darul Arqam School North",
       "city": "Houston",
@@ -36816,14 +33112,6 @@
       "state": "TX",
       "zip": "77074",
       "courses": 14
-    },
-    {
-      "ai": "443565",
-      "name": "Italy Junior Senior High School",
-      "city": "Italy",
-      "state": "TX",
-      "zip": "76651",
-      "courses": 0
     },
     {
       "ai": "443582",
@@ -37042,14 +33330,6 @@
       "courses": 0
     },
     {
-      "ai": "444195",
-      "name": "Lipan School",
-      "city": "Lipan",
-      "state": "TX",
-      "zip": "76462",
-      "courses": 0
-    },
-    {
       "ai": "444209",
       "name": "Judson Early College Academy",
       "city": "Universal City",
@@ -37114,14 +33394,6 @@
       "courses": 0
     },
     {
-      "ai": "444685",
-      "name": "Meridian Middle High School",
-      "city": "Meridian",
-      "state": "TX",
-      "zip": "76665",
-      "courses": 0
-    },
-    {
       "ai": "444742",
       "name": "Midland Christian School",
       "city": "Midland",
@@ -37160,22 +33432,6 @@
       "state": "TX",
       "zip": "75094",
       "courses": 6
-    },
-    {
-      "ai": "444920",
-      "name": "Mount Enterprise School",
-      "city": "Mount Enterprise",
-      "state": "TX",
-      "zip": "75681",
-      "courses": 0
-    },
-    {
-      "ai": "444968",
-      "name": "Mumford School",
-      "city": "Bryan",
-      "state": "TX",
-      "zip": "77807",
-      "courses": 1
     },
     {
       "ai": "445037",
@@ -37418,14 +33674,6 @@
       "courses": 19
     },
     {
-      "ai": "446060",
-      "name": "Runge School",
-      "city": "Runge",
-      "state": "TX",
-      "zip": "78151",
-      "courses": 0
-    },
-    {
       "ai": "446075",
       "name": "Sabinal High School",
       "city": "Sabinal",
@@ -37535,22 +33783,6 @@
       "city": "San Antonio",
       "state": "TX",
       "zip": "78210",
-      "courses": 0
-    },
-    {
-      "ai": "446285",
-      "name": "San Augustine Middle High School",
-      "city": "San Augustine",
-      "state": "TX",
-      "zip": "75972",
-      "courses": 0
-    },
-    {
-      "ai": "446300",
-      "name": "Sanderson Public School",
-      "city": "Sanderson",
-      "state": "TX",
-      "zip": "79848",
       "courses": 0
     },
     {
@@ -37696,30 +33928,6 @@
       "state": "TX",
       "zip": "78148",
       "courses": 4
-    },
-    {
-      "ai": "447180",
-      "name": "Valley Mills Junior Senior High School",
-      "city": "Valley Mills",
-      "state": "TX",
-      "zip": "76689",
-      "courses": 0
-    },
-    {
-      "ai": "447185",
-      "name": "Valley View School",
-      "city": "Valley View",
-      "state": "TX",
-      "zip": "76272",
-      "courses": 0
-    },
-    {
-      "ai": "447220",
-      "name": "Vega Junior Senior High School",
-      "city": "Vega",
-      "state": "TX",
-      "zip": "79092",
-      "courses": 1
     },
     {
       "ai": "447309",
@@ -42722,14 +38930,6 @@
       "courses": 0
     },
     {
-      "ai": "450000",
-      "name": "Altamont Junior Senior High School",
-      "city": "Altamont",
-      "state": "UT",
-      "zip": "84001",
-      "courses": 0
-    },
-    {
       "ai": "450003",
       "name": "American Heritage School",
       "city": "American Fork",
@@ -44234,14 +40434,6 @@
       "courses": 0
     },
     {
-      "ai": "460435",
-      "name": "Stowe Middle High School",
-      "city": "Stowe",
-      "state": "VT",
-      "zip": "05672",
-      "courses": 7
-    },
-    {
       "ai": "460464",
       "name": "Mountain School of Milton Academy",
       "city": "Vershire",
@@ -44442,27 +40634,11 @@
       "courses": 0
     },
     {
-      "ai": "480270",
-      "name": "Creston School",
-      "city": "Creston",
-      "state": "WA",
-      "zip": "99117",
-      "courses": 0
-    },
-    {
       "ai": "480275",
       "name": "Curlew School",
       "city": "Curlew",
       "state": "WA",
       "zip": "99118",
-      "courses": 0
-    },
-    {
-      "ai": "480295",
-      "name": "Dayton Middle High School",
-      "city": "Dayton",
-      "state": "WA",
-      "zip": "99328",
       "courses": 0
     },
     {
@@ -44490,22 +40666,6 @@
       "courses": 1
     },
     {
-      "ai": "480460",
-      "name": "Harrington School",
-      "city": "Harrington",
-      "state": "WA",
-      "zip": "99134",
-      "courses": 0
-    },
-    {
-      "ai": "480490",
-      "name": "Inchelium School",
-      "city": "Inchelium",
-      "state": "WA",
-      "zip": "99138",
-      "courses": 0
-    },
-    {
       "ai": "480505",
       "name": "Crescent School",
       "city": "Joyce",
@@ -44522,28 +40682,12 @@
       "courses": 0
     },
     {
-      "ai": "480580",
-      "name": "LaCrosse School",
-      "city": "Lacrosse",
-      "state": "WA",
-      "zip": "99143",
-      "courses": 0
-    },
-    {
       "ai": "480589",
       "name": "Harrison Prepatory School",
       "city": "Lakewood",
       "state": "WA",
       "zip": "98499",
       "courses": 0
-    },
-    {
-      "ai": "480630",
-      "name": "Lopez Island School",
-      "city": "Lopez Island",
-      "state": "WA",
-      "zip": "98261",
-      "courses": 3
     },
     {
       "ai": "480635",
@@ -44594,51 +40738,11 @@
       "courses": 16
     },
     {
-      "ai": "480785",
-      "name": "Neah Bay School",
-      "city": "Neah Bay",
-      "state": "WA",
-      "zip": "98357",
-      "courses": 3
-    },
-    {
-      "ai": "480805",
-      "name": "Oakesdale School",
-      "city": "Oakesdale",
-      "state": "WA",
-      "zip": "99158",
-      "courses": 2
-    },
-    {
-      "ai": "480820",
-      "name": "Odessa Junior Senior High School",
-      "city": "Odessa",
-      "state": "WA",
-      "zip": "99159",
-      "courses": 0
-    },
-    {
       "ai": "480837",
       "name": "Sunrise Beach School",
       "city": "Olympia",
       "state": "WA",
       "zip": "98501",
-      "courses": 0
-    },
-    {
-      "ai": "480850",
-      "name": "Oroville Junior Senior High School",
-      "city": "Oroville",
-      "state": "WA",
-      "zip": "98844",
-      "courses": 1
-    },
-    {
-      "ai": "480880",
-      "name": "Pateros School",
-      "city": "Pateros",
-      "state": "WA",
-      "zip": "98846",
       "courses": 0
     },
     {
@@ -44754,22 +40858,6 @@
       "courses": 0
     },
     {
-      "ai": "481205",
-      "name": "Skykomish School",
-      "city": "Skykomish",
-      "state": "WA",
-      "zip": "98288",
-      "courses": 0
-    },
-    {
-      "ai": "481220",
-      "name": "South Bend Junior Senior High School",
-      "city": "South Bend",
-      "state": "WA",
-      "zip": "98586",
-      "courses": 0
-    },
-    {
       "ai": "481280",
       "name": "Northwest Christian High School",
       "city": "Colbert",
@@ -44826,14 +40914,6 @@
       "courses": 10
     },
     {
-      "ai": "481405",
-      "name": "Tekoa Junior Senior High School",
-      "city": "Tekoa",
-      "state": "WA",
-      "zip": "99033",
-      "courses": 0
-    },
-    {
       "ai": "481432",
       "name": "Yakama Nation Tribal School",
       "city": "Toppenish",
@@ -44872,30 +40952,6 @@
       "state": "WA",
       "zip": "99371",
       "courses": 3
-    },
-    {
-      "ai": "481525",
-      "name": "Waterville School",
-      "city": "Waterville",
-      "state": "WA",
-      "zip": "98858",
-      "courses": 0
-    },
-    {
-      "ai": "481530",
-      "name": "Wellpinit School",
-      "city": "Wellpinit",
-      "state": "WA",
-      "zip": "99040",
-      "courses": 0
-    },
-    {
-      "ai": "481560",
-      "name": "Wilson Creek School",
-      "city": "Wilson Creek",
-      "state": "WA",
-      "zip": "98860",
-      "courses": 0
     },
     {
       "ai": "481597",
@@ -45346,54 +41402,6 @@
       "courses": 5
     },
     {
-      "ai": "500010",
-      "name": "Albany School",
-      "city": "Albany",
-      "state": "WI",
-      "zip": "53502",
-      "courses": 0
-    },
-    {
-      "ai": "500015",
-      "name": "Algoma Middle High School",
-      "city": "Algoma",
-      "state": "WI",
-      "zip": "54201",
-      "courses": 3
-    },
-    {
-      "ai": "500020",
-      "name": "Alma School",
-      "city": "Alma",
-      "state": "WI",
-      "zip": "54610",
-      "courses": 0
-    },
-    {
-      "ai": "500075",
-      "name": "Argyle School",
-      "city": "Argyle",
-      "state": "WI",
-      "zip": "53504",
-      "courses": 4
-    },
-    {
-      "ai": "500100",
-      "name": "Athens Junior Senior High School",
-      "city": "Athens",
-      "state": "WI",
-      "zip": "54411",
-      "courses": 1
-    },
-    {
-      "ai": "500105",
-      "name": "Auburndale Middle High School",
-      "city": "Auburndale",
-      "state": "WI",
-      "zip": "54412",
-      "courses": 1
-    },
-    {
       "ai": "500180",
       "name": "Belmont Community School",
       "city": "Belmont",
@@ -45402,116 +41410,12 @@
       "courses": 6
     },
     {
-      "ai": "500195",
-      "name": "Benton School",
-      "city": "Benton",
-      "state": "WI",
-      "zip": "53803",
-      "courses": 3
-    },
-    {
-      "ai": "500205",
-      "name": "Birchwood School",
-      "city": "Birchwood",
-      "state": "WI",
-      "zip": "54817",
-      "courses": 1
-    },
-    {
-      "ai": "500255",
-      "name": "Boscobel Junior Senior High School",
-      "city": "Boscobel",
-      "state": "WI",
-      "zip": "53805",
-      "courses": 0
-    },
-    {
-      "ai": "500265",
-      "name": "Boyceville Middle-High School",
-      "city": "Boyceville",
-      "state": "WI",
-      "zip": "54725",
-      "courses": 0
-    },
-    {
       "ai": "500283",
       "name": "Brookfield Academy Upper School",
       "city": "Brookfield",
       "state": "WI",
       "zip": "53045",
       "courses": 26
-    },
-    {
-      "ai": "500290",
-      "name": "Bruce Public School",
-      "city": "Bruce",
-      "state": "WI",
-      "zip": "54819",
-      "courses": 0
-    },
-    {
-      "ai": "500310",
-      "name": "Butternut School",
-      "city": "Butternut",
-      "state": "WI",
-      "zip": "54514",
-      "courses": 0
-    },
-    {
-      "ai": "500320",
-      "name": "Cadott Junior Senior High School",
-      "city": "Cadott",
-      "state": "WI",
-      "zip": "54727",
-      "courses": 4
-    },
-    {
-      "ai": "500340",
-      "name": "Campbellsport Junior Senior High School",
-      "city": "Campbellsport",
-      "state": "WI",
-      "zip": "53010",
-      "courses": 11
-    },
-    {
-      "ai": "500360",
-      "name": "Cassville Junior Senior High School",
-      "city": "Cassville",
-      "state": "WI",
-      "zip": "53806",
-      "courses": 1
-    },
-    {
-      "ai": "500410",
-      "name": "Clear Lake Junior Senior High School",
-      "city": "Clear Lake",
-      "state": "WI",
-      "zip": "54005",
-      "courses": 1
-    },
-    {
-      "ai": "500415",
-      "name": "Clinton Junior Senior High School",
-      "city": "Clinton",
-      "state": "WI",
-      "zip": "53525",
-      "courses": 10
-    },
-    {
-      "ai": "500445",
-      "name": "Colfax Middle High School",
-      "city": "Colfax",
-      "state": "WI",
-      "zip": "54730",
-      "courses": 0
-    },
-    {
-      "ai": "500455",
-      "name": "Cornell Middle High School",
-      "city": "Cornell",
-      "state": "WI",
-      "zip": "54732",
-      "courses": 0
     },
     {
       "ai": "500505",
@@ -45530,52 +41434,12 @@
       "courses": 0
     },
     {
-      "ai": "500530",
-      "name": "De Soto Middle High School",
-      "city": "De Soto",
-      "state": "WI",
-      "zip": "54624",
-      "courses": 1
-    },
-    {
-      "ai": "500590",
-      "name": "Elcho School",
-      "city": "Elcho",
-      "state": "WI",
-      "zip": "54428",
-      "courses": 0
-    },
-    {
       "ai": "500595",
       "name": "Elkhart Lake-Glenbeulah High School",
       "city": "Elkhart Lake",
       "state": "WI",
       "zip": "53020",
       "courses": 4
-    },
-    {
-      "ai": "500620",
-      "name": "Elmwood School",
-      "city": "Elmwood",
-      "state": "WI",
-      "zip": "54740",
-      "courses": 1
-    },
-    {
-      "ai": "500645",
-      "name": "Fall River School",
-      "city": "Fall River",
-      "state": "WI",
-      "zip": "53932",
-      "courses": 1
-    },
-    {
-      "ai": "500650",
-      "name": "Fennimore Middle High School",
-      "city": "Fennimore",
-      "state": "WI",
-      "zip": "53809",
-      "courses": 6
     },
     {
       "ai": "500705",
@@ -45594,27 +41458,11 @@
       "courses": 0
     },
     {
-      "ai": "500735",
-      "name": "Gilman School",
-      "city": "Gilman",
-      "state": "WI",
-      "zip": "54433",
-      "courses": 0
-    },
-    {
       "ai": "500765",
       "name": "Goodman-Armstrong Creek High School",
       "city": "Goodman",
       "state": "WI",
       "zip": "54125",
-      "courses": 0
-    },
-    {
-      "ai": "500775",
-      "name": "Granton Area School",
-      "city": "Granton",
-      "state": "WI",
-      "zip": "54436",
       "courses": 0
     },
     {
@@ -45626,22 +41474,6 @@
       "courses": 1
     },
     {
-      "ai": "500825",
-      "name": "Green Lake School",
-      "city": "Green Lake",
-      "state": "WI",
-      "zip": "54941",
-      "courses": 0
-    },
-    {
-      "ai": "500830",
-      "name": "Greenwood Middle Senior High School",
-      "city": "Greenwood",
-      "state": "WI",
-      "zip": "54437",
-      "courses": 2
-    },
-    {
       "ai": "500850",
       "name": "Hartford Union High School",
       "city": "Hartford",
@@ -45650,60 +41482,12 @@
       "courses": 20
     },
     {
-      "ai": "500880",
-      "name": "Hilbert School",
-      "city": "Hilbert",
-      "state": "WI",
-      "zip": "54129",
-      "courses": 6
-    },
-    {
-      "ai": "500885",
-      "name": "Hillsboro Junior Senior High School",
-      "city": "Hillsboro",
-      "state": "WI",
-      "zip": "54634",
-      "courses": 5
-    },
-    {
       "ai": "500895",
       "name": "Lake Holcombe School",
       "city": "Holcombe",
       "state": "WI",
       "zip": "54745",
       "courses": 2
-    },
-    {
-      "ai": "500910",
-      "name": "Horicon School",
-      "city": "Horicon",
-      "state": "WI",
-      "zip": "53032",
-      "courses": 10
-    },
-    {
-      "ai": "500925",
-      "name": "Hurley K 12 School",
-      "city": "Hurley",
-      "state": "WI",
-      "zip": "54534",
-      "courses": 2
-    },
-    {
-      "ai": "500930",
-      "name": "Hustisford Junior Senior High School",
-      "city": "Hustisford",
-      "state": "WI",
-      "zip": "53034",
-      "courses": 0
-    },
-    {
-      "ai": "500935",
-      "name": "Independence School",
-      "city": "Independence",
-      "state": "WI",
-      "zip": "54747",
-      "courses": 0
     },
     {
       "ai": "500956",
@@ -45722,22 +41506,6 @@
       "courses": 12
     },
     {
-      "ai": "500975",
-      "name": "Juda Public School",
-      "city": "Juda",
-      "state": "WI",
-      "zip": "53550",
-      "courses": 0
-    },
-    {
-      "ai": "501035",
-      "name": "Kohler School",
-      "city": "Kohler",
-      "state": "WI",
-      "zip": "53044",
-      "courses": 7
-    },
-    {
       "ai": "501054",
       "name": "Providence Academy",
       "city": "La Crosse",
@@ -45746,43 +41514,11 @@
       "courses": 0
     },
     {
-      "ai": "501055",
-      "name": "Ladysmith Middle High School",
-      "city": "Ladysmith",
-      "state": "WI",
-      "zip": "54848",
-      "courses": 2
-    },
-    {
-      "ai": "501060",
-      "name": "La Farge School",
-      "city": "La Farge",
-      "state": "WI",
-      "zip": "54639",
-      "courses": 1
-    },
-    {
       "ai": "501082",
       "name": "Conserve School",
       "city": "Land O Lakes",
       "state": "WI",
       "zip": "54540",
-      "courses": 0
-    },
-    {
-      "ai": "501090",
-      "name": "Lena Junior Senior High School",
-      "city": "Lena",
-      "state": "WI",
-      "zip": "54139",
-      "courses": 2
-    },
-    {
-      "ai": "501130",
-      "name": "Loyal Junior Senior High School",
-      "city": "Loyal",
-      "state": "WI",
-      "zip": "54446",
       "courses": 0
     },
     {
@@ -45800,30 +41536,6 @@
       "state": "WI",
       "zip": "53716",
       "courses": 19
-    },
-    {
-      "ai": "501210",
-      "name": "Marion Junior Senior High School",
-      "city": "Marion",
-      "state": "WI",
-      "zip": "54950",
-      "courses": 0
-    },
-    {
-      "ai": "501215",
-      "name": "Markesan Middle High School",
-      "city": "Markesan",
-      "state": "WI",
-      "zip": "53946",
-      "courses": 3
-    },
-    {
-      "ai": "501265",
-      "name": "Mellen School",
-      "city": "Mellen",
-      "state": "WI",
-      "zip": "54546",
-      "courses": 0
     },
     {
       "ai": "501382",
@@ -45866,28 +41578,12 @@
       "courses": 2
     },
     {
-      "ai": "501560",
-      "name": "Monticello School",
-      "city": "Monticello",
-      "state": "WI",
-      "zip": "53570",
-      "courses": 4
-    },
-    {
       "ai": "501567",
       "name": "Wisconsin Valley Lutheran High School",
       "city": "Mosinee",
       "state": "WI",
       "zip": "54455",
       "courses": 0
-    },
-    {
-      "ai": "501610",
-      "name": "Necedah Area School",
-      "city": "Necedah",
-      "state": "WI",
-      "zip": "54646",
-      "courses": 4
     },
     {
       "ai": "501645",
@@ -45898,51 +41594,11 @@
       "courses": 2
     },
     {
-      "ai": "501675",
-      "name": "Oakfield Middle High School",
-      "city": "Oakfield",
-      "state": "WI",
-      "zip": "53065",
-      "courses": 0
-    },
-    {
       "ai": "501703",
       "name": "Oneida Nation High School",
       "city": "Oneida",
       "state": "WI",
       "zip": "54155",
-      "courses": 0
-    },
-    {
-      "ai": "501755",
-      "name": "Pardeeville Middle High School",
-      "city": "Pardeeville",
-      "state": "WI",
-      "zip": "53954",
-      "courses": 6
-    },
-    {
-      "ai": "501775",
-      "name": "Pepin Area School",
-      "city": "Pepin",
-      "state": "WI",
-      "zip": "54759",
-      "courses": 0
-    },
-    {
-      "ai": "501780",
-      "name": "Peshtigo Middle High School",
-      "city": "Peshtigo",
-      "state": "WI",
-      "zip": "54157",
-      "courses": 4
-    },
-    {
-      "ai": "501790",
-      "name": "Phelps School",
-      "city": "Phelps",
-      "state": "WI",
-      "zip": "54554",
       "courses": 0
     },
     {
@@ -45952,46 +41608,6 @@
       "state": "WI",
       "zip": "53140",
       "courses": 11
-    },
-    {
-      "ai": "501855",
-      "name": "Potosi School",
-      "city": "Potosi",
-      "state": "WI",
-      "zip": "53820",
-      "courses": 7
-    },
-    {
-      "ai": "501865",
-      "name": "Poynette Middle High School",
-      "city": "Poynette",
-      "state": "WI",
-      "zip": "53955",
-      "courses": 11
-    },
-    {
-      "ai": "501905",
-      "name": "Princeton Public School",
-      "city": "Princeton",
-      "state": "WI",
-      "zip": "54968",
-      "courses": 0
-    },
-    {
-      "ai": "501935",
-      "name": "Randolph School",
-      "city": "Randolph",
-      "state": "WI",
-      "zip": "53956",
-      "courses": 2
-    },
-    {
-      "ai": "502065",
-      "name": "Seneca Junior Senior High School",
-      "city": "Seneca",
-      "state": "WI",
-      "zip": "54654",
-      "courses": 2
     },
     {
       "ai": "502070",
@@ -46010,43 +41626,11 @@
       "courses": 4
     },
     {
-      "ai": "502110",
-      "name": "Shiocton School",
-      "city": "Shiocton",
-      "state": "WI",
-      "zip": "54170",
-      "courses": 2
-    },
-    {
-      "ai": "502115",
-      "name": "Shullsburg School",
-      "city": "Shullsburg",
-      "state": "WI",
-      "zip": "53586",
-      "courses": 7
-    },
-    {
-      "ai": "502125",
-      "name": "Siren School",
-      "city": "Siren",
-      "state": "WI",
-      "zip": "54872",
-      "courses": 0
-    },
-    {
       "ai": "502165",
       "name": "Spencer Public School",
       "city": "Spencer",
       "state": "WI",
       "zip": "54479",
-      "courses": 3
-    },
-    {
-      "ai": "502180",
-      "name": "Spring Valley Middle High School",
-      "city": "Spring Valley",
-      "state": "WI",
-      "zip": "54767",
       "courses": 3
     },
     {
@@ -46058,60 +41642,12 @@
       "courses": 7
     },
     {
-      "ai": "502200",
-      "name": "Stockbridge School",
-      "city": "Stockbridge",
-      "state": "WI",
-      "zip": "53088",
-      "courses": 0
-    },
-    {
-      "ai": "502210",
-      "name": "Stratford Junior Senior High School",
-      "city": "Stratford",
-      "state": "WI",
-      "zip": "54484",
-      "courses": 5
-    },
-    {
-      "ai": "502280",
-      "name": "Tigerton Junior Senior High School",
-      "city": "Tigerton",
-      "state": "WI",
-      "zip": "54486",
-      "courses": 0
-    },
-    {
-      "ai": "502310",
-      "name": "Turtle Lake Middle High School",
-      "city": "Turtle Lake",
-      "state": "WI",
-      "zip": "54889",
-      "courses": 7
-    },
-    {
-      "ai": "502345",
-      "name": "Wabeno Junior Senior High School",
-      "city": "Wabeno",
-      "state": "WI",
-      "zip": "54566",
-      "courses": 1
-    },
-    {
       "ai": "502353",
       "name": "Kettle Moraine School for Arts and Perfromance",
       "city": "Wales",
       "state": "WI",
       "zip": "53183",
       "courses": 7
-    },
-    {
-      "ai": "502365",
-      "name": "Washington Island School",
-      "city": "Washington Island",
-      "state": "WI",
-      "zip": "54246",
-      "courses": 0
     },
     {
       "ai": "502370",
@@ -46154,36 +41690,12 @@
       "courses": 0
     },
     {
-      "ai": "502420",
-      "name": "Wausaukee School",
-      "city": "Wausaukee",
-      "state": "WI",
-      "zip": "54177",
-      "courses": 1
-    },
-    {
       "ai": "502435",
       "name": "Wauzeka Steuben School",
       "city": "Wauzeka",
       "state": "WI",
       "zip": "53826",
       "courses": 9
-    },
-    {
-      "ai": "502440",
-      "name": "Webster Middle High School",
-      "city": "Webster",
-      "state": "WI",
-      "zip": "54893",
-      "courses": 0
-    },
-    {
-      "ai": "502480",
-      "name": "Westfield Area Middle High School",
-      "city": "Westfield",
-      "state": "WI",
-      "zip": "53964",
-      "courses": 6
     },
     {
       "ai": "502495",
@@ -46194,14 +41706,6 @@
       "courses": 5
     },
     {
-      "ai": "502530",
-      "name": "Wild Rose Middle High School",
-      "city": "Wild Rose",
-      "state": "WI",
-      "zip": "54984",
-      "courses": 3
-    },
-    {
       "ai": "502534",
       "name": "Faith Christian School",
       "city": "Williams Bay",
@@ -46210,28 +41714,12 @@
       "courses": 6
     },
     {
-      "ai": "502535",
-      "name": "Williams Bay Junior Senior High School",
-      "city": "Williams Bay",
-      "state": "WI",
-      "zip": "53191",
-      "courses": 11
-    },
-    {
       "ai": "502540",
       "name": "Wilmot Union High School",
       "city": "Wilmot",
       "state": "WI",
       "zip": "53192",
       "courses": 16
-    },
-    {
-      "ai": "502555",
-      "name": "Winter School",
-      "city": "Winter",
-      "state": "WI",
-      "zip": "54896",
-      "courses": 3
     },
     {
       "ai": "502590",
@@ -46490,14 +41978,6 @@
       "courses": 0
     },
     {
-      "ai": "491480",
-      "name": "Williamstown Middle High School",
-      "city": "Williamstown",
-      "state": "WV",
-      "zip": "26187",
-      "courses": 1
-    },
-    {
       "ai": "994999",
       "name": "West Virginia Home School",
       "city": "Charleston",
@@ -46570,28 +42050,12 @@
       "courses": 0
     },
     {
-      "ai": "510160",
-      "name": "Glenrock High School",
-      "city": "Glenrock",
-      "state": "WY",
-      "zip": "82637",
-      "courses": 0
-    },
-    {
       "ai": "510215",
       "name": "Kaycee High School",
       "city": "Kaycee",
       "state": "WY",
       "zip": "82639",
       "courses": 0
-    },
-    {
-      "ai": "510365",
-      "name": "Rock River School",
-      "city": "Rock River",
-      "state": "WY",
-      "zip": "82083",
-      "courses": 2
     },
     {
       "ai": "510381",

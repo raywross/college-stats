@@ -378,12 +378,14 @@ for the whole Ledger (2026-10-11).
   `ap_ledger: { year, ledger_id, ledger_name, courses, other }` (registered in `lib/hs-fields.ts` as source
   `ap-ledger`, vintage `ap-ledger`; `HS_VINTAGE_KEYS` and meta.json gained the key). Matching, there being no NCES id:
   names are normalized (abbreviations spelled out, "High School" and the like set aside, initials joined, the
-  city's own words set aside, a level word like "Junior" or "Middle" compared on its own), and a row matches a
+  city's own words set aside, a level word like "Junior" or "Middle" compared on its own, South Dakota's numbering
+  "- 01" and a K-12 grade span dropped), and a row matches a
   Ledger school in its state when the names agree exactly and they share a ZIP or a city, when they agree at 0.75 or
   better (Jaccard on the distinguishing words) and share the ZIP, when one name's words are a subset of the other's
   at 0.5 or better with the ZIP (0.6 with only the city), at 0.75 with only the city, or, the weak rule, when the
   row's words are all within the Ledger's at 0.25 or better in a ZIP that offers nothing else ("Taylor High School"
-  for "James E Taylor High School"). Ties break toward the Ledger record with courses (the Ledger keeps an old empty
+  for "James E Taylor High School"), or when the Ledger lists a town's one K-12 school by the town's name alone
+  ("Belt School", "Hebron Public School") and the row is the town's high school in the same ZIP. Ties break toward the Ledger record with courses (the Ledger keeps an old empty
   record beside the live one for some schools) and then the whole name; two directory rows that are one school
   listed twice both take it; anything still tied is ambiguous and left unmatched (reported, never guessed). Rows
   the Ledger doesn't list get `ap_ledger: null`.
@@ -398,14 +400,17 @@ for the whole Ledger (2026-10-11).
   route), name matching and each rule, the adapter's patches and report, the merge for an any-kind adapter, the row
   validator, and the offering precedence.
 - **First run (2026-10-11, Ledger year 2025–26):** 22,785 schools in the Ledger across the 50 states and DC, fetched
-  in about four hours with no failures. Matched to 17,065 of the 35,390 rows (15,614 exact, 298 by ZIP, 1,003 one
-  name within the other by ZIP, 20 by city, 25 within by city, 105 by the weak rule); 13,395 have at least one AP
-  course. Public: 14,149 of 27,815 rows matched (11,249 with a course), 2,923 of them schools CRDC has no count for.
-  Private: 2,916 of 7,575 rows matched (2,146 with a course), the first AP data for private schools on the site.
-  Median list 8 courses at public schools and 6 at private ones (90th percentile 23 and 21). Of the 11,226 rows with
-  both a CRDC count and a Ledger list, 56% agree within two courses, median difference 0 (the pilot's finding holds
+  in about four hours with no failures. Matched to 17,632 of the 35,390 rows (15,998 exact, 522 by ZIP, 961 one
+  name within the other by ZIP, 20 by city, 25 within by city, 106 by the weak rule); 13,655 have at least one AP
+  course. Public: 14,713 of 27,815 rows matched (11,507 with a course), 3,201 of them schools CRDC has no count for.
+  Private: 2,919 of 7,575 rows matched (2,148 with a course), the first AP data for private schools on the site.
+  Median list 7 courses at public schools and 6 at private ones (90th percentile 23 and 21). Of the 11,512 rows with
+  both a CRDC count and a Ledger list, 57% agree within two courses, median difference 0 (the pilot's finding holds
   at scale). 10 rows are ambiguous (duplicate directory rows for one school with different spellings, and three
-  Texas schools where a ninth-grade campus shares the ZIP) and 5,826 Ledger schools matched no row (2,549 with a
-  course): private schools PSS doesn't list, programs inside a larger school, and names the matcher can't
-  bridge ("Nrthn Valley Regional Demarest", "Liberal Arts and Science Academy" for "LASA"); `ledger/report.json`
-  lists them for an alias file later.
+  Texas schools where a ninth-grade campus shares the ZIP) and 5,259 Ledger schools matched no row (2,289 with a
+  course): charter campuses opened or grown to grade 12 since the 2023–24 directory (the Ledger has 63 IDEA schools
+  in Texas, the directory 39), private schools PSS doesn't list, programs inside a larger school, and names the
+  matcher can't bridge ("Nrthn Valley Regional Demarest", "Liberal Arts and Science Academy" for "LASA");
+  `ledger/report.json` lists them for an alias file later. The first merge matched 17,065; a second pass the next
+  day (2026-10-12) added 567 small-town schools whose Ledger name carries a level phrase ("Athens Junior Senior High
+  School" for "Athens High") or is the town's alone, and South Dakota's numbered names.

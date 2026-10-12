@@ -40,6 +40,10 @@ export function estimateInputFromProfile(profile: StudentProfileData | null, uni
       // scored here.
       weightedGpa: a?.weightedGpa ?? null,
       rankExpectation: a?.rankExpectation ?? null,
+      // Revision 3 (method/standing.md, rule 3): the target on the focus test and the graduation year, so the model
+      // can read the target until junior year ends. Passed as entered; the model decides (it knows the date).
+      testTarget: t && (t.focus === "sat" || t.focus === "act") && t.target !== null ? { kind: t.focus, score: t.target } : null,
+      gradYear: b?.gradYear ?? null,
     },
   };
 }

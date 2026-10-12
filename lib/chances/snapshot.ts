@@ -57,6 +57,11 @@ export interface SnapshotDetail {
    * entered, 0–1. Binned to 0.05 into the row's `completeness`; exported with the student's own snapshots, never shown.
    */
   completeness?: number | null;
+  /**
+   * Revision 3, rule 7: the state the estimate used (the student's own, else their high school's), recorded in the
+   * row's `state` when the student entered none.
+   */
+  stateUsed?: string | null;
 }
 
 /** What the estimate hands a snapshot: the result the student saw, and optionally the method's details. */
@@ -241,7 +246,7 @@ export function buildSnapshot({ input, estimate, offering, admitRate, studentGro
     sat_math: binTo(s.satMath, 10, 200, 800),
     act_math: binTo(s.actMath, 1, 1, 36),
     class_rank_pct: binTo(s.classRankPercentile, 1, 0, 100),
-    state: s.state && (STATE.test(s.state) || s.state === "OUTSIDE_US") ? s.state : null,
+    state: s.state && (STATE.test(s.state) || s.state === "OUTSIDE_US") ? s.state : detail?.stateUsed && STATE.test(detail.stateUsed) ? detail.stateUsed : null,
     majors: (s.majors ?? []).filter((m) => /^[0-9]{2}$/.test(m)).slice(0, 3),
     practice: s.practice === true,
     advanced_courses: advancedCount,

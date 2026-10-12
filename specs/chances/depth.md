@@ -159,3 +159,9 @@ the top-two rule, trajectory, the major-track slot, no names in snapshots).
   `courseThemes(tracks, activities)` finds course families where the track reads Deep or Steady and an activity of two
   or more years has the same `family` (else its catalog entry's); its `depth.theme.*` sentences name the theme in
   family words and suggest the missing half.
+- **Broad groups** (2026-10-12, [method Revision 3](method/standing.md#revision-3-the-estimate-reads-the-record-the-way-the-owner-does-2026-10-12)):
+  themes read three broad groups (STEM; humanities and social sciences; arts) from `data/reference/depth-groups.json`
+  instead of single course families: a group's courses read together by the track rules, and an activity belongs to
+  its family's groups (business in STEM and the social sciences; athletics, service, and faith in none). The
+  per-family tracks above still serve the major's checks. "This is connected to the major I want to study" is now
+  computed (`relatedToMajor` in `lib/chances/depth-groups.ts`); the stored checkbox is ignored.

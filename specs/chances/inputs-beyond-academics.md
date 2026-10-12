@@ -43,6 +43,10 @@ The profile has `classRankPercentile` (a number few students know). The form ask
   `/me`. Reason shown: "Some colleges weigh rank, and some states guarantee admission by rank."
 - Enters the estimate as the rank distance where C7 counts rank ([method](method/standing.md#the-distance-of-each-measure))
   and the guaranteed-admission checks (Texas top 5–10%, and the programs in `data/guaranteed-admission.json`).
+- The pick is the student's **perceived** standing, a proxy like weighted GPA (owner, 2026-10-12; method
+  [Revision 3](method/standing.md#revision-3-the-estimate-reads-the-record-the-way-the-owner-does-2026-10-12) rule 5).
+  A stored `no_rank` reads as unanswered in the estimate; the pick itself leaves the form with U16.
+- Without a state of residence, the estimate uses the high school's state and says so (Revision 3, rule 7).
 
 ## Awards
 `StudentProfile.awards: AwardEntry[]`, at most 6:

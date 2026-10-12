@@ -23,7 +23,7 @@ import { pct } from "../format.ts";
 import { bandColumn, GPA_BAND_EDGES } from "../planner/gpa-model.ts";
 import { tierForStudent } from "../selectivity-tier.ts";
 import { stateName } from "../states.ts";
-import { advancedGpa, emptyCoreAtTopLevel, isAdvancedKind, type CoreAtTopLevel } from "../student-profile.ts";
+import { courseMark, emptyCoreAtTopLevel, isAdvancedKind, markPoints, type CoreAtTopLevel } from "../student-profile.ts";
 import {
   gpaStanding,
   isOptionalPolicy,
@@ -52,6 +52,7 @@ import { gpaTopShare, isWeightedReporter } from "./reading.ts";
 import { rigorReading, type RigorResult } from "./rigor.ts";
 import type {
   CollegeHooks,
+  CourseEntry,
   EstimateNote,
   EstimatePool,
   EstimateResult,
@@ -67,7 +68,7 @@ import type {
 import type { AblationInput, SnapshotDetail } from "./snapshot.ts";
 
 /** Recorded with every result and every outcome snapshot (specs/chances/estimate.md "Changing the method"). */
-export const MODEL_VERSION = "20261012.3";
+export const MODEL_VERSION = "20261012.4";
 
 /**
  * The second version's reading constants that the third keeps: GPA crowding, which colleges' class-rank tiers count,
@@ -168,6 +169,18 @@ export const ODDS_V3 = {
   ultraAdvancedCount: 3,
   /** Revision 2, Ultra selective: the advanced courses' unweighted average at least this. */
   ultraAdvancedGpa: 3.7,
+  /**
+   * Revision 3 (2026-10-12), rule 1: "APs are graded on a scale of 1 to 5." A completed course's exam score read as a
+   * grade on the 4-point scale for the advanced-course grades signal (the better of it and the letter grade).
+   */
+  examPoints: {
+    ap: { 5: 4, 4: 3.7, 3: 3, 2: 2, 1: 1 },
+    ib: { 7: 4, 6: 3.7, 5: 3.3, 4: 3, 3: 2, 2: 1, 1: 1 },
+  } as { ap: Record<number, number>; ib: Record<number, number> },
+  /** Revision 3, rule 4: advanced courses can't be taken before 10th grade, so no advanced-course check reads 9th. */
+  firstAdvancedYear: 10,
+  /** Revision 3, rules 3 and 4: junior year ends on this day (month-day) of the year before graduation. */
+  juniorYearEnds: "06-30",
 } as const;
 
 /** Which rank nudge applies (Revision 2). */
@@ -215,6 +228,104 @@ export interface ModelInput {
   grade?: number | null;
   /** The list row's legacy, recruited, and interest inputs for this college; absent reads as NO_HOOKS. */
   hooks?: CollegeHooks | null;
+  /**
+   * Revision 3, rule 7: the student's high school's state (USPS), used when the student hasn't entered a state of
+   * residence (lib/chances/estimate.ts reads it from the high school record, else a public id's FIPS prefix).
+   */
+  schoolState?: string | null;
+  /** The day the estimate is made (YYYY-MM-DD; today when absent): whether junior year is over (rules 3 and 4). */
+  asOf?: string | null;
+}
+
+/** What Revision 3 read differently from what the student entered (for its sentences and the snapshot). */
+interface OwnerReading {
+  /** The high school's state, used because the student entered none (rule 7). */
+  stateFromSchool: string | null;
+  /** The target test score read in place of the actual one until junior year ends (rule 3). */
+  target: { kind: "sat" | "act"; score: number } | null;
+  /** The actual score the target stands in for (same test), or null when the student has none. */
+  actual: number | null;
+  /** Junior year isn't over yet (null when neither a graduation year nor a grade says). */
+  juniorOpen: boolean | null;
+}
+
+/**
+ * Revision 3, rules 3 and 4: whether the student is still before the end of junior year: by graduation year when
+ * known (through June 30 of the year before it), else by grade (11 or under); null when neither is known.
+ */
+export function juniorYearOpen(gradYear: number | null | undefined, grade: number | null | undefined, asOf: string): boolean | null {
+  if (typeof gradYear === "number" && Number.isInteger(gradYear)) return asOf <= `${gradYear - 1}-${ODDS_V3.juniorYearEnds}`;
+  if (typeof grade === "number") return grade <= 11;
+  return null;
+}
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * The student as Revision 3 reads them (owner, 2026-10-12): the target test score in place of a lower or missing
+ * actual one until junior year ends (rule 3), "My school doesn't rank" as unanswered (rule 5: the pick is the
+ * student's perceived standing, a proxy like weighted GPA), and the high school's state where the student entered none
+ * (rule 7). Everything downstream reads this student.
+ */
+function ownerReading(input: ModelInput): { input: ModelInput; reading: OwnerReading } {
+  const s = input.student;
+  const juniorOpen = juniorYearOpen(s.gradYear ?? null, input.grade ?? null, input.asOf ?? todayIso());
+  let test = s.test;
+  let target: OwnerReading["target"] = null;
+  const t = s.testTarget ?? null;
+  if (juniorOpen === true && t && (!test || (test.kind === t.kind && t.score > test.score))) {
+    test = { kind: t.kind, score: t.score };
+    target = test;
+  }
+  const school = input.schoolState && /^[A-Z]{2}$/.test(input.schoolState) ? input.schoolState : null;
+  const stateFromSchool = !s.state && school ? school : null;
+  const student: EstimateStudent = {
+    ...s,
+    test,
+    state: s.state ?? stateFromSchool,
+    classStanding: s.classStanding === "no_rank" ? null : (s.classStanding ?? null),
+  };
+  const actual = target && s.test && s.test.kind === target.kind ? s.test.score : null;
+  return { input: { ...input, student }, reading: { stateFromSchool, target, actual, juniorOpen } };
+}
+
+/** Rule 1: a completed advanced course's exam score as a 4-point grade (AP 1–5, IB 1–7), or null without one. */
+function examGradePoints(c: CourseEntry): number | null {
+  if (c.exam === null || c.exam === undefined) return null;
+  const table = c.kind === "ap" ? ODDS_V3.examPoints.ap : c.kind === "ib_hl" || c.kind === "ib_sl" ? ODDS_V3.examPoints.ib : null;
+  return table ? (table[c.exam] ?? null) : null;
+}
+
+/** Rule 1: a completed advanced course's grade: the better of its letter grade and its exam score's reading. */
+function completedGradePoints(c: CourseEntry): number | null {
+  const letter = markPoints(courseMark(c));
+  const exam = examGradePoints(c);
+  if (letter === null) return exam;
+  if (exam === null) return letter;
+  return Math.max(letter, exam);
+}
+
+const mean = (xs: readonly number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+/**
+ * Rule 1, the advanced-course grades signal at an Ultra selective college: completed courses read by the better of
+ * the letter grade and the exam score; a course in progress has no grade yet and never counts against the student
+ * (its semester grades are read only where they raise the average); with nothing completed, the signal passes.
+ * `ungraded`: a completed course has neither a letter grade nor an exam score, and nothing else meets the bar.
+ */
+function advancedGrades(courses: readonly CourseEntry[]): { pass: boolean; ungraded: boolean } {
+  const adv = courses.filter((c) => isAdvancedKind(c.kind));
+  const taken = adv.filter((c) => c.status === "taken");
+  const done = taken.map(completedGradePoints).filter((p): p is number => p !== null);
+  const now = adv
+    .filter((c) => c.status === "in_progress")
+    .map((c) => markPoints(courseMark(c)))
+    .filter((p): p is number => p !== null);
+  const bar = ODDS_V3.ultraAdvancedGpa - 1e-9;
+  if (done.length > 0) return { pass: Math.max(mean(done), now.length > 0 ? mean([...done, ...now]) : 0) >= bar, ungraded: false };
+  if (now.length > 0 && mean(now) >= bar) return { pass: true, ungraded: false };
+  if (taken.length > 0) return { pass: false, ungraded: true };
+  return { pass: true, ungraded: false };
 }
 
 /** Switches for the season measurements (method/outcomes.md "Each new input separately"). */
@@ -537,6 +648,10 @@ interface Fixed {
   /** Whether the college weighs rigor or GPA (the weighted-GPA nudge's gate). */
   rigorNudgeOpen: boolean;
   mWeighted: number;
+  /** Revision 3, rule 8: an Ultra selective college in the top band (`selectivity.band`), for this student's pool. */
+  topBand: boolean;
+  /** Rule 8's standouts apart from the test: national or state recognition, or the top of the class. */
+  standout: boolean;
 }
 
 /** The Ultra selective rule's signals apart from the test: all met, and the ones the student hasn't entered. */
@@ -594,7 +709,7 @@ function weightedMultiplier(g: WeightedGap | null): number {
   return steps.find(([min]) => g.gap >= min - 1e-9)?.[1] ?? 1;
 }
 
-function fixedPart(input: ModelInput, student: StandingStudent, without: Without): Fixed {
+function fixedPart(input: ModelInput, student: StandingStudent, without: Without, owner: OwnerReading): Fixed {
   const { school } = input;
   const s = input.student;
   const hooks = input.hooks ?? NO_HOOKS;
@@ -724,14 +839,15 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
   const rigorNudgeOpen = gpaWeighs.counts || rigorWeighs.counts;
   const gap = weightedGapOf(s);
   const mWeighted = without.rigor || !rigorNudgeOpen ? 1 : weightedMultiplier(gap);
-  const themes = courseThemes(tracks, activityList);
+  const themes = courseThemes({ courses: s.courses, coreAtTopLevel: core, activities: activityList });
   const themeOpen = depthRating !== null && C7_AT_LEAST_CONSIDERED.has(depthRating);
   const themeCount = themes.themes.length;
   const mTheme = without.depth || !themeOpen || themeCount === 0 ? 1 : themeCount >= 2 ? ODDS_V3.theme.two : ODDS_V3.theme.one;
 
   // Revision 1, completeness: the inputs this college weighs (C7, else the federal factors, as read above), and which
   // the student entered. A test is expected where the college requires one, or weighs one the student has; a test the
-  // student doesn't have at a test-optional college isn't a gap. "My school doesn't rank" counts as an answer.
+  // student doesn't have at a test-optional college isn't a gap. "My school doesn't rank" is unanswered
+  // (Revision 3, rule 5; ownerReading clears it).
   const policy = input.standing.testPolicy;
   const testExpected = policy !== "not-considered" && !testsUnweighed(school, input.standing) && f?.test_scores !== "not_considered" && (isRequiredPolicy(policy) || s.test !== null);
   const expected: Record<CompletenessKind, boolean> = {
@@ -774,7 +890,7 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
   check(reading === "most" || reading === "much", reading === null ? "courses" : reading === "cant_place" ? "high_school" : null);
   const standingPick = s.classStanding ?? null;
   const topStanding = standingPick === "top1" || standingPick === "top5" || (s.classRankPercentile !== null && s.classRankPercentile <= ULTRA_RANK_TOP);
-  check(standingPick === "no_rank" || topStanding, rankAnswered ? null : "class_rank");
+  check(topStanding, rankAnswered ? null : "class_rank");
   const rounded = activities.reading === "focused" || activities.reading === "building" || activities.recognition === 1 || activities.recognition === 2;
   check(rounded, present.activities ? null : "activities");
 
@@ -784,21 +900,35 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
   const extra: ElitePiece[] = [];
   const deep = activities.reading === "focused" || activities.reading === "building";
   check(deep && themeCount > 0, present.activities ? null : "activities");
+  // Revision 3, rule 4: no advanced-course check reads 9th grade (they can't be taken before 10th), so consistency
+  // runs from 10th or the first advanced course, whichever is later, through now; before junior year ends, senior
+  // year is assumed to continue at junior year's number of advanced courses (a count, never a grade).
   const advanced = s.courses.filter((c) => isAdvancedKind(c.kind));
   const sofar = advanced.filter((c) => c.status !== "planned").map((c) => c.year as number);
   const now = input.grade ?? (sofar.length > 0 ? Math.max(...sofar) : null);
   const advYears = new Set(advanced.map((c) => c.year as number));
-  const first = advYears.size > 0 ? Math.min(...advYears) : null;
+  const first = advYears.size > 0 ? Math.max(ODDS_V3.firstAdvancedYear, Math.min(...advYears)) : null;
   const skipped: number[] = [];
   if (first !== null && now !== null) for (let y = first; y <= now; y++) if (!advYears.has(y)) skipped.push(y);
-  const steadyAdvanced = advanced.length >= ODDS_V3.ultraAdvancedCount && skipped.length === 0;
+  const inYear = (y: number) => advanced.filter((c) => c.year === y).length;
+  const projected = owner.juniorOpen === true ? Math.max(0, inYear(11) - inYear(12)) : 0;
+  const steadyAdvanced = advanced.length + projected >= ODDS_V3.ultraAdvancedCount && skipped.length === 0;
   check(steadyAdvanced, null);
   if (!steadyAdvanced && advanced.length > 0 && skipped.length === 1 && skipped[0] === now) extra.push("this_year_courses");
-  const advGpa = advancedGpa(s.courses);
-  check(advGpa !== null && advGpa >= ODDS_V3.ultraAdvancedGpa - 1e-9, null);
-  if (advGpa === null && advanced.some((c) => c.status === "taken")) extra.push("advanced_grades");
+  // Revision 3, rule 1: exam scores are grades; courses in progress never count against.
+  const grades = advancedGrades(s.courses);
+  check(grades.pass, null);
+  if (grades.ungraded) extra.push("advanced_grades");
+
+  // Revision 3, rule 8 (owner, 2026-10-12): at the top band of Ultra selective, Reach also takes one standout. The
+  // test's (at or above the 75th percentile, a junior's target included) is read with the score.
+  const topBand = tier === "elite" && school.selectivity?.band === "top";
+  const topOfClass = s.rankExpectation === "valedictorian" || s.rankExpectation === "salutatorian" || s.classStanding === "top1" || (s.classRankPercentile !== null && s.classRankPercentile <= 1);
+  const standout = activities.recognition === 1 || activities.recognition === 2 || topOfClass;
 
   return {
+    topBand,
+    standout,
     pool,
     tier,
     tierPool,
@@ -902,6 +1032,8 @@ interface Decision {
   /** A cap or floor set the level, so `closeness` is null. */
   set: boolean;
   open: boolean;
+  /** Revision 3, rule 8: a top-band college and none of its standouts (the sentence names them). */
+  noStandout: boolean;
 }
 
 function decide(f: Fixed, score: ScorePart): Decision {
@@ -938,7 +1070,12 @@ function decide(f: Fixed, score: ScorePart): Decision {
     consistencyMissing.push("test");
   }
 
-  const base = { d, dEff, consistent, consistencyMissing };
+  // Revision 3, rule 8: the top band needs one standout too: the test at or above the college's 75th percentile (the
+  // score read, so a junior's target counts), national or state recognition, or the top of the class.
+  const noStandout = f.topBand && !f.standout && !(score.d !== null && score.d >= 1 - 1e-9);
+  if (noStandout) consistent = false;
+
+  const base = { d, dEff, consistent, consistencyMissing, noStandout };
   if (f.pool.kind === "guaranteed") return { ...base, level: "safe", label: "guaranteed", odds: null, set: true, open: false };
   const rate = f.pool.rate;
   if (rate === null) return { ...base, level: "safe", label: null, odds: null, set: true, open: true };
@@ -952,16 +1089,16 @@ function decide(f: Fixed, score: ScorePart): Decision {
 }
 
 /** One college's full evaluation (with the switches the measurements use). */
-function evaluate(input: ModelInput, without: Without = {}) {
+function evaluate(input: ModelInput, reading: OwnerReading, without: Without = {}) {
   const student = standingStudentOf(input.student);
-  const fixed = fixedPart(input, student, without);
+  const fixed = fixedPart(input, student, without, reading);
   const score = scorePart(student, input);
   const decision = decide(fixed, score);
-  return { student, fixed, score, decision };
+  return { student, fixed, score, decision, reading };
 }
 type Evaluation = ReturnType<typeof evaluate>;
 
-/** The fewest points on the student's own test that raise the level through the method (caps respected). */
+/** The fewest points on the student's own test that raise the level through the method (caps respected); from the target while it's read. */
 function moveUp(input: ModelInput, ev: Evaluation): EstimateResult["moveUp"] {
   const { student, fixed, decision } = ev;
   if (!student.test || !decision.level || decision.level === "safe" || decision.label === "guaranteed" || decision.open) return null;
@@ -970,7 +1107,8 @@ function moveUp(input: ModelInput, ev: Evaluation): EstimateResult["moveUp"] {
   const now = LEVEL_RANK[decision.level];
   for (let sc = score + TEST_STEP[kind]; sc <= TEST_MAX[kind]; sc += TEST_STEP[kind]) {
     const next = decide(fixed, scorePart({ ...student, test: { kind, score: sc } }, input)).level;
-    if (next && LEVEL_RANK[next] > now) return { points: sc - score, to: next, score: sc };
+    // Revision 3: while the target stands in for the score, the points count from the actual score the student has.
+    if (next && LEVEL_RANK[next] > now) return { points: sc - (ev.reading.actual ?? score), to: next, score: sc };
   }
   return null;
 }
@@ -1049,15 +1187,20 @@ function explain(input: ModelInput, ev: Evaluation, ed: ReturnType<typeof edVerd
   } else if (decision.label === "elite") {
     notes.push(note("estimate.elite", {}, TIER_FIELD[f.tierPool]));
     fact(TIER_FIELD[f.tierPool]);
+    // Revision 3, rule 8: what would lift it at the very top, in words only.
+    if (decision.noStandout) notes.push(note("estimate.top_band"));
   }
   const position = summaryOf(decision.d);
   if (position) notes.push(note("estimate.academics", { position: noteText(note(`estimate.position.${position}`)) }));
   if (f.pool.kind !== "guaranteed" && f.pool.rate !== null && primary) notes.push(note("estimate.pool", { pool: noteText(primary) }, primary.cite ?? f.pool.field));
   fact(f.pool.rate !== null || f.pool.kind === "guaranteed" ? f.pool.field : null);
+  // Revision 3, rule 7: the high school's state stands in for the student's own, and the sentence says so.
+  if (ev.reading.stateFromSchool) notes.push(note("estimate.state_from_school", { state: stateName(ev.reading.stateFromSchool) }));
   // A tier that capped the level is a cited fact beside it.
   if (f.tier && f.tier !== "elite" && decision.set && decision.label === null && !decision.open) fact(TIER_FIELD[f.tierPool]);
 
-  // The score.
+  // The score (Revision 3, rule 3: the target, said as one, until junior year ends).
+  if (ev.reading.target) notes.push(note("estimate.test_target", { test: TEST_LABEL[ev.reading.target.kind], score: ev.reading.target.score }));
   notes.push(...score.notes);
   if (score.read) {
     fact(scoreField(score.read.kind));
@@ -1301,7 +1444,8 @@ function listWords(words: string[]): string {
  * check, the distance the odds read after completeness, and completeness itself.
  */
 export function stageOneReadings(input: ModelInput): { d: number | null; dEff: number | null; completeness: number } {
-  const ev = evaluate(input);
+  const { input: read, reading } = ownerReading(input);
+  const ev = evaluate(read, reading);
   return { d: ev.decision.d, dEff: ev.decision.dEff, completeness: ev.fixed.completeness };
 }
 
@@ -1316,8 +1460,9 @@ export function modelEstimate(input: ModelInput): EstimateResult {
  * readings (no names), and the level with each input switched off. Server-only; the detail never goes into an API
  * response or a page.
  */
-export function modelEstimateWithDetail(input: ModelInput): { result: EstimateResult; detail: SnapshotDetail } {
-  const ev = evaluate(input);
+export function modelEstimateWithDetail(raw: ModelInput): { result: EstimateResult; detail: SnapshotDetail } {
+  const { input, reading } = ownerReading(raw);
+  const ev = evaluate(input, reading);
   const ed = edVerdict(input, ev);
   const ex = explain(input, ev, ed);
   const dec = ev.decision;
@@ -1336,7 +1481,7 @@ export function modelEstimateWithDetail(input: ModelInput): { result: EstimateRe
     pool: poolOf(ev.fixed.pool),
     modelVersion: MODEL_VERSION,
   };
-  const levelWithout = (k: AblationInput) => evaluate(input, { [k]: true }).decision.level;
+  const levelWithout = (k: AblationInput) => evaluate(input, reading, { [k]: true }).decision.level;
   const detail: SnapshotDetail = {
     position: summaryOf(dec.d),
     baseRateKind: ev.fixed.pool.kind,
@@ -1346,6 +1491,7 @@ export function modelEstimateWithDetail(input: ModelInput): { result: EstimateRe
     hiddenOdds: dec.odds,
     selectivityTier: ev.fixed.tier,
     completeness: ev.fixed.completeness,
+    stateUsed: input.student.state,
     depth: depthSnapshot(ev.fixed.tracks, input.student.activities ?? [], ev.fixed.activities),
     without: {
       residency: levelWithout("residency"),

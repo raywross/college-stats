@@ -390,6 +390,11 @@ export interface SchoolSelectivity {
   tier: SelectivityTier | null;
   in_state?: SelectivityTier;
   out_of_state?: SelectivityTier;
+  /**
+   * "top" for an Ultra selective college in the top band (method/standing.md "Revision 3", rule 8: its score for all
+   * applicants at least TOP_BAND_SCORE in lib/selectivity.ts); absent otherwise. A word only, never the score.
+   */
+  band?: "top";
   year?: string;
 }
 

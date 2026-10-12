@@ -466,3 +466,196 @@ without a family, a catalog pick's family; each new Ultra selective condition al
 row, and the database (a PGlite test shows the column written and updated, and that the five-levels function body
 leaves it null). The leak guards name the new constants (`rankNudge`, `weightedGap`, `M_theme`, …) and check no result
 carries any of their values; each new rule was removed in turn and its test failed.
+
+## Revision 3: the estimate reads the record the way the owner does (2026-10-12)
+`MODEL_VERSION 20261012.4`, in `lib/chances/model.ts` (constants in `ODDS_V3`, the reading in `ownerReading`),
+`lib/chances/depth.ts` (`groupTrack`, `courseThemes`, `activityFamilyMatch`), `lib/chances/depth-groups.ts` and
+`data/reference/depth-groups.json` (checked by `npm run check:depth-groups` in verify), pinned in
+`tests/chances-model.test.mts` and `tests/chances-owner-reading.test.mts`. Written after the owner entered a real
+junior (class of 2028) they expect to be a Reach at Vanderbilt; Revision 2 said High reach because it read APs with
+exam scores but no letter grades as ungraded and because a business club (DECA) couldn't line up with any course.
+
+### The owner's words, as given
+1. "APs are graded on a scale of 1 to 5."
+2. "Business has ties in with math, statistics, computer science. We should more loosely have concepts of STEM vs
+   arts… a good way to loosely group will make it easier to draw a depth conclusion; that's how a student's essays and
+   recommendations tie things together, and we don't have those."
+3. "For a student at this point in the timeline, we should assume their target ACT or SAT score is the score. Once
+   they've completed junior year we should use their actual score."
+4. "We should assume for a junior that they'll continue on with a trend on their APs." "APs can't be taken until
+   sophomore year, so we shouldn't penalize not starting until then."
+5. "We're not asking for actual, we're asking for their perceived place amongst their peers… a proxy in a similar way
+   as weighted GPA."
+6. "Connected to my major" is computed, not asked.
+7. The state comes from the high school when the student hasn't entered one.
+8. "A student like Hayden would be a reach at Vandy, but Harvard and Princeton would still be a high reach. Harvard and
+   Princeton are at the very top of our schools, whereas Vanderbilt is somewhere closer to the middle of the top."
+
+### Rule 1: exam scores are grades
+For the Ultra selective "grades in advanced courses" signal (Revision 2), a **completed** advanced course reads the
+better of its letter grade and its exam score:
+
+| AP exam | 5 | 4 | 3 | 2 | 1 |
+|---|---|---|---|---|---|
+| Reads as | 4.0 | 3.7 | 3.0 | 2.0 | 1.0 |
+
+| IB exam | 7 | 6 | 5 | 4 | 3 | 2, 1 |
+|---|---|---|---|---|---|---|
+| Reads as | 4.0 | 3.7 | 3.3 | 3.0 | 2.0 | 1.0 |
+
+- **The better reading** where both exist: a B+ with a 5 reads 4.0, an A with a 2 reads 4.0. The owner's sentence
+  makes the exam a grade, not a check on one; taking the better one never punishes a student for a hard exam or a hard
+  grader, matching "encourage, don't grade".
+- **Courses in progress and planned have no grade yet and never count against.** A semester grade in a course in
+  progress is read only where it raises the average of the completed ones; with nothing completed and nothing graded,
+  the signal passes. A completed course with neither a letter grade nor an exam score is still a gap
+  ("advanced-course grades").
+- The signal is `max(mean(completed), mean(completed + in-progress semester grades)) ≥ 3.7`.
+- Scope: only this signal. The rigor reading (`rigor.ts`), the track's grades, and the snapshot's `advanced_gpa`
+  keep reading letter grades, as before. IB exam scores aren't stored yet (the profile keeps exam scores for AP only,
+  1–5); the IB table is ready for when they are.
+
+### Rule 2: broad groups for depth themes
+`data/reference/depth-groups.json`, reviewed, with its sources (the College Board's AP categories, meta-majors as
+WestEd and Florida colleges define them, the federal STEM designated-degree list, the NSF's science-and-engineering
+fields, the Advance CTE career clusters, the Common App's activity types). The groups:
+
+| Group | Courses (by subject family) | Activity families |
+|---|---|---|
+| **STEM** | math, science, computer science | math, science, cs, engineering, health, business |
+| **Humanities & social sciences** | English, history and social science, world language | English, history, language, media, leadership, business |
+| **Arts** | arts | arts |
+| *(outside every group)* | | athletics, service, faith |
+
+Courses placed by name (each with its reason in the file):
+
+| Course | Groups | Why |
+|---|---|---|
+| AP Macroeconomics, AP Microeconomics | Humanities & social sciences, STEM | A social science (College Board, NSF), with a quantitative side (econometrics is on the federal STEM list) that business shares with math |
+| AP Psychology | Humanities & social sciences, STEM | College Board files it with the social sciences; the NSF counts psychology a science, and cognitive and research psychology are on the federal STEM list |
+| AP Statistics | STEM, Humanities & social sciences | College Board's Math and Computer Science; also the shared method of the social sciences and business |
+| AP Art History | Arts, Humanities & social sciences | Read and written like a history course |
+| AP Seminar | Humanities & social sciences | Argument and writing across subjects |
+| AP Research | Humanities & social sciences, STEM | A research project in any field |
+| AP Business with Personal Finance | STEM, Humanities & social sciences | Business, which the owner groups with both |
+
+**A theme is now a group** whose courses, **taken together**, read at least Steady by the track rules (years with an
+advanced or honors course, plus the checked core years; Deep is three or more years, rising, with a senior-year
+course; Steady two or more), **and** that at least one activity of two or more years belongs to (its `family`, else
+its catalog entry's). One activity can make two themes (a business club in STEM and the social sciences). The
+per-family course tracks stay for the major's checks (the major-track slot, the track sentences); only themes use
+groups. `M_theme` (one 1.10, two or more 1.18) and the Ultra selective depth condition read the group themes.
+Sentences (`depth.theme.*`) now name groups: "Your courses and activities line up in STEM and the humanities and
+social sciences: depth in one area, in and out of class."
+
+### Rule 3: the target score until junior year ends
+`EstimateStudent` gains `testTarget` (the profile's `tests.target` on `tests.focus`) and `gradYear`
+(`basics.gradYear`); `estimateInputFromProfile` passes both as entered and `estimate-request.ts` validates them (the
+target within its test's range, the year 2000–2100). The model resolves them (it knows the date, `ModelInput.asOf`,
+today by default):
+
+```
+junior year open = asOf ≤ June 30 of (gradYear − 1)      else, without a graduation year, grade ≤ 11
+test read        = target   when junior year is open and the target is on the same test and higher than the score
+                                 (or there is no score)
+                 = the actual score otherwise
+```
+
+Every reading of the test (the range position, the consistency check, completeness, the Ultra selective test
+signal) reads the target then, and the sentence says so: "Reading your target ACT of 34 until junior year ends;
+after that, your actual score." (`estimate.test_target`). The move-up keeps searching from the score read but counts
+its points from the actual score ("6 more points" from a 29, not from the 34). Snapshots keep the actual score.
+
+### Rule 4: a junior's trend, and nothing before 10th grade
+- Consistency runs from 10th grade or the first advanced course, whichever is later, through now (`firstAdvancedYear`
+  10). Revision 2 already started at the first advanced course, so this only makes explicit that 9th grade is never
+  required.
+- Before junior year ends (rule 3's test), the count assumes senior year continues at junior year's number:
+  `count + max(0, count(11th) − count(12th))`, against the same `ultraAdvancedCount` 3. A count only: no projected
+  grades, no projected years.
+
+### Rule 5: class standing is perceived
+The pick is the student's own read of where they stand, used as a proxy the way weighted GPA is: its percentile feeds
+the rank distance and the nudges as before. "My school doesn't rank" is leaving the form (U16); a stored `no_rank` now
+reads as **unanswered** (completeness counts it missing where the college weighs rank, and the Ultra selective
+class-standing signal is missing, not passed). The Ultra selective bar stays top 5% or better.
+
+### Rule 6: connected to the major, computed
+The stored `relatedToMajor` is ignored. An activity is connected when there is no intended major, when its group or
+the major's isn't known, or when they share a group (the major's groups are its expected subjects' groups,
+major-course-expectations.json). Athletics, service, and faith are never connected. A connected activity of three or
+more years still adds a year to the major's track in its course family: its own family when that's a course family
+the major expects; business to math; with no family or an engineering or health one, the old kind rule (research →
+the major's science family, a club → computer science or science). It stays a nudge.
+
+### Rule 7: the high school's state
+`estimateContext` reads the student's high school's state (its record, else a public NCES id's FIPS prefix) and the
+model uses it where the student entered no state of residence: the pool's residency rate and the tier's pool both
+read it, the sentence says "Using your high school's state, New York; add yours if different."
+(`estimate.state_from_school`), and `state` is not listed as missing. The snapshot's `state` column records the state
+used (`SnapshotDetail.stateUsed`) when the student entered none.
+
+### Rule 8: the top band of Ultra selective
+Ultra selective colleges whose [selectivity score](../selectivity-index.md) for all applicants is at least
+`TOP_BAND_SCORE` (90, in `lib/selectivity.ts`) form a **top band**: on 2026-10-12 Yale, Chicago, Harvard, Stanford,
+MIT, Princeton, and Penn (Brown is next at 89.6; Duke 87.6, Vanderbilt 85.2). The selectivity build stores it as a
+word beside the tier, `school.selectivity.band: "top"` (registered as `selectivity.band` in `lib/fields.ts`), never the
+score; a college enters at 90 and leaves only when its score falls the hysteresis band (2 points) below, as tiers do;
+`npm run check:selectivity` checks every band against the index.
+
+In the top band, **Reach** needs every Ultra selective condition (Revisions 1 and 2) **plus one standout**:
+
+| Standout | Passes |
+|---|---|
+| The test | The score read (a junior's target, rule 3) at or above the college's 75th percentile (`d_test ≥ 1`) |
+| Recognition | Tier 1 or 2 (national, or state and regional) from an activity or an award |
+| The top of the class | A valedictorian or salutatorian expectation, the Top 1% pick, or a typed rank in the top 1% |
+
+With none it is **High reach**, and the sentence names what would lift it, in words only: "At the very top colleges,
+Reach also takes one standout: a test score at the top of their range, a state or national honor, or the top of your
+class." (`estimate.top_band`). The band reads the score for all applicants; it applies wherever the student's tier is
+Ultra selective. Floors (a recruited athlete's, a guarantee) still beat it.
+
+### Constants (`ODDS_V3`)
+| Name | Value |
+|---|---|
+| `TOP_BAND_SCORE` (`lib/selectivity.ts`) | 90 |
+| `examPoints.ap` | 5 → 4.0 · 4 → 3.7 · 3 → 3.0 · 2 → 2.0 · 1 → 1.0 |
+| `examPoints.ib` | 7 → 4.0 · 6 → 3.7 · 5 → 3.3 · 4 → 3.0 · 3 → 2.0 · 2, 1 → 1.0 |
+| `firstAdvancedYear` | 10 |
+| `juniorYearEnds` | 06-30 (of the year before graduation) |
+| Groups | `data/reference/depth-groups.json` |
+
+### Pinned examples, Revision 3
+| Student | College | Odds | Level | Change |
+|---|---|---|---|---|
+| The owner's junior: GPA 4.0, weighted above, top 5%, ACT 29 with a target of 34, class of 2028; APs in 10th grade with exams 4, 5, 5 and no letter grades, four in progress in 11th; tennis and flag football four years (captain), DECA four years (vice president, president), a job; no state, a New York high school | Vanderbilt-like, Ultra selective, 5.4%, ACT 34–35, test-optional | — | **Reach**, "Elite" | Was High reach: the exam scores read as grades (rule 1) and DECA lines up with STEM and the social sciences (rule 2: two themes). Without either, or with "doesn't rank" in place of top 5%, High reach. The target changes only the sentences at a test-optional college (the 29 below range reads as withheld); at a test-requiring one it is what keeps the record consistent, and after June 30, 2027 the 29 gives High reach |
+| The same junior | Harvard (top band, ACT 33–35, required) and Princeton (top band, 34–35) | — | **High reach**, with the top-band sentence | Rule 8: Ultra selective in the top band, and none of the standouts: the target 34 is under both 75th percentiles (35), only school-level recognition, top 5%. With a state honor, or a target of 35, Reach |
+| The same junior | Duke (Ultra selective, score 87.6, ACT 34–35) | — | **Reach** | Was High reach; not in the top band |
+| GPA 3.9, nine APs over 10th–12th, top 10%, Science Olympiad (3 years, science) | Elon at 25%, Selective | 48.3% → 53.1% | **Target** | New row: one theme (STEM) |
+| Same, Science Olympiad and math team (2 years, math) | same | 53.1% | **Target** | Revision 2's row (with "doesn't rank": Likely, 61.7%, two themes) moves: science and math are one group, and "doesn't rank" is unanswered (48.4%, Target) |
+| Same, Science Olympiad and debate (2 years, English) beside the English and history APs | same | 57.0% | **Likely** | New: STEM and the humanities, two themes; Target without depth |
+| Excellent record at an Ultra selective college, "my school doesn't rank" | Ultra selective | — | **High reach** | Was Reach (Revision 1's "doesn't rank passes"): rule 5 |
+| Excellent record, two advanced courses (10th, 11th), a junior | Ultra selective | — | **Reach** | Was High reach (fewer than three): rule 4 projects one more in senior year; a senior with the same two stays High reach |
+| Excellent record, exam scores of 4 and no letter grades | Ultra selective | — | **Reach** | Was High reach ("advanced-course grades" missing); threes read 3.0, High reach |
+
+Every other Revision 1 and Revision 2 row keeps its level and odds. The within-one-level check against the second
+version now completes a record with a class-standing pick (top quarter) where it used "doesn't rank".
+
+Across the 1,893 colleges (2026-10-12), against `20261012.3`, with `chances-build/analysis/impact.mts`'s three
+students (GPA and test only; a complete strong record; a complete average record): no college moves for any of them
+(none enters exam scores without grades, a business activity, a target, or "doesn't rank"; the complete strong record
+has a state-level honor, so the top band doesn't move it). The owner's junior moves at 39: 20 High reach → Reach (19)
+or Target (1), 7 Reach → Target, 8 Target → Likely, 1 Likely → Safe; the seven top-band colleges stay High reach
+(rule 8); 3 move down because the New York residency rate now applies (Illinois Urbana-Champaign Likely → Target;
+Florida Atlantic and Tennessee-Chattanooga Safe → Likely). Levels for the junior, before → after: High reach 27 → 7,
+Reach 10 → 22, Target 46 → 47, Likely 132 → 140, Safe 1,164 → 1,163.
+
+Tests: each rule on and off (exam readings and the better reading; in-progress grades never lowering; group tracks,
+business in two groups, AP Psychology in two; the target by date, by grade, only higher, only the same test, the
+move-up's points; the junior projection, and a senior without it; "doesn't rank" unanswered; computed connection;
+the high school's state and the snapshot; each top-band standout alone, a school-level honor and top 5% not, the
+target as the test; the band's build, its hysteresis, and its check). The groups file has its own check with a test that each kind of mistake
+is caught. The leak guards name the new constants (`examPoints`, `firstAdvancedYear`, `juniorYearEnds`, `TOP_BAND_SCORE`). Each rule was
+removed in turn and its tests failed (rule 4's 10th-grade start is the one exception: Revision 2 already started at
+the first advanced course, so removing it changes nothing).

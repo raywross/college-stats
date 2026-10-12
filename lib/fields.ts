@@ -695,6 +695,14 @@ export const FIELDS = {
     vintage: "ipeds-adm",
     derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from other states`, inputs: ["derived.admit_rate_out_of_state", ...SELECTIVITY_INPUTS] },
   },
+  // The top band of Ultra selective (method/standing.md "Revision 3", rule 8): a word the estimate reads, never shown.
+  "selectivity.band": {
+    label: "Quad's selectivity, top of Ultra selective",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+  },
   "selectivity.year": adm("Fall of the admit rate Quad's selectivity read"),
 
   /* ---- Computed at render time (lib/metrics.ts) ---- */

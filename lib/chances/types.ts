@@ -138,6 +138,13 @@ export interface EstimateStudent {
   weightedGpa?: number | null;
   /** Valedictorian or salutatorian, as the student expects it (an expectation: it's decided after admissions). */
   rankExpectation?: RankExpectation | null;
+  /**
+   * Revision 3 (method/standing.md, owner 2026-10-12): the score the student is aiming for on their focus test
+   * (profile `tests.target`), read in place of a lower or missing actual score until junior year ends.
+   */
+  testTarget?: { kind: "sat" | "act"; score: number } | null;
+  /** The student's high school graduation year (profile `basics.gradYear`): when junior year ends. */
+  gradYear?: number | null;
 }
 
 export interface EstimateInput {

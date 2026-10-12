@@ -418,8 +418,9 @@ export interface StudentProfileTests {
   practice: boolean;
   /**
    * The score the student is aiming for on the focus test (specs/planner/redesign/intake.md "Test"), or null. Kept only
-   * within the focus test's range; cleared when the focus test changes or is "none". Never read by the estimate: it
-   * drives the Scores tab's "A {target} would move N colleges up a group" line from each row's move-up.
+   * within the focus test's range; cleared when the focus test changes or is "none". Drives the Scores tab's "A
+   * {target} would move N colleges up a group" line from each row's move-up, and (method/standing.md "Revision 3",
+   * rule 3) the estimate reads it in place of a lower or missing score until junior year ends.
    */
   target: number | null;
   /**

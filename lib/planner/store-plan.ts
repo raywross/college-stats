@@ -4,8 +4,10 @@
  * picks (or hands back to the suggestion), the Dream, the numbers, the intake guide's one save, and a picked test date.
  * Groups are Quad's only (specs/planner/redesign/intake.md "Groups"), so there's no group action. Each one: sign in
  * and the entitlement check (`planner.tab`), the write with the caller's own session so row-level security decides,
- * then `syncAuto` (store the model's group and round on every `auto` row that changed) and `regenerate` (tasks follow
- * rounds and test dates). Returns `{ ok: true } | { ok: false; message }`.
+ * then `syncAndRegenerate` (one pass that both stores the model's group and round on every `auto` row that changed,
+ * and regenerates the tasks that follow rounds and test dates; U17 "faster saves" merged what used to be two
+ * sequential full passes — each with its own plan read and profile fetch — into one). Returns
+ * `{ ok: true } | { ok: false; message }`.
  *
  * A "use server" module exports only async functions (a const export breaks `next build`); the validation and write
  * sets are pure, in lib/planner/plan-writes.ts.
@@ -16,15 +18,15 @@ import { allowed, NOT_ALLOWED_MESSAGE } from "@/lib/entitlements";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { myHome } from "@/lib/home-store";
 import { profileFor, saveProfile } from "@/lib/student-profile-store";
-import { effectiveGradYear } from "@/lib/student-profile";
+import { effectiveGradYear, sanitizeProfile, type StudentProfileData } from "@/lib/student-profile";
 import type { ListRound } from "@/lib/list-rules";
-import { generatorInputFor, readPlan, todayIso, writeAutoWrites } from "./context";
+import { generatorInputFor, readPlan, todayIso, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView } from "./plan-view";
 import { planEstimates } from "./plan-estimates";
+import { generateTasks, mergeTasks } from "./tasks";
 import { applyNumbers, isUuid, parseNumbers, roundPatch, togglePlannedDate, type PlanNumbers } from "./plan-writes";
 import { applyIntake, parseIntakeSave, type IntakeSave } from "./intake";
 import { mergeCoursesForSave } from "@/lib/chances/courses";
-import { regenerate, setDream } from "./store";
 
 export type PlanWriteResult = { ok: true } | { ok: false; message: string };
 
@@ -48,52 +50,91 @@ function refresh() {
   revalidatePath("/household", "layout");
 }
 
-/** The suggestion sync for one list, with a session the caller already built. Returns rows changed. */
-async function syncWith(supabase: Supabase, listId: string): Promise<number> {
+/** A profile the caller just read or saved, so the pass below never re-fetches it from the database. */
+type KnownProfile = { studentId: string; profile: StudentProfileData };
+
+/**
+ * One list's plan, read once, then both the suggestion sync (lib/planner/plan-view.ts autoWrites: the model's group
+ * and round on every `auto` row that differs) and the task regeneration (lib/planner/tasks.ts mergeTasks) from that
+ * single read — instead of the two independent full passes this replaced (each its own readPlan, profile fetch, and
+ * generatorInputFor/planSchools build). The two sets of writes run in parallel; neither depends on the other's
+ * result. `known`, when given and for this list's own student, skips the profile fetch entirely (the caller already
+ * has it, usually because it just saved it). Returns how many rows changed across both. Never touches a `student`
+ * row, an applied or decided college's round, or a task whose source is gone (it's marked orphaned instead).
+ */
+async function syncAndRegenerate(supabase: Supabase, listId: string, known?: KnownProfile): Promise<number> {
   const plan = await readPlan(supabase, listId);
-  if (!plan || plan.items.length === 0 || plan.sourcesMissing) return 0;
+  if (!plan) return 0;
   let gradYear: number | null = null;
-  let profile = null;
+  let profile: StudentProfileData | null = null;
   if (plan.list.student_id) {
-    const [p, s] = await Promise.all([profileFor(plan.list.student_id), supabase.from("students").select("grad_year").eq("id", plan.list.student_id).maybeSingle()]);
-    const stored = (s.data as { grad_year: number | null } | null)?.grad_year ?? null;
-    gradYear = p ? effectiveGradYear(p.data.basics, stored) : stored;
-    profile = p?.data ?? null;
+    if (known && known.studentId === plan.list.student_id) {
+      const s = await supabase.from("students").select("grad_year").eq("id", plan.list.student_id).maybeSingle();
+      const stored = (s.data as { grad_year: number | null } | null)?.grad_year ?? null;
+      profile = known.profile;
+      gradYear = effectiveGradYear(profile.basics, stored);
+    } else {
+      const [p, s] = await Promise.all([profileFor(plan.list.student_id), supabase.from("students").select("grad_year").eq("id", plan.list.student_id).maybeSingle()]);
+      const stored = (s.data as { grad_year: number | null } | null)?.grad_year ?? null;
+      gradYear = p ? effectiveGradYear(p.data.basics, stored) : stored;
+      profile = p?.data ?? null;
+    }
   }
   const today = todayIso();
   const input = await generatorInputFor(plan, { gradYear, profile, home: await myHome(), today });
-  const estimates = await planEstimates(profile, plan.items, { gradYear, today, visits: plan.visits });
-  const writes = autoWrites(planView({ items: plan.items, schools: input.schools, profile, estimates, today }));
-  return writes.length > 0 ? writeAutoWrites(supabase, writes) : 0;
+
+  const jobs: Promise<number>[] = [];
+  if (plan.items.length > 0 && !plan.sourcesMissing) {
+    jobs.push(
+      (async () => {
+        const estimates = await planEstimates(profile, plan.items, { gradYear, today, visits: plan.visits });
+        const writes = autoWrites(planView({ items: plan.items, schools: input.schools, profile, estimates, today }));
+        return writes.length > 0 ? writeAutoWrites(supabase, writes) : 0;
+      })(),
+    );
+  }
+  const merge = mergeTasks(plan.tasks, generateTasks(input));
+  jobs.push(
+    (async () => {
+      const wrote = await writeMerge(supabase, listId, merge);
+      return wrote ? merge.upserts.length + merge.orphans.length : 0;
+    })(),
+  );
+  const totals = await Promise.all(jobs);
+  return totals.reduce((a, b) => a + b, 0);
 }
 
 /**
- * Stores the model's group and round on every `auto` row of a list that differs (lib/planner/plan-view.ts
- * autoWrites). Never touches a `student` row or an applied or decided college's round. Also runs on every plan open
- * for editors (lib/planner/load.ts). A reader who can't edit writes nothing.
+ * Stores the model's group and round on every `auto` row of a list that differs, and regenerates its tasks. Also
+ * runs on every plan open for editors (lib/planner/load.ts). A reader who can't edit writes nothing.
  */
 export async function syncAuto(listId: string): Promise<PlanWriteResult & { changed?: number }> {
   if (!isUuid(listId)) return { ok: false, message: FAILED };
   const r = await ready();
   if (!("supabase" in r)) return r;
   try {
-    return { ok: true, changed: await syncWith(r.supabase, listId) };
+    return { ok: true, changed: await syncAndRegenerate(r.supabase, listId) };
   } catch (err) {
     console.error(`planner: syncAuto failed: ${err instanceof Error ? err.message : String(err)}`);
     return { ok: false, message: FAILED };
   }
 }
 
-/** After a write: the suggestions, then the tasks. */
-async function followUp(supabase: Supabase, listIds: string[]): Promise<void> {
-  for (const id of listIds) {
-    try {
-      await syncWith(supabase, id);
-    } catch (err) {
-      console.error(`planner: syncAuto failed: ${err instanceof Error ? err.message : String(err)}`);
-    }
-    await regenerate(id);
-  }
+/**
+ * After a write: the suggestions and the tasks, for every affected list at once. `known`, when given, is the
+ * profile the caller just read or saved for `listIds`' student — passed through so `syncAndRegenerate` never
+ * re-reads from the database the profile the server action already has in memory.
+ */
+async function followUp(supabase: Supabase, listIds: string[], known?: KnownProfile): Promise<void> {
+  await Promise.all(
+    listIds.map(async (id) => {
+      try {
+        await syncAndRegenerate(supabase, id, known);
+      } catch (err) {
+        console.error(`planner: syncAuto failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }),
+  );
   refresh();
 }
 
@@ -118,24 +159,26 @@ export async function setPlanRound(itemId: string, round: ListRound | null): Pro
   return updateItem(itemId, patch, "setPlanRound");
 }
 
-/** Marks (or clears) the Dream with the built setDream, then re-syncs the starting rounds the Dream decides. */
+/**
+ * Marks (or clears) the Dream (the database itself moves the star off any other item: a trigger behind
+ * `list_items_one_dream_idx`), then re-syncs the starting rounds the Dream decides and the tasks that follow them —
+ * one combined pass (syncAndRegenerate), not the sync-then-regenerate-again chain this replaced.
+ */
 export async function setPlanDream(itemId: string, dream: boolean): Promise<PlanWriteResult> {
   if (!isUuid(itemId)) return { ok: false, message: FAILED };
-  const done = await setDream(itemId, Boolean(dream));
-  if (!done.ok) return done;
   const r = await ready();
   if (!("supabase" in r)) return r;
-  const { data } = await r.supabase.from("list_items").select("list_id").eq("id", itemId).maybeSingle();
-  const listId = (data as { list_id: string } | null)?.list_id;
-  if (listId) {
-    let changed = 0;
-    try {
-      changed = await syncWith(r.supabase, listId);
-    } catch (err) {
-      console.error(`planner: syncAuto failed: ${err instanceof Error ? err.message : String(err)}`);
-    }
-    // setDream regenerated already; only a round that moved since needs another pass.
-    if (changed > 0) await regenerate(listId);
+  const { data, error } = await r.supabase.from("list_items").update({ dream: Boolean(dream) }).eq("id", itemId).select("list_id");
+  if (error) {
+    console.error(`planner: setPlanDream failed: ${error.message}`);
+    return { ok: false, message: FAILED };
+  }
+  if (!data?.length) return { ok: false, message: NOT_EDITOR };
+  const listId = (data[0] as { list_id: string }).list_id;
+  try {
+    await syncAndRegenerate(r.supabase, listId);
+  } catch (err) {
+    console.error(`planner: syncAndRegenerate failed: ${err instanceof Error ? err.message : String(err)}`);
   }
   refresh();
   return { ok: true };
@@ -158,7 +201,10 @@ async function saveTheirProfile(studentId: string, change: (p: NonNullable<Await
   if (!next.ok) return next;
   const saved = await saveProfile(studentId, next.data);
   if (!saved.ok) return saved;
-  await followUp(r.supabase, await studentLists(r.supabase, studentId));
+  const lists = await studentLists(r.supabase, studentId);
+  // Sanitized exactly like saveProfile's own write, so this matches what the database now holds: the follow-up pass
+  // reads the student's grad year fresh (one small query) but never re-reads the profile itself.
+  await followUp(r.supabase, lists, { studentId, profile: sanitizeProfile(next.data) });
   return { ok: true };
 }
 

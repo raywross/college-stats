@@ -12,6 +12,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import * as nodeModule from "node:module";
+import { ACTIVITIES_MAX } from "../lib/chances/levels.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -212,14 +213,14 @@ test("the new student inputs are sanitized by the profile's own rules: activitie
     activities: [
       { id: "a1", name: "Soccer", kind: "sport", years: [9, 10, 11, 12], roles: { 12: "leader" }, hoursPerWeek: 12, recognition: 2, relatedToMajor: false },
       { id: "a2", name: "x".repeat(200), kind: "spying", years: [13], roles: {}, hoursPerWeek: 500, recognition: 9, relatedToMajor: "yes" },
-      ...Array.from({ length: 12 }, (_, i) => ({ id: `b${i}`, name: `Club ${i}`, kind: "club", years: [10], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false })),
+      ...Array.from({ length: ACTIVITIES_MAX + 4 }, (_, i) => ({ id: `b${i}`, name: `Club ${i}`, kind: "club", years: [10], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false })),
     ],
     awards: [{ id: "w1", key: null, name: "State champion", tier: 2, year: 11 }, { id: "w2", name: "", tier: 7 }],
     classStanding: "top10",
     classRankPercentile: 40,
     firstGeneration: "maybe",
   });
-  assert.ok(s.activities!.length <= 8, "at most eight activities");
+  assert.equal(s.activities!.length, ACTIVITIES_MAX, "at most ACTIVITIES_MAX activities");
   assert.equal(s.activities![0].name, "Soccer");
   assert.ok(s.activities!.every((a) => a.name.length <= 60 && a.years.every((y) => y >= 9 && y <= 12)));
   assert.deepEqual(s.awards!.map((a) => a.name), ["State champion"]);

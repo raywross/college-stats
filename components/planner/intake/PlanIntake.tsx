@@ -268,7 +268,7 @@ export default function PlanIntake({
               </button>
             )}
             {activityStep && (
-              <button type="button" onClick={() => go(step, (step + 1) as IntakeStep)} className="text-sm font-semibold text-muted-foreground hover:text-foreground">
+              <button type="button" onClick={() => go(step, (step + 1) as IntakeStep)} className="min-h-11 px-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
                 I&apos;ll add these later
               </button>
             )}

@@ -79,7 +79,7 @@ function AwardCard({
     <div className={cn("rounded-2xl border bg-card p-3.5 sm:p-4", open && "border-primary")}>
       <div className="flex items-center justify-between gap-2">
         <button type="button" onClick={onToggleOpen} aria-expanded={open} className="min-h-11 min-w-0 flex-1 rounded-xl py-1 text-left font-semibold">
-          <span className="block truncate">{name}</span>
+          <span className="line-clamp-2">{name}</span>
         </button>
         <div className="flex shrink-0 items-center gap-2">
           <button type="button" onClick={onToggleOpen} className="inline-flex h-9 items-center rounded-full bg-muted px-3 text-sm font-semibold">
@@ -175,7 +175,7 @@ function AwardAdder({ awards, room, disabled, onAdd }: { awards: AwardEntry[]; r
               done();
             }
           }}
-          placeholder='Add an award — try "honor roll" or "AP Scholar"'
+          placeholder='Add an award — try "AP Scholar"'
           aria-label="Add an award"
           enterKeyHint="done"
           className="h-12 w-full rounded-full border bg-background pl-9 pr-4 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 lg:text-sm"

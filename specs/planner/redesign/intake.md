@@ -21,18 +21,23 @@
   after saving.
 
 ## Steps
-One question per screen, five steps and a Done screen (`IntakeStep` 0–5). Nothing is written until the last step.
-Step 3 ("More about you") was added for [admission chances, next](../../chances/depth.md#what-the-student-enters)
-(U3, 2026-10-12): activities, after the numbers, optional, and never blocking.
+One question per screen, eight steps and a Done screen (`IntakeStep` 0–8; `INTAKE_REVIEW` 7, `INTAKE_DONE` 8). Nothing
+is written until the last step. The single optional "More about you" step (U3, 2026-10-12) became four optional
+activity steps after AP courses (U13, 2026-10-12; owner: "sports and clubs their own items… autocomplete similar to
+the way we did APs… work and internships its own screen… other stuff as the last screen"), see
+[Activities, four steps](#activities-four-steps).
 
 | Step | Headline | Asks |
 |---|---|---|
 | 0 Grades | "Start with your grades" | Class of (chips), GPA (one field, scale detected), high school (optional) |
 | 1 Test | "Your test score" | SAT or ACT or neither; the score; practice; an optional target |
 | 2 AP courses | "Your AP courses" | Which year for each AP course (a score once that year is over); Skip jumps to the next step |
-| 3 More about you | "More about you" | Optional: two or three activities ([depth.md](../../chances/depth.md#what-the-student-enters)); never blocks Continue, and never shown before the numbers |
-| 4 Review | "Look right?" | One row per answer with Edit (jumps to its step); "Save and show my plan" |
-| 5 Done | "Your numbers are in." | First run only: "Add your first college" |
+| 3 Sports | "Your sports" | Optional: type-ahead over the sports catalog; per year a level (JV · Varsity · Captain, more behind "More…"); hours a week in season; recognition |
+| 4 Clubs | "Clubs and organizations" | Optional: type-ahead over the clubs catalog (acronyms: DECA, HOSA, MUN) or a typed name plus a one-tap "What's it about?"; a title per year; recognition |
+| 5 Work | "Work and internships" | Optional: jobs, internships, research positions, family responsibilities, as typed; type, hours, a role per year |
+| 6 Other | "Anything else?" | Optional: awards (type-ahead over the awards catalog), then volunteering, projects, anything else |
+| 7 Review | "Look right?" | One row per answer with Edit (jumps to its step); "Save and show my plan" |
+| 8 Done | "Your numbers are in." | First run only: "Add your first college" |
 
 ### Grades
 - **Class of**: four chips starting at the current senior class (`classYearOptions`: from July on, next year's
@@ -89,9 +94,44 @@ Step 3 ("More about you") was added for [admission chances, next](../../chances/
   private from parents).
 - AP courses never block Continue. A course with no year picked isn't saved.
 
+### Activities, four steps
+Rules in `lib/planner/activity-steps.ts` (pure); cards in `components/activities/` (`ActivityStepEditor`,
+`ActivityCard`, `YearTitles`, `AwardsEditor`), shared with `/me`'s Activities and Awards groups
+(`components/me/ActivitiesForm.tsx`, `AwardsForm.tsx`); the intake screen is `components/planner/intake/ActivitiesStep.tsx`.
+Modeled on the AP step: on desktop the list sits beside a search panel, on a phone the search is under the list.
+- **Every step is optional**: Skip in the phone header, "I'll add these later" on desktop, and Continue never waits.
+- **One list**: the draft holds every activity in `activities` (and awards in `awards`); each step shows the entries
+  `stepOfActivity` gives it: sport → Sports; club and arts → Clubs; a catalog research or service entry (Science
+  Research Program, Key Club) → Clubs; typed research, work, and family → Work; typed service (volunteering) and
+  other → Other. Deterministic, so entries saved on `/me` or by the old form land on one step.
+- **Adding**: Sports and Clubs search their catalog (`searchStep`; popular chips before anything is typed; Enter adds
+  an exact acronym or name, else the first match, else the typed name) and always offer "+ Add “…”" for a name that
+  isn't listed. Work and Other take a name plus quick chips ("Part-time job", "Internship", "Research position",
+  "Family responsibilities"; "Volunteering", "Independent project"). The new card opens and finished ones fold, so
+  several can be added without leaving the list. A typed entry's type is guessed from its words ("lab" → research,
+  "babysitting" → family, "volunteer" → volunteering) and is one tap to change.
+- **Card**: collapsed, the name and a pill ("3 years · Captain", "Pick years"); open, the name (editable), "What's it
+  about?" for a typed club (`CLUB_FAMILY_PICKS`: an arts pick makes it an arts entry), the type for Work and Other,
+  the four year chips (one tap on or off, with the school year under each once the class is known), a title per
+  checked year from `titlesFor(kind)` (the common ones first, the rest behind "More…"), hours a week (1–60; "in
+  season" for a sport), recognition (None · School · State or regional · National, worded per step; none for Work),
+  and "Connected to the major I want to study" (not on sports). Nothing is required.
+- **Smart defaults**: a newly checked year takes the title of the nearest earlier checked year (else the nearest
+  later, else the kind's first title: JV, Member, Employee); a job named as an internship starts as Intern.
+- **Stored** as `ActivityEntry`: `kind`, `catalogKey` and `family` (from the catalog, or the family pick), `titles`
+  per year with `roles` derived by `roleForTitle`, `hoursPerWeek`, `recognition`, `relatedToMajor`. The profile's
+  sanitizer takes kind and family from the catalog for a catalog key, keeps a title only for a checked year and only
+  when the kind offers it (and sets that year's role from it), and writes the three new keys only when set, so rows
+  saved before them read back unchanged. At most `ACTIVITIES_MAX` (20) activities across all four steps and
+  `AWARDS_MAX` (6) awards.
+- **Awards** (Other step): `searchAwards` over data/reference/awards.json (popular first; nicknames such as "nmsf",
+  "eagle", "pvsa"); a catalog award carries its tier; a typed one starts at School and has a level pick; a one-tap
+  year, optional.
+
 ### Review and saving
-- Review lists Class, GPA ("3.82 · 4.0 scale"), Test ("SAT 1390 (practice) · aiming for 1450" / "Not testing"), and
-  AP courses ("2 taken · 1 taking or planned" / "None") (`reviewLines`). Save needs the grades and test steps valid.
+- Review lists Class, GPA ("3.82 · 4.0 scale"), Test ("SAT 1390 (practice) · aiming for 1450" / "Not testing"),
+  AP courses ("2 taken · 1 taking or planned" / "None"), and one line per activity step: Sports, Clubs, Work (the
+  names, "Soccer, Track and Field +1 more", or "None") and Other ("2 awards · Food bank volunteer") (`reviewLines`). Save needs the grades and test steps valid.
 - **One save** (`intakeToSave` → `saveIntake`): the server checks everything again (`parseIntakeSave` refuses the
   whole save on any bad value: a class year outside the profile's window, a GPA outside its scale, a missing or
   out-of-range score, a target without a test or out of range, a bad high-school id, a course that isn't an AP

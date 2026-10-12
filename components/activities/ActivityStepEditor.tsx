@@ -24,10 +24,10 @@ import type { ActivityEntry } from "@/lib/chances/types";
 import { cn } from "@/lib/utils";
 
 const PLACEHOLDER: Record<ActivityStep, string> = {
-  sports: 'Add a sport — try "soccer", "xc", or "track"',
-  clubs: 'Add a club — try "DECA", "HOSA", or "MUN"',
-  work: "Add a job, internship, or research position",
-  other: "Add volunteering, a project, anything else",
+  sports: 'Add a sport — try "xc" or "lax"',
+  clubs: 'Add a club — try "DECA" or "MUN"',
+  work: "Add a job or internship",
+  other: "Add something else",
 };
 
 /** Quick adds for steps without a catalog: one tap adds an entry with this name, open for editing. */

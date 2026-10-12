@@ -51,7 +51,8 @@ One per family the student has courses in, the major's families first:
 
 ## Activities
 ### What the student enters
-`StudentProfile.activities: ActivityEntry[]`, at most 8 (Common App allows 10), in the JSON profile document (no
+`StudentProfile.activities: ActivityEntry[]`, at most 20 (raised from 8 when the intake split into four activity
+steps; the Common App allows 10), in the JSON profile document (no
 migration), on `/me` → Activities, the household Numbers page, and in the planner behind "Add your activities" in
 the header card's prompt line when the estimate lists it as missing.
 
@@ -77,7 +78,8 @@ ActivityEntry {
 - **Work and family** kinds carry hours and years like the rest; a job's role is member unless the student picks
   officer ("shift lead") or leader ("managed others"). They also feed `M_work`
   ([inputs-beyond-academics.md](inputs-beyond-academics.md#work-and-family-responsibilities)).
-- The intake asks for activities only on an optional "More about you" step after the numbers, never in the first
+- The intake asks for activities only on four optional steps after AP courses (Sports, Clubs, Work, Other; see
+  [intake.md "Activities, four steps"](../planner/redesign/intake.md#activities-four-steps)), never in the first
   two steps ([../planner/redesign/intake.md](../planner/redesign/intake.md)); the profile prompt says what it's for:
   "Colleges that read activities look for a few things done for years, with a role. Add your two or three biggest."
 

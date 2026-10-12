@@ -62,7 +62,7 @@ export function ActivityCard({
     <div className={cn("rounded-2xl border bg-card p-3.5 sm:p-4", open && "border-primary")}>
       <div className="flex items-center justify-between gap-2">
         <button type="button" onClick={onToggleOpen} aria-expanded={open} className="min-h-11 min-w-0 flex-1 rounded-xl py-1 text-left font-semibold">
-          <span className="block truncate">{displayName}</span>
+          <span className="line-clamp-2">{displayName}</span>
         </button>
         <div className="flex shrink-0 items-center gap-2">
           <button

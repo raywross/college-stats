@@ -19,8 +19,8 @@ try.
 2. **Every other college** starts in **EA** where offered ("early action is free to use: an earlier answer and no
    commitment"), except at a private college when the Dream is in REA (REA usually rules out other private early
    rounds; public colleges stay in EA). Else **Rolling** where that's how it admits. Else **RD**.
-3. **No Dream, no binding round.** Without a Dream nothing starts in ED; a hint under the list says "Mark a Dream if
-   one college is your clear first choice; if it has early decision, your plan starts it there."
+3. **No Dream, no binding round.** Without a Dream nothing starts in ED. (The hint under the list that explained this
+   was removed 2026-10-12, owner: the heart on each row is intuitive enough.)
 4. **Applied and decided colleges** keep whatever round they have.
 5. **ED II is never started automatically** ([below](#ed-ii)).
 

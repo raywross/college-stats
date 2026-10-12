@@ -113,11 +113,6 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
             <p className="text-sm font-semibold">{headerCountsLine(rows)}</p>
             <ListExplainer />
           </div>
-          {!dreamRow && (
-            <p className="border-b bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground">
-              Mark a Dream if one college is your clear first choice; if it has early decision, your plan starts it there.
-            </p>
-          )}
           {groups.map(({ group, rows: groupRows }) => (
             <div key={group}>
               <div className="border-b px-4 py-3">

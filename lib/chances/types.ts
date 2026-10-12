@@ -1,7 +1,7 @@
 /**
  * Shared types for the admission-chances work (specs/chances/README.md): the student's course list, the high school's
  * offering, the pool rates, how a unit reviews the intended major, and the estimate's contract. Pure, client-safe
- * types and their word lists only: no logic, no method. Every unit imports these and never redefines them; additions are additive.
+ * types only: no runtime code, no method. Every unit imports these and never redefines them; additions are additive.
  */
 
 /** The kind of course a student lists (rigor-in-context.md "The student's courses"). "regular": math and science only, for STEM majors. */
@@ -155,33 +155,18 @@ export interface EstimateResult {
 }
 
 /* ---- Admission chances, next (specs/chances/levels.md, selectivity-index.md, depth.md, inputs-beyond-academics.md) ----
- * Shared contracts for the five-level build, decided up front so its units agree. Additive: the estimate's result
- * switches to `StandingLevel` when the method's third version lands (levels.md "The estimate's contract").
+ * Shared contracts for the five-level build, decided up front so its units agree; their word lists and limits are in
+ * lib/chances/levels.ts. Additive: the estimate's result switches to `StandingLevel` when the method's third version
+ * lands (levels.md "The estimate's contract").
  */
 
 /** The five levels, lowest first (levels.md "The levels"). Stored values; the words may change, these don't. */
 export type StandingLevel = "high_reach" | "reach" | "target" | "likely" | "safe";
-export const STANDING_LEVELS: readonly StandingLevel[] = ["high_reach", "reach", "target", "likely", "safe"];
-export const STANDING_LEVEL_LABELS: Record<StandingLevel, string> = {
-  high_reach: "High reach",
-  reach: "Reach",
-  target: "Target",
-  likely: "Likely",
-  safe: "Safe",
-};
 /** The label on top of a level (levels.md): "elite" replaces "reach-for-everyone"; "recruited" is new. */
 export type StandingLabel = "elite" | "guaranteed" | "recruited";
 
 /** Quad's selectivity tier (selectivity-index.md "Tiers"), hardest first. Stored values. */
 export type SelectivityTier = "elite" | "highly_selective" | "selective" | "accessible" | "open";
-export const SELECTIVITY_TIERS: readonly SelectivityTier[] = ["elite", "highly_selective", "selective", "accessible", "open"];
-export const SELECTIVITY_TIER_LABELS: Record<SelectivityTier, string> = {
-  elite: "Elite",
-  highly_selective: "Highly selective",
-  selective: "Selective",
-  accessible: "Accessible",
-  open: "Open",
-};
 /** Which applicants a tier describes: a public with residency rates has one per pool. */
 export type SelectivityPool = "all" | "in_state" | "out_of_state";
 
@@ -204,7 +189,6 @@ export interface ActivityEntry {
   recognition: RecognitionTier | null;
   relatedToMajor: boolean;
 }
-export const ACTIVITIES_MAX = 8;
 
 /** One award (inputs-beyond-academics.md "Awards"); `key` is an id in data/reference/awards.json, null for "Something else". */
 export interface AwardEntry {
@@ -214,12 +198,9 @@ export interface AwardEntry {
   tier: RecognitionTier;
   year: HsYear | null;
 }
-export const AWARDS_MAX = 6;
 
 /** The class-standing pick (inputs-beyond-academics.md "Class standing"). */
 export type ClassStanding = "top1" | "top5" | "top10" | "top25" | "top50" | "lower" | "no_rank";
-/** The `classRankPercentile` each pick stores; "no_rank" stores null. */
-export const CLASS_STANDING_PERCENTILE: Record<ClassStanding, number | null> = { top1: 1, top5: 5, top10: 10, top25: 25, top50: 50, lower: 75, no_rank: null };
 
 /** Depth readings (depth.md "The reading"): words, never scores. */
 export type TrackReading = "deep" | "steady" | "light" | "not_offered";
@@ -227,11 +208,9 @@ export type ActivitiesReading = "focused" | "building" | "sampling";
 
 /** The per-college list-row inputs (inputs-beyond-academics.md "Legacy", "Recruited athlete", "Demonstrated interest"). */
 export type RecruitedPick = "none" | "contact" | "pre_read" | "likely_letter";
-export const RECRUITED_PICKS: readonly RecruitedPick[] = ["none", "contact", "pre_read", "likely_letter"];
 export interface CollegeHooks {
   legacy: boolean;
   recruited: RecruitedPick;
   /** A visit, interview, or information request is logged in the planner for this college. */
   interest: boolean;
 }
-export const NO_HOOKS: CollegeHooks = { legacy: false, recruited: "none", interest: false };

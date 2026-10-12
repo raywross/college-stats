@@ -12,6 +12,7 @@ import { type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/pl
 import { resolveSelectedChild, type SwitchableChild } from "@/lib/planner/plan-frame";
 import { profileProgress, SECTION_STEP } from "@/lib/planner/profile-progress";
 import { defaultTab, parseTab, planHref } from "@/lib/planner/plan-tabs";
+import { withTiming } from "@/lib/timing-server";
 
 export const metadata: Metadata = { title: "Plan" };
 
@@ -82,8 +83,12 @@ function nextDeadlineOf(load: PlanLoad | undefined): string | null {
  * `?tab=` opens a tab (links, so back and forward work); an unrecognized or unavailable one falls back to the
  * viewer's default (PlanFrame reconciles that). `?setup=1` opens the intake guide in edit mode.
  */
-export default async function PlanPage({ searchParams }: { searchParams: Promise<{ for?: string; tab?: string; setup?: string }> }) {
+export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string }> }) {
   await connection();
+  return withTiming("/plan", () => renderPlan(props));
+}
+
+async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: string; tab?: string; setup?: string }> }) {
   if (!authConfigured()) return <AuthUnavailable />;
   const { for: forParam, tab: tabParam, setup: setupParam } = await searchParams;
   const tab = parseTab(tabParam);

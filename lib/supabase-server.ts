@@ -10,6 +10,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { timedFetch, timingEnabled } from "@/lib/timing";
 
 /** SUPABASE_URL + SUPABASE_PUBLISHABLE_KEY, or null when sign-in isn't configured (e.g. CI builds). */
 export function supabaseAuthEnv(): { url: string; key: string } | null {
@@ -30,6 +31,8 @@ export async function createServerSupabase(): Promise<SupabaseClient> {
   if (!env) throw new Error("Sign-in isn't configured: set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (specs/product/accounts.md).");
   const store = await cookies();
   return createServerClient(env.url, env.key, {
+    // QUAD_TIMING=1 (lib/timing.ts): count and time every round trip; off, the client's own fetch.
+    ...(timingEnabled() ? { global: { fetch: timedFetch } } : {}),
     cookieOptions: AUTH_COOKIE_OPTIONS,
     cookies: {
       getAll() {

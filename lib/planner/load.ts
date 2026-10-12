@@ -20,6 +20,7 @@ import { autoWrites, planView, type PlanView } from "./plan-view";
 import { planEstimates } from "./plan-estimates";
 import { generateTasks, mergeTasks } from "./tasks";
 import type { PlanContext } from "./types";
+import { span } from "@/lib/timing";
 
 export type PlanLoad =
   /** The plan, ready for the tabs. */
@@ -40,17 +41,17 @@ const firstName = (name: string | null | undefined) => name?.trim().split(/\s+/)
  * regenerates the tasks (cheap and idempotent), so a data publish or new numbers show up on the next open.
  */
 export async function loadPlanFor(studentId: string, viewer?: StudentAccess | null): Promise<PlanLoad> {
-  const access = viewer ?? (await studentsICanSee()).find((a) => a.student.id === studentId) ?? null;
+  const access = viewer ?? (await span("access", () => studentsICanSee())).find((a) => a.student.id === studentId) ?? null;
   if (!access || access.student.id !== studentId) return { kind: "not-found" };
   const { student, canEdit, relation } = access;
   const owner = { kind: "student" as const, id: student.id };
-  const lists = await myLists(owner);
+  const lists = await span("lists", () => myLists(owner));
   let listId: string | null = lists.find((l) => l.is_default)?.id ?? lists[0]?.id ?? null;
   if (!listId && canEdit) listId = (await getOrCreateDefaultList(owner))?.id ?? null;
   if (!listId) return { kind: "empty", access };
 
   const supabase = await createServerSupabase();
-  const [account, profile, home] = await Promise.all([getAccount(), profileFor(student.id), myHome()]);
+  const [account, profile, home] = await span("profile+home", () => Promise.all([getAccount(), profileFor(student.id), myHome()]));
   if (relation === "guardian") await scheduleStudentReadLog(student.id, "plan_tasks");
   const gradYear = profile ? effectiveGradYear(profile.data.basics, student.grad_year) : student.grad_year;
   const today = todayIso();
@@ -58,32 +59,24 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
 
   let plan;
   try {
-    plan = await readPlan(supabase, listId);
+    plan = await span("readPlan", () => readPlan(supabase, listId));
   } catch (err) {
     if (err instanceof PlannerSetupError) return { kind: "setup-missing", access };
     throw err;
   }
   if (!plan) return { kind: "empty", access };
 
-  let input = await generatorInputFor(plan, { gradYear, profile: profileData, home, today });
+  const read = plan;
+  let input = await span("planSchools", () => generatorInputFor(read, { gradYear, profile: profileData, home, today }));
   // Quad's estimate for every college, on the server (specs/chances/estimate.md "In the planner"): the same for the
   // student and a guardian, who sees the student's AP exam scores too (owner, 2026-10-11).
-  const estimates = await planEstimates(profileData, plan.items, { gradYear, today, visits: plan.visits });
+  const estimates = await span("estimates", () => planEstimates(profileData, read.items, { gradYear, today, visits: read.visits }));
 
   // Suggested until changed: store the model's group and round on every `auto` row that differs (syncAuto).
   if (canEdit) {
-    // Before the redesign migration the source columns don't exist: show the suggestions, write none of them.
-    const writes = plan.sourcesMissing ? [] : autoWrites(planView({ items: plan.items, schools: input.schools, profile: profileData, estimates, today }));
-    if (writes.length > 0 && (await writeAutoWrites(supabase, writes)) > 0) {
-      const fresh = await readItems(supabase, listId);
-      if (fresh.data) {
-        plan = { ...plan, items: fresh.data };
-        input = { ...input, items: fresh.data };
-      }
-    }
-    if (await writeMerge(supabase, listId, mergeTasks(plan.tasks, generateTasks(input)))) {
-      plan = { ...plan, tasks: await readTasks(supabase, listId) };
-    }
+    const synced = await span("sync", () => syncOnOpen(supabase, listId, read, input, { profile: profileData, estimates, today }));
+    plan = synced.plan;
+    input = synced.input;
   }
 
   const ctx = planContextFrom(input, plan, {
@@ -101,6 +94,32 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
   // No `rigor`, `coursePlan`, or estimate fact citations any more: their only readers were the Scores tab's Courses
   // section and the row drawer's estimate text, both removed (owner, 2026-10-12; specs/planner/redesign/list.md).
   return { kind: "ready", ctx, view, access };
+}
+
+/**
+ * An editor's open: store the model's group and round on every `auto` row that differs (syncAuto), re-reading the
+ * items when any changed, then merge the regenerated tasks, re-reading them when any were written.
+ */
+async function syncOnOpen(
+  supabase: Awaited<ReturnType<typeof createServerSupabase>>,
+  listId: string,
+  plan: NonNullable<Awaited<ReturnType<typeof readPlan>>>,
+  input: Awaited<ReturnType<typeof generatorInputFor>>,
+  opts: { profile: Parameters<typeof planView>[0]["profile"]; estimates: Parameters<typeof planView>[0]["estimates"]; today: string },
+) {
+  // Before the redesign migration the source columns don't exist: show the suggestions, write none of them.
+  const writes = plan.sourcesMissing ? [] : autoWrites(planView({ items: plan.items, schools: input.schools, profile: opts.profile, estimates: opts.estimates, today: opts.today }));
+  if (writes.length > 0 && (await writeAutoWrites(supabase, writes)) > 0) {
+    const fresh = await readItems(supabase, listId);
+    if (fresh.data) {
+      plan = { ...plan, items: fresh.data };
+      input = { ...input, items: fresh.data };
+    }
+  }
+  if (await writeMerge(supabase, listId, mergeTasks(plan.tasks, generateTasks(input)))) {
+    plan = { ...plan, tasks: await readTasks(supabase, listId) };
+  }
+  return { plan, input };
 }
 
 /** A child a parent can switch to (page.md "The child switcher"). */

@@ -27,6 +27,8 @@ import { generateTasks, mergeTasks } from "./tasks";
 import { applyNumbers, isUuid, parseNumbers, roundPatch, togglePlannedDate, type PlanNumbers } from "./plan-writes";
 import { applyIntake, parseIntakeSave, type IntakeSave } from "./intake";
 import { mergeCoursesForSave } from "@/lib/chances/courses";
+import { span } from "@/lib/timing";
+import { withTiming } from "@/lib/timing-server";
 
 export type PlanWriteResult = { ok: true } | { ok: false; message: string };
 
@@ -46,8 +48,10 @@ async function ready(): Promise<{ userId: string; supabase: Supabase } | { ok: f
 
 /** The Plan page, the household pages that still show the plan, and the hub's caption. */
 function refresh() {
-  revalidatePath("/plan");
-  revalidatePath("/household", "layout");
+  void span("revalidate", () => {
+    revalidatePath("/plan");
+    revalidatePath("/household", "layout");
+  });
 }
 
 /** A profile the caller just read or saved, so the pass below never re-fetches it from the database. */
@@ -63,7 +67,7 @@ type KnownProfile = { studentId: string; profile: StudentProfileData };
  * row, an applied or decided college's round, or a task whose source is gone (it's marked orphaned instead).
  */
 async function syncAndRegenerate(supabase: Supabase, listId: string, known?: KnownProfile): Promise<number> {
-  const plan = await readPlan(supabase, listId);
+  const plan = await span("readPlan", () => readPlan(supabase, listId));
   if (!plan) return 0;
   let gradYear: number | null = null;
   let profile: StudentProfileData | null = null;
@@ -81,13 +85,14 @@ async function syncAndRegenerate(supabase: Supabase, listId: string, known?: Kno
     }
   }
   const today = todayIso();
-  const input = await generatorInputFor(plan, { gradYear, profile, home: await myHome(), today });
+  const home = await span("home", () => myHome());
+  const input = await span("planSchools", () => generatorInputFor(plan, { gradYear, profile, home, today }));
 
   const jobs: Promise<number>[] = [];
   if (plan.items.length > 0 && !plan.sourcesMissing) {
     jobs.push(
       (async () => {
-        const estimates = await planEstimates(profile, plan.items, { gradYear, today, visits: plan.visits });
+        const estimates = await span("estimates", () => planEstimates(profile, plan.items, { gradYear, today, visits: plan.visits }));
         const writes = autoWrites(planView({ items: plan.items, schools: input.schools, profile, estimates, today }));
         return writes.length > 0 ? writeAutoWrites(supabase, writes) : 0;
       })(),
@@ -192,19 +197,19 @@ async function studentLists(supabase: Supabase, studentId: string): Promise<stri
 
 async function saveTheirProfile(studentId: string, change: (p: NonNullable<Awaited<ReturnType<typeof profileFor>>>) => { ok: true; data: unknown } | { ok: false; message: string }): Promise<PlanWriteResult> {
   if (!isUuid(studentId)) return { ok: false, message: FAILED };
-  const r = await ready();
+  const r = await span("auth", () => ready());
   if (!("supabase" in r)) return r;
-  const profile = await profileFor(studentId);
+  const profile = await span("profile read", () => profileFor(studentId));
   if (!profile) return { ok: false, message: FAILED };
   if (!profile.canEdit) return { ok: false, message: NOT_EDITOR };
   const next = change(profile);
   if (!next.ok) return next;
-  const saved = await saveProfile(studentId, next.data);
+  const saved = await span("profile write", () => saveProfile(studentId, next.data));
   if (!saved.ok) return saved;
-  const lists = await studentLists(r.supabase, studentId);
+  const lists = await span("lists", () => studentLists(r.supabase, studentId));
   // Sanitized exactly like saveProfile's own write, so this matches what the database now holds: the follow-up pass
   // reads the student's grad year fresh (one small query) but never re-reads the profile itself.
-  await followUp(r.supabase, lists, { studentId, profile: sanitizeProfile(next.data) });
+  await span("followUp", () => followUp(r.supabase, lists, { studentId, profile: sanitizeProfile(next.data) }));
   return { ok: true };
 }
 
@@ -226,7 +231,7 @@ export async function saveIntake(studentId: string, input: IntakeSave): Promise<
   const parsed = parseIntakeSave(input);
   if (!parsed) return { ok: false, message: "Check your answers: one of them is out of range." };
   const today = todayIso();
-  return saveTheirProfile(studentId, (p) => {
+  return withTiming("/plan save", () => saveTheirProfile(studentId, (p) => {
     const next = applyIntake(p.data, parsed, today);
     const merged = mergeCoursesForSave(
       { courses: p.data.academics.courses, apExamsPrivate: p.data.academics.apExamsPrivate },
@@ -234,7 +239,7 @@ export async function saveIntake(studentId: string, input: IntakeSave): Promise<
       p.relation,
     );
     return { ok: true, data: { ...next, academics: { ...next.academics, ...merged } } };
-  });
+  }), { respond: true });
 }
 
 /** "I'll take it" on a test date (scores.md "Test dates"), or undoing it; the cycle generator follows. */

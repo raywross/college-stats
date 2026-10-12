@@ -7,6 +7,7 @@ import "server-only";
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getData } from "@/lib/data";
+import { span } from "@/lib/timing";
 import { crestBrand } from "@/lib/brand";
 import { distanceFromHome, type HomeLocation } from "@/lib/home";
 import { satTotal } from "@/lib/score-bands";
@@ -197,7 +198,7 @@ export function standingGpaAverage(school: Pick<School, "reported">): number | n
 
 /** PlanSchool for every college on the list, by unit id (a college no longer in the dataset is left out). */
 export async function planSchools(unitIds: string[], studentCycleStart: number, home: HomeLocation | null): Promise<Record<string, PlanSchool>> {
-  const { getSchoolById, citeField } = await getData();
+  const { getSchoolById, citeField } = await span("dataset", () => getData());
   const gpaModel = await fittedGpaModel();
   const gpaCurve = await fittedGpaCurve();
   const out: Record<string, PlanSchool> = {};

@@ -196,6 +196,17 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
+    slug: "launch-database",
+    file: "specs/launch-database.md",
+    group: "business",
+    summary:
+      "Just before launch, a production database in the same region as the site's servers (today's only database is in Canada and the servers are in Virginia), with the schema, accounts to keep, and settings moved across.",
+    complexity: 2,
+    complexityNote:
+      "A new Supabase project, every migration in one tested script, an account dump and restore, auth settings, and swapping the keys in Vercel; mostly careful steps, little new code.",
+    status: "planned",
+  },
+  {
     slug: "commercialization",
     file: "specs/product/commercialization.md",
     group: "business",

@@ -295,6 +295,7 @@ Found while setting it up (2026-09-28):
 - Vercel runs Node 24.x (`engines` in `package.json`), matching CI.
 
 ### Setup at the formal release
+Planned in detail, with the region move and direct access for Claude, in [launch-database.md](launch-database.md).
 1. Create the prod project (same region as the Vercel project), apply every migration under `supabase/migrations/`
    in order in the SQL Editor, deploy the `invite-user` Edge Function with its secrets ([Deploy](#deploy)).
 2. Put the prod project's values in `.env.prod.local` (git-ignored) and run `npm run publish-high-schools` against

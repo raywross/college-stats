@@ -28,7 +28,7 @@ A student opens Plan and sees their colleges; a parent opens Plan and sees the f
 | `/plan` | signed-in student | Their plan, Colleges tab |
 | `/plan` | signed-in guardian | One child's plan (**changed 2026-10-11**: no more Everyone — see below), Colleges tab |
 | `/plan?for=[person]` | guardian | One child's plan; a legacy `?for=everyone` falls through to the default below |
-| `/plan?tab=scores` / `calendar` / `offers` | either | Opens a tab; tabs are links so back and forward work |
+| `/plan?tab=calendar` / `offers` | either | Opens a tab; tabs are links so back and forward work (`?tab=scores`, dropped 2026-10-12, opens the default) |
 | `/plan?setup=1` | the plan's own editor | The intake guide ([intake.md](intake.md)) in edit mode, prefilled, starting at Review — the header's Edit button |
 | `/plan` | signed out | The pitch and the numbers step ([below](#signed-out)) |
 | `/plan/print` | either | The calendar's printable list (moves from `/household/[person]/plan/print`) |
@@ -52,11 +52,11 @@ the intake guide instead of a separate banner.
 ```
 Phone                                   Desktop (lg:)
 ┌─────────────────────────────┐         ┌───────────────────────────────┬──────────────────┐
-│ Your plan   GPA 3.82·SAT 1390✎│        │ Your plan            [Colleges][Scores•][Calendar]│ NEXT UP          │
+│ Your plan   GPA 3.82·SAT 1390✎│        │ Your plan            [Colleges][Calendar]       │ NEXT UP          │
 ├─────────────────────────────┤         │ Class of 2027 · applying this fall · GPA 3.82·SAT 1390 ✎│ Georgia & SC │
 │ NEXT UP · Georgia and SC  7d │         ├───────────────────────────────┤ ◆ due Thu, Oct 15 │
 ├─────────────────────────────┤         │ … the open tab …              ├──────────────────┤
-│[Colleges][Scores•][Calendar] │         │                                │ Coming up (8 wks) │
+│[Colleges][Calendar]          │         │                                │ Coming up (8 wks) │
 ├─────────────────────────────┤         │                                ├──────────────────┤
 │ … the open tab …             │         │                                │ (one notice)      │
 └─────────────────────────────┘         └───────────────────────────────┴──────────────────┘
@@ -81,9 +81,9 @@ Phone                                   Desktop (lg:)
   date ("Check Wake Forest's cost together by Nov 15"), and an "Open" link when the task has a URL (a `cost_check`
   task's college net price calculator). This is the one-line version; the full list across every child is still the
   household page's `YourPart` section (parents.md).
-- **Tabs**: Colleges ([list.md](list.md)), Scores ([scores.md](scores.md)), Calendar ([calendar.md](calendar.md)),
+- **Tabs**: Colleges ([list.md](list.md)), Calendar ([calendar.md](calendar.md)) (Scores, [scores.md](scores.md), removed 2026-10-12),
   and Offers once any college has a decision ([../offers.md](../offers.md), unchanged in substance). A segmented
-  pill, ink fill on the active tab, a **coral** dot (not lime) on Scores when a retake suggestion is live. Both the
+  pill, ink fill on the active tab (the coral retake dot went with the Scores tab). Both the
   student's and a guardian's default tab are Colleges now (**changed 2026-10-11**; a guardian's `/plan` no longer
   has a calendar-first family view to default to — see Routes).
 - **Layout**: two columns on desktop (`lg:`) — left, the header with the tabs beside it, then the open tab's body;

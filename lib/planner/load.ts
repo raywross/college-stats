@@ -14,13 +14,10 @@ import { myHome } from "@/lib/home-store";
 import { getOrCreateDefaultList, myLists } from "@/lib/lists";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { profileFor } from "@/lib/student-profile-store";
-import { coreAnswered, effectiveGradYear } from "@/lib/student-profile";
-import { gradeNow } from "@/lib/chances/courses";
-import { rigorViewFor } from "@/lib/chances/rigor-server";
-import { coursePlanViewFor } from "@/lib/chances/course-plan-server";
+import { effectiveGradYear } from "@/lib/student-profile";
 import { generatorInputFor, planContextFrom, PlannerSetupError, readItems, readPlan, readTasks, todayIso, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView, type PlanView } from "./plan-view";
-import { planEstimates, withFactCites } from "./plan-estimates";
+import { planEstimates } from "./plan-estimates";
 import { generateTasks, mergeTasks } from "./tasks";
 import type { PlanContext } from "./types";
 
@@ -101,36 +98,9 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
     },
   });
   const view = planView({ items: ctx.items, schools: ctx.schools, profile: ctx.profile, estimates, today });
-  // The drawer's "What went into this estimate" cites the facts its estimate names.
-  const cited = { ...ctx, schools: await withFactCites(ctx.schools, estimates).catch(() => ctx.schools) };
-  return { kind: "ready", ctx: await withCoursePlan(await withRigor(cited, gradYear), gradYear), view, access };
-}
-
-/**
- * The context with the course list read against the student's high school (rigor-in-context.md). The student and a
- * guardian get the same list, AP exam scores included (owner, 2026-10-11: scores are never private from parents).
- */
-async function withRigor(ctx: PlanContext, gradYear: number | null): Promise<PlanContext> {
-  const profile = ctx.profile;
-  if (!profile) return ctx;
-  const courses = profile.academics.courses;
-  const entered = courses.length > 0 || coreAnswered(profile.academics.coreAtTopLevel);
-  if (!entered) return { ...ctx, rigor: null };
-  const rigor = await rigorViewFor({
-    courses,
-    coreAtTopLevel: profile.academics.coreAtTopLevel,
-    highSchoolId: profile.basics.highSchoolId,
-    grade: gradeNow(gradYear, ctx.today),
-    studentMarks: profile.academics.schoolOffers,
-  }).catch(() => null);
-  return { ...ctx, rigor };
-}
-
-/** The context with next year's course suggestions (course-plan.md). Never throws: a failure is no card. */
-async function withCoursePlan(ctx: PlanContext, gradYear: number | null): Promise<PlanContext> {
-  if (!ctx.profile) return ctx;
-  const coursePlan = await coursePlanViewFor({ profile: ctx.profile, gradYear, items: ctx.items, today: ctx.today, canEdit: ctx.viewer.canEdit }).catch(() => null);
-  return { ...ctx, coursePlan };
+  // No `rigor`, `coursePlan`, or estimate fact citations any more: their only readers were the Scores tab's Courses
+  // section and the row drawer's estimate text, both removed (owner, 2026-10-12; specs/planner/redesign/list.md).
+  return { kind: "ready", ctx, view, access };
 }
 
 /** A child a parent can switch to (page.md "The child switcher"). */

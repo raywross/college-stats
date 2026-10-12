@@ -518,7 +518,7 @@ test("no client code reaches the course plan's rules, the plan, or its server bu
   const forbidden = new Set(["lib/chances/course-plan-rules.ts", "lib/chances/course-plan.ts", "lib/chances/course-plan-server.ts"].map((f) => join(ROOT, f)));
   const clients = [...walk(join(ROOT, "components")), ...walk(join(ROOT, "app")), ...walk(join(ROOT, "lib"))].filter((f) => /^\s*["']use client["']/.test(readFileSync(f, "utf8").slice(0, 200)));
   assert.ok(clients.length > 50, "found the client files");
-  assert.ok(clients.some((f) => f.endsWith("NextYearCard.tsx")));
+  assert.ok(clients.some((f) => f.endsWith("PlanList.tsx")));
   const bad: string[] = [];
   for (const start of clients) {
     const seen = new Set<string>();

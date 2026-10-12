@@ -44,7 +44,7 @@ export interface AnalyticsEvents {
   /* The planner (specs/planner/model.md "Telemetry"): that a stage was used and which college, never a title, a
    * date, a phone number, a count, or a note. */
   /** The redesign (specs/planner/redesign/*.md "Telemetry"): which tab, whose view, and whether it's Everyone. */
-  plan_opened: { tab: "colleges" | "scores" | "calendar" | "offers"; viewer: "student" | "guardian"; everyone: boolean };
+  plan_opened: { tab: "colleges" | "calendar" | "offers"; viewer: "student" | "guardian"; everyone: boolean };
   plan_task_ticked: { kind: string; source: "college" | "cycle" | "stage" | "own"; assignee: "student" | "guardian" | "either" };
   plan_stage_done: { stage: number };
   plan_nudge_sent: { channel: "email" | "sms" | "app" };
@@ -57,7 +57,7 @@ export interface AnalyticsEvents {
   plan_choice_made: { unit_id: string };
   /* The planner redesign (specs/planner/redesign/{page,standing,list,rounds,scores,calendar}.md "Telemetry"): which
    * parts get used, never a score, a GPA, a name, or a date. */
-  plan_tab: { tab: "colleges" | "scores" | "calendar" | "offers" };
+  plan_tab: { tab: "colleges" | "calendar" | "offers" };
   plan_switch_child: { to: "child" | "everyone" };
   plan_signed_out_started: { from: "numbers" | "college" };
   plan_signed_out_saved: { has_numbers: boolean };
@@ -72,8 +72,6 @@ export interface AnalyticsEvents {
   plan_college_removed: { dream: boolean };
   plan_ed2_offer_used: { dream_round: "ed" | "rea" };
   plan_round_problem_shown: { kind: string };
-  plan_scores_opened: { suggestion: boolean };
-  plan_test_date_picked: { test: "sat" | "act" };
   plan_calendar_opened: { everyone: boolean; color_by: "child" | "round" };
   plan_calendar_feed_added: { everyone: boolean };
   plan_calendar_printed: { everyone: boolean };
@@ -158,8 +156,6 @@ export const EVENTS = {
   plan_college_removed: { properties: ["dream"], side: "client", why: "Planner: do students prune the list from the plan" },
   plan_ed2_offer_used: { properties: ["dream_round"], side: "client", why: "Planner: the ED II offer taken" },
   plan_round_problem_shown: { properties: ["kind"], side: "client", why: "Planner: which round conflicts come up" },
-  plan_scores_opened: { properties: ["suggestion"], side: "client", why: "Planner: Scores tab opened, with or without a retake suggestion" },
-  plan_test_date_picked: { properties: ["test"], side: "client", why: "Planner: test dates picked, by test" },
   plan_calendar_opened: { properties: ["everyone", "color_by"], side: "client", why: "Planner: calendar views, per child or for everyone" },
   plan_calendar_feed_added: { properties: ["everyone"], side: "client", why: "Planner: calendar feeds added" },
   plan_calendar_printed: { properties: ["everyone"], side: "client", why: "Planner: calendars printed" },

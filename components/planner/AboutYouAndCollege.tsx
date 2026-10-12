@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Chip, FieldLabel } from "@/components/activities/chips";
 import { banFor, sectorOf } from "@/lib/chances/legacy-bans";
 import { RECRUITED_PICKS } from "@/lib/chances/levels";
 import { noteText } from "@/lib/chances/notes";
@@ -8,24 +10,24 @@ import type { RecruitedPick } from "@/lib/chances/types";
 import { setItemLegacy, setItemRecruited } from "@/lib/planner/store-list";
 import type { PlanItem, PlanSchool } from "@/lib/planner/types";
 import { stateName } from "@/lib/states";
-import { cn } from "@/lib/utils";
 
 const RECRUITED_LABELS: Record<RecruitedPick, string> = {
   none: "None",
   contact: "A coach has contacted me",
-  pre_read: "I've had a pre-read (and it came back positive)",
+  pre_read: "I've had a positive pre-read",
   likely_letter: "I have a likely letter",
 };
 
 /**
- * The drawer's "About you and {College}" line (specs/chances/inputs-beyond-academics.md "Legacy", "Recruited
- * athlete"): the legacy toggle ("A parent or grandparent graduated from here") and the recruited pick, writing
- * through U7's per-item columns (`setItemLegacy`/`setItemRecruited`, lib/planner/store-list.ts), attributed like
- * other list edits. Shows the state-ban sentence where one applies, so a legacy toggle a state bars never reads as
- * if it would help. Nothing here lowers a level; the method applies legacy and recruited status as the method says
- * (specs/chances/method/standing.md).
+ * Legacy and Recruited in the row's capture panel (components/planner/RowDrawer.tsx; specs/chances/
+ * inputs-beyond-academics.md "Legacy", "Recruited athlete"): a one-tap legacy toggle and a recruited pick, in the
+ * intake's chip style (components/activities/chips.tsx), writing through the per-item columns
+ * (`setItemLegacy`/`setItemRecruited`, lib/planner/store-list.ts), attributed like other list edits. A saved change
+ * refreshes the page so the college's level reads it. Shows the state-ban sentence where one applies, so a legacy
+ * toggle a state bars never reads as if it would help.
  */
 export function AboutYouAndCollege({ item, school, canEdit }: { item: Pick<PlanItem, "id" | "legacy" | "recruited">; school: PlanSchool; canEdit: boolean }) {
+  const router = useRouter();
   const [legacy, setLegacy] = useState(item.legacy ?? false);
   const [recruited, setRecruited] = useState<RecruitedPick>(item.recruited ?? "none");
   const [pending, startTransition] = useTransition();
@@ -43,12 +45,14 @@ export function AboutYouAndCollege({ item, school, canEdit }: { item: Pick<PlanI
       if (!result.ok) {
         setLegacy(!next);
         setError(result.message);
+        return;
       }
+      router.refresh();
     });
   };
 
   const pickRecruited = (pick: RecruitedPick) => {
-    if (!canEdit) return;
+    if (!canEdit || pick === recruited) return;
     const before = recruited;
     setRecruited(pick);
     setError(null);
@@ -57,48 +61,41 @@ export function AboutYouAndCollege({ item, school, canEdit }: { item: Pick<PlanI
       if (!result.ok) {
         setRecruited(before);
         setError(result.message);
+        return;
       }
+      router.refresh();
     });
   };
 
   return (
-    <div className="space-y-2.5">
-      <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">About you and {school.name}</p>
-      <label className="flex items-start gap-2">
-        <input type="checkbox" checked={legacy} disabled={!canEdit || pending} onChange={toggleLegacy} className="mt-0.5 size-4 accent-primary" />
-        <span>A parent or grandparent graduated from here</span>
-      </label>
-      {legacy && ban && (
-        <p className="pl-6 text-xs text-muted-foreground">
-          {noteText({
-            key: "hooks.legacy_banned",
-            values: { state: stateName(ban.state), scope: ban.sectors.includes("public") && ban.sectors.includes("private") ? "all" : ban.sectors[0], law: ban.law },
-          })}
-        </p>
-      )}
-      <div className="space-y-1">
-        <p>A coach here is recruiting me</p>
-        <div className="flex flex-wrap gap-1.5">
+    <>
+      <div className="space-y-2">
+        <FieldLabel>Legacy</FieldLabel>
+        <Chip role="checkbox" selected={legacy} disabled={!canEdit || pending} onClick={toggleLegacy} className="min-h-11 py-2 text-left">
+          {legacy ? "✓ " : ""}A parent or grandparent graduated from here
+        </Chip>
+        {legacy && ban && (
+          <p className="text-xs text-muted-foreground">
+            {noteText({
+              key: "hooks.legacy_banned",
+              values: { state: stateName(ban.state), scope: ban.sectors.includes("public") && ban.sectors.includes("private") ? "all" : ban.sectors[0], law: ban.law },
+            })}
+          </p>
+        )}
+      </div>
+      <div className="space-y-2">
+        <FieldLabel>Recruited by a coach here</FieldLabel>
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={`Recruited by a coach at ${school.name}`}>
           {RECRUITED_PICKS.map((pick) => (
-            <button
-              key={pick}
-              type="button"
-              disabled={!canEdit || pending}
-              onClick={() => pickRecruited(pick)}
-              aria-pressed={recruited === pick}
-              className={cn(
-                "rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-60",
-                recruited === pick ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted",
-              )}
-            >
+            <Chip key={pick} selected={recruited === pick} disabled={!canEdit || pending} onClick={() => pickRecruited(pick)} className="min-h-11">
               {RECRUITED_LABELS[pick]}
-            </button>
+            </Chip>
           ))}
         </div>
         {recruited !== "none" && <p className="text-xs text-muted-foreground">{noteText({ key: "hooks.recruited", values: {} })}</p>}
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
+    </>
   );
 }
 

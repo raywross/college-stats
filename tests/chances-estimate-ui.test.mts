@@ -321,8 +321,8 @@ test("guard: a field outside the list is caught", () => {
   assert.equal(isEstimateFactPath("admissions.acceptance_rate"), true);
 });
 
-test("the plan loader resolves the citations its estimates name and the college page resolves the whole list", () => {
-  assert.match(read("lib", "planner", "load.ts"), /withFactCites\(ctx\.schools, estimates\)/);
+test("the college page resolves the citations its estimate names (the plan's row panel shows no estimate facts since 2026-10-12)", () => {
+  assert.doesNotMatch(read("lib", "planner", "load.ts"), /withFactCites/);
   const section = read("components", "chances", "StandingSection.tsx");
   assert.match(section, /estimateFactCites\(school, citeField\)/);
   assert.match(section, /majorUnitCites\(school, citeField\)/);
@@ -413,7 +413,9 @@ test("estimate_shown is registered with the group, the label, and the model vers
 });
 
 test("the places that report an estimate send exactly those three and nothing from the student", () => {
-  for (const f of ["components/chances/StandingCard.tsx", "components/planner/RowDrawer.tsx"]) {
+  // The plan row's panel stopped showing the estimate (owner, 2026-10-12), so it stopped reporting it too.
+  assert.doesNotMatch(read("components/planner/RowDrawer.tsx"), /estimate_shown/);
+  for (const f of ["components/chances/StandingCard.tsx"]) {
     const src = read(f);
     const calls = [...src.matchAll(/track\("estimate_shown",\s*\{([^}]*)\}/g)];
     assert.equal(calls.length, 1, f);
@@ -424,7 +426,7 @@ test("the places that report an estimate send exactly those three and nothing fr
     );
     assert.doesNotMatch(calls[0][1], /gpa|score|student|yours|state|major|rank/i);
   }
-  // The chip and Compare don't report: one report per estimate seen, from the card and the drawer.
+  // The chip and Compare don't report: one report per estimate seen, from the card.
   assert.doesNotMatch(read("components/chances/StandingChip.tsx"), /track\(/);
 });
 
@@ -491,12 +493,13 @@ test("the core-subject legend is a heading inside its box, not a label on the bo
   assert.match(src, /<legend className="[^"]*\bfloat-left\b[^"]*\bw-full\b/);
 });
 
-test("the row drawer shows the stage lines and the panel from the row's estimate and links to how the college reads a record", () => {
+test("the plan explains the estimate once for the list, not per college; the profile's card keeps the full panel", () => {
+  // Owner, 2026-10-12: the row's ⓘ is a capture panel now (tests/planner-capture.test.mts); "How Quad reads your list"
+  // (components/planner/ListExplainer.tsx) carries the explanation. The college profile's card still shows the lines.
   const drawer = read("components", "planner", "RowDrawer.tsx");
-  assert.match(drawer, /<WhatWentIn result=\{estimate\}/);
-  assert.match(drawer, /panelParts\(estimate\)/);
-  assert.match(drawer, /\/schools\/\$\{school\.unit_id\}\/admissions#factors/);
-  assert.match(drawer, /How \{school\.name\} reads a record/);
+  assert.doesNotMatch(drawer, /<WhatWentIn|panelParts\(/);
+  assert.match(read("components", "planner", "PlanList.tsx"), /<ListExplainer \/>/);
+  assert.match(read("components", "chances", "StandingCard.tsx"), /<WhatWentIn\b/);
   assert.match(read("lib", "planner", "plan-view.ts"), /estimate: school \? est : null/);
 });
 

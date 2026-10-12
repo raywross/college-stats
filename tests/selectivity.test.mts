@@ -1,27 +1,30 @@
 /**
- * Quad's selectivity (specs/chances/selectivity-index.md): percentiles, the weighted mean renormalized over what a
- * college reports, the trend points, the tiers and their hysteresis, per-pool tiers, `tierForStudent`, the build's key
- * placement, the guard in `npm run verify` (and that it fails when its rules are broken), and the proprietary rule: the
- * index never reaches public/, the search index, app code, or a client bundle.
+ * Quad's selectivity (specs/chances/selectivity-index.md, second version): the scales, the filled SAT, the evidence
+ * pull for a small class, figures that can't describe one class, the score and ranks, the tiers and their hysteresis,
+ * per-pool tiers, `tierForStudent`, the build's key placement, the guard in `npm run verify` (and that it fails when
+ * its rules are broken), and the proprietary rule: the score never reaches public/, the search index, app code, or a
+ * client bundle.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, relative, resolve } from "node:path";
+import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types.ts";
 import {
   ELITE_COUNT_RANGE,
   ELITE_INDEX,
+  EVIDENCE_ADMITS,
   HYSTERESIS,
-  WEIGHTS,
-  distributions,
-  indexInputs,
-  percentileOf,
+  TIER_CUTOFFS,
+  filledReadings,
+  inconsistent,
+  leastSquares,
+  logit,
   rawInputs,
-  selectivityIndex,
+  scales,
+  selectivityScore,
   selectivityTier,
-  trendPoints,
   type RawInputs,
 } from "../lib/selectivity.ts";
 import { chipTiers, tierForStudent, tierRank, tierText } from "../lib/selectivity-tier.ts";
@@ -42,91 +45,106 @@ const raw = (over: Partial<RawInputs> = {}): RawInputs => ({
   admitRate: 0.5,
   inStateRate: null,
   outOfStateRate: null,
-  sat75: null,
-  gpaTopShare: null,
-  yield: null,
-  edShare: null,
-  waitlistShare: null,
-  factorsRead: null,
-  selectivityTrend: null,
-  applicationsTrend: null,
+  sat75: 1200,
+  yield: 0.3,
+  retention: 0.8,
+  graduation: 0.6,
+  admitted: 5000,
+  enrolled: 1500,
+  undergrad: 6000,
   ...over,
 });
 
-/* ---- Percentiles and the index ---- */
+/** A small field of colleges with every input, spread enough for the fit. */
+const FIELD: RawInputs[] = [0.05, 0.1, 0.2, 0.35, 0.5, 0.65, 0.8, 0.9].map((rate, i) =>
+  raw({ admitRate: rate, sat75: 1560 - i * 60, yield: 0.8 - i * 0.07, retention: 0.98 - i * 0.03, graduation: 0.95 - i * 0.06 })
+);
 
-test("percentiles: the share beaten plus half the ties, in the input's direction", () => {
-  const v = [0.1, 0.2, 0.2, 0.5];
-  assert.equal(percentileOf(v, 0.1, true), 87.5, "the lowest rate beats three of four, plus half its own tie");
-  assert.equal(percentileOf(v, 0.2, true), 50);
-  assert.equal(percentileOf(v, 0.5, false), 87.5, "higher is harder for scores");
-  assert.equal(percentileOf(v, 0.05, true), 100, "a pool rate below every college's rate");
-  assert.equal(percentileOf([], 1, false), 50);
+/* ---- Scales and the score ---- */
+
+test("least squares recovers an exact line", () => {
+  const xs = [[0, 1], [1, 0], [2, 3], [3, 1], [4, 4]];
+  const beta = leastSquares(xs, xs.map(([a, b]) => 2 + 3 * a - b));
+  [2, 3, -1].forEach((v, i) => assert.ok(Math.abs(beta[i] - v) < 1e-9, `${beta}`));
 });
 
-test("the index: a weighted mean renormalized over what the college reports, plus the trend, clamped", () => {
-  assert.equal(selectivityIndex({ readings: { admit_rate: 80 }, trend: 0 }), 80, "the admit rate alone carries all the weight");
-  const both = selectivityIndex({ readings: { admit_rate: 80, class_strength: 50 }, trend: 0 })!;
-  assert.equal(both, Math.round(((WEIGHTS.admit_rate * 80 + WEIGHTS.class_strength * 50) / (WEIGHTS.admit_rate + WEIGHTS.class_strength)) * 10) / 10);
-  assert.equal(selectivityIndex({ readings: { admit_rate: 80, yield: null, waitlist: undefined }, trend: 0 }), 80, "missing inputs are skipped, not zeroes");
-  assert.equal(selectivityIndex({ readings: { class_strength: 99 }, trend: 0 }), null, "the admit rate is required");
-  assert.equal(selectivityIndex({ readings: { admit_rate: 98 }, trend: 7 }), 100, "clamped at 100");
-  assert.equal(selectivityIndex({ readings: { admit_rate: 3 }, trend: -7 }), 0, "clamped at 0");
+test("the scales keep the top apart: 3% and 9% admit rates read far apart, unlike percentiles", () => {
+  const sc = scales(FIELD);
+  const at = (rate: number) => filledReadings(raw({ admitRate: rate }), sc)!.admit_rate;
+  assert.ok(at(0.03) - at(0.09) > 0.5 * (at(0.09) - at(0.5)), "the gap from 9% to 3% is a real share of the gap from 50% to 9%");
+  assert.ok(logit(0) > -10 && logit(1) < 10, "0% and 100% stay finite");
 });
 
-test("the trend: more selective +5, less −5; applications ±2; steady or unknown adds nothing", () => {
-  assert.equal(trendPoints("up", "up"), 7);
-  assert.equal(trendPoints("down", "down"), -7);
-  assert.equal(trendPoints("steady", null), 0);
-  assert.equal(trendPoints(null, "up"), 2);
+test("a missing SAT is filled from the other inputs; a missing yield, retention, or graduation rate reads as the middle", () => {
+  const sc = scales(FIELD);
+  const strong = filledReadings(raw({ admitRate: 0.05, sat75: null, yield: 0.8, retention: 0.98, graduation: 0.95 }), sc)!;
+  const weak = filledReadings(raw({ admitRate: 0.05, sat75: null, yield: 0.3, retention: 0.7, graduation: 0.4 }), sc)!;
+  assert.ok(strong.class_strength > weak.class_strength, "a test-blind college that keeps and graduates its students reads stronger");
+  const gaps = filledReadings(raw({ yield: null, retention: null, graduation: null }), sc)!;
+  assert.deepEqual([gaps.yield, gaps.retention, gaps.graduation], [0, 0, 0]);
 });
 
-test("per pool, only the admit rate changes: each pool's rate is placed among every college's overall rate", () => {
-  const all = [raw({ admitRate: 0.1 }), raw({ admitRate: 0.3 }), raw({ admitRate: 0.6 }), raw({ admitRate: 0.3, inStateRate: 0.5, outOfStateRate: 0.05, sat75: 1400 })];
-  const dist = distributions(all);
-  const r = all[3];
-  const inState = indexInputs(r, dist, "in_state");
-  const outState = indexInputs(r, dist, "out_of_state");
-  assert.ok(inState.readings.admit_rate! < outState.readings.admit_rate!);
-  assert.equal(inState.readings.class_strength, outState.readings.class_strength);
-  assert.equal(dist.admit_rate.values.length, 4, "pool rates don't join the distribution");
+test("the score: required admit rate, no cap at the top, two decimals", () => {
+  const sc = scales(FIELD);
+  assert.equal(selectivityScore(raw({ admitRate: null }), sc), null, "the admit rate is required");
+  const a = selectivityScore(raw({ admitRate: 0.03, sat75: 1580, yield: 0.85, retention: 0.99, graduation: 0.98 }), sc)!;
+  const b = selectivityScore(raw({ admitRate: 0.06, sat75: 1560, yield: 0.6, retention: 0.97, graduation: 0.95 }), sc)!;
+  assert.ok(a > b && a <= 100, `${a} > ${b}`);
+  assert.equal(Math.round(a * 100) / 100, a);
 });
 
-test("the C7 count is scaled to 0–100, not percentiled", () => {
-  const dist = distributions([raw({ factorsRead: 4 })]);
-  assert.equal(indexInputs(raw({ factorsRead: 4 }), dist).readings.factors_read, 50);
+test("evidence: a tiny admitted class is pulled toward the middle", () => {
+  const sc = scales(FIELD);
+  const big = selectivityScore(raw({ admitRate: 0.05, admitted: 2000 }), sc)!;
+  const tiny = selectivityScore(raw({ admitRate: 0.05, admitted: 30 }), sc)!;
+  assert.ok(tiny < big, `${tiny} < ${big}`);
+  // Distance from the middle (40) scales by admitted ÷ (admitted + EVIDENCE_ADMITS).
+  const ratio = (tiny - 40) / (big - 40);
+  const want = 30 / (30 + EVIDENCE_ADMITS) / (2000 / (2000 + EVIDENCE_ADMITS));
+  assert.ok(Math.abs(ratio - want) < 0.01, `${ratio} ≈ ${want}`);
+});
+
+test("figures that can't describe one class (more first-years than undergraduates) leave a college unrated", () => {
+  const sc = scales(FIELD);
+  assert.ok(inconsistent(raw({ enrolled: 233, undergrad: 41 })));
+  assert.equal(selectivityScore(raw({ enrolled: 233, undergrad: 41 }), sc), null);
+  assert.ok(!inconsistent(raw({ undergrad: null })));
+});
+
+test("per pool, only the admit rate changes; pool rates don't move the scales", () => {
+  const r = raw({ admitRate: 0.3, inStateRate: 0.5, outOfStateRate: 0.1 });
+  const sc = scales([...FIELD, r]);
+  const inState = filledReadings(r, sc, "in_state")!;
+  const outState = filledReadings(r, sc, "out_of_state")!;
+  assert.ok(inState.admit_rate < outState.admit_rate);
+  assert.equal(inState.yield, outState.yield);
+  assert.deepEqual(scales([...FIELD, r]).mean, scales([...FIELD, { ...r, inStateRate: 0.9, outOfStateRate: 0.01 }]).mean);
 });
 
 /* ---- Tiers and hysteresis ---- */
 
-test("the tiers: Elite needs the index and a pool rate under 10%; then 85, 60, 30", () => {
-  assert.equal(selectivityTier(ELITE_INDEX, 0.05), "elite");
-  assert.equal(selectivityTier(ELITE_INDEX, 0.12), "highly_selective", "a high index alone isn't Elite");
-  assert.equal(selectivityTier(ELITE_INDEX - 0.1, 0.05), "highly_selective");
-  assert.equal(selectivityTier(85, 0.2), "highly_selective");
-  assert.equal(selectivityTier(60, 0.4), "selective");
-  assert.equal(selectivityTier(30, 0.7), "accessible");
-  assert.equal(selectivityTier(29.9, 0.9), "open");
-  assert.equal(selectivityTier(null, 0.5), null, "no index, not rated");
+test("the tiers: Elite, then the cutoffs, from the score alone", () => {
+  const { highly_selective: hs, selective: se, accessible: ac } = TIER_CUTOFFS;
+  assert.equal(selectivityTier(ELITE_INDEX), "elite");
+  assert.equal(selectivityTier(ELITE_INDEX - 0.01), "highly_selective");
+  assert.equal(selectivityTier(hs), "highly_selective");
+  assert.equal(selectivityTier(se), "selective");
+  assert.equal(selectivityTier(ac), "accessible");
+  assert.equal(selectivityTier(ac - 0.01), "open");
+  assert.equal(selectivityTier(null), null, "no score, not rated");
 });
 
-test("hysteresis: a tier moves only when the index crosses a cutoff by the band", () => {
-  // Up: from Selective, 86 is past 85 but not by the band; 87 is.
-  assert.equal(selectivityTier(85 + HYSTERESIS - 0.1, 0.2, "selective"), "selective");
-  assert.equal(selectivityTier(85 + HYSTERESIS, 0.2, "selective"), "highly_selective");
-  // Down: from Highly selective, 84 holds; 83 falls.
-  assert.equal(selectivityTier(85 - HYSTERESIS + 0.1, 0.2, "highly_selective"), "highly_selective");
-  assert.equal(selectivityTier(85 - HYSTERESIS, 0.2, "highly_selective"), "selective");
-  // Two tiers at once when the index moved that far.
-  assert.equal(selectivityTier(25, 0.6, "highly_selective"), "open");
-  // Into Elite needs the band too; out of Elite on the index needs the band.
-  assert.equal(selectivityTier(ELITE_INDEX + 1, 0.05, "highly_selective"), "highly_selective");
-  assert.equal(selectivityTier(ELITE_INDEX + HYSTERESIS, 0.05, "highly_selective"), "elite");
-  assert.equal(selectivityTier(ELITE_INDEX - 1, 0.05, "elite"), "elite");
-  // The Elite rate condition flips at once.
-  assert.equal(selectivityTier(99, 0.11, "elite"), "highly_selective");
-  // Without a previous tier, the plain rule.
-  assert.equal(selectivityTier(86, 0.2, null), "highly_selective");
+test("hysteresis: a tier moves only when the score crosses a cutoff by the band", () => {
+  const hs = TIER_CUTOFFS.highly_selective;
+  assert.equal(selectivityTier(hs + HYSTERESIS - 0.1, "selective"), "selective");
+  assert.equal(selectivityTier(hs + HYSTERESIS, "selective"), "highly_selective");
+  assert.equal(selectivityTier(hs - HYSTERESIS + 0.1, "highly_selective"), "highly_selective");
+  assert.equal(selectivityTier(hs - HYSTERESIS, "highly_selective"), "selective");
+  assert.equal(selectivityTier(TIER_CUTOFFS.accessible - 5, "highly_selective"), "open", "two tiers at once when the score moved that far");
+  assert.equal(selectivityTier(ELITE_INDEX + 1, "highly_selective"), "highly_selective");
+  assert.equal(selectivityTier(ELITE_INDEX + HYSTERESIS, "highly_selective"), "elite");
+  assert.equal(selectivityTier(ELITE_INDEX - 1, "elite"), "elite");
+  assert.equal(selectivityTier(hs + 1, null), "highly_selective", "without a previous tier, the plain rule");
 });
 
 /* ---- Reading the stored tiers ---- */
@@ -178,13 +196,24 @@ test("the committed tiers are a fresh build: rebuilding changes nothing", () => 
   for (let i = 0; i < SCHOOLS.length; i++) assert.equal(JSON.stringify(again.schools[i]), JSON.stringify(SCHOOLS[i]), SCHOOLS[i].name);
 });
 
-test("the real dataset: Elite 30–40 and the colleges you'd expect; every tier holds colleges", () => {
-  assert.ok(FILE.elite_count >= 30 && FILE.elite_count <= 40, `Elite ${FILE.elite_count}`);
+test("the real dataset: the colleges you'd expect in Elite, every tier filled, no ties for a rank, none at 100", () => {
+  const [lo, hi] = ELITE_COUNT_RANGE;
+  assert.ok(FILE.elite_count >= lo && FILE.elite_count <= hi, `Elite ${FILE.elite_count}`);
   assert.equal(FILE.elite_index, ELITE_INDEX);
   for (const name of ["Harvard University", "Yale University", "Princeton University", "Massachusetts Institute of Technology", "Stanford University", "California Institute of Technology", "University of Chicago", "Brown University", "Columbia University in the City of New York", "Dartmouth College", "University of Pennsylvania", "Cornell University", "Duke University"])
     assert.equal(byName(name).selectivity?.tier, "elite", name);
   for (const t of ["highly_selective", "selective", "accessible", "open"] as const) assert.ok(FILE.counts[t] > 0, t);
-  // Georgia Tech: rated per pool; out of state reads harder (its out-of-state rate is about a third of the in-state one).
+  const entries = Object.values(FILE.colleges);
+  assert.deepEqual(entries.map((e) => e.rank).sort((x, y) => x - y), entries.map((_, i) => i + 1), "ranks 1..n, each once");
+  assert.ok(entries.every((e) => e.all < 100), "nothing pinned at the top of the scale");
+  // The first version tied these at 100 or put NYU and Northeastern above them.
+  const rank = (name: string) => FILE.colleges[byName(name).unit_id].rank;
+  for (const name of ["Massachusetts Institute of Technology", "Stanford University", "Yale University", "Columbia University in the City of New York"])
+    for (const below of ["New York University", "Northeastern University"]) assert.ok(rank(name) < rank(below), `${name} above ${below}`);
+  // Small or inconsistent records don't lead.
+  assert.ok(rank("Curtis Institute of Music") > 60 && rank("Washington University of Science and Technology") > 60);
+  assert.equal(byName("University of North Texas Health Science Center").selectivity, undefined, "more first-years than undergraduates: unrated");
+  // Georgia Tech: rated per pool; out of state reads harder.
   const gt = byName("Georgia Institute of Technology-Main Campus");
   const e = FILE.colleges[gt.unit_id];
   assert.ok(gt.selectivity?.in_state && gt.selectivity.out_of_state);
@@ -199,14 +228,14 @@ test("the guard passes on the committed data and code", () => {
 });
 
 test("the guard fails a tier that moved without crossing the band", () => {
-  // A Selective college whose index sits just under the band above 60 can't be stored as anything but Selective.
-  const i = SCHOOLS.findIndex((s) => s.selectivity?.tier === "selective" && !s.selectivity.in_state && FILE.colleges[s.unit_id].all < 85 - HYSTERESIS);
+  // A Selective college whose score sits under the band above the next cutoff can't be stored as anything but Selective.
+  const i = SCHOOLS.findIndex((s) => s.selectivity?.tier === "selective" && !s.selectivity.in_state && FILE.colleges[s.unit_id].all < TIER_CUTOFFS.highly_selective - HYSTERESIS);
   const schools = SCHOOLS.map((s, j) => (j === i ? { ...s, selectivity: { ...s.selectivity!, tier: "highly_selective" as const } } : s));
   const problems = selectivityProblems(schools, FILE, META);
   assert.ok(problems.some((p) => p.includes(SCHOOLS[i].name) && p.includes("hysteresis")), problems.join("\n"));
 });
 
-test("the guard fails an Elite count outside 25–50 and an empty tier", () => {
+test("the guard fails an Elite count outside its band and an empty tier", () => {
   const [lo, hi] = ELITE_COUNT_RANGE;
   const tooFew = SCHOOLS.map((s) => (s.selectivity?.tier === "elite" ? { ...s, selectivity: { ...s.selectivity, tier: "highly_selective" as const } } : s));
   assert.ok(selectivityProblems(tooFew, FILE, META).some((p) => p.startsWith("Elite holds 0") && p.includes(`${lo}–${hi}`)));

@@ -7,6 +7,7 @@
  *   npm run build-selectivity              # writes data/schools.json and data/selectivity-index.json
  *   npm run build-selectivity -- --dry-run # prints the tiers, writes nothing
  *   npm run build-selectivity -- --list    # also prints the Elite colleges and a sample of each tier
+ *   npm run build-selectivity -- --fresh   # tiers straight from the scores, no hysteresis (after a method change)
  *
  * Running it twice changes nothing the second time. Refuses to write if the lineage check fails. No network.
  */
@@ -23,11 +24,12 @@ const META = join(ROOT, "data", "meta.json");
 const INDEX = join(ROOT, "data", "selectivity-index.json");
 const dryRun = process.argv.includes("--dry-run");
 const list = process.argv.includes("--list") || dryRun;
+const fresh = process.argv.includes("--fresh");
 
 function main() {
   const schools: School[] = JSON.parse(readFileSync(SCHOOLS, "utf8"));
   const meta: DatasetMeta = JSON.parse(readFileSync(META, "utf8"));
-  const { schools: built, file, changed } = buildSelectivity(schools, meta, { prior: readIndexFile(ROOT) });
+  const { schools: built, file, changed } = buildSelectivity(schools, meta, { prior: readIndexFile(ROOT), ...(fresh ? { previous: new Map() } : {}) });
   const problems = [...validateLineage(built, meta), ...selectivityProblems(built, file, meta)];
   if (problems.length) {
     console.error(`build-selectivity: checks failed (${problems.length}); nothing written:`);

@@ -155,11 +155,11 @@ const entries = {
   },
   "selectivity-tier": {
     term: "Quad's selectivity",
-    short: "Quad's reading of how hard a college is to get into, in five steps from Elite to Open, from the figures it publishes: its admit rate (for your state where it publishes one), its admitted students' scores and grades, how many admitted students enroll, how much of the class it fills early, how it has changed over ten years, and how many things it says it weighs. It isn't a ranking and says nothing about quality or fit.",
+    short: "Quad's reading of how hard a college is to get into, in five steps from Elite to Open, from the figures it publishes: its admit rate (for your state where it publishes one), its admitted students' test scores, how many admitted students enroll, and how many of its first-years return for a second year and graduate. It says how hard a college is to get into, not how good it is or whether it fits you.",
     long: "The five steps, hardest first: Elite, Highly selective, Selective, Accessible, Open. A public university that publishes admit rates by residency gets a reading for applicants from its state and one for everyone else, and the profile shows both where they differ. Each college's ⓘ lists the figures read, each with its source and year. How they are combined is Quad's own and isn't published; a college moves between steps only when its figures change clearly, not on a small shift from one year to the next.",
-    why: "Two colleges with the same admit rate can be very different to get into: one fills half its class in early decision, the other admits a class with much higher scores. One word for all of it helps you balance a list.",
+    why: "Two colleges with the same admit rate can be very different to get into: one admits a class with much higher scores, or one most admitted students choose over their other offers. One word for all of it helps you balance a list.",
     category: "Admissions",
-    related: ["acceptance-rate", "yield", "early-decision", "quads-estimate", "levels"],
+    related: ["acceptance-rate", "yield", "quads-estimate", "levels"],
   },
   "median-vs-midpoint": {
     term: "Median vs. midpoint",

@@ -112,26 +112,16 @@ const brandDerived = (label: string, formula: string): FieldDef => ({ ...wikiped
 
 /** What Quad's selectivity reads (specs/chances/selectivity-index.md "Inputs"), in words: kinds, not weights. */
 const SELECTIVITY_FORMULA =
-  "Quad's own reading of figures the college publishes: its admit rate, its admitted students' scores and grades, how many admitted students enroll, how much of the class it fills in early decision, how its admit rate and applications have changed over ten years, how many things it rates very important, and how many applicants it offers a waitlist place. How they are combined is Quad's own and isn't published";
+  "Quad's own reading of figures the college publishes: its admit rate, its admitted students' test scores, how many admitted students enroll, how many first-years return for a second year, how many graduate, and how many students it admits. How they are combined is Quad's own and isn't published";
 const SELECTIVITY_INPUTS = [
   "admissions.acceptance_rate",
   "derived.sat_total",
   "admissions.act_composite_25_75",
-  "derived.gpa_top_share",
   "derived.yield",
-  "reported.admission_profile.early_decision.admitted",
-  "admissions.enrolled",
-  "trends",
-  "reported.admission_profile.factors.rigor",
-  "reported.admission_profile.factors.essay",
-  "reported.admission_profile.factors.recommendations",
-  "reported.admission_profile.factors.interview",
-  "reported.admission_profile.factors.extracurriculars",
-  "reported.admission_profile.factors.talent",
-  "reported.admission_profile.factors.character",
-  "admissions.test_policy",
-  "reported.admission_profile.wait_list.offered",
+  "outcomes.retention_rate",
+  "outcomes.graduation_rate",
   "admissions.admitted",
+  "admissions.enrolled",
 ] as const;
 
 export const FIELDS = {

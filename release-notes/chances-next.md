@@ -13,8 +13,8 @@ summary: Quad's estimate now reads on five levels from High reach to Safe, every
   numbers sees them as a High reach, so the two no longer look the same. Still never a percentage.
 - **A selectivity tier for every college.** One word for how hard a college is to get into: Elite, Highly selective,
   Selective, Accessible, or Open. It's read from what the college publishes (its admit rate for students from your
-  state, its admitted students' scores, how many admitted students enroll, how much of the class it fills early, and
-  its ten-year direction), and the ⓘ beside it lists those facts with their sources. Filter and sort by it on Explore,
+  state, its admitted students' test scores, how many admitted students enroll, and how many of its first-years
+  return and graduate), and the ⓘ beside it lists those facts with their sources. Filter and sort by it on Explore,
   and compare it side by side on Compare.
 - **Who you're compared with.** Instead of "your pool", the estimate now says it plainly: "applicants like you, from
   Indiana, were admitted at 71%". A new panel lists every rate the college publishes for your situation: your state,

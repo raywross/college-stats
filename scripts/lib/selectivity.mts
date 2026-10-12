@@ -1,6 +1,6 @@
 /**
  * The selectivity build step (specs/chances/selectivity-index.md "Data and lineage"): reads every college's published
- * figures, places each input among the colleges that report it, computes the index per pool (lib/selectivity.ts), and
+ * figures, standardizes each input over the colleges that report it, computes the score per pool (lib/selectivity.ts), and
  * writes the tiers to `school.selectivity` with hysteresis against the last published tiers. The index itself goes to
  * data/selectivity-index.json, which only this step and its check read. Run by `npm run build-selectivity` and at the
  * end of `npm run sync-data` (after derived fields and trends); the check runs in `npm run verify`
@@ -12,7 +12,7 @@ import type { DatasetMeta, School, SchoolSelectivity } from "../../lib/types";
 import type { SelectivityPool, SelectivityTier } from "../../lib/chances/types.ts";
 import { SELECTIVITY_TIERS } from "../../lib/chances/levels.ts";
 import { lineageFor } from "../../lib/lineage.ts";
-import { ELITE_COUNT_RANGE, ELITE_INDEX, collegeIndex, distributions, poolRate, rawInputs, selectivityTier, type RawInputs } from "../../lib/selectivity.ts";
+import { ELITE_COUNT_RANGE, ELITE_INDEX, collegeIndex, rawInputs, scales, selectivityScoreExact, selectivityTier } from "../../lib/selectivity.ts";
 
 /** The pools a college can have an index for, in the order the file and `school.selectivity` list them. */
 const POOLS = ["all", "in_state", "out_of_state"] as const satisfies readonly SelectivityPool[];
@@ -21,6 +21,8 @@ type Pool = (typeof POOLS)[number];
 /** One college's line in data/selectivity-index.json. */
 export interface CollegeIndexEntry {
   all: number;
+  /** Place among every rated college by the unrounded score for all applicants (1 = hardest to get into). */
+  rank: number;
   in_state?: number;
   out_of_state?: number;
   /** The tiers this build moved, by pool, with the tier they moved from (the hysteresis check reads it). */
@@ -80,27 +82,31 @@ export function buildSelectivity(
   opts: { previous?: ReadonlyMap<string, SchoolSelectivity | undefined>; prior?: SelectivityIndexFile | null; today?: string } = {}
 ): BuildResult {
   const raws = schools.map(rawInputs);
-  const dist = distributions(raws);
+  const sc = scales(raws);
+  // Ranks by the unrounded score (ties broken by unit id), so every rated college has its own place.
+  const exact = raws.map((r) => selectivityScoreExact(r, sc, "all"));
+  const order = schools.map((_, i) => i).filter((i) => exact[i] !== null).sort((a, b) => exact[b]! - exact[a]! || schools[a].unit_id.localeCompare(schools[b].unit_id));
+  const rankOf = new Map(order.map((i, r) => [i, r + 1]));
   const colleges: Record<string, CollegeIndexEntry> = {};
   const counts = Object.fromEntries(SELECTIVITY_TIERS.map((t) => [t, 0])) as Record<SelectivityTier, number>;
   let eliteCount = 0;
   let changed = 0;
   const out = schools.map((school, i) => {
     const raw = raws[i];
-    const idx = collegeIndex(raw, dist);
+    const idx = collegeIndex(raw, sc);
     const before = opts.previous ? opts.previous.get(school.unit_id) : school.selectivity;
     if (idx.all === null) {
       if (before) changed++;
       return placeSelectivity(school, undefined);
     }
-    const entry: CollegeIndexEntry = { all: idx.all };
+    const entry: CollegeIndexEntry = { all: idx.all, rank: rankOf.get(i)! };
     const sel: SchoolSelectivity = { tier: null };
     const moved: Partial<Record<Pool, SelectivityTier>> = {};
     for (const pool of POOLS) {
       const index = pool === "all" ? idx.all : idx[pool];
       if (index === undefined || index === null) continue;
       const prev = previousTier(before, pool);
-      const tier = selectivityTier(index, poolRate(raw, pool), prev)!;
+      const tier = selectivityTier(index, prev)!;
       if (pool === "all") sel.tier = tier;
       else {
         entry[pool] = index;
@@ -163,7 +169,6 @@ export function selectivityProblems(schools: readonly School[], file: Selectivit
   if (elite !== file.elite_count) problems.push(`data/selectivity-index.json: elite_count ${file.elite_count}, but ${elite} colleges are Elite`);
   for (const t of SELECTIVITY_TIERS) if (!schools.some((s) => s.selectivity?.tier === t)) problems.push(`no college is ${t} for all applicants`);
 
-  const raws = new Map<string, RawInputs>(schools.map((s) => [s.unit_id, rawInputs(s)]));
   for (const s of schools) {
     const e = file.colleges[s.unit_id];
     const where = `${s.name} (${s.unit_id})`;
@@ -183,10 +188,9 @@ export function selectivityProblems(schools: readonly School[], file: Selectivit
         problems.push(`${where}: ${pool} has ${index === undefined ? "a tier but no index" : "an index but no tier"}`);
         continue;
       }
-      const rate = poolRate(raws.get(s.unit_id)!, pool);
       // A moved tier must be what the rule gives from where it was; an unmoved one must still be inside its band.
       const from = e.changed_from?.[pool] ?? tier;
-      const want = selectivityTier(index, rate, from);
+      const want = selectivityTier(index, from);
       if (want !== tier) problems.push(`${where}: ${pool} is ${tier}${e.changed_from?.[pool] ? ` (from ${from})` : ""}, but index ${index} gives ${want} with the hysteresis band`);
     }
   }

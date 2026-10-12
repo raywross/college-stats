@@ -1,10 +1,15 @@
 /**
- * Quad's selectivity (specs/chances/selectivity-index.md): a hidden index (0–100) per college and pool, from the
+ * Quad's selectivity (specs/chances/selectivity-index.md): a hidden score (0–100) per college and pool, from the
  * figures the college publishes, read as one of five public tiers, Elite to Open. This module holds the method: the
- * inputs, the weights, the cutoffs, `ELITE_INDEX`, and the hysteresis band. The build (`npm run build-selectivity`,
- * scripts/lib/selectivity.mts) writes the tiers to `school.selectivity` and the index to data/selectivity-index.json;
- * pages read only the tiers (lib/selectivity-tier.ts). Never shown: the weights, the index, or the cutoffs (the chip's
+ * inputs, their scales, the weights, the cutoffs, and the hysteresis band. The build (`npm run build-selectivity`,
+ * scripts/lib/selectivity.mts) writes the tiers to `school.selectivity` and the score to data/selectivity-index.json;
+ * pages read only the tiers (lib/selectivity-tier.ts). Never shown: the weights, the score, or the cutoffs (the chip's
  * panel lists the inputs as cited facts). Pure, no I/O; kept out of client bundles (tests/selectivity.test.mts).
+ *
+ * Second version (2026-10-12, "As built (second version)" in the spec): each input is read on a continuous scale (the
+ * admit rate and the shares on the log-odds scale, the SAT as points) and standardized over the colleges that report
+ * it, so a 3% and a 9% admit rate stay far apart instead of both reading as the 98th percentile. The first version
+ * percentiled every input and added trend points before capping at 100, which tied 22 colleges at the top.
  */
 import type { School } from "./types";
 import type { SelectivityPool, SelectivityTier } from "./chances/types.ts";
@@ -12,61 +17,67 @@ import { SELECTIVITY_TIERS } from "./chances/levels.ts";
 import { sameClassYield } from "./derive.ts";
 import { satTotal } from "./score-bands.ts";
 import { actToSat } from "./planner/concordance.ts";
-import { gpaTopShare } from "./chances/reading.ts";
 import { admitRatesByResidency } from "./cds/residency-display.ts";
-import { indicatorOf, type Direction } from "./indicators.ts";
 
 export { tierForStudent } from "./selectivity-tier.ts";
 
 /* ---- Constants (the method; never on a page) ---- */
 
-/** The percentiled inputs, each turned into a percentile among the colleges that report it (higher = harder). */
-export type PercentileInput = "admit_rate" | "class_strength" | "gpa_crowding" | "yield" | "ed_share" | "waitlist";
-/** Every input the index reads: the percentiled ones and the C7 count, which is scaled, not percentiled. */
-export type IndexInput = PercentileInput | "factors_read";
-
-/** Weights (selectivity-index.md "Inputs"), renormalized over the inputs a college reports. The trend is added after. */
-export const WEIGHTS: Record<IndexInput, number> = {
-  admit_rate: 45,
-  class_strength: 20,
-  gpa_crowding: 5,
-  yield: 10,
-  ed_share: 5,
-  factors_read: 5,
-  waitlist: 5,
-};
-
-/** Points added after the weighted mean: the ten-year selectivity direction ±5, applications ±2. */
-export const TREND_POINTS = { selectivity: 5, applications: 2 } as const;
-
-/** The C7 count's top: six factors, rigor, and a required test policy. */
-export const FACTORS_READ_MAX = 8;
+/**
+ * The inputs, each standardized over the colleges that report it (higher = harder to get into):
+ * the admit rate, the admitted class's SAT (75th percentile), yield, first-year retention, and the graduation rate.
+ */
+export type ScoreInput = "admit_rate" | "class_strength" | "yield" | "retention" | "graduation";
 
 /**
- * Elite: index at or above this and the pool's admit rate under `ELITE_MAX_RATE`. Set once at build so Elite holds
- * 30–40 colleges, and moved only by a deliberate change here. Set 2026-10-12 on the dataset of that day: 33 colleges
- * Elite, all of them for all applicants (34 colleges admit under 10%; the Naval Academy is the one whose index falls
- * short). At 96 Elite would hold 29, and at 97 Yale drops out (a steady ten-year direction earns no trend points).
+ * Weights (sum 90; the score divides by the sum). Checked on 2026-10-12 against seven public rankings (U.S. News
+ * national and liberal arts, Forbes, Niche's best and hardest-admissions lists, QS U.S., WSJ): tuned on any five,
+ * the weights that did best agreed with the sixth within 0.74–0.92 (rank correlation), and the average agreement
+ * moved by under 0.02 across every nearby weighting, so these round, explainable weights were kept over the best fit
+ * (0.841 against 0.845). Trend points, early-decision share, the top-GPA share, the waitlist, and the C7 count each
+ * lowered the agreement and were dropped.
  */
-export const ELITE_INDEX = 94;
-export const ELITE_MAX_RATE = 0.1;
-
-/** The other cutoffs, hardest first. Open is everything under Accessible's. */
-export const TIER_CUTOFFS: Record<Exclude<SelectivityTier, "elite" | "open">, number> = {
-  highly_selective: 85,
-  selective: 60,
-  accessible: 30,
+export const WEIGHTS: Record<ScoreInput, number> = {
+  admit_rate: 45,
+  class_strength: 20,
+  yield: 10,
+  retention: 10,
+  graduation: 5,
 };
 
-/** A tier changes at a publish only when the index crosses the cutoff by this many points (or the Elite rate flips). */
+/**
+ * Evidence: a college that admits few students is pulled toward the middle by admitted ÷ (admitted + this), so a
+ * conservatory admitting 26 of 568 or a college admitting 30 of 413 can't top the scale on one small class.
+ */
+export const EVIDENCE_ADMITS = 50;
+
+/** The score is 40 + 20 × the weighted standardized mean, held to 0–100: the middle college reads about 40. */
+export const SCORE_CENTER = 40;
+export const SCORE_SPREAD = 20;
+
+/**
+ * Elite: score at or above this. Set 2026-10-12 at the gap below the 29th college (80.3, then 79.4); moved only by a
+ * deliberate change here. No admit-rate condition: the score already weighs the rate, and a fixed 10% line put
+ * colleges ranked above Cornell outside Elite.
+ */
+export const ELITE_INDEX = 80;
+
+/** The other cutoffs, hardest first; set so each tier holds about as many colleges as under the first version. */
+export const TIER_CUTOFFS: Record<Exclude<SelectivityTier, "elite" | "open">, number> = {
+  highly_selective: 55,
+  selective: 42,
+  accessible: 33,
+};
+
+/** A tier changes at a publish only when the score crosses the cutoff by this many points. */
 export const HYSTERESIS = 2;
 
-/** The Elite count the verify guard holds the dataset to (the target is 30–40; this is the alarm band). */
-export const ELITE_COUNT_RANGE: readonly [number, number] = [25, 50];
+/** The Elite count the verify guard holds the dataset to (an alarm band, not a target). */
+export const ELITE_COUNT_RANGE: readonly [number, number] = [20, 50];
 
 /* ---- Inputs ---- */
 
-/** One college's published figures, before percentiles. Null = not reported. */
+/** One college's published figures. Null = not reported. */
 export interface RawInputs {
   /** The overall admit rate (`admissions.acceptance_rate`). */
   admitRate: number | null;
@@ -75,134 +86,133 @@ export interface RawInputs {
   outOfStateRate: number | null;
   /** SAT total 75th percentile, or the ACT 75th through the 2018 concordance. */
   sat75: number | null;
-  gpaTopShare: number | null;
   yield: number | null;
-  /** C21 ED admitted ÷ first-years enrolled. */
-  edShare: number | null;
-  /** C2 waitlist offered ÷ admitted. */
-  waitlistShare: number | null;
-  /** C7 very-important count among the six, +1 rigor, +1 required tests (0–8); null without a C7 grid. */
-  factorsRead: number | null;
-  /** The ten-year indicators (lib/indicators.ts), when the history supports them. */
-  selectivityTrend: Direction | null;
-  applicationsTrend: Direction | null;
+  retention: number | null;
+  graduation: number | null;
+  admitted: number | null;
+  enrolled: number | null;
+  undergrad: number | null;
 }
-
-/** The six C7 factors counted when the college rates them very important. */
-export const FACTORS_COUNTED = ["essay", "recommendations", "interview", "extracurriculars", "talent", "character"] as const;
-
-/** n ÷ d, or null without both (or with nothing to divide by). */
-const ratio = (n: number | null | undefined, d: number | null | undefined): number | null => (n != null && d ? n / d : null);
 
 /** The figures one college publishes, read from the dataset with the site's own helpers. */
 export function rawInputs(school: School): RawInputs {
   const a = school.admissions;
-  const profile = school.reported?.admission_profile;
   const sat = satTotal(school);
   const act = a.act_composite_25_75;
   const res = school.type === "public" ? admitRatesByResidency(school) : null;
   const pools = res && res.in_state !== null && res.out_of_state !== null;
-  const factors = profile?.factors;
-  let factorsRead: number | null = null;
-  if (factors && Object.keys(factors).length) {
-    factorsRead = FACTORS_COUNTED.filter((f) => factors[f] === "very_important").length;
-    if (factors.rigor === "very_important") factorsRead++;
-    if (a.test_policy === "required") factorsRead++;
-  }
   return {
     admitRate: a.acceptance_rate,
     inStateRate: pools ? res.in_state : null,
     outOfStateRate: pools ? res.out_of_state : null,
     sat75: sat ? sat[1] : act ? actToSat(act[1]) : null,
-    gpaTopShare: gpaTopShare(school),
     yield: sameClassYield(school),
-    // A share of the class, so never above 1 (the ED count and the enrolled count can describe different classes).
-    edShare: ((v) => (v === null ? null : Math.min(1, v)))(ratio(profile?.early_decision?.admitted, a.enrolled)),
-    // Offered a place ÷ admitted: heavy waitlisting can offer more places than admits, so no cap.
-    waitlistShare: ratio(profile?.wait_list?.offered, a.admitted),
-    factorsRead,
-    selectivityTrend: indicatorOf(school, "selectivity")?.direction ?? null,
-    applicationsTrend: indicatorOf(school, "applications")?.direction ?? null,
+    retention: school.outcomes?.retention_rate ?? null,
+    graduation: school.outcomes?.graduation_rate ?? null,
+    admitted: a.admitted ?? null,
+    enrolled: a.enrolled ?? null,
+    undergrad: school.demographics?.undergrad_enrollment ?? null,
   };
 }
 
-/* ---- Percentiles ---- */
+/**
+ * Figures that can't describe one first-year class: more first-years enrolled than undergraduates in all (a health
+ * science center whose admissions count a professional program). Such a college is left unrated.
+ */
+export function inconsistent(raw: RawInputs): boolean {
+  return raw.enrolled !== null && raw.undergrad !== null && raw.undergrad > 0 && raw.enrolled > raw.undergrad;
+}
 
-/** Each percentiled input's values over every college that reports it, sorted ascending, and its direction. */
-export type Distributions = Record<PercentileInput, { values: number[]; lowerIsHarder: boolean }>;
+/* ---- Scales ---- */
 
-const PERCENTILE_SOURCES: Record<PercentileInput, { get: (r: RawInputs) => number | null; lowerIsHarder: boolean }> = {
-  admit_rate: { get: (r) => r.admitRate, lowerIsHarder: true },
-  class_strength: { get: (r) => r.sat75, lowerIsHarder: false },
-  gpa_crowding: { get: (r) => r.gpaTopShare, lowerIsHarder: false },
-  yield: { get: (r) => r.yield, lowerIsHarder: false },
-  ed_share: { get: (r) => r.edShare, lowerIsHarder: false },
-  waitlist: { get: (r) => r.waitlistShare, lowerIsHarder: false },
+const EPS = 0.005;
+/** Log-odds, with shares held inside 0.5%–99.5% so a 0% or 100% figure stays finite. */
+export const logit = (p: number) => {
+  const q = Math.min(1 - EPS, Math.max(EPS, p));
+  return Math.log(q / (1 - q));
 };
 
-/** The distributions over these colleges (every college with the input, at this publish). */
-export function distributions(all: readonly RawInputs[]): Distributions {
-  const out = {} as Distributions;
-  for (const [k, src] of Object.entries(PERCENTILE_SOURCES) as [PercentileInput, (typeof PERCENTILE_SOURCES)[PercentileInput]][]) {
-    out[k] = { values: all.map(src.get).filter((v): v is number => v !== null).sort((x, y) => x - y), lowerIsHarder: src.lowerIsHarder };
+/** The value each input reads on its scale (higher = harder), before standardizing. */
+const ON_SCALE: Record<ScoreInput, (r: RawInputs, rate: number | null) => number | null> = {
+  admit_rate: (_r, rate) => (rate === null ? null : -logit(rate)),
+  class_strength: (r) => r.sat75,
+  yield: (r) => (r.yield ? logit(r.yield) : null),
+  retention: (r) => (r.retention ? logit(r.retention) : null),
+  graduation: (r) => (r.graduation ? logit(r.graduation) : null),
+};
+
+const INPUTS = Object.keys(WEIGHTS) as ScoreInput[];
+/** What a missing SAT is filled from: the college's other inputs. */
+const SAT_FROM: readonly ScoreInput[] = ["admit_rate", "yield", "retention", "graduation"];
+
+/** Each input's mean and spread over the reporters, and the fit that fills a missing SAT. */
+export interface Scales {
+  mean: Record<ScoreInput, number>;
+  sd: Record<ScoreInput, number>;
+  /** Intercept, then one coefficient per `SAT_FROM` input, in standardized units. */
+  satFit: number[];
+}
+
+/** Ordinary least squares with an intercept (normal equations; a handful of predictors). */
+export function leastSquares(xs: readonly number[][], ys: readonly number[]): number[] {
+  const k = (xs[0]?.length ?? 0) + 1;
+  const a = Array.from({ length: k }, () => new Array<number>(k).fill(0));
+  const b = new Array<number>(k).fill(0);
+  xs.forEach((x, n) => {
+    const row = [1, ...x];
+    for (let i = 0; i < k; i++) {
+      b[i] += row[i] * ys[n];
+      for (let j = 0; j < k; j++) a[i][j] += row[i] * row[j];
+    }
+  });
+  for (let i = 0; i < k; i++) {
+    let piv = i;
+    for (let r = i + 1; r < k; r++) if (Math.abs(a[r][i]) > Math.abs(a[piv][i])) piv = r;
+    [a[i], a[piv]] = [a[piv], a[i]];
+    [b[i], b[piv]] = [b[piv], b[i]];
+    for (let r = i + 1; r < k; r++) {
+      const f = a[r][i] / a[i][i];
+      for (let c = i; c < k; c++) a[r][c] -= f * a[i][c];
+      b[r] -= f * b[i];
+    }
+  }
+  const beta = new Array<number>(k).fill(0);
+  for (let i = k - 1; i >= 0; i--) {
+    let s = b[i];
+    for (let j = i + 1; j < k; j++) s -= a[i][j] * beta[j];
+    beta[i] = s / a[i][i];
+  }
+  return beta;
+}
+
+/** Standardized readings for one college (null = not reported), before filling. */
+function readings(raw: RawInputs, scales: Pick<Scales, "mean" | "sd">, rate: number | null): Record<ScoreInput, number | null> {
+  const out = {} as Record<ScoreInput, number | null>;
+  for (const k of INPUTS) {
+    const v = ON_SCALE[k](raw, rate);
+    out[k] = v === null ? null : (v - scales.mean[k]) / scales.sd[k];
   }
   return out;
 }
 
-/** Index of the first element ≥ v (or > v with `strict`) in an ascending array. */
-function bound(sorted: readonly number[], v: number, strict: boolean): number {
-  let lo = 0;
-  let hi = sorted.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (strict ? sorted[mid] <= v : sorted[mid] < v) lo = mid + 1;
-    else hi = mid;
+/** The scales over these colleges (every rated, consistent college at this publish). */
+export function scales(all: readonly RawInputs[]): Scales {
+  const rated = all.filter((r) => r.admitRate !== null && !inconsistent(r));
+  const mean = {} as Record<ScoreInput, number>;
+  const sd = {} as Record<ScoreInput, number>;
+  for (const k of INPUTS) {
+    const vs = rated.map((r) => ON_SCALE[k](r, r.admitRate)).filter((v): v is number => v !== null);
+    const m = vs.reduce((x, y) => x + y, 0) / (vs.length || 1);
+    mean[k] = m;
+    sd[k] = Math.sqrt(vs.reduce((x, y) => x + (y - m) ** 2, 0) / (vs.length || 1)) || 1;
   }
-  return lo;
-}
-
-/**
- * Where `v` sits among `sorted` (0–100, higher = harder): the share of colleges it beats plus half the ties (the
- * mid-rank percentile). A value outside the reporters (a pool rate) is placed in the same distribution.
- */
-export function percentileOf(sorted: readonly number[], v: number, lowerIsHarder: boolean): number {
-  if (!sorted.length) return 50;
-  const below = bound(sorted, v, false);
-  const ties = bound(sorted, v, true) - below;
-  const above = sorted.length - below - ties;
-  const beaten = lowerIsHarder ? above : below;
-  return (100 * (beaten + ties / 2)) / sorted.length;
-}
-
-/** What `selectivityIndex` combines: each input's 0–100 reading (null = not reported) and the trend points. */
-export interface IndexInputs {
-  readings: Partial<Record<IndexInput, number | null>>;
-  /** Added after the mean: TREND_POINTS by direction. */
-  trend: number;
-}
-
-/** The trend points for these directions: more selective +5, less −5; applications growing +2, shrinking −2. */
-export function trendPoints(selectivity: Direction | null, applications: Direction | null): number {
-  const dir = (d: Direction | null) => (d === "up" ? 1 : d === "down" ? -1 : 0);
-  return dir(selectivity) * TREND_POINTS.selectivity + dir(applications) * TREND_POINTS.applications;
-}
-
-/** One college's readings for a pool: its pool's admit rate placed among every college's overall rate. */
-export function indexInputs(raw: RawInputs, dist: Distributions, pool: SelectivityPool = "all"): IndexInputs {
-  const rate = poolRate(raw, pool);
-  const p = (k: PercentileInput, v: number | null) => (v === null ? null : percentileOf(dist[k].values, v, dist[k].lowerIsHarder));
-  return {
-    readings: {
-      admit_rate: p("admit_rate", rate),
-      class_strength: p("class_strength", raw.sat75),
-      gpa_crowding: p("gpa_crowding", raw.gpaTopShare),
-      yield: p("yield", raw.yield),
-      ed_share: p("ed_share", raw.edShare),
-      waitlist: p("waitlist", raw.waitlistShare),
-      factors_read: raw.factorsRead === null ? null : (100 * raw.factorsRead) / FACTORS_READ_MAX,
-    },
-    trend: trendPoints(raw.selectivityTrend, raw.applicationsTrend),
-  };
+  const z = rated.map((r) => readings(r, { mean, sd }, r.admitRate));
+  const fitRows = z.filter((r) => r.class_strength !== null && SAT_FROM.every((k) => r[k] !== null));
+  const satFit = leastSquares(
+    fitRows.map((r) => SAT_FROM.map((k) => r[k] as number)),
+    fitRows.map((r) => r.class_strength as number)
+  );
+  return { mean, sd, satFit };
 }
 
 /** The admit rate a pool reads: the residency rate for in-state and out-of-state, else the overall rate. */
@@ -211,21 +221,40 @@ export function poolRate(raw: RawInputs, pool: SelectivityPool): number | null {
 }
 
 /**
- * The index (0–100, one decimal): the weighted mean of the readings the college has, weights renormalized over them,
- * plus the trend points, clamped. Null without an admit-rate reading (the rate is required).
+ * One college's standardized readings for a pool, every input filled: a missing yield, retention, or graduation rate
+ * reads as the middle (0), and a missing SAT (test-blind and test-free colleges) as what the fit predicts from the
+ * other four.
  */
-export function selectivityIndex(inputs: IndexInputs): number | null {
-  if (inputs.readings.admit_rate == null) return null;
-  let sum = 0;
-  let weight = 0;
-  for (const [k, w] of Object.entries(WEIGHTS) as [IndexInput, number][]) {
-    const v = inputs.readings[k];
-    if (v == null) continue;
-    sum += w * v;
-    weight += w;
-  }
-  const raw = sum / weight + inputs.trend;
-  return Math.round(Math.min(100, Math.max(0, raw)) * 10) / 10;
+export function filledReadings(raw: RawInputs, sc: Scales, pool: SelectivityPool = "all"): Record<ScoreInput, number> | null {
+  const rate = poolRate(raw, pool);
+  if (rate === null) return null;
+  const z = readings(raw, sc, rate);
+  const out = {} as Record<ScoreInput, number>;
+  for (const k of INPUTS) if (k !== "class_strength") out[k] = z[k] ?? 0;
+  out.class_strength = z.class_strength ?? sc.satFit[0] + SAT_FROM.reduce((s, k, i) => s + sc.satFit[i + 1] * out[k], 0);
+  return out;
+}
+
+/**
+ * The score before rounding: the weighted mean of the filled readings, pulled toward the middle for a small admitted
+ * class, on the 40 ± 20 scale, held to 0–100. Null without an admit rate for the pool, or with inconsistent figures.
+ * The build orders colleges by it, so two colleges whose rounded scores match still get distinct ranks.
+ */
+export function selectivityScoreExact(raw: RawInputs, sc: Scales, pool: SelectivityPool = "all"): number | null {
+  if (inconsistent(raw)) return null;
+  const z = filledReadings(raw, sc, pool);
+  if (!z) return null;
+  const total = INPUTS.reduce((s, k) => s + WEIGHTS[k], 0);
+  let c = INPUTS.reduce((s, k) => s + WEIGHTS[k] * z[k], 0) / total;
+  const n = raw.admitted ?? 0;
+  c *= n / (n + EVIDENCE_ADMITS);
+  return Math.min(100, Math.max(0, SCORE_CENTER + SCORE_SPREAD * c));
+}
+
+/** The score (0–100, two decimals). */
+export function selectivityScore(raw: RawInputs, sc: Scales, pool: SelectivityPool = "all"): number | null {
+  const exact = selectivityScoreExact(raw, sc, pool);
+  return exact === null ? null : Math.round(exact * 100) / 100;
 }
 
 /* ---- Tiers ---- */
@@ -233,13 +262,13 @@ export function selectivityIndex(inputs: IndexInputs): number | null {
 const RANK = (t: SelectivityTier) => SELECTIVITY_TIERS.indexOf(t);
 
 /**
- * The tier with every cutoff moved by `shift` points (0 = the plain rule). With `strict`, a tier needs the index above
+ * The tier with every cutoff moved by `shift` points (0 = the plain rule). With `strict`, a tier needs the score above
  * its moved cutoff, not at it: falling exactly the band below a cutoff counts as crossing it, as rising exactly the
  * band above one does.
  */
-function tierAt(index: number, rate: number | null, shift: number, strict = false): SelectivityTier {
-  const clears = (cutoff: number) => (strict ? index > cutoff + shift : index >= cutoff + shift);
-  if (clears(ELITE_INDEX) && rate !== null && rate < ELITE_MAX_RATE) return "elite";
+function tierAt(score: number, shift: number, strict = false): SelectivityTier {
+  const clears = (cutoff: number) => (strict ? score > cutoff + shift : score >= cutoff + shift);
+  if (clears(ELITE_INDEX)) return "elite";
   if (clears(TIER_CUTOFFS.highly_selective)) return "highly_selective";
   if (clears(TIER_CUTOFFS.selective)) return "selective";
   if (clears(TIER_CUTOFFS.accessible)) return "accessible";
@@ -247,21 +276,18 @@ function tierAt(index: number, rate: number | null, shift: number, strict = fals
 }
 
 /**
- * The tier for an index and its pool's admit rate. With the tier from the last published dataset (`previous`), it
- * moves only when the index crosses a cutoff by `HYSTERESIS` points or more: up when the index clears the next cutoff
- * up by the band, down when it falls the band below its own. Elite's rate condition applies at once either way: a
- * pool whose rate reaches 10% leaves Elite at the next publish.
+ * The tier for a score. With the tier from the last published dataset (`previous`), it moves only when the score
+ * crosses a cutoff by `HYSTERESIS` points or more: up when the score clears the next cutoff up by the band, down when
+ * it falls the band below its own.
  */
-export function selectivityTier(index: number | null, poolRateValue: number | null, previous: SelectivityTier | null = null): SelectivityTier | null {
-  if (index === null) return null;
-  const plain = tierAt(index, poolRateValue, 0);
+export function selectivityTier(score: number | null, previous: SelectivityTier | null = null): SelectivityTier | null {
+  if (score === null) return null;
+  const plain = tierAt(score, 0);
   if (!previous || plain === previous) return plain;
-  const up = tierAt(index, poolRateValue, HYSTERESIS);
+  const up = tierAt(score, HYSTERESIS);
   if (RANK(up) < RANK(previous)) return up;
-  const down = tierAt(index, poolRateValue, -HYSTERESIS, true);
+  const down = tierAt(score, -HYSTERESIS, true);
   if (RANK(down) > RANK(previous)) return down;
-  // Inside the band: keep the previous tier, unless it was Elite and the rate no longer allows it.
-  if (previous === "elite" && !(poolRateValue !== null && poolRateValue < ELITE_MAX_RATE)) return down;
   return previous;
 }
 
@@ -273,12 +299,12 @@ export interface CollegeIndex {
   out_of_state?: number | null;
 }
 
-/** The index for each pool the college has: all applicants, and in-state and out-of-state at a public with both rates. */
-export function collegeIndex(raw: RawInputs, dist: Distributions): CollegeIndex {
-  const out: CollegeIndex = { all: selectivityIndex(indexInputs(raw, dist, "all")) };
-  if (raw.inStateRate !== null && raw.outOfStateRate !== null) {
-    out.in_state = selectivityIndex(indexInputs(raw, dist, "in_state"));
-    out.out_of_state = selectivityIndex(indexInputs(raw, dist, "out_of_state"));
+/** The score for each pool the college has: all applicants, and in-state and out-of-state at a public with both rates. */
+export function collegeIndex(raw: RawInputs, sc: Scales): CollegeIndex {
+  const out: CollegeIndex = { all: selectivityScore(raw, sc, "all") };
+  if (out.all !== null && raw.inStateRate !== null && raw.outOfStateRate !== null) {
+    out.in_state = selectivityScore(raw, sc, "in_state");
+    out.out_of_state = selectivityScore(raw, sc, "out_of_state");
   }
   return out;
 }

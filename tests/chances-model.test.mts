@@ -1196,6 +1196,8 @@ test("Revision 2, themes: one ×1.10, two or more ×1.18, multiplying with depth
   const none = at([noFamily(SCI_OLY), noFamily(MATH_CLUB)]);
   near(at([SCI_OLY, noFamily(MATH_CLUB)]) / none, 1.1, 1e-9);
   near(at([SCI_OLY, MATH_CLUB]) / none, 1.18, 1e-9);
+  // A catalog pick without its own family reads the catalog's (Science Olympiad is a science club).
+  near(at([{ ...noFamily(SCI_OLY), catalogKey: "science_olympiad" }, noFamily(MATH_CLUB)]) / none, 1.1, 1e-9);
   // An activity of one year doesn't join a theme; a family no course track reads Deep or Steady doesn't either.
   near(at([noFamily(SCI_OLY), { ...MATH_CLUB, years: [12] }]) / none, 1, 1e-9);
   near(at([noFamily(SCI_OLY), { ...MATH_CLUB, family: "arts" }]) / none, 1, 1e-9);
@@ -1214,7 +1216,9 @@ test("Revision 2, themes: the sentence names the theme in words, and a suggestio
   assert.ok(texts(two).includes("Your math and science courses and your math and science activities line up: depth in one thing, in and out of class."), texts(two).join(" | "));
   const one = notesFor([SCI_OLY]);
   assert.ok(texts(one).includes("Your science courses and your science activities line up: depth in one thing, in and out of class."));
-  assert.ok(texts(one).includes("Your math courses run through high school; a club, team, or program in math would tie them to what you do outside class."), "a track with no activity");
+  assert.ok(!keys(one).includes("depth.theme.track_only"), "with a theme, no club is asked for in every other subject");
+  const sport = notesFor([activity("Soccer", "sport", [9, 10, 11, 12], { family: "athletics" })]);
+  assert.ok(texts(sport).includes("Your science courses run through high school; a club, team, or program in science would tie them to what you do outside class."), "a track with no activity, the deep one first");
   const art = notesFor([SCI_OLY, activity("Art club", "arts", [10, 11], { family: "arts" })]);
   assert.ok(texts(art).includes("You keep up art outside class; an honors or advanced art course each year would tie it to your schedule."), "an activity with no track");
   const unnamed = notesFor([{ ...SCI_OLY, family: null }]);
@@ -1222,6 +1226,35 @@ test("Revision 2, themes: the sentence names the theme in words, and a suggestio
   assert.ok(!keys(unnamed).includes("depth.theme"));
   // Never an activity's name in a theme sentence.
   for (const n of [...two.notes, ...one.notes].filter((x) => x.key.startsWith("depth.theme"))) assert.doesNotMatch(noteText(n), /Olympiad|Math team/);
+});
+
+test("pinned, Revision 2: a valedictorian expectation lifts a 22% Reach to Target at a college weighing GPA; top 5% doesn't", () => {
+  const level = (o: Partial<EstimateStudent>) => detailed(NUDGE_ON(), NUDGE_BASE(o));
+  const base = level({});
+  assert.equal(base.result.group, "reach");
+  near(base.detail.hiddenOdds, 0.22, 1e-9);
+  const top5 = level({ classRankPercentile: 5, classStanding: "top5" });
+  assert.equal(top5.result.group, "reach");
+  near(top5.detail.hiddenOdds, 0.231, 1e-9);
+  const val = level({ rankExpectation: "valedictorian" });
+  assert.equal(val.result.group, "target");
+  near(val.detail.hiddenOdds, 0.253, 1e-9);
+  const both = level({ rankExpectation: "valedictorian", weightedGpa: 4.5 });
+  near(both.detail.hiddenOdds, 0.22 * 1.15 * 1.08, 1e-9);
+});
+
+test("pinned, Revision 2: at Elon admitting 25%, a complete record moves from Target to Likely when its science courses and Science Olympiad line up", () => {
+  const at = (acts: ActivityEntry[]) => detailed(ELON(0.25), student({ gpa: 3.9, courses: THREADED_APS, classStanding: "no_rank", activities: acts }), { offering: OFFERING(14), linked: true });
+  const none = at([{ ...SCI_OLY, family: null }, { ...MATH_CLUB, family: null }]);
+  assert.equal(none.result.group, "target");
+  near(none.detail.hiddenOdds, 0.523, 0.001);
+  const one = at([SCI_OLY, { ...MATH_CLUB, family: null }]);
+  assert.equal(one.result.group, "likely");
+  near(one.detail.hiddenOdds, 0.575, 0.001);
+  const two = at([SCI_OLY, MATH_CLUB]);
+  assert.equal(two.result.group, "likely");
+  near(two.detail.hiddenOdds, 0.617, 0.001);
+  assert.equal(two.detail.without?.depth, "target", "without depth it's the Target again");
 });
 
 test("Revision 2: activities of every kind count toward completeness (sports, clubs, work, other)", () => {

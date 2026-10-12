@@ -10,13 +10,14 @@
  * keys in notes.ts. Neither reading, nor its sentences, ever carries an activity's or course's name into a snapshot
  * (lib/chances/depth-snapshot.ts binds the words and counts only).
  */
+import { activityByKey } from "./activity-catalog.ts";
 import { catalogCourse } from "./catalog.ts";
 import { courseName, SUBJECT_LABELS } from "./courses.ts";
 import { expectationsFor, type ExpectedSubject } from "./major-course-expectations.ts";
 import { majorFamilyName } from "../majors.ts";
 import { markPoints, courseMark, type CoreAtTopLevel, CORE_SUBJECT_KEYS, CORE_YEARS, type CoreSubject, type CoreYear } from "../student-profile.ts";
 import { noteText } from "./notes.ts";
-import type { ActivityEntry, ActivityRole, AwardEntry, CourseEntry, CourseSubject, EstimateNote, HsYear, RecognitionTier, SchoolOffering, TrackReading, ActivitiesReading } from "./types.ts";
+import type { ActivityEntry, ActivityFamily, ActivityRole, AwardEntry, CourseEntry, CourseSubject, EstimateNote, HsYear, RecognitionTier, SchoolOffering, TrackReading, ActivitiesReading } from "./types.ts";
 
 const note = (key: string, values: EstimateNote["values"] = {}): EstimateNote => ({ key, values });
 
@@ -331,9 +332,16 @@ function listWords(words: readonly string[]): string {
   return `${words.slice(0, -1).join(", ")}, and ${words[words.length - 1]}`;
 }
 
-/** The course family an activity's own family names, or null (athletics, service, leadership…, or none picked). */
+/**
+ * What an activity is about: its own `family`, else its catalog entry's (lib/chances/activity-catalog.ts), else null.
+ */
+export function activityFamilyOf(a: ActivityEntry): ActivityFamily | null {
+  return a.family ?? activityByKey(a.catalogKey)?.family ?? null;
+}
+
+/** The course family an activity's family names, or null (athletics, service, leadership…, or none known). */
 function activityCourseFamily(a: ActivityEntry): CourseSubject | null {
-  const f = a.family ?? null;
+  const f = activityFamilyOf(a);
   return f !== null && (DEPTH_FAMILIES as readonly string[]).includes(f) ? (f as CourseSubject) : null;
 }
 
@@ -367,7 +375,7 @@ export function courseThemes(tracks: CourseTracks, activities: readonly Activity
   const themes = strong.filter((f) => activityFamilies.has(f));
   const trackOnly = strong.filter((f) => !activityFamilies.has(f));
   const activityOnly = [...activityFamilies].filter((f) => !strong.includes(f));
-  const unclassified = kept.filter((a) => !a.family).length;
+  const unclassified = kept.filter((a) => activityFamilyOf(a) === null).length;
 
   const notes: EstimateNote[] = [];
   if (themes.length > 0) {
@@ -375,7 +383,11 @@ export function courseThemes(tracks: CourseTracks, activities: readonly Activity
     notes.push(note("depth.theme", { subjects: words }));
   }
   if (activityOnly.length > 0) notes.push(note("depth.theme.activity_only", { subject: THEME_WORDS[activityOnly[0]] }));
-  if (trackOnly.length > 0 && activities.length > 0) notes.push(note("depth.theme.track_only", { subject: THEME_WORDS[trackOnly[0]] }));
+  // A track with no activity beside it is suggested only while there's no theme at all (once one exists, asking for a
+  // club in every other subject would be noise), deepest track first.
+  const readingOf = (f: CourseSubject) => tracks.families.find((t) => t.family === f)?.reading;
+  const suggestTrack = [...trackOnly.filter((f) => readingOf(f) === "deep"), ...trackOnly.filter((f) => readingOf(f) !== "deep")][0];
+  if (suggestTrack && themes.length === 0 && activities.length > 0) notes.push(note("depth.theme.track_only", { subject: THEME_WORDS[suggestTrack] }));
   if (themes.length === 0 && unclassified > 0) notes.push(note("depth.theme.add_family"));
   return { themes, trackOnly, activityOnly, unclassified, notes };
 }

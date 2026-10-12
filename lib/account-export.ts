@@ -213,7 +213,7 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
   {
     key: "application_snapshots",
     description:
-      "Your numbers as of the day each college was marked applied (rounded), the group Quad's estimate gave, the group you picked, and whether you share outcomes (specs/chances/calibration.md), for your own and managed students.",
+      "Your numbers as of the day each college was marked applied (rounded), the group Quad's estimate gave, how complete your record was for that college, the group you picked, and whether you share outcomes (specs/chances/calibration.md), for your own and managed students.",
     run: async ({ supabase, studentIds }) => {
       const { data, error } = await supabase
         .from("application_snapshots")

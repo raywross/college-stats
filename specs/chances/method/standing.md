@@ -310,7 +310,7 @@ bundle; the leak guards check the new names. The summary sentence ("Your academi
 students") reads the measured `d`, not `d_eff`: it describes the record entered, and the gaps are named separately.
 
 Snapshots: no column records completeness yet (follow-up: `completeness` binned to 0.05 in the snapshot detail once a
-column exists).
+column exists). Done in [Revision 2](#completeness-recorded).
 
 ### Pinned examples, Revision 1
 `d` is the measured distance (the test as a consistency check); `c` is completeness.
@@ -345,3 +345,124 @@ record above the same record completed.
 Across the 1,893 colleges (2026-10-12), against `20261012.1`: a student with only a GPA 3.8 and an SAT 1350 sees 336
 of 1,378 placed colleges move down a level (Safe → Likely mostly), 4 up; a complete record (GPA 3.9, SAT 1450, eight
 APs, top 10%, Building) sees 27 move, 13 of them Ultra selective colleges down to High reach for the top-5% bar.
+
+## Revision 2: depth, rank and rigor nudges (2026-10-12)
+`MODEL_VERSION 20261012.3`, in `lib/chances/model.ts` (constants in `ODDS_V3`) and `lib/chances/depth.ts`
+(`courseThemes`), pinned in `tests/chances-model.test.mts`. The owner's words, as given:
+
+1. Valedictorian and salutatorian "should be viewed as an expectation… but this expectation should nudge scores up; top
+   5% a little, the absolute top a bit more."
+2. "Having a weighted grade higher than an unweighted one is a good measure of rigor… should nudge up."
+3. "Someone taking a lot of art courses and doing art clubs would increase depth." "Depth should nudge up scores, and
+   having it across the different things we track should amplify."
+4. "For the top schools, to be listed as Reach you would need depth, great academics, consistency in things like APs,
+   great grades in your APs, clubs that overlap with your academics."
+
+### Rank nudges (rule 1)
+Only where the college weighs class rank or GPA (`weighsRank` or `weighsGpa`, read as Stage 1 reads them). The highest
+that applies, never stacked:
+
+| From | `M_rank` |
+|---|---|
+| Class standing Top 5% (the pick, or a typed rank at or under 5) | 1.05 |
+| Class standing Top 1% (the pick, or a typed rank at or under 1) | 1.08 |
+| `rankExpectation` salutatorian | 1.10 |
+| `rankExpectation` valedictorian | 1.15 |
+
+"My school doesn't rank" is no standing nudge (an expectation still counts). An expectation is stated, not known: its
+sentence says so ("Class standing: expects to be valedictorian, an expectation until it's official. {College} weighs
+grades and class standing, so it counts here.", `estimate.rank_expectation`); a top standing without a C10 rank
+sentence gets `estimate.rank_top`. Where the college weighs neither, a stated expectation shows "Not used here: class
+standing". Switched off with the `rank` ablation.
+
+### Weighted over unweighted (rule 2)
+Only where the college weighs rigor or GPA. The lead of the weighted GPA (`EstimateStudent.weightedGpa`, as the school
+reports it) over the unweighted one, on the student's own scale:
+
+| Scale | Unweighted read as | Lead ≥ | `M_weighted` |
+|---|---|---|---|
+| 4.0 | `gpa` | 0.3 / 0.6 | 1.04 / 1.08 |
+| 5.0 | `gpa × 5/4` (the 4.0 conversion read back) | 0.3 / 0.6 | 1.04 / 1.08 |
+| 100 | the top of the 4.0 conversion's 100-point band (4.0 → 100, 3.7 → 96, 3.3 → 92, …) | 3 / 6 points | 1.04 / 1.08 |
+
+Nothing when the weighted GPA is missing or not above by the first step; nothing when a 4.0-scale GPA was itself entered
+above 4.0 (read as a range, so the unweighted one isn't known); nothing for a weighted figure above 6 on a 4- or
+5-point scale (`weightedMaxPoints`, another scale or a typo). The 100-point steps are the "equivalent gap": weighting
+adds about ten points a course on a 100-point scale where it adds one on a 4-point scale. Sentence:
+`estimate.weighted_above` ("Your weighted GPA (4.5) sits well above your unweighted one, a sign of demanding courses,
+which {College} weighs."). Switched off with the `rigor` ablation.
+
+### Themes: depth across what we track (rule 3)
+A **theme** is a course family whose [course track](../depth.md#course-tracks) reads Deep or Steady **and** that at least
+one activity of two or more years shares through `ActivityEntry.family` (else, for a catalog pick, the catalog entry's
+family, `activityByKey(catalogKey)`). An activity with no family never counts; activity families with no course
+(athletics, service, leadership…) never make one.
+
+| Themes | `M_theme` |
+|---|---|
+| 1 | 1.10 |
+| 2 or more | 1.18 |
+
+`M_theme` applies where the college rates extracurriculars or talent at least *considered* (the full value at
+*considered*, unlike `M_depth`'s half), multiplies with `M_depth`, and is switched off with the `depth` ablation:
+
+```
+odds = min(0.97, rate × M_acad(d_eff) × M_depth × M_theme × M_work × M_legacy × M_interest × M_recruit × M_rank × M_weighted)
+```
+
+Sentences (`depth.theme.*`, family words only, never an activity's name): "Your math and science courses and your math
+and science activities line up: depth in one thing, in and out of class."; an activity with no track behind it: "You
+keep up art outside class; an honors or advanced art course each year would tie it to your schedule."; a track with no
+activity, only while there is no theme yet, deepest track first: "Your science courses run through high school; a club,
+team, or program in science would tie them to what you do outside class."; and with no theme and an activity of two or
+more years with no family: "Pick what each activity is about (art, science, a sport…) so it can line up with your
+courses."
+
+### Ultra selective: Reach also needs depth and consistency (rule 4)
+Revision 1's conditions stay. Reach at tier `elite` now also needs all of:
+
+| Signal | Passes | Missing (named to the student) |
+|---|---|---|
+| Depth | Activities reading Focused or Building **and** at least one theme | No activities. Without a theme the theme suggestions show |
+| Consistency in advanced courses | An advanced course (AP, IB, dual) in every year from the first year with one through the current year (the student's grade, else the latest year with a course taken or in progress), and at least three in all | When the only gap is the current year: "advanced courses this year" |
+| Grades in advanced courses | `advancedGpa` (the unweighted 4-point average the snapshot already bins) at least 3.7 | A taken advanced course with no grade: "advanced-course grades" |
+
+The missing pieces join the incomplete sentence ("Not in this estimate yet: your advanced courses this year…"), so the
+drawer shows the "part of your record isn't here yet" line. A recruited floor and a guarantee still beat the rule.
+
+### Completeness, recorded
+Revision 1's completeness is unchanged; activities of any kind (sports, clubs, work, family, other) count as activities
+present. It is now a snapshot column: `application_snapshots.completeness numeric(3,2)`, 0–1 in steps of 0.05
+(`supabase/migrations/20261012120000_snapshot_completeness.sql`, which re-creates `record_application_snapshot()` with
+it), written from the method's detail (`SnapshotDetail.completeness`, binned by `binCompleteness`). The account export
+includes it with the student's own snapshots; no page, result, sentence, or telemetry event carries it.
+
+### Constants (`ODDS_V3`)
+| Name | Value |
+|---|---|
+| `rankNudge` | top5 1.05 · top1 1.08 · salutatorian 1.10 · valedictorian 1.15 |
+| `weightedGap` | ≥ 0.6 → 1.08 · ≥ 0.3 → 1.04 |
+| `weightedGap100` | ≥ 6 → 1.08 · ≥ 3 → 1.04 |
+| `weightedMaxPoints` | 6 |
+| `theme` | one 1.10 · two 1.18 |
+| `ultraAdvancedCount` | 3 |
+| `ultraAdvancedGpa` | 3.7 |
+| `THEME_TRACKS`, `THEME_ACTIVITY_YEARS` (depth.ts) | Deep, Steady · 2 |
+
+### Pinned examples, Revision 2
+Every Revision 1 row keeps its level and odds (none of them enters a weighted GPA, an expectation, a top-5% standing at
+a college weighing rank or GPA, or an activity family). One footnote moves, and four rows are added:
+
+| Student | College | Odds | Level | Change |
+|---|---|---|---|---|
+| SAT 1560, GPA 4.0, eight APs all in 11th grade, top 5%, Focused (soccer, robotics, no family) | Harvard-like, Ultra selective | — | **High reach** | Was Reach (Revision 1's "with top 5% and Focused"): no theme and no advanced course before 11th grade |
+| SAT 1560, GPA 4.0, nine APs over 10th–12th (science deep), top 5%, soccer captain and three years of Science Olympiad (science) | same | — | **Reach**, "Elite" | New: every signal, with a theme and an advanced course every year |
+| SAT 1350 (`d = 0.5`), GPA entered, valedictorian expected | 20%, weighs GPA | 22 × 1.15 = 25.3% | **Target** | New: Reach (22%) without the expectation; top 5% gives 23.1%, still Reach |
+| Same, valedictorian and a weighted 4.5 over an unweighted 3.9 | same | 22 × 1.15 × 1.08 = 27.3% | **Target** | New: the two nudges multiply (they're different things); the rank nudges never stack with each other |
+| GPA 3.9, nine APs over 10th–12th, "doesn't rank", Science Olympiad (3 years, science) and math team (2 years, math) | Elon at 25%, Selective | 52.3% → 57.5% (one theme) → 61.7% (two) | **Likely** | New: Target without the families; one theme lifts it a level |
+
+Tests: each nudge on, off where the college doesn't weigh it, and highest only; themes one, two, none, an activity
+without a family, a catalog pick's family; each new Ultra selective condition alone; completeness in the detail, the
+row, and the database (a PGlite test shows the column written and updated, and that the five-levels function body
+leaves it null). The leak guards name the new constants (`rankNudge`, `weightedGap`, `M_theme`, …) and check no result
+carries any of their values; each new rule was removed in turn and its test failed.

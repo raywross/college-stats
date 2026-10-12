@@ -1,6 +1,8 @@
 # Admin Console: People, Hidden Values, Data Health, and Operations
 
-> Status: **planned** 2026-10-12 from the owner's request: see and search users and households; deactivate or delete
+> Status: **built** 2026-10-12 on `feature/admin` except the hidden-values panels (People, Health, Operations, Log,
+> Admins; see [As built](#as-built-2026-10-12)); the Colleges and high-school panels and the student standing panel
+> wait for the five levels and the selectivity index (PR #136). Planned 2026-10-12 from the owner's request: see and search users and households; deactivate or delete
 > accounts; reset passwords; change account details such as email; link and unlink students and parents; see the
 > values the site hides for a college and for a student's standing; see each college's data "health" by when its data
 > was received; and, longer term, trigger reruns and approve data changes from the same place. Builds on
@@ -258,11 +260,13 @@ revalidated by each deploy.
 
 ### Files the deploy must carry
 `data/college-docs.json`, `data/cds-records/**/*.json`, `data/college-failures.json`, `data/review-queue.json`, and
-`data/link-issues.json` are not traced into the deploy today (`next.config.ts` `outputFileTracingIncludes`); the build
-adds them (about 10 MB together today; measured in the build's plan and watched against the 16 MB-per-function
-guidance in [serving-architecture.md](../serving-architecture.md)). If they grow past that, `npm run college-health`
-writes one compact `data/college-health.json` in each data PR, the way `college-failures.json` is made, and the page
-reads that instead.
+`data/link-issues.json` are not traced into the deploy today (`next.config.ts` `outputFileTracingIncludes`).
+*As built:* measured 2026-10-12 they are 41.7 MB together (the CDS records 28.5 MB, the review queue 11.9 MB), well past
+the 16 MB-per-function guidance in [serving-architecture.md](../serving-architecture.md), so the compact route was
+built from the start: `npm run college-health` writes `data/college-health.json` (about 0.7 MB, one line per college),
+the only file traced for `/admin/**`; `npm run verify` (`check:college-health`) fails when it is stale, and the
+college-reported, identity-refresh, and campus-pilot workflows rebuild it in their data PRs. Operations reads the
+review queue and the run reports from GitHub at `main`, never from the deploy.
 
 ## Operations: reruns and approvals
 The owner wants to trigger reruns and approve data changes from the console, in the first build if the GitHub side
@@ -497,3 +501,28 @@ Recommendations stand unless changed:
   importer's override format is reused as is.
 - Where does the suspended person's support address point before the new domain exists? Recommended: the owner's
   address for now, in one constant.
+
+## As built (2026-10-12)
+Built on `feature/admin` in units on sub-branches (`feature/admin-foundation`, `-auth-fn`, `-health`, `-github`,
+`-people-ui`, `-ops-ui`); the console's page-level decisions are in [admin-console-ui.md](admin-console-ui.md).
+- **Owner decisions:** MFA required (TOTP, `aal2`); Operations through a GitHub App (a fine-grained PAT also works);
+  no support address yet (a paused account reads "Contact Quad support"); the hidden-values panels build on PR #136.
+- **Migrations:** `20261012200000_admin.sql` (tables, `is_admin()`, the read policies, every `admin_*` function, plus
+  `admin_user_auth`, `household_homes_admin`, `admin_note_ops`) and `20261012210000_admin_auth_sessions.sql`
+  (`auth_end_sessions()`, service role only, for admin-auth's sign-out and suspend).
+- **The console header:** the "Admins read" policies answer only requests carrying `x-quad-console: 1`
+  (`admin_reads()`), sent only by `adminSupabase()`, so an admin using the ordinary site sees only their own family.
+- **Paused accounts:** `getUser()` stays claims-only (no per-request database read); `getAccount()` and
+  `requireUser()` treat a paused profile as signed out and send it to `/login?paused=1`; admin-auth's suspend bans the
+  user and ends their sessions, so the token dies within its hour.
+- **Standing panel:** will read the existing server-only `estimateWithDetail()` rather than adding an `admin` option to
+  `estimate()`.
+- **Review queue:** Accept writes an override only for fields an override can set (the C1 totals together, the SAT/ACT
+  submission shares, older whole-college C1 readings); every other item shows why. Reject marks it `resolved:
+  rejected`, which the failures list and the health counts skip. Re-run discovery dispatches a `college` run with
+  `rediscover: true` (no recipe PR).
+- **GitHub App permissions:** the four in the table plus **Checks: read** and **Commit statuses: read** (to read CI
+  before merging). Only this repository's `data/` and `review/` PRs are listed or merged (a fork's same-named branch is
+  refused).
+- **Not yet built:** `/admin/colleges/[unit]`, `/admin/high-schools/[id]`, the student standing panel
+  (`components/admin/StandingPanelSlot.tsx` is the empty slot), and the `hidden: true` registry flag.

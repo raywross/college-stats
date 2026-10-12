@@ -23,7 +23,8 @@ Higher Education Data Explorer - an interactive web app for visualizing U.S. col
   it plus `next build`
 
 ### Quad's estimate is proprietary (see `specs/chances/README.md`)
-- How Quad computes Reach / Target / Likely is never shown on the site: pages, the glossary, release notes, and the
+- How Quad computes a college's level (Reach / Target / Likely today; High reach / Reach / Target / Likely / Safe once
+  `specs/chances/levels.md` ships) is never shown on the site: pages, the glossary, release notes, and the
   estimate's API responses describe its kinds of inputs and its outputs, not weights, thresholds, or rules
 - Until launch the method lives here, in `specs/chances/method/` and server-only code (`lib/chances/model.ts`); the
   repository stays public for now (owner decision, 2026-10-10). At launch it moves to a private repository per the

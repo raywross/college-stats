@@ -54,8 +54,6 @@ export function CoursePicker({
   highSchoolId,
   gradYear,
   majors,
-  showExams,
-  canSetPrivacy,
   disabled,
 }: {
   value: CoursePickerValue;
@@ -63,10 +61,6 @@ export function CoursePicker({
   highSchoolId: string | null;
   gradYear: number | null;
   majors: readonly string[];
-  /** Whether this viewer may see and enter AP exam scores (false for a guardian while they are private). */
-  showExams: boolean;
-  /** Whether this viewer may change the privacy switch (the student). */
-  canSetPrivacy: boolean;
   disabled?: boolean;
 }) {
   const { courses } = value;
@@ -251,7 +245,7 @@ export function CoursePicker({
               <ul className="space-y-2">
                 {g.rows.map((c) => (
                   <li key={c.id}>
-                    <CourseRow course={c} onChange={replace} onRemove={() => remove(c.id)} showExams={showExams} takenKeys={keys} disabled={disabled} />
+                    <CourseRow course={c} onChange={replace} onRemove={() => remove(c.id)} showExams takenKeys={keys} disabled={disabled} />
                   </li>
                 ))}
               </ul>
@@ -318,21 +312,9 @@ export function CoursePicker({
 
       <CoreSubjects courses={courses} value={value.coreAtTopLevel} onChange={(coreAtTopLevel) => set({ coreAtTopLevel })} disabled={disabled} />
 
-      {canSetPrivacy && courses.some((c) => c.kind === "ap") && (
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={value.apExamsPrivate}
-            disabled={disabled}
-            onChange={(e) => set({ apExamsPrivate: e.target.checked })}
-            className="mt-0.5 size-4 accent-primary"
-          />
-          <span>
-            Keep my AP exam scores private
-            <span className="block text-xs text-muted-foreground">Your parents see your courses and grades either way; they see exam scores only if you uncheck this.</span>
-          </span>
-        </label>
-      )}
+      {/* No "keep my AP scores private" switch: scores are never hidden from parents (owner, 2026-10-11), and
+          `apExamsPrivate` now means hidden from other students in the household, who can't see one another's
+          profiles yet (specs/chances/rigor-in-context.md). The saved value rides along in the form unchanged. */}
     </div>
   );
 }
@@ -346,16 +328,12 @@ export function CoursePickerField({
   highSchoolId,
   gradYear,
   majors,
-  showExams,
-  canSetPrivacy,
   disabled,
 }: {
   initial: CoursePickerValue;
   highSchoolId: string | null;
   gradYear: number | null;
   majors: readonly string[];
-  showExams: boolean;
-  canSetPrivacy: boolean;
   disabled?: boolean;
 }) {
   const [value, setValue] = useState(initial);
@@ -364,7 +342,7 @@ export function CoursePickerField({
       <input type="hidden" name="courses" value={JSON.stringify(value.courses)} />
       <input type="hidden" name="coreAtTopLevel" value={JSON.stringify(value.coreAtTopLevel)} />
       <input type="hidden" name="apExamsPrivate" value={value.apExamsPrivate ? "true" : "false"} />
-      <CoursePicker value={value} onChange={setValue} highSchoolId={highSchoolId} gradYear={gradYear} majors={majors} showExams={showExams} canSetPrivacy={canSetPrivacy} disabled={disabled} />
+      <CoursePicker value={value} onChange={setValue} highSchoolId={highSchoolId} gradYear={gradYear} majors={majors} disabled={disabled} />
     </>
   );
 }

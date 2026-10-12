@@ -115,7 +115,7 @@ Every user-data table has an **owner column** and a **visibility rule**, enforce
 
 | Data | Owner | Guardians in the student's households | Student | Notes |
 |---|---|---|---|---|
-| Student profile (GPA, scores, major, state) ([student-profile.md](student-profile.md)) | student | read; write if `can_edit` | read/write | |
+| Student profile (GPA, scores, major, state) ([student-profile.md](student-profile.md)) | student | read; write if `can_edit` | read/write | AP exam scores included: never private from guardians (owner, 2026-10-11). `apExamsPrivate` hides them from other students in the household only, who can't read one another's profiles today |
 | Saved lists, notes, statuses ([saved-lists.md](saved-lists.md)) | student | read; write if `can_edit` | read/write | Notes have a `private` flag the guardian can't read |
 | Chances results ([chances-and-fit.md](chances-and-fit.md)) | student | read | read | Derived from the profile |
 | **Household finances** (AGI, assets, household size, number in college) ([net-price-estimator.md](net-price-estimator.md)) | **guardian** (per guardian user) | own only; another guardian in the same household sees nothing unless the owner shares | **never** | The student sees only an estimate the guardian chose to share, as a range per college, with no inputs |

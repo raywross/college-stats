@@ -1,21 +1,23 @@
 /**
- * U3's pure helpers for the list the plan shows (lib/planner/list-row.ts; specs/planner/redesign/list.md,
- * rounds.md): the header counts line, the sort menu that survives ranking's removal, the group chip's cycle, the
- * round chip's "EA · Nov 1" label, the deadline strike-through rule, and the drawer's score line. `npm test`.
+ * U3's pure helpers for the list the plan shows (lib/planner/list-row.ts; specs/planner/redesign/list.md): the
+ * group sections (Reach/Target/Likely/Not sorted yet — groups are Quad's only now, no chip to cycle and no sort
+ * menu), the header line, the round chip's "EA · Nov 1" label, the deadline strike-through and urgency rules,
+ * whether a student has picked rounds yet (decision 12), and the drawer's score line. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  anySuggested,
+  anySuggestedRound,
   dayLabel,
+  GROUP_HEADING,
+  groupedRows,
   headerCountsLine,
   isPastDeadline,
-  nextGroup,
+  isUrgentDeadline,
   roundOptionLabel,
+  roundsPicked,
   scoreDrawerLine,
   SEASON_STATUS_LABEL,
-  sortRows,
-  type RowSort,
 } from "../lib/planner/list-row.ts";
 import type { PlanRowView } from "../lib/planner/plan-view.ts";
 import type { PlanItem, PlanSchool } from "../lib/planner/types.ts";
@@ -76,77 +78,78 @@ function row(id: string, over: Partial<PlanRowView> = {}): PlanRowView {
 }
 
 /* ------------------------------------------------------------------ */
-/* headerCountsLine / anySuggested                                     */
+/* groupedRows                                                         */
 /* ------------------------------------------------------------------ */
 
-test("headerCountsLine counts each group, in Reach/Target/Likely order, skipping empty and unsorted groups", () => {
+test("groupedRows splits into Reach/Target/Likely/Not-sorted sections, in that order, skipping empty ones", () => {
+  const rows = [row("r1", { group: "reach" }), row("l1", { group: "likely" }), row("r2", { group: "reach" }), row("u1", { group: "unsorted" })];
+  const groups = groupedRows(rows);
+  assert.deepEqual(
+    groups.map((g) => g.group),
+    ["reach", "likely", "unsorted"],
+  );
+  assert.deepEqual(
+    groups.find((g) => g.group === "reach")!.rows.map((r) => r.item.id),
+    ["r1", "r2"],
+  );
+});
+
+test("groupedRows keeps each section's incoming order, so a Dream that's already first stays first within its group", () => {
+  const rows = [row("dream", { group: "reach", dream: true }), row("other", { group: "reach" })];
+  const groups = groupedRows(rows);
+  assert.deepEqual(
+    groups[0].rows.map((r) => r.item.id),
+    ["dream", "other"],
+  );
+});
+
+test("groupedRows is empty for an empty list", () => {
+  assert.deepEqual(groupedRows([]), []);
+});
+
+test("GROUP_HEADING: Reach/Target/Likely keep their labels; unsorted reads 'Not sorted yet'", () => {
+  assert.equal(GROUP_HEADING.reach, "Reach");
+  assert.equal(GROUP_HEADING.target, "Target");
+  assert.equal(GROUP_HEADING.likely, "Likely");
+  assert.equal(GROUP_HEADING.unsorted, "Not sorted yet");
+});
+
+/* ------------------------------------------------------------------ */
+/* headerCountsLine / anySuggestedRound                                */
+/* ------------------------------------------------------------------ */
+
+test("headerCountsLine is just the count now (group counts moved to each section's own heading)", () => {
   const rows = [row("a", { group: "reach" }), row("b", { group: "reach" }), row("c", { group: "likely" }), row("d", { group: "unsorted" })];
-  assert.equal(headerCountsLine(rows), "4 colleges · 2 Reach · 1 Likely");
+  assert.equal(headerCountsLine(rows), "4 colleges");
 });
 
 test("headerCountsLine singular for one college", () => {
   assert.equal(headerCountsLine([row("a")]), "1 college");
 });
 
-test("anySuggested is true while any row's group or round is still the model's", () => {
-  assert.equal(anySuggested([row("a", { groupAuto: false, roundAuto: false })]), false);
-  assert.equal(anySuggested([row("a", { groupAuto: false, roundAuto: false }), row("b", { groupAuto: true })]), true);
-  assert.equal(anySuggested([row("a", { groupAuto: false, roundAuto: true })]), true);
+test("anySuggestedRound is true while any row's round is still the starting one (groups are never a suggestion anymore)", () => {
+  assert.equal(anySuggestedRound([row("a", { roundAuto: false })]), false);
+  assert.equal(anySuggestedRound([row("a", { roundAuto: false }), row("b", { roundAuto: true })]), true);
 });
 
 /* ------------------------------------------------------------------ */
-/* nextGroup                                                           */
+/* roundsPicked (decision 12)                                          */
 /* ------------------------------------------------------------------ */
 
-test("nextGroup cycles Reach -> Target -> Likely -> Reach, and Unsorted starts at Reach", () => {
-  assert.equal(nextGroup("reach"), "target");
-  assert.equal(nextGroup("target"), "likely");
-  assert.equal(nextGroup("likely"), "reach");
-  assert.equal(nextGroup("unsorted"), "reach");
-});
-
-/* ------------------------------------------------------------------ */
-/* sortRows                                                             */
-/* ------------------------------------------------------------------ */
-
-test("sortRows 'default' orders Dream first, then Reach/Target/Likely/Unsorted, then list position", () => {
-  const rows = [
-    row("likely1", { group: "likely" }),
-    row("reach1", { group: "reach" }),
-    row("dream", { group: "target", dream: true }),
-    row("target1", { group: "target" }),
-  ];
-  const ids = sortRows(rows, "default").map((r) => r.item.id);
-  assert.deepEqual(ids, ["dream", "reach1", "target1", "likely1"]);
-});
-
-test("sortRows 'deadline' sorts by closing date, undated rows last", () => {
-  const rows = [
-    row("none"),
-    row("later", { deadline: { iso: "2026-12-01", field: "f", edition: null, lastCycle: false } }),
-    row("sooner", { deadline: { iso: "2026-11-01", field: "f", edition: null, lastCycle: false } }),
-  ];
-  const ids = sortRows(rows, "deadline").map((r) => r.item.id);
-  assert.deepEqual(ids, ["sooner", "later", "none"]);
-});
-
-test("sortRows 'avg_cost' and 'distance' sort by the school's own field, missing values last", () => {
-  const byCost = [row("a", { school: school("a", "A", { avgCost: 40000 }) }), row("b", { school: school("b", "B", { avgCost: 20000 }) }), row("c", { school: school("c", "C", { avgCost: null }) })];
-  assert.deepEqual(sortRows(byCost, "avg_cost").map((r) => r.item.id), ["b", "a", "c"]);
-
-  const byDistance = [row("a", { school: school("a", "A", { distanceMiles: 300 }) }), row("b", { school: school("b", "B", { distanceMiles: 10 }) })];
-  assert.deepEqual(sortRows(byDistance, "distance").map((r) => r.item.id), ["b", "a"]);
-});
-
-test("sortRows never mutates its input array", () => {
-  const rows = [row("a", { group: "likely" }), row("b", { group: "reach" })];
-  const copy = [...rows];
-  sortRows(rows, "default" as RowSort);
-  assert.deepEqual(rows, copy);
+test("roundsPicked is false before senior year, true from senior fall on", () => {
+  assert.equal(roundsPicked("earlier"), false);
+  assert.equal(roundsPicked("junior_fall"), false);
+  assert.equal(roundsPicked("junior_spring"), false);
+  assert.equal(roundsPicked("summer_before_senior"), false);
+  assert.equal(roundsPicked("senior_fall"), true);
+  assert.equal(roundsPicked("senior_winter"), true);
+  assert.equal(roundsPicked("senior_spring"), true);
+  assert.equal(roundsPicked("summer_after"), true);
+  assert.equal(roundsPicked("graduated"), true);
 });
 
 /* ------------------------------------------------------------------ */
-/* dayLabel / roundOptionLabel / isPastDeadline                        */
+/* dayLabel / roundOptionLabel / isPastDeadline / isUrgentDeadline     */
 /* ------------------------------------------------------------------ */
 
 test("dayLabel reads a yyyy-mm-dd as 'Nov 1'", () => {
@@ -164,6 +167,14 @@ test("isPastDeadline strikes a date before today, never a null date", () => {
   assert.equal(isPastDeadline("2026-10-10", "2026-10-10"), false);
   assert.equal(isPastDeadline("2026-11-01", "2026-10-10"), false);
   assert.equal(isPastDeadline(null, "2026-10-10"), false);
+});
+
+test("isUrgentDeadline is true from today through 7 days out, false before, after, past, or null", () => {
+  assert.equal(isUrgentDeadline("2026-10-10", "2026-10-10"), true);
+  assert.equal(isUrgentDeadline("2026-10-17", "2026-10-10"), true);
+  assert.equal(isUrgentDeadline("2026-10-18", "2026-10-10"), false);
+  assert.equal(isUrgentDeadline("2026-10-09", "2026-10-10"), false);
+  assert.equal(isUrgentDeadline(null, "2026-10-10"), false);
 });
 
 /* ------------------------------------------------------------------ */

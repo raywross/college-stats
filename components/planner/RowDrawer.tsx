@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { Lock, RotateCcw } from "lucide-react";
+import { Lock, RotateCcw, X } from "lucide-react";
 import { WhatWentIn } from "@/components/chances/WhatWentIn";
 import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
@@ -25,22 +25,27 @@ import type { AnyCited } from "@/lib/lineage";
 
 /**
  * The row's drawer (specs/planner/redesign/list.md "The drawer"): opened by (i), inline under the row, each line
- * only when it has content. Group and round reasons, a score move, Show interest (the Actions stage's controls,
- * collapsed unless the college weighs it), Requirements once the season starts (the Apply stage's controls), and
- * Notes.
+ * only when it has content. The group's reasons (groups are Quad's only now, so there's no "Use the suggestion"
+ * button), the round's reason, a score move, Show interest (the Actions stage's controls, collapsed unless the
+ * college weighs it), Requirements once the season starts (the Apply stage's controls), Notes, and — moved out of
+ * the row — Remove from the list.
  */
 export function RowDrawer({
   row,
   ctx,
-  onUseGroupSuggestion,
+  name,
   onUseStartingRound,
+  onRemove,
 }: {
   row: PlanRowView;
   ctx: PlanContext;
-  onUseGroupSuggestion: () => void;
+  /** The college's name, for the remove confirmation. */
+  name: string;
   onUseStartingRound: () => void;
+  /** Takes the college off the list (after a confirmation). */
+  onRemove: () => void;
 }) {
-  const { item, school, standing, estimate, group, groupAuto, roundWhy, roundAuto, decision } = row;
+  const { item, school, standing, estimate, group, roundWhy, roundAuto, decision } = row;
   const scoreLine = scoreDrawerLine(row);
   const cite = (field: string | null) => (school && field ? (school.cites[field] as AnyCited | undefined) : undefined);
   const gpaCited = cite(standing?.gpaNote?.cite ?? null);
@@ -66,14 +71,9 @@ export function RowDrawer({
       <div className="space-y-2">
         <p>
           <span className="font-semibold">{group === "unsorted" ? "No group yet" : `${group[0].toUpperCase()}${group.slice(1)}`}:</span>{" "}
-          {groupAuto || group === "unsorted" ? (headline || standing?.reasons.join(" ") || "Add a GPA or a score to sort this one.") : "You picked this group."}
+          {headline || standing?.reasons.join(" ") || "Add a GPA or a score to sort this one."}
           {/* Without an estimate the GPA sentence ends the reasons; its ⓘ cites the figure it used (gpa.md "Saying what was used"). */}
-          {!estimate && (groupAuto || group === "unsorted") && gpaCited && <InfoTip term={standing!.gpaNote!.cite === "derived.gpa_estimate" ? "gpa-estimate" : "high-school-gpa"} cited={gpaCited} className="ml-1 align-middle" />}{" "}
-          {!groupAuto && group !== "unsorted" && (
-            <button type="button" onClick={onUseGroupSuggestion} disabled={!ctx.viewer.canEdit} className="inline-flex items-center gap-1 font-semibold text-primary hover:underline disabled:opacity-60">
-              <RotateCcw className="size-3" aria-hidden /> Use the suggestion
-            </button>
-          )}
+          {!estimate && gpaCited && <InfoTip term={standing!.gpaNote!.cite === "derived.gpa_estimate" ? "gpa-estimate" : "high-school-gpa"} cited={gpaCited} className="ml-1 align-middle" />}
         </p>
         <p>
           <span className="font-semibold">Round:</span> {roundWhy}{" "}
@@ -89,12 +89,6 @@ export function RowDrawer({
 
       {estimate && school && (
         <div className="space-y-2">
-          {/* A group the student picked hides the suggestion's lines above; the estimate's stay here. */}
-          {!(groupAuto || group === "unsorted") && headline && (
-            <p>
-              <span className="font-semibold">{noteText({ key: "estimate.label", values: {} })}:</span> {headline}
-            </p>
-          )}
           <WhatWentIn result={estimate} yours={yours} college={school.name} cite={cite} className="rounded-2xl bg-card/70 p-3" />
           <Link href={`/schools/${school.unit_id}/admissions#factors`} className="inline-flex text-xs font-semibold text-primary hover:underline">
             How {school.name} reads a record
@@ -141,6 +135,18 @@ export function RowDrawer({
         <Link href={`/schools/${school.unit_id}/admissions#early`} className="inline-flex text-xs font-semibold text-primary hover:underline">
           How early rounds work at {school.name}
         </Link>
+      )}
+
+      {ctx.viewer.canEdit && (
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm(`Remove ${name} from the list? Its notes, visits, and any offer go with it.`)) onRemove();
+          }}
+          className="inline-flex items-center gap-1 font-semibold text-destructive hover:underline"
+        >
+          <X className="size-3.5" aria-hidden /> Remove from the list
+        </button>
       )}
     </div>
   );

@@ -133,9 +133,11 @@ core-subject answers, the grades) is part of the estimate's method, in
 - **Scores tab → Courses**: a section after the score coach for students who entered courses: the reading, the list by
   year with grades, the school's offering with its ⓘ, and the [course plan](course-plan.md)'s suggestions for next
   year. The suggestions, the course-registration and AP-exam dates on the calendar, and their rules are that spec's.
-- **Parents** see the reading, the list, and its grades (academics are shared with guardians under
-  [accounts.md](../product/accounts.md#privacy-model)); never the AP exam scores unless the student shares them
-  (exam scores are student-private by default, like list notes).
+- **Parents** see the reading, the list, its grades, and the AP exam scores, and can enter or change scores
+  (academics are shared with guardians under [accounts.md](../product/accounts.md#privacy-model)). Owner,
+  2026-10-11: "We shouldn't make scores private from parents. Really the privacy should only be a feature that hides
+  things from other students in the household." `apExamsPrivate` (default on) now means hidden from other students
+  in the household; no student can read a sibling's profile yet, so the switch isn't shown until one can.
 
 ### On the high school page
 `/high-schools/{id}` already shows AP courses offered. Add, for a signed-in student whose linked school it is: "You've
@@ -231,13 +233,15 @@ and exam sentences); the thresholds are tested with the model (`tests/chances-mo
   `RigorLine` sits under the GPA checker and the **You** column is in the "What you'll need in high school" table; the
   Scores tab has a Courses section (with an empty `CoursesNextYearSlot` for the course plan); the high school page
   says "You've taken or planned 6 of these." for the student's own school.
-- **Parents** get the list and grades in the third person; the plan loader and the Numbers page strip AP exam scores
-  while `apExamsPrivate` holds, and a parent's save puts the saved scores back and can't change the switch.
+- **Parents** get the list, grades, and AP exam scores in the third person, and their saves are taken as sent
+  (`mergeCoursesForSave`), except that only the student sets `apExamsPrivate`. Until 2026-10-11 the plan loader and
+  the Numbers page stripped exam scores from a parent's copy while the switch was on; that was removed on the owner's
+  decision, along with the "Keep my AP exam scores private" checkbox (no sibling view exists for it to govern).
 - **Pilot (2026-10-11): fail.** The CRDC count against College Board's AP Course Ledger: 24 of 41 matched pilot schools
   within two courses (59%; 66% on the Ledger's 2023–24 year) against the 80% bar ("Pilot" above;
   `data/high-schools/ap-ledger-pilot.json`). **What followed (same day):** the owner chose the Ledger's named list
   for every high school. `npm run sync-ap-ledger` fetches it and the `ap-ledger` adapter fills `ap_ledger` on public
-  and private rows; the offering takes it after the profile and before the pooled list, marks, and CRDC
-  (`offering.ts`); the sentence reads "College Board lists 14 AP courses your school is authorized to offer." CRDC's
-  count stays as the fallback and on the high school page beside the list.
+  and private rows; the offering takes the profile and the Ledger together where the school has both, else either,
+  before the pooled list, marks, and CRDC (`offering.ts`); the sentence reads "College Board lists 14 AP courses
+  your school is authorized to offer." CRDC's count stays as the fallback and on the high school page beside the list.
 - **Not done:** the college-tie line's first-year GPA share (`rigor.college_tie`) waits for `derived.gpa_top_share`.

@@ -10,11 +10,14 @@ import {
   calendarFor,
   comingUp,
   eventsFor,
+  laterSummary,
   monthsOf,
   rangeContains,
   schoolYearOf,
   stepRange,
+  upcomingDays,
   xPercent,
+  type CalendarEvent,
   type YearRange,
 } from "../lib/planner/calendar.ts";
 import type { PlanContext, PlanItem, PlanSchool, PlanTask } from "../lib/planner/types.ts";
@@ -490,6 +493,59 @@ test("comingUp: caps at max even when more events exist", () => {
   const rows = Array.from({ length: 20 }, (_, i) => row(`u${i}`, `College ${i}`, { deadline: { iso: `2026-11-${String((i % 28) + 1).padStart(2, "0")}`, field: "f", edition: null, lastCycle: false } }));
   const events = comingUp([{ studentId: "s1", ctx: c, view: view(rows) }], TODAY, 12);
   assert.equal(events.length, 12);
+});
+
+/* ------------------------------------------------------------------ */
+/* Dated-card list (upcomingDays, laterSummary)                        */
+/* ------------------------------------------------------------------ */
+
+function evt(date: string, over: Partial<CalendarEvent> = {}): CalendarEvent {
+  return { date, studentId: "student-1", shape: "bar", round: "rd", text: "A RD due", label: "A", cite: null, daysAway: 0, ...over };
+}
+
+test("upcomingDays: groups events by date, dropping anything before today or past the window", () => {
+  const events = [
+    evt("2026-10-10", { label: "Today U" }), // today, included
+    evt("2026-10-15", { label: "Georgia" }),
+    evt("2026-10-15", { label: "South Carolina" }), // same date as Georgia: one group, two events
+    evt("2026-10-09", { label: "Yesterday U" }), // before today: dropped
+    evt("2026-12-10", { label: "Too far U" }), // past the 8-week window: dropped
+  ];
+  const days = upcomingDays(events, TODAY, 8);
+  assert.deepEqual(
+    days.map((d) => d.date),
+    ["2026-10-10", "2026-10-15"],
+  );
+  assert.equal(days.find((d) => d.date === "2026-10-15")!.events.length, 2);
+  assert.ok(!days.some((d) => d.events.some((e) => e.label === "Too far U" || e.label === "Yesterday U")));
+});
+
+test("upcomingDays: sorted by date even when the input isn't", () => {
+  const events = [evt("2026-11-01"), evt("2026-10-12"), evt("2026-10-20")];
+  const days = upcomingDays(events, TODAY, 8);
+  assert.deepEqual(
+    days.map((d) => d.date),
+    ["2026-10-12", "2026-10-20", "2026-11-01"],
+  );
+});
+
+test("upcomingDays: a wider weeks argument reaches further out (the 'Show' expansion)", () => {
+  const events = [evt("2026-12-20")];
+  assert.equal(upcomingDays(events, TODAY, 8).length, 0);
+  assert.equal(upcomingDays(events, TODAY, 20).length, 1);
+});
+
+test("laterSummary: counts only the first month past the window, not everything after it", () => {
+  // 8 weeks from Oct 10 2026 is Dec 5 2026, so Dec 10 is the first month past the window (December);
+  // Jan 2 is a later month and shouldn't be counted.
+  const events = [evt("2026-10-15"), evt("2026-12-10"), evt("2026-12-28"), evt("2027-01-02")];
+  const summary = laterSummary(events, TODAY, 8);
+  assert.deepEqual(summary, { count: 2, month: "Dec" });
+});
+
+test("laterSummary: null once nothing is left past the window", () => {
+  const events = [evt("2026-10-15")];
+  assert.equal(laterSummary(events, TODAY, 8), null);
 });
 
 /* ------------------------------------------------------------------ */

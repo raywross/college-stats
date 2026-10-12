@@ -5,6 +5,9 @@
 > replaces stage 1's "Suggested" chip ([../list-building.md](../list-building.md#suggested-category)) with groups that
 > start sorted. The pure model is drafted in `lib/planner/standing.ts` with tests in
 > `tests/planner-standing.test.mts`, used by the preview.
+> **Superseded in part** (planned 2026-10-11): the three groups become five levels and the rules below become the
+> open baseline only; see [../../chances/levels.md](../../chances/levels.md) and the method's third version. The
+> numbers form and the first-time setup are unchanged.
 
 ## Goal
 Ask for three things (GPA, which test, the score) and sort every college on the list into Reach, Target, or Likely

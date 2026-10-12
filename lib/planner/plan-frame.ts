@@ -12,19 +12,27 @@ import type { PlanView, PlanRowView } from "./plan-view.ts";
 /** A guardian's child, as far as route choice cares. */
 export interface SwitchableChild {
   studentId: string;
+  /** The ISO date of the soonest open deadline on this child's list, or null when there isn't one. */
+  nextDeadline?: string | null;
 }
 
 /**
- * Which child a guardian's `/plan` opens on (page.md "Routes"): an explicit `?for=` that names a real child, else
- * the only child when there's just one (the switcher's Everyone pill is skipped), else null (Everyone). A guardian
- * with no children at all also gets null (nothing to switch between).
+ * Which child a guardian's `/plan` opens on (page.md "Routes", decision 2026-10-11: no Everyone — a guardian
+ * always lands on one child): an explicit `?for=` that names a real child (a legacy `?for=everyone` doesn't match
+ * any child, so it falls through), else the last one viewed (the `plan_child` cookie the switcher sets), else the
+ * child with the soonest open deadline, else the first child on the roster. A guardian with no children at all gets
+ * null (nothing to show).
  */
-export function resolveSelectedChild(opts: { forParam: string | null; children: readonly SwitchableChild[] }): string | null {
-  const { forParam, children } = opts;
+export function resolveSelectedChild(opts: { forParam: string | null; children: readonly SwitchableChild[]; lastViewed?: string | null }): string | null {
+  const { forParam, children, lastViewed } = opts;
   if (children.length === 0) return null;
   if (forParam && children.some((c) => c.studentId === forParam)) return forParam;
-  if (children.length === 1) return children[0].studentId;
-  return null;
+  if (lastViewed && children.some((c) => c.studentId === lastViewed)) return lastViewed;
+  const withDeadline = children.filter((c): c is SwitchableChild & { nextDeadline: string } => typeof c.nextDeadline === "string");
+  if (withDeadline.length > 0) {
+    return withDeadline.sort((a, b) => a.nextDeadline.localeCompare(b.nextDeadline))[0].studentId;
+  }
+  return children[0].studentId;
 }
 
 /**
@@ -59,6 +67,14 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 /** "2026-11-01" → "Nov 1". */
 export function dayLabel(iso: string): string {
   return `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}`;
+}
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** "2026-10-15" → "Thu, Oct 15" (page.md "Next up"). */
+export function weekdayLabel(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return `${WEEKDAYS[d.getUTCDay()]}, ${dayLabel(iso)}`;
 }
 
 /**
@@ -105,6 +121,32 @@ export function nextUpInfo(opts: { view: PlanView; today: string; cycleStartYear
 /** A college whose deadline still binds: not yet submitted, not withdrawn. */
 function isOpenRow(r: PlanRowView): boolean {
   return (r.item.status === "considering" || r.item.status === "applying") && !r.item.withdrawn_on;
+}
+
+/**
+ * Every row sharing Next up's exact date and round (page.md "Next up"): the ink card joins their names ("Georgia
+ * and South Carolina") instead of showing one deadline at a time when two colleges happen to share it.
+ */
+export function nextUpGroup(view: PlanView, info: NextUpInfo): PlanRowView[] {
+  const row = info.row;
+  if (!row) return [];
+  if (info.kind === "deadline" && row.deadline) {
+    const iso = row.deadline.iso;
+    return view.rows.filter((r) => isOpenRow(r) && r.deadline?.iso === iso && r.round === row.round);
+  }
+  if (info.kind === "decision" && row.decision) {
+    const iso = row.decision.iso;
+    return view.rows.filter((r) => r.item.status === "applied" && r.decision?.iso === iso);
+  }
+  return [row];
+}
+
+/** "Georgia" | "Georgia and South Carolina" | "Georgia, South Carolina, and Clemson". */
+export function joinNames(names: readonly string[]): string {
+  if (names.length === 0) return "A college";
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
 }
 
 /**

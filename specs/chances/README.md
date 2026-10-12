@@ -19,10 +19,10 @@ Zestimate. It will change as the site collects more data and outcomes.
 | Shown on the site | Never shown on the site |
 |---|---|
 | The **kinds of inputs** the estimate uses (below), and which of the student's inputs were used for a given college | How inputs are weighted, combined, or thresholded; rules, cutoffs, models, and their parameters |
-| The **output**: Reach, Target, or Likely, with the labels "Reach for everyone" and "Guaranteed for you" | Training data, tuning, and the method's version history |
+| The **output**: one of five levels, High reach, Reach, Target, Likely, or Safe ([levels.md](levels.md); three until that ships), with the labels "Elite: a reach for everyone", "Guaranteed for you", and "Recruited" | Training data, tuning, the method's version history, and the hidden odds behind the level |
 | The **college facts** shown beside it, each cited as everywhere on the site (admit rates, ranges, factor ratings, required courses) | Internal accuracy diagnostics beyond the published summary |
 | A **published accuracy summary** each season ([calibration.md](calibration.md)), as Zillow publishes its error rates | |
-| The **commitments**: never a percentage; never race, ethnicity, sex, legacy, or high school identity as inputs | |
+| The **commitments**: never a percentage; never race, ethnicity, sex, or religion as inputs; every individual in the outcomes anonymized; legacy only where a college says it weighs it and the state allows it; the high school not used in this version, and said so when it is (owner, 2026-10-11; [inputs-beyond-academics.md](inputs-beyond-academics.md#the-commitment-rewritten)) | |
 
 What follows from it:
 - **On the site, inputs and outputs only.** Pages, release notes, and the glossary say what kinds of information the
@@ -84,6 +84,17 @@ The CDS-based rows grow with every college-reported run without code changes.
 | 6 | [course-plan.md](course-plan.md) | Next year's advanced courses: up to two suggestions from the school's list, with guardrails for grades and load; the course-registration and AP-exam dates | One "you're on track for 3 of 4 years" line | A Next year card in Courses; calendar tasks; "send AP scores for credit" | Medium |
 | 7 | [major-and-grades.md](major-and-grades.md) | How each college says the intended major is reviewed (the pool, subject emphasis, required courses, score requirements), quoted per unit; math and science grades for STEM majors | A Major line; the unit's required courses | Requirements in the course plan; score requirements in Scores | Medium |
 
+Parts 8–12, **planned 2026-10-11** from the owner's review of the build (the next wave; roadmap group "Admission
+chances, next"):
+
+| Part | Spec | Adds | Profile | Planner | Complexity |
+|---|---|---|---|---|---|
+| 8 | [levels.md](levels.md) | Five levels (High reach, Reach, Target, Likely, Safe) from the method's third version ([method/standing.md](method/standing.md)): a measured academic distance, multipliers on the pool's rate, the selectivity tier as the cap | The chip and card on five levels | Five sections ordered closest first, the ED guard, the balance line | Large |
+| 9 | [pool-explainer.md](pool-explainer.md) | "Applicants like you — from Indiana — were admitted at 71%" and a "Who you're compared with" panel; the word "pool" leaves the site | The standing card's lines | The drawer's lines | Small |
+| 10 | [depth.md](depth.md) | Course tracks by subject against the major; an activities list read by years, role, and recognition in the top two | Activities and Tracks on `/me`; a Depth line in the card | "Add your activities"; Tracks in Scores → Courses | Medium |
+| 11 | [inputs-beyond-academics.md](inputs-beyond-academics.md) | Class standing as a pick, an awards catalog, work hours, a legacy toggle and a recruited-athlete pick per college, logged interest; the rewritten commitment | The fields on `/me` | The drawer's "About you and {College}" line | Medium |
+| 12 | [selectivity-index.md](selectivity-index.md) | A hidden selectivity index per college and a public tier, Elite to Open, with its inputs listed | A "Quad's selectivity" chip with its panel; Explore facet; Compare row | Caps the level; "Elite: a reach for everyone" | Medium |
+
 ## Build order
 ```
 how-colleges-read ─────────┐
@@ -111,8 +122,11 @@ rigor-in-context ──► course-plan ◄──┘ (its "what it changes" line)
 | [scattergrams.md](../product/scattergrams.md) | Unchanged; its uploads become an outcome source |
 
 ## Shared rules
-- **Never a percentage.** Reach, Target, or Likely, with labels; facts shown beside it are what they are (the share of a
-  pool admitted, with its year).
+- **Never a percentage.** A level (Reach, Target, or Likely; five from [levels.md](levels.md)), with labels; facts shown
+  beside it are what they are (the share of applicants like the student admitted, with its year).
+- **Say who the student is compared with**, never "pool" ([pool-explainer.md](pool-explainer.md)).
+- **Encourage, don't grade.** No new input lowers a level except where the college itself states a requirement; every
+  reading comes with a suggestion first ([depth.md](depth.md), [inputs-beyond-academics.md](inputs-beyond-academics.md)).
 - **Inputs, not method, on the site.** Pages say what kinds of information the estimate uses and which of the
   student's inputs it used; never how they are combined. The method's files are for building it, not for display.
 - **Every fact cited.** College and high school facts keep their lineage; the estimate is labeled Quad's estimate.

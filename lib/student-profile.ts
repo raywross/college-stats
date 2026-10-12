@@ -12,7 +12,7 @@ import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
 import { isHighSchoolId } from "./high-school-core.ts";
 import type { StandingStudent } from "./planner/standing.ts";
-import type { CourseEntry, CourseKind, CourseStatus, CourseSubject, Mark } from "./chances/types.ts";
+import type { CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, Mark } from "./chances/types.ts";
 import { catalogCourse, COURSE_SUBJECTS, isCatalogKeyFor } from "./chances/catalog.ts";
 
 /**
@@ -87,7 +87,11 @@ export interface StudentProfileAcademics {
    * saved before the list existed (no `courses` key) turns its courseRigorCount into that many unnamed AP rows.
    */
   courses: CourseEntry[];
-  /** AP exam scores are the student's own: hidden from guardians unless the student shares them. Default true. */
+  /**
+   * Hide AP exam scores from other students in the household (default true). Never from guardians, who see and edit
+   * them (owner, 2026-10-11). No student can read a sibling's profile yet, so nothing reads this today and no switch
+   * is shown; saves keep it as stored.
+   */
   apExamsPrivate: boolean;
   /**
    * "Were your English, math, science, history, and language classes the most advanced your school offered?" for 11th
@@ -191,6 +195,12 @@ export interface StudentProfileTests {
   /** The score in the focus test is a practice score (a PSAT or practice test); shown once, in the plan's header card. */
   practice: boolean;
   /**
+   * The score the student is aiming for on the focus test (specs/planner/redesign/intake.md "Test"), or null. Kept only
+   * within the focus test's range; cleared when the focus test changes or is "none". Never read by the estimate: it
+   * drives the Scores tab's "A {target} would move N colleges up a group" line from each row's move-up.
+   */
+  target: number | null;
+  /**
    * Test dates the student picked with "I'll take it" (scores.md "Test dates"): cycle-file entry keys such as
    * `sat_2026_10` (data/application-cycle.json); the cycle generator makes register and test-day tasks only for these.
    */
@@ -269,6 +279,7 @@ export function emptyProfile(): StudentProfileData {
       plansTestOptional: false,
       focus: null,
       practice: false,
+      target: null,
       plannedDates: [],
     },
     plans: { intendedMajors: [], earlyRoundInterest: null },
@@ -330,9 +341,11 @@ const GPA_SCALE_VALUES: GpaScale[] = ["4.0", "5.0", "100"];
 /**
  * The highest GPA kept on each scale. A 4.0-scale GPA may run to 5.0: above 4.0 it is weighted by definition, and the
  * plan reads it as a range (planGpaRange; specs/planner/redesign/gpa.md "The design" 3). unweightedGpa4 still caps it.
+ * A 100-point GPA may run to 120: many schools weight honors and AP courses above 100 (specs/planner/redesign/intake.md
+ * "Grades"); the band table reads anything at 97 or above as a 4.0.
  */
 export function gpaMaxFor(scale: GpaScale): number {
-  return scale === "100" ? 100 : 5.0;
+  return scale === "100" ? 120 : 5.0;
 }
 
 /**
@@ -373,6 +386,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
   };
 
   const t = isObj(input.tests) ? input.tests : {};
+  const focus = TEST_FOCUS_VALUES.includes(t.focus as TestFocus) ? (t.focus as TestFocus) : null;
   const tests: StudentProfileTests = {
     satTotal: int(t.satTotal, 400, 1600),
     satReading: int(t.satReading, 200, 800),
@@ -384,8 +398,9 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     actScience: int(t.actScience, 1, 36),
     superscore: bool(t.superscore),
     plansTestOptional: bool(t.plansTestOptional),
-    focus: TEST_FOCUS_VALUES.includes(t.focus as TestFocus) ? (t.focus as TestFocus) : null,
+    focus,
     practice: bool(t.practice),
+    target: focus === "sat" ? int(t.target, 400, 1600) : focus === "act" ? int(t.target, 1, 36) : null,
     plannedDates: arr(t.plannedDates, (x) => (isTestDateKey(x) ? x : null), PLANNED_DATES_MAX),
   };
 
@@ -417,6 +432,7 @@ export const COURSES_MAX = 40;
 export const COURSE_NAME_MAX = 60;
 export const COURSE_KINDS: readonly CourseKind[] = ["ap", "ib_hl", "ib_sl", "dual", "honors", "regular"];
 export const COURSE_STATUSES: readonly CourseStatus[] = ["taken", "in_progress", "planned"];
+export const COURSE_TERMS: readonly CourseTerm[] = ["full", "fall", "spring"];
 export const MARKS: readonly Mark[] = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "P"];
 /** The kinds that count as advanced: AP, IB, and dual enrollment (honors is listed, never counted). */
 export const ADVANCED_KINDS: readonly CourseKind[] = ["ap", "ib_hl", "ib_sl", "dual"];
@@ -564,6 +580,8 @@ function sanitizeCourse(v: unknown, index: number): CourseEntry | null {
   const planned = status === "planned";
   const exam = kind === "ap" && !planned ? (int(v.exam, 1, 5) as CourseEntry["exam"]) : null;
   const id = typeof v.id === "string" && v.id.trim() && v.id.length <= 40 ? v.id.trim() : `course-${index + 1}`;
+  // The term (intake.md "AP courses"): kept only when it's one of the three; absent means null.
+  const term = COURSE_TERMS.includes(v.term as CourseTerm) ? (v.term as CourseTerm) : null;
   return {
     id,
     kind,
@@ -574,6 +592,7 @@ function sanitizeCourse(v: unknown, index: number): CourseEntry | null {
     status,
     grades: { s1: markOrNull(g.s1), s2: markOrNull(g.s2), final: planned ? null : markOrNull(g.final) },
     exam,
+    ...(term ? { term } : {}),
   };
 }
 

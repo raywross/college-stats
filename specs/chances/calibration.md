@@ -49,7 +49,8 @@ check before the planner has a season of data.
 
 ## The accuracy summary (published each season)
 A section on the Data page ([data-page.md](../data-page.md)), "How well Quad's estimate did":
-- For each group (Reach, Target, Likely) and each band of the college's overall admit rate: how many shared outcomes
+- For each group (Reach, Target, Likely; the five levels once [levels.md](levels.md) ships, with a calibration curve
+  from the binned hidden odds) and each band of the college's overall admit rate: how many shared outcomes
   there were and the share admitted, with an interval.
 - How often students' own group changes turned out right compared with the estimate.
 - The sharers' mix (by admit-rate band, state, test-optional share) beside the national application mix, because
@@ -71,9 +72,12 @@ similar position, without any model:
 ## Commitments (public)
 - Outcomes are used only to improve and report on the estimate and to show the counts above; never sold, shared, or
   used for advertising ([product README](../product/README.md#shared-rules-for-user-data)).
-- The estimate never uses race, ethnicity, sex, legacy, anything inferred about the family, or the identity of the
-  student's high school, whatever the model.
-- The output stays a group, never a percentage, however the method changes.
+- The estimate never uses race, ethnicity, sex, or religion, whatever the model. Every individual in the outcomes it
+  learns from is anonymized: no names, no account ids, no free text. Legacy is used only where a college says it
+  weighs alumni relation and the state allows it. The student's high school is not used in this version; when enough
+  outcomes exist, "how many students this college takes from your school" may be added, and the site will say so when
+  it is (owner, 2026-10-11; [inputs-beyond-academics.md](inputs-beyond-academics.md#the-commitment-rewritten)).
+- The output stays a level, never a percentage, however the method changes.
 
 ## Privacy
 - Minors: snapshots are academic facts the student entered; consent is the student's own (or the guardian's for a

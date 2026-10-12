@@ -8,6 +8,8 @@
 export type CourseKind = "ap" | "ib_hl" | "ib_sl" | "dual" | "honors" | "regular";
 export type CourseSubject = "english" | "math" | "science" | "history" | "language" | "cs" | "arts" | "other";
 export type CourseStatus = "taken" | "in_progress" | "planned";
+/** When in the school year a course runs (the intake's "When?" chips, specs/planner/redesign/intake.md). */
+export type CourseTerm = "full" | "fall" | "spring";
 /** A letter grade, or P (pass, never counted in a GPA). */
 export type Mark = "A+" | "A" | "A-" | "B+" | "B" | "B-" | "C+" | "C" | "C-" | "D+" | "D" | "D-" | "F" | "P";
 
@@ -23,8 +25,10 @@ export interface CourseEntry {
   year: 9 | 10 | 11 | 12;
   status: CourseStatus;
   grades: { s1: Mark | null; s2: Mark | null; final: Mark | null };
-  /** AP exam score, optional; student-private by default (`apExamsPrivate`). */
+  /** AP exam score, optional. Guardians see it; `apExamsPrivate` hides it only from other students in the household. */
   exam: 1 | 2 | 3 | 4 | 5 | null;
+  /** Optional (additive, intake.md): the term within `year` a course in progress or planned runs; absent means null. */
+  term?: CourseTerm | null;
 }
 
 /** The rigor reading (rigor-in-context.md "The reading"); which schedules land where is the method's, never shown. */

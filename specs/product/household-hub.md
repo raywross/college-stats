@@ -402,17 +402,51 @@ place." Full review: `chances-build/qa/household-review.md`.
   redirected to the planner (an earlier unit); unchanged.
 - **What stayed.** A guardian's own list (`lists.user_id`, "it's suggestions, and the student should see them")
   has no planner equivalent — the plan only ever shows a child's — so it still renders in the hub exactly as before,
-  List board and all. The Numbers tab (`components/me/ProfileForm.tsx`, via `StudentNumbers`) stays in full: most of
-  what it collects (GPA, test scores, AP courses, activities, awards) is also reachable through the planner's intake
-  guide and Scores tab, but by design, not duplication — the planner's components are the same ones
-  (`components/me/ActivitiesForm.tsx`, `AwardsForm.tsx`, `ClassStandingPick.tsx`) reused there, and the form holds a
-  great deal the planner never touches (state of residence, high school, fee-waiver eligibility, intended majors,
-  early-round interest, size/setting/type/cost preferences) with no other home. Identity (name, grad year),
-  membership, roles, and account settings were already untouched by the planner and stay as built.
+  List board and all. The Numbers tab (`components/me/ProfileForm.tsx`, via `StudentNumbers`) stayed in full at
+  first (see the correction below): most of what it collected (GPA, test scores, AP courses, activities, awards)
+  was also reachable through the planner's intake guide and Scores tab, by design, not duplication — the planner's
+  components were the same ones (`components/me/ActivitiesForm.tsx`, `AwardsForm.tsx`, `ClassStandingPick.tsx`)
+  reused there. Identity (name, grad year), membership, roles, and account settings were already untouched by the
+  planner and stay as built.
 - **Not done**: the hub's shared list infrastructure (`components/lists/ListPage.tsx`'s `planner` prop and the
   `plannerExtras`/`RowControls` wiring behind it) is now unused — nothing passes `planner={true}` any more — but
   wasn't deleted: it's shared with `/me/lists/[id]`, and pulling it out is a larger refactor of code this unit
   doesn't own. Left as dead-but-harmless for a future pass.
+
+### Correction: trim the Numbers tab too (owner follow-up, 2026-10-12)
+The owner, after the above: "Trim to only the things we don't have in planner." On reflection the Numbers tab
+*was* still a duplicate for the sections the planner's intake covers outright, even though the two forms shared
+components — a student (or parent) had two places to set a GPA, and a save from either one is a save of the whole
+profile, so whichever form they used last silently won.
+
+- **Removed from `components/me/ProfileForm.tsx`**: the Academics group (GPA, weighted GPA, class standing, the
+  valedictorian/salutatorian expectation, the course picker and its course-tracks reading), the Activities group,
+  the Awards group, the Tests group (SAT/ACT scores, superscore, test-optional), and the Graduation year field
+  (Basics) — all of it is the planner intake's now (specs/planner/redesign/intake.md), including grad year, its own
+  first screen ("Class of").
+- **Replaced with** `EditInThePlan`, one link/button inside `ProfileForm.tsx`: "Grades, test scores, courses, and
+  activities and awards are in the plan now" → `planHref({ person: studentId, setup: true })` (`/plan?for=<id>
+  &setup=1`, the same route the plan's own "Edit ✎" opens).
+- **Kept, because the planner doesn't have them**: state of residence, high school, fee-waiver eligibility, the
+  "About you" first-generation question (not in the owner's list verbatim, but the planner's intake never asks it
+  either, so by the same rule it stays — no link target exists to replace it with), intended majors, early-round
+  interest, and the college preferences (size, setting, type, cost, states/regions).
+- **The save can't wipe what it no longer asks for.** `app/me/actions.ts`'s single `saveProfile` call always writes
+  a *complete* profile (`sanitizeProfile` has no merge step of its own), so a FormData missing a field reads as that
+  field's empty default unless something fills it in first — before this change the one exception was courses
+  (`coursesFor`, already preserved the saved list when the form carried none). The same rule now covers every field
+  the trim removed: pulled into a new pure module, `lib/student-profile-form.ts` (`profileFromForm`, `coursesFor`,
+  the `*Or` field readers), so `app/me/actions.ts` stays a thin "use server" wrapper and the merge logic is
+  unit-testable without a database. Also fixed in the same pass: `tests.focus`/`practice`/`target`/`plannedDates`
+  were never on this form to begin with (the planner's intake sets them) but were still being reset to their empty
+  defaults on every `/me` save — a pre-existing bug, now covered by the same unconditional fallback.
+  Tests: `tests/student-profile-form.test.mts` (a save with only the trimmed-form's fields keeps every removed
+  field exactly as saved; a never-saved profile reads the ordinary empty defaults instead; malformed JSON in a
+  removed field falls back rather than clearing it; `coursesFor`'s existing behavior is unchanged).
+- **`/me`**: not a second copy to trim — `app/me/page.tsx` has had no content of its own since the 2026-10-06
+  redesign; it only ever redirects to the signed-in student's own `/household/[id]/numbers`, the same
+  `StudentNumbers`/`ProfileForm` this trims. There's no route where a student can edit these fields without the
+  planner being reachable too, so nothing was kept on `/me` that isn't also covered here.
 
 ## Parents can edit: the student's switch (owner decision 2026-10-08)
 The owner's first pass at the planner: *a parent should be able to make changes to a student's information*, and

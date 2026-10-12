@@ -136,6 +136,14 @@ const entries = {
     category: "How we measure",
     related: ["acceptance-rate"],
   },
+  "selectivity-tier": {
+    term: "Quad's selectivity",
+    short: "Quad's reading of how hard a college is to get into, in five steps from Elite to Open, from the figures it publishes: its admit rate (for your state where it publishes one), its admitted students' scores and grades, how many admitted students enroll, how much of the class it fills early, how it has changed over ten years, and how many things it says it weighs. It isn't a ranking and says nothing about quality or fit.",
+    long: "The five steps, hardest first: Elite, Highly selective, Selective, Accessible, Open. A public university that publishes admit rates by residency gets a reading for applicants from its state and one for everyone else, and the profile shows both where they differ. Each college's ⓘ lists the figures read, each with its source and year. How they are combined is Quad's own and isn't published; a college moves between steps only when its figures change clearly, not on a small shift from one year to the next.",
+    why: "Two colleges with the same admit rate can be very different to get into: one fills half its class in early decision, the other admits a class with much higher scores. One word for all of it helps you balance a list.",
+    category: "Admissions",
+    related: ["acceptance-rate", "yield", "early-decision", "quads-estimate"],
+  },
   "median-vs-midpoint": {
     term: "Median vs. midpoint",
     short: "The median is the score in the middle of all enrolled students who submitted one. The midpoint is halfway between the 25th and 75th percentiles.",

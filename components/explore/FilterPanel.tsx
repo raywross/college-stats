@@ -36,6 +36,8 @@ import { FIELD_MIN_OPTIONS, MAJOR_FAMILIES, MAJOR_FAMILY_CODES } from "@/lib/maj
 import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGroup } from "@/lib/types";
 import { useExploreParams } from "./useExploreParams";
 import { POLICY_BUCKETS, type PolicyBucket } from "@/lib/test-policy";
+import type { SelectivityTier } from "@/lib/chances/types";
+import { SELECTIVITY_TIERS, SELECTIVITY_TIER_LABELS } from "@/lib/chances/levels";
 import { FAITH_FILTERS } from "@/lib/religion";
 import { TRADITIONS, type Tradition } from "@/lib/directories";
 import type { FaithFilter } from "@/lib/types";
@@ -56,6 +58,8 @@ export interface FilterFacets {
   balance: Record<GenderBalance, number>;
   /** Colleges in each test-policy bucket, by each college's newest policy (lib/test-policy.ts). */
   policy: Record<PolicyBucket, number>;
+  /** Colleges in each of Quad's selectivity tiers, for all applicants (specs/chances/selectivity-index.md). */
+  selectivity: Record<SelectivityTier, number>;
   fullTime: number;
   /** Colleges matching each housing and policy filter (lib/housing.ts). */
   housing: Record<HousingFilterParam, number>;
@@ -194,6 +198,7 @@ export function FilterPanel({ facets, onDone, estimates = true }: { facets: Filt
     ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "minApplicants", "minUndergrads", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup", "lgbtqCenter", "lgbtqHousing", "lgbtqNondiscrimination", "greekCouncils", "minAidIncome", "merit"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
     "policy",
+    "selectivity",
     "near",
   ].some((k) => searchParams.get(k));
 
@@ -242,6 +247,19 @@ export function FilterPanel({ facets, onDone, estimates = true }: { facets: Filt
             update({ minAR: lo > 0 ? String(lo) : null, maxAR: hi < 100 ? String(hi) : null })
           }
         />
+      </Section>
+
+      <Section title="Quad's selectivity" term="selectivity-tier">
+        <div role="group" aria-label="Quad's selectivity" className="flex flex-wrap gap-1.5">
+          {SELECTIVITY_TIERS.map((t) => (
+            <Chip key={t} active={getList("selectivity").includes(t)} onClick={() => toggleInList("selectivity", t)} count={facets.selectivity[t]}>
+              {SELECTIVITY_TIER_LABELS[t]}
+            </Chip>
+          ))}
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Our reading of each college&apos;s published figures, for all applicants; a public&apos;s in-state and out-of-state readings are on its profile.
+        </p>
       </Section>
 
       <Section title="SAT middle 50%" term="middle-50">

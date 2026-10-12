@@ -2,6 +2,7 @@ import type { FieldPath, VintageKey } from "./fields";
 import type { Direction, IndicatorKey } from "./indicators";
 import type { GenderBalance } from "./student-body";
 import type { Council, DirectorySummary, PolicyCheck, Tradition } from "./directories";
+import type { SelectivityTier } from "./chances/types";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
@@ -363,6 +364,12 @@ export interface School {
    */
   trends?: SchoolTrends;
   /**
+   * Quad's selectivity tier (specs/chances/selectivity-index.md), written by `npm run build-selectivity` (also run by
+   * sync-data): tiers only. The index behind them stays in data/selectivity-index.json, which no app code reads.
+   * Absent for a college with no admit rate on record (not rated).
+   */
+  selectivity?: SchoolSelectivity;
+  /**
    * Newer figures the college itself published (class profiles, Common Data Sets), read from its website by the
    * ingestion agent and checked (specs/college-reported-data.md). Newest values replace older ones in every view
    * (round 2, Decision 1); partial-coverage fields are never used in ranks, medians, sorts, or Home. Every value here
@@ -373,6 +380,17 @@ export interface School {
    * Every value here has an `extracted` (or `derived`) lineage record with its quote, URL, retrieval date, and year.
    */
   reported?: ReportedData;
+}
+
+/**
+ * `school.selectivity`: Quad's tier for all applicants and, at a public that publishes rates by residency, for each
+ * pool. `year` is the fall of the admit rate the tier read. Never the index, weights, or cutoffs.
+ */
+export interface SchoolSelectivity {
+  tier: SelectivityTier | null;
+  in_state?: SelectivityTier;
+  out_of_state?: SelectivityTier;
+  year?: string;
 }
 
 /** The previous admissions funnel, kept when a newer college-reported class replaces it (`admissions.federal`). */
@@ -1559,6 +1577,8 @@ export type SortKey =
   | "full_time_faculty"
   | "out_of_state"
   | "transfer_share"
+  /** Quad's selectivity, hardest tier first, then admit rate (specs/chances/selectivity-index.md). */
+  | "selectivity"
   /** Straight-line miles from the `near` filter's ZIP center (specs/product/home-and-distance.md); nothing without it. */
   | "distance"
   /** The price at the `income` filter's family income (lib/cost-curve.ts priceAt, the range's middle); nothing without it. */
@@ -1644,6 +1664,8 @@ export interface SearchFilters {
   oosEven?: boolean;
   /** Test policy buckets to keep (lib/test-policy.ts): each college's newest policy; colleges with none are excluded. */
   policy?: ("required" | "optional" | "blind")[];
+  /** Quad's selectivity tiers to keep (the tier for all applicants); colleges that aren't rated are left out while set. */
+  selectivity?: SelectivityTier[];
   /** CDS financial aid (lib/cds/financial-aid.ts): no CSS Profile required; the college aids international students. */
   aidForms?: "no-css";
   intlAid?: boolean;

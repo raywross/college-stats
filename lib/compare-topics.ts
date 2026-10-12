@@ -338,6 +338,7 @@ export const COMPARE_TOPIC_FIELDS: Record<CompareTopicKey, readonly FieldPath[]>
     "admissions.test_submission_rate_act",
     "admissions.test_policy",
     "admissions.factors",
+    "selectivity.tier",
   ],
 
   // Students & campus: app/compare/students/page.tsx.
@@ -446,6 +447,8 @@ export const COMPARE_OVERVIEW_FIELDS: readonly FieldPath[] = [
   "reported.admission_profile.factors.rigor",
   "admissions.factors",
   "reported.admission_profile.gpa.average",
+  // Quad's selectivity (specs/chances/selectivity-index.md): the tier row on the Getting in card.
+  "selectivity.tier",
   "academics.student_faculty_ratio",
   "academics.majors_top",
   "trends",

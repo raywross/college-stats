@@ -17,6 +17,7 @@ import { CompareStanding } from "@/components/compare/CompareStanding";
 import { InfoTip } from "@/components/ui/info-tip";
 import { estimateFactCites } from "@/lib/chances/fact-cites";
 import type { PoolSchool } from "@/lib/chances/pool-rate";
+import { SelectivityChip } from "@/components/school/SelectivityChip";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -117,6 +118,23 @@ export default async function CompareAdmissionsPage({ searchParams }: Props) {
                   cited={citeField("derived.yield")}
                 />
               </div>
+              {/* Quad's selectivity (specs/chances/selectivity-index.md): each college's chip with its ⓘ. */}
+              {schools.some((s) => s.selectivity) && (
+                <div className="mt-4 border-t pt-4">
+                  <h4 className="mb-2 flex items-center gap-1 text-xs font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+                    Quad&apos;s selectivity <InfoTip term="selectivity-tier" cited={citeField("selectivity.tier")} />
+                  </h4>
+                  <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                    {schools.map((s, i) => (
+                      <li key={s.unit_id} className="flex min-w-0 flex-wrap items-center gap-1.5">
+                        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
+                        <span className="font-semibold">{shortName(s)}</span>
+                        {s.selectivity ? <SelectivityChip school={s} citeField={citeField} label={false} /> : <span className="text-muted-foreground">Not rated</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </Block>
 
             <Block id="by-sex" title="Men and women" className={COMPARE_BLOCK_SCROLL}>

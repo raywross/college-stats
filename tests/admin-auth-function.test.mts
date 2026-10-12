@@ -582,8 +582,8 @@ test("the script's planPurge is the shared one (shared, not copied)", () => {
 /* auth_end_sessions() on PGlite                                       */
 /* ------------------------------------------------------------------ */
 
+// auth.sessions is in the shared stub (tests/helpers/pg-auth.mts); refresh tokens are only needed here.
 const SESSIONS_STUB = `
-create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users (id) on delete cascade);
 create table auth.refresh_tokens (id bigserial primary key, session_id uuid references auth.sessions (id) on delete cascade);
 `;
 const MIGRATION = "20261012210000_admin_auth_sessions.sql";

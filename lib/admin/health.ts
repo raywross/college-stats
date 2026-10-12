@@ -307,7 +307,10 @@ export async function familyListUnits(deps: { client?: () => Promise<TableClient
 async function defaultAdminClient(): Promise<TableClient | null> {
   const { supabaseAuthEnv, createServerSupabase } = await import("../supabase-server");
   if (!supabaseAuthEnv()) return null;
-  return (await createServerSupabase()) as unknown as TableClient;
+  // The admin read policies answer only requests carrying the console header (lib/admin/people.ts adminSupabase,
+  // supabase/migrations/20261012200000_admin.sql admin_reads()); without it this read returns no rows.
+  const { ADMIN_CONSOLE_HEADER } = await import("./constants");
+  return (await createServerSupabase({ headers: { [ADMIN_CONSOLE_HEADER]: "1" } })) as unknown as TableClient;
 }
 
 /* ------------------------------------------------------------------ */

@@ -240,6 +240,22 @@ appear on any list, so the owner can fix what families are looking at first, the
 page is computed once per server instance from the deployed files and the two tables, like the dataset itself, and
 revalidated by each deploy.
 
+### Built: the Health page
+`app/admin/health/page.tsx` (stat row, filter form, table), `csv/route.ts`; the logic is pure and tested in
+`lib/admin/health-view.ts`, joined to the dataset in `lib/admin/health-load.ts`.
+- **Filters are the URL**: `status`, `group`, `reason`, `state`, `tier` (0 to 4, the site's selectivity tiers), `family=1`,
+  `sort` (`worst` default, `name`, `failures`, `queue`), `page` (100 rows). `status` alone judges the overall status; with
+  `group` it judges that group (`unjudged` = its files aren't in this deploy); `group` alone lists colleges where that
+  group isn't Fresh. Bad values are dropped, never an error.
+- **"On a family's list"** is offered only when `familyListUnits()` could be read; otherwise the control is hidden and the
+  parameter ignored.
+- Each row: name (links to `/admin/colleges/[unit]`), tier and admit rate (cited once under the table with the admit
+  rate's source note), overall, one cell per group with the date it is judged by (the reason is the cell's tooltip), open
+  failures by reason code, queue items (link to that college's queue). The page header shows the inputs' date
+  (`generated`) and the day measured. On phones the table becomes cards.
+- **CSV** at `/admin/health/csv` takes the page's query string and downloads the same rows in the same order; admin only,
+  a 404 otherwise.
+
 ### Files the deploy must carry
 `data/college-docs.json`, `data/cds-records/**/*.json`, `data/college-failures.json`, `data/review-queue.json`, and
 `data/link-issues.json` are not traced into the deploy today (`next.config.ts` `outputFileTracingIncludes`); the build
@@ -323,6 +339,29 @@ The first two are file changes, so the console makes them the way a person would
 the item, a PR with a generated body and a release note of kind `data`, and auto-merge on. CI's checks (`verify`,
 lineage, the release-note job) run as on any PR. The console never pushes to `main`, never touches
 `.github/workflows/`, and the App has no Workflows permission, so it could not.
+
+### Built: the Operations page
+`app/admin/operations/page.tsx` and `actions.ts`; the logic is in `lib/admin/ops-actions.ts` (over injected dependencies,
+so every path is tested with fakes) and wired in `lib/admin/ops.ts`.
+- **No credentials**: a setup notice and no buttons or forms.
+- **Start a run**: one `<details>` per row of `DISPATCHABLE_RUNS`, with typed inputs; `?unit=` opens and prefills the
+  college run and narrows the review queue to that college. A workflow with a one-at-a-time guard that is queued or running
+  shows that run instead of its form (the action checks again). **All** shows the last full run's actual cost and the
+  newest projection (`fetchRunCost`) and asks for the word. After sending, the action looks the run up by its request id.
+- **Runs**: the last 30, with status (a failed run names its failed step, for the six newest failures), who started it
+  (schedule; the console and the admin's display name, from the log by request id; GitHub by hand), duration, and the open
+  PR it opened.
+- **Open data PRs**: flagged ones first; the body is rendered as untrusted markdown (`lib/admin/pr-markdown.ts`: raw HTML
+  shown as text, images as links, only http(s) links); CI state, auto-merge; Approve and merge (disabled with the reason
+  while checks are pending, not started, or failed), Hold (when auto-merge is on), Re-run CI (when no check started), Close
+  (asks first).
+- **Review queue** (from `main`, 25 per page, open by default, filterable by college, code, status): Accept (when
+  `acceptPlan` allows it, else the refusal reason), Reject, and Re-run discovery (just dispatches a `college` run with
+  `rediscover: true`), each asking first.
+- **Logging**: every action calls `admin_note_ops` *before* it sends (`ops.dispatch`, `ops.merge`, `ops.hold`,
+  `ops.close`, `review.accept`, `review.reject`, `review.rediscover`) and does not send when the log write fails; a send that
+  then fails adds `ops.failed` or `review.failed`. Comments, commit messages, and PR bodies name the admin by display name,
+  never an email (`publicName` falls back to "an admin").
 
 ### What stays on GitHub
 Reading a diff, editing anything other than the two files above, changing a workflow, and the archive repository's

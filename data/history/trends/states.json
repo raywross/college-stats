@@ -18,6 +18,14 @@
     },
     "outOfStatePublicLine": [0.1005,null,0.1121,null,0.1155,null,0.1162,null,0.1269,null,0.1323]
   },
+  "flowsYear": 2024,
+  "flowsRule": {
+    "excluded": {
+      "onlineFirst": 90,
+      "forProfit": 94,
+      "campuses": 24
+    }
+  },
   "states": [
     {
       "postal": "AK",
@@ -168,7 +176,38 @@
         "acceptanceRate": null,
         "avgCost": null,
         "outOfState": null,
-        "testOptionalShare": null
+        "testOptionalShare": null,
+        "netInflow": -0.4142
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 280,
+        "outflow": 1221,
+        "net": -941,
+        "firstYears": 2272,
+        "netShare": -0.4142,
+        "other": 38,
+        "n": 3,
+        "receiving": [
+          {
+            "unit_id": "102614",
+            "name": "University of Alaska Fairbanks",
+            "count": 176,
+            "share": 0.6286
+          },
+          {
+            "unit_id": "102553",
+            "name": "University of Alaska Anchorage",
+            "count": 102,
+            "share": 0.3643
+          },
+          {
+            "unit_id": "102580",
+            "name": "Alaska Bible College",
+            "count": 2,
+            "share": 0.0071
+          }
+        ]
       }
     },
     {
@@ -712,7 +751,8 @@
         "acceptanceRate": 0.7212,
         "avgCost": 20150,
         "outOfState": 0.2139,
-        "testOptionalShare": 0.7586
+        "testOptionalShare": 0.7586,
+        "netInflow": 0.3348
       },
       "all": {
         "key": "all",
@@ -786,6 +826,48 @@
           "line": [0.4389,null,0.4586,null,0.4446,null,null,null,0.4155,null,0.3735],
           "thenNow": [0.4389,0.3735]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 13619,
+        "outflow": 3288,
+        "net": 10331,
+        "firstYears": 30861,
+        "netShare": 0.3348,
+        "other": 776,
+        "n": 23,
+        "receiving": [
+          {
+            "unit_id": "100751",
+            "name": "The University of Alabama",
+            "count": 4734,
+            "share": 0.3476
+          },
+          {
+            "unit_id": "100858",
+            "name": "Auburn University",
+            "count": 2785,
+            "share": 0.2045
+          },
+          {
+            "unit_id": "100654",
+            "name": "Alabama A & M University",
+            "count": 1061,
+            "share": 0.0779
+          },
+          {
+            "unit_id": "102049",
+            "name": "Samford University",
+            "count": 831,
+            "share": 0.061
+          },
+          {
+            "unit_id": "102377",
+            "name": "Tuskegee University",
+            "count": 618,
+            "share": 0.0454
+          }
+        ]
       }
     },
     {
@@ -1156,7 +1238,8 @@
         "acceptanceRate": 0.7052,
         "avgCost": 19354,
         "outOfState": 0.2314,
-        "testOptionalShare": 0.4545
+        "testOptionalShare": 0.4545,
+        "netInflow": 0.2506
       },
       "all": {
         "key": "all",
@@ -1217,6 +1300,48 @@
           "line": [0.4566,null,0.4251,null,0.4222,null,0.429,null,0.3886,null,0.4135],
           "thenNow": [0.4566,0.4135]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 5971,
+        "outflow": 2187,
+        "net": 3784,
+        "firstYears": 15098,
+        "netShare": 0.2506,
+        "other": 649,
+        "n": 20,
+        "receiving": [
+          {
+            "unit_id": "106397",
+            "name": "University of Arkansas",
+            "count": 3703,
+            "share": 0.6202
+          },
+          {
+            "unit_id": "107044",
+            "name": "Harding University",
+            "count": 581,
+            "share": 0.0973
+          },
+          {
+            "unit_id": "106458",
+            "name": "Arkansas State University",
+            "count": 278,
+            "share": 0.0466
+          },
+          {
+            "unit_id": "107983",
+            "name": "Southern Arkansas University Main Campus",
+            "count": 203,
+            "share": 0.034
+          },
+          {
+            "unit_id": "107141",
+            "name": "John Brown University",
+            "count": 189,
+            "share": 0.0317
+          }
+        ]
       }
     },
     {
@@ -1505,7 +1630,8 @@
         "acceptanceRate": 0.8975,
         "avgCost": 30098,
         "outOfState": 0.3705,
-        "testOptionalShare": 0.7647
+        "testOptionalShare": 0.7647,
+        "netInflow": 0.1706
       },
       "all": {
         "key": "all",
@@ -1565,6 +1691,48 @@
           "line": [null,null,null,null,null,null,null,null,null,null,0.5484],
           "thenNow": [0.631,0.5484]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 10099,
+        "outflow": 5306,
+        "net": 4793,
+        "firstYears": 28095,
+        "netShare": 0.1706,
+        "other": 1661,
+        "n": 8,
+        "receiving": [
+          {
+            "unit_id": "104151",
+            "name": "Arizona State University Campus Immersion",
+            "count": 4170,
+            "share": 0.4129
+          },
+          {
+            "unit_id": "104179",
+            "name": "University of Arizona",
+            "count": 4132,
+            "share": 0.4091
+          },
+          {
+            "unit_id": "105330",
+            "name": "Northern Arizona University",
+            "count": 967,
+            "share": 0.0958
+          },
+          {
+            "unit_id": "104586",
+            "name": "Embry-Riddle Aeronautical University-Prescott",
+            "count": 534,
+            "share": 0.0529
+          },
+          {
+            "unit_id": "105899",
+            "name": "Arizona Christian University",
+            "count": 173,
+            "share": 0.0171
+          }
+        ]
       }
     },
     {
@@ -2670,7 +2838,8 @@
         "acceptanceRate": 0.7445,
         "avgCost": 31319,
         "outOfState": 0.0147,
-        "testOptionalShare": 0.7391
+        "testOptionalShare": 0.7391,
+        "netInflow": -0.1482
       },
       "all": {
         "key": "all",
@@ -2744,6 +2913,48 @@
           "line": [null,null,null,null,null,null,null,null,null,null,null],
           "thenNow": [0.2236,0.2146]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 15081,
+        "outflow": 35468,
+        "net": -20387,
+        "firstYears": 137523,
+        "netShare": -0.1482,
+        "other": 9050,
+        "n": 95,
+        "receiving": [
+          {
+            "unit_id": "122409",
+            "name": "San Diego State University",
+            "count": 1530,
+            "share": 0.1015
+          },
+          {
+            "unit_id": "123961",
+            "name": "University of Southern California",
+            "count": 1374,
+            "share": 0.0911
+          },
+          {
+            "unit_id": "110422",
+            "name": "California Polytechnic State University-San Luis Obispo",
+            "count": 875,
+            "share": 0.058
+          },
+          {
+            "unit_id": "110662",
+            "name": "University of California-Los Angeles",
+            "count": 786,
+            "share": 0.0521
+          },
+          {
+            "unit_id": "243744",
+            "name": "Stanford University",
+            "count": 761,
+            "share": 0.0505
+          }
+        ]
       }
     },
     {
@@ -3228,7 +3439,8 @@
         "acceptanceRate": 0.8562,
         "avgCost": 29971,
         "outOfState": 0.2909,
-        "testOptionalShare": 0.619
+        "testOptionalShare": 0.619,
+        "netInflow": -0.0479
       },
       "all": {
         "key": "all",
@@ -3295,6 +3507,48 @@
           "line": [0.6018,null,0.6061,null,0.6667,null,0.6393,null,0.7131,null,0.6657],
           "thenNow": [0.6018,0.6657]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 9426,
+        "outflow": 10677,
+        "net": -1251,
+        "firstYears": 26119,
+        "netShare": -0.0479,
+        "other": 459,
+        "n": 16,
+        "receiving": [
+          {
+            "unit_id": "126614",
+            "name": "University of Colorado Boulder",
+            "count": 3316,
+            "share": 0.3518
+          },
+          {
+            "unit_id": "126818",
+            "name": "Colorado State University-Fort Collins",
+            "count": 1670,
+            "share": 0.1772
+          },
+          {
+            "unit_id": "128328",
+            "name": "United States Air Force Academy",
+            "count": 1018,
+            "share": 0.108
+          },
+          {
+            "unit_id": "127060",
+            "name": "University of Denver",
+            "count": 890,
+            "share": 0.0944
+          },
+          {
+            "unit_id": "126775",
+            "name": "Colorado School of Mines",
+            "count": 732,
+            "share": 0.0777
+          }
+        ]
       }
     },
     {
@@ -3802,7 +4056,8 @@
         "acceptanceRate": 0.7895,
         "avgCost": 34560,
         "outOfState": 0.0978,
-        "testOptionalShare": 0.7308
+        "testOptionalShare": 0.7308,
+        "netInflow": -0.0713
       },
       "all": {
         "key": "all",
@@ -3869,6 +4124,48 @@
           "line": [0.717,null,0.6721,null,0.6427,null,0.7112,null,0.5962,null,0.6928],
           "thenNow": [0.717,0.6928]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 10946,
+        "outflow": 12515,
+        "net": -1569,
+        "firstYears": 21997,
+        "netShare": -0.0713,
+        "other": 840,
+        "n": 23,
+        "receiving": [
+          {
+            "unit_id": "129020",
+            "name": "University of Connecticut",
+            "count": 1872,
+            "share": 0.171
+          },
+          {
+            "unit_id": "130253",
+            "name": "Sacred Heart University",
+            "count": 1425,
+            "share": 0.1302
+          },
+          {
+            "unit_id": "130226",
+            "name": "Quinnipiac University",
+            "count": 1266,
+            "share": 0.1157
+          },
+          {
+            "unit_id": "130794",
+            "name": "Yale University",
+            "count": 1266,
+            "share": 0.1157
+          },
+          {
+            "unit_id": "129242",
+            "name": "Fairfield University",
+            "count": 1259,
+            "share": 0.115
+          }
+        ]
       }
     },
     {
@@ -4178,7 +4475,8 @@
         "acceptanceRate": 0.5806,
         "avgCost": 35573,
         "outOfState": null,
-        "testOptionalShare": 0.4
+        "testOptionalShare": 0.4,
+        "netInflow": 0.6874
       },
       "all": {
         "key": "all",
@@ -4228,6 +4526,48 @@
           "line": [null,null,null,null,null,null,null,null,0.8825,null,0.8782],
           "thenNow": [0.9011,0.8782]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 8516,
+        "outflow": 2373,
+        "net": 6143,
+        "firstYears": 8936,
+        "netShare": 0.6874,
+        "other": 641,
+        "n": 8,
+        "receiving": [
+          {
+            "unit_id": "131520",
+            "name": "Howard University",
+            "count": 2581,
+            "share": 0.3031
+          },
+          {
+            "unit_id": "131469",
+            "name": "George Washington University",
+            "count": 2180,
+            "share": 0.256
+          },
+          {
+            "unit_id": "131159",
+            "name": "American University",
+            "count": 1554,
+            "share": 0.1825
+          },
+          {
+            "unit_id": "131496",
+            "name": "Georgetown University",
+            "count": 1370,
+            "share": 0.1609
+          },
+          {
+            "unit_id": "131283",
+            "name": "The Catholic University of America",
+            "count": 623,
+            "share": 0.0732
+          }
+        ]
       }
     },
     {
@@ -4454,7 +4794,38 @@
         "acceptanceRate": null,
         "avgCost": null,
         "outOfState": null,
-        "testOptionalShare": null
+        "testOptionalShare": null,
+        "netInflow": 0.1255
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 3302,
+        "outflow": 2578,
+        "net": 724,
+        "firstYears": 5771,
+        "netShare": 0.1255,
+        "other": 142,
+        "n": 3,
+        "receiving": [
+          {
+            "unit_id": "130943",
+            "name": "University of Delaware",
+            "count": 2622,
+            "share": 0.7941
+          },
+          {
+            "unit_id": "130934",
+            "name": "Delaware State University",
+            "count": 607,
+            "share": 0.1838
+          },
+          {
+            "unit_id": "130989",
+            "name": "Goldey-Beacom College",
+            "count": 73,
+            "share": 0.0221
+          }
+        ]
       }
     },
     {
@@ -5196,7 +5567,8 @@
         "acceptanceRate": 0.6547,
         "avgCost": 22294,
         "outOfState": 0.1182,
-        "testOptionalShare": 0.5385
+        "testOptionalShare": 0.5385,
+        "netInflow": 0.0089
       },
       "all": {
         "key": "all",
@@ -5270,6 +5642,48 @@
           "line": [0.3566,null,0.3792,null,0.3718,null,0.3757,null,0.4107,null,0.3881],
           "thenNow": [0.3566,0.3881]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 16591,
+        "outflow": 16013,
+        "net": 578,
+        "firstYears": 65123,
+        "netShare": 0.0089,
+        "other": 3222,
+        "n": 48,
+        "receiving": [
+          {
+            "unit_id": "137847",
+            "name": "The University of Tampa",
+            "count": 1964,
+            "share": 0.1184
+          },
+          {
+            "unit_id": "135726",
+            "name": "University of Miami",
+            "count": 1570,
+            "share": 0.0946
+          },
+          {
+            "unit_id": "134130",
+            "name": "University of Florida",
+            "count": 1439,
+            "share": 0.0867
+          },
+          {
+            "unit_id": "133553",
+            "name": "Embry-Riddle Aeronautical University-Daytona Beach",
+            "count": 1191,
+            "share": 0.0718
+          },
+          {
+            "unit_id": "134097",
+            "name": "Florida State University",
+            "count": 1107,
+            "share": 0.0667
+          }
+        ]
       }
     },
     {
@@ -5944,7 +6358,8 @@
         "acceptanceRate": 0.7314,
         "avgCost": 21561,
         "outOfState": 0.0705,
-        "testOptionalShare": 0.6852
+        "testOptionalShare": 0.6852,
+        "netInflow": -0.0444
       },
       "all": {
         "key": "all",
@@ -6018,6 +6433,48 @@
           "line": [0.2591,null,0.2698,null,0.2186,null,0.2088,null,0.2378,null,0.2453],
           "thenNow": [0.2591,0.2453]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 11054,
+        "outflow": 13726,
+        "net": -2672,
+        "firstYears": 60235,
+        "netShare": -0.0444,
+        "other": 2457,
+        "n": 44,
+        "receiving": [
+          {
+            "unit_id": "140951",
+            "name": "Savannah College of Art and Design",
+            "count": 2459,
+            "share": 0.2225
+          },
+          {
+            "unit_id": "139959",
+            "name": "University of Georgia",
+            "count": 1163,
+            "share": 0.1052
+          },
+          {
+            "unit_id": "139755",
+            "name": "Georgia Institute of Technology-Main Campus",
+            "count": 1132,
+            "share": 0.1024
+          },
+          {
+            "unit_id": "139658",
+            "name": "Emory University",
+            "count": 919,
+            "share": 0.0831
+          },
+          {
+            "unit_id": "138947",
+            "name": "Clark Atlanta University",
+            "count": 721,
+            "share": 0.0652
+          }
+        ]
       }
     },
     {
@@ -6162,7 +6619,26 @@
         "acceptanceRate": null,
         "avgCost": null,
         "outOfState": null,
-        "testOptionalShare": null
+        "testOptionalShare": null,
+        "netInflow": -0.5051
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 10,
+        "outflow": 207,
+        "net": -197,
+        "firstYears": 390,
+        "netShare": -0.5051,
+        "other": 44,
+        "n": 1,
+        "receiving": [
+          {
+            "unit_id": "240754",
+            "name": "University of Guam",
+            "count": 10,
+            "share": 1
+          }
+        ]
       }
     },
     {
@@ -6398,7 +6874,50 @@
         "acceptanceRate": null,
         "avgCost": null,
         "outOfState": null,
-        "testOptionalShare": null
+        "testOptionalShare": null,
+        "netInflow": -0.3154
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 1740,
+        "outflow": 3068,
+        "net": -1328,
+        "firstYears": 4211,
+        "netShare": -0.3154,
+        "other": 385,
+        "n": 6,
+        "receiving": [
+          {
+            "unit_id": "141574",
+            "name": "University of Hawaii at Manoa",
+            "count": 1124,
+            "share": 0.646
+          },
+          {
+            "unit_id": "141644",
+            "name": "Hawaii Pacific University",
+            "count": 336,
+            "share": 0.1931
+          },
+          {
+            "unit_id": "230047",
+            "name": "Brigham Young University-Hawaii",
+            "count": 130,
+            "share": 0.0747
+          },
+          {
+            "unit_id": "141565",
+            "name": "University of Hawaii at Hilo",
+            "count": 81,
+            "share": 0.0466
+          },
+          {
+            "unit_id": "141486",
+            "name": "Chaminade University of Honolulu",
+            "count": 65,
+            "share": 0.0374
+          }
+        ]
       }
     },
     {
@@ -6876,7 +7395,8 @@
         "acceptanceRate": 0.8013,
         "avgCost": 23986,
         "outOfState": 0.4261,
-        "testOptionalShare": 0.8125
+        "testOptionalShare": 0.8125,
+        "netInflow": 0.275
       },
       "all": {
         "key": "all",
@@ -6937,6 +7457,48 @@
           "line": [0.5341,null,0.5419,null,0.6077,null,0.6395,null,null,null,0.5282],
           "thenNow": [0.5341,0.5282]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 8317,
+        "outflow": 3148,
+        "net": 5169,
+        "firstYears": 18796,
+        "netShare": 0.275,
+        "other": 766,
+        "n": 27,
+        "receiving": [
+          {
+            "unit_id": "153603",
+            "name": "Iowa State University",
+            "count": 2495,
+            "share": 0.3
+          },
+          {
+            "unit_id": "153658",
+            "name": "University of Iowa",
+            "count": 2329,
+            "share": 0.28
+          },
+          {
+            "unit_id": "153269",
+            "name": "Drake University",
+            "count": 318,
+            "share": 0.0382
+          },
+          {
+            "unit_id": "153384",
+            "name": "Grinnell College",
+            "count": 296,
+            "share": 0.0356
+          },
+          {
+            "unit_id": "153250",
+            "name": "Dordt University",
+            "count": 275,
+            "share": 0.0331
+          }
+        ]
       }
     },
     {
@@ -7188,7 +7750,8 @@
         "acceptanceRate": 0.8389,
         "avgCost": 21464,
         "outOfState": 0.2328,
-        "testOptionalShare": 0.5
+        "testOptionalShare": 0.5,
+        "netInflow": -0.0302
       },
       "all": {
         "key": "all",
@@ -7242,6 +7805,48 @@
           "line": [null,null,0.4717,null,0.587,null,0.519,null,0.4435,null,0.3795],
           "thenNow": [0.4419,0.3795]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 2200,
+        "outflow": 2438,
+        "net": -238,
+        "firstYears": 7886,
+        "netShare": -0.0302,
+        "other": 455,
+        "n": 8,
+        "receiving": [
+          {
+            "unit_id": "142115",
+            "name": "Boise State University",
+            "count": 1205,
+            "share": 0.5477
+          },
+          {
+            "unit_id": "142285",
+            "name": "University of Idaho",
+            "count": 524,
+            "share": 0.2382
+          },
+          {
+            "unit_id": "142276",
+            "name": "Idaho State University",
+            "count": 134,
+            "share": 0.0609
+          },
+          {
+            "unit_id": "142328",
+            "name": "Lewis-Clark State College",
+            "count": 109,
+            "share": 0.0495
+          },
+          {
+            "unit_id": "142461",
+            "name": "Northwest Nazarene University",
+            "count": 82,
+            "share": 0.0373
+          }
+        ]
       }
     },
     {
@@ -7964,7 +8569,8 @@
         "acceptanceRate": 0.7589,
         "avgCost": 24775,
         "outOfState": 0.0819,
-        "testOptionalShare": 0.8406
+        "testOptionalShare": 0.8406,
+        "netInflow": -0.42
       },
       "all": {
         "key": "all",
@@ -8038,6 +8644,48 @@
           "line": [null,null,null,null,null,null,null,null,null,null,null],
           "thenNow": [0.2489,0.2536]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 10941,
+        "outflow": 30289,
+        "net": -19348,
+        "firstYears": 46063,
+        "netShare": -0.42,
+        "other": 4046,
+        "n": 55,
+        "receiving": [
+          {
+            "unit_id": "147767",
+            "name": "Northwestern University",
+            "count": 1385,
+            "share": 0.1266
+          },
+          {
+            "unit_id": "145637",
+            "name": "University of Illinois Urbana-Champaign",
+            "count": 1236,
+            "share": 0.113
+          },
+          {
+            "unit_id": "146719",
+            "name": "Loyola University Chicago",
+            "count": 1232,
+            "share": 0.1126
+          },
+          {
+            "unit_id": "144050",
+            "name": "University of Chicago",
+            "count": 1174,
+            "share": 0.1073
+          },
+          {
+            "unit_id": "144740",
+            "name": "DePaul University",
+            "count": 814,
+            "share": 0.0744
+          }
+        ]
       }
     },
     {
@@ -8647,7 +9295,8 @@
         "acceptanceRate": 0.7791,
         "avgCost": 23837,
         "outOfState": 0.1018,
-        "testOptionalShare": 0.9091
+        "testOptionalShare": 0.9091,
+        "netInflow": 0.2204
       },
       "all": {
         "key": "all",
@@ -8715,6 +9364,48 @@
           "line": [0.3008,null,0.3367,null,0.3675,null,0.3271,null,0.3566,null,0.3305],
           "thenNow": [0.3008,0.3305]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 16028,
+        "outflow": 6149,
+        "net": 9879,
+        "firstYears": 44829,
+        "netShare": 0.2204,
+        "other": 2779,
+        "n": 39,
+        "receiving": [
+          {
+            "unit_id": "243780",
+            "name": "Purdue University-Main Campus",
+            "count": 5435,
+            "share": 0.3391
+          },
+          {
+            "unit_id": "151351",
+            "name": "Indiana University-Bloomington",
+            "count": 3943,
+            "share": 0.246
+          },
+          {
+            "unit_id": "152080",
+            "name": "University of Notre Dame",
+            "count": 1709,
+            "share": 0.1066
+          },
+          {
+            "unit_id": "150163",
+            "name": "Butler University",
+            "count": 493,
+            "share": 0.0308
+          },
+          {
+            "unit_id": "152318",
+            "name": "Rose-Hulman Institute of Technology",
+            "count": 368,
+            "share": 0.023
+          }
+        ]
       }
     },
     {
@@ -9132,7 +9823,8 @@
         "acceptanceRate": 0.8088,
         "avgCost": 25296,
         "outOfState": 0.2234,
-        "testOptionalShare": 0.8214
+        "testOptionalShare": 0.8214,
+        "netInflow": 0.172
       },
       "all": {
         "key": "all",
@@ -9193,6 +9885,48 @@
           "line": [0.4771,null,0.5328,null,0.4963,null,0.543,null,0.5232,null,0.5309],
           "thenNow": [0.4771,0.5309]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 6500,
+        "outflow": 3536,
+        "net": 2964,
+        "firstYears": 17235,
+        "netShare": 0.172,
+        "other": 621,
+        "n": 26,
+        "receiving": [
+          {
+            "unit_id": "155317",
+            "name": "University of Kansas",
+            "count": 2391,
+            "share": 0.3678
+          },
+          {
+            "unit_id": "155399",
+            "name": "Kansas State University",
+            "count": 981,
+            "share": 0.1509
+          },
+          {
+            "unit_id": "154712",
+            "name": "Benedictine College",
+            "count": 491,
+            "share": 0.0755
+          },
+          {
+            "unit_id": "156125",
+            "name": "Wichita State University",
+            "count": 418,
+            "share": 0.0643
+          },
+          {
+            "unit_id": "155681",
+            "name": "Pittsburg State University",
+            "count": 330,
+            "share": 0.0508
+          }
+        ]
       }
     },
     {
@@ -9665,7 +10399,8 @@
         "acceptanceRate": 0.7958,
         "avgCost": 18904,
         "outOfState": 0.3138,
-        "testOptionalShare": 0.8
+        "testOptionalShare": 0.8,
+        "netInflow": 0.1658
       },
       "all": {
         "key": "all",
@@ -9732,6 +10467,48 @@
           "line": [0.3213,null,0.2977,null,0.3,null,0.2984,null,0.3153,null,0.3009],
           "thenNow": [0.3213,0.3009]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 7826,
+        "outflow": 3703,
+        "net": 4123,
+        "firstYears": 24863,
+        "netShare": 0.1658,
+        "other": 629,
+        "n": 27,
+        "receiving": [
+          {
+            "unit_id": "157085",
+            "name": "University of Kentucky",
+            "count": 2650,
+            "share": 0.3386
+          },
+          {
+            "unit_id": "157951",
+            "name": "Western Kentucky University",
+            "count": 928,
+            "share": 0.1186
+          },
+          {
+            "unit_id": "157289",
+            "name": "University of Louisville",
+            "count": 886,
+            "share": 0.1132
+          },
+          {
+            "unit_id": "157401",
+            "name": "Murray State University",
+            "count": 556,
+            "share": 0.071
+          },
+          {
+            "unit_id": "157447",
+            "name": "Northern Kentucky University",
+            "count": 445,
+            "share": 0.0569
+          }
+        ]
       }
     },
     {
@@ -10261,7 +11038,8 @@
         "acceptanceRate": 0.7773,
         "avgCost": 17993,
         "outOfState": 0.0751,
-        "testOptionalShare": 0.75
+        "testOptionalShare": 0.75,
+        "netInflow": 0.1347
       },
       "all": {
         "key": "all",
@@ -10322,6 +11100,48 @@
           "line": [0.4541,null,0.4895,null,0.5299,null,0.4509,null,0.4754,null,0.4251],
           "thenNow": [0.4541,0.4251]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 7385,
+        "outflow": 3640,
+        "net": 3745,
+        "firstYears": 27794,
+        "netShare": 0.1347,
+        "other": 1060,
+        "n": 23,
+        "receiving": [
+          {
+            "unit_id": "159391",
+            "name": "Louisiana State University and Agricultural & Mechanical College",
+            "count": 3120,
+            "share": 0.4225
+          },
+          {
+            "unit_id": "160755",
+            "name": "Tulane University of Louisiana",
+            "count": 1463,
+            "share": 0.1981
+          },
+          {
+            "unit_id": "160904",
+            "name": "Xavier University of Louisiana",
+            "count": 627,
+            "share": 0.0849
+          },
+          {
+            "unit_id": "160621",
+            "name": "Southern University and A & M College",
+            "count": 536,
+            "share": 0.0726
+          },
+          {
+            "unit_id": "159009",
+            "name": "Grambling State University",
+            "count": 366,
+            "share": 0.0496
+          }
+        ]
       }
     },
     {
@@ -11046,7 +11866,8 @@
         "acceptanceRate": 0.7068,
         "avgCost": 33912,
         "outOfState": 0.1141,
-        "testOptionalShare": 0.8169
+        "testOptionalShare": 0.8169,
+        "netInflow": 0.053
       },
       "all": {
         "key": "all",
@@ -11114,6 +11935,48 @@
           "line": [null,null,null,null,null,null,null,null,null,null,0.4966],
           "thenNow": [0.5324,0.4966]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 21648,
+        "outflow": 19148,
+        "net": 2500,
+        "firstYears": 47158,
+        "netShare": 0.053,
+        "other": 5030,
+        "n": 62,
+        "receiving": [
+          {
+            "unit_id": "164988",
+            "name": "Boston University",
+            "count": 2013,
+            "share": 0.093
+          },
+          {
+            "unit_id": "164924",
+            "name": "Boston College",
+            "count": 1717,
+            "share": 0.0793
+          },
+          {
+            "unit_id": "167358",
+            "name": "Northeastern University",
+            "count": 1712,
+            "share": 0.0791
+          },
+          {
+            "unit_id": "166629",
+            "name": "University of Massachusetts-Amherst",
+            "count": 1208,
+            "share": 0.0558
+          },
+          {
+            "unit_id": "168148",
+            "name": "Tufts University",
+            "count": 1129,
+            "share": 0.0522
+          }
+        ]
       }
     },
     {
@@ -11617,7 +12480,8 @@
         "acceptanceRate": 0.7557,
         "avgCost": 24766,
         "outOfState": 0.218,
-        "testOptionalShare": 0.8125
+        "testOptionalShare": 0.8125,
+        "netInflow": -0.329
       },
       "all": {
         "key": "all",
@@ -11691,6 +12555,48 @@
           "line": [0.4717,null,0.4624,null,0.4142,null,0.3469,null,0.4,null,0.3755],
           "thenNow": [0.4717,0.3755]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 8118,
+        "outflow": 16081,
+        "net": -7963,
+        "firstYears": 24200,
+        "netShare": -0.329,
+        "other": 827,
+        "n": 29,
+        "receiving": [
+          {
+            "unit_id": "163286",
+            "name": "University of Maryland-College Park",
+            "count": 1612,
+            "share": 0.1986
+          },
+          {
+            "unit_id": "163453",
+            "name": "Morgan State University",
+            "count": 1197,
+            "share": 0.1475
+          },
+          {
+            "unit_id": "164155",
+            "name": "United States Naval Academy",
+            "count": 1063,
+            "share": 0.1309
+          },
+          {
+            "unit_id": "162928",
+            "name": "Johns Hopkins University",
+            "count": 981,
+            "share": 0.1208
+          },
+          {
+            "unit_id": "163046",
+            "name": "Loyola University Maryland",
+            "count": 598,
+            "share": 0.0737
+          }
+        ]
       }
     },
     {
@@ -12064,7 +12970,8 @@
         "acceptanceRate": 0.8095,
         "avgCost": 24447,
         "outOfState": 0.2376,
-        "testOptionalShare": 0.8235
+        "testOptionalShare": 0.8235,
+        "netInflow": 0.1447
       },
       "all": {
         "key": "all",
@@ -12118,6 +13025,48 @@
           "line": [0.7131,null,0.7514,null,0.7462,null,0.7039,null,0.79,null,0.7727],
           "thenNow": [0.7131,0.7727]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 3311,
+        "outflow": 2388,
+        "net": 923,
+        "firstYears": 6379,
+        "netShare": 0.1447,
+        "other": 287,
+        "n": 14,
+        "receiving": [
+          {
+            "unit_id": "161253",
+            "name": "University of Maine",
+            "count": 729,
+            "share": 0.2202
+          },
+          {
+            "unit_id": "161086",
+            "name": "Colby College",
+            "count": 480,
+            "share": 0.145
+          },
+          {
+            "unit_id": "161457",
+            "name": "University of New England",
+            "count": 439,
+            "share": 0.1326
+          },
+          {
+            "unit_id": "161004",
+            "name": "Bowdoin College",
+            "count": 418,
+            "share": 0.1262
+          },
+          {
+            "unit_id": "160977",
+            "name": "Bates College",
+            "count": 395,
+            "share": 0.1193
+          }
+        ]
       }
     },
     {
@@ -12745,7 +13694,8 @@
         "acceptanceRate": 0.7944,
         "avgCost": 21273,
         "outOfState": 0.0754,
-        "testOptionalShare": 0.913
+        "testOptionalShare": 0.913,
+        "netInflow": 0.0419
       },
       "all": {
         "key": "all",
@@ -12813,6 +13763,48 @@
           "line": [0.1187,null,0.1474,null,0.1684,null,0.1473,null,0.1569,null,0.1587],
           "thenNow": [0.1187,0.1587]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 9020,
+        "outflow": 7041,
+        "net": 1979,
+        "firstYears": 47204,
+        "netShare": 0.0419,
+        "other": 1940,
+        "n": 41,
+        "receiving": [
+          {
+            "unit_id": "170976",
+            "name": "University of Michigan-Ann Arbor",
+            "count": 3097,
+            "share": 0.3433
+          },
+          {
+            "unit_id": "171100",
+            "name": "Michigan State University",
+            "count": 1852,
+            "share": 0.2053
+          },
+          {
+            "unit_id": "172699",
+            "name": "Western Michigan University",
+            "count": 511,
+            "share": 0.0567
+          },
+          {
+            "unit_id": "171456",
+            "name": "Northern Michigan University",
+            "count": 400,
+            "share": 0.0443
+          },
+          {
+            "unit_id": "171128",
+            "name": "Michigan Technological University",
+            "count": 345,
+            "share": 0.0382
+          }
+        ]
       }
     },
     {
@@ -13338,7 +14330,8 @@
         "acceptanceRate": 0.8367,
         "avgCost": 25099,
         "outOfState": 0.1849,
-        "testOptionalShare": 0.9189
+        "testOptionalShare": 0.9189,
+        "netInflow": -0.3126
       },
       "all": {
         "key": "all",
@@ -13406,6 +14399,48 @@
           "line": [0.2482,null,0.266,null,0.2249,null,0.2273,null,0.2461,null,0.2435],
           "thenNow": [0.2482,0.2435]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 6115,
+        "outflow": 13713,
+        "net": -7598,
+        "firstYears": 24308,
+        "netShare": -0.3126,
+        "other": 1444,
+        "n": 35,
+        "receiving": [
+          {
+            "unit_id": "174066",
+            "name": "University of Minnesota-Twin Cities",
+            "count": 2003,
+            "share": 0.3276
+          },
+          {
+            "unit_id": "173920",
+            "name": "Minnesota State University-Mankato",
+            "count": 373,
+            "share": 0.061
+          },
+          {
+            "unit_id": "175272",
+            "name": "Winona State University",
+            "count": 366,
+            "share": 0.0599
+          },
+          {
+            "unit_id": "174844",
+            "name": "St Olaf College",
+            "count": 364,
+            "share": 0.0595
+          },
+          {
+            "unit_id": "173258",
+            "name": "Carleton College",
+            "count": 355,
+            "share": 0.0581
+          }
+        ]
       }
     },
     {
@@ -14004,7 +15039,8 @@
         "acceptanceRate": 0.7263,
         "avgCost": 21460,
         "outOfState": 0.2238,
-        "testOptionalShare": 0.7358
+        "testOptionalShare": 0.7358,
+        "netInflow": 0.0563
       },
       "all": {
         "key": "all",
@@ -14072,6 +15108,48 @@
           "line": [null,null,null,null,0.4209,null,0.3939,null,0.3937,null,0.395],
           "thenNow": [0.3724,0.395]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 9110,
+        "outflow": 7628,
+        "net": 1482,
+        "firstYears": 26336,
+        "netShare": 0.0563,
+        "other": 1820,
+        "n": 43,
+        "receiving": [
+          {
+            "unit_id": "178396",
+            "name": "University of Missouri-Columbia",
+            "count": 2024,
+            "share": 0.2222
+          },
+          {
+            "unit_id": "179867",
+            "name": "Washington University in St Louis",
+            "count": 1356,
+            "share": 0.1488
+          },
+          {
+            "unit_id": "179159",
+            "name": "Saint Louis University",
+            "count": 758,
+            "share": 0.0832
+          },
+          {
+            "unit_id": "178402",
+            "name": "University of Missouri-Kansas City",
+            "count": 415,
+            "share": 0.0456
+          },
+          {
+            "unit_id": "179566",
+            "name": "Missouri State University-Springfield",
+            "count": 356,
+            "share": 0.0391
+          }
+        ]
       }
     },
     {
@@ -14449,7 +15527,8 @@
         "acceptanceRate": 0.7764,
         "avgCost": 17262,
         "outOfState": 0.3686,
-        "testOptionalShare": 0.6471
+        "testOptionalShare": 0.6471,
+        "netInflow": 0.4149
       },
       "all": {
         "key": "all",
@@ -14503,6 +15582,48 @@
           "line": [null,null,null,null,null,null,null,null,0.433,null,0.3081],
           "thenNow": [0.3909,0.3081]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 7835,
+        "outflow": 1702,
+        "net": 6133,
+        "firstYears": 14782,
+        "netShare": 0.4149,
+        "other": 419,
+        "n": 15,
+        "receiving": [
+          {
+            "unit_id": "176017",
+            "name": "University of Mississippi",
+            "count": 4145,
+            "share": 0.529
+          },
+          {
+            "unit_id": "176080",
+            "name": "Mississippi State University",
+            "count": 1560,
+            "share": 0.1991
+          },
+          {
+            "unit_id": "175856",
+            "name": "Jackson State University",
+            "count": 688,
+            "share": 0.0878
+          },
+          {
+            "unit_id": "176372",
+            "name": "University of Southern Mississippi",
+            "count": 397,
+            "share": 0.0507
+          },
+          {
+            "unit_id": "176044",
+            "name": "Mississippi Valley State University",
+            "count": 193,
+            "share": 0.0246
+          }
+        ]
       }
     },
     {
@@ -14746,7 +15867,8 @@
         "acceptanceRate": 0.8214,
         "avgCost": 23004,
         "outOfState": 0.233,
-        "testOptionalShare": 0.7
+        "testOptionalShare": 0.7,
+        "netInflow": 0.2961
       },
       "all": {
         "key": "all",
@@ -14800,6 +15922,48 @@
           "line": [0.4702,null,null,null,null,null,null,null,null,null,0.4222],
           "thenNow": [0.4702,0.4222]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 3384,
+        "outflow": 1246,
+        "net": 2138,
+        "firstYears": 7220,
+        "netShare": 0.2961,
+        "other": 148,
+        "n": 10,
+        "receiving": [
+          {
+            "unit_id": "180461",
+            "name": "Montana State University",
+            "count": 2187,
+            "share": 0.6463
+          },
+          {
+            "unit_id": "180489",
+            "name": "The University of Montana",
+            "count": 696,
+            "share": 0.2057
+          },
+          {
+            "unit_id": "180106",
+            "name": "Carroll College",
+            "count": 129,
+            "share": 0.0381
+          },
+          {
+            "unit_id": "180595",
+            "name": "Rocky Mountain College",
+            "count": 120,
+            "share": 0.0355
+          },
+          {
+            "unit_id": "180416",
+            "name": "Montana Technological University",
+            "count": 67,
+            "share": 0.0198
+          }
+        ]
       }
     },
     {
@@ -15512,7 +16676,8 @@
         "acceptanceRate": 0.749,
         "avgCost": 22310,
         "outOfState": 0.1506,
-        "testOptionalShare": 0.8475
+        "testOptionalShare": 0.8475,
+        "netInflow": 0.1036
       },
       "all": {
         "key": "all",
@@ -15586,6 +16751,48 @@
           "line": [0.3443,null,0.316,null,0.3169,null,0.3363,null,0.3729,null,0.3667],
           "thenNow": [0.3443,0.3667]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 14149,
+        "outflow": 8753,
+        "net": 5396,
+        "firstYears": 52071,
+        "netShare": 0.1036,
+        "other": 1706,
+        "n": 54,
+        "receiving": [
+          {
+            "unit_id": "198419",
+            "name": "Duke University",
+            "count": 1270,
+            "share": 0.0898
+          },
+          {
+            "unit_id": "198516",
+            "name": "Elon University",
+            "count": 1236,
+            "share": 0.0874
+          },
+          {
+            "unit_id": "199847",
+            "name": "Wake Forest University",
+            "count": 1223,
+            "share": 0.0864
+          },
+          {
+            "unit_id": "199102",
+            "name": "North Carolina A & T State University",
+            "count": 1128,
+            "share": 0.0797
+          },
+          {
+            "unit_id": "198695",
+            "name": "High Point University",
+            "count": 1122,
+            "share": 0.0793
+          }
+        ]
       }
     },
     {
@@ -15835,7 +17042,50 @@
         "acceptanceRate": null,
         "avgCost": null,
         "outOfState": null,
-        "testOptionalShare": null
+        "testOptionalShare": null,
+        "netInflow": 0.4296
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 3514,
+        "outflow": 937,
+        "net": 2577,
+        "firstYears": 5999,
+        "netShare": 0.4296,
+        "other": 200,
+        "n": 9,
+        "receiving": [
+          {
+            "unit_id": "200332",
+            "name": "North Dakota State University-Main Campus",
+            "count": 1370,
+            "share": 0.3899
+          },
+          {
+            "unit_id": "200280",
+            "name": "University of North Dakota",
+            "count": 1303,
+            "share": 0.3708
+          },
+          {
+            "unit_id": "200217",
+            "name": "University of Mary",
+            "count": 348,
+            "share": 0.099
+          },
+          {
+            "unit_id": "200156",
+            "name": "University of Jamestown",
+            "count": 156,
+            "share": 0.0444
+          },
+          {
+            "unit_id": "200059",
+            "name": "Dickinson State University",
+            "count": 129,
+            "share": 0.0367
+          }
+        ]
       }
     },
     {
@@ -16223,7 +17473,8 @@
         "acceptanceRate": 0.7975,
         "avgCost": 22668,
         "outOfState": 0.1822,
-        "testOptionalShare": 0.6667
+        "testOptionalShare": 0.6667,
+        "netInflow": 0.0669
       },
       "all": {
         "key": "all",
@@ -16284,6 +17535,48 @@
           "line": [0.3536,null,0.348,null,0.3514,null,0.3396,null,0.4167,null,0.4364],
           "thenNow": [0.3536,0.4364]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 3334,
+        "outflow": 2545,
+        "net": 789,
+        "firstYears": 11798,
+        "netShare": 0.0669,
+        "other": 314,
+        "n": 18,
+        "receiving": [
+          {
+            "unit_id": "181464",
+            "name": "University of Nebraska-Lincoln",
+            "count": 1033,
+            "share": 0.3098
+          },
+          {
+            "unit_id": "181002",
+            "name": "Creighton University",
+            "count": 836,
+            "share": 0.2507
+          },
+          {
+            "unit_id": "181394",
+            "name": "University of Nebraska at Omaha",
+            "count": 216,
+            "share": 0.0648
+          },
+          {
+            "unit_id": "180984",
+            "name": "Concordia University-Nebraska",
+            "count": 179,
+            "share": 0.0537
+          },
+          {
+            "unit_id": "180948",
+            "name": "Chadron State College",
+            "count": 137,
+            "share": 0.0411
+          }
+        ]
       }
     },
     {
@@ -16621,7 +17914,8 @@
         "acceptanceRate": 0.8754,
         "avgCost": 29907,
         "outOfState": 0.4931,
-        "testOptionalShare": 0.8333
+        "testOptionalShare": 0.8333,
+        "netInflow": -0.0081
       },
       "all": {
         "key": "all",
@@ -16675,6 +17969,48 @@
           "line": [0.7949,null,0.8072,null,0.7748,null,0.7615,null,0.7799,null,0.7111],
           "thenNow": [0.7949,0.7111]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 4076,
+        "outflow": 4130,
+        "net": -54,
+        "firstYears": 6655,
+        "netShare": -0.0081,
+        "other": 295,
+        "n": 11,
+        "receiving": [
+          {
+            "unit_id": "183044",
+            "name": "University of New Hampshire-Main Campus",
+            "count": 1417,
+            "share": 0.3476
+          },
+          {
+            "unit_id": "182670",
+            "name": "Dartmouth College",
+            "count": 952,
+            "share": 0.2336
+          },
+          {
+            "unit_id": "183239",
+            "name": "Saint Anselm College",
+            "count": 411,
+            "share": 0.1008
+          },
+          {
+            "unit_id": "183080",
+            "name": "Plymouth State University",
+            "count": 404,
+            "share": 0.0991
+          },
+          {
+            "unit_id": "183062",
+            "name": "Keene State College",
+            "count": 346,
+            "share": 0.0849
+          }
+        ]
       }
     },
     {
@@ -17336,7 +18672,8 @@
         "acceptanceRate": 0.7766,
         "avgCost": 25329,
         "outOfState": 0.0518,
-        "testOptionalShare": 0.8776
+        "testOptionalShare": 0.8776,
+        "netInflow": -0.7391
       },
       "all": {
         "key": "all",
@@ -17410,6 +18747,48 @@
           "line": [null,null,null,null,null,null,0.2362,null,0.2323,null,0.2333],
           "thenNow": [0.1755,0.2333]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 4989,
+        "outflow": 31096,
+        "net": -26107,
+        "firstYears": 35321,
+        "netShare": -0.7391,
+        "other": 2057,
+        "n": 42,
+        "receiving": [
+          {
+            "unit_id": "186380",
+            "name": "Rutgers University-New Brunswick",
+            "count": 1101,
+            "share": 0.2207
+          },
+          {
+            "unit_id": "186131",
+            "name": "Princeton University",
+            "count": 1044,
+            "share": 0.2093
+          },
+          {
+            "unit_id": "186584",
+            "name": "Seton Hall University",
+            "count": 439,
+            "share": 0.088
+          },
+          {
+            "unit_id": "186867",
+            "name": "Stevens Institute of Technology",
+            "count": 316,
+            "share": 0.0633
+          },
+          {
+            "unit_id": "184782",
+            "name": "Rowan University",
+            "count": 242,
+            "share": 0.0485
+          }
+        ]
       }
     },
     {
@@ -17665,7 +19044,8 @@
         "acceptanceRate": 0.9032,
         "avgCost": 15469,
         "outOfState": 0.2267,
-        "testOptionalShare": 0.5
+        "testOptionalShare": 0.5,
+        "netInflow": -0.123
       },
       "all": {
         "key": "all",
@@ -17725,6 +19105,48 @@
           "line": [0.5619,null,0.4839,null,0.4836,null,0.6468,null,0.6656,null,0.6718],
           "thenNow": [0.5619,0.6718]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 1262,
+        "outflow": 2050,
+        "net": -788,
+        "firstYears": 6408,
+        "netShare": -0.123,
+        "other": 156,
+        "n": 7,
+        "receiving": [
+          {
+            "unit_id": "188030",
+            "name": "New Mexico State University-Main Campus",
+            "count": 545,
+            "share": 0.4319
+          },
+          {
+            "unit_id": "187985",
+            "name": "University of New Mexico-Main Campus",
+            "count": 529,
+            "share": 0.4192
+          },
+          {
+            "unit_id": "245652",
+            "name": "St. John's College",
+            "count": 56,
+            "share": 0.0444
+          },
+          {
+            "unit_id": "188182",
+            "name": "University of the Southwest",
+            "count": 54,
+            "share": 0.0428
+          },
+          {
+            "unit_id": "187897",
+            "name": "New Mexico Highlands University",
+            "count": 52,
+            "share": 0.0412
+          }
+        ]
       }
     },
     {
@@ -17961,7 +19383,38 @@
         "acceptanceRate": null,
         "avgCost": null,
         "outOfState": null,
-        "testOptionalShare": null
+        "testOptionalShare": null,
+        "netInflow": -0.2324
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 1367,
+        "outflow": 3298,
+        "net": -1931,
+        "firstYears": 8308,
+        "netShare": -0.2324,
+        "other": 96,
+        "n": 3,
+        "receiving": [
+          {
+            "unit_id": "182290",
+            "name": "University of Nevada-Reno",
+            "count": 784,
+            "share": 0.5735
+          },
+          {
+            "unit_id": "182281",
+            "name": "University of Nevada-Las Vegas",
+            "count": 579,
+            "share": 0.4236
+          },
+          {
+            "unit_id": "441900",
+            "name": "Nevada State University",
+            "count": 4,
+            "share": 0.0029
+          }
+        ]
       }
     },
     {
@@ -19115,7 +20568,8 @@
         "acceptanceRate": 0.7035,
         "avgCost": 24988,
         "outOfState": 0.0312,
-        "testOptionalShare": 0.8242
+        "testOptionalShare": 0.8242,
+        "netInflow": -0.0491
       },
       "all": {
         "key": "all",
@@ -19189,6 +20643,48 @@
           "line": [null,null,null,null,0.1889,null,0.1782,null,0.2159,null,0.1899],
           "thenNow": [0.1925,0.1899]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 27290,
+        "outflow": 32496,
+        "net": -5206,
+        "firstYears": 106136,
+        "netShare": -0.0491,
+        "other": 11009,
+        "n": 150,
+        "receiving": [
+          {
+            "unit_id": "193900",
+            "name": "New York University",
+            "count": 2791,
+            "share": 0.1023
+          },
+          {
+            "unit_id": "196413",
+            "name": "Syracuse University",
+            "count": 2402,
+            "share": 0.088
+          },
+          {
+            "unit_id": "190415",
+            "name": "Cornell University",
+            "count": 1945,
+            "share": 0.0713
+          },
+          {
+            "unit_id": "195003",
+            "name": "Rochester Institute of Technology",
+            "count": 1561,
+            "share": 0.0572
+          },
+          {
+            "unit_id": "191241",
+            "name": "Fordham University",
+            "count": 1282,
+            "share": 0.047
+          }
+        ]
       }
     },
     {
@@ -19985,7 +21481,8 @@
         "acceptanceRate": 0.7654,
         "avgCost": 24492,
         "outOfState": 0.1121,
-        "testOptionalShare": 0.8312
+        "testOptionalShare": 0.8312,
+        "netInflow": 0.0869
       },
       "all": {
         "key": "all",
@@ -20053,6 +21550,48 @@
           "line": [0.2569,null,0.2658,null,0.3046,null,0.2786,null,0.2647,null,0.25],
           "thenNow": [0.2569,0.25]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 15878,
+        "outflow": 10650,
+        "net": 5228,
+        "firstYears": 60143,
+        "netShare": 0.0869,
+        "other": 3223,
+        "n": 69,
+        "receiving": [
+          {
+            "unit_id": "204796",
+            "name": "Ohio State University-Main Campus",
+            "count": 2673,
+            "share": 0.1683
+          },
+          {
+            "unit_id": "204024",
+            "name": "Miami University-Oxford",
+            "count": 1467,
+            "share": 0.0924
+          },
+          {
+            "unit_id": "201885",
+            "name": "University of Cincinnati-Main Campus",
+            "count": 1443,
+            "share": 0.0909
+          },
+          {
+            "unit_id": "201645",
+            "name": "Case Western Reserve University",
+            "count": 1220,
+            "share": 0.0768
+          },
+          {
+            "unit_id": "202480",
+            "name": "University of Dayton",
+            "count": 693,
+            "share": 0.0436
+          }
+        ]
       }
     },
     {
@@ -20452,7 +21991,8 @@
         "acceptanceRate": 0.76,
         "avgCost": 20507,
         "outOfState": 0.1039,
-        "testOptionalShare": 0.625
+        "testOptionalShare": 0.625,
+        "netInflow": 0.2091
       },
       "all": {
         "key": "all",
@@ -20513,6 +22053,48 @@
           "line": [0.3874,null,0.3835,null,0.433,null,0.3611,null,0.3062,null,0.339],
           "thenNow": [0.3874,0.339]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 6842,
+        "outflow": 2783,
+        "net": 4059,
+        "firstYears": 19416,
+        "netShare": 0.2091,
+        "other": 857,
+        "n": 21,
+        "receiving": [
+          {
+            "unit_id": "207500",
+            "name": "University of Oklahoma-Norman Campus",
+            "count": 2780,
+            "share": 0.4063
+          },
+          {
+            "unit_id": "207388",
+            "name": "Oklahoma State University-Main Campus",
+            "count": 1976,
+            "share": 0.2888
+          },
+          {
+            "unit_id": "207582",
+            "name": "Oral Roberts University",
+            "count": 424,
+            "share": 0.062
+          },
+          {
+            "unit_id": "207971",
+            "name": "University of Tulsa",
+            "count": 322,
+            "share": 0.0471
+          },
+          {
+            "unit_id": "207458",
+            "name": "Oklahoma City University",
+            "count": 181,
+            "share": 0.0265
+          }
+        ]
       }
     },
     {
@@ -20987,7 +22569,8 @@
         "acceptanceRate": 0.8674,
         "avgCost": 30116,
         "outOfState": 0.3064,
-        "testOptionalShare": 0.88
+        "testOptionalShare": 0.88,
+        "netInflow": 0.1557
       },
       "all": {
         "key": "all",
@@ -21048,6 +22631,48 @@
           "line": [null,null,0.5356,null,null,null,0.5385,null,null,null,0.5],
           "thenNow": [0.5864,0.5]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 7479,
+        "outflow": 4905,
+        "net": 2574,
+        "firstYears": 16534,
+        "netShare": 0.1557,
+        "other": 438,
+        "n": 21,
+        "receiving": [
+          {
+            "unit_id": "209551",
+            "name": "University of Oregon",
+            "count": 2593,
+            "share": 0.3467
+          },
+          {
+            "unit_id": "209542",
+            "name": "Oregon State University",
+            "count": 2014,
+            "share": 0.2693
+          },
+          {
+            "unit_id": "209825",
+            "name": "University of Portland",
+            "count": 449,
+            "share": 0.06
+          },
+          {
+            "unit_id": "209056",
+            "name": "Lewis & Clark College",
+            "count": 353,
+            "share": 0.0472
+          },
+          {
+            "unit_id": "208822",
+            "name": "George Fox University",
+            "count": 317,
+            "share": 0.0424
+          }
+        ]
       }
     },
     {
@@ -21962,7 +23587,8 @@
         "acceptanceRate": 0.8205,
         "avgCost": 28858,
         "outOfState": 0.1446,
-        "testOptionalShare": 0.9145
+        "testOptionalShare": 0.9145,
+        "netInflow": 0.1362
       },
       "all": {
         "key": "all",
@@ -22036,6 +23662,48 @@
           "line": [0.3704,null,0.3787,null,0.359,null,0.3615,null,0.357,null,0.3555],
           "thenNow": [0.3704,0.3555]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 28462,
+        "outflow": 17839,
+        "net": 10623,
+        "firstYears": 77991,
+        "netShare": 0.1362,
+        "other": 3792,
+        "n": 112,
+        "receiving": [
+          {
+            "unit_id": "214777",
+            "name": "Pennsylvania State University-Main Campus",
+            "count": 3702,
+            "share": 0.1301
+          },
+          {
+            "unit_id": "216339",
+            "name": "Temple University",
+            "count": 1797,
+            "share": 0.0631
+          },
+          {
+            "unit_id": "215062",
+            "name": "University of Pennsylvania",
+            "count": 1674,
+            "share": 0.0588
+          },
+          {
+            "unit_id": "215293",
+            "name": "University of Pittsburgh-Pittsburgh Campus",
+            "count": 1500,
+            "share": 0.0527
+          },
+          {
+            "unit_id": "216597",
+            "name": "Villanova University",
+            "count": 1338,
+            "share": 0.047
+          }
+        ]
       }
     },
     {
@@ -22389,7 +24057,8 @@
         "acceptanceRate": 0.5727,
         "avgCost": 16260,
         "outOfState": 0,
-        "testOptionalShare": 0.6667
+        "testOptionalShare": 0.6667,
+        "netInflow": -0.0562
       },
       "all": {
         "key": "all",
@@ -22457,6 +24126,48 @@
           "line": [0,null,0,null,0,null,0,null,0,null,0.0017],
           "thenNow": [0,0.0017]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 158,
+        "outflow": 983,
+        "net": -825,
+        "firstYears": 14681,
+        "netShare": -0.0562,
+        "other": 145,
+        "n": 34,
+        "receiving": [
+          {
+            "unit_id": "243443",
+            "name": "Universidad del Sagrado Corazon",
+            "count": 73,
+            "share": 0.462
+          },
+          {
+            "unit_id": "243197",
+            "name": "University of Puerto Rico-Mayaguez",
+            "count": 28,
+            "share": 0.1772
+          },
+          {
+            "unit_id": "241191",
+            "name": "Universidad Adventista de las Antillas",
+            "count": 19,
+            "share": 0.1203
+          },
+          {
+            "unit_id": "242626",
+            "name": "Inter American University of Puerto Rico-Aguadilla",
+            "count": 5,
+            "share": 0.0316
+          },
+          {
+            "unit_id": "243179",
+            "name": "University of Puerto Rico-Humacao",
+            "count": 5,
+            "share": 0.0316
+          }
+        ]
       }
     },
     {
@@ -22800,7 +24511,8 @@
         "acceptanceRate": 0.6817,
         "avgCost": 40529,
         "outOfState": 0.3468,
-        "testOptionalShare": 0.9
+        "testOptionalShare": 0.9,
+        "netInflow": 0.4641
       },
       "all": {
         "key": "all",
@@ -22854,6 +24566,48 @@
           "line": [null,null,null,null,null,null,0.83,null,0.8084,null,0.8036],
           "thenNow": [0.8365,0.8036]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 7428,
+        "outflow": 2590,
+        "net": 4838,
+        "firstYears": 10425,
+        "netShare": 0.4641,
+        "other": 683,
+        "n": 10,
+        "receiving": [
+          {
+            "unit_id": "217484",
+            "name": "University of Rhode Island",
+            "count": 1694,
+            "share": 0.2281
+          },
+          {
+            "unit_id": "217156",
+            "name": "Brown University",
+            "count": 1363,
+            "share": 0.1835
+          },
+          {
+            "unit_id": "217402",
+            "name": "Providence College",
+            "count": 1101,
+            "share": 0.1482
+          },
+          {
+            "unit_id": "217235",
+            "name": "Johnson & Wales University-Providence",
+            "count": 917,
+            "share": 0.1235
+          },
+          {
+            "unit_id": "217165",
+            "name": "Bryant University",
+            "count": 719,
+            "share": 0.0968
+          }
+        ]
       }
     },
     {
@@ -23436,7 +25190,8 @@
         "acceptanceRate": 0.725,
         "avgCost": 21383,
         "outOfState": 0.2549,
-        "testOptionalShare": 0.8056
+        "testOptionalShare": 0.8056,
+        "netInflow": 0.2475
       },
       "all": {
         "key": "all",
@@ -23510,6 +25265,48 @@
           "line": [0.2428,null,0.2674,null,0.2865,null,0.3067,null,0.3626,null,0.3418],
           "thenNow": [0.2428,0.3418]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 11882,
+        "outflow": 4611,
+        "net": 7271,
+        "firstYears": 29383,
+        "netShare": 0.2475,
+        "other": 602,
+        "n": 33,
+        "receiving": [
+          {
+            "unit_id": "218663",
+            "name": "University of South Carolina-Columbia",
+            "count": 3261,
+            "share": 0.2744
+          },
+          {
+            "unit_id": "217882",
+            "name": "Clemson University",
+            "count": 2086,
+            "share": 0.1756
+          },
+          {
+            "unit_id": "218724",
+            "name": "Coastal Carolina University",
+            "count": 1783,
+            "share": 0.1501
+          },
+          {
+            "unit_id": "217819",
+            "name": "College of Charleston",
+            "count": 1274,
+            "share": 0.1072
+          },
+          {
+            "unit_id": "218070",
+            "name": "Furman University",
+            "count": 379,
+            "share": 0.0319
+          }
+        ]
       }
     },
     {
@@ -23804,7 +25601,8 @@
         "acceptanceRate": 0.8462,
         "avgCost": 22275,
         "outOfState": 0.3887,
-        "testOptionalShare": 1
+        "testOptionalShare": 1,
+        "netInflow": 0.2363
       },
       "all": {
         "key": "all",
@@ -23858,6 +25656,48 @@
           "line": [null,null,null,null,null,null,0.5232,null,0.4195,null,0.3906],
           "thenNow": [0.4473,0.3906]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 2680,
+        "outflow": 1279,
+        "net": 1401,
+        "firstYears": 5929,
+        "netShare": 0.2363,
+        "other": 438,
+        "n": 9,
+        "receiving": [
+          {
+            "unit_id": "219356",
+            "name": "South Dakota State University",
+            "count": 1071,
+            "share": 0.3996
+          },
+          {
+            "unit_id": "219471",
+            "name": "University of South Dakota",
+            "count": 483,
+            "share": 0.1802
+          },
+          {
+            "unit_id": "219347",
+            "name": "South Dakota School of Mines and Technology",
+            "count": 308,
+            "share": 0.1149
+          },
+          {
+            "unit_id": "219046",
+            "name": "Black Hills State University",
+            "count": 214,
+            "share": 0.0799
+          },
+          {
+            "unit_id": "219000",
+            "name": "Augustana University",
+            "count": 208,
+            "share": 0.0776
+          }
+        ]
       }
     },
     {
@@ -24468,7 +26308,8 @@
         "acceptanceRate": 0.6927,
         "avgCost": 21445,
         "outOfState": 0.1141,
-        "testOptionalShare": 0.6136
+        "testOptionalShare": 0.6136,
+        "netInflow": 0.0424
       },
       "all": {
         "key": "all",
@@ -24542,6 +26383,48 @@
           "line": [0.4134,null,0.3962,null,0.3754,null,0.3485,null,0.3958,null,0.3482],
           "thenNow": [0.4134,0.3482]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 9970,
+        "outflow": 8576,
+        "net": 1394,
+        "firstYears": 32869,
+        "netShare": 0.0424,
+        "other": 1000,
+        "n": 40,
+        "receiving": [
+          {
+            "unit_id": "221759",
+            "name": "The University of Tennessee-Knoxville",
+            "count": 2414,
+            "share": 0.2421
+          },
+          {
+            "unit_id": "221999",
+            "name": "Vanderbilt University",
+            "count": 1192,
+            "share": 0.1196
+          },
+          {
+            "unit_id": "219709",
+            "name": "Belmont University",
+            "count": 997,
+            "share": 0.1
+          },
+          {
+            "unit_id": "221661",
+            "name": "Southern Adventist University",
+            "count": 527,
+            "share": 0.0529
+          },
+          {
+            "unit_id": "220075",
+            "name": "East Tennessee State University",
+            "count": 503,
+            "share": 0.0505
+          }
+        ]
       }
     },
     {
@@ -25553,7 +27436,8 @@
         "acceptanceRate": 0.8387,
         "avgCost": 20587,
         "outOfState": 0.0188,
-        "testOptionalShare": 0.71
+        "testOptionalShare": 0.71,
+        "netInflow": -0.1717
       },
       "all": {
         "key": "all",
@@ -25627,6 +27511,48 @@
           "line": [0.0917,null,0.0877,null,0.0814,null,0.0941,null,0.1157,null,0.0823],
           "thenNow": [0.0917,0.0823]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 9225,
+        "outflow": 30680,
+        "net": -21455,
+        "firstYears": 124938,
+        "netShare": -0.1717,
+        "other": 3995,
+        "n": 77,
+        "receiving": [
+          {
+            "unit_id": "228875",
+            "name": "Texas Christian University",
+            "count": 1249,
+            "share": 0.1354
+          },
+          {
+            "unit_id": "223232",
+            "name": "Baylor University",
+            "count": 1192,
+            "share": 0.1292
+          },
+          {
+            "unit_id": "228246",
+            "name": "Southern Methodist University",
+            "count": 927,
+            "share": 0.1005
+          },
+          {
+            "unit_id": "228778",
+            "name": "The University of Texas at Austin",
+            "count": 752,
+            "share": 0.0815
+          },
+          {
+            "unit_id": "228723",
+            "name": "Texas A&M University-College Station",
+            "count": 638,
+            "share": 0.0692
+          }
+        ]
       }
     },
     {
@@ -25919,7 +27845,8 @@
         "acceptanceRate": 0.8598,
         "avgCost": 23545,
         "outOfState": 0.2729,
-        "testOptionalShare": 0.6364
+        "testOptionalShare": 0.6364,
+        "netInflow": 0.3535
       },
       "all": {
         "key": "all",
@@ -25979,6 +27906,48 @@
           "line": [0.5436,null,0.5363,null,0.5003,null,0.4996,null,0.52,null,0.5123],
           "thenNow": [0.5436,0.5123]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 8021,
+        "outflow": 1521,
+        "net": 6500,
+        "firstYears": 18388,
+        "netShare": 0.3535,
+        "other": 705,
+        "n": 5,
+        "receiving": [
+          {
+            "unit_id": "230038",
+            "name": "Brigham Young University",
+            "count": 3641,
+            "share": 0.4539
+          },
+          {
+            "unit_id": "230764",
+            "name": "University of Utah",
+            "count": 2494,
+            "share": 0.3109
+          },
+          {
+            "unit_id": "230728",
+            "name": "Utah State University",
+            "count": 1255,
+            "share": 0.1565
+          },
+          {
+            "unit_id": "230603",
+            "name": "Southern Utah University",
+            "count": 548,
+            "share": 0.0683
+          },
+          {
+            "unit_id": "230807",
+            "name": "Westminster University",
+            "count": 83,
+            "share": 0.0103
+          }
+        ]
       }
     },
     {
@@ -26663,7 +28632,8 @@
         "acceptanceRate": 0.8306,
         "avgCost": 25349,
         "outOfState": 0.1396,
-        "testOptionalShare": 0.8113
+        "testOptionalShare": 0.8113,
+        "netInflow": -0.0456
       },
       "all": {
         "key": "all",
@@ -26737,6 +28707,48 @@
           "line": [null,null,null,null,null,null,0.4095,null,0.3936,null,0.3573],
           "thenNow": [0.4173,0.3573]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 11610,
+        "outflow": 13570,
+        "net": -1960,
+        "firstYears": 43025,
+        "netShare": -0.0456,
+        "other": 2384,
+        "n": 39,
+        "receiving": [
+          {
+            "unit_id": "233921",
+            "name": "Virginia Polytechnic Institute and State University",
+            "count": 2469,
+            "share": 0.2127
+          },
+          {
+            "unit_id": "232423",
+            "name": "James Madison University",
+            "count": 1478,
+            "share": 0.1273
+          },
+          {
+            "unit_id": "234076",
+            "name": "University of Virginia-Main Campus",
+            "count": 1160,
+            "share": 0.0999
+          },
+          {
+            "unit_id": "232265",
+            "name": "Hampton University",
+            "count": 911,
+            "share": 0.0785
+          },
+          {
+            "unit_id": "233374",
+            "name": "University of Richmond",
+            "count": 645,
+            "share": 0.0556
+          }
+        ]
       }
     },
     {
@@ -26881,7 +28893,26 @@
         "acceptanceRate": null,
         "avgCost": null,
         "outOfState": null,
-        "testOptionalShare": null
+        "testOptionalShare": null,
+        "netInflow": -0.8724
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 25,
+        "outflow": 319,
+        "net": -294,
+        "firstYears": 337,
+        "netShare": -0.8724,
+        "other": 3,
+        "n": 1,
+        "receiving": [
+          {
+            "unit_id": "243665",
+            "name": "University of the Virgin Islands",
+            "count": 25,
+            "share": 1
+          }
+        ]
       }
     },
     {
@@ -27141,7 +29172,50 @@
         "acceptanceRate": null,
         "avgCost": null,
         "outOfState": null,
-        "testOptionalShare": null
+        "testOptionalShare": null,
+        "netInflow": 0.4154
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 3962,
+        "outflow": 1815,
+        "net": 2147,
+        "firstYears": 5169,
+        "netShare": 0.4154,
+        "other": 235,
+        "n": 8,
+        "receiving": [
+          {
+            "unit_id": "231174",
+            "name": "University of Vermont",
+            "count": 2188,
+            "share": 0.5522
+          },
+          {
+            "unit_id": "230959",
+            "name": "Middlebury College",
+            "count": 459,
+            "share": 0.1159
+          },
+          {
+            "unit_id": "230995",
+            "name": "Norwich University",
+            "count": 458,
+            "share": 0.1156
+          },
+          {
+            "unit_id": "230852",
+            "name": "Champlain College",
+            "count": 286,
+            "share": 0.0722
+          },
+          {
+            "unit_id": "231165",
+            "name": "Vermont State University",
+            "count": 252,
+            "share": 0.0636
+          }
+        ]
       }
     },
     {
@@ -27634,7 +29708,8 @@
         "acceptanceRate": 0.833,
         "avgCost": 28253,
         "outOfState": 0.1016,
-        "testOptionalShare": 0.7586
+        "testOptionalShare": 0.7586,
+        "netInflow": -0.2623
       },
       "all": {
         "key": "all",
@@ -27701,6 +29776,48 @@
           "line": [null,null,null,null,null,null,null,null,null,null,null],
           "thenNow": [0.3716,0.2012]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 5021,
+        "outflow": 11274,
+        "net": -6253,
+        "firstYears": 23841,
+        "netShare": -0.2623,
+        "other": 1309,
+        "n": 21,
+        "receiving": [
+          {
+            "unit_id": "236948",
+            "name": "University of Washington-Seattle Campus",
+            "count": 1724,
+            "share": 0.3434
+          },
+          {
+            "unit_id": "236939",
+            "name": "Washington State University",
+            "count": 614,
+            "share": 0.1223
+          },
+          {
+            "unit_id": "235316",
+            "name": "Gonzaga University",
+            "count": 598,
+            "share": 0.1191
+          },
+          {
+            "unit_id": "237011",
+            "name": "Western Washington University",
+            "count": 495,
+            "share": 0.0986
+          },
+          {
+            "unit_id": "236595",
+            "name": "Seattle University",
+            "count": 348,
+            "share": 0.0693
+          }
+        ]
       }
     },
     {
@@ -28193,7 +30310,8 @@
         "acceptanceRate": 0.7984,
         "avgCost": 24148,
         "outOfState": 0.1785,
-        "testOptionalShare": 0.9412
+        "testOptionalShare": 0.9412,
+        "netInflow": 0.1046
       },
       "all": {
         "key": "all",
@@ -28261,6 +30379,48 @@
           "line": [0.2938,null,0.2934,null,0.3266,null,0.3384,null,0.3746,null,0.3195],
           "thenNow": [0.2938,0.3195]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 11013,
+        "outflow": 7485,
+        "net": 3528,
+        "firstYears": 33736,
+        "netShare": 0.1046,
+        "other": 1379,
+        "n": 33,
+        "receiving": [
+          {
+            "unit_id": "240444",
+            "name": "University of Wisconsin-Madison",
+            "count": 3951,
+            "share": 0.3588
+          },
+          {
+            "unit_id": "239105",
+            "name": "Marquette University",
+            "count": 1366,
+            "share": 0.124
+          },
+          {
+            "unit_id": "240268",
+            "name": "University of Wisconsin-Eau Claire",
+            "count": 620,
+            "share": 0.0563
+          },
+          {
+            "unit_id": "240471",
+            "name": "University of Wisconsin-River Falls",
+            "count": 593,
+            "share": 0.0538
+          },
+          {
+            "unit_id": "238476",
+            "name": "Carthage College",
+            "count": 483,
+            "share": 0.0439
+          }
+        ]
       }
     },
     {
@@ -28573,7 +30733,8 @@
         "acceptanceRate": 0.9334,
         "avgCost": 19654,
         "outOfState": 0.2948,
-        "testOptionalShare": 0.6667
+        "testOptionalShare": 0.6667,
+        "netInflow": 0.2992
       },
       "all": {
         "key": "all",
@@ -28640,6 +30801,48 @@
           "line": [0.4803,null,0.5161,null,0.5052,null,0.6751,null,0.4838,null,0.4687],
           "thenNow": [0.4803,0.4687]
         }
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 4071,
+        "outflow": 1142,
+        "net": 2929,
+        "firstYears": 9791,
+        "netShare": 0.2992,
+        "other": 250,
+        "n": 15,
+        "receiving": [
+          {
+            "unit_id": "238032",
+            "name": "West Virginia University",
+            "count": 2406,
+            "share": 0.591
+          },
+          {
+            "unit_id": "237525",
+            "name": "Marshall University",
+            "count": 420,
+            "share": 0.1032
+          },
+          {
+            "unit_id": "237932",
+            "name": "West Liberty University",
+            "count": 168,
+            "share": 0.0413
+          },
+          {
+            "unit_id": "237181",
+            "name": "Bethany College",
+            "count": 166,
+            "share": 0.0408
+          },
+          {
+            "unit_id": "237792",
+            "name": "Shepherd University",
+            "count": 146,
+            "share": 0.0359
+          }
+        ]
       }
     },
     {
@@ -28793,7 +30996,26 @@
         "acceptanceRate": null,
         "avgCost": null,
         "outOfState": null,
-        "testOptionalShare": null
+        "testOptionalShare": null,
+        "netInflow": -0.2031
+      },
+      "flows": {
+        "year": 2024,
+        "inflow": 535,
+        "outflow": 812,
+        "net": -277,
+        "firstYears": 1364,
+        "netShare": -0.2031,
+        "other": 70,
+        "n": 1,
+        "receiving": [
+          {
+            "unit_id": "240727",
+            "name": "University of Wyoming",
+            "count": 535,
+            "share": 1
+          }
+        ]
       }
     }
   ]

@@ -13,6 +13,7 @@ import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { authConfigured, getAccount, getUser } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
+import { viewerBundle } from "@/lib/bundles";
 import { geocodeAddress, suggestAddresses as suggestFromProvider } from "@/lib/geocode";
 import { HOUSEHOLD_ERRORS } from "@/lib/household-rules";
 import { isSessionToken, shouldSuggest, type SuggestResult } from "@/lib/address-suggest";
@@ -58,6 +59,9 @@ const readHome = cache(async (): Promise<HomeRow | null> => {
   if (!authConfigured()) return null;
   const user = await getUser();
   if (!user) return null;
+  // The viewer bundle (lib/bundles.ts) carries the home in the request's one round trip; else two reads in a row.
+  const bundle = await viewerBundle();
+  if (bundle) return (bundle.home as HomeRow | null) ?? null;
   const supabase = await createServerSupabase();
   const household = await myHouseholdId(supabase);
   if (!household) return null;

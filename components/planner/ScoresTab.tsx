@@ -68,6 +68,9 @@ export default function ScoresTab({ ctx, view }: PlanTabProps) {
   const inTimeRows = moveRows.map(inTimeRow);
   const target = ctx.profile?.tests.target ?? null;
   const targetMoveRows = target !== null ? targetMoves(target, view.rows) : [];
+  // Until junior year ends the estimate already reads the target (method/standing.md "Revision 3", rule 3), so the
+  // card says that instead of "a {target} wouldn't move any of these colleges".
+  const targetInUse = Object.values(view.estimates).some((e) => e.notes.some((n) => n.key === "estimate.test_target"));
 
   return (
     <div className="space-y-4">
@@ -91,7 +94,7 @@ export default function ScoresTab({ ctx, view }: PlanTabProps) {
         )}
       </section>
 
-      {target !== null && <TargetScoreCard target={target} moves={targetMoveRows} />}
+      {target !== null && <TargetScoreCard target={target} moves={targetMoveRows} inUse={targetInUse} label={label} />}
 
       {retake ? (
         <section className="rounded-3xl bg-pop p-5 text-pop-foreground">
@@ -146,10 +149,15 @@ export default function ScoresTab({ ctx, view }: PlanTabProps) {
  * student is aiming for (`tests.target`, set in the intake) would move up a group, from each row's own move-up.
  * Separate from the retake suggestion above it — a target is the student's own guess, never Quad's.
  */
-function TargetScoreCard({ target, moves }: { target: number; moves: TargetMove[] }) {
+function TargetScoreCard({ target, moves, inUse, label }: { target: number; moves: TargetMove[]; inUse: boolean; label: string }) {
   return (
     <section className="rounded-3xl border bg-card p-5">
-      {moves.length > 0 ? (
+      {inUse ? (
+        <p className="text-sm">
+          Your estimates read your target {label} of <span className="font-semibold">{target}</span> until junior year ends. After
+          that, they use the score you actually earn.
+        </p>
+      ) : moves.length > 0 ? (
         <>
           <p className="font-display text-xl font-bold">
             A {target} would move {moves.length === 1 ? "one college" : `${moves.length} colleges`} up a group

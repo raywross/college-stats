@@ -482,17 +482,69 @@ function names(list: readonly { name: string }[]): string {
 }
 
 /** A step's Review value: the names ("Soccer, Track and Field +1 more"), or "None"; Other leads with the awards count. */
-export function stepReviewValue(step: ActivityStep, activities: readonly ActivityEntry[], awards: readonly AwardEntry[]): string {
+export function stepReviewValue(step: ActivityStep, activities: readonly ActivityEntry[], awards: readonly AwardEntry[], none = false): string {
+  // "None" only when the student chose it (owner, 2026-10-12); an empty step they haven't answered says so.
+  const empty = none ? "None" : "Not added";
   const mine = activitiesIn(activities, step);
-  if (step !== "other") return mine.length === 0 ? "None" : names(mine);
+  if (step !== "other") return mine.length === 0 ? empty : names(mine);
   const parts: string[] = [];
   if (awards.length > 0) parts.push(`${awards.length} award${awards.length === 1 ? "" : "s"}`);
   if (mine.length > 0) parts.push(names(mine));
-  return parts.length === 0 ? "None" : parts.join(" · ");
+  return parts.length === 0 ? empty : parts.join(" · ");
+}
+
+/* ------------------------------------------------------------------ */
+/* "None" on a step (owner, 2026-10-12)                                */
+/* ------------------------------------------------------------------ */
+
+/** Whether a step has anything entered (the Other step counts its awards too). */
+export function stepHasEntries(step: ActivityStep, activities: readonly ActivityEntry[], awards: readonly AwardEntry[]): boolean {
+  return activitiesIn(activities, step).length > 0 || (step === "other" && awards.length > 0);
+}
+
+export interface StepAnswers {
+  activities: ActivityEntry[];
+  awards: AwardEntry[];
+  activitiesNone: Partial<Record<ActivityStep, true>>;
+}
+
+/**
+ * Choosing "None" on a step: removes that step's entries (the caller confirms first when there are any) and marks it
+ * answered. Choosing it again un-marks it, leaving the step unanswered.
+ */
+export function toggleStepNone<T extends StepAnswers>(a: T, step: ActivityStep): T {
+  if (a.activitiesNone[step]) {
+    const rest = { ...a.activitiesNone };
+    delete rest[step];
+    return { ...a, activitiesNone: rest };
+  }
+  return {
+    ...a,
+    activities: a.activities.filter((x) => stepOfActivity(x) !== step),
+    awards: step === "other" ? [] : a.awards,
+    activitiesNone: { ...a.activitiesNone, [step]: true },
+  };
+}
+
+/**
+ * Whether the student has answered all four activity steps, each with an entry or "None" (owner, 2026-10-12): the
+ * estimate then reads activities as answered for completeness (a student with truly no activities isn't counted as a
+ * gap), though an empty list still earns no depth.
+ */
+export function allActivityStepsAnswered(activities: readonly ActivityEntry[], awards: readonly AwardEntry[], none: Partial<Record<ActivityStep, true>> | null | undefined): boolean {
+  return ACTIVITY_STEPS.every((step) => none?.[step] === true || stepHasEntries(step, activities, awards));
+}
+
+/** Any step that has entries can't also be "None": adding an entry clears it. */
+export function reconcileStepNone(activities: readonly ActivityEntry[], awards: readonly AwardEntry[], none: Partial<Record<ActivityStep, true>>): Partial<Record<ActivityStep, true>> {
+  const out: Partial<Record<ActivityStep, true>> = {};
+  for (const step of ACTIVITY_STEPS) if (none[step] && !stepHasEntries(step, activities, awards)) out[step] = true;
+  return out;
 }
 
 /** A step's rail line on desktop ("2 sports", "1 award · 1 more"), or null with nothing added. */
-export function stepRailSummary(step: ActivityStep, activities: readonly ActivityEntry[], awards: readonly AwardEntry[]): string | null {
+export function stepRailSummary(step: ActivityStep, activities: readonly ActivityEntry[], awards: readonly AwardEntry[], none = false): string | null {
+  if (none && !stepHasEntries(step, activities, awards)) return "None";
   const n = activitiesIn(activities, step).length;
   if (step === "sports") return n ? `${n} sport${n === 1 ? "" : "s"}` : null;
   if (step === "clubs") return n ? `${n} club${n === 1 ? "" : "s"}` : null;

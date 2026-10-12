@@ -145,6 +145,11 @@ export interface EstimateStudent {
   testTarget?: { kind: "sat" | "act"; score: number } | null;
   /** The student's high school graduation year (profile `basics.gradYear`): when junior year ends. */
   gradYear?: number | null;
+  /**
+   * All four activity steps answered, each with an entry or "None" (owner, 2026-10-12; profile
+   * `academics.activitiesNone`): Revision 1's completeness reads activities as present. No depth credit.
+   */
+  activitiesAnswered?: boolean;
 }
 
 export interface EstimateInput {

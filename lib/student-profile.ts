@@ -140,6 +140,25 @@ export interface StudentProfileAcademics {
    * profile saved before this field existed reads as null.
    */
   rankExpectation: RankExpectation | null;
+  /**
+   * The intake's one-tap "None" on an activity step (owner, 2026-10-12): the student answered that step and has
+   * nothing for it, which is different from not having answered. A key is present only when chosen; a profile saved
+   * before this field existed reads as {} (every step unanswered). Adding an entry to a step clears its "None".
+   */
+  activitiesNone: ActivitiesNone;
+}
+
+/** The activity steps a student can answer "None" for (lib/planner/activity-steps.ts ActivityStep). */
+export type ActivityNoneStep = "sports" | "clubs" | "work" | "other";
+export const ACTIVITY_NONE_STEPS: readonly ActivityNoneStep[] = ["sports", "clubs", "work", "other"];
+export type ActivitiesNone = Partial<Record<ActivityNoneStep, true>>;
+
+/** Only the four step keys, only `true`; anything else is dropped. */
+export function sanitizeActivitiesNone(input: unknown): ActivitiesNone {
+  const out: ActivitiesNone = {};
+  if (!input || typeof input !== "object" || Array.isArray(input)) return out;
+  for (const k of ACTIVITY_NONE_STEPS) if ((input as Record<string, unknown>)[k] === true) out[k] = true;
+  return out;
 }
 
 /** The course plan's saved choices; `season` is the school year they were made in ("2026-27"), after which they lapse. */
@@ -511,6 +530,7 @@ export function emptyProfile(): StudentProfileData {
       awards: [],
       firstGeneration: null,
       rankExpectation: null,
+      activitiesNone: {},
     },
     tests: {
       satTotal: null,
@@ -635,6 +655,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     awards: sanitizeAwards(ac.awards),
     firstGeneration: nullableBool(ac.firstGeneration),
     rankExpectation: sanitizeRankExpectation(ac.rankExpectation),
+    activitiesNone: sanitizeActivitiesNone(ac.activitiesNone),
   };
 
   const t = isObj(input.tests) ? input.tests : {};

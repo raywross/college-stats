@@ -244,8 +244,9 @@ test("summaries: a card's pill, a step's Review value, and its rail line", () =>
   assert.equal(activitySummary(toggleYear(typedActivity("clubs", "Bee club"), 11)).incomplete, true, "a typed club without a family");
   const list = [s, cat("tennis"), cat("golf"), cat("deca")];
   assert.equal(stepReviewValue("sports", list, []), "Soccer, Tennis +1 more");
-  assert.equal(stepReviewValue("work", list, []), "None");
-  assert.equal(stepReviewValue("other", [], []), "None");
+  assert.equal(stepReviewValue("work", list, []), "Not added", "empty and unanswered");
+  assert.equal(stepReviewValue("work", list, [], true), "None", "the student chose None (owner, 2026-10-12)");
+  assert.equal(stepReviewValue("other", [], []), "Not added");
   assert.equal(stepRailSummary("sports", list, []), "3 sports");
   assert.equal(stepRailSummary("clubs", list, []), "1 club");
   assert.equal(stepRailSummary("work", list, []), null);

@@ -49,7 +49,7 @@ function railSummary(draft: IntakeDraft, step: IntakeStep): string | null {
   }
   if (step === 2) return draft.courses.length > 0 ? `${draft.courses.length} course${draft.courses.length === 1 ? "" : "s"}` : null;
   const activity = activityStepAt(step);
-  if (activity) return stepRailSummary(activity, draft.activities, draft.awards);
+  if (activity) return stepRailSummary(activity, draft.activities, draft.awards, draft.activitiesNone[activity] === true);
   return null;
 }
 

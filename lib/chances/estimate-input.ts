@@ -7,6 +7,7 @@
  *   const input = estimateInputFromProfile(profile, "243744", "ea");
  */
 import type { EstimateInput } from "./types.ts";
+import { allActivityStepsAnswered } from "../planner/activity-steps.ts";
 import { planGpaRange, planTest, unweightedGpa4, type StudentProfileData } from "../student-profile.ts";
 
 /** The estimate's input for one college from the student's saved profile (the same numbers the plan reads). */
@@ -44,6 +45,9 @@ export function estimateInputFromProfile(profile: StudentProfileData | null, uni
       // can read the target until junior year ends. Passed as entered; the model decides (it knows the date).
       testTarget: t && (t.focus === "sat" || t.focus === "act") && t.target !== null ? { kind: t.focus, score: t.target } : null,
       gradYear: b?.gradYear ?? null,
+      // Owner, 2026-10-12: all four activity steps answered (entries or "None"), so an empty list reads as answered for
+      // completeness rather than as a gap. Only the yes/no travels; the steps themselves stay on the profile.
+      activitiesAnswered: a ? allActivityStepsAnswered(a.activities ?? [], a.awards ?? [], a.activitiesNone) : false,
     },
   };
 }

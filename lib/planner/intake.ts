@@ -18,14 +18,16 @@ import {
   isRankExpectation,
   planTest,
   sanitizeActivities,
+  sanitizeActivitiesNone,
   sanitizeAwards,
   sanitizeProfile,
+  type ActivitiesNone,
   type GpaScale,
   type StudentProfileData,
   type TestFocus,
 } from "../student-profile.ts";
 import type { PlanContext } from "./types.ts";
-import { stepReviewValue, type ActivityStep } from "./activity-steps.ts";
+import { reconcileStepNone, stepReviewValue, type ActivityStep } from "./activity-steps.ts";
 
 /* ------------------------------------------------------------------ */
 /* Shapes                                                              */
@@ -75,6 +77,8 @@ export interface IntakeDraft {
   activities: ActivityEntry[];
   /** The Other step's awards (inputs-beyond-academics.md "Awards"), capped by AWARDS_MAX. */
   awards: AwardEntry[];
+  /** The activity steps answered "None" (student-profile.ts academics.activitiesNone; owner, 2026-10-12). */
+  activitiesNone: ActivitiesNone;
 }
 
 /** 0 grades, 1 test, 2 AP courses, 3 sports, 4 clubs, 5 work, 6 other (3–6 optional), 7 review, 8 done. */
@@ -115,6 +119,7 @@ export interface IntakeSave {
   courses: IntakeCourse[];
   activities: ActivityEntry[];
   awards: AwardEntry[];
+  activitiesNone: ActivitiesNone;
 }
 
 /* ------------------------------------------------------------------ */
@@ -504,6 +509,7 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     courses: [],
     activities: [],
     awards: [],
+    activitiesNone: {},
   };
   if (!profile) return empty;
   const a = profile.academics;
@@ -533,6 +539,7 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     courses: a.courses.filter(isIntakeRow).map(intakeCourseFrom),
     activities: a.activities,
     awards: a.awards,
+    activitiesNone: a.activitiesNone ?? {},
   };
 }
 
@@ -569,10 +576,10 @@ export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2 | 
     { step: 0, label: "School", value: d.highSchool ?? "Not set" },
     { step: 1, label: "Test", value: testValue },
     { step: 2, label: "AP courses", value: courseCount(d.courses, classYear, today) ?? "None" },
-    { step: 3, label: "Sports", value: stepReviewValue("sports", d.activities, d.awards) },
-    { step: 4, label: "Clubs", value: stepReviewValue("clubs", d.activities, d.awards) },
-    { step: 5, label: "Work", value: stepReviewValue("work", d.activities, d.awards) },
-    { step: 6, label: "Other", value: stepReviewValue("other", d.activities, d.awards) },
+    { step: 3, label: "Sports", value: stepReviewValue("sports", d.activities, d.awards, d.activitiesNone.sports === true) },
+    { step: 4, label: "Clubs", value: stepReviewValue("clubs", d.activities, d.awards, d.activitiesNone.clubs === true) },
+    { step: 5, label: "Work", value: stepReviewValue("work", d.activities, d.awards, d.activitiesNone.work === true) },
+    { step: 6, label: "Other", value: stepReviewValue("other", d.activities, d.awards, d.activitiesNone.other === true) },
   ];
 }
 
@@ -608,6 +615,8 @@ export function intakeToSave(d: IntakeDraft): IntakeSave | null {
     courses: d.courses.filter((c) => c.year !== null).map((c) => ({ id: c.id, key: c.key, year: c.year, exam: c.exam })),
     activities: sanitizeActivities(d.activities),
     awards: sanitizeAwards(d.awards),
+    // A step with entries can't also be "None" (adding an entry clears it).
+    activitiesNone: reconcileStepNone(d.activities, d.awards, d.activitiesNone),
   };
 }
 
@@ -706,7 +715,8 @@ export function parseIntakeSave(input: unknown): IntakeSave | null {
   }
   const activities = sanitizeActivities(input.activities);
   const awards = sanitizeAwards(input.awards);
-  return { classYear, gpa, gpaScale, weightedGpa, classStanding, classRankPercentile, rankExpectation, focus, score, practice, target, highSchool, highSchoolId, courses, activities, awards };
+  const activitiesNone = reconcileStepNone(activities, awards, sanitizeActivitiesNone(input.activitiesNone));
+  return { classYear, gpa, gpaScale, weightedGpa, classStanding, classRankPercentile, rankExpectation, focus, score, practice, target, highSchool, highSchoolId, courses, activities, awards, activitiesNone };
 }
 
 /** The draft course a saved row would open as; an unchanged course keeps its saved row as it is. */
@@ -769,6 +779,7 @@ export function applyIntake(profile: StudentProfileData, s: IntakeSave, today: s
       courseRigorCount: null,
       activities: s.activities,
       awards: s.awards,
+      activitiesNone: s.activitiesNone,
     },
     tests,
   });

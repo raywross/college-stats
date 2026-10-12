@@ -61,8 +61,9 @@ and the "Nothing due this year" card (`NothingDue`), all deleted as components:
   of 10 sections in" to screen readers; on screen there's no number, and a full ring reads "Profile complete". The
   text block is the next step's link (44px tall): the intake opened on that step (`?setup=1&step=N`, read by
   `PlanIntake` through `intakeStepParam`), or the student's Numbers page for major and state, which the intake doesn't
-  ask. A viewer who can't edit sees the same ring and words with no link. Activity sections have no "none" answer
-  yet, so a student with, say, no job can't reach "Profile complete" (open question for the owner). The other circles sit beside it. Tapping the selected circle
+  ask. A viewer who can't edit sees the same ring and words with no link. An activity section counts as in with an
+  entry or a one-tap "None" on its intake step (owner, 2026-10-12; [intake.md](intake.md#activities-four-steps)),
+  never for having been seen. The other circles sit beside it. Tapping the selected circle
   folds or unfolds the chip (a button with `aria-expanded` and the full name as its label; folded, it keeps a ring).
 - **Tapping another child's circle** opens their plan (a link, so back works) and expands their circle at once while
   the page loads; the pick is remembered in the `plan_child` cookie as before.

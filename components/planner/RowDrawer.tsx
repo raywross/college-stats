@@ -21,8 +21,7 @@ import { addNote, deleteNote, notesForItems } from "@/lib/lists";
 import { actionsOptional, interestLine } from "@/lib/planner/actions";
 import { considersInterest } from "@/lib/planner/rounds";
 import { requirementsFor } from "@/lib/planner/requirements";
-import { dayLabel, scoreDrawerLine } from "@/lib/planner/list-row";
-import { GROUP_LABEL } from "@/lib/planner/colors";
+import { dayLabel, GROUP_HEADING, scoreDrawerLine } from "@/lib/planner/list-row";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import type { ListNote } from "@/lib/list-rules";
@@ -100,7 +99,7 @@ export function RowDrawer({
             {/* The level's meaning line (levels.md "The levels"), then the label when the estimate has one ("Elite:
                 a reach for everyone", "Guaranteed for you", "Recruited"). */}
             <p>
-              <span className="font-semibold">{level ? GROUP_LABEL[level] : "No group yet"}:</span>{" "}
+              <span className="font-semibold">{level ? GROUP_HEADING[level] : "No group yet"}:</span>{" "}
               {parts.label ? noteText(parts.label) : meaningLine}
             </p>
             {parts.label && meaningLine && <p className="text-muted-foreground">{meaningLine}</p>}
@@ -121,7 +120,7 @@ export function RowDrawer({
           </>
         ) : (
           <p>
-            <span className="font-semibold">{group === "unsorted" ? "No group yet" : `${group[0].toUpperCase()}${group.slice(1)}`}:</span>{" "}
+            <span className="font-semibold">{GROUP_HEADING[group]}:</span>{" "}
             {standing?.reasons.join(" ") || "Add a GPA or a score to sort this one."}
             {/* Without an estimate the GPA sentence ends the reasons; its ⓘ cites the figure it used (gpa.md "Saying what was used"). */}
             {gpaCited && <InfoTip term={standing!.gpaNote!.cite === "derived.gpa_estimate" ? "gpa-estimate" : "high-school-gpa"} cited={gpaCited} className="ml-1 align-middle" />}
@@ -136,16 +135,7 @@ export function RowDrawer({
           )}
         </p>
         {decision && <p className="text-muted-foreground">Decision expected around {dayLabel(decision.iso)}.</p>}
-        {/* levels.md "Retake card...": "60 more points moves X from High reach to Reach" across the five levels —
-            read straight from the raw estimate's `moveUp` (StandingLevel), not the planner's three-group bridge
-            `scoreDrawerLine` still reads (lib/planner/list-row.ts, U7's to remove); falls back to it otherwise. */}
-        {estimate?.moveUp && level ? (
-          <p className="text-muted-foreground">
-            {estimate.moveUp.points} more point{estimate.moveUp.points === 1 ? "" : "s"} moves this from {GROUP_LABEL[level]} to {GROUP_LABEL[estimate.moveUp.to]}.
-          </p>
-        ) : (
-          scoreLine && <p className="text-muted-foreground">{scoreLine}</p>
-        )}
+        {scoreLine && <p className="text-muted-foreground">{scoreLine}</p>}
       </div>
 
       {school && <AboutYouAndCollege item={item} school={school} canEdit={ctx.viewer.canEdit} />}

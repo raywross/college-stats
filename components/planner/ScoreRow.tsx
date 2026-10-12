@@ -1,5 +1,5 @@
 import { CATEGORY_LABELS } from "@/lib/list-rules";
-import { displayGroup, GROUP_CLASS, GROUP_LABEL } from "@/lib/planner/colors";
+import { GROUP_CLASS } from "@/lib/planner/colors";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import { actToSat, satToAct, type TestKind } from "@/lib/planner/standing";
 import { SourceTip } from "@/components/ui/info-tip";
@@ -42,11 +42,7 @@ export default function ScoreRow({ row, kind, score }: { row: PlanRowView; kind:
     <li className="grid grid-cols-1 items-center gap-2 px-4 py-3 sm:grid-cols-[14rem_1fr_13rem]">
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold">{row.school?.name ?? "A college"}</p>
-        {/* levels.md "Where the levels show": the five levels where the raw estimate has one, else the stored
-            (pre-five-level) category. */}
-        <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", GROUP_CLASS[displayGroup(row.group, row.estimate?.group ?? null)])}>
-          {GROUP_LABEL[displayGroup(row.group, row.estimate?.group ?? null)]}
-        </span>
+        <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", GROUP_CLASS[row.group])}>{CATEGORY_LABELS[row.group]}</span>
       </div>
       {range ? (
         <div>
@@ -66,9 +62,9 @@ export default function ScoreRow({ row, kind, score }: { row: PlanRowView; kind:
       <div className="flex flex-wrap items-center gap-1 text-xs sm:justify-end">
         {send && <span className={cn("font-semibold", send === "send" ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground")}>{SEND_LABEL[send]}</span>}
         {cite && <SourceTip cited={cite} />}
-        {(row.estimate?.moveUp || row.moveUp) && (
+        {row.moveUp && (
           <span className="w-full text-muted-foreground sm:text-right">
-            {row.estimate?.moveUp ? `${row.estimate.moveUp.score} → ${GROUP_LABEL[row.estimate.moveUp.to]}` : `${row.moveUp!.score} → ${CATEGORY_LABELS[row.moveUp!.to]}`}
+            {row.moveUp.score} → {CATEGORY_LABELS[row.moveUp.to]}
             {t?.concorded ? " (via concordance)" : ""}
           </span>
         )}

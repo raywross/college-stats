@@ -7,9 +7,7 @@ import { getData } from "@/lib/data";
 import { authConfigured } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
-import { ROUND_LABELS, isListRound } from "@/lib/list-rules";
-import { GROUP_LABEL } from "@/lib/planner/colors";
-import { STANDING_LEVELS } from "@/lib/chances/levels";
+import { CATEGORY_LABELS, LIST_CATEGORIES, ROUND_LABELS, isListCategory, isListRound, type ListCategory } from "@/lib/list-rules";
 
 export const metadata: Metadata = { title: "A shared list", robots: { index: false, follow: false } };
 
@@ -35,13 +33,10 @@ export default async function SharedListPage({ params }: { params: Promise<{ tok
   const preview = data as SharePreview;
 
   const { getSchoolById } = await getData();
-  // levels.md "Where the levels show": High reach, Reach, Target, Likely, Safe, then Not sorted yet. `category`
-  // comes straight off the row (still the four stored values until U7's migration adds the other two); forward-
-  // compatible so the two new buckets light up with no further change here once it does.
-  const groups: { category: string; label: string; items: { unit_id: string; round: string | null }[] }[] = [...STANDING_LEVELS, "unsorted" as const].map((category) => ({
+  // levels.md "Where the levels show": High reach, Reach, Target, Likely, Safe, then Not sorted yet.
+  const groups: { category: ListCategory; items: { unit_id: string; round: string | null }[] }[] = LIST_CATEGORIES.map((category) => ({
     category,
-    label: GROUP_LABEL[category],
-    items: preview.items.filter((i) => i.category === category),
+    items: preview.items.filter((i) => isListCategory(i.category) && i.category === category),
   }));
 
   return (
@@ -54,7 +49,7 @@ export default async function SharedListPage({ params }: { params: Promise<{ tok
         (g) =>
           g.items.length > 0 && (
             <section key={g.category}>
-              <h2 className="mb-2 font-display text-lg font-bold">{g.label}</h2>
+              <h2 className="mb-2 font-display text-lg font-bold">{CATEGORY_LABELS[g.category]}</h2>
               <div className="space-y-2">
                 {g.items.map((item) => {
                   const school = getSchoolById(item.unit_id);

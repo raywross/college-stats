@@ -103,6 +103,14 @@ export interface ListItem {
   recommendations_count?: number | null;
   supplements_count?: number | null;
   transcript_shared?: boolean;
+  /**
+   * U8/U7 (additive, specs/chances/inputs-beyond-academics.md "Legacy", "Recruited athlete"; levels.md's migration):
+   * the "About you and {College}" line's two inputs, per college because they're per list item, not the profile.
+   * Optional until the migration adds the columns (defaults `false` / `"none"`); U7's `setItemLegacy`/
+   * `setItemRecruited` (lib/planner/store-list.ts) write them, attributed like other list edits.
+   */
+  legacy?: boolean;
+  recruited?: import("./chances/types.ts").RecruitedPick;
 }
 
 /**

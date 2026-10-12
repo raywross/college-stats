@@ -15,10 +15,28 @@ import type { SchoolIndexEntry } from "@/lib/dataset";
 import { setPlanDream, setPlanRound } from "@/lib/planner/store-plan";
 import { roundDates } from "@/lib/planner/rounds";
 import type { PlanRowView } from "@/lib/planner/plan-view";
-import { anySuggestedRound, GROUP_HEADING, groupedRows, headerCountsLine } from "@/lib/planner/list-row";
-import { GROUP_CLASS } from "@/lib/planner/colors";
-import type { ListCategory, ListRound } from "@/lib/list-rules";
+import { anySuggestedRound, headerCountsLine } from "@/lib/planner/list-row";
+import { displayGroup, GROUP_CLASS, GROUP_LABEL } from "@/lib/planner/colors";
+import type { DisplayGroup } from "@/lib/planner/colors";
+import { STANDING_LEVELS } from "@/lib/chances/levels";
+import type { ListRound } from "@/lib/list-rules";
 import { cn } from "@/lib/utils";
+
+/** list.md "Grouped by...": High reach, Reach, Target, Likely, Safe, then "Not sorted yet" (levels.md "Where the
+ * levels show") — Quad's five-level estimate where the row has one, else its stored (pre-five-level) category
+ * widened to this display set (lib/planner/colors.ts `displayGroup`). Empty sections are left out; `rows` is
+ * assumed already ordered (Dream first, then by group, then list position), so each section keeps that order. */
+const SECTION_ORDER: readonly DisplayGroup[] = [...STANDING_LEVELS, "unsorted"];
+
+interface RowSection {
+  group: DisplayGroup;
+  rows: PlanRowView[];
+}
+
+function sectionedRows(rows: readonly PlanRowView[]): RowSection[] {
+  const groupOf = (r: PlanRowView) => displayGroup(r.group, r.estimate?.group ?? null);
+  return SECTION_ORDER.map((group) => ({ group, rows: rows.filter((r) => groupOf(r) === group) })).filter((g) => g.rows.length > 0);
+}
 
 /**
  * The Colleges tab: the list as the plan (specs/planner/redesign/list.md). Grouped by Reach / Target / Likely, then
@@ -107,7 +125,7 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
     router.refresh();
   }
 
-  const groups = groupedRows(rows);
+  const groups = sectionedRows(rows);
   const dreamRow = rows.find((r) => r.dream) ?? null;
   const suggestedRound = anySuggestedRound(rows);
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] || null;
@@ -184,12 +202,12 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   );
 }
 
-/** list.md "Grouped by Reach / Target / Likely": the section heading pill, Reach violet, Target sky, Likely
- * emerald, "Not sorted yet" muted — calm tints, never a warning, with the group's count. */
-function GroupHeading({ group, count }: { group: ListCategory; count: number }) {
+/** list.md "Grouped by...": the section heading pill, High reach pink, Reach violet, Target sky, Likely emerald,
+ * Safe green, "Not sorted yet" muted — calm tints, never a warning, with the group's count. */
+function GroupHeading({ group, count }: { group: DisplayGroup; count: number }) {
   return (
     <p className={cn("inline-flex h-8 items-center rounded-full px-3 text-xs font-bold", GROUP_CLASS[group])}>
-      {GROUP_HEADING[group]} · {count}
+      {GROUP_LABEL[group]} · {count}
     </p>
   );
 }

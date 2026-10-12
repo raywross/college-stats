@@ -4,10 +4,12 @@ import { STANDING_LEVEL_LABELS } from "@/lib/chances/levels";
 import type { EstimateResult } from "@/lib/chances/types";
 import { cn } from "@/lib/utils";
 
-/** The chip's words: a label when the estimate has one ("Reach for everyone", "Guaranteed for you"), else the group. */
+/** The chip's words: a label when the estimate has one ("Elite: a reach for everyone", "Guaranteed for you",
+ * "Recruited"), else the group (levels.md "The levels"). */
 export function standingWords(result: Pick<EstimateResult, "group" | "label">): string | null {
   if (result.label === "guaranteed") return noteText({ key: "estimate.label.guaranteed", values: {} });
-  if (result.label === "elite") return noteText({ key: "estimate.label.reach_for_everyone", values: {} });
+  if (result.label === "elite") return noteText({ key: "estimate.label.elite", values: {} });
+  if (result.label === "recruited") return noteText({ key: "estimate.label.recruited", values: {} });
   return result.group ? STANDING_LEVEL_LABELS[result.group] : null;
 }
 

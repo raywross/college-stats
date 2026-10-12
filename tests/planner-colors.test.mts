@@ -6,7 +6,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { KID_VARS, MONEY_VAR, ROUND_VAR, TEST_VAR } from "../lib/planner/colors.ts";
+import { displayGroup, GROUP_CLASS, GROUP_LABEL, KID_VARS, MONEY_VAR, ROUND_VAR, TEST_VAR } from "../lib/planner/colors.ts";
+import { STANDING_LEVELS } from "../lib/chances/levels.ts";
 
 const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 const block = (selector: string) => {
@@ -43,4 +44,28 @@ test("calendar.md's values: RD blue, ED orange, EA aqua; ED II and REA share the
   assert.equal(value(light, "plan-test"), "#4a3aa7");
   assert.equal(value(dark, "plan-test"), "#9085e9");
   assert.equal(value(light, "plan-money"), "#008300");
+});
+
+test("levels.md: the five level chips exist, with 'Not sorted yet' for the empty group", () => {
+  for (const level of STANDING_LEVELS) assert.ok(GROUP_CLASS[level], `GROUP_CLASS missing ${level}`);
+  assert.ok(GROUP_CLASS.unsorted);
+  for (const level of STANDING_LEVELS) assert.equal(GROUP_LABEL[level].length > 0, true);
+  assert.equal(GROUP_LABEL.unsorted, "Not sorted yet");
+});
+
+test("levels.md 'Chip colors': High reach is never red or orange", () => {
+  assert.ok(!/\bred\b|\borange\b/.test(GROUP_CLASS.high_reach), `High reach chip reads a warning color: ${GROUP_CLASS.high_reach}`);
+});
+
+test("levels.md 'Chip colors': Safe is apart from Likely (a different hue family, deeper)", () => {
+  assert.notEqual(GROUP_CLASS.safe, GROUP_CLASS.likely);
+  // Likely stays emerald; Safe moves to a separate green family so the two read apart, not just lighter/darker.
+  assert.ok(GROUP_CLASS.likely.includes("emerald"));
+  assert.ok(GROUP_CLASS.safe.includes("green") && !GROUP_CLASS.safe.includes("emerald"));
+});
+
+test("displayGroup: the estimate's five-level group wins; the stored category is the fallback", () => {
+  assert.equal(displayGroup("reach", "high_reach"), "high_reach");
+  assert.equal(displayGroup("reach", null), "reach");
+  assert.equal(displayGroup("unsorted", null), "unsorted");
 });

@@ -105,6 +105,13 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
   gpaAverage: number | null;
   /** Redesign: the standing model's inputs for this college (lib/planner/standing.ts), built by planSchoolFor. */
   standing: import("./standing").StandingSchool;
+  /**
+   * U8 (additive, levels.md carry-forward "the planner row drawer doesn't show the ComparedWith panel yet"): the
+   * college's own published rates, for the drawer's "Who you're compared with" panel (specs/chances/pool-explainer.md),
+   * the same slice StandingSection passes as `poolSchool` on the college profile. Optional until the server loader
+   * fills it (lib/planner/context.ts planSchoolFor); the drawer shows no panel without it.
+   */
+  poolSchool?: import("../chances/pool-rate").PoolSchool;
 }
 
 /* ------------------------------------------------------------------ */

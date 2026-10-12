@@ -16,7 +16,7 @@ import { noteText } from "@/lib/chances/notes";
 import type { CrestBrand } from "@/lib/brand";
 import type { AnyCited } from "@/lib/lineage";
 import { CATEGORY_LABELS, type ListCategory, type ListRound } from "@/lib/list-rules";
-import { GROUP_CLASS, ROUND_VAR, STRIPED } from "@/lib/planner/colors";
+import { displayGroup, GROUP_CLASS, GROUP_LABEL, ROUND_VAR, STRIPED } from "@/lib/planner/colors";
 import {
   addLocalCollege,
   getLocalPlan,
@@ -202,11 +202,14 @@ function LocalRow({
       </div>
 
       <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-1 sm:contents">
-        {row.group === "unsorted" ? (
+        {/* levels.md "Open questions" 2: the signed-out plan shows all five levels (recommendation taken). */}
+        {displayGroup(row.group, row.estimate?.group ?? null) === "unsorted" ? (
           <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-muted px-3 text-xs font-semibold text-muted-foreground">Add a number</span>
         ) : (
           // Groups are Quad's only (specs/planner/redesign/intake.md "Groups"): no chip to cycle, just the label.
-          <span className={cn("inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-bold", GROUP_CLASS[row.group])}>{CATEGORY_LABELS[row.group]}</span>
+          <span className={cn("inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-bold", GROUP_CLASS[displayGroup(row.group, row.estimate?.group ?? null)])}>
+            {GROUP_LABEL[displayGroup(row.group, row.estimate?.group ?? null)]}
+          </span>
         )}
 
         <label className="relative inline-flex h-11 shrink-0 items-center">

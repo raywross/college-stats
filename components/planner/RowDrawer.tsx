@@ -3,12 +3,16 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { Lock, RotateCcw, X } from "lucide-react";
+import { ComparedWithTip } from "@/components/chances/ComparedWith";
+import { AboutYouAndCollege } from "@/components/planner/AboutYouAndCollege";
 import { WhatWentIn } from "@/components/chances/WhatWentIn";
 import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
+import { comparedWith } from "@/lib/chances/compared-with";
 import { noteText } from "@/lib/chances/notes";
 import { estimateInputFromProfile } from "@/lib/chances/snapshot";
 import { panelParts, yourNumbersFrom } from "@/lib/chances/what-went-in";
+import type { StandingLevel } from "@/lib/chances/types";
 import { planGpaLabel } from "@/lib/student-profile";
 import ActionsRowControls from "@/components/planner/row/actions";
 import ApplyRowControls from "@/components/planner/row/apply";
@@ -18,10 +22,25 @@ import { actionsOptional, interestLine } from "@/lib/planner/actions";
 import { considersInterest } from "@/lib/planner/rounds";
 import { requirementsFor } from "@/lib/planner/requirements";
 import { dayLabel, scoreDrawerLine } from "@/lib/planner/list-row";
+import { GROUP_LABEL } from "@/lib/planner/colors";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import type { ListNote } from "@/lib/list-rules";
 import type { AnyCited } from "@/lib/lineage";
+
+/**
+ * The level's meaning line (levels.md "The levels" table), one per level, student-facing and fixed until feedback —
+ * not computed, so it lives here rather than the shared notes catalog. `{test}` becomes "SAT" or "ACT" when the
+ * student has one on record, else "test score".
+ */
+const LEVEL_MEANING: Record<StandingLevel, (test: string) => string> = {
+  high_reach: (test) =>
+    `Your record is below the students this college admits. It's fine to have one or two on the list; a higher ${test} or another year of grades would move it.`,
+  reach: () => "Possible. This college turns down most applicants like you.",
+  target: () => "Your record looks like the students they admit.",
+  likely: () => "More likely than not, from your record and how many applicants like you get in.",
+  safe: () => "A guarantee, open admission, or a record clearly above the students admitted at a college that admits most applicants like you.",
+};
 
 /**
  * The row's drawer (specs/planner/redesign/list.md "The drawer"): opened by (i), inline under the row, each line
@@ -49,11 +68,18 @@ export function RowDrawer({
   const scoreLine = scoreDrawerLine(row);
   const cite = (field: string | null) => (school && field ? (school.cites[field] as AnyCited | undefined) : undefined);
   const gpaCited = cite(standing?.gpaNote?.cite ?? null);
-  // With an estimate, the first line is its label and two stage lines; the facts behind them are in "What went into
-  // this estimate" below. Without one (a college we can't estimate), the reasons the row had before.
+  // With an estimate: the level's meaning line (levels.md "The levels"), then the two stage lines (pool-explainer.md),
+  // the second with the ComparedWith panel attached from the plan's `poolSchool`; the facts behind them are in "What
+  // went into this estimate" below. Without one (a college we can't estimate), the reasons the row had before.
   const parts = estimate ? panelParts(estimate) : null;
-  const headline = parts ? [parts.label, ...parts.stages].filter((n): n is NonNullable<typeof n> => n !== null).map(noteText).join(" ") : "";
+  const level = estimate?.group ?? null;
   const yours = useMemo(() => (ctx.profile ? yourNumbersFrom(estimateInputFromProfile(ctx.profile, "", null).student, planGpaLabel(ctx.profile)) : null), [ctx.profile]);
+  const testWord = yours?.test?.split(" ")[0] ?? "test score";
+  const meaningLine = level ? LEVEL_MEANING[level](testWord) : null;
+  const compared = useMemo(
+    () => (school?.poolSchool && ctx.profile ? comparedWith(estimateInputFromProfile(ctx.profile, "", null).student, school.poolSchool) : null),
+    [school, ctx.profile],
+  );
   useEffect(() => {
     if (estimate) track("estimate_shown", { group: estimate.group ?? "none", label: estimate.label ?? "none", model_version: estimate.modelVersion });
     // Once per opening of this row's drawer.
@@ -69,12 +95,38 @@ export function RowDrawer({
   return (
     <div className="space-y-4 bg-muted/40 px-4 py-4 text-sm sm:pl-16">
       <div className="space-y-2">
-        <p>
-          <span className="font-semibold">{group === "unsorted" ? "No group yet" : `${group[0].toUpperCase()}${group.slice(1)}`}:</span>{" "}
-          {headline || standing?.reasons.join(" ") || "Add a GPA or a score to sort this one."}
-          {/* Without an estimate the GPA sentence ends the reasons; its ⓘ cites the figure it used (gpa.md "Saying what was used"). */}
-          {!estimate && gpaCited && <InfoTip term={standing!.gpaNote!.cite === "derived.gpa_estimate" ? "gpa-estimate" : "high-school-gpa"} cited={gpaCited} className="ml-1 align-middle" />}
-        </p>
+        {estimate && parts ? (
+          <>
+            {/* The level's meaning line (levels.md "The levels"), then the label when the estimate has one ("Elite:
+                a reach for everyone", "Guaranteed for you", "Recruited"). */}
+            <p>
+              <span className="font-semibold">{level ? GROUP_LABEL[level] : "No group yet"}:</span>{" "}
+              {parts.label ? noteText(parts.label) : meaningLine}
+            </p>
+            {parts.label && meaningLine && <p className="text-muted-foreground">{meaningLine}</p>}
+            {/* The two stage lines (pool-explainer.md "The sentence"); the stage-2 line's ⓘ opens "Who you're
+                compared with" from the plan's `poolSchool`, same panel as the college profile's standing card. */}
+            {parts.stages.length > 0 && (
+              <ul className="space-y-1">
+                {parts.stages.map((n, i) => (
+                  <li key={`${n.key}-${i}`}>
+                    {noteText(n)}
+                    {n.key === "estimate.pool" && compared && <ComparedWithTip data={compared} cite={cite} className="ml-1" />}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {/* The reasons: the college's facts and what the estimate read in the student's record. */}
+            {parts.reasons.length > 0 && <p className="text-muted-foreground">{parts.reasons.map(noteText).join(" ")}</p>}
+          </>
+        ) : (
+          <p>
+            <span className="font-semibold">{group === "unsorted" ? "No group yet" : `${group[0].toUpperCase()}${group.slice(1)}`}:</span>{" "}
+            {standing?.reasons.join(" ") || "Add a GPA or a score to sort this one."}
+            {/* Without an estimate the GPA sentence ends the reasons; its ⓘ cites the figure it used (gpa.md "Saying what was used"). */}
+            {gpaCited && <InfoTip term={standing!.gpaNote!.cite === "derived.gpa_estimate" ? "gpa-estimate" : "high-school-gpa"} cited={gpaCited} className="ml-1 align-middle" />}
+          </p>
+        )}
         <p>
           <span className="font-semibold">Round:</span> {roundWhy}{" "}
           {!roundAuto && (
@@ -84,8 +136,19 @@ export function RowDrawer({
           )}
         </p>
         {decision && <p className="text-muted-foreground">Decision expected around {dayLabel(decision.iso)}.</p>}
-        {scoreLine && <p className="text-muted-foreground">{scoreLine}</p>}
+        {/* levels.md "Retake card...": "60 more points moves X from High reach to Reach" across the five levels —
+            read straight from the raw estimate's `moveUp` (StandingLevel), not the planner's three-group bridge
+            `scoreDrawerLine` still reads (lib/planner/list-row.ts, U7's to remove); falls back to it otherwise. */}
+        {estimate?.moveUp && level ? (
+          <p className="text-muted-foreground">
+            {estimate.moveUp.points} more point{estimate.moveUp.points === 1 ? "" : "s"} moves this from {GROUP_LABEL[level]} to {GROUP_LABEL[estimate.moveUp.to]}.
+          </p>
+        ) : (
+          scoreLine && <p className="text-muted-foreground">{scoreLine}</p>
+        )}
       </div>
+
+      {school && <AboutYouAndCollege item={item} school={school} canEdit={ctx.viewer.canEdit} />}
 
       {estimate && school && (
         <div className="space-y-2">

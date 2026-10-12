@@ -3,13 +3,21 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CoursesNextYearSlot } from "@/components/planner/CoursesNextYearSlot";
+import { CourseTracks } from "@/components/me/CourseTracks";
 import { PlanCoursesSheet } from "@/components/planner/PlanCoursesSheet";
 import { SourceTip, Term } from "@/components/ui/info-tip";
 import { courseName, groupByYear, KIND_LABELS, thirdPerson } from "@/lib/chances/courses";
+import { courseTracks } from "@/lib/chances/depth";
 import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
-import type { CourseEntry } from "@/lib/chances/types";
+import type { CourseEntry, SchoolOffering } from "@/lib/chances/types";
 import { cn } from "@/lib/utils";
+
+/** `rigor.offering` (lib/chances/rigor-view.ts OfferingView) back into the `SchoolOffering` `courseTracks` reads;
+ * `field` isn't carried (it's only used for the offering line's own citation, already shown above this). */
+function schoolOfferingFrom(o: { apCount: number | null; apKeys: string[] | null; ib: boolean | null; dual: boolean | null; source: SchoolOffering["source"] } | null): SchoolOffering | null {
+  return o ? { apCount: o.apCount, apKeys: o.apKeys, ib: o.ib, dual: o.dual, source: o.source, field: null } : null;
+}
 
 /** "S1 A · S2 A- · Final A", or the exam score; empty for a course with no grades yet. */
 function gradeText(c: CourseEntry): string {
@@ -37,6 +45,18 @@ export default function CoursesSection({ ctx, view }: { ctx: PlanContext; view: 
 
   const say = (t: string) => (isGuardian ? thirdPerson(t, first) : t);
   const offering = rigor?.offering ?? null;
+  // The course plan's expectations file already reads the student's majors against each family (depth.md "Course
+  // tracks"); courseTracks is pure and client-safe, so it's fine to compute here from the context's own profile.
+  const tracks =
+    ctx.profile && courses.length > 0
+      ? courseTracks({
+          courses,
+          coreAtTopLevel: ctx.profile.academics.coreAtTopLevel,
+          offering: schoolOfferingFrom(offering),
+          majors: ctx.profile.plans.intendedMajors,
+          activities: ctx.profile.academics.activities,
+        })
+      : null;
 
   return (
     <section className="space-y-3 rounded-3xl border bg-card p-5" aria-labelledby="plan-courses">
@@ -61,6 +81,8 @@ export default function CoursesSection({ ctx, view }: { ctx: PlanContext; view: 
           ))}
         </div>
       )}
+
+      {tracks && <CourseTracks tracks={tracks} />}
 
       {courses.length > 0 && (
         <div className="space-y-3">

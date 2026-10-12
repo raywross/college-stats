@@ -279,7 +279,7 @@ test("Compare's row is a block on the admissions page for the signed-in student 
   assert.match(page, /<CompareStanding\b/);
   const comp = read("components", "compare", "CompareStanding.tsx");
   assert.match(comp, /!mine\.signedIn \|\| !mine\.hasNumbers/, "nothing for a visitor or a student without numbers");
-  assert.match(comp, /rateKindText\(/);
+  assert.match(comp, /compareShortLine\(/);
   assert.match(comp, /term="quads-estimate"/);
   assert.doesNotMatch(comp, /chances\/(model|estimate)["'.]/);
 });
@@ -525,6 +525,7 @@ test("What you'll need in high school adds the intended major's required courses
 /* ------------------------------------------------------------------ */
 
 const NEW_UI = [
+  "components/chances/ComparedWith.tsx",
   "components/chances/WhatWentIn.tsx",
   "components/chances/StandingCard.tsx",
   "components/chances/StandingChip.tsx",

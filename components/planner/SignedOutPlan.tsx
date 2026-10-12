@@ -12,6 +12,7 @@ import { Crest } from "@/components/school/Crest";
 import { Term, SourceTip } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import { loginHref } from "@/lib/accounts";
+import { noteText } from "@/lib/chances/notes";
 import type { CrestBrand } from "@/lib/brand";
 import type { AnyCited } from "@/lib/lineage";
 import { CATEGORY_LABELS, type ListCategory, type ListRound } from "@/lib/list-rules";
@@ -335,6 +336,19 @@ export default function SignedOutPlan() {
       <NumbersFields draft={draft} />
 
       <MostUsefulInput estimates={estimates} />
+
+      {/*
+       * pool-explainer.md "Where it shows": there's no household to add a state to without an account, so the
+       * sentence that would invite one (lib/chances/notes.ts "pool.overall_no_state") points at sign-up instead.
+       */}
+      {Object.values(estimates).some((r) => r.missing.includes("state")) && (
+        <p className="text-xs text-muted-foreground">
+          {noteText({ key: "pool.add_state_prompt", values: {} })}{" "}
+          <Link href={loginHref("/plan")} className="font-semibold text-primary hover:underline">
+            Add your state
+          </Link>
+        </p>
+      )}
 
       <div>
         <button

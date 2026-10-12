@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { TrendingUp } from "lucide-react";
 import { CATEGORY_LABELS } from "@/lib/list-rules";
+import { STANDING_LEVEL_LABELS } from "@/lib/chances/levels";
 import type { PlanNotice, PlanView } from "@/lib/planner/plan-view";
 import { dayLabel } from "@/lib/planner/list-row";
 import { TEST_LABEL } from "@/lib/planner/standing";
@@ -20,12 +21,16 @@ export function ListNotices({
   kind,
   onUseEdTwo,
   edTwoPending,
+  onUseEdHelps,
+  edHelpsPending,
   className,
 }: {
   view: PlanView;
   kind: PlanNotice;
   onUseEdTwo: (itemId: string) => void;
   edTwoPending: boolean;
+  onUseEdHelps?: (itemId: string) => void;
+  edHelpsPending?: boolean;
   className?: string;
 }) {
   const searchParams = useSearchParams();
@@ -41,6 +46,17 @@ export function ListNotices({
       <div role="status" className={cn("rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm dark:border-amber-800 dark:bg-amber-950/40", className)}>
         <p>{view.problems[0]}</p>
       </div>
+    );
+  }
+  if (kind === "edHelps" && view.edHelps && onUseEdHelps) {
+    const { edHelps } = view;
+    return (
+      <p className={cn("rounded-2xl bg-muted/60 px-4 py-3 text-sm", className)}>
+        ED would help most at {edHelps.name} ({STANDING_LEVEL_LABELS[edHelps.level]} for you, with an early round).{" "}
+        <button type="button" disabled={!!edHelpsPending} onClick={() => onUseEdHelps(edHelps.itemId)} className="font-semibold text-primary hover:underline disabled:opacity-60">
+          Start it in ED
+        </button>
+      </p>
     );
   }
   if (kind === "edTwo" && view.edTwo) {

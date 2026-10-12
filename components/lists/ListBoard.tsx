@@ -47,7 +47,8 @@ import { cn } from "@/lib/utils";
 import { sortItems as sortPlanItems, type Suggestion } from "@/lib/planner/suggest";
 import type { ListSort } from "@/lib/planner/types";
 
-const CATEGORY_TERM: Record<ListCategory, TermKey | null> = { reach: "reach-school", target: "target-school", likely: "likely-school", unsorted: null };
+// high_reach and safe have no glossary term of their own yet (U8 rewrites reach-target-likely as "levels").
+const CATEGORY_TERM: Record<ListCategory, TermKey | null> = { high_reach: null, reach: "reach-school", target: "target-school", likely: "likely-school", safe: null, unsorted: null };
 
 export interface BoardSchoolInfo {
   unit_id: string;

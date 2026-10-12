@@ -350,7 +350,7 @@ test("the live-preview hook sends the core answers and the student's grade, as t
   // edited through the intake guide, which saves once rather than previewing the list client-side. SignedOutPlan is
   // the hook's one remaining caller.
   const hook = read("components", "planner", "useEstimates.ts");
-  assert.match(hook, /JSON\.stringify\(\{ student, unitIds, context \}\)/);
+  assert.match(hook, /JSON\.stringify\(\{ student, unitIds, context, hooks \}\)/);
   assert.match(hook, /gradeNow\(gradYear/);
   assert.match(hook, /coreAtTopLevel: profile\?\.academics\.coreAtTopLevel/);
   assert.match(read("components", "planner", "SignedOutPlan.tsx"), /useEstimates\(/);

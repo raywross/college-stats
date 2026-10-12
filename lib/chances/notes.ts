@@ -228,11 +228,10 @@ export const NOTES: Record<NoteKey, Note> = {
   "estimate.panel_college": (v) => `${s(v, "college")}'s numbers`,
   "estimate.panel_also": () => "Also looked at",
   "estimate.panel_not_used": () => "Not used here",
-  /** The labels as chips say them (levels.md "The levels"): "elite" replaces "reach_for_everyone", "recruited" is new. */
+  /** The labels as chips say them (levels.md "The levels"); "estimate.label.elite"/"estimate.label.recruited" are
+   * with the rest of the five-level catalog, below. */
   "estimate.label.reach_for_everyone": () => "Reach for everyone",
-  "estimate.label.elite": () => "Elite: a reach for everyone",
   "estimate.label.guaranteed": () => "Guaranteed for you",
-  "estimate.label.recruited": () => "Recruited",
   /** The profile card's heading and the chip's accessible name. */
   "estimate.card_title": () => "Where you stand",
   "estimate.card_chip": (v) => `Quad's estimate: ${s(v, "group")}`,

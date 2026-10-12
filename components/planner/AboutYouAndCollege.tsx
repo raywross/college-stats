@@ -3,9 +3,11 @@
 import { useState, useTransition } from "react";
 import { banFor, sectorOf } from "@/lib/chances/legacy-bans";
 import { RECRUITED_PICKS } from "@/lib/chances/levels";
+import { noteText } from "@/lib/chances/notes";
 import type { RecruitedPick } from "@/lib/chances/types";
 import { setItemLegacy, setItemRecruited } from "@/lib/planner/store-list";
 import type { PlanItem, PlanSchool } from "@/lib/planner/types";
+import { stateName } from "@/lib/states";
 import { cn } from "@/lib/utils";
 
 const RECRUITED_LABELS: Record<RecruitedPick, string> = {
@@ -66,7 +68,14 @@ export function AboutYouAndCollege({ item, school, canEdit }: { item: Pick<PlanI
         <input type="checkbox" checked={legacy} disabled={!canEdit || pending} onChange={toggleLegacy} className="mt-0.5 size-4 accent-primary" />
         <span>A parent or grandparent graduated from here</span>
       </label>
-      {legacy && ban && <p className="pl-6 text-xs text-muted-foreground">{bannedSentence(ban.state, ban.sectors.length > 1 ? "all" : "public")}</p>}
+      {legacy && ban && (
+        <p className="pl-6 text-xs text-muted-foreground">
+          {noteText({
+            key: "hooks.legacy_banned",
+            values: { state: stateName(ban.state), scope: ban.sectors.includes("public") && ban.sectors.includes("private") ? "all" : ban.sectors[0], law: ban.law },
+          })}
+        </p>
+      )}
       <div className="space-y-1">
         <p>A coach here is recruiting me</p>
         <div className="flex flex-wrap gap-1.5">
@@ -86,19 +95,11 @@ export function AboutYouAndCollege({ item, school, canEdit }: { item: Pick<PlanI
             </button>
           ))}
         </div>
-        {recruited !== "none" && (
-          <p className="text-xs text-muted-foreground">
-            Recruited athletes with a coach&apos;s support are admitted at far higher rates; the estimate assumes that support holds. Confirm it with the coach in writing before relying on it.
-          </p>
-        )}
+        {recruited !== "none" && <p className="text-xs text-muted-foreground">{noteText({ key: "hooks.recruited", values: {} })}</p>}
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
-}
-
-function bannedSentence(state: string, scope: "public" | "all"): string {
-  return `${state} bars legacy preference at ${scope} colleges, so this isn't used.`;
 }
 
 /** The profile's standing card, which has no list row (inputs-beyond-academics.md "Legacy"): shown when neither is set. */

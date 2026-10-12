@@ -12,7 +12,6 @@ import { comparedWith } from "@/lib/chances/compared-with";
 import { noteText } from "@/lib/chances/notes";
 import { estimateInputFromProfile } from "@/lib/chances/snapshot";
 import { panelParts, yourNumbersFrom } from "@/lib/chances/what-went-in";
-import type { StandingLevel } from "@/lib/chances/types";
 import { planGpaLabel } from "@/lib/student-profile";
 import ActionsRowControls from "@/components/planner/row/actions";
 import ApplyRowControls from "@/components/planner/row/apply";
@@ -26,20 +25,6 @@ import type { PlanRowView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import type { ListNote } from "@/lib/list-rules";
 import type { AnyCited } from "@/lib/lineage";
-
-/**
- * The level's meaning line (levels.md "The levels" table), one per level, student-facing and fixed until feedback —
- * not computed, so it lives here rather than the shared notes catalog. `{test}` becomes "SAT" or "ACT" when the
- * student has one on record, else "test score".
- */
-const LEVEL_MEANING: Record<StandingLevel, (test: string) => string> = {
-  high_reach: (test) =>
-    `Your record is below the students this college admits. It's fine to have one or two on the list; a higher ${test} or another year of grades would move it.`,
-  reach: () => "Possible. This college turns down most applicants like you.",
-  target: () => "Your record looks like the students they admit.",
-  likely: () => "More likely than not, from your record and how many applicants like you get in.",
-  safe: () => "A guarantee, open admission, or a record clearly above the students admitted at a college that admits most applicants like you.",
-};
 
 /**
  * The row's drawer (specs/planner/redesign/list.md "The drawer"): opened by (i), inline under the row, each line
@@ -73,8 +58,10 @@ export function RowDrawer({
   const parts = estimate ? panelParts(estimate) : null;
   const level = estimate?.group ?? null;
   const yours = useMemo(() => (ctx.profile ? yourNumbersFrom(estimateInputFromProfile(ctx.profile, "", null).student, planGpaLabel(ctx.profile)) : null), [ctx.profile]);
-  const testWord = yours?.test?.split(" ")[0] ?? "test score";
-  const meaningLine = level ? LEVEL_MEANING[level](testWord) : null;
+  const testWord = yours?.test?.split(" ")[0] ?? "";
+  // levels.md "The levels" table, read from the model's own catalog (lib/chances/notes.ts "Five levels") so this
+  // line never drifts from what model.ts actually emits for each level.
+  const meaningLine = level ? noteText({ key: `estimate.level.${level}`, values: { test: testWord } }) : null;
   const compared = useMemo(
     () => (school?.poolSchool && ctx.profile ? comparedWith(estimateInputFromProfile(ctx.profile, "", null).student, school.poolSchool) : null),
     [school, ctx.profile],

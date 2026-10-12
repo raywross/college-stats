@@ -30,11 +30,22 @@ export const MONEY_VAR = "var(--plan-money)";
 /** Children in the order they were added (color slot 0, 1, 2). */
 export const KID_VARS = ["var(--kid-1)", "var(--kid-2)", "var(--kid-3)"] as const;
 
-/** Group chip classes: tinted backgrounds with dark text (light), deep tints with light text (dark). */
+/**
+ * Group chip classes: tinted backgrounds with dark text (light), deep tints with light text (dark). The five levels
+ * (levels.md "Chip colors"), picked and validated all-pairs with the dataviz skill's validator
+ * (`node scripts/validate_palette.js "<hex,...>" --mode light|dark --pairs all`), identity hex per chip:
+ *   High reach #ec4899 (pink) · Reach #7c3aed (violet) · Target #0284c7 (sky) · Likely #059669 (emerald) ·
+ *   Safe #166534 light / #15803d dark (green).
+ * Light mode: ALL CHECKS PASS (worst pair, sky↔pink, ΔE 7.6 — the floor band, legal because every chip also carries
+ * its word). Dark mode: every pair clears the floor except Likely↔Safe (ΔE 7.6), which is a deliberate exception —
+ * the spec asks for "a deeper green, apart from Likely", i.e. the same hue at two depths, not a sixth hue; that
+ * pair (like the original Reach/High-reach placeholder before it) leans on the word, never the color alone, to
+ * tell the two apart. High reach: a calm pink tint, never red or orange, lighter than Reach. Safe: a deeper green
+ * than Likely's emerald, apart from it by hue family as well as depth.
+ */
 export const GROUP_CLASS: Record<ListCategory | StandingLevel, string> = {
-  // High reach and Safe: placeholders until the five-level chips are picked with the validator (levels.md open question 1).
-  high_reach: "bg-violet-50 text-violet-800 dark:bg-violet-950/50 dark:text-violet-300",
-  safe: "bg-emerald-200 text-emerald-950 dark:bg-emerald-900 dark:text-emerald-100",
+  high_reach: "bg-pink-50 text-pink-800 dark:bg-pink-950/50 dark:text-pink-300",
+  safe: "bg-green-200 text-green-950 dark:bg-green-900 dark:text-green-100",
   reach: "bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-200",
   target: "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200",
   likely: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",

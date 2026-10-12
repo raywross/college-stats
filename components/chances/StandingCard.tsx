@@ -8,6 +8,7 @@ import { StandingBadge } from "@/components/chances/StandingBadge";
 import { useStanding, type LikeYou } from "@/components/chances/useStanding";
 import { WhatWentIn } from "@/components/chances/WhatWentIn";
 import { useLocalProfile } from "@/components/me/useLocalProfile";
+import { AddToListForHooks } from "@/components/planner/AboutYouAndCollege";
 import { InfoTip } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import { loginHref } from "@/lib/accounts";
@@ -109,6 +110,9 @@ export function StandingCard({ unitId, college, cites, majorCites, families, poo
             </li>
           ))}
         </ul>
+        {/* inputs-beyond-academics.md "Legacy": this card has no list row to carry the toggle and the recruited
+            pick, so it points at the planner instead, where "About you and {College}" lives. */}
+        {s.signedIn && <AddToListForHooks college={college} href="/plan" />}
         {!s.signedIn && <SaveYourScores unitId={unitId} />}
         {!s.signedIn && <SignedOutMajor unitId={unitId} college={college} families={families} majorCites={majorCites} />}
       </div>

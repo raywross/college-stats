@@ -389,9 +389,11 @@ for the whole Ledger (2026-10-11).
   record beside the live one for some schools) and then the whole name; two directory rows that are one school
   listed twice both take it; anything still tied is ambiguous and left unmatched (reported, never guessed). Rows
   the Ledger doesn't list get `ap_ledger: null`.
-- **Where it shows:** the high school page's Rigor section lists "N AP courses authorized by College Board" by name
-  (open by default when there's no profile list), with the ⓘ citing the Ledger and its year, beside CRDC's count;
-  private schools get a Rigor section for the first time. The rigor reading and the course picker take the Ledger's
+- **Where it shows:** the high school page's Rigor section lists "N AP courses offered" by name, one list that is
+  every course the school's own profile or the Ledger lists, each once (`apCoursesOnRecord`, field `derived.ap_list`; owner,
+  2026-10-12: "the super-set of everything"), beside CRDC's count. Its ⓘ names the sources and their years (the
+  profile's edition, the Ledger's year), never each course's source; the line under the list says the same in a
+  sentence. Private schools get a Rigor section for the first time. The rigor reading and the course picker take the Ledger's
   list as the school's offering after the profile and before the pooled list, the student's marks, and CRDC's count
   (`lib/chances/offering.ts`); the sentence reads "College Board lists 14 AP courses your school is authorized to
   offer." The glossary's `ap-access` term explains both sources.

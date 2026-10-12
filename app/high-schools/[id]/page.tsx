@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, MapPin } from "lucide-react";
 import { getHighSchool } from "@/lib/high-schools";
 import { gradeSpan } from "@/lib/high-school-core";
-import { catalogCourse } from "@/lib/chances/catalog";
+import { apCoursesOnRecord } from "@/lib/chances/offering";
 import { citeHsView, hsValueAt, isHsSuppressed, type HsFieldPath } from "@/lib/hs-fields";
 import type { HsStateField } from "@/lib/high-school-types";
 import {
@@ -85,10 +85,18 @@ export default async function HighSchoolPage({ params }: Props) {
 
   const rigorFields: HsFieldPath[] = ["rigor.ap_courses", "derived.ap_enrolled_share", "derived.ap_pass_share", "derived.ib_enrolled_share", "derived.dual_enrolled_share"];
   const hasRigorStats = rigorFields.some((p) => value(p) !== null || suppressed(p)) || stateVal("ap_pass_rate") !== null;
-  // College Board's AP Course Ledger: the named list, public and private schools alike.
+  // One AP list: everything the school's own profile and College Board's AP Course Ledger list, each course once
+  // (owner, 2026-10-12); the ⓘ names the sources and their years, not each course's.
   const ledger = school.ap_ledger;
-  const ledgerNames = ledger ? [...ledger.courses.map((k) => catalogCourse(k)?.name ?? k), ...ledger.other] : [];
-  const hasRigor = hasRigorStats || !!ledger;
+  const apNames = apCoursesOnRecord(detail?.ap_courses, ledger);
+  const hasApList = !!ledger || !!detail?.ap_courses?.length;
+  const apCited = cite("derived.ap_list");
+  // The years in the line under the list come from the citation (the same the ⓘ shows), never from raw metadata.
+  const apYear = (key: string) => {
+    const y = apCited.inputs?.find((s) => s.key === key)?.year;
+    return y ? `${y} ` : "";
+  };
+  const hasRigor = hasRigorStats || hasApList;
   const scores = scoresDisplay(detail?.scores ?? null);
   const hasOutcomes = school.grad_rate !== null || !!scores || (["college_going_rate", "ela_proficiency", "math_proficiency", "chronic_absence"] as HsStateField[]).some((f) => stateVal(f) !== null || stateSuppressed(f));
   const hasWhereGo = !!detail?.matriculation || !!detail?.admitted?.entries.length || (["nsc_enrolled_fall", "nsc_persisted", "nsc_completed"] as HsStateField[]).some((f) => stateVal(f) !== null);
@@ -196,27 +204,20 @@ export default async function HighSchoolPage({ params }: Props) {
             )}
           </div>
         )}
-        {ledger ? (
-          <details className="mt-3 rounded-2xl border bg-card p-4" open={ledgerNames.length > 0 && !detail?.ap_courses?.length}>
+        {hasApList ? (
+          <details className="mt-3 rounded-2xl border bg-card p-4" open={apNames.length > 0}>
             <summary className="flex cursor-pointer items-center gap-1 text-sm font-semibold">
-              {ledgerNames.length === 0
-                ? "No AP courses authorized by College Board this year"
-                : `${ledgerNames.length} AP ${ledgerNames.length === 1 ? "course" : "courses"} authorized by College Board`}
-              <InfoTip term="ap-access" cited={cite("ap_ledger")} />
+              {apNames.length === 0 ? "No AP courses on record this year" : `${apNames.length} AP ${apNames.length === 1 ? "course" : "courses"} offered, by name`}
+              <InfoTip term="ap-access" cited={apCited} />
             </summary>
-            {ledgerNames.length > 0 && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{ledgerNames.join(" · ")}</p>}
+            {apNames.length > 0 && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{apNames.join(" · ")}</p>}
             <p className="mt-2 text-xs text-muted-foreground">
-              The courses College Board lists for {ledger.ledger_name} in {ledger.year}; a school that missed renewing a course that year isn&apos;t listed for it.
+              {detail?.ap_courses?.length && ledger
+                ? `Every course the school's ${apYear("hs-profile")}profile or College Board's ${ledger.year} AP Course Ledger lists.`
+                : ledger
+                  ? `The courses College Board's AP Course Ledger lists for ${ledger.ledger_name} in ${ledger.year}; a school that missed renewing a course that year isn't listed for it.`
+                  : `The courses the school's ${apYear("hs-profile")}profile lists.`}
             </p>
-          </details>
-        ) : null}
-        {detail?.ap_courses?.length ? (
-          <details className="mt-3 rounded-2xl border bg-card p-4">
-            <summary className="flex cursor-pointer items-center gap-1 text-sm font-semibold">
-              The school&apos;s AP courses
-              <InfoTip term="ap-access" cited={cite("detail.ap_courses")} />
-            </summary>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{detail.ap_courses.join(" · ")}</p>
           </details>
         ) : null}
         <MyCoursesLine schoolId={school.id} />

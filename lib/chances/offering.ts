@@ -44,6 +44,34 @@ export function profileApList(names: readonly string[]): { keys: string[]; count
   return { keys: [...keys], count: keys.size + unmatched.size };
 }
 
+/**
+ * Every AP course on record for a school, by name, each once: the profile's printed list (recognized names as the
+ * catalog's names, "Physics 1 & 2" as two) and the Ledger's list and `other`, in alphabetical order. The page's
+ * one list (field `ap_list`); the offering below still prefers one source.
+ */
+export function apCoursesOnRecord(printed: readonly string[] | null | undefined, ledger: Pick<NonNullable<HighSchool["ap_ledger"]>, "courses" | "other"> | null | undefined): string[] {
+  const keys = new Set<string>();
+  const other = new Map<string, string>();
+  const addOther = (name: string) => {
+    const n = name.trim();
+    const id = n.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (id && !other.has(id)) other.set(id, n);
+  };
+  for (const k of ledger?.courses ?? []) {
+    if (catalogCourse(k)) keys.add(k);
+    else addOther(k);
+  }
+  for (const n of ledger?.other ?? []) addOther(n);
+  for (const n of printed ?? []) {
+    const k = apKeysForName(n);
+    if (k.length) k.forEach((x) => keys.add(x));
+    else addOther(n);
+  }
+  const names = [...keys].map((k) => catalogCourse(k)!.name);
+  for (const n of other.values()) if (!names.some((x) => x.toLowerCase() === n.toLowerCase())) names.push(n);
+  return names.sort((a, b) => a.localeCompare(b, "en"));
+}
+
 /** The school's offering, best source first (see the module comment). `pooled` is the pooled list's catalog keys. */
 export function schoolOffering(highSchool: OfferingInput | null, pooled?: readonly string[] | null): SchoolOffering {
   if (!highSchool) return NOTHING;

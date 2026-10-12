@@ -11,7 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { HighSchool } from "../lib/high-school-types.ts";
 import { blankHighSchool, validateHighSchoolRow } from "../lib/high-school-core.ts";
-import { schoolOffering } from "../lib/chances/offering.ts";
+import { apCoursesOnRecord, schoolOffering } from "../lib/chances/offering.ts";
 import { offeringLines } from "../lib/chances/rigor-view.ts";
 import { applyAdapterResults } from "../scripts/lib/high-schools/merge.mts";
 import { createAdapterContext } from "../scripts/lib/high-schools/context.mts";
@@ -451,6 +451,15 @@ test("validateHighSchoolRow: a sound ap_ledger passes; a bad year, id, unsorted 
 /* ------------------------------------------------------------------ */
 /* The offering                                                        */
 /* ------------------------------------------------------------------ */
+
+test("apCoursesOnRecord: the profile's list and the Ledger's as one, each course once, by the catalog's names", () => {
+  const ledger = { courses: ["ap_2d_art_and_design", "ap_drawing", "ap_physics_1"], other: ["AP Quantum Computing"] };
+  const printed = ["2D Art and Design", "2D Art and Design (Photo)", "Physics 1 & 2", "Music Theory", "AP Quantum Computing", "Seminar in Roslyn Studies"];
+  assert.deepEqual(apCoursesOnRecord(printed, ledger), ["AP 2-D Art and Design", "AP Drawing", "AP Music Theory", "AP Physics 1: Algebra-Based", "AP Physics 2: Algebra-Based", "AP Quantum Computing", "Seminar in Roslyn Studies"]);
+  assert.deepEqual(apCoursesOnRecord(null, ledger), ["AP 2-D Art and Design", "AP Drawing", "AP Physics 1: Algebra-Based", "AP Quantum Computing"]);
+  assert.deepEqual(apCoursesOnRecord(["Biology"], null), ["AP Biology"]);
+  assert.deepEqual(apCoursesOnRecord(null, { courses: [], other: [] }), []);
+});
 
 test("schoolOffering: the Ledger's list beats pooled, marks, and the CRDC count, and yields to the profile; an empty list is zero", () => {
   const ledger = { year: "2025–26", ledger_id: "440375", ledger_name: "Azle High School", courses: ["ap_biology", "ap_calculus_ab", "not_a_course"], other: ["AP Quantum Computing"] };

@@ -9,8 +9,10 @@ summary: High school pages now list the AP courses College Board authorizes each
 ## What's new
 
 - **A named list of AP courses for every listed high school.** Each high school page's Rigor section now shows the
-  AP courses College Board lists the school as authorized to offer this year, by name, with the federal count of AP
-  courses taught beside it. Private schools, which the federal data never covered, get this list too.
+  AP courses on record for the school, by name: everything College Board lists the school as authorized to offer this
+  year and, where we have it, everything the school's own profile lists, each course once. The federal count of AP
+  courses taught stays beside it, and the ⓘ says which sources the list draws on and from what years. Private
+  schools, which the federal data never covered, get this list too.
 - **Your courses against your school's list.** When you add your courses, the picker opens on your own school's
   list, and the reading says how many of them you've taken: "College Board lists 14 AP courses your school is
   authorized to offer."

@@ -14,6 +14,7 @@ import {
   fitsScores,
   gpaAsEntered,
   gpaDisplay,
+  isClassStanding,
   rankExpectationHint,
   rankExpectationMismatch,
   sanitizeActivities,
@@ -266,13 +267,21 @@ test("sanitizeClassStanding: a pick sets the percentile from the table; a matchi
   assert.deepEqual(sanitizeClassStanding(null, 25), { classStanding: "top25", classRankPercentile: 25 });
   assert.deepEqual(sanitizeClassStanding(null, 40), { classStanding: null, classRankPercentile: 40 });
   assert.deepEqual(sanitizeClassStanding(null, null), { classStanding: null, classRankPercentile: null });
-  assert.deepEqual(sanitizeClassStanding("no_rank", null), { classStanding: "no_rank", classRankPercentile: null });
+  // A stored "no_rank" (the removed "my school doesn't rank" pick, owner 2026-10-12) reads as unanswered: it isn't
+  // one of the accepted picks, and there's no percentile on file either.
+  assert.deepEqual(sanitizeClassStanding("no_rank", null), { classStanding: null, classRankPercentile: null });
   assert.deepEqual(sanitizeClassStanding("not-a-pick", null), { classStanding: null, classRankPercentile: null });
-  // Every CLASS_STANDING_PERCENTILE entry round-trips through the pick.
+  // Every CLASS_STANDING_PERCENTILE entry except "no_rank" (no longer an accepted pick) round-trips through the pick.
   for (const [pick, pct] of Object.entries(CLASS_STANDING_PERCENTILE)) {
+    if (pick === "no_rank") continue;
     assert.equal(sanitizeClassStanding(pick, null).classRankPercentile, pct);
     if (pct !== null) assert.equal(sanitizeClassStanding(null, pct).classStanding, pick);
   }
+});
+
+test("isClassStanding: no_rank is no longer an accepted pick (owner, 2026-10-12)", () => {
+  assert.equal(isClassStanding("no_rank"), false);
+  assert.equal(isClassStanding("top5"), true);
 });
 
 test("sanitizeActivities: caps at ACTIVITIES_MAX, drops unnamed/invalid rows, keeps names to 60 chars, years to 9–12, hours to 1–60, a role only for a checked year", () => {

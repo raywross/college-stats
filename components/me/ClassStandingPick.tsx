@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { CLASS_STANDING_PERCENTILE } from "@/lib/chances/levels";
 import type { ClassStanding } from "@/lib/chances/types";
 import { sanitizeClassStanding } from "@/lib/student-profile";
 import { cn } from "@/lib/utils";
@@ -13,14 +12,17 @@ const PICKS: { value: ClassStanding; label: string }[] = [
   { value: "top25", label: "Top quarter" },
   { value: "top50", label: "Top half" },
   { value: "lower", label: "Lower half" },
-  { value: "no_rank", label: "My school doesn't rank / I don't know" },
 ];
 
 /**
  * The class-standing pick (inputs-beyond-academics.md "Class standing"), under GPA: picking a chip sets
- * `classRankPercentile` from CLASS_STANDING_PERCENTILE; typing a percentile that exactly matches one of the table's
- * values picks that chip back (`sanitizeClassStanding`, so the form and the server agree). Posts both
- * `classStanding` and `classRankPercentile` as hidden fields the way `CoursePickerField` posts `courses`.
+ * `classRankPercentile` from CLASS_STANDING_PERCENTILE (`sanitizeClassStanding`, so the form and the server agree).
+ * Posts both `classStanding` and `classRankPercentile` as hidden fields the way `CoursePickerField` posts `courses`.
+ *
+ * Asks the student's own perceived place among their peers, not their school's official rank (owner, 2026-10-12:
+ * "We don't need the student to enter 'my high school doesn't rank'… get rid of them entering the actual
+ * percentile"): no "my school doesn't rank" option, and no typed-percentile field — a student who doesn't know their
+ * school's numbers still has a sense of where they stand.
  */
 export function ClassStandingPick({
   classStanding,
@@ -43,8 +45,8 @@ export function ClassStandingPick({
 
   return (
     <div>
-      <span className="block text-sm font-semibold">Class standing (optional)</span>
-      <p className="mt-0.5 mb-1.5 text-xs text-muted-foreground">Some colleges weigh rank, and some states guarantee admission by rank.</p>
+      <span className="block text-sm font-semibold">Where do you think you stand in your class? (optional)</span>
+      <p className="mt-0.5 mb-1.5 text-xs text-muted-foreground">Your best guess among classmates; colleges see the real numbers.</p>
       <div className="flex flex-wrap gap-2">
         {PICKS.map((p) => (
           <button
@@ -62,20 +64,6 @@ export function ClassStandingPick({
           </button>
         ))}
       </div>
-      <label className="mt-2 flex items-center gap-2 text-sm text-muted-foreground" htmlFor="classRankPercentileInput">
-        or your percentile, if you know it:
-        <input
-          id="classRankPercentileInput"
-          type="number"
-          min={1}
-          max={100}
-          disabled={disabled}
-          value={value.classStanding === null ? (value.classRankPercentile ?? "") : ""}
-          onChange={(e) => update(sanitizeClassStanding(null, e.currentTarget.value === "" ? null : Number(e.currentTarget.value)))}
-          placeholder={value.classStanding !== null ? String(CLASS_STANDING_PERCENTILE[value.classStanding] ?? "") : ""}
-          className="h-9 w-20 rounded-lg border border-input bg-background px-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 disabled:opacity-60"
-        />
-      </label>
       <input type="hidden" name="classStanding" value={value.classStanding ?? ""} />
       <input type="hidden" name="classRankPercentile" value={value.classRankPercentile ?? ""} />
     </div>

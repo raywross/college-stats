@@ -2,9 +2,11 @@
 /**
  * One activity card (specs/planner/redesign/intake.md "Activities, four steps"), modeled on the AP step's course card:
  * collapsed it shows the name and a summary pill ("3 years · Captain"); open it shows, in order, the name (editable),
- * the family pick for a typed club or the type pick for work and other entries, the years with a title per year, hours
- * a week, recognition, and "connected to my major". Nothing on it is required. Used by the intake's activity steps and
- * `/me` (components/me/ActivitiesForm.tsx).
+ * the family pick for a typed club or the type pick for work and other entries, the years with a title per year,
+ * hours a week (Work and Other only; Sports and Clubs don't ask — owner, 2026-10-12), and recognition. No "connected
+ * to my major" checkbox (owner, 2026-10-12: "We should calculate this as best we can, and just assume it is unless
+ * we conclude otherwise"); the field stays on `ActivityEntry`, the model computes it. Nothing on the card is
+ * required. Used by the intake's activity steps and `/me` (components/me/ActivitiesForm.tsx).
  */
 import { useState } from "react";
 import { X } from "lucide-react";
@@ -139,24 +141,28 @@ export function ActivityCard({
 
           <YearTitles value={value} classYear={classYear} onChange={onChange} disabled={disabled} titleLabel={step === "sports" ? "Level" : step === "work" ? "Role" : "Title"} />
 
-          <label className="block space-y-1.5">
-            <FieldLabel>{step === "sports" ? "Hours a week in season" : "Hours a week"} (optional)</FieldLabel>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={hours}
-              disabled={disabled}
-              placeholder="e.g. 10"
-              onChange={(e) => {
-                const s = e.currentTarget.value;
-                setHours(s);
-                onChange({ ...value, hoursPerWeek: parseHours(s) });
-              }}
-              className={cn(inputCls, "w-28")}
-            />
-            {hint && <span className="block text-xs text-amber-700 dark:text-amber-400">{hint}</span>}
-          </label>
+          {/* Sports and Clubs don't ask hours a week (owner, 2026-10-12: "We don't use it in our algorithm… it just
+              adds space and noise"); Work keeps it (the model reads it as workHours). */}
+          {step !== "sports" && step !== "clubs" && (
+            <label className="block space-y-1.5">
+              <FieldLabel>Hours a week (optional)</FieldLabel>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={hours}
+                disabled={disabled}
+                placeholder="e.g. 10"
+                onChange={(e) => {
+                  const s = e.currentTarget.value;
+                  setHours(s);
+                  onChange({ ...value, hoursPerWeek: parseHours(s) });
+                }}
+                className={cn(inputCls, "w-28")}
+              />
+              {hint && <span className="block text-xs text-amber-700 dark:text-amber-400">{hint}</span>}
+            </label>
+          )}
 
           {recognition.length > 0 && (
             <div className="space-y-1.5">
@@ -173,13 +179,6 @@ export function ActivityCard({
               </div>
               <p className="text-xs text-muted-foreground">{picked ? `For example: ${picked.example}.` : `Your highest, if any: ${recognition.map((r) => r.example.split(",")[0]).join(", ")}.`}</p>
             </div>
-          )}
-
-          {step !== "sports" && (
-            <label className="flex min-h-11 items-center gap-2.5 text-sm">
-              <input type="checkbox" disabled={disabled} checked={value.relatedToMajor} onChange={(e) => onChange({ ...value, relatedToMajor: e.currentTarget.checked })} className="size-5" />
-              Connected to the major I want to study
-            </label>
           )}
 
           <div className="flex justify-end">

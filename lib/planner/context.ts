@@ -239,17 +239,20 @@ export async function writeMerge(supabase: SupabaseClient, listId: string, merge
  * rows changed; a reader who can't edit writes nothing (RLS), and errors are logged, never thrown.
  */
 export async function writeAutoWrites(supabase: SupabaseClient, writes: { id: string; category?: ListCategory; round?: ListRound }[]): Promise<number> {
-  let changed = 0;
-  for (const batch of autoWriteBatches(writes)) {
-    const update = supabase.from("list_items").update(batch.patch).in("id", batch.ids);
-    const { data, error } = await (batch.onlyAuto ? update.eq(batch.sourceColumn, "auto") : update).select("id");
-    if (error) {
-      console.error(`planner: writing suggested ${batch.sourceColumn === "category_source" ? "groups" : "rounds"} failed: ${error.message}`);
-      continue;
-    }
-    changed += data?.length ?? 0;
-  }
-  return changed;
+  // The batches touch different values (and a group and a round are different columns), so they go out together
+  // (U20 "real speed"; they were one after another).
+  const counts = await Promise.all(
+    autoWriteBatches(writes).map(async (batch) => {
+      const update = supabase.from("list_items").update(batch.patch).in("id", batch.ids);
+      const { data, error } = await (batch.onlyAuto ? update.eq(batch.sourceColumn, "auto") : update).select("id");
+      if (error) {
+        console.error(`planner: writing suggested ${batch.sourceColumn === "category_source" ? "groups" : "rounds"} failed: ${error.message}`);
+        return 0;
+      }
+      return data?.length ?? 0;
+    }),
+  );
+  return counts.reduce((a, b) => a + b, 0);
 }
 
 /** Re-reads only a list's tasks (after writeMerge). */

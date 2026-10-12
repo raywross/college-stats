@@ -433,3 +433,56 @@ logic in the browser. The search index is larger than the spec's estimate (522 K
 "about 200 KB"): the crest brand and the alias display forms are most of it; a one-time cached fetch, so kept. The
 load-time log line lives in `lib/data.ts`, not `instrumentation.ts`. Dropping the dataset tables waits for the
 owner's hand (the migration is in the repo; see the owner steps), not a cycle.
+
+## Follow-up (2026-10-12): real speed, timing, and batched reads
+The owner's test of a Vercel preview found the planner intake's final save taking 5–10 seconds and switching
+students taking "a couple of heartbeats". Measured on a production build (`next build` + `next start`) against the
+dev Supabase project (numbers and method in `chances-build/qa/real-speed.md`): the database itself answers in a few
+milliseconds (each bundle below runs in 1–3 ms in Postgres; a trivial query and a plan query cost the same ~40 ms
+round trip from a laptop), so the cost was the **number of round trips made one after another**, multiplied by the
+number of renders. The save made about 14 sequential round trips, then the response re-rendered the page, then the
+browser navigated and refreshed (two more full renders); a guardian's page loaded every child's whole plan to pick
+one. Built on `feature/chances-real-speed`:
+
+- **The intake's save returns once the write is durable.** The profile write (and the grad-year sync) is awaited;
+  the follow-up pass that re-syncs groups, rounds, and tasks runs after the response (`afterResponse` in
+  `lib/timing-server.ts`, Next's `after()`), and the action no longer revalidates, so its response carries no
+  re-render. The intake then makes one navigation (no `router.refresh()` on top); that render runs the same sync for
+  the list it shows. The numbers form and a test date still run the pass before responding.
+- **Reads that don't depend on each other start together**: the account and the student's own record; students,
+  memberships, and the account (`lib/auth.ts`); the profiles read no longer waits for the access list; a plan's list,
+  items, and tasks; the auto-write batches. In a Server Action, where React `cache` does nothing, `inRequestScope`
+  and `requestMemo` (`lib/request-memo.ts`) keep it to one read per request.
+- **A guardian's page loads only the selected child** when `?for=` or the last-viewed cookie names one (it loaded
+  every child's plan to compare deadlines). The page starts that child's plan read before it knows who the viewer is.
+- **Switching students paints the chip at once.** The page sends every child's chip details (from their profiles);
+  a tap stores the line in the browser (`lib/planner/people-snapshot.ts`) and `app/plan/loading.tsx` draws it with the
+  tapped child's progress and Edit (`PendingPeopleLine`) while the plan loads. Full-data prefetch of the other
+  children was not used: it would serve a copy up to five minutes old (`staleTimes.static`) after another family
+  member's edit, and run their plan loads (and access-log writes) on every view.
+- **Batched reads** (`supabase/migrations/20261012140000_plan_bundle.sql`, security invoker, so row-level security
+  decides exactly as for the table reads): `viewer_bundle()` (account, students, memberships, households with
+  rosters, profiles, home), `plan_bundle(p_student, p_list)` (a student's row and their list's whole plan), and
+  `save_student_profile(p_student, p_data)` (the upsert plus the grad-year sync, one transaction). With them a plan
+  render is two calls side by side and the save is two calls in a row. `lib/bundles.ts` calls them and returns null
+  while they aren't installed; every caller keeps its per-table read as the fallback (`lib/bundle-read.ts`
+  remembers a missing function for a minute per instance). `tests/plan-bundle-policies.test.mts` compares each with
+  the per-table reads for a student, an editing guardian, a view-only guardian, and an outsider.
+
+### Timing a request
+Off by default. Set **`QUAD_TIMING=1`** in the environment (Vercel → Project → Settings → Environment Variables, for
+Preview or Production, then redeploy; locally `QUAD_TIMING=1 npx next start`). Then:
+- every `/plan` render and every intake save logs one line to the function log (Vercel → Logs, filter `[timing]`):
+  `[timing] /plan save 201ms (+393ms after): db 5× in 3 waves 180ms (students 48 ‖ household_members 41 ‖ …;
+  student_profiles 106; students 42) auth 1ms profile read 59ms profile write 158ms followUp 323ms`. The first number
+  is what the person waited for; `+N ms after` is work that ran after the response. `db N× in W waves` counts the
+  Supabase round trips by table or function name; `‖` joins calls that ran in parallel and `;` separates waves (calls
+  that waited for the one before), so waves × the region's round trip is the database's share. Then each span:
+  `access+plan`, `readPlan`, `dataset`, `planSchools`, `estimates`, `sync`, `revalidate`, `followUp`.
+- signed-in routes that go through `proxy.ts` carry a `Server-Timing: proxy;dur=…` response header (the session
+  check), visible in the browser's network panel. The page's own timings can't ride in a header: the page streams
+  (its headers leave before the render finishes), so they go to the log line.
+
+The line and the header carry route labels, table names, counts, and milliseconds only: never an id, a query string,
+a name, or a value (`tests/timing.test.mts`). Off, the Supabase clients use their own `fetch` and nothing is
+recorded. Turn it off again by deleting the variable.

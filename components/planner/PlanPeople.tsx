@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { KID_VARS } from "@/lib/planner/colors";
 import { initialsOf } from "@/lib/planner/plan-frame";
+import { setPendingPeople } from "@/lib/planner/people-snapshot";
 import { cn } from "@/lib/utils";
 
 /** Set on every pick, read server-side by `app/plan/page.tsx` so a guardian's next `/plan` open lands on the same
@@ -65,8 +66,21 @@ function ProgressRing({ done, total }: { done: number; total: number }) {
  * four students plus one chip fit at 390px. The status text, the big name heading, and "Your part" are no longer
  * shown here (their helpers stay in lib/planner).
  */
-export function PlanPeople({ people, selected, detail }: { people: PlanPerson[]; selected: string | null; detail: PlanPersonDetail | null }) {
+export function PlanPeople({
+  people,
+  selected,
+  detail,
+  details,
+}: {
+  people: PlanPerson[];
+  selected: string | null;
+  detail: PlanPersonDetail | null;
+  /** Every child's chip details (from their profiles), so a tapped child's chip and Edit show before their plan does. */
+  details?: Record<string, PlanPersonDetail>;
+}) {
   const [open, setOpen] = useState(true);
+  // The line has arrived: nothing is pending any more (app/plan/loading.tsx drew it from the snapshot meanwhile).
+  useEffect(() => setPendingPeople(null), [selected]);
   const [pending, setPending] = useState<string | null>(null);
   const [selectedSeen, setSelectedSeen] = useState(selected);
   if (selected !== selectedSeen) {
@@ -101,6 +115,7 @@ export function PlanPeople({ people, selected, detail }: { people: PlanPerson[];
                 if (p.studentId) {
                   rememberChild(p.studentId);
                   setPending(p.studentId);
+                  setPendingPeople({ people, selected: p.studentId, detail: details?.[p.studentId] ?? null, details: details ?? {} });
                   track("plan_switch_child", { to: "child" });
                 }
               }}
@@ -111,7 +126,8 @@ export function PlanPeople({ people, selected, detail }: { people: PlanPerson[];
           );
         }
         const showDetail = open;
-        const isLoaded = pending === null;
+        // While another child's plan loads, their chip reads from `details` (the page sends every child's).
+        const shown = pending === null ? detail : (details?.[pending] ?? null);
         return (
           <div
             key={p.studentId ?? "self"}
@@ -131,7 +147,7 @@ export function PlanPeople({ people, selected, detail }: { people: PlanPerson[];
             {showDetail && (
               <>
                 {(() => {
-                  const progress = isLoaded && detail ? detail.progress : null;
+                  const progress = shown ? shown.progress : null;
                   const nextText = progress ? (progress.nextLabel ? `Next: ${progress.nextLabel}` : "Profile complete") : null;
                   const body = (
                     <>
@@ -142,15 +158,15 @@ export function PlanPeople({ people, selected, detail }: { people: PlanPerson[];
                       {progress && (
                         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
                           <ProgressRing done={progress.done} total={progress.total} />
-                          <span className={cn("truncate", progress.nextLabel && detail?.nextHref && "font-semibold text-primary")}>{nextText}</span>
+                          <span className={cn("truncate", progress.nextLabel && shown?.nextHref && "font-semibold text-primary")}>{nextText}</span>
                         </span>
                       )}
                     </>
                   );
                   // The whole text block is the next step's link, so the tap target is the chip's full height.
-                  return progress?.nextLabel && detail?.nextHref ? (
+                  return progress?.nextLabel && shown?.nextHref ? (
                     <Link
-                      href={detail.nextHref}
+                      href={shown.nextHref}
                       aria-label={`${name}: next, ${progress.nextLabel}`}
                       className="flex min-h-11 min-w-0 flex-1 flex-col justify-center leading-tight hover:opacity-80"
                     >
@@ -160,9 +176,9 @@ export function PlanPeople({ people, selected, detail }: { people: PlanPerson[];
                     <span className="flex min-h-11 min-w-0 flex-1 flex-col justify-center leading-tight">{body}</span>
                   );
                 })()}
-                {isLoaded && detail?.editHref && (
+                {shown?.editHref && (
                   <Link
-                    href={detail.editHref}
+                    href={shown.editHref}
                     aria-label={`Edit ${name}'s grades, test, and courses`}
                     className="inline-flex size-11 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary text-sm font-semibold text-primary-foreground sm:h-9 sm:w-auto sm:px-3.5"
                   >

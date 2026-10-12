@@ -108,16 +108,18 @@ export async function readItems(supabase: SupabaseClient, listId: string): Promi
  * list isn't visible. Throws `PlannerSetupError` when the planner migration isn't applied yet, so a page can say so.
  */
 export async function readPlan(supabase: SupabaseClient, listId: string): Promise<PlanData | null> {
-  const list = await supabase.from("lists").select(PLAN_LIST_COLUMNS).eq("id", listId).maybeSingle();
+  // The list, its items, and its tasks don't depend on each other: one round together (U20 "real speed"; it was the
+  // list, then the other two). An unreadable list still returns null, whatever the other two said.
+  const [list, items, tasks] = await Promise.all([
+    supabase.from("lists").select(PLAN_LIST_COLUMNS).eq("id", listId).maybeSingle(),
+    readItems(supabase, listId),
+    supabase.from("plan_tasks").select(PLAN_TASK_COLUMNS).eq("list_id", listId).order("due_on", { nullsFirst: false }).order("position"),
+  ]);
   if (list.error) {
     if (isMissing(list.error)) throw new PlannerSetupError(list.error.message ?? "");
     throw new Error(`Reading the plan's list failed: ${list.error.message}`);
   }
   if (!list.data) return null;
-  const [items, tasks] = await Promise.all([
-    readItems(supabase, listId),
-    supabase.from("plan_tasks").select(PLAN_TASK_COLUMNS).eq("list_id", listId).order("due_on", { nullsFirst: false }).order("position"),
-  ]);
   for (const r of [items, tasks]) {
     if (r.error) {
       if (isMissing(r.error)) throw new PlannerSetupError(r.error.message ?? "");

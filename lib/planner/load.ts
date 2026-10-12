@@ -21,6 +21,9 @@ import { planEstimates } from "./plan-estimates";
 import { generateTasks, mergeTasks } from "./tasks";
 import type { PlanContext } from "./types";
 import { span } from "@/lib/timing";
+import { planBundle, type PlanBundle } from "@/lib/bundles";
+import { bundleKnownMissing, planDataFromBundle } from "@/lib/bundle-read";
+import type { PlanData } from "./read-plan";
 
 export type PlanLoad =
   /** The plan, ready for the tabs. */
@@ -39,32 +42,58 @@ const firstName = (name: string | null | undefined) => name?.trim().split(/\s+/)
  * already resolved it (a person page); otherwise it's looked up. A guardian's read is logged for the student. An
  * editor's open writes the suggested groups and rounds that changed (plan-view.ts autoWrites, only `auto` rows) and
  * regenerates the tasks (cheap and idempotent), so a data publish or new numbers show up on the next open.
+ *
+ * U20 "real speed": every read that doesn't depend on another starts at once. With the batched reads installed
+ * (supabase/migrations/20261012140000_plan_bundle.sql) that is two calls side by side, the viewer bundle (access,
+ * account, profile, home) and the plan bundle (the student's default list and its whole plan); `early` is a plan
+ * bundle the page already started for this student. Without them, the per-table reads, in two waves instead of
+ * five.
  */
-export async function loadPlanFor(studentId: string, viewer?: StudentAccess | null): Promise<PlanLoad> {
-  const access = viewer ?? (await span("access", () => studentsICanSee())).find((a) => a.student.id === studentId) ?? null;
+export async function loadPlanFor(studentId: string, viewer?: StudentAccess | null, opts: { early?: Promise<PlanBundle | null> } = {}): Promise<PlanLoad> {
+  const owner = { kind: "student" as const, id: studentId };
+  const bundleP = (async () => {
+    const early = opts.early ? await opts.early : null;
+    return early && early.student?.id === studentId ? early : planBundle(studentId);
+  })();
+  // Without the bundle (known missing a moment ago), the lists read starts in the first wave too.
+  const listsP = bundleKnownMissing("plan_bundle") ? myLists(owner) : null;
+  const [accessList, account, profile, home, bundle] = await span("access+plan", () =>
+    Promise.all([viewer ? Promise.resolve(null) : studentsICanSee(), getAccount(), profileFor(studentId), myHome(), bundleP]),
+  );
+  const access = viewer ?? accessList?.find((a) => a.student.id === studentId) ?? null;
   if (!access || access.student.id !== studentId) return { kind: "not-found" };
   const { student, canEdit, relation } = access;
-  const owner = { kind: "student" as const, id: student.id };
-  const lists = await span("lists", () => myLists(owner));
-  let listId: string | null = lists.find((l) => l.is_default)?.id ?? lists[0]?.id ?? null;
-  if (!listId && canEdit) listId = (await getOrCreateDefaultList(owner))?.id ?? null;
+  const supabase = await createServerSupabase();
+
+  let plan: PlanData | null = null;
+  let listId: string | null = bundle?.list?.id ?? null;
+  if (bundle && listId) {
+    plan = planDataFromBundle(bundle);
+  } else {
+    if (!bundle) {
+      const lists = await span("lists", () => listsP ?? myLists(owner));
+      listId = lists.find((l) => l.is_default)?.id ?? lists[0]?.id ?? null;
+    }
+    if (!listId && canEdit) listId = (await getOrCreateDefaultList(owner))?.id ?? null;
+  }
   if (!listId) return { kind: "empty", access };
 
-  const supabase = await createServerSupabase();
-  const [account, profile, home] = await span("profile+home", () => Promise.all([getAccount(), profileFor(student.id), myHome()]));
   if (relation === "guardian") await scheduleStudentReadLog(student.id, "plan_tasks");
   const gradYear = profile ? effectiveGradYear(profile.data.basics, student.grad_year) : student.grad_year;
   const today = todayIso();
   const profileData = profile?.data ?? null;
 
-  let plan;
-  try {
-    plan = await span("readPlan", () => readPlan(supabase, listId));
-  } catch (err) {
-    if (err instanceof PlannerSetupError) return { kind: "setup-missing", access };
-    throw err;
+  if (!plan) {
+    try {
+      const id = listId;
+      plan = await span("readPlan", () => readPlan(supabase, id));
+    } catch (err) {
+      if (err instanceof PlannerSetupError) return { kind: "setup-missing", access };
+      throw err;
+    }
   }
   if (!plan) return { kind: "empty", access };
+
 
   const read = plan;
   let input = await span("planSchools", () => generatorInputFor(read, { gradYear, profile: profileData, home, today }));

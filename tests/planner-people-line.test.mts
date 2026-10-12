@@ -36,7 +36,7 @@ test("the line: circles link to each plan, the selected one is a button with ari
   assert.match(src, /aria-expanded=\{showDetail\}/);
   assert.match(src, /aria-label=\{name\}/);
   assert.match(src, /aria-label=\{`Show \$\{name\}'s plan`\}/);
-  assert.match(src, /href=\{detail\.editHref\}/);
+  assert.match(src, /href=\{shown\.editHref\}/, "Edit from the loaded detail, or a tapped child's while theirs loads (U20)");
   assert.match(src, /size-11/, "44px circles");
   assert.match(src, /truncate/);
   assert.doesNotMatch(src, /flex-wrap/);

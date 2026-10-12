@@ -13,6 +13,13 @@ import { resolveSelectedChild, type SwitchableChild } from "@/lib/planner/plan-f
 import { profileProgress, SECTION_STEP } from "@/lib/planner/profile-progress";
 import { defaultTab, parseTab, planHref } from "@/lib/planner/plan-tabs";
 import { withTiming } from "@/lib/timing-server";
+import { planBundle } from "@/lib/bundles";
+import { bundleKnownMissing } from "@/lib/bundle-read";
+import { myHome } from "@/lib/home-store";
+import { myLists } from "@/lib/lists";
+import { isUuid } from "@/lib/planner/plan-writes";
+import { profilesICanSee } from "@/lib/student-profile-store";
+import type { StudentProfileData } from "@/lib/student-profile";
 
 export const metadata: Metadata = { title: "Plan" };
 
@@ -56,10 +63,13 @@ function planFallback(loaded: PlanLoad, first: string | null): ReactNode | null 
 function detailFor(load: PlanLoad | undefined, person: string | null): PlanPersonDetail | null {
   if (!load || load.kind !== "ready") return null;
   const { ctx } = load;
-  const progress = profileProgress(ctx.profile);
-  const canEdit = ctx.viewer.canEdit;
+  return detailFrom(ctx.profile, ctx.viewer.canEdit, ctx.student?.id ?? person, person);
+}
+
+/** The chip details from a profile alone: what detailFor shows once the plan is loaded, for every child at once. */
+function detailFrom(profile: StudentProfileData | null, canEdit: boolean, studentId: string | null, person: string | null): PlanPersonDetail {
+  const progress = profileProgress(profile);
   const where = progress.next ? SECTION_STEP[progress.next] : null;
-  const studentId = ctx.student?.id ?? person;
   const nextHref =
     !canEdit || where === null ? null : where === "numbers" ? (studentId ? `/household/${studentId}/numbers` : null) : planHref({ person, setup: true, step: where });
   return { progress, nextHref, editHref: canEdit ? planHref({ person, setup: true }) : null };
@@ -97,9 +107,22 @@ async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: stri
   const user = await getUser();
   if (!user) return <SignedOutPlan />;
 
+  // The plan most likely to be shown starts loading now, alongside who the viewer is (U20 "real speed"): the child
+  // named by `?for=` or last viewed, else (null) the viewer's own. loadPlanFor uses it only if it's that student's.
+  const cookieStore = await cookies();
+  const lastViewed = cookieStore.get(PLAN_CHILD_COOKIE)?.value ?? null;
+  const candidate = [forParam, lastViewed].find((id) => isUuid(id)) ?? null;
+  const early = planBundle(candidate);
+  // Without the batched reads (lib/bundles.ts), the reads every branch below needs start now too, so they share the
+  // first round trip with the viewer's instead of waiting for it (each is memoized per request; a failure surfaces
+  // where it's awaited).
+  if (bundleKnownMissing("viewer_bundle")) {
+    for (const warm of [profilesICanSee(), myHome(), candidate ? myLists({ kind: "student", id: candidate }) : null]) warm?.catch(() => {});
+  }
+
   const viewer = await planViewer();
   if (viewer.kind === "self") {
-    const loaded = await loadPlanFor(viewer.student.id);
+    const loaded = await loadPlanFor(viewer.student.id, undefined, candidate === null ? { early } : {});
     const fallback = planFallback(loaded, null);
     if (fallback || loaded.kind !== "ready") return fallback;
     const self: PlanPerson = { studentId: null, name: loaded.ctx.student?.display_name ?? "You", gradYear: loaded.ctx.student?.grad_year ?? null, colorSlot: 0, href: "/plan" };
@@ -127,16 +150,28 @@ async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: stri
   }
 
   const { children } = viewer;
-  const loads = await Promise.all(children.map((c) => loadPlanFor(c.studentId)));
-  const byId = new Map<string, PlanLoad>(children.map((c, i) => [c.studentId, loads[i]]));
+  // `?for=` or the last child viewed decides alone when it names a child: then only that child's plan is loaded (it
+  // used to load every child's to compare deadlines). Only without either are all loaded, for the soonest deadline.
+  const named = resolveSelectedChild({ forParam: forParam ?? null, children: children.map((c) => ({ studentId: c.studentId, nextDeadline: null })), lastViewed });
+  const decided = named !== null && (named === forParam || named === lastViewed);
+  const toLoad = decided ? children.filter((c) => c.studentId === named) : children;
+  const [loads, profiles] = await Promise.all([Promise.all(toLoad.map((c) => loadPlanFor(c.studentId, undefined, c.studentId === candidate ? { early } : {}))), profilesICanSee()]);
+  const byId = new Map<string, PlanLoad>(toLoad.map((c, i) => [c.studentId, loads[i]]));
 
   const switchable: SwitchableChild[] = children.map((c) => ({ studentId: c.studentId, nextDeadline: nextDeadlineOf(byId.get(c.studentId)) }));
-  const cookieStore = await cookies();
-  const lastViewed = cookieStore.get(PLAN_CHILD_COOKIE)?.value ?? null;
-  const selected = resolveSelectedChild({ forParam: forParam ?? null, children: switchable, lastViewed });
+  const selected = decided ? named : resolveSelectedChild({ forParam: forParam ?? null, children: switchable, lastViewed });
 
   // Every child, in roster order, as an initials circle (page.md "The people line"); the status text is gone.
   const people: PlanPerson[] = children.map((c) => ({ studentId: c.studentId, name: c.name, gradYear: c.gradYear, colorSlot: c.colorSlot, href: planHref({ person: c.studentId }) }));
+  // Each child's chip details from their profile, so tapping a circle shows the chip and Edit at once (PlanPeople,
+  // app/plan/loading.tsx) while that child's plan loads.
+  const profileOf = new Map(profiles.map((p) => [p.student.id, p]));
+  const details: Record<string, PlanPersonDetail> = Object.fromEntries(
+    children.map((c) => {
+      const p = profileOf.get(c.studentId);
+      return [c.studentId, detailFrom(p?.data ?? null, p?.canEdit ?? c.canEdit, c.studentId, c.studentId)];
+    }),
+  );
 
   if (selected === null) {
     // No children on the roster (defensive: planViewer only returns "guardian" when there's at least one).
@@ -146,7 +181,7 @@ async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: stri
   const meta = children.find((c) => c.studentId === selected) as PlanChild;
   const load = byId.get(selected)!;
   const fallback = planFallback(load, firstNameOf(meta.name));
-  const line = <PlanPeople people={people} selected={selected} detail={detailFor(load, selected)} />;
+  const line = <PlanPeople people={people} selected={selected} detail={detailFor(load, selected)} details={details} />;
   if (fallback || load.kind !== "ready") {
     return (
       <div className="space-y-6">

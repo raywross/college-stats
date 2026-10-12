@@ -137,6 +137,26 @@ export const STUDIES = [
     spec: "specs/trends/pell-gap.md",
     color: "var(--d-access)",
   },
+  {
+    slug: "where-students-go",
+    number: 7,
+    title: "Where the students went",
+    question:
+      "Over ten years, where did undergraduates go: to bigger colleges, to certain states, to public or private colleges, to cheaper or pricier ones? And did the pandemic speed the shifts up, or are they reversing?",
+    series: ["undergrads", "applicants", "acceptance_rate", "avg_paid_all", "online_share"],
+    yearKind: "fall",
+    window: 10,
+    // The page's Size switch shows `size4` (with the 20,000+ split); the three-way `size` stays in the file for the
+    // foundation's standard-four rule but isn't offered on the page.
+    groupings: ["region", "control", "size", "selectivity", "size4", "setting", "research"],
+    panelRule:
+      "Colleges with 300 or more undergraduates in both falls, campus-based: not for-profit, not online-first at either end of the window, not a campus that merged or split inside the window",
+    fields: ["demographics.undergrad_enrollment", "admissions.applicants", "admissions.acceptance_rate", "cost.avg_paid_all", "demographics.online_share"],
+    added: 20261012,
+    explore: { href: "/explore?sortBy=size_change", label: "Colleges by undergraduate change over 10 years" },
+    spec: "specs/trends/where-students-go.md",
+    color: "var(--d-size)",
+  },
   // ↑ One entry per study. Studies 2–6 add theirs here (copy Study 1's shape).
 ] as const satisfies readonly StudyDef[];
 

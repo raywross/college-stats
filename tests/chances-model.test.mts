@@ -247,7 +247,7 @@ const ELITE_6 = () => college("162928", { rate: 0.06, sat: [1270, 1370], gpa: nu
 /* ------------------------------------------------------------------ */
 
 test("version: the third version's model version (Revision 1), and the constants the method names", () => {
-  assert.equal(MODEL_VERSION, "20261012.4");
+  assert.equal(MODEL_VERSION, "20261012.5");
   assert.deepEqual([ODDS_V3.testPull, ODDS_V3.testDown, ODDS_V3.testUp, ODDS_V3.gapPrior], [0.25, 0.3, 0.2, -0.5]);
   assert.deepEqual(ODDS_V3.expectWeights, { gpa: 3, courses: 2, class_rank: 1, test: 1, activities: 1 });
   assert.deepEqual(ODDS_V3.acad.map(([d]) => d), [-1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]);

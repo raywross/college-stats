@@ -346,7 +346,7 @@ Across the 1,893 colleges (2026-10-12), against `20261012.1`: a student with onl
 of 1,378 placed colleges move down a level (Safe → Likely mostly), 4 up; a complete record (GPA 3.9, SAT 1450, eight
 APs, top 10%, Building) sees 27 move, 13 of them Ultra selective colleges down to High reach for the top-5% bar.
 
-**"None" is an answer (owner, 2026-10-12).** The intake's four activity steps each take a one-tap "None"
+**"None" is an answer (owner, 2026-10-12; `MODEL_VERSION 20261012.5`).** The intake's four activity steps each take a one-tap "None"
 ([../../planner/redesign/intake.md](../../planner/redesign/intake.md#activities-four-steps)). When all four are
 answered, as entries or None, `EstimateStudent.activitiesAnswered` is true and completeness counts activities as
 present (no gap, no "Not in this estimate yet: your activities"). The activities reading still runs on the (empty)

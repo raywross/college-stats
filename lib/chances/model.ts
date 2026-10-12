@@ -68,7 +68,7 @@ import type {
 import type { AblationInput, SnapshotDetail } from "./snapshot.ts";
 
 /** Recorded with every result and every outcome snapshot (specs/chances/estimate.md "Changing the method"). */
-export const MODEL_VERSION = "20261012.4";
+export const MODEL_VERSION = "20261012.5";
 
 /**
  * The second version's reading constants that the third keeps: GPA crowding, which colleges' class-rank tiers count,

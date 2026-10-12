@@ -264,17 +264,19 @@ test("the five levels: every level and the three labels are stored; a stale or m
   assert.deepEqual([stale.estimate_label, stale.estimate_group, stale.selectivity_tier, stale.hidden_odds], [null, null, null, null]);
 });
 
-test("the hidden odds are binned to 0.005 and clamped to 0–1; the newer inputs stay out of inputs_used until its check allows them", () => {
+test("the hidden odds are binned to 0.005 and clamped to 0–1; inputs_used holds the newer kinds the column's check allows", () => {
   assert.deepEqual([binOdds(0.0024), binOdds(0.0026), binOdds(0.4125), binOdds(0.97), binOdds(1.4), binOdds(-0.1), binOdds(null)], [0, 0.005, 0.415, 0.97, 1, 0, null]);
   const row = buildSnapshot({
     input: estimateInputFromProfile(profile(), "243780", null),
-    estimate: { result: result({ used: ["gpa", "activities", "legacy", "class_standing"] }), detail: { hiddenOdds: 0.41234 } },
+    estimate: { result: result({ used: ["gpa", "activities", "legacy", "class_standing", "essay" as never] }), detail: { hiddenOdds: 0.41234 } },
     offering: null,
     admitRate: 0.3,
     studentGroup: null,
   });
   assert.equal(row.hidden_odds, 0.41);
-  assert.deepEqual(row.inputs_used, ["gpa"], "the column's check holds the original ten kinds");
+  assert.deepEqual(row.inputs_used, ["gpa", "activities", "legacy", "class_standing"], "a kind the check doesn't list is dropped");
+  const sql = readFileSync(new URL("../supabase/migrations/20261012100000_five_levels.sql", import.meta.url), "utf8");
+  for (const k of ["activities", "awards", "work", "legacy", "recruited", "interest", "class_standing"]) assert.ok(sql.includes(`'${k}'`), `the check allows ${k}`);
 });
 
 test("a snapshot never holds an activity's, award's, or course's name, even with the Depth readings in the detail", () => {

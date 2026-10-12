@@ -19,12 +19,11 @@ import type { DepthSnapshot } from "./depth.ts";
 export type Group = StandingLevel;
 export const GROUPS: readonly Group[] = STANDING_LEVELS;
 const ROUNDS = ["ed", "ed2", "ea", "rea", "rd", "rolling"] as const;
-/**
- * The input kinds `inputs_used` may hold: its check constraint (20261011100000_application_snapshots.sql) lists these
- * ten, so the newer kinds (activities, legacy, …) are left out of the column until a migration widens it; the
- * ablation columns record what those inputs did.
- */
-const INPUT_KINDS = ["gpa", "test", "sections", "class_rank", "courses", "subject_grades", "state", "major", "round", "high_school"] as const;
+/** The input kinds `inputs_used` may hold: its check constraint (20261012100000_five_levels.sql) lists these. */
+const INPUT_KINDS = [
+  "gpa", "test", "sections", "class_rank", "courses", "subject_grades", "state", "major", "round", "high_school",
+  "activities", "awards", "work", "legacy", "recruited", "interest", "class_standing",
+] as const;
 
 /** The inputs the season measurements switch off one at a time (method/outcomes.md "Each new input separately"). */
 export const ABLATION_INPUTS = ["residency", "crowding", "rigor", "rank", "depth", "hooks", "interest"] as const;

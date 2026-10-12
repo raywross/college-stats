@@ -7,7 +7,7 @@
  * rule of the method, only the endpoint's answers.
  */
 import { noteText } from "./notes.ts";
-import { estimateInputFromProfile } from "./snapshot.ts";
+import { estimateInputFromProfile } from "./estimate-input.ts";
 import { STANDING_LEVEL_LABELS, STANDING_LEVELS } from "./levels.ts";
 import type { CourseEntry, EstimateResult, StandingLevel } from "./types.ts";
 import type { StudentProfileData } from "../student-profile.ts";

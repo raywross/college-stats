@@ -8,7 +8,7 @@ import "server-only";
 import { estimateContext, estimateMany } from "@/lib/chances/estimate";
 import { gradeNow } from "@/lib/chances/courses";
 import { NO_HOOKS } from "@/lib/chances/levels";
-import { estimateInputFromProfile } from "@/lib/chances/snapshot";
+import { estimateInputFromProfile } from "@/lib/chances/estimate-input";
 import type { CollegeHooks } from "@/lib/chances/types";
 import { citedPaths, isEstimateFactPath } from "@/lib/chances/what-went-in";
 import type { EstimateResult } from "@/lib/chances/types";

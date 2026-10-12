@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { gradeNow } from "@/lib/chances/courses";
 import type { EstimateContextInput } from "@/lib/chances/estimate-request";
-import { estimateInputFromProfile } from "@/lib/chances/snapshot";
+import { estimateInputFromProfile } from "@/lib/chances/estimate-input";
 import type { CollegeHooks, EstimateResult, EstimateStudent } from "@/lib/chances/types";
 import { effectiveGradYear, type StudentProfileData } from "@/lib/student-profile";
 

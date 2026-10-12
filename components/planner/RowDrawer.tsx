@@ -10,7 +10,7 @@ import { InfoTip, MetricLabel } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import { comparedWith } from "@/lib/chances/compared-with";
 import { noteText } from "@/lib/chances/notes";
-import { estimateInputFromProfile } from "@/lib/chances/snapshot";
+import { estimateInputFromProfile } from "@/lib/chances/estimate-input";
 import { panelParts, yourNumbersFrom } from "@/lib/chances/what-went-in";
 import { planGpaLabel } from "@/lib/student-profile";
 import ActionsRowControls from "@/components/planner/row/actions";

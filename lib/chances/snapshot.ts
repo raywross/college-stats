@@ -7,11 +7,11 @@
  * What a snapshot never holds: a name, the high school's id or name, a course's typed name, a note's filled-in text,
  * or any other free text. The high school appears only as a band of how many AP courses it offers.
  *
- *   const input = estimateInputFromProfile(profile, "243744", "ea");
+ *   const input = estimateInputFromProfile(profile, "243744", "ea"); // from ./estimate-input.ts
  *   const row = buildSnapshot({ input, estimate: { result }, offering, admitRate: 0.21, studentGroup: null });
  */
 import type { CourseEntry, EstimateInput, EstimateResult, EstimateStudent, PoolRateKind, RigorReading, SchoolOffering, SelectivityTier, StandingLevel } from "./types.ts";
-import { advancedGpa, courseMark, isAdvancedKind, markPoints, planGpaRange, planTest, unweightedGpa4, type StudentProfileData } from "../student-profile.ts";
+import { advancedGpa, courseMark, isAdvancedKind, markPoints } from "../student-profile.ts";
 import { SELECTIVITY_TIERS, STANDING_LEVELS } from "./levels.ts";
 import type { DepthSnapshot } from "./depth.ts";
 
@@ -181,36 +181,10 @@ export function lastFinishedSeason(today: string): number {
 
 const isGroup = (v: unknown): v is Group => typeof v === "string" && (STANDING_LEVELS as readonly string[]).includes(v);
 
-/** The estimate's input for one college from the student's saved profile (the same numbers the plan reads). */
-export function estimateInputFromProfile(profile: StudentProfileData | null, unitId: string, round: string | null): EstimateInput {
-  const a = profile?.academics;
-  const t = profile?.tests;
-  const b = profile?.basics;
-  return {
-    unitId,
-    student: {
-      gpa: a ? unweightedGpa4(a.gpa, a.gpaScale) : null,
-      gpaScale: a?.gpaScale ?? "4.0",
-      gpaRange: profile ? planGpaRange(profile) : null,
-      test: profile ? planTest(profile) : null,
-      satMath: t?.satMath ?? null,
-      actMath: t?.actMath ?? null,
-      classRankPercentile: a?.classRankPercentile ?? null,
-      courses: a?.courses ?? [],
-      state: b?.stateOfResidence ?? null,
-      majors: profile?.plans.intendedMajors ?? [],
-      round,
-      highSchoolId: b?.highSchoolId ?? null,
-      practice: t?.practice ?? false,
-      // Admission chances, next (specs/chances/depth.md, inputs-beyond-academics.md): passed through for U5's model
-      // and U6's readings; this unit only wires them onto EstimateStudent, never scores them.
-      activities: a?.activities ?? [],
-      awards: a?.awards ?? [],
-      classStanding: a?.classStanding ?? null,
-      firstGeneration: a?.firstGeneration ?? null,
-    },
-  };
-}
+// estimateInputFromProfile lives in ./estimate-input.ts (client-safe); re-exported for the server code and tests that
+// already read it from here. Client code must import it from there: this file names the snapshot's measurement-only
+// columns, which never reach a client bundle (specs/chances/README.md).
+export { estimateInputFromProfile } from "./estimate-input.ts";
 
 function subjectAverage(courses: readonly CourseEntry[], subject: CourseEntry["subject"]): number | null {
   const points = courses

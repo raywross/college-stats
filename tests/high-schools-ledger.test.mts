@@ -255,6 +255,10 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
     row("A9900003", "Jefferson Academy", { city: "Dallas", zip: "75201" }),
     row("480000200014", "Haas Hall Academy", { city: "Springdale", zip: "72764" }),
     row("480000200015", "Dothan High School", { city: "Dothan", zip: "36301" }),
+    row("480000200016", "Taylor High School", { city: "Katy", zip: "77450" }),
+    row("480000200017", "Sultan Virtual Academy", { city: "Sultan", zip: "98294" }),
+    row("480000200018", "Montrose Area JSHS", { city: "Montrose", zip: "18801" }),
+    row("480000200019", "Carver High School", { city: "Houston", zip: "77088" }),
   ];
   const ledger = [
     rec("000001", "Azle High School", "Azle", "76020"),
@@ -288,6 +292,15 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
     rec("000021", "Dothan High School", "Dothan", "36301"),
     // One name inside the other at 0.6, same city, different ZIP.
     rec("000022", "Haas Hall Academy Jones Center Annex", "Springdale", "72762"),
+    // The directory dropped the namesake's first name: the row's words within the Ledger's, alone in the ZIP.
+    rec("000023", "James E Taylor High School", "Katy", "77450"),
+    // The other way round is a different program: "Sultan High School" doesn't take "Sultan Virtual Academy".
+    rec("000024", "Sultan High School", "Sultan", "98294"),
+    // "Area" and "JSHS" are spelling, not identity.
+    rec("000025", "Montrose Junior Senior High School", "Montrose", "18801"),
+    // Two namesakes in one ZIP: the weak rule can't choose.
+    rec("000026", "George Washington Carver High School", "Houston", "77088"),
+    rec("000027", "Carver Early College Academy", "Houston", "77088"),
   ];
   const r = matchLedgerSchools(rows, ledger);
   assert.deepEqual(
@@ -306,6 +319,8 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
       ["480000200010", "000016", "exact"],
       ["480000200012", "000018", "exact"],
       ["480000200014", "000022", "subset-city"],
+      ["480000200016", "000023", "within"],
+      ["480000200018", "000025", "exact"],
       ["A9900001", "000008", "exact"],
       ["A9900002", "000009", "exact"],
       ["A9900003", "000009", "exact"],
@@ -313,9 +328,9 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
       ["A9900006", "000019", "exact"],
     ],
   );
-  assert.deepEqual(r.ambiguousRows.map((a) => a.id), ["480000200015"]);
-  assert.deepEqual(r.unmatchedRows, ["480000200006", "480000200011", "480000200013", "A9900004"]);
-  assert.deepEqual(r.unusedLedger, ["000002", "000007", "000010", "000012", "000014", "000017", "000020", "000021"]);
+  assert.deepEqual(r.ambiguousRows.map((a) => a.id), ["480000200015", "480000200019"]);
+  assert.deepEqual(r.unmatchedRows, ["480000200006", "480000200011", "480000200013", "480000200017", "A9900004"]);
+  assert.deepEqual(r.unusedLedger, ["000002", "000007", "000010", "000012", "000014", "000017", "000020", "000021", "000024", "000026", "000027"]);
 });
 
 /* ------------------------------------------------------------------ */

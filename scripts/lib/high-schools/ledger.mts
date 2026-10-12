@@ -78,7 +78,7 @@ const ABBREVIATIONS: Readonly<Record<string, string>> = {
 };
 
 /** Words that don't tell two schools apart. */
-const STOP = new Set(["high", "school", "schools", "senior", "the", "of", "and", "at", "for", "a", "an", "campus", "program", "center", "centre"]);
+const STOP = new Set(["high", "school", "schools", "senior", "the", "of", "and", "at", "for", "a", "an", "campus", "program", "center", "centre", "area"]);
 
 /**
  * Words that name a school's level. "Bryant Junior High School" and "Bryant High School" share a ZIP and every other
@@ -156,24 +156,34 @@ const jaccard = (a: Set<string>, b: Set<string>) => {
 const minus = (a: Set<string>, b: Set<string>) => new Set([...a].filter((t) => !b.has(t)));
 
 /** Words that say nothing about which school it is, even in a name that is otherwise its city's ("The School of Los Angeles"). */
-const GENERIC = new Set(["school", "schools", "the", "of", "and", "at", "for", "a", "an", "campus", "program"]);
+const GENERIC = new Set(["school", "schools", "the", "of", "and", "at", "for", "a", "an", "campus", "program", "area"]);
 
 /**
  * How alike two names are once the words they share with their cities are set aside: "Marymount High School Los
  * Angeles" has nothing in common with "Los Angeles Senior High School" but the city. When a name is nothing but its
  * city ("Los Angeles Senior High"), it matches only a name with the same words beyond the generic ones.
  */
-function compareNames(row: NameInfo, ledger: NameInfo, cityTokens: Set<string>): { score: number; subset: boolean; exact: boolean } {
+function compareNames(row: NameInfo, ledger: NameInfo, cityTokens: Set<string>): NameComparison {
   const rd = minus(row.core, cityTokens);
   const ld = minus(ledger.core, cityTokens);
   if (!rd.size || !ld.size) {
     const rs = minus(row.tokens, GENERIC);
     const ls = minus(ledger.tokens, GENERIC);
     const exact = rs.size === ls.size && isSubset(rs, ls);
-    return { score: exact ? 1 : 0, subset: false, exact };
+    return { score: exact ? 1 : 0, subset: false, rowWithin: false, exact };
   }
   const score = jaccard(rd, ld);
-  return { score, subset: isSubset(rd, ld) || isSubset(ld, rd), exact: score >= 0.999 };
+  const rowWithin = isSubset(rd, ld);
+  return { score, subset: rowWithin || isSubset(ld, rd), rowWithin, exact: score >= 0.999 };
+}
+
+interface NameComparison {
+  score: number;
+  /** One name's distinguishing words are all in the other's. */
+  subset: boolean;
+  /** The row's distinguishing words are all in the Ledger's: "Taylor High School" within "James E Taylor High School". */
+  rowWithin: boolean;
+  exact: boolean;
 }
 
 interface NameInfo {
@@ -184,7 +194,7 @@ interface NameInfo {
 
 const nameInfo = (name: string): NameInfo => ({ tokens: new Set(nameTokens(name)), core: coreTokens(name), level: levelOf(name) });
 
-export type LedgerMatchRule = "exact" | "zip" | "subset" | "city" | "subset-city";
+export type LedgerMatchRule = "exact" | "zip" | "subset" | "city" | "subset-city" | "within";
 
 export interface LedgerMatch {
   id: string;
@@ -203,18 +213,24 @@ export interface LedgerMatchResult {
   unusedLedger: string[];
 }
 
-/** The rule a candidate satisfies, or null. A different level word (junior high against high school) never matches. */
-function ruleFor(cmp: { score: number; subset: boolean; exact: boolean }, sameZip: boolean, sameCity: boolean, sameLevel: boolean): LedgerMatchRule | null {
+/**
+ * The rule a candidate satisfies, or null. A different level word (junior high against high school) never matches.
+ * "within": the directories often drop a namesake's first name ("Taylor High School" for "James E Taylor High
+ * School"); the row's words inside the Ledger's, in one ZIP, match when nothing else in the ZIP could. The other
+ * direction (the Ledger's "Sultan High School" inside the row's "Sultan Virtual Academy") is a different program.
+ */
+function ruleFor(cmp: NameComparison, sameZip: boolean, sameCity: boolean, sameLevel: boolean): LedgerMatchRule | null {
   if (!sameLevel || (!sameZip && !sameCity)) return null;
   if (cmp.exact) return "exact";
   if (sameZip && cmp.score >= 0.75) return "zip";
   if (sameZip && cmp.score >= 0.5 && cmp.subset) return "subset";
   if (sameCity && cmp.score >= 0.75) return "city";
   if (sameCity && cmp.score >= 0.6 && cmp.subset) return "subset-city";
+  if (sameZip && cmp.score >= 0.25 && cmp.rowWithin) return "within";
   return null;
 }
 
-const RULE_RANK: Record<LedgerMatchRule, number> = { exact: 5, zip: 4, subset: 3, city: 2, "subset-city": 1 };
+const RULE_RANK: Record<LedgerMatchRule, number> = { exact: 6, zip: 5, subset: 4, city: 3, "subset-city": 2, within: 1 };
 
 /**
  * Match one state's rows to its Ledger schools. Candidates share the row's ZIP or city; the best by rule, then
@@ -266,6 +282,11 @@ export function matchLedgerSchools(rows: readonly HighSchool[], ledger: readonly
     const [best, second] = cands;
     if (second && same(best, second) && ledgerCourses.get(best.ai) === ledgerCourses.get(second.ai) && Math.abs(best.whole - second.whole) < 1e-9) {
       ambiguousRows.push({ id: row.id, candidates: cands.filter((c) => same(c, best)).map((c) => c.ai) });
+      continue;
+    }
+    // The weak rule needs the ZIP to offer nothing else at all.
+    if (best.rule === "within" && second) {
+      ambiguousRows.push({ id: row.id, candidates: cands.map((c) => c.ai) });
       continue;
     }
     chosen.set(row.id, best);
@@ -353,7 +374,7 @@ export async function load(ctx: AdapterContext): Promise<AdapterResult> {
   for (const r of ctx.existing.values()) (rowsByState.get(r.state) ?? rowsByState.set(r.state, []).get(r.state)!).push(r);
 
   const patches: HighSchoolPatch[] = [];
-  const byRule: Record<LedgerMatchRule, number> = { exact: 0, zip: 0, subset: 0, city: 0, "subset-city": 0 };
+  const byRule: Record<LedgerMatchRule, number> = { exact: 0, zip: 0, subset: 0, city: 0, "subset-city": 0, within: 0 };
   const report: LedgerReport = {
     generated: ctx.today,
     year,
@@ -400,7 +421,7 @@ export async function load(ctx: AdapterContext): Promise<AdapterResult> {
     sources: { "ap-ledger": ledgerSourceInfo(retrieved, year) },
     vintages: { "ap-ledger": year },
     notes: [
-      `ap-ledger ${year}: ${files.length} states, ${report.ledger_schools} Ledger schools; ${report.matched} of ${report.rows} rows matched (exact ${byRule.exact}, zip ${byRule.zip}, subset ${byRule.subset}, city ${byRule.city}, subset-city ${byRule["subset-city"]}); ${withCourses} with at least one AP course; ${report.unmatched_rows} rows unmatched, ${report.ambiguous_rows} ambiguous, ${report.unused_ledger} Ledger schools unused (ledger/report.json)`,
+      `ap-ledger ${year}: ${files.length} states, ${report.ledger_schools} Ledger schools; ${report.matched} of ${report.rows} rows matched (exact ${byRule.exact}, zip ${byRule.zip}, subset ${byRule.subset}, city ${byRule.city}, subset-city ${byRule["subset-city"]}, within ${byRule.within});${withCourses} with at least one AP course; ${report.unmatched_rows} rows unmatched, ${report.ambiguous_rows} ambiguous, ${report.unused_ledger} Ledger schools unused (ledger/report.json)`,
     ],
   };
 }

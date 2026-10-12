@@ -64,7 +64,7 @@ export async function estimateContext(student: Pick<EstimateStudent, "highSchool
 
 /** A result for a college the dataset doesn't have: no group, nothing used. */
 function unknownCollege(unitId: string): EstimateResult {
-  return { unitId, group: null, label: null, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, modelVersion: MODEL_VERSION };
+  return { unitId, group: null, label: null, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, closeness: null, ed: null, modelVersion: MODEL_VERSION };
 }
 
 /** The model's answer with its snapshot detail, or the baseline's (no detail) when the model throws. */

@@ -339,7 +339,7 @@ function decide(f: Fixed, score: { read: ScoreRead | null }): { group: Fit | nul
   if (f.pool.kind === "guaranteed") return { group: "likely", label: "guaranteed", positions };
   const rate = f.pool.rate;
   if (rate === null) return { group: "likely", label: null, positions };
-  if (rate < STANDING_V2.reachForEveryoneBelow) return { group: "reach", label: "reach-for-everyone", positions };
+  if (rate < STANDING_V2.reachForEveryoneBelow) return { group: "reach", label: "elite", positions };
   if (positions.length === 0) return { group: null, label: null, positions };
   return { group: groupFromPositions(positions, rate), label: null, positions };
 }
@@ -388,7 +388,7 @@ function explain(input: ModelInput, ev: ReturnType<typeof evaluate>) {
     notes.push(note("estimate.guaranteed", { program }, f.pool.field));
   } else if (f.pool.rate === null) {
     notes.push(note("estimate.open_admission"));
-  } else if (decision.label === "reach-for-everyone") {
+  } else if (decision.label === "elite") {
     notes.push(note("estimate.reach_for_everyone", {}, f.pool.field));
   }
   const position = summarize(decision.positions);
@@ -486,7 +486,7 @@ function explain(input: ModelInput, ev: ReturnType<typeof evaluate>) {
   // a guarantee, and not a college that's a Reach for everyone in this pool unless the state could change the pool).
   for (const k of used) missing.delete(k);
   const newMissing = (["courses", "class_rank", "state", "major", "subject_grades", "high_school"] as InputKind[]).filter(
-    (k) => missing.has(k) && (decision.label === null || (decision.label === "reach-for-everyone" && (k === "state" || k === "major"))),
+    (k) => missing.has(k) && (decision.label === null || (decision.label === "elite" && (k === "state" || k === "major"))),
   );
   if (newMissing[0] === "courses") notes.push(note("estimate.missing_courses"));
   else if (newMissing[0]) notes.push(note("estimate.missing_input", { input: noteInput(newMissing[0]) }));
@@ -526,6 +526,8 @@ export function modelEstimateWithDetail(input: ModelInput): { result: EstimateRe
     notes: ex.notes,
     send: ev.score.send,
     moveUp: moveUp(input, ev),
+    closeness: null,
+    ed: null,
     modelVersion: MODEL_VERSION,
   };
   const groupWithout = (k: AblationInput) => evaluate(input, { [k]: true }).decision.group;

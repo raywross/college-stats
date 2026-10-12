@@ -99,7 +99,9 @@ export interface MajorAdmissionUnit {
 }
 
 /** The kinds of input the estimate can use; the site lists which were used, never how. */
-export type InputKind = "gpa" | "test" | "sections" | "class_rank" | "courses" | "subject_grades" | "state" | "major" | "round" | "high_school";
+export type InputKind =
+  | "gpa" | "test" | "sections" | "class_rank" | "courses" | "subject_grades" | "state" | "major" | "round" | "high_school"
+  | "activities" | "awards" | "work" | "legacy" | "recruited" | "interest" | "class_standing";
 /** Keys of NOTES in lib/chances/notes.ts. */
 export type NoteKey = string;
 /** A catalog sentence the estimate picked, with the values that fill it and the field path its value cites. */
@@ -142,15 +144,23 @@ export interface EstimateInput {
 
 export interface EstimateResult {
   unitId: string;
-  group: "reach" | "target" | "likely" | null;
-  label: "reach-for-everyone" | "guaranteed" | null;
+  /** The level (levels.md); null when nothing can be placed ("Add a number"). */
+  group: StandingLevel | null;
+  label: StandingLabel | null;
   used: InputKind[];
   missing: InputKind[];
   /** Field paths to cite beside it. */
   facts: string[];
   notes: EstimateNote[];
   send: "send" | "consider-not-sending" | "required-missing" | "not-used" | null;
-  moveUp: { points: number; to: "target" | "likely"; score: number } | null;
+  moveUp: { points: number; to: StandingLevel; score: number } | null;
+  /**
+   * Which quarter of its level's band the college sits in, 3 = nearest the next level up; null without a level or
+   * when a cap or floor set it. Orders a section "closest first" (levels.md); the only trace of the hidden odds.
+   */
+  closeness: 0 | 1 | 2 | 3 | null;
+  /** What early decision would do here (method/standing.md "The ED sentence"); null without a level. */
+  ed: "helps" | "same" | "not_advised" | null;
   modelVersion: string;
 }
 

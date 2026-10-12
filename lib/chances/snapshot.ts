@@ -240,7 +240,7 @@ export function buildSnapshot({ input, estimate, offering, admitRate, studentGro
     hs_dual: offering?.dual ?? null,
     admit_rate: binRate(admitRate),
     estimate_group: group,
-    estimate_label: result?.label === "reach-for-everyone" || result?.label === "guaranteed" ? result.label : null,
+    estimate_label: result?.label === "elite" || result?.label === "guaranteed" || result?.label === "recruited" ? result.label : null,
     inputs_used: [...new Set((result?.used ?? []).filter((k) => (INPUT_KINDS as readonly string[]).includes(k)))],
     note_keys: [...new Set((result?.notes ?? []).map((n) => n.key).filter((k) => NOTE_KEY.test(k)))].slice(0, 40),
     model_version: result && MODEL_VERSION.test(result.modelVersion) ? result.modelVersion : null,

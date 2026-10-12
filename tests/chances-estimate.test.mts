@@ -77,7 +77,7 @@ test("estimateMany: one result per known college, each exactly the contract's fi
     for (const n of r.notes) assert.ok(isNoteKey(n.key), n.key);
     assert.deepEqual(publicResult(r), r, "already public");
   }
-  assert.equal(results[GEORGIA_TECH].label, "reach-for-everyone", "an Indiana student at Georgia Tech's out-of-state rate");
+  assert.equal(results[GEORGIA_TECH].label, "elite", "an Indiana student at Georgia Tech's out-of-state rate");
   assert.equal(estimate({ student: s, unitId: "999999" }, ctx).group, null, "a college the dataset doesn't have");
 });
 

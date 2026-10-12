@@ -288,15 +288,15 @@ test("a course needs its catalog prerequisites on the list (taken or in progress
 /* What it changes                                                     */
 /* ------------------------------------------------------------------ */
 
-const res = (group: EstimateResult["group"], label: EstimateResult["label"] = null): EstimateResult => ({ unitId: "", group, label, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, modelVersion: "t" });
+const res = (group: EstimateResult["group"], label: EstimateResult["label"] = null): EstimateResult => ({ unitId: "", group, label, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, closeness: null, ed: null, modelVersion: "t" });
 
 test("the what-it-changes line: one college, 'if your grades stay strong', never a percentage, never for a Reach for everyone", () => {
   const names = { "1": "Elon", "2": "Furman" };
   assert.equal(groupChangeLine({ "1": res("target"), "2": res("reach") }, { "1": res("likely"), "2": res("target") }, names), "At Elon: Target → Likely, if your grades stay strong.");
   assert.equal(groupChangeLine({ "1": res("target") }, { "1": res("target") }, names), null, "no move, no line");
   assert.equal(groupChangeLine({ "1": res("likely") }, { "1": res("target") }, names), null, "a move down is never claimed");
-  assert.equal(groupChangeLine({ "1": res(null, "reach-for-everyone") }, { "1": res("target") }, names), null);
-  assert.equal(groupChangeLine({ "1": res("reach", "reach-for-everyone") }, { "1": res("target") }, names), null);
+  assert.equal(groupChangeLine({ "1": res(null, "elite") }, { "1": res("target") }, names), null);
+  assert.equal(groupChangeLine({ "1": res("reach", "elite") }, { "1": res("target") }, names), null);
   assert.doesNotMatch(groupChangeLine({ "1": res("target") }, { "1": res("likely") }, names)!, /%/);
 });
 

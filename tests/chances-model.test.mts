@@ -202,7 +202,7 @@ test("pinned: a Georgia resident, SAT 1500, GPA 3.95 at Georgia Tech (29% in-sta
 test("pinned: the same student from Florida (10% out-of-state) is a Reach for everyone", () => {
   const r = run(GEORGIA_TECH(), student({ state: "FL", test: sat(1500), gpa: 3.95 }));
   assert.equal(r.group, "reach");
-  assert.equal(r.label, "reach-for-everyone");
+  assert.equal(r.label, "elite");
   assert.equal(keys(r)[0], "estimate.reach_for_everyone");
   assert.equal(r.moveUp, null, "a score can't move a Reach for everyone");
 });
@@ -376,7 +376,7 @@ test("a guarantee overrides Stage 1, even below every range", () => {
 });
 
 test("Reach for everyone follows the student's own pool; open admission is Likely", () => {
-  assert.equal(run(GEORGIA_TECH(), student({ test: sat(1500), gpa: 3.95 })).label, "reach-for-everyone", "9% overall, no state");
+  assert.equal(run(GEORGIA_TECH(), student({ test: sat(1500), gpa: 3.95 })).label, "elite", "9% overall, no state");
   const open = run(college("198516", { rate: null, c7: null }), student({ gpa: 3.0 }));
   assert.equal(open.group, "likely");
   assert.equal(keys(open)[0], "estimate.open_admission");

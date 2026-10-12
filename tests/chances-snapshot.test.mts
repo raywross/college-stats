@@ -8,10 +8,11 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import {
   ABLATION_INPUTS,
   apBand,
+  binOdds,
   binGpa,
   binGrade,
   binTest,
@@ -22,7 +23,7 @@ import {
   snapshotSeason,
   type AppliedEstimate,
 } from "../lib/chances/snapshot.ts";
-import { cleanupUnconsentedSnapshots, isMissingSchema, snapshotOnApplied, type SnapshotDeps } from "../lib/chances/snapshot-write.ts";
+import { cleanupUnconsentedSnapshots, hooksForItem, isMissingSchema, snapshotOnApplied, type SnapshotDeps } from "../lib/chances/snapshot-write.ts";
 import { emptyProfile, type StudentProfileData } from "../lib/student-profile.ts";
 import type { CourseEntry, EstimateResult } from "../lib/chances/types.ts";
 
@@ -229,15 +230,69 @@ test("without an estimate the inputs are still recorded; malformed estimate valu
 
 test("method details: position, base rate, crowding, rigor reading, and each input switched off", () => {
   const estimate: AppliedEstimate = {
-    result: result({ group: "likely", label: "guaranteed" }),
-    detail: { position: "above", baseRateKind: "guaranteed", baseRate: null, crowded: true, rigorReading: "most", without: { residency: "likely", crowding: "target", rigor: "target", rank: "reach" } },
+    result: result({ group: "safe", label: "guaranteed" }),
+    detail: {
+      position: "above",
+      baseRateKind: "guaranteed",
+      baseRate: null,
+      crowded: true,
+      rigorReading: "most",
+      hiddenOdds: 0.7234,
+      selectivityTier: "highly_selective",
+      without: { residency: "likely", crowding: "target", rigor: "target", rank: "reach", depth: "high_reach", hooks: "safe", interest: "likely" },
+    },
   };
   const row = buildSnapshot({ input: estimateInputFromProfile(profile(), "228778", null), estimate, offering: null, admitRate: 0.31, studentGroup: null });
-  assert.deepEqual([row.estimate_group, row.estimate_label, row.position, row.base_rate_kind, row.crowded, row.rigor_reading], ["likely", "guaranteed", "above", "guaranteed", true, "most"]);
+  assert.deepEqual([row.estimate_group, row.estimate_label, row.position, row.base_rate_kind, row.crowded, row.rigor_reading], ["safe", "guaranteed", "above", "guaranteed", true, "most"]);
+  assert.deepEqual(ABLATION_INPUTS, ["residency", "crowding", "rigor", "rank", "depth", "hooks", "interest"]);
   assert.deepEqual(
     ABLATION_INPUTS.map((k) => row[`without_${k}` as const]),
-    ["likely", "target", "target", "reach"],
+    ["likely", "target", "target", "reach", "high_reach", "safe", "likely"],
   );
+  assert.equal(row.hidden_odds, 0.725, "binned to 0.005");
+  assert.equal(row.selectivity_tier, "highly_selective");
+});
+
+test("the five levels: every level and the three labels are stored; a stale or made-up one is null", () => {
+  const input = estimateInputFromProfile(profile(), "243780", null);
+  for (const g of ["high_reach", "reach", "target", "likely", "safe"] as const) {
+    const row = buildSnapshot({ input, estimate: { result: result({ group: g }) }, offering: null, admitRate: 0.3, studentGroup: g });
+    assert.deepEqual([row.estimate_group, row.student_group, row.group_changed], [g, g, false]);
+  }
+  for (const label of ["elite", "guaranteed", "recruited"] as const) assert.equal(buildSnapshot({ input, estimate: { result: result({ label }) }, offering: null, admitRate: 0.3, studentGroup: null }).estimate_label, label);
+  const stale = buildSnapshot({ input, estimate: { result: result({ label: "reach-for-everyone" as never, group: "long_shot" as never }), detail: { selectivityTier: "ivy" as never, hiddenOdds: Number.NaN } }, offering: null, admitRate: 0.3, studentGroup: null });
+  assert.deepEqual([stale.estimate_label, stale.estimate_group, stale.selectivity_tier, stale.hidden_odds], [null, null, null, null]);
+});
+
+test("the hidden odds are binned to 0.005 and clamped to 0–1; inputs_used holds the newer kinds the column's check allows", () => {
+  assert.deepEqual([binOdds(0.0024), binOdds(0.0026), binOdds(0.4125), binOdds(0.97), binOdds(1.4), binOdds(-0.1), binOdds(null)], [0, 0.005, 0.415, 0.97, 1, 0, null]);
+  const row = buildSnapshot({
+    input: estimateInputFromProfile(profile(), "243780", null),
+    estimate: { result: result({ used: ["gpa", "activities", "legacy", "class_standing", "essay" as never] }), detail: { hiddenOdds: 0.41234 } },
+    offering: null,
+    admitRate: 0.3,
+    studentGroup: null,
+  });
+  assert.equal(row.hidden_odds, 0.41);
+  assert.deepEqual(row.inputs_used, ["gpa", "activities", "legacy", "class_standing"], "a kind the check doesn't list is dropped");
+  const sql = readFileSync(new URL("../supabase/migrations/20261012100000_five_levels.sql", import.meta.url), "utf8");
+  for (const k of ["activities", "awards", "work", "legacy", "recruited", "interest", "class_standing"]) assert.ok(sql.includes(`'${k}'`), `the check allows ${k}`);
+});
+
+test("a snapshot never holds an activity's, award's, or course's name, even with the Depth readings in the detail", () => {
+  const p = profile();
+  p.academics.activities = [{ id: "a1", name: "Lincoln Robotics Team 4567", kind: "club", years: [10, 11, 12], roles: { 12: "leader" }, hoursPerWeek: 8, recognition: 2, relatedToMajor: true }];
+  p.academics.awards = [{ id: "w1", key: null, name: "Mayor's Youth Award for Jane Doe", tier: 3, year: 11 }];
+  const input = estimateInputFromProfile(p, "243780", null);
+  const row = buildSnapshot({
+    input,
+    estimate: { result: result(), detail: { depth: { courseReadings: { math: "deep" }, majorDeep: true, lightExpectedCount: 0, activitiesReading: "building", activitiesCount: 1, topTwoYears: [3], trajectory: true, recognition: 2, workHours: null } } },
+    offering: null,
+    admitRate: 0.3,
+    studentGroup: null,
+  });
+  const text = JSON.stringify(row);
+  for (const secret of ["Robotics", "4567", "Mayor", "Jane", "Doe"]) assert.ok(!text.includes(secret), secret);
 });
 
 test("a weighted GPA is kept as its range", () => {
@@ -264,6 +319,8 @@ function fakeDb(tables: Record<string, Res | (() => never)>, rpcResult: Res | ((
       const q = {
         select: () => q,
         eq: () => q,
+        not: () => q,
+        limit: () => q,
         maybeSingle: async () => {
           const t = tables[table];
           if (typeof t === "function") return t();
@@ -311,6 +368,30 @@ test("snapshotOnApplied: records the binned row through record_application_snaps
   assert.deepEqual([row.gpa_low, row.estimate_group, row.student_group, row.group_changed, row.admit_rate, row.hs_ap_band, row.round], [3.85, "target", "reach", true, 0.42, "11-15", "ea"]);
   assert.equal((seen[0] as { unitId: string }).unitId, "243780", "the estimator gets the same input the snapshot bins");
   assert.ok(!JSON.stringify(row).includes("180000000123"));
+});
+
+test("snapshotOnApplied: the estimator gets the list row's legacy and recruited inputs and whether interest is logged", async () => {
+  const db = fakeDb(
+    tables({
+      list_items: { data: { list_id: "L", unit_id: "243780", round: "ed", category: "reach", category_source: "auto", applied_on: "2026-11-01", legacy: true, recruited: "contact" }, error: null },
+      plan_visits: { data: { id: "v1" }, error: null },
+    }),
+    { data: "id", error: null },
+  );
+  const seen: { hooks?: unknown }[] = [];
+  assert.equal(await snapshotOnApplied(ITEM, deps(db, { estimate: (input) => (seen.push(input), { result: result() }) })), "written");
+  assert.deepEqual(seen[0].hooks, { legacy: true, recruited: "contact", interest: true });
+  const row = db.rpcCalls[0].args.p_snapshot as Record<string, unknown>;
+  assert.ok(!("legacy" in row) && !("recruited" in row) && !("interest" in row), "the toggles themselves aren't columns");
+});
+
+test("hooksForItem: best-effort; a database without the columns, or a failing read, reads as nothing marked", async () => {
+  const missing = fakeDb({ list_items: { data: null, error: { code: "42703", message: "column list_items.legacy does not exist" } } }, { data: null, error: null });
+  assert.deepEqual(await hooksForItem(missing as never, ITEM), { legacy: false, recruited: "none", interest: false });
+  const throwing = fakeDb({ list_items: () => { throw new Error("down"); }, plan_visits: () => { throw new Error("down"); }, plan_tasks: () => { throw new Error("down"); } }, { data: null, error: null });
+  assert.deepEqual(await hooksForItem(throwing as never, ITEM), { legacy: false, recruited: "none", interest: false });
+  const junk = fakeDb({ list_items: { data: { legacy: "yes", recruited: "signed" }, error: null }, plan_tasks: { data: { id: "t1" }, error: null } }, { data: null, error: null });
+  assert.deepEqual(await hooksForItem(junk as never, ITEM), { legacy: false, recruited: "none", interest: true }, "a completed information request is interest");
 });
 
 test("snapshotOnApplied: an estimator that throws, or none at all, still records the inputs", async () => {
@@ -432,11 +513,31 @@ function snapshotSchemaProblems(sql: string): string[] {
   return problems;
 }
 
+/**
+ * The columns the five-levels migration adds (decision 6 of the chances build, written by the planner unit as
+ * supabase/migrations/20261012100000_five_levels.sql): snapshot code writes exactly these names.
+ */
+const FIVE_LEVEL_COLUMNS = ["hidden_odds", "selectivity_tier", "without_depth", "without_hooks", "without_interest"];
+
 test("snapshot migration: no identifying column, every text column checked, RLS like list_items, consent synced, cleanup, suppression", () => {
   assert.deepEqual(snapshotSchemaProblems(SNAPSHOT_SQL), []);
   const cols = columns(SNAPSHOT_SQL, "application_snapshots");
   for (const c of ["item_id", "student_id", "model_version", "estimate_group", "estimate_label", "group_changed", "consented", "created_at"]) assert.ok(cols.includes(c), c);
-  for (const c of SNAPSHOT_COLUMNS) assert.ok(cols.includes(c), `the table has every column buildSnapshot writes (${c})`);
+  // Columns later migrations add to the table count too.
+  const dir = new URL("../supabase/migrations/", import.meta.url);
+  const later = readdirSync(dir)
+    .filter((f) => f > "20261011100000_application_snapshots.sql" && f.endsWith(".sql"))
+    .map((f) => body(readFileSync(new URL(f, dir), "utf8")))
+    .filter((b) => b.includes("application_snapshots"))
+    .join(" ");
+  const added = [...later.matchAll(/add column (?:if not exists )?([a-z_]+)/g)].map((m) => m[1]);
+  for (const c of SNAPSHOT_COLUMNS) {
+    assert.ok(cols.includes(c) || added.includes(c) || FIVE_LEVEL_COLUMNS.includes(c), `the table has every column buildSnapshot writes (${c})`);
+  }
+  // Once the five-levels migration is on the branch, it adds exactly the names snapshot code writes.
+  if (readdirSync(dir).some((f) => f.endsWith("_five_levels.sql"))) for (const c of FIVE_LEVEL_COLUMNS) assert.ok(added.includes(c), `the five-levels migration adds ${c}`);
+  // Guard: a column the snapshot writes that no migration names fails.
+  assert.ok(!["made_up_column"].every((c) => cols.includes(c) || added.includes(c) || FIVE_LEVEL_COLUMNS.includes(c)));
 });
 
 test("guard: each broken privacy rule in the snapshot migration is caught", () => {

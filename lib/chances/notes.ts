@@ -282,6 +282,54 @@ export const NOTES: Record<NoteKey, Note> = {
   "depth.activities.recognition": (v) => `${s(v, "activity")} (${s(v, "tier")}) counts at colleges that rate talent.`,
   /** Where a college doesn't say it weighs activities (C7 not considered, or no C7). */
   "depth.activities.not_weighed": (v) => `${s(v, "college")} doesn't say it weighs activities; they're shown here for you, not for the estimate.`,
+
+  /* ---- Five levels (specs/chances/levels.md "The levels"), added by the levels model (lib/chances/model.ts) ----
+   * The meaning line a row's drawer shows under the chip, one per stored level. `test` is "SAT", "ACT", or "" (then
+   * "test score"). Inputs and outcomes only: no sentence names a weight, a cutoff, or the odds behind a level. */
+  "estimate.level.high_reach": (v) =>
+    `Your record is below the students this college admits. It's fine to have one or two on the list; a higher ${v.test ? s(v, "test") : "test score"} or another year of grades would move it.`,
+  "estimate.level.reach": () => "Possible. This college turns down most applicants like you.",
+  "estimate.level.target": () => "Your record looks like the students they admit.",
+  "estimate.level.likely": () => "More likely than not, from your record and how many applicants like you get in.",
+  "estimate.level.safe": () => "A guarantee, open admission, or a record clearly above the students admitted at a college that admits most applicants like you.",
+  /** The label line at a college Quad rates Elite (replaces estimate.reach_for_everyone, kept for old snapshots). */
+  "estimate.elite": () => "Elite: a reach for everyone. However strong the record, no student's admission here is predictable.",
+  /** The label line when a coach's likely letter or positive pre-read sets the level (inputs-beyond-academics.md "Recruited athlete"). */
+  "estimate.recruited": () => "Recruited: this estimate rests on the coach's support.",
+  /** The chips' words for the two new labels. */
+  "estimate.label.elite": () => "Elite: a reach for everyone",
+  "estimate.label.recruited": () => "Recruited",
+  /** A per-college input the college doesn't rate in its Common Data Set at all (no C7): it doesn't say either way. */
+  "estimate.not_said": (v) => `Not used here: ${s(v, "input")} (${s(v, "college")} doesn't say it weighs it).`,
+  /** Work and family responsibilities (inputs-beyond-academics.md "Work and family responsibilities"). `hours` is the student's own entry. */
+  "estimate.work": (v) =>
+    `Working ${s(v, "hours")} hours a week through the school year counts at colleges that weigh work experience, and it explains a shorter activity list.`,
+  /** First generation: collected and shown, not in the level (inputs-beyond-academics.md "First generation"). */
+  "estimate.first_generation": (v) => `${s(v, "college")} rates first-generation status ${s(v, "rating")}; it's noted, not estimated.`,
+
+  /* ---- The list row's inputs (inputs-beyond-academics.md "Legacy", "Recruited athlete", "Demonstrated interest") ---- */
+  /** `rating`: "very important", "important", or "considered", as the college's C7 says. */
+  "hooks.legacy_used": (v) => `Legacy helps here: ${s(v, "college")} rates alumni relation ${s(v, "rating")}.`,
+  "hooks.legacy_not_weighed": (v) => `${s(v, "college")} doesn't say it weighs alumni relation.`,
+  /** `scope`: "public", "private", or "all"; `law`: the bill as the state names it. */
+  "hooks.legacy_banned": (v) => `${s(v, "state")} bars legacy preference at ${s(v, "scope")} colleges (${s(v, "law")}), so this isn't used.`,
+  "hooks.recruited": () =>
+    "Recruited athletes with a coach's support are admitted at far higher rates; the estimate assumes that support holds. Confirm it with the coach in writing before relying on it.",
+  "hooks.interest": (v) => `You've shown interest here, which ${s(v, "college")} says it considers.`,
+
+  /* ---- Early decision (method/standing.md "The ED sentence"; planner/redesign/rounds.md "The ED guard") ---- */
+  "ed.same": () => "Early decision doesn't change where this college stands for you.",
+  /** `level`: the level's word ("Target"). */
+  "ed.helps": (v) => `Early decision would move this toward ${s(v, "level")}; it's binding, so check the cost first.`,
+  "ed.not_advised": () => "Early decision is binding and helps most where you're already in range; this college isn't one of them yet.",
+
+  /* ---- Who the student is compared with, short (the estimate's structured `pool`, for Compare's sub-line) ---- */
+  "pool.who.residency_in": (v) => `from ${s(v, "state")}`,
+  "pool.who.residency_out": (v) => `from outside ${s(v, "state")}`,
+  "pool.who.international": () => "international",
+  "pool.who.major": (v) => `to ${s(v, "unit")}`,
+  "pool.who.overall": () => "everyone",
+  "pool.who.guaranteed": () => "guaranteed",
 };
 
 /** "Your GPA (3.82)", or a described range set off by commas: "Your GPA, about 3.4–4.0 unweighted (from a weighted 4.4),". */
@@ -312,6 +360,13 @@ export const INPUT_WORDS: Record<string, string> = {
   major: "intended major",
   round: "application round",
   high_school: "high school",
+  activities: "activities",
+  awards: "awards",
+  work: "work hours",
+  legacy: "legacy connection",
+  recruited: "recruiting",
+  interest: "shown interest",
+  class_standing: "class standing",
 };
 
 export function isNoteKey(key: string): boolean {

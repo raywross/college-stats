@@ -8,11 +8,20 @@
 import { isUnitId } from "../follow-state.ts";
 import { isHighSchoolId } from "../high-school-core.ts";
 import { isMajorFamily } from "../majors.ts";
-import { MAX_INTENDED_MAJORS, OUTSIDE_US, sanitizeCoreAtTopLevel, sanitizeCourses, type CoreAtTopLevel } from "../student-profile.ts";
+import {
+  MAX_INTENDED_MAJORS,
+  OUTSIDE_US,
+  sanitizeActivities,
+  sanitizeAwards,
+  sanitizeClassStanding,
+  sanitizeCoreAtTopLevel,
+  sanitizeCourses,
+  type CoreAtTopLevel,
+} from "../student-profile.ts";
 import { UNDECIDED_MAJOR } from "./major-review.ts";
 import { isNoteKey } from "./notes.ts";
 import { NO_HOOKS, RECRUITED_PICKS, STANDING_LEVELS } from "./levels.ts";
-import type { CollegeHooks, CourseEntry, EstimateNote, EstimateResult, EstimateStudent, InputKind } from "./types.ts";
+import type { CollegeHooks, CourseEntry, EstimateNote, EstimatePool, EstimateResult, EstimateStudent, InputKind, RecruitedPick } from "./types.ts";
 
 /** Colleges per call (owner assumption 4): the signed-out plan holds up to 20; a signed-in caller may ask 25. */
 export const MAX_COLLEGES = { signedOut: 20, signedIn: 25 } as const;
@@ -41,12 +50,8 @@ export interface EstimateRequest {
   context: EstimateContextInput;
   /** Also answer "students like you" for the one college asked about (the profile's card). */
   likeYou: boolean;
-  /**
-   * The list row's legacy, recruited, and interest inputs, by unit id (decision 5 "Hooks in requests"; built by the
-   * planner, lib/planner/plan-estimates.ts and components/planner/useEstimates.ts). A college missing here reads as
-   * NO_HOOKS.
-   */
-  hooks: Record<string, CollegeHooks> | null;
+  /** Each list row's legacy, recruited, and logged-interest inputs, by unit id (only ids asked about; decision 5). */
+  hooks: Record<string, CollegeHooks>;
 }
 
 export type ParseResult = { ok: true; request: EstimateRequest } | { ok: false; message: string };
@@ -76,6 +81,8 @@ export function sanitizeEstimateStudent(input: unknown): EstimateStudent {
   const majors = Array.isArray(v.majors)
     ? [...new Set(v.majors.filter((m): m is string => typeof m === "string" && (m === UNDECIDED_MAJOR || isMajorFamily(m))))].slice(0, MAX_INTENDED_MAJORS)
     : [];
+  // The class-standing pick sets the percentile, as the profile does (lib/student-profile.ts sanitizeClassStanding).
+  const standing = sanitizeClassStanding(v.classStanding, v.classRankPercentile);
   return {
     gpa: numIn(v.gpa, 0, 4),
     gpaScale,
@@ -83,27 +90,37 @@ export function sanitizeEstimateStudent(input: unknown): EstimateStudent {
     test,
     satMath: intIn(v.satMath, 200, 800),
     actMath: intIn(v.actMath, 1, 36),
-    classRankPercentile: intIn(v.classRankPercentile, 1, 100),
+    classRankPercentile: standing.classRankPercentile,
     courses: Array.isArray(v.courses) ? sanitizeCourses(v.courses) : [],
     state: /^[A-Z]{2}$/.test(state) || state === OUTSIDE_US ? state : null,
     majors,
     round: ROUNDS.includes(v.round as (typeof ROUNDS)[number]) ? (v.round as string) : null,
     highSchoolId: typeof v.highSchoolId === "string" && isHighSchoolId(v.highSchoolId) ? v.highSchoolId : null,
     practice: v.practice === true,
+    // Admission chances, next (depth.md, inputs-beyond-academics.md), through the profile's own sanitizers.
+    activities: sanitizeActivities(v.activities),
+    awards: sanitizeAwards(v.awards),
+    classStanding: standing.classStanding,
+    firstGeneration: typeof v.firstGeneration === "boolean" ? v.firstGeneration : null,
   };
 }
 
-/** One college's hooks, as much as is valid; an invalid or missing entry reads as NO_HOOKS. */
-function sanitizeHooks(input: unknown, unitIds: readonly string[]): Record<string, CollegeHooks> | null {
-  if (!isObj(input)) return null;
+/**
+ * The list rows' inputs (`hooks: Record<unitId, CollegeHooks>`), for the colleges asked about only. Malformed entries
+ * are dropped and malformed fields read as nothing marked (NO_HOOKS), never an error: a legacy or interest flag must
+ * be `true` to count, and a recruited pick must be one of RECRUITED_PICKS.
+ */
+export function sanitizeHooks(input: unknown, unitIds: readonly string[]): Record<string, CollegeHooks> {
+  if (!isObj(input)) return {};
   const out: Record<string, CollegeHooks> = {};
   for (const id of unitIds) {
-    const v = input[id];
-    if (!isObj(v)) continue;
-    const recruited = RECRUITED_PICKS.includes(v.recruited as (typeof RECRUITED_PICKS)[number]) ? (v.recruited as CollegeHooks["recruited"]) : NO_HOOKS.recruited;
-    out[id] = { legacy: v.legacy === true, recruited, interest: v.interest === true };
+    const h = input[id];
+    if (!isObj(h)) continue;
+    const recruited = RECRUITED_PICKS.includes(h.recruited as RecruitedPick) ? (h.recruited as RecruitedPick) : NO_HOOKS.recruited;
+    const hooks: CollegeHooks = { legacy: h.legacy === true, recruited, interest: h.interest === true };
+    if (hooks.legacy || hooks.interest || hooks.recruited !== "none") out[id] = hooks;
   }
-  return Object.keys(out).length > 0 ? out : null;
+  return out;
 }
 
 /** Validates a POST body. Colleges beyond the caller's limit are refused, not silently dropped. */
@@ -139,8 +156,7 @@ export function parseEstimateRequest(body: unknown, opts: { signedIn: boolean })
     coreAtTopLevel: ctx.coreAtTopLevel === undefined || ctx.coreAtTopLevel === null ? null : sanitizeCoreAtTopLevel(ctx.coreAtTopLevel),
     grade: intIn(ctx.grade, 9, 12) as EstimateContextInput["grade"],
   };
-  const hooks = sanitizeHooks(body.hooks, unitIds);
-  return { ok: true, request: { student, unitIds, counterfactual, context, likeYou: body.likeYou === true && unitIds.length === 1, hooks } };
+  return { ok: true, request: { student, unitIds, counterfactual, context, likeYou: body.likeYou === true && unitIds.length === 1, hooks: sanitizeHooks(body.hooks, unitIds) } };
 }
 
 /** The student as the counterfactual describes them. */
@@ -161,7 +177,7 @@ export function requestCost(unitIds: readonly string[]): number {
 }
 
 /** Exactly the contract's fields, in order: a response never carries anything else (no detail, no internals). */
-export const RESULT_FIELDS = ["unitId", "group", "label", "used", "missing", "facts", "notes", "send", "moveUp", "closeness", "ed", "modelVersion"] as const satisfies readonly (keyof EstimateResult)[];
+export const RESULT_FIELDS = ["unitId", "group", "label", "used", "missing", "facts", "notes", "send", "moveUp", "closeness", "ed", "pool", "modelVersion"] as const satisfies readonly (keyof EstimateResult)[];
 
 const GROUPS = new Set<string>(STANDING_LEVELS);
 const LABELS = new Set(["elite", "guaranteed", "recruited"]);
@@ -171,6 +187,18 @@ const INPUTS = new Set<InputKind>([
   "gpa", "test", "sections", "class_rank", "courses", "subject_grades", "state", "major", "round", "high_school",
   "activities", "awards", "work", "legacy", "recruited", "interest", "class_standing",
 ]);
+
+const POOL_KINDS = new Set(["guaranteed", "major", "residency", "overall"]);
+
+/** The structured "who you're compared with": a published rate (0–1) or null, and a `pool.who.*` catalog key with string values. */
+function publicPool(p: EstimateResult["pool"]): EstimatePool | null {
+  if (!p || !POOL_KINDS.has(p.kind) || typeof p.whoKey !== "string" || !p.whoKey.startsWith("pool.who.") || !isNoteKey(p.whoKey)) return null;
+  const rate = p.rate === null ? null : finite(p.rate) && p.rate >= 0 && p.rate <= 1 ? p.rate : undefined;
+  if (rate === undefined) return null;
+  const whoValues: Record<string, string> = {};
+  for (const [k, v] of Object.entries(p.whoValues ?? {})) if (typeof v === "string") whoValues[k] = v;
+  return { kind: p.kind, rate, whoKey: p.whoKey, whoValues };
+}
 
 function publicNote(n: EstimateNote): EstimateNote | null {
   if (!isNoteKey(n.key)) return null;
@@ -193,6 +221,7 @@ export function publicResult(r: EstimateResult): EstimateResult {
     moveUp: r.moveUp && finite(r.moveUp.points) && finite(r.moveUp.score) && GROUPS.has(r.moveUp.to) ? { points: r.moveUp.points, to: r.moveUp.to, score: r.moveUp.score } : null,
     closeness: r.closeness === 0 || r.closeness === 1 || r.closeness === 2 || r.closeness === 3 ? r.closeness : null,
     ed: r.ed && EDS.has(r.ed) ? r.ed : null,
+    pool: publicPool(r.pool),
     modelVersion: String(r.modelVersion),
   };
 }

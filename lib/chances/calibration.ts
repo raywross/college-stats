@@ -3,10 +3,13 @@
  * accuracy summary"): pure helpers over consented outcome rows, used by scripts/chances-calibration.mts (which writes
  * `chances_summary`) and by the Data page (which reads it). No I/O.
  *
- * - Wilson intervals (90%) for each group × admit-rate band cell with enough outcomes.
- * - The order check (Likely > Target > Reach in each band) and the Likely-miss flag.
- * - Discrimination: the ordinal AUC of the group against admitted.
- * - Calibration: each cell's admitted share is its implied frequency; the Brier score of those on a later season.
+ * - Wilson intervals (90%) for each level × admit-rate band cell with enough outcomes (five levels, levels.md).
+ * - The order check (Safe > Likely > Target > Reach > High reach in each band) and the miss rules (levels.md
+ *   "Season measurements"): Safe wrong more than 10%, or Likely more than 30%, moves the band's cutoff up; High reach
+ *   admitted more than 15% moves it down.
+ * - Discrimination: the ordinal AUC of the level against admitted.
+ * - Calibration: each cell's admitted share is its implied frequency; the Brier score of those on a later season; and,
+ *   from the binned hidden odds (the third version on), the calibration curve by odds decile and the odds' own Brier.
  * - Each input switched off (the snapshot's `without_*` groups), student overrides, and the sharers' mix.
  * - Held out by season, never a random split.
  * - "Students like you" suppression (at least 50 per cell, at least 10 in each sub-count).
@@ -74,8 +77,15 @@ export function rateBand(rate: number | null | undefined): RateBand | null {
 
 /** A cell reports a share only with at least this many outcomes; below it, "not enough outcomes yet". */
 export const MIN_CELL_OUTCOMES = 30;
-/** Likely should be wrong at most this often in a band (product/chances-and-fit.md). */
-export const LIKELY_MAX_MISS = 0.15;
+/**
+ * The miss rules (levels.md "Season measurements"): Safe wrong more than 10% of the time in a band, or Likely more
+ * than 30%, moves that band's cutoff up; High reach admitted more than 15% moves it down.
+ */
+export const MISS_RULES: readonly { level: Group; outcome: "denied" | "admitted"; max: number; move: "up" | "down" }[] = [
+  { level: "safe", outcome: "denied", max: 0.1, move: "up" },
+  { level: "likely", outcome: "denied", max: 0.3, move: "up" },
+  { level: "high_reach", outcome: "admitted", max: 0.15, move: "down" },
+];
 
 /* ------------------------------------------------------------------ */
 /* Cells                                                               */
@@ -95,7 +105,7 @@ export interface CellStats extends Cell {
 }
 
 const cellKey = (group: Group, band: RateBand) => `${group}|${band}`;
-const isGroup = (v: unknown): v is Group => v === "reach" || v === "target" || v === "likely";
+const isGroup = (v: unknown): v is Group => typeof v === "string" && (GROUPS as readonly string[]).includes(v);
 
 /** Counts per group × band, the group read by `groupOf` (the estimate's by default). Rows without a group or band are left out. */
 export function cellCounts(rows: readonly DecidedRow[], groupOf: (r: DecidedRow) => Group | null | undefined = (r) => r.estimate_group): Map<string, Cell> {
@@ -124,7 +134,7 @@ export function allCells(rows: readonly DecidedRow[], groupOf?: (r: DecidedRow) 
   return RATE_BANDS.flatMap((b) => GROUPS.map((g) => cellStats(counts.get(cellKey(g, b.key)) ?? { group: g, band: b.key, n: 0, admitted: 0 })));
 }
 
-/** Per band: whether Likely > Target > Reach holds among the cells with enough outcomes (null when fewer than two can be compared). */
+/** Per band: whether Safe > Likely > Target > Reach > High reach holds among the cells with enough outcomes (null when fewer than two can be compared). */
 export function orderChecks(cells: readonly CellStats[]): { band: RateBand; holds: boolean | null }[] {
   return RATE_BANDS.map((b) => {
     const shares = GROUPS.map((g) => cells.find((c) => c.band === b.key && c.group === g)?.share ?? null).filter((s): s is number => s !== null);
@@ -133,36 +143,54 @@ export function orderChecks(cells: readonly CellStats[]): { band: RateBand; hold
   });
 }
 
-/** Bands where Likely, with enough outcomes, was wrong more often than LIKELY_MAX_MISS. */
-export function likelyMissFlags(cells: readonly CellStats[]): { band: RateBand; miss: number }[] {
-  return cells
-    .filter((c) => c.group === "likely" && c.share !== null && 1 - c.share > LIKELY_MAX_MISS)
-    .map((c) => ({ band: c.band, miss: 1 - (c.share as number) }));
+export interface MissFlag {
+  band: RateBand;
+  level: Group;
+  /** The share that broke the rule: denied for Safe and Likely, admitted for High reach. */
+  miss: number;
+  /** Which way the band's cutoff for that level moves. */
+  move: "up" | "down";
+}
+
+/** Cells with enough outcomes that break a miss rule (MISS_RULES). */
+export function missFlags(cells: readonly CellStats[]): MissFlag[] {
+  const out: MissFlag[] = [];
+  for (const c of cells) {
+    if (c.share === null) continue;
+    for (const rule of MISS_RULES) {
+      if (c.group !== rule.level) continue;
+      const miss = rule.outcome === "denied" ? 1 - c.share : c.share;
+      if (miss > rule.max) out.push({ band: c.band, level: c.group, miss, move: rule.move });
+    }
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ */
 /* Discrimination and calibration                                      */
 /* ------------------------------------------------------------------ */
 
-const RANK: Record<Group, number> = { reach: 0, target: 1, likely: 2 };
+const RANK = Object.fromEntries(GROUPS.map((g, i) => [g, i])) as Record<Group, number>;
 
 /**
- * The AUC of the ordered group (Reach < Target < Likely) against admitted: the chance a random admitted outcome sits
- * in a higher group than a random not-admitted one, ties counted half. Null without both kinds of outcome.
+ * The AUC of the ordered level (High reach < Reach < Target < Likely < Safe) against admitted: the chance a random
+ * admitted outcome sits in a higher level than a random not-admitted one, ties counted half. Null without both kinds
+ * of outcome.
  */
 export function ordinalAuc(rows: readonly { group: Group | null | undefined; admitted: boolean }[]): number | null {
-  const pos = [0, 0, 0];
-  const neg = [0, 0, 0];
+  const k = GROUPS.length;
+  const pos = new Array<number>(k).fill(0);
+  const neg = new Array<number>(k).fill(0);
   for (const r of rows) {
     if (!isGroup(r.group)) continue;
     (r.admitted ? pos : neg)[RANK[r.group]]++;
   }
-  const P = pos[0] + pos[1] + pos[2];
-  const N = neg[0] + neg[1] + neg[2];
+  const P = pos.reduce((a, b) => a + b, 0);
+  const N = neg.reduce((a, b) => a + b, 0);
   if (P === 0 || N === 0) return null;
   let wins = 0;
-  for (let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
+  for (let i = 0; i < k; i++) {
+    for (let j = 0; j < k; j++) {
       if (i > j) wins += pos[i] * neg[j];
       else if (i === j) wins += 0.5 * pos[i] * neg[j];
     }
@@ -197,6 +225,60 @@ export function brierScore(implied: Map<string, number>, rows: readonly DecidedR
   return n ? { n, brier: sum / n } : null;
 }
 
+/* ------------------------------------------------------------------ */
+/* The hidden odds: a calibration curve and a Brier score              */
+/* ------------------------------------------------------------------ */
+
+/** One decile of the binned hidden odds: how many outcomes, the mean odds, and the share admitted. */
+export interface CurvePoint {
+  /** The decile's lower edge (0, 0.1, …, 0.9). */
+  low: number;
+  n: number;
+  /** Mean hidden odds of the outcomes in it; null when empty. */
+  meanOdds: number | null;
+  /** Observed admitted share; null below MIN_CELL_OUTCOMES. */
+  share: number | null;
+  interval: { low: number; high: number } | null;
+}
+
+const oddsOf = (r: Partial<SnapshotRow>): number | null => (typeof r.hidden_odds === "number" && Number.isFinite(r.hidden_odds) && r.hidden_odds >= 0 && r.hidden_odds <= 1 ? r.hidden_odds : null);
+
+/**
+ * The calibration curve (levels.md "Season measurements"): observed admitted share per decile of the hidden odds the
+ * snapshots recorded. Internal only (it reads the method's odds); never in the public summary.
+ */
+export function calibrationCurve(rows: readonly DecidedRow[], min = MIN_CELL_OUTCOMES): CurvePoint[] {
+  const bins = Array.from({ length: 10 }, (_, i) => ({ low: i / 10, n: 0, admitted: 0, sum: 0 }));
+  for (const r of rows) {
+    const o = oddsOf(r);
+    if (o === null) continue;
+    const b = bins[Math.min(9, Math.floor(o * 10 + 1e-9))];
+    b.n++;
+    b.sum += o;
+    if (r.admitted) b.admitted++;
+  }
+  return bins.map((b) => ({
+    low: b.low,
+    n: b.n,
+    meanOdds: b.n ? b.sum / b.n : null,
+    share: b.n >= min ? b.admitted / b.n : null,
+    interval: b.n >= min ? wilson(b.admitted, b.n) : null,
+  }));
+}
+
+/** The Brier score of the hidden odds themselves on these outcomes; null when no row carries odds. */
+export function oddsBrier(rows: readonly DecidedRow[]): { n: number; brier: number } | null {
+  let n = 0;
+  let sum = 0;
+  for (const r of rows) {
+    const o = oddsOf(r);
+    if (o === null) continue;
+    n++;
+    sum += (o - (r.admitted ? 1 : 0)) ** 2;
+  }
+  return n ? { n, brier: sum / n } : null;
+}
+
 /** Held out by season: train on every earlier season, test on `testSeason` (default the latest). Null with fewer than two seasons. */
 export function heldOutBySeason<T extends { season: number }>(rows: readonly T[], testSeason?: number): { train: T[]; test: T[]; testSeason: number } | null {
   const seasons = [...new Set(rows.map((r) => r.season))].sort((a, b) => a - b);
@@ -214,6 +296,9 @@ const WITHOUT: Record<AblationInput, keyof SnapshotRow> = {
   crowding: "without_crowding",
   rigor: "without_rigor",
   rank: "without_rank",
+  depth: "without_depth",
+  hooks: "without_hooks",
+  interest: "without_interest",
 };
 
 export interface Ablation {
@@ -411,12 +496,14 @@ export function seasonReport(rows: readonly OutcomeRow[], season: number) {
     outcomes: current.length,
     cells,
     order: orderChecks(cells),
-    likelyMisses: likelyMissFlags(cells),
+    misses: missFlags(cells),
     auc: {
       overall: ordinalAuc(current.map((r) => ({ group: r.estimate_group, admitted: r.admitted }))),
       byBand: RATE_BANDS.map((b) => ({ band: b.key, auc: ordinalAuc(current.filter((r) => rateBand(r.admit_rate) === b.key).map((r) => ({ group: r.estimate_group, admitted: r.admitted }))) })),
     },
     heldOutBrier: split && trainImplied ? { trainedOn: [...new Set(split.train.map((r) => r.season))].sort(), ...brierScore(trainImplied, split.test) } : null,
+    curve: calibrationCurve(current),
+    oddsBrier: oddsBrier(current),
     ablations: ablations(current),
     rigorLower: rigorLowerEvidence(current),
     overrides: overrideComparison(current, ownImplied),

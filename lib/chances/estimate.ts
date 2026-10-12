@@ -83,6 +83,7 @@ export function estimateWithDetail(input: EstimateInput, ctx: EstimateContext): 
       overallYear: ctx.overallYearFor(school),
       coreAtTopLevel: ctx.coreAtTopLevel ?? null,
       grade: ctx.grade ?? null,
+      hooks: input.hooks ?? null,
     });
   } catch (err) {
     console.error(`estimate: the model failed for ${input.unitId}; serving the baseline: ${err instanceof Error ? err.message : String(err)}`);
@@ -111,11 +112,10 @@ export function estimate(input: EstimateInput, ctx: EstimateContext): EstimateRe
 }
 
 /**
- * The estimate at several colleges, by unit id; ids the dataset doesn't have are left out. `hooks` is the planner's
- * per-college legacy/recruited/interest input (decision 5 "Hooks in requests"); a college missing from it reads as
- * NO_HOOKS. The model (lib/chances/model.ts) reads `EstimateInput.hooks` once it wires the hook multipliers in.
+ * The estimate at several colleges, by unit id; ids the dataset doesn't have are left out. `hooks` carries each list
+ * row's legacy, recruited, and logged-interest inputs by unit id (decision 5); a college without an entry has none.
  */
-export function estimateMany(student: EstimateStudent, unitIds: readonly string[], ctx: EstimateContext, hooks?: Record<string, CollegeHooks>): Record<string, EstimateResult> {
+export function estimateMany(student: EstimateStudent, unitIds: readonly string[], ctx: EstimateContext, hooks?: Readonly<Record<string, CollegeHooks>> | null): Record<string, EstimateResult> {
   const out: Record<string, EstimateResult> = {};
   for (const unitId of new Set(unitIds)) {
     if (!ctx.schoolById(unitId)) continue;

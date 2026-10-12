@@ -161,7 +161,22 @@ export interface EstimateResult {
   closeness: 0 | 1 | 2 | 3 | null;
   /** What early decision would do here (method/standing.md "The ED sentence"); null without a level. */
   ed: "helps" | "same" | "not_advised" | null;
+  /**
+   * Who the student is compared with and that group's published admit rate (pool-explainer.md), for Compare's
+   * sub-line: the rate's kind, the college's own published rate (0–1; null for a guarantee), and the catalog key of
+   * the short "who" phrase ("pool.who.residency_in") with its values ({ state: "Indiana" }). Public facts only, never
+   * the hidden odds. Absent or null without a published rate (open admission, the baseline).
+   */
+  pool?: EstimatePool | null;
   modelVersion: string;
+}
+
+/** EstimateResult.pool. */
+export interface EstimatePool {
+  kind: PoolRateKind;
+  rate: number | null;
+  whoKey: NoteKey;
+  whoValues: Record<string, string>;
 }
 
 /* ---- Admission chances, next (specs/chances/levels.md, selectivity-index.md, depth.md, inputs-beyond-academics.md) ----

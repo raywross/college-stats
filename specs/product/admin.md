@@ -1,8 +1,8 @@
 # Admin Console: People, Hidden Values, Data Health, and Operations
 
-> Status: **built** 2026-10-12 on `feature/admin` except the hidden-values panels (People, Health, Operations, Log,
-> Admins; see [As built](#as-built-2026-10-12)); the Colleges and high-school panels and the student standing panel
-> wait for the five levels and the selectivity index (PR #136). Planned 2026-10-12 from the owner's request: see and search users and households; deactivate or delete
+> Status: **planned** 2026-10-12; mostly built the same day on `feature/admin` (People, Health, Operations, Log, Admins;
+> see [As built](#as-built-2026-10-12)). Still to build: the Colleges and high-school panels and the student standing
+> panel, which wait for the five levels and the selectivity index (PR #136). Planned from the owner's request: see and search users and households; deactivate or delete
 > accounts; reset passwords; change account details such as email; link and unlink students and parents; see the
 > values the site hides for a college and for a student's standing; see each college's data "health" by when its data
 > was received; and, longer term, trigger reruns and approve data changes from the same place. Builds on

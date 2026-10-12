@@ -308,6 +308,11 @@ export const NOTES: Record<NoteKey, Note> = {
     `Working ${s(v, "hours")} hours a week through the school year counts at colleges that weigh work experience, and it explains a shorter activity list.`,
   /** First generation: collected and shown, not in the level (inputs-beyond-academics.md "First generation"). */
   "estimate.first_generation": (v) => `${s(v, "college")} rates first-generation status ${s(v, "rating")}; it's noted, not estimated.`,
+  /**
+   * Revision 1 (method/standing.md "Consistency and completeness"): the inputs this college reads that the student
+   * hasn't entered, named in words ("courses, class standing, and activities"); never how much they count.
+   */
+  "estimate.incomplete": (v) => `Not in this estimate yet: your ${s(v, "inputs")}. Adding what you have gives a fuller picture and could change where this college stands for you.`,
 
   /* ---- The list row's inputs (inputs-beyond-academics.md "Legacy", "Recruited athlete", "Demonstrated interest") ---- */
   /** `rating`: "very important", "important", or "considered", as the college's C7 says. */

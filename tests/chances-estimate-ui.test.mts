@@ -129,6 +129,7 @@ test("the panel lists the student's entries, the college's facts as catalog sent
   for (const n of parts.reasons) assert.ok(texts(html).includes(noteText(n)), `a reason: ${n.key}`);
   assert.ok(texts(html).includes(noteText({ key: "estimate.disclaimer", values: { college: "Purdue" } })), "the standing disclaimer");
   if (parts.prompt) assert.ok(texts(html).includes(noteText(parts.prompt)), "the missing-input prompt");
+  if (parts.incomplete) assert.ok(texts(html).includes(noteText(parts.incomplete)), "the inputs not in the estimate yet");
   // A source beside each fact whose note cites one, and the glossary term for the estimate.
   for (const n of parts.reasons) if (n.cite) assert.match(html, new RegExp(`data-cited="${n.cite.replace(/\./g, "\\.")}"`), `a source for ${n.cite}`);
   assert.match(html, /data-term="quads-estimate"/);
@@ -149,6 +150,7 @@ test("the panel holds only catalog sentences, headings, and the student's own en
       ...parts.reasons.map(noteText),
       ...parts.notUsed.map(noteText),
       ...(parts.prompt ? [noteText(parts.prompt)] : []),
+      ...(parts.incomplete ? [noteText(parts.incomplete)] : []),
       noteText({ key: "estimate.disclaimer", values: { college: "The College" } }),
       ...(also.length ? [`${noteText({ key: "estimate.panel_also", values: {} })}: ${also.map((f) => f.label).join(" · ")}`] : []),
     ];
@@ -167,6 +169,7 @@ test("guard: foreignText catches a sentence the catalog doesn't have, and a pane
     noteText({ key: "estimate.panel_college", values: { college: "Purdue" } }),
     ...panelParts(r).reasons.map(noteText),
     ...(panelParts(r).prompt ? [noteText(panelParts(r).prompt!)] : []),
+    ...(panelParts(r).incomplete ? [noteText(panelParts(r).incomplete!)] : []),
     noteText({ key: "estimate.disclaimer", values: { college: "Purdue" } }),
     ...(uncoveredFacts(r).length ? [`${noteText({ key: "estimate.panel_also", values: {} })}: ${uncoveredFacts(r).map((f) => f.label).join(" · ")}`] : []),
   ];

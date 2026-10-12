@@ -1,6 +1,7 @@
 /**
  * Quad's estimate, the method's third version (lib/chances/model.ts; specs/chances/method/standing.md, levels.md):
- * the pinned examples, the within-one-level check against the second version with every new input empty, the caps
+ * the pinned examples, the within-one-level check against the second version on complete records, Revision 1's rules
+ * (the test as a consistency check, Reach at Ultra selective only on consistent excellence, completeness), the caps
  * from the selectivity tier and the floors from the college's own statements, the move-up across five levels, the ED
  * verdict, `closeness`, the depth and list-row inputs gated by C7, the readings carried over from the second version
  * (score, GPA, crowding, rigor, rank, the major's subjects), the snapshot detail, and guards that the hidden odds, the
@@ -27,7 +28,7 @@ registerHooks({
   },
 });
 
-const { modelEstimate, modelEstimateWithDetail, MODEL_VERSION, RIGOR_CAN_LOWER, rankShareAtOrAbove, STANDING_V2, ODDS_V3, academicMultiplier, shareBelowGpa } = await import("../lib/chances/model.ts");
+const { modelEstimate, modelEstimateWithDetail, stageOneReadings, MODEL_VERSION, RIGOR_CAN_LOWER, rankShareAtOrAbove, STANDING_V2, ODDS_V3, academicMultiplier, shareBelowGpa } = await import("../lib/chances/model.ts");
 const { baselineEstimate } = await import("../lib/chances/baseline.ts");
 const { noteText, isNoteKey, NOTES } = await import("../lib/chances/notes.ts");
 const { isFieldPath } = await import("../lib/fields.ts");
@@ -164,6 +165,13 @@ function activity(name: string, kind: ActivityEntry["kind"], years: ActivityEntr
 /** Focused (depth.md): soccer four years, captain senior year; robotics three years. */
 const FOCUSED = [activity("Soccer", "sport", [9, 10, 11, 12], { roles: { 12: "leader" } }), activity("Robotics", "club", [10, 11, 12], { roles: { 12: "officer" } })];
 const SAMPLING = [activity("Chess", "club", [9]), activity("Drama", "arts", [10])];
+/** Building (depth.md): one activity carried three years. */
+const BUILDING = [activity("Band", "arts", [10, 11, 12])];
+/**
+ * A GPA for a college with no GPA figures: it counts as entered (completeness) but can't be placed, so a mechanism
+ * test reads the test alone with nothing missing.
+ */
+const UNPLACED_GPA = 3.9;
 
 function run(c: { school: School; standing: StandingSchool }, s: EstimateStudent, extra: Partial<ModelInput> = {}) {
   return modelEstimate({ student: s, school: c.school, standing: c.standing, offering: null, ...extra });
@@ -221,8 +229,10 @@ const ELITE_6 = () => college("162928", { rate: 0.06, sat: [1270, 1370], gpa: nu
 /* method/standing.md's pinned examples                                */
 /* ------------------------------------------------------------------ */
 
-test("version: the third version's model version, and the constants the method names", () => {
-  assert.equal(MODEL_VERSION, "20261012.1");
+test("version: the third version's model version (Revision 1), and the constants the method names", () => {
+  assert.equal(MODEL_VERSION, "20261012.2");
+  assert.deepEqual([ODDS_V3.testPull, ODDS_V3.testDown, ODDS_V3.testUp, ODDS_V3.gapPrior], [0.25, 0.3, 0.2, -0.5]);
+  assert.deepEqual(ODDS_V3.expectWeights, { gpa: 3, courses: 2, class_rank: 1, test: 1, activities: 1 });
   assert.deepEqual(ODDS_V3.acad.map(([d]) => d), [-1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]);
   assert.deepEqual(ODDS_V3.acad.map(([, m]) => m), [0.08, 0.15, 0.4, 0.75, 1.1, 1.6, 2.2, 2.5]);
   near(academicMultiplier(-3), 0.08, 1e-9);
@@ -234,13 +244,23 @@ test("version: the third version's model version, and the constants the method n
   near(shareBelowGpa(bands(0.48, 0.3), 4.0), 0.76, 1e-9);
 });
 
-test("pinned: SAT 1560, GPA 4.0, rigor most at a Harvard-like Elite college (3.5%): Reach, Elite: a reach for everyone", () => {
+test("pinned: SAT 1560, GPA 4.0, rigor most at a Harvard-like Ultra selective college (3.5%), no class standing or activities: High reach, and the gaps are named", () => {
   const r = run(HARVARD(), student({ test: sat(1560), gpa: 4.0, courses: EIGHT_APS }), { offering: OFFERING(9), linked: true });
-  assert.equal(r.group, "reach");
+  // Revision 1: Reach at Ultra selective needs every signal; class standing and activities aren't entered.
+  assert.equal(r.group, "high_reach");
   assert.equal(r.label, "elite");
   assert.equal(keys(r)[0], "estimate.elite");
   assert.equal(r.closeness, null, "the odds don't set an Elite level");
-  assert.equal(r.moveUp, null, "nothing moves an Elite college beyond Reach");
+  assert.ok(r.missing.includes("class_rank") && r.missing.includes("activities"));
+  assert.ok(texts(r).includes("Not in this estimate yet: your class standing and activities. Adding what you have gives a fuller picture and could change where this college stands for you."));
+  assert.ok(keys(r).includes("estimate.missing_input"), "one prompt at an Ultra selective college too, now that inputs can move it");
+  // With them (top 5%, Focused): Reach, and nothing moves it beyond. Top 10% isn't enough (owner, 2026-10-12).
+  const withStanding = (pct: number, pick: "top5" | "top10") => run(HARVARD(), student({ test: sat(1560), gpa: 4.0, courses: EIGHT_APS, classRankPercentile: pct, classStanding: pick, activities: FOCUSED }), { offering: OFFERING(9), linked: true });
+  assert.equal(withStanding(10, "top10").group, "high_reach");
+  const full = withStanding(5, "top5");
+  assert.equal(full.group, "reach");
+  assert.equal(full.moveUp, null, "nothing moves an Elite college beyond Reach");
+  assert.ok(!keys(full).includes("estimate.incomplete"));
 });
 
 test("pinned: SAT 1100, GPA 2.6 at the same college: High reach, still Elite", () => {
@@ -249,18 +269,21 @@ test("pinned: SAT 1100, GPA 2.6 at the same college: High reach, still Elite", (
   assert.equal(r.label, "elite");
 });
 
-test("pinned: a Georgia resident, SAT 1500, at Georgia Tech (29% in-state, Highly selective in-state): Target", () => {
+test("pinned: a Georgia resident with only an SAT 1500 at Georgia Tech (29% in-state, Highly selective in-state): Reach", () => {
   const { result: r, detail } = detailed(GEORGIA_TECH(), student({ state: "GA", test: sat(1500) }));
-  assert.equal(r.group, "target");
+  // Revision 1: a score alone is mostly gap (GPA, courses, class standing missing): Target → Reach.
+  assert.equal(r.group, "reach");
   assert.equal(r.label, null);
-  near(detail.hiddenOdds, 0.41);
+  near(detail.hiddenOdds, 0.154);
   assert.equal(detail.selectivityTier, "highly_selective");
-  assert.equal(r.closeness, 2, "41% sits in the third quarter of Target's band");
+  assert.equal(r.closeness, 2, "15% sits in the third quarter of Reach's band");
+  assert.ok(["gpa", "courses", "class_rank"].every((k) => r.missing.includes(k as never)));
+  assert.ok(keys(r).includes("estimate.missing_input") && texts(r).includes("Adding your GPA could change this estimate."));
 });
 
-test("pinned: the same student from Florida (10% out-of-state, Elite out of state): Reach, Elite: a reach for everyone", () => {
+test("pinned: the same student from Florida (10% out-of-state, Ultra selective out of state): High reach, Elite: a reach for everyone", () => {
   const r = run(GEORGIA_TECH(), student({ state: "FL", test: sat(1500) }));
-  assert.equal(r.group, "reach");
+  assert.equal(r.group, "high_reach", "Revision 1: the record doesn't show every signal");
   assert.equal(r.label, "elite");
   assert.ok(r.facts.includes("selectivity.out_of_state"), "the out-of-state tier is cited");
 });
@@ -268,7 +291,8 @@ test("pinned: the same student from Florida (10% out-of-state, Elite out of stat
 test("pinned: SAT 1500 and GPA 3.7 at a 15% Highly selective college: one weak measure keeps it a Reach", () => {
   const { result: r, detail } = detailed(FIFTEEN(), student({ test: sat(1500), gpa: 3.7 }));
   assert.equal(r.group, "reach");
-  near(detail.hiddenOdds, 0.105);
+  // The GPA (−0.3) is the core; the test (0.83) pulls it up by at most testUp.
+  near(detail.hiddenOdds, 0.102);
   assert.equal(detail.position, "below");
 });
 
@@ -294,21 +318,26 @@ test("pinned: the same numbers from Ohio (44% out-of-state): Target", () => {
   assert.equal(texts(r)[1], "Applicants like you — from outside Indiana — were admitted at 44% (Fall 2025).");
 });
 
-test("pinned: SAT 1450 at a 45% college (SAT 1280–1450): Likely (the second version said Target)", () => {
-  const r = run(college("100654", { rate: 0.45, sat: [1280, 1450], c7: null, tier: "selective" }), student({ test: sat(1450) }));
-  assert.equal(r.group, "likely");
+test("pinned: only an SAT 1450 at a 45% college (SAT 1280–1450): Target (no GPA; with one it can be Likely)", () => {
+  const c = () => college("100654", { rate: 0.45, sat: [1280, 1450], c7: null, tier: "selective" });
+  const r = run(c(), student({ test: sat(1450) }));
+  assert.equal(r.group, "target", "Revision 1: the GPA the college weighs is missing");
+  assert.equal(run(c(), student({ test: sat(1450), gpa: UNPLACED_GPA })).group, "likely", "the same score with a GPA entered");
 });
 
 test("pinned: ACT 24 at a 40% college (ACT 28–33, test required): Reach", () => {
   const { result: r, detail } = detailed(college("100654", { rate: 0.4, act: [28, 33], c7: null }), student({ test: { kind: "act", score: 24 } }));
   assert.equal(r.group, "reach");
+  // A score below the range and nothing else: the gaps don't lift it (a gap never raises a record below the prior).
   near(detail.hiddenOdds, 0.1);
 });
 
-test("pinned: SAT 1450 at a 78% Accessible college (SAT 1100–1300): Safe (rate ≥ 50%)", () => {
-  const { result: r, detail } = detailed(college("100654", { rate: 0.78, sat: [1100, 1300], c7: null, tier: "accessible" }), student({ test: sat(1450) }));
-  assert.equal(r.group, "safe");
-  near(detail.hiddenOdds, 0.97, 1e-9);
+test("pinned: only an SAT 1450 at a 78% Accessible college (SAT 1100–1300): Likely (Safe with a GPA entered)", () => {
+  const c = () => college("100654", { rate: 0.78, sat: [1100, 1300], c7: null, tier: "accessible" });
+  const { result: r, detail } = detailed(c(), student({ test: sat(1450) }));
+  assert.equal(r.group, "likely", "Revision 1: a score alone is mostly gap");
+  near(detail.hiddenOdds, 0.619);
+  assert.equal(run(c(), student({ test: sat(1450), gpa: UNPLACED_GPA })).group, "safe");
 });
 
 test("pinned: no test, GPA 3.9 at a 35% college averaging 3.7: Likely", () => {
@@ -330,12 +359,14 @@ test("pinned: GPA 3.90, 8 of 9 APs, Focused activities at Elon (63%, Selective):
   assert.ok(r.used.includes("courses") && r.used.includes("activities"));
 });
 
-test("pinned: GPA 3.90, no courses, no activities at Elon: Likely", () => {
+test("pinned: GPA 3.90, no courses, no activities at Elon: Target (was Likely)", () => {
   const r = run(ELON(), student({ gpa: 3.9 }));
-  assert.equal(r.group, "likely");
+  assert.equal(r.group, "target", "Revision 1: courses, class standing, and activities missing");
   assert.ok(r.missing.includes("courses"));
+  assert.ok(r.missing.includes("class_rank"), "Elon rates class rank considered");
   assert.ok(r.missing.includes("activities"), "Elon rates extracurriculars important");
   assert.ok(keys(r).includes("estimate.missing_courses"));
+  assert.ok(texts(r).includes("Not in this estimate yet: your courses, class standing, and activities. Adding what you have gives a fuller picture and could change where this college stands for you."));
 });
 
 test("pinned: a Texas resident in the top 4%, SAT 1350, at UT Austin: Safe, Guaranteed for you, and the major isn't", () => {
@@ -431,9 +462,31 @@ const V2_ROWS: { name: string; s: EstimateStudent; c: () => { school: School; st
 
 const V2_RANK: Record<NonNullable<V2>, number> = { reach: 1, target: 2, likely: 3 };
 
+/**
+ * The row's student with every input a college can expect entered, in ways the second version didn't read: a GPA
+ * where none was given (only at colleges with no GPA figures, so it's entered but not placed), courses (without the
+ * school's offering they can't be placed, so rigor stays unread unless the row links the school), "my school doesn't
+ * rank" where no rank was given, and a Building activities record. Revision 1 lowers levels for gaps by design, so
+ * the yardstick check runs on complete records (the second version had no gaps to read).
+ */
+function completed(s: EstimateStudent): EstimateStudent {
+  return {
+    ...s,
+    gpa: s.gpa ?? UNPLACED_GPA,
+    gpaRange: s.gpaRange ?? [s.gpa ?? UNPLACED_GPA, s.gpa ?? UNPLACED_GPA],
+    courses: s.courses.length > 0 ? s.courses : TWO_APS,
+    classStanding: s.classRankPercentile !== null ? (s.classStanding ?? null) : "no_rank",
+    activities: BUILDING,
+  };
+}
+
 for (const row of V2_ROWS) {
-  test(`within one level of the second version, new inputs empty: ${row.name}`, () => {
-    const { result, detail } = detailed(row.c(), row.s, row.extra);
+  test(`within one level of the second version, on a complete record: ${row.name}`, () => {
+    const s = completed(row.s);
+    const { result, detail } = detailed(row.c(), s, row.extra);
+    const ev = modelEstimateWithDetail({ student: s, school: row.c().school, standing: row.c().standing, offering: null, ...row.extra });
+    // Nothing the college weighs is missing (an Ultra selective college's own rule also reads the school's offering).
+    if (ev.result.label !== "elite") assert.ok(!ev.result.notes.some((n) => n.key === "estimate.incomplete"), "nothing the college weighs is missing");
     if (row.v2 === null) {
       assert.equal(result.group, null, "nothing to place then, nothing now");
       return;
@@ -452,6 +505,8 @@ test("the baseline's groups map onto the levels unchanged, so development withou
     const c = row.c();
     const base = baselineEstimate(row.s, c.standing, c.school.unit_id);
     assert.equal(base.group, row.v2, row.name);
+    // Completing the record doesn't change what the second version (the open baseline at these colleges) says.
+    assert.equal(baselineEstimate(completed(row.s), c.standing, c.school.unit_id).group, row.v2, `${row.name}, completed`);
   }
 });
 
@@ -471,7 +526,7 @@ test("guard: the within-one-level check refuses a two-step jump and a wrong-way 
 /* ------------------------------------------------------------------ */
 
 /** A strong student at a college with this tier and rate: SAT at the top of the range. */
-const strong = (rate: number, tier: SelectivityTier | null) => run(college("100654", { rate, sat: [1200, 1350], c7: null, tier }), student({ test: sat(1600) }));
+const strong = (rate: number, tier: SelectivityTier | null) => run(college("100654", { rate, sat: [1200, 1350], c7: null, tier }), student({ gpa: UNPLACED_GPA, test: sat(1600) }));
 
 test("caps: Highly selective stops at Target; Very selective at Likely; Selective at Likely below 50% and Safe from 50%; Accessible and Open allow Safe", () => {
   assert.equal(strong(0.45, "highly_selective").group, "target");
@@ -490,33 +545,78 @@ test("Safe needs at least half of the student's pool admitted, whatever the tier
   assert.equal(strong(0.45, null).group, "likely");
 });
 
-test("Elite: Reach with nothing below range, High reach with any measure below, and the odds aren't used", () => {
-  const elite = () => college("166027", { rate: 0.6, sat: [1300, 1400], gpa: middleGpa(3.7, 3.9), c7: null, tier: "elite" });
-  assert.equal(run(elite(), student({ test: sat(1600), gpa: 4.0 })).group, "reach", "even at 60% admitted: Elite caps at Reach");
-  assert.equal(run(elite(), student({ test: sat(1600), gpa: 3.6 })).group, "high_reach", "one measure below");
-  assert.equal(run(elite(), student({ test: sat(1290), gpa: 4.0 })).group, "high_reach");
-  // An Elite college with no numbers to place: no level ("Add a number").
-  assert.equal(run(elite(), student()).group, null);
+/** A record consistent with excellence at ULTRA (below): GPA above, 8 of 9 APs, top 5%, Focused, SAT above. */
+const EXCELLENT = (o: Partial<EstimateStudent> = {}) => student({ gpa: 4.0, test: sat(1450), courses: EIGHT_APS, classRankPercentile: 5, classStanding: "top5", activities: FOCUSED, ...o });
+const ULTRA = (policy: School["admissions"]["test_policy"] = "required") => college("166027", { rate: 0.6, sat: [1300, 1400], gpa: middleGpa(3.7, 3.9), c7: null, tier: "elite", policy });
+const LINKED = { offering: OFFERING(9), linked: true };
+
+test("rule 2: at an Ultra selective college, Reach only when every signal is consistent; each missing or short signal alone gives High reach", () => {
+  const at = (s: EstimateStudent, policy?: School["admissions"]["test_policy"], extra: Partial<ModelInput> = LINKED) => run(ULTRA(policy), s, extra);
+  const all = at(EXCELLENT());
+  assert.equal(all.group, "reach", "every signal: Reach, even at 60% admitted (the tier caps it)");
+  assert.equal(all.label, "elite");
+  const cases: [string, EstimateStudent, Partial<ModelInput>?][] = [
+    ["GPA missing", EXCELLENT({ gpa: null, gpaRange: null })],
+    ["GPA below the range", EXCELLENT({ gpa: 3.6, gpaRange: [3.6, 3.6] })],
+    ["no courses", EXCELLENT({ courses: [] })],
+    ["courses the reading can't place (no school offering)", EXCELLENT(), {}],
+    ["rigor some", EXCELLENT({ courses: TWO_APS }), { offering: OFFERING(14), linked: true }],
+    ["no class standing", EXCELLENT({ classRankPercentile: null, classStanding: null })],
+    ["top 10% (the bar is top 5%)", EXCELLENT({ classRankPercentile: 10, classStanding: "top10" })],
+    ["a rank of top 8% typed in", EXCELLENT({ classRankPercentile: 8, classStanding: null })],
+    ["top 25%", EXCELLENT({ classRankPercentile: 25, classStanding: "top25" })],
+    ["test below the range", EXCELLENT({ test: sat(1290) })],
+    ["no test where one is required", EXCELLENT({ test: null })],
+    ["no activities", EXCELLENT({ activities: [] })],
+    ["activities Sampling", EXCELLENT({ activities: SAMPLING })],
+  ];
+  for (const [name, s, extra] of cases) assert.equal(at(s, "required", extra ?? LINKED).group, "high_reach", name);
+  // What passes: "my school doesn't rank", a Building record, a tier-2 award beside Sampling, no test at a test-optional college.
+  assert.equal(at(EXCELLENT({ classRankPercentile: null, classStanding: "no_rank" })).group, "reach", "no_rank passes");
+  assert.equal(at(EXCELLENT({ classRankPercentile: 1, classStanding: "top1" })).group, "reach", "top 1% passes");
+  assert.equal(at(EXCELLENT({ classRankPercentile: 5, classStanding: null })).group, "reach", "a typed rank in the top 5% passes");
+  assert.equal(at(EXCELLENT({ activities: BUILDING })).group, "reach", "Building passes");
+  assert.equal(at(EXCELLENT({ activities: SAMPLING, awards: [{ id: "w3", key: null, name: "All-state", tier: 2, year: 11 }] })).group, "reach", "recognition tier 2 passes");
+  assert.equal(at(EXCELLENT({ test: null }), "considered").group, "reach", "no test at a test-optional college isn't missing");
+  // The missing ones are named; the short ones are not called missing.
+  const noRank = at(EXCELLENT({ classRankPercentile: null, classStanding: null }));
+  assert.ok(noRank.missing.includes("class_rank"));
+  assert.ok(texts(noRank).some((t) => t.startsWith("Not in this estimate yet: your class standing.")));
+  assert.ok(!at(EXCELLENT({ activities: SAMPLING })).missing.includes("activities"));
+  // A recruited floor still beats it; an Ultra selective college with no numbers to place has no level.
+  assert.equal(at(EXCELLENT({ activities: [] }), "required", { ...LINKED, hooks: hooks({ recruited: "likely_letter" }) }).group, "likely");
+  assert.equal(run(ULTRA(), student()).group, null);
+});
+
+test("guard: the rule-2 check fails if the old rule (nothing below range) comes back", () => {
+  // Under the old rule a record with every measure in range but no activities or class standing was a Reach.
+  const old = (s: EstimateStudent) => {
+    const r = detailed(ULTRA(), s, LINKED);
+    return r.detail.position !== "below" && s.test !== null && s.test.score >= 1300 ? "reach" : "high_reach";
+  };
+  const gaps = EXCELLENT({ activities: [], classRankPercentile: null, classStanding: null });
+  assert.equal(old(gaps), "reach");
+  assert.notEqual(run(ULTRA(), gaps, LINKED).group, old(gaps), "the new rule disagrees with the old one here");
 });
 
 test("floors: a guarantee and open admission are Safe; a likely letter Likely anywhere; a positive pre-read Target at Elite, Likely elsewhere, from d ≥ −0.5", () => {
   const open = run(college("100654", { rate: null, c7: null, tier: "open" }), student({ gpa: 2.0 }));
   assert.deepEqual([open.group, open.label, keys(open)[0]], ["safe", null, "estimate.open_admission"]);
   const elite = ELITE_6();
-  const pre = (score: number, c = elite) => run(c, student({ test: sat(score) }), { hooks: hooks({ recruited: "pre_read" }) });
+  const pre = (score: number, c = elite) => run(c, student({ gpa: UNPLACED_GPA, test: sat(score) }), { hooks: hooks({ recruited: "pre_read" }) });
   assert.deepEqual([pre(1300).group, pre(1300).label], ["target", "recruited"], "Elite: Target");
   assert.deepEqual([pre(1230).group, pre(1230).label], ["target", "recruited"], "d = −0.4 still floors");
   assert.equal(pre(1200).label, "elite", "d = −0.7: no floor");
   assert.equal(pre(1200).group, "high_reach");
   const hs = college("100654", { rate: 0.1, sat: [1270, 1370], c7: null, tier: "highly_selective" });
   assert.equal(pre(1300, hs).group, "likely", "Likely beats the Highly selective cap");
-  const letter = run(hs, student({ test: sat(1000) }), { hooks: hooks({ recruited: "likely_letter" }) });
+  const letter = run(hs, student({ gpa: UNPLACED_GPA, test: sat(1000) }), { hooks: hooks({ recruited: "likely_letter" }) });
   assert.deepEqual([letter.group, letter.label], ["likely", "recruited"], "a likely letter at any distance");
   // A contact multiplies; it isn't a floor and isn't a label.
-  const contact = run(hs, student({ test: sat(1300) }), { hooks: hooks({ recruited: "contact" }) });
+  const contact = run(hs, student({ gpa: UNPLACED_GPA, test: sat(1300) }), { hooks: hooks({ recruited: "contact" }) });
   assert.equal(contact.label, null);
   assert.ok(keys(contact).includes("hooks.recruited"));
-  assert.ok(RANK(contact.group)! >= RANK(run(hs, student({ test: sat(1300) })).group)!);
+  assert.ok(RANK(contact.group)! >= RANK(run(hs, student({ gpa: UNPLACED_GPA, test: sat(1300) })).group)!);
 });
 
 test("the guarantee floor beats every cap, and open admission needs no numbers", () => {
@@ -527,28 +627,176 @@ test("the guarantee floor beats every cap, and open admission needs no numbers",
 });
 
 /* ------------------------------------------------------------------ */
+/* Revision 1: consistency and completeness (owner, 2026-10-12)        */
+/* ------------------------------------------------------------------ */
+
+/** A college that weighs everything (C7), with a C10 rank profile, at a given tier and rate. */
+const WEIGHS_ALL = (tier: SelectivityTier | null, rate: number) =>
+  college("100654", {
+    rate,
+    sat: [1300, 1450],
+    gpa: middleGpa(3.5, 3.9),
+    c7: { gpa: "very_important", rigor: "very_important", class_rank: "considered", test_scores: "important", extracurriculars: "considered" },
+    classRank: { top_tenth: 0.4, top_quarter: 0.75, top_half: 0.95, submitted_share: 0.4 },
+    tier,
+  });
+const readings = (c: { school: School; standing: StandingSchool }, s: EstimateStudent, extra: Partial<ModelInput> = {}) =>
+  stageOneReadings({ student: s, school: c.school, standing: c.standing, offering: null, ...extra });
+const TIERS: (SelectivityTier | null)[] = ["elite", "highly_selective", "very_selective", "selective", "accessible", "open", null];
+
+test("rule 1: a top student with a weaker test is never placed below a middling student with a top test, at any tier", () => {
+  // A: GPA 4.0 (well above), top 5%, 8 of 9 APs, Focused; SAT 1250, below the range.
+  const a = student({ gpa: 4.0, classRankPercentile: 5, classStanding: "top5", courses: EIGHT_APS, activities: FOCUSED, test: sat(1250) });
+  // B: GPA 3.6 (just in range), top 25%, the same courses and activities; SAT 1600, at the top.
+  const b = student({ gpa: 3.6, classRankPercentile: 25, classStanding: "top25", courses: EIGHT_APS, activities: FOCUSED, test: sat(1600) });
+  for (const tier of TIERS) {
+    for (const rate of [0.04, 0.15, 0.3, 0.6, 0.85]) {
+      const c = WEIGHS_ALL(tier, rate);
+      const [ra, rb] = [readings(c, a, LINKED), readings(c, b, LINKED)];
+      assert.ok(ra.d! > rb.d!, `${tier} ${rate}: d ${ra.d} vs ${rb.d}`);
+      assert.ok(RANK(run(c, a, LINKED).group)! >= RANK(run(c, b, LINKED).group)!, `${tier} ${rate}: level`);
+    }
+  }
+  // The test still counts, a little: the same top student with a great score reads higher than with a weak one.
+  const c = WEIGHS_ALL(null, 0.3);
+  const great = readings(c, { ...a, test: sat(1500) }, LINKED);
+  const weak = readings(c, a, LINKED);
+  assert.ok(great.d! > weak.d!);
+  // Bounded both ways: never more than testUp above or testDown below the record without the test.
+  const core = readings(WEIGHS_ALL(null, 0.3), { ...a, test: null }, LINKED).d!;
+  near(weak.d! - core, -ODDS_V3.testDown, 1e-9);
+  assert.ok(readings(c, { ...a, test: sat(1600) }, LINKED).d! - core <= ODDS_V3.testUp + 1e-9);
+  // Guard: with the test as one more measure under the weakest-first combine (the version before Revision 1), B's
+  // distance would beat A's here; the rule is what keeps A ahead.
+  const oldCombine = (ds: number[]) => ODDS_V3.weakest * Math.min(...ds) + (1 - ODDS_V3.weakest) * (ds.reduce((x, y) => x + y, 0) / ds.length);
+  const gpaA = (4.0 - 3.5) / 0.4;
+  const rankA = (0.75 - 0.2) / 0.5;
+  const gpaB = (3.6 - 3.5) / 0.4;
+  const rankB = (0.75 - 0.75) / 0.5;
+  assert.ok(oldCombine([gpaA, rankA, (1250 - 1300) / 150]) < oldCombine([gpaB, rankB, Math.min(ODDS_V3.dMax, (1600 - 1300) / 150)]), "the old reading put B ahead");
+});
+
+test("rule 3: a score alone reads below a GPA alone, which reads below the full record, for the same strong student", () => {
+  const c = () => college("100654", {
+    rate: 0.3,
+    sat: [1200, 1400],
+    gpa: middleGpa(3.4, 3.9),
+    c7: { gpa: "very_important", rigor: "very_important", class_rank: "considered", test_scores: "important", extracurriculars: "important" },
+  });
+  const testOnly = detailed(c(), student({ test: sat(1500) }));
+  const gpaOnly = detailed(c(), student({ gpa: 4.0 }));
+  const full = detailed(c(), student({ gpa: 4.0, test: sat(1500), courses: EIGHT_APS, classRankPercentile: 5, classStanding: "top5", activities: FOCUSED }), LINKED);
+  assert.ok(testOnly.detail.hiddenOdds! < gpaOnly.detail.hiddenOdds! && gpaOnly.detail.hiddenOdds! < full.detail.hiddenOdds!);
+  assert.deepEqual([testOnly.result.group, gpaOnly.result.group, full.result.group], ["reach", "target", "likely"]);
+  // The score alone measures well above the range (d = 1.5) but is mostly gap.
+  const r = readings(c(), student({ test: sat(1500) }));
+  near(r.d, 1.5, 1e-9);
+  near(r.completeness, 1 / 8, 1e-9);
+  near(r.dEff, (1 / 8) * 1.5 + (7 / 8) * ODDS_V3.gapPrior, 1e-9);
+  // Guard: with completeness switched off (every record complete) the score alone would read as Likely.
+  assert.ok(0.3 * academicMultiplier(r.d!) >= ODDS_V3.cutoffs.likely, "without the gaps it would have been Likely");
+});
+
+test("rule 3: completeness is 1 when the college expects nothing the student lacks; a missing test at a test-optional college costs nothing", () => {
+  // Expects nothing: C7 says GPA and tests aren't considered, nothing else rated.
+  const nothing = college("100654", { rate: 0.3, sat: [1200, 1400], policy: "considered", c7: { gpa: "not_considered", test_scores: "not_considered" } });
+  near(readings(nothing, student()).completeness, 1, 1e-9);
+  near(readings(nothing, student({ gpa: 3.2 })).completeness, 1, 1e-9);
+  // Test-optional: no test is no gap; a test the student has is expected (and present).
+  const optional = () => college("100654", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), policy: "considered", c7: { gpa: "very_important", test_scores: "considered" } });
+  near(readings(optional(), student({ gpa: 3.8 })).completeness, 1, 1e-9);
+  assert.ok(!keys(run(optional(), student({ gpa: 3.8 }))).includes("estimate.incomplete"));
+  near(readings(optional(), student({ gpa: 3.8, test: sat(1300) })).completeness, 1, 1e-9);
+  // Required: no test is a gap.
+  const required = college("100654", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), policy: "required", c7: { gpa: "very_important", test_scores: "important" } });
+  near(readings(required, student({ gpa: 3.8 })).completeness, 3 / 4, 1e-9);
+  assert.ok(texts(run(required, student({ gpa: 3.8 }))).includes("Not in this estimate yet: your test score. Adding what you have gives a fuller picture and could change where this college stands for you."));
+  // "My school doesn't rank" is an answer; Sampling activities are entered.
+  const elon = ELON();
+  near(readings(elon, student({ gpa: 3.9, courses: TWO_APS, classStanding: "no_rank", activities: SAMPLING })).completeness, 1, 1e-9);
+  // Guard: a gap lowers the distance and never raises it (a record below the prior isn't helped by gaps).
+  const low = readings(required, student({ gpa: 2.8 }));
+  assert.ok(low.d! < ODDS_V3.gapPrior && low.dEff === low.d);
+  const high = readings(required, student({ gpa: 3.95 }));
+  assert.ok(high.dEff! < high.d!);
+});
+
+test("an incomplete record is never placed above the same record completed (with courses, activities, and class standing)", () => {
+  const colleges = [PURDUE, GEORGIA_TECH, ELON, () => ELON(0.45), FIFTEEN, HARVARD, () => WEIGHS_ALL("selective", 0.6), () => WEIGHS_ALL(null, 0.3), () => WEIGHS_ALL("elite", 0.05), LEGACY_MA];
+  const bases = [
+    student({ state: "IN", gpa: 3.95, test: sat(1500) }),
+    student({ state: "GA", gpa: 3.6, test: sat(1300) }),
+    student({ state: "OH", gpa: 3.0, test: sat(1100) }),
+    student({ gpa: 3.9 }),
+    student({ test: sat(1450) }),
+  ];
+  const finishes: Partial<EstimateStudent>[] = [
+    { courses: EIGHT_APS, activities: FOCUSED, classRankPercentile: 1, classStanding: "top1" },
+    { courses: TWO_APS, activities: SAMPLING, classStanding: "no_rank" },
+    { courses: EIGHT_APS, activities: BUILDING, classStanding: "no_rank" },
+  ];
+  let checked = 0;
+  for (const mk of colleges) {
+    for (const base of bases) {
+      for (const finish of finishes) {
+        const complete = { ...base, ...finish };
+        // Every subset of the three finishing inputs left out.
+        for (const drop of [["courses"], ["activities"], ["rank"], ["courses", "activities"], ["courses", "rank"], ["activities", "rank"], ["courses", "activities", "rank"]]) {
+          const partial: EstimateStudent = { ...complete };
+          if (drop.includes("courses")) partial.courses = [];
+          if (drop.includes("activities")) partial.activities = [];
+          if (drop.includes("rank")) Object.assign(partial, { classRankPercentile: null, classStanding: null });
+          const [p, f] = [detailed(mk(), partial, LINKED), detailed(mk(), complete, LINKED)];
+          assert.ok(RANK(p.result.group) === null || RANK(p.result.group)! <= RANK(f.result.group)!, `${mk().school.name} ${JSON.stringify(drop)}: ${p.result.group} above ${f.result.group}`);
+          if (p.detail.hiddenOdds !== null && f.detail.hiddenOdds !== null) assert.ok(p.detail.hiddenOdds! <= f.detail.hiddenOdds! + 1e-12, `${mk().school.name} ${JSON.stringify(drop)}: odds`);
+          checked++;
+        }
+      }
+    }
+  }
+  assert.ok(checked > 1000, `${checked}`);
+});
+
+test("the incomplete sentence names the missing kinds in words, and nothing about how much they count", () => {
+  const r = run(WEIGHS_ALL(null, 0.3), student({ test: sat(1400) }));
+  const n = r.notes.find((x) => x.key === "estimate.incomplete")!;
+  assert.equal(n.values.inputs, "GPA, courses, class standing, and activities");
+  assert.equal(noteText(n), "Not in this estimate yet: your GPA, courses, class standing, and activities. Adding what you have gives a fuller picture and could change where this college stands for you.");
+  for (const k of ["gpa", "courses", "class_rank", "activities"]) assert.ok(r.missing.includes(k as never), k);
+  assert.ok(texts(r).includes("Adding your GPA could change this estimate."), "the one prompt asks for the heaviest gap first");
+  assert.ok(Object.values(n.values).every((v) => typeof v === "string" && !/\d/.test(v)));
+  // Two kinds: "a and b"; complete: no sentence; a guarantee or open admission: none either.
+  const two = run(WEIGHS_ALL(null, 0.3), student({ gpa: 3.8, test: sat(1400), courses: EIGHT_APS }), LINKED);
+  assert.equal(two.notes.find((x) => x.key === "estimate.incomplete")!.values.inputs, "class standing and activities");
+  assert.ok(!keys(run(WEIGHS_ALL(null, 0.3), student({ gpa: 3.8, test: sat(1400), courses: EIGHT_APS, classStanding: "no_rank", activities: SAMPLING }), LINKED)).includes("estimate.incomplete"));
+  assert.ok(!keys(run(UT_AUSTIN(), student({ state: "TX", classRankPercentile: 4 }))).includes("estimate.incomplete"));
+  assert.ok(!keys(run(college("100654", { rate: null, c7: null }), student({ gpa: 3 }))).includes("estimate.incomplete"));
+});
+
+/* ------------------------------------------------------------------ */
 /* Move-up, closeness, ED                                              */
 /* ------------------------------------------------------------------ */
 
 test("move-up: the fewest points to the next level, across five; at an Elite college only from High reach to Reach", () => {
   const c = () => plain({ rate: 0.22, sat: [1400, 1510] });
-  const r = run(c(), student({ test: sat(1390) }));
+  const r = run(c(), student({ gpa: UNPLACED_GPA, test: sat(1390) }));
   assert.equal(r.group, "reach");
   assert.deepEqual(r.moveUp, { points: 70, to: "target", score: 1460 });
-  assert.equal(run(c(), student({ test: sat(1460) })).group, "target");
-  assert.equal(run(c(), student({ test: sat(1450) })).group, "reach");
-  const elite = () => college("166027", { rate: 0.04, sat: [1500, 1580], gpa: null, c7: null, tier: "elite" });
-  const low = run(elite(), student({ test: sat(1450) }));
+  assert.equal(run(c(), student({ gpa: UNPLACED_GPA, test: sat(1460) })).group, "target");
+  assert.equal(run(c(), student({ gpa: UNPLACED_GPA, test: sat(1450) })).group, "reach");
+  const elite = () => college("166027", { rate: 0.04, sat: [1500, 1580], gpa: middleGpa(3.7, 3.9), c7: null, tier: "elite" });
+  const low = run(elite(), EXCELLENT({ test: sat(1450) }), LINKED);
   assert.equal(low.group, "high_reach");
-  assert.deepEqual(low.moveUp, { points: 50, to: "reach", score: 1500 });
-  assert.equal(run(elite(), student({ test: sat(1500) })).moveUp, null, "Reach at Elite: nothing beyond");
+  assert.deepEqual(low.moveUp, { points: 50, to: "reach", score: 1500 }, "every other signal is there: the test is the one short");
+  assert.equal(run(elite(), EXCELLENT({ test: sat(1500) }), LINKED).moveUp, null, "Reach at Elite: nothing beyond");
+  assert.equal(run(elite(), EXCELLENT({ test: sat(1450), activities: [] }), LINKED).moveUp, null, "no score reaches Reach while activities are missing");
   // No move-up where the test isn't counted, or from Safe.
   assert.equal(run(ELON(), student({ gpa: 3.5, test: sat(1100) })).moveUp, null);
   assert.equal(strong(0.6, "accessible").moveUp, null);
 });
 
 test("closeness: which quarter of its level's band the odds fall in; null when a cap or floor set the level", () => {
-  const at = (rate: number) => run(plain({ rate, sat: [1200, 1300] }), student({ test: sat(1250) }));
+  const at = (rate: number) => run(plain({ rate, sat: [1200, 1300] }), student({ gpa: UNPLACED_GPA, test: sat(1250) }));
   // d = 0.5 → ×1.1.
   assert.deepEqual([at(0.06).group, at(0.06).closeness], ["reach", 0], "6.6% is low in Reach");
   assert.deepEqual([at(0.2).group, at(0.2).closeness], ["reach", 3], "22% is nearest Target");
@@ -560,24 +808,24 @@ test("closeness: which quarter of its level's band the odds fall in; null when a
 test("ED: helps where the college's early-decision rate lifts the level; same where it doesn't; not advised at a High reach", () => {
   // ED admits 60% against 20% overall: M_ed = 1 + ½ × (3 − 1) = 2, the most it can be.
   const c = (rate = 0.2, tier: SelectivityTier | null = null) => college("100654", { rate, sat: [1200, 1300], c7: null, tier, ed: { applicants: 1000, admitted: 600 } });
-  const target = run(c(), student({ test: sat(1300), round: "ed" }));
+  const target = run(c(), student({ gpa: UNPLACED_GPA, test: sat(1300), round: "ed" }));
   assert.equal(target.group, "target");
   assert.equal(target.ed, "helps");
   assert.ok(texts(target).includes("Early decision would move this toward Likely; it's binding, so check the cost first."));
-  const capped = run(c(0.2, "highly_selective"), student({ test: sat(1300), round: "ed" }));
+  const capped = run(c(0.2, "highly_selective"), student({ gpa: UNPLACED_GPA, test: sat(1300), round: "ed" }));
   assert.equal(capped.ed, "same", "the cap holds under ED");
   assert.ok(keys(capped).includes("ed.same"));
-  const hr = run(c(), student({ test: sat(1000), round: "ed" }));
+  const hr = run(c(), student({ gpa: UNPLACED_GPA, test: sat(1000), round: "ed" }));
   assert.equal(hr.group, "high_reach");
   assert.equal(hr.ed, "not_advised");
   assert.ok(keys(hr).includes("ed.not_advised"));
   // Without a round of ED the verdict is still there for the planner, but no sentence.
-  const rd = run(c(), student({ test: sat(1300) }));
+  const rd = run(c(), student({ gpa: UNPLACED_GPA, test: sat(1300) }));
   assert.equal(rd.ed, "helps");
   assert.ok(!keys(rd).some((k) => k.startsWith("ed.")));
   // No ED counts on record: no verdict (except the High reach guard).
-  assert.equal(run(college("100654", { rate: 0.2, sat: [1200, 1300], c7: null }), student({ test: sat(1300) })).ed, null);
-  assert.equal(run(college("100654", { rate: 0.2, sat: [1200, 1300], c7: null }), student({ test: sat(1000) })).ed, "not_advised");
+  assert.equal(run(college("100654", { rate: 0.2, sat: [1200, 1300], c7: null }), student({ gpa: UNPLACED_GPA, test: sat(1300) })).ed, null);
+  assert.equal(run(college("100654", { rate: 0.2, sat: [1200, 1300], c7: null }), student({ gpa: UNPLACED_GPA, test: sat(1000) })).ed, "not_advised");
   assert.equal(run(college("100654", { rate: 0.2, sat: [1200, 1300], c7: null }), student()).ed, null, "no level, no verdict");
 });
 
@@ -589,9 +837,10 @@ const depthCollege = (extracurriculars: string | null, extra: Record<string, str
   college("100654", { rate: 0.3, sat: [1200, 1400], c7: extracurriculars ? { extracurriculars, ...extra } : Object.keys(extra).length ? extra : null });
 
 test("depth: Focused ×1.3 where the college rates activities important, half at considered, nothing (with a sentence) otherwise", () => {
-  const s = student({ test: sat(1300), activities: FOCUSED });
+  // Against a Sampling record (entered, ×1), so the activities aren't a gap on either side.
+  const s = student({ gpa: UNPLACED_GPA, test: sat(1300), activities: FOCUSED });
   const odds = (c: ReturnType<typeof depthCollege>, st = s) => detailed(c, st).detail.hiddenOdds!;
-  const base = odds(depthCollege("important"), student({ test: sat(1300) }));
+  const base = odds(depthCollege("important"), student({ gpa: UNPLACED_GPA, test: sat(1300), activities: SAMPLING }));
   near(odds(depthCollege("important")) / base, 1.3, 1e-9);
   near(odds(depthCollege("very_important")) / base, 1.3, 1e-9);
   near(odds(depthCollege("considered")) / base, 1.15, 1e-9);
@@ -604,18 +853,19 @@ test("depth: Focused ×1.3 where the college rates activities important, half at
 });
 
 test("depth: recognition counts as the larger of the two, never the product; awards give recognition", () => {
-  const base = detailed(depthCollege("important"), student({ test: sat(1300) })).detail.hiddenOdds!;
-  const both = detailed(depthCollege("important"), student({ test: sat(1300), activities: FOCUSED, awards: [{ id: "w1", key: null, name: "National award", tier: 1, year: 11 }] }));
+  const base = detailed(depthCollege("important"), student({ gpa: UNPLACED_GPA, test: sat(1300), activities: SAMPLING })).detail.hiddenOdds!;
+  const both = detailed(depthCollege("important"), student({ gpa: UNPLACED_GPA, test: sat(1300), activities: FOCUSED, awards: [{ id: "w1", key: null, name: "National award", tier: 1, year: 11 }] }));
   near(both.detail.hiddenOdds! / base, 1.8, 1e-9);
   assert.ok(both.result.used.includes("awards"));
-  const state = detailed(depthCollege("important"), student({ test: sat(1300), activities: SAMPLING, awards: [{ id: "w2", key: null, name: "All-state", tier: 2, year: 11 }] }));
+  const state = detailed(depthCollege("important"), student({ gpa: UNPLACED_GPA, test: sat(1300), activities: SAMPLING, awards: [{ id: "w2", key: null, name: "All-state", tier: 2, year: 11 }] }));
   near(state.detail.hiddenOdds! / base, 1.25, 1e-9);
 });
 
-test("depth never lowers a level: Sampling, or no activities, leaves the level where it was", () => {
-  for (const acts of [SAMPLING, []]) {
-    const s = student({ test: sat(1300), activities: acts });
-    assert.equal(run(depthCollege("very_important"), s).group, run(depthCollege("very_important"), student({ test: sat(1300) })).group);
+test("depth never lowers a level: entering a Sampling record leaves the level at least where it was", () => {
+  for (const rating of ["very_important", "considered", "not_considered"]) {
+    const none = run(depthCollege(rating), student({ gpa: UNPLACED_GPA, test: sat(1300) }));
+    const sampling = run(depthCollege(rating), student({ gpa: UNPLACED_GPA, test: sat(1300), activities: SAMPLING }));
+    assert.ok(RANK(sampling.group)! >= RANK(none.group)!, rating);
   }
 });
 
@@ -654,7 +904,7 @@ test("work: 10+ hours ×1.1, 20+ ×1.2 where the college weighs work experience;
   near(detailed(c(null), student({ test: sat(1300), activities: job(6) })).detail.hiddenOdds! / base, 1, 1e-9);
   // Depth open and the job is a top-two activity: depth reads it, work doesn't count it twice.
   const both = detailed(c("important"), student({ test: sat(1300), activities: job(22) }));
-  near(both.detail.hiddenOdds! / detailed(c("important"), student({ test: sat(1300) })).detail.hiddenOdds!, 1, 1e-9);
+  near(both.detail.hiddenOdds! / detailed(c("important"), student({ test: sat(1300), activities: job(6) })).detail.hiddenOdds!, 1, 1e-9);
   // Not weighed: "not used here".
   const notWeighed = run(college("100654", { rate: 0.3, sat: [1200, 1400], c7: { work_experience: "not_considered" } }), student({ test: sat(1300), activities: job(22) }));
   assert.ok(texts(notWeighed).some((t) => /^Not used here: work hours/.test(t)));
@@ -735,7 +985,7 @@ test("GPA: unused where C7 says it isn't considered, used where it is or where n
 });
 
 test("crowding: at or above the 25th only meets the bar at a crowded college; below keeps its measured distance", () => {
-  const mk = (top: [number, number] | null) => college("198516", { rate: 0.55, gpa: middleGpa(3.3, 3.7), c7: { gpa: "very_important" }, topShare: top });
+  const mk = (top: [number, number] | null) => college("198516", { rate: 0.55, gpa: middleGpa(3.3, 3.7), c7: { gpa: "very_important" }, topShare: top, policy: "considered" });
   assert.equal(run(mk([0.2, 0.2]), student({ gpa: 3.95 })).group, "safe", "40% at 3.75+: not crowded, measured from the bands");
   const crowded = detailed(mk([0.4, 0.2]), student({ gpa: 3.95 }));
   assert.equal(crowded.result.group, "likely", "60% at 3.75+: meets the bar");
@@ -800,7 +1050,7 @@ test("the snapshot detail: position, pool, crowding, reading, hidden odds, tier,
   assert.equal(detail.position, "in");
   assert.equal(detail.baseRateKind, "residency");
   near(detail.baseRate, 0.71, 1e-9);
-  near(detail.hiddenOdds, 0.72);
+  near(detail.hiddenOdds, 0.582, 0.001);
   assert.equal(detail.selectivityTier, "selective");
   assert.equal(detail.without?.residency, "target", "43% overall, Highly selective for all applicants");
   assert.deepEqual(Object.keys(detail.without!).sort(), ["crowding", "depth", "hooks", "interest", "rank", "residency", "rigor"]);
@@ -852,7 +1102,7 @@ test("pool: the published rate's kind, rate, and who-phrase; Compare's line read
 /* ------------------------------------------------------------------ */
 
 /** The names the method's internals go by; a public surface carrying any of them leaks the method. */
-const INTERNAL_NAMES = /hidden_?odds|hiddenOdds|\bodds\b|multiplier|selectivity_?index|ODDS_V3|HOOKS_V3|M_acad|M_depth|M_legacy|cutoff/i;
+const INTERNAL_NAMES = /hidden_?odds|hiddenOdds|\bodds\b|multiplier|selectivity_?index|ODDS_V3|HOOKS_V3|M_acad|M_depth|M_legacy|cutoff|completeness|gap_?prior|test_?pull|test_?down|test_?up|expect_?weights|\bd_?eff\b|d_core|stageOneReadings/i;
 
 /** Results across the pinned cases, each with its hidden odds. */
 function sweep() {
@@ -867,6 +1117,8 @@ function sweep() {
   add(ELON(), student({ gpa: 3.9, courses: EIGHT_APS, activities: FOCUSED }), { offering: OFFERING(9), linked: true });
   add(LEGACY_MA(), student({ test: sat(1450), gpa: 3.9, round: "ed" }), { hooks: hooks({ legacy: true, interest: true, recruited: "contact" }) });
   add(HARVARD(), student({ test: sat(1560), gpa: 4.0 }));
+  add(GEORGIA_TECH(), student({ state: "GA", test: sat(1500) }));
+  add(ELON(), student({ gpa: 3.9 }));
   return out;
 }
 
@@ -888,6 +1140,8 @@ test("guard: a result carries exactly the contract's fields, and none holds the 
   // The check fails when a result does carry them.
   const leaky = { ...sweep()[0].result, hiddenOdds: 0.72 };
   assert.match(JSON.stringify(leaky), INTERNAL_NAMES);
+  // And Revision 1's readings (completeness, the gap prior, the test pull) the same way.
+  for (const extra of [{ completeness: 0.45 }, { gapPrior: -0.5 }, { testPull: 0.25 }, { dEff: 0.3 }]) assert.match(JSON.stringify({ ...sweep()[0].result, ...extra }), INTERNAL_NAMES);
 });
 
 test("guard: the API response strips anything beyond the contract, including odds and multipliers", () => {
@@ -902,10 +1156,10 @@ test("guard: the API response strips anything beyond the contract, including odd
 });
 
 test("guard: the new sentences name no number, weight, cutoff, or odds", () => {
-  const added = Object.keys(NOTES).filter((k) => /^(estimate\.(level\.|elite|recruited|label\.elite|label\.recruited|not_said|work|first_generation)|hooks\.|ed\.|pool\.who\.)/.test(k));
+  const added = Object.keys(NOTES).filter((k) => /^(estimate\.(level\.|elite|recruited|label\.elite|label\.recruited|not_said|work|first_generation|incomplete)|hooks\.|ed\.|pool\.who\.)/.test(k));
   assert.ok(added.length >= 20, `${added.length}`);
   for (const k of added) {
-    const text = NOTES[k]({ college: "X", rating: "considered", state: "Maryland", scope: "all", law: "HB", level: "Target", unit: "Engineering", test: "SAT", hours: "" });
+    const text = NOTES[k]({ inputs: "courses and activities", college: "X", rating: "considered", state: "Maryland", scope: "all", law: "HB", level: "Target", unit: "Engineering", test: "SAT", hours: "" });
     assert.doesNotMatch(text, /\d|%/, `${k}: ${text}`);
     assert.doesNotMatch(text, /weight|threshold|cutoff|multipl|odds|percent|index/i, `${k}: ${text}`);
   }
@@ -951,15 +1205,17 @@ test("guard: the method and the hooks are server-only, and no client component r
 test("guard: telemetry never carries the odds, closeness, the tier's index, or the list row's toggles", () => {
   const analytics = read("lib", "analytics.ts");
   const registry = analytics.slice(analytics.indexOf("export const EVENTS"));
-  const problems = (src: string) => [...src.matchAll(/properties:\s*\[([^\]]*)\]/g)].flatMap((m) => m[1].split(",").map((p) => p.trim().replace(/"/g, ""))).filter((p) => /odds|closeness|multiplier|index|legacy|recruited|interest|without_/.test(p));
+  const problems = (src: string) => [...src.matchAll(/properties:\s*\[([^\]]*)\]/g)].flatMap((m) => m[1].split(",").map((p) => p.trim().replace(/"/g, ""))).filter((p) => /odds|closeness|multiplier|index|legacy|recruited|interest|without_|completeness/.test(p));
   assert.deepEqual(problems(registry), []);
   assert.deepEqual(problems('x: { properties: ["group", "hidden_odds"] }'), ["hidden_odds"], "the check sees a leak");
+  assert.deepEqual(problems('x: { properties: ["group", "completeness"] }'), ["completeness"], "and a completeness leak");
 });
 
 test("guard: the account export never includes the hidden odds or the ablation columns", () => {
   const exp = read("lib", "account-export.ts");
   const cols = exp.match(/const SNAPSHOT_EXPORT_COLUMNS =\s*"([^"]+)"/)![1].split(",").map((c) => c.trim());
-  const leaks = (list: string[]) => list.filter((c) => /hidden_odds|^without_|^position$|^base_rate/.test(c));
+  const leaks = (list: string[]) => list.filter((c) => /hidden_odds|^without_|^position$|^base_rate|completeness/.test(c));
   assert.deepEqual(leaks(cols), []);
   assert.deepEqual(leaks([...cols, "hidden_odds"]), ["hidden_odds"], "the check sees a leak");
+  assert.deepEqual(leaks([...cols, "completeness"]), ["completeness"], "and a completeness column");
 });

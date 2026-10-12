@@ -137,3 +137,16 @@ test("every caller of a bundle keeps its per-table read for when the function is
 test("guard: a caller that drops its fallback is flagged", () => {
   assert.equal(fallbackProblems([{ file: "x.ts", src: "await viewerBundle();", bundle: /viewerBundle\(\)/, table: /\.from\("profiles"\)/ }]).length, 1);
 });
+
+test("plan_bundle reads every list_items column the app reads (a new column must join both lists)", async () => {
+  const { readFileSync, readdirSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { PLAN_ITEM_COLUMNS } = await import("../lib/planner/read-plan.ts");
+  const dir = join(import.meta.dirname, "..", "supabase", "migrations");
+  // The latest migration that defines plan_bundle is the one the database runs.
+  const file = readdirSync(dir).filter((f) => f.endsWith(".sql") && readFileSync(join(dir, f), "utf8").includes("function public.plan_bundle")).sort().at(-1)!;
+  const sql = readFileSync(join(dir, file), "utf8");
+  const select = /select (id, list_id, unit_id[\s\S]*?)\s+from public\.list_items where list_id = v_list/.exec(sql)?.[1] ?? "";
+  const names = (s: string) => s.split(",").map((c) => c.trim()).filter(Boolean).sort();
+  assert.deepEqual(names(select), names(PLAN_ITEM_COLUMNS), `${file}: plan_bundle's list_items columns differ from PLAN_ITEM_COLUMNS`);
+});

@@ -119,7 +119,7 @@ begin
         select id, list_id, unit_id, category, status, outcome, round, position, added_by, added_at, decision_date,
           deadline_text, deadline_date, enrolling, updates, visited_on, follows_social, dream, priority, followed_networks,
           info_requested_on, application_platform, applied_on, complete_on, portal_url, committed_on, withdrawn_on,
-          recommendations_count, supplements_count, transcript_shared, category_source, round_source, legacy, recruited
+          recommendations_count, supplements_count, transcript_shared, category_source, round_source, legacy, recruited, legacy_sibling
         from public.list_items where list_id = v_list
       ) i
     ), '[]'::jsonb),

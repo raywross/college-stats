@@ -138,8 +138,8 @@ export function sanitizeHooks(input: unknown, unitIds: readonly string[]): Recor
     const h = input[id];
     if (!isObj(h)) continue;
     const recruited = RECRUITED_PICKS.includes(h.recruited as RecruitedPick) ? (h.recruited as RecruitedPick) : NO_HOOKS.recruited;
-    const hooks: CollegeHooks = { legacy: h.legacy === true, recruited, interest: h.interest === true };
-    if (hooks.legacy || hooks.interest || hooks.recruited !== "none") out[id] = hooks;
+    const hooks: CollegeHooks = { legacy: h.legacy === true, sibling: h.sibling === true, recruited, interest: h.interest === true };
+    if (hooks.legacy || hooks.sibling || hooks.interest || hooks.recruited !== "none") out[id] = hooks;
   }
   return out;
 }

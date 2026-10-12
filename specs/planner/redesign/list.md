@@ -27,7 +27,13 @@ there's nothing to mark as a suggestion.
 ## Simpler planner (owner, 2026-10-12)
 The owner's review simplified the list; this section is what's built now, and it replaces "The row" columns and "The
 drawer" below where they differ:
-- **The row** is the Dream heart, the crest and name, and (i). Round, Deadline, and Status left the row and the
+- **The row** is the Dream heart, the crest and name, and an expand control (2026-10-12, owner: "It's not really
+  'info', it's more of an expand/contract"): "Details" with a chevron (the chevron alone on phones), `aria-expanded`,
+  opening the capture panel inline under the row. Inline rather than a sheet: the panel is a handful of one-tap chips
+  that belong to that row, the list stays in view around it on a phone and on a desktop, and a second college opens
+  without closing the first. When there's something left to capture (`rowToDo`, lib/planner/capture.ts: no visit or
+  information request yet; social accounts on record and none followed), the control takes the accent color and a
+  small count (1 or 2). Legacy, sibling, and recruiting are answers either way, never a to-do. Round, Deadline, and Status left the row and the
   header ("there for seniors; remove for now, I'll want to tie this into the recommendations in a future PR"); the
   stored round and dates are unchanged and the Calendar (and Offers) still read them. Phones and desktop show the same
   one-line row. The level stays the section heading above the row.
@@ -43,9 +49,13 @@ drawer" below where they differ:
 - **The capture panel** (the row's (i), `components/planner/RowDrawer.tsx`) replaces the drawer: "information
   overload and the text is out of date… what we're really looking for here is to capture some more information."
   In the intake's chip style (`components/activities/chips.tsx`), 44px targets, 16px inputs on phones:
-  1. **Legacy**: one toggle, "A parent or grandparent graduated from here", with the state-ban sentence where one
-     applies (`AboutYouAndCollege`).
-  2. **Recruited**: None · A coach has contacted me · I've had a positive pre-read · I have a likely letter.
+  1. **Connections** (`AboutYouAndCollege`; owner, 2026-10-12: "not take up a ton of space"): one line of one-tap
+     chips, [Parent or grandparent went here] [Sibling went here] [Recruited ▾]. Recruited opens its four picks
+     (No · Coach contact · Pre-read · Likely letter) only when tapped, and reads "Recruited · Pre-read" once picked.
+     The state-ban sentence shows under it where one applies to a marked legacy or sibling. Sibling stores to
+     `list_items.legacy_sibling` (`setItemSibling`); until 20261012130000 is applied it reads as unmarked and its
+     write fails with "That didn't work".
+  2. (Recruited is the third chip on the Connections line.)
   3. **Visited**: "We visited" logs a campus visit dated today (`plan_visits`, which sets `list_items.visited_on`);
      the date is editable (no later than today); **Visit notes** opens the visit's form (`VisitForm`) in a sheet.
      Tapping it again removes that visit (asking first when it has notes); with more than one past visit logged it

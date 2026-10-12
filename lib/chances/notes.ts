@@ -347,6 +347,8 @@ export const NOTES: Record<NoteKey, Note> = {
   /* ---- The list row's inputs (inputs-beyond-academics.md "Legacy", "Recruited athlete", "Demonstrated interest") ---- */
   /** `rating`: "very important", "important", or "considered", as the college's C7 says. */
   "hooks.legacy_used": (v) => `Legacy helps here: ${s(v, "college")} rates alumni relation ${s(v, "rating")}.`,
+  /** A sibling who went here, at a college that rates alumni relation (owner, 2026-10-12). */
+  "hooks.sibling_used": () => "A sibling here counts at colleges that consider family connections.",
   "hooks.legacy_not_weighed": (v) => `${s(v, "college")} doesn't say it weighs alumni relation.`,
   /** `scope`: "public", "private", or "all"; `law`: the bill as the state names it. */
   "hooks.legacy_banned": (v) => `${s(v, "state")} bars legacy preference at ${s(v, "scope")} colleges (${s(v, "law")}), so this isn't used.`,
@@ -477,7 +479,7 @@ export function listExplainer(): ListExplainerSection[] {
           label: "Activities",
           text: "Sports, clubs, work, and anything else, with the years, your role, and your awards. Depth counts: sticking with something across the years, and courses and activities in the same area, like art classes and an art club.",
         },
-        { label: "Legacy", text: "A parent or grandparent who graduated, at colleges that say they consider it and where the state allows it." },
+        { label: "Legacy", text: "A parent, grandparent, or sibling who went there, at colleges that say they consider it and where the state allows it." },
         { label: "Recruiting", text: "A coach recruiting you, from a first contact to a likely letter." },
         { label: "Visits and following", text: "Visiting, asking for information, and following a college on social, at colleges that say they consider an applicant's interest." },
         { label: "Your state and major", text: "They decide who you're compared with." },

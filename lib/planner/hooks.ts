@@ -3,7 +3,7 @@
  * requests"). Pure and client-safe, so it can be tested and shared; lib/planner/plan-estimates.ts calls it on the
  * server for the plan loader and the suggestion sync.
  *
- * - `legacy` and `recruited`: the row's own toggles, set in the row's capture panel (components/planner/RowDrawer.tsx,
+ * - `legacy`, `sibling` (`legacy_sibling`, owner 2026-10-12), and `recruited`: the row's own toggles, set in the row's capture panel (components/planner/RowDrawer.tsx,
  *   through components/planner/AboutYouAndCollege.tsx).
  * - `interest` (demonstrated interest): true once the family has shown the college interest in any way the plan
  *   records: a visit (`visited_on`, or any entry in `plan_visits`), an information request (`info_requested_on`), or
@@ -18,7 +18,7 @@ import type { PlanItem, PlanVisit } from "./types.ts";
 
 /** What hooksFromPlan reads of a list item: its ids, the two per-college toggles, and the interest records. */
 export type HooksItem = Pick<PlanItem, "id" | "unit_id" | "legacy" | "recruited" | "visited_on" | "info_requested_on"> &
-  Partial<Pick<PlanItem, "followed_networks" | "follows_social">>;
+  Partial<Pick<PlanItem, "followed_networks" | "follows_social" | "legacy_sibling">>;
 
 /** Whether the plan records any demonstrated interest in this college (see the module comment). */
 export function showsInterest(item: HooksItem, visitedItemIds: ReadonlySet<string>): boolean {
@@ -35,8 +35,13 @@ export function hooksFromPlan(items: readonly HooksItem[], visits: readonly Pick
   const visitedItemIds = new Set(visits.map((v) => v.item_id));
   const out: Record<string, CollegeHooks> = {};
   for (const item of items) {
-    const hooks: CollegeHooks = { legacy: item.legacy === true, recruited: item.recruited ?? NO_HOOKS.recruited, interest: showsInterest(item, visitedItemIds) };
-    if (hooks.legacy || hooks.recruited !== "none" || hooks.interest) out[item.unit_id] = hooks;
+    const hooks: CollegeHooks = {
+      legacy: item.legacy === true,
+      sibling: item.legacy_sibling === true,
+      recruited: item.recruited ?? NO_HOOKS.recruited,
+      interest: showsInterest(item, visitedItemIds),
+    };
+    if (hooks.legacy || hooks.sibling || hooks.recruited !== "none" || hooks.interest) out[item.unit_id] = hooks;
   }
   return out;
 }

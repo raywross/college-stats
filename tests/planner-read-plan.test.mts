@@ -59,7 +59,7 @@ test("with the redesign's columns: one read, sources as stored", async () => {
   const itemReads = selects.filter((s) => s.table === "list_items");
   assert.equal(itemReads.length, 1);
   assert.equal(itemReads[0].columns, PLAN_ITEM_COLUMNS);
-  assert.match(PLAN_ITEM_COLUMNS, /category_source, round_source, legacy, recruited$/);
+  assert.match(PLAN_ITEM_COLUMNS, /category_source, round_source, legacy, recruited, legacy_sibling$/);
 });
 
 test("without the five-levels columns only (legacy/recruited): retried without them, backfilled to false/'none', sources kept as stored", async () => {

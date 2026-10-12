@@ -5,7 +5,7 @@
  * at the end through `saveIntake` (lib/planner/store-plan.ts), every rule from lib/planner/intake.ts. Screens 1a
  * (phone) and 2a (desktop) of the design handoff.
  */
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ActivitiesStep } from "@/components/planner/intake/ActivitiesStep";
@@ -27,6 +27,7 @@ import {
   type IntakeStep,
 } from "@/lib/planner/intake";
 import { stepRailSummary } from "@/lib/planner/activity-steps";
+import { entryCount, intakeScrollFor, scrollBehavior } from "@/lib/planner/intake-scroll";
 import { planHref } from "@/lib/planner/plan-tabs";
 import { saveIntake } from "@/lib/planner/store-plan";
 import type { PlanView } from "@/lib/planner/plan-view";
@@ -51,6 +52,35 @@ function railSummary(draft: IntakeDraft, step: IntakeStep): string | null {
   const activity = activityStepAt(step);
   if (activity) return stepRailSummary(activity, draft.activities, draft.awards, draft.activitiesNone[activity] === true);
   return null;
+}
+
+/**
+ * The guide's scrolling (lib/planner/intake-scroll.ts; owner, 2026-10-12): a step change goes to the page top and moves
+ * focus to the step's heading; an added entry brings the step's top (its search box) back into view. Returns the ref
+ * for the step's container. Scroll only; it never touches the draft or the save.
+ */
+function useIntakeScroll(step: number, count: number) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const prev = useRef<{ step: number; count: number } | null>(null);
+  useEffect(() => {
+    const action = intakeScrollFor(prev.current, { step, count });
+    prev.current = { step, count };
+    if (!action) return;
+    const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const behavior = scrollBehavior(reduced);
+    if (action === "page-top") {
+      window.scrollTo({ top: 0, behavior });
+      const heading = ref.current?.querySelector<HTMLElement>("h1, h2");
+      if (heading) {
+        heading.tabIndex = -1;
+        heading.classList.add("outline-none");
+        heading.focus({ preventScroll: true });
+      }
+    } else {
+      ref.current?.scrollIntoView({ block: "start", behavior });
+    }
+  }, [step, count]);
+  return ref;
 }
 
 export default function PlanIntake({
@@ -87,6 +117,7 @@ export default function PlanIntake({
   const [step, setStep] = useState<IntakeStep>(done ? INTAKE_DONE : mode === "edit" ? (linkedStep ?? INTAKE_REVIEW) : 0);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const stepTop = useIntakeScroll(step, entryCount(draft));
 
   const go = (from: IntakeStep, to: IntakeStep) => {
     if (from !== INTAKE_DONE) track("plan_intake_step", { step: from, mode });
@@ -234,7 +265,7 @@ export default function PlanIntake({
           <ProgressBar step={step} />
         </div>
 
-        <div className="px-5 py-6 lg:px-0 lg:py-2">
+        <div ref={stepTop} className="px-5 py-6 lg:px-0 lg:py-2">
           {step === 0 && <GradesStep draft={draft} setDraft={setDraft} today={today} storedGradYear={storedGradYear} />}
           {step === 1 && <TestStep draft={draft} setDraft={setDraft} />}
           {step === 2 && <ApStep draft={draft} setDraft={setDraft} today={today} />}

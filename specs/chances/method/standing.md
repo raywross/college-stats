@@ -101,12 +101,13 @@ distance, which is part of Stage 1 because the college itself states the require
 | `M_depth` | The [activities reading](../depth.md#activities) and highest recognition tier | `extracurriculars` or `talent` at least *important* (half the effect at *considered*: `1 + (M − 1)/2`) | Focused 1.3 · Building 1.1 · Sampling 1.0; recognition tier 1 → 1.8, tier 2 → 1.25; **the larger of the two**, not the product |
 | `M_work` | [Work and family responsibilities](../inputs-beyond-academics.md#work-and-family-responsibilities) | `work_experience` at least *considered* | 10+ hours a week in the school year 1.1; 20+ hours 1.2. Where `M_depth` already counts the work entry (it is one of the top two activities), `M_work` is 1 |
 | `M_legacy` | The list row's [legacy toggle](../inputs-beyond-academics.md#legacy) | `alumni_relation`: *very important* or *important* 2.5; *considered* 1.5; *not considered* or no C7 1.0 | 1.0 with the "This state bars legacy preference" sentence where `data/reference/legacy-bans.json` covers the college's state and sector |
-| `M_interest` | A visit, interview, or information request logged in the planner for this college | `interest` *very important* or *important* 1.15; *considered* 1.05 | |
+| `M_sibling` (owner, 2026-10-12; `MODEL_VERSION 20261012.6`) | The list row's Sibling chip (`list_items.legacy_sibling`) | `alumni_relation` at least *considered*: 1.15 at every such rating; *not considered* or no C7 1.0 | 1.0 where a state bars legacy preference (the same ban as `M_legacy`). Never stacked: with both marked, the larger of `M_legacy` and `M_sibling` enters the product. Sentence: "A sibling here counts at colleges that consider family connections." |
+| `M_interest` | A visit, interview, follow on social, or information request logged in the planner for this college | `interest` *very important* or *important* 1.15; *considered* 1.05 | |
 | `M_recruit` | The list row's [recruited-athlete pick](../inputs-beyond-academics.md#recruited-athlete) at "a coach has contacted me" | none (the coach's interest is the evidence) | 1.5. Pre-read and likely letter are floors, below |
 | `M_ed` | The college's C21 early-decision counts | **for the ED advice sentence only**, never in the level | `1 + 0.5 × (edRate / overallRate − 1)`, at most 2; half the raw ratio because ED pools hold recruited athletes and other hooked applicants |
 
 ```
-odds = min(0.97, rate × M_acad × M_depth × M_work × M_legacy × M_interest × M_recruit)
+odds = min(0.97, rate × M_acad × M_depth × M_work × max(M_legacy, M_sibling) × M_interest × M_recruit)
 ```
 
 ## Stage 3: the level

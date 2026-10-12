@@ -198,7 +198,7 @@ function detailed(c: { school: School; standing: StandingSchool }, s: EstimateSt
 }
 const keys = (r: { notes: { key: string }[] }) => r.notes.map((n) => n.key);
 const texts = (r: { notes: { key: string; values: Record<string, string | number> }[] }) => r.notes.map((n) => noteText(n));
-const hooks = (o: Partial<CollegeHooks>): CollegeHooks => ({ legacy: false, recruited: "none", interest: false, ...o });
+const hooks = (o: Partial<CollegeHooks>): CollegeHooks => ({ legacy: false, sibling: false, recruited: "none", interest: false, ...o });
 const near = (a: number | null | undefined, b: number, eps = 0.01) => assert.ok(a !== null && a !== undefined && Math.abs(a - b) < eps, `${a} ≈ ${b}`);
 
 /* The pinned colleges (method/standing.md "Pinned examples"). */
@@ -247,7 +247,7 @@ const ELITE_6 = () => college("162928", { rate: 0.06, sat: [1270, 1370], gpa: nu
 /* ------------------------------------------------------------------ */
 
 test("version: the third version's model version (Revision 1), and the constants the method names", () => {
-  assert.equal(MODEL_VERSION, "20261012.5");
+  assert.equal(MODEL_VERSION, "20261012.6");
   assert.deepEqual([ODDS_V3.testPull, ODDS_V3.testDown, ODDS_V3.testUp, ODDS_V3.gapPrior], [0.25, 0.3, 0.2, -0.5]);
   assert.deepEqual(ODDS_V3.expectWeights, { gpa: 3, courses: 2, class_rank: 1, test: 1, activities: 1 });
   assert.deepEqual(ODDS_V3.acad.map(([d]) => d), [-1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]);
@@ -995,6 +995,34 @@ test("legacy: 2.5 at important, 1.5 at considered, 1 (with a sentence) where not
   assert.ok(keys(run(c(null), s, { hooks: hooks({ legacy: true }) })).includes("hooks.legacy_not_weighed"));
   // The cap holds: legacy can't lift a Highly selective college past Target.
   assert.equal(run(c("very_important"), student({ test: sat(1600) }), { hooks: hooks({ legacy: true }) }).group, "target");
+});
+
+test("sibling (owner, 2026-10-12): 1.15 wherever alumni relation is at least considered, never stacked on legacy", () => {
+  const c = (rating: string | null) => college("168148", { rate: 0.12, sat: [1360, 1460], gpa: null, c7: rating ? { alumni_relation: rating } : null, tier: "highly_selective" });
+  const s = student({ test: sat(1450) });
+  const ratio = (rating: string | null, h: Partial<CollegeHooks>) => detailed(c(rating), s, { hooks: hooks(h) }).detail.hiddenOdds! / detailed(c(rating), s).detail.hiddenOdds!;
+  near(ratio("very_important", { sibling: true }), 1.15, 1e-9);
+  near(ratio("considered", { sibling: true }), 1.15, 1e-9);
+  near(ratio("not_considered", { sibling: true }), 1, 1e-9);
+  near(ratio(null, { sibling: true }), 1, 1e-9);
+  // Smaller than a parent's or grandparent's at every rating where either counts.
+  for (const r of ["very_important", "important", "considered"]) assert.ok(ratio(r, { sibling: true }) < ratio(r, { legacy: true }), r);
+  // Both marked: the larger counts once.
+  near(ratio("considered", { legacy: true, sibling: true }), 1.5, 1e-9);
+  const used = run(c("considered"), s, { hooks: hooks({ sibling: true }) });
+  assert.ok(keys(used).includes("hooks.sibling_used"));
+  assert.equal(noteText(used.notes.find((n) => n.key === "hooks.sibling_used")!), "A sibling here counts at colleges that consider family connections.");
+  assert.ok(used.used.includes("legacy"));
+});
+
+test("sibling in a state that bars legacy is ignored, with the ban sentence once", () => {
+  const s = student({ test: sat(1450) });
+  const r = detailed(LEGACY_MD(), s, { hooks: hooks({ sibling: true }) });
+  near(r.detail.hiddenOdds! / detailed(LEGACY_MD(), s).detail.hiddenOdds!, 1, 1e-9);
+  assert.equal(keys(r.result).filter((k) => k === "hooks.legacy_banned").length, 1);
+  const both = detailed(LEGACY_MD(), s, { hooks: hooks({ sibling: true, legacy: true }) });
+  assert.equal(keys(both.result).filter((k) => k === "hooks.legacy_banned").length, 1, "not twice with legacy marked too");
+  assert.ok(!keys(both.result).includes("hooks.sibling_used"));
 });
 
 test("legacy in a state that bars it is ignored, and the ban is cited by state and law", () => {

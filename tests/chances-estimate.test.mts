@@ -250,14 +250,18 @@ test("hooks in requests: per college asked about, legacy and interest only when 
       student: {},
       hooks: {
         [PURDUE]: { legacy: true, recruited: "pre_read", interest: "yes" },
-        [ELON]: { legacy: "true", recruited: "signed", interest: false },
+        [ELON]: { legacy: "true", sibling: "yes", recruited: "signed", interest: false },
         [GEORGIA_TECH]: { legacy: true, recruited: "likely_letter", interest: true },
       },
     },
     { signedIn: true },
   );
   assert.ok(parsed.ok);
-  assert.deepEqual(parsed.request.hooks, { [PURDUE]: { legacy: true, recruited: "pre_read", interest: false } }, "only colleges asked about, only real values");
+  assert.deepEqual(parsed.request.hooks, { [PURDUE]: { legacy: true, sibling: false, recruited: "pre_read", interest: false } }, "only colleges asked about, only real values");
+  // A sibling alone is kept, and only a literal true counts (owner, 2026-10-12).
+  const sib = parseEstimateRequest({ unitIds: [ELON], student: {}, hooks: { [ELON]: { sibling: true } } }, { signedIn: true });
+  assert.ok(sib.ok);
+  assert.deepEqual(sib.request.hooks, { [ELON]: { legacy: false, sibling: true, recruited: "none", interest: false } });
   const none = parseEstimateRequest({ unitIds: [PURDUE], student: {}, hooks: "legacy" }, { signedIn: false });
   assert.ok(none.ok && Object.keys(none.request.hooks).length === 0);
   assert.ok(parseEstimateRequest({ unitIds: [PURDUE], student: {} }, { signedIn: false }).ok, "hooks are optional");
@@ -267,7 +271,7 @@ test("estimateMany passes each college's hooks to the model, and the route passe
   const s = student({ gpa: 3.9, test: { kind: "sat", score: 1450 } });
   const ctx = await estimateContext(s);
   const plainResult = estimateMany(s, [ELON], ctx)[ELON];
-  const hooked = estimateMany(s, [ELON], ctx, { [ELON]: { legacy: true, recruited: "contact", interest: false } })[ELON];
+  const hooked = estimateMany(s, [ELON], ctx, { [ELON]: { legacy: true, sibling: false, recruited: "contact", interest: false } })[ELON];
   assert.ok(!plainResult.used.includes("recruited"));
   assert.ok(hooked.used.includes("recruited"));
   assert.ok(hooked.notes.some((n) => n.key === "hooks.recruited"));

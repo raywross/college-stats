@@ -17,6 +17,11 @@ type Importance = "very_important" | "important" | "considered" | "not_considere
 export const HOOKS_V3 = {
   legacy: { very_important: 2.5, important: 2.5, considered: 1.5, not_considered: 1 } as Record<Importance, number>,
   interest: { very_important: 1.15, important: 1.15, considered: 1.05, not_considered: 1 } as Record<Importance, number>,
+  /**
+   * A sibling who went here (owner, 2026-10-12): one value wherever the college rates alumni relation at least
+   * considered and no state law bars legacy preference; smaller than a parent's or grandparent's at any rating.
+   */
+  sibling: 1.15,
   /** "A coach has contacted me". */
   recruitContact: 1.5,
   /** A positive pre-read is a floor only from this academic distance up. */
@@ -42,6 +47,17 @@ export function legacyMultiplier(school: HookSchool): LegacyReading {
   const ban = school.location?.state ? banFor(school.location.state, sectorOf(school.type)) : null;
   if (ban) return { multiplier: 1, rating: r, ban };
   return { multiplier: r ? HOOKS_V3.legacy[r] : 1, rating: r, ban: null };
+}
+
+/**
+ * What a sibling connection does at this college: gated exactly like legacy (the C7 alumni-relation rating at least
+ * "considered", and never where a state bans legacy preference), with HOOKS_V3.sibling as the multiplier.
+ */
+export function siblingMultiplier(school: HookSchool): LegacyReading {
+  const r = rating(school, "alumni_relation");
+  const ban = school.location?.state ? banFor(school.location.state, sectorOf(school.type)) : null;
+  if (ban) return { multiplier: 1, rating: r, ban };
+  return { multiplier: r && r !== "not_considered" ? HOOKS_V3.sibling : 1, rating: r, ban: null };
 }
 
 /** What logged interest does here: its multiplier and the college's C7 interest rating. */

@@ -53,7 +53,12 @@ export interface PlanItemColumns { dream: boolean; priority: number | null; foll
    * lib/planner/store-list.ts setItemLegacy/setItemRecruited.
    */
   legacy: boolean;
-  recruited: import("../chances/types").RecruitedPick }
+  recruited: import("../chances/types").RecruitedPick;
+  /**
+   * A brother or sister went here (owner, 2026-10-12; 20261012130000_list_item_sibling.sql), set from the row's
+   * Connections line. Optional: absent until the column exists (read-plan.ts falls back without it).
+   */
+  legacy_sibling?: boolean }
 export type PlanItem = import("../list-rules").ListItem & PlanItemColumns;
 /** lists gains: sort text null, rounds_plan_accepted_at timestamptz null. */
 export type ListSort = "mine" | "category" | "dream_priority" | "next_date" | "admit_rate" | "avg_cost" | "distance" | "standing";

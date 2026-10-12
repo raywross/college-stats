@@ -21,7 +21,9 @@ export const PLAN_ITEM_BASE_COLUMNS =
 export const PLAN_ITEM_SOURCE_COLUMNS = "category_source, round_source";
 /** The five-levels migration's per-college hooks (20261012100000_five_levels.sql). */
 export const PLAN_ITEM_HOOKS_COLUMNS = "legacy, recruited";
-export const PLAN_ITEM_COLUMNS = `${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}, ${PLAN_ITEM_HOOKS_COLUMNS}`;
+/** The sibling connection (20261012130000_list_item_sibling.sql; owner, 2026-10-12). */
+export const PLAN_ITEM_SIBLING_COLUMN = "legacy_sibling";
+export const PLAN_ITEM_COLUMNS = `${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}, ${PLAN_ITEM_HOOKS_COLUMNS}, ${PLAN_ITEM_SIBLING_COLUMN}`;
 export const PLAN_TASK_COLUMNS =
   "id, list_id, item_id, key, kind, title, detail, due_on, window_start, window_end, assignee, source, source_field, source_edition, date_note, done_at, done_by, snoozed_until, dismissed, orphaned, position, created_by, created_at";
 const VISIT_COLUMNS = "id, item_id, kind, on_date, at_time, registered, registration_url, who, rating, notes, created_by, created_at, updated_at";
@@ -56,7 +58,12 @@ export function isMissingSourceColumn(error: PgError): boolean {
 
 /** The error is about the five-levels migration's hooks columns (not applied yet). */
 export function isMissingHooksColumn(error: PgError): boolean {
-  return isMissing(error) && /legacy|recruited/.test(error.message ?? "");
+  return isMissing(error) && /\blegacy\b|recruited/.test((error.message ?? "").replace(/legacy_sibling/g, ""));
+}
+
+/** The error is about the sibling column alone (20261012130000 not applied yet; the rest is there). */
+export function isMissingSiblingColumn(error: PgError): boolean {
+  return isMissing(error) && /legacy_sibling/.test(error.message ?? "");
 }
 
 /** The planner's tables aren't in the database yet (the migration hasn't been applied). */
@@ -89,14 +96,21 @@ function withBackfillHooks<T>(rows: T[]): (T & { legacy: boolean; recruited: "no
 
 /** The list's items, retrying without newer columns when the database doesn't have them yet. */
 export async function readItems(supabase: SupabaseClient, listId: string): Promise<{ data: PlanItem[] | null; error: PgError | null; sourcesMissing: boolean }> {
-  const first = await supabase.from("list_items").select(PLAN_ITEM_COLUMNS).eq("list_id", listId).order("position");
-  if (!first.error) return { data: (first.data ?? []) as unknown as PlanItem[], error: null, sourcesMissing: false };
-  if (isMissingHooksColumn(first.error)) {
+  const full = await supabase.from("list_items").select(PLAN_ITEM_COLUMNS).eq("list_id", listId).order("position");
+  if (!full.error) return { data: (full.data ?? []) as unknown as PlanItem[], error: null, sourcesMissing: false };
+  let first: { data: unknown; error: PgError | null } = full;
+  // The sibling column alone missing: read everything else, the sibling reading as unmarked.
+  if (isMissingSiblingColumn(full.error)) {
+    first = await supabase.from("list_items").select(`${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}, ${PLAN_ITEM_HOOKS_COLUMNS}`).eq("list_id", listId).order("position");
+    if (!first.error) return { data: ((first.data ?? []) as unknown as PlanItem[]).map((r) => ({ ...r, legacy_sibling: false })), error: null, sourcesMissing: false };
+  }
+  const err: PgError = first.error ?? full.error;
+  if (isMissingHooksColumn(err)) {
     const withoutHooks = await supabase.from("list_items").select(`${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}`).eq("list_id", listId).order("position");
     if (!withoutHooks.error) return { data: withBackfillHooks((withoutHooks.data ?? []) as unknown as Omit<PlanItem, "legacy" | "recruited">[]), error: null, sourcesMissing: false };
     if (!isMissingSourceColumn(withoutHooks.error)) return { data: null, error: withoutHooks.error, sourcesMissing: false };
-  } else if (!isMissingSourceColumn(first.error)) {
-    return { data: null, error: first.error, sourcesMissing: false };
+  } else if (!isMissingSourceColumn(err)) {
+    return { data: null, error: err, sourcesMissing: false };
   }
   const retry = await supabase.from("list_items").select(PLAN_ITEM_BASE_COLUMNS).eq("list_id", listId).order("position");
   if (retry.error) return { data: null, error: retry.error, sourcesMissing: true };

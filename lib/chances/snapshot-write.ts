@@ -82,6 +82,12 @@ export async function hooksForItem(supabase: Pick<SupabaseClient, "from">, itemI
     const r = await from("list_items").select("legacy, recruited").eq("id", itemId).maybeSingle();
     return r.error ? null : (r.data as { legacy?: unknown; recruited?: unknown } | null);
   }, null);
+  // The sibling column (20261012130000_list_item_sibling.sql) is read on its own, so a database without it yet keeps
+  // the legacy and recruited reads above.
+  const sibling = await settle(async () => {
+    const r = await from("list_items").select("legacy_sibling").eq("id", itemId).maybeSingle();
+    return !r.error && (r.data as { legacy_sibling?: unknown } | null)?.legacy_sibling === true;
+  }, false);
   const any = async (q: Query) => {
     if (q.limit) q = q.limit(1);
     const r = await q.maybeSingle();
@@ -96,7 +102,7 @@ export async function hooksForItem(supabase: Pick<SupabaseClient, "from">, itemI
       return q.not ? any(q.not("done_at", "is", null)) : false;
     }, false));
   const recruited = RECRUITED_PICKS.includes(row?.recruited as RecruitedPick) ? (row!.recruited as RecruitedPick) : NO_HOOKS.recruited;
-  return { legacy: row?.legacy === true, recruited, interest: visited || requested };
+  return { legacy: row?.legacy === true, sibling, recruited, interest: visited || requested };
 }
 
 /** Records the snapshot for an item just marked applied. Never throws. */

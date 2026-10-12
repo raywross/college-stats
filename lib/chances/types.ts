@@ -268,6 +268,8 @@ export type ActivitiesReading = "focused" | "building" | "sampling";
 export type RecruitedPick = "none" | "contact" | "pre_read" | "likely_letter";
 export interface CollegeHooks {
   legacy: boolean;
+  /** A brother or sister went here (owner, 2026-10-12): read like legacy, gated the same way, with a smaller weight. */
+  sibling: boolean;
   recruited: RecruitedPick;
   /** A visit, interview, or information request is logged in the planner for this college. */
   interest: boolean;

@@ -102,7 +102,7 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
   {
     key: "lists",
     description:
-      "Your saved college lists (your own, and those of the students you own or manage): categories, rounds, statuses, outcomes, deadlines, the tracking row (updates, visited, following on social), legacy and recruited-athlete marks, and notes.",
+      "Your saved college lists (your own, and those of the students you own or manage): categories, rounds, statuses, outcomes, deadlines, the tracking row (updates, visited, following on social), legacy (parent or grandparent, and sibling) and recruited-athlete marks, and notes.",
     run: async ({ supabase, studentIds, userId }) => {
       type ListRow = { id: string; student_id: string | null; user_id: string | null; name: string; is_default: boolean; created: string };
       const cols = "id, student_id, user_id, name, is_default, created";
@@ -123,6 +123,10 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
               )
               .eq("list_id", list.id),
           );
+          // The sibling mark (20261012130000_list_item_sibling.sql) is read on its own, best-effort, so an export still
+          // works on a database without the column yet.
+          const siblingRead = await supabase.from("list_items").select("id, legacy_sibling").eq("list_id", list.id);
+          const siblings = new Set(siblingRead.error ? [] : ((siblingRead.data ?? []) as { id: string; legacy_sibling: boolean }[]).filter((r) => r.legacy_sibling).map((r) => r.id));
           const notes = await rows("list_notes", supabase.from("list_notes").select("item_id, body, private, created").in("item_id", inList(items.map((i) => i.id))));
           const itemsOut = items.map((i) => ({
             unit_id: i.unit_id,
@@ -140,6 +144,7 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
             visited_on: i.visited_on,
             follows_social: i.follows_social,
             legacy: i.legacy,
+            legacy_sibling: siblings.has(i.id),
             recruited: i.recruited,
           }));
           return { ...list, items: itemsOut, notes };

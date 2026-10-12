@@ -24,6 +24,7 @@ import { DEFAULT_WITHIN } from "@/lib/home";
 import { costFilterChips, priceAtSortOption } from "@/lib/cost-explore";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
+import { ONLINE_FILTER_LABELS, isOnlineFilter } from "@/lib/online-share";
 
 /* ---------------------------------------------------------------- */
 
@@ -351,6 +352,8 @@ export function ActiveFilters({ showEstimates = true }: { showEstimates?: boolea
   if (searchParams.get("studyAbroad") === "1") chips.push({ key: "studyAbroad", label: "Study abroad", onRemove: () => update({ studyAbroad: null }) });
   if (searchParams.get("honors") === "1") chips.push({ key: "honors", label: HONORS_FILTER_LABEL, onRemove: () => update({ honors: null }) });
   if (searchParams.get("opportunity") === "1") chips.push({ key: "opportunity", label: "Opportunity colleges", onRemove: () => update({ opportunity: null }) });
+  const online = searchParams.get("online");
+  if (isOnlineFilter(online)) chips.push({ key: "online", label: ONLINE_FILTER_LABELS[online], onRemove: () => update({ online: null }) });
 
   for (const k of INDICATOR_KEYS) {
     const def = INDICATORS[k];

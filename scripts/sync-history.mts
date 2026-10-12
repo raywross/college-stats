@@ -195,7 +195,7 @@ function toInputs(fetched: Fetched[]): Inputs {
     return { year: f.year, family: f.family, rows, suffix: f.choice.suffix, values: f.era.values };
   };
   const of = (...fams: HistoryFamily[]) => fetched.filter((f) => fams.includes(f.family)).sort((a, b) => a.year - b.year).map(table);
-  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services"), efd: of("ef-d"), efc: of("ef-c"), efa: of("ef-a"), ca: of("c-a"), om: of("om"), grPell: of("gr-pell"), sal: of("ipeds-sal") };
+  return { admissions: of("ic-admissions", "adm"), prices: of("prices"), sfa: of("sfa"), characteristics: of("characteristics"), services: of("services"), efd: of("ef-d"), efc: of("ef-c"), efa: of("ef-a"), efaDist: of("ef-a-dist"), ca: of("c-a"), om: of("om"), grPell: of("gr-pell"), sal: of("ipeds-sal") };
 }
 
 /* ------------------------------------------------------------------ */
@@ -249,7 +249,10 @@ async function crossCheck(schools: School[], histories: Map<string, SchoolHistor
       const body = await urbanJson(`admissions-enrollment/${y}/?unitid=${s.unit_id}`);
       if (!body) return unreachable++;
       const theirs = body.results.find((r) => r.sex === 99)?.number_applied ?? null;
-      const t = theirs !== null && theirs >= 0 ? theirs : null;
+      // Fall 2001 (IC2001) reports applicants by sex only; Urban leaves the total -1 when one sex doesn't apply (a
+      // women's college, e.g. Barnard), so compare with the sexes it does report, as we sum them (registry.mts).
+      const bySex = body.results.filter((r) => (r.sex === 1 || r.sex === 2) && r.number_applied >= 0).map((r) => r.number_applied);
+      const t = theirs !== null && theirs >= 0 ? theirs : bySex.length ? bySex.reduce((a, b) => a + b, 0) : null;
       if (ours === null && t === null) return;
       checked++;
       byKind.applicants++;

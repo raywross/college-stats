@@ -18,6 +18,7 @@ import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpp
 import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "./campus-services.ts";
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "./academics.ts";
 import { drawsNationally } from "./residence.ts";
+import { isMostlyOnline } from "./online-share.ts";
 import { noCssProfile, offersInternationalAid } from "./cds/financial-aid.ts";
 import { fieldFacets } from "./majors.ts";
 import { policyBucket } from "./test-policy.ts";
@@ -78,6 +79,8 @@ export function buildFacets({ getAllSchools, histogram, meritInfoFor }: FacetSou
     research: Object.fromEntries(RESEARCH_TIERS.map((r) => [r, 0])) as FilterFacets["campus"]["research"],
     designation: Object.fromEntries(DESIGNATION_KEYS.map((d) => [d, 0])) as FilterFacets["campus"]["designation"],
     opportunity: all.filter(isOpportunityCollege).length,
+    // Online share (lib/online-share.ts): a college with no share counts as campus-based, as the filter does.
+    online: { campus: all.filter((s) => !isMostlyOnline(s)).length, mostly: all.filter(isMostlyOnline).length },
   };
   for (const s of all) {
     if (s.campus?.setting) campus.setting[s.campus.setting.group]++;

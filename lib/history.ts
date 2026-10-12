@@ -76,6 +76,8 @@ export const HISTORY_FAMILIES = {
   // Residence is required in even-numbered falls only (odd years cover about half the colleges): every other year.
   "ef-c": { source: "ipeds-ef-c", kind: "fall", files: "EF{year}C (residence of first-time students), even-numbered falls", step: 2 },
   "ef-a": { source: "ipeds-ef-a", kind: "fall", files: "EF{year}A (fall enrollment by level: new transfer-ins and first-time students)" },
+  // Online share (specs/data-expansion/online-share.md): EF{year}A_DIST, collected every fall from 2012.
+  "ef-a-dist": { source: "ipeds-ef-a-dist", kind: "fall", files: "EF{year}A_DIST (distance education by level)" },
   // Completions (specs/data-expansion/majors.md): C{year+1}_A covers degrees awarded July {year} to June {year+1}.
   "c-a": { source: "ipeds-c", kind: "academic", files: "C{year+1}_A (bachelor's degrees by field; CIP 2010 codes before C2020_A read through NCES's crosswalk)" },
   // College Scorecard API, year-prefixed fields (not files): years can have gaps, so they aren't checked as consecutive.
@@ -164,6 +166,8 @@ const BASE_SERIES = {
   // Transfers in (specs/data-expansion/transfers.md): every fall from 2008.
   transfer_in_count: { label: "New transfer-in undergraduates", short: "Transfer-ins", field: "demographics.transfer_in", term: "transfer-in", unit: "count", kind: "fall", format: "num", families: ["ef-a"] },
   transfer_in_share: { label: "Transfer-ins, share of new undergraduates", short: "Share of new students", field: "demographics.transfer_in", term: "transfer-in", unit: "share", kind: "fall", format: "pct", families: ["ef-a"] },
+  // Online share (specs/data-expansion/online-share.md): every fall from 2012, pandemic falls kept as reported.
+  online_share: { label: "Undergraduates taking every course online", short: "Entirely online", field: "demographics.online_share", term: "online-first", unit: "share", kind: "fall", format: "pct", families: ["ef-a-dist"] },
   international_share: { label: "First-years from abroad", short: "From abroad", field: "demographics.residence", term: "in-state-student", unit: "share", kind: "fall", format: "pct", families: ["ef-c"] },
   // Athletics and ROTC as codes, for events (lib/events.ts; lib/campus-services.ts reads them).
   conference: { label: "Athletic conference", short: "Conference", field: "campus.athletics", term: "athletic-conference", unit: "conference", kind: "academic", format: "int", families: ["services"] },
@@ -665,6 +669,23 @@ export function pellGapAt(h: SchoolHistory, year: number): number | null {
   if (pell === null || neither === null) return null;
   // Implausibly far apart: groups sorted inconsistently (lib/graduation-groups.ts MAX_PLAUSIBLE_GAP).
   return Math.abs(neither - pell) > MAX_PLAUSIBLE_GAP ? null : neither - pell;
+}
+
+/** The glossary's online-first bar: more than this share of undergraduates taking every course online. */
+export const ONLINE_FIRST_SHARE = 0.5;
+/** Falls in which campuses reported pandemic enrollment as distance education; the rule evaluates them at the fall before. */
+export const PANDEMIC_DISTANCE_FALLS: readonly number[] = [2020, 2021];
+/** The fall the online-first rule reads for `year`: the year itself, or the fall before the pandemic falls. */
+export const onlineFirstEvalYear = (year: number): number => (PANDEMIC_DISTANCE_FALLS.includes(year) ? Math.min(...PANDEMIC_DISTANCE_FALLS) - 1 : year);
+
+/**
+ * True when the college was online-first in `year`: more than half of undergraduates took every course online
+ * (specs/data-expansion/online-share.md), evaluated at the fall before the pandemic for the pandemic falls. Null when it
+ * reported no share that fall; no other fall stands in, and callers count null as campus-based (and say so).
+ */
+export function onlineFirstAt(h: Pick<SchoolHistory, "series">, year: number): boolean | null {
+  const v = valueAt(h.series.online_share, onlineFirstEvalYear(year));
+  return v === null ? null : v > ONLINE_FIRST_SHARE;
 }
 
 /** Below this many Pell recipients in either entering class, the gap swings too much to compare over time. */

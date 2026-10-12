@@ -12,7 +12,7 @@ import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
 import { isHighSchoolId } from "./high-school-core.ts";
 import type { StandingStudent } from "./planner/standing.ts";
-import type { ActivityEntry, ActivityKind, ActivityRole, AwardEntry, ClassStanding, CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, HsYear, Mark, RecognitionTier } from "./chances/types.ts";
+import type { ActivityEntry, ActivityKind, ActivityRole, AwardEntry, ClassStanding, CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, HsYear, Mark, RankExpectation, RecognitionTier } from "./chances/types.ts";
 import { ACTIVITIES_MAX, AWARDS_MAX, CLASS_STANDING_PERCENTILE } from "./chances/levels.ts";
 import { catalogCourse, COURSE_SUBJECTS, isCatalogKeyFor } from "./chances/catalog.ts";
 import { awardByKey } from "./chances/awards-catalog.ts";
@@ -133,6 +133,12 @@ export interface StudentProfileAcademics {
    * null until answered. Not used in the level in this version; shown as noted, not estimated.
    */
   firstGeneration: boolean | null;
+  /**
+   * "Do you expect to be valedictorian or salutatorian?" (method/standing.md "Revision 1"), beside `classStanding`:
+   * worded as an expectation (it's only decided after senior year), never a fact. Optional; null until answered. A
+   * profile saved before this field existed reads as null.
+   */
+  rankExpectation: RankExpectation | null;
 }
 
 /** The course plan's saved choices; `season` is the school year they were made in ("2026-27"), after which they lapse. */
@@ -185,6 +191,64 @@ export function sanitizeClassStanding(pickInput: unknown, percentileInput: unkno
   if (percentile === null) return { classStanding: null, classRankPercentile: null };
   const matched = CLASS_STANDING_VALUES.find((c) => CLASS_STANDING_PERCENTILE[c] === percentile) ?? null;
   return { classStanding: matched, classRankPercentile: percentile };
+}
+
+/** Whether a value is one of the stored ClassStanding picks (for a server-side check, like `isHighSchoolId`). */
+export function isClassStanding(v: unknown): v is ClassStanding {
+  return typeof v === "string" && (CLASS_STANDING_VALUES as readonly string[]).includes(v);
+}
+
+const RANK_EXPECTATION_VALUES: readonly RankExpectation[] = ["valedictorian", "salutatorian"];
+
+/** Whether a value is a stored RankExpectation. */
+export function isRankExpectation(v: unknown): v is RankExpectation {
+  return typeof v === "string" && (RANK_EXPECTATION_VALUES as readonly string[]).includes(v);
+}
+
+/** Untrusted input as a RankExpectation, else null. */
+export function sanitizeRankExpectation(v: unknown): RankExpectation | null {
+  return isRankExpectation(v) ? v : null;
+}
+
+/**
+ * The class standing a rank expectation implies (method/standing.md "Revision 1", owner 2026-10-12): valedictorian
+ * is usually top 1%, salutatorian top 5%.
+ */
+export const RANK_EXPECTATION_STANDING: Readonly<Record<RankExpectation, ClassStanding>> = { valedictorian: "top1", salutatorian: "top5" };
+
+/**
+ * Whether the rank expectation and the class-standing pick disagree (inputs-beyond-academics.md: "Valedictorian or
+ * salutatorian implies Top 1% / Top 5% standing; keep the two consistent"). Either one unset is never a mismatch —
+ * there's nothing yet to reconcile.
+ */
+export function rankExpectationMismatch(classStanding: ClassStanding | null, rankExpectation: RankExpectation | null): boolean {
+  if (rankExpectation === null || classStanding === null) return false;
+  if (rankExpectation === "valedictorian") return classStanding !== "top1";
+  return classStanding !== "top1" && classStanding !== "top5";
+}
+
+/** The hint shown when they disagree ("picking valedictorian with Top 25% asks the student to fix one"); null otherwise. */
+export function rankExpectationHint(classStanding: ClassStanding | null, rankExpectation: RankExpectation | null): string | null {
+  if (!rankExpectationMismatch(classStanding, rankExpectation)) return null;
+  const expect = rankExpectation === "valedictorian" ? "Valedictorian is usually top 1%" : "Salutatorian is usually top 5%";
+  return `${expect}. Update your class standing to match, or change this if it's not right.`;
+}
+
+/**
+ * The hint shown when a weighted GPA is below the unweighted one on the same family of scale (owner, 2026-10-12:
+ * "having a weighted grade higher than an unweighted one is a good measure of rigor"), so a lower one is worth a
+ * second look. Only compared where both are on a 4- or 5-point scale (gpaScale isn't "100"); either missing is never
+ * a mismatch.
+ */
+export function weightedGpaBelowUnweighted(gpa: number | null, gpaScale: GpaScale, weightedGpa: number | null): boolean {
+  if (gpa === null || weightedGpa === null || gpaScale === "100") return false;
+  return weightedGpa < gpa;
+}
+
+/** The hint text for `weightedGpaBelowUnweighted`; null when there's nothing to flag. */
+export function weightedGpaHint(gpa: number | null, gpaScale: GpaScale, weightedGpa: number | null): string | null {
+  if (!weightedGpaBelowUnweighted(gpa, gpaScale, weightedGpa)) return null;
+  return "A weighted GPA is usually higher than unweighted. Check these two numbers.";
 }
 
 const ACTIVITY_KINDS: readonly ActivityKind[] = ["sport", "club", "arts", "service", "work", "research", "family", "other"];
@@ -410,6 +474,7 @@ export function emptyProfile(): StudentProfileData {
       activities: [],
       awards: [],
       firstGeneration: null,
+      rankExpectation: null,
     },
     tests: {
       satTotal: null,
@@ -533,6 +598,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     activities: sanitizeActivities(ac.activities),
     awards: sanitizeAwards(ac.awards),
     firstGeneration: nullableBool(ac.firstGeneration),
+    rankExpectation: sanitizeRankExpectation(ac.rankExpectation),
   };
 
   const t = isObj(input.tests) ? input.tests : {};

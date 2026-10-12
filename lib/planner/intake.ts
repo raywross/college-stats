@@ -8,12 +8,14 @@
  */
 import { apCourses, catalogCourse, isCatalogKeyFor } from "../chances/catalog.ts";
 import { newCourseId } from "../chances/courses.ts";
-import type { ActivityEntry, CourseEntry, CourseStatus } from "../chances/types.ts";
+import type { ActivityEntry, ClassStanding, CourseEntry, CourseStatus, RankExpectation } from "../chances/types.ts";
 import { isHighSchoolId } from "../high-school-core.ts";
 import {
   COURSES_MAX,
   GRAD_YEAR_MAX,
   GRAD_YEAR_MIN,
+  isClassStanding,
+  isRankExpectation,
   planTest,
   sanitizeActivities,
   sanitizeProfile,
@@ -48,6 +50,13 @@ export interface IntakeDraft {
   gpa: string;
   /** The scale the student picked over the detected one; null follows detection. */
   scaleOverride: GpaScale | null;
+  /** As typed, optional (intake.md "Grades"): "Many schools weight honors and AP grades; if yours does, add it." */
+  weightedGpa: string;
+  /** The class-standing pick, kept consistent with `classRankPercentile` the way ClassStandingPick does. */
+  classStanding: ClassStanding | null;
+  classRankPercentile: number | null;
+  /** "Do you expect to be valedictorian or salutatorian?" (method/standing.md "Revision 1"); None reads as null. */
+  rankExpectation: RankExpectation | null;
   test: IntakeTest | null;
   score: string;
   practice: boolean;
@@ -72,6 +81,10 @@ export interface IntakeSave {
   classYear: number;
   gpa: number | null;
   gpaScale: GpaScale;
+  weightedGpa: number | null;
+  classStanding: ClassStanding | null;
+  classRankPercentile: number | null;
+  rankExpectation: RankExpectation | null;
   focus: TestFocus;
   score: number | null;
   practice: boolean;
@@ -441,6 +454,10 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     classYear: gradYear,
     gpa: "",
     scaleOverride: null,
+    weightedGpa: "",
+    classStanding: null,
+    classRankPercentile: null,
+    rankExpectation: null,
     test: null,
     score: "",
     practice: false,
@@ -463,6 +480,10 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     classYear: gradYear,
     gpa,
     scaleOverride,
+    weightedGpa: a.weightedGpa === null ? "" : trimNumber(a.weightedGpa),
+    classStanding: a.classStanding,
+    classRankPercentile: a.classRankPercentile,
+    rankExpectation: a.rankExpectation,
     test,
     score: score === null ? "" : String(score),
     practice: test !== "none" && t.practice,
@@ -473,6 +494,19 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     activities: a.activities,
   };
 }
+
+/** Class-standing labels for the review line (components/me/ClassStandingPick.tsx's own words, kept in step). */
+const CLASS_STANDING_LABELS: Readonly<Record<ClassStanding, string>> = {
+  top1: "Top 1%",
+  top5: "Top 5%",
+  top10: "Top 10%",
+  top25: "Top quarter",
+  top50: "Top half",
+  lower: "Lower half",
+  no_rank: "Doesn't rank",
+};
+
+const RANK_EXPECTATION_LABELS: Readonly<Record<RankExpectation, string>> = { valedictorian: "Valedictorian", salutatorian: "Salutatorian" };
 
 /** The review card's rows: label, value, and the step its Edit link opens. */
 export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2 | 3; label: string; value: string }[] {
@@ -488,6 +522,9 @@ export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2 | 
   return [
     { step: 0, label: "Class", value: d.classYear === null ? "Not set" : `Class of ${d.classYear}` },
     { step: 0, label: "GPA", value: d.gpa.trim() === "" ? "Not set" : `${d.gpa.trim()} · ${scaleLabel(effectiveScale(d))}` },
+    { step: 0, label: "Weighted GPA", value: d.weightedGpa.trim() === "" ? "Not set" : `${d.weightedGpa.trim()} weighted` },
+    { step: 0, label: "Class standing", value: d.classStanding ? CLASS_STANDING_LABELS[d.classStanding] : "Not set" },
+    { step: 0, label: "Rank expectation", value: d.rankExpectation ? RANK_EXPECTATION_LABELS[d.rankExpectation] : "None" },
     { step: 0, label: "School", value: d.highSchool ?? "Not set" },
     { step: 1, label: "Test", value: testValue },
     { step: 2, label: "AP courses", value: courseCount(d.courses, classYear, today) ?? "None" },
@@ -508,10 +545,16 @@ export function courseCount(courses: readonly IntakeCourse[], classYear: number,
 export function intakeToSave(d: IntakeDraft): IntakeSave | null {
   if (!stepValid(d, 0) || !stepValid(d, 1) || d.classYear === null || d.test === null) return null;
   const testing = d.test !== "none";
+  const weightedGpa = d.weightedGpa.trim() === "" ? null : numberOf(d.weightedGpa);
   return {
     classYear: d.classYear,
     gpa: numberOf(d.gpa),
     gpaScale: effectiveScale(d),
+    // Optional, never blocking: an out-of-range weighted GPA is just dropped, like a bad high-school id elsewhere.
+    weightedGpa: weightedGpa !== null && Number.isFinite(weightedGpa) && weightedGpa >= 0 && weightedGpa <= 120 ? weightedGpa : null,
+    classStanding: d.classStanding,
+    classRankPercentile: d.classRankPercentile,
+    rankExpectation: d.rankExpectation,
     focus: d.test,
     score: testing ? intOf(d.score) : null,
     practice: testing && d.practice,
@@ -562,6 +605,26 @@ export function parseIntakeSave(input: unknown): IntakeSave | null {
     if (typeof input.gpa !== "number" || !gpaInRange(input.gpa, gpaScale)) return null;
     gpa = input.gpa;
   }
+  let weightedGpa: number | null = null;
+  if (input.weightedGpa !== null && input.weightedGpa !== undefined) {
+    if (typeof input.weightedGpa !== "number" || input.weightedGpa < 0 || input.weightedGpa > 120) return null;
+    weightedGpa = input.weightedGpa;
+  }
+  let classStanding: ClassStanding | null = null;
+  if (input.classStanding !== null && input.classStanding !== undefined) {
+    if (!isClassStanding(input.classStanding)) return null;
+    classStanding = input.classStanding;
+  }
+  let classRankPercentile: number | null = null;
+  if (input.classRankPercentile !== null && input.classRankPercentile !== undefined) {
+    if (typeof input.classRankPercentile !== "number" || !Number.isInteger(input.classRankPercentile) || input.classRankPercentile < 1 || input.classRankPercentile > 100) return null;
+    classRankPercentile = input.classRankPercentile;
+  }
+  let rankExpectation: RankExpectation | null = null;
+  if (input.rankExpectation !== null && input.rankExpectation !== undefined) {
+    if (!isRankExpectation(input.rankExpectation)) return null;
+    rankExpectation = input.rankExpectation;
+  }
   const focus = input.focus;
   if (focus !== "sat" && focus !== "act" && focus !== "none") return null;
   let score: number | null = null;
@@ -596,7 +659,7 @@ export function parseIntakeSave(input: unknown): IntakeSave | null {
     courses.push(c);
   }
   const activities = sanitizeActivities(input.activities);
-  return { classYear, gpa, gpaScale, focus, score, practice, target, highSchool, highSchoolId, courses, activities };
+  return { classYear, gpa, gpaScale, weightedGpa, classStanding, classRankPercentile, rankExpectation, focus, score, practice, target, highSchool, highSchoolId, courses, activities };
 }
 
 /** The draft course a saved row would open as; an unchanged course keeps its saved row as it is. */
@@ -647,7 +710,18 @@ export function applyIntake(profile: StudentProfileData, s: IntakeSave, today: s
     ...profile,
     basics: { ...profile.basics, gradYear: s.classYear, highSchool: s.highSchool, highSchoolId: s.highSchoolId },
     // courseRigorCount null: the count follows the list, never re-adds placeholder rows for removed courses.
-    academics: { ...profile.academics, gpa: s.gpa, gpaScale: s.gpaScale, courses, courseRigorCount: null, activities: s.activities },
+    academics: {
+      ...profile.academics,
+      gpa: s.gpa,
+      gpaScale: s.gpaScale,
+      weightedGpa: s.weightedGpa,
+      classStanding: s.classStanding,
+      classRankPercentile: s.classRankPercentile,
+      rankExpectation: s.rankExpectation,
+      courses,
+      courseRigorCount: null,
+      activities: s.activities,
+    },
     tests,
   });
 }

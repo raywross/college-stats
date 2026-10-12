@@ -239,6 +239,32 @@ export const NOTES: Record<NoteKey, Note> = {
   "major.pick_prompt": () => "Pick an intended major to see how this college reads it.",
   "major.pick_label": () => "Intended major",
   "major.no_statement": (v) => `${s(v, "college")} hasn't said how it treats this major.`,
+
+  /* ---- Depth (specs/chances/depth.md "Course tracks", "Activities"), added by the depth unit (lib/chances/depth.ts) ----
+   * `extra` and `examNote` are fragments depth.ts builds and passes pre-formatted (never free text): `extra` names
+   * an activity that adds a track year ("plus three years of Science Olympiad."), `examNote` the AP-exam confirm
+   * sentence; both are "" when there's nothing to add. */
+  "depth.courses.deep_major": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a deep track for your major.${s(v, "extra")}${s(v, "examNote")}`,
+  "depth.courses.deep": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a deep track.${s(v, "extra")}${s(v, "examNote")}`,
+  "depth.courses.steady_major": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a steady track.${s(v, "extra")} Most ${s(v, "major")} programs expect ${s(v, "course")} senior year.${s(v, "examNote")}`,
+  "depth.courses.steady": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a steady track.${s(v, "extra")}${s(v, "examNote")}`,
+  "depth.courses.light_major": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a light track.${s(v, "extra")} ${s(v, "major")} programs commonly expect ${s(v, "expects")}.${s(v, "examNote")}`,
+  "depth.courses.light": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a light track.${s(v, "extra")} ${s(v, "subject")} isn't among the subjects your major usually expects.${s(v, "examNote")}`,
+  "depth.courses.not_offered": (v) => `Your school offers no advanced courses in ${s(v, "subject")}, so none is expected.`,
+  /** Fragment: appended to a family's sentence when an AP exam score of 4 or 5 confirms the grade. */
+  "depth.courses.exam_confirms": (v) => `${s(v, "high")} of your ${plural(v, "taken", "AP exam")} in it scored a 4 or 5, confirming the grade.`,
+
+  /** `a1`/`a2`: pre-formatted activity fragments ("Soccer, four years, captain this year"). */
+  "depth.activities.focused": (v) =>
+    `${s(v, "a1")}; ${s(v, "a2")}. Two things carried through high school with a role in each: that's what colleges that read activities look for.`,
+  "depth.activities.building": (v) => `${s(v, "a1")}. One activity carried through; a second you'd keep for two more years, or a bigger role in this one, would round it out.`,
+  "depth.activities.sampling": (v) =>
+    `${s(v, "count")} activit${Number(v.count) === 1 ? "y" : "ies"}, each for a year or two. Colleges that read activities look for a few kept up over years with a role; pick the one or two you'd stay with.`,
+  "depth.activities.none": () => "Add your activities to see how colleges that rate them would read your record.",
+  /** `tier`: a word from RECOGNITION_WORD ("state-level recognition"). */
+  "depth.activities.recognition": (v) => `${s(v, "activity")} (${s(v, "tier")}) counts at colleges that rate talent.`,
+  /** Where a college doesn't say it weighs activities (C7 not considered, or no C7). */
+  "depth.activities.not_weighed": (v) => `${s(v, "college")} doesn't say it weighs activities; they're shown here for you, not for the estimate.`,
 };
 
 /** "Your GPA (3.82)", or a described range set off by commas: "Your GPA, about 3.4–4.0 unweighted (from a weighted 4.4),". */

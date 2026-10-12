@@ -7,9 +7,14 @@
  * college offers it. ED II is never started automatically, only offered as a one-line suggestion. Pure.
  */
 import type { ListRound } from "../list-rules.ts";
+import { STANDING_LEVELS } from "../chances/levels.ts";
+import type { EstimateResult, StandingLevel } from "../chances/types.ts";
 import { isOffered, type RoundsSchool } from "./rounds.ts";
 
 export type AutoRoundsSchool = Pick<RoundsSchool, "profile" | "logistics"> & { type?: string | null };
+
+/** Every level, lowest first; used to find "the highest level that offers ED" (rounds.md "The ED guard" 3). */
+const LEVEL_RANK: Record<StandingLevel, number> = Object.fromEntries(STANDING_LEVELS.map((l, i) => [l, i])) as Record<StandingLevel, number>;
 
 export interface AutoRoundsItem {
   id: string;
@@ -31,7 +36,7 @@ export interface AutoRound {
 
 const offered = (s: AutoRoundsSchool | undefined, r: ListRound) => isOffered(s ?? null, r) === true;
 
-/** The Dream's starting round: ED where offered, else restrictive EA, else EA, else regular. */
+/** The Dream's starting round at Reach, Target, Likely, or Safe: ED where offered, else restrictive EA, else EA, else regular. */
 function dreamRound(s: AutoRoundsSchool | undefined): { round: ListRound; why: string } {
   if (offered(s, "ed")) return { round: "ed", why: "Your Dream offers early decision, so it starts there. ED is binding: check the cost with a parent before you apply." };
   if (offered(s, "rea")) return { round: "rea", why: "Your Dream offers restrictive early action: an early answer without a commitment, but it limits other early applications." };
@@ -41,19 +46,42 @@ function dreamRound(s: AutoRoundsSchool | undefined): { round: ListRound; why: s
 }
 
 /**
- * Starting rounds for a list. The Dream gets ED (or REA, or EA); every other college takes EA where offered (not
- * where the Dream's REA forbids a private college's early round), rolling where that's how it admits, else regular.
- * No college but the Dream starts in a binding round.
+ * The Dream's starting round at High reach (rounds.md "The ED guard" 2): never ED or REA. EA where offered, else
+ * regular. Early decision helps most where the student is already in range, so it isn't offered to start here; the
+ * student can still pick it from the chip.
  */
-export function autoRounds(items: AutoRoundsItem[], schools: Record<string, AutoRoundsSchool | undefined>): AutoRound[] {
+function dreamRoundHighReach(s: AutoRoundsSchool | undefined): { round: ListRound; why: string } {
+  const why =
+    "Early decision is binding and helps most where you're already in range; this college isn't one of them yet, so it starts in " +
+    (offered(s, "ea") ? "early action" : "regular decision") +
+    ". You can still pick ED from the chip.";
+  if (offered(s, "ea")) return { round: "ea", why };
+  if (offered(s, "rolling")) return { round: "rolling", why };
+  return { round: "rd", why };
+}
+
+/** The Dream's starting round for its level (rounds.md "The ED guard" 1–2); no level (null) follows the plain rule. */
+function dreamRoundFor(s: AutoRoundsSchool | undefined, level: StandingLevel | null | undefined): { round: ListRound; why: string } {
+  return level === "high_reach" ? dreamRoundHighReach(s) : dreamRound(s);
+}
+
+/**
+ * Starting rounds for a list. The Dream gets ED (or REA, or EA) unless its level is High reach (the ED guard: EA or
+ * regular instead); every other college takes EA where offered (not where the Dream's REA forbids a private
+ * college's early round), rolling where that's how it admits, else regular. No college but the Dream starts in a
+ * binding round. `levels` is the estimate's group per item id (rounds.md "The ED guard"); without a level for an
+ * item, the Dream follows the plain rule.
+ */
+export function autoRounds(items: AutoRoundsItem[], schools: Record<string, AutoRoundsSchool | undefined>, levels: Record<string, StandingLevel | null> = {}): AutoRound[] {
   const dream = items.find((i) => i.dream) ?? null;
-  const dreamPick = dream ? (dream.chosen ?? dreamRound(schools[dream.id]).round) : null;
+  const dreamLevel = dream ? (levels[dream.id] ?? null) : null;
+  const dreamPick = dream ? (dream.chosen ?? dreamRoundFor(schools[dream.id], dreamLevel).round) : null;
   const dreamRea = dreamPick === "rea";
 
   return items.map((i): AutoRound => {
     if (i.chosen || i.locked) return { id: i.id, round: i.chosen ?? "rd", auto: false, why: "You picked this round." };
     const s = schools[i.id];
-    if (i.dream) return { id: i.id, auto: true, ...dreamRound(s) };
+    if (i.dream) return { id: i.id, auto: true, ...dreamRoundFor(s, levels[i.id] ?? null) };
     if (offered(s, "ea")) {
       if (dreamRea && s?.type !== "public") {
         return { id: i.id, round: "rd", auto: true, why: "Your Dream's restrictive early action usually rules out early action at other private colleges, so this starts in regular decision." };
@@ -67,15 +95,39 @@ export function autoRounds(items: AutoRoundsItem[], schools: Record<string, Auto
 
 /**
  * The one optional ED II line (rounds.md "ED II"): the first non-Dream college that offers ED II, when the Dream
- * starts in ED or REA and the student hasn't picked ED II anywhere. Never applied automatically.
+ * starts in ED or REA and the student hasn't picked ED II anywhere. A college at High reach is skipped (rounds.md
+ * "ED II", planned with the five levels). Never applied automatically.
  */
-export function edTwoSuggestion(items: AutoRoundsItem[], rounds: AutoRound[], schools: Record<string, AutoRoundsSchool | undefined>): string | null {
+export function edTwoSuggestion(
+  items: AutoRoundsItem[],
+  rounds: AutoRound[],
+  schools: Record<string, AutoRoundsSchool | undefined>,
+  levels: Record<string, StandingLevel | null> = {},
+): string | null {
   const byId = new Map(rounds.map((r) => [r.id, r]));
   const dream = items.find((i) => i.dream);
   const dreamPick = dream ? byId.get(dream.id)?.round : undefined;
   if (dreamPick !== "ed" && dreamPick !== "rea") return null;
   if (rounds.some((r) => r.round === "ed2")) return null;
-  return items.find((i) => !i.dream && !i.locked && offered(schools[i.id], "ed2"))?.id ?? null;
+  return items.find((i) => !i.dream && !i.locked && levels[i.id] !== "high_reach" && offered(schools[i.id], "ed2"))?.id ?? null;
+}
+
+/**
+ * Where ED would help most (rounds.md "The ED guard" 3): with a High-reach Dream, the highest-level college that
+ * offers ED and whose ED sentence (the estimate's `ed` verdict) says "helps" — i.e. applying ED there would move it
+ * toward the next level. Null when the Dream isn't at High reach, or no college qualifies.
+ */
+export function edHelpsMostSuggestion(
+  items: AutoRoundsItem[],
+  schools: Record<string, AutoRoundsSchool | undefined>,
+  levels: Record<string, StandingLevel | null>,
+  eds: Record<string, EstimateResult["ed"]>,
+): string | null {
+  const dream = items.find((i) => i.dream);
+  if (!dream || levels[dream.id] !== "high_reach") return null;
+  const candidates = items.filter((i) => !i.dream && !i.locked && eds[i.id] === "helps" && offered(schools[i.id], "ed") && levels[i.id] !== null);
+  if (candidates.length === 0) return null;
+  return candidates.reduce((best, i) => (LEVEL_RANK[levels[i.id]!] > LEVEL_RANK[levels[best.id]!] ? i : best)).id;
 }
 
 /** Plain-language conflicts, only when they exist: two binding rounds, ED with REA, a round the college doesn't offer. */

@@ -52,6 +52,7 @@ function school(over: Partial<PlanSchool> = {}): PlanSchool {
     actRange: null,
     gpaAverage: null,
     standing: { admitRate: null, sat: null, act: null, gpaAverage: null, testPolicy: null },
+    poolSchool: {} as PlanSchool["poolSchool"],
     ...over,
   };
 }

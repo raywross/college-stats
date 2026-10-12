@@ -276,3 +276,48 @@ test("tracking columns: defaults on a new item; the student and an edit-access g
   assert.deepEqual({ ...after }, { updates: false, visited_on: null, follows_social: false }, "the view-only guardian still reads the row");
   await assert.rejects(asUser(db, alice, "update public.list_items set visited_on = 'last spring' where id = $1", [item.id]), /invalid input syntax for type date/);
 });
+
+/* ------------------------------------------------------------------ */
+/* Five levels (20261012100000_five_levels.sql): the category check constraint, */
+/* and the new legacy/recruited columns                                */
+/* ------------------------------------------------------------------ */
+
+test("five levels: list_items.category accepts the five levels and unsorted, rejects the old three-group-only values nothing else, and rejects junk", async () => {
+  const db = await bootAll();
+  const alice = await createUser(db, { email: "alice@example.com", birthYear: 2009, roleHint: "student" });
+  const [{ id: student }] = await asUser<{ id: string }>(db, alice, "insert into public.students (user_id) values ($1) returning id", [alice]);
+  const [{ id: list }] = await asUser<{ id: string }>(db, alice, "insert into public.lists (student_id, name, is_default) values ($1, 'My list', true) returning id", [student]);
+  for (const category of ["high_reach", "reach", "target", "likely", "safe", "unsorted"]) {
+    const [row] = await asUser<{ category: string }>(
+      db,
+      alice,
+      "insert into public.list_items (list_id, unit_id, category) values ($1, $2, $3) returning category",
+      [list, `1${Math.floor(Math.random() * 900000) + 100000}`, category],
+    );
+    assert.equal(row.category, category);
+  }
+  await assert.rejects(
+    asUser(db, alice, "insert into public.list_items (list_id, unit_id, category) values ($1, '199999', 'reach-for-everyone')", [list]),
+    /violates check constraint/,
+    "a value outside the five levels and unsorted is rejected",
+  );
+});
+
+test("five levels: list_items.legacy defaults false and recruited defaults 'none', with a check constraint on recruited", async () => {
+  const db = await bootAll();
+  const alice = await createUser(db, { email: "alice@example.com", birthYear: 2009, roleHint: "student" });
+  const [{ id: student }] = await asUser<{ id: string }>(db, alice, "insert into public.students (user_id) values ($1) returning id", [alice]);
+  const [{ id: list }] = await asUser<{ id: string }>(db, alice, "insert into public.lists (student_id, name, is_default) values ($1, 'My list', true) returning id", [student]);
+  const [item] = await asUser<{ id: string; legacy: boolean; recruited: string }>(
+    db,
+    alice,
+    "insert into public.list_items (list_id, unit_id) values ($1, '243744') returning id, legacy, recruited",
+    [list],
+  );
+  assert.deepEqual({ legacy: item.legacy, recruited: item.recruited }, { legacy: false, recruited: "none" });
+  for (const recruited of ["contact", "pre_read", "likely_letter"]) {
+    assert.equal(await affectedAsUser(db, alice, "update public.list_items set recruited = $2 where id = $1", [item.id, recruited]), 1);
+  }
+  await assert.rejects(asUser(db, alice, "update public.list_items set recruited = 'maybe' where id = $1", [item.id]), /violates check constraint/);
+  assert.equal(await affectedAsUser(db, alice, "update public.list_items set legacy = true where id = $1", [item.id]), 1);
+});

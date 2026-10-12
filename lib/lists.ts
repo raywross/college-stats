@@ -45,6 +45,8 @@ import {
 } from "@/lib/list-rules";
 
 // The planner's columns (20261008120000_planner.sql) ride along so every list read is a PlanItem.
+// legacy/recruited (20261012100000_five_levels.sql) aren't selected here: this generic reader predates the redesign's
+// source columns too (they're absent here for the same reason) and should keep working before that migration lands.
 const ITEM_COLUMNS =
   "id, list_id, unit_id, category, status, outcome, round, position, added_by, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social, dream, priority, followed_networks, info_requested_on, application_platform, applied_on, complete_on, portal_url, committed_on, withdrawn_on, recommendations_count, supplements_count, transcript_shared";
 // "sort" rides along (specs/planner/list-building.md "Sorting") like the planner's item columns above.

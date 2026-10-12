@@ -18,16 +18,17 @@
  */
 import type { ListCategory, ListRound } from "../list-rules.ts";
 import { isOffered, roundDates, roundsOffered } from "./rounds.ts";
-import { autoRounds, edTwoSuggestion, roundProblems, type AutoRound, type AutoRoundsItem } from "./auto-rounds.ts";
-import { balance, retakeFromMoves, type Fit, type MoveUp, type RetakeSuggestion, type StandingStudent } from "./standing.ts";
+import { autoRounds, edHelpsMostSuggestion, edTwoSuggestion, roundProblems, type AutoRound, type AutoRoundsItem } from "./auto-rounds.ts";
+import { RETAKE_REACH, TEST_MAX, type StandingStudent, type TestKind } from "./standing.ts";
 import { GPA_CITES, positionIn, readScore, type GpaCite, type ScoreRead, type SendAdvice, type StandingSchool } from "../chances/baseline.ts";
+import { STANDING_LEVELS } from "../chances/levels.ts";
 import { noteText } from "../chances/notes.ts";
-import type { EstimateResult } from "../chances/types.ts";
+import type { EstimateResult, StandingLevel } from "../chances/types.ts";
 import { planGpaLabel, planGpaRange, planStudent, type StudentProfileData } from "../student-profile.ts";
 import type { PlanItem, PlanSchool } from "./types.ts";
 
 export type SeasonStatus = "not_started" | "working" | "submitted" | "decision";
-export type PlanNotice = "problems" | "edTwo" | "balance" | "retake";
+export type PlanNotice = "problems" | "edHelps" | "edTwo" | "balance" | "retake";
 
 /**
  * One college's estimate as the tabs read it: the group, its label, the score's place in the college's middle 50%
@@ -35,14 +36,53 @@ export type PlanNotice = "problems" | "edTwo" | "balance" | "retake";
  * notes as sentences), and the GPA sentence with the field its ⓘ cites.
  */
 export interface RowStanding {
-  fit: Fit | null;
-  /** The college is a Reach whatever the numbers. */
+  fit: StandingLevel | null;
+  /** The college is a Reach for everyone (label "elite"): its tier is Elite, whatever the numbers. */
   reachForEveryone: boolean;
   label: EstimateResult["label"];
   test: ScoreRead | null;
   gpaNote: { text: string; cite: GpaCite | null } | null;
   send: SendAdvice | null;
   reasons: string[];
+}
+
+/** The fewest points on the student's own test that would move a college up a level (levels.md "The planner's advice"; scores.md). */
+export interface LevelMoveUp {
+  score: number;
+  delta: number;
+  from: StandingLevel;
+  to: StandingLevel;
+}
+
+/** A retake worth suggesting across the list (scores.md "When to suggest another test"), across the five levels. */
+export interface LevelRetakeSuggestion {
+  kind: TestKind;
+  /** The increase that makes every listed move (the largest one needed, within RETAKE_REACH). */
+  delta: number;
+  target: number;
+  moves: { id: string; from: StandingLevel; to: StandingLevel; needed: number }[];
+}
+
+/** Counts per level for the balance line ("2 High reach · 3 Reach · 2 Target · 1 Likely · 1 Safe"). */
+function balanceLevels(levels: (StandingLevel | null)[]): Record<StandingLevel, number> {
+  const out = Object.fromEntries(STANDING_LEVELS.map((l) => [l, 0])) as Record<StandingLevel, number>;
+  for (const l of levels) if (l) out[l]++;
+  return out;
+}
+
+/**
+ * The retake card from moves already worked out (scores.md "When to suggest another test"): every move within a
+ * common retake gain, smallest first, and the largest number needed among them. Null when none. A planner-local,
+ * five-level version of lib/chances/baseline.ts retakeFromMoves (which stays three-group for the open baseline).
+ */
+function levelRetakeFromMoves(test: { kind: TestKind; score: number }, moves: { id: string; up: LevelMoveUp | null }[]): LevelRetakeSuggestion | null {
+  const counted = moves
+    .filter((m): m is { id: string; up: LevelMoveUp } => m.up !== null && m.up.delta > 0 && m.up.delta <= RETAKE_REACH[test.kind])
+    .map(({ id, up }) => ({ id, from: up.from, to: up.to, needed: up.delta }))
+    .sort((a, b) => a.needed - b.needed);
+  if (counted.length === 0) return null;
+  const delta = counted[counted.length - 1].needed;
+  return { kind: test.kind, delta, target: Math.min(test.score + delta, TEST_MAX[test.kind]), moves: counted };
 }
 
 export interface PlanRowView {
@@ -70,24 +110,26 @@ export interface PlanRowView {
   deadline: { iso: string; field: string; edition: string | null; lastCycle: boolean } | null;
   /** The round's expected decision date. */
   decision: { iso: string; field: string } | null;
-  /** The fewest points on the student's test that move this college up a group (scores.md). */
-  moveUp: MoveUp | null;
+  /** The fewest points on the student's test that move this college up a level (scores.md). */
+  moveUp: LevelMoveUp | null;
   /** The row's status chip once the season starts; null before. */
   seasonStatus: SeasonStatus | null;
 }
 
 export interface PlanView {
   student: StandingStudent;
-  /** Ordered: the Dream, then Reach, Target, Likely, unsorted; then the list's own order. */
+  /** Ordered: the Dream, then High reach, Reach, Target, Likely, Safe, unsorted; within a section, closest first, then the list's own order. */
   rows: PlanRowView[];
-  balance: Record<Fit, number>;
-  /** One sentence under the list when the balance is off (list.md "Balance line"), else null. */
+  balance: Record<StandingLevel, number>;
+  /** One sentence under the list when the balance is off (levels.md "Where the levels show"), else null. */
   balanceLine: string | null;
   /** One sentence per round conflict (rounds.md "Problems"). */
   problems: string[];
   /** The one optional ED II line (rounds.md "ED II"). */
   edTwo: { itemId: string; name: string; due: string | null } | null;
-  retake: RetakeSuggestion | null;
+  /** Where ED would help most (rounds.md "The ED guard" 3), when the Dream is at High reach. */
+  edHelps: { itemId: string; name: string; level: StandingLevel } | null;
+  retake: LevelRetakeSuggestion | null;
   /** The estimates the view was built from, by unit id (the numbers form seeds its live preview with them). */
   estimates: Record<string, EstimateResult>;
   /** The next deadline still to meet, or once deadlines are done the next decision to hear. */
@@ -114,20 +156,23 @@ export interface PlanViewInput {
 
 /** list.md "Around the list": at most three notices at once; the rest wait until the earlier ones are handled. */
 export const MAX_NOTICES = 3;
-export const NOTICE_ORDER: readonly PlanNotice[] = ["problems", "edTwo", "balance", "retake"];
+export const NOTICE_ORDER: readonly PlanNotice[] = ["problems", "edHelps", "edTwo", "balance", "retake"];
 /** list.md "The row": the season starts when the first deadline is within this many days. */
 export const SEASON_WINDOW_DAYS = 30;
 /** Counselors' common range for a list (README.md "Research"). */
 export const LIST_SIZE = { min: 6, max: 12 } as const;
+/** levels.md "Where the levels show": at least this many Likely-or-Safe colleges. */
 export const MIN_LIKELY = 2;
 
+/** levels.md "Where the levels show" "Balance line": the five-level copy, checked in this priority order. */
 export const BALANCE_LINES = {
-  likely: "Counselors suggest at least two Likely colleges you'd be happy to attend.",
+  likelyOrSafe: "Counselors suggest at least two colleges that are Likely or Safe for you.",
+  highReach: "One or two High reaches is fine; three or more crowd out colleges you'd get into.",
   size: "Most students apply to 6 to 12 colleges.",
   reach: "A Target or two would balance the Reaches.",
 } as const;
 
-const GROUP_ORDER: Record<ListCategory, number> = { reach: 0, target: 1, likely: 2, unsorted: 3 };
+const GROUP_ORDER: Record<ListCategory, number> = { high_reach: 0, reach: 1, target: 2, likely: 3, safe: 4, unsorted: 5 };
 
 const STATUS_TO_SEASON: Record<PlanItem["status"], SeasonStatus> = {
   considering: "not_started",
@@ -148,14 +193,18 @@ const isLocked = (i: PlanItem) => i.status === "applied" || i.status === "decide
 /** A round that still binds or restricts: not a decided college other than an admit, not a withdrawn one. */
 const isActive = (i: PlanItem) => !(i.status === "decided" && i.outcome !== "admitted") && !i.withdrawn_on;
 
-/** The balance sentence, when the list is off: too few Likely, then the list's size, then too many Reaches. */
+/**
+ * The balance sentence, when the list is off (levels.md "Where the levels show"): too few Likely-or-Safe, then
+ * three or more High reach, then the list's size, then Reach-plus-High-reach outnumbering the rest.
+ */
 export function balanceLineFor(groups: ListCategory[]): string | null {
   if (groups.length === 0) return null;
-  const counts = balance(groups.map((g) => (g === "unsorted" ? null : g)));
-  const sorted = counts.reach + counts.target + counts.likely;
-  if (sorted > 0 && counts.likely < MIN_LIKELY) return BALANCE_LINES.likely;
+  const counts = balanceLevels(groups.map((g) => (g === "unsorted" ? null : g)));
+  const sorted = STANDING_LEVELS.reduce((n, l) => n + counts[l], 0);
+  if (sorted > 0 && counts.likely + counts.safe < MIN_LIKELY) return BALANCE_LINES.likelyOrSafe;
+  if (counts.high_reach >= 3) return BALANCE_LINES.highReach;
   if (groups.length < LIST_SIZE.min || groups.length > LIST_SIZE.max) return BALANCE_LINES.size;
-  if (sorted > 0 && counts.reach > sorted / 2) return BALANCE_LINES.reach;
+  if (sorted > 0 && counts.reach + counts.high_reach > sorted / 2) return BALANCE_LINES.reach;
   return null;
 }
 
@@ -192,15 +241,12 @@ function scoreReadFor(student: StandingStudent, school: StandingSchool, send: Se
 
 const isGpaNote = (key: string) => key.startsWith("estimate.gpa.");
 
-/** Bridge from the five levels to the planner's three groups until the planner reads five (levels.md; U7 removes it). */
-const toFit = (g: EstimateResult["group"]): Fit | null => (g === "high_reach" ? "reach" : g === "safe" ? "likely" : g);
-
 /** The row's standing from its estimate (the reasons are the catalog's sentences, in the estimate's order). */
 export function rowStanding(est: EstimateResult, student: StandingStudent, school: StandingSchool): RowStanding {
   const gpa = est.notes.find((n) => isGpaNote(n.key));
   const cite = gpa?.cite && (GPA_CITES as readonly string[]).includes(gpa.cite) ? (gpa.cite as GpaCite) : null;
   return {
-    fit: toFit(est.group),
+    fit: est.group,
     reachForEveryone: est.label === "elite",
     label: est.label,
     test: scoreReadFor(student, school, est.send),
@@ -210,10 +256,10 @@ export function rowStanding(est: EstimateResult, student: StandingStudent, schoo
   };
 }
 
-/** The row's move-up in the score coach's shape (scores.md), from the estimate's. */
-function rowMoveUp(est: EstimateResult | null, student: StandingStudent): MoveUp | null {
+/** The row's move-up in the score coach's shape (scores.md), from the estimate's, across the five levels. */
+function rowMoveUp(est: EstimateResult | null, student: StandingStudent): LevelMoveUp | null {
   if (!est?.moveUp || !est.group || !student.test) return null;
-  return { score: est.moveUp.score, delta: est.moveUp.points, from: toFit(est.group)!, to: toFit(est.moveUp.to)! };
+  return { score: est.moveUp.score, delta: est.moveUp.points, from: est.group, to: est.moveUp.to };
 }
 
 /** The plan's whole view (build-plan.md "The view model"). */
@@ -230,7 +276,9 @@ export function planView(input: PlanViewInput): PlanView {
     const chosen = locked ? i.round : i.round_source === "student" ? i.round : null;
     return { id: i.id, dream: i.dream === true, chosen, locked };
   });
-  const rounds = autoRounds(roundItems, bySchool);
+  // rounds.md "The ED guard": the Dream's starting round depends on its level (null when the estimate has nothing to go on).
+  const levelById: Record<string, StandingLevel | null> = Object.fromEntries(items.map((i) => [i.id, estimates[i.unit_id]?.group ?? null]));
+  const rounds = autoRounds(roundItems, bySchool, levelById);
   const roundById = new Map<string, AutoRound>(rounds.map((r) => [r.id, r]));
 
   let rows: PlanRowView[] = items.map((item) => {
@@ -243,6 +291,7 @@ export function planView(input: PlanViewInput): PlanView {
     const group: ListCategory = standing ? (standing.fit ?? "unsorted") : school ? item.category : "unsorted";
     const r = roundById.get(item.id)!;
     const locked = isLocked(item);
+    // rounds.md "The ED guard" 2: a Dream at High reach never starts in ED/REA; its auto round's `why` already says so.
     const why = locked && item.round_source !== "student" ? "Your application is in, so the round stays as it is." : r.why;
     const dates = roundDates(school, r.round);
     const offered = roundsOffered(school);
@@ -265,7 +314,16 @@ export function planView(input: PlanViewInput): PlanView {
     };
   });
 
-  rows.sort((a, b) => Number(b.dream) - Number(a.dream) || GROUP_ORDER[a.group] - GROUP_ORDER[b.group] || a.item.position - b.item.position);
+  // levels.md "Within a section": Dream first overall, then the level order, then closest first (closeness 3 =
+  // nearest the next level up; null sorts after every closeness), then the student's own order among ties.
+  const closenessOf = (r: PlanRowView) => r.estimate?.closeness ?? -1;
+  rows.sort(
+    (a, b) =>
+      Number(b.dream) - Number(a.dream) ||
+      GROUP_ORDER[a.group] - GROUP_ORDER[b.group] ||
+      closenessOf(b) - closenessOf(a) ||
+      a.item.position - b.item.position,
+  );
 
   // The season (list.md "The row"): the first deadline is within 30 days, or any college is past "considering".
   const firstDeadline = rows.map((r) => r.deadline?.iso).filter((d): d is string => !!d).sort()[0] ?? null;
@@ -278,15 +336,22 @@ export function planView(input: PlanViewInput): PlanView {
   const activeRounds = rounds.filter((r) => active.some((a) => a.item.id === r.id));
   const problems = [...roundProblems(activeRounds, bySchool, names), ...amberProblems(active)];
 
-  const edTwoId = edTwoSuggestion(roundItems, rounds, bySchool);
+  const edTwoId = edTwoSuggestion(roundItems, rounds, bySchool, levelById);
   const edTwoRow = edTwoId ? rows.find((r) => r.item.id === edTwoId) ?? null : null;
   const edTwo = edTwoRow
     ? { itemId: edTwoRow.item.id, name: edTwoRow.school?.name ?? "A college", due: roundDates(edTwoRow.school, "ed2").closing?.iso ?? null }
     : null;
 
+  // rounds.md "The ED guard" 3: with a High-reach Dream, the highest-level college that offers ED and whose ED
+  // sentence says it would help.
+  const edVerdictById: Record<string, EstimateResult["ed"]> = Object.fromEntries(items.map((i) => [i.id, estimates[i.unit_id]?.ed ?? null]));
+  const edHelpsId = edHelpsMostSuggestion(roundItems, bySchool, levelById, edVerdictById);
+  const edHelpsRow = edHelpsId ? (rows.find((r) => r.item.id === edHelpsId) ?? null) : null;
+  const edHelps = edHelpsRow && edHelpsRow.school && levelById[edHelpsRow.item.id] ? { itemId: edHelpsRow.item.id, name: edHelpsRow.school.name, level: levelById[edHelpsRow.item.id]! } : null;
+
   // A retake can still move a college that hasn't decided (scores.md "When to suggest another test").
   const retake = student.test
-    ? retakeFromMoves(
+    ? levelRetakeFromMoves(
         student.test,
         rows.filter((r) => r.school && r.item.status !== "decided" && !r.item.withdrawn_on).map((r) => ({ id: r.item.id, up: r.moveUp })),
       )
@@ -302,16 +367,23 @@ export function planView(input: PlanViewInput): PlanView {
 
   const groups = rows.map((r) => r.group);
   const balanceLine = balanceLineFor(groups);
-  const present: Record<PlanNotice, boolean> = { problems: problems.length > 0, edTwo: edTwo !== null, balance: balanceLine !== null, retake: retake !== null };
+  const present: Record<PlanNotice, boolean> = {
+    problems: problems.length > 0,
+    edHelps: edHelps !== null,
+    edTwo: edTwo !== null,
+    balance: balanceLine !== null,
+    retake: retake !== null,
+  };
   const notices = NOTICE_ORDER.filter((n) => present[n]).slice(0, MAX_NOTICES);
 
   return {
     student,
     rows,
-    balance: balance(groups.map((g) => (g === "unsorted" ? null : g))),
+    balance: balanceLevels(groups.map((g) => (g === "unsorted" ? null : g))),
     balanceLine,
     problems,
     edTwo,
+    edHelps,
     retake,
     estimates,
     next,

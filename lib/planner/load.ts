@@ -71,7 +71,7 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
   let input = await generatorInputFor(plan, { gradYear, profile: profileData, home, today });
   // Quad's estimate for every college, on the server (specs/chances/estimate.md "In the planner"): the same for the
   // student and a guardian, who sees the student's AP exam scores too (owner, 2026-10-11).
-  const estimates = await planEstimates(profileData, plan.items.map((i) => i.unit_id), { gradYear, today });
+  const estimates = await planEstimates(profileData, plan.items, { gradYear, today, visits: plan.visits });
 
   // Suggested until changed: store the model's group and round on every `auto` row that differs (syncAuto).
   if (canEdit) {

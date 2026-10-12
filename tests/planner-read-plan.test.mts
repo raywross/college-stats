@@ -59,7 +59,22 @@ test("with the redesign's columns: one read, sources as stored", async () => {
   const itemReads = selects.filter((s) => s.table === "list_items");
   assert.equal(itemReads.length, 1);
   assert.equal(itemReads[0].columns, PLAN_ITEM_COLUMNS);
-  assert.match(PLAN_ITEM_COLUMNS, /category_source, round_source$/);
+  assert.match(PLAN_ITEM_COLUMNS, /category_source, round_source, legacy, recruited$/);
+});
+
+test("without the five-levels columns only (legacy/recruited): retried without them, backfilled to false/'none', sources kept as stored", async () => {
+  const MISSING_HOOKS = { code: "42703", message: "column list_items.legacy does not exist" };
+  const { client, selects } = fakeClient(
+    tables((q) => (q.columns.includes("legacy") ? { data: null, error: MISSING_HOOKS } : { data: [{ ...ROW, category_source: "student", round_source: "auto" }], error: null })),
+  );
+  const plan = await readPlan(client, "list-1");
+  assert.ok(plan);
+  assert.equal(plan.sourcesMissing, undefined, "the redesign's own source columns were there, so nothing is flagged missing");
+  assert.equal(plan.items[0].legacy, false);
+  assert.equal(plan.items[0].recruited, "none");
+  assert.equal(plan.items[0].category_source, "student");
+  const itemReads = selects.filter((s) => s.table === "list_items").map((s) => s.columns);
+  assert.deepEqual(itemReads, [PLAN_ITEM_COLUMNS, `${PLAN_ITEM_BASE_COLUMNS}, category_source, round_source`]);
 });
 
 test("without them: retried without the two columns, sources as the migration's backfill sets them, and flagged so nothing is written", async () => {

@@ -19,18 +19,15 @@ import {
   earlyFor,
   isOffered,
   lastCycleNote,
-  priorityOrder,
   redConflictCount,
   resolveMonthDay,
   roundDates,
   roundsOffered,
   roundsSummary,
-  standingFor,
   type ConflictKind,
   type MoneyInput,
   type RoundsItem,
   type RoundsSchool,
-  type Standing,
 } from "../lib/planner/rounds.ts";
 import { COST_CHECK_LEAD_DAYS, generate } from "../lib/planner/generators/rounds.ts";
 import { applyMerge, mergeTasks, taskKey } from "../lib/planner/tasks.ts";
@@ -94,8 +91,6 @@ function item(unit_id: string, over: Partial<RoundsItem> = {}): RoundsItem {
   return { id: `i${n}-${unit_id}`, unit_id, category: "target", status: "considering", outcome: null, round: null, position: n, dream: false, priority: null, ...over };
 }
 
-const standingOf = (items: RoundsItem[], schools: Record<string, RoundsSchool>): Record<string, Standing> =>
-  Object.fromEntries(items.map((i) => [i.id, standingFor(i, schools[i.unit_id])]));
 const by = <T extends { unit_id: string }>(list: T[]) => Object.fromEntries(list.map((s) => [s.unit_id, s]));
 
 /* ------------------------------------------------------------------ */
@@ -136,24 +131,6 @@ test("dates resolve against the student's cycle: fall in the start year, winter 
   assert.equal(roundDates(s, "rd").edition, `${START}-${(START + 1) % 100}`, "logistics fields fall back to the block's edition");
   assert.equal(roundDates(s, "rd").lastCycle, false);
   assert.equal(cycleLabel(START), "2026–27");
-});
-
-test("priority order: the Dream first, then the student's rank, then category and position", () => {
-  const a = item("a", { category: "likely", position: 1 });
-  const b = item("b", { category: "reach", position: 2 });
-  const c = item("c", { category: "target", position: 3, priority: 1 });
-  const d = item("d", { category: "likely", position: 4, dream: true });
-  assert.deepEqual(priorityOrder([a, b, c, d]).map((i) => i.unit_id), ["d", "c", "b", "a"]);
-});
-
-/* ------------------------------------------------------------------ */
-
-/* ------------------------------------------------------------------ */
-
-test("standing: under 20% admitted is a Reach for everyone; otherwise the list's category", () => {
-  assert.equal(standingFor({ category: "target" }, { admitRate: 0.19 }).label, "Reach for everyone");
-  assert.equal(standingFor({ category: "target" }, { admitRate: 0.2 }).label, "Target");
-  assert.equal(standingFor({ category: "unsorted" }, { admitRate: null }).label, "Not sorted");
 });
 
 /* ------------------------------------------------------------------ */

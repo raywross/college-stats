@@ -11,8 +11,8 @@ import { isMajorFamily } from "../majors.ts";
 import { MAX_INTENDED_MAJORS, OUTSIDE_US, sanitizeCoreAtTopLevel, sanitizeCourses, type CoreAtTopLevel } from "../student-profile.ts";
 import { UNDECIDED_MAJOR } from "./major-review.ts";
 import { isNoteKey } from "./notes.ts";
-import { STANDING_LEVELS } from "./levels.ts";
-import type { CourseEntry, EstimateNote, EstimateResult, EstimateStudent, InputKind } from "./types.ts";
+import { NO_HOOKS, RECRUITED_PICKS, STANDING_LEVELS } from "./levels.ts";
+import type { CollegeHooks, CourseEntry, EstimateNote, EstimateResult, EstimateStudent, InputKind } from "./types.ts";
 
 /** Colleges per call (owner assumption 4): the signed-out plan holds up to 20; a signed-in caller may ask 25. */
 export const MAX_COLLEGES = { signedOut: 20, signedIn: 25 } as const;
@@ -41,6 +41,12 @@ export interface EstimateRequest {
   context: EstimateContextInput;
   /** Also answer "students like you" for the one college asked about (the profile's card). */
   likeYou: boolean;
+  /**
+   * The list row's legacy, recruited, and interest inputs, by unit id (decision 5 "Hooks in requests"; built by the
+   * planner, lib/planner/plan-estimates.ts and components/planner/useEstimates.ts). A college missing here reads as
+   * NO_HOOKS.
+   */
+  hooks: Record<string, CollegeHooks> | null;
 }
 
 export type ParseResult = { ok: true; request: EstimateRequest } | { ok: false; message: string };
@@ -87,6 +93,19 @@ export function sanitizeEstimateStudent(input: unknown): EstimateStudent {
   };
 }
 
+/** One college's hooks, as much as is valid; an invalid or missing entry reads as NO_HOOKS. */
+function sanitizeHooks(input: unknown, unitIds: readonly string[]): Record<string, CollegeHooks> | null {
+  if (!isObj(input)) return null;
+  const out: Record<string, CollegeHooks> = {};
+  for (const id of unitIds) {
+    const v = input[id];
+    if (!isObj(v)) continue;
+    const recruited = RECRUITED_PICKS.includes(v.recruited as (typeof RECRUITED_PICKS)[number]) ? (v.recruited as CollegeHooks["recruited"]) : NO_HOOKS.recruited;
+    out[id] = { legacy: v.legacy === true, recruited, interest: v.interest === true };
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
 /** Validates a POST body. Colleges beyond the caller's limit are refused, not silently dropped. */
 export function parseEstimateRequest(body: unknown, opts: { signedIn: boolean }): ParseResult {
   if (!isObj(body)) return { ok: false, message: "Send a JSON object with student and unitIds." };
@@ -120,7 +139,8 @@ export function parseEstimateRequest(body: unknown, opts: { signedIn: boolean })
     coreAtTopLevel: ctx.coreAtTopLevel === undefined || ctx.coreAtTopLevel === null ? null : sanitizeCoreAtTopLevel(ctx.coreAtTopLevel),
     grade: intIn(ctx.grade, 9, 12) as EstimateContextInput["grade"],
   };
-  return { ok: true, request: { student, unitIds, counterfactual, context, likeYou: body.likeYou === true && unitIds.length === 1 } };
+  const hooks = sanitizeHooks(body.hooks, unitIds);
+  return { ok: true, request: { student, unitIds, counterfactual, context, likeYou: body.likeYou === true && unitIds.length === 1, hooks } };
 }
 
 /** The student as the counterfactual describes them. */

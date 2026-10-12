@@ -182,6 +182,7 @@ export function planSchoolFor(
     actRange,
     gpaAverage,
     standing,
+    poolSchool: school,
   };
 }
 

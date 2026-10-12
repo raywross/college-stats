@@ -62,7 +62,7 @@ async function syncWith(supabase: Supabase, listId: string): Promise<number> {
   }
   const today = todayIso();
   const input = await generatorInputFor(plan, { gradYear, profile, home: await myHome(), today });
-  const estimates = await planEstimates(profile, plan.items.map((i) => i.unit_id), { gradYear, today });
+  const estimates = await planEstimates(profile, plan.items, { gradYear, today, visits: plan.visits });
   const writes = autoWrites(planView({ items: plan.items, schools: input.schools, profile, estimates, today }));
   return writes.length > 0 ? writeAutoWrites(supabase, writes) : 0;
 }

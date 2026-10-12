@@ -25,9 +25,10 @@ import {
   selectivity,
   setting,
   size,
+  size4,
   splitBy,
 } from "../lib/trend-groups.ts";
-import { byGroup, fixedPanel, medianBy, shareBy, totalBy, weightedBy, yearly, type Member } from "../lib/trend-panel.ts";
+import { byGroup, byGroupThen, fixedPanel, medianBy, shareBy, splitByThen, totalBy, weightedBy, yearly, type Member } from "../lib/trend-panel.ts";
 import { STUDIES, studyWindow, type StudyDef } from "../lib/trend-studies.ts";
 import type { GroupingResult, StudyFile, TrendEnvelope, TrendIndex } from "../lib/trends.ts";
 import { loadTrendContext } from "../scripts/trends/context.mts";
@@ -61,7 +62,7 @@ test("floors: 30 per group, 10 per state, 8 per conference", () => {
   assert.equal(CONFERENCE_FLOOR, 8);
   assert.equal(GROUPINGS.state.floor, STATE_FLOOR);
   assert.equal(GROUPINGS.conference.floor, CONFERENCE_FLOOR);
-  for (const k of ["region", "control", "size", "selectivity", "setting", "division", "research", "designation"] as const) assert.equal(GROUPINGS[k].floor, GROUP_FLOOR, k);
+  for (const k of ["region", "control", "size", "size4", "selectivity", "setting", "division", "research", "designation"] as const) assert.equal(GROUPINGS[k].floor, GROUP_FLOOR, k);
 });
 
 test("grouping functions classify by today's fields, with the hub's boundaries", () => {
@@ -198,4 +199,51 @@ test("committed trend files are exactly what npm run build-trends makes from the
   const { outputs, index } = computeTrends(loadTrendContext(ROOT));
   for (const o of outputs) assert.equal(readFileSync(join(TRENDS, `${o.name}.json`), "utf8"), trendFileText(o.file), `${o.name}.json is stale: run npm run build-trends`);
   assert.equal(readFileSync(join(TRENDS, "index.json"), "utf8"), trendFileText(index), "index.json is stale: run npm run build-trends");
+});
+
+/* ---- Classified then (Study 7) ---- */
+
+/** A member whose undergraduates and acceptance rate are given by fall from 2014. */
+const memberThen = (id: string, undergrads: (number | null)[], rate: (number | null)[], over: Parameters<typeof school>[0] = {}): Member => ({
+  school: { ...school(over), unit_id: id },
+  h: { unit_id: id, series: { undergrads: { start: 2014, values: undergrads }, acceptance_rate: { start: 2014, values: rate } } } as unknown as SchoolHistory,
+});
+
+test("size4: the 20,000+ split on today's size, same boundaries below it as size", () => {
+  assert.equal(size4(school({ undergrads: 1999 })), "small");
+  assert.equal(size4(school({ undergrads: 2000 })), "medium");
+  assert.equal(size4(school({ undergrads: 9999 })), "medium");
+  assert.equal(size4(school({ undergrads: 10_000 })), "large");
+  assert.equal(size4(school({ undergrads: 19_999 })), "large");
+  assert.equal(size4(school({ undergrads: 20_000 })), "xl");
+  assert.deepEqual(GROUPINGS.size4.groups!.map((g) => g.key), ["small", "medium", "large", "xl"]);
+  assert.equal(GROUPINGS.size4.field, GROUPINGS.size.field);
+});
+
+test("ofThen reads the grouping from history at the given fall; today's grouping is unaffected", () => {
+  const grew = memberThen("g", [18_000, 25_000], [0.2, 0.3], { undergrads: 25_000, rate: 0.3 });
+  assert.deepEqual(GROUPINGS.size4.ofThen!(grew, 2014), ["large"]);
+  assert.deepEqual(GROUPINGS.size4.ofThen!(grew, 2015), ["xl"]);
+  assert.deepEqual(GROUPINGS.size4.of(grew.school), ["xl"]);
+  assert.deepEqual(GROUPINGS.size.ofThen!(memberThen("s", [1999], [null]), 2014), ["small"]);
+  assert.deepEqual(GROUPINGS.selectivity.ofThen!(grew, 2014), ["most"]);
+  assert.deepEqual(GROUPINGS.selectivity.ofThen!(grew, 2015), ["more"]);
+  assert.deepEqual(GROUPINGS.selectivity.ofThen!(memberThen("n", [5000], [null]), 2014), [], "no rate that fall, no group");
+  assert.deepEqual(GROUPINGS.size4.ofThen!(grew, 2030), [], "a fall outside the series, no group");
+  for (const k of ["region", "control", "setting", "research"] as const) assert.equal(GROUPINGS[k].ofThen, undefined, `${k} doesn't move with enrollment`);
+});
+
+test("byGroupThen classifies as of the fall given, falls back to today's grouping, and keeps the floor", () => {
+  const ms = [
+    ...Array.from({ length: 30 }, (_, i) => memberThen(`x${i}`, [25_000, 26_000], [0.5, 0.5], { undergrads: 26_000, region: "West" })),
+    ...Array.from({ length: 30 }, (_, i) => memberThen(`c${i}`, [15_000, 21_000], [0.5, 0.5], { undergrads: 21_000, region: "West" })),
+  ];
+  const then = byGroupThen(ms, "size4", 2014, (g) => g.length);
+  assert.deepEqual(then.groups.map((r) => [r.key, r.n]), [["large", 30], ["xl", 30]], "the colleges that crossed 20,000 stay large");
+  assert.deepEqual(byGroup(ms, "size4", (g) => g.length).groups.map((r) => [r.key, r.n]), [["xl", 60]], "today's classification counts them as 20,000+");
+  assert.deepEqual(byGroupThen(ms, "region", 2014, (g) => g.length).groups.map((r) => [r.key, r.n]), [["West", 60]], "no ofThen: today's region");
+  assert.deepEqual(splitByThen(ms.slice(0, 31), "size4", 2014).map((g) => [g.key, g.items.length]), [["large", 1], ["xl", 30]]);
+  const under = byGroupThen(ms.slice(0, 31), "size4", 2014, (g) => g.length);
+  assert.deepEqual(under.groups[0], { key: "large", label: "10,000–19,999", n: 1, tooFew: true });
+  assert.equal(under.floor, GROUP_FLOOR);
 });

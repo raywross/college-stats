@@ -1,6 +1,6 @@
 # National Trends: How College Is Changing
 
-> Status: **built** 2026-10-04 (PR pending, branch `feature/national-trends`). Opened 2026-09-29 with one study. Expanded 2026-10-03 into a family of specs: this
+> Status: **built** 2026-10-04 (PR #80); Study 7, the online-share field, the state flows, and Study 3's campus-based toggle were built 2026-10-12 (branch `feature/national-trends-2`). Opened 2026-09-29 with one study. Expanded 2026-10-03 into a family of specs: this
 > hub (the shared method, groups, routes, and computation), five more studies, top-10 lists, and pages by athletic
 > conference and by state, each in [specs/trends/](trends/). Uses the year-by-year history already on the site
 > ([how history is built](trends-data.md)). First-look numbers below and in the study specs were computed 2026-10-03
@@ -18,7 +18,7 @@
 | [Study 4: The price gap](trends/price-gap.md) | Full price vs what students pay, by group: who is discounting | this hub |
 | [Study 5: Out-of-state students](trends/out-of-state.md) | Public colleges enrolling more first-years from other states | this hub |
 | [Study 6: The Pell graduation gap](trends/pell-gap.md) | Pell recipients graduate less often, and the gap widened | this hub |
-| [Study 7: Where the students went](trends/where-students-go.md) (planned 2026-10-05) | The students view: each kind of college's share of all undergraduates then and now, by size, research tier, public or private, region and state, selectivity, and price | this hub; [online share](data-expansion/online-share.md) for the campus-based panel (the movers' lists stand in until then) |
+| [Study 7: Where the students went](trends/where-students-go.md) (built 2026-10-12) | The students view: each kind of college's share of all undergraduates then and now, by size, research tier, public or private, region and state, selectivity, and price | this hub; [online share](data-expansion/online-share.md) for the campus-based panel (`isCampusBased`, both ends of the window) |
 
 Study 1 (men and women in admissions) stays in this file as the worked example of the template.
 
@@ -177,7 +177,7 @@ are already read) so the study can use the same rule and weight by applicants.
 | 5. Public colleges and out-of-state students | The median public's out-of-state share rose 11% → 13%; R1 publics 18% → 22% | [out-of-state.md](trends/out-of-state.md) |
 | 6. The Pell graduation gap | Pell recipients graduate 11 points less often than peers with neither Pell nor loans; the gap widened from 9 | [pell-gap.md](trends/pell-gap.md) |
 
-### Study 7 (specified 2026-10-05, planned)
+### Study 7 (specified 2026-10-05, built 2026-10-12)
 | Study | Headline from the first look | Spec |
 |---|---|---|
 | 7. Where the students went | A third of campus-based undergraduates attend a college with 20,000+ students, up from 30% in ten years, and the share rose every year; R1 universities went from 40% to 46% of students; the colleges that cut prices most lost the most students. The pandemic sped every shift up (the biggest campuses held flat in fall 2019 → 2022 while every other size lost 6–8%); since 2022 the shifts have slowed to their old pace, not reversed | [where-students-go.md](trends/where-students-go.md) |

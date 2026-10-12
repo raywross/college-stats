@@ -1,7 +1,8 @@
 # Trends by State
 
-> Status: **built** 2026-10-04 (PR #80); an addition, first-years crossing state lines, was planned 2026-10-05
-> ([below](#planned-addition-2026-10-05-first-years-crossing-state-lines)). Specified 2026-10-03 as part of the national-trends family
+> Status: **built** 2026-10-04 (PR #80); the addition, first-years crossing state lines, was planned 2026-10-05 and
+> **built** 2026-10-12 ([below](#planned-addition-2026-10-05-first-years-crossing-state-lines), with an
+> [as-built note](#as-built-2026-10-12)). Specified 2026-10-03 as part of the national-trends family
 > ([hub](../national-trends.md)). First-look figures computed 2026-10-03.
 
 ## Why
@@ -147,6 +148,40 @@ the most first-years: their growth is home-grown. The Arizona and New Hampshire 
   counted once on each side); one state recomputed from the detail files without the helpers; no online-first,
   for-profit, or merged college on either side; `flows` absent for a state with no college table; the `receiving`
   shares sum to at most 1 and are ordered.
+
+### As built (2026-10-12)
+Built on `feature/national-trends-2`, after the online-share unit's `isCampusBased`/`onlineFirstAt` (rule 1's field,
+no longer the movers' reviewed list). `npm run build-trends` reads the committed `data/detail/schools/*.json` and
+`data/history/schools/*.json`; no network.
+
+- **The one fall is fall 2024** (`StatesFile.flowsYear`), parsed from the home-state tables' own year string (the
+  detail files' `home_states.year`, e.g. "Fall 2024"), not typed anywhere in app code (`historyYearLabel`).
+- **Rule 1, at one fall:** `isCampusBased(m, flowsYear, flowsYear, campuses)` (both ends of the window the same year,
+  as the contract says for a snapshot). Excluded from the 2024 computation: 90 online-first colleges, 94 for-profit
+  colleges, 24 reviewed closed/merged campuses (`StatesFile.flowsRule.excluded`).
+- **Rule 3, extended:** a home code that isn't a recognized state (foreign, unknown) is left out as specified; this
+  build also treats a state or territory with **no counted college of its own** the same way (an "outlying area
+  without a college on the site" in spirit, even when it technically has an on-site college that simply didn't clear
+  rule 1 or report a table) — that count folds into the *sending* college's `other`, not into anyone's inflow or
+  outflow. This was necessary for the sum invariant: without it, a state that could receive credit as an inflow
+  target elsewhere but never gets its own `flows` entry would make Σ inflow and Σ outflow diverge. In the current
+  data this never actually drops a real state (every state and territory on the site has at least one counted
+  college with a table), so the first-look numbers below are unaffected; it only matters for a future release where
+  a state's only table-bearing colleges go online-first or close.
+- **First look, revised** (fall 2024, after rule 1 excludes online-first/for-profit/merged colleges; 54 states and
+  territories get `flows`, including every tooFew state): Arizona's net inflow fell from the planning estimate's
+  +16,000 to **+4,793** (Grand Canyon and University of Phoenix, both online-first, dropped out of its receiving
+  list) and New Hampshire's fell from +15,700 to **−54** (Southern New Hampshire University, 80% of its raw inflow,
+  is online-first) — confirming the planned addition's note that "the Arizona and New Hampshire rows show why rule 1
+  comes first." Top net importers: Pennsylvania +10,623, Alabama +10,331, Indiana +9,879, South Carolina +7,271, Utah
+  +6,500. Top net exporters: New Jersey −26,107, Texas −21,455, California −20,387, Illinois −19,348, Maryland
+  −7,963. Σ inflow = Σ outflow = 438,616 exactly.
+- **Receiving colleges' "ratio in words"** uses the state's name ("Indiana's colleges enroll 2.6 first-years from
+  other states for every Indiana resident who starts college in another state") rather than a demonym
+  ("Indianan"/"Hoosier"): building a demonym table for every state and territory wasn't worth it for one sentence.
+- **Deviation from the file shape sketched 2026-10-05:** `StateFlows` also carries `other` (first-years at the
+  state's colleges with no recognized home state, per rule 3) and `n` (campus-based colleges counted toward its own
+  inflow), both named in the shared Unit C contract alongside `receiving`.
 
 ## Open questions
 1. Should the state page include **high school graduate projections** (WICHE's "Knocking at the College Door")? They

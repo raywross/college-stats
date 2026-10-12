@@ -30,6 +30,8 @@ export type VintageKey =
   | "ipeds-ef-c"
   /** IPEDS Fall Enrollment part A (EF{Y}A): enrollment by level, incl. new transfer-ins. Fall Y. */
   | "ipeds-ef-a"
+  /** IPEDS Fall Enrollment, distance education (EF{Y}A_DIST): undergraduates taking every course or some online. Fall Y. */
+  | "ipeds-ef-a-dist"
   /** IPEDS Completions (C{Y}_A): degrees awarded by field, July Y−1 to June Y ("2024–25 graduates"). */
   | "ipeds-c"
   /** IPEDS Finance survey, derived per-student figures (DRVF{Y}): endowment and spending per student. Fiscal year. */
@@ -248,6 +250,9 @@ export const FIELDS = {
   // Stored in the per-college detail file (lib/detail.ts), not data/schools.json.
   // Transfers in (specs/data-expansion/transfers.md).
   "demographics.transfer_in": { label: "New transfer-in undergraduates this fall", topic: "demographics", source: "ipeds-ef-a", vintage: "ipeds-ef-a" },
+  // Online share (specs/data-expansion/online-share.md; lib/online-share.ts): EF{Y}A_DIST level 2, all undergraduates.
+  "demographics.online_share": { label: "Undergraduates taking every course online", topic: "demographics", source: "ipeds-ef-a-dist", vintage: "ipeds-ef-a-dist" },
+  "demographics.online_any_share": { label: "Undergraduates taking at least one course online", topic: "demographics", source: "ipeds-ef-a-dist", vintage: "ipeds-ef-a-dist" },
   "detail.home_states": { label: "First-years by home state", topic: "demographics", source: "ipeds-ef-c", vintage: "ipeds-ef-c" },
   // LGBTQ+ life, phase 1 (specs/lgbtq-life.md; lib/lgbtq.ts). Another gender was last collected for fall 2024; when the
   // newest file lacks it, each value's lineage record names the older file and its fall (scripts/lib/lgbtq-sync.mts).

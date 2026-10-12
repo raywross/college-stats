@@ -6,8 +6,8 @@
  *
  * Every list is a change the site already measures for profiles and Explore (`changeOver`, `pellGapAt`), with:
  * - a floor at the start of the window, on the base (rule 1), some also at the end (`at: "both"`);
- * - campus-based only for growth (rule 2): for-profits and the reviewed online-first list are left out of `growth`
- *   lists until the distance-education share exists;
+ * - campus-based only for growth (rule 2): for-profits and colleges online-first at either end of the window (`onlineFirstAt`,
+ *   from the distance-education share) are left out of growth lists;
  * - still open on every list: a latest undergraduate count under 300, or a campus on the reviewed closed/merged list,
  *   keeps a college out (rules 2 and 3);
  * - reporting errors out (rule 4): an endpoint that jumped more than 3× from the year next to it;
@@ -15,7 +15,7 @@
  */
 import type { FieldPath } from "./fields";
 import type { TermKey } from "./glossary";
-import { changeOver, pellGapAt, valueAt, type CpiTable, type HistoryMeta, type SchoolHistory, type SeriesKey, type YearKind } from "./history.ts";
+import { changeOver, onlineFirstAt, pellGapAt, valueAt, type CpiTable, type HistoryMeta, type SchoolHistory, type SeriesKey, type YearKind } from "./history.ts";
 import type { School, SchoolType, SortKey } from "./types";
 
 /** Years back from history's newest year of the list's kind. Ten is the default (as profiles and Explore). */
@@ -72,7 +72,7 @@ export interface MoverListDef {
   floors: readonly MoverFloor[];
   /** Only these control types (e.g. public colleges for out-of-state students). */
   types?: readonly SchoolType[];
-  /** Growth list: for-profits and the online-first list are left out (rule 2). */
+  /** Growth list: for-profits and colleges online-first at either end of the window are left out (rule 2). */
   campusBased?: true;
   /** A decline list: the page reminds readers that smaller can be deliberate. */
   decline?: true;
@@ -113,7 +113,7 @@ export const MOVER_LISTS = [
     jumpKeys: ["applicants"],
     floorText: "2,000+ applicants",
     term: "applicants",
-    fields: ["admissions.applicants", "demographics.undergrad_enrollment"],
+    fields: ["admissions.applicants", "demographics.undergrad_enrollment", "demographics.online_share"],
     explore: { sortBy: "apps_change", sortDir: "desc", params: { minApplicants: "2000" } },
   },
   {
@@ -162,8 +162,8 @@ export const MOVER_LISTS = [
     jumpKeys: ["undergrads"],
     floorText: "1,000+ undergraduates",
     term: "undergrad-enrollment",
-    fields: ["demographics.undergrad_enrollment"],
-    explore: { sortBy: "size_change", sortDir: "desc", params: { minUndergrads: "1000", types: "public,private-nonprofit" } },
+    fields: ["demographics.undergrad_enrollment", "demographics.online_share"],
+    explore: { sortBy: "size_change", sortDir: "desc", params: { minUndergrads: "1000", types: "public,private-nonprofit", online: "campus" } },
   },
   {
     key: "shrank-most",
@@ -283,7 +283,7 @@ export const moverList = (key: MoverListKey): MoverListDef => MOVER_LISTS.find((
 export type MoverExclusion = "for-profit" | "online-first" | "closed-or-merged" | "under-300" | "reporting-jump";
 export const MOVER_EXCLUSIONS: readonly MoverExclusion[] = ["closed-or-merged", "under-300", "for-profit", "online-first", "reporting-jump"];
 
-/** One entry of a reviewed exclusion file (data/trends/online-first.json, data/trends/excluded-campuses.json). */
+/** One entry of a reviewed exclusion file (data/trends/excluded-campuses.json). */
 export interface ExclusionEntry {
   unit_id: string;
   /** The college's name when reviewed, for readers of the file. */
@@ -306,18 +306,17 @@ export interface CampusExclusionEntry extends ExclusionEntry {
   years?: number[];
 }
 
-/** The reviewed lists, by unit ID. */
+/**
+ * The reviewed campus list, by unit ID. Online-first isn't a list: it's evaluated from each college's distance-education
+ * share at the window's start (`onlineFirstAt`, lib/history.ts).
+ */
 export interface MoverExclusionSets {
-  onlineFirst: ReadonlySet<string>;
   campuses: ReadonlyMap<string, Pick<CampusExclusionEntry, "before" | "years">>;
 }
 
-/** The reviewed files as `MoverExclusionSets`. */
-export function exclusionSets(onlineFirst: readonly ExclusionEntry[], campuses: readonly CampusExclusionEntry[]): MoverExclusionSets {
-  return {
-    onlineFirst: new Set(onlineFirst.map((e) => e.unit_id)),
-    campuses: new Map(campuses.map((e) => [e.unit_id, { before: e.before, years: e.years }])),
-  };
+/** The reviewed file as `MoverExclusionSets`. */
+export function exclusionSets(campuses: readonly CampusExclusionEntry[]): MoverExclusionSets {
+  return { campuses: new Map(campuses.map((e) => [e.unit_id, { before: e.before, years: e.years }])) };
 }
 
 /** True when a campus exclusion applies to a change from `since` to `to`. */
@@ -331,6 +330,32 @@ export function campusExcluded(rule: Pick<CampusExclusionEntry, "before" | "year
 export interface MoverMember {
   school: School;
   h: SchoolHistory;
+}
+
+/** Why a college isn't campus-based over a window. */
+export type CampusExclusion = "for-profit" | "online-first" | "closed-or-merged";
+
+/**
+ * The first reason a college isn't campus-based from `since` to `to`, or null: a campus that merged or split inside the
+ * window (`campusExcluded`), for-profit, or online-first at either end of the window (`onlineFirstAt`; a college with
+ * no share that fall counts as campus-based). Both ends, as the growth lists check: a college that became online-first
+ * inside the window grew by going online, which is the growth these panels leave out. For a one-fall snapshot pass the
+ * same year twice.
+ */
+export function campusExclusionOf(m: MoverMember, since: number, to: number, campuses: MoverExclusionSets["campuses"]): CampusExclusion | null {
+  if (campusExcluded(campuses.get(m.school.unit_id), since, to)) return "closed-or-merged";
+  if (m.school.type === "private-forprofit") return "for-profit";
+  if (onlineFirstAt(m.h, since) === true || onlineFirstAt(m.h, to) === true) return "online-first";
+  return null;
+}
+
+/**
+ * Campus-based over a window (top-10-lists rule 2; Study 7's panel; the state flows): not for-profit, not online-first at
+ * either end of the window (`onlineFirstAt`; a college with no share that fall counts as campus-based), and not a campus
+ * that merged or split inside the window (`campusExcluded`). For a one-fall snapshot pass the same year twice.
+ */
+export function isCampusBased(m: MoverMember, since: number, to: number, campuses: MoverExclusionSets["campuses"]): boolean {
+  return campusExclusionOf(m, since, to, campuses) === null;
 }
 
 export interface MoverContext {
@@ -428,7 +453,9 @@ export function moverExclusion(def: MoverListDef, m: MoverMember, c: MoverChange
   if (campusExcluded(ctx.exclusions.campuses.get(id), c.since, to)) return "closed-or-merged";
   if (latestUndergrads(m, ctx.latest) < STILL_OPEN_MIN_UNDERGRADS) return "under-300";
   if (def.campusBased && m.school.type === "private-forprofit") return "for-profit";
-  if (def.campusBased && ctx.exclusions.onlineFirst.has(id)) return "online-first";
+  // At either end of the change (its first fall, or up to 2 falls after the window's start, and its last): a college
+  // that became online-first inside the window grew by going online, which is what rule 2 keeps off growth lists.
+  if (def.campusBased && (onlineFirstAt(m.h, c.since) === true || onlineFirstAt(m.h, to) === true)) return "online-first";
   if (def.jumpKeys.some((k) => isEndpointJump(m.h, k, c.since) || isEndpointJump(m.h, k, to))) return "reporting-jump";
   return null;
 }
@@ -518,10 +545,13 @@ export const EXCLUSION_LABELS: Record<MoverExclusion, string> = {
   "reporting-jump": "figures that jumped more than threefold in a year at either end",
 };
 
-/** Every history series a list reads (measure, floors, the jump check, and today's undergraduates), for citations. */
+/**
+ * Every history series a list reads (measure, floors, the jump check, today's undergraduates, and for growth lists the
+ * online share at both ends), for citations.
+ */
 export function moverSeries(def: MoverListDef): SeriesKey[] {
   const floors = def.floors.flatMap((f) => (f.series === "entering_class" ? [...ENTERING_CLASS_SERIES] : [f.series]));
-  return [...new Set<SeriesKey>([...def.series, ...floors, ...def.jumpKeys, "undergrads"])];
+  return [...new Set<SeriesKey>([...def.series, ...floors, ...def.jumpKeys, "undergrads", ...(def.campusBased ? (["online_share"] as const) : [])])];
 }
 
 /** "See all in Explore" for a list (the ten-year sort, same floors), or null when Explore has no such sort. */

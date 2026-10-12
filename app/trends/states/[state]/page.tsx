@@ -7,7 +7,7 @@ import { historyYearLabel } from "@/lib/history";
 import { pct, points } from "@/lib/format";
 import { moverList } from "@/lib/movers";
 import type { School } from "@/lib/types";
-import type { StateEntry, StateMeasures } from "@/lib/trends";
+import type { StateEntry, StateFlows, StateMeasures } from "@/lib/trends";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { HistorySourceNote } from "@/components/sources/HistorySourceNote";
 import { MoverListCard } from "@/components/trends/movers/MoverListCard";
@@ -109,6 +109,63 @@ function gapNote(values: readonly (number | null)[], start: number, kind: "fall"
   );
 }
 
+/**
+ * The in/out block (specs/trends/states.md, "Planned addition"): inflow, outflow, net, the ratio in words, and the
+ * five colleges taking the most of the inflow. `id="flows"` so other pages (Study 7) can link straight to it. Shown
+ * on both the full state page and a tooFew state's reduced page (rule 5: flows have no floor).
+ */
+function FlowsBlock({ stateName, flows }: { stateName: string; flows: StateFlows }) {
+  const fall = historyYearLabel(flows.year, "fall").toLowerCase();
+  const ratio = flows.outflow > 0 ? flows.inflow / flows.outflow : null;
+  return (
+    <div id="flows" className="rounded-2xl border bg-card p-4 sm:p-5">
+      <p className="text-sm font-semibold">First-years crossing state lines, {fall}</p>
+      <dl className="mt-3 grid grid-cols-3 gap-3 text-sm">
+        <div>
+          <dt className="text-xs text-muted-foreground">Inflow</dt>
+          <dd className="font-semibold tabular-nums">{flows.inflow.toLocaleString("en-US")}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Outflow</dt>
+          <dd className="font-semibold tabular-nums">{flows.outflow.toLocaleString("en-US")}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Net</dt>
+          <dd className="font-semibold tabular-nums">
+            {flows.net > 0 ? "+" : ""}
+            {flows.net.toLocaleString("en-US")}
+          </dd>
+        </div>
+      </dl>
+      {ratio !== null && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          {stateName}&apos;s colleges enroll {ratio.toFixed(1)} first-years from other states for every {stateName} resident who starts college in another
+          state, among four-year colleges on this site.
+        </p>
+      )}
+      {flows.receiving.length > 0 && (
+        <div className="mt-4">
+          <p className="text-xs font-semibold text-muted-foreground">Colleges taking the most of the inflow</p>
+          <ol className="mt-1.5 space-y-1.5">
+            {flows.receiving.map((r) => (
+              <li key={r.unit_id} className="flex items-baseline justify-between gap-2 text-sm">
+                <Link href={`/schools/${r.unit_id}`} className="min-w-0 truncate hover:text-primary hover:underline">
+                  {r.name}
+                </Link>
+                <b className="shrink-0 tabular-nums">{pct(r.share)}</b>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+      <p className="mt-4 text-[11px] text-muted-foreground">
+        One fall, over campus-based colleges only: not <Term term="online-first">online-first</Term> that fall, not for-profit, and not a campus that merged
+        or split.
+      </p>
+    </div>
+  );
+}
+
 function ControlCard({ title, v, n, tooFew }: { title: string; v: StateMeasures | undefined; n: number; tooFew?: boolean }) {
   return (
     <div className="min-w-0 rounded-2xl border bg-card p-4">
@@ -196,6 +253,16 @@ export default async function StatePage({ params }: Props) {
             See them in Explore <ArrowRight className="size-3.5" />
           </Link>
         </section>
+        {entry.flows && (
+          <section aria-labelledby="origins" className="mt-12 max-w-3xl">
+            <h2 id="origins" className="font-display text-xl font-bold">
+              Where {entry.name}&apos;s first-years come from
+            </h2>
+            <div className="mt-4">
+              <FlowsBlock stateName={entry.name} flows={entry.flows} />
+            </div>
+          </section>
+        )}
         {window10 && (
           <section aria-labelledby="movers" className="mt-12">
             <h2 id="movers" className="font-display text-2xl font-extrabold tracking-tight">
@@ -317,6 +384,11 @@ export default async function StatePage({ params }: Props) {
               })}
             </div>
           </div>
+          {entry.flows && (
+            <div className="mt-6 max-w-3xl">
+              <FlowsBlock stateName={entry.name} flows={entry.flows} />
+            </div>
+          )}
         </section>
       )}
 
@@ -385,6 +457,13 @@ export default async function StatePage({ params }: Props) {
             <b className="text-foreground">No policy attribution.</b> This page shows what changed, not why; a state&apos;s mix of public, private, and
             for-profit colleges, and its system policies, aren&apos;t broken out as causes.
           </li>
+          {entry.flows && (
+            <li>
+              <b className="text-foreground">First-years crossing state lines</b> is a single snapshot, {fall(entry.flows.year)}, over campus-based colleges
+              only: colleges <Term term="online-first">online-first</Term> that fall, for-profit colleges, and campuses that merged or split are left out.
+              It&apos;s the newest fall the site&apos;s per-college home-state tables cover, not this page&apos;s ten-year window.
+            </li>
+          )}
         </ul>
         <HistorySourceNote keys={["undergrads", "applicants", "acceptance_rate", "avg_paid_all", "out_of_state_share"]} files={files} range={[file.from, file.to]} className="mt-4" />
       </section>

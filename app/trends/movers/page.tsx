@@ -128,8 +128,10 @@ export default async function MoversPage({ searchParams }: { searchParams: Promi
               </li>
               <li>
                 <b className="text-foreground">Campus-based growth.</b> The growth lists leave out for-profit colleges and{" "}
-                {file.rules.onlineFirst.toLocaleString("en-US")} <Term term="online-first">online-first colleges</Term>, whose enrollment can grow without a
-                campus growing.
+                <Term term="online-first">online-first colleges</Term>, colleges where more than{" "}
+                {file.rules.onlineFirstShare === 0.5 ? "half" : `${Math.round(file.rules.onlineFirstShare * 100)}%`} of undergraduates took every course
+                online at the window&apos;s start or at its end, whose enrollment can grow without a campus growing. A college that reported no share counts
+                as campus-based.
               </li>
               <li>
                 <b className="text-foreground">Reporting errors.</b> A count at either end that is more than {file.rules.jumpFactor}× (or under a{" "}

@@ -11,6 +11,7 @@ import { isFaithFilter } from "./religion.ts";
 import { isTradition } from "./directories.ts";
 import { isCouncil } from "./directories.ts";
 import { isWithinOption, parseZip } from "./home.ts";
+import { isOnlineFilter } from "./online-share.ts";
 
 /** Unique values, or undefined when none remain. */
 const uniq = <T,>(v: T[] | undefined): T[] | undefined => (v?.length ? [...new Set(v)] : undefined);
@@ -98,6 +99,8 @@ export function parseFilters(params: Params): SearchFilters {
     research: uniq(list(params.research)?.filter(isResearchTier)),
     designation: uniq(list(params.designation)?.filter(isDesignation)),
     opportunity: str(params.opportunity) === "1" || undefined,
+    // Online share (lib/online-share.ts): campus-based or mostly online; anything else is ignored.
+    online: ((v) => (isOnlineFilter(v) ? v : undefined))(str(params.online)),
     division: uniq(list(params.division)?.filter(isDivisionFilter)),
     // Only a current or retired IPEDS code: anything else is ignored rather than matching nothing.
     conference: ((c) => (c !== undefined && Number.isInteger(c) && conferenceName(c) !== null ? c : undefined))(n(params.conference)),
@@ -187,6 +190,7 @@ export const FILTER_KEYS = [
   "research",
   "designation",
   "opportunity",
+  "online",
   "division",
   "conference",
   "football",

@@ -937,7 +937,8 @@ const entries = {
   },
   "online-first": {
     term: "Online-first college",
-    short: "A college where more than half of undergraduates take all their courses online (IPEDS distance-education counts). Its enrollment can grow without a campus growing, so growth lists leave it out.",
+    short: "A college where more than half of undergraduates take every course online (IPEDS distance-education counts). Its enrollment can grow without a campus growing, so growth lists and campus-based comparisons leave it out.",
+    long: "Each fall, colleges report how many undergraduates take every course online, some of their courses online, or none. Quad shows two shares of all undergraduates: those taking every course online, and those taking at least one online course. A college is online-first in a fall when the first share is over half. In the pandemic falls of 2020 and 2021, campuses reported much of their teaching as online; those falls are shown as reported, but the online-first rule reads the fall before the pandemic in their place. A college that reported no share that fall counts as campus-based.",
     category: "How we measure",
     related: ["biggest-movers"],
   },

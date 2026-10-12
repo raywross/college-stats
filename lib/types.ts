@@ -105,6 +105,13 @@ export interface School {
     } | null;
     /** New transfer-in undergraduates this fall (specs/data-expansion/transfers.md; lib/transfers.ts), IPEDS EF{Y}A. */
     transfer_in?: TransferIn | null;
+    /**
+     * Share of all undergraduates taking every course online this fall (0–1; specs/data-expansion/online-share.md;
+     * lib/online-share.ts), IPEDS EF{Y}A_DIST level 2. Null when not reported.
+     */
+    online_share?: number | null;
+    /** Share of all undergraduates taking at least one course online (every course or some), IPEDS EF{Y}A_DIST level 2. */
+    online_any_share?: number | null;
     racial_diversity: {
       asian: number;
       black: number;
@@ -1427,7 +1434,7 @@ export interface CampusPrograms {
   intellectual_disability_program: boolean;
 }
 
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-ef-a" | "ipeds-c" | "ipeds-om" | "ipeds-sal" | "ipeds-f" | "cds"
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-ef-a" | "ipeds-ef-a-dist" | "ipeds-c" | "ipeds-om" | "ipeds-sal" | "ipeds-f" | "cds"
   /** A college's own website (class profile or CDS), read by the ingestion agent (specs/college-reported-data.md). Per-value lineage carries the document. */
   | "college-site"
   /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */
@@ -1636,6 +1643,11 @@ export interface SearchFilters {
   designation?: Designation[];
   /** Carnegie "Opportunity Colleges and Universities" (higher access, higher earnings) only. */
   opportunity?: boolean;
+  /**
+   * Online share (lib/online-share.ts): "campus" keeps colleges where half or fewer of undergraduates take every course
+   * online (a college with no share counts as campus-based); "mostly" keeps those where more than half do.
+   */
+  online?: "campus" | "mostly";
   /** Campus services (lib/campus-services.ts): any of these divisions; one conference; ROTC branches; flags. */
   division?: DivisionFilter[];
   conference?: number;

@@ -15,6 +15,7 @@ import type { HistoryFamily } from "../../lib/history.ts";
 import { FACTOR_COLUMNS } from "../../lib/derive.ts";
 import { OM_COLUMNS, OM_FIRST_FILE, OM_LAG, OM_PIVOT } from "../../lib/outcome-measures.ts";
 import { EFA_COLUMNS, EFA_FIRST_YEAR, EFA_WIDE } from "../../lib/transfers.ts";
+import { EFA_DIST_COLUMNS, EFA_DIST_FIRST_YEAR, EFA_DIST_WIDE } from "../../lib/online-share.ts";
 import { GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS } from "../../lib/graduation-groups.ts";
 import { C_COLUMNS } from "../../lib/majors.ts";
 import { fromCip2010 } from "../../lib/cip.ts";
@@ -226,6 +227,16 @@ export const ERAS: readonly Era[] = [
     required: () => [...EFA_COLUMNS],
     wide: EFA_WIDE,
   },
+  // Online share (specs/data-expansion/online-share.md): EF{Y}A_DIST, fall Y, one row per college per level (EFDELEV),
+  // read with lib/online-share.ts like the snapshot. Probed 2026-10-12: the same columns and level codes (2 = all
+  // undergraduates) in EF2012A_DIST and EF2024A_DIST; 2012 is the first file.
+  {
+    family: "ef-a-dist",
+    years: [EFA_DIST_FIRST_YEAR, OPEN],
+    files: (y) => [{ name: `EF${y}A_DIST` }],
+    required: () => [...EFA_DIST_COLUMNS],
+    wide: EFA_DIST_WIDE,
+  },
   // Majors (specs/data-expansion/majors.md): C{Y+1}_A holds degrees awarded July Y to June Y+1, one row per college ×
   // program × award level × major, summed here to first-major bachelor's by 2-digit family. Probed 2026-10-02: the same
   // columns in C2014_A–C2025_A; CIP 2020 codes from C2020_A (30.70 Data Science first appears), CIP 2010 before, read
@@ -288,7 +299,7 @@ export function eraFor(family: HistoryFamily, year: number): Era | null {
 }
 
 /** Families by the kind of year they describe, and the first year each can start. */
-export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "ef-c", "ef-a", "c-a", "om", "gr-pell", "ipeds-sal"];
+export const FAMILY_ORDER: readonly HistoryFamily[] = ["ic-admissions", "adm", "prices", "sfa", "characteristics", "services", "ef-d", "ef-c", "ef-a", "ef-a-dist", "c-a", "om", "gr-pell", "ipeds-sal"];
 
 /** Columns a value spec reads. */
 export function specColumns(spec: ColumnSpec): readonly string[] {

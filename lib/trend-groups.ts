@@ -8,6 +8,8 @@
 import type { FieldPath } from "./fields";
 import type { TermKey } from "./glossary";
 import type { School } from "./types";
+import type { Member } from "./trend-panel";
+import { valueAt } from "./history.ts";
 import { DESIGNATION_LABELS, RESEARCH_LABELS, SETTING_GROUPS, designationsOf } from "./campus-profile.ts";
 import { conferenceName } from "./conferences.ts";
 import { stateName } from "./states.ts";
@@ -19,7 +21,7 @@ export const STATE_FLOOR = 10;
 /** Conference medians need 8 members (specs/trends/conferences.md). */
 export const CONFERENCE_FLOOR = 8;
 
-export type GroupingKey = "region" | "control" | "size" | "selectivity" | "setting" | "division" | "research" | "designation" | "state" | "conference";
+export type GroupingKey = "region" | "control" | "size" | "size4" | "selectivity" | "setting" | "division" | "research" | "designation" | "state" | "conference";
 
 /** The four every study offers, in this order (hub: standard breakdowns). */
 export const STANDARD_GROUPINGS = ["region", "control", "size", "selectivity"] as const satisfies readonly GroupingKey[];
@@ -34,19 +36,32 @@ export const region = (s: School): string | null => s.location.region || null;
 /** "public", "private-nonprofit", "private-forprofit". */
 export const control = (s: School): string | null => s.type;
 
-/** Undergraduates today: "small" under 2,000 · "medium" 2,000–9,999 · "large" 10,000+. */
-export function size(s: School): string | null {
-  const n = s.demographics.undergrad_enrollment;
+/** The size boundaries for any undergraduate count (today's, or a fall's from history). */
+export function sizeOfCount(n: number | null | undefined): string | null {
   if (n === null || n === undefined) return null;
   return n < 2000 ? "small" : n < 10_000 ? "medium" : "large";
 }
 
-/** Today's acceptance rate: "most" under 25% · "more" 25–59% · "less" 60% or more. Null without a rate. */
-export function selectivity(s: School): string | null {
-  const r = s.admissions.acceptance_rate;
+/** Study 7's four-way size scale, with a 20,000+ split: "small" · "medium" · "large" (10,000–19,999) · "xl" (20,000+). */
+export function size4OfCount(n: number | null | undefined): string | null {
+  if (n === null || n === undefined) return null;
+  return n < 2000 ? "small" : n < 10_000 ? "medium" : n < 20_000 ? "large" : "xl";
+}
+
+/** The selectivity boundaries for any acceptance rate. */
+export function selectivityOfRate(r: number | null | undefined): string | null {
   if (r === null || r === undefined) return null;
   return r < 0.25 ? "most" : r < 0.6 ? "more" : "less";
 }
+
+/** Undergraduates today: "small" under 2,000 · "medium" 2,000–9,999 · "large" 10,000+. */
+export const size = (s: School): string | null => sizeOfCount(s.demographics.undergrad_enrollment);
+
+/** Undergraduates today on the four-way scale: under 2,000 · 2,000–9,999 · 10,000–19,999 · 20,000+ (Study 7). */
+export const size4 = (s: School): string | null => size4OfCount(s.demographics.undergrad_enrollment);
+
+/** Today's acceptance rate: "most" under 25% · "more" 25–59% · "less" 60% or more. Null without a rate. */
+export const selectivity = (s: School): string | null => selectivityOfRate(s.admissions.acceptance_rate);
 
 /** NCES locale group: "city", "suburb", "town", "rural". */
 export const setting = (s: School): string | null => s.campus?.setting?.group ?? null;
@@ -87,6 +102,12 @@ export interface Grouping {
   groups: readonly GroupDef[] | null;
   /** A college's group keys today (several for designation, none when unclassified). */
   of: (s: School) => string[];
+  /**
+   * A college's group keys as of a given fall, read from its history (same boundaries as `of`): "classified then",
+   * for a study that departs from hub rule 3 (Study 7). Only groupings whose value moves with enrollment or
+   * admissions have one; `byGroupThen` falls back to `of` for the rest.
+   */
+  ofThen?: (m: Member, year: number) => string[];
   /** The stored field the grouping reads (for the method note's lineage). */
   field: FieldPath;
   term?: TermKey;
@@ -94,6 +115,12 @@ export interface Grouping {
 
 const one = (f: (s: School) => string | null) => (s: School) => {
   const k = f(s);
+  return k === null ? [] : [k];
+};
+
+/** `ofThen` from a history series and a boundary function: the college's group in `year`, none when unreported. */
+const oneThen = (key: "undergrads" | "acceptance_rate", f: (v: number | null) => string | null) => (m: Member, year: number) => {
+  const k = f(valueAt(m.h.series[key], year));
   return k === null ? [] : [k];
 };
 
@@ -128,6 +155,22 @@ export const GROUPINGS: Record<GroupingKey, Grouping> = {
       { key: "large", label: "10,000+" },
     ],
     of: one(size),
+    ofThen: oneThen("undergrads", sizeOfCount),
+    field: "demographics.undergrad_enrollment",
+    term: "undergrad-enrollment",
+  },
+  size4: {
+    key: "size4",
+    label: "Size",
+    floor: GROUP_FLOOR,
+    groups: [
+      { key: "small", label: "Under 2,000 undergrads" },
+      { key: "medium", label: "2,000–9,999" },
+      { key: "large", label: "10,000–19,999" },
+      { key: "xl", label: "20,000+" },
+    ],
+    of: one(size4),
+    ofThen: oneThen("undergrads", size4OfCount),
     field: "demographics.undergrad_enrollment",
     term: "undergrad-enrollment",
   },
@@ -141,6 +184,7 @@ export const GROUPINGS: Record<GroupingKey, Grouping> = {
       { key: "less", label: "60% or more" },
     ],
     of: one(selectivity),
+    ofThen: oneThen("acceptance_rate", selectivityOfRate),
     field: "admissions.acceptance_rate",
     term: "acceptance-rate",
   },
@@ -224,9 +268,14 @@ export function groupLabel(grouping: GroupingKey, key: string): string {
  * are left out; colleges with no group (no acceptance rate, for selectivity) are left out of every group.
  */
 export function splitBy<T>(items: readonly T[], grouping: GroupingKey, schoolOf: (item: T) => School): { key: string; label: string; items: T[] }[] {
+  return splitByKeys(items, grouping, (item) => GROUPINGS[grouping].of(schoolOf(item)));
+}
+
+/** `splitBy` with each item's group keys given (today's `of`, or a grouping's `ofThen` at some fall). */
+export function splitByKeys<T>(items: readonly T[], grouping: GroupingKey, keysOf: (item: T) => string[]): { key: string; label: string; items: T[] }[] {
   const g = GROUPINGS[grouping];
   const buckets = new Map<string, T[]>();
-  for (const item of items) for (const k of g.of(schoolOf(item))) buckets.set(k, [...(buckets.get(k) ?? []), item]);
+  for (const item of items) for (const k of keysOf(item)) buckets.set(k, [...(buckets.get(k) ?? []), item]);
   const order = g.groups
     ? g.groups.map((d) => d.key).filter((k) => buckets.has(k))
     : [...buckets.keys()].sort((a, b) => groupLabel(grouping, a).localeCompare(groupLabel(grouping, b)) || a.localeCompare(b));

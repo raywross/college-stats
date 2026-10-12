@@ -1,14 +1,15 @@
 /**
  * Biggest movers (specs/trends/top-10-lists.md): every entry clears its list's floors, no excluded college appears,
- * ranks and ties follow rule 5, the reviewed exclusion files are well formed, every series a list reads is cited, and
- * one list ("Applications surged", ten years) is recomputed straight from the shards without lib/movers.ts.
+ * ranks and ties follow rule 5, the reviewed campus exclusions are well formed, online-first is evaluated from the
+ * distance-education share at both ends of each window, every series a list reads is cited, and one list ("Applications
+ * surged", ten years) is recomputed straight from the shards without lib/movers.ts.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { School } from "../lib/types";
-import { SERIES, type HistoryMeta, type SchoolHistory, type SeriesKey } from "../lib/history.ts";
+import { ONLINE_FIRST_SHARE, SERIES, onlineFirstAt, type HistoryMeta, type SchoolHistory, type SeriesKey } from "../lib/history.ts";
 import {
   ENTERING_CLASS_SERIES,
   MOVER_LISTS,
@@ -20,7 +21,6 @@ import {
   moverSeries,
   shownEntries,
   type CampusExclusionEntry,
-  type ExclusionEntry,
   type MoverListDef,
 } from "../lib/movers.ts";
 import { parseFilters } from "../lib/params.ts";
@@ -38,7 +38,6 @@ const shards = new Map(
     .filter((f) => f.endsWith(".json") && byId.has(f.replace(/\.json$/, "")))
     .map((f) => [f.replace(/\.json$/, ""), JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8")) as SchoolHistory])
 );
-const onlineFirst = read<ExclusionEntry[]>("data/trends/online-first.json");
 const campuses = read<CampusExclusionEntry[]>("data/trends/excluded-campuses.json");
 const LISTS = MOVER_LISTS as readonly MoverListDef[];
 
@@ -101,7 +100,6 @@ test("every entry clears its list's floors, moved the list's way, and is ranked 
 });
 
 test("no excluded college appears: closed or reorganized campuses, under 300 today, for-profits and online-first on growth lists", () => {
-  const online = new Set(onlineFirst.map((e) => e.unit_id));
   const camp = new Map(campuses.map((e) => [e.unit_id, e]));
   for (const w of file.windows) {
     for (const l of w.lists) {
@@ -111,7 +109,7 @@ test("no excluded college appears: closed or reorganized campuses, under 300 tod
         assert.ok(latestUndergrads(e.unit_id) >= file.rules.stillOpenMinUndergrads, `${e.name} has under 300 undergraduates today`);
         if (def.campusBased) {
           assert.notEqual(byId.get(e.unit_id)!.type, "private-forprofit", `${e.name} is for-profit (${l.key})`);
-          assert.ok(!online.has(e.unit_id), `${e.name} is online-first (${l.key})`);
+          for (const y of [e.since, l.to]) assert.notEqual(onlineFirstAt(shards.get(e.unit_id)!, y), true, `${e.name} was online-first in ${y} (${l.key})`);
         }
       }
     }
@@ -123,8 +121,8 @@ test("no excluded college appears: closed or reorganized campuses, under 300 tod
   }
 });
 
-test("the reviewed exclusion files are well formed: known colleges, a reason and date each, no duplicates", () => {
-  for (const [name, entries] of [["online-first", onlineFirst], ["excluded-campuses", campuses]] as const) {
+test("the reviewed campus exclusions are well formed: known colleges, a reason and date each, no duplicates", () => {
+  for (const [name, entries] of [["excluded-campuses", campuses]] as const) {
     const ids = entries.map((e) => e.unit_id);
     assert.equal(new Set(ids).size, ids.length, `${name}: no duplicate ids`);
     for (const e of entries) {
@@ -134,7 +132,6 @@ test("the reviewed exclusion files are well formed: known colleges, a reason and
       assert.match(e.added, /^\d{4}-\d{2}-\d{2}$/);
     }
   }
-  for (const e of onlineFirst) assert.notEqual(byId.get(e.unit_id)!.type, "private-forprofit", "for-profits are excluded by rule, not listed");
   for (const e of campuses) {
     if (e.before !== undefined) assert.ok(Number.isInteger(e.before));
     if (e.years) assert.ok(e.years.length && e.years.every(Number.isInteger));
@@ -147,9 +144,16 @@ test("the reviewed exclusion files are well formed: known colleges, a reason and
   assert.equal(campusExcluded({}, 2014, 2024), true);
 });
 
+test("online-first is a rule over the stored share, not a list: the movers file records its bar", () => {
+  assert.equal(file.rules.onlineFirstShare, ONLINE_FIRST_SHARE);
+  assert.equal(ONLINE_FIRST_SHARE, 0.5, "the glossary's bar: more than half entirely online");
+  assert.equal("onlineFirst" in file.rules, false, "the reviewed list's count is gone");
+});
+
 test("Applications surged, ten years, recomputed from the shards without lib/movers.ts", () => {
   const [from, to] = [hmeta.latest.fall - 10, hmeta.latest.fall];
-  const online = new Set(onlineFirst.map((e) => e.unit_id));
+  // Online-first at either end: more than half entirely online (the pandemic falls read fall 2019).
+  const onlineAt = (h: SchoolHistory, y: number) => (val(h, "online_share", y === 2020 || y === 2021 ? 2019 : y) ?? 0) > 0.5;
   const camp = new Map(campuses.map((e) => [e.unit_id, e]));
   const jumpy = (h: SchoolHistory, y: number) => {
     const [a, b, c] = [val(h, "applicants", y - 1), val(h, "applicants", y), val(h, "applicants", y + 1)];
@@ -166,7 +170,7 @@ test("Applications surged, ten years, recomputed from the shards without lib/mov
     if (start < 2000) continue;
     const c = camp.get(id);
     const closed = c && (c.before === undefined && c.years === undefined ? true : (c.before !== undefined && since < c.before) || !!c.years?.some((y) => y === since || y === to));
-    if (closed || latestUndergrads(id) < 300 || s.type === "private-forprofit" || online.has(id) || jumpy(h, since) || jumpy(h, to)) continue;
+    if (closed || latestUndergrads(id) < 300 || s.type === "private-forprofit" || onlineAt(h, since) || onlineAt(h, to) || jumpy(h, since) || jumpy(h, to)) continue;
     rows.push({ id, change: end / start - 1 });
   }
   const list = file.windows.find((w) => w.years === 10)!.lists.find((l) => l.key === "applications-surged")!;
@@ -190,7 +194,7 @@ test("computeMovers over a subset (a state's colleges) applies the same rules", 
   const ctx = {
     cpi: read<Parameters<typeof computeMovers>[3]["cpi"]>("data/history/cpi.json"),
     latest: hmeta.latest,
-    exclusions: exclusionSets(onlineFirst, campuses),
+    exclusions: exclusionSets(campuses),
   };
   const members = [...shards].filter(([id]) => byId.get(id)!.location.state === "GA").map(([id, h]) => ({ school: byId.get(id)!, h }));
   const def = LISTS.find((l) => l.key === "applications-surged")!;

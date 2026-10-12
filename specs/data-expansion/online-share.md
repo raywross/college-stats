@@ -1,7 +1,8 @@
 # Online Share: Undergraduates Studying Entirely Online (IPEDS Fall Enrollment, distance education)
 
-> Status: **planned**. Specified 2026-10-05. Needed by [Study 7](../trends/where-students-go.md)'s campus-based panel;
-> replaces the reviewed `data/trends/online-first.json` that the movers' growth lists use
+> Status: **built** 2026-10-12 (see [As built](#as-built-2026-10-12)). Specified 2026-10-05. Needed by
+> [Study 7](../trends/where-students-go.md)'s campus-based panel;
+> replaced the reviewed `data/trends/online-first.json` that the movers' growth lists used
 > ([top-10-lists.md](../trends/top-10-lists.md), rule 2), gives [Study 3](../trends/shrinking-colleges.md) its
 > "campus-based colleges only" toggle, and gives Explore a filter. Listed in the backlog's National trends section
 > since the trends build.
@@ -66,3 +67,36 @@ feeds already exists as a reviewed list.
    keep 50% exclusive; it matches the glossary and the reviewed list, and campuses with hybrid courses stay campuses.
 2. **A three-way bar on the profile** (all online · some · none) instead of one line? Recommendation: later, if
    readers ask; one line now.
+
+## As built (2026-10-12)
+- **Level 2 (all undergraduates)** is both shares' denominator: `lib/online-share.ts` `onlineSharesFrom` reads the
+  pivoted `EF{Y}A_DIST` row (`EFDETOT_2`, `EFDEEXC_2`, `EFDESOM_2`, `EFDENON_2`; levels 1 all students, 2 all
+  undergraduates, 3 degree-seeking undergraduates, 11 non-degree, 12 graduate). A blank part is 0 (NCES leaves a part
+  blank, flagged `A` "not applicable", when no students are in it: every blank part in EF2012A_DIST and EF2024A_DIST);
+  a blank total, a negative count, or a row whose parts don't add up gives null, so a stored share is always 0–1.
+  sync-data, history, and the tests share the reader.
+- **Fall 2024:** 1,892 of 1,893 colleges have a share (Southern University Law Center has no all-undergraduates row);
+  Southern New Hampshire 97.8%, Vanderbilt 0%. Add-up rule on all 8,764 level rows at 1,892 colleges: 0 failures (the
+  sync stops above 1%). The 10% enrollment check uses **level 3** (degree-seeking, Scorecard `student.size`'s
+  population; level 2 includes non-degree students): 1 of 1,892 flagged (Southern University and A&M College, 6,126
+  vs 5,519), a warning only.
+- **History:** family `ef-a-dist`, series `online_share` (fall 2012 on; 1,757 colleges in 2012, 1,892 in 2024).
+  Colleges over half entirely online by fall: 48 (2012), 69 (2014), 101 (2019), **411 (2020)**, 158 (2021), 161 (2024),
+  the pandemic falls kept as reported. Rule 1 compares the last point with `demographics.online_share`.
+- **The rule:** `ONLINE_FIRST_SHARE` (0.5), `PANDEMIC_DISTANCE_FALLS` (2020, 2021, read at fall 2019),
+  `onlineFirstEvalYear`, and `onlineFirstAt(h, year)` (null when not reported; callers count null as campus-based) in
+  `lib/history.ts`. `isCampusBased` / `campusExclusionOf` in `lib/movers.ts` apply it at a window's start for panels
+  (Study 7, Study 3's toggle, state flows). The movers' growth lists apply it at **both ends** of each change: judged at
+  the start alone, colleges that went online-first inside the window (University of the Cumberlands, National Louis,
+  LSU Alexandria, Point, National University) took the top of "Grew the most".
+- **The reviewed list is retired:** before `data/trends/online-first.json` was deleted, the field rule (public and
+  nonprofit, share over 0.5, fall 2024) matched it exactly: 110 of 110, no differences either way. `movers.json`
+  records `rules.onlineFirstShare` instead of the list's count. Against the list, "Grew the most" lost Everglades
+  University (online-first at the window's start, not today) and gained Embry-Riddle Prescott (10 years) and Eastern
+  University (5 years) at tenth place.
+- **Display:** the Students page's Campus size block shows "N% of undergraduates take every course online" (+ ", and
+  another M% take some" when that gap is 5 points or more) from 5% entirely online, with the `online-first` InfoTip
+  cited to `demographics.online_share`; the glossary entry explains the two shares and the pandemic falls. Explore:
+  `online=campus|mostly` (`SearchFilters.online`; campus keeps colleges with no share), an "Online" chip row in the
+  Campus section with counts, a Toolbar chip, and a "Mostly online" card standout; "Grew the most"'s Explore link adds
+  `online=campus`. The Data page lists the source; the release calendar's spring entry names `EF{Y}A_DIST`.

@@ -23,6 +23,7 @@ import { CampusServices } from "@/components/school/CampusServices";
 import { ReligiousLife } from "@/components/school/ReligiousLife";
 import { LgbtqLife } from "@/components/school/LgbtqLife";
 import { countDisplay, countText } from "@/lib/lgbtq";
+import { onlineLine } from "@/lib/online-share";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -48,6 +49,8 @@ export default async function StudentsPage({ params }: Props) {
   const { citeField, distribution, metricMedian, rankOf } = data;
   const { demographics: d } = school;
   const body = studentBodyNotes(data, school);
+  // Undergraduates studying online (specs/data-expansion/online-share.md), under the campus size.
+  const online = onlineLine(school);
   // Another gender beside the men/women shares (specs/lgbtq-life.md), under the same display rules as the block.
   const gender = school.lgbtq?.gender ?? null;
   const another = gender ? countDisplay(gender.status, gender.another, gender.undergrads) : null;
@@ -153,6 +156,19 @@ export default async function StudentsPage({ params }: Props) {
               format="compact"
               color={DOMAINS.size.color}
             />
+            {online && (
+              <p className="flex flex-wrap items-center gap-1.5 text-sm">
+                <span>
+                  <b>{pct(online.all)}</b> of undergraduates take every course online
+                  {online.some !== null && (
+                    <>
+                      , and another <b>{pct(online.some)}</b> take some
+                    </>
+                  )}
+                </span>
+                <InfoTip term="online-first" cited={citeField("demographics.online_share", school)} />
+              </p>
+            )}
           </Block>
           <Residence
             id="residence"

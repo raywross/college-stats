@@ -10,6 +10,7 @@
     "out_of_state_share": {"start":2024,"values":[0]},
     "transfer_in_count": {"start":2023,"values":[0,0]},
     "transfer_in_share": {"start":2023,"values":[0,0]},
+    "online_share": {"start":2023,"values":[1,0.8485]},
     "international_share": {"start":2024,"values":[0]},
     "athletic_association": {"start":2023,"values":[3,3,3]},
     "rotc": {"start":2023,"values":[2,2,2]},

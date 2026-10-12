@@ -41,6 +41,7 @@ import { GR_PELL_BACHELOR_TYPE, GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, bachelorSu
 import { residenceFrom } from "../lib/residence.ts";
 import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence, writeDetails } from "./lib/residence-sync.mts";
 import { addTransferMeta, checkTransfers, fetchTransfers } from "./lib/transfers-sync.mts";
+import { addOnlineShareMeta, checkOnlineShare, fetchOnlineShare } from "./lib/online-share-sync.mts";
 import { addLgbtq, addStateLawMeta, fetchLgbtqInputs, lgbtqSummary } from "./lib/lgbtq-sync.mts";
 import { addMajorsMeta, buildMajorDetails, checkTotals, fetchCompletions, majorsFor, unknownCodes } from "./lib/majors-sync.mts";
 import { mergeDetails } from "../lib/detail.ts";
@@ -50,6 +51,7 @@ import { readPagesFile } from "./lib/campus-pilot/files.mts";
 import { applyLgbtqPolicies, campusPagesDetails, pilotDirectoryFiles } from "./lib/campus-pilot/merge.mts";
 import { financialAidDetails } from "../lib/cds/financial-aid.ts";
 import { transferInFrom } from "../lib/transfers.ts";
+import { onlineSharesFrom } from "../lib/online-share.ts";
 import { financesFrom } from "../lib/finances.ts";
 import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom, servicesFrom } from "../lib/campus-services.ts";
 import { addFieldOfStudyMeta, buildProgramDetails, fetchFieldOfStudy } from "./lib/field-of-study-sync.mts";
@@ -618,6 +620,8 @@ function buildMeta(
       "ipeds-ef-c": null,
       // Set with its source by addTransferMeta (scripts/lib/transfers-sync.mts).
       "ipeds-ef-a": null,
+      // Set with its source by addOnlineShareMeta (scripts/lib/online-share-sync.mts).
+      "ipeds-ef-a-dist": null,
       // Set with its source by addMajorsMeta (scripts/lib/majors-sync.mts).
       "ipeds-c": null,
       "ipeds-f": academicYear(String(drvfFiscalYear)),
@@ -826,6 +830,8 @@ async function main() {
   const efc = await fetchResidence(join(ROOT, ".cache", "ipeds"), thisYear);
   // Transfers in (specs/data-expansion/transfers.md): the newest EF{Y}A, every fall.
   const efa = await fetchTransfers(join(ROOT, ".cache", "ipeds"), thisYear);
+  // Online share (specs/data-expansion/online-share.md): the newest EF{Y}A_DIST, every fall.
+  const efaDist = await fetchOnlineShare(join(ROOT, ".cache", "ipeds"), thisYear);
   // LGBTQ+ life (specs/lgbtq-life.md): another-gender counts from EF{Y}A and ADM{Y} (the newest files that still have
   // them; NCES stopped asking from 2025–26) and the state-law table.
   const lgbtqInputs = await fetchLgbtqInputs(
@@ -888,6 +894,11 @@ async function main() {
     if (school) addGradByGroup(school, grPell.rows.get(school.unit_id), grBachelor.rows.get(school.unit_id), row);
     if (school) school.demographics.residence = residenceFrom(efc.table.rows.get(school.unit_id), school.location.state);
     if (school) school.demographics.transfer_in = transferInFrom(efa.table.rows.get(school.unit_id));
+    if (school) {
+      const online = onlineSharesFrom(efaDist.table.rows.get(school.unit_id));
+      school.demographics.online_share = online?.online_share ?? null;
+      school.demographics.online_any_share = online?.online_any_share ?? null;
+    }
     if (school) school.finances = financesFrom(drvf.rows.get(school.unit_id), drvfFiscalYear);
     if (school) addLgbtq(school, lgbtqInputs);
     if (!school) {
@@ -925,6 +936,7 @@ async function main() {
   const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell, sal, drvf, drvfFiscalYear);
   addResidenceMeta(meta, efc.table, efc.year);
   addTransferMeta(meta, efa.table, efa.year);
+  addOnlineShareMeta(meta, efaDist.table, efaDist.year);
   addFieldOfStudyMeta(meta, fos);
   addStateLawMeta(meta, lgbtqInputs.laws);
   addIdentityMeta(meta, identity);
@@ -946,6 +958,10 @@ async function main() {
 
   // Transfers in: the level codes must still mean transfer-ins and first-time students (lib/transfers.ts).
   const transfersChecked = await checkTransfers(efa.table, efa.year, schools.map((s) => s.unit_id), join(ROOT, ".cache", "ipeds"));
+
+  // Online share: every row must add up (lib/online-share.ts); degree-seeking undergraduates more than 10% from the
+  // snapshot's enrollment are flagged for review, not fatal.
+  const onlineCheck = checkOnlineShare(efaDist.table, efaDist.year, schools);
 
   // Residence: the per-state rows must add up to NCES's own derived counts, and the detail files must check out.
   const derived = await crossCheckDerived(schools, efc.table, efc.year, join(ROOT, ".cache", "ipeds"));
@@ -1021,6 +1037,12 @@ async function main() {
   console.log(`  with grad rate:       ${schools.filter((s) => s.outcomes?.graduation_rate != null).length}`);
   console.log(`  with 8-year outcomes: ${schools.filter((s) => s.outcomes?.eight_year?.all.award != null).length}`);
   console.log(`  with transfer-ins:    ${schools.filter((s) => s.demographics.transfer_in != null).length} (EF${efa.year}A; level codes checked for ${transfersChecked} colleges)`);
+  console.log(`  with online share:    ${schools.filter((s) => s.demographics.online_share != null).length} (EF${efaDist.year}A_DIST; ${schools.filter((s) => (s.demographics.online_share ?? 0) > 0.5).length} over half entirely online; ${onlineCheck.checked} level rows at ${onlineCheck.colleges} colleges checked, ${onlineCheck.problems.length} don't add up)`);
+  for (const p of onlineCheck.problems.slice(0, 10)) console.warn(`    ⚠ ${p}`);
+  if (onlineCheck.flagged.length) {
+    console.warn(`  ⚠ online share: ${onlineCheck.flagged.length} of ${onlineCheck.compared} colleges' degree-seeking undergraduates (EF${efaDist.year}A_DIST level 3) are more than 10% from undergrad_enrollment (review):`);
+    for (const f of onlineCheck.flagged.slice(0, 20)) console.warn(`    ${f}`);
+  } else console.log(`  online share: degree-seeking undergraduates within 10% of undergrad_enrollment for all ${onlineCheck.compared} colleges compared`);
   console.log(`  LGBTQ+ life:          ${lgbtqSummary(schools, lgbtqInputs)}`);
   console.log(`  with 4-year finish:   ${schools.filter((s) => s.outcomes?.eight_year?.all.award_4 != null).length} (${timeToDegree.missing} shown groups without 4/6-year shares)`);
   console.log(`  with Pell grad rate:  ${schools.filter((s) => s.outcomes?.grad_rate_pell != null).length} (${grPell.name})`);

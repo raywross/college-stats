@@ -28,6 +28,7 @@ import { GREEK_COUNCIL_FILTERS, GREEK_FILTER_LABEL, MIN_GREEK_OPTIONS } from "@/
 import type { Council } from "@/lib/directories";
 import { LOGISTICS_FILTERS, type LogisticsFilterParam } from "@/lib/cds/application-logistics-display";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
+import { ONLINE_FILTER_LABELS } from "@/lib/online-share";
 import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
 import { SMALL_PELL_GAP } from "@/lib/graduation-groups";
@@ -66,7 +67,7 @@ export interface FilterFacets {
   /** Colleges matching each admission-factor filter (lib/factors.ts). */
   factors: Record<FactorFilterParam, number>;
   /** Colleges per setting group, research tier, and designation (lib/campus-profile.ts). */
-  campus: { setting: Record<SettingGroup, number>; research: Record<ResearchTier, number>; designation: Record<Designation, number>; opportunity: number };
+  campus: { setting: Record<SettingGroup, number>; research: Record<ResearchTier, number>; designation: Record<Designation, number>; opportunity: number; online: { campus: number; mostly: number } };
   /** Colleges per faith family, and with no religious affiliation (lib/religion.ts). */
   faith: Record<FaithFilter, number>;
   /** Colleges with a named community of each tradition, from national directories (specs/campus-directories.md). */
@@ -195,7 +196,7 @@ export function FilterPanel({ facets, onDone, estimates = true }: { facets: Filt
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "minApplicants", "minUndergrads", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup", "lgbtqCenter", "lgbtqHousing", "lgbtqNondiscrimination", "greekCouncils", "minAidIncome", "merit"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "minApplicants", "minUndergrads", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "online", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup", "lgbtqCenter", "lgbtqHousing", "lgbtqNondiscrimination", "greekCouncils", "minAidIncome", "merit"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
     "policy",
     "selectivity",
@@ -502,6 +503,19 @@ export function FilterPanel({ facets, onDone, estimates = true }: { facets: Filt
             </Chip>
             <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
               Carnegie&apos;s higher access, higher earnings class. <InfoTip term="student-access-and-earnings" />
+            </p>
+          </div>
+          <div role="group" aria-label="Online">
+            <p className="mb-1.5 text-xs font-semibold">Online</p>
+            <div className="flex flex-wrap gap-1.5">
+              {(["campus", "mostly"] as const).map((v) => (
+                <Chip key={v} active={searchParams.get("online") === v} onClick={() => update({ online: searchParams.get("online") === v ? null : v })} count={facets.campus.online[v]}>
+                  {ONLINE_FILTER_LABELS[v]}
+                </Chip>
+              ))}
+            </div>
+            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+              Mostly online: more than half of undergraduates take every course online. <InfoTip term="online-first" />
             </p>
           </div>
         </div>

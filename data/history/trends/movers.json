@@ -1,6 +1,6 @@
 {
   "name": "movers",
-  "built": "2026-10-02",
+  "built": "2026-10-12",
   "yearKind": "fall",
   "from": 2014,
   "to": 2024,
@@ -10,7 +10,7 @@
   "rules": {
     "stillOpenMinUndergrads": 300,
     "jumpFactor": 3,
-    "onlineFirst": 110,
+    "onlineFirstShare": 0.5,
     "excludedCampuses": 42
   },
   "windows": [
@@ -29,13 +29,13 @@
               "at": "start"
             }
           ],
-          "n": 885,
-          "median": 0.4167,
+          "n": 881,
+          "median": 0.4183,
           "excluded": {
             "closed-or-merged": 6,
             "under-300": 1,
             "for-profit": 1,
-            "online-first": 8,
+            "online-first": 12,
             "reporting-jump": 2
           },
           "entries": [
@@ -772,28 +772,19 @@
               "at": "start"
             }
           ],
-          "n": 1189,
-          "median": -0.1212,
+          "n": 1184,
+          "median": -0.1205,
           "excluded": {
             "closed-or-merged": 30,
             "under-300": 3,
             "for-profit": 19,
-            "online-first": 48
+            "online-first": 53
           },
           "entries": [
             {
-              "unit_id": "385619",
-              "name": "Everglades University",
-              "rank": 1,
-              "since": 2014,
-              "from": 1284,
-              "to": 2789,
-              "change": 1.1721
-            },
-            {
               "unit_id": "178059",
               "name": "Maryville University of Saint Louis",
-              "rank": 2,
+              "rank": 1,
               "since": 2014,
               "from": 2736,
               "to": 5658,
@@ -802,7 +793,7 @@
             {
               "unit_id": "227863",
               "name": "University of St Thomas",
-              "rank": 3,
+              "rank": 2,
               "since": 2014,
               "from": 1563,
               "to": 3220,
@@ -811,7 +802,7 @@
             {
               "unit_id": "436836",
               "name": "University of Connecticut-Stamford",
-              "rank": 4,
+              "rank": 3,
               "since": 2014,
               "from": 1336,
               "to": 2432,
@@ -820,7 +811,7 @@
             {
               "unit_id": "459949",
               "name": "Texas A&M University-San Antonio",
-              "rank": 5,
+              "rank": 4,
               "since": 2015,
               "from": 3630,
               "to": 6599,
@@ -829,7 +820,7 @@
             {
               "unit_id": "446604",
               "name": "Uta Mesivta of Kiryas Joel",
-              "rank": 6,
+              "rank": 5,
               "since": 2014,
               "from": 1634,
               "to": 2957,
@@ -838,7 +829,7 @@
             {
               "unit_id": "219949",
               "name": "Cumberland University",
-              "rank": 7,
+              "rank": 6,
               "since": 2014,
               "from": 1167,
               "to": 2104,
@@ -847,7 +838,7 @@
             {
               "unit_id": "140951",
               "name": "Savannah College of Art and Design",
-              "rank": 8,
+              "rank": 7,
               "since": 2014,
               "from": 8846,
               "to": 15243,
@@ -856,7 +847,7 @@
             {
               "unit_id": "230603",
               "name": "Southern Utah University",
-              "rank": 9,
+              "rank": 8,
               "since": 2014,
               "from": 5514,
               "to": 9289,
@@ -865,7 +856,7 @@
             {
               "unit_id": "137564",
               "name": "Southeastern University",
-              "rank": 10,
+              "rank": 9,
               "since": 2014,
               "from": 2946,
               "to": 4813,
@@ -874,7 +865,7 @@
             {
               "unit_id": "104586",
               "name": "Embry-Riddle Aeronautical University-Prescott",
-              "rank": 11,
+              "rank": 10,
               "since": 2014,
               "from": 1971,
               "to": 3218,
@@ -883,7 +874,7 @@
             {
               "unit_id": "193399",
               "name": "University of Mount Saint Vincent",
-              "rank": 12,
+              "rank": 11,
               "since": 2014,
               "from": 1671,
               "to": 2692,
@@ -892,7 +883,7 @@
             {
               "unit_id": "141060",
               "name": "Spelman College",
-              "rank": 13,
+              "rank": 12,
               "since": 2014,
               "from": 2135,
               "to": 3414,
@@ -901,7 +892,7 @@
             {
               "unit_id": "133553",
               "name": "Embry-Riddle Aeronautical University-Daytona Beach",
-              "rank": 14,
+              "rank": 13,
               "since": 2014,
               "from": 4954,
               "to": 7860,
@@ -910,7 +901,7 @@
             {
               "unit_id": "136215",
               "name": "Nova Southeastern University",
-              "rank": 15,
+              "rank": 14,
               "since": 2014,
               "from": 4582,
               "to": 7240,
@@ -919,7 +910,7 @@
             {
               "unit_id": "164748",
               "name": "Berklee College of Music",
-              "rank": 16,
+              "rank": 15,
               "since": 2014,
               "from": 4743,
               "to": 7468,
@@ -928,7 +919,7 @@
             {
               "unit_id": "137847",
               "name": "The University of Tampa",
-              "rank": 17,
+              "rank": 16,
               "since": 2014,
               "from": 6811,
               "to": 10572,
@@ -937,7 +928,7 @@
             {
               "unit_id": "228787",
               "name": "The University of Texas at Dallas",
-              "rank": 18,
+              "rank": 17,
               "since": 2014,
               "from": 14300,
               "to": 21751,
@@ -946,7 +937,7 @@
             {
               "unit_id": "201690",
               "name": "Central State University",
-              "rank": 19,
+              "rank": 18,
               "since": 2014,
               "from": 1728,
               "to": 2620,
@@ -955,7 +946,7 @@
             {
               "unit_id": "132657",
               "name": "Lynn University",
-              "rank": 20,
+              "rank": 19,
               "since": 2014,
               "from": 1911,
               "to": 2859,
@@ -964,7 +955,7 @@
             {
               "unit_id": "183804",
               "name": "Beth Medrash Govoha",
-              "rank": 21,
+              "rank": 20,
               "since": 2014,
               "from": 2703,
               "to": 4027,
@@ -973,7 +964,7 @@
             {
               "unit_id": "186867",
               "name": "Stevens Institute of Technology",
-              "rank": 22,
+              "rank": 21,
               "since": 2014,
               "from": 2842,
               "to": 4222,
@@ -982,7 +973,7 @@
             {
               "unit_id": "243780",
               "name": "Purdue University-Main Campus",
-              "rank": 23,
+              "rank": 22,
               "since": 2014,
               "from": 29977,
               "to": 44503,
@@ -991,7 +982,7 @@
             {
               "unit_id": "100654",
               "name": "Alabama A & M University",
-              "rank": 24,
+              "rank": 23,
               "since": 2014,
               "from": 4206,
               "to": 6124,
@@ -1000,11 +991,20 @@
             {
               "unit_id": "131520",
               "name": "Howard University",
-              "rank": 25,
+              "rank": 24,
               "since": 2014,
               "from": 6961,
               "to": 10108,
               "change": 0.4521
+            },
+            {
+              "unit_id": "163453",
+              "name": "Morgan State University",
+              "rank": 25,
+              "since": 2014,
+              "from": 6239,
+              "to": 9019,
+              "change": 0.4456
             }
           ]
         },
@@ -3263,12 +3263,12 @@
               "at": "start"
             }
           ],
-          "n": 1155,
+          "n": 1153,
           "median": -0.0757,
           "excluded": {
             "closed-or-merged": 17,
             "for-profit": 23,
-            "online-first": 48
+            "online-first": 50
           },
           "entries": [
             {
@@ -3290,18 +3290,9 @@
               "change": 0.6119
             },
             {
-              "unit_id": "385619",
-              "name": "Everglades University",
-              "rank": 3,
-              "since": 2019,
-              "from": 1757,
-              "to": 2789,
-              "change": 0.5874
-            },
-            {
               "unit_id": "227863",
               "name": "University of St Thomas",
-              "rank": 4,
+              "rank": 3,
               "since": 2019,
               "from": 2047,
               "to": 3220,
@@ -3310,7 +3301,7 @@
             {
               "unit_id": "131520",
               "name": "Howard University",
-              "rank": 5,
+              "rank": 4,
               "since": 2019,
               "from": 6461,
               "to": 10108,
@@ -3319,7 +3310,7 @@
             {
               "unit_id": "183804",
               "name": "Beth Medrash Govoha",
-              "rank": 6,
+              "rank": 5,
               "since": 2019,
               "from": 2726,
               "to": 4027,
@@ -3328,7 +3319,7 @@
             {
               "unit_id": "446604",
               "name": "Uta Mesivta of Kiryas Joel",
-              "rank": 7,
+              "rank": 6,
               "since": 2019,
               "from": 2016,
               "to": 2957,
@@ -3337,7 +3328,7 @@
             {
               "unit_id": "193399",
               "name": "University of Mount Saint Vincent",
-              "rank": 8,
+              "rank": 7,
               "since": 2019,
               "from": 1841,
               "to": 2692,
@@ -3346,7 +3337,7 @@
             {
               "unit_id": "117751",
               "name": "The Master's University and Seminary",
-              "rank": 9,
+              "rank": 8,
               "since": 2019,
               "from": 1134,
               "to": 1622,
@@ -3355,7 +3346,7 @@
             {
               "unit_id": "163453",
               "name": "Morgan State University",
-              "rank": 10,
+              "rank": 9,
               "since": 2019,
               "from": 6449,
               "to": 9019,
@@ -3364,7 +3355,7 @@
             {
               "unit_id": "212133",
               "name": "Eastern University",
-              "rank": 11,
+              "rank": 10,
               "since": 2019,
               "from": 1736,
               "to": 2404,
@@ -3373,7 +3364,7 @@
             {
               "unit_id": "218733",
               "name": "South Carolina State University",
-              "rank": 12,
+              "rank": 11,
               "since": 2019,
               "from": 2122,
               "to": 2934,
@@ -3382,7 +3373,7 @@
             {
               "unit_id": "205957",
               "name": "Franciscan University of Steubenville",
-              "rank": 13,
+              "rank": 12,
               "since": 2019,
               "from": 2138,
               "to": 2901,
@@ -3391,7 +3382,7 @@
             {
               "unit_id": "482936",
               "name": "Florida Polytechnic University",
-              "rank": 14,
+              "rank": 13,
               "since": 2019,
               "from": 1263,
               "to": 1689,
@@ -3400,7 +3391,7 @@
             {
               "unit_id": "221759",
               "name": "The University of Tennessee-Knoxville",
-              "rank": 15,
+              "rank": 14,
               "since": 2019,
               "from": 23152,
               "to": 30418,
@@ -3409,7 +3400,7 @@
             {
               "unit_id": "201690",
               "name": "Central State University",
-              "rank": 16,
+              "rank": 15,
               "since": 2019,
               "from": 1999,
               "to": 2620,
@@ -3418,7 +3409,7 @@
             {
               "unit_id": "189088",
               "name": "Bard College",
-              "rank": 17,
+              "rank": 16,
               "since": 2019,
               "from": 1844,
               "to": 2414,
@@ -3427,7 +3418,7 @@
             {
               "unit_id": "178059",
               "name": "Maryville University of Saint Louis",
-              "rank": 18,
+              "rank": 17,
               "since": 2019,
               "from": 4351,
               "to": 5658,
@@ -3436,7 +3427,7 @@
             {
               "unit_id": "243780",
               "name": "Purdue University-Main Campus",
-              "rank": 19,
+              "rank": 18,
               "since": 2019,
               "from": 34376,
               "to": 44503,
@@ -3445,7 +3436,7 @@
             {
               "unit_id": "159391",
               "name": "Louisiana State University and Agricultural & Mechanical College",
-              "rank": 20,
+              "rank": 19,
               "since": 2019,
               "from": 23706,
               "to": 30594,
@@ -3454,7 +3445,7 @@
             {
               "unit_id": "136215",
               "name": "Nova Southeastern University",
-              "rank": 21,
+              "rank": 20,
               "since": 2019,
               "from": 5618,
               "to": 7240,
@@ -3463,7 +3454,7 @@
             {
               "unit_id": "133872",
               "name": "AdventHealth University",
-              "rank": 22,
+              "rank": 21,
               "since": 2019,
               "from": 1061,
               "to": 1361,
@@ -3472,7 +3463,7 @@
             {
               "unit_id": "140951",
               "name": "Savannah College of Art and Design",
-              "rank": 23,
+              "rank": 22,
               "since": 2019,
               "from": 11992,
               "to": 15243,
@@ -3481,7 +3472,7 @@
             {
               "unit_id": "140553",
               "name": "Morehouse College",
-              "rank": 24,
+              "rank": 23,
               "since": 2019,
               "from": 2238,
               "to": 2844,
@@ -3490,11 +3481,20 @@
             {
               "unit_id": "176017",
               "name": "University of Mississippi",
-              "rank": 25,
+              "rank": 24,
               "since": 2019,
               "from": 16932,
               "to": 21473,
               "change": 0.2682
+            },
+            {
+              "unit_id": "129242",
+              "name": "Fairfield University",
+              "rank": 25,
+              "since": 2019,
+              "from": 4250,
+              "to": 5373,
+              "change": 0.2642
             }
           ]
         },

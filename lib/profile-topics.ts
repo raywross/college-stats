@@ -258,6 +258,8 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "demographics.age_25_plus_share",
     "demographics.residence",
     "demographics.transfer_in",
+    "demographics.online_share",
+    "demographics.online_any_share",
     "detail.home_states",
     // Campus life.
     "campus.housing",

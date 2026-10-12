@@ -281,6 +281,9 @@ const ADDED_FIELDS = [
   "reported.admission_profile.class_rank.top_quarter",
   "reported.major_admission.review.major_considered",
   "reported.major_admission.review.emphasis",
+  // Online share (specs/data-expansion/online-share.md): one line under the Students page's campus size.
+  "demographics.online_share",
+  "demographics.online_any_share",
 ] as const;
 
 test("every topic has a route file and a fields list", () => {

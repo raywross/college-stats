@@ -106,6 +106,7 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   "ipeds-sal": "ipeds-sal",
   "ipeds-ef-c": "ipeds-ef-c",
   "ipeds-ef-a": "ipeds-ef-a",
+  "ipeds-ef-a-dist": "ipeds-ef-a-dist",
   "ipeds-c": "ipeds-c",
   "ipeds-f": "ipeds-f",
   "scorecard-fos": "scorecard-fos",
@@ -452,6 +453,7 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
   "ipeds-sal",
   "ipeds-ef-c",
   "ipeds-ef-a",
+  "ipeds-ef-a-dist",
   "ipeds-c",
   "ipeds-f",
   "scorecard-enrollment",
@@ -462,7 +464,7 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
   "scorecard-fos",
 ];
 /** Releases that must resolve to a year (the rest may be null). */
-const YEAR_REQUIRED: readonly VintageKey[] = ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-hd", "ipeds-ic-char", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-c", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-enrollment", "scorecard-age", "scorecard-cost", "ipeds-om"];
+const YEAR_REQUIRED: readonly VintageKey[] = ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-hd", "ipeds-ic-char", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-enrollment", "scorecard-age", "scorecard-cost", "ipeds-om"];
 const METHODS = new Set(["reported", "derived", "extracted"]);
 
 /** Fields read from the hand-kept state-law table (data/state-laws.json). */

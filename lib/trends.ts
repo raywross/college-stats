@@ -204,6 +204,19 @@ export interface ShrinkingWindow {
   groupings: GroupingResult<ShrinkingValues>[];
 }
 
+/**
+ * The "campus-based colleges only" toggle (specs/trends/shrinking-colleges.md "Data work needed"): both windows'
+ * measures recomputed over the campus-based cut of their panel (`isCampusBased`, lib/movers.ts), plus how many
+ * panel colleges were left out and why. `excluded` is over the ten-year panel (the primary window); the five-year
+ * panel has its own, smaller, implied exclusion count from its own `n`.
+ */
+export interface ShrinkingCampusBased {
+  ten: ShrinkingWindow;
+  five: ShrinkingWindow;
+  /** Ten-year panel colleges left out of `ten`, by reason (`campusExclusionOf`, lib/movers.ts). */
+  excluded: { onlineFirst: number; forProfit: number; campuses: number };
+}
+
 /** data/history/trends/shrinking-colleges.json: the ten-year window is the primary StudyFile; `five` is the owner-recommended second window (the segmented control on the page). */
 export interface ShrinkingCollegesFile extends StudyFile<ShrinkingValues> {
   slug: "shrinking-colleges";
@@ -219,6 +232,8 @@ export interface ShrinkingCollegesFile extends StudyFile<ShrinkingValues> {
   histogram: { binSize: number; min: number; max: number; counts: number[]; median: number; n: number };
   /** Companion: median applicants and enrolled first-years, by fall, over the colleges that shrank 10%+ (a sub-panel of the ten-year panel). */
   companion: { from: number; to: number; n: number; applicants: (number | null)[]; enrolled: (number | null)[] };
+  /** The "Campus-based only" method toggle: both windows over campus-based colleges, and why the rest were left out. */
+  campusBased: ShrinkingCampusBased;
 }
 
 /* ------------------------------------------------------------------ */

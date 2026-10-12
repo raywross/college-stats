@@ -1,6 +1,6 @@
 /**
- * The Plan's intake guide (specs/planner/redesign/intake.md): four steps (grades, test, AP courses, review) and a
- * Done screen, saved once at the end. Everything the guide decides lives here: the class-year chips, GPA scale
+ * The Plan's intake guide (specs/planner/redesign/intake.md): grades, test, AP courses, four optional activity steps
+ * (sports, clubs, work, other; their rules in ./activity-steps.ts), review, and a Done screen, saved once at the end. Everything the guide decides lives here: the class-year chips, GPA scale
  * detection and validation, the score and target checks, the AP search and its aliases, the "When?" term chips, the
  * draft read from a saved profile, and the profile the save writes. Ported from the design prototype's script (Plan
  * Redesign.dc.html). Pure (no server or browser APIs), so the intake's UI, the `saveIntake` Server Action, and tests
@@ -8,7 +8,7 @@
  */
 import { apCourses, catalogCourse, isCatalogKeyFor } from "../chances/catalog.ts";
 import { newCourseId } from "../chances/courses.ts";
-import type { ActivityEntry, CourseEntry, CourseStatus } from "../chances/types.ts";
+import type { ActivityEntry, AwardEntry, CourseEntry, CourseStatus } from "../chances/types.ts";
 import { isHighSchoolId } from "../high-school-core.ts";
 import {
   COURSES_MAX,
@@ -16,12 +16,14 @@ import {
   GRAD_YEAR_MIN,
   planTest,
   sanitizeActivities,
+  sanitizeAwards,
   sanitizeProfile,
   type GpaScale,
   type StudentProfileData,
   type TestFocus,
 } from "../student-profile.ts";
 import type { PlanContext } from "./types.ts";
+import { stepReviewValue, type ActivityStep } from "./activity-steps.ts";
 
 /* ------------------------------------------------------------------ */
 /* Shapes                                                              */
@@ -57,15 +59,25 @@ export interface IntakeDraft {
   highSchoolId: string | null;
   courses: IntakeCourse[];
   /**
-   * The optional "More about you" step's activities (depth.md "What the student enters"), after the numbers: the
-   * guide invites two or three; `sanitizeActivities`'s own ACTIVITIES_MAX still caps it. Carried through unchanged
-   * when the step is skipped.
+   * The four optional activity steps' entries (depth.md "What the student enters"), one list: each step shows the
+   * entries `stepOfActivity` gives it. `sanitizeActivities`'s ACTIVITIES_MAX caps the whole list. Carried through
+   * unchanged when the steps are skipped.
    */
   activities: ActivityEntry[];
+  /** The Other step's awards (inputs-beyond-academics.md "Awards"), capped by AWARDS_MAX. */
+  awards: AwardEntry[];
 }
 
-/** 0 grades, 1 test, 2 AP courses, 3 more about you (optional), 4 review, 5 done. */
-export type IntakeStep = 0 | 1 | 2 | 3 | 4 | 5;
+/** 0 grades, 1 test, 2 AP courses, 3 sports, 4 clubs, 5 work, 6 other (3–6 optional), 7 review, 8 done. */
+export type IntakeStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export const INTAKE_REVIEW = 7;
+export const INTAKE_DONE = 8;
+/** The step each activity screen is. */
+export const ACTIVITY_STEP_INDEX: Readonly<Record<ActivityStep, 3 | 4 | 5 | 6>> = { sports: 3, clubs: 4, work: 5, other: 6 };
+/** The activity screen a step index is, or null. */
+export function activityStepAt(step: IntakeStep): ActivityStep | null {
+  return step === 3 ? "sports" : step === 4 ? "clubs" : step === 5 ? "work" : step === 6 ? "other" : null;
+}
 
 /** What `saveIntake` takes: the draft, checked and converted. */
 export interface IntakeSave {
@@ -80,6 +92,7 @@ export interface IntakeSave {
   highSchoolId: string | null;
   courses: IntakeCourse[];
   activities: ActivityEntry[];
+  awards: AwardEntry[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -194,7 +207,7 @@ export function targetCheck(test: "sat" | "act", score: string, target: string):
   return { ok: true, hint: `We'll show which colleges a ${t} would move.`, tone: "muted" };
 }
 
-/** Whether a step lets the student continue. The review step needs the first two; AP courses and "More about you" never block. */
+/** Whether a step lets the student continue. The review step needs the first two; AP courses and the activity steps never block. */
 export function stepValid(d: IntakeDraft, step: IntakeStep): boolean {
   if (step === 0) return d.classYear !== null && gpaCheck(d).ok;
   if (step === 1) {
@@ -202,7 +215,7 @@ export function stepValid(d: IntakeDraft, step: IntakeStep): boolean {
     if (d.test === "none") return true;
     return scoreCheck(d.test, d.score).ok && targetCheck(d.test, d.score, d.target).ok;
   }
-  if (step === 4) return stepValid(d, 0) && stepValid(d, 1);
+  if (step === INTAKE_REVIEW) return stepValid(d, 0) && stepValid(d, 1);
   return true;
 }
 
@@ -449,6 +462,7 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     highSchoolId: null,
     courses: [],
     activities: [],
+    awards: [],
   };
   if (!profile) return empty;
   const a = profile.academics;
@@ -471,11 +485,12 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     highSchoolId: profile.basics.highSchoolId,
     courses: a.courses.filter(isIntakeRow).map(intakeCourseFrom),
     activities: a.activities,
+    awards: a.awards,
   };
 }
 
 /** The review card's rows: label, value, and the step its Edit link opens. */
-export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2 | 3; label: string; value: string }[] {
+export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2 | 3 | 4 | 5 | 6; label: string; value: string }[] {
   const test = d.test;
   let testValue = "Not set";
   if (test === "none") testValue = "Not testing";
@@ -491,7 +506,10 @@ export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2 | 
     { step: 0, label: "School", value: d.highSchool ?? "Not set" },
     { step: 1, label: "Test", value: testValue },
     { step: 2, label: "AP courses", value: courseCount(d.courses, classYear, today) ?? "None" },
-    { step: 3, label: "Activities", value: d.activities.length === 0 ? "None" : `${d.activities.length} added` },
+    { step: 3, label: "Sports", value: stepReviewValue("sports", d.activities, d.awards) },
+    { step: 4, label: "Clubs", value: stepReviewValue("clubs", d.activities, d.awards) },
+    { step: 5, label: "Work", value: stepReviewValue("work", d.activities, d.awards) },
+    { step: 6, label: "Other", value: stepReviewValue("other", d.activities, d.awards) },
   ];
 }
 
@@ -520,6 +538,7 @@ export function intakeToSave(d: IntakeDraft): IntakeSave | null {
     highSchoolId: d.highSchoolId,
     courses: d.courses.filter((c) => c.year !== null).map((c) => ({ id: c.id, key: c.key, year: c.year, exam: c.exam })),
     activities: sanitizeActivities(d.activities),
+    awards: sanitizeAwards(d.awards),
   };
 }
 
@@ -596,7 +615,8 @@ export function parseIntakeSave(input: unknown): IntakeSave | null {
     courses.push(c);
   }
   const activities = sanitizeActivities(input.activities);
-  return { classYear, gpa, gpaScale, focus, score, practice, target, highSchool, highSchoolId, courses, activities };
+  const awards = sanitizeAwards(input.awards);
+  return { classYear, gpa, gpaScale, focus, score, practice, target, highSchool, highSchoolId, courses, activities, awards };
 }
 
 /** The draft course a saved row would open as; an unchanged course keeps its saved row as it is. */
@@ -647,7 +667,7 @@ export function applyIntake(profile: StudentProfileData, s: IntakeSave, today: s
     ...profile,
     basics: { ...profile.basics, gradYear: s.classYear, highSchool: s.highSchool, highSchoolId: s.highSchoolId },
     // courseRigorCount null: the count follows the list, never re-adds placeholder rows for removed courses.
-    academics: { ...profile.academics, gpa: s.gpa, gpaScale: s.gpaScale, courses, courseRigorCount: null, activities: s.activities },
+    academics: { ...profile.academics, gpa: s.gpa, gpaScale: s.gpaScale, courses, courseRigorCount: null, activities: s.activities, awards: s.awards },
     tests,
   });
 }

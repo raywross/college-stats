@@ -29,8 +29,12 @@ export const SELECTIVITY_TIER_LABELS: Record<SelectivityTier, string> = {
   open: "Open",
 };
 
-/** Most activities a student lists (depth.md; the Common App allows 10). */
-export const ACTIVITIES_MAX = 8;
+/**
+ * Most activities a student lists across the four intake steps (sports, clubs, work, other; depth.md). The Common App
+ * allows 10; this is twice that so a student can enter everything and pick their ten later. The depth reading uses
+ * only the top two, so a longer list neither helps nor hurts (raised from 8, U13, 2026-10-12).
+ */
+export const ACTIVITIES_MAX = 20;
 /** Most awards a student lists (inputs-beyond-academics.md "Awards"). */
 export const AWARDS_MAX = 6;
 

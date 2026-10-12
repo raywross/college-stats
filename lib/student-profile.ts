@@ -12,10 +12,11 @@ import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
 import { isHighSchoolId } from "./high-school-core.ts";
 import type { StandingStudent } from "./planner/standing.ts";
-import type { ActivityEntry, ActivityKind, ActivityRole, AwardEntry, ClassStanding, CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, HsYear, Mark, RecognitionTier } from "./chances/types.ts";
+import type { ActivityEntry, ActivityFamily, ActivityKind, ActivityRole, AwardEntry, ClassStanding, CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, HsYear, Mark, RecognitionTier } from "./chances/types.ts";
 import { ACTIVITIES_MAX, AWARDS_MAX, CLASS_STANDING_PERCENTILE } from "./chances/levels.ts";
 import { catalogCourse, COURSE_SUBJECTS, isCatalogKeyFor } from "./chances/catalog.ts";
 import { awardByKey } from "./chances/awards-catalog.ts";
+import { activityByKey, roleForTitle, titlesFor } from "./chances/activity-catalog.ts";
 
 /**
  * Same boundaries as lib/metrics.ts SIZE_BUCKETS, duplicated here rather than imported: that module pulls in
@@ -196,23 +197,50 @@ export const ACTIVITY_NAME_MAX = 60;
 /** Longest name kept for a typed-in ("Something else") award. */
 export const AWARD_NAME_MAX = 60;
 
+const ACTIVITY_FAMILIES: readonly ActivityFamily[] = [
+  "english", "math", "science", "history", "language", "cs", "arts",
+  "business", "health", "engineering", "service", "athletics", "leadership", "media", "faith", "other",
+];
+
+/**
+ * One untrusted activity row. A catalog pick (`catalogKey` in data/reference/sports.json or clubs.json) takes its kind
+ * and family from the catalog, so they can't drift; an unknown key is dropped (the row stays as typed). A typed row
+ * keeps a known `family`. A per-year title (data/reference/activity-roles.json) is kept only for a checked year and only
+ * when the kind offers it, and then sets that year's role tier (roleForTitle). `catalogKey`, `family`, and `titles`
+ * are written only when set, so a row saved before the catalogs reads back exactly as it was.
+ */
 function sanitizeActivity(v: unknown, index: number): ActivityEntry | null {
   if (!isObj(v)) return null;
   const name = str(v.name, ACTIVITY_NAME_MAX);
   if (!name) return null;
-  const kind = ACTIVITY_KINDS.includes(v.kind as ActivityKind) ? (v.kind as ActivityKind) : "other";
+  const cat = typeof v.catalogKey === "string" ? activityByKey(v.catalogKey) : null;
+  const kind = cat ? cat.kind : ACTIVITY_KINDS.includes(v.kind as ActivityKind) ? (v.kind as ActivityKind) : "other";
+  const family = cat ? cat.family : ACTIVITY_FAMILIES.includes(v.family as ActivityFamily) ? (v.family as ActivityFamily) : null;
   const years = Array.from(new Set(arr(v.years, (y) => (HS_YEARS.includes(y as HsYear) ? (y as HsYear) : null), 4))).sort((a, b) => a - b) as HsYear[];
   const rolesIn = isObj(v.roles) ? v.roles : {};
+  const titlesIn = isObj(v.titles) ? v.titles : {};
+  const offered = new Set(titlesFor(kind).map((t) => t.title));
   const roles: Partial<Record<HsYear, ActivityRole>> = {};
-  // A role only counts for a checked year; an unchecked year's role, if any was sent, is dropped.
+  const titles: Partial<Record<HsYear, string>> = {};
+  // A role only counts for a checked year; an unchecked year's role or title, if any was sent, is dropped.
   for (const y of years) {
+    const t = titlesIn[String(y)];
+    if (typeof t === "string" && offered.has(t)) {
+      titles[y] = t;
+      roles[y] = roleForTitle(kind, t);
+      continue;
+    }
     const r = rolesIn[String(y)];
     roles[y] = ACTIVITY_ROLES.includes(r as ActivityRole) ? (r as ActivityRole) : "member";
   }
   const hoursPerWeek = int(v.hoursPerWeek, 1, 60);
   const recognition = RECOGNITION_TIERS.includes(v.recognition as RecognitionTier) ? (v.recognition as RecognitionTier) : null;
   const id = typeof v.id === "string" && v.id.trim() && v.id.length <= 40 ? v.id.trim() : `activity-${index + 1}`;
-  return { id, name, kind, years, roles, hoursPerWeek, recognition, relatedToMajor: bool(v.relatedToMajor) };
+  const out: ActivityEntry = { id, name, kind, years, roles, hoursPerWeek, recognition, relatedToMajor: bool(v.relatedToMajor) };
+  if (cat) out.catalogKey = cat.key;
+  if (family) out.family = family;
+  if (Object.keys(titles).length > 0) out.titles = titles;
+  return out;
 }
 
 /** Untrusted input as at most ACTIVITIES_MAX ActivityEntries: invalid rows dropped, ids made unique. */

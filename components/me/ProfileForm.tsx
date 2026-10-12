@@ -265,7 +265,7 @@ export function ProfileForm({
       </Group>
 
       <Group title="Activities">
-        <ActivitiesForm activities={data.academics.activities} disabled={disabled} />
+        <ActivitiesForm activities={data.academics.activities} classYear={defaultGradYear ?? null} disabled={disabled} />
         {/* depth.md "The reading": the suggestion-first sentence, computed the same way the estimate reads it. */}
         {data.academics.activities.length > 0 && (
           <div className="sm:col-span-2 space-y-1 text-sm text-muted-foreground">
@@ -277,7 +277,7 @@ export function ProfileForm({
       </Group>
 
       <Group title="Awards">
-        <AwardsForm awards={data.academics.awards} disabled={disabled} />
+        <AwardsForm awards={data.academics.awards} classYear={defaultGradYear ?? null} disabled={disabled} />
       </Group>
 
       <Group title="Tests">

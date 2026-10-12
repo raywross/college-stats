@@ -14,6 +14,7 @@
     "out_of_state_share": {"start":2024,"values":[0]},
     "transfer_in_count": {"start":2024,"values":[55]},
     "transfer_in_share": {"start":2024,"values":[0.873]},
+    "online_share": {"start":2024,"values":[0]},
     "international_share": {"start":2024,"values":[0]},
     "athletic_association": {"start":2024,"values":[3,3]},
     "rotc": {"start":2024,"values":[2,2]},

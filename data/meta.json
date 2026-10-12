@@ -1,5 +1,5 @@
 {
-  "retrieved": "2026-10-04",
+  "retrieved": "2026-10-12",
   "sources": {
     "scorecard": {
       "label": "College Scorecard",
@@ -106,6 +106,13 @@
       "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024A.zip",
       "description": "Each college's fall enrollment by level of student, including new transfer-in undergraduates (full-time and part-time) and first-time degree-seeking undergraduates."
     },
+    "ipeds-ef-a-dist": {
+      "label": "IPEDS Fall Enrollment survey (distance education)",
+      "publisher": "National Center for Education Statistics (NCES)",
+      "edition": "Fall 2024 (EF2024A_DIST)",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024A_DIST.zip",
+      "description": "Each college's fall enrollment by level of student, split into students taking every course by distance education, some courses, and none. The site uses all undergraduates."
+    },
     "scorecard-fos": {
       "label": "College Scorecard Field of Study data",
       "publisher": "U.S. Department of Education",
@@ -175,6 +182,7 @@
     "ipeds-sal": "Fall 2024",
     "ipeds-ef-c": "Fall 2024",
     "ipeds-ef-a": "Fall 2024",
+    "ipeds-ef-a-dist": "Fall 2024",
     "ipeds-c": "2024–25 graduates",
     "ipeds-f": "2023–24",
     "scorecard-enrollment": "Fall 2024",

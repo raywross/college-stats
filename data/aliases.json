@@ -2306,7 +2306,7 @@
 {"unit_id":"196079","alias":"Triple Cities College","key":"triplecitiescollege","source":"wikidata","weight":2},
 {"unit_id":"196088","alias":"State University of New York at Buffalo","key":"stateuniversityofnewyorkatbuffalo","source":"ipeds","weight":3},
 {"unit_id":"196088","alias":"State University of New York, Buffalo","key":"stateuniversityofnewyorkbuffalo","source":"wikidata","weight":2},
-{"unit_id":"196088","alias":"SUNY Buffalo","key":"sunybuffalo","source":"wikidata","weight":2},
+{"unit_id":"196088","alias":"SUNY Buffalo","key":"sunybuffalo","source":"ipeds","weight":3},
 {"unit_id":"196088","alias":"UB","key":"ub","source":"ipeds","weight":3},
 {"unit_id":"196088","alias":"University at Buffalo, SUNY","key":"universityatbuffalosuny","source":"wikidata","weight":2},
 {"unit_id":"196088","alias":"University at Buffalo, The State University of New York","key":"universityatbuffalothestateuniversityofnewyork","source":"wikidata","weight":2},

@@ -248,7 +248,7 @@ test("sendEmail posts to Resend when configured, and reports failures without th
  * else is a public page that must stay static/ISR.
  */
 // /api/estimate: a POST endpoint (never static) that reads the session only to pick the signed-in limit (U5).
-const ACCOUNT_ROUTES = ["/account", "/household", "/login", "/auth", "/api/me", "/me", "/invite", "/l", "/unsubscribe", "/api/cron", "/api/plan", "/plan", "/api/estimate"];
+const ACCOUNT_ROUTES = ["/account", "/household", "/login", "/auth", "/api/me", "/me", "/invite", "/l", "/unsubscribe", "/api/cron", "/api/plan", "/plan", "/api/estimate", "/admin"];
 
 function underAccountRoute(path: string): boolean {
   return ACCOUNT_ROUTES.some((r) => path === r || path.startsWith(`${r}/`));

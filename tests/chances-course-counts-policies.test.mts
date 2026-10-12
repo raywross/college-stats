@@ -85,9 +85,11 @@ test("nobody reads the table; school_course_list returns a course only at three 
   const raw = await asUser<Record<string, unknown>>(db, eve, "select * from public.school_course_list($1)", ["S1"]);
   assert.deepEqual(Object.keys(raw[0]), ["school_course_list"]);
   assert.equal(typeof raw[0].school_course_list, "string");
-  // The table itself is closed to every role the app uses.
+  // The table itself is closed to every role the app uses. A signed-in user may select (the admin console reads it
+  // through its "Admins read" policy, 20261012200000_admin.sql) but gets no rows; nobody writes.
+  assert.deepEqual(await asUser(db, eve, "select * from public.school_course_counts"), []);
+  await assert.rejects(() => asUser(db, null, "select * from public.school_course_counts"), /permission denied/);
   for (const who of [eve, null]) {
-    await assert.rejects(() => asUser(db, who, "select * from public.school_course_counts"), /permission denied/);
     await assert.rejects(() => asUser(db, who, "insert into public.school_course_counts values ('S1', 'ap_x', 99)"), /permission denied/);
   }
   // A student leaving the school takes the list back under the threshold.
@@ -97,11 +99,11 @@ test("nobody reads the table; school_course_list returns a course only at three 
 });
 
 test("the backfill counts the profiles that already exist when the migration runs", async () => {
-  // Boot every migration but this one, add profiles, then run this one.
+  // Boot every migration before this one, add profiles, then run this one.
   const last = "20261011120000_school_course_counts.sql";
   const db = await PGlite.create({ extensions: { pg_trgm } });
   await db.exec(AUTH_STUB_SQL);
-  for (const name of ALL.filter((f) => f !== last)) await db.exec(readFileSync(join(DIR, name), "utf8"));
+  for (const name of ALL.filter((f) => f < last)) await db.exec(readFileSync(join(DIR, name), "utf8"));
   await db.exec("grant usage on schema extensions to anon, authenticated, service_role");
   for (let i = 0; i < 3; i++) await student(db, doc("S1", [{ key: "ap_calculus_ab" }]));
   await db.exec(readFileSync(join(DIR, last), "utf8"));

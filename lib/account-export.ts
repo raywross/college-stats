@@ -121,7 +121,16 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
               .select("id, unit_id, category, status, outcome, round, position, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social")
               .eq("list_id", list.id),
           );
-          const notes = await rows("list_notes", supabase.from("list_notes").select("item_id, body, private, created").in("item_id", inList(items.map((i) => i.id))));
+          // Row-level security already hides another person's private notes from the person; the filter keeps it so
+          // when the admin console runs this exporter through its read policy (lib/admin/people.ts exportFor).
+          const notes = (
+            await rows<{ item_id: string; author_id: string; body: string; private: boolean; created: string }>(
+              "list_notes",
+              supabase.from("list_notes").select("item_id, author_id, body, private, created").in("item_id", inList(items.map((i) => i.id))),
+            )
+          )
+            .filter((n) => !n.private || n.author_id === userId)
+            .map((n) => ({ item_id: n.item_id, body: n.body, private: n.private, created: n.created }));
           const itemsOut = items.map((i) => ({
             unit_id: i.unit_id,
             category: i.category,

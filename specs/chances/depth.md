@@ -153,3 +153,7 @@ the top-two rule, trajectory, the major-track slot, no names in snapshots).
 - An activity has no subject of its own, so `activityFamilyMatch` decides which track it can add a year to: research
   counts toward the major's science family (else computer science, else the major's first expected family); a club
   only toward computer science or science. IB SL counts 1.5 (open question 2's default).
+- **Themes** (2026-10-12, [method Revision 2](method/standing.md#revision-2-depth-rank-and-rigor-nudges-2026-10-12)):
+  `courseThemes(tracks, activities)` finds course families where the track reads Deep or Steady and an activity of two
+  or more years has the same `family` (else its catalog entry's); its `depth.theme.*` sentences name the theme in
+  family words and suggest the missing half.

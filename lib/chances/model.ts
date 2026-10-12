@@ -23,7 +23,7 @@ import { pct } from "../format.ts";
 import { bandColumn, GPA_BAND_EDGES } from "../planner/gpa-model.ts";
 import { tierForStudent } from "../selectivity-tier.ts";
 import { stateName } from "../states.ts";
-import { emptyCoreAtTopLevel, type CoreAtTopLevel } from "../student-profile.ts";
+import { advancedGpa, emptyCoreAtTopLevel, isAdvancedKind, type CoreAtTopLevel } from "../student-profile.ts";
 import {
   gpaStanding,
   isOptionalPolicy,
@@ -42,7 +42,7 @@ import {
   type StandingSchool,
   type StandingStudent,
 } from "./baseline.ts";
-import { activitiesReading, courseTracks, depthSnapshot, type ActivitiesResult, type CourseTracks } from "./depth.ts";
+import { activitiesReading, courseThemes, courseTracks, depthSnapshot, type ActivitiesResult, type CourseTracks, type ThemesResult } from "./depth.ts";
 import { interestMultiplier, legacyMultiplier, recruitedFloor, recruitMultiplier, type LegacyReading } from "./hooks.ts";
 import { NO_HOOKS, STANDING_LEVEL_LABELS } from "./levels.ts";
 import { majorMatters, majorReviewFor, type MajorReviewReading } from "./major-review.ts";
@@ -67,7 +67,7 @@ import type {
 import type { AblationInput, SnapshotDetail } from "./snapshot.ts";
 
 /** Recorded with every result and every outcome snapshot (specs/chances/estimate.md "Changing the method"). */
-export const MODEL_VERSION = "20261012.2";
+export const MODEL_VERSION = "20261012.3";
 
 /**
  * The second version's reading constants that the third keeps: GPA crowding, which colleges' class-rank tiers count,
@@ -145,7 +145,53 @@ export const ODDS_V3 = {
    */
   expectWeights: { gpa: 3, courses: 2, class_rank: 1, test: 1, activities: 1 } as Record<CompletenessKind, number>,
   gapPrior: -0.5,
+  /**
+   * Revision 2 (2026-10-12), rank nudges where the college weighs class rank or GPA: the highest that applies, never
+   * stacked. A valedictorian or salutatorian expectation is stated, not known.
+   */
+  rankNudge: { top5: 1.05, top1: 1.08, salutatorian: 1.1, valedictorian: 1.15 } as Record<RankNudgeKind, number>,
+  /** Revision 2, weighted over unweighted (4- or 5-point scales): the gap at least each value, largest first. */
+  weightedGap: [
+    [0.6, 1.08],
+    [0.3, 1.04],
+  ] as readonly (readonly [number, number])[],
+  /** The same on a 100-point scale: weighting adds about ten points a course where a 4-point scale adds one. */
+  weightedGap100: [
+    [6, 1.08],
+    [3, 1.04],
+  ] as readonly (readonly [number, number])[],
+  /** A weighted GPA above this on a 4- or 5-point scale isn't on that scale (a typo or another scale): unread. */
+  weightedMaxPoints: 6,
+  /** Revision 2, `M_theme`: one theme (a course track and an activity in the same family), two or more. */
+  theme: { one: 1.1, two: 1.18 },
+  /** Revision 2, Ultra selective: advanced courses at least this many, in every year from the first through now. */
+  ultraAdvancedCount: 3,
+  /** Revision 2, Ultra selective: the advanced courses' unweighted average at least this. */
+  ultraAdvancedGpa: 3.7,
 } as const;
+
+/** Which rank nudge applies (Revision 2). */
+type RankNudgeKind = "top5" | "top1" | "salutatorian" | "valedictorian";
+
+/**
+ * The top of each 100-point band the profile's conversion reads (lib/student-profile.ts gpaFrom100): the student's
+ * unweighted 100-point GPA, read back from its 4-point conversion at the top of its band, so the weighted gap is
+ * never overstated.
+ */
+const HUNDRED_BAND_TOP: readonly (readonly [number, number])[] = [
+  [4.0, 100],
+  [3.7, 96],
+  [3.3, 92],
+  [3.0, 89],
+  [2.7, 86],
+  [2.3, 82],
+  [2.0, 79],
+  [1.7, 76],
+  [1.3, 72],
+  [1.0, 69],
+  [0.7, 66],
+  [0, 64],
+];
 
 /** The inputs a college can expect (Revision 1, completeness). */
 type CompletenessKind = "gpa" | "courses" | "class_rank" | "test" | "activities";
@@ -477,6 +523,20 @@ interface Fixed {
   testExpected: boolean;
   /** The Ultra selective consistency check, apart from the test (which the score part reads). */
   consistency: Consistency;
+  /** Revision 2: course tracks and activities in the same family. */
+  themes: ThemesResult;
+  /** Revision 2, `M_theme`: where the college rates extracurriculars or talent at least considered. */
+  mTheme: number;
+  /** Revision 2: the rank nudge that applies here (the highest), or null. */
+  rankNudge: RankNudgeKind | null;
+  /** Whether the college weighs class rank or GPA (the rank nudge's gate). */
+  rankNudgeOpen: boolean;
+  mRank: number;
+  /** Revision 2: the weighted GPA's lead over the unweighted, where it's readable. */
+  weightedGap: WeightedGap | null;
+  /** Whether the college weighs rigor or GPA (the weighted-GPA nudge's gate). */
+  rigorNudgeOpen: boolean;
+  mWeighted: number;
 }
 
 /** The Ultra selective rule's signals apart from the test: all met, and the ones the student hasn't entered. */
@@ -484,6 +544,54 @@ interface Consistency {
   pass: boolean;
   /** Inputs the student hasn't entered that the rule needs (named in the incomplete sentence). */
   missing: InputKind[];
+  /** Revision 2: parts of the record the rule needs that aren't kinds of input (named in the same sentence). */
+  extra: ElitePiece[];
+}
+
+/** Revision 2: what the Ultra selective rule can ask for beyond the input kinds. */
+type ElitePiece = "advanced_grades" | "this_year_courses";
+
+interface WeightedGap {
+  /** Weighted minus unweighted, on the student's scale. */
+  gap: number;
+  /** A 100-point scale (its own steps). */
+  hundred: boolean;
+}
+
+/** Revision 2: the highest rank nudge the student's class standing or expectation gives, or null. Never stacked. */
+function rankNudgeOf(s: EstimateStudent): RankNudgeKind | null {
+  const kinds: RankNudgeKind[] = [];
+  if (s.rankExpectation === "valedictorian" || s.rankExpectation === "salutatorian") kinds.push(s.rankExpectation);
+  const pick = s.classStanding ?? null;
+  const pct = pick === "no_rank" ? null : s.classRankPercentile;
+  if (pick === "top1" || (pct !== null && pct <= 1)) kinds.push("top1");
+  else if (pick === "top5" || (pct !== null && pct <= 5)) kinds.push("top5");
+  return kinds.reduce<RankNudgeKind | null>((best, k) => (best === null || ODDS_V3.rankNudge[k] > ODDS_V3.rankNudge[best] ? k : best), null);
+}
+
+/**
+ * Revision 2: the weighted GPA's lead over the unweighted one on the student's own scale, or null where it can't be
+ * read (no weighted GPA, no unweighted one, a 4.0-scale GPA entered above 4.0, or a weighted figure off the scale).
+ */
+function weightedGapOf(s: EstimateStudent): WeightedGap | null {
+  const w = s.weightedGpa;
+  if (typeof w !== "number" || !Number.isFinite(w) || s.gpa === null) return null;
+  const g = s.gpa;
+  if (s.gpaScale === "100") {
+    const top = HUNDRED_BAND_TOP.find(([at]) => g >= at - 1e-9)?.[1] ?? null;
+    return top === null ? null : { gap: w - top, hundred: true };
+  }
+  if (w > ODDS_V3.weightedMaxPoints) return null;
+  if (s.gpaScale === "5.0") return { gap: w - (g * 5) / 4, hundred: false };
+  // A 4.0-scale GPA entered above 4.0 is itself weighted (read as a range): the unweighted one isn't known.
+  if (s.gpaRange && s.gpaRange[1] - s.gpaRange[0] > 1e-9) return null;
+  return { gap: w - g, hundred: false };
+}
+
+function weightedMultiplier(g: WeightedGap | null): number {
+  if (!g) return 1;
+  const steps = g.hundred ? ODDS_V3.weightedGap100 : ODDS_V3.weightedGap;
+  return steps.find(([min]) => g.gap >= min - 1e-9)?.[1] ?? 1;
 }
 
 function fixedPart(input: ModelInput, student: StandingStudent, without: Without): Fixed {
@@ -608,6 +716,19 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
   const mInterest = interest && !without.interest ? interest.multiplier : 1;
   const mRecruit = hooksOff ? 1 : recruitMultiplier(hooks.recruited);
 
+  // Revision 2: rank nudges where the college weighs class rank or GPA; the weighted GPA's lead where it weighs rigor
+  // or GPA; themes (a course track and an activity in the same family) where it rates activities at all.
+  const rankNudgeOpen = gpaWeighs.counts || rankWeighs.counts;
+  const rankNudge = without.rank || !rankNudgeOpen ? null : rankNudgeOf(s);
+  const mRank = rankNudge ? ODDS_V3.rankNudge[rankNudge] : 1;
+  const rigorNudgeOpen = gpaWeighs.counts || rigorWeighs.counts;
+  const gap = weightedGapOf(s);
+  const mWeighted = without.rigor || !rigorNudgeOpen ? 1 : weightedMultiplier(gap);
+  const themes = courseThemes(tracks, activityList);
+  const themeOpen = depthRating !== null && C7_AT_LEAST_CONSIDERED.has(depthRating);
+  const themeCount = themes.themes.length;
+  const mTheme = without.depth || !themeOpen || themeCount === 0 ? 1 : themeCount >= 2 ? ODDS_V3.theme.two : ODDS_V3.theme.one;
+
   // Revision 1, completeness: the inputs this college weighs (C7, else the federal factors, as read above), and which
   // the student entered. A test is expected where the college requires one, or weighs one the student has; a test the
   // student doesn't have at a test-optional college isn't a gap. "My school doesn't rank" counts as an answer.
@@ -657,6 +778,26 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
   const rounded = activities.reading === "focused" || activities.reading === "building" || activities.recognition === 1 || activities.recognition === 2;
   check(rounded, present.activities ? null : "activities");
 
+  // Revision 2 (owner, 2026-10-12: "depth, great academics, consistency in things like APs, great grades in your APs,
+  // clubs that overlap with your academics"): depth with a theme, an advanced course every year from the first through
+  // now (at least three), and strong grades in them.
+  const extra: ElitePiece[] = [];
+  const deep = activities.reading === "focused" || activities.reading === "building";
+  check(deep && themeCount > 0, present.activities ? null : "activities");
+  const advanced = s.courses.filter((c) => isAdvancedKind(c.kind));
+  const sofar = advanced.filter((c) => c.status !== "planned").map((c) => c.year as number);
+  const now = input.grade ?? (sofar.length > 0 ? Math.max(...sofar) : null);
+  const advYears = new Set(advanced.map((c) => c.year as number));
+  const first = advYears.size > 0 ? Math.min(...advYears) : null;
+  const skipped: number[] = [];
+  if (first !== null && now !== null) for (let y = first; y <= now; y++) if (!advYears.has(y)) skipped.push(y);
+  const steadyAdvanced = advanced.length >= ODDS_V3.ultraAdvancedCount && skipped.length === 0;
+  check(steadyAdvanced, null);
+  if (!steadyAdvanced && advanced.length > 0 && skipped.length === 1 && skipped[0] === now) extra.push("this_year_courses");
+  const advGpa = advancedGpa(s.courses);
+  check(advGpa !== null && advGpa >= ODDS_V3.ultraAdvancedGpa - 1e-9, null);
+  if (advGpa === null && advanced.some((c) => c.status === "taken")) extra.push("advanced_grades");
+
   return {
     pool,
     tier,
@@ -688,7 +829,7 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
     activities,
     depthRating,
     workRating,
-    mult: mDepth * mWork * mLegacy * mInterest * mRecruit,
+    mult: mDepth * mWork * mLegacy * mInterest * mRecruit * mRank * mWeighted * mTheme,
     mDepth,
     mWork,
     legacy,
@@ -701,7 +842,15 @@ function fixedPart(input: ModelInput, student: StandingStudent, without: Without
     completeness,
     gaps,
     testExpected,
-    consistency: { pass: cPass, missing: cMissing },
+    consistency: { pass: cPass, missing: [...new Set(cMissing)], extra },
+    themes,
+    mTheme,
+    rankNudge,
+    rankNudgeOpen,
+    mRank,
+    weightedGap: gap,
+    rigorNudgeOpen,
+    mWeighted,
   };
 }
 
@@ -971,6 +1120,27 @@ function explain(input: ModelInput, ev: Evaluation, ed: ReturnType<typeof edVerd
     fact(factorPath("class_rank"));
   }
 
+  // Revision 2: the rank nudge (the expectation said as one) where the college weighs class rank or GPA; else, for a
+  // stated expectation, "not used here".
+  if (f.rankNudge) {
+    const rankFact = factorFact(f.rankWeighs.counts ? f.rankWeighs : f.gpaWeighs, f.rankWeighs.counts ? "class_rank" : "gpa");
+    if (f.rankNudge === "valedictorian" || f.rankNudge === "salutatorian") notes.push(note("estimate.rank_expectation", { title: f.rankNudge, college: school.name }, rankFact));
+    else if (f.rankPosition === null) notes.push(note("estimate.rank_top", { rank: f.rankNudge === "top1" ? "top 1%" : "top 5%", college: school.name }, rankFact));
+    used.add("class_standing");
+    fact(rankFact);
+  } else if (s.rankExpectation && !f.rankNudgeOpen) {
+    const rated = f.rankWeighs.source === "c7" ? "class_rank" : f.gpaWeighs.source === "c7" ? "gpa" : null;
+    notes.push(rated ? note("estimate.not_used", { input: "class standing", college: school.name }, factorPath(rated)) : note("estimate.not_said", { input: "class standing", college: school.name }));
+    if (rated) fact(factorPath(rated));
+  }
+  // Revision 2: a weighted GPA well above the unweighted one, where the college weighs rigor or GPA.
+  if (f.mWeighted > 1 && typeof s.weightedGpa === "number") {
+    const rigorFact = factorFact(f.rigorWeighs.counts ? f.rigorWeighs : f.gpaWeighs, f.rigorWeighs.counts ? "rigor" : "gpa");
+    notes.push(note("estimate.weighted_above", { weighted: String(s.weightedGpa), college: school.name }, rigorFact));
+    used.add("gpa");
+    fact(rigorFact);
+  }
+
   // The major: its review's lines, and whether its subjects or required courses joined the measures.
   notes.push(...f.major.notes);
   for (const p of f.major.facts) fact(p);
@@ -994,6 +1164,9 @@ function explain(input: ModelInput, ev: Evaluation, ed: ReturnType<typeof edVerd
     const ratingFact = factorPath(c7(school)?.extracurriculars === f.depthRating ? "extracurriculars" : "talent");
     if (acts.length > 0 || awards.length > 0) {
       notes.push(...f.activities.notes.filter((n) => n.key !== "depth.activities.none"));
+      // Revision 2: the theme sentence (a course track and an activity in the same family) and what would make one.
+      notes.push(...f.themes.notes);
+      if (f.mTheme > 1) used.add("courses");
       if (acts.length > 0) used.add("activities");
       if (awards.length > 0) used.add("awards");
       fact(ratingFact);
@@ -1002,6 +1175,8 @@ function explain(input: ModelInput, ev: Evaluation, ed: ReturnType<typeof edVerd
     }
   } else if (acts.length > 0 || awards.length > 0) {
     notes.push(note("depth.activities.not_weighed", { college: school.name }));
+    // Revision 2: an Ultra selective college's own rule reads depth across courses and activities, so its suggestions show.
+    if (f.tier === "elite") notes.push(...f.themes.notes.filter((n) => n.key !== "depth.theme"));
   }
 
   // Work and family responsibilities.
@@ -1078,6 +1253,8 @@ function explain(input: ModelInput, ev: Evaluation, ed: ReturnType<typeof edVerd
   // college every input its rule reads (a guarantee, a recruited floor, or open admission asks for nothing more).
   const settled = decision.open || decision.label === "guaranteed" || decision.label === "recruited";
   const asks: InputKind[] = settled ? [] : [...f.gaps, ...(f.tier === "elite" ? decision.consistencyMissing : [])];
+  // Revision 2: at an Ultra selective college, the parts of the record its rule reads that aren't on file yet.
+  const extraAsks: ElitePiece[] = settled || f.tier !== "elite" ? [] : f.consistency.extra;
   for (const k of asks) missing.add(k);
 
   // One prompt for the most useful new input that's missing, only where an input could still change the level.
@@ -1087,7 +1264,8 @@ function explain(input: ModelInput, ev: Evaluation, ed: ReturnType<typeof edVerd
   else if (newMissing[0]) notes.push(note("estimate.missing_input", { input: noteInput(newMissing[0]) }));
   // And the gaps by name: what the estimate doesn't have yet (never how much they count).
   const gapKinds = INCOMPLETE_ORDER.filter((k) => asks.includes(k) && !used.has(k));
-  if (gapKinds.length > 0) notes.push(note("estimate.incomplete", { inputs: listWords(gapKinds.map((k) => INCOMPLETE_WORDS[k] ?? k)) }));
+  const gapWords = [...gapKinds.map((k) => INCOMPLETE_WORDS[k] ?? k), ...extraAsks.map((k) => ELITE_PIECE_WORDS[k])];
+  if (gapWords.length > 0) notes.push(note("estimate.incomplete", { inputs: listWords(gapWords) }));
 
   return { notes, facts: [...new Set(facts)], used: [...used], missing: [...missing] };
 }
@@ -1105,6 +1283,11 @@ const INCOMPLETE_WORDS: Partial<Record<InputKind, string>> = {
   class_rank: "class standing",
   test: "test score",
   activities: "activities",
+};
+/** Revision 2's pieces in the incomplete sentence's words. */
+const ELITE_PIECE_WORDS: Record<ElitePiece, string> = {
+  advanced_grades: "advanced-course grades",
+  this_year_courses: "advanced courses this year",
 };
 /** "a", "a and b", "a, b, and c". */
 function listWords(words: string[]): string {
@@ -1162,6 +1345,7 @@ export function modelEstimateWithDetail(input: ModelInput): { result: EstimateRe
     rigorReading: ev.fixed.rigor?.reading ?? null,
     hiddenOdds: dec.odds,
     selectivityTier: ev.fixed.tier,
+    completeness: ev.fixed.completeness,
     depth: depthSnapshot(ev.fixed.tracks, input.student.activities ?? [], ev.fixed.activities),
     without: {
       residency: levelWithout("residency"),

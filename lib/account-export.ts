@@ -41,7 +41,7 @@ const inList = (ids: string[]) => (ids.length ? ids : ["00000000-0000-0000-0000-
 
 /** The student's own inputs and the estimate they saw; the measurement-only columns (position, groups without an input) are the method's and stay out. */
 const SNAPSHOT_EXPORT_COLUMNS =
-  "student_id, unit_id, season, applied_on, round, gpa, gpa_low, gpa_high, gpa_scale, test_kind, test_score, sat_math, act_math, class_rank_pct, state, majors, practice, advanced_courses, advanced_planned, honors_courses, advanced_gpa, math_gpa, science_gpa, hs_ap_band, hs_ib, hs_dual, estimate_group, estimate_label, model_version, student_group, group_changed, consented, created_at";
+  "student_id, unit_id, season, applied_on, round, gpa, gpa_low, gpa_high, gpa_scale, test_kind, test_score, sat_math, act_math, class_rank_pct, state, majors, practice, advanced_courses, advanced_planned, honors_courses, advanced_gpa, math_gpa, science_gpa, hs_ap_band, hs_ib, hs_dual, estimate_group, estimate_label, model_version, completeness, student_group, group_changed, consented, created_at";
 
 /** The registry. Later units append their tables here (keep keys unique; tests check). */
 export const ACCOUNT_EXPORTERS: AccountExporter[] = [
@@ -213,7 +213,7 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
   {
     key: "application_snapshots",
     description:
-      "Your numbers as of the day each college was marked applied (rounded), the group Quad's estimate gave, the group you picked, and whether you share outcomes (specs/chances/calibration.md), for your own and managed students.",
+      "Your numbers as of the day each college was marked applied (rounded), the group Quad's estimate gave, how complete your record was for that college, the group you picked, and whether you share outcomes (specs/chances/calibration.md), for your own and managed students.",
     run: async ({ supabase, studentIds }) => {
       const { data, error } = await supabase
         .from("application_snapshots")

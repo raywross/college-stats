@@ -309,6 +309,13 @@ export interface ReviewItem {
   sha256?: string;
   /** Round 3: the item's value as read (the code table's, for a template workbook). */
   value?: number | string | boolean | null;
+  /**
+   * A person reviewed the item and rejected it (the admin console's Reject, lib/admin/review-queue.ts): the checks were
+   * right and nothing is publishable from this document. Kept so the next run doesn't queue it again; `resolved_on` is
+   * the ISO date.
+   */
+  resolved?: "rejected";
+  resolved_on?: string;
 }
 
 /** The review queue's key: college + edition + code. Round-1/2 entries (no code) share one key per college. */
@@ -316,14 +323,24 @@ export function reviewKey(item: Pick<ReviewItem, "unit_id" | "edition" | "code">
   return `${item.unit_id}|${item.edition ?? ""}|${item.code ?? ""}`;
 }
 
+/** Same key and the same document: the sha256 when both have one, else the first URL. */
+function sameDocument(a: ReviewItem, b: ReviewItem): boolean {
+  if (reviewKey(a) !== reviewKey(b)) return false;
+  if (a.sha256 || b.sha256) return a.sha256 === b.sha256;
+  return (a.urls[0] ?? "") === (b.urls[0] ?? "");
+}
+
 /**
  * Adds items to the queue, replacing only entries with the same key (college + edition + code). Replacing one
  * college's H2 entry leaves its C1 entry and every other code alone (Decision 9; the round-2 `enqueue` replaced every
- * item of the college).
+ * item of the college). An entry a person rejected stays, and the same document's item is not queued again; a newer
+ * document's item replaces it.
  */
 export function enqueueItems(queue: readonly ReviewItem[], items: readonly ReviewItem[]): ReviewItem[] {
-  const keys = new Set(items.map(reviewKey));
-  return [...queue.filter((q) => !keys.has(reviewKey(q))), ...items];
+  const rejected = queue.filter((q) => q.resolved === "rejected");
+  const incoming = items.filter((i) => !rejected.some((r) => sameDocument(r, i)));
+  const keys = new Set(incoming.map(reviewKey));
+  return [...queue.filter((q) => !keys.has(reviewKey(q))), ...incoming];
 }
 
 export interface ReviewQueueFile {

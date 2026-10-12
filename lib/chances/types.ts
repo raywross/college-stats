@@ -134,6 +134,10 @@ export interface EstimateStudent {
   awards?: AwardEntry[];
   classStanding?: ClassStanding | null;
   firstGeneration?: boolean | null;
+  /** Weighted GPA as the school reports it (on `gpaScale`'s family); with `gpa`, a rigor signal (U14). */
+  weightedGpa?: number | null;
+  /** Valedictorian or salutatorian, as the student expects it (an expectation: it's decided after admissions). */
+  rankExpectation?: RankExpectation | null;
 }
 
 export interface EstimateInput {
@@ -208,8 +212,17 @@ export interface ActivityEntry {
   name: string;
   kind: ActivityKind;
   years: HsYear[];
-  /** Per checked year; a checked year with no role is "member". */
+  /** Per checked year; a checked year with no role is "member". The model reads these tiers. */
   roles: Partial<Record<HsYear, ActivityRole>>;
+  /**
+   * The catalog entry picked (data/reference/sports.json or clubs.json key), null when typed freely. Optional so
+   * profiles saved before the catalogs read as typed entries.
+   */
+  catalogKey?: string | null;
+  /** What the activity is about, from the catalog or the student's pick; ties activities to course tracks (depth). */
+  family?: ActivityFamily | null;
+  /** The title the student picked per year ("Varsity", "Captain", "President"), from data/reference/activity-roles.json; each maps to a tier in `roles`. */
+  titles?: Partial<Record<HsYear, string>>;
   /** During the school year, 1–60; null when not given. */
   hoursPerWeek: number | null;
   recognition: RecognitionTier | null;
@@ -227,6 +240,13 @@ export interface AwardEntry {
 
 /** The class-standing pick (inputs-beyond-academics.md "Class standing"). */
 export type ClassStanding = "top1" | "top5" | "top10" | "top25" | "top50" | "lower" | "no_rank";
+/** An expectation the student states; never a fact until after admissions (owner, 2026-10-12). */
+export type RankExpectation = "valedictorian" | "salutatorian";
+/**
+ * What an activity is about (U12 classifies the catalogs). The course families (CourseSubject minus "other") let an
+ * activity line up with a course track; the rest describe activities with no course of their own.
+ */
+export type ActivityFamily = Exclude<CourseSubject, "other"> | "business" | "health" | "engineering" | "service" | "athletics" | "leadership" | "media" | "faith" | "other";
 
 /** Depth readings (depth.md "The reading"): words, never scores. */
 export type TrackReading = "deep" | "steady" | "light" | "not_offered";

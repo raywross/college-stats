@@ -1,14 +1,15 @@
 /**
  * The Plan page's tabs and links (specs/planner/redesign/page.md; build-plan.md "Tabs and routing"). Pure: which
  * tabs a view shows, which one opens first, where an old `?stage=` link lands, and the `/plan` URL for a person and
- * tab. Students open on Colleges, parents on the Calendar; "Everyone" (a parent's view across children) is the
- * calendar alone; Offers appears once a decision is recorded.
+ * tab. Students and parents open on Colleges; "Everyone" (a parent's view across children) is the calendar alone;
+ * Offers appears once a decision is recorded. The Scores tab was dropped (owner, 2026-10-12: "a relic now that we've
+ * got so many more inputs"), so an old `?tab=scores` link is unrecognized and opens the default tab.
  */
 
-export type PlanTab = "colleges" | "scores" | "calendar" | "offers";
-export const PLAN_TABS: readonly PlanTab[] = ["colleges", "scores", "calendar", "offers"];
+export type PlanTab = "colleges" | "calendar" | "offers";
+export const PLAN_TABS: readonly PlanTab[] = ["colleges", "calendar", "offers"];
 
-export const TAB_LABELS: Record<PlanTab, string> = { colleges: "Colleges", scores: "Scores", calendar: "Calendar", offers: "Offers" };
+export const TAB_LABELS: Record<PlanTab, string> = { colleges: "Colleges", calendar: "Calendar", offers: "Offers" };
 
 export function parseTab(v: unknown): PlanTab | null {
   return typeof v === "string" && (PLAN_TABS as readonly string[]).includes(v) ? (v as PlanTab) : null;
@@ -28,7 +29,7 @@ export function defaultTab(viewer: "student" | "guardian", everyone: boolean): P
 /** The tabs a view shows, in order. Everyone → the calendar only; Offers only once a decision is recorded. */
 export function tabsFor(opts: { everyone: boolean; hasDecision: boolean }): PlanTab[] {
   if (opts.everyone) return ["calendar"];
-  return opts.hasDecision ? ["colleges", "scores", "calendar", "offers"] : ["colleges", "scores", "calendar"];
+  return opts.hasDecision ? ["colleges", "calendar", "offers"] : ["colleges", "calendar"];
 }
 
 /** Where an old six-stage link (`?stage=N`) lands: List, Rounds, Actions, Apply → Colleges; Timeline → Calendar; Offers → Offers. */
@@ -39,7 +40,7 @@ export function tabForStage(stage: number): PlanTab {
 }
 
 /**
- * "/plan", "/plan?for=<person>", "/plan?for=<person>&tab=scores" (the person is a student id). `setup` adds
+ * "/plan", "/plan?for=<person>", "/plan?for=<person>&tab=calendar" (the person is a student id). `setup` adds
  * `&setup=1`: the intake guide in edit mode (specs/planner/redesign/intake.md "Edit mode").
  */
 export function planHref(opts: { person?: string | null; tab?: PlanTab | null; setup?: boolean }): string {

@@ -24,7 +24,49 @@ its own section (`plan-view.ts`'s row order puts it first overall, and a group s
 no group chip on the row, no cycling it, and no "✦ = sorted for you" line — the group is always Quad's own, so
 there's nothing to mark as a suggestion.
 
+## Simpler planner (owner, 2026-10-12)
+The owner's review simplified the list; this section is what's built now, and it replaces "The row" columns and "The
+drawer" below where they differ:
+- **The row** is the Dream heart, the crest and name, and (i). Round, Deadline, and Status left the row and the
+  header ("there for seniors; remove for now, I'll want to tie this into the recommendations in a future PR"); the
+  stored round and dates are unchanged and the Calendar (and Offers) still read them. Phones and desktop show the same
+  one-line row. The level stays the section heading above the row.
+- **The header** shows on every width: "8 colleges" and one link, **How Quad reads your list**
+  (`components/planner/ListExplainer.tsx`, a bottom sheet on phones and a centered card from `sm`). Its text has one
+  home, `listExplainer()` in `lib/chances/notes.ts`: the five levels and what each means, the order within a level,
+  the six selectivity tiers with Ultra selective's stricter bar and the very top colleges' standout, the kinds of
+  inputs (grades, weighted GPA, class standing, courses and AP results, tests with a junior's target, activities and
+  depth, legacy, recruiting, visits and following), that missing inputs lower confidence, who the student is compared
+  with, and never a percentage. Kinds of inputs only; `tests/planner-list-explainer.test.mts` fails on a number, a
+  weight, a cutoff, a multiplier, or the odds. Its headings link the glossary's `levels`, `selectivity-tier`, and
+  `applicants-like-you`.
+- **The capture panel** (the row's (i), `components/planner/RowDrawer.tsx`) replaces the drawer: "information
+  overload and the text is out of date… what we're really looking for here is to capture some more information."
+  In the intake's chip style (`components/activities/chips.tsx`), 44px targets, 16px inputs on phones:
+  1. **Legacy**: one toggle, "A parent or grandparent graduated from here", with the state-ban sentence where one
+     applies (`AboutYouAndCollege`).
+  2. **Recruited**: None · A coach has contacted me · I've had a positive pre-read · I have a likely letter.
+  3. **Visited**: "We visited" logs a campus visit dated today (`plan_visits`, which sets `list_items.visited_on`);
+     the date is editable (no later than today); **Visit notes** opens the visit's form (`VisitForm`) in a sheet.
+     Tapping it again removes that visit (asking first when it has notes); with more than one past visit logged it
+     can't be undone from here. A planned visit shows as "Visit planned for Nov 3".
+  4. **Following on social**: one toggle per account the college has (`school.social`), recording
+     `followed_networks`/`follows_social` (`recordFollow`), each beside a link that opens the account to follow it
+     (X's follow intent, YouTube's subscribe prompt, else the profile). A follow is the student's own account, so a
+     guardian sees the toggles read-only with the links.
+  5. **Quick links**: the college's campus visit page, else its virtual tour, else its admissions page
+     (`lib/planner/capture.ts` `visitPageLink`).
+  6. **Remove from the list** (editors), unchanged.
+  Each saved change refreshes the page, so the level reads it: visits, information requests, and follows count as
+  demonstrated interest (`lib/planner/hooks.ts`; follows joined on 2026-10-12). The estimate's meaning line, stage
+  lines, compared-with panel, reasons, and "What went into this estimate" left the plan (the college profile's
+  standing card and Compare still show them), and so did the round line, score line, Show interest, Requirements,
+  and Notes; their data stays.
+- **Scores tab**: dropped ([page.md](page.md)); see [scores.md](scores.md).
+
 ## The row
+> Superseded on 2026-10-12 by "Simpler planner" above: the round chip, deadline, and status are off the row.
+
 ```
  ♥  [crest] Wake Forest University      [● ED I ✦ ▾]   Nov 15 ⓘ   Working on it   (i)
     Dream
@@ -50,6 +92,8 @@ group section and its heading still show — the model sorts a college into Reac
 enough to go on, independent of the student's grade.
 
 ## The drawer
+> Replaced on 2026-10-12 by the capture panel ("Simpler planner" above). Kept for the record.
+
 Opened by (i), inline under the row (no modal), each line only when it has content:
 1. **Group**: the model's reasons (there's no "You picked this group" anymore — groups are never student-picked).
 2. **Round**: the one-line reason for the starting round ([rounds.md](rounds.md#starting-rounds)), or "You picked
@@ -118,3 +162,8 @@ panels' controls), `ListNotices.tsx` (one notice's content, used by `PlanNotice.
 (`groupedRows`, `GROUP_HEADING`, `headerCountsLine`, `anySuggestedRound`, `roundsPicked`, the round/deadline label
 and urgency helpers, `scoreDrawerLine`); `lib/planner/colors.ts` `GROUP_CLASS`. Tests:
 `tests/planner-list-view.test.mts`.
+
+Simpler planner (2026-10-12): `RowDrawer.tsx` is the capture panel, with `AboutYouAndCollege.tsx`;
+`ListExplainer.tsx` and `listExplainer()` in `lib/chances/notes.ts`; `lib/planner/capture.ts` (`visitPageLink`,
+`visitedState`, `followTargets`); `lib/planner/hooks.ts` (`hooksFromPlan`, interest now including follows). Tests:
+`tests/planner-capture.test.mts`, `tests/planner-list-explainer.test.mts`, `tests/planner-hooks.test.mts`.

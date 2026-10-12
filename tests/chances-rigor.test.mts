@@ -365,7 +365,7 @@ test("a parent sees the list, grades, and AP exam scores, whatever the privacy s
   for (const f of ["lib/planner/load.ts", "lib/planner/plan-estimates.ts", "components/me/StudentNumbers.tsx"]) {
     assert.doesNotMatch(read(f), /withoutExams\(|hideExams/, f);
   }
-  for (const f of ["components/me/ProfileForm.tsx", "components/planner/PlanCoursesSheet.tsx", "components/planner/intake/PlanIntake.tsx"]) {
+  for (const f of ["components/me/ProfileForm.tsx", "components/planner/intake/PlanIntake.tsx"]) {
     assert.doesNotMatch(read(f), /apExamsPrivate[^\n]*(showExams|examsHidden)|(showExams|examsHidden)[^\n]*apExamsPrivate/, f);
   }
 });
@@ -506,8 +506,6 @@ test("none of the rigor components or notes spells a threshold or a constant of 
     "components/profile/LocalCoursesSheet.tsx",
     "components/school/RigorLine.tsx",
     "components/school/HsPrepTable.tsx",
-    "components/planner/CoursesSection.tsx",
-    "components/planner/PlanCoursesSheet.tsx",
     "components/high-schools/MyCoursesLine.tsx",
     "lib/chances/courses.ts",
     "lib/chances/rigor-view.ts",

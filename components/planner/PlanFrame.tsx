@@ -88,7 +88,7 @@ export function PlanFrame({
     <NothingDue gradYear={gradYear} season={season} relation={relation} firstName={firstName} />
   );
 
-  const pills = <PlanTabPills tabs={tabs} tab={openTab} person={personId} hasRetake={view.retake !== null} />;
+  const pills = <PlanTabPills tabs={tabs} tab={openTab} person={personId} />;
 
   return (
     <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">

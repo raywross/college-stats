@@ -7,9 +7,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { defaultTab, parseTab, planHref, tabForStage, tabsFor } from "../lib/planner/plan-tabs.ts";
 
-test("parseTab keeps the four tabs and nothing else", () => {
-  for (const t of ["colleges", "scores", "calendar", "offers"]) assert.equal(parseTab(t), t);
-  for (const v of ["", "Colleges", "list", null, undefined, 3, ["scores"]]) assert.equal(parseTab(v), null);
+test("parseTab keeps the three tabs and nothing else; the dropped Scores tab falls back to the default (owner, 2026-10-12)", () => {
+  for (const t of ["colleges", "calendar", "offers"]) assert.equal(parseTab(t), t);
+  for (const v of ["", "Colleges", "list", "scores", null, undefined, 3, ["colleges"]]) assert.equal(parseTab(v), null);
 });
 
 test("a student opens on Colleges; a guardian does too now that a guardian always lands on one child (no more Everyone); the deferred family view (everyone) is still the Calendar", () => {
@@ -22,8 +22,8 @@ test("a student opens on Colleges; a guardian does too now that a guardian alway
 test("Everyone is the calendar alone; Offers appears only once a decision is recorded", () => {
   assert.deepEqual(tabsFor({ everyone: true, hasDecision: true }), ["calendar"]);
   assert.deepEqual(tabsFor({ everyone: true, hasDecision: false }), ["calendar"]);
-  assert.deepEqual(tabsFor({ everyone: false, hasDecision: false }), ["colleges", "scores", "calendar"]);
-  assert.deepEqual(tabsFor({ everyone: false, hasDecision: true }), ["colleges", "scores", "calendar", "offers"]);
+  assert.deepEqual(tabsFor({ everyone: false, hasDecision: false }), ["colleges", "calendar"]);
+  assert.deepEqual(tabsFor({ everyone: false, hasDecision: true }), ["colleges", "calendar", "offers"]);
 });
 
 test("old ?stage= links: List, Rounds, Actions, Apply → Colleges; Timeline → Calendar; Offers → Offers", () => {
@@ -35,7 +35,7 @@ test("old ?stage= links: List, Rounds, Actions, Apply → Colleges; Timeline →
 test("planHref builds /plan with the person and the tab, leaving out what's missing", () => {
   assert.equal(planHref({}), "/plan");
   assert.equal(planHref({ person: null, tab: null }), "/plan");
-  assert.equal(planHref({ tab: "scores" }), "/plan?tab=scores");
+  assert.equal(planHref({ tab: "offers" }), "/plan?tab=offers");
   assert.equal(planHref({ person: "6b0f1c1e-0000-4000-8000-000000000001" }), "/plan?for=6b0f1c1e-0000-4000-8000-000000000001");
   assert.equal(planHref({ person: "abc", tab: "calendar" }), "/plan?for=abc&tab=calendar");
   assert.equal(planHref({ person: "a b&c" }), "/plan?for=a+b%26c");

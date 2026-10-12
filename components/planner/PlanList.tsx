@@ -3,27 +3,27 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Sparkles } from "lucide-react";
+import { Search } from "lucide-react";
 import { Crest } from "@/components/school/Crest";
 import { PlanRow } from "@/components/planner/PlanRow";
+import { ListExplainer } from "@/components/planner/ListExplainer";
 import { PlanNotice } from "@/components/planner/PlanNotice";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
 import { addToList, removeFromList } from "@/lib/lists";
 import { track } from "@/lib/analytics";
 import { searchSchoolsApi } from "@/lib/school-api";
 import type { SchoolIndexEntry } from "@/lib/dataset";
-import { setPlanDream, setPlanRound } from "@/lib/planner/store-plan";
-import { roundDates } from "@/lib/planner/rounds";
+import { setPlanDream } from "@/lib/planner/store-plan";
 import type { PlanRowView } from "@/lib/planner/plan-view";
-import { anySuggestedRound, GROUP_HEADING, groupedRows, headerCountsLine } from "@/lib/planner/list-row";
+import { GROUP_HEADING, groupedRows, headerCountsLine } from "@/lib/planner/list-row";
 import { GROUP_CLASS } from "@/lib/planner/colors";
-import type { ListCategory, ListRound } from "@/lib/list-rules";
+import type { ListCategory } from "@/lib/list-rules";
 import { cn } from "@/lib/utils";
 
 /**
  * The Colleges tab: the list as the plan (specs/planner/redesign/list.md). Grouped by Reach / Target / Likely, then
  * "Not sorted yet" — Quad's groups only, no chip to cycle and no sort menu. Owns its own copy of the rows so every
- * tap (the Dream, the round chip, the drawer's remove) updates at once; a refused write rolls the row back and shows
+ * tap (the Dream, the capture panel's remove) updates at once; a refused write rolls the row back and shows
  * an inline message, and a successful one refreshes the server page so the notices, balance line, and tasks that
  * depend on more than one row stay correct.
  */
@@ -50,7 +50,6 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
       return rest;
     });
 
-  const patch = (id: string, p: Partial<PlanRowView>) => setRows((rs) => rs.map((r) => (r.item.id === id ? { ...r, ...p } : r)));
 
   async function handleDream(row: PlanRowView) {
     const before = rows;
@@ -59,32 +58,6 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
     setRows((rs) => rs.map((r) => (r.item.id === row.item.id ? { ...r, dream: next } : next && r.dream ? { ...r, dream: false } : r)));
     track("plan_dream_set", { on: next });
     const result = await setPlanDream(row.item.id, next);
-    if (!result.ok) {
-      setRows(before);
-      setRowError(row.item.id, result.message);
-      return;
-    }
-    router.refresh();
-  }
-
-  async function handleRound(row: PlanRowView, round: ListRound | null) {
-    const before = rows;
-    setRowError(row.item.id, null);
-    if (round) {
-      // The closing/notification dates for immediate feedback; the citation's edition is left as the server last
-      // had it (null here) until router.refresh() below replaces this row with the authoritative one.
-      const dates = row.school ? roundDates(row.school, round) : null;
-      patch(row.item.id, {
-        round,
-        roundAuto: false,
-        deadline: dates?.closing ? { iso: dates.closing.iso, field: dates.closing.field, edition: null, lastCycle: false } : null,
-        decision: dates?.notification ? { iso: dates.notification.iso, field: dates.notification.field } : null,
-      });
-    } else {
-      patch(row.item.id, { roundAuto: true });
-    }
-    track("plan_round_changed", { from_auto: row.roundAuto, round: round ?? row.round });
-    const result = await setPlanRound(row.item.id, round);
     if (!result.ok) {
       setRows(before);
       setRowError(row.item.id, result.message);
@@ -109,7 +82,6 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
 
   const groups = groupedRows(rows);
   const dreamRow = rows.find((r) => r.dream) ?? null;
-  const suggestedRound = anySuggestedRound(rows);
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] || null;
   const addLabel = ctx.viewer.isGuardian && firstName ? `Add a college for ${firstName}` : "Add a college";
 
@@ -135,20 +107,11 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
         </div>
       ) : (
         <section className="overflow-hidden rounded-3xl border bg-card">
-          <div className="hidden items-center justify-between gap-2 border-b px-4 py-3 lg:flex">
-            <p className="inline-flex items-center gap-2 text-sm font-semibold">
-              {headerCountsLine(rows)}
-              {suggestedRound && (
-                <span className="inline-flex items-center gap-1 text-xs font-normal text-muted-foreground">
-                  <Sparkles className="size-3.5" aria-hidden /> suggested round
-                </span>
-              )}
-            </p>
-            <div className="flex items-center gap-10 pr-11 text-xs font-semibold text-muted-foreground">
-              <span>Round</span>
-              <span>Deadline</span>
-              <span>Status</span>
-            </div>
+          {/* The list's header, on every width (owner, 2026-10-12): the count and the one info link for the whole
+              list. Round, Deadline, and Status columns are gone for now (they return with recommendations). */}
+          <div className="flex flex-wrap items-center justify-between gap-x-3 border-b px-4 py-1.5">
+            <p className="text-sm font-semibold">{headerCountsLine(rows)}</p>
+            <ListExplainer />
           </div>
           {!dreamRow && (
             <p className="border-b bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground">
@@ -169,7 +132,6 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
                     dreamName={dreamRow && dreamRow.item.id !== row.item.id ? (dreamRow.school?.name ?? null) : null}
                     error={errors[row.item.id] ?? null}
                     onToggleDream={handleDream}
-                    onRound={handleRound}
                     onRemove={handleRemove}
                   />
                 ))}

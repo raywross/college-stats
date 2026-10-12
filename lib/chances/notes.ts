@@ -414,3 +414,91 @@ export function isNoteKey(key: string): boolean {
 export function noteText(note: Pick<EstimateNote, "key" | "values">): string {
   return isNoteKey(note.key) ? NOTES[note.key](note.values) : "";
 }
+
+/* ---- How Quad reads your list (the plan's one list-level info link; owner, 2026-10-12) ----
+ * The single home for the text the planner's "How Quad reads your list" panel shows (components/planner/
+ * ListExplainer.tsx). Kinds of inputs and the outputs only, like every sentence here: no weights, cutoffs,
+ * multipliers, scores, or numbers of any kind (tests/planner-list-explainer.test.mts guards it). The level lines are
+ * the catalog's own `estimate.level.*` sentences and the top-band line is `estimate.top_band`, so the panel never
+ * drifts from what a college's estimate says. */
+export interface ListExplainerSection {
+  heading: string;
+  /** The glossary entry the heading links to, when there is one. */
+  term?: "levels" | "selectivity-tier" | "applicants-like-you";
+  paragraphs: string[];
+  /** A labeled list under the paragraphs ("Grades: …"). */
+  items?: { label: string; text: string }[];
+}
+
+export const LIST_EXPLAINER_TITLE = "How Quad reads your list";
+
+export function listExplainer(): ListExplainerSection[] {
+  const line = (key: NoteKey) => noteText({ key, values: { test: "" } });
+  return [
+    {
+      heading: "Five levels",
+      term: "levels",
+      paragraphs: [
+        "Quad sorts each college on your list into one of five levels, from what you've entered and what the college publishes about the students it admits. It's Quad's estimate: never a percentage, and never the college's own prediction.",
+      ],
+      items: [
+        { label: "High reach", text: line("estimate.level.high_reach") },
+        { label: "Reach", text: line("estimate.level.reach") },
+        { label: "Target", text: line("estimate.level.target") },
+        { label: "Likely", text: line("estimate.level.likely") },
+        { label: "Safe", text: line("estimate.level.safe") },
+      ],
+    },
+    {
+      heading: "Within a level",
+      paragraphs: ["Your Dream comes first, then the colleges closest to the next level up."],
+    },
+    {
+      heading: "Quad's selectivity",
+      term: "selectivity-tier",
+      paragraphs: [
+        "Every college also gets one of six steps for how hard it is to get into, from the figures it publishes: Ultra selective, Highly selective, Very selective, Selective, Accessible, and Open.",
+        "Ultra selective colleges are a reach for everyone. There, Reach takes a record that's strong and consistent in every part: grades, courses and AP results, test, class standing, and depth across courses and activities. Anything less reads as High reach.",
+        line("estimate.top_band"),
+      ],
+    },
+    {
+      heading: "What Quad reads",
+      paragraphs: [],
+      items: [
+        { label: "Grades", text: "Your GPA, and your weighted GPA where your school gives one." },
+        { label: "Class standing", text: "Where you stand in your class, including a valedictorian or salutatorian you expect to be." },
+        {
+          label: "Courses",
+          text: "Your AP, IB, dual-enrollment, and honors courses, taken and planned, read against what your high school offers, with your grades in them and your AP exam results.",
+        },
+        { label: "Tests", text: "Your SAT or ACT. Until junior year ends, the score you're aiming for counts in its place; after that, the score you earn." },
+        {
+          label: "Activities",
+          text: "Sports, clubs, work, and anything else, with the years, your role, and your awards. Depth counts: sticking with something across the years, and courses and activities in the same area, like art classes and an art club.",
+        },
+        { label: "Legacy", text: "A parent or grandparent who graduated, at colleges that say they consider it and where the state allows it." },
+        { label: "Recruiting", text: "A coach recruiting you, from a first contact to a likely letter." },
+        { label: "Visits and following", text: "Visiting, asking for information, and following a college on social, at colleges that say they consider an applicant's interest." },
+        { label: "Your state and major", text: "They decide who you're compared with." },
+      ],
+    },
+    {
+      heading: "Missing inputs",
+      paragraphs: ["Missing inputs lower confidence: an estimate built on part of your record reads lower than the same record complete. Add what you have to get a fuller picture."],
+    },
+    {
+      heading: "Who you're compared with",
+      term: "applicants-like-you",
+      paragraphs: [
+        "Applicants like you. Quad uses the most specific admit rate a college publishes for you: for applicants from your state at a public university that publishes rates by residency, for your intended major where the college admits by major, or a guarantee you qualify for. Otherwise, everyone who applied.",
+      ],
+    },
+    {
+      heading: "What Quad never does",
+      paragraphs: [
+        "It never shows a percentage, and never reads race, ethnicity, sex, or religion. Quad says what it reads, not how it puts them together; that part is Quad's own.",
+      ],
+    },
+  ];
+}

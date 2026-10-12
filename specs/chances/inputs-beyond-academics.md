@@ -132,7 +132,9 @@ identity (reserved, as the commitment says).
 ## Where it shows
 - `/me`: Class standing under GPA; Awards and Activities as their own sections; First generation under "About you".
 - Planner: the drawer's **About you and {College}** line with the legacy toggle and the recruited pick; interest is the
-  built Show interest section.
+  built Show interest section. **Changed 2026-10-12** (simpler planner, [../planner/redesign/list.md](../planner/redesign/list.md)):
+  the row's (i) is a capture panel with Legacy, Recruited, "We visited", and one follow toggle per account, and
+  interest also counts a follow on social (`lib/planner/hooks.ts`); the panel no longer shows the estimate's lines.
 - Standing card and drawer: each input as used or "not used here" in the panel; the recruited sentence whenever set.
 - Compare: no new rows.
 

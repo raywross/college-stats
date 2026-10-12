@@ -10,6 +10,12 @@ Grouped sections replace the per-row group chip; nothing else is on the row. It 
 never stress anyone out.
 
 ## Grouped by Reach / Target / Likely
+> **Planned change** ([../../chances/levels.md](../../chances/levels.md), 2026-10-11): five sections, **High reach**,
+> **Reach**, **Target**, **Likely**, **Safe**, then Not sorted yet; within a section the Dream first, then closest
+> first; the balance line below reworded; the drawer gains an "About you and {College}" line
+> ([../../chances/inputs-beyond-academics.md](../../chances/inputs-beyond-academics.md)) and opens with the level's
+> meaning and the "applicants like you" lines ([../../chances/pool-explainer.md](../../chances/pool-explainer.md)).
+
 The list is split into sections, in this order, empty ones left out: **Reach**, **Target**, **Likely**, then **Not
 sorted yet** (`unsorted` — no GPA or score yet, or the college isn't in the dataset). Each section starts with a
 pill heading, calm and never alarming (Reach violet, Target sky, Likely emerald, tinted backgrounds with dark text;
@@ -74,7 +80,11 @@ Opened by (i), inline under the row (no modal), each line only when it has conte
   the group chip; distance and cost stay as profile facts, not a list control).
 - **Balance line**, only when it's off, one sentence under the header: "Counselors suggest at least two Likely
   colleges you'd be happy to attend." (fewer than 2 Likely), "Most students apply to 6 to 12" (outside that), "A
-  Target or two would balance the Reaches" (Reach is more than half).
+  Target or two would balance the Reaches" (Reach is more than half). With the five levels
+  ([../../chances/levels.md](../../chances/levels.md#where-the-levels-show)): "at least two colleges that are Likely
+  or Safe for you" (fewer than 2 of either), "One or two High reaches is fine; three or more crowd out colleges you'd
+  get into" (3+ High reach), "A Target or two would balance the Reaches" (Reach + High reach more than half); one
+  notice at a time, in that order of priority after a conflict.
 - **Add a college**: a collapsed "+ Add a college" pill (guardian viewing a child: "+ Add a college for {First}")
   below the list, `id="add-college"` so the intake's Done screen and the numbers line's edit link can jump straight
   to it; tapping it expands into the existing search box. A new college arrives with its group and round already

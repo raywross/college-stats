@@ -53,12 +53,37 @@ Rolling and says "the college hasn't published its rounds" in the drawer.
 The built `conflicts()` stays for the amber cases it also catches (REA with a private college's EA, ED II before the
 ED I decision); those become the same kind of sentence. No severity colors, no icons beyond the box.
 
+## The ED guard
+> **Planned** 2026-10-11 with [../../chances/levels.md](../../chances/levels.md); needs the five levels.
+
+Early decision helps most where the student is already in range (roughly 1.6× at very selective colleges by the
+published research, and far less for an unhooked applicant than the raw ED gap suggests), and it is binding. So the
+Dream's starting round depends on Quad's level for it:
+1. Dream at **Reach, Target, Likely, or Safe**: rule 1 above, unchanged (ED where offered, else REA, EA, Rolling, RD).
+2. Dream at **High reach**: starts in **EA** where offered, else **RD**; never ED or REA. Its drawer line: "Early
+   decision is binding and helps most where you're already in range; this college isn't one of them yet, so it starts
+   in {early action | regular decision}. You can still pick ED from the chip." The student can set ED by hand (it
+   becomes their choice, as any picked round); the line stays in the drawer.
+3. With a High-reach Dream, the plan suggests **where ED would help most**: one line under the list (a `PlanNotice`,
+   after a conflict and before the balance line), naming the highest-level college that offers ED and whose ED
+   sentence from the method says "would move this toward {level}" ([method/standing.md](../../chances/method/standing.md#the-ed-sentence)):
+   "ED would help most at Wake Forest (Target for you, with an early round). **Start it in ED**" sets that row's round
+   to ED as the student's choice and keeps the Dream where it is. No line when no college qualifies.
+4. The level is recomputed with the estimate, so a Dream that moves from High reach to Reach after a retake starts
+   in ED on the next plan open if its round is still the starting one (`round_source = 'auto'`).
+5. **ED II** is never suggested for a High reach (below).
+
+`autoRounds` takes the levels (`Record<id, Level | null>`) as a third argument; without a level (the estimate had
+nothing to go on) the Dream follows rule 1. `tests/planner-standing.test.mts` pins: High-reach Dream with ED → EA;
+with no EA → RD; Reach Dream with ED → ED; the suggestion picks the highest level with ED; none when all are High reach.
+
 ## ED II
 `edTwoSuggestion()`: when the Dream starts in ED or REA, no college is in ED II yet, and another college on the list
 offers ED II, one line under the list offers it: "A second early shot, if you want one: Vassar has an ED II round
 (due Jan 1), after your Dream answers. It's binding too. **Use ED II there**." The button sets that row's round to
 ED II (as the student's choice). In mid-December, if the student records a deferral or denial from the Dream, the
 same line comes back in the Next-up card's place for a week ("Wake Forest said no. ED II at Vassar is due Jan 1").
+Planned with the five levels: a college at **High reach** is skipped when picking the ED II college.
 
 ## Money
 ED and ED II are binding and the only release is aid that makes attending impossible, so before either:

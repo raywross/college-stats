@@ -424,6 +424,8 @@ test("planView reads the estimates it's given: no estimate keeps the stored grou
     notes: [{ key: "estimate.score_position", values: { test: "SAT", score: 1450, where: "above", concorded: "" } }],
     send: "send" as const,
     moveUp: null,
+    closeness: null,
+    ed: null,
     modelVersion: "test",
   };
   const v = planViewOf({ items, schools: by([s]), profile: numbers({ sat: 1450, focus: "sat" }), estimates: { "1": est }, today: TODAY });
@@ -438,7 +440,7 @@ test("the retake card is built from the estimates' move-ups, within a common ret
   const s2 = ps("2", "B", { sat: [1500, 1560], admitRate: 0.3 });
   const mk = (id: string, points: number) => ({
     unitId: id, group: "reach" as const, label: null, used: [], missing: [], facts: [], notes: [], send: "send" as const,
-    moveUp: { points, to: "target" as const, score: 1390 + points }, modelVersion: "test",
+    moveUp: { points, to: "target" as const, score: 1390 + points }, closeness: null, ed: null, modelVersion: "test",
   });
   const v = planViewOf({ items: [item("1"), item("2")], schools: by([s1, s2]), profile: numbers({ sat: 1390, focus: "sat" }), estimates: { "1": mk("1", 10), "2": mk("2", 110) }, today: TODAY });
   assert.deepEqual(v.retake, { kind: "sat", delta: 10, target: 1400, moves: [{ id: "item-1", from: "reach", to: "target", needed: 10 }] });

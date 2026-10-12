@@ -1,14 +1,14 @@
-import { CATEGORY_LABELS } from "@/lib/list-rules";
 import { GROUP_CLASS } from "@/lib/planner/colors";
 import { noteText } from "@/lib/chances/notes";
+import { STANDING_LEVEL_LABELS } from "@/lib/chances/levels";
 import type { EstimateResult } from "@/lib/chances/types";
 import { cn } from "@/lib/utils";
 
 /** The chip's words: a label when the estimate has one ("Reach for everyone", "Guaranteed for you"), else the group. */
 export function standingWords(result: Pick<EstimateResult, "group" | "label">): string | null {
   if (result.label === "guaranteed") return noteText({ key: "estimate.label.guaranteed", values: {} });
-  if (result.label === "reach-for-everyone") return noteText({ key: "estimate.label.reach_for_everyone", values: {} });
-  return result.group ? CATEGORY_LABELS[result.group] : null;
+  if (result.label === "elite") return noteText({ key: "estimate.label.reach_for_everyone", values: {} });
+  return result.group ? STANDING_LEVEL_LABELS[result.group] : null;
 }
 
 /**

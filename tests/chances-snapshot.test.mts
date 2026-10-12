@@ -83,6 +83,8 @@ const result = (over: Partial<EstimateResult> = {}): EstimateResult => ({
   ],
   send: "send",
   moveUp: null,
+  closeness: null,
+  ed: null,
   modelVersion: "2026.10.1",
   ...over,
 });

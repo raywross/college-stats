@@ -192,13 +192,16 @@ function scoreReadFor(student: StandingStudent, school: StandingSchool, send: Se
 
 const isGpaNote = (key: string) => key.startsWith("estimate.gpa.");
 
+/** Bridge from the five levels to the planner's three groups until the planner reads five (levels.md; U7 removes it). */
+const toFit = (g: EstimateResult["group"]): Fit | null => (g === "high_reach" ? "reach" : g === "safe" ? "likely" : g);
+
 /** The row's standing from its estimate (the reasons are the catalog's sentences, in the estimate's order). */
 export function rowStanding(est: EstimateResult, student: StandingStudent, school: StandingSchool): RowStanding {
   const gpa = est.notes.find((n) => isGpaNote(n.key));
   const cite = gpa?.cite && (GPA_CITES as readonly string[]).includes(gpa.cite) ? (gpa.cite as GpaCite) : null;
   return {
-    fit: est.group,
-    reachForEveryone: est.label === "reach-for-everyone",
+    fit: toFit(est.group),
+    reachForEveryone: est.label === "elite",
     label: est.label,
     test: scoreReadFor(student, school, est.send),
     gpaNote: gpa ? { text: noteText(gpa), cite } : null,
@@ -210,7 +213,7 @@ export function rowStanding(est: EstimateResult, student: StandingStudent, schoo
 /** The row's move-up in the score coach's shape (scores.md), from the estimate's. */
 function rowMoveUp(est: EstimateResult | null, student: StandingStudent): MoveUp | null {
   if (!est?.moveUp || !est.group || !student.test) return null;
-  return { score: est.moveUp.score, delta: est.moveUp.points, from: est.group, to: est.moveUp.to };
+  return { score: est.moveUp.score, delta: est.moveUp.points, from: toFit(est.group)!, to: toFit(est.moveUp.to)! };
 }
 
 /** The plan's whole view (build-plan.md "The view model"). */

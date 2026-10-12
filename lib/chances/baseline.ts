@@ -513,13 +513,15 @@ export function baselineEstimate(input: Pick<EstimateStudent, "gpa" | "gpaScale"
   return {
     unitId,
     group: r.fit,
-    label: r.reachForEveryone ? "reach-for-everyone" : null,
+    label: r.reachForEveryone ? "elite" : null,
     used,
     missing,
     facts: baselineFacts(r, school),
     notes: r.notes,
     send: r.send,
     moveUp: up && up.to !== "reach" ? { points: up.delta, to: up.to, score: up.score } : null,
+    closeness: null,
+    ed: null,
     modelVersion: BASELINE_VERSION,
   };
 }

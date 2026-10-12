@@ -20,7 +20,7 @@ export function StandingChip({ unitId, className }: { unitId: string; className?
     <span className={cn("inline-flex items-center gap-1.5", className)}>
       <Link
         href={`/schools/${unitId}/admissions#standing`}
-        aria-label={`${noteText({ key: "estimate.card_title", values: {} })}: ${noteText({ key: "estimate.card_chip", values: { group: s.result.label === "guaranteed" ? "guaranteed for you" : s.result.label === "reach-for-everyone" ? "reach for everyone" : s.result.group } })}`}
+        aria-label={`${noteText({ key: "estimate.card_title", values: {} })}: ${noteText({ key: "estimate.card_chip", values: { group: s.result.label === "guaranteed" ? "guaranteed for you" : s.result.label === "elite" ? "reach for everyone" : s.result.group } })}`}
         className="inline-flex items-center gap-1.5 rounded-full text-xs font-semibold"
       >
         <span className="text-muted-foreground">{noteText({ key: "estimate.card_title", values: {} })}</span>

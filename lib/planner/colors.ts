@@ -11,6 +11,7 @@
  * Reach never looks like a warning.
  */
 import type { ListCategory, ListRound } from "../list-rules.ts";
+import type { StandingLevel } from "../chances/types.ts";
 
 export const ROUND_VAR: Record<ListRound, string> = {
   ed: "var(--round-ed)",
@@ -30,7 +31,10 @@ export const MONEY_VAR = "var(--plan-money)";
 export const KID_VARS = ["var(--kid-1)", "var(--kid-2)", "var(--kid-3)"] as const;
 
 /** Group chip classes: tinted backgrounds with dark text (light), deep tints with light text (dark). */
-export const GROUP_CLASS: Record<ListCategory, string> = {
+export const GROUP_CLASS: Record<ListCategory | StandingLevel, string> = {
+  // High reach and Safe: placeholders until the five-level chips are picked with the validator (levels.md open question 1).
+  high_reach: "bg-violet-50 text-violet-800 dark:bg-violet-950/50 dark:text-violet-300",
+  safe: "bg-emerald-200 text-emerald-950 dark:bg-emerald-900 dark:text-emerald-100",
   reach: "bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-200",
   target: "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200",
   likely: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",

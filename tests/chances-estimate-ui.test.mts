@@ -66,7 +66,7 @@ function student(o: Partial<EstimateStudent> = {}): EstimateStudent {
 }
 const note = (key: string, values: EstimateNote["values"] = {}, cite?: string): EstimateNote => (cite ? { key, values, cite } : { key, values });
 function result(o: Partial<EstimateResult> = {}): EstimateResult {
-  return { unitId: "1", group: "target", label: null, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, modelVersion: "test", ...o };
+  return { unitId: "1", group: "target", label: null, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, closeness: null, ed: null, modelVersion: "test", ...o };
 }
 
 /* ------------------------------------------------------------------ */

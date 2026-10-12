@@ -11,6 +11,7 @@ import { isMajorFamily } from "../majors.ts";
 import { MAX_INTENDED_MAJORS, OUTSIDE_US, sanitizeCoreAtTopLevel, sanitizeCourses, type CoreAtTopLevel } from "../student-profile.ts";
 import { UNDECIDED_MAJOR } from "./major-review.ts";
 import { isNoteKey } from "./notes.ts";
+import { STANDING_LEVELS } from "./levels.ts";
 import type { CourseEntry, EstimateNote, EstimateResult, EstimateStudent, InputKind } from "./types.ts";
 
 /** Colleges per call (owner assumption 4): the signed-out plan holds up to 20; a signed-in caller may ask 25. */
@@ -140,12 +141,16 @@ export function requestCost(unitIds: readonly string[]): number {
 }
 
 /** Exactly the contract's fields, in order: a response never carries anything else (no detail, no internals). */
-export const RESULT_FIELDS = ["unitId", "group", "label", "used", "missing", "facts", "notes", "send", "moveUp", "modelVersion"] as const satisfies readonly (keyof EstimateResult)[];
+export const RESULT_FIELDS = ["unitId", "group", "label", "used", "missing", "facts", "notes", "send", "moveUp", "closeness", "ed", "modelVersion"] as const satisfies readonly (keyof EstimateResult)[];
 
-const GROUPS = new Set(["reach", "target", "likely"]);
-const LABELS = new Set(["reach-for-everyone", "guaranteed"]);
+const GROUPS = new Set<string>(STANDING_LEVELS);
+const LABELS = new Set(["elite", "guaranteed", "recruited"]);
 const SENDS = new Set(["send", "consider-not-sending", "required-missing", "not-used"]);
-const INPUTS = new Set<InputKind>(["gpa", "test", "sections", "class_rank", "courses", "subject_grades", "state", "major", "round", "high_school"]);
+const EDS = new Set(["helps", "same", "not_advised"]);
+const INPUTS = new Set<InputKind>([
+  "gpa", "test", "sections", "class_rank", "courses", "subject_grades", "state", "major", "round", "high_school",
+  "activities", "awards", "work", "legacy", "recruited", "interest", "class_standing",
+]);
 
 function publicNote(n: EstimateNote): EstimateNote | null {
   if (!isNoteKey(n.key)) return null;
@@ -165,7 +170,9 @@ export function publicResult(r: EstimateResult): EstimateResult {
     facts: (r.facts ?? []).filter((f): f is string => typeof f === "string"),
     notes: (r.notes ?? []).map(publicNote).filter((n): n is EstimateNote => n !== null),
     send: r.send && SENDS.has(r.send) ? r.send : null,
-    moveUp: r.moveUp && finite(r.moveUp.points) && finite(r.moveUp.score) && (r.moveUp.to === "target" || r.moveUp.to === "likely") ? { points: r.moveUp.points, to: r.moveUp.to, score: r.moveUp.score } : null,
+    moveUp: r.moveUp && finite(r.moveUp.points) && finite(r.moveUp.score) && GROUPS.has(r.moveUp.to) ? { points: r.moveUp.points, to: r.moveUp.to, score: r.moveUp.score } : null,
+    closeness: r.closeness === 0 || r.closeness === 1 || r.closeness === 2 || r.closeness === 3 ? r.closeness : null,
+    ed: r.ed && EDS.has(r.ed) ? r.ed : null,
     modelVersion: String(r.modelVersion),
   };
 }

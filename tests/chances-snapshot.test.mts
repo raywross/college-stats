@@ -152,6 +152,25 @@ test("the snapshot: binned inputs, course counts and grades, the estimate's grou
   assert.equal(row.group_changed, false);
 });
 
+test("estimateInputFromProfile: class standing, activities, awards, and first generation pass onto EstimateStudent unchanged (depth.md, inputs-beyond-academics.md) — U3 only wires them, never scores them", () => {
+  const p = profile();
+  p.academics.classStanding = "top10";
+  p.academics.firstGeneration = true;
+  p.academics.activities = [{ id: "a1", name: "Robotics", kind: "club", years: [11, 12], roles: { 11: "member", 12: "leader" }, hoursPerWeek: 6, recognition: 2, relatedToMajor: true }];
+  p.academics.awards = [{ id: "w1", key: "honor_roll", name: "Honor roll", tier: 4, year: 11 }];
+  const input = estimateInputFromProfile(p, "243780", null);
+  assert.equal(input.student.classStanding, "top10");
+  assert.equal(input.student.firstGeneration, true);
+  assert.deepEqual(input.student.activities, p.academics.activities);
+  assert.deepEqual(input.student.awards, p.academics.awards);
+  // A profile with none of the four set still gives EstimateStudent the documented empty/null defaults.
+  const bare = estimateInputFromProfile(emptyProfile(), "243780", null);
+  assert.deepEqual(bare.student.activities, []);
+  assert.deepEqual(bare.student.awards, []);
+  assert.equal(bare.student.classStanding, null);
+  assert.equal(bare.student.firstGeneration, null);
+});
+
 test("no name, no high school id, no typed course name, no note text: the row's keys are exactly the columns", () => {
   const p = profile();
   const row = buildSnapshot({ input: estimateInputFromProfile(p, "243780", "rd"), estimate: { result: result() }, offering: OFFERING, admitRate: 0.5, studentGroup: "likely" });

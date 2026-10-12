@@ -89,7 +89,13 @@ function profileFromForm(form: FormData, courses: CourseFields = {}): unknown {
       gpaScale: strField(form, "gpaScale") ?? "4.0",
       weightedGpa: numField(form, "weightedGpa"),
       classRankPercentile: numField(form, "classRankPercentile"),
+      classStanding: strField(form, "classStanding"),
       courseRigorCount: numField(form, "courseRigorCount"),
+      // Admission chances, next (specs/chances/depth.md, inputs-beyond-academics.md): posted whole as hidden JSON
+      // fields by ActivitiesForm/AwardsForm, the same pattern as "courses"; sanitizeProfile drops anything invalid.
+      activities: form.has("activities") ? jsonField(form, "activities") : [],
+      awards: form.has("awards") ? jsonField(form, "awards") : [],
+      firstGeneration: nullableBoolField(form, "firstGeneration"),
       ...courses,
     },
     tests: {

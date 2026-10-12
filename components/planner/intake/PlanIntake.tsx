@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 import { ApStep } from "@/components/planner/intake/ApStep";
 import { DoneStep } from "@/components/planner/intake/DoneStep";
 import { GradesStep } from "@/components/planner/intake/GradesStep";
+import { MoreAboutYouStep } from "@/components/planner/intake/MoreAboutYouStep";
 import { ReviewStep } from "@/components/planner/intake/ReviewStep";
 import { TestStep } from "@/components/planner/intake/TestStep";
 import { track } from "@/lib/analytics";
@@ -26,9 +27,9 @@ import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { cn } from "@/lib/utils";
 
-const RAIL_LABELS = ["Grades", "Test score", "AP courses", "Review"] as const;
+const RAIL_LABELS = ["Grades", "Test score", "AP courses", "More about you", "Review"] as const;
 
-function railSummary(draft: IntakeDraft, step: 0 | 1 | 2 | 3): string | null {
+function railSummary(draft: IntakeDraft, step: 0 | 1 | 2 | 3 | 4): string | null {
   if (step === 0) {
     const parts = [draft.classYear ? `Class of ${draft.classYear}` : null, draft.gpa.trim() ? `GPA ${draft.gpa.trim()}` : null].filter(Boolean);
     return parts.length ? parts.join(" · ") : null;
@@ -39,6 +40,7 @@ function railSummary(draft: IntakeDraft, step: 0 | 1 | 2 | 3): string | null {
     return null;
   }
   if (step === 2) return draft.courses.length > 0 ? `${draft.courses.length} course${draft.courses.length === 1 ? "" : "s"}` : null;
+  if (step === 3) return draft.activities.length > 0 ? `${draft.activities.length} added` : null;
   return null;
 }
 
@@ -70,12 +72,12 @@ export default function PlanIntake({
   const person = relation === "guardian" ? studentId : null;
 
   const [draft, setDraft] = useState<IntakeDraft>(() => draftFromProfile(ctx.profile, storedGradYear, today));
-  const [step, setStep] = useState<IntakeStep>(done ? 4 : mode === "edit" ? 3 : 0);
+  const [step, setStep] = useState<IntakeStep>(done ? 5 : mode === "edit" ? 4 : 0);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const go = (from: IntakeStep, to: IntakeStep) => {
-    if (from !== 4) track("plan_intake_step", { step: from, mode });
+    if (from !== 5) track("plan_intake_step", { step: from, mode });
     setError(null);
     setStep(to);
   };
@@ -97,13 +99,13 @@ export default function PlanIntake({
         setError(result.message);
         return;
       }
-      track("plan_intake_step", { step: 3, mode });
+      track("plan_intake_step", { step: 4, mode });
       if (toSave.focus) track("plan_numbers_set", { test: toSave.focus, practice: toSave.practice });
       after();
     });
   };
 
-  if (step === 4) {
+  if (step === 5) {
     const hasColleges = view.rows.length > 0;
     return (
       <DoneStep
@@ -118,22 +120,23 @@ export default function PlanIntake({
 
   const canContinue0 = stepValid(draft, 0);
   const canContinue1 = stepValid(draft, 1);
-  const canSave = stepValid(draft, 3);
+  const canSave = stepValid(draft, 4);
 
-  const primaryLabel = step === 3 ? "Save and show my plan" : "Continue";
-  const primaryDisabled = pending || (step === 0 ? !canContinue0 : step === 1 ? !canContinue1 : step === 3 ? !canSave : false);
+  const primaryLabel = step === 4 ? "Save and show my plan" : "Continue";
+  const primaryDisabled = pending || (step === 0 ? !canContinue0 : step === 1 ? !canContinue1 : step === 4 ? !canSave : false);
 
   const onPrimary = () => {
     if (step === 0) return canContinue0 && go(0, 1);
     if (step === 1) return canContinue1 && go(1, 2);
     if (step === 2) return go(2, 3);
-    if (step === 3) {
+    if (step === 3) return go(3, 4);
+    if (step === 4) {
       save(() => {
         if (mode === "edit") {
           router.push(planHref({ person, tab: null }));
           router.refresh();
         } else {
-          setStep(4);
+          setStep(5);
           // Numbers are set now, so the next server render stops treating this as "first" (intakeNeeded turns
           // false); `setup=1` keeps it showing the guide anyway, and `done=1` tells that next mount to open on Done.
           const href = planHref({ person, setup: true });
@@ -152,7 +155,7 @@ export default function PlanIntake({
           <h1 className="font-display text-xl font-extrabold">Set up your plan</h1>
           <nav className="space-y-2">
             {RAIL_LABELS.map((label, i) => {
-              const idx = i as 0 | 1 | 2 | 3;
+              const idx = i as 0 | 1 | 2 | 3 | 4;
               const state = idx < step ? "done" : idx === step ? "active" : "upcoming";
               const sub = railSummary(draft, idx);
               return (
@@ -203,9 +206,9 @@ export default function PlanIntake({
             ) : (
               <span className="size-11" aria-hidden />
             )}
-            <p className="text-sm font-semibold text-muted-foreground">Step {step + 1} of 4</p>
-            {step === 2 ? (
-              <button type="button" onClick={() => go(2, 3)} className="min-h-11 px-1 text-sm font-semibold text-muted-foreground">
+            <p className="text-sm font-semibold text-muted-foreground">Step {step + 1} of 5</p>
+            {step === 2 || step === 3 ? (
+              <button type="button" onClick={() => go(step, (step + 1) as IntakeStep)} className="min-h-11 px-1 text-sm font-semibold text-muted-foreground">
                 Skip
               </button>
             ) : (
@@ -219,7 +222,8 @@ export default function PlanIntake({
           {step === 0 && <GradesStep draft={draft} setDraft={setDraft} today={today} storedGradYear={storedGradYear} />}
           {step === 1 && <TestStep draft={draft} setDraft={setDraft} />}
           {step === 2 && <ApStep draft={draft} setDraft={setDraft} today={today} />}
-          {step === 3 && <ReviewStep draft={draft} today={today} onEdit={(s) => go(3, s)} />}
+          {step === 3 && <MoreAboutYouStep draft={draft} setDraft={setDraft} />}
+          {step === 4 && <ReviewStep draft={draft} today={today} onEdit={(s) => go(4, s)} />}
 
           {error && <p className="mt-4 text-sm text-amber-700 dark:text-amber-400">{error}</p>}
         </div>
@@ -251,6 +255,11 @@ export default function PlanIntake({
                 I&apos;m not taking any AP courses
               </button>
             )}
+            {step === 3 && (
+              <button type="button" onClick={() => go(3, 4)} className="text-sm font-semibold text-muted-foreground hover:text-foreground">
+                I&apos;ll add activities later
+              </button>
+            )}
             <button
               type="button"
               disabled={primaryDisabled}
@@ -268,8 +277,8 @@ export default function PlanIntake({
 
 function ProgressBar({ step }: { step: IntakeStep }) {
   return (
-    <div className="flex gap-1.5 px-5 py-3" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={4}>
-      {[0, 1, 2, 3].map((i) => (
+    <div className="flex gap-1.5 px-5 py-3" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={5}>
+      {[0, 1, 2, 3, 4].map((i) => (
         <span key={i} className={cn("h-[5px] flex-1 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />
       ))}
     </div>

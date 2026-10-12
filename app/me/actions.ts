@@ -3,134 +3,18 @@
 import { refresh } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { importLocalProfile, profileFor, saveProfile } from "@/lib/student-profile-store";
-import { sanitizeCourses, type StudentProfileData } from "@/lib/student-profile";
-import { mergeCoursesForSave } from "@/lib/chances/courses";
+import { coursesFor, profileFromForm } from "@/lib/student-profile-form";
 
 export type ProfileSaveState = { status: "idle" } | { status: "saved" } | { status: "error"; message: string };
-
-function numField(form: FormData, name: string): number | null {
-  const v = form.get(name);
-  if (v === null || v === "") return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-
-function strField(form: FormData, name: string): string | null {
-  const v = form.get(name);
-  return typeof v === "string" && v.trim() !== "" ? v.trim() : null;
-}
-
-function boolField(form: FormData, name: string): boolean {
-  return form.get(name) === "on" || form.get(name) === "1" || form.get(name) === "true";
-}
-
-/** Yes/No/not set, from a <select>'s "", "yes", "no" (lib/student-profile.ts's feeWaiverEligible pattern). */
-function nullableBoolField(form: FormData, name: string): boolean | null {
-  const v = form.get(name);
-  if (v === "yes") return true;
-  if (v === "no") return false;
-  return null;
-}
-
-function arrField(form: FormData, name: string): string[] {
-  return form.getAll(name).map(String).filter(Boolean);
-}
-
-/** "TN, CA, New England" -> ["TN", "CA", "New England"]; also accepts newline- or slash-separated lists. */
-function csvField(form: FormData, name: string): string[] {
-  const raw = strField(form, name);
-  return raw ? raw.split(/[,\n/]/).map((s) => s.trim()).filter(Boolean) : [];
-}
-
-type CourseFields = { courses?: unknown; apExamsPrivate?: unknown; coreAtTopLevel?: unknown; coursePlan?: unknown; schoolOffers?: unknown };
-
-function jsonField(form: FormData, name: string): unknown {
-  try {
-    return JSON.parse(String(form.get(name)));
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * The course list (specs/chances/rigor-in-context.md): from a "courses" JSON field when the form carries one (the
- * course picker), else the list already saved, so a form without the picker never erases it. The courseRigorCount
- * field then adds or removes only unnamed rows (sanitizeProfile). A guardian's post carries no exam scores while
- * they're private, so the saved ones are put back (mergeCoursesForSave) and the privacy switch stays as saved.
- */
-async function coursesFor(form: FormData, studentId: string): Promise<CourseFields> {
-  const saved = await profileFor(studentId);
-  const kept = saved?.saved ? saved.data.academics : null;
-  // The course plan's dismissals and the student's school marks live in the same group; the form never carries them.
-  const plan = kept ? { coursePlan: kept.coursePlan, schoolOffers: kept.schoolOffers } : {};
-  if (!form.has("courses")) {
-    return kept ? { courses: kept.courses, apExamsPrivate: kept.apExamsPrivate, coreAtTopLevel: kept.coreAtTopLevel, ...plan } : {};
-  }
-  const posted = jsonField(form, "courses");
-  if (posted === undefined) return { ...plan };
-  const incoming = { courses: sanitizeCourses(posted), apExamsPrivate: form.get("apExamsPrivate") !== "false" };
-  const merged = kept && saved ? mergeCoursesForSave({ courses: kept.courses, apExamsPrivate: kept.apExamsPrivate }, incoming, saved.relation) : incoming;
-  const core = form.has("coreAtTopLevel") ? jsonField(form, "coreAtTopLevel") : kept?.coreAtTopLevel;
-  return { courses: merged.courses, apExamsPrivate: merged.apExamsPrivate, coreAtTopLevel: core, ...plan };
-}
-
-/** The form's fields back into the raw shape sanitizeProfile() expects; it drops anything out of range itself. */
-function profileFromForm(form: FormData, courses: CourseFields = {}): unknown {
-  return {
-    basics: {
-      gradYear: numField(form, "gradYear"),
-      stateOfResidence: strField(form, "stateOfResidence"),
-      highSchool: strField(form, "highSchool"),
-      highSchoolId: strField(form, "highSchoolId"),
-      feeWaiverEligible: nullableBoolField(form, "feeWaiverEligible"),
-    },
-    academics: {
-      gpa: numField(form, "gpa"),
-      gpaScale: strField(form, "gpaScale") ?? "4.0",
-      weightedGpa: numField(form, "weightedGpa"),
-      classRankPercentile: numField(form, "classRankPercentile"),
-      classStanding: strField(form, "classStanding"),
-      courseRigorCount: numField(form, "courseRigorCount"),
-      // Admission chances, next (specs/chances/depth.md, inputs-beyond-academics.md): posted whole as hidden JSON
-      // fields by ActivitiesForm/AwardsForm, the same pattern as "courses"; sanitizeProfile drops anything invalid.
-      activities: form.has("activities") ? jsonField(form, "activities") : [],
-      awards: form.has("awards") ? jsonField(form, "awards") : [],
-      firstGeneration: nullableBoolField(form, "firstGeneration"),
-      rankExpectation: strField(form, "rankExpectation"),
-      ...courses,
-    },
-    tests: {
-      satTotal: numField(form, "satTotal"),
-      satReading: numField(form, "satReading"),
-      satMath: numField(form, "satMath"),
-      actComposite: numField(form, "actComposite"),
-      actEnglish: numField(form, "actEnglish"),
-      actMath: numField(form, "actMath"),
-      actReading: numField(form, "actReading"),
-      actScience: numField(form, "actScience"),
-      superscore: boolField(form, "superscore"),
-      plansTestOptional: boolField(form, "plansTestOptional"),
-    },
-    plans: {
-      intendedMajors: arrField(form, "intendedMajors"),
-      earlyRoundInterest: strField(form, "earlyRoundInterest"),
-    },
-    preferences: {
-      sizes: arrField(form, "sizes"),
-      settings: arrField(form, "settings"),
-      statesOrRegions: csvField(form, "statesOrRegionsText"),
-      maxAverageCost: numField(form, "maxAverageCost"),
-      types: arrField(form, "types"),
-    },
-  } satisfies Partial<Record<keyof StudentProfileData, unknown>>;
-}
 
 /** Saves the form on /me. Reused for every student a guardian can edit (the student id travels with the form). */
 export async function saveStudentProfile(_prev: ProfileSaveState, form: FormData): Promise<ProfileSaveState> {
   await requireUser("/me");
   const studentId = String(form.get("student_id") ?? "");
   if (!studentId) return { status: "error", message: "Missing student." };
-  const result = await saveProfile(studentId, profileFromForm(form, await coursesFor(form, studentId)));
+  const saved = await profileFor(studentId);
+  const kept = saved?.saved ? saved.data : null;
+  const result = await saveProfile(studentId, profileFromForm(form, kept, coursesFor(form, kept, saved?.relation ?? null)));
   if (!result.ok) return { status: "error", message: result.message };
   refresh();
   return { status: "saved" };

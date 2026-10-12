@@ -379,8 +379,11 @@ test("saving as a guardian takes their scores as sent; only the student sets the
   assert.equal(added.courses[2].exam, 4, "a parent can add an exam score");
   const own = mergeCoursesForSave(saved, { courses: [{ ...saved.courses[0], exam: 2 }], apExamsPrivate: false }, "self");
   assert.deepEqual([own.courses[0].exam, own.apExamsPrivate], [2, false]);
-  // The save paths use it.
-  assert.match(read("app/me/actions.ts"), /mergeCoursesForSave\(/);
+  // The save paths use it. The /me form's own merge logic moved into a pure module (household-hub.md "Household
+  // cleanup", "Correction: trim the Numbers tab too") so it stays unit-testable from a "use server" file that may
+  // only export async functions; app/me/actions.ts calls it rather than calling mergeCoursesForSave directly.
+  assert.match(read("lib/student-profile-form.ts"), /mergeCoursesForSave\(/);
+  assert.match(read("app/me/actions.ts"), /coursesFor\(/);
   assert.match(read("lib/chances/courses-store.ts"), /mergeCoursesForSave\(/);
 });
 

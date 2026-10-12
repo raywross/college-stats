@@ -36,6 +36,10 @@ export function estimateInputFromProfile(profile: StudentProfileData | null, uni
       awards: a?.awards ?? [],
       classStanding: a?.classStanding ?? null,
       firstGeneration: a?.firstGeneration ?? null,
+      // U11 (inputs-beyond-academics.md, method/standing.md "Revision 1"): wired through for U14's model, never
+      // scored here.
+      weightedGpa: a?.weightedGpa ?? null,
+      rankExpectation: a?.rankExpectation ?? null,
     },
   };
 }

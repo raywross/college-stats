@@ -42,6 +42,10 @@ const draft = (over: Partial<IntakeDraft> = {}): IntakeDraft => ({
   classYear: 2027,
   gpa: "3.82",
   scaleOverride: null,
+  weightedGpa: "",
+  classStanding: null,
+  classRankPercentile: null,
+  rankExpectation: null,
   test: "sat",
   score: "1390",
   practice: false,
@@ -267,6 +271,10 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
     classYear: 2028,
     gpa: "",
     scaleOverride: null,
+    weightedGpa: "",
+    classStanding: null,
+    classRankPercentile: null,
+    rankExpectation: null,
     test: null,
     score: "",
     practice: false,
@@ -292,6 +300,9 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
   assert.deepEqual(reviewLines(d, TODAY), [
     { step: 0, label: "Class", value: "Class of 2027" },
     { step: 0, label: "GPA", value: "3.82 · 4.0 scale" },
+    { step: 0, label: "Weighted GPA", value: "Not set" },
+    { step: 0, label: "Class standing", value: "Not set" },
+    { step: 0, label: "Rank expectation", value: "None" },
     { step: 0, label: "School", value: "Not set" },
     { step: 1, label: "Test", value: "SAT 1390 · aiming for 1450" },
     { step: 2, label: "AP courses", value: "1 taken · 1 taking or planned" },
@@ -337,6 +348,24 @@ test("round trip: the draft of a saved profile saves back to the same profile (n
   const save = intakeToSave(draftFromProfile(p, 2027, TODAY));
   assert.ok(save);
   assert.deepEqual(applyIntake(p, save, TODAY), p);
+});
+
+test("round trip: weighted GPA, class standing, and rank expectation save back onto the profile and reopen the same", () => {
+  const p = sampleProfile();
+  const d = draftFromProfile(p, 2027, TODAY);
+  d.weightedGpa = "4.4";
+  d.classStanding = "top5";
+  d.classRankPercentile = 5;
+  d.rankExpectation = "salutatorian";
+  const save = intakeToSave(d)!;
+  const out = applyIntake(p, save, TODAY);
+  assert.equal(out.academics.weightedGpa, 4.4);
+  assert.equal(out.academics.classStanding, "top5");
+  assert.equal(out.academics.classRankPercentile, 5);
+  assert.equal(out.academics.rankExpectation, "salutatorian");
+  assert.deepEqual(draftFromProfile(out, 2027, TODAY).weightedGpa, "4.4");
+  assert.equal(draftFromProfile(out, 2027, TODAY).classStanding, "top5");
+  assert.equal(draftFromProfile(out, 2027, TODAY).rankExpectation, "salutatorian");
 });
 
 test("applyIntake: the picked year and score land on the course list; the numbers land on the profile", () => {
@@ -411,6 +440,10 @@ test("applyIntake: status always derives from the picked year, the class, and to
     classYear: 2029,
     gpa: 3.5,
     gpaScale: "4.0",
+    weightedGpa: null,
+    classStanding: null,
+    classRankPercentile: null,
+    rankExpectation: null,
     focus: "none",
     score: null,
     practice: false,
@@ -476,6 +509,10 @@ const GOOD: IntakeSave = {
   classYear: 2027,
   gpa: 3.82,
   gpaScale: "4.0",
+  weightedGpa: null,
+  classStanding: null,
+  classRankPercentile: null,
+  rankExpectation: null,
   focus: "sat",
   score: 1390,
   practice: false,
@@ -527,6 +564,14 @@ test("parseIntakeSave: accepts a good save and refuses anything off", () => {
     { ...GOOD, courses: [GOOD.courses[0], { ...GOOD.courses[0], key: "ap_chemistry" }] },
     { ...GOOD, highSchoolId: "not-an-id" },
     { ...GOOD, highSchoolId: 12345 },
+    { ...GOOD, weightedGpa: 121 },
+    { ...GOOD, weightedGpa: -1 },
+    { ...GOOD, weightedGpa: "4.4" },
+    { ...GOOD, classStanding: "top2" },
+    { ...GOOD, classRankPercentile: 0 },
+    { ...GOOD, classRankPercentile: 101 },
+    { ...GOOD, classRankPercentile: 10.5 },
+    { ...GOOD, rankExpectation: "president" },
   ];
   for (const b of bad) assert.equal(parseIntakeSave(b), null, JSON.stringify(b));
   // An overlong free-typed name is dropped, not a reason to refuse the whole save (student-profile.ts's own
@@ -535,6 +580,11 @@ test("parseIntakeSave: accepts a good save and refuses anything off", () => {
   assert.equal(parseIntakeSave({ ...GOOD, highSchool: "x".repeat(201) })?.highSchool, null);
   assert.equal(parseIntakeSave({ ...GOOD, highSchool: "Not Listed Yet", highSchoolId: null })?.highSchoolId, null);
   assert.equal(parseIntakeSave({ ...GOOD, highSchoolId: "A9106383" })?.highSchoolId, "A9106383");
+  assert.equal(parseIntakeSave({ ...GOOD, weightedGpa: 4.4 })?.weightedGpa, 4.4);
+  assert.deepEqual(
+    parseIntakeSave({ ...GOOD, classStanding: "top5", classRankPercentile: 5, rankExpectation: "salutatorian" }),
+    { ...GOOD, classStanding: "top5", classRankPercentile: 5, rankExpectation: "salutatorian" },
+  );
 });
 
 /* ------------------------------------------------------------------ */

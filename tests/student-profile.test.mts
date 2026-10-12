@@ -14,11 +14,14 @@ import {
   fitsScores,
   gpaAsEntered,
   gpaDisplay,
+  rankExpectationHint,
+  rankExpectationMismatch,
   sanitizeActivities,
   sanitizeAwards,
   sanitizeClassStanding,
   sanitizeProfile,
   unweightedGpa4,
+  weightedGpaHint,
   type StudentProfileData,
 } from "../lib/student-profile.ts";
 import { ACTIVITIES_MAX, AWARDS_MAX, CLASS_STANDING_PERCENTILE } from "../lib/chances/levels.ts";
@@ -336,4 +339,44 @@ test("sanitizeProfile: classStanding and activities/awards round-trip through th
   assert.equal(p.academics.classRankPercentile, 10);
   assert.equal(p.academics.activities.length, 1);
   assert.equal(p.academics.awards[0]?.name, "AP Scholar");
+});
+
+/* ------------------------------------------------------------------ */
+/* Grades inputs, U11: weightedGpa, rankExpectation (inputs-beyond-     */
+/* academics.md, method/standing.md "Revision 1")                      */
+/* ------------------------------------------------------------------ */
+
+test("rankExpectation: sanitized to a known value or null; a profile saved before it existed reads as null", () => {
+  assert.equal(sanitizeProfile({ academics: { rankExpectation: "valedictorian" } }).academics.rankExpectation, "valedictorian");
+  assert.equal(sanitizeProfile({ academics: { rankExpectation: "salutatorian" } }).academics.rankExpectation, "salutatorian");
+  assert.equal(sanitizeProfile({ academics: { rankExpectation: "not-a-pick" } }).academics.rankExpectation, null);
+  assert.equal(sanitizeProfile({ academics: {} }).academics.rankExpectation, null);
+  assert.equal(emptyProfile().academics.rankExpectation, null);
+});
+
+test("rankExpectationMismatch: valedictorian implies top1, salutatorian top1 or top5; either side unset is never a mismatch", () => {
+  assert.equal(rankExpectationMismatch("top1", "valedictorian"), false);
+  assert.equal(rankExpectationMismatch("top5", "valedictorian"), true, "valedictorian expects top 1%, not top 5%");
+  assert.equal(rankExpectationMismatch("top25", "valedictorian"), true);
+  assert.equal(rankExpectationMismatch("top1", "salutatorian"), false);
+  assert.equal(rankExpectationMismatch("top5", "salutatorian"), false);
+  assert.equal(rankExpectationMismatch("top10", "salutatorian"), true);
+  assert.equal(rankExpectationMismatch(null, "valedictorian"), false, "nothing to reconcile without a class-standing pick");
+  assert.equal(rankExpectationMismatch("top25", null), false, "nothing to reconcile without an expectation");
+});
+
+test("rankExpectationHint: names which pick to fix, only when they disagree", () => {
+  assert.equal(rankExpectationHint("top25", "valedictorian"), "Valedictorian is usually top 1%. Update your class standing to match, or change this if it's not right.");
+  assert.equal(rankExpectationHint("top10", "salutatorian"), "Salutatorian is usually top 5%. Update your class standing to match, or change this if it's not right.");
+  assert.equal(rankExpectationHint("top1", "valedictorian"), null);
+  assert.equal(rankExpectationHint(null, "valedictorian"), null);
+});
+
+test("weightedGpaHint: a weighted GPA below the unweighted one asks the student to check, only on a 4- or 5-point scale", () => {
+  assert.equal(weightedGpaHint(3.8, "4.0", 3.6), "A weighted GPA is usually higher than unweighted. Check these two numbers.");
+  assert.equal(weightedGpaHint(3.8, "4.0", 4.2), null, "higher than unweighted is the normal case");
+  assert.equal(weightedGpaHint(3.8, "4.0", 3.8), null, "equal isn't below");
+  assert.equal(weightedGpaHint(92, "100", 85), null, "the 100-point scale isn't compared (different families)");
+  assert.equal(weightedGpaHint(null, "4.0", 3.6), null, "no unweighted GPA yet");
+  assert.equal(weightedGpaHint(3.8, "4.0", null), null, "no weighted GPA yet");
 });

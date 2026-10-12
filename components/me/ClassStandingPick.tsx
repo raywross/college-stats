@@ -7,7 +7,7 @@ import { sanitizeClassStanding } from "@/lib/student-profile";
 import { cn } from "@/lib/utils";
 
 const PICKS: { value: ClassStanding; label: string }[] = [
-  { value: "top1", label: "Valedictorian or salutatorian" },
+  { value: "top1", label: "Top 1%" },
   { value: "top5", label: "Top 5%" },
   { value: "top10", label: "Top 10%" },
   { value: "top25", label: "Top quarter" },
@@ -26,12 +26,20 @@ export function ClassStandingPick({
   classStanding,
   classRankPercentile,
   disabled,
+  onChange,
 }: {
   classStanding: ClassStanding | null;
   classRankPercentile: number | null;
   disabled?: boolean;
+  /** Called with every change, in addition to the hidden fields, for a caller that needs the live pick (the rank-
+   * expectation consistency hint on /me, the intake draft's single source of truth on the Grades step). */
+  onChange?: (next: { classStanding: ClassStanding | null; classRankPercentile: number | null }) => void;
 }) {
   const [value, setValue] = useState(() => sanitizeClassStanding(classStanding, classRankPercentile));
+  const update = (next: { classStanding: ClassStanding | null; classRankPercentile: number | null }) => {
+    setValue(next);
+    onChange?.(next);
+  };
 
   return (
     <div>
@@ -44,7 +52,7 @@ export function ClassStandingPick({
             type="button"
             disabled={disabled}
             aria-pressed={value.classStanding === p.value}
-            onClick={() => setValue(sanitizeClassStanding(p.value, null))}
+            onClick={() => update(sanitizeClassStanding(p.value, null))}
             className={cn(
               "inline-flex min-h-10 items-center rounded-full border px-3 py-1.5 text-left text-sm leading-tight transition-colors disabled:opacity-50",
               value.classStanding === p.value ? "border-primary bg-primary/10 font-semibold text-primary" : "bg-background hover:bg-muted",
@@ -63,7 +71,7 @@ export function ClassStandingPick({
           max={100}
           disabled={disabled}
           value={value.classStanding === null ? (value.classRankPercentile ?? "") : ""}
-          onChange={(e) => setValue(sanitizeClassStanding(null, e.currentTarget.value === "" ? null : Number(e.currentTarget.value)))}
+          onChange={(e) => update(sanitizeClassStanding(null, e.currentTarget.value === "" ? null : Number(e.currentTarget.value)))}
           placeholder={value.classStanding !== null ? String(CLASS_STANDING_PERCENTILE[value.classStanding] ?? "") : ""}
           className="h-9 w-20 rounded-lg border border-input bg-background px-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 disabled:opacity-60"
         />

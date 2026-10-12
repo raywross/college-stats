@@ -288,7 +288,9 @@ test("every Server Action goes through withAdmin() (an admin at aal2), and the M
   for (const f of adminFiles.filter((f) => /\/actions\.ts$/.test(f))) {
     const src = read(f);
     assert.match(src, /^"use server";/);
-    const guard = f.includes("/mfa/") ? /adminState\(\)/ : /return withAdmin\(/;
+    // Operations' actions call requireAdmin() first (an admin at aal2, else a 404; tests/admin-ops.test.mts proves it
+    // runs before the form is read), the same gate as withAdmin() with a 404 for a stale tab instead of a message.
+    const guard = f.includes("/mfa/") ? /adminState\(\)/ : f.includes("/operations/") ? /await requireAdmin\(\)/ : /return withAdmin\(/;
     assert.deepEqual(unguardedActions(src, guard), [], f);
   }
 });

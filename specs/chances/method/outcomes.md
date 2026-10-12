@@ -16,9 +16,14 @@ rules against them every season, and only let a model in when it beats the rules
 ### Measuring the groups (`scripts/chances-calibration.mts`, run after each season and on demand)
 For every cell of group × base-rate band (under 20%, 20–35%, 35–50%, 50–70%, 70%+), with at least 30 outcomes:
 - **Admitted share** with a 90% Wilson interval.
-- **Order:** Likely > Target > Reach within each band; a band where the order fails is flagged.
+- **Order:** Likely > Target > Reach within each band (Safe > Likely > Target > Reach > High reach under the third
+  version, [standing.md](standing.md)); a band where the order fails is flagged.
 - **The 15% rule** from chances-and-fit: if Likely is wrong more than 15% of the time in a band, the thresholds that
-  produce Likely there move up.
+  produce Likely there move up. Third version: Safe wrong more than 10% or Likely more than 30% moves that band's
+  cutoff up; High reach admitted more than 15% of the time moves it down ([../levels.md](../levels.md#season-measurements)).
+- **The calibration curve** (third version): observed admitted share per decile of the binned hidden odds, and its
+  Brier score; the first measure that can say whether the odds behind the levels are too optimistic or too cautious
+  as a whole, not only at the cutoffs.
 - **Discrimination:** the AUC of the ordered group (Reach < Target < Likely) against admitted, overall and per band;
   the [proposal](ideas/grade-inflation-acceptance-model.md#4-modeling--algorithmic-strategy) asked for ROC-AUC and
   that is the honest version for an ordinal output.
@@ -49,14 +54,17 @@ only when all of these hold:
    every base-rate band, by a margin set before the test.
 4. **Explainable:** monotone in score, GPA, and rigor; each output comes with the same kind of reason sentences
    (the top contributing inputs, worded and cited), so a family can still see why.
-5. **Features:** only what the student entered and the college published. Never race, ethnicity, sex, legacy, or
-   anything inferred about the family; no high school identity (a model that learns which high schools get in would
-   bake in exactly the access gaps the site's data shows).
+5. **Features:** only what the student entered and the college published. Never race, ethnicity, sex, or religion;
+   legacy only where the college rates alumni relation and the state allows it. The high school's identity stays out
+   of the first trained model; a later season may add "how many students this college takes from this school" as a
+   feature once there are outcomes to learn it from, with the Data page saying so (owner, 2026-10-11; the earlier
+   worry, that such a model bakes in access gaps, is answered by publishing the per-school counts as facts beside the
+   estimate rather than hiding them inside it).
 6. **A model card** on the Data page: training seasons, colleges covered, the held-out results, and what it can't see
    (essays, recommendations, hooks, institutional priorities).
 
-Even then, the output stays **a group**: the model's calibrated score is mapped to Reach / Target / Likely by fixed
-cutoffs, never printed as a percentage. Holistic admission decides on evidence no profile holds (essays,
+Even then, the output stays **a level**: the model's calibrated score is mapped to the five levels (High reach to
+Safe) by fixed cutoffs, never printed as a percentage. Holistic admission decides on evidence no profile holds (essays,
 recommendations, the college's needs that year), and at a college admitting 8% no model can be calibrated per
 student closely enough for a percentage to be honest; the commercial tools that print one are known to overstate
 chances at the most selective colleges ([chances-and-fit.md](../../product/chances-and-fit.md#goal)).

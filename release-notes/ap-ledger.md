@@ -14,7 +14,8 @@ summary: High school pages now list the AP courses College Board authorizes each
 - **Your courses against your school's list.** When you add your courses, the picker opens on your own school's
   list, and the reading says how many of them you've taken: "College Board lists 14 AP courses your school is
   authorized to offer."
-- **Not every school is listed.** A school missing from College Board's list shows "not listed", not "offers none".
+- **Not every school is listed.** About 17,000 of the 35,000 high schools on the site are in College Board's list, 13,400
+  of them with at least one AP course. A school missing from the list shows "not listed", not "offers none".
   And the list records what a school renewed with College Board that year, so a school that missed a renewal can show
   fewer courses than it teaches; we say "authorized" and keep the federal count next to it for that reason.
 

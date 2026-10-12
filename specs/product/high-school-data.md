@@ -377,12 +377,16 @@ for the whole Ledger (2026-10-11).
   that fills public and private rows alike) matches each state's Ledger schools to the shard's rows and writes
   `ap_ledger: { year, ledger_id, ledger_name, courses, other }` (registered in `lib/hs-fields.ts` as source
   `ap-ledger`, vintage `ap-ledger`; `HS_VINTAGE_KEYS` and meta.json gained the key). Matching, there being no NCES id:
-  names are normalized (abbreviations spelled out, "High School" and the like set aside, initials joined), and a row
-  matches a Ledger school in its state when the names agree exactly and they share a ZIP or a city, when they agree
-  at 0.75 or better (Jaccard on the distinguishing words) and share the ZIP, when one name's words are a subset of
-  the other's at 0.5 or better with the ZIP, or at 0.75 with only the city. A tie between two candidates, or two rows
-  claiming one Ledger school equally, is ambiguous and left unmatched (reported, never guessed). Rows the Ledger
-  doesn't list get `ap_ledger: null`.
+  names are normalized (abbreviations spelled out, "High School" and the like set aside, initials joined, the
+  city's own words set aside, a level word like "Junior" or "Middle" compared on its own), and a row matches a
+  Ledger school in its state when the names agree exactly and they share a ZIP or a city, when they agree at 0.75 or
+  better (Jaccard on the distinguishing words) and share the ZIP, when one name's words are a subset of the other's
+  at 0.5 or better with the ZIP (0.6 with only the city), at 0.75 with only the city, or, the weak rule, when the
+  row's words are all within the Ledger's at 0.25 or better in a ZIP that offers nothing else ("Taylor High School"
+  for "James E Taylor High School"). Ties break toward the Ledger record with courses (the Ledger keeps an old empty
+  record beside the live one for some schools) and then the whole name; two directory rows that are one school
+  listed twice both take it; anything still tied is ambiguous and left unmatched (reported, never guessed). Rows
+  the Ledger doesn't list get `ap_ledger: null`.
 - **Where it shows:** the high school page's Rigor section lists "N AP courses authorized by College Board" by name
   (open by default when there's no profile list), with the ⓘ citing the Ledger and its year, beside CRDC's count;
   private schools get a Rigor section for the first time. The rigor reading and the course picker take the Ledger's
@@ -393,4 +397,15 @@ for the whole Ledger (2026-10-11).
   resumable fetch against a fake site (online providers skipped, a failed school refetched, `--limit`, the org-id
   route), name matching and each rule, the adapter's patches and report, the merge for an any-kind adapter, the row
   validator, and the offering precedence.
-- **Results of the first run** are recorded below once the run finishes.
+- **First run (2026-10-11, Ledger year 2025–26):** 22,785 schools in the Ledger across the 50 states and DC, fetched
+  in about four hours with no failures. Matched to 17,065 of the 35,390 rows (15,614 exact, 298 by ZIP, 1,003 one
+  name within the other by ZIP, 20 by city, 25 within by city, 105 by the weak rule); 13,395 have at least one AP
+  course. Public: 14,149 of 27,815 rows matched (11,249 with a course), 2,923 of them schools CRDC has no count for.
+  Private: 2,916 of 7,575 rows matched (2,146 with a course), the first AP data for private schools on the site.
+  Median list 8 courses at public schools and 6 at private ones (90th percentile 23 and 21). Of the 11,226 rows with
+  both a CRDC count and a Ledger list, 56% agree within two courses, median difference 0 (the pilot's finding holds
+  at scale). 10 rows are ambiguous (duplicate directory rows for one school with different spellings, and three
+  Texas schools where a ninth-grade campus shares the ZIP) and 5,826 Ledger schools matched no row (2,549 with a
+  course): private schools PSS doesn't list, programs inside a larger school, and names the matcher can't
+  bridge ("Nrthn Valley Regional Demarest", "Liberal Arts and Science Academy" for "LASA"); `ledger/report.json`
+  lists them for an alias file later.

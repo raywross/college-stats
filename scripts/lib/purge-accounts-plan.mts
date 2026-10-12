@@ -1,65 +1,21 @@
 /**
  * What `npm run purge-accounts` hard-deletes (specs/product/accounts.md "Data handling"): accounts, student records,
- * and households soft-deleted more than DELETE_GRACE_DAYS ago. Pure, so the selection is unit-tested
- * (tests/purge-accounts.test.mts) without a database.
+ * and households soft-deleted more than the grace period ago. The selection itself lives in
+ * supabase/functions/_shared/purge-plan.ts, shared with the admin-auth Edge Function's one-account `purge` op
+ * (specs/product/admin.md), and is re-exported here so the script and tests/purge-accounts.test.mts keep their import.
+ * This file adds the script's argument parsing.
  */
-
-export interface PurgeProfile {
-  id: string;
-  deleted_at: string | null;
-}
-export interface PurgeStudent {
-  id: string;
-  user_id: string | null;
-  deleted_at: string | null;
-}
-export interface PurgeHousehold {
-  id: string;
-  deleted_at: string | null;
-}
-
-export interface PurgePlan {
-  cutoff: string;
-  /** Auth users to delete (the Auth admin API; their profile, memberships, and access-log rows cascade). */
-  users: string[];
-  /** Soft-deleted student records to delete (their memberships and access-log rows cascade). */
-  students: string[];
-  /** Closed households to delete (their memberships and invitations cascade). */
-  households: string[];
-  /** Soft-deleted students kept because their own account still exists (shouldn't happen; reported). */
-  skippedStudents: string[];
-}
-
-const DAY_MS = 86_400_000;
-
-function expired(deletedAt: string | null, cutoff: number): boolean {
-  if (!deletedAt) return false;
-  const t = Date.parse(deletedAt);
-  return Number.isFinite(t) && t <= cutoff;
-}
-
-/**
- * Everything soft-deleted at least `graceDays` before `now`. A student record with its own account is purged only
- * with that account: a student's data survives while their user exists, whatever its deleted_at says.
- */
-export function planPurge(
-  { profiles, students, households }: { profiles: PurgeProfile[]; students: PurgeStudent[]; households: PurgeHousehold[] },
-  now: Date,
-  graceDays = 30,
-): PurgePlan {
-  if (!Number.isFinite(graceDays) || graceDays < 30) throw new Error(`purge: the grace period can't be shorter than 30 days (got ${graceDays})`);
-  const cutoff = now.getTime() - graceDays * DAY_MS;
-  const users = profiles.filter((p) => expired(p.deleted_at, cutoff)).map((p) => p.id);
-  const purging = new Set(users);
-  const oldStudents = students.filter((s) => expired(s.deleted_at, cutoff));
-  return {
-    cutoff: new Date(cutoff).toISOString(),
-    users,
-    students: oldStudents.filter((s) => s.user_id === null || purging.has(s.user_id)).map((s) => s.id),
-    households: households.filter((h) => expired(h.deleted_at, cutoff)).map((h) => h.id),
-    skippedStudents: oldStudents.filter((s) => s.user_id !== null && !purging.has(s.user_id)).map((s) => s.id),
-  };
-}
+export {
+  planPurge,
+  planPurgeForUser,
+  type PurgeHousehold,
+  type PurgePlan,
+  type PurgeProfile,
+  type PurgeStudent,
+  type PurgeUserPlan,
+  type PurgeUserRows,
+  type PurgeUserStudent,
+} from "../../supabase/functions/_shared/purge-plan.ts";
 
 /** `--apply` deletes; anything else (including `--dry-run`, the default) only prints the plan. */
 export function parsePurgeArgs(argv: string[]): { apply: boolean; days: number } {

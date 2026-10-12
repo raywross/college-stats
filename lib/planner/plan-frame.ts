@@ -94,6 +94,29 @@ export function shortSummaryLine(full: string): string {
     .join(" · ");
 }
 
+/**
+ * The initials on a student's circle in the plan's top line (page.md "The people line", owner 2026-10-12): the first
+ * letters of the first and last words ("Alex QA" → "AQ", "Maya Ross" → "MR"), one letter for a single name, "?" for
+ * none. Letters only, upper-cased.
+ */
+export function initialsOf(name: string | null | undefined): string {
+  const words = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  const letter = (w: string | undefined) => (w ? (w.match(/\p{L}|\p{N}/u)?.[0] ?? "") : "");
+  const out = words.length > 1 ? letter(words[0]) + letter(words[words.length - 1]) : letter(words[0]);
+  return out ? out.toUpperCase() : "?";
+}
+
+/**
+ * The numbers on the expanded chip, as the student entered them ("GPA 99.2/100 · ACT 23", "GPA 3.82 · Not
+ * testing", "No numbers yet"). `enteredGpa` is `gpaAsEntered` (lib/student-profile.ts), else the plan's unweighted
+ * GPA is shown to two places; `test` is "SAT 1390" or null.
+ */
+export function numbersLine(enteredGpa: string | null, gpa: number | null, test: string | null): string {
+  const gpaText = enteredGpa ?? (gpa !== null ? gpa.toFixed(2) : null);
+  if (!gpaText && !test) return "No numbers yet";
+  return `${gpaText ? `GPA ${gpaText}` : "No GPA yet"} · ${test ?? "Not testing"}`;
+}
+
 export type NextUpKind = "deadline" | "decision" | "before_season" | "none";
 
 export interface NextUpInfo {

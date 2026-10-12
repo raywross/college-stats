@@ -70,6 +70,13 @@ test("the row's panel is the capture panel: legacy, recruited, visited, follows,
   const drawer = read("components", "planner", "RowDrawer.tsx");
   for (const gone of [/WhatWentIn/, /panelParts/, /ComparedWith/, /estimate\.level\./, /track\("estimate_shown"/, /RoundChip|roundWhy|Requirements/]) assert.doesNotMatch(drawer, gone);
   for (const kept of [/<AboutYouAndCollege\b/, /We visited/, /recordFollow\(/, /visitPageLink\(/, /followTargets\(/, /logVisit\(/]) assert.match(drawer, kept);
+  // Requested info is back as a third one-tap item, dated and undoable (owner, 2026-10-12).
+  assert.match(drawer, /We requested info/);
+  assert.match(drawer, /markInfoRequested\(itemId, next !== null, next\)/);
+  // A guardian sees each network's follow state, not a greyed-out control.
+  assert.match(drawer, /\{canMark \? \(/);
+  assert.match(drawer, /"Not following"/);
+  assert.match(drawer, /canMark=\{canEdit && !ctx\.viewer\.isGuardian\}/);
   // Round, deadline, and status are off the row and the list header (owner, 2026-10-12).
   const row = read("components", "planner", "PlanRow.tsx");
   assert.doesNotMatch(row, /RoundChip|SEASON_STATUS_LABEL|Round picked senior year|dayLabel/);

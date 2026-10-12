@@ -503,8 +503,8 @@ test("the plan explains the estimate once for the list, not per college; the pro
   assert.match(read("lib", "planner", "plan-view.ts"), /estimate: school \? est : null/);
 });
 
-test("the signed-out plan shows the most useful missing input; the header card no longer does (redesign 2026-10-11: it moved to the Scores tab)", () => {
-  assert.doesNotMatch(read("components", "planner", "PlanHeaderCard.tsx"), /MostUsefulInput/);
+test("the signed-out plan shows the most useful missing input; the plan's people line doesn't", () => {
+  assert.doesNotMatch(read("components", "planner", "PlanPeople.tsx"), /MostUsefulInput/);
   assert.match(read("components", "planner", "SignedOutPlan.tsx"), /<MostUsefulInput estimates=\{estimates\}/);
   assert.match(read("components", "chances", "MostUsefulInput.tsx"), /mostUsefulMissing\(Object\.values\(estimates\)\)/);
 });
@@ -597,7 +597,7 @@ test("nothing the new client components import is server-only code (Server Actio
     "components/school/HsPrepTable.tsx",
     "components/school/RigorLine.tsx",
     "components/planner/RowDrawer.tsx",
-    "components/planner/PlanHeaderCard.tsx",
+    "components/planner/PlanPeople.tsx",
     "components/planner/SignedOutPlan.tsx",
     "components/planner/useEstimates.ts",
   ];

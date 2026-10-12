@@ -129,16 +129,6 @@ export interface RoadmapSpec {
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
   {
-    slug: "online-share",
-    file: "specs/data-expansion/online-share.md",
-    group: "national-trends",
-    summary:
-      "How much of each college's undergraduate enrollment is entirely online, from the federal distance-education counts: a line on the profile, an Explore filter, and the stored rule that keeps online colleges out of growth lists and campus-based trends.",
-    complexity: 1,
-    complexityNote: "One more IPEDS file the sync reads, two fields and one history series, and a filter; the online-first rule already exists as a reviewed list.",
-    status: "planned",
-  },
-  {
     slug: "where-students-go",
     file: "specs/trends/where-students-go.md",
     group: "national-trends",

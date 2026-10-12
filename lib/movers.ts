@@ -337,20 +337,22 @@ export type CampusExclusion = "for-profit" | "online-first" | "closed-or-merged"
 
 /**
  * The first reason a college isn't campus-based from `since` to `to`, or null: a campus that merged or split inside the
- * window (`campusExcluded`), for-profit, or online-first at the window's start (`onlineFirstAt`; a college with no share
- * that fall counts as campus-based). For a one-fall snapshot pass the same year twice.
+ * window (`campusExcluded`), for-profit, or online-first at either end of the window (`onlineFirstAt`; a college with
+ * no share that fall counts as campus-based). Both ends, as the growth lists check: a college that became online-first
+ * inside the window grew by going online, which is the growth these panels leave out. For a one-fall snapshot pass the
+ * same year twice.
  */
 export function campusExclusionOf(m: MoverMember, since: number, to: number, campuses: MoverExclusionSets["campuses"]): CampusExclusion | null {
   if (campusExcluded(campuses.get(m.school.unit_id), since, to)) return "closed-or-merged";
   if (m.school.type === "private-forprofit") return "for-profit";
-  if (onlineFirstAt(m.h, since) === true) return "online-first";
+  if (onlineFirstAt(m.h, since) === true || onlineFirstAt(m.h, to) === true) return "online-first";
   return null;
 }
 
 /**
  * Campus-based over a window (top-10-lists rule 2; Study 7's panel; the state flows): not for-profit, not online-first at
- * the window's start (`onlineFirstAt`; a college with no share that fall counts as campus-based), and not a campus that
- * merged or split inside the window (`campusExcluded`). For a one-fall snapshot pass the same year twice.
+ * either end of the window (`onlineFirstAt`; a college with no share that fall counts as campus-based), and not a campus
+ * that merged or split inside the window (`campusExcluded`). For a one-fall snapshot pass the same year twice.
  */
 export function isCampusBased(m: MoverMember, since: number, to: number, campuses: MoverExclusionSets["campuses"]): boolean {
   return campusExclusionOf(m, since, to, campuses) === null;

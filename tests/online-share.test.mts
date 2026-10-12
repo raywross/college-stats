@@ -114,12 +114,13 @@ test("online-first: the pandemic falls are read at the fall before them, never a
   assert.equal(onlineFirstAt(hist(2020, [0.9, 0.9]), 2021), null, "no fall 2019 share: null, as callers then count it campus-based");
 });
 
-test("campus-based: not for-profit, not online-first at the window's start, not a campus reorganized inside the window", () => {
+test("campus-based: not for-profit, not online-first at either end of the window, not a campus reorganized inside the window", () => {
   const school = (id: string, type: School["type"]) => ({ unit_id: id, type }) as School;
   const m = (id: string, type: School["type"], h: SchoolHistory): MoverMember => ({ school: school(id, type), h: { ...h, unit_id: id } });
   const campuses = new Map([["9", { before: 2018 }]]);
   const campus = m("1", "public", hist(2014, [0.1, 0.1, 0.2, 0.3, 0.4, 0.55, 0.6, 0.7, 0.7, 0.7, 0.7]));
-  assert.equal(isCampusBased(campus, 2014, 2024, campuses), true, "went online-first inside the window: judged at its start");
+  assert.equal(isCampusBased(campus, 2014, 2024, campuses), false, "went online-first inside the window: online-first at the end, so out");
+  assert.equal(isCampusBased(campus, 2014, 2017, campuses), true, "campus-based at both ends of an earlier window");
   assert.equal(campusExclusionOf(campus, 2019, 2024, campuses), "online-first", "online-first at a later window's start");
   assert.equal(campusExclusionOf(campus, 2021, 2021, campuses), "online-first", "a pandemic fall reads fall 2019 (0.55)");
   assert.equal(campusExclusionOf(m("2", "private-forprofit", hist(2014, [0.1])), 2014, 2024, campuses), "for-profit");

@@ -559,6 +559,13 @@ export const FIELDS = {
   "reference.guaranteed_admission.rule": reported("Automatic admission rule (published program)"),
   "reference.guaranteed_admission.scope": reported("Whether the program admits to the campus or only to the system"),
   "reference.guaranteed_admission.major_guaranteed": reported("Whether automatic admission includes the major"),
+  // State bans on legacy preference in admissions (specs/chances/inputs-beyond-academics.md "Legacy"). They live in
+  // data/reference/legacy-bans.json, hand-kept like data/state-laws.json (lgbtq.state_law below): not on the school
+  // record, so no lineage record carries them; the hooks sentence cites the law and effective date from
+  // lib/chances/legacy-bans.ts's `banFor` directly.
+  "reference.legacy_ban.sectors": { label: "Sectors a state's legacy-preference ban covers", topic: "admissions", source: "state-law", vintage: null },
+  "reference.legacy_ban.effective": { label: "Effective date of a state's legacy-preference ban", topic: "admissions", source: "state-law", vintage: null },
+  "reference.legacy_ban.law": { label: "Bill number or chapter citation for a state's legacy-preference ban", topic: "admissions", source: "state-law", vintage: null },
   // How the college admits by school or major (specs/chances/base-rates.md "Major", major-and-grades.md "Data"), from
   // data/major-admission.json: each value quoted from the unit's own page; lib/lineage.ts resolves the citation to it.
   "reported.major_admission.direct_admit": reported("Whether first-years are admitted directly to the school or major"),

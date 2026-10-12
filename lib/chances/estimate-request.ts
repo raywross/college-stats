@@ -11,7 +11,8 @@ import { isMajorFamily } from "../majors.ts";
 import { MAX_INTENDED_MAJORS, OUTSIDE_US, sanitizeCoreAtTopLevel, sanitizeCourses, type CoreAtTopLevel } from "../student-profile.ts";
 import { UNDECIDED_MAJOR } from "./major-review.ts";
 import { isNoteKey } from "./notes.ts";
-import { STANDING_LEVELS, type CourseEntry, type EstimateNote, type EstimateResult, type EstimateStudent, type InputKind } from "./types.ts";
+import { STANDING_LEVELS } from "./levels.ts";
+import type { CourseEntry, EstimateNote, EstimateResult, EstimateStudent, InputKind } from "./types.ts";
 
 /** Colleges per call (owner assumption 4): the signed-out plan holds up to 20; a signed-in caller may ask 25. */
 export const MAX_COLLEGES = { signedOut: 20, signedIn: 25 } as const;

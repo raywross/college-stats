@@ -1,6 +1,7 @@
 import { GROUP_CLASS } from "@/lib/planner/colors";
 import { noteText } from "@/lib/chances/notes";
-import { STANDING_LEVEL_LABELS, type EstimateResult } from "@/lib/chances/types";
+import { STANDING_LEVEL_LABELS } from "@/lib/chances/levels";
+import type { EstimateResult } from "@/lib/chances/types";
 import { cn } from "@/lib/utils";
 
 /** The chip's words: a label when the estimate has one ("Reach for everyone", "Guaranteed for you"), else the group. */

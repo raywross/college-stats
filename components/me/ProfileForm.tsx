@@ -5,12 +5,13 @@ import { STATES } from "@/lib/states";
 import { SETTING_GROUPS } from "@/lib/campus-profile";
 import { SIZE_BUCKETS } from "@/lib/metrics";
 import { MAJOR_FAMILY_CODES, MAJOR_FAMILIES, type MajorFamily } from "@/lib/majors";
-import { GPA_SCALES, MAX_INTENDED_MAJORS, OUTSIDE_US, effectiveGradYear, gpaDisplay, type GpaScale, type StudentProfileData } from "@/lib/student-profile";
+import { GPA_SCALES, MAX_INTENDED_MAJORS, OUTSIDE_US, effectiveGradYear, gpaDisplay, weightedGpaHint, type GpaScale, type StudentProfileData } from "@/lib/student-profile";
 import { saveStudentProfile, type ProfileSaveState } from "@/app/me/actions";
 import { Term } from "@/components/ui/info-tip";
 import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
 import { CoursePickerField } from "@/components/profile/CoursePicker";
 import { ClassStandingPick } from "@/components/me/ClassStandingPick";
+import { RankExpectationPick } from "@/components/me/RankExpectationPick";
 import { ActivitiesForm } from "@/components/me/ActivitiesForm";
 import { AwardsForm } from "@/components/me/AwardsForm";
 import { CourseTracks } from "@/components/me/CourseTracks";
@@ -76,8 +77,12 @@ function CheckboxGroup({
   );
 }
 
-/** GPA plus its scale, with a live "about 3.7 unweighted (from 93/100)" readout (student-profile.md "GPA normalization"). */
-function GpaField({ disabled, gpa, gpaScale }: { disabled?: boolean; gpa: number | null; gpaScale: GpaScale }) {
+/**
+ * GPA plus its scale, with a live "about 3.7 unweighted (from 93/100)" readout (student-profile.md "GPA
+ * normalization"). `onChange` reports the live number and scale up (the weighted-GPA field's own hint compares
+ * against them).
+ */
+function GpaField({ disabled, gpa, gpaScale, onChange }: { disabled?: boolean; gpa: number | null; gpaScale: GpaScale; onChange?: (gpa: number | null, scale: GpaScale) => void }) {
   const [value, setValue] = useState(gpa);
   const [scale, setScale] = useState(gpaScale);
   const display = gpaDisplay({ gpa: value, gpaScale: scale });
@@ -93,14 +98,22 @@ function GpaField({ disabled, gpa, gpaScale }: { disabled?: boolean; gpa: number
           max={100}
           disabled={disabled}
           defaultValue={gpa ?? ""}
-          onChange={(e) => setValue(e.currentTarget.value === "" ? null : Number(e.currentTarget.value))}
+          onChange={(e) => {
+            const next = e.currentTarget.value === "" ? null : Number(e.currentTarget.value);
+            setValue(next);
+            onChange?.(next, scale);
+          }}
           className={`${inputCls} min-w-0 flex-1`}
         />
         <select
           name="gpaScale"
           disabled={disabled}
           defaultValue={gpaScale}
-          onChange={(e) => setScale(e.currentTarget.value as GpaScale)}
+          onChange={(e) => {
+            const next = e.currentTarget.value as GpaScale;
+            setScale(next);
+            onChange?.(value, next);
+          }}
           className={`${inputCls} w-auto max-w-32 min-w-0 shrink-0`}
           aria-label="GPA scale"
         >
@@ -144,6 +157,14 @@ export function ProfileForm({
   const [residenceFromSchool, setResidenceFromSchool] = useState(false);
   // The picked high school's id, so the course picker can start from its AP list.
   const [highSchoolId, setHighSchoolId] = useState(data.basics.highSchoolId);
+
+  // Live GPA/weighted-GPA/class-standing, so the weighted-below-unweighted and rank-expectation hints can compare
+  // against whatever's on screen right now, not just what was last saved (lib/student-profile.ts).
+  const [gpaNum, setGpaNum] = useState(data.academics.gpa);
+  const [gpaScaleNum, setGpaScaleNum] = useState(data.academics.gpaScale);
+  const [weightedGpaNum, setWeightedGpaNum] = useState(data.academics.weightedGpa);
+  const [classStanding, setClassStanding] = useState(data.academics.classStanding);
+  const weightedHint = weightedGpaHint(gpaNum, gpaScaleNum, weightedGpaNum);
 
   return (
     <form action={action} className="space-y-4">
@@ -226,12 +247,40 @@ export function ProfileForm({
       </Group>
 
       <Group title="Academics">
-        <GpaField disabled={disabled} gpa={data.academics.gpa} gpaScale={data.academics.gpaScale} />
-        <Field label="Weighted GPA (optional)" htmlFor="weightedGpa" hint="0–120: some high schools weight courses above 100.">
-          <input id="weightedGpa" name="weightedGpa" type="number" step="0.01" min={0} max={120} disabled={disabled} defaultValue={data.academics.weightedGpa ?? ""} className={`${inputCls} mt-1.5`} />
+        <GpaField
+          disabled={disabled}
+          gpa={data.academics.gpa}
+          gpaScale={data.academics.gpaScale}
+          onChange={(g, s) => {
+            setGpaNum(g);
+            setGpaScaleNum(s);
+          }}
+        />
+        <Field label="Weighted GPA (optional)" htmlFor="weightedGpa" hint="Many schools weight honors and AP grades; if yours does, add it. 0–120: some weight above 100.">
+          <input
+            id="weightedGpa"
+            name="weightedGpa"
+            type="number"
+            step="0.01"
+            min={0}
+            max={120}
+            disabled={disabled}
+            defaultValue={data.academics.weightedGpa ?? ""}
+            onChange={(e) => setWeightedGpaNum(e.currentTarget.value === "" ? null : Number(e.currentTarget.value))}
+            className={`${inputCls} mt-1.5`}
+          />
+          {weightedHint && <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">{weightedHint}</p>}
         </Field>
         <div className="sm:col-span-2">
-          <ClassStandingPick classStanding={data.academics.classStanding} classRankPercentile={data.academics.classRankPercentile} disabled={disabled} />
+          <ClassStandingPick
+            classStanding={data.academics.classStanding}
+            classRankPercentile={data.academics.classRankPercentile}
+            disabled={disabled}
+            onChange={(v) => setClassStanding(v.classStanding)}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <RankExpectationPick rankExpectation={data.academics.rankExpectation} classStanding={classStanding} disabled={disabled} />
         </div>
         <div className="sm:col-span-2">
           <span className="block text-sm font-semibold">Courses (optional)</span>

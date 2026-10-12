@@ -96,6 +96,7 @@ function profileFromForm(form: FormData, courses: CourseFields = {}): unknown {
       activities: form.has("activities") ? jsonField(form, "activities") : [],
       awards: form.has("awards") ? jsonField(form, "awards") : [],
       firstGeneration: nullableBoolField(form, "firstGeneration"),
+      rankExpectation: strField(form, "rankExpectation"),
       ...courses,
     },
     tests: {

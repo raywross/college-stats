@@ -174,6 +174,18 @@ test("estimateInputFromProfile: class standing, activities, awards, and first ge
   assert.equal(bare.student.firstGeneration, null);
 });
 
+test("estimateInputFromProfile: weightedGpa and rankExpectation pass onto EstimateStudent unchanged (U11 only wires them, never scores them)", () => {
+  const p = profile();
+  p.academics.weightedGpa = 4.4;
+  p.academics.rankExpectation = "valedictorian";
+  const input = estimateInputFromProfile(p, "243780", null);
+  assert.equal(input.student.weightedGpa, 4.4);
+  assert.equal(input.student.rankExpectation, "valedictorian");
+  const bare = estimateInputFromProfile(emptyProfile(), "243780", null);
+  assert.equal(bare.student.weightedGpa, null);
+  assert.equal(bare.student.rankExpectation, null);
+});
+
 test("no name, no high school id, no typed course name, no note text: the row's keys are exactly the columns", () => {
   const p = profile();
   const row = buildSnapshot({ input: estimateInputFromProfile(p, "243780", "rd"), estimate: { result: result() }, offering: OFFERING, admitRate: 0.5, studentGroup: "likely" });

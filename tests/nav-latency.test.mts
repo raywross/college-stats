@@ -61,11 +61,15 @@ for (const rel of LOADING_FILES) {
   });
 }
 
-test("the person skeleton has the name line, List | Numbers pills, and four list rows", async () => {
+test("the person skeleton has the name line, Plan | Numbers pills, and a generic content card", async () => {
+  // Household cleanup (2026-10-12): the student's old four-row list board is gone (its page is a plain link into
+  // the planner now, OpenPlanCard), so the skeleton below the pills is a couple of generic blocks that fit that
+  // card, a guardian's own list, or the Numbers form alike, rather than hard-coding list rows.
   const html = await renderLoading("app/household/[person]/loading.tsx");
-  assert.equal((html.match(/<li /g) ?? []).length, 4);
+  assert.equal((html.match(/<li /g) ?? []).length, 0);
   assert.match(html, /h-\[50px\][^"]*w-full/); // the pills: full width, 44px pills + padding + border on phones
   assert.match(html, /sm:h-\[42px\]/);
+  assert.equal((html.match(/h-28 w-full rounded-3xl/g) ?? []).length, 2);
 });
 
 test("the Explore skeleton has the toolbar, the filter rail, and six cards (rows on phones)", async () => {

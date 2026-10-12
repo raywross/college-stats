@@ -417,6 +417,31 @@ export interface StateTopSendingState {
   share: number;
 }
 
+/**
+ * First-years crossing state lines (specs/trends/states.md, "Planned addition"): a snapshot (one fall) summed from
+ * the residence detail's home-state tables over campus-based colleges (`isCampusBased`: not for-profit, not
+ * online-first at that fall, not a campus that merged or split). `inflow` is first-years at this state's colleges
+ * from elsewhere; `outflow` is this state's residents who started at colleges in other states; `firstYears` is
+ * in-state plus inflow (home codes that aren't states — foreign, unknown — are left out and tracked in `other`, not
+ * counted in `firstYears`). `receiving` is the five colleges in this state taking the most of the inflow, ordered,
+ * with their share of it. "Among four-year colleges on this site": a resident who starts at a college not on the
+ * site, or a community college, is invisible on both sides.
+ */
+export interface StateFlows {
+  year: number;
+  inflow: number;
+  outflow: number;
+  net: number;
+  firstYears: number;
+  /** net ÷ firstYears; the map's "Net first-year inflow" measure. */
+  netShare: number;
+  /** First-years at this state's colleges whose home code isn't a state (foreign, unknown): left out of the flows. */
+  other: number;
+  /** Campus-based colleges in this state with a home-state table, counted toward inflow. */
+  n: number;
+  receiving: { unit_id: string; name: string; count: number; share: number }[];
+}
+
 export interface StateResearchUni {
   unit_id: string;
   name: string;
@@ -434,6 +459,8 @@ export interface StateMapMeasures {
   avgCost: number | null;
   outOfState: number | null;
   testOptionalShare: number | null;
+  /** StateFlows.netShare; null when the state has no flows (no college table, per rule 5). */
+  netInflow: number | null;
 }
 
 export interface StateEntry {
@@ -456,6 +483,8 @@ export interface StateEntry {
   topSendingStates: StateTopSendingState[];
   researchUnis: StateResearchUni[];
   movers: MoversWindow[];
+  /** Absent when no college in the state has a home-state table (rule 5); present even for a tooFew state. */
+  flows?: StateFlows;
 }
 
 export interface StatesFile extends TrendEnvelope {
@@ -471,6 +500,10 @@ export interface StatesFile extends TrendEnvelope {
     sparkLines: StateSparkLines;
     outOfStatePublicLine: (number | null)[];
   };
+  /** The one fall the flows snapshot is for (the detail files' year); null when no detail file has a home-state table. */
+  flowsYear: number | null;
+  /** Colleges left out of the flows computation (specs/trends/states.md, flows rule 1), across every college on the site. */
+  flowsRule: { excluded: { onlineFirst: number; forProfit: number; campuses: number } };
   states: StateEntry[];
 }
 

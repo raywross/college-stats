@@ -4,7 +4,7 @@ import { useState } from "react";
 import { StateTileMap, type TileRange } from "@/components/charts/StateTileMap";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 
-export type StateMapKey = "undergradChange" | "acceptanceRate" | "avgCost" | "outOfState" | "testOptionalShare";
+export type StateMapKey = "undergradChange" | "acceptanceRate" | "avgCost" | "outOfState" | "testOptionalShare" | "netInflow";
 
 /** How a measure's value is printed; kept as data (never a function prop) so this stays a plain server→client payload. */
 export type StateMapFormat = "signedPct" | "pctWhole" | "moneyK";

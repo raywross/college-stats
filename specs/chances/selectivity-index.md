@@ -1,6 +1,6 @@
 # Quad's Selectivity: One Number per College, Five Tiers, Elite at the Top
 
-> Status: **planned** 2026-10-11 from the owner's review ("we should have a number behind the scenes… 5 levels with
+> Status: **built** 2026-10-12 on `feature/chances` (see "As built"; planned 2026-10-11) from the owner's review ("we should have a number behind the scenes… 5 levels with
 > the top being something like Elite"). Part 12 of [admission chances](README.md). Uses only data the site holds;
 > [levels.md](levels.md) reads the tier for its caps, so this ships first or with it.
 
@@ -94,3 +94,24 @@ tiers, hysteresis, the Elite count guard on the real dataset, nothing in `search
 1. Weights are a first judgment (admit rate 45, class strength 20, yield 10, the rest 5 each). Revisit once with the
    first season's outcomes: the tier should order colleges by observed difficulty for students at the same distance.
 2. Should the Explore facet show counts per tier? Recommendation: yes, like other facets.
+
+## As built (2026-10-12)
+- **Storage:** tiers only, on each college as `school.selectivity: { tier, in_state?, out_of_state?, year? }` (type
+  `SchoolSelectivity`), not the `school.derived.selectivity_*` fields named under "Data and lineage". The 0–100 index
+  is written to `data/selectivity-index.json`, read only by the build (`npm run build-selectivity`, also run by
+  `sync-data`) and its check; it is never in `public/`, `search-index.json`, the data API, or client code
+  (`check:selectivity` in verify; tests/selectivity.test.mts).
+- **Code:** the method in `lib/selectivity.ts` (server and scripts); `tierForStudent` and the chip helpers in the
+  client-safe `lib/selectivity-tier.ts`. A test fails if a client file reaches the method or the panel's facts builder.
+- **`ELITE_INDEX` = 94:** Elite holds 33 colleges (2026-10-12), in effect "admit rate under 10%". Tier counts for all
+  applicants: Elite 33, Highly selective 134, Selective 348, Accessible 597, Open 435; 346 unrated (no admit rate).
+  Hysteresis moves a tier at exactly 2 points either way. Georgia Tech is Highly selective in both pools (out-of-state
+  admit rate 10.12%); 9 publics differ by pool (Purdue: Selective in-state, Highly selective out of state).
+- **Surfaces:** the chip and its panel on the profile hero and the Getting in card (the card's old admit-rate pill and
+  its "Most selective" summary give way to the tier where a college is rated); the Explore facet ("Quad's selectivity",
+  all-applicants tier) and sort (tier, then admit rate); Compare's "Quad's selectivity" row with per-pool tiers.
+- **Open for the owner:** a minimum-evidence rule for Elite (two very small colleges qualify on admit rate and yield
+  alone); yield's weight when a college reports only rate and yield (puts a few 26–38% colleges in Highly selective);
+  the index saturating at 100 (open question 1). `.github/workflows/college-reported.yml` needs a
+  `npm run build-selectivity` step after "Re-merge the directory listings into schools.json" in both jobs, or a
+  college-reported PR that changes admissions figures fails `check:selectivity`.

@@ -1,6 +1,6 @@
 # Applicants Like You: Saying Who the Student Is Compared With
 
-> Status: **planned** 2026-10-11 (owner: "I don't think that's super clear on the site"). Part 9 of
+> Status: **built** 2026-10-12 on `feature/chances` (see "As built"; planned 2026-10-11) (owner: "I don't think that's super clear on the site"). Part 9 of
 > [admission chances](README.md). Rewords what [base-rates.md](base-rates.md) built; no new data. Ships with or before
 > [levels.md](levels.md).
 
@@ -79,3 +79,12 @@ it), `components/planner/ListRow.tsx` drawer, `components/compare/…` the stand
 
 ## Open questions
 None the build needs; the sentences above are final copy until user feedback.
+
+## As built (2026-10-12)
+- The stage-2 sentences per kind are in `lib/chances/notes.ts`; no student-facing sentence says "pool" (tested).
+  `comparedWith(student, school)` in `lib/chances/compared-with.ts` builds the panel's rows; `ComparedWith.tsx` shows
+  them on the profile's standing card, Compare's "Where you stand" row, and the planner row drawer's stage lines.
+- Compare's short line ("from Indiana: 71%", "everyone: 43%", "guaranteed") is `compareShortLine`, read from the
+  result's structured `pool: { kind, rate, whoKey, whoValues }` (published rate only, never the hidden odds).
+- The signed-out plan asks for a state through sign-up (no household to add it to without an account). The Data
+  page's accuracy labels say "admit rate for applicants like the student". Glossary: `applicants-like-you`, `pool`.

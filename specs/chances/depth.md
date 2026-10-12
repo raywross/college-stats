@@ -1,6 +1,6 @@
 # Depth: Years and Progression in a Few Things, Not a List of Many
 
-> Status: **planned** 2026-10-11 (owner: "consistency of students' courses and extracurriculars"). Part 10 of
+> Status: **built** 2026-10-12 on `feature/chances` (see "As built"; planned 2026-10-11) (owner: "consistency of students' courses and extracurriculars"). Part 10 of
 > [admission chances](README.md). Reads the course list from [rigor-in-context.md](rigor-in-context.md) and adds an
 > activities list. How the readings move the level is the method's
 > ([method/standing.md](method/standing.md#the-other-multipliers)). After [levels.md](levels.md).
@@ -145,3 +145,11 @@ the top-two rule, trajectory, the major-track slot, no names in snapshots).
    or three entries, because the planner header is where students are when the estimate asks.
 2. IB SL at 1.5: treat as 2 if IB schools' students complain that SL is their top offering; the level table is one
    constant.
+
+## As built (2026-10-12)
+- `lib/chances/depth.ts`: `courseTracks`, `activitiesReading`, and `depthSnapshot` (the names-free shape for
+  snapshots; no table column holds it yet). Shown as the Courses "Tracks" line and the activities reading on `/me` and
+  in the planner's Scores tab → Courses (`components/me/CourseTracks.tsx`).
+- An activity has no subject of its own, so `activityFamilyMatch` decides which track it can add a year to: research
+  counts toward the major's science family (else computer science, else the major's first expected family); a club
+  only toward computer science or science. IB SL counts 1.5 (open question 2's default).

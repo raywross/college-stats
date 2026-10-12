@@ -43,6 +43,7 @@ import { eightYearFrom } from "../../lib/outcome-measures.ts";
 import { aidGroupGradFrom, raceGradFrom } from "../../lib/graduation-groups.ts";
 import { residenceFrom } from "../../lib/residence.ts";
 import { transferInFrom } from "../../lib/transfers.ts";
+import { onlineSharesFrom } from "../../lib/online-share.ts";
 import { MAJOR_FAMILY_CODES, familiesFromRow, isMajorFamily, type MajorFamily } from "../../lib/majors.ts";
 import { majorSeriesKey } from "../../lib/history.ts";
 import { seriesStep } from "../../lib/history.ts";
@@ -77,6 +78,8 @@ export interface Inputs {
   efc?: readonly YearTable[];
   /** Transfers in (EF{Y}A pivoted to one wide row per college by level), one table per fall. */
   efa?: readonly YearTable[];
+  /** Online share (EF{Y}A_DIST pivoted to one wide row per college by level), one table per fall. */
+  efaDist?: readonly YearTable[];
   /** Completions (C{Y+1}_A summed to first-major bachelor's by family, lib/majors.ts familyColumn), one per school year. */
   ca?: readonly YearTable[];
   /** College Scorecard year-prefixed values by unit ID (scripts/history/scorecard.mts), and the years requested. */
@@ -265,6 +268,8 @@ export function buildCollege(school: Pick<School, "unit_id" | "type"> & { locati
     put(raw, "transfer_in_count", t.year, tr?.count);
     put(raw, "transfer_in_share", t.year, tr?.share_of_new);
   }
+  // Online share, with the snapshot's reader (lib/online-share.ts); pandemic falls kept as reported.
+  for (const t of inputs.efaDist ?? []) put(raw, "online_share", t.year, onlineSharesFrom(t.rows.get(id))?.online_share);
   // Where first-years come from, with the snapshot's reader (lib/residence.ts); in-state is the college's state today.
   if (school.location?.state) {
     for (const t of inputs.efc ?? []) {
@@ -685,6 +690,9 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
   // The newest EF part A fall history read: what the snapshot's EF{Y}A describes.
   const efaYears = [...histories.values()].flatMap((h) => (h.series.transfer_in_count ? [lastYear(h.series.transfer_in_count)] : []));
   const efaYear = efaYears.length ? Math.max(...efaYears) : null;
+  // The newest EF{Y}A_DIST fall history read: what the snapshot's online share describes.
+  const efaDistYears = [...histories.values()].flatMap((h) => (h.series.online_share ? [lastYear(h.series.online_share)] : []));
+  const efaDistYear = efaDistYears.length ? Math.max(...efaDistYears) : null;
   // The newest school year history read from C{Y}_A: what the snapshot's completions file describes.
   const caYears = [...histories.values()].flatMap((h) => (h.series.bachelors ? [lastYear(h.series.bachelors)] : []));
   const caYear = caYears.length ? Math.max(...caYears) : null;
@@ -809,6 +817,7 @@ export function lastPointMismatches(schools: readonly School[], histories: Reado
       check("transfer_in_count", s.demographics.transfer_in?.count, false, efaYear);
       check("transfer_in_share", s.demographics.transfer_in?.share_of_new, false, efaYear);
     }
+    if (efaDistYear !== null) check("online_share", s.demographics.online_share, false, efaDistYear);
     if (efcYear !== null) {
       check("out_of_state_share", s.demographics.residence?.out_of_state, false, efcYear);
       check("international_share", s.demographics.residence?.international, false, efcYear);

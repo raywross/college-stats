@@ -28,6 +28,7 @@ import { mostFromOtherState } from "./residence";
 import { stateName } from "./states";
 import { endowmentMetricFor } from "./finances";
 import { isFaithCentered } from "./religion";
+import { isMostlyOnline } from "./online-share";
 
 /* ------------------------------------------------------------------ */
 /* "Known for" badges: computed standouts vs. the dataset              */
@@ -59,6 +60,9 @@ export function standouts({ rankOf }: Dataset, s: School, { trends = false }: { 
   if (at("sat", (v) => v >= 0.9)) out.push({ label: "Top test scores", domain: "scores", metric: "sat" });
   if (at("enrollment", (v) => v >= 0.95)) out.push({ label: "Big campus", domain: "size", metric: "enrollment" });
   if (at("enrollment", (v) => v <= 0.1)) out.push({ label: "Intimate campus", domain: "size", metric: "enrollment" });
+  // An absolute rule, not a percentile (specs/data-expansion/online-share.md): more than half of undergraduates take
+  // every course online.
+  if (isMostlyOnline(s)) out.push({ label: "Mostly online", domain: "size" });
   // The national bottom 5% of students per faculty member (specs/data-expansion/student-faculty-ratio.md): a snapshot standout.
   if (at("studentFaculty", (v) => v <= 0.05)) out.push({ label: "Very small student-faculty ratio", domain: "size", metric: "studentFaculty" });
   // Where first-years come from (specs/data-expansion/residence.md): the top 5% from other states among classes of

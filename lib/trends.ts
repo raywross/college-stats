@@ -245,8 +245,9 @@ export interface MoversFile extends TrendEnvelope {
     stillOpenMinUndergrads: number;
     /** An endpoint this many times the year next to it is a reporting jump. */
     jumpFactor: number;
-    /** Entries in data/trends/online-first.json and data/trends/excluded-campuses.json. */
-    onlineFirst: number;
+    /** Growth lists leave out colleges where more than this share of undergraduates took every course online at either end of the window (its start or its last fall). */
+    onlineFirstShare: number;
+    /** Entries in data/trends/excluded-campuses.json. */
     excludedCampuses: number;
   };
   windows: MoversWindow[];

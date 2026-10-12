@@ -23,6 +23,7 @@ import { matchesServices } from "./campus-services.ts";
 import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
 import { hasSmallPellGap } from "./graduation-groups.ts";
 import { drawsNationally } from "./residence.ts";
+import { matchesOnline } from "./online-share.ts";
 import { matchesField } from "./majors.ts";
 import { noCssProfile, offersInternationalAid } from "./cds/financial-aid.ts";
 import { fitsScoreRange } from "./student-profile.ts";
@@ -350,6 +351,8 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     // Gap year (LOGISTICS_FILTERS, cds-application-logistics.md): colleges without a CDS answer never match.
     for (const f of LOGISTICS_FILTERS) if (filters[f.param]) results = results.filter(f.test);
     if (filters.setting || filters.research || filters.designation || filters.opportunity) results = results.filter((s) => matchesCampus(s, filters));
+    // Online share: "campus" keeps colleges with no share (campus-based unless reported otherwise).
+    if (filters.online) results = results.filter((s) => matchesOnline(s, filters.online!));
     // Religious affiliation (lib/religion.ts): colleges IPEDS has no answer for never match.
     if (filters.faith?.length) results = results.filter((s) => matchesFaith(s, filters.faith!));
     // Has a named community of this tradition (specs/campus-directories.md): colleges with no directory listing never match.

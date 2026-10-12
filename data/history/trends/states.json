@@ -1,6 +1,6 @@
 {
   "name": "states",
-  "built": "2026-10-02",
+  "built": "2026-10-12",
   "yearKind": "fall",
   "from": 2014,
   "to": 2024,
@@ -2335,9 +2335,11 @@
                   "at": "start"
                 }
               ],
-              "n": 65,
-              "median": 0.2486,
-              "excluded": {},
+              "n": 64,
+              "median": 0.2493,
+              "excluded": {
+                "online-first": 1
+              },
               "entries": [
                 {
                   "unit_id": "119173",
@@ -4859,10 +4861,10 @@
                   "at": "start"
                 }
               ],
-              "n": 27,
-              "median": 0.932,
+              "n": 26,
+              "median": 0.9423,
               "excluded": {
-                "online-first": 1
+                "online-first": 2
               },
               "entries": [
                 {
@@ -4969,27 +4971,18 @@
                   "at": "start"
                 }
               ],
-              "n": 32,
+              "n": 30,
               "median": 0.0087,
               "excluded": {
                 "closed-or-merged": 2,
                 "for-profit": 1,
-                "online-first": 2
+                "online-first": 4
               },
               "entries": [
                 {
-                  "unit_id": "385619",
-                  "name": "Everglades University",
-                  "rank": 1,
-                  "since": 2014,
-                  "from": 1284,
-                  "to": 2789,
-                  "change": 1.1721
-                },
-                {
                   "unit_id": "137564",
                   "name": "Southeastern University",
-                  "rank": 2,
+                  "rank": 1,
                   "since": 2014,
                   "from": 2946,
                   "to": 4813,
@@ -4998,7 +4991,7 @@
                 {
                   "unit_id": "133553",
                   "name": "Embry-Riddle Aeronautical University-Daytona Beach",
-                  "rank": 3,
+                  "rank": 2,
                   "since": 2014,
                   "from": 4954,
                   "to": 7860,
@@ -5007,7 +5000,7 @@
                 {
                   "unit_id": "136215",
                   "name": "Nova Southeastern University",
-                  "rank": 4,
+                  "rank": 3,
                   "since": 2014,
                   "from": 4582,
                   "to": 7240,
@@ -5016,7 +5009,7 @@
                 {
                   "unit_id": "137847",
                   "name": "The University of Tampa",
-                  "rank": 5,
+                  "rank": 4,
                   "since": 2014,
                   "from": 6811,
                   "to": 10572,
@@ -5025,7 +5018,7 @@
                 {
                   "unit_id": "132657",
                   "name": "Lynn University",
-                  "rank": 6,
+                  "rank": 5,
                   "since": 2014,
                   "from": 1911,
                   "to": 2859,
@@ -5034,7 +5027,7 @@
                 {
                   "unit_id": "136774",
                   "name": "Ringling College of Art and Design",
-                  "rank": 7,
+                  "rank": 6,
                   "since": 2014,
                   "from": 1216,
                   "to": 1662,
@@ -5043,7 +5036,7 @@
                 {
                   "unit_id": "446048",
                   "name": "Ave Maria University",
-                  "rank": 8,
+                  "rank": 7,
                   "since": 2014,
                   "from": 1019,
                   "to": 1298,
@@ -5052,7 +5045,7 @@
                 {
                   "unit_id": "137351",
                   "name": "University of South Florida",
-                  "rank": 9,
+                  "rank": 8,
                   "since": 2014,
                   "from": 30279,
                   "to": 37207,
@@ -5061,11 +5054,20 @@
                 {
                   "unit_id": "135726",
                   "name": "University of Miami",
-                  "rank": 10,
+                  "rank": 9,
                   "since": 2014,
                   "from": 10828,
                   "to": 12913,
                   "change": 0.1926
+                },
+                {
+                  "unit_id": "132903",
+                  "name": "University of Central Florida",
+                  "rank": 10,
+                  "since": 2014,
+                  "from": 52280,
+                  "to": 59146,
+                  "change": 0.1313
                 }
               ]
             },
@@ -8923,9 +8925,11 @@
                   "at": "start"
                 }
               ],
-              "n": 7,
-              "median": 0.2072,
-              "excluded": {},
+              "n": 6,
+              "median": 0.3128,
+              "excluded": {
+                "online-first": 1
+              },
               "entries": [
                 {
                   "unit_id": "156125",
@@ -8971,15 +8975,6 @@
                   "from": 2758,
                   "to": 3138,
                   "change": 0.1378
-                },
-                {
-                  "unit_id": "155061",
-                  "name": "Fort Hays State University",
-                  "rank": 6,
-                  "since": 2014,
-                  "from": 2437,
-                  "to": 2619,
-                  "change": 0.0747
                 }
               ]
             },
@@ -8995,9 +8990,11 @@
                   "at": "start"
                 }
               ],
-              "n": 13,
+              "n": 11,
               "median": -0.2324,
-              "excluded": {},
+              "excluded": {
+                "online-first": 2
+              },
               "entries": [
                 {
                   "unit_id": "154712",
@@ -9406,10 +9403,10 @@
                   "at": "start"
                 }
               ],
-              "n": 13,
-              "median": 0.1628,
+              "n": 12,
+              "median": 0.3202,
               "excluded": {
-                "online-first": 1,
+                "online-first": 2,
                 "reporting-jump": 1
               },
               "entries": [
@@ -9490,10 +9487,10 @@
                   "at": "start"
                 }
               ],
-              "n": 20,
-              "median": -0.1053,
+              "n": 19,
+              "median": -0.0754,
               "excluded": {
-                "online-first": 1
+                "online-first": 2
               },
               "entries": [
                 {

@@ -128,9 +128,10 @@ Built 2026-10-04 on `feature/national-trends`: the hub, Studies 1–6, movers, c
 build-trends` writes `data/history/trends/`). What's left:
 - [ ] `applicants_men`/`applicants_women` history series, so Study 1 can use the 200-per-sex rule and weight by
   applicants by sex (it uses a 1,000-total-applicant floor and total-applicant weighting today).
-- [ ] Distance-education share (`EF{Y}A_DIST`) as `demographics.online_share`, replacing the reviewed
+- [x] Distance-education share (`EF{Y}A_DIST`) as `demographics.online_share`, replacing the reviewed
   `data/trends/online-first.json` list the movers use. Specified 2026-10-05:
-  [online-share.md](data-expansion/online-share.md) (two fields, one history series, an Explore filter).
+  [online-share.md](data-expansion/online-share.md) (two fields, one history series, an Explore filter). Built
+  2026-10-12: the field rule reproduced the reviewed list exactly for fall 2024, and the list is retired.
 - [ ] **Study 7: Where the students went** ([trends/where-students-go.md](trends/where-students-go.md), specified
   2026-10-05): the students view, each kind of college's share of all undergraduates then and now, by size and
   selectivity as of the window start, research tier, public or private, region and state, and price, over a

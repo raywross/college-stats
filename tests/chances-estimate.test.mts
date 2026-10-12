@@ -230,6 +230,18 @@ test("the new student inputs are sanitized by the profile's own rules: activitie
   assert.deepEqual(sanitizeEstimateStudent({}).activities, []);
 });
 
+test("Revision 2's student inputs: a weighted GPA on the profile's range (0–120) and a valedictorian or salutatorian expectation; anything else is null", () => {
+  assert.equal(sanitizeEstimateStudent({ weightedGpa: 4.4 }).weightedGpa, 4.4);
+  assert.equal(sanitizeEstimateStudent({ weightedGpa: 104 }).weightedGpa, 104, "a 100-point scale weights above 100");
+  for (const bad of [-1, 121, "4.4", Number.NaN, null, undefined]) assert.equal(sanitizeEstimateStudent({ weightedGpa: bad }).weightedGpa, null, String(bad));
+  assert.equal(sanitizeEstimateStudent({ rankExpectation: "valedictorian" }).rankExpectation, "valedictorian");
+  assert.equal(sanitizeEstimateStudent({ rankExpectation: "salutatorian" }).rankExpectation, "salutatorian");
+  for (const bad of ["Valedictorian", "top1", 1, true, null]) assert.equal(sanitizeEstimateStudent({ rankExpectation: bad }).rankExpectation, null, String(bad));
+  const parsed = parseEstimateRequest({ unitIds: [PURDUE], student: { gpa: 3.8, weightedGpa: 4.3, rankExpectation: "salutatorian" } }, { signedIn: true });
+  assert.ok(parsed.ok);
+  if (parsed.ok) assert.deepEqual([parsed.request.student.weightedGpa, parsed.request.student.rankExpectation], [4.3, "salutatorian"]);
+});
+
 test("hooks in requests: per college asked about, legacy and interest only when true, a recruited pick from the list; anything else is dropped", () => {
   const parsed = parseEstimateRequest(
     {

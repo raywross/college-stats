@@ -21,7 +21,7 @@ import {
 import { UNDECIDED_MAJOR } from "./major-review.ts";
 import { isNoteKey } from "./notes.ts";
 import { NO_HOOKS, RECRUITED_PICKS, STANDING_LEVELS } from "./levels.ts";
-import type { CollegeHooks, CourseEntry, EstimateNote, EstimatePool, EstimateResult, EstimateStudent, InputKind, RecruitedPick } from "./types.ts";
+import type { CollegeHooks, CourseEntry, EstimateNote, EstimatePool, EstimateResult, EstimateStudent, InputKind, RankExpectation, RecruitedPick } from "./types.ts";
 
 /** Colleges per call (owner assumption 4): the signed-out plan holds up to 20; a signed-in caller may ask 25. */
 export const MAX_COLLEGES = { signedOut: 20, signedIn: 25 } as const;
@@ -62,6 +62,7 @@ const intIn = (v: unknown, lo: number, hi: number): number | null => (finite(v) 
 const numIn = (v: unknown, lo: number, hi: number): number | null => (finite(v) && v >= lo && v <= hi ? v : null);
 
 const GPA_SCALES = ["4.0", "5.0", "100"] as const;
+const RANK_EXPECTATIONS: readonly RankExpectation[] = ["valedictorian", "salutatorian"];
 const ROUNDS = ["ed", "ed2", "ea", "rea", "rd", "rolling"] as const;
 export const TEST_RANGE = { sat: [400, 1600], act: [1, 36] } as const;
 
@@ -102,6 +103,10 @@ export function sanitizeEstimateStudent(input: unknown): EstimateStudent {
     awards: sanitizeAwards(v.awards),
     classStanding: standing.classStanding,
     firstGeneration: typeof v.firstGeneration === "boolean" ? v.firstGeneration : null,
+    // Wave 4 (method/standing.md "Revision 2"): the weighted GPA as the school reports it, on the profile's range
+    // (0–120: a 100-point scale weights above 100), and a valedictorian or salutatorian expectation.
+    weightedGpa: numIn(v.weightedGpa, 0, 120),
+    rankExpectation: RANK_EXPECTATIONS.includes(v.rankExpectation as RankExpectation) ? (v.rankExpectation as RankExpectation) : null,
   };
 }
 

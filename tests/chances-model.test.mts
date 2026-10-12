@@ -157,6 +157,21 @@ const EIGHT_APS = [
   ap("ap_us_government", "history"),
 ];
 const TWO_APS = [ap("ap_english_language", "english"), ap("ap_us_history", "history")];
+/**
+ * Revision 2: nine APs over three years, an advanced course every year from 10th grade on, science rising to a deep
+ * track (10th biology, 11th chemistry, 12th physics).
+ */
+const THREADED_APS = [
+  ap("ap_world_history_modern", "history", "A", 10),
+  ap("ap_biology", "science", "A", 10),
+  ap("ap_english_language", "english", "A", 11),
+  ap("ap_calculus_ab", "math", "A", 11),
+  ap("ap_chemistry", "science", "A", 11),
+  ap("ap_us_history", "history", "A", 11),
+  ap("ap_english_literature", "english", "A", 12),
+  ap("ap_calculus_bc", "math", "A", 12),
+  ap("ap_physics_c_mechanics", "science", "A", 12),
+];
 
 let actId = 0;
 function activity(name: string, kind: ActivityEntry["kind"], years: ActivityEntry["years"], o: Partial<ActivityEntry> = {}): ActivityEntry {
@@ -167,6 +182,8 @@ const FOCUSED = [activity("Soccer", "sport", [9, 10, 11, 12], { roles: { 12: "le
 const SAMPLING = [activity("Chess", "club", [9]), activity("Drama", "arts", [10])];
 /** Building (depth.md): one activity carried three years. */
 const BUILDING = [activity("Band", "arts", [10, 11, 12])];
+/** Focused, with a theme: soccer four years (captain), and Science Olympiad three years in the science family. */
+const THEMED = [activity("Soccer", "sport", [9, 10, 11, 12], { roles: { 12: "leader" }, family: "athletics" }), activity("Science Olympiad", "club", [10, 11, 12], { roles: { 12: "officer" }, family: "science" })];
 /**
  * A GPA for a college with no GPA figures: it counts as entered (completeness) but can't be placed, so a mechanism
  * test reads the test alone with nothing missing.
@@ -230,7 +247,7 @@ const ELITE_6 = () => college("162928", { rate: 0.06, sat: [1270, 1370], gpa: nu
 /* ------------------------------------------------------------------ */
 
 test("version: the third version's model version (Revision 1), and the constants the method names", () => {
-  assert.equal(MODEL_VERSION, "20261012.2");
+  assert.equal(MODEL_VERSION, "20261012.3");
   assert.deepEqual([ODDS_V3.testPull, ODDS_V3.testDown, ODDS_V3.testUp, ODDS_V3.gapPrior], [0.25, 0.3, 0.2, -0.5]);
   assert.deepEqual(ODDS_V3.expectWeights, { gpa: 3, courses: 2, class_rank: 1, test: 1, activities: 1 });
   assert.deepEqual(ODDS_V3.acad.map(([d]) => d), [-1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]);
@@ -254,11 +271,16 @@ test("pinned: SAT 1560, GPA 4.0, rigor most at a Harvard-like Ultra selective co
   assert.ok(r.missing.includes("class_rank") && r.missing.includes("activities"));
   assert.ok(texts(r).includes("Not in this estimate yet: your class standing and activities. Adding what you have gives a fuller picture and could change where this college stands for you."));
   assert.ok(keys(r).includes("estimate.missing_input"), "one prompt at an Ultra selective college too, now that inputs can move it");
-  // With them (top 5%, Focused): Reach, and nothing moves it beyond. Top 10% isn't enough (owner, 2026-10-12).
-  const withStanding = (pct: number, pick: "top5" | "top10") => run(HARVARD(), student({ test: sat(1560), gpa: 4.0, courses: EIGHT_APS, classRankPercentile: pct, classStanding: pick, activities: FOCUSED }), { offering: OFFERING(9), linked: true });
+  // With them (top 5%, Focused with a theme, an advanced course every year): Reach, and nothing moves it beyond. Top
+  // 10% isn't enough (owner, 2026-10-12).
+  const withStanding = (pct: number, pick: "top5" | "top10") => run(HARVARD(), student({ test: sat(1560), gpa: 4.0, courses: THREADED_APS, classRankPercentile: pct, classStanding: pick, activities: THEMED }), { offering: OFFERING(9), linked: true });
   assert.equal(withStanding(10, "top10").group, "high_reach");
   const full = withStanding(5, "top5");
   assert.equal(full.group, "reach");
+  // Revision 2 moved this row: the same top-5%, Focused record with all eight APs in one year and no theme is a High
+  // reach now (no depth across courses and activities, no advanced course before 11th grade).
+  const r1Full = run(HARVARD(), student({ test: sat(1560), gpa: 4.0, courses: EIGHT_APS, classRankPercentile: 5, classStanding: "top5", activities: FOCUSED }), { offering: OFFERING(9), linked: true });
+  assert.equal(r1Full.group, "high_reach");
   assert.equal(full.moveUp, null, "nothing moves an Elite college beyond Reach");
   assert.ok(!keys(full).includes("estimate.incomplete"));
 });
@@ -546,7 +568,7 @@ test("Safe needs at least half of the student's pool admitted, whatever the tier
 });
 
 /** A record consistent with excellence at ULTRA (below): GPA above, 8 of 9 APs, top 5%, Focused, SAT above. */
-const EXCELLENT = (o: Partial<EstimateStudent> = {}) => student({ gpa: 4.0, test: sat(1450), courses: EIGHT_APS, classRankPercentile: 5, classStanding: "top5", activities: FOCUSED, ...o });
+const EXCELLENT = (o: Partial<EstimateStudent> = {}) => student({ gpa: 4.0, test: sat(1450), courses: THREADED_APS, classRankPercentile: 5, classStanding: "top5", activities: THEMED, ...o });
 const ULTRA = (policy: School["admissions"]["test_policy"] = "required") => college("166027", { rate: 0.6, sat: [1300, 1400], gpa: middleGpa(3.7, 3.9), c7: null, tier: "elite", policy });
 const LINKED = { offering: OFFERING(9), linked: true };
 
@@ -569,14 +591,16 @@ test("rule 2: at an Ultra selective college, Reach only when every signal is con
     ["no test where one is required", EXCELLENT({ test: null })],
     ["no activities", EXCELLENT({ activities: [] })],
     ["activities Sampling", EXCELLENT({ activities: SAMPLING })],
+    // Revision 2: depth needs a theme; Sampling with a tier-2 award no longer passes (Focused or Building only).
+    ["Focused, no theme (no activity shares a course family)", EXCELLENT({ activities: FOCUSED })],
+    ["a tier-2 award beside Sampling", EXCELLENT({ activities: SAMPLING, awards: [{ id: "w3", key: null, name: "All-state", tier: 2, year: 11 }] })],
   ];
   for (const [name, s, extra] of cases) assert.equal(at(s, "required", extra ?? LINKED).group, "high_reach", name);
-  // What passes: "my school doesn't rank", a Building record, a tier-2 award beside Sampling, no test at a test-optional college.
+  // What passes: "my school doesn't rank", a Building record with a theme, no test at a test-optional college.
   assert.equal(at(EXCELLENT({ classRankPercentile: null, classStanding: "no_rank" })).group, "reach", "no_rank passes");
   assert.equal(at(EXCELLENT({ classRankPercentile: 1, classStanding: "top1" })).group, "reach", "top 1% passes");
   assert.equal(at(EXCELLENT({ classRankPercentile: 5, classStanding: null })).group, "reach", "a typed rank in the top 5% passes");
-  assert.equal(at(EXCELLENT({ activities: BUILDING })).group, "reach", "Building passes");
-  assert.equal(at(EXCELLENT({ activities: SAMPLING, awards: [{ id: "w3", key: null, name: "All-state", tier: 2, year: 11 }] })).group, "reach", "recognition tier 2 passes");
+  assert.equal(at(EXCELLENT({ activities: [THEMED[1]] })).group, "reach", "Building with a theme passes");
   assert.equal(at(EXCELLENT({ test: null }), "considered").group, "reach", "no test at a test-optional college isn't missing");
   // The missing ones are named; the short ones are not called missing.
   const noRank = at(EXCELLENT({ classRankPercentile: null, classStanding: null }));
@@ -586,6 +610,43 @@ test("rule 2: at an Ultra selective college, Reach only when every signal is con
   // A recruited floor still beats it; an Ultra selective college with no numbers to place has no level.
   assert.equal(at(EXCELLENT({ activities: [] }), "required", { ...LINKED, hooks: hooks({ recruited: "likely_letter" }) }).group, "likely");
   assert.equal(run(ULTRA(), student()).group, null);
+});
+
+/** THREADED_APS without the courses of one year, or with every grade changed. */
+const withoutYear = (y: number) => THREADED_APS.filter((c) => c.year !== y);
+const graded = (final: CourseEntry["grades"]["final"]) => THREADED_APS.map((c) => ({ ...c, grades: { ...c.grades, final } }));
+/** Every core subject at the top level in 11th and 12th grade (rigor reads "most" from this alone). */
+const ALL_CORE = { 11: { english: true, math: true, science: true, history: true, language: true }, 12: { english: true, math: true, science: true, history: true, language: true } };
+
+test("Revision 2, Ultra selective: depth with a theme, an advanced course every year, and strong advanced grades; each alone gives High reach", () => {
+  const at = (s: EstimateStudent, extra: Partial<ModelInput> = LINKED) => run(ULTRA(), s, extra);
+  assert.equal(at(EXCELLENT()).group, "reach");
+  // Depth: Focused or Building AND at least one theme. An activity without a family never makes one.
+  assert.equal(at(EXCELLENT({ activities: FOCUSED })).group, "high_reach", "no theme");
+  assert.equal(at(EXCELLENT({ activities: [THEMED[0], { ...THEMED[1], family: null }] })).group, "high_reach", "the club without a family");
+  assert.equal(at(EXCELLENT({ activities: [THEMED[0], { ...THEMED[1], family: "athletics" }] })).group, "high_reach", "a family with no course track");
+  // Consistency: a year with no advanced course between the first and now.
+  assert.equal(at(EXCELLENT({ courses: withoutYear(11) })).group, "high_reach", "a skipped 11th grade");
+  assert.equal(at(EXCELLENT({ courses: withoutYear(10) })).group, "reach", "starting in 11th grade is consistent");
+  // Fewer than three in all (rigor still reads "most" from the core answers, the theme from the science track).
+  const two = [ap("ap_biology", "science", "A", 10), ap("ap_chemistry", "science", "A", 11)];
+  assert.equal(at(EXCELLENT({ courses: two }), { ...LINKED, coreAtTopLevel: ALL_CORE, grade: 11 }).group, "high_reach", "two advanced courses");
+  assert.equal(at(EXCELLENT({ courses: [...two, ap("ap_us_history", "history", "A", 11)] }), { ...LINKED, coreAtTopLevel: ALL_CORE, grade: 11 }).group, "reach", "three");
+  // Grades: the advanced courses' unweighted average at least 3.7 (A- passes, B+ doesn't; rigor still reads "most").
+  assert.equal(at(EXCELLENT({ courses: graded("A-") })).group, "reach", "A- average");
+  assert.equal(at(EXCELLENT({ courses: graded("B+") })).group, "high_reach", "B+ average");
+  // Missing pieces are named: this year's courses (the student's grade says 12th) and grades not yet entered.
+  const noSenior = at(EXCELLENT({ courses: withoutYear(12) }), { ...LINKED, grade: 12 });
+  assert.equal(noSenior.group, "high_reach");
+  assert.ok(texts(noSenior).includes("Not in this estimate yet: your advanced courses this year. Adding what you have gives a fuller picture and could change where this college stands for you."), texts(noSenior).join(" | "));
+  const ungraded = at(EXCELLENT({ courses: graded(null) }));
+  assert.equal(ungraded.group, "high_reach");
+  assert.ok(texts(ungraded).some((x) => x.startsWith("Not in this estimate yet: your advanced-course grades.")), texts(ungraded).join(" | "));
+  // A theme missing is said as a suggestion.
+  assert.ok(keys(at(EXCELLENT({ activities: FOCUSED }))).includes("depth.theme.add_family"));
+  // The rule is Ultra selective only: elsewhere a gap year or a B+ average changes nothing by itself.
+  const hs = WEIGHS_ALL("highly_selective", 0.2);
+  assert.equal(run(hs, EXCELLENT({ courses: withoutYear(11) }), LINKED).group, run(hs, EXCELLENT(), LINKED).group);
 });
 
 test("guard: the rule-2 check fails if the old rule (nothing below range) comes back", () => {
@@ -1040,6 +1101,139 @@ test("major subjects: a required course missing is below; grades well under the 
 });
 
 /* ------------------------------------------------------------------ */
+/* Revision 2: rank and rigor nudges, themes (2026-10-12)              */
+/* ------------------------------------------------------------------ */
+
+/** A college weighing GPA (C7) and tests, with no GPA figures (a GPA counts as entered but can't be placed). */
+const NUDGE_ON = () => college("100654", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "very_important", test_scores: "important" } });
+/** The same college saying GPA isn't considered and rating neither rank nor rigor: no nudge applies. */
+const NUDGE_OFF = () => college("100654", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "not_considered", test_scores: "important" } });
+const oddsOf = (c: { school: School; standing: StandingSchool }, s: EstimateStudent, extra: Partial<ModelInput> = {}) => detailed(c, s, extra).detail.hiddenOdds!;
+const NUDGE_BASE = (o: Partial<EstimateStudent> = {}) => student({ gpa: UNPLACED_GPA, test: sat(1350), ...o });
+
+test("Revision 2, rank nudges: top 5% ×1.05, top 1% ×1.08, salutatorian ×1.10, valedictorian ×1.15, the highest only", () => {
+  assert.deepEqual(ODDS_V3.rankNudge, { top5: 1.05, top1: 1.08, salutatorian: 1.1, valedictorian: 1.15 });
+  const base = oddsOf(NUDGE_ON(), NUDGE_BASE());
+  const ratio = (o: Partial<EstimateStudent>) => oddsOf(NUDGE_ON(), NUDGE_BASE(o)) / base;
+  near(ratio({ classRankPercentile: 10, classStanding: "top10" }), 1, 1e-9);
+  near(ratio({ classRankPercentile: 5, classStanding: "top5" }), 1.05, 1e-9);
+  near(ratio({ classRankPercentile: 5, classStanding: null }), 1.05, 1e-9);
+  near(ratio({ classRankPercentile: 1, classStanding: "top1" }), 1.08, 1e-9);
+  near(ratio({ rankExpectation: "salutatorian" }), 1.1, 1e-9);
+  near(ratio({ rankExpectation: "valedictorian" }), 1.15, 1e-9);
+  // Never stacked: valedictorian with top 1% is the valedictorian nudge alone; salutatorian beats top 5%.
+  near(ratio({ rankExpectation: "valedictorian", classRankPercentile: 1, classStanding: "top1" }), 1.15, 1e-9);
+  near(ratio({ rankExpectation: "salutatorian", classRankPercentile: 5, classStanding: "top5" }), 1.1, 1e-9);
+  // "My school doesn't rank" is no standing nudge.
+  near(ratio({ classStanding: "no_rank" }), 1, 1e-9);
+  // The expectation's sentence says it's an expectation.
+  const r = run(NUDGE_ON(), NUDGE_BASE({ rankExpectation: "valedictorian" }));
+  assert.ok(texts(r).includes(`Class standing: expects to be valedictorian, an expectation until it's official. ${NUDGE_ON().school.name} weighs grades and class standing, so it counts here.`), texts(r).join(" | "));
+  assert.ok(r.used.includes("class_standing"));
+  const top5 = run(NUDGE_ON(), NUDGE_BASE({ classRankPercentile: 5, classStanding: "top5" }));
+  assert.ok(texts(top5).some((x) => x.startsWith("Your class standing (top 5%) counts here")));
+});
+
+test("Revision 2, rank nudges: off where the college weighs neither class rank nor GPA; on where it weighs rank alone", () => {
+  const base = oddsOf(NUDGE_OFF(), NUDGE_BASE());
+  near(oddsOf(NUDGE_OFF(), NUDGE_BASE({ rankExpectation: "valedictorian", classRankPercentile: 1, classStanding: "top1" })) / base, 1, 1e-9);
+  const r = run(NUDGE_OFF(), NUDGE_BASE({ rankExpectation: "valedictorian" }));
+  assert.ok(!r.used.includes("class_standing"));
+  assert.ok(keys(r).includes("estimate.not_used") && texts(r).some((x) => x.startsWith("Not used here: class standing")));
+  // Rank alone (C7 class rank considered, GPA not): on. Both records answer the rank question, so completeness matches.
+  const rankOnly = () => college("100654", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "not_considered", class_rank: "considered", test_scores: "important" } });
+  near(oddsOf(rankOnly(), NUDGE_BASE({ classRankPercentile: 5, classStanding: "top5" })) / oddsOf(rankOnly(), NUDGE_BASE({ classRankPercentile: 10, classStanding: "top10" })), 1.05, 1e-9);
+});
+
+test("Revision 2, weighted over unweighted: ×1.04 from a 0.3 lead, ×1.08 from 0.6; 100-point scales by 3 and 6 points; nothing without a lead", () => {
+  assert.deepEqual(ODDS_V3.weightedGap, [[0.6, 1.08], [0.3, 1.04]]);
+  assert.deepEqual(ODDS_V3.weightedGap100, [[6, 1.08], [3, 1.04]]);
+  const base = oddsOf(NUDGE_ON(), NUDGE_BASE());
+  const ratio = (o: Partial<EstimateStudent>, c = NUDGE_ON) => oddsOf(c(), NUDGE_BASE(o)) / oddsOf(c(), NUDGE_BASE({ ...o, weightedGpa: null }));
+  near(ratio({ weightedGpa: 4.1 }), 1, 1e-9);
+  near(ratio({ weightedGpa: 4.2 }), 1.04, 1e-9);
+  near(ratio({ weightedGpa: 4.4 }), 1.04, 1e-9);
+  near(ratio({ weightedGpa: 4.5 }), 1.08, 1e-9);
+  near(ratio({ weightedGpa: 3.8 }), 1, 1e-9);
+  near(oddsOf(NUDGE_ON(), NUDGE_BASE()) / base, 1, 1e-9);
+  // A 5-point scale: 4.5/5.0 reads as 3.6 unweighted on 4.0; the lead is read on the student's own scale.
+  near(ratio({ gpa: 3.6, gpaScale: "5.0", gpaRange: [3.6, 3.6], weightedGpa: 4.9 }), 1.04, 1e-9);
+  near(ratio({ gpa: 3.6, gpaScale: "5.0", gpaRange: [3.6, 3.6], weightedGpa: 5.2 }), 1.08, 1e-9);
+  // A 100-point scale: 3.7 is the 93–96 band, read at its top (96).
+  near(ratio({ gpa: 3.7, gpaScale: "100", gpaRange: [3.7, 3.7], weightedGpa: 98 }), 1, 1e-9);
+  near(ratio({ gpa: 3.7, gpaScale: "100", gpaRange: [3.7, 3.7], weightedGpa: 99 }), 1.04, 1e-9);
+  near(ratio({ gpa: 3.7, gpaScale: "100", gpaRange: [3.7, 3.7], weightedGpa: 102 }), 1.08, 1e-9);
+  // Nothing where the GPA entered on the 4.0 scale is itself weighted (a range), or a weighted figure off the scale.
+  near(ratio({ gpa: 4.0, gpaRange: [3.4, 4.0], weightedGpa: 4.9 }), 1, 1e-9);
+  near(ratio({ weightedGpa: 95 }), 1, 1e-9);
+  // Off where the college weighs neither rigor nor GPA.
+  near(ratio({ weightedGpa: 4.5 }, NUDGE_OFF), 1, 1e-9);
+  // On where it weighs rigor alone (C7 rigor important), and said in a sentence without the multiplier.
+  const rigorOnly = () => college("100654", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "not_considered", rigor: "important", test_scores: "important" } });
+  near(oddsOf(rigorOnly(), NUDGE_BASE({ weightedGpa: 4.5, courses: TWO_APS })) / oddsOf(rigorOnly(), NUDGE_BASE({ courses: TWO_APS })), 1.08, 1e-9);
+  const r = run(NUDGE_ON(), NUDGE_BASE({ weightedGpa: 4.5 }));
+  assert.ok(texts(r).some((x) => x.startsWith("Your weighted GPA (4.5) sits well above your unweighted one")));
+});
+
+/** A college rating extracurriculars important (the theme's gate), GPA and tests, no GPA figures. */
+const THEME_COLLEGE = (extracurriculars = "important") => college("100654", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "very_important", test_scores: "important", extracurriculars } });
+/** Science deep (10th–12th, rising, senior year), math steady (11th, 12th). */
+const TRACKS = [
+  ap("ap_biology", "science", "A", 10),
+  ap("ap_chemistry", "science", "A", 11),
+  ap("ap_physics_c_mechanics", "science", "A", 12),
+  ap("ap_calculus_ab", "math", "A", 11),
+  ap("ap_calculus_bc", "math", "A", 12),
+];
+const SCI_OLY = activity("Science Olympiad", "club", [10, 11, 12], { family: "science" });
+const MATH_CLUB = activity("Math team", "club", [11, 12], { family: "math" });
+
+test("Revision 2, themes: one ×1.10, two or more ×1.18, multiplying with depth; none without a matching family", () => {
+  assert.deepEqual(ODDS_V3.theme, { one: 1.1, two: 1.18 });
+  const at = (acts: ActivityEntry[], c = THEME_COLLEGE) => oddsOf(c(), NUDGE_BASE({ courses: TRACKS, activities: acts }));
+  const noFamily = (a: ActivityEntry) => ({ ...a, family: null });
+  // Both records read Building (×1.1 depth at "important"), so the ratio is the theme alone.
+  const none = at([noFamily(SCI_OLY), noFamily(MATH_CLUB)]);
+  near(at([SCI_OLY, noFamily(MATH_CLUB)]) / none, 1.1, 1e-9);
+  near(at([SCI_OLY, MATH_CLUB]) / none, 1.18, 1e-9);
+  // An activity of one year doesn't join a theme; a family no course track reads Deep or Steady doesn't either.
+  near(at([noFamily(SCI_OLY), { ...MATH_CLUB, years: [12] }]) / none, 1, 1e-9);
+  near(at([noFamily(SCI_OLY), { ...MATH_CLUB, family: "arts" }]) / none, 1, 1e-9);
+  // Multiplies with M_depth: a Focused record (×1.3) with one theme against the same record with no family.
+  const captain = activity("Soccer", "sport", [9, 10, 11, 12], { roles: { 12: "leader" }, family: "athletics" });
+  near(at([captain, SCI_OLY]) / at([captain, noFamily(SCI_OLY)]), 1.1, 1e-9);
+  near(at([captain, noFamily(SCI_OLY)]) / at([noFamily(SCI_OLY)]), 1.3 / 1.1, 1e-9);
+  // Applied where the college rates activities at least considered; not where it doesn't.
+  near(at([SCI_OLY, MATH_CLUB], () => THEME_COLLEGE("considered")) / at([noFamily(SCI_OLY), noFamily(MATH_CLUB)], () => THEME_COLLEGE("considered")), 1.18, 1e-9);
+  near(at([SCI_OLY, MATH_CLUB], () => THEME_COLLEGE("not_considered")) / at([noFamily(SCI_OLY), noFamily(MATH_CLUB)], () => THEME_COLLEGE("not_considered")), 1, 1e-9);
+});
+
+test("Revision 2, themes: the sentence names the theme in words, and a suggestion where a track or an activity has no partner", () => {
+  const notesFor = (acts: ActivityEntry[], courses = TRACKS) => run(THEME_COLLEGE(), NUDGE_BASE({ courses, activities: acts }));
+  const two = notesFor([SCI_OLY, MATH_CLUB]);
+  assert.ok(texts(two).includes("Your math and science courses and your math and science activities line up: depth in one thing, in and out of class."), texts(two).join(" | "));
+  const one = notesFor([SCI_OLY]);
+  assert.ok(texts(one).includes("Your science courses and your science activities line up: depth in one thing, in and out of class."));
+  assert.ok(texts(one).includes("Your math courses run through high school; a club, team, or program in math would tie them to what you do outside class."), "a track with no activity");
+  const art = notesFor([SCI_OLY, activity("Art club", "arts", [10, 11], { family: "arts" })]);
+  assert.ok(texts(art).includes("You keep up art outside class; an honors or advanced art course each year would tie it to your schedule."), "an activity with no track");
+  const unnamed = notesFor([{ ...SCI_OLY, family: null }]);
+  assert.ok(keys(unnamed).includes("depth.theme.add_family"));
+  assert.ok(!keys(unnamed).includes("depth.theme"));
+  // Never an activity's name in a theme sentence.
+  for (const n of [...two.notes, ...one.notes].filter((x) => x.key.startsWith("depth.theme"))) assert.doesNotMatch(noteText(n), /Olympiad|Math team/);
+});
+
+test("Revision 2: activities of every kind count toward completeness (sports, clubs, work, other)", () => {
+  const c = () => college("100654", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), c7: { gpa: "very_important", test_scores: "important", extracurriculars: "important" } });
+  const none = readings(c(), student({ gpa: 3.8, test: sat(1300) })).completeness;
+  for (const kind of ["sport", "club", "work", "other", "family", "service", "arts", "research"] as const) {
+    near(readings(c(), student({ gpa: 3.8, test: sat(1300), activities: [activity("X", kind, [11])] })).completeness, 1, 1e-9);
+  }
+  assert.ok(none < 1);
+});
+
+/* ------------------------------------------------------------------ */
 /* The snapshot detail                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -1056,6 +1250,9 @@ test("the snapshot detail: position, pool, crowding, reading, hidden odds, tier,
   assert.deepEqual(Object.keys(detail.without!).sort(), ["crowding", "depth", "hooks", "interest", "rank", "residency", "rigor"]);
   assert.ok(detail.depth && detail.depth.activitiesCount === 0);
   assert.ok(!("detail" in result) && !("hiddenOdds" in result));
+  // Revision 2: completeness rides in the detail (courses and class standing missing at Purdue: 4 of 7), never the result.
+  near(detail.completeness, 4 / 7, 1e-9);
+  assert.ok(!("completeness" in result));
 });
 
 test("every note is a catalog key with a sentence, and every fact is a registered field", () => {
@@ -1102,7 +1299,7 @@ test("pool: the published rate's kind, rate, and who-phrase; Compare's line read
 /* ------------------------------------------------------------------ */
 
 /** The names the method's internals go by; a public surface carrying any of them leaks the method. */
-const INTERNAL_NAMES = /hidden_?odds|hiddenOdds|\bodds\b|multiplier|selectivity_?index|ODDS_V3|HOOKS_V3|M_acad|M_depth|M_legacy|cutoff|completeness|gap_?prior|test_?pull|test_?down|test_?up|expect_?weights|\bd_?eff\b|d_core|stageOneReadings/i;
+const INTERNAL_NAMES = /hidden_?odds|hiddenOdds|\bodds\b|multiplier|selectivity_?index|ODDS_V3|HOOKS_V3|M_acad|M_depth|M_legacy|M_theme|M_rank|cutoff|completeness|gap_?prior|test_?pull|test_?down|test_?up|expect_?weights|\bd_?eff\b|d_core|stageOneReadings|rank_?nudge|weighted_?gap|weightedMax|ultra_?advanced|theme_?count|\bmTheme\b|\bmRank\b|\bmWeighted\b/i;
 
 /** Results across the pinned cases, each with its hidden odds. */
 function sweep() {
@@ -1119,6 +1316,10 @@ function sweep() {
   add(HARVARD(), student({ test: sat(1560), gpa: 4.0 }));
   add(GEORGIA_TECH(), student({ state: "GA", test: sat(1500) }));
   add(ELON(), student({ gpa: 3.9 }));
+  // Revision 2's nudges and a theme.
+  add(NUDGE_ON(), student({ gpa: UNPLACED_GPA, test: sat(1350), classRankPercentile: 1, classStanding: "top1", rankExpectation: "valedictorian", weightedGpa: 4.5 }));
+  add(THEME_COLLEGE(), student({ gpa: UNPLACED_GPA, test: sat(1350), courses: TRACKS, activities: [SCI_OLY, MATH_CLUB] }));
+  add(ULTRA(), EXCELLENT({ courses: withoutYear(12) }), { ...LINKED, grade: 12 });
   return out;
 }
 
@@ -1142,6 +1343,25 @@ test("guard: a result carries exactly the contract's fields, and none holds the 
   assert.match(JSON.stringify(leaky), INTERNAL_NAMES);
   // And Revision 1's readings (completeness, the gap prior, the test pull) the same way.
   for (const extra of [{ completeness: 0.45 }, { gapPrior: -0.5 }, { testPull: 0.25 }, { dEff: 0.3 }]) assert.match(JSON.stringify({ ...sweep()[0].result, ...extra }), INTERNAL_NAMES);
+  // And Revision 2's constants and readings.
+  for (const extra of [{ rankNudge: { valedictorian: 1.15 } }, { weightedGap: 0.6 }, { M_theme: 1.18 }, { mRank: 1.08 }, { mWeighted: 1.04 }, { ultraAdvancedGpa: 3.7 }, { weightedMaxPoints: 6 }]) {
+    assert.match(JSON.stringify({ ...sweep()[0].result, ...extra }), INTERNAL_NAMES, JSON.stringify(extra));
+  }
+});
+
+test("guard: no Revision 2 constant reaches a result as a number", () => {
+  const constants = [
+    ...Object.values(ODDS_V3.rankNudge),
+    ...ODDS_V3.weightedGap.map(([, m]) => m),
+    ...ODDS_V3.weightedGap100.map(([, m]) => m),
+    ODDS_V3.theme.one,
+    ODDS_V3.theme.two,
+  ];
+  const numbersIn = (r: EstimateResult) => r.notes.flatMap((n) => Object.values(n.values)).filter((v): v is number => typeof v === "number");
+  for (const { result } of sweep()) for (const v of numbersIn(result)) assert.ok(!constants.some((c) => Math.abs(c - v) < 1e-9), `${v} in ${result.unitId}`);
+  // The check sees one.
+  const leaky = { ...sweep()[0].result, notes: [{ key: "estimate.work", values: { hours: ODDS_V3.rankNudge.top5 } }] };
+  assert.ok(numbersIn(leaky).some((v) => constants.includes(v)));
 });
 
 test("guard: the API response strips anything beyond the contract, including odds and multipliers", () => {
@@ -1156,12 +1376,12 @@ test("guard: the API response strips anything beyond the contract, including odd
 });
 
 test("guard: the new sentences name no number, weight, cutoff, or odds", () => {
-  const added = Object.keys(NOTES).filter((k) => /^(estimate\.(level\.|elite|recruited|label\.elite|label\.recruited|not_said|work|first_generation|incomplete)|hooks\.|ed\.|pool\.who\.)/.test(k));
-  assert.ok(added.length >= 20, `${added.length}`);
+  const added = Object.keys(NOTES).filter((k) => /^(estimate\.(level\.|elite|recruited|label\.elite|label\.recruited|not_said|work|first_generation|incomplete|rank_expectation|rank_top|weighted_above)|hooks\.|ed\.|pool\.who\.|depth\.theme)/.test(k));
+  assert.ok(added.length >= 27, `${added.length}`);
   for (const k of added) {
-    const text = NOTES[k]({ inputs: "courses and activities", college: "X", rating: "considered", state: "Maryland", scope: "all", law: "HB", level: "Target", unit: "Engineering", test: "SAT", hours: "" });
+    const text = NOTES[k]({ inputs: "courses and activities", college: "X", rating: "considered", state: "Maryland", scope: "all", law: "HB", level: "Target", unit: "Engineering", test: "SAT", hours: "", title: "valedictorian", rank: "top", weighted: "", subjects: "art", subject: "art" });
     assert.doesNotMatch(text, /\d|%/, `${k}: ${text}`);
-    assert.doesNotMatch(text, /weight|threshold|cutoff|multipl|odds|percent|index/i, `${k}: ${text}`);
+    assert.doesNotMatch(text, /(?<!un)weight(?!ed GPA)|threshold|cutoff|multipl|odds|percent|index/i, `${k}: ${text}`);
   }
 });
 
@@ -1211,11 +1431,13 @@ test("guard: telemetry never carries the odds, closeness, the tier's index, or t
   assert.deepEqual(problems('x: { properties: ["group", "completeness"] }'), ["completeness"], "and a completeness leak");
 });
 
-test("guard: the account export never includes the hidden odds or the ablation columns", () => {
+test("guard: the account export never includes the hidden odds or the ablation columns; completeness is the student's own", () => {
   const exp = read("lib", "account-export.ts");
   const cols = exp.match(/const SNAPSHOT_EXPORT_COLUMNS =\s*"([^"]+)"/)![1].split(",").map((c) => c.trim());
-  const leaks = (list: string[]) => list.filter((c) => /hidden_odds|^without_|^position$|^base_rate|completeness/.test(c));
+  const leaks = (list: string[]) => list.filter((c) => /hidden_odds|^without_|^position$|^base_rate|multiplier|nudge|theme/.test(c));
   assert.deepEqual(leaks(cols), []);
   assert.deepEqual(leaks([...cols, "hidden_odds"]), ["hidden_odds"], "the check sees a leak");
-  assert.deepEqual(leaks([...cols, "completeness"]), ["completeness"], "and a completeness column");
+  assert.deepEqual(leaks([...cols, "rank_nudge"]), ["rank_nudge"], "and a nudge column");
+  // Revision 2 (the lead's brief for U14): the binned completeness is exported with the student's own snapshots.
+  assert.ok(cols.includes("completeness"));
 });

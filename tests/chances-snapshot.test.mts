@@ -13,6 +13,7 @@ import {
   ABLATION_INPUTS,
   apBand,
   binOdds,
+  binCompleteness,
   binGpa,
   binGrade,
   binTest,
@@ -277,6 +278,21 @@ test("the hidden odds are binned to 0.005 and clamped to 0–1; inputs_used hold
   assert.deepEqual(row.inputs_used, ["gpa", "activities", "legacy", "class_standing"], "a kind the check doesn't list is dropped");
   const sql = readFileSync(new URL("../supabase/migrations/20261012100000_five_levels.sql", import.meta.url), "utf8");
   for (const k of ["activities", "awards", "work", "legacy", "recruited", "interest", "class_standing"]) assert.ok(sql.includes(`'${k}'`), `the check allows ${k}`);
+});
+
+test("Revision 2: completeness is written from the method's detail, binned to 0.05 and clamped to 0–1; absent or malformed reads null", () => {
+  assert.deepEqual([binCompleteness(4 / 7), binCompleteness(1 / 7), binCompleteness(0.024), binCompleteness(1), binCompleteness(1.3), binCompleteness(-0.2), binCompleteness(null)], [0.55, 0.15, 0, 1, 1, 0, null]);
+  const input = estimateInputFromProfile(profile(), "243780", null);
+  const row = buildSnapshot({ input, estimate: { result: result(), detail: { completeness: 6 / 7 } }, offering: null, admitRate: 0.3, studentGroup: null });
+  assert.equal(row.completeness, 0.85);
+  assert.ok(SNAPSHOT_COLUMNS.includes("completeness"));
+  assert.equal(buildSnapshot({ input, estimate: { result: result() }, offering: null, admitRate: 0.3, studentGroup: null }).completeness, null);
+  assert.equal(buildSnapshot({ input, estimate: { result: result(), detail: { completeness: Number.NaN } }, offering: null, admitRate: 0.3, studentGroup: null }).completeness, null);
+  // Every binned value meets the column's check (a multiple of 0.05 between 0 and 1).
+  for (let i = 0; i <= 100; i++) {
+    const v = binCompleteness(i / 97)!;
+    assert.ok(v >= 0 && v <= 1 && Math.abs(Math.round(v * 100) % 5) === 0, `${i / 97} → ${v}`);
+  }
 });
 
 test("a snapshot never holds an activity's, award's, or course's name, even with the Depth readings in the detail", () => {

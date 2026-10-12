@@ -304,3 +304,41 @@ test("five levels: the migration applies over a snapshot stored with the old 're
   const rows = (await db.query<{ estimate_label: string }>("select estimate_label from public.application_snapshots")).rows;
   assert.deepEqual(rows, [{ estimate_label: "reach-for-everyone" }]);
 });
+
+/* ------------------------------------------------------------------ */
+/* Completeness (20261012120000_snapshot_completeness.sql)              */
+/* ------------------------------------------------------------------ */
+
+const COMPLETENESS = "20261012120000_snapshot_completeness.sql";
+
+/** Records with completeness, re-records with another value, and returns both reads. */
+async function writeCompleteness(w: World): Promise<[string | null, string | null]> {
+  const snap = { ...JSON.parse(SNAP), completeness: 0.55 };
+  const read = async () => (await one(asUser<{ completeness: string | null }>(w.db, w.alice, "select completeness::text from public.application_snapshots where item_id = $1", [w.item]))).completeness;
+  await record(w, w.alice, w.item, JSON.stringify(snap));
+  const first = await read();
+  await record(w, w.alice, w.item, JSON.stringify({ ...snap, completeness: 0.85 }));
+  return [first, await read()];
+}
+
+test("completeness: the write keeps the column and re-recording updates it; the check refuses an unbinned or out-of-range value", async () => {
+  const w = await world();
+  assert.ok(ALL.includes(COMPLETENESS), "the migration is on the branch");
+  assert.deepEqual(await writeCompleteness(w), ["0.55", "0.85"]);
+  await assert.rejects(record(w, w.alice, w.item, JSON.stringify({ ...JSON.parse(SNAP), completeness: 0.57 })), /check constraint/, "a multiple of 0.05 only");
+  await assert.rejects(record(w, w.alice, w.item, JSON.stringify({ ...JSON.parse(SNAP), completeness: 1.05 })), /check constraint|overflow/, "at most 1");
+  await assert.rejects(record(w, w.alice, w.item, JSON.stringify({ ...JSON.parse(SNAP), completeness: -0.05 })), /check constraint/, "at least 0");
+  // A snapshot without it reads null (taken before the column, or with no estimate).
+  await record(w, w.alice, w.item);
+  assert.equal((await one(asUser<{ completeness: string | null }>(w.db, w.alice, "select completeness::text from public.application_snapshots where item_id = $1", [w.item]))).completeness, null);
+});
+
+test("guard: without the function change (the five-levels body), the column is never written, and the check fails", async () => {
+  const w = await world();
+  // Re-create record_application_snapshot() as the five-levels migration left it: the column exists, the write skips it.
+  const five = readFileSync(join(DIR, "20261012100000_five_levels.sql"), "utf8");
+  await w.db.exec(five.slice(five.indexOf("create or replace function public.record_application_snapshot")));
+  const written = await writeCompleteness(w);
+  assert.deepEqual(written, [null, null]);
+  assert.throws(() => assert.deepEqual(written, ["0.55", "0.85"]), "the check above fails");
+});

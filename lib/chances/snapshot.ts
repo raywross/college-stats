@@ -52,6 +52,11 @@ export interface SnapshotDetail {
    * name). Kept with the detail for the measurements; the row has no column for it yet (decision 6 adds none).
    */
   depth?: DepthSnapshot | null;
+  /**
+   * Revision 2 (method/standing.md): the share of the weight of the inputs this college weighs that the student
+   * entered, 0–1. Binned to 0.05 into the row's `completeness`; exported with the student's own snapshots, never shown.
+   */
+  completeness?: number | null;
 }
 
 /** What the estimate hands a snapshot: the result the student saw, and optionally the method's details. */
@@ -104,6 +109,7 @@ export interface SnapshotRow {
   without_interest: Group | null;
   hidden_odds: number | null;
   selectivity_tier: SelectivityTier | null;
+  completeness: number | null;
   student_group: Group | null;
   group_changed: boolean;
 }
@@ -115,7 +121,7 @@ export const SNAPSHOT_COLUMNS = [
   "science_gpa", "hs_ap_band", "hs_ib", "hs_dual", "admit_rate", "estimate_group", "estimate_label", "inputs_used",
   "note_keys", "model_version", "position", "base_rate_kind", "base_rate", "crowded", "rigor_reading",
   "without_residency", "without_crowding", "without_rigor", "without_rank", "without_depth", "without_hooks",
-  "without_interest", "hidden_odds", "selectivity_tier", "student_group", "group_changed",
+  "without_interest", "hidden_odds", "selectivity_tier", "completeness", "student_group", "group_changed",
 ] as const satisfies readonly (keyof SnapshotRow)[];
 
 /* ------------------------------------------------------------------ */
@@ -140,6 +146,8 @@ export const binGrade = (g: number | null | undefined) => binTo(g, 0.1, 0, 4);
 export const binRate = (r: number | null | undefined) => binTo(r, 0.01, 0, 1);
 /** The hidden odds (0–1) to the nearest 0.005 (levels.md "Database": `hidden_odds numeric(4,3)`). */
 export const binOdds = (r: number | null | undefined) => binTo(r, 0.005, 0, 1);
+/** Completeness (0–1) to the nearest 0.05 (20261012120000_snapshot_completeness.sql: `completeness numeric(3,2)`). */
+export const binCompleteness = (r: number | null | undefined) => binTo(r, 0.05, 0, 1);
 
 export function binTest(test: EstimateStudent["test"]): { test_kind: "sat" | "act" | null; test_score: number | null } {
   if (!test || !finite(test.score)) return { test_kind: null, test_score: null };
@@ -265,6 +273,7 @@ export function buildSnapshot({ input, estimate, offering, admitRate, studentGro
     without_interest: without("interest"),
     hidden_odds: binOdds(detail?.hiddenOdds),
     selectivity_tier: detail?.selectivityTier && (SELECTIVITY_TIERS as readonly string[]).includes(detail.selectivityTier) ? detail.selectivityTier : null,
+    completeness: binCompleteness(detail?.completeness),
     student_group: picked,
     group_changed: picked !== null && picked !== group,
   };

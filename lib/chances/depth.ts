@@ -305,6 +305,82 @@ export function activitiesReading(activities: readonly ActivityEntry[], awards: 
 }
 
 /* ------------------------------------------------------------------ */
+/* Themes: depth across what we track (method/standing.md Revision 2)  */
+/* ------------------------------------------------------------------ */
+
+/** Track readings that can anchor a theme. */
+export const THEME_TRACKS: readonly TrackReading[] = ["deep", "steady"];
+/** An activity joins a theme when it was kept up at least this many years. */
+export const THEME_ACTIVITY_YEARS = 2;
+
+/** A family in the words a theme sentence uses ("Your art courses and your art activities line up"). */
+const THEME_WORDS: Record<CourseSubject, string> = {
+  english: "English",
+  math: "math",
+  science: "science",
+  history: "history",
+  language: "world language",
+  cs: "computer science",
+  arts: "art",
+  other: "other",
+};
+
+/** "a", "a and b", "a, b, and c". */
+function listWords(words: readonly string[]): string {
+  if (words.length <= 2) return words.join(" and ");
+  return `${words.slice(0, -1).join(", ")}, and ${words[words.length - 1]}`;
+}
+
+/** The course family an activity's own family names, or null (athletics, service, leadership…, or none picked). */
+function activityCourseFamily(a: ActivityEntry): CourseSubject | null {
+  const f = a.family ?? null;
+  return f !== null && (DEPTH_FAMILIES as readonly string[]).includes(f) ? (f as CourseSubject) : null;
+}
+
+export interface ThemesResult {
+  /** Families where the course track reads Deep or Steady and an activity of two or more years shares the family. */
+  themes: CourseSubject[];
+  /** Deep or Steady tracks with no activity in the family. */
+  trackOnly: CourseSubject[];
+  /** Families of activities (two or more years) with no Deep or Steady track behind them. */
+  activityOnly: CourseSubject[];
+  /** Activities of two or more years with no family picked (they can't line up with anything). */
+  unclassified: number;
+  /** The theme sentence, then at most one suggestion of each kind (depth.theme.*). */
+  notes: EstimateNote[];
+}
+
+/**
+ * Depth across what we track (owner, 2026-10-12: "someone taking a lot of art courses and doing art clubs would
+ * increase depth"): a theme is a course family whose track reads Deep or Steady and that at least one activity of
+ * two or more years shares through `ActivityEntry.family`. An activity without a family never counts. Words only
+ * reach the sentences (the families' names), never the activities' names.
+ */
+export function courseThemes(tracks: CourseTracks, activities: readonly ActivityEntry[]): ThemesResult {
+  const kept = activities.filter((a) => a.years.length >= THEME_ACTIVITY_YEARS);
+  const activityFamilies = new Set<CourseSubject>();
+  for (const a of kept) {
+    const f = activityCourseFamily(a);
+    if (f) activityFamilies.add(f);
+  }
+  const strong = tracks.families.filter((t) => THEME_TRACKS.includes(t.reading)).map((t) => t.family);
+  const themes = strong.filter((f) => activityFamilies.has(f));
+  const trackOnly = strong.filter((f) => !activityFamilies.has(f));
+  const activityOnly = [...activityFamilies].filter((f) => !strong.includes(f));
+  const unclassified = kept.filter((a) => !a.family).length;
+
+  const notes: EstimateNote[] = [];
+  if (themes.length > 0) {
+    const words = listWords(themes.map((f) => THEME_WORDS[f]));
+    notes.push(note("depth.theme", { subjects: words }));
+  }
+  if (activityOnly.length > 0) notes.push(note("depth.theme.activity_only", { subject: THEME_WORDS[activityOnly[0]] }));
+  if (trackOnly.length > 0 && activities.length > 0) notes.push(note("depth.theme.track_only", { subject: THEME_WORDS[trackOnly[0]] }));
+  if (themes.length === 0 && unclassified > 0) notes.push(note("depth.theme.add_family"));
+  return { themes, trackOnly, activityOnly, unclassified, notes };
+}
+
+/* ------------------------------------------------------------------ */
 /* Snapshots                                                           */
 /* ------------------------------------------------------------------ */
 

@@ -284,6 +284,16 @@ export const NOTES: Record<NoteKey, Note> = {
   "depth.activities.recognition": (v) => `${s(v, "activity")} (${s(v, "tier")}) counts at colleges that rate talent.`,
   /** Where a college doesn't say it weighs activities (C7 not considered, or no C7). */
   "depth.activities.not_weighed": (v) => `${s(v, "college")} doesn't say it weighs activities; they're shown here for you, not for the estimate.`,
+  /*
+   * Themes (method/standing.md "Revision 2"): a course track and an activity in the same family. `subjects` and
+   * `subject` are family words ("art", "science and math"), never an activity's or course's name.
+   */
+  "depth.theme": (v) => `Your ${s(v, "subjects")} courses and your ${s(v, "subjects")} activities line up: depth in one thing, in and out of class.`,
+  "depth.theme.activity_only": (v) =>
+    `You keep up ${s(v, "subject")} outside class; an honors or advanced ${s(v, "subject")} course each year would tie it to your schedule.`,
+  "depth.theme.track_only": (v) =>
+    `Your ${s(v, "subject")} courses run through high school; a club, team, or program in ${s(v, "subject")} would tie them to what you do outside class.`,
+  "depth.theme.add_family": () => "Pick what each activity is about (art, science, a sport…) so it can line up with your courses.",
 
   /* ---- Five levels (specs/chances/levels.md "The levels"), added by the levels model (lib/chances/model.ts) ----
    * The meaning line a row's drawer shows under the chip, one per stored level. `test` is "SAT", "ACT", or "" (then
@@ -316,6 +326,16 @@ export const NOTES: Record<NoteKey, Note> = {
    * hasn't entered, named in words ("courses, class standing, and activities"); never how much they count.
    */
   "estimate.incomplete": (v) => `Not in this estimate yet: your ${s(v, "inputs")}. Adding what you have gives a fuller picture and could change where this college stands for you.`,
+  /**
+   * Revision 2 (method/standing.md): the class-standing nudges. An expectation is stated, not known, so its sentence
+   * says "expects to be". `title`: "valedictorian" or "salutatorian"; `rank`: "top 5%" as the student picked it.
+   */
+  "estimate.rank_expectation": (v) =>
+    `Class standing: expects to be ${s(v, "title")}, an expectation until it's official. ${s(v, "college")} weighs grades and class standing, so it counts here.`,
+  "estimate.rank_top": (v) => `Your class standing (${s(v, "rank")}) counts here: ${s(v, "college")} weighs grades and class standing.`,
+  /** Revision 2: a weighted GPA above the unweighted one, read as a sign of demanding courses. `weighted`: as entered. */
+  "estimate.weighted_above": (v) =>
+    `Your weighted GPA (${s(v, "weighted")}) sits well above your unweighted one, a sign of demanding courses, which ${s(v, "college")} weighs.`,
 
   /* ---- The list row's inputs (inputs-beyond-academics.md "Legacy", "Recruited athlete", "Demonstrated interest") ---- */
   /** `rating`: "very important", "important", or "considered", as the college's C7 says. */

@@ -50,13 +50,16 @@ drawer" below where they differ:
      the date is editable (no later than today); **Visit notes** opens the visit's form (`VisitForm`) in a sheet.
      Tapping it again removes that visit (asking first when it has notes); with more than one past visit logged it
      can't be undone from here. A planned visit shows as "Visit planned for Nov 3".
-  4. **Following on social**: one toggle per account the college has (`school.social`), recording
+  4. **Requested info** (back on 2026-10-12, owner): "We requested info" records `list_items.info_requested_on` as
+     today, the date editable (no later than today, `markInfoRequested(itemId, on, date)`); tapping again clears it.
+  5. **Following on social**: one toggle per account the college has (`school.social`), recording
      `followed_networks`/`follows_social` (`recordFollow`), each beside a link that opens the account to follow it
      (X's follow intent, YouTube's subscribe prompt, else the profile). A follow is the student's own account, so a
-     guardian sees the toggles read-only with the links.
-  5. **Quick links**: the college's campus visit page, else its virtual tour, else its admissions page
+     guardian sees each network's state without acting on it (owner: "see that it is followed but not act"): a
+     filled "Following" chip or a dashed-outline "Not following" one, not a greyed-out control, plus the link.
+  6. **Quick links**: the college's campus visit page, else its virtual tour, else its admissions page
      (`lib/planner/capture.ts` `visitPageLink`).
-  6. **Remove from the list** (editors), unchanged.
+  7. **Remove from the list** (editors), unchanged.
   Each saved change refreshes the page, so the level reads it: visits, information requests, and follows count as
   demonstrated interest (`lib/planner/hooks.ts`; follows joined on 2026-10-12). The estimate's meaning line, stage
   lines, compared-with panel, reasons, and "What went into this estimate" left the plan (the college profile's

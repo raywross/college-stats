@@ -20,6 +20,7 @@ import {
   draftFromProfile,
   INTAKE_DONE,
   INTAKE_REVIEW,
+  intakeStepParam,
   intakeToSave,
   stepValid,
   type IntakeDraft,
@@ -73,14 +74,17 @@ export default function PlanIntake({
   // (PlanFrame), so a plain `setStep(4)` never survives the refresh that follows: the whole tree unmounts under it.
   // `&done=1` on the URL (alongside `&setup=1`, which keeps PlanFrame rendering the guide regardless) tells the next
   // mount to open on Done directly, instead of edit mode's usual Review.
-  const done = useSearchParams().get("done") === "1";
+  const params = useSearchParams();
+  const done = params.get("done") === "1";
+  // `&step=N` (the people line's "Next: add clubs", owner 2026-10-12) opens edit mode on that step instead of Review.
+  const linkedStep = intakeStepParam(params.get("step"));
   const today = ctx.today;
   const studentId = ctx.student?.id ?? null;
   const storedGradYear = ctx.student?.grad_year ?? null;
   const person = relation === "guardian" ? studentId : null;
 
   const [draft, setDraft] = useState<IntakeDraft>(() => draftFromProfile(ctx.profile, storedGradYear, today));
-  const [step, setStep] = useState<IntakeStep>(done ? INTAKE_DONE : mode === "edit" ? INTAKE_REVIEW : 0);
+  const [step, setStep] = useState<IntakeStep>(done ? INTAKE_DONE : mode === "edit" ? (linkedStep ?? INTAKE_REVIEW) : 0);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 

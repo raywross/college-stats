@@ -41,13 +41,15 @@ export function tabForStage(stage: number): PlanTab {
 
 /**
  * "/plan", "/plan?for=<person>", "/plan?for=<person>&tab=calendar" (the person is a student id). `setup` adds
- * `&setup=1`: the intake guide in edit mode (specs/planner/redesign/intake.md "Edit mode").
+ * `&setup=1`: the intake guide in edit mode (specs/planner/redesign/intake.md "Edit mode"); with `step`, opened on that
+ * step (`&step=4`, the people line's next-step link).
  */
-export function planHref(opts: { person?: string | null; tab?: PlanTab | null; setup?: boolean }): string {
+export function planHref(opts: { person?: string | null; tab?: PlanTab | null; setup?: boolean; step?: number | null }): string {
   const q = new URLSearchParams();
   if (opts.person) q.set("for", opts.person);
   if (opts.tab) q.set("tab", opts.tab);
   if (opts.setup) q.set("setup", "1");
+  if (opts.setup && opts.step != null) q.set("step", String(opts.step));
   const s = q.toString();
   return s ? `/plan?${s}` : "/plan";
 }

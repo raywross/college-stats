@@ -6,6 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { defaultTab, parseTab, planHref, tabForStage, tabsFor } from "../lib/planner/plan-tabs.ts";
+import { intakeStepParam } from "../lib/planner/intake.ts";
 
 test("parseTab keeps the three tabs and nothing else; the dropped Scores tab falls back to the default (owner, 2026-10-12)", () => {
   for (const t of ["colleges", "calendar", "offers"]) assert.equal(parseTab(t), t);
@@ -43,4 +44,13 @@ test("planHref builds /plan with the person and the tab, leaving out what's miss
   assert.equal(planHref({ person: "abc", setup: true }), "/plan?for=abc&setup=1");
   assert.equal(planHref({ setup: true }), "/plan?setup=1");
   assert.equal(planHref({ person: "abc", setup: false }), "/plan?for=abc");
+  // A step into edit mode (the people line's next-step link); ignored without setup.
+  assert.equal(planHref({ person: "abc", setup: true, step: 4 }), "/plan?for=abc&setup=1&step=4");
+  assert.equal(planHref({ setup: true, step: 0 }), "/plan?setup=1&step=0");
+  assert.equal(planHref({ step: 4 }), "/plan");
+});
+
+test("intakeStepParam takes the entry steps 0–6 and nothing else", () => {
+  for (const v of ["0", "1", "2", "3", "4", "5", "6"]) assert.equal(intakeStepParam(v), Number(v));
+  for (const v of [null, undefined, "", "7", "8", "-1", "4.0", " 4", "four"]) assert.equal(intakeStepParam(v), null);
 });

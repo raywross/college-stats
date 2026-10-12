@@ -11,7 +11,7 @@ import { SheetDialog } from "@/components/ui/sheet-dialog";
 import { setVisited } from "@/lib/lists";
 import { followTargets, visitedState, visitPageLink } from "@/lib/planner/capture";
 import { dayLabel } from "@/lib/planner/list-row";
-import { deleteVisit, logVisit, recordFollow, updateVisit } from "@/lib/planner/store-actions";
+import { deleteVisit, logVisit, markInfoRequested, recordFollow, updateVisit } from "@/lib/planner/store-actions";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import type { PlanContext, PlanVisit } from "@/lib/planner/types";
 import type { SocialNetwork } from "@/lib/types";
@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
  * - **Legacy** and **Recruited** (AboutYouAndCollege),
  * - **Visited**: "We visited" logs a visit dated today (a `plan_visits` row, which sets `list_items.visited_on`), with
  *   the date editable and the visit's notes one tap away (VisitForm in a sheet),
+ * - **Requested info**: one tap records `list_items.info_requested_on` as today, the date editable, tapping again clears it,
  * - **Following on social**: one toggle per account the college has, each beside a link that opens the account,
  * - **Quick links**: the college's visit page (else virtual tour, else admissions page),
  * - and, for an editor, Remove from the list.
@@ -54,6 +55,7 @@ export function RowDrawer({
         <>
           <AboutYouAndCollege item={item} school={school} canEdit={canEdit} />
           <VisitedControl itemId={item.id} visitedOn={item.visited_on} visits={ctx.visits.filter((v) => v.item_id === item.id)} today={ctx.today} canEdit={canEdit} schoolName={school.name} />
+          <InfoRequestedControl itemId={item.id} requestedOn={item.info_requested_on ?? null} today={ctx.today} canEdit={canEdit} schoolName={school.name} />
           <FollowControl
             itemId={item.id}
             social={school.social as Partial<Record<SocialNetwork, string>> | null | undefined}
@@ -240,6 +242,65 @@ function VisitNotesView({ visit }: { visit: PlanVisit }) {
 }
 
 /** Following on social: one toggle per account the college has, beside the link that opens it to follow. */
+const followChip = "inline-flex min-h-11 flex-1 items-center gap-2 rounded-full border px-2 pr-3.5 text-sm font-semibold";
+const followOn = "border-foreground bg-foreground text-background";
+const followOff = "bg-card text-muted-foreground hover:bg-muted";
+
+/** Requested info: one tap records today (editable), tapping again clears it. Counts as interest (lib/planner/hooks.ts). */
+function InfoRequestedControl({ itemId, requestedOn, today, canEdit, schoolName }: { itemId: string; requestedOn: string | null; today: string; canEdit: boolean; schoolName: string }) {
+  const router = useRouter();
+  const [value, setValue] = useState(requestedOn);
+  const [seen, setSeen] = useState(requestedOn);
+  if (seen !== requestedOn) {
+    setSeen(requestedOn);
+    setValue(requestedOn);
+  }
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const save = (next: string | null) => {
+    if (!canEdit) return;
+    const before = value;
+    setValue(next);
+    setError(null);
+    startTransition(async () => {
+      const result = await markInfoRequested(itemId, next !== null, next);
+      if (!result.ok) {
+        setValue(before);
+        setError(result.message);
+        return;
+      }
+      router.refresh();
+    });
+  };
+
+  return (
+    <div className="space-y-2">
+      <FieldLabel>Requested info</FieldLabel>
+      <div className="flex flex-wrap items-center gap-2">
+        <Chip role="checkbox" selected={value !== null} disabled={!canEdit || pending} onClick={() => save(value === null ? today : null)} className="min-h-11">
+          {value !== null ? "✓ We requested info" : "We requested info"}
+        </Chip>
+        {value !== null && (
+          <label className="inline-flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground">On</span>
+            <input
+              type="date"
+              value={value}
+              max={today}
+              disabled={!canEdit || pending}
+              onChange={(e) => e.target.value && e.target.value <= today && save(e.target.value)}
+              aria-label={`When you requested information from ${schoolName}`}
+              className="h-11 rounded-full border bg-background px-3 text-base sm:text-sm"
+            />
+          </label>
+        )}
+      </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
 function FollowControl({
   itemId,
   social,
@@ -296,31 +357,41 @@ function FollowControl({
       <ul className="grid gap-2 sm:grid-cols-2">
         {targets.map((t) => {
           const Glyph = SOCIAL_GLYPHS[t.network];
+          const chipBody = (
+            <>
+              <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-background">
+                <Glyph />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-left">{t.label}</span>
+              {t.followed ? (
+                <span className="inline-flex items-center gap-1 text-xs">
+                  <Check className="size-3.5" aria-hidden /> Following
+                </span>
+              ) : (
+                <span className="text-xs font-normal">{canMark ? "Not yet" : "Not following"}</span>
+              )}
+            </>
+          );
           return (
             <li key={t.network} className="flex items-center gap-2">
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={t.followed}
-                disabled={!canMark || pending}
-                onClick={() => toggle(t.network)}
-                className={cn(
-                  "inline-flex min-h-11 flex-1 items-center gap-2 rounded-full border px-2 pr-3.5 text-sm font-semibold disabled:opacity-60",
-                  t.followed ? "border-foreground bg-foreground text-background" : "bg-card text-muted-foreground hover:bg-muted",
-                )}
-              >
-                <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-background">
-                  <Glyph />
+              {canMark ? (
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={t.followed}
+                  disabled={pending}
+                  onClick={() => toggle(t.network)}
+                  className={cn(followChip, t.followed ? followOn : followOff, "disabled:opacity-60")}
+                >
+                  {chipBody}
+                </button>
+              ) : (
+                // Read-only (a guardian, or no edit access): the state is still plain to see, filled vs. outline,
+                // not a greyed-out control (owner, 2026-10-12: "see that it is followed but not act").
+                <span className={cn(followChip, t.followed ? followOn : "border-dashed bg-transparent text-muted-foreground")} aria-label={`${t.label}: ${t.followed ? "following" : "not following"}`}>
+                  {chipBody}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-left">{t.label}</span>
-                {t.followed ? (
-                  <span className="inline-flex items-center gap-1 text-xs">
-                    <Check className="size-3.5" aria-hidden /> Following
-                  </span>
-                ) : (
-                  <span className="text-xs font-normal">Not yet</span>
-                )}
-              </button>
+              )}
               <a
                 href={t.href}
                 target="_blank"

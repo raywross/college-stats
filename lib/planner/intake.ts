@@ -84,6 +84,15 @@ export const INTAKE_DONE = 8;
 /** The step each activity screen is. */
 export const ACTIVITY_STEP_INDEX: Readonly<Record<ActivityStep, 3 | 4 | 5 | 6>> = { sports: 3, clubs: 4, work: 5, other: 6 };
 /** The activity screen a step index is, or null. */
+/**
+ * A `&step=N` link into edit mode (the plan's people line, "Next: add clubs"; owner 2026-10-12): an entry step 0–6
+ * (grades through Other), else null (Review, Done, and anything else aren't linkable this way).
+ */
+export function intakeStepParam(v: string | null | undefined): IntakeStep | null {
+  if (v == null || !/^[0-6]$/.test(v)) return null;
+  return Number(v) as IntakeStep;
+}
+
 export function activityStepAt(step: IntakeStep): ActivityStep | null {
   return step === 3 ? "sports" : step === 4 ? "clubs" : step === 5 ? "work" : step === 6 ? "other" : null;
 }

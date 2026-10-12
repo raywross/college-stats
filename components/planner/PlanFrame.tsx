@@ -1,27 +1,26 @@
+import type { ReactNode } from "react";
 import type { CalendarChild } from "@/components/planner/tabs/types";
 import { ImportLocalPlan } from "@/components/planner/ImportLocalPlan";
 import { NextUp } from "@/components/planner/NextUp";
-import { NothingDue } from "@/components/planner/parents/NothingDue";
-import { YourPartLine } from "@/components/planner/parents/YourPartLine";
 import PlanIntake from "@/components/planner/intake/PlanIntake";
-import { PlanHeaderCard } from "@/components/planner/PlanHeaderCard";
 import { PlanNotice } from "@/components/planner/PlanNotice";
 import { PlanTabPills, PlanTabs } from "@/components/planner/PlanTabs";
 import { UpcomingList } from "@/components/planner/calendar/UpcomingList";
 import { intakeNeeded } from "@/lib/planner/intake";
 import { roundsPicked } from "@/lib/planner/list-row";
-import { nextUpInfo, seasonWords } from "@/lib/planner/plan-frame";
+import { nextUpInfo } from "@/lib/planner/plan-frame";
 import { defaultTab, planHref, tabsFor, type PlanTab } from "@/lib/planner/plan-tabs";
 import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 
 /**
  * One student's plan frame (specs/planner/redesign/page.md "The page", specs/planner/redesign/intake.md): the
- * intake guide in place of everything else when it's needed or requested (`?setup=1`), otherwise the header, Next
- * up (or, with no open deadline, NothingDue), the parent's "Your part" line, the import banner, and the tabs.
- * Desktop (`lg:`) is two columns: left the header with the tab pills beside it, then the open tab's body; right
- * (~380px) Next up/NothingDue, the 8-week "Coming up" list, then the one notice. On a phone everything is one
- * column: header, Next up (or NothingDue), Your part, the tab pills, then the open tab's body. Used for a student's
+ * intake guide in place of everything else when it's needed or requested (`?setup=1`), otherwise the people line
+ * (`people`: initials, the selected student's chip with numbers and Edit), Next up when something dated is coming,
+ * the import banner, and the tabs. Desktop (`lg:`) is two columns: left the people line with the tab pills beside
+ * it, then the open tab's body; right (~380px) Next up, the 8-week "Coming up" list, then the one notice. On a phone
+ * everything is one column. The big name heading, the status text, "Your part", and the "nothing due" card left
+ * the top of the plan (owner, 2026-10-12); their helpers stay. Used for a student's
  * own `/plan` and for a guardian's selected child — a guardian's `/plan` always resolves to one child now (decision
  * 2026-10-11: no Everyone; lib/planner/plan-frame.ts resolveSelectedChild).
  */
@@ -34,6 +33,7 @@ export function PlanFrame({
   personId,
   tab,
   setup,
+  people,
 }: {
   ctx: PlanContext;
   view: PlanView;
@@ -44,8 +44,10 @@ export function PlanFrame({
   /** The student id for `?for=` links; null when a student is looking at their own plan. */
   personId: string | null;
   tab: PlanTab;
-  /** `?setup=1`: the ✎ on the numbers line opens the intake guide in edit mode, prefilled, starting at Review. */
+  /** `?setup=1`: the people line's Edit opens the intake guide in edit mode, prefilled, starting at Review. */
   setup: boolean;
+  /** The plan's one top line (components/planner/PlanPeople.tsx), built by the page. */
+  people?: ReactNode;
 }) {
   const today = ctx.today;
   const studentId = ctx.student?.id ?? personId ?? "";
@@ -54,11 +56,6 @@ export function PlanFrame({
   // Before senior year the rows read "Round picked senior year" (list.md), so no deadline counts yet: the starting
   // round's dates are a guess that would otherwise surface as Next up (QA 2026-10-11).
   const roundsOpen = roundsPicked(ctx.grade);
-  const anyOpenDeadline = roundsOpen && view.rows.some(
-    (r) => (r.item.status === "considering" || r.item.status === "applying") && !r.item.withdrawn_on && r.deadline !== null && r.deadline.iso >= today,
-  );
-  const anyApplied = ctx.items.some((i) => i.status === "applied" || i.status === "decided");
-  const season = seasonWords({ today, cycleStartYear: ctx.cycle.startYear, anyOpenDeadline, anyApplied });
 
   const hasDecision = ctx.items.some((i) => i.status === "decided" || i.decision_date !== null);
   const tabs = tabsFor({ everyone: false, hasDecision });
@@ -70,35 +67,38 @@ export function PlanFrame({
   const needsIntake = intakeNeeded(ctx);
   // The intake guide shows instead of the whole frame (decision 1): no header, no Next up, no tabs underneath it.
   // Never for a read-only viewer — a guardian without edit rights who opens a child with no numbers just sees the
-  // plan, with "No numbers yet" in the header (PlanHeaderCard).
+  // plan, with "No numbers yet" on the people line. A guardian keeps the people line above it to switch children.
   if (ctx.viewer.canEdit && (setup || needsIntake)) {
-    return <PlanIntake ctx={ctx} view={view} mode={needsIntake ? "first" : "edit"} relation={relation} firstName={firstName} />;
+    const intake = <PlanIntake ctx={ctx} view={view} mode={needsIntake ? "first" : "edit"} relation={relation} firstName={firstName} />;
+    return relation === "guardian" && people ? (
+      <div className="space-y-6">
+        {people}
+        {intake}
+      </div>
+    ) : (
+      intake
+    );
   }
 
-  // NothingDue instead of Next up (page.md "The page"): nothing dated to meet or hear back on yet.
+  // Next up only when something dated is coming (the "nothing due" card left the top of the plan, owner 2026-10-12).
   const nextKind = nextUpInfo({ view, today, cycleStartYear: ctx.cycle.startYear }).kind;
   const hasNextUp = roundsOpen && (nextKind === "deadline" || nextKind === "decision");
 
   const calendarHref = planHref({ person: personId, tab: "calendar" });
   const fullYearHref = `${calendarHref}${calendarHref.includes("?") ? "&" : "?"}range=year`;
 
-  const nextUpCard = hasNextUp ? (
-    <NextUp view={view} today={today} cycleStartYear={ctx.cycle.startYear} />
-  ) : (
-    <NothingDue gradYear={gradYear} season={season} relation={relation} firstName={firstName} />
-  );
+  const nextUpCard = hasNextUp ? <NextUp view={view} today={today} cycleStartYear={ctx.cycle.startYear} /> : null;
 
   const pills = <PlanTabPills tabs={tabs} tab={openTab} person={personId} />;
 
   return (
     <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
-          <PlanHeaderCard ctx={ctx} view={view} relation={relation} firstName={firstName} season={season} />
-          <div className="hidden lg:block">{pills}</div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0 flex-1">{people}</div>
+          <div className="hidden shrink-0 lg:block">{pills}</div>
         </div>
-        <div className="lg:hidden">{nextUpCard}</div>
-        {relation === "guardian" && <YourPartLine ctx={ctx} firstName={firstName} />}
+        {nextUpCard && <div className="lg:hidden">{nextUpCard}</div>}
         {relation === "self" && <ImportLocalPlan studentId={studentId} canEdit={ctx.viewer.canEdit} />}
         <div className="space-y-4">
           <div className="lg:hidden">{pills}</div>

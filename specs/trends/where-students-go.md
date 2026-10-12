@@ -1,6 +1,6 @@
 # Study 7: Where the Students Went
 
-> Status: **planned**. Specified 2026-10-05 as part of the national-trends family ([hub](../national-trends.md), which
+> Status: **built** 2026-10-12 (branch `feature/national-trends-2-study-7`; see "As built" at the end). Specified 2026-10-05 as part of the national-trends family ([hub](../national-trends.md), which
 > holds the study template and rules). First look computed 2026-10-05 from the committed history and the movers'
 > exclusion lists (`data/trends/`). Owner decisions 2026-10-05: a ten-year view with the pandemic as a question inside
 > it (not a five-year toggle); the students view of cost; the state-flows measure, specified in
@@ -314,3 +314,61 @@ What stands out, to confirm before publishing:
    pace strip labels the length, and the takeaway says "so far". Recommendation: when the after period reaches four
    falls, the test that flags headline moves (hub open question 2) should also flag any group whose after pace has
    the opposite sign from its before pace, so the copy gets rewritten rather than quietly going stale.
+
+## As built (2026-10-12)
+- **Code.** Registry entry `where-students-go` (Study 7) in `lib/trend-studies.ts`; builder
+  `scripts/trends/studies/where-students-go.mts` (one line in `scripts/trends/index.mts`); types
+  `WhereStudentsGoValues` / `WhereStudentsGoFile` in `lib/trends.ts`; page `app/trends/where-students-go/page.tsx` on
+  `StudyPage`; client components in `components/trends/where-students-go/` (`KindBars`, `PeriodsByGroup` with the pace
+  strip, `ApplicationLines`, `PriceFifths`); the share-shift bars reuse `GroupBars`, the concentration, pandemic, and
+  students-view-of-cost charts reuse `TrendLine`, and the state map reuses `StateTileMap` (diverging `--div-1..5`,
+  bands at ±0.1 and ±0.4 points, each tile linking to `/trends/states/{state}`; the copy links two states'
+  `#flows` blocks). Output `data/history/trends/where-students-go.json`; the /trends card is the 20,000+ share with its
+  yearly line.
+- **Campus-based, both ends.** The panel is Study 3's 300-floor panel (`shrinkingPanel`) cut with
+  `campusExclusionOf(m, from, to, campuses)` (`isCampusBased`, lib/movers.ts): not for-profit, not online-first at
+  **either end** of the window (`onlineFirstAt` at fall 2014 and the newest fall; the pandemic falls read fall 2019; no
+  share that fall counts as campus-based), not a campus on `data/trends/excluded-campuses.json` whose change falls in
+  the window. The registry's `panelRule` and the method note say "at either end". The both-ends rule moves 38 colleges
+  out against a start-only rule (1,444 → 1,406), all of them online-first in the newest fall only.
+- **Groupings, in registry order:** region, control, size, selectivity, `size4`, setting, research (the standard four
+  first, as the foundation test requires). `size`, `size4`, and `selectivity` are classified as of the window's first
+  fall through `Grouping.ofThen` and `byGroupThen` / `splitByThen` (`lib/trend-panel.ts`); the other groupings fall back
+  to today's `of`. The page's switch shows Size (`size4`), Research, Public or private, Region, Setting, Selectivity, and
+  leaves the three-way `size` out (it stays in the file).
+- **Periods** come from the file: before = [`from`, `PRE_PANDEMIC_FALL`], pandemic = [`PRE_PANDEMIC_FALL`, `lowFall`],
+  after = [`lowFall`, `to`], where `lowFall` is the fall after the pre-pandemic fall and before the newest one with the
+  smallest campus-based total (over falls clearing 90% coverage). The search stops before the newest fall so the after
+  period is at least one fall long.
+- **Applications** use the period boundaries (2014, 2019, 2022, 2024 today), each replaced by the nearest earlier fall
+  clearing 90% applicant coverage if it didn't; fall 2019 clears it in today's data, so the spec's "2018" became 2019.
+  Panel: 1,273 colleges reporting applicants in all four.
+- **Cost.** `fromMoney`/`toMoney` are history's newest academic year and ten before (2013–14 → 2023–24), one behind the
+  falls; period price changes use the period's falls minus one. The students view (enrollment-weighted average paid by
+  academic year, weighted by the fall that year starts) is computed over the cost panel (colleges reporting average
+  cost paid at both ends), not every campus-based college: about 13% of publics never report `avg_paid_all`, which
+  put every year under the 90% coverage rule. The correlation rows also carry the median college's real price change.
+- **States** are listed only at or over `STATE_FLOOR` (10) panel colleges (`stateFloor` in the file); the rest show the
+  map's "too few colleges" tile.
+- **Takeaway** sentences are written in the page with numbers and direction words ("faster than", "about as fast as",
+  "slowed") computed from the file, so a release that changes a direction changes the wording; the after period is
+  always labeled with its length and "so far". The test flags (once the after period reaches four falls) any group
+  whose after pace has the opposite sign from its before pace, unless it's listed in `ACKNOWLEDGED_FLIPS`.
+
+### Numbers as built (fall 2014 → fall 2024)
+| | First look (2026-10-05) | As built |
+|---|---|---|
+| 300-floor panel | 1,537 | 1,537 |
+| Campus-based panel | 1,412 (reviewed list, start only) | 1,406 (field rule, both ends) |
+| Online-first / for-profit / merged | 60 / 37 / 28 | 67 / 37 / 27 |
+| 20,000+ share (classified then) | 30.2% → 34.4% | 30.6% → 34.8% |
+| 20,000+ share (today's size) | 29.8% → 35.4% | 30.3% → 35.8% |
+| R1 share | 40.5% → 46.0% | 40.9% → 46.4% |
+| Low fall | 2022 | 2022 (−5.2% against fall 2019; −3.5% now) |
+| Cost panel | 1,290 | 1,285 |
+
+Every difference is under a point and comes from the panel change. Two first-look statements did not hold and the copy
+doesn't make them: the 20,000+ share rose in 9 of 10 falls, not every one (flat from fall 2019 to 2020 at one
+decimal), and its pace in the pandemic (+0.44 points a year) was about the same as before (+0.45), so only the R1
+line (+0.52 → +0.73) shows the pandemic speeding it up. Publics and privates did not fall the same amount in the
+pandemic (−5.7% and −4.8%).

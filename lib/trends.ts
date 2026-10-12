@@ -630,6 +630,128 @@ export interface TestOptionalFile extends StudyFile<TestOptionalValues> {
 }
 
 /* ------------------------------------------------------------------ */
+/* Study 7: where the students went (where-students-go.json)           */
+/* specs/trends/where-students-go.md                                   */
+/* ------------------------------------------------------------------ */
+
+/** The three periods inside the ten-year window: before the pandemic, the pandemic (to the low point), and after. */
+export type StudentsPeriodKey = "before" | "pandemic" | "after";
+
+/** One group's change over one period (falls `from` → `to`). */
+export interface StudentsPeriod {
+  key: StudentsPeriodKey;
+  from: number;
+  to: number;
+  /** Total undergraduates' % change over the period, colleges reporting both falls. */
+  studentsChange: number;
+  /** Change in the group's share of all campus-based undergraduates, in percentage points per year: (share at `to` − share at `from`) × 100 ÷ (`to` − `from`). */
+  pacePerYear: number;
+  /** Median college's % change in undergraduates over the period. */
+  medianChange: number;
+  /** Share of the group's colleges that grew at all over the period. */
+  grewShare: number;
+}
+
+/** One group's (or the nation's) measures, students view: its share of the campus-based panel's undergraduates. */
+export interface WhereStudentsGoValues {
+  /** Share of all campus-based undergraduates in the panel, then and now. */
+  share: ThenNow;
+  /** Now − then, in share units (0.042 = 4.2 points). */
+  points: number;
+  /** Total undergraduates' % change in the group. */
+  totalChange: number;
+  /** Median college's % change. */
+  medianChange: number;
+  /** Share of the group's colleges that grew at all. */
+  grewShare: number;
+  n: number;
+  /** Yearly share of all campus-based undergraduates, `lineFrom` to `to` (null under 90% coverage). */
+  line: (number | null)[];
+  periods: StudentsPeriod[];
+  /** Share of the group's colleges at or above their `prePandemicFall` size in the newest fall. */
+  backToPrePandemic: number;
+}
+
+/** A kind of college in the whole 300-floor panel (the by-kind bar): campus-based, online-first, for-profit, merged or split. */
+export interface StudentsKindRow {
+  key: "campus-based" | "online-first" | "for-profit" | "merged-or-split";
+  label: string;
+  n: number;
+  /** Share of the whole panel's undergraduates, then and now. */
+  share: ThenNow;
+  totalChange: number;
+}
+
+/** One state's share of campus-based undergraduates (today's state), at or over STATE_FLOOR panel colleges. */
+export interface StudentsStateRow {
+  postal: string;
+  share: ThenNow;
+  points: number;
+  totalChange: number;
+  n: number;
+}
+
+/** One fifth of colleges, ordered by real price change (`byChange`, share units) or by price level (`byLevel`, dollars). */
+export interface PriceFifth {
+  /** The fifth's range of the ordering measure: % change after inflation, or `fromMoney` price in `toMoney` dollars. */
+  lo: number;
+  hi: number;
+  /** Median college's % change in undergraduates (fall `from` → `to`). */
+  medianChange: number;
+  /** Total undergraduates' % change. */
+  totalChange: number;
+  grewShare: number;
+  n: number;
+}
+
+export type PriceControl = "all" | "public" | "private-nonprofit";
+
+export interface WhereStudentsGoFile extends StudyFile<WhereStudentsGoValues> {
+  slug: "where-students-go";
+  /** Undergraduates a college needs in both falls (Study 3's floor). */
+  minUndergrads: number;
+  /** Colleges in the whole 300-floor panel, before the campus-based cut. */
+  allN: number;
+  /** The last fall before the pandemic (scripts/history/build.mts PRE_PANDEMIC_FALL): the before/pandemic boundary. */
+  prePandemicFall: number;
+  /** The fall after it with the smallest campus-based total (over falls clearing 90% coverage): the pandemic/after boundary. */
+  lowFall: number;
+  /** The campus-based panel's totals by fall (`lineFrom` → `to`) and each fall against `prePandemicFall` (0.01 = 1% above). */
+  campusBased: { n: number; totalByFall: (number | null)[]; indexToPrePandemic: (number | null)[] };
+  /** The whole panel, by kind: why the rest of the page is campus-based. */
+  byKind: StudentsKindRow[];
+  /** Share of campus-based undergraduates at the 50 and 100 biggest campuses, re-ranked each fall. */
+  concentration: { top50: (number | null)[]; top100: (number | null)[] };
+  /** The method note's comparison: the 20,000+ share with today's classification instead of the window start's. */
+  todayClassified: { xlShare: ThenNow };
+  /** States with at least `stateFloor` campus-based panel colleges (today's state). */
+  stateFloor: number;
+  states: StudentsStateRow[];
+  /** Share of all applications at the period boundaries that clear 90% coverage, over colleges reporting in every one of those falls. */
+  applications: {
+    falls: number[];
+    n: number;
+    byGrouping: { grouping: GroupingKey; groups: { key: string; label: string; n: number; shares: number[] }[] }[];
+  };
+  /**
+   * Price moved with enrollment: average cost paid (`avg_paid_all`, academic years `fromMoney` → `toMoney`, one behind
+   * the falls, in `toMoney` dollars) against the fall `from` → `to` change in undergraduates.
+   */
+  cost: {
+    fromMoney: number;
+    toMoney: number;
+    /** Campus-based colleges reporting average cost paid in both academic years. */
+    n: number;
+    byChange: { control: PriceControl; fifths: PriceFifth[] }[];
+    byLevel: { control: PriceControl; fifths: PriceFifth[] }[];
+    /** Spearman rank correlation of real price change and enrollment change, over the decade and within each period (price years one behind the falls), with the median college's real price change. */
+    correlations: { period: "decade" | StudentsPeriodKey; control: PriceControl; rho: number; medianPriceChange: number; n: number }[];
+    /** Students view: enrollment-weighted average paid each academic year `fromMoney` → `toMoney`, in `toMoney` dollars, over the `n` colleges (null under 90% coverage). */
+    students: { control: Exclude<PriceControl, "all">; line: (number | null)[] }[];
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Every file, by name (one line per unit)                             */
 /* ------------------------------------------------------------------ */
 
@@ -644,6 +766,7 @@ export interface TrendFiles {
   "pell-gap": PellGapFile;
   "price-gap": PriceGapFile;
   "test-optional": TestOptionalFile;
+  "where-students-go": WhereStudentsGoFile;
 }
 
 export type TrendFileName = keyof TrendFiles;

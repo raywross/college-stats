@@ -7,6 +7,7 @@ import {
   hasAnalyticsSink,
   identify,
   installAnalyticsSink,
+  isAdminPath,
   navigationSourceFromPath,
   resetIdentity,
   roadmapSlugFromPath,
@@ -39,6 +40,8 @@ declare global {
 function allowedKey(): string | null {
   const key = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
   if (!key || typeof window === "undefined") return null;
+  // The admin console is never measured: a page that loads there starts with no sink at all.
+  if (isAdminPath(window.location.pathname)) return null;
   if (navigator.globalPrivacyControl === true || navigator.doNotTrack === "1" || window.doNotTrack === "1") return null;
   return key;
 }
@@ -115,7 +118,17 @@ if (allowedKey()) setActive(queueingSink);
 /** The last pathname counted as a page view; module-level so a remounted provider (global-error) doesn't recount. */
 let lastPath: string | null = null;
 
+/**
+ * Renders the runtime everywhere except under /admin (specs/product/admin.md: no PostHog events there). Moving into
+ * /admin unmounts the runtime, whose cleanup removes the sink; moving out mounts it again.
+ */
 export function AnalyticsProvider() {
+  const pathname = usePathname();
+  if (isAdminPath(pathname)) return null;
+  return <AnalyticsRuntime />;
+}
+
+function AnalyticsRuntime() {
   const pathname = usePathname();
   const me = useMe();
   const signedIn = me?.signedIn ?? null;

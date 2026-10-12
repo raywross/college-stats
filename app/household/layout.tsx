@@ -8,6 +8,8 @@ import { Term } from "@/components/ui/info-tip";
 import { AccountsSetupError, authConfigured, currentStudent, getAccount, getUser } from "@/lib/auth";
 import { myHouseholds } from "@/lib/households";
 import { myHome } from "@/lib/home-store";
+import { householdNoticeLines } from "@/lib/admin/console";
+import { householdAdminNotice } from "@/lib/admin/people";
 import { addPersonProps, soloRole as soloRoleFor } from "@/components/account/addPersonProps";
 import { householdSeats, viewerRoles, type HouseholdView, type RosterMember } from "@/lib/household-rules";
 import { defaultHouseholdName } from "@/lib/household-hub";
@@ -62,6 +64,9 @@ export default async function HouseholdLayout({ children }: { children: React.Re
   // One household per account; an account from before that rule still sees each household's strip, and adds to the first.
   const first = households[0] ?? null;
   const soloRole = soloRoleFor(account.profile.role_hint, ownStudentId !== null);
+  // "Quad support added Jordan to this household on Oct 12": admin links and unlinks of the last 30 days
+  // (specs/product/admin.md "A household"). Nobody joins a household silently; empty on any error.
+  const adminNotices = first ? householdNoticeLines(await householdAdminNotice(first.id)) : [];
   const strips = households.length > 0 ? households : [soloView(account, soloRole, ownStudentId)];
   const seats = first ? householdSeats(first) : null;
   const addChip = (
@@ -80,6 +85,11 @@ export default async function HouseholdLayout({ children }: { children: React.Re
               {seats.taken} of {seats.max} seats{first?.members.some((m) => m.status === "invited") ? ", counting invitations" : ""}
             </p>
           )}
+          {adminNotices.map((line) => (
+            <p key={line} role="status" className="mt-2 rounded-xl bg-muted px-3 py-2 text-sm text-foreground">
+              {line}
+            </p>
+          ))}
         </div>
         {strips.map((h, i) => (
           <div key={h.id || "solo"} className="space-y-1.5">

@@ -328,3 +328,12 @@ export function wasNotFound(pathname: string): boolean {
 export function roadmapSlugFromPath(pathname: string): string | null {
   return /^\/roadmap\/([^/]+)\/?$/.exec(pathname)?.[1] ?? null;
 }
+
+/**
+ * The admin console is never measured (specs/product/admin.md "The console", telemetry.md): `/admin` and everything
+ * under it. AnalyticsProvider renders nothing there, so posthog-js isn't loaded, no page view is sent, and an event
+ * fired by a shared component is dropped (there is no sink).
+ */
+export function isAdminPath(pathname: string | null | undefined): boolean {
+  return pathname === "/admin" || (pathname?.startsWith("/admin/") ?? false);
+}

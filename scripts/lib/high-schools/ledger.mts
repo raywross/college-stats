@@ -113,8 +113,13 @@ export function nameTokens(name: string): string[] {
       initials.push(t.length === 1);
     }
   }
+  // A lone trailing letter is a compass point ("Half Hollow Hills High School E"), not an initial.
+  const tail = out.length - 1;
+  if (tail > 0 && !initials[tail - 1] && COMPASS[out[tail]]) out[tail] = COMPASS[out[tail]];
   return out;
 }
+
+const COMPASS: Readonly<Record<string, string>> = { e: "east", w: "west", n: "north" };
 
 /** The distinguishing words of a name (stop and level words removed); the full tokens when nothing else is left. */
 export function coreTokens(name: string): Set<string> {
@@ -156,7 +161,7 @@ const jaccard = (a: Set<string>, b: Set<string>) => {
 const minus = (a: Set<string>, b: Set<string>) => new Set([...a].filter((t) => !b.has(t)));
 
 /** Words that say nothing about which school it is, even in a name that is otherwise its city's ("The School of Los Angeles"). */
-const GENERIC = new Set(["school", "schools", "the", "of", "and", "at", "for", "a", "an", "campus", "program", "area"]);
+const GENERIC = new Set(["school", "schools", "senior", "the", "of", "and", "at", "for", "a", "an", "campus", "program", "area"]);
 
 /**
  * How alike two names are once the words they share with their cities are set aside: "Marymount High School Los

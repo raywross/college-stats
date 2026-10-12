@@ -210,6 +210,8 @@ test("fetchLedgerState: a failed school is counted, the file is incomplete, and 
 
 test("nameTokens and coreTokens: abbreviations spelled out, punctuation gone, 'High School' set aside", () => {
   assert.deepEqual(nameTokens("Plano East Sr H S"), ["plano", "east", "senior", "high", "school"]);
+  assert.deepEqual(nameTokens("Half Hollow Hills High School E"), ["half", "hollow", "hills", "high", "school", "east"]);
+  assert.deepEqual(nameTokens("James E Taylor High School"), ["james", "e", "taylor", "high", "school"]);
   assert.deepEqual([...coreTokens("Plano East Sr H S")], ["plano", "east"]);
   assert.deepEqual([...coreTokens("St. Anthony's High School")], ["saint", "anthonys"]);
   assert.deepEqual([...coreTokens("Harmony Science Academy - Carrollton")], ["harmony", "science", "academy", "carrollton"]);
@@ -259,6 +261,9 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
     row("480000200017", "Sultan Virtual Academy", { city: "Sultan", zip: "98294" }),
     row("480000200018", "Montrose Area JSHS", { city: "Montrose", zip: "18801" }),
     row("480000200019", "Carver High School", { city: "Houston", zip: "77088" }),
+    row("480000200020", "Syosset Senior High School", { city: "Syosset", zip: "11791" }),
+    row("480000200021", "Half Hollow Hills High School East", { city: "Dix Hills", zip: "11746" }),
+    row("480000200022", "Half Hollow Hills High School West", { city: "Dix Hills", zip: "11746" }),
   ];
   const ledger = [
     rec("000001", "Azle High School", "Azle", "76020"),
@@ -301,6 +306,11 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
     // Two namesakes in one ZIP: the weak rule can't choose.
     rec("000026", "George Washington Carver High School", "Houston", "77088"),
     rec("000027", "Carver Early College Academy", "Houston", "77088"),
+    // A name that is its city's, "Senior High" against "High School".
+    rec("000028", "Syosset High School", "Syosset", "11791"),
+    // East and West abbreviated to a trailing letter.
+    rec("000029", "Half Hollow Hills High School E", "Dix Hills", "11746"),
+    rec("000030", "Half Hollow Hills High School W", "Dix Hills", "11746"),
   ];
   const r = matchLedgerSchools(rows, ledger);
   assert.deepEqual(
@@ -321,6 +331,9 @@ test("matchLedgerSchools: exact by zip or city, weaker names need the zip, subse
       ["480000200014", "000022", "subset-city"],
       ["480000200016", "000023", "within"],
       ["480000200018", "000025", "exact"],
+      ["480000200020", "000028", "exact"],
+      ["480000200021", "000029", "exact"],
+      ["480000200022", "000030", "exact"],
       ["A9900001", "000008", "exact"],
       ["A9900002", "000009", "exact"],
       ["A9900003", "000009", "exact"],

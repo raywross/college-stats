@@ -19,8 +19,9 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // Metro area, deferred from wave 2, is under "later". Campus life (religious, Greek, and LGBTQ+ life, group
 // "campus-life") was built 2026-10-03/04 (#72, #73, #75, #76); its remaining work is under "later":
 // campus-pilot-accuracy and campus-sources-later. National trends (the /trends hub, Studies 1–6, movers, conferences,
-// states) was built 2026-10-04 on feature/national-trends; Study 7 (where the students went) and the online-share
-// field it needs were specified 2026-10-05 and sit under "national-trends".
+// states) was built 2026-10-04 on feature/national-trends; Study 7 (where the students went), the online-share field
+// it needs, the state flows addition, and Study 3's campus-based toggle were built 2026-10-12 on
+// feature/national-trends-2, so the "national-trends" group is gone until a new study is specified.
 // Accounts and households (sign-in, households, student profile, saved lists, following colleges; group "accounts")
 // was built 2026-10-05 on feature/accounts; Google sign-in and email sending wait for the new domain (specs/backlog.md).
 // The group came back on 2026-10-06 with the owner's review of that build: the household hub (people by name, one
@@ -38,7 +39,6 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // The compare redesign, the only spec in "Design and usability" (group "design"), was built 2026-10-05 (#84), so that
 // group is gone until a new design spec.
 export type RoadmapGroupKey =
-  | "national-trends"
   | "college-reported"
   | "campus-life"
   | "chances"
@@ -50,12 +50,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "national-trends",
-    title: "National trends",
-    description:
-      "Questions about the whole landscape of colleges, not one college: where students went over ten years, and the data that keeps online colleges from standing in for campuses.",
-  },
   {
     key: "chances",
     title: "Admission chances, next",
@@ -128,17 +122,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  {
-    slug: "where-students-go",
-    file: "specs/trends/where-students-go.md",
-    group: "national-trends",
-    summary:
-      "Where undergraduates went over ten years, as shares of all students then and now: toward the biggest campuses and research universities, toward publics and the Sun Belt, and not toward cheaper colleges; and whether the pandemic sped that up or is reversing it.",
-    complexity: 2,
-    complexityNote:
-      "One study on the existing trends machinery, but it classifies colleges as they were at the start of the window, adds a campus-based panel, a state map by share change, and a chart of price change against enrollment change.",
-    status: "planned",
-  },
   {
     slug: "selectivity-index",
     file: "specs/chances/selectivity-index.md",

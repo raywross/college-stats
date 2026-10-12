@@ -332,7 +332,7 @@ test("failedStep: the failed job and step", async () => {
 /* ------------------------------------------------------------------ */
 
 function pull(n: number, ref: string, extra: Record<string, unknown> = {}) {
-  return { number: n, title: `PR ${n}`, body: "", draft: false, auto_merge: null, html_url: `https://github.com/raywross/college-stats/pull/${n}`, created_at: "2026-10-12T00:00:00Z", user: { login: "college-reported-bot" }, head: { ref, sha: `sha${n}` }, base: { ref: "main" }, node_id: `PR_${n}`, state: "open", ...extra };
+  return { number: n, title: `PR ${n}`, body: "", draft: false, auto_merge: null, html_url: `https://github.com/raywross/college-stats/pull/${n}`, created_at: "2026-10-12T00:00:00Z", user: { login: "college-reported-bot" }, head: { ref, sha: `sha${n}`, repo: { full_name: "raywross/college-stats" } }, base: { ref: "main" }, node_id: `PR_${n}`, state: "open", ...extra };
 }
 
 type CheckFixture = { runs: { status: string; conclusion: string | null }[]; statuses: { state: string }[] };
@@ -353,6 +353,18 @@ test("combineChecks: failed beats pending beats success; nothing started is none
   assert.equal(gh.combineChecks([{ status: "in_progress", conclusion: null }, { status: "completed", conclusion: "failure" }], []), "failure");
   assert.equal(gh.combineChecks([{ status: "completed", conclusion: "cancelled" }], []), "failure");
   assert.equal(gh.combineChecks([], [{ state: "error" }]), "failure");
+});
+
+test("isConsolePull: a fork's PR with a data/ branch is never listed, merged, held, or closed", () => {
+  const ours = pull(9, "data/college-reported-20261012-010101-7");
+  assert.equal(gh.isConsolePull(ours), true);
+  const fork = { ...ours, head: { ...ours.head, repo: { full_name: "someone/college-stats" } } };
+  assert.equal(gh.isConsolePull(fork), false, "same branch name, other repository");
+  assert.equal(gh.isConsolePull({ ...ours, head: { ref: ours.head.ref, sha: "x" } }), false, "no head repository: refused");
+  assert.equal(gh.isConsolePull({ ...ours, head: { ...ours.head, repo: { full_name: "RayWRoss/College-Stats" } } }), true, "case doesn't matter");
+  assert.equal(gh.isConsolePull({ ...ours, base: { ref: "other" } }), false, "only PRs into main");
+  assert.equal(gh.isConsolePull(pull(10, "feature/x")), false, "only data/ and review/ branches");
+  assert.equal(gh.isConsolePull(ours, { GITHUB_REPO: "elsewhere/repo" }), false, "the configured repository decides");
 });
 
 test("listDataPulls: open PRs on main from data/ or review/ branches, with checks, flagged ones first", async () => {

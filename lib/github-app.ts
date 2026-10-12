@@ -464,7 +464,7 @@ export interface DataPull {
   headSha: string;
 }
 
-interface RawPull {
+export interface RawPull {
   number: number;
   title?: string;
   body?: string | null;
@@ -473,7 +473,7 @@ interface RawPull {
   html_url?: string;
   created_at?: string;
   user?: { login?: string } | null;
-  head?: { ref?: string; sha?: string };
+  head?: { ref?: string; sha?: string; repo?: { full_name?: string } | null };
   base?: { ref?: string };
   node_id?: string;
   state?: string;
@@ -493,7 +493,8 @@ export async function listDataPulls(deps: GithubDeps = {}): Promise<DataPull[]> 
   try {
     const r = await api<RawPull[]>(deps, "GET", `/pulls?state=open&base=${BASE_BRANCH}&per_page=100`);
     if (r.status !== 200) throw new GithubError(`pulls ${r.status}`, r.status);
-    const pulls = (r.data ?? []).filter((p) => DATA_PULL_PREFIXES.some((prefix) => p.head?.ref?.startsWith(prefix)));
+    const env = deps.env ?? process.env;
+    const pulls = (r.data ?? []).filter((p) => isConsolePull(p, env));
     const out = await Promise.all(
       pulls.map(async (p): Promise<DataPull> => {
         const branch = p.head?.ref ?? "";
@@ -540,8 +541,17 @@ async function getPull(n: number, deps: GithubDeps): Promise<RawPull> {
   return r.data;
 }
 
-function isConsolePull(p: RawPull): boolean {
-  return p.base?.ref === BASE_BRANCH && DATA_PULL_PREFIXES.some((prefix) => p.head?.ref?.startsWith(prefix));
+/**
+ * A pull request the console may list, merge, hold, or close: into `main`, from a `data/` or `review/` branch **of this
+ * repository**. A fork's PR can carry a branch with the same name (`data/…`), so the head repository must match.
+ */
+export function isConsolePull(p: RawPull, env: Env = process.env): boolean {
+  const headRepo = p.head?.repo?.full_name?.toLowerCase();
+  return (
+    p.base?.ref === BASE_BRANCH &&
+    headRepo === githubRepo(env).toLowerCase() &&
+    DATA_PULL_PREFIXES.some((prefix) => p.head?.ref?.startsWith(prefix))
+  );
 }
 
 export type MergeResult = { ok: true } | { ok: false; reason: "checks_pending" | "checks_failed" | "error"; detail?: string };
@@ -555,7 +565,7 @@ export async function mergePull(n: number, deps: GithubDeps = {}): Promise<Merge
   if (!githubConfigured(deps.env ?? process.env)) return { ok: false, reason: "error", detail: "not_configured" };
   try {
     const pull = await getPull(n, deps);
-    if (!isConsolePull(pull)) return { ok: false, reason: "error", detail: "not a data or review pull request" };
+    if (!isConsolePull(pull, deps.env ?? process.env)) return { ok: false, reason: "error", detail: "not a data or review pull request" };
     if (pull.state !== "open") return { ok: false, reason: "error", detail: "not open" };
     if (pull.draft) return { ok: false, reason: "error", detail: "draft" };
     const sha = pull.head?.sha ?? "";
@@ -594,7 +604,7 @@ export async function holdPull(n: number, admin: string, deps: GithubDeps = {}):
   if (!githubConfigured(deps.env ?? process.env)) return { ok: false, reason: "not_configured" };
   try {
     const pull = await getPull(n, deps);
-    if (!isConsolePull(pull)) return { ok: false, reason: "not a data or review pull request" };
+    if (!isConsolePull(pull, deps.env ?? process.env)) return { ok: false, reason: "not a data or review pull request" };
     if (pull.auto_merge && pull.node_id) {
       const g = await graphql(deps, DISABLE_AUTO_MERGE, { id: pull.node_id });
       if (!g.ok) return { ok: false, reason: g.detail };
@@ -612,7 +622,7 @@ export async function closePull(n: number, admin: string, deps: GithubDeps = {})
   if (!githubConfigured(deps.env ?? process.env)) return { ok: false, reason: "not_configured" };
   try {
     const pull = await getPull(n, deps);
-    if (!isConsolePull(pull)) return { ok: false, reason: "not a data or review pull request" };
+    if (!isConsolePull(pull, deps.env ?? process.env)) return { ok: false, reason: "not a data or review pull request" };
     await comment(n, `Closed by ${adminLabel(admin)} from the admin console.`, deps);
     const r = await api(deps, "PATCH", `/pulls/${n}`, { body: { state: "closed" } });
     if (r.status !== 200) return { ok: false, reason: `close ${r.status}` };

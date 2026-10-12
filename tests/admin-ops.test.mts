@@ -854,7 +854,7 @@ test("hold, close, and the review PRs carry the display name and no email: every
   // The real client over a fake fetch, with an admin whose profile name is an email address.
   const API = "https://api.github.com/repos/raywross/college-stats";
   const bodies: string[] = [];
-  const pull = { number: 7, node_id: "PR_7", state: "open", draft: false, auto_merge: { x: 1 }, base: { ref: "main" }, head: { ref: "review/999001-c-116-2026-10-12", sha: "s" } };
+  const pull = { number: 7, node_id: "PR_7", state: "open", draft: false, auto_merge: { x: 1 }, base: { ref: "main" }, head: { ref: "review/999001-c-116-2026-10-12", sha: "s", repo: { full_name: "raywross/college-stats" } } };
   const fetchImpl = (async (url: string | URL, init?: RequestInit) => {
     if (init?.body) bodies.push(String(init.body));
     const u = String(url);

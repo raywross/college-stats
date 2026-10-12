@@ -14,6 +14,10 @@
 # pipeline PR whose batches are open: collect, escalate, merge-reported, commit, and mark it ready.
 name: College-reported data
 
+# The admin console passes request_id on dispatch so it can find its run (specs/product/admin.md, "Reruns"); a run
+# without one keeps GitHub's usual title: the PR title, the commit message, or the workflow's name.
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.event.pull_request.title || github.event.head_commit.message || github.workflow }}"
+
 on:
   workflow_dispatch:
     inputs:
@@ -47,6 +51,10 @@ on:
         type: choice
         options: [none, C, rest]
         default: none
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
   schedule:
     # Two entries because one cron line can't mix a weekly Aug–Nov cadence with a monthly Dec–Jul one (and GitHub's
     # schedule parser doesn't reliably support month ranges combined with a weekday filter); each fires on a plain,

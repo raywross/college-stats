@@ -12,6 +12,10 @@
 # Skips cleanly while the PROD_* repository secrets aren't set. See specs/supabase.md#production.
 name: Publish changes
 
+# The admin console passes request_id on dispatch so it can find its run (specs/product/admin.md, "Reruns"); a run
+# without one keeps GitHub's usual title: the PR title, the commit message, or the workflow's name.
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.event.pull_request.title || github.event.head_commit.message || github.workflow }}"
+
 on:
   deployment_status:
   push:
@@ -24,6 +28,10 @@ on:
         type: choice
         options: [all, changes, high-schools, college-failures]
         default: all
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
 
 permissions:
   contents: read

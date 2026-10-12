@@ -243,6 +243,12 @@ jobs:
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run college-failures
 
+      # The admin console's compact health file (lib/admin/health.ts, specs/product/admin.md "Files the deploy must
+      # carry"), rebuilt from the files this run changed; `npm run verify` fails a PR whose copy is stale.
+      - name: Rebuild the compact health file
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run college-health
+
       # The draft signal: data/college-batches.json lists the batches still open when the script exits (it is written
       # after every submit and collect). Any open batch → the PR opens as a draft and waits for the collect job.
       - name: Check for open batches
@@ -265,6 +271,7 @@ jobs:
             data/review-queue.json
             data/college-batches.json
             data/college-failures.json
+            data/college-health.json
             data/reports/college-reported-run-${{ steps.run_id.outputs.id }}.json
             data/reports/college-reported-calls-${{ steps.run_id.outputs.id }}.jsonl
           if-no-files-found: ignore
@@ -472,6 +479,12 @@ jobs:
       - name: Rebuild the college data failures list
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run college-failures
+
+      # The admin console's compact health file (lib/admin/health.ts, specs/product/admin.md "Files the deploy must
+      # carry"), rebuilt from the files this run changed; `npm run verify` fails a PR whose copy is stale.
+      - name: Rebuild the compact health file
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run college-health
 
       - name: Check for open batches
         id: batches

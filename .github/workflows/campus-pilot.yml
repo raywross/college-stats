@@ -86,6 +86,7 @@ jobs:
       - name: Merge into the dataset and check it
         run: |
           npm run merge-directories
+          npm run college-health
           npm run check:lineage
 
       - name: Commit the results to this branch

@@ -36,7 +36,7 @@ export function readHealthFilesFromDisk(root: string = REPO_ROOT): HealthFiles &
   const data = join(root, "data");
   const docs = readJson<{ updated?: string | null; documents: ManifestDocLite[] }>(join(data, "college-docs.json"));
   const failures = readJson<{ generated?: string | null; rows: FailureRowLite[] }>(join(data, "college-failures.json"));
-  const queue = readJson<{ updated?: string | null; items: { unit_id: string }[] }>(join(data, "review-queue.json"));
+  const queue = readJson<{ updated?: string | null; items: { unit_id: string; resolved?: string }[] }>(join(data, "review-queue.json"));
   const links = readJson<LinkIssueRowLite[]>(join(data, "link-issues.json"));
   const recordsDir = join(data, "cds-records");
   let records: Map<string, RecordDocLite[]> | null = null;
@@ -49,7 +49,8 @@ export function readHealthFilesFromDisk(root: string = REPO_ROOT): HealthFiles &
     }
   }
   const counts = new Map<string, number>();
-  for (const item of queue?.items ?? []) counts.set(item.unit_id, (counts.get(item.unit_id) ?? 0) + 1);
+  // A rejected item (lib/admin/review-queue.ts) was dismissed by an admin: it no longer holds the college back.
+  for (const item of queue?.items ?? []) if (!item.resolved) counts.set(item.unit_id, (counts.get(item.unit_id) ?? 0) + 1);
   return {
     manifest: docs?.documents ?? null,
     records,

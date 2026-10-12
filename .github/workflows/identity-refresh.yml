@@ -150,6 +150,12 @@ jobs:
         id: sync_brand
         run: npm run sync-brand
 
+      # The admin console's compact health file (lib/admin/health.ts), rebuilt from this run's link issues and
+      # identity lineage; `npm run verify` fails a PR whose copy is stale.
+      - name: Rebuild the compact health file
+        if: always() && steps.gate.outputs.proceed == 'true'
+        run: npm run college-health
+
       # always(): a step above can fail partway through (e.g. probe-sites' ~20-minute run hitting the job timeout)
       # while an earlier one still wrote real changes; those should still reach a PR rather than being discarded.
       - name: Check for data changes

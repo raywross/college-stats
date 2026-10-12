@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
+import { OpenPlanCard } from "@/components/account/OpenPlanCard";
 import { PersonHeader, personOwner } from "@/components/account/PersonHeader";
 import { ListPage } from "@/components/lists/ListPage";
 import { YourPart } from "@/components/planner/parents/YourPart";
 import { AccountsSetupError, authConfigured, requireUser } from "@/lib/auth";
+import { personListHref } from "@/lib/household-hub";
 import { personPage } from "@/lib/households";
 import { getOrCreateDefaultList, myLists } from "@/lib/lists";
 import { myYourPart } from "@/lib/planner/store-parents";
@@ -15,11 +17,17 @@ import { todayIso } from "@/lib/planner/context";
 export const metadata: Metadata = { title: "Their list", robots: { index: false } };
 
 /**
- * /household/[person] (specs/product/household-hub.md "A person's page", "Redesign (2026-10-06)"): inside the hub's
- * frame (app/household/layout.tsx: header, people strip, settings), the person area (PersonHeader: name line, "⋯"
- * menu, guardian banner, List | Numbers) and List, the default: their default list, with the tracking row under each
- * college's "More" and, on your own, the Updates section (components/lists/ListPage.tsx). `person` is a student id for a student and a user
- * id for a guardian (personHref() builds both); anyone outside the viewer's household is a 404.
+ * /household/[person] (specs/product/household-hub.md "A person's page", "Household cleanup (2026-10-12)"): inside
+ * the hub's frame (app/household/layout.tsx: header, people strip, settings), the person area (PersonHeader: name
+ * line, "⋯" menu, guardian banner, Plan | Numbers). `person` is a student id for a student and a user id for a
+ * guardian (personHref() builds both); anyone outside the viewer's household is a 404.
+ *
+ * A student's colleges, levels, rounds, and deadlines live in the planner now (specs/chances/levels.md,
+ * specs/planner/redesign/list.md): this route no longer embeds the old list board for a student, just
+ * `OpenPlanCard` linking to `/plan?for=<id>` (`lib/household-hub.ts` `personListHref`). A guardian's own list has no
+ * planner equivalent (the plan only ever shows a child's), so it still renders here, exactly as before, with the
+ * tracking row under each college's "More" and, on your own, the Updates section
+ * (components/lists/ListPage.tsx).
  */
 export default async function PersonListPage({ params }: { params: Promise<{ person: string }> }) {
   await connection();
@@ -32,12 +40,13 @@ export default async function PersonListPage({ params }: { params: Promise<{ per
   try {
     person = await personPage(id);
     if (!person) notFound();
-    const owner = personOwner(person);
-    const lists = await myLists(owner);
-    listId = lists.find((l) => l.is_default)?.id ?? lists[0]?.id ?? null;
-    // The default list is created on first visit by whoever may write it: the person, or a guardian who can edit a student.
-    const canCreate = person.kind === "student" ? person.access.canEdit : person.is_me;
-    if (!listId && canCreate) listId = (await getOrCreateDefaultList(owner))?.id ?? null;
+    if (person.kind !== "student") {
+      const owner = personOwner(person);
+      const lists = await myLists(owner);
+      listId = lists.find((l) => l.is_default)?.id ?? lists[0]?.id ?? null;
+      // The default list is created on first visit by whoever may write it: the guardian themselves.
+      if (!listId && person.is_me) listId = (await getOrCreateDefaultList(owner))?.id ?? null;
+    }
   } catch (err) {
     if (err instanceof AccountsSetupError) return <AuthUnavailable title="Accounts aren't set up yet" />;
     throw err;
@@ -50,14 +59,18 @@ export default async function PersonListPage({ params }: { params: Promise<{ per
   const today = todayIso();
   const yourPartGroups = person.kind === "guardian" && person.is_me ? yourPart(await myYourPart(), today) : [];
 
+  const planLink = personListHref(person.kind, id);
+
   return (
     <div className="space-y-6">
       <div className="print:hidden">
         <PersonHeader id={id} person={person} active="list" />
       </div>
       {yourPartGroups.length > 0 && <YourPart groups={yourPartGroups} today={today} />}
-      {listId ? (
-        <ListPage listId={listId} basePath={`/household/${id}/lists`} showGuardianBanner={false} embedded planner />
+      {planLink ? (
+        <OpenPlanCard href={planLink} first={first} own={own} />
+      ) : listId ? (
+        <ListPage listId={listId} basePath={`/household/${id}/lists`} showGuardianBanner={false} embedded />
       ) : (
         <section className="rounded-3xl border bg-card p-5 sm:p-6">
           <h2 className="font-display text-xl font-bold">No list yet</h2>

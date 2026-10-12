@@ -16,6 +16,7 @@ import {
   invitationLink,
   inviteRedirectTo,
   ownPersonPath,
+  personListHref,
   parseAddPerson,
   parseWelcome,
   requestOrigin,
@@ -170,6 +171,20 @@ test("the password page's welcome value: an id, 1, or nothing", () => {
 test("a person's own page is their student record's, else their user id's", () => {
   assert.equal(ownPersonPath("s1", "u1"), "/household/s1");
   assert.equal(ownPersonPath(null, "u1"), "/household/u1");
+});
+
+/* ------------------------------------------------------------------ */
+/* Household cleanup (2026-10-12): a student's list and extra lists    */
+/* redirect into the planner; a guardian's own list still shows here.  */
+/* ------------------------------------------------------------------ */
+
+test("a student's list page points into the planner; a guardian's own list has no planner equivalent", () => {
+  assert.equal(personListHref("student", "s1"), "/plan?for=s1");
+  assert.equal(personListHref("guardian", "u1"), null);
+});
+
+test("the planner link encodes the person id", () => {
+  assert.equal(personListHref("student", "s 1/x"), "/plan?for=s%201%2Fx");
 });
 
 /* ------------------------------------------------------------------ */

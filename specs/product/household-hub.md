@@ -378,6 +378,42 @@ Alexandra Ross  [Student] Class of 2028 (call)        [⋯]   ← person area (P
 2. Deploy the Edge Function and set its secrets (`specs/supabase.md` "Edge Functions"); set `INVITE_FUNCTION_SECRET`
    in Vercel. Until then, invited people see the sign-in prompt and the earlier accept flow still works.
 
+## Household cleanup (2026-10-12)
+The owner, reviewing the finished planner redesign ([list.md](../planner/redesign/list.md),
+[levels.md](../chances/levels.md)): "The household screen... has a bunch of the older views of the functionality we
+now have in the planner. Please review and remove those functions from there. They're out of date and in the wrong
+place." Full review: `chances-build/qa/household-review.md`.
+
+- **What was duplicated.** A student's page (`/household/[person]`) embedded the hub's pre-redesign list board
+  (`components/lists/ListBoard.tsx`, built 2026-10-06, before the plan redesign): three groups (Reach/Target/Likely,
+  the old glossary terms), a category/round/status picker per row, and the planner's *first-generation* stage
+  controls (`components/planner/RowControls.tsx`, absorbed into `RowDrawer.tsx` by the redesign but never
+  unwired here). The planner's own list ([list.md](../planner/redesign/list.md)) is strictly newer and more capable:
+  five levels, the Dream and closest-first order, the round picker, the drawer, notices, and the calendar/offers
+  tabs alongside it — none of which the hub's copy ever gained. The segmented control also carried a third, "Plan"
+  pill that did nothing but redirect straight to `/plan`, the same dead-end-tab pattern this cleanup removes
+  elsewhere.
+- **What moved.** A student's page no longer embeds a list at all: `OpenPlanCard`
+  (`components/account/OpenPlanCard.tsx`) replaces it with a plain "Open {name}'s plan" link to
+  `/plan?for=<id>`. The segmented control drops to **Plan | Numbers** (the "Plan" pill is the same
+  `/household/[id]` route; it just doesn't embed the old board any more). `/household/[person]/lists/[id]` (an
+  extra-list bookmark) redirects the same way for a student, rather than 404ing, since the planner has no concept of
+  extra lists (`lib/household-hub.ts` `personListHref`). `/household/[person]/plan` and `.../plan/print` already
+  redirected to the planner (an earlier unit); unchanged.
+- **What stayed.** A guardian's own list (`lists.user_id`, "it's suggestions, and the student should see them")
+  has no planner equivalent — the plan only ever shows a child's — so it still renders in the hub exactly as before,
+  List board and all. The Numbers tab (`components/me/ProfileForm.tsx`, via `StudentNumbers`) stays in full: most of
+  what it collects (GPA, test scores, AP courses, activities, awards) is also reachable through the planner's intake
+  guide and Scores tab, but by design, not duplication — the planner's components are the same ones
+  (`components/me/ActivitiesForm.tsx`, `AwardsForm.tsx`, `ClassStandingPick.tsx`) reused there, and the form holds a
+  great deal the planner never touches (state of residence, high school, fee-waiver eligibility, intended majors,
+  early-round interest, size/setting/type/cost preferences) with no other home. Identity (name, grad year),
+  membership, roles, and account settings were already untouched by the planner and stay as built.
+- **Not done**: the hub's shared list infrastructure (`components/lists/ListPage.tsx`'s `planner` prop and the
+  `plannerExtras`/`RowControls` wiring behind it) is now unused — nothing passes `planner={true}` any more — but
+  wasn't deleted: it's shared with `/me/lists/[id]`, and pulling it out is a larger refactor of code this unit
+  doesn't own. Left as dead-but-harmless for a future pass.
+
 ## Parents can edit: the student's switch (owner decision 2026-10-08)
 The owner's first pass at the planner: *a parent should be able to make changes to a student's information*, and
 *it should be on by default when a student is added, so they'd have to choose to turn it off; these are minors.*

@@ -829,6 +829,19 @@ test("the Households list runs admin_list_households with the search and page, a
   assert.deepEqual(ui.current.rpcCalls, [{ name: "admin_list_households", args: { q: null, p_page: 1, p_size: people.PEOPLE_PAGE_SIZE } }]);
 });
 
+test("sign-in activity in words: devices from the browser, the authenticator noted, support's actions named", () => {
+  assert.equal(consoleLib.deviceLabel("Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7 Mobile/15E148 Safari/604.1"), "Safari on iPhone");
+  assert.equal(consoleLib.deviceLabel("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 Edg/130.0"), "Edge on Windows");
+  assert.equal(consoleLib.deviceLabel("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"), "Chrome on Mac");
+  assert.equal(consoleLib.deviceLabel(null), null);
+  assert.deepEqual(consoleLib.describeAuthActivity({ at: "x", kind: "session_started", detail: "aal2 · Mozilla/5.0 (iPhone) Version/18 Safari/604", source: "session" }), {
+    label: "Session started",
+    detail: "Safari on iPhone · passed the authenticator code",
+  });
+  assert.equal(consoleLib.describeAuthActivity({ at: "x", kind: "user_updated_password", detail: null, source: "audit" }).label, "Changed their password");
+  assert.equal(consoleLib.describeAuthActivity({ at: "x", kind: "auth.recovery", detail: null, source: "support" }).label, "Quad support: made a password-reset link");
+});
+
 test("the rail has its six sections, highlights the right one, and every console page sits under one", () => {
   assert.deepEqual(consoleLib.ADMIN_SECTIONS.map((s) => s.label), ["People", "Households", "Colleges", "Health", "Operations", "Log"]);
   assert.equal(consoleLib.activeSection("/admin"), null);

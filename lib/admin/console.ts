@@ -472,3 +472,70 @@ export function isNextControlFlow(err: unknown): boolean {
   const digest = (err as { digest?: unknown } | null)?.digest;
   return typeof digest === "string" && /^NEXT_(REDIRECT|HTTP_ERROR_FALLBACK)/.test(digest);
 }
+
+/* ------------------------------------------------------------------ */
+/* Sign-in activity                                                    */
+/* ------------------------------------------------------------------ */
+
+/** One row of admin_user_auth_activity(). */
+export interface AuthActivityRow {
+  at: string;
+  kind: string;
+  detail: string | null;
+  source: "audit" | "session" | "account" | "support";
+}
+
+/** Supabase Auth's audit actions and the console's own kinds, in words. Unknown kinds show as written. */
+export const AUTH_ACTIVITY_LABELS: Record<string, string> = {
+  login: "Signed in",
+  logout: "Signed out",
+  user_signedup: "Signed up",
+  user_repeated_signup: "Tried to sign up again with this email",
+  user_confirmation_requested: "Asked for a confirmation email",
+  user_recovery_requested: "Asked for a password reset",
+  user_reauthenticate_requested: "Asked for a verification code",
+  user_updated_password: "Changed their password",
+  user_modified: "Updated their account",
+  user_invited: "Was invited",
+  invite_accepted: "Accepted an invitation",
+  user_deleted: "Account deleted",
+  token_revoked: "A session ended",
+  mfa_code_login: "Signed in with an authenticator code",
+  factor_in_progress: "Started adding an authenticator",
+  factor_unenrolled: "Removed an authenticator",
+  factor_deleted: "Removed an authenticator",
+  challenge_created: "Was asked for an authenticator code",
+  verification_attempted: "Entered an authenticator code",
+  identity_unlinked: "Removed a sign-in method",
+  session_started: "Session started",
+  session_active: "Last active in that session",
+  account_created: "Account created",
+  confirmation_sent: "Confirmation email sent",
+  email_confirmed: "Email confirmed",
+  recovery_sent: "Password reset link sent or made",
+  email_change_sent: "Email change link sent",
+  last_sign_in: "Last sign-in",
+  factor_added: "Authenticator added",
+};
+
+/** "Safari on iPhone" from a user agent; null when it can't be read. Never the full string or an address. */
+export function deviceLabel(ua: string | null | undefined): string | null {
+  if (!ua) return null;
+  const browser = /Edg\//.test(ua) ? "Edge" : /Firefox\//.test(ua) ? "Firefox" : /Chrome\/|CriOS\//.test(ua) ? "Chrome" : /Safari\//.test(ua) && /Version\//.test(ua) ? "Safari" : null;
+  const os = /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Android/.test(ua) ? "Android" : /Mac OS X|Macintosh/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Windows" : /Linux/.test(ua) ? "Linux" : null;
+  if (browser && os) return `${browser} on ${os}`;
+  return browser ?? os ?? "Another app or browser";
+}
+
+/** A row's label and detail line for the panel. */
+export function describeAuthActivity(row: AuthActivityRow): { label: string; detail: string | null } {
+  if (row.source === "support") return { label: `Quad support: ${(LOG_ACTIONS[row.kind] ?? row.kind).toLowerCase()}`, detail: null };
+  const label = AUTH_ACTIVITY_LABELS[row.kind] ?? row.kind.replace(/_/g, " ");
+  if (row.source === "session" && row.detail) {
+    const [aal, ...ua] = row.detail.split(" · ");
+    const device = deviceLabel(ua.join(" · "));
+    return { label, detail: [device, aal === "aal2" ? "passed the authenticator code" : null].filter(Boolean).join(" · ") || null };
+  }
+  if (row.kind === "factor_added" && row.detail) return { label, detail: /verified/.test(row.detail) ? "In use" : "Not finished" };
+  return { label, detail: null };
+}

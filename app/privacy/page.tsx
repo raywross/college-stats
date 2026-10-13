@@ -143,6 +143,11 @@ export default function PrivacyPage() {
           nothing about who opened it. If your browser sends a privacy signal, we record neither.
         </p>
         <p>
+          <b>Sign-ins and account changes.</b> For your account&apos;s security, we keep a record of when it signs in and from what kind of
+          device (like &ldquo;Safari on iPhone&rdquo;), and of changes like a new password or email. Quad support can see it to help if
+          something goes wrong; the connection addresses that come with it are never shown to support.
+        </p>
+        <p>
           Signed-in visits are not given even a country or region. Signing in sets the cookies the site needs to remember that you are
           signed in; they aren&apos;t used for measuring.
         </p>

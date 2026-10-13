@@ -465,6 +465,41 @@ test("a re-judge with no new read moves the queue with the verdicts (check-cds-r
   assert.deepEqual(queueAfterRejudge(rejected, fixed, fixed, T, opts).find((i) => i.code === "B.2201"), rejected.find((i) => i.code === "B.2201"));
 });
 
+test("grid-column: a model-read C7/C8A mark passes only once its column is checked, and the hold stays out of the queue", () => {
+  const { d } = modelDoc();
+  d.items["C.702"] = { v: "Considered", status: "passed", page: 9, line: 5, quote: "Class rank | X" };
+  // One C7 row also fails one-mark (too few rows marked for a real grid); only grid-column is this test's concern.
+  const gridHeld = () => (runItemChecks(d, { table: T }).byCode["C.702"] ?? []).some((f) => f.check === "grid-column");
+  assert.ok(gridHeld());
+  // Checked against the layout and found under its heading: no hold.
+  d.items["C.702"].column = { heading: "Considered", checked: "2026-10-13" };
+  assert.ok(!gridHeld());
+  // A heading that differs from the value (not yet corrected) still holds.
+  d.items["C.702"].column = { heading: "Not Considered", checked: "2026-10-13" };
+  assert.ok(gridHeld());
+  // Held only by the rule: not queued, and not counted by the breaker.
+  for (let n = 703; n <= 712; n++) d.items[`C.${n}`] = { v: "Important", status: "passed", page: 9, line: 5, quote: "row | X" };
+  delete d.items["C.702"].column;
+  const checked = applyChecks(d, { table: T });
+  assert.deepEqual(checked.items["C.702"].failures?.map((f) => f.check), ["grid-column"]);
+  assert.ok(!reviewItemsFor(checked, T, { unit_id: "x", name: "x", run: "r", queued: "2026-10-13" }).some((i) => i.code === "C.702"));
+  assert.ok(!itemFailureShares([checked], T).some((s) => s.code === "C.702" && s.failed > 0));
+  // A workbook cell is read deterministically: no hold.
+  const cu = doc(CU);
+  const k = Object.keys(cu.items).find((c) => /^C\.7(0\d|1[0-8])$/.test(c) && cu.items[c].v !== undefined);
+  if (k) assert.ok(!(runItemChecks(cu, ctx(CU)).byCode[k] ?? []).some((f) => f.check === "grid-column"));
+});
+
+test("an assumed-edition hold drops on re-judge once the items' own years confirm the edition", () => {
+  const { d } = modelDoc();
+  const assumed = { check: "edition-mismatch" as const, detail: "the document states no edition; filed as 2025-26 until an item's text (B22, H4, I-2) confirms it" };
+  d.items["C.116"] = { ...d.items["C.116"], status: "failed", failures: [assumed] };
+  // modelDoc's I-2 names Fall 2025: confirmed, so the kept hold goes.
+  assert.equal(applyChecks(d, { table: T }).items["C.116"].failures, undefined);
+  d.items["I.201"].quote = "Fall 2024 Student to Faculty ratio | 9"; // only E - 1: not confirmed, the hold stays
+  assert.deepEqual(applyChecks(d, { table: T }).items["C.116"].failures, [assumed]);
+});
+
 test("a person's misread hold survives every re-judge, and the item stays queued", () => {
   const d = applyChecks(doc(VU), ctx(VU));
   const misread = { check: "misread" as const, detail: "the mark is under Recommended, read as Required" };

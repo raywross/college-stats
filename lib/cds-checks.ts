@@ -679,9 +679,26 @@ function checkC7(x: Ctx) {
     if (!level) x.fail("one-mark", [k], `C7 ${k} "${t}" isn't exactly one of Very Important, Important, Considered, Not Considered`);
     else levels.push(level);
   }
+  gridColumnUnchecked(x, rows, "C7");
   if (!levels.length) return;
   if (levels.length < 9) x.fail("one-mark", rows, `C7 has ${levels.length} of 18 factors marked (a column misread, not a sparse grid)`);
   else if (new Set(levels).size === 1) x.fail("one-mark", rows, `C7 marks every factor "${levels[0].replace("_", " ")}" (the column positions are off)`);
+}
+
+/**
+ * C7 and C8A grids a model read from flattened text: the model often puts a mark under the column next to it (a hand
+ * check of 16 documents on 2026-10-13 found about half a column off). Such a value passes only once
+ * `npm run check-grid-columns` has placed the mark under its heading in the document's own layout (`column`) and the
+ * value is that heading. Workbook cells and form fields are read deterministically and pass.
+ */
+function gridColumnUnchecked(x: Ctx, rows: readonly CdsCode[], grid: string) {
+  const held = rows.filter((k) => {
+    const v = x.v.get(k);
+    if (v === undefined || !isModelRead(x.doc, k, x.table)) return false;
+    const col = x.items[k]?.column;
+    return !col || col.heading !== v;
+  });
+  if (held.length) x.fail("grid-column", held, `${grid}: read by a model from flattened text; which column each mark sits under isn't checked yet`);
 }
 
 type TestUse = "required" | "recommended" | "considered" | "not-considered";
@@ -699,6 +716,7 @@ function testUse(s: string): TestUse | null {
 /** C8: one use per row; C8A agrees with the grid; C8F's words don't contradict the headline policy. */
 function checkC8(x: Ctx) {
   const rows = ["C.802", "C.803", "C.804"];
+  gridColumnUnchecked(x, rows, "C8A");
   const uses = new Map<CdsCode, TestUse>();
   for (const k of rows) {
     const t = x.v.text(k);
@@ -1356,7 +1374,7 @@ function universalChecks(x: Ctx, resolved: ReadonlySet<CdsCode>) {
 /** Undo applyChecks's own work: restore code-table values, drop derived totals and every check failure it adds. */
 const OWN_CHECKS = new Set<string>([
   "type-range", "number-on-line", "line-in-document", "edition-mismatch", "form-vs-code", "parts-sum", "sums-to-100", "order",
-  "ratio-matches", "one-mark", "inconsistent", "valid-date", "date-order", "enrollment-disagrees", "federal-disagrees",
+  "ratio-matches", "one-mark", "grid-column", "inconsistent", "valid-date", "date-order", "enrollment-disagrees", "federal-disagrees",
   "residency-funnel", "residency-sum", "residency-vs-federal", "column-3-not-all-undergrads", "previous-cohort-disagrees",
   "not-a-url", "out-of-range", "quote-present", "funnel-order", "plausible-change", "sources-agree", "aid-year",
 ]);
@@ -1369,7 +1387,7 @@ const OWN_CHECKS = new Set<string>([
 function keptVerdict(ctx: Pick<CheckContext, "lines" | "editionAssumed">, textConfirms: boolean): (f: ItemFailure) => boolean {
   return (f) =>
     (!ctx.lines && (f.check === "number-on-line" || f.check === "line-in-document" || (f.check === "edition-mismatch" && f.detail.startsWith("the cover says") && !textConfirms))) ||
-    (ctx.editionAssumed === undefined && f.check === "edition-mismatch" && f.detail.startsWith("the document states no edition"));
+    (ctx.editionAssumed === undefined && f.check === "edition-mismatch" && f.detail.startsWith("the document states no edition") && !textConfirms);
 }
 
 function reset(items: Record<CdsCode, ItemResult>, keep: (f: ItemFailure) => boolean = () => false): Record<CdsCode, ItemResult> {
@@ -1639,7 +1657,8 @@ export interface ItemFailureShare {
 }
 
 /** Failures that say nothing about the pipeline. */
-const NOT_COUNTED = new Set<string>(["unreachable", "newer-than-federal"]);
+// grid-column holds every unchecked model-read C7/C8 mark by rule, so it says nothing about this run's reads.
+const NOT_COUNTED = new Set<string>(["unreachable", "newer-than-federal", "grid-column"]);
 /** B2 column 3 publishes nothing (cds-student-body-and-outcomes.md), so it never counts. */
 const NOT_COUNTED_CODES = new Set(run("B", 221, 230));
 
@@ -1697,6 +1716,11 @@ export function circuitBreakerV3(input: {
 /* Review queue entries (keyed by college + edition + code)            */
 /* ------------------------------------------------------------------ */
 
+/** Holds by rule, not by what a document says: a person can't resolve one item, so they stay out of the queue. */
+const NOT_QUEUED = new Set<string>(["grid-column"]);
+/** Whether a failed item belongs in the review queue: it fails something besides a hold by rule. */
+const queueable = (it: ItemResult) => it.status === "failed" && (!it.failures?.length || it.failures.some((f) => !NOT_QUEUED.has(f.check)));
+
 /** One review entry per failed item of a document. Add them with `enqueueItems` (lib/reported.ts). */
 export function reviewItemsFor(
   doc: DocumentRecord,
@@ -1705,7 +1729,7 @@ export function reviewItemsFor(
 ): ReviewItem[] {
   const out: ReviewItem[] = [];
   for (const [code, it] of Object.entries(doc.items)) {
-    if (it.status !== "failed") continue;
+    if (!queueable(it)) continue;
     const rule = table.byCode.get(code)?.year_rule;
     out.push({
       unit_id: opts.unit_id,
@@ -1724,9 +1748,12 @@ export function reviewItemsFor(
   return out.sort((a, b) => (a.code! < b.code! ? -1 : 1));
 }
 
-/** The queue without this document's entries for codes that now pass (or are blank): a fixed item leaves the queue. */
+/**
+ * The queue without this document's entries for codes that now pass (or are blank, or are held only by rule): a fixed
+ * item leaves the queue.
+ */
 export function dropPassed(queue: readonly ReviewItem[], unitId: string, doc: DocumentRecord): ReviewItem[] {
-  return queue.filter((q) => !(q.unit_id === unitId && q.edition === doc.edition && q.code && doc.items[q.code] && doc.items[q.code].status !== "failed"));
+  return queue.filter((q) => !(q.unit_id === unitId && q.edition === doc.edition && q.code && doc.items[q.code] && !queueable(doc.items[q.code])));
 }
 
 /**

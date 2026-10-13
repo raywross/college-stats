@@ -183,8 +183,18 @@ function freshState(recipes: Recipe[] = []): Round3State {
 
 const recipe = (id: string, sources: Recipe["sources"], index_urls: string[] = []): Recipe => ({ unit_id: id, sources, index_urls, learned: "2026-09-01", model: "claude-sonnet-5" });
 
-function pipeline(o: { fetch: typeof globalThis.fetch; batches: ReturnType<typeof fakeBatchApi>; archive: ReturnType<typeof memoryArchive>; client?: ModelClient; now?: Date; writer?: ReturnType<typeof memoryCallLogWriter> }) {
+function pipeline(o: {
+  fetch: typeof globalThis.fetch;
+  batches: ReturnType<typeof fakeBatchApi>;
+  archive: ReturnType<typeof memoryArchive>;
+  client?: ModelClient;
+  now?: Date;
+  writer?: ReturnType<typeof memoryCallLogWriter>;
+  gridLayout?: (bytes: Uint8Array, type: string) => string[] | null;
+}) {
   return createRound3({
+    // No pdftotext in tests unless a test gives the layout: C7/C8A marks stay as read (and held).
+    gridLayout: o.gridLayout ?? (() => null),
     client: o.client ?? fakeClient().client,
     batches: o.batches,
     fetch: o.fetch,
@@ -315,6 +325,38 @@ test("a flattened PDF goes through layout, one extraction batch, and collect int
 /* ------------------------------------------------------------------ */
 /* Test 1: read once                                                   */
 /* ------------------------------------------------------------------ */
+
+test("a model read of C8A is placed under its column from the document's layout before the checks; unplaced, it's held", async () => {
+  // The model reads the SAT or ACT mark as Required; in the layout it sits under "Not required … considered if submitted".
+  const layout = `
+C8A Does your institution make use of SAT or ACT scores in admission decisions for                  Yes
+                                                                                                                     Not required for    Not considered
+                                                     Required to be
+                                                                                                                     admission, but      for admission,
+                         Admission                   considered for      Required for some      Recommended
+                                                                                                                      considered if          even if
+                                                       admission
+                                                                                                                       submitted           submitted
+      SAT or ACT                                                                                                            X
+C8B Has been removed from the CDS.`.split("\n");
+  const run = async (gridLayout: (bytes: Uint8Array, type: string) => string[] | null) => {
+    const f = fakeFetch({ [pdfUrl]: pdfRoute, [pdfIndex]: indexHtml });
+    const api = batchApi({ C: { ...C_PLAN, "C.802": ["Required to be considered for admission", /who applied/] }, rest: REST_PLAN });
+    const state = freshState([recipe(PDF_ID, [{ kind: "cds", url: pdfUrl, format: "pdf" }], [pdfIndex])]);
+    let asked: string | null = null;
+    await pipeline({ fetch: f.fn, batches: api, archive: memoryArchive(), gridLayout: (b, t) => ((asked = t), gridLayout(b, t)) }).run(state, runOpts([school(PDF_ID)]));
+    return { item: state.records.get(PDF_ID)!.documents[0].items["C.802"], asked };
+  };
+  const placed = await run(() => layout);
+  assert.equal(placed.asked, "pdf-flat", "the archived bytes and the document's type are what's laid out");
+  assert.equal(placed.item.v, "Not required for admission, but considered if submitted");
+  assert.deepEqual(placed.item.column, { heading: placed.item.v, read: "Required to be considered for admission", checked: OCT.toISOString().slice(0, 10) });
+  assert.ok(!placed.item.failures?.some((f) => f.check === "grid-column"));
+  const unplaced = await run(() => null);
+  assert.equal(unplaced.item.v, "Required to be considered for admission");
+  assert.equal(unplaced.item.status, "failed");
+  assert.ok(unplaced.item.failures!.some((f) => f.check === "grid-column"));
+});
 
 test("test 1: run 2 at the same schema version fetches only the index page and sends no model request; a month on, one conditional GET", async () => {
   const { archive, state } = await pdfRun1();

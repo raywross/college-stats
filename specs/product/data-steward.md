@@ -207,8 +207,9 @@ happen. A decision is always about a field at a college (the Review page) or abo
 6. Audits: the rotation and the weekly schedule.
 7. ~~A grid-column check~~ **Built 2026-10-13** (decision 1): `lib/grid-columns.ts` and `npm run check-grid-columns`
    place each model-read C7/C8A mark from the document's own layout (PDF layout text, or the workbook's cells); the
-   `grid-column` check holds what couldn't be placed. First run: 3,212 marks placed (817 corrected), 958 held. The
-   pipeline doesn't run it on new reads yet: until it does, a new run's grid marks stay held until the script runs.
+   `grid-column` check holds what couldn't be placed. First run: 3,212 marks placed (817 corrected), 958 held. Since
+   PR #157 the pipeline places marks right after each model read, before the checks (`grid-place.mts`; the workflow
+   installs pdftotext), so new reads arrive placed or held, never unchecked.
 
 ## Tests
 - Clustering: the committed queue's top clusters are stable under re-ordering and number changes; a cause key

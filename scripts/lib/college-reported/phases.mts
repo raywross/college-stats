@@ -56,6 +56,7 @@ import { parseExtractResponse } from "./llm.mts";
 import { tierOf } from "./pilot.mts";
 import { fatalApiError } from "./pipeline.mts";
 import { toWellFormedDeep } from "./well-formed.mts";
+import { gridCodes, gridLayout, placeGridMarks } from "./grid-place.mts";
 
 /* ------------------------------------------------------------------ */
 /* Shapes                                                              */
@@ -95,6 +96,8 @@ export interface Round3Deps {
   minDelayMs?: number;
   archive: Archive;
   table: TemplateTable;
+  /** Layout text for placing C7/C8A marks (grid-place.mts: pdftotext, or a workbook's cells); tests pass a fake. */
+  gridLayout?: (bytes: Uint8Array, type: string) => string[] | null;
   /** One line per model call (data/reports/college-reported-calls-<run>.jsonl); in memory by default. */
   callLog?: CallLogWriter;
   log?: (msg: string) => void;
@@ -1302,7 +1305,23 @@ export function createRound3(deps: Round3Deps) {
           if (!it.failures?.some((f) => f.check === "aid-year")) doc.items[code] = { ...it, status: "failed", failures: [...(it.failures ?? []), { check: "aid-year", detail: `H.101 is ${aid === undefined ? "blank" : `"${aid}"`}, which names no aid year` }] };
         }
       }
+      doc = await placeGrid(doc, entry);
       return judgeDoc(school, entry.unit_id, doc, { lines: arch.lines, codes, editionAssumed: entry.edition_from === "assumed" });
+    }
+
+    /**
+     * A model read of C7 or C8A: each mark placed under its column heading from the document's own layout before the
+     * checks run (a model often reads a mark under the next column); a mark that can't be placed stays as read, and
+     * the grid-column check holds it.
+     */
+    async function placeGrid(doc: DocumentRecord, entry: ManifestEntry): Promise<DocumentRecord> {
+      if (!gridCodes(doc, table).length) return doc;
+      const bytes = await deps.archive.get(entry.sha256);
+      const lines = bytes ? (deps.gridLayout ?? gridLayout)(bytes, entry.type) : null;
+      if (!lines) return doc;
+      const p = placeGridMarks(doc, lines, table, today);
+      if (p.corrected.length) log(`  ${entry.unit_id}: ${p.corrected.length} grid mark(s) under another column than read: ${p.corrected.join("; ")}`);
+      return p.doc;
     }
 
     /** Collects every open batch that has ended (waiting until the deadline), then resubmits, escalates, publishes. */

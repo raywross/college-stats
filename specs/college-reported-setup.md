@@ -61,7 +61,10 @@ document that `data/schools.json` already holds, and a merge to `main` deploys i
 ([serving-architecture.md](serving-architecture.md)); the `publish-changes.yml` workflow then records what changed.
 
 ## 4. Run it locally first
-1. Add `ANTHROPIC_API_KEY=sk-ant-…` to `.env.local` (git-ignored).
+1. Add `ANTHROPIC_API_KEY=sk-ant-…` to `.env.local` (git-ignored). Install `pdftotext` (`brew install poppler`; the
+   workflow installs `poppler-utils`): after a model read, each C7/C8A mark is placed under its column heading from
+   the PDF's layout, and without pdftotext those marks stay held (`grid-column`). `npm run check-grid-columns` does the
+   same for records already committed.
 2. Dry run against the pilot set (no network writes to `data/`, no model calls that can't be undone — check the
    script's own `--dry-run` behavior, but it should at minimum skip writing files):
    ```sh

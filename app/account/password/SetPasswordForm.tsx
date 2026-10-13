@@ -10,11 +10,16 @@ import { setPassword, type SetPasswordState } from "./actions";
 const inputCls =
   "h-11 w-full rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
-/** `welcome`: an invited person's first visit; saving also joins the household (setPassword) and opens it. */
-export function SetPasswordForm({ email, welcome }: { email: string; welcome?: string }) {
+/**
+ * `welcome`: an invited person's first visit; saving also joins the household (setPassword) and opens it. `askCode`:
+ * the account has an authenticator app and this session hasn't passed it (a reset link), so the 6-digit code is asked
+ * for too; the action also asks for it if Supabase does.
+ */
+export function SetPasswordForm({ email, welcome, askCode = false }: { email: string; welcome?: string; askCode?: boolean }) {
   const [state, action, pending] = useActionState<SetPasswordState, FormData>(setPassword, { status: "idle" });
   const [password, setPw] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [code, setCode] = useState("");
   if (state.status === "saved")
     return (
       <div className="rounded-3xl border bg-card p-6 text-center" role="status">
@@ -38,7 +43,8 @@ export function SetPasswordForm({ email, welcome }: { email: string; welcome?: s
     );
   const strength = passwordStrength(password, email);
   const problems = password ? passwordProblems(password, email) : [];
-  const ok = problems.length === 0 && password.length > 0 && password === confirm;
+  const showCode = askCode || (state.status === "error" && state.needsCode === true);
+  const ok = problems.length === 0 && password.length > 0 && password === confirm && (!showCode || /^\d{6}$/.test(code));
   return (
     <form action={action} className="rounded-3xl border bg-card p-5 sm:p-8">
       {/* Lets password managers save it against the right account. */}
@@ -87,6 +93,26 @@ export function SetPasswordForm({ email, welcome }: { email: string; welcome?: s
         className={`${inputCls} mt-1.5`}
       />
       {confirm && password !== confirm && <p className="mt-1.5 text-xs text-destructive">The two don&apos;t match yet.</p>}
+      {showCode && (
+        <>
+          <label className="mt-4 block text-sm font-semibold" htmlFor="mfa-code">
+            Code from your authenticator app
+          </label>
+          <input
+            id="mfa-code"
+            name="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9]{6}"
+            maxLength={6}
+            required
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            className={`${inputCls} mt-1.5 tracking-[0.3em] tabular-nums`}
+          />
+          <p className="mt-1.5 text-xs text-muted-foreground">This account uses two-step sign-in, so changing its password needs the current 6-digit code.</p>
+        </>
+      )}
       {state.status === "error" && (
         <p className="mt-4 text-sm font-medium text-destructive" role="alert">
           {state.message}

@@ -94,12 +94,13 @@ export interface SelectAlertsResult {
   skipped: AlertSkips;
 }
 
-/** "new" or "moved" for an event in the window, or null when it isn't a candidate. */
-export function changeOf(event: Pick<VisitEventRow, "first_seen" | "changed_at">, since: Date): AlertChange | null {
-  const first = Date.parse(event.first_seen);
-  const changed = Date.parse(event.changed_at);
-  if (first >= since.getTime()) return "new";
-  if (changed >= since.getTime() && changed > first) return "moved";
+/**
+ * "new" or "moved" for an event in the window, or null when it isn't a candidate. `moved_at` is set by the sync only
+ * for a date or venue change (20261013190000), so an availability flip never reads as "moved to".
+ */
+export function changeOf(event: Pick<VisitEventRow, "first_seen" | "moved_at">, since: Date): AlertChange | null {
+  if (Date.parse(event.first_seen) >= since.getTime()) return "new";
+  if (event.moved_at && Date.parse(event.moved_at) >= since.getTime()) return "moved";
   return null;
 }
 

@@ -603,6 +603,7 @@ Things learned in testing:
 
 Owner steps done on dev (2026-10-13): the admin migrations and every console migration through
 `20261013170000_admin_top_viewed_colleges.sql`, the first admin row (now `rayuno+quadadmin@gmail.com`, MFA enrolled),
-`admin-auth` deployed, `INVITE_ALLOWED_ORIGINS` and `ADMIN_AUTH_SEND_EMAIL` set, the selectivity backfill run. Not
-yet confirmed: the GitHub App for Operations. Prod repeats all of it at launch
+`admin-auth` deployed, `INVITE_ALLOWED_ORIGINS` and `ADMIN_AUTH_SEND_EMAIL` set, the selectivity backfill run, and the
+"Quad console" GitHub App for Operations (its three variables and `GITHUB_REPO` in Vercel Production since
+2026-10-13, repository auto-merge on). Prod repeats all of it at launch
 ([supabase.md](../supabase.md#setup-at-the-formal-release)).

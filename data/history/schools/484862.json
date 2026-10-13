@@ -8,6 +8,7 @@
     "faculty_salary": {"start":2016,"values":[48750,null,46755,50958,48662,60603,59369,71642,75631]},
     "transfer_in_count": {"start":2014,"values":[0,null,0,null,3,0,0,0,2,1,1]},
     "transfer_in_share": {"start":2018,"values":[1,null,null,null,1,1,1]},
+    "online_share": {"start":2018,"values":[0,0,0,0,0,0,0.5714]},
     "athletic_association": {"start":2014,"values":[3,null,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},
     "promise": {"start":2022,"values":[2,2]},

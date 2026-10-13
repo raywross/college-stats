@@ -1,6 +1,6 @@
 # Five Levels: High Reach, Reach, Target, Likely, Safe
 
-> Status: **planned** 2026-10-11 from the owner's review of the built estimate (PR #105, `feature/chances`). Part 8 of
+> Status: **built** 2026-10-12 on `feature/chances` (see "As built"; planned 2026-10-11) from the owner's review of the built estimate (PR #105, `feature/chances`). Part 8 of
 > [admission chances](README.md). The rules are the method's third version,
 > [method/standing.md](method/standing.md); this spec is everything public: the words, the screens, the database, the
 > planner's advice, and the season measurements. Needs [selectivity-index.md](selectivity-index.md) (the caps) and
@@ -114,3 +114,20 @@ cells, the miss rules, the calibration curve), `tests/lists-policies.test.mts` (
    lighter than Reach, Safe deeper than Likely).
 2. Whether the signed-out plan shows all five levels or collapses High reach into Reach for a visitor with only a
    score: recommendation, show all five; the copy is the same.
+
+## As built (2026-10-12)
+- **Migration** `supabase/migrations/20261012100000_five_levels.sql`, not yet applied to dev: the five-level checks,
+  `list_items.legacy` and `recruited`, the snapshot columns (`hidden_odds`, `selectivity_tier`, `without_depth`,
+  `without_hooks`, `without_interest`), and `record_application_snapshot()` re-created to write them. Snapshots stored
+  with the old `reach-for-everyone` label stay valid (no data rewrite). Until it's applied the planner reads without the
+  new columns, the legacy and recruited controls fail to save with "That didn't work", and writing suggested groups
+  logs a check-constraint error.
+- **Model:** the third version in `lib/chances/model.ts` (`MODEL_VERSION` 20261012.1); see
+  [method/standing.md](method/standing.md) "As built".
+- **Planner:** five sections, the Dream first, then closest first by `closeness`, then the student's order; the ED
+  guard (a High-reach Dream starts EA/RD; no ED II at High reach); an "ED would help most" notice where `ed` is
+  `helps` (copy is a first draft); the balance line across five.
+- **Chips:** High reach `#ec4899` (pink), Safe `#166534` light / `#15803d` dark beside Likely's emerald; validated
+  all-pairs in both themes, with Likely/Safe the one deliberate near pair in dark mode (one green at two depths, each
+  chip carrying its word). The signed-out plan's example rows still show three words (open question 2).
+- **Glossary:** `levels` (the old `reach-target-likely` kept as an alias).

@@ -90,7 +90,7 @@ students who tried it said (2026-10-09):
 ## What stays, what goes
 | Built in PR #103 | In the redesign |
 |---|---|
-| The six-stage strip (List, Rounds, Actions, Timeline, Apply, Offers) | **Gone.** Three tabs: Colleges, Scores, Calendar. The stage machine (`stage.ts`) stays as internal state for the hub caption, reminders, and which tab opens |
+| The six-stage strip (List, Rounds, Actions, Timeline, Apply, Offers) | **Gone.** Three tabs: Colleges, Scores, Calendar (Scores dropped 2026-10-12, [scores.md](scores.md)). The stage machine (`stage.ts`) stays as internal state for the hub caption, reminders, and which tab opens |
 | Stage 1 list with suggested category beside the student's chip | The suggestion **is** the group until the student changes it ([standing.md](standing.md#suggested-until-changed)) |
 | `PriorityList` (rank the list) and `list_items.priority` | **Gone** from the UI; the column is left unused, then dropped in a later migration |
 | `RoundsTable`, the proposal, `bindingChecklist`, "Use this plan" | **Gone.** A round chip per row, started from the Dream ([rounds.md](rounds.md)); `lists.rounds_plan_accepted_at` no longer read |

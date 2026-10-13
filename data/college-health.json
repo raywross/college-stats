@@ -1,7 +1,7 @@
 {
 "version": 1,
-"generated": "2026-10-11",
-"federalRetrieved": "2026-10-04",
+"generated": "2026-10-12",
+"federalRetrieved": "2026-10-12",
 "colleges": {
 "100654": {"missing":[],"docs":[{"kind":"cds","edition":null,"type":"html","retrieved":"2026-10-11","url":"https://www.aamu.edu/campus-life/student-support/career-development/_documents/cds-2024-spring-career-guide-jrd.pdf","archivedSections":null,"reads":null,"extracted":null}],"failures":[{"reason":"edition_unknown","stage":"read","url":"https://www.aamu.edu/campus-life/student-support/career-development/_documents/cds-2024-spring-career-guide-jrd.pdf","lastRun":"2026-10-11"}],"queue":0,"linkIssues":[],"identity":"2026-10-04","campus":"2026-10-04"},
 "100663": {"missing":[],"docs":[],"failures":[{"reason":"no_document_found","stage":"discovery","url":null,"lastRun":"2026-10-10"}],"queue":0,"linkIssues":[],"identity":"2026-10-04","campus":"2026-10-04"},

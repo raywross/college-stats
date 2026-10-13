@@ -1,0 +1,50 @@
+{
+  "retrieved": "2026-10-12",
+  "editorial": "The titles students and the Common App activities section actually use, per activity kind, each mapped to the role tier the model reads (depth.md \"What the student enters\": member took part, officer a named role, leader ran it). A title is a level within a tier, not a tier of its own: on a sports team, Varsity is still member tier (everyone on the roster is a member; being varsity is a level of play, not a role), while Captain and Co-captain are leader because the team follows them. A club's elected or appointed posts split the same way: Secretary, Treasurer, Vice President, and Committee chair run a piece of the club (officer); President and Founder run the whole thing (leader). Researched from the Common App's own activities guidance and how students commonly describe each kind.",
+  "roles": [
+    { "kind": "sport", "title": "Freshman team", "role": "member" },
+    { "kind": "sport", "title": "JV", "role": "member" },
+    { "kind": "sport", "title": "Varsity", "role": "member" },
+    { "kind": "sport", "title": "Letter winner", "role": "member" },
+    { "kind": "sport", "title": "Captain", "role": "leader" },
+    { "kind": "sport", "title": "Co-captain", "role": "leader" },
+
+    { "kind": "club", "title": "Member", "role": "member" },
+    { "kind": "club", "title": "Committee chair", "role": "officer" },
+    { "kind": "club", "title": "Secretary", "role": "officer" },
+    { "kind": "club", "title": "Treasurer", "role": "officer" },
+    { "kind": "club", "title": "Vice President", "role": "officer" },
+    { "kind": "club", "title": "President", "role": "leader" },
+    { "kind": "club", "title": "Founder", "role": "leader" },
+    { "kind": "club", "title": "Editor-in-chief", "role": "leader" },
+
+    { "kind": "arts", "title": "Member", "role": "member" },
+    { "kind": "arts", "title": "Section leader", "role": "officer" },
+    { "kind": "arts", "title": "Principal or first chair", "role": "leader" },
+    { "kind": "arts", "title": "Lead role", "role": "leader" },
+    { "kind": "arts", "title": "Director", "role": "leader" },
+
+    { "kind": "service", "title": "Member", "role": "member" },
+    { "kind": "service", "title": "Committee chair", "role": "officer" },
+    { "kind": "service", "title": "Secretary", "role": "officer" },
+    { "kind": "service", "title": "Treasurer", "role": "officer" },
+    { "kind": "service", "title": "Vice President", "role": "officer" },
+    { "kind": "service", "title": "President", "role": "leader" },
+    { "kind": "service", "title": "Founder", "role": "leader" },
+
+    { "kind": "work", "title": "Employee", "role": "member" },
+    { "kind": "work", "title": "Intern", "role": "member" },
+    { "kind": "work", "title": "Shift lead", "role": "officer" },
+    { "kind": "work", "title": "Manager", "role": "leader" },
+
+    { "kind": "research", "title": "Member", "role": "member" },
+    { "kind": "research", "title": "Team lead", "role": "leader" },
+
+    { "kind": "family", "title": "Shared responsibility", "role": "member" },
+    { "kind": "family", "title": "Primary caregiver", "role": "leader" },
+
+    { "kind": "other", "title": "Member", "role": "member" },
+    { "kind": "other", "title": "Coordinator", "role": "officer" },
+    { "kind": "other", "title": "Lead", "role": "leader" }
+  ]
+}

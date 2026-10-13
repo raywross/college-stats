@@ -28,6 +28,7 @@ import { GREEK_COUNCIL_FILTERS, GREEK_FILTER_LABEL, MIN_GREEK_OPTIONS } from "@/
 import type { Council } from "@/lib/directories";
 import { LOGISTICS_FILTERS, type LogisticsFilterParam } from "@/lib/cds/application-logistics-display";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
+import { ONLINE_FILTER_LABELS } from "@/lib/online-share";
 import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "@/lib/academics";
 import { SMALL_PELL_GAP } from "@/lib/graduation-groups";
@@ -36,6 +37,8 @@ import { FIELD_MIN_OPTIONS, MAJOR_FAMILIES, MAJOR_FAMILY_CODES } from "@/lib/maj
 import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGroup } from "@/lib/types";
 import { useExploreParams } from "./useExploreParams";
 import { POLICY_BUCKETS, type PolicyBucket } from "@/lib/test-policy";
+import type { SelectivityTier } from "@/lib/chances/types";
+import { SELECTIVITY_TIERS, SELECTIVITY_TIER_LABELS } from "@/lib/chances/levels";
 import { FAITH_FILTERS } from "@/lib/religion";
 import { TRADITIONS, type Tradition } from "@/lib/directories";
 import type { FaithFilter } from "@/lib/types";
@@ -56,13 +59,15 @@ export interface FilterFacets {
   balance: Record<GenderBalance, number>;
   /** Colleges in each test-policy bucket, by each college's newest policy (lib/test-policy.ts). */
   policy: Record<PolicyBucket, number>;
+  /** Colleges in each of Quad's selectivity tiers, for all applicants (specs/chances/selectivity-index.md). */
+  selectivity: Record<SelectivityTier, number>;
   fullTime: number;
   /** Colleges matching each housing and policy filter (lib/housing.ts). */
   housing: Record<HousingFilterParam, number>;
   /** Colleges matching each admission-factor filter (lib/factors.ts). */
   factors: Record<FactorFilterParam, number>;
   /** Colleges per setting group, research tier, and designation (lib/campus-profile.ts). */
-  campus: { setting: Record<SettingGroup, number>; research: Record<ResearchTier, number>; designation: Record<Designation, number>; opportunity: number };
+  campus: { setting: Record<SettingGroup, number>; research: Record<ResearchTier, number>; designation: Record<Designation, number>; opportunity: number; online: { campus: number; mostly: number } };
   /** Colleges per faith family, and with no religious affiliation (lib/religion.ts). */
   faith: Record<FaithFilter, number>;
   /** Colleges with a named community of each tradition, from national directories (specs/campus-directories.md). */
@@ -191,9 +196,10 @@ export function FilterPanel({ facets, onDone, estimates = true }: { facets: Filt
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "minApplicants", "minUndergrads", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup", "lgbtqCenter", "lgbtqHousing", "lgbtqNondiscrimination", "greekCouncils", "minAidIncome", "merit"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "minApplicants", "minUndergrads", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "online", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup", "lgbtqCenter", "lgbtqHousing", "lgbtqNondiscrimination", "greekCouncils", "minAidIncome", "merit"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
     "policy",
+    "selectivity",
     "near",
   ].some((k) => searchParams.get(k));
 
@@ -242,6 +248,19 @@ export function FilterPanel({ facets, onDone, estimates = true }: { facets: Filt
             update({ minAR: lo > 0 ? String(lo) : null, maxAR: hi < 100 ? String(hi) : null })
           }
         />
+      </Section>
+
+      <Section title="Quad's selectivity" term="selectivity-tier">
+        <div role="group" aria-label="Quad's selectivity" className="flex flex-wrap gap-1.5">
+          {SELECTIVITY_TIERS.map((t) => (
+            <Chip key={t} active={getList("selectivity").includes(t)} onClick={() => toggleInList("selectivity", t)} count={facets.selectivity[t]}>
+              {SELECTIVITY_TIER_LABELS[t]}
+            </Chip>
+          ))}
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Our reading of each college&apos;s published figures, for all applicants; a public&apos;s in-state and out-of-state readings are on its profile.
+        </p>
       </Section>
 
       <Section title="SAT middle 50%" term="middle-50">
@@ -484,6 +503,19 @@ export function FilterPanel({ facets, onDone, estimates = true }: { facets: Filt
             </Chip>
             <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
               Carnegie&apos;s higher access, higher earnings class. <InfoTip term="student-access-and-earnings" />
+            </p>
+          </div>
+          <div role="group" aria-label="Online">
+            <p className="mb-1.5 text-xs font-semibold">Online</p>
+            <div className="flex flex-wrap gap-1.5">
+              {(["campus", "mostly"] as const).map((v) => (
+                <Chip key={v} active={searchParams.get("online") === v} onClick={() => update({ online: searchParams.get("online") === v ? null : v })} count={facets.campus.online[v]}>
+                  {ONLINE_FILTER_LABELS[v]}
+                </Chip>
+              ))}
+            </div>
+            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+              Mostly online: more than half of undergraduates take every course online. <InfoTip term="online-first" />
             </p>
           </div>
         </div>

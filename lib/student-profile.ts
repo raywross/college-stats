@@ -12,8 +12,11 @@ import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
 import { isHighSchoolId } from "./high-school-core.ts";
 import type { StandingStudent } from "./planner/standing.ts";
-import type { CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, Mark } from "./chances/types.ts";
+import type { ActivityEntry, ActivityFamily, ActivityKind, ActivityRole, AwardEntry, ClassStanding, CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, HsYear, Mark, RankExpectation, RecognitionTier } from "./chances/types.ts";
+import { ACTIVITIES_MAX, AWARDS_MAX, CLASS_STANDING_PERCENTILE } from "./chances/levels.ts";
 import { catalogCourse, COURSE_SUBJECTS, isCatalogKeyFor } from "./chances/catalog.ts";
+import { awardByKey } from "./chances/awards-catalog.ts";
+import { activityByKey, roleForTitle, titlesFor } from "./chances/activity-catalog.ts";
 
 /**
  * Same boundaries as lib/metrics.ts SIZE_BUCKETS, duplicated here rather than imported: that module pulls in
@@ -110,6 +113,52 @@ export interface StudentProfileAcademics {
    * isn't on record (course-plan.md "The school's course list" 3). Never shared with other students.
    */
   schoolOffers: string[];
+  /**
+   * The class-standing pick (inputs-beyond-academics.md "Class standing"), beside `classRankPercentile`: picking a
+   * value here sets the percentile from CLASS_STANDING_PERCENTILE; typing a percentile that matches one of those
+   * values sets the pick to match. Null until answered; a profile saved before this field existed reads as null.
+   */
+  classStanding: ClassStanding | null;
+  /**
+   * Admission chances, next (depth.md "What the student enters"): at most ACTIVITIES_MAX entries. A profile saved
+   * before this field existed reads as an empty list.
+   */
+  activities: ActivityEntry[];
+  /**
+   * Admission chances, next (inputs-beyond-academics.md "Awards"): at most AWARDS_MAX entries. A profile saved
+   * before this field existed reads as an empty list.
+   */
+  awards: AwardEntry[];
+  /**
+   * "Neither of my parents finished a four-year degree" (inputs-beyond-academics.md "First generation"). Optional;
+   * null until answered. Not used in the level in this version; shown as noted, not estimated.
+   */
+  firstGeneration: boolean | null;
+  /**
+   * "Do you expect to be valedictorian or salutatorian?" (method/standing.md "Revision 1"), beside `classStanding`:
+   * worded as an expectation (it's only decided after senior year), never a fact. Optional; null until answered. A
+   * profile saved before this field existed reads as null.
+   */
+  rankExpectation: RankExpectation | null;
+  /**
+   * The intake's one-tap "None" on an activity step (owner, 2026-10-12): the student answered that step and has
+   * nothing for it, which is different from not having answered. A key is present only when chosen; a profile saved
+   * before this field existed reads as {} (every step unanswered). Adding an entry to a step clears its "None".
+   */
+  activitiesNone: ActivitiesNone;
+}
+
+/** The activity steps a student can answer "None" for (lib/planner/activity-steps.ts ActivityStep). */
+export type ActivityNoneStep = "sports" | "clubs" | "work" | "other";
+export const ACTIVITY_NONE_STEPS: readonly ActivityNoneStep[] = ["sports", "clubs", "work", "other"];
+export type ActivitiesNone = Partial<Record<ActivityNoneStep, true>>;
+
+/** Only the four step keys, only `true`; anything else is dropped. */
+export function sanitizeActivitiesNone(input: unknown): ActivitiesNone {
+  const out: ActivitiesNone = {};
+  if (!input || typeof input !== "object" || Array.isArray(input)) return out;
+  for (const k of ACTIVITY_NONE_STEPS) if ((input as Record<string, unknown>)[k] === true) out[k] = true;
+  return out;
 }
 
 /** The course plan's saved choices; `season` is the school year they were made in ("2026-27"), after which they lapse. */
@@ -137,6 +186,205 @@ export function sanitizeCoursePlan(input: unknown): CoursePlanState | null {
 /** Untrusted input as marked AP course keys: only keys in the AP catalog, each once. */
 export function sanitizeSchoolOffers(input: unknown): string[] {
   return arr(input, (x) => (typeof x === "string" && isCatalogKeyFor("ap", x) ? x : null), SCHOOL_OFFERS_MAX);
+}
+
+/* ------------------------------------------------------------------ */
+/* Admission chances, next: class standing, activities, awards         */
+/* (specs/chances/depth.md "What the student enters",                  */
+/*  specs/chances/inputs-beyond-academics.md "Class standing", "Awards") */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The picks the form offers and the sanitizer accepts. "no_rank" ("My school doesn't rank") is left out on purpose
+ * (owner, 2026-10-12: the question asks the student's own sense of where they stand, not whether their school
+ * ranks): a stored "no_rank" — from before this change, or any other untrusted input — falls through to the
+ * percentile check below, which finds no percentile on file either, so it reads as unanswered (null), not as a
+ * fourth kind of answer the form has to keep showing.
+ */
+const CLASS_STANDING_VALUES: readonly ClassStanding[] = ["top1", "top5", "top10", "top25", "top50", "lower"];
+
+/**
+ * The class-standing pick and `classRankPercentile` kept in sync (inputs-beyond-academics.md "Class standing"):
+ * picking a value sets the percentile from CLASS_STANDING_PERCENTILE (overriding any percentile also sent, since the
+ * pick is what the form shows); with no pick (including a stored "no_rank"), a percentile that exactly matches one
+ * of the table's values sets the matching pick; any other percentile, or none, keeps `classStanding` null.
+ */
+export function sanitizeClassStanding(pickInput: unknown, percentileInput: unknown): { classStanding: ClassStanding | null; classRankPercentile: number | null } {
+  if (typeof pickInput === "string" && (CLASS_STANDING_VALUES as readonly string[]).includes(pickInput)) {
+    const pick = pickInput as ClassStanding;
+    return { classStanding: pick, classRankPercentile: CLASS_STANDING_PERCENTILE[pick] };
+  }
+  const percentile = int(percentileInput, 1, 100);
+  if (percentile === null) return { classStanding: null, classRankPercentile: null };
+  const matched = CLASS_STANDING_VALUES.find((c) => CLASS_STANDING_PERCENTILE[c] === percentile) ?? null;
+  return { classStanding: matched, classRankPercentile: percentile };
+}
+
+/** Whether a value is one of the stored ClassStanding picks (for a server-side check, like `isHighSchoolId`). */
+export function isClassStanding(v: unknown): v is ClassStanding {
+  return typeof v === "string" && (CLASS_STANDING_VALUES as readonly string[]).includes(v);
+}
+
+const RANK_EXPECTATION_VALUES: readonly RankExpectation[] = ["valedictorian", "salutatorian"];
+
+/** Whether a value is a stored RankExpectation. */
+export function isRankExpectation(v: unknown): v is RankExpectation {
+  return typeof v === "string" && (RANK_EXPECTATION_VALUES as readonly string[]).includes(v);
+}
+
+/** Untrusted input as a RankExpectation, else null. */
+export function sanitizeRankExpectation(v: unknown): RankExpectation | null {
+  return isRankExpectation(v) ? v : null;
+}
+
+/**
+ * The class standing a rank expectation implies (method/standing.md "Revision 1", owner 2026-10-12): valedictorian
+ * is usually top 1%, salutatorian top 5%.
+ */
+export const RANK_EXPECTATION_STANDING: Readonly<Record<RankExpectation, ClassStanding>> = { valedictorian: "top1", salutatorian: "top5" };
+
+/**
+ * Whether the rank expectation and the class-standing pick disagree (inputs-beyond-academics.md: "Valedictorian or
+ * salutatorian implies Top 1% / Top 5% standing; keep the two consistent"). Either one unset is never a mismatch —
+ * there's nothing yet to reconcile.
+ */
+export function rankExpectationMismatch(classStanding: ClassStanding | null, rankExpectation: RankExpectation | null): boolean {
+  if (rankExpectation === null || classStanding === null) return false;
+  if (rankExpectation === "valedictorian") return classStanding !== "top1";
+  return classStanding !== "top1" && classStanding !== "top5";
+}
+
+/** The hint shown when they disagree ("picking valedictorian with Top 25% asks the student to fix one"); null otherwise. */
+export function rankExpectationHint(classStanding: ClassStanding | null, rankExpectation: RankExpectation | null): string | null {
+  if (!rankExpectationMismatch(classStanding, rankExpectation)) return null;
+  const expect = rankExpectation === "valedictorian" ? "Valedictorian is usually top 1%" : "Salutatorian is usually top 5%";
+  return `${expect}. Update your class standing to match, or change this if it's not right.`;
+}
+
+/**
+ * The hint shown when a weighted GPA is below the unweighted one on the same family of scale (owner, 2026-10-12:
+ * "having a weighted grade higher than an unweighted one is a good measure of rigor"), so a lower one is worth a
+ * second look. Only compared where both are on a 4- or 5-point scale (gpaScale isn't "100"); either missing is never
+ * a mismatch.
+ */
+export function weightedGpaBelowUnweighted(gpa: number | null, gpaScale: GpaScale, weightedGpa: number | null): boolean {
+  if (gpa === null || weightedGpa === null || gpaScale === "100") return false;
+  return weightedGpa < gpa;
+}
+
+/** The hint text for `weightedGpaBelowUnweighted`; null when there's nothing to flag. */
+export function weightedGpaHint(gpa: number | null, gpaScale: GpaScale, weightedGpa: number | null): string | null {
+  if (!weightedGpaBelowUnweighted(gpa, gpaScale, weightedGpa)) return null;
+  return "A weighted GPA is usually higher than unweighted. Check these two numbers.";
+}
+
+const ACTIVITY_KINDS: readonly ActivityKind[] = ["sport", "club", "arts", "service", "work", "research", "family", "other"];
+const ACTIVITY_ROLES: readonly ActivityRole[] = ["member", "officer", "leader"];
+const HS_YEARS: readonly HsYear[] = [9, 10, 11, 12];
+const RECOGNITION_TIERS: readonly RecognitionTier[] = [1, 2, 3, 4];
+/** Longest name kept for an activity (depth.md "What the student enters"). */
+export const ACTIVITY_NAME_MAX = 60;
+/** Longest name kept for a typed-in ("Something else") award. */
+export const AWARD_NAME_MAX = 60;
+
+const ACTIVITY_FAMILIES: readonly ActivityFamily[] = [
+  "english", "math", "science", "history", "language", "cs", "arts",
+  "business", "health", "engineering", "service", "athletics", "leadership", "media", "faith", "other",
+];
+
+/**
+ * One untrusted activity row. A catalog pick (`catalogKey` in data/reference/sports.json or clubs.json) takes its kind
+ * and family from the catalog, so they can't drift; an unknown key is dropped (the row stays as typed). A typed row
+ * keeps a known `family`. A per-year title (data/reference/activity-roles.json) is kept only for a checked year and only
+ * when the kind offers it, and then sets that year's role tier (roleForTitle). `catalogKey`, `family`, and `titles`
+ * are written only when set, so a row saved before the catalogs reads back exactly as it was.
+ */
+function sanitizeActivity(v: unknown, index: number): ActivityEntry | null {
+  if (!isObj(v)) return null;
+  const name = str(v.name, ACTIVITY_NAME_MAX);
+  if (!name) return null;
+  const cat = typeof v.catalogKey === "string" ? activityByKey(v.catalogKey) : null;
+  const kind = cat ? cat.kind : ACTIVITY_KINDS.includes(v.kind as ActivityKind) ? (v.kind as ActivityKind) : "other";
+  const family = cat ? cat.family : ACTIVITY_FAMILIES.includes(v.family as ActivityFamily) ? (v.family as ActivityFamily) : null;
+  const years = Array.from(new Set(arr(v.years, (y) => (HS_YEARS.includes(y as HsYear) ? (y as HsYear) : null), 4))).sort((a, b) => a - b) as HsYear[];
+  const rolesIn = isObj(v.roles) ? v.roles : {};
+  const titlesIn = isObj(v.titles) ? v.titles : {};
+  const offered = new Set(titlesFor(kind).map((t) => t.title));
+  const roles: Partial<Record<HsYear, ActivityRole>> = {};
+  const titles: Partial<Record<HsYear, string>> = {};
+  // A role only counts for a checked year; an unchecked year's role or title, if any was sent, is dropped.
+  for (const y of years) {
+    const t = titlesIn[String(y)];
+    if (typeof t === "string" && offered.has(t)) {
+      titles[y] = t;
+      roles[y] = roleForTitle(kind, t);
+      continue;
+    }
+    const r = rolesIn[String(y)];
+    roles[y] = ACTIVITY_ROLES.includes(r as ActivityRole) ? (r as ActivityRole) : "member";
+  }
+  const hoursPerWeek = int(v.hoursPerWeek, 1, 60);
+  const recognition = RECOGNITION_TIERS.includes(v.recognition as RecognitionTier) ? (v.recognition as RecognitionTier) : null;
+  const id = typeof v.id === "string" && v.id.trim() && v.id.length <= 40 ? v.id.trim() : `activity-${index + 1}`;
+  const out: ActivityEntry = { id, name, kind, years, roles, hoursPerWeek, recognition, relatedToMajor: bool(v.relatedToMajor) };
+  if (cat) out.catalogKey = cat.key;
+  if (family) out.family = family;
+  if (Object.keys(titles).length > 0) out.titles = titles;
+  return out;
+}
+
+/** Untrusted input as at most ACTIVITIES_MAX ActivityEntries: invalid rows dropped, ids made unique. */
+export function sanitizeActivities(input: unknown): ActivityEntry[] {
+  if (!Array.isArray(input)) return [];
+  const out: ActivityEntry[] = [];
+  const ids = new Set<string>();
+  input.forEach((raw, i) => {
+    if (out.length >= ACTIVITIES_MAX) return;
+    const a = sanitizeActivity(raw, i);
+    if (!a) return;
+    let id = a.id;
+    for (let n = 2; ids.has(id); n++) id = `${a.id}-${n}`;
+    ids.add(id);
+    out.push({ ...a, id });
+  });
+  return out;
+}
+
+/**
+ * One untrusted award row: a catalog pick (`key` in data/reference/awards.json) takes its name and tier from the
+ * catalog, not whatever the client sent, so the two can't drift apart; "Something else" (`key` null) needs a typed
+ * name and a tier pick. An unknown key drops the row (a catalog entry the client no longer recognizes).
+ */
+function sanitizeAward(v: unknown, index: number): AwardEntry | null {
+  if (!isObj(v)) return null;
+  const id = typeof v.id === "string" && v.id.trim() && v.id.length <= 40 ? v.id.trim() : `award-${index + 1}`;
+  const year = int(v.year, 9, 12) as HsYear | null;
+  if (typeof v.key === "string" && v.key.trim()) {
+    const entry = awardByKey(v.key);
+    if (!entry) return null;
+    return { id, key: entry.key, name: entry.name, tier: entry.tier, year };
+  }
+  const name = str(v.name, AWARD_NAME_MAX);
+  const tier = RECOGNITION_TIERS.includes(v.tier as RecognitionTier) ? (v.tier as RecognitionTier) : null;
+  if (!name || tier === null) return null;
+  return { id, key: null, name, tier, year };
+}
+
+/** Untrusted input as at most AWARDS_MAX AwardEntries: invalid rows dropped, ids made unique. */
+export function sanitizeAwards(input: unknown): AwardEntry[] {
+  if (!Array.isArray(input)) return [];
+  const out: AwardEntry[] = [];
+  const ids = new Set<string>();
+  input.forEach((raw, i) => {
+    if (out.length >= AWARDS_MAX) return;
+    const a = sanitizeAward(raw, i);
+    if (!a) return;
+    let id = a.id;
+    for (let n = 2; ids.has(id); n++) id = `${a.id}-${n}`;
+    ids.add(id);
+    out.push({ ...a, id });
+  });
+  return out;
 }
 
 /** The five subjects the counselor's "most demanding" question asks about. */
@@ -196,8 +444,9 @@ export interface StudentProfileTests {
   practice: boolean;
   /**
    * The score the student is aiming for on the focus test (specs/planner/redesign/intake.md "Test"), or null. Kept only
-   * within the focus test's range; cleared when the focus test changes or is "none". Never read by the estimate: it
-   * drives the Scores tab's "A {target} would move N colleges up a group" line from each row's move-up.
+   * within the focus test's range; cleared when the focus test changes or is "none". Drives the Scores tab's "A
+   * {target} would move N colleges up a group" line from each row's move-up, and (method/standing.md "Revision 3",
+   * rule 3) the estimate reads it in place of a lower or missing score until junior year ends.
    */
   target: number | null;
   /**
@@ -265,7 +514,24 @@ export const LOCAL_PROFILE_KEY = "student-profile";
 export function emptyProfile(): StudentProfileData {
   return {
     basics: { gradYear: null, stateOfResidence: null, highSchool: null, highSchoolId: null, feeWaiverEligible: null },
-    academics: { gpa: null, gpaScale: "4.0", weightedGpa: null, classRankPercentile: null, courseRigorCount: null, courses: [], apExamsPrivate: true, coreAtTopLevel: emptyCoreAtTopLevel(), coursePlan: null, schoolOffers: [] },
+    academics: {
+      gpa: null,
+      gpaScale: "4.0",
+      weightedGpa: null,
+      classRankPercentile: null,
+      courseRigorCount: null,
+      courses: [],
+      apExamsPrivate: true,
+      coreAtTopLevel: emptyCoreAtTopLevel(),
+      coursePlan: null,
+      schoolOffers: [],
+      classStanding: null,
+      activities: [],
+      awards: [],
+      firstGeneration: null,
+      rankExpectation: null,
+      activitiesNone: {},
+    },
     tests: {
       satTotal: null,
       satReading: null,
@@ -372,17 +638,24 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
   // A profile saved before the list existed: its count becomes that many unnamed AP rows (rigor-in-context.md).
   const rows = Array.isArray(ac.courses) ? sanitizeCourses(ac.courses) : [];
   const courses = countIn !== null ? reconcileCourseCount(rows, countIn) : rows;
+  const { classStanding, classRankPercentile } = sanitizeClassStanding(ac.classStanding, ac.classRankPercentile);
   const academics: StudentProfileAcademics = {
     gpa: num(ac.gpa, 0, gpaMaxFor(gpaScale)),
     gpaScale,
     weightedGpa: num(ac.weightedGpa, 0, 120),
-    classRankPercentile: int(ac.classRankPercentile, 1, 100),
+    classRankPercentile,
     courseRigorCount: courses.length > 0 || countIn !== null ? courseRigorCountOf(courses) : null,
     courses,
     apExamsPrivate: ac.apExamsPrivate !== false,
     coreAtTopLevel: sanitizeCoreAtTopLevel(ac.coreAtTopLevel),
     coursePlan: sanitizeCoursePlan(ac.coursePlan),
     schoolOffers: sanitizeSchoolOffers(ac.schoolOffers),
+    classStanding,
+    activities: sanitizeActivities(ac.activities),
+    awards: sanitizeAwards(ac.awards),
+    firstGeneration: nullableBool(ac.firstGeneration),
+    rankExpectation: sanitizeRankExpectation(ac.rankExpectation),
+    activitiesNone: sanitizeActivitiesNone(ac.activitiesNone),
   };
 
   const t = isObj(input.tests) ? input.tests : {};

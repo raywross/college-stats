@@ -64,6 +64,7 @@ into the deploy for that reason.
 | `admin_log` | Every admin action: `admin_id`, `at`, `action`, `target_kind`, `target_id`, `details`, `request_id`. No tokens, links, or passwords; emails only in `auth.email` rows | Admins read; written only by the `admin_*()` functions and, for the `admin-auth` Edge Function's ops, `admin_note_auth_action()` (secret key only) |
 | `profiles.suspended_at`, `profiles.suspended_reason` | A deactivated account ([admin.md](product/admin.md#what-deactivate-means)): set and cleared only by `admin-auth` `suspend` / `unsuspend`; `getAccount()` treats a set `suspended_at` as signed out | As `profiles`, plus "Admins read" |
 | `auth_end_sessions(user)` | Deletes a user's `auth.sessions` rows (their refresh tokens cascade), for `admin-auth` `sign_out` and `suspend` | Secret key only |
+| `viewer_bundle()`, `plan_bundle()`, `save_student_profile()` | Batched reads and the profile write for the plan (one call instead of a chain of round trips; [serving-architecture.md](serving-architecture.md#follow-up-2026-10-12-real-speed-timing-and-batched-reads)). Security invoker: they return and write exactly what the per-table calls would. The app falls back to the per-table calls until they are applied | Signed-in users (as their own policies allow) |
 | Accounts, households, invitations, student profiles, lists, follows, notification prefs, digests, and the rest | [accounts.md](product/accounts.md), [household-hub.md](product/household-hub.md), [saved-lists.md](product/saved-lists.md), [follow-colleges.md](product/follow-colleges.md) | Per policy |
 
 **Retired on 2026-10-07** by `supabase/migrations/20261007130000_retire_dataset_tables.sql`: `schools`,
@@ -393,6 +394,7 @@ Found while setting it up (2026-09-28):
 - Vercel runs Node 24.x (`engines` in `package.json`), matching CI.
 
 ### Setup at the formal release
+Planned in detail, with the region move and direct access for Claude, in [launch-database.md](launch-database.md).
 1. Create the prod project (same region as the Vercel project), apply every migration under `supabase/migrations/`
    in order in the SQL Editor, deploy the `invite-user` Edge Function with its secrets ([Deploy](#deploy)) and the
    `admin-auth` function ([admin-auth](#admin-auth-the-consoles-auth-admin-calls)).

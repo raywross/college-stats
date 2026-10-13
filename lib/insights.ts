@@ -17,6 +17,7 @@ import {
   type Domain,
   type MetricKey,
 } from "./metrics";
+import { tierText } from "./selectivity-tier";
 import { money, moneyCompact, pct, pctSmart, num } from "./format";
 import { leaversElsewhere } from "./outcome-measures";
 import { shortName } from "./brand";
@@ -28,6 +29,7 @@ import { mostFromOtherState } from "./residence";
 import { stateName } from "./states";
 import { endowmentMetricFor } from "./finances";
 import { isFaithCentered } from "./religion";
+import { isMostlyOnline } from "./online-share";
 
 /* ------------------------------------------------------------------ */
 /* "Known for" badges: computed standouts vs. the dataset              */
@@ -59,6 +61,9 @@ export function standouts({ rankOf }: Dataset, s: School, { trends = false }: { 
   if (at("sat", (v) => v >= 0.9)) out.push({ label: "Top test scores", domain: "scores", metric: "sat" });
   if (at("enrollment", (v) => v >= 0.95)) out.push({ label: "Big campus", domain: "size", metric: "enrollment" });
   if (at("enrollment", (v) => v <= 0.1)) out.push({ label: "Intimate campus", domain: "size", metric: "enrollment" });
+  // An absolute rule, not a percentile (specs/data-expansion/online-share.md): more than half of undergraduates take
+  // every course online.
+  if (isMostlyOnline(s)) out.push({ label: "Mostly online", domain: "size" });
   // The national bottom 5% of students per faculty member (specs/data-expansion/student-faculty-ratio.md): a snapshot standout.
   if (at("studentFaculty", (v) => v <= 0.05)) out.push({ label: "Very small student-faculty ratio", domain: "size", metric: "studentFaculty" });
   // Where first-years come from (specs/data-expansion/residence.md): the top 5% from other states among classes of
@@ -144,7 +149,10 @@ export function admissionsTakeaway({ rankOf, reportingCount }: Dataset, s: Schoo
   const n = admitRatio(s);
   const rank = rankOf(s, "acceptance");
   if (rate === null || n === null || rank === null) return undefined;
-  const tier = selectivityTier(rate).label;
+  // Quad's selectivity tier where the college is rated (selectivity-index.md), else the admit-rate band
+  // (U8, levels.md carry-forward: "the profile's Getting in card summary sentence... still name the old admit-rate
+  // band ('Most selective')").
+  const tier = tierText(s) ?? selectivityTier(rate).label;
   return `${shortName(s)} admits about ${n} applicants (${pctSmart(rate)}). That puts it in the "${tier}" tier, more selective than ${share(
     1 - rank
   )} of the ${num(reportingCount("acceptance"))} colleges that report admissions.`;

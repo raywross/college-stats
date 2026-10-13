@@ -147,10 +147,15 @@ test("every row control exists as a client component with the shared props; RowC
   assert.deepEqual(order, ROW_FILES);
 });
 
-test("the Plan tab sits between List and Numbers on a student's page, and the hub's List tab turns the planner on", () => {
+test("household cleanup (2026-10-12): the hub's List pill is Plan | Numbers, and a student's page links into the planner instead of embedding it", () => {
   const header = src("components/account/PersonHeader.tsx");
-  assert.ok(header.indexOf('value: "list"') < header.indexOf('value: "plan"') && header.indexOf('value: "plan"') < header.indexOf('value: "numbers"'));
-  assert.match(header, /href: `\/household\/\$\{id\}\/plan`/);
-  assert.match(src("app/household/[person]/page.tsx"), /<ListPage [^>]*\bplanner\b/);
+  // The dead-end third pill (a "Plan" tab that just redirected to /plan) is gone; List | Numbers is List's old
+  // value under a new "Plan" label, since its route now shows OpenPlanCard rather than the old list board.
+  assert.ok(header.indexOf('value: "list"') < header.indexOf('value: "numbers"'));
+  assert.doesNotMatch(header, /value: "plan"/);
+  assert.doesNotMatch(header, /href: `\/household\/\$\{id\}\/plan`/);
+  assert.doesNotMatch(src("app/household/[person]/page.tsx"), /<ListPage [^>]*\bplanner\b/);
+  assert.match(src("app/household/[person]/page.tsx"), /OpenPlanCard/);
+  // The old /household/[person]/plan route (and its ?stage= mapping) still redirects, for anyone's old bookmark.
   assert.match(src("app/household/[person]/plan/page.tsx"), /searchParams: Promise<\{ stage\?: string \| string\[\] \}>/);
 });

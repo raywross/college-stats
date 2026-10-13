@@ -27,6 +27,7 @@
     "out_of_state_share": {"start":2018,"values":[0.0286,null,0.1298,null,0.0621,null,0.0292]},
     "transfer_in_count": {"start":2017,"values":[31,56,115,126,160,144,110,339]},
     "transfer_in_share": {"start":2017,"values":[0.369,0.3478,0.3485,0.4903,0.2832,0.2558,0.2439,0.3822]},
+    "online_share": {"start":2017,"values":[0.4606,0.8128,0.7183,0.6024,0.6862,0.6907,0.7536,0.7727]},
     "international_share": {"start":2018,"values":[0.8857,null,0.3893,null,0.5776,null,0.8449]},
     "conference": {"start":2020,"values":[301,301,301,301,301,301]},
     "athletic_association": {"start":2017,"values":[3,3,3,2,2,2,2,2,2]},

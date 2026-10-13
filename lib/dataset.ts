@@ -7,6 +7,7 @@ import { compareMatches, scoreSchool, type AliasRow } from "./aliases";
 import { matchesIndicators } from "./indicators";
 import { genderBalanceOf, isMostlyFullTime } from "./student-body";
 import { matchesPolicy } from "./test-policy";
+import { tierRank } from "./selectivity-tier";
 import { hasFewLoans } from "./repayment";
 import { hasTuitionGuarantee, noApplicationFee, requiresLiveOn } from "./housing";
 import { FACTOR_FILTERS } from "./factors";
@@ -23,6 +24,7 @@ import { matchesServices } from "./campus-services.ts";
 import { withinMaxRatio, withinMinFullTimeFaculty } from "./academics.ts";
 import { hasSmallPellGap } from "./graduation-groups.ts";
 import { drawsNationally } from "./residence.ts";
+import { matchesOnline } from "./online-share.ts";
 import { matchesField } from "./majors.ts";
 import { noCssProfile, offersInternationalAid } from "./cds/financial-aid.ts";
 import { fitsScoreRange } from "./student-profile.ts";
@@ -152,6 +154,11 @@ const SORTERS: Record<SortKey, (s: School) => number | string | null> = {
   instruction_spending: METRICS.financesInstruction.get,
   endowment_per_student: METRICS.endowmentFasb.get,
   bachelors: (s) => s.academics?.bachelors_awarded ?? null,
+  // Hardest tier first (Elite 0 … Open 4), then the admit rate within a tier; colleges that aren't rated sort last.
+  selectivity: (s) => {
+    const rank = tierRank(s.selectivity?.tier);
+    return rank === null ? null : rank + Math.min(s.admissions.acceptance_rate ?? 1, 1) * 0.999;
+  },
   // Needs the request's `near` filter, so getSchools() substitutes the real getter; without one nothing sorts.
   distance: () => null,
   // Needs the request's `income`, so getSchools() substitutes the real getter (the dataset's memoized curves).
@@ -330,6 +337,8 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     if (filters.fullTime) results = results.filter(isMostlyFullTime);
     // Test policy (lib/test-policy.ts): each college's newest policy; colleges with none are left out while set.
     if (filters.policy?.length) results = results.filter((s) => matchesPolicy(s, filters.policy!));
+    // Quad's selectivity: the tier for all applicants; colleges that aren't rated are left out while set.
+    if (filters.selectivity?.length) results = results.filter((s) => !!s.selectivity?.tier && filters.selectivity!.includes(s.selectivity.tier));
     if (filters.fewLoans) results = results.filter(hasFewLoans);
     // Graduation by group: colleges without both Pell and "neither" rates are left out while set.
     if (filters.pellGap) results = results.filter(hasSmallPellGap);
@@ -350,6 +359,8 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     // Gap year (LOGISTICS_FILTERS, cds-application-logistics.md): colleges without a CDS answer never match.
     for (const f of LOGISTICS_FILTERS) if (filters[f.param]) results = results.filter(f.test);
     if (filters.setting || filters.research || filters.designation || filters.opportunity) results = results.filter((s) => matchesCampus(s, filters));
+    // Online share: "campus" keeps colleges with no share (campus-based unless reported otherwise).
+    if (filters.online) results = results.filter((s) => matchesOnline(s, filters.online!));
     // Religious affiliation (lib/religion.ts): colleges IPEDS has no answer for never match.
     if (filters.faith?.length) results = results.filter((s) => matchesFaith(s, filters.faith!));
     // Has a named community of this tradition (specs/campus-directories.md): colleges with no directory listing never match.

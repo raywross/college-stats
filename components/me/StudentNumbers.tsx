@@ -8,8 +8,8 @@ import type { ProfileAccess } from "@/lib/student-profile-store";
  * the one-time offer to save what the student entered before signing in (their own record only). Read-only for a
  * guardian without edit access. The Numbers tab of /household/[person] renders it; the page shows GuardianBanner.
  *
- * Passes `profile.student.grad_year` down as `ProfileForm`'s `studentGradYear` (student-profile.md
- * "Changes (2026-10-06)"): the default the graduation-year field falls back to when the profile itself has none.
+ * Trimmed 2026-10-12 (household-hub.md "Household cleanup"): `ProfileForm` no longer takes a graduation-year
+ * default — that field moved to the planner's intake, whose "Class of" reads `students.grad_year` the same way.
  */
 export function StudentNumbers({ profile }: { profile: ProfileAccess }) {
   // A guardian sees the same numbers as the student, AP exam scores included (owner, 2026-10-11).
@@ -22,7 +22,7 @@ export function StudentNumbers({ profile }: { profile: ProfileAccess }) {
       </p>
       {profile.relation === "self" && <ImportLocalProfile studentId={profile.student.id} canEdit={profile.canEdit} />}
       <CompletenessMeter data={data} />
-      <ProfileForm studentId={profile.student.id} data={data} canEdit={profile.canEdit} studentGradYear={profile.student.grad_year} />
+      <ProfileForm studentId={profile.student.id} data={data} canEdit={profile.canEdit} />
     </div>
   );
 }

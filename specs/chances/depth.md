@@ -1,6 +1,6 @@
 # Depth: Years and Progression in a Few Things, Not a List of Many
 
-> Status: **planned** 2026-10-11 (owner: "consistency of students' courses and extracurriculars"). Part 10 of
+> Status: **built** 2026-10-12 on `feature/chances` (see "As built"; planned 2026-10-11) (owner: "consistency of students' courses and extracurriculars"). Part 10 of
 > [admission chances](README.md). Reads the course list from [rigor-in-context.md](rigor-in-context.md) and adds an
 > activities list. How the readings move the level is the method's
 > ([method/standing.md](method/standing.md#the-other-multipliers)). After [levels.md](levels.md).
@@ -51,7 +51,8 @@ One per family the student has courses in, the major's families first:
 
 ## Activities
 ### What the student enters
-`StudentProfile.activities: ActivityEntry[]`, at most 8 (Common App allows 10), in the JSON profile document (no
+`StudentProfile.activities: ActivityEntry[]`, at most 20 (raised from 8 when the intake split into four activity
+steps; the Common App allows 10), in the JSON profile document (no
 migration), on `/me` → Activities, the household Numbers page, and in the planner behind "Add your activities" in
 the header card's prompt line when the estimate lists it as missing.
 
@@ -77,7 +78,8 @@ ActivityEntry {
 - **Work and family** kinds carry hours and years like the rest; a job's role is member unless the student picks
   officer ("shift lead") or leader ("managed others"). They also feed `M_work`
   ([inputs-beyond-academics.md](inputs-beyond-academics.md#work-and-family-responsibilities)).
-- The intake asks for activities only on an optional "More about you" step after the numbers, never in the first
+- The intake asks for activities only on four optional steps after AP courses (Sports, Clubs, Work, Other; see
+  [intake.md "Activities, four steps"](../planner/redesign/intake.md#activities-four-steps)), never in the first
   two steps ([../planner/redesign/intake.md](../planner/redesign/intake.md)); the profile prompt says what it's for:
   "Colleges that read activities look for a few things done for years, with a role. Add your two or three biggest."
 
@@ -145,3 +147,21 @@ the top-two rule, trajectory, the major-track slot, no names in snapshots).
    or three entries, because the planner header is where students are when the estimate asks.
 2. IB SL at 1.5: treat as 2 if IB schools' students complain that SL is their top offering; the level table is one
    constant.
+
+## As built (2026-10-12)
+- `lib/chances/depth.ts`: `courseTracks`, `activitiesReading`, and `depthSnapshot` (the names-free shape for
+  snapshots; no table column holds it yet). Shown as the Courses "Tracks" line and the activities reading on `/me` and
+  in the planner's Scores tab → Courses (`components/me/CourseTracks.tsx`).
+- An activity has no subject of its own, so `activityFamilyMatch` decides which track it can add a year to: research
+  counts toward the major's science family (else computer science, else the major's first expected family); a club
+  only toward computer science or science. IB SL counts 1.5 (open question 2's default).
+- **Themes** (2026-10-12, [method Revision 2](method/standing.md#revision-2-depth-rank-and-rigor-nudges-2026-10-12)):
+  `courseThemes(tracks, activities)` finds course families where the track reads Deep or Steady and an activity of two
+  or more years has the same `family` (else its catalog entry's); its `depth.theme.*` sentences name the theme in
+  family words and suggest the missing half.
+- **Broad groups** (2026-10-12, [method Revision 3](method/standing.md#revision-3-the-estimate-reads-the-record-the-way-the-owner-does-2026-10-12)):
+  themes read three broad groups (STEM; humanities and social sciences; arts) from `data/reference/depth-groups.json`
+  instead of single course families: a group's courses read together by the track rules, and an activity belongs to
+  its family's groups (business in STEM and the social sciences; athletics, service, and faith in none). The
+  per-family tracks above still serve the major's checks. "This is connected to the major I want to study" is now
+  computed (`relatedToMajor` in `lib/chances/depth-groups.ts`); the stored checkbox is ignored.

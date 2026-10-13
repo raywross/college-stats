@@ -6,6 +6,8 @@ import { SIZE_BUCKETS } from "@/lib/metrics";
 import { INDICATORS, INDICATOR_KEYS, isDirection } from "@/lib/indicators";
 import { GENDER_BALANCE } from "@/lib/student-body";
 import { POLICY_BUCKETS } from "@/lib/test-policy";
+import { SELECTIVITY_TIER_LABELS } from "@/lib/chances/levels";
+import { isSelectivityTier } from "@/lib/selectivity-tier";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
 import { RESIDENCY_FILTERS } from "@/lib/cds/residency-display";
@@ -24,6 +26,7 @@ import { DEFAULT_WITHIN } from "@/lib/home";
 import { costFilterChips, priceAtSortOption } from "@/lib/cost-explore";
 import { useExploreParams } from "./useExploreParams";
 import { cn } from "@/lib/utils";
+import { ONLINE_FILTER_LABELS, isOnlineFilter } from "@/lib/online-share";
 
 /* ---------------------------------------------------------------- */
 
@@ -95,6 +98,7 @@ const SORTS = [
   { value: "applicants", label: "Most applied-to", dir: "desc" },
   { value: "name", label: "Name", dir: "asc" },
   { value: "acceptance_rate", label: "Acceptance rate", dir: "asc" },
+  { value: "selectivity", label: "Quad's selectivity (hardest first)", dir: "asc" },
   { value: "sat", label: "SAT midpoint", dir: "desc" },
   { value: "enrollment", label: "Size", dir: "desc" },
   { value: "pell", label: "Pell share", dir: "desc" },
@@ -294,6 +298,8 @@ export function ActiveFilters({ showEstimates = true }: { showEstimates?: boolea
   for (const r of getList("regions")) chips.push({ key: `r-${r}`, label: r, onRemove: () => toggleInList("regions", r) });
   for (const s of getList("states")) chips.push({ key: `st-${s}`, label: s, onRemove: () => toggleInList("states", s) });
 
+  for (const t of getList("selectivity"))
+    chips.push({ key: `sel-${t}`, label: isSelectivityTier(t) ? SELECTIVITY_TIER_LABELS[t] : t, onRemove: () => toggleInList("selectivity", t) });
   for (const b of getList("policy"))
     chips.push({ key: `p-${b}`, label: `Tests: ${POLICY_BUCKETS.find((g) => g.key === b)?.label ?? b}`, onRemove: () => toggleInList("policy", b) });
   for (const b of getList("balance"))
@@ -351,6 +357,8 @@ export function ActiveFilters({ showEstimates = true }: { showEstimates?: boolea
   if (searchParams.get("studyAbroad") === "1") chips.push({ key: "studyAbroad", label: "Study abroad", onRemove: () => update({ studyAbroad: null }) });
   if (searchParams.get("honors") === "1") chips.push({ key: "honors", label: HONORS_FILTER_LABEL, onRemove: () => update({ honors: null }) });
   if (searchParams.get("opportunity") === "1") chips.push({ key: "opportunity", label: "Opportunity colleges", onRemove: () => update({ opportunity: null }) });
+  const online = searchParams.get("online");
+  if (isOnlineFilter(online)) chips.push({ key: "online", label: ONLINE_FILTER_LABELS[online], onRemove: () => update({ online: null }) });
 
   for (const k of INDICATOR_KEYS) {
     const def = INDICATORS[k];

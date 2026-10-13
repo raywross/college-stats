@@ -14,6 +14,7 @@
     "out_of_state_share": {"start":2010,"values":[0.0426,null,0.0667,null,0.0517,null,0.0547,null,0.0663,null,0.1176,null,0.2542,null,0.0167]},
     "transfer_in_count": {"start":2010,"values":[233,340,162,179,133,200,494,393,429,500,369,226,183,212,99]},
     "transfer_in_share": {"start":2010,"values":[0.3983,0.5592,0.5455,0.4555,0.3644,0.4008,0.7942,0.6993,0.6864,0.7194,0.7069,0.7129,0.7562,0.726,0.6226]},
+    "online_share": {"start":2012,"values":[0.5194,0.5103,0.5995,0.6408,0.7028,0.7881,0.8553,0.9073,1,1,1,0.994,0.9886]},
     "international_share": {"start":2010,"values":[0,null,0,null,0,null,0,null,0,null,0,null,0,null,0]},
     "athletic_association": {"start":2014,"values":[3,3,3,3,3,3,3,3,3,3,3,3]},
     "rotc": {"start":2014,"values":[2,2,2,2,2,2,2,2,2,2,2,2]},

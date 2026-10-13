@@ -12,6 +12,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import * as nodeModule from "node:module";
+import { ACTIVITIES_MAX } from "../lib/chances/levels.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -77,7 +78,11 @@ test("estimateMany: one result per known college, each exactly the contract's fi
     for (const n of r.notes) assert.ok(isNoteKey(n.key), n.key);
     assert.deepEqual(publicResult(r), r, "already public");
   }
-  assert.equal(results[GEORGIA_TECH].label, "reach-for-everyone", "an Indiana student at Georgia Tech's out-of-state rate");
+  // Georgia Tech is Highly selective for an out-of-state student (Quad's tier), so no Elite label; the SAT is below its range.
+  assert.equal(results[GEORGIA_TECH].label, null, "an Indiana student at Georgia Tech's out-of-state rate");
+  assert.ok(results[GEORGIA_TECH].group === "high_reach" || results[GEORGIA_TECH].group === "reach");
+  const harvard = estimate({ student: s, unitId: "166027" }, ctx);
+  assert.deepEqual([harvard.group, harvard.label], ["high_reach", "elite"], "Elite, and the score is below its range");
   assert.equal(estimate({ student: s, unitId: "999999" }, ctx).group, null, "a college the dataset doesn't have");
 });
 
@@ -119,7 +124,9 @@ test("the snapshot's estimator returns the result and the method's detail", asyn
 /* ------------------------------------------------------------------ */
 
 test("counterfactual score: the move-up's score reaches the group it names", async () => {
-  const s = student({ gpa: 3.85, test: { kind: "sat", score: 1150 } });
+  // An Indiana resident (the in-state rate): with the test as a consistency check (method Revision 1) a retake moves
+  // Purdue only where the rest of the record is near the next level.
+  const s = student({ gpa: 3.85, test: { kind: "sat", score: 1050 }, state: "IN" });
   const ctx = await estimateContext(s);
   const now = estimate({ student: s, unitId: PURDUE }, ctx);
   assert.ok(now.moveUp, "a retake could move Purdue");
@@ -138,8 +145,9 @@ test("counterfactual course: adding the course that makes the schedule read 'mos
   const added = withCounterfactual(s, { addCourse: ap("ap_calculus_bc", "math") });
   assert.equal(added.courses.length, 7);
   const after = estimate({ student: added, unitId: ELON }, ctx);
-  assert.equal(before.group, "target");
-  assert.equal(after.group, "likely");
+  // The third version: a crowded GPA that meets the bar is Likely at 63%; rigor "most" fills the slot as above, Safe.
+  assert.equal(before.group, "likely");
+  assert.equal(after.group, "safe");
   assert.equal(withCounterfactual(added, { addCourse: { ...added.courses[6], status: "planned" } }).courses.length, 7, "the same row replaces itself");
   assert.equal(withCounterfactual(s, null), s);
 });
@@ -198,6 +206,78 @@ test("the student is sanitized: out-of-range numbers, unknown majors, malformed 
   assert.equal(s.practice, false);
   assert.ok(!("detail" in s));
   assert.deepEqual(sanitizeEstimateStudent({ test: { kind: "act", score: 31 }, state: "OUTSIDE_US", gpa: 3.82, gpaRange: [3.82, 3.82] }).test, { kind: "act", score: 31 });
+});
+
+test("the new student inputs are sanitized by the profile's own rules: activities, awards, class standing, first generation", () => {
+  const s = sanitizeEstimateStudent({
+    activities: [
+      { id: "a1", name: "Soccer", kind: "sport", years: [9, 10, 11, 12], roles: { 12: "leader" }, hoursPerWeek: 12, recognition: 2, relatedToMajor: false },
+      { id: "a2", name: "x".repeat(200), kind: "spying", years: [13], roles: {}, hoursPerWeek: 500, recognition: 9, relatedToMajor: "yes" },
+      ...Array.from({ length: ACTIVITIES_MAX + 4 }, (_, i) => ({ id: `b${i}`, name: `Club ${i}`, kind: "club", years: [10], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false })),
+    ],
+    awards: [{ id: "w1", key: null, name: "State champion", tier: 2, year: 11 }, { id: "w2", name: "", tier: 7 }],
+    classStanding: "top10",
+    classRankPercentile: 40,
+    firstGeneration: "maybe",
+  });
+  assert.equal(s.activities!.length, ACTIVITIES_MAX, "at most ACTIVITIES_MAX activities");
+  assert.equal(s.activities![0].name, "Soccer");
+  assert.ok(s.activities!.every((a) => a.name.length <= 60 && a.years.every((y) => y >= 9 && y <= 12)));
+  assert.deepEqual(s.awards!.map((a) => a.name), ["State champion"]);
+  assert.equal(s.classStanding, "top10");
+  assert.equal(s.classRankPercentile, 10, "the pick sets the percentile");
+  assert.equal(s.firstGeneration, null, "only a boolean counts");
+  assert.equal(sanitizeEstimateStudent({ firstGeneration: true }).firstGeneration, true);
+  assert.deepEqual(sanitizeEstimateStudent({}).activities, []);
+});
+
+test("Revision 2's student inputs: a weighted GPA on the profile's range (0–120) and a valedictorian or salutatorian expectation; anything else is null", () => {
+  assert.equal(sanitizeEstimateStudent({ weightedGpa: 4.4 }).weightedGpa, 4.4);
+  assert.equal(sanitizeEstimateStudent({ weightedGpa: 104 }).weightedGpa, 104, "a 100-point scale weights above 100");
+  for (const bad of [-1, 121, "4.4", Number.NaN, null, undefined]) assert.equal(sanitizeEstimateStudent({ weightedGpa: bad }).weightedGpa, null, String(bad));
+  assert.equal(sanitizeEstimateStudent({ rankExpectation: "valedictorian" }).rankExpectation, "valedictorian");
+  assert.equal(sanitizeEstimateStudent({ rankExpectation: "salutatorian" }).rankExpectation, "salutatorian");
+  for (const bad of ["Valedictorian", "top1", 1, true, null]) assert.equal(sanitizeEstimateStudent({ rankExpectation: bad }).rankExpectation, null, String(bad));
+  const parsed = parseEstimateRequest({ unitIds: [PURDUE], student: { gpa: 3.8, weightedGpa: 4.3, rankExpectation: "salutatorian" } }, { signedIn: true });
+  assert.ok(parsed.ok);
+  if (parsed.ok) assert.deepEqual([parsed.request.student.weightedGpa, parsed.request.student.rankExpectation], [4.3, "salutatorian"]);
+});
+
+test("hooks in requests: per college asked about, legacy and interest only when true, a recruited pick from the list; anything else is dropped", () => {
+  const parsed = parseEstimateRequest(
+    {
+      unitIds: [PURDUE, ELON],
+      student: {},
+      hooks: {
+        [PURDUE]: { legacy: true, recruited: "pre_read", interest: "yes" },
+        [ELON]: { legacy: "true", sibling: "yes", recruited: "signed", interest: false },
+        [GEORGIA_TECH]: { legacy: true, recruited: "likely_letter", interest: true },
+      },
+    },
+    { signedIn: true },
+  );
+  assert.ok(parsed.ok);
+  assert.deepEqual(parsed.request.hooks, { [PURDUE]: { legacy: true, sibling: false, recruited: "pre_read", interest: false } }, "only colleges asked about, only real values");
+  // A sibling alone is kept, and only a literal true counts (owner, 2026-10-12).
+  const sib = parseEstimateRequest({ unitIds: [ELON], student: {}, hooks: { [ELON]: { sibling: true } } }, { signedIn: true });
+  assert.ok(sib.ok);
+  assert.deepEqual(sib.request.hooks, { [ELON]: { legacy: false, sibling: true, recruited: "none", interest: false } });
+  const none = parseEstimateRequest({ unitIds: [PURDUE], student: {}, hooks: "legacy" }, { signedIn: false });
+  assert.ok(none.ok && Object.keys(none.request.hooks).length === 0);
+  assert.ok(parseEstimateRequest({ unitIds: [PURDUE], student: {} }, { signedIn: false }).ok, "hooks are optional");
+});
+
+test("estimateMany passes each college's hooks to the model, and the route passes the request's", async () => {
+  const s = student({ gpa: 3.9, test: { kind: "sat", score: 1450 } });
+  const ctx = await estimateContext(s);
+  const plainResult = estimateMany(s, [ELON], ctx)[ELON];
+  const hooked = estimateMany(s, [ELON], ctx, { [ELON]: { legacy: true, sibling: false, recruited: "contact", interest: false } })[ELON];
+  assert.ok(!plainResult.used.includes("recruited"));
+  assert.ok(hooked.used.includes("recruited"));
+  assert.ok(hooked.notes.some((n) => n.key === "hooks.recruited"));
+  const route = read("app", "api", "estimate", "route.ts");
+  assert.match(route, /estimateMany\(student, unitIds, ctx, hooks\)/);
+  assert.match(route, /hooks: hooks\[unitIds\[0\]\]/);
 });
 
 test("counterfactuals are validated: a score needs a test and the test's range; a course must pass the course sanitizer", () => {

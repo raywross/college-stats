@@ -188,9 +188,11 @@ test("SEASON_STATUS_LABEL relabels the built status/outcome values (list.md 'The
   assert.equal(SEASON_STATUS_LABEL.decision, "Decision");
 });
 
-test("scoreDrawerLine reports a score move when there is one", () => {
+test("scoreDrawerLine reports a score move when there is one, across the five levels (levels.md)", () => {
   const r = row("a", { moveUp: { score: 1420, delta: 30, from: "target", to: "likely" } });
-  assert.equal(scoreDrawerLine(r), "A 1420 would make this a Likely.");
+  assert.equal(scoreDrawerLine(r), "30 more points moves this from Target to Likely.");
+  const fromHighReach = row("a", { moveUp: { score: 1200, delta: 60, from: "high_reach", to: "reach" } });
+  assert.equal(scoreDrawerLine(fromHighReach), "60 more points moves this from High reach to Reach.");
 });
 
 test("scoreDrawerLine falls back to the optional-score advice, else null", () => {

@@ -89,7 +89,9 @@ test("household_roster: co-members see each other's names and roles, and nothing
   const rows = await roster(db, mom, household);
   assert.deepEqual(Object.keys(rows[0]).sort(), ["can_edit", "display_name", "is_me", "joined", "managed", "managed_by_me", "member_id", "role", "student_id", "user_id"]);
   const text = JSON.stringify(rows);
-  assert.ok(!/@example\.com/.test(text) && !/19(76|78)|2009/.test(text.replace(/"joined":"[^"]*"/g, "")), "roster must not carry emails or birth years");
+  // Random ids can contain "1976" or "2009" by chance, so ids and timestamps are set aside before looking for birth years.
+  const scrubbed = text.replace(/"joined":"[^"]*"/g, "").replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, "");
+  assert.ok(!/@example\.com/.test(text) && !/19(76|78)|2009/.test(scrubbed), "roster must not carry emails or birth years");
 
   const byName = Object.fromEntries(rows.map((r) => [r.display_name, r]));
   assert.equal(byName.Mom.is_me, true);

@@ -41,7 +41,7 @@ const inList = (ids: string[]) => (ids.length ? ids : ["00000000-0000-0000-0000-
 
 /** The student's own inputs and the estimate they saw; the measurement-only columns (position, groups without an input) are the method's and stay out. */
 const SNAPSHOT_EXPORT_COLUMNS =
-  "student_id, unit_id, season, applied_on, round, gpa, gpa_low, gpa_high, gpa_scale, test_kind, test_score, sat_math, act_math, class_rank_pct, state, majors, practice, advanced_courses, advanced_planned, honors_courses, advanced_gpa, math_gpa, science_gpa, hs_ap_band, hs_ib, hs_dual, estimate_group, estimate_label, model_version, student_group, group_changed, consented, created_at";
+  "student_id, unit_id, season, applied_on, round, gpa, gpa_low, gpa_high, gpa_scale, test_kind, test_score, sat_math, act_math, class_rank_pct, state, majors, practice, advanced_courses, advanced_planned, honors_courses, advanced_gpa, math_gpa, science_gpa, hs_ap_band, hs_ib, hs_dual, estimate_group, estimate_label, model_version, completeness, student_group, group_changed, consented, created_at";
 
 /** The registry. Later units append their tables here (keep keys unique; tests check). */
 export const ACCOUNT_EXPORTERS: AccountExporter[] = [
@@ -102,7 +102,7 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
   {
     key: "lists",
     description:
-      "Your saved college lists (your own, and those of the students you own or manage): categories, rounds, statuses, outcomes, deadlines, the tracking row (updates, visited, following on social), and notes.",
+      "Your saved college lists (your own, and those of the students you own or manage): categories, rounds, statuses, outcomes, deadlines, the tracking row (updates, visited, following on social), legacy (parent or grandparent, and sibling) and recruited-athlete marks, and notes.",
     run: async ({ supabase, studentIds, userId }) => {
       type ListRow = { id: string; student_id: string | null; user_id: string | null; name: string; is_default: boolean; created: string };
       const cols = "id, student_id, user_id, name, is_default, created";
@@ -114,13 +114,19 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
       const lists = [...studentLists, ...ownLists];
       return Promise.all(
         lists.map(async (list) => {
-          const items = await rows<{ id: string; unit_id: string; category: string; status: string; outcome: string | null; round: string | null; position: number; added_at: string; decision_date: string | null; deadline_text: string | null; deadline_date: string | null; enrolling: boolean; updates: boolean; visited_on: string | null; follows_social: boolean }>(
+          const items = await rows<{ id: string; unit_id: string; category: string; status: string; outcome: string | null; round: string | null; position: number; added_at: string; decision_date: string | null; deadline_text: string | null; deadline_date: string | null; enrolling: boolean; updates: boolean; visited_on: string | null; follows_social: boolean; legacy: boolean; recruited: string }>(
             "list_items",
             supabase
               .from("list_items")
-              .select("id, unit_id, category, status, outcome, round, position, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social")
+              .select(
+                "id, unit_id, category, status, outcome, round, position, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social, legacy, recruited",
+              )
               .eq("list_id", list.id),
           );
+          // The sibling mark (20261012130000_list_item_sibling.sql) is read on its own, best-effort, so an export still
+          // works on a database without the column yet.
+          const siblingRead = await supabase.from("list_items").select("id, legacy_sibling").eq("list_id", list.id);
+          const siblings = new Set(siblingRead.error ? [] : ((siblingRead.data ?? []) as { id: string; legacy_sibling: boolean }[]).filter((r) => r.legacy_sibling).map((r) => r.id));
           // Row-level security already hides another person's private notes from the person; the filter keeps it so
           // when the admin console runs this exporter through its read policy (lib/admin/people.ts exportFor).
           const notes = (
@@ -146,6 +152,9 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
             updates: i.updates,
             visited_on: i.visited_on,
             follows_social: i.follows_social,
+            legacy: i.legacy,
+            legacy_sibling: siblings.has(i.id),
+            recruited: i.recruited,
           }));
           return { ...list, items: itemsOut, notes };
         }),
@@ -218,7 +227,7 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
   {
     key: "application_snapshots",
     description:
-      "Your numbers as of the day each college was marked applied (rounded), the group Quad's estimate gave, the group you picked, and whether you share outcomes (specs/chances/calibration.md), for your own and managed students.",
+      "Your numbers as of the day each college was marked applied (rounded), the group Quad's estimate gave, how complete your record was for that college, the group you picked, and whether you share outcomes (specs/chances/calibration.md), for your own and managed students.",
     run: async ({ supabase, studentIds }) => {
       const { data, error } = await supabase
         .from("application_snapshots")

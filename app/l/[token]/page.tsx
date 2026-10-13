@@ -7,7 +7,7 @@ import { getData } from "@/lib/data";
 import { authConfigured } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
-import { CATEGORY_LABELS, ROUND_LABELS, isListCategory, isListRound, type ListCategory } from "@/lib/list-rules";
+import { CATEGORY_LABELS, LIST_CATEGORIES, ROUND_LABELS, isListCategory, isListRound, type ListCategory } from "@/lib/list-rules";
 
 export const metadata: Metadata = { title: "A shared list", robots: { index: false, follow: false } };
 
@@ -33,7 +33,8 @@ export default async function SharedListPage({ params }: { params: Promise<{ tok
   const preview = data as SharePreview;
 
   const { getSchoolById } = await getData();
-  const groups: { category: ListCategory; items: { unit_id: string; round: string | null }[] }[] = (["reach", "target", "likely", "unsorted"] as const).map((category) => ({
+  // levels.md "Where the levels show": High reach, Reach, Target, Likely, Safe, then Not sorted yet.
+  const groups: { category: ListCategory; items: { unit_id: string; round: string | null }[] }[] = LIST_CATEGORIES.map((category) => ({
     category,
     items: preview.items.filter((i) => isListCategory(i.category) && i.category === category),
   }));

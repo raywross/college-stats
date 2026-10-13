@@ -48,9 +48,14 @@ causes), plus:
 2. **Campus-based only for growth; still-open only for decline.** The first look's "grew the most" list was
    Colorado Technical University (1,139 → 28,086), Southern New Hampshire University (28,035 → 163,164) and other
    mostly-online enrollments; "shrank the most" was six DeVry campuses winding down to under 100 students. Rules:
-   - Exclude a college from **growth** lists when its distance-education share is over 50% (needs the
-     `EF{Y}A_DIST` share: see *Data work*). Until that exists, exclude for-profits and the handful of known
-     online-first nonprofits by a reviewed list in `data/trends/online-first.json` with a reason per entry.
+   - Exclude a college from **growth** lists when it is for-profit, or when its distance-education share
+     (`demographics.online_share`'s history series, [online-share.md](../data-expansion/online-share.md)) is over 50%
+     at either end of the change: its first fall or its last (`onlineFirstAt` in `lib/history.ts`; the pandemic falls read fall 2019; a college
+     with no share that fall counts as campus-based). Built 2026-10-12: this replaced the reviewed list
+     `data/trends/online-first.json`, which the field rule reproduced exactly for fall 2024 (110 of 110) before the
+     list was deleted. Both ends, not only the start: judged at the start alone, colleges that went online-first inside
+     the window (University of the Cumberlands, National Louis, LSU Alexandria) topped "Grew the most". `isCampusBased` /
+     `campusExclusionOf` in `lib/movers.ts` (start of the window only) are the shared rule for panels.
    - Exclude a college from **decline** lists when its latest undergraduate count is under 300 (it is closing, not
      shrinking) and when the Scorecard flags it as closed or merged. Say "N colleges that closed or merged are not
      listed" under the list, with a link to the Explore sort that includes them.
@@ -87,8 +92,8 @@ Shown to record what the raw lists look like, so the rules above can be checked 
   The page reads this file (static); nothing is ranked at request time.
 - Floors, directions, and series live in one registry, `lib/movers.ts`, typed against `SeriesKey`, so a list can't name
   a series that doesn't exist and the test can recompute every list.
-- Exclusion lists: `data/trends/online-first.json` and `data/trends/excluded-campuses.json`, each entry `{ unit_id,
-  reason, added }`, reviewed when the history is rebuilt (the build prints newly qualifying candidates for review:
+- Exclusion list: `data/trends/excluded-campuses.json` (online-first is a rule over the stored share since
+  2026-10-12, not a list), each entry `{ unit_id, reason, added }`, reviewed when the history is rebuilt (the build prints newly qualifying candidates for review:
   any college whose change is in a list's top 25 and whose undergraduate count moved more than 3×).
 - Links: `/explore?sortBy=apps_change&minApplicants=2000` etc. Explore needs `minApplicants` / `minUndergrads` params
   (small: `lib/params.ts`), so "See all" shows the same universe the list used.
@@ -101,9 +106,9 @@ Shown to record what the raw lists look like, so the rules above can be checked 
    ([mobile.md](../mobile.md)).
 3. Home: the "Leaderboards" band can swap one static list for a mover list when it's striking ("Applications
    surged"), linking here.
-4. Data work: distance-education share (`EF{Y}A_DIST`, `DEEXC`/`DESOM`/`DENON` undergraduates) as a snapshot field
-   `demographics.online_share`, which also benefits Explore ("mostly online" filter). A small wave-4 item; until then the
-   reviewed list stands in.
+4. Data work (**built** 2026-10-12, [online-share.md](../data-expansion/online-share.md)): distance-education share
+   (`EF{Y}A_DIST`, `EFDEEXC`/`EFDESOM`/`EFDENON` undergraduates) as a snapshot field `demographics.online_share` and
+   a history series; Explore has `online=campus|mostly`, and "Grew the most"'s Explore link adds `online=campus`.
 
 ## Open questions
 1. Should the page also show the **national median** for each measure next to the list, so "+120% applications" reads

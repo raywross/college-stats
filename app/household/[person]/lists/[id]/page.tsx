@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { PersonHeader, personOwner } from "@/components/account/PersonHeader";
 import { ListPage } from "@/components/lists/ListPage";
 import { AccountsSetupError, authConfigured, requireUser } from "@/lib/auth";
+import { personListHref } from "@/lib/household-hub";
 import { personPage } from "@/lib/households";
 import { myLists } from "@/lib/lists";
 
 export const metadata: Metadata = { title: "Their list", robots: { index: false } };
 
 /**
- * /household/[person]/lists/[id] (specs/product/household-hub.md "A person's page"): one of the person's lists,
- * reached from the list switcher, under the same person area (List selected) as their default list. A list that isn't this
- * person's is a 404.
+ * /household/[person]/lists/[id] (specs/product/household-hub.md "A person's page", "Household cleanup
+ * (2026-10-12)"): one of a guardian's extra lists, reached from the list switcher, under the same person area (Plan
+ * selected) as their default list. A student's colleges live in the planner now, which has no concept of extra
+ * lists, so an old bookmark to one of a student's lists redirects to their plan instead of 404ing
+ * (`lib/household-hub.ts` `personListHref`). A list that isn't this person's is a 404.
  */
 export default async function PersonExtraListPage({ params }: { params: Promise<{ person: string; id: string }> }) {
   await connection();
@@ -25,6 +28,8 @@ export default async function PersonExtraListPage({ params }: { params: Promise<
   try {
     person = await personPage(personId);
     if (!person) notFound();
+    const planLink = personListHref(person.kind, personId);
+    if (planLink) redirect(planLink);
     if (!(await myLists(personOwner(person))).some((l) => l.id === id)) notFound();
   } catch (err) {
     if (err instanceof AccountsSetupError) return <AuthUnavailable title="Accounts aren't set up yet" />;

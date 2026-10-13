@@ -8,7 +8,7 @@
 import type { SchoolHistory, SeriesKey } from "./history";
 import { valueAt } from "./history.ts";
 import type { School } from "./types";
-import { GROUPINGS, splitBy, type GroupingKey } from "./trend-groups.ts";
+import { GROUPINGS, splitBy, splitByKeys, type GroupingKey } from "./trend-groups.ts";
 import type { GroupRow, GroupingResult } from "./trends";
 
 /** One college in a study: today's snapshot (for grouping) and its history shard. */
@@ -118,6 +118,23 @@ export function nationalRow<V>(members: readonly Member[], compute: (ms: Member[
  */
 export function byGroup<V>(members: readonly Member[], grouping: GroupingKey, compute: (ms: Member[]) => V, floor = GROUPINGS[grouping].floor): GroupingResult<V> {
   const groups = splitBy(members, grouping, (m) => m.school).map(({ key, label, items }): GroupRow<V> =>
+    items.length >= floor ? { key, label, n: items.length, values: compute(items) } : { key, label, n: items.length, tooFew: true }
+  );
+  return { grouping, label: GROUPINGS[grouping].label, floor, groups };
+}
+
+/**
+ * Split members by a grouping as of `year` ("classified then"): the grouping's `ofThen` read from each college's
+ * history, or today's `of` for groupings without one (region, control, setting, research don't move with enrollment).
+ */
+export function splitByThen(members: readonly Member[], grouping: GroupingKey, year: number): { key: string; label: string; items: Member[] }[] {
+  const g = GROUPINGS[grouping];
+  return splitByKeys(members, grouping, (m) => (g.ofThen ? g.ofThen(m, year) : g.of(m.school)));
+}
+
+/** `byGroup`, classified as of `year` (`splitByThen`): same rows, floor, and "too few" rule. */
+export function byGroupThen<V>(members: readonly Member[], grouping: GroupingKey, year: number, compute: (ms: Member[]) => V, floor = GROUPINGS[grouping].floor): GroupingResult<V> {
+  const groups = splitByThen(members, grouping, year).map(({ key, label, items }): GroupRow<V> =>
     items.length >= floor ? { key, label, n: items.length, values: compute(items) } : { key, label, n: items.length, tooFew: true }
   );
   return { grouping, label: GROUPINGS[grouping].label, floor, groups };

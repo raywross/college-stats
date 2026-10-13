@@ -10,6 +10,7 @@ import { after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAccount, studentsICanSee } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
+import { viewerBundle } from "@/lib/bundles";
 import type { StudentAccess } from "@/lib/accounts";
 import {
   viewerRoles,
@@ -26,6 +27,13 @@ import {
 export const myHouseholds = cache(async (): Promise<HouseholdView[]> => {
   const account = await getAccount();
   if (!account) return [];
+  const bundle = await viewerBundle();
+  // The viewer bundle (lib/bundles.ts) carries every household with its roster in the one round trip.
+  if (bundle) {
+    return bundle.households
+      .filter((h) => h.members.some((m) => m.is_me))
+      .map((h) => ({ id: h.id, name: h.name, created: h.created, members: h.members, me: viewerRoles(h.members) }));
+  }
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.from("households").select("id, name, created").is("deleted_at", null).order("created");
   if (error) throw new Error(`Reading your households failed: ${error.message}`);

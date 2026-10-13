@@ -66,7 +66,7 @@ function student(o: Partial<EstimateStudent> = {}): EstimateStudent {
 }
 const note = (key: string, values: EstimateNote["values"] = {}, cite?: string): EstimateNote => (cite ? { key, values, cite } : { key, values });
 function result(o: Partial<EstimateResult> = {}): EstimateResult {
-  return { unitId: "1", group: "target", label: null, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, modelVersion: "test", ...o };
+  return { unitId: "1", group: "target", label: null, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, closeness: null, ed: null, modelVersion: "test", ...o };
 }
 
 /* ------------------------------------------------------------------ */
@@ -129,6 +129,7 @@ test("the panel lists the student's entries, the college's facts as catalog sent
   for (const n of parts.reasons) assert.ok(texts(html).includes(noteText(n)), `a reason: ${n.key}`);
   assert.ok(texts(html).includes(noteText({ key: "estimate.disclaimer", values: { college: "Purdue" } })), "the standing disclaimer");
   if (parts.prompt) assert.ok(texts(html).includes(noteText(parts.prompt)), "the missing-input prompt");
+  if (parts.incomplete) assert.ok(texts(html).includes(noteText(parts.incomplete)), "the inputs not in the estimate yet");
   // A source beside each fact whose note cites one, and the glossary term for the estimate.
   for (const n of parts.reasons) if (n.cite) assert.match(html, new RegExp(`data-cited="${n.cite.replace(/\./g, "\\.")}"`), `a source for ${n.cite}`);
   assert.match(html, /data-term="quads-estimate"/);
@@ -149,6 +150,7 @@ test("the panel holds only catalog sentences, headings, and the student's own en
       ...parts.reasons.map(noteText),
       ...parts.notUsed.map(noteText),
       ...(parts.prompt ? [noteText(parts.prompt)] : []),
+      ...(parts.incomplete ? [noteText(parts.incomplete)] : []),
       noteText({ key: "estimate.disclaimer", values: { college: "The College" } }),
       ...(also.length ? [`${noteText({ key: "estimate.panel_also", values: {} })}: ${also.map((f) => f.label).join(" · ")}`] : []),
     ];
@@ -167,6 +169,7 @@ test("guard: foreignText catches a sentence the catalog doesn't have, and a pane
     noteText({ key: "estimate.panel_college", values: { college: "Purdue" } }),
     ...panelParts(r).reasons.map(noteText),
     ...(panelParts(r).prompt ? [noteText(panelParts(r).prompt!)] : []),
+    ...(panelParts(r).incomplete ? [noteText(panelParts(r).incomplete!)] : []),
     noteText({ key: "estimate.disclaimer", values: { college: "Purdue" } }),
     ...(uncoveredFacts(r).length ? [`${noteText({ key: "estimate.panel_also", values: {} })}: ${uncoveredFacts(r).map((f) => f.label).join(" · ")}`] : []),
   ];
@@ -279,7 +282,7 @@ test("Compare's row is a block on the admissions page for the signed-in student 
   assert.match(page, /<CompareStanding\b/);
   const comp = read("components", "compare", "CompareStanding.tsx");
   assert.match(comp, /!mine\.signedIn \|\| !mine\.hasNumbers/, "nothing for a visitor or a student without numbers");
-  assert.match(comp, /rateKindText\(/);
+  assert.match(comp, /compareShortLine\(/);
   assert.match(comp, /term="quads-estimate"/);
   assert.doesNotMatch(comp, /chances\/(model|estimate)["'.]/);
 });
@@ -318,8 +321,8 @@ test("guard: a field outside the list is caught", () => {
   assert.equal(isEstimateFactPath("admissions.acceptance_rate"), true);
 });
 
-test("the plan loader resolves the citations its estimates name and the college page resolves the whole list", () => {
-  assert.match(read("lib", "planner", "load.ts"), /withFactCites\(ctx\.schools, estimates\)/);
+test("the college page resolves the citations its estimate names (the plan's row panel shows no estimate facts since 2026-10-12)", () => {
+  assert.doesNotMatch(read("lib", "planner", "load.ts"), /withFactCites/);
   const section = read("components", "chances", "StandingSection.tsx");
   assert.match(section, /estimateFactCites\(school, citeField\)/);
   assert.match(section, /majorUnitCites\(school, citeField\)/);
@@ -350,7 +353,7 @@ test("the live-preview hook sends the core answers and the student's grade, as t
   // edited through the intake guide, which saves once rather than previewing the list client-side. SignedOutPlan is
   // the hook's one remaining caller.
   const hook = read("components", "planner", "useEstimates.ts");
-  assert.match(hook, /JSON\.stringify\(\{ student, unitIds, context \}\)/);
+  assert.match(hook, /JSON\.stringify\(\{ student, unitIds, context, hooks \}\)/);
   assert.match(hook, /gradeNow\(gradYear/);
   assert.match(hook, /coreAtTopLevel: profile\?\.academics\.coreAtTopLevel/);
   assert.match(read("components", "planner", "SignedOutPlan.tsx"), /useEstimates\(/);
@@ -410,7 +413,9 @@ test("estimate_shown is registered with the group, the label, and the model vers
 });
 
 test("the places that report an estimate send exactly those three and nothing from the student", () => {
-  for (const f of ["components/chances/StandingCard.tsx", "components/planner/RowDrawer.tsx"]) {
+  // The plan row's panel stopped showing the estimate (owner, 2026-10-12), so it stopped reporting it too.
+  assert.doesNotMatch(read("components/planner/RowDrawer.tsx"), /estimate_shown/);
+  for (const f of ["components/chances/StandingCard.tsx"]) {
     const src = read(f);
     const calls = [...src.matchAll(/track\("estimate_shown",\s*\{([^}]*)\}/g)];
     assert.equal(calls.length, 1, f);
@@ -421,7 +426,7 @@ test("the places that report an estimate send exactly those three and nothing fr
     );
     assert.doesNotMatch(calls[0][1], /gpa|score|student|yours|state|major|rank/i);
   }
-  // The chip and Compare don't report: one report per estimate seen, from the card and the drawer.
+  // The chip and Compare don't report: one report per estimate seen, from the card.
   assert.doesNotMatch(read("components/chances/StandingChip.tsx"), /track\(/);
 });
 
@@ -488,17 +493,18 @@ test("the core-subject legend is a heading inside its box, not a label on the bo
   assert.match(src, /<legend className="[^"]*\bfloat-left\b[^"]*\bw-full\b/);
 });
 
-test("the row drawer shows the stage lines and the panel from the row's estimate and links to how the college reads a record", () => {
+test("the plan explains the estimate once for the list, not per college; the profile's card keeps the full panel", () => {
+  // Owner, 2026-10-12: the row's ⓘ is a capture panel now (tests/planner-capture.test.mts); "How Quad reads your list"
+  // (components/planner/ListExplainer.tsx) carries the explanation. The college profile's card still shows the lines.
   const drawer = read("components", "planner", "RowDrawer.tsx");
-  assert.match(drawer, /<WhatWentIn result=\{estimate\}/);
-  assert.match(drawer, /panelParts\(estimate\)/);
-  assert.match(drawer, /\/schools\/\$\{school\.unit_id\}\/admissions#factors/);
-  assert.match(drawer, /How \{school\.name\} reads a record/);
+  assert.doesNotMatch(drawer, /<WhatWentIn|panelParts\(/);
+  assert.match(read("components", "planner", "PlanList.tsx"), /<ListExplainer \/>/);
+  assert.match(read("components", "chances", "StandingCard.tsx"), /<WhatWentIn\b/);
   assert.match(read("lib", "planner", "plan-view.ts"), /estimate: school \? est : null/);
 });
 
-test("the signed-out plan shows the most useful missing input; the header card no longer does (redesign 2026-10-11: it moved to the Scores tab)", () => {
-  assert.doesNotMatch(read("components", "planner", "PlanHeaderCard.tsx"), /MostUsefulInput/);
+test("the signed-out plan shows the most useful missing input; the plan's people line doesn't", () => {
+  assert.doesNotMatch(read("components", "planner", "PlanPeople.tsx"), /MostUsefulInput/);
   assert.match(read("components", "planner", "SignedOutPlan.tsx"), /<MostUsefulInput estimates=\{estimates\}/);
   assert.match(read("components", "chances", "MostUsefulInput.tsx"), /mostUsefulMissing\(Object\.values\(estimates\)\)/);
 });
@@ -525,6 +531,7 @@ test("What you'll need in high school adds the intended major's required courses
 /* ------------------------------------------------------------------ */
 
 const NEW_UI = [
+  "components/chances/ComparedWith.tsx",
   "components/chances/WhatWentIn.tsx",
   "components/chances/StandingCard.tsx",
   "components/chances/StandingChip.tsx",
@@ -590,7 +597,7 @@ test("nothing the new client components import is server-only code (Server Actio
     "components/school/HsPrepTable.tsx",
     "components/school/RigorLine.tsx",
     "components/planner/RowDrawer.tsx",
-    "components/planner/PlanHeaderCard.tsx",
+    "components/planner/PlanPeople.tsx",
     "components/planner/SignedOutPlan.tsx",
     "components/planner/useEstimates.ts",
   ];

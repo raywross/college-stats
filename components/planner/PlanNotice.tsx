@@ -19,6 +19,7 @@ export function PlanNotice({ ctx, view, className }: { ctx: PlanContext; view: P
   void ctx;
   const router = useRouter();
   const [edTwoPending, startEdTwo] = useTransition();
+  const [edHelpsPending, startEdHelps] = useTransition();
   const kind = view.notices[0];
   if (!kind) return null;
 
@@ -31,5 +32,23 @@ export function PlanNotice({ ctx, view, className }: { ctx: PlanContext; view: P
     });
   }
 
-  return <ListNotices view={view} kind={kind} onUseEdTwo={handleUseEdTwo} edTwoPending={edTwoPending} className={className} />;
+  /** rounds.md "The ED guard" 3: sets that row's round to ED as the student's choice; the Dream stays where it is. */
+  function handleUseEdHelps(itemId: string) {
+    startEdHelps(async () => {
+      const result = await setPlanRound(itemId, "ed");
+      if (result.ok) router.refresh();
+    });
+  }
+
+  return (
+    <ListNotices
+      view={view}
+      kind={kind}
+      onUseEdTwo={handleUseEdTwo}
+      edTwoPending={edTwoPending}
+      onUseEdHelps={handleUseEdHelps}
+      edHelpsPending={edHelpsPending}
+      className={className}
+    />
+  );
 }

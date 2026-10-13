@@ -107,8 +107,8 @@ export function TaskRow({
         </div>
         {task.detail && <p className="mt-1 text-xs text-muted-foreground">{task.detail}</p>}
         {task.kind === "cycle" && !viewer.isGuardian && task.key?.includes(":cycle:choose_courses") && (
-          <Link href="/plan?tab=scores#plan-courses" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
-            See next year&apos;s options
+          <Link href="/plan?setup=1" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
+            Update your courses
           </Link>
         )}
         {error && (

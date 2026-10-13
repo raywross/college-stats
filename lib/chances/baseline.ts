@@ -16,7 +16,7 @@ import type { School, TestPolicy } from "../types.ts";
 import { satTotal } from "../score-bands.ts";
 import { actToSat, satToAct } from "../planner/concordance.ts";
 import { collegeGpa, compareGpaMiddle, compareGpaRanges, type CollegeGpa, type GpaCurve, type GpaMiddle, type GpaModel } from "../planner/gpa-model.ts";
-import type { EstimateNote, EstimateResult, EstimateStudent, InputKind } from "./types.ts";
+import type { EstimateNote, EstimateResult, EstimateStudent, InputKind, StandingLevel } from "./types.ts";
 
 export type TestKind = "sat" | "act";
 export type Fit = "reach" | "target" | "likely";
@@ -504,6 +504,12 @@ function baselineInputs(student: StandingStudent, school: StandingSchool, r: Sta
   return { used, missing };
 }
 
+/**
+ * The baseline's three groups on the estimate's five levels (levels.md "The estimate's contract"): each keeps its
+ * stored value, so development without the model still runs. The baseline never says High reach or Safe.
+ */
+export const FIT_LEVEL: Record<Fit, StandingLevel> = { reach: "reach", target: "target", likely: "likely" };
+
 /** The baseline's answer for one college as an EstimateResult (estimate.md "The open baseline"). */
 export function baselineEstimate(input: Pick<EstimateStudent, "gpa" | "gpaScale" | "gpaRange" | "test">, school: StandingSchool, unitId: string): EstimateResult {
   const student = standingStudentOf(input);
@@ -512,14 +518,16 @@ export function baselineEstimate(input: Pick<EstimateStudent, "gpa" | "gpaScale"
   const { used, missing } = baselineInputs(student, school, r);
   return {
     unitId,
-    group: r.fit,
-    label: r.reachForEveryone ? "reach-for-everyone" : null,
+    group: r.fit ? FIT_LEVEL[r.fit] : null,
+    label: r.reachForEveryone ? "elite" : null,
     used,
     missing,
     facts: baselineFacts(r, school),
     notes: r.notes,
     send: r.send,
-    moveUp: up && up.to !== "reach" ? { points: up.delta, to: up.to, score: up.score } : null,
+    moveUp: up && up.to !== "reach" ? { points: up.delta, to: FIT_LEVEL[up.to], score: up.score } : null,
+    closeness: null,
+    ed: null,
     modelVersion: BASELINE_VERSION,
   };
 }

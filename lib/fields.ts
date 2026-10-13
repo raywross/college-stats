@@ -30,6 +30,8 @@ export type VintageKey =
   | "ipeds-ef-c"
   /** IPEDS Fall Enrollment part A (EF{Y}A): enrollment by level, incl. new transfer-ins. Fall Y. */
   | "ipeds-ef-a"
+  /** IPEDS Fall Enrollment, distance education (EF{Y}A_DIST): undergraduates taking every course or some online. Fall Y. */
+  | "ipeds-ef-a-dist"
   /** IPEDS Completions (C{Y}_A): degrees awarded by field, July Y−1 to June Y ("2024–25 graduates"). */
   | "ipeds-c"
   /** IPEDS Finance survey, derived per-student figures (DRVF{Y}): endowment and spending per student. Fiscal year. */
@@ -109,6 +111,20 @@ const wikidata = (label: string): FieldDef => ({ label, topic: "institution", so
 const wikipedia = (label: string): FieldDef => ({ label, topic: "institution", source: "wikipedia", vintage: null });
 /** Derived at sync time from the college's colors (lib/brand-colors.ts), so the app does no color math. */
 const brandDerived = (label: string, formula: string): FieldDef => ({ ...wikipedia(label), derived: { formula, inputs: ["brand.colors"] } });
+
+/** What Quad's selectivity reads (specs/chances/selectivity-index.md "Inputs"), in words: kinds, not weights. */
+const SELECTIVITY_FORMULA =
+  "Quad's own reading of figures the college publishes: its admit rate, its admitted students' test scores, how many admitted students enroll, how many first-years return for a second year, how many graduate, and how many students it admits. How they are combined is Quad's own and isn't published";
+const SELECTIVITY_INPUTS = [
+  "admissions.acceptance_rate",
+  "derived.sat_total",
+  "admissions.act_composite_25_75",
+  "derived.yield",
+  "outcomes.retention_rate",
+  "outcomes.graduation_rate",
+  "admissions.admitted",
+  "admissions.enrolled",
+] as const;
 
 export const FIELDS = {
   /* ---- Institution ---- */
@@ -234,6 +250,9 @@ export const FIELDS = {
   // Stored in the per-college detail file (lib/detail.ts), not data/schools.json.
   // Transfers in (specs/data-expansion/transfers.md).
   "demographics.transfer_in": { label: "New transfer-in undergraduates this fall", topic: "demographics", source: "ipeds-ef-a", vintage: "ipeds-ef-a" },
+  // Online share (specs/data-expansion/online-share.md; lib/online-share.ts): EF{Y}A_DIST level 2, all undergraduates.
+  "demographics.online_share": { label: "Undergraduates taking every course online", topic: "demographics", source: "ipeds-ef-a-dist", vintage: "ipeds-ef-a-dist" },
+  "demographics.online_any_share": { label: "Undergraduates taking at least one course online", topic: "demographics", source: "ipeds-ef-a-dist", vintage: "ipeds-ef-a-dist" },
   "detail.home_states": { label: "First-years by home state", topic: "demographics", source: "ipeds-ef-c", vintage: "ipeds-ef-c" },
   // LGBTQ+ life, phase 1 (specs/lgbtq-life.md; lib/lgbtq.ts). Another gender was last collected for fall 2024; when the
   // newest file lacks it, each value's lineage record names the older file and its fall (scripts/lib/lgbtq-sync.mts).
@@ -559,6 +578,22 @@ export const FIELDS = {
   "reference.guaranteed_admission.rule": reported("Automatic admission rule (published program)"),
   "reference.guaranteed_admission.scope": reported("Whether the program admits to the campus or only to the system"),
   "reference.guaranteed_admission.major_guaranteed": reported("Whether automatic admission includes the major"),
+  // State bans on legacy preference in admissions (specs/chances/inputs-beyond-academics.md "Legacy"). They live in
+  // data/reference/legacy-bans.json, hand-kept like data/state-laws.json (lgbtq.state_law below): not on the school
+  // record, so no lineage record carries them; the hooks sentence cites the law and effective date from
+  // lib/chances/legacy-bans.ts's `banFor` directly.
+  "reference.legacy_ban.sectors": { label: "Sectors a state's legacy-preference ban covers", topic: "admissions", source: "state-law", vintage: null },
+  "reference.legacy_ban.effective": { label: "Effective date of a state's legacy-preference ban", topic: "admissions", source: "state-law", vintage: null },
+  "reference.legacy_ban.law": { label: "Bill number or chapter citation for a state's legacy-preference ban", topic: "admissions", source: "state-law", vintage: null },
+  // The reviewed awards catalog the AwardsForm picker reads (specs/chances/inputs-beyond-academics.md "Awards"), from
+  // data/reference/awards.json: not per-college (no school record carries it), but registered here like the other
+  // curated reference files so it has a citeField-able path for the picker's "source" note beside each award.
+  "reference.awards.body": reported("The organization that gives the award, and its source page"),
+  // The activity catalogs the ActivitiesForm picker reads (specs/chances/inputs-beyond-academics.md, depth.md "What
+  // the student enters", Wave 4 U12), from data/reference/sports.json, clubs.json, and activity-roles.json: not
+  // per-college, registered here like awards.json so each catalog entry's governing body has a citeField-able path.
+  "reference.activity_catalog.org": reported("The sport or club's governing body, and its source page"),
+  "reference.activity_catalog.role": reported("The title's role tier (member, officer, or leader)"),
   // How the college admits by school or major (specs/chances/base-rates.md "Major", major-and-grades.md "Data"), from
   // data/major-admission.json: each value quoted from the unit's own page; lib/lineage.ts resolves the citation to it.
   "reported.major_admission.direct_admit": reported("Whether first-years are admitted directly to the school or major"),
@@ -640,6 +675,40 @@ export const FIELDS = {
       inputs: ["cost.avg_paid_all", "cost.breakdown", "admissions.acceptance_rate", "admissions.applicants", "demographics.undergrad_enrollment", "demographics.racial_diversity", "demographics.men_share", "outcomes.federal_loan_rate", "aid.grant_pct", "outcomes.grad_rate_pell", "outcomes.grad_rate_no_pell_no_loan"],
     },
   },
+
+  /* ---- Quad's selectivity (specs/chances/selectivity-index.md; `npm run build-selectivity`) ---- */
+  // Stored tiers, never the index. The formula names the kinds of figures read, never weights or cutoffs (the method is
+  // Quad's own); citations expand to the inputs this college publishes.
+  "selectivity.tier": {
+    label: "Quad's selectivity",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+  },
+  "selectivity.in_state": {
+    label: "Quad's selectivity, in-state applicants",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from its state`, inputs: ["derived.admit_rate_in_state", ...SELECTIVITY_INPUTS] },
+  },
+  "selectivity.out_of_state": {
+    label: "Quad's selectivity, out-of-state applicants",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from other states`, inputs: ["derived.admit_rate_out_of_state", ...SELECTIVITY_INPUTS] },
+  },
+  // The top band of Ultra selective (method/standing.md "Revision 3", rule 8): a word the estimate reads, never shown.
+  "selectivity.band": {
+    label: "Quad's selectivity, top of Ultra selective",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+  },
+  "selectivity.year": adm("Fall of the admit rate Quad's selectivity read"),
 
   /* ---- Computed at render time (lib/metrics.ts) ---- */
   "derived.sat_composite": {

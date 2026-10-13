@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
+import { ClassStandingPick } from "@/components/me/ClassStandingPick";
+import { RankExpectationPick } from "@/components/me/RankExpectationPick";
 import { Headline } from "@/components/planner/intake/Headline";
 import {
   classYearOptions,
@@ -9,9 +11,10 @@ import {
   gpaCheck,
   INTAKE_SCALES,
   scaleLabel,
+  weightedGpaCheck,
   type IntakeDraft,
 } from "@/lib/planner/intake";
-import type { GpaScale } from "@/lib/student-profile";
+import { weightedGpaHint, type GpaScale } from "@/lib/student-profile";
 import { cn } from "@/lib/utils";
 
 /** Step 0 (intake.md "Grades"): the class-of chips and the GPA field with its detected/overridden scale. */
@@ -30,6 +33,8 @@ export function GradesStep({
   const years = classYearOptions(today, storedGradYear);
   const check = gpaCheck(draft);
   const scale = effectiveScale(draft);
+  const weightedCheck = weightedGpaCheck(draft.weightedGpa);
+  const weightedHint = weightedGpaHint(Number(draft.gpa.trim()) || null, scale, draft.weightedGpa.trim() === "" ? null : Number(draft.weightedGpa.trim()));
 
   const pickScale = (s: GpaScale) => {
     setDraft({ ...draft, scaleOverride: s });
@@ -125,6 +130,40 @@ export function GradesStep({
           </div>
         </div>
         <p className={cn("text-sm", check.tone === "amber" ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground")}>{check.hint}</p>
+      </div>
+
+      <div className="space-y-2.5">
+        <label htmlFor="intake-weightedGpa" className="text-sm font-semibold">
+          Weighted GPA · optional
+        </label>
+        <input
+          id="intake-weightedGpa"
+          type="text"
+          inputMode="decimal"
+          placeholder="4.4"
+          value={draft.weightedGpa}
+          onChange={(e) => setDraft({ ...draft, weightedGpa: e.target.value })}
+          aria-label="Weighted GPA"
+          className="h-12 w-full rounded-2xl border px-4 text-lg font-semibold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-40"
+        />
+        <p className={cn("text-sm", weightedCheck.tone === "amber" ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground")}>{weightedCheck.hint}</p>
+        {weightedHint && <p className="text-sm text-amber-700 dark:text-amber-400">{weightedHint}</p>}
+      </div>
+
+      <div className="space-y-2.5">
+        <ClassStandingPick
+          classStanding={draft.classStanding}
+          classRankPercentile={draft.classRankPercentile}
+          onChange={(v) => setDraft({ ...draft, classStanding: v.classStanding, classRankPercentile: v.classRankPercentile })}
+        />
+      </div>
+
+      <div className="space-y-2.5">
+        <RankExpectationPick
+          rankExpectation={draft.rankExpectation}
+          classStanding={draft.classStanding}
+          onChange={(v) => setDraft({ ...draft, rankExpectation: v })}
+        />
       </div>
 
       <div className="space-y-2.5">

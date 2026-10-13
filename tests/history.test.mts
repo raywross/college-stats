@@ -189,6 +189,36 @@ test("validateShard rejects unknown series, impossible values, and untrimmed arr
   assert.match(validateShard(ok, new Set(["1"]))[0], /not a college/);
 });
 
+test("online share: EF{Y}A_DIST from fall 2012, read with the snapshot's reader; the pandemic falls kept as reported; rule 1 checks the last point", () => {
+  const era = eraFor("ef-a-dist", 2012)!;
+  assert.ok(era, "EF2012A_DIST is the first file");
+  assert.equal(eraFor("ef-a-dist", 2011), null);
+  assert.deepEqual(era.files(2024), [{ name: "EF2024A_DIST" }]);
+  assert.deepEqual(era.wide, { key: "EFDELEV", values: ["EFDETOT", "EFDEEXC", "EFDESOM", "EFDENON"] });
+  for (const c of ["EFDELEV", "EFDETOT", "EFDEEXC", "EFDESOM", "EFDENON"]) assert.ok(requiredColumns(era, era.files(2012)[0]).includes(c), c);
+  assert.equal(SERIES.online_share.field, "demographics.online_share");
+  assert.deepEqual(SERIES.online_share.families, ["ef-a-dist"]);
+  assert.equal(HISTORY_FAMILIES["ef-a-dist"].source, "ipeds-ef-a-dist");
+  // Level 2 (all undergraduates): every course online / some / none, pivoted as scripts/lib/ipeds.mts does.
+  const dist = (year: number, exc: number, som: number, non: number): YearTable => ({
+    year,
+    family: "ef-a-dist",
+    rows: rows({ EFDETOT_2: String(exc + som + non), EFDEEXC_2: String(exc), EFDESOM_2: String(som), EFDENON_2: String(non) }),
+  });
+  const h = buildCollege({ unit_id: V, type: "private-nonprofit" }, { admissions: [], prices: [], sfa: [], efaDist: [dist(2019, 20, 300, 6680), dist(2020, 4000, 2500, 500), dist(2021, 50, 400, 6550)] });
+  assert.deepEqual(h.series.online_share, { start: 2019, values: [0.0029, 0.5714, 0.0071] }, "fall 2020 is kept as reported");
+  assert.deepEqual(validateShard(h), []);
+  // Rule 1: the last point must equal the snapshot's demographics.online_share.
+  const s = structuredClone(schools.find((x) => x.unit_id === V) ?? schools[0]);
+  s.unit_id = V;
+  s.demographics.online_share = 0.0071;
+  const only = (list: string[]) => list.filter((m) => m.includes(" online_share:"));
+  const map = new Map([[V, h]]);
+  assert.deepEqual(only(lastPointMismatches([s], map, { fall: 2021, academic: 2020 })), []);
+  s.demographics.online_share = 0.2;
+  assert.equal(only(lastPointMismatches([s], map, { fall: 2021, academic: 2020 })).length, 1, "a drifted snapshot is caught");
+});
+
 test("every series extends a registered field and every family cites a known source", () => {
   for (const [k, def] of Object.entries(SERIES)) assert.ok(def.field in FIELDS, `${k} → ${def.field}`);
   for (const [f, fam] of Object.entries(HISTORY_FAMILIES)) assert.ok(fam.source in meta.sources, `${f} → ${fam.source}`);

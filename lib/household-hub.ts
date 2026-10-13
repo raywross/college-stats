@@ -174,6 +174,17 @@ export function ownPersonPath(studentId: string | null, userId: string): string 
   return `/household/${studentId ?? userId}`;
 }
 
+/**
+ * Household cleanup (2026-10-12, specs/product/household-hub.md): a student's list and numbers moved into the
+ * planner (the plan's Colleges/Scores tabs, [levels.md](../chances/levels.md)), so a student's list page here
+ * redirects into it; a guardian's own list has no planner equivalent (the planner only ever shows a child's) and
+ * still renders in the hub. Any old bookmark under a student's `/household/[person]/lists/[id]` lands on the same
+ * place rather than 404.
+ */
+export function personListHref(personKind: "student" | "guardian", personId: string): string | null {
+  return personKind === "student" ? `/plan?for=${encodeURIComponent(personId)}` : null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Roster                                                              */
 /* ------------------------------------------------------------------ */

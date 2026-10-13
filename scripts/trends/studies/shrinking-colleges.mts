@@ -8,10 +8,12 @@
  */
 import { DIVERSITY_MIN_UNDERGRADS, historyYearLabel } from "../../../lib/history.ts";
 import { pct } from "../../../lib/format.ts";
+import { campusExclusionOf, isCampusBased, type MoverExclusionSets } from "../../../lib/movers.ts";
 import { at, byGroup, fixedPanel, medianBy, nationalRow, reporting, round4, shareBy, totalBy, yearly, type Member } from "../../../lib/trend-panel.ts";
 import { studyBySlug, studyWindow, type StudyDef } from "../../../lib/trend-studies.ts";
-import type { ShrinkingCollegesFile, ShrinkingValues, ShrinkingWindow } from "../../../lib/trends.ts";
+import type { ShrinkingCampusBased, ShrinkingCollegesFile, ShrinkingValues, ShrinkingWindow } from "../../../lib/trends.ts";
 import type { TrendBuilder, TrendContext, TrendOutput } from "../context.mts";
+import { moverContext } from "../movers.mts";
 
 const SLUG = "shrinking-colleges";
 /** Colleges need this many undergrads at both ends of a window to join its panel (same bar as the diversity change). */
@@ -54,8 +56,9 @@ export function values(ms: readonly Member[], from: number, to: number): Shrinki
   };
 }
 
-function buildWindow(ctx: TrendContext, study: StudyDef, from: number, to: number): ShrinkingWindow {
-  const panel = shrinkingPanel(ctx.members, from, to);
+function buildWindow(ctx: TrendContext, study: StudyDef, from: number, to: number, campuses?: MoverExclusionSets["campuses"]): ShrinkingWindow {
+  const basePanel = shrinkingPanel(ctx.members, from, to);
+  const panel = campuses ? basePanel.filter((m) => isCampusBased(m, from, to, campuses)) : basePanel;
   const compute = (ms: Member[]) => values(ms, from, to);
   return {
     from,
@@ -64,6 +67,18 @@ function buildWindow(ctx: TrendContext, study: StudyDef, from: number, to: numbe
     national: nationalRow(panel, compute),
     groupings: study.groupings.map((g) => byGroup(panel, g, compute)),
   };
+}
+
+/** How many of a window's panel colleges aren't campus-based, by reason (`campusExclusionOf`). */
+function excludedCounts(panel: readonly Member[], from: number, to: number, campuses: MoverExclusionSets["campuses"]): ShrinkingCampusBased["excluded"] {
+  const out = { onlineFirst: 0, forProfit: 0, campuses: 0 };
+  for (const m of panel) {
+    const reason = campusExclusionOf(m, from, to, campuses);
+    if (reason === "online-first") out.onlineFirst++;
+    else if (reason === "for-profit") out.forProfit++;
+    else if (reason === "closed-or-merged") out.campuses++;
+  }
+  return out;
 }
 
 /** Histogram of the ten-year panel's % change, 10-point bins clamped to [HIST_MIN, HIST_MAX], with the median. */
@@ -94,9 +109,15 @@ function companionOf(panel: readonly Member[], from: number, to: number) {
 export function buildShrinkingColleges(ctx: TrendContext): TrendOutput {
   const study = studyBySlug(SLUG)!;
   const [from, to] = studyWindow(study, ctx.hmeta.latest);
+  const campuses = moverContext(ctx).exclusions.campuses;
   const ten = buildWindow(ctx, study, from, to);
   const five = buildWindow(ctx, study, to - FIVE_YEAR_WINDOW, to);
   const tenPanel = shrinkingPanel(ctx.members, from, to);
+  const campusBased: ShrinkingCampusBased = {
+    ten: buildWindow(ctx, study, from, to, campuses),
+    five: buildWindow(ctx, study, to - FIVE_YEAR_WINDOW, to, campuses),
+    excluded: excludedCounts(tenPanel, from, to, campuses),
+  };
 
   const belowStart = yearly(from, to, (y) => {
     const r = reporting(tenPanel, (m) => at(m, "undergrads", y) !== null);
@@ -121,6 +142,7 @@ export function buildShrinkingColleges(ctx: TrendContext): TrendOutput {
     belowStart,
     histogram: histogramOf(tenPanel, from, to),
     companion: companionOf(tenPanel, from, to),
+    campusBased,
   };
 
   const v = file.national.values!;

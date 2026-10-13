@@ -7,19 +7,26 @@
  * What a snapshot never holds: a name, the high school's id or name, a course's typed name, a note's filled-in text,
  * or any other free text. The high school appears only as a band of how many AP courses it offers.
  *
- *   const input = estimateInputFromProfile(profile, "243744", "ea");
+ *   const input = estimateInputFromProfile(profile, "243744", "ea"); // from ./estimate-input.ts
  *   const row = buildSnapshot({ input, estimate: { result }, offering, admitRate: 0.21, studentGroup: null });
  */
-import type { CourseEntry, EstimateInput, EstimateResult, EstimateStudent, PoolRateKind, RigorReading, SchoolOffering } from "./types.ts";
-import { advancedGpa, courseMark, isAdvancedKind, markPoints, planGpaRange, planTest, unweightedGpa4, type StudentProfileData } from "../student-profile.ts";
+import type { CourseEntry, EstimateInput, EstimateResult, EstimateStudent, PoolRateKind, RigorReading, SchoolOffering, SelectivityTier, StandingLevel } from "./types.ts";
+import { advancedGpa, courseMark, isAdvancedKind, markPoints } from "../student-profile.ts";
+import { SELECTIVITY_TIERS, STANDING_LEVELS } from "./levels.ts";
+import type { DepthSnapshot } from "./depth.ts";
 
-export type Group = "reach" | "target" | "likely";
-export const GROUPS: readonly Group[] = ["reach", "target", "likely"];
+/** A level as a snapshot stores it (levels.md "Database": the five stored values). */
+export type Group = StandingLevel;
+export const GROUPS: readonly Group[] = STANDING_LEVELS;
 const ROUNDS = ["ed", "ed2", "ea", "rea", "rd", "rolling"] as const;
-const INPUT_KINDS = ["gpa", "test", "sections", "class_rank", "courses", "subject_grades", "state", "major", "round", "high_school"] as const;
+/** The input kinds `inputs_used` may hold: its check constraint (20261012100000_five_levels.sql) lists these. */
+const INPUT_KINDS = [
+  "gpa", "test", "sections", "class_rank", "courses", "subject_grades", "state", "major", "round", "high_school",
+  "activities", "awards", "work", "legacy", "recruited", "interest", "class_standing",
+] as const;
 
 /** The inputs the season measurements switch off one at a time (method/outcomes.md "Each new input separately"). */
-export const ABLATION_INPUTS = ["residency", "crowding", "rigor", "rank"] as const;
+export const ABLATION_INPUTS = ["residency", "crowding", "rigor", "rank", "depth", "hooks", "interest"] as const;
 export type AblationInput = (typeof ABLATION_INPUTS)[number];
 
 /** Method details recorded beside the group for the season measurements (never shown, never exported). */
@@ -33,6 +40,28 @@ export interface SnapshotDetail {
   rigorReading?: RigorReading | null;
   /** The group with each input switched off. */
   without?: Partial<Record<AblationInput, Group | null>>;
+  /**
+   * The hidden odds behind the level (method/standing.md Stage 2), 0–1, before caps and floors; null without a
+   * level's measures. Measurement only: binned into the row's `hidden_odds`, never shown, exported, or returned.
+   */
+  hiddenOdds?: number | null;
+  /** The selectivity tier that capped the level for this student's pool, or null when the college isn't rated. */
+  selectivityTier?: SelectivityTier | null;
+  /**
+   * The Depth readings as words and counts (lib/chances/depth.ts depthSnapshot: never a course, activity, or award
+   * name). Kept with the detail for the measurements; the row has no column for it yet (decision 6 adds none).
+   */
+  depth?: DepthSnapshot | null;
+  /**
+   * Revision 2 (method/standing.md): the share of the weight of the inputs this college weighs that the student
+   * entered, 0–1. Binned to 0.05 into the row's `completeness`; exported with the student's own snapshots, never shown.
+   */
+  completeness?: number | null;
+  /**
+   * Revision 3, rule 7: the state the estimate used (the student's own, else their high school's), recorded in the
+   * row's `state` when the student entered none.
+   */
+  stateUsed?: string | null;
 }
 
 /** What the estimate hands a snapshot: the result the student saw, and optionally the method's details. */
@@ -80,6 +109,12 @@ export interface SnapshotRow {
   without_crowding: Group | null;
   without_rigor: Group | null;
   without_rank: Group | null;
+  without_depth: Group | null;
+  without_hooks: Group | null;
+  without_interest: Group | null;
+  hidden_odds: number | null;
+  selectivity_tier: SelectivityTier | null;
+  completeness: number | null;
   student_group: Group | null;
   group_changed: boolean;
 }
@@ -90,7 +125,8 @@ export const SNAPSHOT_COLUMNS = [
   "state", "majors", "practice", "advanced_courses", "advanced_planned", "honors_courses", "advanced_gpa", "math_gpa",
   "science_gpa", "hs_ap_band", "hs_ib", "hs_dual", "admit_rate", "estimate_group", "estimate_label", "inputs_used",
   "note_keys", "model_version", "position", "base_rate_kind", "base_rate", "crowded", "rigor_reading",
-  "without_residency", "without_crowding", "without_rigor", "without_rank", "student_group", "group_changed",
+  "without_residency", "without_crowding", "without_rigor", "without_rank", "without_depth", "without_hooks",
+  "without_interest", "hidden_odds", "selectivity_tier", "completeness", "student_group", "group_changed",
 ] as const satisfies readonly (keyof SnapshotRow)[];
 
 /* ------------------------------------------------------------------ */
@@ -113,6 +149,10 @@ export const binGpa = (g: number | null | undefined) => binTo(g, 0.05, 0, 4);
 export const binGrade = (g: number | null | undefined) => binTo(g, 0.1, 0, 4);
 /** A rate (0–1) to the nearest hundredth. */
 export const binRate = (r: number | null | undefined) => binTo(r, 0.01, 0, 1);
+/** The hidden odds (0–1) to the nearest 0.005 (levels.md "Database": `hidden_odds numeric(4,3)`). */
+export const binOdds = (r: number | null | undefined) => binTo(r, 0.005, 0, 1);
+/** Completeness (0–1) to the nearest 0.05 (20261012120000_snapshot_completeness.sql: `completeness numeric(3,2)`). */
+export const binCompleteness = (r: number | null | undefined) => binTo(r, 0.05, 0, 1);
 
 export function binTest(test: EstimateStudent["test"]): { test_kind: "sat" | "act" | null; test_score: number | null } {
   if (!test || !finite(test.score)) return { test_kind: null, test_score: null };
@@ -152,32 +192,12 @@ export function lastFinishedSeason(today: string): number {
 /* Inputs                                                              */
 /* ------------------------------------------------------------------ */
 
-const isGroup = (v: unknown): v is Group => v === "reach" || v === "target" || v === "likely";
+const isGroup = (v: unknown): v is Group => typeof v === "string" && (STANDING_LEVELS as readonly string[]).includes(v);
 
-/** The estimate's input for one college from the student's saved profile (the same numbers the plan reads). */
-export function estimateInputFromProfile(profile: StudentProfileData | null, unitId: string, round: string | null): EstimateInput {
-  const a = profile?.academics;
-  const t = profile?.tests;
-  const b = profile?.basics;
-  return {
-    unitId,
-    student: {
-      gpa: a ? unweightedGpa4(a.gpa, a.gpaScale) : null,
-      gpaScale: a?.gpaScale ?? "4.0",
-      gpaRange: profile ? planGpaRange(profile) : null,
-      test: profile ? planTest(profile) : null,
-      satMath: t?.satMath ?? null,
-      actMath: t?.actMath ?? null,
-      classRankPercentile: a?.classRankPercentile ?? null,
-      courses: a?.courses ?? [],
-      state: b?.stateOfResidence ?? null,
-      majors: profile?.plans.intendedMajors ?? [],
-      round,
-      highSchoolId: b?.highSchoolId ?? null,
-      practice: t?.practice ?? false,
-    },
-  };
-}
+// estimateInputFromProfile lives in ./estimate-input.ts (client-safe); re-exported for the server code and tests that
+// already read it from here. Client code must import it from there: this file names the snapshot's measurement-only
+// columns, which never reach a client bundle (specs/chances/README.md).
+export { estimateInputFromProfile } from "./estimate-input.ts";
 
 function subjectAverage(courses: readonly CourseEntry[], subject: CourseEntry["subject"]): number | null {
   const points = courses
@@ -226,7 +246,7 @@ export function buildSnapshot({ input, estimate, offering, admitRate, studentGro
     sat_math: binTo(s.satMath, 10, 200, 800),
     act_math: binTo(s.actMath, 1, 1, 36),
     class_rank_pct: binTo(s.classRankPercentile, 1, 0, 100),
-    state: s.state && (STATE.test(s.state) || s.state === "OUTSIDE_US") ? s.state : null,
+    state: s.state && (STATE.test(s.state) || s.state === "OUTSIDE_US") ? s.state : detail?.stateUsed && STATE.test(detail.stateUsed) ? detail.stateUsed : null,
     majors: (s.majors ?? []).filter((m) => /^[0-9]{2}$/.test(m)).slice(0, 3),
     practice: s.practice === true,
     advanced_courses: advancedCount,
@@ -240,7 +260,7 @@ export function buildSnapshot({ input, estimate, offering, admitRate, studentGro
     hs_dual: offering?.dual ?? null,
     admit_rate: binRate(admitRate),
     estimate_group: group,
-    estimate_label: result?.label === "reach-for-everyone" || result?.label === "guaranteed" ? result.label : null,
+    estimate_label: result?.label === "elite" || result?.label === "guaranteed" || result?.label === "recruited" ? result.label : null,
     inputs_used: [...new Set((result?.used ?? []).filter((k) => (INPUT_KINDS as readonly string[]).includes(k)))],
     note_keys: [...new Set((result?.notes ?? []).map((n) => n.key).filter((k) => NOTE_KEY.test(k)))].slice(0, 40),
     model_version: result && MODEL_VERSION.test(result.modelVersion) ? result.modelVersion : null,
@@ -253,6 +273,12 @@ export function buildSnapshot({ input, estimate, offering, admitRate, studentGro
     without_crowding: without("crowding"),
     without_rigor: without("rigor"),
     without_rank: without("rank"),
+    without_depth: without("depth"),
+    without_hooks: without("hooks"),
+    without_interest: without("interest"),
+    hidden_odds: binOdds(detail?.hiddenOdds),
+    selectivity_tier: detail?.selectivityTier && (SELECTIVITY_TIERS as readonly string[]).includes(detail.selectivityTier) ? detail.selectivityTier : null,
+    completeness: binCompleteness(detail?.completeness),
     student_group: picked,
     group_changed: picked !== null && picked !== group,
   };

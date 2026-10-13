@@ -14,14 +14,15 @@
  */
 import { isUnitId } from "../follow-state.ts";
 import { isListRound, type ListRound } from "../list-rules.ts";
-import type { Fit } from "./standing.ts";
+import { STANDING_LEVELS } from "../chances/levels.ts";
+import type { StandingLevel } from "../chances/types.ts";
 import type { PlanItem } from "./types.ts";
 
 export interface LocalPlan {
   unitIds: string[];
   dream: string | null;
   /** Only colleges whose group the visitor picked themselves; everything else is the model's live suggestion. */
-  groups: Record<string, Fit>;
+  groups: Record<string, StandingLevel>;
   /** Only colleges whose round the visitor picked themselves; everything else is the starting round. */
   rounds: Record<string, ListRound>;
 }
@@ -32,8 +33,7 @@ const EVENT = "plan-local-updated";
 /** Keeps the signed-out list to a sane size; also the most ids `/api/plan/schools` accepts in one call. */
 export const MAX_LOCAL_COLLEGES = 20;
 
-const FIT_VALUES: readonly Fit[] = ["reach", "target", "likely"];
-const isFit = (v: unknown): v is Fit => typeof v === "string" && (FIT_VALUES as readonly string[]).includes(v);
+const isLevel = (v: unknown): v is StandingLevel => typeof v === "string" && (STANDING_LEVELS as readonly string[]).includes(v);
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 export function emptyLocalPlan(): LocalPlan {
@@ -59,11 +59,11 @@ export function sanitizeLocalPlan(input: unknown): LocalPlan {
 
   const dream = typeof input.dream === "string" && unitIds.includes(input.dream) ? input.dream : null;
 
-  const groups: Record<string, Fit> = {};
+  const groups: Record<string, StandingLevel> = {};
   if (isObj(input.groups)) {
     for (const id of unitIds) {
       const v = input.groups[id];
-      if (isFit(v)) groups[id] = v;
+      if (isLevel(v)) groups[id] = v;
     }
   }
 
@@ -105,7 +105,7 @@ export function setLocalDream(plan: LocalPlan, unitId: string | null): LocalPlan
 }
 
 /** A group the visitor picks, or null for "use the suggestion" (back to auto). */
-export function setLocalGroup(plan: LocalPlan, unitId: string, group: Fit | null): LocalPlan {
+export function setLocalGroup(plan: LocalPlan, unitId: string, group: StandingLevel | null): LocalPlan {
   if (!plan.unitIds.includes(unitId)) return plan;
   const groups = { ...plan.groups };
   if (group === null) delete groups[unitId];
@@ -243,6 +243,8 @@ export function planItemsFor(plan: LocalPlan, now: () => string = TODAY_ISO): Pl
       recommendations_count: null,
       supplements_count: null,
       transcript_shared: false,
+      legacy: false,
+      recruited: "none",
     };
   });
 }
@@ -257,7 +259,7 @@ export interface LocalImportPlan {
   /** The college to mark as the Dream, or null when the local plan had none worth keeping. */
   dreamUnitId: string | null;
   /** Groups to set as `student` source (only ones the visitor actually picked themselves). */
-  groupWrites: { unitId: string; group: Fit }[];
+  groupWrites: { unitId: string; group: StandingLevel }[];
   /** Rounds to set as `student` source (only ones the visitor actually picked themselves). */
   roundWrites: { unitId: string; round: ListRound }[];
 }

@@ -17,9 +17,16 @@ export interface StatesTableRow {
   avgCost: number | null;
   outOfState: number | null;
   testOptionalShare: number | null;
+  /** First-years crossing state lines (no floor: present for a tooFew state too, absent only with no college table). */
+  inflow: number | null;
+  outflow: number | null;
+  net: number | null;
 }
 
-type SortKey = keyof Pick<StatesTableRow, "name" | "onSite" | "undergradChange" | "acceptanceRate" | "avgCost" | "outOfState" | "testOptionalShare">;
+type SortKey = keyof Pick<
+  StatesTableRow,
+  "name" | "onSite" | "undergradChange" | "acceptanceRate" | "avgCost" | "outOfState" | "testOptionalShare" | "inflow" | "outflow" | "net"
+>;
 
 const COLUMNS: { key: SortKey; label: string; align?: "right" }[] = [
   { key: "name", label: "State" },
@@ -29,11 +36,18 @@ const COLUMNS: { key: SortKey; label: string; align?: "right" }[] = [
   { key: "avgCost", label: "Average cost", align: "right" },
   { key: "outOfState", label: "Out-of-state", align: "right" },
   { key: "testOptionalShare", label: "Test-optional", align: "right" },
+  { key: "inflow", label: "Inflow", align: "right" },
+  { key: "outflow", label: "Outflow", align: "right" },
+  { key: "net", label: "Net", align: "right" },
 ];
+/** The five measure columns gated by STATE_FLOOR (a tooFew state shows a single cell instead); flows aren't gated. */
+const FLOOR_GATED_COLUMNS = 5;
 
 const fmtPct = (v: number | null) => (v === null ? "—" : `${v > 0 ? "+" : ""}${Math.round(v * 100)}%`);
 const fmtShare = (v: number | null) => (v === null ? "—" : `${Math.round(v * 100)}%`);
 const fmtMoney = (v: number | null) => (v === null ? "—" : `$${v.toLocaleString("en-US")}`);
+const fmtCount = (v: number | null) => (v === null ? "—" : `${v > 0 ? "+" : ""}${Math.round(v).toLocaleString("en-US")}`);
+const fmtCountPlain = (v: number | null) => (v === null ? "—" : Math.round(v).toLocaleString("en-US"));
 
 /**
  * The /trends/states index table (specs/trends/states.md): every state and territory, sortable, alphabetical by
@@ -95,7 +109,7 @@ export function StatesTable({ rows }: { rows: readonly StatesTableRow[] }) {
               </td>
               <td className="px-3 py-2 text-right tabular-nums">{r.onSite.toLocaleString("en-US")}</td>
               {r.tooFew ? (
-                <td colSpan={5} className="px-3 py-2 text-right text-xs text-muted-foreground">
+                <td colSpan={FLOOR_GATED_COLUMNS} className="px-3 py-2 text-right text-xs text-muted-foreground">
                   Too few colleges to summarize
                 </td>
               ) : (
@@ -107,6 +121,10 @@ export function StatesTable({ rows }: { rows: readonly StatesTableRow[] }) {
                   <td className="px-3 py-2 text-right tabular-nums">{fmtShare(r.testOptionalShare)}</td>
                 </>
               )}
+              {/* First-years crossing state lines: no floor (rule 5), so these show for a tooFew state too. */}
+              <td className="px-3 py-2 text-right tabular-nums">{fmtCountPlain(r.inflow)}</td>
+              <td className="px-3 py-2 text-right tabular-nums">{fmtCountPlain(r.outflow)}</td>
+              <td className="px-3 py-2 text-right tabular-nums">{fmtCount(r.net)}</td>
             </tr>
           ))}
         </tbody>

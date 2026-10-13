@@ -104,6 +104,13 @@ export default async function ShrinkingCollegesPage() {
   const vR1 = file.groupings.find((g) => g.grouping === "research")?.groups.find((r) => r.key === "R1")?.values ?? null;
   const vForProfit = file.groupings.find((g) => g.grouping === "control")?.groups.find((r) => r.key === "private-forprofit")?.values ?? null;
   const vTerritories = file.groupings.find((g) => g.grouping === "region")?.groups.find((r) => r.key === "Territories")?.values ?? null;
+  const vLargeAll = file.groupings.find((g) => g.grouping === "size")?.groups.find((r) => r.key === "large");
+  const vLargeCampusBased = file.campusBased.ten.groupings.find((g) => g.grouping === "size")?.groups.find((r) => r.key === "large");
+
+  const { campusBased } = file;
+  const campusCaption =
+    `"Campus-based only" leaves out ${campusBased.excluded.forProfit} for-profit colleges, ${campusBased.excluded.onlineFirst} colleges where more than half of ` +
+    `undergraduates took every course online at either end of the window, and ${campusBased.excluded.campuses} campuses that merged or split.`;
 
   const windows = [
     {
@@ -113,6 +120,15 @@ export default async function ShrinkingCollegesPage() {
         collegesView(file.groupings, "colleges", "Colleges", `Share of colleges that shrank (left) or grew (right) by ${T}+ points, ${fall(from)} to ${fall(to)}.`),
         studentsView(file.groupings, "students", "Students", `Total change in undergraduates within each group, ${fall(from)} to ${fall(to)}.`),
       ],
+      campusViews: [
+        collegesView(
+          campusBased.ten.groupings,
+          "colleges",
+          "Colleges",
+          `Share of campus-based colleges that shrank (left) or grew (right) by ${T}+ points, ${fall(from)} to ${fall(to)}.`
+        ),
+        studentsView(campusBased.ten.groupings, "students", "Students", `Total change in undergraduates within each campus-based group, ${fall(from)} to ${fall(to)}.`),
+      ],
     },
     {
       key: "five",
@@ -120,6 +136,20 @@ export default async function ShrinkingCollegesPage() {
       views: [
         collegesView(five.groupings, "colleges", "Colleges", `Share of colleges that shrank (left) or grew (right) by ${T}+ points, ${fall(five.from)} to ${fall(five.to)}. Isolates the pandemic drop and partial recovery.`),
         studentsView(five.groupings, "students", "Students", `Total change in undergraduates within each group, ${fall(five.from)} to ${fall(five.to)}.`),
+      ],
+      campusViews: [
+        collegesView(
+          campusBased.five.groupings,
+          "colleges",
+          "Colleges",
+          `Share of campus-based colleges that shrank (left) or grew (right) by ${T}+ points, ${fall(five.from)} to ${fall(five.to)}. Isolates the pandemic drop and partial recovery.`
+        ),
+        studentsView(
+          campusBased.five.groupings,
+          "students",
+          "Students",
+          `Total change in undergraduates within each campus-based group, ${fall(five.from)} to ${fall(five.to)}.`
+        ),
       ],
     },
   ];
@@ -194,7 +224,7 @@ export default async function ShrinkingCollegesPage() {
           isolate the pandemic.
         </>
       }
-      breakdowns={<ShrinkingBreakdowns windows={windows} />}
+      breakdowns={<ShrinkingBreakdowns windows={windows} campusCaption={campusCaption} />}
       takeaway={
         <>
           <p>
@@ -214,6 +244,13 @@ export default async function ShrinkingCollegesPage() {
               Growth went the other way: R1 universities&apos; median college grew {pct(Math.abs(vR1.medianChange))}, while for-profit colleges grew{" "}
               {pct(Math.abs(vForProfit.medianChange))} at the median but shrank {pct(Math.abs(vForProfit.totalChange))} in total — a few large closures against many
               small gains, the reason this page shows colleges and students separately.
+            </p>
+          )}
+          {vLargeAll?.values && vLargeCampusBased?.values && (
+            <p>
+              Some of that growth is online, not campus: among 10,000+ colleges, the campus-based cut ({vLargeCampusBased.n.toLocaleString("en-US")} of{" "}
+              {vLargeAll.n.toLocaleString("en-US")}) trims the total change from {pct(vLargeAll.values.totalChange)} to {pct(vLargeCampusBased.values.totalChange)}.
+              For-profit colleges drop out of the campus-based view entirely, by definition.
             </p>
           )}
           <p className="text-muted-foreground">These breakdowns show where undergraduate counts changed, not why; a college shrinking could mean fewer applicants, lower yield, or less retention.</p>
@@ -239,6 +276,10 @@ export default async function ShrinkingCollegesPage() {
         <>
           <b className="text-foreground">The companion chart</b> covers the {companion.n.toLocaleString("en-US")} colleges that shrank {T}%+ over the ten-year window
           (a sub-panel), median applicants and enrolled first-years reported each fall.
+        </>,
+        <>
+          <b className="text-foreground">&quot;Campus-based only.&quot;</b> Leaves out for-profits, colleges where more than half of undergraduates took every
+          course online at either end of the window, and campuses that merged or split; the headline figures above are all colleges.
         </>,
       ]}
       links={[

@@ -28,7 +28,7 @@ A student opens Plan and sees their colleges; a parent opens Plan and sees the f
 | `/plan` | signed-in student | Their plan, Colleges tab |
 | `/plan` | signed-in guardian | One child's plan (**changed 2026-10-11**: no more Everyone — see below), Colleges tab |
 | `/plan?for=[person]` | guardian | One child's plan; a legacy `?for=everyone` falls through to the default below |
-| `/plan?tab=scores` / `calendar` / `offers` | either | Opens a tab; tabs are links so back and forward work |
+| `/plan?tab=calendar` / `offers` | either | Opens a tab; tabs are links so back and forward work (`?tab=scores`, dropped 2026-10-12, opens the default) |
 | `/plan?setup=1` | the plan's own editor | The intake guide ([intake.md](intake.md)) in edit mode, prefilled, starting at Review — the header's Edit button |
 | `/plan` | signed out | The pitch and the numbers step ([below](#signed-out)) |
 | `/plan/print` | either | The calendar's printable list (moves from `/household/[person]/plan/print`) |
@@ -42,7 +42,42 @@ per-viewer convenience, nothing sensitive), else the child with the soonest open
 roster. A guardian with one child skips the switcher entirely (nothing to switch between). A student in two
 households (divorced parents each with an account) has one plan; both see it, as today.
 
+## The people line (owner, 2026-10-12)
+"What if we used just the initials of the student instead of their full name and got rid of the rest of the text.
+Put them all in one line. Then when you click it would expand… exposing the edit and some of the other basic
+details." The top of the plan is now one line under the site header (`components/planner/PlanPeople.tsx`), replacing
+the child switcher's pills, the big name heading and numbers line (`PlanHeaderCard`), "Your part" (`YourPartLine`),
+and the "Nothing due this year" card (`NothingDue`), all deleted as components:
+- One **initials circle** per child (`initialsOf`, lib/planner/plan-frame.ts: first and last word), 44px, in the
+  child's household color, in roster order. Every child on the roster shows, including one with no list yet.
+- The **selected child's circle expands in place** into a chip: name and "Class of 2028" on top; underneath, a small
+  **progress ring** and **one next step** ("Next: add clubs"); and **Edit** (the intake guide, `?setup=1`, editors
+  only; a pencil alone on phones, "Edit" from `sm`). No GPA or test score (owner, 2026-10-12: "Showing their scores
+  is a relic of older thinking. Highlight profile completeness or strength… a way for them to quickly know there's
+  more to do without overwhelming them"). The ring is a plain count of the student's own sections
+  (`lib/planner/profile-progress.ts`, not the estimate's completeness): high school, courses, grades (GPA plus class
+  standing), test or target (or "not testing"), clubs, sports, intended major, work and internships, other (awards and
+  more), and state; ten in all, and the next step is the first one missing in that order. Its label says "Profile: 6
+  of 10 sections in" to screen readers; on screen there's no number, and a full ring reads "Profile complete". The
+  text block is the next step's link (44px tall): the intake opened on that step (`?setup=1&step=N`, read by
+  `PlanIntake` through `intakeStepParam`), or the student's Numbers page for major and state, which the intake doesn't
+  ask. A viewer who can't edit sees the same ring and words with no link. An activity section counts as in with an
+  entry or a one-tap "None" on its intake step (owner, 2026-10-12; [intake.md](intake.md#activities-four-steps)),
+  never for having been seen. The other circles sit beside it. Tapping the selected circle
+  folds or unfolds the chip (a button with `aria-expanded` and the full name as its label; folded, it keeps a ring).
+- **Tapping another child's circle** opens their plan (a link, so back works) and expands their circle at once while
+  the page loads; the pick is remembered in the `plan_child` cookie as before.
+- A **student's own plan** shows the same line with just their chip.
+- It never wraps: the chip's text truncates, so four children and one chip fit at 390px (measured 2026-10-12).
+- Next up still shows when something dated is coming; with nothing dated, nothing shows in its place. On desktop the
+  tab pills sit at the right end of the line. A guardian sees the line above the intake guide too, to switch children.
+- The data and helpers behind the removed lines stay (`shortSummaryLine`, `seasonWords`, `yourPart`); the household
+  page still shows "Your part" in full.
+
 ## The page
+> The title, numbers line, Your part, and NothingDue described here were replaced on 2026-10-12 by "The people
+> line" above.
+
 **Rebuilt 2026-10-11** on the [intake guide](intake.md) design handoff. Above the tabs there is only the title and
 numbers line, Next up (or Your part for a parent, or NothingDue when nothing's due), and, when it applies, the
 signed-out import banner — the stuck-signal stack, "What your parents see", and the header card's courses button
@@ -52,11 +87,11 @@ the intake guide instead of a separate banner.
 ```
 Phone                                   Desktop (lg:)
 ┌─────────────────────────────┐         ┌───────────────────────────────┬──────────────────┐
-│ Your plan   GPA 3.82·SAT 1390✎│        │ Your plan            [Colleges][Scores•][Calendar]│ NEXT UP          │
+│ Your plan   GPA 3.82·SAT 1390✎│        │ Your plan            [Colleges][Calendar]       │ NEXT UP          │
 ├─────────────────────────────┤         │ Class of 2027 · applying this fall · GPA 3.82·SAT 1390 ✎│ Georgia & SC │
 │ NEXT UP · Georgia and SC  7d │         ├───────────────────────────────┤ ◆ due Thu, Oct 15 │
 ├─────────────────────────────┤         │ … the open tab …              ├──────────────────┤
-│[Colleges][Scores•][Calendar] │         │                                │ Coming up (8 wks) │
+│[Colleges][Calendar]          │         │                                │ Coming up (8 wks) │
 ├─────────────────────────────┤         │                                ├──────────────────┤
 │ … the open tab …             │         │                                │ (one notice)      │
 └─────────────────────────────┘         └───────────────────────────────┴──────────────────┘
@@ -81,9 +116,9 @@ Phone                                   Desktop (lg:)
   date ("Check Wake Forest's cost together by Nov 15"), and an "Open" link when the task has a URL (a `cost_check`
   task's college net price calculator). This is the one-line version; the full list across every child is still the
   household page's `YourPart` section (parents.md).
-- **Tabs**: Colleges ([list.md](list.md)), Scores ([scores.md](scores.md)), Calendar ([calendar.md](calendar.md)),
+- **Tabs**: Colleges ([list.md](list.md)), Calendar ([calendar.md](calendar.md)) (Scores, [scores.md](scores.md), removed 2026-10-12),
   and Offers once any college has a decision ([../offers.md](../offers.md), unchanged in substance). A segmented
-  pill, ink fill on the active tab, a **coral** dot (not lime) on Scores when a retake suggestion is live. Both the
+  pill, ink fill on the active tab (the coral retake dot went with the Scores tab). Both the
   student's and a guardian's default tab are Colleges now (**changed 2026-10-11**; a guardian's `/plan` no longer
   has a calendar-first family view to default to — see Routes).
 - **Layout**: two columns on desktop (`lg:`) — left, the header with the tabs beside it, then the open tab's body;
@@ -98,6 +133,7 @@ Phone                                   Desktop (lg:)
   still works so groups appear the moment a college is added.
 
 ## The child switcher (parents)
+> Replaced on 2026-10-12 by "The people line" above: initials circles, no summary text. Who is on it is unchanged.
 *Who is on it (fixed 2026-10-11, owner testing):* the children on the parent's household roster, the same people
 the Household page shows (`lib/households.ts` `householdChildren`). A student record the parent can still read only
 because they created it, but that is no longer in the household (left behind when the child joined with their own

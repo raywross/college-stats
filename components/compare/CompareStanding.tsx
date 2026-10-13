@@ -1,23 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ComparedWithTip } from "@/components/chances/ComparedWith";
 import { StandingBadge } from "@/components/chances/StandingBadge";
 import { InfoTip } from "@/components/ui/info-tip";
 import { SLOT_COLORS } from "@/lib/brand";
+import { comparedWith } from "@/lib/chances/compared-with";
 import { noteText } from "@/lib/chances/notes";
+import type { PoolSchool } from "@/lib/chances/pool-rate";
 import { myStandingInput } from "@/lib/chances/standing-store";
-import { rateKindText } from "@/lib/chances/what-went-in";
-import type { EstimateResult } from "@/lib/chances/types";
+import { compareShortLine } from "@/lib/chances/what-went-in";
+import type { EstimateResult, EstimateStudent } from "@/lib/chances/types";
+import type { AnyCited } from "@/lib/lineage";
 import { cn } from "@/lib/utils";
 
 /**
- * Compare's "Where you stand" row (specs/product/chances-and-fit.md "Display", specs/chances/base-rates.md "Where it
- * shows"): Quad's estimate for each compared college, with the rate it started from named under it ("in-state rate",
- * "guaranteed"). Only for a signed-in student with numbers; Compare's page is public and static, so the student's
+ * Compare's "Where you stand" row (specs/product/chances-and-fit.md "Display", specs/chances/pool-explainer.md
+ * "Where it shows"): Quad's estimate for each compared college, with the sentence's short form under it ("from
+ * Indiana: 71%", "everyone: 43%", "guaranteed") and the same "Who you're compared with" panel the stage-2 sentence
+ * opens elsewhere. Only for a signed-in student with numbers; Compare's page is public and static, so the student's
  * numbers and the estimates arrive after mount (like the "You" score row) and the block is absent until then.
  */
-export function CompareStanding({ colleges, className }: { colleges: { id: string; name: string }[]; className?: string }) {
+export function CompareStanding({
+  colleges,
+  poolSchools,
+  cites,
+  className,
+}: {
+  colleges: { id: string; name: string }[];
+  /** The college's own published rates, for the panel (pool-explainer.md). */
+  poolSchools: Record<string, PoolSchool>;
+  /** Citations for every field the panel can cite, resolved on the server (lib/chances/fact-cites.ts). */
+  cites: Record<string, Record<string, AnyCited>>;
+  className?: string;
+}) {
   const [results, setResults] = useState<Record<string, EstimateResult> | null>(null);
+  const [student, setStudent] = useState<EstimateStudent | null>(null);
   const idKey = colleges.map((c) => c.id).join(",");
 
   useEffect(() => {
@@ -32,7 +50,10 @@ export function CompareStanding({ colleges, className }: { colleges: { id: strin
       });
       if (!res.ok || cancelled) return;
       const body = (await res.json()) as { results?: Record<string, EstimateResult> };
-      if (!cancelled) setResults(body.results ?? null);
+      if (!cancelled) {
+        setResults(body.results ?? null);
+        setStudent(mine.student);
+      }
     })().catch(() => {});
     return () => {
       cancelled = true;
@@ -49,7 +70,9 @@ export function CompareStanding({ colleges, className }: { colleges: { id: strin
       <ul className="space-y-3">
         {colleges.map((c, i) => {
           const r = results[c.id];
-          const rate = r ? rateKindText(r) : null;
+          const short = r ? compareShortLine(r) : null;
+          const poolSchool = poolSchools[c.id];
+          const compared = r && student && poolSchool ? comparedWith({ state: student.state, classRankPercentile: student.classRankPercentile, gpa: student.gpa, majors: student.majors, round: student.round }, poolSchool) : null;
           return (
             <li key={c.id} className="grid grid-cols-[4.5rem_1fr] items-start gap-3 sm:grid-cols-[6rem_1fr]">
               <span className="flex min-w-0 items-center gap-1.5 text-xs font-semibold">
@@ -58,7 +81,12 @@ export function CompareStanding({ colleges, className }: { colleges: { id: strin
               </span>
               <span className="flex min-w-0 flex-col items-start gap-0.5">
                 {r?.group ? <StandingBadge result={r} /> : <span className="text-sm text-muted-foreground">{noteText({ key: "estimate.compare_none", values: {} })}</span>}
-                {r?.group && rate && <span className="text-xs text-muted-foreground">{rate}</span>}
+                {r?.group && short && (
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    {short}
+                    {compared && <ComparedWithTip data={compared} cite={(p) => cites[c.id]?.[p]} />}
+                  </span>
+                )}
               </span>
             </li>
           );

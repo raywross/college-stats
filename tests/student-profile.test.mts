@@ -14,10 +14,18 @@ import {
   fitsScores,
   gpaAsEntered,
   gpaDisplay,
+  isClassStanding,
+  rankExpectationHint,
+  rankExpectationMismatch,
+  sanitizeActivities,
+  sanitizeAwards,
+  sanitizeClassStanding,
   sanitizeProfile,
   unweightedGpa4,
+  weightedGpaHint,
   type StudentProfileData,
 } from "../lib/student-profile.ts";
+import { ACTIVITIES_MAX, AWARDS_MAX, CLASS_STANDING_PERCENTILE } from "../lib/chances/levels.ts";
 // lib/student-profile.ts: only type-only internal imports plus lib/score-bands.ts and lib/majors.ts, both of which
 // are themselves type-only internally, so this resolves under plain Node ESM (no bundler) just like those two.
 
@@ -245,4 +253,165 @@ test("fitsPreferences: max average cost compares against avg_paid_all", () => {
   const profile = { ...emptyProfile(), preferences: { ...emptyProfile().preferences, maxAverageCost: 20000 } };
   assert.equal(fitsPreferences(cheap, profile), "in");
   assert.equal(fitsPreferences(pricey, profile), "out");
+});
+
+/* ------------------------------------------------------------------ */
+/* Admission chances, next: class standing, activities, awards,        */
+/* first generation (specs/chances/depth.md, inputs-beyond-academics.md) */
+/* ------------------------------------------------------------------ */
+
+test("sanitizeClassStanding: a pick sets the percentile from the table; a matching percentile sets the pick back; anything else leaves classStanding null", () => {
+  assert.deepEqual(sanitizeClassStanding("top10", null), { classStanding: "top10", classRankPercentile: 10 });
+  // The pick wins even when a different percentile is also sent.
+  assert.deepEqual(sanitizeClassStanding("top5", 50), { classStanding: "top5", classRankPercentile: 5 });
+  assert.deepEqual(sanitizeClassStanding(null, 25), { classStanding: "top25", classRankPercentile: 25 });
+  assert.deepEqual(sanitizeClassStanding(null, 40), { classStanding: null, classRankPercentile: 40 });
+  assert.deepEqual(sanitizeClassStanding(null, null), { classStanding: null, classRankPercentile: null });
+  // A stored "no_rank" (the removed "my school doesn't rank" pick, owner 2026-10-12) reads as unanswered: it isn't
+  // one of the accepted picks, and there's no percentile on file either.
+  assert.deepEqual(sanitizeClassStanding("no_rank", null), { classStanding: null, classRankPercentile: null });
+  assert.deepEqual(sanitizeClassStanding("not-a-pick", null), { classStanding: null, classRankPercentile: null });
+  // Every CLASS_STANDING_PERCENTILE entry except "no_rank" (no longer an accepted pick) round-trips through the pick.
+  for (const [pick, pct] of Object.entries(CLASS_STANDING_PERCENTILE)) {
+    if (pick === "no_rank") continue;
+    assert.equal(sanitizeClassStanding(pick, null).classRankPercentile, pct);
+    if (pct !== null) assert.equal(sanitizeClassStanding(null, pct).classStanding, pick);
+  }
+});
+
+test("isClassStanding: no_rank is no longer an accepted pick (owner, 2026-10-12)", () => {
+  assert.equal(isClassStanding("no_rank"), false);
+  assert.equal(isClassStanding("top5"), true);
+});
+
+test("sanitizeActivities: caps at ACTIVITIES_MAX, drops unnamed/invalid rows, keeps names to 60 chars, years to 9–12, hours to 1–60, a role only for a checked year", () => {
+  const many = Array.from({ length: ACTIVITIES_MAX + 2 }, (_, i) => ({ id: `a${i}`, name: `Club ${i}`, kind: "club", years: [10], roles: {}, hoursPerWeek: 2, recognition: null, relatedToMajor: false }));
+  assert.equal(sanitizeActivities(many).length, ACTIVITIES_MAX);
+  assert.equal(sanitizeActivities([{ name: "" }]).length, 0, "an unnamed row is dropped");
+  assert.equal(sanitizeActivities("nope" as unknown).length, 0);
+  const long = sanitizeActivities([{ name: "x".repeat(90), kind: "club", years: [], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false }]);
+  assert.equal(long.length, 0, "a name over 60 characters is dropped, not truncated");
+  const [a] = sanitizeActivities([{ name: "Robotics", kind: "club", years: [9, 13, 10], roles: { "10": "leader" }, hoursPerWeek: 90, recognition: 9, relatedToMajor: true }]);
+  assert.deepEqual(a.years, [9, 10], "13 is outside 9–12");
+  assert.equal(a.roles[10], "leader");
+  assert.equal(a.roles[9], "member", "a checked year with no role sent defaults to member");
+  assert.equal(a.hoursPerWeek, null, "90 is outside 1–60");
+  assert.equal(a.recognition, null, "9 isn't one of the four tiers");
+  assert.equal(a.relatedToMajor, true);
+  // Duplicate ids are made unique rather than dropped.
+  const [x, y] = sanitizeActivities([
+    { id: "dup", name: "A", kind: "club", years: [], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false },
+    { id: "dup", name: "B", kind: "club", years: [], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false },
+  ]);
+  assert.notEqual(x.id, y.id);
+});
+
+test("ACTIVITIES_MAX holds sports, clubs, work, and other together: at least the Common App's 10, at most 25", () => {
+  assert.ok(ACTIVITIES_MAX >= 10 && ACTIVITIES_MAX <= 25);
+});
+
+test("sanitizeActivities: a catalog key sets kind and family from the catalog; titles are kept per checked year when the kind offers them and set the role tier; old rows read back unchanged", () => {
+  const [soccer] = sanitizeActivities([
+    { id: "s", name: "Soccer", kind: "club", catalogKey: "soccer", family: "math", years: [9, 11, 12], roles: { "9": "leader" }, titles: { "9": "JV", "11": "Varsity", "12": "Captain", "10": "Captain" }, hoursPerWeek: 10, recognition: 2, relatedToMajor: false },
+  ]);
+  assert.equal(soccer.kind, "sport", "the catalog's kind wins over the client's");
+  assert.equal(soccer.family, "athletics", "the catalog's family wins over the client's");
+  assert.equal(soccer.catalogKey, "soccer");
+  assert.deepEqual(soccer.titles, { 9: "JV", 11: "Varsity", 12: "Captain" }, "an unchecked year's title is dropped");
+  assert.deepEqual(soccer.roles, { 9: "member", 11: "member", 12: "leader" }, "the role tier follows the title, not the client's role");
+  const [typed] = sanitizeActivities([
+    { id: "t", name: "Bee club", kind: "club", catalogKey: "no_such_club", family: "science", years: [10], roles: { "10": "officer" }, titles: { "10": "Captain" }, hoursPerWeek: null, recognition: null, relatedToMajor: false },
+  ]);
+  assert.equal(typed.catalogKey, undefined, "an unknown catalog key is dropped, the row stays as typed");
+  assert.equal(typed.family, "science");
+  assert.equal(typed.titles, undefined, "Captain isn't a club title");
+  assert.equal(typed.roles[10], "officer", "without a valid title, the sent role stands");
+  const [bad] = sanitizeActivities([{ id: "b", name: "X", kind: "club", family: "astrology", years: [], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false }]);
+  assert.equal(bad.family, undefined);
+  const old = { id: "o", name: "Robotics", kind: "club", years: [10], roles: { 10: "officer" }, hoursPerWeek: 4, recognition: null, relatedToMajor: false };
+  assert.deepEqual(sanitizeActivities([old]), [old], "a row saved before the catalogs reads back exactly");
+});
+
+test("sanitizeAwards: caps at AWARDS_MAX, a catalog key takes its name and tier from the catalog (never the client's), an unknown key drops the row, 'Something else' needs a name and a tier", () => {
+  const many = Array.from({ length: 8 }, (_, i) => ({ id: `w${i}`, key: null, name: `Award ${i}`, tier: 4, year: null }));
+  assert.equal(sanitizeAwards(many).length, AWARDS_MAX);
+  const [fromCatalog] = sanitizeAwards([{ key: "honor_roll", name: "Hacked name", tier: 1, year: 11 }]);
+  assert.equal(fromCatalog.name, "Honor roll", "the catalog's name wins over whatever the client sent");
+  assert.equal(fromCatalog.tier, 4, "the catalog's tier wins too");
+  assert.equal(sanitizeAwards([{ key: "not_a_real_award" }]).length, 0, "an unknown key drops the row");
+  assert.equal(sanitizeAwards([{ key: null, name: "", tier: 2 }]).length, 0, "'Something else' needs a name");
+  assert.equal(sanitizeAwards([{ key: null, name: "Science fair", tier: 9 }]).length, 0, "and a real tier");
+  const [other] = sanitizeAwards([{ key: null, name: "Science fair", tier: 2, year: 10 }]);
+  assert.deepEqual(other, { id: "award-1", key: null, name: "Science fair", tier: 2, year: 10 });
+});
+
+test("A profile saved before class standing, activities, awards, or first generation existed reads as the documented defaults", () => {
+  const old = sanitizeProfile({ academics: { gpa: 3.5 } });
+  assert.equal(old.academics.classStanding, null);
+  assert.equal(old.academics.classRankPercentile, null);
+  assert.deepEqual(old.academics.activities, []);
+  assert.deepEqual(old.academics.awards, []);
+  assert.equal(old.academics.firstGeneration, null);
+  assert.equal(emptyProfile().academics.firstGeneration, null);
+});
+
+test("firstGeneration: yes/no/not set, never coerced to false", () => {
+  assert.equal(sanitizeProfile({ academics: { firstGeneration: true } }).academics.firstGeneration, true);
+  assert.equal(sanitizeProfile({ academics: { firstGeneration: false } }).academics.firstGeneration, false);
+  assert.equal(sanitizeProfile({ academics: {} }).academics.firstGeneration, null);
+  assert.equal(sanitizeProfile({ academics: { firstGeneration: "yes" } }).academics.firstGeneration, true);
+});
+
+test("sanitizeProfile: classStanding and activities/awards round-trip through the whole profile", () => {
+  const p = sanitizeProfile({
+    academics: {
+      classStanding: "top10",
+      activities: [{ id: "a", name: "Soccer", kind: "sport", years: [11, 12], roles: { "11": "member", "12": "leader" }, hoursPerWeek: 10, recognition: 3, relatedToMajor: false }],
+      awards: [{ key: "ap_scholar", year: 12 }],
+    },
+  });
+  assert.equal(p.academics.classStanding, "top10");
+  assert.equal(p.academics.classRankPercentile, 10);
+  assert.equal(p.academics.activities.length, 1);
+  assert.equal(p.academics.awards[0]?.name, "AP Scholar");
+});
+
+/* ------------------------------------------------------------------ */
+/* Grades inputs, U11: weightedGpa, rankExpectation (inputs-beyond-     */
+/* academics.md, method/standing.md "Revision 1")                      */
+/* ------------------------------------------------------------------ */
+
+test("rankExpectation: sanitized to a known value or null; a profile saved before it existed reads as null", () => {
+  assert.equal(sanitizeProfile({ academics: { rankExpectation: "valedictorian" } }).academics.rankExpectation, "valedictorian");
+  assert.equal(sanitizeProfile({ academics: { rankExpectation: "salutatorian" } }).academics.rankExpectation, "salutatorian");
+  assert.equal(sanitizeProfile({ academics: { rankExpectation: "not-a-pick" } }).academics.rankExpectation, null);
+  assert.equal(sanitizeProfile({ academics: {} }).academics.rankExpectation, null);
+  assert.equal(emptyProfile().academics.rankExpectation, null);
+});
+
+test("rankExpectationMismatch: valedictorian implies top1, salutatorian top1 or top5; either side unset is never a mismatch", () => {
+  assert.equal(rankExpectationMismatch("top1", "valedictorian"), false);
+  assert.equal(rankExpectationMismatch("top5", "valedictorian"), true, "valedictorian expects top 1%, not top 5%");
+  assert.equal(rankExpectationMismatch("top25", "valedictorian"), true);
+  assert.equal(rankExpectationMismatch("top1", "salutatorian"), false);
+  assert.equal(rankExpectationMismatch("top5", "salutatorian"), false);
+  assert.equal(rankExpectationMismatch("top10", "salutatorian"), true);
+  assert.equal(rankExpectationMismatch(null, "valedictorian"), false, "nothing to reconcile without a class-standing pick");
+  assert.equal(rankExpectationMismatch("top25", null), false, "nothing to reconcile without an expectation");
+});
+
+test("rankExpectationHint: names which pick to fix, only when they disagree", () => {
+  assert.equal(rankExpectationHint("top25", "valedictorian"), "Valedictorian is usually top 1%. Update your class standing to match, or change this if it's not right.");
+  assert.equal(rankExpectationHint("top10", "salutatorian"), "Salutatorian is usually top 5%. Update your class standing to match, or change this if it's not right.");
+  assert.equal(rankExpectationHint("top1", "valedictorian"), null);
+  assert.equal(rankExpectationHint(null, "valedictorian"), null);
+});
+
+test("weightedGpaHint: a weighted GPA below the unweighted one asks the student to check, only on a 4- or 5-point scale", () => {
+  assert.equal(weightedGpaHint(3.8, "4.0", 3.6), "A weighted GPA is usually higher than unweighted. Check these two numbers.");
+  assert.equal(weightedGpaHint(3.8, "4.0", 4.2), null, "higher than unweighted is the normal case");
+  assert.equal(weightedGpaHint(3.8, "4.0", 3.8), null, "equal isn't below");
+  assert.equal(weightedGpaHint(92, "100", 85), null, "the 100-point scale isn't compared (different families)");
+  assert.equal(weightedGpaHint(null, "4.0", 3.6), null, "no unweighted GPA yet");
+  assert.equal(weightedGpaHint(3.8, "4.0", null), null, "no weighted GPA yet");
 });

@@ -19,8 +19,9 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // Metro area, deferred from wave 2, is under "later". Campus life (religious, Greek, and LGBTQ+ life, group
 // "campus-life") was built 2026-10-03/04 (#72, #73, #75, #76); its remaining work is under "later":
 // campus-pilot-accuracy and campus-sources-later. National trends (the /trends hub, Studies 1–6, movers, conferences,
-// states) was built 2026-10-04 on feature/national-trends; Study 7 (where the students went) and the online-share
-// field it needs were specified 2026-10-05 and sit under "national-trends".
+// states) was built 2026-10-04 on feature/national-trends; Study 7 (where the students went), the online-share field
+// it needs, the state flows addition, and Study 3's campus-based toggle were built 2026-10-12 on
+// feature/national-trends-2, so the "national-trends" group is gone until a new study is specified.
 // Accounts and households (sign-in, households, student profile, saved lists, following colleges; group "accounts")
 // was built 2026-10-05 on feature/accounts; Google sign-in and email sending wait for the new domain (specs/backlog.md).
 // The group came back on 2026-10-06 with the owner's review of that build: the household hub (people by name, one
@@ -34,14 +35,13 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // Admission chances (specs/chances/, seven parts) was built 2026-10-11 on feature/chances, so its group was gone; it
 // came back the same day as group "chances" with the owner's review of the build: five levels instead of three, a
 // selectivity tier per college, "applicants like you" wording, depth (course tracks and activities), and the inputs
-// beyond the numbers (class standing, awards, work, legacy, recruiting, interest); parts 8–12 in specs/chances/.
+// beyond the numbers (class standing, awards, work, legacy, recruiting, interest); parts 8–12 in specs/chances/,
+// built 2026-10-12 on feature/chances (nine units on sub-branches), so the group is gone again.
 // The compare redesign, the only spec in "Design and usability" (group "design"), was built 2026-10-05 (#84), so that
 // group is gone until a new design spec.
 export type RoadmapGroupKey =
-  | "national-trends"
   | "college-reported"
   | "campus-life"
-  | "chances"
   | "planning"
   | "high-school"
   | "business"
@@ -50,18 +50,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "national-trends",
-    title: "National trends",
-    description:
-      "Questions about the whole landscape of colleges, not one college: where students went over ten years, and the data that keeps online colleges from standing in for campuses.",
-  },
-  {
-    key: "chances",
-    title: "Admission chances, next",
-    description:
-      "Quad's estimate on a five-step scale (High reach to Safe), a selectivity tier for every college with Elite at the top, plainer words for who you're compared with, and what you did outside the numbers: courses in sequence, activities kept up for years, awards, work, legacy, and recruiting.",
-  },
   {
     key: "planning",
     title: "Planning tools",
@@ -129,84 +117,6 @@ export interface RoadmapSpec {
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
   {
-    slug: "online-share",
-    file: "specs/data-expansion/online-share.md",
-    group: "national-trends",
-    summary:
-      "How much of each college's undergraduate enrollment is entirely online, from the federal distance-education counts: a line on the profile, an Explore filter, and the stored rule that keeps online colleges out of growth lists and campus-based trends.",
-    complexity: 1,
-    complexityNote: "One more IPEDS file the sync reads, two fields and one history series, and a filter; the online-first rule already exists as a reviewed list.",
-    status: "planned",
-  },
-  {
-    slug: "where-students-go",
-    file: "specs/trends/where-students-go.md",
-    group: "national-trends",
-    summary:
-      "Where undergraduates went over ten years, as shares of all students then and now: toward the biggest campuses and research universities, toward publics and the Sun Belt, and not toward cheaper colleges; and whether the pandemic sped that up or is reversing it.",
-    complexity: 2,
-    complexityNote:
-      "One study on the existing trends machinery, but it classifies colleges as they were at the start of the window, adds a campus-based panel, a state map by share change, and a chart of price change against enrollment change.",
-    status: "planned",
-  },
-  {
-    slug: "selectivity-index",
-    file: "specs/chances/selectivity-index.md",
-    group: "chances",
-    summary:
-      "One word for how hard each college is to get into, from Elite to Open, read from what it publishes: its admit rate for your state, its admitted students' scores and grades, yield, how much of the class it fills early, its ten-year direction, and how much it says it reads; shown on the profile with its inputs, and used to cap the estimate.",
-    complexity: 2,
-    complexityNote:
-      "A sync step over fields the dataset already holds, three derived fields with lineage, a chip with an inputs panel, an Explore facet, and a Compare row; the Elite count and hysteresis need a guard.",
-    status: "planned",
-  },
-  {
-    slug: "pool-explainer",
-    file: "specs/chances/pool-explainer.md",
-    group: "chances",
-    summary:
-      "\"Applicants like you — from Indiana — were admitted at 71%\": the estimate says who you're compared with and what would change it, with a panel listing every rate the college publishes for your situation; the word \"pool\" leaves the site.",
-    complexity: 1,
-    complexityNote: "New sentences in the note catalog and one panel built from rates the site already shows; no new data.",
-    status: "planned",
-  },
-  {
-    slug: "levels",
-    file: "specs/chances/levels.md",
-    group: "chances",
-    summary:
-      "Five levels instead of three: High reach, Reach, Target, Likely, Safe. A top student sees an Elite college as a Reach and a C student as a High reach; the list orders itself closest first; a High-reach Dream no longer starts in early decision; the balance line asks for two Likely or Safe colleges.",
-    complexity: 3,
-    complexityNote:
-      "The method's third version (a measured distance, multipliers, tier caps), a migration touching three tables' check constraints, five sections and two chip colors in the planner, the ED guard, and five-level season measurements with a calibration curve.",
-    status: "planned",
-    after: ["selectivity-index", "pool-explainer"],
-  },
-  {
-    slug: "depth",
-    file: "specs/chances/depth.md",
-    group: "chances",
-    summary:
-      "Years and progression in a few things, not a list of many: your courses read as tracks by subject against your intended major, and an activities list read by years, role, and recognition in your top two; each with a suggestion, and counted only at colleges that say they read it.",
-    complexity: 2,
-    complexityNote:
-      "A new activities form and profile field, two pure readings with sentences, a multiplier in the method, and ablation switches; the course side reads data already collected.",
-    status: "planned",
-    after: ["levels"],
-  },
-  {
-    slug: "inputs-beyond-academics",
-    file: "specs/chances/inputs-beyond-academics.md",
-    group: "chances",
-    summary:
-      "A few more facts a student can answer in a minute, each used only where the college says it counts: where you stand in your class, awards, work hours, a legacy toggle and a recruited-athlete pick per college, interest you've shown; and the rewritten commitment that goes with them.",
-    complexity: 2,
-    complexityNote:
-      "Two profile fields, two list-item columns, two reviewed reference files (awards, state legacy bans), the row's new line in the planner, and the multipliers and floors in the method.",
-    status: "planned",
-    after: ["levels"],
-  },
-  {
     slug: "chances-and-fit",
     file: "specs/product/chances-and-fit.md",
     group: "planning",
@@ -256,6 +166,17 @@ export const ROADMAP: RoadmapSpec[] = [
       "Past applicants from your high school to each college, scrubbed of names and shown over the national ranges with you on the chart.",
     complexity: 3,
     complexityNote: "A counselor upload with client-side scrubbing, small-count thresholds, name matching, and a new chart.",
+    status: "planned",
+  },
+  {
+    slug: "launch-database",
+    file: "specs/launch-database.md",
+    group: "business",
+    summary:
+      "Just before launch, a production database in the same region as the site's servers (today's only database is in Canada and the servers are in Virginia), with the schema, accounts to keep, and settings moved across.",
+    complexity: 2,
+    complexityNote:
+      "A new Supabase project, every migration in one tested script, an account dump and restore, auth settings, and swapping the keys in Vercel; mostly careful steps, little new code.",
     status: "planned",
   },
   {

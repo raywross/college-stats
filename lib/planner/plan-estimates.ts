@@ -7,46 +7,30 @@ import "server-only";
  */
 import { estimateContext, estimateMany } from "@/lib/chances/estimate";
 import { gradeNow } from "@/lib/chances/courses";
-import { estimateInputFromProfile } from "@/lib/chances/snapshot";
-import { citedPaths, isEstimateFactPath } from "@/lib/chances/what-went-in";
+import { estimateInputFromProfile } from "@/lib/chances/estimate-input";
 import type { EstimateResult } from "@/lib/chances/types";
-import { getData } from "@/lib/data";
-import type { FieldPath } from "@/lib/fields";
 import type { StudentProfileData } from "@/lib/student-profile";
-import type { PlanSchool } from "./types";
+import { hooksFromPlan, type HooksItem } from "./hooks";
+import type { PlanVisit } from "./types";
+
+// The hooks themselves are built by the pure lib/planner/hooks.ts (legacy, recruited, and interest from visits,
+// information requests, and follows); re-exported here for callers that already import them from this module.
+export { hooksFromPlan, type HooksItem } from "./hooks";
 
 export async function planEstimates(
   profile: StudentProfileData | null,
-  unitIds: readonly string[],
-  opts: { gradYear: number | null; today: string },
+  items: readonly HooksItem[],
+  opts: { gradYear: number | null; today: string; visits?: readonly Pick<PlanVisit, "item_id">[] },
 ): Promise<Record<string, EstimateResult>> {
+  const unitIds = items.map((i) => i.unit_id);
   if (unitIds.length === 0) return {};
   try {
     const input = estimateInputFromProfile(profile, "", null).student;
     const ctx = await estimateContext(input, { coreAtTopLevel: profile?.academics.coreAtTopLevel ?? null, grade: gradeNow(opts.gradYear, opts.today) });
-    return estimateMany(input, unitIds, ctx);
+    const hooks = hooksFromPlan(items, opts.visits ?? []);
+    return estimateMany(input, unitIds, ctx, hooks);
   } catch (err) {
     console.error(`planner: estimates failed: ${err instanceof Error ? err.message : String(err)}`);
     return {};
   }
-}
-
-/**
- * The plan's colleges with the citations their estimates name added to `cites`, so the row drawer's "What went into
- * this estimate" can show a source beside each fact (the plan page resolves them here because the browser has no
- * dataset). Only the fields an estimate cites, only where the estimate cites them; a college without an estimate is
- * unchanged.
- */
-export async function withFactCites(schools: Record<string, PlanSchool>, estimates: Record<string, EstimateResult>): Promise<Record<string, PlanSchool>> {
-  const { getSchoolById, citeField } = await getData();
-  const out = { ...schools };
-  for (const [id, est] of Object.entries(estimates)) {
-    const planSchool = schools[id];
-    const school = getSchoolById(id);
-    if (!planSchool || !school) continue;
-    const cites = { ...planSchool.cites };
-    for (const path of citedPaths(est)) if (isEstimateFactPath(path) && !(path in cites)) cites[path] = citeField(path as FieldPath, school);
-    out[id] = { ...planSchool, cites };
-  }
-  return out;
 }

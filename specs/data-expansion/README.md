@@ -71,7 +71,7 @@ because template workbooks and fillable PDFs read for free.
 ### Wave 5: one more NCES file, for the trends studies
 | Spec | Adds | Source |
 |---|---|---|
-| [online-share.md](online-share.md) | **Planned** 2026-10-05. Share of undergraduates studying entirely online, by fall since 2012; the online-first rule as a stored field (the movers' growth lists, Study 3's campus-based toggle, Study 7's panel); a profile line and an Explore filter | IPEDS EF part A, distance education (`EF{Y}A_DIST`) |
+| [online-share.md](online-share.md) | **Built** 2026-10-12 (specified 2026-10-05). Share of undergraduates studying entirely online, by fall since 2012; the online-first rule as a stored field (the movers' growth lists, Study 3's campus-based toggle, Study 7's panel); a profile line and an Explore filter | IPEDS EF part A, distance education (`EF{Y}A_DIST`) |
 
 ### Wave 6: a non-federal source, once permitted
 | Spec | Adds | Source |

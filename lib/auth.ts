@@ -10,6 +10,8 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createServerSupabase, supabaseAuthEnv } from "@/lib/supabase-server";
 import { PAUSED_LOGIN_PATH } from "@/lib/admin/constants";
+import { viewerBundle } from "@/lib/bundles";
+import { requestMemo } from "@/lib/request-memo";
 import {
   loginHref,
   resolveStudentAccess,
@@ -96,28 +98,40 @@ function isMissingSuspension(error: { code?: string; message?: string }): boolea
   return error.code === "42703" || /suspended_at/.test(error.message ?? "");
 }
 
-/** The profile row as read, with the pause (null when the admin migration isn't applied: nobody can be paused). */
-const readAccount = cache(async (): Promise<{ account: Account; pausedAt: string | null } | null> => {
-  const user = await getUser();
-  if (!user) return null;
-  const supabase = await createServerSupabase();
-  const byId = (columns: string) => supabase.from("profiles").select(columns).eq("id", user.id).maybeSingle();
-  let { data, error } = await byId(`${PROFILE_COLUMNS}, suspended_at`);
-  // Before 20261012200000_admin.sql is applied the column doesn't exist; read without it.
-  if (error && isMissingSuspension(error)) ({ data, error } = await byId(PROFILE_COLUMNS));
-  if (error) {
-    if (isMissingTable(error)) throw new AccountsSetupError(error.message);
-    throw new Error(`Reading your profile failed: ${error.message}`);
-  }
-  let row = data as (Profile & { suspended_at?: string | null }) | null;
-  if (!row) {
-    const inserted = await supabase.from("profiles").insert({ id: user.id }).select(PROFILE_COLUMNS).single();
-    if (inserted.error) throw new Error(`Creating your profile failed: ${inserted.error.message}`);
-    row = inserted.data as Profile;
-  }
-  const { suspended_at: pausedAt = null, ...profile } = row;
-  return { account: { user: { id: user.id, email: user.email }, profile }, pausedAt };
-});
+/**
+ * The profile row as read, with the pause (null when the admin migration isn't applied: nobody can be paused). From
+ * the viewer bundle when it's installed (lib/bundles.ts; 20261013100000_viewer_bundle_pause.sql adds `suspended_at`
+ * to its profile), else from the table.
+ */
+const readAccount = cache(
+  async (): Promise<{ account: Account; pausedAt: string | null } | null> =>
+    requestMemo("account", async () => {
+      const user = await getUser();
+      if (!user) return null;
+      const bundled = ((await viewerBundle())?.profile ?? null) as (Profile & { suspended_at?: string | null }) | null;
+      if (bundled) {
+        const { suspended_at: pausedAt = null, ...profile } = bundled;
+        return { account: { user: { id: user.id, email: user.email }, profile }, pausedAt };
+      }
+      const supabase = await createServerSupabase();
+      const byId = (columns: string) => supabase.from("profiles").select(columns).eq("id", user.id).maybeSingle();
+      let { data, error } = await byId(`${PROFILE_COLUMNS}, suspended_at`);
+      // Before 20261012200000_admin.sql is applied the column doesn't exist; read without it.
+      if (error && isMissingSuspension(error)) ({ data, error } = await byId(PROFILE_COLUMNS));
+      if (error) {
+        if (isMissingTable(error)) throw new AccountsSetupError(error.message);
+        throw new Error(`Reading your profile failed: ${error.message}`);
+      }
+      let row = data as (Profile & { suspended_at?: string | null }) | null;
+      if (!row) {
+        const inserted = await supabase.from("profiles").insert({ id: user.id }).select(PROFILE_COLUMNS).single();
+        if (inserted.error) throw new Error(`Creating your profile failed: ${inserted.error.message}`);
+        row = inserted.data as Profile;
+      }
+      const { suspended_at: pausedAt = null, ...profile } = row;
+      return { account: { user: { id: user.id, email: user.email }, profile }, pausedAt };
+    }),
+);
 
 /**
  * The signed-in user and their profile row. A user created before the migration (or whose sign-up trigger didn't
@@ -142,46 +156,69 @@ export const accountPaused = cache(async (): Promise<boolean> => {
 
 /**
  * The signed-in user's own student record. Created on first use for a user whose role hint is "student" (or unset:
- * most people signing up are students); null for guardians and counselors, and when signed out.
+ * most people signing up are students); null for guardians and counselors, and when signed out. The record comes
+ * from the viewer bundle when it's installed; otherwise it's read in parallel with the account (U20 "real speed":
+ * one round trip instead of two in a row). The role hint is needed only when there is no record yet.
  */
-export const currentStudent = cache(async (): Promise<StudentRecord | null> => {
-  const account = await getAccount();
-  if (!account) return null;
-  const supabase = await createServerSupabase();
-  const { data, error } = await supabase
-    .from("students")
-    .select(STUDENT_COLUMNS)
-    .eq("user_id", account.user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
-  if (error) throw new Error(`Reading your student record failed: ${error.message}`);
-  if (data) return data as StudentRecord;
-  if (!wantsOwnStudent(account.profile.role_hint)) return null;
-  const created = await supabase
-    .from("students")
-    .insert({ user_id: account.user.id, display_name: account.profile.display_name })
-    .select(STUDENT_COLUMNS)
-    .single();
-  if (created.error) {
-    // Two requests racing to create it: the unique user_id lost one insert; read the winner.
-    const again = await supabase.from("students").select(STUDENT_COLUMNS).eq("user_id", account.user.id).maybeSingle();
-    if (again.data) return again.data as StudentRecord;
-    throw new Error(`Creating your student record failed: ${created.error.message}`);
-  }
-  return created.data as StudentRecord;
-});
+export const currentStudent = cache(
+  async (): Promise<StudentRecord | null> =>
+    requestMemo("current_student", async () => {
+      const user = await getUser();
+      if (!user) return null;
+      const supabase = await createServerSupabase();
+      const bundle = await viewerBundle();
+      const [account, own] = await Promise.all([
+        getAccount(),
+        bundle
+          ? Promise.resolve({ data: bundle.students.find((s) => s.user_id === user.id && !s.deleted_at) ?? null, error: null })
+          : supabase.from("students").select(STUDENT_COLUMNS).eq("user_id", user.id).is("deleted_at", null).maybeSingle(),
+      ]);
+      if (!account) return null;
+      const { data, error } = own;
+      if (error) throw new Error(`Reading your student record failed: ${error.message}`);
+      if (data) return data as StudentRecord;
+      if (!wantsOwnStudent(account.profile.role_hint)) return null;
+      const created = await supabase
+        .from("students")
+        .insert({ user_id: account.user.id, display_name: account.profile.display_name })
+        .select(STUDENT_COLUMNS)
+        .single();
+      if (created.error) {
+        // Two requests racing to create it: the unique user_id lost one insert; read the winner.
+        const again = await supabase.from("students").select(STUDENT_COLUMNS).eq("user_id", account.user.id).maybeSingle();
+        if (again.data) return again.data as StudentRecord;
+        throw new Error(`Creating your student record failed: ${created.error.message}`);
+      }
+      return created.data as StudentRecord;
+    }),
+);
 
-/** Every student the signed-in user can see: their own first, then those they reach as a guardian. */
-export const studentsICanSee = cache(async (): Promise<StudentAccess[]> => {
-  const account = await getAccount();
-  if (!account) return [];
-  await currentStudent();
-  const supabase = await createServerSupabase();
-  const [students, members] = await Promise.all([
-    supabase.from("students").select(STUDENT_COLUMNS).is("deleted_at", null),
-    supabase.from("household_members").select("id, household_id, user_id, student_id, role, status, invited_email, can_edit, created, accepted_at"),
-  ]);
-  if (students.error) throw new Error(`Reading students failed: ${students.error.message}`);
-  if (members.error) throw new Error(`Reading households failed: ${members.error.message}`);
-  return resolveStudentAccess(account.user.id, students.data as StudentRecord[], members.data as HouseholdMember[]);
-});
+const MEMBER_COLUMNS = "id, household_id, user_id, student_id, role, status, invited_email, can_edit, created, accepted_at";
+
+/**
+ * Every student the signed-in user can see: their own first, then those they reach as a guardian. From the viewer
+ * bundle when it's installed (one round trip for everything); otherwise the account, the user's own record (created
+ * on first use), and the two reads run together (one round trip instead of three in a row). An own record this very
+ * request created isn't in either read yet, so it's added.
+ */
+export const studentsICanSee = cache(
+  async (): Promise<StudentAccess[]> =>
+    requestMemo("students_i_can_see", async () => {
+      const user = await getUser();
+      if (!user) return [];
+      const bundle = await viewerBundle();
+      const supabase = await createServerSupabase();
+      const [account, own, students, members] = await Promise.all([
+        getAccount(),
+        currentStudent(),
+        bundle ? Promise.resolve({ data: bundle.students, error: null }) : supabase.from("students").select(STUDENT_COLUMNS).is("deleted_at", null),
+        bundle ? Promise.resolve({ data: bundle.members, error: null }) : supabase.from("household_members").select(MEMBER_COLUMNS),
+      ]);
+      if (!account) return [];
+      if (students.error) throw new Error(`Reading students failed: ${students.error.message}`);
+      if (members.error) throw new Error(`Reading households failed: ${members.error.message}`);
+      const rows = students.data as StudentRecord[];
+      const all = own && !rows.some((s) => s.id === own.id) ? [...rows, own] : rows;
+      return resolveStudentAccess(account.user.id, all, members.data as HouseholdMember[]);
+    }),
+);

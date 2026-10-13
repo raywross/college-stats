@@ -18,9 +18,11 @@ import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpp
 import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "./campus-services.ts";
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "./academics.ts";
 import { drawsNationally } from "./residence.ts";
+import { isMostlyOnline } from "./online-share.ts";
 import { noCssProfile, offersInternationalAid } from "./cds/financial-aid.ts";
 import { fieldFacets } from "./majors.ts";
 import { policyBucket } from "./test-policy.ts";
+import { SELECTIVITY_TIERS } from "./chances/levels.ts";
 import { FAITH_FILTERS, faithFilterOf } from "./religion.ts";
 import { TRADITIONS } from "./directories.ts";
 import { hasLgbtqCenter, policyIsYes } from "./lgbtq-policy.ts";
@@ -73,11 +75,17 @@ export function buildFacets({ getAllSchools, histogram, meritInfoFor }: FacetSou
     if (b) policy[b]++;
   }
 
+  // Quad's selectivity (specs/chances/selectivity-index.md): colleges per tier for all applicants.
+  const selectivity = Object.fromEntries(SELECTIVITY_TIERS.map((t) => [t, 0])) as FilterFacets["selectivity"];
+  for (const s of all) if (s.selectivity?.tier) selectivity[s.selectivity.tier]++;
+
   const campus: FilterFacets["campus"] = {
     setting: Object.fromEntries(SETTING_GROUPS.map((g) => [g.key, 0])) as FilterFacets["campus"]["setting"],
     research: Object.fromEntries(RESEARCH_TIERS.map((r) => [r, 0])) as FilterFacets["campus"]["research"],
     designation: Object.fromEntries(DESIGNATION_KEYS.map((d) => [d, 0])) as FilterFacets["campus"]["designation"],
     opportunity: all.filter(isOpportunityCollege).length,
+    // Online share (lib/online-share.ts): a college with no share counts as campus-based, as the filter does.
+    online: { campus: all.filter((s) => !isMostlyOnline(s)).length, mostly: all.filter(isMostlyOnline).length },
   };
   for (const s of all) {
     if (s.campus?.setting) campus.setting[s.campus.setting.group]++;
@@ -129,6 +137,7 @@ export function buildFacets({ getAllSchools, histogram, meritInfoFor }: FacetSou
     services,
     balance,
     policy,
+    selectivity,
     fullTime: all.filter(isMostlyFullTime).length,
     fewLoans: all.filter(hasFewLoans).length,
     pellGap: all.filter(hasSmallPellGap).length,

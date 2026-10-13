@@ -49,10 +49,10 @@ export function roundsPicked(grade: Grade): boolean {
   return ROUNDS_PICKED_GRADES.has(grade);
 }
 
-/** list.md "Grouped by Reach / Target / Likely" + "Not sorted yet": the group pill's heading text. */
+/** levels.md "Where the levels show": the group pill's heading text, five levels then "Not sorted yet". */
 export const GROUP_HEADING: Record<ListCategory, string> = { ...CATEGORY_LABELS, unsorted: "Not sorted yet" };
 
-const GROUP_SECTION_ORDER: readonly ListCategory[] = ["reach", "target", "likely", "unsorted"];
+const GROUP_SECTION_ORDER: readonly ListCategory[] = ["high_reach", "reach", "target", "likely", "safe", "unsorted"];
 
 export interface RowGroup {
   group: ListCategory;
@@ -77,11 +77,14 @@ export function anySuggestedRound(rows: readonly PlanRowView[]): boolean {
   return rows.some((r) => r.roundAuto);
 }
 
-const GROUP_WORD: Record<Exclude<ListCategory, "unsorted">, string> = { reach: "Reach", target: "Target", likely: "Likely" };
+const GROUP_WORD: Record<Exclude<ListCategory, "unsorted">, string> = { high_reach: "High reach", reach: "Reach", target: "Target", likely: "Likely", safe: "Safe" };
 
-/** list.md "The drawer", line 3: the score move, or the optional-score advice, whichever the model has for this row. */
+/**
+ * list.md "The drawer", line 3: the score move, or the optional-score advice, whichever the model has for this row.
+ * Across five levels (levels.md "Where the levels show"): "60 more points moves X from High reach to Reach."
+ */
 export function scoreDrawerLine(row: Pick<PlanRowView, "moveUp" | "standing">): string | null {
-  if (row.moveUp) return `A ${row.moveUp.score} would make this a ${GROUP_WORD[row.moveUp.to]}.`;
+  if (row.moveUp) return `${row.moveUp.delta} more points moves this from ${GROUP_WORD[row.moveUp.from]} to ${GROUP_WORD[row.moveUp.to]}.`;
   if (row.standing?.send === "consider-not-sending") return "Optional here: consider not sending.";
   return null;
 }

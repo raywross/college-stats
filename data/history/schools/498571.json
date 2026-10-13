@@ -27,6 +27,7 @@
     "out_of_state_share": {"start":2022,"values":[0.1115,null,0.1053]},
     "transfer_in_count": {"start":2022,"values":[704,532,521]},
     "transfer_in_share": {"start":2022,"values":[0.257,0.2476,0.2541]},
+    "online_share": {"start":2022,"values":[0.1775,0.1769,0.1768]},
     "international_share": {"start":2022,"values":[0.0138,null,0.0196]},
     "conference": {"start":2022,"values":[158,158,158,158]},
     "football_conference": {"start":2022,"values":[158,158,158,158]},

@@ -48,6 +48,39 @@ const entries = {
     category: "Admissions",
     related: ["applicants", "admitted", "selectivity"],
   },
+  "applicants-like-you": {
+    term: "Applicants like you",
+    short:
+      "The group of applicants a college admits from in your situation: your state, your intended major, or a program you qualify for. Colleges often admit these groups at very different rates, so Quad's estimate uses the most specific rate the college publishes for you.",
+    long: "A college's overall admit rate can blend very different groups: in-state and out-of-state applicants at a public university, or applicants to a direct-admit engineering school and to the college of arts and sciences. Quad shows the most specific rate the college itself publishes for your situation, with its source, instead of the blended overall rate.",
+    why: "The overall admit rate can be misleading in either direction: it can look easier than your own group's rate, or harder. Counselors call this your pool.",
+    category: "Admissions",
+    related: ["acceptance-rate", "quads-estimate", "levels", "in-state-student"],
+  },
+  /** levels.md "Glossary": rewritten from "reach-target-likely" with the five words; the old slug stays as an alias. */
+  "levels": {
+    term: "High reach, Reach, Target, Likely, Safe",
+    short:
+      "Quad's five steps for how a college fits your record, from a calm \"High reach\" (your record is below the students this college admits) through \"Reach\" (possible; this college turns down most applicants like you), \"Target\" (your record looks like the students they admit), \"Likely\" (more likely than not), to \"Safe\" (a guarantee, open admission, or a record clearly above the students admitted). Never a percentage.",
+    long: "High reach: it's fine to have one or two on the list; a higher test score or another year of grades would move it. Reach: possible, and a reach for everyone at an Ultra selective college. Target: your record looks like the students admitted. Likely: more likely than not, from your record and how many applicants like you get in. Safe: a guarantee, open admission, or a record clearly above the students admitted at a college that admits most applicants like you.",
+    why: "A college that admits 4% is a Reach for everyone, but it reads very differently for a top student than for one further below its admitted range — the five steps say which, without ever showing a percentage or the method behind it.",
+    category: "Admissions",
+    related: ["applicants-like-you", "selectivity-tier", "quads-estimate"],
+  },
+  /** Alias: the old slug, kept findable for anything still linking it (levels.md). */
+  "reach-target-likely": {
+    term: "Reach, Target, Likely",
+    short: "The old three-word version of Quad's levels. See High reach, Reach, Target, Likely, Safe.",
+    category: "Admissions",
+    related: ["levels"],
+  },
+  /** Short alias (pool-explainer.md "Glossary"): the word "pool" leaves every student-facing sentence but stays findable here. */
+  "pool": {
+    term: "Pool",
+    short: "Another word for applicants like you.",
+    category: "Admissions",
+    related: ["applicants-like-you"],
+  },
   "admission-factor": {
     term: "Admission factors",
     short: "What a college looks at when deciding: whether each item, like GPA or an essay, is required, considered, or not considered at all.",
@@ -119,6 +152,14 @@ const entries = {
     short: "Our plain-English label for acceptance rate: Most selective (<10%), Highly selective (10–25%), Selective (25–50%), Broadly accessible (50%+).",
     category: "How we measure",
     related: ["acceptance-rate"],
+  },
+  "selectivity-tier": {
+    term: "Quad's selectivity",
+    short: "Quad's reading of how hard a college is to get into, in six steps from Ultra selective to Open, from the figures it publishes: its admit rate (for your state where it publishes one), its admitted students' test scores, how many admitted students enroll, and how many of its first-years return for a second year and graduate. It says how hard a college is to get into, not how good it is or whether it fits you.",
+    long: "The six steps, hardest first: Ultra selective, Highly selective, Very selective, Selective, Accessible, Open. A public university that publishes admit rates by residency gets a reading for applicants from its state and one for everyone else, and the profile shows both where they differ. Each college's ⓘ lists the figures read, each with its source and year. How they are combined is Quad's own and isn't published; a college moves between steps only when its figures change clearly, not on a small shift from one year to the next.",
+    why: "Two colleges with the same admit rate can be very different to get into: one admits a class with much higher scores, or one most admitted students choose over their other offers. One word for all of it helps you balance a list.",
+    category: "Admissions",
+    related: ["acceptance-rate", "yield", "quads-estimate", "levels"],
   },
   "median-vs-midpoint": {
     term: "Median vs. midpoint",
@@ -896,7 +937,8 @@ const entries = {
   },
   "online-first": {
     term: "Online-first college",
-    short: "A college where more than half of undergraduates take all their courses online (IPEDS distance-education counts). Its enrollment can grow without a campus growing, so growth lists leave it out.",
+    short: "A college where more than half of undergraduates take every course online (IPEDS distance-education counts). Its enrollment can grow without a campus growing, so growth lists and campus-based comparisons leave it out.",
+    long: "Each fall, colleges report how many undergraduates take every course online, some of their courses online, or none. Quad shows two shares of all undergraduates: those taking every course online, and those taking at least one online course. A college is online-first in a fall when the first share is over half. In the pandemic falls of 2020 and 2021, campuses reported much of their teaching as online; those falls are shown as reported, but the online-first rule reads the fall before the pandemic in their place. A college that reported no share that fall counts as campus-based.",
     category: "How we measure",
     related: ["biggest-movers"],
   },

@@ -126,7 +126,9 @@ rigor-in-context ──► course-plan ◄──┘ (its "what it changes" line)
   beside it are what they are (the share of applicants like the student admitted, with its year).
 - **Say who the student is compared with**, never "pool" ([pool-explainer.md](pool-explainer.md)).
 - **Encourage, don't grade.** No new input lowers a level except where the college itself states a requirement; every
-  reading comes with a suggestion first ([depth.md](depth.md), [inputs-beyond-academics.md](inputs-beyond-academics.md)).
+  reading comes with a suggestion first. Missing inputs are the exception (owner, 2026-10-12): an estimate built on
+  part of a record reads lower than the same record complete, and says what to add
+  ([method/standing.md](method/standing.md) "Revision 1") ([depth.md](depth.md), [inputs-beyond-academics.md](inputs-beyond-academics.md)).
 - **Inputs, not method, on the site.** Pages say what kinds of information the estimate uses and which of the
   student's inputs it used; never how they are combined. The method's files are for building it, not for display.
 - **Every fact cited.** College and high school facts keep their lineage; the estimate is labeled Quad's estimate.

@@ -1,15 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
+import { ArrowRight, GraduationCap } from "lucide-react";
 import { STATES } from "@/lib/states";
 import { SETTING_GROUPS } from "@/lib/campus-profile";
 import { SIZE_BUCKETS } from "@/lib/metrics";
 import { MAJOR_FAMILY_CODES, MAJOR_FAMILIES, type MajorFamily } from "@/lib/majors";
-import { GPA_SCALES, MAX_INTENDED_MAJORS, OUTSIDE_US, effectiveGradYear, gpaDisplay, type GpaScale, type StudentProfileData } from "@/lib/student-profile";
+import { MAX_INTENDED_MAJORS, OUTSIDE_US, type StudentProfileData } from "@/lib/student-profile";
+import { planHref } from "@/lib/planner/plan-tabs";
 import { saveStudentProfile, type ProfileSaveState } from "@/app/me/actions";
-import { Term } from "@/components/ui/info-tip";
 import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
-import { CoursePickerField } from "@/components/profile/CoursePicker";
 
 const inputCls =
   "h-11 w-full rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 disabled:opacity-60";
@@ -70,42 +71,33 @@ function CheckboxGroup({
   );
 }
 
-/** GPA plus its scale, with a live "about 3.7 unweighted (from 93/100)" readout (student-profile.md "GPA normalization"). */
-function GpaField({ disabled, gpa, gpaScale }: { disabled?: boolean; gpa: number | null; gpaScale: GpaScale }) {
-  const [value, setValue] = useState(gpa);
-  const [scale, setScale] = useState(gpaScale);
-  const display = gpaDisplay({ gpa: value, gpaScale: scale });
+/**
+ * Grades, test scores, courses, class standing, and activities and awards moved to the planner's intake guide
+ * (household-hub.md "Household cleanup (2026-10-12)", "Trim to only the things we don't have in planner";
+ * specs/planner/redesign/intake.md): this form no longer collects them (app/me/actions.ts keeps whatever's already
+ * saved on every submit, so removing the fields here never wipes them), so in their place is one link into the
+ * plan's edit mode (`planHref({ person: studentId, setup: true })`, the same route the plan's own "Edit ✎" opens).
+ */
+function EditInThePlan({ studentId }: { studentId: string }) {
   return (
-    <Field label={<Term term="unweighted-gpa">GPA</Term>} htmlFor="gpa" hint={display ?? "Entered on whatever scale your school uses."}>
-      <div className="mt-1.5 flex gap-2">
-        <input
-          id="gpa"
-          name="gpa"
-          type="number"
-          step="0.01"
-          min={0}
-          max={100}
-          disabled={disabled}
-          defaultValue={gpa ?? ""}
-          onChange={(e) => setValue(e.currentTarget.value === "" ? null : Number(e.currentTarget.value))}
-          className={`${inputCls} min-w-0 flex-1`}
-        />
-        <select
-          name="gpaScale"
-          disabled={disabled}
-          defaultValue={gpaScale}
-          onChange={(e) => setScale(e.currentTarget.value as GpaScale)}
-          className={`${inputCls} w-auto max-w-32 min-w-0 shrink-0`}
-          aria-label="GPA scale"
-        >
-          {GPA_SCALES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+    <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3.5 sm:px-5">
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <GraduationCap className="size-4.5" aria-hidden />
+        </span>
+        <p className="text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">Grades, test scores, courses, and activities and awards are in the plan now.</span>{" "}
+          Open it to add or change them.
+        </p>
       </div>
-    </Field>
+      <Link
+        href={planHref({ person: studentId, setup: true })}
+        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+      >
+        Open in the plan
+        <ArrowRight className="size-3.5" aria-hidden />
+      </Link>
+    </section>
   );
 }
 
@@ -114,39 +106,37 @@ function GpaField({ disabled, gpa, gpaScale }: { disabled?: boolean; gpa: number
  * and saves whatever's filled in. `canEdit=false` (a view-only guardian) renders every field disabled. No field
  * shows a sample value as its placeholder (student-profile.md "Changes (2026-10-06)"): empty stays visibly empty,
  * and a muted hint under a field gives its range instead.
+ *
+ * Trimmed 2026-10-12 to what the planner doesn't have (household-hub.md "Household cleanup"): state of residence,
+ * high school, fee-waiver eligibility, first generation, intended majors, early-round interest, and the college
+ * preferences. Grades/GPA, class standing, the valedictorian/salutatorian expectation, tests, courses, activities,
+ * and awards are the planner intake's now (`EditInThePlan`, above); graduation year moved with them (it's the
+ * intake's own first screen, "Class of").
  */
 export function ProfileForm({
   studentId,
   data,
   canEdit,
-  studentGradYear,
 }: {
   studentId: string;
   data: StudentProfileData;
   canEdit: boolean;
-  /** `students.grad_year` (set when the student was invited or added to the household): the default shown when
-   * the profile itself has no graduation year yet. */
-  studentGradYear: number | null;
 }) {
   const [state, action, pending] = useActionState<ProfileSaveState, FormData>(saveStudentProfile, { status: "idle" });
   const disabled = !canEdit || pending;
-  const defaultGradYear = effectiveGradYear(data.basics, studentGradYear);
 
   // Controlled only so a high school pick can fill it in (see HighSchoolPicker's onSelect below); the student can
   // still change it freely afterward, same as any other select.
   const [residenceState, setResidenceState] = useState(data.basics.stateOfResidence ?? "");
   const [residenceFromSchool, setResidenceFromSchool] = useState(false);
-  // The picked high school's id, so the course picker can start from its AP list.
-  const [highSchoolId, setHighSchoolId] = useState(data.basics.highSchoolId);
 
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="student_id" value={studentId} />
 
+      <EditInThePlan studentId={studentId} />
+
       <Group title="Basics" defaultOpen>
-        <Field label="Graduation year" htmlFor="gradYear" hint="2000–2035">
-          <input id="gradYear" name="gradYear" type="number" inputMode="numeric" min={2000} max={2035} disabled={disabled} defaultValue={defaultGradYear ?? ""} className={`${inputCls} mt-1.5`} />
-        </Field>
         <Field
           label="State of residence"
           htmlFor="stateOfResidence"
@@ -180,7 +170,6 @@ export function ProfileForm({
             defaultName={data.basics.highSchool}
             disabled={disabled}
             onSelect={(hit) => {
-              setHighSchoolId(hit.id);
               // Only fills a blank state; a student who already set one (or typed over it) keeps their own answer.
               if (!residenceState && hit.state) {
                 setResidenceState(hit.state);
@@ -200,59 +189,23 @@ export function ProfileForm({
             <option value="no">No</option>
           </select>
         </Field>
-      </Group>
-
-      <Group title="Academics">
-        <GpaField disabled={disabled} gpa={data.academics.gpa} gpaScale={data.academics.gpaScale} />
-        <Field label="Weighted GPA (optional)" htmlFor="weightedGpa" hint="0–120: some high schools weight courses above 100.">
-          <input id="weightedGpa" name="weightedGpa" type="number" step="0.01" min={0} max={120} disabled={disabled} defaultValue={data.academics.weightedGpa ?? ""} className={`${inputCls} mt-1.5`} />
-        </Field>
-        <Field label="Class rank percentile (optional)" htmlFor="classRankPercentile" hint='"Top 10%" is 10.'>
-          <input id="classRankPercentile" name="classRankPercentile" type="number" min={1} max={100} disabled={disabled} defaultValue={data.academics.classRankPercentile ?? ""} className={`${inputCls} mt-1.5`} />
-        </Field>
         <div className="sm:col-span-2">
-          <span className="block text-sm font-semibold">Courses (optional)</span>
-          <p className="mb-3 mt-0.5 text-xs text-muted-foreground">
-            Your advanced courses, one by one, with grades. Colleges read rigor against what your school offers, and the plan uses your list where most students have top GPAs.
-          </p>
-          <CoursePickerField
-            initial={{ courses: data.academics.courses, coreAtTopLevel: data.academics.coreAtTopLevel, apExamsPrivate: data.academics.apExamsPrivate }}
-            highSchoolId={highSchoolId}
-            gradYear={defaultGradYear}
-            majors={data.plans.intendedMajors}
+          <span className="block text-sm font-semibold">About you</span>
+          <p className="mb-2 mt-0.5 text-xs text-muted-foreground">Optional; many colleges consider it.</p>
+        </div>
+        <Field label="First generation?" htmlFor="firstGeneration" hint="Neither of my parents finished a four-year degree.">
+          <select
+            id="firstGeneration"
+            name="firstGeneration"
             disabled={disabled}
-          />
-        </div>
-      </Group>
-
-      <Group title="Tests">
-        <Field label="SAT total" htmlFor="satTotal" hint="400–1600">
-          <input id="satTotal" name="satTotal" type="number" min={400} max={1600} disabled={disabled} defaultValue={data.tests.satTotal ?? ""} className={`${inputCls} mt-1.5`} />
+            defaultValue={data.academics.firstGeneration === null ? "" : data.academics.firstGeneration ? "yes" : "no"}
+            className={`${inputCls} mt-1.5`}
+          >
+            <option value="">Not set</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
         </Field>
-        <Field label="ACT composite" htmlFor="actComposite" hint="1–36">
-          <input id="actComposite" name="actComposite" type="number" min={1} max={36} disabled={disabled} defaultValue={data.tests.actComposite ?? ""} className={`${inputCls} mt-1.5`} />
-        </Field>
-        <Field label="SAT Reading & Writing (optional)" htmlFor="satReading">
-          <input id="satReading" name="satReading" type="number" min={200} max={800} disabled={disabled} defaultValue={data.tests.satReading ?? ""} className={`${inputCls} mt-1.5`} />
-        </Field>
-        <Field label="SAT Math (optional)" htmlFor="satMath">
-          <input id="satMath" name="satMath" type="number" min={200} max={800} disabled={disabled} defaultValue={data.tests.satMath ?? ""} className={`${inputCls} mt-1.5`} />
-        </Field>
-        <Field label="ACT English (optional)" htmlFor="actEnglish">
-          <input id="actEnglish" name="actEnglish" type="number" min={1} max={36} disabled={disabled} defaultValue={data.tests.actEnglish ?? ""} className={`${inputCls} mt-1.5`} />
-        </Field>
-        <Field label="ACT Math (optional)" htmlFor="actMath">
-          <input id="actMath" name="actMath" type="number" min={1} max={36} disabled={disabled} defaultValue={data.tests.actMath ?? ""} className={`${inputCls} mt-1.5`} />
-        </Field>
-        <div className="flex flex-col gap-2 sm:col-span-2">
-          <label className="inline-flex items-center gap-2 text-sm">
-            <input type="checkbox" name="superscore" disabled={disabled} defaultChecked={data.tests.superscore} className="size-4" /> This is a{" "}
-            <Term term="superscore">superscore</Term>
-          </label>
-          <label className="inline-flex items-center gap-2 text-sm">
-            <input type="checkbox" name="plansTestOptional" disabled={disabled} defaultChecked={data.tests.plansTestOptional} className="size-4" /> I plan to apply test-optional
-          </label>
-        </div>
       </Group>
 
       <Group title="Plans">

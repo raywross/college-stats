@@ -67,16 +67,22 @@ export const NOTES: Record<NoteKey, Note> = {
   "offering.unknown": () => "We don't have a course list for your school yet.",
   "offering.pick_prompt": (v) => `Your school offers these ${plural(v, "count", "AP course")}. Tap the ones you've taken, are taking, or plan to take.`,
 
-  /* ---- The pool's rate (base-rates.md) ---- */
+  /* ---- The admit rate for the student's pool (base-rates.md), reworded so no student-facing sentence says "pool"
+   * (specs/chances/pool-explainer.md "The sentence"): every kind names who the student is compared with, the share
+   * admitted, and the year. */
   "pool.guaranteed": (v) => `Guaranteed for you: ${s(v, "program")}.`,
   "pool.may_qualify": (v) => `You may qualify for ${s(v, "program")} if you're in the top ${s(v, "pct")} of your class.`,
   "pool.system_scope": (v) => `${s(v, "program")} guarantees a place in the ${s(v, "system")} system, not at a campus you choose.`,
   "pool.major_not_guaranteed": (v) => `Automatic admission to ${s(v, "college")} doesn't include a major; ${s(v, "unit")} admits separately.`,
-  "pool.residency_in": (v) => `Applicants from ${s(v, "state")} were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
-  "pool.residency_out": (v) => `Applicants from outside ${s(v, "state")} were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
-  "pool.major_rate": (v) => `${s(v, "unit")} admitted ${s(v, "rate")} of its applicants (${s(v, "year")}).`,
+  "pool.residency_in": (v) => `Applicants like you — from ${s(v, "state")} — were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
+  "pool.residency_out": (v) => `Applicants like you — from outside ${s(v, "state")} — were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
+  "pool.major_rate": (v) => `Applicants to ${s(v, "unit")} were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
   "pool.major_separate": (v) => `${s(v, "unit")} admits separately here and is more selective than the university overall.`,
-  "pool.overall": (v) => `${s(v, "rate")} of applicants were admitted (${s(v, "year")}).`,
+  /** The overall rate, with the student's state known: a second sentence says the college publishes no rate for it. */
+  "pool.overall_state_known": (v) =>
+    `Applicants were admitted at ${s(v, "rate")}${v.year ? ` (${s(v, "year")})` : ""}. ${s(v, "college")} doesn't publish a rate for applicants from ${s(v, "state")}, so this is everyone.`,
+  /** The overall rate with no state on the household: invites adding one. */
+  "pool.overall_no_state": (v) => `Applicants were admitted at ${s(v, "rate")}${v.year ? ` (${s(v, "year")})` : ""}. Add your state to see the rate for applicants like you.`,
   "pool.ed_fact": (v) =>
     `Early decision admitted ${s(v, "ed")} here against ${s(v, "overall")} overall (${s(v, "year")}); much of that gap is recruited athletes and other students with an inside track.`,
   "pool.direct_admissions": () => "Some colleges admit students before they apply, through programs like Common App's Direct Admissions; it's one more way to find colleges.",
@@ -85,13 +91,19 @@ export const NOTES: Record<NoteKey, Note> = {
   "pool.kind.residency_in": () => "in-state rate",
   "pool.kind.residency_out": () => "out-of-state rate",
   "pool.kind.overall": () => "overall rate",
-  /* Added by the pool rate (lib/chances/pool-rate.ts): programs with a GPA rule, international applicants, an undated rate. */
+  /* Added by the pool rate (lib/chances/pool-rate.ts): programs with a GPA rule, international applicants. */
   "pool.may_qualify_gpa": (v) => `You may qualify for ${s(v, "program")} with a GPA of ${s(v, "gpa")} or higher.`,
   "pool.may_qualify_rank_or_gpa": (v) => `You may qualify for ${s(v, "program")} if you're in the top ${s(v, "pct")} of your class or have a GPA of ${s(v, "gpa")} or higher.`,
   "pool.may_qualify_rank_and_gpa": (v) => `You may qualify for ${s(v, "program")} if you're in the top ${s(v, "pct")} of your class with a GPA of ${s(v, "gpa")} or higher.`,
   "pool.residency_international": (v) => `International applicants were admitted at ${s(v, "rate")} (${s(v, "year")}).`,
   "pool.kind.residency_international": () => "international rate",
-  "pool.overall_undated": (v) => `${s(v, "rate")} of applicants were admitted.`,
+  /* Added by the pool explainer (pool-explainer.md "Who you're compared with"): the panel's fixed copy. */
+  "pool.panel_intro": (v) => `Colleges admit different groups at different rates, so we use the most specific rate ${s(v, "college")} publishes for applicants like you.`,
+  "pool.panel_change_state": () => "Change your state in Household to see another rate.",
+  "pool.panel_major_none": (v) => `${s(v, "college")} publishes no rate by major; ${s(v, "unit")} applicants are admitted to the university, then to the college.`,
+  "pool.panel_guaranteed_note": () => "admits every applicant who qualifies",
+  /** The signed-out plan (pool-explainer.md "Where it shows"): there's no household to add a state to without an account. */
+  "pool.add_state_prompt": () => "Add your state to see the admit rate for applicants like you at the colleges that publish one.",
 
   /* ---- The major (major-and-grades.md "What the estimate does with it") ---- */
   "major.not_considered": (v) => `The major you list doesn't affect admission here (${s(v, "college")} says so).`,
@@ -103,7 +115,7 @@ export const NOTES: Record<NoteKey, Note> = {
   "major.gate_not_yet": (v) => `To be considered for ${s(v, "major")} at ${s(v, "college")} you'll need one of: ${s(v, "routes")}.`,
   "major.gate_closed": (v) => `${s(v, "major")} at ${s(v, "college")} isn't open to this application.`,
   "major.gate_alternate": (v) => `${s(v, "college")} describes another route: ${s(v, "alternate")}`,
-  "major.undecided": (v) => `You're undecided; at ${s(v, "college")} you'd apply to a specific college, and that choice is compared within its own pool.`,
+  "major.undecided": (v) => `You're undecided; at ${s(v, "college")} you'd apply to a specific college, and that choice decides who you're compared with.`,
   "major.add_grades": (v) => `Adding your math and science grades would help at ${s(v, "colleges")}.`,
   "major.unit_requires": (v) => `${s(v, "unit")} also requires: ${s(v, "courses")}.`,
   /* Added by the major review (lib/chances/major-review.ts). */
@@ -119,10 +131,13 @@ export const NOTES: Record<NoteKey, Note> = {
   "estimate.disclaimer": (v) =>
     `Quad's estimate is our own assessment from these inputs and outcomes reported by students. It isn't a prediction from ${s(v, "college")}, and holistic admission weighs things no estimate can see: essays, recommendations, and the college's needs that year.`,
   "estimate.reach_for_everyone": () => "Reach for everyone: no student's numbers make this college predictable.",
-  "estimate.guaranteed": (v) => `Guaranteed for you: ${s(v, "program")}.`,
+  /** pool-explainer.md "The sentence": "{program} applies to you: this college admits every applicant who qualifies." */
+  "estimate.guaranteed": (v) => `${s(v, "program")} applies to you: this college admits every applicant who qualifies.`,
   "estimate.open_admission": () => "Admits everyone who applies.",
   "estimate.academics": (v) => `Your academics: ${s(v, "position")}.`,
-  "estimate.pool": (v) => `Your pool: ${s(v, "pool")}.`,
+  /** Stage 2 (pool-explainer.md "The sentence"): `pool` already carries the full, cited sentence for this college's
+   * pool kind (lib/chances/model.ts poolPhrase); this key only exists so model.ts keeps a stable place to write it. */
+  "estimate.pool": (v) => s(v, "pool"),
   "estimate.position.above": () => "above most admitted students",
   "estimate.position.in": () => "in the middle of admitted students",
   "estimate.position.below": () => "below most admitted students",
@@ -216,7 +231,8 @@ export const NOTES: Record<NoteKey, Note> = {
   "estimate.panel_college": (v) => `${s(v, "college")}'s numbers`,
   "estimate.panel_also": () => "Also looked at",
   "estimate.panel_not_used": () => "Not used here",
-  /** The two labels as chips say them. */
+  /** The labels as chips say them (levels.md "The levels"); "estimate.label.elite"/"estimate.label.recruited" are
+   * with the rest of the five-level catalog, below. */
   "estimate.label.reach_for_everyone": () => "Reach for everyone",
   "estimate.label.guaranteed": () => "Guaranteed for you",
   /** The profile card's heading and the chip's accessible name. */
@@ -242,6 +258,117 @@ export const NOTES: Record<NoteKey, Note> = {
   "major.pick_prompt": () => "Pick an intended major to see how this college reads it.",
   "major.pick_label": () => "Intended major",
   "major.no_statement": (v) => `${s(v, "college")} hasn't said how it treats this major.`,
+
+  /* ---- Depth (specs/chances/depth.md "Course tracks", "Activities"), added by the depth unit (lib/chances/depth.ts) ----
+   * `extra` and `examNote` are fragments depth.ts builds and passes pre-formatted (never free text): `extra` names
+   * an activity that adds a track year ("plus three years of Science Olympiad."), `examNote` the AP-exam confirm
+   * sentence; both are "" when there's nothing to add. */
+  "depth.courses.deep_major": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a deep track for your major.${s(v, "extra")}${s(v, "examNote")}`,
+  "depth.courses.deep": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a deep track.${s(v, "extra")}${s(v, "examNote")}`,
+  "depth.courses.steady_major": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a steady track.${s(v, "extra")} Most ${s(v, "major")} programs expect ${s(v, "course")} senior year.${s(v, "examNote")}`,
+  "depth.courses.steady": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a steady track.${s(v, "extra")}${s(v, "examNote")}`,
+  "depth.courses.light_major": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a light track.${s(v, "extra")} ${s(v, "major")} programs commonly expect ${s(v, "expects")}.${s(v, "examNote")}`,
+  "depth.courses.light": (v) => `${s(v, "subject")}: ${s(v, "courses")}: a light track.${s(v, "extra")} ${s(v, "subject")} isn't among the subjects your major usually expects.${s(v, "examNote")}`,
+  "depth.courses.not_offered": (v) => `Your school offers no advanced courses in ${s(v, "subject")}, so none is expected.`,
+  /** Fragment: appended to a family's sentence when an AP exam score of 4 or 5 confirms the grade. */
+  "depth.courses.exam_confirms": (v) => `${s(v, "high")} of your ${plural(v, "taken", "AP exam")} in it scored a 4 or 5, confirming the grade.`,
+
+  /** `a1`/`a2`: pre-formatted activity fragments ("Soccer, four years, captain this year"). */
+  "depth.activities.focused": (v) =>
+    `${s(v, "a1")}; ${s(v, "a2")}. Two things carried through high school with a role in each: that's what colleges that read activities look for.`,
+  "depth.activities.building": (v) => `${s(v, "a1")}. One activity carried through; a second you'd keep for two more years, or a bigger role in this one, would round it out.`,
+  "depth.activities.sampling": (v) =>
+    `${s(v, "count")} activit${Number(v.count) === 1 ? "y" : "ies"}, each for a year or two. Colleges that read activities look for a few kept up over years with a role; pick the one or two you'd stay with.`,
+  "depth.activities.none": () => "Add your activities to see how colleges that rate them would read your record.",
+  /** `tier`: a word from RECOGNITION_WORD ("state-level recognition"). */
+  "depth.activities.recognition": (v) => `${s(v, "activity")} (${s(v, "tier")}) counts at colleges that rate talent.`,
+  /** Where a college doesn't say it weighs activities (C7 not considered, or no C7). */
+  "depth.activities.not_weighed": (v) => `${s(v, "college")} doesn't say it weighs activities; they're shown here for you, not for the estimate.`,
+  /*
+   * Themes (method/standing.md "Revisions 2 and 3"): a broad group's courses and an activity in the same group.
+   * `subjects` and `subject` are group words ("STEM", "the humanities and social sciences", "the arts";
+   * data/reference/depth-groups.json), never an activity's or course's name.
+   */
+  "depth.theme": (v) => `Your courses and activities line up in ${s(v, "subjects")}: depth in one area, in and out of class.`,
+  "depth.theme.activity_only": (v) =>
+    `You keep up ${s(v, "subject")} outside class; an honors or advanced course in ${s(v, "subject")} each year would tie it to your schedule.`,
+  "depth.theme.track_only": (v) =>
+    `Your courses in ${s(v, "subject")} run through high school; a club, team, or program in ${s(v, "subject")} would tie them to what you do outside class.`,
+  "depth.theme.add_family": () => "Pick what each activity is about (art, science, a sport…) so it can line up with your courses.",
+
+  /* ---- Five levels (specs/chances/levels.md "The levels"), added by the levels model (lib/chances/model.ts) ----
+   * The meaning line a row's drawer shows under the chip, one per stored level. `test` is "SAT", "ACT", or "" (then
+   * "test score"). Inputs and outcomes only: no sentence names a weight, a cutoff, or the odds behind a level. */
+  "estimate.level.high_reach": (v) =>
+    `Your record is below the students this college admits. It's fine to have one or two on the list; a higher ${v.test ? s(v, "test") : "test score"} or another year of grades would move it.`,
+  // High reach because parts of the record aren't on file (method/standing.md "Revision 1"), not because it's weak.
+  "estimate.level.high_reach_incomplete": () =>
+    "A high reach for now: part of your record isn't here yet, and at this college every part has to be strong. Add what's missing below to see where you stand.",
+  "estimate.level.reach": () => "Possible. This college turns down most applicants like you.",
+  "estimate.level.target": () => "Your record looks like the students they admit.",
+  "estimate.level.likely": () => "More likely than not, from your record and how many applicants like you get in.",
+  "estimate.level.safe": () => "A guarantee, open admission, or a record clearly above the students admitted at a college that admits most applicants like you.",
+  /** The label line at a college Quad rates Elite (replaces estimate.reach_for_everyone, kept for old snapshots). */
+  "estimate.elite": () => "Ultra selective: a reach for everyone. However strong the record, no student's admission here is predictable.",
+  /** The label line when a coach's likely letter or positive pre-read sets the level (inputs-beyond-academics.md "Recruited athlete"). */
+  "estimate.recruited": () => "Recruited: this estimate rests on the coach's support.",
+  /** The chips' words for the two new labels. */
+  "estimate.label.elite": () => "Ultra selective: a reach for everyone",
+  "estimate.label.recruited": () => "Recruited",
+  /** A per-college input the college doesn't rate in its Common Data Set at all (no C7): it doesn't say either way. */
+  "estimate.not_said": (v) => `Not used here: ${s(v, "input")} (${s(v, "college")} doesn't say it weighs it).`,
+  /** Work and family responsibilities (inputs-beyond-academics.md "Work and family responsibilities"). `hours` is the student's own entry. */
+  "estimate.work": (v) =>
+    `Working ${s(v, "hours")} hours a week through the school year counts at colleges that weigh work experience, and it explains a shorter activity list.`,
+  /** First generation: collected and shown, not in the level (inputs-beyond-academics.md "First generation"). */
+  "estimate.first_generation": (v) => `${s(v, "college")} rates first-generation status ${s(v, "rating")}; it's noted, not estimated.`,
+  /**
+   * Revision 1 (method/standing.md "Consistency and completeness"): the inputs this college reads that the student
+   * hasn't entered, named in words ("courses, class standing, and activities"); never how much they count.
+   */
+  /* Revision 3 (method/standing.md, owner 2026-10-12). `test` is "SAT" or "ACT"; `state` the state's name. */
+  "estimate.test_target": (v) => `Reading your target ${s(v, "test")} of ${s(v, "score")} until junior year ends; after that, your actual score.`,
+  "estimate.state_from_school": (v) => `Using your high school's state, ${s(v, "state")}; add yours if different.`,
+  /** Rule 8: at a college in the top band of Ultra selective, without one standout (words only). */
+  "estimate.top_band": () =>
+    "At the very top colleges, Reach also takes one standout: a test score at the top of their range, a state or national honor, or the top of your class.",
+  "estimate.incomplete": (v) => `Not in this estimate yet: your ${s(v, "inputs")}. Adding what you have gives a fuller picture and could change where this college stands for you.`,
+  /**
+   * Revision 2 (method/standing.md): the class-standing nudges. An expectation is stated, not known, so its sentence
+   * says "expects to be". `title`: "valedictorian" or "salutatorian"; `rank`: "top 5%" as the student picked it.
+   */
+  "estimate.rank_expectation": (v) =>
+    `Class standing: expects to be ${s(v, "title")}, an expectation until it's official. ${s(v, "college")} weighs grades and class standing, so it counts here.`,
+  "estimate.rank_top": (v) => `Your class standing (${s(v, "rank")}) counts here: ${s(v, "college")} weighs grades and class standing.`,
+  /** Revision 2: a weighted GPA above the unweighted one, read as a sign of demanding courses. `weighted`: as entered. */
+  "estimate.weighted_above": (v) =>
+    `Your weighted GPA (${s(v, "weighted")}) sits well above your unweighted one, a sign of demanding courses, which ${s(v, "college")} weighs.`,
+
+  /* ---- The list row's inputs (inputs-beyond-academics.md "Legacy", "Recruited athlete", "Demonstrated interest") ---- */
+  /** `rating`: "very important", "important", or "considered", as the college's C7 says. */
+  "hooks.legacy_used": (v) => `Legacy helps here: ${s(v, "college")} rates alumni relation ${s(v, "rating")}.`,
+  /** A sibling who went here, at a college that rates alumni relation (owner, 2026-10-12). */
+  "hooks.sibling_used": () => "A sibling here counts at colleges that consider family connections.",
+  "hooks.legacy_not_weighed": (v) => `${s(v, "college")} doesn't say it weighs alumni relation.`,
+  /** `scope`: "public", "private", or "all"; `law`: the bill as the state names it. */
+  "hooks.legacy_banned": (v) => `${s(v, "state")} bars legacy preference at ${s(v, "scope")} colleges (${s(v, "law")}), so this isn't used.`,
+  "hooks.recruited": () =>
+    "Recruited athletes with a coach's support are admitted at far higher rates; the estimate assumes that support holds. Confirm it with the coach in writing before relying on it.",
+  "hooks.interest": (v) => `You've shown interest here, which ${s(v, "college")} says it considers.`,
+
+  /* ---- Early decision (method/standing.md "The ED sentence"; planner/redesign/rounds.md "The ED guard") ---- */
+  "ed.same": () => "Early decision doesn't change where this college stands for you.",
+  /** `level`: the level's word ("Target"). */
+  "ed.helps": (v) => `Early decision would move this toward ${s(v, "level")}; it's binding, so check the cost first.`,
+  "ed.not_advised": () => "Early decision is binding and helps most where you're already in range; this college isn't one of them yet.",
+
+  /* ---- Who the student is compared with, short (the estimate's structured `pool`, for Compare's sub-line) ---- */
+  "pool.who.residency_in": (v) => `from ${s(v, "state")}`,
+  "pool.who.residency_out": (v) => `from outside ${s(v, "state")}`,
+  "pool.who.international": () => "international",
+  "pool.who.major": (v) => `to ${s(v, "unit")}`,
+  "pool.who.overall": () => "everyone",
+  "pool.who.guaranteed": () => "guaranteed",
 };
 
 /** "Your GPA (3.82)", or a described range set off by commas: "Your GPA, about 3.4–4.0 unweighted (from a weighted 4.4),". */
@@ -272,6 +399,13 @@ export const INPUT_WORDS: Record<string, string> = {
   major: "intended major",
   round: "application round",
   high_school: "high school",
+  activities: "activities",
+  awards: "awards",
+  work: "work hours",
+  legacy: "legacy connection",
+  recruited: "recruiting",
+  interest: "shown interest",
+  class_standing: "class standing",
 };
 
 export function isNoteKey(key: string): boolean {
@@ -281,4 +415,92 @@ export function isNoteKey(key: string): boolean {
 /** A note's sentence with its values filled in; empty for a key the catalog doesn't have (never free text). */
 export function noteText(note: Pick<EstimateNote, "key" | "values">): string {
   return isNoteKey(note.key) ? NOTES[note.key](note.values) : "";
+}
+
+/* ---- How Quad reads your list (the plan's one list-level info link; owner, 2026-10-12) ----
+ * The single home for the text the planner's "How Quad reads your list" panel shows (components/planner/
+ * ListExplainer.tsx). Kinds of inputs and the outputs only, like every sentence here: no weights, cutoffs,
+ * multipliers, scores, or numbers of any kind (tests/planner-list-explainer.test.mts guards it). The level lines are
+ * the catalog's own `estimate.level.*` sentences and the top-band line is `estimate.top_band`, so the panel never
+ * drifts from what a college's estimate says. */
+export interface ListExplainerSection {
+  heading: string;
+  /** The glossary entry the heading links to, when there is one. */
+  term?: "levels" | "selectivity-tier" | "applicants-like-you";
+  paragraphs: string[];
+  /** A labeled list under the paragraphs ("Grades: …"). */
+  items?: { label: string; text: string }[];
+}
+
+export const LIST_EXPLAINER_TITLE = "How Quad reads your list";
+
+export function listExplainer(): ListExplainerSection[] {
+  const line = (key: NoteKey) => noteText({ key, values: { test: "" } });
+  return [
+    {
+      heading: "Five levels",
+      term: "levels",
+      paragraphs: [
+        "Quad sorts each college on your list into one of five levels, from what you've entered and what the college publishes about the students it admits. It's Quad's estimate: never a percentage, and never the college's own prediction.",
+      ],
+      items: [
+        { label: "High reach", text: line("estimate.level.high_reach") },
+        { label: "Reach", text: line("estimate.level.reach") },
+        { label: "Target", text: line("estimate.level.target") },
+        { label: "Likely", text: line("estimate.level.likely") },
+        { label: "Safe", text: line("estimate.level.safe") },
+      ],
+    },
+    {
+      heading: "Within a level",
+      paragraphs: ["Your Dream comes first, then the colleges closest to the next level up."],
+    },
+    {
+      heading: "Quad's selectivity",
+      term: "selectivity-tier",
+      paragraphs: [
+        "Every college also gets one of six steps for how hard it is to get into, from the figures it publishes: Ultra selective, Highly selective, Very selective, Selective, Accessible, and Open.",
+        "Ultra selective colleges are a reach for everyone. There, Reach takes a record that's strong and consistent in every part: grades, courses and AP results, test, class standing, and depth across courses and activities. Anything less reads as High reach.",
+        line("estimate.top_band"),
+      ],
+    },
+    {
+      heading: "What Quad reads",
+      paragraphs: [],
+      items: [
+        { label: "Grades", text: "Your GPA, and your weighted GPA where your school gives one." },
+        { label: "Class standing", text: "Where you stand in your class, including a valedictorian or salutatorian you expect to be." },
+        {
+          label: "Courses",
+          text: "Your AP, IB, dual-enrollment, and honors courses, taken and planned, read against what your high school offers, with your grades in them and your AP exam results.",
+        },
+        { label: "Tests", text: "Your SAT or ACT. Until junior year ends, the score you're aiming for counts in its place; after that, the score you earn." },
+        {
+          label: "Activities",
+          text: "Sports, clubs, work, and anything else, with the years, your role, and your awards. Depth counts: sticking with something across the years, and courses and activities in the same area, like art classes and an art club.",
+        },
+        { label: "Legacy", text: "A parent, grandparent, or sibling who went there, at colleges that say they consider it and where the state allows it." },
+        { label: "Recruiting", text: "A coach recruiting you, from a first contact to a likely letter." },
+        { label: "Visits and following", text: "Visiting, asking for information, and following a college on social, at colleges that say they consider an applicant's interest." },
+        { label: "Your state and major", text: "They decide who you're compared with." },
+      ],
+    },
+    {
+      heading: "Missing inputs",
+      paragraphs: ["Missing inputs lower confidence: an estimate built on part of your record reads lower than the same record complete. Add what you have to get a fuller picture."],
+    },
+    {
+      heading: "Who you're compared with",
+      term: "applicants-like-you",
+      paragraphs: [
+        "Applicants like you. Quad uses the most specific admit rate a college publishes for you: for applicants from your state at a public university that publishes rates by residency, for your intended major where the college admits by major, or a guarantee you qualify for. Otherwise, everyone who applied.",
+      ],
+    },
+    {
+      heading: "What Quad never does",
+      paragraphs: [
+        "It never shows a percentage, and never reads race, ethnicity, sex, or religion. Quad says what it reads, not how it puts them together; that part is Quad's own.",
+      ],
+    },
+  ];
 }

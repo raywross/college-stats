@@ -24,12 +24,15 @@ const { registerHooks } = nodeModule as unknown as {
   registerHooks(hooks: { resolve(specifier: string, context: { parentURL?: string }, next: (s: string, c: unknown) => ResolveResult): ResolveResult }): void;
 };
 const FAKE_SUPABASE = "export function supabaseAuthEnv(){return globalThis.__adminTest.env} export async function createServerSupabase(o){return globalThis.__adminTest.client(o)}";
+// lib/auth.ts reads the profile from the viewer bundle when it's installed (lib/bundles.ts), else from the table.
+const FAKE_BUNDLES = "export async function viewerBundle(){const p=globalThis.__adminTest.bundleProfile();return p?{profile:p}:null}";
 const FAKE_NAVIGATION =
   "export function redirect(u){const e=new Error('NEXT_REDIRECT');e.digest='NEXT_REDIRECT;replace;'+u+';307;';throw e} export function notFound(){const e=new Error('NEXT_HTTP_ERROR_FALLBACK;404');e.digest='NEXT_HTTP_ERROR_FALLBACK;404';throw e}";
 registerHooks({
   resolve(specifier, context, next) {
     if (specifier === "server-only") return { url: "data:text/javascript,export {}", shortCircuit: true };
     if (specifier === "@/lib/supabase-server") return { url: `data:text/javascript,${encodeURIComponent(FAKE_SUPABASE)}`, shortCircuit: true };
+    if (specifier === "@/lib/bundles") return { url: `data:text/javascript,${encodeURIComponent(FAKE_BUNDLES)}`, shortCircuit: true };
     if (specifier === "next/navigation") return { url: `data:text/javascript,${encodeURIComponent(FAKE_NAVIGATION)}`, shortCircuit: true };
     let spec = specifier;
     if (spec.startsWith("@/")) spec = pathToFileURL(join(ROOT, spec.slice(2))).href;
@@ -50,10 +53,12 @@ interface Fake {
   isAdmin: boolean | "missing";
   factors: { factor_type: string; status: string }[];
   headers: Record<string, string>[];
+  /** The viewer bundle's profile (20261013100000_viewer_bundle_pause.sql), or null: no bundle installed, read the table. */
+  bundleProfile: Record<string, unknown> | null;
 }
 const state = { fake: null as unknown as Fake };
 function reset(o: Partial<Fake> = {}): Fake {
-  state.fake = { claims: null, profile: null, noSuspendedColumn: false, isAdmin: false, factors: [], headers: [], ...o };
+  state.fake = { claims: null, profile: null, noSuspendedColumn: false, isAdmin: false, factors: [], headers: [], bundleProfile: null, ...o };
   return state.fake;
 }
 
@@ -99,7 +104,7 @@ function fakeClient(options?: { headers?: Record<string, string> }) {
 }
 const pick = (row: Record<string, unknown>, columns: string) => Object.fromEntries(columns.split(",").map((c) => c.trim()).map((c) => [c, row[c] ?? null]));
 
-(globalThis as unknown as { __adminTest: unknown }).__adminTest = { env: { url: "https://x.supabase.co", key: "sb_publishable_x" }, client: fakeClient };
+(globalThis as unknown as { __adminTest: unknown }).__adminTest = { env: { url: "https://x.supabase.co", key: "sb_publishable_x" }, client: fakeClient, bundleProfile: () => state.fake.bundleProfile };
 
 const auth = await import("../lib/auth.ts");
 const adminAuth = await import("../lib/admin/auth.ts");
@@ -219,6 +224,19 @@ test("a paused profile: getAccount() is null and requireUser() sends the person 
   assert.equal(await auth.accountPaused(), false);
   reset({ claims: session("aal2"), profile: { ...PROFILE, suspended_at: "2026-10-12T10:00:00Z" } });
   assert.equal(await auth.accountPaused(), true);
+});
+
+test("from the viewer bundle: a bundled profile's suspended_at pauses the account, and the profile drops the field", async () => {
+  const paused = { ...PROFILE, suspended_at: "2026-10-12T10:00:00Z" };
+  // The table says active; the bundle says paused. The bundle is what's read.
+  reset({ claims: session("aal2"), profile: PROFILE, bundleProfile: paused });
+  assert.equal(await auth.getAccount(), null);
+  reset({ claims: session("aal2"), profile: PROFILE, bundleProfile: paused });
+  assert.equal(await outcome(() => auth.requireUser("/account")), "redirect /login?paused=1");
+  reset({ claims: session("aal2"), profile: PROFILE, bundleProfile: { ...PROFILE, suspended_at: null } });
+  const account = (await auth.getAccount()) as unknown as { profile: Record<string, unknown> } | null;
+  assert.equal(account?.profile.display_name, "Alice");
+  assert.ok(!("suspended_at" in (account?.profile ?? {})));
 });
 
 test("before the admin migration (no suspended_at column) accounts read as before and nobody is paused", async () => {

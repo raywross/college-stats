@@ -1,8 +1,8 @@
 # Admin Console: People, Hidden Values, Data Health, and Operations
 
-> Status: **planned** 2026-10-12; mostly built the same day on `feature/admin` (People, Health, Operations, Log, Admins;
-> see [As built](#as-built-2026-10-12)). Still to build: the Colleges and high-school panels and the student standing
-> panel, which wait for the five levels and the selectivity index (PR #136). Planned from the owner's request: see and search users and households; deactivate or delete
+> Status: **planned** 2026-10-12; built on `feature/admin` (People, Health, Operations, Log, Admins on 2026-10-12; the
+> Colleges and high-school pages and the student standing panel on 2026-10-13, after PR #136; see
+> [As built](#as-built-2026-10-12)). Planned from the owner's request: see and search users and households; deactivate or delete
 > accounts; reset passwords; change account details such as email; link and unlink students and parents; see the
 > values the site hides for a college and for a student's standing; see each college's data "health" by when its data
 > was received; and, longer term, trigger reruns and approve data changes from the same place. Builds on
@@ -215,6 +215,8 @@ major); the note catalog entries that fired; the ablations (what the level would
 version; and the baseline's three-group answer for comparison. The panel is rendered only inside `requireAdmin()`
 and reads the same `estimate()` function the endpoint calls, with an `admin: true` option that includes the private
 fields, which the endpoint never sets. A test checks that the public endpoint's response shape rejects those fields.
+*As built:* no `admin` option; the panel reads the server-only `estimateWithDetail()` that `estimate()` itself wraps
+([as built](#as-built-colleges-high-schools-hidden-values-the-standing-panel-2026-10-13)).
 
 ## Health
 
@@ -434,7 +436,7 @@ user who is not soft-deleted. Every success writes `admin_note_auth_action`. The
 | `lib/admin/auth.ts` | `requireAdmin()`, `isAdmin()`, the aal check |
 | `lib/admin/people.ts` | Typed reads over the admin policies; `logAccess(student)` |
 | `lib/admin/health-rules.ts`, `health.ts` | Thresholds; `collegeHealth()` pure; the overview's computation and cache |
-| `lib/admin/hidden.ts` | The selectivity breakdown, GPA sources, hidden derived fields, the standing panel's `estimate(…, { admin: true })` |
+| `lib/admin/hidden.ts` | The selectivity breakdown, GPA sources, hidden derived fields, the standing panel (as built: from `estimateWithDetail()`, loaded by `lib/admin/standing.ts`) |
 | `lib/github-app.ts` | App JWT, installation token, `dispatch`, `runs`, `pulls`, `mergePull`, `commitFile`, `openPull`; a PAT fallback |
 | `lib/admin/review-queue.ts` | Accept, reject, re-run: the file edits and the PR body |
 | `supabase/migrations/2026…_admin.sql` | [Model](#model) |
@@ -457,7 +459,9 @@ user who is not soft-deleted. Every success writes `admin_note_auth_action`. The
   and the current-cycle edition constant; a guard that moving one threshold changes the expected status.
 - `tests/admin-hidden.test.mts`: the standing panel's private fields appear with `admin: true` and the public
   endpoint's response schema rejects them; the selectivity breakdown's percentiles sum to the index as the spec's
-  formula says.
+  formula says. *As built:* the panel's detail comes from `estimateWithDetail()`; `publicResult` drops every detail
+  field; no API route or client component imports the detail; and since the index's second version standardizes
+  instead of percentiling, each college's weighted readings add up to its committed index (percentiles are shown too).
 - `tests/github-app.test.mts`: JWT shape, token caching, each call's URL and body, the `request_id` input on every
   dispatch, the merge refusal on pending checks, the review-queue commit's branch name and file contents.
 - `tests/require-admin.test.mts`: `/admin/**` returns 404 signed out and for a non-admin; `getUser()` returns null
@@ -515,8 +519,8 @@ Built on `feature/admin` in units on sub-branches (`feature/admin-foundation`, `
 - **Paused accounts:** `getUser()` stays claims-only (no per-request database read); `getAccount()` and
   `requireUser()` treat a paused profile as signed out and send it to `/login?paused=1`; admin-auth's suspend bans the
   user and ends their sessions, so the token dies within its hour.
-- **Standing panel:** will read the existing server-only `estimateWithDetail()` rather than adding an `admin` option to
-  `estimate()`.
+- **Standing panel:** reads the existing server-only `estimateWithDetail()` rather than adding an `admin` option to
+  `estimate()` (built 2026-10-13, below).
 - **Review queue:** Accept writes an override only for fields an override can set (the C1 totals together, the SAT/ACT
   submission shares, older whole-college C1 readings); every other item shows why. Reject marks it `resolved:
   rejected`, which the failures list and the health counts skip. Re-run discovery dispatches a `college` run with
@@ -524,5 +528,47 @@ Built on `feature/admin` in units on sub-branches (`feature/admin-foundation`, `
 - **GitHub App permissions:** the four in the table plus **Checks: read** and **Commit statuses: read** (to read CI
   before merging). Only this repository's `data/` and `review/` PRs are listed or merged (a fork's same-named branch is
   refused).
-- **Not yet built:** `/admin/colleges/[unit]`, `/admin/high-schools/[id]`, the student standing panel
-  (`components/admin/StandingPanelSlot.tsx` is the empty slot), and the `hidden: true` registry flag.
+
+### As built: colleges, high schools, hidden values, the standing panel (2026-10-13)
+Built on `feature/admin-hidden` after PR #136 (the five levels and the selectivity index) reached `main`. Every page
+calls `requireAdmin()` before it reads anything and is `noindex`; everything below is rendered by server components, so
+none of it reaches a client bundle, an API route, or a public page. The assembly is pure and tested
+(`lib/admin/hidden.ts`); the loaders are `lib/admin/college.ts`, `lib/admin/high-school.ts`, and `lib/admin/standing.ts`.
+- **Colleges** `/admin/colleges?q=`: colleges by name, alias, or unit id (the dataset's own search) and high schools by
+  name (three letters or more); an exact unit id or high-school id opens its page. The People search's "use Colleges" link
+  lands here.
+- **A college** `/admin/colleges/[unit]`: the public header (name, tier, admit rate with its source note, a link to the
+  public profile), then three panels and the health card:
+  - *Selectivity*, recomputed from the dataset with `lib/selectivity.ts` (the index file stays readable only by the build
+    and its check): per pool (all, and in-state and out-of-state at a public with both residency rates), each input's
+    value with its citation, its percentile among reporting colleges, its standardized reading, its weight, and its
+    contribution; the small-class pull and the score; the tier the plain cutoffs give beside the stored tier, and a
+    sentence saying whether hysteresis held it and at what scores it would move; the top band of Ultra selective. The
+    method's constants are listed once under the panel. The method's second version has no trend adjustment, and the
+    panel says so. A test holds every college's breakdown to the committed index.
+  - *GPA*: what the standing model reads (`collegeGpa`): the source kind (reported, bands, estimated, bounded by a
+    weighted average, none), the point and range, the middle 50%, and for an estimate the fitted models' size and misses
+    and the predictors it read, with the field the plan cites.
+  - *Derived, not shown*: every registry field marked `hidden: true` (below) with its value and lineage (`citeField`).
+  - *Data health*: the college's card from `healthOverview()` (each group's status, date, and reason), the open failures
+    by reason and stage, the review-queue count linking to Operations' queue, and **Rerun in Operations**
+    (`/admin/operations?unit=`, which opens and prefills the college run).
+- **The `hidden: true` registry flag** (`lib/fields.ts`, `HIDDEN_FIELDS`): `selectivity.band` and three new computed fields,
+  `derived.selectivity_score`, `_in_state`, `_out_of_state` (the score behind each stored tier, never stored). Each has a
+  value function in `HIDDEN_VALUES`; a test fails when a hidden field has none, or when any public page, component, or
+  library outside the console names one. The Data page leaves hidden fields out.
+- **A high school** `/admin/high-schools/[id]`: the pooled course counts in full (`school_course_counts` through the
+  console client), most students first, with the three-student line drawn (`COURSE_LIST_MIN_STUDENTS`, held to
+  `school_course_list()`'s own threshold by a test that reads the migration); what the course plan reads for the school
+  (`offeringFor`); its profile extraction status (the profile file's link and read date); and its graduation rate with
+  the class it describes, from lineage.
+- **The standing panel** (`components/admin/StandingPanelSlot.tsx`, collapsed under every list college on the student
+  page): the estimate's private detail for that student at that college, from the server-only `estimateWithDetail()`,
+  with the open baseline's answer beside it. No `admin` option was added to `estimate()`. It mirrors the planner's own
+  estimate (the saved profile, no round, the grade and core-subject answers, each list's hooks from its own rows and
+  visits), reads through the console client, and computes once per page render for every slot (React `cache()`). The
+  student page's single access row covers it; it writes none of its own. Tests check that the public endpoint's
+  response carries no detail field (`publicResult`), and that no file under `app/api/` and no client component imports
+  `estimateWithDetail`, `SnapshotDetail`, or the console's hidden modules, directly or through a chain of imports.
+- **Not shown on the high-school page:** whether the school is in the hs-profile pilot's sample (the pilot file is a
+  pipeline input, not a runtime one); the profile's presence answers "was it extracted".

@@ -13,7 +13,7 @@
 - **Rail** (`components/admin/AdminRail.tsx`): People, Colleges, Health, Operations, Log, plus "Who is an admin"; the global
   search at the top. From `lg` a left column; on phones a strip (search, then the sections in one swipeable row).
 - **Global search** (`AdminSearch`) is a GET form to `/admin/people?q=`. One hit opens its page; several list; none says so
-  and points to Colleges. Colleges and high schools are searched on their own pages (unit U7).
+  and points to Colleges. Colleges and high schools are searched on `/admin/colleges` (below).
 - `robots: noindex, nofollow` on the layout and every page. **No analytics under `/admin`**: `AnalyticsProvider` renders
   nothing there (`isAdminPath()` in `lib/analytics.ts`), so posthog-js isn't loaded and no event is sent.
 - `proxy.ts` refreshes the session on `/admin/:path*`.
@@ -46,7 +46,7 @@ refuses when a verified factor exists. After `verified` the component calls `rou
   **Move here** with the sentence naming that household (`moveWarning()`). A parent's can-edit box starts ticked.
 - **A student record** `/admin/students/[id]`: the page calls `admin_log_access` once per render, **before** reading
   anything, so a failed log means a failed page; a missing student is a 404. Shows the record, numbers, lists (each
-  college with `StandingPanelSlot`, which unit U7 fills), plan, snapshots, and who viewed. Edit, Attach to an account
+  college with its standing panel, `StandingPanelSlot`), plan, snapshots, and who viewed. Edit, Attach to an account
   (managed records), Delete the record (typed `delete`, managed records only). Each Server Action refresh re-renders the
   page, which logs another view.
 - **Log** `/admin/log`: filters by action, admin, target kind and id, in the URL; paged by the last row's id ("Older").
@@ -55,6 +55,21 @@ refuses when a verified factor exists. After `verified` the component calls `rou
 - **On `/household`**: a one-line notice per admin link or unlink of the last 30 days, "Quad support added Jordan to this
   household on Oct 12", from `admin_household_notice`. Never the admin's name; a member name that is an email address
   reads "someone".
+
+## Colleges and high schools (built 2026-10-13, `feature/admin-hidden`)
+What each panel holds is in [admin.md](admin.md#as-built-colleges-high-schools-hidden-values-the-standing-panel-2026-10-13);
+the screens:
+- **Search** `/admin/colleges`: one GET form; colleges list with city, state, admit rate (cited by one source note under
+  the list) and unit id; high schools list with place, kind, and grades. An exact id skips the list.
+- **A college**: header, then the Selectivity, GPA, and Derived-not-shown panels in the main column and the Data health
+  card in a right column (below the panels on phones). Wide tables scroll inside their panel on phones. Each pool of the
+  selectivity breakdown is its own table, its sentence about hysteresis under it.
+- **A high school**: the counts as one table split by a dashed rule at the three-student line (counts below it in muted
+  ink), then what the course plan reads, then the profile and graduation rate.
+- **The standing panel**: a `<details>` element, closed by default, whose summary line reads the level and its label;
+  open, it shows the estimate's private detail, the inputs beside the college's, the level without each input, and
+  the notes that fired. A failed read or estimate shows one muted line in its place, never an error page. No client
+  JavaScript.
 
 ## Refusals
 Every database refusal has plain text (`ADMIN_ERRORS` in `lib/admin/constants.ts` plus `HOUSEHOLD_ERRORS`), and every

@@ -809,6 +809,15 @@ test("search runs through admin_search_people with the console header; a blank q
   assert.equal(ui.current.rpcCalls.length, 0);
 });
 
+test("the unsearched list runs admin_list_people a page at a time and reads the full count", async () => {
+  asAdmin({ rpcData: { admin_list_people: [{ kind: "user", id: BOB, name: "Bob", email: "b@example.com", status: "active", total: 120 }] } });
+  const page = await people.listPeople(3);
+  assert.equal(page.total, 120);
+  assert.equal(page.rows.length, 1);
+  assert.deepEqual(ui.current.rpcCalls, [{ name: "admin_list_people", args: { p_page: 3, p_size: people.PEOPLE_PAGE_SIZE } }]);
+  assert.deepEqual(ui.current.headers, [{ [constants.ADMIN_CONSOLE_HEADER]: "1" }]);
+});
+
 test("the rail has the five sections, highlights the right one, and every console page sits under one", () => {
   assert.deepEqual(consoleLib.ADMIN_SECTIONS.map((s) => s.label), ["People", "Colleges", "Health", "Operations", "Log"]);
   assert.equal(consoleLib.activeSection("/admin"), null);

@@ -169,6 +169,7 @@ async function readProblems(w: World): Promise<string[]> {
 function functionCalls(w: World): [name: string, sql: string, params: unknown[]][] {
   return [
     ["admin_search_people", "select * from public.admin_search_people('smith')", []],
+    ["admin_list_people", "select * from public.admin_list_people()", []],
     ["admin_user_auth", "select * from public.admin_user_auth($1)", [w.alice]],
     ["admin_update_profile", "select public.admin_update_profile($1, '{\"display_name\": \"Hacked\"}')", [w.alice]],
     ["admin_update_student", "select public.admin_update_student($1, '{\"display_name\": \"Hacked\"}')", [w.ben]],
@@ -332,6 +333,25 @@ test("admin_search_people: emails, names, households, invitations, ids, and typo
   assert.deepEqual(await search("   "), []);
   // A % in the query is a character, not a wildcard.
   assert.deepEqual(await search("%"), []);
+});
+
+test("admin_list_people: every account and managed record, newest first, paged with the full count", async () => {
+  const w = await world();
+  type Row = { kind: string; id: string; name: string | null; status: string; created: string; total: string };
+  const list = (page: number, size: number) => asAdmin<Row>(w, "select * from public.admin_list_people($1, $2)", [page, size]);
+  const accounts = Number((await w.db.query<{ n: number }>("select count(*)::int as n from auth.users")).rows[0].n);
+  const managed = Number((await w.db.query<{ n: number }>("select count(*)::int as n from public.students where user_id is null")).rows[0].n);
+  const all = await list(1, 200);
+  assert.equal(all.length, accounts + managed);
+  assert.ok(all.every((r) => Number(r.total) === all.length));
+  assert.ok(all.every((r, i) => i === 0 || all[i - 1].created >= r.created), "newest first");
+  assert.ok(all.some((r) => r.kind === "student" && r.name === "Joe" && r.status === "managed"));
+  assert.ok(!all.some((r) => r.kind === "student" && r.name === "Alice Smith"), "a student with an account is listed once, as the account");
+  const first = await list(1, 2);
+  const second = await list(2, 2);
+  assert.deepEqual([...first, ...second].map((r) => r.id), all.slice(0, 4).map((r) => r.id));
+  assert.equal(Number(first[0].total), all.length);
+  assert.deepEqual(await list(999, 50), []);
 });
 
 test("admin_link: six seats counting invitations, one household per person (moved, never duplicated), the household left behind closed", async () => {

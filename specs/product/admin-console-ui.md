@@ -29,7 +29,9 @@ refuses when a verified factor exists. After `verified` the component calls `rou
 
 ## People
 - **Search** `/admin/people`: `admin_search_people`. Rows show kind, name, email (the only place on the site that shows one
-  beside a name), household, status chips (Paused, Deleting, Invited, No account yet), created and last sign-in.
+  beside a name), household, status chips (Paused, Deleting, Invited, No account yet), created and last sign-in. With no
+  search (owner, 2026-10-13), it lists every account and managed student record, newest first, 50 a page
+  (`admin_list_people(page, size)`, `?page=N`); households and invitations stay search-only.
 - **A person** `/admin/people/[user]`: Account (with Auth data from `admin_user_auth`), Households (with **Leave**), Student
   records, Lists and plan (counts only; the lists open on the student page), Notifications, Who viewed their data. Actions in
   a right column (below the content on phones, with a "Jump to actions" link): Edit details, Change email (typed twice,

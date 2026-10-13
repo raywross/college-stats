@@ -83,6 +83,16 @@ export async function searchPeople(q: string, max = 50): Promise<SearchRow[]> {
   return rows<SearchRow>("search", supabase.rpc("admin_search_people", { q, max_rows: max }));
 }
 
+/** Rows per page of the unsearched People list. */
+export const PEOPLE_PAGE_SIZE = 50;
+
+/** One page of every account and managed student record, newest first (admin_list_people), and the full count. */
+export async function listPeople(page: number): Promise<{ rows: SearchRow[]; total: number }> {
+  const supabase = await db();
+  const found = await rows<SearchRow & { total: number }>("list", supabase.rpc("admin_list_people", { p_page: page, p_size: PEOPLE_PAGE_SIZE }));
+  return { rows: found, total: Number(found[0]?.total ?? 0) };
+}
+
 /* ------------------------------------------------------------------ */
 /* A person                                                            */
 /* ------------------------------------------------------------------ */

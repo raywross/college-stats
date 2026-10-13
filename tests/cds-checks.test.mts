@@ -465,6 +465,17 @@ test("a re-judge with no new read moves the queue with the verdicts (check-cds-r
   assert.deepEqual(queueAfterRejudge(rejected, fixed, fixed, T, opts).find((i) => i.code === "B.2201"), rejected.find((i) => i.code === "B.2201"));
 });
 
+test("a person's misread hold survives every re-judge, and the item stays queued", () => {
+  const d = applyChecks(doc(VU), ctx(VU));
+  const misread = { check: "misread" as const, detail: "the mark is under Recommended, read as Required" };
+  d.items["C.116"] = { ...d.items["C.116"], status: "failed", failures: [misread] };
+  const again = applyChecks(applyChecks(d, ctx(VU)), ctx(VU));
+  assert.equal(again.items["C.116"].status, "failed");
+  assert.deepEqual(again.items["C.116"].failures, [misread]);
+  const queued = reviewItemsFor(again, T, { unit_id: VU, name: "Vanderbilt University", run: "hold-misread", queued: "2026-10-13" });
+  assert.ok(queued.some((i) => i.code === "C.116" && i.failures[0].check === "misread"));
+});
+
 test("the PR body lists per-item review rows beside the round-2 table", () => {
   const items = reviewItemsFor(doc(CU), T, { unit_id: CU, name: "Cornell University", run: "r1", queued: "2026-10-03" });
   const rows = perItemTable(items);

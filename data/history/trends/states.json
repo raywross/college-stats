@@ -9295,7 +9295,7 @@
         "acceptanceRate": 0.7791,
         "avgCost": 23837,
         "outOfState": 0.1018,
-        "testOptionalShare": 0.8864,
+        "testOptionalShare": 0.9091,
         "netInflow": 0.2204
       },
       "all": {
@@ -20568,7 +20568,7 @@
         "acceptanceRate": 0.7035,
         "avgCost": 24988,
         "outOfState": 0.0312,
-        "testOptionalShare": 0.8182,
+        "testOptionalShare": 0.8242,
         "netInflow": -0.0491
       },
       "all": {
@@ -23587,7 +23587,7 @@
         "acceptanceRate": 0.8205,
         "avgCost": 28858,
         "outOfState": 0.1446,
-        "testOptionalShare": 0.906,
+        "testOptionalShare": 0.9145,
         "netInflow": 0.1362
       },
       "all": {

@@ -1,5 +1,5 @@
 -- Quad's selectivity history (specs/chances/selectivity-history.md): after each production deploy, the score, rank,
--- tier, and inputs of every college and pool whose selectivity meaningfully changed, for the admin console. Never on
+-- tier, and inputs of every college and pool whose selectivity changed in any way (no threshold), for the admin console. Never on
 -- the public site: the score is a hidden value. Additive; apply after 20261013140000_college_views.sql (dev first,
 -- then prod), then run `npm run backfill-selectivity-history` once.
 --
@@ -57,15 +57,18 @@ grant all on public.selectivity_publishes, public.selectivity_history to service
 /* Writing (service role)                                              */
 /* ------------------------------------------------------------------ */
 
--- The last recorded row for every college and pool: what the next publish is compared against.
+-- The last recorded row for every college and pool: what the next publish is compared against (every field, since every
+-- change is recorded).
 create function public.selectivity_latest_rows()
-returns table (unit_id text, pool text, score numeric, tier text, tier_year text, band text, published_at timestamptz)
+returns table (unit_id text, pool text, score numeric, rank integer, tier text, tier_year text, band text, held boolean,
+               inputs jsonb, published_at timestamptz)
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select distinct on (h.unit_id, h.pool) h.unit_id, h.pool, h.score, h.tier, h.tier_year, h.band, h.published_at
+  select distinct on (h.unit_id, h.pool) h.unit_id, h.pool, h.score, h.rank, h.tier, h.tier_year, h.band, h.held, h.inputs,
+         h.published_at
   from public.selectivity_history h
   order by h.unit_id, h.pool, h.published_at desc, h.id desc
 $$;
@@ -141,9 +144,12 @@ end;
 $$;
 
 -- The biggest score moves over the last p_days days: each college and pool's newest row against its last row from
--- before the window. Method-change rows are left out unless p_include_method (a method change isn't the college moving).
+-- before the window. By default the console hides method changes and moves under 0.25 points ("show every change"
+-- passes p_include_method and p_min 0): display filters only, since every change is recorded. p_tier narrows to moves
+-- into or out of a tier; p_cause to one cause.
 create function public.admin_selectivity_movers(p_days integer default 30, p_pool text default null,
-                                                p_include_method boolean default false, p_limit integer default 50)
+                                                p_include_method boolean default false, p_limit integer default 50,
+                                                p_min numeric default 0, p_tier text default null, p_cause text default null)
 returns table (unit_id text, pool text, score_from numeric, score_to numeric, delta numeric, tier_from text, tier_to text,
                moved_at timestamptz, cause text)
 language plpgsql
@@ -172,7 +178,11 @@ begin
   select l.unit_id, l.pool, b.score, l.score, l.score - b.score, b.tier, l.tier, l.published_at, l.cause
   from latest l
   left join before b on b.unit_id = l.unit_id and b.pool = l.pool
-  where b.score is distinct from l.score or b.tier is distinct from l.tier
+  where (b.score is distinct from l.score or b.tier is distinct from l.tier)
+    and (b.tier is distinct from l.tier or b.score is null or l.score is null
+         or abs(l.score - b.score) >= coalesce(p_min, 0))
+    and (p_tier is null or l.tier = p_tier or b.tier = p_tier)
+    and (p_cause is null or l.cause = p_cause)
   order by abs(coalesce(l.score - b.score, 0)) desc, (b.tier is distinct from l.tier) desc, l.unit_id, l.pool
   limit greatest(1, least(coalesce(p_limit, 50), 500));
 end;
@@ -207,8 +217,8 @@ end;
 $$;
 
 revoke execute on function public.admin_selectivity_tier_counts(text) from public, anon;
-revoke execute on function public.admin_selectivity_movers(integer, text, boolean, integer) from public, anon;
+revoke execute on function public.admin_selectivity_movers(integer, text, boolean, integer, numeric, text, text) from public, anon;
 revoke execute on function public.admin_selectivity_run_changes(bigint) from public, anon;
 grant execute on function public.admin_selectivity_tier_counts(text) to authenticated;
-grant execute on function public.admin_selectivity_movers(integer, text, boolean, integer) to authenticated;
+grant execute on function public.admin_selectivity_movers(integer, text, boolean, integer, numeric, text, text) to authenticated;
 grant execute on function public.admin_selectivity_run_changes(bigint) to authenticated;

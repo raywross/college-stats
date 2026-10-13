@@ -29,6 +29,18 @@ export interface SelectivityPoint {
   inputs: Record<string, InputValue>;
 }
 
+/**
+ * Score moves smaller than this are hidden by default in Movers and a college's table ("show every change" shows them).
+ * A display filter only: every change is recorded (Decision 2).
+ */
+export const DISPLAY_MOVE_MIN = 0.25;
+
+/** Whether a row is drift the console hides by default: same tier as before, a data cause, and a move under the filter. */
+export function isDrift(point: Pick<SelectivityPoint, "score" | "tier" | "cause">, prev: Pick<SelectivityPoint, "score" | "tier"> | null): boolean {
+  if (!prev || point.cause !== "data" || point.tier !== prev.tier || point.score === null || prev.score === null) return false;
+  return Math.abs(point.score - prev.score) < DISPLAY_MOVE_MIN;
+}
+
 export const POOL_LABELS: Record<Pool, string> = { all: "All applicants", in_state: "In-state", out_of_state: "Out-of-state" };
 export const CAUSE_LABELS: Record<PointCause, string> = {
   data: "New figures",

@@ -136,7 +136,12 @@ test("the diff comes from the two commits' data files, read from git", async () 
   assert.equal(r.changes.find((c) => c.field === "admissions.acceptance_rate")?.kind, "revised");
   assert.ok(r.changes.some((c) => c.field === "name" && c.unit_id === TWO_COMMITS[HEAD].schools[1].unit_id), "the rename is a change");
   assert.deepEqual({ head: r.head, base: r.base }, { head: HEAD, base: BASE });
-  assert.deepEqual(reads.sort(), [`aaaa:${DATASET_PATHS.calendar}`, `aaaa:${DATASET_PATHS.meta}`, `aaaa:${DATASET_PATHS.schools}`, `bbbb:${DATASET_PATHS.calendar}`, `bbbb:${DATASET_PATHS.meta}`, `bbbb:${DATASET_PATHS.schools}`].sort());
+  // Each commit's selectivity index is read too, for its method (a method change keeps tier changes out of the emails).
+  const index = "data/selectivity-index.json";
+  assert.deepEqual(
+    reads.sort(),
+    [`aaaa:${DATASET_PATHS.calendar}`, `aaaa:${DATASET_PATHS.meta}`, `aaaa:${DATASET_PATHS.schools}`, `aaaa:${index}`, `bbbb:${DATASET_PATHS.calendar}`, `bbbb:${DATASET_PATHS.meta}`, `bbbb:${DATASET_PATHS.schools}`, `bbbb:${index}`].sort(),
+  );
   assert.ok(out.lines.some((l) => l.startsWith(`Changes since ${BASE.slice(0, 12)}: ${expected.length} changes (`)), out.lines.join("\n"));
 });
 

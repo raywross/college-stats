@@ -2,12 +2,12 @@
  * Quad's selectivity history (specs/chances/selectivity-history.md): which rows a publish records, and what each row
  * carries. Pure: the publish and backfill scripts read the commits and the table, and this decides.
  *
- * A row is recorded for a college and pool when, against that pool's last recorded row:
- * - the tier, the tier's admissions year, or the top-of-Ultra band changed; or the score moved by SCORE_MOVE_MIN or
- *   more (small drifts add up against the last recorded row, so no move is lost);
- * - the pool is new (`new_pool`), or it lost its rating (`unrated`, score and tier null);
- * - the method changed (`method`: every rated college and pool, so a method change never reads as a college moving).
- * Rank-only moves aren't recorded: they come from other colleges, and every recorded row carries the rank.
+ * Every change is recorded (owner, 2026-10-13: "we should track everything"; Decision 2). A row is written for a
+ * college and pool when anything differs from that pool's last recorded row: the score at its two stored decimals,
+ * the rank, the tier, the tier's admissions year, the top-of-Ultra band, the hysteresis hold, or any input; when the
+ * pool is new (`new_pool`) or lost its rating (`unrated`, score and tier null); and for every rated college and pool
+ * when the method changed (`method`, so a method change never reads as a college moving). There is no threshold: the
+ * console hides moves under DISPLAY_MOVE_MIN by default, as a display filter.
  */
 import type { DatasetMeta, School } from "../../lib/types";
 import type { SelectivityTier } from "../../lib/chances/types.ts";
@@ -19,8 +19,6 @@ import type { SelectivityIndexFile } from "./selectivity.mts";
 export const HISTORY_POOLS = ["all", "in_state", "out_of_state"] as const;
 export type HistoryPool = (typeof HISTORY_POOLS)[number];
 
-/** A score move that is recorded without a tier change (owner can tune; open question 1). */
-export const SCORE_MOVE_MIN = 0.25;
 
 export type RowCause = "data" | "method" | "backfill" | "new_pool" | "unrated";
 export type RunCause = "data" | "method" | "backfill";
@@ -30,9 +28,12 @@ export interface Recorded {
   unit_id: string;
   pool: HistoryPool;
   score: number | null;
+  rank: number | null;
   tier: string | null;
   tier_year: string | null;
   band: string | null;
+  held: boolean;
+  inputs: Record<string, InputValue>;
 }
 
 export interface InputValue {
@@ -116,6 +117,29 @@ export function inputsFor(school: School, pool: HistoryPool, meta: DatasetMeta):
   return out;
 }
 
+/** Whether anything recorded differs: score (two decimals), rank, tier, year, band, hold, or an input. */
+function differsFrom(last: Recorded, row: HistoryRow): boolean {
+  return (
+    round2(Number(last.score)) !== row.score ||
+    (last.rank ?? null) !== row.rank ||
+    last.tier !== row.tier ||
+    last.tier_year !== row.tier_year ||
+    last.band !== row.band ||
+    Boolean(last.held) !== row.held ||
+    JSON.stringify(sortKeys(last.inputs ?? {})) !== JSON.stringify(sortKeys(row.inputs))
+  );
+}
+
+/** Inputs compared key by key, whatever order the database returned them in. */
+function sortKeys(inputs: Record<string, InputValue>): [string, InputValue][] {
+  return Object.keys(inputs)
+    .sort()
+    .map((k) => {
+      const v = inputs[k];
+      return [k, { v: v.v ?? null, year: v.year ?? null, source: v.source ?? null, ...(v.imputed ? { imputed: true } : {}) }];
+    });
+}
+
 const tierOf = (school: School, pool: HistoryPool): SelectivityTier | null =>
   ((pool === "all" ? school.selectivity?.tier : school.selectivity?.[pool]) ?? null) as SelectivityTier | null;
 
@@ -138,12 +162,7 @@ export function historyRows(prev: ReadonlyMap<string, Recorded>, next: Selectivi
       const last = prev.get(key(school.unit_id, pool));
       const tierYear = school.selectivity?.year ?? null;
       const band = pool === "all" ? (school.selectivity?.band ?? null) : null;
-      let cause: RowCause | null = null;
-      if (methodChanged) cause = "method";
-      else if (!last || last.score === null) cause = "new_pool";
-      else if (last.tier !== tier || last.tier_year !== tierYear || last.band !== band || Math.abs(round2(score - Number(last.score))) >= SCORE_MOVE_MIN) cause = "data";
-      if (!cause) continue;
-      rows.push({
+      const row: HistoryRow = {
         unit_id: school.unit_id,
         pool,
         score: round2(score),
@@ -153,9 +172,15 @@ export function historyRows(prev: ReadonlyMap<string, Recorded>, next: Selectivi
         band,
         // Held is read with today's cutoffs, so it's only known for rows built with today's method.
         held: next.method === SELECTIVITY_METHOD && tier !== selectivityTier(score, null),
-        cause: opts.backfill ? "backfill" : cause,
+        cause: "data",
         inputs: inputsFor(school, pool, next.meta),
-      });
+      };
+      let cause: RowCause | null = null;
+      if (methodChanged) cause = "method";
+      else if (!last || last.score === null) cause = "new_pool";
+      else if (differsFrom(last, row)) cause = "data";
+      if (!cause) continue;
+      rows.push({ ...row, cause: opts.backfill ? "backfill" : cause });
     }
   }
   // A pool recorded as rated that this publish no longer rates.
@@ -196,12 +221,12 @@ export function historyRun(next: SelectivityAt, opts: { gitCommit: string; publi
 /** The recorded rows a run leaves as "last recorded", for the next run in the same process (the backfill walks several). */
 export function advance(prev: Map<string, Recorded>, rows: readonly HistoryRow[]): Map<string, Recorded> {
   const out = new Map(prev);
-  for (const r of rows) out.set(key(r.unit_id, r.pool), { unit_id: r.unit_id, pool: r.pool, score: r.score, tier: r.tier, tier_year: r.tier_year, band: r.band });
+  for (const r of rows) out.set(key(r.unit_id, r.pool), { unit_id: r.unit_id, pool: r.pool, score: r.score, rank: r.rank, tier: r.tier, tier_year: r.tier_year, band: r.band, held: r.held, inputs: r.inputs });
   return out;
 }
 
 export function recordedMap(rows: readonly Recorded[]): Map<string, Recorded> {
-  return new Map(rows.map((r) => [key(r.unit_id, r.pool), { ...r, score: r.score === null ? null : Number(r.score) }]));
+  return new Map(rows.map((r) => [key(r.unit_id, r.pool), { ...r, score: r.score === null ? null : Number(r.score), rank: r.rank ?? null, held: Boolean(r.held), inputs: r.inputs ?? {} }]));
 }
 
 /* ------------------------------------------------------------------ */

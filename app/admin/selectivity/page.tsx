@@ -7,8 +7,10 @@ import { getData } from "@/lib/data";
 import { ELITE_COUNT_RANGE } from "@/lib/selectivity";
 import { SELECTIVITY_TIERS, SELECTIVITY_TIER_LABELS } from "@/lib/chances/levels";
 import type { SelectivityTier } from "@/lib/chances/types";
-import { historyInstalled, movers, runChanges, runs, tierCounts, type Pool } from "@/lib/admin/selectivity-history";
-import { CAUSE_LABELS, POOL_LABELS, tierMoves, type RunChange } from "@/lib/admin/selectivity-history-view";
+import { followerTierEmails, historyInstalled, movers, runChanges, runs, tierCounts, type Pool } from "@/lib/admin/selectivity-history";
+import { CAUSE_LABELS, DISPLAY_MOVE_MIN, POOL_LABELS, tierMoves, type PointCause, type RunChange } from "@/lib/admin/selectivity-history-view";
+import { describeChange } from "@/lib/changes";
+import type { FieldPath } from "@/lib/fields";
 
 export const metadata: Metadata = { title: "Selectivity history", robots: { index: false, follow: false } };
 
@@ -24,7 +26,8 @@ const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v
 /**
  * /admin/selectivity (specs/chances/selectivity-history.md "Across colleges"): the latest publish's tier moves and
  * Ultra selective count, the biggest movers over 7, 30, or 90 days, tier counts after each publish per pool, and the
- * method log. Filters are GET parameters: days, pool, method=1, counts (the pool the counts table shows).
+ * method log, and the tier changes that went to followers. Filters are GET parameters: days, pool, tier, cause, every=1
+ * ("show every change": method changes and moves under DISPLAY_MOVE_MIN), counts (the pool the counts table shows).
  */
 export default async function SelectivityPage({ searchParams }: PageProps<"/admin/selectivity">) {
   await connection();
@@ -33,7 +36,12 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
   const days = (DAYS as readonly number[]).includes(Number(first(params.days))) ? (Number(first(params.days)) as 7 | 30 | 90) : 30;
   const poolParam = first(params.pool);
   const pool = POOLS.includes(poolParam as Pool) ? (poolParam as Pool) : undefined;
-  const includeMethod = first(params.method) === "1";
+  const every = first(params.every) === "1";
+  const tierParam = first(params.tier);
+  const tier = SELECTIVITY_TIERS.includes(tierParam as SelectivityTier) ? (tierParam as SelectivityTier) : undefined;
+  const causeParam = first(params.cause);
+  const CAUSES: PointCause[] = ["data", "new_pool", "unrated", "method", "backfill"];
+  const cause = CAUSES.includes(causeParam as PointCause) ? (causeParam as PointCause) : undefined;
   const countsParam = first(params.counts);
   const countsPool: Pool = POOLS.includes(countsParam as Pool) ? (countsParam as Pool) : "all";
 
@@ -51,7 +59,12 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
   const all = await runs();
   const latest = all[0] ?? null;
   const previous = all[1] ?? null;
-  const [latestChanges, moved, counts] = await Promise.all([latest ? runChanges(latest.id) : Promise.resolve([] as RunChange[]), movers({ days, pool, includeMethod }), tierCounts(countsPool)]);
+  const [latestChanges, moved, counts, emails] = await Promise.all([
+    latest ? runChanges(latest.id) : Promise.resolve([] as RunChange[]),
+    movers({ days, pool, tier, cause, includeMethod: every, minMove: every ? 0 : DISPLAY_MOVE_MIN }),
+    tierCounts(countsPool),
+    followerTierEmails((c) => describeChange({ ...c, field: c.field as FieldPath, kind: c.kind as Parameters<typeof describeChange>[0]["kind"] })),
+  ]);
   const moves = tierMoves(latestChanges);
   // The method log: each method, when it first shipped, and how many tier changes its method-change runs made.
   const methodRuns = all.filter((r) => r.cause === "method" || r === all.at(-1)).reverse();
@@ -60,7 +73,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
 
   const href = (o: Record<string, string | undefined>) => {
     const q = new URLSearchParams();
-    const merged = { days: String(days), pool, method: includeMethod ? "1" : undefined, counts: countsPool === "all" ? undefined : countsPool, ...o };
+    const merged = { days: String(days), pool, tier, cause, every: every ? "1" : undefined, counts: countsPool === "all" ? undefined : countsPool, ...o };
     for (const [k, v] of Object.entries(merged)) if (v) q.set(k, v);
     const s = q.toString();
     return s ? `${BASE}?${s}` : BASE;
@@ -149,10 +162,22 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
             {chip("Any pool", !pool, href({ pool: undefined }))}
             {POOLS.map((p) => chip(POOL_LABELS[p], pool === p, href({ pool: p })))}
             <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-            {chip(includeMethod ? "Method changes shown" : "Method changes hidden", includeMethod, href({ method: includeMethod ? undefined : "1" }))}
+            {chip("Show every change", every, href({ every: every ? undefined : "1" }))}
           </div>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            {chip("Any tier", !tier, href({ tier: undefined }))}
+            {SELECTIVITY_TIERS.map((t) => chip(SELECTIVITY_TIER_LABELS[t], tier === t, href({ tier: t })))}
+            <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+            {chip("Any cause", !cause, href({ cause: undefined }))}
+            {CAUSES.filter((c) => every || (c !== "method" && c !== "backfill")).map((c) => chip(CAUSE_LABELS[c], cause === c, href({ cause: c })))}
+          </div>
+          {!every && (
+            <p className="mb-3 text-xs text-muted-foreground">
+              Hiding method changes and moves under {DISPLAY_MOVE_MIN} points. Every change is recorded; &ldquo;Show every change&rdquo; lists them.
+            </p>
+          )}
           {moved.length === 0 ? (
-            <Empty>No moves in the last {days} days{includeMethod ? "" : " (method changes hidden)"}.</Empty>
+            <Empty>No moves in the last {days} days{every ? "" : ` of ${DISPLAY_MOVE_MIN} points or more, or across a tier`}.</Empty>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -184,6 +209,25 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
                 </tbody>
               </table>
             </div>
+          )}
+        </Panel>
+
+        <Panel title="Follower emails" id="followers">
+          {emails.length === 0 ? (
+            <Empty>No tier change has gone to followers yet. They go out with the update email after a publish that changes a college&apos;s public tier (never for a method change).</Empty>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {emails.map((e) => (
+                <li key={`${e.publishId}-${e.unitId}-${e.field}`} className="flex flex-wrap items-baseline justify-between gap-x-4">
+                  <span className="min-w-0">
+                    {collegeLink(e.unitId)} <span className="text-muted-foreground">·</span> {e.sentence}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {day(e.publishedAt)} · {e.followers} {e.followers === 1 ? "follower" : "followers"}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </Panel>
 

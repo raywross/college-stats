@@ -1,7 +1,7 @@
 import { ELITE_INDEX, TIER_CUTOFFS } from "@/lib/selectivity";
 import { SELECTIVITY_TIER_LABELS } from "@/lib/chances/levels";
 import type { SelectivityTier } from "@/lib/chances/types";
-import { CAUSE_LABELS, POOL_LABELS, inputChanges, withPrevious, type Pool, type SelectivityPoint } from "@/lib/admin/selectivity-history-view";
+import { CAUSE_LABELS, DISPLAY_MOVE_MIN, POOL_LABELS, inputChanges, isDrift, withPrevious, type Pool, type SelectivityPoint } from "@/lib/admin/selectivity-history-view";
 
 /**
  * One college's selectivity history on its console page (specs/chances/selectivity-history.md "The admin screens"):
@@ -75,9 +75,12 @@ function ScoreTrail({ points }: { points: SelectivityPoint[] }) {
   );
 }
 
-export function SelectivityHistory({ points, repoUrl }: { points: SelectivityPoint[]; repoUrl: string }) {
+export function SelectivityHistory({ points, repoUrl, every, toggleHref }: { points: SelectivityPoint[]; repoUrl: string; every: boolean; toggleHref: string }) {
   const pools = (["all", "in_state", "out_of_state"] as Pool[]).filter((pool) => points.some((p) => p.pool === pool));
-  const rows = withPrevious(points);
+  const all = withPrevious(points);
+  // Every change is recorded; by default the table hides same-tier moves under DISPLAY_MOVE_MIN (a display filter).
+  const rows = every ? all : all.filter(({ point, prev }) => !isDrift(point, prev));
+  const hidden = all.length - rows.length;
   return (
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -99,6 +102,14 @@ export function SelectivityHistory({ points, repoUrl }: { points: SelectivityPoi
       </div>
       <p className="text-xs text-muted-foreground">
         Bands are today&apos;s tier cutoffs. A ringed point is a tier change; a dashed line is a method change, so a jump there is the method, not the college.
+      </p>
+      <p className="text-xs text-muted-foreground">
+        {every ? `Showing every change (${all.length}).` : hidden > 0 ? `${hidden} same-tier ${hidden === 1 ? "move" : "moves"} under ${DISPLAY_MOVE_MIN} points hidden.` : "Every change is shown."}{" "}
+        {(every || hidden > 0) && (
+          <a href={toggleHref} className="font-semibold text-primary underline-offset-4 hover:underline">
+            {every ? "Hide small moves" : "Show every change"}
+          </a>
+        )}
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

@@ -33,7 +33,7 @@ export const metadata: Metadata = { title: "College", robots: { index: false, fo
  * with its open failures and review-queue items, and a Rerun link that opens Operations with this college filled in.
  * Server-rendered behind requireAdmin(); nothing here reaches a client bundle.
  */
-export default async function CollegePage({ params }: PageProps<"/admin/colleges/[unit]">) {
+export default async function CollegePage({ params, searchParams }: PageProps<"/admin/colleges/[unit]">) {
   await connection();
   await requireAdmin();
   const { unit } = await params;
@@ -46,6 +46,7 @@ export default async function CollegePage({ params }: PageProps<"/admin/colleges
   const opsHref = `/admin/operations?unit=${unit}`;
   const looking = await collegeViewers(unit);
   const history = (await historyInstalled()) ? await collegeHistory(unit) : null;
+  const every = (await searchParams).every === "1";
 
   return (
     <>
@@ -71,7 +72,7 @@ export default async function CollegePage({ params }: PageProps<"/admin/colleges
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="min-w-0 space-y-5">
           <SelectivityBlock panel={selectivity} school={school} />
-          <HistoryBlock points={history} />
+          <HistoryBlock points={history} every={every} unit={unit} />
           <GpaBlock panel={gpa} school={school} />
           <HiddenBlock rows={hidden} school={school} />
         </div>
@@ -352,7 +353,7 @@ function ViewersBlock({ unit, looking }: { unit: string; looking: Awaited<Return
 /* Selectivity history                                                 */
 /* ------------------------------------------------------------------ */
 
-function HistoryBlock({ points }: { points: SelectivityPoint[] | null }) {
+function HistoryBlock({ points, every, unit }: { points: SelectivityPoint[] | null; every: boolean; unit: string }) {
   return (
     <Panel
       title="Selectivity history"
@@ -368,7 +369,12 @@ function HistoryBlock({ points }: { points: SelectivityPoint[] | null }) {
       ) : points.length === 0 ? (
         <Empty>Nothing recorded for this college yet.</Empty>
       ) : (
-        <SelectivityHistory points={points} repoUrl={`https://github.com/${githubRepo()}`} />
+        <SelectivityHistory
+          points={points}
+          repoUrl={`https://github.com/${githubRepo()}`}
+          every={every}
+          toggleHref={`/admin/colleges/${unit}${every ? "" : "?every=1"}#selectivity-history`}
+        />
       )}
     </Panel>
   );

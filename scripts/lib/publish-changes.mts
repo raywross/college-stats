@@ -14,7 +14,8 @@ import { execFileSync } from "node:child_process";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DatasetMeta, School } from "../../lib/types";
 import type { ReleaseCalendar } from "../../lib/releases";
-import { describeChange, diffSchools, type DatasetChange, type DatasetSnapshot } from "../../lib/changes.ts";
+import type { FieldPath } from "../../lib/fields.ts";
+import { TIER_FIELDS, describeChange, diffSchools, type DatasetChange, type DatasetSnapshot } from "../../lib/changes.ts";
 
 export const PUBLISH_CHANGES_MIGRATION = "supabase/migrations/20261007120000_publish_changes.sql";
 /** Changes per staging call: rows are small (~300 bytes), so a big release (~20,000 rows) takes ten calls. */
@@ -79,9 +80,35 @@ export function readDatasetAt(readAt: ReadAt, sha: string): DatasetAt {
   return { schools: read<School[]>(DATASET_PATHS.schools), meta: read<DatasetMeta>(DATASET_PATHS.meta), calendar: read<ReleaseCalendar>(DATASET_PATHS.calendar) };
 }
 
+/**
+ * The selectivity method a commit was built with: its `method`, null for an index from before the field, or
+ * "missing" when the commit has no index at all.
+ */
+export function selectivityMethodAt(readAt: ReadAt, sha: string): string | null | "missing" {
+  let text: string;
+  try {
+    text = readAt(sha, "data/selectivity-index.json");
+  } catch {
+    return "missing";
+  }
+  return (JSON.parse(text) as { method?: string }).method ?? null;
+}
+
+/**
+ * Why the tier fields are left out of a publish's changes, or null when they're announced: the method changed between
+ * the two commits (a method change is ours, not the college's), or the earlier commit had no tiers at all (every tier
+ * would read as new). A method unknown on one side (an index from before the field) counts as unchanged.
+ */
+export function suppressTiers(base: string | null | "missing", head: string | null | "missing"): string | null {
+  if (head === "missing") return null;
+  if (base === "missing") return "the earlier commit had no selectivity tiers";
+  if (base && head && base !== head) return `the selectivity method changed (${base} → ${head})`;
+  return null;
+}
+
 /** Every change between the previous dataset and the new one; none on a project's first publish. */
-export function computeChanges(prev: DatasetSnapshot | null, next: DatasetSnapshot, calendar: Pick<ReleaseCalendar, "releases">): DatasetChange[] {
-  return prev ? diffSchools(prev, next, undefined, { calendar }) : [];
+export function computeChanges(prev: DatasetSnapshot | null, next: DatasetSnapshot, calendar: Pick<ReleaseCalendar, "releases">, suppress: readonly FieldPath[] = []): DatasetChange[] {
+  return prev ? diffSchools(prev, next, undefined, { calendar, suppress }) : [];
 }
 
 /**
@@ -215,7 +242,9 @@ export async function publishChanges(opts: PublishChangesOptions): Promise<Publi
 
   const next = readDatasetAt(git.readAt, head);
   const prev = base ? readDatasetAt(git.readAt, base) : null;
-  const changes = computeChanges(prev, next, next.calendar);
+  const tiersSuppressed = base ? suppressTiers(selectivityMethodAt(git.readAt, base), selectivityMethodAt(git.readAt, head)) : null;
+  if (tiersSuppressed) log(`Quad's selectivity tier changes aren't announced this time: ${tiersSuppressed}.`);
+  const changes = computeChanges(prev, next, next.calendar, tiersSuppressed ? TIER_FIELDS : []);
   log(`${next.schools.length.toLocaleString("en-US")} colleges at ${short(head)} (retrieved ${next.meta.retrieved}).`);
   log(base ? `Changes since ${short(base)}: ${changeSummary(changes)}.` : `First publish (no earlier commit recorded): ${changeSummary(changes)}.`);
 

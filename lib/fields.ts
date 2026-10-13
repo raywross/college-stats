@@ -84,6 +84,14 @@ export interface NotifyDef {
   phrase?: string;
   /** For an object value: the keys compared and shown, with their words ("in-state"); other keys are ignored. */
   keys?: Record<string, string>;
+  /**
+   * false: report any change to the stored value, even when the derived value's own inputs didn't change (Quad's
+   * selectivity tier, which other colleges' figures can move by shifting the scales; specs/chances/selectivity-history.md
+   * Decision 7). Hysteresis already keeps a tier from flapping on small drifts.
+   */
+  ownInputsOnly?: false;
+  /** Quad's selectivity tier for this pool: the sentence names the pool ("for out-of-state applicants"). */
+  tierPool?: "all" | "in_state" | "out_of_state";
 }
 
 /** Default thresholds per unit (specs/product/follow-colleges.md#detecting-changes): 0.1 points, $50, 1, 0.01, any. */
@@ -686,12 +694,15 @@ export const FIELDS = {
   /* ---- Quad's selectivity (specs/chances/selectivity-index.md; `npm run build-selectivity`) ---- */
   // Stored tiers, never the index. The formula names the kinds of figures read, never weights or cutoffs (the method is
   // Quad's own); citations expand to the inputs this college publishes.
+  // The tier is public, so followers hear when it changes (specs/chances/selectivity-history.md, Decision 7); the score
+  // and rank never notify. The band and the year stay silent.
   "selectivity.tier": {
     label: "Quad's selectivity",
     topic: "admissions",
     source: "ipeds-adm",
     vintage: "ipeds-adm",
     derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+    notify: { unit: "text", ownInputsOnly: false, tierPool: "all" },
   },
   "selectivity.in_state": {
     label: "Quad's selectivity, in-state applicants",
@@ -699,6 +710,7 @@ export const FIELDS = {
     source: "ipeds-adm",
     vintage: "ipeds-adm",
     derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from its state`, inputs: ["derived.admit_rate_in_state", ...SELECTIVITY_INPUTS] },
+    notify: { unit: "text", ownInputsOnly: false, tierPool: "in_state" },
   },
   "selectivity.out_of_state": {
     label: "Quad's selectivity, out-of-state applicants",
@@ -706,6 +718,7 @@ export const FIELDS = {
     source: "ipeds-adm",
     vintage: "ipeds-adm",
     derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from other states`, inputs: ["derived.admit_rate_out_of_state", ...SELECTIVITY_INPUTS] },
+    notify: { unit: "text", ownInputsOnly: false, tierPool: "out_of_state" },
   },
   // The top band of Ultra selective (method/standing.md "Revision 3", rule 8): a word the estimate reads, never shown.
   "selectivity.band": {

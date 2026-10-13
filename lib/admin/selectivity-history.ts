@@ -118,12 +118,20 @@ export async function runChanges(runId: number): Promise<RunChange[]> {
 }
 
 /** The biggest score moves over a window (method changes left out unless asked for). */
-export async function movers(o: { days: 7 | 30 | 90; pool?: Pool; includeMethod?: boolean; limit?: number }): Promise<Mover[]> {
+export async function movers(o: { days: 7 | 30 | 90; pool?: Pool; includeMethod?: boolean; limit?: number; minMove?: number; tier?: SelectivityTier; cause?: PointCause }): Promise<Mover[]> {
   const supabase = await client();
   type Row = { unit_id: string; pool: Pool; score_from: number | string | null; score_to: number | string | null; delta: number | string | null; tier_from: SelectivityTier | null; tier_to: SelectivityTier | null; moved_at: string; cause: PointCause };
   const rows = check<Row[]>(
     "movers",
-    await supabase.rpc("admin_selectivity_movers", { p_days: o.days, p_pool: o.pool ?? null, p_include_method: o.includeMethod ?? false, p_limit: o.limit ?? 50 }),
+    await supabase.rpc("admin_selectivity_movers", {
+      p_days: o.days,
+      p_pool: o.pool ?? null,
+      p_include_method: o.includeMethod ?? false,
+      p_limit: o.limit ?? 50,
+      p_min: o.minMove ?? 0,
+      p_tier: o.tier ?? null,
+      p_cause: o.cause ?? null,
+    }),
   );
   const num = (v: number | string | null) => (v === null ? null : Number(v));
   return rows.map((r) => ({ unitId: r.unit_id, pool: r.pool, scoreFrom: num(r.score_from), scoreTo: num(r.score_to), delta: num(r.delta), tierFrom: r.tier_from, tierTo: r.tier_to, movedAt: r.moved_at, cause: r.cause }));
@@ -152,4 +160,37 @@ export async function lastRunSummary(): Promise<{ run: SelectivityRun; tierChang
     console.warn("[admin] selectivity history summary unavailable:", err instanceof Error ? err.message : err);
     return null;
   }
+}
+
+export interface FollowerTierEmail {
+  publishId: number;
+  publishedAt: string;
+  unitId: string;
+  field: string;
+  sentence: string;
+  /** People following the college now (the change went to each one who had update emails on that week). */
+  followers: number;
+}
+
+/**
+ * The tier changes that went to followers (Decision 7): `dataset_changes` rows for the three tier fields, newest
+ * publish first, each with the college's follower count. `describe` turns a row into its sentence (lib/changes.ts).
+ */
+export async function followerTierEmails(describe: (c: { field: string; kind: string; old_value: unknown; new_value: unknown; old_year: string | null; new_year: string | null }) => string, limit = 100): Promise<FollowerTierEmail[]> {
+  const supabase = await client();
+  type Row = { publish_id: number; published_at: string; unit_id: string; field: string; kind: string; old_value: unknown; new_value: unknown; old_year: string | null; new_year: string | null };
+  const rows = check<Row[]>(
+    "tier changes sent to followers",
+    await supabase
+      .from("dataset_changes")
+      .select("publish_id, published_at, unit_id, field, kind, old_value, new_value, old_year, new_year")
+      .in("field", ["selectivity.tier", "selectivity.in_state", "selectivity.out_of_state"])
+      .order("published_at", { ascending: false })
+      .limit(limit),
+  );
+  const units = [...new Set(rows.map((r) => r.unit_id))];
+  const follows = units.length ? check<{ unit_id: string }[]>("followers", await supabase.from("follows").select("unit_id").in("unit_id", units)) : [];
+  const count = new Map<string, number>();
+  for (const f of follows) count.set(f.unit_id, (count.get(f.unit_id) ?? 0) + 1);
+  return rows.map((r) => ({ publishId: r.publish_id, publishedAt: r.published_at, unitId: r.unit_id, field: r.field, sentence: describe(r), followers: count.get(r.unit_id) ?? 0 }));
 }

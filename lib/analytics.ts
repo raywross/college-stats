@@ -81,10 +81,12 @@ export interface AnalyticsEvents {
   course_plan_dismissed: { reason: string };
   /** An estimate shown to a student (the profile's card, the planner's drawer): the group, the label, the model version; never an input. */
   estimate_shown: { group: StandingLevel | "none"; label: StandingLabel | "none"; model_version: string };
+  /** The nightly visit alert (specs/product/visit-events.md "Privacy and telemetry"): how many colleges and events, never which or how far. */
+  visit_alert_sent: { college_count: number; event_count: number };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "visit_alert_sent";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -162,6 +164,7 @@ export const EVENTS = {
   course_plan_shown: { properties: ["reasons", "guardrail"], side: "client", why: "Course plan: which reasons and guardrails the Next year card shows" },
   course_plan_added: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get added, by reason" },
   course_plan_dismissed: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get set aside, by reason" },
+  visit_alert_sent: { properties: ["college_count", "event_count"], side: "server", why: "Visit events: alerts sent, by size" },
   estimate_shown: { properties: ["group", "label", "model_version"], side: "client", why: "Quad's estimate: how often it is shown and as which group and label, per model version (never the inputs)" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 

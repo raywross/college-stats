@@ -119,6 +119,7 @@ has a denied token (`gpa`, `sat`, `act`, `score`, `income`, `agi`, `asset`, `ema
 | `plan_task_ticked` | `kind` (the task kind), `source`: college / cycle / stage / own, `assignee`: student / guardian / either | `TaskRow` after a tick succeeds | Planner |
 | `plan_stage_done`, `plan_nudge_sent` (`channel`), `plan_rounds_accepted` (`ed`, `ed2`: bool), `plan_offer_added`, `plan_choice_made` (`unit_id`) | as listed | The stage units, when built | Planner |
 | `plan_text_consented` (server, `by_guardian`: bool), `plan_text_opted_out` (server, `via`: stop / account) | as listed | The text consent flow and the STOP webhook ([planner/timeline.md](../planner/timeline.md#texts)) | Planner |
+| `visit_alert_sent` (server, `college_count`, `event_count`) | as listed; never which events or how far | `app/api/cron/visit-alerts/route.ts`, after each alert is sent ([visit-events.md](visit-events.md#privacy-and-telemetry)) | Visit events |
 | `list_item_added`, `standing_viewed`, `estimate_run`, `offer_added`, `scattergram_viewed` | `unit_id` and coarse flags only | Later features, each defined in its spec and added to the registry then | |
 | `subscribe_started`, `subscribe_completed`, `subscription_cancelled` (server) | `tier`, `interval` | [commercialization.md](commercialization.md) | Commercial |
 | `api_request` (server) | key id, endpoint, status | [data-api.md](data-api.md) | |

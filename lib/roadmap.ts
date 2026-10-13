@@ -309,6 +309,18 @@ export const ROADMAP: RoadmapSpec[] = [
     // Also needs the round-3 agent (college-reported-round-3), built 2026-10-03 and so no longer on the roadmap.
   },
   {
+    slug: "visit-events",
+    file: "specs/ideas/visit-events.md",
+    group: "ideas",
+    summary:
+      "Upcoming tours, info sessions, and open houses at the colleges on your list, read from each college's own calendar, with a link to book there.",
+    complexity: 3,
+    complexityNote:
+      "A reader for the colleges' event portals (most on one admissions system), the site's first data refreshed daily, and lines on the college page and in the planner; research still open.",
+    status: "idea",
+    // Also uses each college's visit link (specs/school-identity/links.md) and the planner's visit log.
+  },
+  {
     slug: "metro-area",
     file: "specs/data-expansion/metro-area.md",
     group: "later",

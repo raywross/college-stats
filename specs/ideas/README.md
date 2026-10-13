@@ -64,6 +64,7 @@ In the order they could be built; each is a page on the roadmap.
 | [Colleges that would compete for you](would-compete-for-you.md) | Which colleges would be glad to have me, and show it in money? | Reverse search (Levels.fyi, Redfin inverted) | CollegeIQ's "hidden gems", the buyers-and-sellers list |
 | [Cycle watch](cycle-watch.md) | What changed this year at the colleges I'm applying to? | A guidebook's "new this edition"; Google Flights' "typical vs now" | Kickstart's hand-written policy posts; the counselor channel |
 | [Getting into the major](getting-into-the-major.md) | Do I apply to the college or the major, and can I change in later? | The fine print every buyer's guide prints | Kickstart's department admit rates, with the question families actually have |
+| [Visit events](visit-events.md) (added 2026-10-13; research open) | When can we visit, and what's on? | CampusBooker's event listings, from the family's list | Checking a dozen college calendars one by one |
 
 ## Smaller additions proposed for existing specs (not applied)
 Each belongs inside a spec that already exists; listed here so they aren't lost, for the owner to accept into those

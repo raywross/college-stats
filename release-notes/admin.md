@@ -1,7 +1,7 @@
 ---
 title: "An admin console for Quad support"
 pr: 140
-date: 2026-10-12
+date: 2026-10-13
 kind: feature
 summary: Quad support can now find and fix an account or household, see which colleges' data is fresh or failing, and start data reruns, and every time support looks at a student's information, the student sees it.
 ---

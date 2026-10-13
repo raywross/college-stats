@@ -158,19 +158,8 @@ export const ROADMAP: RoadmapSpec[] = [
       "A PDF grid parsed by column, a name-to-id join, a block of fields and a source, one profile card, six filters, and a permission letter that sets the start date.",
     status: "planned",
   },
-  {
-    slug: "visit-events",
-    file: "specs/product/visit-events.md",
-    group: "planning",
-    summary:
-      "Every event a college publishes, read nightly: campus tours and sessions, online sessions, and the admissions officers' visits to high schools and fairs near you, with a sign-up link on the college's own page and an email when a college on your list adds one within your radius of home.",
-    complexity: 4,
-    complexityNote:
-      "A reader for the admissions system most colleges use (about 820 of them), the site's first data refreshed every night, a radius setting and per-college alert switch, a nightly email, pages for signed-in people, and a pilot on two dozen colleges first.",
-    status: "planned",
-    // Signed-in only (owner decision 2026-10-13). Uses the visit links, the household home, the student's high
-    // school, follows, and the planner's visit log; the research is in specs/ideas/visit-events.md (promoted).
-  },
+  // visit-events (specs/product/visit-events.md) was planned and built the same day, 2026-10-13, on feature/visit-events
+  // as a four-college pilot; the research is in specs/ideas/visit-events.md (promoted).
   {
     slug: "scattergrams",
     file: "specs/product/scattergrams.md",

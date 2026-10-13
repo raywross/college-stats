@@ -1,8 +1,9 @@
 # Visit Events: Tours, Sessions, and Rep Visits Near You, With Nightly Alerts
 
-> Status: **planned** 2026-10-13, from the owner's decisions after the research in
-> [ideas/visit-events.md](../ideas/visit-events.md) (traced through the University of Florida and Duke). Builds on the
-> visit links ([school-identity/links.md](../school-identity/links.md)), the household home
+> Status: **built** 2026-10-13 on `feature/visit-events` as a **pilot on four colleges** (UF, Duke, UNC, UT Austin,
+> 2,108 events on dev); see [As built](#as-built-2026-10-13). Planned the same day from the owner's decisions after the
+> research in [ideas/visit-events.md](../ideas/visit-events.md). Builds on the visit links
+> ([school-identity/links.md](../school-identity/links.md)), the household home
 > ([home-and-distance.md](home-and-distance.md)), the student's high school ([student-profile.md](student-profile.md)),
 > following and the digest job ([follow-colleges.md](follow-colleges.md)), and the planner's visit log
 > ([planner/actions.md](../planner/actions.md)). Part of [product](README.md).
@@ -232,3 +233,49 @@ alerts to everyone.
 5. **Pilot**, then every host, with the admin data-health rows.
 
 Complexity: extra large (a new pipeline with its own nightly job, checks, emails, and a pilot).
+
+## As built (2026-10-13)
+Built the day it was planned, on `feature/visit-events`, as five units with the build-roadmap-section method (the
+brief and prompts are in the owner's `visit-events-build/` folder, outside the repo). A **pilot on four colleges**:
+UF (527 live events), Duke (153), UNC (819), UT Austin (609) on the dev project; `--all` discovery over the 1,390 visit
+links has not been run yet.
+
+**Reader** (`scripts/lib/visit-events/`, `npm run sync-visit-events`, `npm run check:visit-events`; U1):
+`parseStandardSearch`, `findWidgetServices`/`parseWidgetList`, `parseEventPage`, `discoverSlateHost` (one hop from the
+visit link, then the apply link; weaker links on the host such as `/status` are accepted and every host is confirmed by
+its standard search), `syncHost` with a pure diff, `store.mts` writing in batches of 500. Dates in
+`lib/visit-events/dates.ts`: a search date lands in the twelve months starting yesterday (the printed weekday breaks a
+tie), the event page confirms year and zone, and until then the state's usual zone is assumed. No-ZIP events (UF's
+campus ZIP 32611 has no ZCTA) take the event page's own map centre. `moved_at` is set for a start, venue, address, or
+city change on a confirmed row; title and availability changes move only `changed_at`. "closed" from the event page
+outranks the widget's "full". UT's widget nests a placeholder item inside each real one; the parser reads the outer
+item. Not built: the weekly re-read of unchanged event pages, the `no_events` host status, a last-attempt timestamp for
+unreachable hosts (retried on Sundays for now).
+
+**Pages** (U2): `lib/visit-events/read.ts` and `view.ts` (pure grouping, chips, wording), `store.ts`; `components/
+visits/`; `/me/visits`; the block under the college page's hero; settings on `/account` beside the Updates switch
+(`/me` redirects). Chips: Sessions = `info_session` + `open_house` + `other`; Near you = `travel`. "Add to calendar" is
+a client-side `.ics` from `lib/ics.ts`. No React render test (the repo's only pattern compiles `.tsx` by hand).
+
+**Alerts** (U3): `lib/visit-events/alerts.ts` (`selectAlerts`), `lib/emails/visit-alert.ts`, `/api/cron/visit-alerts`
+(13:00 UTC; `?dry=1` returns the rendered messages without sending), `/unsubscribe/<token>/visits[/<unit>]` (GET
+confirms, POST acts, RFC 8058 one-click). Besides the spec: a host's own first night never alerts (its whole calendar
+is new that night); people without a prefs row get the defaults; the first-night rule for a home applies only when the
+home is the measuring point; a college with nothing near is left out of the email entirely. Not built: the "Since you
+joined, N events near you" line. The account export gains a `visit_alerts` section.
+
+**Planner** (U4): `components/visits/NextEvents.tsx` under the row's Log a visit button, fed by a server action
+(`lib/planner/visit-feed.ts`) because the row is a client tree; "I registered" prefills `VisitForm` (kind via
+`planVisitKind`, date and time in the event's zone, `registration_url`). `RowDrawer`'s older "We visited" flow is
+untouched.
+
+**Second migration** (`20261013190000_visit_events_moved.sql`): `visit_events.moved_at`, `visit_alert_prefs.created`
+(the first-night rule reads it, so a radius change skips nothing), admin read policies on the three alert tables.
+
+**Workflow** `.github/workflows/visit-events.yml`: 07:00 UTC, target `dev` during the pilot (`DEV_SUPABASE_*`
+repository secrets), `prod` by dispatch or by changing `SCHEDULE_TARGET`; skips cleanly without secrets.
+
+**Open from the build:** UNC's stored visit link is a video-tours page (discovery coped; the links data could be
+corrected); UT's `/portal/campus_walking_tour` widget times out every run (logged, harmless); Duke's `/portal/
+group-tours` adds staff rows (29% staff share there, all hidden); the Vercel Preview environment has no `CRON_SECRET`,
+so the alert route can be exercised on a preview only by hand with a bearer token set for the deployment.

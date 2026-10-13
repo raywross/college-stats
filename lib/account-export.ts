@@ -247,6 +247,19 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
     },
   },
   {
+    key: "visit_alerts",
+    description:
+      "Your visit-alert settings (radius, where it's measured from, online sessions), the colleges you stopped visit alerts for, and each visit alert we emailed you with its events (specs/product/visit-events.md).",
+    run: async ({ supabase, userId }) => {
+      const [prefs, mutes, sent] = await Promise.all([
+        rows("visit_alert_prefs", supabase.from("visit_alert_prefs").select("email_visit_alerts, radius_miles, measure_from, include_online, updated").eq("user_id", userId)),
+        rows("visit_alert_mutes", supabase.from("visit_alert_mutes").select("unit_id, created").eq("user_id", userId)),
+        rows("visit_alerts", supabase.from("visit_alerts").select("sent_at, event_ids, college_count").eq("user_id", userId).order("sent_at", { ascending: false })),
+      ]);
+      return { prefs: prefs[0] ?? null, muted: mutes, sent };
+    },
+  },
+  {
     key: "access_log",
     description: "When guardians viewed your information, and when you viewed a student's as a guardian.",
     run: async ({ supabase, userId }) => ({

@@ -350,6 +350,8 @@ export const LOG_ACTIONS: Record<string, string> = {
   "account.suspend": "Deactivated an account",
   "account.unsuspend": "Reactivated an account",
   "account.purge": "Deleted an account now",
+  "auth.confirm": "Confirmed an email address",
+  "auth.unconfirm": "Marked an email address unconfirmed",
 };
 
 /** A log action in words; unknown actions (from a later unit) show as written. */

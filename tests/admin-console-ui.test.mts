@@ -376,8 +376,8 @@ test("an admin at aal2 gets through: each action reaches its one database functi
 /* Refusals in plain words                                             */
 /* ------------------------------------------------------------------ */
 
-test("every refusal the admin migration can raise has readable text (no raw error code reaches the page)", () => {
-  const sql = read("supabase/migrations/20261012200000_admin.sql");
+test("every refusal the admin migrations can raise has readable text (no raw error code reaches the page)", () => {
+  const sql = read("supabase/migrations/20261012200000_admin.sql") + read("supabase/migrations/20261013130000_admin_email_confirmed.sql");
   const raised = [...new Set([...sql.matchAll(/raise exception '([a-z_ ]+)'/g)].map((m) => m[1]))];
   const INTERNAL = new Set(["profiles_suspension_immutable", "invalid_action"]); // triggers and service-role paths, never shown
   const missing = raised.filter((code) => !INTERNAL.has(code) && !(code in { ...HOUSEHOLD_ERRORS, ...constants.ADMIN_ERRORS }));
@@ -864,9 +864,10 @@ test("log filters: action, admin, target; malformed values are ignored; paging k
   assert.equal(consoleLib.targetHref("member", MEMBER), null);
 });
 
-test("every action the migration logs has words in the log's labels", () => {
-  const sql = read("supabase/migrations/20261012200000_admin.sql");
-  const logged = [...new Set([...sql.matchAll(/admin_log_write\('([a-z_.]+)'/g)].map((m) => m[1]))];
+test("every action the migrations log has words in the log's labels", () => {
+  const sql = read("supabase/migrations/20261012200000_admin.sql") + read("supabase/migrations/20261013130000_admin_email_confirmed.sql");
+  const logged = [...new Set([...sql.matchAll(/admin_log_write\('([a-z_.]+)'/g), ...sql.matchAll(/then '([a-z_]+\.[a-z_]+)' else '([a-z_]+\.[a-z_]+)'/g)].flatMap((m) => m.slice(1)))];
+  assert.ok(logged.includes("auth.confirm") && logged.includes("auth.unconfirm"), logged.join(", "));
   assert.ok(logged.length >= 15, logged.join(", "));
   assert.deepEqual(logged.filter((a) => !(a in consoleLib.LOG_ACTIONS)), []);
 });

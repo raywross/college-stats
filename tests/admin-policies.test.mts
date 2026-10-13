@@ -171,6 +171,7 @@ function functionCalls(w: World): [name: string, sql: string, params: unknown[]]
     ["admin_search_people", "select * from public.admin_search_people('smith')", []],
     ["admin_list_people", "select * from public.admin_list_people()", []],
     ["admin_list_households", "select * from public.admin_list_households()", []],
+    ["admin_set_email_confirmed", "select public.admin_set_email_confirmed($1, true)", [w.alice]],
     ["admin_user_auth", "select * from public.admin_user_auth($1)", [w.alice]],
     ["admin_update_profile", "select public.admin_update_profile($1, '{\"display_name\": \"Hacked\"}')", [w.alice]],
     ["admin_update_student", "select public.admin_update_student($1, '{\"display_name\": \"Hacked\"}')", [w.ben]],
@@ -376,6 +377,34 @@ test("admin_list_households: every household with its members and waiting invita
   assert.deepEqual(await list("%"), []);
   if (households > 1) assert.equal((await list(null, 2, 1)).length, 1);
   assert.deepEqual(await list(null, 999), []);
+});
+
+test("admin_set_email_confirmed: confirms, unconfirms and signs them out, logs both, never unconfirms yourself; People shows the state", async () => {
+  const w = await world();
+  const confirmedAt = async (id: string) => (await w.db.query<{ at: string | null }>("select email_confirmed_at as at from auth.users where id = $1", [id])).rows[0].at;
+  await w.db.query("update auth.users set email_confirmed_at = null where id = $1", [w.alice]);
+  type Row = { kind: string; id: string; email_confirmed: boolean | null };
+  const listed = async () => await asAdmin<Row>(w, "select * from public.admin_list_people(1, 200)");
+  assert.equal((await listed()).find((r) => r.id === w.alice)?.email_confirmed, false);
+  assert.equal((await asAdmin<Row>(w, "select * from public.admin_search_people('alice')")).find((r) => r.kind === "user")?.email_confirmed, false);
+  assert.ok((await listed()).filter((r) => r.kind === "student").every((r) => r.email_confirmed === null), "managed records have no email to confirm");
+
+  await asAdmin(w, "select public.admin_set_email_confirmed($1, true)", [w.alice]);
+  assert.ok(await confirmedAt(w.alice));
+  assert.equal((await listed()).find((r) => r.id === w.alice)?.email_confirmed, true);
+  await asAdmin(w, "select public.admin_set_email_confirmed($1, true)", [w.alice]); // already confirmed: no change, no log row
+
+  await w.db.query("insert into auth.sessions (user_id) values ($1), ($1)", [w.alice]);
+  await asAdmin(w, "select public.admin_set_email_confirmed($1, false)", [w.alice]);
+  assert.equal(await confirmedAt(w.alice), null);
+  assert.equal(Number((await w.db.query<{ n: number }>("select count(*)::int as n from auth.sessions where user_id = $1", [w.alice])).rows[0].n), 0, "unconfirming signs them out");
+
+  const log = (await w.db.query<{ action: string; details: { sessions_ended?: number } }>("select action, details from public.admin_log where target_id = $1 order by id", [w.alice])).rows;
+  assert.deepEqual(log.map((r) => r.action), ["auth.confirm", "auth.unconfirm"]);
+  assert.equal(log[1].details.sessions_ended, 2);
+
+  await assert.rejects(asAdmin(w, "select public.admin_set_email_confirmed($1, false)", [w.quinn]), /cannot_change_self/);
+  await assert.rejects(asAdmin(w, "select public.admin_set_email_confirmed($1, null)", [w.alice]), /invalid_state/);
 });
 
 test("admin_link: six seats counting invitations, one household per person (moved, never duplicated), the household left behind closed", async () => {

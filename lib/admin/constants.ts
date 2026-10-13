@@ -66,4 +66,7 @@ export const ADMIN_ERRORS: Record<string, string> = {
   cannot_revoke_self: "You can't revoke your own admin access. Ask another admin.",
   last_admin: "This is the last admin. Grant someone else first.",
   birth_year_not_allowed: "That birth year is under the 13+ rule.",
+  no_email: "That account has no email address to confirm.",
+  cannot_change_self: "You can't unconfirm your own email: you'd be locked out. Ask another admin.",
+  invalid_state: "Pick confirmed or unconfirmed.",
 };

@@ -22,6 +22,7 @@ import {
   reactivate,
   restoreAccount,
   sendResetEmail,
+  setEmailConfirmed,
   signOutEverywhere,
 } from "../actions";
 
@@ -382,6 +383,26 @@ function LiveActions({ person, self }: { person: AdminPerson; self: boolean }) {
           { name: "repoint", label: "Also move invitations still waiting at the old address", type: "checkbox" },
         ]}
       />
+      {auth?.email &&
+        (auth.email_confirmed_at ? (
+          self ? null : (
+            <AdminForm
+              action={setEmailConfirmed}
+              hidden={{ ...hidden, confirmed: "false" }}
+              trigger="Mark email unconfirmed"
+              submit="Mark unconfirmed"
+              description="Signs them out everywhere. Their next sign-in asks them to confirm their email, and the sign-in page offers to send it again."
+            />
+          )
+        ) : (
+          <AdminForm
+            action={setEmailConfirmed}
+            hidden={{ ...hidden, confirmed: "true" }}
+            trigger="Confirm email"
+            tone="primary"
+            description="Vouches for this address so they can sign in without the confirmation email."
+          />
+        ))}
       <AdminForm action={copyResetLink} hidden={hidden} trigger="Copy reset link" pendingLabel="Making the link…" />
       {canEmail ? (
         <AdminForm action={sendResetEmail} hidden={hidden} trigger="Send reset email" />

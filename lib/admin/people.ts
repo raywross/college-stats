@@ -74,6 +74,8 @@ export interface SearchRow {
   status: PersonStatus;
   created: string;
   last_sign_in: string | null;
+  /** Whether the account's email is confirmed; null for rows that aren't an account. */
+  email_confirmed: boolean | null;
 }
 
 /** People, student records, households, and pending invitations matching q (names, emails, ids; typos by trigram). */

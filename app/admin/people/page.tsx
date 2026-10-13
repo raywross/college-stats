@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { PageHeader, Empty } from "@/components/admin/Panel";
-import { StatusChips } from "@/components/admin/StatusChip";
+import { StatusChip, StatusChips } from "@/components/admin/StatusChip";
 import { AdminSearch } from "@/components/admin/AdminSearch";
 import { requireAdmin } from "@/lib/admin/auth";
 import { KIND_LABELS, fmtDate, resultHref, singleHitHref } from "@/lib/admin/console";
@@ -127,6 +127,7 @@ function PeopleList({ rows }: { rows: SearchRow[] }) {
                   <span className="font-semibold break-words">{title}</span>
                   <span className="text-xs text-muted-foreground">{KIND_LABELS[r.kind]}</span>
                   <StatusChips status={r.status} />
+                  {r.email_confirmed === false && <StatusChip label="Email not confirmed" tone="warn" />}
                 </span>
                 {r.email && <span className="block text-sm break-all text-muted-foreground">{r.email}</span>}
                 {r.household && r.kind !== "household" && <span className="block text-xs text-muted-foreground">{r.household} household</span>}

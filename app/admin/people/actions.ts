@@ -117,6 +117,23 @@ export async function deleteAccount(_prev: AdminActionState, form: FormData): Pr
   });
 }
 
+/**
+ * Confirm or unconfirm the account's email (admin_set_email_confirmed). Unconfirming also signs them out; their next
+ * sign-in asks them to confirm, and the sign-in page offers to send the email again.
+ */
+export async function setEmailConfirmed(_prev: AdminActionState, form: FormData): Promise<AdminActionState> {
+  return withAdmin("email confirmation", async (ctx) => {
+    const user = formId(form, "user");
+    const state = form.get("confirmed");
+    if (!user || (state !== "true" && state !== "false")) return badForm;
+    const confirmed = state === "true";
+    const failed = await callAdminRpc(ctx, "email confirmation", "admin_set_email_confirmed", { p_user: user, p_confirmed: confirmed });
+    if (failed) return failed;
+    refresh();
+    return { status: "done", message: confirmed ? "Email confirmed. They can sign in now." : "Email marked unconfirmed and signed out everywhere." };
+  });
+}
+
 /** Restore within the 30 days. */
 export async function restoreAccount(_prev: AdminActionState, form: FormData): Promise<AdminActionState> {
   return withAdmin("account restore", async (ctx) => {

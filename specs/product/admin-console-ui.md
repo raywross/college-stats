@@ -33,7 +33,8 @@ People and Households are separate rail sections (owner, 2026-10-13).
   (`admin_list_people(page, size)`, `?page=N`). A search (`admin_search_people`, also the rail's global box) lists
   people and student records; one hit of any kind opens its page, and when households or invitations match too, a link
   goes to Households with the same query. Rows show kind, name, email (the only place on the site that shows one beside
-  a name), household, status chips (Paused, Deleting, Invited, No account yet), created and last sign-in.
+  a name), household, status chips (Paused, Deleting, Invited, No account yet, Email not confirmed), created and last
+  sign-in.
 - **Households** `/admin/households`: every household, newest first, 50 a page, or those matching `?q=` (household
   name, a member's name or account email, a waiting invitation's email or name, or the id), from
   `admin_list_households(q, page, size)`. Rows show the name, a Deleting chip for closed ones, the active members'
@@ -42,7 +43,8 @@ People and Households are separate rail sections (owner, 2026-10-13).
 - **A person** `/admin/people/[user]`: Account (with Auth data from `admin_user_auth`), Households (with **Leave**), Student
   records, Lists and plan (counts only; the lists open on the student page), Notifications, Who viewed their data. Actions in
   a right column (below the content on phones, with a "Jump to actions" link): Edit details, Change email (typed twice,
-  optional re-point of invitations), Copy reset link, Send reset email (shown only when `emailConfigured()`), Sign out
+  optional re-point of invitations), Confirm email / Mark email unconfirmed (`admin_set_email_confirmed`, owner
+  2026-10-13; unconfirming signs them out and is refused for yourself), Copy reset link, Send reset email (shown only when `emailConfigured()`), Sign out
   everywhere, Deactivate (reason required) / Reactivate, Delete account (typed `delete`; then `admin-auth sign_out`),
   Export their data. A deleted account shows a banner with the purge date and only **Restore** and **Delete now** (typed:
   the account's email, read by the action). An admin can't deactivate or delete their own account here.

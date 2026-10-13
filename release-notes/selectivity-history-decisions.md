@@ -1,6 +1,6 @@
 ---
 title: "Plan: followers will hear when a college's selectivity rating changes"
-pr: 0
+pr: 148
 date: 2026-10-13
 kind: plans
 summary: The plan for tracking selectivity ratings now records every change, keeps the record forever, and adds an update for followers when a college's public rating changes.

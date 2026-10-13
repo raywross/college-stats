@@ -6,7 +6,8 @@
  *   const alice = await createUser(db, { email: "alice@example.com", birthYear: 2008 });
  *   const rows = await asUser(db, alice, "select * from public.profiles");
  *
- * The stub mirrors what Supabase provides: `auth.users` (id, email, raw_user_meta_data), `auth.uid()` and
+ * The stub mirrors what Supabase provides: `auth.users` (id, email, raw_user_meta_data, and the few columns the admin
+ * console reads), `auth.mfa_factors`, `auth.sessions`, `auth.uid()` and
  * `auth.jwt()` reading the `request.jwt.claims` setting, and the roles `anon`, `authenticated` (no BYPASSRLS) and
  * `service_role` (BYPASSRLS). PGlite's own session is a superuser, which bypasses RLS: run every assertion about
  * access through `asUser`, and use `db.query` only for setup.
@@ -36,7 +37,28 @@ create table auth.users (
   id uuid primary key default gen_random_uuid(),
   email text unique,
   raw_user_meta_data jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  -- Read by the admin console's functions (20261012200000_admin.sql); Supabase has these columns.
+  raw_app_meta_data jsonb not null default '{}'::jsonb,
+  email_confirmed_at timestamptz,
+  last_sign_in_at timestamptz,
+  banned_until timestamptz
+);
+
+-- Supabase's MFA factors and sessions, reduced to the columns the admin console reads.
+create table auth.mfa_factors (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  factor_type text not null default 'totp',
+  status text not null default 'unverified',
   created_at timestamptz not null default now()
+);
+
+create table auth.sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  aal text
 );
 
 create function auth.jwt() returns jsonb language sql stable as $$

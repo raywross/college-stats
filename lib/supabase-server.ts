@@ -25,14 +25,19 @@ export function supabaseAuthEnv(): { url: string; key: string } | null {
  */
 export const AUTH_COOKIE_OPTIONS = { httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production" } as const;
 
-/** A new client per request (never shared). Throws when Supabase isn't configured; check authConfigured() first. */
-export async function createServerSupabase(): Promise<SupabaseClient> {
+/**
+ * A new client per request (never shared). Throws when Supabase isn't configured; check authConfigured() first.
+ * `headers` go on every request it makes (the admin console's x-quad-console header: lib/admin/people.ts).
+ */
+export async function createServerSupabase({ headers }: { headers?: Record<string, string> } = {}): Promise<SupabaseClient> {
   const env = supabaseAuthEnv();
   if (!env) throw new Error("Sign-in isn't configured: set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (specs/product/accounts.md).");
   const store = await cookies();
+  // QUAD_TIMING=1 (lib/timing.ts): count and time every round trip; off, the client's own fetch.
+  const timing: { global?: { fetch: typeof timedFetch } } = timingEnabled() ? { global: { fetch: timedFetch } } : {};
   return createServerClient(env.url, env.key, {
-    // QUAD_TIMING=1 (lib/timing.ts): count and time every round trip; off, the client's own fetch.
-    ...(timingEnabled() ? { global: { fetch: timedFetch } } : {}),
+    // `headers`: the admin console's header (lib/admin/people.ts adminSupabase()), beside the timing fetch.
+    ...(headers ? { global: { ...timing.global, headers } } : timing),
     cookieOptions: AUTH_COOKIE_OPTIONS,
     cookies: {
       getAll() {

@@ -3,6 +3,7 @@
 # - changes: after each successful Vercel production deploy, records what changed in data/schools.json between the
 #   last recorded commit and the deployed one (npm run publish-changes), so the What changed panel and the update
 #   digest never announce a change before the site shows it. Safe to re-run: a commit already recorded writes nothing.
+#   Then records Quad's selectivity history for the admin console (npm run publish-selectivity-history).
 # - high-schools: when a push to main changes data/high-schools/**, publishes the high school tables
 #   (npm run publish-high-schools).
 # - college-failures: after each successful Vercel production deploy (the same trigger as changes), loads the
@@ -11,6 +12,10 @@
 # - Run workflow (by hand, from main): any one, or all.
 # Skips cleanly while the PROD_* repository secrets aren't set. See specs/supabase.md#production.
 name: Publish changes
+
+# The admin console passes request_id on dispatch so it can find its run (specs/product/admin.md, "Reruns"); a run
+# without one keeps GitHub's usual title: the PR title, the commit message, or the workflow's name.
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.event.pull_request.title || github.event.head_commit.message || github.workflow }}"
 
 on:
   deployment_status:
@@ -24,6 +29,10 @@ on:
         type: choice
         options: [all, changes, high-schools, college-failures]
         default: all
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -74,6 +83,11 @@ jobs:
       # first staging call resets the staging table, and a commit already recorded is reused, not written twice.
       - if: steps.secrets.outputs.ready == 'true'
         run: npm run publish-changes -- --head "$SHA" || { echo "::warning::Publish changes failed; retrying once in 60 s."; sleep 60; npm run publish-changes -- --head "$SHA"; }
+      # Quad's selectivity history for the admin console (specs/chances/selectivity-history.md): the deployed commit's
+      # scores and tiers against the last recorded rows. After publish-changes, so the run links its dataset publish.
+      # Safe to repeat: a recorded commit writes nothing.
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm run publish-selectivity-history -- --head "$SHA" || { echo "::warning::Selectivity history failed; retrying once in 60 s."; sleep 60; npm run publish-selectivity-history -- --head "$SHA"; }
 
   high-schools:
     if: >-

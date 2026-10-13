@@ -20,6 +20,10 @@
 # conflict (both write data/schools.json).
 name: Identity refresh
 
+# The admin console passes request_id on dispatch so it can find its run (specs/product/admin.md, "Reruns"); a run
+# without one keeps GitHub's usual title: the PR title, the commit message, or the workflow's name.
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.event.pull_request.title || github.event.head_commit.message || github.workflow }}"
+
 on:
   workflow_dispatch:
     inputs:
@@ -31,6 +35,10 @@ on:
         description: Auto-merge the resulting PR once CI passes (on by default)
         type: boolean
         default: true
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
   schedule:
     - cron: "0 6 * * *" # daily 06:00 UTC; the "Check whether a refresh is due" step below decides whether this firing does anything
 
@@ -141,6 +149,12 @@ jobs:
         if: steps.gate.outputs.proceed == 'true'
         id: sync_brand
         run: npm run sync-brand
+
+      # The admin console's compact health file (lib/admin/health.ts), rebuilt from this run's link issues and
+      # identity lineage; `npm run verify` fails a PR whose copy is stale.
+      - name: Rebuild the compact health file
+        if: always() && steps.gate.outputs.proceed == 'true'
+        run: npm run college-health
 
       # always(): a step above can fail partway through (e.g. probe-sites' ~20-minute run hitting the job timeout)
       # while an earlier one still wrote real changes; those should still reach a PR rather than being discarded.

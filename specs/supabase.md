@@ -60,6 +60,10 @@ into the deploy for that reason.
 | `application_snapshots`, `record_application_snapshot()`, `chances_like_you()`, `chances_outcome_rows()`, `delete_unconsented_snapshots()` | The student's binned inputs and estimate the day a college is marked applied ([calibration.md](chances/calibration.md#as-built)) | The list's readers read; written through the function; the summary's read and the cleanup are secret key only |
 | `school_course_counts`, `school_course_list()` | How many distinct students at each high school have listed each AP or IB course, kept by a trigger on `student_profiles`; no student, name, or grade ([course-plan.md](chances/course-plan.md#as-built)) | Nobody reads the table; `school_course_list()` (anyone) returns the course keys at least three students at the school have listed, never a count |
 | `chances_summary` | The season accuracy summary the Data page shows: counts and intervals only | Public read; secret key writes |
+| `admins` | Who may use `/admin`: `user_id`, `granted_by`, `granted_at`, `revoked_at`, `note`; `is_admin()` is true for an unrevoked row **and** an `aal2` session ([admin.md](product/admin.md#who-is-an-admin)) | Admins read; written by `admin_grant()` / `admin_revoke()` (the first row by hand in the SQL Editor) |
+| `admin_log` | Every admin action: `admin_id`, `at`, `action`, `target_kind`, `target_id`, `details`, `request_id`. No tokens, links, or passwords; emails only in `auth.email` rows | Admins read; written only by the `admin_*()` functions and, for the `admin-auth` Edge Function's ops, `admin_note_auth_action()` (secret key only) |
+| `profiles.suspended_at`, `profiles.suspended_reason` | A deactivated account ([admin.md](product/admin.md#what-deactivate-means)): set and cleared only by `admin-auth` `suspend` / `unsuspend`; `getAccount()` treats a set `suspended_at` as signed out | As `profiles`, plus "Admins read" |
+| `auth_end_sessions(user)` | Deletes a user's `auth.sessions` rows (their refresh tokens cascade), for `admin-auth` `sign_out` and `suspend` | Secret key only |
 | `viewer_bundle()`, `plan_bundle()`, `save_student_profile()` | Batched reads and the profile write for the plan (one call instead of a chain of round trips; [serving-architecture.md](serving-architecture.md#follow-up-2026-10-12-real-speed-timing-and-batched-reads)). Security invoker: they return and write exactly what the per-table calls would. The app falls back to the per-table calls until they are applied | Signed-in users (as their own policies allow) |
 | Accounts, households, invitations, student profiles, lists, follows, notification prefs, digests, and the rest | [accounts.md](product/accounts.md), [household-hub.md](product/household-hub.md), [saved-lists.md](product/saved-lists.md), [follow-colleges.md](product/follow-colleges.md) | Per policy |
 
@@ -128,19 +132,33 @@ page stale (`revalidatePath("/", "layout")`) for use by hand; nothing calls it a
 | `REVALIDATE_SECRET` | Vercel (Production), optional | Random string; guards `/api/revalidate`. Unset = endpoint refuses everything |
 | `CRON_SECRET` | Vercel | Bearer token for Vercel Cron's daily `/api/cron/digests` ([follow-colleges.md](product/follow-colleges.md#setup-owner)) |
 | `INVITE_FUNCTION_SECRET` | `.env.local`, Vercel (every environment that invites), **and** a function secret on the matching Supabase project | Random string (`openssl rand -hex 32`); the only thing that lets the site call the `invite-user` [Edge Function](#edge-functions). Unset in the site = invitations use the plain `/invite/<token>` link; unset on the function = it refuses everything |
-| `INVITE_ALLOWED_ORIGINS` | Function secret only (not Vercel) | Comma-separated site origins an invite link may land on. Unset = any `https://*.vercel.app` and `http://localhost:*` (dev); **set it on prod** |
+| `INVITE_ALLOWED_ORIGINS` | Function secret only (not Vercel) | Comma-separated site origins an invite link, and an `admin-auth` recovery link, may land on. Unset = any `https://*.vercel.app` and `http://localhost:*` (dev); **set it on prod** |
+| `ADMIN_AUTH_SEND_EMAIL` | Function secret only, optional | Set (`1`) once Supabase Auth has an email provider (custom SMTP); unset = `admin-auth` `recovery_email` refuses with `email_not_configured` and the console offers only "Copy reset link" |
+| `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY` | Vercel (Production and Preview, Sensitive), `.env.local` to try Operations locally | The "Quad console" GitHub App ([admin.md](product/admin.md#the-github-app-recommended-over-a-pat)): its id, its installation on this repository, and its private key (PEM). `lib/github-app.ts` signs a short JWT with the key and trades it for an installation token (one hour, cached in memory). Unset = `/admin/operations` shows a setup notice and no buttons |
+| `GITHUB_REPO` | Vercel, `.env.local` | `raywross/college-stats`: the repository Operations dispatches workflows on and opens PRs against |
+| `GITHUB_TOKEN` | Vercel (Sensitive), optional | Fallback for a first go: a fine-grained PAT with the App's four permissions (Actions, Contents, Pull requests: read and write; Metadata: read). Used only when the App variables are unset; expires, and acts as the person who made it |
 
 None use the `NEXT_PUBLIC_` prefix: `lib/data.ts` and the high-school readers are server-only, so the browser never
 talks to Supabase directly except through Supabase Auth's own flows.
 
 ## Edge Functions
 
-`supabase/functions/` holds code that runs **inside Supabase** (Deno), not on Vercel. There is one function,
-`invite-user`. It is the **only code outside the database with admin power** over the project: it holds the secret
-key that bypasses row-level security. Keep it that way: no other function, route, or script on Vercel gets admin
-power, and this one stays small (it touches auth users and one column of `invitations`, nothing else). It is touched
-rarely, so everything needed to change, deploy, test, or roll it back is written down here and in the header of
-`supabase/functions/invite-user/index.ts`.
+`supabase/functions/` holds code that runs **inside Supabase** (Deno), not on Vercel. **Two functions hold the secret
+key** that bypasses row-level security, and they are the only code outside the database with admin power over the
+project. Each does an enumerated list of operations and nothing else, and each has its own tests:
+
+| Function | Operations | Authorized by | Caller |
+|---|---|---|---|
+| [`invite-user`](#invite-user-what-it-does-and-why) | 1. create the invited person's account (email confirmed) and record it on the invitation; 2. mint their one-time sign-in link | `X-Invite-Secret` (a shared secret in Vercel) | `lib/invite-function.ts` |
+| [`admin-auth`](#admin-auth-the-consoles-auth-admin-calls) | `set_email` (and re-point pending invitations), `recovery_link`, `recovery_email`, `sign_out`, `suspend`, `unsuspend`, `purge` | the admin's own session JWT, then `is_admin()` (aal2) in the database | `lib/admin/auth-function.ts` |
+
+Keep it that way (owner decision, 2026-10-12, [admin.md](product/admin.md#how-admin-power-reaches-the-site-without-the-secret-key)):
+no route or script on Vercel gets admin power, a new operation in either function is a spec change with its tests, and
+a **third** function with the secret key needs an owner decision. `tests/invite-function.test.mts` checks that each
+function has exactly one caller in `app/`, `lib/`, and `components/`. Both are touched rarely, so everything needed to
+change, deploy, test, or roll them back is written down here and in the header of each `index.ts`. Code they share
+lives in `supabase/functions/_shared/` (not deployed as a function; the bundle can't reach files outside
+`supabase/functions/`).
 
 ### invite-user: what it does and why
 When someone is invited to a household by email ([household-hub.md](product/household-hub.md#adding-a-person)), the
@@ -258,6 +276,86 @@ To switch the feature off without a deploy, remove `INVITE_FUNCTION_SECRET` from
 invitations fall back to the `/invite/<token>` link. To remove the function entirely:
 `npx supabase functions delete invite-user --project-ref <ref>`.
 
+### admin-auth: the console's Auth admin calls
+The `/admin` console ([admin.md](product/admin.md)) reads and edits people's data through `is_admin()` policies and
+`admin_*()` functions, but a few things are Supabase Auth admin API calls that only the secret key can make: change
+an email, mint a recovery link, ban and unban, end sessions, hard-delete a user. Those, and only those, go through
+this function.
+
+| Piece | File |
+|---|---|
+| The function (wiring: env, two Supabase clients, `Deno.serve`) | `supabase/functions/admin-auth/index.ts` |
+| Its logic, pure, so Node tests can run it | `supabase/functions/admin-auth/handler.ts` |
+| The one-account purge plan, shared with `npm run purge-accounts` | `supabase/functions/_shared/purge-plan.ts` (re-exported by `scripts/lib/purge-accounts-plan.mts`) |
+| Ending sessions (no Auth API call exists for it) | `auth_end_sessions(user)` in `supabase/migrations/20261012210000_admin_auth_sessions.sql`, secret key only |
+| The site's only caller | `lib/admin/auth-function.ts` (`adminAuthConfigured()`, `callAdminAuth(req, accessToken)`) |
+| Gateway settings | `supabase/config.toml` (`[functions.admin-auth] verify_jwt = true`) |
+| Tests | `tests/admin-auth-function.test.mts` (every op and status with fake dependencies, a non-admin and an aal1 admin, nothing private in a log line; the caller; `auth_end_sessions` on PGlite; guards) |
+
+```
+POST {SUPABASE_URL}/functions/v1/admin-auth
+Authorization: Bearer <the admin's session access token>    -- apikey: the publishable key
+{ "op": "set_email" | "recovery_link" | "recovery_email" | "sign_out" | "suspend" | "unsuspend" | "purge",
+  "user": "<uuid>", "request_id": "<uuid>",
+  "email"?: "...", "repoint_invitations"?: true,             -- set_email
+  "redirect_to"?: "https://<site>/auth/confirm?next=...",    -- recovery_link, recovery_email
+  "reason"?: "..." }                                         -- suspend (required, up to 500 characters)
+
+200 { "ok": true, "link"?: "..." }        -- link only for recovery_link; shown once, never logged
+400 { "error": "bad_request", "detail" }  -- invalid body, or an admin suspending or purging themselves
+400 { "error": "email_not_configured" }   -- recovery_email without ADMIN_AUTH_SEND_EMAIL
+401 unauthorized · 403 not_admin · 404 user_not_found · 405 method_not_allowed
+409 { "error": "email_taken" }            -- set_email: another account has the address
+409 { "error": "not_deleted" }            -- purge: the account isn't soft-deleted (Delete account comes first)
+500 internal_error
+```
+Steps: read the bearer token and ask Supabase Auth whose it is (a client built with the publishable key) → 401 if
+nobody's → `select is_admin()` through PostgREST **as the caller** (publishable key + their `Authorization` header), so
+a signed-in non-admin and an admin still at `aal1` get 403 → validate the body → look up the target user → do the op
+with the service role → write the log row with `admin_note_auth_action(admin, action, user, details, request_id)`.
+
+| Op | Does | `admin_log` action and details |
+|---|---|---|
+| `set_email` | `auth.admin.updateUserById(user, { email, email_confirm: true })` (the admin vouches; no confirmation round trip); with `repoint_invitations`, pending invitations addressed to the old email move to the new one | `auth.email`: `old`, `new`, `repointed_invitations` |
+| `recovery_link` | `auth.admin.generateLink({ type: "recovery" })`, landing on `/auth/confirm` then `/account/password` (the invitation's path); returned once. If the log row can't be written, the link is not returned | `auth.recovery`: `via: "link"` (never the link) |
+| `recovery_email` | `resetPasswordForEmail`, only with `ADMIN_AUTH_SEND_EMAIL` set | `auth.recovery`: `via: "email"` |
+| `sign_out` | `auth_end_sessions(user)` | `auth.sign_out`: `sessions` |
+| `suspend` | ban (`ban_duration: "876000h"`, about 100 years) → `auth_end_sessions` → `profiles.suspended_at` and `suspended_reason` | `account.suspend`: `reason`, `sessions` |
+| `unsuspend` | `ban_duration: "none"` → clear `suspended_at` and `suspended_reason` | `account.unsuspend` |
+| `purge` | refuse unless soft-deleted; `planPurgeForUser()`: the account's own student record, the managed records and households deleted with it (same `deleted_at`), then `auth.admin.deleteUser` | `account.purge`: `students`, `households` |
+
+- **Mapping in the site** (`lib/admin/auth-function.ts`): 200 → `{ ok: true, link? }`; 400 → `bad_request` (with the
+  detail), except `email_not_configured` → `not_configured`; 401 (ours or the gateway's) → `unauthorized`; 403 →
+  `not_admin`; 404 with `user_not_found` → `user_not_found` (a bare 404 means the function isn't deployed: `error`);
+  409 → `email_taken` or `not_deleted`; unset `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` → `not_configured`; anything
+  else, a network error, or no answer in 15 s → `error`. Nothing throws. The caller makes the `request_id`.
+- **The token.** The Server Action forwards the admin's access token from `supabase.auth.getSession()`. Elsewhere the
+  site uses `getClaims()` because `getSession()` trusts the cookie unchecked; here the token is only forwarded, and the
+  function verifies it.
+- **Logging.** Neither side logs a link, a token, a reason, or an email address: the op, user ids, and the request id.
+  The function's log lines also pass through `scrub()`, which masks anything shaped like an address or URL. The
+  `admin_log` row is the one place the old and new address and the reason are kept.
+- **Gateway JWT check is on** (`verify_jwt = true`): the caller sends a real user JWT. The handler checks the token
+  with Supabase Auth again, so if the project's asymmetric signing keys ever make the gateway refuse valid tokens,
+  deploying with `--no-verify-jwt` keeps it just as safe.
+- **Secrets**: none of its own. It uses the injected `SUPABASE_URL`, `SUPABASE_SECRET_KEYS` (or
+  `SUPABASE_SERVICE_ROLE_KEY`), and `SUPABASE_PUBLISHABLE_KEYS` (or `SUPABASE_ANON_KEY`), plus `INVITE_ALLOWED_ORIGINS`
+  for where a recovery link may land and the optional `ADMIN_AUTH_SEND_EMAIL` ([Keys](#keys)).
+
+Deploy (dev first, then prod), after `20261012200000_admin.sql` and `20261012210000_admin_auth_sessions.sql` are applied
+to that project:
+```sh
+npx supabase functions deploy admin-auth --project-ref <ref>       # add --use-api without Docker
+```
+Test against dev: `npm test`; then, from `/admin` signed in as an admin with MFA, **Sign out everywhere** on a test
+account and check `/admin/log` for its `auth.sign_out` row. `curl -i -X POST "$SUPABASE_URL/functions/v1/admin-auth"
+-H "apikey: $SUPABASE_PUBLISHABLE_KEY"` must answer 401; with a non-admin's access token, 403. Logs: dashboard → Edge
+Functions → admin-auth → Logs.
+
+Roll back as for invite-user (`git checkout <sha> -- supabase/functions/admin-auth supabase/functions/_shared`, deploy,
+put the tree back). To switch it off: `npx supabase functions delete admin-auth --project-ref <ref>`; the console's
+Auth actions then answer with an error and everything else in `/admin` keeps working.
+
 ## Environments: two projects
 
 | Project | Used by | Data changes when |
@@ -298,7 +396,8 @@ Found while setting it up (2026-09-28):
 ### Setup at the formal release
 Planned in detail, with the region move and direct access for Claude, in [launch-database.md](launch-database.md).
 1. Create the prod project (same region as the Vercel project), apply every migration under `supabase/migrations/`
-   in order in the SQL Editor, deploy the `invite-user` Edge Function with its secrets ([Deploy](#deploy)).
+   in order in the SQL Editor, deploy the `invite-user` Edge Function with its secrets ([Deploy](#deploy)) and the
+   `admin-auth` function ([admin-auth](#admin-auth-the-consoles-auth-admin-calls)).
 2. Put the prod project's values in `.env.prod.local` (git-ignored) and run `npm run publish-high-schools` against
    it (`--env-file=.env.prod.local`), then `npm run publish-changes` once to record the first publish.
 3. Vercel environment variables (Project → Settings → Environment Variables; mark keys **Sensitive**):

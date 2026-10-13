@@ -7,6 +7,7 @@
  * so tests, server code, and client components can all import it. Server reads live in lib/households.ts.
  */
 import type { MemberRole } from "@/lib/accounts";
+import { SUPPORT_VIEWER_NAME } from "./admin/constants.ts";
 
 /**
  * Where a roster row stands (specs/product/household-hub.md "The roster"): an active member; a managed student with
@@ -169,11 +170,11 @@ export function editAccessControl(viewer: HouseholdView["me"], target: RosterMem
 /* Access log                                                          */
 /* ------------------------------------------------------------------ */
 
-/** One row of my_access_log(). */
+/** One row of my_access_log(). An admin's view (table_name "admin") has no viewer id and reads "Quad support". */
 export interface AccessLogRow {
   at: string;
   table_name: string;
-  viewer_id: string;
+  viewer_id: string | null;
   viewer_name: string | null;
 }
 
@@ -187,6 +188,8 @@ export const ACCESS_TABLE_LABELS: Record<string, string> = {
   lists: "your list",
   list_items: "your list",
   notes: "your notes",
+  // Written by the admin console (admin_log_access, admin_export); the viewer reads as SUPPORT_VIEWER_NAME.
+  admin: "your information",
 };
 
 export function describeAccessTable(table: string): string {
@@ -207,10 +210,12 @@ export function groupAccessLog(rows: AccessLogRow[], timeZone = "America/New_Yor
   const fmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone });
   const lines = new Map<string, AccessLogLine>();
   for (const r of rows) {
-    const viewer = r.viewer_name?.trim() || "A former guardian";
+    // An admin's view is "Quad support", whoever at Quad looked (admin.md: the admin's name is never shown).
+    const support = r.table_name === "admin";
+    const viewer = support ? SUPPORT_VIEWER_NAME : r.viewer_name?.trim() || "A former guardian";
     const what = describeAccessTable(r.table_name);
     const day = fmt.format(new Date(r.at));
-    const key = `${r.viewer_id}|${what}|${day}`;
+    const key = `${support ? "support" : r.viewer_id}|${what}|${day}`;
     const line = lines.get(key);
     if (line) {
       line.count++;

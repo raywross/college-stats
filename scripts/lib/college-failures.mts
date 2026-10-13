@@ -336,7 +336,8 @@ export function classifyFailures(state: FailureState): Omit<FailureRow, "first_s
   const blockedByCollege = new Map<string, BlockedHost[]>();
   for (const h of state.blockedHosts) for (const id of h.unit_ids ?? []) blockedByCollege.set(id, [...(blockedByCollege.get(id) ?? []), h]);
   const queueBy = new Map<string, ReviewItem[]>();
-  for (const i of state.queue) queueBy.set(i.unit_id, [...(queueBy.get(i.unit_id) ?? []), i]);
+  // A rejected item (the admin console's Reject, lib/admin/review-queue.ts) was looked at and dismissed: not a failure.
+  for (const i of state.queue) if (!i.resolved) queueBy.set(i.unit_id, [...(queueBy.get(i.unit_id) ?? []), i]);
 
   const rows: Omit<FailureRow, "first_seen" | "last_seen">[] = [];
   for (const recipe of state.recipes) {

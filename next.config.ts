@@ -51,6 +51,10 @@ const nextConfig: NextConfig = {
       // ZIP code centers for the distance-from-home filter (lib/zip-centroids.ts).
       "./data/reference/zcta-centroids.csv",
     ],
+    // The admin console's data health (lib/admin/health.ts; specs/product/admin.md "Files the deploy must carry") reads
+    // one compact file, which `npm run college-health` builds in each data PR from the college-reported documents,
+    // records, failures, review queue, and link findings (42 MB together, so they are not traced). Only /admin routes.
+    "/admin/**": ["./data/college-health.json"],
     // /roadmap pages are prerendered from specs/*.md; ship the specs too in case a page is ever rendered on demand.
     "/roadmap/*": ["./specs/**/*.md"],
     // Same for /release-notes, prerendered from release-notes/*.md.

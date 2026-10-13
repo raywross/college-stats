@@ -1,6 +1,6 @@
 # Quad's Selectivity History: Every Score and Tier Change, per Pool, for the Admin Console
 
-> Status: **planned** 2026-10-13, spec only. Owner request after UT Austin's fall 2025 Common Data Set moved it up
+> Status: **built** 2026-10-13 (PR #140, with the admin console; see "As built" at the end). Planned 2026-10-13. Owner request after UT Austin's fall 2025 Common Data Set moved it up
 > (data PR #145): "We really should track the scores that our algorithm is spitting out… we need to track for both in
 > and out of state… it wouldn't need to be on the main site, but I'd want to see it in the admin screens." Extends
 > [selectivity-index.md](selectivity-index.md); read by the [admin console](../product/admin.md), which is being built
@@ -229,3 +229,29 @@ The first draft's four open questions, answered by the owner:
 
 ## Open questions
 None.
+
+## As built (2026-10-13)
+- **Method strings use dots** (`2026.10.12.3`, `SELECTIVITY_METHOD`): the dash form `2026-10-12.3` reads as a data year
+  to the citation guard ("no hard-coded data years in app code"). The backfill maps 1bbc2596 → `2026.10.12.1`,
+  491ecb37 → `.2`, a118cc13 → `.3`, and #145's commit on `main`, 3c5b4280 (not e782ed78, its branch commit), → `.3`.
+- **Method guard.** `check:selectivity` re-scores a frozen sample of colleges' raw figures
+  (`data/reference/selectivity-method.json`, about 100 colleges including UT Austin and Harvard;
+  `scripts/lib/selectivity-method.mts`). Data runs can't move it, so a moved score or tier under an unchanged
+  `SELECTIVITY_METHOD` means the method changed: bump it, run `npm run selectivity-method-sample`, then
+  `npm run build-selectivity`.
+- **Every change is a row** (Decision 2): score at two decimals, rank, tier, year, band, held, or any input, compared
+  with the pool's last recorded row (`selectivity_latest_rows()` returns all of them). `held` is recorded only for rows
+  built with today's method (it's read with today's cutoffs); backfilled rows from older methods store false.
+- **Reads.** The tables' "Admins read" policies use `admin_reads()` (is_admin() at aal2 plus the console header), like
+  the other console tables; `admin_selectivity_run_changes`, `_movers` (with `p_min`, `p_tier`, `p_cause`), and
+  `_tier_counts` aggregate.
+- **Screens.** The college page's "Selectivity history" panel (a chart per pool over today's tier bands, the rows with
+  input changes in words, same-tier moves under 0.25 hidden unless "Show every change") and `/admin/selectivity`
+  (latest publish, movers with day, pool, tier, cause, and "Show every change" filters, follower emails, tier counts
+  per pool, the method log). Health links it: "Selectivity: N tier changes in the last publish".
+- **Follower alert** (Decision 7): `NotifyDef.ownInputsOnly: false` and `tierPool` on the three tier fields
+  (`lib/fields.ts`), their sentences and labels in `lib/changes.ts`, `DiffOptions.suppress`, and
+  `publish-changes` passing the tier fields to `suppress` when the two commits' methods differ. One addition: the
+  tier fields are also suppressed when the earlier commit had no `data/selectivity-index.json` at all, so a first
+  publish can't announce every college's tier as new. A method unknown on one side (an index from before the `method`
+  field) counts as unchanged.

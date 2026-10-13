@@ -12,7 +12,7 @@ import type { DatasetMeta, School, SchoolSelectivity } from "../../lib/types";
 import type { SelectivityPool, SelectivityTier } from "../../lib/chances/types.ts";
 import { SELECTIVITY_TIERS } from "../../lib/chances/levels.ts";
 import { lineageFor } from "../../lib/lineage.ts";
-import { ELITE_COUNT_RANGE, ELITE_INDEX, TOP_BAND_SCORE, collegeIndex, rawInputs, scales, selectivityScoreExact, selectivityTier, topBand } from "../../lib/selectivity.ts";
+import { ELITE_COUNT_RANGE, ELITE_INDEX, SELECTIVITY_METHOD, TOP_BAND_SCORE, collegeIndex, rawInputs, scales, selectivityScoreExact, selectivityTier, topBand } from "../../lib/selectivity.ts";
 
 /** The pools a college can have an index for, in the order the file and `school.selectivity` list them. */
 const POOLS = ["all", "in_state", "out_of_state"] as const satisfies readonly SelectivityPool[];
@@ -33,6 +33,8 @@ export interface CollegeIndexEntry {
 export interface SelectivityIndexFile {
   /** The day the indexes last changed (a rebuild that changes nothing keeps it). */
   generated: string;
+  /** SELECTIVITY_METHOD at the build (absent in files built before 2026-10-13). */
+  method?: string;
   elite_index: number;
   /** Colleges Elite for at least one pool. */
   elite_count: number;
@@ -126,9 +128,14 @@ export function buildSelectivity(
     if (JSON.stringify(sel) !== JSON.stringify(before)) changed++;
     return placeSelectivity(school, sel);
   });
-  const sameIndexes = !!opts.prior && JSON.stringify(stripChanges(opts.prior.colleges)) === JSON.stringify(stripChanges(colleges)) && opts.prior.elite_index === ELITE_INDEX;
+  const sameIndexes =
+    !!opts.prior &&
+    JSON.stringify(stripChanges(opts.prior.colleges)) === JSON.stringify(stripChanges(colleges)) &&
+    opts.prior.elite_index === ELITE_INDEX &&
+    opts.prior.method === SELECTIVITY_METHOD;
   const file: SelectivityIndexFile = {
     generated: sameIndexes ? opts.prior!.generated : (opts.today ?? new Date().toLocaleDateString("en-CA")),
+    method: SELECTIVITY_METHOD,
     elite_index: ELITE_INDEX,
     elite_count: eliteCount,
     counts,
@@ -149,7 +156,7 @@ function stripChanges(colleges: Record<string, CollegeIndexEntry>): Record<strin
 
 /** One college per line, like data/schools.json, so a rebuild's diff shows the colleges that moved. */
 export function formatIndexFile(file: SelectivityIndexFile): string {
-  const head = JSON.stringify({ generated: file.generated, elite_index: file.elite_index, elite_count: file.elite_count, counts: file.counts });
+  const head = JSON.stringify({ generated: file.generated, method: file.method, elite_index: file.elite_index, elite_count: file.elite_count, counts: file.counts });
   const lines = Object.entries(file.colleges).map(([id, e]) => `    ${JSON.stringify(id)}: ${JSON.stringify(e)}`);
   return `${head.slice(0, -1)},\n  "colleges": {\n${lines.join(",\n")}\n  }\n}\n`;
 }
@@ -166,6 +173,7 @@ export function formatIndexFile(file: SelectivityIndexFile): string {
 export function selectivityProblems(schools: readonly School[], file: SelectivityIndexFile, meta: DatasetMeta): string[] {
   const problems: string[] = [];
   const [lo, hi] = ELITE_COUNT_RANGE;
+  if (file.method !== SELECTIVITY_METHOD) problems.push(`data/selectivity-index.json: method ${file.method ?? "(none)"} isn't SELECTIVITY_METHOD (${SELECTIVITY_METHOD}); run npm run build-selectivity`);
   if (file.elite_index !== ELITE_INDEX) problems.push(`data/selectivity-index.json: elite_index ${file.elite_index} isn't ELITE_INDEX (${ELITE_INDEX}); run npm run build-selectivity`);
   const elite = schools.filter((s) => s.selectivity && (s.selectivity.tier === "elite" || s.selectivity.in_state === "elite" || s.selectivity.out_of_state === "elite")).length;
   if (elite < lo || elite > hi) problems.push(`Elite holds ${elite} colleges, outside ${lo}–${hi}: revisit ELITE_INDEX in lib/selectivity.ts deliberately`);

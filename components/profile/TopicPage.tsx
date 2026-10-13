@@ -7,6 +7,7 @@ import { CompactHeader } from "./CompactHeader";
 import { BlockViews } from "./BlockViews";
 import { OnThisPage, type PageItem } from "./OnThisPage";
 import { TopicNav } from "./TopicNav";
+import { ViewBeacon } from "./ViewBeacon";
 
 /** "{School} · {Topic label}" for a topic page's generateMetadata. */
 export async function topicMetadata(id: string, key: TopicKey): Promise<Metadata> {
@@ -53,6 +54,7 @@ export function TopicPage({
           {children}
           {sources ?? (fields.length > 0 && <SourceNote fields={fields} school={school} className="mt-6" />)}
           <TopicNav unitId={school.unit_id} current={topic} available={profile.topics} />
+          <ViewBeacon unit={school.unit_id} page={topic} />
         </div>
       </div>
     </div>

@@ -127,7 +127,16 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
           // works on a database without the column yet.
           const siblingRead = await supabase.from("list_items").select("id, legacy_sibling").eq("list_id", list.id);
           const siblings = new Set(siblingRead.error ? [] : ((siblingRead.data ?? []) as { id: string; legacy_sibling: boolean }[]).filter((r) => r.legacy_sibling).map((r) => r.id));
-          const notes = await rows("list_notes", supabase.from("list_notes").select("item_id, body, private, created").in("item_id", inList(items.map((i) => i.id))));
+          // Row-level security already hides another person's private notes from the person; the filter keeps it so
+          // when the admin console runs this exporter through its read policy (lib/admin/people.ts exportFor).
+          const notes = (
+            await rows<{ item_id: string; author_id: string; body: string; private: boolean; created: string }>(
+              "list_notes",
+              supabase.from("list_notes").select("item_id, author_id, body, private, created").in("item_id", inList(items.map((i) => i.id))),
+            )
+          )
+            .filter((n) => !n.private || n.author_id === userId)
+            .map((n) => ({ item_id: n.item_id, body: n.body, private: n.private, created: n.created }));
           const itemsOut = items.map((i) => ({
             unit_id: i.unit_id,
             category: i.category,
@@ -159,6 +168,12 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
       const [home] = await rows("household_homes", supabase.from("household_homes").select("household_id, label, place, zip, lat, lng, set_by_name, updated_at").limit(1));
       return home ?? null;
     },
+  },
+  {
+    key: "college_views",
+    description: "Each time you opened a college's page while signed in: the college, the page, and when (specs/product/college-views.md).",
+    run: ({ supabase, userId }) =>
+      rows("college_views", supabase.from("college_views").select("unit_id, page, viewed_at").eq("user_id", userId).order("viewed_at", { ascending: false })),
   },
   {
     key: "follows",

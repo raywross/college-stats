@@ -7,6 +7,8 @@ import { authConfigured, requireUser } from "@/lib/auth";
 import { parseWelcome } from "@/lib/household-hub";
 import { SetPasswordForm } from "./SetPasswordForm";
 import { welcomeInvitation } from "./welcome";
+import { needsSecondFactor } from "./actions";
+import { createServerSupabase } from "@/lib/supabase-server";
 
 export const metadata: Metadata = { title: "Your password", robots: { index: false } };
 
@@ -22,6 +24,8 @@ export default async function PasswordPage({ searchParams }: { searchParams: Pro
   const welcome = parseWelcome(welcomeParam);
   const user = await requireUser(welcome ? `/account/password?welcome=${welcome.invitation ?? "1"}` : "/account/password");
   const invitation = welcome ? await welcomeInvitation(user.id, welcome.invitation) : null;
+  // An account with an authenticator app (admins) confirms a code before the password can change.
+  const askCode = await needsSecondFactor(await createServerSupabase()).catch(() => false);
 
   if (invitation) {
     return (
@@ -31,7 +35,7 @@ export default async function PasswordPage({ searchParams }: { searchParams: Pro
           Choose a password to finish joining your <Term term="household">household</Term>. Next time, sign in with {user.email ?? "your email"} and this
           password.
         </p>
-        <SetPasswordForm email={user.email ?? ""} welcome={invitation.id} />
+        <SetPasswordForm email={user.email ?? ""} welcome={invitation.id} askCode={askCode} />
       </div>
     );
   }
@@ -45,7 +49,7 @@ export default async function PasswordPage({ searchParams }: { searchParams: Pro
       <p className="mt-2 mb-6 text-muted-foreground">
         Choose a password to sign in with your email. You can still ask for an emailed sign-in link any time.
       </p>
-      <SetPasswordForm email={user.email ?? ""} />
+      <SetPasswordForm email={user.email ?? ""} askCode={askCode} />
     </div>
   );
 }

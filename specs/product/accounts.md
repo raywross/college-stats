@@ -46,7 +46,10 @@ federal number ([commercialization.md](commercialization.md#what-stays-free)).
   Sign-up sends Supabase's confirmation email (implicit flow, lands on `/auth/confirm`); after confirming, people sign
   in with email and password. "Forgot password" emails a link that signs in and opens `/account/password`, which is
   also where anyone signed in sets or changes a password (an account made with a magic link has none until then).
-  Sign-in with an unconfirmed email offers to send the confirmation again.
+  Sign-in with an unconfirmed email offers to send the confirmation again. An account with an authenticator app
+  (admins) can only change its password from a session that passed it (Supabase: `insufficient_aal`), and a reset
+  link's session hasn't, so `/account/password` also asks for the 6-digit code there and verifies it before saving
+  (2026-10-13).
 - **Routes:** `/login` (one form, both methods; `?next=` returns to the page that asked), `/auth/confirm` (where
   magic links land), `/auth/callback` (`?code=` / `?token_hash=` links, server-side), `/account` (name, email, birth
   year, households, subscription, export, delete).

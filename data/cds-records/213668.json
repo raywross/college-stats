@@ -266,7 +266,7 @@
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":269,"status":"failed","page":6,"line":324,"quote":"B22 | 269","failures":[{"check":"federal-disagrees","detail":"B22 retention 68.773234% vs federal 76.11% one cohort older (more than 5 points)"}]},
       "B.2202": {"v":185,"status":"failed","page":6,"line":326,"quote":"From this group, identify how many were still enrolled at your institution as of the official enrollment date in Fall 2025. | 185","failures":[{"check":"federal-disagrees","detail":"B22 retention 68.773234% vs federal 76.11% one cohort older (more than 5 points)"}]},
-      "B.2203": {"v":0.688,"status":"failed","page":6,"line":327,"quote":"Calculate the percentage of the Fall 2025 entering cohort who remained enrolled on the official census date. | 68.8%","failures":[{"check":"edition-mismatch","detail":"the item's text names 2025; the 2025-26 edition's is 2024"},{"check":"federal-disagrees","detail":"B22 retention 68.773234% vs federal 76.11% one cohort older (more than 5 points)"}]},
+      "B.2203": {"v":0.688,"status":"failed","page":6,"line":327,"quote":"Calculate the percentage of the Fall 2025 entering cohort who remained enrolled on the official census date. | 68.8%","failures":[{"check":"federal-disagrees","detail":"B22 retention 68.773234% vs federal 76.11% one cohort older (more than 5 points)"}]},
       "C.101": {"v":1605,"status":"passed","page":7,"line":353,"quote":"Total first-time, first-year males who applied | 1605"},
       "C.102": {"v":1759,"status":"passed","page":7,"line":354,"quote":"Total first-time, first-year females who applied | 1759"},
       "C.103": {"v":65,"status":"passed","page":7,"line":355,"quote":"Total first-time, first-year students of unknown sex who applied | 65"},

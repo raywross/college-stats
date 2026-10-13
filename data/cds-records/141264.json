@@ -266,7 +266,7 @@
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":1111,"status":"passed","page":3,"line":90,"quote":"students | 331 | 780 | 1,111"},
       "B.2202": {"v":799,"status":"failed","page":7,"line":331,"quote":"institution as of the date your institution calculates its official enrollment in Fall 2024. | 71.90%","failures":[{"check":"number-on-line","detail":"799 isn't on line 331: \"@74 institution as of the date your institution calculates its official enrollment in Fall 2024. | @\""}]},
-      "B.2203": {"v":0.719,"status":"failed","page":7,"line":331,"quote":"institution as of the date your institution calculates its official enrollment in Fall 2024. | 71.90%","failures":[{"check":"edition-mismatch","detail":"the item's text names 2024; the 2024-25 edition's is 2023"}]},
+      "B.2203": {"v":0.719,"status":"passed","page":7,"line":331,"quote":"institution as of the date your institution calculates its official enrollment in Fall 2024. | 71.90%"},
       "C.101": {"v":1831,"status":"passed","page":8,"line":364,"quote":"Total first-time, first-year men who applied | 1831"},
       "C.102": {"v":4436,"status":"passed","page":8,"line":365,"quote":"Total first-time, first-year women who applied | 4436"},
       "C.103": {"status":"not-found"},

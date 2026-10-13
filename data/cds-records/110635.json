@@ -266,7 +266,7 @@
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":6260,"status":"passed","page":2,"line":213,"quote":"…irst-time, full-time, bachelor’s (or equivalent) degree-seeking undergraduate students who entered in Fall 2024 (or the preceding summer term). | | | | | 6260"},
       "B.2202": {"v":6074,"status":"passed","page":2,"line":214,"quote":"| From this group, identify how many were still enrolled at your institution as of the official enrollment date in Fall 2025. | | | | | 6074"},
-      "B.2203": {"v":0.9703,"status":"failed","page":2,"line":215,"quote":"| Calculate the percentage of the Fall 2025 entering cohort who remained enrolled on the official census date. | | | | | 0.9703","failures":[{"check":"edition-mismatch","detail":"the item's text names 2025; the 2025-26 edition's is 2024"}]},
+      "B.2203": {"v":0.9703,"status":"passed","page":2,"line":215,"quote":"| Calculate the percentage of the Fall 2025 entering cohort who remained enrolled on the official census date. | | | | | 0.9703"},
       "C.101": {"v":62395,"status":"passed","page":3,"line":225,"quote":"| Total first-time, first-year males who applied | | | 62395"},
       "C.102": {"v":64469,"status":"passed","page":3,"line":226,"quote":"| Total first-time, first-year females who applied | | | 64469"},
       "C.103": {"status":"not-found"},

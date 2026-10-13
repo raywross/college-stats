@@ -265,7 +265,7 @@
       "B.2101": {"status":"not-read"},
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":8127,"status":"passed","page":3,"line":85,"quote":"year | 3,318 | 4,742 | 26 | 41 | 8,127"},
-      "B.2202": {"v":7155,"status":"failed","page":5,"line":252,"quote":"first-year students in Fall 2024 (or the preceding summer term), what percentage was enrolled at your institution as of the date | 88.0%","failures":[{"check":"number-on-line","detail":"7155 isn't on line 252: \"@94 first-year students in Fall 2024 (or the preceding summer term), what percentage was enrolled at\""},{"check":"edition-mismatch","detail":"the item's text names 2024; the 2025-26 edition's is 2025"}]},
+      "B.2202": {"v":7155,"status":"failed","page":5,"line":252,"quote":"first-year students in Fall 2024 (or the preceding summer term), what percentage was enrolled at your institution as of the date | 88.0%","failures":[{"check":"number-on-line","detail":"7155 isn't on line 252: \"@94 first-year students in Fall 2024 (or the preceding summer term), what percentage was enrolled at\""}]},
       "B.2203": {"v":0.88,"status":"passed","page":5,"line":252,"quote":"first-year students in Fall 2024 (or the preceding summer term), what percentage was enrolled at your institution as of the date | 88.0%"},
       "C.101": {"v":25528,"status":"passed","page":6,"line":272,"quote":"Total first-time, first-year men who applied | 25,528"},
       "C.102": {"v":36466,"status":"passed","page":6,"line":273,"quote":"Total first-time, first-year women who applied | 36,466 | Applicants"},

@@ -264,7 +264,7 @@
       "B.2002": {"status":"not-read"},
       "B.2101": {"status":"not-read"},
       "B.2102": {"status":"not-read"},
-      "B.2201": {"v":421,"status":"failed","page":47,"line":1248,"quote":"A | students (CDS Item B1 if reporting on Fall 2023 | 421 | 1934 | 170","failures":[{"check":"edition-mismatch","detail":"the item's text names 2023; the 2023-24 edition's is 2022"},{"check":"federal-disagrees","detail":"B22 retention 83.135392% vs federal 75.77% one cohort older (more than 5 points)"}]},
+      "B.2201": {"v":421,"status":"failed","page":47,"line":1248,"quote":"A | students (CDS Item B1 if reporting on Fall 2023 | 421 | 1934 | 170","failures":[{"check":"federal-disagrees","detail":"B22 retention 83.135392% vs federal 75.77% one cohort older (more than 5 points)"}]},
       "B.2202": {"v":350,"status":"failed","page":17,"line":483,"quote":"✓ | 83%","failures":[{"check":"number-on-line","detail":"350 isn't on line 483: \"@72 ✓ | @90 83%\""},{"check":"federal-disagrees","detail":"B22 retention 83.135392% vs federal 75.77% one cohort older (more than 5 points)"}]},
       "B.2203": {"v":0.83,"status":"failed","page":17,"line":483,"quote":"✓ | 83%","failures":[{"check":"federal-disagrees","detail":"B22 retention 83.135392% vs federal 75.77% one cohort older (more than 5 points)"}]},
       "C.101": {"v":1637,"status":"passed","page":18,"line":508,"quote":"Total first-time, first-year men who applied | 1637"},

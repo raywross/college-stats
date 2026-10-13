@@ -264,7 +264,7 @@
       "B.2002": {"status":"not-read"},
       "B.2101": {"status":"not-read"},
       "B.2102": {"status":"not-read"},
-      "B.2201": {"v":218,"status":"failed","page":18,"line":902,"quote":"(CDS Item B1 if reporting on Fall 2014 cohort) | 218 | 1,947 | 282","failures":[{"check":"edition-mismatch","detail":"the item's text names 2014; the 2014-15 edition's is 2013"},{"check":"federal-disagrees","detail":"B22 retention 56.880734% vs federal 78.51% one cohort older (more than 5 points)"}]},
+      "B.2201": {"v":218,"status":"failed","page":18,"line":902,"quote":"(CDS Item B1 if reporting on Fall 2014 cohort) | 218 | 1,947 | 282","failures":[{"check":"federal-disagrees","detail":"B22 retention 56.880734% vs federal 78.51% one cohort older (more than 5 points)"}]},
       "B.2202": {"v":124,"status":"failed","page":5,"line":257,"quote":"57%","failures":[{"check":"number-on-line","detail":"124 isn't on line 257: \"@412 57%\""},{"check":"federal-disagrees","detail":"B22 retention 56.880734% vs federal 78.51% one cohort older (more than 5 points)"}]},
       "B.2203": {"v":0.57,"status":"failed","page":5,"line":257,"quote":"57%","failures":[{"check":"federal-disagrees","detail":"B22 retention 56.880734% vs federal 78.51% one cohort older (more than 5 points)"}]},
       "C.101": {"v":889,"status":"passed","page":6,"line":269,"quote":"C1 | Total first-time, first-year (freshman) men who applied | 889"},

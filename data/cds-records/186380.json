@@ -849,7 +849,7 @@
       "H.2A10": {"v":8686,"status":"passed","page":23,"line":1106,"quote":"$10,071 | $8,686 | $3,277"},
       "H.2A11": {"v":315,"status":"passed","page":23,"line":1109,"quote":"69 | 315 | 3"},
       "H.2A12": {"v":39210,"status":"passed","page":23,"line":1112,"quote":"$34,575 | $39,210 | $9,399"},
-      "H.401": {"v":6230,"status":"failed","page":23,"line":1130,"quote":"and June 30, 2023. Exclude students who transferred into your institution | 6,230","failures":[{"check":"edition-mismatch","detail":"the item's text names 2023; the 2023-24 edition's is 2022"}]},
+      "H.401": {"v":6230,"status":"passed","page":23,"line":1130,"quote":"and June 30, 2023. Exclude students who transferred into your institution | 6,230"},
       "H.501": {"v":3080,"status":"passed","page":24,"line":1160,"quote":"loans that your institution is aware of, etc. Include both | 3,080 | 49% | $28,227"},
       "H.502": {"v":3039,"status":"passed","page":24,"line":1165,"quote":"3,039 | 49% | $19,999"},
       "H.503": {"v":11,"status":"passed","page":24,"line":1168,"quote":"c) Institutional loan programs. | 11 | 0% | $10,693"},

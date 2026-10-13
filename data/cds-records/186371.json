@@ -849,7 +849,7 @@
       "H.2A10": {"v":2931,"status":"passed","page":23,"line":1093,"quote":"$5,873 | $6,244 | $2,931"},
       "H.2A11": {"v":0,"status":"passed","page":23,"line":1096,"quote":"institutional non-need-based athletic scholarship or | 0 | 0 | 0"},
       "H.2A12": {"v":0,"status":"passed","page":23,"line":1099,"quote":"athletic scholarships and grants awarded to students in | $0 | $0 | $0"},
-      "H.401": {"v":500,"status":"failed","page":23,"line":1117,"quote":"and June 30, 2023. Exclude students who transferred into your institution | 500","failures":[{"check":"edition-mismatch","detail":"the item's text names 2023; the 2023-24 edition's is 2022"}]},
+      "H.401": {"v":500,"status":"passed","page":23,"line":1117,"quote":"and June 30, 2023. Exclude students who transferred into your institution | 500"},
       "H.501": {"v":353,"status":"passed","page":24,"line":1147,"quote":"loans that your institution is aware of, etc. Include both | 353 | 71% | $28,560"},
       "H.502": {"v":349,"status":"passed","page":24,"line":1152,"quote":"349 | 70% | $22,954"},
       "H.503": {"v":3,"status":"passed","page":24,"line":1155,"quote":"c) Institutional loan programs. | 3 | 1% | $6,863"},

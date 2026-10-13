@@ -264,7 +264,7 @@
       "B.2002": {"status":"not-read"},
       "B.2101": {"status":"not-read"},
       "B.2102": {"status":"not-read"},
-      "B.2201": {"v":1793,"status":"failed","page":54,"line":900,"quote":"students (CDS Item B1 if reporting on Fall 2023 | 1793 | 6070 | 138","failures":[{"check":"edition-mismatch","detail":"the item's text names 2023; the 2023-24 edition's is 2022"}]},
+      "B.2201": {"v":1793,"status":"passed","page":54,"line":900,"quote":"students (CDS Item B1 if reporting on Fall 2023 | 1793 | 6070 | 138"},
       "B.2202": {"v":1558,"status":"failed","page":18,"line":306,"quote":"Enter retention rate: | 87%","failures":[{"check":"number-on-line","detail":"1558 isn't on line 306: \"@142 Enter retention rate: | @276 87%\""}]},
       "B.2203": {"v":0.87,"status":"passed","page":18,"line":306,"quote":"Enter retention rate: | 87%"},
       "C.101": {"v":8453,"status":"failed","page":19,"line":324,"quote":"Total first-time, first-year students who applied in Fall 2023 | 8,453.0 | 12,866.0 | 0.0","failures":[{"check":"parts-sum","detail":"C1 applicants by sex: parts sum to 21,319, the total says 21,323 (allowed ±1)"}]},

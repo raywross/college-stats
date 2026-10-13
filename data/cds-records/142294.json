@@ -266,7 +266,7 @@
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":296,"status":"failed","page":21,"line":1044,"quote":"296 | 1039 | 6","failures":[{"check":"federal-disagrees","detail":"B22 retention 76.351351% vs federal 81.85% one cohort older (more than 5 points)"}]},
       "B.2202": {"v":226,"status":"failed","page":6,"line":315,"quote":"institution as of the date your institution calculates its official enrollment in Fall 2023. | 76.50%","failures":[{"check":"number-on-line","detail":"226 isn't on line 315: \"@60 institution as of the date your institution calculates its official enrollment in Fall 2023. | @\""},{"check":"federal-disagrees","detail":"B22 retention 76.351351% vs federal 81.85% one cohort older (more than 5 points)"}]},
-      "B.2203": {"v":0.765,"status":"failed","page":6,"line":315,"quote":"institution as of the date your institution calculates its official enrollment in Fall 2023. | 76.50%","failures":[{"check":"edition-mismatch","detail":"the item's text names 2023; the 2023-24 edition's is 2022"},{"check":"federal-disagrees","detail":"B22 retention 76.351351% vs federal 81.85% one cohort older (more than 5 points)"}]},
+      "B.2203": {"v":0.765,"status":"failed","page":6,"line":315,"quote":"institution as of the date your institution calculates its official enrollment in Fall 2023. | 76.50%","failures":[{"check":"federal-disagrees","detail":"B22 retention 76.351351% vs federal 81.85% one cohort older (more than 5 points)"}]},
       "C.101": {"v":1984,"status":"passed","page":7,"line":347,"quote":"Total first-time, first-year men who applied | 1984"},
       "C.102": {"v":2569,"status":"passed","page":7,"line":348,"quote":"Total first-time, first-year women who applied | 2569"},
       "C.103": {"status":"not-found"},

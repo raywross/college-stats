@@ -264,7 +264,7 @@
       "B.2002": {"status":"not-read"},
       "B.2101": {"status":"not-read"},
       "B.2102": {"status":"not-read"},
-      "B.2201": {"v":834,"status":"failed","page":26,"line":901,"quote":"students (CDS Item B1 if reporting on Fall 2023 | 834 | 3200 | 75","failures":[{"check":"edition-mismatch","detail":"the item's text names 2023; the 2023-24 edition's is 2022"}]},
+      "B.2201": {"v":834,"status":"passed","page":26,"line":901,"quote":"students (CDS Item B1 if reporting on Fall 2023 | 834 | 3200 | 75"},
       "B.2202": {"v":750,"status":"failed","page":26,"line":901,"quote":"students (CDS Item B1 if reporting on Fall 2023 | 834 | 3200 | 75","failures":[{"check":"number-on-line","detail":"750 isn't on line 901: \"@119 students (CDS Item B1 if reporting on Fall 2023 | @348 834 | @429 3200 | @510 75\""}]},
       "B.2203": {"v":0.9,"status":"passed","page":9,"line":292,"quote":"Enter retention rate: | 90%"},
       "C.101": {"v":2152,"status":"passed","page":10,"line":309,"quote":"Total first-time, first-year students who applied in Fall 2023 | 2,152 | 3,054 | 0"},

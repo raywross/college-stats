@@ -266,7 +266,7 @@
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":533,"status":"failed","page":3,"line":127,"quote":"TOTAL | 535 | 1,732 | 1,752","failures":[{"check":"number-on-line","detail":"533 isn't on line 127: \"@67 TOTAL | @244 535 | @288 1,732 | @343 1,752\""}]},
       "B.2202": {"v":492,"status":"failed","page":5,"line":294,"quote":"enrolled at your institution as of the date your institution calculates its official enrollment in Fall 2022. | 92.40%","failures":[{"check":"number-on-line","detail":"492 isn't on line 294: \"@67 enrolled at your institution as of the date your institution calculates its official enrollment \""}]},
-      "B.2203": {"v":0.924,"status":"failed","page":5,"line":294,"quote":"enrolled at your institution as of the date your institution calculates its official enrollment in Fall 2022. | 92.40%","failures":[{"check":"edition-mismatch","detail":"the item's text names 2022; the 2022-23 edition's is 2021"}]},
+      "B.2203": {"v":0.924,"status":"passed","page":5,"line":294,"quote":"enrolled at your institution as of the date your institution calculates its official enrollment in Fall 2022. | 92.40%"},
       "C.101": {"v":2684,"status":"passed","page":6,"line":311,"quote":"Total first-time, first-year men who applied | 2684"},
       "C.102": {"v":3024,"status":"passed","page":6,"line":312,"quote":"Total first-time, first-year women who applied | 3024"},
       "C.103": {"status":"not-found"},

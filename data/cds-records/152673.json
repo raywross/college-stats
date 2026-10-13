@@ -266,7 +266,7 @@
       "B.2102": {"status":"blank"},
       "B.2201": {"status":"blank"},
       "B.2202": {"status":"blank"},
-      "B.2203": {"v":0.8398,"status":"failed","cell":"CDS-B!AC205","quote":"Calculate the percentage of the Fall 2025 entering cohort who remained enrolled on the official census date. | 0.8398","failures":[{"check":"edition-mismatch","detail":"the item's text names 2025; the 2025-26 edition's is 2024"},{"check":"federal-disagrees","detail":"B22 retention 83.98% vs federal 92.95% one cohort older (more than 5 points)"}]},
+      "B.2203": {"v":0.8398,"status":"failed","cell":"CDS-B!AC205","quote":"Calculate the percentage of the Fall 2025 entering cohort who remained enrolled on the official census date. | 0.8398","failures":[{"check":"federal-disagrees","detail":"B22 retention 83.98% vs federal 92.95% one cohort older (more than 5 points)"}]},
       "C.101": {"v":2496,"status":"passed","cell":"CDS-C!AC2","quote":"Total first-time, first-year males who applied | 2496"},
       "C.102": {"status":"blank"},
       "C.103": {"status":"blank"},

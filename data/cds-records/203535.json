@@ -266,7 +266,7 @@
       "B.2102": {"status":"blank"},
       "B.2201": {"v":439,"status":"passed","cell":"CDS-B!AC203","quote":"Report the number of all first-time, full-time, bachelor’s (or equivalent) degree-seeking undergraduate students who entered in Fall 2024 (or the precedi… | 439"},
       "B.2202": {"v":400,"status":"passed","cell":"CDS-B!AC204","quote":"From this group, identify how many were still enrolled at your institution as of the official enrollment date in Fall 2025. | 400"},
-      "B.2203": {"v":0.91,"status":"failed","cell":"CDS-B!AC205","quote":"Calculate the percentage of the Fall 2025 entering cohort who remained enrolled on the official census date. | 0.91","failures":[{"check":"edition-mismatch","detail":"the item's text names 2025; the 2025-26 edition's is 2024"}]},
+      "B.2203": {"v":0.91,"status":"passed","cell":"CDS-B!AC205","quote":"Calculate the percentage of the Fall 2025 entering cohort who remained enrolled on the official census date. | 0.91"},
       "C.101": {"v":3611,"status":"passed","cell":"CDS-C!AC2","quote":"Total first-time, first-year males who applied | 3611"},
       "C.102": {"v":3477,"status":"passed","cell":"CDS-C!AC3","quote":"Total first-time, first-year females who applied | 3477"},
       "C.103": {"v":3,"status":"passed","cell":"CDS-C!AC4","quote":"Total first-time, first-year students of unknown sex applied | 3"},

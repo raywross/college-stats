@@ -849,7 +849,7 @@
       "H.2A10": {"v":11272,"status":"passed","page":41,"line":969,"quote":"based scholarship and grant aid awarded to students | $14,762.00 | $11,272.00 | $2,750.00"},
       "H.2A11": {"v":74,"status":"passed","page":41,"line":972,"quote":"an instutional non-need-based athletic scholarship or | 21 | 74 | 0"},
       "H.2A12": {"v":8369,"status":"passed","page":41,"line":975,"quote":"based athletic scholarships and grants awarded to | $8,027.00 | $8,369.00 | $0.00"},
-      "H.401": {"v":692,"status":"failed","page":42,"line":979,"quote":"✔️ 2023 undergraduate class = all students who started at your institution as first-time students and received a bachelor's degree","failures":[{"check":"number-on-line","detail":"692 isn't on line 979: \"@80 ✔️ 2023 undergraduate class = all students who started at your institution as first-time student\""},{"check":"edition-mismatch","detail":"the item's text names 2023; the 2023-24 edition's is 2022"}]},
+      "H.401": {"v":692,"status":"failed","page":42,"line":979,"quote":"✔️ 2023 undergraduate class = all students who started at your institution as first-time students and received a bachelor's degree","failures":[{"check":"number-on-line","detail":"692 isn't on line 979: \"@80 ✔️ 2023 undergraduate class = all students who started at your institution as first-time student\""}]},
       "H.501": {"v":224,"status":"passed","page":43,"line":1014,"quote":"state, private loans that your institution is aware of, | 224 | 82% | $57,317"},
       "H.502": {"v":219,"status":"passed","page":43,"line":1019,"quote":"219 | 79% | $23,741"},
       "H.503": {"v":0,"status":"passed","page":43,"line":1022,"quote":"C. Institutional loan program | 0 | 0% | $0"},

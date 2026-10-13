@@ -266,7 +266,7 @@
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":189,"status":"passed","page":2,"line":78,"quote":"Total | 189 | 1088 | 1098"},
       "B.2202": {"v":149,"status":"failed","page":3,"line":129,"quote":"of the date your institution calculates its official enrollment in Fall 2017? | 79 %","failures":[{"check":"number-on-line","detail":"149 isn't on line 129: \"@80 of the date your institution calculates its official enrollment in Fall 2017? | @385 79 %\""}]},
-      "B.2203": {"v":0.79,"status":"failed","page":3,"line":129,"quote":"of the date your institution calculates its official enrollment in Fall 2017? | 79 %","failures":[{"check":"edition-mismatch","detail":"the item's text names 2017; the 2017-18 edition's is 2016"}]},
+      "B.2203": {"v":0.79,"status":"passed","page":3,"line":129,"quote":"of the date your institution calculates its official enrollment in Fall 2017? | 79 %"},
       "C.101": {"v":500,"status":"passed","page":4,"line":140,"quote":"Total first-time, first-year (freshman) who applied | 500 | 732 | 1232"},
       "C.102": {"v":732,"status":"passed","page":4,"line":140,"quote":"Total first-time, first-year (freshman) who applied | 500 | 732 | 1232"},
       "C.103": {"status":"not-found"},

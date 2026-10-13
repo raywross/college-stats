@@ -729,3 +729,34 @@ test("robots.txt: a CDS file that answers 403 is not worked around (one request,
   assert.equal(res?.status, 403);
   assert.deepEqual(http.blockedSeen().map((b) => [b.host, b.url]), [[`c${ROBOTS_ID}.edu`, robotsCds]]);
 });
+
+const SHARE_ID = "190008";
+const shareLink = "https://utx.box.com/s/abc123share";
+const shareDirect = "https://utx.box.com/shared/static/abc123share";
+const viewerPage = `<!doctype html><html><head><title>Box</title><script src="/app.js"></script></head><body></body></html>`;
+
+test("share links: a Box CDS found by a model is fetched at its direct download; a viewer page archived earlier is ignored", async () => {
+  const f = fakeFetch({ [shareLink]: viewerPage, [shareDirect]: XLSX });
+  const state = freshState([recipe(SHARE_ID, [{ kind: "cds", url: shareLink, format: "html" }])]);
+  // What runs before this fix left behind: the viewer page, archived as an HTML "CDS" and never read.
+  state.manifest.documents.push({ sha256: sha256(new TextEncoder().encode(viewerPage)), unit_id: SHARE_ID, url: shareLink, final_url: shareLink, kind: "cds", type: "html", edition: null, retrieved: "2026-10-01", bytes: viewerPage.length, archive: "local:viewer.html" } as Round3State["manifest"]["documents"][number]);
+  await pipeline({ fetch: f.fn, batches: batchApi(), archive: memoryArchive() }).run(state, runOpts([school(SHARE_ID)]));
+  assert.deepEqual(f.docs().map((c) => c.url), [shareDirect], "the direct form only, never the share link's viewer");
+  assert.equal(state.records.get(SHARE_ID)!.documents[0].reads.deterministic?.read_by, "xlsx-template");
+  assert.equal(state.reported.entries[0].admissions.applicants, 45409);
+  assert.equal(state.manifest.documents.find((d) => d.type === "xlsx-template")?.url, shareLink, "recorded under the link the college publishes");
+});
+
+test("share links: a viewer page at the direct download isn't archived, and is queued even when a class profile published", async () => {
+  const profile = `https://c${SHARE_ID}.edu/news/class-profile`;
+  const f = fakeFetch({ [shareDirect]: viewerPage, [profile]: "<p>48,000 students applied</p>" });
+  const { client } = fakeClient({ cohort: "first-year", scope: "all-rounds", entering_term: "Fall 2025", applicants: 48000, admitted: null, enrolled: null, acceptance_rate: null, quotes: { applicants: "48,000 students applied" }, page: null });
+  const state = freshState([recipe(SHARE_ID, [{ kind: "cds", url: shareLink, format: "html" }, { kind: "class-profile", url: profile, format: "html" }])]);
+  await pipeline({ fetch: f.fn, batches: batchApi(), archive: memoryArchive(), client }).run(state, runOpts([school(SHARE_ID)]));
+  assert.equal(state.manifest.documents.filter((d) => d.kind === "cds").length, 0, "the viewer page is not a document");
+  assert.equal(state.reported.entries[0]?.admissions.applicants, 48000, "the class profile still publishes");
+  const q = state.queue.items.find((i) => i.unit_id === SHARE_ID && i.failures.some((x) => x.check === "unreachable"));
+  assert.ok(q, "queued, so the failures table lists it");
+  assert.deepEqual(q.urls, [shareLink]);
+  assert.match(q.failures[0].detail, /box link answered with a viewer page/);
+});

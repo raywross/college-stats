@@ -139,6 +139,30 @@ test("reported Fresh: an edition newer than the current cycle is not behind", ()
   assert.equal(statusOf("reported", reported([doc({ edition: "2026-27" })])), "fresh");
 });
 
+test("what the data covers: a reported row names its Common Data Set edition; a class profile says it has no year", () => {
+  assert.equal(row(collegeHealth("1", reported([doc({})])), "reported").covers, "2025-26 Common Data Set");
+  assert.equal(row(collegeHealth("1", reported([doc({ edition: "2023-24" })])), "reported").covers, "2023-24 Common Data Set");
+});
+
+test("what the data covers: federal fields grouped by source and the year they describe, never the collection date", () => {
+  type C = { label: string; year: string | null; key: string; replaces?: { year: string | null } };
+  const cited: Record<string, C> = {
+    "admissions.acceptance_rate": { label: "IPEDS Admissions survey", year: "Fall 2024", key: "ipeds-adm" },
+    // A newer college-reported class replaced the federal test ranges: the federal value's year is the one shown.
+    "admissions.sat_math_25_75": { label: "Example CDS 2025–26", year: "Fall 2025", key: "college-site", replaces: { year: "Fall 2024" } },
+    "admissions.act_composite_25_75": { label: "Example CDS 2025–26", year: "Fall 2025", key: "college-site", replaces: { year: "Fall 2024" } },
+    "cost.avg_net_price": { label: "College Scorecard", year: "2023–24", key: "scorecard" },
+    "outcomes.graduation_rate": { label: "College Scorecard", year: null, key: "scorecard" },
+    "outcomes.median_earnings_10yr": { label: "College Scorecard", year: null, key: "scorecard" },
+  };
+  const defaults: Record<string, string> = { "admissions.sat_math_25_75": "IPEDS Admissions survey", "admissions.act_composite_25_75": "IPEDS Admissions survey" };
+  const cite = (path: string, school?: object) => (school ? cited[path] : { ...cited[path], label: defaults[path] ?? cited[path].label });
+  assert.equal(
+    health.federalCoverage({}, cite as never),
+    "IPEDS Admissions survey: Fall 2024 (admit rate, test ranges) · College Scorecard: 2023–24 (net price) · College Scorecard: latest release, year not stated by the source (graduation rate, earnings)",
+  );
+});
+
 test("reported Watch: one edition old", () => {
   const h = collegeHealth("1", reported([doc({ edition: "2024-25" })]));
   assert.equal(row(h, "reported").status, "watch");

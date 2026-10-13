@@ -6,7 +6,7 @@ import "server-only";
  * family data. Callers check requireAdmin() first (the page does).
  */
 import { getData } from "@/lib/data";
-import { healthOverview, type CollegeHealth } from "@/lib/admin/health";
+import { federalCoverage, healthOverview, type CollegeHealth } from "@/lib/admin/health";
 import { gpaCurve, gpaModel } from "@/lib/planner/gpa-model-server";
 import type { School } from "@/lib/types";
 import { gpaPanel, hiddenFieldRows, selectivityContext, selectivityPanel, type GpaPanel, type HiddenFieldRow, type SelectivityPanel } from "./hidden";
@@ -41,7 +41,13 @@ export async function adminCollege(unitId: string): Promise<AdminCollege | null>
     selectivity,
     gpa: gpaPanel(school, model, curve),
     hidden: hiddenFieldRows(school, { selectivity }),
-    health: overview?.colleges.find((c) => c.unitId === unitId) ?? null,
+    health: withFederalCoverage(overview?.colleges.find((c) => c.unitId === unitId) ?? null, federalCoverage(school, data.citeField)),
     healthGenerated: overview?.generated ?? null,
   };
+}
+
+/** The health card with the federal row's period filled in. */
+function withFederalCoverage(health: CollegeHealth | null, covers: string | null): CollegeHealth | null {
+  if (!health || !covers) return health;
+  return { ...health, rows: health.rows.map((r) => (r.group === "federal" ? { ...r, covers } : r)) };
 }

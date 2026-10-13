@@ -74,7 +74,12 @@ the screens:
   the list) and unit id; high schools list with place, kind, and grades. An exact id skips the list.
 - **A college**: header, then the Selectivity, GPA, and Derived-not-shown panels in the main column and the Data health
   card in a right column (below the panels on phones). Wide tables scroll inside their panel on phones. Each pool of the
-  selectivity breakdown is its own table, its sentence about hysteresis under it.
+  selectivity breakdown is its own table, its sentence about hysteresis under it. Each health row shows **Covers**, the
+  period the data describes, above **Collected**, when we gathered it (owner, 2026-10-13: Fresh federal data collected
+  this week can still describe fall 2024). Federal: each core field's source and year from lineage, grouped
+  (`federalCoverage()`; a value a college's own class replaced is dated by the federal value it replaced; Scorecard's
+  undated fields say the source states no year). College-reported: the Common Data Set edition. Identity and campus:
+  current pages as collected.
 - **A high school**: the counts as one table split by a dashed rule at the three-student line (counts below it in muted
   ink), then what the course plan reads, then the profile and graduation rate.
 - **The standing panel**: a `<details>` element, closed by default, whose summary line reads the level and its label;

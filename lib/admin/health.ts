@@ -33,6 +33,7 @@ import {
   type HealthRules,
   type HealthStatus,
 } from "./health-rules.ts";
+import type { FieldPath } from "../fields.ts";
 import { inputsFromCompact, newer, parseCompact, pickReportedDocs, type CompactHealth, type HealthInputs, type ReportedDoc } from "./health-files.ts";
 
 export { HEALTH_GROUPS, HEALTH_STATUSES, type HealthGroup, type HealthStatus } from "./health-rules.ts";
@@ -52,6 +53,11 @@ export interface HealthRow {
   reason: string;
   /** The document or failing page the reason names. */
   link?: string;
+  /**
+   * The period the data describes, as opposed to when it was collected (`judgedBy`): "2025–26 Common Data Set".
+   * Set here for college-reported data; the federal row's comes from the dataset's lineage (lib/admin/college.ts).
+   */
+  covers?: string;
 }
 
 export interface CollegeHealth {
@@ -128,12 +134,13 @@ function reportedRow(inputs: HealthInputs, rules: HealthRules["reported"]): Heal
       judgedBy: lastRun ?? edition?.retrieved ?? null,
       reason: `${plural(deciding.length, "open failure")}: ${codes.join(", ")}${queued}.`,
       link: deciding.find((f) => f.url)?.url ?? edition?.url ?? undefined,
+      ...(edition ? { covers: `${edition.edition} Common Data Set` } : {}),
     };
   }
 
   if (!edition) {
     if (profile) {
-      return { group: "reported", status: "watch", judgedBy: profile.retrieved, reason: "Class profile only: no Common Data Set with a stated edition.", link: profile.url };
+      return { group: "reported", status: "watch", judgedBy: profile.retrieved, reason: "Class profile only: no Common Data Set with a stated edition.", link: profile.url, covers: "A class profile (no stated year)" };
     }
     return { group: "reported", status: "stale", judgedBy: null, reason: cds.length ? "No document with a stated edition." : "No document found." };
   }
@@ -142,18 +149,19 @@ function reportedRow(inputs: HealthInputs, rules: HealthRules["reported"]): Heal
   const behind = current - (editionStart(edition.edition) ?? current);
   const read = edition.extracted ? `, read ${edition.extracted}` : "";
   const base = `${edition.edition} edition, retrieved ${edition.retrieved}${read}`;
+  const covers = `${edition.edition} Common Data Set`;
   if (behind >= rules.staleEditionsBehind) {
-    return { group: "reported", status: "stale", judgedBy: edition.retrieved, reason: `${base}: ${plural(behind, "edition")} behind ${rules.currentEdition}.`, link: edition.url };
+    return { group: "reported", status: "stale", judgedBy: edition.retrieved, reason: `${base}: ${plural(behind, "edition")} behind ${rules.currentEdition}.`, link: edition.url, covers };
   }
   const unread = unreadParts(edition);
   if (behind >= rules.watchEditionsBehind) {
     const also = unread.length ? `; ${unread.join(" and ")} archived but not read` : "";
-    return { group: "reported", status: "watch", judgedBy: edition.retrieved, reason: `${base}: ${plural(behind, "edition")} behind ${rules.currentEdition}${also}.`, link: edition.url };
+    return { group: "reported", status: "watch", judgedBy: edition.retrieved, reason: `${base}: ${plural(behind, "edition")} behind ${rules.currentEdition}${also}.`, link: edition.url, covers };
   }
   if (unread.length) {
-    return { group: "reported", status: "watch", judgedBy: edition.retrieved, reason: `${base}: ${unread.join(" and ")} archived but not read.`, link: edition.url };
+    return { group: "reported", status: "watch", judgedBy: edition.retrieved, reason: `${base}: ${unread.join(" and ")} archived but not read.`, link: edition.url, covers };
   }
-  return { group: "reported", status: "fresh", judgedBy: edition.retrieved, reason: `${base}; every section read.`, link: edition.url };
+  return { group: "reported", status: "fresh", judgedBy: edition.retrieved, reason: `${base}; every section read.`, link: edition.url, covers };
 }
 
 function identityRow(inputs: HealthInputs, rules: HealthRules["identity"]): HealthRow {
@@ -170,7 +178,7 @@ function identityRow(inputs: HealthInputs, rules: HealthRules["identity"]): Heal
   let status: HealthStatus = age <= rules.freshDays ? "fresh" : age <= rules.watchDays ? "watch" : "stale";
   if (status === "fresh" && linkIssues.length) status = "watch";
   const probed = `Probed ${dayLabel(newest, inputs.today)}.`;
-  return { group: "identity", status, judgedBy: newest, reason: `${probed}${dead || " No link issues."}`, link: issue?.url };
+  return { group: "identity", status, judgedBy: newest, reason: `${probed}${dead || " No link issues."}`, link: issue?.url, covers: "Current pages: as they were when collected" };
 }
 
 function campusRow(inputs: HealthInputs, rules: HealthRules["campus"]): HealthRow {
@@ -180,7 +188,7 @@ function campusRow(inputs: HealthInputs, rules: HealthRules["campus"]): HealthRo
   }
   const age = daysBetween(newest, inputs.today);
   const status: HealthStatus = age <= rules.freshDays ? "fresh" : age <= rules.watchDays ? "watch" : "stale";
-  return { group: "campus", status, judgedBy: newest, reason: `Collected ${dayLabel(newest, inputs.today)}.` };
+  return { group: "campus", status, judgedBy: newest, reason: `Collected ${dayLabel(newest, inputs.today)}.`, covers: "Current pages: as they were when collected" };
 }
 
 /**
@@ -467,4 +475,42 @@ export function healthCsv(rows: CollegeHealth[], names: Record<string, string>):
     lines.push(cells.map(csvCell).join(","));
   }
   return `${lines.join("\r\n")}\r\n`;
+}
+
+/* ------------------------------------------------------------------ */
+/* What the data covers                                                */
+/* ------------------------------------------------------------------ */
+
+/** Scorecard's "latest" file states no year for some fields (graduation, earnings); lineage has none to give. */
+const UNDATED = "latest release, year not stated by the source";
+
+/**
+ * The period the federal row's data describes, from the dataset's lineage (owner, 2026-10-13: "fresh" says when we
+ * collected it, not which year it covers). Each core field's federal value is cited; when a newer college-reported
+ * class replaced it on the site, the federal value it replaced is the one dated (`replaces.year`), since this row is
+ * about federal data. Grouped by source and year: "IPEDS Admissions survey: Fall 2024 (admit rate, test ranges)".
+ */
+export function federalCoverage<S>(
+  school: S,
+  cite: (path: FieldPath, school?: S) => { label: string; year: string | null; key: string; replaces?: { year: string | null } },
+): string | null {
+  const groups = new Map<string, { source: string; year: string; fields: string[] }>();
+  for (const f of CORE_FEDERAL_FIELDS) {
+    for (const path of f.paths) {
+      const c = cite(path as FieldPath, school);
+      // A replaced value is dated by the field's default (federal) source; a year the source doesn't state is said so.
+      const federal = c.replaces
+        ? { source: cite(path as FieldPath).label, year: c.replaces.year ?? UNDATED }
+        : c.key === "college-site"
+          ? null
+          : { source: c.label, year: c.year ?? UNDATED };
+      if (!federal) continue;
+      const id = `${federal.source}|${federal.year}`;
+      const g = groups.get(id) ?? { ...federal, fields: [] };
+      if (!g.fields.includes(f.label)) g.fields.push(f.label);
+      groups.set(id, g);
+    }
+  }
+  if (!groups.size) return null;
+  return [...groups.values()].map((g) => `${g.source}: ${g.year} (${g.fields.join(", ")})`).join(" · ");
 }

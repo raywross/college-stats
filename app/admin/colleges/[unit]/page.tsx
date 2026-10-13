@@ -243,8 +243,13 @@ function HealthBlock({ health, generated, opsHref }: { health: CollegeHealth | n
                   <span className="font-medium">{GROUP_LABELS[r.group]}</span>
                   <HealthChip status={r.status} />
                 </div>
+                {r.covers && (
+                  <p className="text-xs">
+                    <span className="font-semibold">Covers</span> {r.covers}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
-                  {r.judgedBy ? `${dayLabel(r.judgedBy)} · ` : ""}
+                  {r.judgedBy ? `Collected ${dayLabel(r.judgedBy)} · ` : ""}
                   {r.link ? (
                     <a href={r.link} className="underline-offset-2 hover:underline" rel="noreferrer" target="_blank">
                       {r.reason}

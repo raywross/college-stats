@@ -229,6 +229,11 @@ export interface ItemResult {
    * group, the code table didn't): the code table's value, cell, and quote as read, so both values stay in the record.
    */
   code_table?: { v: number | string | boolean | null; cell?: string; quote?: string };
+  /**
+   * C7 and C8A grids read by a model from flattened text: the column heading the mark sits under in the document's own
+   * layout (`npm run check-grid-columns`), and what the model read when that differed (`v` is then the heading).
+   */
+  column?: { heading: string; read?: number | string | boolean | null; checked: string };
 }
 
 /** How one part of a document was read. */

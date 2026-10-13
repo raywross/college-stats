@@ -205,8 +205,10 @@ happen. A decision is always about a field at a college (the Review page) or abo
 5. Proposals section: whole approval for systemic, per-row ticks for value (`apply-proposal`, rebuild on trim), Ask,
    Decline. Decisions section.
 6. Audits: the rotation and the weekly schedule.
-7. A **grid-column check**: from the line text's x positions, the column each C7/C8A mark sits under, compared with
-   the headings. Retires the hold below.
+7. ~~A grid-column check~~ **Built 2026-10-13** (decision 1): `lib/grid-columns.ts` and `npm run check-grid-columns`
+   place each model-read C7/C8A mark from the document's own layout (PDF layout text, or the workbook's cells); the
+   `grid-column` check holds what couldn't be placed. First run: 3,212 marks placed (817 corrected), 958 held. The
+   pipeline doesn't run it on new reads yet: until it does, a new run's grid marks stay held until the script runs.
 
 ## Tests
 - Clustering: the committed queue's top clusters are stable under re-ordering and number changes; a cause key
@@ -221,7 +223,9 @@ happen. A decision is always about a field at a college (the Review page) or abo
 - Every issue the clustering produces has exactly one of the four kinds.
 
 ## Owner decisions
-1. **The live C7/C8 grids.** About 3,550 grid values at ~189 colleges come from a model reading a flattened PDF, and
+1. **Decided 2026-10-13: fix the columns.** Built as step 7 of the build order rather than a blanket hold: each mark
+   placed by position, corrected where the model was wrong, held only where it can't be placed. The question as
+   written: About 3,550 grid values at ~189 colleges come from a model reading a flattened PDF, and
    the sample suggests about half are a column off (for example Harvard's alumni relation shows Very Important; the
    PDF marks Considered). Recommended: **hold them all now** with a rule-based `grid-column` failure on model-read
    C7 and C8A rows (about 20 lines in `lib/cds-checks.ts`, tried on 2026-10-13: it holds 3,680 record items, kept out

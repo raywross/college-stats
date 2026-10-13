@@ -263,6 +263,7 @@ export type CheckId =
   | "order" // a ≤ b: funnels, percentiles, class-rank bands, H2 lines, wait list, ED counts, H5 rows
   | "ratio-matches" // a stated rate, ratio, or average matches its counts (B22, B4 H, C9 share, H2 I, H6, I-2)
   | "one-mark" // exactly one mark or level per row (C7, C8, C16/C17 kind, D5, H0 methodology, H9 deadline)
+  | "grid-column" // C7, C8A grids a model read from flattened text: held until each mark's column is checked
   // A person compared the value with the document and found it misread; the detail says what the document shows.
   // Not a check the code runs, so a re-judge keeps it; a new read of the item replaces it.
   | "misread"

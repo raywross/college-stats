@@ -1,6 +1,6 @@
 # Auth emails in Quad's look
 
-Supabase Auth sends six emails itself: the sign-up confirmation, the magic link, the password reset, the email change,
+Supabase Auth sends six emails itself (plus two security notices, below): the sign-up confirmation, the magic link, the password reset, the email change,
 the invitation, and the reauthentication code. They used to be Supabase's plain defaults. Since 2026-10-13 (owner),
 they carry Quad's mark and colors, and they're sent from **Quad &lt;support@usequad.app&gt;** through Resend's SMTP, so
 replies reach the support mailbox.
@@ -20,14 +20,16 @@ replies reach the support mailbox.
 
 ## Rules
 
-- These are Go templates that Supabase fills in. Only `{{ .ConfirmationURL }}`, `{{ .Email }}`, `{{ .NewEmail }}`,
+- These are Go templates that Supabase fills in. Only `{{ .ConfirmationURL }}`, `{{ .Email }}`, `{{ .NewEmail }}`, `{{ .OldEmail }}`,
   and `{{ .Token }}` are used (a test enforces the list). The link stays `{{ .ConfirmationURL }}`, so the sign-in flow
   (`/auth/confirm`, see [product/accounts.md](product/accounts.md)) is unchanged.
 - Email clients drop most CSS and block SVG: tables, inline styles, no images. Bricolage Grotesque loads where the
   client allows web fonts and falls back to the system font elsewhere.
 - Copy follows the site's voice: say what the button does, say what happens if they didn't ask for it.
-- Supabase's security notices (password changed, email changed, MFA added or removed, sign-in linked) are off on the
-  project, so they aren't branded yet. Turning one on means adding it here first.
+- Security notices (owner, 2026-10-13): **password changed** and **email changed** (sent to the old address) are on,
+  in the same layout, with no confirmation link (there's nothing to confirm) and a "reply to this email" path if it
+  wasn't them. The push switches both on (`mailer_notifications_*_enabled`). The others (MFA added or removed, phone
+  changed, sign-in linked or unlinked) stay off; turning one on means adding its template here first.
 
 ## Setup (per project)
 

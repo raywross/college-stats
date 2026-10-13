@@ -20,7 +20,15 @@ export const AUTH_EMAIL_COLORS = {
 } as const;
 
 /** Supabase's template names, as its Management API spells them (mailer_subjects_<name>, mailer_templates_<name>_content). */
-export type AuthEmailName = "confirmation" | "magic_link" | "recovery" | "email_change" | "invite" | "reauthentication";
+export type AuthEmailName =
+  | "confirmation"
+  | "magic_link"
+  | "recovery"
+  | "email_change"
+  | "invite"
+  | "reauthentication"
+  | "password_changed_notification"
+  | "email_changed_notification";
 
 export interface AuthEmail {
   name: AuthEmailName;
@@ -39,6 +47,8 @@ interface Copy {
   button?: string;
   /** A one-time code shown large (reauthentication). */
   code?: string;
+  /** A plain link to the site instead of Supabase's confirmation URL (the security notices). */
+  link?: { label: string; href: string };
   /** Why they got this, and what to do if they didn't ask for it. */
   footnote: string;
 }
@@ -92,6 +102,29 @@ const COPY: Record<AuthEmailName, Copy> = {
     code: "{{ .Token }}",
     footnote: "If you didn't ask for a code, someone may know your password. Sign in and change it.",
   },
+  // Security notices (owner, 2026-10-13): sent after the change, so there's nothing to confirm; they say what changed and
+  // what to do if it wasn't you.
+  password_changed_notification: {
+    subject: "Your Quad password was changed",
+    preheader: "The password for your Quad account was just changed.",
+    heading: "Your password was changed",
+    body: [
+      "The password for <strong>{{ .Email }}</strong> on Quad was just changed. If that was you, there's nothing to do.",
+      "If it wasn't you, reset your password now and reply to this email so we can help.",
+    ],
+    link: { label: "Reset your password", href: "https://usequad.app/login" },
+    footnote: "We send this whenever a Quad account's password changes, so you'd know if someone else did it.",
+  },
+  email_changed_notification: {
+    subject: "Your Quad email address was changed",
+    preheader: "The email address for your Quad account was changed.",
+    heading: "Your email address was changed",
+    body: [
+      "The email address for your Quad account was changed from <strong>{{ .OldEmail }}</strong> to <strong>{{ .Email }}</strong>.",
+      "If you didn't make this change, reply to this email right away and we'll secure your account.",
+    ],
+    footnote: "We send this to the old address whenever a Quad account's email changes, so you'd know if someone else did it.",
+  },
 };
 
 const FONT = "'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif";
@@ -110,17 +143,21 @@ function logoMark(): string {
               </table>`;
 }
 
-function button(label: string): string {
+function button(label: string, href = "{{ .ConfirmationURL }}", fallback = true): string {
   const c = AUTH_EMAIL_COLORS;
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px;">
                 <tr>
                   <td style="border-radius:999px;background:${c.primary};">
-                    <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:13px 26px;font-family:${BODY_FONT};font-size:16px;font-weight:700;line-height:1;color:#ffffff;text-decoration:none;border-radius:999px;">${label}</a>
+                    <a href="${href}" style="display:inline-block;padding:13px 26px;font-family:${BODY_FONT};font-size:16px;font-weight:700;line-height:1;color:#ffffff;text-decoration:none;border-radius:999px;">${label}</a>
                   </td>
                 </tr>
-              </table>
+              </table>${
+                fallback
+                  ? `
               <p style="margin:0 0 4px;font-family:${BODY_FONT};font-size:13px;line-height:1.5;color:${c.muted};">Button not working? Paste this link into your browser:</p>
-              <p style="margin:0;font-family:${BODY_FONT};font-size:13px;line-height:1.5;word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:${c.primary};">{{ .ConfirmationURL }}</a></p>`;
+              <p style="margin:0;font-family:${BODY_FONT};font-size:13px;line-height:1.5;word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:${c.primary};">{{ .ConfirmationURL }}</a></p>`
+                  : ""
+              }`;
 }
 
 function code(value: string): string {
@@ -135,7 +172,7 @@ export function renderAuthEmail(name: AuthEmailName): AuthEmail {
   const paragraphs = copy.body
     .map((p) => `<p style="margin:0 0 16px;font-family:${BODY_FONT};font-size:16px;line-height:1.55;color:${c.ink};">${p}</p>`)
     .join("\n              ");
-  const action = copy.button ? button(copy.button) : copy.code ? code(copy.code) : "";
+  const action = copy.button ? button(copy.button) : copy.link ? button(copy.link.label, copy.link.href, false) : copy.code ? code(copy.code) : "";
   const html = `<!doctype html>
 <html lang="en">
   <head>
@@ -187,11 +224,24 @@ export function renderAuthEmail(name: AuthEmailName): AuthEmail {
   return { name, subject: copy.subject, html };
 }
 
-export const AUTH_EMAIL_NAMES: readonly AuthEmailName[] = ["confirmation", "magic_link", "recovery", "email_change", "invite", "reauthentication"];
+export const AUTH_EMAIL_NAMES: readonly AuthEmailName[] = [
+  "confirmation",
+  "magic_link",
+  "recovery",
+  "email_change",
+  "invite",
+  "reauthentication",
+  "password_changed_notification",
+  "email_changed_notification",
+];
 
-/** The Management API body that sets every template's subject and content (and nothing else). */
-export function authEmailConfigPatch(): Record<string, string> {
-  const patch: Record<string, string> = {};
+/** The security notices this layout covers; the push also switches them on (mailer_notifications_<kind>_enabled). */
+export const AUTH_NOTICES = ["password_changed", "email_changed"] as const;
+
+/** The Management API body that sets every template's subject and content and turns on the notices (nothing else). */
+export function authEmailConfigPatch(): Record<string, string | boolean> {
+  const patch: Record<string, string | boolean> = {};
+  for (const notice of AUTH_NOTICES) patch[`mailer_notifications_${notice}_enabled`] = true;
   for (const name of AUTH_EMAIL_NAMES) {
     const email = renderAuthEmail(name);
     patch[`mailer_subjects_${name}`] = email.subject;

@@ -13,7 +13,10 @@ test("every link email sends people to Supabase's confirmation URL, the code ema
   for (const name of AUTH_EMAIL_NAMES) {
     const { html, subject } = renderAuthEmail(name);
     assert.ok(subject.length > 0 && subject.length <= 80, name);
-    if (name === "reauthentication") {
+    if (name.endsWith("_notification")) {
+      assert.doesNotMatch(html, /ConfirmationURL/, `${name}: a notice has nothing to confirm`);
+      assert.match(html, /\{\{ \.Email \}\}/, name);
+    } else if (name === "reauthentication") {
       assert.match(html, /\{\{ \.Token \}\}/, name);
       assert.doesNotMatch(html, /ConfirmationURL/, name);
     } else {
@@ -25,20 +28,23 @@ test("every link email sends people to Supabase's confirmation URL, the code ema
     assert.match(html, /Quad/);
   }
   assert.match(renderAuthEmail("email_change").html, /\{\{ \.NewEmail \}\}/);
+  assert.match(renderAuthEmail("email_changed_notification").html, /\{\{ \.OldEmail \}\}/);
 });
 
 test("Supabase's template syntax is only the variables it fills in", () => {
-  const allowed = new Set(["{{ .ConfirmationURL }}", "{{ .Email }}", "{{ .NewEmail }}", "{{ .Token }}"]);
+  const allowed = new Set(["{{ .ConfirmationURL }}", "{{ .Email }}", "{{ .NewEmail }}", "{{ .OldEmail }}", "{{ .Token }}"]);
   for (const name of AUTH_EMAIL_NAMES) {
     const { html, subject } = renderAuthEmail(name);
     for (const m of `${subject}${html}`.matchAll(/\{\{[^}]*\}\}/g)) assert.ok(allowed.has(m[0]), `${name}: ${m[0]}`);
   }
 });
 
-test("the push sends each template's subject and content, and no other Auth setting", () => {
+test("the push sends each template's subject and content and turns on the two notices, and no other Auth setting", () => {
   const patch = authEmailConfigPatch();
-  assert.equal(Object.keys(patch).length, AUTH_EMAIL_NAMES.length * 2);
-  assert.ok(Object.keys(patch).every((k) => /^mailer_subjects_[a-z_]+$|^mailer_templates_[a-z_]+_content$/.test(k)));
+  assert.equal(Object.keys(patch).length, AUTH_EMAIL_NAMES.length * 2 + 2);
+  assert.ok(Object.keys(patch).every((k) => /^mailer_subjects_[a-z_]+$|^mailer_templates_[a-z_]+_content$|^mailer_notifications_(password|email)_changed_enabled$/.test(k)));
+  assert.equal(patch.mailer_notifications_password_changed_enabled, true);
+  assert.equal(patch.mailer_notifications_email_changed_enabled, true);
 });
 
 test("the committed files in supabase/templates/ match the source", () => {

@@ -264,7 +264,7 @@
       "B.2002": {"status":"not-read"},
       "B.2101": {"status":"not-read"},
       "B.2102": {"status":"not-read"},
-      "B.2201": {"v":636,"status":"failed","page":8,"line":675,"quote":"| A | Number of degree-seeking undergraduate students (CDS Item B1 if reporting on Fall 2020 cohort) | 636 | 2857 | 666","failures":[{"check":"edition-mismatch","detail":"the item's text names 2020; the 2020-21 edition's is 2019"}]},
+      "B.2201": {"v":636,"status":"passed","page":8,"line":675,"quote":"| A | Number of degree-seeking undergraduate students (CDS Item B1 if reporting on Fall 2020 cohort) | 636 | 2857 | 666"},
       "B.2202": {"v":431,"status":"failed","page":2,"line":101,"quote":"| Two or more races, non-Hispanic | | 16 | 66 | 77","failures":[{"check":"number-on-line","detail":"431 isn't on line 101: \"@A38 | @B38 Two or more races, non-Hispanic | @C38 | @D38 16 | @E38 66 | @F38 77\""}]},
       "B.2203": {"v":0.68,"status":"failed","page":2,"line":101,"quote":"| Two or more races, non-Hispanic | | 16 | 66 | 77","failures":[{"check":"number-on-line","detail":"0.68 isn't on line 101: \"@A38 | @B38 Two or more races, non-Hispanic | @C38 | @D38 16 | @E38 66 | @F38 77\""}]},
       "C.101": {"v":3648,"status":"passed","page":3,"line":166,"quote":"| Total first-time, first-year (freshman) men who applied | | | 3648"},

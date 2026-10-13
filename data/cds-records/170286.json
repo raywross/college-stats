@@ -849,7 +849,7 @@
       "H.2A10": {"v":16958,"status":"passed","page":21,"line":1058,"quote":"scholarship and grant aid awarded to students in line n | $16,596 | $17,717 | $16,958"},
       "H.2A11": {"v":5,"status":"passed","page":21,"line":1060,"quote":"institutional non-need-based athletic scholarship or grant | 67 | 275 | 5"},
       "H.2A12": {"v":15286,"status":"passed","page":21,"line":1062,"quote":"athletic scholarships and grants awarded to students in | $12,388 | $12,623 | $15,286"},
-      "H.401": {"v":339,"status":"failed","page":22,"line":1082,"quote":"and June 30, 2018. Exclude students who transferred into your institution | 339","failures":[{"check":"edition-mismatch","detail":"the item's text names 2018; the 2018-19 edition's is 2017"}]},
+      "H.401": {"v":339,"status":"passed","page":22,"line":1082,"quote":"and June 30, 2018. Exclude students who transferred into your institution | 339"},
       "H.501": {"v":190,"status":"passed","page":22,"line":1103,"quote":"190 | 56.05% | $32,199"},
       "H.502": {"v":0,"status":"passed","page":22,"line":1107,"quote":"0 | 0.00% | $0"},
       "H.503": {"v":180,"status":"passed","page":22,"line":1111,"quote":"c) Institutional loan programs. | 180 | 53.10% | $18,912"},

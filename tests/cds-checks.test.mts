@@ -23,6 +23,8 @@ import {
   failedC1Count,
   federalBaseline,
   itemFailureShares,
+  itemTextEdition,
+  queueAfterRejudge,
   reviewItemsFor,
   runItemChecks,
   valueOnLine,
@@ -99,9 +101,10 @@ test("the committed records fail exactly where the colleges' own files are wrong
   assert.deepEqual(failedCodes(doc(VU)), ["B.2201"]); // 0.97 typed into a count
   assert.deepEqual(failedCodes(doc(CU)), ["G.001"]); // "89*---31" isn't a URL
   assert.deepEqual(failedCodes(doc(WM)), []);
-  assert.deepEqual(failedCodes(doc(IL)), [...range("B", 221, 230), "B.2203", "C.110", "C.111", "C.112", "C.113"].sort());
+  assert.deepEqual(failedCodes(doc(IL)), [...range("B", 221, 230), "C.110", "C.111", "C.112", "C.113"].sort());
   assert.equal(doc(IL).items["B.230"].failures![0].check, "column-3-not-all-undergrads");
-  assert.equal(doc(IL).items["B.2203"].failures![0].check, "edition-mismatch"); // its label says "Fall 2025 entering cohort"
+  // B.2203's label says "Fall 2025 entering cohort": the census fall of a 2025-26 edition, which colleges quote too.
+  assert.equal(doc(IL).items["B.2203"].status, "passed");
   // W&M's recommended-units total was blank with its subjects filled: summed from the parts.
   const wm = doc(WM).items["C.513"];
   assert.deepEqual([wm.v, wm.method, wm.status], [20, "derived", "passed"]);
@@ -150,9 +153,27 @@ test("universal: type-range, form-vs-code (and its resolution), aid-year", () =>
   failsExactly(WM, (d) => delete d.years["aid-year"], "aid-year", Object.keys(doc(WM).items).filter((k) => T.byCode.get(k)!.year_rule === "aid-year" && doc(WM).items[k].v !== undefined));
 });
 
-test("universal: an item's own text must name the edition's year (B22, H4, I-2)", () => {
-  failsExactly(WM, (d) => (d.items["I.201"].quote = "Fall 2024 Student to Faculty ratio | 11"), "edition-mismatch", ["I.201"]);
+test("universal: an item's own text must name the edition's year or the one before (B22, H4, I-2)", () => {
+  failsExactly(WM, (d) => (d.items["I.201"].quote = "Fall 2023 Student to Faculty ratio | 11"), "edition-mismatch", ["I.201"]);
+  failsExactly(WM, (d) => (d.items["I.201"].quote = "Fall 2026 Student to Faculty ratio | 11"), "edition-mismatch", ["I.201"]);
   failsExactly(VU, (d) => (d.items["H.401"].quote = "Provide the number of students in the 2023 undergraduate class who started … | 1561"), "edition-mismatch", ["H.401"]);
+  // A 2025-26 edition: B22 quotes the Fall 2024 cohort or the Fall 2025 census, I-2 this fall or the last.
+  for (const [code, quote] of [
+    ["B.2203", "Calculate the percentage of the Fall 2024 entering cohort who remained enrolled | 90%"],
+    ["B.2203", "your institution calculates its official enrollment in Fall 2025. | 90%"],
+    ["I.201", "Fall 2024 Student to Faculty ratio | 11"],
+    ["H.401", "Provide the number of students in the 2025 undergraduate class who started … | 1561"],
+  ] as const) {
+    const d = doc(WM);
+    if (d.items[code].v === undefined) continue;
+    d.items[code].quote = quote;
+    assert.ok(!(runItemChecks(d, ctx(WM)).byCode[code] ?? []).some((f) => f.check === "edition-mismatch"), `${code}: ${quote}`);
+  }
+  const d = doc(WM);
+  d.items["B.2203"] = { ...d.items["B.2203"], quote: "official enrollment in Fall 2025. | 90%" };
+  assert.deepEqual(itemTextEdition(d.items, "2025-26"), { confirmed: true, mismatches: [] });
+  assert.equal(itemTextEdition(d.items, "2024-25").confirmed, false); // 2025 is past a 2024-25 edition's years
+  assert.ok(itemTextEdition(d.items, "2024-25").mismatches.some((m) => m.code === "B.2203"));
 });
 
 /** A small model-read (flattened PDF) document with its numbered line text. */
@@ -222,9 +243,28 @@ test("universal (model reads): the cover's edition must be the one the document 
   const { d, lines } = modelDoc();
   assert.equal(coverEdition(lines), "2025-26");
   lines[0] = "Common Data Set 2024-2025";
+  // Nothing in the items names 2025 (I-2's prior fall and B22's cohort fit either edition): the cover decides.
+  lines[24] = "Fall 2024 Student to Faculty ratio | 9";
+  d.items["I.201"].quote = lines[24];
   const r = runItemChecks(d, { table: T, lines });
   for (const k of Object.keys(d.items).filter((k) => d.items[k].v !== undefined)) assert.ok(r.byCode[k].some((f) => f.check === "edition-mismatch"), k);
   assert.equal(r.byCode["C.1201"], undefined); // blank stays blank
+});
+
+test("universal (model reads): the 2025-26 form's stale running header yields to items that name the edition's years", () => {
+  // Taylor, North Alabama, Bucknell, …: every page says "Common Data Set 2024-2025", C1 and B22 say Fall 2025.
+  const { d, lines } = modelDoc();
+  lines[0] = "Common Data Set 2024-2025";
+  const r = runItemChecks(d, { table: T, lines });
+  assert.ok(!Object.values(r.byCode).flat().some((f) => f.check === "edition-mismatch"));
+  // A re-judge without the lines (check-cds-records) drops a cover failure kept from an earlier read once the items
+  // confirm the edition, and keeps it while they don't.
+  const held = applyChecks(d, { table: T, lines });
+  const cover = { check: "edition-mismatch" as const, detail: "the cover says 2024-25; the document is filed as 2025-26" };
+  held.items["C.116"] = { ...held.items["C.116"], status: "failed", failures: [cover] };
+  assert.equal(applyChecks(held, { table: T }).items["C.116"].status, "passed");
+  held.items["I.201"].quote = "Fall 2024 Student to Faculty ratio | 9";
+  assert.deepEqual(applyChecks(held, { table: T }).items["C.116"].failures, [cover]);
 });
 
 /* ---- Per-item checks: the real records pass; one broken value fails exactly its check's codes ---- */
@@ -404,6 +444,36 @@ test("16: a failing H2 code doesn't stop C1 publishing; the queue holds one item
   // Once H2 is fixed, its entries leave the queue; the others stay.
   const fixed = applyChecks(doc(VU), ctx(VU));
   assert.deepEqual(dropPassed(again, VU, fixed).map((i) => `${i.code ?? "C1"} ${i.edition ?? ""}`).sort(), ["B.2201 2025-26", "C1 ", "H.201 2024-25"]);
+});
+
+test("a re-judge with no new read moves the queue with the verdicts (check-cds-records)", () => {
+  const opts = { unit_id: VU, name: "Vanderbilt University", run: "check-cds-records", queued: "2026-10-13" };
+  const was = doc(VU);
+  set(was, "H.202", 2000);
+  const held = applyChecks(was, ctx(VU));
+  const c1: ReviewItem = { unit_id: VU, name: "Vanderbilt University", urls: [], entering_term: "Fall 2026", failures: [], queued: "", run: "r1" };
+  const queue = [c1, ...reviewItemsFor(held, T, { ...opts, run: "r1", queued: "2026-10-03" })];
+  // H2 fixed: its items leave; B.2201 (0.97 typed into a count) stays with its first run and date; C1 is untouched.
+  const fixed = applyChecks(doc(VU), ctx(VU));
+  const after = queueAfterRejudge(queue, held, fixed, T, opts);
+  assert.deepEqual(after.map((i) => `${i.code ?? "C1"} ${i.run} ${i.queued}`).sort(), ["B.2201 r1 2026-10-03", "C1 r1 "]);
+  // An item that newly fails joins under the re-judge; one a person rejected stays rejected and isn't re-queued.
+  const worse = structuredClone(fixed);
+  worse.items["H.202"] = { ...worse.items["H.202"], status: "failed", failures: [{ check: "parts-sum", detail: "test" }] };
+  assert.ok(queueAfterRejudge(after, fixed, worse, T, opts).some((i) => i.code === "H.202" && i.run === "check-cds-records"));
+  const rejected = after.map((i) => (i.code === "B.2201" ? { ...i, resolved: "rejected" as const, resolved_on: "2026-10-12" } : i));
+  assert.deepEqual(queueAfterRejudge(rejected, fixed, fixed, T, opts).find((i) => i.code === "B.2201"), rejected.find((i) => i.code === "B.2201"));
+});
+
+test("a person's misread hold survives every re-judge, and the item stays queued", () => {
+  const d = applyChecks(doc(VU), ctx(VU));
+  const misread = { check: "misread" as const, detail: "the mark is under Recommended, read as Required" };
+  d.items["C.116"] = { ...d.items["C.116"], status: "failed", failures: [misread] };
+  const again = applyChecks(applyChecks(d, ctx(VU)), ctx(VU));
+  assert.equal(again.items["C.116"].status, "failed");
+  assert.deepEqual(again.items["C.116"].failures, [misread]);
+  const queued = reviewItemsFor(again, T, { unit_id: VU, name: "Vanderbilt University", run: "hold-misread", queued: "2026-10-13" });
+  assert.ok(queued.some((i) => i.code === "C.116" && i.failures[0].check === "misread"));
 });
 
 test("the PR body lists per-item review rows beside the round-2 table", () => {

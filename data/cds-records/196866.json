@@ -265,7 +265,7 @@
       "B.2101": {"status":"not-read"},
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":500,"status":"passed","page":28,"line":810,"quote":"A | Number of degree-seeking undergraduate students (CDS Item | 500 | 2031"},
-      "B.2202": {"v":"90.20%","status":"failed","page":8,"line":238,"quote":"students in Fall 2023 (or the preceding summer term), what | 90.20%","failures":[{"check":"type-range","detail":"text \"90.20%\" in a numeric cell"},{"check":"edition-mismatch","detail":"the item's text names 2023; the 2024-25 edition's is 2024"}]},
+      "B.2202": {"v":"90.20%","status":"failed","page":8,"line":238,"quote":"students in Fall 2023 (or the preceding summer term), what | 90.20%","failures":[{"check":"type-range","detail":"text \"90.20%\" in a numeric cell"}]},
       "B.2203": {"v":0.902,"status":"passed","page":8,"line":238,"quote":"students in Fall 2023 (or the preceding summer term), what | 90.20%"},
       "C.101": {"v":4418,"status":"passed","page":9,"line":262,"quote":"Total first-time, first-year who applied | 4,418 | 3,789 | 3 | 0 | 8,210"},
       "C.102": {"v":3789,"status":"passed","page":9,"line":262,"quote":"Total first-time, first-year who applied | 4,418 | 3,789 | 3 | 0 | 8,210"},

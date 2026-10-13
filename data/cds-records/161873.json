@@ -264,7 +264,7 @@
       "B.2002": {"status":"not-read"},
       "B.2101": {"status":"not-read"},
       "B.2102": {"status":"not-read"},
-      "B.2201": {"v":25,"status":"failed","page":8,"line":702,"quote":"| A | Number of degree-seeking undergraduate students (CDS Item B1 if reporting on Fall 2023 cohort) | 25 | 693 | 583","failures":[{"check":"edition-mismatch","detail":"the item's text names 2023; the 2023-24 edition's is 2022"}]},
+      "B.2201": {"v":25,"status":"passed","page":8,"line":702,"quote":"| A | Number of degree-seeking undergraduate students (CDS Item B1 if reporting on Fall 2023 cohort) | 25 | 693 | 583"},
       "B.2202": {"v":16,"status":"failed","page":2,"line":180,"lines":[180,130],"quote":"…* Foreign aid service of the federal government * Official church missions * No other adjustments to the initial cohort should be made. / | Associate degrees","failures":[{"check":"number-on-line","detail":"16 isn't on line 180, 130: \"@A129 | @B129 * Death * Permanent Disability * Service in the armed forces * Foreign aid service of \""}]},
       "B.2203": {"status":"not-found"},
       "C.101": {"v":72,"status":"passed","page":3,"line":193,"quote":"| Total first-time, first-year men who applied | | | 72"},

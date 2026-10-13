@@ -6,20 +6,26 @@
  *   npm run check-cds-records [-- --unit <unit_id>] [--dry-run]
  *
  * Writes each changed record back (same key order as the readers write) and prints, per college, the items whose
- * status changed and why. Re-running is a no-op: `applyChecks` is idempotent.
+ * status changed and why. The review queue follows the new verdicts: an item that now passes leaves it, one still
+ * failing gets its current failures (keeping when and by which run it was first queued), and one that newly fails
+ * joins it. Re-running is a no-op: `applyChecks` is idempotent.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import type { School } from "../lib/types";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
-import { applyChecks } from "../lib/cds-checks.ts";
+import { applyChecks, queueAfterRejudge } from "../lib/cds-checks.ts";
 import { restoreFederal } from "../lib/newest.ts";
 import { readRecords, serializeRecord, writeRecord } from "./lib/college-reported/records.mts";
-import { federalGradYear } from "./lib/college-reported/files.mts";
+import { federalGradYear, readQueue, writeQueue } from "./lib/college-reported/files.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const RECORDS = join(ROOT, "data", "cds-records");
+const QUEUE = join(ROOT, "data", "review-queue.json");
+const today = new Date().toISOString().slice(0, 10);
+let queue = readQueue(QUEUE).items;
+const queueBefore = JSON.stringify(queue);
 
 const { values } = parseArgs({ options: { unit: { type: "string" }, "dry-run": { type: "boolean", default: false } } });
 const schools = new Map((JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[]).map((s) => [s.unit_id, s]));
@@ -46,6 +52,8 @@ for (const record of readRecords(RECORDS)) {
       const why = it.failures?.map((f) => `${f.check}: ${f.detail}`).join("; ") ?? (it.method === "derived" ? "summed from its parts" : it.code_table ? `visible form ${String(it.v)} published (code table said ${String(it.code_table.v)})` : "");
       console.log(`  ${code} ${old?.status ?? "missing"} → ${it.status}${why ? `: ${why}` : ""}`);
     }
+    queue = queueAfterRejudge(queue, record.documents[i], documents[i], CDS_TEMPLATE, { unit_id: record.unit_id, name, run: "check-cds-records", queued: today });
   }
   if (!values["dry-run"] && serializeRecord(next) !== before) writeRecord(RECORDS, next);
 }
+if (!values["dry-run"] && JSON.stringify(queue) !== queueBefore) writeQueue(QUEUE, { updated: today, items: queue });

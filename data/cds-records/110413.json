@@ -966,7 +966,7 @@
       "I.128": {"status":"not-read"},
       "I.129": {"status":"not-read"},
       "I.130": {"status":"not-read"},
-      "I.201": {"v":16,"status":"failed","page":24,"line":1264,"lines":[1264,1265],"quote":"I2 | Fall 2016 Student to Faculty ratio | 16 | 1 (based on | 2890 students / and | 185 faculty).","failures":[{"check":"edition-mismatch","detail":"the item's text names 2016; the 2017-18 edition's is 2017"}]},
+      "I.201": {"v":16,"status":"passed","page":24,"line":1264,"lines":[1264,1265],"quote":"I2 | Fall 2016 Student to Faculty ratio | 16 | 1 (based on | 2890 students / and | 185 faculty)."},
       "I.202": {"v":2890,"status":"passed","page":24,"line":1264,"lines":[1264,1265],"quote":"I2 | Fall 2016 Student to Faculty ratio | 16 | 1 (based on | 2890 students / and | 185 faculty)."},
       "I.203": {"v":185,"status":"passed","page":24,"line":1264,"lines":[1264,1265],"quote":"I2 | Fall 2016 Student to Faculty ratio | 16 | 1 (based on | 2890 students / and | 185 faculty)."},
       "I.301": {"v":79,"status":"passed","page":25,"line":1294,"quote":"I3 | SECTIONS | 79 | 272 | 228 | 40 | 3 | 2 | 624"},

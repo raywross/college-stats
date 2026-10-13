@@ -849,7 +849,7 @@
       "H.2A10": {"status":"not-found"},
       "H.2A11": {"status":"not-found"},
       "H.2A12": {"status":"not-found"},
-      "H.401": {"v":6517,"status":"failed","page":29,"line":1140,"quote":"H4 Provide the number of students in the 2025 undergraduate class who started at your | 6,517","failures":[{"check":"edition-mismatch","detail":"the item's text names 2025; the 2025-26 edition's is 2024"}]},
+      "H.401": {"v":6517,"status":"passed","page":29,"line":1140,"quote":"H4 Provide the number of students in the 2025 undergraduate class who started at your | 6,517"},
       "H.501": {"v":1056,"status":"passed","page":30,"line":1166,"quote":"A | 1,056 | 16.20% | $18,745"},
       "H.502": {"v":1014,"status":"passed","page":30,"line":1172,"quote":"B | Unsubsidized. Include both Federal Direct | 1,014 | 15.56% | $14,698"},
       "H.503": {"v":10,"status":"passed","page":30,"line":1175,"quote":"C | Institutional loan programs. | 10 | 0.15% | $4,459"},

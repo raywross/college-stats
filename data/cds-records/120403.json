@@ -266,7 +266,7 @@
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":218,"status":"passed","page":4,"line":161,"quote":"TOTAL | 218 | 1,005 | 1,224"},
       "B.2202": {"v":162,"status":"failed","page":6,"line":323,"quote":"institution as of the date your institution calculates its official enrollment in Fall 2024. | 74.47%","failures":[{"check":"number-on-line","detail":"162 isn't on line 323: \"@21 institution as of the date your institution calculates its official enrollment in Fall 2024. | @\""}]},
-      "B.2203": {"v":0.7447,"status":"failed","page":6,"line":323,"quote":"institution as of the date your institution calculates its official enrollment in Fall 2024. | 74.47%","failures":[{"check":"edition-mismatch","detail":"the item's text names 2024; the 2024-25 edition's is 2023"}]},
+      "B.2203": {"v":0.7447,"status":"passed","page":6,"line":323,"quote":"institution as of the date your institution calculates its official enrollment in Fall 2024. | 74.47%"},
       "C.101": {"v":646,"status":"failed","page":8,"line":355,"quote":"Total first-time, first-year men who applied | 646","failures":[{"check":"parts-sum","detail":"C1 applicants by sex: parts sum to 2,534, the total says 2,549 (allowed ±1)"}]},
       "C.102": {"v":1888,"status":"failed","page":8,"line":356,"quote":"Total first-time, first-year women who applied | 1888","failures":[{"check":"parts-sum","detail":"C1 applicants by sex: parts sum to 2,534, the total says 2,549 (allowed ±1)"}]},
       "C.103": {"v":0,"status":"failed","page":8,"line":357,"quote":"Total first-time, first-year another gender who applied | 0","failures":[{"check":"parts-sum","detail":"C1 applicants by sex: parts sum to 2,534, the total says 2,549 (allowed ±1)"}]},

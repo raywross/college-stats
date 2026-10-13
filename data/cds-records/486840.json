@@ -265,7 +265,7 @@
       "B.2101": {"status":"not-read"},
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":8635,"status":"passed","page":20,"line":1082,"quote":"8635 | 31278 | 9990"},
-      "B.2202": {"v":6625,"status":"failed","page":7,"line":327,"quote":"institution as first-year students in Fall 2023 (or the preceding summer term), what percentage was enrolled at your | 76.70%","failures":[{"check":"number-on-line","detail":"6625 isn't on line 327: \"@72 institution as first-year students in Fall 2023 (or the preceding summer term), what percentage \""},{"check":"edition-mismatch","detail":"the item's text names 2023; the 2024-25 edition's is 2024"}]},
+      "B.2202": {"v":6625,"status":"failed","page":7,"line":327,"quote":"institution as first-year students in Fall 2023 (or the preceding summer term), what percentage was enrolled at your | 76.70%","failures":[{"check":"number-on-line","detail":"6625 isn't on line 327: \"@72 institution as first-year students in Fall 2023 (or the preceding summer term), what percentage \""}]},
       "B.2203": {"v":0.767,"status":"passed","page":7,"line":327,"quote":"institution as first-year students in Fall 2023 (or the preceding summer term), what percentage was enrolled at your | 76.70%"},
       "C.101": {"v":15108,"status":"passed","page":8,"line":359,"quote":"Total first-time, first-year men who applied | 15,108"},
       "C.102": {"v":19572,"status":"passed","page":8,"line":360,"quote":"Total first-time, first-year women who applied | 19,572"},

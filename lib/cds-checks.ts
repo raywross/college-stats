@@ -37,7 +37,7 @@ import {
   type TemplateItem,
   type TemplateTable,
 } from "./cds-sections.ts";
-import { REPORTED_MODELS, type CheckFailure, type CheckId, type Extraction, type ReviewItem } from "./reported.ts";
+import { REPORTED_MODELS, enqueueItems, type CheckFailure, type CheckId, type Extraction, type ReviewItem } from "./reported.ts";
 import { runChecks } from "./reported-checks.ts";
 import { stripLayoutTags } from "./cds-quotes.ts";
 import { bachelorGrad } from "./graduation-groups.ts";
@@ -1276,13 +1276,35 @@ export function coverEdition(lines: readonly string[]): string | null {
 /** Codes whose own text names a year the edition fixes (B22's cohort and census falls, H4's class, I-2's fall). */
 const YEAR_TEXT_CODES = ["B.2201", "B.2202", "B.2203", "H.401", "I.201"];
 
+/**
+ * What the year-naming items' own text says about the edition a document is filed under. An edition starting in fall
+ * E names E or E − 1: B22 quotes the entering cohort (Fall E − 1) or the census (Fall E), H4 the class of E or its
+ * July E − 1 to June E window, I-2 the fall E ratio or the prior fall's. Any other year contradicts the filing; a
+ * year E with none contradicting confirms it. The template's own wording isn't the yardstick: colleges quote either
+ * fall, and the 2025-26 template's H4 still names the 2024 class.
+ */
+export function itemTextEdition(
+  items: Record<CdsCode, ItemResult>,
+  edition: string
+): { confirmed: boolean; mismatches: { code: CdsCode; said: number; start: number }[] } {
+  const start = parseEdition(edition)?.start;
+  const mismatches: { code: CdsCode; said: number; start: number }[] = [];
+  let named = false;
+  if (start === undefined) return { confirmed: false, mismatches };
+  for (const code of YEAR_TEXT_CODES) {
+    const it = items[code];
+    if (!it || it.v === undefined || !it.quote) continue;
+    const label = it.quote.includes(" | ") ? it.quote.slice(0, it.quote.lastIndexOf(" | ")) : it.quote;
+    const said = Number(/\b(20\d{2})\b/.exec(label)?.[1]);
+    if (!said) continue;
+    if (said === start) named = true;
+    else if (said !== start - 1) mismatches.push({ code, said, start });
+  }
+  return { confirmed: named && !mismatches.length, mismatches };
+}
+
 function universalChecks(x: Ctx, resolved: ReadonlySet<CdsCode>) {
   const { doc, table, lines } = x;
-  const tableStart = parseEdition(table.edition)?.start;
-  const docStart = parseEdition(doc.edition)?.start;
-  /** For an assumed edition: whether some item's own text named the year the edition implies, or another year. */
-  let confirmed = false;
-  let contradicted = false;
   for (const [code, it] of Object.entries(x.items)) {
     const item = table.byCode.get(code);
     const v = x.v.get(code);
@@ -1308,23 +1330,19 @@ function universalChecks(x: Ctx, resolved: ReadonlySet<CdsCode>) {
         x.fail("number-on-line", [code], `${String(v)} isn't on line ${cited.join(", ")}: "${lines[cited[0] - 1].slice(0, 100)}"`);
       } else if (!cited.length) x.fail("line-in-document", [code], "no line cited");
     }
-    if (YEAR_TEXT_CODES.includes(code) && tableStart !== undefined && docStart !== undefined) {
-      const want = Number(/\b(20\d{2})\b/.exec(item.question)?.[1]) - tableStart + docStart;
-      const label = it.quote?.includes(" | ") ? it.quote.slice(0, it.quote.lastIndexOf(" | ")) : (it.quote ?? "");
-      const said = /\b(20\d{2})\b/.exec(label)?.[1];
-      if (said && Number(said) !== want) {
-        x.fail("edition-mismatch", [code], `the item's text names ${said}; the ${doc.edition} edition's is ${want}`);
-        contradicted = true;
-      } else if (said) confirmed = true;
-    }
   }
-  if (x.editionAssumed && (!confirmed || contradicted)) {
+  const text = itemTextEdition(x.items, doc.edition);
+  for (const m of text.mismatches) {
+    x.fail("edition-mismatch", [m.code], `the item's text names ${m.said}; the ${doc.edition} edition's are ${m.start - 1} and ${m.start}`);
+  }
+  if (x.editionAssumed && !text.confirmed) {
     const valued = Object.keys(x.items).filter((k) => x.v.get(k) !== undefined);
     if (valued.length) x.fail("edition-mismatch", valued, `the document states no edition; filed as ${doc.edition} until an item's text (B22, H4, I-2) confirms it`);
   }
   if (lines) {
     const stated = coverEdition(lines);
-    if (stated && stated !== parseEdition(doc.edition)?.key) {
+    // The 2025-26 form's running header still prints "Common Data Set 2024-2025": the items' own years outrank it.
+    if (stated && stated !== parseEdition(doc.edition)?.key && !text.confirmed) {
       const valued = Object.keys(x.items).filter((k) => x.v.get(k) !== undefined);
       x.fail("edition-mismatch", valued, `the cover says ${stated}; the document is filed as ${doc.edition}`);
     }
@@ -1348,9 +1366,9 @@ const OWN_CHECKS = new Set<string>([
  * (`npm run check-cds-records` has none), and the assumed-edition failure without `editionAssumed`. Before 2026-10-11
  * a re-check without lines dropped them, passing values whose number isn't on their cited line.
  */
-function keptVerdict(ctx: Pick<CheckContext, "lines" | "editionAssumed">): (f: ItemFailure) => boolean {
+function keptVerdict(ctx: Pick<CheckContext, "lines" | "editionAssumed">, textConfirms: boolean): (f: ItemFailure) => boolean {
   return (f) =>
-    (!ctx.lines && (f.check === "number-on-line" || f.check === "line-in-document" || (f.check === "edition-mismatch" && f.detail.startsWith("the cover says")))) ||
+    (!ctx.lines && (f.check === "number-on-line" || f.check === "line-in-document" || (f.check === "edition-mismatch" && f.detail.startsWith("the cover says") && !textConfirms))) ||
     (ctx.editionAssumed === undefined && f.check === "edition-mismatch" && f.detail.startsWith("the document states no edition"));
 }
 
@@ -1476,7 +1494,7 @@ function quoteFor(label: string, v: Value | null): string {
  */
 export function applyChecks(doc: DocumentRecord, ctx: CheckContext): DocumentRecord {
   const result = runItemChecks(doc, ctx);
-  const items = reset(doc.items, keptVerdict(ctx));
+  const items = reset(doc.items, keptVerdict(ctx, itemTextEdition(doc.items, doc.edition).confirmed));
   const resolved = new Set(result.resolved);
   for (const [code, it] of Object.entries(items)) {
     const item = ctx.table.byCode.get(code);
@@ -1709,4 +1727,27 @@ export function reviewItemsFor(
 /** The queue without this document's entries for codes that now pass (or are blank): a fixed item leaves the queue. */
 export function dropPassed(queue: readonly ReviewItem[], unitId: string, doc: DocumentRecord): ReviewItem[] {
   return queue.filter((q) => !(q.unit_id === unitId && q.edition === doc.edition && q.code && doc.items[q.code] && doc.items[q.code].status !== "failed"));
+}
+
+/**
+ * The queue after a document is re-judged with no new read (`npm run check-cds-records`): items that now pass leave,
+ * items still failing carry their current failures (keeping when and by which run they were first queued), and items
+ * that newly fail join under `opts.run`. An item that failed before and isn't queued (a person rejected it, or it was
+ * never queued) isn't added.
+ */
+export function queueAfterRejudge(
+  queue: readonly ReviewItem[],
+  was: DocumentRecord,
+  now: DocumentRecord,
+  table: TemplateTable,
+  opts: { unit_id: string; name: string; run: string; queued: string }
+): ReviewItem[] {
+  const kept = dropPassed(queue, opts.unit_id, now);
+  const queued = new Map(kept.filter((e) => e.unit_id === opts.unit_id && e.edition === now.edition && e.code).map((e) => [e.code!, e]));
+  const updates = reviewItemsFor(now, table, opts).flatMap((f) => {
+    const prior = queued.get(f.code!);
+    if (prior) return prior.resolved ? [] : [{ ...f, urls: prior.urls, queued: prior.queued, run: prior.run }];
+    return was.items[f.code!]?.status === "failed" ? [] : [f];
+  });
+  return enqueueItems(kept, updates);
 }

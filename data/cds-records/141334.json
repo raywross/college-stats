@@ -266,7 +266,7 @@
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":1345,"status":"passed","page":5,"line":191,"quote":"_1,345__ Report the number of all first-time, full-time, bachelor’s (or equivalent) degree-seeking undergraduate"},
       "B.2202": {"v":1051,"status":"passed","page":5,"line":193,"quote":"_1,051__ From this group, identify how many were still enrolled at your institution as of the official enrollment date in"},
-      "B.2203": {"v":0.7814,"status":"failed","page":5,"line":195,"quote":"_78.14%__ Calculate the percentage of the fall 2025 entering cohort who remained enrolled on the official census date","failures":[{"check":"edition-mismatch","detail":"the item's text names 2025; the 2025-26 edition's is 2024"}]},
+      "B.2203": {"v":0.7814,"status":"passed","page":5,"line":195,"quote":"_78.14%__ Calculate the percentage of the fall 2025 entering cohort who remained enrolled on the official census date"},
       "C.101": {"v":1650,"status":"passed","page":6,"line":223,"quote":"Total first-time, first-year (freshman) males who applied | 1,650"},
       "C.102": {"v":3377,"status":"passed","page":6,"line":224,"quote":"Total first-time, first-year (freshman) females who applied | 3,377"},
       "C.103": {"v":40,"status":"passed","page":6,"line":225,"quote":"Total first-time, first-year (freshman) of unknown gender who applied | 40"},

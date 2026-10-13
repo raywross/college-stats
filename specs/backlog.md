@@ -285,6 +285,10 @@ shared rules for user data are in that README. All user data lives only in Supab
 - [ ] **Scattergrams** ([product/scattergrams.md](product/scattergrams.md)): counselor CSV upload (Scoir/Naviance
   columns) scrubbed in the browser, binned, 10-point threshold; shown to that school's verified students over the
   national ranges; opt-in pooled self-reported outcomes.
+- [ ] **Data Steward** ([product/data-steward.md](product/data-steward.md)): an agent in Actions that clusters the
+  review queue into causes, proves each against the documents, and opens proposals (check fix, hold, correct,
+  refile, re-read, recipe) for the owner to approve; Operations becomes Issues, Proposals, Audits. Needs the
+  document archive repo first.
 - [ ] **Commercialization** ([product/commercialization.md](product/commercialization.md)): Free / Plus ($1.99 or
   $15.99/yr) / Pro ($49 pass); the feature map as one entitlement object; Stripe Checkout, Billing, webhooks;
   pricing page; legal setup; public data stays free.

@@ -51,6 +51,7 @@
     "score-campus-pilot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/score-campus-pilot.mts",
     "purge-accounts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/purge-accounts.mts",
     "check-cds-records": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-cds-records.mts",
+    "hold-misread": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/hold-misread.mts",
     "check:college-health": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-college-health.mts",
     "check:selectivity": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-selectivity.mts",
     "check:cycle": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-cycle.mts",

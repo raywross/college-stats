@@ -966,7 +966,7 @@
       "I.128": {"status":"not-read"},
       "I.129": {"status":"not-read"},
       "I.130": {"status":"not-read"},
-      "I.201": {"v":16,"status":"failed","page":28,"line":1319,"quote":"Fall 2021 Student to Faculty ratio | 16 | to 1 | (based on | 32,441 students","failures":[{"check":"edition-mismatch","detail":"the item's text names 2021; the 2022-23 edition's is 2022"}]},
+      "I.201": {"v":16,"status":"passed","page":28,"line":1319,"quote":"Fall 2021 Student to Faculty ratio | 16 | to 1 | (based on | 32,441 students"},
       "I.202": {"v":32441,"status":"passed","page":28,"line":1319,"quote":"Fall 2021 Student to Faculty ratio | 16 | to 1 | (based on | 32,441 students"},
       "I.203": {"v":2046,"status":"passed","page":28,"line":1320,"quote":"and | 2,046 faculty)."},
       "I.301": {"v":350,"status":"passed","page":28,"line":1347,"quote":"350 | 822 | 870 | 326 | 259 | 356 | 195 | 3,178"},

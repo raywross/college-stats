@@ -266,7 +266,7 @@
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":4238,"status":"failed","page":2,"line":44,"lines":[44,45,47],"quote":"…| 2,331 | 1,907 | 1 | 13 | 13 | 0 / Other first-year, degree-seeking | 677 | 608 | 1 | 53 | 81 | 0 / Total degree-seeking | 10,258 | 8,483 | 5 | 644 | 724 | 0","failures":[{"check":"number-on-line","detail":"4238 isn't on line 44, 45, 47: \"@51 Degree-seeking, first-time freshmen | @240 2,331 | @303 1,907 | @390 1 | @443 13 | @501 13 | @57\""}]},
       "B.2202": {"v":3609,"status":"failed","page":4,"line":155,"quote":"your institution calculates its official enrollment in Fall 2024? | 85.2%","failures":[{"check":"number-on-line","detail":"3609 isn't on line 155: \"@95 your institution calculates its official enrollment in Fall 2024? | @372 85.2%\""}]},
-      "B.2203": {"v":0.852,"status":"failed","page":4,"line":155,"quote":"your institution calculates its official enrollment in Fall 2024? | 85.2%","failures":[{"check":"edition-mismatch","detail":"the item's text names 2024; the 2024-25 edition's is 2023"}]},
+      "B.2203": {"v":0.852,"status":"passed","page":4,"line":155,"quote":"your institution calculates its official enrollment in Fall 2024? | 85.2%"},
       "C.101": {"v":19810,"status":"passed","page":5,"line":167,"quote":"Total first-time, first-year men who applied | 19,810"},
       "C.102": {"v":21021,"status":"passed","page":5,"line":168,"quote":"Total first-time, first-year women who applied | 21,021"},
       "C.103": {"v":25,"status":"passed","page":5,"line":169,"quote":"Total first-time, first-year another gender who applied | 25"},

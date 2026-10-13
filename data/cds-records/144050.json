@@ -266,7 +266,7 @@
       "B.2102": {"status":"not-read"},
       "B.2201": {"v":1726,"status":"passed","page":7,"line":345,"quote":"B22 | 1726"},
       "B.2202": {"v":1715,"status":"passed","page":7,"line":348,"quote":"1715"},
-      "B.2203": {"v":0.99,"status":"failed","page":7,"line":350,"quote":"Calculate the percentage of the Fall 2025 entering cohort who remained enrolled on the official census date. | 99%","failures":[{"check":"edition-mismatch","detail":"the item's text names 2025; the 2025-26 edition's is 2024"}]},
+      "B.2203": {"v":0.99,"status":"passed","page":7,"line":350,"quote":"Calculate the percentage of the Fall 2025 entering cohort who remained enrolled on the official census date. | 99%"},
       "C.101": {"v":19929,"status":"passed","page":8,"line":376,"quote":"Total first-time, first-year males who applied | 19929"},
       "C.102": {"v":24578,"status":"passed","page":8,"line":377,"quote":"Total first-time, first-year females who applied | 24578"},
       "C.103": {"v":1026,"status":"passed","page":8,"line":378,"quote":"Total first-time, first-year students of unknown sex who applied | 1026"},

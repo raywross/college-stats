@@ -24,4 +24,4 @@ and Calvin now show their 2025–26 retention and test score ranges.
 
 ## Behind the scenes
 - 3,212 grid marks were placed by position (817 corrected); 958 that couldn't be placed safely are held.
-- Selectivity tiers didn't change; UCLA moved from 19th to 21st and Calvin from 339th to 330th on the hidden score.
+- No college's selectivity tier changed.

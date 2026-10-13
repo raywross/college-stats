@@ -26,6 +26,7 @@ import { SelectivityChip } from "@/components/school/SelectivityChip";
 import { ProfileChanges } from "@/components/profile/ProfileChanges";
 import { MyHighSchoolLine } from "@/components/high-schools/MyHighSchoolLine";
 import { ViewBeacon } from "@/components/profile/ViewBeacon";
+import { UpcomingVisits } from "@/components/visits/UpcomingVisits";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -136,6 +137,8 @@ export default async function SchoolPage({ params }: Props) {
 
           {/* Official links and social accounts (specs/school-identity/links.md, social-accounts.md). */}
           <HeroIdentity school={school} />
+          {/* Tours, sessions, and the travel calendar (specs/product/visit-events.md), under the official links. */}
+          <UpcomingVisits unitId={school.unit_id} schoolName={school.name} />
           {/* Records that this college was opened (specs/product/college-views.md). Renders nothing. */}
           <ViewBeacon unit={school.unit_id} page="overview" />
         </div>

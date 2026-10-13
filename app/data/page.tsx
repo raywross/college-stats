@@ -49,7 +49,8 @@ const TOPIC_LABELS: Record<Topic, string> = {
   academics: "Academics",
 };
 
-const STORED = (Object.entries(FIELDS) as [FieldPath, FieldDef][]).filter(([, def]) => !def.computed);
+// Hidden fields (computed for Quad's method, never on a public page) are left out, as on every other page.
+const STORED = (Object.entries(FIELDS) as [FieldPath, FieldDef][]).filter(([, def]) => !def.computed && !def.hidden);
 
 /** Stored fields whose default source is this release (lib/fields.ts). */
 const fieldsOf = (v: VintageKey) => STORED.filter(([, def]) => def.vintage === v && def.source !== "cds");

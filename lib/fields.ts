@@ -62,6 +62,13 @@ export interface FieldDef {
    * lib/changes.ts). Only headline figures a family recognizes carry it: see NOTIFY_FIELDS below.
    */
   notify?: NotifyDef;
+  /**
+   * Computed for Quad's method and never shown or cited on a public page (specs/product/admin.md "A college"): the admin
+   * college page lists every hidden field with its value and lineage (lib/admin/hidden.ts), so that panel needs no list
+   * of its own. A hidden field is never named outside the admin console and the method (tests/admin-hidden.test.mts),
+   * and the Data page leaves it out.
+   */
+  hidden?: true;
 }
 
 /** How a reported field's value is compared and written: a share (0–1), whole dollars, a count, a ratio, or words. */
@@ -707,8 +714,38 @@ export const FIELDS = {
     source: "ipeds-adm",
     vintage: "ipeds-adm",
     derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+    hidden: true,
   },
   "selectivity.year": adm("Fall of the admit rate Quad's selectivity read"),
+  // The hidden score behind each stored tier (lib/selectivity.ts selectivityScore), recomputed from the dataset where it
+  // is shown: only on the admin college page. Never stored in data/schools.json, never on a public page.
+  "derived.selectivity_score": {
+    label: "Quad's selectivity score (0–100), all applicants",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    computed: true,
+    hidden: true,
+    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+  },
+  "derived.selectivity_score_in_state": {
+    label: "Quad's selectivity score (0–100), in-state applicants",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    computed: true,
+    hidden: true,
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from its state`, inputs: ["derived.admit_rate_in_state", ...SELECTIVITY_INPUTS] },
+  },
+  "derived.selectivity_score_out_of_state": {
+    label: "Quad's selectivity score (0–100), out-of-state applicants",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    computed: true,
+    hidden: true,
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from other states`, inputs: ["derived.admit_rate_out_of_state", ...SELECTIVITY_INPUTS] },
+  },
 
   /* ---- Computed at render time (lib/metrics.ts) ---- */
   "derived.sat_composite": {
@@ -954,6 +991,12 @@ export const REPORTED_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) =>
  * funnel and middle-50% scores, test policy, undergraduates, sticker price, average cost, net price after grants,
  * graduation and retention, earnings, debt, and the student-to-faculty ratio.
  */
+/**
+ * Fields marked `hidden` (computed for the method, never on a public page), in registry order: the admin college page's
+ * "Derived, not shown" panel lists exactly these (lib/admin/hidden.ts HIDDEN_VALUES gives each one's value).
+ */
+export const HIDDEN_FIELDS: readonly FieldPath[] = (Object.keys(FIELDS) as FieldPath[]).filter((p) => (FIELDS[p] as FieldDef).hidden === true);
+
 export const NOTIFY_FIELDS: readonly FieldPath[] = (Object.keys(FIELDS) as FieldPath[]).filter((p) => {
   const def: FieldDef = FIELDS[p];
   return !!def.notify && !def.computed;

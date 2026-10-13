@@ -733,10 +733,12 @@ test("no other console page shows a student's lists, numbers, or plan (only the 
   }
 });
 
-test("the student page leaves a named slot for U7's standing panel and renders it under every list college", () => {
+test("the student page renders the standing panel under every list college (a server component; tests/admin-hidden.test.mts covers its body)", () => {
   const page = read("app/admin/students/[id]/page.tsx");
   assert.match(page, /<StandingPanelSlot studentId=\{studentId\} unitId=\{item\.unit_id\} itemId=\{item\.id\} \/>/);
-  assert.match(read("components/admin/StandingPanelSlot.tsx"), /export function StandingPanelSlot\(props: StandingPanelSlotProps\): null/);
+  const slot = read("components/admin/StandingPanelSlot.tsx");
+  assert.match(slot, /export async function StandingPanelSlot\(\{ studentId, unitId, itemId \}: StandingPanelSlotProps\)/);
+  assert.doesNotMatch(slot, /^\s*["']use client["']/);
 });
 
 /* ------------------------------------------------------------------ */

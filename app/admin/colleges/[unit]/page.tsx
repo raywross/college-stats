@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Empty, Fields, Muted, PageHeader, Panel } from "@/components/admin/Panel";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
+import { DailyViews, TopBars } from "@/components/admin/ViewCharts";
+import { collegeViewers, VIEW_CHART_DAYS, type ViewerRow } from "@/lib/admin/college-views";
 import { SourceNote } from "@/components/sources/SourceNote";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminCollege } from "@/lib/admin/college";
@@ -39,6 +41,7 @@ export default async function CollegePage({ params }: PageProps<"/admin/colleges
   const rate = school.admissions.acceptance_rate;
   const tier = tierText(school);
   const opsHref = `/admin/operations?unit=${unit}`;
+  const looking = await collegeViewers(unit);
 
   return (
     <>
@@ -69,6 +72,7 @@ export default async function CollegePage({ params }: PageProps<"/admin/colleges
         </div>
         <aside className="min-w-0 space-y-5">
           <HealthBlock health={health} generated={healthGenerated} opsHref={opsHref} />
+          <ViewersBlock unit={unit} looking={looking} />
         </aside>
       </div>
     </>
@@ -288,6 +292,53 @@ function HealthBlock({ health, generated, opsHref }: { health: CollegeHealth | n
       <Link href={opsHref} className="mt-4 inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
         Rerun in Operations
       </Link>
+    </Panel>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Who's looking                                                       */
+/* ------------------------------------------------------------------ */
+
+/** Where a viewer row drills in: the person's views of this college, or the signed-out visits. */
+function viewerHref(unit: string, v: ViewerRow): string {
+  return v.userId ? `/admin/people/${v.userId}/views?unit=${unit}` : `/admin/colleges/${unit}/views?signed_out=1`;
+}
+
+function ViewersBlock({ unit, looking }: { unit: string; looking: Awaited<ReturnType<typeof collegeViewers>> }) {
+  return (
+    <Panel
+      title="Who's looking"
+      id="views"
+      aside={
+        looking.total > 0 ? (
+          <Link href={`/admin/colleges/${unit}/views`} className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+            All
+          </Link>
+        ) : undefined
+      }
+    >
+      {looking.total === 0 ? (
+        <Empty>No views recorded yet.</Empty>
+      ) : (
+        <div className="space-y-5 text-sm">
+          <p className="text-muted-foreground">
+            {looking.total.toLocaleString("en-US")} {looking.total === 1 ? "view" : "views"} · {looking.people.toLocaleString("en-US")} signed-in{" "}
+            {looking.people === 1 ? "person" : "people"} · {looking.signedOut.toLocaleString("en-US")} signed out
+          </p>
+          <DailyViews days={looking.days} label={`Last ${VIEW_CHART_DAYS} days`} />
+          <TopBars
+            unit={["view", "views"]}
+            rows={looking.viewers.slice(0, 8).map((v) => ({
+              key: v.userId ?? "signed-out",
+              label: v.userId ? (v.name ?? v.email ?? "No name") : "Signed-out visitors",
+              sub: v.userId ? (v.name && v.email ? v.email : undefined) : "Not tied to anyone",
+              value: v.views,
+              href: viewerHref(unit, v),
+            }))}
+          />
+        </div>
+      )}
     </Panel>
   );
 }

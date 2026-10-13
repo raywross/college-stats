@@ -609,7 +609,7 @@ export async function householdAdminNotice(householdId: string): Promise<Househo
  * replaced in ADMIN_EXPORT_OVERRIDES. A new exporter must be added here after that review (a test checks).
  */
 export const ADMIN_EXPORT_REVIEWED = [
-  "profile", "students", "households", "memberships", "invitations_sent", "student_profiles", "lists", "home", "follows",
+  "profile", "students", "households", "memberships", "invitations_sent", "student_profiles", "lists", "home", "college_views", "follows",
   "planner", "application_snapshots", "access_log",
 ] as const;
 

@@ -8,7 +8,9 @@ import { Empty, Fields, KeyValues, Muted, PageHeader, Panel } from "@/components
 import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
 import { CONFIRM_DELETE, CONFIRM_REMOVE, deletingLabel, fmtDate, fmtDateTime } from "@/lib/admin/console";
-import { adminPerson, type AdminMember, type AdminPerson } from "@/lib/admin/people";
+import { adminPerson, logStudentView, type AdminMember, type AdminPerson } from "@/lib/admin/people";
+import { personCollegeViews, VIEW_CHART_DAYS } from "@/lib/admin/college-views";
+import { DailyViews, TopBars } from "@/components/admin/ViewCharts";
 import { emailConfigured } from "@/lib/email";
 import { isUuid } from "@/lib/household-hub";
 import { removeMember } from "@/app/admin/households/[id]/actions";
@@ -47,6 +49,10 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
   const self = profile.id === me.userId;
   const deleted = profile.deleted_at !== null;
   const now = new Date();
+  const views = await personCollegeViews(profile.id);
+  // Which colleges a student opens is their information: showing it is a view the student is told about, as on the
+  // student page (specs/product/college-views.md).
+  if (person.ownStudent && views.colleges.length > 0) await logStudentView(person.ownStudent.id, "college views");
 
   return (
     <>
@@ -172,6 +178,41 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
                   <StudentLine key={s.id} s={s} note="Managed, no account yet" />
                 ))}
               </ul>
+            )}
+          </Panel>
+
+          <Panel
+            title="Colleges viewed"
+            id="views"
+            aside={
+              views.colleges.length > 0 ? (
+                <Link href={`/admin/people/${profile.id}/views`} className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+                  All {views.colleges.length}
+                </Link>
+              ) : undefined
+            }
+          >
+            {views.colleges.length === 0 ? (
+              <Empty>No college pages opened while signed in.</Empty>
+            ) : (
+              <div className="space-y-5">
+                <p className="text-sm text-muted-foreground">
+                  {views.total.toLocaleString("en-US")} {views.total === 1 ? "view" : "views"} of {views.colleges.length}{" "}
+                  {views.colleges.length === 1 ? "college" : "colleges"} · last {fmtDateTime(views.colleges.reduce((a, c) => (c.lastViewed > a ? c.lastViewed : a), ""))}
+                </p>
+                <DailyViews days={views.days} label={`Last ${VIEW_CHART_DAYS} days`} />
+                <TopBars
+                  unit={["view", "views"]}
+                  rows={views.colleges.slice(0, 8).map((c) => ({
+                    key: c.unitId,
+                    label: c.name,
+                    sub: `Last ${fmtDateTime(c.lastViewed)}`,
+                    value: c.views,
+                    href: `/admin/people/${profile.id}/views?unit=${c.unitId}`,
+                  }))}
+                />
+                {person.ownStudent && <p className="text-xs text-muted-foreground">Showing these is recorded in their &ldquo;Who viewed your information&rdquo; as Quad support.</p>}
+              </div>
             )}
           </Panel>
 

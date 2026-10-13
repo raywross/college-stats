@@ -170,6 +170,12 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
     },
   },
   {
+    key: "college_views",
+    description: "Each time you opened a college's page while signed in: the college, the page, and when (specs/product/college-views.md).",
+    run: ({ supabase, userId }) =>
+      rows("college_views", supabase.from("college_views").select("unit_id, page, viewed_at").eq("user_id", userId).order("viewed_at", { ascending: false })),
+  },
+  {
     key: "follows",
     description: "Colleges you follow, and your update-email preference (specs/product/follow-colleges.md).",
     run: async ({ supabase, userId }) => {

@@ -172,6 +172,10 @@ function functionCalls(w: World): [name: string, sql: string, params: unknown[]]
     ["admin_list_people", "select * from public.admin_list_people()", []],
     ["admin_list_households", "select * from public.admin_list_households()", []],
     ["admin_set_email_confirmed", "select public.admin_set_email_confirmed($1, true)", [w.alice]],
+    ["admin_user_college_views", "select * from public.admin_user_college_views($1)", [w.alice]],
+    ["admin_college_viewers", "select * from public.admin_college_viewers('199847')", []],
+    ["admin_college_views_daily", "select * from public.admin_college_views_daily('199847')", []],
+    ["admin_college_view_times", "select * from public.admin_college_view_times('199847', $1)", [w.alice]],
     ["admin_user_auth", "select * from public.admin_user_auth($1)", [w.alice]],
     ["admin_update_profile", "select public.admin_update_profile($1, '{\"display_name\": \"Hacked\"}')", [w.alice]],
     ["admin_update_student", "select public.admin_update_student($1, '{\"display_name\": \"Hacked\"}')", [w.ben]],
@@ -405,6 +409,49 @@ test("admin_set_email_confirmed: confirms, unconfirms and signs them out, logs b
 
   await assert.rejects(asAdmin(w, "select public.admin_set_email_confirmed($1, false)", [w.quinn]), /cannot_change_self/);
   await assert.rejects(asAdmin(w, "select public.admin_set_email_confirmed($1, null)", [w.alice]), /invalid_state/);
+});
+
+test("college views: anyone records a view under their own session; repeats fold; only admins and the person read them", async () => {
+  const w = await world();
+  const view = (who: string | null, unit: string, page = "overview") =>
+    asUser<{ v: boolean }>(w.db, who, "select public.record_college_view($1, $2) as v", [unit, page]).then((r) => r[0].v);
+  const count = async () => Number((await w.db.query<{ n: number }>("select count(*)::int as n from public.college_views")).rows[0].n);
+
+  assert.equal(await view(null, "199847"), true, "a signed-out visitor records a view");
+  assert.equal(await view(null, "199847"), true, "signed-out repeats can't be told apart, so they count");
+  assert.equal(await view(w.alice, "199847"), true);
+  assert.equal(await view(w.alice, "199847"), false, "the same person, page, and college within 10 minutes is one view");
+  assert.equal(await view(w.alice, "199847", "cost"), true, "another page is another view");
+  assert.equal(await view(w.alice, "199120"), true);
+  assert.equal(await view(w.mom, "199847"), true);
+  assert.equal(await count(), 6);
+  const stored = (await w.db.query<{ user_id: string | null }>("select user_id from public.college_views order by id")).rows.map((r) => r.user_id);
+  assert.deepEqual(stored, [null, null, w.alice, w.alice, w.alice, w.mom], "the user comes from the session");
+  await assert.rejects(view(w.alice, "12345"), /invalid_view/);
+  await assert.rejects(view(w.alice, "199847", "secret"), /invalid_view/);
+
+  // Nobody writes the table directly; a person reads only their own rows; a signed-out visitor reads nothing.
+  await assert.rejects(asUser(w.db, w.alice, "insert into public.college_views (unit_id, user_id) values ('199847', $1)", [w.mom]));
+  assert.equal((await asUser(w.db, w.alice, "select * from public.college_views")).length, 3);
+  assert.equal((await asUser(w.db, w.dad, "select * from public.college_views")).length, 0);
+  await assert.rejects(asUser(w.db, null, "select * from public.college_views"));
+
+  type Viewer = { user_id: string | null; views: string };
+  const viewers = await asAdmin<Viewer>(w, "select * from public.admin_college_viewers('199847')");
+  assert.deepEqual(viewers.map((r) => [r.user_id, Number(r.views)]), [[w.alice, 2], [w.mom, 1], [null, 2]], "most views first, signed-out views last as one row");
+  const mine = await asAdmin<{ unit_id: string; views: string }>(w, "select * from public.admin_user_college_views($1)", [w.alice]);
+  assert.deepEqual(mine.map((r) => [r.unit_id, Number(r.views)]), [["199847", 2], ["199120", 1]]);
+  const daily = await asAdmin<{ signed_in: string; signed_out: string }>(w, "select * from public.admin_college_views_daily('199847', null, 7)");
+  assert.equal(daily.length, 7, "every day present, zeros included");
+  assert.deepEqual([daily.reduce((n, d) => n + Number(d.signed_in), 0), daily.reduce((n, d) => n + Number(d.signed_out), 0)], [3, 2]);
+  assert.equal((await asAdmin(w, "select * from public.admin_college_view_times('199847', $1)", [w.alice])).length, 2);
+  assert.equal((await asAdmin(w, "select * from public.admin_college_view_times('199847', null, true)")).length, 2);
+  await assert.rejects(asAdmin(w, "select * from public.admin_college_view_times('199847')"), /invalid_view/);
+
+  // A purged account's views stay, as signed-out views.
+  await w.db.query("delete from auth.users where id = $1", [w.mom]);
+  assert.equal(await count(), 6);
+  assert.equal(Number((await w.db.query<{ n: number }>("select count(*)::int as n from public.college_views where user_id is null")).rows[0].n), 3);
 });
 
 test("admin_link: six seats counting invitations, one household per person (moved, never duplicated), the household left behind closed", async () => {

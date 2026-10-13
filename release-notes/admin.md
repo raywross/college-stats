@@ -17,6 +17,11 @@ summary: Quad support can now find and fix an account or household, see which co
 - **Answers about a college or a high school.** Support can open any college to see the values the site works out but
   doesn't show, and any high school to see the courses its students take, so a question like "why is this college a
   reach?" or "why isn't AP Physics suggested?" has an answer.
+- **Which colleges you open, if you're signed in.** Quad now keeps a simple record of which college pages a signed-in
+  account opens, and when, so support can help you and see which colleges families are looking at. It's never sold or
+  shared, it's in your data download, and a student is told when support looks at theirs. Signed out, a visit is
+  counted with nothing about who; with a browser privacy signal, nothing is recorded. The
+  [privacy page](/privacy#signed-in) says so.
 - **Fresher college data.** Support can see which colleges have recent data and which ones the site keeps failing to
   read, and start a fresh read for a college without waiting for the next scheduled run.
 

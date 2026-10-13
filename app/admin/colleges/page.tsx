@@ -2,25 +2,38 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { Empty, PageHeader } from "@/components/admin/Panel";
+import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
 import { requireAdmin } from "@/lib/admin/auth";
 import { getData } from "@/lib/data";
 import { isHighSchoolId } from "@/lib/high-school-core";
 import { getHighSchool, searchHighSchools } from "@/lib/high-schools";
 import { pctSmart } from "@/lib/format";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
+import { TopBars } from "@/components/admin/ViewCharts";
+import { topViewedColleges } from "@/lib/admin/college-views";
+
+/** The "Most viewed" windows: ?views=7 | 30 (default) | all. */
+const VIEW_WINDOWS = [
+  { key: "7", label: "7 days", days: 7 },
+  { key: "30", label: "30 days", days: 30 },
+  { key: "all", label: "All time", days: null },
+] as const;
 
 export const metadata: Metadata = { title: "Colleges", robots: { index: false, follow: false } };
 
 /**
  * /admin/colleges?q=… (specs/product/admin.md "The console"): find a college by name, alias, or unit id, or a high
  * school by name or NCES/PSS id, and open its console page with the hidden values. An exact unit id or high-school id
- * opens its page directly.
+ * opens its page directly. With no search, the ten most viewed colleges (college_views) over 7 days, 30 days, or all
+ * time (?views=).
  */
 export default async function CollegesPage({ searchParams }: PageProps<"/admin/colleges">) {
   await connection();
   await requireAdmin();
-  const raw = (await searchParams).q;
+  const params = await searchParams;
+  const raw = params.q;
+  const windowKey = Array.isArray(params.views) ? params.views[0] : params.views;
+  const viewWindow = VIEW_WINDOWS.find((w) => w.key === windowKey) ?? VIEW_WINDOWS[1];
   const q = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
   const { getSchoolById, getSchoolsByIds, searchSchools } = await getData();
   if (q && getSchoolById(q)) redirect(`/admin/colleges/${q}`);
@@ -28,6 +41,7 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/c
   const colleges = q ? searchSchools(q, 25) : [];
   const cited = getSchoolsByIds(colleges.map((c) => c.id));
   const highSchools = q.length >= 3 ? await searchHighSchools({ q, limit: 15 }) : [];
+  const mostViewed = q ? [] : await topViewedColleges(viewWindow.days);
 
   return (
     <>
@@ -60,6 +74,41 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/c
         </button>
       </form>
       <div className="mt-6 space-y-6">
+        {!q && (
+          <Panel
+            title="Most viewed"
+            id="most-viewed"
+            aside={
+              <span className="flex gap-1.5">
+                {VIEW_WINDOWS.map((w) => (
+                  <Link
+                    key={w.key}
+                    href={w.key === "30" ? "/admin/colleges" : `/admin/colleges?views=${w.key}`}
+                    aria-current={w === viewWindow ? "true" : undefined}
+                    className={`inline-flex h-7 items-center rounded-full border px-2.5 text-xs ${w === viewWindow ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                  >
+                    {w.label}
+                  </Link>
+                ))}
+              </span>
+            }
+          >
+            {mostViewed.length === 0 ? (
+              <Empty>No college pages viewed {viewWindow.days === null ? "yet" : `in the last ${viewWindow.days} days`}.</Empty>
+            ) : (
+              <TopBars
+                unit={["view", "views"]}
+                rows={mostViewed.map((c) => ({
+                  key: c.unitId,
+                  label: c.name,
+                  sub: `${c.people} signed-in ${c.people === 1 ? "person" : "people"} · ${c.signedOut} signed-out ${c.signedOut === 1 ? "view" : "views"}`,
+                  value: c.views,
+                  href: `/admin/colleges/${c.unitId}#views`,
+                }))}
+              />
+            )}
+          </Panel>
+        )}
         {!q ? (
           <Empty>
             Search a college by name or IPEDS unit id, or a high school by name or id. Every college&apos;s data health is on{" "}

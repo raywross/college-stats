@@ -176,6 +176,7 @@ function functionCalls(w: World): [name: string, sql: string, params: unknown[]]
     ["admin_college_viewers", "select * from public.admin_college_viewers('199847')", []],
     ["admin_college_views_daily", "select * from public.admin_college_views_daily('199847')", []],
     ["admin_college_view_times", "select * from public.admin_college_view_times('199847', $1)", [w.alice]],
+    ["admin_top_viewed_colleges", "select * from public.admin_top_viewed_colleges()", []],
     ["admin_user_auth_activity", "select * from public.admin_user_auth_activity($1)", [w.alice]],
     ["admin_selectivity_tier_counts", "select * from public.admin_selectivity_tier_counts('all')", []],
     ["admin_selectivity_movers", "select * from public.admin_selectivity_movers(30)", []],
@@ -523,6 +524,23 @@ test("admin_user_auth_activity: sessions, the account's dates, its audit log (no
   assert.ok(rows.every((r, i) => i === 0 || rows[i - 1].at >= r.at), "newest first");
   assert.ok(!JSON.stringify(rows).includes("203.0.113.9"), "no IP address in any row");
   assert.equal(rows.filter((r) => r.source === "audit").length, 2, "only this account's audit rows");
+});
+
+test("admin_top_viewed_colleges: most views first, people and signed-out views split, the window narrows", async () => {
+  const w = await world();
+  const add = (unit: string, user: string | null, ago: string) =>
+    w.db.query("insert into public.college_views (unit_id, user_id, viewed_at) values ($1, $2, now() - $3::interval)", [unit, user, ago]);
+  for (const [unit, user, ago] of [
+    ["199847", w.alice, "1 day"], ["199847", w.mom, "2 days"], ["199847", null, "3 days"], ["199847", w.alice, "40 days"],
+    ["199120", w.alice, "1 day"], ["199120", null, "1 day"],
+    ["166027", null, "60 days"],
+  ] as const) await add(unit, user, ago);
+  type Row = { unit_id: string; views: string; people: string; signed_out: string };
+  const month = await asAdmin<Row>(w, "select * from public.admin_top_viewed_colleges(30)");
+  assert.deepEqual(month.map((r) => [r.unit_id, Number(r.views), Number(r.people), Number(r.signed_out)]), [["199847", 3, 2, 1], ["199120", 2, 1, 1]]);
+  const all = await asAdmin<Row>(w, "select * from public.admin_top_viewed_colleges(null)");
+  assert.deepEqual(all.map((r) => [r.unit_id, Number(r.views)]), [["199847", 4], ["199120", 2], ["166027", 1]]);
+  assert.equal((await asAdmin(w, "select * from public.admin_top_viewed_colleges(null, 1)")).length, 1);
 });
 
 test("admin_link: six seats counting invitations, one household per person (moved, never duplicated), the household left behind closed", async () => {

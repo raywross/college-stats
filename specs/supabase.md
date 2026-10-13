@@ -132,8 +132,10 @@ page stale (`revalidatePath("/", "layout")`) for use by hand; nothing calls it a
 | `REVALIDATE_SECRET` | Vercel (Production), optional | Random string; guards `/api/revalidate`. Unset = endpoint refuses everything |
 | `CRON_SECRET` | Vercel | Bearer token for Vercel Cron's daily `/api/cron/digests` ([follow-colleges.md](product/follow-colleges.md#setup-owner)) |
 | `INVITE_FUNCTION_SECRET` | `.env.local`, Vercel (every environment that invites), **and** a function secret on the matching Supabase project | Random string (`openssl rand -hex 32`); the only thing that lets the site call the `invite-user` [Edge Function](#edge-functions). Unset in the site = invitations use the plain `/invite/<token>` link; unset on the function = it refuses everything |
-| `INVITE_ALLOWED_ORIGINS` | Function secret only (not Vercel) | Comma-separated site origins an invite link, and an `admin-auth` recovery link, may land on. Unset = any `https://*.vercel.app` and `http://localhost:*` (dev); **set it on prod** |
-| `ADMIN_AUTH_SEND_EMAIL` | Function secret only, optional | Set (`1`) once Supabase Auth has an email provider (custom SMTP); unset = `admin-auth` `recovery_email` refuses with `email_not_configured` and the console offers only "Copy reset link" |
+| `INVITE_ALLOWED_ORIGINS` | Function secret only (not Vercel) | Comma-separated site origins an invite link, and an `admin-auth` recovery link, may land on. Unset = any `https://*.vercel.app` and `http://localhost:*`. **Set on dev since 2026-10-13** (the site moved to usequad.app, which the unset default refuses): `https://usequad.app,https://www.usequad.app,https://college-stats-nine.vercel.app,http://localhost:3000,http://localhost:3001`. Exact origins only, so a preview URL is refused until it's added; set the same on prod |
+| `ADMIN_AUTH_SEND_EMAIL` | Function secret only, optional | Set (`1`) once Supabase Auth has an email provider (custom SMTP); unset = `admin-auth` `recovery_email` refuses with `email_not_configured` and the console offers only "Copy reset link". **Set on dev since 2026-10-13** |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Vercel (Production and Preview; the key Sensitive), `.env.local` | The app's own emails (invitations, update digests) through Resend (`lib/email.ts`); `EMAIL_FROM` is `Quad <support@usequad.app>`. The same key is Supabase Auth's SMTP password ([Hosting configuration](#hosting-configuration-outside-the-repo)) |
+| `SUPABASE_ACCESS_TOKEN` | `.env.local` only, never Vercel or GitHub | A Supabase **personal access token** for the Management API (auth settings, function secrets, logs). It can manage every project in the account, so it has an expiry and is renewed by hand (supabase.com/dashboard/account/tokens). `npm run auth-emails -- --push` reads it |
 | `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY` | Vercel (Production and Preview, Sensitive), `.env.local` to try Operations locally | The "Quad console" GitHub App ([admin.md](product/admin.md#the-github-app-recommended-over-a-pat)): its id, its installation on this repository, and its private key (PEM). `lib/github-app.ts` signs a short JWT with the key and trades it for an installation token (one hour, cached in memory). Unset = `/admin/operations` shows a setup notice and no buttons |
 | `GITHUB_REPO` | Vercel, `.env.local` | `raywross/college-stats`: the repository Operations dispatches workflows on and opens PRs against |
 | `GITHUB_TOKEN` | Vercel (Sensitive), optional | Fallback for a first go: a fine-grained PAT with the App's four permissions (Actions, Contents, Pull requests: read and write; Metadata: read). Used only when the App variables are unset; expires, and acts as the person who made it |
@@ -377,7 +379,9 @@ Auth actions then answer with an error and everything else in `/admin` keeps wor
 
 ### Current state: pre-release, dev only
 The site is still being built, so there is only the **dev** project (`gwusgmmionqxabifntgv`). Vercel's Production
-environment, at **https://college-stats-nine.vercel.app** since 2026-09-28, is a pre-release dev site. The prod
+environment is a pre-release dev site at **https://usequad.app** since 2026-10-12 (also still at
+https://college-stats-nine.vercel.app, its first address, from 2026-09-28). Its settings outside the repo are in
+[Hosting configuration](#hosting-configuration-outside-the-repo). The prod
 project and the dev/prod split come with the formal release ([backlog.md](backlog.md#platform)).
 - Vercel Production has `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` for the dev project (accounts and high
   schools); Preview may have them or not (without them, high schools come from the files). A `DATA_SOURCE` variable
@@ -413,6 +417,53 @@ Planned in detail, with the region move and direct access for Claude, in [launch
 4. GitHub repository secrets `PROD_SUPABASE_URL` and `PROD_SUPABASE_SECRET_KEY` pointing at prod.
 5. Point Vercel Production at prod and redeploy; check sign-in, a list, a high-school page, and that the next
    deploy's `publish-changes` run goes green.
+6. Repeat every row of [Hosting configuration](#hosting-configuration-outside-the-repo) on prod (Auth URLs, SMTP, the
+   email rate limit, the templates and security notices, the audit log switch, the function secrets), then run
+   `npm run backfill-selectivity-history` once against prod ([selectivity-history.md](chances/selectivity-history.md)).
+
+## Hosting configuration (outside the repo)
+
+Settings that live in the Supabase, Vercel, Resend, and DNS dashboards rather than in code, as set on dev and the live
+site (2026-10-12 to 2026-10-13). Nothing here is a secret value; the keys themselves are in the [Keys](#keys) table's
+places. Each one has to be repeated on prod at the formal release ([step 6](#setup-at-the-formal-release)). Claude
+can make most of them through the Management API with `SUPABASE_ACCESS_TOKEN` and the Vercel CLI; the ones marked
+**dashboard** can't be set through the API.
+
+### Supabase Auth (Authentication settings)
+| Setting | Dev value | Why |
+|---|---|---|
+| Site URL | `https://usequad.app` | Where Auth sends a link whose `redirect_to` isn't allowed. It was a team preview URL behind Vercel's login, so confirmation emails led to a Vercel login page (fixed 2026-10-13) |
+| Redirect URLs | `https://usequad.app/**`, `https://college-stats-nine.vercel.app/**`, the team's `*-raywross-projects.vercel.app` preview patterns, `http://localhost:3000/**`, `http://localhost:3001/**` | Where sign-in, confirmation, and reset links may return ([accounts.md](product/accounts.md)) |
+| Confirm email (`mailer_autoconfirm`) | On (auto-confirm off) | Every sign-up confirms its address; only invited people skip it, through the invite link |
+| Custom SMTP | `smtp.resend.com`, port 465, user `resend`, the Resend API key as password, sender name `Quad`, admin email `support@usequad.app` | Auth's emails go out from Quad's address through Resend ([auth-emails.md](auth-emails.md)) |
+| Email rate limit (`rate_limit_email_sent`) | 30 per hour | The built-in mailer's default of 2 per hour stays after switching to custom SMTP; at 2, a second reset in an hour failed with 429 (2026-10-13) |
+| Email templates and subjects | Quad's, from `supabase/templates/` | `npm run auth-emails -- --push <ref>` sets only the template fields |
+| Security notices | Password changed, email changed: on; the rest off | The push turns these two on ([auth-emails.md](auth-emails.md)) |
+| Audit logs in the database | On (**dashboard**: Authentication → Configuration → Audit Logs → "Write audit logs to the database") | Fills `auth.audit_log_entries`, which the console's sign-in activity reads ([admin.md](product/admin.md#as-built-after-the-first-merge-2026-10-13)). The API accepts the setting but ignores it |
+
+### Edge Functions
+- `invite-user` and `admin-auth` deployed (`npx supabase functions deploy <name> --project-ref <ref> --use-api`;
+  `admin-auth` keeps `verify_jwt = true`).
+- Function secrets on dev: `INVITE_FUNCTION_SECRET`, `INVITE_ALLOWED_ORIGINS` (above), `ADMIN_AUTH_SEND_EMAIL=1`.
+
+### Vercel
+- Domains on the `college-stats` project: `usequad.app` (production) and `www.usequad.app` as a **308 redirect** to
+  it. `usequad.app` was bought through Vercel (renews 2027-10-12) and uses Vercel DNS.
+- Deployment Protection (Vercel Authentication) is on: preview and team URLs ask for a Vercel login; the production
+  domains are public. A link meant for someone else must be a production address.
+- Environment variables beyond the ones above: `RESEND_API_KEY`, `EMAIL_FROM` (Production and Preview).
+- Production logs: `npx --yes vercel@latest logs -p college-stats --scope raywross-projects --environment production
+  --since 3h -x` (the site logs the real error behind messages like "We couldn't save it").
+
+### DNS (Vercel DNS, `usequad.app`)
+- **Google Workspace** for `support@usequad.app`: MX `smtp.google.com`, SPF `v=spf1 include:_spf.google.com ~all`,
+  `google._domainkey` DKIM, DMARC `p=none` reporting to `dmarc@usequad.app`, and Google's verification records.
+- **Resend** (sending only): `resend._domainkey` TXT (DKIM) and CNAMEs `send` and `rsend` to Resend's servers.
+  The domain shows Verified in Resend; it doesn't touch the Google mail records.
+
+### Resend
+- One domain, `usequad.app` (region us-east-1), verified 2026-10-13; one API key, used both by Supabase's SMTP and by
+  the app (`RESEND_API_KEY`). The free tier allows 100 emails a day, so the Auth rate limit above stays under it.
 
 ## History
 How the dataset was served from 2026-09-28 to 2026-10-07, kept for the record (the full text is in git before the

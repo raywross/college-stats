@@ -16,9 +16,18 @@ import { FIELDS, NOTIFY_FIELDS, NOTIFY_TOLERANCE, isFieldPath, type FieldDef, ty
 import { lineageFor, type CitedSource } from "./lineage.ts";
 import { formatBy, money, num, pct, pctSmart } from "./format.ts";
 import { POLICY_LABELS } from "./test-policy.ts";
+import { SELECTIVITY_TIER_LABELS } from "./chances/levels.ts";
 
 /** The site's words for a text value, by field (the test policy's "Test-optional"). */
-const TEXT_WORDS: Partial<Record<FieldPath, Readonly<Record<string, string>>>> = { "admissions.test_policy": POLICY_LABELS };
+const TEXT_WORDS: Partial<Record<FieldPath, Readonly<Record<string, string>>>> = {
+  "admissions.test_policy": POLICY_LABELS,
+  "selectivity.tier": SELECTIVITY_TIER_LABELS,
+  "selectivity.in_state": SELECTIVITY_TIER_LABELS,
+  "selectivity.out_of_state": SELECTIVITY_TIER_LABELS,
+};
+
+/** Quad's selectivity tier, per pool: what publish-changes suppresses when the method changed. */
+export const TIER_FIELDS = ["selectivity.tier", "selectivity.in_state", "selectivity.out_of_state"] as const satisfies readonly FieldPath[];
 
 /**
  * - `new_year`: the value describes a later period than before ("Fall 2025: … (fall 2024: …)"); never for the same
@@ -67,6 +76,11 @@ export interface DatasetSnapshot {
 export interface DiffOptions {
   /** data/release-calendar.json of the new dataset, to name the release that brought a change. */
   calendar?: Pick<ReleaseCalendar, "releases">;
+  /**
+   * Fields left out of this diff: the tier fields when Quad's selectivity method changed between the two commits, so a
+   * method change (ours, not the college's) never emails followers (specs/chances/selectivity-history.md, Decision 7).
+   */
+  suppress?: readonly FieldPath[];
 }
 
 const EPSILON = 1e-9;
@@ -190,7 +204,7 @@ export function diffSchools(prev: DatasetSnapshot, next: DatasetSnapshot, fields
     if (!old) continue;
     for (const field of fields) {
       const notify = notifyOf(field);
-      if (!notify) continue;
+      if (!notify || options.suppress?.includes(field)) continue;
       const a = valueAt(old, field);
       const b = valueAt(school, field);
       if (a === null && b === null) continue;
@@ -198,7 +212,7 @@ export function diffSchools(prev: DatasetSnapshot, next: DatasetSnapshot, fields
       if (!differs(a, b, tolerance, notify.keys ? Object.keys(notify.keys) : undefined)) continue;
       // Re-deriving can move a stored derived value by float noise, or a formula fix can move it with no new data;
       // only a change in what it's calculated from is news.
-      if (!notify.always && a !== null && b !== null && isCalculated(field, old) && isCalculated(field, school) && !inputsChanged(field, old, school)) continue;
+      if (!notify.always && notify.ownInputsOnly !== false && a !== null && b !== null && isCalculated(field, old) && isCalculated(field, school) && !inputsChanged(field, old, school)) continue;
       const citedBefore = lineageFor(field, old, prev.meta);
       const citedAfter = lineageFor(field, school, next.meta);
       const oldYear = a === null ? null : periodLabel(field, citedBefore, prev.meta);
@@ -291,6 +305,8 @@ function formatPair(field: FieldPath, a: unknown, b: unknown, opts: DescribeOpti
  * - appeared: "Now reported: median earnings 10 years after entry $55,736 (most recent release)"
  * - disappeared: "No longer reported: median debt at graduation (was $24,250, most recent release)"
  * - a rename (`always`): "Name changed: New College (was Old College)"
+ * - Quad's selectivity tier: "Quad's selectivity is now Ultra selective for out-of-state applicants (was Highly
+ *   selective)", or for a new pool "Quad's selectivity for out-of-state applicants: Ultra selective"
  * Both years are written in the field's own style (periodLabel), so a sentence never mixes "Fall 2024" and "2024-25".
  */
 export function describeChange(
@@ -301,6 +317,15 @@ export function describeChange(
   const [was, now] = formatPair(c.field, c.old_value, c.new_value, opts);
   if (def.notify?.always && c.kind !== "appeared" && c.kind !== "disappeared") {
     return `${def.label} changed: ${now} (was ${was})`;
+  }
+  // Quad's selectivity tier names the pool and never a score: "Quad's selectivity is now Ultra selective for
+  // out-of-state applicants (was Highly selective)"; a new pool: "Quad's selectivity for out-of-state applicants:
+  // Ultra selective".
+  if (def.notify?.tierPool) {
+    const pool = def.notify.tierPool === "in_state" ? " for in-state applicants" : def.notify.tierPool === "out_of_state" ? " for out-of-state applicants" : "";
+    if (c.kind === "appeared") return `Quad's selectivity${pool}: ${now}`;
+    if (c.kind === "disappeared") return `Quad's selectivity${pool}: no longer rated (was ${was})`;
+    return `Quad's selectivity is now ${now}${pool} (was ${was})`;
   }
   switch (c.kind) {
     case "new_year":

@@ -14,6 +14,10 @@
 # pipeline PR whose batches are open: collect, escalate, merge-reported, commit, and mark it ready.
 name: College-reported data
 
+# The admin console passes request_id on dispatch so it can find its run (specs/product/admin.md, "Reruns"); a run
+# without one keeps GitHub's usual title: the PR title, the commit message, or the workflow's name.
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.event.pull_request.title || github.event.head_commit.message || github.workflow }}"
+
 on:
   workflow_dispatch:
     inputs:
@@ -47,6 +51,10 @@ on:
         type: choice
         options: [none, C, rest]
         default: none
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
   schedule:
     # Two entries because one cron line can't mix a weekly Aug–Nov cadence with a monthly Dec–Jul one (and GitHub's
     # schedule parser doesn't reliably support month ranges combined with a weekday filter); each fires on a plain,
@@ -221,6 +229,13 @@ jobs:
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run merge-directories
 
+      # New admissions figures move Quad's selectivity, so the tiers in data/schools.json and data/selectivity-index.json
+      # are rebuilt here (specs/chances/selectivity-history.md, "Fix that comes with it"); check:selectivity fails a
+      # PR whose tiers are stale. No network; hysteresis runs against the committed tiers.
+      - name: Rebuild Quad's selectivity
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run build-selectivity
+
       # Some national trends group colleges by the current dataset (data/schools.json), so the merges above change
       # them; tests/trends-foundation.test.mts fails a PR whose data/history/trends/ isn't what build-trends makes.
       # No network. The rebuilt files are under data/, so the PR step's `git add data` commits them.
@@ -234,6 +249,12 @@ jobs:
       - name: Rebuild the college data failures list
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run college-failures
+
+      # The admin console's compact health file (lib/admin/health.ts, specs/product/admin.md "Files the deploy must
+      # carry"), rebuilt from the files this run changed; `npm run verify` fails a PR whose copy is stale.
+      - name: Rebuild the compact health file
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run college-health
 
       # The draft signal: data/college-batches.json lists the batches still open when the script exits (it is written
       # after every submit and collect). Any open batch → the PR opens as a draft and waits for the collect job.
@@ -257,6 +278,7 @@ jobs:
             data/review-queue.json
             data/college-batches.json
             data/college-failures.json
+            data/college-health.json
             data/reports/college-reported-run-${{ steps.run_id.outputs.id }}.json
             data/reports/college-reported-calls-${{ steps.run_id.outputs.id }}.jsonl
           if-no-files-found: ignore
@@ -455,6 +477,13 @@ jobs:
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run merge-directories
 
+      # New admissions figures move Quad's selectivity, so the tiers in data/schools.json and data/selectivity-index.json
+      # are rebuilt here (specs/chances/selectivity-history.md, "Fix that comes with it"); check:selectivity fails a
+      # PR whose tiers are stale. No network; hysteresis runs against the committed tiers.
+      - name: Rebuild Quad's selectivity
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run build-selectivity
+
       # As in the run job: the trends follow the merged schools.json (committed below with `git add data`).
       - name: Rebuild the national trends
         if: always() && steps.secret.outputs.ready == 'true'
@@ -464,6 +493,12 @@ jobs:
       - name: Rebuild the college data failures list
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run college-failures
+
+      # The admin console's compact health file (lib/admin/health.ts, specs/product/admin.md "Files the deploy must
+      # carry"), rebuilt from the files this run changed; `npm run verify` fails a PR whose copy is stale.
+      - name: Rebuild the compact health file
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run college-health
 
       - name: Check for open batches
         id: batches

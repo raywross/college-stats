@@ -2,12 +2,21 @@
 # lineage check, and a production build. See specs/data-lineage.md#enforcement.
 name: Verify
 
+# The admin console passes request_id on dispatch so it can find its run (specs/product/admin.md, "Reruns"); a run
+# without one keeps GitHub's usual title: the PR title, the commit message, or the workflow's name.
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.event.pull_request.title || github.event.head_commit.message || github.workflow }}"
+
 on:
   push:
     branches: [main]
   pull_request:
   # Re-run by hand when GitHub drops a push event (it happened for PR #16's merge).
   workflow_dispatch:
+    inputs:
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
 
 jobs:
   verify:

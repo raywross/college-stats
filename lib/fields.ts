@@ -62,6 +62,13 @@ export interface FieldDef {
    * lib/changes.ts). Only headline figures a family recognizes carry it: see NOTIFY_FIELDS below.
    */
   notify?: NotifyDef;
+  /**
+   * Computed for Quad's method and never shown or cited on a public page (specs/product/admin.md "A college"): the admin
+   * college page lists every hidden field with its value and lineage (lib/admin/hidden.ts), so that panel needs no list
+   * of its own. A hidden field is never named outside the admin console and the method (tests/admin-hidden.test.mts),
+   * and the Data page leaves it out.
+   */
+  hidden?: true;
 }
 
 /** How a reported field's value is compared and written: a share (0–1), whole dollars, a count, a ratio, or words. */
@@ -77,6 +84,14 @@ export interface NotifyDef {
   phrase?: string;
   /** For an object value: the keys compared and shown, with their words ("in-state"); other keys are ignored. */
   keys?: Record<string, string>;
+  /**
+   * false: report any change to the stored value, even when the derived value's own inputs didn't change (Quad's
+   * selectivity tier, which other colleges' figures can move by shifting the scales; specs/chances/selectivity-history.md
+   * Decision 7). Hysteresis already keeps a tier from flapping on small drifts.
+   */
+  ownInputsOnly?: false;
+  /** Quad's selectivity tier for this pool: the sentence names the pool ("for out-of-state applicants"). */
+  tierPool?: "all" | "in_state" | "out_of_state";
 }
 
 /** Default thresholds per unit (specs/product/follow-colleges.md#detecting-changes): 0.1 points, $50, 1, 0.01, any. */
@@ -679,12 +694,15 @@ export const FIELDS = {
   /* ---- Quad's selectivity (specs/chances/selectivity-index.md; `npm run build-selectivity`) ---- */
   // Stored tiers, never the index. The formula names the kinds of figures read, never weights or cutoffs (the method is
   // Quad's own); citations expand to the inputs this college publishes.
+  // The tier is public, so followers hear when it changes (specs/chances/selectivity-history.md, Decision 7); the score
+  // and rank never notify. The band and the year stay silent.
   "selectivity.tier": {
     label: "Quad's selectivity",
     topic: "admissions",
     source: "ipeds-adm",
     vintage: "ipeds-adm",
     derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+    notify: { unit: "text", ownInputsOnly: false, tierPool: "all" },
   },
   "selectivity.in_state": {
     label: "Quad's selectivity, in-state applicants",
@@ -692,6 +710,7 @@ export const FIELDS = {
     source: "ipeds-adm",
     vintage: "ipeds-adm",
     derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from its state`, inputs: ["derived.admit_rate_in_state", ...SELECTIVITY_INPUTS] },
+    notify: { unit: "text", ownInputsOnly: false, tierPool: "in_state" },
   },
   "selectivity.out_of_state": {
     label: "Quad's selectivity, out-of-state applicants",
@@ -699,6 +718,7 @@ export const FIELDS = {
     source: "ipeds-adm",
     vintage: "ipeds-adm",
     derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from other states`, inputs: ["derived.admit_rate_out_of_state", ...SELECTIVITY_INPUTS] },
+    notify: { unit: "text", ownInputsOnly: false, tierPool: "out_of_state" },
   },
   // The top band of Ultra selective (method/standing.md "Revision 3", rule 8): a word the estimate reads, never shown.
   "selectivity.band": {
@@ -707,8 +727,38 @@ export const FIELDS = {
     source: "ipeds-adm",
     vintage: "ipeds-adm",
     derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+    hidden: true,
   },
   "selectivity.year": adm("Fall of the admit rate Quad's selectivity read"),
+  // The hidden score behind each stored tier (lib/selectivity.ts selectivityScore), recomputed from the dataset where it
+  // is shown: only on the admin college page. Never stored in data/schools.json, never on a public page.
+  "derived.selectivity_score": {
+    label: "Quad's selectivity score (0–100), all applicants",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    computed: true,
+    hidden: true,
+    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+  },
+  "derived.selectivity_score_in_state": {
+    label: "Quad's selectivity score (0–100), in-state applicants",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    computed: true,
+    hidden: true,
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from its state`, inputs: ["derived.admit_rate_in_state", ...SELECTIVITY_INPUTS] },
+  },
+  "derived.selectivity_score_out_of_state": {
+    label: "Quad's selectivity score (0–100), out-of-state applicants",
+    topic: "admissions",
+    source: "ipeds-adm",
+    vintage: "ipeds-adm",
+    computed: true,
+    hidden: true,
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from other states`, inputs: ["derived.admit_rate_out_of_state", ...SELECTIVITY_INPUTS] },
+  },
 
   /* ---- Computed at render time (lib/metrics.ts) ---- */
   "derived.sat_composite": {
@@ -954,6 +1004,12 @@ export const REPORTED_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) =>
  * funnel and middle-50% scores, test policy, undergraduates, sticker price, average cost, net price after grants,
  * graduation and retention, earnings, debt, and the student-to-faculty ratio.
  */
+/**
+ * Fields marked `hidden` (computed for the method, never on a public page), in registry order: the admin college page's
+ * "Derived, not shown" panel lists exactly these (lib/admin/hidden.ts HIDDEN_VALUES gives each one's value).
+ */
+export const HIDDEN_FIELDS: readonly FieldPath[] = (Object.keys(FIELDS) as FieldPath[]).filter((p) => (FIELDS[p] as FieldDef).hidden === true);
+
 export const NOTIFY_FIELDS: readonly FieldPath[] = (Object.keys(FIELDS) as FieldPath[]).filter((p) => {
   const def: FieldDef = FIELDS[p];
   return !!def.notify && !def.computed;

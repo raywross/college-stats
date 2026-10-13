@@ -209,17 +209,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "admin-console",
-    file: "specs/product/admin.md",
-    group: "business",
-    summary:
-      "A console for the site's owner: find and fix any account or household, see the values the site computes but never shows, see which colleges have fresh data and which the pipeline keeps failing on, and start reruns or approve data changes without opening GitHub.",
-    complexity: 3,
-    complexityNote:
-      "Admin policies and functions on every people table, a second Edge Function for the Auth admin calls, a health model over the lineage and pipeline files, and a GitHub App client for workflow runs and data PRs.",
-    status: "planned",
-  },
-  {
     slug: "manual-collection",
     file: "specs/manual-collection.md",
     group: "business",
@@ -308,6 +297,18 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote: "A new recipe type for the agent with checks and review, new fields, a profile block, two filters, and a pilot.",
     status: "idea",
     // Also needs the round-3 agent (college-reported-round-3), built 2026-10-03 and so no longer on the roadmap.
+  },
+  {
+    slug: "visit-events",
+    file: "specs/ideas/visit-events.md",
+    group: "ideas",
+    summary:
+      "Upcoming tours, info sessions, and open houses at the colleges on your list, read from each college's own calendar, with a link to book there.",
+    complexity: 3,
+    complexityNote:
+      "A reader for the colleges' event portals (most on one admissions system), the site's first data refreshed daily, and lines on the college page and in the planner; research still open.",
+    status: "idea",
+    // Also uses each college's visit link (specs/school-identity/links.md) and the planner's visit log.
   },
   {
     slug: "metro-area",

@@ -17,6 +17,7 @@ import { AUTH_STUB_SQL, asUser, createUser, type AuthDb } from "./helpers/pg-aut
 const DIR = join(import.meta.dirname, "..", "supabase", "migrations");
 const ALL = readdirSync(DIR).filter((f) => f.endsWith(".sql")).sort();
 const BUNDLE = "20261012140000_plan_bundle.sql";
+const PAUSE = "20261013100000_viewer_bundle_pause.sql";
 
 async function boot(files = ALL): Promise<AuthDb> {
   const db = await PGlite.create({ extensions: { pg_trgm } });
@@ -36,7 +37,8 @@ const rpc = async <T,>(db: AuthDb, who: string | null, sql: string, params: unkn
 /** A per-table read as PostgREST returns it (rows as JSON), so it compares with the bundle's JSON directly. */
 const rowsAs = (db: AuthDb, who: string, sql: string, params: unknown[] = []) => rpc<unknown[]>(db, who, `coalesce((select jsonb_agg(to_jsonb(t)) from (${sql}) t), '[]'::jsonb)`, params);
 
-const PROFILE_COLS = "id, display_name, birth_year, role_hint, created, updated, deleted_at";
+// suspended_at: the pause (20261012200000_admin.sql), which lib/auth.ts reads too and 20261013100000_viewer_bundle_pause.sql adds to the bundle.
+const PROFILE_COLS = "id, display_name, birth_year, role_hint, created, updated, deleted_at, suspended_at";
 const STUDENT_COLS = "id, user_id, display_name, grad_year, managed_by, created, deleted_at";
 const MEMBER_COLS = "id, household_id, user_id, student_id, role, status, invited_email, can_edit, created, accepted_at";
 const HOME_COLS = "household_id, lat, lng, label, place, zip, set_by, set_by_name, updated_at";
@@ -238,12 +240,25 @@ test("save_student_profile(): a bad grad year never fails the profile write (the
 /* ------------------------------------------------------------------ */
 
 test("guard: a security definer bundle would leak another household's plan, and the comparison catches it", async () => {
-  const files = ALL.filter((f) => f !== BUNDLE);
+  // The pause migration re-creates viewer_bundle(); leave it out too so the definer copy below is the only one.
+  const files = ALL.filter((f) => f !== BUNDLE && f !== PAUSE);
   const w = await world(files);
   const sql = readFileSync(join(DIR, BUNDLE), "utf8").replaceAll("security invoker", "security definer");
   await w.db.exec(sql);
   const eve = await planByBundle(w, w.eve, w.student);
   assert.notDeepEqual(eve, await planByTables(w, w.eve, w.student), "definer: Eve sees Alice's plan, so the equality check fails");
+});
+
+test("the pause migration re-creates viewer_bundle() unchanged but for the profile's suspended_at", () => {
+  const original = readFileSync(join(DIR, BUNDLE), "utf8");
+  const pause = readFileSync(join(DIR, PAUSE), "utf8");
+  const body = (sql: string) => sql.slice(sql.indexOf("function public.viewer_bundle()"), sql.indexOf("$$;", sql.indexOf("function public.viewer_bundle()")));
+  assert.equal(body(pause), body(original).replace("created, updated, deleted_at\n        from public.profiles", "created, updated, deleted_at, suspended_at\n        from public.profiles"));
+  assert.match(pause, /create or replace function public\.viewer_bundle\(\)/);
+  assert.match(pause, /security invoker/);
+  assert.doesNotMatch(pause, /security definer/);
+  assert.ok(pause.includes("revoke execute on function public.viewer_bundle() from public, anon;"));
+  assert.ok(pause.includes("grant execute on function public.viewer_bundle() to authenticated;"));
 });
 
 test("the migration keeps all three functions security invoker and closed to anon", () => {

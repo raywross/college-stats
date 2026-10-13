@@ -42,6 +42,10 @@ regression test pins it).
   nearest registered ancestor (`registeredPathFor`).
 - `derived.*` entries are computed at render time in `lib/metrics.ts` (yield, SAT midpoint, diversity index, aid
   generosity, payback). Every `METRICS` entry names its `field`.
+- `hidden: true` marks a field computed for Quad's method and never shown or cited on a public page (`selectivity.band`,
+  `derived.selectivity_score*`). `HIDDEN_FIELDS` lists them; the admin college page shows each with its value and
+  lineage ([admin.md](product/admin.md#as-built-colleges-high-schools-hidden-values-the-standing-panel-2026-10-13)), the
+  Data page leaves them out, and `tests/admin-hidden.test.mts` fails when one has no value or a public file names one.
 - Pure module (type-only imports), so Node scripts and tests load it directly.
 
 ### Vintages: `data/meta.json`

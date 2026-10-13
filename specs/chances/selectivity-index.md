@@ -2,7 +2,8 @@
 
 > Status: **built** 2026-10-12 on `feature/chances` (see "As built"; planned 2026-10-11) from the owner's review ("we should have a number behind the scenes… 5 levels with
 > the top being something like Elite"). Part 12 of [admission chances](README.md). Uses only data the site holds;
-> [levels.md](levels.md) reads the tier for its caps, so this ships first or with it.
+> [levels.md](levels.md) reads the tier for its caps, so this ships first or with it. Its history (every score and tier
+> change, per pool, for the admin console) is planned in [selectivity-history.md](selectivity-history.md).
 
 ## Goal
 The site describes how hard a college is to get into with one figure, the admit rate, and a 10-year direction. One

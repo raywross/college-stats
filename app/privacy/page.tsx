@@ -68,6 +68,10 @@ export default function PrivacyPage() {
           <li>
             We <b>never record</b> your grades, test scores, income, name, email, the colleges on your lists, or anything you type.
           </li>
+          <li>
+            If you&apos;re signed in, we keep a record of <b>which college pages your account opens, and when</b>. Quad support can see it;
+            nobody else can, and it&apos;s in your download.
+          </li>
           <li>If your browser sends a privacy signal, we send nothing at all.</li>
           <li>
             If you have an account, you can download or delete everything we keep about you from your{" "}
@@ -130,6 +134,13 @@ export default function PrivacyPage() {
           anonymous. That lets us see whether the site is useful over time, for example whether people come back to finish what they
           started, and whether students, parents, and counselors use it differently. We also count when an account is created, and
           whether you came through an invitation.
+        </p>
+        <p>
+          <b>College pages you open.</b> While you&apos;re signed in, we keep a simple record of which college pages your account opens
+          and when. Quad support can see it, to help you and to learn which colleges families are looking at; it&apos;s never sold or
+          shared, and it&apos;s included when you download your data. If a student&apos;s record is looked at this way, it shows in their
+          &ldquo;Who viewed your information&rdquo; as Quad support. Signed out, we note only that a college page was opened and when, with
+          nothing about who opened it. If your browser sends a privacy signal, we record neither.
         </p>
         <p>
           Signed-in visits are not given even a country or region. Signing in sets the cookies the site needs to remember that you are

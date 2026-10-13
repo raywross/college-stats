@@ -172,6 +172,10 @@ overview cards (17): `name` (`always`), `admissions.applicants`, `.admitted`, `.
 `text` any change), optionally a `tolerance`, the `phrase` it reads as ("{value} admitted"), and for an object the
 `keys` compared. Adding one: give it `notify` and check the sentence in `tests/changes.test.mts`.
 
+*Planned 2026-10-13:* Quad's selectivity tier (`selectivity.tier`, `.in_state`, `.out_of_state`) joins the list on the
+owner's decision, with a new option that reports a tier moved by other colleges' figures and a suppression when the
+method changes ([selectivity-history.md](../chances/selectivity-history.md), Decision 7). The score and rank never do.
+
 ### `lib/changes.ts`
 - `diffSchools(prev, next, fields = NOTIFY_FIELDS, { calendar }) → DatasetChange[]` (pure). Years come from
   `lineageFor` (what `citeField` wraps) on each side's own school and meta. Derived fields that are calculated

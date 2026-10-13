@@ -5,13 +5,27 @@ import { cn } from "@/lib/utils";
  * The console's global search box (specs/product/admin.md "The console"): a plain GET form to /admin/people, which
  * opens the page itself when there is one hit and lists the hits otherwise. Names, emails, household names, and
  * user, student, household, or invitation ids. A GET with the query in the URL is fine here: the console is
- * noindex, behind sign-in, and the query is the admin's own.
+ * noindex, behind sign-in, and the query is the admin's own. The Households page points it at itself instead.
  */
-export function AdminSearch({ defaultValue = "", className, id = "admin-search" }: { defaultValue?: string; className?: string; id?: string }) {
+export function AdminSearch({
+  defaultValue = "",
+  className,
+  id = "admin-search",
+  action = "/admin/people",
+  label = "Search people, students, households",
+  placeholder = "Name, email, household, id",
+}: {
+  defaultValue?: string;
+  className?: string;
+  id?: string;
+  action?: string;
+  label?: string;
+  placeholder?: string;
+}) {
   return (
-    <form action="/admin/people" method="get" role="search" className={cn("relative", className)}>
+    <form action={action} method="get" role="search" className={cn("relative", className)}>
       <label htmlFor={id} className="sr-only">
-        Search people, students, households
+        {label}
       </label>
       <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
       <input
@@ -19,7 +33,7 @@ export function AdminSearch({ defaultValue = "", className, id = "admin-search" 
         name="q"
         type="search"
         defaultValue={defaultValue}
-        placeholder="Name, email, household, id"
+        placeholder={placeholder}
         autoComplete="off"
         autoCapitalize="off"
         spellCheck={false}

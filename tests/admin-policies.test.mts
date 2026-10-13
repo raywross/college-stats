@@ -170,6 +170,7 @@ function functionCalls(w: World): [name: string, sql: string, params: unknown[]]
   return [
     ["admin_search_people", "select * from public.admin_search_people('smith')", []],
     ["admin_list_people", "select * from public.admin_list_people()", []],
+    ["admin_list_households", "select * from public.admin_list_households()", []],
     ["admin_user_auth", "select * from public.admin_user_auth($1)", [w.alice]],
     ["admin_update_profile", "select public.admin_update_profile($1, '{\"display_name\": \"Hacked\"}')", [w.alice]],
     ["admin_update_student", "select public.admin_update_student($1, '{\"display_name\": \"Hacked\"}')", [w.ben]],
@@ -352,6 +353,29 @@ test("admin_list_people: every account and managed record, newest first, paged w
   assert.deepEqual([...first, ...second].map((r) => r.id), all.slice(0, 4).map((r) => r.id));
   assert.equal(Number(first[0].total), all.length);
   assert.deepEqual(await list(999, 50), []);
+});
+
+test("admin_list_households: every household with its members and waiting invitations; search by name, member, email, invitation", async () => {
+  const w = await world();
+  type Row = { id: string; name: string; status: string; guardians: number; students: number; invitations: number; members: string | null; total: string };
+  const list = (q: string | null, page = 1, size = 50) => asAdmin<Row>(w, "select * from public.admin_list_households($1, $2, $3)", [q, page, size]);
+  const households = Number((await w.db.query<{ n: number }>("select count(*)::int as n from public.households")).rows[0].n);
+  const all = await list(null);
+  assert.equal(all.length, households);
+  assert.ok(all.every((r) => Number(r.total) === households));
+  const smiths = all.find((r) => r.id === w.household)!;
+  assert.equal(smiths.name, "The Smiths");
+  assert.ok(smiths.guardians >= 1 && smiths.students >= 1);
+  assert.equal(smiths.invitations, 1, "Gran's invitation is waiting");
+  assert.match(smiths.members ?? "", /Alice Smith/);
+  assert.deepEqual((await list("smiths")).map((r) => r.id), [w.household]);
+  assert.deepEqual((await list("alice@example.com")).map((r) => r.id), [w.household], "a member's account email");
+  assert.deepEqual((await list("gran@example")).map((r) => r.id), [w.household], "a waiting invitation's email");
+  assert.deepEqual((await list(w.household)).map((r) => r.id), [w.household]);
+  assert.deepEqual((await list("joe")).map((r) => r.id), [w.joneses], "a managed student's name");
+  assert.deepEqual(await list("%"), []);
+  if (households > 1) assert.equal((await list(null, 2, 1)).length, 1);
+  assert.deepEqual(await list(null, 999), []);
 });
 
 test("admin_link: six seats counting invitations, one household per person (moved, never duplicated), the household left behind closed", async () => {

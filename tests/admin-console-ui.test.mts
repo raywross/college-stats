@@ -818,10 +818,22 @@ test("the unsearched list runs admin_list_people a page at a time and reads the 
   assert.deepEqual(ui.current.headers, [{ [constants.ADMIN_CONSOLE_HEADER]: "1" }]);
 });
 
-test("the rail has the five sections, highlights the right one, and every console page sits under one", () => {
-  assert.deepEqual(consoleLib.ADMIN_SECTIONS.map((s) => s.label), ["People", "Colleges", "Health", "Operations", "Log"]);
+test("the Households list runs admin_list_households with the search and page, and reads the full count", async () => {
+  asAdmin({ rpcData: { admin_list_households: [{ id: HH, name: "The Smiths", status: "active", guardians: 2, students: 1, invitations: 0, members: "Mom, Alice", total: 3 }] } });
+  const page = await people.listHouseholds("  smith ", 2);
+  assert.equal(page.total, 3);
+  assert.deepEqual(ui.current.rpcCalls, [{ name: "admin_list_households", args: { q: "smith", p_page: 2, p_size: people.PEOPLE_PAGE_SIZE } }]);
+  assert.deepEqual(ui.current.headers, [{ [constants.ADMIN_CONSOLE_HEADER]: "1" }]);
+  asAdmin({ rpcData: { admin_list_households: [] } });
+  assert.deepEqual(await people.listHouseholds("", 1), { rows: [], total: 0 });
+  assert.deepEqual(ui.current.rpcCalls, [{ name: "admin_list_households", args: { q: null, p_page: 1, p_size: people.PEOPLE_PAGE_SIZE } }]);
+});
+
+test("the rail has its six sections, highlights the right one, and every console page sits under one", () => {
+  assert.deepEqual(consoleLib.ADMIN_SECTIONS.map((s) => s.label), ["People", "Households", "Colleges", "Health", "Operations", "Log"]);
   assert.equal(consoleLib.activeSection("/admin"), null);
-  assert.equal(consoleLib.activeSection(`/admin/households/${HH}`), "people");
+  assert.equal(consoleLib.activeSection("/admin/households"), "households");
+  assert.equal(consoleLib.activeSection(`/admin/households/${HH}`), "households");
   assert.equal(consoleLib.activeSection(`/admin/students/${STUDENT}`), "people");
   assert.equal(consoleLib.activeSection("/admin/high-schools/abc"), "colleges");
   assert.equal(consoleLib.activeSection("/admin/admins"), "log");

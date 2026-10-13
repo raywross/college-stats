@@ -14,7 +14,9 @@ export const metadata: Metadata = { title: "People", robots: { index: false, fol
 /**
  * /admin/people?q=…: the results of admin_search_people (specs/product/admin.md "Search"). One hit opens its page;
  * none or several list here. With no q, every account and managed student record, newest first, PEOPLE_PAGE_SIZE at a
- * time (admin_list_people, ?page=N). This list is the only place on the site that shows an email next to a name.
+ * time (admin_list_people, ?page=N). Households have their own page (owner, 2026-10-13): a search here lists people
+ * and student records, and links to Households when households or invitations match too. This list is the only place
+ * on the site that shows an email next to a name.
  */
 export default async function PeoplePage({ searchParams }: PageProps<"/admin/people">) {
   await connection();
@@ -24,9 +26,11 @@ export default async function PeoplePage({ searchParams }: PageProps<"/admin/peo
   const q = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
   const rawPage = Number(Array.isArray(params.page) ? params.page[0] : params.page);
   const page = Number.isInteger(rawPage) && rawPage >= 1 ? rawPage : 1;
-  const rows = q ? await searchPeople(q) : [];
-  const only = singleHitHref(rows);
+  const hits = q ? await searchPeople(q) : [];
+  const only = singleHitHref(hits);
   if (only) redirect(only);
+  const rows = hits.filter((r) => r.kind === "user" || r.kind === "student");
+  const elsewhere = hits.length - rows.length;
   const list = q ? null : await listPeople(page);
   if (list && list.rows.length === 0 && page > 1) redirect("/admin/people");
   const pages = list ? Math.max(1, Math.ceil(list.total / PEOPLE_PAGE_SIZE)) : 1;
@@ -34,7 +38,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/admin/peo
 
   return (
     <>
-      <PageHeader title="People" subtitle="People, student records, households, and invitations. Paused and deleted accounts are included." />
+      <PageHeader title="People" subtitle="Accounts and student records. Paused and deleted accounts are included." />
       <AdminSearch defaultValue={q} id="people-search" className="max-w-xl" />
       <div className="mt-6">
         {list ? (
@@ -44,7 +48,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/admin/peo
             <>
               <p className="mb-2 text-sm text-muted-foreground" role="status">
                 {list.total.toLocaleString("en-US")} people, newest first · showing {from.toLocaleString("en-US")} to{" "}
-                {(from + list.rows.length - 1).toLocaleString("en-US")}. Search to find households and invitations too.
+                {(from + list.rows.length - 1).toLocaleString("en-US")}
               </p>
               <PeopleList rows={list.rows} />
               {pages > 1 && (
@@ -72,7 +76,16 @@ export default async function PeoplePage({ searchParams }: PageProps<"/admin/peo
           )
         ) : rows.length === 0 ? (
           <Empty>
-            No one matches &ldquo;{q}&rdquo;. Try part of a name or email. To look up a college, use{" "}
+            No one matches &ldquo;{q}&rdquo;.{" "}
+            {elsewhere > 0 && (
+              <>
+                <Link href={`/admin/households?q=${encodeURIComponent(q)}`} className="font-semibold text-primary underline-offset-4 hover:underline">
+                  See matching households
+                </Link>
+                .{" "}
+              </>
+            )}
+            Try part of a name or email. To look up a college, use{" "}
             <Link href={`/admin/colleges?q=${encodeURIComponent(q)}`} className="font-semibold text-primary underline-offset-4 hover:underline">
               Colleges
             </Link>
@@ -82,6 +95,14 @@ export default async function PeoplePage({ searchParams }: PageProps<"/admin/peo
           <>
             <p className="mb-2 text-sm text-muted-foreground">
               {rows.length} {rows.length === 1 ? "match" : "matches"} for &ldquo;{q}&rdquo;
+              {elsewhere > 0 && (
+                <>
+                  {" · "}
+                  <Link href={`/admin/households?q=${encodeURIComponent(q)}`} className="font-semibold text-primary underline-offset-4 hover:underline">
+                    households and invitations matching too
+                  </Link>
+                </>
+              )}
             </p>
             <PeopleList rows={rows} />
           </>

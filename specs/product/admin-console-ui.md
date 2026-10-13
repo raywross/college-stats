@@ -28,10 +28,17 @@ challenge-and-verify on the session's own factor. Both refuse unless the session
 refuses when a verified factor exists. After `verified` the component calls `router.refresh()`.
 
 ## People
-- **Search** `/admin/people`: `admin_search_people`. Rows show kind, name, email (the only place on the site that shows one
-  beside a name), household, status chips (Paused, Deleting, Invited, No account yet), created and last sign-in. With no
-  search (owner, 2026-10-13), it lists every account and managed student record, newest first, 50 a page
-  (`admin_list_people(page, size)`, `?page=N`); households and invitations stay search-only.
+People and Households are separate rail sections (owner, 2026-10-13).
+- **People** `/admin/people`: with no search, every account and managed student record, newest first, 50 a page
+  (`admin_list_people(page, size)`, `?page=N`). A search (`admin_search_people`, also the rail's global box) lists
+  people and student records; one hit of any kind opens its page, and when households or invitations match too, a link
+  goes to Households with the same query. Rows show kind, name, email (the only place on the site that shows one beside
+  a name), household, status chips (Paused, Deleting, Invited, No account yet), created and last sign-in.
+- **Households** `/admin/households`: every household, newest first, 50 a page, or those matching `?q=` (household
+  name, a member's name or account email, a waiting invitation's email or name, or the id), from
+  `admin_list_households(q, page, size)`. Rows show the name, a Deleting chip for closed ones, the active members'
+  names (parents first), counts of parents, students, and invitations waiting, and the created date. One match on a
+  search opens the household.
 - **A person** `/admin/people/[user]`: Account (with Auth data from `admin_user_auth`), Households (with **Leave**), Student
   records, Lists and plan (counts only; the lists open on the student page), Notifications, Who viewed their data. Actions in
   a right column (below the content on phones, with a "Jump to actions" link): Edit details, Change email (typed twice,

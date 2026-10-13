@@ -16,7 +16,7 @@ import type { AdminState } from "./auth.ts";
 /* The rail                                                            */
 /* ------------------------------------------------------------------ */
 
-export type AdminSectionKey = "people" | "colleges" | "health" | "operations" | "log";
+export type AdminSectionKey = "people" | "households" | "colleges" | "health" | "operations" | "log";
 
 export interface AdminSection {
   key: AdminSectionKey;
@@ -29,11 +29,12 @@ export interface AdminSection {
 }
 
 /**
- * The five sections of the spec's console table. Colleges, Health, and Operations link to pages other units build;
- * the rail doesn't need them to exist.
+ * The sections of the spec's console table, with People and Households apart (owner, 2026-10-13). Colleges, Health,
+ * and Operations link to pages other units build; the rail doesn't need them to exist.
  */
 export const ADMIN_SECTIONS: readonly AdminSection[] = [
-  { key: "people", label: "People", href: "/admin/people", under: ["/admin/people", "/admin/households", "/admin/students"], hint: "Search, households, students" },
+  { key: "people", label: "People", href: "/admin/people", under: ["/admin/people", "/admin/students"], hint: "Accounts and students" },
+  { key: "households", label: "Households", href: "/admin/households", under: ["/admin/households"], hint: "Families and invitations" },
   { key: "colleges", label: "Colleges", href: "/admin/colleges", under: ["/admin/colleges", "/admin/high-schools"], hint: "Hidden values" },
   { key: "health", label: "Health", href: "/admin/health", under: ["/admin/health"], hint: "Which data is fresh" },
   { key: "operations", label: "Operations", href: "/admin/operations", under: ["/admin/operations"], hint: "Runs and approvals" },

@@ -180,6 +180,17 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
+    slug: "data-steward",
+    file: "specs/product/data-steward.md",
+    group: "business",
+    summary:
+      "Behind the scenes: an assistant that works through the figures our checks hold back, proves each fix against the college's own document, and asks before anything changes on the site.",
+    complexity: 3,
+    complexityNote:
+      "An agent run in GitHub Actions with a budget and no power to merge, clustering of the review queue, a document archive it can read, and a redesigned Operations page.",
+    status: "planned",
+  },
+  {
     slug: "commercialization",
     file: "specs/product/commercialization.md",
     group: "business",

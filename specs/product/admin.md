@@ -273,6 +273,10 @@ college-reported, identity-refresh, and campus-pilot workflows rebuild it in the
 review queue and the run reports from GitHub at `main`, never from the deploy.
 
 ## Operations: reruns and approvals
+> The Review queue and Approvals parts are replaced by [data-steward.md](data-steward.md) (planned 2026-10-13): an
+> agent groups the queue into causes and proposes fixes with evidence; Operations shows Issues, Proposals, and Audits.
+> Runs and Start a run stay as built.
+
 The owner wants to trigger reruns and approve data changes from the console, in the first build if the GitHub side
 is right. It is: every pipeline is already a workflow with `workflow_dispatch` inputs, every data change is already a
 PR with CI and a readable diff, and the review queue is resolved by editing one file. The console needs a way to call

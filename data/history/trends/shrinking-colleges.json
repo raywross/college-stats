@@ -182,23 +182,23 @@
         {
           "key": "most",
           "label": "Under 25% admitted",
-          "n": 82,
+          "n": 83,
           "values": {
-            "shrank10": 0.0244,
-            "grew10": 0.3902,
-            "medianChange": 0.0584,
-            "totalChange": 0.1182
+            "shrank10": 0.0241,
+            "grew10": 0.3976,
+            "medianChange": 0.0589,
+            "totalChange": 0.1171
           }
         },
         {
           "key": "more",
           "label": "25–59% admitted",
-          "n": 243,
+          "n": 242,
           "values": {
-            "shrank10": 0.3786,
-            "grew10": 0.3292,
-            "medianChange": 0.0014,
-            "totalChange": 0.0841
+            "shrank10": 0.3802,
+            "grew10": 0.3264,
+            "medianChange": -0.0021,
+            "totalChange": 0.0836
           }
         },
         {
@@ -494,23 +494,23 @@
           {
             "key": "most",
             "label": "Under 25% admitted",
-            "n": 83,
+            "n": 84,
             "values": {
-              "shrank10": 0.012,
-              "grew10": 0.1687,
+              "shrank10": 0.0119,
+              "grew10": 0.1667,
               "medianChange": 0.0392,
-              "totalChange": 0.0649
+              "totalChange": 0.0657
             }
           },
           {
             "key": "more",
             "label": "25–59% admitted",
-            "n": 245,
+            "n": 244,
             "values": {
-              "shrank10": 0.3143,
-              "grew10": 0.2286,
-              "medianChange": -0.0099,
-              "totalChange": 0.0324
+              "shrank10": 0.3156,
+              "grew10": 0.2295,
+              "medianChange": -0.0109,
+              "totalChange": 0.0313
             }
           },
           {
@@ -808,23 +808,23 @@
             {
               "key": "most",
               "label": "Under 25% admitted",
-              "n": 80,
+              "n": 81,
               "values": {
-                "shrank10": 0.0125,
-                "grew10": 0.3875,
-                "medianChange": 0.0584,
-                "totalChange": 0.1162
+                "shrank10": 0.0123,
+                "grew10": 0.3951,
+                "medianChange": 0.0589,
+                "totalChange": 0.1152
               }
             },
             {
               "key": "more",
               "label": "25–59% admitted",
-              "n": 231,
+              "n": 230,
               "values": {
-                "shrank10": 0.3723,
-                "grew10": 0.3247,
-                "medianChange": 0.0027,
-                "totalChange": 0.0854
+                "shrank10": 0.3739,
+                "grew10": 0.3217,
+                "medianChange": 0.0021,
+                "totalChange": 0.085
               }
             },
             {
@@ -1110,23 +1110,23 @@
             {
               "key": "most",
               "label": "Under 25% admitted",
-              "n": 81,
+              "n": 82,
               "values": {
-                "shrank10": 0.0123,
-                "grew10": 0.1605,
+                "shrank10": 0.0122,
+                "grew10": 0.1585,
                 "medianChange": 0.0392,
-                "totalChange": 0.0625
+                "totalChange": 0.0635
               }
             },
             {
               "key": "more",
               "label": "25–59% admitted",
-              "n": 233,
+              "n": 232,
               "values": {
-                "shrank10": 0.3004,
-                "grew10": 0.2232,
-                "medianChange": -0.0097,
-                "totalChange": 0.0335
+                "shrank10": 0.3017,
+                "grew10": 0.2241,
+                "medianChange": -0.0098,
+                "totalChange": 0.0323
               }
             },
             {

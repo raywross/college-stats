@@ -224,9 +224,9 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/chances/selectivity-history.md",
     group: "business",
     summary:
-      "A record of every change to a college's selectivity rating, for applicants overall, in state, and out of state, with the figures behind each change, for the admin console.",
+      "A record of every change to a college's selectivity rating, for applicants overall, in state, and out of state, with the figures behind each change, for the admin console; followers hear when a college's public tier changes.",
     complexity: 2,
-    complexityNote: "Two admin-only tables written after each deploy, a method version, a one-time backfill from git, and two console screens.",
+    complexityNote: "Two admin-only tables written after each deploy, a method version, a one-time backfill from git, two console screens, and the tier as a follower update.",
     status: "planned",
     after: ["admin-console"],
   },

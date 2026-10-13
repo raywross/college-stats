@@ -426,6 +426,17 @@ working around a viewer page or bot protection.
 The pilot logs why each of the five unread share links failed (robots.txt, HTML, or status), so this table is corrected
 from facts before the full run.
 
+**Applied at fetch, whoever found the link (fixed 2026-10-13).** The rewrite first ran only in the free steps and the
+owner's list, so a share link a model found (step 4) was fetched as is, and its viewer page was archived as an HTML
+"CDS" with no text (UT Austin's 2025–26 Box link; also Georgetown, Mount Holyoke, Binghamton, Notre Dame, Tulane).
+`acquireSource` (`phases.mts`) now fetches every `cds` source on a share host at its direct form, keeps the
+recipe and manifest under the link the college publishes, ignores any HTML document archived earlier for that link,
+and refuses an answer that isn't a file (`%PDF` within 1 KB, or `PK`): nothing is archived, and the source is queued
+`unreachable` ("the box link answered with a viewer page…; download it in a browser and run archive-doc"). A CDS that
+fails to fetch is queued even when another source (a class profile) published, so the failures table lists it; those
+fetch-only items are replaced by each new fetch of the college's sources rather than cleared by the class profile.
+Verified on UT Austin: `/shared/static/<id>` returned the 2025–26 PDF (1,505 layout lines).
+
 **Blocked hosts.** The pipeline writes `data/reference/blocked-hosts.json`: host, status (401, 403, 404-to-tools, 405,
 429, or a challenge), and first and last seen.
 - **Blocking is per host, not per college.** Columbia's `opir.` host served its CDS while its admissions host returned

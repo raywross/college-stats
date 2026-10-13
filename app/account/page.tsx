@@ -11,9 +11,12 @@ import { UpdateEmailsSection } from "@/components/me/UpdateEmailsSection";
 import { RemindersSection } from "@/components/account/RemindersSection";
 import { AccountSwitches } from "@/components/planner/parents/AccountSwitches";
 import { Term } from "@/components/ui/info-tip";
+import { VisitAlertSettings } from "@/components/visits/VisitAlertSettings";
 import { AccountsSetupError, authConfigured, currentStudent, getAccount, requireUser } from "@/lib/auth";
 import { myAccessLog, myHouseholds } from "@/lib/households";
 import { DELETE_GRACE_DAYS, shortDate } from "@/lib/household-rules";
+import { getData } from "@/lib/data";
+import { myMeasuringPoint, myVisitMutes, myVisitPrefs } from "@/lib/visit-events/read";
 import { restoreAccount } from "./delete/actions";
 import { ProfileForm } from "./ProfileForm";
 
@@ -42,6 +45,9 @@ export default async function AccountPage() {
 
   const [households, student] = await Promise.all([myHouseholds(), currentStudent()]);
   const accessLog = student ? await myAccessLog() : [];
+
+  const [visitPrefs, visitMutes, visitPoint, data] = await Promise.all([myVisitPrefs(), myVisitMutes(), myMeasuringPoint(), getData()]);
+  const mutedColleges = visitMutes.map((unitId) => ({ unitId, name: data.getSchoolById(unitId)?.name ?? unitId }));
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6 sm:py-14">
@@ -79,6 +85,17 @@ export default async function AccountPage() {
       </AccountSection>
 
       <UpdateEmailsSection />
+
+      <AccountSection
+        id="visit-alerts"
+        title={<Term term="visit-near-you">Visit alerts</Term>}
+        description="An email when a college on your list adds a tour, session, or a visit near you, within your radius. See every upcoming event on your visits page."
+      >
+        <VisitAlertSettings prefs={visitPrefs} pointLabel={visitPoint?.label ?? null} mutedColleges={mutedColleges} />
+        <Link href="/me/visits" className="mt-3 inline-block text-xs font-semibold text-primary hover:underline">
+          Go to your visits page →
+        </Link>
+      </AccountSection>
 
       <RemindersSection student={student} />
 

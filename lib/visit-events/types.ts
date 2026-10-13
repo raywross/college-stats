@@ -49,12 +49,14 @@ export interface VisitEventRow {
   first_seen: string;
   last_seen: string;
   changed_at: string;
+  /** When the start or the venue last changed (20261013190000); null until a date or place has moved. */
+  moved_at: string | null;
   removed_at: string | null;
 }
 
 /** The columns a page or the alert job selects; keep in step with the migration (tests/visit-events-model.test.mts). */
 export const VISIT_EVENT_COLUMNS =
-  "id, unit_id, host, slate_id, title, kind, starts_at, ends_at, timezone, all_day, online, venue, address, city, state, zip, lat, lng, availability, book_url, source_url, description, date_confirmed, first_seen, last_seen, changed_at, removed_at";
+  "id, unit_id, host, slate_id, title, kind, starts_at, ends_at, timezone, all_day, online, venue, address, city, state, zip, lat, lng, availability, book_url, source_url, description, date_confirmed, first_seen, last_seen, changed_at, moved_at, removed_at";
 
 export const RADIUS_OPTIONS = [10, 25, 30, 50, 100, 250] as const;
 export type RadiusMiles = (typeof RADIUS_OPTIONS)[number];

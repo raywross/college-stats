@@ -46,6 +46,7 @@ function ev(over: Partial<VisitEventRow>): VisitEventRow {
     first_seen: "2026-10-14T06:00:00Z",
     last_seen: "2026-10-14T06:00:00Z",
     changed_at: "2026-10-14T06:00:00Z",
+    moved_at: null,
     removed_at: null,
     ...over,
   };

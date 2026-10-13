@@ -61,6 +61,7 @@ function ev(over: Partial<VisitEventRow> = {}): VisitEventRow {
     first_seen: AN_HOUR_AGO,
     last_seen: AN_HOUR_AGO,
     changed_at: AN_HOUR_AGO,
+    moved_at: null,
     removed_at: null,
     ...over,
   };
@@ -206,15 +207,17 @@ test("two colleges: one plan, colleges ordered by their nearest event", () => {
   assert.deepEqual(r.plans[0].colleges.map((c) => c.unitId), [DUKE, UF]);
 });
 
-test("moved: changed_at in the window after an older first_seen; an old unchanged row is not a candidate", () => {
-  const moved = ev({ id: "moved", first_seen: LAST_WEEK, changed_at: AN_HOUR_AGO });
-  const old = ev({ id: "old", first_seen: LAST_WEEK, changed_at: LAST_WEEK });
-  const r = selectAlerts(input({ events: [moved, old] }));
+test("moved: moved_at in the window; an availability flip (changed_at only) and an old row are not candidates", () => {
+  const moved = ev({ id: "moved", first_seen: LAST_WEEK, changed_at: AN_HOUR_AGO, moved_at: AN_HOUR_AGO });
+  const flipped = ev({ id: "flipped", first_seen: LAST_WEEK, changed_at: AN_HOUR_AGO, moved_at: null, availability: "full" });
+  const old = ev({ id: "old", first_seen: LAST_WEEK, changed_at: LAST_WEEK, moved_at: LAST_WEEK });
+  const r = selectAlerts(input({ events: [moved, flipped, old] }));
   assert.deepEqual(r.plans[0].colleges[0].events.map((e) => [e.event.id, e.change]), [["moved", "moved"]]);
   assert.equal(changeOf(old, SINCE), null);
-  assert.equal(changeOf({ first_seen: AN_HOUR_AGO, changed_at: AN_HOUR_AGO }, SINCE), "new");
-  // A new row changed again the same night is still "new".
-  assert.equal(changeOf({ first_seen: AN_HOUR_AGO, changed_at: "2026-10-14T12:30:00Z" }, SINCE), "new");
+  assert.equal(changeOf(flipped, SINCE), null);
+  assert.equal(changeOf({ first_seen: AN_HOUR_AGO, moved_at: null }, SINCE), "new");
+  // A new row moved again the same night is still "new".
+  assert.equal(changeOf({ first_seen: AN_HOUR_AGO, moved_at: "2026-10-14T12:30:00Z" }, SINCE), "new");
 });
 
 test("staff, removed, and past rows never alert", () => {

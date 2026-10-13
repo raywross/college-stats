@@ -63,6 +63,8 @@ interface PrefsRow {
   measure_from: MeasureFrom;
   include_online: boolean;
   updated: string;
+  /** The row's creation (20261013190000): the first-night rule reads this, not `updated`, so a radius change skips nothing. */
+  created: string;
 }
 
 /**
@@ -191,7 +193,7 @@ async function alert(client: Client, siteUrl: string, dry: boolean) {
     .is("removed_at", null)
     .neq("kind", "staff")
     .gte("starts_at", now.toISOString())
-    .or(`first_seen.gte.${sinceIso},changed_at.gte.${sinceIso}`);
+    .or(`first_seen.gte.${sinceIso},moved_at.gte.${sinceIso}`);
   if (eventsError) throw new Error(`visit-alerts: reading visit_events failed: ${eventsError.message}`);
   const events = (eventRows ?? []) as unknown as VisitEventRow[];
   const unitIds = [...new Set(events.map((e) => e.unit_id))];
@@ -209,7 +211,7 @@ async function alert(client: Client, siteUrl: string, dry: boolean) {
   const [mutes, prefRows, tokenRows, recent] = await Promise.all([
     readIn<{ user_id: string; unit_id: string }>("visit_alert_mutes", userIds, (ids) => client.from("visit_alert_mutes").select("user_id, unit_id").in("user_id", ids)),
     readIn<PrefsRow>("visit_alert_prefs", userIds, (ids) =>
-      client.from("visit_alert_prefs").select("user_id, email_visit_alerts, radius_miles, measure_from, include_online, updated").in("user_id", ids),
+      client.from("visit_alert_prefs").select("user_id, email_visit_alerts, radius_miles, measure_from, include_online, updated, created").in("user_id", ids),
     ),
     readIn<{ user_id: string; unsubscribe_token: string }>("notification_prefs", userIds, (ids) => client.from("notification_prefs").select("user_id, unsubscribe_token").in("user_id", ids)),
     readIn<{ user_id: string }>("visit_alerts", userIds, (ids) =>
@@ -230,6 +232,7 @@ async function alert(client: Client, siteUrl: string, dry: boolean) {
     homesSetAt,
     unsubscribeTokens: new Map(tokenRows.map((t) => [t.user_id, t.unsubscribe_token])),
     hostsFirstSeen: new Map(hosts.map((h) => [h.unit_id, h.first_seen])),
+    prefsCreatedAt: new Map(prefRows.map((p) => [p.user_id, p.created])),
   });
 
   const alreadySent = new Set(recent.map((r) => r.user_id));

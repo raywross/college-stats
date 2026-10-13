@@ -49,7 +49,11 @@ the visitor's session (or none), which validates, folds repeats, and inserts. Th
 - Charts use the compare slots `--s1` (signed in) and `--s2` (signed out), validated as a pair in both themes; each has
   a legend, a per-day hover label, and a hidden table for screen readers (`components/admin/ViewCharts.tsx`).
 
+- **Colleges** (`/admin/colleges`, owner 2026-10-13): with no search, "Most viewed" lists the top ten colleges by views
+  over 7 days, 30 days (default), or all time (`?views=7|30|all`, `admin_top_viewed_colleges(days, limit)`), each with
+  its signed-in people and signed-out views, linking to the college's "Who's looking".
+
 ## Later
 
-- A "most viewed" sort on `/admin/colleges`, and views as an interest signal in the planner.
+- Views as an interest signal in the planner.
 - Rate limiting signed-out posts if the table is abused.

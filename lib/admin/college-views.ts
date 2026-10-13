@@ -97,3 +97,32 @@ export async function viewTimes(unitId: string, userId: string | null): Promise<
   });
   return found.map((r) => ({ viewedAt: r.viewed_at, page: r.page }));
 }
+
+export interface TopViewedRow {
+  unitId: string;
+  name: string;
+  views: number;
+  /** Distinct signed-in people. */
+  people: number;
+  signedOut: number;
+  lastViewed: string;
+}
+
+/** The most viewed colleges over the last `days` days (null = all time), most views first. */
+export async function topViewedColleges(days: number | null, limit = 10): Promise<TopViewedRow[]> {
+  const [found, data] = await Promise.all([
+    rpc<{ unit_id: string; views: number | string; people: number | string; signed_out: number | string; last_viewed: string }>("most viewed colleges", "admin_top_viewed_colleges", {
+      p_days: days,
+      p_limit: limit,
+    }),
+    getData(),
+  ]);
+  return found.map((r) => ({
+    unitId: r.unit_id,
+    name: data.getSchoolById(r.unit_id)?.name ?? `College ${r.unit_id}`,
+    views: Number(r.views),
+    people: Number(r.people),
+    signedOut: Number(r.signed_out),
+    lastViewed: r.last_viewed,
+  }));
+}

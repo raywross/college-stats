@@ -751,7 +751,7 @@
         "acceptanceRate": 0.7212,
         "avgCost": 20150,
         "outOfState": 0.2139,
-        "testOptionalShare": 0.7586,
+        "testOptionalShare": 0.7931,
         "netInflow": 0.3348
       },
       "all": {
@@ -2838,7 +2838,7 @@
         "acceptanceRate": 0.7445,
         "avgCost": 31319,
         "outOfState": 0.0147,
-        "testOptionalShare": 0.7391,
+        "testOptionalShare": 0.7536,
         "netInflow": -0.1482
       },
       "all": {
@@ -3439,7 +3439,7 @@
         "acceptanceRate": 0.8562,
         "avgCost": 29971,
         "outOfState": 0.2909,
-        "testOptionalShare": 0.619,
+        "testOptionalShare": 0.6667,
         "netInflow": -0.0479
       },
       "all": {
@@ -5567,7 +5567,7 @@
         "acceptanceRate": 0.6547,
         "avgCost": 22294,
         "outOfState": 0.1182,
-        "testOptionalShare": 0.5385,
+        "testOptionalShare": 0.5538,
         "netInflow": 0.0089
       },
       "all": {
@@ -6358,7 +6358,7 @@
         "acceptanceRate": 0.7314,
         "avgCost": 21561,
         "outOfState": 0.0705,
-        "testOptionalShare": 0.6852,
+        "testOptionalShare": 0.7037,
         "netInflow": -0.0444
       },
       "all": {
@@ -7395,7 +7395,7 @@
         "acceptanceRate": 0.8013,
         "avgCost": 23986,
         "outOfState": 0.4261,
-        "testOptionalShare": 0.8125,
+        "testOptionalShare": 0.8438,
         "netInflow": 0.275
       },
       "all": {
@@ -8569,7 +8569,7 @@
         "acceptanceRate": 0.7589,
         "avgCost": 24775,
         "outOfState": 0.0819,
-        "testOptionalShare": 0.8406,
+        "testOptionalShare": 0.8551,
         "netInflow": -0.42
       },
       "all": {
@@ -9823,7 +9823,7 @@
         "acceptanceRate": 0.8088,
         "avgCost": 25296,
         "outOfState": 0.2234,
-        "testOptionalShare": 0.8214,
+        "testOptionalShare": 0.8571,
         "netInflow": 0.172
       },
       "all": {
@@ -11866,7 +11866,7 @@
         "acceptanceRate": 0.7068,
         "avgCost": 33912,
         "outOfState": 0.1141,
-        "testOptionalShare": 0.8169,
+        "testOptionalShare": 0.8451,
         "netInflow": 0.053
       },
       "all": {
@@ -15039,7 +15039,7 @@
         "acceptanceRate": 0.7263,
         "avgCost": 21460,
         "outOfState": 0.2238,
-        "testOptionalShare": 0.7358,
+        "testOptionalShare": 0.7547,
         "netInflow": 0.0563
       },
       "all": {
@@ -20568,7 +20568,7 @@
         "acceptanceRate": 0.7035,
         "avgCost": 24988,
         "outOfState": 0.0312,
-        "testOptionalShare": 0.8242,
+        "testOptionalShare": 0.8182,
         "netInflow": -0.0491
       },
       "all": {
@@ -22569,7 +22569,7 @@
         "acceptanceRate": 0.8674,
         "avgCost": 30116,
         "outOfState": 0.3064,
-        "testOptionalShare": 0.88,
+        "testOptionalShare": 0.92,
         "netInflow": 0.1557
       },
       "all": {
@@ -23587,7 +23587,7 @@
         "acceptanceRate": 0.8205,
         "avgCost": 28858,
         "outOfState": 0.1446,
-        "testOptionalShare": 0.9145,
+        "testOptionalShare": 0.9487,
         "netInflow": 0.1362
       },
       "all": {
@@ -26308,7 +26308,7 @@
         "acceptanceRate": 0.6927,
         "avgCost": 21445,
         "outOfState": 0.1141,
-        "testOptionalShare": 0.6136,
+        "testOptionalShare": 0.6364,
         "netInflow": 0.0424
       },
       "all": {
@@ -27436,7 +27436,7 @@
         "acceptanceRate": 0.8387,
         "avgCost": 20587,
         "outOfState": 0.0188,
-        "testOptionalShare": 0.7,
+        "testOptionalShare": 0.72,
         "netInflow": -0.1717
       },
       "all": {

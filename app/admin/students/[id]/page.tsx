@@ -20,7 +20,7 @@ export const metadata: Metadata = { title: "Student", robots: { index: false, fo
 
 /**
  * /admin/students/[id] (specs/product/admin.md "A student record"): the record, then the student's data as the family
- * sees it, read-only: numbers, lists (each college with the standing panel's slot), plan, snapshots. Opening it writes
+ * sees it, read-only: numbers, lists (each college with its standing panel), plan, snapshots. Opening it writes
  * the access row first (admin_log_access, once per render): the student sees "Quad support viewed your information",
  * and nothing is read until the row exists, so a failed log means a failed page, not an unlogged view.
  */
@@ -277,7 +277,7 @@ function ItemRow({ item, name, studentId }: { item: AdminListItem; name: string;
           ))}
         </ul>
       )}
-      {/* Unit U7 fills this: the standing panel (collapsed), server-rendered inside this page's requireAdmin(). */}
+      {/* The standing panel (collapsed): the estimate's private detail, server-rendered inside this page's requireAdmin(). */}
       <StandingPanelSlot studentId={studentId} unitId={item.unit_id} itemId={item.id} />
     </li>
   );

@@ -574,3 +574,35 @@ none of it reaches a client bundle, an API route, or a public page. The assembly
   `estimateWithDetail`, `SnapshotDetail`, or the console's hidden modules, directly or through a chain of imports.
 - **Not shown on the high-school page:** whether the school is in the hs-profile pilot's sample (the pilot file is a
   pipeline input, not a runtime one); the profile's presence answers "was it extracted".
+
+## As built after the first merge (2026-10-13)
+PR #140 merged 2026-10-13 with these additions from the owner's testing, each in its own spec:
+- **People and Households are separate rail sections.** People lists every account and managed student record, 50 a
+  page, with no search needed (`admin_list_people`); Households lists every household with its members, counts, and
+  waiting invitations, and searches names, member emails, and invitation emails (`admin_list_households`).
+  [admin-console-ui.md](admin-console-ui.md#people).
+- **Email confirmation.** People rows carry an "Email not confirmed" chip; a person's actions offer Confirm email or
+  Mark email unconfirmed (`admin_set_email_confirmed`; unconfirming signs them out and is refused for yourself).
+- **Sign-in activity** on a person (PR #150): sessions with device and assurance level, the account's own dates, the
+  auth audit log (once its dashboard switch is on, [supabase.md](../supabase.md#supabase-auth-authentication-settings)),
+  and support's actions; never an IP address. The privacy page says the record is kept.
+- **College views** ([college-views.md](college-views.md)): who opens each college page and when; "Colleges viewed" on
+  a person, "Who's looking" on a college, and "Most viewed" on `/admin/colleges` (PR #151), each drilling down to
+  individual times.
+- **Health "Covers".** Each row of a college's health card says the period the data describes (the federal year by
+  source, the CDS edition) above when it was collected.
+- **Selectivity history** ([selectivity-history.md](../chances/selectivity-history.md)): every score and tier change
+  per pool on the college page and at `/admin/selectivity`, with follower emails when a public tier changes.
+
+Things learned in testing:
+- **Revoking admin leaves the authenticator.** The TOTP factor an admin enrolled stays on the account, so its password
+  reset asks for the code (PR #149 added the code step to `/account/password`). To drop it, delete the factor; the
+  site has no self-service control for it yet.
+- **Copy reset link** works from any origin in `INVITE_ALLOWED_ORIGINS`; on a preview URL it is refused until that
+  origin is added.
+
+Owner steps done on dev (2026-10-13): the admin migrations and every console migration through
+`20261013170000_admin_top_viewed_colleges.sql`, the first admin row (now `rayuno+quadadmin@gmail.com`, MFA enrolled),
+`admin-auth` deployed, `INVITE_ALLOWED_ORIGINS` and `ADMIN_AUTH_SEND_EMAIL` set, the selectivity backfill run. Not
+yet confirmed: the GitHub App for Operations. Prod repeats all of it at launch
+([supabase.md](../supabase.md#setup-at-the-formal-release)).

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <title>Your Quad sign-in link</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&amp;display=swap" rel="stylesheet" />
+  </head>
+  <body style="margin:0;padding:0;background:#faf9f5;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Sign in to Quad with one tap.</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#faf9f5;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+            <tr>
+              <td style="padding:0 4px 20px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="vertical-align:middle;padding-right:10px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">
+                <tr><td width="13" height="13" style="width:13px;height:13px;background:#6d4df2;border-radius:4px;font-size:0;line-height:0;">&nbsp;</td><td width="3" style="width:3px;font-size:0;line-height:0;">&nbsp;</td><td width="13" height="13" style="width:13px;height:13px;background:#c9fa4d;border-radius:7px;font-size:0;line-height:0;">&nbsp;</td></tr>
+                <tr><td colspan="3" height="3" style="height:3px;font-size:0;line-height:0;">&nbsp;</td></tr>
+                <tr><td width="13" height="13" style="width:13px;height:13px;background:#eb6834;border-radius:7px;font-size:0;line-height:0;">&nbsp;</td><td width="3" style="width:3px;font-size:0;line-height:0;">&nbsp;</td><td width="13" height="13" style="width:13px;height:13px;background:#c2378f;border-radius:4px;font-size:0;line-height:0;">&nbsp;</td></tr>
+              </table>
+                    </td>
+                    <td style="vertical-align:middle;font-family:'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#131426;">Quad</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff;border:1px solid #e3e1da;border-radius:20px;padding:32px 28px;">
+              <h1 style="margin:0 0 16px;font-family:'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;font-size:26px;font-weight:800;line-height:1.2;letter-spacing:-0.5px;color:#131426;">Sign in to Quad</h1>
+              <p style="margin:0 0 16px;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;font-size:16px;line-height:1.55;color:#131426;">Tap the button to sign in as <strong>{{ .Email }}</strong>. The link works once and expires in an hour.</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px;">
+                <tr>
+                  <td style="border-radius:999px;background:#613bf0;">
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:13px 26px;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;font-size:16px;font-weight:700;line-height:1;color:#ffffff;text-decoration:none;border-radius:999px;">Sign in</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 4px;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;font-size:13px;line-height:1.5;color:#5d5f6f;">Button not working? Paste this link into your browser:</p>
+              <p style="margin:0;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;font-size:13px;line-height:1.5;word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#613bf0;">{{ .ConfirmationURL }}</a></p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 4px 0;">
+                <p style="margin:0 0 10px;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;font-size:13px;line-height:1.5;color:#5d5f6f;">If you didn't ask to sign in, ignore this email. Nobody can sign in without this link.</p>
+                <p style="margin:0;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;font-size:13px;line-height:1.5;color:#5d5f6f;">Quad · College data, decoded. · <a href="https://usequad.app" style="color:#5d5f6f;">usequad.app</a> · Questions? Reply to this email.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

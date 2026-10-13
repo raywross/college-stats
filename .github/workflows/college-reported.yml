@@ -229,6 +229,13 @@ jobs:
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run merge-directories
 
+      # New admissions figures move Quad's selectivity, so the tiers in data/schools.json and data/selectivity-index.json
+      # are rebuilt here (specs/chances/selectivity-history.md, "Fix that comes with it"); check:selectivity fails a
+      # PR whose tiers are stale. No network; hysteresis runs against the committed tiers.
+      - name: Rebuild Quad's selectivity
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run build-selectivity
+
       # Some national trends group colleges by the current dataset (data/schools.json), so the merges above change
       # them; tests/trends-foundation.test.mts fails a PR whose data/history/trends/ isn't what build-trends makes.
       # No network. The rebuilt files are under data/, so the PR step's `git add data` commits them.
@@ -469,6 +476,13 @@ jobs:
       - name: Re-merge the directory listings into schools.json
         if: always() && steps.secret.outputs.ready == 'true'
         run: npm run merge-directories
+
+      # New admissions figures move Quad's selectivity, so the tiers in data/schools.json and data/selectivity-index.json
+      # are rebuilt here (specs/chances/selectivity-history.md, "Fix that comes with it"); check:selectivity fails a
+      # PR whose tiers are stale. No network; hysteresis runs against the committed tiers.
+      - name: Rebuild Quad's selectivity
+        if: always() && steps.secret.outputs.ready == 'true'
+        run: npm run build-selectivity
 
       # As in the run job: the trends follow the merged schools.json (committed below with `git add data`).
       - name: Rebuild the national trends

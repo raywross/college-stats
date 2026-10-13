@@ -31,7 +31,18 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/c
 
   return (
     <>
-      <PageHeader title="Colleges" subtitle="A college's hidden values (selectivity, GPA, derived fields) and its data health; a high school's pooled course counts." />
+      <PageHeader
+        title="Colleges"
+        subtitle={
+          <>
+            A college&apos;s hidden values (selectivity, GPA, derived fields) and its data health; a high school&apos;s pooled course counts. Every college&apos;s{" "}
+            <Link href="/admin/selectivity" className="font-semibold text-primary underline-offset-4 hover:underline">
+              selectivity history
+            </Link>
+            .
+          </>
+        }
+      />
       <form action="/admin/colleges" method="get" role="search" className="flex max-w-xl gap-2">
         <label htmlFor="college-search" className="sr-only">
           Search colleges and high schools

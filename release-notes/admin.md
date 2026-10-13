@@ -31,4 +31,6 @@ The console lives at `/admin` and only Quad's admins can open it, with a second 
 Every action is recorded. The database checks admin rights on every read and change, and the sign-in operations that
 need Supabase's secret key run in a separate, small function that does only those operations. College data health is
 read from a compact summary the data pipelines rebuild with each update. The admin pages are rendered on the server
-only; nothing they show reaches the public site or its API.
+only; nothing they show reaches the public site or its API. Quad's selectivity ratings now keep a private history,
+recorded after each update, so support can see when and why a college's rating moved; data updates also rebuild the
+ratings automatically.

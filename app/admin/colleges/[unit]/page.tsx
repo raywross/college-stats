@@ -5,6 +5,9 @@ import { connection } from "next/server";
 import { Empty, Fields, Muted, PageHeader, Panel } from "@/components/admin/Panel";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
 import { DailyViews, TopBars } from "@/components/admin/ViewCharts";
+import { SelectivityHistory } from "@/components/admin/SelectivityHistory";
+import { collegeHistory, historyInstalled, type SelectivityPoint } from "@/lib/admin/selectivity-history";
+import { githubRepo } from "@/lib/github-app";
 import { collegeViewers, VIEW_CHART_DAYS, type ViewerRow } from "@/lib/admin/college-views";
 import { SourceNote } from "@/components/sources/SourceNote";
 import { requireAdmin } from "@/lib/admin/auth";
@@ -42,6 +45,7 @@ export default async function CollegePage({ params }: PageProps<"/admin/colleges
   const tier = tierText(school);
   const opsHref = `/admin/operations?unit=${unit}`;
   const looking = await collegeViewers(unit);
+  const history = (await historyInstalled()) ? await collegeHistory(unit) : null;
 
   return (
     <>
@@ -67,6 +71,7 @@ export default async function CollegePage({ params }: PageProps<"/admin/colleges
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="min-w-0 space-y-5">
           <SelectivityBlock panel={selectivity} school={school} />
+          <HistoryBlock points={history} />
           <GpaBlock panel={gpa} school={school} />
           <HiddenBlock rows={hidden} school={school} />
         </div>
@@ -338,6 +343,32 @@ function ViewersBlock({ unit, looking }: { unit: string; looking: Awaited<Return
             }))}
           />
         </div>
+      )}
+    </Panel>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Selectivity history                                                 */
+/* ------------------------------------------------------------------ */
+
+function HistoryBlock({ points }: { points: SelectivityPoint[] | null }) {
+  return (
+    <Panel
+      title="Selectivity history"
+      id="selectivity-history"
+      aside={
+        <Link href="/admin/selectivity" className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+          Every college
+        </Link>
+      }
+    >
+      {points === null ? (
+        <Empty>Not set up yet: apply supabase/migrations/20261013150000_selectivity_history.sql, then run npm run backfill-selectivity-history.</Empty>
+      ) : points.length === 0 ? (
+        <Empty>Nothing recorded for this college yet.</Empty>
+      ) : (
+        <SelectivityHistory points={points} repoUrl={`https://github.com/${githubRepo()}`} />
       )}
     </Panel>
   );

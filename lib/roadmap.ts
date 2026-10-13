@@ -209,16 +209,6 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
-    slug: "selectivity-history",
-    file: "specs/chances/selectivity-history.md",
-    group: "business",
-    summary:
-      "A record of every change to a college's selectivity rating, for applicants overall, in state, and out of state, with the figures behind each change, for the admin console.",
-    complexity: 2,
-    complexityNote: "Two admin-only tables written after each deploy, a method version, a one-time backfill from git, and two console screens.",
-    status: "planned",
-  },
-  {
     slug: "manual-collection",
     file: "specs/manual-collection.md",
     group: "business",

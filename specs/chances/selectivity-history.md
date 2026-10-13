@@ -1,6 +1,7 @@
 # Quad's Selectivity History: Every Score and Tier Change, per Pool, for the Admin Console
 
-> Status: **planned** 2026-10-13, spec only. Owner request after UT Austin's fall 2025 Common Data Set moved it up
+> Status: **built** 2026-10-13 (PR #140, with the admin console; see "As built" at the end).
+> Planned 2026-10-13. Owner request after UT Austin's fall 2025 Common Data Set moved it up
 > (data PR #145): "We really should track the scores that our algorithm is spitting out… we need to track for both in
 > and out of state… it wouldn't need to be on the main site, but I'd want to see it in the admin screens." Extends
 > [selectivity-index.md](selectivity-index.md); read by the [admin console](../product/admin.md), which is being built
@@ -51,7 +52,7 @@ because one college's new inputs shift the scales every college is standardized 
    that pool, with each one's year and source kind: admit rate, SAT 75th percentile (and whether it was imputed),
    yield, retention, graduation rate, and the trend adjustment. Weights, percentiles, and cutoffs are not stored.
    They come from the current method, which the console already shows on the college page.
-4. **Version the method.** `lib/selectivity.ts` gains `SELECTIVITY_METHOD`, a dated string such as `2026-10-12.3`.
+4. **Version the method.** `lib/selectivity.ts` gains `SELECTIVITY_METHOD`, a dated string such as `2026.10.12.3`.
    It is written into `data/selectivity-index.json` as `method`. Any change to inputs, weights, scales, cutoffs, the
    hysteresis band, or the Elite rule must bump it. A publish whose method differs from the previous one is recorded
    with `cause = 'method'` and one row for **every** rated college and pool, so method changes never look like real
@@ -61,7 +62,7 @@ because one college's new inputs shift the scales every college is standardized 
    `data/selectivity-index.json` (four as of 2026-10-13: 1bbc2596, 491ecb37, a118cc13, and #145's rebuild e782ed78),
    reads that commit's index and `data/schools.json`, and records them as if each had been a publish, with
    `cause = 'backfill'`. Inputs are rebuilt from that commit's `schools.json`. The first version (1bbc2596, five
-   tiers, many colleges tied at 100) is recorded as method `2026-10-12.1` so its jumps read as method changes.
+   tiers, many colleges tied at 100) is recorded as method `2026.10.12.1` so its jumps read as method changes.
 
 ## Model
 ```sql
@@ -183,3 +184,23 @@ checks that.
 3. Keep history forever, or thin method-change snapshots older than a year to monthly?
 4. Should the public tier (not the score) become a notify field, so followers get "UT Austin is now Ultra selective
    for out-of-state applicants"? That changes the public site and the update emails, so it isn't part of this spec.
+
+## As built (2026-10-13)
+- **Method guard.** Rather than comparing `--fresh` tiers, `check:selectivity` re-scores a frozen sample of colleges'
+  raw figures (`data/reference/selectivity-method.json`, about 100 colleges including UT Austin and Harvard;
+  `scripts/lib/selectivity-method.mts`). Data runs can't move it, so a moved score or tier with an unchanged
+  `SELECTIVITY_METHOD` means the method changed: bump it and run `npm run selectivity-method-sample`.
+- **Method strings use dots** (`2026.10.12.3`): a dash form like `2026-10-12.3` reads as a data year to the
+  citation guard ("no hard-coded data years in app code").
+- **Held** is recorded only for rows built with today's method (it's read with today's cutoffs); backfilled rows from
+  older methods store false.
+- **Backfill commits** on `main`: 1bbc2596 (`2026.10.12.1`), 491ecb37 (`.2`), a118cc13 (`.3`), and #145's 3c5b4280
+  (`.3`, new figures); `scripts/backfill-selectivity-history.mts` maps them. Later index files carry `method`.
+- **Reads.** The tables' "Admins read" policies use `admin_reads()` (is_admin() at aal2 plus the console header), like
+  the other console tables. `admin_selectivity_run_changes`, `_movers`, and `_tier_counts` do the aggregation.
+- **Screens.** The college page's "Selectivity history" panel (a small chart per pool over today's tier bands, then
+  the rows with the inputs that changed in words) and `/admin/selectivity` (latest publish, movers with 7/30/90-day,
+  pool, and method filters, tier counts per pool after each publish, the method log). The Health page links it with
+  "Selectivity: N tier changes in the last publish". Commit links go to GitHub; the commit page names its PR.
+- **Open questions, as built:** `SCORE_MOVE_MIN` stays 0.25; the console is the only alert; history is kept forever;
+  the public tier is not a notify field.

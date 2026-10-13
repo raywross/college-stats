@@ -176,6 +176,9 @@ function functionCalls(w: World): [name: string, sql: string, params: unknown[]]
     ["admin_college_viewers", "select * from public.admin_college_viewers('199847')", []],
     ["admin_college_views_daily", "select * from public.admin_college_views_daily('199847')", []],
     ["admin_college_view_times", "select * from public.admin_college_view_times('199847', $1)", [w.alice]],
+    ["admin_selectivity_tier_counts", "select * from public.admin_selectivity_tier_counts('all')", []],
+    ["admin_selectivity_movers", "select * from public.admin_selectivity_movers(30)", []],
+    ["admin_selectivity_run_changes", "select * from public.admin_selectivity_run_changes(1)", []],
     ["admin_user_auth", "select * from public.admin_user_auth($1)", [w.alice]],
     ["admin_update_profile", "select public.admin_update_profile($1, '{\"display_name\": \"Hacked\"}')", [w.alice]],
     ["admin_update_student", "select public.admin_update_student($1, '{\"display_name\": \"Hacked\"}')", [w.ben]],
@@ -452,6 +455,54 @@ test("college views: anyone records a view under their own session; repeats fold
   await w.db.query("delete from auth.users where id = $1", [w.mom]);
   assert.equal(await count(), 6);
   assert.equal(Number((await w.db.query<{ n: number }>("select count(*)::int as n from public.college_views where user_id is null")).rows[0].n), 3);
+});
+
+test("selectivity history: only the service role records, once per commit; only an admin in the console reads", async () => {
+  const w = await world();
+  const run = (commit: string, at: string, method: string, cause: string, rows: unknown[]) =>
+    asService<{ v: number | null }>(w.db, "select public.record_selectivity_run($1::jsonb, $2::jsonb) as v", [
+      JSON.stringify({ git_commit: commit, published_at: at, method, elite_index: 80, counts: { elite: 29 }, elite_any_pool: 29, rated: 2, cause }),
+      JSON.stringify(rows),
+    ]).then((r) => r[0].v);
+  const row = (unit: string, pool: string, score: number | null, tier: string | null, cause: string) => ({ unit_id: unit, pool, score, rank: 58, tier, tier_year: "Fall 2025", band: null, held: false, cause, inputs: { admit_rate: { v: 0.2222, year: "Fall 2025", source: "college-site" } } });
+
+  const now = new Date();
+  const ago = (d: number) => new Date(now.getTime() - d * 86_400_000).toISOString();
+  const first = await run("1bbc2596", ago(40), "2026.10.12.3", "backfill", [row("228778", "all", 70.92, "highly_selective", "backfill"), row("166027", "all", 91.65, "elite", "backfill")]);
+  assert.ok(first);
+  assert.equal(await run("1bbc2596", ago(40), "2026.10.12.3", "backfill", []), null, "a recorded commit writes nothing");
+  const second = await run("3c5b4280", ago(1), "2026.10.12.3", "data", [
+    row("228778", "all", 72.45, "highly_selective", "data"),
+    row("228778", "out_of_state", 80.49, "elite", "new_pool"),
+    row("166027", "all", 79.5, "highly_selective", "data"),
+  ]);
+
+  // Nobody else writes; only an admin in the console reads.
+  await assert.rejects(asUser(w.db, w.quinn, "select public.record_selectivity_run('{}'::jsonb, '[]'::jsonb)"));
+  await assert.rejects(asUser(w.db, w.quinn, "insert into public.selectivity_history (run_id, published_at, unit_id, pool, cause) values ($1, now(), '228778', 'all', 'data')", [second]));
+  assert.equal((await asUser(w.db, w.alice, "select * from public.selectivity_history")).length, 0);
+  await assert.rejects(asUser(w.db, null, "select * from public.selectivity_history"));
+  assert.equal((await as(w.db, w.quinn, "select * from public.selectivity_history", [], { console: false })).length, 0, "the console header is needed");
+  assert.equal((await asAdmin(w, "select * from public.selectivity_history")).length, 5);
+  assert.equal((await asService(w.db, "select * from public.selectivity_latest_rows()")).length, 3);
+
+  type Change = { unit_id: string; pool: string; tier: string; prev_tier: string | null; prev_score: string | null };
+  const changes = await asAdmin<Change>(w, "select * from public.admin_selectivity_run_changes($1)", [second]);
+  assert.deepEqual(changes.map((c) => [c.unit_id, c.pool, c.prev_tier, c.tier]), [
+    ["166027", "all", "elite", "highly_selective"],
+    ["228778", "all", "highly_selective", "highly_selective"],
+    ["228778", "out_of_state", null, "elite"],
+  ]);
+  type Mover = { unit_id: string; pool: string; delta: string | null };
+  const moved = await asAdmin<Mover>(w, "select * from public.admin_selectivity_movers(30)");
+  assert.deepEqual(moved.map((m) => [m.unit_id, m.pool, m.delta === null ? null : Number(m.delta)]), [
+    ["166027", "all", -12.15],
+    ["228778", "all", 1.53],
+    ["228778", "out_of_state", null],
+  ]);
+  type Count = { cause: string; counts: Record<string, number> };
+  const counts = await asAdmin<Count>(w, "select * from public.admin_selectivity_tier_counts('all')");
+  assert.deepEqual(counts.map((c) => c.counts), [{ elite: 1, highly_selective: 1 }, { highly_selective: 2 }]);
 });
 
 test("admin_link: six seats counting invitations, one household per person (moved, never duplicated), the household left behind closed", async () => {

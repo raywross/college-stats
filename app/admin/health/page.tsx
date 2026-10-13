@@ -6,6 +6,7 @@ import { loadHealthView, selectHealthRows } from "@/lib/admin/health-load";
 import { HEALTH_PAGE_SIZE, healthHref, healthQuery, isFiltered, pageOf, parseHealthFilters, reasonOptions, stateOptions } from "@/lib/admin/health-view";
 import { dayLabel } from "@/lib/admin/ops-view";
 import { HealthStats } from "@/components/admin/ops/HealthStats";
+import { lastRunSummary } from "@/lib/admin/selectivity-history";
 import { HealthFilterForm } from "@/components/admin/ops/HealthFilterForm";
 import { HealthTable } from "@/components/admin/ops/HealthTable";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
@@ -30,6 +31,8 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
   const schools = page.rows.map((r) => data.getSchoolById(r.health.unitId)).filter((s): s is School => s !== null);
   const query = healthQuery({ ...filters, page: 1 });
   const { overview } = view;
+  // One line from the selectivity history (specs/chances/selectivity-history.md): tier changes in the last publish.
+  const selectivity = await lastRunSummary();
 
   return (
     <div className="space-y-6">
@@ -42,6 +45,15 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
       </header>
 
       <HealthStats counts={overview.counts} filters={filters} />
+      {selectivity && (
+        <p className="text-sm text-muted-foreground">
+          Selectivity:{" "}
+          <Link href="/admin/selectivity" className="font-semibold text-primary underline-offset-4 hover:underline">
+            {selectivity.tierChanges} tier {selectivity.tierChanges === 1 ? "change" : "changes"} in the last publish
+          </Link>{" "}
+          ({selectivity.run.cause === "method" ? "a method change" : selectivity.run.cause === "backfill" ? "backfilled" : "new figures"}).
+        </p>
+      )}
 
       <HealthFilterForm
         filters={filters}

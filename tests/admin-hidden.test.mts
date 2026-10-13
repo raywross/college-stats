@@ -372,7 +372,7 @@ function detailImporters(files: Map<string, string>): string[] {
     const scoped = f.startsWith("app/api/") || /^\s*["']use client["']/.test(text);
     if (!scoped) continue;
     const imports = [...text.matchAll(/(?:^|\n)\s*(?:import|export)\s[^;]*?from\s+["']([^"']+)["']/g)].map((m) => m[0]);
-    for (const line of imports) if (/\bestimateWithDetail\b|\bSnapshotDetail\b|lib\/admin\/(hidden|standing)\b/.test(line)) out.push(f);
+    for (const line of imports) if (/\bestimateWithDetail\b|\bSnapshotDetail\b|lib\/admin\/(hidden|standing|selectivity-history)\b/.test(line)) out.push(f);
   }
   return out;
 }
@@ -381,7 +381,7 @@ test("no API route or client component imports estimateWithDetail, SnapshotDetai
   const files = new Map([...walk("app"), ...walk("components"), ...walk("lib")]);
   assert.deepEqual(detailImporters(files), []);
   // Nor can a client component reach them through a chain of imports.
-  assert.deepEqual(reachedFromClient(files, ["lib/admin/hidden.ts", "lib/admin/standing.ts", "lib/admin/college.ts", "lib/chances/estimate.ts", "lib/chances/snapshot.ts", "lib/selectivity.ts"]), []);
+  assert.deepEqual(reachedFromClient(files, ["lib/admin/hidden.ts", "lib/admin/standing.ts", "lib/admin/college.ts", "lib/chances/estimate.ts", "lib/chances/snapshot.ts", "lib/selectivity.ts", "lib/admin/selectivity-history.ts", "lib/admin/selectivity-history-view.ts"]), []);
 });
 
 test("guard: a route or a client component importing the detail is caught", () => {

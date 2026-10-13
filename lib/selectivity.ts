@@ -95,6 +95,17 @@ export function topBand(score: number | null, tier: SelectivityTier | null, prev
   return null;
 }
 
+/**
+ * The method's version (specs/chances/selectivity-history.md, Decision 4). Any change to the inputs, their scales, the
+ * weights, the cutoffs, the hysteresis band, or the top-band rule must bump it: the selectivity history records a
+ * publish with a new method as a method change, so its moves never read as colleges moving. Written into
+ * data/selectivity-index.json as `method`. `npm run check:selectivity` re-scores a frozen sample
+ * (data/reference/selectivity-method.json) and fails when the scores or tiers change while this string doesn't; after a
+ * deliberate change, bump it and run `npm run selectivity-method-sample`.
+ * History: 2026.10.12.1 five tiers, many tied at the top; .2 continuous scores and a rank; .3 six tiers (Ultra selective).
+ */
+export const SELECTIVITY_METHOD = "2026.10.12.3";
+
 /** The Elite count the verify guard holds the dataset to (an alarm band, not a target). */
 export const ELITE_COUNT_RANGE: readonly [number, number] = [20, 50];
 

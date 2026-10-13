@@ -35,7 +35,7 @@ export interface AdminSection {
 export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { key: "people", label: "People", href: "/admin/people", under: ["/admin/people", "/admin/students"], hint: "Accounts and students" },
   { key: "households", label: "Households", href: "/admin/households", under: ["/admin/households"], hint: "Families and invitations" },
-  { key: "colleges", label: "Colleges", href: "/admin/colleges", under: ["/admin/colleges", "/admin/high-schools"], hint: "Hidden values" },
+  { key: "colleges", label: "Colleges", href: "/admin/colleges", under: ["/admin/colleges", "/admin/high-schools", "/admin/selectivity"], hint: "Hidden values, selectivity" },
   { key: "health", label: "Health", href: "/admin/health", under: ["/admin/health"], hint: "Which data is fresh" },
   { key: "operations", label: "Operations", href: "/admin/operations", under: ["/admin/operations"], hint: "Runs and approvals" },
   { key: "log", label: "Log", href: "/admin/log", under: ["/admin/log", "/admin/admins"], hint: "Every admin action" },

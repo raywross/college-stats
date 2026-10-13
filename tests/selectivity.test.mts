@@ -242,7 +242,11 @@ test("the guard fails a tier that moved without crossing the band", () => {
 
 test("the guard fails an Elite count outside its band and an empty tier", () => {
   const [lo, hi] = ELITE_COUNT_RANGE;
-  const tooFew = SCHOOLS.map((s) => (s.selectivity?.tier === "elite" ? { ...s, selectivity: { ...s.selectivity, tier: "highly_selective" as const } } : s));
+  // Elite for some pool counts too (UT Austin, fall 2025: Elite out of state only), so every pool is demoted.
+  const notElite = <T,>(t: T) => (t === "elite" ? ("highly_selective" as const) : t);
+  const tooFew = SCHOOLS.map((s) =>
+    s.selectivity ? { ...s, selectivity: { ...s.selectivity, tier: notElite(s.selectivity.tier), ...(s.selectivity.in_state ? { in_state: notElite(s.selectivity.in_state) } : {}), ...(s.selectivity.out_of_state ? { out_of_state: notElite(s.selectivity.out_of_state) } : {}) } } : s
+  );
   assert.ok(selectivityProblems(tooFew, FILE, META).some((p) => p.startsWith("Elite holds 0") && p.includes(`${lo}–${hi}`)));
   assert.ok(selectivityProblems(tooFew, FILE, META).some((p) => p === "no college is elite for all applicants"));
   let extra = hi + 1;

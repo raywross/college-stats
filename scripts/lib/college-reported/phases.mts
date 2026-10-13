@@ -41,13 +41,13 @@ import { runChecks, toReportedEntry } from "../../../lib/reported-checks.ts";
 import { recordFromTemplate } from "../cds-xlsx.mts";
 import { readFormPdf } from "./form-pdf.mts";
 import { editionFromBody, editionFromUrl, layoutDocument, type CDSplit, type EditionFound, type LineRange } from "./layout.mts";
-import { typeOfDocument } from "./doctype.mts";
+import { isPdfBytes, typeOfDocument } from "./doctype.mts";
 import { extOf } from "./archive-doc.mts";
 import { priorEditionLinks, type Archive } from "./archive.mts";
 import { SCANNED_TEXT_CHARS, detectFormat, findLinks, htmlToText, newSourcesFromIndex, pagesText, pdfPages, selectPages, windowAround } from "./documents.mts";
 import { PoliteHttp, sha256, type FetchFn } from "./http.mts";
 import { recordBlocked } from "./blocked.mts";
-import { confirmDocument, freeSteps, magicFormat, sourcesFromPage, type Prefetched, type ProbePage, type StepFind } from "./probe.mts";
+import { confirmDocument, freeSteps, magicFormat, rewriteShareLink, sourcesFromPage, type Prefetched, type ProbePage, type StepFind } from "./probe.mts";
 import { STEP_ESTIMATE_USD, ladder, orderColleges, replaceUnlisted, retireSuperseded, shouldRetry, stepsFor, type LadderCollege, type LadderDeps, type LadderResult, type LadderState, type PaidFind } from "./discovery.mts";
 import { buildEscalationRequests, buildPickerRequests, buildRequests, collect, customId, openReservations, parseCustomId, projection, projectionGuard, resubmitOnce, submit, trimToCap, type BatchApi, type BatchRequest, type Collected, type PendingDocument } from "./batch.mts";
 import { discover, extract, parsePickerResponse, pickLinks, searchOnly, type CallContext, type LlmContext, type PageLink, type PickResult } from "./llm.mts";
@@ -299,6 +299,9 @@ function entryForCustomId(manifest: CollegeDocsFile, id: string): ManifestEntry 
 
 const errText = (err: unknown) => (err instanceof Error ? err.message : String(err)).slice(0, 300);
 
+/** A review item that records only failed fetches (no value was read). */
+const isFetchFailure = (q: ReviewItem) => q.failures.length > 0 && q.failures.every((f) => f.check === "unreachable");
+
 /**
  * What the class-profile extractor reads from a page's archived bytes, as round 2 read them: a PDF's pages around the
  * anchor (a scanned one, under 100 pages, as the PDF itself), an HTML page's text around it. Empty when the anchor
@@ -485,7 +488,8 @@ export function createRound3(deps: Round3Deps) {
         (fallYear(b.e.entering_term) ?? 0) - (fallYear(a.e.entering_term) ?? 0) || VALUE_KEYS.filter((k) => b.e[k] !== null).length - VALUE_KEYS.filter((k) => a.e[k] !== null).length || (a.kind === "cds" ? -1 : 1);
       const passing = judged.filter((j) => !j.failures.length).sort(newest);
       // Round 2's whole-college C1 entry (no code) is replaced or dropped; round 3's per-item entries stay.
-      const c1Key = (q: ReviewItem) => q.unit_id === school.unit_id && !q.code;
+      // Fetch failures aren't C1 judgments: `acquire` re-evaluates them each time it fetches the college's sources.
+      const c1Key = (q: ReviewItem) => q.unit_id === school.unit_id && !q.code && !isFetchFailure(q);
       if (passing.length) {
         const best = passing[0];
         const entry = toReportedEntry(best.e, school, { url: best.url, kind: best.kind, retrieved: best.retrieved, page: best.e.page }, opts.run);
@@ -592,9 +596,18 @@ export function createRound3(deps: Round3Deps) {
      * when the archive doesn't hold its bytes.
      */
     async function acquireSource(school: School, src: RecipeSource, o: { prefetched: Map<string, Prefetched>; indexChanged: boolean }): Promise<SourceRead> {
-      const known = state.manifest.documents.filter((d) => d.url === src.url || d.final_url === src.url).sort((a, b) => b.retrieved.localeCompare(a.retrieved))[0];
+      // A CDS on a share host (Box, Google Drive or Sheets, SharePoint) is fetched at its direct-download form, whichever
+      // discovery step found it: the share link itself opens a viewer page, not the file (UT Austin's Box link, 2026-10-13).
+      const share = src.kind === "cds" ? rewriteShareLink(src.url) : null;
+      if (share && "manual" in share) return { state: "unreachable", detail: `${src.url}: ${share.manual}` };
+      const fetchUrl = share ? share.url : src.url;
+      // An earlier run may have archived a share link's viewer page as an HTML "CDS"; that page is never the document.
+      const known = state.manifest.documents
+        .filter((d) => d.url === src.url || d.final_url === src.url)
+        .filter((d) => !(share && d.type === "html"))
+        .sort((a, b) => b.retrieved.localeCompare(a.retrieved))[0];
       let bytes: Uint8Array;
-      let finalUrl = src.url;
+      let finalUrl = fetchUrl;
       const pre = o.prefetched.get(src.url);
       if (pre) {
         bytes = pre.bytes;
@@ -615,19 +628,25 @@ export function createRound3(deps: Round3Deps) {
         let res: Response | null;
         try {
           // A CDS file is fetched even where robots.txt disallows it (owner decision 2026-10-10); class profiles aren't.
-          res = await http.get(src.url, d.conditional, {}, { cdsDocument: src.kind === "cds" });
+          res = await http.get(fetchUrl, d.conditional, {}, { cdsDocument: src.kind === "cds" });
         } catch (err) {
-          return { state: "unreachable", detail: `${src.url}: ${errText(err)}` };
+          return { state: "unreachable", detail: `${fetchUrl}: ${errText(err)}` };
         }
-        if (!res) return { state: "unreachable", detail: `robots.txt disallows ${src.url}` };
+        if (!res) return { state: "unreachable", detail: `robots.txt disallows ${fetchUrl}` };
         src.checked = today;
         if (res.status === 304) {
           if (known) summary.documents[known.type].unchanged++;
           return { state: "unchanged" };
         }
-        if (!res.ok) return { state: "unreachable", detail: `HTTP ${res.status} at ${src.url}` };
+        if (!res.ok) return { state: "unreachable", detail: `HTTP ${res.status} at ${fetchUrl}` };
         bytes = new Uint8Array(await res.arrayBuffer());
-        finalUrl = res.url || src.url;
+        finalUrl = res.url || fetchUrl;
+        if (share && !isPdfBytes(bytes) && !magicFormat(bytes)) {
+          return {
+            state: "unreachable",
+            detail: `${src.url}: the ${share.service} link answered with a viewer page, not a file (no direct download at ${fetchUrl}); download it in a browser and run archive-doc`,
+          };
+        }
         const etag = res.headers.get("etag");
         const lm = res.headers.get("last-modified");
         if (etag) src.etag = etag;
@@ -717,13 +736,18 @@ export function createRound3(deps: Round3Deps) {
     /** Every source of a recipe not fetched yet this run (test 22: never the same URL twice in one run). */
     const fetchedThisRun = new Set<string>();
     async function acquire(school: School, recipe: Recipe, o: { prefetched?: Map<string, Prefetched>; indexChanged?: boolean } = {}) {
+      // Fetch failures from earlier runs are replaced by this run's outcome (fixed sources drop off the list).
+      const stale = (q: ReviewItem) => q.unit_id === school.unit_id && !q.code && isFetchFailure(q) && q.run !== opts.run;
+      if (state.queue.items.some(stale)) state.queue = { updated: today, items: state.queue.items.filter((q) => !stale(q)) };
       const reads: SourceRead[] = [];
+      const cdsUnreachable: { url: string; detail: string }[] = [];
       for (const src of recipe.sources) {
         if (fetchedThisRun.has(src.url)) continue;
         fetchedThisRun.add(src.url);
         const r = await acquireSource(school, src, { prefetched: o.prefetched ?? new Map(), indexChanged: !!o.indexChanged });
         reads.push(r);
         if (r.state === "unreachable" || r.state === "problem") log(`  ${school.name}: ${r.detail}`);
+        if (r.state === "unreachable" && src.kind === "cds") cdsUnreachable.push({ url: src.url, detail: r.detail });
       }
       const unreachable = reads.filter((r): r is Extract<SourceRead, { state: "unreachable" }> => r.state === "unreachable");
       if (reads.length && unreachable.length === reads.length) {
@@ -731,6 +755,9 @@ export function createRound3(deps: Round3Deps) {
         summary.unreachable = (summary.unreachable ?? 0) + 1;
         attempted.add(school.unit_id);
         queueOne(school, school.unit_id, recipe.sources.map((s) => s.url), unreachable.map((r) => ({ check: "unreachable" as const, detail: r.detail })));
+      } else {
+        // A CDS that failed while another source (a class profile) read is still queued, so the failures table lists it.
+        for (const c of cdsUnreachable) queueOne(school, school.unit_id, [c.url], [{ check: "unreachable" as const, detail: c.detail }]);
       }
       for (const r of reads) {
         if (r.state === "problem") queueOne(school, school.unit_id, recipe.sources.map((s) => s.url), [{ check: "quote-present", detail: `no figures read: ${r.detail}` }]);

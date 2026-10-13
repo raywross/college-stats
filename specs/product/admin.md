@@ -189,7 +189,9 @@ Three panels over the public profile's header (name, tier chip, admit rate as ci
 1. **Selectivity**: the index, the previous published tier and whether hysteresis held it, and a table of the inputs
    from [selectivity-index.md](../chances/selectivity-index.md): each input's raw value with its citation, its
    percentile among reporting colleges, its weight, and whether it was present; the trend adjustment; per pool when
-   the college has residency rates. The one place the weights are visible.
+   the college has residency rates. The one place the weights are visible. Below it, the score and tier history per
+   pool, and a site-wide movers page at `/admin/selectivity`
+   ([selectivity-history.md](../chances/selectivity-history.md), planned 2026-10-13).
 2. **GPA**: what the standing model uses for this college ([gpa.md](../planner/redesign/gpa.md)): source kind
    (reported, bands, estimated, bounded, none), the point and range, and for an estimate the model's fit size and
    typical miss, plus the p25 and p75 curve the same way.

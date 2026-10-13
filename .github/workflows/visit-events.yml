@@ -1,0 +1,103 @@
+# The nightly visit-events read (specs/product/visit-events.md, "The nightly job"): reads every Slate host's public
+# event calendar (the standard event search, then each portal widget, then the event page for new or changed events)
+# through the polite crawler and upserts public.visit_events in Supabase, then runs the data checks. The alert emails
+# are a separate job: Vercel Cron calls /api/cron/visit-alerts at 13:00 UTC and reads what this run wrote.
+#
+# Target: `prod` (the default on the schedule) writes to the production project with PROD_SUPABASE_*; `dev` (the pilot,
+# or by hand) writes to the dev project with DEV_SUPABASE_*. A target whose secrets aren't set skips cleanly, like
+# publish-changes.yml, so the schedule can exist before the formal release. Until the owner switches the schedule's
+# target, the pilot runs on dev every night.
+#
+# Every source is a college's own public page: honest user agent, robots.txt honored, one request a second per host
+# (scripts/lib/college-reported/http.mts). No secret beyond the database's. Never submits a form.
+name: Visit events
+
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.workflow }}"
+
+on:
+  schedule:
+    - cron: "0 7 * * *" # 07:00 UTC daily: 3 am Eastern, after the colleges' own overnight changes
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which Supabase project to write
+        type: choice
+        options: [dev, prod]
+        default: dev
+      units:
+        description: Comma-separated IPEDS unit ids to read (empty = every known Slate host)
+        type: string
+        default: ""
+      discover:
+        description: Also look for Slate hosts the table doesn't have yet (one hop from each college's visit link)
+        type: boolean
+        default: false
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visit-events
+  cancel-in-progress: false
+
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      # The schedule targets dev during the pilot; change SCHEDULE_TARGET to prod at the formal release.
+      SCHEDULE_TARGET: dev
+    steps:
+      - name: Pick the target and its secrets
+        id: target
+        env:
+          INPUT_TARGET: ${{ inputs.target }}
+          DEV_URL: ${{ secrets.DEV_SUPABASE_URL }}
+          DEV_KEY: ${{ secrets.DEV_SUPABASE_SECRET_KEY }}
+          PROD_URL: ${{ secrets.PROD_SUPABASE_URL }}
+          PROD_KEY: ${{ secrets.PROD_SUPABASE_SECRET_KEY }}
+        run: |
+          target="${INPUT_TARGET:-$SCHEDULE_TARGET}"
+          if [ "$target" = "prod" ]; then url="$PROD_URL"; key="$PROD_KEY"; else url="$DEV_URL"; key="$DEV_KEY"; fi
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          if [ -z "$url" ] || [ -z "$key" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No Supabase secrets for target '$target'; nothing to do."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "::add-mask::$key"
+            echo "SUPABASE_URL=$url" >> "$GITHUB_ENV"
+            echo "SUPABASE_SECRET_KEY=$key" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.target.outputs.configured == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.target.outputs.configured == 'true'
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+        if: steps.target.outputs.configured == 'true'
+
+      - name: Read the calendars
+        if: steps.target.outputs.configured == 'true'
+        env:
+          UNITS: ${{ inputs.units }}
+          DISCOVER: ${{ inputs.discover }}
+        run: |
+          flags=""
+          if [ -n "$UNITS" ]; then flags="$flags --units $UNITS"; else flags="$flags --all"; fi
+          if [ "$DISCOVER" = "true" ]; then flags="$flags --discover"; fi
+          echo "Target ${{ steps.target.outputs.target }}; flags:$flags"
+          npm run sync-visit-events -- $flags
+
+      - name: Check what was read
+        if: steps.target.outputs.configured == 'true'
+        run: npm run check:visit-events

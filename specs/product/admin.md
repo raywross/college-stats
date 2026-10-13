@@ -1,7 +1,7 @@
 # Admin Console: People, Hidden Values, Data Health, and Operations
 
-> Status: **planned** 2026-10-12; built on `feature/admin` (People, Health, Operations, Log, Admins on 2026-10-12; the
-> Colleges and high-school pages and the student standing panel on 2026-10-13, after PR #136; see
+> Status: **built** 2026-10-13 (planned 2026-10-12; People, Health, Operations, Log, Admins built 2026-10-12; the
+> Colleges and high-school pages and the student standing panel 2026-10-13, after PR #136; see
 > [As built](#as-built-2026-10-12)). Planned from the owner's request: see and search users and households; deactivate or delete
 > accounts; reset passwords; change account details such as email; link and unlink students and parents; see the
 > values the site hides for a college and for a student's standing; see each college's data "health" by when its data

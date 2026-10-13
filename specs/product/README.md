@@ -53,7 +53,7 @@ the roadmap, with the award-letter analyzer as the last stage.
 | [commercialization.md](commercialization.md) | Free / Plus / Pro tiers, what each gates, Stripe billing, entitlements, the pricing page | Large |
 | [counselor-portal.md](counselor-portal.md) | Organization accounts for counselors and consultants: caseloads, reports, scattergram uploads | Extra large |
 | [data-api.md](data-api.md) | A keyed public API over the dataset, history, and lineage, with a paid tier | Medium |
-| [admin.md](admin.md) | *Planned 2026-10-12, mostly built:* everything but the hidden-values panels (waiting on PR #136; [console pages](admin-console-ui.md)): the admin console: people and households (search, details, email, password reset, deactivate, delete, link and unlink), the hidden selectivity index and a student's hidden odds, each college's data health by when its data was received, and reruns and data approvals through a GitHub App | Large |
+| [admin.md](admin.md) | *Built 2026-10-13* ([console pages](admin-console-ui.md)): the admin console: people and households (search, details, email, password reset, deactivate, delete, link and unlink), the hidden selectivity index and a student's hidden odds, each college's data health by when its data was received, and reruns and data approvals through a GitHub App | Large |
 
 ## How the idea documents map
 | Idea document | Where it went |

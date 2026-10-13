@@ -14,6 +14,9 @@ summary: Quad support can now find and fix an account or household, see which co
 - **You see when support looks.** If support opens a student's information, the student's "Who viewed your information"
   list says "Quad support viewed your information", just as it does when a parent looks. If support adds someone to a
   household, the household is told the next time anyone opens it.
+- **Answers about a college or a high school.** Support can open any college to see the values the site works out but
+  doesn't show, and any high school to see the courses its students take, so a question like "why is this college a
+  reach?" or "why isn't AP Physics suggested?" has an answer.
 - **Fresher college data.** Support can see which colleges have recent data and which ones the site keeps failing to
   read, and start a fresh read for a college without waiting for the next scheduled run.
 
@@ -22,5 +25,5 @@ summary: Quad support can now find and fix an account or household, see which co
 The console lives at `/admin` and only Quad's admins can open it, with a second sign-in step from an authenticator app.
 Every action is recorded. The database checks admin rights on every read and change, and the sign-in operations that
 need Supabase's secret key run in a separate, small function that does only those operations. College data health is
-read from a compact summary the data pipelines rebuild with each update. The college pages' hidden values come next,
-after the five-level estimate lands.
+read from a compact summary the data pipelines rebuild with each update. The admin pages are rendered on the server
+only; nothing they show reaches the public site or its API.

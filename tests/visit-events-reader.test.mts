@@ -105,6 +105,21 @@ test("parseWidgetList: UF's own tour template (no legend, a day alone, a button 
   assert.equal(rows[0].availability, null);
 });
 
+test("parseWidgetList: UT Austin's template nests a placeholder item (2024-08-12, offline) around the link; the outer item wins", () => {
+  const rows = parseWidgetList(read("ut-widget-virtual-sessions-event_list.html"), "bealonghorn.admissions.utexas.edu");
+  assert.equal(rows.length, 53);
+  assert.deepEqual(rows[0], {
+    slateId: "e91013b2-177a-4a3b-b09c-6a30d41976e9",
+    title: "University Housing and Dining: Living On Campus - Virtual",
+    whenIso: "2026-10-14T07:00:00",
+    online: true,
+    place: "Online",
+    availability: "full",
+    bookUrl: "https://bealonghorn.admissions.utexas.edu/register/?id=e91013b2-177a-4a3b-b09c-6a30d41976e9",
+  });
+  assert.ok(rows.every((r) => r.online && !r.whenIso.startsWith("2024")));
+});
+
 test("parseEventPage: the online info session, 28 Oct 6:30–7:30 pm Eastern", () => {
   const p = parseEventPage(read("uf-event-page-info-session.html"));
   assert.equal(p.title, "Prospective Information Session");
@@ -297,8 +312,30 @@ test("diffEvents: changed_at moves on title, start, venue, or availability, not 
     assert.equal(d.upserts[0].changed_at, LATER);
   }
   const quiet = diffEvents(stored, [readEvent({ description: "New words" })], LATER);
+  assert.equal(quiet.upserts[0].moved_at, null);
   assert.equal(quiet.counts.changed, 0);
   assert.equal(quiet.upserts[0].changed_at, NOW);
+});
+
+test("diffEvents: moved_at moves on a new start, venue, address, or city; not on a title or availability change, nor a first confirmation", () => {
+  const stored = apply([], diffEvents([], [readEvent()], NOW));
+  assert.equal(stored[0].moved_at, null);
+  for (const move of [{ starts_at: "2026-10-20T15:40:00.000Z" }, { venue: "Gym" }, { address: "1 Main St" }, { city: "Kennesaw" }]) {
+    const d = diffEvents(stored, [readEvent(move)], LATER);
+    assert.equal(d.upserts[0].moved_at, LATER, JSON.stringify(move));
+    assert.equal(d.upserts[0].changed_at, LATER);
+  }
+  for (const change of [{ title: "Marietta HS" }, { availability: "full" as const }]) {
+    const d = diffEvents(stored, [readEvent(change)], LATER);
+    assert.equal(d.upserts[0].changed_at, LATER);
+    assert.equal(d.upserts[0].moved_at, null, JSON.stringify(change));
+  }
+  // An earlier move is kept when nothing moves tonight.
+  const moved = apply(stored, diffEvents(stored, [readEvent({ venue: "Gym" })], LATER));
+  assert.equal(diffEvents(moved, [readEvent({ venue: "Gym" })], LATEST).upserts[0].moved_at, LATER);
+  // A search row's guessed start corrected by its first page read is not a move.
+  const guessed = apply([], diffEvents([], [readEvent({ date_confirmed: false, pageRead: false, starts_at: "2026-10-19T16:40:00.000Z" })], NOW));
+  assert.equal(diffEvents(guessed, [readEvent()], LATER).upserts[0].moved_at, null);
 });
 
 test("diffEvents: a known row read from the listing alone keeps the page's fields, and its confirmation", () => {
@@ -310,6 +347,12 @@ test("diffEvents: a known row read from the listing alone keeps the page's field
   assert.equal(d.upserts[0].zip, "30064");
   assert.equal(d.upserts[0].date_confirmed, true);
   assert.equal(d.upserts[0].timezone, "America/New_York");
+  // The page's "closed" outranks the widget's "full" on a night the page isn't read; the widget's "open" reopens it.
+  const closed = apply([], diffEvents([], [readEvent({ availability: "closed" })], NOW));
+  const full = diffEvents(closed, [{ ...listingOnly, availability: "full" }], LATER);
+  assert.equal(full.upserts[0].availability, "closed");
+  assert.equal(full.counts.changed, 0);
+  assert.equal(diffEvents(closed, [{ ...listingOnly, availability: "open" }], LATER).upserts[0].availability, "open");
 });
 
 test("diffEvents: removed only after two missed reads; a row seen again comes back; past rows and skipped rows are never missed", () => {
@@ -461,7 +504,7 @@ function stored(i: number, over: Partial<StoredEvent> = {}): StoredEvent {
   const r = readEvent({ id: `h:${i}`, host: "h", slate_id: `00000000-0000-0000-0000-${String(i).padStart(12, "0")}`, title: `Event ${i}`, ...over });
   const row: Partial<ReadEvent> = { ...r };
   delete row.pageRead;
-  return { ...(row as Omit<ReadEvent, "pageRead">), first_seen: NOW, last_seen: NOW, changed_at: NOW, removed_at: null, misses: 0, ...over };
+  return { ...(row as Omit<ReadEvent, "pageRead">), first_seen: NOW, last_seen: NOW, changed_at: NOW, removed_at: null, misses: 0, moved_at: null, ...over };
 }
 
 test("checkHosts: a clean host passes", () => {

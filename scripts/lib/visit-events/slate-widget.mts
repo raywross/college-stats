@@ -36,13 +36,42 @@ export interface WidgetRow {
   bookUrl: string;
 }
 
+/**
+ * The outermost `<div class="item">` blocks, each with everything nested inside it. UT Austin's template nests a
+ * second event list inside each item, whose own placeholder item (data-online="0", data-date="2024-08-12T08:00:00")
+ * holds the link: the outer item's attributes are the event's, the inner link is its link.
+ */
+export function topLevelItems(html: string): string[] {
+  const items: string[] = [];
+  let depth = 0;
+  let itemDepth = -1;
+  let start = 0;
+  for (const m of html.matchAll(/<div\b[^>]*>|<\/div\s*>/gi)) {
+    if (m[0][1] === "/") {
+      depth--;
+      if (itemDepth >= 0 && depth === itemDepth) {
+        items.push(html.slice(start, m.index! + m[0].length));
+        itemDepth = -1;
+      }
+      continue;
+    }
+    if (itemDepth < 0 && /^<div\s+class="item"/i.test(m[0])) {
+      itemDepth = depth;
+      start = m.index!;
+    }
+    depth++;
+  }
+  // An item the page never closed runs to the end.
+  if (itemDepth >= 0) items.push(html.slice(start));
+  return items;
+}
+
 /** The items of one `event_list` answer, one per event id, in page order. */
 export function parseWidgetList(html: string, host: string): WidgetRow[] {
   const rows: WidgetRow[] = [];
   const seen = new Set<string>();
-  const parts = html.split(/<div class="item"/i).slice(1);
-  for (const raw of parts) {
-    const frag = `<div class="item"${raw}`;
+  const body = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ");
+  for (const frag of topLevelItems(body)) {
     const online = /^<div class="item"[^>]*data-online="1"/i.test(frag);
     const date = /data-date="([^"]*)"/i.exec(frag)?.[1] ?? "";
     const location = decodeEntities(/data-location="([^"]*)"/i.exec(frag)?.[1] ?? "").trim();

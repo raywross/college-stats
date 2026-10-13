@@ -5,8 +5,8 @@
  *   2. the event page for every id not stored yet, stored with `date_confirmed = false`, or whose title or start
  *      changed in the search (the page gives the year, zone, venue, ZIP, description, and closed registration);
  *   3. rows built (`visitEventId`, `kindOf` with the campus city, ZIP → lat/lng, availability) and compared with the
- *      stored rows by `diffEvents`, a pure function: new rows, `changed_at` when the title, start, venue, or
- *      availability moved, `misses + 1` for a stored live upcoming row not seen tonight and `removed_at` at two misses;
+ *      stored rows by `diffEvents`, a pure function: new rows, `changed_at` when the title, start, place, or
+ *      availability moved (`moved_at` when the start or place did), `misses + 1` for a stored live upcoming row not seen tonight and `removed_at` at two misses;
  *   4. written through the secret key in batches of 500, the host's row updated, and a `visit_event_sync` row.
  * Every request goes through `PoliteHttp` (robots.txt, at least a second between requests to one host, the project's
  * user agent); hosts are read in parallel, a few at a time. Nothing is ever submitted to a college.
@@ -20,14 +20,18 @@ import { locate, type ZipTable } from "./geo.mts";
 import { isSlateEventRegistration, parseStandardSearch, searchUrl } from "./slate-search.mts";
 import { MAX_WIDGET_PAGES, parseWidgetList, widgetListUrl } from "./slate-widget.mts";
 
-/** A stored row: the public columns plus the miss counter only the reader uses. */
-export type StoredEvent = VisitEventRow & { misses: number };
+/**
+ * A stored row: the public columns plus the miss counter only the reader uses, and `moved_at` (migration
+ * 20261013190000_visit_events_moved.sql): when the start or the place last changed, which the alert job reports as
+ * "moved to".
+ */
+export type StoredEvent = VisitEventRow & { misses: number; moved_at: string | null };
 
-/** The columns the reader reads back (every public column plus `misses`). */
-export const STORED_EVENT_COLUMNS = `${VISIT_EVENT_COLUMNS}, misses`;
+/** The columns the reader reads back (every public column plus `misses` and `moved_at`). */
+export const STORED_EVENT_COLUMNS = `${VISIT_EVENT_COLUMNS}, misses${/\bmoved_at\b/.test(VISIT_EVENT_COLUMNS) ? "" : ", moved_at"}`;
 
 /** One event as tonight's read built it, before the bookkeeping columns. */
-export type ReadEvent = Omit<VisitEventRow, "first_seen" | "last_seen" | "changed_at" | "removed_at"> & {
+export type ReadEvent = Omit<VisitEventRow, "first_seen" | "last_seen" | "changed_at" | "removed_at" | "moved_at"> & {
   /** Whether the event page was read tonight (its fields are fresh); otherwise the stored page fields stand. */
   pageRead: boolean;
 };
@@ -69,22 +73,34 @@ export function diffEvents(stored: readonly StoredEvent[], read: readonly ReadEv
     const old = byId.get(r.id);
     if (!old) {
       counts.new++;
-      upserts.push({ ...fresh, first_seen: now, last_seen: now, changed_at: now, removed_at: null, misses: 0 });
+      upserts.push({ ...fresh, first_seen: now, last_seen: now, changed_at: now, removed_at: null, misses: 0, moved_at: null });
       continue;
     }
     counts.seen++;
     const next: StoredEvent = { ...old, ...fresh, first_seen: old.first_seen, last_seen: now, removed_at: null, misses: 0, changed_at: old.changed_at };
     if (!pageRead) {
       for (const f of PAGE_FIELDS) (next as unknown as Record<string, unknown>)[f] = old[f];
-      // Closed comes from the page; open/full from tonight's widget when it said.
-      next.availability = fresh.availability ?? old.availability;
+      // Closed comes from the page and outranks the widget's "full" (Duke's filled slots say both); "open" reopens it.
+      next.availability = old.availability === "closed" && fresh.availability !== "open" ? "closed" : (fresh.availability ?? old.availability);
     }
     next.date_confirmed = old.date_confirmed || next.date_confirmed;
-    const changed = next.title !== old.title || !sameInstant(next.starts_at, old.starts_at) || next.venue !== old.venue || next.availability !== old.availability;
+    const changed =
+      next.title !== old.title ||
+      !sameInstant(next.starts_at, old.starts_at) ||
+      next.venue !== old.venue ||
+      next.address !== old.address ||
+      next.city !== old.city ||
+      next.availability !== old.availability;
     if (changed) {
       next.changed_at = now;
       counts.changed++;
     }
+    // Moved: the start or the place changed on a row whose page had confirmed them (the first confirmation of a
+    // search row's guessed date is not a move). A new title or availability moves changed_at only.
+    const moved =
+      old.date_confirmed &&
+      (!sameInstant(next.starts_at, old.starts_at) || next.venue !== old.venue || next.address !== old.address || next.city !== old.city);
+    next.moved_at = moved ? now : (old.moved_at ?? null);
     upserts.push(next);
   }
   const missed: StoredEvent[] = [];

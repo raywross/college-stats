@@ -162,7 +162,8 @@ for (const r of results) {
     console.log(`${name} (${r.host}): FAILED: ${r.error}`);
     continue;
   }
-  const rows = r.read!.rows;
+  // The rows as written (a known event read from the listing alone keeps its stored place).
+  const rows = r.diff!.upserts;
   const kinds = new Map<string, number>();
   for (const e of rows) kinds.set(e.kind, (kinds.get(e.kind) ?? 0) + 1);
   const located = rows.filter((e) => !e.online && e.kind !== "online").length;

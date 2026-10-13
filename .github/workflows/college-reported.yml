@@ -180,6 +180,12 @@ jobs:
       - run: npm ci
         if: steps.secret.outputs.ready == 'true'
 
+      # pdftotext (poppler) lays out each PDF so C7/C8A marks are placed under their column headings after a model
+      # read (scripts/lib/college-reported/grid-place.mts). Without it the marks stay held by the grid-column check.
+      - name: Install pdftotext
+        if: steps.secret.outputs.ready == 'true'
+        run: command -v pdftotext || (sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils)
+
       # Discovery's cached documents (.cache/college-docs/, git-ignored): keyed per run so a run always starts from
       # the newest prior cache, and never writes over another run's in-flight cache.
       - name: Restore document cache
@@ -436,6 +442,12 @@ jobs:
 
       - run: npm ci
         if: steps.secret.outputs.ready == 'true'
+
+      # pdftotext (poppler) lays out each PDF so C7/C8A marks are placed under their column headings after a model
+      # read (scripts/lib/college-reported/grid-place.mts). Without it the marks stay held by the grid-column check.
+      - name: Install pdftotext
+        if: steps.secret.outputs.ready == 'true'
+        run: command -v pdftotext || (sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils)
 
       # The same document cache as the run job (escalation re-reads archived text). Its own key per collect, so a
       # collect never writes over the run's entry; restore-keys picks the newest.

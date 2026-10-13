@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { SheetDialog } from "@/components/ui/sheet-dialog";
 import { FollowRow } from "@/components/planner/FollowRow";
 import { VisitForm } from "@/components/planner/VisitForm";
+import NextEvents from "@/components/visits/NextEvents";
 import { markInfoRequested } from "@/lib/planner/store-actions";
 import type { RowControlProps } from "@/components/planner/row/props";
 import type { SocialNetwork } from "@/lib/types";
@@ -33,6 +34,9 @@ export default function ActionsRowControls({ item, school, canEdit, viewerIsGuar
       <button type="button" onClick={() => setLogging(true)} className="h-9 rounded-full border px-3 text-xs font-semibold hover:bg-muted">
         Log a visit
       </button>
+      {/* U4 (specs/product/visit-events.md "Planner"): the next two events for this college, under Book a visit;
+          renders nothing without any (the button above still covers logging a visit by hand). */}
+      <NextEvents unitId={school.unit_id} itemId={item.id} schoolName={school.name} />
       <SheetDialog open={logging} onOpenChange={setLogging} title={`Log a visit · ${school.name}`}>
         <VisitForm itemId={item.id} householdNames={[]} onDone={() => setLogging(false)} onCancel={() => setLogging(false)} />
       </SheetDialog>

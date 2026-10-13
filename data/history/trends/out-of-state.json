@@ -273,21 +273,21 @@
         {
           "key": "most",
           "label": "Under 25% admitted",
-          "n": 13,
+          "n": 14,
           "tooFew": true
         },
         {
           "key": "more",
           "label": "25–59% admitted",
-          "n": 75,
+          "n": 74,
           "values": {
-            "medianShare": [0.0918,0.1223],
-            "share30": [0.16,0.28],
-            "weightedShare": [0.1423,0.1967],
+            "medianShare": [0.0919,0.1226],
+            "share30": [0.1622,0.2838],
+            "weightedShare": [0.145,0.2011],
             "lines": {
-              "medianShare": [0.0788,null,0.0667,null,0.0742,null,0.0771,null,0.0891,null,0.0918,null,0.0956,null,0.1013,null,0.1092,null,0.1065,null,0.1223],
-              "share30": [0.1918,null,0.1781,null,0.1781,null,0.2055,null,0.1781,null,0.16,null,0.1867,null,0.2267,null,0.2,null,0.2533,null,0.28],
-              "weightedShare": [null,null,0.1329,null,0.1374,null,0.1389,null,0.1382,null,0.1423,null,0.1467,null,0.1596,null,0.1654,null,0.197,null,0.1967]
+              "medianShare": [0.0814,null,0.0675,null,0.0781,null,0.0764,null,0.0906,null,0.0919,null,0.0986,null,0.1024,null,0.1093,null,0.1082,null,0.1226],
+              "share30": [0.1944,null,0.1806,null,0.1806,null,0.2083,null,0.1806,null,0.1622,null,0.1892,null,0.2297,null,0.2027,null,0.2568,null,0.2838],
+              "weightedShare": [null,null,0.1363,null,0.141,null,0.1415,null,0.1414,null,0.145,null,0.1502,null,0.1631,null,0.1695,null,0.2015,null,0.2011]
             }
           }
         },

@@ -1,0 +1,322 @@
+{
+  "run": "20261012-213930-60",
+  "started": "2026-10-12T21:39:59.564Z",
+  "finished": "2026-10-13T02:05:00.148Z",
+  "status": "stopped",
+  "attempted": 113,
+  "documents_read": 0,
+  "published": 0,
+  "changed": 0,
+  "failed": 45,
+  "discovered": 84,
+  "escalated": 0,
+  "tripped": null,
+  "usage": {
+    "discovery": {
+      "calls": 210,
+      "input_tokens": 11042096,
+      "output_tokens": 130745,
+      "cost_usd": 14.141539,
+      "cache_read_input_tokens": 5785958,
+      "cache_creation_input_tokens": 1265017,
+      "web_searches": 296
+    },
+    "extraction": {
+      "calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": 0
+    },
+    "escalation": {
+      "calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": 0
+    }
+  },
+  "round": 3,
+  "usage_rows": [
+    {
+      "job": "picker",
+      "model": "claude-haiku-4-5-20251001",
+      "mode": "batch",
+      "calls": 76,
+      "input_tokens": 237161,
+      "cache_write_tokens": 0,
+      "cache_read_tokens": 0,
+      "output_tokens": 700,
+      "searches": 0,
+      "cost_usd": 0.120346
+    },
+    {
+      "job": "search",
+      "model": "claude-sonnet-5",
+      "mode": "interactive",
+      "calls": 73,
+      "input_tokens": 2308068,
+      "cache_write_tokens": 0,
+      "cache_read_tokens": 0,
+      "output_tokens": 40546,
+      "searches": 145,
+      "cost_usd": 6.471596
+    },
+    {
+      "job": "discovery",
+      "model": "claude-sonnet-5",
+      "mode": "interactive",
+      "calls": 61,
+      "input_tokens": 8496867,
+      "cache_write_tokens": 1265017,
+      "cache_read_tokens": 5785958,
+      "output_tokens": 89499,
+      "searches": 151,
+      "cost_usd": 7.549597
+    }
+  ],
+  "discovery": {
+    "known": {
+      "colleges": 894,
+      "cost_usd": 0
+    },
+    "guessed": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "manual": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "probe-sitemap": {
+      "colleges": 1,
+      "cost_usd": 0
+    },
+    "probe-host": {
+      "colleges": 0,
+      "cost_usd": 0
+    },
+    "probe-crawl": {
+      "colleges": 1,
+      "cost_usd": 0
+    },
+    "picker": {
+      "colleges": 26,
+      "cost_usd": 6.884708
+    },
+    "search": {
+      "colleges": 9,
+      "cost_usd": 1.051404
+    },
+    "full": {
+      "colleges": 3,
+      "cost_usd": 0.518364
+    },
+    "blocked": {
+      "colleges": 10,
+      "cost_usd": 0
+    },
+    "none": {
+      "colleges": 36,
+      "cost_usd": 5.662177
+    }
+  },
+  "documents": {
+    "xlsx-template": {
+      "fetched": 0,
+      "unchanged": 22,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "xlsx-classic": {
+      "fetched": 1,
+      "unchanged": 18,
+      "archived": 1,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "pdf-form": {
+      "fetched": 13,
+      "unchanged": 48,
+      "archived": 13,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "pdf-flat": {
+      "fetched": 17,
+      "unchanged": 224,
+      "archived": 17,
+      "model_calls": 0,
+      "split_fallback": 3,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "pdf-scanned": {
+      "fetched": 1,
+      "unchanged": 2,
+      "archived": 1,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "html": {
+      "fetched": 0,
+      "unchanged": 12,
+      "archived": 0,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    },
+    "class-profile": {
+      "fetched": 46,
+      "unchanged": 448,
+      "archived": 46,
+      "model_calls": 0,
+      "split_fallback": 0,
+      "grid_rows_undecided": 0,
+      "vision": 0,
+      "cost_usd": 0
+    }
+  },
+  "items": {},
+  "tiers": {
+    "very selective": {
+      "colleges": 59,
+      "located": 49,
+      "cds_found": 37,
+      "published_c1": 0,
+      "cost_usd": 1.511209
+    },
+    "selective": {
+      "colleges": 190,
+      "located": 137,
+      "cds_found": 73,
+      "published_c1": 0,
+      "cost_usd": 12.190455
+    },
+    "less selective": {
+      "colleges": 769,
+      "located": 355,
+      "cds_found": 163,
+      "published_c1": 0,
+      "cost_usd": 0.439875
+    },
+    "open admission": {
+      "colleges": 875,
+      "located": 185,
+      "cds_found": 81,
+      "published_c1": 0,
+      "cost_usd": 0
+    }
+  },
+  "batches": [
+    {
+      "id": "msgbatch_01BjiEpQMdfiDQ7mSxofWL5A",
+      "requests": 76,
+      "submitted": "2026-10-13T00:16:13.762Z",
+      "ended": "2026-10-13T00:18:06.108220+00:00",
+      "succeeded": 76,
+      "errored": 0,
+      "expired": 0,
+      "reserved_usd": 0.158866,
+      "cost_usd": 0.120346
+    }
+  ],
+  "projection": {
+    "full_run_usd": 22.22,
+    "run_usd": 22.22,
+    "basis": "33 pdf-flat × $0.05 + 6 xlsx-classic × $0.045 + 1 html × $0.045 + 10 class-profile × $0.005 + 100 picker × $0.005 + 100 search × $0.08 + 78 full × $0.15 (high end of each estimate)"
+  },
+  "total": 1893,
+  "done": 1893,
+  "open_batches": 0,
+  "unreachable": 36,
+  "blocked_colleges": [
+    {
+      "unit_id": "192110",
+      "name": "The Juilliard School",
+      "hosts": [
+        "www.juilliard.edu"
+      ]
+    },
+    {
+      "unit_id": "230047",
+      "name": "Brigham Young University-Hawaii",
+      "hosts": [
+        "ir.byuh.edu",
+        "www.byuh.edu"
+      ]
+    },
+    {
+      "unit_id": "237950",
+      "name": "West Virginia University Institute of Technology",
+      "hosts": [
+        "www.wvutech.edu"
+      ]
+    },
+    {
+      "unit_id": "197027",
+      "name": "United States Merchant Marine Academy",
+      "hosts": [
+        "www.usmma.edu"
+      ]
+    },
+    {
+      "unit_id": "146339",
+      "name": "Judson University",
+      "hosts": [
+        "www.judsonu.edu"
+      ]
+    },
+    {
+      "unit_id": "173142",
+      "name": "Bethany Lutheran College",
+      "hosts": [
+        "www.blc.edu"
+      ]
+    },
+    {
+      "unit_id": "156356",
+      "name": "Brescia University",
+      "hosts": [
+        "www.brescia.edu"
+      ]
+    },
+    {
+      "unit_id": "181604",
+      "name": "College of Saint Mary",
+      "hosts": [
+        "www.csm.edu"
+      ]
+    },
+    {
+      "unit_id": "167057",
+      "name": "The New England Conservatory of Music",
+      "hosts": [
+        "necmusic.edu"
+      ]
+    },
+    {
+      "unit_id": "368452",
+      "name": "Nossi College of Art and Design",
+      "hosts": [
+        "nossi.edu",
+        "www.nossi.edu"
+      ]
+    }
+  ],
+  "stopped_reason": "the Anthropic account's spend limit or credit balance was reached: 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"},\"reque"
+}

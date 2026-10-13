@@ -13,7 +13,7 @@
       "host": "abpa.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -22,7 +22,7 @@
       "host": "abpa.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -31,7 +31,7 @@
       "host": "abpa.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -49,13 +49,19 @@
       "host": "admission.tulane.edu",
       "status": 403,
       "first_seen": "2026-10-11",
-      "last_seen": "2026-10-11"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "admission.virginia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-12"
+    },
+    {
+      "host": "admissions.ucdavis.edu",
+      "status": 403,
+      "first_seen": "2026-10-12",
+      "last_seen": "2026-10-12"
     },
     {
       "host": "allegheny.edu",
@@ -79,7 +85,7 @@
       "host": "apb.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -88,7 +94,7 @@
       "host": "apb.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -97,7 +103,7 @@
       "host": "apb.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -115,7 +121,7 @@
       "host": "apb.ucmerced.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "445188"
       ]
@@ -124,7 +130,7 @@
       "host": "arizonachristian.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "105899"
       ]
@@ -133,7 +139,7 @@
       "host": "azcu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "105899"
       ]
@@ -142,7 +148,7 @@
       "host": "beaver.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214698"
       ]
@@ -178,7 +184,7 @@
       "host": "dair.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -187,7 +193,7 @@
       "host": "dair.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -196,7 +202,7 @@
       "host": "dair.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -220,7 +226,7 @@
       "host": "dubois.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214740"
       ]
@@ -229,7 +235,7 @@
       "host": "eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -238,7 +244,7 @@
       "host": "fayette.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214759"
       ]
@@ -247,7 +253,7 @@
       "host": "gallaudet.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "131450"
       ]
@@ -256,7 +262,7 @@
       "host": "greaterallegheny.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214786"
       ]
@@ -274,7 +280,7 @@
       "host": "hazleton.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214768"
       ]
@@ -283,7 +289,7 @@
       "host": "iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -301,7 +307,7 @@
       "host": "ir.byuh.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "230047"
       ]
@@ -310,7 +316,7 @@
       "host": "ir.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -319,7 +325,7 @@
       "host": "ir.catholic.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "131283"
       ]
@@ -328,7 +334,7 @@
       "host": "ir.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -337,7 +343,7 @@
       "host": "ir.ferrum.edu",
       "status": 401,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "232089"
       ]
@@ -346,7 +352,7 @@
       "host": "ir.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -355,7 +361,7 @@
       "host": "ir.mit.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-10",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "166683"
       ]
@@ -373,7 +379,7 @@
       "host": "ir.opsu.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "207351"
       ]
@@ -382,7 +388,7 @@
       "host": "ir.princeton.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "ir.tcnj.edu",
@@ -397,7 +403,7 @@
       "host": "ir.ucdavis.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "110644"
       ]
@@ -406,13 +412,13 @@
       "host": "ir.web.baylor.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-10"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "ira.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -421,7 +427,7 @@
       "host": "ira.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -430,7 +436,7 @@
       "host": "ira.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -457,13 +463,19 @@
       "host": "ira.virginia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-12"
+    },
+    {
+      "host": "irda.wayne.edu",
+      "status": 403,
+      "first_seen": "2026-10-12",
+      "last_seen": "2026-10-12"
     },
     {
       "host": "irds.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -472,7 +484,7 @@
       "host": "irds.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -481,7 +493,7 @@
       "host": "irds.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -499,7 +511,7 @@
       "host": "irds.ucmerced.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "445188"
       ]
@@ -508,7 +520,7 @@
       "host": "iris.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -517,7 +529,7 @@
       "host": "iris.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -526,7 +538,7 @@
       "host": "iris.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -553,7 +565,7 @@
       "host": "irp.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -562,7 +574,7 @@
       "host": "irp.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -571,7 +583,7 @@
       "host": "irp.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -589,7 +601,7 @@
       "host": "kairos.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "219240"
       ]
@@ -598,7 +610,7 @@
       "host": "lehighvalley.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214670"
       ]
@@ -607,7 +619,7 @@
       "host": "lima.osu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "204671"
       ]
@@ -616,7 +628,7 @@
       "host": "marymount.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "232706"
       ]
@@ -625,7 +637,7 @@
       "host": "mba.walshcollege.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "172608"
       ]
@@ -634,7 +646,7 @@
       "host": "montalto.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214795"
       ]
@@ -643,7 +655,7 @@
       "host": "ncad.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "377546"
       ]
@@ -652,7 +664,7 @@
       "host": "necmusic.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "167057"
       ]
@@ -670,7 +682,7 @@
       "host": "newkensington.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214625"
       ]
@@ -679,7 +691,7 @@
       "host": "newmanu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "155335"
       ]
@@ -688,7 +700,7 @@
       "host": "news.umflint.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "northcentralcollege.edu",
@@ -703,7 +715,7 @@
       "host": "nossi.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "368452"
       ]
@@ -712,7 +724,7 @@
       "host": "nsa.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "440396"
       ]
@@ -721,7 +733,7 @@
       "host": "obp.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -730,7 +742,7 @@
       "host": "obp.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -739,7 +751,7 @@
       "host": "obp.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -757,7 +769,7 @@
       "host": "obp.umich.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-10"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "obu.edu",
@@ -772,13 +784,13 @@
       "host": "oem.umn.edu",
       "status": "challenge",
       "first_seen": "2026-10-10",
-      "last_seen": "2026-10-11"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "oie.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -787,7 +799,7 @@
       "host": "oie.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -796,7 +808,7 @@
       "host": "oie.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -850,7 +862,7 @@
       "host": "oir.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -859,7 +871,7 @@
       "host": "oir.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -868,7 +880,7 @@
       "host": "oir.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -895,7 +907,7 @@
       "host": "oir.umn.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-11",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "174066",
         "174233",
@@ -907,7 +919,7 @@
       "host": "oira.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -916,7 +928,7 @@
       "host": "oira.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -925,7 +937,7 @@
       "host": "oira.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -961,7 +973,7 @@
       "host": "oirds.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -970,7 +982,7 @@
       "host": "oirds.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -979,7 +991,7 @@
       "host": "oirds.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -988,7 +1000,7 @@
       "host": "oirds.rutgers.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-10",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "186371",
         "186399"
@@ -1007,7 +1019,7 @@
       "host": "opa.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -1016,7 +1028,7 @@
       "host": "opa.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -1025,7 +1037,7 @@
       "host": "opa.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -1043,13 +1055,13 @@
       "host": "open.clemson.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-10"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "opir.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -1058,13 +1070,13 @@
       "host": "opir.columbia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-10"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "opir.eu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "139630"
       ]
@@ -1073,7 +1085,7 @@
       "host": "opir.iaia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "187745"
       ]
@@ -1097,10 +1109,16 @@
       ]
     },
     {
+      "host": "queensuniv.sharepoint.com",
+      "status": 403,
+      "first_seen": "2026-10-12",
+      "last_seen": "2026-10-12"
+    },
+    {
       "host": "record.umich.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-10"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "ripon.edu",
@@ -1115,7 +1133,7 @@
       "host": "sage.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "195128"
       ]
@@ -1130,7 +1148,7 @@
       "host": "schuylkill.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214810"
       ]
@@ -1157,7 +1175,7 @@
       "host": "shenango.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214634"
       ]
@@ -1166,7 +1184,7 @@
       "host": "sonoma.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "123572"
       ]
@@ -1175,7 +1193,7 @@
       "host": "spu.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "236577"
       ]
@@ -1202,13 +1220,13 @@
       "host": "sunygeneseo.sharepoint.com",
       "status": 401,
       "first_seen": "2026-10-11",
-      "last_seen": "2026-10-11"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "tamuct.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "483036"
       ]
@@ -1226,7 +1244,7 @@
       "host": "tsbc.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "206154"
       ]
@@ -1235,7 +1253,7 @@
       "host": "uiu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "154493"
       ]
@@ -1253,13 +1271,13 @@
       "host": "undergrad.admissions.columbia.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-10"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "ussa.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "102395"
       ]
@@ -1277,7 +1295,7 @@
       "host": "walshcollege.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "172608"
       ]
@@ -1295,7 +1313,7 @@
       "host": "westliberty.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "237932"
       ]
@@ -1313,7 +1331,7 @@
       "host": "wilkesbarre.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214643"
       ]
@@ -1331,7 +1349,7 @@
       "host": "www.aiuniv.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "445133"
       ]
@@ -1340,7 +1358,7 @@
       "host": "www.albion.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "168546"
       ]
@@ -1349,7 +1367,7 @@
       "host": "www.albright.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "210571"
       ]
@@ -1421,7 +1439,7 @@
       "host": "www.bju.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "217749"
       ]
@@ -1430,7 +1448,7 @@
       "host": "www.blc.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "173142"
       ]
@@ -1457,7 +1475,7 @@
       "host": "www.brescia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "156356"
       ]
@@ -1466,7 +1484,7 @@
       "host": "www.bryanhealthcollege.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "180878"
       ]
@@ -1484,7 +1502,7 @@
       "host": "www.byuh.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "230047"
       ]
@@ -1493,7 +1511,7 @@
       "host": "www.calvary.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "176789"
       ]
@@ -1502,7 +1520,7 @@
       "host": "www.carlow.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "211431"
       ]
@@ -1511,7 +1529,7 @@
       "host": "www.catholic.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "131283"
       ]
@@ -1529,7 +1547,7 @@
       "host": "www.colby-sawyer.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "182634"
       ]
@@ -1556,7 +1574,7 @@
       "host": "www.csm.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "181604"
       ]
@@ -1565,7 +1583,7 @@
       "host": "www.cui.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "112075"
       ]
@@ -1574,7 +1592,7 @@
       "host": "www.cumberland.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "219949"
       ]
@@ -1583,7 +1601,7 @@
       "host": "www.deltastate.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "175616"
       ]
@@ -1601,7 +1619,7 @@
       "host": "www.devry.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "482413",
         "482422",
@@ -1618,7 +1636,7 @@
       "host": "www.doane.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "181020"
       ]
@@ -1663,7 +1681,7 @@
       "host": "www.fisher.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "165802"
       ]
@@ -1681,7 +1699,7 @@
       "host": "www.fullsail.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "134237"
       ]
@@ -1690,7 +1708,7 @@
       "host": "www.gc.cuny.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "190576"
       ]
@@ -1699,7 +1717,7 @@
       "host": "www.georgetowncollege.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "156745"
       ]
@@ -1708,7 +1726,7 @@
       "host": "www.glenville.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "237385"
       ]
@@ -1726,7 +1744,7 @@
       "host": "www.goshen.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "150668"
       ]
@@ -1735,7 +1753,7 @@
       "host": "www.gratz.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "212771"
       ]
@@ -1744,7 +1762,7 @@
       "host": "www.greenville.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "145372"
       ]
@@ -1753,7 +1771,7 @@
       "host": "www.harrisburgu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "446640"
       ]
@@ -1777,6 +1795,15 @@
       ]
     },
     {
+      "host": "www.hlg.edu",
+      "status": "challenge",
+      "first_seen": "2026-10-12",
+      "last_seen": "2026-10-12",
+      "unit_ids": [
+        "177542"
+      ]
+    },
+    {
       "host": "www.jhu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
@@ -1789,7 +1816,7 @@
       "host": "www.judsonu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "146339"
       ]
@@ -1798,7 +1825,7 @@
       "host": "www.juilliard.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "192110"
       ]
@@ -1816,7 +1843,7 @@
       "host": "www.kairos.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "219240"
       ]
@@ -1834,13 +1861,13 @@
       "host": "www.letu.edu",
       "status": 403,
       "first_seen": "2026-10-11",
-      "last_seen": "2026-10-11"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "www.lsuhs.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "435000"
       ]
@@ -1858,7 +1885,7 @@
       "host": "www.marymount.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "232706"
       ]
@@ -1867,7 +1894,7 @@
       "host": "www.mbts.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "178208"
       ]
@@ -1885,13 +1912,13 @@
       "host": "www.memphis.edu",
       "status": 403,
       "first_seen": "2026-10-10",
-      "last_seen": "2026-10-10"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "www.midlandu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "181330"
       ]
@@ -1900,7 +1927,7 @@
       "host": "www.misericordia.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214069"
       ]
@@ -1918,7 +1945,7 @@
       "host": "www.moreheadstate.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "157386"
       ]
@@ -1933,13 +1960,13 @@
       "host": "www.mtholyoke.edu",
       "status": 403,
       "first_seen": "2026-10-11",
-      "last_seen": "2026-10-11"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "www.ncad.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "377546"
       ]
@@ -1957,7 +1984,7 @@
       "host": "www.newschool.edu",
       "status": 429,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "193654"
       ]
@@ -1975,7 +2002,7 @@
       "host": "www.nossi.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "368452"
       ]
@@ -1984,7 +2011,7 @@
       "host": "www.nyu.edu",
       "status": 405,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "www.okcu.edu",
@@ -2023,7 +2050,7 @@
       "host": "www.pcj.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "205027"
       ]
@@ -2050,7 +2077,7 @@
       "host": "www.rca.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "186186"
       ]
@@ -2059,7 +2086,7 @@
       "host": "www.rccgnaseminary.org",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "497462"
       ]
@@ -2068,7 +2095,7 @@
       "host": "www.reinhardt.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "140872"
       ]
@@ -2077,7 +2104,7 @@
       "host": "www.ringling.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "136774"
       ]
@@ -2095,7 +2122,7 @@
       "host": "www.sagrado.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "243443"
       ]
@@ -2113,7 +2140,7 @@
       "host": "www.seu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "137564"
       ]
@@ -2122,7 +2149,7 @@
       "host": "www.simpsonu.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "123457"
       ]
@@ -2158,7 +2185,7 @@
       "host": "www.sulc.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "440916"
       ]
@@ -2203,7 +2230,7 @@
       "host": "www.tiu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "149514"
       ]
@@ -2212,7 +2239,7 @@
       "host": "www.tiuny.org",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "196440"
       ]
@@ -2230,7 +2257,7 @@
       "host": "www.ucsc.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "110714"
       ]
@@ -2239,7 +2266,7 @@
       "host": "www.uiu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "154493"
       ]
@@ -2248,13 +2275,13 @@
       "host": "www.umflint.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05"
+      "last_seen": "2026-10-12"
     },
     {
       "host": "www.upstate.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "196307"
       ]
@@ -2263,7 +2290,7 @@
       "host": "www.usiouxfalls.edu",
       "status": 405,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "219383"
       ]
@@ -2272,7 +2299,7 @@
       "host": "www.usmma.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "197027"
       ]
@@ -2281,7 +2308,7 @@
       "host": "www.ussu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "102395"
       ]
@@ -2290,7 +2317,7 @@
       "host": "www.uth.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "229300"
       ]
@@ -2308,7 +2335,7 @@
       "host": "www.vanguard.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "123651"
       ]
@@ -2317,7 +2344,7 @@
       "host": "www.viterbo.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "240107"
       ]
@@ -2326,7 +2353,7 @@
       "host": "www.washjeff.edu",
       "status": 403,
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "216667"
       ]
@@ -2389,7 +2416,7 @@
       "host": "www.wright.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "206604"
       ]
@@ -2398,7 +2425,7 @@
       "host": "www.wsc.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "181783"
       ]
@@ -2413,10 +2440,19 @@
       ]
     },
     {
+      "host": "www.wvutech.edu",
+      "status": 403,
+      "first_seen": "2026-10-12",
+      "last_seen": "2026-10-12",
+      "unit_ids": [
+        "237950"
+      ]
+    },
+    {
       "host": "www.york.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214829"
       ]
@@ -2425,7 +2461,7 @@
       "host": "www2.trinitydc.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "131876"
       ]
@@ -2434,7 +2470,7 @@
       "host": "york.psu.edu",
       "status": "challenge",
       "first_seen": "2026-10-05",
-      "last_seen": "2026-10-05",
+      "last_seen": "2026-10-12",
       "unit_ids": [
         "214829"
       ]

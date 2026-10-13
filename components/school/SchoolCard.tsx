@@ -3,6 +3,7 @@ import type { School } from "@/lib/types";
 import { getData } from "@/lib/data";
 import { standouts } from "@/lib/insights";
 import { DOMAINS, admitRatio, satComposite, selectivityTier } from "@/lib/metrics";
+import { tierRank, tierText } from "@/lib/selectivity-tier";
 import { compact, moneyCompact, pct, pctSmart, range, typeShort } from "@/lib/format";
 import type { CSSProperties } from "react";
 import { brandTint, crestBrand } from "@/lib/brand";
@@ -53,7 +54,13 @@ export async function SchoolCard({
   const { rankOf } = data;
   const distance = home ? distanceFromHome(school.location, home) : null;
   const rate = school.admissions.acceptance_rate;
-  const tier = selectivityTier(rate);
+  const band = selectivityTier(rate);
+  // Quad's selectivity tier where the college is rated (selectivity-index.md), else the old admit-rate band
+  // (U8, levels.md carry-forward: the Explore cards still named "Most selective"). `tierRank` is hardest-first
+  // (Elite 0 … Open 4); flipped to match the band's hardest-is-highest depth scale.
+  const quadTier = school.selectivity?.in_state ?? school.selectivity?.out_of_state ?? school.selectivity?.tier ?? null;
+  const tierWord = tierText(school);
+  const tier = tierWord ? { label: tierWord, level: 4 - (tierRank(quadTier) ?? 0) } : band;
   const tags = standouts(data, school).slice(0, 2);
   const sat = satComposite(school);
   const acceptanceRank = rankOf(school, "acceptance");

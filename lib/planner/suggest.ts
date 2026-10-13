@@ -121,7 +121,7 @@ export interface SortableItem {
   standing?: Suggestion | null;
 }
 
-const CATEGORY_RANK: Record<ListCategory, number> = { reach: 0, target: 1, likely: 2, unsorted: 3 };
+const CATEGORY_RANK: Record<ListCategory, number> = { high_reach: 0, reach: 1, target: 2, likely: 3, safe: 4, unsorted: 5 };
 const STANDING_RANK: Record<Suggestion, number> = { likely: 0, target: 1, reach: 2, none: 3 };
 
 const num = (n: number | null | undefined): number => (n === null || n === undefined ? Infinity : n);
@@ -207,12 +207,12 @@ export function extendedBalanceLines(
   opts: { maxAverageCost?: number | null } = {},
 ): BalanceExtra[] {
   const out: BalanceExtra[] = [];
-  const counts = { reach: 0, target: 0, likely: 0, unsorted: 0 } as Record<ListCategory, number>;
+  const counts = { high_reach: 0, reach: 0, target: 0, likely: 0, safe: 0, unsorted: 0 } as Record<ListCategory, number>;
   for (const i of items) counts[i.category]++;
-  const placed = counts.reach + counts.target + counts.likely;
+  const placed = counts.high_reach + counts.reach + counts.target + counts.likely + counts.safe;
   if (placed > 0) {
-    if (counts.likely === 0 && counts.target === 0) out.push({ text: "Only Reaches so far.", kind: "fact" });
-    else if (counts.likely === 0) out.push({ text: "No Likely yet.", kind: "fact" });
+    if (counts.likely === 0 && counts.safe === 0 && counts.target === 0) out.push({ text: "Only Reaches so far.", kind: "fact" });
+    else if (counts.likely === 0 && counts.safe === 0) out.push({ text: "No Likely yet.", kind: "fact" });
     else if (counts.target === 0) out.push({ text: "No Target yet.", kind: "fact" });
   }
   if (opts.maxAverageCost != null) {

@@ -19,7 +19,11 @@ export const PLAN_ITEM_BASE_COLUMNS =
   "id, list_id, unit_id, category, status, outcome, round, position, added_by, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social, dream, priority, followed_networks, info_requested_on, application_platform, applied_on, complete_on, portal_url, committed_on, withdrawn_on, recommendations_count, supplements_count, transcript_shared";
 /** The redesign's two columns (20261010120000_plan_redesign.sql). */
 export const PLAN_ITEM_SOURCE_COLUMNS = "category_source, round_source";
-export const PLAN_ITEM_COLUMNS = `${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}`;
+/** The five-levels migration's per-college hooks (20261012100000_five_levels.sql). */
+export const PLAN_ITEM_HOOKS_COLUMNS = "legacy, recruited";
+/** The sibling connection (20261012130000_list_item_sibling.sql; owner, 2026-10-12). */
+export const PLAN_ITEM_SIBLING_COLUMN = "legacy_sibling";
+export const PLAN_ITEM_COLUMNS = `${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}, ${PLAN_ITEM_HOOKS_COLUMNS}, ${PLAN_ITEM_SIBLING_COLUMN}`;
 export const PLAN_TASK_COLUMNS =
   "id, list_id, item_id, key, kind, title, detail, due_on, window_start, window_end, assignee, source, source_field, source_edition, date_note, done_at, done_by, snoozed_until, dismissed, orphaned, position, created_by, created_at";
 const VISIT_COLUMNS = "id, item_id, kind, on_date, at_time, registered, registration_url, who, rating, notes, created_by, created_at, updated_at";
@@ -52,6 +56,16 @@ export function isMissingSourceColumn(error: PgError): boolean {
   return isMissing(error) && /category_source|round_source/.test(error.message ?? "");
 }
 
+/** The error is about the five-levels migration's hooks columns (not applied yet). */
+export function isMissingHooksColumn(error: PgError): boolean {
+  return isMissing(error) && /\blegacy\b|recruited/.test((error.message ?? "").replace(/legacy_sibling/g, ""));
+}
+
+/** The error is about the sibling column alone (20261012130000 not applied yet; the rest is there). */
+export function isMissingSiblingColumn(error: PgError): boolean {
+  return isMissing(error) && /legacy_sibling/.test(error.message ?? "");
+}
+
 /** The planner's tables aren't in the database yet (the migration hasn't been applied). */
 export class PlannerSetupError extends Error {
   constructor(message: string) {
@@ -75,14 +89,32 @@ export function withBackfillSources(rows: Omit<PlanItem, "category_source" | "ro
   }));
 }
 
-/** The list's items, retrying without the redesign's columns when the database doesn't have them yet. */
+/** Rows read before the five-levels migration (20261012100000) has applied: legacy/recruited default like a fresh row. */
+function withBackfillHooks<T>(rows: T[]): (T & { legacy: boolean; recruited: "none" })[] {
+  return rows.map((r) => ({ ...r, legacy: false, recruited: "none" as const }));
+}
+
+/** The list's items, retrying without newer columns when the database doesn't have them yet. */
 export async function readItems(supabase: SupabaseClient, listId: string): Promise<{ data: PlanItem[] | null; error: PgError | null; sourcesMissing: boolean }> {
-  const first = await supabase.from("list_items").select(PLAN_ITEM_COLUMNS).eq("list_id", listId).order("position");
-  if (!first.error) return { data: (first.data ?? []) as unknown as PlanItem[], error: null, sourcesMissing: false };
-  if (!isMissingSourceColumn(first.error)) return { data: null, error: first.error, sourcesMissing: false };
+  const full = await supabase.from("list_items").select(PLAN_ITEM_COLUMNS).eq("list_id", listId).order("position");
+  if (!full.error) return { data: (full.data ?? []) as unknown as PlanItem[], error: null, sourcesMissing: false };
+  let first: { data: unknown; error: PgError | null } = full;
+  // The sibling column alone missing: read everything else, the sibling reading as unmarked.
+  if (isMissingSiblingColumn(full.error)) {
+    first = await supabase.from("list_items").select(`${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}, ${PLAN_ITEM_HOOKS_COLUMNS}`).eq("list_id", listId).order("position");
+    if (!first.error) return { data: ((first.data ?? []) as unknown as PlanItem[]).map((r) => ({ ...r, legacy_sibling: false })), error: null, sourcesMissing: false };
+  }
+  const err: PgError = first.error ?? full.error;
+  if (isMissingHooksColumn(err)) {
+    const withoutHooks = await supabase.from("list_items").select(`${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}`).eq("list_id", listId).order("position");
+    if (!withoutHooks.error) return { data: withBackfillHooks((withoutHooks.data ?? []) as unknown as Omit<PlanItem, "legacy" | "recruited">[]), error: null, sourcesMissing: false };
+    if (!isMissingSourceColumn(withoutHooks.error)) return { data: null, error: withoutHooks.error, sourcesMissing: false };
+  } else if (!isMissingSourceColumn(err)) {
+    return { data: null, error: err, sourcesMissing: false };
+  }
   const retry = await supabase.from("list_items").select(PLAN_ITEM_BASE_COLUMNS).eq("list_id", listId).order("position");
   if (retry.error) return { data: null, error: retry.error, sourcesMissing: true };
-  return { data: withBackfillSources((retry.data ?? []) as unknown as PlanItem[]), error: null, sourcesMissing: true };
+  return { data: withBackfillHooks(withBackfillSources((retry.data ?? []) as unknown as PlanItem[])), error: null, sourcesMissing: true };
 }
 
 /**
@@ -90,16 +122,18 @@ export async function readItems(supabase: SupabaseClient, listId: string): Promi
  * list isn't visible. Throws `PlannerSetupError` when the planner migration isn't applied yet, so a page can say so.
  */
 export async function readPlan(supabase: SupabaseClient, listId: string): Promise<PlanData | null> {
-  const list = await supabase.from("lists").select(PLAN_LIST_COLUMNS).eq("id", listId).maybeSingle();
+  // The list, its items, and its tasks don't depend on each other: one round together (U20 "real speed"; it was the
+  // list, then the other two). An unreadable list still returns null, whatever the other two said.
+  const [list, items, tasks] = await Promise.all([
+    supabase.from("lists").select(PLAN_LIST_COLUMNS).eq("id", listId).maybeSingle(),
+    readItems(supabase, listId),
+    supabase.from("plan_tasks").select(PLAN_TASK_COLUMNS).eq("list_id", listId).order("due_on", { nullsFirst: false }).order("position"),
+  ]);
   if (list.error) {
     if (isMissing(list.error)) throw new PlannerSetupError(list.error.message ?? "");
     throw new Error(`Reading the plan's list failed: ${list.error.message}`);
   }
   if (!list.data) return null;
-  const [items, tasks] = await Promise.all([
-    readItems(supabase, listId),
-    supabase.from("plan_tasks").select(PLAN_TASK_COLUMNS).eq("list_id", listId).order("due_on", { nullsFirst: false }).order("position"),
-  ]);
   for (const r of [items, tasks]) {
     if (r.error) {
       if (isMissing(r.error)) throw new PlannerSetupError(r.error.message ?? "");

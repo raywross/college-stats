@@ -96,14 +96,21 @@ export async function recordFollow(itemId: string, network: SocialNetwork, follo
   return { ok: true };
 }
 
-/** Marks (or clears) "Request information". The site never fills or submits a college's form; this records that the family did. */
-export async function markInfoRequested(itemId: string, requested: boolean): Promise<PlanActionResult> {
+/**
+ * Marks (or clears) "Request information". The site never fills or submits a college's form; this records that the
+ * family did. `onDate` (the capture panel's editable date, owner 2026-10-12) sets the day; it defaults to today and
+ * can't be later than today.
+ */
+export async function markInfoRequested(itemId: string, requested: boolean, onDate?: string | null): Promise<PlanActionResult> {
   if (!isUuid(itemId) || typeof requested !== "boolean") return { ok: false, message: FAILED };
+  const today = todayIso();
+  const day = onDate == null ? today : isoDateOrNull(onDate);
+  if (requested && (day === null || day > today)) return { ok: false, message: "That isn't a date." };
   const r = await ready("planner.tab");
   if (!("supabase" in r)) return r;
   const listId = await listOfItem(r.supabase, itemId);
   if (!listId) return { ok: false, message: FAILED };
-  const { error } = await r.supabase.from("list_items").update({ info_requested_on: requested ? todayIso() : null }).eq("id", itemId);
+  const { error } = await r.supabase.from("list_items").update({ info_requested_on: requested ? day : null }).eq("id", itemId);
   if (error) return fail(error, "markInfoRequested");
   if (requested) await completeGeneratedTask(r.supabase, itemId, "request_info");
   await regenerate(listId);

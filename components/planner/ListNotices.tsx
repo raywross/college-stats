@@ -1,8 +1,8 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { TrendingUp } from "lucide-react";
 import { CATEGORY_LABELS } from "@/lib/list-rules";
+import { STANDING_LEVEL_LABELS } from "@/lib/chances/levels";
 import type { PlanNotice, PlanView } from "@/lib/planner/plan-view";
 import { dayLabel } from "@/lib/planner/list-row";
 import { TEST_LABEL } from "@/lib/planner/standing";
@@ -20,27 +20,34 @@ export function ListNotices({
   kind,
   onUseEdTwo,
   edTwoPending,
+  onUseEdHelps,
+  edHelpsPending,
   className,
 }: {
   view: PlanView;
   kind: PlanNotice;
   onUseEdTwo: (itemId: string) => void;
   edTwoPending: boolean;
+  onUseEdHelps?: (itemId: string) => void;
+  edHelpsPending?: boolean;
   className?: string;
 }) {
-  const searchParams = useSearchParams();
-
-  const scoresHref = (() => {
-    const p = new URLSearchParams(searchParams);
-    p.set("tab", "scores");
-    return `?${p.toString()}`;
-  })();
-
   if (kind === "problems" && view.problems.length > 0) {
     return (
       <div role="status" className={cn("rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm dark:border-amber-800 dark:bg-amber-950/40", className)}>
         <p>{view.problems[0]}</p>
       </div>
+    );
+  }
+  if (kind === "edHelps" && view.edHelps && onUseEdHelps) {
+    const { edHelps } = view;
+    return (
+      <p className={cn("rounded-2xl bg-muted/60 px-4 py-3 text-sm", className)}>
+        ED would help most at {edHelps.name} ({STANDING_LEVEL_LABELS[edHelps.level]} for you, with an early round).{" "}
+        <button type="button" disabled={!!edHelpsPending} onClick={() => onUseEdHelps(edHelps.itemId)} className="font-semibold text-primary hover:underline disabled:opacity-60">
+          Start it in ED
+        </button>
+      </p>
     );
   }
   if (kind === "edTwo" && view.edTwo) {
@@ -62,8 +69,10 @@ export function ListNotices({
     const { retake } = view;
     const single = retake.moves.length === 1 ? retake.moves[0] : null;
     const name = single ? (view.rows.find((r) => r.item.id === single.id)?.school?.name ?? "A college") : null;
+    const others = retake.moves.map((m) => view.rows.find((r) => r.item.id === m.id)?.school?.name ?? "A college").join(", ");
     return (
-      <a href={scoresHref} className={cn("flex items-start gap-3 rounded-3xl border bg-card p-4 text-left hover:bg-muted/50", className)}>
+      // A notice, not a link: the Scores tab it opened is gone (owner, 2026-10-12), so it names the colleges itself.
+      <div className={cn("flex items-start gap-3 rounded-3xl border bg-card p-4 text-left", className)}>
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pop text-pop-foreground">
           <TrendingUp className="size-5" aria-hidden />
         </span>
@@ -72,9 +81,9 @@ export function ListNotices({
             {retake.delta} more {TEST_LABEL[retake.kind]} points would move{" "}
             {single ? `${name} up to ${CATEGORY_LABELS[single.to]}.` : `${retake.moves.length} colleges up a group.`}
           </span>
-          <span className="text-muted-foreground">See which ones and the next test dates →</span>
+          {!single && <span className="text-muted-foreground">{others}</span>}
         </span>
-      </a>
+      </div>
     );
   }
   return null;

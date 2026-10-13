@@ -85,6 +85,7 @@ export function WhatWentIn({
           })}
         </ul>
       )}
+      {parts.incomplete && <p>{noteText(parts.incomplete)}</p>}
       {parts.prompt && (
         <p className="font-medium">
           {noteText(parts.prompt)}

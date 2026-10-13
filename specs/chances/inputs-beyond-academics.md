@@ -1,6 +1,6 @@
 # Inputs Beyond the Numbers: Class Standing, Awards, Work, Legacy, Recruiting, Interest
 
-> Status: **planned** 2026-10-11 from the owner's review. Part 11 of [admission chances](README.md). Each input here
+> Status: **built** 2026-10-12 on `feature/chances` (see "As built"; planned 2026-10-11) from the owner's review. Part 11 of [admission chances](README.md). Each input here
 > is small on its own; together they are what colleges say they read beyond grades, courses, and scores (CDS C7), and
 > each one enters the estimate only at colleges that rate it. How each moves the level is the method's
 > ([method/standing.md](method/standing.md#the-other-multipliers)). After [levels.md](levels.md); the per-college
@@ -43,6 +43,10 @@ The profile has `classRankPercentile` (a number few students know). The form ask
   `/me`. Reason shown: "Some colleges weigh rank, and some states guarantee admission by rank."
 - Enters the estimate as the rank distance where C7 counts rank ([method](method/standing.md#the-distance-of-each-measure))
   and the guaranteed-admission checks (Texas top 5–10%, and the programs in `data/guaranteed-admission.json`).
+- The pick is the student's **perceived** standing, a proxy like weighted GPA (owner, 2026-10-12; method
+  [Revision 3](method/standing.md#revision-3-the-estimate-reads-the-record-the-way-the-owner-does-2026-10-12) rule 5).
+  A stored `no_rank` reads as unanswered in the estimate; the pick itself leaves the form with U16.
+- Without a state of residence, the estimate uses the high school's state and says so (Revision 3, rule 7).
 
 ## Awards
 `StudentProfile.awards: AwardEntry[]`, at most 6:
@@ -73,6 +77,10 @@ A toggle on the college's row in the planner, in the drawer under a new **About 
 **"A parent or grandparent graduated from here"**. Stored on the list item, not the profile, because it is per college.
 
 - `list_items.legacy boolean not null default false` (migration with the five-levels change or its own).
+- **Sibling (owner, 2026-10-12):** "Sibling went here" beside it on the row's Connections line, stored as
+  `list_items.legacy_sibling boolean not null default false` (`20261012130000_list_item_sibling.sql`). Read like
+  legacy, gated the same way (C7 alumni relation at least considered; never under a state ban), with a smaller weight,
+  never stacked on a parent's or grandparent's ([method/standing.md](method/standing.md#the-other-multipliers)).
 - Enters as `M_legacy` by the college's C7 alumni-relation rating; `1` with a sentence where no C7 or *not considered*.
 - **State bans → `1`.** `data/reference/legacy-bans.json`:
   ```
@@ -128,7 +136,9 @@ identity (reserved, as the commitment says).
 ## Where it shows
 - `/me`: Class standing under GPA; Awards and Activities as their own sections; First generation under "About you".
 - Planner: the drawer's **About you and {College}** line with the legacy toggle and the recruited pick; interest is the
-  built Show interest section.
+  built Show interest section. **Changed 2026-10-12** (simpler planner, [../planner/redesign/list.md](../planner/redesign/list.md)):
+  the row's (i) is a capture panel with Legacy, Recruited, "We visited", and one follow toggle per account, and
+  interest also counts a follow on social (`lib/planner/hooks.ts`); the panel no longer shows the estimate's lines.
 - Standing card and drawer: each input as used or "not used here" in the panel; the recruited sentence whenever set.
 - Compare: no new rows.
 
@@ -153,3 +163,17 @@ the toggles), `tests/lists-policies.test.mts` (the new columns under RLS).
    Recommendation: one toggle now, worded "parent or grandparent"; split if the first season shows the multiplier
    overstated.
 2. Awards catalog size: start at ~40, grow from "Something else" entries that recur.
+
+## As built (2026-10-12)
+- **Profile:** class standing (under GPA, setting the percentile), activities, awards, and first generation (under an
+  "About you" heading in Basics) on `/me` and the household Numbers page; the intake's optional "More about you" step
+  is step 3, after AP courses. All four reach `EstimateStudent`; the account export includes them; parents see them.
+- **Awards:** `data/reference/awards.json`, 40 awards, each checked against its giving body's page on 2026-10-12
+  (`check:awards-catalog`). The All-National Honor Ensemble was dropped (paused by NAfME since 2023). The President's
+  Volunteer Service Award is paused by AmeriCorps (since May 2025) and kept; the owner may drop it.
+- **Legacy bans:** `data/reference/legacy-bans.json`, five states verified on each legislature's site on 2026-10-12
+  (CA private; CO, IL, VA public; MD public and private); no other state had enacted one (Maine's bill died; New York
+  and Massachusetts pending). `banFor` in `lib/chances/legacy-bans.ts` (client-safe); `check:legacy-bans`.
+- **Per college:** "About you and {College}" in the planner row drawer (legacy toggle, recruited pick, the ban sentence
+  where one applies); the profile's standing card asks to add the college to the list first. Interest comes from
+  logged visits and info requests.

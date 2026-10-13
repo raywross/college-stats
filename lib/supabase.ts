@@ -4,6 +4,7 @@
  * specs/serving-architecture.md). Schema: supabase/migrations/. How the pieces fit: specs/supabase.md.
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { timedFetch, timingEnabled } from "./timing.ts";
 import type { CpiTable, HistoryMeta, NationalHistory, TrendFacts } from "./history";
 import type { StoredChange } from "./changes";
 
@@ -26,7 +27,7 @@ export function supabaseClient(role: "read" | "publish"): SupabaseClient {
   if (!url || !key) {
     throw new Error(`Supabase is not configured: set SUPABASE_URL and ${keyName} (see specs/supabase.md).`);
   }
-  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, ...(timingEnabled() ? { global: { fetch: timedFetch } } : {}) });
 }
 
 /* ------------------------------------------------------------------ */

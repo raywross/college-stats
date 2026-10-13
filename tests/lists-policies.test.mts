@@ -246,6 +246,35 @@ async function bootAll(): Promise<AuthDb> {
   return db;
 }
 
+test("sibling (20261012130000_list_item_sibling.sql): defaults false; the student and an edit-access guardian set it, a view-only guardian and an outsider can't", async () => {
+  const db = await bootAll();
+  const mom = await createUser(db, { email: "mom@example.com", birthYear: 1978, roleHint: "guardian" });
+  const dad = await createUser(db, { email: "dad@example.com", birthYear: 1976, roleHint: "guardian" });
+  const alice = await createUser(db, { email: "alice@example.com", birthYear: 2009, roleHint: "student" });
+  const eve = await createUser(db, { email: "eve@example.com", birthYear: 1980, roleHint: "guardian" });
+  const [{ household }] = await asUser<{ household: string }>(db, mom, "select public.create_household('The Smiths', 'guardian') as household");
+  for (const [who, email, side] of [[dad, "dad@example.com", "guardian"], [alice, "alice@example.com", "student"]] as const) {
+    const [{ inv }] = await asUser<{ inv: { token: string } }>(db, mom, "select public.create_invitation($1, $2, $3, null, false) as inv", [household, email, side]);
+    await asUser(db, who, "select public.accept_invitation($1)", [inv.token]);
+  }
+  const [momMember] = await asUser<{ id: string }>(db, alice, "select id from public.household_members where household_id = $1 and user_id = $2", [household, mom]);
+  await asUser(db, alice, "select public.set_member_can_edit($1, true)", [momMember.id]);
+  const [{ id: student }] = await asUser<{ id: string }>(db, alice, "select id from public.students where user_id = $1", [alice]);
+  const [{ id: list }] = await asUser<{ id: string }>(db, alice, "insert into public.lists (student_id, name, is_default) values ($1, 'My list', true) returning id", [student]);
+  const [item] = await asUser<{ id: string; legacy_sibling: boolean }>(db, alice, "insert into public.list_items (list_id, unit_id) values ($1, '243744') returning id, legacy_sibling", [list]);
+  assert.equal(item.legacy_sibling, false, "defaults false");
+
+  const set = "update public.list_items set legacy_sibling = true where id = $1";
+  assert.equal(await affectedAsUser(db, dad, set, [item.id]), 0, "a view-only guardian can't set it");
+  assert.equal(await affectedAsUser(db, eve, set, [item.id]), 0, "an outsider can't");
+  assert.equal(await affectedAsUser(db, mom, set, [item.id]), 1, "an edit-access guardian can");
+  assert.equal(await affectedAsUser(db, alice, "update public.list_items set legacy_sibling = false where id = $1", [item.id]), 1, "and so can the student");
+  const [seen] = await asUser<{ legacy_sibling: boolean }>(db, dad, "select legacy_sibling from public.list_items where id = $1", [item.id]);
+  assert.equal(seen.legacy_sibling, false, "the view-only guardian reads it");
+  assert.deepEqual(await asUser(db, eve, "select legacy_sibling from public.list_items where id = $1", [item.id]), [], "an outsider sees nothing");
+  await assert.rejects(asUser(db, alice, "update public.list_items set legacy_sibling = null where id = $1", [item.id]), /null value/);
+});
+
 test("tracking columns: defaults on a new item; the student and an edit-access guardian set them, a view-only guardian can't", async () => {
   const db = await bootAll();
   const mom = await createUser(db, { email: "mom@example.com", birthYear: 1978, roleHint: "guardian" });
@@ -275,4 +304,49 @@ test("tracking columns: defaults on a new item; the student and an edit-access g
   const [after] = await asUser<{ updates: boolean; visited_on: string | null; follows_social: boolean }>(db, dad, "select updates, visited_on, follows_social from public.list_items where id = $1", [item.id]);
   assert.deepEqual({ ...after }, { updates: false, visited_on: null, follows_social: false }, "the view-only guardian still reads the row");
   await assert.rejects(asUser(db, alice, "update public.list_items set visited_on = 'last spring' where id = $1", [item.id]), /invalid input syntax for type date/);
+});
+
+/* ------------------------------------------------------------------ */
+/* Five levels (20261012100000_five_levels.sql): the category check constraint, */
+/* and the new legacy/recruited columns                                */
+/* ------------------------------------------------------------------ */
+
+test("five levels: list_items.category accepts the five levels and unsorted, rejects the old three-group-only values nothing else, and rejects junk", async () => {
+  const db = await bootAll();
+  const alice = await createUser(db, { email: "alice@example.com", birthYear: 2009, roleHint: "student" });
+  const [{ id: student }] = await asUser<{ id: string }>(db, alice, "insert into public.students (user_id) values ($1) returning id", [alice]);
+  const [{ id: list }] = await asUser<{ id: string }>(db, alice, "insert into public.lists (student_id, name, is_default) values ($1, 'My list', true) returning id", [student]);
+  for (const category of ["high_reach", "reach", "target", "likely", "safe", "unsorted"]) {
+    const [row] = await asUser<{ category: string }>(
+      db,
+      alice,
+      "insert into public.list_items (list_id, unit_id, category) values ($1, $2, $3) returning category",
+      [list, `1${Math.floor(Math.random() * 900000) + 100000}`, category],
+    );
+    assert.equal(row.category, category);
+  }
+  await assert.rejects(
+    asUser(db, alice, "insert into public.list_items (list_id, unit_id, category) values ($1, '199999', 'reach-for-everyone')", [list]),
+    /violates check constraint/,
+    "a value outside the five levels and unsorted is rejected",
+  );
+});
+
+test("five levels: list_items.legacy defaults false and recruited defaults 'none', with a check constraint on recruited", async () => {
+  const db = await bootAll();
+  const alice = await createUser(db, { email: "alice@example.com", birthYear: 2009, roleHint: "student" });
+  const [{ id: student }] = await asUser<{ id: string }>(db, alice, "insert into public.students (user_id) values ($1) returning id", [alice]);
+  const [{ id: list }] = await asUser<{ id: string }>(db, alice, "insert into public.lists (student_id, name, is_default) values ($1, 'My list', true) returning id", [student]);
+  const [item] = await asUser<{ id: string; legacy: boolean; recruited: string }>(
+    db,
+    alice,
+    "insert into public.list_items (list_id, unit_id) values ($1, '243744') returning id, legacy, recruited",
+    [list],
+  );
+  assert.deepEqual({ legacy: item.legacy, recruited: item.recruited }, { legacy: false, recruited: "none" });
+  for (const recruited of ["contact", "pre_read", "likely_letter"]) {
+    assert.equal(await affectedAsUser(db, alice, "update public.list_items set recruited = $2 where id = $1", [item.id, recruited]), 1);
+  }
+  await assert.rejects(asUser(db, alice, "update public.list_items set recruited = 'maybe' where id = $1", [item.id]), /violates check constraint/);
+  assert.equal(await affectedAsUser(db, alice, "update public.list_items set legacy = true where id = $1", [item.id]), 1);
 });

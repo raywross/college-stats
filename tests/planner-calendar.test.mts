@@ -95,6 +95,7 @@ function planSchool(unitId: string, name: string): PlanSchool {
     cites: {},
     gpaAverage: null,
     standing: { admitRate: 0.4, sat: null, act: null, gpaAverage: null, testPolicy: "considered" },
+    poolSchool: {} as PlanSchool["poolSchool"],
   };
 }
 
@@ -122,10 +123,11 @@ function view(rows: PlanRowView[], over: Partial<PlanView> = {}): PlanView {
   return {
     student: { gpa: 3.8, test: { kind: "sat", score: 1400 } },
     rows,
-    balance: { reach: 0, target: 0, likely: 0 },
+    balance: { high_reach: 0, reach: 0, target: 0, likely: 0, safe: 0 },
     balanceLine: null,
     problems: [],
     edTwo: null,
+    edHelps: null,
     retake: null,
     estimates: {},
     next: null,

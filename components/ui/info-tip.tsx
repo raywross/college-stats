@@ -11,8 +11,9 @@ import { DEMOGRAPHIC_CATEGORIES } from "@/lib/metrics";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
+// Exported for panels that list several cited facts (the selectivity chip).
 // Inline, not inline-flex, so a long source name wraps like the sentence around it and its year stays beside it.
-function SourceLink({ s }: { s: AnyCitedSource }) {
+export function SourceLink({ s }: { s: AnyCitedSource }) {
   return (
     <>
       <a href={s.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary hover:underline">

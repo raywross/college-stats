@@ -10,6 +10,8 @@ import "server-only";
  *   const results = estimateMany(student, ["243780", "139755"], ctx);
  */
 import { getData } from "@/lib/data";
+import { stateOfHighSchoolId } from "@/lib/high-school-core";
+import { getHighSchool } from "@/lib/high-schools";
 import { gpaCurve, gpaModel } from "@/lib/planner/gpa-model-server";
 import type { CoreAtTopLevel } from "@/lib/student-profile";
 import type { School } from "@/lib/types";
@@ -19,7 +21,7 @@ import { modelEstimateWithDetail, MODEL_VERSION } from "./model";
 import { offeringFor } from "./rigor-server";
 import type { AppliedEstimate } from "./snapshot";
 import type { AppliedEstimator } from "./snapshot-write";
-import type { EstimateInput, EstimateResult, EstimateStudent, SchoolOffering } from "./types";
+import type { CollegeHooks, EstimateInput, EstimateResult, EstimateStudent, SchoolOffering } from "./types";
 
 export { MODEL_VERSION };
 export { withCounterfactual, type Counterfactual } from "./estimate-request";
@@ -36,15 +38,30 @@ export interface EstimateContext {
   linked: boolean;
   coreAtTopLevel?: CoreAtTopLevel | null;
   grade?: number | null;
+  /**
+   * The student's high school's state (USPS), from its record, else a public id's FIPS prefix; the estimate uses it
+   * when the student entered no state (method/standing.md "Revision 3", rule 7).
+   */
+  schoolState?: string | null;
+  /** The day the estimate is made (YYYY-MM-DD); today when absent. */
+  asOf?: string | null;
+}
+
+/** The high school's state: its record's, else the FIPS prefix of a public id; null for an unknown private school. */
+async function highSchoolState(id: string | null): Promise<string | null> {
+  if (!id) return null;
+  const hs = await getHighSchool(id).catch(() => null);
+  return hs?.school.state ?? stateOfHighSchoolId(id);
 }
 
 /** Builds the context for one student (one dataset read, the fitted GPA models, the high school's offering). */
-export async function estimateContext(student: Pick<EstimateStudent, "highSchoolId">, extra: { coreAtTopLevel?: CoreAtTopLevel | null; grade?: number | null } = {}): Promise<EstimateContext> {
-  const [{ getSchoolById, citeField }, model, curve, offering] = await Promise.all([
+export async function estimateContext(student: Pick<EstimateStudent, "highSchoolId">, extra: { coreAtTopLevel?: CoreAtTopLevel | null; grade?: number | null; asOf?: string | null } = {}): Promise<EstimateContext> {
+  const [{ getSchoolById, citeField }, model, curve, offering, schoolState] = await Promise.all([
     getData(),
     gpaModel(),
     gpaCurve(),
     student.highSchoolId ? offeringFor(student.highSchoolId).then((o) => (o.offering.source ? o.offering : null)).catch(() => null) : Promise.resolve(null),
+    highSchoolState(student.highSchoolId).catch(() => null),
   ]);
   const standingCache = new Map<string, StandingSchool>();
   return {
@@ -59,12 +76,14 @@ export async function estimateContext(student: Pick<EstimateStudent, "highSchool
     linked: student.highSchoolId !== null,
     coreAtTopLevel: extra.coreAtTopLevel ?? null,
     grade: extra.grade ?? null,
+    schoolState,
+    asOf: extra.asOf ?? null,
   };
 }
 
 /** A result for a college the dataset doesn't have: no group, nothing used. */
 function unknownCollege(unitId: string): EstimateResult {
-  return { unitId, group: null, label: null, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, modelVersion: MODEL_VERSION };
+  return { unitId, group: null, label: null, used: [], missing: [], facts: [], notes: [], send: null, moveUp: null, closeness: null, ed: null, modelVersion: MODEL_VERSION };
 }
 
 /** The model's answer with its snapshot detail, or the baseline's (no detail) when the model throws. */
@@ -83,6 +102,9 @@ export function estimateWithDetail(input: EstimateInput, ctx: EstimateContext): 
       overallYear: ctx.overallYearFor(school),
       coreAtTopLevel: ctx.coreAtTopLevel ?? null,
       grade: ctx.grade ?? null,
+      hooks: input.hooks ?? null,
+      schoolState: ctx.schoolState ?? null,
+      asOf: ctx.asOf ?? null,
     });
   } catch (err) {
     console.error(`estimate: the model failed for ${input.unitId}; serving the baseline: ${err instanceof Error ? err.message : String(err)}`);
@@ -110,12 +132,15 @@ export function estimate(input: EstimateInput, ctx: EstimateContext): EstimateRe
   return estimateWithDetail(input, ctx).result;
 }
 
-/** The estimate at several colleges, by unit id; ids the dataset doesn't have are left out. */
-export function estimateMany(student: EstimateStudent, unitIds: readonly string[], ctx: EstimateContext): Record<string, EstimateResult> {
+/**
+ * The estimate at several colleges, by unit id; ids the dataset doesn't have are left out. `hooks` carries each list
+ * row's legacy, recruited, and logged-interest inputs by unit id (decision 5); a college without an entry has none.
+ */
+export function estimateMany(student: EstimateStudent, unitIds: readonly string[], ctx: EstimateContext, hooks?: Readonly<Record<string, CollegeHooks>> | null): Record<string, EstimateResult> {
   const out: Record<string, EstimateResult> = {};
   for (const unitId of new Set(unitIds)) {
     if (!ctx.schoolById(unitId)) continue;
-    out[unitId] = estimate({ student, unitId }, ctx);
+    out[unitId] = estimate({ student, unitId, hooks: hooks?.[unitId] }, ctx);
   }
   return out;
 }

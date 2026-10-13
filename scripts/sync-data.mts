@@ -60,6 +60,7 @@ import { religionFrom } from "../lib/religion.ts";
 import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 import { normalizeUrl, websiteMismatch } from "../lib/links.ts";
 import { addIdentityMeta, applyIdentity } from "../lib/identity.ts";
+import { buildSelectivity, formatIndexFile, readIndexFile, selectivityProblems } from "./lib/selectivity.mts";
 import { loadIdentityInputs } from "./lib/identity-sync.mts";
 import { writeAliasTable } from "./lib/aliases-sync.mts";
 import { runSiteProbe } from "./lib/site-probe.mts";
@@ -1001,6 +1002,15 @@ async function main() {
   if (timeToDegree.missing > timeToDegree.shown * 0.01)
     throw new Error(`${om.name}: ${timeToDegree.missing} of ${timeToDegree.shown} shown 8-year groups have no 4/6-year shares (blank or not cumulative)`);
 
+  // Quad's selectivity (specs/chances/selectivity-index.md), last: it reads the newest admissions figures, the CDS
+  // blocks, and the trends restored above. Hysteresis reads the tiers in the committed data/schools.json, and the hidden
+  // index goes to data/selectivity-index.json, as `npm run build-selectivity` does.
+  const previousSelectivity = existsSync(OUT) ? new Map((JSON.parse(readFileSync(OUT, "utf8")) as School[]).map((s) => [s.unit_id, s.selectivity])) : new Map();
+  const selectivity = buildSelectivity(schools, meta, { previous: previousSelectivity, prior: readIndexFile(ROOT) });
+  schools.splice(0, schools.length, ...selectivity.schools);
+  const selectivityIssues = selectivityProblems(schools, selectivity.file, meta);
+  if (selectivityIssues.length) throw new Error(`Selectivity failed its checks:\n  ${selectivityIssues.slice(0, 20).join("\n  ")}`);
+
   // Nothing is written unless every value's lineage checks out.
   const problems = validateLineage(schools, meta);
   if (problems.length) {
@@ -1012,6 +1022,7 @@ async function main() {
   writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
   // One school per line keeps diffs readable between syncs.
   writeFileSync(OUT, `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
+  writeFileSync(join(ROOT, "data", "selectivity-index.json"), formatIndexFile(selectivity.file));
   writeDetails(join(ROOT, "data", "detail", "schools"), details);
   // Short names for search (specs/school-identity/aliases.md), from this HD file's IALIAS column and the identity files.
   writeAliasTable(ROOT, { schools, hdRows: hd.rows, wikidata: identity.wikidata });
@@ -1046,6 +1057,7 @@ async function main() {
   console.log(`  religious affiliation: ${schools.filter((s) => s.religion?.affiliation).length} affiliated, ${schools.filter((s) => s.religion && !s.religion.affiliation).length} none, ${schools.filter((s) => !s.religion).length} not in ${icChar.name}`);
   console.log(`  overrides applied:    ${stats.overridden}`);
   console.log(`  college-reported:     ${reportedMerged} colleges`);
+  console.log(`  selectivity:          Elite ${selectivity.file.elite_count} (ELITE_INDEX ${selectivity.file.elite_index}), ${selectivity.changed} colleges' tiers changed`);
   if (directoryWarnings.length) {
     console.warn(`  directory mismatches: ${directoryWarnings.length} (check the id still means the same college)`);
     for (const w of directoryWarnings.slice(0, 20)) console.warn(`    ${w}`);

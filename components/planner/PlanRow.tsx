@@ -1,26 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { Heart, Info } from "lucide-react";
+import { ChevronDown, Heart } from "lucide-react";
 import { CollegeChip } from "@/components/planner/CollegeChip";
-import { RoundChip } from "@/components/planner/RoundChip";
 import { RowDrawer } from "@/components/planner/RowDrawer";
-import { SourceTip } from "@/components/ui/info-tip";
-import { dayLabel, isPastDeadline, isUrgentDeadline, roundsPicked, SEASON_STATUS_LABEL } from "@/lib/planner/list-row";
-import { roundDates } from "@/lib/planner/rounds";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
-import type { ListRound } from "@/lib/list-rules";
-import type { AnyCited } from "@/lib/lineage";
 import { track } from "@/lib/analytics";
+import { rowToDo } from "@/lib/planner/capture";
+import type { SocialNetwork } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**
- * One college on the list (specs/planner/redesign/list.md "The row"): the Dream heart, the crest and name, the
- * round chip (no group chip — groups are Quad's only, shown by the section heading above), the deadline (bold
- * within a week) with its citation, the status column once the season starts (desktop), (i) for the drawer. The ×
- * to remove a college lives in the drawer now, not the row. An underclassman's row (decision 12, no round picked
- * yet) shows "Round picked senior year" instead of the round chip, deadline, and status. Every tap is optimistic
+ * One college on the list (specs/planner/redesign/list.md "The row"): the Dream heart, the crest and name, and an
+ * expand control ("Details" and a chevron, aria-expanded) that opens the row's capture panel (RowDrawer) inline under
+ * the row. When there's something left to capture (rowToDo) the control takes the accent color and a small count. The level is the section heading above the row. Round, deadline, and status
+ * left the row on 2026-10-12 (owner: "there for seniors; remove for now", to return with recommendations); the data
+ * and the calendar's use of it are unchanged. The ×  to remove a college lives in the panel. Every tap is optimistic
  * (the parent, PlanList, patches its own state and rolls back on a refused write).
  */
 export function PlanRow({
@@ -29,7 +25,6 @@ export function PlanRow({
   dreamName,
   error,
   onToggleDream,
-  onRound,
   onRemove,
 }: {
   row: PlanRowView;
@@ -39,27 +34,19 @@ export function PlanRow({
   /** A refused write's message, shown under the row until the next tap. */
   error?: string | null;
   onToggleDream: (row: PlanRowView) => void;
-  /** A round the student picks, or null for "Use the starting round". */
-  onRound: (row: PlanRowView, round: ListRound | null) => void;
-  /** Takes the college off the list (after the drawer's own confirmation). */
+  /** Takes the college off the list (after the panel's own confirmation). */
   onRemove: (row: PlanRowView) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const { item, school, deadline } = row;
+  const { item, school } = row;
   const name = school?.name ?? item.unit_id;
-  const past = isPastDeadline(deadline?.iso ?? null, ctx.today);
-  const urgent = isUrgentDeadline(deadline?.iso ?? null, ctx.today);
   const canEdit = ctx.viewer.canEdit;
-  const picked = roundsPicked(ctx.grade);
-
-  const dates: Record<ListRound, string | null> = Object.fromEntries(
-    row.pickable.map((r) => [r, school ? roundDates(school, r).closing?.iso ?? null : null]),
-  ) as Record<ListRound, string | null>;
-  const deadlineCite = deadline ? ((school?.cites[deadline.field] as AnyCited | undefined) ?? undefined) : undefined;
+  // What's left to capture here (lib/planner/capture.ts rowToDo): an accent and a count on the control, never a nag.
+  const todo = rowToDo(item, ctx.visits, school?.social as Partial<Record<SocialNetwork, string>> | null | undefined);
 
   return (
     <li>
-      <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1.5 p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto_auto] sm:px-4">
+      <div className="flex items-center gap-2 p-3 sm:px-4">
         <button
           type="button"
           onClick={() => {
@@ -75,47 +62,37 @@ export function PlanRow({
           <Heart className={cn("size-5", row.dream && "fill-rose-500 text-rose-500")} aria-hidden />
         </button>
 
-        <div className="min-w-0">
-          <CollegeChip school={school ? { unit_id: school.unit_id, name: school.name, brand: school.brand } : null} size="sm" link />
+        <div className="min-w-0 flex-1">
+          <CollegeChip school={school ? { unit_id: school.unit_id, name: school.name, brand: school.brand } : null} size="sm" link className="max-w-full" />
           {row.dream && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">Dream</p>}
         </div>
 
-        <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-1 sm:contents">
-          {!picked ? (
-            <span className="text-sm text-muted-foreground sm:col-span-3 sm:text-right">Round picked senior year</span>
-          ) : (
-            <>
-              <RoundChip round={row.round} auto={row.roundAuto} pickable={row.pickable} dates={dates} canEdit={canEdit} onChange={(round) => onRound(row, round)} />
-              <span className={cn("inline-flex items-center gap-1 text-sm tabular-nums", urgent ? "font-bold" : "font-semibold", past && "text-muted-foreground line-through")}>
-                {deadline ? (
-                  <>
-                    {dayLabel(deadline.iso)}
-                    {deadlineCite && <SourceTip cited={deadlineCite} />}
-                  </>
-                ) : (
-                  <span className="text-xs font-normal text-muted-foreground">no date on record</span>
-                )}
-              </span>
-              <span className="hidden text-sm text-muted-foreground lg:inline-flex lg:w-28">{row.seasonStatus !== null ? SEASON_STATUS_LABEL[row.seasonStatus] : null}</span>
-            </>
+        <button
+          type="button"
+          onClick={() => {
+            const next = !open;
+            setOpen(next);
+            if (next) track("plan_drawer_opened", { in_season: row.seasonStatus !== null });
+          }}
+          aria-expanded={open}
+          aria-label={`Details for ${name}${todo.length ? `, ${todo.length === 1 ? "one thing" : "two things"} to add` : ""}`}
+          className={cn(
+            "inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold transition-colors",
+            todo.length ? "bg-primary/10 text-primary hover:bg-primary/15" : "text-muted-foreground hover:bg-muted",
+            open && !todo.length && "bg-muted text-foreground",
           )}
-          <button
-            type="button"
-            onClick={() => {
-              const next = !open;
-              setOpen(next);
-              if (next) track("plan_drawer_opened", { in_season: row.seasonStatus !== null });
-            }}
-            aria-expanded={open}
-            aria-label={`Details for ${name}`}
-            className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-          >
-            <Info className="size-4" aria-hidden />
-          </button>
-        </div>
+        >
+          {todo.length > 0 && (
+            <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground" aria-hidden>
+              {todo.length}
+            </span>
+          )}
+          <span className="hidden sm:inline">Details</span>
+          <ChevronDown className={cn("size-4 transition-transform motion-reduce:transition-none", open && "rotate-180")} aria-hidden />
+        </button>
       </div>
       {error && <p className="px-4 pb-2 text-xs text-destructive sm:px-16">{error}</p>}
-      {open && <RowDrawer row={row} ctx={ctx} name={name} onUseStartingRound={() => onRound(row, null)} onRemove={() => onRemove(row)} />}
+      {open && <RowDrawer row={row} ctx={ctx} name={name} onRemove={() => onRemove(row)} />}
     </li>
   );
 }

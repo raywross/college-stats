@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocalProfile } from "@/components/me/useLocalProfile";
 import type { EstimateContextInput } from "@/lib/chances/estimate-request";
 import { gradeNow } from "@/lib/chances/courses";
-import { estimateInputFromProfile } from "@/lib/chances/snapshot";
+import { estimateInputFromProfile } from "@/lib/chances/estimate-input";
 import { myStandingInput, type MyStanding } from "@/lib/chances/standing-store";
 import type { EstimateResult, EstimateStudent } from "@/lib/chances/types";
 import { hasNumbers, yourNumbersFrom, type YourNumbers } from "@/lib/chances/what-went-in";

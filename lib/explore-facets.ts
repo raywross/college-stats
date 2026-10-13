@@ -22,6 +22,7 @@ import { isMostlyOnline } from "./online-share.ts";
 import { noCssProfile, offersInternationalAid } from "./cds/financial-aid.ts";
 import { fieldFacets } from "./majors.ts";
 import { policyBucket } from "./test-policy.ts";
+import { SELECTIVITY_TIERS } from "./chances/levels.ts";
 import { FAITH_FILTERS, faithFilterOf } from "./religion.ts";
 import { TRADITIONS } from "./directories.ts";
 import { hasLgbtqCenter, policyIsYes } from "./lgbtq-policy.ts";
@@ -73,6 +74,10 @@ export function buildFacets({ getAllSchools, histogram, meritInfoFor }: FacetSou
     const b = policyBucket(s.admissions.test_policy);
     if (b) policy[b]++;
   }
+
+  // Quad's selectivity (specs/chances/selectivity-index.md): colleges per tier for all applicants.
+  const selectivity = Object.fromEntries(SELECTIVITY_TIERS.map((t) => [t, 0])) as FilterFacets["selectivity"];
+  for (const s of all) if (s.selectivity?.tier) selectivity[s.selectivity.tier]++;
 
   const campus: FilterFacets["campus"] = {
     setting: Object.fromEntries(SETTING_GROUPS.map((g) => [g.key, 0])) as FilterFacets["campus"]["setting"],
@@ -132,6 +137,7 @@ export function buildFacets({ getAllSchools, histogram, meritInfoFor }: FacetSou
     services,
     balance,
     policy,
+    selectivity,
     fullTime: all.filter(isMostlyFullTime).length,
     fewLoans: all.filter(hasFewLoans).length,
     pellGap: all.filter(hasSmallPellGap).length,

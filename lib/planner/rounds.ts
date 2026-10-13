@@ -259,36 +259,8 @@ export function considersInterest(school: Pick<RoundsSchool, "profile"> | null |
 }
 
 /* ------------------------------------------------------------------ */
-/* Standing and money (seams for chances-and-fit and the estimator)    */
+/* Money (a seam for the net-price estimator)                          */
 /* ------------------------------------------------------------------ */
-
-export type StandingLabel = "Reach for everyone" | "Reach" | "Target" | "Likely" | "Not sorted";
-export interface Standing {
-  label: StandingLabel;
-  reason: string;
-}
-
-/** Under this admit rate a college is a Reach for every applicant (early-rounds.md "Your standing"). */
-export const REACH_FOR_EVERYONE_RATE = 0.2;
-
-/**
- * The stand-in for chances (owner assumption 2): "Reach for everyone" under a 20% admit rate, else the list's own
- * category. When chances-and-fit is built, its output replaces this map; proposeRounds takes it as an input.
- */
-export function standingFor(item: Pick<RoundsItem, "category">, school: Pick<RoundsSchool, "admitRate"> | null | undefined): Standing {
-  const rate = school?.admitRate ?? null;
-  if (rate !== null && rate < REACH_FOR_EVERYONE_RATE) return { label: "Reach for everyone", reason: `Admits fewer than ${Math.round(REACH_FOR_EVERYONE_RATE * 100)}% of applicants` };
-  switch (item.category) {
-    case "reach":
-      return { label: "Reach", reason: "Your category on the list" };
-    case "target":
-      return { label: "Target", reason: "Your category on the list" };
-    case "likely":
-      return { label: "Likely", reason: "Your category on the list" };
-    default:
-      return { label: "Not sorted", reason: "Not sorted on the list yet" };
-  }
-}
 
 /** A guardian's shared estimate (net-price-estimator, not built: always absent today). */
 export interface Estimate {
@@ -304,38 +276,6 @@ export interface MoneyInput {
 }
 
 export const NO_MONEY: MoneyInput = { limit: null, estimates: {} };
-
-/* ------------------------------------------------------------------ */
-/* Priority order                                                      */
-/* ------------------------------------------------------------------ */
-
-const CATEGORY_ORDER = { reach: 0, target: 1, likely: 2, unsorted: 3 } as const;
-
-/**
- * "Where I'd go if admitted everywhere": the Dream first, then the student's priority (1 first), then colleges with no
- * priority by category (Reach, Target, Likely, Unsorted) and list position.
- */
-export function priorityOrder<T extends RoundsItem>(items: T[]): T[] {
-  return [...items].sort((a, b) => {
-    if (!!a.dream !== !!b.dream) return a.dream ? -1 : 1;
-    const pa = a.priority ?? null;
-    const pb = b.priority ?? null;
-    if (pa !== null && pb !== null && pa !== pb) return pa - pb;
-    if ((pa === null) !== (pb === null)) return pa === null ? 1 : -1;
-    return CATEGORY_ORDER[a.category] - CATEGORY_ORDER[b.category] || a.position - b.position;
-  });
-}
-
-/** Whether the student has ranked the list (every live college has a priority). */
-export function hasPriorities(items: RoundsItem[]): boolean {
-  const live = items.filter((i) => i.status !== "decided");
-  return live.length > 0 && live.every((i) => i.priority !== null && i.priority !== undefined);
-}
-
-/* ------------------------------------------------------------------ */
-/* The proposal                                                        */
-/* ------------------------------------------------------------------ */
-
 
 const dayLabel = (iso: string) => {
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

@@ -210,7 +210,7 @@ export async function setGradYear(studentId: string, gradYear: number): Promise<
   if (error) return fail(error, "setGradYear");
   if (!data?.length) return { ok: false, message: "Only the student or a guardian who can edit can set this." };
   const lists = await r.supabase.from("lists").select("id").eq("student_id", studentId);
-  for (const l of (lists.data ?? []) as { id: string }[]) await regenerate(l.id);
+  await Promise.all(((lists.data ?? []) as { id: string }[]).map((l) => regenerate(l.id)));
   refresh();
   return { ok: true };
 }

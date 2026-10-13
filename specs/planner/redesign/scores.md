@@ -3,6 +3,14 @@
 > Status: **built** 2026-10-10 on feature/plan-redesign ([build plan](build-plan.md)). Part 5 of the [planner redesign](README.md). After [standing.md](standing.md).
 > Replaces the SAT and ACT dates the timeline generated for everyone ([../timeline.md](../timeline.md)) with a coach
 > for the one test the student is taking.
+>
+> **Removed 2026-10-12** (owner: "a relic now that we've got so many more inputs. We'll add something for
+> recommendations in a future PR"). The tab, its body (`ScoresTab`, `ScoreRow`, the Courses section with its course
+> list, `PlanCoursesSheet`, and the course plan's Next year card), and `lib/planner/scores.ts` are deleted; an old
+> `?tab=scores` link opens the default tab. Kept: the retake suggestion as a plain list notice (no link), the course
+> plan's server code in `lib/chances/` for the recommendations work, and the stored test dates and targets. Links that
+> pointed at "Your courses" (the course-registration task, the profile's "what you'll need" table) open the plan's
+> setup instead (`/plan?setup=1`). This file stays as the record of what the tab did.
 
 ## Goal
 A student takes one test and works to raise it. The Scores tab tells them where that score stands at each college on

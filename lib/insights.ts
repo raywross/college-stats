@@ -17,6 +17,7 @@ import {
   type Domain,
   type MetricKey,
 } from "./metrics";
+import { tierText } from "./selectivity-tier";
 import { money, moneyCompact, pct, pctSmart, num } from "./format";
 import { leaversElsewhere } from "./outcome-measures";
 import { shortName } from "./brand";
@@ -148,7 +149,10 @@ export function admissionsTakeaway({ rankOf, reportingCount }: Dataset, s: Schoo
   const n = admitRatio(s);
   const rank = rankOf(s, "acceptance");
   if (rate === null || n === null || rank === null) return undefined;
-  const tier = selectivityTier(rate).label;
+  // Quad's selectivity tier where the college is rated (selectivity-index.md), else the admit-rate band
+  // (U8, levels.md carry-forward: "the profile's Getting in card summary sentence... still name the old admit-rate
+  // band ('Most selective')").
+  const tier = tierText(s) ?? selectivityTier(rate).label;
   return `${shortName(s)} admits about ${n} applicants (${pctSmart(rate)}). That puts it in the "${tier}" tier, more selective than ${share(
     1 - rank
   )} of the ${num(reportingCount("acceptance"))} colleges that report admissions.`;

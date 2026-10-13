@@ -17,6 +17,8 @@ import {
   effectiveScale,
   gpaCheck,
   intakeNeeded,
+  INTAKE_DONE,
+  INTAKE_REVIEW,
   intakeToSave,
   parseIntakeSave,
   POPULAR_AP,
@@ -26,12 +28,16 @@ import {
   searchAp,
   stepValid,
   targetCheck,
+  weightedGpaCheck,
   yearOptions,
   yearStatus,
   type IntakeDraft,
   type IntakeSave,
 } from "../lib/planner/intake.ts";
 import { mergeCoursesForSave } from "../lib/chances/courses.ts";
+import { activityByKey } from "../lib/chances/activity-catalog.ts";
+import { allAwards } from "../lib/chances/awards-catalog.ts";
+import { activityFromCatalog, awardFromCatalog, setClubFamily, setYearTitle, toggleYear, typedActivity, typedAward } from "../lib/planner/activity-steps.ts";
 import { isCatalogKeyFor } from "../lib/chances/catalog.ts";
 import { emptyProfile, gpaMaxFor, sanitizeProfile, type StudentProfileData } from "../lib/student-profile.ts";
 import type { CourseEntry } from "../lib/chances/types.ts";
@@ -42,6 +48,10 @@ const draft = (over: Partial<IntakeDraft> = {}): IntakeDraft => ({
   classYear: 2027,
   gpa: "3.82",
   scaleOverride: null,
+  weightedGpa: "",
+  classStanding: null,
+  classRankPercentile: null,
+  rankExpectation: null,
   test: "sat",
   score: "1390",
   practice: false,
@@ -49,6 +59,9 @@ const draft = (over: Partial<IntakeDraft> = {}): IntakeDraft => ({
   highSchool: null,
   highSchoolId: null,
   courses: [],
+  activities: [],
+  awards: [],
+  activitiesNone: {},
   ...over,
 });
 
@@ -114,6 +127,18 @@ test("gpaCheck: hints and captions for empty, detected, overridden, and out-of-r
   assert.equal(gpaCheck({ gpa: "92", scaleOverride: "5.0" }).ok, false);
 });
 
+test("weightedGpaCheck: reads like the unweighted GPA (detects and shows the scale), but a value above the scale's top is never flagged", () => {
+  assert.deepEqual(weightedGpaCheck(""), { ok: true, hint: "Many schools weight honors and AP grades; if yours does, add it.", tone: "muted" });
+  // A 4.0 school's weighted 4.6: above the 4.0 top, detected as the 5.0-weighted family, never an error.
+  assert.deepEqual(weightedGpaCheck("4.6"), { ok: true, hint: "Looks like a 5.0 weighted.", tone: "muted" });
+  // A 100-point school's weighted 104.3: above the 100 top, still a clean 100-point read.
+  assert.deepEqual(weightedGpaCheck("104.3"), { ok: true, hint: "Looks like a 100-point scale.", tone: "muted" });
+  assert.equal(weightedGpaCheck("3.9").hint, "Looks like a 4.0 scale.");
+  const bad = weightedGpaCheck("abc");
+  assert.equal(bad.ok, false);
+  assert.equal(bad.tone, "amber");
+});
+
 test("gpaMaxFor: a 100-point GPA may run to 120 everywhere the profile is sanitized", () => {
   assert.equal(gpaMaxFor("100"), 120);
   assert.equal(sanitizeProfile({ academics: { gpa: 108, gpaScale: "100" } }).academics.gpa, 108);
@@ -142,7 +167,7 @@ test("targetCheck: optional; out of range blocks; at or below the score is allow
   assert.deepEqual(targetCheck("act", "29", "37"), { ok: false, hint: "ACT scores run from 1 to 36.", tone: "amber" });
 });
 
-test("stepValid: grades need a class and a valid GPA; the test step a choice, a score, and a valid target; review both", () => {
+test("stepValid: grades need a class and a valid GPA; the test step a choice, a score, and a valid target; review both; AP courses and activities never block", () => {
   assert.equal(stepValid(draft(), 0), true);
   assert.equal(stepValid(draft({ classYear: null }), 0), false);
   assert.equal(stepValid(draft({ gpa: "" }), 0), false);
@@ -152,9 +177,12 @@ test("stepValid: grades need a class and a valid GPA; the test step a choice, a 
   assert.equal(stepValid(draft({ score: "" }), 1), false);
   assert.equal(stepValid(draft({ target: "1700" }), 1), false);
   assert.equal(stepValid(draft({ courses: [{ id: "x", key: "ap_biology", year: null, exam: null }] }), 2), true, "AP courses never block");
-  assert.equal(stepValid(draft(), 3), true);
-  assert.equal(stepValid(draft({ gpa: "" }), 3), false);
-  assert.equal(stepValid(draft(), 4), true);
+  for (const step of [3, 4, 5, 6] as const) {
+    assert.equal(stepValid(draft({ gpa: "" }), step), true, `activity step ${step} never blocks, even with an invalid grades step`);
+  }
+  assert.equal(stepValid(draft(), INTAKE_REVIEW), true);
+  assert.equal(stepValid(draft({ gpa: "" }), INTAKE_REVIEW), false);
+  assert.equal(stepValid(draft(), INTAKE_DONE), true);
 });
 
 /* ------------------------------------------------------------------ */
@@ -265,6 +293,10 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
     classYear: 2028,
     gpa: "",
     scaleOverride: null,
+    weightedGpa: "",
+    classStanding: null,
+    classRankPercentile: null,
+    rankExpectation: null,
     test: null,
     score: "",
     practice: false,
@@ -272,6 +304,9 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
     highSchool: null,
     highSchoolId: null,
     courses: [],
+    activities: [],
+    awards: [],
+    activitiesNone: {},
   });
   const d = draftFromProfile(sampleProfile(), 2027, TODAY);
   assert.equal(d.classYear, 2027);
@@ -289,9 +324,16 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
   assert.deepEqual(reviewLines(d, TODAY), [
     { step: 0, label: "Class", value: "Class of 2027" },
     { step: 0, label: "GPA", value: "3.82 · 4.0 scale" },
+    { step: 0, label: "Weighted GPA", value: "Not set" },
+    { step: 0, label: "Class standing", value: "Not set" },
+    { step: 0, label: "Rank expectation", value: "None" },
     { step: 0, label: "School", value: "Not set" },
     { step: 1, label: "Test", value: "SAT 1390 · aiming for 1450" },
     { step: 2, label: "AP courses", value: "1 taken · 1 taking or planned" },
+    { step: 3, label: "Sports", value: "Not added" },
+    { step: 4, label: "Clubs", value: "Not added" },
+    { step: 5, label: "Work", value: "Not added" },
+    { step: 6, label: "Other", value: "Not added" },
   ]);
 });
 
@@ -333,6 +375,33 @@ test("round trip: the draft of a saved profile saves back to the same profile (n
   const save = intakeToSave(draftFromProfile(p, 2027, TODAY));
   assert.ok(save);
   assert.deepEqual(applyIntake(p, save, TODAY), p);
+});
+
+test("round trip: weighted GPA, class standing, and rank expectation save back onto the profile and reopen the same", () => {
+  const p = sampleProfile();
+  const d = draftFromProfile(p, 2027, TODAY);
+  d.weightedGpa = "4.4";
+  d.classStanding = "top5";
+  d.classRankPercentile = 5;
+  d.rankExpectation = "salutatorian";
+  const save = intakeToSave(d)!;
+  const out = applyIntake(p, save, TODAY);
+  assert.equal(out.academics.weightedGpa, 4.4);
+  assert.equal(out.academics.classStanding, "top5");
+  assert.equal(out.academics.classRankPercentile, 5);
+  assert.equal(out.academics.rankExpectation, "salutatorian");
+  assert.deepEqual(draftFromProfile(out, 2027, TODAY).weightedGpa, "4.4");
+  assert.equal(draftFromProfile(out, 2027, TODAY).classStanding, "top5");
+  assert.equal(draftFromProfile(out, 2027, TODAY).rankExpectation, "salutatorian");
+});
+
+test("draftFromProfile: a stored 'no_rank' (the removed 'my school doesn't rank' pick) opens as unanswered", () => {
+  const p = sampleProfile();
+  p.academics.classStanding = "no_rank";
+  p.academics.classRankPercentile = null;
+  const d = draftFromProfile(p, 2027, TODAY);
+  assert.equal(d.classStanding, null);
+  assert.equal(d.classRankPercentile, null);
 });
 
 test("applyIntake: the picked year and score land on the course list; the numbers land on the profile", () => {
@@ -387,12 +456,88 @@ test("applyIntake: the picked year and score land on the course list; the number
   assert.equal(out.academics.courses.length, 6);
 });
 
+test("the four activity steps: entries built with their helpers and awards round-trip draft → save → server check → profile → draft, and Review has a line per step", () => {
+  let soccer = activityFromCatalog(activityByKey("soccer")!);
+  soccer = toggleYear(toggleYear(toggleYear(soccer, 10), 11), 12);
+  soccer = setYearTitle(soccer, 12, "Captain");
+  soccer = { ...soccer, hoursPerWeek: 12, recognition: 2 };
+  let deca = activityFromCatalog(activityByKey("deca")!);
+  deca = setYearTitle(toggleYear(deca, 11), 12, "President");
+  let club = setClubFamily(typedActivity("clubs", "Bee Club"), "science");
+  club = toggleYear(club, 9);
+  let job = toggleYear(typedActivity("work", "Summer intern at City Hall"), 11);
+  job = { ...job, hoursPerWeek: 15 };
+  const volunteering = toggleYear(typedActivity("other", "Food bank volunteer"), 10);
+  const awards = [awardFromCatalog(allAwards().find((a) => a.key === "eagle_scout")!), { ...typedAward("Rotary youth award"), tier: 2 as const, year: 11 as const }];
+  const d = draft({ activities: [soccer, deca, club, job, volunteering], awards });
+
+  const lines = reviewLines(d, TODAY).filter((l) => l.step >= 3);
+  assert.deepEqual(lines, [
+    { step: 3, label: "Sports", value: "Soccer" },
+    { step: 4, label: "Clubs", value: "DECA, Bee Club" },
+    { step: 5, label: "Work", value: "Summer intern at City Hall" },
+    { step: 6, label: "Other", value: "2 awards · Food bank volunteer" },
+  ]);
+
+  const saved = intakeToSave(d)!;
+  const parsed = parseIntakeSave(JSON.parse(JSON.stringify(saved)))!;
+  assert.deepEqual(parsed.activities, saved.activities, "the server's check keeps what the browser sent");
+  assert.deepEqual(parsed.awards, saved.awards);
+  const out = applyIntake(sampleProfile(), parsed, TODAY);
+  const by = Object.fromEntries(out.academics.activities.map((a) => [a.name, a]));
+  assert.deepEqual(by.Soccer.titles, { 10: "JV", 11: "JV", 12: "Captain" });
+  assert.deepEqual(by.Soccer.roles, { 10: "member", 11: "member", 12: "leader" });
+  assert.equal(by.Soccer.catalogKey, "soccer");
+  assert.equal(by.Soccer.family, "athletics");
+  assert.deepEqual(by.DECA.titles, { 11: "Member", 12: "President" });
+  assert.equal(by.DECA.roles[12], "leader");
+  assert.equal(by["Bee Club"].family, "science");
+  assert.equal(by["Summer intern at City Hall"].kind, "work");
+  assert.deepEqual(by["Summer intern at City Hall"].titles, { 11: "Intern" }, "a job named as an internship starts as Intern");
+  assert.equal(by["Food bank volunteer"].kind, "service");
+  assert.equal(out.academics.awards.length, 2);
+  assert.equal(out.academics.awards[0].name, "Eagle Scout");
+  assert.equal(out.academics.awards[1].tier, 2);
+
+  const back = draftFromProfile(out, 2027, TODAY);
+  assert.deepEqual(back.activities, out.academics.activities);
+  assert.deepEqual(back.awards, out.academics.awards);
+  assert.deepEqual(reviewLines(back, TODAY).filter((l) => l.step >= 3), lines, "the same Review lines after a round trip");
+});
+
+test("the activity steps never block and their draft carries through untouched when skipped", () => {
+  const p = sampleProfile();
+  p.academics.awards = [{ id: "a1", key: "honor_roll", name: "Honor roll", tier: 4, year: null }];
+  const d = draftFromProfile(p, 2027, TODAY);
+  for (const step of [3, 4, 5, 6] as const) assert.equal(stepValid(d, step), true);
+  const out = applyIntake(p, intakeToSave(d)!, TODAY);
+  assert.deepEqual(out.academics.awards, p.academics.awards);
+});
+
+test("the activity steps' entries: carried from the profile, sanitized on save, written back, and never block a step", () => {
+  const p = sampleProfile();
+  p.academics.activities = [{ id: "soccer", name: "Varsity soccer", kind: "sport", years: [10, 11, 12], roles: { 10: "member", 11: "officer", 12: "leader" }, hoursPerWeek: 8, recognition: 3, relatedToMajor: false }];
+  const d = draftFromProfile(p, 2027, TODAY);
+  assert.deepEqual(d.activities, p.academics.activities);
+  // Invalid rows are dropped, not a reason to refuse the step or the whole save (sanitizeActivities' own rule).
+  d.activities = [...d.activities, { id: "bad", name: "", kind: "club", years: [], roles: {}, hoursPerWeek: null, recognition: null, relatedToMajor: false }];
+  const saved = intakeToSave(d)!;
+  assert.equal(saved.activities.length, 1, "the unnamed row was dropped");
+  assert.deepEqual(parseIntakeSave(saved)?.activities, saved.activities);
+  const out = applyIntake(p, saved, TODAY);
+  assert.deepEqual(out.academics.activities, p.academics.activities);
+});
+
 test("applyIntake: status always derives from the picked year, the class, and today — never stored, never inferred from 'taken'", () => {
   const p = emptyProfile();
   const save: IntakeSave = {
     classYear: 2029,
     gpa: 3.5,
     gpaScale: "4.0",
+    weightedGpa: null,
+    classStanding: null,
+    classRankPercentile: null,
+    rankExpectation: null,
     focus: "none",
     score: null,
     practice: false,
@@ -404,6 +549,9 @@ test("applyIntake: status always derives from the picked year, the class, and to
       { id: "b", key: "ap_chemistry", year: 11, exam: null },
       { id: "c", key: "ap_human_geography", year: 9, exam: "3" },
     ],
+    activitiesNone: {},
+    activities: [],
+    awards: [],
   };
   const out = applyIntake(p, save, TODAY);
   const by = Object.fromEntries(out.academics.courses.map((c) => [c.id, c]));
@@ -457,6 +605,10 @@ const GOOD: IntakeSave = {
   classYear: 2027,
   gpa: 3.82,
   gpaScale: "4.0",
+  weightedGpa: null,
+  classStanding: null,
+  classRankPercentile: null,
+  rankExpectation: null,
   focus: "sat",
   score: 1390,
   practice: false,
@@ -464,6 +616,9 @@ const GOOD: IntakeSave = {
   highSchool: "Lincoln High School",
   highSchoolId: "010000500870",
   courses: [{ id: "c1", key: "ap_biology", year: 11, exam: "4" }],
+  activities: [],
+  awards: [],
+  activitiesNone: {},
 };
 
 test("intakeToSave: null while the grades or test step is invalid; testing fields cleared for Not testing", () => {
@@ -507,6 +662,13 @@ test("parseIntakeSave: accepts a good save and refuses anything off", () => {
     { ...GOOD, courses: [GOOD.courses[0], { ...GOOD.courses[0], key: "ap_chemistry" }] },
     { ...GOOD, highSchoolId: "not-an-id" },
     { ...GOOD, highSchoolId: 12345 },
+    { ...GOOD, weightedGpa: 121 },
+    { ...GOOD, weightedGpa: -1 },
+    { ...GOOD, weightedGpa: "4.4" },
+    { ...GOOD, classRankPercentile: 0 },
+    { ...GOOD, classRankPercentile: 101 },
+    { ...GOOD, classRankPercentile: 10.5 },
+    { ...GOOD, rankExpectation: "president" },
   ];
   for (const b of bad) assert.equal(parseIntakeSave(b), null, JSON.stringify(b));
   // An overlong free-typed name is dropped, not a reason to refuse the whole save (student-profile.ts's own
@@ -515,6 +677,15 @@ test("parseIntakeSave: accepts a good save and refuses anything off", () => {
   assert.equal(parseIntakeSave({ ...GOOD, highSchool: "x".repeat(201) })?.highSchool, null);
   assert.equal(parseIntakeSave({ ...GOOD, highSchool: "Not Listed Yet", highSchoolId: null })?.highSchoolId, null);
   assert.equal(parseIntakeSave({ ...GOOD, highSchoolId: "A9106383" })?.highSchoolId, "A9106383");
+  assert.equal(parseIntakeSave({ ...GOOD, weightedGpa: 4.4 })?.weightedGpa, 4.4);
+  assert.deepEqual(
+    parseIntakeSave({ ...GOOD, classStanding: "top5", classRankPercentile: 5, rankExpectation: "salutatorian" }),
+    { ...GOOD, classStanding: "top5", classRankPercentile: 5, rankExpectation: "salutatorian" },
+  );
+  // An unrecognized classStanding (including a stored "no_rank" from before the question was reworded) reads as
+  // unanswered rather than refusing the whole save — matches sanitizeClassStanding's own leniency (owner, 2026-10-12).
+  assert.equal(parseIntakeSave({ ...GOOD, classStanding: "top2" })?.classStanding, null);
+  assert.equal(parseIntakeSave({ ...GOOD, classStanding: "no_rank" })?.classStanding, null);
 });
 
 /* ------------------------------------------------------------------ */

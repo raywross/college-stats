@@ -61,7 +61,7 @@ test("overall, then residency (in-state, out-of-state, international) when the g
   assert.equal(none.rate, 0.43);
   assert.equal(none.field, "admissions.acceptance_rate");
   assert.equal(none.edition, "Fall 2025");
-  assert.deepEqual(texts(none), ["43% of applicants were admitted (Fall 2025)."]);
+  assert.deepEqual(texts(none), ["Applicants were admitted at 43% (Fall 2025). Add your state to see the rate for applicants like you."]);
 
   const hoosier = poolRateFor(student({ state: "IN" }), purdue);
   assert.equal(hoosier.kind, "residency");
@@ -69,12 +69,12 @@ test("overall, then residency (in-state, out-of-state, international) when the g
   assert.equal(hoosier.label, "in-state rate");
   assert.equal(hoosier.field, "derived.admit_rate_in_state");
   assert.equal(hoosier.edition, "Fall 2025");
-  assert.deepEqual(texts(hoosier), ["Applicants from Indiana were admitted at 71% (Fall 2025)."]);
+  assert.deepEqual(texts(hoosier), ["Applicants like you — from Indiana — were admitted at 71% (Fall 2025)."]);
 
   const buckeye = poolRateFor(student({ state: "OH" }), purdue);
   assert.equal(buckeye.rate, 0.44);
   assert.equal(buckeye.label, "out-of-state rate");
-  assert.deepEqual(texts(buckeye), ["Applicants from outside Indiana were admitted at 44% (Fall 2025)."]);
+  assert.deepEqual(texts(buckeye), ["Applicants like you — from outside Indiana — were admitted at 44% (Fall 2025)."]);
 
   const abroad = poolRateFor(student({ state: "OUTSIDE_US" }), purdue);
   assert.equal(abroad.field, "derived.admit_rate_international");
@@ -90,7 +90,7 @@ test("overall, then residency (in-state, out-of-state, international) when the g
   // Without a lineage record or a default year, the line is undated rather than guessed.
   const undated = college("243780", 0.43);
   delete (undated.lineage as Record<string, unknown>)["admissions.acceptance_rate"];
-  assert.equal(poolRateFor(student(), undated).notes[0].key, "pool.overall_undated");
+  assert.equal(poolRateFor(student(), undated).notes[0].key, "pool.overall_no_state");
   assert.equal(poolRateFor(student(), undated, { overallYear: "Fall 2024" }).notes[0].values.year, "Fall 2024");
 });
 
@@ -164,8 +164,8 @@ test("a major's published rate beats residency, and residency is named beside it
   assert.equal(r.field, "reported.major_admission.admit_rate");
   assert.equal(r.edition, "Fall 2025");
   assert.deepEqual(keys(r), ["pool.major_rate", "pool.residency_in"]);
-  assert.equal(texts(r)[0], "Grainger College of Engineering admitted 21% of its applicants (Fall 2025).");
-  assert.equal(texts(r)[1], "Applicants from Illinois were admitted at 45% (Fall 2025).");
+  assert.equal(texts(r)[0], "Applicants to Grainger College of Engineering were admitted at 21% (Fall 2025).");
+  assert.equal(texts(r)[1], "Applicants like you — from Illinois — were admitted at 45% (Fall 2025).");
   // A major with no published rate (English) falls through to residency.
   assert.equal(poolRateFor(student({ state: "IL", majors: ["23"] }), illinois).kind, "residency");
   // Only the first intended major counts.
@@ -182,7 +182,7 @@ test("GPA rules and 'either' rules: Idaho's two tiers and Arizona's top 25% or a
   assert.equal(poolRateFor(student({ state: "ID", gpa: 3.4 }), isu).programId, "id-direct-admission-all-2027");
   // GPA unknown: one "may qualify" line per program name, the easier tier.
   const noGpa = poolRateFor(student({ state: "ID" }), isu);
-  assert.deepEqual(keys(noGpa), ["pool.overall", "pool.may_qualify_gpa"]);
+  assert.deepEqual(keys(noGpa), ["pool.overall_state_known", "pool.may_qualify_gpa"]);
   assert.equal(texts(noGpa)[1], "You may qualify for Idaho Direct Admissions with a GPA of 2.25 or higher.");
   // Boise State has only the 3.0 tier.
   assert.equal(poolRateFor(student({ state: "ID", gpa: 2.5 }), college("142115", 0.87)).kind, "overall");
@@ -215,10 +215,10 @@ test("early decision is a fact beside the pool, for an ED student at a college w
   const ed = poolRateFor(student({ round: "ed" }), s);
   assert.equal(ed.kind, "overall");
   assert.equal(ed.rate, 0.2);
-  assert.deepEqual(keys(ed), ["pool.overall", "pool.ed_fact"]);
+  assert.deepEqual(keys(ed), ["pool.overall_no_state", "pool.ed_fact"]);
   assert.match(texts(ed)[1], /^Early decision admitted 40% here against 20% overall \(Fall 2025\)/);
   assert.ok(ed.facts.includes("derived.ed_admit_rate"));
-  assert.deepEqual(keys(poolRateFor(student({ round: "ea" }), s)), ["pool.overall"]);
+  assert.deepEqual(keys(poolRateFor(student({ round: "ea" }), s)), ["pool.overall_no_state"]);
 });
 
 test("every line renders from the catalog and cites a registered field; facts list them", () => {

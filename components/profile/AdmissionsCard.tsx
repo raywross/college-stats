@@ -11,10 +11,11 @@ import { InfoTip, MetricLabel, Term } from "@/components/ui/info-tip";
 import { CardHeadline, CardStat, CardStats, TopicCard } from "./TopicCard";
 import { TenYearLine } from "./TenYearLine";
 import { StandingChip } from "@/components/chances/StandingChip";
+import { SelectivityChip } from "@/components/school/SelectivityChip";
 import { admissionProfile } from "@/lib/cds/admissions";
 
 /**
- * Getting in: the acceptance ring with "1 in N" and the selectivity tier (or the open-admission state), applied,
+ * Getting in: the acceptance ring with "1 in N" and Quad's selectivity (or the open-admission state), applied,
  * admitted, and yield, the SAT and ACT middle 50% bars, and applications over ten years with the acceptance rate.
  */
 export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
@@ -41,11 +42,16 @@ export async function AdmissionsCard({ profile: p }: { profile: Profile }) {
               <MetricLabel term="acceptance-rate" cited={citeField("admissions.acceptance_rate", school)}>
                 acceptance rate
               </MetricLabel>
-              <span className="mt-1.5 flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-foreground">
-                <span className="size-1.5 rounded-full" style={{ backgroundColor: color }} />
-                {tier.label}
-                <InfoTip term="selectivity" />
-              </span>
+              {/* Quad's selectivity where the college is rated (specs/chances/selectivity-index.md); else the admit-rate band. */}
+              {school.selectivity ? (
+                <SelectivityChip school={school} citeField={citeField} className="mt-1.5" />
+              ) : (
+                <span className="mt-1.5 flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-foreground">
+                  <span className="size-1.5 rounded-full" style={{ backgroundColor: color }} />
+                  {tier.label}
+                  <InfoTip term="selectivity" />
+                </span>
+              )}
             </>
           }
           aside={

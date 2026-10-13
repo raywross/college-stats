@@ -94,6 +94,7 @@ chances, next"):
 | 10 | [depth.md](depth.md) | Course tracks by subject against the major; an activities list read by years, role, and recognition in the top two | Activities and Tracks on `/me`; a Depth line in the card | "Add your activities"; Tracks in Scores → Courses | Medium |
 | 11 | [inputs-beyond-academics.md](inputs-beyond-academics.md) | Class standing as a pick, an awards catalog, work hours, a legacy toggle and a recruited-athlete pick per college, logged interest; the rewritten commitment | The fields on `/me` | The drawer's "About you and {College}" line | Medium |
 | 12 | [selectivity-index.md](selectivity-index.md) | A hidden selectivity index per college and a public tier, Elite to Open, with its inputs listed | A "Quad's selectivity" chip with its panel; Explore facet; Compare row | Caps the level; "Elite: a reach for everyone" | Medium |
+| 12a | [selectivity-history.md](selectivity-history.md) | *Planned 2026-10-13:* every score, rank, and tier change per college and pool, with the inputs behind it and the method version | Admin console only: a college's history and a movers page | None | Medium |
 
 ## Build order
 ```

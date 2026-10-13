@@ -118,6 +118,12 @@ export async function listHouseholds(q: string, page: number): Promise<{ rows: H
   return { rows: found, total: Number(found[0]?.total ?? 0) };
 }
 
+/** One account's sign-ins, sessions, and security events, newest first (admin_user_auth_activity; no IP addresses). */
+export async function authActivity(userId: string, limit = 100): Promise<import("@/lib/admin/console").AuthActivityRow[]> {
+  const supabase = await db();
+  return rows("sign-in activity", supabase.rpc("admin_user_auth_activity", { p_user: userId, p_limit: limit }));
+}
+
 /* ------------------------------------------------------------------ */
 /* A person                                                            */
 /* ------------------------------------------------------------------ */

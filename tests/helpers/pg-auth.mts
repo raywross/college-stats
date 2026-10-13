@@ -42,7 +42,11 @@ create table auth.users (
   raw_app_meta_data jsonb not null default '{}'::jsonb,
   email_confirmed_at timestamptz,
   last_sign_in_at timestamptz,
-  banned_until timestamptz
+  banned_until timestamptz,
+  -- Read by the console's sign-in activity (20261013160000_admin_auth_activity.sql).
+  confirmation_sent_at timestamptz,
+  recovery_sent_at timestamptz,
+  email_change_sent_at timestamptz
 );
 
 -- Supabase's MFA factors and sessions, reduced to the columns the admin console reads.
@@ -58,7 +62,20 @@ create table auth.sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   created_at timestamptz not null default now(),
-  aal text
+  aal text,
+  updated_at timestamptz,
+  refreshed_at timestamp,
+  user_agent text,
+  ip inet
+);
+
+-- Supabase Auth's audit log (written when the project's "audit logs in the database" setting is on).
+create table auth.audit_log_entries (
+  instance_id uuid,
+  id uuid primary key default gen_random_uuid(),
+  payload json,
+  created_at timestamptz not null default now(),
+  ip_address varchar(64) not null default ''
 );
 
 create function auth.jwt() returns jsonb language sql stable as $$

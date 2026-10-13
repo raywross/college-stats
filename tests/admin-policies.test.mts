@@ -176,6 +176,7 @@ function functionCalls(w: World): [name: string, sql: string, params: unknown[]]
     ["admin_college_viewers", "select * from public.admin_college_viewers('199847')", []],
     ["admin_college_views_daily", "select * from public.admin_college_views_daily('199847')", []],
     ["admin_college_view_times", "select * from public.admin_college_view_times('199847', $1)", [w.alice]],
+    ["admin_user_auth_activity", "select * from public.admin_user_auth_activity($1)", [w.alice]],
     ["admin_selectivity_tier_counts", "select * from public.admin_selectivity_tier_counts('all')", []],
     ["admin_selectivity_movers", "select * from public.admin_selectivity_movers(30)", []],
     ["admin_selectivity_run_changes", "select * from public.admin_selectivity_run_changes(1)", []],
@@ -503,6 +504,25 @@ test("selectivity history: only the service role records, once per commit; only 
   type Count = { cause: string; counts: Record<string, number> };
   const counts = await asAdmin<Count>(w, "select * from public.admin_selectivity_tier_counts('all')");
   assert.deepEqual(counts.map((c) => c.counts), [{ elite: 1, highly_selective: 1 }, { highly_selective: 2 }]);
+});
+
+test("admin_user_auth_activity: sessions, the account's dates, its audit log (no token refreshes), and support's actions; never an address", async () => {
+  const w = await world();
+  await w.db.query("update auth.users set created_at = now() - interval '3 days', confirmation_sent_at = now() - interval '3 days', email_confirmed_at = now() - interval '3 days', recovery_sent_at = now() - interval '1 hour' where id = $1", [w.alice]);
+  await w.db.query("insert into auth.sessions (user_id, created_at, aal, user_agent, ip, updated_at) values ($1, now() - interval '50 minutes', 'aal1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7 Mobile/15E148 Safari/604.1', '203.0.113.9', now() - interval '5 minutes')", [w.alice]);
+  for (const [action, ago] of [["login", "50 minutes"], ["token_refreshed", "20 minutes"], ["user_updated_password", "45 minutes"]] as const) {
+    await w.db.query("insert into auth.audit_log_entries (payload, created_at, ip_address) values ($1::json, now() - $2::interval, '203.0.113.9')", [JSON.stringify({ action, actor_id: w.alice, log_type: "account" }), ago]);
+  }
+  await w.db.query("insert into auth.audit_log_entries (payload) values ($1::json)", [JSON.stringify({ action: "login", actor_id: w.mom })]);
+  type Row = { at: string; kind: string; detail: string | null; source: string };
+  const rows = await asAdmin<Row>(w, "select * from public.admin_user_auth_activity($1)", [w.alice]);
+  const kinds = rows.map((r) => r.kind);
+  assert.ok(kinds.includes("login") && kinds.includes("user_updated_password"), kinds.join(", "));
+  assert.ok(!kinds.includes("token_refreshed"), "token refreshes are noise");
+  assert.ok(kinds.includes("session_started") && kinds.includes("session_active") && kinds.includes("recovery_sent") && kinds.includes("account_created"));
+  assert.ok(rows.every((r, i) => i === 0 || rows[i - 1].at >= r.at), "newest first");
+  assert.ok(!JSON.stringify(rows).includes("203.0.113.9"), "no IP address in any row");
+  assert.equal(rows.filter((r) => r.source === "audit").length, 2, "only this account's audit rows");
 });
 
 test("admin_link: six seats counting invitations, one household per person (moved, never duplicated), the household left behind closed", async () => {

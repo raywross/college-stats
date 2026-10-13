@@ -7,8 +7,8 @@ import { ConfirmTyped } from "@/components/admin/ConfirmTyped";
 import { Empty, Fields, KeyValues, Muted, PageHeader, Panel } from "@/components/admin/Panel";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
-import { CONFIRM_DELETE, CONFIRM_REMOVE, deletingLabel, fmtDate, fmtDateTime } from "@/lib/admin/console";
-import { adminPerson, logStudentView, type AdminMember, type AdminPerson } from "@/lib/admin/people";
+import { CONFIRM_DELETE, CONFIRM_REMOVE, deletingLabel, describeAuthActivity, fmtDate, fmtDateTime } from "@/lib/admin/console";
+import { adminPerson, authActivity, logStudentView, type AdminMember, type AdminPerson } from "@/lib/admin/people";
 import { personCollegeViews, VIEW_CHART_DAYS } from "@/lib/admin/college-views";
 import { DailyViews, TopBars } from "@/components/admin/ViewCharts";
 import { emailConfigured } from "@/lib/email";
@@ -49,7 +49,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
   const self = profile.id === me.userId;
   const deleted = profile.deleted_at !== null;
   const now = new Date();
-  const views = await personCollegeViews(profile.id);
+  const [views, activity] = await Promise.all([personCollegeViews(profile.id), authActivity(profile.id)]);
   // Which colleges a student opens is their information: showing it is a view the student is told about, as on the
   // student page (specs/product/college-views.md).
   if (person.ownStudent && views.colleges.length > 0) await logStudentView(person.ownStudent.id, "college views");
@@ -118,6 +118,31 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
                 { label: "Deleted", value: profile.deleted_at ? `${fmtDate(profile.deleted_at)}, removed ${fmtDate(person.purgeAt)}` : <Muted>No</Muted> },
               ]}
             />
+          </Panel>
+
+          <Panel title="Sign-in activity" id="sign-in">
+            {activity.length === 0 ? (
+              <Empty>No sign-in activity recorded.</Empty>
+            ) : (
+              <ol className="space-y-2 text-sm">
+                {activity.slice(0, 40).map((a, i) => {
+                  const { label, detail } = describeAuthActivity(a);
+                  return (
+                    <li key={`${a.at}-${a.kind}-${i}`} className="flex flex-wrap items-baseline justify-between gap-x-4">
+                      <span className="min-w-0">
+                        <span className={a.source === "support" ? "text-muted-foreground" : "font-medium"}>{label}</span>
+                        {detail && <span className="text-muted-foreground"> · {detail}</span>}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{fmtDateTime(a.at)}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+            <p className="mt-3 text-xs text-muted-foreground">
+              From Supabase&apos;s records: sessions, the account&apos;s own dates, and its sign-in log when that&apos;s turned on. Devices come from the
+              browser; addresses aren&apos;t shown.
+            </p>
           </Panel>
 
           <Panel title="Households" id="households">

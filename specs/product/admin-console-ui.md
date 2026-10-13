@@ -40,6 +40,11 @@ People and Households are separate rail sections (owner, 2026-10-13).
   `admin_list_households(q, page, size)`. Rows show the name, a Deleting chip for closed ones, the active members'
   names (parents first), counts of parents, students, and invitations waiting, and the created date. One match on a
   search opens the household.
+- **Sign-in activity** (person page, owner 2026-10-13): `admin_user_auth_activity(user)` merges Supabase's audit log
+  (when the project's "audit logs in the database" setting is on; token refreshes left out), each session's start and
+  last activity with its browser and whether it passed the authenticator, the account's own dates (created,
+  confirmation and reset links sent, confirmed, last sign-in, authenticator added), and support's actions on it.
+  Newest 40 shown; devices are words ("Safari on iPhone", `deviceLabel()`); IP addresses are never returned.
 - **A person** `/admin/people/[user]`: Account (with Auth data from `admin_user_auth`), Households (with **Leave**), Student
   records, Lists and plan (counts only; the lists open on the student page), Notifications, Who viewed their data. Actions in
   a right column (below the content on phones, with a "Jump to actions" link): Edit details, Change email (typed twice,

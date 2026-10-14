@@ -5,17 +5,19 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { defaultTab, parseTab, planHref, tabForStage, tabsFor } from "../lib/planner/plan-tabs.ts";
+import { defaultTab, parseTab, PLAN_TABS, planHref, TAB_LABELS, tabForStage, tabsFor } from "../lib/planner/plan-tabs.ts";
 import { intakeStepParam } from "../lib/planner/intake.ts";
 
-test("parseTab keeps the three tabs and nothing else; the dropped Scores tab falls back to the default (owner, 2026-10-12)", () => {
-  for (const t of ["colleges", "calendar", "offers"]) assert.equal(parseTab(t), t);
+test("parseTab keeps the four tabs and nothing else; the dropped Scores tab falls back to the default (owner, 2026-10-12)", () => {
+  for (const t of ["next", "colleges", "calendar", "offers"]) assert.equal(parseTab(t), t);
   for (const v of ["", "Colleges", "list", "scores", null, undefined, 3, ["colleges"]]) assert.equal(parseTab(v), null);
 });
 
-test("a student opens on Colleges; a guardian does too now that a guardian always lands on one child (no more Everyone); the deferred family view (everyone) is still the Calendar", () => {
-  assert.equal(defaultTab("student", false), "colleges");
-  assert.equal(defaultTab("guardian", false), "colleges");
+test("a student opens on Next steps, and a guardian too (owner, 2026-10-14; it was Colleges); the deferred family view (everyone) is still the Calendar", () => {
+  assert.equal(defaultTab("student", false), "next");
+  assert.equal(defaultTab("guardian", false), "next");
+  assert.equal(TAB_LABELS.next, "Next steps");
+  assert.equal(PLAN_TABS[0], "next", "first in the strip");
   assert.equal(defaultTab("guardian", true), "calendar");
   assert.equal(defaultTab("student", true), "calendar");
 });
@@ -23,8 +25,8 @@ test("a student opens on Colleges; a guardian does too now that a guardian alway
 test("Everyone is the calendar alone; Offers appears only once a decision is recorded", () => {
   assert.deepEqual(tabsFor({ everyone: true, hasDecision: true }), ["calendar"]);
   assert.deepEqual(tabsFor({ everyone: true, hasDecision: false }), ["calendar"]);
-  assert.deepEqual(tabsFor({ everyone: false, hasDecision: false }), ["colleges", "calendar"]);
-  assert.deepEqual(tabsFor({ everyone: false, hasDecision: true }), ["colleges", "calendar", "offers"]);
+  assert.deepEqual(tabsFor({ everyone: false, hasDecision: false }), ["next", "colleges", "calendar"]);
+  assert.deepEqual(tabsFor({ everyone: false, hasDecision: true }), ["next", "colleges", "calendar", "offers"]);
 });
 
 test("old ?stage= links: List, Rounds, Actions, Apply → Colleges; Timeline → Calendar; Offers → Offers", () => {
@@ -48,6 +50,10 @@ test("planHref builds /plan with the person and the tab, leaving out what's miss
   assert.equal(planHref({ person: "abc", setup: true, step: 4 }), "/plan?for=abc&setup=1&step=4");
   assert.equal(planHref({ setup: true, step: 0 }), "/plan?setup=1&step=0");
   assert.equal(planHref({ step: 4 }), "/plan");
+  // Next steps: the people line's Next: opens the tab scrolled to the card; `move` is ignored on any other tab.
+  assert.equal(planHref({ person: "abc", tab: "next", move: "t-1" }), "/plan?for=abc&tab=next&move=t-1");
+  assert.equal(planHref({ tab: "next" }), "/plan?tab=next");
+  assert.equal(planHref({ person: "abc", tab: "colleges", move: "t-1" }), "/plan?for=abc&tab=colleges");
 });
 
 test("intakeStepParam takes the entry steps 0–6 and nothing else", () => {

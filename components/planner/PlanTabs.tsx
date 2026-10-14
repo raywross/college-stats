@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { CalendarDays, FileCheck2, ListChecks } from "lucide-react";
+import { CalendarDays, FileCheck2, Footprints, ListChecks } from "lucide-react";
 import FamilyCalendar from "@/components/planner/FamilyCalendar";
+import { NextSteps } from "@/components/planner/NextSteps";
 import { PlanOpened } from "@/components/planner/PlanOpened";
 import PlanList from "@/components/planner/PlanList";
 import OffersStage from "@/components/planner/stages/OffersStage";
@@ -10,7 +11,7 @@ import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { cn } from "@/lib/utils";
 
-const ICONS: Record<PlanTab, typeof ListChecks> = { colleges: ListChecks, calendar: CalendarDays, offers: FileCheck2 };
+const ICONS: Record<PlanTab, typeof ListChecks> = { next: Footprints, colleges: ListChecks, calendar: CalendarDays, offers: FileCheck2 };
 
 /**
  * The tab pills alone (specs/planner/redesign/page.md "The page"): a segmented control, ink fill on the active tab.
@@ -63,6 +64,7 @@ export function PlanTabs({
   return (
     <div className="space-y-4">
       <PlanOpened tab={tab} viewer={viewer} everyone={false} />
+      {tab === "next" && <NextSteps ctx={ctx} viewer={viewer} />}
       {tab === "colleges" && <PlanList ctx={ctx} view={view} />}
       {
         // eslint-disable-next-line react/no-children-prop -- CalendarTabProps.children is the list of child lanes, by contract

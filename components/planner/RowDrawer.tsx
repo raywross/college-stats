@@ -6,8 +6,8 @@ import { Check, ExternalLink, X } from "lucide-react";
 import { Chip, FieldLabel } from "@/components/activities/chips";
 import { AboutYouAndCollege } from "@/components/planner/AboutYouAndCollege";
 import { EdSheet } from "@/components/planner/EdSheet";
-import { MetricLabel } from "@/components/ui/info-tip";
-import { ED_PILL_TEXT, type EdCandidate } from "@/lib/planner/ed-opportunities";
+import { MetricLabel, Term } from "@/components/ui/info-tip";
+import { ED_PILL_TEXT, edOpportunities, type EdCandidate } from "@/lib/planner/ed-opportunities";
 import { earlyFor } from "@/lib/planner/rounds";
 import type { AnyCited } from "@/lib/lineage";
 import { VisitForm } from "@/components/planner/VisitForm";
@@ -15,6 +15,8 @@ import { SOCIAL_GLYPHS } from "@/components/school/SocialIcons";
 import { SheetDialog } from "@/components/ui/sheet-dialog";
 import { setVisited } from "@/lib/lists";
 import { followTargets, visitedState, visitPageLink } from "@/lib/planner/capture";
+import { hooksFromPlan } from "@/lib/planner/hooks";
+import { interestMoves, interestMoveText } from "@/lib/planner/interest";
 import { dayLabel } from "@/lib/planner/list-row";
 import { deleteVisit, logVisit, markInfoRequested, recordFollow, updateVisit } from "@/lib/planner/store-actions";
 import type { PlanRowView } from "@/lib/planner/plan-view";
@@ -72,6 +74,19 @@ export function RowDrawer({
   const early = school ? earlyFor(school) : null;
   const noEdCounts = early?.offered === true && (school?.profile?.early_decision?.applicants == null || school?.profile?.early_decision?.admitted == null);
 
+  // Next steps (interest-and-visits.md "The pill"): opened with `panel="capture"` on an open interest move, the
+  // move's why sits above the capture chips. Recomputed here (not threaded through PlanRow, which U3 doesn't own)
+  // from the same context PlanList used to decide the row's pill.
+  const interestWhy =
+    school && panel === "capture"
+      ? (() => {
+          const edCands = edOpportunities(ctx.items, ctx.estimates, ctx.schools, { season: ctx.season, today: ctx.today });
+          const hooks = hooksFromPlan(ctx.items, ctx.visits);
+          const move = interestMoves(ctx.items, ctx.estimates, ctx.schools, hooks, edCands, { season: ctx.season, today: ctx.today }).find((m) => m.itemId === item.id);
+          return move ? { move, text: interestMoveText(move, school) } : null;
+        })()
+      : null;
+
   return (
     <div data-capture-panel className="space-y-5 bg-muted/40 px-4 py-4 text-sm sm:pr-6 sm:pl-16">
       {school && edCandidate && panel === "ed" && <EdSheet row={row} ctx={ctx} candidate={edCandidate} onClose={() => onPanel?.(null)} />}
@@ -86,6 +101,16 @@ export function RowDrawer({
             <span>ED offered; {school.name} hasn&apos;t published its ED counts</span>
           </MetricLabel>
         </p>
+      )}
+      {interestWhy && (
+        <div className="space-y-1">
+          <p className="font-semibold">{interestWhy.text.title}</p>
+          <p className="text-sm text-muted-foreground">
+            <Term term="demonstrated-interest" cited={interestWhy.text.sourceField ? (school!.cites[interestWhy.text.sourceField] as AnyCited | undefined) : undefined}>
+              {interestWhy.text.why}
+            </Term>
+          </p>
+        </div>
       )}
       {school && (
         <>

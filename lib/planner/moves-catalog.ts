@@ -509,7 +509,7 @@ export const MOVE_TEXT: Record<string, { title: string; why: string }> = {
   ed_decide: { title: "Decide on ED (due {date})", why: "Early decision is binding. The colleges where it would make the most difference are one tap away, with their own reported numbers." },
   ed2_decide: { title: "ED II at {college}, if you want it", why: "{edCollege} said no. ED II at {college} is due {date}." },
   visit_ed: { title: "Visit {college} before you decide on a binding round", why: "Early decision is binding, so seeing the campus first matters more than usual." },
-  show_interest: { title: "Show {college} you're interested", why: "{college} says it considers applicant interest." },
+  show_interest: { title: "Show {college} you're interested", why: "{college} says applicant interest is {label}." },
   "shape_gap:likely_min": { title: "Add a Likely you'd be happy at", why: "{counts}" },
   "shape_gap:affordable": { title: "Add a Likely within your family's limit", why: "{counts}" },
   "shape_gap:target_min": { title: "Add a Target or two", why: "{counts}" },

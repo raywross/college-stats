@@ -22,7 +22,15 @@ export interface ParentSummaryStudent {
   stuckSignals: string[];
   /** Titles the student ticked this week, titles only. */
   tickedThisWeek: string[];
+  /**
+   * Next steps (notifications.md "Channels"): the child's top three moves, read-only titles, shown after Your part.
+   * Optional so older callers compile.
+   */
+  childMoves?: string[];
 }
+
+/** The child's moves shown under Your part. */
+export const CHILD_MOVES_MAX = 3;
 
 export interface ParentSummaryInput {
   guardianFirstName: string | null;
@@ -54,7 +62,7 @@ const COLORS = { text: "#1c1f26", muted: "#6b7280", border: "#e4e4e7", bg: "#fff
 
 /** The email, or null when there's no student with anything to say this week. */
 export function buildParentSummary(input: ParentSummaryInput): BuiltParentSummary | null {
-  const students = input.students.filter((s) => s.yourPart.length > 0 || s.stuckSignals.length > 0 || s.tickedThisWeek.length > 0 || s.summary);
+  const students = input.students.filter((s) => s.yourPart.length > 0 || (s.childMoves ?? []).length > 0 || s.stuckSignals.length > 0 || s.tickedThisWeek.length > 0 || s.summary);
   if (students.length === 0) return null;
   const planHref = utm(`${input.siteUrl}/household`);
   const unsubscribeHref = utm(`${input.siteUrl}/unsubscribe/${input.unsubscribeToken}/parent-summary`);
@@ -64,10 +72,10 @@ export function buildParentSummary(input: ParentSummaryInput): BuiltParentSummar
   const block = (s: ParentSummaryStudent): string => {
     const name = s.firstName ?? "Your student";
     const yourPart = s.yourPart.slice(0, YOUR_PART_MAX);
+    const childMoves = (s.childMoves ?? []).slice(0, CHILD_MOVES_MAX);
     return `
       <div style="margin-bottom:20px;">
         <p style="margin:0 0 6px;font-weight:700;">${escapeHtml(name)}</p>
-        <p style="margin:0 0 8px;color:${COLORS.muted};">${escapeHtml(s.summary)}</p>
         ${
           yourPart.length
             ? `<p style="margin:0 0 4px;font-weight:600;">Your part</p><ul style="margin:0 0 8px;padding-left:20px;">${yourPart
@@ -75,6 +83,14 @@ export function buildParentSummary(input: ParentSummaryInput): BuiltParentSummar
                 .join("")}</ul>`
             : ""
         }
+        ${
+          childMoves.length
+            ? `<p style="margin:0 0 4px;font-weight:600;">${escapeHtml(name)}&#39;s next steps</p><ul style="margin:0 0 8px;padding-left:20px;color:${COLORS.muted};">${childMoves
+                .map((t) => `<li style="margin-bottom:4px;">${escapeHtml(t)}</li>`)
+                .join("")}</ul>`
+            : ""
+        }
+        <p style="margin:0 0 8px;color:${COLORS.muted};">${escapeHtml(s.summary)}</p>
         ${
           s.stuckSignals.length
             ? `<ul style="margin:0 0 8px;padding-left:20px;color:${COLORS.muted};">${s.stuckSignals.map((t) => `<li style="margin-bottom:4px;">${escapeHtml(t)}</li>`).join("")}</ul>`
@@ -107,8 +123,15 @@ export function buildParentSummary(input: ParentSummaryInput): BuiltParentSummar
 
   const lines = [`${hello}'s this week, for each student you can see.`, ""];
   for (const s of students) {
-    lines.push(s.firstName ?? "Your student", s.summary);
-    for (const t of s.yourPart.slice(0, YOUR_PART_MAX)) lines.push(`- ${t.title}${t.when ? ` · ${t.when}` : ""}`);
+    const name = s.firstName ?? "Your student";
+    lines.push(name);
+    const yourPart = s.yourPart.slice(0, YOUR_PART_MAX);
+    if (yourPart.length) lines.push("Your part");
+    for (const t of yourPart) lines.push(`- ${t.title}${t.when ? ` · ${t.when}` : ""}`);
+    const childMoves = (s.childMoves ?? []).slice(0, CHILD_MOVES_MAX);
+    if (childMoves.length) lines.push(`${name}'s next steps`);
+    for (const t of childMoves) lines.push(`- ${t}`);
+    lines.push(s.summary);
     for (const t of s.stuckSignals) lines.push(`- ${t}`);
     if (s.tickedThisWeek.length) lines.push(`Ticked this week: ${s.tickedThisWeek.join(", ")}`);
     lines.push("");

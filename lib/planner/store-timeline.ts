@@ -214,6 +214,32 @@ export async function myYourWeek(): Promise<boolean | null> {
 }
 
 /* ------------------------------------------------------------------ */
+/* The season brief (next-steps notifications.md)                      */
+/* ------------------------------------------------------------------ */
+
+/** The season brief switch (null: back to the default, on). Students and guardians alike. */
+export async function setSeasonBrief(on: boolean | null): Promise<TimelineResult> {
+  const r = await ready("planner.reminders");
+  if (!("supabase" in r)) return r;
+  const value = on === null ? null : Boolean(on);
+  const { error } = await r.supabase
+    .from("notification_prefs")
+    .upsert({ user_id: r.userId, season_brief: value, updated: new Date().toISOString() }, { onConflict: "user_id" });
+  if (error) return fail(error, "setSeasonBrief");
+  revalidatePath("/account");
+  return { ok: true };
+}
+
+/** The stored season brief choice (null: the default applies, or the column isn't there yet). */
+export async function mySeasonBrief(): Promise<boolean | null> {
+  const r = await ready("planner.reminders");
+  if (!("supabase" in r)) return null;
+  const { data, error } = await r.supabase.from("notification_prefs").select("season_brief").eq("user_id", r.userId).maybeSingle();
+  if (error) return null;
+  return ((data as { season_brief: boolean | null } | null)?.season_brief ?? null) as boolean | null;
+}
+
+/* ------------------------------------------------------------------ */
 /* Texts                                                               */
 /* ------------------------------------------------------------------ */
 

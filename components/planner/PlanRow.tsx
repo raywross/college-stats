@@ -24,6 +24,7 @@ export function PlanRow({
   ctx,
   dreamName,
   error,
+  status,
   onToggleDream,
   onRemove,
 }: {
@@ -33,6 +34,12 @@ export function PlanRow({
   dreamName: string | null;
   /** A refused write's message, shown under the row until the next tap. */
   error?: string | null;
+  /**
+   * Next steps (applying.md "On the list row"): the row's muted status word from senior fall (Not started · Working
+   * on it · Submitted · Decision), read-only here — the Submit/Decision move cards are where it changes. Shown after
+   * any pill (U2 owns that slot in this same file). Null before senior fall.
+   */
+  status?: string | null;
   onToggleDream: (row: PlanRowView) => void;
   /** Takes the college off the list (after the panel's own confirmation). */
   onRemove: (row: PlanRowView) => void;
@@ -66,6 +73,9 @@ export function PlanRow({
           <CollegeChip school={school ? { unit_id: school.unit_id, name: school.name, brand: school.brand } : null} size="sm" link className="max-w-full" />
           {row.dream && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">Dream</p>}
         </div>
+
+        {/* After any pill (U2's slot, same file): the row's muted, read-only status word, senior fall on. */}
+        {status && <span className="shrink-0 text-xs font-medium text-muted-foreground">{status}</span>}
 
         <button
           type="button"

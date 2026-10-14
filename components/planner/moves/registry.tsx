@@ -5,5 +5,9 @@
 import type { ComponentType } from "react";
 import type { TaskKind } from "@/lib/planner/types";
 import type { MoveCardProps } from "./types";
+import { ShapeCard } from "./ShapeCard";
 
-export const MOVE_CARDS: Partial<Record<TaskKind, ComponentType<MoveCardProps>>> = {};
+export const MOVE_CARDS: Partial<Record<TaskKind, ComponentType<MoveCardProps>>> = {
+  shape_gap: ShapeCard,
+  shape_cost: ShapeCard,
+};

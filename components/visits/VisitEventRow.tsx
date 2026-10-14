@@ -8,7 +8,7 @@ import { CalendarPlus, ExternalLink } from "lucide-react";
 import { formatMiles } from "@/lib/home";
 import { icsCalendar } from "@/lib/ics";
 import { track } from "@/lib/analytics";
-import type { VisitEventRow as VisitEventRowData } from "@/lib/visit-events/types";
+import { isShownKind, type VisitEventRow as VisitEventRowData } from "@/lib/visit-events/types";
 import { localDateParts, timeLabel } from "@/lib/visit-events/view";
 
 const AVAILABILITY_STYLE: Record<"open" | "full" | "closed", string> = {
@@ -66,7 +66,7 @@ export function VisitEventRow({
   /** Whether this row is shown as a "near you" result (visit_signup_clicked.near). */
   near?: boolean;
 }) {
-  if (event.kind === "staff") return null; // Never shown, even if a caller passes one through.
+  if (!isShownKind(event.kind)) return null; // Never shown, even if a caller passes one through.
   const place = placeLine(event);
 
   return (

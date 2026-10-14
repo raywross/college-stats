@@ -14,6 +14,7 @@ const MIGRATIONS = [
   "20261005140000_follows.sql",
   "20261005145000_change_old_source.sql",
   "20261013180000_visit_events.sql",
+  "20261014100000_visit_events_shown_kinds.sql",
 ];
 
 let db: AuthDb;
@@ -30,7 +31,8 @@ test.before(async () => {
       ('h:1', '134130', 'h', '11111111-1111-1111-1111-111111111111', 'Campus Tour', 'tour', now() + interval '3 days', 'https://h/register/?id=1', 'https://h/register/?cmd=search'),
       ('h:2', '134130', 'h', '22222222-2222-2222-2222-222222222222', 'Hotel Shipping', 'staff', now() + interval '3 days', 'https://h/register/?id=2', 'https://h/register/?cmd=search'),
       ('h:3', '134130', 'h', '33333333-3333-3333-3333-333333333333', 'Old Tour', 'tour', now() - interval '3 days', 'https://h/register/?id=3', 'https://h/register/?cmd=search'),
-      ('h:4', '134130', 'h', '44444444-4444-4444-4444-444444444444', 'Gone Tour', 'tour', now() + interval '3 days', 'https://h/register/?id=4', 'https://h/register/?cmd=search');
+      ('h:4', '134130', 'h', '44444444-4444-4444-4444-444444444444', 'Gone Tour', 'tour', now() + interval '3 days', 'https://h/register/?id=4', 'https://h/register/?cmd=search'),
+      ('h:5', '134130', 'h', '55555555-5555-5555-5555-555555555555', 'Admissions Drop-In', 'other', now() + interval '3 days', 'https://h/register/?id=5', 'https://h/register/?cmd=search');
     update public.visit_events set removed_at = now() where id = 'h:4';
   `);
 });
@@ -39,7 +41,7 @@ test.after(async () => {
   await db?.close();
 });
 
-test("signed-in people read upcoming live non-staff events; anon reads none but gets the count", async () => {
+test("signed-in people read upcoming live events of the five shown kinds (never other or staff); anon reads none but gets the count", async () => {
   const mine = await asUser<{ id: string }>(db, alice, "select id from public.visit_events order by id");
   assert.deepEqual(
     mine.map((r) => r.id),

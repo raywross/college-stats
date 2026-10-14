@@ -427,9 +427,11 @@ const UF_HOST: SlateHostRow = {
   last_error: null,
 };
 
-test("pagePolicy: staff rows are dropped; online and on-campus rows come from the listing; away rows get their page", () => {
+test("pagePolicy: hidden kinds, online, and on-campus rows come from the listing alone; away rows of shown kinds get their page", () => {
   const c = (title: string, place: string, online = false) => ({ title, place, online });
-  assert.equal(pagePolicy(c("Requested Group / Filled", "Durham, NC"), "durham"), "drop");
+  assert.equal(pagePolicy(c("Requested Group / Filled", "Durham, NC"), "durham"), "listing", "staff: stored, never detailed");
+  assert.equal(pagePolicy(c("Admissions Drop-In", "Chapel Hill, NC"), "chapel hill"), "listing", "other: stored, never detailed");
+  assert.equal(pagePolicy(c("Meal on Campus in the Dining Hall", "Austin, TX"), "austin"), "listing", "an appointment slot gets no page");
   assert.equal(pagePolicy(c("Prospective Information Session", "", true), "gainesville"), "listing");
   assert.equal(pagePolicy(c("Campus Tour", "Gainesville, FL"), "gainesville"), "listing");
   assert.equal(pagePolicy(c("Campus Tour", "Welcome Center"), "gainesville"), "listing", "a widget row names a building, not a city");
@@ -439,7 +441,7 @@ test("pagePolicy: staff rows are dropped; online and on-campus rows come from th
   assert.equal(pagePolicy(c("Discover Duke - Denver", "Englewood, CO"), "durham"), "page");
 });
 
-test("readHost: UF's search and widgets make 523 rows (4 staff dropped); only away rows read their page; campus rows take the campus coordinates", async () => {
+test("readHost: UF's search and widgets make 527 rows (4 staff stored, never detailed); only away rows read their page; campus rows take the campus coordinates", async () => {
   const http = ufSite();
   const r = await readHost(UF_HOST, {
     http,
@@ -451,10 +453,13 @@ test("readHost: UF's search and widgets make 523 rows (4 staff dropped); only aw
     campusLng: -82.347911,
     stored: new Map(),
   });
-  assert.equal(r.rows.length, 523);
-  assert.equal(r.dropped, 4);
+  assert.equal(r.rows.length, 527);
   assert.equal(r.searchTotal, 519);
-  assert.equal(new Set(r.rows.map((e) => e.id)).size, 523);
+  assert.equal(new Set(r.rows.map((e) => e.id)).size, 527);
+  // A staff row is kept from the listing (for later), unconfirmed, with no page requested.
+  const staff = r.rows.find((e) => e.kind === "staff")!;
+  assert.equal(staff.date_confirmed, false);
+  assert.ok(!http.asked.some((u) => u.includes(staff.slate_id)), "no page for a staff row");
   // An online session from the widget: no page read; the listing's time in the campus state's zone, unconfirmed.
   const info = r.rows.find((e) => e.slate_id === "8b849d04-6aba-4437-b90f-eb24b53f6cf0")!;
   assert.equal(info.kind, "online");
@@ -478,11 +483,11 @@ test("readHost: UF's search and widgets make 523 rows (4 staff dropped); only aw
   assert.equal(tour.lat, 29.64629);
   assert.equal(tour.lng, -82.347911);
   assert.ok(!http.asked.some((u) => u.includes("4c7c83d8-5e9a-4660-ba5e-fa059d4f09d9")), "no page for a campus row");
-  // Kinds as the research counted them (UF 2026-10-13: 340 travel, 132 tours, 40 sessions, 9 online, 3 open houses,
-  // from a search one row longer than the saved page); the 4 staff rows are dropped, never stored.
+  // Kinds as the research counted them (UF 2026-10-13: 340 travel, 132 tours, 40 sessions, 9 online, 3 open houses, 4
+  // staff, from a search one row longer than the saved page).
   const kinds: Record<string, number> = {};
   for (const e of r.rows) kinds[e.kind] = (kinds[e.kind] ?? 0) + 1;
-  assert.deepEqual(kinds, { travel: 339, tour: 132, info_session: 40, online: 9, open_house: 3 });
+  assert.deepEqual(kinds, { travel: 339, tour: 132, info_session: 40, online: 9, open_house: 3, staff: 4 });
   assert.ok(r.errors.length > 0, "event pages the fake doesn't serve are recorded as errors");
   assert.ok(!http.asked.includes(widgetListUrl(UF, ONLINE_SERVICE, 3)), "paging stops when a page repeats");
 });
@@ -503,13 +508,13 @@ test("runSync: twice over the same pages is idempotent; a search failure leaves 
   };
   const deps = { store, zips: loadZipTable(ROOT), campus: () => ({ city: "Gainesville", state: "FL", lat: 29.64629, lng: -82.347911 }), maxPages: 3 };
   const first = await runSync([UF_HOST], { ...deps, http: ufSite(), now: OCT_13 });
-  assert.equal(first.record.events_new, 523);
-  assert.equal(rows.length, 523);
+  assert.equal(first.record.events_new, 527);
+  assert.equal(rows.length, 527);
   const second = await runSync([UF_HOST], { ...deps, http: ufSite(), now: new Date("2026-10-14T16:00:00Z") });
   assert.equal(second.record.events_new, 0);
   assert.equal(second.record.events_changed, 0);
   assert.equal(second.record.events_removed, 0);
-  assert.equal(rows.length, 523);
+  assert.equal(rows.length, 527);
   assert.equal(records.length, 2);
   assert.deepEqual(hostPatches.at(-1), { last_read: "2026-10-14T16:00:00.000Z", failures: 0, last_error: null, status: "active" });
   // The search fails: nothing is missed, the host's failure count rises.

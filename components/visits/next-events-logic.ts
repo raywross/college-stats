@@ -5,7 +5,7 @@
  * modules (`lib/visit-events/view.ts`'s own tests). `components/visits/NextEvents.tsx` is the only caller.
  */
 import { planVisitKind } from "../../lib/visit-events/kinds.ts";
-import type { VisitEventRow } from "../../lib/visit-events/types.ts";
+import { isShownKind, type VisitEventRow } from "../../lib/visit-events/types.ts";
 import { localDateParts, nearYouEvents, onCampusEvents, timeLabel } from "../../lib/visit-events/view.ts";
 import type { MeasuringPoint } from "../../lib/visit-events/measure.ts";
 import type { VisitKind } from "../../lib/planner/types.ts";
@@ -18,7 +18,7 @@ import type { VisitKind } from "../../lib/planner/types.ts";
  */
 export function nextTwoEvents(events: readonly VisitEventRow[], point: MeasuringPoint | null): VisitEventRow[] {
   // Staff rows are never shown (RLS already keeps them out of eventsForUnit; this defends like VisitEventRow does).
-  const shown = events.filter((e) => e.kind !== "staff");
+  const shown = events.filter((e) => isShownKind(e.kind));
   const campus = onCampusEvents(shown);
   const first = campus[0] ?? null;
   let second: VisitEventRow | null = null;

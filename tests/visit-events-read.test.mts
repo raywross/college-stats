@@ -101,12 +101,12 @@ test("VISIT_CHIPS: the five chips in the spec's order", () => {
   );
 });
 
-test("matchesChip: Sessions covers info sessions, open houses, and other on-campus kinds; Everything matches everything", () => {
+test("matchesChip: Sessions covers info sessions and open houses, never the hidden other kind; Everything matches everything", () => {
   assert.equal(matchesChip("tour", "tour"), true);
   assert.equal(matchesChip("travel", "tour"), false);
   assert.equal(matchesChip("info_session", "info_session"), true);
   assert.equal(matchesChip("open_house", "info_session"), true);
-  assert.equal(matchesChip("other", "info_session"), true);
+  assert.equal(matchesChip("other", "info_session"), false);
   assert.equal(matchesChip("tour", "info_session"), false);
   assert.equal(matchesChip("travel", "travel"), true);
   assert.equal(matchesChip("online", "online"), true);

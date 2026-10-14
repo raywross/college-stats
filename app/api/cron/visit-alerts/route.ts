@@ -10,7 +10,7 @@ import { trackServer } from "@/lib/analytics-server";
 import { selectAlerts, type AlertPlan } from "@/lib/visit-events/alerts";
 import { buildVisitAlert, type VisitAlertCollegeInfo } from "@/lib/emails/visit-alert";
 import { measuringPoint, type HighSchoolPoint, type HomePoint, type MeasuringPoint } from "@/lib/visit-events/measure";
-import { VISIT_EVENT_COLUMNS, type MeasureFrom, type RadiusMiles, type VisitEventRow } from "@/lib/visit-events/types";
+import { SHOWN_KINDS, VISIT_EVENT_COLUMNS, type MeasureFrom, type RadiusMiles, type VisitEventRow } from "@/lib/visit-events/types";
 
 /**
  * The nightly visit alert (specs/product/visit-events.md, "Alerting"). Vercel Cron issues a GET with
@@ -191,7 +191,7 @@ async function alert(client: Client, siteUrl: string, dry: boolean) {
     .from("visit_events")
     .select(VISIT_EVENT_COLUMNS)
     .is("removed_at", null)
-    .neq("kind", "staff")
+    .in("kind", [...SHOWN_KINDS])
     .gte("starts_at", now.toISOString())
     .or(`first_seen.gte.${sinceIso},moved_at.gte.${sinceIso}`);
   if (eventsError) throw new Error(`visit-alerts: reading visit_events failed: ${eventsError.message}`);

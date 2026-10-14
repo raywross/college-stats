@@ -4,7 +4,7 @@
  * and the client expand panel both use it.
  */
 import { groupEventsByDay } from "@/lib/visit-events/view";
-import type { VisitEventRow as VisitEventRowData } from "@/lib/visit-events/types";
+import { isShownKind, type VisitEventRow as VisitEventRowData } from "@/lib/visit-events/types";
 import { VisitEventRow } from "@/components/visits/VisitEventRow";
 
 export interface VisitListItem extends VisitEventRowData {
@@ -23,7 +23,7 @@ export function VisitEventList({
   near?: boolean;
   emptyMessage?: string;
 }) {
-  const shown = events.filter((e) => e.kind !== "staff");
+  const shown = events.filter((e) => isShownKind(e.kind));
   if (shown.length === 0) {
     return emptyMessage ? <p className="rounded-2xl border border-dashed bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">{emptyMessage}</p> : null;
   }

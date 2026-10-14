@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { authConfigured, getUser } from "@/lib/auth";
 import { eventsForUnit, myMeasuringPoint, readAt } from "@/lib/visit-events/read";
 import { eventDistance } from "@/lib/visit-events/measure";
+import { isShownKind } from "@/lib/visit-events/types";
 import { nearYouEvents, onCampusEvents, readTimeLine } from "@/lib/visit-events/view";
 import { VisitEventList, type VisitListItem } from "@/components/visits/VisitEventList";
 import { VisitEventsExpand } from "@/components/visits/VisitEventsExpand";
@@ -24,7 +25,7 @@ export async function VisitCalendar({ unitId, schoolName }: { unitId: string; sc
   if (!user) redirect(signupHref(`${back}?view=events`));
 
   const [events, point, lastSeen] = await Promise.all([eventsForUnit(unitId, { limit: 1000 }), myMeasuringPoint(), readAt(unitId)]);
-  const shown = events.filter((e) => e.kind !== "staff");
+  const shown = events.filter((e) => isShownKind(e.kind));
   const withDistance: VisitListItem[] = shown.map((e) => ({ ...e, distanceMiles: point ? eventDistance(e, point) : null }));
   const onCampus = onCampusEvents(withDistance, 3);
   const near = nearYouEvents(withDistance, point, 3);

@@ -8,6 +8,17 @@ export type VisitEventKind = "tour" | "info_session" | "open_house" | "travel" |
 
 export const VISIT_EVENT_KINDS: readonly VisitEventKind[] = ["tour", "info_session", "open_house", "travel", "online", "staff", "other"];
 
+/**
+ * The kinds the site shows, alerts on, and counts (owner, 2026-10-14). `other` (appointment slots, interviews,
+ * counselor and coach meetings, meals, individual counselors' calendars) and `staff` (logistics) are stored from the
+ * listing for later but never read in detail or shown: they are what a college's Slate database exposes by accident.
+ * The database's read policy and `visit_event_count` enforce the same list (20261014100000); this is the client side.
+ */
+export const SHOWN_KINDS: readonly VisitEventKind[] = ["tour", "info_session", "open_house", "travel", "online"];
+export function isShownKind(kind: VisitEventKind): boolean {
+  return (SHOWN_KINDS as readonly string[]).includes(kind);
+}
+
 /** What each kind is called on the site. `staff` rows are never shown. */
 export const VISIT_KIND_LABELS: Record<VisitEventKind, string> = {
   tour: "Campus tour",

@@ -119,6 +119,30 @@ visit_alerts       (id, user_id, sent_at, event_ids text[], college_count, provi
 - Guardians get alerts for the colleges they follow, like digests; the student's follows stay the student's.
 - Deleted with the account ([accounts.md](accounts.md)); exported with it ([account-export](accounts.md)).
 
+## What is stored, what is read in detail, and what is shown (owner, 2026-10-14)
+The full read of all 795 Slate hosts (350,406 upcoming events, 2026-10-14) showed that a Slate database exposes more
+than its admissions calendar: 19% of the rows are one-on-one appointment slots (interviews, counselor and coach
+meetings, meals, individual counselors' calendars with bare first names) and some are staff logistics. UNC's 734
+"Admissions Drop-In" rows are an internal calendar; nothing on UNC's site offers them. The rules:
+
+| Kind | Stored | Read in detail (the event page) | Shown, counted, alerted |
+|---|---|---|---|
+| `travel` (rep visits, fairs, named evenings in a city) | yes, from the listing | **yes**: the venue's address and ZIP place it for the radius | yes |
+| `info_session`, `open_house` on campus | yes | no: the campus's own coordinates and zone | yes |
+| `info_session`, `open_house` in another city | yes | yes (a venue) | yes |
+| `tour` | yes | no: the campus's own coordinates and zone (the sign-up link needs nothing from the page) | yes |
+| `online` | yes | no: no place; the campus state's zone | yes (pages; alerts only when a person asks for online) |
+| `other` (appointments, interviews, meetings, meals, bare names) | yes, from the listing, for later | **never** | **never** |
+| `staff` (shipping, pickups, filled group slots, non-admissions and graduate events) | yes, from the listing, for later | **never** | **never** |
+
+Enforced in three places that must agree: `lib/visit-events/types.ts` `SHOWN_KINDS` (pages, alerts, the planner),
+the database's read policy and `visit_event_count()` (`20261014100000_visit_events_shown_kinds.sql`), and
+`pagePolicy()` in `scripts/lib/visit-events/sync.mts` (which rows get their page). A night's read is therefore one
+search per host, the portal widgets, and an event page only for the shown kinds away from campus; kinds are
+recomputed from the titles every night, so a rule change reclassifies without re-reading. Why keep the hidden rows at
+all: the listing is already in hand, the rows cost nothing to keep, and they may be useful later (an "interview
+offered" signal, say); keeping them also lets `check:visit-events` watch each host's share of accidental rows.
+
 ## The nightly job
 
 ### Discovery (once, then monthly in the identity refresh)

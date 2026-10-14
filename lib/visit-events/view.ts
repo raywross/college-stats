@@ -84,7 +84,7 @@ export const VISIT_CHIPS: { key: VisitChipKey; label: string }[] = [
 /** Whether an event's kind belongs to a chip. "Sessions" covers info sessions, open houses, and anything else on campus. */
 export function matchesChip(kind: VisitEventKind, chip: VisitChipKey): boolean {
   if (chip === "all") return true;
-  if (chip === "info_session") return kind === "info_session" || kind === "open_house" || kind === "other";
+  if (chip === "info_session") return kind === "info_session" || kind === "open_house";
   return kind === chip;
 }
 

@@ -18,7 +18,7 @@
  *   candidates outside the radius. Colleges are ordered by their nearest event.
  */
 import { alertable, eventDistance, type MeasuringPoint } from "./measure.ts";
-import { DEFAULT_VISIT_ALERT_PREFS, type VisitAlertPrefs, type VisitEventRow } from "./types.ts";
+import { DEFAULT_VISIT_ALERT_PREFS, isShownKind, type VisitAlertPrefs, type VisitEventRow } from "./types.ts";
 
 /** At most this many events per college in one email; the visits page has the rest. */
 export const VISIT_ALERT_PER_COLLEGE = 10;
@@ -105,7 +105,7 @@ export function changeOf(event: Pick<VisitEventRow, "first_seen" | "moved_at">, 
 }
 
 function isCandidate(event: VisitEventRow, input: Pick<SelectAlertsInput, "now" | "since" | "hostsFirstSeen">): AlertChange | null {
-  if (event.kind === "staff" || event.removed_at) return null;
+  if (!isShownKind(event.kind) || event.removed_at) return null;
   if (Date.parse(event.starts_at) < input.now.getTime()) return null;
   const hostSeen = input.hostsFirstSeen?.get(event.unit_id);
   if (hostSeen && Date.parse(hostSeen) >= input.since.getTime()) return null;

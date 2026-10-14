@@ -4,7 +4,7 @@
  * alerts; pages only); `measure_from` overrides `auto` either way. Pure: the pages and the alert job pass in the rows.
  */
 import { milesBetween, type LatLng } from "../home.ts";
-import type { MeasureFrom, VisitAlertPrefs, VisitEventRow } from "./types.ts";
+import { isShownKind, type MeasureFrom, type VisitAlertPrefs, type VisitEventRow } from "./types.ts";
 
 export interface HomePoint extends LatLng {
   /** "Marietta, GA" (household_homes.place). */
@@ -50,7 +50,7 @@ export function eventDistance(event: Pick<VisitEventRow, "lat" | "lng">, point: 
  * sessions. Never staff, never a removed row. The caller has already limited the events to followed, unmuted colleges.
  */
 export function alertable(event: VisitEventRow, prefs: Pick<VisitAlertPrefs, "radius_miles" | "include_online">, point: LatLng | null): boolean {
-  if (event.kind === "staff" || event.removed_at) return false;
+  if (!isShownKind(event.kind) || event.removed_at) return false;
   if (event.online || event.kind === "online") return prefs.include_online;
   if (!point) return false;
   const miles = eventDistance(event, point);

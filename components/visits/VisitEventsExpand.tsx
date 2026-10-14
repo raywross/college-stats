@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { track } from "@/lib/analytics";
 import { matchesChip, type VisitChipKey } from "@/lib/visit-events/view";
+import { isShownKind } from "@/lib/visit-events/types";
 import { VisitFilters } from "@/components/visits/VisitFilters";
 import { VisitEventList, type VisitListItem } from "@/components/visits/VisitEventList";
 
@@ -28,7 +29,7 @@ export function VisitEventsExpand({
   const [chip, setChip] = useState<VisitChipKey>("all");
   const [stateFilter, setStateFilter] = useState<string | null>(null);
 
-  const nonStaff = useMemo(() => events.filter((e) => e.kind !== "staff"), [events]);
+  const nonStaff = useMemo(() => events.filter((e) => isShownKind(e.kind)), [events]);
 
   useEffect(() => {
     if (!expanded) return;

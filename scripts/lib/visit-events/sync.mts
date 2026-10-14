@@ -13,7 +13,7 @@
  */
 import { localIsoIn, parseSearchWhen, toInstant, zoneForState } from "../../../lib/visit-events/dates.ts";
 import { kindOf } from "../../../lib/visit-events/kinds.ts";
-import { VISIT_EVENT_COLUMNS, visitEventId, type SlateHostRow, type VisitAvailability, type VisitEventRow } from "../../../lib/visit-events/types.ts";
+import { VISIT_EVENT_COLUMNS, isShownKind, visitEventId, type SlateHostRow, type VisitAvailability, type VisitEventRow } from "../../../lib/visit-events/types.ts";
 import type { ReaderHttp } from "./discover.mts";
 import { parseEventPage, type EventPage } from "./event-page.mts";
 import { locate, type ZipTable } from "./geo.mts";
@@ -158,8 +158,6 @@ export interface HostRead {
   /** Requests made to the host (search, widget pages, event pages). */
   fetched: number;
   pagesRead: number;
-  /** Staff rows seen in the listing and never stored (pagePolicy "drop"). */
-  dropped: number;
   /** Whether a widget failed to answer (its online rows then aren't counted missed). */
   widgetFailed: boolean;
   /** The search's stated total ("returned N event(s)"). */
@@ -183,17 +181,18 @@ export function isCampusPlace(place: string, campusCity: string | null): boolean
   return !!campusCity && city.toLowerCase() === campusCity;
 }
 
-export type PagePolicy = "drop" | "listing" | "page";
+export type PagePolicy = "listing" | "page";
 
 /**
- * What a listing row needs (owner, 2026-10-14: don't look up a ZIP and a time zone for a campus tour or an online
- * session, and drop the staff rows at the door): staff rows are never stored; online rows and anything on campus are
- * stored from the listing alone (the campus's own coordinates and zone); only an event somewhere else (the travel
- * calendar, a session in another city) is worth its page, for the venue's address and ZIP.
+ * What a listing row needs (owner, 2026-10-14; specs/product/visit-events.md "What is stored, read in detail, and
+ * shown"): every row is stored from the listing. Only a shown kind (lib/visit-events/types.ts SHOWN_KINDS) that happens
+ * away from campus (the travel calendar, a session in another city) is worth its event page, for the venue's address
+ * and ZIP. Campus rows take the campus's own coordinates and zone; online rows need no place; `other` and `staff` rows
+ * (what a Slate database exposes by accident) are kept from the listing alone and never shown.
  */
 export function pagePolicy(c: Pick<Candidate, "title" | "place" | "online">, campusCity: string | null): PagePolicy {
   const kind = kindOf({ title: c.title, online: c.online, place: c.place, campusCity });
-  if (kind === "staff") return "drop";
+  if (!isShownKind(kind)) return "listing";
   if (kind === "online" || c.online) return "listing";
   if (kind === "travel") return "page";
   return isCampusPlace(c.place, campusCity) ? "listing" : "page";
@@ -355,15 +354,10 @@ export async function readHost(hostRow: Pick<SlateHostRow, "unit_id" | "host" | 
 
   const rows: ReadEvent[] = [];
   let pagesRead = 0;
-  let dropped = 0;
   const cap = deps.maxPages ?? Infinity;
   for (const c of cands.values()) {
     const id = visitEventId(host, c.slateId);
     const policy = pagePolicy(c, deps.campusCity);
-    if (policy === "drop") {
-      dropped++;
-      continue;
-    }
     let page: EventPage | null = null;
     if (policy === "page" && needsPage(deps.stored.get(id), c) && pagesRead < cap) {
       const url = `https://${host}/register/?id=${c.slateId}`;
@@ -385,8 +379,8 @@ export async function readHost(hostRow: Pick<SlateHostRow, "unit_id" | "host" | 
       errors.push(`${c.slateId}: ${(err as Error).message}`);
     }
   }
-  log(`  ${host}: ${search.rows.length} in the search, ${cands.size} in all, ${pagesRead} event pages read${dropped ? `, ${dropped} staff rows dropped` : ""}`);
-  return { rows, fetched, pagesRead, dropped, widgetFailed, searchTotal: search.total, errors };
+  log(`  ${host}: ${search.rows.length} in the search, ${cands.size} in all, ${pagesRead} event pages read`);
+  return { rows, fetched, pagesRead, widgetFailed, searchTotal: search.total, errors };
 }
 
 /* ------------------------------------------------------------------ */

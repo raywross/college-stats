@@ -11,6 +11,7 @@ import { myFollows } from "@/lib/follows";
 import { getData } from "@/lib/data";
 import { eventsForMe, myMeasuringPoint, myVisitMutes, myVisitPrefs, readTimeLine } from "@/lib/visit-events/read";
 import { nearYouEvents } from "@/lib/visit-events/view";
+import { isShownKind } from "@/lib/visit-events/types";
 
 export const metadata: Metadata = { title: "Your visits", robots: { index: false } };
 
@@ -33,7 +34,7 @@ export default async function MyVisitsPage() {
   ]);
 
   const mutedSet = new Set(mutes);
-  const nonStaff = events.filter((e) => e.kind !== "staff");
+  const nonStaff = events.filter((e) => isShownKind(e.kind));
   const near = nearYouEvents(nonStaff, point).filter((e) => e.distanceMiles != null && e.distanceMiles <= prefs.radius_miles);
   // Every list shows when it was read (the spec's display rule): the newest read among the colleges on the page.
   const lastSeen = nonStaff.reduce<string | null>((max, e) => (max == null || e.last_seen > max ? e.last_seen : max), null);

@@ -64,7 +64,7 @@ export function PlanTabs({
   return (
     <div className="space-y-4">
       <PlanOpened tab={tab} viewer={viewer} everyone={false} />
-      {tab === "next" && <NextSteps ctx={ctx} viewer={viewer} />}
+      {tab === "next" && <NextSteps ctx={ctx} view={view} />}
       {tab === "colleges" && <PlanList ctx={ctx} view={view} />}
       {
         // eslint-disable-next-line react/no-children-prop -- CalendarTabProps.children is the list of child lanes, by contract

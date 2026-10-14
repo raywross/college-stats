@@ -73,7 +73,7 @@ export function PlanRow({
   const todo = rowToDo(item, ctx.visits, school?.social as Partial<Record<SocialNetwork, string>> | null | undefined);
 
   return (
-    <li ref={ref} className="scroll-mt-24">
+    <li ref={ref} id={`row-${item.id}`} className="scroll-mt-24">
       <div className="flex items-center gap-2 p-3 sm:px-4">
         <button
           type="button"

@@ -4,6 +4,10 @@
  */
 import type { ComponentType } from "react";
 import type { TaskKind } from "@/lib/planner/types";
+import { EdDecideCard } from "./EdDecideCard";
 import type { MoveCardProps } from "./types";
 
-export const MOVE_CARDS: Partial<Record<TaskKind, ComponentType<MoveCardProps>>> = {};
+export const MOVE_CARDS: Partial<Record<TaskKind, ComponentType<MoveCardProps>>> = {
+  ed_decide: EdDecideCard,
+  ed2_decide: EdDecideCard,
+};

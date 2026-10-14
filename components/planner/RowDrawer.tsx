@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { Check, ExternalLink, X } from "lucide-react";
 import { Chip, FieldLabel } from "@/components/activities/chips";
 import { AboutYouAndCollege } from "@/components/planner/AboutYouAndCollege";
+import { EdSheet } from "@/components/planner/EdSheet";
+import { MetricLabel } from "@/components/ui/info-tip";
+import { ED_PILL_TEXT, type EdCandidate } from "@/lib/planner/ed-opportunities";
+import { earlyFor } from "@/lib/planner/rounds";
+import type { AnyCited } from "@/lib/lineage";
 import { VisitForm } from "@/components/planner/VisitForm";
 import { SOCIAL_GLYPHS } from "@/components/school/SocialIcons";
 import { SheetDialog } from "@/components/ui/sheet-dialog";
@@ -31,12 +36,22 @@ import { cn } from "@/lib/utils";
  * Visits and follows count as demonstrated interest for the estimate (lib/planner/hooks.ts), so a saved change refreshes
  * the page and the college's level reads it. How the level is worked out is explained once for the whole list
  * ("How Quad reads your list", components/planner/ListExplainer.tsx), not per college.
+ *
+ * Next steps (ed-opportunities.md "The sheet"): opened with `panel="ed"` (the row's ED pill, or a move's `open_row`
+ * link) on a Good ED opportunity, the ED sheet (EdSheet) sits on top; opened from Details, a one-line link leads to it.
+ * An ED college that hasn't published its ED counts says so here, and nothing shows on the row.
  */
+
+/** Which panel the drawer opens on: the ED sheet on top, or the capture panel's own (U3 adds its move's why). */
+export type RowPanel = "ed" | "capture";
 export function RowDrawer({
   row,
   ctx,
   name,
   onRemove,
+  panel = null,
+  edCandidate = null,
+  onPanel,
 }: {
   row: PlanRowView;
   ctx: PlanContext;
@@ -44,13 +59,34 @@ export function RowDrawer({
   name: string;
   /** Takes the college off the list (after a confirmation). */
   onRemove: () => void;
+  /** The panel the drawer was opened on (null: Details). */
+  panel?: RowPanel | null;
+  /** The row's Good ED opportunity, when it has one. */
+  edCandidate?: EdCandidate | null;
+  /** Switches the panel (the link to the ED sheet). */
+  onPanel?: (panel: RowPanel | null) => void;
 }) {
   const { item, school } = row;
   const canEdit = ctx.viewer.canEdit;
   const visitLink = visitPageLink(school?.links ?? null);
+  const early = school ? earlyFor(school) : null;
+  const noEdCounts = early?.offered === true && (school?.profile?.early_decision?.applicants == null || school?.profile?.early_decision?.admitted == null);
 
   return (
     <div data-capture-panel className="space-y-5 bg-muted/40 px-4 py-4 text-sm sm:pr-6 sm:pl-16">
+      {school && edCandidate && panel === "ed" && <EdSheet row={row} ctx={ctx} candidate={edCandidate} onClose={() => onPanel?.(null)} />}
+      {school && edCandidate && panel !== "ed" && (
+        <button type="button" onClick={() => onPanel?.("ed")} className="min-h-11 text-left font-semibold text-primary hover:underline">
+          {ED_PILL_TEXT[edCandidate.round].full}: the facts
+        </button>
+      )}
+      {school && !edCandidate && noEdCounts && (
+        <p className="text-xs text-muted-foreground">
+          <MetricLabel term="early-decision" cited={school.cites[early!.field] as AnyCited | undefined}>
+            <span>ED offered; {school.name} hasn&apos;t published its ED counts</span>
+          </MetricLabel>
+        </p>
+      )}
       {school && (
         <>
           <AboutYouAndCollege item={item} school={school} canEdit={canEdit} />

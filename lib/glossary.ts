@@ -1765,6 +1765,14 @@ const entries = {
     category: "Your account",
     related: ["demonstrated-interest"],
   },
+  "visit-near-you": {
+    term: "Visit near you",
+    short: "A college's admissions officers visiting a high school or college fair in your area, open to the public with a sign-up.",
+    long: "Colleges that use Slate for admissions publish a full travel calendar of high school visits and fairs alongside their campus tours and sessions; Quad reads it nightly and shows the ones near a family's home or high school, with a link to sign up. Nothing on the college's own site points a family to these unless they already know to search their ZIP.",
+    why: "A family far from campus may never hear a college is coming to their own town otherwise, and seats are first-come.",
+    category: "Admissions",
+    related: ["information-session", "demonstrated-interest"],
+  },
 
   // Stage 5, applications (specs/planner/applications.md)
   "application-portal": {

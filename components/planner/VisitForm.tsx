@@ -4,6 +4,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { VISIT_KINDS, VISIT_KIND_LABELS, VISIT_NOTE_PROMPTS } from "@/lib/planner/actions";
 import { logVisit, updateVisit } from "@/lib/planner/store-actions";
 import type { PlanVisit, VisitKind, VisitNotes } from "@/lib/planner/types";
+import type { VisitFormPrefill } from "@/components/visits/next-events-logic";
 
 function todayIsoClient(): string {
   const d = new Date();
@@ -24,6 +25,7 @@ export function VisitForm({
   itemId,
   visit,
   householdNames,
+  prefill,
   onDone,
   onCancel,
 }: {
@@ -31,20 +33,25 @@ export function VisitForm({
   visit?: PlanVisit | null;
   /** Names from the household roster, for the "who's going" checklist; free text covers anyone else. */
   householdNames: readonly string[];
+  /**
+   * U4 (specs/product/visit-events.md "Planner"): the new-visit starting values from "I registered" on an upcoming
+   * event (`components/visits/next-events-logic.ts` `visitFormPrefill`). Ignored when `visit` is set (editing wins).
+   */
+  prefill?: VisitFormPrefill;
   onDone?: () => void;
   onCancel?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [kind, setKind] = useState<VisitKind>(visit?.kind ?? "campus_tour");
-  const [onDate, setOnDate] = useState(visit?.on_date ?? "");
-  const [atTime, setAtTime] = useState(visit?.at_time ?? "");
-  const [registered, setRegistered] = useState(visit?.registered ?? false);
-  const [registrationUrl, setRegistrationUrl] = useState(visit?.registration_url ?? "");
+  const [kind, setKind] = useState<VisitKind>(visit?.kind ?? prefill?.kind ?? "campus_tour");
+  const [onDate, setOnDate] = useState(visit?.on_date ?? prefill?.onDate ?? "");
+  const [atTime, setAtTime] = useState(visit?.at_time ?? prefill?.atTime ?? "");
+  const [registered, setRegistered] = useState(visit?.registered ?? prefill?.registered ?? false);
+  const [registrationUrl, setRegistrationUrl] = useState(visit?.registration_url ?? prefill?.registrationUrl ?? "");
   const [who, setWho] = useState<string[]>(visit?.who ?? []);
   const [whoFreeText, setWhoFreeText] = useState("");
   const [rating, setRating] = useState<number | null>(visit?.rating ?? null);
-  const [notes, setNotes] = useState<VisitNotes>(visit?.notes ?? {});
+  const [notes, setNotes] = useState<VisitNotes>(visit?.notes ?? (prefill?.notesFree ? { free: prefill.notesFree } : {}));
   const [interviewer, setInterviewer] = useState(visit?.notes?.interviewer ?? "");
   const [interviewerKind, setInterviewerKind] = useState<"alumni" | "admissions" | "">(visit?.notes?.interviewer_kind ?? "");
 

@@ -11,6 +11,7 @@ import { ED_PILL_TEXT, edOpportunities, type EdCandidate } from "@/lib/planner/e
 import { earlyFor } from "@/lib/planner/rounds";
 import type { AnyCited } from "@/lib/lineage";
 import { VisitForm } from "@/components/planner/VisitForm";
+import NextEvents from "@/components/visits/NextEvents";
 import { SOCIAL_GLYPHS } from "@/components/school/SocialIcons";
 import { SheetDialog } from "@/components/ui/sheet-dialog";
 import { setVisited } from "@/lib/lists";
@@ -116,6 +117,8 @@ export function RowDrawer({
         <>
           <AboutYouAndCollege item={item} school={school} canEdit={canEdit} />
           <VisitedControl itemId={item.id} visitedOn={item.visited_on} visits={ctx.visits.filter((v) => v.item_id === item.id)} today={ctx.today} canEdit={canEdit} schoolName={school.name} />
+          {/* The college's next two visit events with "I registered" (specs/product/visit-events.md "Display" → Planner). */}
+          <NextEvents unitId={item.unit_id} itemId={item.id} schoolName={school.name} />
           <InfoRequestedControl itemId={item.id} requestedOn={item.info_requested_on ?? null} today={ctx.today} canEdit={canEdit} schoolName={school.name} />
           <FollowControl
             itemId={item.id}

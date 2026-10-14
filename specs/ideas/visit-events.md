@@ -1,9 +1,49 @@
 # Visit Events: Tours, Info Sessions, and Admissions Events From Each College's Own Calendar
 
-> Status: **idea** (2026-10-13). Research notes from a cloud session; **more research is needed** (see
-> [Research still to do](#research-still-to-do)), which the owner will do from a desktop session with fuller network
-> access. Builds on the visit links in [links.md](../school-identity/links.md) and the planner's visit log
-> ([actions.md](../planner/actions.md)). Part of [ideas](README.md).
+> Status: **promoted** 2026-10-13 to [product/visit-events.md](../product/visit-events.md) (planned), after the
+> desktop research below ([What the desktop research found](#what-the-desktop-research-found-2026-10-13-desktop)) and
+> the owner's decisions: travel events in, signed-in only, a nightly refresh, radius-limited alert emails with a
+> per-college switch. The cloud session's notes stay here as the record. Builds on the visit links in
+> [links.md](../school-identity/links.md) and the planner's visit log ([actions.md](../planner/actions.md)). Part of
+> [ideas](README.md).
+
+## What the desktop research found (2026-10-13, desktop)
+The six items under [Research still to do](#research-still-to-do), done from the desktop with UF (unit 134130) as the
+trace and Duke (198419) as the second college. The sample pages and the 659 parsed events are in the session's
+scratch; the product spec carries the conclusions.
+
+1. **Slate coverage.** 100 of the 1,390 visit links, one hop each: 59 reach a Slate `/portal/` or `/register/` page
+   (about 820 colleges extrapolated). The others: YouVisit 29 (virtual tours), a campus calendar 25, TargetX 6,
+   Element451 5, VisitDays 4, other CRMs 9, plain forms 15, one 403. Slate hosts are `apply.`, `admissions.`,
+   `connect.`, `go.`, `undergrad.admissions.`, `admiss.ugrad.` and the like.
+2. **A Slate event portal, read.** UF's `undergrad.admissions.ufl.edu/portal/uf-campus-tour` renders its list with
+   `event.js` against `/portal/widget/event?portal_id=…&part=…`: `cmd=event_dates&dtstart=&dtend=` returns JSON
+   `{dates:[["2026-10-21","0"],…]}`; `cmd=event_list&date=` returns HTML items with `data-date`, `data-online`,
+   `data-location`, a `/register/?id=<guid>` link, and an available/unavailable legend; `cmd=event_markers` returns
+   map markers. The widget protocol worked on 6 of 6 other Slate portals; the inner markup is each college's template
+   (UF prints "23 spots available" per slot, Bowdoin prints "Sign up").
+   **The bigger find:** every Slate host also serves Slate's standard event search, `/register/?cmd=search` with
+   `zip=`, or `country=US` / `US-GA`, listing every placed event as `<li>` rows with a `?id=` link, title,
+   "Wednesday, October 21 at 9:00 AM", and city; it answered on 9 of 9 hosts (130 to 879 events each). Online
+   events appear only in the widgets. The event page states the full date, timezone, venue with ZIP, and whether
+   registration closed. No iCal, RSS, or JSON anywhere.
+3. **CampusBooker.** A Vite single-page app on Supabase with tables `events`, `colleges`, `urls`,
+   `college_fair_events` and an admin route `/api/extract-portal-ids` that takes a URL and returns Slate portal ids:
+   it scrapes Slate portals, plus hand-entered fairs. Its event fields: `event_name, event_date, start_time,
+   end_time, event_type, is_online, booking_page_url`. Its sitemap of 6,416 college slugs is an IPEDS list, not
+   coverage. Its JS bundle cites College Scorecard, IPEDS, the CDS, and Common App as data sources.
+4. **Terms.** Technolutions has no terms-of-use page (a privacy policy and a contact page; `proposals@` for
+   partnerships). Every Slate host serves the same robots.txt: `gsa-crawler` and `GPTBot` disallowed, `*` allowed.
+   UF's and Duke's site policies govern their own users.
+5. **Common App requirements grid.** Now inside the applicant dashboard, not a public file; it belongs to
+   [cycle-watch.md](cycle-watch.md), not here.
+6. **Technolutions.** No partner program for data consumers; one email, when the build starts.
+
+What the two colleges publish (2026-10-13): UF 528 events (340 rep visits and fairs in 18 states, 132 tours, 40
+sessions, 9 online, 3 open houses, 4 staff rows); Duke 131 (75 tours and sessions with open/full per slot, 15 travel
+evenings such as "Discover Duke - Denver", 1 online, **40 staff rows**: "Requested Group / Filled", hotel shipping,
+materials pickups). UF's high-school visits carry a public registration form (name, email, high school, graduation
+year), which is what moved the travel events from a question to the point of the feature.
 
 ## Question it answers
 *When can we visit, and what's on?* Families plan visits around tours, information sessions, open houses, and

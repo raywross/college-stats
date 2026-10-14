@@ -25,6 +25,7 @@ public data stays free ([commercialization.md](commercialization.md#what-stays-f
 | [saved-lists.md](saved-lists.md) | Saved colleges with Reach / Target / Likely, status, notes, deadlines, sharing, export | Medium |
 | [follow-colleges.md](follow-colleges.md) | Follow colleges (lists follow automatically) and get one email per data release summarizing what changed, with years; a public "What changed" panel on profiles | Large |
 | [home-and-distance.md](home-and-distance.md) | A home address on the account, Explore's "Distance from home" filter with a nearest-first sort, and the distance to every college on a saved list, for students and guardians alike (built 2026-10-05) | Medium |
+| [visit-events.md](visit-events.md) | Every event a Slate college publishes (campus tours, sessions, online, and rep visits to high schools and fairs), read nightly, shown to signed-in people on the college page, `/me/visits`, and the planner, with a nightly email when a college on your list adds an event within a radius of home (default 30 miles) and a per-college off switch (built 2026-10-13 as a four-college pilot) | Extra large |
 | [household-hub.md](household-hub.md) | Add a parent or a student by role with only the details that role needs; everyone by name, invited people in the same roster with their link; the household page as the hub, one list per person with "updates" as a switch per college (built 2026-10-06 from the owner's review) | Large |
 
 The application plan written on 2026-10-06 became the timeline stage of the **planner** on 2026-10-07

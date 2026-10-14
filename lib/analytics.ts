@@ -14,6 +14,7 @@ import type { TopicKey } from "./profile-topics";
 import type { StandingLabel, StandingLevel } from "./chances/types";
 import type { Season } from "./planner/seasons";
 import type { ShapeGapKind } from "./planner/list-shape";
+import type { VisitEventKind } from "./visit-events/types";
 
 /** How someone reached a college's page (`school_viewed.from`; see the spec's "Attribution of a school view"). */
 export type NavigationSource = "search" | "explore" | "compare" | "home" | "similar" | "direct" | "other";
@@ -104,10 +105,17 @@ export interface AnalyticsEvents {
   story_filled: { count: number };
   /** Server (U6): one season brief sent. */
   brief_sent: { season: Season; role: "student" | "guardian" };
+  /** Visit events (specs/product/visit-events.md "Privacy and telemetry"): which surface and kind filter are viewed, never an address or a distance. */
+  visit_events_viewed: { surface: "profile" | "me" | "planner"; kind: VisitEventKind | "all" };
+  visit_signup_clicked: { unit_id: string; kind: VisitEventKind; near: boolean };
+  visit_alert_muted: { unit_id: string };
+  visit_radius_changed: { miles: number };
+  /** The nightly visit alert: how many colleges and events, never which or how far. */
+  visit_alert_sent: { college_count: number; event_count: number };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -184,6 +192,7 @@ export const EVENTS = {
   course_plan_shown: { properties: ["reasons", "guardrail"], side: "client", why: "Course plan: which reasons and guardrails the Next year card shows" },
   course_plan_added: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get added, by reason" },
   course_plan_dismissed: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get set aside, by reason" },
+  visit_alert_sent: { properties: ["college_count", "event_count"], side: "server", why: "Visit events: alerts sent, by size" },
   estimate_shown: { properties: ["group", "label", "model_version"], side: "client", why: "Quad's estimate: how often it is shown and as which group and label, per model version (never the inputs)" },
   plan_move_shown: { properties: ["kind", "season"], side: "client", why: "Next steps: which moves families see, by season" },
   plan_move_done: { properties: ["kind", "season", "by"], side: "client", why: "Next steps: which moves get done, and by whom" },
@@ -203,6 +212,10 @@ export const EVENTS = {
   plan_outcome_shared: { properties: ["yes"], side: "client", why: "Next steps: outcome sharing answered" },
   story_filled: { properties: ["count"], side: "client", why: "Your story: how many prompts are filled (never the text)" },
   brief_sent: { properties: ["season", "role"], side: "server", why: "Next steps: season briefs sent" },
+  visit_events_viewed: { properties: ["surface", "kind"], side: "client", why: "Visit events: which surface and kind filter get used" },
+  visit_signup_clicked: { properties: ["unit_id", "kind", "near"], side: "client", why: "Visit events: sign-up clicks, by college, kind, and whether it was a near-you event" },
+  visit_alert_muted: { properties: ["unit_id"], side: "client", why: "Visit events: per-college alert mutes" },
+  visit_radius_changed: { properties: ["miles"], side: "client", why: "Visit events: radius changes" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

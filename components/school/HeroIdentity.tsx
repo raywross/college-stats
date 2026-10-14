@@ -39,12 +39,16 @@ export async function HeroIdentity({ school, trailing }: { school: School; trail
   return (
     <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 sm:mt-5">
       <OfficialLinks school={school} />
-      <span className="inline-flex items-center gap-2">
-        <SocialLinks school={school} />
-        <SourcesTip title="Where these links come from" groups={[...groups.values()]} />
-      </span>
-      {/* To the right of the social bar: the event calendar button (specs/product/visit-events.md "Display"). */}
-      {trailing}
+      {/* The social bar and, right-aligned on the same line, the event calendar button (specs/product/visit-events.md
+          "Display"): one flexible row, so on phones (after the links' forced break) the button sits at the right edge
+          of the icons' line instead of dropping below them. */}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="inline-flex items-center gap-2">
+          <SocialLinks school={school} />
+          <SourcesTip title="Where these links come from" groups={[...groups.values()]} />
+        </span>
+        {trailing && <span className="ml-auto shrink-0">{trailing}</span>}
+      </div>
     </div>
   );
 }

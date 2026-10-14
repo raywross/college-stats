@@ -126,8 +126,6 @@ function view(rows: PlanRowView[], over: Partial<PlanView> = {}): PlanView {
     balance: { high_reach: 0, reach: 0, target: 0, likely: 0, safe: 0 },
     balanceLine: null,
     problems: [],
-    edTwo: null,
-    edHelps: null,
     retake: null,
     estimates: {},
     next: null,

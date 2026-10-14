@@ -18,7 +18,7 @@
  */
 import type { ListCategory, ListRound } from "../list-rules.ts";
 import { isOffered, roundDates, roundsOffered } from "./rounds.ts";
-import { autoRounds, edHelpsMostSuggestion, edTwoSuggestion, roundProblems, type AutoRound, type AutoRoundsItem } from "./auto-rounds.ts";
+import { autoRounds, roundProblems, type AutoRound, type AutoRoundsItem } from "./auto-rounds.ts";
 import { RETAKE_REACH, TEST_MAX, type StandingStudent, type TestKind } from "./standing.ts";
 import { GPA_CITES, positionIn, readScore, type GpaCite, type ScoreRead, type SendAdvice, type StandingSchool } from "../chances/baseline.ts";
 import { STANDING_LEVELS } from "../chances/levels.ts";
@@ -28,7 +28,8 @@ import { planGpaLabel, planGpaRange, planStudent, type StudentProfileData } from
 import type { PlanItem, PlanSchool } from "./types.ts";
 
 export type SeasonStatus = "not_started" | "working" | "submitted" | "decision";
-export type PlanNotice = "problems" | "edHelps" | "edTwo" | "balance" | "retake";
+/** The ED II offer and "ED would help most" notices became the Good ED opportunity pills (ed-opportunities.md). */
+export type PlanNotice = "problems" | "balance" | "retake";
 
 /**
  * One college's estimate as the tabs read it: the group, its label, the score's place in the college's middle 50%
@@ -125,10 +126,6 @@ export interface PlanView {
   balanceLine: string | null;
   /** One sentence per round conflict (rounds.md "Problems"). */
   problems: string[];
-  /** The one optional ED II line (rounds.md "ED II"). */
-  edTwo: { itemId: string; name: string; due: string | null } | null;
-  /** Where ED would help most (rounds.md "The ED guard" 3), when the Dream is at High reach. */
-  edHelps: { itemId: string; name: string; level: StandingLevel } | null;
   retake: LevelRetakeSuggestion | null;
   /** The estimates the view was built from, by unit id (the numbers form seeds its live preview with them). */
   estimates: Record<string, EstimateResult>;
@@ -156,7 +153,7 @@ export interface PlanViewInput {
 
 /** list.md "Around the list": at most three notices at once; the rest wait until the earlier ones are handled. */
 export const MAX_NOTICES = 3;
-export const NOTICE_ORDER: readonly PlanNotice[] = ["problems", "edHelps", "edTwo", "balance", "retake"];
+export const NOTICE_ORDER: readonly PlanNotice[] = ["problems", "balance", "retake"];
 /** list.md "The row": the season starts when the first deadline is within this many days. */
 export const SEASON_WINDOW_DAYS = 30;
 /** Counselors' common range for a list (README.md "Research"). */
@@ -336,19 +333,6 @@ export function planView(input: PlanViewInput): PlanView {
   const activeRounds = rounds.filter((r) => active.some((a) => a.item.id === r.id));
   const problems = [...roundProblems(activeRounds, bySchool, names), ...amberProblems(active)];
 
-  const edTwoId = edTwoSuggestion(roundItems, rounds, bySchool, levelById);
-  const edTwoRow = edTwoId ? rows.find((r) => r.item.id === edTwoId) ?? null : null;
-  const edTwo = edTwoRow
-    ? { itemId: edTwoRow.item.id, name: edTwoRow.school?.name ?? "A college", due: roundDates(edTwoRow.school, "ed2").closing?.iso ?? null }
-    : null;
-
-  // rounds.md "The ED guard" 3: with a High-reach Dream, the highest-level college that offers ED and whose ED
-  // sentence says it would help.
-  const edVerdictById: Record<string, EstimateResult["ed"]> = Object.fromEntries(items.map((i) => [i.id, estimates[i.unit_id]?.ed ?? null]));
-  const edHelpsId = edHelpsMostSuggestion(roundItems, bySchool, levelById, edVerdictById);
-  const edHelpsRow = edHelpsId ? (rows.find((r) => r.item.id === edHelpsId) ?? null) : null;
-  const edHelps = edHelpsRow && edHelpsRow.school && levelById[edHelpsRow.item.id] ? { itemId: edHelpsRow.item.id, name: edHelpsRow.school.name, level: levelById[edHelpsRow.item.id]! } : null;
-
   // A retake can still move a college that hasn't decided (scores.md "When to suggest another test").
   const retake = student.test
     ? levelRetakeFromMoves(
@@ -369,8 +353,6 @@ export function planView(input: PlanViewInput): PlanView {
   const balanceLine = balanceLineFor(groups);
   const present: Record<PlanNotice, boolean> = {
     problems: problems.length > 0,
-    edHelps: edHelps !== null,
-    edTwo: edTwo !== null,
     balance: balanceLine !== null,
     retake: retake !== null,
   };
@@ -382,8 +364,6 @@ export function planView(input: PlanViewInput): PlanView {
     balance: balanceLevels(groups.map((g) => (g === "unsorted" ? null : g))),
     balanceLine,
     problems,
-    edTwo,
-    edHelps,
     retake,
     estimates,
     next,

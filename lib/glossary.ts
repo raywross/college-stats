@@ -1174,6 +1174,13 @@ const entries = {
     category: "Admissions",
     related: ["early-decision", "early-decision-ii", "early-action"],
   },
+  "hooked-applicant": {
+    term: "Hooked applicant",
+    short: "An applicant with an edge beyond their record: a recruited athlete, a legacy, or a family tie the college weighs. Many apply early, so a college's early admit rate overstates the gain for everyone else.",
+    long: "Dartmouth calls its own early rate \"somewhat misleading\" for this reason, and Brown's falls by more than a quarter with recruited athletes taken out. The early round still helps where a college fills much of its class early, but by less than the gap between the rates.",
+    category: "Admissions",
+    related: ["early-decision", "early-decision-ii", "binding"],
+  },
   "wait-list": {
     term: "Wait list",
     short: "A list of qualified applicants a college may admit later if spaces open. Applicants choose whether to accept a place on it; at many colleges few are admitted from it.",

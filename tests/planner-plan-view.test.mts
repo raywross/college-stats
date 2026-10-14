@@ -304,9 +304,9 @@ test("deadline and decision follow the row's round, with the field to cite and i
 /* Notices                                                             */
 /* ------------------------------------------------------------------ */
 
-test("notices: at most three, in list.md's order (problems, ED II, balance, retake); the fourth waits", () => {
-  // Two EDs (a problem), a Dream in ED with a college offering ED II (the offer), three colleges (balance), and a
-  // score 20 points under a range at a 45% college (a retake would move it up).
+test("notices: at most three, in list.md's order (problems, balance, retake)", () => {
+  // Two EDs (a problem), three colleges (balance), and a score 20 points under a range at a 45% college (a retake
+  // would move it up). The ED II offer is gone: the Good ED opportunity pills replaced it.
   const schools = by([
     ps("D", "Dream U", { ed: true, admitRate: 0.1 }),
     ps("X", "Second ED U", { ed: true, admitRate: 0.45, sat: [1300, 1450] }),
@@ -315,12 +315,10 @@ test("notices: at most three, in list.md's order (problems, ED II, balance, reta
   const items = [item("D", { dream: true }), item("X", { round: "ed", round_source: "student" }), item("Y")];
   const v = planView({ items, schools, profile: numbers({ sat: 1280, focus: "sat" }), today: TODAY });
   assert.ok(v.problems.length > 0);
-  assert.equal(v.edTwo?.itemId, "item-Y");
-  assert.equal(v.edTwo?.due, "2027-01-01");
   assert.ok(v.balanceLine);
   assert.ok(v.retake);
   assert.equal(MAX_NOTICES, 3);
-  assert.deepEqual(v.notices, ["problems", "edTwo", "balance"]);
+  assert.deepEqual(v.notices, ["problems", "balance", "retake"]);
 });
 
 test("notices: only the ones that are true, in order", () => {
@@ -484,23 +482,3 @@ test("the Dream sorts first even ahead of a closer college in an earlier section
   assert.deepEqual(v.rows.map((r) => r.item.unit_id), ["B", "A"]);
 });
 
-test("edHelps: with a High-reach Dream, names the highest level that offers ED and whose ed verdict helps", () => {
-  const schools = by([ps("dream", "Dream"), ps("target", "Target College", { ed: true }), ps("reach", "Reach College", { ed: true })]);
-  const items = [item("dream", { dream: true }), item("target"), item("reach")];
-  const estimates = {
-    dream: est("dream", "high_reach"),
-    target: est("target", "target", { ed: "helps" }),
-    reach: est("reach", "reach", { ed: "helps" }),
-  };
-  const v = planViewOf({ items, schools, profile: null, estimates, today: TODAY });
-  assert.deepEqual(v.edHelps, { itemId: "item-target", name: "Target College", level: "target" });
-  assert.ok(v.notices.includes("edHelps"));
-});
-
-test("edHelps is null once the Dream isn't at High reach", () => {
-  const schools = by([ps("dream", "Dream"), ps("target", "Target College", { ed: true })]);
-  const items = [item("dream", { dream: true }), item("target")];
-  const estimates = { dream: est("dream", "reach"), target: est("target", "target", { ed: "helps" }) };
-  const v = planViewOf({ items, schools, profile: null, estimates, today: TODAY });
-  assert.equal(v.edHelps, null);
-});

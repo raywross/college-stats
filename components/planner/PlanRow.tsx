@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, Heart } from "lucide-react";
 import { CollegeChip } from "@/components/planner/CollegeChip";
-import { RowDrawer } from "@/components/planner/RowDrawer";
+import { RowDrawer, type RowPanel } from "@/components/planner/RowDrawer";
+import type { EdCandidate } from "@/lib/planner/ed-opportunities";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { track } from "@/lib/analytics";
@@ -18,7 +19,15 @@ import { cn } from "@/lib/utils";
  * left the row on 2026-10-12 (owner: "there for seniors; remove for now", to return with recommendations); the data
  * and the calendar's use of it are unchanged. The ×  to remove a college lives in the panel. Every tap is optimistic
  * (the parent, PlanList, patches its own state and rolls back on a refused write).
+ *
+ * Next steps (ed-opportunities.md "The pill"; build-plan.md U2): at most one pill per row, right-aligned before the
+ * Details control. `pill` is a render prop (RowPill) given the function that opens the drawer on a panel, so the
+ * pill's tap opens the details with its sheet on top: the Good ED opportunity pill first, else (U3) the interest pill.
+ * `openPanel` opens the drawer on that panel at first render (a move's `open_row` link: `?row=<id>&panel=ed`).
  */
+/** The row's one pill, rendered with the function that opens the drawer on a panel (ED sheet, capture). */
+export type RowPill = (open: (panel: RowPanel) => void) => ReactNode;
+
 export function PlanRow({
   row,
   ctx,
@@ -26,6 +35,9 @@ export function PlanRow({
   error,
   onToggleDream,
   onRemove,
+  pill,
+  openPanel,
+  edCandidate,
 }: {
   row: PlanRowView;
   ctx: PlanContext;
@@ -36,8 +48,24 @@ export function PlanRow({
   onToggleDream: (row: PlanRowView) => void;
   /** Takes the college off the list (after the panel's own confirmation). */
   onRemove: (row: PlanRowView) => void;
+  /** The row's one pill (at most one per row; the ED pill first). */
+  pill?: RowPill;
+  /** Open the drawer on this panel at first render. */
+  openPanel?: RowPanel | null;
+  /** The row's Good ED opportunity, when it has one (the drawer's ED sheet reads it). */
+  edCandidate?: EdCandidate | null;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!openPanel);
+  const [panel, setPanel] = useState<RowPanel | null>(openPanel ?? null);
+  const ref = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (openPanel) ref.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [openPanel]);
+  const openOn = (p: RowPanel) => {
+    setPanel(p);
+    if (!open) track("plan_drawer_opened", { in_season: row.seasonStatus !== null });
+    setOpen(true);
+  };
   const { item, school } = row;
   const name = school?.name ?? item.unit_id;
   const canEdit = ctx.viewer.canEdit;
@@ -45,7 +73,7 @@ export function PlanRow({
   const todo = rowToDo(item, ctx.visits, school?.social as Partial<Record<SocialNetwork, string>> | null | undefined);
 
   return (
-    <li>
+    <li ref={ref} className="scroll-mt-24">
       <div className="flex items-center gap-2 p-3 sm:px-4">
         <button
           type="button"
@@ -67,12 +95,17 @@ export function PlanRow({
           {row.dream && <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">Dream</p>}
         </div>
 
+        {pill?.(openOn)}
+
         <button
           type="button"
           onClick={() => {
             const next = !open;
             setOpen(next);
-            if (next) track("plan_drawer_opened", { in_season: row.seasonStatus !== null });
+            if (next) {
+              setPanel(null);
+              track("plan_drawer_opened", { in_season: row.seasonStatus !== null });
+            }
           }}
           aria-expanded={open}
           aria-label={`Details for ${name}${todo.length ? `, ${todo.length === 1 ? "one thing" : "two things"} to add` : ""}`}
@@ -92,7 +125,7 @@ export function PlanRow({
         </button>
       </div>
       {error && <p className="px-4 pb-2 text-xs text-destructive sm:px-16">{error}</p>}
-      {open && <RowDrawer row={row} ctx={ctx} name={name} onRemove={() => onRemove(row)} />}
+      {open && <RowDrawer row={row} ctx={ctx} name={name} onRemove={() => onRemove(row)} panel={panel} edCandidate={edCandidate ?? null} onPanel={setPanel} />}
     </li>
   );
 }

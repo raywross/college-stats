@@ -106,7 +106,7 @@ function row(overrides: {
 }
 
 function view(next: PlanRowView | null, rows: PlanRowView[] = []): PlanView {
-  return { student: { gpa: 3.8, test: { kind: "sat", score: 1400 } }, rows, balance: { reach: 0, target: 0, likely: 0 }, balanceLine: null, problems: [], edTwo: null, retake: null, next, inSeason: true, notices: [] } as unknown as PlanView;
+  return { student: { gpa: 3.8, test: { kind: "sat", score: 1400 } }, rows, balance: { reach: 0, target: 0, likely: 0 }, balanceLine: null, problems: [], retake: null, next, inSeason: true, notices: [] } as unknown as PlanView;
 }
 
 test("nextUpInfo: a deadline still to meet", () => {

@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Crest } from "@/components/school/Crest";
-import { PlanRow } from "@/components/planner/PlanRow";
+import { PlanRow, type RowPill } from "@/components/planner/PlanRow";
+import { EdPill } from "@/components/planner/EdPill";
+import { edOpportunities, type EdCandidate } from "@/lib/planner/ed-opportunities";
 import { ListExplainer } from "@/components/planner/ListExplainer";
 import { PlanNotice } from "@/components/planner/PlanNotice";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
@@ -33,6 +35,22 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   const [viewSeen, setViewSeen] = useState(view);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const canEdit = ctx.viewer.canEdit;
+  // A move's `open_row` link (`?row=<item id>&panel=ed|capture`) opens that row's drawer on the panel.
+  const params = useSearchParams();
+  const openRow = params?.get("row") ?? null;
+  const openPanelParam = params?.get("panel");
+  const openPanel = openPanelParam === "ed" || openPanelParam === "capture" ? openPanelParam : "capture";
+  // Good ED opportunities (ed-opportunities.md): computed once from the server's view; at most three pills.
+  const edByItem = new Map<string, EdCandidate>(
+    edOpportunities(view.rows.map((r) => r.item), view.estimates, ctx.schools, { season: ctx.season, today: ctx.today }).map((c) => [c.itemId, c]),
+  );
+  const pillFor = (row: PlanRowView): RowPill | undefined => {
+    const c = edByItem.get(row.item.id);
+    if (!c) return undefined;
+    return function edPill(open) {
+      return <EdPill candidate={c} onOpen={() => open("ed")} />;
+    };
+  };
 
   // The server's view (a refresh, a different child, a data publish) replaces whatever's local. Resetting state
   // during render (rather than in an effect) avoids an extra render each time the view changes.
@@ -128,6 +146,9 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
                     error={errors[row.item.id] ?? null}
                     onToggleDream={handleDream}
                     onRemove={handleRemove}
+                    pill={pillFor(row)}
+                    edCandidate={edByItem.get(row.item.id) ?? null}
+                    openPanel={openRow === row.item.id ? openPanel : null}
                   />
                 ))}
               </ul>

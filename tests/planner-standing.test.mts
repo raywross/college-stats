@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { actToSat, balance, retakeSuggestion, satToAct, scoreToMoveUp, standingFor, type StandingSchool } from "../lib/planner/standing.ts";
-import { autoRounds, edHelpsMostSuggestion, edTwoSuggestion, roundProblems, type AutoRoundsSchool } from "../lib/planner/auto-rounds.ts";
+import { autoRounds, roundProblems, type AutoRoundsSchool } from "../lib/planner/auto-rounds.ts";
 
 const school = (over: Partial<StandingSchool> = {}): StandingSchool => ({ admitRate: 0.45, sat: [1280, 1450], act: [28, 33], gpaAverage: null, testPolicy: "considered", ...over });
 const sat = (score: number, gpa: number | null = null) => ({ gpa, test: { kind: "sat" as const, score } });
@@ -143,7 +143,7 @@ test("the student's pick wins and is not auto", () => {
   assert.deepEqual([r[0].round, r[0].auto], ["rd", false]);
 });
 
-test("ED II is suggested, never set, and only behind an early Dream", () => {
+test("ED II is never set automatically", () => {
   const items = [
     { id: "d", dream: true, chosen: null },
     { id: "x", dream: false, chosen: null },
@@ -151,8 +151,6 @@ test("ED II is suggested, never set, and only behind an early Dream", () => {
   const schools = { d: s({ ed: true }), x: s({ ed: true, ed2: true }) };
   const rounds = autoRounds(items, schools);
   assert.equal(rounds[1].round, "rd");
-  assert.equal(edTwoSuggestion(items, rounds, schools), "x");
-  assert.equal(edTwoSuggestion([{ ...items[0], dream: false }, items[1]], autoRounds([{ ...items[0], dream: false }, items[1]], schools), schools), null);
 });
 
 /* The ED guard (rounds.md "The ED guard", levels.md "The planner's advice") */
@@ -174,34 +172,6 @@ test("the ED guard: a High-reach Dream starts in EA, not ED; with no EA, RD; a R
 test("the ED guard: the student can still pick ED by hand even at High reach", () => {
   const r = autoRounds([{ id: "a", dream: true, chosen: "ed" }], { a: s({ ed: true, ea: true }) }, { a: "high_reach" });
   assert.deepEqual([r[0].round, r[0].auto], ["ed", false]);
-});
-
-test("ED II is never suggested for a college at High reach", () => {
-  const items = [
-    { id: "d", dream: true, chosen: null },
-    { id: "x", dream: false, chosen: null },
-  ];
-  const schools = { d: s({ ed: true }), x: s({ ed: true, ed2: true }) };
-  const rounds = autoRounds(items, schools);
-  assert.equal(edTwoSuggestion(items, rounds, schools, { x: "high_reach" }), null, "the only ED II candidate is High reach, so none qualifies");
-  assert.equal(edTwoSuggestion(items, rounds, schools, { x: "reach" }), "x", "at any other level it's still suggested");
-});
-
-test("edHelpsMostSuggestion: with a High-reach Dream, the highest level that offers ED and whose ed verdict is 'helps'", () => {
-  const items = [
-    { id: "dream", dream: true, chosen: null },
-    { id: "low", dream: false, chosen: null },
-    { id: "high", dream: false, chosen: null },
-    { id: "no-ed", dream: false, chosen: null },
-    { id: "not-helps", dream: false, chosen: null },
-  ];
-  const schools = { dream: s({ ea: true }), low: s({ ed: true }), high: s({ ed: true }), "no-ed": s({ ea: true }), "not-helps": s({ ed: true }) };
-  const levels = { dream: "high_reach", low: "reach", high: "target", "no-ed": "target", "not-helps": "likely" } as const;
-  const eds = { dream: null, low: "helps", high: "helps", "no-ed": "helps", "not-helps": "same" } as const;
-  assert.equal(edHelpsMostSuggestion(items, schools, levels, eds), "high", "Target (higher) beats Reach, both offering ED and 'helps'");
-  assert.equal(edHelpsMostSuggestion(items, schools, levels, { ...eds, high: "same" }), "low", "falls back to the next-highest qualifying college");
-  assert.equal(edHelpsMostSuggestion(items, schools, { ...levels, dream: "reach" }, eds), null, "no suggestion once the Dream isn't at High reach");
-  assert.equal(edHelpsMostSuggestion(items, schools, levels, { dream: null, low: "same", high: "same", "no-ed": "helps", "not-helps": "same" }), null, "none when nothing qualifies");
 });
 
 test("problems appear only when they exist", () => {

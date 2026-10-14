@@ -318,7 +318,8 @@ test("SeasonExplainer: the sheet dialog, SEASON_EXPLAINER's paragraph and next l
 });
 
 test("PlanRow: the row carries an id for ?move= / #row- to scroll to", () => {
-  assert.match(read("components", "planner", "PlanRow.tsx"), /<li id=\{`row-\$\{item\.id\}`\}>/);
+  // U2 put a ref and a scroll margin on the same element; the id may sit among other attributes.
+  assert.match(read("components", "planner", "PlanRow.tsx"), /<li[^>]*\bid=\{`row-\$\{item\.id\}`\}[^>]*>/);
 });
 
 /* ------------------------------------------------------------------ */

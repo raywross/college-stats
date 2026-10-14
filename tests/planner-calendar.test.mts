@@ -141,6 +141,8 @@ function task(over: Partial<PlanTask>): PlanTask {
   return {
     id: `task-${Math.random()}`,
     list_id: "list-1",
+    season: null,
+    action: null,
     item_id: null,
     key: null,
     kind: "own",
@@ -206,6 +208,9 @@ function ctx(over: Partial<PlanContext> = {}): PlanContext {
     today: TODAY,
     cycle: cycleFor(CYCLE_START),
     grade: "senior_fall",
+    season: "senior_fall",
+    gradYear: CYCLE_START + 1,
+    estimates: {},
     stages: {} as PlanContext["stages"],
     current: 4,
     ...over,

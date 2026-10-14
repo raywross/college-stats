@@ -246,6 +246,9 @@ const input = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
   today: TODAY,
   visits: [],
   offers: [],
+  gradYear: null,
+  season: "unknown",
+  estimates: {},
   ...over,
 });
 

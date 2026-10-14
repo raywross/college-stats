@@ -141,27 +141,11 @@ export const GRADE_LABELS: Record<Grade, string> = {
 };
 
 /**
- * The grade on `today` (ISO) for the class of `gradYear`. With G the grad year and S = G - 1 (the cycle's start):
- * junior year runs August of S - 1 to May of S (fall and winter through February, spring March to May), the summer
- * before senior year June to August of S, senior fall September to December of S, senior winter January and February
- * of G, senior spring March to May of G, the summer after June to August of G; from September of G, college.
+ * The grade on `today` (ISO) for the class of `gradYear`: a thin map over `seasonOf()` (lib/planner/seasons.ts), so
+ * the plan has one set of boundaries (specs/planner/next-steps/seasons.md "The season"; the school year turns on
+ * August 1, so senior fall starts in August and the summer after ends in July).
  */
-export function gradeOf(gradYear: number | null, today: string): Grade {
-  if (gradYear === null || !Number.isFinite(gradYear)) return "unknown";
-  const [y, m] = today.split("-").map(Number);
-  const months = y * 12 + (m - 1);
-  const at = (year: number, month: number) => year * 12 + (month - 1);
-  const s = gradYear - 1;
-  if (months < at(s - 1, 8)) return "earlier";
-  if (months < at(s, 3)) return "junior_fall";
-  if (months < at(s, 6)) return "junior_spring";
-  if (months < at(s, 9)) return "summer_before_senior";
-  if (months < at(gradYear, 1)) return "senior_fall";
-  if (months < at(gradYear, 3)) return "senior_winter";
-  if (months < at(gradYear, 6)) return "senior_spring";
-  if (months < at(gradYear, 9)) return "summer_after";
-  return "graduated";
-}
+export { gradeOf } from "./seasons.ts";
 
 /** Junior spring through the summer after: when the plan is "in season" (the hub's caption, reminders). */
 export function inSeason(grade: Grade): boolean {

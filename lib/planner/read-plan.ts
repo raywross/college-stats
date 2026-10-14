@@ -8,6 +8,10 @@
  * `category_source`/`round_source`. A read that fails on them is retried without them, and every row comes back as
  * the student's (`student` source) so nothing is ever overwritten (specs/planner/redesign/build-plan.md, review
  * note 2): the plan renders, read-only-safe, either way.
+ *
+ * Next steps (supabase/migrations/20261014120000_next_steps.sql; specs/planner/next-steps/build-plan.md review note
+ * 5): until it's applied, tasks are read without `season, action` (null), items without `ed_dismissed_at, ed_checks`
+ * (null, {}), and a generated-task upsert that fails on `season`/`action` is retried without them (upsertTaskRows).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ListRecord } from "../list-rules.ts";
@@ -23,9 +27,15 @@ export const PLAN_ITEM_SOURCE_COLUMNS = "category_source, round_source";
 export const PLAN_ITEM_HOOKS_COLUMNS = "legacy, recruited";
 /** The sibling connection (20261012130000_list_item_sibling.sql; owner, 2026-10-12). */
 export const PLAN_ITEM_SIBLING_COLUMN = "legacy_sibling";
-export const PLAN_ITEM_COLUMNS = `${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}, ${PLAN_ITEM_HOOKS_COLUMNS}, ${PLAN_ITEM_SIBLING_COLUMN}`;
-export const PLAN_TASK_COLUMNS =
+/** Next steps' ED columns (20261014120000_next_steps.sql). */
+export const PLAN_ITEM_ED_COLUMNS = "ed_dismissed_at, ed_checks";
+export const PLAN_ITEM_COLUMNS = `${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}, ${PLAN_ITEM_HOOKS_COLUMNS}, ${PLAN_ITEM_SIBLING_COLUMN}, ${PLAN_ITEM_ED_COLUMNS}`;
+/** plan_tasks columns that exist without the next-steps migration. */
+export const PLAN_TASK_BASE_COLUMNS =
   "id, list_id, item_id, key, kind, title, detail, due_on, window_start, window_end, assignee, source, source_field, source_edition, date_note, done_at, done_by, snoozed_until, dismissed, orphaned, position, created_by, created_at";
+/** Next steps' move columns (20261014120000_next_steps.sql). */
+export const PLAN_TASK_MOVE_COLUMNS = "season, action";
+export const PLAN_TASK_COLUMNS = `${PLAN_TASK_BASE_COLUMNS}, ${PLAN_TASK_MOVE_COLUMNS}`;
 const VISIT_COLUMNS = "id, item_id, kind, on_date, at_time, registered, registration_url, who, rating, notes, created_by, created_at, updated_at";
 const OFFER_COLUMNS = "id, item_id, award_year, letter_date, source, coa, gift, work_study, loans, quotes, pros, cons, confirmed_at, created_by, created_at";
 const NUDGE_COLUMNS = "id, task_id, from_user, to_student, note, sent_at, channel, reply, replied_at";
@@ -97,6 +107,30 @@ function withBackfillHooks<T>(rows: T[]): (T & { legacy: boolean; recruited: "no
 /** The list's items, retrying without newer columns when the database doesn't have them yet. */
 export async function readItems(supabase: SupabaseClient, listId: string): Promise<{ data: PlanItem[] | null; error: PgError | null; sourcesMissing: boolean }> {
   const full = await supabase.from("list_items").select(PLAN_ITEM_COLUMNS).eq("list_id", listId).order("position");
+  if (!full.error) return { data: withEdDefaults((full.data ?? []) as unknown as PlanItem[]), error: null, sourcesMissing: false };
+  // Next steps' ED columns missing (20261014120000 not applied): read the rest; a different missing column falls
+  // through to the older retries, none of which ask for the ED columns.
+  if (!isMissing(full.error)) return { data: null, error: full.error, sourcesMissing: false };
+  // An older column named instead: that read would fail the same way, so the older retries start from this error.
+  const r = await readItemsBeforeNextSteps(supabase, listId, isMissingEdColumn(full.error) ? undefined : full.error);
+  return r.data ? { ...r, data: withEdDefaults(r.data) } : r;
+}
+
+/** The error is about next steps' ED columns (20261014120000_next_steps.sql not applied yet). */
+export function isMissingEdColumn(error: PgError): boolean {
+  return isMissing(error) && /ed_dismissed_at|ed_checks/.test(error.message ?? "");
+}
+
+/** Rows read without the ED columns: not dismissed, no checks ticked. */
+function withEdDefaults(rows: PlanItem[]): PlanItem[] {
+  return rows.map((r) => ({ ...r, ed_dismissed_at: r.ed_dismissed_at ?? null, ed_checks: r.ed_checks ?? {} }));
+}
+
+/** readItems before next steps: every column but the ED ones, with the older migrations' retries. */
+async function readItemsBeforeNextSteps(supabase: SupabaseClient, listId: string, known?: PgError): Promise<{ data: PlanItem[] | null; error: PgError | null; sourcesMissing: boolean }> {
+  const full: { data: unknown; error: PgError | null } = known
+    ? { data: null, error: known }
+    : await supabase.from("list_items").select(`${PLAN_ITEM_BASE_COLUMNS}, ${PLAN_ITEM_SOURCE_COLUMNS}, ${PLAN_ITEM_HOOKS_COLUMNS}, ${PLAN_ITEM_SIBLING_COLUMN}`).eq("list_id", listId).order("position");
   if (!full.error) return { data: (full.data ?? []) as unknown as PlanItem[], error: null, sourcesMissing: false };
   let first: { data: unknown; error: PgError | null } = full;
   // The sibling column alone missing: read everything else, the sibling reading as unmarked.
@@ -117,6 +151,49 @@ export async function readItems(supabase: SupabaseClient, listId: string): Promi
   return { data: withBackfillHooks(withBackfillSources((retry.data ?? []) as unknown as PlanItem[])), error: null, sourcesMissing: true };
 }
 
+/** The error is about next steps' move columns on plan_tasks (20261014120000_next_steps.sql not applied yet). */
+export function isMissingMoveColumn(error: PgError): boolean {
+  return isMissing(error) && /\bseason\b|\baction\b/.test(error.message ?? "");
+}
+
+/** Rows read without the move columns: no season, no button. */
+function withMoveDefaults(rows: PlanTask[]): PlanTask[] {
+  return rows.map((r) => ({ ...r, season: r.season ?? null, action: r.action ?? null }));
+}
+
+/**
+ * A list's tasks (due date, then position), retrying without `season, action` while the next-steps migration isn't
+ * applied (build-plan.md review note 5): they read as null.
+ */
+export async function readTaskRows(supabase: SupabaseClient, listId: string): Promise<{ data: PlanTask[] | null; error: PgError | null }> {
+  const sel = (cols: string) => supabase.from("plan_tasks").select(cols).eq("list_id", listId).order("due_on", { nullsFirst: false }).order("position");
+  const full = await sel(PLAN_TASK_COLUMNS);
+  if (!full.error) return { data: withMoveDefaults((full.data ?? []) as unknown as PlanTask[]), error: null };
+  if (!isMissingMoveColumn(full.error)) return { data: null, error: full.error };
+  const retry = await sel(PLAN_TASK_BASE_COLUMNS);
+  if (retry.error) return { data: null, error: retry.error };
+  return { data: withMoveDefaults((retry.data ?? []) as unknown as PlanTask[]), error: null };
+}
+
+/**
+ * Upserts generated task rows on (list_id, key). On a missing-column error naming `season` or `action` (the
+ * next-steps migration not applied yet), retries once without those two fields (review note 5). Returns the error of
+ * the last attempt, or null.
+ */
+export async function upsertTaskRows(supabase: SupabaseClient, rows: Record<string, unknown>[]): Promise<PgError | null> {
+  const { error } = await supabase.from("plan_tasks").upsert(rows, { onConflict: "list_id,key" });
+  if (!error) return null;
+  if (!isMissingMoveColumn(error)) return error;
+  const stripped = rows.map((r) => {
+    const copy = { ...r };
+    delete copy.season;
+    delete copy.action;
+    return copy;
+  });
+  const retry = await supabase.from("plan_tasks").upsert(stripped, { onConflict: "list_id,key" });
+  return retry.error ?? null;
+}
+
 /**
  * Reads a list's plan in one round after the list (items, tasks, visits, offers, nudges in parallel). Null when the
  * list isn't visible. Throws `PlannerSetupError` when the planner migration isn't applied yet, so a page can say so.
@@ -127,7 +204,7 @@ export async function readPlan(supabase: SupabaseClient, listId: string): Promis
   const [list, items, tasks] = await Promise.all([
     supabase.from("lists").select(PLAN_LIST_COLUMNS).eq("id", listId).maybeSingle(),
     readItems(supabase, listId),
-    supabase.from("plan_tasks").select(PLAN_TASK_COLUMNS).eq("list_id", listId).order("due_on", { nullsFirst: false }).order("position"),
+    readTaskRows(supabase, listId),
   ]);
   if (list.error) {
     if (isMissing(list.error)) throw new PlannerSetupError(list.error.message ?? "");

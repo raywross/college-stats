@@ -12,6 +12,8 @@
 import type { ExploreView } from "./types";
 import type { TopicKey } from "./profile-topics";
 import type { StandingLabel, StandingLevel } from "./chances/types";
+import type { Season } from "./planner/seasons";
+import type { ShapeGapKind } from "./planner/list-shape";
 
 /** How someone reached a college's page (`school_viewed.from`; see the spec's "Attribution of a school view"). */
 export type NavigationSource = "search" | "explore" | "compare" | "home" | "similar" | "direct" | "other";
@@ -44,8 +46,8 @@ export interface AnalyticsEvents {
   /* The planner (specs/planner/model.md "Telemetry"): that a stage was used and which college, never a title, a
    * date, a phone number, a count, or a note. */
   /** The redesign (specs/planner/redesign/*.md "Telemetry"): which tab, whose view, and whether it's Everyone. */
-  plan_opened: { tab: "colleges" | "calendar" | "offers"; viewer: "student" | "guardian"; everyone: boolean };
-  plan_task_ticked: { kind: string; source: "college" | "cycle" | "stage" | "own"; assignee: "student" | "guardian" | "either" };
+  plan_opened: { tab: "next" | "colleges" | "calendar" | "offers"; viewer: "student" | "guardian"; everyone: boolean };
+  plan_task_ticked: { kind: string; source: "college" | "cycle" | "stage" | "own" | "season"; assignee: "student" | "guardian" | "either" };
   plan_stage_done: { stage: number };
   plan_nudge_sent: { channel: "email" | "sms" | "app" };
   /** A text consent recorded; `by_guardian` when a guardian turned it on for a student. */
@@ -57,7 +59,7 @@ export interface AnalyticsEvents {
   plan_choice_made: { unit_id: string };
   /* The planner redesign (specs/planner/redesign/{page,standing,list,rounds,scores,calendar}.md "Telemetry"): which
    * parts get used, never a score, a GPA, a name, or a date. */
-  plan_tab: { tab: "colleges" | "calendar" | "offers" };
+  plan_tab: { tab: "next" | "colleges" | "calendar" | "offers" };
   plan_switch_child: { to: "child" | "everyone" };
   plan_signed_out_started: { from: "numbers" | "college" };
   plan_signed_out_saved: { has_numbers: boolean };
@@ -81,10 +83,32 @@ export interface AnalyticsEvents {
   course_plan_dismissed: { reason: string };
   /** An estimate shown to a student (the profile's card, the planner's drawer): the group, the label, the model version; never an input. */
   estimate_shown: { group: StandingLevel | "none"; label: StandingLabel | "none"; model_version: string };
+  /* Next steps (specs/planner/next-steps/*.md "Telemetry"; build-plan.md "Telemetry"): kinds, seasons, levels, and
+     rule names only; never a college, a score, or a number from the estimate. */
+  plan_move_shown: { kind: string; season: Season };
+  plan_move_done: { kind: string; season: Season; by: "student" | "guardian" };
+  plan_move_skipped: { kind: string; season: Season };
+  plan_season_explainer_opened: { season: Season };
+  plan_ed_pill_shown: { round: "ed" | "ed2" | "ed_alt"; level: StandingLevel; rank: number };
+  plan_ed_sheet_opened: { round: "ed" | "ed2" | "ed_alt" };
+  plan_ed_started: { round: "ed" | "ed2" | "ed_alt" };
+  plan_ed_dismissed: { round: "ed" | "ed2" | "ed_alt" };
+  plan_interest_move_shown: { rule: "visit_ed" | "important" | "considered"; level: StandingLevel | "none" };
+  /** `action`, not the brief's `act`: "act" is a denied property token (the ACT). */
+  plan_interest_act: { action: string };
+  plan_shape_gap_shown: { gap: ShapeGapKind; season: Season };
+  plan_rail_opened: { level: StandingLevel };
+  plan_rail_added: { level: StandingLevel };
+  plan_applied: { round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" | "none" };
+  plan_decision_recorded: { outcome: "admitted" | "denied" | "waitlisted" | "deferred" };
+  plan_outcome_shared: { yes: boolean };
+  story_filled: { count: number };
+  /** Server (U6): one season brief sent. */
+  brief_sent: { season: Season; role: "student" | "guardian" };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -163,6 +187,24 @@ export const EVENTS = {
   course_plan_added: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get added, by reason" },
   course_plan_dismissed: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get set aside, by reason" },
   estimate_shown: { properties: ["group", "label", "model_version"], side: "client", why: "Quad's estimate: how often it is shown and as which group and label, per model version (never the inputs)" },
+  plan_move_shown: { properties: ["kind", "season"], side: "client", why: "Next steps: which moves families see, by season" },
+  plan_move_done: { properties: ["kind", "season", "by"], side: "client", why: "Next steps: which moves get done, and by whom" },
+  plan_move_skipped: { properties: ["kind", "season"], side: "client", why: "Next steps: which moves get a Not now" },
+  plan_season_explainer_opened: { properties: ["season"], side: "client", why: "Next steps: is How this season works read" },
+  plan_ed_pill_shown: { properties: ["round", "level", "rank"], side: "client", why: "Next steps: ED opportunity pills shown" },
+  plan_ed_sheet_opened: { properties: ["round"], side: "client", why: "Next steps: ED sheets opened" },
+  plan_ed_started: { properties: ["round"], side: "client", why: "Next steps: ED opportunities taken" },
+  plan_ed_dismissed: { properties: ["round"], side: "client", why: "Next steps: ED opportunities dismissed" },
+  plan_interest_move_shown: { properties: ["rule", "level"], side: "client", why: "Next steps: interest moves shown, by rule" },
+  plan_interest_act: { properties: ["action"], side: "client", why: "Next steps: which ways of showing interest get used" },
+  plan_shape_gap_shown: { properties: ["gap", "season"], side: "client", why: "Next steps: which list-shape gaps come up" },
+  plan_rail_opened: { properties: ["level"], side: "client", why: "Next steps: the college rail opened, by level" },
+  plan_rail_added: { properties: ["level"], side: "client", why: "Next steps: colleges added from the rail, by level" },
+  plan_applied: { properties: ["round"], side: "client", why: "Next steps: applications marked sent, by round" },
+  plan_decision_recorded: { properties: ["outcome"], side: "client", why: "Next steps: decisions recorded" },
+  plan_outcome_shared: { properties: ["yes"], side: "client", why: "Next steps: outcome sharing answered" },
+  story_filled: { properties: ["count"], side: "client", why: "Your story: how many prompts are filled (never the text)" },
+  brief_sent: { properties: ["season", "role"], side: "server", why: "Next steps: season briefs sent" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

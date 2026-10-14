@@ -415,3 +415,18 @@ test("weightedGpaHint: a weighted GPA below the unweighted one asks the student 
   assert.equal(weightedGpaHint(null, "4.0", 3.6), null, "no unweighted GPA yet");
   assert.equal(weightedGpaHint(3.8, "4.0", null), null, "no weighted GPA yet");
 });
+
+test("story (next steps, your-story.md): round-trips through sanitizeProfile; plain text, 500 characters each; null when empty", async () => {
+  const { emptyProfile: empty, sanitizeProfile: sanitize, sanitizeStory, STORY_FIELD_MAX } = await import("../lib/student-profile.ts");
+  assert.equal(empty().story, null);
+  assert.equal(sanitize({}).story, null, "an older profile without a story reads as none");
+  const story = { about: "I fix bikes for neighbors.", thread: "Making things work again.", majorWhy: "", updatedAt: "2026-10-14T12:00:00.000Z" };
+  const saved = sanitize({ ...empty(), story });
+  assert.deepEqual(saved.story, story);
+  assert.deepEqual(sanitize(JSON.parse(JSON.stringify(saved))).story, story, "round-trips through JSON");
+  // Plain text: tags and control characters go; each answer is capped; a bad timestamp is dropped.
+  const messy = sanitizeStory({ about: "<b>Bold</b> move\u0007", thread: "x".repeat(STORY_FIELD_MAX + 50), majorWhy: 42, updatedAt: "yesterday" });
+  assert.deepEqual(messy, { about: "Bold move", thread: "x".repeat(STORY_FIELD_MAX), majorWhy: "", updatedAt: null });
+  assert.equal(sanitizeStory({ about: "  ", thread: "", majorWhy: "<i></i>" }), null, "all three empty is no story");
+  assert.equal(sanitizeStory("a string"), null);
+});

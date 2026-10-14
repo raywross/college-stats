@@ -49,7 +49,28 @@ export const GENERATED_FIELDS = [
   "source_edition",
   "date_note",
   "position",
+  // Next steps (20261014120000_next_steps.sql): the move's season and its button.
+  "season",
+  "action",
 ] as const satisfies readonly (keyof GeneratedTask)[];
+
+/**
+ * JSON with object keys sorted, so a stored jsonb `action` (Postgres reorders keys) compares equal to the generated
+ * one with the same content.
+ */
+export function stableJson(v: unknown): string {
+  if (v === undefined || v === null) return "null";
+  if (Array.isArray(v)) return `[${v.map(stableJson).join(",")}]`;
+  if (typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    return `{${Object.keys(o)
+      .filter((k) => o[k] !== undefined)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${stableJson(o[k])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(v);
+}
 
 /** One row to write (an upsert on (list_id, key), list_id added by the writer): only generated fields, so a tick or snooze is never overwritten. */
 export type TaskUpsert = GeneratedTask & { orphaned: false };
@@ -62,7 +83,12 @@ export interface MergeResult {
 }
 
 function sameGenerated(a: Pick<PlanTask, (typeof GENERATED_FIELDS)[number]>, b: GeneratedTask, keepPosition: boolean): boolean {
-  return GENERATED_FIELDS.every((f) => (f === "position" && keepPosition) || (a[f] ?? null) === (b[f] ?? null));
+  return GENERATED_FIELDS.every((f) => {
+    if (f === "position" && keepPosition) return true;
+    // `action` is an object: compare its content, not its identity.
+    if (f === "action") return stableJson(a.action) === stableJson(b.action);
+    return (a[f] ?? null) === (b[f] ?? null);
+  });
 }
 
 /**
@@ -77,7 +103,8 @@ export function mergeTasks(existing: PlanTask[], generated: GeneratedTask[]): Me
   for (const g of generated) {
     const current = byKey.get(g.key);
     if (current && !current.orphaned && sameGenerated(current, g, true)) continue;
-    upserts.push({ ...g, position: current ? current.position : g.position, orphaned: false });
+    // season/action written as null when a generator leaves them out, so a cleared one is cleared in the database.
+    upserts.push({ ...g, season: g.season ?? null, action: g.action ?? null, position: current ? current.position : g.position, orphaned: false });
   }
   const orphans = existing.filter((t) => t.key !== null && t.source !== "own" && !t.orphaned && !wanted.has(t.key)).map((t) => t.id);
   return { upserts, orphans };

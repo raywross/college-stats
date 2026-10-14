@@ -25,7 +25,9 @@ import type { StandingSchool } from "./standing";
 import { collegeGpa, gpaCites, type GpaCurve, type GpaModel } from "./gpa-model";
 import { gpaCurve as fittedGpaCurve, gpaModel as fittedGpaModel } from "./gpa-model-server";
 import { autoWriteBatches } from "./plan-writes";
-import { PLAN_TASK_COLUMNS, type PlanData } from "./read-plan";
+import { readTaskRows, upsertTaskRows, type PlanData } from "./read-plan";
+import { seasonOf } from "./seasons";
+import type { EstimateResult } from "@/lib/chances/types";
 
 export {
   isMissing,
@@ -218,7 +220,8 @@ export async function writeMerge(supabase: SupabaseClient, listId: string, merge
   if (merge.upserts.length === 0 && merge.orphans.length === 0) return false;
   if (merge.upserts.length > 0) {
     const rows = merge.upserts.map((u) => ({ ...u, list_id: listId }));
-    const { error } = await supabase.from("plan_tasks").upsert(rows, { onConflict: "list_id,key" });
+    // Retried without season/action while the next-steps migration isn't applied (read-plan.ts upsertTaskRows).
+    const error = await upsertTaskRows(supabase, rows);
     if (error) {
       console.error(`planner: writing generated tasks failed: ${error.message}`);
       return false;
@@ -257,9 +260,9 @@ export async function writeAutoWrites(supabase: SupabaseClient, writes: { id: st
 
 /** Re-reads only a list's tasks (after writeMerge). */
 export async function readTasks(supabase: SupabaseClient, listId: string): Promise<PlanTask[]> {
-  const { data, error } = await supabase.from("plan_tasks").select(PLAN_TASK_COLUMNS).eq("list_id", listId).order("due_on", { nullsFirst: false }).order("position");
+  const { data, error } = await readTaskRows(supabase, listId);
   if (error) throw new Error(`Reading the plan's tasks failed: ${error.message}`);
-  return data as PlanTask[];
+  return data ?? [];
 }
 
 /* ------------------------------------------------------------------ */
@@ -283,10 +286,14 @@ export function planCycleKey(gradYear: number | null, today: string): string {
   return gradYear !== null ? cycleFor(gradYear) : currentCycle(today);
 }
 
-/** What the generators read for a plan (store.regenerate and PlanPage share it). */
+/**
+ * What the generators read for a plan (store.regenerate and PlanPage share it). `estimates` (next steps, review note
+ * 3) are the caller's: planEstimates is server-only and costs a dataset read, so a caller that has them passes them
+ * (or sets them on the input before generating); without, `{}`.
+ */
 export async function generatorInputFor(
   plan: PlanData,
-  opts: { gradYear: number | null; profile: StudentProfileData | null; home: HomeLocation | null; today: string },
+  opts: { gradYear: number | null; profile: StudentProfileData | null; home: HomeLocation | null; today: string; estimates?: Record<string, EstimateResult> },
 ): Promise<GeneratorInput> {
   const cycle = loadCycle(planCycleKey(opts.gradYear, opts.today));
   const schools = await planSchools(plan.items.map((i) => i.unit_id), cycle.startYear, opts.home);
@@ -300,6 +307,9 @@ export async function generatorInputFor(
     today: opts.today,
     visits: plan.visits,
     offers: plan.offers,
+    gradYear: opts.gradYear,
+    season: seasonOf(opts.gradYear, opts.today),
+    estimates: opts.estimates ?? {},
   };
 }
 

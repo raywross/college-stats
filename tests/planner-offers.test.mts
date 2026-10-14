@@ -448,6 +448,9 @@ function input(items: PlanItem[], over: Partial<GeneratorInput> = {}): Generator
     today: TODAY,
     visits: [],
     offers: [],
+    gradYear: null,
+    season: "unknown",
+    estimates: {},
     ...over,
   };
 }

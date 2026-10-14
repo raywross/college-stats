@@ -244,6 +244,19 @@ test("the phone tab bar is Explore, Search, Plan, Compare, More, with Plan's ico
   assert.match(src, /\bListChecks\b/);
 });
 
+test("the plan opens on Next steps (owner, 2026-10-14): the page and the frame fall back to defaultTab, which is next; PlanTabs renders it with Footprints", async () => {
+  const { defaultTab } = await import("../lib/planner/plan-tabs.ts");
+  assert.equal(defaultTab("student", false), "next");
+  assert.equal(defaultTab("guardian", false), "next");
+  const page = read("app/plan/page.tsx");
+  assert.match(page, /tab=\{tab \?\? defaultTab\("student", false\)\}/);
+  assert.match(page, /tab=\{tab \?\? defaultTab\("guardian", false\)\}/);
+  assert.match(read("components/planner/PlanFrame.tsx"), /: defaultTab\(viewer, false\)/);
+  const tabs = read("components/planner/PlanTabs.tsx");
+  assert.match(tabs, /next: Footprints/);
+  assert.match(tabs, /tab === "next" && <NextSteps /);
+});
+
 test("guard: a header missing Plan, or out of order, is caught by the label check", () => {
   const bad = 'const NAV_ITEMS = [{ label: "Explore", href: "/explore" }, { label: "Compare", href: "/compare" }];';
   const labels = [...bad.matchAll(/label:\s*"([^"]+)"/g)].map((m) => m[1]);

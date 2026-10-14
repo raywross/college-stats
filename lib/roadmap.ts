@@ -39,7 +39,10 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // built 2026-10-12 on feature/chances (nine units on sub-branches), so the group is gone again.
 // The compare redesign, the only spec in "Design and usability" (group "design"), was built 2026-10-05 (#84), so that
 // group is gone until a new design spec.
+// Next steps (specs/planner/next-steps/, seven parts) was specified 2026-10-14 from the owner's brief to drive actions
+// from students and parents by season: group "next-steps".
 export type RoadmapGroupKey =
+  | "next-steps"
   | "college-reported"
   | "campus-life"
   | "planning"
@@ -50,6 +53,12 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
+  {
+    key: "next-steps",
+    title: "Next steps: the plan drives the work",
+    description:
+      "What to do this season, by graduation year: a Next steps tab the plan opens to, good ED opportunities and interest prompts on the list, the shape of a good list, the senior moves from submit to the deposit, and the briefs and texts that bring people back.",
+  },
   {
     key: "planning",
     title: "Planning tools",
@@ -116,6 +125,83 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
+  // Next steps (specs/planner/next-steps/README.md): the plan drives the work, season by season; specified 2026-10-14.
+  {
+    slug: "next-steps-seasons",
+    file: "specs/planner/next-steps/seasons.md",
+    group: "next-steps",
+    summary:
+      "A Next steps tab the plan opens to: this season's three to six moves for the student and the parent, each with a why and one button, placed by the graduation year rather than the sign-up date.",
+    complexity: 3,
+    complexityNote:
+      "A season function the whole plan shares, a playbook of moves per season as generated tasks, the tab and its cards, the people line's Next, and what a late joiner sees.",
+    status: "planned",
+  },
+  {
+    slug: "ed-opportunities",
+    file: "specs/planner/next-steps/ed-opportunities.md",
+    group: "next-steps",
+    summary:
+      "Good ED opportunity pills on the list, at most three (the Dream first, then the lower end of Reach, then the upper end of Target), ED I or ED II by what the college offers, with the facts, the caveats, and the cost question one tap away.",
+    complexity: 2,
+    complexityNote: "A pure ranking over the estimate's ED verdict and closeness, a pill, a sheet, and the decide-by-date moves; replaces two notice lines.",
+    status: "planned",
+    after: ["next-steps-seasons"],
+  },
+  {
+    slug: "interest-and-visits",
+    file: "specs/planner/next-steps/interest-and-visits.md",
+    group: "next-steps",
+    summary:
+      "A visit move for every ED candidate, and one act of interest where the college says it counts and the student is close enough for it to matter: visit first, then contact or an information session, then a follow.",
+    complexity: 2,
+    complexityNote: "A pure rule over CDS C7, the level and closeness, and the built capture panel; a pill; the season windows.",
+    status: "planned",
+    after: ["ed-opportunities"],
+  },
+  {
+    slug: "list-shape",
+    file: "specs/planner/next-steps/list-shape.md",
+    group: "next-steps",
+    summary:
+      "The shape of a good list by season (12 to 15 for seniors, with at least one affordable Likely or Safe), one gap move at a time, and a rail of colleges at the missing level with one-tap Add.",
+    complexity: 2,
+    complexityNote: "Shape constants and gap rules replacing the balance line, plus a server rail that levels similar colleges for the student.",
+    status: "planned",
+    after: ["next-steps-seasons"],
+  },
+  {
+    slug: "applying-moves",
+    file: "specs/planner/next-steps/applying.md",
+    group: "next-steps",
+    summary:
+      "The senior moves from submit to the deposit: mark applied, record each decision, ED II after a deferral, compare offers, decide by May 1, and tell Quad where you landed; the controls exist and get their screen back.",
+    complexity: 2,
+    complexityNote: "Cards over the built application and decision stores and generators; four new move kinds; the row's status word for seniors.",
+    status: "planned",
+    after: ["next-steps-seasons"],
+  },
+  {
+    slug: "next-steps-notifications",
+    file: "specs/planner/next-steps/notifications.md",
+    group: "next-steps",
+    summary:
+      "One brief when a season turns, the week's moves in the Sunday email and the parent summary, a text the day before a hard date, and a dot in the header when something new is waiting; two briefs a year before junior year, weekly in season.",
+    complexity: 2,
+    complexityNote: "A new email on the existing weekly job, season-based defaults for the built channels, a last-opened table for the dot; nothing new to wire.",
+    status: "planned",
+    after: ["next-steps-seasons", "ed-opportunities", "list-shape", "applying-moves"],
+  },
+  {
+    slug: "your-story",
+    file: "specs/planner/next-steps/your-story.md",
+    group: "next-steps",
+    summary: "Three private prompts in the student's own words, written in junior year and read again when the essay window opens; nobody but the student writes a word of it.",
+    complexity: 1,
+    complexityNote: "Three profile fields, a section on the Numbers page, two move cards, and the privacy guards.",
+    status: "planned",
+    after: ["next-steps-seasons"],
+  },
   {
     slug: "chances-and-fit",
     file: "specs/product/chances-and-fit.md",
@@ -413,6 +499,7 @@ export const ROADMAP: RoadmapSpec[] = [
 
 /** Readable background pages that aren't work items themselves (linked from the roadmap, not ranked). */
 export const ROADMAP_OVERVIEWS: { slug: string; file: string; title: string }[] = [
+  { slug: "next-steps", file: "specs/planner/next-steps/README.md", title: "Next steps overview: the research into how advisors run the process, the design principles, the seven parts, and the build order" },
   { slug: "planner-redesign", file: "specs/planner/redesign/README.md", title: "Planner redesign overview: the owner's review, the research, the design principles, and what stays and goes" },
   { slug: "planner", file: "specs/planner/README.md", title: "Planner overview: the six stages from the first list to the deposit, the research, the tiers, and the build order" },
   { slug: "data-expansion", file: "specs/data-expansion/README.md", title: "Data expansion overview" },

@@ -17,6 +17,7 @@ import { ADMIN_CONSOLE_HEADER, ADMIN_LOG_PAGE, SUPPORT_VIEWER_NAME } from "@/lib
 import { ACCOUNT_EXPORTERS, buildAccountExport, type AccountExport, type AccountExporter, type ExportContext } from "@/lib/account-export";
 import { DELETE_GRACE_DAYS } from "@/lib/household-rules";
 import { SITE_NAME } from "@/lib/brand";
+import { redactStoryForGuardian, sanitizeStory } from "@/lib/student-profile";
 
 /** The console's Supabase client: the admin's own session plus the header that turns on the "Admins read" policies. */
 export function adminSupabase(): Promise<SupabaseClient> {
@@ -481,12 +482,16 @@ export async function adminStudent(studentId: string): Promise<AdminStudent | nu
   ]);
   const names = await namesFor(supabase, [record.user_id, record.managed_by, ...notes.map((n) => n.author_id)]);
 
+  // Your story (next-steps/your-story.md): never in the admin console's household view, same as a guardian — the
+  // text is stripped, `updatedAt` kept, so the console can still say whether it's written.
+  const redactedProfile = profile ? { ...profile, data: { ...profile.data, story: redactStoryForGuardian(sanitizeStory((profile.data as Record<string, unknown>).story)) } } : null;
+
   return {
     record,
     owner: record.user_id ? { id: record.user_id, name: names.get(record.user_id) ?? null } : null,
     manager: record.managed_by ? { id: record.managed_by, name: names.get(record.managed_by) ?? null } : null,
     household,
-    profile,
+    profile: redactedProfile,
     lists: lists.map((l) => ({
       ...l,
       items: items

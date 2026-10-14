@@ -1,6 +1,7 @@
 import { CompletenessMeter } from "@/components/me/CompletenessMeter";
 import { ImportLocalProfile } from "@/components/me/ImportLocalProfile";
 import { ProfileForm } from "@/components/me/ProfileForm";
+import { StorySection } from "@/components/me/StorySection";
 import type { ProfileAccess } from "@/lib/student-profile-store";
 
 /**
@@ -23,6 +24,7 @@ export function StudentNumbers({ profile }: { profile: ProfileAccess }) {
       {profile.relation === "self" && <ImportLocalProfile studentId={profile.student.id} canEdit={profile.canEdit} />}
       <CompletenessMeter data={data} />
       <ProfileForm studentId={profile.student.id} data={data} canEdit={profile.canEdit} />
+      <StorySection profile={profile} />
     </div>
   );
 }

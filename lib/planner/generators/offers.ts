@@ -17,7 +17,8 @@
  */
 import { applies } from "../cycle.ts";
 import { taskKey } from "../tasks.ts";
-import type { GeneratedTask, GeneratorInput, PlanItem, PlanSchool, TaskKind } from "../types.ts";
+import { MOVE_TEXT } from "../moves-catalog.ts";
+import type { GeneratedTask, GeneratorInput, MoveAction, PlanItem, PlanSchool, TaskKind } from "../types.ts";
 import { cycleTask } from "./cycle.ts";
 import { isLastCycle, resolveDay, shortDay, type CollegeDate } from "./college.ts";
 
@@ -99,6 +100,44 @@ function sendApScores(chosen: PlanItem, name: string): GeneratedTask {
   };
 }
 
+/** A list-level move (next-steps/applying.md): not tied to one college. */
+function listTask(
+  listId: string,
+  kind: TaskKind,
+  fields: { title: string; detail: string | null; due_on: string | null; assignee: GeneratedTask["assignee"]; action?: MoveAction | null },
+  position: number,
+): GeneratedTask {
+  return {
+    key: taskKey(listId, kind),
+    item_id: null,
+    kind,
+    title: fields.title.slice(0, 200),
+    detail: fields.detail ? fields.detail.slice(0, 1000) : null,
+    due_on: fields.due_on,
+    window_start: null,
+    window_end: null,
+    assignee: fields.assignee,
+    source: "stage",
+    source_field: null,
+    source_edition: null,
+    date_note: null,
+    position,
+    action: fields.action ?? null,
+  };
+}
+
+/** The earliest reply date (C17) among the admitted, live colleges; null when none is published. */
+function earliestReply(items: readonly PlanItem[], schools: Record<string, PlanSchool>): string | null {
+  const dates = items
+    .filter((i) => i.outcome === "admitted" && !i.withdrawn_on)
+    .map((i) => {
+      const school = schools[i.unit_id];
+      return school ? (replyDate(school)?.date ?? null) : null;
+    })
+    .filter((d): d is string => d !== null);
+  return dates.length ? [...dates].sort()[0] : null;
+}
+
 export function generate(input: GeneratorInput): GeneratedTask[] {
   if (input.list.student_id === null) return [];
   const out: GeneratedTask[] = [];
@@ -123,11 +162,41 @@ export function generate(input: GeneratorInput): GeneratedTask[] {
     );
   }
 
+  // Compare the offers, and decide by the reply date (next-steps/applying.md): list-level moves, dated from the
+  // cycle's second year (the student's cycleStartYear + 1). Every listed school shares one cycleStartYear.
+  const cycleStartYear = Object.values(input.schools)[0]?.cycleStartYear ?? (input.gradYear !== null ? input.gradYear - 1 : null);
+  if (cycleStartYear !== null) {
+    const march1 = resolveDay({ month: 3, day: 1 }, cycleStartYear);
+    const admittedWithOffer = input.items.filter((i) => i.outcome === "admitted" && !i.withdrawn_on && input.offers.some((o) => o.item_id === i.id));
+    if (march1 && input.today >= march1 && admittedWithOffer.length >= 2) {
+      out.push(
+        listTask(
+          input.list.id,
+          "compare_offers",
+          { title: MOVE_TEXT.compare_offers.title, detail: MOVE_TEXT.compare_offers.why, due_on: null, assignee: "either", action: { kind: "open_tab", tab: "offers" } },
+          3000,
+        ),
+      );
+    }
+    const april1 = resolveDay({ month: 4, day: 1 }, cycleStartYear);
+    if (april1 && input.today >= april1 && chosenItem(input.items) === null) {
+      const due = earliestReply(input.items, input.schools) ?? resolveDay({ month: 5, day: 1 }, cycleStartYear);
+      out.push(listTask(input.list.id, "decide_by", { title: MOVE_TEXT.decide_by.title, detail: MOVE_TEXT.decide_by.why, due_on: due, assignee: "either" }, 3001));
+    }
+  }
+
   const chosen = chosenItem(input.items);
   if (!chosen) return out;
   const chosenSchool = input.schools[chosen.unit_id];
   const chosenName = name(chosen);
   const ed = isEdChoice(chosen);
+
+  // "Tell us where you landed" (next-steps/applying.md "outcome_share"): generated unconditionally once a college
+  // is enrolling. A pure generator can't read the list's consent column (lib/planner/store-offers.ts
+  // consentOutcomeShare), and that column can't tell "answered no" from "never asked" either way — so the card
+  // itself ticks the move on "Yes, share" and dismisses it on "No thanks", and both persist through regeneration
+  // (mergeTasks never resets done_at or dismissed).
+  out.push(listTask(input.list.id, "outcome_share", { title: MOVE_TEXT.outcome_share.title, detail: MOVE_TEXT.outcome_share.why, due_on: null, assignee: "either" }, 3002));
 
   // Deposit at the chosen college, by its reply date.
   const reply = chosenSchool ? replyDate(chosenSchool) : null;

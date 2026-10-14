@@ -461,11 +461,14 @@ test("before a choice: Add the aid offer for each admit only; no choice tasks, n
   const tasks = offersGen(
     input([item(1, { status: "decided", outcome: "admitted" }), item(2, { status: "decided", outcome: "denied" }), item(3, { status: "decided", outcome: "waitlisted" }), item(4)]),
   );
+  // Next steps (U5, applying.md): `decide_by` also shows here — today (TODAY, April 20) is past April 1 and no
+  // college is enrolling yet, so the move to decide is correctly on; it isn't one of the "choice" tasks this test
+  // is otherwise checking for (those come only once a college is chosen, below).
   assert.deepEqual(
-    tasks.map((t) => t.key),
-    [taskKey(ID(1), "add_offer")],
+    tasks.map((t) => t.key).sort(),
+    [taskKey(ID(1), "add_offer"), taskKey(LIST, "decide_by")].sort(),
   );
-  assert.equal(tasks[0].due_on, null);
+  assert.equal(tasks.find((t) => t.kind === "add_offer")!.due_on, null);
   // Enrolling without a commit date isn't the choice yet.
   assert.equal(kinds(offersGen(input([item(1, { status: "decided", outcome: "admitted", enrolling: true })])), "deposit").length, 0);
 });

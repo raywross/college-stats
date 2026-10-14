@@ -14,6 +14,7 @@
  */
 import { addDays } from "../stage.ts";
 import { taskKey } from "../tasks.ts";
+import { MOVE_TEXT } from "../moves-catalog.ts";
 import { testPolicyAnswer } from "../requirements.ts";
 import { applyDate, feeDetail, ROUND_SHORT, shortDay } from "./college.ts";
 import type { GeneratedTask, GeneratorInput, PlanItem, PlanSchool, TaskKind } from "../types.ts";
@@ -187,6 +188,25 @@ export function generate(input: GeneratorInput): GeneratedTask[] {
             detail: "Confirm what's showing is complete; the site never logs in for you.",
             assignee: "student",
             due_on: addDays(item.applied_on, (weekIndex + 1) * 7),
+          },
+          offset++,
+        ),
+      );
+    }
+
+    // confirm_complete (next-steps/applying.md "Confirm {College} has everything"): 7 days after applied_on, while
+    // the portal hasn't been confirmed complete. Gone once complete_on is set (not generated, so orphaned).
+    if (item.applied_on && !item.complete_on) {
+      out.push(
+        itemTask(
+          item,
+          "confirm_complete",
+          null,
+          {
+            title: MOVE_TEXT.confirm_complete.title.replace("{college}", school.name),
+            detail: MOVE_TEXT.confirm_complete.why,
+            assignee: "student",
+            due_on: addDays(item.applied_on, 7),
           },
           offset++,
         ),

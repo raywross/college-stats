@@ -17,10 +17,14 @@ import { searchSchoolsApi } from "@/lib/school-api";
 import type { SchoolIndexEntry } from "@/lib/dataset";
 import { setPlanDream } from "@/lib/planner/store-plan";
 import type { PlanRowView } from "@/lib/planner/plan-view";
-import { GROUP_HEADING, groupedRows, headerCountsLine } from "@/lib/planner/list-row";
+import { GROUP_HEADING, SEASON_STATUS_LABEL, groupedRows, headerCountsLine } from "@/lib/planner/list-row";
 import { GROUP_CLASS } from "@/lib/planner/colors";
+import { seasonRank } from "@/lib/planner/seasons";
 import type { ListCategory } from "@/lib/list-rules";
 import { cn } from "@/lib/utils";
+
+/** applying.md "On the list row": the status word shows from senior fall on. */
+const SENIOR_FALL_RANK = seasonRank("senior_fall");
 
 /**
  * The Colleges tab: the list as the plan (specs/planner/redesign/list.md). Grouped by Reach / Target / Likely, then
@@ -100,6 +104,7 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
 
   const groups = groupedRows(rows);
   const dreamRow = rows.find((r) => r.dream) ?? null;
+  const showStatusWord = seasonRank(ctx.season) >= SENIOR_FALL_RANK;
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] || null;
   const addLabel = ctx.viewer.isGuardian && firstName ? `Add a college for ${firstName}` : "Add a college";
 
@@ -144,6 +149,7 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
                     ctx={ctx}
                     dreamName={dreamRow && dreamRow.item.id !== row.item.id ? (dreamRow.school?.name ?? null) : null}
                     error={errors[row.item.id] ?? null}
+                    status={showStatusWord && row.seasonStatus ? SEASON_STATUS_LABEL[row.seasonStatus] : null}
                     onToggleDream={handleDream}
                     onRemove={handleRemove}
                     pill={pillFor(row)}

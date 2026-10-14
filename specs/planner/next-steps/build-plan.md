@@ -374,6 +374,41 @@ built notes each part asks for; `grep` that nothing imports the removed ED sugge
 13. Not extended by U1 (owners note): `lib/account-export.ts`, `lib/chances/snapshot-write.ts` and the crons select
     their own `plan_tasks`/`list_items` columns (U6 for the crons; U7 for the export's story exclusion).
 
+## As built by wave 1 (U7, U2, U1b, U5, U4)
+- **Rows and links (U2):** `PlanRow`'s pill slot is `pill?: RowPill` with `RowPill = (open: (panel: RowPanel) => void) =>
+  ReactNode`, `RowPanel = "ed" | "capture"` (exported from `RowDrawer.tsx`); `PlanRow` also takes `openPanel` and
+  `edCandidate`. Links into a row are the Colleges tab plus `?row=<itemId>&panel=ed|capture` (`PlanList` reads them);
+  `edRowHref()` in `moves/EdDecideCard.tsx` builds one; `MoveCard`'s `open_row` uses the same shape. The "ED college"
+  for ED II timing is the row already in ED (the student's choice first), else the first candidate; no notification date
+  on record → `ed_alt`. `ed_decide` stops being generated once a row is in ED/ED II by the student's choice; `startEd`
+  also ticks it. The per-candidate cost check key `{list}:cost_check:{item}:candidate` replaces the built `:ed`/`:ed2`
+  key for a candidate row. `EdRow` also picks `ed_checks`, `round_source`, `outcome`, `decision_date`; `edSheetFacts`
+  takes an optional 4th `round`. `edDismissedItemIds(rows)` exported. The glossary gained `hooked-applicant`;
+  `plan_ed2_offer_used` was removed. `NOTICE_ORDER` is now problems, balance, retake.
+- **Cards (U1b):** `NextSteps` takes `PlanTabProps` (`{ ctx, view }`) and owns the optimistic tick/untick/dismiss
+  lifecycle; `MoveCard` exports `personFor(ctx)`; Done and Not now are always present (edit access), the action button
+  beside them; `mark_applied`/`record_decision`/`set_round`/`choose`/`show_rail` render no button in the default card
+  (their own cards do); `action.kind === "story"` links `/household/{studentId}/numbers#story`. `NextYearCard` is the
+  registry's `playbook` entry and falls back to `MoveCard` unless the key ends in `choose_courses`; `loadPlanFor` fills
+  `ctx.coursePlan` again inside `inCoursePlanWindow(season, today)`. The people line's Next: is `topMove(nowMoves(…))`
+  when the plan is loaded, else the profile step.
+- **Applying (U5):** registry: `apply` and `submit` → `SubmitCard` (`submit` renders nothing: the dated `apply` row is
+  the move), `confirm_complete` → `ConfirmCard` (`portal_check` stays on `MoveCard`), `decision_expected`,
+  `ed2_conditional`, `decide_by` + `deposit` → `DecideCard`, `outcome_share`. `outcome_share` is emitted once a college
+  is enrolling and closes by tick (Yes) or dismiss (No thanks). The platform picker is a plain select over
+  `platformsFor`. The parent's "Review before submit" is the playbook's own `review_before_submit` entry. Not built:
+  the free college pick for a student with no recorded decision (`choose` takes a list item only).
+- **Shape (U4):** `Shape` gained `minLikelyOrSafe` (seniors 2, the junior long list 3); `over_max` fires only for High
+  reach, a bare total over the maximum is `total_off`; `lib/planner/rail.ts` holds the pure rail parts (`rankRail`,
+  `excludeOverLimit`), `rail-server.ts` the loader; `CollegeRail` keeps a local card type (the client-reach guard
+  traces type imports). Exports `affordabilityFor`, `dreamAtHighReach`, `unsortedLine`. `balanceLineFor(groups, season,
+  affordability)`; `PlanViewInput.season` optional (default "unknown" → no shape). Lead's integration fixes after the
+  merge: the season generator's `moveFacts` reads `affordabilityFor` (it was a two-state stub, so the "Add a Likely
+  within your family's limit" move never fired), and the Dream clause is threaded through `balanceLineFor`.
+- **Story (U7):** `storyMissing`, `redactStoryForGuardian`, `profileForViewer` in `lib/student-profile.ts`;
+  `profilesICanSee` redacts for guardians; `saveStory` (Server Action, self only; a guardian with edit still can't
+  write it); `lib/admin/people.ts adminStudent` redacts too; `lib/account-export.ts` untouched (own records only).
+
 ## Integration
 Merge waves in order (U1; then U2, U4, U5, U7, U1b; then U3, U6; then U8) with `--no-ff`, `npm run verify` after each,
 `npx next build` after each wave; apply the migration to dev after U1 (psql, `SUPABASE_DB_URL` in `.env.local`), and

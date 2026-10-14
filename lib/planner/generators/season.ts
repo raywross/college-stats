@@ -18,7 +18,7 @@ import type { EstimateResult } from "../../chances/types.ts";
 import { edMoves, edOpportunities, type EdCandidate } from "../ed-opportunities.ts";
 import { interestMoves, interestTasks, type InterestMove } from "../interest.ts";
 import { hooksFromPlan } from "../hooks.ts";
-import { shapeGaps, shapeTasks, type ShapeGap } from "../list-shape.ts";
+import { affordabilityFor, dreamAtHighReach, shapeGaps, shapeTasks, type ShapeGap } from "../list-shape.ts";
 import { PLAYBOOK, type PlaybookEntry } from "../moves-catalog.ts";
 import { PROFILE_SECTIONS, sectionDone, type ProfileSection } from "../profile-progress.ts";
 import { nextSeason, seasonBounds, seasonRank, type Season } from "../seasons.ts";
@@ -142,8 +142,10 @@ export function moveFacts(input: GeneratorInput): MoveFacts {
   const hooks = hooksFromPlan(items, input.visits);
   const interest = interestMoves(items, input.estimates, input.schools, hooks, edCandidates, opts);
   const { counts, unsorted } = levelCounts(items, input.estimates);
-  const affordability = input.profile?.preferences.maxAverageCost == null ? "unknown" : "ok";
-  const gaps = shapeGaps(counts, unsorted, input.season, affordability);
+  // The same three-state affordability and Dream clause the Colleges tab's notice reads (lib/planner/plan-view.ts
+  // balanceLineFor), so the shape_gap/shape_cost move and the notice never disagree (list-shape.md "Gap moves").
+  const affordability = affordabilityFor(items, input.schools, input.profile, input.estimates);
+  const gaps = shapeGaps(counts, unsorted, input.season, affordability, dreamAtHighReach(items, input.estimates));
   return { items, schools: input.schools, profile: input.profile, visits: input.visits, estimates: input.estimates, edCandidates, shapeGaps: gaps, interest };
 }
 

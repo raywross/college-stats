@@ -500,7 +500,10 @@ export const SEASON_EXPLAINER: Record<Season, { lead: string; paragraph: string;
 
 /**
  * Titles and whys for the rule units' kinds, keyed by kind or `kind:variant` (`shape_gap:likely_min`). `{college}`,
- * `{edCollege}`, `{date}`, and `{counts}` are filled by the unit that emits the move.
+ * `{edCollege}`, `{date}`, `{counts}`, and `{count}` (U4's unsorted move, a plain number) are filled by the unit
+ * that emits the move. U4's `shape_gap:likely_min`/`affordable`/`target_min`/`reach_min` read their why from
+ * `countLine` directly rather than this dict's `why` (unused for those four); `over_max`, `total_off`, and
+ * `shape_cost` use their `why` here as written, since those three aren't about the list's counts.
  */
 export const MOVE_TEXT: Record<string, { title: string; why: string }> = {
   ed_decide: { title: "Decide on ED (due {date})", why: "Early decision is binding. The colleges where it would make the most difference are one tap away, with their own reported numbers." },
@@ -512,7 +515,8 @@ export const MOVE_TEXT: Record<string, { title: string; why: string }> = {
   "shape_gap:target_min": { title: "Add a Target or two", why: "{counts}" },
   "shape_gap:reach_min": { title: "Room for a Reach", why: "{counts}" },
   "shape_gap:over_max": { title: "Review the list", why: "Several High reaches crowd out colleges you'd get into; which would you drop?" },
-  "shape_gap:total_off": { title: "Review the list's size", why: "{counts}" },
+  "shape_gap:total_off": { title: "Review the list's size", why: "Common App's own average is about seven applications." },
+  "shape_gap:unsorted": { title: "Add your numbers so Quad can sort {count} colleges", why: "Quad sorts a college into a level once it has your numbers." },
   shape_cost: { title: "Check the cost of a Likely or Safe together", why: "A college you'd get into is only a safe choice if the family can pay for it." },
   confirm_complete: { title: "Confirm {college} has everything", why: "Colleges list missing pieces in the applicant portal, often weeks after the application." },
   compare_offers: { title: "Compare your offers", why: "Side by side, the cost after grants is what differs most." },

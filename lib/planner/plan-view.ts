@@ -25,6 +25,8 @@ import { STANDING_LEVELS } from "../chances/levels.ts";
 import { noteText } from "../chances/notes.ts";
 import type { EstimateResult, StandingLevel } from "../chances/types.ts";
 import { planGpaLabel, planGpaRange, planStudent, type StudentProfileData } from "../student-profile.ts";
+import { affordabilityFor, dreamAtHighReach, shapeFor, shapeGaps, unsortedLine } from "./list-shape.ts";
+import type { Season } from "./seasons.ts";
 import type { PlanItem, PlanSchool } from "./types.ts";
 
 export type SeasonStatus = "not_started" | "working" | "submitted" | "decision";
@@ -149,6 +151,13 @@ export interface PlanViewInput {
   estimates: Record<string, EstimateResult>;
   /** yyyy-mm-dd. */
   today: string;
+  /**
+   * Next steps (list-shape.md): the student's season, for the balance notice's shape (lib/planner/list-shape.ts
+   * shapeFor). Optional so every existing caller keeps compiling (lib/planner/load.ts, store-plan.ts, the
+   * signed-out plan, the numbers form); "unknown" (the default) has no shape, so the notice stays silent exactly as
+   * it did before this unit.
+   */
+  season?: Season;
 }
 
 /** list.md "Around the list": at most three notices at once; the rest wait until the earlier ones are handled. */
@@ -156,18 +165,8 @@ export const MAX_NOTICES = 3;
 export const NOTICE_ORDER: readonly PlanNotice[] = ["problems", "balance", "retake"];
 /** list.md "The row": the season starts when the first deadline is within this many days. */
 export const SEASON_WINDOW_DAYS = 30;
-/** Counselors' common range for a list (README.md "Research"). */
-export const LIST_SIZE = { min: 6, max: 12 } as const;
-/** levels.md "Where the levels show": at least this many Likely-or-Safe colleges. */
-export const MIN_LIKELY = 2;
-
-/** levels.md "Where the levels show" "Balance line": the five-level copy, checked in this priority order. */
-export const BALANCE_LINES = {
-  likelyOrSafe: "Counselors suggest at least two colleges that are Likely or Safe for you.",
-  highReach: "One or two High reaches is fine; three or more crowd out colleges you'd get into.",
-  size: "Most students apply to 6 to 12 colleges.",
-  reach: "A Target or two would balance the Reaches.",
-} as const;
+/** The junior long list's own soft line (list-shape.md open question 1): no move, just a nudge. */
+const LONG_LIST_SOFT_LINE = "20 is plenty to visit.";
 
 const GROUP_ORDER: Record<ListCategory, number> = { high_reach: 0, reach: 1, target: 2, likely: 3, safe: 4, unsorted: 5 };
 
@@ -191,17 +190,22 @@ const isLocked = (i: PlanItem) => i.status === "applied" || i.status === "decide
 const isActive = (i: PlanItem) => !(i.status === "decided" && i.outcome !== "admitted") && !i.withdrawn_on;
 
 /**
- * The balance sentence, when the list is off (levels.md "Where the levels show"): too few Likely-or-Safe, then
- * three or more High reach, then the list's size, then Reach-plus-High-reach outnumbering the rest.
+ * The balance sentence, when the list is off (list-shape.md "Gap moves"): the first gap `shapeGaps` returns — the
+ * same list the shape_gap/shape_cost move reads (lib/planner/list-shape.ts), so the Colleges tab's notice and the
+ * Next steps move never disagree (build-plan.md "What's removed (U2) and replaced (U4)"). The junior long list's
+ * own soft "20 is plenty" line (open question 1) has no move behind it, so it's handled here only, after every
+ * real gap comes up empty. No shape (freshman/sophomore, no graduation year) means no line at all.
  */
-export function balanceLineFor(groups: ListCategory[]): string | null {
+export function balanceLineFor(groups: ListCategory[], season: Season, affordability: "ok" | "none" | "unknown", hasDreamAtHighReach = false): string | null {
   if (groups.length === 0) return null;
+  const shape = shapeFor(season);
+  if (!shape) return null;
+  const unsorted = groups.filter((g) => g === "unsorted").length;
+  if (unsorted > 0) return unsortedLine(unsorted);
   const counts = balanceLevels(groups.map((g) => (g === "unsorted" ? null : g)));
-  const sorted = STANDING_LEVELS.reduce((n, l) => n + counts[l], 0);
-  if (sorted > 0 && counts.likely + counts.safe < MIN_LIKELY) return BALANCE_LINES.likelyOrSafe;
-  if (counts.high_reach >= 3) return BALANCE_LINES.highReach;
-  if (groups.length < LIST_SIZE.min || groups.length > LIST_SIZE.max) return BALANCE_LINES.size;
-  if (sorted > 0 && counts.reach + counts.high_reach > sorted / 2) return BALANCE_LINES.reach;
+  const gaps = shapeGaps(counts, unsorted, season, affordability, hasDreamAtHighReach);
+  if (gaps.length > 0) return gaps[0].line;
+  if ((season === "junior_fall" || season === "junior_winter") && groups.length > shape.total[1]) return LONG_LIST_SOFT_LINE;
   return null;
 }
 
@@ -263,6 +267,7 @@ function rowMoveUp(est: EstimateResult | null, student: StandingStudent): LevelM
 export function planView(input: PlanViewInput): PlanView {
   const { items, schools, profile, today } = input;
   const estimates = input.estimates ?? {};
+  const season = input.season ?? "unknown";
   // The GPA as a range, so a weighted GPA is placed only as roughly as it allows (gpa.md "The design" 3).
   const student: StandingStudent = { ...planStudent(profile), gpaRange: planGpaRange(profile), gpaLabel: planGpaLabel(profile) };
   const schoolOf = (i: PlanItem): PlanSchool | null => schools[i.unit_id] ?? null;
@@ -350,7 +355,10 @@ export function planView(input: PlanViewInput): PlanView {
     null;
 
   const groups = rows.map((r) => r.group);
-  const balanceLine = balanceLineFor(groups);
+  // list-shape.md "The shape": the same affordability and gaps the shape_gap/shape_cost move reads, so the
+  // Colleges tab's notice never disagrees with it.
+  const affordability = affordabilityFor(items, schools, profile, estimates);
+  const balanceLine = balanceLineFor(groups, season, affordability, dreamAtHighReach(items, estimates));
   const present: Record<PlanNotice, boolean> = {
     problems: problems.length > 0,
     balance: balanceLine !== null,

@@ -80,6 +80,12 @@ export function diffEvents(stored: readonly StoredEvent[], read: readonly ReadEv
     const next: StoredEvent = { ...old, ...fresh, first_seen: old.first_seen, last_seen: now, removed_at: null, misses: 0, changed_at: old.changed_at };
     if (!pageRead) {
       for (const f of PAGE_FIELDS) (next as unknown as Record<string, unknown>)[f] = old[f];
+      // A row stored without coordinates (its page failed, or it predates the campus rule) takes the listing's: the
+      // campus's own coordinates for an on-campus row (Central College's 503 rows, 2026-10-14).
+      if (old.lat == null && fresh.lat != null) {
+        next.lat = fresh.lat;
+        next.lng = fresh.lng;
+      }
       // Closed comes from the page and outranks the widget's "full" (Duke's filled slots say both); "open" reopens it.
       next.availability = old.availability === "closed" && fresh.availability !== "open" ? "closed" : (fresh.availability ?? old.availability);
     }

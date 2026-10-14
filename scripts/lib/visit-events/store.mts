@@ -11,16 +11,24 @@ export const BATCH = 500;
 /** PostgREST returns at most this many rows a request; longer reads page. */
 const PAGE = 1000;
 
-/** Every row of `table` whose columns equal `eq`, ordered by `orderBy` so the pages don't overlap. */
-async function selectAll<T>(client: SupabaseClient, table: string, columns: string, orderBy: string, eq: Record<string, string> = {}): Promise<T[]> {
+/**
+ * Every row of `table` whose columns equal `eq`, paged by `keyColumn` (a unique, indexed column: the primary key).
+ * Keyset paging (`key > last`), not offsets: an offset page over 330,000 events costs more each page and hits the
+ * statement timeout before the end (the full read of 2026-10-14).
+ */
+async function selectAll<T extends object>(client: SupabaseClient, table: string, columns: string, keyColumn: string, eq: Record<string, string> = {}): Promise<T[]> {
   const out: T[] = [];
-  for (let from = 0; ; from += PAGE) {
+  let last: string | null = null;
+  for (;;) {
     let q = client.from(table).select(columns);
     for (const [k, v] of Object.entries(eq)) q = q.eq(k, v);
-    const { data, error } = await q.order(orderBy).range(from, from + PAGE - 1);
+    if (last !== null) q = q.gt(keyColumn, last);
+    const { data, error } = await q.order(keyColumn).limit(PAGE);
     if (error) throw new Error(`Supabase: reading ${table} failed: ${error.message}`);
-    out.push(...((data ?? []) as T[]));
-    if (!data || data.length < PAGE) return out;
+    const rows = (data ?? []) as unknown as T[];
+    out.push(...rows);
+    if (rows.length < PAGE) return out;
+    last = String((rows[rows.length - 1] as Record<string, unknown>)[keyColumn]);
   }
 }
 

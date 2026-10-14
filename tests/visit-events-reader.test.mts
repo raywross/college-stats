@@ -353,6 +353,14 @@ test("diffEvents: a known row read from the listing alone keeps the page's field
   assert.equal(full.upserts[0].availability, "closed");
   assert.equal(full.counts.changed, 0);
   assert.equal(diffEvents(closed, [{ ...listingOnly, availability: "open" }], LATER).upserts[0].availability, "open");
+  // A row stored without coordinates (its page failed on the first read) takes the listing's campus coordinates on a
+  // later night; a row that has the page's coordinates keeps them.
+  const unplaced = apply([], diffEvents([], [readEvent({ pageRead: false, date_confirmed: false, lat: null, lng: null, zip: null })], NOW));
+  const campus = diffEvents(unplaced, [{ ...listingOnly, lat: 29.64629, lng: -82.347911 }], LATER).upserts[0];
+  assert.equal(campus.lat, 29.64629);
+  assert.equal(campus.lng, -82.347911);
+  const placed = diffEvents(stored, [{ ...listingOnly, lat: 29.64629, lng: -82.347911 }], LATER).upserts[0];
+  assert.equal(placed.lat, stored[0].lat, "the page's coordinates are kept");
 });
 
 test("diffEvents: removed only after two missed reads; a row seen again comes back; past rows and skipped rows are never missed", () => {
@@ -543,9 +551,10 @@ test("checkHosts: a clean host passes", () => {
   const [c] = checkHosts(rows, OCT_13);
   assert.equal(c.events, 10);
   assert.equal(c.staffShare, 0);
-  assert.equal(c.zipShare, 1);
+  assert.equal(c.hiddenShare, 0);
+  assert.equal(c.locatedShare, 1);
   assert.deepEqual(c.failures, []);
-  assert.match(hostReport(c)[0], /^h \(134130\): 10 events \(travel 10\); staff 0%; ZIP 100%/);
+  assert.match(hostReport(c)[0], /^h \(134130\): 10 events \(travel 10\); hidden 0% \(staff 0%\); ZIP of detailed (100%|n\/a); located 100%/);
 });
 
 test("checkHosts: fails above 40% staff, naming the titles; 40% exactly passes", () => {
@@ -557,16 +566,18 @@ test("checkHosts: fails above 40% staff, naming the titles; 40% exactly passes",
   assert.match(c.failures[0], /staff share 50% is above 40%; staff titles: Hotel Shipping 0/);
 });
 
-test("checkHosts: fails below 80% ZIP among placed rows (online rows don't count); lists duplicates, far-out and late-seen rows", () => {
+test("checkHosts: fails below 80% located among placed rows (online and hidden rows don't count); lists duplicates, far-out and late-seen rows", () => {
   const rows = [
     ...Array.from({ length: 7 }, (_, i) => stored(i)),
-    ...Array.from({ length: 3 }, (_, i) => stored(10 + i, { zip: null, title: `No ZIP ${i}` })),
-    ...Array.from({ length: 5 }, (_, i) => stored(20 + i, { zip: null, online: true, kind: "online" })),
+    ...Array.from({ length: 3 }, (_, i) => stored(10 + i, { lat: null, lng: null, zip: null, title: `No place ${i}` })),
+    ...Array.from({ length: 5 }, (_, i) => stored(20 + i, { lat: null, lng: null, zip: null, online: true, kind: "online" })),
+    ...Array.from({ length: 4 }, (_, i) => stored(30 + i, { lat: null, lng: null, zip: null, kind: "other", title: `Counselor Meeting ${i}` })),
   ];
   const [c] = checkHosts(rows, OCT_13);
-  assert.equal(c.zipShare, 0.7);
-  assert.match(c.failures.join(" "), /ZIP share 70% is below 80%; rows with no ZIP: No ZIP 0/);
-  const eight = checkHosts([...Array.from({ length: 8 }, (_, i) => stored(i)), ...Array.from({ length: 2 }, (_, i) => stored(10 + i, { zip: null }))], OCT_13)[0];
+  assert.equal(c.locatedShare, 0.7);
+  assert.equal(c.hiddenShare, 4 / 19);
+  assert.match(c.failures.join(" "), /located share 70% is below 80%; rows with no coordinates: No place 0/);
+  const eight = checkHosts([...Array.from({ length: 8 }, (_, i) => stored(i)), ...Array.from({ length: 2 }, (_, i) => stored(10 + i, { lat: null, lng: null, zip: null }))], OCT_13)[0];
   assert.deepEqual(eight.failures, []);
   const odd = checkHosts(
     [

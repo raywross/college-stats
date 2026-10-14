@@ -139,6 +139,9 @@ function input(over: Partial<GeneratorInput> = {}): GeneratorInput {
     today: TODAY,
     visits: [],
     offers: [],
+    gradYear: null,
+    season: "unknown",
+    estimates: {},
     ...over,
   };
 }
@@ -328,6 +331,8 @@ test("the fold by grade at four dates", () => {
 const task = (over: Partial<PlanTask>): PlanTask => ({
   id: `t${Math.random().toString(36).slice(2)}`,
   list_id: LIST,
+  season: null,
+  action: null,
   item_id: ITEM_A,
   key: null,
   kind: "apply",

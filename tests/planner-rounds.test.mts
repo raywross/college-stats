@@ -223,6 +223,9 @@ function genInput(items: RoundsItem[], schools: Record<string, RoundsSchool>, gr
     today: "2026-08-15",
     visits: [],
     offers: [],
+    gradYear: null,
+    season: "unknown",
+    estimates: {},
   };
 }
 

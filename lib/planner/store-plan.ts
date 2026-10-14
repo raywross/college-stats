@@ -109,13 +109,18 @@ async function syncAndRegenerate(supabase: Supabase, listId: string, known?: Kno
     }
   }
   const today = todayIso();
-  const input = await span("planSchools", () => generatorInputFor(plan, { gradYear, profile, home, today }));
+  // The estimates feed both the suggestion sync and (next steps, review note 3) the generators, so they're computed
+  // once, beside the dataset read (planEstimates returns {} at once for an empty list).
+  const [input, estimates] = await Promise.all([
+    span("planSchools", () => generatorInputFor(plan, { gradYear, profile, home, today })),
+    span("estimates", () => planEstimates(profile, plan.items, { gradYear, today, visits: plan.visits })),
+  ]);
+  input.estimates = estimates;
 
   const jobs: Promise<number>[] = [];
   if (plan.items.length > 0 && !plan.sourcesMissing) {
     jobs.push(
       (async () => {
-        const estimates = await span("estimates", () => planEstimates(profile, plan.items, { gradYear, today, visits: plan.visits }));
         const writes = autoWrites(planView({ items: plan.items, schools: input.schools, profile, estimates, today }));
         return writes.length > 0 ? writeAutoWrites(supabase, writes) : 0;
       })(),

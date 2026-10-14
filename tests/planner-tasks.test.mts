@@ -49,6 +49,8 @@ const gen = (over: Partial<GeneratedTask> & { key: string }): GeneratedTask => (
 const stored = (over: Partial<PlanTask> = {}): PlanTask => ({
   id: `t${Math.random().toString(36).slice(2)}`,
   list_id: LIST,
+  season: null,
+  action: null,
   item_id: null,
   key: null,
   kind: "own",
@@ -139,6 +141,9 @@ const input = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
   today: TODAY,
   visits: [],
   offers: [],
+  gradYear: null,
+  season: "unknown",
+  estimates: {},
   ...over,
 });
 

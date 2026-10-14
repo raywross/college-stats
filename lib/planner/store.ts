@@ -19,6 +19,7 @@ import { effectiveGradYear, GRAD_YEAR_MAX, GRAD_YEAR_MIN } from "@/lib/student-p
 import { isListRound, isoDateOrNull, type ListRound } from "@/lib/list-rules";
 import { generatorInputFor, readPlan, todayIso, writeMerge, type PlanData } from "./context";
 import { generateTasks, mergeTasks } from "./tasks";
+import { planEstimates } from "./plan-estimates";
 import type { Assignee } from "./types";
 
 export type PlanActionResult = { ok: true } | { ok: false; message: string };
@@ -90,7 +91,10 @@ export async function regenerate(listId: string): Promise<PlanActionResult & { c
   if (!plan) return { ok: false, message: FAILED };
   const facts = await studentFacts(r.supabase, plan.list.student_id);
   const home = await myHome();
-  const input = await generatorInputFor(plan, { ...facts, home, today: todayIso() });
+  const today = todayIso();
+  // Next steps (build-plan.md review note 3): the generators read the estimates, so regenerate computes them too.
+  const estimates = await planEstimates(facts.profile, plan.items, { gradYear: facts.gradYear, today, visits: plan.visits });
+  const input = await generatorInputFor(plan, { ...facts, home, today, estimates });
   const merge = mergeTasks(plan.tasks, generateTasks(input));
   const wrote = await writeMerge(r.supabase, listId, merge);
   return { ok: true, changed: wrote ? merge.upserts.length + merge.orphans.length : 0 };

@@ -150,3 +150,22 @@ test("plan_bundle reads every list_items column the app reads (a new column must
   const names = (s: string) => s.split(",").map((c) => c.trim()).filter(Boolean).sort();
   assert.deepEqual(names(select), names(PLAN_ITEM_COLUMNS), `${file}: plan_bundle's list_items columns differ from PLAN_ITEM_COLUMNS`);
 });
+
+/** plan_bundle's plan_tasks select in `sql` (the latest definition's), as sorted column names. */
+function bundleTaskColumns(sql: string): string[] {
+  const select = /select (id, list_id, item_id, key[\s\S]*?)\s+from public\.plan_tasks where list_id = v_list/.exec(sql)?.[1] ?? "";
+  return select.split(",").map((c) => c.trim()).filter(Boolean).sort();
+}
+
+test("plan_bundle reads every plan_tasks column the app reads (next steps: season, action)", async () => {
+  const { readFileSync, readdirSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { PLAN_TASK_COLUMNS } = await import("../lib/planner/read-plan.ts");
+  const dir = join(import.meta.dirname, "..", "supabase", "migrations");
+  const file = readdirSync(dir).filter((f) => f.endsWith(".sql") && readFileSync(join(dir, f), "utf8").includes("function public.plan_bundle")).sort().at(-1)!;
+  const sql = readFileSync(join(dir, file), "utf8");
+  const want = PLAN_TASK_COLUMNS.split(",").map((c) => c.trim()).sort();
+  assert.deepEqual(bundleTaskColumns(sql), want, `${file}: plan_bundle's plan_tasks columns differ from PLAN_TASK_COLUMNS`);
+  // The guard is live: a definition without the move columns fails it.
+  assert.notDeepEqual(bundleTaskColumns(sql.replace(", season, action", "")), want);
+});

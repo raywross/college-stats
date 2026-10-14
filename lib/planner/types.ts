@@ -7,7 +7,8 @@
 export type Stage = 1 | 2 | 3 | 4 | 5 | 6;
 export type StageState = "done" | "open" | "not_yet";
 export type Assignee = "student" | "guardian" | "either";
-export type TaskSource = "college" | "cycle" | "stage" | "own";
+/** `season`: the playbook's own entries (specs/planner/next-steps/seasons.md; lib/planner/generators/season.ts). */
+export type TaskSource = "college" | "cycle" | "stage" | "own" | "season";
 export type TaskKind =
   | "apply" | "decision_expected" | "aid_forms" | "reply_by" | "housing_deposit" | "ed2_conditional"   // college (U5)
   | "cycle"                                                                                            // cycle file entries; key = entry key (U5)
@@ -17,7 +18,29 @@ export type TaskKind =
   | "continued_interest" | "waitlist_accept" | "waitlist_deposit_elsewhere"                            // U6
   | "add_offer" | "deposit" | "withdraw" | "waitlist_decide" | "summer"                                // U7
   | "cost_check" | "test_register" | "test_day"                                                         // redesign (U6)
+  | "playbook"                                                                                         // next steps U1: the playbook's own entries
+  | "ed_decide" | "ed2_decide"                                                                         // next steps U2
+  | "visit_ed" | "show_interest"                                                                       // next steps U3
+  | "shape_gap" | "shape_cost"                                                                         // next steps U4
+  | "confirm_complete" | "compare_offers" | "decide_by" | "outcome_share"                              // next steps U5
+  | "story"                                                                                            // next steps U7
   | "own";
+/**
+ * What a move's one button does (specs/planner/next-steps/seasons.md "Moves"; build-plan.md "Moves"), stored in
+ * plan_tasks.action (jsonb). Null: no button beyond Done and Not now.
+ */
+export type MoveAction =
+  | { kind: "href"; href: string }
+  | { kind: "open_intake"; step: number }
+  | { kind: "open_tab"; tab: import("./plan-tabs").PlanTab }
+  | { kind: "open_row"; itemId: string; panel?: "ed" | "capture" }
+  | { kind: "mark_applied"; itemId: string }
+  | { kind: "record_decision"; itemId: string }
+  | { kind: "set_round"; itemId: string; round: "ed" | "ed2" }
+  | { kind: "choose"; itemId: string }
+  | { kind: "show_rail"; level: import("../chances/types").StandingLevel; gap: import("./list-shape").ShapeGapKind }
+  | { kind: "story" }
+  | { kind: "tick" };
 export interface PlanTask {
   id: string; list_id: string; item_id: string | null; key: string | null; kind: TaskKind;
   title: string; detail: string | null;
@@ -29,8 +52,20 @@ export interface PlanTask {
   /** Set by mergeTasks when a generated task's source disappeared; shown once, then hidden. */
   orphaned: boolean;
   position: number; created_by: string | null; created_at: string;
+  /**
+   * Next steps (20261014120000_next_steps.sql): the season the move belongs to (only the season generator sets it;
+   * otherwise a move's season is its date's, lib/planner/moves.ts taskSeason) and what its one button does. Null
+   * before the migration is applied (read-plan.ts reads without them).
+   */
+  season: import("./seasons").Season | null;
+  action: MoveAction | null;
 }
-export type GeneratedTask = Omit<PlanTask, "id" | "list_id" | "done_at" | "done_by" | "snoozed_until" | "dismissed" | "orphaned" | "created_by" | "created_at"> & { key: string };
+/** What a generator emits. `season` and `action` are optional (null when left out), so the older generators are untouched. */
+export type GeneratedTask = Omit<PlanTask, "id" | "list_id" | "done_at" | "done_by" | "snoozed_until" | "dismissed" | "orphaned" | "created_by" | "created_at" | "season" | "action"> & {
+  key: string;
+  season?: import("./seasons").Season | null;
+  action?: MoveAction | null;
+};
 export type VisitKind = "campus_tour" | "info_session" | "open_house" | "virtual" | "interview" | "fair" | "overnight" | "other";
 export interface PlanVisit { id: string; item_id: string; kind: VisitKind; on_date: string; at_time: string | null; registered: boolean; registration_url: string | null; who: string[]; rating: number | null; notes: VisitNotes; created_by: string | null; created_at: string; updated_at: string }
 export interface VisitNotes { stood_out?: string; worried?: string; people?: string; questions?: string; live_here?: string; free?: string; interviewer?: string; interviewer_kind?: "alumni" | "admissions" }
@@ -58,7 +93,11 @@ export interface PlanItemColumns { dream: boolean; priority: number | null; foll
    * A brother or sister went here (owner, 2026-10-12; 20261012130000_list_item_sibling.sql), set from the row's
    * Connections line. Optional: absent until the column exists (read-plan.ts falls back without it).
    */
-  legacy_sibling?: boolean }
+  legacy_sibling?: boolean;
+  /** Next steps (20261014120000_next_steps.sql; ed-opportunities.md): "Not for me" on the row's ED pill. Optional: absent before the migration (read as null). */
+  ed_dismissed_at?: string | null;
+  /** Next steps: the ED sheet's checklist ticks, by check key. Optional: absent before the migration (read as {}). */
+  ed_checks?: Record<string, boolean> }
 export type PlanItem = import("../list-rules").ListItem & PlanItemColumns;
 /** lists gains: sort text null, rounds_plan_accepted_at timestamptz null. */
 export type ListSort = "mine" | "category" | "dream_priority" | "next_date" | "admit_rate" | "avg_cost" | "distance" | "standing";
@@ -77,6 +116,12 @@ export interface PlanContext {
   today: string;                                // ISO date
   cycle: import("./cycle").Cycle;               // the student's cycle entries (or the current one for a guardian's list)
   grade: import("./cycle").Grade;
+  /** Next steps: the student's season on `today` (lib/planner/seasons.ts seasonOf; `unknown` without a grad year). */
+  season: import("./seasons").Season;
+  /** Next steps: the plan's graduation year (the student's effective one; null for a guardian's own list or unset). */
+  gradYear: number | null;
+  /** Next steps (build-plan.md review note 3): Quad's estimate per college by unit id, computed on the server. */
+  estimates: Record<string, import("../chances/types").EstimateResult>;
   stages: Record<Stage, { state: StageState; count: string }>;
   current: Stage;
   /**
@@ -130,6 +175,6 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
 /* ------------------------------------------------------------------ */
 
 /** What a generator reads: a PlanContext without its tasks, stages, and viewer (generators/index.ts). Pure input. */
-export type GeneratorInput = Pick<PlanContext, "list" | "items" | "schools" | "profile" | "cycle" | "grade" | "today" | "visits" | "offers">;
+export type GeneratorInput = Pick<PlanContext, "list" | "items" | "schools" | "profile" | "cycle" | "grade" | "today" | "visits" | "offers" | "gradYear" | "season" | "estimates">;
 /** One generator module's export: pure, no I/O, returns every task it wants to exist right now. */
 export type Generator = (input: GeneratorInput) => GeneratedTask[];

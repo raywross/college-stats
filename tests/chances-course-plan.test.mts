@@ -390,6 +390,9 @@ function generatorInput(school: PlanSchool, courses: CourseEntry[], over: Partia
     today: "2027-04-20",
     visits: [],
     offers: [],
+    gradYear: null,
+    season: "unknown",
+    estimates: {},
   };
 }
 const sendAp = (tasks: ReturnType<typeof offersGen>) => tasks.filter((t) => t.key.endsWith(":summer:send_ap_scores"));

@@ -61,7 +61,7 @@ test("seasonBounds: each dated season's first and last day round-trip, and the s
     assert.equal(seasonOfDate(b.start, G), season, `${season} start ${b.start}`);
     assert.equal(seasonOfDate(b.end, G), season, `${season} end ${b.end}`);
     if (prevEnd) {
-      const next = new Date(`${prevEnd}T00:00:00Z`);
+      const next: Date = new Date(`${prevEnd}T00:00:00Z`);
       next.setUTCDate(next.getUTCDate() + 1);
       assert.equal(next.toISOString().slice(0, 10), b.start, `${season} starts the day after the last one ends`);
     }

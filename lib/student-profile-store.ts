@@ -171,6 +171,8 @@ function mergeProfiles(base: StudentProfileData, incoming: StudentProfileData): 
     tests: pick(base.tests, incoming.tests),
     plans: pick(base.plans, incoming.plans),
     preferences: pick(base.preferences, incoming.preferences),
+    // Your story (next steps): the saved one wins; a signed-out copy fills it only when none is saved.
+    story: base.story ?? incoming.story,
   };
 }
 

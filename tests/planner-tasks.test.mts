@@ -162,10 +162,10 @@ test("generateTasks: generator order, the first key wins, own tasks are never ge
   );
 });
 
-test("the generator registry lists the six modules in order, and each returns an array (stubs until their units fill them)", () => {
+test("the generator registry lists the seven modules in order (season last), and each returns an array", () => {
   assert.deepEqual(
     GENERATORS.map((g) => g.name),
-    ["cycle", "college", "rounds", "actions", "apply", "offers"],
+    ["cycle", "college", "rounds", "actions", "apply", "offers", "season"],
   );
   for (const g of GENERATORS) assert.ok(Array.isArray(g.generate(input())), `${g.name} returns an array`);
 });

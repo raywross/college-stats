@@ -488,12 +488,54 @@ export interface StudentProfilePreferences {
   types: SchoolType[];
 }
 
+/**
+ * Your story (specs/planner/next-steps/your-story.md): three short answers in the student's words, plain text up to
+ * STORY_FIELD_MAX characters each, read by the story move, the brag sheet, and the essay move. A guardian never
+ * receives the text (U7 strips it in profilesICanSee); `updatedAt` is kept.
+ */
+export interface StudentStory {
+  about: string;
+  thread: string;
+  majorWhy: string;
+  updatedAt: string | null;
+}
+
 export interface StudentProfileData {
   basics: StudentProfileBasics;
   academics: StudentProfileAcademics;
   tests: StudentProfileTests;
   plans: StudentProfilePlans;
   preferences: StudentProfilePreferences;
+  /** Next steps (your-story.md): null until any prompt is answered. */
+  story: StudentStory | null;
+}
+
+/** Longest answer kept for each story prompt. */
+export const STORY_FIELD_MAX = 500;
+
+const ISO_INSTANT_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/;
+
+/** One story answer: plain text (tags and control characters removed, whitespace kept tidy), at most STORY_FIELD_MAX characters. */
+function storyText(v: unknown): string {
+  if (typeof v !== "string") return "";
+  const plain = v
+    .replace(/<[^>]*>/g, "")
+    // eslint-disable-next-line no-control-regex -- stripping control characters is the point
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .replace(/\r\n?/g, "\n")
+    .trim();
+  return plain.slice(0, STORY_FIELD_MAX).trim();
+}
+
+/** The story from untrusted input; null when all three answers are empty. `updatedAt` is an ISO date or time, else null. */
+export function sanitizeStory(input: unknown): StudentStory | null {
+  if (!isObj(input)) return null;
+  const about = storyText(input.about);
+  const thread = storyText(input.thread);
+  const majorWhy = storyText(input.majorWhy);
+  if (!about && !thread && !majorWhy) return null;
+  const at = typeof input.updatedAt === "string" && ISO_INSTANT_RE.test(input.updatedAt) && !Number.isNaN(Date.parse(input.updatedAt)) ? input.updatedAt : null;
+  return { about, thread, majorWhy, updatedAt: at };
 }
 
 /**
@@ -550,6 +592,7 @@ export function emptyProfile(): StudentProfileData {
     },
     plans: { intendedMajors: [], earlyRoundInterest: null },
     preferences: { sizes: [], settings: [], statesOrRegions: [], maxAverageCost: null, types: [] },
+    story: null,
   };
 }
 
@@ -692,7 +735,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     types: arr(pr.types, (x) => (SCHOOL_TYPE_VALUES.includes(x as SchoolType) ? (x as SchoolType) : null), 3),
   };
 
-  return { basics, academics, tests, plans, preferences };
+  return { basics, academics, tests, plans, preferences, story: sanitizeStory(input.story) };
 }
 
 /* ------------------------------------------------------------------ */

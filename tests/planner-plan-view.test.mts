@@ -6,7 +6,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { autoWrites, balanceLineFor, BALANCE_LINES, MAX_NOTICES, planView as planViewOf, type PlanView, type PlanViewInput } from "../lib/planner/plan-view.ts";
+import { autoWrites, balanceLineFor, MAX_NOTICES, planView as planViewOf, type PlanView, type PlanViewInput } from "../lib/planner/plan-view.ts";
 import { baselineEstimates } from "../lib/chances/baseline.ts";
 import { estimateInputFromProfile } from "../lib/chances/snapshot.ts";
 import { withBackfillSources } from "../lib/planner/read-plan.ts";
@@ -313,7 +313,7 @@ test("notices: at most three, in list.md's order (problems, balance, retake)", (
     ps("Y", "ED II U", { ed: true, ed2: true, admitRate: 0.45, sat: [1300, 1450] }),
   ]);
   const items = [item("D", { dream: true }), item("X", { round: "ed", round_source: "student" }), item("Y")];
-  const v = planView({ items, schools, profile: numbers({ sat: 1280, focus: "sat" }), today: TODAY });
+  const v = planView({ items, schools, profile: numbers({ sat: 1280, focus: "sat" }), today: TODAY, season: "senior_fall" });
   assert.ok(v.problems.length > 0);
   assert.ok(v.balanceLine);
   assert.ok(v.retake);
@@ -323,7 +323,7 @@ test("notices: at most three, in list.md's order (problems, balance, retake)", (
 
 test("notices: only the ones that are true, in order", () => {
   const schools = by([ps("1", "A", { admitRate: 0.45, sat: [1300, 1450] })]);
-  const v = planView({ items: [item("1")], schools, profile: numbers({ sat: 1280, focus: "sat" }), today: TODAY });
+  const v = planView({ items: [item("1")], schools, profile: numbers({ sat: 1280, focus: "sat" }), today: TODAY, season: "senior_fall" });
   assert.deepEqual(v.notices, ["balance", "retake"]);
   const none = planView({ items: [], schools: {}, profile: null, today: TODAY });
   assert.deepEqual(none.notices, []);
@@ -345,17 +345,21 @@ test("problems: two EDs, and REA beside a private college's EA, each as one sent
   assert.deepEqual(done.problems, []);
 });
 
-test("balance lines: too few Likely first, then the list's size, then too many Reaches; none when balanced", () => {
+/**
+ * The balance line is now `shapeGaps`'s own (lib/planner/list-shape.ts; specs/planner/next-steps/list-shape.md): a
+ * full pass over every gap and every season lives in tests/planner-list-shape.test.mts. Here, just the handful of
+ * cases specific to `balanceLineFor`'s own contract — no shape, no colleges, and the first gap's line matching
+ * `shapeGaps` exactly — now that U4 replaced `BALANCE_LINES`/`LIST_SIZE`/`MIN_LIKELY` with the shape (build-plan.md
+ * "What's removed (U2) and replaced (U4)").
+ */
+test("balance lines: no shape (freshman/sophomore), no colleges, else the first shape gap's line", () => {
   const g = (r: number, t: number, l: number, u = 0): ListCategory[] => [...Array(r).fill("reach"), ...Array(t).fill("target"), ...Array(l).fill("likely"), ...Array(u).fill("unsorted")];
-  assert.equal(balanceLineFor([]), null);
-  assert.equal(balanceLineFor(g(3, 3, 1)), BALANCE_LINES.likelyOrSafe);
-  assert.equal(balanceLineFor(g(1, 1, 2)), BALANCE_LINES.size);
-  assert.equal(balanceLineFor(g(4, 5, 4)), BALANCE_LINES.size);
-  assert.equal(balanceLineFor(g(5, 1, 2)), BALANCE_LINES.reach);
-  assert.equal(balanceLineFor(g(2, 4, 2)), null);
-  // Nothing sorted yet (no numbers): only the size line can apply.
-  assert.equal(balanceLineFor(g(0, 0, 0, 3)), BALANCE_LINES.size);
-  assert.equal(balanceLineFor(g(0, 0, 0, 8)), null);
+  assert.equal(balanceLineFor([], "senior_fall", "unknown"), null);
+  assert.equal(balanceLineFor(g(1, 1, 2), "freshman", "unknown"), null, "no shape before junior year");
+  // A senior list short on Likely-or-Safe: the first gap (likely_min).
+  assert.ok(balanceLineFor(g(3, 3, 1), "senior_fall", "unknown")?.includes("Likely"));
+  // Balanced and affordable (12 total, every level inside its range): no gap at all.
+  assert.equal(balanceLineFor(g(2, 5, 3, 0).concat(Array(2).fill("safe") as ListCategory[]), "senior_fall", "ok"), null);
 });
 
 /* ------------------------------------------------------------------ */

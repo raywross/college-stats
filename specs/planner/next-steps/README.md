@@ -76,7 +76,7 @@ Summarized here; each part cites what it uses.
 | 3 | [interest-and-visits.md](interest-and-visits.md) | Visit moves for every ED candidate; "show interest" moves (visit, contact or information session, follow) where the college says interest counts, in the upper-Target / lower-Reach band; the **Interest counts here** pill | Medium |
 | 4 | [list-shape.md](list-shape.md) | The shape of a good list by season (12–15 for seniors: 0–2 High reach, 2–3 Reach, 5–8 Target, 2–3 Likely, 2–3 Safe, one affordable), the gap moves, and a rail of colleges at the missing level | Medium |
 | 5 | [applying.md](applying.md) | The senior moves that re-home what the simplification removed: submit and mark applied, record each decision, ED II after a deferral, compare offers, decide by May 1, tell us where you landed | Medium |
-| 6 | [notifications.md](notifications.md) | Bringing people back: the season brief, the weekly moves in Your week and the parent summary, the day-before texts, the header dot; monthly before junior year, weekly after | Medium |
+| 6 | [notifications.md](notifications.md) | Bringing people back: the season brief, the weekly moves in Your week and the parent summary, the day-before texts, the header dot; a brief at the start of the year and one in February before junior year, weekly in season | Medium |
 | 7 | [your-story.md](your-story.md) | Three private prompts that start the narrative in junior year and feed the essay window | Small |
 
 ## Design principles

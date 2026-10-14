@@ -24,13 +24,14 @@ One email at the turn of each season, to the student and, separately, to each gu
 this season's moves (three to six, the playbook's order, each with its why's first clause and a link), one line on
 what next season brings, and the unsubscribe. The parent's brief leads with their part. Sent by the weekly job on the
 first Sunday of the season (`emails/season-brief.tsx`; `notification_prefs.season_brief`, default on where email is
-on). Eleven seasons, so at most eleven briefs across high school; a late joiner gets the current season's brief on
-their first Sunday.
+on). Ten seasons from freshman year to the summer after, plus one mid-year brief in February of freshman and
+sophomore year (course planning, the PSAT's result), so at most twelve briefs across high school; a late joiner gets
+the current season's brief on their first Sunday.
 
 ## Cadence by season
 | Season | Student | Parent |
 |---|---|---|
-| Freshman, sophomore | The season brief only (two a year), plus Your week **off** by default | The brief only |
+| Freshman, sophomore | The season brief in August and the February brief (two a year); Your week **off** by default | The same two briefs, leading with the money conversation |
 | Junior fall, winter | The brief; Your week **off** by default (opt in); the PSAT and test-registration day-before texts if texts are on | The brief; summary off by default |
 | Junior spring, summer | The brief; Your week **on** by default (the recommenders, the essay window, the ED decide move) | The brief; summary **on** by default (the cost checks) |
 | Senior fall, winter, spring | The brief; Your week on; day-before texts for every hard date | The brief; summary on; the FAFSA/CSS and deposit texts if texts are on |

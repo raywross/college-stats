@@ -186,7 +186,7 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/planner/next-steps/notifications.md",
     group: "next-steps",
     summary:
-      "One brief when a season turns, the week's moves in the Sunday email and the parent summary, a text the day before a hard date, and a dot in the header when something new is waiting; monthly before junior year, weekly after.",
+      "One brief when a season turns, the week's moves in the Sunday email and the parent summary, a text the day before a hard date, and a dot in the header when something new is waiting; two briefs a year before junior year, weekly in season.",
     complexity: 2,
     complexityNote: "A new email on the existing weekly job, season-based defaults for the built channels, a last-opened table for the dot; nothing new to wire.",
     status: "planned",

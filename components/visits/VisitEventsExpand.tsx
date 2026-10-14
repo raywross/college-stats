@@ -16,12 +16,15 @@ export function VisitEventsExpand({
   events,
   schoolName,
   surface = "profile",
+  alwaysOpen = false,
 }: {
   events: readonly VisitListItem[];
   schoolName: string;
   surface?: "profile" | "me" | "planner";
+  /** The event calendar view: the full list is open from the start and there is no toggle. */
+  alwaysOpen?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(alwaysOpen);
   const [chip, setChip] = useState<VisitChipKey>("all");
   const [stateFilter, setStateFilter] = useState<string | null>(null);
 
@@ -47,9 +50,11 @@ export function VisitEventsExpand({
 
   return (
     <div className="mt-5">
-      <button type="button" onClick={() => setExpanded((v) => !v)} className="text-xs font-bold text-primary hover:underline">
-        {expanded ? "Show fewer" : `All ${nonStaff.length} events`}
-      </button>
+      {!alwaysOpen && (
+        <button type="button" onClick={() => setExpanded((v) => !v)} className="text-xs font-bold text-primary hover:underline">
+          {expanded ? "Show fewer" : `All ${nonStaff.length} events`}
+        </button>
+      )}
       {expanded && (
         <div className="mt-3 space-y-3">
           <VisitFilters value={chip} onChange={setChip} states={states} stateValue={stateFilter} onStateChange={setStateFilter} counts={counts} />

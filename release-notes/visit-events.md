@@ -13,10 +13,11 @@ sessions, and the days their admissions officers spend at high schools and colle
 reads those calendars every night and shows them to signed-in families, starting with four colleges: the University
 of Florida, Duke, UNC Chapel Hill, and UT Austin (about 2,100 upcoming events between them).
 
-- **On a college's page**, under its official links, "Upcoming visits" lists the next events on campus and the next
-  ones near you, each with the date, time, place, how far it is, whether it still has room, and a **Sign up** link to
-  the college's own page. Quad never takes a booking. Signed out, the page says only how many events the college
-  lists.
+- **On a college's page**, an **Event calendar** button beside its social links (with the count) opens the calendar
+  in place of the college's figures, with the college's name and facts still at the top and a link back: the next
+  events on campus, the next ones near you, then everything, each with the date, time, place, how far it is, whether
+  it still has room, and a **Sign up** link to the college's own page. Quad never takes a booking. Signed out, the
+  button shows the count and leads to creating an account.
 - **Your visits page** (`/me/visits`) gathers the events at every college on your lists, nearest first, with a switch
   per college to stop its alerts.
 - **A nightly email** when a college on your list adds an event within your chosen distance of home: 30 miles unless

@@ -30,8 +30,19 @@ type Mode = "signin" | "signup" | "forgot" | "magic";
  * Sign in with email and password by default; create an account (with a strong password, a birth year, and who they
  * are), reset a forgotten password, or use an emailed magic link instead. One card, switching modes in place.
  */
-export function LoginForm({ next, refused, initialError }: { next: string; refused: boolean; initialError?: string }) {
-  const [mode, setMode] = useState<Mode>("signin");
+export function LoginForm({
+  next,
+  refused,
+  initialError,
+  initialMode = "signin",
+}: {
+  next: string;
+  refused: boolean;
+  initialError?: string;
+  /** `?mode=signup` opens on "Create an account" (a sign-in-only feature's button for a visitor, e.g. the event calendar). */
+  initialMode?: "signin" | "signup";
+}) {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
 
   if (refused) return <Refused />;

@@ -161,12 +161,15 @@ inserts a mute), the radius with a link to change it, and one-click unsubscribe 
 pure in `lib/emails/visit-alert.ts` like `lib/digest.ts`, with the HTML and plain-text bodies from one template.
 
 ## Display (signed in)
-- **College page**, under the official links: **Upcoming visits**: the next three on-campus events and the next
-  three near the family ("Near you: Decatur High School, Mon 19 Oct, 14 miles"), each with the date, time, place,
-  open/full, and a Sign up link; "All 528 events" opens the full list for that college with the kind chips (Campus
-  tours · Sessions · Near you · Online · Everything) and a state filter for the travel calendar. Signed out: "UF lists
-  528 upcoming events, 4 within 30 miles of Marietta. Sign in to see them" (the count by ZIP is a public figure; the
-  rows are not).
+- **College page**: an **Event calendar** button in the hero, to the right of the social bar, with the count of
+  upcoming events (owner, 2026-10-13: the calendar shows only when asked for, never as the first thing on the page).
+  It opens the same page with `?view=events`: the college's header stays, and the stats below are replaced by the
+  calendar: a "Back to the college" link, the next three on-campus events and the next three near the family ("Near
+  you: Decatur High School, Mon 19 Oct, 14 miles"), each with the date, time, place, open/full, and a Sign up link,
+  then the whole calendar with the kind chips (Campus tours · Sessions · Near you · Online · Everything) and a state
+  filter for the travel calendar. The button turns into "Back to the college" while the view is open. Signed out, the
+  button (and a direct `?view=events` link) goes to the sign-up form (`/login?mode=signup`) and returns to the
+  calendar afterwards; the count is the one public figure.
 - **`/me/visits`**: every upcoming event at the colleges on the person's lists, nearest first, then by date; a
   **Near you** section at the top with the radius control; per college, the alert switch (the same mute as the email
   footer). Guardians see the same for the colleges they follow.
@@ -252,9 +255,12 @@ outranks the widget's "full". UT's widget nests a placeholder item inside each r
 item. Not built: the weekly re-read of unchanged event pages, the `no_events` host status, a last-attempt timestamp for
 unreachable hosts (retried on Sundays for now).
 
-**Pages** (U2): `lib/visit-events/read.ts` and `view.ts` (pure grouping, chips, wording), `store.ts`; `components/
-visits/`; `/me/visits`; the block under the college page's hero; settings on `/account` beside the Updates switch
-(`/me` redirects). Chips: Sessions = `info_session` + `open_house` + `other`; Near you = `travel`. "Add to calendar" is
+**Pages** (U2, then the owner's review): `lib/visit-events/read.ts` and `view.ts` (pure grouping, chips, wording),
+`store.ts`; `components/visits/`; `/me/visits`; settings on `/account` beside the Updates switch (`/me` redirects).
+The first build put an "Upcoming visits" block under the hero; the owner's review the same day replaced it with the
+**Event calendar** button (`EventCalendarButton`, a `trailing` slot in `HeroIdentity`) and the `?view=events` view
+(`VisitCalendar`, rendered by `app/schools/[id]/page.tsx` in place of the stats). `/login` gained `?mode=signup`,
+which opens the form on "Create an account". Chips: Sessions = `info_session` + `open_house` + `other`; Near you = `travel`. "Add to calendar" is
 a client-side `.ics` from `lib/ics.ts`. No React render test (the repo's only pattern compiles `.tsx` by hand).
 
 **Alerts** (U3): `lib/visit-events/alerts.ts` (`selectAlerts`), `lib/emails/visit-alert.ts`, `/api/cron/visit-alerts`

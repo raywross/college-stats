@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { School } from "@/lib/types";
 import type { FieldPath } from "@/lib/fields";
 import { getData } from "@/lib/data";
@@ -12,12 +13,15 @@ import { SourcesTip, type SourceGroup } from "@/components/ui/info-tip";
  * scrolling width on phones (like the chips above it), so it forces a line break there and the icons and the (i) drop
  * to their own line; from `sm:` up they share the row. Hidden entirely when the college has neither.
  */
-export async function HeroIdentity({ school }: { school: School }) {
+export async function HeroIdentity({ school, trailing }: { school: School; trailing?: ReactNode }) {
   const shown: { label: string; field: FieldPath }[] = [
     ...officialLinkPills(school).map((p) => ({ label: p.label, field: p.field })),
     ...SOCIAL_NETWORKS.filter((n) => school.social?.[n]).map((n) => ({ label: SOCIAL_LABELS[n], field: `social.${n}` as FieldPath })),
   ];
-  if (!shown.length) return null;
+  if (!shown.length) {
+    // No links or accounts: only the trailing control (the event calendar button), on its own row.
+    return trailing ? <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 sm:mt-5">{trailing}</div> : null;
+  }
 
   // Each source once, with the links and accounts it covers. A quote belongs to one item, so a shared source drops it.
   const { citeField } = await getData();
@@ -39,6 +43,8 @@ export async function HeroIdentity({ school }: { school: School }) {
         <SocialLinks school={school} />
         <SourcesTip title="Where these links come from" groups={[...groups.values()]} />
       </span>
+      {/* To the right of the social bar: the event calendar button (specs/product/visit-events.md "Display"). */}
+      {trailing}
     </div>
   );
 }

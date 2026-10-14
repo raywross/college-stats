@@ -26,9 +26,10 @@ import { SelectivityChip } from "@/components/school/SelectivityChip";
 import { ProfileChanges } from "@/components/profile/ProfileChanges";
 import { MyHighSchoolLine } from "@/components/high-schools/MyHighSchoolLine";
 import { ViewBeacon } from "@/components/profile/ViewBeacon";
-import { UpcomingVisits } from "@/components/visits/UpcomingVisits";
+import { EventCalendarButton } from "@/components/visits/EventCalendarButton";
+import { VisitCalendar } from "@/components/visits/VisitCalendar";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams?: Promise<{ view?: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
@@ -51,8 +52,10 @@ export async function generateStaticParams() {
  * The profile overview (specs/profile-redesign.md#overview-page): a slim hero, one card per topic page the college
  * has, similar schools, and one collapsed source list. The detail lives on the six topic pages under this route.
  */
-export default async function SchoolPage({ params }: Props) {
+export default async function SchoolPage({ params, searchParams }: Props) {
   const { id } = await params;
+  // `?view=events`: the event calendar replaces the stats under the hero (specs/product/visit-events.md "Display").
+  const eventsView = (await searchParams)?.view === "events";
   const p = await loadProfile(id);
   if (!p) notFound();
   const { data, school } = p;
@@ -136,14 +139,15 @@ export default async function SchoolPage({ params }: Props) {
           )}
 
           {/* Official links and social accounts (specs/school-identity/links.md, social-accounts.md). */}
-          <HeroIdentity school={school} />
-          {/* Tours, sessions, and the travel calendar (specs/product/visit-events.md), under the official links. */}
-          <UpcomingVisits unitId={school.unit_id} schoolName={school.name} />
+          <HeroIdentity school={school} trailing={<EventCalendarButton unitId={school.unit_id} active={eventsView} />} />
           {/* Records that this college was opened (specs/product/college-views.md). Renders nothing. */}
           <ViewBeacon unit={school.unit_id} page="overview" />
         </div>
       </section>
 
+      {eventsView ? (
+        <VisitCalendar unitId={school.unit_id} schoolName={school.name} />
+      ) : (
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="space-y-14 pt-2 sm:space-y-16 sm:pt-4">
           {/* ============================== WHAT CHANGED (nothing without a change in the last year) ============================== */}
@@ -207,6 +211,7 @@ export default async function SchoolPage({ params }: Props) {
           </Panel>
         </div>
       </div>
+      )}
     </div>
   );
 }

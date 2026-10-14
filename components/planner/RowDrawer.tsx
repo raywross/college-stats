@@ -6,6 +6,7 @@ import { Check, ExternalLink, X } from "lucide-react";
 import { Chip, FieldLabel } from "@/components/activities/chips";
 import { AboutYouAndCollege } from "@/components/planner/AboutYouAndCollege";
 import { VisitForm } from "@/components/planner/VisitForm";
+import NextEvents from "@/components/visits/NextEvents";
 import { SOCIAL_GLYPHS } from "@/components/school/SocialIcons";
 import { SheetDialog } from "@/components/ui/sheet-dialog";
 import { setVisited } from "@/lib/lists";
@@ -55,6 +56,8 @@ export function RowDrawer({
         <>
           <AboutYouAndCollege item={item} school={school} canEdit={canEdit} />
           <VisitedControl itemId={item.id} visitedOn={item.visited_on} visits={ctx.visits.filter((v) => v.item_id === item.id)} today={ctx.today} canEdit={canEdit} schoolName={school.name} />
+          {/* The college's next two visit events with "I registered" (specs/product/visit-events.md "Display" → Planner). */}
+          <NextEvents unitId={item.unit_id} itemId={item.id} schoolName={school.name} />
           <InfoRequestedControl itemId={item.id} requestedOn={item.info_requested_on ?? null} today={ctx.today} canEdit={canEdit} schoolName={school.name} />
           <FollowControl
             itemId={item.id}

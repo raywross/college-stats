@@ -60,6 +60,13 @@ test("a first follow creates visit_alert_prefs with the defaults; prefs and mute
   await asUser(db, alice, "update public.visit_alert_prefs set radius_miles = 50");
   assert.deepEqual(await asUser(db, bob, "select user_id from public.visit_alert_prefs"), []);
   await asUser(db, alice, "insert into public.visit_alert_mutes (unit_id) values ('134130')");
+  // The mute switch inserts with ON CONFLICT DO NOTHING (lib/visit-events/store.ts): a second tap must not need the
+  // update privilege the grant withholds (QA 2026-10-13 found the upsert's DO UPDATE refused).
+  await asUser(db, alice, "insert into public.visit_alert_mutes (unit_id) values ('134130') on conflict (user_id, unit_id) do nothing");
+  await assert.rejects(
+    asUser(db, alice, "insert into public.visit_alert_mutes (unit_id) values ('134130') on conflict (user_id, unit_id) do update set created = now()"),
+    /permission denied/,
+  );
   assert.deepEqual(await asUser(db, bob, "select unit_id from public.visit_alert_mutes"), []);
   await assert.rejects(asUser(db, bob, "insert into public.visit_alert_mutes (user_id, unit_id) values ($1, '134130')", [alice]), /row-level security/);
 });

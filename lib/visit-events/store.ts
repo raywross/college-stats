@@ -55,7 +55,11 @@ export async function setVisitMute(unitId: string, muted: boolean): Promise<{ ok
   if (!user || !UNIT_ID_RE.test(unitId)) return { ok: false };
   const supabase = await createServerSupabase();
   if (muted) {
-    const { error } = await supabase.from("visit_alert_mutes").upsert({ user_id: user.id, unit_id: unitId }, { onConflict: "user_id,unit_id" });
+    // ON CONFLICT DO NOTHING: the row has nothing to update, and the grant is insert/delete only (an upsert's DO UPDATE
+    // needs the update privilege even when no row conflicts; QA 2026-10-13).
+    const { error } = await supabase
+      .from("visit_alert_mutes")
+      .upsert({ user_id: user.id, unit_id: unitId }, { onConflict: "user_id,unit_id", ignoreDuplicates: true });
     if (error) {
       console.error(`visit_alert_mutes: muting ${unitId} failed: ${error.message}`);
       return { ok: false };

@@ -35,7 +35,7 @@ export function VisitFilters({
               type="button"
               disabled={disabled}
               onClick={() => onChange(chip.key)}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors ${
+              className={`inline-flex h-11 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors sm:h-8 ${
                 active ? "bg-foreground text-background" : "border bg-card text-foreground/80 hover:border-primary/40 hover:text-primary"
               } ${disabled ? "cursor-not-allowed opacity-40" : ""}`}
             >
@@ -50,7 +50,7 @@ export function VisitFilters({
           value={stateValue ?? ""}
           onChange={(e) => onStateChange(e.target.value || null)}
           aria-label="Filter by state"
-          className="h-8 rounded-full border bg-card px-3 text-xs font-semibold"
+          className="h-11 rounded-full border bg-card px-3 text-xs font-semibold sm:h-8"
         >
           <option value="">Every state</option>
           {states.map((s) => (

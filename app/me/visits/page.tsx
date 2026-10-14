@@ -9,7 +9,7 @@ import { ViewedBeacon } from "@/components/visits/ViewedBeacon";
 import { authConfigured, requireUser } from "@/lib/auth";
 import { myFollows } from "@/lib/follows";
 import { getData } from "@/lib/data";
-import { eventsForMe, myMeasuringPoint, myVisitMutes, myVisitPrefs } from "@/lib/visit-events/read";
+import { eventsForMe, myMeasuringPoint, myVisitMutes, myVisitPrefs, readTimeLine } from "@/lib/visit-events/read";
 import { nearYouEvents } from "@/lib/visit-events/view";
 
 export const metadata: Metadata = { title: "Your visits", robots: { index: false } };
@@ -35,6 +35,9 @@ export default async function MyVisitsPage() {
   const mutedSet = new Set(mutes);
   const nonStaff = events.filter((e) => e.kind !== "staff");
   const near = nearYouEvents(nonStaff, point).filter((e) => e.distanceMiles != null && e.distanceMiles <= prefs.radius_miles);
+  // Every list shows when it was read (the spec's display rule): the newest read among the colleges on the page.
+  const lastSeen = nonStaff.reduce<string | null>((max, e) => (max == null || e.last_seen > max ? e.last_seen : max), null);
+  const readLine = readTimeLine("each college", lastSeen);
 
   return (
     <div className="mx-auto max-w-3xl space-y-10 px-4 py-10 sm:px-6 sm:py-14">
@@ -48,6 +51,7 @@ export default async function MyVisitsPage() {
           </Link>
           .
         </p>
+        {readLine && <p className="mt-1 text-xs text-muted-foreground">{readLine}</p>}
       </header>
 
       <section aria-label="Near you">

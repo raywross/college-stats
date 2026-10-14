@@ -33,7 +33,7 @@ export function MuteSwitch({ unitId, schoolName, initiallyMuted, onChange }: { u
       onClick={toggle}
       disabled={pending}
       aria-pressed={muted}
-      className="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold hover:bg-muted disabled:opacity-60"
+      className="inline-flex h-11 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold hover:bg-muted disabled:opacity-60 sm:h-8"
     >
       {muted ? `Unmute ${schoolName}` : "Mute visit alerts"}
     </button>

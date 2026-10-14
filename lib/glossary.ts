@@ -1725,6 +1725,13 @@ const entries = {
     category: "Your account",
     related: ["plan", "calendar-feed"],
   },
+  "season-brief": {
+    term: "Season brief",
+    short: "One email when a season of high school turns: what the season is for, its first few moves with a link to each, and what comes next.",
+    long: "Twice a year in freshman and sophomore year (August and February), then once a season through the summer after senior year. A parent's brief leads with their part. On by default; a skipped move never appears in it.",
+    category: "Your account",
+    related: ["your-week", "your-part", "plan"],
+  },
 
   // Parents (specs/planner/parents.md)
   nudge: {

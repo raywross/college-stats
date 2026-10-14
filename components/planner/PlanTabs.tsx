@@ -63,7 +63,7 @@ export function PlanTabs({
 }) {
   return (
     <div className="space-y-4">
-      <PlanOpened tab={tab} viewer={viewer} everyone={false} />
+      <PlanOpened tab={tab} viewer={viewer} everyone={false} studentId={ctx.student?.id ?? null} />
       {tab === "next" && <NextSteps ctx={ctx} view={view} />}
       {tab === "colleges" && <PlanList ctx={ctx} view={view} />}
       {

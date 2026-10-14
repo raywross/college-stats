@@ -8,9 +8,11 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getData } from "@/lib/data";
 import { canText, composeConfirmText, localDay, send, smsConfigured, timeZonesFor } from "@/lib/sms";
-import { PLAN_TASK_COLUMNS } from "./context";
+import { effectiveGradYear, type StudentProfileBasics } from "@/lib/student-profile";
 import { shortDay } from "./generators/college";
-import { collegeNames, dueSoon, outsideTitle } from "./timeline";
+import { readTaskRows } from "./read-plan";
+import { seasonOf, type Season } from "./seasons";
+import { changedCollegeMoves, collegeNames, dueSoon, outsideTitle } from "./timeline";
 import type { PlanTask } from "./types";
 
 export interface ListTasks {
@@ -18,20 +20,61 @@ export interface ListTasks {
   tasks: PlanTask[];
   /** College name by item id. */
   names: Record<string, string>;
+  /** College (unit id) by item id. */
+  units: Record<string, string>;
 }
 
-/** A list's tasks and its colleges' names (the dataset carries the names, not the database). */
+/**
+ * A list's tasks and its colleges' names (the dataset carries the names, not the database). Tasks are read with the
+ * move columns, and without them before the next-steps migration (read-plan.ts readTaskRows).
+ */
 export async function readListTasks(client: SupabaseClient, listId: string): Promise<ListTasks> {
-  const [tasks, items] = await Promise.all([
-    client.from("plan_tasks").select(PLAN_TASK_COLUMNS).eq("list_id", listId),
-    client.from("list_items").select("id, unit_id").eq("list_id", listId),
-  ]);
+  const [tasks, items] = await Promise.all([readTaskRows(client, listId), client.from("list_items").select("id, unit_id").eq("list_id", listId)]);
   if (tasks.error) throw new Error(`reminders: reading tasks failed: ${tasks.error.message}`);
   if (items.error) throw new Error(`reminders: reading items failed: ${items.error.message}`);
   const rows = (items.data ?? []) as { id: string; unit_id: string }[];
   const { getSchoolsByIds } = await getData();
   const byUnit = Object.fromEntries(getSchoolsByIds(rows.map((r) => r.unit_id)).map((s) => [s.unit_id, s.name]));
-  return { listId, tasks: (tasks.data ?? []) as PlanTask[], names: collegeNames(rows, byUnit) };
+  return { listId, tasks: tasks.data ?? [], names: collegeNames(rows, byUnit), units: Object.fromEntries(rows.map((r) => [r.id, r.unit_id])) };
+}
+
+export interface StudentMoves extends ListTasks {
+  studentId: string;
+  /** The effective class year: the profile's, else the student record's. */
+  gradYear: number | null;
+  season: Season;
+}
+
+/**
+ * One student's moves across users (the weekly job): the default list's tasks and names, the class year the plan
+ * uses (lib/planner/load.ts reads it the same way), and the season on `today`. Null without a default list.
+ */
+export async function readStudentMoves(client: SupabaseClient, student: { id: string; grad_year: number | null }, today: string): Promise<StudentMoves | null> {
+  const [list, profile] = await Promise.all([
+    client.from("lists").select("id").eq("student_id", student.id).eq("is_default", true).maybeSingle(),
+    client.from("student_profiles").select("data").eq("student_id", student.id).maybeSingle(),
+  ]);
+  const listId = (list.data as { id: string } | null)?.id;
+  if (!listId) return null;
+  const basics = ((profile.data as { data: { basics?: Partial<StudentProfileBasics> } | null } | null)?.data?.basics ?? {}) as Pick<StudentProfileBasics, "gradYear">;
+  const gradYear = effectiveGradYear({ gradYear: basics.gradYear ?? null }, student.grad_year);
+  const plan = await readListTasks(client, listId);
+  return { ...plan, studentId: student.id, gradYear, season: seasonOf(gradYear, today) };
+}
+
+/** The brief turns already sent to this person for this student (season_briefs_sent; season:cycle_start keys). Null when the table isn't there. */
+export async function briefsSent(client: SupabaseClient, userId: string, studentId: string): Promise<Set<string> | null> {
+  const { data, error } = await client.from("season_briefs_sent").select("season, cycle_start").eq("user_id", userId).eq("student_id", studentId);
+  if (error) return null;
+  return new Set(((data ?? []) as { season: string; cycle_start: number }[]).map((r) => `${r.season}:${r.cycle_start}`));
+}
+
+/** Records a sent brief (after the send). A duplicate is ignored: the turn is sent either way. */
+export async function recordBriefSent(client: SupabaseClient, row: { userId: string; studentId: string; season: string; cycleStart: number }): Promise<void> {
+  const { error } = await client
+    .from("season_briefs_sent")
+    .upsert({ user_id: row.userId, student_id: row.studentId, season: row.season, cycle_start: row.cycleStart }, { onConflict: "user_id,student_id,season,cycle_start", ignoreDuplicates: true });
+  if (error) console.error(`reminders: recording a season brief failed: ${error.message}`);
 }
 
 /** The lists a user's digest covers: their own and their student record's (the lists they follow colleges from). */
@@ -44,17 +87,38 @@ export async function listsForUser(client: SupabaseClient, userId: string): Prom
   return ((data ?? []) as { id: string }[]).map((r) => r.id);
 }
 
-/** The digest's "Coming up" lines for a user: tasks due within seven days on their lists, titles and dates only. */
-export async function digestTaskLines(client: SupabaseClient, userId: string, today: string): Promise<{ title: string; when: string }[]> {
+/**
+ * The digest's "Coming up" lines for a user: tasks due within seven days on their lists, titles and dates only. With
+ * the publish's changed colleges (next-steps notifications.md "Channels"), a move that change created or closed for
+ * one of them comes first, its title as the line; the digest keeps its five-line cap (lib/digest.ts).
+ */
+export async function digestTaskLines(
+  client: SupabaseClient,
+  userId: string,
+  today: string,
+  changed?: { unitIds: readonly string[]; since: string },
+): Promise<{ title: string; when: string }[]> {
+  const moveLines: { title: string; when: string }[] = [];
   const lines: { title: string; when: string; date: string }[] = [];
+  const changedSet = new Set(changed?.unitIds ?? []);
   for (const listId of await listsForUser(client, userId)) {
-    const { tasks, names } = await readListTasks(client, listId);
+    const { tasks, names, units } = await readListTasks(client, listId);
+    const shown = new Set<string>();
+    const nameOf = (t: PlanTask) => (t.item_id ? (names[t.item_id] ?? null) : null);
+    if (changed && changedSet.size) {
+      for (const { task, closed } of changedCollegeMoves(tasks, units, changedSet, changed.since, today)) {
+        shown.add(task.id);
+        const d = task.due_on ?? task.window_end;
+        moveLines.push({ title: outsideTitle(task, nameOf(task)), when: closed ? "no longer needed" : d ? shortDay(d) : "new on your plan" });
+      }
+    }
     for (const t of dueSoon(tasks, today)) {
+      if (shown.has(t.id)) continue;
       const date = t.due_on ?? t.window_end!;
-      lines.push({ title: outsideTitle(t, t.item_id ? (names[t.item_id] ?? null) : null), when: shortDay(date), date });
+      lines.push({ title: outsideTitle(t, nameOf(t)), when: shortDay(date), date });
     }
   }
-  return lines.sort((a, b) => a.date.localeCompare(b.date)).map(({ title, when }) => ({ title, when }));
+  return [...moveLines, ...lines.sort((a, b) => a.date.localeCompare(b.date)).map(({ title, when }) => ({ title, when }))];
 }
 
 /* ------------------------------------------------------------------ */

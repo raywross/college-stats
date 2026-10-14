@@ -45,7 +45,7 @@ export function PlanRow({
   const todo = rowToDo(item, ctx.visits, school?.social as Partial<Record<SocialNetwork, string>> | null | undefined);
 
   return (
-    <li>
+    <li id={`row-${item.id}`}>
       <div className="flex items-center gap-2 p-3 sm:px-4">
         <button
           type="button"

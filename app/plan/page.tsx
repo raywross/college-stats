@@ -12,6 +12,7 @@ import { type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/pl
 import { resolveSelectedChild, type SwitchableChild } from "@/lib/planner/plan-frame";
 import { profileProgress, SECTION_STEP } from "@/lib/planner/profile-progress";
 import { defaultTab, parseTab, planHref } from "@/lib/planner/plan-tabs";
+import { nowMoves, topMove } from "@/lib/planner/moves";
 import { withTiming } from "@/lib/timing-server";
 import { planBundle } from "@/lib/bundles";
 import { bundleKnownMissing } from "@/lib/bundle-read";
@@ -56,14 +57,18 @@ function planFallback(loaded: PlanLoad, first: string | null): ReactNode | null 
 }
 
 /**
- * The selected student's chip details on the people line: a plain count of their profile sections with the one next
- * step (lib/planner/profile-progress.ts), linking to the intake on that step (or the Numbers page for major and state),
- * and Edit, for an editor. No GPA or test score (owner, 2026-10-12).
+ * The selected student's chip details on the people line: the profile-section count and ring (lib/planner/profile-
+ * progress.ts) always, and for "Next:" the loaded plan's top move (next steps, seasons.md "The people line's
+ * 'Next:'": `topMove(nowMoves(...))`) when there is one, so profile steps that became early-season moves still show
+ * once, as a move rather than twice. Edit, for an editor. No GPA or test score (owner, 2026-10-12).
  */
 function detailFor(load: PlanLoad | undefined, person: string | null): PlanPersonDetail | null {
   if (!load || load.kind !== "ready") return null;
   const { ctx } = load;
-  return detailFrom(ctx.profile, ctx.viewer.canEdit, ctx.student?.id ?? person, person);
+  const base = detailFrom(ctx.profile, ctx.viewer.canEdit, ctx.student?.id ?? person, person);
+  const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: ctx.viewer.isGuardian ? "guardian" : "student" });
+  const move = topMove(groups);
+  return { ...base, next: move ? { label: move.title, href: planHref({ person, tab: "next", move: move.id }) } : null };
 }
 
 /** The chip details from a profile alone: what detailFor shows once the plan is loaded, for every child at once. */

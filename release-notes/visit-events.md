@@ -33,8 +33,10 @@ data-update emails.
 
 Every one of these colleges runs admissions on the same system, which answers one public search per college with its
 whole calendar; a second read of each college's own event pages adds the online sessions and seat counts, and a third
-read of each new event's page confirms its date, time zone, and address. Staff rows the colleges leave public (shipping
-requests, filled group slots) are recognised by their titles and never shown. The read runs every night as a GitHub
+read of each new event's page confirms its date, time zone, and address, but only for events away from campus, where
+the venue matters. Five kinds are shown: campus tours, information sessions, open houses, online sessions, and the
+visits to high schools and fairs. The rest of what a college's calendar system exposes (one-on-one appointment slots,
+counselors' own calendars, staff logistics) is recognised by its titles and never shown. The read runs every night as a GitHub
 workflow; the email job runs after it. The plan is in [the spec](../specs/product/visit-events.md), with what was built
 and what waits for the next round (reading the other 800 or so colleges on the same system, and the ones on other
 systems).

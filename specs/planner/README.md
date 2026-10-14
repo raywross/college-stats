@@ -1,5 +1,9 @@
 # The Planner: From the First List to the Deposit
 
+> **Next steps (2026-10-14):** the plan now drives the work season by season; see [next-steps/](next-steps/README.md)
+> (a Next steps tab the plan opens to, good ED opportunities and interest prompts on the list, the shape of a good list,
+> the senior moves from submit to the deposit, briefs and texts, and the Your story prompts).
+>
 > **Being redesigned (2026-10-09):** the owner's review of the build moved the plan to the main navigation, cut the six
 > stages to three tabs, removed the ranking, and added numbers-first sorting, a scores coach, and a family calendar.
 > See [redesign/](redesign/README.md); the stage specs below describe what was built in PR #103.

@@ -12,13 +12,17 @@ import type { VisitEventKind } from "./types.ts";
 import type { VisitKind } from "../planner/types.ts";
 
 const STAFF =
-  /shipping|materials|pick ?up|requested group \/ filled|no activit|request a group tour appointment|travel shipment|placeholder|^test\b|do not use|^hold\b/i;
-/** Student-success and advancement events a Slate database shares with admissions (UNC's scholars lunches, alumni councils). */
+  /shipping|materials? (for )?(pick[ -]?up|request|drop ?off)|\bpick[ -]?up\b|(visit|hsv|trip|travel|fair) materials\s*\)?\s*$|requested group \/ filled|no activit|request a group tour appointment|travel shipment|placeholder|^test\b|do not use|^hold\b/i;
+/**
+ * Student-success, advancement, and graduate events a Slate database shares with undergraduate admissions (UNC's
+ * scholars lunches and Carolina Covenant, alumni councils, graduate school fairs). Tuned on the 795-host universe of
+ * 2026-10-14: "Covenant Classical School" and "Earth Materials" (a course) must stay.
+ */
 const NOT_ADMISSIONS =
-  /alumni|homecoming|scholars (lunch|dinner|@|research)|council meeting|covenant|mentorship|graduate school|friendsgiving|scholarship lunch|reunion/i;
+  /alumni|homecoming|scholars (lunch|dinner|@|research)|council meeting|carolina covenant|covenant connections|mentorship|graduate (school|program|admission|student)|friendsgiving|scholarship lunch|reunion/i;
 const ONLINE = /virtual|online|zoom|webinar/i;
 const OPEN_HOUSE = /open house|preview\b|admitted|explore day|showcase/i;
-const TOUR = /\btour\b/i;
+const TOUR = /\btours?\b/i;
 const NOT_A_TOUR = /high school|\bhs\b|fair/i;
 const TRAVEL =
   /college night|fair\b|nacac|acac\b|\bhsv\b|high school|\bhs\b|\bhigh\b|academy|schools?\b|prep\b|preparatory|senior meeting|symposium|summit|college & trades|clubs?\b|county|consolidated|isd\b|cisd\b|magnet|kipp|uplift|\bidea\b|discover [a-z]+ - /i;

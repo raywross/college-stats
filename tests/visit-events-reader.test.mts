@@ -13,7 +13,7 @@ import { findWidgetServices, parseWidgetList, widgetListUrl } from "../scripts/l
 import { parseEventPage } from "../scripts/lib/visit-events/event-page.mts";
 import { discoverSlateHost, portalPages, rankHosts, slateLinks } from "../scripts/lib/visit-events/discover.mts";
 import { loadZipTable, locate } from "../scripts/lib/visit-events/geo.mts";
-import { diffEvents, needsPage, readHost, runSync, MISSES_TO_REMOVE, type EventStore, type ReadEvent, type StoredEvent, type SyncRecord } from "../scripts/lib/visit-events/sync.mts";
+import { diffEvents, needsPage, pagePolicy, readHost, runSync, MISSES_TO_REMOVE, type EventStore, type ReadEvent, type StoredEvent, type SyncRecord } from "../scripts/lib/visit-events/sync.mts";
 import { checkHosts, hostReport } from "../scripts/lib/visit-events/check.mts";
 import type { SlateHostRow } from "../lib/visit-events/types.ts";
 
@@ -427,36 +427,62 @@ const UF_HOST: SlateHostRow = {
   last_error: null,
 };
 
-test("readHost: UF's search and widgets make 527 rows; the read page confirms its row; the rest wait unconfirmed", async () => {
+test("pagePolicy: staff rows are dropped; online and on-campus rows come from the listing; away rows get their page", () => {
+  const c = (title: string, place: string, online = false) => ({ title, place, online });
+  assert.equal(pagePolicy(c("Requested Group / Filled", "Durham, NC"), "durham"), "drop");
+  assert.equal(pagePolicy(c("Prospective Information Session", "", true), "gainesville"), "listing");
+  assert.equal(pagePolicy(c("Campus Tour", "Gainesville, FL"), "gainesville"), "listing");
+  assert.equal(pagePolicy(c("Campus Tour", "Welcome Center"), "gainesville"), "listing", "a widget row names a building, not a city");
+  assert.equal(pagePolicy(c("Honors Information Session", "Gainesville, FL"), "gainesville"), "listing");
+  assert.equal(pagePolicy(c("Becoming a Longhorn", "Dallas, TX"), "austin"), "page", "a session in another city needs its venue");
+  assert.equal(pagePolicy(c("Marietta High School Probe Fair", "Marietta, GA"), "gainesville"), "page");
+  assert.equal(pagePolicy(c("Discover Duke - Denver", "Englewood, CO"), "durham"), "page");
+});
+
+test("readHost: UF's search and widgets make 523 rows (4 staff dropped); only away rows read their page; campus rows take the campus coordinates", async () => {
   const http = ufSite();
-  const r = await readHost(UF_HOST, { http, now: OCT_13, zips: loadZipTable(ROOT), campusCity: "gainesville", campusState: "FL", stored: new Map() });
-  assert.equal(r.rows.length, 527);
+  const r = await readHost(UF_HOST, {
+    http,
+    now: OCT_13,
+    zips: loadZipTable(ROOT),
+    campusCity: "gainesville",
+    campusState: "FL",
+    campusLat: 29.64629,
+    campusLng: -82.347911,
+    stored: new Map(),
+  });
+  assert.equal(r.rows.length, 523);
+  assert.equal(r.dropped, 4);
   assert.equal(r.searchTotal, 519);
-  assert.equal(new Set(r.rows.map((e) => e.id)).size, 527);
+  assert.equal(new Set(r.rows.map((e) => e.id)).size, 523);
+  // An online session from the widget: no page read; the listing's time in the campus state's zone, unconfirmed.
   const info = r.rows.find((e) => e.slate_id === "8b849d04-6aba-4437-b90f-eb24b53f6cf0")!;
   assert.equal(info.kind, "online");
   assert.equal(info.online, true);
-  assert.equal(info.date_confirmed, true);
+  assert.equal(info.date_confirmed, false);
   assert.equal(info.starts_at, "2026-10-28T22:30:00.000Z");
-  assert.equal(info.ends_at, "2026-10-28T23:30:00.000Z");
-  assert.equal(info.timezone, "America/New_York");
+  assert.equal(info.ends_at, null);
   assert.equal(info.availability, "open");
   assert.equal(info.lat, null);
-  // A search row whose page didn't answer: the year rule's date in the state's zone, unconfirmed.
+  assert.ok(!http.asked.some((u) => u.includes("8b849d04-6aba-4437-b90f-eb24b53f6cf0")), "no page for an online row");
+  // A travel row whose page didn't answer: the year rule's date in the state's zone, unconfirmed.
   const chadwick = r.rows.find((e) => e.title === "Chadwick School College Night")!;
   assert.equal(chadwick.date_confirmed, false);
   assert.equal(chadwick.starts_at, "2026-10-14T01:30:00.000Z");
   assert.equal(chadwick.kind, "travel");
   assert.equal(chadwick.state, "CA");
   assert.equal(chadwick.city, "Palos Verdes Peninsula");
-  // The widget's button title never replaces the search's title.
+  // A campus tour: no page, the campus's own coordinates, the widget's title never replaces the search's.
   const tour = r.rows.find((e) => e.slate_id === "4c7c83d8-5e9a-4660-ba5e-fa059d4f09d9")!;
   assert.notEqual(tour.title, "Sign Up For a Tour");
-  // Kinds as the research counted them (UF 2026-10-13: 340 travel, 132 tours, 40 sessions, 9 online, 3 open houses, 4
-  // staff, from a search one row longer than the saved page).
+  assert.equal(tour.lat, 29.64629);
+  assert.equal(tour.lng, -82.347911);
+  assert.ok(!http.asked.some((u) => u.includes("4c7c83d8-5e9a-4660-ba5e-fa059d4f09d9")), "no page for a campus row");
+  // Kinds as the research counted them (UF 2026-10-13: 340 travel, 132 tours, 40 sessions, 9 online, 3 open houses,
+  // from a search one row longer than the saved page); the 4 staff rows are dropped, never stored.
   const kinds: Record<string, number> = {};
   for (const e of r.rows) kinds[e.kind] = (kinds[e.kind] ?? 0) + 1;
-  assert.deepEqual(kinds, { travel: 339, tour: 132, info_session: 40, online: 9, open_house: 3, staff: 4 });
+  assert.deepEqual(kinds, { travel: 339, tour: 132, info_session: 40, online: 9, open_house: 3 });
   assert.ok(r.errors.length > 0, "event pages the fake doesn't serve are recorded as errors");
   assert.ok(!http.asked.includes(widgetListUrl(UF, ONLINE_SERVICE, 3)), "paging stops when a page repeats");
 });
@@ -475,15 +501,15 @@ test("runSync: twice over the same pages is idempotent; a search failure leaves 
     updateHost: async (_u, patch) => void hostPatches.push(patch),
     recordSync: async (r) => void records.push(r),
   };
-  const deps = { store, zips: loadZipTable(ROOT), campus: () => ({ city: "Gainesville", state: "FL" }), maxPages: 3 };
+  const deps = { store, zips: loadZipTable(ROOT), campus: () => ({ city: "Gainesville", state: "FL", lat: 29.64629, lng: -82.347911 }), maxPages: 3 };
   const first = await runSync([UF_HOST], { ...deps, http: ufSite(), now: OCT_13 });
-  assert.equal(first.record.events_new, 527);
-  assert.equal(rows.length, 527);
+  assert.equal(first.record.events_new, 523);
+  assert.equal(rows.length, 523);
   const second = await runSync([UF_HOST], { ...deps, http: ufSite(), now: new Date("2026-10-14T16:00:00Z") });
   assert.equal(second.record.events_new, 0);
   assert.equal(second.record.events_changed, 0);
   assert.equal(second.record.events_removed, 0);
-  assert.equal(rows.length, 527);
+  assert.equal(rows.length, 523);
   assert.equal(records.length, 2);
   assert.deepEqual(hostPatches.at(-1), { last_read: "2026-10-14T16:00:00.000Z", failures: 0, last_error: null, status: "active" });
   // The search fails: nothing is missed, the host's failure count rises.

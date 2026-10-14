@@ -151,7 +151,10 @@ const { results, record } = await runSync(chosen, {
   store: client ? supabaseStore(client) : memoryStore,
   zips,
   now,
-  campus: (unitId) => ({ city: byId.get(unitId)?.location?.city ?? null, state: byId.get(unitId)?.location?.state ?? null }),
+  campus: (unitId) => {
+    const loc = byId.get(unitId)?.location;
+    return { city: loc?.city ?? null, state: loc?.state ?? null, lat: loc?.lat ?? null, lng: loc?.lng ?? null };
+  },
   dryRun: DRY_RUN,
   maxPages: MAX_PAGES,
   log: (m) => console.log(m),

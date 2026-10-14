@@ -143,6 +143,9 @@ export interface ReadDeps {
   campusCity: string | null;
   /** The campus state, for the zone of a row with no state before its page is read. */
   campusState: string | null;
+  /** The campus coordinates (IPEDS), where on-campus rows are placed without reading their page. */
+  campusLat: number | null;
+  campusLng: number | null;
   /** Stored rows for the host, by id (decides which event pages to read). */
   stored: ReadonlyMap<string, StoredEvent>;
   /** Event pages read per host at most this run (default: all that need it). */
@@ -155,6 +158,8 @@ export interface HostRead {
   /** Requests made to the host (search, widget pages, event pages). */
   fetched: number;
   pagesRead: number;
+  /** Staff rows seen in the listing and never stored (pagePolicy "drop"). */
+  dropped: number;
   /** Whether a widget failed to answer (its online rows then aren't counted missed). */
   widgetFailed: boolean;
   /** The search's stated total ("returned N event(s)"). */
@@ -171,6 +176,29 @@ async function getText(http: ReaderHttp, url: string): Promise<string | null> {
 
 const cityOf = (place: string) => /^(.+?),\s*[A-Z]{2}$/.exec(place)?.[1] ?? null;
 
+/** Whether a listing's place is the campus: the campus city, or no city at all (a widget row names a building). */
+export function isCampusPlace(place: string, campusCity: string | null): boolean {
+  const city = cityOf(place);
+  if (!city) return true;
+  return !!campusCity && city.toLowerCase() === campusCity;
+}
+
+export type PagePolicy = "drop" | "listing" | "page";
+
+/**
+ * What a listing row needs (owner, 2026-10-14: don't look up a ZIP and a time zone for a campus tour or an online
+ * session, and drop the staff rows at the door): staff rows are never stored; online rows and anything on campus are
+ * stored from the listing alone (the campus's own coordinates and zone); only an event somewhere else (the travel
+ * calendar, a session in another city) is worth its page, for the venue's address and ZIP.
+ */
+export function pagePolicy(c: Pick<Candidate, "title" | "place" | "online">, campusCity: string | null): PagePolicy {
+  const kind = kindOf({ title: c.title, online: c.online, place: c.place, campusCity });
+  if (kind === "staff") return "drop";
+  if (kind === "online" || c.online) return "listing";
+  if (kind === "travel") return "page";
+  return isCampusPlace(c.place, campusCity) ? "listing" : "page";
+}
+
 /** Whether a stored row's page should be read again: not confirmed, or the title or the start moved in the listing. */
 export function needsPage(stored: StoredEvent | undefined, c: Pick<Candidate, "title" | "localIso" | "timed" | "inSearch">): boolean {
   if (!stored || !stored.date_confirmed) return true;
@@ -182,7 +210,13 @@ export function needsPage(stored: StoredEvent | undefined, c: Pick<Candidate, "t
 }
 
 /** The row for one candidate, from its page when read, else from the listing alone (date unconfirmed). */
-export function buildRow(host: string, unitId: string, c: Candidate, page: EventPage | null, deps: Pick<ReadDeps, "zips" | "campusCity" | "campusState">): ReadEvent | null {
+export function buildRow(
+  host: string,
+  unitId: string,
+  c: Candidate,
+  page: EventPage | null,
+  deps: Pick<ReadDeps, "zips" | "campusCity" | "campusState" | "campusLat" | "campusLng">,
+): ReadEvent | null {
   const title = (page?.title ?? c.title).slice(0, 300);
   const state = page?.state ?? c.state ?? null;
   const guessZone = zoneForState(state ?? deps.campusState);
@@ -202,7 +236,11 @@ export function buildRow(host: string, unitId: string, c: Candidate, page: Event
   }
   if (!startsAt) return null;
   const zip = page?.zip && /^\d{5}$/.test(page.zip) ? page.zip : null;
-  const where = locate(deps.zips, { zip, online: c.online, mapLat: page?.mapLat, mapLng: page?.mapLng });
+  // No page for an on-campus row (pagePolicy "listing"): the campus's own coordinates place it.
+  const onCampus = !page && !c.online && isCampusPlace(c.place, deps.campusCity) && deps.campusLat != null && deps.campusLng != null;
+  const where = onCampus
+    ? { lat: deps.campusLat as number, lng: deps.campusLng as number }
+    : locate(deps.zips, { zip, online: c.online, mapLat: page?.mapLat, mapLng: page?.mapLng });
   const place = c.place || [page?.city, page?.state].filter(Boolean).join(", ");
   const availability: VisitAvailability | null = page?.closed ? "closed" : c.availability;
   return {
@@ -317,11 +355,17 @@ export async function readHost(hostRow: Pick<SlateHostRow, "unit_id" | "host" | 
 
   const rows: ReadEvent[] = [];
   let pagesRead = 0;
+  let dropped = 0;
   const cap = deps.maxPages ?? Infinity;
   for (const c of cands.values()) {
     const id = visitEventId(host, c.slateId);
+    const policy = pagePolicy(c, deps.campusCity);
+    if (policy === "drop") {
+      dropped++;
+      continue;
+    }
     let page: EventPage | null = null;
-    if (needsPage(deps.stored.get(id), c) && pagesRead < cap) {
+    if (policy === "page" && needsPage(deps.stored.get(id), c) && pagesRead < cap) {
       const url = `https://${host}/register/?id=${c.slateId}`;
       try {
         fetched++;
@@ -341,8 +385,8 @@ export async function readHost(hostRow: Pick<SlateHostRow, "unit_id" | "host" | 
       errors.push(`${c.slateId}: ${(err as Error).message}`);
     }
   }
-  log(`  ${host}: ${search.rows.length} in the search, ${cands.size} in all, ${pagesRead} event pages read`);
-  return { rows, fetched, pagesRead, widgetFailed, searchTotal: search.total, errors };
+  log(`  ${host}: ${search.rows.length} in the search, ${cands.size} in all, ${pagesRead} event pages read${dropped ? `, ${dropped} staff rows dropped` : ""}`);
+  return { rows, fetched, pagesRead, dropped, widgetFailed, searchTotal: search.total, errors };
 }
 
 /* ------------------------------------------------------------------ */
@@ -383,7 +427,7 @@ export interface SyncDeps {
   zips: ZipTable;
   now: Date;
   /** Campus city and state by unit id (data/schools.json `location`). */
-  campus: (unitId: string) => { city: string | null; state: string | null };
+  campus: (unitId: string) => { city: string | null; state: string | null; lat: number | null; lng: number | null };
   dryRun?: boolean;
   maxPages?: number;
   log?: (msg: string) => void;
@@ -405,6 +449,8 @@ export async function syncHost(hostRow: SlateHostRow, deps: SyncDeps): Promise<H
       zips: deps.zips,
       campusCity: campus.city?.toLowerCase() ?? null,
       campusState: campus.state,
+      campusLat: campus.lat,
+      campusLng: campus.lng,
       stored: new Map(stored.map((s) => [s.id, s])),
       maxPages: deps.maxPages,
       log,

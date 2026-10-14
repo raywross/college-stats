@@ -1,6 +1,6 @@
 # Part 7, Your Story: Three Private Prompts That Start the Narrative
 
-> Status: **planned** 2026-10-14. After [seasons.md](seasons.md); extends the student profile
+> Status: **built** 2026-10-14 (feature/next-steps, PR #160). After [seasons.md](seasons.md); extends the student profile
 > ([../../product/student-profile.md](../../product/student-profile.md)). Part 7 of [next steps](README.md). The one new
 > capture piece in this section (owner, 2026-10-14; no résumé export, no essay tracker).
 

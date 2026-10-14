@@ -1,6 +1,6 @@
 # Part 5, Applying: The Senior Moves From Submit to "Where I Landed"
 
-> Status: **planned** 2026-10-14. After [seasons.md](seasons.md); re-homes the built but unrendered application and
+> Status: **built** 2026-10-14 (feature/next-steps, PR #160). After [seasons.md](seasons.md); re-homes the built but unrendered application and
 > decision controls ([../applications.md](../applications.md), [../offers.md](../offers.md)) that the simplification of
 > 2026-10-12 took off the list row ([../redesign/list.md](../redesign/list.md#simpler-planner-owner-2026-10-12): "there
 > for seniors; remove for now, I'll want to tie this into the recommendations in a future PR"). Part 5 of [next steps](README.md).

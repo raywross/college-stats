@@ -1,6 +1,6 @@
 # Part 2, Good ED Opportunities: Where a Binding Early Application Would Help
 
-> Status: **planned** 2026-10-14. After [seasons.md](seasons.md) and the five levels
+> Status: **built** 2026-10-14 (feature/next-steps, PR #160). After [seasons.md](seasons.md) and the five levels
 > ([../../chances/levels.md](../../chances/levels.md)); uses the estimate's ED verdict
 > ([../../chances/method/standing.md](../../chances/method/standing.md#the-ed-sentence)) and the built early-round data
 > ([../../product/early-decision-strategy.md](../../product/early-decision-strategy.md)). Part 2 of [next steps](README.md).

@@ -68,7 +68,7 @@ Dream's starting round depends on Quad's level for it:
    after a conflict and before the balance line), naming the highest-level college that offers ED and whose ED
    sentence from the method says "would move this toward {level}" ([method/standing.md](../../chances/method/standing.md#the-ed-sentence)):
    "ED would help most at Wake Forest (Target for you, with an early round). **Start it in ED**" sets that row's round
-   to ED as the student's choice and keeps the Dream where it is. No line when no college qualifies.
+   to ED as the student's choice and keeps the Dream where it is. No line when no college qualifies. (`edHelpsMostSuggestion()` and its notice line were replaced by the pills and moves on 2026-10-14.)
 4. The level is recomputed with the estimate, so a Dream that moves from High reach to Reach after a retake starts
    in ED on the next plan open if its round is still the starting one (`round_source = 'auto'`).
 5. **ED II** is never suggested for a High reach (below).
@@ -78,12 +78,13 @@ nothing to go on) the Dream follows rule 1. `tests/planner-standing.test.mts` pi
 with no EA → RD; Reach Dream with ED → ED; the suggestion picks the highest level with ED; none when all are High reach.
 
 ## ED II
-`edTwoSuggestion()`: when the Dream starts in ED or REA, no college is in ED II yet, and another college on the list
-offers ED II, one line under the list offers it: "A second early shot, if you want one: Vassar has an ED II round
-(due Jan 1), after your Dream answers. It's binding too. **Use ED II there**." The button sets that row's round to
-ED II (as the student's choice). In mid-December, if the student records a deferral or denial from the Dream, the
-same line comes back in the Next-up card's place for a week ("Wake Forest said no. ED II at Vassar is due Jan 1").
-Planned with the five levels: a college at **High reach** is skipped when picking the ED II college.
+When the Dream starts in ED or REA, no college is in ED II yet, and another college on the list offers ED II, one line
+under the list offers it: "A second early shot, if you want one: Vassar has an ED II round (due Jan 1), after your Dream
+answers. It's binding too. **Use ED II there**." The button sets that row's round to ED II (as the student's choice). In
+mid-December, if the student records a deferral or denial from the Dream, the same line comes back in the Next-up card's
+place for a week ("Wake Forest said no. ED II at Vassar is due Jan 1"). Planned with the five levels: a college at
+**High reach** is skipped when picking the ED II college. (`edTwoSuggestion()` and its notice line were replaced by the
+pills and moves on 2026-10-14.)
 
 ## Money
 ED and ED II are binding and the only release is aid that makes attending impossible, so before either:
@@ -105,8 +106,7 @@ rounds work at Wake Forest".
 
 ## Rules
 - The site never starts a college in a binding round except the Dream, and never ED II.
-- No sentence recommends applying early anywhere; the reasons describe the round ("an earlier answer and no
-  commitment"), not the college's odds.
+- Quad may flag a **Good ED opportunity** by name, with the facts and caveats one tap away; it never says 'apply' and the student sets the round (owner, 2026-10-14; specs/planner/next-steps/ed-opportunities.md).
 - Dates follow the student's cycle; a date from an earlier cycle's edition says so (built `lastCycleNote`).
 - Telemetry: `plan_round_changed {from_auto, round}`, `plan_ed2_offer_used`, `plan_round_problem_shown {kind}`.
 

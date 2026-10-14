@@ -1,6 +1,6 @@
 # Part 3, Interest and Visits: Where Showing Up Counts
 
-> Status: **planned** 2026-10-14. After [seasons.md](seasons.md) and [ed-opportunities.md](ed-opportunities.md); builds
+> Status: **built** 2026-10-14 (feature/next-steps, PR #160). After [seasons.md](seasons.md) and [ed-opportunities.md](ed-opportunities.md); builds
 > on the built capture panel ([../redesign/list.md](../redesign/list.md#simpler-planner-owner-2026-10-12)), the visit
 > log ([../actions.md](../actions.md)), and CDS C7 ([../../data-expansion/cds-admissions.md](../../data-expansion/cds-admissions.md)).
 > Part 3 of [next steps](README.md).

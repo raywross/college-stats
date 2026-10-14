@@ -25,7 +25,7 @@ import { isBlockedHost } from "./lib/college-reported/blocked.mts";
 import { discoverSlateHost, type Discovered } from "./lib/visit-events/discover.mts";
 import { loadZipTable } from "./lib/visit-events/geo.mts";
 import { readHosts, supabaseStore, upsertHosts } from "./lib/visit-events/store.mts";
-import { pool, runSync, type EventStore } from "./lib/visit-events/sync.mts";
+import { HOST_POOL, pool, runSync, type EventStore } from "./lib/visit-events/sync.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const args = process.argv.slice(2);
@@ -90,7 +90,8 @@ if (DISCOVER) {
   let found = 0;
   for (let i = 0; i < targets.length; i += CHUNK) {
     const chunk = targets.slice(i, i + CHUNK);
-    const results = await pool(chunk, 8, async (unitId): Promise<[string, Discovered | null]> => {
+    // Each college is its own host, so the pool only sets how many colleges are visited at once (HOST_POOL's env override applies).
+    const results = await pool(chunk, HOST_POOL, async (unitId): Promise<[string, Discovered | null]> => {
       const s = byId.get(unitId);
       if (!s) {
         console.log(`  ${unitId}: not in data/schools.json; skipped`);

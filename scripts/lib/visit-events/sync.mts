@@ -442,8 +442,11 @@ export async function pool<T, R>(items: readonly T[], size: number, fn: (item: T
   return out;
 }
 
-/** Hosts read in parallel (each host's own requests stay one a second). */
-export const HOST_POOL = 8;
+/**
+ * Hosts read in parallel (each host's own requests stay one a second, so the pool changes nothing a college sees).
+ * VISIT_EVENTS_HOST_POOL raises it for a first full read, which fetches every event's page once.
+ */
+export const HOST_POOL = Math.max(1, Number(process.env.VISIT_EVENTS_HOST_POOL) || 8);
 
 /** Syncs the hosts (one row per host; a host listed for two colleges is read once), records the run, returns the results. */
 export async function runSync(hosts: readonly SlateHostRow[], deps: SyncDeps): Promise<{ results: HostResult[]; record: SyncRecord }> {

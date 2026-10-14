@@ -576,7 +576,9 @@ test("checkHosts: fails below 80% located among placed rows (online and hidden r
   const [c] = checkHosts(rows, OCT_13);
   assert.equal(c.locatedShare, 0.7);
   assert.equal(c.hiddenShare, 4 / 19);
-  assert.match(c.failures.join(" "), /located share 70% is below 80%; rows with no coordinates: No place 0/);
+  // A host whose event pages didn't answer is a warning (the nightly job shouldn't fail on it), never a failure.
+  assert.deepEqual(c.failures, []);
+  assert.match(c.warnings.join(" "), /located share 70% is below 80%; rows with no coordinates: No place 0/);
   const eight = checkHosts([...Array.from({ length: 8 }, (_, i) => stored(i)), ...Array.from({ length: 2 }, (_, i) => stored(10 + i, { lat: null, lng: null, zip: null }))], OCT_13)[0];
   assert.deepEqual(eight.failures, []);
   const odd = checkHosts(

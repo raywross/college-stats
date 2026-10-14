@@ -19,7 +19,7 @@ const STAFF =
  * 2026-10-14: "Covenant Classical School" and "Earth Materials" (a course) must stay.
  */
 const NOT_ADMISSIONS =
-  /alumni|homecoming|scholars (lunch|dinner|@|research)|council meeting|carolina covenant|covenant connections|mentorship|graduate (school|program|admission|student)|friendsgiving|scholarship lunch|reunion/i;
+  /alumni|homecoming|scholars (lunch|dinner|@|research)|council meeting|carolina covenant|covenant connections|mentorship|\bgraduate (school|program|admission|student)|friendsgiving|scholarship lunch|reunion/i;
 const ONLINE = /virtual|online|zoom|webinar/i;
 const OPEN_HOUSE = /open house|preview\b|admitted|explore day|showcase/i;
 const TOUR = /\btours?\b/i;

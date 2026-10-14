@@ -28,7 +28,10 @@ test("a school called Covenant is a rep visit; UNC's Carolina Covenant alumni ev
   assert.equal(k("2026 Carolina Covenant Alumni Homecoming", "Chapel Hill, NC"), "staff");
 });
 
-test("graduate events stay out of an undergraduate calendar", () => {
+test("graduate events stay out of an undergraduate calendar; 'Undergraduate' never counts as graduate", () => {
   assert.equal(k("Graduate School of Education Admission Appointment"), "staff");
   assert.equal(k("Millersville University Graduate School Fair"), "staff");
+  assert.equal(k("Undergraduate Admission Daily Visit"), "info_session");
+  assert.equal(k("Personal Campus Visit (Traditional Undergraduate Programs)"), "info_session");
+  assert.equal(k("Graduate Admissions - Campus Tour"), "staff");
 });

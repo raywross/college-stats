@@ -28,8 +28,10 @@ export interface HostCheck {
   duplicates: string[];
   farOut: string[];
   startsBeforeSeen: string[];
-  /** Why the host fails, empty when it passes. */
+  /** Why the host fails (a rules problem the code must fix: too many rows read as staff), empty when it passes. */
   failures: string[];
+  /** Worth a look but not a failure (a host problem: its event pages didn't answer, so away rows lack coordinates). */
+  warnings: string[];
 }
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
@@ -73,11 +75,12 @@ export function checkHosts(rows: readonly StoredEvent[], now: Date): HostCheck[]
       const titles = uniq(staff.map((r) => r.title)).slice(0, 15);
       failures.push(`staff share ${pct(staffShare)} is above ${pct(MAX_STAFF_SHARE)}; staff titles: ${titles.join("; ")}. A new title pattern may be counting real events as staff, or a host is mostly logistics.`);
     }
+    const warnings: string[] = [];
     if (locatedShare != null && locatedShare < MIN_ZIP_SHARE) {
       const titles = uniq(placed.filter((r) => r.lat == null).map((r) => r.title)).slice(0, 15);
-      failures.push(`located share ${pct(locatedShare)} is below ${pct(MIN_ZIP_SHARE)}; rows with no coordinates: ${titles.join("; ")}`);
+      warnings.push(`located share ${pct(locatedShare)} is below ${pct(MIN_ZIP_SHARE)}; rows with no coordinates: ${titles.join("; ")}`);
     }
-    out.push({ host, unitId: list[0].unit_id, events: list.length, kinds, staffShare, hiddenShare, zipShare, locatedShare, duplicates, farOut, startsBeforeSeen, failures });
+    out.push({ host, unitId: list[0].unit_id, events: list.length, kinds, staffShare, hiddenShare, zipShare, locatedShare, duplicates, farOut, startsBeforeSeen, failures, warnings });
   }
   return out;
 }
@@ -94,6 +97,7 @@ export function hostReport(c: HostCheck): string[] {
   if (c.duplicates.length) lines.push(`  ${c.duplicates.length} duplicated events (title, start, place): ${c.duplicates.slice(0, 5).join("; ")}`);
   if (c.farOut.length) lines.push(`  ${c.farOut.length} start more than 18 months out: ${c.farOut.slice(0, 5).join("; ")}`);
   if (c.startsBeforeSeen.length) lines.push(`  ${c.startsBeforeSeen.length} start more than a day before first seen: ${c.startsBeforeSeen.slice(0, 5).join("; ")}`);
+  for (const w of c.warnings) lines.push(`  WARN: ${w}`);
   for (const f of c.failures) lines.push(`  FAIL: ${f}`);
   return lines;
 }

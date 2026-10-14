@@ -26,5 +26,6 @@ if (!checks.length) {
 for (const c of checks) for (const line of hostReport(c)) console.log(line);
 const failing = checks.filter((c) => c.failures.length);
 const total = checks.reduce((n, c) => n + c.events, 0);
-console.log(`${checks.length} hosts, ${total} live upcoming events; ${failing.length} failing.`);
+const warned = checks.filter((c) => c.warnings.length);
+console.log(`${checks.length} hosts, ${total} live upcoming events; ${failing.length} failing, ${warned.length} with warnings.`);
 if (failing.length) process.exit(1);

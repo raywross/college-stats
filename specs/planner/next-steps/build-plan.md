@@ -347,6 +347,33 @@ built notes each part asks for; `grep` that nothing imports the removed ED sugge
   a free port from 3000 up, never another session's).
 - Report: branch, commits, files, decisions not covered here, anything left undone.
 
+## As built by U1 (read this; it overrides the contracts above where they differ)
+1. `PlanContext` gains `gradYear: number | null` beside `season` and `estimates`; `GeneratorInput` picks all three.
+2. `GeneratedTask.season` and `.action` are optional (older generators untouched); `mergeTasks` writes `null` when left
+   out. `action` is compared with `stableJson` (exported from `tasks.ts`; Postgres jsonb reorders keys).
+3. `read-plan.ts` exports `PLAN_TASK_BASE_COLUMNS`, `PLAN_TASK_MOVE_COLUMNS`, `PLAN_ITEM_ED_COLUMNS`, `readTaskRows`,
+   `upsertTaskRows` (the retry without `season, action`), `isMissingMoveColumn`, `isMissingEdColumn`; `context.ts`
+   `readTasks`/`writeMerge` use them. `planDataFromBundle` fills defaults for the four new columns.
+4. `generatorInputFor(plan, { …, estimates? })` (default `{}`); `store-plan.ts` computes the estimates once for both
+   the sync and the generators.
+5. `MoveApplies` also has `profile_incomplete` and `test_unplanned`; `MOVE_APPLIES` list, `moveFacts`, `entriesFor`,
+   `playbookTask`, `generateFrom(input, playbook)` exported from `generators/season.ts`.
+6. `PlaybookEntry` optional fields: `kind` (the story entry emits kind `story`), `builtBy` (skipped when the cycle has
+   the built entry, e.g. `choose_courses_*`), `replaces` (`walk_away` hides `money_talk`). Entries repeated across
+   seasons carry the season in their key (`freshman_choose_courses`): **match the course card with
+   `key.endsWith("choose_courses")`**; `playbookEntryFor(key)` exists.
+7. The `unknown` season has one move, `class_year`; summer after and graduated carry nothing. Before freshman year
+   `seasonOf` returns `freshman`; graduated starts Aug 1 of the class year; `seasonBounds("graduated")` is null.
+8. `taskSeason` dates a window by its start (`due_on ?? window_start`).
+9. A guardian's own moves (assignee guardian or either) are **not** in `nowMoves`; they live only in `yourPartMoves`.
+10. Telemetry: `plan_interest_act {action}` (not `act`: a denied token); `plan_task_ticked.source` gains `"season"`.
+11. Stubs: `EdRow`, `EdSheetFacts` (loose record; `edSheetFacts` returns it or null), `Shape`; `LIST_SHAPE` is
+    `Partial<Record<Season, Shape>>`. Owners may tighten these types.
+12. Migration: `grant update (season_brief) on notification_prefs`; the source check is re-added as
+    `plan_tasks_source_check`. Applied to dev 2026-10-14 by the lead.
+13. Not extended by U1 (owners note): `lib/account-export.ts`, `lib/chances/snapshot-write.ts` and the crons select
+    their own `plan_tasks`/`list_items` columns (U6 for the crons; U7 for the export's story exclusion).
+
 ## Integration
 Merge waves in order (U1; then U2, U4, U5, U7, U1b; then U3, U6; then U8) with `--no-ff`, `npm run verify` after each,
 `npx next build` after each wave; apply the migration to dev after U1 (psql, `SUPABASE_DB_URL` in `.env.local`), and

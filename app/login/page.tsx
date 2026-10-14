@@ -22,7 +22,7 @@ const ERRORS: Record<string, string> = {
  * notice says so. A paused person whose last token still lives stays here (sending them on would loop back) with a
  * Sign out button instead of the form.
  */
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; paused?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; paused?: string; mode?: string }> }) {
   await connection();
   if (!authConfigured()) return <AuthUnavailable />;
   const params = await searchParams;
@@ -48,7 +48,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         {pausedNow ? (
           <SignOutButton className="h-10 rounded-full border px-4 text-sm font-semibold hover:bg-muted" />
         ) : (
-          <LoginForm next={next} refused={refused} initialError={params.error ? ERRORS[params.error] ?? ERRORS.link : undefined} />
+          <LoginForm
+            next={next}
+            refused={refused}
+            initialError={params.error ? ERRORS[params.error] ?? ERRORS.link : undefined}
+            initialMode={params.mode === "signup" ? "signup" : "signin"}
+          />
         )}
       </div>
     </div>

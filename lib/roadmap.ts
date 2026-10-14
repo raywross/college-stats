@@ -244,6 +244,8 @@ export const ROADMAP: RoadmapSpec[] = [
       "A PDF grid parsed by column, a name-to-id join, a block of fields and a source, one profile card, six filters, and a permission letter that sets the start date.",
     status: "planned",
   },
+  // visit-events (specs/product/visit-events.md) was planned and built the same day, 2026-10-13, on feature/visit-events
+  // as a four-college pilot; the research is in specs/ideas/visit-events.md (promoted).
   {
     slug: "scattergrams",
     file: "specs/product/scattergrams.md",
@@ -395,18 +397,9 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "idea",
     // Also needs the round-3 agent (college-reported-round-3), built 2026-10-03 and so no longer on the roadmap.
   },
-  {
-    slug: "visit-events",
-    file: "specs/ideas/visit-events.md",
-    group: "ideas",
-    summary:
-      "Upcoming tours, info sessions, and open houses at the colleges on your list, read from each college's own calendar, with a link to book there.",
-    complexity: 3,
-    complexityNote:
-      "A reader for the colleges' event portals (most on one admissions system), the site's first data refreshed daily, and lines on the college page and in the planner; research still open.",
-    status: "idea",
-    // Also uses each college's visit link (specs/school-identity/links.md) and the planner's visit log.
-  },
+  // visit-events was an idea here until 2026-10-13, when the desktop research (UF and Duke traced) and the owner's
+  // decisions made it a planned product spec under "planning" (specs/product/visit-events.md); the idea file keeps the
+  // research and is marked promoted.
   {
     slug: "metro-area",
     file: "specs/data-expansion/metro-area.md",

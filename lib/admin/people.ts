@@ -617,6 +617,9 @@ export async function householdAdminNotice(householdId: string): Promise<Househo
 export const ADMIN_EXPORT_REVIEWED = [
   "profile", "students", "households", "memberships", "invitations_sent", "student_profiles", "lists", "home", "college_views", "follows",
   "planner", "application_snapshots", "access_log",
+  // Reads by ctx.userId. The visit-alert tables (20261013180000_visit_events.sql) have no "Admins read" policy yet, so
+  // run as an admin this section comes back empty until one is added; it never reads anyone else's rows.
+  "visit_alerts",
 ] as const;
 
 const OVERRIDE_DESCRIPTION_NOTE = " (Exported by Quad support.)";

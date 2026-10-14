@@ -318,7 +318,8 @@ test("SeasonExplainer: the sheet dialog, SEASON_EXPLAINER's paragraph and next l
 });
 
 test("PlanRow: the row carries an id for ?move= / #row- to scroll to", () => {
-  assert.match(read("components", "planner", "PlanRow.tsx"), /<li id=\{`row-\$\{item\.id\}`\}>/);
+  // U2 added a scroll ref before the id (and a class) for its own `openPanel` auto-scroll; the id itself, unchanged.
+  assert.match(read("components", "planner", "PlanRow.tsx"), /<li[^>]*\bid=\{`row-\$\{item\.id\}`\}/);
 });
 
 /* ------------------------------------------------------------------ */

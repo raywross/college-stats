@@ -7,7 +7,10 @@ import { Search } from "lucide-react";
 import { Crest } from "@/components/school/Crest";
 import { PlanRow, type RowPill } from "@/components/planner/PlanRow";
 import { EdPill } from "@/components/planner/EdPill";
+import { InterestPill } from "@/components/planner/InterestPill";
 import { edOpportunities, type EdCandidate } from "@/lib/planner/ed-opportunities";
+import { hooksFromPlan } from "@/lib/planner/hooks";
+import { interestMoves } from "@/lib/planner/interest";
 import { ListExplainer } from "@/components/planner/ListExplainer";
 import { PlanNotice } from "@/components/planner/PlanNotice";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
@@ -45,15 +48,27 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   const openPanelParam = params?.get("panel");
   const openPanel = openPanelParam === "ed" || openPanelParam === "capture" ? openPanelParam : "capture";
   // Good ED opportunities (ed-opportunities.md): computed once from the server's view; at most three pills.
-  const edByItem = new Map<string, EdCandidate>(
-    edOpportunities(view.rows.map((r) => r.item), view.estimates, ctx.schools, { season: ctx.season, today: ctx.today }).map((c) => [c.itemId, c]),
+  const edCandidates = edOpportunities(view.rows.map((r) => r.item), view.estimates, ctx.schools, { season: ctx.season, today: ctx.today });
+  const edByItem = new Map<string, EdCandidate>(edCandidates.map((c) => [c.itemId, c]));
+  // Interest moves (interest-and-visits.md "The pill"): the row's one pill when it has no ED pill. Computed from
+  // the same server view as the ED pills, so both read the same estimates and candidates.
+  const interestHooks = hooksFromPlan(view.rows.map((r) => r.item), ctx.visits);
+  const interestItemIds = new Set(
+    interestMoves(view.rows.map((r) => r.item), view.estimates, ctx.schools, interestHooks, edCandidates, { season: ctx.season, today: ctx.today }).map((m) => m.itemId),
   );
   const pillFor = (row: PlanRowView): RowPill | undefined => {
     const c = edByItem.get(row.item.id);
-    if (!c) return undefined;
-    return function edPill(open) {
-      return <EdPill candidate={c} onOpen={() => open("ed")} />;
-    };
+    if (c) {
+      return function edPill(open) {
+        return <EdPill candidate={c} onOpen={() => open("ed")} />;
+      };
+    }
+    if (interestItemIds.has(row.item.id)) {
+      return function interestPill(open) {
+        return <InterestPill onOpen={() => open("capture")} />;
+      };
+    }
+    return undefined;
   };
 
   // The server's view (a refresh, a different child, a data publish) replaces whatever's local. Resetting state

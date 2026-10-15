@@ -271,6 +271,17 @@ candidate is a legacy site when its page carries a `TargetX_Eventsb` remoting de
 carries `var a = '[` with `ERx_Events__` fields, and unreadable (recorded with `config.flavour: "lightning"`, status
 `off`) when it is a `/s/` Lightning site. `config` keeps `{ site, flavour }`.
 
+**robots.txt (found in the pilot, 2026-10-15).** Every Salesforce-hosted site in the pilot serves Salesforce's
+default `robots.txt` ("robots.txt for sfdc appservers": `User-agent: *` / `Disallow: /`, Googlebot alone allowed), or
+answers it with a 503, which RFC 9309 reads as disallow. The reader honours robots.txt like every other read the site
+makes (`PoliteHttp`), so **it reads nothing** until the owner decides otherwise: the research used plain curl and
+never checked. The reader is built, tested, and merged; its discovery records TargetX sites it finds and the reads
+return "robots.txt disallows" as a host error. The options are the owner's: keep honouring the file (TargetX stays a
+recorded gap: 74 colleges, about 20% of what Slate gave); treat Salesforce's platform default as the platform's
+file rather than the college's and read anyway (the CDS documents have a narrower precedent, `cdsDocument` in
+`http.mts`); or ask the colleges or TargetX for a feed. The recommendation in this spec is the first: the rule
+"robots honored" has been stated to colleges in every user agent string, and the exception would be hard to defend.
+
 **Collapse:** a legacy page with no remoting descriptor, a `getFutureEvents` answer with no `result` array, or an ERx
 page with no `var a = '[` literal is a collapsed site. **Risks:** tokens are page-scoped (handled by fetching per
 run); Referer/Origin are mandatory; per-org differences are real in three fixtures (namespace prefix, whether

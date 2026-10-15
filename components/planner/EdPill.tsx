@@ -2,17 +2,18 @@
 
 import { useEffect } from "react";
 import { track } from "@/lib/analytics";
-import { ED_PILL_TEXT, type EdCandidate } from "@/lib/planner/ed-opportunities";
+import { edPillText, type EdCandidate, type EdVerdict } from "@/lib/planner/ed-opportunities";
 import { cn } from "@/lib/utils";
 
 /**
- * The row's Good ED opportunity pill (specs/planner/next-steps/ed-opportunities.md "The pill"): accent background,
- * "Good ED opportunity" or "Good ED II opportunity" ("ED" / "ED II" on a phone, the full text as its accessible
- * label). At most three on a list (edOpportunities caps them). Tapping opens the row's details with the ED sheet on
- * top. Never a number: the level and closeness only decide which rows get one.
+ * The row's ED opportunity pill (specs/planner/next-steps/ed-opportunities.md "The pill"): accent background, worded
+ * by the ED verdict: "Good ED opportunity" / "Good ED II opportunity" where early decision moves the college up a
+ * level (`helps`), "ED opportunity" / "ED II opportunity" otherwise ("ED" / "ED II" on a phone, the full text as its
+ * accessible label). Every candidate gets one (no cap). Tapping opens the row's details with the ED sheet on top.
+ * Never a number: the verdict, level, and closeness only decide which rows get one and in what order.
  */
-export function EdPill({ candidate, onOpen, className }: { candidate: EdCandidate; onOpen: () => void; className?: string }) {
-  const text = ED_PILL_TEXT[candidate.round];
+export function EdPill({ candidate, verdict = candidate.verdict, onOpen, className }: { candidate: EdCandidate; verdict?: EdVerdict | undefined; onOpen: () => void; className?: string }) {
+  const text = edPillText(candidate.round, verdict);
   const { round, level, rank } = candidate;
   useEffect(() => {
     track("plan_ed_pill_shown", { round, level, rank });

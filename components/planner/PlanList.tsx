@@ -9,8 +9,7 @@ import { PlanRow, type RowPill } from "@/components/planner/PlanRow";
 import { EdPill } from "@/components/planner/EdPill";
 import { InterestPill } from "@/components/planner/InterestPill";
 import { edOpportunities, type EdCandidate } from "@/lib/planner/ed-opportunities";
-import { hooksFromPlan } from "@/lib/planner/hooks";
-import { interestMoves } from "@/lib/planner/interest";
+import { isOpen } from "@/lib/planner/tasks";
 import { ListExplainer } from "@/components/planner/ListExplainer";
 import { PlanNotice } from "@/components/planner/PlanNotice";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
@@ -50,11 +49,11 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   // Good ED opportunities (ed-opportunities.md): computed once from the server's view; at most three pills.
   const edCandidates = edOpportunities(view.rows.map((r) => r.item), view.estimates, ctx.schools, { season: ctx.season, today: ctx.today });
   const edByItem = new Map<string, EdCandidate>(edCandidates.map((c) => [c.itemId, c]));
-  // Interest moves (interest-and-visits.md "The pill"): the row's one pill when it has no ED pill. Computed from
-  // the same server view as the ED pills, so both read the same estimates and candidates.
-  const interestHooks = hooksFromPlan(view.rows.map((r) => r.item), ctx.visits);
+  // Interest pill (interest-and-visits.md "The pill": "a list row with an open interest move"): the row-level rendering
+  // of the move the Next steps tab shows, read from the same generated rows, so the pill and the card never disagree
+  // (QA 2026-10-15: recomputing the rule here drifted from the generated set once the senior-fall dating applied).
   const interestItemIds = new Set(
-    interestMoves(view.rows.map((r) => r.item), view.estimates, ctx.schools, interestHooks, edCandidates, { season: ctx.season, today: ctx.today }).map((m) => m.itemId),
+    ctx.tasks.filter((t) => (t.kind === "show_interest" || t.kind === "visit_ed") && t.item_id && isOpen(t, ctx.today)).map((t) => t.item_id as string),
   );
   const pillFor = (row: PlanRowView): RowPill | undefined => {
     const c = edByItem.get(row.item.id);

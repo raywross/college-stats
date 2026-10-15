@@ -337,3 +337,11 @@ test("the guard fails on a planted bad string", () => {
   assert.ok(numberProblems("A 40% chance this visit helps").length > 0);
   assert.ok(numberProblems("Your odds improve 2× with a visit").length > 0);
 });
+
+test("the list's interest pill is the open move itself (interest-and-visits.md 'The pill'), never a second computation of the rule", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const src = readFileSync(join(import.meta.dirname, "..", "components", "planner", "PlanList.tsx"), "utf8");
+  assert.match(src, /ctx\.tasks\.filter\(\(t\) => \(t\.kind === "show_interest" \|\| t\.kind === "visit_ed"\)/, "the pill reads the open show_interest / visit_ed rows");
+  assert.doesNotMatch(src, /interestMoves\(/, "PlanList no longer recomputes the rule (QA 2026-10-15: it drifted from the generated set)");
+});

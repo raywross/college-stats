@@ -24,6 +24,7 @@ import { afterFailure, afterRead, FAILURES_TO_UNREACHABLE } from "./hosts.mts";
 import { locate, type ZipTable } from "./geo.mts";
 import { isSlateEventRegistration, parseStandardSearch, searchUrl, type StandardSearch } from "./slate-search.mts";
 import { MAX_WIDGET_PAGES, parseWidgetList, widgetListUrl } from "./slate-widget.mts";
+import { readTargetxSite } from "./readers/targetx.mts";
 
 /**
  * A stored row: the public columns plus the miss counter only the reader uses, and `moved_at` (migration
@@ -417,6 +418,25 @@ export async function readHost(hostRow: Pick<SlateHostRow, "unit_id" | "host" | 
   return { rows, fetched, pagesRead, widgetFailed, searchTotal: search.total, errors };
 }
 
+/**
+ * Reads one host row with its vendor's reader (specs/product/visit-events.md, "Round 3"): Slate's `readHost`, the
+ * TargetX reader (readers/targetx.mts; a Lightning site throws "not readable"). A row without a vendor is Slate.
+ */
+export async function readSite(
+  hostRow: Pick<SlateHostRow, "unit_id" | "host" | "portal_parts"> & Partial<Pick<SlateHostRow, "vendor" | "config">>,
+  deps: ReadDeps,
+): Promise<HostRead> {
+  const vendor = hostRow.vendor ?? "slate";
+  switch (vendor) {
+    case "slate":
+      return readHost(hostRow, deps);
+    case "targetx":
+      return readTargetxSite({ unit_id: hostRow.unit_id, host: hostRow.host, config: hostRow.config ?? {} }, deps);
+    default:
+      throw new Error(`no reader for vendor "${vendor}" (${hostRow.host})`);
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Storage and the run                                                 */
 /* ------------------------------------------------------------------ */
@@ -483,7 +503,7 @@ export async function syncHost(hostRow: SlateHostRow, deps: SyncDeps): Promise<H
   try {
     const stored = await deps.store.storedFor(hostRow.host, hostRow.unit_id);
     const campus = deps.campus(hostRow.unit_id);
-    const read = await readHost(hostRow, {
+    const read = await readSite(hostRow, {
       http: deps.http,
       now: deps.now,
       zips: deps.zips,

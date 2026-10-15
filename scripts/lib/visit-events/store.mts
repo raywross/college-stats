@@ -62,12 +62,17 @@ export function readHosts(client: SupabaseClient): Promise<SlateHostRow[]> {
 
 /**
  * Inserts or updates hosts found by discovery (keeping first_seen, failures, last_read, last_attempt, search_total,
- * and zero_since of a known one; the reader's bookkeeping, hosts.mts, moves those).
+ * and zero_since of a known one; the reader's bookkeeping, hosts.mts, moves those). `vendor` and `config` default to
+ * a Slate row's; `status` to `active` (a TargetX Lightning site is written `off`: found, never read). Every row
+ * carries every column, so a batch mixing vendors never writes a null.
  */
-export async function upsertHosts(client: SupabaseClient, rows: readonly Pick<SlateHostRow, "unit_id" | "host" | "found_on" | "portal_parts">[]): Promise<void> {
+export async function upsertHosts(
+  client: SupabaseClient,
+  rows: readonly (Pick<SlateHostRow, "unit_id" | "host" | "found_on" | "portal_parts"> & Partial<Pick<SlateHostRow, "vendor" | "config" | "status">>)[],
+): Promise<void> {
   for (let i = 0; i < rows.length; i += BATCH) {
     const { error } = await client.from("slate_hosts").upsert(
-      rows.slice(i, i + BATCH).map((r) => ({ ...r, status: "active" })),
+      rows.slice(i, i + BATCH).map((r) => ({ ...r, vendor: r.vendor ?? "slate", config: r.config ?? {}, status: r.status ?? "active" })),
       { onConflict: "unit_id" },
     );
     if (error) throw new Error(`Supabase: writing slate_hosts failed: ${error.message}`);

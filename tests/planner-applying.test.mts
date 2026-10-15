@@ -267,3 +267,16 @@ test("the status word's season gate: senior fall and every later season, never e
   // The label set PlanList.tsx reads from (list-row.ts), sanity-checked here too.
   assert.equal(SEASON_STATUS_LABEL.submitted, "Submitted");
 });
+
+/* A submitted college with no published notification date still gets its decision move, undated (QA 2026-10-15). */
+test("decision_expected: dated from the college's record; undated once applied when the college published no date; nothing before applying", () => {
+  const s = school(1, "No Date U", { logistics: null });
+  const schools = { [s.unit_id]: s };
+  const before = collegeGen(input([item(1, { round: "rd", status: "applying" })], schools)).filter((t) => t.kind === "decision_expected");
+  assert.equal(before.length, 0, "not yet applied, no date: no move");
+  const after = collegeGen(input([item(1, { round: "rd", status: "applied", applied_on: "2026-11-02" })], schools)).filter((t) => t.kind === "decision_expected");
+  assert.equal(after.length, 1, "applied, no date: one undated move so the decision can be recorded");
+  assert.equal(after[0].due_on, null);
+  assert.match(after[0].title, /^Record the decision/);
+  assert.equal(after[0].key, taskKey(after[0].item_id!, "decision_expected"), "the same key as the dated move, so a published date later just dates it");
+});

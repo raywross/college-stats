@@ -60,7 +60,10 @@ export function readHosts(client: SupabaseClient): Promise<SlateHostRow[]> {
   return selectAll<SlateHostRow>(client, "slate_hosts", SLATE_HOST_COLUMNS, "unit_id");
 }
 
-/** Inserts or updates hosts found by discovery (keeping first_seen, failures, and last_read of a known one). */
+/**
+ * Inserts or updates hosts found by discovery (keeping first_seen, failures, last_read, last_attempt, search_total,
+ * and zero_since of a known one; the reader's bookkeeping, hosts.mts, moves those).
+ */
 export async function upsertHosts(client: SupabaseClient, rows: readonly Pick<SlateHostRow, "unit_id" | "host" | "found_on" | "portal_parts">[]): Promise<void> {
   for (let i = 0; i < rows.length; i += BATCH) {
     const { error } = await client.from("slate_hosts").upsert(

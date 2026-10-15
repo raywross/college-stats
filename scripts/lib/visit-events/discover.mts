@@ -32,7 +32,7 @@ export interface DiscoverOptions {
   /** Hosts never fetched (data/reference/blocked-hosts.json). */
   isBlocked?: (host: string) => boolean;
   log?: (msg: string) => void;
-  /** Candidate hosts confirmed per page at most (default 4). */
+  /** Candidate hosts confirmed per page at most (default 8: portal-linked hosts first, then admissions subdomains). */
   maxCandidates?: number;
   /** Portal pages fetched for widgets at most (default 8). */
   maxPortalPages?: number;
@@ -53,19 +53,69 @@ const SLATE_HINT_PATH = /^\/(status|apply|account|manage)(\/|$)/i;
 export function slateLinks(html: string, pageUrl: string): URL[] {
   const pageHost = new URL(pageUrl).host;
   const out: URL[] = [];
-  for (const m of html.matchAll(/href\s*=\s*["']([^"'#]+)["']/gi)) {
-    let u: URL;
-    try {
-      u = new URL(decodeEntities(m[1]).trim(), pageUrl);
-    } catch {
-      continue;
-    }
-    if (u.protocol !== "https:" && u.protocol !== "http:") continue;
+  for (const u of pageUrls(html, pageUrl)) {
     if (/\.(css|js|png|jpe?g|gif|svg|ico)$/i.test(u.pathname)) continue;
     // A hint path on the page's own host is the college's own site (its /apply page), not a Slate host.
     if (!SLATE_PATH.test(u.pathname) && !(SLATE_HINT_PATH.test(u.pathname) && u.host !== pageHost)) continue;
     out.push(u);
   }
+  return out;
+}
+
+/**
+ * Every URL a page points to: each `href`, resolved against the page, and each absolute `https://…` URL in a quoted
+ * string elsewhere, which is how Slate's embed snippet names its portal (Amherst's visit page builds a script whose
+ * `src` is `https://admission.amherst.edu/portal/campus_visit?output=embed…`; no link points there).
+ */
+export function pageUrls(html: string, pageUrl: string): URL[] {
+  const out: URL[] = [];
+  const add = (raw: string) => {
+    try {
+      const u = new URL(decodeEntities(raw).trim(), pageUrl);
+      if (u.protocol === "https:" || u.protocol === "http:") out.push(u);
+    } catch {
+      /* not a URL */
+    }
+  };
+  const HREF = /href\s*=\s*["']([^"'#]+)["']/gi;
+  for (const m of html.matchAll(HREF)) add(m[1]);
+  for (const m of html.replace(HREF, "").matchAll(/["'](https?:\/\/[a-z0-9.-]+\/[^"'\s<>]*)["']/gi)) add(m[1]);
+  return out;
+}
+
+/**
+ * Hosts that look like an admissions system (`apply.`, `admission(s).`, `connect.`, `engage.`, `go.`, `visit.`, …)
+ * whatever the path: Slate often lives on such a subdomain, linked only by its root or a non-Slate path
+ * (specs/product/visit-events.md, "Keeping it running", point 2). Each is still confirmed by the standard search.
+ */
+export const CANDIDATE_HOST = /^(apply|admissions?|connect|engage|go|visit|discover|enroll|begin|join|future|explore|mycollege|my)\./i;
+
+/**
+ * Admissions-style hosts a page points to (and the page's own URL, when its host is one), on the college's own domain
+ * or any `.edu` host, best first: the college's own domain, then by how many links point there.
+ */
+export function candidateHosts(html: string, pageUrl: string, collegeHosts: readonly string[]): string[] {
+  const domains = new Set(collegeHosts.map((h) => collegeDomain(h)));
+  const count = new Map<string, number>();
+  for (const u of [new URL(pageUrl), ...pageUrls(html, pageUrl)]) {
+    const host = u.host.toLowerCase();
+    if (!CANDIDATE_HOST.test(host)) continue;
+    if (!domains.has(collegeDomain(host)) && !/\.edu$/.test(host)) continue;
+    count.set(host, (count.get(host) ?? 0) + 1);
+  }
+  return [...count.entries()]
+    .sort((a, b) => {
+      const ownA = domains.has(collegeDomain(a[0])) ? 0 : 1;
+      const ownB = domains.has(collegeDomain(b[0])) ? 0 : 1;
+      return ownA - ownB || b[1] - a[1] || a[0].localeCompare(b[0]);
+    })
+    .map(([h]) => h);
+}
+
+/** The hosts to confirm, in order: those with portal or register links (`rankHosts`), then the subdomain candidates. */
+export function rankCandidates(links: readonly URL[], subdomains: readonly string[], collegeHosts: readonly string[]): string[] {
+  const out = rankHosts(links, collegeHosts);
+  for (const h of subdomains) if (!out.includes(h)) out.push(h);
   return out;
 }
 
@@ -139,7 +189,7 @@ export async function discoverSlateHost(
 ): Promise<Discovered | null> {
   const log = opts.log ?? (() => {});
   const blocked = opts.isBlocked ?? (() => false);
-  const maxCandidates = opts.maxCandidates ?? 4;
+  const maxCandidates = opts.maxCandidates ?? 8;
   const tried = new Set<string>();
   for (const start of [visitUrl, applyUrl]) {
     if (!start) continue;
@@ -159,10 +209,14 @@ export async function discoverSlateHost(
     for (const u of [startUrl, page ? new URL(page.finalUrl) : null]) if (u && SLATE_PATH.test(u.pathname)) links.push(u);
     if (page) links.push(...slateLinks(page.html, page.finalUrl));
     const own = [startUrl.host, ...(page ? [new URL(page.finalUrl).host] : [])];
-    for (const host of rankHosts(links, own).slice(0, maxCandidates)) {
+    const subdomains = [...new Set([...candidateHosts("", start, own), ...(page ? candidateHosts(page.html, page.finalUrl, own) : [])])];
+    for (const host of rankCandidates(links, subdomains, own).slice(0, maxCandidates)) {
       if (tried.has(host) || blocked(host)) continue;
       tried.add(host);
-      if (!(await confirmSlateHost(host, http))) continue;
+      if (!(await confirmSlateHost(host, http))) {
+        log(`  ${unitId}: ${host} rejected (no Slate event search; linked from ${page?.finalUrl ?? start})`);
+        continue;
+      }
       const portalParts = await readPortalParts(host, portalPages(links, host), http, opts.maxPortalPages ?? 8);
       log(`  ${unitId}: ${host} (found on ${page?.finalUrl ?? start}; ${portalParts.length} widget${portalParts.length === 1 ? "" : "s"})`);
       return { host, foundOn: page?.finalUrl ?? start, portalParts };

@@ -196,9 +196,9 @@ Left for later: a self-hosted runner or small VM for the crawl once the reposito
 Actions a month); the Technolutions partnership email (the owner's).
 
 ## Round 3: TargetX and Element451 (2026-10-15)
-> Status of this section: **planned** 2026-10-15 (owner: "put a spec together for the TargetX and Element451
-> schools, then implement and test"). The protocol subsections are filled from the research in
-> `visit-events-build/research/{targetx,element451}.md`.
+> Status of this section: **built** 2026-10-15 on `feature/visit-events-readers` (planned the same morning; owner:
+> "put a spec together for the TargetX and Element451 schools, then implement and test"). The protocol subsections
+> are from the research in `visit-events-build/research/{targetx,element451}.md`; see [As built](#round-3-as-built).
 
 **Why these two.** Of the 984 colleges without a Slate host, the visit page links TargetX (Salesforce) at 149 and
 Element451 at 49 ([what the rest run](#keeping-it-running-round-2-2026-10-15): campus-wide calendars, virtual
@@ -333,6 +333,37 @@ of those use Slate or a campus calendar for events); 1 refused the fetch.
 3. **Pilot QA**: the check and the admin card over the new hosts (staff share, located share, collapses), a
    signed-in look at two Element451 and two TargetX colleges' calendars and `/me/visits`, and the kind mix of the new
    rows reviewed against the five-kind rule.
+
+### Round 3: as built
+Built 2026-10-15 as three units (research on two sonnet agents, the Element451 reader on sonnet, the TargetX reader
+on opus, QA on sonnet). Foundation: `slate_hosts.vendor` and `config` (`20261015120000`), `visit_events.slate_id`
+as text (`20261015130000`), both on dev; `readSite(hostRow, deps)` in `sync.mts` dispatches `slate` → `readHost`,
+`targetx` → `readTargetxSite`, `element451` → `readElementSite`, anything else throws; `upsertHosts` takes optional
+`vendor`, `config`, `status`; the CLI's discovery runs Slate, then TargetX, then Element451 for colleges still
+without a row.
+
+**Element451** (`scripts/lib/visit-events/readers/element451.mts`, `discover-element451.mts`, 21 tests): the
+state blob parsed from one GET; one row per occurrence with `slate_id` = `${item.guid}:${element_guid}:${start_ts}`
+(the research's two-part key collided: an `element_guid` names a recurring daily slot, reused across dates); online
+= a `location` with no place-naming fields (St Francis's virtual sessions carry a placeholder location, so "key
+absent" alone was not enough); `lat` = `geo.latitude` (the research had the pair swapped); discovery from the visit
+page, then the apply link (Arkansas at Pine Bluff has no visit link). Pilot on dev: **20 of 20 sites discovered and
+read, 509 events** (232 tours, 116 online, 76 sessions, 21 open houses, 12 travel, 52 other, 0 staff), every placed
+row located, 0 errors, 0 collapses; two sites answer with no events (Criswell, LSU Alexandria); Otterbein's 28 items
+is the closest any site came to the 30-item page, which the reader warns about rather than paging.
+
+**TargetX** (`readers/targetx.mts`, `discover-targetx.mts`, 20 tests; `PoliteHttp.post`, paced and robots-checked
+like a GET): the descriptor parser, the two remoting calls with the origin headers (a fake Salesforce in the tests
+answers 402 without them and refuses stale tokens), the reference resolver (Beacon's compressed answer resolves to
+the saved plain one), the ERx literal parser with per-event failure isolation, the place rule, availability; a
+Lightning site is recorded `off`. ERx start times proved to be local wall-clock labelled UTC, read as local when the
+display time agrees. Pilot: **0 sites read**: 17 of 19 Salesforce sites serve the platform's default robots.txt
+and two answer 503, so every read is declined (see the robots.txt note above); Arcadia's Lightning site is recorded
+`off`. The owner's decision stands open; nothing reads until it changes.
+
+Known gaps: Element451's "reachable but empty" sites count as active hosts (their `zero_since` will make them
+`no_events` after a month); the CLI's "No Slate host on record" message predates vendors; TargetX's POST path has
+no live verification beyond the tests.
 
 ## The nightly job
 

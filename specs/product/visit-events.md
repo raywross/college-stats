@@ -276,11 +276,17 @@ default `robots.txt` ("robots.txt for sfdc appservers": `User-agent: *` / `Disal
 answers it with a 503, which RFC 9309 reads as disallow. The reader honours robots.txt like every other read the site
 makes (`PoliteHttp`), so **it reads nothing** until the owner decides otherwise: the research used plain curl and
 never checked. The reader is built, tested, and merged; its discovery records TargetX sites it finds and the reads
-return "robots.txt disallows" as a host error. The options are the owner's: keep honouring the file (TargetX stays a
-recorded gap: 74 colleges, about 20% of what Slate gave); treat Salesforce's platform default as the platform's
-file rather than the college's and read anyway (the CDS documents have a narrower precedent, `cdsDocument` in
-`http.mts`); or ask the colleges or TargetX for a feed. The recommendation in this spec is the first: the rule
-"robots honored" has been stated to colleges in every user agent string, and the exception would be hard to defend.
+return "robots.txt disallows" as a host error. The options were the owner's: keep honouring the file; treat
+Salesforce's platform default as the platform's file rather than the college's and read anyway (the CDS documents
+have a narrower precedent, `cdsDocument` in `http.mts`); or ask the colleges or TargetX for a feed.
+
+**Decided 2026-10-15 (owner): off for now; robots.txt stands.** The reader stays in the code, tested, and the 74
+readable TargetX colleges (67 legacy, 7 ERx: Texas Tech, North Texas, Cal State Chico, Western Michigan, College of
+Charleston, WPI, three Embry-Riddle campuses, Maine, North Dakota, Wyoming, and 60 smaller regionals and privates;
+about 9% of the colleges read and 325,000 undergraduates against 1.9 million at Slate colleges) keep their visit
+link only. Their `slate_hosts` rows are recorded `off` when discovery meets them. What would reopen it: a feed from
+TargetX or from a college, or a college's own `robots.txt` allowing us, in which case that one host can be switched
+`active` by hand. The rule "robots honored" is stated to colleges in every user agent string and stays.
 
 **Collapse:** a legacy page with no remoting descriptor, a `getFutureEvents` answer with no `result` array, or an ERx
 page with no `var a = '[` literal is a collapsed site. **Risks:** tokens are page-scoped (handled by fetching per

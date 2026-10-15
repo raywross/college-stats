@@ -28,6 +28,7 @@ import { supabaseClient } from "../lib/supabase.ts";
 import { PoliteHttp } from "./lib/college-reported/http.mts";
 import { isBlockedHost } from "./lib/college-reported/blocked.mts";
 import { discoverSlateHost, type Discovered } from "./lib/visit-events/discover.mts";
+import { discoverElementSite } from "./lib/visit-events/readers/discover-element451.mts";
 import { loadZipTable } from "./lib/visit-events/geo.mts";
 import { discoveryTargets, dueHosts } from "./lib/visit-events/hosts.mts";
 import { readHosts, supabaseStore, upsertHosts } from "./lib/visit-events/store.mts";
@@ -136,6 +137,44 @@ if (DISCOVER) {
   }
   console.log(`Found ${found} of ${targets.length} (${added} new to slate_hosts)${DRY_RUN ? " (dry run: slate_hosts not written)" : ""}.`);
   hosts = [...known.values()];
+}
+
+/* Element451 step (round 3: specs/product/visit-events.md "Round 3"), after the Slate step above, for colleges
+ * still without a row (the same `targets`, filtered to what Slate didn't find; `known` already reflects it). */
+if (DISCOVER) {
+  const targets = discoveryTargets(schools, known, { units: UNITS, now }).slice(0, LIMIT);
+  const stillMissing = targets.filter((unitId) => !known.has(unitId));
+  if (stillMissing.length) {
+    console.log(`Discovering Element451 sites for ${stillMissing.length} college${stillMissing.length === 1 ? "" : "s"} still without a host…`);
+    const results = await pool(stillMissing, HOST_POOL, async (unitId): Promise<[string, Awaited<ReturnType<typeof discoverElementSite>>]> => {
+      const s = byId.get(unitId);
+      if (!s) return [unitId, null];
+      const d = await discoverElementSite(unitId, s.links?.visit ?? null, http, { log: (m) => console.log(m) });
+      if (!d) console.log(`  ${unitId} ${s.name}: no Element451 site found from ${s.links?.visit ?? "no link"}`);
+      return [unitId, d];
+    });
+    const elementRows = results
+      .filter((r): r is [string, NonNullable<Awaited<ReturnType<typeof discoverElementSite>>>] => r[1] !== null)
+      .map(([unit_id, d]) => ({ unit_id, host: d.host, found_on: d.foundOn, portal_parts: [], vendor: "element451" as const, config: d.config }));
+    if (client && !DRY_RUN && elementRows.length) await upsertHosts(client, elementRows);
+    for (const r of elementRows) {
+      const row: SlateHostRow = {
+        failures: 0,
+        first_seen: now.toISOString(),
+        last_read: null,
+        last_error: null,
+        last_attempt: null,
+        search_total: null,
+        zero_since: null,
+        ...known.get(r.unit_id),
+        ...r,
+        status: "active",
+      };
+      known.set(r.unit_id, row);
+    }
+    console.log(`Found ${elementRows.length} of ${stillMissing.length} Element451 site${stillMissing.length === 1 ? "" : "s"}${DRY_RUN ? " (dry run: slate_hosts not written)" : ""}.`);
+    hosts = [...known.values()];
+  }
 }
 
 /* Reading */

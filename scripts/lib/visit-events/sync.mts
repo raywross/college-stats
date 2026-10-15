@@ -24,6 +24,7 @@ import { afterFailure, afterRead, FAILURES_TO_UNREACHABLE } from "./hosts.mts";
 import { locate, type ZipTable } from "./geo.mts";
 import { isSlateEventRegistration, parseStandardSearch, searchUrl, type StandardSearch } from "./slate-search.mts";
 import { MAX_WIDGET_PAGES, parseWidgetList, widgetListUrl } from "./slate-widget.mts";
+import { readElementSite } from "./readers/element451.mts";
 
 /**
  * A stored row: the public columns plus the miss counter only the reader uses, and `moved_at` (migration
@@ -417,6 +418,23 @@ export async function readHost(hostRow: Pick<SlateHostRow, "unit_id" | "host" | 
   return { rows, fetched, pagesRead, widgetFailed, searchTotal: search.total, errors };
 }
 
+/**
+ * Reads one host by its vendor (specs/product/visit-events.md, "Round 3: TargetX and Element451"): `readHost` for
+ * `slate` (today's reader, above), `readElementSite` for `element451`; throws for anything else, so an unknown or
+ * misconfigured vendor is a visible failure rather than a silently skipped host. (TargetX agent: add a `targetx` case
+ * here, alongside the `element451` one.)
+ */
+export async function readSite(hostRow: SlateHostRow, deps: ReadDeps): Promise<HostRead> {
+  switch (hostRow.vendor) {
+    case "slate":
+      return readHost(hostRow, deps);
+    case "element451":
+      return readElementSite(hostRow, deps);
+    default:
+      throw new Error(`readSite: no reader for vendor "${hostRow.vendor}" (host ${hostRow.host})`);
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Storage and the run                                                 */
 /* ------------------------------------------------------------------ */
@@ -483,7 +501,7 @@ export async function syncHost(hostRow: SlateHostRow, deps: SyncDeps): Promise<H
   try {
     const stored = await deps.store.storedFor(hostRow.host, hostRow.unit_id);
     const campus = deps.campus(hostRow.unit_id);
-    const read = await readHost(hostRow, {
+    const read = await readSite(hostRow, {
       http: deps.http,
       now: deps.now,
       zips: deps.zips,

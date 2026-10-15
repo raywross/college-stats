@@ -62,9 +62,14 @@ export function readHosts(client: SupabaseClient): Promise<SlateHostRow[]> {
 
 /**
  * Inserts or updates hosts found by discovery (keeping first_seen, failures, last_read, last_attempt, search_total,
- * and zero_since of a known one; the reader's bookkeeping, hosts.mts, moves those).
+ * and zero_since of a known one; the reader's bookkeeping, hosts.mts, moves those). `vendor`/`config` (round 3:
+ * TargetX and Element451) are optional and additive: a Slate row passes neither and keeps its implicit `vendor:
+ * "slate"`/`config: {}` column defaults (20261015120000_visit_events_vendors.sql).
  */
-export async function upsertHosts(client: SupabaseClient, rows: readonly Pick<SlateHostRow, "unit_id" | "host" | "found_on" | "portal_parts">[]): Promise<void> {
+export async function upsertHosts(
+  client: SupabaseClient,
+  rows: readonly (Pick<SlateHostRow, "unit_id" | "host" | "found_on" | "portal_parts"> & Partial<Pick<SlateHostRow, "vendor" | "config">>)[],
+): Promise<void> {
   for (let i = 0; i < rows.length; i += BATCH) {
     const { error } = await client.from("slate_hosts").upsert(
       rows.slice(i, i + BATCH).map((r) => ({ ...r, status: "active" })),

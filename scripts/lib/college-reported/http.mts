@@ -296,6 +296,30 @@ export class PoliteHttp {
   }
 
   /**
+   * POST `body` to `url` politely, like `get`: robots.txt (null when it disallows the URL), the per-host gap (a POST
+   * counts as a request), the deadline and size cap, refusals recorded in `blockedSeen()`. `headers` are added to the
+   * request but never replace the user agent. Redirects are not followed (a redirected POST is returned as is). Used
+   * by the visit-events TargetX reader for the two read-only remoting calls its public page makes.
+   */
+  async post(url: string, body: string, extraHeaders: Record<string, string> = {}): Promise<Response | null> {
+    const u = new URL(url);
+    const robots = await this.robotsFor(u.origin);
+    if (!robotsAllows(robots, url)) {
+      if (robots.unreachable === "no-response") {
+        if (!this.unreachableLogged.has(u.host)) this.deps.log(`  ${u.host} didn't respond; skipped`);
+        this.unreachableLogged.add(u.host);
+      } else this.deps.log(`  robots.txt disallows ${url}; skipped`);
+      return null;
+    }
+    const headers: Record<string, string> = { ...extraHeaders, "User-Agent": this.deps.userAgent ?? USER_AGENT };
+    const delay = Math.max(this.deps.minDelayMs, robots.crawlDelayMs ?? 0);
+    const { res, head } = await this.paced(u.host, delay, () => this.limited(url, { method: "POST", headers, body, redirect: "manual" }));
+    const status = blockedStatusOf(res.status, res.headers, head);
+    if (status !== null) this.blocked.push({ host: u.host, url, status });
+    return res;
+  }
+
+  /**
    * Why `get` or `head` would skip `url` without a request, or null when it may be fetched: robots.txt disallows it
    * ("robots"), the host's robots.txt answered a server error ("server-error"), or the host didn't answer robots.txt at
    * all ("no-response", with the error's code as `cause`: "ENOTFOUND" when the host doesn't exist). Reads the same

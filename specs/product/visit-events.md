@@ -143,6 +143,234 @@ recomputed from the titles every night, so a rule change reclassifies without re
 all: the listing is already in hand, the rows cost nothing to keep, and they may be useful later (an "interview
 offered" signal, say); keeping them also lets `check:visit-events` watch each host's share of accidental rows.
 
+## Keeping it running (round 2, 2026-10-15)
+The owner's condition for the feature: it must maintain itself, never a one-time pull. The nightly read is already
+idempotent and self-correcting (new rows appear, changed rows update, a row missing from two reads is removed, kinds
+are recomputed from titles each night). Four things would still let it rot, each with its fix:
+
+1. **A collapse.** If Technolutions changed the search page's markup, every host would parse to zero rows the same
+   night, and two nights later the table would have emptied itself. Guards: a host whose search page says
+   "returned N event(s)" with N > 0 but parses to no rows, or whose page no longer says it at all, is a **collapsed**
+   host: an error, no misses counted (`slate_hosts.failures` moves, `hosts_collapsed` on the run). A **run-level
+   guard** withholds all miss-marking when more than 20% of the hosts read tonight failed or collapsed
+   (`visit_event_sync.misses_withheld`); new and changed rows still write.
+2. **New Slate adopters are never found.** A **weekly discovery** (Sundays, the same workflow) tries every college with
+   a visit or apply link that isn't in `slate_hosts` yet. Discovery widens its candidates: any admissions-style
+   subdomain linked from the visit page or apply page (`apply.`, `admission(s).`, `connect.`, `engage.`, `go.`,
+   `visit.`, `discover.`, `enroll.`, `begin.`, `join.`, …), confirmed only by answering the standard search. The
+   2026-10-14 measurement found 13 of 14 such missed hosts answering (Amherst 86 events, Emerson 396, Union 398,
+   UMass Dartmouth 1,148); about 40 to 95 colleges.
+3. **Nobody sees it break.** The admin console's Health area gains a **Visit events** card: the last runs
+   (`visit_event_sync`: when, hosts read / failed / collapsed, new / changed / removed, misses withheld, the data
+   check's failures and warnings), hosts by status, and a red state when the last run failed, withheld misses, or is
+   older than 36 hours. The check script writes its summary onto the run it follows (`check_summary`,
+   `check_failures`, `check_warnings`).
+4. **Host bookkeeping.** `last_attempt` (tried) beside `last_read` (answered); unreachable hosts are retried every
+   seven days from their last attempt; a host whose search has answered with zero rows for 30 days (`zero_since`)
+   becomes `no_events` and is retried monthly; `search_total` keeps the search's own count for the card.
+
+**Built 2026-10-15** on `feature/visit-events-upkeep` as three units. Guards (`scripts/lib/visit-events/sync.mts`):
+`CollapsedSearchError` when a Slate results page says "returned N event(s)" with N > 0 but no rows parse, or no longer
+says it; a collapsed host counts as a failure and its misses are never counted; `runSync` writes every host's misses
+in one step after the pool and withholds them all when more than 20% of the hosts tried failed or collapsed
+(`misses_withheld`); `check:visit-events -- --record` writes `check_failures`, `check_warnings`, and a `check_summary`
+(`{checked_at, hosts, events, failing, warned, listed: [{host, unit_id, events, failures, warnings}], omitted}`, at
+most 50 hosts, failing first) onto the night's run. Host bookkeeping (`scripts/lib/visit-events/hosts.mts`, pure):
+`afterRead` / `afterFailure` keep `last_attempt`, `last_read`, `search_total`, `zero_since`; `dueHosts` reads active
+hosts nightly, unreachable ones seven days after their last attempt (or at once with `--retry-unreachable`),
+`no_events` ones monthly, `off` never; a host becomes `no_events` thirty days after its search first came back
+empty (widget rows count as rows, so a host with online sessions only never does). Discovery
+(`scripts/lib/visit-events/discover.mts`): candidate hosts also come from any admissions-style subdomain linked (or
+quoted in a script) on the visit and apply pages, own domain first, ranked after portal/register links, each confirmed
+by the standard search; the first dev run found **59 more hosts** (58 read, 29,731 events; Juilliard, St. Olaf,
+Elmira, Gallaudet, UMass Dartmouth, Wofford among them), taking dev to 852 active hosts. Admin
+(`lib/admin/visit-events.ts`, `components/admin/VisitEventsCard.tsx`): the card on `/admin/health#visit-events` and a
+tile on the console landing page (red when the newest run failed, withheld misses, has check failures, or is older
+than 36 hours; amber on warnings); Operations can dispatch the workflow (target, units, discover). Known gaps: a
+college whose discovery finds nothing has no row to record the attempt on, so it is retried every Sunday (a
+`discovery_attempts` record would fix it); two hosts were set `off` by hand on dev (Trinity College of Nursing had
+Augustana's host, Kansas State a graduate Slate); `www.amherst.edu` challenges our user agent, so Amherst stays
+unfound until the WAF is addressed; the search times out (30 s) on a few large hosts under a pool of 24.
+
+Left for later: a self-hosted runner or small VM for the crawl once the repository goes private (about 30 hours of
+Actions a month); the Technolutions partnership email (the owner's).
+
+## Round 3: TargetX and Element451 (2026-10-15)
+> Status of this section: **built** 2026-10-15 on `feature/visit-events-readers` (planned the same morning; owner:
+> "put a spec together for the TargetX and Element451 schools, then implement and test"). The protocol subsections
+> are from the research in `visit-events-build/research/{targetx,element451}.md`; see [As built](#round-3-as-built).
+
+**Why these two.** Of the 984 colleges without a Slate host, the visit page links TargetX (Salesforce) at 149 and
+Element451 at 49 ([what the rest run](#keeping-it-running-round-2-2026-10-15): campus-wide calendars, virtual
+tours, plain forms, or nothing). They are the only other systems with enough colleges to be worth a reader each, and
+both publish events on public pages a reader can call.
+
+**One table, one pipeline, one reader per vendor.** `slate_hosts` gains `vendor` (`slate` | `targetx` |
+`element451`) and `config` (what the reader needs beyond the host: a TargetX site's path and flavour, an
+Element451 site's API base and the public tokens its own pages carry) in `20261015120000_visit_events_vendors.sql`.
+`syncHost` dispatches by vendor to `readSite(hostRow, deps) → HostRead` (`scripts/lib/visit-events/readers/
+{slate,targetx,element451}.mts`; the Slate one is today's `readHost`); everything after the read is shared: the row
+shape, `kindOf`, `pagePolicy`'s idea (detail only for shown kinds away from campus, where a vendor has a detail call
+at all), `diffEvents`, the collapse and run-level guards, the host bookkeeping, the check, the admin card. A vendor
+reader throws `CollapsedSearchError` when its listing answers but not in the shape it knows, so a vendor-wide change
+is a collapse like Slate's and never a mass cancellation. Discovery gains a step per vendor (`discover-targetx.mts`,
+`discover-element451.mts`) run after the Slate step for colleges still without a row; each confirms a candidate
+site by a successful listing call before writing it.
+
+**Rules carried over.** Every listing row is stored; only the five shown kinds appear; staff and appointment rows
+are kept hidden; one request a second per host through `PoliteHttp`, an honest user agent, robots honored, no form
+ever submitted, no token used for anything but the read the public page itself makes. A reader whose source needs a
+login, a session, or a token that isn't on a public page is not built.
+
+**Pilot before `--all`.** Each reader runs for a month on a dozen colleges (`status` `active` for those, the rest
+discovered but `off`) with the check's staff share, located share, and collapse count watched on the admin card;
+then the rest are switched on.
+
+### TargetX: the protocol
+Research 2026-10-15 (`visit-events-build/research/targetx.md`, four colleges reproduced). Of the 151 colleges whose
+visit page links TargetX or Salesforce, about **67** run the legacy TargetX Events site, about **7** a second TargetX
+product (ERx Events), about **10** a Lightning (Experience Cloud) site, 2 a third-party package, and about **65** use
+TargetX only to apply or chat: no events. Two flavours are read; the Lightning one is recorded as a known gap
+(nothing is server-rendered and the component code loads from hashed paths; it needs a browser, which this reader
+never is).
+
+**Legacy events site** (`https://<org>.my.salesforce-sites.com/<site>`, usually `events`; the `#/calendar` fragment is
+client-side). The page embeds a Visualforce remoting descriptor (`RemotingProviderImpl`: `vid`, and per method a
+`csrf` and an `authorization` JWT). The read is **two remoting calls the page itself makes**, `POST
+…/<site>/apexremote` with `Content-Type: application/json` and `Referer`/`Origin` set to the site's own origin
+(without them Salesforce answers 402 "unable to determine from which page the request originated"): `initialize`
+(the org's settings: `Search_Days__c`, `Use_Location_Lookup__c`, `SingleEventRegistrationURL__c`, `Org_Time_Zone__c`)
+then `getFutureEvents` with `[{}, <Use_Location_Lookup__c>, "", []]`, which returns every future event in the org's
+own window; there is no paging and no detail call (an event's page filters the same list client-side). Tokens are
+minted per page load: the reader fetches the page and calls within the same run, never caching them. The response
+may come in Salesforce's reference-compressed form (`{"s": id, "v": …}` / `{"r": id}`, `ref: true` in the envelope);
+the reader resolves both shapes. This is a read, not a form: it posts nothing a person would enter, and it is the same
+request the public page makes for any visitor.
+
+Fields (`result[i].oe`, every field optional since null fields are dropped): `Id` (the event id; `book_url` =
+`<SingleEventRegistrationURL__c>?eid=<Id>`), `Name`, `…Start_Date_Time__c` / `…End_Date_Time__c` (epoch
+milliseconds, UTC), `…Time_Zone__c` (IANA), `…type__c` (free text: "Campus Tour", "College Fair"…), `…Description__c`,
+`…Slots_Available__c` (a number or "Unlimited"), `…Waiting_List__c`, `…Cancelled__c`, `…Registration_Deadline__c`,
+and the place: `…Location_Lookup__r` with `City`, `State`, `Street`, `Postal_Code` fields read **by suffix** (the
+namespace prefix varies by org) when the org uses the lookup, else `…Location__c` as venue text. No coordinates and no
+online flag exist: the ZIP, when present, places the event through the ZCTA table; a row with venue text only and no
+city, or a city equal to the campus city, takes the campus's coordinates; an away row with no ZIP stays unlocated
+(shown, never alerted); online comes from `kindOf` on the type and title. A cancelled event is stored as `closed`.
+
+**ERx Events site** (`https://<org>.my.salesforce-sites.com/EventListing`): the whole list is server-rendered into
+the page as a JavaScript string literal (`var a = '[…]'`), so the read is one GET, a regex, a tolerant one-layer
+unescape (an unknown backslash escape is dropped, and one unparseable event is skipped rather than failing the page),
+and `JSON.parse`. Fields: `Id`, `Name`, `ERx_Events__StartDateTime__c` (ISO, UTC), `…Campaign_Time_Zone__c` (the IANA
+zone is the parenthesised suffix), `…Location__c` (venue text only; no address fields exist in this flavour),
+`…Event_URL__c` (the booking URL), `…Event_Description__c` (HTML), `…OnlineGuestEnabled__c` (online), the
+registration counts and caps for availability, `…RSVP_Date__c`. The end time is only a display string, so `ends_at`
+is null. Rows are placed by the campus rule above.
+
+**Discovery:** from the visit page, links on `*.my.salesforce-sites.com`, `*.my.site.com`, or `*.force.com`; a
+candidate is a legacy site when its page carries a `TargetX_Eventsb` remoting descriptor, an ERx site when its page
+carries `var a = '[` with `ERx_Events__` fields, and unreadable (recorded with `config.flavour: "lightning"`, status
+`off`) when it is a `/s/` Lightning site. `config` keeps `{ site, flavour }`.
+
+**robots.txt (found in the pilot, 2026-10-15).** Every Salesforce-hosted site in the pilot serves Salesforce's
+default `robots.txt` ("robots.txt for sfdc appservers": `User-agent: *` / `Disallow: /`, Googlebot alone allowed), or
+answers it with a 503, which RFC 9309 reads as disallow. The reader honours robots.txt like every other read the site
+makes (`PoliteHttp`), so **it reads nothing** until the owner decides otherwise: the research used plain curl and
+never checked. The reader is built, tested, and merged; its discovery records TargetX sites it finds and the reads
+return "robots.txt disallows" as a host error. The options were the owner's: keep honouring the file; treat
+Salesforce's platform default as the platform's file rather than the college's and read anyway (the CDS documents
+have a narrower precedent, `cdsDocument` in `http.mts`); or ask the colleges or TargetX for a feed.
+
+**Decided 2026-10-15 (owner): off for now; robots.txt stands.** The reader stays in the code, tested, and the 74
+readable TargetX colleges (67 legacy, 7 ERx: Texas Tech, North Texas, Cal State Chico, Western Michigan, College of
+Charleston, WPI, three Embry-Riddle campuses, Maine, North Dakota, Wyoming, and 60 smaller regionals and privates;
+about 9% of the colleges read and 325,000 undergraduates against 1.9 million at Slate colleges) keep their visit
+link only. Their `slate_hosts` rows are recorded `off` when discovery meets them. What would reopen it: a feed from
+TargetX or from a college, or a college's own `robots.txt` allowing us, in which case that one host can be switched
+`active` by hand. The rule "robots honored" is stated to colleges in every user agent string and stays.
+
+**Collapse:** a legacy page with no remoting descriptor, a `getFutureEvents` answer with no `result` array, or an ERx
+page with no `var a = '[` literal is a collapsed site. **Risks:** tokens are page-scoped (handled by fetching per
+run); Referer/Origin are mandatory; per-org differences are real in three fixtures (namespace prefix, whether
+locations are filled, reference compression), so every field is optional; Salesforce WAFs rate-limit anonymous
+traffic, so the per-host second stays; the ~67 / ~7 split is from link patterns, confirmed on four colleges only,
+which is what the pilot is for.
+
+### Element451: the protocol
+Research 2026-10-15 (`visit-events-build/research/element451.md`, fixtures from four colleges). Element451 serves
+several apps; only **`event451`** lists events. It is a server-rendered Angular app: `GET https://<site>/` returns
+the full listing in `<script id="event451-state" type="application/json">` (the blob appears twice, identical), so
+one request per site, no API call, no token. Sites: `https://<client>.event451.sites.451.io/`, a differently
+prefixed subdomain (`ggc-35205.event451.sites.451.io`), or a custom domain running the same app
+(`visit.cookman.edu`). Of the 50 colleges whose visit page links Element451, **20** have a reachable `event451`
+listing; 4 have only an embedded form; 25 link only the chat shell, a landing page, or the applicant portal (several
+of those use Slate or a campus calendar for events); 1 refused the fetch.
+
+- **Discovery:** from the visit page, any link or script on an `event451.sites.451.io` host, or a linked host whose
+  page contains `id="event451-state"` (a custom domain); the visit page may itself be the site. Confirmed by the
+  blob's presence. `config` keeps `{ site, client }` (`configState.client.token`, e.g. `cccb`).
+- **Listing:** `eventsListStore.items[]`. Each item is a template (a "parent" spanning months) with
+  `occurrences.upcoming[]`, the actual bookable slots, each with its own `start_date`, `end_date`, `timezone`
+  (IANA already), `is_open` / `is_full` / `is_closed`, and counts. **One stored row per occurrence**, the parent's
+  title, description, and location carried down; `slate_id` = `${item.guid}:${occurrence.element_guid}` (the
+  column becomes text in `20261015130000`). `total ≤ limit (30)` in every fixture; a response with `total >
+  items.length` is logged as a warning, never silently dropped, since no paging parameter was found.
+- **Fields:** `content.title`; `location.{venue_name|building, address, city, state, zip, geo.latitude/longitude}`
+  (coordinates and ZIP on every in-person item: better than Slate's page read); **online = the `location` key is
+  absent** (confirmed on Georgia Gwinnett's virtual sessions; `event_type` slugs are client-chosen and only a hint);
+  `availability` from the occurrence's flags; `book_url` = `https://<site>/event/<item.guid>` (the detail page is
+  the registration page); `kind` from the title and `event_type` through `kindOf` (no fixed enum: `campus_tours`,
+  `preview-day`, `virtual-session`, `information-session`… are per-client text).
+- **No detail read is needed**: the listing carries everything the row needs, so `pagePolicy` is "listing" for every
+  Element451 row and the per-night cost is one request per site.
+- **Collapse:** a page without the `event451-state` blob, or a blob without `eventsListStore`, is a collapsed site.
+- **Risks:** the online inference is undocumented; occurrence paging (`singleEventOccurrencesStore.range`) was empty
+  in every fixture and may matter for a busy tour calendar; robots.txt on `element451.com` and the client sites
+  disallow nothing; no login anywhere.
+
+### Units
+1. **Element451 reader** (`scripts/lib/visit-events/readers/element451.mts`, `discover-element451.mts`; the
+   `readSite` dispatch seam in `sync.mts`; the vendor step in the CLI's discovery; `tests/
+   visit-events-element451.test.mts`): parse the state blob, one row per occurrence, discovery and confirmation, a
+   collapse on a blob-less page; then the pilot run on the 20 colleges with a listing.
+2. **TargetX reader** (`readers/targetx.mts` with both flavours, `discover-targetx.mts`, its `readSite` case, its
+   discovery step, `tests/visit-events-targetx.test.mts`): the descriptor parser, the two remoting calls with the
+   origin headers, the reference resolver, the ERx literal parser and unescaper, the place rule, availability; then
+   the pilot run on a dozen legacy colleges and the ERx ones.
+3. **Pilot QA**: the check and the admin card over the new hosts (staff share, located share, collapses), a
+   signed-in look at two Element451 and two TargetX colleges' calendars and `/me/visits`, and the kind mix of the new
+   rows reviewed against the five-kind rule.
+
+### Round 3: as built
+Built 2026-10-15 as three units (research on two sonnet agents, the Element451 reader on sonnet, the TargetX reader
+on opus, QA on sonnet). Foundation: `slate_hosts.vendor` and `config` (`20261015120000`), `visit_events.slate_id`
+as text (`20261015130000`), both on dev; `readSite(hostRow, deps)` in `sync.mts` dispatches `slate` → `readHost`,
+`targetx` → `readTargetxSite`, `element451` → `readElementSite`, anything else throws; `upsertHosts` takes optional
+`vendor`, `config`, `status`; the CLI's discovery runs Slate, then TargetX, then Element451 for colleges still
+without a row.
+
+**Element451** (`scripts/lib/visit-events/readers/element451.mts`, `discover-element451.mts`, 21 tests): the
+state blob parsed from one GET; one row per occurrence with `slate_id` = `${item.guid}:${element_guid}:${start_ts}`
+(the research's two-part key collided: an `element_guid` names a recurring daily slot, reused across dates); online
+= a `location` with no place-naming fields (St Francis's virtual sessions carry a placeholder location, so "key
+absent" alone was not enough); `lat` = `geo.latitude` (the research had the pair swapped); discovery from the visit
+page, then the apply link (Arkansas at Pine Bluff has no visit link). Pilot on dev: **20 of 20 sites discovered and
+read, 509 events** (232 tours, 116 online, 76 sessions, 21 open houses, 12 travel, 52 other, 0 staff), every placed
+row located, 0 errors, 0 collapses; two sites answer with no events (Criswell, LSU Alexandria); Otterbein's 28 items
+is the closest any site came to the 30-item page, which the reader warns about rather than paging.
+
+**TargetX** (`readers/targetx.mts`, `discover-targetx.mts`, 20 tests; `PoliteHttp.post`, paced and robots-checked
+like a GET): the descriptor parser, the two remoting calls with the origin headers (a fake Salesforce in the tests
+answers 402 without them and refuses stale tokens), the reference resolver (Beacon's compressed answer resolves to
+the saved plain one), the ERx literal parser with per-event failure isolation, the place rule, availability; a
+Lightning site is recorded `off`. ERx start times proved to be local wall-clock labelled UTC, read as local when the
+display time agrees. Pilot: **0 sites read**: 17 of 19 Salesforce sites serve the platform's default robots.txt
+and two answer 503, so every read is declined (see the robots.txt note above); Arcadia's Lightning site is recorded
+`off`. The owner's decision stands open; nothing reads until it changes.
+
+Known gaps: Element451's "reachable but empty" sites count as active hosts (their `zero_since` will make them
+`no_events` after a month); the CLI's "No Slate host on record" message predates vendors; TargetX's POST path has
+no live verification beyond the tests.
+
 ## The nightly job
 
 ### Discovery (once, then monthly in the identity refresh)
@@ -276,8 +504,8 @@ tie), the event page confirms year and zone, and until then the state's usual zo
 campus ZIP 32611 has no ZCTA) take the event page's own map centre. `moved_at` is set for a start, venue, address, or
 city change on a confirmed row; title and availability changes move only `changed_at`. "closed" from the event page
 outranks the widget's "full". UT's widget nests a placeholder item inside each real one; the parser reads the outer
-item. Not built: the weekly re-read of unchanged event pages, the `no_events` host status, a last-attempt timestamp for
-unreachable hosts (retried on Sundays for now).
+item. Not built in the first round: the weekly re-read of unchanged event pages. The `no_events` status, the
+last-attempt timestamp, and the retry rules came in round 2 (below).
 
 **Pages** (U2, then the owner's review): `lib/visit-events/read.ts` and `view.ts` (pure grouping, chips, wording),
 `store.ts`; `components/visits/`; `/me/visits`; settings on `/account` beside the Updates switch (`/me` redirects).

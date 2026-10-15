@@ -8,6 +8,10 @@
  *      stored rows by `diffEvents`, a pure function: new rows, `changed_at` when the title, start, place, or
  *      availability moved (`moved_at` when the start or place did), `misses + 1` for a stored live upcoming row not seen tonight and `removed_at` at two misses;
  *   4. written through the secret key in batches of 500, the host's row updated, and a `visit_event_sync` row.
+ * Guards ("Keeping it running"): a search that is Slate's page but parses to nothing it says it has (or no longer says
+ * "returned N event(s)" at all) is a collapsed host, an error that counts no misses; and when more than 20% of the hosts
+ * tried tonight failed or collapsed, no host's misses are written (`misses_withheld`), so a markup change can never
+ * empty the table.
  * Every request goes through `PoliteHttp` (robots.txt, at least a second between requests to one host, the project's
  * user agent); hosts are read in parallel, a few at a time. Nothing is ever submitted to a college.
  */
@@ -16,9 +20,12 @@ import { kindOf } from "../../../lib/visit-events/kinds.ts";
 import { VISIT_EVENT_COLUMNS, isShownKind, visitEventId, type SlateHostRow, type VisitAvailability, type VisitEventRow } from "../../../lib/visit-events/types.ts";
 import type { ReaderHttp } from "./discover.mts";
 import { parseEventPage, type EventPage } from "./event-page.mts";
+import { afterFailure, afterRead, FAILURES_TO_UNREACHABLE } from "./hosts.mts";
 import { locate, type ZipTable } from "./geo.mts";
-import { isSlateEventRegistration, parseStandardSearch, searchUrl } from "./slate-search.mts";
+import { isSlateEventRegistration, parseStandardSearch, searchUrl, type StandardSearch } from "./slate-search.mts";
 import { MAX_WIDGET_PAGES, parseWidgetList, widgetListUrl } from "./slate-widget.mts";
+import { readTargetxSite } from "./readers/targetx.mts";
+import { readElementSite } from "./readers/element451.mts";
 
 /**
  * A stored row: the public columns plus the miss counter only the reader uses, and `moved_at` (migration
@@ -171,6 +178,24 @@ export interface HostRead {
   errors: string[];
 }
 
+/**
+ * A search page that is Slate's but parsed to nothing it says it has: "returned N event(s)" with N > 0 and no rows, or
+ * the phrase gone entirely. Most likely Technolutions changed the markup; the host's stored rows must not be missed.
+ */
+export class CollapsedSearchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CollapsedSearchError";
+  }
+}
+
+/** Why a parsed standard search is a collapse, or null when it is a real answer (rows, or "returned 0 event(s)"). */
+export function searchCollapse(search: StandardSearch): string | null {
+  if (search.total == null) return 'the search page no longer says "returned N event(s)" (collapsed: markup changed?)';
+  if (search.total > 0 && search.rows.length === 0) return `the search says it returned ${search.total} event(s) but none parsed (collapsed: markup changed?)`;
+  return null;
+}
+
 async function getText(http: ReaderHttp, url: string): Promise<string | null> {
   const res = await http.get(url);
   if (!res) return null;
@@ -286,8 +311,13 @@ export async function readHost(hostRow: Pick<SlateHostRow, "unit_id" | "host" | 
   fetched++;
   const searchHtml = await getText(deps.http, sUrl);
   if (searchHtml == null) throw new Error(`robots.txt disallows ${sUrl}, or the host didn't answer it`);
-  if (!isSlateEventRegistration(searchHtml)) throw new Error(`${sUrl} is not Slate's Event Registration page`);
+  // A page still headed "Event Registration" is Slate's even when the results phrase is gone (a results page has no
+  // form fields, so isSlateEventRegistration alone would call it a stranger): that is a collapse, not a plain failure.
   const search = parseStandardSearch(searchHtml, host);
+  const headed = /<h1>\s*Event Registration\s*<\/h1>/i.test(searchHtml);
+  const collapse = headed ? searchCollapse(search) : null;
+  if (collapse) throw new CollapsedSearchError(`${sUrl}: ${collapse}`);
+  if (!isSlateEventRegistration(searchHtml)) throw new Error(`${sUrl} is not Slate's Event Registration page`);
   const cands = new Map<string, Candidate>();
   for (const r of search.rows) {
     const when = parseSearchWhen(r.when, deps.now);
@@ -389,6 +419,29 @@ export async function readHost(hostRow: Pick<SlateHostRow, "unit_id" | "host" | 
   return { rows, fetched, pagesRead, widgetFailed, searchTotal: search.total, errors };
 }
 
+/**
+ * Reads one host row with its vendor's reader (specs/product/visit-events.md, "Round 3: TargetX and Element451"):
+ * Slate's `readHost` (above), the TargetX reader (readers/targetx.mts; a Lightning site throws "not readable"), the
+ * Element451 reader (readers/element451.mts). A row without a vendor is Slate; anything else throws, so a
+ * misconfigured vendor is a visible failure rather than a silently skipped host.
+ */
+export async function readSite(
+  hostRow: Pick<SlateHostRow, "unit_id" | "host" | "portal_parts"> & Partial<Pick<SlateHostRow, "vendor" | "config">>,
+  deps: ReadDeps,
+): Promise<HostRead> {
+  const vendor = hostRow.vendor ?? "slate";
+  switch (vendor) {
+    case "slate":
+      return readHost(hostRow, deps);
+    case "targetx":
+      return readTargetxSite({ unit_id: hostRow.unit_id, host: hostRow.host, config: hostRow.config ?? {} }, deps);
+    case "element451":
+      return readElementSite({ ...hostRow, vendor, config: hostRow.config ?? {} } as SlateHostRow, deps);
+    default:
+      throw new Error(`readSite: no reader for vendor "${vendor}" (host ${hostRow.host})`);
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Storage and the run                                                 */
 /* ------------------------------------------------------------------ */
@@ -410,12 +463,20 @@ export interface SyncRecord {
   events_removed: number;
   pages_fetched: number;
   errors: { host: string; error: string }[];
+  /** Hosts whose read failed (not answering, not Slate's page, a write error); collapsed hosts are counted apart. */
+  hosts_failed: number;
+  /** Hosts whose search collapsed (`CollapsedSearchError`). */
+  hosts_collapsed: number;
+  /** Whether the run-level guard withheld every host's misses tonight. */
+  misses_withheld: boolean;
 }
 
 export interface HostResult {
   unitId: string;
   host: string;
   ok: boolean;
+  /** Whether the failure was a collapsed search (`CollapsedSearchError`). */
+  collapsed: boolean;
   error?: string;
   diff?: EventDiff;
   read?: HostRead;
@@ -433,17 +494,21 @@ export interface SyncDeps {
   log?: (msg: string) => void;
 }
 
-/** Hosts that fail this many nights running become `unreachable` (tried weekly). */
-export const FAILURES_TO_UNREACHABLE = 3;
+/** Hosts that fail this many nights running become `unreachable` (retried 7 days after the last attempt; hosts.mts). */
+export { FAILURES_TO_UNREACHABLE };
 
-/** Reads, diffs, and (unless a dry run) writes one host. Never throws: a failure is the result's `error`. */
+/**
+ * Reads, diffs, and (unless a dry run) writes one host's new and changed rows and its `slate_hosts` row. The misses
+ * (`diff.missed`) are left to `runSync`, which writes them only when the run-level guard allows. Never throws: a
+ * failure is the result's `error`; a collapsed search is a failure with `collapsed` set.
+ */
 export async function syncHost(hostRow: SlateHostRow, deps: SyncDeps): Promise<HostResult> {
   const now = deps.now.toISOString();
   const log = deps.log ?? (() => {});
   try {
     const stored = await deps.store.storedFor(hostRow.host, hostRow.unit_id);
     const campus = deps.campus(hostRow.unit_id);
-    const read = await readHost(hostRow, {
+    const read = await readSite(hostRow, {
       http: deps.http,
       now: deps.now,
       zips: deps.zips,
@@ -457,20 +522,17 @@ export async function syncHost(hostRow: SlateHostRow, deps: SyncDeps): Promise<H
     });
     const diff = diffEvents(stored, read.rows, now, (s) => read.widgetFailed && s.online);
     if (!deps.dryRun) {
-      await deps.store.upsertEvents([...diff.upserts, ...diff.missed]);
-      await deps.store.updateHost(hostRow.unit_id, { last_read: now, failures: 0, last_error: null, status: "active" });
+      await deps.store.upsertEvents(diff.upserts);
+      await deps.store.updateHost(hostRow.unit_id, afterRead(hostRow, { rows: read.rows.length, searchTotal: read.searchTotal }, deps.now));
     }
-    return { unitId: hostRow.unit_id, host: hostRow.host, ok: true, diff, read };
+    return { unitId: hostRow.unit_id, host: hostRow.host, ok: true, collapsed: false, diff, read };
   } catch (err) {
     const error = (err as Error).message;
     log(`  ${hostRow.host}: ${error}`);
     if (!deps.dryRun) {
-      const failures = (hostRow.failures ?? 0) + 1;
-      await deps.store
-        .updateHost(hostRow.unit_id, { failures, last_error: error.slice(0, 500), status: failures >= FAILURES_TO_UNREACHABLE ? "unreachable" : hostRow.status })
-        .catch(() => {});
+      await deps.store.updateHost(hostRow.unit_id, afterFailure(hostRow, error, deps.now)).catch(() => {});
     }
-    return { unitId: hostRow.unit_id, host: hostRow.host, ok: false, error };
+    return { unitId: hostRow.unit_id, host: hostRow.host, ok: false, collapsed: err instanceof CollapsedSearchError, error };
   }
 }
 
@@ -494,7 +556,18 @@ export async function pool<T, R>(items: readonly T[], size: number, fn: (item: T
  */
 export const HOST_POOL = Math.max(1, Number(process.env.VISIT_EVENTS_HOST_POOL) || 8);
 
-/** Syncs the hosts (one row per host; a host listed for two colleges is read once), records the run, returns the results. */
+/** Above this share of tonight's hosts failed or collapsed, no misses are written for any host (the run-level guard). */
+export const MAX_FAILED_SHARE = 0.2;
+
+/** Whether the run-level guard withholds tonight's misses: more than `MAX_FAILED_SHARE` of the hosts tried failed or collapsed. */
+export function withholdMisses(tried: number, failed: number, collapsed: number): boolean {
+  return tried > 0 && (failed + collapsed) / tried > MAX_FAILED_SHARE;
+}
+
+/**
+ * Syncs the hosts (one row per host; a host listed for two colleges is read once), then writes every host's misses
+ * unless the run-level guard withholds them, records the run, and returns the results.
+ */
 export async function runSync(hosts: readonly SlateHostRow[], deps: SyncDeps): Promise<{ results: HostResult[]; record: SyncRecord }> {
   const ranAt = deps.now.toISOString();
   const byHost = new Map<string, SlateHostRow>();
@@ -503,18 +576,35 @@ export async function runSync(hosts: readonly SlateHostRow[], deps: SyncDeps): P
     else byHost.set(h.host, h);
   }
   const results = await pool([...byHost.values()], HOST_POOL, (h) => syncHost(h, deps));
+  const collapsed = results.filter((r) => r.collapsed).length;
+  const failed = results.filter((r) => !r.ok && !r.collapsed).length;
+  const withheld = withholdMisses(results.length, failed, collapsed);
+  const runErrors: { host: string; error: string }[] = [];
+  if (withheld) {
+    deps.log?.(`  Misses withheld: ${failed} failed and ${collapsed} collapsed of ${results.length} hosts (more than ${MAX_FAILED_SHARE * 100}%)`);
+  } else if (!deps.dryRun) {
+    const missed = results.flatMap((r) => r.diff?.missed ?? []);
+    try {
+      if (missed.length) await deps.store.upsertEvents(missed);
+    } catch (err) {
+      runErrors.push({ host: "*", error: `writing ${missed.length} missed rows: ${(err as Error).message}` });
+    }
+  }
   const record: SyncRecord = {
     ran_at: ranAt,
     finished_at: new Date().toISOString(),
     hosts_read: results.filter((r) => r.ok).length,
     events_new: results.reduce((n, r) => n + (r.diff?.counts.new ?? 0), 0),
     events_changed: results.reduce((n, r) => n + (r.diff?.counts.changed ?? 0), 0),
-    events_removed: results.reduce((n, r) => n + (r.diff?.counts.removed ?? 0), 0),
+    events_removed: withheld || runErrors.length ? 0 : results.reduce((n, r) => n + (r.diff?.counts.removed ?? 0), 0),
     pages_fetched: results.reduce((n, r) => n + (r.read?.fetched ?? 0), 0),
     errors: results.flatMap((r) => [
       ...(r.error ? [{ host: r.host, error: r.error }] : []),
       ...(r.read?.errors ?? []).slice(0, 20).map((e) => ({ host: r.host, error: e })),
-    ]),
+    ]).concat(runErrors),
+    hosts_failed: failed,
+    hosts_collapsed: collapsed,
+    misses_withheld: withheld,
   };
   if (!deps.dryRun) await deps.store.recordSync(record);
   return { results, record };

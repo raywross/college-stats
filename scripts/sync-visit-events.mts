@@ -2,11 +2,18 @@
  * Reads Slate colleges' public event calendars into Supabase (specs/product/visit-events.md, "The nightly job";
  * scripts/lib/visit-events/).
  *
- *   npm run sync-visit-events                                   every active host (the nightly run)
- *   npm run sync-visit-events -- --units 134130,198419          those colleges' hosts
- *   npm run sync-visit-events -- --discover --units 134130      find the colleges' Slate hosts first, then read them
+ *   npm run sync-visit-events                                   every host due tonight (the nightly run): active hosts,
+ *                                                                unreachable ones 7+ days after their last attempt,
+ *                                                                no_events ones 30+ days after it (scripts/lib/visit-events/hosts.mts)
+ *   npm run sync-visit-events -- --retry-unreachable            also every unreachable host now (a manual retry)
+ *   npm run sync-visit-events -- --units 134130,198419          those colleges' hosts, whatever their status (never `off`)
+ *   npm run sync-visit-events -- --discover --units 134130      find the colleges' Slate hosts first (then, for colleges
+ *                                                                still without a row, a TargetX events site:
+ *                                                                readers/discover-targetx.mts), then read them
  *   npm run sync-visit-events -- --discover --all               find hosts for every college with a visit or apply link
- *                                                                not yet in slate_hosts (resumable), then read every host
+ *                                                                not yet in slate_hosts (resumable; safe weekly: a college
+ *                                                                on record is retried only when unreachable and untried
+ *                                                                for 7 days), then read the hosts due
  *   npm run sync-visit-events -- --dry-run                      read and diff; write nothing
  *   npm run sync-visit-events -- --limit 20                     at most 20 colleges
  *
@@ -23,7 +30,10 @@ import { supabaseClient } from "../lib/supabase.ts";
 import { PoliteHttp } from "./lib/college-reported/http.mts";
 import { isBlockedHost } from "./lib/college-reported/blocked.mts";
 import { discoverSlateHost, type Discovered } from "./lib/visit-events/discover.mts";
+import { discoverTargetxSite } from "./lib/visit-events/readers/discover-targetx.mts";
+import { discoverElementSite } from "./lib/visit-events/readers/discover-element451.mts";
 import { loadZipTable } from "./lib/visit-events/geo.mts";
+import { discoveryTargets, dueHosts } from "./lib/visit-events/hosts.mts";
 import { readHosts, supabaseStore, upsertHosts } from "./lib/visit-events/store.mts";
 import { HOST_POOL, pool, runSync, type EventStore } from "./lib/visit-events/sync.mts";
 
@@ -38,6 +48,7 @@ const value = (name: string) => {
 const DRY_RUN = flag("--dry-run");
 const DISCOVER = flag("--discover");
 const ALL = flag("--all");
+const RETRY_UNREACHABLE = flag("--retry-unreachable");
 const UNITS = (value("--units") ?? "")
   .split(",")
   .map((s) => s.trim())
@@ -81,13 +92,13 @@ const known = new Map(hosts.map((h) => [h.unit_id, h]));
 
 /* Discovery */
 if (DISCOVER) {
-  let targets = UNITS.length ? UNITS : schools.filter((s) => s.links?.visit || s.links?.apply).map((s) => s.unit_id);
-  // --all is resumable: colleges already in slate_hosts are skipped; --units rediscovers the named ones.
-  if (!UNITS.length) targets = targets.filter((u) => !known.has(u));
-  targets = targets.filter((u) => known.get(u)?.status !== "off").slice(0, LIMIT);
-  console.log(`Discovering Slate hosts for ${targets.length} college${targets.length === 1 ? "" : "s"}…`);
+  // --all is resumable and safe weekly (colleges on record are skipped unless unreachable and untried for 7 days);
+  // --units rediscovers the named ones. Never an `off` college.
+  const targets = discoveryTargets(schools, known, { units: UNITS, now }).slice(0, LIMIT);
+  console.log(`Discovering Slate hosts (then TargetX sites) for ${targets.length} college${targets.length === 1 ? "" : "s"}…`);
   const CHUNK = 40;
   let found = 0;
+  let added = 0;
   for (let i = 0; i < targets.length; i += CHUNK) {
     const chunk = targets.slice(i, i + CHUNK);
     // Each college is its own host, so the pool only sets how many colleges are visited at once (HOST_POOL's env override applies).
@@ -101,19 +112,82 @@ if (DISCOVER) {
       if (!d) console.log(`  ${unitId} ${s.name}: no Slate host found from ${s.links?.visit ?? s.links?.apply ?? "no link"}`);
       return [unitId, d];
     });
-    const rows = results
+    const rows: Pick<SlateHostRow, "unit_id" | "host" | "found_on" | "portal_parts" | "vendor" | "config" | "status">[] = results
       .filter((r): r is [string, Discovered] => r[1] !== null)
-      .map(([unit_id, d]) => ({ unit_id, host: d.host, found_on: d.foundOn, portal_parts: d.portalParts }));
+      .map(([unit_id, d]) => ({ unit_id, host: d.host, found_on: d.foundOn, portal_parts: d.portalParts, vendor: "slate" as const, config: {}, status: "active" as const }));
+    // TargetX (readers/discover-targetx.mts), for the colleges the Slate step left without a row (or whose row is
+    // already TargetX): a legacy or ERx site is written active; a Lightning site is written off (found, never read).
+    const slateFound = new Set(rows.map((r) => r.unit_id));
+    const forTargetx = chunk.filter((u) => !slateFound.has(u) && byId.has(u) && (!known.has(u) || known.get(u)!.vendor === "targetx"));
+    const tx = await pool(forTargetx, HOST_POOL, async (unitId) => {
+      const s = byId.get(unitId)!;
+      const d = await discoverTargetxSite(unitId, s.links?.visit ?? null, http, { isBlocked, log: (m) => console.log(m) });
+      if (!d) console.log(`  ${unitId} ${s.name}: no TargetX events site found either`);
+      if (!d) return null;
+      const status: SlateHostRow["status"] = d.config.flavour === "lightning" ? "off" : "active";
+      return { unit_id: unitId, host: d.host, found_on: d.foundOn, portal_parts: [], vendor: "targetx" as const, config: { ...d.config }, status };
+    });
+    for (const r of tx) if (r) rows.push(r);
     found += rows.length;
     if (client && !DRY_RUN && rows.length) await upsertHosts(client, rows);
     for (const r of rows) {
       const prev = known.get(r.unit_id);
-      const row: SlateHostRow = { status: "active", failures: 0, first_seen: now.toISOString(), last_read: null, last_error: null, ...prev, ...r };
+      if (!prev) added++;
+      const row: SlateHostRow = {
+        failures: 0,
+        first_seen: now.toISOString(),
+        last_read: null,
+        last_error: null,
+        last_attempt: null,
+        search_total: null,
+        zero_since: null,
+        ...prev,
+        ...r,
+        // upsertHosts writes `active` (a TargetX Lightning site `off`): a rediscovered unreachable host is read tonight like a new one.
+      };
       known.set(r.unit_id, row);
     }
   }
-  console.log(`Found ${found} of ${targets.length}${DRY_RUN ? " (dry run: slate_hosts not written)" : ""}.`);
+  console.log(`Found ${found} of ${targets.length} (${added} new to slate_hosts)${DRY_RUN ? " (dry run: slate_hosts not written)" : ""}.`);
   hosts = [...known.values()];
+}
+
+/* Element451 step (round 3: specs/product/visit-events.md "Round 3"), after the Slate step above, for colleges
+ * still without a row (the same `targets`, filtered to what Slate didn't find; `known` already reflects it). */
+if (DISCOVER) {
+  const targets = discoveryTargets(schools, known, { units: UNITS, now }).slice(0, LIMIT);
+  const stillMissing = targets.filter((unitId) => !known.has(unitId));
+  if (stillMissing.length) {
+    console.log(`Discovering Element451 sites for ${stillMissing.length} college${stillMissing.length === 1 ? "" : "s"} still without a host…`);
+    const results = await pool(stillMissing, HOST_POOL, async (unitId): Promise<[string, Awaited<ReturnType<typeof discoverElementSite>>]> => {
+      const s = byId.get(unitId);
+      if (!s) return [unitId, null];
+      const d = await discoverElementSite(unitId, s.links?.visit ?? null, s.links?.apply ?? null, http, { log: (m) => console.log(m) });
+      if (!d) console.log(`  ${unitId} ${s.name}: no Element451 site found from ${s.links?.visit ?? "no link"}`);
+      return [unitId, d];
+    });
+    const elementRows = results
+      .filter((r): r is [string, NonNullable<Awaited<ReturnType<typeof discoverElementSite>>>] => r[1] !== null)
+      .map(([unit_id, d]) => ({ unit_id, host: d.host, found_on: d.foundOn, portal_parts: [], vendor: "element451" as const, config: d.config }));
+    if (client && !DRY_RUN && elementRows.length) await upsertHosts(client, elementRows);
+    for (const r of elementRows) {
+      const row: SlateHostRow = {
+        failures: 0,
+        first_seen: now.toISOString(),
+        last_read: null,
+        last_error: null,
+        last_attempt: null,
+        search_total: null,
+        zero_since: null,
+        ...known.get(r.unit_id),
+        ...r,
+        status: "active",
+      };
+      known.set(r.unit_id, row);
+    }
+    console.log(`Found ${elementRows.length} of ${stillMissing.length} Element451 site${stillMissing.length === 1 ? "" : "s"}${DRY_RUN ? " (dry run: slate_hosts not written)" : ""}.`);
+    hosts = [...known.values()];
+  }
 }
 
 /* Reading */
@@ -123,9 +197,10 @@ if (UNITS.length) {
   const missing = UNITS.filter((u) => !known.has(u));
   if (missing.length) console.log(`No Slate host on record for ${missing.join(", ")} (run with --discover, or seed slate_hosts).`);
 } else {
-  // Unreachable hosts are retried weekly (Sundays); colleges whose hosts are blocked are skipped.
-  const sunday = now.getUTCDay() === 0;
-  chosen = hosts.filter((h) => h.status === "active" || h.status === "no_events" || (h.status === "unreachable" && sunday));
+  // The hosts due tonight by their status and last attempt (hosts.mts); colleges whose hosts are blocked are skipped.
+  chosen = dueHosts(hosts, now, { retryUnreachable: RETRY_UNREACHABLE });
+  const waiting = hosts.length - chosen.length;
+  if (waiting) console.log(`${waiting} host${waiting === 1 ? "" : "s"} not due tonight (unreachable, no_events, or off).`);
 }
 chosen = chosen.filter((h) => {
   if (!isBlocked(h.host)) return true;
@@ -179,6 +254,6 @@ for (const r of results) {
   );
 }
 console.log(
-  `Run: ${record.hosts_read} hosts read, ${record.events_new} new, ${record.events_changed} changed, ${record.events_removed} removed, ${record.pages_fetched} requests, ${record.errors.length} errors${DRY_RUN ? " (dry run: nothing written)" : ""}.`,
+  `Run: ${record.hosts_read} hosts read, ${record.hosts_failed} failed, ${record.hosts_collapsed} collapsed, ${record.events_new} new, ${record.events_changed} changed, ${record.events_removed} removed, ${record.pages_fetched} requests, ${record.errors.length} errors${record.misses_withheld ? "; MISSES WITHHELD (more than 20% of hosts failed or collapsed: no rows marked missed or removed tonight)" : ""}${DRY_RUN ? " (dry run: nothing written)" : ""}.`,
 );
 if (quiet.length) console.log(`${quiet.length} requests skipped by robots.txt or unreachable hosts (first: ${quiet[0].trim()}).`);

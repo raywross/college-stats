@@ -187,15 +187,27 @@ async function alert(client: Client, siteUrl: string, dry: boolean) {
   const since = new Date(now.getTime() - WINDOW_HOURS * 3_600_000);
   const sinceIso = since.toISOString();
 
-  const { data: eventRows, error: eventsError } = await client
-    .from("visit_events")
-    .select(VISIT_EVENT_COLUMNS)
-    .is("removed_at", null)
-    .in("kind", [...SHOWN_KINDS])
-    .gte("starts_at", now.toISOString())
-    .or(`first_seen.gte.${sinceIso},moved_at.gte.${sinceIso}`);
-  if (eventsError) throw new Error(`visit-alerts: reading visit_events failed: ${eventsError.message}`);
-  const events = (eventRows ?? []) as unknown as VisitEventRow[];
+  // Paged by primary key: PostgREST caps an unordered read at 1,000 rows, and a night after discovery adds hosts (or a
+  // reseed) has tens of thousands of "new" events; an unpaged read silently dropped most of them (pilot QA, 2026-10-15).
+  const events: VisitEventRow[] = [];
+  const PAGE = 1000;
+  let last: string | null = null;
+  for (;;) {
+    let q = client
+      .from("visit_events")
+      .select(VISIT_EVENT_COLUMNS)
+      .is("removed_at", null)
+      .in("kind", [...SHOWN_KINDS])
+      .gte("starts_at", now.toISOString())
+      .or(`first_seen.gte.${sinceIso},moved_at.gte.${sinceIso}`);
+    if (last !== null) q = q.gt("id", last);
+    const { data: page, error: eventsError } = await q.order("id").limit(PAGE);
+    if (eventsError) throw new Error(`visit-alerts: reading visit_events failed: ${eventsError.message}`);
+    const rows = (page ?? []) as unknown as VisitEventRow[];
+    events.push(...rows);
+    if (rows.length < PAGE) break;
+    last = rows[rows.length - 1].id;
+  }
   const unitIds = [...new Set(events.map((e) => e.unit_id))];
 
   const empty = { configured: !dry, dry, events: events.length, candidates: 0, sent: 0, recorded: 0, errors: 0, skipped: { noPoint: 0, unsubscribed: 0, firstNight: 0, nothingNear: 0, alreadySent: 0 } };

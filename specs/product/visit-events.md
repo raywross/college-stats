@@ -230,7 +230,36 @@ then the rest are switched on.
 *(filled from the research)*
 
 ### Element451: the protocol
-*(filled from the research)*
+Research 2026-10-15 (`visit-events-build/research/element451.md`, fixtures from four colleges). Element451 serves
+several apps; only **`event451`** lists events. It is a server-rendered Angular app: `GET https://<site>/` returns
+the full listing in `<script id="event451-state" type="application/json">` (the blob appears twice, identical), so
+one request per site, no API call, no token. Sites: `https://<client>.event451.sites.451.io/`, a differently
+prefixed subdomain (`ggc-35205.event451.sites.451.io`), or a custom domain running the same app
+(`visit.cookman.edu`). Of the 50 colleges whose visit page links Element451, **20** have a reachable `event451`
+listing; 4 have only an embedded form; 25 link only the chat shell, a landing page, or the applicant portal (several
+of those use Slate or a campus calendar for events); 1 refused the fetch.
+
+- **Discovery:** from the visit page, any link or script on an `event451.sites.451.io` host, or a linked host whose
+  page contains `id="event451-state"` (a custom domain); the visit page may itself be the site. Confirmed by the
+  blob's presence. `config` keeps `{ site, client }` (`configState.client.token`, e.g. `cccb`).
+- **Listing:** `eventsListStore.items[]`. Each item is a template (a "parent" spanning months) with
+  `occurrences.upcoming[]`, the actual bookable slots, each with its own `start_date`, `end_date`, `timezone`
+  (IANA already), `is_open` / `is_full` / `is_closed`, and counts. **One stored row per occurrence**, the parent's
+  title, description, and location carried down; `slate_id` = `${item.guid}:${occurrence.element_guid}` (the
+  column becomes text in `20261015130000`). `total ≤ limit (30)` in every fixture; a response with `total >
+  items.length` is logged as a warning, never silently dropped, since no paging parameter was found.
+- **Fields:** `content.title`; `location.{venue_name|building, address, city, state, zip, geo.latitude/longitude}`
+  (coordinates and ZIP on every in-person item: better than Slate's page read); **online = the `location` key is
+  absent** (confirmed on Georgia Gwinnett's virtual sessions; `event_type` slugs are client-chosen and only a hint);
+  `availability` from the occurrence's flags; `book_url` = `https://<site>/event/<item.guid>` (the detail page is
+  the registration page); `kind` from the title and `event_type` through `kindOf` (no fixed enum: `campus_tours`,
+  `preview-day`, `virtual-session`, `information-session`… are per-client text).
+- **No detail read is needed**: the listing carries everything the row needs, so `pagePolicy` is "listing" for every
+  Element451 row and the per-night cost is one request per site.
+- **Collapse:** a page without the `event451-state` blob, or a blob without `eventsListStore`, is a collapsed site.
+- **Risks:** the online inference is undocumented; occurrence paging (`singleEventOccurrencesStore.range`) was empty
+  in every fixture and may matter for a busy tour calendar; robots.txt on `element451.com` and the client sites
+  disallow nothing; no login anywhere.
 
 ### Units
 *(filled once the protocols are known: a reader per vendor, discovery, the pilot and its QA)*

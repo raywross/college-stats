@@ -114,10 +114,17 @@ export interface SlateHostRow {
   search_total: number | null;
   /** When the host's reads first came back with no rows; a month of that makes it `no_events`. */
   zero_since: string | null;
+  /** Which system the college's calendar runs on, and so which reader reads this row (20261015120000). */
+  vendor: HostVendor;
+  /** What that reader needs beyond the host: a TargetX site's path and flavour, an Element451 site's API base and public tokens. */
+  config: Record<string, unknown>;
 }
 
+export type HostVendor = "slate" | "targetx" | "element451";
+export const HOST_VENDORS: readonly HostVendor[] = ["slate", "targetx", "element451"];
+
 export const SLATE_HOST_COLUMNS =
-  "unit_id, host, found_on, portal_parts, status, failures, first_seen, last_read, last_error, last_attempt, search_total, zero_since";
+  "unit_id, host, found_on, portal_parts, status, failures, first_seen, last_read, last_error, last_attempt, search_total, zero_since, vendor, config";
 
 /** `visit_events.id`: the host plus Slate's event GUID, so two sources for one event make one row. */
 export function visitEventId(host: string, slateId: string): string {

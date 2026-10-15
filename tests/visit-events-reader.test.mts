@@ -479,6 +479,8 @@ function ufSite() {
 const UF_HOST: SlateHostRow = {
   unit_id: "134130",
   host: UF,
+  vendor: "slate",
+  config: {},
   found_on: "https://www.admissions.ufl.edu/visit-and-events",
   portal_parts: [
     { page: "/portal/uf-campus-tour", service: TOUR_SERVICE },

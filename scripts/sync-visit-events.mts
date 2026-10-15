@@ -7,7 +7,9 @@
  *                                                                no_events ones 30+ days after it (scripts/lib/visit-events/hosts.mts)
  *   npm run sync-visit-events -- --retry-unreachable            also every unreachable host now (a manual retry)
  *   npm run sync-visit-events -- --units 134130,198419          those colleges' hosts, whatever their status (never `off`)
- *   npm run sync-visit-events -- --discover --units 134130      find the colleges' Slate hosts first, then read them
+ *   npm run sync-visit-events -- --discover --units 134130      find the colleges' Slate hosts first (then, for colleges
+ *                                                                still without a row, a TargetX events site:
+ *                                                                readers/discover-targetx.mts), then read them
  *   npm run sync-visit-events -- --discover --all               find hosts for every college with a visit or apply link
  *                                                                not yet in slate_hosts (resumable; safe weekly: a college
  *                                                                on record is retried only when unreachable and untried
@@ -28,6 +30,7 @@ import { supabaseClient } from "../lib/supabase.ts";
 import { PoliteHttp } from "./lib/college-reported/http.mts";
 import { isBlockedHost } from "./lib/college-reported/blocked.mts";
 import { discoverSlateHost, type Discovered } from "./lib/visit-events/discover.mts";
+import { discoverTargetxSite } from "./lib/visit-events/readers/discover-targetx.mts";
 import { loadZipTable } from "./lib/visit-events/geo.mts";
 import { discoveryTargets, dueHosts } from "./lib/visit-events/hosts.mts";
 import { readHosts, supabaseStore, upsertHosts } from "./lib/visit-events/store.mts";
@@ -91,7 +94,7 @@ if (DISCOVER) {
   // --all is resumable and safe weekly (colleges on record are skipped unless unreachable and untried for 7 days);
   // --units rediscovers the named ones. Never an `off` college.
   const targets = discoveryTargets(schools, known, { units: UNITS, now }).slice(0, LIMIT);
-  console.log(`Discovering Slate hosts for ${targets.length} college${targets.length === 1 ? "" : "s"}…`);
+  console.log(`Discovering Slate hosts (then TargetX sites) for ${targets.length} college${targets.length === 1 ? "" : "s"}…`);
   const CHUNK = 40;
   let found = 0;
   let added = 0;
@@ -108,17 +111,28 @@ if (DISCOVER) {
       if (!d) console.log(`  ${unitId} ${s.name}: no Slate host found from ${s.links?.visit ?? s.links?.apply ?? "no link"}`);
       return [unitId, d];
     });
-    const rows = results
+    const rows: Pick<SlateHostRow, "unit_id" | "host" | "found_on" | "portal_parts" | "vendor" | "config" | "status">[] = results
       .filter((r): r is [string, Discovered] => r[1] !== null)
-      .map(([unit_id, d]) => ({ unit_id, host: d.host, found_on: d.foundOn, portal_parts: d.portalParts }));
+      .map(([unit_id, d]) => ({ unit_id, host: d.host, found_on: d.foundOn, portal_parts: d.portalParts, vendor: "slate" as const, config: {}, status: "active" as const }));
+    // TargetX (readers/discover-targetx.mts), for the colleges the Slate step left without a row (or whose row is
+    // already TargetX): a legacy or ERx site is written active; a Lightning site is written off (found, never read).
+    const slateFound = new Set(rows.map((r) => r.unit_id));
+    const forTargetx = chunk.filter((u) => !slateFound.has(u) && byId.has(u) && (!known.has(u) || known.get(u)!.vendor === "targetx"));
+    const tx = await pool(forTargetx, HOST_POOL, async (unitId) => {
+      const s = byId.get(unitId)!;
+      const d = await discoverTargetxSite(unitId, s.links?.visit ?? null, http, { isBlocked, log: (m) => console.log(m) });
+      if (!d) console.log(`  ${unitId} ${s.name}: no TargetX events site found either`);
+      if (!d) return null;
+      const status: SlateHostRow["status"] = d.config.flavour === "lightning" ? "off" : "active";
+      return { unit_id: unitId, host: d.host, found_on: d.foundOn, portal_parts: [], vendor: "targetx" as const, config: { ...d.config }, status };
+    });
+    for (const r of tx) if (r) rows.push(r);
     found += rows.length;
     if (client && !DRY_RUN && rows.length) await upsertHosts(client, rows);
     for (const r of rows) {
       const prev = known.get(r.unit_id);
       if (!prev) added++;
       const row: SlateHostRow = {
-        vendor: "slate",
-        config: {},
         failures: 0,
         first_seen: now.toISOString(),
         last_read: null,
@@ -128,8 +142,7 @@ if (DISCOVER) {
         zero_since: null,
         ...prev,
         ...r,
-        // upsertHosts writes `active`: a rediscovered unreachable host is read tonight like a new one.
-        status: "active",
+        // upsertHosts writes `active` (a TargetX Lightning site `off`): a rediscovered unreachable host is read tonight like a new one.
       };
       known.set(r.unit_id, row);
     }

@@ -143,6 +143,36 @@ recomputed from the titles every night, so a rule change reclassifies without re
 all: the listing is already in hand, the rows cost nothing to keep, and they may be useful later (an "interview
 offered" signal, say); keeping them also lets `check:visit-events` watch each host's share of accidental rows.
 
+## Keeping it running (round 2, 2026-10-15)
+The owner's condition for the feature: it must maintain itself, never a one-time pull. The nightly read is already
+idempotent and self-correcting (new rows appear, changed rows update, a row missing from two reads is removed, kinds
+are recomputed from titles each night). Four things would still let it rot, each with its fix:
+
+1. **A collapse.** If Technolutions changed the search page's markup, every host would parse to zero rows the same
+   night, and two nights later the table would have emptied itself. Guards: a host whose search page says
+   "returned N event(s)" with N > 0 but parses to no rows, or whose page no longer says it at all, is a **collapsed**
+   host: an error, no misses counted (`slate_hosts.failures` moves, `hosts_collapsed` on the run). A **run-level
+   guard** withholds all miss-marking when more than 20% of the hosts read tonight failed or collapsed
+   (`visit_event_sync.misses_withheld`); new and changed rows still write.
+2. **New Slate adopters are never found.** A **weekly discovery** (Sundays, the same workflow) tries every college with
+   a visit or apply link that isn't in `slate_hosts` yet. Discovery widens its candidates: any admissions-style
+   subdomain linked from the visit page or apply page (`apply.`, `admission(s).`, `connect.`, `engage.`, `go.`,
+   `visit.`, `discover.`, `enroll.`, `begin.`, `join.`, …), confirmed only by answering the standard search. The
+   2026-10-14 measurement found 13 of 14 such missed hosts answering (Amherst 86 events, Emerson 396, Union 398,
+   UMass Dartmouth 1,148); about 40 to 95 colleges.
+3. **Nobody sees it break.** The admin console's Health area gains a **Visit events** card: the last runs
+   (`visit_event_sync`: when, hosts read / failed / collapsed, new / changed / removed, misses withheld, the data
+   check's failures and warnings), hosts by status, and a red state when the last run failed, withheld misses, or is
+   older than 36 hours. The check script writes its summary onto the run it follows (`check_summary`,
+   `check_failures`, `check_warnings`).
+4. **Host bookkeeping.** `last_attempt` (tried) beside `last_read` (answered); unreachable hosts are retried every
+   seven days from their last attempt; a host whose search has answered with zero rows for 30 days (`zero_since`)
+   becomes `no_events` and is retried monthly; `search_total` keeps the search's own count for the card.
+
+Left for the round after: a TargetX reader (~150 colleges) and an Element451 reader (~50), each behind the same guards
+and piloted for a month on a dozen colleges first; a self-hosted runner or small VM for the crawl once the repository
+goes private (about 30 hours of Actions a month); the Technolutions partnership email (the owner's).
+
 ## The nightly job
 
 ### Discovery (once, then monthly in the identity refresh)

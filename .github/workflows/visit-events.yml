@@ -91,13 +91,17 @@ jobs:
         env:
           UNITS: ${{ inputs.units }}
           DISCOVER: ${{ inputs.discover }}
+          VISIT_EVENTS_HOST_POOL: "24"
         run: |
           flags=""
           if [ -n "$UNITS" ]; then flags="$flags --units $UNITS"; else flags="$flags --all"; fi
-          if [ "$DISCOVER" = "true" ]; then flags="$flags --discover"; fi
+          # Discovery runs weekly (Sundays) so colleges that adopt Slate are found; by hand when asked.
+          if [ "$DISCOVER" = "true" ] || [ "$(date -u +%u)" = "7" ]; then flags="$flags --discover"; fi
           echo "Target ${{ steps.target.outputs.target }}; flags:$flags"
           npm run sync-visit-events -- $flags
 
+      # The data check writes its summary onto tonight's run (visit_event_sync.check_*), which the admin console's
+      # Visit events card shows; a failing check (a rules problem) fails the job, so GitHub emails the owner.
       - name: Check what was read
         if: steps.target.outputs.configured == 'true'
-        run: npm run check:visit-events
+        run: npm run check:visit-events -- --record

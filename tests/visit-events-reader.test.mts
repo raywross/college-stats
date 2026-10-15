@@ -13,7 +13,7 @@ import { findWidgetServices, parseWidgetList, widgetListUrl } from "../scripts/l
 import { parseEventPage } from "../scripts/lib/visit-events/event-page.mts";
 import { CANDIDATE_HOST, candidateHosts, discoverSlateHost, portalPages, rankCandidates, rankHosts, slateLinks } from "../scripts/lib/visit-events/discover.mts";
 import { loadZipTable, locate } from "../scripts/lib/visit-events/geo.mts";
-import { diffEvents, needsPage, pagePolicy, readHost, runSync, MISSES_TO_REMOVE, type EventStore, type ReadEvent, type StoredEvent, type SyncRecord } from "../scripts/lib/visit-events/sync.mts";
+import { diffEvents, needsPage, pagePolicy, readHost, runSync, syncHost, withholdMisses, CollapsedSearchError, MISSES_TO_REMOVE, type EventStore, type ReadEvent, type StoredEvent, type SyncRecord } from "../scripts/lib/visit-events/sync.mts";
 import { checkHosts, hostReport } from "../scripts/lib/visit-events/check.mts";
 import type { SlateHostRow } from "../lib/visit-events/types.ts";
 
@@ -600,6 +600,131 @@ test("runSync: twice over the same pages is idempotent; a search failure leaves 
   assert.equal(JSON.stringify(rows), before);
   assert.equal(hostPatches.at(-1)?.failures, 3);
   assert.equal(hostPatches.at(-1)?.status, "unreachable");
+});
+
+/* ------------------------------------------------------------------ */
+/* Guards: a collapsed search, the run-level guard ("Keeping it running") */
+/* ------------------------------------------------------------------ */
+
+const UF_SEARCH_URL = `https://${UF}/register/?cmd=search&country=US`;
+/** UF's saved search with every row taken out: the page still says "returned 519 event(s)". */
+const ufCollapsed = () => read("uf-standard-search-us.html").replace(/<li[^>]*>\s*<a href="[^"]*\?id=[\s\S]*?<\/li>/gi, "");
+
+function memoryStore(initial: StoredEvent[] = []) {
+  const state = { rows: initial, hostPatches: [] as { unitId: string; patch: Partial<SlateHostRow> }[], records: [] as SyncRecord[] };
+  const store: EventStore = {
+    storedFor: async (host) => state.rows.filter((r) => r.host === host).map((r) => ({ ...r })),
+    upsertEvents: async (up) => {
+      const by = new Map(state.rows.map((r) => [r.id, r]));
+      for (const r of up) by.set(r.id, { ...r });
+      state.rows = [...by.values()];
+    },
+    updateHost: async (unitId, patch) => void state.hostPatches.push({ unitId, patch }),
+    recordSync: async (r) => void state.records.push(r),
+  };
+  return { state, store };
+}
+
+const campusDeps = { zips: loadZipTable(ROOT), campus: () => ({ city: "Gainesville", state: "FL", lat: 29.64629, lng: -82.347911 }) };
+
+test('readHost: a search that still says "returned 519 event(s)" but has no rows is a collapse; so is a page without the phrase; "returned 0" is not', async () => {
+  const deps = { now: OCT_13, zips: campusDeps.zips, campusCity: "gainesville", campusState: "FL", campusLat: null, campusLng: null, stored: new Map() };
+  const html = ufCollapsed();
+  assert.match(html, /returned 519 event/);
+  assert.equal(parseStandardSearch(html, UF).rows.length, 0);
+  await assert.rejects(
+    readHost(UF_HOST, { ...deps, http: fakeHttp({ [UF_SEARCH_URL]: html }) }),
+    (err: Error) => err instanceof CollapsedSearchError && /returned 519 event\(s\) but none parsed/.test(err.message),
+  );
+  // The phrase gone (even with rows on the page): collapsed too.
+  const noPhrase = read("uf-standard-search-us.html").replace(/returned\s+[\d,]+\s+event\(s\)/gi, "found these events");
+  assert.match(noPhrase, /<h1>\s*Event Registration\s*<\/h1>/, "still headed as Slate's page");
+  await assert.rejects(
+    readHost(UF_HOST, { ...deps, http: fakeHttp({ [UF_SEARCH_URL]: noPhrase }) }),
+    (err: Error) => err instanceof CollapsedSearchError && /no longer says/.test(err.message),
+  );
+  // A genuine empty search is an answer, not a collapse.
+  const empty = html.replace(/returned 519 event/, "returned 0 event");
+  const r = await readHost({ ...UF_HOST, portal_parts: [] }, { ...deps, http: fakeHttp({ [UF_SEARCH_URL]: empty }) });
+  assert.equal(r.rows.length, 0);
+  assert.equal(r.searchTotal, 0);
+});
+
+test("syncHost: a collapsed host counts a failure, names the collapse, keeps its status, and misses nothing", async () => {
+  const live = stored(1, { id: `${UF}:a`, host: UF, starts_at: "2026-11-01T15:00:00.000Z", misses: 1 });
+  const { state, store } = memoryStore([live]);
+  const res = await syncHost({ ...UF_HOST, failures: 1 }, { ...campusDeps, store, http: fakeHttp({ [UF_SEARCH_URL]: ufCollapsed() }), now: OCT_13 });
+  assert.equal(res.ok, false);
+  assert.equal(res.collapsed, true);
+  assert.equal(res.diff, undefined);
+  assert.deepEqual(state.rows, [live], "the stored row is not missed (it had one miss; a second would remove it)");
+  const patch = state.hostPatches.at(-1)!.patch;
+  assert.equal(patch.failures, 2);
+  assert.equal(patch.status, "active", "status unchanged below FAILURES_TO_UNREACHABLE");
+  assert.match(patch.last_error ?? "", /collapsed/);
+  // A plain failure is not a collapse.
+  const down = await syncHost(UF_HOST, { ...campusDeps, store, http: fakeHttp({}), now: OCT_13 });
+  assert.equal(down.ok, false);
+  assert.equal(down.collapsed, false);
+});
+
+/** A small Slate host's search listing `ids` (each a travel row on Oct 19); `collapsed` drops the rows but keeps the count. */
+function tinySearch(ids: string[], collapsed = false): string {
+  const li = collapsed ? "" : ids.map((id) => `<li><a href="?id=${id}">Visit ${id.slice(-2)}</a><br />Monday, October 19 at 9:00 AM<br />Marietta, GA</li>`).join("");
+  return `<html><h1>Event Registration</h1><p>Your search returned ${ids.length} event(s).</p><ul>${li}</ul></html>`;
+}
+const guid = (h: number, n: number) => `00000000-0000-0000-${String(h).padStart(4, "0")}-${String(n).padStart(12, "0")}`;
+
+/** Ten hosts, the first `collapsedCount` collapsed; each stores a row seen again (1) and a row gone tonight (2, one miss already); 3 is new. */
+function tenHosts(collapsedCount: number) {
+  const hosts: SlateHostRow[] = [];
+  const pages: Record<string, string> = {};
+  const rows: StoredEvent[] = [];
+  for (let h = 0; h < 10; h++) {
+    const host = `h${h}.example.edu`;
+    const unit = String(1000 + h);
+    hosts.push({ ...UF_HOST, unit_id: unit, host, portal_parts: [] });
+    pages[`https://${host}/register/?cmd=search&country=US`] = tinySearch([guid(h, 1), guid(h, 3)], h < collapsedCount);
+    for (const n of [1, 2]) {
+      rows.push(stored(h * 10 + n, { id: `${host}:${guid(h, n)}`, host, unit_id: unit, slate_id: guid(h, n), starts_at: "2026-10-19T13:00:00.000Z", misses: n === 2 ? 1 : 0, title: `Visit 0${n}` }));
+    }
+  }
+  return { hosts, pages, rows };
+}
+
+test("runSync: 3 of 10 hosts collapsed withholds every miss (no removed rows) but still writes new rows; 2 of 10 does not", async () => {
+  const { hosts, pages, rows } = tenHosts(3);
+  const { state, store } = memoryStore(rows);
+  const { record, results } = await runSync(hosts, { ...campusDeps, store, http: fakeHttp(pages), now: OCT_13, maxPages: 0 });
+  assert.equal(record.hosts_collapsed, 3);
+  assert.equal(record.hosts_failed, 0);
+  assert.equal(record.hosts_read, 7);
+  assert.equal(record.misses_withheld, true);
+  assert.equal(record.events_removed, 0);
+  assert.equal(record.events_new, 7, "each healthy host's new row");
+  assert.deepEqual(state.records, [record]);
+  assert.equal(results.filter((r) => r.collapsed).length, 3);
+  assert.ok(state.rows.every((r) => r.removed_at == null), "nothing removed");
+  assert.ok(state.rows.filter((r) => r.slate_id.endsWith("2")).every((r) => r.misses === 1), "no miss counted, on any host");
+  assert.equal(state.rows.filter((r) => r.slate_id.endsWith("3")).length, 7, "new rows written");
+
+  // 20% exactly is under the guard: the healthy hosts' gone rows are removed (their second miss); collapsed hosts' rows stay.
+  const two = tenHosts(2);
+  const m = memoryStore(two.rows);
+  const run = await runSync(two.hosts, { ...campusDeps, store: m.store, http: fakeHttp(two.pages), now: OCT_13, maxPages: 0 });
+  assert.equal(run.record.misses_withheld, false);
+  assert.equal(run.record.hosts_collapsed, 2);
+  assert.equal(run.record.events_removed, 8);
+  assert.equal(m.state.rows.filter((r) => r.removed_at).length, 8);
+  assert.ok(m.state.rows.filter((r) => r.host === "h0.example.edu" || r.host === "h1.example.edu").every((r) => !r.removed_at && r.misses === (r.slate_id.endsWith("2") ? 1 : 0)));
+});
+
+test("withholdMisses: failed and collapsed both count, above 20% of the hosts tried", () => {
+  assert.equal(withholdMisses(10, 2, 0), false);
+  assert.equal(withholdMisses(10, 1, 1), false);
+  assert.equal(withholdMisses(10, 2, 1), true);
+  assert.equal(withholdMisses(10, 3, 0), true);
+  assert.equal(withholdMisses(0, 0, 0), false);
 });
 
 /* ------------------------------------------------------------------ */

@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * The row's ED opportunity pill (specs/planner/next-steps/ed-opportunities.md "The pill"): accent background, worded
  * by the ED verdict: "Good ED opportunity" / "Good ED II opportunity" where early decision moves the college up a
  * level (`helps`), "ED opportunity" / "ED II opportunity" otherwise ("ED" / "ED II" on a phone, the full text as its
- * accessible label). Every candidate gets one (no cap). Tapping opens the row's details with the ED sheet on top.
+ * accessible label). At most three across the list (owner, 2026-10-15). Tapping opens the row's details with the ED sheet on top.
  * Never a number: the verdict, level, and closeness only decide which rows get one and in what order.
  */
 export function EdPill({ candidate, verdict = candidate.verdict, onOpen, className }: { candidate: EdCandidate; verdict?: EdVerdict | undefined; onOpen: () => void; className?: string }) {

@@ -203,7 +203,7 @@ export const RESULT_FIELDS = ["unitId", "group", "label", "used", "missing", "fa
 const GROUPS = new Set<string>(STANDING_LEVELS);
 const LABELS = new Set(["elite", "guaranteed", "recruited"]);
 const SENDS = new Set(["send", "consider-not-sending", "required-missing", "not-used"]);
-const EDS = new Set(["helps", "same", "not_advised"]);
+const EDS = new Set(["helps", "improves", "same", "not_advised"]);
 const INPUTS = new Set<InputKind>([
   "gpa", "test", "sections", "class_rank", "courses", "subject_grades", "state", "major", "round", "high_school",
   "activities", "awards", "work", "legacy", "recruited", "interest", "class_standing",

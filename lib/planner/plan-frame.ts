@@ -8,6 +8,8 @@
 import { addDays, parseStage } from "./stage.ts";
 import { planHref, tabForStage, type PlanTab } from "./plan-tabs.ts";
 import type { PlanView, PlanRowView } from "./plan-view.ts";
+import { isOpen } from "./tasks.ts";
+import type { PlanTask } from "./types.ts";
 
 /** A guardian's child, as far as route choice cares. */
 export interface SwitchableChild {
@@ -179,6 +181,16 @@ export function joinNames(names: readonly string[]): string {
 export function hasDueSoon(view: PlanView, today: string, windowDays = 7): boolean {
   const limit = addDays(today, windowDays);
   return view.rows.some((r) => isOpenRow(r) && r.deadline !== null && r.deadline.iso >= today && r.deadline.iso <= limit);
+}
+
+/**
+ * Whether a move was added since the viewer last opened this student's Next steps tab (next-steps notifications.md
+ * "Channels", the header dot): an open move created after `lastOpenedAt` (plan_opens.last_at). Never opened: any
+ * open move counts. Skipped, done, snoozed, and orphaned moves never light it.
+ */
+export function hasNewMove(tasks: readonly Pick<PlanTask, "created_at" | "done_at" | "dismissed" | "snoozed_until" | "orphaned">[], lastOpenedAt: string | null, today: string): boolean {
+  const since = lastOpenedAt === null ? null : Date.parse(lastOpenedAt);
+  return tasks.some((t) => isOpen(t, today) && (since === null || Number.isNaN(since) || Date.parse(t.created_at) > since));
 }
 
 /**

@@ -35,12 +35,21 @@ export interface PlanPerson {
 }
 
 export interface PlanPersonDetail {
-  /** How many profile sections are in, of how many (lib/planner/profile-progress.ts); a plain count, never a score. */
+  /** How many profile sections are in, of how many (lib/planner/profile-progress.ts); a plain count, never a score.
+   *  The ring alone reads from this; the "Next:" text and link read `next` first (next steps U1b), falling back to
+   *  this when there's no loaded plan to read a move from (the other children's chips). */
   progress: { done: number; total: number; nextLabel: string | null };
   /** Where the next step is entered (the intake on that step, or the Numbers page), or null for a read-only viewer. */
   nextHref: string | null;
   /** The intake guide in edit mode (`?setup=1`), or null for a read-only viewer. */
   editHref: string | null;
+  /**
+   * Next steps (seasons.md "The Next steps tab": "the people line's 'Next:' is the Now list's first card"): the
+   * loaded plan's top move (`topMove(nowMoves(...))`), replacing the profile-progress step as the "Next:" text and
+   * link. Null when there's no plan loaded for this child yet (detailFrom keeps the profile step then) or Now is
+   * empty.
+   */
+  next?: { label: string; href: string } | null;
 }
 
 /** A small ring filled by the share of sections entered; its label says the count in words. */
@@ -148,7 +157,11 @@ export function PlanPeople({
               <>
                 {(() => {
                   const progress = shown ? shown.progress : null;
-                  const nextText = progress ? (progress.nextLabel ? `Next: ${progress.nextLabel}` : "Profile complete") : null;
+                  // Next steps (seasons.md "The people line's 'Next:'"): the loaded plan's top move first, the
+                  // profile-progress step otherwise (the ring always reads from `progress` either way).
+                  const nextLabel = shown?.next?.label ?? progress?.nextLabel ?? null;
+                  const nextHref = shown?.next?.href ?? shown?.nextHref ?? null;
+                  const nextText = progress ? (nextLabel ? `Next: ${nextLabel}` : "Profile complete") : null;
                   const body = (
                     <>
                       <span className="block truncate text-sm font-bold">
@@ -158,18 +171,14 @@ export function PlanPeople({
                       {progress && (
                         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
                           <ProgressRing done={progress.done} total={progress.total} />
-                          <span className={cn("truncate", progress.nextLabel && shown?.nextHref && "font-semibold text-primary")}>{nextText}</span>
+                          <span className={cn("truncate", nextLabel && nextHref && "font-semibold text-primary")}>{nextText}</span>
                         </span>
                       )}
                     </>
                   );
                   // The whole text block is the next step's link, so the tap target is the chip's full height.
-                  return progress?.nextLabel && shown?.nextHref ? (
-                    <Link
-                      href={shown.nextHref}
-                      aria-label={`${name}: next, ${progress.nextLabel}`}
-                      className="flex min-h-11 min-w-0 flex-1 flex-col justify-center leading-tight hover:opacity-80"
-                    >
+                  return nextLabel && nextHref ? (
+                    <Link href={nextHref} aria-label={`${name}: next, ${nextLabel}`} className="flex min-h-11 min-w-0 flex-1 flex-col justify-center leading-tight hover:opacity-80">
                       {body}
                     </Link>
                   ) : (

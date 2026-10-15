@@ -1,6 +1,6 @@
 # Part 6, Bringing People Back: Briefs, the Week, and the Dot
 
-> Status: **planned** 2026-10-14. After the other parts; builds on the built reminders
+> Status: **built** 2026-10-14 (feature/next-steps, PR #160). After the other parts; builds on the built reminders
 > ([../timeline.md](../timeline.md#reminders): Your week, the digest's task lines, day-before texts) and the parent
 > summary ([../parents.md](../parents.md#the-weekly-summary)). Part 6 of [next steps](README.md).
 

@@ -17,7 +17,7 @@ import { callBundle } from "@/lib/bundle-read";
 import { requestMemo } from "@/lib/request-memo";
 import { cache } from "react";
 import type { StudentAccess, StudentRecord } from "@/lib/accounts";
-import { coreAnswered, emptyProfile, sanitizeProfile, type StudentProfileData } from "@/lib/student-profile";
+import { coreAnswered, emptyProfile, profileForViewer, sanitizeProfile, sanitizeStory, type StudentProfileData } from "@/lib/student-profile";
 import { getHighSchool } from "@/lib/high-schools";
 import { matriculationLine } from "@/lib/high-school-ui";
 
@@ -59,7 +59,8 @@ export async function profilesICanSee(): Promise<ProfileAccess[]> {
   if (access.length === 0) return [];
   return access.map((a: StudentAccess) => {
     const raw = rows.get(a.student.id);
-    return { student: a.student, relation: a.relation, canEdit: a.canEdit, data: sanitizeProfile(raw), saved: raw !== undefined };
+    // Your story (next-steps/your-story.md): a guardian never receives the text, only that it's written.
+    return { student: a.student, relation: a.relation, canEdit: a.canEdit, data: profileForViewer(sanitizeProfile(raw), a.relation), saved: raw !== undefined };
   });
 }
 
@@ -136,6 +137,31 @@ async function syncStudentGradYear(supabase: SupabaseClient, studentId: string, 
   }
 }
 
+export type StorySaveState = { status: "idle" } | { status: "saved" } | { status: "error"; message: string };
+
+/**
+ * Saves the three story prompts (specs/planner/next-steps/your-story.md), from the Numbers page's StorySection or
+ * the move's StoryCard: a Server Action shape (`useActionState`), same pattern as app/me/actions.ts
+ * saveStudentProfile. Reads the profile that's actually saved first and changes only `story`, so nothing else on the
+ * profile is ever touched by this form. Student only (IECA's rule: nobody writes it but the student), even for a
+ * guardian with edit access elsewhere — `profileFor` already strips the text for a guardian, so `access.data.story`
+ * would otherwise silently blank it back out on save.
+ */
+export async function saveStory(_prev: StorySaveState, form: FormData): Promise<StorySaveState> {
+  const user = await getUser();
+  if (!user) return { status: "error", message: "Sign in to save your story." };
+  const studentId = String(form.get("student_id") ?? "");
+  if (!studentId) return { status: "error", message: "Missing student." };
+  const access = await profileFor(studentId);
+  if (!access) return { status: "error", message: "You don't have permission to edit this profile." };
+  if (access.relation !== "self") return { status: "error", message: "Only the student can write their own story." };
+  if (!access.canEdit) return { status: "error", message: "You don't have permission to edit this profile." };
+  const story = sanitizeStory({ about: form.get("about"), thread: form.get("thread"), majorWhy: form.get("majorWhy"), updatedAt: new Date().toISOString() });
+  const result = await saveProfile(studentId, { ...access.data, story });
+  if (!result.ok) return { status: "error", message: result.message };
+  return { status: "saved" };
+}
+
 /**
  * One-time import from the signed-out localStorage copy (student-profile.md "Behavior"): merges every field the
  * local copy has into the student's saved profile, without overwriting a field the student already saved there.
@@ -171,6 +197,8 @@ function mergeProfiles(base: StudentProfileData, incoming: StudentProfileData): 
     tests: pick(base.tests, incoming.tests),
     plans: pick(base.plans, incoming.plans),
     preferences: pick(base.preferences, incoming.preferences),
+    // Your story (next steps): the saved one wins; a signed-out copy fills it only when none is saved.
+    story: base.story ?? incoming.story,
   };
 }
 

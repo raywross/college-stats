@@ -127,6 +127,7 @@ A student can see every task at any time; the grade only decides the fold and wh
   a row's bottom sheet.
 
 ## Reminders
+The season brief and the season-based defaults are in [next-steps/notifications.md](next-steps/notifications.md) (2026-10-14); `gradeOf()` in this file is a shim over `seasonOf()` ([lib/planner/seasons.ts](../../lib/planner/seasons.ts)).
 - **In the digest** ([follow-colleges.md](../product/follow-colleges.md#the-digest)): a task due within seven days
   adds a line to the next digest; during the season (August to May) a weekly digest goes out even when no college's
   data changed, only to people with a task due. The line is the task, the college, and the date; never a note or a

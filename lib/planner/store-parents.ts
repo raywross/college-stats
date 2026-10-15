@@ -236,12 +236,17 @@ export async function setNudgeEmails(on: boolean): Promise<ParentActionResult> {
   return { ok: true };
 }
 
-/** The stored parent-summary choice (null: off, the default). */
-export async function myParentSummary(): Promise<boolean> {
+/**
+ * The stored parent-summary choice, or null when the guardian never chose: then the weekly job applies the default
+ * per child (lib/planner/timeline.ts parentSummaryOn: on from the child's junior spring, off before; next steps
+ * notifications.md "Cadence by season"), so the account page shows that default rather than "off".
+ */
+export async function myParentSummary(): Promise<boolean | null> {
   const r = await ready("planner.reminders");
-  if (!("supabase" in r)) return false;
+  if (!("supabase" in r)) return null;
   const { data } = await r.supabase.from("notification_prefs").select("parent_summary").eq("user_id", r.userId).maybeSingle();
-  return (data as { parent_summary: boolean | null } | null)?.parent_summary === true;
+  const stored = (data as { parent_summary: boolean | null } | null)?.parent_summary;
+  return typeof stored === "boolean" ? stored : null;
 }
 
 /** The stored nudge-emails choice (default on). */

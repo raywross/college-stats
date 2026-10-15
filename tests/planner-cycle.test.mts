@@ -56,10 +56,16 @@ test("gradeOf at the turning points of a class of 2028 student", () => {
   assert.equal(g("2026-10-08"), "junior_fall");
   assert.equal(g("2027-03-01"), "junior_spring");
   assert.equal(g("2027-06-15"), "summer_before_senior");
+  // Next steps (seasons.md "The season"): the school year turns on August 1, so senior fall starts in August (it was
+  // September) and the summer after ends in July.
+  assert.equal(g("2027-07-31"), "summer_before_senior");
+  assert.equal(g("2027-08-01"), "senior_fall");
   assert.equal(g("2027-09-01"), "senior_fall");
   assert.equal(g("2028-01-10"), "senior_winter");
   assert.equal(g("2028-04-15"), "senior_spring");
   assert.equal(g("2028-07-01"), "summer_after");
+  assert.equal(g("2028-07-31"), "summer_after");
+  assert.equal(g("2028-08-01"), "graduated");
   assert.equal(g("2028-09-01"), "graduated");
   assert.equal(gradeOf(null, "2026-10-08"), "unknown");
   assert.equal(inSeason("junior_fall"), true);

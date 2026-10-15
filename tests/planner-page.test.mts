@@ -106,7 +106,7 @@ function row(overrides: {
 }
 
 function view(next: PlanRowView | null, rows: PlanRowView[] = []): PlanView {
-  return { student: { gpa: 3.8, test: { kind: "sat", score: 1400 } }, rows, balance: { reach: 0, target: 0, likely: 0 }, balanceLine: null, problems: [], edTwo: null, retake: null, next, inSeason: true, notices: [] } as unknown as PlanView;
+  return { student: { gpa: 3.8, test: { kind: "sat", score: 1400 } }, rows, balance: { reach: 0, target: 0, likely: 0 }, balanceLine: null, problems: [], retake: null, next, inSeason: true, notices: [] } as unknown as PlanView;
 }
 
 test("nextUpInfo: a deadline still to meet", () => {
@@ -242,6 +242,19 @@ test("the phone tab bar is Explore, Search, Plan, Compare, More, with Plan's ico
   assert.match(src, /href="\/plan"[^]*?icon=\{<ListChecks/);
   assert.match(src, /from "lucide-react"/);
   assert.match(src, /\bListChecks\b/);
+});
+
+test("the plan opens on Next steps (owner, 2026-10-14): the page and the frame fall back to defaultTab, which is next; PlanTabs renders it with Footprints", async () => {
+  const { defaultTab } = await import("../lib/planner/plan-tabs.ts");
+  assert.equal(defaultTab("student", false), "next");
+  assert.equal(defaultTab("guardian", false), "next");
+  const page = read("app/plan/page.tsx");
+  assert.match(page, /tab=\{tab \?\? defaultTab\("student", false\)\}/);
+  assert.match(page, /tab=\{tab \?\? defaultTab\("guardian", false\)\}/);
+  assert.match(read("components/planner/PlanFrame.tsx"), /: defaultTab\(viewer, false\)/);
+  const tabs = read("components/planner/PlanTabs.tsx");
+  assert.match(tabs, /next: Footprints/);
+  assert.match(tabs, /tab === "next" && <NextSteps /);
 });
 
 test("guard: a header missing Plan, or out of order, is caught by the label check", () => {

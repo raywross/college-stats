@@ -1,6 +1,6 @@
 # Part 4, The Shape of a Good List: Gaps, and Colleges to Fill Them
 
-> Status: **planned** 2026-10-14. After [seasons.md](seasons.md); extends the balance line
+> Status: **built** 2026-10-14 (feature/next-steps, PR #160). After [seasons.md](seasons.md); extends the balance line
 > ([../redesign/list.md](../redesign/list.md#around-the-list), `balanceLineFor` in `lib/planner/plan-view.ts`) and the
 > levels ([../../chances/levels.md](../../chances/levels.md)). Part 4 of [next steps](README.md).
 

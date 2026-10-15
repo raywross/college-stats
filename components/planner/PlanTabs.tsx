@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { CalendarDays, FileCheck2, ListChecks } from "lucide-react";
+import { CalendarDays, FileCheck2, Footprints, ListChecks } from "lucide-react";
 import FamilyCalendar from "@/components/planner/FamilyCalendar";
+import { NextSteps } from "@/components/planner/NextSteps";
 import { PlanOpened } from "@/components/planner/PlanOpened";
 import PlanList from "@/components/planner/PlanList";
 import OffersStage from "@/components/planner/stages/OffersStage";
@@ -10,7 +11,7 @@ import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { cn } from "@/lib/utils";
 
-const ICONS: Record<PlanTab, typeof ListChecks> = { colleges: ListChecks, calendar: CalendarDays, offers: FileCheck2 };
+const ICONS: Record<PlanTab, typeof ListChecks> = { next: Footprints, colleges: ListChecks, calendar: CalendarDays, offers: FileCheck2 };
 
 /**
  * The tab pills alone (specs/planner/redesign/page.md "The page"): a segmented control, ink fill on the active tab.
@@ -19,7 +20,8 @@ const ICONS: Record<PlanTab, typeof ListChecks> = { colleges: ListChecks, calend
  */
 export function PlanTabPills({ tabs, tab, person }: { tabs: readonly PlanTab[]; tab: PlanTab; person: string | null }) {
   return (
-    <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Plan views">
+    // One line on a phone (owner, 2026-10-15): no wrap, tighter padding, the icon only from `sm:` up.
+    <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2" role="tablist" aria-label="Plan views">
       {tabs.map((t) => {
         const Icon = ICONS[t];
         const active = t === tab;
@@ -30,11 +32,11 @@ export function PlanTabPills({ tabs, tab, person }: { tabs: readonly PlanTab[]; 
             role="tab"
             aria-selected={active}
             className={cn(
-              "inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors",
+              "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition-colors sm:px-4",
               active ? "bg-foreground text-background" : "bg-card text-muted-foreground ring-1 ring-border hover:text-foreground",
             )}
           >
-            <Icon className="size-4" aria-hidden />
+            <Icon className="hidden size-4 sm:block" aria-hidden />
             {TAB_LABELS[t]}
           </Link>
         );
@@ -62,7 +64,8 @@ export function PlanTabs({
 }) {
   return (
     <div className="space-y-4">
-      <PlanOpened tab={tab} viewer={viewer} everyone={false} />
+      <PlanOpened tab={tab} viewer={viewer} everyone={false} studentId={ctx.student?.id ?? null} />
+      {tab === "next" && <NextSteps ctx={ctx} view={view} />}
       {tab === "colleges" && <PlanList ctx={ctx} view={view} />}
       {
         // eslint-disable-next-line react/no-children-prop -- CalendarTabProps.children is the list of child lanes, by contract

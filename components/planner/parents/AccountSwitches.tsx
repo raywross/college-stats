@@ -23,7 +23,10 @@ async function toggleNudgeEmails(on: boolean) {
  */
 export async function AccountSwitches({ isGuardian, hasStudent }: { isGuardian: boolean; hasStudent: boolean }) {
   if (!isGuardian && !hasStudent) return null;
-  const [summaryOn, nudgeEmailsOn] = await Promise.all([isGuardian ? myParentSummary() : Promise.resolve(false), hasStudent ? myNudgeEmails() : Promise.resolve(true)]);
+  const [summaryStored, nudgeEmailsOn] = await Promise.all([isGuardian ? myParentSummary() : Promise.resolve(null), hasStudent ? myNudgeEmails() : Promise.resolve(true)]);
+  // No stored choice: the weekly job applies the season default per child (next steps notifications.md "Cadence by
+  // season": on from junior spring, off before), so the page says that instead of "off".
+  const summaryOn = summaryStored ?? true;
   return (
     <AccountSection id="parent-summary" title="Parent summary and nudges" description="A weekly email for guardians, and how nudges reach you.">
       <div className="space-y-5">
@@ -35,8 +38,10 @@ export async function AccountSwitches({ isGuardian, hasStudent }: { isGuardian: 
               </button>
             </form>
             <p className="mt-2 text-xs text-muted-foreground">
-              The weekly summary is <strong>{summaryOn ? "on" : "off"}</strong>. One email on Sunday evening, per student you can see: the
-              summary line, <Term term="your-part">Your part</Term>, the stuck signals, and what they ticked this week. No notes, no numbers,
+              The weekly summary is{" "}
+              <strong>{summaryStored === null ? "on by default from each student's junior spring, off before" : summaryStored ? "on" : "off"}</strong>.
+              One email on Sunday evening, per student you can see: their part first, then the student&apos;s next moves,
+              <Term term="your-part">Your part</Term>, the stuck signals, and what they ticked this week. No notes, no numbers,
               no comparison between students.
             </p>
           </div>

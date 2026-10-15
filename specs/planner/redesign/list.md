@@ -35,7 +35,9 @@ drawer" below where they differ:
   information request yet; social accounts on record and none followed), the control takes the accent color and a
   small count (1 or 2). Legacy, sibling, and recruiting are answers either way, never a to-do. Round, Deadline, and Status left the row and the
   header ("there for seniors; remove for now, I'll want to tie this into the recommendations in a future PR"); the
-  stored round and dates are unchanged and the Calendar (and Offers) still read them. Phones and desktop show the same
+  stored round and dates are unchanged and the Calendar (and Offers) still read them. The status word returned for seniors
+  on 2026-10-14 ([next-steps/applying.md](../next-steps/applying.md)), and the pills arrived ([next-steps/ed-opportunities.md](../next-steps/ed-opportunities.md),
+  [next-steps/interest-and-visits.md](../next-steps/interest-and-visits.md)). Phones and desktop show the same
   one-line row. The level stays the section heading above the row.
 - **The header** shows on every width: "8 colleges" and one link, **How Quad reads your list**
   (`components/planner/ListExplainer.tsx`, a bottom sheet on phones and a centered card from `sm`). Its text has one

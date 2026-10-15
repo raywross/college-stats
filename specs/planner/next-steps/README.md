@@ -3,8 +3,8 @@
 > Overview of the next-steps specs (not a work item itself). Written 2026-10-14 from the owner's brief ("drive actions
 > from students and parents: tasks contextual to the graduation year, shown when they log in and sent to bring them
 > back; good ED opportunities on the list; visits and interest where they count; a shape for a good list") and research
-> into how college advisors run the process. Each part below is a separate work item on the [roadmap](../../roadmap.md).
-> Builds on the [planner](../README.md) and its [redesign](../redesign/README.md); extends the [chances](../../chances/README.md) work.
+> into how college advisors run the process. The seven parts below were built 2026-10-14 on `feature/next-steps` (PR #160);
+> the [build plan](build-plan.md) lists the contracts and review notes. Builds on the [planner](../README.md) and its [redesign](../redesign/README.md); extends the [chances](../../chances/README.md) work.
 
 ## Why
 The planner knows a great deal and asks for little: three numbers, a Dream, a list. It sorts the list, starts the

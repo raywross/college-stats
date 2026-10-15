@@ -74,7 +74,10 @@ export interface PlanBundle {
 /** A plan bundle as readPlan's PlanData (null when the list isn't there or readable, as readPlan returns). */
 export function planDataFromBundle(b: PlanBundle): PlanData | null {
   if (!b.list) return null;
-  return { list: b.list, items: b.items ?? [], tasks: b.tasks ?? [], visits: b.visits ?? [], offers: b.offers ?? [], nudges: b.nudges ?? [] };
+  // Next steps' columns read as their defaults from a plan_bundle() defined before 20261014120000_next_steps.sql.
+  const items = (b.items ?? []).map((i) => ({ ...i, ed_dismissed_at: i.ed_dismissed_at ?? null, ed_checks: i.ed_checks ?? {} }));
+  const tasks = (b.tasks ?? []).map((t) => ({ ...t, season: t.season ?? null, action: t.action ?? null }));
+  return { list: b.list, items, tasks, visits: b.visits ?? [], offers: b.offers ?? [], nudges: b.nudges ?? [] };
 }
 
 /** Whether `fn` was found missing within the last minute (callers then start their per-table reads right away). */

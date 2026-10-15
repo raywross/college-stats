@@ -135,6 +135,11 @@ Each is argued in its spec.
    specs name no tier and gate nothing; once the stages exist the owner draws the paid line in
    [commercialization.md](../product/commercialization.md) and the stages pick it up through one hook
    ([model.md](model.md#entitlements)).
+10. **Quad flags Good ED opportunities, not "apply early".** Pills on the list show promising ED colleges by name, with
+    facts and caveats one tap away; the site never says "apply" and the student sets the round (owner, 2026-10-14;
+    [next-steps/ed-opportunities.md](next-steps/ed-opportunities.md)).
+11. **The Next steps tab is the default on `/plan`.** When the planner opens, it shows the seasonal task sequence first,
+    and siblings are hidden from peers (owner, 2026-10-14).
 
 ## Owner decisions (2026-10-07)
 From the owner's review of the first draft:

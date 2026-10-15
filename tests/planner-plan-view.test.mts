@@ -6,7 +6,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { autoWrites, balanceLineFor, BALANCE_LINES, MAX_NOTICES, planView as planViewOf, type PlanView, type PlanViewInput } from "../lib/planner/plan-view.ts";
+import { autoWrites, balanceLineFor, MAX_NOTICES, planView as planViewOf, type PlanView, type PlanViewInput } from "../lib/planner/plan-view.ts";
 import { baselineEstimates } from "../lib/chances/baseline.ts";
 import { estimateInputFromProfile } from "../lib/chances/snapshot.ts";
 import { withBackfillSources } from "../lib/planner/read-plan.ts";
@@ -304,28 +304,26 @@ test("deadline and decision follow the row's round, with the field to cite and i
 /* Notices                                                             */
 /* ------------------------------------------------------------------ */
 
-test("notices: at most three, in list.md's order (problems, ED II, balance, retake); the fourth waits", () => {
-  // Two EDs (a problem), a Dream in ED with a college offering ED II (the offer), three colleges (balance), and a
-  // score 20 points under a range at a 45% college (a retake would move it up).
+test("notices: at most three, in list.md's order (problems, balance, retake)", () => {
+  // Two EDs (a problem), three colleges (balance), and a score 20 points under a range at a 45% college (a retake
+  // would move it up). The ED II offer is gone: the Good ED opportunity pills replaced it.
   const schools = by([
     ps("D", "Dream U", { ed: true, admitRate: 0.1 }),
     ps("X", "Second ED U", { ed: true, admitRate: 0.45, sat: [1300, 1450] }),
     ps("Y", "ED II U", { ed: true, ed2: true, admitRate: 0.45, sat: [1300, 1450] }),
   ]);
   const items = [item("D", { dream: true }), item("X", { round: "ed", round_source: "student" }), item("Y")];
-  const v = planView({ items, schools, profile: numbers({ sat: 1280, focus: "sat" }), today: TODAY });
+  const v = planView({ items, schools, profile: numbers({ sat: 1280, focus: "sat" }), today: TODAY, season: "senior_fall" });
   assert.ok(v.problems.length > 0);
-  assert.equal(v.edTwo?.itemId, "item-Y");
-  assert.equal(v.edTwo?.due, "2027-01-01");
   assert.ok(v.balanceLine);
   assert.ok(v.retake);
   assert.equal(MAX_NOTICES, 3);
-  assert.deepEqual(v.notices, ["problems", "edTwo", "balance"]);
+  assert.deepEqual(v.notices, ["problems", "balance", "retake"]);
 });
 
 test("notices: only the ones that are true, in order", () => {
   const schools = by([ps("1", "A", { admitRate: 0.45, sat: [1300, 1450] })]);
-  const v = planView({ items: [item("1")], schools, profile: numbers({ sat: 1280, focus: "sat" }), today: TODAY });
+  const v = planView({ items: [item("1")], schools, profile: numbers({ sat: 1280, focus: "sat" }), today: TODAY, season: "senior_fall" });
   assert.deepEqual(v.notices, ["balance", "retake"]);
   const none = planView({ items: [], schools: {}, profile: null, today: TODAY });
   assert.deepEqual(none.notices, []);
@@ -347,17 +345,21 @@ test("problems: two EDs, and REA beside a private college's EA, each as one sent
   assert.deepEqual(done.problems, []);
 });
 
-test("balance lines: too few Likely first, then the list's size, then too many Reaches; none when balanced", () => {
+/**
+ * The balance line is now `shapeGaps`'s own (lib/planner/list-shape.ts; specs/planner/next-steps/list-shape.md): a
+ * full pass over every gap and every season lives in tests/planner-list-shape.test.mts. Here, just the handful of
+ * cases specific to `balanceLineFor`'s own contract — no shape, no colleges, and the first gap's line matching
+ * `shapeGaps` exactly — now that U4 replaced `BALANCE_LINES`/`LIST_SIZE`/`MIN_LIKELY` with the shape (build-plan.md
+ * "What's removed (U2) and replaced (U4)").
+ */
+test("balance lines: no shape (freshman/sophomore), no colleges, else the first shape gap's line", () => {
   const g = (r: number, t: number, l: number, u = 0): ListCategory[] => [...Array(r).fill("reach"), ...Array(t).fill("target"), ...Array(l).fill("likely"), ...Array(u).fill("unsorted")];
-  assert.equal(balanceLineFor([]), null);
-  assert.equal(balanceLineFor(g(3, 3, 1)), BALANCE_LINES.likelyOrSafe);
-  assert.equal(balanceLineFor(g(1, 1, 2)), BALANCE_LINES.size);
-  assert.equal(balanceLineFor(g(4, 5, 4)), BALANCE_LINES.size);
-  assert.equal(balanceLineFor(g(5, 1, 2)), BALANCE_LINES.reach);
-  assert.equal(balanceLineFor(g(2, 4, 2)), null);
-  // Nothing sorted yet (no numbers): only the size line can apply.
-  assert.equal(balanceLineFor(g(0, 0, 0, 3)), BALANCE_LINES.size);
-  assert.equal(balanceLineFor(g(0, 0, 0, 8)), null);
+  assert.equal(balanceLineFor([], "senior_fall", "unknown"), null);
+  assert.equal(balanceLineFor(g(1, 1, 2), "freshman", "unknown"), null, "no shape before junior year");
+  // A senior list short on Likely-or-Safe: the first gap (likely_min).
+  assert.ok(balanceLineFor(g(3, 3, 1), "senior_fall", "unknown")?.includes("Likely"));
+  // Balanced and affordable (12 total, every level inside its range): no gap at all.
+  assert.equal(balanceLineFor(g(2, 5, 3, 0).concat(Array(2).fill("safe") as ListCategory[]), "senior_fall", "ok"), null);
 });
 
 /* ------------------------------------------------------------------ */
@@ -484,23 +486,3 @@ test("the Dream sorts first even ahead of a closer college in an earlier section
   assert.deepEqual(v.rows.map((r) => r.item.unit_id), ["B", "A"]);
 });
 
-test("edHelps: with a High-reach Dream, names the highest level that offers ED and whose ed verdict helps", () => {
-  const schools = by([ps("dream", "Dream"), ps("target", "Target College", { ed: true }), ps("reach", "Reach College", { ed: true })]);
-  const items = [item("dream", { dream: true }), item("target"), item("reach")];
-  const estimates = {
-    dream: est("dream", "high_reach"),
-    target: est("target", "target", { ed: "helps" }),
-    reach: est("reach", "reach", { ed: "helps" }),
-  };
-  const v = planViewOf({ items, schools, profile: null, estimates, today: TODAY });
-  assert.deepEqual(v.edHelps, { itemId: "item-target", name: "Target College", level: "target" });
-  assert.ok(v.notices.includes("edHelps"));
-});
-
-test("edHelps is null once the Dream isn't at High reach", () => {
-  const schools = by([ps("dream", "Dream"), ps("target", "Target College", { ed: true })]);
-  const items = [item("dream", { dream: true }), item("target")];
-  const estimates = { dream: est("dream", "reach"), target: est("target", "target", { ed: "helps" }) };
-  const v = planViewOf({ items, schools, profile: null, estimates, today: TODAY });
-  assert.equal(v.edHelps, null);
-});

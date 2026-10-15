@@ -8,6 +8,8 @@
  */
 import type { IcsEvent } from "../ics.ts";
 import type { Grade } from "./cycle.ts";
+import { nowMoves } from "./moves.ts";
+import { seasonBounds, type Season } from "./seasons.ts";
 import { addDays } from "./stage.ts";
 import { compareTasks, isOpen, taskDate } from "./tasks.ts";
 import type { PlanItem, PlanTask, PlanVisit, VisitKind } from "./types.ts";
@@ -219,8 +221,63 @@ export function firstOverdue(tasks: PlanTask[], today: string): PlanTask | null 
   );
 }
 
-/** Kinds with a hard deadline: the ones a day-before text is for (an application, a reply, a deposit). */
-export const HARD_DEADLINE_KINDS: ReadonlySet<PlanTask["kind"]> = new Set(["apply", "ed2_conditional", "reply_by", "housing_deposit", "deposit"]);
+/**
+ * Kinds with a hard deadline: the ones a day-before text is for (an application, a reply, a deposit, and the ED decide
+ * dates: next-steps notifications.md "Channels").
+ */
+export const HARD_DEADLINE_KINDS: ReadonlySet<PlanTask["kind"]> = new Set(["apply", "ed2_conditional", "reply_by", "housing_deposit", "deposit", "ed_decide", "ed2_decide"]);
+
+/** The Now list's moves that lead Your week (next-steps notifications.md "Channels"). */
+export const WEEK_MOVES = 3;
+/** Kinds whose new move is a line in the next Your week or summary, never an instant message (an ED or interest pill's move). */
+export const NEW_MOVE_LINE_KINDS: ReadonlySet<PlanTask["kind"]> = new Set(["ed_decide", "ed2_decide", "visit_ed", "show_interest"]);
+
+/**
+ * What Your week carries for a student (notifications.md "Channels"): the Now list's first three moves, dated first;
+ * a new ED or interest move from the last seven days; then the built week (due in the next seven days) and the first
+ * overdue task, neither repeating a move; and what was done in the last seven days (shown once: each Sunday's mail
+ * covers the days since the last). Only open moves; a skipped (dismissed) move never mails.
+ */
+export function yourWeekTasks(
+  tasks: PlanTask[],
+  opts: { season: Season; gradYear: number | null; today: string },
+): { moves: PlanTask[]; fresh: PlanTask[]; week: PlanTask[]; overdue: PlanTask | null; done: PlanTask[] } {
+  const { today } = opts;
+  const now = nowMoves(tasks, { ...opts, viewer: "student" }).now.slice(0, WEEK_MOVES);
+  const moves = [...now].sort((a, b) => Number(taskDate(a) === null) - Number(taskDate(b) === null));
+  const shown = new Set(moves.map((t) => t.id));
+  const weekAgo = addDays(today, -REMINDER_DAYS);
+  const fresh = tasks.filter((t) => !shown.has(t.id) && NEW_MOVE_LINE_KINDS.has(t.kind) && isOpen(t, today) && t.created_at.slice(0, 10) > weekAgo);
+  for (const t of fresh) shown.add(t.id);
+  const week = dueSoon(tasks, today).filter((t) => !shown.has(t.id));
+  const first = firstOverdue(tasks, today);
+  const overdue = first && !shown.has(first.id) ? first : null;
+  const done = tasks.filter((t) => !t.orphaned && t.done_at !== null && t.done_at.slice(0, 10) > weekAgo && t.done_at.slice(0, 10) <= today).sort(compareTasks);
+  return { moves, fresh, week, overdue, done };
+}
+
+/**
+ * The digest's changed-college move lines (notifications.md "Channels"): for the colleges that changed in a publish,
+ * the open moves created since it (the change created them) and the moves it orphaned and no one has acknowledged
+ * (the change closed them), soonest first.
+ */
+export function changedCollegeMoves(
+  tasks: PlanTask[],
+  unitByItem: Record<string, string>,
+  changedUnitIds: ReadonlySet<string>,
+  since: string,
+  today: string,
+): { task: PlanTask; closed: boolean }[] {
+  const sinceMs = Date.parse(since);
+  const out: { task: PlanTask; closed: boolean }[] = [];
+  for (const t of tasks) {
+    const unit = t.item_id ? unitByItem[t.item_id] : undefined;
+    if (!unit || !changedUnitIds.has(unit)) continue;
+    if (t.orphaned && !t.dismissed && t.done_at === null) out.push({ task: t, closed: true });
+    else if (isOpen(t, today) && Date.parse(t.created_at) >= sinceMs) out.push({ task: t, closed: false });
+  }
+  return out.sort((a, b) => compareTasks(a.task, b.task));
+}
 
 /** Open hard-deadline tasks due exactly tomorrow. */
 export function dueTomorrow(tasks: PlanTask[], today: string): PlanTask[] {
@@ -229,15 +286,126 @@ export function dueTomorrow(tasks: PlanTask[], today: string): PlanTask[] {
 }
 
 /* ------------------------------------------------------------------ */
-/* Your week's default                                                 */
+/* Defaults by season (next-steps notifications.md "Cadence by season") */
 /* ------------------------------------------------------------------ */
 
-/** The Your week switch when the person hasn't set it: off before junior spring (and after college starts), on in season. */
-export function yourWeekDefault(grade: Grade): boolean {
-  return grade === "junior_spring" || grade === "summer_before_senior" || grade === "senior_fall" || grade === "senior_winter" || grade === "senior_spring" || grade === "summer_after";
+/** The seasons (and the older grades of the same name) where Your week and the parent summary are on by default. */
+const IN_SEASON: ReadonlySet<Season | Grade> = new Set(["junior_spring", "summer_before_senior", "senior_fall", "senior_winter", "senior_spring", "summer_after"]);
+
+/**
+ * The Your week switch when the person hasn't set it: off before junior spring (and after college starts), on from it.
+ * Reads the season (lib/planner/seasons.ts seasonOf); an older Grade reads the same.
+ */
+export function yourWeekDefault(season: Season | Grade): boolean {
+  return IN_SEASON.has(season);
 }
 
-/** The switch's value: the stored choice, else the default by grade. */
-export function yourWeekOn(stored: boolean | null | undefined, grade: Grade): boolean {
-  return typeof stored === "boolean" ? stored : yourWeekDefault(grade);
+/** The switch's value: the stored choice, else the default by season. */
+export function yourWeekOn(stored: boolean | null | undefined, season: Season | Grade): boolean {
+  return typeof stored === "boolean" ? stored : yourWeekDefault(season);
+}
+
+/** The parent summary's default for one child: on from junior spring (the cost checks), off before. */
+export function parentSummaryDefault(season: Season): boolean {
+  return IN_SEASON.has(season);
+}
+
+/** Whether a guardian's weekly summary covers this child: their stored choice, else the child's season's default. */
+export function parentSummaryOn(stored: boolean | null | undefined, season: Season): boolean {
+  return typeof stored === "boolean" ? stored : parentSummaryDefault(season);
+}
+
+/** The season brief's switch: the stored choice, else on (wherever email goes out at all). */
+export function seasonBriefOn(stored: boolean | null | undefined): boolean {
+  return typeof stored === "boolean" ? stored : true;
+}
+
+/* ------------------------------------------------------------------ */
+/* The season brief's schedule (notifications.md "The season brief")   */
+/* ------------------------------------------------------------------ */
+
+/** A brief's turn: a season, or February of freshman or sophomore year (the mid-year brief). */
+export type BriefKey = Exclude<Season, "graduated" | "unknown"> | "freshman_feb" | "sophomore_feb";
+
+/** Every brief turn in calendar order: ten seasons and two Februaries, at most twelve across high school. */
+export const BRIEF_KEYS: readonly BriefKey[] = [
+  "freshman",
+  "freshman_feb",
+  "sophomore",
+  "sophomore_feb",
+  "junior_fall",
+  "junior_winter",
+  "junior_spring",
+  "summer_before_senior",
+  "senior_fall",
+  "senior_winter",
+  "senior_spring",
+  "summer_after",
+];
+
+/** The Season a brief belongs to (a February brief is its school year's). */
+export function briefSeason(key: BriefKey): Season {
+  return key === "freshman_feb" ? "freshman" : key === "sophomore_feb" ? "sophomore" : key;
+}
+
+/** The first day of a brief's turn: the season's start, or February 1 inside the freshman or sophomore year. */
+export function briefStart(key: BriefKey, gradYear: number): string | null {
+  const bounds = seasonBounds(briefSeason(key), gradYear);
+  if (!bounds) return null;
+  if (key === "freshman_feb" || key === "sophomore_feb") return `${Number(bounds.start.slice(0, 4)) + 1}-02-01`;
+  return bounds.start;
+}
+
+/** The first Sunday on or after an ISO day (the weekly job runs on Sundays). */
+export function firstSundayOnOrAfter(iso: string): string {
+  const day = new Date(`${iso}T00:00:00Z`).getUTCDay();
+  return addDays(iso, (7 - day) % 7);
+}
+
+/** The school year a day falls in, by its August start ("2027-02-01" → 2026): season_briefs_sent's `cycle_start`. */
+export function cycleStartOf(iso: string): number {
+  const y = Number(iso.slice(0, 4));
+  return Number(iso.slice(5, 7)) >= 8 ? y : y - 1;
+}
+
+export interface BriefTurn {
+  key: BriefKey;
+  /** The Season it belongs to (telemetry's `brief_sent.season`). */
+  season: Season;
+  /** The turn's first day (ISO). */
+  start: string;
+  cycleStart: number;
+}
+
+/**
+ * The brief turn under way on `today` for the class of `gradYear`: the latest whose start is on or before it. Null
+ * without a class year, before freshman year, and once the summer after senior year is over.
+ */
+export function currentBriefTurn(gradYear: number | null, today: string): BriefTurn | null {
+  if (gradYear === null || !Number.isFinite(gradYear)) return null;
+  const last = seasonBounds("summer_after", gradYear);
+  if (last && today > last.end) return null;
+  let found: BriefTurn | null = null;
+  for (const key of BRIEF_KEYS) {
+    const start = briefStart(key, gradYear);
+    if (start && start <= today) found = { key, season: briefSeason(key), start, cycleStart: cycleStartOf(start) };
+  }
+  return found;
+}
+
+/** A sent brief's identity for one person and student (season_briefs_sent's key without the two ids). */
+export function briefSentKey(t: Pick<BriefTurn, "key" | "cycleStart">): string {
+  return `${t.key}:${t.cycleStart}`;
+}
+
+/**
+ * The brief due for one person and student on `today`, or null: the turn under way, once the first Sunday on or after
+ * its start has come, and not already sent (`sent` holds briefSentKey()s read from season_briefs_sent). A late joiner
+ * gets the turn under way on their first Sunday; a turn that was missed isn't sent once the next one has started.
+ */
+export function briefDue(gradYear: number | null, today: string, sent: ReadonlySet<string>): BriefTurn | null {
+  const turn = currentBriefTurn(gradYear, today);
+  if (!turn) return null;
+  if (firstSundayOnOrAfter(turn.start) > today) return null;
+  return sent.has(briefSentKey(turn)) ? null : turn;
 }

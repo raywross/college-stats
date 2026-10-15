@@ -20,6 +20,9 @@ import { autoWrites, planView, type PlanView } from "./plan-view";
 import { planEstimates } from "./plan-estimates";
 import { generateTasks, mergeTasks } from "./tasks";
 import type { PlanContext } from "./types";
+import type { Season } from "./seasons";
+import { coursePlanViewFor } from "@/lib/chances/course-plan-server";
+import { inRegistrationWindow } from "@/lib/chances/course-plan-view";
 import { span } from "@/lib/timing";
 import { planBundle, type PlanBundle } from "@/lib/bundles";
 import { bundleKnownMissing, planDataFromBundle } from "@/lib/bundle-read";
@@ -36,6 +39,16 @@ export type PlanLoad =
   | { kind: "not-found" };
 
 const firstName = (name: string | null | undefined) => name?.trim().split(/\s+/)[0] || null;
+
+/**
+ * The course-plan card's windows (specs/chances/course-plan.md; next-steps U1b): freshman and sophomore only in the
+ * usual registration season (February–April), junior winter always (its own window runs into April; cheap to check
+ * here, kept cheap by skipping the read entirely outside these seasons rather than computing it and hiding the card).
+ */
+function inCoursePlanWindow(season: Season, today: string): boolean {
+  if (season === "junior_winter") return true;
+  return (season === "freshman" || season === "sophomore") && inRegistrationWindow(today);
+}
 
 /**
  * One student's plan as the signed-in user sees it. `viewer` is the viewer's access to the student when the page
@@ -100,6 +113,8 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
   // Quad's estimate for every college, on the server (specs/chances/estimate.md "In the planner"): the same for the
   // student and a guardian, who sees the student's AP exam scores too (owner, 2026-10-11).
   const estimates = await span("estimates", () => planEstimates(profileData, read.items, { gradYear, today, visits: read.visits }));
+  // Next steps (build-plan.md review note 3): the generators read each college's level, closeness, and ED verdict.
+  input = { ...input, estimates };
 
   // Suggested until changed: store the model's group and round on every `auto` row that differs (syncAuto).
   if (canEdit) {
@@ -120,9 +135,14 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
     },
   });
   const view = planView({ items: ctx.items, schools: ctx.schools, profile: ctx.profile, estimates, today });
-  // No `rigor`, `coursePlan`, or estimate fact citations any more: their only readers were the Scores tab's Courses
-  // section and the row drawer's estimate text, both removed (owner, 2026-10-12; specs/planner/redesign/list.md).
-  return { kind: "ready", ctx, view, access };
+  // No `rigor` or estimate fact citations any more: their only reader was the Scores tab's Courses section, removed
+  // (owner, 2026-10-12; specs/planner/redesign/list.md). `coursePlan` is filled again (next steps U1b) for the
+  // playbook's course-choice card (NextYearCard.tsx), only in the seasons that card shows, and only with a profile.
+  const coursePlan =
+    profileData && inCoursePlanWindow(input.season, today)
+      ? await span("coursePlan", () => coursePlanViewFor({ profile: profileData, gradYear, items: ctx.items, today, canEdit }))
+      : null;
+  return { kind: "ready", ctx: { ...ctx, coursePlan }, view, access };
 }
 
 /**

@@ -488,12 +488,87 @@ export interface StudentProfilePreferences {
   types: SchoolType[];
 }
 
+/**
+ * Your story (specs/planner/next-steps/your-story.md): three short answers in the student's words, plain text up to
+ * STORY_FIELD_MAX characters each, read by the story move, the brag sheet, and the essay move. A guardian never
+ * receives the text (U7 strips it in profilesICanSee); `updatedAt` is kept.
+ */
+export interface StudentStory {
+  about: string;
+  thread: string;
+  majorWhy: string;
+  updatedAt: string | null;
+}
+
 export interface StudentProfileData {
   basics: StudentProfileBasics;
   academics: StudentProfileAcademics;
   tests: StudentProfileTests;
   plans: StudentProfilePlans;
   preferences: StudentProfilePreferences;
+  /** Next steps (your-story.md): null until any prompt is answered. */
+  story: StudentStory | null;
+}
+
+/** Longest answer kept for each story prompt. */
+export const STORY_FIELD_MAX = 500;
+/** Same limit, the name the build plan uses (U7). */
+export const STORY_MAX = STORY_FIELD_MAX;
+
+const ISO_INSTANT_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/;
+
+/** One story answer: plain text (tags and control characters removed, whitespace kept tidy), at most STORY_FIELD_MAX characters. */
+function storyText(v: unknown): string {
+  if (typeof v !== "string") return "";
+  const plain = v
+    .replace(/<[^>]*>/g, "")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .replace(/\r\n?/g, "\n")
+    .trim();
+  return plain.slice(0, STORY_FIELD_MAX).trim();
+}
+
+/** The story from untrusted input; null when all three answers are empty. `updatedAt` is an ISO date or time, else null. */
+export function sanitizeStory(input: unknown): StudentStory | null {
+  if (!isObj(input)) return null;
+  const about = storyText(input.about);
+  const thread = storyText(input.thread);
+  const majorWhy = storyText(input.majorWhy);
+  if (!about && !thread && !majorWhy) return null;
+  const at = typeof input.updatedAt === "string" && ISO_INSTANT_RE.test(input.updatedAt) && !Number.isNaN(Date.parse(input.updatedAt)) ? input.updatedAt : null;
+  return { about, thread, majorWhy, updatedAt: at };
+}
+
+/**
+ * The `story_missing` applies-key's rule (your-story.md "The prompts"; mirrored inline by
+ * lib/planner/generators/season.ts moveApplies, which U1 wrote first): About and The thread are always required;
+ * Why this major only when an intended major is set ("or 'not sure yet' is a fine answer" otherwise). True (missing)
+ * until every applicable prompt is filled, so the "Write your story" move keeps showing.
+ */
+export function storyMissing(profile: Pick<StudentProfileData, "story" | "plans"> | null): boolean {
+  const story = profile?.story ?? null;
+  if (!story) return true;
+  const needsMajor = (profile?.plans.intendedMajors.length ?? 0) > 0;
+  return !story.about.trim() || !story.thread.trim() || (needsMajor && !story.majorWhy.trim());
+}
+
+/**
+ * The guardian strip (your-story.md "Never shown to a guardian"; specs/planner/parents.md: private notes stay
+ * private): a guardian never receives the story's text, only that it exists. `updatedAt` is kept so "Maya has
+ * written her story" can still be said without the text itself. Null in, null out (nothing to strip).
+ */
+export function redactStoryForGuardian(story: StudentStory | null): StudentStory | null {
+  if (!story) return null;
+  return { about: "", thread: "", majorWhy: "", updatedAt: story.updatedAt };
+}
+
+/**
+ * A saved profile as the signed-in viewer should receive it: unchanged for the student themselves, the story
+ * redacted for a guardian (lib/student-profile-store.ts profilesICanSee calls this on every row it returns).
+ */
+export function profileForViewer(data: StudentProfileData, relation: "self" | "guardian"): StudentProfileData {
+  if (relation !== "guardian") return data;
+  return { ...data, story: redactStoryForGuardian(data.story) };
 }
 
 /**
@@ -550,6 +625,7 @@ export function emptyProfile(): StudentProfileData {
     },
     plans: { intendedMajors: [], earlyRoundInterest: null },
     preferences: { sizes: [], settings: [], statesOrRegions: [], maxAverageCost: null, types: [] },
+    story: null,
   };
 }
 
@@ -692,7 +768,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     types: arr(pr.types, (x) => (SCHOOL_TYPE_VALUES.includes(x as SchoolType) ? (x as SchoolType) : null), 3),
   };
 
-  return { basics, academics, tests, plans, preferences };
+  return { basics, academics, tests, plans, preferences, story: sanitizeStory(input.story) };
 }
 
 /* ------------------------------------------------------------------ */

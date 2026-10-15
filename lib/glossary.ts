@@ -1174,6 +1174,13 @@ const entries = {
     category: "Admissions",
     related: ["early-decision", "early-decision-ii", "early-action"],
   },
+  "hooked-applicant": {
+    term: "Hooked applicant",
+    short: "An applicant with an edge beyond their record: a recruited athlete, a legacy, or a family tie the college weighs. Many apply early, so a college's early admit rate overstates the gain for everyone else.",
+    long: "Dartmouth calls its own early rate \"somewhat misleading\" for this reason, and Brown's falls by more than a quarter with recruited athletes taken out. The early round still helps where a college fills much of its class early, but by less than the gap between the rates.",
+    category: "Admissions",
+    related: ["early-decision", "early-decision-ii", "binding"],
+  },
   "wait-list": {
     term: "Wait list",
     short: "A list of qualified applicants a college may admit later if spaces open. Applicants choose whether to accept a place on it; at many colleges few are admitted from it.",
@@ -1717,6 +1724,13 @@ const entries = {
     long: "On by default for seniors in season and off for juniors until spring. Texts, when someone turns them on, carry the first three of the same steps, at most one a day and never at night.",
     category: "Your account",
     related: ["plan", "calendar-feed"],
+  },
+  "season-brief": {
+    term: "Season brief",
+    short: "One email when a season of high school turns: what the season is for, its first few moves with a link to each, and what comes next.",
+    long: "Twice a year in freshman and sophomore year (August and February), then once a season through the summer after senior year. A parent's brief leads with their part. On by default; a skipped move never appears in it.",
+    category: "Your account",
+    related: ["your-week", "your-part", "plan"],
   },
 
   // Parents (specs/planner/parents.md)

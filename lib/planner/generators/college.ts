@@ -218,7 +218,9 @@ export function generate(input: GeneratorInput): GeneratedTask[] {
       out.push(task(item, "apply", 0, { title: `Apply${roundLabel}`, detail: feeDetail(school), date: apply, assignee: "student" }, school));
     }
 
-    // 2. Decision expected.
+    // 2. Decision expected. With no published notification date the move still exists once the application is in
+    // (applying.md "Rules": "no date, no dated move"), undated, so the decision can be recorded at all (QA 2026-10-15:
+    // a submitted college with no date had no card, and so no way to the Offers tab).
     const decision = decisionDate(school, round);
     if (decision) {
       out.push(
@@ -227,6 +229,21 @@ export function generate(input: GeneratorInput): GeneratedTask[] {
           "decision_expected",
           1,
           { title: `Decision expected${roundLabel}`, detail: "When it comes, record it on the list: an admit opens the offer steps.", date: decision, assignee: "either" },
+          school,
+        ),
+      );
+    } else if (item.status === "applied") {
+      out.push(
+        task(
+          item,
+          "decision_expected",
+          1,
+          {
+            title: `Record the decision${roundLabel}`,
+            detail: `${school.name} hasn't published when it decides. When the answer comes, record it here: an admit opens the offer steps.`,
+            date: null,
+            assignee: "either",
+          },
           school,
         ),
       );

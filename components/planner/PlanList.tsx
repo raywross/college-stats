@@ -2,10 +2,14 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Crest } from "@/components/school/Crest";
-import { PlanRow } from "@/components/planner/PlanRow";
+import { PlanRow, type RowPill } from "@/components/planner/PlanRow";
+import { EdPill } from "@/components/planner/EdPill";
+import { InterestPill } from "@/components/planner/InterestPill";
+import { edOpportunities, type EdCandidate } from "@/lib/planner/ed-opportunities";
+import { isOpen } from "@/lib/planner/tasks";
 import { ListExplainer } from "@/components/planner/ListExplainer";
 import { PlanNotice } from "@/components/planner/PlanNotice";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
@@ -15,10 +19,14 @@ import { searchSchoolsApi } from "@/lib/school-api";
 import type { SchoolIndexEntry } from "@/lib/dataset";
 import { setPlanDream } from "@/lib/planner/store-plan";
 import type { PlanRowView } from "@/lib/planner/plan-view";
-import { GROUP_HEADING, groupedRows, headerCountsLine } from "@/lib/planner/list-row";
+import { GROUP_HEADING, SEASON_STATUS_LABEL, groupedRows, headerCountsLine } from "@/lib/planner/list-row";
 import { GROUP_CLASS } from "@/lib/planner/colors";
+import { seasonRank } from "@/lib/planner/seasons";
 import type { ListCategory } from "@/lib/list-rules";
 import { cn } from "@/lib/utils";
+
+/** applying.md "On the list row": the status word shows from senior fall on. */
+const SENIOR_FALL_RANK = seasonRank("senior_fall");
 
 /**
  * The Colleges tab: the list as the plan (specs/planner/redesign/list.md). Grouped by Reach / Target / Likely, then
@@ -33,6 +41,34 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   const [viewSeen, setViewSeen] = useState(view);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const canEdit = ctx.viewer.canEdit;
+  // A move's `open_row` link (`?row=<item id>&panel=ed|capture`) opens that row's drawer on the panel.
+  const params = useSearchParams();
+  const openRow = params?.get("row") ?? null;
+  const openPanelParam = params?.get("panel");
+  const openPanel = openPanelParam === "ed" || openPanelParam === "capture" ? openPanelParam : "capture";
+  // Good ED opportunities (ed-opportunities.md): computed once from the server's view; every candidate gets a pill.
+  const edCandidates = edOpportunities(view.rows.map((r) => r.item), view.estimates, ctx.schools, { season: ctx.season, today: ctx.today });
+  const edByItem = new Map<string, EdCandidate>(edCandidates.map((c) => [c.itemId, c]));
+  // Interest pill (interest-and-visits.md "The pill": "a list row with an open interest move"): the row-level rendering
+  // of the move the Next steps tab shows, read from the same generated rows, so the pill and the card never disagree
+  // (QA 2026-10-15: recomputing the rule here drifted from the generated set once the senior-fall dating applied).
+  const interestItemIds = new Set(
+    ctx.tasks.filter((t) => (t.kind === "show_interest" || t.kind === "visit_ed") && t.item_id && isOpen(t, ctx.today)).map((t) => t.item_id as string),
+  );
+  const pillFor = (row: PlanRowView): RowPill | undefined => {
+    const c = edByItem.get(row.item.id);
+    if (c) {
+      return function edPill(open) {
+        return <EdPill candidate={c} onOpen={() => open("ed")} />;
+      };
+    }
+    if (interestItemIds.has(row.item.id)) {
+      return function interestPill(open) {
+        return <InterestPill onOpen={() => open("capture")} />;
+      };
+    }
+    return undefined;
+  };
 
   // The server's view (a refresh, a different child, a data publish) replaces whatever's local. Resetting state
   // during render (rather than in an effect) avoids an extra render each time the view changes.
@@ -82,6 +118,7 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
 
   const groups = groupedRows(rows);
   const dreamRow = rows.find((r) => r.dream) ?? null;
+  const showStatusWord = seasonRank(ctx.season) >= SENIOR_FALL_RANK;
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] || null;
   const addLabel = ctx.viewer.isGuardian && firstName ? `Add a college for ${firstName}` : "Add a college";
 
@@ -126,8 +163,12 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
                     ctx={ctx}
                     dreamName={dreamRow && dreamRow.item.id !== row.item.id ? (dreamRow.school?.name ?? null) : null}
                     error={errors[row.item.id] ?? null}
+                    status={showStatusWord && row.seasonStatus ? SEASON_STATUS_LABEL[row.seasonStatus] : null}
                     onToggleDream={handleDream}
                     onRemove={handleRemove}
+                    pill={pillFor(row)}
+                    edCandidate={edByItem.get(row.item.id) ?? null}
+                    openPanel={openRow === row.item.id ? openPanel : null}
                   />
                 ))}
               </ul>

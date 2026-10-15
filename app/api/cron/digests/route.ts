@@ -129,7 +129,7 @@ async function processPublish(
     }
     // Plan tasks due within seven days add a "Coming up" line each (specs/planner/timeline.md "Reminders"). A plan
     // that can't be read (the planner migration not applied yet) just adds nothing.
-    const tasks = await digestTaskLines(client, userId, todayIso()).catch((err: unknown) => {
+    const tasks = await digestTaskLines(client, userId, todayIso(), { unitIds: byUser.get(userId)!, since: publish.published_at }).catch((err: unknown) => {
       console.warn(`digests: plan tasks for ${userId} skipped: ${err instanceof Error ? err.message : err}`);
       return [];
     });

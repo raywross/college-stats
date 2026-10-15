@@ -5,12 +5,19 @@ import { useRouter } from "next/navigation";
 import { Check, ExternalLink, X } from "lucide-react";
 import { Chip, FieldLabel } from "@/components/activities/chips";
 import { AboutYouAndCollege } from "@/components/planner/AboutYouAndCollege";
+import { EdSheet } from "@/components/planner/EdSheet";
+import { MetricLabel, Term } from "@/components/ui/info-tip";
+import { edOpportunities, edPillText, type EdCandidate } from "@/lib/planner/ed-opportunities";
+import { earlyFor } from "@/lib/planner/rounds";
+import type { AnyCited } from "@/lib/lineage";
 import { VisitForm } from "@/components/planner/VisitForm";
 import NextEvents from "@/components/visits/NextEvents";
 import { SOCIAL_GLYPHS } from "@/components/school/SocialIcons";
 import { SheetDialog } from "@/components/ui/sheet-dialog";
 import { setVisited } from "@/lib/lists";
 import { followTargets, visitedState, visitPageLink } from "@/lib/planner/capture";
+import { hooksFromPlan } from "@/lib/planner/hooks";
+import { interestMoves, interestMoveText } from "@/lib/planner/interest";
 import { dayLabel } from "@/lib/planner/list-row";
 import { deleteVisit, logVisit, markInfoRequested, recordFollow, updateVisit } from "@/lib/planner/store-actions";
 import type { PlanRowView } from "@/lib/planner/plan-view";
@@ -32,12 +39,22 @@ import { cn } from "@/lib/utils";
  * Visits and follows count as demonstrated interest for the estimate (lib/planner/hooks.ts), so a saved change refreshes
  * the page and the college's level reads it. How the level is worked out is explained once for the whole list
  * ("How Quad reads your list", components/planner/ListExplainer.tsx), not per college.
+ *
+ * Next steps (ed-opportunities.md "The sheet"): opened with `panel="ed"` (the row's ED pill, or a move's `open_row`
+ * link) on a Good ED opportunity, the ED sheet (EdSheet) sits on top; opened from Details, a one-line link leads to it.
+ * An ED college that hasn't published its ED counts says so here, and nothing shows on the row.
  */
+
+/** Which panel the drawer opens on: the ED sheet on top, or the capture panel's own (U3 adds its move's why). */
+export type RowPanel = "ed" | "capture";
 export function RowDrawer({
   row,
   ctx,
   name,
   onRemove,
+  panel = null,
+  edCandidate = null,
+  onPanel,
 }: {
   row: PlanRowView;
   ctx: PlanContext;
@@ -45,13 +62,57 @@ export function RowDrawer({
   name: string;
   /** Takes the college off the list (after a confirmation). */
   onRemove: () => void;
+  /** The panel the drawer was opened on (null: Details). */
+  panel?: RowPanel | null;
+  /** The row's Good ED opportunity, when it has one. */
+  edCandidate?: EdCandidate | null;
+  /** Switches the panel (the link to the ED sheet). */
+  onPanel?: (panel: RowPanel | null) => void;
 }) {
   const { item, school } = row;
   const canEdit = ctx.viewer.canEdit;
   const visitLink = visitPageLink(school?.links ?? null);
+  const early = school ? earlyFor(school) : null;
+  const noEdCounts = early?.offered === true && (school?.profile?.early_decision?.applicants == null || school?.profile?.early_decision?.admitted == null);
+
+  // Next steps (interest-and-visits.md "The pill"): opened with `panel="capture"` on an open interest move, the
+  // move's why sits above the capture chips. Recomputed here (not threaded through PlanRow, which U3 doesn't own)
+  // from the same context PlanList used to decide the row's pill.
+  const interestWhy =
+    school && panel === "capture"
+      ? (() => {
+          const edCands = edOpportunities(ctx.items, ctx.estimates, ctx.schools, { season: ctx.season, today: ctx.today });
+          const hooks = hooksFromPlan(ctx.items, ctx.visits);
+          const move = interestMoves(ctx.items, ctx.estimates, ctx.schools, hooks, edCands, { season: ctx.season, today: ctx.today }).find((m) => m.itemId === item.id);
+          return move ? { move, text: interestMoveText(move, school) } : null;
+        })()
+      : null;
 
   return (
     <div data-capture-panel className="space-y-5 bg-muted/40 px-4 py-4 text-sm sm:pr-6 sm:pl-16">
+      {school && edCandidate && panel === "ed" && <EdSheet row={row} ctx={ctx} candidate={edCandidate} onClose={() => onPanel?.(null)} />}
+      {school && edCandidate && panel !== "ed" && (
+        <button type="button" onClick={() => onPanel?.("ed")} className="min-h-11 text-left font-semibold text-primary hover:underline">
+          {edPillText(edCandidate.round, edCandidate.verdict).full}: the facts
+        </button>
+      )}
+      {school && !edCandidate && noEdCounts && (
+        <p className="text-xs text-muted-foreground">
+          <MetricLabel term="early-decision" cited={school.cites[early!.field] as AnyCited | undefined}>
+            <span>ED offered; {school.name} hasn&apos;t published its ED counts</span>
+          </MetricLabel>
+        </p>
+      )}
+      {interestWhy && (
+        <div className="space-y-1">
+          <p className="font-semibold">{interestWhy.text.title}</p>
+          <p className="text-sm text-muted-foreground">
+            <Term term="demonstrated-interest" cited={interestWhy.text.sourceField ? (school!.cites[interestWhy.text.sourceField] as AnyCited | undefined) : undefined}>
+              {interestWhy.text.why}
+            </Term>
+          </p>
+        </div>
+      )}
       {school && (
         <>
           <AboutYouAndCollege item={item} school={school} canEdit={canEdit} />

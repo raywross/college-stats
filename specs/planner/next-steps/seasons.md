@@ -1,6 +1,6 @@
 # Part 1, Seasons: The Playbook and the Next Steps Tab
 
-> Status: **planned** 2026-10-14. After the built planner ([../redesign/page.md](../redesign/page.md),
+> Status: **built** 2026-10-14 (feature/next-steps, PR #160). After the built planner ([../redesign/page.md](../redesign/page.md),
 > [../timeline.md](../timeline.md), [../parents.md](../parents.md)). Part 1 of [next steps](README.md); every other part
 > adds moves to the playbook defined here.
 

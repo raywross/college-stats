@@ -1,10 +1,13 @@
 /**
  * The reader's Supabase side (supabase/migrations/20261013180000_visit_events.sql): the secret-key client
  * (`supabaseClient("publish")`, lib/supabase.ts) reads a host's stored rows, upserts events in batches of 500,
- * updates `slate_hosts`, and records each run in `visit_event_sync`.
+ * updates `slate_hosts`, and records each run in `visit_event_sync` (with its failed and collapsed host counts and
+ * whether misses were withheld, migration 20261015100000_visit_events_upkeep.sql); the check writes its summary onto the
+ * newest run (`recordCheck`).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SLATE_HOST_COLUMNS, type SlateHostRow } from "../../../lib/visit-events/types.ts";
+import type { CheckRecord } from "./check.mts";
 import { STORED_EVENT_COLUMNS, type EventStore, type StoredEvent, type SyncRecord } from "./sync.mts";
 
 export const BATCH = 500;
@@ -57,7 +60,10 @@ export function readHosts(client: SupabaseClient): Promise<SlateHostRow[]> {
   return selectAll<SlateHostRow>(client, "slate_hosts", SLATE_HOST_COLUMNS, "unit_id");
 }
 
-/** Inserts or updates hosts found by discovery (keeping first_seen, failures, and last_read of a known one). */
+/**
+ * Inserts or updates hosts found by discovery (keeping first_seen, failures, last_read, last_attempt, search_total,
+ * and zero_since of a known one; the reader's bookkeeping, hosts.mts, moves those).
+ */
 export async function upsertHosts(client: SupabaseClient, rows: readonly Pick<SlateHostRow, "unit_id" | "host" | "found_on" | "portal_parts">[]): Promise<void> {
   for (let i = 0; i < rows.length; i += BATCH) {
     const { error } = await client.from("slate_hosts").upsert(
@@ -71,4 +77,18 @@ export async function upsertHosts(client: SupabaseClient, rows: readonly Pick<Sl
 /** Every stored event (for the check), paged. */
 export function readAllEvents(client: SupabaseClient): Promise<StoredEvent[]> {
   return selectAll<StoredEvent>(client, "visit_events", STORED_EVENT_COLUMNS, "id");
+}
+
+/**
+ * Writes the check's counts and summary onto the newest `visit_event_sync` row (the run the check follows). Returns that
+ * row's id, or null when no run is recorded yet.
+ */
+export async function recordCheck(client: SupabaseClient, payload: CheckRecord): Promise<number | null> {
+  const { data, error } = await client.from("visit_event_sync").select("id").order("ran_at", { ascending: false }).order("id", { ascending: false }).limit(1);
+  if (error) throw new Error(`Supabase: reading visit_event_sync failed: ${error.message}`);
+  const id = (data?.[0] as { id: number } | undefined)?.id;
+  if (id == null) return null;
+  const { error: upd } = await client.from("visit_event_sync").update(payload).eq("id", id);
+  if (upd) throw new Error(`Supabase: writing the check onto visit_event_sync ${id} failed: ${upd.message}`);
+  return id;
 }

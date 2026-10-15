@@ -108,9 +108,16 @@ export interface SlateHostRow {
   first_seen: string;
   last_read: string | null;
   last_error: string | null;
+  /** When the reader last tried the host (20261015100000); `last_read` says when it last answered. */
+  last_attempt: string | null;
+  /** The search's own "returned N" the last time it answered. */
+  search_total: number | null;
+  /** When the host's reads first came back with no rows; a month of that makes it `no_events`. */
+  zero_since: string | null;
 }
 
-export const SLATE_HOST_COLUMNS = "unit_id, host, found_on, portal_parts, status, failures, first_seen, last_read, last_error";
+export const SLATE_HOST_COLUMNS =
+  "unit_id, host, found_on, portal_parts, status, failures, first_seen, last_read, last_error, last_attempt, search_total, zero_since";
 
 /** `visit_events.id`: the host plus Slate's event GUID, so two sources for one event make one row. */
 export function visitEventId(host: string, slateId: string): string {

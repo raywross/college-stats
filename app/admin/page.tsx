@@ -6,6 +6,8 @@ import { PageHeader, Panel, Empty } from "@/components/admin/Panel";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminCounts } from "@/lib/admin/console-reads";
 import { adminLog } from "@/lib/admin/people";
+import { cardTone, loadVisitEventsHealth } from "@/lib/admin/visit-events";
+import { VISIT_EVENTS_TONE_LABEL } from "@/components/admin/VisitEventsCard";
 
 export const metadata: Metadata = { title: "Console", robots: { index: false, follow: false } };
 
@@ -13,7 +15,7 @@ export const metadata: Metadata = { title: "Console", robots: { index: false, fo
 export default async function AdminHome() {
   await connection();
   await requireAdmin();
-  const [counts, log] = await Promise.all([adminCounts(), adminLog()]);
+  const [counts, log, visitEvents] = await Promise.all([adminCounts(), adminLog(), loadVisitEventsHealth()]);
   const tiles: { label: string; value: number; href?: string; note?: string }[] = [
     { label: "People", value: counts.people, href: "/admin/people" },
     { label: "Households", value: counts.households },
@@ -22,6 +24,7 @@ export default async function AdminHome() {
     { label: "Paused accounts", value: counts.paused },
     { label: "Being deleted", value: counts.deleting, note: "Inside the 30 days" },
     { label: "Admins", value: counts.admins, href: "/admin/admins" },
+    { label: "Visit events, hosts read", value: visitEvents.newest?.hostsRead ?? 0, href: "/admin/health#visit-events", note: VISIT_EVENTS_TONE_LABEL[cardTone(visitEvents.newest, new Date())] },
   ];
   return (
     <>

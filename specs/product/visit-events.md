@@ -143,6 +143,59 @@ recomputed from the titles every night, so a rule change reclassifies without re
 all: the listing is already in hand, the rows cost nothing to keep, and they may be useful later (an "interview
 offered" signal, say); keeping them also lets `check:visit-events` watch each host's share of accidental rows.
 
+## Keeping it running (round 2, 2026-10-15)
+The owner's condition for the feature: it must maintain itself, never a one-time pull. The nightly read is already
+idempotent and self-correcting (new rows appear, changed rows update, a row missing from two reads is removed, kinds
+are recomputed from titles each night). Four things would still let it rot, each with its fix:
+
+1. **A collapse.** If Technolutions changed the search page's markup, every host would parse to zero rows the same
+   night, and two nights later the table would have emptied itself. Guards: a host whose search page says
+   "returned N event(s)" with N > 0 but parses to no rows, or whose page no longer says it at all, is a **collapsed**
+   host: an error, no misses counted (`slate_hosts.failures` moves, `hosts_collapsed` on the run). A **run-level
+   guard** withholds all miss-marking when more than 20% of the hosts read tonight failed or collapsed
+   (`visit_event_sync.misses_withheld`); new and changed rows still write.
+2. **New Slate adopters are never found.** A **weekly discovery** (Sundays, the same workflow) tries every college with
+   a visit or apply link that isn't in `slate_hosts` yet. Discovery widens its candidates: any admissions-style
+   subdomain linked from the visit page or apply page (`apply.`, `admission(s).`, `connect.`, `engage.`, `go.`,
+   `visit.`, `discover.`, `enroll.`, `begin.`, `join.`, …), confirmed only by answering the standard search. The
+   2026-10-14 measurement found 13 of 14 such missed hosts answering (Amherst 86 events, Emerson 396, Union 398,
+   UMass Dartmouth 1,148); about 40 to 95 colleges.
+3. **Nobody sees it break.** The admin console's Health area gains a **Visit events** card: the last runs
+   (`visit_event_sync`: when, hosts read / failed / collapsed, new / changed / removed, misses withheld, the data
+   check's failures and warnings), hosts by status, and a red state when the last run failed, withheld misses, or is
+   older than 36 hours. The check script writes its summary onto the run it follows (`check_summary`,
+   `check_failures`, `check_warnings`).
+4. **Host bookkeeping.** `last_attempt` (tried) beside `last_read` (answered); unreachable hosts are retried every
+   seven days from their last attempt; a host whose search has answered with zero rows for 30 days (`zero_since`)
+   becomes `no_events` and is retried monthly; `search_total` keeps the search's own count for the card.
+
+**Built 2026-10-15** on `feature/visit-events-upkeep` as three units. Guards (`scripts/lib/visit-events/sync.mts`):
+`CollapsedSearchError` when a Slate results page says "returned N event(s)" with N > 0 but no rows parse, or no longer
+says it; a collapsed host counts as a failure and its misses are never counted; `runSync` writes every host's misses
+in one step after the pool and withholds them all when more than 20% of the hosts tried failed or collapsed
+(`misses_withheld`); `check:visit-events -- --record` writes `check_failures`, `check_warnings`, and a `check_summary`
+(`{checked_at, hosts, events, failing, warned, listed: [{host, unit_id, events, failures, warnings}], omitted}`, at
+most 50 hosts, failing first) onto the night's run. Host bookkeeping (`scripts/lib/visit-events/hosts.mts`, pure):
+`afterRead` / `afterFailure` keep `last_attempt`, `last_read`, `search_total`, `zero_since`; `dueHosts` reads active
+hosts nightly, unreachable ones seven days after their last attempt (or at once with `--retry-unreachable`),
+`no_events` ones monthly, `off` never; a host becomes `no_events` thirty days after its search first came back
+empty (widget rows count as rows, so a host with online sessions only never does). Discovery
+(`scripts/lib/visit-events/discover.mts`): candidate hosts also come from any admissions-style subdomain linked (or
+quoted in a script) on the visit and apply pages, own domain first, ranked after portal/register links, each confirmed
+by the standard search; the first dev run found **59 more hosts** (58 read, 29,731 events; Juilliard, St. Olaf,
+Elmira, Gallaudet, UMass Dartmouth, Wofford among them), taking dev to 852 active hosts. Admin
+(`lib/admin/visit-events.ts`, `components/admin/VisitEventsCard.tsx`): the card on `/admin/health#visit-events` and a
+tile on the console landing page (red when the newest run failed, withheld misses, has check failures, or is older
+than 36 hours; amber on warnings); Operations can dispatch the workflow (target, units, discover). Known gaps: a
+college whose discovery finds nothing has no row to record the attempt on, so it is retried every Sunday (a
+`discovery_attempts` record would fix it); two hosts were set `off` by hand on dev (Trinity College of Nursing had
+Augustana's host, Kansas State a graduate Slate); `www.amherst.edu` challenges our user agent, so Amherst stays
+unfound until the WAF is addressed; the search times out (30 s) on a few large hosts under a pool of 24.
+
+Left for the round after: a TargetX reader (~150 colleges) and an Element451 reader (~50), each behind the same guards
+and piloted for a month on a dozen colleges first; a self-hosted runner or small VM for the crawl once the repository
+goes private (about 30 hours of Actions a month); the Technolutions partnership email (the owner's).
+
 ## The nightly job
 
 ### Discovery (once, then monthly in the identity refresh)
@@ -276,8 +329,8 @@ tie), the event page confirms year and zone, and until then the state's usual zo
 campus ZIP 32611 has no ZCTA) take the event page's own map centre. `moved_at` is set for a start, venue, address, or
 city change on a confirmed row; title and availability changes move only `changed_at`. "closed" from the event page
 outranks the widget's "full". UT's widget nests a placeholder item inside each real one; the parser reads the outer
-item. Not built: the weekly re-read of unchanged event pages, the `no_events` host status, a last-attempt timestamp for
-unreachable hosts (retried on Sundays for now).
+item. Not built in the first round: the weekly re-read of unchanged event pages. The `no_events` status, the
+last-attempt timestamp, and the retry rules came in round 2 (below).
 
 **Pages** (U2, then the owner's review): `lib/visit-events/read.ts` and `view.ts` (pure grouping, chips, wording),
 `store.ts`; `components/visits/`; `/me/visits`; settings on `/account` beside the Updates switch (`/me` redirects).

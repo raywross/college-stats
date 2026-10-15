@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { parseStandardSearch, isSlateEventRegistration } from "../scripts/lib/visit-events/slate-search.mts";
 import { findWidgetServices, parseWidgetList, widgetListUrl } from "../scripts/lib/visit-events/slate-widget.mts";
 import { parseEventPage } from "../scripts/lib/visit-events/event-page.mts";
-import { discoverSlateHost, portalPages, rankHosts, slateLinks } from "../scripts/lib/visit-events/discover.mts";
+import { CANDIDATE_HOST, candidateHosts, discoverSlateHost, portalPages, rankCandidates, rankHosts, slateLinks } from "../scripts/lib/visit-events/discover.mts";
 import { loadZipTable, locate } from "../scripts/lib/visit-events/geo.mts";
 import { diffEvents, needsPage, pagePolicy, readHost, runSync, MISSES_TO_REMOVE, type EventStore, type ReadEvent, type StoredEvent, type SyncRecord } from "../scripts/lib/visit-events/sync.mts";
 import { checkHosts, hostReport } from "../scripts/lib/visit-events/check.mts";
@@ -244,6 +244,62 @@ test("discoverSlateHost: a page that links its Slate host only by /status (UNC) 
   assert.deepEqual(d?.portalParts, []);
 });
 
+test("candidateHosts: Amherst's visit page names admission.amherst.edu only in Slate's embed script; engage.amherst.edu is a subdomain candidate; other hosts are not", () => {
+  const html = read("amherst-visit-page.html");
+  const page = "https://www.amherst.edu/admission/visit";
+  // No href points at admission.amherst.edu: the portal is only in a script string.
+  assert.ok(!/href="https:\/\/admission\.amherst\.edu/.test(html));
+  const links = slateLinks(html, page);
+  assert.deepEqual(rankHosts(links, ["www.amherst.edu"]), ["admission.amherst.edu"]);
+  assert.deepEqual(portalPages(links, "admission.amherst.edu"), ["/portal/campus_visit"]);
+  const subs = candidateHosts(html, page, ["www.amherst.edu"]);
+  assert.ok(subs.includes("engage.amherst.edu"));
+  assert.ok(subs.every((h) => CANDIDATE_HOST.test(h)));
+  assert.ok(!subs.includes("athletics.amherst.edu") && !subs.includes("give.engage.amherst.edu"));
+  // Portal-linked hosts are confirmed before subdomain candidates.
+  assert.deepEqual(rankCandidates(links, subs, ["www.amherst.edu"])[0], "admission.amherst.edu");
+});
+
+test("candidateHosts: own domain first, any .edu next, never another domain; the start URL counts", () => {
+  const html =
+    '<a href="https://apply.other.edu/x">a</a><a href="https://go.example.edu/">b</a><a href="https://go.example.edu/y">c</a>' +
+    '<a href="https://apply.vendor.com/">d</a><a href="https://visit.example.edu/z">e</a><a href="https://www.example.edu/apply">f</a>';
+  assert.deepEqual(candidateHosts(html, "https://www.example.edu/visit", ["www.example.edu"]), ["go.example.edu", "visit.example.edu", "apply.other.edu"]);
+  assert.deepEqual(candidateHosts("", "https://admissions.example.edu/apply/", ["admissions.example.edu"]), ["admissions.example.edu"]);
+});
+
+test("discoverSlateHost: a subdomain linked without a portal path is confirmed by the standard search; a rejected candidate is logged and the next one wins", async () => {
+  const visit = '<a href="https://connect.example.edu/">Connect</a><a href="https://apply.example.edu/">Apply now</a><a href="https://apply.example.edu/start">Start</a>';
+  const http = fakeHttp({
+    "https://www.example.edu/visit": visit,
+    "https://apply.example.edu/register/?cmd=search&country=US": "<html>Common App</html>",
+    "https://connect.example.edu/register/?cmd=search&country=US": read("uf-standard-search-us.html"),
+  });
+  const logs: string[] = [];
+  const d = await discoverSlateHost("1", "https://www.example.edu/visit", null, http, { log: (m) => logs.push(m) });
+  assert.equal(d?.host, "connect.example.edu");
+  assert.equal(d?.foundOn, "https://www.example.edu/visit");
+  assert.ok(logs.some((l) => l.includes("apply.example.edu rejected")));
+  // apply. has two links, so it was asked first.
+  assert.ok(http.asked.indexOf("https://apply.example.edu/register/?cmd=search&country=US") < http.asked.indexOf("https://connect.example.edu/register/?cmd=search&country=US"));
+  // Nothing on a vendor domain or a non-admissions subdomain is ever asked.
+  const none = fakeHttp({ "https://www.example.edu/visit": '<a href="https://apply.vendor.com/">x</a><a href="https://library.example.edu/">y</a>' });
+  assert.equal(await discoverSlateHost("1", "https://www.example.edu/visit", null, none), null);
+  assert.deepEqual(none.asked, ["https://www.example.edu/visit"]);
+});
+
+test("discoverSlateHost: Amherst's embedded portal is found from the saved visit page", async () => {
+  const http = fakeHttp({
+    "https://www.amherst.edu/admission/visit": read("amherst-visit-page.html"),
+    "https://admission.amherst.edu/register/?cmd=search&country=US": read("uf-standard-search-us.html"),
+    "https://admission.amherst.edu/portal/campus_visit": read("uf-portal-campus-tour.html"),
+  });
+  const d = await discoverSlateHost("164465", "https://www.amherst.edu/admission/visit", null, http);
+  assert.equal(d?.host, "admission.amherst.edu");
+  assert.equal(d?.foundOn, "https://www.amherst.edu/admission/visit");
+  assert.deepEqual(d?.portalParts.map((p) => p.page), ["/portal/campus_visit"]);
+});
+
 /* ------------------------------------------------------------------ */
 /* The diff                                                            */
 /* ------------------------------------------------------------------ */
@@ -433,6 +489,9 @@ const UF_HOST: SlateHostRow = {
   first_seen: NOW,
   last_read: null,
   last_error: null,
+  last_attempt: null,
+  search_total: null,
+  zero_since: null,
 };
 
 test("pagePolicy: hidden kinds, online, and on-campus rows come from the listing alone; away rows of shown kinds get their page", () => {
@@ -524,7 +583,15 @@ test("runSync: twice over the same pages is idempotent; a search failure leaves 
   assert.equal(second.record.events_removed, 0);
   assert.equal(rows.length, 527);
   assert.equal(records.length, 2);
-  assert.deepEqual(hostPatches.at(-1), { last_read: "2026-10-14T16:00:00.000Z", failures: 0, last_error: null, status: "active" });
+  assert.deepEqual(hostPatches.at(-1), {
+    last_attempt: "2026-10-14T16:00:00.000Z",
+    last_read: "2026-10-14T16:00:00.000Z",
+    failures: 0,
+    last_error: null,
+    search_total: 519,
+    zero_since: null,
+    status: "active",
+  });
   // The search fails: nothing is missed, the host's failure count rises.
   const before = JSON.stringify(rows);
   const down = await runSync([{ ...UF_HOST, failures: 2 }], { ...deps, http: fakeHttp({}), now: new Date("2026-10-15T16:00:00Z") });

@@ -16,6 +16,7 @@ import { kindOf } from "../../../lib/visit-events/kinds.ts";
 import { VISIT_EVENT_COLUMNS, isShownKind, visitEventId, type SlateHostRow, type VisitAvailability, type VisitEventRow } from "../../../lib/visit-events/types.ts";
 import type { ReaderHttp } from "./discover.mts";
 import { parseEventPage, type EventPage } from "./event-page.mts";
+import { afterFailure, afterRead, FAILURES_TO_UNREACHABLE } from "./hosts.mts";
 import { locate, type ZipTable } from "./geo.mts";
 import { isSlateEventRegistration, parseStandardSearch, searchUrl } from "./slate-search.mts";
 import { MAX_WIDGET_PAGES, parseWidgetList, widgetListUrl } from "./slate-widget.mts";
@@ -433,8 +434,8 @@ export interface SyncDeps {
   log?: (msg: string) => void;
 }
 
-/** Hosts that fail this many nights running become `unreachable` (tried weekly). */
-export const FAILURES_TO_UNREACHABLE = 3;
+/** Hosts that fail this many nights running become `unreachable` (retried 7 days after the last attempt; hosts.mts). */
+export { FAILURES_TO_UNREACHABLE };
 
 /** Reads, diffs, and (unless a dry run) writes one host. Never throws: a failure is the result's `error`. */
 export async function syncHost(hostRow: SlateHostRow, deps: SyncDeps): Promise<HostResult> {
@@ -458,17 +459,14 @@ export async function syncHost(hostRow: SlateHostRow, deps: SyncDeps): Promise<H
     const diff = diffEvents(stored, read.rows, now, (s) => read.widgetFailed && s.online);
     if (!deps.dryRun) {
       await deps.store.upsertEvents([...diff.upserts, ...diff.missed]);
-      await deps.store.updateHost(hostRow.unit_id, { last_read: now, failures: 0, last_error: null, status: "active" });
+      await deps.store.updateHost(hostRow.unit_id, afterRead(hostRow, { rows: read.rows.length, searchTotal: read.searchTotal }, deps.now));
     }
     return { unitId: hostRow.unit_id, host: hostRow.host, ok: true, diff, read };
   } catch (err) {
     const error = (err as Error).message;
     log(`  ${hostRow.host}: ${error}`);
     if (!deps.dryRun) {
-      const failures = (hostRow.failures ?? 0) + 1;
-      await deps.store
-        .updateHost(hostRow.unit_id, { failures, last_error: error.slice(0, 500), status: failures >= FAILURES_TO_UNREACHABLE ? "unreachable" : hostRow.status })
-        .catch(() => {});
+      await deps.store.updateHost(hostRow.unit_id, afterFailure(hostRow, error, deps.now)).catch(() => {});
     }
     return { unitId: hostRow.unit_id, host: hostRow.host, ok: false, error };
   }

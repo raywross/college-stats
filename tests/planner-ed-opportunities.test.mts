@@ -310,10 +310,16 @@ test("dismissal removes the college and the next one moves up", () => {
   assert.deepEqual(edDismissedItemIds(items), ["item-1"]);
 });
 
-test("the junior-spring gate: nothing before junior spring, nothing without a class year", () => {
+test("the junior-fall gate (junior spring until 2026-10-15): nothing in sophomore year, pills from junior fall, nothing without a class year", () => {
   const schools = by([ps("1")]);
   const e = { "1": est("1", "reach", 3) };
-  assert.deepEqual(edOpportunities([item("1")], e, schools, { season: seasonOf(G, "2027-02-10"), today: "2027-02-10" }), []);
+  // Sophomore year for the class of G (the summer before junior year is still "sophomore"): nothing.
+  assert.equal(seasonOf(G, `${G - 2}-07-10`), "sophomore");
+  assert.deepEqual(edOpportunities([item("1")], e, schools, { season: seasonOf(G, `${G - 2}-07-10`), today: `${G - 2}-07-10` }), []);
+  // Junior fall and winter: the pill.
+  assert.equal(seasonOf(G, `${G - 2}-10-15`), "junior_fall");
+  assert.equal(edOpportunities([item("1")], e, schools, { season: "junior_fall", today: `${G - 2}-10-15` }).length, 1);
+  assert.equal(edOpportunities([item("1")], e, schools, { season: seasonOf(G, "2027-02-10"), today: "2027-02-10" }).length, 1);
   assert.equal(edOpportunities([item("1")], e, schools, opts(JUNIOR_SPRING)).length, 1);
   assert.deepEqual(edOpportunities([item("1")], e, schools, { season: "unknown", today: SUMMER }), []);
 });

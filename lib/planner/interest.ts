@@ -36,9 +36,11 @@ export interface InterestMove { itemId: string; rule: "visit_ed" | "important" |
 
 /** The most open interest moves at a time (interest-and-visits.md "Who gets a move"). */
 export const INTEREST_MAX = 3;
-/** The first season rule 2 (important / very important) can show, per the Timing table. Rules 1 and 3 wait for
- *  `ED_FIRST_SEASON` (junior spring), the same gate as the ED opportunities they read from. */
+/** The first season rule 2 (important / very important) can show, per the Timing table. Rule 1 (a visit for every ED
+ *  candidate) follows `ED_FIRST_SEASON`, the same gate as the pills it reads from (junior fall since 2026-10-15). */
 export const INTEREST_FIRST_SEASON: Season = "junior_fall";
+/** Rule 3 (C7 "considered", the upper-Target / lower-Reach band) keeps the Timing table's own start: junior spring. */
+export const CONSIDERED_FIRST_SEASON: Season = "junior_spring";
 
 const fill = (s: string, v: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k: string) => v[k] ?? "");
 
@@ -139,7 +141,7 @@ export function interestMoves(
     const order = closenessOrder(level, est?.closeness ?? null);
     if (factor === "important" || factor === "very_important") {
       if (rank >= seasonRank(INTEREST_FIRST_SEASON)) important.push({ itemId: row.id, order });
-    } else if (order <= 1 && rank >= seasonRank(ED_FIRST_SEASON)) {
+    } else if (order <= 1 && rank >= seasonRank(CONSIDERED_FIRST_SEASON)) {
       considered.push({ itemId: row.id, order });
     }
   }

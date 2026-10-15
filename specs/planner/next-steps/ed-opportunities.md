@@ -102,8 +102,8 @@ from the estimate but the level.
 ## Moves and timing
 | When | What shows | Source |
 |---|---|---|
-| Before junior spring | Nothing. The list is exploratory and a pill would read as pressure. | owner: "when best to show it in the lifecycle" |
-| Junior spring → summer | The pills on the list; on the Next steps tab, one quiet card per candidate ("Good ED opportunity: {College}"), folded under More this season after the first | advisors firm ED over the summer |
+| Before junior fall | Nothing. The list is exploratory and a pill would read as pressure. | owner: "when best to show it in the lifecycle"; the gate moved from junior spring to junior fall on 2026-10-15 so a junior with a Dream that offers ED sees the chip as soon as the list is real |
+| Junior fall → summer | The pills on the list; on the Next steps tab, one quiet card per candidate ("Good ED opportunity: {College}"), folded under More this season after the first | advisors firm ED over the summer |
 | Summer before senior year | `ed_decide` move in Now: "Decide on ED (due {date})", one card listing the candidates, with each sheet one tap away; parent move `cost_check` for each candidate 21 days before (built, now generated per candidate, not only per ED row) | the built `decide_rounds` task becomes this move |
 | Senior fall | The pills stay until the ED deadline; the decide card turns dated 14 days before and overdue after | college dates |
 | Mid-December | On a recorded ED deferral or denial: `ed2_decide` in Now for the ED II candidate(s): "{ED college} said no. ED II at {College} is due {date}." (the built ED II re-offer, now a move) | [applying.md](applying.md) |

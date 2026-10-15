@@ -114,13 +114,17 @@ test("rule 1: every ED candidate gets a visit move, regardless of C7, while no i
   assert.deepEqual(moves, [{ itemId: "item-1", rule: "visit_ed", kind: "visit_ed" }]);
 });
 
-test("rule 1 gate: nothing before junior spring", () => {
+test("rule 1 gate: follows the ED pills (junior fall since 2026-10-15); nothing in sophomore year", () => {
   const schools = by([ps("1")]);
   const e = { "1": est("1", "reach", 3) };
   const items = [item("1")];
+  const sophomore = { season: "sophomore" as const, today: "2026-07-10" };
+  assert.deepEqual(edOpportunities(items, e, schools, sophomore), [], "setup: ED itself not yet shown");
+  assert.deepEqual(interestMoves(items, e, schools, {}, [], sophomore), []);
+  // Junior fall: the pill exists, so its visit move does too.
   const edCands = edOpportunities(items, e, schools, opts(JUNIOR_FALL));
-  assert.deepEqual(edCands, [], "setup: ED itself not yet shown");
-  assert.deepEqual(interestMoves(items, e, schools, {}, [], opts(JUNIOR_FALL)), []);
+  assert.equal(edCands.length, 1);
+  assert.deepEqual(interestMoves(items, e, schools, {}, edCands, opts(JUNIOR_FALL)).map((m) => m.kind), ["visit_ed"]);
 });
 
 /* ------------------------------------------------------------------ */

@@ -65,8 +65,11 @@ export type EdVerdict = EstimateResult["ed"];
 export type EdRow = Pick<PlanItem, "id" | "unit_id" | "round" | "dream" | "status" | "withdrawn_on" | "position"> &
   Partial<Pick<PlanItem, "ed_dismissed_at" | "ed_checks" | "round_source" | "outcome" | "decision_date">>;
 
-/** The first season with pills (ed-opportunities.md "Moves and timing"). */
-export const ED_FIRST_SEASON: Season = "junior_spring";
+/**
+ * The first season with pills (ed-opportunities.md "Moves and timing"): junior fall since 2026-10-15 (owner: a junior
+ * with a Dream that offers ED should see the chip as soon as the list is real; it was junior spring).
+ */
+export const ED_FIRST_SEASON: Season = "junior_fall";
 /** The first season with the `ed_decide` move and the per-candidate cost checks. */
 export const ED_DECIDE_SEASON: Season = "summer_before_senior";
 

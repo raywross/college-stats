@@ -62,8 +62,9 @@ export function readHosts(client: SupabaseClient): Promise<SlateHostRow[]> {
 
 /**
  * Inserts or updates hosts found by discovery (keeping first_seen, failures, last_read, last_attempt, search_total,
- * and zero_since of a known one; the reader's bookkeeping, hosts.mts, moves those). `vendor` and `config` default to
- * a Slate row's; `status` to `active` (a TargetX Lightning site is written `off`: found, never read). Every row
+ * and zero_since of a known one; the reader's bookkeeping, hosts.mts, moves those). `vendor`, `config`, and `status`
+ * (round 3: TargetX and Element451; 20261015120000_visit_events_vendors.sql) are optional: a Slate row passes none
+ * and gets `slate` / `{}` / `active`; a TargetX Lightning site is written `off` (found, never read). Every row
  * carries every column, so a batch mixing vendors never writes a null.
  */
 export async function upsertHosts(

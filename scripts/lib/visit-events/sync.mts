@@ -25,6 +25,7 @@ import { locate, type ZipTable } from "./geo.mts";
 import { isSlateEventRegistration, parseStandardSearch, searchUrl, type StandardSearch } from "./slate-search.mts";
 import { MAX_WIDGET_PAGES, parseWidgetList, widgetListUrl } from "./slate-widget.mts";
 import { readTargetxSite } from "./readers/targetx.mts";
+import { readElementSite } from "./readers/element451.mts";
 
 /**
  * A stored row: the public columns plus the miss counter only the reader uses, and `moved_at` (migration
@@ -419,8 +420,10 @@ export async function readHost(hostRow: Pick<SlateHostRow, "unit_id" | "host" | 
 }
 
 /**
- * Reads one host row with its vendor's reader (specs/product/visit-events.md, "Round 3"): Slate's `readHost`, the
- * TargetX reader (readers/targetx.mts; a Lightning site throws "not readable"). A row without a vendor is Slate.
+ * Reads one host row with its vendor's reader (specs/product/visit-events.md, "Round 3: TargetX and Element451"):
+ * Slate's `readHost` (above), the TargetX reader (readers/targetx.mts; a Lightning site throws "not readable"), the
+ * Element451 reader (readers/element451.mts). A row without a vendor is Slate; anything else throws, so a
+ * misconfigured vendor is a visible failure rather than a silently skipped host.
  */
 export async function readSite(
   hostRow: Pick<SlateHostRow, "unit_id" | "host" | "portal_parts"> & Partial<Pick<SlateHostRow, "vendor" | "config">>,
@@ -432,8 +435,10 @@ export async function readSite(
       return readHost(hostRow, deps);
     case "targetx":
       return readTargetxSite({ unit_id: hostRow.unit_id, host: hostRow.host, config: hostRow.config ?? {} }, deps);
+    case "element451":
+      return readElementSite({ ...hostRow, vendor, config: hostRow.config ?? {} } as SlateHostRow, deps);
     default:
-      throw new Error(`no reader for vendor "${vendor}" (${hostRow.host})`);
+      throw new Error(`readSite: no reader for vendor "${vendor}" (host ${hostRow.host})`);
   }
 }
 

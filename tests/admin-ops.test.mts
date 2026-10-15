@@ -41,6 +41,9 @@ const STUBS: Record<string, string> = {
   "@/lib/admin/auth": "export async function requireAdmin(){globalThis.__world.calls.push('requireAdmin'); if(!globalThis.__world.admin){" + NOT_FOUND + "} return {userId:'admin-1'}}",
   "@/lib/admin/people": "export async function adminSupabase(){globalThis.__world.calls.push('adminSupabase'); return globalThis.__world.supabase()}",
   "@/lib/admin/ops": "export function realOpsDeps(a){globalThis.__world.calls.push('realOpsDeps'); return globalThis.__world.deps(a)} export async function loadOperations(){return globalThis.__world.operations()}",
+  // The Health page's Visit events card (lib/admin/visit-events.ts): a loader like the others above, driven by `world`.
+  "@/lib/admin/visit-events":
+    "export async function loadVisitEventsHealth(){globalThis.__world.calls.push('loadVisitEventsHealth'); return globalThis.__world.visitEvents()} export function cardTone(){return 'green'}",
   // lib/admin/health.ts reaches Supabase through a relative dynamic import; with no auth env the family lists are unavailable.
   "../supabase-server": "export function supabaseAuthEnv(){return false} export async function createServerSupabase(){throw new Error('no request')}",
   "@/lib/data": "export async function getData(){return {getSchoolById:(id)=>globalThis.__world.schools[id]??null}}",
@@ -66,11 +69,13 @@ interface World {
   supabase: () => unknown;
   deps: (a: { userId: string }) => unknown;
   operations: () => Promise<unknown>;
+  visitEvents: () => Promise<unknown>;
 }
-const world: World = { admin: true, calls: [], refreshed: 0, schools: {}, supabase: () => ({}), deps: () => ({}), operations: async () => ({}) };
+const NO_VISIT_EVENTS = async () => ({ runs: [], newest: null, hostsByStatus: { active: 0, unreachable: 0, no_events: 0, off: 0 } });
+const world: World = { admin: true, calls: [], refreshed: 0, schools: {}, supabase: () => ({}), deps: () => ({}), operations: async () => ({}), visitEvents: NO_VISIT_EVENTS };
 (globalThis as unknown as { __world: World }).__world = world;
 function reset(over: Partial<World> = {}) {
-  Object.assign(world, { admin: true, calls: [], refreshed: 0, schools: {}, supabase: () => ({}), deps: () => ({}), operations: async () => ({}) }, over);
+  Object.assign(world, { admin: true, calls: [], refreshed: 0, schools: {}, supabase: () => ({}), deps: () => ({}), operations: async () => ({}), visitEvents: NO_VISIT_EVENTS }, over);
 }
 
 // No network anywhere in this file.

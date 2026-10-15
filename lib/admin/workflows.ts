@@ -15,15 +15,16 @@
  * from `main` through lib/github-app.ts `fetchRunCost` (data/reports/ isn't in the deploy).
  */
 
-export type WorkflowFile = "college-reported.yml" | "identity-refresh.yml" | "publish-changes.yml" | "verify.yml";
+export type WorkflowFile = "college-reported.yml" | "identity-refresh.yml" | "publish-changes.yml" | "verify.yml" | "visit-events.yml";
 
 export type RunInput =
   | { name: string; label: string; kind: "unit"; required: true }
   | { name: string; label: string; kind: "boolean"; default: boolean }
   | { name: string; label: string; kind: "choice"; options: readonly string[]; default: string }
-  | { name: string; label: string; kind: "money"; default: string };
+  | { name: string; label: string; kind: "money"; default: string }
+  | { name: string; label: string; kind: "text"; default: string };
 
-export type RunId = "college" | "pilot" | "all" | "collect" | "identity" | "publish" | "verify";
+export type RunId = "college" | "pilot" | "all" | "collect" | "identity" | "publish" | "verify" | "visit-events";
 
 export interface DispatchableRun {
   id: RunId;
@@ -125,6 +126,20 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     guards: {},
     ref: "pull-branch",
   },
+  {
+    id: "visit-events",
+    label: "Read visit-event calendars",
+    description: "Reads every Slate host's event calendar now, instead of waiting for the nightly schedule.",
+    workflow: "visit-events.yml",
+    fixed: {},
+    inputs: [
+      { name: "target", label: "Which Supabase project to write", kind: "choice", options: ["dev", "prod"], default: "dev" },
+      { name: "units", label: "Unit ids to read (comma-separated; empty for every known host)", kind: "text", default: "" },
+      { name: "discover", label: "Also look for Slate hosts not in the table yet", kind: "boolean", default: false },
+    ],
+    guards: { oneAtATime: { concurrencyGroup: "visit-events" } },
+    ref: "main",
+  },
 ];
 
 /** The workflow files the console may dispatch: exactly the table's. */
@@ -182,6 +197,10 @@ export function buildDispatch(
         const v = raw === undefined || raw === "" ? input.default : String(raw).trim();
         if (!/^\d{1,5}(\.\d{1,2})?$/.test(v) || Number(v) <= 0) errors.push(`${input.label}: a dollar amount`);
         inputs[input.name] = v;
+        break;
+      }
+      case "text": {
+        inputs[input.name] = raw === undefined ? input.default : String(raw).trim();
         break;
       }
     }

@@ -56,35 +56,46 @@ function clientToken(html: string): string | null {
 
 /**
  * The college's Element451 site, the page it was found on, and its `config`; null when neither the visit page itself
- * nor any host it links (ranked, `event451.sites.451.io` hosts first) answers with the `event451-state` blob.
+ * nor any host it links (ranked, `event451.sites.451.io` hosts first) answers with the `event451-state` blob. The
+ * apply link is the fallback when the visit page gives nothing, the same order Slate's `discoverSlateHost` tries
+ * `visitUrl` then `applyUrl` (specs/product/visit-events.md, "Discovery"): a college whose visit link 404s, or whose
+ * visit page links only a chat shell, may still link (or itself be) the events site from its apply page.
  */
-export async function discoverElementSite(unitId: string, visitUrl: string | null, http: ReaderHttp, opts: { maxCandidates?: number; log?: (msg: string) => void } = {}): Promise<ElementDiscovered | null> {
-  if (!visitUrl) return null;
+export async function discoverElementSite(
+  unitId: string,
+  visitUrl: string | null,
+  applyUrl: string | null,
+  http: ReaderHttp,
+  opts: { maxCandidates?: number; log?: (msg: string) => void } = {},
+): Promise<ElementDiscovered | null> {
   const log = opts.log ?? (() => {});
-  try {
-    new URL(visitUrl);
-  } catch {
-    return null;
-  }
-  const page = await text(http, visitUrl);
-  if (!page) return null;
-
-  // The visit link may itself be the Element451 site (visit.cookman.edu): no hop needed.
-  const ownHost = new URL(page.finalUrl).host;
-  if (hasElementState(page.html)) {
-    log(`  ${unitId}: ${ownHost} is itself an Element451 events site`);
-    return { host: ownHost, foundOn: visitUrl, config: { site: ownHost, client: clientToken(page.html) } };
-  }
-
   const maxCandidates = opts.maxCandidates ?? 8;
-  for (const host of elementCandidateHosts(page.html, page.finalUrl).slice(0, maxCandidates)) {
-    const root = await text(http, `https://${host}/`);
-    if (!root || !hasElementState(root.html)) {
-      log(`  ${unitId}: ${host} rejected (no event451-state blob; linked from ${page.finalUrl})`);
+  for (const start of [visitUrl, applyUrl]) {
+    if (!start) continue;
+    try {
+      new URL(start);
+    } catch {
       continue;
     }
-    log(`  ${unitId}: ${host} (found on ${page.finalUrl})`);
-    return { host, foundOn: visitUrl, config: { site: host, client: clientToken(root.html) } };
+    const page = await text(http, start);
+    if (!page) continue;
+
+    // The link may itself be the Element451 site (visit.cookman.edu): no hop needed.
+    const ownHost = new URL(page.finalUrl).host;
+    if (hasElementState(page.html)) {
+      log(`  ${unitId}: ${ownHost} is itself an Element451 events site`);
+      return { host: ownHost, foundOn: start, config: { site: ownHost, client: clientToken(page.html) } };
+    }
+
+    for (const host of elementCandidateHosts(page.html, page.finalUrl).slice(0, maxCandidates)) {
+      const root = await text(http, `https://${host}/`);
+      if (!root || !hasElementState(root.html)) {
+        log(`  ${unitId}: ${host} rejected (no event451-state blob; linked from ${page.finalUrl})`);
+        continue;
+      }
+      log(`  ${unitId}: ${host} (found on ${page.finalUrl})`);
+      return { host, foundOn: start, config: { site: host, client: clientToken(root.html) } };
+    }
   }
   return null;
 }

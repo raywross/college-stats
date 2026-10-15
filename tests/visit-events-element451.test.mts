@@ -249,7 +249,7 @@ test("discoverElementSite: a visit page that links an event451 site, confirmed b
     [visitUrl]: read("cccb-visit-page.html"),
     "https://cccb.event451.sites.451.io/": read("cccb-listing.html"),
   });
-  const d = await discoverElementSite("176910", visitUrl, http);
+  const d = await discoverElementSite("176910", visitUrl, null, http);
   assert.equal(d?.host, "cccb.event451.sites.451.io");
   assert.equal(d?.foundOn, visitUrl);
   assert.deepEqual(d?.config, { site: "cccb.event451.sites.451.io", client: "cccb" });
@@ -258,7 +258,7 @@ test("discoverElementSite: a visit page that links an event451 site, confirmed b
 test("discoverElementSite: a visit link that is itself the site (visit.cookman.edu) needs no hop", async () => {
   const visitUrl = "https://visit.cookman.edu/";
   const http = fakeHttp({ [visitUrl]: read("cookman-listing.html") });
-  const d = await discoverElementSite("132602", visitUrl, http);
+  const d = await discoverElementSite("132602", visitUrl, null, http);
   assert.equal(d?.host, "visit.cookman.edu");
   assert.equal(d?.foundOn, visitUrl);
   assert.deepEqual(d?.config, { site: "visit.cookman.edu", client: "cookman" });
@@ -271,13 +271,43 @@ test("discoverElementSite: a candidate without the blob is rejected and logged; 
     [visitUrl]: '<a href="https://nowhere.event451.sites.451.io/">Visit us</a>',
     "https://nowhere.event451.sites.451.io/": "<html><body>Coming soon</body></html>",
   });
-  const d = await discoverElementSite("1", visitUrl, http, { log: (m) => logs.push(m) });
+  const d = await discoverElementSite("1", visitUrl, null, http, { log: (m) => logs.push(m) });
   assert.equal(d, null);
   assert.ok(logs.some((l) => l.includes("nowhere.event451.sites.451.io rejected")));
   // No visit link, no page at all: still null, never throws.
   const none = fakeHttp({});
-  assert.equal(await discoverElementSite("1", "https://gone.edu/visit", none), null);
-  assert.equal(await discoverElementSite("1", null, none), null);
+  assert.equal(await discoverElementSite("1", "https://gone.edu/visit", null, none), null);
+  assert.equal(await discoverElementSite("1", null, null, none), null);
+});
+
+test("discoverElementSite: the apply link is the fallback when the visit page gives nothing (Slate's own order)", async () => {
+  const visitUrl = "https://nowhere.edu/visit";
+  const applyUrl = "https://centralbible.edu/visit";
+  const http = fakeHttp({
+    [visitUrl]: "<html>no links here</html>",
+    [applyUrl]: read("cccb-visit-page.html"),
+    "https://cccb.event451.sites.451.io/": read("cccb-listing.html"),
+  });
+  const d = await discoverElementSite("176910", visitUrl, applyUrl, http);
+  assert.equal(d?.host, "cccb.event451.sites.451.io");
+  assert.equal(d?.foundOn, applyUrl, "found on the apply page, not the visit page that gave nothing");
+  // A visit link that 404s (no page at all) falls through to the apply link the same way.
+  const noVisit = fakeHttp({
+    [applyUrl]: read("cccb-visit-page.html"),
+    "https://cccb.event451.sites.451.io/": read("cccb-listing.html"),
+  });
+  const d2 = await discoverElementSite("176910", "https://gone.edu/visit", applyUrl, noVisit);
+  assert.equal(d2?.host, "cccb.event451.sites.451.io");
+  assert.equal(d2?.foundOn, applyUrl);
+  // The visit link winning means the apply link is never even fetched.
+  const bothWork = fakeHttp({
+    "https://visit.cookman.edu/": read("cookman-listing.html"),
+    [applyUrl]: read("cccb-visit-page.html"),
+    "https://cccb.event451.sites.451.io/": read("cccb-listing.html"),
+  });
+  const d3 = await discoverElementSite("132602", "https://visit.cookman.edu/", applyUrl, bothWork);
+  assert.equal(d3?.host, "visit.cookman.edu");
+  assert.ok(!bothWork.asked.includes(applyUrl), "the apply link is never fetched once the visit link wins");
 });
 
 /* ------------------------------------------------------------------ */

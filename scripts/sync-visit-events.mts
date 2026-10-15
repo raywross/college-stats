@@ -149,7 +149,7 @@ if (DISCOVER) {
     const results = await pool(stillMissing, HOST_POOL, async (unitId): Promise<[string, Awaited<ReturnType<typeof discoverElementSite>>]> => {
       const s = byId.get(unitId);
       if (!s) return [unitId, null];
-      const d = await discoverElementSite(unitId, s.links?.visit ?? null, http, { log: (m) => console.log(m) });
+      const d = await discoverElementSite(unitId, s.links?.visit ?? null, s.links?.apply ?? null, http, { log: (m) => console.log(m) });
       if (!d) console.log(`  ${unitId} ${s.name}: no Element451 site found from ${s.links?.visit ?? "no link"}`);
       return [unitId, d];
     });

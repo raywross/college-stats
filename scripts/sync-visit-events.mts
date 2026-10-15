@@ -117,6 +117,8 @@ if (DISCOVER) {
       const prev = known.get(r.unit_id);
       if (!prev) added++;
       const row: SlateHostRow = {
+        vendor: "slate",
+        config: {},
         failures: 0,
         first_seen: now.toISOString(),
         last_read: null,

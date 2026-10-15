@@ -116,6 +116,8 @@ test("syncHost through runSync: a failed try sets last_attempt and never last_re
     host: "apply.example.edu",
     found_on: null,
     portal_parts: [],
+    vendor: "slate",
+    config: {},
     status: "active",
     failures: 0,
     first_seen: daysAgo(10),

@@ -192,9 +192,48 @@ college whose discovery finds nothing has no row to record the attempt on, so it
 Augustana's host, Kansas State a graduate Slate); `www.amherst.edu` challenges our user agent, so Amherst stays
 unfound until the WAF is addressed; the search times out (30 s) on a few large hosts under a pool of 24.
 
-Left for the round after: a TargetX reader (~150 colleges) and an Element451 reader (~50), each behind the same guards
-and piloted for a month on a dozen colleges first; a self-hosted runner or small VM for the crawl once the repository
-goes private (about 30 hours of Actions a month); the Technolutions partnership email (the owner's).
+Left for later: a self-hosted runner or small VM for the crawl once the repository goes private (about 30 hours of
+Actions a month); the Technolutions partnership email (the owner's).
+
+## Round 3: TargetX and Element451 (2026-10-15)
+> Status of this section: **planned** 2026-10-15 (owner: "put a spec together for the TargetX and Element451
+> schools, then implement and test"). The protocol subsections are filled from the research in
+> `visit-events-build/research/{targetx,element451}.md`.
+
+**Why these two.** Of the 984 colleges without a Slate host, the visit page links TargetX (Salesforce) at 149 and
+Element451 at 49 ([what the rest run](#keeping-it-running-round-2-2026-10-15): campus-wide calendars, virtual
+tours, plain forms, or nothing). They are the only other systems with enough colleges to be worth a reader each, and
+both publish events on public pages a reader can call.
+
+**One table, one pipeline, one reader per vendor.** `slate_hosts` gains `vendor` (`slate` | `targetx` |
+`element451`) and `config` (what the reader needs beyond the host: a TargetX site's path and flavour, an
+Element451 site's API base and the public tokens its own pages carry) in `20261015120000_visit_events_vendors.sql`.
+`syncHost` dispatches by vendor to `readSite(hostRow, deps) → HostRead` (`scripts/lib/visit-events/readers/
+{slate,targetx,element451}.mts`; the Slate one is today's `readHost`); everything after the read is shared: the row
+shape, `kindOf`, `pagePolicy`'s idea (detail only for shown kinds away from campus, where a vendor has a detail call
+at all), `diffEvents`, the collapse and run-level guards, the host bookkeeping, the check, the admin card. A vendor
+reader throws `CollapsedSearchError` when its listing answers but not in the shape it knows, so a vendor-wide change
+is a collapse like Slate's and never a mass cancellation. Discovery gains a step per vendor (`discover-targetx.mts`,
+`discover-element451.mts`) run after the Slate step for colleges still without a row; each confirms a candidate
+site by a successful listing call before writing it.
+
+**Rules carried over.** Every listing row is stored; only the five shown kinds appear; staff and appointment rows
+are kept hidden; one request a second per host through `PoliteHttp`, an honest user agent, robots honored, no form
+ever submitted, no token used for anything but the read the public page itself makes. A reader whose source needs a
+login, a session, or a token that isn't on a public page is not built.
+
+**Pilot before `--all`.** Each reader runs for a month on a dozen colleges (`status` `active` for those, the rest
+discovered but `off`) with the check's staff share, located share, and collapse count watched on the admin card;
+then the rest are switched on.
+
+### TargetX: the protocol
+*(filled from the research)*
+
+### Element451: the protocol
+*(filled from the research)*
+
+### Units
+*(filled once the protocols are known: a reader per vendor, discovery, the pilot and its QA)*
 
 ## The nightly job
 

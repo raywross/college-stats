@@ -16,24 +16,27 @@ import { cn } from "@/lib/utils";
  * "Navigation"): never computed on the server, so public pages stay static. Signed-out visitors and any fetch
  * error read as false.
  */
-function usePlanDueSoon(signedIn: boolean | undefined): boolean {
-  const [fetched, setFetched] = useState(false);
+function usePlanDueSoon(signedIn: boolean | undefined): { lit: boolean; label: string } {
+  const [fetched, setFetched] = useState<{ dueSoon: boolean; deadline?: boolean } | null>(null);
   useEffect(() => {
     if (!signedIn) return;
     let active = true;
     fetch("/api/plan/next", { cache: "no-store", credentials: "same-origin" })
-      .then((r) => (r.ok ? (r.json() as Promise<{ dueSoon: boolean }>) : null))
+      .then((r) => (r.ok ? (r.json() as Promise<{ dueSoon: boolean; deadline?: boolean }>) : null))
       .then((data) => {
-        if (active) setFetched(Boolean(data?.dueSoon));
+        if (active) setFetched(data ?? null);
       })
       .catch(() => {
-        if (active) setFetched(false);
+        if (active) setFetched(null);
       });
     return () => {
       active = false;
     };
   }, [signedIn]);
-  return Boolean(signedIn) && fetched;
+  const lit = Boolean(signedIn) && Boolean(fetched?.dueSoon);
+  // The dot lights for a deadline within a week or a move added since the plan was last opened (next-steps
+  // notifications.md "Channels"); its name says which.
+  return { lit, label: fetched?.deadline ? "A deadline in the next 7 days" : "Something new on your plan" };
 }
 
 type Sheet = "search" | "more" | null;
@@ -47,7 +50,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const compareIds = useCompareIds();
   const me = useMe();
-  const planDueSoon = usePlanDueSoon(me?.signedIn);
+  const planDot = usePlanDueSoon(me?.signedIn);
   const [sheet, setSheet] = useState<Sheet>(null);
 
   // Close sheets on navigation.
@@ -78,7 +81,7 @@ export function BottomNav() {
         <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
           <Tab href="/explore" label="Explore" icon={<Compass />} active={isActive("/explore") && !sheet} />
           <Tab label="Search" icon={<Search />} active={sheet === "search"} onClick={() => setSheet(sheet === "search" ? null : "search")} />
-          <Tab href="/plan" label="Plan" icon={<ListChecks />} active={isActive("/plan") && !sheet} dot={planDueSoon} />
+          <Tab href="/plan" label="Plan" icon={<ListChecks />} active={isActive("/plan") && !sheet} dot={planDot.lit && planDot.label} />
           <Tab
             href={compareHref}
             label="Compare"
@@ -158,8 +161,8 @@ function Tab({
   icon: ReactNode;
   active: boolean;
   badge?: number;
-  /** A plain dot (no count), for the Plan tab's "a deadline is due soon" (page.md "Navigation"). */
-  dot?: boolean;
+  /** A plain dot (no count), for the Plan tab (page.md "Navigation"); a string is the lit dot's accessible name. */
+  dot?: boolean | string;
   onClick?: () => void;
 }) {
   const inner = (
@@ -176,7 +179,12 @@ function Tab({
             {badge}
           </span>
         )}
-        {dot && <span className="absolute top-0.5 right-1.5 inline-flex size-2 animate-pop-in rounded-full bg-pop ring-2 ring-background" aria-label="A deadline in the next 7 days" />}
+        {dot && (
+          <span
+            className="absolute top-0.5 right-1.5 inline-flex size-2 animate-pop-in rounded-full bg-pop ring-2 ring-background"
+            aria-label={typeof dot === "string" ? dot : "A deadline in the next 7 days"}
+          />
+        )}
       </span>
       <span className={cn("text-[11px] font-semibold", active ? "text-foreground" : "text-muted-foreground")}>{label}</span>
     </>

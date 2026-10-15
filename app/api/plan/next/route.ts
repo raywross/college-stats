@@ -7,7 +7,8 @@ import { createServerSupabase } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
-const json = (dueSoon: boolean) => NextResponse.json({ dueSoon }, { headers: { "Cache-Control": "no-store" } });
+/** `dueSoon` is the dot (lit for either reason, the name the header has always read); `deadline` and `newMove` say why, for the dot's accessible name. */
+const json = (deadline: boolean, newMove = false) => NextResponse.json({ dueSoon: deadline || newMove, deadline, newMove }, { headers: { "Cache-Control": "no-store" } });
 
 /** When this viewer last opened each student's Next steps tab (own rows only, by RLS). A failed read: never opened. */
 async function lastOpens(userId: string, studentIds: string[]): Promise<Map<string, string>> {
@@ -37,10 +38,9 @@ export async function GET() {
     if (studentIds.length === 0) return json(false);
     const today = todayIso();
     const [loads, opens] = await Promise.all([Promise.all(studentIds.map((id) => loadPlanFor(id))), lastOpens(user.id, studentIds)]);
-    const lit = loads.some(
-      (l, i) => l.kind === "ready" && (hasDueSoon(l.view, today) || hasNewMove(l.ctx.tasks, opens.get(studentIds[i]) ?? null, today)),
-    );
-    return json(lit);
+    const deadline = loads.some((l) => l.kind === "ready" && hasDueSoon(l.view, today));
+    const newMove = loads.some((l, i) => l.kind === "ready" && hasNewMove(l.ctx.tasks, opens.get(studentIds[i]) ?? null, today));
+    return json(deadline, newMove);
   } catch {
     return json(false);
   }

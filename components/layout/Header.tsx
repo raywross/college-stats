@@ -17,24 +17,27 @@ import { cn } from "@/lib/utils";
  * "Navigation"): never computed on the server, so public pages stay static. Signed-out visitors and any fetch
  * error read as false.
  */
-function usePlanDueSoon(signedIn: boolean | undefined): boolean {
-  const [fetched, setFetched] = useState(false);
+function usePlanDueSoon(signedIn: boolean | undefined): { lit: boolean; label: string } {
+  const [fetched, setFetched] = useState<{ dueSoon: boolean; deadline?: boolean } | null>(null);
   useEffect(() => {
     if (!signedIn) return;
     let active = true;
     fetch("/api/plan/next", { cache: "no-store", credentials: "same-origin" })
-      .then((r) => (r.ok ? (r.json() as Promise<{ dueSoon: boolean }>) : null))
+      .then((r) => (r.ok ? (r.json() as Promise<{ dueSoon: boolean; deadline?: boolean }>) : null))
       .then((data) => {
-        if (active) setFetched(Boolean(data?.dueSoon));
+        if (active) setFetched(data ?? null);
       })
       .catch(() => {
-        if (active) setFetched(false);
+        if (active) setFetched(null);
       });
     return () => {
       active = false;
     };
   }, [signedIn]);
-  return Boolean(signedIn) && fetched;
+  const lit = Boolean(signedIn) && Boolean(fetched?.dueSoon);
+  // The dot lights for a deadline within a week or a move added since the plan was last opened (next-steps
+  // notifications.md "Channels"); its name says which.
+  return { lit, label: fetched?.deadline ? "A deadline in the next 7 days" : "Something new on your plan" };
 }
 
 const NAV_ITEMS = [
@@ -52,7 +55,7 @@ export function Header() {
   const pathname = usePathname();
   const compareIds = useCompareIds();
   const me = useMe();
-  const planDueSoon = usePlanDueSoon(me?.signedIn);
+  const planDot = usePlanDueSoon(me?.signedIn);
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Close the search row on navigation.
@@ -100,8 +103,8 @@ export function Header() {
                     {compareIds.length}
                   </span>
                 )}
-                {item.href === "/plan" && planDueSoon && (
-                  <span className="inline-flex size-2 animate-pop-in rounded-full bg-pop" aria-label="A deadline in the next 7 days" />
+                {item.href === "/plan" && planDot.lit && (
+                  <span className="inline-flex size-2 animate-pop-in rounded-full bg-pop" aria-label={planDot.label} />
                 )}
               </Link>
             );

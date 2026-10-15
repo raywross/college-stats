@@ -1,7 +1,7 @@
 ---
 title: "Next steps: the plan tells you what to do this season"
 pr: 160
-date: 2026-10-14
+date: 2026-10-15
 kind: feature
 summary: "The plan now opens to a Next steps tab with this season's three to six moves for the student and the parent, flags good early-decision opportunities on the list, says what shape the list should be in, walks seniors from submit to the deposit, and sends a brief when a season turns."
 ---

@@ -198,7 +198,8 @@ Actions a month); the Technolutions partnership email (the owner's).
 ## Round 3: TargetX and Element451 (2026-10-15)
 > Status of this section: **built** 2026-10-15 on `feature/visit-events-readers` (planned the same morning; owner:
 > "put a spec together for the TargetX and Element451 schools, then implement and test"). The protocol subsections
-> are from the research in `visit-events-build/research/{targetx,element451}.md`; see [As built](#round-3-as-built).
+> are from the research kept in [visit-events-research/](visit-events-research/README.md); see
+> [As built](#round-3-as-built).
 
 **Why these two.** Of the 984 colleges without a Slate host, the visit page links TargetX (Salesforce) at 149 and
 Element451 at 49 ([what the rest run](#keeping-it-running-round-2-2026-10-15): campus-wide calendars, virtual

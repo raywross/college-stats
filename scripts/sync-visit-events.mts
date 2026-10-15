@@ -179,6 +179,6 @@ for (const r of results) {
   );
 }
 console.log(
-  `Run: ${record.hosts_read} hosts read, ${record.events_new} new, ${record.events_changed} changed, ${record.events_removed} removed, ${record.pages_fetched} requests, ${record.errors.length} errors${DRY_RUN ? " (dry run: nothing written)" : ""}.`,
+  `Run: ${record.hosts_read} hosts read, ${record.hosts_failed} failed, ${record.hosts_collapsed} collapsed, ${record.events_new} new, ${record.events_changed} changed, ${record.events_removed} removed, ${record.pages_fetched} requests, ${record.errors.length} errors${record.misses_withheld ? "; MISSES WITHHELD (more than 20% of hosts failed or collapsed: no rows marked missed or removed tonight)" : ""}${DRY_RUN ? " (dry run: nothing written)" : ""}.`,
 );
 if (quiet.length) console.log(`${quiet.length} requests skipped by robots.txt or unreachable hosts (first: ${quiet[0].trim()}).`);

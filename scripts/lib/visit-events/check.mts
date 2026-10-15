@@ -101,3 +101,69 @@ export function hostReport(c: HostCheck): string[] {
   for (const f of c.failures) lines.push(`  FAIL: ${f}`);
   return lines;
 }
+
+/** Hosts listed in `check_summary` at most (failing first); the rest are counted in `omitted`. */
+export const SUMMARY_MAX_HOSTS = 50;
+/** A failure or warning longer than this is cut (they name up to 15 titles). */
+const SUMMARY_MAX_MESSAGE = 500;
+
+/** One host in `visit_event_sync.check_summary`: only hosts with a failure or a warning are listed. */
+export interface CheckSummaryHost {
+  host: string;
+  unit_id: string;
+  events: number;
+  failures: string[];
+  warnings: string[];
+}
+
+/** `visit_event_sync.check_summary`, written by `check:visit-events --record` and read by the admin card. */
+export interface CheckSummary {
+  checked_at: string;
+  /** Hosts with live upcoming rows, and their rows. */
+  hosts: number;
+  events: number;
+  /** Hosts with at least one failure / at least one warning (the same numbers as `check_failures` / `check_warnings`). */
+  failing: number;
+  warned: number;
+  /** Failing hosts first, then warned ones, each group by host name; at most `SUMMARY_MAX_HOSTS`. */
+  listed: CheckSummaryHost[];
+  /** Hosts with a failure or a warning left out of `listed`. */
+  omitted: number;
+}
+
+/** The columns `--record` writes onto the newest `visit_event_sync` row. */
+export interface CheckRecord {
+  check_failures: number;
+  check_warnings: number;
+  check_summary: CheckSummary;
+}
+
+const cut = (s: string) => (s.length > SUMMARY_MAX_MESSAGE ? `${s.slice(0, SUMMARY_MAX_MESSAGE - 1)}…` : s);
+
+/** The `--record` payload for the check's results: the counts of failing and warned hosts and the summary. Pure. */
+export function checkRecord(checks: readonly HostCheck[], now: Date): CheckRecord {
+  const failing = checks.filter((c) => c.failures.length);
+  const warned = checks.filter((c) => c.warnings.length);
+  const byName = (a: HostCheck, b: HostCheck) => a.host.localeCompare(b.host);
+  const flagged = [...failing.sort(byName), ...checks.filter((c) => !c.failures.length && c.warnings.length).sort(byName)];
+  const listed = flagged.slice(0, SUMMARY_MAX_HOSTS).map((c) => ({
+    host: c.host,
+    unit_id: c.unitId,
+    events: c.events,
+    failures: c.failures.map(cut),
+    warnings: c.warnings.map(cut),
+  }));
+  return {
+    check_failures: failing.length,
+    check_warnings: warned.length,
+    check_summary: {
+      checked_at: now.toISOString(),
+      hosts: checks.length,
+      events: checks.reduce((n, c) => n + c.events, 0),
+      failing: failing.length,
+      warned: warned.length,
+      listed,
+      omitted: flagged.length - listed.length,
+    },
+  };
+}

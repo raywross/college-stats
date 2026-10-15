@@ -1,14 +1,17 @@
 /**
  * ED opportunities (specs/planner/next-steps/ed-opportunities.md): the colleges on a list at Reach or Target that offer
- * early decision, ranked by the estimate's ED verdict and then the owner's order, with no cap (owner 2026-10-15: "be
- * more forgiving"); the round each pill names; the `ed_decide` and `ed2_decide` moves; and the facts the ED sheet shows
- * (the college's own numbers, never the estimate's).
+ * early decision, ranked by the estimate's ED verdict and then the owner's order, at most three (owner 2026-10-15:
+ * "be more forgiving … show up to three in the Reach or top of Target, particularly if one is a Dream"); the round
+ * each pill names; the `ed_decide` and `ed2_decide` moves; and the facts the ED sheet shows (the college's own
+ * numbers, never the estimate's).
  *
  * - Candidates: the college offers ED (`isOffered(school, "ed") === true`), the level is Reach or Target, the estimate
  *   isn't labelled `elite`, its ED verdict is `helps`, `same`, or null (no counts published; never `not_advised`), the
- *   row isn't withdrawn or decided, and the student hasn't said "Not for me" (`ed_dismissed_at`). A `same` college
- *   whose own ED rate isn't above its overall rate is out: nothing about the round helps there (the model's multiplier
- *   is 1). A row already in ED or ED II stays a candidate: its pill reads as confirmation.
+ *   row isn't withdrawn or decided, and the student hasn't said "Not for me" (`ed_dismissed_at`). Where the verdict
+ *   isn't `helps`, the college must sit at Reach or at the top of Target (closeness 0 or 1), or be the Dream: the hint
+ *   is that a binding application improves the chance where the student is close. A `same` college whose own ED rate
+ *   isn't above its overall rate is out: nothing about the round helps there (the model's multiplier is 1). A row
+ *   already in ED or ED II stays a candidate: its pill reads as confirmation.
  * - Rank: `helps`, then `same`, then null; within each, the Dream; Reach at closeness 3, 2; Target 0, 1; Reach 1, 0;
  *   Target 2, 3; no closeness after; then the student's own order. Closeness orders; it never shows.
  * - Round per pill: one candidate is ED (the one the student set in ED, else the first); each other is ED II when the
@@ -137,6 +140,10 @@ function ranked(rows: readonly EdRow[], estimates: Record<string, EstimateResult
       if (isOffered(school, "ed") !== true) return [];
       const verdict: EdVerdict = est.ed ?? null;
       if (verdict === "same" && edRateAbove(school) === false) return [];
+      // Owner (2026-10-15): where ED wouldn't move the level, the hint is still worth giving — at Reach, or at the top
+      // of Target (closeness 0 or 1, nearest Reach), and always for the Dream. A `helps` verdict qualifies anywhere.
+      const inBand = level === "reach" || est.closeness === 0 || est.closeness === 1;
+      if (verdict !== "helps" && !r.dream && !inBand) return [];
       const p = VERDICT_ORDER[verdict ?? "none"] * 10 + priority(r.dream === true, level, est.closeness);
       return [{ row: r, level, verdict, p }];
     })
@@ -162,9 +169,12 @@ function ranked(rows: readonly EdRow[], estimates: Record<string, EstimateResult
   });
 }
 
+/** At most this many pills (owner, 2026-10-15: "up to three in the Reach or top of Target, particularly a Dream"). */
+export const ED_MAX = 3;
+
 /**
- * The ED opportunities on a list (ed-opportunities.md "Candidates and ranking"): ranked, uncapped, empty before junior
- * spring and once every candidate's round has closed.
+ * The ED opportunities on a list (ed-opportunities.md "Candidates and ranking"): ranked, the first three whose round
+ * is still open, empty before junior spring and once every candidate's round has closed.
  */
 export function edOpportunities(
   rows: readonly EdRow[],
@@ -175,9 +185,10 @@ export function edOpportunities(
   if (!isPlanned(opts.season)) return [];
   return ranked(rows, estimates, schools)
     .filter((c) => stillOpen(bySchool(schools, c.unitId), c.round, opts.season, opts.today))
-    .map(({ row, ...c }) => {
+    .slice(0, ED_MAX)
+    .map(({ row, ...c }, i) => {
       void row;
-      return c;
+      return { ...c, rank: i + 1 };
     });
 }
 

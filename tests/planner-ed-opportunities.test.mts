@@ -9,7 +9,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ED_CAVEAT, ED_PILL_TEXT, ED_PILL_TEXT_PLAIN, edDismissedItemIds, edPillText, edMoves, edOpportunities, edSheetFacts, type EdCandidate, type EdSheetFacts } from "../lib/planner/ed-opportunities.ts";
+import { ED_CAVEAT, ED_MAX, ED_PILL_TEXT, ED_PILL_TEXT_PLAIN, edDismissedItemIds, edPillText, edMoves, edOpportunities, edSheetFacts, type EdCandidate, type EdSheetFacts } from "../lib/planner/ed-opportunities.ts";
 import { generate as roundsGenerate } from "../lib/planner/generators/rounds.ts";
 import { loadCycle, cycleFor } from "../lib/planner/cycle.ts";
 import { gradeOf, seasonOf } from "../lib/planner/seasons.ts";
@@ -120,11 +120,21 @@ test("the Dream first, then the owner's closeness order (Reach 3, 2; Target 0, 1
     "9": est("9", "reach", null),
     "10": est("10", "target", 3),
   };
-  const got = edOpportunities(items, estimates, schools, opts());
-  assert.deepEqual(ids(got), ["10", "8", "7", "6", "5", "4", "2", "3", "1", "9"], "all ten, no cap");
-  assert.deepEqual(got.map((c) => c.rank), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.ok(got[0].dream);
-  assert.ok(got.every((c) => c.verdict === "helps"));
+  // The cap of three hides the tail, so the order is read in slices: take the pills, drop those rows, ask again.
+  const order: string[] = [];
+  let left = items;
+  for (let i = 0; i < 4; i++) {
+    const got = edOpportunities(left, estimates, schools, opts());
+    if (got.length === 0) break;
+    assert.ok(got.length <= ED_MAX);
+    assert.deepEqual(got.map((c) => c.rank), got.map((_, j) => j + 1));
+    assert.ok(got.every((c) => c.verdict === "helps"));
+    order.push(...ids(got));
+    const taken = new Set(ids(got));
+    left = left.filter((it) => !taken.has(it.unit_id));
+  }
+  assert.deepEqual(order, ["10", "8", "7", "6", "5", "4", "2", "3", "1", "9"]);
+  assert.ok(edOpportunities(items, estimates, schools, opts())[0].dream, "the Dream first");
 });
 
 test("same and null qualify, ranked after helps (same before null), each in the owner's order", () => {
@@ -140,15 +150,33 @@ test("same and null qualify, ranked after helps (same before null), each in the 
     "6": est("6", "reach", 2, null),
   };
   const got = edOpportunities(items, estimates, schools, opts());
-  // helps: Target 0 before Target 3; same: the Dream before Reach 3; null: Reach 3 before Reach 2.
-  assert.deepEqual(ids(got), ["5", "3", "2", "4", "1", "6"]);
-  assert.deepEqual(got.map((c) => c.verdict), ["helps", "helps", "same", "same", null, null]);
+  // helps: Target 0 before Target 3; then same: the Dream first. The cap of three (owner, 2026-10-15) ends it there;
+  // Reach 3 same, Reach 3 null, Reach 2 null would follow in that order.
+  assert.deepEqual(ids(got), ["5", "3", "2"]);
+  assert.deepEqual(got.map((c) => c.verdict), ["helps", "helps", "same"]);
+  assert.deepEqual(got.map((c) => c.rank), [1, 2, 3], "ranks renumbered after the cap");
   // The owner's case: one college at Reach or Target offers ED, and early decision doesn't change its level.
   const one = edOpportunities([item("4")], { "4": est("4", "reach", 3, "same") }, schools, opts());
   assert.deepEqual(one.map((c) => [c.unitId, c.round, c.verdict]), [["4", "ed", "same"]]);
 });
 
-test("no cap: six candidates give six pills, the first ED, the rest ED II or ed_alt by the date rule", () => {
+test("where ED wouldn't move the level the hint is for Reach or the top of Target (closeness 0 or 1), or the Dream (owner, 2026-10-15)", () => {
+  const schools = by([ps("1"), ps("2"), ps("3"), ps("4"), ps("5")]);
+  const e = {
+    "1": est("1", "target", 3, "same"), // lower Target, not the Dream: out
+    "2": est("2", "target", 2, null), // lower Target, no counts: out
+    "3": est("3", "target", 1, "same"), // top of Target: in
+    "4": est("4", "reach", 0, "same"), // any Reach: in
+    "5": est("5", "target", 3, "helps"), // helps qualifies anywhere
+  };
+  const got = edOpportunities(["1", "2", "3", "4", "5"].map((u) => item(u)), e, schools, opts());
+  assert.deepEqual(ids(got), ["5", "3", "4"]);
+  // The Dream at the bottom of Target with a same verdict still gets the hint.
+  const dream = edOpportunities([item("1", { dream: true })], { "1": est("1", "target", 3, "same") }, schools, opts());
+  assert.deepEqual(ids(dream), ["1"]);
+});
+
+test("the cap of three: six candidates give three pills, the first ED, the rest ED II or ed_alt by the date rule", () => {
   const schools = by([
     ps("1"),
     ps("2", { ed2: true }),
@@ -167,20 +195,20 @@ test("no cap: six candidates give six pills, the first ED, the rest ED II or ed_
     "6": est("6", "target", 2, null),
   };
   const got = edOpportunities(items, e, schools, opts());
-  assert.equal(got.length, 6);
+  assert.equal(got.length, ED_MAX);
   assert.deepEqual(
     got.map((c) => [c.unitId, c.round]),
     [
       ["1", "ed"],
       ["2", "ed2"],
       ["3", "ed_alt"],
-      ["4", "ed_alt"],
-      ["5", "ed2"],
-      ["6", "ed2"],
     ],
-    "ED II due Dec 1 is before the Dec 15 notification; no ED II offered is an alternative",
+    "helps first (1, 2), then the top-of-Target same; ED II due Dec 1 is before the Dec 15 notification",
   );
   assert.equal(got.filter((c) => c.round === "ed").length, 1, "never two plain ED");
+  // Without the cap the next would be 4 (Target 1, same) then 5 (Reach 1, same); 6 (lower Target, no counts) is out of the band.
+  const rest = edOpportunities(items.filter((i) => !["1", "2", "3"].includes(i.unit_id)), e, schools, opts());
+  assert.deepEqual(ids(rest), ["4", "5"]);
 });
 
 test("ties go by the student's own order", () => {
@@ -221,7 +249,7 @@ test("rounds: the first is ED; a later one is ED II only when offered and its de
   const items = ["1", "2", "3", "4"].map((u) => item(u));
   const e = { "1": est("1", "reach", 3), "2": est("2", "reach", 2), "3": est("3", "target", 0), "4": est("4", "target", 1) };
   const got = edOpportunities(items, e, schools, opts());
-  assert.deepEqual(got.map((c) => [c.unitId, c.round]), [["1", "ed"], ["2", "ed2"], ["3", "ed_alt"], ["4", "ed_alt"]], "ED II due Dec 1 is before the Dec 15 notification");
+  assert.deepEqual(got.map((c) => [c.unitId, c.round]), [["1", "ed"], ["2", "ed2"], ["3", "ed_alt"]], "ED II due Dec 1 is before the Dec 15 notification; the fourth is past the cap");
   // No published notification at the ED college: ED II can't be shown to come after, so it's an alternative.
   const noNote = by([ps("1", { edNotification: null }), ps("2", { ed2: true })]);
   assert.deepEqual(edOpportunities([item("1"), item("2")], e, noNote, opts()).map((c) => c.round), ["ed", "ed_alt"]);

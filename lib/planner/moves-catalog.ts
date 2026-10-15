@@ -506,7 +506,7 @@ export const SEASON_EXPLAINER: Record<Season, { lead: string; paragraph: string;
  * `shape_cost` use their `why` here as written, since those three aren't about the list's counts.
  */
 export const MOVE_TEXT: Record<string, { title: string; why: string }> = {
-  ed_decide: { title: "Decide on ED (due {date})", why: "Early decision is binding. The colleges where it would make the most difference are one tap away, with their own reported numbers." },
+  ed_decide: { title: "Decide on ED (due {date})", why: "Early decision is binding. The colleges on your list that offer it are one tap away, each with its own reported numbers and what a binding application would mean there." },
   ed2_decide: { title: "ED II at {college}, if you want it", why: "{edCollege} said no. ED II at {college} is due {date}." },
   visit_ed: { title: "Visit {college} before you decide on a binding round", why: "Early decision is binding, so seeing the campus first matters more than usual." },
   show_interest: { title: "Show {college} you're interested", why: "{college} says applicant interest is {label}." },

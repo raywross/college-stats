@@ -36,14 +36,17 @@ may flag an opportunity by name.
 1. **Candidates**: rows not withdrawn or decided, at **Reach or Target**, whose college offers ED
    (`isOffered(school, "ed") === true`), whose estimate isn't labelled `elite`, and whose ED verdict is anything but
    `not_advised`: `helps`, `same`, or null (ED offered, no counts published). High reach stays out (`not_advised`);
-   Likely and Safe don't need a binding round. A `same` college whose own ED rate isn't above its overall rate is out
-   (see "What the data can say"). A row the student dismissed ("Not for me") is out. A row already in ED or ED II by
+   Likely and Safe don't need a binding round. Where the verdict isn't `helps`, the college must sit at **Reach or the
+   top of Target** (closeness 0 or 1, nearest Reach) or be the **Dream** (owner 2026-10-15): the hint is that a binding
+   application improves the chance where the student is close. A `same` college whose own ED rate isn't above its
+   overall rate is out (see "What the data can say"). A row the student dismissed ("Not for me") is out. A row already in ED or ED II by
    the student's choice stays a candidate so its pill reads as confirmation.
 2. **Rank**: verdict `helps` first, then `same`, then null; within each, the owner's order: the **Dream** first if
    it's a candidate; then **Reach, lower end** (closeness 3, then 2); then **Target, upper end** (closeness 0, then 1);
    then the remaining Reaches (1, 0) and Targets (2, 3); no closeness after; ties by the student's own order.
-3. **No cap**: every candidate gets a pill (owner 2026-10-15). A list with one ED college at Reach or Target gets its
-   pill even when early decision doesn't change the level, because a binding application still helps.
+3. **Cap**: the first three (owner 2026-10-15: "up to three in the Reach or top of Target, particularly a Dream"). A
+   list with one ED college at Reach or Target gets its pill even when early decision doesn't change the level,
+   because a binding application still helps.
 4. **Round per pill**: the first candidate is **ED** (ED I). Each later candidate is **ED II** if its college offers
    ED II and its ED II deadline falls after the first candidate's ED notification date (the built conflict rule);
    otherwise it is an **alternative ED**, shown with the same pill and a sheet that says ED is one college. So "easier"
@@ -57,7 +60,7 @@ pill; its button reads **Keep ED** and the sheet says "On your plan: ED".
 ## The pill
 On the list row, right end, accent background, worded by the verdict: `helps` → **Good ED opportunity** / **Good ED
 II opportunity**; `same` and null → **ED opportunity** / **ED II opportunity** (phones: **ED** / **ED II** with the
-same color and the full text as the accessible label). Never a number. One per candidate, no cap. Tapping opens the
+same color and the full text as the accessible label). Never a number. At most three across the list. Tapping opens the
 row's details with the ED sheet at the top. The Next steps tab shows the same opportunity as a card
 ("Good ED opportunity: Wake Forest · Target for you") whose button opens the sheet.
 
@@ -124,7 +127,8 @@ dismissed college never returns.
 `lib/planner/ed-opportunities.ts` (candidates, rank, round per pill, `edSheetFacts`), `components/planner/EdPill.tsx`,
 `EdSheet.tsx`, `EdDecideCard.tsx`; `ed_decide` and `ed2_decide` kinds; migration `list_items.ed_dismissed_at`,
 `list_items.ed_checks`; removal of the two notice lines. Tests: `tests/planner-ed-opportunities.test.mts` (Dream first;
-the closeness order; `helps` before `same` before null; no cap; ED II only after the ED I notification; the
+the closeness order; `helps` before `same` before null; the band for non-`helps` verdicts and the Dream exception;
+the three-cap; ED II only after the ED I notification; the
 alternative-ED wording; the pill and read by verdict; no pill at `not_advised`/High reach/`elite` or a `same` college
 whose ED rate isn't higher; dismissal; the junior-spring gate; a guard that the pill text never carries a number).
 
@@ -132,8 +136,11 @@ whose ED rate isn't higher; dismissal; the junior-spring gate; a guard that the 
 - 2026-10-14: the plan may flag an ED opportunity by name; it never says "apply".
 - 2026-10-15: "On the ED pill, we should be more forgiving. Particularly when users don't have any. We should suggest
   more than three, but if there's an ED available and only one school in reach or target that has it, we should
-  suggest it because it still improves their odds." `same` and null qualify, no cap, the pill and read worded by
-  verdict (U2b).
+  suggest it because it still improves their odds." `same` and null qualify, the pill and read worded by verdict (U2b).
+- 2026-10-15, later: "Even though the ED wouldn't move a school up, it should still show up though. We should show up
+  to three in the reach or top of target. Particularly if one of the schools is a dream … if they're willing to go to
+  the school for sure if they get in, why not improve their chances." The cap of three returns; a non-`helps`
+  candidate must be at Reach or the top of Target (closeness 0 or 1), or the Dream.
 
 ## Open questions
 1. Should a pill show for a Dream at Likely that offers ED (the verdict is `same`: ED changes nothing)? Recommendation:

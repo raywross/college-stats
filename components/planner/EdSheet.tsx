@@ -106,6 +106,7 @@ export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ct
             </MetricLabel>
           </p>
         )}
+        <p className="text-sm text-muted-foreground">{facts.framing}</p>
       </div>
 
       <div className="space-y-1">

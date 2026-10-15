@@ -69,7 +69,7 @@ function closenessOrder(level: StandingLevel, closeness: EstimateResult["closene
 function looksLikeEdCandidate(unitId: string, estimates: Record<string, EstimateResult>, schools: Record<string, PlanSchool>): StandingLevel | null {
   const est = estimates[unitId];
   const level = est?.group ?? null;
-  if (!est || est.ed !== "helps" || (level !== "reach" && level !== "target")) return null;
+  if (!est || (est.ed !== "helps" && est.ed !== "improves") || (level !== "reach" && level !== "target")) return null;
   if (isOffered(schools[unitId], "ed") !== true) return null;
   return level;
 }

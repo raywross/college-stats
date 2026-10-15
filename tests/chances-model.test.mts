@@ -247,7 +247,7 @@ const ELITE_6 = () => college("162928", { rate: 0.06, sat: [1270, 1370], gpa: nu
 /* ------------------------------------------------------------------ */
 
 test("version: the third version's model version (Revision 1), and the constants the method names", () => {
-  assert.equal(MODEL_VERSION, "20261012.6");
+  assert.equal(MODEL_VERSION, "20261015.1");
   assert.deepEqual([ODDS_V3.testPull, ODDS_V3.testDown, ODDS_V3.testUp, ODDS_V3.gapPrior], [0.25, 0.3, 0.2, -0.5]);
   assert.deepEqual(ODDS_V3.expectWeights, { gpa: 3, courses: 2, class_rank: 1, test: 1, activities: 1 });
   assert.deepEqual(ODDS_V3.acad.map(([d]) => d), [-1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]);
@@ -878,7 +878,7 @@ test("closeness: which quarter of its level's band the odds fall in; null when a
   for (const r of [at(0.06), at(0.3), at(0.6)]) assert.ok([0, 1, 2, 3].includes(r.closeness as number));
 });
 
-test("ED: helps where the college's early-decision rate lifts the level; same where it doesn't; not advised at a High reach", () => {
+test("ED: helps where the college's early-decision rate lifts the level; improves where it's higher but the level holds; not advised at a High reach", () => {
   // ED admits 60% against 20% overall: M_ed = 1 + ½ × (3 − 1) = 2, the most it can be.
   const c = (rate = 0.2, tier: SelectivityTier | null = null) => college("100654", { rate, sat: [1200, 1300], c7: null, tier, ed: { applicants: 1000, admitted: 600 } });
   const target = run(c(), student({ gpa: UNPLACED_GPA, test: sat(1300), round: "ed" }));
@@ -886,8 +886,10 @@ test("ED: helps where the college's early-decision rate lifts the level; same wh
   assert.equal(target.ed, "helps");
   assert.ok(texts(target).includes("Early decision would move this toward Likely; it's binding, so check the cost first."));
   const capped = run(c(0.2, "highly_selective"), student({ gpa: UNPLACED_GPA, test: sat(1300), round: "ed" }));
-  assert.equal(capped.ed, "same", "the cap holds under ED");
-  assert.ok(keys(capped).includes("ed.same"));
+  assert.equal(capped.group, "target", "the cap holds under ED");
+  assert.equal(capped.ed, "improves", "the ED rate is above overall, the level holds (owner, 2026-10-15)");
+  assert.ok(keys(capped).includes("ed.improves"));
+  assert.ok(texts(capped).includes("Early decision improves your chance here without changing where it stands for you; it's binding, so check the cost first."));
   const hr = run(c(), student({ gpa: UNPLACED_GPA, test: sat(1000), round: "ed" }));
   assert.equal(hr.group, "high_reach");
   assert.equal(hr.ed, "not_advised");
@@ -900,6 +902,25 @@ test("ED: helps where the college's early-decision rate lifts the level; same wh
   assert.equal(run(college("100654", { rate: 0.2, sat: [1200, 1300], c7: null }), student({ gpa: UNPLACED_GPA, test: sat(1300) })).ed, null);
   assert.equal(run(college("100654", { rate: 0.2, sat: [1200, 1300], c7: null }), student({ gpa: UNPLACED_GPA, test: sat(1000) })).ed, "not_advised");
   assert.equal(run(college("100654", { rate: 0.2, sat: [1200, 1300], c7: null }), student()).ed, null, "no level, no verdict");
+});
+
+test("ED as a currency (owner, 2026-10-15): improves at an Ultra selective Reach; same where the ED rate isn't above overall", () => {
+  // Vanderbilt-like: Ultra selective, 5.4% overall, ED admits 14.1%. The tier caps the level at Reach for everyone.
+  const ultra = (ed: { applicants: number; admitted: number }) =>
+    college("166027", { rate: 0.054, sat: [1500, 1580], gpa: middleGpa(3.7, 3.9), c7: null, tier: "elite", ed });
+  const reach = run(ultra({ applicants: 1000, admitted: 141 }), EXCELLENT({ test: sat(1550), round: "ed" }), LINKED);
+  assert.equal(reach.group, "reach");
+  assert.equal(reach.ed, "improves");
+  assert.ok(keys(reach).includes("ed.improves"));
+  // ED rate at or below overall (Franklin & Marshall, Loyola Maryland): M_ed is 1; nothing about the round helps.
+  const flat = run(ultra({ applicants: 1000, admitted: 54 }), EXCELLENT({ test: sat(1550), round: "ed" }), LINKED);
+  assert.equal(flat.group, "reach");
+  assert.equal(flat.ed, "same");
+  assert.ok(keys(flat).includes("ed.same"));
+  const below = college("100654", { rate: 0.3, sat: [1200, 1300], c7: null, ed: { applicants: 1000, admitted: 200 } });
+  assert.equal(run(below, student({ gpa: UNPLACED_GPA, test: sat(1250) })).ed, "same");
+  // The planner reads it through the public result: the new value survives.
+  assert.equal(publicResult(reach).ed, "improves");
 });
 
 /* ------------------------------------------------------------------ */

@@ -5,15 +5,18 @@
  * each pill names; the `ed_decide` and `ed2_decide` moves; and the facts the ED sheet shows (the college's own
  * numbers, never the estimate's).
  *
- * - Candidates: the college offers ED (`isOffered(school, "ed") === true`), the level is Reach or Target, the estimate
- *   isn't labelled `elite`, its ED verdict is `helps`, `same`, or null (no counts published; never `not_advised`), the
- *   row isn't withdrawn or decided, and the student hasn't said "Not for me" (`ed_dismissed_at`). Where the verdict
- *   isn't `helps`, the college must sit at Reach or at the top of Target (closeness 0 or 1), or be the Dream: the hint
- *   is that a binding application improves the chance where the student is close. A `same` college whose own ED rate
- *   isn't above its overall rate is out: nothing about the round helps there (the model's multiplier is 1). A row
- *   already in ED or ED II stays a candidate: its pill reads as confirmation.
- * - Rank: `helps`, then `same`, then null; within each, the Dream; Reach at closeness 3, 2; Target 0, 1; Reach 1, 0;
- *   Target 2, 3; no closeness after; then the student's own order. Closeness orders; it never shows.
+ * - Candidates (owner 2026-10-15, "an ED has to be viewed like a currency … you only have 1, but it's free to use"):
+ *   the college offers ED (`isOffered(school, "ed") === true`), the level is Reach or Target (an Ultra selective
+ *   college's capped Reach included), its ED verdict is `helps`, `improves`, or null (no counts published; never
+ *   `same`, where the college's ED rate isn't above its overall rate, nor `not_advised`), the row isn't withdrawn or
+ *   decided, and the student hasn't said "Not for me" (`ed_dismissed_at`). Where the verdict isn't `helps`, the
+ *   college must sit at Reach or at the top of Target (closeness 0 or 1), or be the Dream. One more: the Dream at High
+ *   reach, where the college's own ED rate is above its overall rate (`edRateAbove`; the model says `not_advised`
+ *   there), ranked after every Reach and Target candidate ("not necessarily if it were high reach and there were some
+ *   good ED reach options"). A row already in ED or ED II stays a candidate: its pill reads as confirmation.
+ * - Rank: `helps`, then `improves`, then null, then the High-reach Dream; within each, the Dream; Reach at closeness
+ *   3, 2; Target 0, 1; Reach 1, 0; Target 2, 3; no closeness after; then the student's own order. Closeness orders; it
+ *   never shows.
  * - Round per pill: one candidate is ED (the one the student set in ED, else the first); each other is ED II when the
  *   college offers it, the student set it there, or its ED II closing falls after the ED college's ED notification
  *   (the built conflict rule, rounds.ts conflicts); else `ed_alt` ("ED is one college").
@@ -48,14 +51,15 @@ export interface EdCandidate {
   /** Always false in edOpportunities' result (dismissed rows aren't candidates); see edDismissedItemIds. */
   dismissed: boolean;
   /**
-   * The estimate's ED verdict: "helps" (a level up), "same", or null (ED offered, no counts published). Wording only.
-   * Always set by edOpportunities; optional so hand-built candidates (other units' tests) still type-check, and an
-   * absent one reads as the plain wording.
+   * The estimate's ED verdict: "helps" (a level up), "improves" (the ED rate is above overall, the level holds), null
+   * (ED offered, no counts published), or "not_advised" (the Dream at High reach). Wording only. Always set by
+   * edOpportunities; optional so hand-built candidates (other units' tests) still type-check, and an absent one reads
+   * as the plain wording. "same" is never a candidate's; it stays in the type for hand-built ones.
    */
   verdict?: EdVerdict;
 }
 
-export type EdVerdict = "helps" | "same" | null;
+export type EdVerdict = EstimateResult["ed"];
 
 /** What a candidate is read from: a list row. */
 export type EdRow = Pick<PlanItem, "id" | "unit_id" | "round" | "dream" | "status" | "withdrawn_on" | "position"> &
@@ -73,7 +77,7 @@ export const ED_PILL_TEXT: Record<EdRound, { full: string; short: string }> = {
   ed2: { full: "Good ED II opportunity", short: "ED II" },
 };
 
-/** The pill's words at `same` or null (no level up, or no counts): no "Good". */
+/** The pill's words at `improves`, null, or the High-reach Dream (no level up, or no counts): no "Good". */
 export const ED_PILL_TEXT_PLAIN: Record<EdRound, { full: string; short: string }> = {
   ed: { full: "ED opportunity", short: "ED" },
   ed_alt: { full: "ED opportunity", short: "ED" },
@@ -112,12 +116,13 @@ export function edDismissedItemIds(rows: readonly EdRow[]): string[] {
 
 const chose = (r: EdRow, round: "ed" | "ed2") => r.round === round && r.round_source === "student";
 
-const VERDICT_ORDER = { helps: 0, same: 1, none: 2 } as const;
+/** Verdict groups, in rank order; the High-reach Dream comes after every Reach and Target candidate. */
+const VERDICT_ORDER = { helps: 0, improves: 1, none: 2, highReachDream: 3 } as const;
 
 /**
  * Whether the college's own ED rate is above its overall rate (the same document's when it publishes totals, else the
- * overall rate), or null without the counts. The model's ED multiplier is 1 when it isn't, so a `same` there means
- * the round changes nothing at all.
+ * overall rate), or null without the counts: the model's `M_ed > 1`. Read only for the Dream at High reach, where the
+ * model's verdict is `not_advised` whatever the data (elsewhere `improves` and `same` already say it).
  */
 export function edRateAbove(school: RoundsSchool | null): boolean | null {
   const ed = school?.profile?.early_decision;
@@ -132,14 +137,20 @@ export function edRateAbove(school: RoundsSchool | null): boolean | null {
 function ranked(rows: readonly EdRow[], estimates: Record<string, EstimateResult>, schools: Record<string, PlanSchool | RoundsSchool>): (EdCandidate & { row: EdRow })[] {
   const pool = rows
     .filter((r) => !r.withdrawn_on && r.status !== "decided" && !r.ed_dismissed_at)
-    .flatMap((r) => {
+    .flatMap((r): { row: EdRow; level: StandingLevel; verdict: EdVerdict; p: number }[] => {
       const est = estimates[r.unit_id];
       const level = est?.group ?? null;
-      if (!est || est.label === "elite" || est.ed === "not_advised" || (level !== "reach" && level !== "target")) return [];
+      if (!est || !level) return [];
       const school = bySchool(schools, r.unit_id);
       if (isOffered(school, "ed") !== true) return [];
+      // Owner (2026-10-15): the Dream at High reach, where the college's ED rate is above overall, ranked last.
+      if (level === "high_reach") {
+        if (r.dream !== true || edRateAbove(school) !== true) return [];
+        return [{ row: r, level, verdict: "not_advised", p: VERDICT_ORDER.highReachDream * 10 + priority(true, level, est.closeness) }];
+      }
+      if (level !== "reach" && level !== "target") return [];
       const verdict: EdVerdict = est.ed ?? null;
-      if (verdict === "same" && edRateAbove(school) === false) return [];
+      if (verdict === "same" || verdict === "not_advised") return [];
       // Owner (2026-10-15): where ED wouldn't move the level, the hint is still worth giving — at Reach, or at the top
       // of Target (closeness 0 or 1, nearest Reach), and always for the Dream. A `helps` verdict qualifies anywhere.
       const inBand = level === "reach" || est.closeness === 0 || est.closeness === 1;
@@ -287,6 +298,9 @@ export const ED_CHECK_KEYS: readonly EdCheckKey[] = ["attend", "cost", "ready"];
 /** The caveat (ed-opportunities.md "The sheet" 3), split so the glossary term wraps its middle. */
 export const ED_CAVEAT = { before: "Early pools include ", term: "recruited athletes and legacies", after: ", so the edge for most applicants is smaller than the gap." } as const;
 
+/** The owner's framing (2026-10-15, "you only have 1, but it's free to use"), under the sheet's read for every verdict. */
+export const ED_FRAMING = "Early decision is one binding application; it's free to use once.";
+
 export interface EdSheetDate extends RoundDate {
   label: string;
 }
@@ -299,13 +313,16 @@ export interface EdSheetFacts {
   /** The level's word ("Target"), the one thing from the estimate. */
   levelLabel: string | null;
   /**
-   * Quad's read by verdict: `helps` the built `ed.helps` sentence; `same` "wouldn't change the level, but admits a
-   * larger share"; null "hasn't published how its early applicants fare". ED II adds its "though less" sentence (at
-   * null, "binding too"); ED alt says ED is one college.
+   * Quad's read by verdict: `helps` the built `ed.helps` sentence; `improves` the `ed.improves` sentence; null "hasn't
+   * published how its early applicants fare"; `not_advised` (the Dream at High reach) the `ed.not_advised` sentence
+   * and "still your one binding chip to spend"; `same` (never a candidate's now) "wouldn't change the level". ED II
+   * adds its "though less" sentence (at null and `not_advised`, "binding too"); ED alt says ED is one college.
    */
   read: string;
-  /** At `same`, the college's own ED rate line the read rests on (`earlyFor().line` up to its multiple, cited by `countsField`); else null. */
+  /** At `improves` (or `same`), the college's own ED rate line the read rests on (`earlyFor().line` up to its multiple, cited by `countsField`); else null. */
   readBasis: string | null;
+  /** The owner's framing under every read (2026-10-15), no numbers: ED_FRAMING. */
+  framing: string;
   /** "ED admitted 412 of 1,690 (24%) against 9% overall", or null without counts. */
   reported: string | null;
   /** Where the overall rate came from: "same document", or "overall rate from 2024"; null without counts. */
@@ -365,9 +382,13 @@ export function edSheetFacts(row: EdRow, school: PlanSchool | undefined, estimat
 
   const verdict = estimate?.ed ?? null;
   let base: string;
-  if (verdict === "same")
+  if (verdict === "improves") base = noteText({ key: "ed.improves", values: {} });
+  else if (verdict === "same")
     base = `Early decision wouldn't change ${name}'s level for you, but ${name} admits a larger share of its early applicants, and a binding application says you'd come. Check the cost first.`;
-  else if (verdict === null || verdict === "not_advised")
+  else if (verdict === "not_advised")
+    // The Dream at High reach (owner, 2026-10-15): the guard's sentence, then the chip.
+    base = `${noteText({ key: "ed.not_advised", values: {} })} If ${name} is where you'd go regardless, early decision is still your one binding chip to spend.`;
+  else if (verdict === null)
     base = `${name} offers early decision but hasn't published how its early applicants fare; a binding application still says you'd come. Check the cost first.`;
   else {
     const helps = estimate?.notes.find((n) => n.key === "ed.helps");
@@ -375,7 +396,7 @@ export function edSheetFacts(row: EdRow, school: PlanSchool | undefined, estimat
   }
   const read =
     round === "ed2"
-      ? verdict === "helps" || verdict === "same"
+      ? verdict === "helps" || verdict === "improves" || verdict === "same"
         ? `${base} Early decision II too, though less: ${name} reports its ED rounds together, and much of the class is admitted in the first.`
         : `${base} Early decision II is binding too.`
       : round === "ed_alt"
@@ -412,7 +433,8 @@ export function edSheetFacts(row: EdRow, school: PlanSchool | undefined, estimat
     levelLabel: level ? STANDING_LEVEL_LABELS[level] : null,
     read,
     // The college's own line without its "×" multiple: the pill and sheet never show one (the guard in the tests).
-    readBasis: verdict === "same" && early.measures?.edRate != null ? (early.line?.split(" · ")[0] ?? null) : null,
+    readBasis: (verdict === "improves" || verdict === "same") && early.measures?.edRate != null ? (early.line?.split(" · ")[0] ?? null) : null,
+    framing: ED_FRAMING,
     reported,
     lineage,
     edition,

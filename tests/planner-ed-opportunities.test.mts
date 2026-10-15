@@ -1,9 +1,10 @@
 /**
  * ED opportunities (lib/planner/ed-opportunities.ts; specs/planner/next-steps/ed-opportunities.md), after the owner's
- * "be more forgiving" (2026-10-15): `helps`, `same`, and null all qualify at Reach or Target, `helps` first; within a
- * verdict the Dream, then the owner's closeness order; no cap (six candidates, six pills: the first ED, the rest ED II
- * or `ed_alt` by the date rule); no candidate at `not_advised` / High reach / Likely / `elite`, without ED, or at a
- * `same` college whose own ED rate isn't above its overall; the pill and sheet wording by verdict; dismissal; the
+ * "be more forgiving" and "ED as a currency" (2026-10-15): `helps`, `improves`, and null qualify at Reach or Target
+ * (an `elite`-labelled Reach included), `helps` first, then `improves`, then null, then the Dream at High reach where
+ * the college's ED rate is above overall; within a verdict the Dream, then the owner's closeness order; the cap of
+ * three (the first ED, the rest ED II or `ed_alt` by the date rule); no candidate at `same` / `not_advised` (but the
+ * Dream) / Likely, or without ED; the pill and sheet wording by verdict; dismissal; the
  * junior-spring gate; the post-deadline close; the moves (`ed_decide`, `ed2_decide`) and the per-candidate cost
  * check; and a guard that no pill or sheet string carries a number from the estimate, a "×", or "odds". `npm test`.
  */
@@ -137,42 +138,78 @@ test("the Dream first, then the owner's closeness order (Reach 3, 2; Target 0, 1
   assert.ok(edOpportunities(items, estimates, schools, opts())[0].dream, "the Dream first");
 });
 
-test("same and null qualify, ranked after helps (same before null), each in the owner's order", () => {
+test("improves and null qualify, ranked after helps (improves before null), each in the owner's order", () => {
   const units = ["1", "2", "3", "4", "5", "6"];
   const schools = by(units.map((u) => (u === "6" ? ps(u, { counts: null }) : ps(u))));
   const items = units.map((u) => item(u, { dream: u === "2" }));
   const estimates = {
     "1": est("1", "reach", 3, null),
-    "2": est("2", "target", 1, "same"),
+    "2": est("2", "target", 1, "improves"),
     "3": est("3", "target", 3, "helps"),
-    "4": est("4", "reach", 3, "same"),
+    "4": est("4", "reach", 3, "improves"),
     "5": est("5", "target", 0, "helps"),
     "6": est("6", "reach", 2, null),
   };
   const got = edOpportunities(items, estimates, schools, opts());
-  // helps: Target 0 before Target 3; then same: the Dream first. The cap of three (owner, 2026-10-15) ends it there;
-  // Reach 3 same, Reach 3 null, Reach 2 null would follow in that order.
+  // helps: Target 0 before Target 3; then improves: the Dream first. The cap of three (owner, 2026-10-15) ends it
+  // there; Reach 3 improves, Reach 3 null, Reach 2 null would follow in that order.
   assert.deepEqual(ids(got), ["5", "3", "2"]);
-  assert.deepEqual(got.map((c) => c.verdict), ["helps", "helps", "same"]);
+  assert.deepEqual(got.map((c) => c.verdict), ["helps", "helps", "improves"]);
   assert.deepEqual(got.map((c) => c.rank), [1, 2, 3], "ranks renumbered after the cap");
-  // The owner's case: one college at Reach or Target offers ED, and early decision doesn't change its level.
-  const one = edOpportunities([item("4")], { "4": est("4", "reach", 3, "same") }, schools, opts());
-  assert.deepEqual(one.map((c) => [c.unitId, c.round, c.verdict]), [["4", "ed", "same"]]);
+  const rest = edOpportunities(items.filter((i) => !["5", "3", "2"].includes(i.unit_id)), estimates, schools, opts());
+  assert.deepEqual(ids(rest), ["4", "1", "6"], "improves before null");
+  // The owner's case: one college at Reach or Target offers ED, and early decision improves the chance there.
+  const one = edOpportunities([item("4")], { "4": est("4", "reach", 3, "improves") }, schools, opts());
+  assert.deepEqual(one.map((c) => [c.unitId, c.round, c.verdict]), [["4", "ed", "improves"]]);
+});
+
+test("ED as a currency (owner, 2026-10-15): an Ultra selective (elite) Reach with improves gets a pill; same never does", () => {
+  const schools = by([ps("1"), ps("2")]);
+  // Vanderbilt's case: the tier caps the level at Reach (no closeness), ED admits a larger share.
+  const vandy = { ...est("1", "reach", null, "improves"), label: "elite" } as EstimateResult;
+  const got = edOpportunities([item("1")], { "1": vandy }, schools, opts());
+  assert.deepEqual(got.map((c) => [c.unitId, c.round, c.verdict]), [["1", "ed", "improves"]]);
+  assert.equal(edPillText(got[0].round, got[0].verdict).full, "ED opportunity");
+  // same: the college's ED rate is at or below its overall rate. Never a pill, at any level or as the Dream.
+  for (const [level, closeness] of [["reach", 3], ["reach", null], ["target", 0], ["target", 1]] as const) {
+    assert.deepEqual(edOpportunities([item("2", { dream: true })], { "2": est("2", level, closeness, "same") }, schools, opts()), [], `same at ${level} ${closeness}`);
+    assert.deepEqual(edOpportunities([item("2")], { "2": { ...est("2", level, closeness, "same"), label: "elite" } as EstimateResult }, schools, opts()), []);
+  }
+});
+
+test("the Dream at High reach: a candidate only where the college's ED rate is above overall, ranked after every Reach and Target", () => {
+  // ps defaults: ED 24% (240 of 1,000) against 10% overall (the same document's totals).
+  const schools = by([ps("1"), ps("2"), ps("3"), ps("4", { counts: [1000, 80] }), ps("5", { counts: null })]);
+  const dream = (u: string) => item(u, { dream: true });
+  const hr = (u: string) => est(u, "high_reach", null, "not_advised");
+  // Alone, it gets the pill, and the round is ED.
+  const alone = edOpportunities([dream("1")], { "1": hr("1") }, schools, opts());
+  assert.deepEqual(alone.map((c) => [c.unitId, c.round, c.level, c.verdict, c.dream]), [["1", "ed", "high_reach", "not_advised", true]]);
+  assert.equal(edPillText(alone[0].round, alone[0].verdict).full, "ED opportunity");
+  // Behind every Reach and Target candidate, null included, so the cap pushes it out when three are better.
+  const e = { "1": hr("1"), "2": est("2", "reach", 0, null), "3": est("3", "target", 1, "improves") };
+  assert.deepEqual(ids(edOpportunities([dream("1"), item("2"), item("3")], e, schools, opts())), ["3", "2", "1"]);
+  const full = { ...e, "4": est("4", "reach", 3, "helps") };
+  assert.deepEqual(ids(edOpportunities([dream("1"), item("2"), item("3"), item("4")], full, schools, opts())), ["4", "3", "2"], "past the cap");
+  // M_ed is 1 (8% ED against 10% overall) or unknown (no counts): out. Not the Dream: out.
+  assert.deepEqual(edOpportunities([dream("4")], { "4": hr("4") }, schools, opts()), []);
+  assert.deepEqual(edOpportunities([dream("5")], { "5": hr("5") }, schools, opts()), []);
+  assert.deepEqual(edOpportunities([item("1")], { "1": hr("1") }, schools, opts()), []);
 });
 
 test("where ED wouldn't move the level the hint is for Reach or the top of Target (closeness 0 or 1), or the Dream (owner, 2026-10-15)", () => {
   const schools = by([ps("1"), ps("2"), ps("3"), ps("4"), ps("5")]);
   const e = {
-    "1": est("1", "target", 3, "same"), // lower Target, not the Dream: out
+    "1": est("1", "target", 3, "improves"), // lower Target, not the Dream: out
     "2": est("2", "target", 2, null), // lower Target, no counts: out
-    "3": est("3", "target", 1, "same"), // top of Target: in
-    "4": est("4", "reach", 0, "same"), // any Reach: in
+    "3": est("3", "target", 1, "improves"), // top of Target: in
+    "4": est("4", "reach", 0, "improves"), // any Reach: in
     "5": est("5", "target", 3, "helps"), // helps qualifies anywhere
   };
   const got = edOpportunities(["1", "2", "3", "4", "5"].map((u) => item(u)), e, schools, opts());
   assert.deepEqual(ids(got), ["5", "3", "4"]);
-  // The Dream at the bottom of Target with a same verdict still gets the hint.
-  const dream = edOpportunities([item("1", { dream: true })], { "1": est("1", "target", 3, "same") }, schools, opts());
+  // The Dream at the bottom of Target with an improves verdict still gets the hint.
+  const dream = edOpportunities([item("1", { dream: true })], { "1": est("1", "target", 3, "improves") }, schools, opts());
   assert.deepEqual(ids(dream), ["1"]);
 });
 
@@ -189,9 +226,9 @@ test("the cap of three: six candidates give three pills, the first ED, the rest 
   const e = {
     "1": est("1", "reach", 3),
     "2": est("2", "reach", 2),
-    "3": est("3", "target", 0, "same"),
-    "4": est("4", "target", 1, "same"),
-    "5": est("5", "reach", 1, "same"),
+    "3": est("3", "target", 0, "improves"),
+    "4": est("4", "target", 1, "improves"),
+    "5": est("5", "reach", 1, "improves"),
     "6": est("6", "target", 2, null),
   };
   const got = edOpportunities(items, e, schools, opts());
@@ -203,10 +240,10 @@ test("the cap of three: six candidates give three pills, the first ED, the rest 
       ["2", "ed2"],
       ["3", "ed_alt"],
     ],
-    "helps first (1, 2), then the top-of-Target same; ED II due Dec 1 is before the Dec 15 notification",
+    "helps first (1, 2), then the top-of-Target improves; ED II due Dec 1 is before the Dec 15 notification",
   );
   assert.equal(got.filter((c) => c.round === "ed").length, 1, "never two plain ED");
-  // Without the cap the next would be 4 (Target 1, same) then 5 (Reach 1, same); 6 (lower Target, no counts) is out of the band.
+  // Without the cap the next would be 4 (Target 1, improves) then 5 (Reach 1, improves); 6 (lower Target, no counts) is out of the band.
   const rest = edOpportunities(items.filter((i) => !["1", "2", "3"].includes(i.unit_id)), e, schools, opts());
   assert.deepEqual(ids(rest), ["4", "5"]);
 });
@@ -217,7 +254,7 @@ test("ties go by the student's own order", () => {
   assert.deepEqual(ids(edOpportunities(items, { "1": est("1", "reach", 3), "2": est("2", "reach", 3) }, schools, opts())), ["2", "1"]);
 });
 
-test("no candidate at not_advised, High reach / Likely / no level, elite, without ED, a same college whose ED rate isn't higher, or decided / withdrawn", () => {
+test("no candidate at not_advised, High reach (not the Dream) / Likely / no level, without ED, a same verdict, or decided / withdrawn", () => {
   const units = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
   const schools = by(
     units.map((u) => (u === "7" ? ps(u, { ed: false }) : u === "3" ? ps(u, { counts: [1000, 50] }) : u === "10" ? ps(u, { counts: [1000, 100] }) : ps(u))),
@@ -226,7 +263,7 @@ test("no candidate at not_advised, High reach / Likely / no level, elite, withou
   items[7] = item("8", { status: "decided", outcome: "admitted" });
   items[8] = item("9", { withdrawn_on: "2027-05-01" });
   const estimates = {
-    "1": { ...est("1", "reach", 3), label: "elite" } as EstimateResult,
+    "1": est("1", "reach", 3, "same"),
     "2": est("2", "reach", 3, "not_advised"),
     // Reversed (5% ED against 10% overall) and level (10% against 10%): early decision changes nothing there.
     "3": est("3", "reach", 3, "same"),
@@ -240,8 +277,9 @@ test("no candidate at not_advised, High reach / Likely / no level, elite, withou
   };
   assert.deepEqual(edOpportunities(items, estimates, schools, opts()), []);
   // The planted control: the same rows qualify once the reason is gone.
-  assert.equal(edOpportunities([item("1")], { "1": est("1", "reach", 3) }, schools, opts()).length, 1, "not elite");
-  assert.equal(edOpportunities([item("3")], { "3": est("3", "reach", 3, "same") }, by([ps("3")]), opts()).length, 1, "ED rate above");
+  assert.equal(edOpportunities([item("1")], { "1": est("1", "reach", 3, "improves") }, schools, opts()).length, 1, "improves, not same");
+  assert.equal(edOpportunities([item("1")], { "1": { ...est("1", "reach", 3, "improves"), label: "elite" } as EstimateResult }, schools, opts()).length, 1, "elite is no longer out");
+  assert.equal(edOpportunities([item("4", { dream: true })], { "4": est("4", "high_reach", 3, "not_advised") }, schools, opts()).length, 1, "the Dream at High reach");
 });
 
 test("rounds: the first is ED; a later one is ED II only when offered and its deadline is after the first's ED notification; else ed_alt", () => {
@@ -372,39 +410,45 @@ test("the sheet: Quad's read per round, the college's own counts cited, together
   assert.equal(ed.readBasis, null, "helps rests on the estimate's own sentence");
 });
 
-test("the sheet's read by verdict: same cites the college's ED rate line; null says the counts aren't published", () => {
+test("the sheet's read by verdict: improves cites the college's ED rate line; null says the counts aren't published; the High-reach Dream spends the chip", () => {
   const school = ps("1", { ed2: true, counts: [1690, 412], totals: [20000, 2000] });
-  const same = edSheetFacts(item("1"), school, est("1", "reach", 3, "same"), "ed")!;
+  const improves = edSheetFacts(item("1"), school, est("1", "reach", 3, "improves"), "ed")!;
+  assert.equal(improves.read, "Early decision improves your chance here without changing where it stands for you; it's binding, so check the cost first.");
+  assert.match(improves.readBasis ?? "", /^ED admitted 24% vs \d+(\.\d+)?% \w+ \(CDS 2026–27\)$/);
+  assert.equal(improves.countsField, "reported.admission_profile.early_decision.admitted", "cited by the counts' field");
+  assert.match(edSheetFacts(item("1"), school, est("1", "reach", 3, "improves"), "ed2")!.read, /check the cost first\. Early decision II too, though less/);
+  const hr = edSheetFacts(item("1", { dream: true }), school, est("1", "high_reach", null, "not_advised"), "ed")!;
   assert.equal(
-    same.read,
-    "Early decision wouldn't change College 1's level for you, but College 1 admits a larger share of its early applicants, and a binding application says you'd come. Check the cost first.",
+    hr.read,
+    "Early decision is binding and helps most where you're already in range; this college isn't one of them yet. If College 1 is where you'd go regardless, early decision is still your one binding chip to spend.",
   );
-  assert.match(same.readBasis ?? "", /^ED admitted 24% vs \d+(\.\d+)?% \w+ \(CDS 2026–27\)$/);
-  assert.equal(same.countsField, "reported.admission_profile.early_decision.admitted", "cited by the counts' field");
-  assert.match(edSheetFacts(item("1"), school, est("1", "reach", 3, "same"), "ed2")!.read, /you'd come\. Check the cost first\. Early decision II too, though less/);
+  assert.equal(hr.levelLabel, "High reach");
+  // The owner's framing under the read, for every verdict.
+  for (const v of ["helps", "improves", null, "not_advised"] as const)
+    assert.equal(edSheetFacts(item("1"), school, est("1", "reach", 3, v), "ed")!.framing, "Early decision is one binding application; it's free to use once.");
   const none = edSheetFacts(item("1"), ps("1", { ed2: true, counts: null }), est("1", "reach", 3, null), "ed")!;
   assert.equal(none.read, "College 1 offers early decision but hasn't published how its early applicants fare; a binding application still says you'd come. Check the cost first.");
   assert.equal(none.readBasis, null);
   assert.equal(none.noCounts, "ED offered; College 1 hasn't published its ED counts");
   assert.match(edSheetFacts(item("1"), ps("1", { ed2: true, counts: null }), est("1", "reach", 3, null), "ed2")!.read, /fare; .* Early decision II is binding too\.$/);
-  assert.match(edSheetFacts(item("1"), school, est("1", "target", 0, "same"), "ed_alt")!.read, /binding at one college only/);
+  assert.match(edSheetFacts(item("1"), school, est("1", "target", 0, "improves"), "ed_alt")!.read, /binding at one college only/);
 });
 
-test("the pill's words by verdict: Good at helps, plain at same and null; ED / ED II on a phone", () => {
+test("the pill's words by verdict: Good at helps, plain at improves, null, and the High-reach Dream; ED / ED II on a phone", () => {
   assert.equal(edPillText("ed", "helps").full, "Good ED opportunity");
   assert.equal(edPillText("ed2", "helps").full, "Good ED II opportunity");
   assert.equal(edPillText("ed_alt", "helps").full, "Good ED opportunity");
-  for (const v of ["same", null] as const) {
+  for (const v of ["improves", null, "not_advised"] as const) {
     assert.equal(edPillText("ed", v).full, "ED opportunity");
     assert.equal(edPillText("ed2", v).full, "ED II opportunity");
     assert.equal(edPillText("ed_alt", v).full, "ED opportunity");
   }
-  assert.deepEqual([edPillText("ed", "same").short, edPillText("ed2", null).short, edPillText("ed2", "helps").short], ["ED", "ED II", "ED II"]);
+  assert.deepEqual([edPillText("ed", "improves").short, edPillText("ed2", null).short, edPillText("ed2", "helps").short], ["ED", "ED II", "ED II"]);
 });
 
 /** Every string a pill or sheet shows. */
 function sheetStrings(f: EdSheetFacts): string[] {
-  return [f.read, f.readBasis, f.reported, f.lineage, f.share, f.noCounts, ...f.questions.map((q) => q.text), f.closing?.label, f.notification?.label, f.dateNote, f.profileLabel, f.levelLabel].filter(
+  return [f.read, f.readBasis, f.framing, f.reported, f.lineage, f.share, f.noCounts, ...f.questions.map((q) => q.text), f.closing?.label, f.notification?.label, f.dateNote, f.profileLabel, f.levelLabel].filter(
     (x): x is string => typeof x === "string",
   );
 }
@@ -425,9 +469,10 @@ test("guard: no pill or sheet string carries a number from the estimate, a ×, o
   assert.deepEqual(badStrings(pill, []), []);
   assert.ok(pill.every((t) => !/\d/.test(t)), "a pill carries no number at all");
   assert.deepEqual(badStrings([ED_CAVEAT.before + ED_CAVEAT.term + ED_CAVEAT.after], []), []);
-  for (const verdict of ["helps", "same", null] as const) {
+  for (const verdict of ["helps", "improves", "same", null, "not_advised"] as const) {
     for (const round of ["ed", "ed2", "ed_alt"] as const) {
-      const f = edSheetFacts(item("1"), ps("1", { ed2: true, counts: verdict === null ? null : [1690, 412], totals: [20000, 2000] }), est("1", "reach", 3, verdict), round)!;
+      const level = verdict === "not_advised" ? "high_reach" : "reach";
+      const f = edSheetFacts(item("1"), ps("1", { ed2: true, counts: verdict === null ? null : [1690, 412], totals: [20000, 2000] }), est("1", level, 3, verdict), round)!;
       const allowed = ownRates(f);
       assert.deepEqual(badStrings(sheetStrings(f), allowed), [], `${verdict} ${round}`);
     }
@@ -439,7 +484,13 @@ test("the guard fails on a planted bad string", () => {
   assert.equal(badStrings(["2.7× the rate"], []).length, 1);
   assert.equal(badStrings(["A 63% chance"], ["24%"]).length, 1);
   // Planted into a real sheet: a read that leaks the estimate's number is caught.
-  const f = edSheetFacts(item("1"), ps("1", { counts: [1690, 412], totals: [20000, 2000] }), est("1", "reach", 3, "same"), "ed")!;
+  const f = edSheetFacts(item("1"), ps("1", { counts: [1690, 412], totals: [20000, 2000] }), est("1", "reach", 3, "improves"), "ed")!;
   assert.deepEqual(badStrings(sheetStrings(f), ownRates(f)), []);
   assert.equal(badStrings(sheetStrings({ ...f, read: `${f.read} Your chance rises to 41%.` }), ownRates(f)).length, 1);
+  // The new sentences: an improves read or a framing line that names the multiple or the odds is caught.
+  assert.equal(badStrings(sheetStrings({ ...f, read: `${f.read} About 1.4× better odds.` }), ownRates(f)).length, 1);
+  assert.equal(badStrings(sheetStrings({ ...f, framing: `${f.framing} It lifts you to 12%.` }), ownRates(f)).length, 1);
+  const hr = edSheetFacts(item("1", { dream: true }), ps("1", { counts: [1690, 412], totals: [20000, 2000] }), est("1", "high_reach", null, "not_advised"), "ed")!;
+  assert.deepEqual(badStrings(sheetStrings(hr), ownRates(hr)), []);
+  assert.equal(badStrings(sheetStrings({ ...hr, read: `${hr.read} Still under 3%.` }), ownRates(hr)).length, 1);
 });

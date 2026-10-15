@@ -68,7 +68,7 @@ import type {
 import type { AblationInput, SnapshotDetail } from "./snapshot.ts";
 
 /** Recorded with every result and every outcome snapshot (specs/chances/estimate.md "Changing the method"). */
-export const MODEL_VERSION = "20261012.6";
+export const MODEL_VERSION = "20261015.1";
 
 /**
  * The second version's reading constants that the third keeps: GPA crowding, which colleges' class-rank tiers count,
@@ -1132,19 +1132,26 @@ function edMultiplier(school: School): number | null {
   return Math.min(ODDS_V3.ed.max, Math.max(1, 1 + ODDS_V3.ed.share * (edShare / overall - 1)));
 }
 
-/** What early decision would do here (method/standing.md "The ED sentence"), with the level it would reach. */
+/**
+ * What early decision would do here (method/standing.md "The ED sentence"), with the level it would reach. Owner
+ * (2026-10-15), "an ED has to be viewed like a currency": `helps` a level up; `improves` where the college's own ED
+ * rate is above its overall rate (`M_ed > 1`) but the level holds, including where a tier cap set it; `same` where
+ * `M_ed` is 1 (ED rate at or below overall) or the case is guaranteed or has no rate; `not_advised` at High reach
+ * whatever the data; null without ED counts.
+ */
 function edVerdict(input: ModelInput, ev: Evaluation): { ed: EstimateResult["ed"]; to: StandingLevel | null } {
   const { decision: dec, fixed: f } = ev;
   if (!dec.level) return { ed: null, to: null };
-  if (dec.level === "high_reach") return { ed: "not_advised", to: null };
   const m = edMultiplier(input.school);
+  if (dec.level === "high_reach") return { ed: "not_advised", to: null };
   if (m === null) return { ed: null, to: null };
   const rate = f.pool.rate;
   if (dec.label === "guaranteed" || rate === null || dec.d === null || dec.dEff === null) return { ed: "same", to: null };
   const odds = Math.min(ODDS_V3.maxOdds, rate * academicMultiplier(dec.dEff) * f.mult * m);
   const floor = f.hooksOff ? null : recruitedFloor(f.hooks.recruited, dec.d, f.tier);
   const to = place(odds, dec.consistent, f.tier, rate, floor).level;
-  return LEVEL_RANK[to] > LEVEL_RANK[dec.level] ? { ed: "helps", to } : { ed: "same", to: null };
+  if (LEVEL_RANK[to] > LEVEL_RANK[dec.level]) return { ed: "helps", to };
+  return { ed: m > 1 ? "improves" : "same", to: null };
 }
 
 /* ------------------------------------------------------------------ */

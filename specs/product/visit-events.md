@@ -227,7 +227,56 @@ discovered but `off`) with the check's staff share, located share, and collapse 
 then the rest are switched on.
 
 ### TargetX: the protocol
-*(filled from the research)*
+Research 2026-10-15 (`visit-events-build/research/targetx.md`, four colleges reproduced). Of the 151 colleges whose
+visit page links TargetX or Salesforce, about **67** run the legacy TargetX Events site, about **7** a second TargetX
+product (ERx Events), about **10** a Lightning (Experience Cloud) site, 2 a third-party package, and about **65** use
+TargetX only to apply or chat: no events. Two flavours are read; the Lightning one is recorded as a known gap
+(nothing is server-rendered and the component code loads from hashed paths; it needs a browser, which this reader
+never is).
+
+**Legacy events site** (`https://<org>.my.salesforce-sites.com/<site>`, usually `events`; the `#/calendar` fragment is
+client-side). The page embeds a Visualforce remoting descriptor (`RemotingProviderImpl`: `vid`, and per method a
+`csrf` and an `authorization` JWT). The read is **two remoting calls the page itself makes**, `POST
+…/<site>/apexremote` with `Content-Type: application/json` and `Referer`/`Origin` set to the site's own origin
+(without them Salesforce answers 402 "unable to determine from which page the request originated"): `initialize`
+(the org's settings: `Search_Days__c`, `Use_Location_Lookup__c`, `SingleEventRegistrationURL__c`, `Org_Time_Zone__c`)
+then `getFutureEvents` with `[{}, <Use_Location_Lookup__c>, "", []]`, which returns every future event in the org's
+own window; there is no paging and no detail call (an event's page filters the same list client-side). Tokens are
+minted per page load: the reader fetches the page and calls within the same run, never caching them. The response
+may come in Salesforce's reference-compressed form (`{"s": id, "v": …}` / `{"r": id}`, `ref: true` in the envelope);
+the reader resolves both shapes. This is a read, not a form: it posts nothing a person would enter, and it is the same
+request the public page makes for any visitor.
+
+Fields (`result[i].oe`, every field optional since null fields are dropped): `Id` (the event id; `book_url` =
+`<SingleEventRegistrationURL__c>?eid=<Id>`), `Name`, `…Start_Date_Time__c` / `…End_Date_Time__c` (epoch
+milliseconds, UTC), `…Time_Zone__c` (IANA), `…type__c` (free text: "Campus Tour", "College Fair"…), `…Description__c`,
+`…Slots_Available__c` (a number or "Unlimited"), `…Waiting_List__c`, `…Cancelled__c`, `…Registration_Deadline__c`,
+and the place: `…Location_Lookup__r` with `City`, `State`, `Street`, `Postal_Code` fields read **by suffix** (the
+namespace prefix varies by org) when the org uses the lookup, else `…Location__c` as venue text. No coordinates and no
+online flag exist: the ZIP, when present, places the event through the ZCTA table; a row with venue text only and no
+city, or a city equal to the campus city, takes the campus's coordinates; an away row with no ZIP stays unlocated
+(shown, never alerted); online comes from `kindOf` on the type and title. A cancelled event is stored as `closed`.
+
+**ERx Events site** (`https://<org>.my.salesforce-sites.com/EventListing`): the whole list is server-rendered into
+the page as a JavaScript string literal (`var a = '[…]'`), so the read is one GET, a regex, a tolerant one-layer
+unescape (an unknown backslash escape is dropped, and one unparseable event is skipped rather than failing the page),
+and `JSON.parse`. Fields: `Id`, `Name`, `ERx_Events__StartDateTime__c` (ISO, UTC), `…Campaign_Time_Zone__c` (the IANA
+zone is the parenthesised suffix), `…Location__c` (venue text only; no address fields exist in this flavour),
+`…Event_URL__c` (the booking URL), `…Event_Description__c` (HTML), `…OnlineGuestEnabled__c` (online), the
+registration counts and caps for availability, `…RSVP_Date__c`. The end time is only a display string, so `ends_at`
+is null. Rows are placed by the campus rule above.
+
+**Discovery:** from the visit page, links on `*.my.salesforce-sites.com`, `*.my.site.com`, or `*.force.com`; a
+candidate is a legacy site when its page carries a `TargetX_Eventsb` remoting descriptor, an ERx site when its page
+carries `var a = '[` with `ERx_Events__` fields, and unreadable (recorded with `config.flavour: "lightning"`, status
+`off`) when it is a `/s/` Lightning site. `config` keeps `{ site, flavour }`.
+
+**Collapse:** a legacy page with no remoting descriptor, a `getFutureEvents` answer with no `result` array, or an ERx
+page with no `var a = '[` literal is a collapsed site. **Risks:** tokens are page-scoped (handled by fetching per
+run); Referer/Origin are mandatory; per-org differences are real in three fixtures (namespace prefix, whether
+locations are filled, reference compression), so every field is optional; Salesforce WAFs rate-limit anonymous
+traffic, so the per-host second stays; the ~67 / ~7 split is from link patterns, confirmed on four colleges only,
+which is what the pilot is for.
 
 ### Element451: the protocol
 Research 2026-10-15 (`visit-events-build/research/element451.md`, fixtures from four colleges). Element451 serves
@@ -262,7 +311,17 @@ of those use Slate or a campus calendar for events); 1 refused the fetch.
   disallow nothing; no login anywhere.
 
 ### Units
-*(filled once the protocols are known: a reader per vendor, discovery, the pilot and its QA)*
+1. **Element451 reader** (`scripts/lib/visit-events/readers/element451.mts`, `discover-element451.mts`; the
+   `readSite` dispatch seam in `sync.mts`; the vendor step in the CLI's discovery; `tests/
+   visit-events-element451.test.mts`): parse the state blob, one row per occurrence, discovery and confirmation, a
+   collapse on a blob-less page; then the pilot run on the 20 colleges with a listing.
+2. **TargetX reader** (`readers/targetx.mts` with both flavours, `discover-targetx.mts`, its `readSite` case, its
+   discovery step, `tests/visit-events-targetx.test.mts`): the descriptor parser, the two remoting calls with the
+   origin headers, the reference resolver, the ERx literal parser and unescaper, the place rule, availability; then
+   the pilot run on a dozen legacy colleges and the ERx ones.
+3. **Pilot QA**: the check and the admin card over the new hosts (staff share, located share, collapses), a
+   signed-in look at two Element451 and two TargetX colleges' calendars and `/me/visits`, and the kind mix of the new
+   rows reviewed against the five-kind rule.
 
 ## The nightly job
 

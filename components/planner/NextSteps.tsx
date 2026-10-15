@@ -31,6 +31,8 @@ import type { PlanTask } from "@/lib/planner/types";
 
 /** Undo stays live for a minute after Done (seasons.md "The Next steps tab"). */
 const UNDO_MS = 60_000;
+/** A guardian's Your part shows this many cards before the rest fold (the same cap as Now). */
+const YOUR_PART_NOW = 6;
 /** A ring the scrolled-to card wears briefly for `?move=`. */
 const RING_CLASSES = ["ring-2", "ring-ring", "ring-offset-2"] as const;
 
@@ -207,7 +209,18 @@ export function NextSteps({ ctx, view }: PlanTabProps) {
       {ctx.viewer.isGuardian && yourPart.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-muted-foreground">Your part</h3>
-          <div className="space-y-3">{yourPart.map(renderCard)}</div>
+          {/* The same cap as Now (README.md "Three to six things"): the first six, the rest folded (QA 2026-10-14
+              found seventeen unfolded cards for an eleven-college senior). */}
+          <div className="space-y-3">{yourPart.slice(0, YOUR_PART_NOW).map(renderCard)}</div>
+          {yourPart.length > YOUR_PART_NOW && (
+            <details className="group rounded-3xl bg-card p-4 ring-1 ring-border">
+              <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold marker:hidden [&::-webkit-details-marker]:hidden">
+                More of your part ({yourPart.length - YOUR_PART_NOW})
+                <span className="text-xs font-normal text-muted-foreground group-open:hidden">Show</span>
+              </summary>
+              <div className="mt-3 space-y-3">{yourPart.slice(YOUR_PART_NOW).map(renderCard)}</div>
+            </details>
+          )}
         </div>
       )}
 

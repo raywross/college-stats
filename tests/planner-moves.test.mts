@@ -105,3 +105,14 @@ test("taskSeason: its own season, else its date's (a window by its start), else 
   assert.equal(taskSeason(task({ season: null }), G, "junior_spring"), "junior_spring", "undated: the current season");
   assert.equal(taskSeason(task({ season: null, due_on: "2027-11-01" }), null, "unknown"), "unknown", "no class year");
 });
+
+test("the old stage-3 to-dos (follow, request_info, write_visit_notes) are not moves: left out of Now, More, and Your part", () => {
+  const follow = task({ id: "f", kind: "follow", source: "stage", title: "Follow Emory", season: "senior_fall" });
+  const info = task({ id: "i", kind: "request_info", source: "stage", title: "Request information from Emory", season: "senior_fall", assignee: "either" });
+  const notes = task({ id: "n", kind: "write_visit_notes", source: "stage", title: "Write up the visit", season: "senior_fall" });
+  const real = task({ id: "r", kind: "playbook", source: "season", title: "A real move", season: "senior_fall" });
+  const groups = nowMoves([follow, info, notes, real], { season: "senior_fall", gradYear: 2027, today: "2026-10-14", viewer: "student" });
+  assert.deepEqual([...groups.now, ...groups.more].map((t) => t.id), ["r"]);
+  const theirs = task({ id: "p", kind: "playbook", source: "season", title: "Theirs", season: "senior_fall", assignee: "guardian" });
+  assert.deepEqual(yourPartMoves([info, theirs], "2026-10-14").map((t) => t.id), ["p"]);
+});

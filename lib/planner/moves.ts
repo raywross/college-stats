@@ -70,6 +70,15 @@ function compareMoves(a: PlanTask, b: PlanTask, today: string): number {
 
 const isMine = (t: PlanTask) => t.assignee === "guardian" || t.assignee === "either";
 
+/**
+ * The old stage-3 to-dos (lib/planner/generators/actions.ts: a follow, an information request, and visit notes for
+ * every college) are not moves: the row's "Details" count already marks them (lib/planner/capture.ts rowToDo), and
+ * interest-and-visits.md gives the plan its own interest moves only where the college says interest counts. They stay
+ * on the calendar as before; the Next steps tab leaves them out (QA 2026-10-14: a "Follow" and a "Request
+ * information" card for every college, Emory included).
+ */
+export const LEGACY_TODO_KINDS: ReadonlySet<PlanTask["kind"]> = new Set(["follow", "request_info", "write_visit_notes"]);
+
 export function nowMoves(
   tasks: PlanTask[],
   opts: { season: Season; gradYear: number | null; today: string; viewer: "student" | "guardian"; max?: number },
@@ -77,7 +86,7 @@ export function nowMoves(
   const { season, gradYear, today } = opts;
   const max = opts.max ?? NOW_MAX;
   const next = nextSeason(season);
-  const live = tasks.filter((t) => !t.orphaned);
+  const live = tasks.filter((t) => !t.orphaned && !LEGACY_TODO_KINDS.has(t.kind));
   const seasonOf = (t: PlanTask) => taskSeason(t, gradYear, season);
   const open = live
     .filter((t) => isOpen(t, today))
@@ -99,7 +108,8 @@ export function nowMoves(
 
 /** A guardian's own open moves for this child (assignee guardian or either), as parents.md's Your part orders them. */
 export function yourPartMoves(tasks: PlanTask[], today: string): PlanTask[] {
-  return yourPart([{ studentId: "", name: null, tasks }], today)[0]?.tasks ?? [];
+  const moves = tasks.filter((t) => !LEGACY_TODO_KINDS.has(t.kind));
+  return yourPart([{ studentId: "", name: null, tasks: moves }], today)[0]?.tasks ?? [];
 }
 
 /** The people line's "Next:": Now's first card. */

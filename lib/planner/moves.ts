@@ -79,6 +79,29 @@ const isMine = (t: PlanTask) => t.assignee === "guardian" || t.assignee === "eit
  */
 export const LEGACY_TODO_KINDS: ReadonlySet<PlanTask["kind"]> = new Set(["follow", "request_info", "write_visit_notes"]);
 
+/**
+ * Financial aid is its own body of work, set aside for now (owner, 2026-10-15: "too much stuff in the list on
+ * financial aid; hide the financial aid tasks, we can come back to them"): the aid-form, cost-check, and
+ * affordability moves, the cycle's FAFSA / CSS Profile / aid-offer entries, and the playbook's money entries stay off
+ * the Next steps tab and out of Your part (they remain on the calendar as before). A kind, or a key suffix for the
+ * cycle, playbook, and shape entries.
+ */
+export const FINANCIAL_KINDS: ReadonlySet<PlanTask["kind"]> = new Set(["aid_forms", "cost_check", "shape_cost"]);
+export const FINANCIAL_KEY_SUFFIXES: readonly string[] = [
+  ":cycle:fafsa_opens", ":cycle:css_profile_opens", ":cycle:accept_aid",
+  ":playbook:money_talk", ":playbook:net_price", ":playbook:walk_away", ":playbook:fsa_ids", ":playbook:list_cost",
+  ":shape_gap:affordable",
+];
+export function isFinancialMove(t: Pick<PlanTask, "kind" | "key">): boolean {
+  if (FINANCIAL_KINDS.has(t.kind)) return true;
+  return t.key !== null && FINANCIAL_KEY_SUFFIXES.some((s) => t.key!.endsWith(s));
+}
+
+/** What the Next steps tab counts as a move at all: a live row that isn't a legacy to-do or a financial task. */
+export function isMove(t: Pick<PlanTask, "kind" | "key" | "orphaned">): boolean {
+  return !t.orphaned && !LEGACY_TODO_KINDS.has(t.kind) && !isFinancialMove(t);
+}
+
 export function nowMoves(
   tasks: PlanTask[],
   opts: { season: Season; gradYear: number | null; today: string; viewer: "student" | "guardian"; max?: number },
@@ -86,7 +109,7 @@ export function nowMoves(
   const { season, gradYear, today } = opts;
   const max = opts.max ?? NOW_MAX;
   const next = nextSeason(season);
-  const live = tasks.filter((t) => !t.orphaned && !LEGACY_TODO_KINDS.has(t.kind));
+  const live = tasks.filter(isMove);
   const seasonOf = (t: PlanTask) => taskSeason(t, gradYear, season);
   const open = live
     .filter((t) => isOpen(t, today))
@@ -108,7 +131,7 @@ export function nowMoves(
 
 /** A guardian's own open moves for this child (assignee guardian or either), as parents.md's Your part orders them. */
 export function yourPartMoves(tasks: PlanTask[], today: string): PlanTask[] {
-  const moves = tasks.filter((t) => !LEGACY_TODO_KINDS.has(t.kind));
+  const moves = tasks.filter(isMove);
   return yourPart([{ studentId: "", name: null, tasks: moves }], today)[0]?.tasks ?? [];
 }
 

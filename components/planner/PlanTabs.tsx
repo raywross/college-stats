@@ -20,7 +20,8 @@ const ICONS: Record<PlanTab, typeof ListChecks> = { next: Footprints, colleges: 
  */
 export function PlanTabPills({ tabs, tab, person }: { tabs: readonly PlanTab[]; tab: PlanTab; person: string | null }) {
   return (
-    <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Plan views">
+    // One line on a phone (owner, 2026-10-15): no wrap, tighter padding, the icon only from `sm:` up.
+    <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2" role="tablist" aria-label="Plan views">
       {tabs.map((t) => {
         const Icon = ICONS[t];
         const active = t === tab;
@@ -31,11 +32,11 @@ export function PlanTabPills({ tabs, tab, person }: { tabs: readonly PlanTab[]; 
             role="tab"
             aria-selected={active}
             className={cn(
-              "inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors",
+              "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition-colors sm:px-4",
               active ? "bg-foreground text-background" : "bg-card text-muted-foreground ring-1 ring-border hover:text-foreground",
             )}
           >
-            <Icon className="size-4" aria-hidden />
+            <Icon className="hidden size-4 sm:block" aria-hidden />
             {TAB_LABELS[t]}
           </Link>
         );

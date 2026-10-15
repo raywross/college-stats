@@ -5,7 +5,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { nowMoves, taskSeason, topMove, yourPartMoves } from "../lib/planner/moves.ts";
+import { isFinancialMove, nowMoves, taskSeason, topMove, yourPartMoves } from "../lib/planner/moves.ts";
 import type { PlanTask } from "../lib/planner/types.ts";
 
 const G = 2028;
@@ -115,4 +115,22 @@ test("the old stage-3 to-dos (follow, request_info, write_visit_notes) are not m
   assert.deepEqual([...groups.now, ...groups.more].map((t) => t.id), ["r"]);
   const theirs = task({ id: "p", kind: "playbook", source: "season", title: "Theirs", season: "senior_fall", assignee: "guardian" });
   assert.deepEqual(yourPartMoves([info, theirs], "2026-10-14").map((t) => t.id), ["p"]);
+});
+
+test("financial aid is set aside (owner 2026-10-15): aid forms, cost checks, the FAFSA/CSS/aid-offer entries, the money playbook entries, and the affordability gap are not moves", () => {
+  const L = "11111111-1111-1111-1111-111111111111";
+  const aid = task({ id: "a", kind: "aid_forms", source: "college", title: "Aid forms: FAFSA", season: "senior_fall", assignee: "guardian", key: `item:aid_forms:-` });
+  const cost = task({ id: "c", kind: "cost_check", source: "stage", title: "Check the cost", season: "senior_fall", assignee: "guardian", key: `${L}:cost_check:x:candidate` });
+  const fafsa = task({ id: "f", kind: "cycle", source: "cycle", title: "FAFSA opens", season: "senior_fall", assignee: "guardian", key: `${L}:cycle:fafsa_opens` });
+  const money = task({ id: "m", kind: "playbook", source: "season", title: "Talk about what you can pay", season: "senior_fall", assignee: "guardian", key: `${L}:playbook:money_talk` });
+  const afford = task({ id: "g", kind: "shape_gap", source: "season", title: "Add a Likely within your limit", season: "senior_fall", key: `${L}:shape_gap:affordable` });
+  const shapeCost = task({ id: "s", kind: "shape_cost", source: "season", title: "Check the cost of a Likely", season: "senior_fall", assignee: "guardian", key: `${L}:shape_gap:affordable` });
+  const real = task({ id: "r", kind: "playbook", source: "season", title: "Ask two teachers", season: "senior_fall", key: `${L}:playbook:ask_teachers` });
+  const likely = task({ id: "l", kind: "shape_gap", source: "season", title: "Add a Likely", season: "senior_fall", key: `${L}:shape_gap:likely_min` });
+  const all = [aid, cost, fafsa, money, afford, shapeCost, real, likely];
+  for (const t of [aid, cost, fafsa, money, afford, shapeCost]) assert.equal(isFinancialMove(t), true, t.id);
+  for (const t of [real, likely]) assert.equal(isFinancialMove(t), false, t.id);
+  const groups = nowMoves(all, { season: "senior_fall", gradYear: 2027, today: "2026-10-14", viewer: "student" });
+  assert.deepEqual([...groups.now, ...groups.more].map((t) => t.id).sort(), ["l", "r"]);
+  assert.deepEqual(yourPartMoves(all, "2026-10-14").map((t) => t.id), []);
 });

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Check, ExternalLink, X } from "lucide-react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
-import { ED_CAVEAT, ED_PILL_TEXT, edSheetFacts, type EdCandidate, type EdCheckKey } from "@/lib/planner/ed-opportunities";
+import { ED_CAVEAT, edPillText, edSheetFacts, type EdCandidate, type EdCheckKey } from "@/lib/planner/ed-opportunities";
 import { dismissEd, setEdChecks, startEd } from "@/lib/planner/store-ed";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
@@ -81,11 +81,11 @@ export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ct
   const button = facts.onPlan ? (setRound === "ed2" ? "Keep ED II" : "Keep ED") : setRound === "ed2" ? "Start it in ED II" : "Start it in ED";
 
   return (
-    <section aria-label={ED_PILL_TEXT[round].full} className="space-y-4 rounded-2xl border bg-card p-4">
+    <section aria-label={edPillText(round, candidate.verdict).full} className="space-y-4 rounded-2xl border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-semibold">
-            {ED_PILL_TEXT[round].full}: {facts.name}
+            {edPillText(round, candidate.verdict).full}: {facts.name}
           </p>
           {facts.levelLabel && <p className="text-xs text-muted-foreground">{facts.levelLabel} for you</p>}
           {facts.onPlan && <p className="text-xs font-semibold text-primary">On your plan: {setRound === "ed2" ? "ED II" : "ED"}</p>}
@@ -97,7 +97,16 @@ export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ct
         )}
       </div>
 
-      <p>{facts.read}</p>
+      <div className="space-y-1">
+        <p>{facts.read}</p>
+        {facts.readBasis && (
+          <p className="text-xs text-muted-foreground">
+            <MetricLabel term="early-decision" cited={cite(facts.countsField)}>
+              <span>{facts.readBasis}</span>
+            </MetricLabel>
+          </p>
+        )}
+      </div>
 
       <div className="space-y-1">
         <p className="text-xs font-semibold text-muted-foreground">What {facts.name} reports</p>

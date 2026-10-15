@@ -7,7 +7,7 @@ import { Chip, FieldLabel } from "@/components/activities/chips";
 import { AboutYouAndCollege } from "@/components/planner/AboutYouAndCollege";
 import { EdSheet } from "@/components/planner/EdSheet";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
-import { ED_PILL_TEXT, edOpportunities, type EdCandidate } from "@/lib/planner/ed-opportunities";
+import { edOpportunities, edPillText, type EdCandidate } from "@/lib/planner/ed-opportunities";
 import { earlyFor } from "@/lib/planner/rounds";
 import type { AnyCited } from "@/lib/lineage";
 import { VisitForm } from "@/components/planner/VisitForm";
@@ -93,7 +93,7 @@ export function RowDrawer({
       {school && edCandidate && panel === "ed" && <EdSheet row={row} ctx={ctx} candidate={edCandidate} onClose={() => onPanel?.(null)} />}
       {school && edCandidate && panel !== "ed" && (
         <button type="button" onClick={() => onPanel?.("ed")} className="min-h-11 text-left font-semibold text-primary hover:underline">
-          {ED_PILL_TEXT[edCandidate.round].full}: the facts
+          {edPillText(edCandidate.round, edCandidate.verdict).full}: the facts
         </button>
       )}
       {school && !edCandidate && noEdCounts && (

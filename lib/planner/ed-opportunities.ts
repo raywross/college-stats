@@ -1,14 +1,16 @@
 /**
- * Good ED opportunities (specs/planner/next-steps/ed-opportunities.md): the colleges on a list where a binding early
- * round would move the college up a level for this student, by the estimate's ED verdict, ranked in the owner's order
- * and capped at three; the round each pill names; the `ed_decide` and `ed2_decide` moves; and the facts the ED sheet
- * shows (the college's own numbers, never the estimate's).
+ * ED opportunities (specs/planner/next-steps/ed-opportunities.md): the colleges on a list at Reach or Target that offer
+ * early decision, ranked by the estimate's ED verdict and then the owner's order, with no cap (owner 2026-10-15: "be
+ * more forgiving"); the round each pill names; the `ed_decide` and `ed2_decide` moves; and the facts the ED sheet shows
+ * (the college's own numbers, never the estimate's).
  *
- * - Candidates: the college offers ED (`isOffered(school, "ed") === true`), the estimate says `ed === "helps"`, the
- *   level is Reach or Target, the row isn't withdrawn or decided, and the student hasn't said "Not for me"
- *   (`ed_dismissed_at`). A row already in ED or ED II stays a candidate: its pill reads as confirmation.
- * - Rank: the Dream; Reach at closeness 3, 2; Target 0, 1; Reach 1, 0; Target 2, 3; no closeness after; then the
- *   student's own order. Closeness orders; it never shows.
+ * - Candidates: the college offers ED (`isOffered(school, "ed") === true`), the level is Reach or Target, the estimate
+ *   isn't labelled `elite`, its ED verdict is `helps`, `same`, or null (no counts published; never `not_advised`), the
+ *   row isn't withdrawn or decided, and the student hasn't said "Not for me" (`ed_dismissed_at`). A `same` college
+ *   whose own ED rate isn't above its overall rate is out: nothing about the round helps there (the model's multiplier
+ *   is 1). A row already in ED or ED II stays a candidate: its pill reads as confirmation.
+ * - Rank: `helps`, then `same`, then null; within each, the Dream; Reach at closeness 3, 2; Target 0, 1; Reach 1, 0;
+ *   Target 2, 3; no closeness after; then the student's own order. Closeness orders; it never shows.
  * - Round per pill: one candidate is ED (the one the student set in ED, else the first); each other is ED II when the
  *   college offers it, the student set it there, or its ED II closing falls after the ED college's ED notification
  *   (the built conflict rule, rounds.ts conflicts); else `ed_alt` ("ED is one college").
@@ -42,29 +44,45 @@ export interface EdCandidate {
   dream: boolean;
   /** Always false in edOpportunities' result (dismissed rows aren't candidates); see edDismissedItemIds. */
   dismissed: boolean;
+  /**
+   * The estimate's ED verdict: "helps" (a level up), "same", or null (ED offered, no counts published). Wording only.
+   * Always set by edOpportunities; optional so hand-built candidates (other units' tests) still type-check, and an
+   * absent one reads as the plain wording.
+   */
+  verdict?: EdVerdict;
 }
+
+export type EdVerdict = "helps" | "same" | null;
 
 /** What a candidate is read from: a list row. */
 export type EdRow = Pick<PlanItem, "id" | "unit_id" | "round" | "dream" | "status" | "withdrawn_on" | "position"> &
   Partial<Pick<PlanItem, "ed_dismissed_at" | "ed_checks" | "round_source" | "outcome" | "decision_date">>;
 
-/** The most pills on a list. */
-export const ED_MAX = 3;
 /** The first season with pills (ed-opportunities.md "Moves and timing"). */
 export const ED_FIRST_SEASON: Season = "junior_spring";
 /** The first season with the `ed_decide` move and the per-candidate cost checks. */
 export const ED_DECIDE_SEASON: Season = "summer_before_senior";
 
-/** The pill's words (EdPill.tsx): the full text, and the short one on a phone. */
+/** The pill's words at `helps` (EdPill.tsx): the full text, and the short one on a phone. */
 export const ED_PILL_TEXT: Record<EdRound, { full: string; short: string }> = {
   ed: { full: "Good ED opportunity", short: "ED" },
   ed_alt: { full: "Good ED opportunity", short: "ED" },
   ed2: { full: "Good ED II opportunity", short: "ED II" },
 };
 
+/** The pill's words at `same` or null (no level up, or no counts): no "Good". */
+export const ED_PILL_TEXT_PLAIN: Record<EdRound, { full: string; short: string }> = {
+  ed: { full: "ED opportunity", short: "ED" },
+  ed_alt: { full: "ED opportunity", short: "ED" },
+  ed2: { full: "ED II opportunity", short: "ED II" },
+};
+
+/** The pill's words for a round and verdict (ed-opportunities.md "The pill"). */
+export const edPillText = (round: EdRound, verdict: EdVerdict | undefined) => (verdict === "helps" ? ED_PILL_TEXT : ED_PILL_TEXT_PLAIN)[round];
+
 const isPlanned = (s: Season) => s !== "unknown" && seasonRank(s) >= seasonRank(ED_FIRST_SEASON);
 
-/** The owner's order (ed-opportunities.md "Candidates and ranking" 2): lower first. */
+/** The owner's order (ed-opportunities.md "Candidates and ranking" 2) within one verdict: lower first. */
 function priority(dream: boolean, level: StandingLevel, closeness: EstimateResult["closeness"]): number {
   if (dream) return 0;
   if (closeness === null || closeness === undefined) return 9;
@@ -91,19 +109,38 @@ export function edDismissedItemIds(rows: readonly EdRow[]): string[] {
 
 const chose = (r: EdRow, round: "ed" | "ed2") => r.round === round && r.round_source === "student";
 
-/** Ranked candidates, capped, rounds assigned; before the closed-round filter. */
+const VERDICT_ORDER = { helps: 0, same: 1, none: 2 } as const;
+
+/**
+ * Whether the college's own ED rate is above its overall rate (the same document's when it publishes totals, else the
+ * overall rate), or null without the counts. The model's ED multiplier is 1 when it isn't, so a `same` there means
+ * the round changes nothing at all.
+ */
+export function edRateAbove(school: RoundsSchool | null): boolean | null {
+  const ed = school?.profile?.early_decision;
+  if (!ed || ed.applicants == null || ed.admitted == null || ed.applicants <= 0) return null;
+  const t = school?.edTotals;
+  const overall = t?.applicants && t.admitted != null ? t.admitted / t.applicants : (school?.admitRate ?? null);
+  if (!overall) return null;
+  return ed.admitted / ed.applicants > overall;
+}
+
+/** Ranked candidates, rounds assigned; before the closed-round filter. */
 function ranked(rows: readonly EdRow[], estimates: Record<string, EstimateResult>, schools: Record<string, PlanSchool | RoundsSchool>): (EdCandidate & { row: EdRow })[] {
   const pool = rows
     .filter((r) => !r.withdrawn_on && r.status !== "decided" && !r.ed_dismissed_at)
     .flatMap((r) => {
       const est = estimates[r.unit_id];
       const level = est?.group ?? null;
-      if (!est || est.ed !== "helps" || (level !== "reach" && level !== "target")) return [];
-      if (isOffered(bySchool(schools, r.unit_id), "ed") !== true) return [];
-      return [{ row: r, level, p: priority(r.dream === true, level, est.closeness) }];
+      if (!est || est.label === "elite" || est.ed === "not_advised" || (level !== "reach" && level !== "target")) return [];
+      const school = bySchool(schools, r.unit_id);
+      if (isOffered(school, "ed") !== true) return [];
+      const verdict: EdVerdict = est.ed ?? null;
+      if (verdict === "same" && edRateAbove(school) === false) return [];
+      const p = VERDICT_ORDER[verdict ?? "none"] * 10 + priority(r.dream === true, level, est.closeness);
+      return [{ row: r, level, verdict, p }];
     })
-    .sort((a, b) => a.p - b.p || a.row.position - b.row.position)
-    .slice(0, ED_MAX);
+    .sort((a, b) => a.p - b.p || a.row.position - b.row.position);
   if (pool.length === 0) return [];
 
   // The ED college: a row already in ED (the student's pick first; it may be decided, deferred, or no candidate at
@@ -121,13 +158,13 @@ function ranked(rows: readonly EdRow[], estimates: Record<string, EstimateResult
       const ed2 = isOffered(school, "ed2") === true && (chose(c.row, "ed2") || (!!decides && !!ed2Closing && ed2Closing.iso > decides.iso));
       round = ed2 ? "ed2" : "ed_alt";
     }
-    return { row: c.row, itemId: c.row.id, unitId: c.row.unit_id, round, rank: i + 1, level: c.level, dream: c.row.dream === true, dismissed: false };
+    return { row: c.row, itemId: c.row.id, unitId: c.row.unit_id, round, rank: i + 1, level: c.level, dream: c.row.dream === true, dismissed: false, verdict: c.verdict };
   });
 }
 
 /**
- * The Good ED opportunities on a list (ed-opportunities.md "Candidates and ranking"): ranked, at most three, empty
- * before junior spring and once every candidate's round has closed.
+ * The ED opportunities on a list (ed-opportunities.md "Candidates and ranking"): ranked, uncapped, empty before junior
+ * spring and once every candidate's round has closed.
  */
 export function edOpportunities(
   rows: readonly EdRow[],
@@ -250,8 +287,14 @@ export interface EdSheetFacts {
   round: EdRound;
   /** The level's word ("Target"), the one thing from the estimate. */
   levelLabel: string | null;
-  /** Quad's read (the built `ed.helps` sentence; ED II adds its "though less" sentence; ED alt says ED is one college). */
+  /**
+   * Quad's read by verdict: `helps` the built `ed.helps` sentence; `same` "wouldn't change the level, but admits a
+   * larger share"; null "hasn't published how its early applicants fare". ED II adds its "though less" sentence (at
+   * null, "binding too"); ED alt says ED is one college.
+   */
   read: string;
+  /** At `same`, the college's own ED rate line the read rests on (`earlyFor().line` up to its multiple, cited by `countsField`); else null. */
+  readBasis: string | null;
   /** "ED admitted 412 of 1,690 (24%) against 9% overall", or null without counts. */
   reported: string | null;
   /** Where the overall rate came from: "same document", or "overall rate from 2024"; null without counts. */
@@ -309,12 +352,21 @@ export function edSheetFacts(row: EdRow, school: PlanSchool | undefined, estimat
   const ed = school.profile?.early_decision;
   const level = estimate?.group ?? null;
 
-  const helps = estimate?.notes.find((n) => n.key === "ed.helps");
-  const toward = levelAbove(level);
-  const base = helps ? noteText(helps) : noteText({ key: "ed.helps", values: { level: toward ?? "the next level" } });
+  const verdict = estimate?.ed ?? null;
+  let base: string;
+  if (verdict === "same")
+    base = `Early decision wouldn't change ${name}'s level for you, but ${name} admits a larger share of its early applicants, and a binding application says you'd come. Check the cost first.`;
+  else if (verdict === null || verdict === "not_advised")
+    base = `${name} offers early decision but hasn't published how its early applicants fare; a binding application still says you'd come. Check the cost first.`;
+  else {
+    const helps = estimate?.notes.find((n) => n.key === "ed.helps");
+    base = helps ? noteText(helps) : noteText({ key: "ed.helps", values: { level: levelAbove(level) ?? "the next level" } });
+  }
   const read =
     round === "ed2"
-      ? `${base} Early decision II too, though less: ${name} reports its ED rounds together, and much of the class is admitted in the first.`
+      ? verdict === "helps" || verdict === "same"
+        ? `${base} Early decision II too, though less: ${name} reports its ED rounds together, and much of the class is admitted in the first.`
+        : `${base} Early decision II is binding too.`
       : round === "ed_alt"
         ? `${base} Early decision is binding at one college only, so this is an alternative to your other ED opportunity, not a second one.`
         : base;
@@ -348,6 +400,8 @@ export function edSheetFacts(row: EdRow, school: PlanSchool | undefined, estimat
     round,
     levelLabel: level ? STANDING_LEVEL_LABELS[level] : null,
     read,
+    // The college's own line without its "×" multiple: the pill and sheet never show one (the guard in the tests).
+    readBasis: verdict === "same" && early.measures?.edRate != null ? (early.line?.split(" · ")[0] ?? null) : null,
     reported,
     lineage,
     edition,

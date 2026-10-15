@@ -46,7 +46,7 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   const openRow = params?.get("row") ?? null;
   const openPanelParam = params?.get("panel");
   const openPanel = openPanelParam === "ed" || openPanelParam === "capture" ? openPanelParam : "capture";
-  // Good ED opportunities (ed-opportunities.md): computed once from the server's view; at most three pills.
+  // Good ED opportunities (ed-opportunities.md): computed once from the server's view; every candidate gets a pill.
   const edCandidates = edOpportunities(view.rows.map((r) => r.item), view.estimates, ctx.schools, { season: ctx.season, today: ctx.today });
   const edByItem = new Map<string, EdCandidate>(edCandidates.map((c) => [c.itemId, c]));
   // Interest pill (interest-and-visits.md "The pill": "a list row with an open interest move"): the row-level rendering

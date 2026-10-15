@@ -7,10 +7,12 @@
 > Replaces the ED guard's one-line suggestion and the ED II offer in [../redesign/rounds.md](../redesign/rounds.md).
 
 ## Goal
-A student looks at the list and sees, on at most three rows, **Good ED opportunity** or **Good ED II opportunity**:
-colleges where applying in a binding early round would move the college up a level for *this* student, by the data
-the college published. Tapping shows the facts, the caveats, the cost question, and a button that sets the round.
-Nothing says "apply"; the owner's decision (2026-10-14) is that the plan may flag an opportunity by name.
+A student looks at the list and sees, on every Reach or Target row whose college offers early decision, an **ED
+opportunity** pill: **Good ED opportunity** (or ED II) where applying in a binding early round would move the college
+up a level for *this* student, by the data the college published, and plain **ED opportunity** where it wouldn't
+change the level or the college hasn't published its early counts. Tapping shows the facts, the caveats, the cost
+question, and a button that sets the round. Nothing says "apply"; the owner's decision (2026-10-14) is that the plan
+may flag an opportunity by name.
 
 ## What the data can say
 - **Availability**: ED I, ED II, EA, REA from CDS C21/C22 (`school.reported.admission_profile.early_decision` /
@@ -19,8 +21,10 @@ Nothing says "apply"; the owner's decision (2026-10-14) is that the plan may fla
   college one level higher for the student; `"same"`, `"not_advised"` (High reach), or null when the college
   publishes no ED counts or the student has no level. The multiplier already discounts the raw ED gap (the hooked
   pool), caps the effect, and compares ED against the same document's overall rate where the lineage allows (33 of 79
-  colleges) and the overall rate otherwise. **No pill without `helps`.** That rules out colleges where the ED and
-  overall rates are about equal (Franklin & Marshall) or reversed (Loyola Maryland) without a special case.
+  colleges) and the overall rate otherwise. **The verdict no longer gates the pill** (owner 2026-10-15): it orders the
+  candidates (`helps` first) and words the pill and Quad's read. A `same` college whose own ED rate isn't above its
+  overall rate (about equal, as at Franklin & Marshall, or reversed, as at Loyola Maryland) gets no pill: the
+  multiplier is 1 there and nothing about the round helps.
 - **Closeness** within a level (`closeness` 0–3, 3 nearest the level above; null when a cap or floor set the level,
   so always null at Ultra selective colleges). It orders candidates; it is never shown.
 - **ED II**: one count pair covers both rounds at nearly every college, so the verdict is the same for ED I and ED II,
@@ -29,14 +33,17 @@ Nothing says "apply"; the owner's decision (2026-10-14) is that the plan may fla
 
 ## Candidates and ranking
 `edOpportunities(rows, estimates, schools)` in `lib/planner/ed-opportunities.ts` (pure):
-1. **Candidates**: rows whose college offers ED (C21 `offered`), whose estimate says `ed === "helps"`, and whose level
-   is Reach or Target. (High reach is `not_advised`; Likely and Safe don't need a binding round; Ultra selective has no
-   verdict.) A row the student dismissed ("Not for me") is out. A row already in ED or ED II by the student's choice
-   stays a candidate so its pill reads as confirmation.
-2. **Rank** (the owner's order): the **Dream** first if it's a candidate; then **Reach, lower end** (closeness 3, then
-   2); then **Target, upper end** (closeness 0, then 1); then the remaining Reaches (1, 0) and Targets (2, 3); ties by
-   the student's own order.
-3. **Cap**: the first three.
+1. **Candidates**: rows not withdrawn or decided, at **Reach or Target**, whose college offers ED
+   (`isOffered(school, "ed") === true`), whose estimate isn't labelled `elite`, and whose ED verdict is anything but
+   `not_advised`: `helps`, `same`, or null (ED offered, no counts published). High reach stays out (`not_advised`);
+   Likely and Safe don't need a binding round. A `same` college whose own ED rate isn't above its overall rate is out
+   (see "What the data can say"). A row the student dismissed ("Not for me") is out. A row already in ED or ED II by
+   the student's choice stays a candidate so its pill reads as confirmation.
+2. **Rank**: verdict `helps` first, then `same`, then null; within each, the owner's order: the **Dream** first if
+   it's a candidate; then **Reach, lower end** (closeness 3, then 2); then **Target, upper end** (closeness 0, then 1);
+   then the remaining Reaches (1, 0) and Targets (2, 3); no closeness after; ties by the student's own order.
+3. **No cap**: every candidate gets a pill (owner 2026-10-15). A list with one ED college at Reach or Target gets its
+   pill even when early decision doesn't change the level, because a binding application still helps.
 4. **Round per pill**: the first candidate is **ED** (ED I). Each later candidate is **ED II** if its college offers
    ED II and its ED II deadline falls after the first candidate's ED notification date (the built conflict rule);
    otherwise it is an **alternative ED**, shown with the same pill and a sheet that says ED is one college. So "easier"
@@ -48,17 +55,23 @@ A college whose pill would show but whose round was set to ED by `autoRounds` (a
 pill; its button reads **Keep ED** and the sheet says "On your plan: ED".
 
 ## The pill
-On the list row, right end, accent background, text **Good ED opportunity** or **Good ED II opportunity** (phones:
-**ED** / **ED II** with the same color and an accessible label). At most three across the list. Tapping opens the
+On the list row, right end, accent background, worded by the verdict: `helps` → **Good ED opportunity** / **Good ED
+II opportunity**; `same` and null → **ED opportunity** / **ED II opportunity** (phones: **ED** / **ED II** with the
+same color and the full text as the accessible label). Never a number. One per candidate, no cap. Tapping opens the
 row's details with the ED sheet at the top. The Next steps tab shows the same opportunity as a card
 ("Good ED opportunity: Wake Forest · Target for you") whose button opens the sheet.
 
 ## The sheet
 Facts first, then the caveats, then the questions, then the button. Every number is a cited college fact; nothing is
 from the estimate but the level.
-1. **Quad's read**: the built sentence, `ed.helps`: "Early decision would move this toward {level}; it's binding, so
-   check the cost first." For ED II: "…Early decision II too, though less: {College} reports its ED rounds together,
-   and much of the class is admitted in the first."
+1. **Quad's read**, by verdict. `helps`: the built sentence, `ed.helps`: "Early decision would move this toward
+   {level}; it's binding, so check the cost first." `same`: "Early decision wouldn't change {College}'s level for you,
+   but {College} admits a larger share of its early applicants, and a binding application says you'd come. Check the
+   cost first.", with the college's own ED rate line beneath it (`earlyFor().line` up to its multiple, cited). null:
+   "{College} offers early decision but hasn't published how its early applicants fare; a binding application still
+   says you'd come. Check the cost first." For ED II (`helps`, `same`): "…Early decision II too, though less: {College}
+   reports its ED rounds together, and much of the class is admitted in the first." (null: "Early decision II is
+   binding too.")
 2. **What {College} reports**: ED admitted {n} of {m} ({rate}%) against {rate}% overall ({edition}, CDS C21/C1), with
    "same document" or "overall rate from {year}" per the lineage; the share of the class admitted early where the
    measure exists (`classShareLine`, built). Where the counts cover both rounds: "ED I and ED II together."
@@ -94,11 +107,13 @@ dismissed college never returns.
 - The rule "No sentence recommends applying early anywhere" becomes: *Quad may flag a Good ED opportunity by name,
   with the facts and caveats one tap away; it never says 'apply' and the student sets the round.* Updated in
   [../redesign/rounds.md](../redesign/rounds.md#rules) and [../README.md](../README.md#decisions-in-short) when built.
-- No pill where coverage is missing: an ED college without counts shows, in the row's details, "ED offered; {College}
-  hasn't published its ED counts" (the built line), and nothing on the row.
+- Coverage missing (owner 2026-10-15): an ED college at Reach or Target without counts gets the plain **ED
+  opportunity** pill, ranked last; its sheet says "ED offered; {College} hasn't published its ED counts" (the built
+  line) under Quad's read.
 
 ## Rules
-- At most three pills; never two colleges labelled plain ED without the sheet saying ED is one college.
+- Every candidate gets a pill; the first is ED, the rest ED II or an alternative ED (never two colleges labelled
+  plain ED without the sheet saying ED is one college).
 - A pill never shows a percentage, a multiple, odds, or closeness; the sheet's numbers are the college's own, cited.
 - Nothing is written until the student presses the button; a guardian can't set a round.
 - "Not for me" is final for the cycle; the brief and the tab never resurface it.
@@ -109,8 +124,16 @@ dismissed college never returns.
 `lib/planner/ed-opportunities.ts` (candidates, rank, round per pill, `edSheetFacts`), `components/planner/EdPill.tsx`,
 `EdSheet.tsx`, `EdDecideCard.tsx`; `ed_decide` and `ed2_decide` kinds; migration `list_items.ed_dismissed_at`,
 `list_items.ed_checks`; removal of the two notice lines. Tests: `tests/planner-ed-opportunities.test.mts` (Dream first;
-the closeness order; three-cap; ED II only after the ED I notification; the alternative-ED wording; no pill at
-`same`/`not_advised`/null; dismissal; the junior-spring gate; a guard that the pill text never carries a number).
+the closeness order; `helps` before `same` before null; no cap; ED II only after the ED I notification; the
+alternative-ED wording; the pill and read by verdict; no pill at `not_advised`/High reach/`elite` or a `same` college
+whose ED rate isn't higher; dismissal; the junior-spring gate; a guard that the pill text never carries a number).
+
+## Owner decisions
+- 2026-10-14: the plan may flag an ED opportunity by name; it never says "apply".
+- 2026-10-15: "On the ED pill, we should be more forgiving. Particularly when users don't have any. We should suggest
+  more than three, but if there's an ED available and only one school in reach or target that has it, we should
+  suggest it because it still improves their odds." `same` and null qualify, no cap, the pill and read worded by
+  verdict (U2b).
 
 ## Open questions
 1. Should a pill show for a Dream at Likely that offers ED (the verdict is `same`: ED changes nothing)? Recommendation:

@@ -2,7 +2,7 @@
 
 /**
  * The ED moves' card (specs/planner/next-steps/ed-opportunities.md "Moves and timing"):
- * - `ed_decide`: "Decide on ED (due {date})", listing the Good ED opportunities with their rounds, each opening the
+ * - `ed_decide`: "Decide on ED (due {date})", listing every ED opportunity with its round and pill wording, each opening the
  *   row's ED sheet on the Colleges tab (`?row=<id>&panel=ed`, the `open_row` action).
  * - `ed2_decide`: the one college, with **Start it in ED II** for the student (a guardian reads "{First} picks the round").
  * The date carries its ⓘ (the college's field). Nothing here is a number from the estimate; the level is the only
@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { MetricLabel } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import { STANDING_LEVEL_LABELS } from "@/lib/chances/levels";
-import { ED_PILL_TEXT, edOpportunities } from "@/lib/planner/ed-opportunities";
+import { edOpportunities, edPillText } from "@/lib/planner/ed-opportunities";
 import { planHref } from "@/lib/planner/plan-tabs";
 import { startEd } from "@/lib/planner/store-ed";
 import { taskDateLabel } from "@/lib/planner/tasks";
@@ -78,7 +78,7 @@ export function EdDecideCard({ task, ctx, view, onSkip, pending }: MoveCardProps
               <Link href={edRowHref(person, c.itemId)} className="flex min-h-11 items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-muted">
                 <span className="min-w-0 truncate font-semibold">{nameOf(c.itemId)}</span>
                 <span className="shrink-0 text-xs text-muted-foreground">
-                  {ED_PILL_TEXT[c.round].full} · {STANDING_LEVEL_LABELS[c.level]} for you
+                  {edPillText(c.round, c.verdict).full} · {STANDING_LEVEL_LABELS[c.level]} for you
                 </span>
               </Link>
             </li>

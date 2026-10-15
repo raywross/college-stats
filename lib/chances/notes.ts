@@ -360,6 +360,8 @@ export const NOTES: Record<NoteKey, Note> = {
   "ed.same": () => "Early decision doesn't change where this college stands for you.",
   /** `level`: the level's word ("Target"). */
   "ed.helps": (v) => `Early decision would move this toward ${s(v, "level")}; it's binding, so check the cost first.`,
+  /** Owner (2026-10-15): the college's ED rate is above its overall rate, but the level holds. */
+  "ed.improves": () => "Early decision improves your chance here without changing where it stands for you; it's binding, so check the cost first.",
   "ed.not_advised": () => "Early decision is binding and helps most where you're already in range; this college isn't one of them yet.",
 
   /* ---- Who the student is compared with, short (the estimate's structured `pool`, for Compare's sub-line) ---- */

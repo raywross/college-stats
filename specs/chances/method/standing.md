@@ -156,11 +156,25 @@ respects the caps: no move-up is offered at an Elite college beyond Reach, and n
 
 ### The ED sentence
 Where the student's round is ED (or the planner asks "would ED help here?"), the sentence is chosen by
-`rate × M_ed × (the other multipliers)` against the cutoffs:
-- level unchanged → "Early decision doesn't change where this college stands for you."
-- one level up → "Early decision would move this toward {level}; it's binding, so check the cost first."
-- High reach, any multiplier → "Early decision is binding and helps most where you're already in range; this college
-  isn't one of them yet." ([rounds.md](../../planner/redesign/rounds.md) "The ED guard")
+`rate × M_ed × (the other multipliers)` against the cutoffs, four ways (`EstimateResult.ed`):
+- `helps`, one level up → "Early decision would move this toward {level}; it's binding, so check the cost first."
+- `improves`, `M_ed > 1` (the college's own ED rate is above its overall rate) but the level holds, including where a
+  tier cap set it (Ultra selective: Reach for everyone) → "Early decision improves your chance here without changing
+  where it stands for you; it's binding, so check the cost first."
+- `same`, `M_ed = 1` (ED rate at or below the overall rate: Franklin & Marshall, Loyola Maryland), or a guaranteed or
+  no-rate case → "Early decision doesn't change where this college stands for you."
+- `not_advised`, High reach, any multiplier (`M_ed` is computed first; the level decides) → "Early decision is
+  binding and helps most where you're already in range; this college isn't one of them yet."
+  ([rounds.md](../../planner/redesign/rounds.md) "The ED guard")
+- null: no ED offered, or no C21 counts (outside High reach).
+
+**Owner, 2026-10-15 (`MODEL_VERSION 20261015.1`), ED as a currency:** "An ED has to be viewed like a currency on its
+own. You only have 1, but it's free to use. The student should use it, unless they really want to take their chances
+and see where they'd get in. This is why we'd prioritize a dream school (although not necessarily if it were high reach
+and there were some good ED reach options). But to not recommend anything when they have a free chip to spend doesn't
+make sense." Before this, a Reach student at Vanderbilt (Ultra selective; ED admits 14.1% against 5.4% overall) read
+`same`, since the tier caps the level at Reach and ED could never move it; now `improves`. The numbers
+(`ODDS_V3.ed = { share: 0.5, max: 2 }`) don't change, and no level changes.
 
 ## Pinned examples
 `tests/chances-model.test.mts`. The second version's table must still hold within one level with every new input
@@ -226,7 +240,8 @@ Built 2026-10-12 in `lib/chances/model.ts` (constants in `ODDS_V3`), `lib/chance
 - **`closeness`** is null at Elite, and wherever a cap (including the Safe rule) or a floor (a guarantee, open
   admission, a recruited floor) set the level.
 - **ED**: `M_ed` is held between 1 and 2 (ED never lowers); the verdict is computed for every result with a level
-  (the planner reads it), `not_advised` at High reach whatever the data, null without C21 counts; the sentence shows
+  (the planner reads it), `not_advised` at High reach whatever the data, null without C21 counts, `improves` where
+  `M_ed > 1` and the level holds, `same` where `M_ed` is 1 (owner, 2026-10-15); the sentence shows
   only when the student's round is ED or ED II.
 - **Snapshots** record the hidden odds binned to 0.005, the tier, and the level with depth, hooks (legacy and
   recruited), and interest switched off. The Depth readings (`depthSnapshot`, no names) are in the method's detail;

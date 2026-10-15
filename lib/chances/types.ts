@@ -176,8 +176,11 @@ export interface EstimateResult {
    * when a cap or floor set it. Orders a section "closest first" (levels.md); the only trace of the hidden odds.
    */
   closeness: 0 | 1 | 2 | 3 | null;
-  /** What early decision would do here (method/standing.md "The ED sentence"); null without a level. */
-  ed: "helps" | "same" | "not_advised" | null;
+  /**
+   * What early decision would do here (method/standing.md "The ED sentence"); null without a level. `improves` (owner,
+   * 2026-10-15): the college's ED rate is above its overall rate, but the level holds.
+   */
+  ed: "helps" | "improves" | "same" | "not_advised" | null;
   /**
    * Who the student is compared with and that group's published admit rate (pool-explainer.md), for Compare's
    * sub-line: the rate's kind, the college's own published rate (0–1; null for a guarantee), and the catalog key of

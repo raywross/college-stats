@@ -10,6 +10,8 @@ import { lastRunSummary } from "@/lib/admin/selectivity-history";
 import { HealthFilterForm } from "@/components/admin/ops/HealthFilterForm";
 import { HealthTable } from "@/components/admin/ops/HealthTable";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
+import { VisitEventsCard } from "@/components/admin/VisitEventsCard";
+import { loadVisitEventsHealth } from "@/lib/admin/visit-events";
 import type { School } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Data health", robots: { index: false } };
@@ -33,6 +35,8 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
   const { overview } = view;
   // One line from the selectivity history (specs/chances/selectivity-history.md): tier changes in the last publish.
   const selectivity = await lastRunSummary();
+  const visitEvents = await loadVisitEventsHealth();
+  const now = new Date();
 
   return (
     <div className="space-y-6">
@@ -67,6 +71,8 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
         {isFiltered(filters) ? `${page.total.toLocaleString("en-US")} of ${overview.counts.total.toLocaleString("en-US")} colleges` : `${page.total.toLocaleString("en-US")} colleges`}
         {page.total > 0 && ` · showing ${page.from.toLocaleString("en-US")} to ${page.to.toLocaleString("en-US")}`}
       </p>
+
+      <VisitEventsCard health={visitEvents} now={now} />
 
       <HealthTable rows={page.rows} />
 

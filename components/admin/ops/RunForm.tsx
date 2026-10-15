@@ -53,6 +53,15 @@ function Field({ input, prefillUnit }: { input: RunInput; prefillUnit: string | 
           <input id={id} name={input.name} defaultValue={input.default} inputMode="decimal" pattern="[0-9]{1,5}(\.[0-9]{1,2})?" className={`${inputCls} mt-1.5 sm:max-w-[12rem]`} />
         </div>
       );
+    case "text":
+      return (
+        <div>
+          <label htmlFor={id} className="block text-sm font-semibold">
+            {input.label}
+          </label>
+          <input id={id} name={input.name} defaultValue={input.default} className={`${inputCls} mt-1.5`} />
+        </div>
+      );
   }
 }
 

@@ -576,7 +576,7 @@ function sources(dir: string, out: Map<string, string> = new Map()): Map<string,
   return out;
 }
 
-const ACT_READERS = new Set(["lib/planner/interest-acts-server.ts", "lib/planner/store-interest.ts", "lib/account-export.ts", "lib/planner/interest-acts-types.ts"]);
+const ACT_READERS = new Set(["lib/planner/interest-acts-server.ts", "lib/planner/store-interest.ts", "lib/account-export.ts", "lib/admin/people.ts", "lib/planner/interest-acts-types.ts"]);
 
 /** Files that name the acts table outside act tracking itself. */
 function strayReaders(files: Map<string, string>): string[] {

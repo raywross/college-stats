@@ -20,7 +20,7 @@
  */
 import { addDays } from "./stage.ts";
 import { yourPart } from "./summary.ts";
-import { compareTasks, isOpen, taskDate } from "./tasks.ts";
+import { compareTasks, dayLabel, isOpen, taskDate } from "./tasks.ts";
 import { nextSeason, seasonOfDate, seasonRank, type Season } from "./seasons.ts";
 import type { PlanTask } from "./types.ts";
 
@@ -151,6 +151,16 @@ export function nowMoves(
 export function yourPartMoves(tasks: PlanTask[], today: string): PlanTask[] {
   const moves = tasks.filter(isMove);
   return yourPart([{ studentId: "", name: null, tasks: moves }], today)[0]?.tasks ?? [];
+}
+
+/** "Skipped Oct 12" for the Done and skipped fold, or "Skipped" for a skip made before the skip record existed. */
+export function skippedLabel(t: Pick<PlanTask, "dismissed_at">, today: string): string {
+  return t.dismissed_at ? `Skipped ${dayLabel(t.dismissed_at.slice(0, 10), today)}` : "Skipped";
+}
+
+/** "Done Oct 3": the day a done move was ticked, or null. */
+export function doneLabel(t: Pick<PlanTask, "done_at">, today: string): string | null {
+  return t.done_at ? `Done ${dayLabel(t.done_at.slice(0, 10), today)}` : null;
 }
 
 /** The people line's "Next:": Now's first card. */

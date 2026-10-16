@@ -1,6 +1,8 @@
 /**
  * Cards by kind (specs/planner/next-steps/build-plan.md review note 8): a task kind's own card, else MoveCard (the
  * default). Each rule unit adds its card file and one line here, e.g. `ed_decide: EdDecideCard,`.
+ * Plan v3: a kind whose move opens a guide needs no card of its own; MoveCard's one button is the guide's
+ * (`visit_ed` and `show_interest` render MoveCard, the Show interest guide's "Show me how").
  */
 import type { ComponentType } from "react";
 import type { TaskKind } from "@/lib/planner/types";
@@ -15,7 +17,6 @@ import { Ed2Card } from "./Ed2Card";
 import { DecideCard } from "./DecideCard";
 import { OutcomeShareCard } from "./OutcomeShareCard";
 import { ShapeCard } from "./ShapeCard";
-import { InterestCard } from "./InterestCard";
 
 export const MOVE_CARDS: Partial<Record<TaskKind, ComponentType<MoveCardProps>>> = {
   story: StoryCard,
@@ -37,6 +38,4 @@ export const MOVE_CARDS: Partial<Record<TaskKind, ComponentType<MoveCardProps>>>
   outcome_share: OutcomeShareCard,
   shape_gap: ShapeCard,
   shape_cost: ShapeCard,
-  visit_ed: InterestCard,
-  show_interest: InterestCard,
 };

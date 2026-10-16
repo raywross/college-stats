@@ -1,12 +1,14 @@
 /**
- * The Next steps tab's UI (specs/planner/next-steps/seasons.md "The Next steps tab"; build-plan.md "U1b Next steps
- * tab UI"): `MoveCard`'s rendering (why, date/overdue, assignee chip, the citation, the one action button per
- * `task.action`, read-only labels without edit access) rendered for real with `react-dom/server`, no bundler (the
- * same technique as tests/chances-estimate-ui.test.mts); `NextYearCard`'s fallback to `MoveCard` for every task that
- * isn't the course-choice move; and, for `NextSteps.tsx`, `SeasonExplainer.tsx`, `PlanRow.tsx`, `PlanPeople.tsx`, and
- * `app/plan/page.tsx` (whose client-only hooks and dialog primitive aren't worth stubbing here), structural checks on
- * the source — the groups' order, the empty state, a guardian's Your part, `?move=` scrolling, and the people line's
- * "Next:" reading the loaded plan's top move before the profile step. `npm test`.
+ * The Next steps tab's UI (specs/planner/v3/now.md "The tab"; plan v3 build-plan.md "U1 Foundation" step 7; first
+ * built by next steps' U1b): `MoveCard`'s rendering (why, date/overdue, assignee chip, the citation, the one button:
+ * the move's guide when it has one, else the built action; Done and Skip for now in the corner menu, only with edit
+ * access, and no Skip for a guardian) rendered for real with `react-dom/server`, no bundler (the same technique as
+ * tests/chances-estimate-ui.test.mts); `NextYearCard`'s fallback to `MoveCard` for every task that isn't the
+ * course-choice move; and, for `NextSteps.tsx`, `ParentNextSteps.tsx`, `SeasonExplainer.tsx`, `PlanRow.tsx`,
+ * `PlanPeople.tsx`, and `app/plan/page.tsx` (whose client-only hooks and dialog primitive aren't worth stubbing here),
+ * structural checks on the source: three cards and the Done and skipped fold for the student, the empty state, the
+ * guardian's tab kept as built, `?move=` scrolling, and the people line's "Next:" reading the loaded plan's top move
+ * before the profile step. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -18,6 +20,7 @@ import { pathToFileURL } from "node:url";
 import ts from "typescript";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { PlanContext, PlanTask } from "../lib/planner/types.ts";
+import { doneLabel, skippedLabel } from "../lib/planner/moves.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (...p: string[]) => readFileSync(join(ROOT, ...p), "utf8");
@@ -120,10 +123,10 @@ function taskOf(o: Partial<PlanTask> = {}): PlanTask {
     id: "t1",
     list_id: "l1",
     item_id: null,
-    key: "l1:playbook:notice_teachers",
+    key: "l1:playbook:summer_program",
     kind: "playbook",
-    title: "Notice two teachers you'd ask to write for you",
-    detail: "Junior-year teachers in core subjects know your work best. The asking comes in spring.",
+    title: "Apply to a summer program by its deadline",
+    detail: "Optional. Many summer programs close their applications in winter.",
     due_on: null,
     window_start: null,
     window_end: null,
@@ -156,8 +159,8 @@ const noop = () => {};
 
 test("MoveCard: title, why, and 'this season' for an undated move — never Overdue", () => {
   const html = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf(), onDone: noop, onSkip: noop, pending: false });
-  assert.match(html, /Notice two teachers/);
-  assert.match(html, /Junior-year teachers in core subjects/);
+  assert.match(html, /Apply to a summer program/);
+  assert.match(html, /Many summer programs close/);
   assert.match(html, />this season</);
   assert.doesNotMatch(html, /Overdue/);
   assert.doesNotMatch(html, /text-destructive/);
@@ -203,7 +206,7 @@ test("MoveCard: the date is cited only when the task names a field the school ac
   assert.doesNotMatch(withoutCite, /data-cited="yes"/);
 });
 
-test("MoveCard: one button per action kind beyond Done/Not now; tick and the other units' kinds add none", () => {
+test("MoveCard: one button per action kind for a move with no guide; tick and the other units' kinds add none", () => {
   const ctx = ctxOf();
   const hrefHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "href", href: "https://example.edu" } }), ctx, onDone: noop, onSkip: noop, pending: false });
   assert.match(hrefHtml, /href="https:\/\/example\.edu"/);
@@ -236,14 +239,52 @@ test("MoveCard: one button per action kind beyond Done/Not now; tick and the oth
   assert.doesNotMatch(otherUnitHtml, /See the college|Open</, "no button for a kind without its own card yet; the title alone stands in");
 });
 
-test("MoveCard: Done and Not now are buttons with edit access, plain read-only labels without it", () => {
+test("MoveCard: a move with a guide has one button, the guide's, linking the guide page with the move open", () => {
+  const ctx = ctxOf({ items: [{ id: "i1", unit_id: "198419" } as never] });
+  const interest = render(moveCardMod.MoveCard as never, {
+    task: taskOf({ id: "t5", kind: "show_interest", key: "l1:show_interest:i1", item_id: "i1", title: "Show Duke you're interested", action: { kind: "open_row", itemId: "i1", panel: "capture" } }),
+    ctx,
+    onDone: noop,
+    onSkip: noop,
+    pending: false,
+  });
+  assert.match(interest, /href="\/plan\/guide\/interest\?move=t5&amp;college=198419&amp;from=move"/);
+  assert.match(interest, />Show me how</);
+  assert.doesNotMatch(interest, /See the college/, "the built action gives way to the guide");
+  const recs = render(moveCardMod.MoveCard as never, { task: taskOf({ id: "t6", key: "l1:playbook:pick_recommenders", action: null }), ctx, onDone: noop, onSkip: noop, pending: false });
+  assert.match(recs, /href="\/plan\/guide\/recommenders\?move=t6&amp;from=move"[^>]*>Help me pick</);
+  // A guardian's link carries the child.
+  const guardian = render(moveCardMod.MoveCard as never, {
+    task: taskOf({ id: "t7", key: "l1:playbook:build_list", action: { kind: "open_tab", tab: "colleges" } }),
+    ctx: ctxOf({ viewer: { userId: "u2", firstName: "Jo", canEdit: false, relation: "guardian", isGuardian: true }, student: { id: "kid-1", display_name: "Maya", grad_year: 2028, user_id: null } }),
+    onDone: noop,
+    onSkip: noop,
+    pending: false,
+  });
+  assert.match(guardian, /href="\/plan\/guide\/list\?for=kid-1&amp;move=t7&amp;from=move"[^>]*>Help me build it</, "a read-only guardian still opens the guide");
+});
+
+test("MoveCard: Done and Skip for now live in the corner menu, with edit access only; a guardian's menu has no Skip", () => {
   const editable = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf({ viewer: { userId: "u1", firstName: "Jo", canEdit: true, relation: "self", isGuardian: false } }), onDone: noop, onSkip: noop, pending: false });
+  assert.match(editable, /<details[^>]*>\s*<summary[^>]*aria-label="More for Apply to a summer program by its deadline"/);
+  assert.match(editable, /size-11/, "the ⋯ button is 44px");
   assert.match(editable, /<button[^>]*>Done<\/button>/);
-  assert.match(editable, /<button[^>]*>Not now<\/button>/);
+  assert.match(editable, /<button[^>]*>Skip for now<\/button>/);
+  assert.doesNotMatch(editable, /Not now/);
+  const guardian = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf({ viewer: { userId: "u2", firstName: "Jo", canEdit: true, relation: "guardian", isGuardian: true } }), onDone: noop, onSkip: noop, pending: false });
+  assert.match(guardian, /<button[^>]*>Done<\/button>/);
+  assert.doesNotMatch(guardian, /Skip for now/, "a parent never skips for the student");
   const readOnly = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf({ viewer: { userId: "u1", firstName: "Jo", canEdit: false, relation: "self", isGuardian: false } }), onDone: noop, onSkip: noop, pending: false });
-  assert.doesNotMatch(readOnly, /<button/, "no tappable control at all without edit access");
-  assert.match(readOnly, />Done</);
-  assert.match(readOnly, />Not now</);
+  assert.doesNotMatch(readOnly, /<button|<details/, "no menu at all without edit access");
+  assert.doesNotMatch(readOnly, />Done<|Skip for now/);
+});
+
+test("the Done and skipped fold's labels: 'Skipped Oct 12' (or 'Skipped' before the record), 'Done Oct 3'", () => {
+  assert.equal(skippedLabel({ dismissed_at: "2026-10-12T15:00:00Z" }, "2026-11-01"), "Skipped Oct 12");
+  assert.equal(skippedLabel({ dismissed_at: "2025-10-12T15:00:00Z" }, "2026-11-01"), "Skipped Oct 12, 2025");
+  assert.equal(skippedLabel({ dismissed_at: null }, "2026-11-01"), "Skipped");
+  assert.equal(doneLabel({ done_at: "2026-10-03T09:00:00Z" }, "2026-11-01"), "Done Oct 3");
+  assert.equal(doneLabel({ done_at: null }, "2026-11-01"), null);
 });
 
 test("personFor: null for a signed-in student's own plan, the child's id for a guardian", () => {
@@ -264,10 +305,10 @@ test("NextYearCard: a playbook task that isn't the course choice, or any non-pla
     'from "@/lib/chances/estimate-input"': `from ${JSON.stringify(pathToFileURL(join(tmp, "estimate-input.mjs")).href)}`,
   })) as { NextYearCard: (p: Record<string, unknown>) => import("react").ReactElement };
   const notCourseChoice = renderToStaticMarkup(
-    React.createElement(mod.NextYearCard as never, { task: taskOf({ key: "l1:playbook:notice_teachers" }), ctx: ctxOf(), onDone: noop, onSkip: noop, pending: false } as never),
+    React.createElement(mod.NextYearCard as never, { task: taskOf({ key: "l1:playbook:summer_program" }), ctx: ctxOf(), onDone: noop, onSkip: noop, pending: false } as never),
   );
   assert.match(notCourseChoice, /data-stub="MoveCard"/);
-  assert.match(notCourseChoice, /Notice two teachers/);
+  assert.match(notCourseChoice, /Apply to a summer program/);
 
   const noCoursePlan = renderToStaticMarkup(
     React.createElement(mod.NextYearCard as never, {
@@ -285,30 +326,44 @@ test("NextYearCard: a playbook task that isn't the course choice, or any non-pla
 /* NextSteps.tsx, SeasonExplainer.tsx: structural checks               */
 /* ------------------------------------------------------------------ */
 
-test("NextSteps: PlanTabProps, groups in order, the empty state, Your part first for a guardian, ?move= scrolling", () => {
+test("NextSteps (the student's): three cards, then one Done and skipped fold with Bring back; nothing else; the empty state", () => {
   const src = read("components", "planner", "NextSteps.tsx");
   assert.match(src, /export function NextSteps\(\{ ctx, view \}: PlanTabProps\)/);
   assert.match(src, /"use client"/);
-  // Order in the source: Your part, then Now, then More this season, then Coming up, then Done.
-  // Only the function's body, not the file's doc comment (which names every group too, in prose).
-  const body = src.slice(src.indexOf("export function NextSteps"));
+  assert.match(src, /if \(ctx\.viewer\.isGuardian\) return <GuardianNextSteps ctx=\{ctx\} view=\{view\} \/>;/, "the guardian branch is one line (U9 replaces ParentNextSteps.tsx)");
+  // Only the student's body, not the file's doc comment (which names the groups in prose).
+  const body = src.slice(src.indexOf("function StudentNextSteps"));
+  const iNow = body.indexOf("groups.now.length === 0");
+  const iFold = body.indexOf("Done and skipped ({foldCount})");
+  assert.ok(iNow > 0 && iNow < iFold, "Now, then the fold");
+  for (const gone of ["More this season", "Coming up", "groups.more", "groups.comingUp", "Your part"]) assert.ok(!body.includes(gone), `no ${gone} for the student`);
+  assert.match(body, /Nothing to do right now\. Enjoy it\./);
+  assert.match(body, /SEASON_EXPLAINER\[ctx\.season\]\.lead/, "the empty state adds the explainer's lead");
+  assert.match(body, /Bring back/);
+  assert.match(body, /await undismiss\(task\.id\)/);
+  assert.match(body, /track\("plan_move_restored", \{ kind: task\.kind, season: seasonOfTask\(task\), by: "student" \}\)/);
+  assert.match(body, /skippedLabel\(t, ctx\.today\)/);
+  assert.match(body, /doneLabel\(t, ctx\.today\)/);
+  assert.match(body, /searchParams\.get\("move"\)/);
+  assert.match(body, /scrollIntoView/);
+  assert.match(body, /plan_move_done/);
+  assert.match(body, /plan_move_skipped/);
+  assert.match(body, /plan_season_explainer_opened/);
+  assert.match(src, /UNDO_MS = 60_000/, "Undo stays for a minute");
+  assert.match(body, /MOVE_CARDS\[task\.kind\] \?\? MoveCard/, "a kind with no card of its own falls back to MoveCard");
+});
+
+test("ParentNextSteps (the guardian's tab, kept as built until U9): Your part, Now, More this season, Coming up, Done", () => {
+  const src = read("components", "planner", "ParentNextSteps.tsx");
+  assert.match(src, /export function GuardianNextSteps\(\{ ctx, view \}: PlanTabProps\)/);
+  const body = src.slice(src.indexOf("export function GuardianNextSteps"));
   const iYourPart = body.indexOf("Your part");
   const iNow = body.indexOf("groups.now.length === 0");
   const iMore = body.indexOf("More this season");
   const iComingUp = body.indexOf("Coming up:");
   const iDone = body.indexOf("Done ({groups.done.length})");
-  assert.ok(iYourPart > 0 && iYourPart < iNow, "Your part renders before Now");
-  assert.ok(iNow < iMore && iMore < iComingUp && iComingUp < iDone, "More this season, then Coming up, then Done, in that order");
-  assert.match(src, /Nothing to do this season\. Enjoy it\./);
-  assert.match(src, /open=\{groups\.now\.length === 0\}/, "Coming up opens by itself when there's nothing to do");
-  assert.match(src, /ctx\.viewer\.isGuardian && yourPart\.length > 0/, "Your part only for a guardian, and only when there's something in it");
-  assert.match(src, /searchParams\.get\("move"\)/);
-  assert.match(src, /scrollIntoView/);
-  assert.match(src, /plan_move_done[\s\S]*by: viewerRole/);
-  assert.match(src, /plan_move_skipped/);
-  assert.match(src, /plan_season_explainer_opened/);
-  assert.match(src, /UNDO_MS = 60_000/, "Undo stays for a minute");
-  assert.match(src, /MOVE_CARDS\[task\.kind\] \?\? MoveCard/, "a kind with no card of its own falls back to MoveCard");
+  assert.ok(iYourPart > 0 && iYourPart < iNow && iNow < iMore && iMore < iComingUp && iComingUp < iDone);
+  assert.match(src, /ctx\.viewer\.isGuardian && yourPart\.length > 0/);
 });
 
 test("SeasonExplainer: the sheet dialog, SEASON_EXPLAINER's paragraph and next line", () => {

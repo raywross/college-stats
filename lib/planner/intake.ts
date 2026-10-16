@@ -105,6 +105,8 @@ export interface IntakeDraft {
   majors: MajorFamily[];
   /** Step 9: a USPS code or OUTSIDE_US (`basics.stateOfResidence`). */
   stateOfResidence: string | null;
+  /** Step 9, read-only: the household address's state (`profile.homeState`), shown when no state is entered; never saved. */
+  homeState?: string | null;
   /** Step 9: yes / no; null is "not sure" or unanswered (`basics.feeWaiverEligible`). */
   feeWaiverEligible: boolean | null;
   /** Step 9: yes / no; null is "not sure" or unanswered (the built `academics.firstGeneration`). */
@@ -744,6 +746,7 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     activitiesNone: a.activitiesNone ?? {},
     majors: [...profile.plans.intendedMajors],
     stateOfResidence: profile.basics.stateOfResidence,
+    homeState: profile.homeState ?? null,
     feeWaiverEligible: profile.basics.feeWaiverEligible,
     firstGeneration: a.firstGeneration,
     sizes: [...profile.preferences.sizes],

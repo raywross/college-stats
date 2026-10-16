@@ -46,7 +46,8 @@ The profile has `classRankPercentile` (a number few students know). The form ask
 - The pick is the student's **perceived** standing, a proxy like weighted GPA (owner, 2026-10-12; method
   [Revision 3](method/standing.md#revision-3-the-estimate-reads-the-record-the-way-the-owner-does-2026-10-12) rule 5).
   A stored `no_rank` reads as unanswered in the estimate; the pick itself leaves the form with U16.
-- Without a state of residence, the estimate uses the high school's state and says so (Revision 3, rule 7).
+- Residency: the state entered on the record, else the household's home address, else the high school's state (the
+  last one says so; Revision 3, rule 7, amended 2026-10-16).
 
 ## Awards
 `StudentProfile.awards: AwardEntry[]`, at most 6:

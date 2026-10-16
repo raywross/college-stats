@@ -142,9 +142,16 @@ each section's Edit opening the tour at that step and returning here (`back=inli
 closing it back to the plan's tabs (every step saves on its own when its tour saves). The household's Record tab keeps
 the standalone page.
 
-## Changed (owner, 2026-10-16): the household's address fills an empty state
-"Maya has a high school in New York and an address for her household in New York as well. So the system should know."
-A record with no state of residence now reads the household home's state (`stateOfHome`, lib/home.ts) wherever the
-profile is read (`withHomeState` in `profilesICanSee`), so the estimate, Explore's levels, the record overview, and the
-Basics step (pre-filled) all use it, and the record's next save stores it. A state the student entered wins; with
-neither, the estimate still falls back to the high school's state and says so.
+## Changed (owner, 2026-10-16): residency comes from the household's address, then the high school
+"Household address should be the priority but if it's not there it should fall back to high school." The state the
+estimate treats as the student's residency is resolved in this order:
+1. **The state entered on the record** (`basics.stateOfResidence`, the Basics step). Only the student or a parent sets
+   it; it's for a student whose residency differs from the household's (a split household, a recent move).
+2. **The household's address** (`household_homes`, read as `stateOfHome`). Attached to the profile when it's read as a
+   read-only `homeState` (`withHomeState`: `profilesICanSee` for the site, `homeStateForStudent` in lib/home-state.ts
+   for the estimate snapshot and the admin standing view). Never stored, so a family that moves is read from its new
+   address. The Basics step shows "Using your household's address: New York" under an empty state field.
+3. **The high school's state** (the model's own fallback, lib/chances/model.ts `ownerReading`), with the note "Using
+   your high school's state, New York; add yours if different."
+`residencyState(profile)` in lib/student-profile.ts returns steps 1–2 and their source; `estimateInputFromProfile`
+passes its state to the model, which applies step 3 when it's null.

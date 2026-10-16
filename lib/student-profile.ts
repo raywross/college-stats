@@ -665,6 +665,13 @@ export interface StudentProfileData {
   story: StudentStory | null;
   /** Plan v3 (guides/recommenders.md "Stored"): the teachers picked or asked, at most RECOMMENDERS_MAX. Visible to a guardian. */
   recommenders: RecommenderEntry[];
+  /**
+   * The household's state, read from its home address when the profile is read (lib/student-profile-store.ts
+   * profilesICanSee; lib/home-state-server.ts for the server-side readers). Never stored: sanitizeProfile drops it, so
+   * a family that moves is read from its new address. The estimate resolves residency as: the state entered on the
+   * record (`basics.stateOfResidence`), else this, else the high school's state (lib/chances/model.ts ownerReading).
+   */
+  homeState?: string | null;
 }
 
 /** Longest story kept. */
@@ -772,15 +779,23 @@ export function guardianStoryLine(firstName: string | null, written: boolean): s
  * redacted for a guardian (lib/student-profile-store.ts profilesICanSee calls this on every row it returns).
  */
 /**
- * A record with no state of residence reads the household's address (owner, 2026-10-16: "Maya has a high school in New
- * York and an address for her household in New York as well. So the system should know."). Applied where profiles are
- * read (lib/student-profile-store.ts profilesICanSee), so every reader gets it: the estimate, Explore's levels, the
- * record, the Basics step pre-filled; the next save of the record stores it. A state the student entered always wins;
- * with neither, the estimate still falls back to the high school's state.
+ * Attaches the household's state to a profile as it's read (owner, 2026-10-16: "Household address should be the
+ * priority but if it's not there it should fall back to high school"). Read-only (`homeState`, never stored), so the
+ * record's own field keeps meaning "a state the student entered" and a move is picked up from the new address.
  */
 export function withHomeState(data: StudentProfileData, homeState: string | null): StudentProfileData {
-  if (data.basics.stateOfResidence || !homeState) return data;
-  return { ...data, basics: { ...data.basics, stateOfResidence: homeState } };
+  return { ...data, homeState: homeState ?? null };
+}
+
+/**
+ * The state the estimate treats as the student's residency, and where it came from: the record's own entry, else the
+ * household's address, else the high school's state (the model applies the last one itself, since only it knows the
+ * high school's state; lib/chances/model.ts ownerReading). Exported for the record's display and the tests.
+ */
+export function residencyState(p: Pick<StudentProfileData, "basics" | "homeState"> | null): { state: string | null; source: "record" | "home" | null } {
+  if (p?.basics.stateOfResidence) return { state: p.basics.stateOfResidence, source: "record" };
+  if (p?.homeState) return { state: p.homeState, source: "home" };
+  return { state: null, source: null };
 }
 
 export function profileForViewer(data: StudentProfileData, relation: "self" | "guardian"): StudentProfileData {

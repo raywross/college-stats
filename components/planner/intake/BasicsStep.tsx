@@ -120,6 +120,10 @@ export function BasicsStep({ draft, setDraft }: { draft: IntakeDraft; setDraft: 
       <div className="space-y-2.5">
         <FieldLabel>State of residence</FieldLabel>
         <StateField value={draft.stateOfResidence} onChange={(v) => setDraft({ ...draft, stateOfResidence: v })} />
+        {!draft.stateOfResidence && draft.homeState && (
+          // The estimate reads the household's address when no state is entered (owner, 2026-10-16); say so.
+          <p className="text-sm text-muted-foreground">Using your household&apos;s address: {placeLabel(draft.homeState)}. Pick a state only if yours is different.</p>
+        )}
       </div>
 
       <div className="space-y-2.5">

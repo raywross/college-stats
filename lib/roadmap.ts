@@ -159,6 +159,16 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
+    slug: "record-reading",
+    file: "specs/planner/record/reading.md",
+    group: "record",
+    summary: "The record says what Quad's estimate is working from right now, and a college you might add shows its level before it's on the list.",
+    complexity: 2,
+    complexityNote: "One section on the overview from the built estimate notes, a small levels route, and the level chip on the add-college search results.",
+    status: "planned",
+    after: ["record-steps"],
+  },
+  {
     slug: "record-less-text",
     file: "specs/planner/record/less-text.md",
     group: "record",

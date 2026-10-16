@@ -1,6 +1,6 @@
 # Part 2, The Major Picker
 
-> Status: **planned** 2026-10-16. A step of [steps.md](steps.md) (step 8) and the overview's Major row. Part 2 of
+> Status: **built** 2026-10-16 (PR #165). A step of [steps.md](steps.md) (step 8) and the overview's Major row. Part 2 of
 > [Your record](README.md). The owner: "Choosing a major goes in the guided section, it should be another section. The way
 > it's entered should work the way the other entry works: you type and there are a few common choices you can click. You
 > should be able to choose more than one."
@@ -41,7 +41,14 @@ Picked:  ✕ Engineering (first choice)   ✕ Computer science
 - No "popularity" number shows; the common chips are a fixed, ordered list.
 - Telemetry: `record_major_picked { count }` (never the major).
 
-## Files (planned)
+## Files
 `lib/majors-search.ts` (pure: `MAJOR_ALIASES`, `POPULAR_MAJORS`, `searchMajors`), `components/planner/intake/MajorStep.tsx`,
 `components/planner/intake/MajorChips.tsx` (the picked list with reorder), the intake draft's `majors: MajorFamily[]`.
 Tests: `tests/majors-search.test.mts` (aliases, exclusion, the cap, name matches, every alias resolves to a real family).
+
+## As built by R2
+- Eight popular majors as chips before any typing; a pick removes it from the common set
+- Search input with six results, alias matches shown in muted text
+- Up to three majors picked with "First choice" label, arrow reorder, and ✕ remove
+- Native HTML5 drag-and-drop on the picked list, with no touch-drag fallback (arrows cover phones)
+- `record_major_picked { count }` fired on every pick, never on reorder or remove

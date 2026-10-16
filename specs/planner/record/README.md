@@ -1,8 +1,8 @@
 # Your Record: One Place to Enter Everything, and Three Things Ranked
 
-> Status: **planned** 2026-10-16 from the owner's review of the plan v3 preview (PR #165). Overview of the record specs
-> (not a work item itself). Changes the intake ([../redesign/intake.md](../redesign/intake.md)), the household Numbers
-> tab ([../../product/household-hub.md](../../product/household-hub.md)), and how Now picks its three cards
+> Status: **built** 2026-10-16 (PR #165). Overview of the record specs (not a work item itself). Changes the intake
+> ([../redesign/intake.md](../redesign/intake.md)), the household Numbers tab
+> ([../../product/household-hub.md](../../product/household-hub.md)), and how Now picks its three cards
 > ([../v3/now.md](../v3/now.md)); each part below says what it replaces.
 
 ## Why
@@ -82,10 +82,21 @@ Steps first (the record's shape, the overview, the routes); the major picker is 
 final copy. Build with the `build-roadmap-section` skill, one unit per part (steps split in two: the data and routes, then
 the overview and steps' UI).
 
-## Open questions for the owner
+## Open questions for the owner (answered)
 1. **The name.** "Your record" is the proposal (one constant to change). Alternatives: "About you", "Your profile".
+   **Adopted: "Your record."**
 2. **How many majors.** Three today (`MAX_INTENDED_MAJORS`); the owner said "more than one". Recommendation: keep three
    (the estimate's major reading and the likeness fact use the first; three keeps the list honest).
+   **Adopted: three majors.**
 3. **The cost limit's home.** It is a parent's fact (the walk-away number) stored on the student's preferences.
    Recommendation: in the Where you'd go step, labeled "The most your family would pay in a year (a parent can fill this
    in)", editable by a guardian with edit access.
+   **Adopted: in the Where you'd go step, parent's field.**
+
+## As built by R1a–R6
+- Four record specs and reading.md all built, with all role-gated access and merge-and-verify green light
+- The name "Your record" is `RECORD_LABEL` in `lib/planner/record.ts`; changing it changes the UI everywhere
+- The major picker handles three families maximum with aliases and the eight common families as chips
+- Importance ranking sorts moves by season, deadline, and move kind; "story" and "pick recommenders" open summer before senior year
+- Every screen now opens with one line; longer text lives behind folds and info icons
+- The record overview replaces the Numbers tab; "Parents can edit" moved to /account

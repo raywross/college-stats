@@ -1,6 +1,6 @@
 # Part 5, How Quad Reads Your Record
 
-> Status: **planned** 2026-10-16. Reads the estimate ([../../chances/estimate.md](../../chances/estimate.md) "What
+> Status: **built** 2026-10-16 (PR #165). Reads the estimate ([../../chances/estimate.md](../../chances/estimate.md) "What
 > families see"; `lib/chances/what-went-in.ts`) on the record overview ([steps.md](steps.md)) and beside every college
 > offered for the list ([../v3/guides/list-size.md](../v3/guides/list-size.md), the add-college search). Part 5 of
 > [Your record](README.md). The owner: "Score the current student calculation on the record and recalculate it as they
@@ -55,7 +55,7 @@ HOW QUAD READS YOUR RECORD RIGHT NOW                                            
 - Telemetry: `record_reading_shown { inputs: number, missing: boolean }`, `plan_add_level_shown { level }`; never a
   college.
 
-## Files (planned)
+## Files
 `components/record/RecordReading.tsx` (server), `lib/planner/record-reading.ts` (pure: `readingLines(estimates,
 student, profile)` over `yourNumbersList`, `mostUsefulMissing`, the level counts), `app/api/plan/levels/route.ts`,
 `components/planner/AddCollegeBox.tsx` (the chip, the fetch), `components/chances/StandingCard.tsx` (the record link),
@@ -63,6 +63,17 @@ student, profile)` over `yourNumbersList`, `mostUsefulMissing`, the level counts
 an empty list; no number from the estimate in any string), `tests/planner-levels-route.test.mts` (the cap; access
 denied → 404; levels only in the response).
 
-## Open questions
+## Open questions (answered)
 1. Should the add-college results also show the chip for a signed-out visitor with local numbers? Recommendation: not
    now (the local plan is read client-side; the estimate runs on the server).
+   **Adopted: signed-out plan left for later.**
+
+## As built by R6
+- Record Reading section on overview under "How complete is this" shows working-from inputs, missing input, and list count breakdown
+- `readingLines` pure function reads inputs from estimate notes via `InputKind` union and maps missing inputs to record sections
+- "activities" input maps to Sports section (first activity step) as a tie-break choice
+- Level chip on add-college search results with "sorted" fallback when profile has no grades or test
+- `/api/plan/levels` route caps at 12 colleges, returns levels dict and sorted flag; 404 for inaccessible student
+- AddCollegeBox sends levels fetch on each result set and shows chip at right of college row (name/city truncate first)
+- StandingCard "Add your numbers" link now targets record page directly (via `studentId`)
+- `record_reading_shown` and `plan_add_level_shown` telemetry track what inputs are used and what levels appear

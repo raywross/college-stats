@@ -1,6 +1,6 @@
 # Part 4, Less Text on Every Screen
 
-> Status: **planned** 2026-10-16. A rule and a per-screen list across the record's steps ([steps.md](steps.md)), the
+> Status: **built** 2026-10-16 (PR #165). A rule and a per-screen list across the record's steps ([steps.md](steps.md)), the
 > guides ([../v3/guides/](../v3/guides/)), and the plan's tab. Part 4 of [Your record](README.md). The owner: "On each of
 > the screens, less explanatory text when the screens come up. It's great information and instruction, but put that stuff
 > in collapsed areas or info icons, whatever works best for the section."
@@ -38,6 +38,20 @@
 - Tests: a source-level guard per guide and step that the text above the first control is at most two elements (the
   title and the lead), listing the file and the selector it checks.
 
-## Files (planned)
+## Files
 `components/ui/why-fold.tsx`, edits in every guide and step named above, `lib/analytics.ts` (`plan_why_opened`),
 `tests/planner-less-text.test.mts`.
+
+## As built by R4
+- `WhyFold` component with two renderings: full row with chevron for guide sections, compact "?" for headline rows
+- `WhyFold` fires `plan_why_opened { screen, section }` once per open via useRef guard
+- Tour steps show headline + why-icon on one line, then the one-line description
+- Activities steps look up step's line and why from `RECORD_STEPS` instead of per-step copy
+- Record overview lead line unchanged ("Everything a college reads about you, in one place")
+- List guide: season sentence moves to "Why this shape" sheet
+- Interest guide: per-section sentences fold under section title (new `note` prop on `Section`)
+- Test guide: Study section folds under "How much to study"
+- Story guide: two folds ("Depth and breadth", "What your record says so far")
+- Recommenders guide: "What to think about" and "How to ask" fold, teachers list first
+- ED sheet: "What {college} reports" and caveat fold under one title
+- All fold bodies keep original content unchanged; only wrapper and classes changed

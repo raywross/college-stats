@@ -91,3 +91,9 @@ the move opens in March of junior year and not in fall; two Asked ticks it; the 
 - The "What your colleges ask for" line cites `recommendations_count` per college (the student's own entry, not a dataset fact, so carries no lineage citation).
 - Advisor sources are plain links (College Board, NACAC). Reset lives in the Numbers page's edit panel.
 - Not built: linking an Invited status to a college's `recommendation` tasks.
+
+## Changed (2026-10-16)
+The owner: "same thing with pick your recommenders" (not before the summer before senior year). The `pick_recommenders`
+entry moves to `summer_before_senior` (importance 68 there, 75 in senior fall; [../../record/ranking.md](../../record/ranking.md));
+the teachers list is also a step of the record's tour ([../../record/steps.md](../../record/steps.md), step 12) and a row
+on the record overview, which links this guide. The Numbers page's link to this guide is gone with that page.

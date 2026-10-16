@@ -198,3 +198,9 @@ Rounds are unchanged: still the student's own once picked.
   kinds of inputs only.
 - Whether AP courses or the target score should feed the grouping (the design's open question): not yet; the target
   drives only the Scores tab's line.
+
+## Superseded (2026-10-16): Your record
+The guide is now the record's tour, **Your record** ([../record/steps.md](../record/steps.md)): thirteen steps (the nine
+here plus Major, Basics, Where you'd go, Your story, Recommenders), the Numbers tab's fields folded in, an overview page
+with "How complete is this", and `?record=1` as the edit-mode switch (`setup=1` still works). Every built step's rules
+above stand.

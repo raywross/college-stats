@@ -191,3 +191,7 @@ In addition to the [product rules for user data](../product/README.md#shared-rul
 ## Open questions for the owner
 None at the overview level as of 2026-10-07; each spec keeps its own small ones. The two that were here (the text
 provider, the letter threshold) were decided the same day and are recorded above.
+
+**Your record (2026-10-16):** one guided entry for everything about the student (the intake plus the Numbers tab, with
+major, basics, where you'd go, story, and recommenders as steps), a record overview with "How complete is this", an
+importance ranking for Now's three cards, and less text on every screen; see [record/README.md](record/README.md).

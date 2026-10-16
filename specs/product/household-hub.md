@@ -461,3 +461,9 @@ The owner's first pass at the planner: *a parent should be able to make changes 
   household's student). The per-guardian choice in the person menu remains for finer control.
 - **Unchanged:** a managed student (no account) is edited by whoever manages them; the student's own account, text
   consent, and follows stay the student's alone.
+
+## Changed (2026-10-16): the Numbers tab becomes the record
+The Numbers tab (`/household/[person]/numbers`, the profile form and completeness meter) is replaced by **Your record**
+(`/household/[person]/record`, [../planner/record/steps.md](../planner/record/steps.md)): the overview with "How complete is
+this" and Edit per section, each opening the plan's guided tour at that step. The segmented control reads **Plan | Record**;
+`/numbers` redirects. "Parents can edit: the student's switch" moves to `/account`, under Household.

@@ -52,9 +52,18 @@ export type RoadmapGroupKey =
   | "business"
   | "apps"
   | "ideas"
-  | "later";
+  | "later"
+  // Your record (specs/planner/record/README.md): one guided entry for everything about the student, an importance
+  // ranking for Now, less text on every screen (owner review of the plan v3 preview, 2026-10-16).
+  | "record";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
+  {
+    key: "record",
+    title: "Your record",
+    description:
+      "One place to enter everything about the student, an overview of how complete it is, three things to do ranked by importance, and less text on every screen.",
+  },
   {
     key: "planning",
     title: "Planning tools",
@@ -121,6 +130,44 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
+  {
+    slug: "record-steps",
+    file: "specs/planner/record/steps.md",
+    group: "record",
+    summary: "Your record: one guided tour for grades, tests, courses, activities, connections, major, basics, where you'd go, your story, and recommenders, with an overview of how complete it is.",
+    complexity: 3,
+    complexityNote: "Five new tour steps, the Numbers tab's fields folded in, a new overview page and route, and the people line, person header, and account page updated.",
+    status: "planned",
+  },
+  {
+    slug: "record-majors",
+    file: "specs/planner/record/majors.md",
+    group: "record",
+    summary: "Pick up to three majors by typing, with the common ones one tap away.",
+    complexity: 1,
+    complexityNote: "A search over the major families with aliases and a chip list that reorders.",
+    status: "planned",
+    after: ["record-steps"],
+  },
+  {
+    slug: "record-ranking",
+    file: "specs/planner/record/ranking.md",
+    group: "record",
+    summary: "Every move gets an importance; Now shows the three highest that apply, and the next surfaces as one closes.",
+    complexity: 2,
+    complexityNote: "A table of base importance by move with timing and season rules, the sort behind Now, and the story and recommenders moves retimed to the summer before senior year.",
+    status: "planned",
+  },
+  {
+    slug: "record-less-text",
+    file: "specs/planner/record/less-text.md",
+    group: "record",
+    summary: "Every plan screen opens with a title and one line; the explanations fold.",
+    complexity: 1,
+    complexityNote: "A fold component and copy edits across the tour's steps and the six guides, with a guard test per screen.",
+    status: "planned",
+    after: ["record-steps"],
+  },
   {
     slug: "chances-and-fit",
     file: "specs/product/chances-and-fit.md",
@@ -411,6 +458,7 @@ export const ROADMAP: RoadmapSpec[] = [
 
 /** Readable background pages that aren't work items themselves (linked from the roadmap, not ranked). */
 export const ROADMAP_OVERVIEWS: { slug: string; file: string; title: string }[] = [
+  { slug: "record", file: "specs/planner/record/README.md", title: "Your record overview: the owner's review of the plan v3 preview, the name, the four parts, and the build order" },
   { slug: "plan-v3", file: "specs/planner/v3/README.md", title: "Plan v3 overview: the owner's review of Next steps, the nine parts, the design principles, and the build order" },
   { slug: "next-steps", file: "specs/planner/next-steps/README.md", title: "Next steps overview: the research into how advisors run the process, the design principles, the seven parts, and the build order" },
   { slug: "planner-redesign", file: "specs/planner/redesign/README.md", title: "Planner redesign overview: the owner's review, the research, the design principles, and what stays and goes" },

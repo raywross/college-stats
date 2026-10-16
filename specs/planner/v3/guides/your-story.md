@@ -86,3 +86,9 @@ guardian redaction; the cap).
 - A guardian's StorySection on the Numbers page shows the status line plus a link to the guide (not the full story).
 - `StoryCard` is deleted; the story move renders `MoveCard` with the guide button.
 - QA fix (2026-10-16): the guardian's one line is now `guardianStoryLine(firstName, written)` (`lib/student-profile.ts`), shared by `StoryGuide.tsx` and `components/me/StorySection.tsx`. A name takes "has"/"hasn't"; with no name it falls back to "Your student", never the ungrammatical "They has written their story."
+
+## Changed (2026-10-16)
+The owner: "it probably doesn't need to be filled out until the summer before senior year." The `story` move's season
+is `summer_before_senior` (carrying into senior fall) with its importance in [../../record/ranking.md](../../record/ranking.md);
+the story is also a step of the record's tour ([../../record/steps.md](../../record/steps.md), step 11) and a row on the
+record overview, which links this guide. The guide stays reachable any time.

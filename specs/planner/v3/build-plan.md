@@ -520,3 +520,81 @@ release note, push, and the PR for the owner's review on the Vercel preview. Not
    `PlanRow.tsx`), `plan_rail_opened` and `plan_rail_added` (U3, `CollegeRail.tsx`); each owner deletes its event.
 10. **Tests**: the catalog's words guard is shared as `tests/helpers/copy-guard.mts` (`numberProblems`); use it for any
     guide's words. Test fixtures that build a `PlanTask` need `dismissed_at: null, dismissed_by: null`.
+
+## As built by waves 1 and 2 (U2a, U2b, U3, U4, U5, U6, U7, U8, U9)
+Filled by the lead from the unit reports; U10 copies what concerns each spec into its "As built" section.
+
+- **Connections (U2a):** intake step 6 Connections, Other 7, Review 8, Done 9 (`INTAKE_CONNECTIONS`); `IntakeDraft.connections`,
+  `newIntakeConnection`, `sanitizeIntakeConnections` (unit ids format-checked, 1–10 digits); `reviewLines` takes an optional
+  `names` map for the Connections line; `ProfileSection` has eleven sections (`connections` after `work`); the state-ban line
+  shows on the step itself (`SchoolIndexEntry` carries `state` and `type`); `listColleges` computed inside `PlanIntake` from
+  `ctx`; `ConnectionsForm` sits after the story section on the Numbers page; `connectionSentence` in `lib/student-profile.ts`;
+  `hooksFromPlan(items, visits, profile)` reads `academics.connections` only (row columns ignored); the standing card reads
+  `connectionFor`; `scripts/backfill-connections.mts` (`npm run backfill-connections [-- --dry-run]`) ran on dev 2026-10-16
+  (one student, one sibling connection). The three `setItem*` setters were removed by the lead at merge.
+- **The row (U2b):** `PlanRow` is heart · crest+name · one pill (`ReactNode`) · status word · trash (`Trash2`, 44px,
+  `aria-label="Remove {name} from the list"`); `RowDrawer.tsx`, the `AboutYouAndCollege` component, `rowToDo`, and
+  `plan_drawer_opened` are gone; `RowControls.tsx` and `components/planner/row/*` stay (the Lists page's `ListPage.tsx` renders
+  them); `AboutYouAndCollege.tsx` keeps only `AddToListForHooks` (the standing card's). `EdSheetDialog` wraps `EdSheet` in
+  `SheetDialog`; `EdPill` owns the dialog state (`openInitially`); `PlanList` opens it for `?row=&panel=ed`; the sheet's
+  "Visit before you decide" links the interest guide. `InterestPill` is a `Link` to the interest guide. `MoveCard`'s `open_row`
+  renders a button only for `panel: "ed"`. The old drawer-only "ED offered; no counts published" notice for non-candidate rows
+  has no row-level home now (accepted scope reduction).
+- **Build your list (U3):** `lib/planner/list-guide.ts` holds the pure half and the data types (`ListGuideData`,
+  `GuideSection`, `FreshmanView`, `GuidePageResult`, `AlikeCard` with `level: StandingLevel | null`); `likenessSentence(anchorName,
+  result)` takes the likeness result; place matched by distance reads "nearby"; facts in the order character, place, setting,
+  size, control, major; the major fact reads `academics.bachelors_by_family`; character = same affiliation (Catholic, Jewish,
+  Latter-day Saint spelled; else NCES's label), both HBCU, both women's. `GUIDE_CANDIDATE_CAP` 200 estimated once per page so
+  folded sections show counts; sections come only from `shapeGaps` (Likely-or-Safe is one combined gap); `fallback: boolean` per
+  section (the near-home rail; distance from the list's colleges when home is unknown); the affordability gap stays hidden
+  (`excludeOverLimit` kept for later). `app/api/plan/list-guide/route.ts` POST `{ studentId, level, gap, offset }` or
+  `{ studentId, chips, offset }` (freshman view). The shape row stacks per level on phones, five columns from `sm`; cards scroll
+  inside their own box on phones, grid from `md`. "Explore with your numbers" → `/explore?mySAT=…&myACT=…` for the student,
+  plain `/explore` for a guardian. `plan_shape_gap_shown` fires from the guide; `plan_guide_added {level, likeness}`.
+  `AddCollegeBox` moved to `components/planner/AddCollegeBox.tsx`. `CollegeRail`, `ShapeCard`, `rail.ts`, `rail-server.ts`,
+  `/api/plan/rail`, `plan_rail_opened/added` are gone; `shape_gap`/`shape_cost` render `MoveCard`.
+- **Show interest (U4):** `lib/planner/interest-acts.ts` (pure), `interest-guide.ts` (pure: events shown, the C7 sentence,
+  the logged line, the overview order), `interest-acts-server.ts` (server-only: `writeConfirmedAct` the one confirm writer,
+  `expireInterestActs`, `runInterestConfirm`), `store-interest.ts` (`recordAct`, `markPrompted`, `resolveAct`, `pendingActs`),
+  `interest-guide-server.ts` (`loadInterestGuide`: `eventsForUnit` + `myMeasuringPoint` + the family's radius; two near-you
+  events then on-campus, four in all). `recordAct` checks `can_edit_item`; only the student records a follow. Event kind → act:
+  tour, info_session, open_house, travel → fair, online/other → event; a confirmed act maps back through `planVisitKind`
+  (tested). The visit-page link records an undated `tour`; Yes opens the visit form for the date; a virtual-tour link isn't
+  tracked. `resolveAct`'s extra accepts the visit kind, who, and notes. **The email's Yes/No links open a page with one button**
+  (a scanner's prefetch writes nothing; two taps, not one). Cron `app/api/cron/interest-confirm/route.ts` at `30 13 * * *`:
+  expiry first, then one email per person with `your_week !== false`, address via `auth.admin.getUserById`, footer = the Your
+  week unsubscribe; `plan_interest_confirmed`/`plan_interest_expired` are server events too (`action` property). Event times
+  are printed in the event's zone via `visit_events.timezone`; no zone → date only. `VisitForm` gained an optional `onSubmit`;
+  its inputs are still 14px inside the sheet (QA item). `lib/account-export.ts` exports acts without the token.
+- **Reach your score (U5):** `lib/planner/test-guide.ts` (`SCORE_LAG`, `datesFor`, `inTimeText` over `{ name, round, iso }[]`
+  per college's chosen round, `registerByText`, `standingCounts` via `readScore`/`positionIn` through `scoreAt`, `resourcesFor`,
+  `plannedState`); `toggleRegisteredDate` (pure, `plan-writes.ts`) + `setRegisteredDate` (`store-plan.ts`); `writeConfirmedAct`'s
+  `test_register` branch uses the pure toggle (it runs under three clients); a guardian's confirmed registration resolves the
+  student through `studentForTestRegister` (the one household child with that date's `test_register` task open; ambiguous or
+  none → nothing written). `plan_test_date_picked {test}` re-added. The no-target fallback to the retake notice is not built
+  (owner question).
+- **Your story (U6):** `lib/planner/story-guide.ts` (`storyStarters(majorName)`, `appendStarter`, `crossesStoryDone(before,
+  after)`: the auto-tick fires only on the save that crosses 200, tracked in a ref seeded from the saved length); `StoryGuide`
+  renders every `activitiesReading` note and every track sentence; `StorySection` on the Numbers page is the status line plus
+  a link to the guide; `StoryCard` deleted; glossary `depth` under "How we measure".
+- **Choose APs (U7):** `lib/planner/courses-guide.ts` (`courseRows`, `nextYearCourses`, `kindMark`; status recomputed through
+  `yearStatus`); `CoursesGuide` restores `NextYearCard`'s suggestion UI (that file is deleted; `playbook` renders `MoveCard`);
+  `loadCoursesGuide` runs `coursePlanViewFor` regardless of the window plus `courseTracks`; the depth tie-in line "A fourth
+  year makes this a deep track."; "not on your school's list" compares against `academics.schoolOffers`; once `plan.done` the
+  Suggested section hides; the Numbers page's links live in `components/me/ProfileForm.tsx` (`EditInThePlan`). `ctx.coursePlan`
+  in `lib/planner/load.ts` is now unused (follow-up cleanup).
+- **Recommenders (U8):** `lib/planner/recommenders.ts` (`orderRecommenders`, `nextRank`, `moveRank`, `setStatus` — forward
+  only, dated once, explicit reset to thinking clears dates, thinking may jump to agreed; `subjectsFrom`, `collegesAskLine`
+  returning `{ text, cites: unitIds }` since `recommendations_count` is the student's own per-college entry, not a dataset
+  fact, so it carries no lineage citation; `thankSeason`, `yearsLabel`, `THINK_ABOUT`, `HOW_TO_ASK`); `saveRecommenders`
+  reads the stored profile (not the guardian-redacted copy) so a guardian's save never blanks the story; advisor sources as
+  plain links (College Board, NACAC); reset lives in the row's edit panel. Not built: linking an Invited status to a college's
+  `recommendation` tasks (an entry carries no college).
+- **The parent's Next steps (U9):** `seasonRows`, `comingUpRows`, `parentSafeTitle` (a `reach_score_*` row reads "Work toward
+  the target score", never the number), `SeasonRowState`/`SeasonRow` in `moves.ts`; `ParentNextSteps.tsx` exports
+  `GuardianNextSteps`: Your part → "{First}'s season" (Now and Next rows only) → "Coming up · {next season} (n)" open →
+  "Done and skipped this season" folded with Bring back; `ParentSummaryStudent.skipped?: string[]` and the summary's one
+  skipped line, threaded in `app/api/cron/weekly/route.ts` (dismissed within seven days).
+- **Lead, at merge:** `list-guide-server.ts` passes `ctx.profile` to `hooksFromPlan`; `guides-server.ts` conflicts resolved by
+  keeping every import and entry; `verify-u4.log` was cut off mid-run under load (node --test killed), covered by the wave 1
+  rerun (3,790 pass). Dev: migration applied 2026-10-16; backfill run.

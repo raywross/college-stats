@@ -96,6 +96,10 @@ function EditInThePlan({ studentId }: { studentId: string }) {
         <Link href={guideHref("courses", { person: studentId, from: "numbers" })} className="text-sm font-semibold text-primary hover:underline">
           Choose next year&apos;s courses
         </Link>
+        {/* Plan v3 (specs/planner/v3/guides/test-prep.md): the test guide, reachable from here too, not only its own move. */}
+        <Link href={guideHref("test", { person: studentId, from: "numbers" })} className="text-sm font-semibold text-primary hover:underline">
+          Reach your score
+        </Link>
         <Link
           href={planHref({ person: studentId, setup: true })}
           className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"

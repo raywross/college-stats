@@ -12,6 +12,8 @@
  * ed-opportunities,interest}.ts), with their words in MOVE_TEXT.
  *
  * Wording: a why is a fact or an advisor placement ("Advisors place this in junior spring"), never "you should".
+ * A title may hold `{target}` (plan v3 review note 8): `playbookTask` fills it from the profile, and skips the entry
+ * when it can't.
  * Pure; safe in server code, client components, and tests.
  */
 import { SECTION_STEP, sectionDone, PROFILE_SECTIONS } from "./profile-progress.ts";
@@ -116,7 +118,8 @@ function earlyYears(season: "freshman" | "sophomore"): PlaybookEntry[] {
       why: "A practice run on the real format. Only the junior-year PSAT counts toward National Merit.",
       who: "student",
       carries: false,
-      applies: "always",
+      // Plan v3 (now.md "Timing rules"): no practice test for a student with a real score.
+      applies: "no_real_score",
       action: () => PSAT_PAGE,
       window: OCTOBER,
       source: "advisors",
@@ -143,6 +146,26 @@ function earlyYears(season: "freshman" | "sophomore"): PlaybookEntry[] {
       carries: false,
       applies: "always",
       action: nearestVisit,
+      source: "advisors",
+    },
+  ];
+}
+
+/**
+ * "Work toward your {target}" (plan v3 review note 8; guides/test-prep.md): one entry per season from junior fall to
+ * senior fall, so each season's skip is its own. Only below the student's own target; the test guide is the button.
+ */
+function reachScore(season: "junior_fall" | "junior_winter" | "junior_spring" | "summer_before_senior" | "senior_fall"): PlaybookEntry[] {
+  return [
+    {
+      key: `reach_score_${season}`,
+      season,
+      title: "Work toward your {target}",
+      why: "Your target is your own. The dates below are the ones whose scores would arrive in time.",
+      who: "student",
+      carries: false,
+      applies: "below_target",
+      action: () => null,
       source: "advisors",
     },
   ];
@@ -216,7 +239,8 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     why: "The junior-year PSAT is the one that counts toward National Merit, and a practice run for the SAT.",
     who: "student",
     carries: false,
-    applies: "always",
+    // Plan v3 review note 9 (overview question 4): dropped too for a student with a real score.
+    applies: "no_real_score",
     action: () => PSAT_PAGE,
     window: OCTOBER,
     source: "advisors",
@@ -254,22 +278,12 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     action: nearestVisit,
     source: "interest",
   },
-  {
-    key: "notice_teachers",
-    season: "junior_fall",
-    title: "Notice two teachers you'd ask to write for you",
-    why: "Junior-year teachers in core subjects know your work best. The asking comes in spring.",
-    who: "student",
-    carries: true,
-    applies: "always",
-    action: () => TICK,
-    source: "advisors",
-  },
+  ...reachScore("junior_fall"),
   {
     key: "story",
     season: "junior_fall",
     title: "Write your story",
-    why: "Three short prompts. The counselor's questionnaire and the essay both start from them.",
+    why: "One page in your own words. The counselor's questionnaire and the essay both start from it.",
     who: "student",
     carries: true,
     applies: "story_missing",
@@ -289,6 +303,7 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     source: "advisors",
   },
   // Junior winter (Jan–Feb).
+  ...reachScore("junior_winter"),
   {
     key: "register_spring_test",
     season: "junior_winter",
@@ -349,6 +364,19 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     source: "advisors",
   },
   // Junior spring (Mar–May).
+  ...reachScore("junior_spring"),
+  {
+    key: "pick_recommenders",
+    season: "junior_spring",
+    title: "Pick your recommenders",
+    why: "Junior-year teachers in core subjects know your work best. Advisors say ask before summer, while they remember it.",
+    who: "student",
+    carries: true,
+    applies: "recommenders_open",
+    // The recommenders guide is the button (lib/planner/guides.ts).
+    action: () => null,
+    source: "advisors",
+  },
   {
     key: "spring_break_visit",
     season: "junior_spring",
@@ -372,6 +400,7 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     source: "story",
   },
   // Summer before senior year (Jun–Jul).
+  ...reachScore("summer_before_senior"),
   {
     key: "list_cost",
     season: "summer_before_senior",
@@ -384,6 +413,7 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     source: "advisors",
   },
   // Senior fall (Aug–Dec).
+  ...reachScore("senior_fall"),
   {
     key: "review_before_submit",
     season: "senior_fall",
@@ -446,7 +476,7 @@ export const SEASON_EXPLAINER: Record<Season, { lead: string; paragraph: string;
   junior_fall: {
     lead: "Junior year is when the plan starts.",
     paragraph:
-      "The PSAT/NMSQT in October, a first test date, and a list that grows toward something to visit and cut. Notice the teachers who know your work, and write your story while there's no deadline.",
+      "The PSAT/NMSQT in October, a first test date, and a list that grows toward something to visit and cut. Write your story while there's no deadline.",
     next: "Next: junior winter, when you register for a spring test and choose senior-year courses.",
   },
   junior_winter: {
@@ -522,5 +552,5 @@ export const MOVE_TEXT: Record<string, { title: string; why: string }> = {
   compare_offers: { title: "Compare your offers", why: "Side by side, the cost after grants is what differs most." },
   decide_by: { title: "Decide by May 1", why: "The national reply date, unless a college published its own." },
   outcome_share: { title: "Tell us where you landed", why: "It helps the next class's estimate. What's shared: the college, the round, the outcome, and your state; never your name." },
-  story: { title: "Write your story", why: "Three short prompts. The counselor's questionnaire and the essay both start from them." },
+  story: { title: "Write your story", why: "One page in your own words. The counselor's questionnaire and the essay both start from it." },
 };

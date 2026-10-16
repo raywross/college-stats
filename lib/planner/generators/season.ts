@@ -25,7 +25,7 @@ import { nextSeason, seasonBounds, seasonRank, type Season } from "../seasons.ts
 import { addDays } from "../stage.ts";
 import { taskKey } from "../tasks.ts";
 import type { GeneratedTask, GeneratorInput, PlanItem, PlanSchool, PlanVisit } from "../types.ts";
-import { storyMissing, type StudentProfileData } from "../../student-profile.ts";
+import { recommendersAsked, storyMissing, type StudentProfileData } from "../../student-profile.ts";
 import { STALE_DAYS } from "./cycle.ts";
 
 export type MoveApplies =
@@ -44,7 +44,12 @@ export type MoveApplies =
   | "cost_limit_unset"
   // Additions beyond the brief (U1): any profile section missing; a chosen test with no date picked yet.
   | "profile_incomplete"
-  | "test_unplanned";
+  | "test_unplanned"
+  // Plan v3 (build-plan.md "Catalog and applies"): no real SAT/ACT score yet; a score below the student's own target;
+  // fewer than two recommenders asked.
+  | "no_real_score"
+  | "below_target"
+  | "recommenders_open";
 
 export const MOVE_APPLIES: readonly MoveApplies[] = [
   "always",
@@ -62,6 +67,9 @@ export const MOVE_APPLIES: readonly MoveApplies[] = [
   "cost_limit_unset",
   "profile_incomplete",
   "test_unplanned",
+  "no_real_score",
+  "below_target",
+  "recommenders_open",
 ];
 
 /** What `moveApplies` reads, built once per regeneration. */
@@ -114,8 +122,35 @@ export function moveApplies(a: MoveApplies, facts: MoveFacts): boolean {
       return facts.shapeGaps.length > 0;
     case "cost_limit_unset":
       return (p?.preferences.maxAverageCost ?? null) === null;
+    case "no_real_score":
+      // now.md "Timing rules": an SAT total or ACT composite that isn't marked practice is a real score.
+      return !(p && (p.tests.satTotal !== null || p.tests.actComposite !== null) && !p.tests.practice);
+    case "below_target":
+      return belowTarget(p);
+    case "recommenders_open":
+      return recommendersAsked(p) < 2;
   }
   return false;
+}
+
+/**
+ * The `below_target` rule: the focus test is the SAT or ACT, its score is set (practice or real), the student has a
+ * target, and the score is below it.
+ */
+export function belowTarget(p: Pick<StudentProfileData, "tests"> | null): boolean {
+  if (!p || p.tests.target === null) return false;
+  const score = p.tests.focus === "sat" ? p.tests.satTotal : p.tests.focus === "act" ? p.tests.actComposite : null;
+  return score !== null && score < p.tests.target;
+}
+
+/**
+ * An entry's title with its placeholders filled (`{target}` from the profile's target), or null when one can't be
+ * filled: a title with an unfilled placeholder is never emitted (build-plan.md "Catalog and applies").
+ */
+export function fillTitle(title: string, profile: Pick<StudentProfileData, "tests"> | null): string | null {
+  const target = profile?.tests.target ?? null;
+  const filled = target === null ? title : title.replaceAll("{target}", String(target));
+  return /\{[a-zA-Z]+\}/.test(filled) ? null : filled;
 }
 
 /** Counts by level for the shape rules: every open row with an estimate's level; the rest are unsorted. */
@@ -180,11 +215,13 @@ export function playbookTask(entry: PlaybookEntry, input: GeneratorInput, positi
   if (builtInCycle(entry, range, input)) return null;
   const last = w ? ("due" in w ? w.due : w.end) : null;
   if (last !== null && last < addDays(input.today, -STALE_DAYS)) return null;
+  const title = fillTitle(entry.title, input.profile);
+  if (title === null) return null;
   return {
     key: taskKey(input.list.id, "playbook", entry.key),
     item_id: null,
     kind: entry.kind ?? "playbook",
-    title: entry.title,
+    title,
     detail: entry.why,
     due_on: w && "due" in w ? w.due : null,
     window_start: w && !("due" in w) ? w.start : null,

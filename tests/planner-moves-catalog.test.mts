@@ -49,10 +49,10 @@ test("no title, why, or explainer carries a percentage, a multiple, odds, chance
 });
 
 test("guard: the check fails on planted bad strings and passes the allowed ones", () => {
-  for (const s of ["A 35% admit rate", "Your odds are good", "2× the chance", "A good chance here", "You're likely to get in", "Apply to 3 more", "Admits 1 in 4", "You should visit"]) {
+  for (const s of ["A 35% admit rate", "Your odds are good", "2× the chance", "A good chance here", "You're likely to get in", "Apply to 3 more", "Admits 1 in 4", "You should visit", "Work toward your 1400"]) {
     assert.ok(numberProblems(s).length > 0, s);
   }
-  for (const s of ["Decide by May 1", "PSAT/NMSQT in October", "Build the list toward 15–20 to visit and cut", "Final list: 12–15", "Add a Likely you'd be happy at", "Oct 1–31", "ED II at {college}"]) {
+  for (const s of ["Decide by May 1", "PSAT/NMSQT in October", "Build the list toward 15–20 to visit and cut", "Final list: 12–15", "Add a Likely you'd be happy at", "Oct 1–31", "ED II at {college}", "Work toward your {target}"]) {
     assert.deepEqual(numberProblems(s), [], s);
   }
 });
@@ -85,6 +85,16 @@ test("every season has an explainer; juniors and seniors get the what-counts-nex
 test("MOVE_TEXT covers every rule unit's kind", () => {
   for (const k of ["ed_decide", "ed2_decide", "visit_ed", "show_interest", "shape_cost", "confirm_complete", "compare_offers", "decide_by", "outcome_share", "story"]) assert.ok(MOVE_TEXT[k], k);
   for (const g of ["likely_min", "affordable", "target_min", "reach_min", "over_max", "total_off"]) assert.ok(MOVE_TEXT[`shape_gap:${g}`], g);
+});
+
+test("plan v3: the catalog's only placeholders are {target} in titles; reach_score and pick_recommenders are in, notice_teachers is out", () => {
+  for (const e of PLAYBOOK) {
+    for (const m of e.title.matchAll(/\{([a-zA-Z]+)\}/g)) assert.equal(m[1], "target", `${e.key}.title`);
+    assert.doesNotMatch(e.why, /\{/, `${e.key}.why`);
+  }
+  assert.ok(PLAYBOOK.some((e) => e.title.includes("{target}")));
+  assert.ok(PLAYBOOK.some((e) => e.key === "pick_recommenders"));
+  assert.ok(!PLAYBOOK.some((e) => e.key === "notice_teachers"));
 });
 
 test("playbookEntryFor finds a task's entry by its key", () => {

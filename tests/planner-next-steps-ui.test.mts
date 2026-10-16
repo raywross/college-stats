@@ -371,7 +371,12 @@ test("PlanRow: the row carries an id for ?move= / #row- to scroll to", () => {
 test("The people line's Next: reads the loaded plan's top move first, the profile step otherwise", () => {
   const page = read("app", "plan", "page.tsx");
   assert.match(page, /topMove\(groups\)/);
-  assert.match(page, /nowMoves\(ctx\.tasks, \{ season: ctx\.season, gradYear: ctx\.gradYear, today: ctx\.today, viewer: ctx\.viewer\.isGuardian \? "guardian" : "student" \}\)/);
+  // R1b (ranking.md): the facts object (importanceFactsFrom) feeds nowMoves' importance sort.
+  assert.match(page, /importanceFactsFrom\(ctx, view\)/);
+  assert.match(
+    page,
+    /nowMoves\(ctx\.tasks, \{ season: ctx\.season, gradYear: ctx\.gradYear, today: ctx\.today, viewer: ctx\.viewer\.isGuardian \? "guardian" : "student", facts \}\)/,
+  );
   assert.match(page, /planHref\(\{ person, tab: "next", move: move\.id \}\)/);
   // Still there, unchanged: the profile-step fallback used for a child with no loaded plan (the other chips).
   assert.match(page, /planHref\(\{ person, setup: true, step: where \}\)/);

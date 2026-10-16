@@ -34,6 +34,7 @@ import type { PlanTabProps } from "@/components/planner/tabs/types";
 import { track } from "@/lib/analytics";
 import { guideFor } from "@/lib/planner/guides";
 import { comingUpRows, parentSafeTitle, seasonRows, skippedLabel, yourPartMoves, type SeasonRow } from "@/lib/planner/moves";
+import { importanceFactsFrom } from "@/lib/planner/importance-facts";
 import { nextSeason, SEASON_LABELS } from "@/lib/planner/seasons";
 import { dismiss, tick, undismiss, untick } from "@/lib/planner/store";
 import { dayLabel } from "@/lib/planner/tasks";
@@ -75,7 +76,8 @@ export function GuardianNextSteps({ ctx, view }: PlanTabProps) {
   const viewed = useRef(false);
 
   const viewerRole = "guardian" as const;
-  const seasonOpts = { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today };
+  const facts = importanceFactsFrom(ctx, view);
+  const seasonOpts = { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, facts };
   const yourPart = yourPartMoves(ctx.tasks, ctx.today);
   const rows = seasonRows(ctx.tasks, seasonOpts);
   const openRows = rows.filter((r) => r.state === "now" || r.state === "next");

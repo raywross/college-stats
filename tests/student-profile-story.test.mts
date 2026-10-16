@@ -140,7 +140,9 @@ test("story_filled is registered with a length band only (lib/analytics.ts)", as
 
 const LIST = "list-story-1";
 const G = 2028;
-const JUNIOR_FALL_DAY = "2026-11-15"; // mid junior_fall for the class of 2028 (tests/planner-season-generator.test.mts MID table)
+// R1b (specs/planner/record/ranking.md "Timing rules moved here"): the story move's season moved from junior_fall
+// to summer_before_senior, so the day used to generate it here moves too.
+const STORY_DAY = "2027-07-01"; // mid summer_before_senior for the class of 2028 (tests/planner-season-generator.test.mts MID table)
 
 function genInput(profile: StudentProfileData | null, over: Partial<GeneratorInput> = {}): GeneratorInput {
   return {
@@ -149,12 +151,12 @@ function genInput(profile: StudentProfileData | null, over: Partial<GeneratorInp
     schools: {},
     profile,
     cycle: loadCycle(cycleFor(G)),
-    grade: gradeOf(G, JUNIOR_FALL_DAY),
-    today: JUNIOR_FALL_DAY,
+    grade: gradeOf(G, STORY_DAY),
+    today: STORY_DAY,
     visits: [],
     offers: [],
     gradYear: G,
-    season: seasonOf(G, JUNIOR_FALL_DAY),
+    season: seasonOf(G, STORY_DAY),
     estimates: {},
     ...over,
   } as GeneratorInput;
@@ -175,16 +177,16 @@ test("the move closes through the real merge path (generate() + mergeTasks + app
   const round1 = generate(genInput(null));
   const merge1 = mergeTasks([], round1);
   assert.ok(merge1.upserts.some((u) => u.key === storyTaskKey));
-  let tasks: PlanTask[] = applyMerge(LIST, [], merge1, JUNIOR_FALL_DAY);
+  let tasks: PlanTask[] = applyMerge(LIST, [], merge1, STORY_DAY);
   const storyTask = tasks.find((t) => t.key === storyTaskKey)!;
   assert.ok(storyTask, "the task exists after the first merge");
-  assert.equal(isOpen(storyTask, JUNIOR_FALL_DAY), true, "and it's open");
+  assert.equal(isOpen(storyTask, STORY_DAY), true, "and it's open");
 
   const round2 = generate(genInput(written));
   assert.ok(!round2.some((t) => t.key === storyTaskKey), "no longer generated");
   const merge2 = mergeTasks(tasks, round2);
   assert.ok(merge2.orphans.includes(storyTask.id), "the previously-open task is orphaned: a generator that still emitted it would leave orphans empty");
-  tasks = applyMerge(LIST, tasks, merge2, JUNIOR_FALL_DAY);
+  tasks = applyMerge(LIST, tasks, merge2, STORY_DAY);
   const after = tasks.find((t) => t.id === storyTask.id)!;
-  assert.equal(isOpen(after, JUNIOR_FALL_DAY), false, "the move is closed: no longer open");
+  assert.equal(isOpen(after, STORY_DAY), false, "the move is closed: no longer open");
 });

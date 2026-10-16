@@ -254,3 +254,88 @@ body with the ranking table's link and what to check by hand.
 - **`PlanIntake.tsx` (kept compiling for R2)**: shows steps 0–7 and Review (13) only; a `&step=8…12` link or a Review
   Edit on a new row opens Review until R2 adds the screens. Note the profile move's "Add a major" now opens step 8 (was
   the Numbers page), so R2 must land before release.
+
+## As built by R1b
+
+**`lib/planner/importance.ts`** (new, pure, client-safe): `ImportanceFacts`, `DEFAULT_IMPORTANCE = 50`,
+`MOVE_IMPORTANCE` (ranking.md's table, one entry per row, keyed `kind:<TaskKind>`, `playbook:<key>`, `cycle:<key>`,
+`shape_gap:<variant>`, or `profile:<section>`), the season-varying rules as small functions (`storyImportance`,
+`recommendersImportance`, `chooseCoursesImportance`, `reachScoreImportance`, `buildListImportance`,
+`majorImportance`), `baseImportance(task, facts)`, `timingBoost(task, today)`, `importance(task, facts)`,
+`compareByImportance(a, b, facts)`. `baseImportance`'s resolution order: the season-varying rules first (by kind or
+playbook-key match), then the table by kind, then playbook key, then cycle key, then shape-gap variant, then —
+for the catalog's own `profile` key — `firstMissingSection(facts.profile)` (from `lib/planner/profile-progress.ts`,
+unchanged by this unit; R1a's richer `record.ts` section list isn't merged yet, so this reads the current eleven
+sections). `DEFAULT_IMPORTANCE` otherwise. `profile:major` isn't a literal table entry; `majorImportance` (50, 60
+from junior spring) covers it whenever `firstMissingSection` returns `"major"`.
+
+**`lib/planner/importance-facts.ts`** (new, pure, client-safe): `importanceFactsFrom(ctx, view)` builds
+`ImportanceFacts` from a `PlanContext` and a `PlanView`'s `rows` (deadline, round via `ROUND_SHORT`, school name),
+the one shape `NextSteps.tsx`, `ParentNextSteps.tsx` (kept-but-unused, per plan-v3-fix-cards), and `app/plan/page.tsx`
+(`detailFor`) all build it from, so a `reach_score` move reads the same list deadlines everywhere.
+
+**`lib/planner/moves.ts`**: `nowMoves`'s `opts` gains a required `facts: ImportanceFacts`; the eligible set is
+sorted with `compareByImportance(a, b, facts)` and a move whose `importance(t, facts)` is 0 is filtered out before
+`now`/`more` are cut (not just ranked last — left out of both). `bucket` and `compareMoves` are deleted.
+`eligibleNow`, `skipped`, `yourPartMoves`, `topMove`, `taskSeason`, `seasonRows`, `comingUpRows`, `parentSafeTitle`
+are unchanged in shape; `seasonRows`/`comingUpRows` now require `facts` in their `opts` too (they call `nowMoves`).
+Every other caller of `nowMoves`/`yourWeekTasks`/`briefContent` needed a `facts` value to keep compiling even though
+they weren't the brief's "owned" files: `app/plan/page.tsx` (`detailFor`, via `importanceFactsFrom`),
+`components/planner/ParentNextSteps.tsx` (via `importanceFactsFrom`), `app/api/cron/weekly/route.ts` (two call
+sites: `yourWeekTasks` and the parent-summary `childMoves`; both build a minimal `ImportanceFacts` with
+`profile: null` and `listDeadlines: []`, since the weekly job reads neither — `reach_score`'s "no date would count"
+check can't run there, so it resolves true rather than silently hiding the move), `lib/emails/season-brief.ts`
+(`briefContent`'s `opts` gains `facts`, threaded through its own two `nowMoves` calls) and its caller `sendBrief` in
+the same cron route (same minimal-facts construction). `lib/planner/timeline.ts`'s `yourWeekTasks` opts gains
+`facts: ImportanceFacts` for the same reason.
+
+**Catalog (`lib/planner/moves-catalog.ts`)**: `story`'s entry moved from `junior_fall` to `summer_before_senior`
+(title, why, `carries`, `applies: "story_missing"`, `kind: "story"` unchanged); `pick_recommenders`'s entry moved
+from `junior_spring` to `summer_before_senior` (unchanged otherwise). `SEASON_EXPLAINER.junior_fall`'s paragraph
+drops "Write your story while there's no deadline."; `SEASON_EXPLAINER.summer_before_senior`'s paragraph gains it
+(appended after the existing sentence). No other explainer text changed (`junior_spring`'s "asking two teachers
+before summer" line is informational prose, not the move itself, and was left as written per the brief).
+
+**Telemetry (`lib/analytics.ts`)**: `plan_move_shown` gains `rank: number | null` (the card's 1-based position in
+Now; `null` for a card outside the ranked set — Your part, a parent's rows). `MoveCardProps` (`components/planner/
+moves/types.ts`) gains `rank?: number`; `MoveCard.tsx`'s mount effect sends `rank: rank ?? null`. `NextSteps.tsx`'s
+`renderCard(task, rank?)` passes `i + 1` for `groups.now.map`, and no rank (`undefined` → `null`) for `yourPart.map`.
+No other card in `components/planner/moves/registry.tsx` tracks `plan_move_shown` itself (only the default
+`MoveCard` does), so only that one file needed the change.
+
+**Tests**: `tests/planner-importance.test.mts` (new) — every `TaskKind` resolves to `kind:<k>` in the table or is in
+an explicit `DEFAULT_ON_PURPOSE` allowlist (`reply_by`, `housing_deposit`, `cycle`, `decide_rounds`,
+`waitlist_deposit_elsewhere`, `add_offer`, `withdraw`, `summer`, `playbook`, `shape_gap`, `own` — the generic kinds
+resolved by key suffix rather than kind, plus the to-do kinds the brief hasn't ranked, plus `own`); `story`'s kind
+is season-ruled, never the flat default; every `PLAYBOOK` key resolves (season rule or `playbook:<key>` row — none
+of the current catalog's keys need the default allowlist); `timingBoost`'s four boundaries (7/14/30 days, overdue,
+undated); the four season-zero rules (`story`, `pick_recommenders`/`ask_recommenders`, `choose_courses*` outside its
+window, `reach_score` with no counting date); `build_list`/`long_list` and the record's major's season steps;
+carried −10; `compareByImportance`'s tie order; the worked example from ranking.md (today 2026-10-16, class of
+2028): the three shown and their order, then the PSAT ticked to show the interest move surfacing into Now with
+"Add your clubs" next in line (`more[0]`). `tests/planner-moves.test.mts`: the old bucket-order test replaced with
+an importance-order one (`kind:apply` and `kind:ed_decide`'s high base now outrank a bare `overdue`/`due soon`
+built task of default importance — the old "ED window" sub-case was dropped, since importance no longer special-
+cases an unopened ED window); every other test updated only to add a `facts` fixture (`factsFor`, a real cycle via
+`loadCycle(cycleFor(gradYear))`, `profile: null`, `listDeadlines: []`) to its `opts`; their expected orders were
+unchanged by the switch (all the planted tasks tie at `DEFAULT_IMPORTANCE`, so the same dated-first/position/title
+tie-break reproduces the old `compareTasks` order). `tests/planner-season-generator.test.mts` and
+`tests/planner-recommenders.test.mts`: `pick_recommenders`'s presence/absence checks moved to `summer_before_senior`
+/ `junior_fall` (not `junior_spring`, since `entriesFor`/`generate` legitimately preview a season's "next" entries,
+and `summer_before_senior` is `junior_spring`'s next); the story/explainer test updated for the new season and
+paragraph. `tests/planner-next-steps-ui.test.mts`: the people-line regex now expects `importanceFactsFrom(ctx,
+view)` and `nowMoves(..., facts)`. `tests/planner-briefs.test.mts`: every `briefContent`/`yourWeekTasks` call site
+needed a `facts` fixture (same `factsFor` pattern) to keep compiling.
+
+**Left for later / noted, not built**: `show_interest`'s importance (55 for every instance) doesn't distinguish
+"important" from "considered" interest (ranking.md's 55-vs-48 split) because the season generator's
+`interest.ts`/`interest-acts.ts` don't carry that distinction onto the generated `PlanTask` (no field says which
+rule produced it) — flagged in the code as an R1b simplification, not fixed here since `interest.ts` isn't this
+unit's file. `reach_score`'s "no date would count" rule reads `facts.profile?.tests.focus`; without a real `sat`/
+`act` focus test it answers 72 rather than consulting dates (the move is only ever generated when the student is
+below a real target, which implies a real focus test, per ranking.md's own note). R1a's richer profile-section list
+(fourteen sections, `lib/planner/record.ts`) isn't merged yet; `profile:<section>` keys in the table use the
+current eleven-section `ProfileSection` from `lib/planner/profile-progress.ts` (`state`, not `basics`/`where`/
+`story`/`recommenders`) — when R1a lands, whoever merges should re-check that every new section still has a
+`profile:<section>` row (`connections`, `basics`, `where` is written "`profile:state`" today and will need renaming/
+adding alongside R1a's `SECTION_MOVE_TITLE` change).

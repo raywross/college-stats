@@ -7,8 +7,13 @@
  * Plan v3 (specs/planner/v3/now.md "Ranking"; build-plan.md review note 6): only moves that pass the season gate
  * (`eligibleNow`: this season's, an earlier season's that carried, or one dated within SOON_DAYS) are the student's.
  *
- * - Now: at most three (NOW_MAX), in order: overdue dated moves, dated moves within 14 days, ED decide moves inside
- *   their window, then the playbook's own order (the catalog's position), then the rest by date.
+ * Plan v3, R1b (specs/planner/record/ranking.md): Now's old buckets (overdue, soon, ED window, playbook order) are
+ * gone. Every eligible move gets an importance score (`lib/planner/importance.ts`) and the set is sorted by it, ties
+ * broken dated-before-undated, then the catalog's position, then title (`compareByImportance`). A move whose
+ * importance is 0 (a season-gated-off rule like the story before summer, or reach-your-score once no date would
+ * count) is left out of both `now` and `more`: it isn't just low-ranked, it isn't shown at all.
+ *
+ * - Now: at most three (NOW_MAX), by importance.
  * - More this season: the rest of the eligible open moves (the parent's view; the student's tab doesn't show it). A
  *   skipped move (dismissed) and a snoozed one are never open; an orphan is never a move.
  * - Coming up: next season's open moves, titles and dates only (the parent's view).
@@ -18,6 +23,7 @@
  *   in Now.
  * Pure; safe in client components.
  */
+import { compareByImportance, importance, type ImportanceFacts } from "./importance.ts";
 import { addDays } from "./stage.ts";
 import { yourPart } from "./summary.ts";
 import { compareTasks, dayLabel, isOpen, taskDate } from "./tasks.ts";
@@ -60,31 +66,6 @@ export function eligibleNow(t: PlanTask, opts: { season: Season; gradYear: numbe
   return d !== null && d <= addDays(opts.today, SOON_DAYS);
 }
 
-const isEdDecide = (t: PlanTask) => t.kind === "ed_decide" || t.kind === "ed2_decide";
-
-/** Now's buckets, lowest first: overdue, due soon, ED decide in window, the rest. */
-function bucket(t: PlanTask, today: string): number {
-  const d = taskDate(t);
-  if (d !== null && d < today) return 0;
-  if (d !== null && d <= addDays(today, SOON_DAYS)) return 1;
-  if (isEdDecide(t) && (t.window_start === null || t.window_start <= today)) return 2;
-  return 3;
-}
-
-/** Inside a bucket: dated ones by date; in the last, playbook rows by the catalog's position, then the rest by date. */
-function compareMoves(a: PlanTask, b: PlanTask, today: string): number {
-  const ba = bucket(a, today);
-  const bb = bucket(b, today);
-  if (ba !== bb) return ba - bb;
-  if (ba === 3) {
-    const pa = a.source === "season" ? 0 : 1;
-    const pb = b.source === "season" ? 0 : 1;
-    if (pa !== pb) return pa - pb;
-    if (pa === 0 && a.position !== b.position) return a.position - b.position;
-  }
-  return compareTasks(a, b);
-}
-
 const isMine = (t: PlanTask) => t.assignee === "guardian" || t.assignee === "either";
 
 /**
@@ -121,9 +102,9 @@ export function isMove(t: Pick<PlanTask, "kind" | "key" | "orphaned">): boolean 
 
 export function nowMoves(
   tasks: PlanTask[],
-  opts: { season: Season; gradYear: number | null; today: string; viewer: "student" | "guardian"; max?: number },
+  opts: { season: Season; gradYear: number | null; today: string; viewer: "student" | "guardian"; max?: number; facts: ImportanceFacts },
 ): MoveGroups {
-  const { season, gradYear, today } = opts;
+  const { season, gradYear, today, facts } = opts;
   const max = opts.max ?? NOW_MAX;
   const next = nextSeason(season);
   const live = tasks.filter(isMove);
@@ -133,7 +114,9 @@ export function nowMoves(
     .filter((t) => isOpen(t, today))
     .filter(forViewer)
     .filter((t) => eligibleNow(t, { season, gradYear, today }))
-    .sort((a, b) => compareMoves(a, b, today));
+    // R1b (ranking.md): a move whose importance is 0 doesn't show at all, not even folded into More.
+    .filter((t) => importance(t, facts) > 0)
+    .sort((a, b) => compareByImportance(a, b, facts));
   const comingUp = next
     ? live
         .filter((t) => isOpen(t, today) && seasonOf(t) === next)
@@ -189,7 +172,7 @@ export interface SeasonRow {
  * skipped groups, which `nowMoves` doesn't trim for a guardian viewer), and the guardian-assigned ones are dropped
  * here instead.
  */
-export function seasonRows(tasks: PlanTask[], opts: { season: Season; gradYear: number | null; today: string }): SeasonRow[] {
+export function seasonRows(tasks: PlanTask[], opts: { season: Season; gradYear: number | null; today: string; facts: ImportanceFacts }): SeasonRow[] {
   const groups = nowMoves(tasks, { ...opts, viewer: "student" });
   const theirs = (t: PlanTask) => !isMine(t);
   const rows: SeasonRow[] = [];
@@ -201,7 +184,7 @@ export function seasonRows(tasks: PlanTask[], opts: { season: Season; gradYear: 
 }
 
 /** Next season's open moves (titles, dates): `nowMoves`'s own `comingUp` (the parent's view; now.md "Ranking"). */
-export function comingUpRows(tasks: PlanTask[], opts: { season: Season; gradYear: number | null; today: string }): { title: string; date: string | null }[] {
+export function comingUpRows(tasks: PlanTask[], opts: { season: Season; gradYear: number | null; today: string; facts: ImportanceFacts }): { title: string; date: string | null }[] {
   return nowMoves(tasks, { ...opts, viewer: "student" }).comingUp;
 }
 

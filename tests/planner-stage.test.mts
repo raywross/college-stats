@@ -147,11 +147,12 @@ test("every row control exists as a client component with the shared props; RowC
   assert.deepEqual(order, ROW_FILES);
 });
 
-test("household cleanup (2026-10-12): the hub's List pill is Plan | Numbers, and a student's page links into the planner instead of embedding it", () => {
+test("household cleanup (2026-10-12): the hub's List pill is Plan | Record, and a student's page links into the planner instead of embedding it", () => {
   const header = src("components/account/PersonHeader.tsx");
-  // The dead-end third pill (a "Plan" tab that just redirected to /plan) is gone; List | Numbers is List's old
-  // value under a new "Plan" label, since its route now shows OpenPlanCard rather than the old list board.
-  assert.ok(header.indexOf('value: "list"') < header.indexOf('value: "numbers"'));
+  // The dead-end third pill (a "Plan" tab that just redirected to /plan) is gone; List | Record is List's old
+  // value under a new "Plan" label, since its route now shows OpenPlanCard rather than the old list board. The
+  // second pill was "numbers" (the Numbers page); record/steps.md renamed it "record" (the record overview).
+  assert.ok(header.indexOf('value: "list"') < header.indexOf('value: "record"'));
   assert.doesNotMatch(header, /value: "plan"/);
   assert.doesNotMatch(header, /href: `\/household\/\$\{id\}\/plan`/);
   assert.doesNotMatch(src("app/household/[person]/page.tsx"), /<ListPage [^>]*\bplanner\b/);

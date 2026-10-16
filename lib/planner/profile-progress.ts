@@ -53,11 +53,8 @@ export const LATER_SECTIONS: readonly ProfileSection[] = ["story", "recommenders
 /** The season the later sections open. */
 export const LATER_SECTIONS_SEASON: Season = "summer_before_senior";
 
-/**
- * Where each section is entered: a step of the record's tour (every section has one now). The type keeps the
- * retired `"numbers"` so callers that still compare against it compile until the overview replaces them (R3).
- */
-export const SECTION_STEP: Record<ProfileSection, RecordEntryStep | "numbers"> = {
+/** Where each section is entered: a step of the record's tour (every section has one now). */
+export const SECTION_STEP: Record<ProfileSection, RecordEntryStep> = {
   high_school: 0,
   grades: 0,
   test: 1,

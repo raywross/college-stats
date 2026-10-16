@@ -69,18 +69,18 @@ export interface PlaybookEntry {
 /* Actions                                                             */
 /* ------------------------------------------------------------------ */
 
-const NUMBERS = (ctx: PlaybookActionInput): MoveAction => (ctx.studentId ? { kind: "href", href: `/household/${ctx.studentId}/numbers` } : { kind: "open_intake", step: 0 });
+const NUMBERS = (ctx: PlaybookActionInput): MoveAction => (ctx.studentId ? { kind: "href", href: `/household/${ctx.studentId}/record` } : { kind: "open_intake", step: 0 });
 const COLLEGES: MoveAction = { kind: "open_tab", tab: "colleges" };
 const TICK: MoveAction = { kind: "tick" };
 const PSAT_PAGE: MoveAction = { kind: "href", href: "https://satsuite.collegeboard.org/psat-nmsqt" };
 const FSA_ID_PAGE: MoveAction = { kind: "href", href: "https://studentaid.gov/fsa-id/create-account/launch" };
 
-/** The intake step of the first missing profile section (the Numbers page for major and state). */
+/** The intake step of the first missing profile section (every section is a tour step now; record.ts). */
 function firstMissingStep(ctx: PlaybookActionInput): MoveAction {
   const p = ctx.profile;
   const missing = p ? PROFILE_SECTIONS.find((s) => !sectionDone(p, s)) : "high_school";
   const step = missing ? SECTION_STEP[missing] : 0;
-  return step === "numbers" ? NUMBERS(ctx) : { kind: "open_intake", step };
+  return { kind: "open_intake", step };
 }
 
 const open = (ctx: PlaybookActionInput) => ctx.items.filter((i) => !i.withdrawn_on).sort((a, b) => a.position - b.position);

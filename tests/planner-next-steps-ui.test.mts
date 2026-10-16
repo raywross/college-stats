@@ -217,7 +217,7 @@ test("MoveCard: one button per action kind for a move with no guide; tick and th
   // The brag-sheet playbook entry (junior spring) carries action.kind "story": the Numbers page's story section,
   // the same route for self and a guardian (the lead's merge notice, after U7's StorySection landed there).
   const storyHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "story" } }), ctx: ctxOf({ student: { id: "s9", display_name: "Maya", grad_year: 2028, user_id: "u1" } }), onDone: noop, onSkip: noop, pending: false });
-  assert.match(storyHtml, /href="\/household\/s9\/numbers#story"/);
+  assert.match(storyHtml, /href="\/plan\/guide\/story\?from=card"/);
 
   const otherUnitHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "mark_applied", itemId: "i1" } }), ctx, onDone: noop, onSkip: noop, pending: false });
   assert.doesNotMatch(otherUnitHtml, /See the college|Open</, "no button for a kind without its own card yet; the title alone stands in");

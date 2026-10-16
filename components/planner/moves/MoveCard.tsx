@@ -22,7 +22,7 @@ import { useEffect, useRef } from "react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import type { AnyCited } from "@/lib/lineage";
-import { guideFor } from "@/lib/planner/guides";
+import { guideFor, guideHref } from "@/lib/planner/guides";
 import { parentSafeTitle } from "@/lib/planner/moves";
 import { planHref } from "@/lib/planner/plan-tabs";
 import { assigneeLabel, isOverdue, taskDateLabel } from "@/lib/planner/tasks";
@@ -131,11 +131,10 @@ function ActionLink({ task, ctx }: { task: PlanTask; ctx: PlanContext }) {
       );
     }
     case "story": {
-      // The Numbers page's story section (U7, StorySection.tsx); the same route for self and a guardian (NUMBERS in
-      // moves-catalog.ts goes there too, unconditionally on the student id, not the viewer).
+      // The story guide (Your record, 2026-10-16: the Numbers page and its story section are gone).
       const studentId = ctx.student?.id;
       return studentId ? (
-        <Link href={`/household/${studentId}/numbers#story`} className={SECONDARY}>
+        <Link href={guideHref("story", { person: personFor(ctx), from: "card" })} className={SECONDARY}>
           Open
         </Link>
       ) : null;

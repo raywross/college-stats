@@ -6,6 +6,7 @@ import { AccessLogList } from "@/components/account/AccessLogList";
 import { AccountSection } from "@/components/account/AccountSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { HouseholdSummary } from "@/components/account/HouseholdSummary";
+import { ParentsCanEdit } from "@/components/account/ParentsCanEdit";
 import { SignOutButton } from "@/components/account/SignOutButton";
 import { UpdateEmailsSection } from "@/components/me/UpdateEmailsSection";
 import { RemindersSection } from "@/components/account/RemindersSection";
@@ -45,6 +46,9 @@ export default async function AccountPage() {
 
   const [households, student] = await Promise.all([myHouseholds(), currentStudent()]);
   const accessLog = student ? await myAccessLog() : [];
+  // The student's own switch over their parents' edit access (household-hub.md "Parents can edit: the student's
+  // switch"), moved here from the Numbers page: the same guardians lookup it used, through myHouseholds().
+  const guardians = student ? households.flatMap((h) => h.members.filter((m) => m.role === "guardian" && m.member_id !== null)) : [];
 
   const [visitPrefs, visitMutes, visitPoint, data] = await Promise.all([myVisitPrefs(), myVisitMutes(), myMeasuringPoint(), getData()]);
   const mutedColleges = visitMutes.map((unitId) => ({ unitId, name: data.getSchoolById(unitId)?.name ?? unitId }));
@@ -83,6 +87,12 @@ export default async function AccountPage() {
       >
         <HouseholdSummary households={households} />
       </AccountSection>
+
+      {guardians.length > 0 && (
+        <AccountSection id="parents-can-edit" title="Parents can edit">
+          <ParentsCanEdit on={guardians.every((g) => g.can_edit)} guardians={guardians.length} bare />
+        </AccountSection>
+      )}
 
       <UpdateEmailsSection />
 

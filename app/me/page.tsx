@@ -8,7 +8,7 @@ import { isUuid } from "@/lib/household-hub";
 export const metadata: Metadata = { title: "Your profile", robots: { index: false } };
 
 /**
- * /me moved to the household hub (specs/product/household-hub.md): a student's numbers are the Numbers tab of their
+ * /me moved to the household hub (specs/product/household-hub.md): a student's record is the Record tab of their
  * page. Redirects to the signed-in student's own (or, from the old guardian picker's ?student=, that student's), and
  * to /household for someone with no student record.
  */
@@ -20,10 +20,10 @@ export default async function MePage({ searchParams }: { searchParams: Promise<{
   let target = "/household";
   try {
     const { student: wanted } = await searchParams;
-    if (isUuid(wanted) && (await studentsICanSee()).some((a) => a.student.id === wanted)) target = `/household/${wanted}/numbers`;
+    if (isUuid(wanted) && (await studentsICanSee()).some((a) => a.student.id === wanted)) target = `/household/${wanted}/record`;
     else {
       const own = await currentStudent();
-      if (own) target = `/household/${own.id}/numbers`;
+      if (own) target = `/household/${own.id}/record`;
     }
   } catch (err) {
     if (err instanceof AccountsSetupError) return <AuthUnavailable title="Profiles aren't set up yet" />;

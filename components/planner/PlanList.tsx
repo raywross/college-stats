@@ -8,6 +8,7 @@ import { Crest } from "@/components/school/Crest";
 import { PlanRow, type RowPill } from "@/components/planner/PlanRow";
 import { EdPill } from "@/components/planner/EdPill";
 import { InterestPill } from "@/components/planner/InterestPill";
+import { personFor } from "@/components/planner/moves/MoveCard";
 import { edOpportunities, type EdCandidate } from "@/lib/planner/ed-opportunities";
 import { isOpen } from "@/lib/planner/tasks";
 import { ListExplainer } from "@/components/planner/ListExplainer";
@@ -29,11 +30,11 @@ import { cn } from "@/lib/utils";
 const SENIOR_FALL_RANK = seasonRank("senior_fall");
 
 /**
- * The Colleges tab: the list as the plan (specs/planner/redesign/list.md). Grouped by Reach / Target / Likely, then
- * "Not sorted yet" — Quad's groups only, no chip to cycle and no sort menu. Owns its own copy of the rows so every
- * tap (the Dream, the capture panel's remove) updates at once; a refused write rolls the row back and shows
- * an inline message, and a successful one refreshes the server page so the notices, balance line, and tasks that
- * depend on more than one row stay correct.
+ * The Colleges tab: the list as the plan (specs/planner/redesign/list.md; row changed by plan v3's connections.md).
+ * Grouped by Reach / Target / Likely, then "Not sorted yet" — Quad's groups only, no chip to cycle and no sort menu.
+ * Owns its own copy of the rows so every tap (the Dream, the row's trash icon) updates at once; a refused write
+ * rolls the row back and shows an inline message, and a successful one refreshes the server page so the notices,
+ * balance line, and tasks that depend on more than one row stay correct.
  */
 export default function PlanList({ ctx, view }: PlanTabProps) {
   const router = useRouter();
@@ -41,11 +42,12 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   const [viewSeen, setViewSeen] = useState(view);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const canEdit = ctx.viewer.canEdit;
-  // A move's `open_row` link (`?row=<item id>&panel=ed|capture`) opens that row's drawer on the panel.
+  // A move's `open_row` link (`?row=<item id>&panel=ed`) opens that row's ED dialog on mount; any other `panel`
+  // value is ignored (there's no other panel left to open — capture's controls moved into the Show interest guide).
   const params = useSearchParams();
   const openRow = params?.get("row") ?? null;
-  const openPanelParam = params?.get("panel");
-  const openPanel = openPanelParam === "ed" || openPanelParam === "capture" ? openPanelParam : "capture";
+  const openEd = params?.get("panel") === "ed";
+  const person = personFor(ctx);
   // Good ED opportunities (ed-opportunities.md): computed once from the server's view; every candidate gets a pill.
   const edCandidates = edOpportunities(view.rows.map((r) => r.item), view.estimates, ctx.schools, { season: ctx.season, today: ctx.today });
   const edByItem = new Map<string, EdCandidate>(edCandidates.map((c) => [c.itemId, c]));
@@ -57,16 +59,8 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   );
   const pillFor = (row: PlanRowView): RowPill | undefined => {
     const c = edByItem.get(row.item.id);
-    if (c) {
-      return function edPill(open) {
-        return <EdPill candidate={c} onOpen={() => open("ed")} />;
-      };
-    }
-    if (interestItemIds.has(row.item.id)) {
-      return function interestPill(open) {
-        return <InterestPill onOpen={() => open("capture")} />;
-      };
-    }
+    if (c) return <EdPill row={row} ctx={ctx} candidate={c} openInitially={openEd && openRow === row.item.id} />;
+    if (interestItemIds.has(row.item.id)) return <InterestPill collegeUnitId={row.item.unit_id} name={row.school?.name ?? row.item.unit_id} person={person} />;
     return undefined;
   };
 
@@ -167,8 +161,7 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
                     onToggleDream={handleDream}
                     onRemove={handleRemove}
                     pill={pillFor(row)}
-                    edCandidate={edByItem.get(row.item.id) ?? null}
-                    openPanel={openRow === row.item.id ? openPanel : null}
+                    openEdDialog={openEd && openRow === row.item.id}
                   />
                 ))}
               </ul>

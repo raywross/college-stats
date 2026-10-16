@@ -3,8 +3,8 @@
  * requests"). Pure and client-safe, so it can be tested and shared; lib/planner/plan-estimates.ts calls it on the
  * server for the plan loader and the suggestion sync.
  *
- * - `legacy`, `sibling` (`legacy_sibling`, owner 2026-10-12), and `recruited`: the row's own toggles, set in the row's capture panel (components/planner/RowDrawer.tsx,
- *   through components/planner/AboutYouAndCollege.tsx).
+ * - `legacy`, `sibling` (`legacy_sibling`, owner 2026-10-12), and `recruited`: the row's own toggles (plan v3: moving
+ *   to the profile's Connections step, U2a).
  * - `interest` (demonstrated interest): true once the family has shown the college interest in any way the plan
  *   records: a visit (`visited_on`, or any entry in `plan_visits`), an information request (`info_requested_on`), or
  *   following the college on social (`followed_networks`, or the older tracking row's `follows_social`). Following

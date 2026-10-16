@@ -1,13 +1,14 @@
 /**
- * The row capture panel's pure parts (lib/planner/capture.ts; specs/planner/redesign/list.md "The capture panel"):
- * the visit page fallback, "We visited" from the tracking date and logged visits, and the follow links. Plus source
- * checks that the panel is only the capture controls now (owner, 2026-10-12). `npm test`.
+ * The Show interest guide's pure helpers (lib/planner/capture.ts; plan v3 build-plan.md U2b "What's removed"): the
+ * visit page fallback, "We visited" from the tracking date and logged visits, and the follow links. `rowToDo` (the
+ * old row's expand-control count) is gone with the row's capture panel. Plus the row and intake source checks.
+ * `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { followTargets, rowToDo, visitPageLink, visitedState } from "../lib/planner/capture.ts";
+import { followTargets, visitPageLink, visitedState } from "../lib/planner/capture.ts";
 import { entryCount, intakeScrollFor, scrollBehavior } from "../lib/planner/intake-scroll.ts";
 import type { PlanVisit } from "../lib/planner/types.ts";
 
@@ -67,57 +68,30 @@ test("follow targets: the college's accounts in the site's order, each with its 
   assert.deepEqual(followTargets(null, []), []);
 });
 
-test("the row's panel is the capture panel: legacy, recruited, visited, follows, quick links, remove — no estimate text", () => {
-  const drawer = read("components", "planner", "RowDrawer.tsx");
-  for (const gone of [/WhatWentIn/, /panelParts/, /ComparedWith/, /estimate\.level\./, /track\("estimate_shown"/, /RoundChip|roundWhy|Requirements/]) assert.doesNotMatch(drawer, gone);
-  for (const kept of [/<AboutYouAndCollege\b/, /We visited/, /recordFollow\(/, /visitPageLink\(/, /followTargets\(/, /logVisit\(/]) assert.match(drawer, kept);
-  // Requested info is back as a third one-tap item, dated and undoable (owner, 2026-10-12).
-  assert.match(drawer, /We requested info/);
-  assert.match(drawer, /markInfoRequested\(itemId, next !== null, next\)/);
-  // A guardian sees each network's follow state, not a greyed-out control.
-  assert.match(drawer, /\{canMark \? \(/);
-  assert.match(drawer, /"Not following"/);
-  assert.match(drawer, /canMark=\{canEdit && !ctx\.viewer\.isGuardian\}/);
-  // Round, deadline, and status are off the row and the list header (owner, 2026-10-12).
+test("the row: no expand control, no drawer, no capture panel (plan v3 connections.md 'The row')", () => {
   const row = read("components", "planner", "PlanRow.tsx");
+  assert.doesNotMatch(row, /ChevronDown|aria-expanded|rowToDo\(|RowDrawer|RowPanel/);
+  assert.doesNotMatch(row, /\bDetails\b/);
+  // Round, deadline, and status are off the row and the list header (owner, 2026-10-12, unchanged by plan v3).
   assert.doesNotMatch(row, /RoundChip|SEASON_STATUS_LABEL|Round picked senior year|dayLabel/);
   const list = read("components", "planner", "PlanList.tsx");
   assert.doesNotMatch(list, /<span>Round<\/span>|<span>Deadline<\/span>|<span>Status<\/span>/);
 });
 
-test("row to-do: a visit or info request, and following an account the college has; gentle, never legacy or recruiting", () => {
-  const item = (o: Record<string, unknown> = {}) => ({ id: "i1", visited_on: null, info_requested_on: null, followed_networks: [], follows_social: false, ...o });
-  const social = { instagram: "college" };
-  assert.deepEqual(rowToDo(item(), [], social), ["interest", "follow"]);
-  assert.deepEqual(rowToDo(item({ visited_on: "2026-09-01" }), [], social), ["follow"]);
-  assert.deepEqual(rowToDo(item(), [{ item_id: "i1" }], social), ["follow"], "a logged visit, past or planned");
-  assert.deepEqual(rowToDo(item(), [{ item_id: "other" }], social), ["interest", "follow"]);
-  assert.deepEqual(rowToDo(item({ info_requested_on: "2026-09-01" }), [], social), ["follow"]);
-  assert.deepEqual(rowToDo(item({ followed_networks: ["instagram"] }), [], social), ["interest"]);
-  assert.deepEqual(rowToDo(item({ follows_social: true }), [], social), ["interest"], "the older tracking switch");
-  assert.deepEqual(rowToDo(item(), [], null), ["interest"], "no accounts on record: nothing to follow");
-  assert.deepEqual(rowToDo(item(), [], {}), ["interest"]);
-  assert.deepEqual(rowToDo(item({ visited_on: "2026-09-01", followed_networks: ["x"] }), [], social), [], "nothing left");
-});
-
-test("the row's control is an expand toggle with the accent and count when there's more to do", () => {
+test("the row's trash icon: 44px, editors only, asks first in the built words, then removes", () => {
   const row = read("components", "planner", "PlanRow.tsx");
-  assert.doesNotMatch(row, /\bInfo\b/, "no info icon");
-  assert.match(row, /ChevronDown/);
-  assert.match(row, /aria-expanded=\{open\}/);
-  assert.match(row, /rowToDo\(/);
-  assert.match(row, /todo\.length \? "bg-primary\/10 text-primary/);
+  assert.match(row, /import \{ Heart, Trash2 \} from "lucide-react"/);
+  assert.match(row, /\{canEdit && \(\s*<button[\s\S]*?<Trash2/, "an editor-only trash button");
+  assert.match(row, /aria-label=\{`Remove \$\{name\} from the list`\}/);
+  assert.match(row, /title="Remove from the list"/);
+  assert.match(row, /window\.confirm\(`Remove \$\{name\} from the list\? Its notes, visits, and any offer go with it\.`\)\) onRemove\(row\)/);
+  assert.match(row, /className="flex size-11 shrink-0 items-center justify-center[^"]*"\s*>\s*<Trash2/, "the trash button is a 44px tap target");
 });
 
-test("Connections: one line of chips (parent or grandparent, sibling, Recruited) with the picks behind Recruited", () => {
-  const src = read("components", "planner", "AboutYouAndCollege.tsx");
-  assert.match(src, /Connections/);
-  assert.match(src, /Parent or grandparent went here/);
-  assert.match(src, /Sibling went here/);
-  assert.match(src, /setItemSibling\(item\.id, !sibling\)/);
-  assert.match(src, /aria-expanded=\{picking\}/);
-  assert.match(src, /\{picking && \(/, "the four picks show only when Recruited is tapped");
-  assert.match(src, /none: "No", contact: "Coach contact", pre_read: "Pre-read", likely_letter: "Likely letter"/);
+test("the row is one line: the name truncates before the pill does", () => {
+  const row = read("components", "planner", "PlanRow.tsx");
+  assert.match(row, /<div className="min-w-0 flex-1">/, "the name column may shrink below its content");
+  assert.match(row, /\{pill\}/, "the pill is a plain node now, not a render prop");
 });
 
 test("intake scroll: page top on a step change, the step's top after an add, nothing on first render or a removal", () => {

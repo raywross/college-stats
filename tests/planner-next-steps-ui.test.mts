@@ -218,14 +218,16 @@ test("MoveCard: one button per action kind for a move with no guide; tick and th
   const tabHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "open_tab", tab: "colleges" } }), ctx, onDone: noop, onSkip: noop, pending: false });
   assert.match(tabHtml, /href="\/plan\?tab=colleges"/);
 
-  // PlanList reads `row`/`panel` on the Colleges tab and opens that row's drawer there (the lead's merge notice,
-  // replacing an earlier #row- anchor): the same shape U2's edRowHref() builds for the pill's "See why".
+  // Plan v3 (build-plan.md U2b): every row task but the ED sheet's has its own guide now, so `open_row` without
+  // `panel: "ed"` renders no button here (PlanList's row no longer has a drawer for it to open).
   const rowHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "open_row", itemId: "i9" } }), ctx, onDone: noop, onSkip: noop, pending: false });
-  assert.match(rowHtml, /href="\/plan\?tab=colleges&amp;row=i9"/);
-  assert.match(rowHtml, /See the college/);
+  assert.doesNotMatch(rowHtml, /See the college|Open</, "no button for an open_row without panel: \"ed\"");
 
+  // PlanList reads `row`/`panel=ed` on the Colleges tab and opens that row's ED dialog (EdDecideCard's edRowHref()
+  // builds the same shape for its own links).
   const rowWithPanelHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "open_row", itemId: "i9", panel: "ed" } }), ctx, onDone: noop, onSkip: noop, pending: false });
   assert.match(rowWithPanelHtml, /href="\/plan\?tab=colleges&amp;row=i9&amp;panel=ed"/);
+  assert.match(rowWithPanelHtml, /See the college/);
 
   const tickHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "tick" } }), ctx, onDone: noop, onSkip: noop, pending: false });
   assert.doesNotMatch(tickHtml, /See the college|Open</);

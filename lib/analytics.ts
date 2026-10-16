@@ -72,7 +72,6 @@ export interface AnalyticsEvents {
   plan_group_changed: { from_auto: boolean };
   plan_dream_set: { on: boolean };
   plan_round_changed: { from_auto: boolean; round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" };
-  plan_drawer_opened: { in_season: boolean };
   plan_college_removed: { dream: boolean };
   plan_round_problem_shown: { kind: string };
   plan_calendar_opened: { everyone: boolean; color_by: "child" | "round" };
@@ -202,7 +201,6 @@ export const EVENTS = {
   plan_group_changed: { properties: ["from_auto"], side: "client", why: "Planner: how often a suggested group gets changed" },
   plan_dream_set: { properties: ["on"], side: "client", why: "Planner: Dreams marked" },
   plan_round_changed: { properties: ["from_auto", "round"], side: "client", why: "Planner: which rounds students pick over the starting round" },
-  plan_drawer_opened: { properties: ["in_season"], side: "client", why: "Planner: do row details get opened" },
   plan_college_removed: { properties: ["dream"], side: "client", why: "Planner: do students prune the list from the plan" },
   plan_round_problem_shown: { properties: ["kind"], side: "client", why: "Planner: which round conflicts come up" },
   plan_calendar_opened: { properties: ["everyone", "color_by"], side: "client", why: "Planner: calendar views, per child or for everyone" },

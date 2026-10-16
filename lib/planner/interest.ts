@@ -164,7 +164,7 @@ export interface InterestMoveText {
   sourceEdition: string | null;
 }
 
-/** Title and why for one move, shared by `interestTasks`, InterestCard, and RowDrawer's "capture" panel why line, so
+/** Title and why for one move, shared by `interestTasks`, InterestCard, and the Show interest guide's why line, so
  *  all three say exactly the same thing. */
 export function interestMoveText(move: Pick<InterestMove, "kind">, school: Pick<PlanSchool, "name" | "profile" | "cites"> | undefined): InterestMoveText {
   const name = school?.name ?? "the college";

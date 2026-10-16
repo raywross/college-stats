@@ -8,8 +8,12 @@ import { GuideFrame } from "@/components/planner/guides/GuideFrame";
 import { authConfigured, getUser } from "@/lib/auth";
 import { GUIDES, parseGuideFrom, parseGuideQuery, parseGuideSlug, type GuideSlug } from "@/lib/planner/guides";
 import { GUIDE_PAGES } from "@/lib/planner/guides-server";
+import { planBundle } from "@/lib/bundles";
 import { loadPlanFor, planViewer, type PlanLoad } from "@/lib/planner/load";
 import { resolveSelectedChild } from "@/lib/planner/plan-frame";
+import { isUuid } from "@/lib/planner/plan-writes";
+import { span } from "@/lib/timing";
+import { withTiming } from "@/lib/timing-server";
 
 type Params = Promise<{ slug: string }>;
 type Search = Promise<{ for?: string; move?: string; college?: string; level?: string; from?: string }>;
@@ -52,10 +56,22 @@ export default async function GuidePageRoute({ params, searchParams }: { params:
   await connection();
   const slug = parseGuideSlug((await params).slug);
   if (!slug) notFound();
+  return withTiming(`/plan/guide/${slug}`, () => renderRoute(slug, searchParams));
+}
+
+/** The route's work, timed as one request (`QUAD_TIMING=1`; lib/timing-server.ts) like /plan's. */
+async function renderRoute(slug: GuideSlug, searchParams: Search) {
   if (!authConfigured()) return <AuthUnavailable />;
   const user = await getUser();
   if (!user) redirect("/plan");
   const sp = await searchParams;
+
+  // As /plan does (performance pass, 2026-10-16): the plan most likely to be shown starts loading now, beside the
+  // viewer lookup, instead of after it. A student's own plan when nothing names a child (`planBundle(null)`), else the
+  // child `?for=` or the cookie names; loadPlanFor uses it only when it turns out to be that student's.
+  const lastViewed = (await cookies()).get(PLAN_CHILD_COOKIE)?.value ?? null;
+  const candidate = [sp.for, lastViewed].find((id) => isUuid(id)) ?? null;
+  const early = planBundle(candidate);
 
   const viewer = await planViewer();
   if (viewer.kind === "none") {
@@ -72,7 +88,6 @@ export default async function GuidePageRoute({ params, searchParams }: { params:
     studentId = viewer.student.id;
     person = null;
   } else {
-    const lastViewed = (await cookies()).get(PLAN_CHILD_COOKIE)?.value ?? null;
     const selected = resolveSelectedChild({
       forParam: sp.for ?? null,
       children: viewer.children.map((c) => ({ studentId: c.studentId, nextDeadline: null })),
@@ -83,7 +98,7 @@ export default async function GuidePageRoute({ params, searchParams }: { params:
     person = selected;
   }
 
-  const loaded = await loadPlanFor(studentId);
+  const loaded = await loadPlanFor(studentId, undefined, { early });
   if (loaded.kind !== "ready") return <Fallback loaded={loaded} />;
   return renderGuide(slug, loaded, person, sp);
 }
@@ -93,7 +108,7 @@ async function renderGuide(slug: GuideSlug, loaded: Extract<PlanLoad, { kind: "r
   const query = parseGuideQuery(sp);
   const move = query.move ? (ctx.tasks.find((t) => t.id === query.move) ?? null) : null;
   const page = GUIDE_PAGES[slug];
-  const data = page.load ? await page.load(ctx, view, query) : undefined;
+  const data = page.load ? await span("guide-load", () => page.load!(ctx, view, query)) : undefined;
   return (
     <GuideFrame
       slug={slug}

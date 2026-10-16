@@ -89,7 +89,13 @@ export function PlanPeople({
 }) {
   const [open, setOpen] = useState(true);
   // The line has arrived: nothing is pending any more (app/plan/loading.tsx drew it from the snapshot meanwhile).
-  useEffect(() => setPendingPeople(null), [selected]);
+  // Remembering the shown child here, not only on a pick (performance pass, 2026-10-16): without the cookie a
+  // guardian's every /plan open loaded every child's plan to break the tie by deadline (two waves of reads, up to a
+  // second); with it, the next open loads one child in one wave, like a student's own plan.
+  useEffect(() => {
+    setPendingPeople(null);
+    if (selected) rememberChild(selected);
+  }, [selected]);
   const [pending, setPending] = useState<string | null>(null);
   const [selectedSeen, setSelectedSeen] = useState(selected);
   if (selected !== selectedSeen) {

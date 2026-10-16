@@ -598,3 +598,28 @@ Filled by the lead from the unit reports; U10 copies what concerns each spec int
 - **Lead, at merge:** `list-guide-server.ts` passes `ctx.profile` to `hooksFromPlan`; `guides-server.ts` conflicts resolved by
   keeping every import and entry; `verify-u4.log` was cut off mid-run under load (node --test killed), covered by the wave 1
   rerun (3,790 pass). Dev: migration applied 2026-10-16; backfill run.
+
+## Performance pass (lead, 2026-10-16; owner: "the new screen is pretty slow to open")
+Measured on the Vercel preview's own logs (`[timing]`, `QUAD_TIMING=1`) and locally against `next start`:
+- **On the preview, `/plan` spent ~1.7 s on the server**: the dataset's cold load (`[data] loaded 1893 colleges in
+  700–850 ms`, on nearly every request: the preview's function instances were not reused across the owner's clicks),
+  the two bundle RPCs (250–335 ms), the estimate's four high-school reads (~120–220 ms, after the dataset), and
+  `auth` (120–220 ms). Locally the same page is ~250 ms (the dataset parse is 130 ms and cached per instance).
+- **`/api/plan/next` (the header's dot) ran a whole plan load per student on every page view**: dataset, estimate,
+  suggestion sync, regenerated tasks — a second 1.7 s function call beside each page, twice (header and bottom nav).
+- **A parent's `/plan` loaded every child's plan** (two waves, up to 1 s) until the `plan_child` cookie was set, which
+  only a pick did.
+- **The guide pages** ran the viewer lookup and the plan bundle in two waves (`/plan` runs them side by side).
+Changes:
+1. `/api/plan/next` reads each student's plan bundle only and decides from the tasks (`tasksDueSoon`, `hasNewMove` in
+   `lib/planner/plan-frame.ts`); the header and bottom nav share `components/layout/usePlanDot.ts`, which keeps the
+   answer in sessionStorage for five minutes (`PlanOpened` forgets it when the Next steps tab is opened).
+2. `PlanPeople` remembers the shown child on mount, so a guardian's next open loads one child in one wave.
+3. The guide route starts the plan bundle beside the viewer lookup (`planBundle(candidate)`, `{ early }`), and is timed
+   like `/plan` (`withTiming("/plan/guide/<slug>")`, a `guide-load` span).
+4. `loadPlanFor` runs the school slices and the estimate side by side, so the estimate's high-school reads overlap the
+   dataset's first load instead of following it.
+Not changed (follow-ups for the owner): the dataset's cold parse itself (`data/schools.json` is 26.5 MB; `lineage` is
+41% of it and read in ~160 places, so splitting it out is its own piece of work; a per-college shard for the planner's
+reads would remove the parse from `/plan` entirely); whether the Vercel project reuses function instances (Fluid
+compute), since the logs show a cold dataset load on almost every request; `auth` (a Supabase round trip per request).

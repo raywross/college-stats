@@ -109,10 +109,15 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
 
 
   const read = plan;
-  let input = await span("planSchools", () => generatorInputFor(read, { gradYear, profile: profileData, home, today }));
   // Quad's estimate for every college, on the server (specs/chances/estimate.md "In the planner"): the same for the
-  // student and a guardian, who sees the student's AP exam scores too (owner, 2026-10-11).
-  const estimates = await span("estimates", () => planEstimates(profileData, read.items, { gradYear, today, visits: read.visits }));
+  // student and a guardian, who sees the student's AP exam scores too (owner, 2026-10-11). Started beside the school
+  // slices (performance pass, 2026-10-16): the estimate's high-school reads (four small queries) then overlap the
+  // dataset's first load on a cold instance instead of waiting behind it.
+  const [schoolsInput, estimates] = await Promise.all([
+    span("planSchools", () => generatorInputFor(read, { gradYear, profile: profileData, home, today })),
+    span("estimates", () => planEstimates(profileData, read.items, { gradYear, today, visits: read.visits })),
+  ]);
+  let input = schoolsInput;
   // Next steps (build-plan.md review note 3): the generators read each college's level, closeness, and ED verdict.
   input = { ...input, estimates };
 

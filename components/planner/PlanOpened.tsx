@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { track } from "@/lib/analytics";
 import type { PlanTab } from "@/lib/planner/plan-tabs";
 import { recordPlanOpen } from "@/lib/planner/store-opens";
+import { forgetPlanDot } from "@/components/layout/usePlanDot";
 
 /**
  * Reports `plan_opened {tab, viewer, everyone}` once per tab shown (specs/planner/redesign/page.md "Telemetry"):
@@ -15,7 +16,8 @@ export function PlanOpened({ tab, viewer, everyone, studentId = null }: { tab: P
     track("plan_opened", { tab, viewer, everyone });
   }, [tab, viewer, everyone]);
   useEffect(() => {
-    if (tab === "next" && studentId) void recordPlanOpen(studentId).catch(() => undefined);
+    // Recording the open is what turns the dot off, so the stored answer (usePlanDot's five-minute memory) goes too.
+    if (tab === "next" && studentId) void recordPlanOpen(studentId).then(forgetPlanDot, () => undefined);
   }, [tab, studentId]);
   return null;
 }

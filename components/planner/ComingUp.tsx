@@ -92,6 +92,7 @@ function Shape({ shape, color }: { shape: CalendarEvent["shape"]; color: string 
       </span>
     );
   if (shape === "decision") return <span className="inline-block size-3 rounded-full border-2" style={{ borderColor: c }} aria-hidden />;
+  if (shape === "visit") return <span className="inline-block size-3 rounded-full" style={{ background: c }} aria-hidden />;
   return <span className="inline-block size-3 rotate-45" style={{ background: c }} aria-hidden />;
 }
 

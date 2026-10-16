@@ -11,7 +11,7 @@
  * its stored title says.
  */
 import { SITE_NAME } from "../brand.ts";
-import { actLabel, confirmUrl, shortDate, testOf, whenLabel, type InterestActRow } from "../planner/interest-acts.ts";
+import { actLabel, coalesceByKey, confirmUrl, shortDate, testOf, whenLabel, type InterestActRow } from "../planner/interest-acts.ts";
 import { SOCIAL_LABELS } from "../social.ts";
 
 export type ConfirmAct = Pick<InterestActRow, "id" | "item_id" | "act" | "network" | "event_id" | "event_starts_at" | "event_title" | "clicked_at" | "confirm_token">;
@@ -118,7 +118,8 @@ function subjectFor(act: ConfirmAct, names: Record<string, string>): string {
 
 /** The email, or null when there's nothing pending to ask about. */
 export function buildInterestConfirm(input: InterestConfirmInput): BuiltInterestConfirm | null {
-  const [lead, ...others] = input.acts;
+  // A duplicate pending row for the same act (QA finding 3) never earns two lines in the same email.
+  const [lead, ...others] = coalesceByKey(input.acts);
   if (!lead) return null;
   const now = input.now ?? new Date();
   const zones = input.zones ?? {};

@@ -124,6 +124,8 @@ function MarkView({ mark: m, x, style, source }: { mark: CalendarMark; x: (iso: 
           $
         </Tip>
       );
+    case "visit":
+      return <Tip tip={m.tip} source={source} className="top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-card" style={{ left: `${x(m.date)}%`, background: style.color }} />;
   }
 }
 

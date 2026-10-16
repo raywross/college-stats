@@ -149,3 +149,11 @@ once; the return prompt asks once per act; nothing pending reaches `nowMoves`' t
 - Yes/No email links open a one-button page; a scanner's prefetch writes nothing.
 - Confirmed acts write through built stores: tours/info_sessions/open_houses/fairs/events → `logVisit` + visit_id; info_request/mailing_list → `markInfoRequested`; follow → `recordFollow`; test_register → the date into `tests.registeredDates`.
 - Social follows are the last option in Show interest, kept as the spec recommends.
+- QA fix round (2026-10-16): `recordAct` reuses a pending row for the same item/act/event (or network, for a
+  follow) instead of inserting a duplicate on a second click; `coalesceByKey` (`lib/planner/interest-acts.ts`)
+  defensively collapses any that slipped through anyway, on the guide's pending list and the morning email alike.
+  A confirmed visit now also reaches the Calendar tab: `lib/planner/calendar.ts` reads `ctx.visits` into a `visits`
+  lane and "Coming up" ("{College}: {visit kind}", from today on; a past visit stays off Coming up, on the row's own
+  logged line), in a new rose color (`--plan-visit`, `VISIT_VAR`). When the event's own zone (`visit_events.timezone`)
+  is unknown, `writeConfirmedAct` now falls back to a guess from the event's place's state (`zoneForState`) rather
+  than dropping the visit's time outright.

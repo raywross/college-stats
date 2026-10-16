@@ -16,7 +16,9 @@ import { pathToFileURL } from "node:url";
 import * as nodeModule from "node:module";
 import {
   actForEvent,
+  actKey,
   actLabel,
+  coalesceByKey,
   confirmUrl,
   expiresAt,
   isActToken,
@@ -152,6 +154,24 @@ test("expiry: seven days after the event, fourteen after an undated click", () =
   assert.deepEqual(visiblePending([dated, undated], new Date("2026-11-05T00:00:00Z")).map((r) => r.id), [dated.id]);
 });
 
+test("coalesceByKey: two pending rows for the same item, act, and event collapse to the newer one; different events don't", () => {
+  const older = act({ clicked_at: "2026-10-20T14:00:00.000Z" });
+  const newer = act({ clicked_at: "2026-10-20T14:05:00.000Z" });
+  const otherEvent = act({ event_id: "admissions.duke.edu:tour-2", clicked_at: "2026-10-20T13:00:00.000Z" });
+  assert.deepEqual(coalesceByKey([older, newer, otherEvent]).map((r) => r.id).sort(), [newer.id, otherEvent.id].sort());
+  // A follow has no event id, so two different networks are two different acts, not a duplicate.
+  const ig = act({ act: "follow", network: "instagram", event_id: null, event_starts_at: null });
+  const tiktok = act({ act: "follow", network: "tiktok", event_id: null, event_starts_at: null });
+  assert.equal(coalesceByKey([ig, tiktok]).length, 2);
+  // visiblePending coalesces too (the page's defensive dedupe for a row that slipped through before this fix).
+  assert.deepEqual(
+    visiblePending([older, newer], new Date("2026-10-20T15:00:00Z")).map((r) => r.id),
+    [newer.id],
+  );
+  assert.equal(actKey(older), actKey(newer));
+  assert.notEqual(actKey(older), actKey(otherEvent));
+});
+
 /* ------------------------------------------------------------------ */
 /* The prompt                                                          */
 /* ------------------------------------------------------------------ */
@@ -250,6 +270,28 @@ test("resolveActRow: a confirmed tour logs a registered visit, links it, and clo
   assert.equal(out.kind === "resolved" && out.listId, LIST);
   // A future visit leaves visited_on empty (the built first-past-visit rule).
   assert.equal(db.tables.list_items[0].visited_on, null);
+});
+
+test("resolveActRow: without the event's own zone, a confirmed visit's time falls back to a guess from its state (QA finding 4a) rather than going empty", async () => {
+  // Dev's actual shape: visit_events.timezone null (the scraper read no zone off the page) but event_place still
+  // names a state. Stanford, CA picks a zone three hours off New York's, so the fallback is provably engaging.
+  const row = act({ event_place: "Stanford, CA", event_starts_at: "2026-11-03T18:00:00.000Z" });
+  const db = planTables(row);
+  const out = await server.resolveActRow(db as never, row, "confirmed", "prompt", {}, { now: new Date("2026-10-20T15:00:00Z"), today: "2026-10-20", timeZone: null });
+  assert.equal(out.kind, "resolved");
+  const visit = db.tables.plan_visits[0];
+  assert.equal(visit.at_time, "10:00", "10am Pacific, not left empty for want of a stored zone");
+  // The event's own confirmed zone still wins when one is on record.
+  const row2 = act({ id: "bbbbbbbb-0000-4000-8000-000000000001", event_place: "Stanford, CA", event_starts_at: "2026-11-03T18:00:00.000Z" });
+  const db2 = planTables(row2);
+  await server.resolveActRow(db2 as never, row2, "confirmed", "prompt", {}, { now: new Date("2026-10-20T15:00:00Z"), today: "2026-10-20", timeZone: "America/New_York" });
+  assert.equal(db2.tables.plan_visits[0].at_time, "13:00");
+  // No state to guess from (a place with no comma, or none at all): zoneForState's own default (Eastern) applies,
+  // same as everywhere else in the product that falls back to it — still a guess, never a blank for want of trying.
+  const row3 = act({ event_place: null, event_starts_at: "2026-11-03T18:00:00.000Z" });
+  const db3 = planTables(row3);
+  await server.resolveActRow(db3 as never, row3, "confirmed", "prompt", {}, { now: new Date("2026-10-20T15:00:00Z"), today: "2026-10-20", timeZone: null });
+  assert.equal(db3.tables.plan_visits[0].at_time, "13:00");
 });
 
 test("resolveActRow: a declined act writes nothing but its own status", async () => {

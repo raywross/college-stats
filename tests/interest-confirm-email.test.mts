@@ -102,6 +102,20 @@ test("a line per other pending act, each with its own token links", () => {
   }
 });
 
+test("a duplicate pending row for the same act (clicked twice before the first was answered) earns one line, not two", () => {
+  // Same item, act, and event id by default: the shape the duplicate-click bug (QA finding 3) leaves behind.
+  const first = act({ clicked_at: "2026-10-20T14:00:00.000Z" });
+  const duplicate = act({ clicked_at: "2026-10-20T14:05:00.000Z" });
+  const email = build([duplicate, first])!;
+  assert.doesNotMatch(email.text, /Also waiting for an answer/, "the duplicate never earns its own \"other act\" line");
+  // The newer row (the one still worth asking about) leads; its own token links are the ones sent.
+  assert.ok(email.text.includes(confirmUrl(SITE, duplicate.confirm_token, "yes")));
+  assert.ok(!email.text.includes(confirmUrl(SITE, first.confirm_token, "yes")));
+  // A real second college's act is untouched: still its own line.
+  const oh = act({ item_id: ELON, act: "open_house", event_id: "elon:oh", event_title: "Fall Open House", event_starts_at: "2026-11-08T15:00:00.000Z" });
+  assert.match(build([duplicate, first, oh])!.text, /Also waiting for an answer/);
+});
+
 test("the footer: Your week's unsubscribe, one-click headers, and a link to the plan", () => {
   const email = build([act()])!;
   assert.ok(email.text.endsWith(`Turn off Your week: ${UNSUB}`));

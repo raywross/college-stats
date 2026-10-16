@@ -8,7 +8,6 @@ import type { ComponentType } from "react";
 import type { TaskKind } from "@/lib/planner/types";
 import { EdDecideCard } from "./EdDecideCard";
 import type { MoveCardProps } from "./types";
-import { StoryCard } from "./StoryCard";
 import { SubmitCard } from "./SubmitCard";
 import { ConfirmCard } from "./ConfirmCard";
 import { DecisionCard } from "./DecisionCard";
@@ -17,7 +16,9 @@ import { DecideCard } from "./DecideCard";
 import { OutcomeShareCard } from "./OutcomeShareCard";
 
 export const MOVE_CARDS: Partial<Record<TaskKind, ComponentType<MoveCardProps>>> = {
-  story: StoryCard,
+  // Plan v3 (build-plan.md "What's removed" U6): `story`'s move opens the Your story guide now (guideFor maps it,
+  // the "brag_sheet" playbook key, and the "personal_essay_draft" cycle key all to it), so it has no card of its own
+  // either and falls back to MoveCard. Its old inline card is deleted.
   ed_decide: EdDecideCard,
   ed2_decide: EdDecideCard,
   // Plan v3 (build-plan.md "What's removed" U7): the course-choice playbook entries open the courses guide now

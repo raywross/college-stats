@@ -1,11 +1,12 @@
 /**
- * The Next steps view (lib/planner/moves.ts; seasons.md "The Next steps tab"): the Now order (overdue dated, dated
- * within 14 days, ED decide in window, playbook order), the cap of six, the More / Coming up / Done partition, a
- * guardian's Your part, and taskSeason for a dated task without a season. `npm test`.
+ * The Next steps view (lib/planner/moves.ts; seasons.md "The Next steps tab"; plan v3 now.md "Ranking"): the Now order
+ * (overdue dated, dated within 14 days, ED decide in window, playbook order), the cap of three, the season gate
+ * (eligibleNow), the More / Coming up / Done / Skipped partition, a guardian's Your part, and taskSeason for a dated
+ * task without a season. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isFinancialMove, nowMoves, taskSeason, topMove, yourPartMoves } from "../lib/planner/moves.ts";
+import { eligibleNow, isFinancialMove, NOW_MAX, nowMoves, SOON_DAYS, taskSeason, topMove, yourPartMoves } from "../lib/planner/moves.ts";
 import type { PlanTask } from "../lib/planner/types.ts";
 
 const G = 2028;
@@ -51,7 +52,7 @@ test("Now's order: overdue dated, dated within 14 days, ED decide in its window,
   const ed = task({ title: "Decide on ED", kind: "ed_decide", source: "stage", season: null, window_start: "2027-04-01", window_end: "2027-10-15" });
   const soon = task({ title: "Due soon", kind: "cycle", source: "cycle", season: null, due_on: "2027-04-25" });
   const overdue = task({ title: "Overdue", kind: "cycle", source: "cycle", season: null, due_on: "2027-04-10" });
-  const g = nowMoves([playbookLate, ed, playbookEarly, soon, overdue], opts);
+  const g = nowMoves([playbookLate, ed, playbookEarly, soon, overdue], { ...opts, max: 6 });
   assert.deepEqual(g.now.map((t) => t.title), ["Overdue", "Due soon", "Decide on ED", "Playbook first", "Playbook second"]);
   assert.equal(topMove(g)?.title, "Overdue");
   // An ED decide move whose window hasn't opened sits with the rest.
@@ -59,17 +60,21 @@ test("Now's order: overdue dated, dated within 14 days, ED decide in its window,
   assert.equal(nowMoves([later, playbookEarly], opts).now[0].title, "Playbook first");
 });
 
-test("the cap of six; the rest of the season folds into More; skipped, snoozed and orphaned moves show nowhere", () => {
-  const many = Array.from({ length: 8 }, (_, i) => task({ title: `P${i}`, position: i }));
+test("the cap of three; the rest of the season folds into More; skipped is its own group; snoozed and orphaned moves show nowhere", () => {
+  assert.equal(NOW_MAX, 3);
+  assert.equal(SOON_DAYS, 14);
+  const many = Array.from({ length: 5 }, (_, i) => task({ title: `P${i}`, position: i }));
   const skipped = task({ title: "Skipped", dismissed: true });
   const snoozed = task({ title: "Snoozed", snoozed_until: "2027-05-01" });
   const orphan = task({ title: "Orphan", orphaned: true });
   const g = nowMoves([...many, skipped, snoozed, orphan], opts);
-  assert.equal(g.now.length, 6);
-  assert.deepEqual(g.more.map((t) => t.title), ["P6", "P7"]);
+  assert.deepEqual(g.now.map((t) => t.title), ["P0", "P1", "P2"]);
+  assert.deepEqual(g.more.map((t) => t.title), ["P3", "P4"]);
+  assert.deepEqual(g.skipped.map((t) => t.title), ["Skipped"]);
   const everywhere = [...g.now, ...g.more, ...g.done].map((t) => t.title);
   for (const t of ["Skipped", "Snoozed", "Orphan"]) assert.ok(!everywhere.includes(t), t);
-  assert.equal(nowMoves(many, { ...opts, max: 3 }).now.length, 3);
+  assert.ok(![...g.skipped].some((t) => t.title === "Snoozed" || t.title === "Orphan"));
+  assert.equal(nowMoves(many, { ...opts, max: 6 }).now.length, 5);
 });
 
 test("Coming up is next season's open moves (titles and dates); Done is this season's done moves", () => {
@@ -135,4 +140,73 @@ test("financial aid is set aside (owner 2026-10-15): aid forms, cost checks, the
   const groups = nowMoves(all, { season: "senior_fall", gradYear: 2027, today: "2026-10-14", viewer: "student" });
   assert.deepEqual([...groups.now, ...groups.more].map((t) => t.id).sort(), ["l", "r"]);
   assert.deepEqual(yourPartMoves(all, "2026-10-14").map((t) => t.id), []);
+});
+
+/* ------------------------------------------------------------------ */
+/* Plan v3: the season gate, skipped, three at a time                  */
+/* ------------------------------------------------------------------ */
+
+test("the season gate: a junior's cycle apply and decision_expected tasks (senior fall by date) are invisible", () => {
+  // A junior in junior spring whose list already has a college with deadlines next fall.
+  const apply = task({ title: "Duke: apply", kind: "apply", source: "college", season: null, key: "item-1:apply:rd", due_on: "2028-01-02" });
+  const earlyApply = task({ title: "Duke: apply ED", kind: "apply", source: "college", season: null, key: "item-1:apply:ed", due_on: "2027-11-01" });
+  const decision = task({ title: "Duke: decision expected", kind: "decision_expected", source: "college", season: null, key: "item-1:decision_expected", due_on: "2027-12-15" });
+  const real = task({ title: "Pick your recommenders" });
+  const g = nowMoves([apply, earlyApply, decision, real], opts);
+  assert.deepEqual(g.now.map((t) => t.title), ["Pick your recommenders"]);
+  assert.deepEqual(g.more, []);
+  assert.deepEqual(g.skipped, []);
+  assert.deepEqual(g.done, []);
+  for (const t of [apply, earlyApply, decision]) assert.equal(eligibleNow(t, opts), false, t.title);
+  // Planted: the old rule (this season, or overdue) agrees here, but a gate that let any open move through would not.
+  const leaky = [apply, earlyApply, decision, real].filter((t) => t.done_at === null);
+  assert.notDeepEqual(leaky.map((t) => t.title), g.now.map((t) => t.title));
+});
+
+test("the season gate: a carried freshman entry shows in junior fall; a later season's playbook entry does not", () => {
+  const juniorFall = { season: "junior_fall" as const, gradYear: G, today: "2026-11-15", viewer: "student" as const };
+  const carried = task({ title: "Fill in your numbers and courses", season: "freshman", key: "list-1:playbook:profile" });
+  const nextSeason = task({ title: "Register for a spring SAT or ACT", season: "junior_winter", key: "list-1:playbook:register_spring_test" });
+  const g = nowMoves([carried, nextSeason], juniorFall);
+  assert.deepEqual(g.now.map((t) => t.title), ["Fill in your numbers and courses"]);
+  assert.deepEqual(g.more, [], "next season's move is not in More either");
+  assert.deepEqual(g.comingUp.map((m) => m.title), ["Register for a spring SAT or ACT"], "it stays in Coming up (the parent's view)");
+});
+
+test("the 14-day lead: 'Common App opens Aug 1' shows on Jul 20 and not on Jul 10", () => {
+  const commonApp = task({ title: "Common App opens", kind: "cycle", source: "cycle", season: null, key: "list-1:cycle:common_app_opens", due_on: "2027-08-01" });
+  const summer = (today: string) => ({ season: "summer_before_senior" as const, gradYear: G, today, viewer: "student" as const });
+  assert.equal(taskSeason(commonApp, G, "summer_before_senior"), "senior_fall", "dated in senior fall");
+  assert.deepEqual(nowMoves([commonApp], summer("2027-07-20")).now.map((t) => t.title), ["Common App opens"]);
+  assert.deepEqual(nowMoves([commonApp], summer("2027-07-10")).now, []);
+  assert.equal(eligibleNow(commonApp, summer("2027-07-18")), true, "exactly fourteen days ahead");
+  assert.equal(eligibleNow(commonApp, summer("2027-07-17")), false, "fifteen days ahead");
+});
+
+test("a skipped move is in skipped, not now; brought back (undismissed), it returns to now", () => {
+  const a = task({ title: "A", position: 1 });
+  const b = task({ title: "B", position: 2, dismissed: true, dismissed_at: "2027-04-12T15:00:00Z", dismissed_by: "u1" });
+  const g = nowMoves([a, b], opts);
+  assert.deepEqual(g.now.map((t) => t.title), ["A"]);
+  assert.deepEqual(g.skipped.map((t) => t.title), ["B"]);
+  const back = { ...b, dismissed: false, dismissed_at: null, dismissed_by: null };
+  const g2 = nowMoves([a, back], opts);
+  assert.deepEqual(g2.now.map((t) => t.title), ["A", "B"]);
+  assert.deepEqual(g2.skipped, []);
+});
+
+test("skipped: this season's; a carried move skipped this season counts by its skip date; last season's skip does not", () => {
+  const carried = task({ title: "Carried", season: "freshman", dismissed: true, dismissed_at: "2027-04-02T10:00:00Z" });
+  const oldSkip = task({ title: "Old skip", season: "junior_winter", dismissed: true, dismissed_at: "2027-02-02T10:00:00Z" });
+  const legacy = task({ title: "Skipped before the record", season: "junior_spring", dismissed: true });
+  assert.deepEqual(nowMoves([carried, oldSkip, legacy], opts).skipped.map((t) => t.title).sort(), ["Carried", "Skipped before the record"]);
+});
+
+test("three cards; when one is ticked the fourth surfaces", () => {
+  const four = [1, 2, 3, 4].map((i) => task({ title: `M${i}`, position: i }));
+  assert.deepEqual(nowMoves(four, opts).now.map((t) => t.title), ["M1", "M2", "M3"]);
+  const ticked = four.map((t) => (t.title === "M2" ? { ...t, done_at: "2027-04-15T12:00:00Z" } : t));
+  const g = nowMoves(ticked, opts);
+  assert.deepEqual(g.now.map((t) => t.title), ["M1", "M3", "M4"]);
+  assert.deepEqual(g.done.map((t) => t.title), ["M2"]);
 });

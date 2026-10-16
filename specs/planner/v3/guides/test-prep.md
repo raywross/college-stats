@@ -106,3 +106,10 @@ string).
 - "I'll take it" updates `tests.plannedDates`; test registration is tracked via the same `plan_interest_acts` table and `ActButton` as Show interest (confirm an act to write the date to `tests.registeredDates`).
 - `plan_test_date_picked {test}` telemetry re-added.
 - The no-target fallback to the retake notice is not built (owner question).
+
+## Changed (owner, 2026-10-16): the dates first
+"The main reason to go to the page is to schedule an exam. That should be the first thing we show. Let the other two
+be pop ups or info icons." The page is now: the header line (the student's score and target) with two buttons,
+**Where it stands** and **How to study**, each opening its content in a sheet (a bottom sheet on phones); then
+**Upcoming dates** with "I'll take it" and Register; then **On your calendar**. Opening either sheet records
+`plan_why_opened { screen: "test_guide", section }`.

@@ -177,13 +177,23 @@ test("planted bad case: the old bare <p> sentence (no WhyFold) above the buttons
 test("TestGuide's Study section shows the links only; the lead sentence and the cadence fold under 'How much to study'", () => {
   const src = read("components/planner/guides/TestGuide.tsx");
   const start = src.indexOf('id="test-study"');
-  const section = src.slice(start, src.indexOf("</section>", start));
+  const section = src.slice(start, src.indexOf("</PopupButton>", start));
   assert.match(section, /<WhyFold title="How much to study" screen="test_guide" section="study">/);
   assert.match(section, /Official, free, and the ones advisors point to first:/, "the lead sentence must survive the move");
   assert.match(section, /\{study\.cadence\}/, "the cadence line must survive the move");
   // The lead sentence is inside the fold, not printed before the links list.
   const beforeLinks = section.slice(0, section.indexOf("study.resources.map"));
   assert.doesNotMatch(beforeLinks, /Official, free, and the ones advisors point to first:/);
+});
+
+test("Reach your score leads with the dates; where the score stands and how to study open as popups (owner, 2026-10-16)", () => {
+  const src = read("components/planner/guides/TestGuide.tsx");
+  assert.ok(src.indexOf('id="test-dates"') > 0 && src.indexOf('id="test-standing"') > 0 && src.indexOf('id="test-study"') > 0);
+  // Standing and study are never their own page sections; they live inside PopupButtons in the header card.
+  assert.doesNotMatch(src, /<section[^>]*aria-labelledby="test-standing"/);
+  assert.doesNotMatch(src, /<section[^>]*aria-labelledby="test-study"/);
+  assert.match(src, /<PopupButton label=\{`Where/);
+  assert.match(src, /<PopupButton label="How to study"/);
 });
 
 test("planted bad case: the lead sentence printed before the links (no fold) would fail the guard above", () => {

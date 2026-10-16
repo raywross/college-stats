@@ -8,8 +8,12 @@
  * view, no telemetry carries them). A guardian reads the same page in the third person.
  */
 import Link from "next/link";
+import { useState, type ReactNode } from "react";
+import { Info } from "lucide-react";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { MetricLabel } from "@/components/ui/info-tip";
+import { SheetDialog } from "@/components/ui/sheet-dialog";
+import { track } from "@/lib/analytics";
 import { WhyFold } from "@/components/ui/why-fold";
 import type { AnyCited } from "@/lib/lineage";
 import { DOMAINS } from "@/lib/metrics";
@@ -84,40 +88,41 @@ function TestGuideBody({ ctx, view, person, data }: GuideProps & { data: TestGui
 
   const planned = data.dates.filter((d) => plannedState(profile, d.key) !== null);
 
+  // Owner, 2026-10-16: "The main reason to go to the page is to schedule an exam. That should be the first thing we
+  // show. Let the other two be pop ups." So: the header line with two buttons (where the score stands; study), the
+  // upcoming dates, then the dates already on the calendar. Standing and study open as sheets.
   return (
     <div className="min-w-0 space-y-5">
-      <section className="rounded-3xl bg-card p-5 ring-1 ring-border sm:p-6">
+      <section className="space-y-3 rounded-3xl bg-card p-5 ring-1 ring-border sm:p-6">
         <p className="font-display text-xl font-bold">
           {header}
           {practice && <span className="ml-2 text-sm font-semibold text-muted-foreground">(practice score)</span>}
         </p>
-      </section>
-
-      <section className="space-y-3 rounded-3xl bg-card p-4 ring-1 ring-border sm:p-5" aria-labelledby="test-standing">
-        <h2 id="test-standing" className="font-display text-lg font-bold">
-          Where {isGuardian ? (first ?? "it") : "it"} stands on {isGuardian ? "the" : "your"} list
-        </h2>
-        {sentence && <p className="text-sm text-muted-foreground">{sentence}</p>}
-        <StandingRows rows={view.rows.filter((r) => !r.item.withdrawn_on && r.school)} standing={data.standing} test={test} />
-      </section>
-
-      <section className="space-y-2 rounded-3xl bg-card p-4 ring-1 ring-border sm:p-5" aria-labelledby="test-study">
-        <h2 id="test-study" className="font-display text-lg font-bold">
-          Study
-        </h2>
-        <ul className="space-y-1 text-sm">
-          {study.resources.map((r) => (
-            <li key={r.href}>
-              <a href={r.href} target="_blank" rel="noopener" className="font-semibold text-primary hover:underline">
-                {r.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-        <WhyFold title="How much to study" screen="test_guide" section="study">
-          <p>Official, free, and the ones advisors point to first:</p>
-          <p className="text-xs">{study.cadence}</p>
-        </WhyFold>
+        <div className="flex flex-wrap gap-2">
+          <PopupButton label={`Where ${isGuardian ? "the score" : "it"} stands`} title={`Where ${isGuardian ? (first ?? "it") : "it"} stands on ${isGuardian ? "the" : "your"} list`} section="standing">
+            <div className="space-y-3" id="test-standing">
+              {sentence && <p className="text-sm text-muted-foreground">{sentence}</p>}
+              <StandingRows rows={view.rows.filter((r) => !r.item.withdrawn_on && r.school)} standing={data.standing} test={test} />
+            </div>
+          </PopupButton>
+          <PopupButton label="How to study" title={`Study for the ${TEST_LABEL[test]}`} section="study">
+            <div className="space-y-3" id="test-study">
+              <ul className="space-y-1 text-sm">
+                {study.resources.map((r) => (
+                  <li key={r.href}>
+                    <a href={r.href} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
+                      {r.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <WhyFold title="How much to study" screen="test_guide" section="study">
+                <p>Official, free, and the ones advisors point to first:</p>
+                <p className="text-xs">{study.cadence}</p>
+              </WhyFold>
+            </div>
+          </PopupButton>
+        </div>
       </section>
 
       <section className="space-y-3 rounded-3xl bg-card p-4 ring-1 ring-border sm:p-5" aria-labelledby="test-dates">
@@ -161,6 +166,24 @@ function TestGuideBody({ ctx, view, person, data }: GuideProps & { data: TestGui
         )}
       </section>
     </div>
+  );
+}
+
+/** A secondary button that opens its content in a sheet (a bottom sheet on phones, centered from `sm`). */
+function PopupButton({ label, title, section, children }: { label: string; title: string; section: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <SheetDialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) track("plan_why_opened", { screen: "test_guide", section });
+      }}
+      title={title}
+      trigger={{ className: "inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-semibold ring-1 ring-border hover:bg-muted", label, content: <><Info className="size-4" aria-hidden />{label}</> }}
+    >
+      {children}
+    </SheetDialog>
   );
 }
 

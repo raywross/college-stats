@@ -1,4 +1,5 @@
 import { CompletenessMeter } from "@/components/me/CompletenessMeter";
+import { ConnectionsForm } from "@/components/me/ConnectionsForm";
 import { ImportLocalProfile } from "@/components/me/ImportLocalProfile";
 import { ProfileForm } from "@/components/me/ProfileForm";
 import { StorySection } from "@/components/me/StorySection";
@@ -25,6 +26,10 @@ export function StudentNumbers({ profile }: { profile: ProfileAccess }) {
       <CompletenessMeter data={data} />
       <ProfileForm studentId={profile.student.id} data={data} canEdit={profile.canEdit} />
       <StorySection profile={profile} />
+      {/* Plan v3 (connections.md): the same cards as the intake's Connections step, after the rest — grades, test
+          scores, courses, and activities moved into the plan's intake, so this is the one profile fact still entered
+          here too. */}
+      <ConnectionsForm studentId={profile.student.id} data={data} canEdit={profile.canEdit} />
     </div>
   );
 }

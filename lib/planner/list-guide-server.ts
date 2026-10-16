@@ -291,7 +291,7 @@ async function depsFor(ctx: PlanContext, withEstimate = true): Promise<GuideDeps
   const input = estimateInputFromProfile(ctx.profile, "", null).student;
   const estCtx = await estimateContext(input, { coreAtTopLevel: ctx.profile?.academics.coreAtTopLevel ?? null, grade: gradeNow(ctx.gradYear, ctx.today) });
   // Plan v3 U2a adds `ctx.profile` as hooksFromPlan's third argument (connections); until it merges, the list's own hooks.
-  const hooks = hooksFromPlan(ctx.items, ctx.visits);
+  const hooks = hooksFromPlan(ctx.items, ctx.visits, ctx.profile);
   const estimate = (ids: readonly string[]): Record<string, EstimateResult> => {
     try {
       return estimateMany(input, ids, estCtx, hooks);

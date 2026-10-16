@@ -2,10 +2,14 @@
 
 import { Headline } from "@/components/planner/intake/Headline";
 import { reviewLines, type IntakeDraft, type IntakeStep } from "@/lib/planner/intake";
+import { useSchoolEntries } from "@/lib/school-api";
 
 /** Step 3 (intake.md "Review and saving"): one row per answer, each with an Edit link back to its step. */
 export function ReviewStep({ draft, today, onEdit }: { draft: IntakeDraft; today: string; onEdit: (step: IntakeStep) => void }) {
-  const lines = reviewLines(draft, today);
+  // The Connections line needs each college's display name (lib/planner/intake.ts reviewLines only has unit ids).
+  const connectionEntries = useSchoolEntries(draft.connections.map((c) => c.unitId));
+  const names = Object.fromEntries(connectionEntries.map((e) => [e.id, e.name]));
+  const lines = reviewLines(draft, today, names);
   return (
     <div className="space-y-6">
       <Headline lead="Look" pop="right?" />

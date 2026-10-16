@@ -8,6 +8,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  activityStepAt,
   applyIntake,
   apName,
   classYearOptions,
@@ -17,9 +18,11 @@ import {
   effectiveScale,
   gpaCheck,
   intakeNeeded,
+  intakeStepParam,
   INTAKE_DONE,
   INTAKE_REVIEW,
   intakeToSave,
+  newIntakeConnection,
   parseIntakeSave,
   POPULAR_AP,
   reviewLines,
@@ -39,7 +42,7 @@ import { activityByKey } from "../lib/chances/activity-catalog.ts";
 import { allAwards } from "../lib/chances/awards-catalog.ts";
 import { activityFromCatalog, awardFromCatalog, setClubFamily, setYearTitle, toggleYear, typedActivity, typedAward } from "../lib/planner/activity-steps.ts";
 import { isCatalogKeyFor } from "../lib/chances/catalog.ts";
-import { emptyProfile, gpaMaxFor, sanitizeProfile, type StudentProfileData } from "../lib/student-profile.ts";
+import { emptyProfile, gpaMaxFor, sanitizeProfile, type ConnectionEntry, type StudentProfileData } from "../lib/student-profile.ts";
 import type { CourseEntry } from "../lib/chances/types.ts";
 
 const TODAY = "2026-10-11";
@@ -61,6 +64,7 @@ const draft = (over: Partial<IntakeDraft> = {}): IntakeDraft => ({
   courses: [],
   activities: [],
   awards: [],
+  connections: [],
   activitiesNone: {},
   ...over,
 });
@@ -177,12 +181,29 @@ test("stepValid: grades need a class and a valid GPA; the test step a choice, a 
   assert.equal(stepValid(draft({ score: "" }), 1), false);
   assert.equal(stepValid(draft({ target: "1700" }), 1), false);
   assert.equal(stepValid(draft({ courses: [{ id: "x", key: "ap_biology", year: null, exam: null }] }), 2), true, "AP courses never block");
-  for (const step of [3, 4, 5, 6] as const) {
+  for (const step of [3, 4, 5, 7] as const) {
     assert.equal(stepValid(draft({ gpa: "" }), step), true, `activity step ${step} never blocks, even with an invalid grades step`);
   }
+  // Step 6, Connections, never blocks either (connections.md "stepValid never blocks on 6").
+  assert.equal(stepValid(draft({ gpa: "" }), 6), true);
   assert.equal(stepValid(draft(), INTAKE_REVIEW), true);
   assert.equal(stepValid(draft({ gpa: "" }), INTAKE_REVIEW), false);
   assert.equal(stepValid(draft(), INTAKE_DONE), true);
+});
+
+test("the renumbered steps (plan v3 connections.md): Connections at 6, Other at 7, Review 8, Done 9", () => {
+  assert.equal(INTAKE_REVIEW, 8);
+  assert.equal(INTAKE_DONE, 9);
+  assert.equal(activityStepAt(3), "sports");
+  assert.equal(activityStepAt(4), "clubs");
+  assert.equal(activityStepAt(5), "work");
+  assert.equal(activityStepAt(6), null, "step 6 is Connections, not an activity step");
+  assert.equal(activityStepAt(7), "other");
+});
+
+test("intakeStepParam: 0 through 7 (grades through Other); anything else (Review, Done, junk) is null", () => {
+  for (let i = 0; i <= 7; i++) assert.equal(intakeStepParam(String(i)), i);
+  for (const v of ["8", "9", "-1", "10", "x", null, undefined, ""]) assert.equal(intakeStepParam(v), null, String(v));
 });
 
 /* ------------------------------------------------------------------ */
@@ -306,6 +327,7 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
     courses: [],
     activities: [],
     awards: [],
+    connections: [],
     activitiesNone: {},
   });
   const d = draftFromProfile(sampleProfile(), 2027, TODAY);
@@ -333,7 +355,8 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
     { step: 3, label: "Sports", value: "Not added" },
     { step: 4, label: "Clubs", value: "Not added" },
     { step: 5, label: "Work", value: "Not added" },
-    { step: 6, label: "Other", value: "Not added" },
+    { step: 6, label: "Connections", value: "Not set" },
+    { step: 7, label: "Other", value: "Not added" },
   ]);
 });
 
@@ -471,12 +494,13 @@ test("the four activity steps: entries built with their helpers and awards round
   const awards = [awardFromCatalog(allAwards().find((a) => a.key === "eagle_scout")!), { ...typedAward("Rotary youth award"), tier: 2 as const, year: 11 as const }];
   const d = draft({ activities: [soccer, deca, club, job, volunteering], awards });
 
-  const lines = reviewLines(d, TODAY).filter((l) => l.step >= 3);
+  // Step 6 (Connections) is filtered out here: this test is about the four activity steps only.
+  const lines = reviewLines(d, TODAY).filter((l) => l.step >= 3 && l.step !== 6);
   assert.deepEqual(lines, [
     { step: 3, label: "Sports", value: "Soccer" },
     { step: 4, label: "Clubs", value: "DECA, Bee Club" },
     { step: 5, label: "Work", value: "Summer intern at City Hall" },
-    { step: 6, label: "Other", value: "2 awards · Food bank volunteer" },
+    { step: 7, label: "Other", value: "2 awards · Food bank volunteer" },
   ]);
 
   const saved = intakeToSave(d)!;
@@ -502,7 +526,7 @@ test("the four activity steps: entries built with their helpers and awards round
   const back = draftFromProfile(out, 2027, TODAY);
   assert.deepEqual(back.activities, out.academics.activities);
   assert.deepEqual(back.awards, out.academics.awards);
-  assert.deepEqual(reviewLines(back, TODAY).filter((l) => l.step >= 3), lines, "the same Review lines after a round trip");
+  assert.deepEqual(reviewLines(back, TODAY).filter((l) => l.step >= 3 && l.step !== 6), lines, "the same Review lines after a round trip");
 });
 
 test("the activity steps never block and their draft carries through untouched when skipped", () => {
@@ -552,6 +576,7 @@ test("applyIntake: status always derives from the picked year, the class, and to
     activitiesNone: {},
     activities: [],
     awards: [],
+    connections: [],
   };
   const out = applyIntake(p, save, TODAY);
   const by = Object.fromEntries(out.academics.courses.map((c) => [c.id, c]));
@@ -618,6 +643,7 @@ const GOOD: IntakeSave = {
   courses: [{ id: "c1", key: "ap_biology", year: 11, exam: "4" }],
   activities: [],
   awards: [],
+  connections: [],
   activitiesNone: {},
 };
 
@@ -686,6 +712,71 @@ test("parseIntakeSave: accepts a good save and refuses anything off", () => {
   // unanswered rather than refusing the whole save — matches sanitizeClassStanding's own leniency (owner, 2026-10-12).
   assert.equal(parseIntakeSave({ ...GOOD, classStanding: "top2" })?.classStanding, null);
   assert.equal(parseIntakeSave({ ...GOOD, classStanding: "no_rank" })?.classStanding, null);
+});
+
+/* ------------------------------------------------------------------ */
+/* Connections (plan v3, connections.md)                               */
+/* ------------------------------------------------------------------ */
+
+const connection = (over: Partial<ConnectionEntry> = {}): ConnectionEntry => ({ id: "c1", unitId: "100654", family: ["parent"], recruited: "none", ...over });
+
+test("intakeToSave and parseIntakeSave: connections carry through, capped, and dedupe by unit id", () => {
+  const many = Array.from({ length: 12 }, (_, i) => connection({ id: `c${i}`, unitId: String(100000 + i) }));
+  const saved = intakeToSave(draft({ connections: many }))!;
+  assert.equal(saved.connections.length, 10, "CONNECTIONS_MAX caps the list");
+  const parsed = parseIntakeSave(JSON.parse(JSON.stringify(saved)))!;
+  assert.deepEqual(parsed.connections, saved.connections);
+});
+
+test("an unknown entry is dropped: no family and no recruiting, or a malformed unit id", () => {
+  const nothing = connection({ family: [], recruited: "none" });
+  assert.deepEqual(intakeToSave(draft({ connections: [nothing] }))!.connections, []);
+  const badId = connection({ unitId: "not-a-unit-id" });
+  assert.deepEqual(intakeToSave(draft({ connections: [badId] }))!.connections, []);
+  assert.deepEqual(parseIntakeSave({ ...GOOD, connections: [badId] })?.connections, []);
+  const recruitedOnly = connection({ family: [], recruited: "pre_read" });
+  assert.deepEqual(intakeToSave(draft({ connections: [recruitedOnly] }))!.connections, [recruitedOnly]);
+});
+
+test("Connections' None: kept only while there are no entries; adding one clears it, same as the activity steps", () => {
+  const none = intakeToSave(draft({ connections: [], activitiesNone: { connections: true } }))!;
+  assert.equal(none.activitiesNone.connections, true);
+  const withEntry = intakeToSave(draft({ connections: [connection()], activitiesNone: { connections: true } }))!;
+  assert.equal(withEntry.activitiesNone.connections, undefined, "an entry clears the None answer");
+  assert.deepEqual(withEntry.connections, [connection()]);
+});
+
+test("reviewLines: the Connections line, with names, None, and Not set", () => {
+  const withNames = reviewLines(draft({ connections: [connection(), connection({ id: "c2", unitId: "200800", family: ["sibling"] }), connection({ id: "c3", unitId: "300100", family: [], recruited: "contact" })] }), TODAY, {
+    "100654": "Duke University",
+    "200800": "University of Michigan",
+    "300100": "Elon University",
+  }).find((l) => l.step === 6);
+  assert.equal(withNames?.value, "Duke University (parent), University of Michigan (sibling), Elon University (recruited)");
+  assert.equal(reviewLines(draft(), TODAY).find((l) => l.step === 6)?.value, "Not set");
+  assert.equal(reviewLines(draft({ activitiesNone: { connections: true } }), TODAY).find((l) => l.step === 6)?.value, "None");
+  // Without a names map, an unknown unit id falls back to the id itself.
+  assert.equal(reviewLines(draft({ connections: [connection()] }), TODAY).find((l) => l.step === 6)?.value, "100654 (parent)");
+});
+
+test("draftFromProfile and applyIntake: connections round-trip onto academics.connections", () => {
+  const p = emptyProfile();
+  p.tests.focus = "none";
+  p.academics.gpa = 3.5;
+  p.academics.connections = [connection(), connection({ id: "c2", unitId: "200800", family: [], recruited: "likely_letter" })];
+  const d = draftFromProfile(p, 2027, TODAY);
+  assert.deepEqual(d.connections, p.academics.connections);
+  const saved = intakeToSave(d)!;
+  const out = applyIntake(p, saved, TODAY);
+  assert.deepEqual(out.academics.connections, p.academics.connections);
+});
+
+test("newIntakeConnection: a fresh entry, nothing picked yet (not saved until something is)", () => {
+  const c = newIntakeConnection("100654");
+  assert.equal(c.unitId, "100654");
+  assert.deepEqual(c.family, []);
+  assert.equal(c.recruited, "none");
+  assert.deepEqual(intakeToSave(draft({ connections: [c] }))!.connections, [], "a card with nothing picked isn't saved");
 });
 
 /* ------------------------------------------------------------------ */

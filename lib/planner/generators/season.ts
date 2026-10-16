@@ -170,7 +170,7 @@ export function moveFacts(input: GeneratorInput): MoveFacts {
   const items = input.items.filter((i) => !i.withdrawn_on);
   const opts = { season: input.season, today: input.today };
   const edCandidates = edOpportunities(items, input.estimates, input.schools, opts);
-  const hooks = hooksFromPlan(items, input.visits);
+  const hooks = hooksFromPlan(items, input.visits, input.profile);
   const interest = interestMoves(items, input.estimates, input.schools, hooks, edCandidates, opts);
   const { counts, unsorted } = levelCounts(items, input.estimates);
   // The same three-state affordability and Dream clause the Colleges tab's notice reads (lib/planner/plan-view.ts

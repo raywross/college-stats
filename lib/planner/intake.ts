@@ -20,12 +20,15 @@ import {
   sanitizeActivities,
   sanitizeActivitiesNone,
   sanitizeAwards,
+  sanitizeConnections,
   sanitizeProfile,
   type ActivitiesNone,
+  type ConnectionEntry,
   type GpaScale,
   type StudentProfileData,
   type TestFocus,
 } from "../student-profile.ts";
+import { isUnitId } from "../follow-state.ts";
 import type { PlanContext } from "./types.ts";
 import { reconcileStepNone, stepReviewValue, type ActivityStep } from "./activity-steps.ts";
 
@@ -77,28 +80,33 @@ export interface IntakeDraft {
   activities: ActivityEntry[];
   /** The Other step's awards (inputs-beyond-academics.md "Awards"), capped by AWARDS_MAX. */
   awards: AwardEntry[];
-  /** The activity steps answered "None" (student-profile.ts academics.activitiesNone; owner, 2026-10-12). */
+  /**
+   * Plan v3's Connections step (specs/planner/v3/connections.md), between Work and Other: the colleges a parent,
+   * grandparent, or sibling went to, or that are recruiting the student, at most CONNECTIONS_MAX.
+   */
+  connections: ConnectionEntry[];
+  /** The activity steps (and plan v3's Connections step) answered "None" (student-profile.ts academics.activitiesNone; owner, 2026-10-12). */
   activitiesNone: ActivitiesNone;
 }
 
-/** 0 grades, 1 test, 2 AP courses, 3 sports, 4 clubs, 5 work, 6 other (3–6 optional), 7 review, 8 done. */
-export type IntakeStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-export const INTAKE_REVIEW = 7;
-export const INTAKE_DONE = 8;
-/** The step each activity screen is. */
-export const ACTIVITY_STEP_INDEX: Readonly<Record<ActivityStep, 3 | 4 | 5 | 6>> = { sports: 3, clubs: 4, work: 5, other: 6 };
+/** 0 grades, 1 test, 2 AP courses, 3 sports, 4 clubs, 5 work, 6 connections, 7 other (3–7 optional), 8 review, 9 done. */
+export type IntakeStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+export const INTAKE_REVIEW = 8;
+export const INTAKE_DONE = 9;
+/** The step each activity screen is (Connections, step 6, isn't one of the four — it's handled directly in this module). */
+export const ACTIVITY_STEP_INDEX: Readonly<Record<ActivityStep, 3 | 4 | 5 | 7>> = { sports: 3, clubs: 4, work: 5, other: 7 };
 /** The activity screen a step index is, or null. */
 /**
- * A `&step=N` link into edit mode (the plan's people line, "Next: add clubs"; owner 2026-10-12): an entry step 0–6
+ * A `&step=N` link into edit mode (the plan's people line, "Next: add clubs"; owner 2026-10-12): an entry step 0–7
  * (grades through Other), else null (Review, Done, and anything else aren't linkable this way).
  */
 export function intakeStepParam(v: string | null | undefined): IntakeStep | null {
-  if (v == null || !/^[0-6]$/.test(v)) return null;
+  if (v == null || !/^[0-7]$/.test(v)) return null;
   return Number(v) as IntakeStep;
 }
 
 export function activityStepAt(step: IntakeStep): ActivityStep | null {
-  return step === 3 ? "sports" : step === 4 ? "clubs" : step === 5 ? "work" : step === 6 ? "other" : null;
+  return step === 3 ? "sports" : step === 4 ? "clubs" : step === 5 ? "work" : step === 7 ? "other" : null;
 }
 
 /** What `saveIntake` takes: the draft, checked and converted. */
@@ -119,6 +127,7 @@ export interface IntakeSave {
   courses: IntakeCourse[];
   activities: ActivityEntry[];
   awards: AwardEntry[];
+  connections: ConnectionEntry[];
   activitiesNone: ActivitiesNone;
 }
 
@@ -470,6 +479,22 @@ export function newIntakeCourse(key: string): IntakeCourse {
 }
 
 /* ------------------------------------------------------------------ */
+/* Connections (specs/planner/v3/connections.md)                       */
+/* ------------------------------------------------------------------ */
+
+let connectionCounter = 0;
+/** A fresh connection row id. */
+function newConnectionId(): string {
+  connectionCounter += 1;
+  return `connection-${Date.now().toString(36)}${connectionCounter}`;
+}
+
+/** A college just added on the Connections step: nothing picked yet (a card with nothing picked isn't saved). */
+export function newIntakeConnection(unitId: string): ConnectionEntry {
+  return { id: newConnectionId(), unitId, family: [], recruited: "none" };
+}
+
+/* ------------------------------------------------------------------ */
 /* Profile ↔ draft                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -509,6 +534,7 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     courses: [],
     activities: [],
     awards: [],
+    connections: [],
     activitiesNone: {},
   };
   if (!profile) return empty;
@@ -539,6 +565,7 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     courses: a.courses.filter(isIntakeRow).map(intakeCourseFrom),
     activities: a.activities,
     awards: a.awards,
+    connections: a.connections,
     activitiesNone: a.activitiesNone ?? {},
   };
 }
@@ -556,8 +583,24 @@ const CLASS_STANDING_LABELS: Readonly<Record<ClassStanding, string>> = {
 
 const RANK_EXPECTATION_LABELS: Readonly<Record<RankExpectation, string>> = { valedictorian: "Valedictorian", salutatorian: "Salutatorian" };
 
-/** The review card's rows: label, value, and the step its Edit link opens. */
-export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2 | 3 | 4 | 5 | 6; label: string; value: string }[] {
+/**
+ * The Connections review line (specs/planner/v3/connections.md "Adding one"): "Duke (parent, grandparent), Michigan
+ * (sibling), Elon (recruited)", "None" when answered with nothing, or "Not set" when not answered at all. `names`
+ * maps a unit id to its display name (the caller passes the ones it has; an unknown id falls back to the id itself).
+ */
+function connectionsReviewValue(connections: readonly ConnectionEntry[], none: boolean, names: Record<string, string>): string {
+  if (connections.length === 0) return none ? "None" : "Not set";
+  return connections
+    .map((c) => {
+      const parts: string[] = [...c.family];
+      if (c.recruited !== "none") parts.push("recruited");
+      return `${names[c.unitId] ?? c.unitId} (${parts.join(", ")})`;
+    })
+    .join(", ");
+}
+
+/** The review card's rows: label, value, and the step its Edit link opens. `names` maps a connection's unit id to its display name. */
+export function reviewLines(d: IntakeDraft, today: string, names: Record<string, string> = {}): { step: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7; label: string; value: string }[] {
   const test = d.test;
   let testValue = "Not set";
   if (test === "none") testValue = "Not testing";
@@ -579,7 +622,8 @@ export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2 | 
     { step: 3, label: "Sports", value: stepReviewValue("sports", d.activities, d.awards, d.activitiesNone.sports === true) },
     { step: 4, label: "Clubs", value: stepReviewValue("clubs", d.activities, d.awards, d.activitiesNone.clubs === true) },
     { step: 5, label: "Work", value: stepReviewValue("work", d.activities, d.awards, d.activitiesNone.work === true) },
-    { step: 6, label: "Other", value: stepReviewValue("other", d.activities, d.awards, d.activitiesNone.other === true) },
+    { step: 6, label: "Connections", value: connectionsReviewValue(d.connections, d.activitiesNone.connections === true, names) },
+    { step: 7, label: "Other", value: stepReviewValue("other", d.activities, d.awards, d.activitiesNone.other === true) },
   ];
 }
 
@@ -592,11 +636,31 @@ export function courseCount(courses: readonly IntakeCourse[], classYear: number,
   return `${taken} taken · ${rest} taking or planned`;
 }
 
+/**
+ * Connections whose unit id is at least validly formatted (lib/follow-state.ts isUnitId); this module has no
+ * dataset access to check a college actually exists — the step's own search only ever offers real ones, so this
+ * just keeps a tampered or malformed id from being stored as a connection.
+ */
+function sanitizeIntakeConnections(input: unknown): ConnectionEntry[] {
+  const rows = Array.isArray(input) ? input.filter((c) => isUnitId((c as { unitId?: unknown } | null | undefined)?.unitId)) : input;
+  return sanitizeConnections(rows);
+}
+
+/**
+ * The Connections step's "None" (connections.md "A card with nothing picked isn't saved"), reconciled the way the
+ * four activity steps' own None is (owner, 2026-10-12): kept only while there are no connections entered; adding
+ * one clears it.
+ */
+function reconcileConnectionsNone(rawNone: ActivitiesNone, connectionsCount: number, base: ActivitiesNone): ActivitiesNone {
+  return rawNone.connections && connectionsCount === 0 ? { ...base, connections: true } : base;
+}
+
 /** The draft as a save, or null when the grades or test step isn't valid. Courses with nothing chosen are left out. */
 export function intakeToSave(d: IntakeDraft): IntakeSave | null {
   if (!stepValid(d, 0) || !stepValid(d, 1) || d.classYear === null || d.test === null) return null;
   const testing = d.test !== "none";
   const weightedGpa = d.weightedGpa.trim() === "" ? null : numberOf(d.weightedGpa);
+  const connections = sanitizeIntakeConnections(d.connections);
   return {
     classYear: d.classYear,
     gpa: numberOf(d.gpa),
@@ -615,8 +679,9 @@ export function intakeToSave(d: IntakeDraft): IntakeSave | null {
     courses: d.courses.filter((c) => c.year !== null).map((c) => ({ id: c.id, key: c.key, year: c.year, exam: c.exam })),
     activities: sanitizeActivities(d.activities),
     awards: sanitizeAwards(d.awards),
-    // A step with entries can't also be "None" (adding an entry clears it).
-    activitiesNone: reconcileStepNone(d.activities, d.awards, d.activitiesNone),
+    connections,
+    // A step with entries can't also be "None" (adding an entry clears it); same rule for Connections.
+    activitiesNone: reconcileConnectionsNone(d.activitiesNone, connections.length, reconcileStepNone(d.activities, d.awards, d.activitiesNone)),
   };
 }
 
@@ -715,8 +780,10 @@ export function parseIntakeSave(input: unknown): IntakeSave | null {
   }
   const activities = sanitizeActivities(input.activities);
   const awards = sanitizeAwards(input.awards);
-  const activitiesNone = reconcileStepNone(activities, awards, sanitizeActivitiesNone(input.activitiesNone));
-  return { classYear, gpa, gpaScale, weightedGpa, classStanding, classRankPercentile, rankExpectation, focus, score, practice, target, highSchool, highSchoolId, courses, activities, awards, activitiesNone };
+  const connections = sanitizeIntakeConnections(input.connections);
+  const rawNone = sanitizeActivitiesNone(input.activitiesNone);
+  const activitiesNone = reconcileConnectionsNone(rawNone, connections.length, reconcileStepNone(activities, awards, rawNone));
+  return { classYear, gpa, gpaScale, weightedGpa, classStanding, classRankPercentile, rankExpectation, focus, score, practice, target, highSchool, highSchoolId, courses, activities, awards, connections, activitiesNone };
 }
 
 /** The draft course a saved row would open as; an unchanged course keeps its saved row as it is. */
@@ -779,8 +846,9 @@ export function applyIntake(profile: StudentProfileData, s: IntakeSave, today: s
       courseRigorCount: null,
       activities: s.activities,
       awards: s.awards,
-      // The intake's activity steps own their "None" keys; the Connections step's (plan v3) is kept as saved.
-      activitiesNone: profile.academics.activitiesNone.connections ? { ...s.activitiesNone, connections: true } : s.activitiesNone,
+      // Plan v3: the Connections step now owns its own "None" key, reconciled in intakeToSave/parseIntakeSave.
+      connections: s.connections,
+      activitiesNone: s.activitiesNone,
     },
     tests,
   });

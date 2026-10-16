@@ -8,7 +8,6 @@ import { StandingBadge } from "@/components/chances/StandingBadge";
 import { useStanding, type LikeYou } from "@/components/chances/useStanding";
 import { WhatWentIn } from "@/components/chances/WhatWentIn";
 import { useLocalProfile } from "@/components/me/useLocalProfile";
-import { AddToListForHooks } from "@/components/planner/AboutYouAndCollege";
 import { InfoTip } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import { loginHref } from "@/lib/accounts";
@@ -20,6 +19,7 @@ import type { PoolSchool } from "@/lib/chances/pool-rate";
 import { panelParts } from "@/lib/chances/what-went-in";
 import type { EstimateResult } from "@/lib/chances/types";
 import type { AnyCited } from "@/lib/lineage";
+import { connectionSentence, type ConnectionEntry } from "@/lib/student-profile";
 import { stateName } from "@/lib/states";
 
 export interface StandingCardProps {
@@ -69,7 +69,8 @@ export function StandingCard({ unitId, college, cites, majorCites, families, poo
   if (s.status === "loading") return <div className="h-24 animate-pulse rounded-2xl bg-muted/50" aria-hidden />;
 
   if (s.status === "ready") {
-    const { result, yours, student, likeYou } = s;
+    const { result, yours, student, likeYou, connections } = s;
+    const connection = connections.find((c: ConnectionEntry) => c.unitId === unitId) ?? null;
     const parts = panelParts(result);
     // The stage-2 sentence's ⓘ (pool-explainer.md "Who you're compared with"): built from the same student the
     // estimate used, so the panel never disagrees with the sentence beside it.
@@ -110,9 +111,9 @@ export function StandingCard({ unitId, college, cites, majorCites, families, poo
             </li>
           ))}
         </ul>
-        {/* inputs-beyond-academics.md "Legacy": this card has no list row to carry the toggle and the recruited
-            pick, so it points at the planner instead, where "About you and {College}" lives. */}
-        {s.signedIn && <AddToListForHooks college={college} href="/plan" />}
+        {/* Plan v3 (connections.md "The profile's standing card"): the connection's own sentence, read directly
+            from the profile — whether or not this college is on a list. Nothing when there is none. */}
+        {s.signedIn && connection && <p className="text-sm text-muted-foreground">{connectionSentence(connection)}</p>}
         {!s.signedIn && <SaveYourScores unitId={unitId} />}
         {!s.signedIn && <SignedOutMajor unitId={unitId} college={college} families={families} majorCites={majorCites} />}
       </div>

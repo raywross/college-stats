@@ -27,7 +27,7 @@ export async function planEstimates(
   try {
     const input = estimateInputFromProfile(profile, "", null).student;
     const ctx = await estimateContext(input, { coreAtTopLevel: profile?.academics.coreAtTopLevel ?? null, grade: gradeNow(opts.gradYear, opts.today) });
-    const hooks = hooksFromPlan(items, opts.visits ?? []);
+    const hooks = hooksFromPlan(items, opts.visits ?? [], profile);
     return estimateMany(input, unitIds, ctx, hooks);
   } catch (err) {
     console.error(`planner: estimates failed: ${err instanceof Error ? err.message : String(err)}`);

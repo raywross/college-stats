@@ -66,6 +66,19 @@ const draft = (over: Partial<IntakeDraft> = {}): IntakeDraft => ({
   awards: [],
   connections: [],
   activitiesNone: {},
+  majors: [],
+  stateOfResidence: null,
+  feeWaiverEligible: null,
+  firstGeneration: null,
+  sizes: [],
+  settings: [],
+  statesOrRegions: [],
+  types: [],
+  maxAverageCost: "",
+  earlyRoundInterest: null,
+  story: "",
+  storyWritten: false,
+  recommenders: [],
   ...over,
 });
 
@@ -191,9 +204,10 @@ test("stepValid: grades need a class and a valid GPA; the test step a choice, a 
   assert.equal(stepValid(draft(), INTAKE_DONE), true);
 });
 
-test("the renumbered steps (plan v3 connections.md): Connections at 6, Other at 7, Review 8, Done 9", () => {
-  assert.equal(INTAKE_REVIEW, 8);
-  assert.equal(INTAKE_DONE, 9);
+test("the renumbered steps (record build-plan review note 2): Connections at 6, Other at 7, Major 8 … Recommenders 12, Review 13, Done 14", () => {
+  assert.equal(INTAKE_REVIEW, 13);
+  assert.equal(INTAKE_DONE, 14);
+  for (const step of [8, 9, 10, 11, 12] as const) assert.equal(activityStepAt(step), null, `step ${step} isn't an activity step`);
   assert.equal(activityStepAt(3), "sports");
   assert.equal(activityStepAt(4), "clubs");
   assert.equal(activityStepAt(5), "work");
@@ -201,9 +215,9 @@ test("the renumbered steps (plan v3 connections.md): Connections at 6, Other at 
   assert.equal(activityStepAt(7), "other");
 });
 
-test("intakeStepParam: 0 through 7 (grades through Other); anything else (Review, Done, junk) is null", () => {
-  for (let i = 0; i <= 7; i++) assert.equal(intakeStepParam(String(i)), i);
-  for (const v of ["8", "9", "-1", "10", "x", null, undefined, ""]) assert.equal(intakeStepParam(v), null, String(v));
+test("intakeStepParam: 0 through 12 (grades through Recommenders); anything else (Review, Done, junk) is null", () => {
+  for (let i = 0; i <= 12; i++) assert.equal(intakeStepParam(String(i)), i);
+  for (const v of ["13", "14", "-1", "012", "1.5", "x", null, undefined, ""]) assert.equal(intakeStepParam(v), null, String(v));
 });
 
 /* ------------------------------------------------------------------ */
@@ -329,6 +343,19 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
     awards: [],
     connections: [],
     activitiesNone: {},
+    majors: [],
+    stateOfResidence: null,
+    feeWaiverEligible: null,
+    firstGeneration: null,
+    sizes: [],
+    settings: [],
+    statesOrRegions: [],
+    types: [],
+    maxAverageCost: "",
+    earlyRoundInterest: null,
+    story: "",
+    storyWritten: false,
+    recommenders: [],
   });
   const d = draftFromProfile(sampleProfile(), 2027, TODAY);
   assert.equal(d.classYear, 2027);
@@ -357,6 +384,11 @@ test("draftFromProfile: an empty profile opens empty; a saved one opens filled, 
     { step: 5, label: "Work", value: "Not added" },
     { step: 6, label: "Connections", value: "Not set" },
     { step: 7, label: "Other", value: "Not added" },
+    { step: 8, label: "Major", value: "Undecided" },
+    { step: 9, label: "Basics", value: "Not set" },
+    { step: 10, label: "Where you'd go", value: "Not set" },
+    { step: 11, label: "Your story", value: "Not yet" },
+    { step: 12, label: "Recommenders", value: "Not yet" },
   ]);
 });
 
@@ -495,7 +527,7 @@ test("the four activity steps: entries built with their helpers and awards round
   const d = draft({ activities: [soccer, deca, club, job, volunteering], awards });
 
   // Step 6 (Connections) is filtered out here: this test is about the four activity steps only.
-  const lines = reviewLines(d, TODAY).filter((l) => l.step >= 3 && l.step !== 6);
+  const lines = reviewLines(d, TODAY).filter((l) => l.step >= 3 && l.step <= 7 && l.step !== 6);
   assert.deepEqual(lines, [
     { step: 3, label: "Sports", value: "Soccer" },
     { step: 4, label: "Clubs", value: "DECA, Bee Club" },
@@ -526,7 +558,7 @@ test("the four activity steps: entries built with their helpers and awards round
   const back = draftFromProfile(out, 2027, TODAY);
   assert.deepEqual(back.activities, out.academics.activities);
   assert.deepEqual(back.awards, out.academics.awards);
-  assert.deepEqual(reviewLines(back, TODAY).filter((l) => l.step >= 3 && l.step !== 6), lines, "the same Review lines after a round trip");
+  assert.deepEqual(reviewLines(back, TODAY).filter((l) => l.step >= 3 && l.step <= 7 && l.step !== 6), lines, "the same Review lines after a round trip");
 });
 
 test("the activity steps never block and their draft carries through untouched when skipped", () => {

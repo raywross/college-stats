@@ -193,3 +193,64 @@ the branch, don't push.
 Merge R1a and R1b (resolve `profile-progress`/`season.ts` test overlaps), verify; launch R2 and R3; merge, verify, build;
 launch R4; merge, verify; R5 and QA; final verify, build, push to `feature/plan-v3` (PR #165's preview), update the PR
 body with the ranking table's link and what to check by hand.
+
+## As built by R1a (read this; it overrides the contracts above where they differ)
+- **`firstGeneration` already existed** on `academics` (`StudentProfileAcademics.firstGeneration`, from
+  inputs-beyond-academics.md; the estimate shows it as a note, and the old ProfileForm wrote it). No second field was
+  added to `basics` (one place for a fact): the Basics step reads and writes `academics.firstGeneration`. `sanitizeProfile`,
+  `emptyProfile`, and the account export (which exports the whole profile) already carry it.
+- **`lib/planner/intake.ts`** (review note 1): `RecordStep` (0–14), `RecordEntryStep` (0–12), `RECORD_REVIEW` 13,
+  `RECORD_DONE` 14 live here (record.ts re-exports them, so there's no import cycle); `IntakeStep = RecordStep`,
+  `INTAKE_REVIEW`/`INTAKE_DONE` alias them. `intakeStepParam` takes 0–12 and returns `RecordEntryStep | null`.
+  `ACTIVITY_STEP_INDEX`/`activityStepAt` unchanged.
+- **The draft's new fields** (`IntakeDraft`, for R2): `majors: MajorFamily[]`, `stateOfResidence: string | null`,
+  `feeWaiverEligible: boolean | null`, `firstGeneration: boolean | null` (null = "not sure" or unanswered, for both),
+  `sizes: SizeBucket[]`, `settings: SettingGroup[]`, `statesOrRegions: string[]`, `types: SchoolType[]`,
+  `maxAverageCost: string` (as typed), `earlyRoundInterest: EarlyRoundInterest | null`, `story: string | null` ("" for
+  nothing written; null for a guardian), `storyWritten: boolean` (derived: what a guardian's step and summary show;
+  not saved), `recommenders: RecommenderEntry[]`. `draftFromProfile(profile, gradYear, today, { relation? })`: a
+  guardian (or a redacted profile, story text "") gets `story: null`.
+- **`IntakeSave`** gains the same names as optional fields (`maxAverageCost: number | null`, `story: string | null`);
+  a field left out keeps the stored value (`applyIntake` writes only what's present), so an older client can't blank
+  anything. `intakeToSave` always sends them and never blocks on them (a cost that isn't a number is left out; empty
+  clears it). `parseIntakeSave` runs the new fields through `sanitizeProfile` itself (a one-off profile), so the rules
+  can't drift: unknown values dropped, three majors, recommenders via `sanitizeRecommenders`; it never refuses a save
+  over them. A story that isn't text reads as left out.
+- **`applyIntake`**: the story is kept when the save's is null/absent or the same text (so `updatedAt` survives);
+  changed text goes through `sanitizeStory` dated `today`; empty clears it. **`saveTheirProfileNow`
+  (lib/planner/store-plan.ts) now puts the stored story back for a guardian** before the write: a guardian's
+  `profileFor` copy is redacted, so any guardian save through the plan (intake, numbers, test dates) used to write the
+  story back as null. One extra read (`student_profiles.data`) on guardian saves only; the save fails rather than blank
+  the story if that read fails.
+- **New pure helpers in intake.ts** (for R2's steps): `maxCostOf(typed)` (null empty, NaN invalid, whole dollars
+  0–400,000), `maxCostCheck(typed)` (`{ ok, hint }`, amber hint, never blocks), `MAX_COST_LIMIT`, `dollars(n)`,
+  `placeLabel(place)` ("Outside the US" for `OUTSIDE_US`), `majorsSummary`, `basicsSummary(d, withFirstGeneration?)`,
+  `whereSummary(d, withCost?)` (the list guide's `SIZE_CHIPS`/`SETTING_CHIPS` words), `storySummary`, `recommendersSummary`.
+  `reviewLines` adds Major ("Undecided"), Basics ("Not set"), Where you'd go ("Not set"; with the cost and the early
+  round), Your story ("Written"/"Not yet"), Recommenders ("Not yet"/"2 teachers, 1 asked"); its `step` is `RecordEntryStep`.
+- **`lib/planner/record.ts`**: `RECORD_LABEL`, `recordTitle(firstName | null)` ("Your record" / "Jordan's record"),
+  `RecordSection`, `RecordStepInfo` (`step: RecordEntryStep`), `RECORD_STEPS` (rail, headline, line, required, why),
+  `SECTION_RECORD_STEP`, `SECTION_UNLOCK`, `stepSummary(draft, step)` (PlanIntake's `railSummary` plus steps 8–12; the
+  component still has its own copy until R2 rewires it), `recordProgress(profile, { relation? })` →
+  `{ done, total: 13, rows: { section, step, done, summary, unlock }[] }`, `recordNeeded`, `recordHref({ person, step?,
+  back? })` (`/plan?for=…&record=1&step=n&back=…`; no `step` for Review), `recordPageHref(id)`.
+- **`lib/planner/profile-progress.ts`** (review note 6): fourteen `PROFILE_SECTIONS` in the brief's order; `SECTION_STEP`
+  maps every section to a step (its type still admits the retired `"numbers"` so `app/plan/page.tsx` and
+  `moves-catalog.ts` compile; R3 can drop it). `LATER_SECTIONS` (story, recommenders) and `LATER_SECTIONS_SEASON`.
+  `firstMissingSection` never returns story or recommenders, and `profile_incomplete` (season.ts, two lines) now reads
+  `firstMissingSection(p) !== null`, so the profile move closes once everything else is in. `profileProgress(p, opts?:
+  { season?: Season })`: `next` skips story and recommenders before `summer_before_senior`; **without a season they are
+  never `next`** (callers that don't pass one today: `app/plan/page.tsx` `detailFrom`; R3 should pass `ctx.season`).
+  `sectionDone("story")` uses `storyWritten` (a guardian's redacted copy counts once a story exists, the guardian
+  line's own rule). `SECTION_MOVE_TITLE`: "Add a major", "Add a few basics", "Add where you'd go" (story/recommenders
+  have entries but are never used). The order change means the profile move's title after the high school is now
+  "Add your grades" (was courses).
+- **`lib/student-profile.ts`**: `hasAnyPreference` exported; `storyWritten(profile)` added.
+- **`lib/majors-search.ts`**: `MAJOR_ALIASES` (the spec's table plus a few common ones: "nurse", "pharmacy",
+  "neuroscience", "psych", "politics", …), `POPULAR_MAJORS`, `searchMajors(query, exclude, limit = 6)` →
+  `{ family, name, via }[]`, empty query → the popular chips not yet picked.
+- **Telemetry**: `plan_intake_step.step` is 0–13; `record_major_picked { count }`, `record_overview_opened { viewer:
+  "student" | "guardian" }`.
+- **`PlanIntake.tsx` (kept compiling for R2)**: shows steps 0–7 and Review (13) only; a `&step=8…12` link or a Review
+  Edit on a new row opens Review until R2 adds the screens. Note the profile move's "Add a major" now opens step 8 (was
+  the Numbers page), so R2 must land before release.

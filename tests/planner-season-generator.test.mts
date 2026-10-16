@@ -148,6 +148,24 @@ const FACTS: MoveFacts = { items: [], schools: {}, profile: null, visits: [], es
 let recN = 0;
 const rec = (status: "thinking" | "asked" | "agreed" | "invited") => ({ id: `r${++recN}`, name: `Teacher ${recN}`, subject: null, courseId: null, years: [11 as const], rank: recN, status, askedOn: null, agreedOn: null, invitedOn: null });
 
+/** Every record section in except story and recommenders. */
+function recordFull(p: StudentProfileData): StudentProfileData {
+  return {
+    ...p,
+    basics: { ...p.basics, highSchool: "Central High", stateOfResidence: "OH" },
+    academics: {
+      ...p.academics,
+      gpa: 3.6,
+      classStanding: "top25",
+      courses: [{ id: "c1" } as never],
+      activitiesNone: { sports: true, clubs: true, work: true, other: true, connections: true },
+    },
+    tests: { ...p.tests, focus: "none" },
+    plans: { ...p.plans, intendedMajors: ["14"] },
+    preferences: { ...p.preferences, sizes: ["small"] },
+  };
+}
+
 test("moveApplies: every vocabulary value", () => {
   const p = emptyProfile();
   const dream = item({ dream: true });
@@ -172,7 +190,15 @@ test("moveApplies: every vocabulary value", () => {
       [{ profile: { ...p, academics: { ...p.academics, activitiesNone: { ...p.academics.activitiesNone, connections: true } } } }, false],
     ],
     "profile_missing:other": [[{ profile: p }, true]],
-    "profile_missing:state": [[{ profile: p }, true], [{ profile: { ...p, basics: { ...p.basics, stateOfResidence: "OH" } } }, false]],
+    // Your record (review note 6): `state` folded into `basics`; where, story, and recommenders are sections too.
+    "profile_missing:basics": [
+      [{ profile: p }, true],
+      [{ profile: { ...p, basics: { ...p.basics, stateOfResidence: "OH" } } }, false],
+      [{ profile: { ...p, basics: { ...p.basics, feeWaiverEligible: false } } }, false],
+    ],
+    "profile_missing:where": [[{ profile: p }, true], [{ profile: { ...p, preferences: { ...p.preferences, settings: ["town"] } } }, false]],
+    "profile_missing:story": [[{ profile: p }, true], [{ profile: { ...p, story: { narrative: "a".repeat(200), updatedAt: null } } }, false]],
+    "profile_missing:recommenders": [[{ profile: p }, true], [{ profile: { ...p, recommenders: [rec("thinking")] } }, false]],
     story_missing: [
       [{ profile: p }, true],
       [{ profile: { ...p, story: { narrative: "a".repeat(200), updatedAt: null } } }, false],
@@ -189,7 +215,8 @@ test("moveApplies: every vocabulary value", () => {
     interest_candidate: [[{}, false], [{ interest: [{ itemId: "i", rule: "important", kind: "show_interest" }] }, true]],
     shape_gap: [[{}, false], [{ shapeGaps: [{ kind: "likely_min", level: "likely", who: "student", line: "x" }] }, true]],
     cost_limit_unset: [[{ profile: p }, true], [{ profile: { ...p, preferences: { ...p.preferences, maxAverageCost: 20_000 } } }, false]],
-    profile_incomplete: [[{ profile: null }, true], [{ profile: p }, true]],
+    // Story and recommenders never hold the profile move open (they have their own moves).
+    profile_incomplete: [[{ profile: null }, true], [{ profile: p }, true], [{ profile: recordFull(p) }, false], [{ profile: { ...recordFull(p), plans: { ...p.plans, intendedMajors: [] } } }, true]],
     no_real_score: [
       [{ profile: null }, true],
       [{ profile: p }, true],
@@ -332,9 +359,9 @@ test("the profile move's title follows the first missing section, not the generi
   // Nothing entered at all: the first section, high school.
   assert.equal(titleOf(p), "Add your high school");
 
-  // High school in, nothing else: courses.
+  // High school in, nothing else: grades (Your record's order, review note 6).
   const withHighSchool: StudentProfileData = { ...p, basics: { ...p.basics, highSchool: "Central High" } };
-  assert.equal(titleOf(withHighSchool), "Add your AP courses");
+  assert.equal(titleOf(withHighSchool), "Add your grades");
 
   // High school and courses in, GPA entered but no class standing yet: the swapped wording, not "Add your grades".
   const withGpaOnly: StudentProfileData = {
@@ -342,6 +369,13 @@ test("the profile move's title follows the first missing section, not the generi
     academics: { ...withHighSchool.academics, courses: [{ id: "c1", name: "AP Biology", subject: "science", year: 10, kind: "ap" } as never], gpa: 3.8 },
   };
   assert.equal(titleOf(withGpaOnly), "Add your class standing");
+
+  // Your record's new sections name themselves; story and recommenders never do (the move is gone once the rest is in).
+  const all = recordFull(p);
+  assert.equal(titleOf({ ...all, plans: { ...all.plans, intendedMajors: [] } }), "Add a major");
+  assert.equal(titleOf({ ...all, basics: { ...all.basics, stateOfResidence: null } }), "Add a few basics");
+  assert.equal(titleOf({ ...all, preferences: { ...all.preferences, sizes: [] } }), "Add where you'd go");
+  assert.equal(titleOf(all), undefined, "story and recommenders missing: no profile move");
 
   // None of the generated titles carry a digit (the catalog's words guard, extended to this dynamic title).
   for (const title of [titleOf(p), titleOf(withHighSchool), titleOf(withGpaOnly)]) {

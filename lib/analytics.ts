@@ -68,7 +68,8 @@ export interface AnalyticsEvents {
   /** `test` is which test the plan uses (sat, act, none), never the score. */
   plan_numbers_set: { test: "sat" | "act" | "none"; practice: boolean };
   /** The intake guide (specs/planner/redesign/intake.md): which step was completed, never the values entered. */
-  plan_intake_step: { step: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8; mode: "first" | "edit" };
+  /** Your record (specs/planner/record/build-plan.md): steps 0–12 and 13 (Review, the save). */
+  plan_intake_step: { step: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13; mode: "first" | "edit" };
   plan_group_changed: { from_auto: boolean };
   plan_dream_set: { on: boolean };
   plan_round_changed: { from_auto: boolean; round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" };
@@ -121,6 +122,9 @@ export interface AnalyticsEvents {
   recommenders_count: { n: number };
   plan_parent_season_viewed: { season: Season };
   plan_connection_added: { kind: "family" | "recruited" };
+  /* Your record (specs/planner/record/build-plan.md "Telemetry"): counts and the viewer, never a major or a value. */
+  record_major_picked: { count: number };
+  record_overview_opened: { viewer: "student" | "guardian" };
   /** Server (U4): one interest-confirmation email sent, with how many acts it asks about. */
   interest_confirm_sent: { acts: number };
   /** Visit events (specs/product/visit-events.md "Privacy and telemetry"): which surface and kind filter are viewed, never an address or a distance. */
@@ -240,6 +244,8 @@ export const EVENTS = {
   recommenders_count: { properties: ["n"], side: "client", why: "Plan v3: how many recommenders a student lists" },
   plan_parent_season_viewed: { properties: ["season"], side: "client", why: "Plan v3: parents reading the season's list" },
   plan_connection_added: { properties: ["kind"], side: "client", why: "Plan v3: connections entered, family or recruiting" },
+  record_major_picked: { properties: ["count"], side: "client", why: "Your record: how many majors a student picks (never which)" },
+  record_overview_opened: { properties: ["viewer"], side: "client", why: "Your record: the overview opened, by students and parents" },
   interest_confirm_sent: { properties: ["acts"], side: "server", why: "Plan v3: interest-confirmation emails sent, by act count" },
   visit_events_viewed: { properties: ["surface", "kind"], side: "client", why: "Visit events: which surface and kind filter get used" },
   visit_signup_clicked: { properties: ["unit_id", "kind", "near"], side: "client", why: "Visit events: sign-up clicks, by college, kind, and whether it was a near-you event" },

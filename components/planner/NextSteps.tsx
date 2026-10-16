@@ -1,12 +1,22 @@
 "use client";
 
 /**
- * The Next steps tab (specs/planner/v3/now.md "The tab"; build-plan.md "U1 Foundation" step 7). For the student:
- * the header (the season in words and class year, "How this season works"), at most three cards (`nowMoves`' `now`,
- * the season gate and NOW_MAX), and one folded **Done and skipped (n)** line: this season's done moves with a check
- * and the day, and its skipped moves with "Skipped Oct 12" and **Bring back**. Nothing else: no More this season, no
- * Coming up (the explainer's next-season line is the one look ahead). With nothing to do: "Nothing to do right now.
- * Enjoy it." and the explainer's lead. A guardian gets their own tab (ParentNextSteps.tsx, plan v3 U9).
+ * The Next steps tab (specs/planner/v3/now.md "The tab"; build-plan.md "U1 Foundation" step 7). The header (the
+ * season in words and class year, "How this season works"), at most three cards (`nowMoves`' `now`, the season gate
+ * and NOW_MAX), and one folded **Done and skipped (n)** line: this season's done moves with a check and the day, and
+ * its skipped moves with "Skipped Oct 12" and **Bring back**. Nothing else: no More this season, no Coming up (the
+ * explainer's next-season line is the one look ahead). With nothing to do: "Nothing to do right now. Enjoy it." and
+ * the explainer's lead.
+ *
+ * Owner, 2026-10-16 (plan-v3-fix-cards; `specs/planner/v3/parents.md`'s "As built" note): "For now, when a parent
+ * looks at a student they should see what they see." A guardian renders this same view — the same `nowMoves` call
+ * with `viewer: "student"` so the student's set shows, the same header, the same Done and skipped fold with Bring
+ * back for an editor — with their own **Your part** cards (`yourPartMoves`) above when non-empty. A guardian never
+ * skips (`MoveCard`'s corner menu offers Done only for a guardian); Bring back still needs edit access. Every title a
+ * guardian sees goes through `parentSafeTitle` so a `reach_score_*` move reads "Work toward the target score", never
+ * the student's own number — `MoveCard` does this for the card body; the Done/skipped fold below does it for its own
+ * rows. `ParentNextSteps.tsx` (the former guardian-only tab) is kept but unused; `specs/planner/v3/parents.md`
+ * describes it.
  *
  * A card is `MOVE_CARDS[task.kind]` when one exists, else `MoveCard` (its one button opens the move's guide). Done,
  * Skip, and Bring back are optimistic and live here, not in the cards: Done folds the card with a check and Undo for a
@@ -21,12 +31,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Check } from "lucide-react";
 import { MOVE_CARDS } from "@/components/planner/moves/registry";
 import MoveCard from "@/components/planner/moves/MoveCard";
-import { GuardianNextSteps } from "@/components/planner/ParentNextSteps";
 import { SeasonExplainer } from "@/components/planner/SeasonExplainer";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
 import { track } from "@/lib/analytics";
 import { SEASON_EXPLAINER } from "@/lib/planner/moves-catalog";
-import { doneLabel, nowMoves, skippedLabel, taskSeason } from "@/lib/planner/moves";
+import { doneLabel, nowMoves, parentSafeTitle, skippedLabel, taskSeason, yourPartMoves } from "@/lib/planner/moves";
 import { SEASON_LABELS } from "@/lib/planner/seasons";
 import { dismiss, tick, undismiss, untick } from "@/lib/planner/store";
 import type { PlanTask } from "@/lib/planner/types";
@@ -49,7 +58,6 @@ function firstClause(detail: string | null): string | null {
 }
 
 export function NextSteps({ ctx, view }: PlanTabProps) {
-  if (ctx.viewer.isGuardian) return <GuardianNextSteps ctx={ctx} view={view} />;
   return <StudentNextSteps ctx={ctx} view={view} />;
 }
 
@@ -65,11 +73,15 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const scrolled = useRef(false);
 
+  const isGuardian = ctx.viewer.isGuardian;
+  const by = isGuardian ? "guardian" : "student";
+  const yourPart = isGuardian ? yourPartMoves(ctx.tasks, ctx.today) : [];
   const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: "student" });
   const classOf = ctx.gradYear !== null ? ` · Class of ${ctx.gradYear}` : "";
   const seasonOfTask = (t: PlanTask) => taskSeason(t, ctx.gradYear, ctx.season);
   const skipped = groups.skipped.filter((t) => !restored.has(t.id));
   const foldCount = groups.done.length + skipped.length;
+  const titleFor = (t: PlanTask) => (isGuardian ? parentSafeTitle(t) : t.title);
 
   // `?move=<task id>`: scroll that card into view once, and ring it briefly.
   useEffect(() => {
@@ -121,7 +133,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
         setError(task.id, result.message);
         return;
       }
-      track("plan_move_done", { kind: task.kind, season: seasonOfTask(task), by: "student" });
+      track("plan_move_done", { kind: task.kind, season: seasonOfTask(task), by });
       router.refresh();
     });
   }
@@ -170,7 +182,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
         setError(task.id, result.message);
         return;
       }
-      track("plan_move_restored", { kind: task.kind, season: seasonOfTask(task), by: "student" });
+      track("plan_move_restored", { kind: task.kind, season: seasonOfTask(task), by });
       router.refresh();
     });
   }
@@ -185,7 +197,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
           <div className="flex min-w-0 items-center gap-2">
             <Check className="size-4 shrink-0 text-primary" aria-hidden />
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-muted-foreground line-through">{task.title}</p>
+              <p className="truncate text-sm font-medium text-muted-foreground line-through">{titleFor(task)}</p>
               {clause && <p className="truncate text-xs text-muted-foreground">{clause}</p>}
             </div>
           </div>
@@ -230,6 +242,13 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
       </div>
       <SeasonExplainer open={explainerOpen} onOpenChange={setExplainerOpen} season={ctx.season} />
 
+      {isGuardian && yourPart.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-muted-foreground">Your part</h3>
+          <div className="space-y-3">{yourPart.map(renderCard)}</div>
+        </div>
+      )}
+
       {groups.now.length === 0 ? (
         <div className="space-y-1">
           <p className="font-semibold">Nothing to do right now. Enjoy it.</p>
@@ -250,7 +269,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
               <li key={t.id} className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
                 <span className="flex min-w-0 items-center gap-2">
                   <Check className="size-3.5 shrink-0 text-primary" aria-hidden />
-                  <span className="truncate line-through">{t.title}</span>
+                  <span className="truncate line-through">{titleFor(t)}</span>
                 </span>
                 {doneLabel(t, ctx.today) && <span className="shrink-0 text-xs">{doneLabel(t, ctx.today)}</span>}
               </li>
@@ -259,7 +278,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
               <li key={t.id} className="text-sm">
                 <div className="flex items-center justify-between gap-3">
                   <span className="min-w-0">
-                    <span className="block truncate">{t.title}</span>
+                    <span className="block truncate">{titleFor(t)}</span>
                     <span className="block text-xs text-muted-foreground">{skippedLabel(t, ctx.today)}</span>
                   </span>
                   {ctx.viewer.canEdit && (

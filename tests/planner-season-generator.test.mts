@@ -15,6 +15,7 @@ import { addDays } from "../lib/planner/stage.ts";
 import { applyMerge, generateTasks, mergeTasks, taskDate } from "../lib/planner/tasks.ts";
 import { emptyProfile, type StudentProfileData } from "../lib/student-profile.ts";
 import type { GeneratorInput, PlanItem, PlanTask } from "../lib/planner/types.ts";
+import { numberProblems } from "./helpers/copy-guard.mts";
 
 const LIST = "list-1";
 const G = 2028;
@@ -143,7 +144,7 @@ test("student lists only; registered last so a built generator's key wins", () =
   assert.equal(GENERATORS.at(-1)?.name, "season");
 });
 
-const FACTS: MoveFacts = { items: [], schools: {}, profile: null, visits: [], estimates: {}, edCandidates: [], shapeGaps: [], interest: [] };
+const FACTS: MoveFacts = { items: [], schools: {}, profile: null, visits: [], estimates: {}, edCandidates: [], shapeGaps: [], interest: [], counts: null };
 let recN = 0;
 const rec = (status: "thinking" | "asked" | "agreed" | "invited") => ({ id: `r${++recN}`, name: `Teacher ${recN}`, subject: null, courseId: null, years: [11 as const], rank: recN, status, askedOn: null, agreedOn: null, invitedOn: null });
 
@@ -322,4 +323,28 @@ test("the story move's why and the junior-fall explainer (plan v3)", () => {
   assert.doesNotMatch(SEASON_EXPLAINER.junior_fall.paragraph, /Notice the teachers/);
   assert.match(SEASON_EXPLAINER.junior_fall.paragraph, /Write your story while there's no deadline\./);
   assert.match(SEASON_EXPLAINER.junior_spring.paragraph, /asking two teachers before summer/);
+});
+
+test("the profile move's title follows the first missing section, not the generic 'Fill in your numbers and courses' (plan-v3-fix-cards)", () => {
+  const p = emptyProfile();
+  const titleOf = (profile: StudentProfileData) => generate(input(MID.freshman, { profile })).find((t) => t.key === `${LIST}:playbook:profile`)?.title;
+
+  // Nothing entered at all: the first section, high school.
+  assert.equal(titleOf(p), "Add your high school");
+
+  // High school in, nothing else: courses.
+  const withHighSchool: StudentProfileData = { ...p, basics: { ...p.basics, highSchool: "Central High" } };
+  assert.equal(titleOf(withHighSchool), "Add your AP courses");
+
+  // High school and courses in, GPA entered but no class standing yet: the swapped wording, not "Add your grades".
+  const withGpaOnly: StudentProfileData = {
+    ...withHighSchool,
+    academics: { ...withHighSchool.academics, courses: [{ id: "c1", name: "AP Biology", subject: "science", year: 10, kind: "ap" } as never], gpa: 3.8 },
+  };
+  assert.equal(titleOf(withGpaOnly), "Add your class standing");
+
+  // None of the generated titles carry a digit (the catalog's words guard, extended to this dynamic title).
+  for (const title of [titleOf(p), titleOf(withHighSchool), titleOf(withGpaOnly)]) {
+    assert.ok(title && numberProblems(title).length === 0, title);
+  }
 });

@@ -14,7 +14,7 @@
  * - A plan with no class year gets the `unknown` season's one move. Student lists only. Never ticks a move.
  * Pure; no I/O.
  */
-import type { EstimateResult } from "../../chances/types.ts";
+import type { EstimateResult, StandingLevel } from "../../chances/types.ts";
 import { edMoves, edOpportunities, type EdCandidate } from "../ed-opportunities.ts";
 import { interestMoves, interestTasks, type InterestMove } from "../interest.ts";
 import { hooksFromPlan } from "../hooks.ts";
@@ -83,6 +83,9 @@ export interface MoveFacts {
   edCandidates: EdCandidate[];
   shapeGaps: ShapeGap[];
   interest: InterestMove[];
+  /** The list's counts by level (`levelCounts`), null while nothing has an estimate yet (plan-v3-fix-cards,
+   *  `build_list`/`long_list`'s `titleFor`). */
+  counts: Record<StandingLevel, number> | null;
 }
 
 /** Whether a move's condition holds. Missing facts lean toward showing the move (a family can dismiss it). */
@@ -177,7 +180,10 @@ export function moveFacts(input: GeneratorInput): MoveFacts {
   // balanceLineFor), so the shape_gap/shape_cost move and the notice never disagree (list-shape.md "Gap moves").
   const affordability = affordabilityFor(items, input.schools, input.profile, input.estimates);
   const gaps = shapeGaps(counts, unsorted, input.season, affordability, dreamAtHighReach(items, input.estimates));
-  return { items, schools: input.schools, profile: input.profile, visits: input.visits, estimates: input.estimates, edCandidates, shapeGaps: gaps, interest };
+  // Null while nothing has an estimate yet (plan-v3-fix-cards): `listGapTitle` keeps the built title rather than
+  // reading every level as a shortfall.
+  const sorted = Object.values(counts).some((n) => n > 0);
+  return { items, schools: input.schools, profile: input.profile, visits: input.visits, estimates: input.estimates, edCandidates, shapeGaps: gaps, interest, counts: sorted ? counts : null };
 }
 
 /** The playbook entries a season shows: this season's and the next's, plus earlier seasons' carried ones. */
@@ -206,8 +212,10 @@ function builtInCycle(entry: PlaybookEntry, window: { start: string; end: string
   });
 }
 
-/** The task one playbook entry becomes for this plan (dates from its season's bounds), or null when it shouldn't exist. */
-export function playbookTask(entry: PlaybookEntry, input: GeneratorInput, position: number): GeneratedTask | null {
+/** The task one playbook entry becomes for this plan (dates from its season's bounds), or null when it shouldn't exist.
+ *  `counts` (plan-v3-fix-cards) threads the list's level counts into both `titleFor` and `action`, the way `generateFrom`
+ *  has it ready from `moveFacts`; callers outside this module (none today) get `null`. */
+export function playbookTask(entry: PlaybookEntry, input: GeneratorInput, position: number, counts: Record<StandingLevel, number> | null = null): GeneratedTask | null {
   const bounds = input.gradYear !== null ? seasonBounds(entry.season, input.gradYear) : null;
   const w = entry.window && bounds ? entry.window(bounds) : null;
   if (entry.window && !w) return null;
@@ -215,7 +223,8 @@ export function playbookTask(entry: PlaybookEntry, input: GeneratorInput, positi
   if (builtInCycle(entry, range, input)) return null;
   const last = w ? ("due" in w ? w.due : w.end) : null;
   if (last !== null && last < addDays(input.today, -STALE_DAYS)) return null;
-  const title = fillTitle(entry.title, input.profile);
+  const actionCtx = { studentId: input.list.student_id, items: input.items, schools: input.schools, profile: input.profile, counts };
+  const title = entry.titleFor ? (entry.titleFor(actionCtx) ?? fillTitle(entry.title, input.profile)) : fillTitle(entry.title, input.profile);
   if (title === null) return null;
   return {
     key: taskKey(input.list.id, "playbook", entry.key),
@@ -233,7 +242,7 @@ export function playbookTask(entry: PlaybookEntry, input: GeneratorInput, positi
     date_note: null,
     position,
     season: entry.season,
-    action: entry.action({ studentId: input.list.student_id, items: input.items, schools: input.schools, profile: input.profile }),
+    action: entry.action(actionCtx),
   };
 }
 
@@ -246,7 +255,7 @@ export function generateFrom(input: GeneratorInput, playbook: readonly PlaybookE
   const out: GeneratedTask[] = [];
   for (const entry of entries) {
     if (replaced.has(entry.key)) continue;
-    const t = playbookTask(entry, input, playbook.indexOf(entry));
+    const t = playbookTask(entry, input, playbook.indexOf(entry), facts.counts);
     if (t) out.push(t);
   }
   out.push(...edMoves(input, facts.edCandidates), ...interestTasks(input, facts.interest), ...shapeTasks(input, facts.shapeGaps));

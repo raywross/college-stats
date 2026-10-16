@@ -16,11 +16,13 @@
  * when it can't.
  * Pure; safe in server code, client components, and tests.
  */
-import { SECTION_STEP, sectionDone, PROFILE_SECTIONS } from "./profile-progress.ts";
+import { SECTION_STEP, sectionDone, PROFILE_SECTIONS, SECTION_MOVE_TITLE, firstMissingSection } from "./profile-progress.ts";
+import { listGapTitle, LIST_SHAPE } from "./list-shape.ts";
 import type { MoveApplies } from "./generators/season.ts";
 import type { Season } from "./seasons.ts";
 import type { Assignee, MoveAction, PlanItem, PlanSchool, TaskKind } from "./types.ts";
 import type { StudentProfileData } from "../student-profile.ts";
+import type { StandingLevel } from "../chances/types.ts";
 
 /** What an entry's action reads: the plan's student (for the Numbers page), its colleges, and the profile. */
 export interface PlaybookActionInput {
@@ -28,6 +30,9 @@ export interface PlaybookActionInput {
   items: readonly Pick<PlanItem, "id" | "unit_id" | "withdrawn_on" | "position">[];
   schools: Record<string, Pick<PlanSchool, "links" | "distanceMiles">>;
   profile: StudentProfileData | null;
+  /** The list's counts by level (shape_gap's `levelCounts`), null while nothing has an estimate yet
+   *  (`build_list`/`long_list`'s `titleFor`, plan-v3-fix-cards). */
+  counts: Record<StandingLevel, number> | null;
 }
 
 /** A dated entry's window: a start and end, or one due date (ISO). */
@@ -44,6 +49,9 @@ export interface PlaybookEntry {
   carries: boolean;
   applies: MoveApplies;
   action: (ctx: PlaybookActionInput) => MoveAction | null;
+  /** The entry's title computed from the plan, preferred over the static `title` (plan-v3-fix-cards, 2026-10-16); a
+   *  null result falls back to the static title (run through `fillTitle`), so the task key stays stable either way. */
+  titleFor?: (ctx: PlaybookActionInput) => string | null;
   /** Dated entries only: the window from the entry's own season's bounds (ISO, inclusive). */
   window?: (bounds: { start: string; end: string }) => PlaybookWindow | null;
   source: "advisors" | "profile" | "list" | "depth" | "story" | "shape" | "ed" | "interest";
@@ -194,6 +202,14 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     carries: true,
     applies: "profile_incomplete",
     action: firstMissingStep,
+    // Plan v3 fix (2026-10-16, owner: "it should say what's needed, like 'add APs'"): the first missing section's
+    // own words, in PROFILE_SECTIONS' order; "Add your class standing" once the GPA is already in.
+    titleFor: (ctx) => {
+      const section = firstMissingSection(ctx.profile);
+      if (section === null) return null;
+      if (section === "grades" && ctx.profile?.academics.gpa != null) return "Add your class standing";
+      return SECTION_MOVE_TITLE[section];
+    },
     source: "profile",
   },
   {
@@ -217,6 +233,9 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     carries: true,
     applies: "list_empty",
     action: () => COLLEGES,
+    // Plan v3 fix (2026-10-16): names the thinnest level once there's something to judge (list_empty rarely leaves
+    // a shortfall, but a late joiner's carried entry might).
+    titleFor: (ctx) => listGapTitle(ctx.counts, LIST_SHAPE.senior_fall!),
     source: "list",
   },
   {
@@ -265,6 +284,9 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     carries: true,
     applies: "always",
     action: () => COLLEGES,
+    // Plan v3 fix (2026-10-16, owner: "it should say 'add a few reach schools'"): the level with the largest
+    // shortfall against the senior shape's minimums; the built title stays with no shortfall or no estimates yet.
+    titleFor: (ctx) => listGapTitle(ctx.counts, LIST_SHAPE.senior_fall!),
     source: "shape",
   },
   {
@@ -543,7 +565,7 @@ export const MOVE_TEXT: Record<string, { title: string; why: string }> = {
   "shape_gap:likely_min": { title: "Add a Likely you'd be happy at", why: "{counts}" },
   "shape_gap:affordable": { title: "Add a Likely within your family's limit", why: "{counts}" },
   "shape_gap:target_min": { title: "Add a Target or two", why: "{counts}" },
-  "shape_gap:reach_min": { title: "Room for a Reach", why: "{counts}" },
+  "shape_gap:reach_min": { title: "Add a Reach school", why: "{counts}" },
   "shape_gap:over_max": { title: "Review the list", why: "Several High reaches crowd out colleges you'd get into; which would you drop?" },
   "shape_gap:total_off": { title: "Review the list's size", why: "Common App's own average is about seven applications." },
   "shape_gap:unsorted": { title: "Add your numbers so Quad can sort {count} colleges", why: "Quad sorts a college into a level once it has your numbers." },

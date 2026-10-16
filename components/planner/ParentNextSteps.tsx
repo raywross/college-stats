@@ -1,6 +1,12 @@
 "use client";
 
 /**
+ * Set aside 2026-10-16 (plan-v3-fix-cards). Owner, after seeing the preview: "For now, when a parent looks at a
+ * student they should see what they see." `NextSteps.tsx` no longer renders this component — a guardian now gets the
+ * same three-card student view, plus their own Your part cards above it. This file (and the `seasonRows`/
+ * `comingUpRows`/`parentSafeTitle` helpers in `lib/planner/moves.ts` it leans on) is kept in place, unused, in case
+ * the fuller parent view comes back; `specs/planner/v3/parents.md` describes it and carries the "set aside" note.
+ *
  * A guardian's Next steps tab (specs/planner/v3/parents.md "The tab"; build-plan.md "U9 The parent's Next steps"):
  * their own part first (built `yourPartMoves`, as cards, hidden while empty), then "{First name}'s season": the
  * season's open moves (Now and Next) as compact rows, a row's title opening its guide read-only when it has one

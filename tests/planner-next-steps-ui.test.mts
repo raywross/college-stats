@@ -280,22 +280,30 @@ test("personFor: null for a signed-in student's own plan, the child's id for a g
 /* NextSteps.tsx, SeasonExplainer.tsx: structural checks               */
 /* ------------------------------------------------------------------ */
 
-test("NextSteps (the student's): three cards, then one Done and skipped fold with Bring back; nothing else; the empty state", () => {
+test("NextSteps: three cards, then one Done and skipped fold with Bring back; nothing else; the empty state; a guardian gets the same view plus Your part", () => {
   const src = read("components", "planner", "NextSteps.tsx");
   assert.match(src, /export function NextSteps\(\{ ctx, view \}: PlanTabProps\)/);
   assert.match(src, /"use client"/);
-  assert.match(src, /if \(ctx\.viewer\.isGuardian\) return <GuardianNextSteps ctx=\{ctx\} view=\{view\} \/>;/, "the guardian branch is one line (U9 replaces ParentNextSteps.tsx)");
+  // Plan v3 fix (2026-10-16, owner: "when a parent looks at a student they should see what they see"): no more
+  // guardian branch to GuardianNextSteps; every viewer renders StudentNextSteps, the same nowMoves(viewer: "student").
+  assert.doesNotMatch(src, /GuardianNextSteps/, "the guardian branch is gone; ParentNextSteps.tsx is unused now");
+  assert.match(src, /return <StudentNextSteps ctx=\{ctx\} view=\{view\} \/>;/);
   // Only the student's body, not the file's doc comment (which names the groups in prose).
   const body = src.slice(src.indexOf("function StudentNextSteps"));
+  const iYourPart = body.indexOf(">Your part<");
   const iNow = body.indexOf("groups.now.length === 0");
   const iFold = body.indexOf("Done and skipped ({foldCount})");
-  assert.ok(iNow > 0 && iNow < iFold, "Now, then the fold");
-  for (const gone of ["More this season", "Coming up", "groups.more", "groups.comingUp", "Your part"]) assert.ok(!body.includes(gone), `no ${gone} for the student`);
+  assert.ok(iYourPart > 0 && iYourPart < iNow && iNow < iFold, "Your part (guardian only), then Now, then the fold");
+  for (const gone of ["More this season", "Coming up", "groups.more", "groups.comingUp"]) assert.ok(!body.includes(gone), `no ${gone}`);
+  assert.match(body, /isGuardian \? yourPartMoves\(ctx\.tasks, ctx\.today\) : \[\]/, "a guardian's own Your part cards, hidden for the student");
+  assert.match(body, /isGuardian && yourPart\.length > 0/);
   assert.match(body, /Nothing to do right now\. Enjoy it\./);
   assert.match(body, /SEASON_EXPLAINER\[ctx\.season\]\.lead/, "the empty state adds the explainer's lead");
   assert.match(body, /Bring back/);
   assert.match(body, /await undismiss\(task\.id\)/);
-  assert.match(body, /track\("plan_move_restored", \{ kind: task\.kind, season: seasonOfTask\(task\), by: "student" \}\)/);
+  assert.match(body, /track\("plan_move_restored", \{ kind: task\.kind, season: seasonOfTask\(task\), by \}\)/);
+  // Every title the fold shows goes through parentSafeTitle for a guardian, task.title verbatim for the student.
+  assert.match(body, /const titleFor = \(t: PlanTask\) => \(isGuardian \? parentSafeTitle\(t\) : t\.title\)/);
   assert.match(body, /skippedLabel\(t, ctx\.today\)/);
   assert.match(body, /doneLabel\(t, ctx\.today\)/);
   assert.match(body, /searchParams\.get\("move"\)/);
@@ -305,6 +313,23 @@ test("NextSteps (the student's): three cards, then one Done and skipped fold wit
   assert.match(body, /plan_season_explainer_opened/);
   assert.match(src, /UNDO_MS = 60_000/, "Undo stays for a minute");
   assert.match(body, /MOVE_CARDS\[task\.kind\] \?\? MoveCard/, "a kind with no card of its own falls back to MoveCard");
+});
+
+test("a guardian's card title never carries a digit for a reach_score_* move (parentSafeTitle, plan-v3-fix-cards)", () => {
+  const reachScore = taskOf({
+    id: "t9",
+    key: "l1:playbook:reach_score_junior_fall",
+    title: "Work toward your 1400",
+    detail: "Your target is your own. The dates below are the ones whose scores would arrive in time.",
+    action: null,
+  });
+  const guardianCtx = ctxOf({ viewer: { userId: "u2", firstName: "Jo", canEdit: true, relation: "guardian", isGuardian: true } });
+  const html = render(moveCardMod.MoveCard as never, { task: reachScore, ctx: guardianCtx, onDone: noop, onSkip: noop, pending: false });
+  assert.match(html, /Work toward the target score/);
+  assert.doesNotMatch(html, /1400/, "a parent never sees the student's own target number");
+  // The student's own card still shows it.
+  const studentHtml = render(moveCardMod.MoveCard as never, { task: reachScore, ctx: ctxOf(), onDone: noop, onSkip: noop, pending: false });
+  assert.match(studentHtml, /Work toward your 1400/);
 });
 
 test("ParentNextSteps (plan v3 U9): Your part, {First}'s season, Coming up folded open, Done and skipped folded", () => {

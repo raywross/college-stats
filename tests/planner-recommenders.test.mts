@@ -224,6 +224,7 @@ const baseFacts: MoveFacts = {
   edCandidates: [],
   shapeGaps: [],
   interest: [],
+  counts: null,
 };
 
 function profileWith(recommenders: RecommenderEntry[]): StudentProfileData {

@@ -322,6 +322,8 @@ async function parentSummaryStudent(client: SupabaseClient, s: VisibleStudent, p
     .map((t) => outsideTitle(t, nameOf(t, plan)));
   const weekAgo = addDays(today, -7);
   const tickedThisWeek = taskRows.filter((t) => t.done_at !== null && t.done_at.slice(0, 10) >= weekAgo).map((t) => outsideTitle(t, nameOf(t, plan)));
+  // Plan v3 (specs/planner/v3/parents.md "Rules"): the week's skipped moves, titles only.
+  const skipped = taskRows.filter((t) => t.dismissed_at !== null && t.dismissed_at.slice(0, 10) >= weekAgo).map((t) => outsideTitle(t, nameOf(t, plan)));
   return {
     studentId: s.id,
     firstName: firstName(s.display_name),
@@ -330,6 +332,7 @@ async function parentSummaryStudent(client: SupabaseClient, s: VisibleStudent, p
     childMoves,
     stuckSignals: signals.map((sig) => sig.text),
     tickedThisWeek,
+    skipped,
   };
 }
 

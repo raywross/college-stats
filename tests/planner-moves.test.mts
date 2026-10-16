@@ -6,7 +6,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { eligibleNow, isFinancialMove, NOW_MAX, nowMoves, SOON_DAYS, taskSeason, topMove, yourPartMoves } from "../lib/planner/moves.ts";
+import { comingUpRows, eligibleNow, isFinancialMove, NOW_MAX, nowMoves, parentSafeTitle, seasonRows, SOON_DAYS, taskSeason, topMove, yourPartMoves } from "../lib/planner/moves.ts";
 import type { PlanTask } from "../lib/planner/types.ts";
 
 const G = 2028;
@@ -200,6 +200,64 @@ test("skipped: this season's; a carried move skipped this season counts by its s
   const oldSkip = task({ title: "Old skip", season: "junior_winter", dismissed: true, dismissed_at: "2027-02-02T10:00:00Z" });
   const legacy = task({ title: "Skipped before the record", season: "junior_spring", dismissed: true });
   assert.deepEqual(nowMoves([carried, oldSkip, legacy], opts).skipped.map((t) => t.title).sort(), ["Carried", "Skipped before the record"]);
+});
+
+/* ------------------------------------------------------------------ */
+/* Plan v3 U9: the parent's season rows, Coming up, and the target-free title */
+/* ------------------------------------------------------------------ */
+
+test("seasonRows: now and next states in Now's order, done and skipped with their dates; the guardian's own moves (Your part) are left out", () => {
+  const now1 = task({ title: "Build your list", position: 1 });
+  const now2 = task({ title: "Show interest", position: 2 });
+  const now3 = task({ title: "Pick your recommenders", position: 3 });
+  const later = task({ title: "In More", position: 4 }); // the fourth eligible move: `next`
+  const done = task({ title: "Visit over spring break", done_at: "2027-04-01T12:00:00Z" });
+  const skipped = task({ title: "Write your story", dismissed: true, dismissed_at: "2027-04-02T10:00:00Z", dismissed_by: "u1" });
+  const mine = task({ title: "Run the calculator", assignee: "guardian", position: 5 });
+  const rows = seasonRows([now1, now2, now3, later, done, skipped, mine], opts);
+  assert.deepEqual(
+    rows.map((r) => [r.task.title, r.state]),
+    [
+      ["Build your list", "now"],
+      ["Show interest", "now"],
+      ["Pick your recommenders", "now"],
+      ["In More", "next"],
+      ["Visit over spring break", "done"],
+      ["Write your story", "skipped"],
+    ],
+  );
+  assert.ok(!rows.some((r) => r.task.title === "Run the calculator"), "a guardian's own move is Your part, not a season row");
+  const skippedRow = rows.find((r) => r.state === "skipped")!;
+  assert.equal(skippedRow.when, "2027-04-02T10:00:00Z");
+  const doneRow = rows.find((r) => r.state === "done")!;
+  assert.equal(doneRow.when, "2027-04-01T12:00:00Z");
+});
+
+test("seasonRows: a skipped move is 'skipped', never 'now', even though the student's own tab hides it entirely", () => {
+  const a = task({ title: "A", position: 1 });
+  const b = task({ title: "B", position: 2, dismissed: true, dismissed_at: "2027-04-12T15:00:00Z" });
+  const rows = seasonRows([a, b], opts);
+  assert.deepEqual(rows.map((r) => r.state), ["now", "skipped"]);
+  assert.deepEqual(nowMoves([a, b], opts).now.map((t) => t.title), ["A"], "the student's now never shows a skipped move");
+});
+
+test("comingUpRows: next season's open moves only, reusing nowMoves's comingUp; never a row in this season's list", () => {
+  const thisSeason = task({ title: "This season", position: 1 });
+  const nextOne = task({ title: "Next season's move", season: "summer_before_senior", due_on: "2027-07-01" });
+  const laterStill = task({ title: "Senior fall thing", season: "senior_fall" });
+  const rows = seasonRows([thisSeason, nextOne, laterStill], opts);
+  assert.ok(!rows.some((r) => r.task.title === "Next season's move"), "a later season's move is never a season row");
+  assert.deepEqual(comingUpRows([thisSeason, nextOne, laterStill], opts), [{ title: "Next season's move", date: "2027-07-01" }]);
+});
+
+test("parentSafeTitle: a reach_score move's title never carries the student's own target; every other title passes through", () => {
+  const reach = task({ title: "Work toward your 1400", key: "list-1:playbook:reach_score_junior_spring" });
+  assert.equal(parentSafeTitle(reach), "Work toward the target score");
+  assert.doesNotMatch(parentSafeTitle(reach), /\d/);
+  const other = task({ title: "Pick your recommenders", key: "list-1:playbook:pick_recommenders" });
+  assert.equal(parentSafeTitle(other), "Pick your recommenders");
+  const untitled = task({ title: "Work toward your 1400", key: null });
+  assert.equal(parentSafeTitle(untitled), "Work toward your 1400", "no key: passes through (the catalog guard covers the real entries)");
 });
 
 test("three cards; when one is ticked the fourth surfaces", () => {

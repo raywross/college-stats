@@ -307,17 +307,23 @@ test("NextSteps (the student's): three cards, then one Done and skipped fold wit
   assert.match(body, /MOVE_CARDS\[task\.kind\] \?\? MoveCard/, "a kind with no card of its own falls back to MoveCard");
 });
 
-test("ParentNextSteps (the guardian's tab, kept as built until U9): Your part, Now, More this season, Coming up, Done", () => {
+test("ParentNextSteps (plan v3 U9): Your part, {First}'s season, Coming up folded open, Done and skipped folded", () => {
   const src = read("components", "planner", "ParentNextSteps.tsx");
   assert.match(src, /export function GuardianNextSteps\(\{ ctx, view \}: PlanTabProps\)/);
   const body = src.slice(src.indexOf("export function GuardianNextSteps"));
-  const iYourPart = body.indexOf("Your part");
-  const iNow = body.indexOf("groups.now.length === 0");
-  const iMore = body.indexOf("More this season");
-  const iComingUp = body.indexOf("Coming up:");
-  const iDone = body.indexOf("Done ({groups.done.length})");
-  assert.ok(iYourPart > 0 && iYourPart < iNow && iNow < iMore && iMore < iComingUp && iComingUp < iDone);
-  assert.match(src, /ctx\.viewer\.isGuardian && yourPart\.length > 0/);
+  const iYourPart = body.indexOf('>Your part<');
+  const iSeason = body.indexOf("Nothing open this season");
+  const iComingUp = body.indexOf("Coming up ·");
+  const iDone = body.indexOf("Done and skipped this season");
+  assert.ok(iYourPart > 0 && iYourPart < iSeason && iSeason < iComingUp && iComingUp < iDone);
+  assert.match(src, /yourPart\.length > 0/);
+  // No "More this season": the parent sees the season's open rows at once (Now and Next), not a second fold.
+  assert.doesNotMatch(body, /More this season/);
+  // A reach_score move never shows the student's own target to a parent.
+  assert.match(src, /parentSafeTitle/);
+  // Coming up is the one look-ahead a parent gets (folded open, `<details open>`); Done and skipped folds closed.
+  const comingUpTag = body.slice(body.indexOf('<details className="group rounded-3xl bg-card p-4 ring-1 ring-border" open>'));
+  assert.match(comingUpTag.slice(0, 80), /open>/);
 });
 
 test("SeasonExplainer: the sheet dialog, SEASON_EXPLAINER's paragraph and next line", () => {

@@ -249,6 +249,52 @@ test("buildParentSummary: null when no student has anything to say", () => {
 });
 
 /* ------------------------------------------------------------------ */
+/* Plan v3 (U9): the weekly summary's skipped line                     */
+/* ------------------------------------------------------------------ */
+
+test("buildParentSummary: one line for the week's skipped moves, titles only; present with nothing else to say", () => {
+  const built = buildParentSummary({
+    guardianFirstName: null,
+    students: [
+      {
+        studentId: "jordan",
+        firstName: "Jordan",
+        summary: "",
+        yourPart: [],
+        stuckSignals: [],
+        tickedThisWeek: [],
+        skipped: ["Write your story", "Visit over spring break"],
+      },
+    ],
+    siteUrl: "https://example.com",
+    unsubscribeToken: "a".repeat(40),
+  });
+  assert.ok(built, "a student with only a skipped line still has something to say");
+  assert.match(built!.text, /Jordan skipped: Write your story, Visit over spring break/);
+  assert.match(built!.html, /Jordan skipped: Write your story, Visit over spring break/);
+  assert.doesNotMatch(built!.text, /\$\d|GPA|SAT \d|\b\d{3,4}\b/, "titles only, never a number");
+});
+
+test("buildParentSummary: no skipped line when nothing was skipped", () => {
+  const built = buildParentSummary({
+    guardianFirstName: null,
+    students: [{ studentId: "a", firstName: "Alex", summary: "Building the list", yourPart: [], stuckSignals: [], tickedThisWeek: [] }],
+    siteUrl: "https://example.com",
+    unsubscribeToken: "a".repeat(40),
+  });
+  assert.ok(built);
+  assert.doesNotMatch(built!.text, /skipped:/);
+  // Planted bad case: the guard above would catch a target number slipping into a skipped title.
+  const withNumber = buildParentSummary({
+    guardianFirstName: null,
+    students: [{ studentId: "a", firstName: "Alex", summary: "", yourPart: [], stuckSignals: [], tickedThisWeek: [], skipped: ["Work toward your 1400"] }],
+    siteUrl: "https://example.com",
+    unsubscribeToken: "a".repeat(40),
+  })!;
+  assert.match(withNumber.text, /1400/, "proves the guard above is live: an unscrubbed title would fail it");
+});
+
+/* ------------------------------------------------------------------ */
 /* The nudge rate limit, against real Postgres                         */
 /* ------------------------------------------------------------------ */
 

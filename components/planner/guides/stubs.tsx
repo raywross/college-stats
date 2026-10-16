@@ -26,9 +26,6 @@ export function TestGuideStub() {
 export function StoryGuideStub() {
   return <Stub slug="story" />;
 }
-export function CoursesGuideStub() {
-  return <Stub slug="courses" />;
-}
 export function RecommendersGuideStub() {
   return <Stub slug="recommenders" />;
 }

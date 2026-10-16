@@ -3,8 +3,7 @@
  * built by next steps' U1b): `MoveCard`'s rendering (why, date/overdue, assignee chip, the citation, the one button:
  * the move's guide when it has one, else the built action; Done and Skip for now in the corner menu, only with edit
  * access, and no Skip for a guardian) rendered for real with `react-dom/server`, no bundler (the same technique as
- * tests/chances-estimate-ui.test.mts); `NextYearCard`'s fallback to `MoveCard` for every task that isn't the
- * course-choice move; and, for `NextSteps.tsx`, `ParentNextSteps.tsx`, `SeasonExplainer.tsx`, `PlanRow.tsx`,
+ * tests/chances-estimate-ui.test.mts); and, for `NextSteps.tsx`, `ParentNextSteps.tsx`, `SeasonExplainer.tsx`, `PlanRow.tsx`,
  * `PlanPeople.tsx`, and `app/plan/page.tsx` (whose client-only hooks and dialog primitive aren't worth stubbing here),
  * structural checks on the source: three cards and the Done and skipped fold for the student, the empty state, the
  * guardian's tab kept as built, `?move=` scrolling, and the people line's "Next:" reading the loaded plan's top move
@@ -26,7 +25,7 @@ const ROOT = join(import.meta.dirname, "..");
 const read = (...p: string[]) => readFileSync(join(ROOT, ...p), "utf8");
 
 /* ------------------------------------------------------------------ */
-/* Rendering MoveCard and NextYearCard without a build step            */
+/* Rendering MoveCard without a build step                             */
 /* ------------------------------------------------------------------ */
 
 const tmp = mkdtempSync(join(tmpdir(), "next-steps-ui-"));
@@ -43,23 +42,6 @@ export const Term = ({ term, children }) => React.createElement("span", { "data-
 export const MetricLabel = ({ cited, children, className }) => React.createElement("span", { className, "data-cited": cited ? "yes" : undefined }, children);`,
 );
 writeFileSync(join(tmp, "link.mjs"), `import React from ${JSON.stringify(reactUrl)};\nexport default ({ href, children, className }) => React.createElement("a", { href, className }, children);`);
-// NextYearCard's fallback only needs to prove it reaches for MoveCard; MoveCard's own markup has its own tests below.
-writeFileSync(
-  join(tmp, "move-card-stub.mjs"),
-  `import React from ${JSON.stringify(reactUrl)};\nexport default function MoveCard({ task }) { return React.createElement("div", { "data-stub": "MoveCard" }, task.title); }`,
-);
-// NextYearCard's own writes (saveCourses, markScheduleDone, …) are "use server" actions that pull in next/cache and
-// Supabase; the fallback path this test exercises never calls them, so they're stood in rather than loaded for real.
-writeFileSync(join(tmp, "courses-store.mjs"), `export async function saveCourses() { return { ok: true }; }`);
-writeFileSync(
-  join(tmp, "course-plan-store.mjs"),
-  `export async function dismissSuggestion() { return { ok: true }; }\nexport async function markScheduleDone() { return { ok: true }; }\nexport async function saveSchoolOffers() { return { ok: true }; }`,
-);
-writeFileSync(
-  join(tmp, "course-plan-estimate.mjs"),
-  `export const ESTIMATE_MAX_COLLEGES = 20;\nexport function endpointFetch() { return async () => null; }\nexport async function whatItChanges() { return null; }`,
-);
-writeFileSync(join(tmp, "estimate-input.mjs"), `export function estimateInputFromProfile() { return { student: {} }; }`);
 
 /**
  * Transpiles a component (JSX → React.createElement) and wires its imports to the stubs above or the real file.
@@ -290,36 +272,6 @@ test("the Done and skipped fold's labels: 'Skipped Oct 12' (or 'Skipped' before 
 test("personFor: null for a signed-in student's own plan, the child's id for a guardian", () => {
   assert.equal(moveCardMod.personFor(ctxOf({ viewer: { userId: "u1", firstName: null, canEdit: true, relation: "self", isGuardian: false } })), null);
   assert.equal(moveCardMod.personFor(ctxOf({ viewer: { userId: "u1", firstName: null, canEdit: true, relation: "guardian", isGuardian: true }, student: { id: "kid-1", display_name: "Maya", grad_year: 2028, user_id: null } })), "kid-1");
-});
-
-/* ------------------------------------------------------------------ */
-/* NextYearCard: falls back to MoveCard outside the course-choice move */
-/* ------------------------------------------------------------------ */
-
-test("NextYearCard: a playbook task that isn't the course choice, or any non-playbook kind, falls back to MoveCard", async () => {
-  const mod = (await load("components/planner/NextYearCard.tsx", {
-    'from "@/components/planner/moves/MoveCard"': `from ${JSON.stringify(pathToFileURL(join(tmp, "move-card-stub.mjs")).href)}`,
-    'from "@/lib/chances/courses-store"': `from ${JSON.stringify(pathToFileURL(join(tmp, "courses-store.mjs")).href)}`,
-    'from "@/lib/chances/course-plan-store"': `from ${JSON.stringify(pathToFileURL(join(tmp, "course-plan-store.mjs")).href)}`,
-    'from "@/lib/chances/course-plan-estimate"': `from ${JSON.stringify(pathToFileURL(join(tmp, "course-plan-estimate.mjs")).href)}`,
-    'from "@/lib/chances/estimate-input"': `from ${JSON.stringify(pathToFileURL(join(tmp, "estimate-input.mjs")).href)}`,
-  })) as { NextYearCard: (p: Record<string, unknown>) => import("react").ReactElement };
-  const notCourseChoice = renderToStaticMarkup(
-    React.createElement(mod.NextYearCard as never, { task: taskOf({ key: "l1:playbook:summer_program" }), ctx: ctxOf(), onDone: noop, onSkip: noop, pending: false } as never),
-  );
-  assert.match(notCourseChoice, /data-stub="MoveCard"/);
-  assert.match(notCourseChoice, /Apply to a summer program/);
-
-  const noCoursePlan = renderToStaticMarkup(
-    React.createElement(mod.NextYearCard as never, {
-      task: taskOf({ key: "l1:playbook:freshman_choose_courses", title: "Plan next year's courses" }),
-      ctx: ctxOf({ coursePlan: null }),
-      onDone: noop,
-      onSkip: noop,
-      pending: false,
-    } as never),
-  );
-  assert.match(noCoursePlan, /data-stub="MoveCard"/, "a course-choice task still falls back without a loaded course plan");
 });
 
 /* ------------------------------------------------------------------ */

@@ -10,11 +10,11 @@ import "server-only";
 import type { ComponentType } from "react";
 import type { GuideProps, GuideQuery } from "@/components/planner/guides/types";
 import { CoursesGuide, type CoursesGuideData } from "@/components/planner/guides/CoursesGuide";
+import { StoryGuide, type StoryGuideData } from "@/components/planner/guides/StoryGuide";
 import {
   EdGuideStub,
   InterestGuideStub,
   RecommendersGuideStub,
-  StoryGuideStub,
   TestGuideStub,
 } from "@/components/planner/guides/stubs";
 import { courseTracks } from "../chances/depth";
@@ -35,7 +35,7 @@ export const GUIDE_PAGES: Record<GuideSlug, GuidePage> = {
   list: { Component: ListGuide, load: listGuideFor },
   interest: { Component: InterestGuideStub },
   test: { Component: TestGuideStub },
-  story: { Component: StoryGuideStub },
+  story: { Component: StoryGuide, load: loadStoryGuide },
   courses: { Component: CoursesGuide, load: loadCoursesGuide },
   recommenders: { Component: RecommendersGuideStub },
   ed: { Component: EdGuideStub },
@@ -63,4 +63,24 @@ async function loadCoursesGuide(ctx: PlanContext): Promise<CoursesGuideData> {
     activities: profile.academics.activities,
   });
   return { plan, tracks };
+}
+
+/**
+ * The story guide's load (specs/planner/v3/guides/your-story.md "What your record says"): the same depth course
+ * tracks the courses guide computes, so "What your record says so far" reads the same sentences the Numbers page and
+ * the courses guide show. Null without a profile (the component then shows no track lines, same as a profile with
+ * no courses).
+ */
+async function loadStoryGuide(ctx: PlanContext): Promise<StoryGuideData> {
+  const profile = ctx.profile;
+  if (!profile) return { tracks: null };
+  const { offering } = await offeringFor(profile.basics.highSchoolId, { studentMarks: profile.academics.schoolOffers });
+  const tracks = courseTracks({
+    courses: profile.academics.courses,
+    coreAtTopLevel: profile.academics.coreAtTopLevel,
+    offering,
+    majors: profile.plans.intendedMajors,
+    activities: profile.academics.activities,
+  });
+  return { tracks };
 }

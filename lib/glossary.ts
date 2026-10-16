@@ -1968,6 +1968,14 @@ const entries = {
     category: "Your account",
     related: ["plan"],
   },
+  /** specs/planner/v3/guides/your-story.md "The frame": the word the Your story guide links to the glossary. */
+  depth: {
+    term: "Depth",
+    short: "A few things carried for years with a growing role, rather than a long list tried once. Colleges that read beyond the numbers look for it.",
+    long: "Depth shows up as a course track taken further each year, or an activity kept up for years with more responsibility over time — captain, not just player; a few things, not many. It pairs with breadth: whether those few things add up to a person with a direction, which your own story is where that comes through.",
+    category: "How we measure",
+    related: ["course-rigor"],
+  },
 } satisfies Record<string, GlossaryEntry>;
 
 export type TermKey = keyof typeof entries;

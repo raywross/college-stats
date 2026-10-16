@@ -20,9 +20,6 @@ export function InterestGuideStub() {
 export function TestGuideStub() {
   return <Stub slug="test" />;
 }
-export function StoryGuideStub() {
-  return <Stub slug="story" />;
-}
 export function RecommendersGuideStub() {
   return <Stub slug="recommenders" />;
 }

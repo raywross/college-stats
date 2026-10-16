@@ -17,7 +17,7 @@ import { callBundle } from "@/lib/bundle-read";
 import { requestMemo } from "@/lib/request-memo";
 import { cache } from "react";
 import type { StudentAccess, StudentRecord } from "@/lib/accounts";
-import { coreAnswered, emptyProfile, profileForViewer, sanitizeProfile, sanitizeStory, type StudentProfileData } from "@/lib/student-profile";
+import { coreAnswered, emptyProfile, profileForViewer, sanitizeProfile, sanitizeRecommenders, sanitizeStory, type StudentProfileData } from "@/lib/student-profile";
 import { getHighSchool } from "@/lib/high-schools";
 import { matriculationLine } from "@/lib/high-school-ui";
 
@@ -161,6 +161,23 @@ export async function saveStory(_prev: StorySaveState, form: FormData): Promise<
   const result = await saveProfile(studentId, { ...access.data, story });
   if (!result.ok) return { status: "error", message: result.message };
   return { status: "saved" };
+}
+
+/**
+ * Saves the recommenders list (guides/recommenders.md "Stored"): the student, or a guardian with edit access (a
+ * teacher's name isn't a private note, unlike the story). Reads the profile exactly as it's stored — not the
+ * viewer's copy, which `profileFor` redacts the story for a guardian — so a guardian's save can never blank out the
+ * student's own story: only `recommenders` changes.
+ */
+export async function saveRecommenders(studentId: string, entries: unknown): Promise<SaveProfileResult> {
+  const user = await getUser();
+  if (!user) return { ok: false, message: "Sign in to save your plan." };
+  const access = await profileFor(studentId);
+  if (!access) return { ok: false, message: "You don't have permission to edit this profile." };
+  if (!access.canEdit) return { ok: false, message: "You don't have permission to edit this profile." };
+  const rows = await readableProfiles();
+  const stored = sanitizeProfile(rows.get(studentId));
+  return saveProfile(studentId, { ...stored, recommenders: sanitizeRecommenders(entries) });
 }
 
 /**

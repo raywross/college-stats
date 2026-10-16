@@ -13,11 +13,11 @@ import { CoursesGuide, type CoursesGuideData } from "@/components/planner/guides
 import { StoryGuide, type StoryGuideData } from "@/components/planner/guides/StoryGuide";
 import {
   EdGuideStub,
-  RecommendersGuideStub,
   TestGuideStub,
 } from "@/components/planner/guides/stubs";
 import { InterestGuide } from "@/components/planner/guides/InterestGuide";
 import { ListGuide } from "@/components/planner/guides/ListGuide";
+import { RecommendersGuide } from "@/components/planner/guides/RecommendersGuide";
 import { courseTracks } from "../chances/depth";
 import { coursePlanViewFor } from "../chances/course-plan-server";
 import { offeringFor } from "../chances/rigor-server";
@@ -38,7 +38,7 @@ export const GUIDE_PAGES: Record<GuideSlug, GuidePage> = {
   test: { Component: TestGuideStub },
   story: { Component: StoryGuide, load: loadStoryGuide },
   courses: { Component: CoursesGuide, load: loadCoursesGuide },
-  recommenders: { Component: RecommendersGuideStub },
+  recommenders: { Component: RecommendersGuide },
   ed: { Component: EdGuideStub },
 };
 

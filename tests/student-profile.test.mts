@@ -416,17 +416,96 @@ test("weightedGpaHint: a weighted GPA below the unweighted one asks the student 
   assert.equal(weightedGpaHint(3.8, "4.0", null), null, "no weighted GPA yet");
 });
 
-test("story (next steps, your-story.md): round-trips through sanitizeProfile; plain text, 500 characters each; null when empty", async () => {
-  const { emptyProfile: empty, sanitizeProfile: sanitize, sanitizeStory, STORY_FIELD_MAX } = await import("../lib/student-profile.ts");
+test("story (plan v3, guides/your-story.md): one narrative round-trips through sanitizeProfile; plain text, STORY_MAX; null when empty", async () => {
+  const { emptyProfile: empty, sanitizeProfile: sanitize, sanitizeStory, STORY_MAX } = await import("../lib/student-profile.ts");
+  assert.equal(STORY_MAX, 2000);
   assert.equal(empty().story, null);
   assert.equal(sanitize({}).story, null, "an older profile without a story reads as none");
-  const story = { about: "I fix bikes for neighbors.", thread: "Making things work again.", majorWhy: "", updatedAt: "2026-10-14T12:00:00.000Z" };
+  const story = { narrative: "I fix bikes for neighbors.\n\nMaking things work again.", updatedAt: "2026-10-14T12:00:00.000Z" };
   const saved = sanitize({ ...empty(), story });
   assert.deepEqual(saved.story, story);
   assert.deepEqual(sanitize(JSON.parse(JSON.stringify(saved))).story, story, "round-trips through JSON");
-  // Plain text: tags and control characters go; each answer is capped; a bad timestamp is dropped.
-  const messy = sanitizeStory({ about: "<b>Bold</b> move\u0007", thread: "x".repeat(STORY_FIELD_MAX + 50), majorWhy: 42, updatedAt: "yesterday" });
-  assert.deepEqual(messy, { about: "Bold move", thread: "x".repeat(STORY_FIELD_MAX), majorWhy: "", updatedAt: null });
-  assert.equal(sanitizeStory({ about: "  ", thread: "", majorWhy: "<i></i>" }), null, "all three empty is no story");
+  // Plain text: tags and control characters go; the narrative is capped; a bad timestamp is dropped.
+  assert.deepEqual(sanitizeStory({ narrative: "<b>Bold</b> move\u0007", updatedAt: "yesterday" }), { narrative: "Bold move", updatedAt: null });
+  assert.equal(sanitizeStory({ narrative: "x".repeat(STORY_MAX + 50) })?.narrative.length, STORY_MAX, "capped at STORY_MAX");
+  assert.equal(sanitizeStory({ narrative: "  <i></i> " }), null, "an empty narrative is no story");
   assert.equal(sanitizeStory("a string"), null);
+});
+
+test("story: the built three-prompt shape is joined into one narrative (review note 4)", async () => {
+  const { sanitizeProfile: sanitize, sanitizeStory, STORY_MAX } = await import("../lib/student-profile.ts");
+  const old = { about: "I fix bikes.", thread: "Making things work.", majorWhy: "Robots.", updatedAt: "2026-10-14T12:00:00.000Z" };
+  assert.deepEqual(sanitizeStory(old), {
+    narrative: "About you: I fix bikes.\n\nThe thread: Making things work.\n\nWhy this major: Robots.",
+    updatedAt: old.updatedAt,
+  });
+  // Only the non-empty answers, in order.
+  assert.equal(sanitizeStory({ about: "", thread: "Making things work.", majorWhy: "  " })?.narrative, "The thread: Making things work.");
+  assert.equal(sanitizeStory({ about: " ", thread: "", majorWhy: "<i></i>" }), null, "all three empty is no story");
+  // The join is capped too.
+  const long = sanitizeStory({ about: "a".repeat(1500), thread: "b".repeat(1500), majorWhy: "" });
+  assert.equal(long?.narrative.length, STORY_MAX);
+  // A saved old profile reads in the new shape, and its next save writes it.
+  const read = sanitize({ story: old });
+  assert.deepEqual(Object.keys(read.story ?? {}).sort(), ["narrative", "updatedAt"]);
+  assert.deepEqual(sanitize(JSON.parse(JSON.stringify(read))).story, read.story, "the new shape round-trips");
+});
+
+test("connections (plan v3, connections.md): sanitized, empty entries dropped, one per college, capped at CONNECTIONS_MAX", async () => {
+  const { emptyProfile: empty, sanitizeProfile: sanitize, sanitizeConnections, connectionFor, CONNECTIONS_MAX } = await import("../lib/student-profile.ts");
+  assert.deepEqual(empty().academics.connections, []);
+  assert.deepEqual(sanitize({}).academics.connections, [], "a profile saved before connections reads as none");
+  const duke = { id: "c1", unitId: "198419", family: ["parent", "bogus", "parent"], recruited: "none" };
+  const mich = { id: "c2", unitId: "170976", family: [], recruited: "contact" };
+  const out = sanitizeConnections([duke, mich, { id: "c3", unitId: "110635", family: [], recruited: "none" }, { id: "c4", unitId: "198419", family: ["sibling"], recruited: "none" }, { unitId: "", family: ["parent"] }, { unitId: "1234567890123", family: ["parent"] }]);
+  assert.deepEqual(out, [
+    { id: "c1", unitId: "198419", family: ["parent"], recruited: "none" },
+    { id: "c2", unitId: "170976", family: [], recruited: "contact" },
+  ], "nothing set dropped; a second Duke dropped; no unit id or one over 12 characters dropped");
+  // Planted: an entry with nothing set must not survive.
+  assert.equal(sanitizeConnections([{ id: "x", unitId: "110635", family: [], recruited: "none" }]).length, 0);
+  assert.equal(sanitizeConnections(Array.from({ length: 15 }, (_, i) => ({ unitId: String(100000 + i), family: ["sibling"] }))).length, CONNECTIONS_MAX);
+  // Round trip through the profile; connectionFor reads by unit id.
+  const p = sanitize({ academics: { connections: [duke, mich] } });
+  assert.deepEqual(sanitize(JSON.parse(JSON.stringify(p))).academics.connections, p.academics.connections);
+  assert.equal(connectionFor(p, "170976")?.recruited, "contact");
+  assert.equal(connectionFor(p, "999999"), null);
+  assert.equal(connectionFor(null, "170976"), null);
+});
+
+test("activitiesNone keeps the Connections step's None", async () => {
+  const { sanitizeActivitiesNone } = await import("../lib/student-profile.ts");
+  assert.deepEqual(sanitizeActivitiesNone({ connections: true, sports: true, bogus: true }), { sports: true, connections: true });
+});
+
+test("recommenders (plan v3, guides/recommenders.md): sanitized, ranked 1..n, capped at RECOMMENDERS_MAX; recommendersAsked counts asked/agreed/invited", async () => {
+  const { emptyProfile: empty, sanitizeProfile: sanitize, sanitizeRecommenders, recommendersAsked, RECOMMENDERS_MAX, RECOMMENDER_NAME_MAX } = await import("../lib/student-profile.ts");
+  assert.deepEqual(empty().recommenders, []);
+  assert.deepEqual(sanitize({}).recommenders, [], "a profile saved before recommenders reads as none");
+  const rows = sanitizeRecommenders([
+    { id: "r1", name: "Ms. Ortiz", subject: "English", courseId: "c-eng", years: [11, 11, 8], rank: 2, status: "asked", askedOn: "2027-03-02", agreedOn: "soon", invitedOn: null },
+    { id: "r2", name: "Mr. Lee", subject: null, years: [10], rank: 1, status: "bogus" },
+    { id: "r3", name: "", status: "asked" },
+    { id: "r4", name: "x".repeat(RECOMMENDER_NAME_MAX + 1) },
+  ]);
+  assert.deepEqual(rows, [
+    { id: "r2", name: "Mr. Lee", subject: null, courseId: null, years: [10], rank: 1, status: "thinking", askedOn: null, agreedOn: null, invitedOn: null },
+    { id: "r1", name: "Ms. Ortiz", subject: "English", courseId: "c-eng", years: [11], rank: 2, status: "asked", askedOn: "2027-03-02", agreedOn: null, invitedOn: null },
+  ]);
+  const many = sanitizeRecommenders(Array.from({ length: 7 }, (_, i) => ({ name: `Teacher ${i}`, status: "agreed" })));
+  assert.equal(many.length, RECOMMENDERS_MAX, "capped at four");
+  assert.deepEqual(many.map((r) => r.rank), [1, 2, 3, 4]);
+  const p = sanitize({ recommenders: [...rows, { name: "Dr. Kim", status: "invited" }] });
+  assert.deepEqual(sanitize(JSON.parse(JSON.stringify(p))).recommenders, p.recommenders, "round-trips");
+  assert.equal(recommendersAsked(p), 2);
+  assert.equal(recommendersAsked(null), 0);
+});
+
+test("tests.registeredDates (plan v3): kept only for keys also in plannedDates", async () => {
+  const { emptyProfile: empty, sanitizeProfile: sanitize } = await import("../lib/student-profile.ts");
+  assert.deepEqual(empty().tests.registeredDates, []);
+  assert.deepEqual(sanitize({}).tests.registeredDates, []);
+  const p = sanitize({ tests: { plannedDates: ["sat_2026_10", "act_2026_12"], registeredDates: ["sat_2026_10", "sat_2027_03", "nope", "sat_2026_10"] } });
+  assert.deepEqual(p.tests.registeredDates, ["sat_2026_10"], "a date not planned (or not a key) is dropped; no duplicates");
+  assert.deepEqual(sanitize(JSON.parse(JSON.stringify(p))).tests, p.tests);
 });

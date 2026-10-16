@@ -12,6 +12,10 @@
  * Next steps (supabase/migrations/20261014120000_next_steps.sql; specs/planner/next-steps/build-plan.md review note
  * 5): until it's applied, tasks are read without `season, action` (null), items without `ed_dismissed_at, ed_checks`
  * (null, {}), and a generated-task upsert that fails on `season`/`action` is retried without them (upsertTaskRows).
+ *
+ * Plan v3 (supabase/migrations/20261016120000_plan_v3.sql; specs/planner/v3/build-plan.md review note 3): until it's
+ * applied, tasks are read without `dismissed_at, dismissed_by` (null), and a skip that fails on them is retried with
+ * the `dismissed` flag alone (updateTaskSkip). The generators never write them.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ListRecord } from "../list-rules.ts";
@@ -35,7 +39,9 @@ export const PLAN_TASK_BASE_COLUMNS =
   "id, list_id, item_id, key, kind, title, detail, due_on, window_start, window_end, assignee, source, source_field, source_edition, date_note, done_at, done_by, snoozed_until, dismissed, orphaned, position, created_by, created_at";
 /** Next steps' move columns (20261014120000_next_steps.sql). */
 export const PLAN_TASK_MOVE_COLUMNS = "season, action";
-export const PLAN_TASK_COLUMNS = `${PLAN_TASK_BASE_COLUMNS}, ${PLAN_TASK_MOVE_COLUMNS}`;
+/** Plan v3's skip record (20261016120000_plan_v3.sql). */
+export const PLAN_TASK_SKIP_COLUMNS = ["dismissed_at", "dismissed_by"] as const;
+export const PLAN_TASK_COLUMNS = `${PLAN_TASK_BASE_COLUMNS}, ${PLAN_TASK_MOVE_COLUMNS}, dismissed_at, dismissed_by` as const;
 const VISIT_COLUMNS = "id, item_id, kind, on_date, at_time, registered, registration_url, who, rating, notes, created_by, created_at, updated_at";
 const OFFER_COLUMNS = "id, item_id, award_year, letter_date, source, coa, gift, work_study, loans, quotes, pros, cons, confirmed_at, created_by, created_at";
 const NUDGE_COLUMNS = "id, task_id, from_user, to_student, note, sent_at, channel, reply, replied_at";
@@ -156,23 +162,63 @@ export function isMissingMoveColumn(error: PgError): boolean {
   return isMissing(error) && /\bseason\b|\baction\b/.test(error.message ?? "");
 }
 
-/** Rows read without the move columns: no season, no button. */
-function withMoveDefaults(rows: PlanTask[]): PlanTask[] {
-  return rows.map((r) => ({ ...r, season: r.season ?? null, action: r.action ?? null }));
+/** The error is about plan v3's skip record on plan_tasks (20261016120000_plan_v3.sql not applied yet). */
+export function isMissingSkipColumn(error: PgError): boolean {
+  return isMissing(error) && /dismissed_at|dismissed_by/.test(error.message ?? "");
+}
+
+/** Rows read without the newer task columns: no season, no button, no skip record. */
+export function withTaskDefaults<T extends Partial<Pick<PlanTask, "season" | "action" | "dismissed_at" | "dismissed_by">>>(rows: T[]): (T & Pick<PlanTask, "season" | "action" | "dismissed_at" | "dismissed_by">)[] {
+  return rows.map((r) => ({ ...r, season: r.season ?? null, action: r.action ?? null, dismissed_at: r.dismissed_at ?? null, dismissed_by: r.dismissed_by ?? null }));
 }
 
 /**
- * A list's tasks (due date, then position), retrying without `season, action` while the next-steps migration isn't
- * applied (build-plan.md review note 5): they read as null.
+ * A list's tasks (due date, then position), retrying without the newer columns while their migrations aren't applied:
+ * without `dismissed_at, dismissed_by` (plan v3), then without `season, action` too (next steps' review note 5). They
+ * read as null.
  */
 export async function readTaskRows(supabase: SupabaseClient, listId: string): Promise<{ data: PlanTask[] | null; error: PgError | null }> {
   const sel = (cols: string) => supabase.from("plan_tasks").select(cols).eq("list_id", listId).order("due_on", { nullsFirst: false }).order("position");
+  const done = (rows: unknown) => ({ data: withTaskDefaults((rows ?? []) as unknown as PlanTask[]), error: null });
   const full = await sel(PLAN_TASK_COLUMNS);
-  if (!full.error) return { data: withMoveDefaults((full.data ?? []) as unknown as PlanTask[]), error: null };
-  if (!isMissingMoveColumn(full.error)) return { data: null, error: full.error };
+  if (!full.error) return done(full.data);
+  let err: PgError = full.error;
+  if (isMissingSkipColumn(err)) {
+    const withoutSkip = await sel(`${PLAN_TASK_BASE_COLUMNS}, ${PLAN_TASK_MOVE_COLUMNS}`);
+    if (!withoutSkip.error) return done(withoutSkip.data);
+    err = withoutSkip.error;
+  }
+  if (!isMissingMoveColumn(err)) return { data: null, error: err };
   const retry = await sel(PLAN_TASK_BASE_COLUMNS);
   if (retry.error) return { data: null, error: retry.error };
-  return { data: withMoveDefaults((retry.data ?? []) as unknown as PlanTask[]), error: null };
+  return done(retry.data);
+}
+
+/**
+ * The skip record's patch (now.md "Skip, recorded"; build-plan.md review note 7): skipping stamps when and who;
+ * bringing back clears all three.
+ */
+export function skipPatch(dismissed: boolean, userId: string, now: string): { dismissed: boolean; dismissed_at: string | null; dismissed_by: string | null } {
+  return dismissed ? { dismissed: true, dismissed_at: now, dismissed_by: userId } : { dismissed: false, dismissed_at: null, dismissed_by: null };
+}
+
+/**
+ * Skips a task or brings it back with the user's own client (RLS decides), stamping the skip record; on a missing
+ * `dismissed_at`/`dismissed_by` column (the plan v3 migration not applied yet) retried with `{ dismissed }` alone.
+ * Returns the updated ids (empty when the user can't edit the task) or the last error.
+ */
+export async function updateTaskSkip(
+  supabase: SupabaseClient,
+  taskId: string,
+  dismissed: boolean,
+  userId: string,
+  now: string = new Date().toISOString(),
+): Promise<{ data: { id: string }[] | null; error: PgError | null }> {
+  const update = (patch: Record<string, unknown>) => supabase.from("plan_tasks").update(patch).eq("id", taskId).select("id");
+  const first = await update(skipPatch(dismissed, userId, now));
+  if (!first.error || !isMissingSkipColumn(first.error)) return { data: (first.data ?? null) as { id: string }[] | null, error: first.error };
+  const retry = await update({ dismissed });
+  return { data: (retry.data ?? null) as { id: string }[] | null, error: retry.error };
 }
 
 /**

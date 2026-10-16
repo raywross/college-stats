@@ -168,4 +168,7 @@ test("plan_bundle reads every plan_tasks column the app reads (next steps: seaso
   assert.deepEqual(bundleTaskColumns(sql), want, `${file}: plan_bundle's plan_tasks columns differ from PLAN_TASK_COLUMNS`);
   // The guard is live: a definition without the move columns fails it.
   assert.notDeepEqual(bundleTaskColumns(sql.replace(", season, action", "")), want);
+  // Plan v3 (20261016120000_plan_v3.sql): the skip record is in both lists, and a definition without it fails too.
+  for (const c of ["dismissed_at", "dismissed_by"]) assert.ok(want.includes(c), c);
+  assert.notDeepEqual(bundleTaskColumns(sql.replace(", dismissed_at, dismissed_by", "")), want);
 });

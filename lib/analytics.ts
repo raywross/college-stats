@@ -15,6 +15,7 @@ import type { StandingLabel, StandingLevel } from "./chances/types";
 import type { Season } from "./planner/seasons";
 import type { ShapeGapKind } from "./planner/list-shape";
 import type { VisitEventKind } from "./visit-events/types";
+import type { GuideFrom, GuideSlug } from "./planner/guides";
 
 /** How someone reached a college's page (`school_viewed.from`; see the spec's "Attribution of a school view"). */
 export type NavigationSource = "search" | "explore" | "compare" | "home" | "similar" | "direct" | "other";
@@ -67,7 +68,7 @@ export interface AnalyticsEvents {
   /** `test` is which test the plan uses (sat, act, none), never the score. */
   plan_numbers_set: { test: "sat" | "act" | "none"; practice: boolean };
   /** The intake guide (specs/planner/redesign/intake.md): which step was completed, never the values entered. */
-  plan_intake_step: { step: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7; mode: "first" | "edit" };
+  plan_intake_step: { step: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8; mode: "first" | "edit" };
   plan_group_changed: { from_auto: boolean };
   plan_dream_set: { on: boolean };
   plan_round_changed: { from_auto: boolean; round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" };
@@ -102,9 +103,27 @@ export interface AnalyticsEvents {
   plan_applied: { round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" | "none" };
   plan_decision_recorded: { outcome: "admitted" | "denied" | "waitlisted" | "deferred" };
   plan_outcome_shared: { yes: boolean };
-  story_filled: { count: number };
+  story_filled: { length_band: "short" | "medium" | "long" };
   /** Server (U6): one season brief sent. */
   brief_sent: { season: Season; role: "student" | "guardian" };
+  /* Plan v3 (specs/planner/v3/build-plan.md "Telemetry"): slugs, kinds, seasons, levels, statuses, and counts; never a
+     college on a pill, a teacher's name, a score, a target, or the text of anything typed. "act" is a denied token
+     (the ACT), so the act-tracking events carry `action`, as plan_interest_act does. */
+  plan_guide_opened: { slug: GuideSlug; from: GuideFrom };
+  plan_move_restored: { kind: string; season: Season; by: "student" | "guardian" };
+  /** The list guide's Add: the level added at and how alike the college is (points of likeness, never an estimate number). */
+  plan_guide_added: { level: StandingLevel; likeness: number };
+  plan_guide_shape_explained: { season: Season };
+  plan_interest_confirmed: { action: string; via: "prompt" | "email" | "manual" };
+  plan_interest_expired: { action: string };
+  plan_test_registered: { test: "sat" | "act"; via: "prompt" | "email" | "manual" };
+  plan_courses_added: { count: number };
+  plan_recommender_status: { status: "thinking" | "asked" | "agreed" | "invited" };
+  recommenders_count: { n: number };
+  plan_parent_season_viewed: { season: Season };
+  plan_connection_added: { kind: "family" | "recruited" };
+  /** Server (U4): one interest-confirmation email sent, with how many acts it asks about. */
+  interest_confirm_sent: { acts: number };
   /** Visit events (specs/product/visit-events.md "Privacy and telemetry"): which surface and kind filter are viewed, never an address or a distance. */
   visit_events_viewed: { surface: "profile" | "me" | "planner"; kind: VisitEventKind | "all" };
   visit_signup_clicked: { unit_id: string; kind: VisitEventKind; near: boolean };
@@ -115,7 +134,7 @@ export interface AnalyticsEvents {
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -210,8 +229,21 @@ export const EVENTS = {
   plan_applied: { properties: ["round"], side: "client", why: "Next steps: applications marked sent, by round" },
   plan_decision_recorded: { properties: ["outcome"], side: "client", why: "Next steps: decisions recorded" },
   plan_outcome_shared: { properties: ["yes"], side: "client", why: "Next steps: outcome sharing answered" },
-  story_filled: { properties: ["count"], side: "client", why: "Your story: how many prompts are filled (never the text)" },
+  story_filled: { properties: ["length_band"], side: "client", why: "Your story: how long the saved story is, by band (never the text)" },
   brief_sent: { properties: ["season", "role"], side: "server", why: "Next steps: season briefs sent" },
+  plan_guide_opened: { properties: ["slug", "from"], side: "client", why: "Plan v3: which guides get opened, and from where" },
+  plan_move_restored: { properties: ["kind", "season", "by"], side: "client", why: "Plan v3: skipped moves brought back, and by whom" },
+  plan_guide_added: { properties: ["level", "likeness"], side: "client", why: "Plan v3: colleges added from the list guide, by level and likeness" },
+  plan_guide_shape_explained: { properties: ["season"], side: "client", why: "Plan v3: is the list guide's shape explainer read" },
+  plan_interest_confirmed: { properties: ["action", "via"], side: "client", why: "Plan v3: tracked acts confirmed, by act and how" },
+  plan_interest_expired: { properties: ["action"], side: "client", why: "Plan v3: tracked acts that expired unconfirmed" },
+  plan_test_registered: { properties: ["test", "via"], side: "client", why: "Plan v3: test registrations confirmed" },
+  plan_courses_added: { properties: ["count"], side: "client", why: "Plan v3: courses added from the courses guide" },
+  plan_recommender_status: { properties: ["status"], side: "client", why: "Plan v3: recommender status changes (never a name)" },
+  recommenders_count: { properties: ["n"], side: "client", why: "Plan v3: how many recommenders a student lists" },
+  plan_parent_season_viewed: { properties: ["season"], side: "client", why: "Plan v3: parents reading the season's list" },
+  plan_connection_added: { properties: ["kind"], side: "client", why: "Plan v3: connections entered, family or recruiting" },
+  interest_confirm_sent: { properties: ["acts"], side: "server", why: "Plan v3: interest-confirmation emails sent, by act count" },
   visit_events_viewed: { properties: ["surface", "kind"], side: "client", why: "Visit events: which surface and kind filter get used" },
   visit_signup_clicked: { properties: ["unit_id", "kind", "near"], side: "client", why: "Visit events: sign-up clicks, by college, kind, and whether it was a near-you event" },
   visit_alert_muted: { properties: ["unit_id"], side: "client", why: "Visit events: per-college alert mutes" },

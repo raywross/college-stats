@@ -455,3 +455,68 @@ after each, `npx next build` after each wave; apply the migration to dev after U
 `.env.local`) and run `scripts/backfill-connections.mts` after U2a. Then browser QA on the dev database with throwaway
 accounts (a junior-spring student, a senior, a parent of both), mark the specs built, remove the roadmap group, one
 release note, push, and the PR for the owner's review on the Vercel preview. Not merged into `main` until the owner approves.
+
+## As built by U1 (read this; it overrides the contracts above where they differ)
+1. **Profile** (`lib/student-profile.ts`): also exports `ConnectionFamily`, `CONNECTION_FAMILIES`, `RecommenderStatus`,
+   `RECOMMENDER_STATUSES`, and `storyLengthBand(narrative)` (short under 200, medium under 1,000, long; for
+   `story_filled`). `sanitizeConnections` keeps the first entry per unit id. `sanitizeRecommenders` drops a row without
+   a name, reads an unknown status as `thinking`, keeps dates as ISO days, caps subject at 60, sorts by `rank` (then
+   input order) and renumbers 1..n. The old story join labels the third answer **"Why this major: …"** (not "Why
+   {major}"). `storyMissing` takes `Pick<StudentProfileData, "story">`. `ACTIVITY_NONE_STEPS` includes `connections`.
+   `applyIntake` keeps a saved `activitiesNone.connections` (the activity steps own their other keys);
+   `importLocalProfile`'s merge carries `recommenders`. `StorySection` and `StoryCard` are one `narrative` field
+   (U6 replaces both).
+2. **Skip record** (`lib/planner/read-plan.ts`): `PLAN_TASK_SKIP_COLUMNS` is `readonly ["dismissed_at", "dismissed_by"]`;
+   `PLAN_TASK_COLUMNS` ends `…, season, action, dismissed_at, dismissed_by`. New: `isMissingSkipColumn`,
+   `withTaskDefaults` (replaces the private `withMoveDefaults`), `skipPatch(dismissed, userId, now)`, and
+   `updateTaskSkip(supabase, taskId, dismissed, userId, now?)` (the stamped patch, retried with `{ dismissed }` alone),
+   which `store.ts dismiss` calls; `undismiss(taskId)` is `dismiss(taskId, false)`. `GeneratedTask` omits the two
+   columns; `applyMerge` and `planDataFromBundle` (`lib/bundle-read.ts`) fill them with null. `store-parents.ts
+   myYourPart` still selects `PLAN_TASK_COLUMNS` with no fallback (as it did for next steps): it reads nothing until
+   the migration is applied, so apply it right after U1 merges.
+3. **Migration**: `confirm_token` defaults to two `gen_random_uuid()`s without dashes (64 hex characters; the repo's
+   token pattern, no pgcrypto). Added an `"Admins read"` policy on `plan_interest_acts` (the admin console's pattern);
+   no delete policy or grant (acts expire). `lib/planner/interest-acts-types.ts` holds `INTEREST_ACTS`, `ACT_STATUSES`,
+   `ACT_RESOLVED_VIA`, `InterestAct`, `ActStatus`, `ActResolvedVia`, and `InterestActRow`: **U4 imports these** (re-export
+   from `interest-acts.ts` if you like) rather than redefining them; the migration test holds the SQL's check lists
+   equal to them.
+4. **Catalog**: `generators/season.ts` exports `belowTarget(profile)` and `fillTitle(title, profile)` (any `{word}` left
+   unfilled → the entry is skipped). `reach_score_*` and `pick_recommenders` have `action: () => null` (the guide is the
+   button); `reach_score_*` don't carry. Like every playbook entry, next season's `reach_score_*` is generated for
+   Coming up. **U9 note:** a `reach_score_*` title holds the student's own target ("Work toward your 1400"); the
+   parent's view must not show it (render a target-free title there).
+5. **`moves.ts`**: `skipped` is this season's skipped moves: its own season, or skipped (by `dismissed_at`) this
+   season, which catches a carried move; a guardian viewer's own moves are left out as in Now. New helpers
+   `skippedLabel(t, today)` ("Skipped Oct 12"; "Skipped" without a date) and `doneLabel(t, today)` ("Done Oct 3").
+   `NOW_MAX` 3 also shortens the weekly email's child moves and the calendar week's moves (they read `.now`); the season
+   brief passes its own `max`.
+6. **`guides.ts`**: also exports `GUIDE_SLUGS`, `GUIDE_FROMS`, `GuideHrefQuery`, `GuideHrefOpts`, `GUIDE_BY_KIND`,
+   `GUIDE_BY_PLAYBOOK_KEY`, `GUIDE_BY_CYCLE_KEY`, `parseGuideSlug`, `parseGuideQuery` (college: digits up to 12; level:
+   a `StandingLevel`; move: a uuid), `parseGuideFrom(v, hasMove)`. `hrefFor(task, opts)`'s `opts` is `{ person; items? }`:
+   pass `ctx.items` to get `college=<unit id>` (the interest and ED guides); with a task it adds `move` and
+   `from=move`; with null it's the bare guide URL. Beyond the brief: the cycle's `choose_courses_YYYY` (the built
+   course choice) maps to `courses`. Titles: list "Build your list", interest "Show a college you're interested", test
+   "Reach your score", story "Your story", courses "Choose next year's courses", recommenders "Pick your recommenders",
+   ed "Early decision: the facts"; owners may refine their own title and purpose (the guard test reads them).
+7. **Guide page**: `lib/planner/guides-server.ts` exports `GuidePage { Component; load? }`; stubs live in
+   `components/planner/guides/stubs.tsx` (`ListGuideStub`, …; no props): replace your entry in `GUIDE_PAGES`, then
+   delete your stub. `GuideFrame` takes `GuideProps` plus `slug`, `from`, `Component`; the lead under the title is
+   `move.detail ?? purpose`. `GuideFooter` (`{ move: { id, kind, season } | null; canEdit; isGuardian; person }`) shows
+   Done with this / Skip for now only for a move that is still open and an editor, **Skip never for a guardian**
+   (review note 14), then `router.push(planHref({ person, tab: "next" }))`. `GuideOpened` (client) sends
+   `plan_guide_opened`. A guardian without `?for=` gets the last child viewed (the cookie), else the first child.
+8. **Cards**: `MoveCard`'s one button is the guide's (`guideFor`) else the built `ActionLink` (unchanged: an `open_row`
+   with `panel: "capture"` still links the row; U2b changes that). The corner menu (`<details>`, 44px `⋯`,
+   `aria-label="More for {title}"`) holds Done and Skip for now, only with edit access; **a guardian's menu has Done
+   alone**. Every card button is 44px at every width now. `NextSteps` is a wrapper: `GuardianNextSteps`
+   (`components/planner/ParentNextSteps.tsx`, the built guardian tab moved verbatim, for U9 to rewrite) or the
+   student's three cards.
+9. **Telemetry**: `act` is a denied property token (the ACT), so the act events carry **`action`**:
+   `plan_interest_confirmed { action, via }`, `plan_interest_expired { action }`. Types: `plan_guide_opened { slug:
+   GuideSlug; from: GuideFrom }`, `plan_move_restored { kind; season; by: "student" | "guardian" }`, `plan_guide_added {
+   level: StandingLevel; likeness: number }`, `plan_test_registered { test: "sat" | "act"; via }`,
+   `plan_recommender_status { status }`, `recommenders_count { n: number }`, `interest_confirm_sent { acts: number }`
+   (server). The three removed events stay registered until their callers go: `plan_drawer_opened` (U2b,
+   `PlanRow.tsx`), `plan_rail_opened` and `plan_rail_added` (U3, `CollegeRail.tsx`); each owner deletes its event.
+10. **Tests**: the catalog's words guard is shared as `tests/helpers/copy-guard.mts` (`numberProblems`); use it for any
+    guide's words. Test fixtures that build a `PlanTask` need `dismissed_at: null, dismissed_by: null`.

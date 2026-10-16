@@ -4,24 +4,29 @@
  * (review note 1); its season is `task.season` when set, else the season its date falls in, else the current one
  * (review note 2).
  *
- * - Now: at most six, in order: overdue dated moves, dated moves within 14 days, ED decide moves inside their window,
- *   then the playbook's own order (the catalog's position), then the rest by date.
- * - More this season: the rest of this season's open moves. A skipped move ("Not now" = dismissed) and a snoozed one
- *   show nowhere; an orphan is never a move.
- * - Coming up: next season's open moves, titles and dates only.
+ * Plan v3 (specs/planner/v3/now.md "Ranking"; build-plan.md review note 6): only moves that pass the season gate
+ * (`eligibleNow`: this season's, an earlier season's that carried, or one dated within SOON_DAYS) are the student's.
+ *
+ * - Now: at most three (NOW_MAX), in order: overdue dated moves, dated moves within 14 days, ED decide moves inside
+ *   their window, then the playbook's own order (the catalog's position), then the rest by date.
+ * - More this season: the rest of the eligible open moves (the parent's view; the student's tab doesn't show it). A
+ *   skipped move (dismissed) and a snoozed one are never open; an orphan is never a move.
+ * - Coming up: next season's open moves, titles and dates only (the parent's view).
  * - Done: this season's done moves.
+ * - Skipped: this season's skipped moves (its own season, or skipped this season), for "Done and skipped" and Bring back.
  * - A guardian's own moves (assignee guardian or either) are their Your part (yourPartMoves), shown first and not again
  *   in Now.
  * Pure; safe in client components.
  */
 import { addDays } from "./stage.ts";
 import { yourPart } from "./summary.ts";
-import { compareTasks, isOpen, taskDate } from "./tasks.ts";
-import { nextSeason, seasonOfDate, type Season } from "./seasons.ts";
+import { compareTasks, dayLabel, isOpen, taskDate } from "./tasks.ts";
+import { nextSeason, seasonOfDate, seasonRank, type Season } from "./seasons.ts";
 import type { PlanTask } from "./types.ts";
 
-export const NOW_MAX = 6;
-/** A dated move this close (days) is in Now. */
+/** Plan v3 (now.md "The tab"): at most three cards. */
+export const NOW_MAX = 3;
+/** A dated move this close (days) is in Now, whatever its season. */
 export const SOON_DAYS = 14;
 
 export interface MoveGroups {
@@ -29,6 +34,7 @@ export interface MoveGroups {
   more: PlanTask[];
   comingUp: { title: string; date: string | null }[];
   done: PlanTask[];
+  skipped: PlanTask[];
   season: Season;
 }
 
@@ -41,6 +47,17 @@ export function taskSeason(t: Pick<PlanTask, "season" | "due_on" | "window_start
   const d = t.due_on ?? t.window_start;
   if (d && gradYear !== null) return seasonOfDate(d, gradYear);
   return current;
+}
+
+/**
+ * The season gate (now.md "Ranking" 1; review note 6): a move is the student's now when its season is the current one
+ * or an earlier one (the generators only emit earlier entries that carry), or it is dated within SOON_DAYS ("Common
+ * App opens Aug 1" shows from Jul 18). A later season's move is otherwise invisible: not in Now, not in a fold.
+ */
+export function eligibleNow(t: PlanTask, opts: { season: Season; gradYear: number | null; today: string }): boolean {
+  if (seasonRank(taskSeason(t, opts.gradYear, opts.season)) <= seasonRank(opts.season)) return true;
+  const d = taskDate(t);
+  return d !== null && d <= addDays(opts.today, SOON_DAYS);
 }
 
 const isEdDecide = (t: PlanTask) => t.kind === "ed_decide" || t.kind === "ed2_decide";
@@ -111,13 +128,11 @@ export function nowMoves(
   const next = nextSeason(season);
   const live = tasks.filter(isMove);
   const seasonOf = (t: PlanTask) => taskSeason(t, gradYear, season);
+  const forViewer = (t: PlanTask) => !(opts.viewer === "guardian" && isMine(t));
   const open = live
     .filter((t) => isOpen(t, today))
-    .filter((t) => !(opts.viewer === "guardian" && isMine(t)))
-    .filter((t) => {
-      const d = taskDate(t);
-      return seasonOf(t) === season || (d !== null && d < today);
-    })
+    .filter(forViewer)
+    .filter((t) => eligibleNow(t, { season, gradYear, today }))
     .sort((a, b) => compareMoves(a, b, today));
   const comingUp = next
     ? live
@@ -126,13 +141,26 @@ export function nowMoves(
         .map((t) => ({ title: t.title, date: taskDate(t) }))
     : [];
   const done = live.filter((t) => t.done_at !== null && seasonOf(t) === season).sort(compareTasks);
-  return { now: open.slice(0, max), more: open.slice(max), comingUp, done, season };
+  // A carried move keeps its own (earlier) season, so one skipped this season counts by its skip date too.
+  const skippedThisSeason = (t: PlanTask) => seasonOf(t) === season || (t.dismissed_at != null && gradYear !== null && seasonOfDate(t.dismissed_at.slice(0, 10), gradYear) === season);
+  const skipped = live.filter((t) => t.dismissed && t.done_at === null && forViewer(t) && skippedThisSeason(t)).sort(compareTasks);
+  return { now: open.slice(0, max), more: open.slice(max), comingUp, done, skipped, season };
 }
 
 /** A guardian's own open moves for this child (assignee guardian or either), as parents.md's Your part orders them. */
 export function yourPartMoves(tasks: PlanTask[], today: string): PlanTask[] {
   const moves = tasks.filter(isMove);
   return yourPart([{ studentId: "", name: null, tasks: moves }], today)[0]?.tasks ?? [];
+}
+
+/** "Skipped Oct 12" for the Done and skipped fold, or "Skipped" for a skip made before the skip record existed. */
+export function skippedLabel(t: Pick<PlanTask, "dismissed_at">, today: string): string {
+  return t.dismissed_at ? `Skipped ${dayLabel(t.dismissed_at.slice(0, 10), today)}` : "Skipped";
+}
+
+/** "Done Oct 3": the day a done move was ticked, or null. */
+export function doneLabel(t: Pick<PlanTask, "done_at">, today: string): string | null {
+  return t.done_at ? `Done ${dayLabel(t.done_at.slice(0, 10), today)}` : null;
 }
 
 /** The people line's "Next:": Now's first card. */

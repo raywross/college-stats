@@ -779,7 +779,8 @@ export function applyIntake(profile: StudentProfileData, s: IntakeSave, today: s
       courseRigorCount: null,
       activities: s.activities,
       awards: s.awards,
-      activitiesNone: s.activitiesNone,
+      // The intake's activity steps own their "None" keys; the Connections step's (plan v3) is kept as saved.
+      activitiesNone: profile.academics.activitiesNone.connections ? { ...s.activitiesNone, connections: true } : s.activitiesNone,
     },
     tests,
   });

@@ -18,6 +18,7 @@ import { profileFor } from "@/lib/student-profile-store";
 import { effectiveGradYear, GRAD_YEAR_MAX, GRAD_YEAR_MIN } from "@/lib/student-profile";
 import { isListRound, isoDateOrNull, type ListRound } from "@/lib/list-rules";
 import { generatorInputFor, readPlan, todayIso, writeMerge, type PlanData } from "./context";
+import { updateTaskSkip } from "./read-plan";
 import { generateTasks, mergeTasks } from "./tasks";
 import { planEstimates } from "./plan-estimates";
 import type { Assignee } from "./types";
@@ -137,9 +138,25 @@ export async function snooze(taskId: string, until: string | null): Promise<Plan
   return updateTask(taskId, { snoozed_until: day }, "snooze");
 }
 
-/** Dismisses a task ("not for us"), or brings it back. A dismissed generated task stays dismissed after a regeneration. */
+/**
+ * Skips a task ("Skip for now"), or brings it back. A dismissed generated task stays dismissed after a regeneration.
+ * Plan v3 (now.md "Skip, recorded"): a skip stamps `dismissed_at` and `dismissed_by` (the signed-in user); bringing
+ * back clears all three. Before the plan v3 migration, only the flag is written (read-plan.ts updateTaskSkip).
+ */
 export async function dismiss(taskId: string, dismissed = true): Promise<PlanActionResult> {
-  return updateTask(taskId, { dismissed: Boolean(dismissed) }, "dismiss");
+  if (!isUuid(taskId)) return { ok: false, message: FAILED };
+  const r = await ready("planner.tab");
+  if (!("supabase" in r)) return r;
+  const { data, error } = await updateTaskSkip(r.supabase, taskId, Boolean(dismissed), r.userId);
+  if (error) return fail(error, "dismiss");
+  if (!data?.length) return { ok: false, message: "Only someone who can edit this plan can change it." };
+  refresh();
+  return { ok: true };
+}
+
+/** Brings a skipped task back ("Bring back"): clears the flag and the skip record. */
+export async function undismiss(taskId: string): Promise<PlanActionResult> {
+  return dismiss(taskId, false);
 }
 
 /** The family's own task: a title, an optional date and college, and who it's for (timeline.md "own"). */

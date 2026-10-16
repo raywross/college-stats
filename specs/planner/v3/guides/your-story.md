@@ -85,3 +85,4 @@ guardian redaction; the cap).
 - Starters append a line; every `activitiesReading` note and track sentence appear beside the textarea.
 - A guardian's StorySection on the Numbers page shows the status line plus a link to the guide (not the full story).
 - `StoryCard` is deleted; the story move renders `MoveCard` with the guide button.
+- QA fix (2026-10-16): the guardian's one line is now `guardianStoryLine(firstName, written)` (`lib/student-profile.ts`), shared by `StoryGuide.tsx` and `components/me/StorySection.tsx`. A name takes "has"/"hasn't"; with no name it falls back to "Your student", never the ungrammatical "They has written their story."

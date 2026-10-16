@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   emptyProfile,
+  guardianStoryLine,
   profileForViewer,
   redactStoryForGuardian,
   sanitizeProfile,
@@ -57,6 +58,18 @@ test("redactStoryForGuardian: text becomes '', updatedAt survives; null in, null
   const s = story("I fix bikes.");
   assert.deepEqual(redactStoryForGuardian(s), { narrative: "", updatedAt: s.updatedAt });
   assert.equal(redactStoryForGuardian(null), null);
+});
+
+// QA fix (2026-10-16): the fixed "They has written their story" template didn't agree in number. A name takes
+// singular "has"; no name falls back to "Your student" (also singular), never the ungrammatical "They has".
+test("guardianStoryLine: a name reads 'has'/'hasn't'; no name falls back to 'Your student', never 'They has'", () => {
+  assert.equal(guardianStoryLine("Maya", true), "Maya has written their story.");
+  assert.equal(guardianStoryLine("Maya", false), "Maya hasn't written their story yet.");
+  assert.equal(guardianStoryLine(null, true), "Your student has written their story.");
+  assert.equal(guardianStoryLine(null, false), "Your student hasn't written their story yet.");
+  for (const written of [true, false]) {
+    assert.doesNotMatch(guardianStoryLine(null, written), /\bThey has\b/);
+  }
 });
 
 test("profileForViewer: a guardian's copy carries no story text (but keeps updatedAt, so 'has written' survives); the student's own copy is untouched", () => {

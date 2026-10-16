@@ -33,10 +33,14 @@ export function EdSheetDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const title = edPillText(candidate.round, candidate.verdict).full;
+  const school = row.school ?? undefined;
+  const facts = edSheetFacts({ ...row.item, round: row.round }, school, row.estimate ?? undefined, candidate.round);
+  const pillText = edPillText(candidate.round, candidate.verdict).full;
+  const title = facts ? `${pillText}: ${facts.name}` : pillText;
+  const description = facts?.levelLabel ? `${facts.levelLabel} for you` : undefined;
   return (
-    <SheetDialog open={open} onOpenChange={onOpenChange} title={title}>
-      <EdSheet row={row} ctx={ctx} candidate={candidate} onClose={() => onOpenChange(false)} />
+    <SheetDialog open={open} onOpenChange={onOpenChange} title={title} description={description}>
+      <EdSheet row={row} ctx={ctx} candidate={candidate} chrome="dialog" onClose={() => onOpenChange(false)} />
     </SheetDialog>
   );
 }
@@ -50,7 +54,21 @@ export function EdSheetDialog({
  * me**; a guardian sees the facts and questions, ticks the cost check as theirs, and reads "{First} picks the round".
  * Nothing here is a number from the estimate: the level is the only thing from it.
  */
-export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ctx: PlanContext; candidate: EdCandidate; onClose?: () => void }) {
+export function EdSheet({
+  row,
+  ctx,
+  candidate,
+  onClose,
+  chrome = "inline",
+}: {
+  row: PlanRowView;
+  ctx: PlanContext;
+  candidate: EdCandidate;
+  onClose?: () => void;
+  /** "dialog" (opened via `EdSheetDialog`) suppresses this component's own title row and ✕: `SheetDialog` already
+   * carries the title and the level line as its description, so a dialog never shows two of each. */
+  chrome?: "inline" | "dialog";
+}) {
   const router = useRouter();
   const school = row.school ?? undefined;
   const facts = edSheetFacts({ ...row.item, round: row.round }, school, row.estimate ?? undefined, candidate.round);
@@ -114,20 +132,22 @@ export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ct
 
   return (
     <section aria-label={edPillText(round, candidate.verdict).full} className="space-y-4 rounded-2xl border bg-card p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-semibold">
-            {edPillText(round, candidate.verdict).full}: {facts.name}
-          </p>
-          {facts.levelLabel && <p className="text-xs text-muted-foreground">{facts.levelLabel} for you</p>}
-          {facts.onPlan && <p className="text-xs font-semibold text-primary">On your plan: {setRound === "ed2" ? "ED II" : "ED"}</p>}
+      {chrome === "inline" && (
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-semibold">
+              {edPillText(round, candidate.verdict).full}: {facts.name}
+            </p>
+            {facts.levelLabel && <p className="text-xs text-muted-foreground">{facts.levelLabel} for you</p>}
+          </div>
+          {onClose && (
+            <button type="button" onClick={onClose} aria-label="Close the ED facts" className="inline-flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-muted">
+              <X className="size-4" aria-hidden />
+            </button>
+          )}
         </div>
-        {onClose && (
-          <button type="button" onClick={onClose} aria-label="Close the ED facts" className="inline-flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-muted">
-            <X className="size-4" aria-hidden />
-          </button>
-        )}
-      </div>
+      )}
+      {facts.onPlan && <p className="text-xs font-semibold text-primary">On your plan: {setRound === "ed2" ? "ED II" : "ED"}</p>}
 
       <div className="space-y-1">
         <p>{facts.read}</p>

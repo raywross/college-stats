@@ -148,3 +148,4 @@ the cap; the freshman view; no number from the estimate in any string; the shape
 - Sections come only from `shapeGaps` (Likely-or-Safe is one combined gap); the affordability gap stays hidden.
 - `AddCollegeBox` moved to its own component.
 - `CollegeRail`, `ShapeCard`, `rail.ts`, `rail-server.ts`, and `plan_rail_opened/added` telemetry are removed; `shape_gap` and `shape_cost` moves render `MoveCard`.
+- QA fix (2026-10-16): `ListGuide.tsx` removes the just-added card optimistically (tracked by unit id) the moment Add succeeds, rather than leaving it visible until `router.refresh()`'s fresh data lands; the open-section-after-refresh logic is factored into the pure `openSectionsFor(openGap)` (`lib/planner/list-guide.ts`), tested directly.

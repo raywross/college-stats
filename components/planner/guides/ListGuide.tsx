@@ -26,6 +26,7 @@ import { track } from "@/lib/analytics";
 import { STANDING_LEVEL_LABELS } from "@/lib/chances/levels";
 import {
   nothingAlikeLine,
+  openSectionsFor,
   SETTING_CHIPS,
   SIZE_CHIPS,
   TYPE_CHIPS,
@@ -71,7 +72,10 @@ export function ListGuide({ ctx, move, data, person }: GuideProps) {
   const router = useRouter();
   const [seen, setSeen] = useState(d);
   const [sections, setSections] = useState<GuideSection[]>(d.sections);
-  const [opened, setOpened] = useState<ReadonlySet<ShapeGapKind>>(new Set(d.openGap ? [d.openGap] : []));
+  const [opened, setOpened] = useState<ReadonlySet<ShapeGapKind>>(openSectionsFor(d.openGap));
+  // Added optimistically so the just-added card disappears at once, while `router.refresh()` is still in flight;
+  // cleared below once fresh data (which no longer lists it) actually arrives.
+  const [pendingAdded, setPendingAdded] = useState<ReadonlySet<string>>(new Set());
   const added = useRef(false);
 
   // A refresh (after an add) brings new data: the counts, the gaps, and the open section follow it, so the open
@@ -79,7 +83,8 @@ export function ListGuide({ ctx, move, data, person }: GuideProps) {
   if (d !== seen) {
     setSeen(d);
     setSections(d.sections);
-    setOpened(new Set(d.openGap ? [d.openGap] : []));
+    setOpened(openSectionsFor(d.openGap));
+    setPendingAdded(new Set());
   }
 
   // `plan_shape_gap_shown` (list-shape.md telemetry, built): once per open gap per visit.
@@ -106,6 +111,7 @@ export function ListGuide({ ctx, move, data, person }: GuideProps) {
 
   function onAdded(card: AlikeCardData | null) {
     added.current = true;
+    if (card) setPendingAdded((prev) => new Set(prev).add(card.unitId));
     if (card?.level) track("plan_guide_added", { level: card.level, likeness: card.likeness });
     router.refresh();
   }
@@ -173,7 +179,10 @@ export function ListGuide({ ctx, move, data, person }: GuideProps) {
         </section>
       )}
 
-      {sections.map((s) => {
+      {sections.map((s0) => {
+        // Strip out any card just added on this page, before the refresh that will drop it from `s0.cards` server
+        // side actually lands (the "remove the added card optimistically" fix for the stale-guide finding).
+        const s = pendingAdded.size === 0 ? s0 : { ...s0, cards: s0.cards.filter((c) => !pendingAdded.has(c.unitId)) };
         const gap = d.gaps.find((g) => g.kind === s.gap);
         const isOpenNow = opened.has(s.gap);
         return (

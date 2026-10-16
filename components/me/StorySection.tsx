@@ -10,12 +10,12 @@
  */
 import Link from "next/link";
 import { guideHref } from "@/lib/planner/guides";
+import { guardianStoryLine } from "@/lib/student-profile";
 import type { ProfileAccess } from "@/lib/student-profile-store";
 
-/** A guardian's whole view of it: "Maya has written her story." / "Maya hasn't written her story yet." */
+/** A guardian's whole view of it: "Maya has written their story." / "Maya hasn't written their story yet." */
 function GuardianLine({ written, firstName }: { written: boolean; firstName: string | null }) {
-  const name = firstName ?? "The student";
-  return <p className="text-sm text-muted-foreground">{written ? `${name} has written their story.` : `${name} hasn't written their story yet.`}</p>;
+  return <p className="text-sm text-muted-foreground">{guardianStoryLine(firstName, written)}</p>;
 }
 
 export function StorySection({ profile }: { profile: ProfileAccess }) {

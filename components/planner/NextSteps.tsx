@@ -76,9 +76,12 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
 
   const isGuardian = ctx.viewer.isGuardian;
   const by = isGuardian ? "guardian" : "student";
-  const yourPart = isGuardian ? yourPartMoves(ctx.tasks, ctx.today) : [];
   const facts = importanceFactsFrom(ctx, view);
   const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: "student", facts });
+  // A move for "either" (a visit, showing interest) is the student's card when it's among the three; Your part keeps
+  // only the guardian's moves that aren't already shown (QA 2026-10-16: two cards rendered twice for a parent).
+  const nowIds = new Set(groups.now.map((t) => t.id));
+  const yourPart = isGuardian ? yourPartMoves(ctx.tasks, ctx.today).filter((t) => !nowIds.has(t.id)) : [];
   const classOf = ctx.gradYear !== null ? ` · Class of ${ctx.gradYear}` : "";
   const seasonOfTask = (t: PlanTask) => taskSeason(t, ctx.gradYear, ctx.season);
   const skipped = groups.skipped.filter((t) => !restored.has(t.id));

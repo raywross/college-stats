@@ -163,10 +163,11 @@ export function searchMajors(query: string, exclude: readonly MajorFamily[], lim
   for (const family of MAJOR_FAMILY_CODES) {
     const name = normalize(MAJOR_FAMILIES[family]);
     if (name.startsWith(q)) offer(family, 0, null);
-    else if (name.includes(q) || wordsStart(name, q)) offer(family, 2, null);
+    // "cs" must not match "economics" or "physics" (QA 2026-10-16): a bare substring counts only for a longer query.
+    else if (wordsStart(name, q) || (q.length >= 4 && name.includes(q))) offer(family, 2, null);
   }
   for (const a of ALIAS_INDEX) {
-    const rank: Rank | null = a.norm.startsWith(q) ? 1 : a.norm.includes(q) || wordsStart(a.norm, q) ? 1.5 : null;
+    const rank: Rank | null = a.norm.startsWith(q) ? 1 : wordsStart(a.norm, q) ? 1.5 : null;
     if (rank !== null) for (const family of a.families) offer(family, rank, a.alias);
   }
   return [...best.entries()]

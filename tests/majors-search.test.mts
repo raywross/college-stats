@@ -132,3 +132,11 @@ test("picked families never come back, and results stop at the limit", () => {
 test("nothing matches: an empty list", () => {
   assert.deepEqual(searchMajors("zzzz", []), []);
 });
+
+test("a short query matches aliases and names by word, never by a bare substring ('cs' is not 'economics')", async () => {
+  const { searchMajors } = await import("../lib/majors-search.ts");
+  const families = searchMajors("cs", []).map((m) => m.family);
+  assert.deepEqual(families, ["11"], "Computer science only");
+  // A longer query may still match inside a name ("stat" → Math and statistics).
+  assert.ok(searchMajors("stat", []).some((m) => m.family === "27"));
+});

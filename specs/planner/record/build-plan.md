@@ -705,3 +705,14 @@ adding alongside R1a's `SECTION_MOVE_TITLE` change).
   answer — worth a one-line owner decision if a different activity step (or a fifth, combined entry point) reads
   better. The add-college chip doesn't cover `SignedOutPlan.tsx`'s own local-storage plan (reading.md's open question
   1, left "not now" on purpose). Nothing else from this unit's scope is left open.
+
+## QA fixes (lead, 2026-10-16; report in plan-v3-build/qa2/report.md)
+1. A guardian's redacted story carries `written` (whether the narrative reached `STORY_DONE_CHARS`), so the parent's
+   "Written" / "Not yet" and the record's "n of 13" agree with the student's; the flag is never stored.
+2. The major search matches aliases by word only ("cs" no longer matches "economics"); a bare substring counts for a
+   name only when the query has four or more letters.
+3. A parent's Next steps no longer shows an "either" move twice: Your part keeps only the guardian's moves not already
+   among the student's three.
+4. The major chips' reorder and remove buttons are 44 px.
+Not covered by QA (needs a hand check): the first-run tour on a brand-new account, the bare-record "Add your grades to
+sort" chip, drag reordering, the regions type-ahead, adding recommenders from empty, each guide's fold content.

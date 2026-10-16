@@ -20,6 +20,9 @@ import {
   STORY_MAX,
   type StudentProfileData,
 } from "../lib/student-profile.ts";
+
+/** What a guardian's redacted copy carries instead of the text: whether the story counts as written (QA 2026-10-16). */
+const storyWrittenOf = (s: { narrative: string } | null) => !storyMissing({ story: s ? { narrative: s.narrative, updatedAt: null } : null });
 import { generate } from "../lib/planner/generators/season.ts";
 import { loadCycle, cycleFor } from "../lib/planner/cycle.ts";
 import { gradeOf, seasonOf } from "../lib/planner/seasons.ts";
@@ -56,7 +59,7 @@ test("storyLengthBand: short under 200, medium under 1,000, long from 1,000", ()
 
 test("redactStoryForGuardian: text becomes '', updatedAt survives; null in, null out", () => {
   const s = story("I fix bikes.");
-  assert.deepEqual(redactStoryForGuardian(s), { narrative: "", updatedAt: s.updatedAt });
+  assert.deepEqual(redactStoryForGuardian(s), { narrative: "", updatedAt: s.updatedAt, written: storyWrittenOf(s) });
   assert.equal(redactStoryForGuardian(null), null);
 });
 
@@ -81,7 +84,7 @@ test("profileForViewer: a guardian's copy carries no story text (but keeps updat
   assert.equal(asSelf, data, "unchanged reference: no copy needed for the student");
 
   const asGuardian = profileForViewer(data, "guardian");
-  assert.deepEqual(asGuardian.story, { narrative: "", updatedAt: s.updatedAt });
+  assert.deepEqual(asGuardian.story, { narrative: "", updatedAt: s.updatedAt, written: storyWrittenOf(s) });
 
   // Planted: a loader that forgets to strip would just return `data` back unchanged for a guardian too.
   const forgotToStrip = data;
@@ -94,7 +97,7 @@ test("profileForViewer: a guardian's copy carries no story text (but keeps updat
 test("profileForViewer: a guardian's copy of an old three-prompt story is stripped too", () => {
   const data = sanitizeProfile({ story: { about: "I fix bikes.", thread: "Making things work.", majorWhy: "", updatedAt: "2026-10-14T12:00:00.000Z" } });
   assert.match(data.story?.narrative ?? "", /^About you: I fix bikes\./);
-  assert.deepEqual(profileForViewer(data, "guardian").story, { narrative: "", updatedAt: "2026-10-14T12:00:00.000Z" });
+  assert.deepEqual(profileForViewer(data, "guardian").story, { narrative: "", updatedAt: "2026-10-14T12:00:00.000Z", written: storyWrittenOf(data.story) });
 });
 
 test("profileForViewer: a guardian sees 'not yet' correctly when nothing was ever written", () => {

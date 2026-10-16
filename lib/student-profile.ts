@@ -646,6 +646,13 @@ export interface StudentProfilePreferences {
 export interface StudentStory {
   narrative: string;
   updatedAt: string | null;
+  /**
+   * A guardian's redacted copy only (redactStoryForGuardian): whether the student's narrative has reached
+   * STORY_DONE_CHARS, so a parent's "Written" / "Not yet" and the record's count agree with the student's own
+   * (QA 2026-10-16: a 150-character story read "Written" to the parent and "Not yet" to the student). Never stored:
+   * sanitizeStory drops it.
+   */
+  written?: boolean;
 }
 
 export interface StudentProfileData {
@@ -724,7 +731,8 @@ export function storyMissing(profile: Pick<StudentProfileData, "story"> | null):
 export function storyWritten(profile: Pick<StudentProfileData, "story"> | null): boolean {
   const story = profile?.story ?? null;
   if (!story) return false;
-  return story.narrative === "" ? true : !storyMissing(profile);
+  if (typeof story.written === "boolean") return story.written;
+  return !storyMissing(profile);
 }
 
 /**
@@ -743,7 +751,7 @@ export function storyLengthBand(narrative: string): "short" | "medium" | "long" 
  */
 export function redactStoryForGuardian(story: StudentStory | null): StudentStory | null {
   if (!story) return null;
-  return { narrative: "", updatedAt: story.updatedAt };
+  return { narrative: "", updatedAt: story.updatedAt, written: !storyMissing({ story }) };
 }
 
 /**

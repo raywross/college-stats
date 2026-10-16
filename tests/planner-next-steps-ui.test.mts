@@ -295,7 +295,7 @@ test("NextSteps: three cards, then one Done and skipped fold with Bring back; no
   const iFold = body.indexOf("Done and skipped ({foldCount})");
   assert.ok(iYourPart > 0 && iYourPart < iNow && iNow < iFold, "Your part (guardian only), then Now, then the fold");
   for (const gone of ["More this season", "Coming up", "groups.more", "groups.comingUp"]) assert.ok(!body.includes(gone), `no ${gone}`);
-  assert.match(body, /isGuardian \? yourPartMoves\(ctx\.tasks, ctx\.today\) : \[\]/, "a guardian's own Your part cards, hidden for the student");
+  assert.match(body, /isGuardian \? yourPartMoves\(ctx\.tasks, ctx\.today\)\.filter\(\(t\) => !nowIds\.has\(t\.id\)\) : \[\]/, "a guardian's own Your part cards, minus the three already shown, hidden for the student");
   assert.match(body, /isGuardian && yourPart\.length > 0/);
   assert.match(body, /Nothing to do right now\. Enjoy it\./);
   assert.match(body, /SEASON_EXPLAINER\[ctx\.season\]\.lead/, "the empty state adds the explainer's lead");

@@ -51,7 +51,7 @@ export function MajorChips({ majors, onChange }: { majors: readonly MajorFamily[
               onClick={() => move(i, -1)}
               disabled={i === 0}
               aria-label={`Move ${MAJOR_FAMILIES[m]} up`}
-              className="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted disabled:opacity-30"
+              className="flex size-11items-center justify-center rounded-full text-muted-foreground hover:bg-muted disabled:opacity-30"
             >
               <ChevronUp className="size-4" aria-hidden />
             </button>
@@ -60,7 +60,7 @@ export function MajorChips({ majors, onChange }: { majors: readonly MajorFamily[
               onClick={() => move(i, 1)}
               disabled={i === majors.length - 1}
               aria-label={`Move ${MAJOR_FAMILIES[m]} down`}
-              className="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted disabled:opacity-30"
+              className="flex size-11items-center justify-center rounded-full text-muted-foreground hover:bg-muted disabled:opacity-30"
             >
               <ChevronDown className="size-4" aria-hidden />
             </button>
@@ -73,7 +73,7 @@ export function MajorChips({ majors, onChange }: { majors: readonly MajorFamily[
             type="button"
             onClick={() => remove(i)}
             aria-label={`Remove ${MAJOR_FAMILIES[m]}`}
-            className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+            className="flex size-11shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
           >
             <X className="size-4" aria-hidden />
           </button>

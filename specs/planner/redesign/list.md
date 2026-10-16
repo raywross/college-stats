@@ -50,6 +50,7 @@ drawer" below where they differ:
   `applicants-like-you`.
 - **The capture panel** (the row's (i), `components/planner/RowDrawer.tsx`) replaces the drawer: "information
   overload and the text is out of date… what we're really looking for here is to capture some more information."
+  **(Plan v3, 2026-10-16: connections moved to a Connections step in the profile intake; see [../v3/connections.md](../v3/connections.md).)**
   In the intake's chip style (`components/activities/chips.tsx`), 44px targets, 16px inputs on phones:
   1. **Connections** (`AboutYouAndCollege`; owner, 2026-10-12: "not take up a ton of space"): one line of one-tap
      chips, [Parent or grandparent went here] [Sibling went here] [Recruited ▾]. Recruited opens its four picks

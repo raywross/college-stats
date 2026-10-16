@@ -1,6 +1,6 @@
 # Guide: Reach Your Score
 
-> Status: **planned** 2026-10-15. After [../now.md](../now.md); shares act tracking with [show-interest.md](show-interest.md).
+> Status: **built** 2026-10-16 (PR #165). After [../now.md](../now.md); shares act tracking with [show-interest.md](show-interest.md).
 > Brings back, as a guide, the useful parts of the dropped Scores tab ([../../redesign/scores.md](../../redesign/scores.md)):
 > the standing line, the retake rule, and the test dates with "I'll take it". Part 5 of [plan v3](../README.md).
 
@@ -99,3 +99,10 @@ string).
    undated, and the picked date's `test_register` task is the dated one.
 2. A student whose target is at or below their score keeps the target (the intake allows it). Recommendation: the move
    doesn't fire and the Numbers page shows "You're there" by the target.
+
+## As built
+- `reach_score_*` moves are generated one per season (junior fall → senior fall) with `applies: "below_target"`. Titles filled from `profile.tests.target` ("Work toward your 1400"). Seasons without a target don't emit the move.
+- The test guide page shows the student's own score and target; a guardian sees the target-free version.
+- "I'll take it" updates `tests.plannedDates`; test registration is tracked via the same `plan_interest_acts` table and `ActButton` as Show interest (confirm an act to write the date to `tests.registeredDates`).
+- `plan_test_date_picked {test}` telemetry re-added.
+- The no-target fallback to the retake notice is not built (owner question).

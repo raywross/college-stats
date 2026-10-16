@@ -1,6 +1,6 @@
 # Plan v3: A Few Things to Do Now, Each With a Guide
 
-> Status: **planned** 2026-10-15 from the owner's review of the built Next steps (PR #160, merged 2026-10-15). Overview of
+> Status: **built** 2026-10-16 (PR #165) from the owner's review of the built Next steps (PR #160, merged 2026-10-15). Overview of
 > the v3 specs (not a work item itself). Builds on the [planner](../README.md), its [redesign](../redesign/README.md), and
 > [next steps](../next-steps/README.md); the parts below change what those built, and each says what it replaces.
 
@@ -108,3 +108,9 @@ Each part keeps its own; these cut across:
    nothing and `hooksFromPlan` already reads it.
 4. **The PSAT/NMSQT for juniors with a real score**: the owner's rule drops every practice-test move. The junior PSAT is
    also the National Merit qualifier. Recommendation: drop it too, as asked; a student chasing National Merit knows.
+
+## As built
+1. **Recruiting in the Connections step**: adopted. The step captures legacy, sibling, and recruiting as three family chips on each college card.
+2. **Social follows**: adopted. Kept as the last option in the Show interest guide with the built "weakest signal" line.
+3. **The PSAT/NMSQT for juniors with a real score**: adopted. The PSAT entries get `applies: "no_real_score"` (false when the profile has a real SAT or ACT). The junior PSAT/NMSQT is dropped too for such a student.
+4. **Which card did the junior see?**: still open. The card asking "where they got into school" wasn't found in the generators; naming it would let the build check the fix against it.

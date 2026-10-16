@@ -167,3 +167,51 @@ export function doneLabel(t: Pick<PlanTask, "done_at">, today: string): string |
 export function topMove(groups: MoveGroups): PlanTask | null {
   return groups.now[0] ?? null;
 }
+
+/* ------------------------------------------------------------------ */
+/* Plan v3 (parents.md "The tab"; build-plan.md "U9 The parent's Next steps")                                       */
+/* ------------------------------------------------------------------ */
+
+export type SeasonRowState = "now" | "next" | "done" | "skipped";
+export interface SeasonRow {
+  task: PlanTask;
+  state: SeasonRowState;
+  /** The row's date (ISO): the task's own date for now/next, `done_at` for done, `dismissed_at` for skipped; null
+   *  when undated ("this season"). The component formats it (dayLabel, doneLabel, skippedLabel). */
+  when: string | null;
+}
+
+/**
+ * The season's rows for a guardian's view (parents.md "The tab" 2): the season's moves the student would see or has
+ * seen, in Now's order — the three in `now` as "now", the rest of the eligible open set (`more`) as "next", this
+ * season's done moves as "done", its skipped moves as "skipped". The guardian's own moves (Your part) are left out:
+ * `nowMoves` is called with `viewer: "student"` to get the student's full set (including past NOW_MAX and the done/
+ * skipped groups, which `nowMoves` doesn't trim for a guardian viewer), and the guardian-assigned ones are dropped
+ * here instead.
+ */
+export function seasonRows(tasks: PlanTask[], opts: { season: Season; gradYear: number | null; today: string }): SeasonRow[] {
+  const groups = nowMoves(tasks, { ...opts, viewer: "student" });
+  const theirs = (t: PlanTask) => !isMine(t);
+  const rows: SeasonRow[] = [];
+  for (const t of groups.now.filter(theirs)) rows.push({ task: t, state: "now", when: taskDate(t) });
+  for (const t of groups.more.filter(theirs)) rows.push({ task: t, state: "next", when: taskDate(t) });
+  for (const t of groups.done.filter(theirs)) rows.push({ task: t, state: "done", when: t.done_at });
+  for (const t of groups.skipped.filter(theirs)) rows.push({ task: t, state: "skipped", when: t.dismissed_at });
+  return rows;
+}
+
+/** Next season's open moves (titles, dates): `nowMoves`'s own `comingUp` (the parent's view; now.md "Ranking"). */
+export function comingUpRows(tasks: PlanTask[], opts: { season: Season; gradYear: number | null; today: string }): { title: string; date: string | null }[] {
+  return nowMoves(tasks, { ...opts, viewer: "student" }).comingUp;
+}
+
+/** A `reach_score_*` playbook move's key suffix ("Work toward your {target}"). */
+const REACH_SCORE_KEY_RE = /:playbook:reach_score_[a-z_]+$/;
+
+/**
+ * Plan v3 (build-plan.md, U1's "As built" note on U9): a `reach_score_*` move's title holds the student's own target
+ * score ("Work toward your 1400"); a parent must never see it. The parent's row reads this instead of `task.title`.
+ */
+export function parentSafeTitle(t: Pick<PlanTask, "key" | "title">): string {
+  return t.key && REACH_SCORE_KEY_RE.test(t.key) ? "Work toward the target score" : t.title;
+}

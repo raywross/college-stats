@@ -134,7 +134,7 @@ export interface AnalyticsEvents {
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -235,8 +235,8 @@ export const EVENTS = {
   plan_move_restored: { properties: ["kind", "season", "by"], side: "client", why: "Plan v3: skipped moves brought back, and by whom" },
   plan_guide_added: { properties: ["level", "likeness"], side: "client", why: "Plan v3: colleges added from the list guide, by level and likeness" },
   plan_guide_shape_explained: { properties: ["season"], side: "client", why: "Plan v3: is the list guide's shape explainer read" },
-  plan_interest_confirmed: { properties: ["action", "via"], side: "client", why: "Plan v3: tracked acts confirmed, by act and how" },
-  plan_interest_expired: { properties: ["action"], side: "client", why: "Plan v3: tracked acts that expired unconfirmed" },
+  plan_interest_confirmed: { properties: ["action", "via"], side: "server", why: "Plan v3: tracked acts confirmed, by act and how (sent where the answer is written)" },
+  plan_interest_expired: { properties: ["action"], side: "server", why: "Plan v3: tracked acts that expired unconfirmed (the morning job)" },
   plan_test_registered: { properties: ["test", "via"], side: "client", why: "Plan v3: test registrations confirmed" },
   plan_courses_added: { properties: ["count"], side: "client", why: "Plan v3: courses added from the courses guide" },
   plan_recommender_status: { properties: ["status"], side: "client", why: "Plan v3: recommender status changes (never a name)" },

@@ -625,6 +625,8 @@ export const ADMIN_EXPORT_REVIEWED = [
   // Reads by ctx.userId. The visit-alert tables (20261013180000_visit_events.sql) have no "Admins read" policy yet, so
   // run as an admin this section comes back empty until one is added; it never reads anyone else's rows.
   "visit_alerts",
+  // Reads by ctx.userId; plan_interest_acts has an "Admins read" policy (20261016120000_plan_v3.sql).
+  "plan_interest_acts",
 ] as const;
 
 const OVERRIDE_DESCRIPTION_NOTE = " (Exported by Quad support.)";

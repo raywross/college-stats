@@ -12,13 +12,14 @@ import type { GuideProps, GuideQuery } from "@/components/planner/guides/types";
 import {
   CoursesGuideStub,
   EdGuideStub,
-  InterestGuideStub,
   ListGuideStub,
   RecommendersGuideStub,
   StoryGuideStub,
   TestGuideStub,
 } from "@/components/planner/guides/stubs";
+import { InterestGuide } from "@/components/planner/guides/InterestGuide";
 import type { GuideSlug } from "./guides";
+import { loadInterestGuide } from "./interest-guide-server";
 import type { PlanView } from "./plan-view";
 import type { PlanContext } from "./types";
 
@@ -29,7 +30,7 @@ export interface GuidePage {
 
 export const GUIDE_PAGES: Record<GuideSlug, GuidePage> = {
   list: { Component: ListGuideStub },
-  interest: { Component: InterestGuideStub },
+  interest: { Component: InterestGuide, load: loadInterestGuide },
   test: { Component: TestGuideStub },
   story: { Component: StoryGuideStub },
   courses: { Component: CoursesGuideStub },

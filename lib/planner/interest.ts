@@ -164,8 +164,9 @@ export interface InterestMoveText {
   sourceEdition: string | null;
 }
 
-/** Title and why for one move, shared by `interestTasks`, InterestCard, and RowDrawer's "capture" panel why line, so
- *  all three say exactly the same thing. */
+/** Title and why for one move, shared by `interestTasks` and the row's capture panel why line (RowDrawer, until U2b
+ *  removes it), so both say exactly the same thing. The Show interest guide states C7 in its own words
+ *  (lib/planner/interest-guide.ts interestSentence). */
 export function interestMoveText(move: Pick<InterestMove, "kind">, school: Pick<PlanSchool, "name" | "profile" | "cites"> | undefined): InterestMoveText {
   const name = school?.name ?? "the college";
   if (move.kind === "visit_ed") {

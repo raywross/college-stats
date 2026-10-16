@@ -114,6 +114,8 @@ export interface AnalyticsEvents {
   plan_interest_confirmed: { action: string; via: "prompt" | "email" | "manual" };
   plan_interest_expired: { action: string };
   plan_test_registered: { test: "sat" | "act"; via: "prompt" | "email" | "manual" };
+  /** U5 (restored from the deleted Scores tab): "I'll take it" on a test date. */
+  plan_test_date_picked: { test: "sat" | "act" };
   plan_courses_added: { count: number };
   plan_recommender_status: { status: "thinking" | "asked" | "agreed" | "invited" };
   recommenders_count: { n: number };
@@ -232,6 +234,7 @@ export const EVENTS = {
   plan_interest_confirmed: { properties: ["action", "via"], side: "server", why: "Plan v3: tracked acts confirmed, by act and how (sent where the answer is written)" },
   plan_interest_expired: { properties: ["action"], side: "server", why: "Plan v3: tracked acts that expired unconfirmed (the morning job)" },
   plan_test_registered: { properties: ["test", "via"], side: "client", why: "Plan v3: test registrations confirmed" },
+  plan_test_date_picked: { properties: ["test"], side: "client", why: "Plan v3: test dates picked with \"I'll take it\"" },
   plan_courses_added: { properties: ["count"], side: "client", why: "Plan v3: courses added from the courses guide" },
   plan_recommender_status: { properties: ["status"], side: "client", why: "Plan v3: recommender status changes (never a name)" },
   recommenders_count: { properties: ["n"], side: "client", why: "Plan v3: how many recommenders a student lists" },

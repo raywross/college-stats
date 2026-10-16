@@ -24,7 +24,7 @@ import { generatorInputFor, readPlan, todayIso, writeAutoWrites, writeMerge } fr
 import { autoWrites, planView } from "./plan-view";
 import { planEstimates } from "./plan-estimates";
 import { generateTasks, mergeTasks } from "./tasks";
-import { applyNumbers, isUuid, parseNumbers, roundPatch, togglePlannedDate, type PlanNumbers } from "./plan-writes";
+import { applyNumbers, isUuid, parseNumbers, roundPatch, togglePlannedDate, toggleRegisteredDate, type PlanNumbers } from "./plan-writes";
 import { applyIntake, parseIntakeSave, type IntakeSave } from "./intake";
 import { mergeCoursesForSave } from "@/lib/chances/courses";
 import { span } from "@/lib/timing";
@@ -309,6 +309,19 @@ export async function saveIntake(studentId: string, input: IntakeSave): Promise<
 export async function setPlannedDate(studentId: string, entryKey: string, on: boolean): Promise<PlanWriteResult> {
   return saveTheirProfile(studentId, (p) => {
     const t = togglePlannedDate(p.data, entryKey, Boolean(on));
+    return t.ok ? { ok: true, data: t.profile } : t;
+  });
+}
+
+/**
+ * Confirming (or undoing) a test registration directly on the plan (guides/test-prep.md "Upcoming dates"): the same
+ * pure rule `writeConfirmedAct` (lib/planner/interest-acts-server.ts) uses for a `test_register` act confirmed
+ * through the return prompt or the morning email. This action is for the guide's own UI (a manual edit on the
+ * calendar); it goes through the caller's own session, like `setPlannedDate`.
+ */
+export async function setRegisteredDate(studentId: string, entryKey: string, on: boolean): Promise<PlanWriteResult> {
+  return saveTheirProfile(studentId, (p) => {
+    const t = toggleRegisteredDate(p.data, entryKey, Boolean(on));
     return t.ok ? { ok: true, data: t.profile } : t;
   });
 }

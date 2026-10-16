@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { Headline } from "@/components/planner/intake/Headline";
+import { guideHref } from "@/lib/planner/guides";
 import { scoreCheck, targetCheck, type IntakeDraft, type IntakeTest } from "@/lib/planner/intake";
 import { cn } from "@/lib/utils";
 
@@ -102,6 +104,11 @@ export function TestStep({ draft, setDraft }: { draft: IntakeDraft; setDraft: (n
             />
             {target?.hint && <p className={cn("text-sm", target.tone === "amber" ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground")}>{target.hint}</p>}
           </div>
+
+          {/* Plan v3 (specs/planner/v3/guides/test-prep.md): the test guide's upcoming dates, from the intake too. */}
+          <Link href={guideHref("test")} target="_blank" rel="noopener" className="inline-block text-sm font-semibold text-primary hover:underline">
+            See upcoming {test === "sat" ? "SAT" : "ACT"} dates ↗
+          </Link>
         </>
       )}
 

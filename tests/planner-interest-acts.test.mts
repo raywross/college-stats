@@ -321,6 +321,62 @@ test("resolveActRow: an information request, a follow, and a test registration w
   assert.equal(db3.tables.plan_visits.length, 0, "a test registration is not a college visit");
 });
 
+// U5 (guides/test-prep.md "Upcoming dates"): a guardian's click has no item or list of its own to say which child it's
+// for, so the fallback below is the one household child with that date's test_register task still open.
+test("resolveActRow: a guardian's confirmed registration writes the one household child with that date open", async () => {
+  const GUARDIAN = "66666666-6666-4666-8666-666666666666";
+  const row = act({
+    act: "test_register",
+    item_id: null,
+    user_id: GUARDIAN,
+    event_id: "sat_2026_11",
+    event_title: "SAT",
+    event_starts_at: "2026-11-07T12:00:00.000Z",
+    url: "https://satsuite.collegeboard.org/sat/registration",
+  });
+  const db = fakeSupabase({
+    plan_interest_acts: [{ ...row }],
+    plan_visits: [],
+    list_items: [],
+    plan_tasks: [{ id: "t1", list_id: LIST, item_id: null, kind: "test_register", key: `${LIST}:test_register:sat_2026_11`, done_at: null }],
+    students: [{ id: STUDENT, user_id: USER, deleted_at: null }],
+    student_profiles: [{ student_id: STUDENT, data: { ...emptyProfile(), tests: { ...emptyProfile().tests, focus: "sat", plannedDates: [] } } }],
+    lists: [{ id: LIST, student_id: STUDENT, is_default: true }],
+    household_members: [{ id: "m1", user_id: GUARDIAN, student_id: STUDENT, can_edit: true }],
+  });
+  const out = await server.resolveActRow(db as never, row, "confirmed", "manual", {}, OPTS);
+  assert.equal(out.kind, "resolved");
+  const tests = (db.tables.student_profiles[0].data as { tests: { plannedDates: string[]; registeredDates: string[] } }).tests;
+  assert.deepEqual(tests.plannedDates, ["sat_2026_11"]);
+  assert.deepEqual(tests.registeredDates, ["sat_2026_11"]);
+  assert.ok(db.tables.plan_tasks[0].done_at);
+});
+
+test("resolveActRow: a guardian with two household children and neither's date open writes nothing (ambiguous, no guess)", async () => {
+  const GUARDIAN = "77777777-7777-4777-8777-777777777777";
+  const STUDENT2 = "88888888-8888-4888-8888-888888888888";
+  const row = act({ act: "test_register", item_id: null, user_id: GUARDIAN, event_id: "sat_2026_11", event_title: "SAT", event_starts_at: "2026-11-07T12:00:00.000Z" });
+  const db = fakeSupabase({
+    plan_interest_acts: [{ ...row }],
+    plan_visits: [],
+    list_items: [],
+    plan_tasks: [],
+    students: [],
+    student_profiles: [],
+    lists: [
+      { id: LIST, student_id: STUDENT, is_default: true },
+      { id: "list2", student_id: STUDENT2, is_default: true },
+    ],
+    household_members: [
+      { id: "m1", user_id: GUARDIAN, student_id: STUDENT, can_edit: true },
+      { id: "m2", user_id: GUARDIAN, student_id: STUDENT2, can_edit: true },
+    ],
+  });
+  const out = await server.resolveActRow(db as never, row, "confirmed", "manual", {}, OPTS);
+  assert.equal(out.kind, "resolved");
+  assert.equal(db.tables.student_profiles.length, 0, "no student's date was open, so nothing is guessed");
+});
+
 /* ------------------------------------------------------------------ */
 /* The morning job                                                     */
 /* ------------------------------------------------------------------ */

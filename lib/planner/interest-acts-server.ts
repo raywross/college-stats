@@ -12,7 +12,8 @@ import "server-only";
  *   info_request / mailing_list → `list_items.info_requested_on` (today, unless one is already recorded).
  *   follow → the network into `followed_networks` (and `follows_social`).
  *   test_register → the test date into the student's `tests.registeredDates` (and `plannedDates` when it wasn't
- *     there), and the matching `test_register` task ticked.
+ *     there), and the matching `test_register` task ticked. The student is the actor themself, or (U5, a parent
+ *     often registers) the one household child with that date's task still open (`studentForTestRegister`, below).
  * A declined act writes nothing but its own status. The regeneration that closes the interest move is the caller's
  * (a Server Action regenerates at once; after an email answer the plan regenerates on its next open).
  *
@@ -23,6 +24,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitizeProfile } from "../student-profile.ts";
 import type { SocialNetwork } from "../types.ts";
 import { firstPastVisitOn } from "./actions.ts";
+import { toggleRegisteredDate } from "./plan-writes.ts";
 import {
   INTEREST_ACT_COLUMNS,
   isExpired,
@@ -71,6 +73,31 @@ export async function zonesForEvents(client: Client, eventIds: readonly (string 
 async function listOfItem(client: Client, itemId: string): Promise<string | null> {
   const { data } = await client.from("list_items").select("list_id").eq("id", itemId).maybeSingle();
   return (data as { list_id: string } | null)?.list_id ?? null;
+}
+
+/**
+ * The student a `test_register` act belongs to (U5, guides/test-prep.md; the guardian case the module comment
+ * flags): the actor's own student record first — the common case, a student registering for themself. Failing
+ * that, a `test_register` act carries no item or list of its own to say which child a guardian meant, so this
+ * falls back to the one child in the actor's household who has that date open (`plan_tasks` keyed
+ * `{list}:test_register:{dateKey}`, undone); more than one match, or none, writes nothing — the same conservative
+ * choice the rest of this function makes for a row it can't place.
+ */
+async function studentForTestRegister(client: Client, userId: string, dateKey: string): Promise<string | null> {
+  const own = await client.from("students").select("id").eq("user_id", userId).is("deleted_at", null).maybeSingle();
+  const ownId = (own.data as { id: string } | null)?.id ?? null;
+  if (ownId) return ownId;
+  const members = await client.from("household_members").select("student_id, can_edit").eq("user_id", userId).eq("can_edit", true);
+  const studentIds = [...new Set(((members.data ?? []) as { student_id: string | null }[]).map((m) => m.student_id).filter((id): id is string => Boolean(id)))];
+  if (studentIds.length === 0) return null;
+  if (studentIds.length === 1) return studentIds[0];
+  const lists = await client.from("lists").select("id, student_id").in("student_id", studentIds).eq("is_default", true);
+  const matches: string[] = [];
+  for (const l of (lists.data ?? []) as { id: string; student_id: string }[]) {
+    const task = await client.from("plan_tasks").select("id").eq("key", `${l.id}:test_register:${dateKey}`).is("done_at", null).maybeSingle();
+    if (task.data) matches.push(l.student_id);
+  }
+  return matches.length === 1 ? matches[0] : null;
 }
 
 /** Ticks any open generated task of `kind` for this item (store-actions.ts completeGeneratedTask's rule). */
@@ -155,17 +182,18 @@ export async function writeConfirmedAct(
     return { ok: true, listId: await listOfItem(client, row.item_id), visitId: null };
   }
 
-  // test_register: the actor's own student record (a test registration is the student's).
+  // test_register: the student's own record (studentForTestRegister), through the same pure rule the guide's own
+  // "I'll take it"/registered toggle uses (toggleRegisteredDate, lib/planner/plan-writes.ts U5).
   const dateKey = row.event_id && /^(sat|act)_\d{4}_\d{2}$/.test(row.event_id) ? row.event_id : null;
   if (!dateKey || !testOf(row)) return { ok: true, listId: null, visitId: null };
-  const student = await client.from("students").select("id").eq("user_id", row.user_id).is("deleted_at", null).maybeSingle();
-  const studentId = (student.data as { id: string } | null)?.id ?? null;
+  const studentId = await studentForTestRegister(client, row.user_id, dateKey);
   if (!studentId) return { ok: true, listId: null, visitId: null };
   const stored = await client.from("student_profiles").select("data").eq("student_id", studentId).maybeSingle();
   if (stored.error || !stored.data) return { ok: false, message: FAILED };
   const profile = sanitizeProfile((stored.data as { data: unknown }).data);
-  const planned = profile.tests.plannedDates.includes(dateKey) ? profile.tests.plannedDates : [...profile.tests.plannedDates, dateKey];
-  const next = sanitizeProfile({ ...profile, tests: { ...profile.tests, plannedDates: planned, registeredDates: [...new Set([...profile.tests.registeredDates, dateKey])] } });
+  const toggled = toggleRegisteredDate(profile, dateKey, true);
+  if (!toggled.ok) return { ok: true, listId: null, visitId: null };
+  const next = sanitizeProfile(toggled.profile);
   const { error } = await client.from("student_profiles").update({ data: next, updated_at: opts.now.toISOString() }).eq("student_id", studentId);
   if (error) return { ok: false, message: FAILED };
   const list = await client.from("lists").select("id").eq("student_id", studentId).eq("is_default", true).maybeSingle();

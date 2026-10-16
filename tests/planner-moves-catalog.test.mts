@@ -10,25 +10,8 @@ import assert from "node:assert/strict";
 import { MOVE_TEXT, PLAYBOOK, playbookEntryFor, SEASON_EXPLAINER } from "../lib/planner/moves-catalog.ts";
 import { MOVE_APPLIES } from "../lib/planner/generators/season.ts";
 import { SEASONS } from "../lib/planner/seasons.ts";
-
-const MONTH = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*";
-/** What may carry a digit: a month and day ("Oct 1", "May 1", "Oct 1–31"), the list-size ranges, and names with digits. */
-const ALLOWED = [new RegExp(`\\b${MONTH} \\d{1,2}(?:–\\d{1,2})?\\b`, "g"), /\b15–20\b/g, /\b12–15\b/g, /\bPSAT\/NMSQT\b/g, /\bED II\b/g];
-
-/** Every problem with one line of copy (empty when it's fine). */
-function numberProblems(text: string): string[] {
-  const problems: string[] = [];
-  if (/%|percent/i.test(text)) problems.push("a percentage");
-  if (/×|\b\d+x\b/i.test(text)) problems.push("a multiple");
-  if (/\bodds\b/i.test(text)) problems.push("odds");
-  if (/\bchances?\b/i.test(text)) problems.push("chance");
-  if (/\blikely\b/.test(text)) problems.push("a probability 'likely'");
-  let rest = text;
-  for (const re of ALLOWED) rest = rest.replace(re, "");
-  if (/\d/.test(rest)) problems.push("a bare number");
-  if (/\byou should\b/i.test(text)) problems.push("'you should'");
-  return problems;
-}
+// The guard itself is shared with the guides' words (tests/planner-guides.test.mts).
+import { numberProblems } from "./helpers/copy-guard.mts";
 
 function allCopy(): { where: string; text: string }[] {
   const out: { where: string; text: string }[] = [];

@@ -124,15 +124,6 @@ export interface RoadmapSpec {
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
   {
-    slug: "record-explore-levels",
-    file: "specs/planner/record/explore-levels.md",
-    group: "planning",
-    summary: "Filter Explore by your own level (High reach to Safe), and jump from your list's shape to colleges at the level you need that fit your preferences.",
-    complexity: 2,
-    complexityNote: "A level filter on Explore computed from the estimate on the server, and a link per level in the list guide's shape table.",
-    status: "planned",
-  },
-  {
     slug: "chances-and-fit",
     file: "specs/product/chances-and-fit.md",
     group: "planning",

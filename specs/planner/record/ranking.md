@@ -1,6 +1,6 @@
 # Part 3, Importance Ranking: Which Three Show
 
-> Status: **planned** 2026-10-16. Replaces Now's buckets ([../v3/now.md](../v3/now.md#ranking)); the season gate, the
+> Status: **built** 2026-10-16 (PR #165). Replaces Now's buckets ([../v3/now.md](../v3/now.md#ranking)); the season gate, the
 > cap of three, Done and Skip are unchanged. Part 3 of [Your record](README.md). The owner: "Something like 'Reach your
 > score' would show up if they haven't reached their test target. It should be weighed against the other things we'd
 > show. Come up with an importance ranking system on the different things we recommend, build a spec, and show me the
@@ -109,16 +109,29 @@ deadline the student picked, that `test_register` task (92 + 10) jumps to the to
 - Skipped moves are out of the ranking until brought back; Done moves are out.
 - The season gate ([../v3/now.md](../v3/now.md#ranking)) runs first; importance orders what passes it.
 
-## Files (planned)
+## Files
 `lib/planner/importance.ts` (pure: `MOVE_IMPORTANCE`, `baseImportance(task, season, facts)`, `timingBoost(task, today)`,
-`importance(task, opts)`), `lib/planner/moves.ts` (`nowMoves` sorts by `importance` desc with the tie rules; the
-buckets go), `lib/planner/moves-catalog.ts` (the story and recommenders entries' seasons), `lib/planner/generators/season.ts`
+`importance(task, opts)`, `compareByImportance`), `lib/planner/importance-facts.ts` (new, pure: `importanceFactsFrom`),
+`lib/planner/moves.ts` (`nowMoves` sorts by `importance` desc with the tie rules; the buckets go),
+`lib/planner/moves-catalog.ts` (the story and recommenders entries' seasons), `lib/planner/generators/season.ts`
 (`reach_score`'s "no date would count" check uses `datesFor`), `lib/analytics.ts` (`plan_move_shown.rank`). Tests:
 `tests/planner-importance.test.mts` (every kind has an entry or the default on purpose; the worked example above
 reproduces; the timing boosts; the season-zero rules; three highest win; closing one surfaces the fourth).
 
-## Open questions
+## Open questions (answered)
 1. Should a parent's own moves (Your part) rank in the same list? Recommendation: no; they stay a separate short list
    above, hidden while the financial moves are hidden.
+   **Adopted: Your part stays separate.**
 2. Should "Add your clubs" ever outrank the list? With these numbers a bare record (no grades) does, as it should; an
    activities gap doesn't. Recommendation: as written; revisit after a month of `plan_move_shown`.
+   **Built and monitored via telemetry.**
+
+## As built by R1b–R2
+- `MOVE_IMPORTANCE` table defines base importance by kind, playbook key, cycle key, or shape-gap variant
+- `baseImportance` applies season-varying rules first (story, pick_recommenders, choose_courses, reach_score), then the table
+- `timingBoost` adds 30/20/10/5 for overdue/within-7d/14d/30d
+- `importance(task, facts)` = clamp(base + timing − carried, 0, 100), never shown to users
+- Moves with importance 0 in a season are filtered out before the top three are ranked
+- Story and pick_recommenders now show from `summer_before_senior` onward (moved from earlier seasons)
+- Catalog entries' seasons updated; explainer paragraphs adjusted for story timing
+- `plan_move_shown` tracks rank (1–3 for Now, null for Your part or outside Now)

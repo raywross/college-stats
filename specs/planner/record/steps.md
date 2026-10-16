@@ -1,6 +1,6 @@
 # Part 1, Your Record: One Guided Entry and an Overview
 
-> Status: **planned** 2026-10-16. Replaces the Numbers tab ([../../product/household-hub.md](../../product/household-hub.md#a-persons-page-householdperson))
+> Status: **built** 2026-10-16 (PR #165). Replaces the Numbers tab ([../../product/household-hub.md](../../product/household-hub.md#a-persons-page-householdperson))
 > and extends the intake ([../redesign/intake.md](../redesign/intake.md), whose rules for each built step stand). Part 1
 > of [Your record](README.md).
 
@@ -116,7 +116,20 @@ ProfileForm,CompletenessMeter}.tsx`. Tests: `tests/planner-record.test.mts` (eve
 step; the unlock lines; `recordProgress` for planted profiles), `tests/planner-intake.test.mts` (updated step numbers),
 `tests/planner-profile-progress.test.mts`.
 
-## Open questions
+## Open questions (answered)
 1. Should the tour's first run stop after step 1 ("That's enough to start") and offer the rest later? Recommendation:
    no; the owner likes the tour and every later step is one tap to skip.
+   **Adopted: tour's first run keeps every step.**
 2. Should a guardian see the Review step's story row at all? Recommendation: yes, as "Written" / "Not yet".
+   **Adopted: guardians see story row as Written / Not yet.**
+
+## As built by R1a–R3
+- The thirteen entry steps (0–12) plus Review and Done; steps 0–7 built, steps 8–12 new in this section
+- `RecordStep` type covers 0–14; `IntakeStep` aliased for backward compatibility with `import` statements
+- Story and recommenders drafts preserve null for guardians, keeping the stored student story on every guardian save
+- Thirteen tour steps with rail, headline (lead, pop, tail), one-line description, required flag, and why-text; the overview reads from the same `RECORD_STEPS`
+- Record overview replaces Numbers tab with sections for all thirteen steps, each with check/ring, rail name, summary or unlock text, and Edit/Add (guarded by `canEdit`)
+- `/household/{id}/record` is the new overview route; `/numbers` redirects to it
+- `/me` redirects to `/household/{id}/record` for both student and guardian
+- PersonHeader segmented control shows Plan | Record
+- Parents can edit section moved from Numbers page to /account, guarded by guardians.length > 0

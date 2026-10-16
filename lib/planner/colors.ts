@@ -6,9 +6,9 @@
  * Rounds take the reference palette's first three slots, the only three that stay apart for every reader in both
  * themes (validated all-pairs): regular blue, early decision orange, early action aqua. ED II and REA reuse their
  * family's color drawn striped (STRIPED), and every mark carries its round's short name, so color is never the only
- * cue. Tests (violet) and money (green) live in their own labeled lanes with their own shapes. The group chips
- * (Reach / Target / Likely) deliberately use other hues, so a group never looks like a round, and calm tints so a
- * Reach never looks like a warning.
+ * cue. Tests (violet), money (green), and visits (rose) live in their own labeled lanes with their own shapes. The
+ * group chips (Reach / Target / Likely) deliberately use other hues, so a group never looks like a round, and calm
+ * tints so a Reach never looks like a warning.
  */
 import type { ListCategory, ListRound } from "../list-rules.ts";
 import type { StandingLevel } from "../chances/types.ts";
@@ -27,6 +27,8 @@ export const STRIPED: ReadonlySet<ListRound> = new Set<ListRound>(["ed2", "rea"]
 
 export const TEST_VAR = "var(--plan-test)";
 export const MONEY_VAR = "var(--plan-money)";
+/** A logged (or planned) visit on the calendar (QA finding 4: a confirmed act's visit, or one logged by hand). */
+export const VISIT_VAR = "var(--plan-visit)";
 /** Children in the order they were added (color slot 0, 1, 2). */
 export const KID_VARS = ["var(--kid-1)", "var(--kid-2)", "var(--kid-3)"] as const;
 

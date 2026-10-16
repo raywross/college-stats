@@ -202,9 +202,35 @@ export function pendingForPrompt<T extends Pick<InterestActRow, "status" | "prom
   return open[0] ?? null;
 }
 
-/** The pending acts a page shows ("Pending: did you register …"), newest first, without the expired ones. */
-export function visiblePending<T extends Pick<InterestActRow, "status" | "clicked_at" | "event_starts_at">>(rows: readonly T[], now: Date): T[] {
-  return rows.filter((r) => r.status === "pending" && !isExpired(r, now)).sort((a, b) => b.clicked_at.localeCompare(a.clicked_at));
+/**
+ * The key that makes two acts "the same act" for deduping (QA finding 3): same item (or item-less), same act, same
+ * event (or no event), and — a follow's only way to tell two pending rows apart, since it has no event — the same
+ * network. `recordAct` reuses a pending row sharing this key instead of inserting a second one; `coalesceByKey`
+ * collapses any that slipped through anyway (a legacy duplicate, or two tabs racing) to the newest.
+ */
+export function actKey(row: Pick<InterestActRow, "item_id" | "act" | "event_id" | "network">): string {
+  return [row.item_id ?? "", row.act, row.event_id ?? "", row.act === "follow" ? row.network ?? "" : ""].join("\u0000");
+}
+
+/** Keeps the newest row per `actKey` (defensive: the page and the email both coalesce, even if a duplicate exists). */
+export function coalesceByKey<T extends Pick<InterestActRow, "item_id" | "act" | "event_id" | "network" | "clicked_at">>(rows: readonly T[]): T[] {
+  const byKey = new Map<string, T>();
+  for (const r of rows) {
+    const key = actKey(r);
+    const prev = byKey.get(key);
+    if (!prev || r.clicked_at > prev.clicked_at) byKey.set(key, r);
+  }
+  return [...byKey.values()];
+}
+
+/** The pending acts a page shows ("Pending: did you register …"), newest first, without the expired ones, and with
+ * any duplicate row for the same act (clicked twice before the first was answered) coalesced to the newest. */
+export function visiblePending<T extends Pick<InterestActRow, "status" | "clicked_at" | "event_starts_at" | "item_id" | "act" | "event_id" | "network">>(
+  rows: readonly T[],
+  now: Date,
+): T[] {
+  const live = rows.filter((r) => r.status === "pending" && !isExpired(r, now));
+  return coalesceByKey(live).sort((a, b) => b.clicked_at.localeCompare(a.clicked_at));
 }
 
 /* ------------------------------------------------------------------ */

@@ -81,18 +81,45 @@ export async function recordAct(input: RecordActInput): Promise<RecordActResult>
     if (canEdit !== true) return { ok: false, message: "Only someone who can edit this plan can do that." };
     if (input.act === "follow" && !(await isStudentOfItem(r.supabase, input.itemId, r.userId))) return { ok: false, message: "Only the student can mark a follow." };
   }
+  const network = input.act === "follow" ? (input.network ?? null) : null;
+  const eventId = text(input.event?.id, 200);
+  const eventPlace = text(input.event?.place, 200);
+  const eventTitle = input.act === "test_register" ? (input.event?.title === "ACT" ? "ACT" : input.event?.title === "SAT" ? "SAT" : null) : text(input.event?.title, 200);
+
+  // Reuse an existing pending row for the same act (QA finding 3: a second click never makes a second pending row).
+  // The match is `actKey`'s fields, queried directly rather than filtered in memory.
+  let existingQuery = r.supabase.from("plan_interest_acts").select("id, confirm_token").eq("user_id", r.userId).eq("act", input.act).eq("status", "pending");
+  existingQuery = input.itemId === null ? existingQuery.is("item_id", null) : existingQuery.eq("item_id", input.itemId);
+  existingQuery = eventId === null ? existingQuery.is("event_id", null) : existingQuery.eq("event_id", eventId);
+  if (input.act === "follow") existingQuery = network === null ? existingQuery.is("network", null) : existingQuery.eq("network", network);
+  const { data: existing } = await existingQuery.limit(1).maybeSingle();
+  if (existing) {
+    const row = existing as { id: string; confirm_token: string };
+    const { error: updateError } = await r.supabase
+      .from("plan_interest_acts")
+      .update({ clicked_at: new Date().toISOString(), prompted_at: null })
+      .eq("id", row.id)
+      .eq("user_id", r.userId);
+    if (updateError) {
+      console.error(`interest acts: recordAct's reuse failed: ${updateError.message}`);
+      return { ok: false, message: FAILED };
+    }
+    return { ok: true, id: row.id, token: row.confirm_token };
+  }
+
   const { data, error } = await r.supabase
     .from("plan_interest_acts")
     .insert({
       item_id: input.itemId,
       user_id: r.userId,
       act: input.act,
-      network: input.act === "follow" ? input.network : null,
+      network,
       url: input.url,
-      event_id: text(input.event?.id, 200),
+      event_id: eventId,
       event_starts_at: startsAt,
-      event_place: text(input.event?.place, 200),
-      event_title: input.act === "test_register" ? (input.event?.title === "ACT" ? "ACT" : input.event?.title === "SAT" ? "SAT" : null) : text(input.event?.title, 200),
+      event_place: eventPlace,
+      event_title: eventTitle,
+      status: "pending",
     })
     .select("id, confirm_token")
     .single();

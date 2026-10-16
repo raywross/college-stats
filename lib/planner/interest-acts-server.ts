@@ -23,6 +23,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitizeProfile } from "../student-profile.ts";
 import type { SocialNetwork } from "../types.ts";
+import { zoneForState } from "../visit-events/dates.ts";
 import { firstPastVisitOn } from "./actions.ts";
 import { toggleRegisteredDate } from "./plan-writes.ts";
 import {
@@ -68,6 +69,16 @@ export async function zonesForEvents(client: Client, eventIds: readonly (string 
   const out: Record<string, string> = {};
   for (const r of (data ?? []) as { id: string; timezone: string | null }[]) if (r.timezone) out[r.id] = r.timezone;
   return out;
+}
+
+/** "Elon, NC" → "NC": the state from an event's free-text place (QA finding 4a: a confirmed visit's time dropped
+ *  whenever the scraped event page named no zone, even though it did give a city and state). A state-level zone is
+ *  a guess (`zoneForState`'s own words: never stored as *the* zone for a search row), but once the family has
+ *  confirmed they're going, a wall-clock time close enough to right beats showing none at all; `visitFromAct` still
+ *  prefers `visit_events.timezone` when the reader found one. */
+function stateFromPlace(place: string | null): string | null {
+  const m = place?.trim().match(/,\s*([A-Za-z]{2})$/);
+  return m ? m[1].toUpperCase() : null;
 }
 
 async function listOfItem(client: Client, itemId: string): Promise<string | null> {
@@ -139,7 +150,8 @@ export async function writeConfirmedAct(
 ): Promise<{ ok: true; listId: string | null; visitId: string | null } | { ok: false; needDate?: true; message: string }> {
   if (isVisitAct(row.act)) {
     if (!row.item_id) return { ok: false, message: FAILED };
-    const visit = visitFromAct(row, extra, opts.timeZone);
+    const timeZone = opts.timeZone ?? zoneForState(stateFromPlace(row.event_place));
+    const visit = visitFromAct(row, extra, timeZone);
     if (!visit) return { ok: false, needDate: true, message: "Pick the date." };
     const url = /^https?:\/\//.test(row.url) && row.url.length <= 500 ? row.url : null;
     const { data, error } = await client

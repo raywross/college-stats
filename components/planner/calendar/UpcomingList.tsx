@@ -14,7 +14,7 @@ import type { PlanContext } from "@/lib/planner/types";
 import type { PlanView } from "@/lib/planner/plan-view";
 import { roundsPicked } from "@/lib/planner/list-row";
 import { daysBetween, eventsFor, laterSummary, monthLabel, upcomingDays, type CalendarCite, type CalendarEvent, type UpcomingDay } from "@/lib/planner/calendar";
-import { MONEY_VAR, ROUND_VAR, TEST_VAR } from "@/lib/planner/colors";
+import { MONEY_VAR, ROUND_VAR, TEST_VAR, VISIT_VAR } from "@/lib/planner/colors";
 import { ROUND_SHORT } from "@/lib/planner/rounds";
 import { cn } from "@/lib/utils";
 
@@ -165,6 +165,7 @@ function EventLine({ ctx, event }: { ctx: PlanContext; event: CalendarEvent }) {
 
 function Marker({ event }: { event: CalendarEvent }) {
   if (event.shape === "money") return <span className="inline-block size-2.5 shrink-0 rounded-full" style={{ background: MONEY_VAR }} aria-hidden />;
+  if (event.shape === "visit") return <span className="inline-block size-2.5 shrink-0 rounded-full" style={{ background: VISIT_VAR }} aria-hidden />;
   if (event.shape === "decision") {
     return <span className="inline-block size-2.5 shrink-0 rounded-full border-2" style={{ borderColor: event.round ? ROUND_VAR[event.round] : TEST_VAR }} aria-hidden />;
   }

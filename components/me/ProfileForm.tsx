@@ -9,6 +9,7 @@ import { SIZE_BUCKETS } from "@/lib/metrics";
 import { MAJOR_FAMILY_CODES, MAJOR_FAMILIES, type MajorFamily } from "@/lib/majors";
 import { MAX_INTENDED_MAJORS, OUTSIDE_US, type StudentProfileData } from "@/lib/student-profile";
 import { planHref } from "@/lib/planner/plan-tabs";
+import { guideHref } from "@/lib/planner/guides";
 import { saveStudentProfile, type ProfileSaveState } from "@/app/me/actions";
 import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
 
@@ -90,13 +91,19 @@ function EditInThePlan({ studentId }: { studentId: string }) {
           Open it to add or change them.
         </p>
       </div>
-      <Link
-        href={planHref({ person: studentId, setup: true })}
-        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
-      >
-        Open in the plan
-        <ArrowRight className="size-3.5" aria-hidden />
-      </Link>
+      <div className="flex shrink-0 items-center gap-3">
+        {/* Plan v3 (specs/planner/v3/guides/ap-choices.md): the courses guide, reachable from here too, not only its own move. */}
+        <Link href={guideHref("courses", { person: studentId, from: "numbers" })} className="text-sm font-semibold text-primary hover:underline">
+          Choose next year&apos;s courses
+        </Link>
+        <Link
+          href={planHref({ person: studentId, setup: true })}
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        >
+          Open in the plan
+          <ArrowRight className="size-3.5" aria-hidden />
+        </Link>
+      </div>
     </section>
   );
 }

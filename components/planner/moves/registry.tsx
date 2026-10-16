@@ -6,7 +6,6 @@
  */
 import type { ComponentType } from "react";
 import type { TaskKind } from "@/lib/planner/types";
-import NextYearCard from "@/components/planner/NextYearCard";
 import { EdDecideCard } from "./EdDecideCard";
 import type { MoveCardProps } from "./types";
 import { StoryCard } from "./StoryCard";
@@ -22,9 +21,9 @@ export const MOVE_CARDS: Partial<Record<TaskKind, ComponentType<MoveCardProps>>>
   story: StoryCard,
   ed_decide: EdDecideCard,
   ed2_decide: EdDecideCard,
-  // The course-choice playbook entries only (its key ends in "choose_courses"); every other `playbook` task falls
-  // back to MoveCard from inside NextYearCard itself (next steps U1b, build-plan.md "As built by U1" 6).
-  playbook: NextYearCard,
+  // Plan v3 (build-plan.md "What's removed" U7): the course-choice playbook entries open the courses guide now
+  // (guideFor maps `*_choose_courses` to it), so `playbook` has no card of its own and falls back to MoveCard, whose
+  // one button is the guide's. `NextYearCard.tsx` (the suggestion UI) moved into `CoursesGuide.tsx` and is deleted.
   // U5 Applying (specs/planner/next-steps/applying.md): `apply` is the Submit move (the college generator's dated,
   // fee-bearing row); `submit` duplicates it once this card exists and is registered to the same component so it
   // renders nothing and stays out of the Now list (SubmitCard.tsx's note).

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, ExternalLink, X } from "lucide-react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
+import { WhyFold } from "@/components/ui/why-fold";
 import { track } from "@/lib/analytics";
 import { guideHref } from "@/lib/planner/guides";
 import { ED_CAVEAT, edPillText, edSheetFacts, type EdCandidate, type EdCheckKey } from "@/lib/planner/ed-opportunities";
@@ -158,11 +159,10 @@ export function EdSheet({
             </MetricLabel>
           </p>
         )}
-        <p className="text-sm text-muted-foreground">{facts.framing}</p>
       </div>
 
-      <div className="space-y-1">
-        <p className="text-xs font-semibold text-muted-foreground">What {facts.name} reports</p>
+      <WhyFold title={`What ${facts.name} reports`} screen="ed_sheet" section="what_reports">
+        <p>{facts.framing}</p>
         {facts.reported ? (
           <p>
             <MetricLabel term="early-decision" cited={cite(facts.countsField)}>
@@ -174,17 +174,16 @@ export function EdSheet({
             {facts.overallFromAdmitRate && school.admitRateCite ? <MetricLabel cited={school.admitRateCite as AnyCited}><span className="sr-only">Overall rate source</span></MetricLabel> : null}
           </p>
         ) : (
-          facts.noCounts && <p className="text-muted-foreground">{facts.noCounts}</p>
+          facts.noCounts && <p>{facts.noCounts}</p>
         )}
-        {facts.share && <p className="text-muted-foreground">ED admits fill {facts.share}.</p>}
-        {facts.together && <p className="text-muted-foreground">ED I and ED II together.</p>}
-      </div>
-
-      <p className="text-muted-foreground">
-        {ED_CAVEAT.before}
-        <Term term="hooked-applicant">{ED_CAVEAT.term}</Term>
-        {ED_CAVEAT.after}
-      </p>
+        {facts.share && <p>ED admits fill {facts.share}.</p>}
+        {facts.together && <p>ED I and ED II together.</p>}
+        <p>
+          {ED_CAVEAT.before}
+          <Term term="hooked-applicant">{ED_CAVEAT.term}</Term>
+          {ED_CAVEAT.after}
+        </p>
+      </WhyFold>
 
       <ul className="space-y-1">
         {facts.questions.map((q) => {

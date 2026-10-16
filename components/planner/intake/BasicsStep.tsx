@@ -7,8 +7,10 @@
 import { useId, useRef, useState } from "react";
 import { Chip, FieldLabel } from "@/components/activities/chips";
 import { Headline } from "@/components/planner/intake/Headline";
+import { WhyFold } from "@/components/ui/why-fold";
 import type { IntakeDraft } from "@/lib/planner/intake";
 import { placeLabel } from "@/lib/planner/intake";
+import { RECORD_STEPS } from "@/lib/planner/record";
 import { OUTSIDE_US } from "@/lib/student-profile";
 import { STATES } from "@/lib/states";
 import { cn } from "@/lib/utils";
@@ -96,21 +98,6 @@ function StateField({ value, onChange }: { value: string | null; onChange: (next
   );
 }
 
-/** A small "?" disclosure with one sentence (less-text.md's pattern, ahead of R4's fold component). */
-function InfoNote({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <details className="inline-block align-middle">
-      <summary
-        aria-label={label}
-        className="inline-flex size-6 min-h-6 cursor-pointer list-none items-center justify-center rounded-full border text-xs font-bold text-muted-foreground [&::-webkit-details-marker]:hidden"
-      >
-        ?
-      </summary>
-      <p className="mt-1.5 max-w-xs text-xs text-muted-foreground">{children}</p>
-    </details>
-  );
-}
-
 const YES_NO_NOT_SURE: { key: boolean | null; label: string }[] = [
   { key: true, label: "Yes" },
   { key: false, label: "No" },
@@ -121,8 +108,13 @@ export function BasicsStep({ draft, setDraft }: { draft: IntakeDraft; setDraft: 
   return (
     <div className="space-y-8">
       <div className="space-y-1">
-        <Headline lead="A few" pop="basics" />
-        <p className="text-sm text-muted-foreground">Where you live, and two yes-or-no questions about applying.</p>
+        <div className="flex items-center gap-1.5">
+          <Headline lead="A few" pop="basics" />
+          <WhyFold compact title="Why we ask" screen="record_tour" section="basics">
+            {RECORD_STEPS[9].why}
+          </WhyFold>
+        </div>
+        <p className="text-sm text-muted-foreground">{RECORD_STEPS[9].line}</p>
       </div>
 
       <div className="space-y-2.5">
@@ -133,10 +125,10 @@ export function BasicsStep({ draft, setDraft }: { draft: IntakeDraft; setDraft: 
       <div className="space-y-2.5">
         <div className="flex items-center gap-1.5">
           <FieldLabel>Fee-waiver eligible?</FieldLabel>
-          <InfoNote label="What counts as fee-waiver eligible">
+          <WhyFold compact title="What counts as fee-waiver eligible" screen="record_tour" section="fee_waiver">
             The Common App/NACAC criteria: income near the federal poverty guideline, a federal program like free or reduced lunch, foster care or
             homelessness, or a counselor-signed waiver, among others.
-          </InfoNote>
+          </WhyFold>
         </div>
         <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Fee-waiver eligible">
           {YES_NO_NOT_SURE.map((o) => (

@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { SheetDialog } from "@/components/ui/sheet-dialog";
+import { WhyFold } from "@/components/ui/why-fold";
 import { SOCIAL_GLYPHS } from "@/components/school/SocialIcons";
 import { VisitForm } from "@/components/planner/VisitForm";
 import { venueLine } from "@/components/visits/next-events-logic";
@@ -95,11 +96,31 @@ function CollegeGuide({ ctx, item, school, data }: CollegeProps) {
         <VisitSection ctx={ctx} item={item} school={school} data={data} canEdit={canEdit} />
       </Section>
 
-      <Section n={2} title="Ask for information" weight="counts" muted={muted}>
+      <Section
+        n={2}
+        title="Ask for information"
+        weight="counts"
+        muted={muted}
+        note={
+          <WhyFold compact title="An information request or a mailing-list sign-up" screen="interest_guide" section="ask_for_information">
+            An information request or a mailing-list sign-up puts you in {name}&apos;s system.
+          </WhyFold>
+        }
+      >
         <InfoSection item={item} school={school} today={ctx.today} canEdit={canEdit} />
       </Section>
 
-      <Section n={3} title="Follow" weight="weakest signal" muted={muted}>
+      <Section
+        n={3}
+        title="Follow"
+        weight="weakest signal"
+        muted={muted}
+        note={
+          <WhyFold compact title="Does following count?" screen="interest_guide" section="follow">
+            No college says it counts a follow; do it for yourself.
+          </WhyFold>
+        }
+      >
         <FollowSection item={item} school={school} canFollow={canFollow} isGuardian={ctx.viewer.isGuardian} />
       </Section>
 
@@ -116,13 +137,29 @@ function CollegeGuide({ ctx, item, school, data }: CollegeProps) {
   );
 }
 
-function Section({ n, title, weight, muted, children }: { n: number; title: string; weight: string; muted: boolean; children: ReactNode }) {
+function Section({
+  n,
+  title,
+  weight,
+  muted,
+  note,
+  children,
+}: {
+  n: number;
+  title: string;
+  weight: string;
+  muted: boolean;
+  /** A compact `WhyFold` info icon beside the title, for a section with a sentence to fold (less-text.md). */
+  note?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <section className={cn("rounded-3xl bg-card p-4 ring-1 ring-border sm:p-5", muted && "bg-muted/40")} aria-labelledby={`interest-step-${n}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 id={`interest-step-${n}`} className={cn("font-display text-lg font-bold", muted && "text-muted-foreground")}>
+        <h2 id={`interest-step-${n}`} className={cn("flex items-center gap-1.5 font-display text-lg font-bold", muted && "text-muted-foreground")}>
           <span className="mr-2 text-muted-foreground">{n}</span>
           {title}
+          {note}
         </h2>
         <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{weight}</span>
       </div>
@@ -302,7 +339,6 @@ function InfoSection({ item, school, today, canEdit }: { item: PlanItem; school:
 
   return (
     <>
-      <p className="text-sm text-muted-foreground">An information request or a mailing-list sign-up puts you in {name}&apos;s system.</p>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         {admissions && (
           <ActButton href={admissions} itemId={item.id} act="info_request" track={canEdit} className={PRIMARY}>
@@ -374,7 +410,6 @@ function FollowSection({ item, school, canFollow, isGuardian }: { item: PlanItem
   const chip = "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold";
   return (
     <>
-      <p className="text-sm text-muted-foreground">No college says it counts a follow; do it for yourself.</p>
       <div className="flex flex-wrap gap-2">
         {targets.map((t) => {
           const Glyph = SOCIAL_GLYPHS[t.network];

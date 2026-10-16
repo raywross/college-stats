@@ -8,8 +8,10 @@ import { useId, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Chip, FieldLabel } from "@/components/activities/chips";
 import { Headline } from "@/components/planner/intake/Headline";
+import { WhyFold } from "@/components/ui/why-fold";
 import { maxCostCheck, placeLabel, type IntakeDraft } from "@/lib/planner/intake";
 import { SETTING_CHIPS, SIZE_CHIPS } from "@/lib/planner/list-guide";
+import { RECORD_STEPS } from "@/lib/planner/record";
 import { OUTSIDE_US, type EarlyRoundInterest } from "@/lib/student-profile";
 import { STATES } from "@/lib/states";
 import type { SchoolType } from "@/lib/types";
@@ -122,8 +124,13 @@ export function WhereStep({ draft, setDraft }: { draft: IntakeDraft; setDraft: (
   return (
     <div className="space-y-8">
       <div className="space-y-1">
-        <Headline lead="Where would you" pop="go?" />
-        <p className="text-sm text-muted-foreground">Size, setting, places, and type; pick any that matter.</p>
+        <div className="flex items-center gap-1.5">
+          <Headline lead="Where would you" pop="go?" />
+          <WhyFold compact title="Why we ask" screen="record_tour" section="where">
+            {RECORD_STEPS[10].why}
+          </WhyFold>
+        </div>
+        <p className="text-sm text-muted-foreground">{RECORD_STEPS[10].line}</p>
       </div>
 
       <div className="space-y-2.5">

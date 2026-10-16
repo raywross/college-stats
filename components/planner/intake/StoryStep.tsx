@@ -6,7 +6,9 @@
  * 3). A guardian's draft carries no text (`draft.story === null`): "Written" / "Not yet" only, as the guide shows it.
  */
 import { Headline } from "@/components/planner/intake/Headline";
+import { WhyFold } from "@/components/ui/why-fold";
 import type { IntakeDraft } from "@/lib/planner/intake";
+import { RECORD_STEPS } from "@/lib/planner/record";
 import { appendStarter, storyStarters } from "@/lib/planner/story-guide";
 import { STORY_MAX } from "@/lib/student-profile";
 
@@ -28,8 +30,13 @@ export function StoryStep({
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <Headline lead="Your" pop="story" />
-        <p className="text-sm text-muted-foreground">A few sentences in your own words: what your grades don&apos;t say.</p>
+        <div className="flex items-center gap-1.5">
+          <Headline lead="Your" pop="story" />
+          <WhyFold compact title="Why we ask" screen="record_tour" section="story">
+            {RECORD_STEPS[11].why}
+          </WhyFold>
+        </div>
+        <p className="text-sm text-muted-foreground">{RECORD_STEPS[11].line}</p>
         {firstRun && (
           <p className="text-sm text-muted-foreground">Most students write this the summer before senior year; skip it for now if you like.</p>
         )}

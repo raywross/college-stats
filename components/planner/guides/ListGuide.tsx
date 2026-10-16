@@ -163,12 +163,11 @@ export function ListGuide({ ctx, move, data, person }: GuideProps) {
             <h2 id="shape-heading" className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
               What a good list looks like
             </h2>
-            <ShapeExplainer season={ctx.season} />
+            <ShapeExplainer season={ctx.season} sentence={d.sentence} />
           </div>
           {!move && d.countLine && <p className="font-semibold">{d.countLine}</p>}
           <ShapeRow row={d.row} />
           <ShapeKey hasDream={hasDream} hasOverflow={hasOverflow} />
-          <p className="text-sm text-muted-foreground">{d.sentence}</p>
         </section>
       )}
 

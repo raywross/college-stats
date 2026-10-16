@@ -73,9 +73,7 @@ export function CoursesGuide({ ctx, move, person, data }: GuideProps) {
 
   return (
     <div className="space-y-8">
-      <p className="text-sm text-muted-foreground">
-        Schools ask for next year&apos;s choices in late winter. Colleges read the courses as closely as the grades.
-      </p>
+      <p className="text-sm text-muted-foreground">Schools ask for next year&apos;s choices in late winter.</p>
 
       <WhatYouveTaken rows={rows} tracks={tracks} say={say} person={person} />
 

@@ -8,24 +8,11 @@
 import { catalogCourse } from "@/lib/chances/catalog";
 import { RecommenderRow } from "@/components/planner/guides/RecommenderRow";
 import { Headline } from "@/components/planner/intake/Headline";
+import { WhyFold } from "@/components/ui/why-fold";
 import type { IntakeDraft } from "@/lib/planner/intake";
+import { RECORD_STEPS } from "@/lib/planner/record";
 import { moveRank, nextRank, orderRecommenders, setStatus } from "@/lib/planner/recommenders";
 import { RECOMMENDERS_MAX, type RecommenderEntry, type RecommenderStatus } from "@/lib/student-profile";
-
-/** A small "?" disclosure with one sentence (less-text.md's pattern, ahead of R4's fold component). */
-function InfoNote({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <details className="inline-block align-middle">
-      <summary
-        aria-label={label}
-        className="inline-flex size-6 min-h-6 cursor-pointer list-none items-center justify-center rounded-full border text-xs font-bold text-muted-foreground [&::-webkit-details-marker]:hidden"
-      >
-        ?
-      </summary>
-      <p className="mt-1.5 max-w-xs text-xs text-muted-foreground">{children}</p>
-    </details>
-  );
-}
 
 export function RecommendersStep({
   draft,
@@ -71,11 +58,11 @@ export function RecommendersStep({
       <div className="space-y-1">
         <div className="flex items-center gap-1.5">
           <Headline lead="Your" pop="recommenders" />
-          <InfoNote label="Why recommenders matter">
-            Most colleges ask for one or two teacher letters. Pick teachers from junior year in core subjects, and ask early in senior year.
-          </InfoNote>
+          <WhyFold compact title="Why we ask" screen="record_tour" section="recommenders">
+            {RECORD_STEPS[12].why}
+          </WhyFold>
         </div>
-        <p className="text-sm text-muted-foreground">The teachers who might write for you, first choice first.</p>
+        <p className="text-sm text-muted-foreground">{RECORD_STEPS[12].line}</p>
         {firstRun && (
           <p className="text-sm text-muted-foreground">Most students pick these the summer before senior year; skip it for now if you like.</p>
         )}

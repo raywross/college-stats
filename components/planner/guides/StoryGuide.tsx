@@ -15,6 +15,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { Term } from "@/components/ui/info-tip";
+import { WhyFold } from "@/components/ui/why-fold";
 import { track } from "@/lib/analytics";
 import { activitiesReading, type CourseTracks } from "@/lib/chances/depth";
 import { noteText } from "@/lib/chances/notes";
@@ -41,22 +42,35 @@ function GuardianView({ written, firstName }: { written: boolean; firstName: str
   return <p className="text-sm text-muted-foreground">{guardianStoryLine(firstName, written)}</p>;
 }
 
-/** "Colleges that read beyond the numbers …", with "depth" linking the glossary. */
+/** "Colleges that read beyond the numbers …", with "depth" linking the glossary. Folded, closed (less-text.md). */
 function Frame() {
   return (
-    <section className="space-y-2">
-      <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">Depth and breadth</h2>
-      <p className="max-w-prose text-sm text-muted-foreground">
+    <WhyFold title="Depth and breadth" screen="story_guide" section="depth_and_breadth">
+      <p className="max-w-prose">
         Colleges that read beyond the numbers look for two things: <Term term="depth">depth</Term>, a few things carried for years with a growing role, and
         breadth, that those things add up to a person with a direction. Your story is where the second comes from. Write it the way you&apos;d tell a
         teacher who asked &quot;what are you about?&quot;
       </p>
-    </section>
+    </WhyFold>
   );
 }
 
-/** The depth reading's sentences, the course tracks' sentences, and the intended major, read-only, exactly as the Numbers page shows them. */
-function WhatYourRecordSays({ ctx, tracks, person }: { ctx: GuideProps["ctx"]; tracks: CourseTracks | null; person: string | null }) {
+/**
+ * The depth reading's sentences, the course tracks' sentences, and the intended major, read-only, exactly as the
+ * Numbers page shows them. Folded (less-text.md): open the first time (the story is empty), closed once there's
+ * text to read instead.
+ */
+function WhatYourRecordSays({
+  ctx,
+  tracks,
+  person,
+  storyEmpty,
+}: {
+  ctx: GuideProps["ctx"];
+  tracks: CourseTracks | null;
+  person: string | null;
+  storyEmpty: boolean;
+}) {
   const profile = ctx.profile;
   const activities = profile?.academics.activities ?? [];
   const awards = profile?.academics.awards ?? [];
@@ -69,10 +83,9 @@ function WhatYourRecordSays({ ctx, tracks, person }: { ctx: GuideProps["ctx"]; t
   if (majorName) lines.push(`Intended major: ${majorName}.`);
 
   return (
-    <section className="space-y-2">
-      <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">What your record says so far</h2>
+    <WhyFold title="What your record says so far" screen="story_guide" section="record_so_far" defaultOpen={storyEmpty}>
       {activities.length === 0 && (
-        <p className="text-sm text-muted-foreground">
+        <p>
           Add your activities and the plan will show what they say.{" "}
           <Link href={planHref({ person, setup: true, step: ACTIVITY_STEP_INDEX.clubs })} className="font-semibold text-primary hover:underline">
             Add them
@@ -81,13 +94,13 @@ function WhatYourRecordSays({ ctx, tracks, person }: { ctx: GuideProps["ctx"]; t
         </p>
       )}
       {lines.length > 0 && (
-        <ul className="space-y-1.5 text-sm text-muted-foreground">
+        <ul className="space-y-1.5">
           {lines.map((line, i) => (
             <li key={`${i}-${line.slice(0, 24)}`}>{line}</li>
           ))}
         </ul>
       )}
-    </section>
+    </WhyFold>
   );
 }
 
@@ -112,13 +125,14 @@ export function StoryGuide({ ctx, move, person, data }: GuideProps) {
 
   const majorName = majorFamilyName(ctx.profile?.plans.intendedMajors[0] ?? null)?.toLowerCase() ?? null;
   const openMove = move && isOpen(move, ctx.today) ? move : null;
+  const storyEmpty = !story?.narrative?.trim();
 
   return (
     <div className="space-y-8">
       <p className="text-sm text-muted-foreground">Private to you. Nobody at Quad reads it, and your parents can&apos;t see it.</p>
 
       <Frame />
-      <WhatYourRecordSays ctx={ctx} tracks={tracks} person={person} />
+      <WhatYourRecordSays ctx={ctx} tracks={tracks} person={person} storyEmpty={storyEmpty} />
 
       <StoryField studentId={studentId} initial={story?.narrative ?? ""} majorName={majorName} moveId={openMove?.id ?? null} />
     </div>

@@ -202,6 +202,33 @@ export function dreamAtHighReach(items: readonly Pick<PlanItem, "unit_id" | "dre
   return items.some((i) => i.dream && estimates[i.unit_id]?.group === "high_reach");
 }
 
+/**
+ * The level with the thinnest list, against the senior shape's minimums (plan-v3-fix-cards, 2026-10-16; owner:
+ * "Same as above for filling out your list, it should say 'add a few reach schools'."): the shortfall per level
+ * (minimum minus the current count; High reach has no minimum and is never checked), the largest shortfall wins,
+ * ties broken in the order Likely, Target, Reach, Safe. Null counts (no estimates yet) or no shortfall at all keeps
+ * the built title (`moves-catalog.ts`'s `build_list`/`long_list` entries fall back to their static title).
+ */
+const LIST_GAP_TIE_ORDER: readonly StandingLevel[] = ["likely", "target", "reach", "safe"];
+
+export function listGapTitle(counts: Record<StandingLevel, number> | null, shape: Shape): string | null {
+  if (!counts) return null;
+  let bestLevel: StandingLevel | null = null;
+  let bestShortfall = 0;
+  for (const level of LIST_GAP_TIE_ORDER) {
+    const min = shape.levels[level]?.[0];
+    if (min === undefined) continue;
+    const shortfall = min - counts[level];
+    if (shortfall > bestShortfall) {
+      bestShortfall = shortfall;
+      bestLevel = level;
+    }
+  }
+  if (bestLevel === null) return null;
+  const word = LEVEL_WORD[bestLevel].one;
+  return bestShortfall >= 2 ? `Add a few ${word} schools` : `Add a ${word} school`;
+}
+
 function fillCount(text: string, n: number): string {
   return text.replace("{count}", String(n));
 }

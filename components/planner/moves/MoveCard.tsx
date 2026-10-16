@@ -12,6 +12,10 @@
  *
  * `onDone`/`onSkip` are the parent's (NextSteps.tsx): this card is presentational plus the one link, and leaves the
  * write, the optimism, and the fold-with-undo to whoever placed it on the page.
+ *
+ * A guardian's title goes through `parentSafeTitle` (plan-v3-fix-cards, 2026-10-16): a `reach_score_*` move reads
+ * "Work toward the target score" to a parent, never the student's own number (`task.title` holds it verbatim for the
+ * student). The corner menu's `aria-label` uses the same safe title.
  */
 import Link from "next/link";
 import { useEffect, useRef } from "react";
@@ -19,6 +23,7 @@ import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import type { AnyCited } from "@/lib/lineage";
 import { guideFor } from "@/lib/planner/guides";
+import { parentSafeTitle } from "@/lib/planner/moves";
 import { planHref } from "@/lib/planner/plan-tabs";
 import { assigneeLabel, isOverdue, taskDateLabel } from "@/lib/planner/tasks";
 import type { PlanContext, PlanTask } from "@/lib/planner/types";
@@ -57,7 +62,7 @@ function GuideLink({ task, ctx }: { task: PlanTask; ctx: PlanContext }) {
  * Done and Skip for now, folded into a corner menu (now.md "The tab"): a `<details>` whose `⋯` summary is a 44px,
  * keyboard-reachable button. Picking an item closes the menu.
  */
-function CornerMenu({ task, isGuardian, onDone, onSkip, pending }: { task: PlanTask; isGuardian: boolean; onDone: (t: PlanTask) => void; onSkip: (t: PlanTask) => void; pending: boolean }) {
+function CornerMenu({ task, title, isGuardian, onDone, onSkip, pending }: { task: PlanTask; title: string; isGuardian: boolean; onDone: (t: PlanTask) => void; onSkip: (t: PlanTask) => void; pending: boolean }) {
   const ref = useRef<HTMLDetailsElement>(null);
   const pick = (fn: (t: PlanTask) => void) => {
     if (ref.current) ref.current.open = false;
@@ -66,7 +71,7 @@ function CornerMenu({ task, isGuardian, onDone, onSkip, pending }: { task: PlanT
   return (
     <details ref={ref} className="relative shrink-0">
       <summary
-        aria-label={`More for ${task.title}`}
+        aria-label={`More for ${title}`}
         className="-mr-2 -mt-2 flex size-11 cursor-pointer list-none items-center justify-center rounded-full text-lg leading-none text-muted-foreground hover:bg-muted marker:hidden [&::-webkit-details-marker]:hidden"
       >
         <span aria-hidden>⋯</span>
@@ -156,6 +161,7 @@ export function MoveCard({ task, ctx, onDone, onSkip, pending }: MoveCardProps) 
   const viewerAssignee = ctx.viewer.isGuardian ? "guardian" : "student";
   const showAssignee = task.assignee !== viewerAssignee;
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
+  const title = ctx.viewer.isGuardian ? parentSafeTitle(task) : task.title;
 
   const guide = guideFor(task);
 
@@ -163,7 +169,7 @@ export function MoveCard({ task, ctx, onDone, onSkip, pending }: MoveCardProps) 
     <div className="rounded-3xl bg-card p-4 ring-1 ring-border" id={`move-${task.id}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <p className="min-w-0 font-semibold">{task.title}</p>
+          <p className="min-w-0 font-semibold">{title}</p>
           <MetricLabel cited={cited} className={cn("shrink-0 text-sm text-muted-foreground", overdue && "font-semibold text-destructive")}>
             <span>
               {overdue ? "Overdue · " : ""}
@@ -171,7 +177,7 @@ export function MoveCard({ task, ctx, onDone, onSkip, pending }: MoveCardProps) 
             </span>
           </MetricLabel>
         </div>
-        {canEdit && <CornerMenu task={task} isGuardian={ctx.viewer.isGuardian} onDone={onDone} onSkip={onSkip} pending={pending} />}
+        {canEdit && <CornerMenu task={task} title={title} isGuardian={ctx.viewer.isGuardian} onDone={onDone} onSkip={onSkip} pending={pending} />}
       </div>
       {task.detail && <p className="mt-1 text-sm text-muted-foreground">{task.detail}</p>}
       {showAssignee && (

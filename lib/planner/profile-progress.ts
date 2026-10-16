@@ -50,6 +50,33 @@ const LABELS: Record<ProfileSection, string> = {
   state: "add a state",
 };
 
+/**
+ * The profile move's own title (plan-v3-fix-cards, 2026-10-16; owner: "I'm assuming the student has more to add to
+ * their plan. It should say what's needed, like 'add APs'."): one per section, title case, for the playbook's
+ * `profile` entry (`moves-catalog.ts`'s `titleFor`) rather than the generic "Fill in your numbers and courses". The
+ * grades title reads "Add your class standing" once the GPA is in (the same swap `profileProgress`'s `nextLabel`
+ * makes) — callers apply that swap themselves; this map holds the section's base title.
+ */
+export const SECTION_MOVE_TITLE: Record<ProfileSection, string> = {
+  high_school: "Add your high school",
+  courses: "Add your AP courses",
+  grades: "Add your grades",
+  test: "Add a test score or target",
+  clubs: "Add your clubs",
+  sports: "Add your sports",
+  major: "Add an intended major",
+  work: "Add work and internships",
+  connections: "Add your connections (or none)",
+  other: "Add awards and more",
+  state: "Add your state",
+};
+
+/** The first missing section in `PROFILE_SECTIONS`' own order, or null once every section is done. */
+export function firstMissingSection(p: StudentProfileData | null): ProfileSection | null {
+  if (!p) return "high_school";
+  return PROFILE_SECTIONS.find((s) => !sectionDone(p, s)) ?? null;
+}
+
 /** Whether one section has anything entered. */
 export function sectionDone(p: StudentProfileData, s: ProfileSection): boolean {
   const a = p.academics;

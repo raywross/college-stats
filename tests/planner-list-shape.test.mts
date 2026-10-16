@@ -13,6 +13,7 @@ import {
   countLine,
   dreamAtHighReach,
   LIST_SHAPE,
+  listGapTitle,
   shapeFor,
   shapeGaps,
   shapeTasks,
@@ -26,6 +27,7 @@ import { loadCycle, cycleFor } from "../lib/planner/cycle.ts";
 import type { GeneratorInput, PlanItem, PlanSchool } from "../lib/planner/types.ts";
 import type { EstimateResult, StandingLevel } from "../lib/chances/types.ts";
 import type { ListCategory } from "../lib/list-rules.ts";
+import { numberProblems } from "./helpers/copy-guard.mts";
 
 const LIST = "list-1";
 const G = 2028;
@@ -363,6 +365,50 @@ test("one gap move at a time: resolving the first lets the next regenerate in it
 /* ------------------------------------------------------------------ */
 /* Guard: no closeness, no percentage, anywhere a shape gap or card shows text */
 /* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ */
+/* listGapTitle: the level with the thinnest list, against the senior shape's minimums (plan-v3-fix-cards)    */
+/* ------------------------------------------------------------------ */
+
+const SENIOR = LIST_SHAPE.senior_fall as Shape;
+
+test("listGapTitle: null with no counts yet (no estimates), or no shortfall at all", () => {
+  assert.equal(listGapTitle(null, SENIOR), null);
+  const full = counts({ high_reach: 2, reach: 3, target: 8, likely: 3, safe: 3 });
+  assert.equal(listGapTitle(full, SENIOR), null);
+});
+
+test("listGapTitle: each level, singular at a shortfall of one, 'a few' at two or more", () => {
+  // Reach min 2, Target min 5, Likely min 2, Safe min 2 (High reach has no minimum).
+  assert.equal(listGapTitle(counts({ reach: 1, target: 5, likely: 2, safe: 2 }), SENIOR), "Add a Reach school");
+  assert.equal(listGapTitle(counts({ reach: 0, target: 5, likely: 2, safe: 2 }), SENIOR), "Add a few Reach schools");
+  assert.equal(listGapTitle(counts({ reach: 2, target: 3, likely: 2, safe: 2 }), SENIOR), "Add a few Target schools");
+  assert.equal(listGapTitle(counts({ reach: 2, target: 5, likely: 1, safe: 2 }), SENIOR), "Add a Likely school");
+  assert.equal(listGapTitle(counts({ reach: 2, target: 5, likely: 0, safe: 2 }), SENIOR), "Add a few Likely schools");
+  assert.equal(listGapTitle(counts({ reach: 2, target: 5, likely: 2, safe: 1 }), SENIOR), "Add a Safe school");
+  assert.equal(listGapTitle(counts({ reach: 2, target: 5, likely: 2, safe: 0 }), SENIOR), "Add a few Safe schools");
+});
+
+test("listGapTitle: the largest shortfall wins; ties break Likely, Target, Reach, Safe", () => {
+  // Reach short by 2, Likely short by 1: Reach's shortfall is larger.
+  assert.equal(listGapTitle(counts({ reach: 0, target: 5, likely: 1, safe: 2 }), SENIOR), "Add a few Reach schools");
+  // Likely and Target tie (both short by 2): Likely comes first in the tie order.
+  assert.equal(listGapTitle(counts({ reach: 2, target: 3, likely: 0, safe: 2 }), SENIOR), "Add a few Likely schools");
+  // Target and Reach tie (both short by 2): Target wins over Reach.
+  assert.equal(listGapTitle(counts({ reach: 0, target: 3, likely: 2, safe: 2 }), SENIOR), "Add a few Target schools");
+  // Reach and Safe tie (both short by 1): Reach wins over Safe.
+  assert.equal(listGapTitle(counts({ reach: 1, target: 5, likely: 2, safe: 1 }), SENIOR), "Add a Reach school");
+});
+
+test("listGapTitle: no title carries a digit (the catalog's words guard)", () => {
+  const titles = [
+    listGapTitle(counts({ reach: 0 }), SENIOR),
+    listGapTitle(counts({ target: 0 }), SENIOR),
+    listGapTitle(counts({ likely: 0 }), SENIOR),
+    listGapTitle(counts({ safe: 0 }), SENIOR),
+  ];
+  for (const t of titles) assert.ok(t !== null && numberProblems(t).length === 0, t ?? "null");
+});
 
 test("guard: no gap's line and no shape_gap/shape_cost task text carries a percentage or the word 'closeness'", () => {
   const texts: string[] = [];

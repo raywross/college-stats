@@ -18,7 +18,7 @@ import { allowed, NOT_ALLOWED_MESSAGE } from "@/lib/entitlements";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { myHome } from "@/lib/home-store";
 import { profileFor, profilesICanSee, saveProfile } from "@/lib/student-profile-store";
-import { effectiveGradYear, sanitizeProfile, type StudentProfileData } from "@/lib/student-profile";
+import { effectiveGradYear, sanitizeProfile, type StudentProfileData, type StudentStory } from "@/lib/student-profile";
 import type { ListRound } from "@/lib/list-rules";
 import { generatorInputFor, readPlan, todayIso, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView } from "./plan-view";
@@ -253,11 +253,20 @@ async function saveTheirProfileNow(
   if (!profile.canEdit) return { ok: false, message: NOT_EDITOR };
   const next = change(profile);
   if (!next.ok) return next;
-  const saved = await span("profile write", () => saveProfile(studentId, next.data));
+  // A guardian's copy never carries the story's text (profileForViewer redacts it), so a profile built from it holds
+  // a blanked story: the stored one goes back on before the write (only the student writes it: saveStory). Your
+  // record's tour saves through here with the story step (record build-plan review note 3).
+  let data = next.data;
+  if (profile.relation === "guardian") {
+    const stored = await span("story read", () => storedStory(r.supabase, studentId));
+    if (!stored.ok) return { ok: false, message: FAILED };
+    data = { ...sanitizeProfile(next.data), story: stored.story };
+  }
+  const saved = await span("profile write", () => saveProfile(studentId, data));
   if (!saved.ok) return saved;
   // Sanitized exactly like saveProfile's own write, so this matches what the database now holds: the follow-up pass
   // reads the student's grad year fresh (with the plan) but never re-reads the profile itself.
-  const known = { studentId, profile: sanitizeProfile(next.data) };
+  const known = { studentId, profile: sanitizeProfile(data) };
   const pass = async () => {
     const lists = await span("lists", () => studentLists(r.supabase, studentId));
     await followUp(r.supabase, lists, known);
@@ -265,6 +274,13 @@ async function saveTheirProfileNow(
   if (opts.background) await afterResponse("followUp", pass);
   else await span("followUp", pass);
   return { ok: true };
+}
+
+/** The story as stored (not the guardian's redacted copy); not ok when it can't be read, so a save never blanks it. */
+async function storedStory(supabase: Supabase, studentId: string): Promise<{ ok: true; story: StudentStory | null } | { ok: false }> {
+  const { data, error } = await supabase.from("student_profiles").select("data").eq("student_id", studentId).maybeSingle();
+  if (error) return { ok: false };
+  return { ok: true, story: sanitizeProfile((data as { data?: unknown } | null)?.data).story };
 }
 
 /** The numbers form (standing.md "The numbers"): GPA and scale, which test, the score, and the practice flag. */

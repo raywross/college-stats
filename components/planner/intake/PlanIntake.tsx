@@ -38,6 +38,15 @@ import { cn } from "@/lib/utils";
 const RAIL_LABELS = ["Grades", "Test score", "AP courses", "Sports", "Clubs", "Work", "Connections", "Other", "Review"] as const;
 /** Steps on the progress bar and rail (Done isn't one). */
 const STEP_COUNT = RAIL_LABELS.length;
+/**
+ * The steps this screen shows, in order (Your record R1a renumbered Review to 13 and Done to 14; the major, basics,
+ * where, story, and recommenders steps, 8–12, get their screens in R2, which rewires this component). Until then a
+ * link or Edit to one of them opens Review.
+ */
+const UI_STEPS: readonly IntakeStep[] = [0, 1, 2, 3, 4, 5, 6, 7, INTAKE_REVIEW];
+const shownStep = (s: IntakeStep): IntakeStep => (UI_STEPS.includes(s) || s === INTAKE_DONE ? s : INTAKE_REVIEW);
+const stepAfter = (s: IntakeStep): IntakeStep => UI_STEPS[Math.min(UI_STEPS.indexOf(s) + 1, UI_STEPS.length - 1)];
+const stepBefore = (s: IntakeStep): IntakeStep => UI_STEPS[Math.max(UI_STEPS.indexOf(s) - 1, 0)];
 
 function railSummary(draft: IntakeDraft, step: IntakeStep): string | null {
   if (step === 0) {
@@ -112,7 +121,8 @@ export default function PlanIntake({
   const params = useSearchParams();
   const done = params.get("done") === "1";
   // `&step=N` (the people line's "Next: add clubs", owner 2026-10-12) opens edit mode on that step instead of Review.
-  const linkedStep = intakeStepParam(params.get("step"));
+  const linkedParam = intakeStepParam(params.get("step"));
+  const linkedStep = linkedParam === null ? null : shownStep(linkedParam);
   const today = ctx.today;
   const studentId = ctx.student?.id ?? null;
   const storedGradYear = ctx.student?.grad_year ?? null;
@@ -188,7 +198,7 @@ export default function PlanIntake({
   const onPrimary = () => {
     if (step === 0) return canContinue0 && go(0, 1);
     if (step === 1) return canContinue1 && go(1, 2);
-    if (step < INTAKE_REVIEW) return go(step, (step + 1) as IntakeStep);
+    if (step < INTAKE_REVIEW) return go(step, stepAfter(step));
     if (step === INTAKE_REVIEW) {
       // One navigation after the save, nothing more (U20 "real speed"): it fetches the page fresh (a plan page is never
       // served from the browser's cache), so a router.refresh() on top only rendered the same page a second time.
@@ -214,8 +224,9 @@ export default function PlanIntake({
           <h1 className="font-display text-xl font-extrabold">Set up your plan</h1>
           <nav className="space-y-2">
             {RAIL_LABELS.map((label, i) => {
-              const idx = i as IntakeStep;
-              const state = idx < step ? "done" : idx === step ? "active" : "upcoming";
+              const idx = UI_STEPS[i];
+              const pos = UI_STEPS.indexOf(step);
+              const state = i < pos ? "done" : i === pos ? "active" : "upcoming";
               const sub = railSummary(draft, idx);
               return (
                 <button
@@ -256,7 +267,7 @@ export default function PlanIntake({
             {step > 0 ? (
               <button
                 type="button"
-                onClick={() => go(step, (step - 1) as IntakeStep)}
+                onClick={() => go(step, stepBefore(step))}
                 aria-label="Back"
                 className="flex size-11 items-center justify-center rounded-full border"
               >
@@ -266,17 +277,17 @@ export default function PlanIntake({
               <span className="size-11" aria-hidden />
             )}
             <p className="text-sm font-semibold text-muted-foreground">
-              Step {step + 1} of {STEP_COUNT}
+              Step {UI_STEPS.indexOf(step) + 1} of {STEP_COUNT}
             </p>
             {skippable ? (
-              <button type="button" onClick={() => go(step, (step + 1) as IntakeStep)} className="min-h-11 px-1 text-sm font-semibold text-muted-foreground">
+              <button type="button" onClick={() => go(step, stepAfter(step))} className="min-h-11 px-1 text-sm font-semibold text-muted-foreground">
                 Skip
               </button>
             ) : (
               <span className="size-11" aria-hidden />
             )}
           </div>
-          <ProgressBar step={step} />
+          <ProgressBar step={UI_STEPS.indexOf(step)} />
         </div>
 
         <div ref={stepTop} className="px-5 py-6 lg:px-0 lg:py-2">
@@ -285,7 +296,7 @@ export default function PlanIntake({
           {step === 2 && <ApStep draft={draft} setDraft={setDraft} today={today} />}
           {activityStep && <ActivitiesStep key={activityStep} step={activityStep} draft={draft} setDraft={setDraft} />}
           {step === 6 && <ConnectionsStep draft={draft} setDraft={setDraft} listColleges={listColleges} />}
-          {step === INTAKE_REVIEW && <ReviewStep draft={draft} today={today} onEdit={(s) => go(INTAKE_REVIEW, s)} />}
+          {step === INTAKE_REVIEW && <ReviewStep draft={draft} today={today} onEdit={(s) => go(INTAKE_REVIEW, shownStep(s))} />}
 
           {error && <p className="mt-4 text-sm text-amber-700 dark:text-amber-400">{error}</p>}
         </div>
@@ -305,7 +316,7 @@ export default function PlanIntake({
         {/* Desktop footer */}
         <div className="mt-10 hidden items-center justify-between border-t pt-6 lg:flex">
           {step > 0 ? (
-            <button type="button" onClick={() => go(step, (step - 1) as IntakeStep)} className="min-h-11 rounded-full border px-5 text-sm font-semibold hover:bg-muted">
+            <button type="button" onClick={() => go(step, stepBefore(step))} className="min-h-11 rounded-full border px-5 text-sm font-semibold hover:bg-muted">
               Back
             </button>
           ) : (
@@ -318,7 +329,7 @@ export default function PlanIntake({
               </button>
             )}
             {(activityStep || step === 6) && (
-              <button type="button" onClick={() => go(step, (step + 1) as IntakeStep)} className="min-h-11 px-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
+              <button type="button" onClick={() => go(step, stepAfter(step))} className="min-h-11 px-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
                 I&apos;ll add these later
               </button>
             )}
@@ -337,7 +348,7 @@ export default function PlanIntake({
   );
 }
 
-function ProgressBar({ step }: { step: IntakeStep }) {
+function ProgressBar({ step }: { step: number }) {
   return (
     <div className="flex gap-1.5 px-5 py-3" role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={STEP_COUNT}>
       {Array.from({ length: STEP_COUNT }, (_, i) => i).map((i) => (

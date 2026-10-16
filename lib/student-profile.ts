@@ -717,6 +717,17 @@ export function storyMissing(profile: Pick<StudentProfileData, "story"> | null):
 }
 
 /**
+ * Whether the story reads as written to this viewer (Your record's story row: "Written" / "Not yet"): the student's own
+ * copy once it holds STORY_DONE_CHARS characters (`!storyMissing`); a guardian's redacted copy (narrative "", which
+ * `sanitizeStory` never produces for real text) whenever it exists, the guardian line's own rule (StoryGuide).
+ */
+export function storyWritten(profile: Pick<StudentProfileData, "story"> | null): boolean {
+  const story = profile?.story ?? null;
+  if (!story) return false;
+  return story.narrative === "" ? true : !storyMissing(profile);
+}
+
+/**
  * The story's length as telemetry may record it (`story_filled {length_band}`; never the text): short under
  * STORY_DONE_CHARS, long from 1,000 characters, medium between.
  */
@@ -1307,7 +1318,8 @@ export interface CompletenessItem {
   met: boolean;
 }
 
-function hasAnyPreference(p: StudentProfilePreferences): boolean {
+/** Whether any "where you'd go" preference is set (size, setting, place, type, or the cost limit). */
+export function hasAnyPreference(p: StudentProfilePreferences): boolean {
   return p.sizes.length > 0 || p.settings.length > 0 || p.statesOrRegions.length > 0 || p.types.length > 0 || p.maxAverageCost !== null;
 }
 

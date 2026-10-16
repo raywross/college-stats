@@ -56,7 +56,7 @@ test("planHref builds /plan with the person and the tab, leaving out what's miss
   assert.equal(planHref({ person: "abc", tab: "colleges", move: "t-1" }), "/plan?for=abc&tab=colleges");
 });
 
-test("intakeStepParam takes the entry steps 0–7 and nothing else (plan v3, connections.md: Connections at 6, Other at 7)", () => {
-  for (const v of ["0", "1", "2", "3", "4", "5", "6", "7"]) assert.equal(intakeStepParam(v), Number(v));
-  for (const v of [null, undefined, "", "8", "9", "-1", "4.0", " 4", "four"]) assert.equal(intakeStepParam(v), null);
+test("intakeStepParam takes the entry steps 0–12 and nothing else (Your record: Major 8 through Recommenders 12; Review 13 and Done 14 aren't links)", () => {
+  for (const v of ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]) assert.equal(intakeStepParam(v), Number(v));
+  for (const v of [null, undefined, "", "13", "14", "-1", "4.0", " 4", "four"]) assert.equal(intakeStepParam(v), null);
 });

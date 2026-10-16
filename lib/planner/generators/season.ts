@@ -20,7 +20,7 @@ import { interestMoves, interestTasks, type InterestMove } from "../interest.ts"
 import { hooksFromPlan } from "../hooks.ts";
 import { affordabilityFor, dreamAtHighReach, shapeGaps, shapeTasks, type ShapeGap } from "../list-shape.ts";
 import { PLAYBOOK, type PlaybookEntry } from "../moves-catalog.ts";
-import { PROFILE_SECTIONS, sectionDone, type ProfileSection } from "../profile-progress.ts";
+import { firstMissingSection, PROFILE_SECTIONS, sectionDone, type ProfileSection } from "../profile-progress.ts";
 import { nextSeason, seasonBounds, seasonRank, type Season } from "../seasons.ts";
 import { addDays } from "../stage.ts";
 import { taskKey } from "../tasks.ts";
@@ -107,7 +107,7 @@ export function moveApplies(a: MoveApplies, facts: MoveFacts): boolean {
     case "list_nonempty":
       return facts.items.length > 0;
     case "profile_incomplete":
-      return !p || PROFILE_SECTIONS.some((s) => !sectionDone(p, s));
+      return firstMissingSection(p) !== null;
     case "story_missing":
       // guides/your-story.md: the narrative under STORY_DONE_CHARS characters.
       return storyMissing(p);

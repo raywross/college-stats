@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ActivitiesStep } from "@/components/planner/intake/ActivitiesStep";
 import { ApStep } from "@/components/planner/intake/ApStep";
+import { ConnectionsStep } from "@/components/planner/intake/ConnectionsStep";
 import { DoneStep } from "@/components/planner/intake/DoneStep";
 import { GradesStep } from "@/components/planner/intake/GradesStep";
 import { ReviewStep } from "@/components/planner/intake/ReviewStep";
@@ -34,7 +35,7 @@ import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { cn } from "@/lib/utils";
 
-const RAIL_LABELS = ["Grades", "Test score", "AP courses", "Sports", "Clubs", "Work", "Other", "Review"] as const;
+const RAIL_LABELS = ["Grades", "Test score", "AP courses", "Sports", "Clubs", "Work", "Connections", "Other", "Review"] as const;
 /** Steps on the progress bar and rail (Done isn't one). */
 const STEP_COUNT = RAIL_LABELS.length;
 
@@ -49,6 +50,10 @@ function railSummary(draft: IntakeDraft, step: IntakeStep): string | null {
     return null;
   }
   if (step === 2) return draft.courses.length > 0 ? `${draft.courses.length} course${draft.courses.length === 1 ? "" : "s"}` : null;
+  if (step === 6) {
+    if (draft.connections.length > 0) return `${draft.connections.length} college${draft.connections.length === 1 ? "" : "s"}`;
+    return draft.activitiesNone.connections === true ? "None" : null;
+  }
   const activity = activityStepAt(step);
   if (activity) return stepRailSummary(activity, draft.activities, draft.awards, draft.activitiesNone[activity] === true);
   return null;
@@ -112,6 +117,15 @@ export default function PlanIntake({
   const studentId = ctx.student?.id ?? null;
   const storedGradYear = ctx.student?.grad_year ?? null;
   const person = relation === "guardian" ? studentId : null;
+  // The Connections step's first suggestions (connections.md "Adding one"): the list's own colleges, since a
+  // connection there is the common case. `ctx` already carries `items`/`schools`, so this is computed here rather
+  // than threaded in from PlanFrame.
+  const listColleges = ctx.items
+    .map((i) => {
+      const school = ctx.schools[i.unit_id];
+      return school ? { unitId: i.unit_id, name: school.name, state: school.state } : null;
+    })
+    .filter((c): c is { unitId: string; name: string; state: string | null } => c !== null);
 
   const [draft, setDraft] = useState<IntakeDraft>(() => draftFromProfile(ctx.profile, storedGradYear, today));
   const [step, setStep] = useState<IntakeStep>(done ? INTAKE_DONE : mode === "edit" ? (linkedStep ?? INTAKE_REVIEW) : 0);
@@ -165,8 +179,8 @@ export default function PlanIntake({
   const canContinue1 = stepValid(draft, 1);
   const canSave = stepValid(draft, INTAKE_REVIEW);
   const activityStep = activityStepAt(step);
-  // AP courses and the four activity steps can be skipped (they never block Continue either).
-  const skippable = step === 2 || activityStep !== null;
+  // AP courses, the four activity steps, and Connections can be skipped (they never block Continue either).
+  const skippable = step === 2 || step === 6 || activityStep !== null;
 
   const primaryLabel = step === INTAKE_REVIEW ? "Save and show my plan" : "Continue";
   const primaryDisabled = pending || (step === 0 ? !canContinue0 : step === 1 ? !canContinue1 : step === INTAKE_REVIEW ? !canSave : false);
@@ -270,6 +284,7 @@ export default function PlanIntake({
           {step === 1 && <TestStep draft={draft} setDraft={setDraft} />}
           {step === 2 && <ApStep draft={draft} setDraft={setDraft} today={today} />}
           {activityStep && <ActivitiesStep key={activityStep} step={activityStep} draft={draft} setDraft={setDraft} />}
+          {step === 6 && <ConnectionsStep draft={draft} setDraft={setDraft} listColleges={listColleges} />}
           {step === INTAKE_REVIEW && <ReviewStep draft={draft} today={today} onEdit={(s) => go(INTAKE_REVIEW, s)} />}
 
           {error && <p className="mt-4 text-sm text-amber-700 dark:text-amber-400">{error}</p>}
@@ -302,7 +317,7 @@ export default function PlanIntake({
                 I&apos;m not taking any AP courses
               </button>
             )}
-            {activityStep && (
+            {(activityStep || step === 6) && (
               <button type="button" onClick={() => go(step, (step + 1) as IntakeStep)} className="min-h-11 px-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
                 I&apos;ll add these later
               </button>

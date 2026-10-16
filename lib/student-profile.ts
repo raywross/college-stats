@@ -223,6 +223,23 @@ export function connectionFor(profile: Pick<StudentProfileData, "academics"> | n
   return profile?.academics.connections?.find((c) => c.unitId === unitId) ?? null;
 }
 
+const CONNECTION_FAMILY_SENTENCE: Readonly<Record<ConnectionFamily, string>> = {
+  parent: "A parent went here",
+  grandparent: "A grandparent went here",
+  sibling: "A sibling went here",
+};
+
+/**
+ * The connection's own sentence (connections.md "What reads it"), for the standing card and the Connections step's
+ * summary line: "A parent went here", "A grandparent went here · A sibling went here · A coach is recruiting you".
+ * Empty string for an entry with nothing set (shouldn't happen after sanitizeConnections, but never surfaces junk).
+ */
+export function connectionSentence(entry: Pick<ConnectionEntry, "family" | "recruited">): string {
+  const parts = entry.family.map((f) => CONNECTION_FAMILY_SENTENCE[f]);
+  if (entry.recruited !== "none") parts.push("A coach is recruiting you");
+  return parts.join(" · ");
+}
+
 export type RecommenderStatus = "thinking" | "asked" | "agreed" | "invited";
 export const RECOMMENDER_STATUSES: readonly RecommenderStatus[] = ["thinking", "asked", "agreed", "invited"];
 

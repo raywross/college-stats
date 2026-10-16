@@ -8,7 +8,7 @@ import { estimateInputFromProfile } from "@/lib/chances/estimate-input";
 import { myStandingInput, type MyStanding } from "@/lib/chances/standing-store";
 import type { EstimateResult, EstimateStudent } from "@/lib/chances/types";
 import { hasNumbers, yourNumbersFrom, type YourNumbers } from "@/lib/chances/what-went-in";
-import { planGpaLabel } from "@/lib/student-profile";
+import { planGpaLabel, type ConnectionEntry } from "@/lib/student-profile";
 
 /** "Students like you" for the one college, as POST /api/estimate returns it (null until the data clears its thresholds). */
 export interface LikeYou {
@@ -24,7 +24,7 @@ export type StandingState =
   /** Signed in or not, there is no GPA or test to estimate from. */
   | { status: "no-numbers"; signedIn: boolean }
   | { status: "failed"; signedIn: boolean }
-  | { status: "ready"; signedIn: boolean; result: EstimateResult; yours: YourNumbers; student: EstimateStudent; likeYou: LikeYou | null };
+  | { status: "ready"; signedIn: boolean; result: EstimateResult; yours: YourNumbers; student: EstimateStudent; likeYou: LikeYou | null; connections: ConnectionEntry[] };
 
 interface Answer {
   result: EstimateResult | null;
@@ -117,5 +117,15 @@ export function useStanding(unitId: string, opts: { likeYou?: boolean } = {}): S
   if (input === "none") return { status: "no-numbers", signedIn: server.signedIn };
   if (!input || answer?.key !== key) return { status: "loading", signedIn: server.signedIn };
   if (!answer.value?.result) return { status: "failed", signedIn: server.signedIn };
-  return { status: "ready", signedIn: server.signedIn, result: answer.value.result, yours: input.yours, student: input.student, likeYou: answer.value.likeYou };
+  return {
+    status: "ready",
+    signedIn: server.signedIn,
+    result: answer.value.result,
+    yours: input.yours,
+    student: input.student,
+    likeYou: answer.value.likeYou,
+    // Plan v3: only the signed-in student's own connections (connections.md "The profile's standing card"); a
+    // visitor's browser-kept profile has no connections concept.
+    connections: server.signedIn ? server.connections : [],
+  };
 }

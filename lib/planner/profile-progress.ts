@@ -9,8 +9,8 @@ import type { IntakeStep } from "./intake.ts";
 import type { StudentProfileData } from "../student-profile.ts";
 
 /** The sections, in the order the next step is picked (the most useful missing one first). */
-export type ProfileSection = "high_school" | "courses" | "grades" | "test" | "clubs" | "sports" | "major" | "work" | "other" | "state";
-export const PROFILE_SECTIONS: readonly ProfileSection[] = ["high_school", "courses", "grades", "test", "clubs", "sports", "major", "work", "other", "state"];
+export type ProfileSection = "high_school" | "courses" | "grades" | "test" | "clubs" | "sports" | "major" | "work" | "connections" | "other" | "state";
+export const PROFILE_SECTIONS: readonly ProfileSection[] = ["high_school", "courses", "grades", "test", "clubs", "sports", "major", "work", "connections", "other", "state"];
 
 /** Where each section is entered: an intake step, or the student's Numbers page (major and state aren't in the intake). */
 export const SECTION_STEP: Record<ProfileSection, IntakeStep | "numbers"> = {
@@ -21,7 +21,8 @@ export const SECTION_STEP: Record<ProfileSection, IntakeStep | "numbers"> = {
   sports: 3,
   clubs: 4,
   work: 5,
-  other: 6,
+  connections: 6,
+  other: 7,
   major: "numbers",
   state: "numbers",
 };
@@ -44,6 +45,7 @@ const LABELS: Record<ProfileSection, string> = {
   sports: "add sports",
   major: "add an intended major",
   work: "add work and internships",
+  connections: "add connections (or none)",
   other: "add awards and more",
   state: "add a state",
 };
@@ -68,6 +70,8 @@ export function sectionDone(p: StudentProfileData, s: ProfileSection): boolean {
     case "work":
     case "other":
       return a.activitiesNone?.[s] === true || stepHasEntries(s, a.activities ?? [], a.awards ?? []);
+    case "connections":
+      return a.connections.length > 0 || a.activitiesNone?.connections === true;
     case "major":
       return p.plans.intendedMajors.length > 0;
     case "state":

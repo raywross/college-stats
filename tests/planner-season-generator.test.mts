@@ -164,6 +164,12 @@ test("moveApplies: every vocabulary value", () => {
     "profile_missing:sports": [[{ profile: p }, true]],
     "profile_missing:major": [[{ profile: p }, true], [{ profile: { ...p, plans: { ...p.plans, intendedMajors: ["14"] as never } } }, false]],
     "profile_missing:work": [[{ profile: p }, true]],
+    // Plan v3 (connections.md): an entry or a None answer counts (profile-progress.ts sectionDone("connections")).
+    "profile_missing:connections": [
+      [{ profile: p }, true],
+      [{ profile: { ...p, academics: { ...p.academics, connections: [{ id: "c1", unitId: "100654", family: ["parent"] as const, recruited: "none" as const }] } } }, false],
+      [{ profile: { ...p, academics: { ...p.academics, activitiesNone: { ...p.academics.activitiesNone, connections: true } } } }, false],
+    ],
     "profile_missing:other": [[{ profile: p }, true]],
     "profile_missing:state": [[{ profile: p }, true], [{ profile: { ...p, basics: { ...p.basics, stateOfResidence: "OH" } } }, false]],
     story_missing: [

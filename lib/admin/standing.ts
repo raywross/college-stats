@@ -60,7 +60,7 @@ async function compute(studentId: string): Promise<StudentStanding> {
   for (const listId of listIds) {
     const rows = items.filter((i) => i.list_id === listId);
     // Each list is a plan of its own: its hooks come from its own rows and visits, as the planner reads them.
-    const hooks = hooksFromPlan(rows, visits);
+    const hooks = hooksFromPlan(rows, visits, profileData);
     for (const item of rows) {
       const school = ctx.schoolById(item.unit_id);
       if (!school) continue;

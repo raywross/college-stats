@@ -21,6 +21,7 @@ function full(): StudentProfileData {
   p.academics.classStanding = "top10";
   p.academics.courses = [{ id: "c1" } as never];
   p.academics.activities = [act("sport", "Soccer"), act("club", "Robotics"), act("work", "Grocery"), act("service", "Food bank")];
+  p.academics.activitiesNone.connections = true;
   p.tests.focus = "sat";
   p.tests.satTotal = 1400;
   p.plans.intendedMajors = ["engineering" as never];
@@ -56,6 +57,7 @@ test("the next step follows the owner's order: high school, courses, class stand
     sports: (q) => (q.academics.activities = [...q.academics.activities, act("sport", "Track")]),
     major: (q) => (q.plans.intendedMajors = ["business" as never]),
     work: (q) => (q.academics.activities = [...q.academics.activities, act("work", "Job")]),
+    connections: (q) => (q.academics.activitiesNone = { ...q.academics.activitiesNone, connections: true }),
     other: (q) => (q.academics.awards = [{ key: "x" } as never]),
     state: (q) => (q.basics.stateOfResidence = "OH"),
   };
@@ -65,7 +67,7 @@ test("the next step follows the owner's order: high school, courses, class stand
     order.push(r.next!);
     fills[r.next!](p);
   }
-  assert.deepEqual(order, ["high_school", "courses", "grades", "test", "clubs", "sports", "major", "work", "other", "state"]);
+  assert.deepEqual(order, ["high_school", "courses", "grades", "test", "clubs", "sports", "major", "work", "connections", "other", "state"]);
   assert.equal(profileProgress(p).nextLabel, null);
 });
 
@@ -94,9 +96,21 @@ test("test: a score, a target, or 'not testing' each count", () => {
 });
 
 test("every section opens somewhere: an intake step, or the Numbers page for major and state", () => {
-  for (const s of PROFILE_SECTIONS) assert.ok(SECTION_STEP[s] === "numbers" || (typeof SECTION_STEP[s] === "number" && SECTION_STEP[s] >= 0 && SECTION_STEP[s] <= 6), s);
+  for (const s of PROFILE_SECTIONS) assert.ok(SECTION_STEP[s] === "numbers" || (typeof SECTION_STEP[s] === "number" && SECTION_STEP[s] >= 0 && SECTION_STEP[s] <= 7), s);
   assert.equal(SECTION_STEP.major, "numbers");
   assert.equal(SECTION_STEP.clubs, 4);
+  assert.equal(SECTION_STEP.connections, 6);
+  assert.equal(SECTION_STEP.other, 7);
+});
+
+test("connections: an entry or a None answer counts; neither doesn't", () => {
+  const p = emptyProfile();
+  assert.equal(sectionDone(p, "connections"), false);
+  p.academics.connections = [{ id: "c1", unitId: "100654", family: ["parent"], recruited: "none" }];
+  assert.equal(sectionDone(p, "connections"), true);
+  const q = emptyProfile();
+  q.academics.activitiesNone.connections = true;
+  assert.equal(sectionDone(q, "connections"), true);
 });
 
 test("the ring never shows a percentage or anything from the estimate", () => {

@@ -82,7 +82,7 @@ export function RowDrawer({
     school && panel === "capture"
       ? (() => {
           const edCands = edOpportunities(ctx.items, ctx.estimates, ctx.schools, { season: ctx.season, today: ctx.today });
-          const hooks = hooksFromPlan(ctx.items, ctx.visits);
+          const hooks = hooksFromPlan(ctx.items, ctx.visits, ctx.profile);
           const move = interestMoves(ctx.items, ctx.estimates, ctx.schools, hooks, edCands, { season: ctx.season, today: ctx.today }).find((m) => m.itemId === item.id);
           return move ? { move, text: interestMoveText(move, school) } : null;
         })()

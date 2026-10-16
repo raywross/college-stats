@@ -79,7 +79,7 @@ export async function railFor(input: { studentId: string; level: StandingLevel; 
 
   const estimateInput = estimateInputFromProfile(ctx.profile, "", null).student;
   const estCtx = await estimateContext(estimateInput, { coreAtTopLevel: ctx.profile?.academics.coreAtTopLevel ?? null, grade: gradeNow(ctx.gradYear, ctx.today) });
-  const hooks = hooksFromPlan(ctx.items, ctx.visits);
+  const hooks = hooksFromPlan(ctx.items, ctx.visits, ctx.profile);
   const estimates = estimateMany(estimateInput, candidates.map((s) => s.unit_id), estCtx, hooks);
 
   const home = ctx.home;

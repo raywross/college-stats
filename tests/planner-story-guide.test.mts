@@ -112,7 +112,6 @@ test("StoryGuide.tsx: the guardian's branch renders no textarea or other input, 
 test("StoryCard is gone: not imported or referenced anywhere a guide, card, or test would reach it", () => {
   const files = [
     "components/planner/moves/registry.tsx",
-    "components/me/StorySection.tsx",
     "lib/planner/guides-server.ts",
     "components/planner/guides/stubs.tsx",
   ];

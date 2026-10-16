@@ -11,6 +11,7 @@ import { authConfigured, getUser } from "@/lib/auth";
 import { type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/planner/load";
 import { resolveSelectedChild, type SwitchableChild } from "@/lib/planner/plan-frame";
 import { profileProgress, SECTION_STEP } from "@/lib/planner/profile-progress";
+import { recordPageHref, recordProgress } from "@/lib/planner/record";
 import { defaultTab, parseTab, planHref } from "@/lib/planner/plan-tabs";
 import { nowMoves, topMove } from "@/lib/planner/moves";
 import { withTiming } from "@/lib/timing-server";
@@ -21,6 +22,7 @@ import { myLists } from "@/lib/lists";
 import { isUuid } from "@/lib/planner/plan-writes";
 import { profilesICanSee } from "@/lib/student-profile-store";
 import type { StudentProfileData } from "@/lib/student-profile";
+import type { Season } from "@/lib/planner/seasons";
 
 export const metadata: Metadata = { title: "Plan" };
 
@@ -65,19 +67,29 @@ function planFallback(loaded: PlanLoad, first: string | null): ReactNode | null 
 function detailFor(load: PlanLoad | undefined, person: string | null): PlanPersonDetail | null {
   if (!load || load.kind !== "ready") return null;
   const { ctx } = load;
-  const base = detailFrom(ctx.profile, ctx.viewer.canEdit, ctx.student?.id ?? person, person);
+  const base = detailFrom(ctx.profile, ctx.viewer.canEdit, ctx.student?.id ?? person, person, ctx.season);
   const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: ctx.viewer.isGuardian ? "guardian" : "student" });
   const move = topMove(groups);
   return { ...base, next: move ? { label: move.title, href: planHref({ person, tab: "next", move: move.id }) } : null };
 }
 
-/** The chip details from a profile alone: what detailFor shows once the plan is loaded, for every child at once. */
-function detailFrom(profile: StudentProfileData | null, canEdit: boolean, studentId: string | null, person: string | null): PlanPersonDetail {
-  const progress = profileProgress(profile);
+/**
+ * The chip details from a profile alone: what detailFor shows once the plan is loaded, for every child at once. The
+ * ring reads the record's completeness (`recordProgress`, the overview's thirteen steps) rather than the fourteen-
+ * section `profileProgress`, whose `next`/`nextLabel` still drive the "Next:" text and link (its own section order,
+ * story and recommenders gated by `season` once R3 has it: the batched "every child at once" branch below has no
+ * loaded plan yet, so no season there either, same as before). Edit opens the record overview, not the intake.
+ */
+function detailFrom(profile: StudentProfileData | null, canEdit: boolean, studentId: string | null, person: string | null, season?: Season): PlanPersonDetail {
+  const progress = profileProgress(profile, { season });
+  const record = recordProgress(profile);
   const where = progress.next ? SECTION_STEP[progress.next] : null;
-  const nextHref =
-    !canEdit || where === null ? null : where === "numbers" ? (studentId ? `/household/${studentId}/numbers` : null) : planHref({ person, setup: true, step: where });
-  return { progress, nextHref, editHref: canEdit ? planHref({ person, setup: true }) : null };
+  const nextHref = !canEdit || where === null ? null : planHref({ person, setup: true, step: where });
+  return {
+    progress: { done: record.done, total: record.total, nextLabel: progress.nextLabel },
+    nextHref,
+    editHref: canEdit && studentId ? recordPageHref(studentId) : null,
+  };
 }
 
 /** The soonest open deadline still to meet on a ready plan (resolveSelectedChild's tie-breaker), or null. */

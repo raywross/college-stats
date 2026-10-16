@@ -254,3 +254,90 @@ body with the ranking table's link and what to check by hand.
 - **`PlanIntake.tsx` (kept compiling for R2)**: shows steps 0–7 and Review (13) only; a `&step=8…12` link or a Review
   Edit on a new row opens Review until R2 adds the screens. Note the profile move's "Add a major" now opens step 8 (was
   the Numbers page), so R2 must land before release.
+
+## As built by R3
+
+- **`components/record/{RecordOverview,RecordRow}.tsx`** (new): `RecordOverview` is a server component — the rows are
+  static with links, so nothing needed a client wrapper except the one telemetry mount. It reads `recordProgress(profile.data,
+  { relation: profile.relation })` for the thirteen rows, `recordNeeded`/`recordTitle` for the header and the Fill it in
+  button, and renders each row through `RecordRow` (check/ring, rail name from `RECORD_STEPS` by step, the summary when
+  done or the unlock line when not, and Edit/Add). The rail name lookup (`RAIL_BY_STEP`) is a `Map` built from
+  `RECORD_STEPS`, since `recordProgress`'s rows don't carry the rail label themselves (only `section`/`step`). **Your
+  story** and **Recommenders** are special-cased before the generic row: they link `guideHref("story"|"recommenders",
+  { person, from: "profile" })`, their action label is fixed ("Open your story" / "Pick your recommenders") whether or
+  not the section is done, and their row text is always `stepSummary`'s own "Written"/"Not yet" or "{n} teachers, {m}
+  asked" (the literal rule in steps.md's prose) — **not** `SECTION_UNLOCK`'s longer unlock line that the ASCII mockup
+  shows for an unfilled story row ("Not yet · most write it the summer before senior year"); I followed the prose over
+  the diagram since the two disagree only there and the prose is the more specific rule. The guide links aren't gated
+  by `canEdit` (a read-only guardian can still open the guide to look, the same as a move would let them); only the
+  tour-step rows' Edit/Add is `profile.canEdit ? recordHref(...) : null`, so a guardian without edit access sees no
+  Edit/Add on those, per steps.md. `RecordOverviewOpened.tsx` (new, tiny): the one client island, firing
+  `record_overview_opened { viewer }` once on mount — the same shape as `PlanOpened.tsx`, split into its own file since
+  a "use client" directive is file-wide and `RecordOverview` itself stays a server component.
+- **Routes**: `app/household/[person]/record/page.tsx` (new) is the Numbers page's loader verbatim (`personPage`,
+  `profileFor`, the guardian read log via `scheduleStudentReadLog`) with `RecordOverview` instead of
+  `StudentNumbers`/`ParentsCanEdit`. Its metadata title ("Their record" / "Your record") needed `generateMetadata`
+  (the static `export const metadata` the Numbers page used can't branch on the viewer), so it re-reads
+  `personPage`/`profileFor` once more there — both are request-memoized (`cache()`), so this is a dedup, not a second
+  round trip. `app/household/[person]/numbers/page.tsx` is now a three-line redirect to `/household/{id}/record`,
+  with no auth check of its own (the destination's `requireUser` still gates it). `/me` (`app/me/page.tsx`) now
+  targets `/household/{id}/record` for both its branches (the `?student=` guardian case and the signed-in student's
+  own).
+- **`PersonHeader.tsx`**: `PersonTab` is `"list" | "record"`; the segmented control's second pill is `{ value: "record",
+  label: "Record", href: `/household/${id}/record` }`.
+- **`/account`**: a new `guardians` computation (`student ? households.flatMap(...) : []`, the same filter the Numbers
+  page used) and an `AccountSection id="parents-can-edit" title="Parents can edit"` right after Household, rendered
+  only when `guardians.length > 0`, with `<ParentsCanEdit on={...} guardians={...} bare />`. `ParentsCanEdit` gained a
+  `bare` prop (default false): bare drops the outer `<section>` and its own `<h2>`, returning just the description
+  paragraph and the switch (plus the error line), so the section's own card and heading don't double up; the Numbers
+  page's old, non-bare call (now deleted along with that page's body) would still render its own chrome unchanged.
+- **`PlanPeople.tsx`** / **`app/plan/page.tsx` `detailFrom`**: `editHref` is now `canEdit && studentId ?
+  recordPageHref(studentId) : null` (was `planHref({ person, setup: true })`); the pencil link's `aria-label` is
+  `` p.studentId ? `${name}'s record` : "Your record" `` (was "Edit {name}'s grades, test, and courses", retired per
+  the brief's "What's removed"). The ring: `detailFrom` now also calls `recordProgress(profile)` and uses its
+  `done`/`total` (the record's thirteen steps) for `PlanPersonDetail.progress`, while `nextLabel` still comes from
+  `profileProgress`'s fourteen-section `next`/`nextLabel` — R1a's built `profileProgress` is **not** the thirteen-section
+  wrapper the brief's task description allowed for (it kept `high_school` as its own section alongside `grades`, for
+  fourteen total, matching review note 6 exactly), so "the ring reads `recordProgress` ... via `profileProgress`" reads
+  as "call `recordProgress` directly for the ring's numbers," which is what I did; `nextLabel`'s wording and its
+  season-gated "later sections" rule are untouched. `profileProgress` also gained its `{ season }` param threaded
+  through: `detailFor` passes `ctx.season` (it has `ctx`); the "every child at once" batch loop in `renderPlan` (no
+  loaded plan yet for those children) still calls `detailFrom` without a season, same as before — so story/recommenders
+  still never show as "Next:" there until R1b/R2's later work gives that branch a season too, which isn't a regression
+  (it had none before this unit either).
+- **`lib/planner/profile-progress.ts`**: dropped `SECTION_STEP`'s `| "numbers"` from its type (nothing assigned that
+  literal; the brief flagged this as safe once no caller needs it). One caller did still compare against it —
+  `lib/planner/moves-catalog.ts`'s `firstMissingStep` had a `step === "numbers" ? NUMBERS(ctx) : ...` branch that
+  became a type error once the comparison was unreachable; simplified to always return `{ kind: "open_intake", step
+  }`. While there, I also pointed the `NUMBERS` playbook action's href at `/household/{id}/record` instead of
+  `/numbers` (one line, avoids an extra redirect hop for the two playbook entries that still use it) — `moves-catalog.ts`
+  isn't one of my owned files, but both edits were required for the type-check to pass after `SECTION_STEP`'s cleanup
+  and are one-line, non-conflicting with R1b's season-entry edits elsewhere in the same file.
+- **Deletions**: `components/me/{StudentNumbers,ProfileForm,CompletenessMeter,ConnectionsForm,StorySection}.tsx`, all
+  five — `grep` showed `ConnectionsForm` and `StorySection` were each imported only by `StudentNumbers.tsx`, so both
+  went too, per the brief's "only if nothing else imports them." Fixed the two tests this broke:
+  `tests/planner-story-guide.test.mts` (dropped the now-missing `components/me/StorySection.tsx` from its "StoryCard is
+  gone" file list — unrelated to this unit's own `StoryCard` check) and `tests/chances-rigor.test.mts` (swapped
+  `components/me/StudentNumbers.tsx`/`ProfileForm.tsx` for `components/record/RecordOverview.tsx`/dropped the second,
+  in its "no path strips a guardian's exam scores" guard). **Left alone**: `app/me/actions.ts`'s `saveStudentProfile`
+  server action is now dead code (its only caller was the deleted `ProfileForm.tsx`'s form) — not in this unit's file
+  list, and I didn't want to guess whether R2's new steps reuse its shape, so I left it for a later cleanup pass
+  rather than deleting an action I don't own. `components/planner/moves/MoveCard.tsx`'s `/household/{id}/numbers#story`
+  link (R1b's file) still points at the old path — it still works (redirects to `/record`, just without the `#story`
+  scroll, since `StorySection` and its anchor are gone) but doesn't scroll to anything there any more; flagging for R1b
+  or the integration pass rather than editing their file.
+- **Tests**: `tests/planner-record-overview.test.mts` (new): the numbers route's redirect, `/me`'s target, the header's
+  `PersonTab`/labels, the account section's placement and `bare` usage, the overview's rows coming from
+  `recordProgress` with no `ProfileForm`/`CompletenessMeter`/`StudentNumbers` reference and no `"Open in the plan"`/
+  `guideHref("courses"`/`guideHref("test"` anywhere in it, the telemetry island, the `SECTION_UNLOCK` no-digit guard
+  (sliced precisely to the object literal — the first attempt's slice ran into `stepSummary`'s doc comment, which
+  *does* have digits in its examples, and false-failed), and `detailFrom`'s new `recordProgress`/`recordPageHref`
+  wiring. `tests/planner-people-line.test.mts` updated for the new `editHref` line and the new aria-label (asserts the
+  retired "grades, test, and courses" wording is gone). `npm run verify`'s full run also caught
+  `tests/planner-stage.test.mts`'s "household cleanup (2026-10-12)" test, which hard-coded `value: "numbers"` in
+  `PersonHeader.tsx`'s pill order (predates this unit, outside my file list, broken only by the rename) — updated its
+  assertion and title to `"record"`.
+- **Left undone / for later units**: R4 (less-text) still has the overview's lead line and the tour's per-step
+  sub-lines to fold; R5 should update steps.md/README.md's status lines and this file's roadmap-group removal; QA
+  should check the overview at 390px and a guardian's read-only view by hand. The `#story` dead anchor above is the
+  one loose end I'd flag loudest for integration.

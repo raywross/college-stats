@@ -8,12 +8,14 @@
  * gone: the Good ED opportunity pills replaced them (specs/planner/next-steps/ed-opportunities.md).
  */
 import { ListNotices } from "@/components/planner/ListNotices";
+import { guideHref } from "@/lib/planner/guides";
 import type { PlanContext } from "@/lib/planner/types";
 import type { PlanView } from "@/lib/planner/plan-view";
 
 export function PlanNotice({ ctx, view, className }: { ctx: PlanContext; view: PlanView; className?: string }) {
-  void ctx;
   const kind = view.notices[0];
   if (!kind) return null;
-  return <ListNotices view={view} kind={kind} className={className} />;
+  // The balance line opens the Build your list guide (plan v3, specs/planner/v3/guides/list-size.md).
+  const listGuideHref = ctx.student ? guideHref("list", { person: ctx.viewer.relation === "self" ? null : ctx.student.id, from: "notice" }) : null;
+  return <ListNotices view={view} kind={kind} className={className} listGuideHref={listGuideHref} />;
 }

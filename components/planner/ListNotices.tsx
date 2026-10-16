@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { TrendingUp } from "lucide-react";
 import { CATEGORY_LABELS } from "@/lib/list-rules";
+import { GUIDES } from "@/lib/planner/guides";
 import type { PlanNotice, PlanView } from "@/lib/planner/plan-view";
 import { TEST_LABEL } from "@/lib/planner/standing";
 import { cn } from "@/lib/utils";
@@ -17,10 +19,13 @@ export function ListNotices({
   view,
   kind,
   className,
+  listGuideHref,
 }: {
   view: PlanView;
   kind: PlanNotice;
   className?: string;
+  /** The Build your list guide's link for the balance line (plan v3: "Help me build it"); none without it. */
+  listGuideHref?: string | null;
 }) {
   if (kind === "problems" && view.problems.length > 0) {
     return (
@@ -30,7 +35,19 @@ export function ListNotices({
     );
   }
   if (kind === "balance" && view.balanceLine) {
-    return <p className={cn("text-sm text-muted-foreground", className)}>{view.balanceLine}</p>;
+    return (
+      <p className={cn("text-sm text-muted-foreground", className)}>
+        {view.balanceLine}
+        {listGuideHref && (
+          <>
+            {" "}
+            <Link href={listGuideHref} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
+              {GUIDES.list.button}
+            </Link>
+          </>
+        )}
+      </p>
+    );
   }
   if (kind === "retake" && view.retake) {
     const { retake } = view;

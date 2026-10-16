@@ -16,7 +16,6 @@ import { DecisionCard } from "./DecisionCard";
 import { Ed2Card } from "./Ed2Card";
 import { DecideCard } from "./DecideCard";
 import { OutcomeShareCard } from "./OutcomeShareCard";
-import { ShapeCard } from "./ShapeCard";
 
 export const MOVE_CARDS: Partial<Record<TaskKind, ComponentType<MoveCardProps>>> = {
   story: StoryCard,
@@ -36,6 +35,4 @@ export const MOVE_CARDS: Partial<Record<TaskKind, ComponentType<MoveCardProps>>>
   decide_by: DecideCard,
   deposit: DecideCard,
   outcome_share: OutcomeShareCard,
-  shape_gap: ShapeCard,
-  shape_cost: ShapeCard,
 };

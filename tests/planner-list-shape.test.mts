@@ -2,8 +2,9 @@
  * The list's shape (lib/planner/list-shape.ts; specs/planner/next-steps/list-shape.md): every gap in priority
  * order, each season's shape, the three affordability states, unsorted rows excluded from the counts and given
  * their own move, one move at a time with the next appearing once the first resolves (via mergeTasks orphaning),
- * `balanceLineFor` and `shapeTasks` agreeing, and the rail's pure parts (`rankRail`, `excludeOverLimit`) with fake
- * inputs. A guard that no rail card or balance/move line carries a closeness number or a percentage. `npm test`.
+ * `balanceLineFor` and `shapeTasks` agreeing. A guard that no balance/move line carries a closeness number or a
+ * percentage. The rail these moves used to open became the Build your list guide (plan v3; its ordering, the cost
+ * exclusion, and its card's fields are tested in tests/planner-list-guide.test.mts). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -18,7 +19,6 @@ import {
   unsortedLine,
   type Shape,
 } from "../lib/planner/list-shape.ts";
-import { excludeOverLimit, rankRail, type RailCard } from "../lib/planner/rail.ts";
 import { balanceLineFor } from "../lib/planner/plan-view.ts";
 import { gradeOf, type Season } from "../lib/planner/seasons.ts";
 import { mergeTasks, applyMerge } from "../lib/planner/tasks.ts";
@@ -361,42 +361,10 @@ test("one gap move at a time: resolving the first lets the next regenerate in it
 });
 
 /* ------------------------------------------------------------------ */
-/* The rail's pure parts                                               */
-/* ------------------------------------------------------------------ */
-
-function card(unitId: string, level: StandingLevel, distanceMiles: number | null = null): RailCard {
-  return { unitId, name: unitId, state: "CA", level, avgCost: null, distanceMiles };
-}
-
-test("rankRail: keeps only the missing level, orders by closeness then distance, caps at 12", () => {
-  const rows = [
-    { school: { unit_id: "far", name: "Far" } as never, estimate: { group: "target", closeness: 1 } as EstimateResult, distanceMiles: 500 },
-    { school: { unit_id: "near", name: "Near" } as never, estimate: { group: "target", closeness: 1 } as EstimateResult, distanceMiles: 10 },
-    { school: { unit_id: "closest", name: "Closest" } as never, estimate: { group: "target", closeness: 3 } as EstimateResult, distanceMiles: 1000 },
-    { school: { unit_id: "wrong-level", name: "Wrong" } as never, estimate: { group: "reach", closeness: 3 } as EstimateResult, distanceMiles: 1 },
-    { school: { unit_id: "no-estimate", name: "None" } as never, estimate: undefined, distanceMiles: 1 },
-  ];
-  const ranked = rankRail(rows, "target");
-  assert.deepEqual(ranked.map((r) => r.school.unit_id), ["closest", "near", "far"]);
-});
-
-test("rankRail: caps at twelve", () => {
-  const rows = Array.from({ length: 20 }, (_, i) => ({ school: { unit_id: `s${i}`, name: `S${i}` } as never, estimate: { group: "target", closeness: 0 } as EstimateResult, distanceMiles: i }));
-  assert.equal(rankRail(rows, "target").length, 12);
-});
-
-test("excludeOverLimit: only filters when the gap is affordable and a limit is set", () => {
-  const schools = [{ unit_id: "cheap", cost: { avg_paid_all: 10000 } }, { unit_id: "pricey", cost: { avg_paid_all: 50000 } }, { unit_id: "unknown-cost", cost: {} }] as never[];
-  assert.deepEqual(excludeOverLimit(schools, "affordable", 20000).map((s) => (s as unknown as { unit_id: string }).unit_id), ["cheap", "unknown-cost"]);
-  assert.deepEqual(excludeOverLimit(schools, "affordable", null).length, 3, "no limit, nothing excluded");
-  assert.deepEqual(excludeOverLimit(schools, "target_min", 20000).length, 3, "not the affordable gap, nothing excluded");
-});
-
-/* ------------------------------------------------------------------ */
 /* Guard: no closeness, no percentage, anywhere a shape gap or card shows text */
 /* ------------------------------------------------------------------ */
 
-test("guard: no gap's line, no shape_gap/shape_cost task text, and no rail card carries a percentage or the word 'closeness'", () => {
+test("guard: no gap's line and no shape_gap/shape_cost task text carries a percentage or the word 'closeness'", () => {
   const texts: string[] = [];
   for (const season of ["senior_fall", "junior_fall", "junior_spring"] as const) {
     for (const affordability of ["ok", "none", "unknown"] as const) {
@@ -413,11 +381,4 @@ test("guard: no gap's line, no shape_gap/shape_cost task text, and no rail card 
     assert.ok(!/closeness/i.test(t), t);
     assert.ok(!/\bodds\b/i.test(t), t);
   }
-  // RailCard's own shape carries no closeness or estimate field at all — a planted bad card would fail this.
-  const c = card("X", "target") as unknown as Record<string, unknown>;
-  assert.deepEqual(
-    Object.keys(c).sort(),
-    ["avgCost", "distanceMiles", "level", "name", "state", "unitId"],
-    "no closeness, no estimate number, nothing beyond the card's own fields",
-  );
 });

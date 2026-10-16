@@ -1,6 +1,6 @@
 # Part 1, Connections: Legacy and Recruiting in the Profile; a Simpler Row
 
-> Status: **planned** 2026-10-15. Changes the intake ([../redesign/intake.md](../redesign/intake.md)), the list row and
+> Status: **built** 2026-10-16 (PR #165). Changes the intake ([../redesign/intake.md](../redesign/intake.md)), the list row and
 > its capture panel ([../redesign/list.md](../redesign/list.md#simpler-planner-owner-2026-10-12)), and where the hooks
 > come from ([../../chances/inputs-beyond-academics.md](../../chances/inputs-beyond-academics.md#legacy)). Part 1 of
 > [plan v3](README.md).
@@ -115,3 +115,11 @@ list's hooks and read by the standing card), `tests/planner-list-view.test.mts` 
 1. Recruiting on this step (overview question 2)? Recommendation: yes.
 2. Should adding a connection to a college not on the list offer "Add it to your list"? Recommendation: no; a
    grandparent's alma mater isn't a reason to apply, and the list guide handles additions.
+
+## As built
+- Intake step 6 Connections (Other → 7, Review → 8, Done → 9). `IntakeDraft.connections` sanitizer format-checks unit ids (1–10 digits), dedupes by unit id, and caps at 10.
+- `ProfileSection` has eleven sections; `connections` comes after `work`, before `other`. Done when any connection is entered or `activitiesNone.connections` is true.
+- The state-ban line shows on the Connections step itself (from `SchoolIndexEntry.state` and `type`).
+- `hooksFromPlan(items, visits, profile)` reads `academics.connections` only (the row columns `legacy`, `legacy_sibling`, `recruited` are no longer read).
+- The three `setItem*` setters were removed; the `list_items` columns stay in the schema for backfill.
+- `scripts/backfill-connections.mts` copies legacy, sibling, and recruited columns into `student_profiles.data.academics.connections` (run after U2a merged; the lead ran it on dev 2026-10-16).

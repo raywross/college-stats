@@ -42,10 +42,9 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // Next steps (specs/planner/next-steps/, seven parts) was specified 2026-10-14 from the owner's brief to drive actions
 // from students and parents by season (group "next-steps") and built the same day on feature/next-steps (nine units on
 // sub-branches, PR #160), so the group is gone; its overview page stays under ROADMAP_OVERVIEWS.
-// Plan v3 (specs/planner/v3/, nine parts) was specified 2026-10-15 from the owner's review of the built Next steps: a
-// Connections step in the profile, three cards instead of six, and a guide per task (group "plan-v3").
+// Plan v3 (specs/planner/v3/, nine parts) was specified 2026-10-15 and built 2026-10-16 (PR #165) from the owner's
+// review of the built Next steps: a Connections step in the profile, three cards instead of six, and a guide per task.
 export type RoadmapGroupKey =
-  | "plan-v3"
   | "college-reported"
   | "campus-life"
   | "planning"
@@ -56,12 +55,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "plan-v3",
-    title: "Plan v3: a few things to do now, each with a guide",
-    description:
-      "The plan shows a student two or three things to do this season, each opening a screen designed for that one job: build the list, show a college interest, reach a score, write your story, choose APs, pick recommenders. Connections move into the profile, the list row gets simpler, and parents see the whole season.",
-  },
   {
     key: "planning",
     title: "Planning tools",
@@ -128,95 +121,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  {
-    slug: "plan-connections",
-    file: "specs/planner/v3/connections.md",
-    group: "plan-v3",
-    summary: "Legacy, sibling, and recruiting connections entered once in your profile, like AP courses; the list row becomes a name, a pill, and a trash can.",
-    complexity: 2,
-    complexityNote: "A new intake step and profile field, the hooks read from the profile, a backfill from the list rows, and the row's panel removed.",
-    status: "planned",
-  },
-  {
-    slug: "plan-now",
-    file: "specs/planner/v3/now.md",
-    group: "plan-v3",
-    summary: "Two or three things to do now, each opening a guide; skip or finish them and the plan remembers; nothing from next year.",
-    complexity: 2,
-    complexityNote: "The tab's layout, a guide route and registry every guide plugs into, a recorded skip, and two timing rules over the built moves.",
-    status: "planned",
-    after: ["plan-connections"],
-  },
-  {
-    slug: "plan-guide-list",
-    file: "specs/planner/v3/guides/list-size.md",
-    group: "plan-v3",
-    summary: "What a good list looks like, where yours stands, and colleges like the ones you have at the level that's missing.",
-    complexity: 3,
-    complexityNote: "A likeness rule over size, control, setting, place, and character; candidates estimated at the missing level; a new page with the shape, the gaps, and cards.",
-    status: "planned",
-    after: ["plan-now"],
-  },
-  {
-    slug: "plan-guide-interest",
-    file: "specs/planner/v3/guides/show-interest.md",
-    group: "plan-v3",
-    summary: "For one college, the acts that count in order, with its upcoming events; what you did is confirmed when you come back or by email, and registrations land on the calendar.",
-    complexity: 3,
-    complexityNote: "An act-tracking table and state machine, a return prompt, a daily confirmation email with one-click answers, and writes into the visit log.",
-    status: "planned",
-    after: ["plan-now"],
-  },
-  {
-    slug: "plan-guide-test",
-    file: "specs/planner/v3/guides/test-prep.md",
-    group: "plan-v3",
-    summary: "Under your target score: where it stands on your list, free official study resources, and the upcoming dates with registration tracked like a tour.",
-    complexity: 2,
-    complexityNote: "Restores the dropped Scores tab's standing and date logic as a guide, adds a registered-dates field, and reuses the interest guide's act tracking.",
-    status: "planned",
-    after: ["plan-guide-interest"],
-  },
-  {
-    slug: "plan-guide-story",
-    file: "specs/planner/v3/guides/your-story.md",
-    group: "plan-v3",
-    summary: "One free-form story in your own words, framed by depth and breadth, with what your record already says beside it.",
-    complexity: 1,
-    complexityNote: "One field replacing three, a one-off migration of existing answers, and a page that reads the built depth sentences.",
-    status: "planned",
-    after: ["plan-now"],
-  },
-  {
-    slug: "plan-guide-courses",
-    file: "specs/planner/v3/guides/ap-choices.md",
-    group: "plan-v3",
-    summary: "Choose next year's APs: what you've taken by subject, the suggestions that add depth, and any course you're adding, all saved to your profile.",
-    complexity: 2,
-    complexityNote: "A page over the built course plan and AP search, with the by-subject track view; no new rules.",
-    status: "planned",
-    after: ["plan-now"],
-  },
-  {
-    slug: "plan-guide-recommenders",
-    file: "specs/planner/v3/guides/recommenders.md",
-    group: "plan-v3",
-    summary: "From March of junior year: enter and rank the teachers you'd ask, what to think about, how to ask, and when to thank them.",
-    complexity: 1,
-    complexityNote: "A small profile field with statuses, one new playbook entry, and a page of sourced advice.",
-    status: "planned",
-    after: ["plan-now"],
-  },
-  {
-    slug: "plan-parents",
-    file: "specs/planner/v3/parents.md",
-    group: "plan-v3",
-    summary: "A parent sees the whole season: every move and when it comes, what the student finished, and what they skipped.",
-    complexity: 1,
-    complexityNote: "A guardian's view over the built moves and the new skip record; design to follow.",
-    status: "planned",
-    after: ["plan-now"],
-  },
   {
     slug: "chances-and-fit",
     file: "specs/product/chances-and-fit.md",

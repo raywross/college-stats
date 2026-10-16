@@ -1,7 +1,6 @@
 # The Planner: From the First List to the Deposit
 
-> **Plan v3 (2026-10-15, planned):** the owner's review of Next steps: three cards instead of six, a guide per task,
-> connections in the profile, a simpler list row, and the parent's view of the whole season; see [v3/](v3/README.md).
+> **Plan v3 (2026-10-16):** replaced the row's details panel with a Connections step, the six-card Next steps with three cards and guides, and the parent's view with the whole season; see [v3/](v3/README.md).
 >
 > **Next steps (2026-10-14):** the plan now drives the work season by season; see [next-steps/](next-steps/README.md)
 > (a Next steps tab the plan opens to, good ED opportunities and interest prompts on the list, the shape of a good list,

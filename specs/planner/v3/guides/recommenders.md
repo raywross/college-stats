@@ -1,6 +1,6 @@
 # Guide: Pick Your Recommenders
 
-> Status: **planned** 2026-10-15. After [../now.md](../now.md). Replaces the "Notice two teachers" note move
+> Status: **built** 2026-10-16 (PR #165). After [../now.md](../now.md). Replaces the "Notice two teachers" note move
 > ([../../next-steps/seasons.md](../../next-steps/seasons.md#junior-fall-augdec)) and gives the cycle's
 > `ask_recommenders` and `thank_recommenders` entries a screen. Part 8 of [plan v3](../README.md).
 
@@ -83,3 +83,11 @@ the move opens in March of junior year and not in fall; two Asked ticks it; the 
    every source says ask before summer, and the fall is when teachers are swamped.
 2. Should the guide send the student a reminder when a recommender has been "Asked" for three weeks without "Agreed"?
    Recommendation: no; a nudge about a teacher is the family's business.
+
+## As built
+- `RecommenderEntry` has name, subject (from the course list or typed), years (9–12), rank, and status (Thinking → Asked → Agreed → Invited). Status transitions are forward only; explicit reset to Thinking clears dates; Thinking may jump to Agreed.
+- Two Asked status entries tick the `pick_recommenders` move (the generator also stops emitting it).
+- Ranking by arrows (drag is not implemented); a "Thank them" section appears in November of senior year.
+- The "What your colleges ask for" line cites `recommendations_count` per college (the student's own entry, not a dataset fact, so carries no lineage citation).
+- Advisor sources are plain links (College Board, NACAC). Reset lives in the Numbers page's edit panel.
+- Not built: linking an Invited status to a college's `recommendation` tasks.

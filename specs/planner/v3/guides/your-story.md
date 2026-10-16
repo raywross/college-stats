@@ -1,6 +1,6 @@
 # Guide: Your Story
 
-> Status: **planned** 2026-10-15. After [../now.md](../now.md). Replaces the three prompts of
+> Status: **built** 2026-10-16 (PR #165). After [../now.md](../now.md). Replaces the three prompts of
 > [../../next-steps/your-story.md](../../next-steps/your-story.md) with one narrative; keeps every privacy rule. Reads
 > depth ([../../../chances/depth.md](../../../chances/depth.md)). Part 6 of [plan v3](../README.md).
 
@@ -78,3 +78,10 @@ guardian redaction; the cap).
    the paragraph before it.
 2. Should the auto-tick at 200 characters be a tick at all, or should the student always press Done? Recommendation:
    auto-tick; the card's job is to get the writing started.
+
+## As built
+- `StudentStory` becomes `{ narrative: string; updatedAt: string | null }`. The old three-prompt shape is joined on read ("About you: …\n\nThe thread: …\n\nWhy this major: …").
+- `STORY_MAX` 2,000; auto-tick fires when the saved narrative first crosses 200 characters.
+- Starters append a line; every `activitiesReading` note and track sentence appear beside the textarea.
+- A guardian's StorySection on the Numbers page shows the status line plus a link to the guide (not the full story).
+- `StoryCard` is deleted; the story move renders `MoveCard` with the guide button.

@@ -1,6 +1,6 @@
 # Part 9, The Parent's Next Steps: The Whole Season, and What Was Skipped
 
-> Status: **planned** 2026-10-15, design to follow (the owner: "we can design it later"). After [now.md](now.md).
+> Status: **built** 2026-10-16 (PR #165). After [now.md](now.md).
 > Extends [../parents.md](../parents.md) and the guardian's view in [../next-steps/seasons.md](../next-steps/seasons.md#the-next-steps-tab).
 > Part 9 of [plan v3](README.md).
 
@@ -51,3 +51,10 @@ Coming up · Summer before senior year (4) ▾
 
 ## Open questions
 1. Should a parent be able to skip a move on the student's behalf? Recommendation: no; only Bring back.
+
+## As built
+- A parent's Next steps tab shows: Your part (the student's `myYourPart` moves, hidden when empty) → "{First}'s {Season}" rows with states Now and Next → "Coming up · {next season} (n)" folded open → "Done and skipped this season" folded with Bring back buttons for each skipped move (editors only).
+- A row's title links its guide read-only (via `guideHref` with `person` parameter).
+- `reach_score_*` titles on the parent's view read "Work toward the target score" (never the number).
+- The weekly email includes skipped moves from the last seven days (dismissed within seven days), titles only: "Jordan skipped: Write your story".
+- Telemetry: `plan_parent_season_viewed {season}`, `plan_move_restored {kind, season, by: "guardian"}`.

@@ -1,6 +1,6 @@
 # Guide: Choose Next Year's APs
 
-> Status: **planned** 2026-10-15. After [../now.md](../now.md). Gives the built course plan
+> Status: **built** 2026-10-16 (PR #165). After [../now.md](../now.md). Gives the built course plan
 > ([../../../chances/course-plan.md](../../../chances/course-plan.md), server-side, card UI removed 2026-10-12) a home,
 > with the intake's AP search ([../../redesign/intake.md](../../redesign/intake.md#ap-courses)) beside it. Reads depth's
 > course tracks ([../../../chances/depth.md](../../../chances/depth.md#course-tracks)). Part 7 of [plan v3](../README.md).
@@ -80,3 +80,10 @@ row; the chosen tick; a guardian's redaction).
 ## Open questions
 1. Should "Add anything else" also take honors and dual-enrollment courses (the course list supports them)?
    Recommendation: APs only here, as the owner asked; the Numbers page's full course editor stays for the rest.
+
+## As built
+- `CoursesGuide` restores `NextYearCard`'s suggestion UI (that file is deleted; `playbook` course moves render `MoveCard`).
+- The depth tie-in line reads "A fourth year makes this a deep track."
+- "Not on your school's list" compares against `academics.schoolOffers`; once `plan.done` the Suggested section hides.
+- The guide's status auto-ticks the `junior_choose_courses` move when added to the plan.
+- Numbers page links live in `components/me/ProfileForm.tsx`.

@@ -1,6 +1,6 @@
 # Guide: Show a College You're Interested
 
-> Status: **planned** 2026-10-15. After [../now.md](../now.md) and [../connections.md](../connections.md) (which takes
+> Status: **built** 2026-10-16 (PR #165). After [../now.md](../now.md) and [../connections.md](../connections.md) (which takes
 > the capture panel off the list). Builds on interest and visits ([../../next-steps/interest-and-visits.md](../../next-steps/interest-and-visits.md)),
 > the visit log ([../../actions.md](../../actions.md)), visit events ([../../../product/visit-events.md](../../../product/visit-events.md)),
 > and the follow intents ([../../README.md](../../README.md#research-2026-10-07)). Part 4 of [plan v3](../README.md).
@@ -141,3 +141,11 @@ once; the return prompt asks once per act; nothing pending reaches `nowMoves`' t
    guide reuses `ActButton` with act `test_register`.
 3. Should a confirmed tour send a calendar invitation (`.ics`) by email as well as appear in the feed? Recommendation:
    not now; the feed and the day-before text cover it.
+
+## As built
+- Act tracking: `plan_interest_acts` table records tours, info sessions, open houses, fairs, events, info requests, mailing lists, follows, and test registrations.
+- The return prompt arms on `visibilitychange`/`focus` and asks once per act; "Not yet" leaves it pending for the next-morning email. Server cron `app/api/cron/interest-confirm/route.ts` at 13:30 UTC sends one email per person per day.
+- Event times are printed in the event's timezone (from `visit_events.timezone`); no zone shows date only.
+- Yes/No email links open a one-button page; a scanner's prefetch writes nothing.
+- Confirmed acts write through built stores: tours/info_sessions/open_houses/fairs/events → `logVisit` + visit_id; info_request/mailing_list → `markInfoRequested`; follow → `recordFollow`; test_register → the date into `tests.registeredDates`.
+- Social follows are the last option in Show interest, kept as the spec recommends.

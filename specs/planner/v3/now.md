@@ -1,6 +1,6 @@
 # Part 2, Now: Three Cards, Each a Door to a Guide
 
-> Status: **planned** 2026-10-15. Replaces the Next steps tab's layout ([../next-steps/seasons.md](../next-steps/seasons.md#the-next-steps-tab))
+> Status: **built** 2026-10-16 (PR #165). Replaces the Next steps tab's layout ([../next-steps/seasons.md](../next-steps/seasons.md#the-next-steps-tab))
 > and adds the guide pattern every guide in [guides/](guides/) follows, the Skip record, and two timing rules. Part 2 of
 > [plan v3](README.md). The season model, the moves, the generators, and the notifications are unchanged.
 
@@ -136,3 +136,11 @@ score), `tests/planner-guides.test.mts` (every registry entry has a page; every 
 1. Should the corner menu also offer "Remind me next season" (snooze to the season's end)? Recommendation: not now;
    Skip plus the parent's view covers it, and a third state complicates the record.
 2. Should Done and skipped show the whole year or this season? Recommendation: this season, as the built Done fold did.
+
+## As built
+- Skip is stamped: `dismiss(taskId, true)` sets `dismissed_at = now()` and `dismissed_by = auth.uid()`; `undismiss(taskId)` clears all three. The three-card tab shows Done and skipped as a folded line with dates and a Bring back button for editors.
+- `NOW_MAX` 3 also applies to the weekly email's child moves and the calendar week's moves (they read `.now`).
+- `PSAT entries get `applies: "no_real_score"`: false when the profile has a real SAT or ACT (not practice).
+- `reach_score_*` moves are generated one per season (junior fall → senior fall), with titles filled from `profile.tests.target` ("Work toward your 1400"). Seasons without a target don't emit the move.
+- `pick_recommenders` replaces `notice_teachers`, starting junior spring with `applies: "recommenders_open"` (fewer than two entries asked/agreed/invited).
+- Guides write through built stores; no guide keeps data except the act-tracking table. A guardian without edit sees the three cards without the menu and no footer buttons.

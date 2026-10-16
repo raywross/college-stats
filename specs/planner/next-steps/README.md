@@ -1,7 +1,6 @@
 # Next Steps: The Plan Drives the Work, Season by Season
 
-> **Plan v3 (2026-10-15, planned):** the owner's review of this build changes the tab (three cards, each a door to a
-> guide), moves connections into the profile, and simplifies the list row; see [../v3/](../v3/README.md). The parts
+> **Plan v3 (2026-10-16):** replaced the row's details panel with a Connections step, the six-card Next steps with three cards and guides, and the parent's view with the whole season; see [../v3/](../v3/README.md). The parts
 > below describe what was built in PR #160.
 >
 > Overview of the next-steps specs (not a work item itself). Written 2026-10-14 from the owner's brief ("drive actions

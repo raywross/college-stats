@@ -1,6 +1,6 @@
 # Guide: Build Your List
 
-> Status: **planned** 2026-10-15. After [../now.md](../now.md). Extends the shape and the rail
+> Status: **built** 2026-10-16 (PR #165). After [../now.md](../now.md). Extends the shape and the rail
 > ([../../next-steps/list-shape.md](../../next-steps/list-shape.md)) and the levels ([../../../chances/levels.md](../../../chances/levels.md)).
 > Part 3 of [plan v3](../README.md). The owner: "explain what a good list looks like, and recommend similar schools to
 > what they already have based on facts like school size, public/private, location, etc., just with differing
@@ -142,3 +142,9 @@ the cap; the freshman view; no number from the estimate in any string; the shape
    default 30) is about driving, not about where a student would go to college. Recommendation: 150, fixed.
 3. Should a candidate's card say which level the **anchor** is ("Like Wake Forest, a Reach for you")? Recommendation:
    no; one level per card keeps it calm.
+
+## As built
+- Likeness uses three points of six: character (same affiliation, both HBCU, both women's), place (nearby: ≤150 miles), setting, size, control, and major (from `academics.bachelors_by_family`). Two points when the anchor has under four facts known.
+- Sections come only from `shapeGaps` (Likely-or-Safe is one combined gap); the affordability gap stays hidden.
+- `AddCollegeBox` moved to its own component.
+- `CollegeRail`, `ShapeCard`, `rail.ts`, `rail-server.ts`, and `plan_rail_opened/added` telemetry are removed; `shape_gap` and `shape_cost` moves render `MoveCard`.

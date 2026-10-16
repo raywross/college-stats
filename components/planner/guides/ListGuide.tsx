@@ -331,7 +331,14 @@ function NotSeeing({ ctx, exploreHref, onAdded }: { ctx: PlanContext; exploreHre
         </Link>
       </div>
       {searching && (
-        <AddCollegeBox listId={ctx.list.id} excludeIds={ctx.items.map((i) => i.unit_id)} label="Search any college" startExpanded onAdded={() => onAdded()} />
+        <AddCollegeBox
+          listId={ctx.list.id}
+          excludeIds={ctx.items.map((i) => i.unit_id)}
+          label="Search any college"
+          startExpanded
+          onAdded={() => onAdded()}
+          studentId={ctx.student?.id ?? null}
+        />
       )}
     </div>
   );

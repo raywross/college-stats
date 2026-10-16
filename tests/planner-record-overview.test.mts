@@ -26,7 +26,8 @@ test("the record route reuses the Numbers page's loader (personPage, profileFor,
   assert.match(src, /personPage\(id\)/);
   assert.match(src, /profileFor\(person\.access\.student\.id\)/);
   assert.match(src, /scheduleStudentReadLog\(profile\.student\.id, "student_profiles"\)/);
-  assert.match(src, /<RecordOverview profile=\{profile\} \/>/);
+  // R6 (reading.md): the overview also takes the plan load, for "How Quad reads your record right now".
+  assert.match(src, /<RecordOverview profile=\{profile\} plan=\{plan\} \/>/);
   // Metadata: "Their record" for a guardian, "Your record" for the student.
   assert.match(src, /"Their record"/);
   assert.match(src, /"Your record"/);

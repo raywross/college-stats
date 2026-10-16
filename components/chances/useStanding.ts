@@ -21,8 +21,10 @@ export interface LikeYou {
 export type StandingState =
   /** Still finding out who is asking, or waiting for the answer. */
   | { status: "loading"; signedIn: boolean | null }
-  /** Signed in or not, there is no GPA or test to estimate from. */
-  | { status: "no-numbers"; signedIn: boolean }
+  /** Signed in or not, there is no GPA or test to estimate from. `studentId` (R6, reading.md): the signed-in
+   * student's own id, so "Add your numbers" can link the record page directly; null signed out, or signed in
+   * with no student record yet. */
+  | { status: "no-numbers"; signedIn: boolean; studentId: string | null }
   | { status: "failed"; signedIn: boolean }
   | { status: "ready"; signedIn: boolean; result: EstimateResult; yours: YourNumbers; student: EstimateStudent; likeYou: LikeYou | null; connections: ConnectionEntry[] };
 
@@ -114,7 +116,7 @@ export function useStanding(unitId: string, opts: { likeYou?: boolean } = {}): S
   }, [key]);
 
   if (server === null) return { status: "loading", signedIn: null };
-  if (input === "none") return { status: "no-numbers", signedIn: server.signedIn };
+  if (input === "none") return { status: "no-numbers", signedIn: server.signedIn, studentId: server.signedIn ? server.studentId : null };
   if (!input || answer?.key !== key) return { status: "loading", signedIn: server.signedIn };
   if (!answer.value?.result) return { status: "failed", signedIn: server.signedIn };
   return {

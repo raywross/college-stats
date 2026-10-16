@@ -19,6 +19,7 @@ import type { PoolSchool } from "@/lib/chances/pool-rate";
 import { panelParts } from "@/lib/chances/what-went-in";
 import type { EstimateResult } from "@/lib/chances/types";
 import type { AnyCited } from "@/lib/lineage";
+import { recordPageHref } from "@/lib/planner/record";
 import { connectionSentence, type ConnectionEntry } from "@/lib/student-profile";
 import { stateName } from "@/lib/states";
 
@@ -128,7 +129,7 @@ export function StandingCard({ unitId, college, cites, majorCites, families, poo
       <p className="text-sm text-muted-foreground">
         {noteText({ key: "estimate.add_numbers", values: {} })}{" "}
         {s.signedIn ? (
-          <Link href="/me" className="font-semibold text-primary hover:underline">
+          <Link href={s.studentId ? recordPageHref(s.studentId) : "/me"} className="font-semibold text-primary hover:underline">
             Add your numbers
           </Link>
         ) : (

@@ -4,12 +4,14 @@
  * Build your list (specs/planner/v3/guides/list-size.md): what a good list looks like this season, where this list
  * stands against it, and colleges **like the ones already on it** at the level that's missing. Three parts, in order:
  *
- * 1. **The shape**: the slot row (ShapeRow) with the season's sentence and "Why this shape" (ShapeExplainer).
+ * 1. **The shape**: the slot row (ShapeRow) with the season's sentence and "Why this shape" (ShapeExplainer), a
+ *    "Show me more" link per level into Explore at that level (specs/planner/record/explore-levels.md), and under the
+ *    table "Not seeing it?" with the add-college search. (The "Your list has the shape" card is gone.)
  * 2. **The gaps**: one section per gap in `shapeGaps` order, the open one first (or the one the move's `?level=`
  *    names), the rest folded `<details>` that fetch their cards when opened; unsorted colleges get their own section
  *    at the end. The over-maximum gap names its High reaches and asks which to drop; nothing is removed.
  * 3. **Colleges like yours** in each level section: AlikeCards, twelve at a time ("Show more" asks POST
- *    /api/plan/list-guide), then "Not seeing it?": the inline add-college search and Explore with your numbers.
+ *    /api/plan/list-guide), then "Not seeing it?": the inline add-college search.
  *
  * Freshmen, sophomores, and an empty list get one section instead: "Places that might interest you", preference chips
  * pre-set from the profile and the colleges that fit them, nearest first. Nothing about levels.
@@ -24,10 +26,14 @@ import { useRouter } from "next/navigation";
 import { AddCollegeBox } from "@/components/planner/AddCollegeBox";
 import { track } from "@/lib/analytics";
 import { STANDING_LEVEL_LABELS } from "@/lib/chances/levels";
+import type { StandingLevel } from "@/lib/chances/types";
 import {
+  hasExplorePreferences,
+  NO_PREFERENCES_LINE,
   nothingAlikeLine,
   openSectionsFor,
   SETTING_CHIPS,
+  showMoreLinks,
   SIZE_CHIPS,
   TYPE_CHIPS,
   unsortedSectionLine,
@@ -39,6 +45,7 @@ import {
 } from "@/lib/planner/list-guide";
 import type { ShapeGapKind } from "@/lib/planner/list-shape";
 import { planHref } from "@/lib/planner/plan-tabs";
+import { RECORD_STEPS, recordHref } from "@/lib/planner/record";
 import { tick } from "@/lib/planner/store";
 import { isOpen } from "@/lib/planner/tasks";
 import type { PlanContext, PlanTask } from "@/lib/planner/types";
@@ -154,6 +161,10 @@ export function ListGuide({ ctx, move, data, person }: GuideProps) {
   const whose = ctx.viewer.isGuardian && firstName ? `${firstName}'s record` : "your record";
   const hasOverflow = d.row?.levels.some((l) => l.slots.includes("overflow")) ?? false;
   const hasDream = d.row?.levels.some((l) => l.slots.includes("dream")) ?? false;
+  const preferences = ctx.profile?.preferences ?? null;
+  const links = d.row ? showMoreLinks(d.row, preferences) : null;
+  const whereStep = RECORD_STEPS.find((s) => s.section === "where")?.step ?? null;
+  const onShowMore = (level: StandingLevel, emphasized: boolean) => track("plan_show_more", { level, emphasized });
 
   return (
     <div className="space-y-6">
@@ -166,15 +177,20 @@ export function ListGuide({ ctx, move, data, person }: GuideProps) {
             <ShapeExplainer season={ctx.season} sentence={d.sentence} />
           </div>
           {!move && d.countLine && <p className="font-semibold">{d.countLine}</p>}
-          <ShapeRow row={d.row} />
+          <ShapeRow row={d.row} links={links} onShowMore={onShowMore} />
           <ShapeKey hasDream={hasDream} hasOverflow={hasOverflow} />
-        </section>
-      )}
-
-      {sections.length === 0 && d.unsorted === 0 && (
-        <section className="space-y-3 rounded-3xl bg-card p-4 ring-1 ring-border sm:p-6">
-          <p className="font-semibold">Your list has the shape for this season.</p>
-          <NotSeeing ctx={ctx} exploreHref={d.exploreHref} onAdded={() => onAdded(null)} />
+          {!hasExplorePreferences(preferences) && (
+            <p className="text-xs text-muted-foreground">
+              {ctx.viewer.canEdit ? (
+                <Link href={recordHref({ person, step: whereStep })} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
+                  {NO_PREFERENCES_LINE}
+                </Link>
+              ) : (
+                NO_PREFERENCES_LINE
+              )}
+            </p>
+          )}
+          <NotSeeing ctx={ctx} onAdded={() => onAdded(null)} />
         </section>
       )}
 
@@ -210,7 +226,6 @@ export function ListGuide({ ctx, move, data, person }: GuideProps) {
                   loading={isOpenNow && s.cards.length === 0 && s.total !== 0}
                   onMore={() => void loadSection(s, s.cards.length)}
                   onAdded={onAdded}
-                  exploreHref={d.exploreHref}
                 />
               ) : s.gap === "over_max" ? (
                 <div className="space-y-2">
@@ -229,7 +244,7 @@ export function ListGuide({ ctx, move, data, person }: GuideProps) {
               ) : (
                 <div className="space-y-3">
                   <p className="text-sm">{gap?.line}</p>
-                  <NotSeeing ctx={ctx} exploreHref={d.exploreHref} onAdded={() => onAdded(null)} />
+                  <NotSeeing ctx={ctx} onAdded={() => onAdded(null)} />
                 </div>
               )}
             </div>
@@ -257,7 +272,6 @@ function LevelSection({
   loading,
   onMore,
   onAdded,
-  exploreHref,
 }: {
   section: GuideSection;
   whose: string;
@@ -266,7 +280,6 @@ function LevelSection({
   loading: boolean;
   onMore: () => void;
   onAdded: (card: AlikeCardData | null) => void;
-  exploreHref: string;
 }) {
   const level = section.level!;
   const label = STANDING_LEVEL_LABELS[level];
@@ -279,7 +292,7 @@ function LevelSection({
       {loading ? (
         <div className="h-40 animate-pulse rounded-2xl bg-muted/50" aria-hidden />
       ) : section.cards.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Quad didn&apos;t find a {label} for {whose === "your record" ? "you" : whose.replace(/'s record$/, "")} yet. Try the search or Explore below.</p>
+        <p className="text-sm text-muted-foreground">Quad didn&apos;t find a {label} for {whose === "your record" ? "you" : whose.replace(/'s record$/, "")} yet. Try Show me more above, or the search below.</p>
       ) : (
         <CardRail cards={section.cards} ctx={ctx} onAdded={onAdded} />
       )}
@@ -297,7 +310,7 @@ function LevelSection({
           Show more
         </button>
       )}
-      <NotSeeing ctx={ctx} exploreHref={exploreHref} onAdded={() => onAdded(null)} />
+      <NotSeeing ctx={ctx} onAdded={() => onAdded(null)} />
     </>
   );
 }
@@ -313,9 +326,14 @@ function CardRail({ cards, ctx, onAdded }: { cards: AlikeCardData[]; ctx: PlanCo
   );
 }
 
-/** "Not seeing it?": the inline add-college search (editors) and the built "Fits my scores" navigation. */
-function NotSeeing({ ctx, exploreHref, onAdded }: { ctx: PlanContext; exploreHref: string; onAdded: () => void }) {
+/**
+ * "Not seeing it?": the inline add-college search (editors). The freshman view also passes `exploreHref`, the built
+ * "Fits my scores" navigation; the shape's views don't, their per-level "Show me more" links replace it
+ * (explore-levels.md).
+ */
+function NotSeeing({ ctx, exploreHref = null, onAdded }: { ctx: PlanContext; exploreHref?: string | null; onAdded: () => void }) {
   const [searching, setSearching] = useState(false);
+  if (!ctx.viewer.canEdit && !exploreHref) return null;
   return (
     <div className="space-y-2 border-t pt-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -325,9 +343,11 @@ function NotSeeing({ ctx, exploreHref, onAdded }: { ctx: PlanContext; exploreHre
             Search any college
           </button>
         )}
-        <Link href={exploreHref} className={cn(PILL, "ring-1 ring-border hover:bg-muted")}>
-          Explore with your numbers
-        </Link>
+        {exploreHref && (
+          <Link href={exploreHref} className={cn(PILL, "ring-1 ring-border hover:bg-muted")}>
+            Explore with your numbers
+          </Link>
+        )}
       </div>
       {searching && (
         <AddCollegeBox

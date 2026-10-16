@@ -12,6 +12,8 @@ import { isTradition } from "./directories.ts";
 import { isCouncil } from "./directories.ts";
 import { isWithinOption, parseZip } from "./home.ts";
 import { isOnlineFilter } from "./online-share.ts";
+import { STANDING_LEVELS } from "./chances/levels.ts";
+import type { StandingLevel } from "./chances/types.ts";
 
 /** Unique values, or undefined when none remain. */
 const uniq = <T,>(v: T[] | undefined): T[] | undefined => (v?.length ? [...new Set(v)] : undefined);
@@ -148,6 +150,17 @@ export function parseFilters(params: Params): SearchFilters {
   };
 }
 
+export const isStandingLevel = (v: string): v is StandingLevel => (STANDING_LEVELS as readonly string[]).includes(v);
+
+/**
+ * "For you" levels (specs/planner/record/explore-levels.md): `forMe=reach,high_reach`, level keys in the URL's order,
+ * unknown keys dropped; undefined when none remain. Kept out of `SearchFilters` on purpose: the dataset never sees it.
+ * The page applies it after the other filters (lib/explore-for-me.ts), and only for a viewer with a student.
+ */
+export function parseForMe(params: Params): StandingLevel[] | undefined {
+  return uniq(list(params.forMe)?.filter(isStandingLevel));
+}
+
 export function parseView(params: Params): ExploreView {
   const v = str(params.view) as ExploreView | undefined;
   return v && VIEWS.includes(v) ? v : "grid";
@@ -221,6 +234,8 @@ export const FILTER_KEYS = [
   // Cost by income. `income` isn't here: it prices the `price_at` sort and the cards' line, it narrows nothing.
   "minAidIncome",
   "merit",
+  // "For you" levels (explore-levels.md): narrows the results like any filter, for a viewer with a student.
+  "forMe",
   ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
 ] as const;
 

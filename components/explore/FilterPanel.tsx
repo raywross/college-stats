@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RotateCcw } from "lucide-react";
 import { useMe } from "@/components/account/useMe";
@@ -38,7 +39,11 @@ import type { Designation, DivisionFilter, ResearchTier, RotcBranch, SettingGrou
 import { useExploreParams } from "./useExploreParams";
 import { POLICY_BUCKETS, type PolicyBucket } from "@/lib/test-policy";
 import type { SelectivityTier } from "@/lib/chances/types";
-import { SELECTIVITY_TIERS, SELECTIVITY_TIER_LABELS } from "@/lib/chances/levels";
+import { SELECTIVITY_TIERS, SELECTIVITY_TIER_LABELS, STANDING_LEVELS, STANDING_LEVEL_LABELS } from "@/lib/chances/levels";
+import type { StandingLevel } from "@/lib/chances/types";
+import { loginHref } from "@/lib/accounts";
+import { track } from "@/lib/analytics";
+import { GROUP_CLASS } from "@/lib/planner/colors";
 import { FAITH_FILTERS } from "@/lib/religion";
 import { TRADITIONS, type Tradition } from "@/lib/directories";
 import type { FaithFilter } from "@/lib/types";
@@ -164,10 +169,84 @@ function Chip({
 }
 
 /**
+ * What the server decided about Explore's "For you" levels (specs/planner/record/explore-levels.md), when `forMe` is
+ * in the URL: `applied` shows the chips; the others show the group's line instead. Null without `forMe`: the panel
+ * then goes by the header's sign-in state (useMe), and the server answers once a level is picked.
+ */
+export interface ForYouGroup {
+  status: "signed-out" | "no-student" | "no-numbers" | "applied";
+  /** The record's link for a student with no grades or test yet (the plan's person's), else null. */
+  recordHref: string | null;
+}
+
+const isLevel = (v: string): v is StandingLevel => (STANDING_LEVELS as readonly string[]).includes(v);
+
+/**
+ * "For you": five level chips, any combination, in the level colors (lib/planner/colors.ts GROUP_CLASS). Shown to a
+ * signed-in viewer; a signed-out one gets the sign-in line, a student with no grades or test the record's link.
+ * Picking sends `explore_for_me` with how many levels are picked, never which colleges.
+ */
+function ForYouSection({ group }: { group: ForYouGroup | null }) {
+  const me = useMe();
+  const { getList, update } = useExploreParams();
+  const picked = getList("forMe").filter(isLevel);
+  const status = group?.status ?? (me === null ? null : me.signedIn ? "applied" : "signed-out");
+
+  function toggle(level: StandingLevel) {
+    const next = picked.includes(level) ? picked.filter((l) => l !== level) : [...picked, level];
+    update({ forMe: next.length ? next.join(",") : null });
+    track("explore_for_me", { levels: next.length });
+  }
+
+  return (
+    <Section title="For you" term="levels">
+      {status === "applied" ? (
+        <>
+          <div role="group" aria-label="Your level at each college" className="flex flex-wrap gap-1.5">
+            {STANDING_LEVELS.map((l) => {
+              const on = picked.includes(l);
+              return (
+                <button
+                  key={l}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => toggle(l)}
+                  className={cn(
+                    "inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-semibold ring-1 transition-all active:scale-95",
+                    on ? cn(GROUP_CLASS[l], "ring-2 ring-foreground") : "bg-card ring-border hover:ring-foreground/40",
+                  )}
+                >
+                  {STANDING_LEVEL_LABELS[l]}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-muted-foreground">Quad&apos;s level for your record at each college. Pick any.</p>
+        </>
+      ) : status === "signed-out" ? (
+        <p className="text-sm text-muted-foreground">
+          <Link href={loginHref("/explore")} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
+            Sign in and add your grades to filter by your level
+          </Link>
+        </p>
+      ) : status === "no-numbers" || status === "no-student" ? (
+        <p className="text-sm text-muted-foreground">
+          <Link href={group?.recordHref ?? "/plan?record=1"} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
+            Add your grades and a test choice to filter by your level
+          </Link>
+        </p>
+      ) : (
+        <div className="h-11 animate-pulse rounded-full bg-muted/50" aria-hidden />
+      )}
+    </Section>
+  );
+}
+
+/**
  * `estimates`: whether estimated break points are shown (lib/cost-curve.ts estimatesShown(), decided on the server);
  * closed, the "need-based aid reaches" control is replaced by a line saying why.
  */
-export function FilterPanel({ facets, onDone, estimates = true }: { facets: FilterFacets; onDone?: () => void; estimates?: boolean }) {
+export function FilterPanel({ facets, onDone, estimates = true, forYou = null }: { facets: FilterFacets; onDone?: () => void; estimates?: boolean; forYou?: ForYouGroup | null }) {
   const router = useRouter();
   const { searchParams, update, getList, toggleInList } = useExploreParams();
 
@@ -201,6 +280,7 @@ export function FilterPanel({ facets, onDone, estimates = true }: { facets: Filt
     "policy",
     "selectivity",
     "near",
+    "forMe",
   ].some((k) => searchParams.get(k));
 
   const clearAll = () => {
@@ -232,6 +312,8 @@ export function FilterPanel({ facets, onDone, estimates = true }: { facets: Filt
           </button>
         )}
       </div>
+
+      <ForYouSection group={forYou} />
 
       {/* Keyed by the URL's ZIP so the field starts over when a chip or Reset removes the filter. */}
       <DistanceSection key={searchParams.get("near") ?? ""} />

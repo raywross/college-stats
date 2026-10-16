@@ -20,6 +20,8 @@ import {
   distanceText,
   FACT_ORDER,
   GUIDE_CANDIDATE_CAP,
+  hasExplorePreferences,
+  NO_PREFERENCES_LINE,
   GUIDE_PAGE,
   likeness,
   likenessSentence,
@@ -37,6 +39,8 @@ import {
   SHAPE_EXPLAINER_SOURCES,
   shapeRow,
   shapeSentence,
+  showMoreHref,
+  showMoreLinks,
   SIZE_BANDS,
   SIZE_CHIPS,
   sizeBand,
@@ -50,6 +54,7 @@ import { countLine, shapeFor, shapeGaps } from "../lib/planner/list-shape.ts";
 import { MOVE_TEXT } from "../lib/planner/moves-catalog.ts";
 import type { Season } from "../lib/planner/seasons.ts";
 import type { StandingLevel } from "../lib/chances/types.ts";
+import type { StudentProfilePreferences } from "../lib/student-profile.ts";
 import { numberProblems } from "./helpers/copy-guard.mts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -283,6 +288,92 @@ test("shape row: no row without a shape; the long list bounds the total only; th
   }
 });
 
+/* ------------------------------------------------------------------ */
+/* "Show me more" (specs/planner/record/explore-levels.md)             */
+/* ------------------------------------------------------------------ */
+
+const PREFS = { sizes: ["medium", "large"], settings: ["suburban"], statesOrRegions: ["NC", "va", "Southeast"], types: ["public"], maxAverageCost: 30000 } as unknown as StudentProfilePreferences;
+const NO_PREFS = { sizes: [], settings: [], statesOrRegions: [], types: [], maxAverageCost: null } as unknown as StudentProfilePreferences;
+
+test("Show me more: Explore at the level, with the record's preferences as Explore's own params", () => {
+  const href = showMoreHref("target", PREFS);
+  const url = new URL(href, "https://quad.example");
+  assert.equal(url.pathname, "/explore");
+  assert.equal(url.searchParams.get("forMe"), "target", "the level");
+  assert.equal(url.searchParams.get("sizes"), "medium,large");
+  assert.equal(url.searchParams.get("setting"), "suburban");
+  assert.equal(url.searchParams.get("states"), "NC,VA", "USPS codes only; a region has no Explore filter");
+  assert.equal(url.searchParams.get("types"), "public");
+  assert.equal(url.searchParams.get("maxCost"), "30000");
+  assert.ok(href.startsWith("/explore?forMe=target&"), "the level comes first");
+  // No preferences (or no record): only the level.
+  assert.equal(showMoreHref("high_reach", NO_PREFS), "/explore?forMe=high_reach");
+  assert.equal(showMoreHref("safe", null), "/explore?forMe=safe");
+  assert.equal(hasExplorePreferences(PREFS), true);
+  assert.equal(hasExplorePreferences(NO_PREFS), false);
+  assert.equal(hasExplorePreferences({ ...NO_PREFS, statesOrRegions: ["Southeast"] } as StudentProfilePreferences), false, "a region alone filters nothing");
+  assert.equal(hasExplorePreferences(null), false);
+});
+
+/** Problems with a set of links against the row: a level missing, or the emphasis not exactly "below the minimum". */
+function emphasisProblems(row: NonNullable<ReturnType<typeof shapeRow>>, links: Record<StandingLevel, { href: string; emphasized: boolean }>): string[] {
+  const out: string[] = [];
+  for (const l of row.levels) {
+    const link = links[l.level];
+    if (!link) {
+      out.push(`${l.level}: no link`);
+      continue;
+    }
+    if (new URL(link.href, "https://quad.example").searchParams.get("forMe") !== l.level) out.push(`${l.level}: the link's level`);
+    const below = l.range !== null && l.count < l.range[0];
+    if (link.emphasized !== below) out.push(`${l.level}: emphasized ${link.emphasized}, below the minimum ${below}`);
+  }
+  return out;
+}
+
+test("Show me more: emphasized exactly where the level is below the shape's minimum; no range reads quiet", () => {
+  // Senior shape: High reach 0–2, Target 5–8, and so on.
+  const senior = shapeRow(shapeFor("senior_fall"), counts({ high_reach: 3, reach: 3, target: 2 }), null)!;
+  const links = showMoreLinks(senior, PREFS);
+  assert.deepEqual(emphasisProblems(senior, links), []);
+  assert.equal(links.target.emphasized, true, "2 Targets against a minimum of 5");
+  assert.equal(links.likely.emphasized, true, "no Likely yet");
+  assert.equal(links.high_reach.emphasized, false, "three High reaches: past the most, not below the least");
+  assert.ok(links.target.href.includes("sizes=medium%2Clarge"));
+  // The junior long list has no level ranges: every link is quiet.
+  const junior = shapeRow(shapeFor("junior_fall"), counts({ reach: 1 }), null)!;
+  const quiet = showMoreLinks(junior, null);
+  assert.deepEqual(emphasisProblems(junior, quiet), []);
+  assert.ok(Object.values(quiet).every((l) => !l.emphasized));
+  // Planted bad cases: emphasis on every level, and a link to the wrong level.
+  const loud = Object.fromEntries(Object.entries(links).map(([k, v]) => [k, { ...v, emphasized: true }])) as typeof links;
+  assert.ok(emphasisProblems(senior, loud).length > 0);
+  assert.ok(emphasisProblems(senior, { ...links, safe: { ...links.safe, href: "/explore?forMe=reach" } }).length > 0);
+});
+
+test("the list guide: Show me more in the shape table, the shape card gone, Search any college under the table", () => {
+  const guide = readFileSync(join(ROOT, "components", "planner", "guides", "ListGuide.tsx"), "utf8");
+  const row = readFileSync(join(ROOT, "components", "planner", "guides", "ShapeRow.tsx"), "utf8");
+  assert.doesNotMatch(guide, /Your list has the shape for this season/, "the shape card is removed");
+  assert.match(guide, /<ShapeRow row=\{d\.row\} links=\{links\} onShowMore=\{onShowMore\} \/>/);
+  assert.match(guide, /showMoreLinks\(d\.row, preferences\)/);
+  assert.match(guide, /track\("plan_show_more", \{ level, emphasized \}\)/);
+  // "Explore with your numbers" is only the freshman view's now; the shape's views pass no exploreHref.
+  assert.equal([...guide.matchAll(/exploreHref=\{/g)].length, 1, "one NotSeeing with an Explore link: the freshman view's");
+  assert.match(guide, /<NotSeeing ctx=\{ctx\} exploreHref=\{data\.exploreHref\}/);
+  // Under the table: the no-preferences line linking the record's Where you'd go step, then Search any college.
+  const shapeSection = guide.slice(guide.indexOf('aria-labelledby="shape-heading"'), guide.indexOf("{sections.map("));
+  assert.match(shapeSection, /NO_PREFERENCES_LINE/);
+  assert.match(shapeSection, /recordHref\(\{ person, step: whereStep \}\)/);
+  assert.match(shapeSection, /<NotSeeing ctx=\{ctx\} onAdded=/);
+  assert.equal(NO_PREFERENCES_LINE, "Add where you'd go to your record and these show colleges that fit it too");
+  // The link: "Show me more", 44 px, filled primary when emphasized, under the boxes on a phone.
+  assert.match(row, />\s*Show me more\s*</);
+  assert.match(row, /min-h-11/);
+  assert.match(row, /emphasized \? "bg-primary text-primary-foreground/);
+  assert.match(row, /col-span-2 col-start-2/);
+});
+
 test("openSectionsFor: the open section after a refresh is whatever the fresh page's openGap names, never a client guess", () => {
   assert.deepEqual(openSectionsFor("likely_min"), new Set(["likely_min"]));
   assert.deepEqual(openSectionsFor(null), new Set());
@@ -329,6 +420,7 @@ function everyString(): string[] {
   for (const n of [1, 2, 3, 7, 10, 11, 14]) out.push(overMaxLine(n), unsortedSectionLine(n));
   for (const l of ["High reach", "Reach", "Target", "Likely", "Safe"]) out.push(nothingAlikeLine(l, true), nothingAlikeLine(l, false));
   out.push(distanceText(140), distanceText(1234.6));
+  out.push(NO_PREFERENCES_LINE, "Show me more");
   for (const c of [...SIZE_CHIPS, ...SETTING_CHIPS, ...TYPE_CHIPS]) out.push(c.label, c.word);
   out.push(preferenceSentence({ undergrad: 40000, settingGroup: "rural", state: "NC", region: "Southeast", type: "public" }, chipsFromPreferences({ sizes: ["xl"], settings: ["rural"], statesOrRegions: ["Southeast"], types: ["public"] })));
   // The section titles and the count line the page shows (list-shape's, read by the guide).

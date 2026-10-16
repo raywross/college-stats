@@ -7,10 +7,15 @@
  * On a phone the five levels stack as rows (label, boxes, count), so nothing scrolls sideways at 390 px; from `sm`
  * they sit side by side as five columns with the total as a sixth. Presentational; the numbers are the list's own
  * counts and the season's ranges (lib/planner/list-guide.ts `shapeRow`), never anything from the estimate.
+ *
+ * `links` (specs/planner/record/explore-levels.md): a "Show me more" link per level into Explore at that level for the
+ * student, narrowed by the record's preferences (lib/planner/list-guide.ts showMoreLinks): filled in the primary color
+ * on a level below the shape's minimum, quiet on the rest. On a phone it sits under the boxes, 44 px tall.
  */
+import Link from "next/link";
 import { STANDING_LEVEL_LABELS } from "@/lib/chances/levels";
 import type { StandingLevel } from "@/lib/chances/types";
-import type { ShapeRowView, ShapeSlot } from "@/lib/planner/list-guide";
+import type { ShapeRowView, ShapeSlot, ShowMoreLink } from "@/lib/planner/list-guide";
 import { GROUP_CLASS } from "@/lib/planner/colors";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +43,15 @@ function slotClass(slot: ShapeSlot, level: StandingLevel): string {
   }
 }
 
-export function ShapeRow({ row }: { row: ShapeRowView }) {
+export function ShapeRow({
+  row,
+  links = null,
+  onShowMore,
+}: {
+  row: ShapeRowView;
+  links?: Readonly<Record<StandingLevel, ShowMoreLink>> | null;
+  onShowMore?: (level: StandingLevel, emphasized: boolean) => void;
+}) {
   return (
     <div className="grid gap-x-3 gap-y-2.5 sm:grid-cols-[repeat(5,minmax(0,1fr))_auto] sm:items-start">
       {row.levels.map((l) => (
@@ -55,6 +68,19 @@ export function ShapeRow({ row }: { row: ShapeRowView }) {
             ))}
           </span>
           <span className="text-right text-xs text-muted-foreground tabular-nums sm:text-left">{l.countText}</span>
+          {links?.[l.level] && (
+            <Link
+              href={links[l.level].href}
+              onClick={() => onShowMore?.(l.level, links[l.level].emphasized)}
+              aria-label={`Show me more ${STANDING_LEVEL_LABELS[l.level]} colleges`}
+              className={cn(
+                "col-span-2 col-start-2 inline-flex min-h-11 w-fit items-center justify-center rounded-full px-3 text-center text-xs leading-tight font-semibold sm:mt-1 sm:w-full",
+                links[l.level].emphasized ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-foreground ring-1 ring-border hover:bg-muted",
+              )}
+            >
+              Show me more
+            </Link>
+          )}
         </div>
       ))}
       <p className="border-t pt-2 text-sm font-semibold tabular-nums sm:self-end sm:border-t-0 sm:border-l sm:pt-0 sm:pl-3 sm:text-right">{row.total.text}</p>

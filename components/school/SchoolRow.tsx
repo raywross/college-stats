@@ -8,6 +8,8 @@ import { CompareButton } from "@/components/compare/CompareButton";
 import { AddToListButton } from "@/components/lists/AddToListButton";
 import { distanceFromHome, formatMiles, type NearHome } from "@/lib/home";
 import type { PriceLine } from "@/lib/cost-at-income";
+import type { StandingLevel } from "@/lib/chances/types";
+import { ForYouChip } from "@/components/explore/ForYouChip";
 
 /**
  * Phone result row (Explore, below sm): one headline number and three facts in ~90px, so a screen shows
@@ -15,7 +17,7 @@ import type { PriceLine } from "@/lib/cost-at-income";
  * With Explore's distance filter set (`home`), the location line adds the straight-line miles. With a family income set
  * (`priceAt`, specs/product/cost-by-income.md), "About $41K at $200K" replaces the average cost.
  */
-export function SchoolRow({ school, home = null, priceAt = null }: { school: School; home?: NearHome | null; priceAt?: PriceLine | null }) {
+export function SchoolRow({ school, home = null, priceAt = null, level = null }: { school: School; home?: NearHome | null; priceAt?: PriceLine | null; level?: StandingLevel | null }) {
   const rate = school.admissions.acceptance_rate;
   const sat = satComposite(school);
   const cost = school.cost?.avg_paid_all ?? null;
@@ -34,6 +36,7 @@ export function SchoolRow({ school, home = null, priceAt = null }: { school: Sch
       <Crest id={school.unit_id} name={school.name} size="sm" brand={crestBrand(school)} />
       <div className="min-w-0 flex-1">
         <h3 className="line-clamp-2 font-display text-[15px] leading-snug font-bold">{school.name}</h3>
+        {level && <ForYouChip level={level} className="my-0.5" />}
         <p className="truncate text-xs text-muted-foreground">
           {school.location.city}, {school.location.state} · {typeShort(school.type)}
           {distance !== null && <> · {formatMiles(distance)} away</>}

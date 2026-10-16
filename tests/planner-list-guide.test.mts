@@ -24,6 +24,7 @@ import {
   likeness,
   likenessSentence,
   nothingAlikeLine,
+  openSectionsFor,
   overMaxLine,
   pageOf,
   parseChips,
@@ -280,6 +281,13 @@ test("shape row: no row without a shape; the long list bounds the total only; th
       assert.deepEqual(likely.slots, ["need", "need", "room"]);
     }
   }
+});
+
+test("openSectionsFor: the open section after a refresh is whatever the fresh page's openGap names, never a client guess", () => {
+  assert.deepEqual(openSectionsFor("likely_min"), new Set(["likely_min"]));
+  assert.deepEqual(openSectionsFor(null), new Set());
+  // A second call with a different gap replaces the first (the server's answer always wins, not an accumulation).
+  assert.deepEqual(openSectionsFor("target_min"), new Set(["target_min"]));
 });
 
 /* ------------------------------------------------------------------ */

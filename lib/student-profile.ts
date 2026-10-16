@@ -736,6 +736,19 @@ export function redactStoryForGuardian(story: StudentStory | null): StudentStory
 }
 
 /**
+ * The one line a guardian's whole view of the story amounts to (your-story.md "Rules"; QA fix 2026-10-16: the
+ * fixed "They has written their story" template didn't agree in number). With the student's first name, "Maya has
+ * written her story" reads most naturally with the site's they/them default for a student with no stated pronoun,
+ * so it says "Maya has written their story." / "Maya hasn't written their story yet." Without a name, "Your
+ * student" (never the ungrammatical singular "They has"): "Your student has written their story." / "Your student
+ * hasn't written their story yet."
+ */
+export function guardianStoryLine(firstName: string | null, written: boolean): string {
+  const name = firstName ?? "Your student";
+  return written ? `${name} has written their story.` : `${name} hasn't written their story yet.`;
+}
+
+/**
  * A saved profile as the signed-in viewer should receive it: unchanged for the student themselves, the story
  * redacted for a guardian (lib/student-profile-store.ts profilesICanSee calls this on every row it returns).
  */

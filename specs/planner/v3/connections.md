@@ -123,3 +123,4 @@ list's hooks and read by the standing card), `tests/planner-list-view.test.mts` 
 - `hooksFromPlan(items, visits, profile)` reads `academics.connections` only (the row columns `legacy`, `legacy_sibling`, `recruited` are no longer read).
 - The three `setItem*` setters were removed; the `list_items` columns stay in the schema for backfill.
 - `scripts/backfill-connections.mts` copies legacy, sibling, and recruited columns into `student_profiles.data.academics.connections` (run after U2a merged; the lead ran it on dev 2026-10-16).
+- QA fix (2026-10-16): `EdSheet` takes a `chrome?: "inline" | "dialog"` prop (default `"inline"`); in dialog mode (set by `EdSheetDialog`) it renders no title row and no ✕ of its own, since `SheetDialog` already carries the title (the pill text plus the college's name) and the level line as its description. Fixes two stacked headers and two close buttons in the ED sheet dialog.

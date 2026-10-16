@@ -25,7 +25,7 @@ import { tick } from "@/lib/planner/store";
 import { isOpen } from "@/lib/planner/tasks";
 import { appendStarter, crossesStoryDone, storyStarters } from "@/lib/planner/story-guide";
 import { saveStory, type StorySaveState } from "@/lib/student-profile-store";
-import { STORY_MAX, storyLengthBand } from "@/lib/student-profile";
+import { guardianStoryLine, STORY_MAX, storyLengthBand } from "@/lib/student-profile";
 import type { GuideProps } from "./types";
 
 /** What the guide's server `load` sends down (lib/planner/guides-server.ts "story" entry). */
@@ -38,8 +38,7 @@ export interface StoryGuideData {
  * sentences — just whether it's written.
  */
 function GuardianView({ written, firstName }: { written: boolean; firstName: string | null }) {
-  const name = firstName ?? "They";
-  return <p className="text-sm text-muted-foreground">{written ? `${name} has written their story.` : `${name} hasn't written their story yet.`}</p>;
+  return <p className="text-sm text-muted-foreground">{guardianStoryLine(firstName, written)}</p>;
 }
 
 /** "Colleges that read beyond the numbers …", with "depth" linking the glossary. */

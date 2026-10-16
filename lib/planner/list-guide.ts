@@ -570,3 +570,13 @@ export interface GuidePageResult {
   fallback: boolean;
 }
 
+/**
+ * Which section the guide shows open right after the server's `load` runs again (list-size.md "Card": "advances
+ * the open section to the next gap when this one is filled"). Pure: `ListGuide.tsx` calls this with the fresh
+ * page's `openGap` both on first load and after a refresh, so the open section always matches what the server
+ * just computed — never a client guess about whether an add closed the previous gap.
+ */
+export function openSectionsFor(openGap: ShapeGapKind | null): ReadonlySet<ShapeGapKind> {
+  return new Set(openGap ? [openGap] : []);
+}
+

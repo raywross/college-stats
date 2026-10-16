@@ -96,7 +96,9 @@ test("crossesStoryDone: planted bad rule — 'at or over 200' alone, with no 'wa
 test("StoryGuide.tsx: the guardian's branch renders no textarea or other input, just the one line", () => {
   const src = readFileSync(join(ROOT, "components/planner/guides/StoryGuide.tsx"), "utf8");
   const guardianFn = src.slice(src.indexOf("function GuardianView"), src.indexOf("function Frame"));
-  assert.match(guardianFn, /written \? `\$\{name\} has written their story\.` : `\$\{name\} hasn't written their story yet\.`/);
+  // QA fix (2026-10-16, finding 5): the line is now the shared `guardianStoryLine` helper (lib/student-profile.ts),
+  // not a fixed "{name} has written…" template with a "They" fallback — that disagreed in number ("They has").
+  assert.match(guardianFn, /guardianStoryLine\(firstName, written\)/);
   assert.doesNotMatch(guardianFn, /<textarea/i);
   assert.doesNotMatch(guardianFn, /<input/i);
   assert.doesNotMatch(guardianFn, /<form/i);

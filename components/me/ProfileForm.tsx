@@ -96,6 +96,10 @@ function EditInThePlan({ studentId }: { studentId: string }) {
         <Link href={guideHref("courses", { person: studentId, from: "numbers" })} className="text-sm font-semibold text-primary hover:underline">
           Choose next year&apos;s courses
         </Link>
+        {/* Plan v3 (specs/planner/v3/guides/recommenders.md): the recommenders guide, reachable from here too. */}
+        <Link href={guideHref("recommenders", { person: studentId, from: "numbers" })} className="text-sm font-semibold text-primary hover:underline">
+          Pick your recommenders
+        </Link>
         <Link
           href={planHref({ person: studentId, setup: true })}
           className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"

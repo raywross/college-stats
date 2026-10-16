@@ -140,8 +140,8 @@ async function syncStudentGradYear(supabase: SupabaseClient, studentId: string, 
 export type StorySaveState = { status: "idle" } | { status: "saved" } | { status: "error"; message: string };
 
 /**
- * Saves the three story prompts (specs/planner/next-steps/your-story.md), from the Numbers page's StorySection or
- * the move's StoryCard: a Server Action shape (`useActionState`), same pattern as app/me/actions.ts
+ * Saves the story's one narrative (form field `narrative`; specs/planner/v3/guides/your-story.md), from the Numbers
+ * page's StorySection, the move's StoryCard, or the story guide: a Server Action shape (`useActionState`), same pattern as app/me/actions.ts
  * saveStudentProfile. Reads the profile that's actually saved first and changes only `story`, so nothing else on the
  * profile is ever touched by this form. Student only (IECA's rule: nobody writes it but the student), even for a
  * guardian with edit access elsewhere — `profileFor` already strips the text for a guardian, so `access.data.story`
@@ -156,7 +156,8 @@ export async function saveStory(_prev: StorySaveState, form: FormData): Promise<
   if (!access) return { status: "error", message: "You don't have permission to edit this profile." };
   if (access.relation !== "self") return { status: "error", message: "Only the student can write their own story." };
   if (!access.canEdit) return { status: "error", message: "You don't have permission to edit this profile." };
-  const story = sanitizeStory({ about: form.get("about"), thread: form.get("thread"), majorWhy: form.get("majorWhy"), updatedAt: new Date().toISOString() });
+  const narrative = form.get("narrative");
+  const story = sanitizeStory({ narrative: typeof narrative === "string" ? narrative : "", updatedAt: new Date().toISOString() });
   const result = await saveProfile(studentId, { ...access.data, story });
   if (!result.ok) return { status: "error", message: result.message };
   return { status: "saved" };
@@ -199,6 +200,7 @@ function mergeProfiles(base: StudentProfileData, incoming: StudentProfileData): 
     preferences: pick(base.preferences, incoming.preferences),
     // Your story (next steps): the saved one wins; a signed-out copy fills it only when none is saved.
     story: base.story ?? incoming.story,
+    recommenders: base.recommenders.length > 0 ? base.recommenders : incoming.recommenders,
   };
 }
 

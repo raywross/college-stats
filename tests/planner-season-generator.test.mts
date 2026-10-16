@@ -166,8 +166,8 @@ test("moveApplies: every vocabulary value", () => {
     "profile_missing:state": [[{ profile: p }, true], [{ profile: { ...p, basics: { ...p.basics, stateOfResidence: "OH" } } }, false]],
     story_missing: [
       [{ profile: p }, true],
-      [{ profile: { ...p, story: { about: "a", thread: "b", majorWhy: "", updatedAt: null } } }, false],
-      [{ profile: { ...p, plans: { ...p.plans, intendedMajors: ["14"] as never }, story: { about: "a", thread: "b", majorWhy: "", updatedAt: null } } }, true],
+      [{ profile: { ...p, story: { narrative: "a".repeat(200), updatedAt: null } } }, false],
+      [{ profile: { ...p, story: { narrative: "a".repeat(199), updatedAt: null } } }, true],
     ],
     no_visit_logged: [[{}, true], [{ items: [item({ visited_on: "2027-03-01" })] }, false]],
     tests_focus_null: [[{ profile: p }, true], [{ profile: { ...p, tests: { ...p.tests, focus: "sat" } } }, false]],

@@ -12,8 +12,8 @@ import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
 import { isHighSchoolId } from "./high-school-core.ts";
 import type { StandingStudent } from "./planner/standing.ts";
-import type { ActivityEntry, ActivityFamily, ActivityKind, ActivityRole, AwardEntry, ClassStanding, CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, HsYear, Mark, RankExpectation, RecognitionTier } from "./chances/types.ts";
-import { ACTIVITIES_MAX, AWARDS_MAX, CLASS_STANDING_PERCENTILE } from "./chances/levels.ts";
+import type { ActivityEntry, ActivityFamily, ActivityKind, ActivityRole, AwardEntry, ClassStanding, CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, HsYear, Mark, RankExpectation, RecognitionTier, RecruitedPick } from "./chances/types.ts";
+import { ACTIVITIES_MAX, AWARDS_MAX, CLASS_STANDING_PERCENTILE, RECRUITED_PICKS } from "./chances/levels.ts";
 import { catalogCourse, COURSE_SUBJECTS, isCatalogKeyFor } from "./chances/catalog.ts";
 import { awardByKey } from "./chances/awards-catalog.ts";
 import { activityByKey, roleForTitle, titlesFor } from "./chances/activity-catalog.ts";
@@ -146,19 +146,147 @@ export interface StudentProfileAcademics {
    * before this field existed reads as {} (every step unanswered). Adding an entry to a step clears its "None".
    */
   activitiesNone: ActivitiesNone;
+  /**
+   * Plan v3 (specs/planner/v3/connections.md "Stored"): the student's connections to colleges (a parent, grandparent,
+   * or sibling went there; a coach is recruiting), at most CONNECTIONS_MAX, one per college. Read by `hooksFromPlan`
+   * by unit id. A profile saved before this field existed reads as an empty list.
+   */
+  connections: ConnectionEntry[];
 }
 
-/** The activity steps a student can answer "None" for (lib/planner/activity-steps.ts ActivityStep). */
-export type ActivityNoneStep = "sports" | "clubs" | "work" | "other";
-export const ACTIVITY_NONE_STEPS: readonly ActivityNoneStep[] = ["sports", "clubs", "work", "other"];
+/**
+ * The steps a student can answer "None" for: the four activity steps (lib/planner/activity-steps.ts ActivityStep) and
+ * plan v3's Connections step (connections.md).
+ */
+export type ActivityNoneStep = "sports" | "clubs" | "work" | "other" | "connections";
+export const ACTIVITY_NONE_STEPS: readonly ActivityNoneStep[] = ["sports", "clubs", "work", "other", "connections"];
 export type ActivitiesNone = Partial<Record<ActivityNoneStep, true>>;
 
-/** Only the four step keys, only `true`; anything else is dropped. */
+/** Only the step keys, only `true`; anything else is dropped. */
 export function sanitizeActivitiesNone(input: unknown): ActivitiesNone {
   const out: ActivitiesNone = {};
   if (!input || typeof input !== "object" || Array.isArray(input)) return out;
   for (const k of ACTIVITY_NONE_STEPS) if ((input as Record<string, unknown>)[k] === true) out[k] = true;
   return out;
+}
+
+/* ------------------------------------------------------------------ */
+/* Plan v3: connections (connections.md) and recommenders              */
+/* (guides/recommenders.md)                                            */
+/* ------------------------------------------------------------------ */
+
+export type ConnectionFamily = "parent" | "grandparent" | "sibling";
+export const CONNECTION_FAMILIES: readonly ConnectionFamily[] = ["parent", "grandparent", "sibling"];
+
+/** One college the student has a connection to: family who went there (may be empty) and the recruiting pick. */
+export interface ConnectionEntry {
+  id: string;
+  /** The college's unit id (any college in the dataset; the caller validates it against the index). */
+  unitId: string;
+  family: ConnectionFamily[];
+  recruited: RecruitedPick;
+}
+
+/** Most connections a profile keeps. */
+export const CONNECTIONS_MAX = 10;
+const UNIT_ID_MAX = 12;
+
+/**
+ * Untrusted input as at most CONNECTIONS_MAX connections: an entry with no family and no recruiting is dropped
+ * (nothing set), as is one without a unit id (any non-empty string up to 12 characters; the caller checks it names a
+ * college); a second entry for the same college is dropped; ids made unique.
+ */
+export function sanitizeConnections(input: unknown): ConnectionEntry[] {
+  if (!Array.isArray(input)) return [];
+  const out: ConnectionEntry[] = [];
+  const ids = new Set<string>();
+  const units = new Set<string>();
+  input.forEach((v, i) => {
+    if (out.length >= CONNECTIONS_MAX || !isObj(v)) return;
+    const unitId = typeof v.unitId === "string" ? v.unitId.trim() : "";
+    if (!unitId || unitId.length > UNIT_ID_MAX || units.has(unitId)) return;
+    const family = CONNECTION_FAMILIES.filter((f) => Array.isArray(v.family) && v.family.includes(f));
+    const recruited = RECRUITED_PICKS.includes(v.recruited as RecruitedPick) ? (v.recruited as RecruitedPick) : "none";
+    if (family.length === 0 && recruited === "none") return;
+    const base = typeof v.id === "string" && v.id.trim() && v.id.length <= 40 ? v.id.trim() : `connection-${i + 1}`;
+    let id = base;
+    for (let n = 2; ids.has(id); n++) id = `${base}-${n}`;
+    ids.add(id);
+    units.add(unitId);
+    out.push({ id, unitId, family, recruited });
+  });
+  return out;
+}
+
+/** The student's connection to one college, or null. */
+export function connectionFor(profile: Pick<StudentProfileData, "academics"> | null, unitId: string): ConnectionEntry | null {
+  return profile?.academics.connections?.find((c) => c.unitId === unitId) ?? null;
+}
+
+export type RecommenderStatus = "thinking" | "asked" | "agreed" | "invited";
+export const RECOMMENDER_STATUSES: readonly RecommenderStatus[] = ["thinking", "asked", "agreed", "invited"];
+
+/** A teacher the student is considering or has asked for a recommendation (guides/recommenders.md "Stored"). */
+export interface RecommenderEntry {
+  id: string;
+  name: string;
+  subject: string | null;
+  /** The course this teacher taught (an `academics.courses` id), or null. */
+  courseId: string | null;
+  years: (9 | 10 | 11 | 12)[];
+  /** 1 is the first choice; the sanitizer renumbers 1..n in rank order. */
+  rank: number;
+  status: RecommenderStatus;
+  askedOn: string | null;
+  agreedOn: string | null;
+  invitedOn: string | null;
+}
+
+export const RECOMMENDERS_MAX = 4;
+export const RECOMMENDER_NAME_MAX = 60;
+const RECOMMENDER_SUBJECT_MAX = 60;
+const ISO_DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const isoDay = (v: unknown): string | null => (typeof v === "string" && ISO_DAY_RE.test(v) && !Number.isNaN(Date.parse(v)) ? v : null);
+
+/**
+ * Untrusted input as at most RECOMMENDERS_MAX recommenders: a row without a name is dropped; an unknown status reads
+ * as "thinking"; dates are ISO days or null; sorted by rank (then input order) and renumbered 1..n; ids made unique.
+ */
+export function sanitizeRecommenders(input: unknown): RecommenderEntry[] {
+  if (!Array.isArray(input)) return [];
+  const rows: { entry: RecommenderEntry; order: number }[] = [];
+  const ids = new Set<string>();
+  input.forEach((v, i) => {
+    if (rows.length >= RECOMMENDERS_MAX || !isObj(v)) return;
+    const name = str(v.name, RECOMMENDER_NAME_MAX);
+    if (!name) return;
+    const base = typeof v.id === "string" && v.id.trim() && v.id.length <= 40 ? v.id.trim() : `recommender-${i + 1}`;
+    let id = base;
+    for (let n = 2; ids.has(id); n++) id = `${base}-${n}`;
+    ids.add(id);
+    const years = Array.from(new Set(arr(v.years, (y) => (HS_YEARS.includes(y as HsYear) ? (y as HsYear) : null), 4))).sort((a, b) => a - b) as (9 | 10 | 11 | 12)[];
+    rows.push({
+      order: i,
+      entry: {
+        id,
+        name,
+        subject: str(v.subject, RECOMMENDER_SUBJECT_MAX),
+        courseId: typeof v.courseId === "string" && v.courseId.trim() && v.courseId.length <= 40 ? v.courseId.trim() : null,
+        years,
+        rank: num(v.rank, 0, 1000) ?? 1000 + i,
+        status: RECOMMENDER_STATUSES.includes(v.status as RecommenderStatus) ? (v.status as RecommenderStatus) : "thinking",
+        askedOn: isoDay(v.askedOn),
+        agreedOn: isoDay(v.agreedOn),
+        invitedOn: isoDay(v.invitedOn),
+      },
+    });
+  });
+  return rows.sort((a, b) => a.entry.rank - b.entry.rank || a.order - b.order).map((r, i) => ({ ...r.entry, rank: i + 1 }));
+}
+
+/** How many recommenders have been asked (status asked, agreed, or invited). */
+export function recommendersAsked(profile: Pick<StudentProfileData, "recommenders"> | null): number {
+  return (profile?.recommenders ?? []).filter((r) => r.status !== "thinking").length;
 }
 
 /** The course plan's saved choices; `season` is the school year they were made in ("2026-27"), after which they lapse. */
@@ -454,6 +582,11 @@ export interface StudentProfileTests {
    * `sat_2026_10` (data/application-cycle.json); the cycle generator makes register and test-day tasks only for these.
    */
   plannedDates: string[];
+  /**
+   * Plan v3 (guides/test-prep.md): the planned dates the student confirmed registering for, a subset of
+   * `plannedDates` (the sanitizer keeps only keys also in `plannedDates`).
+   */
+  registeredDates: string[];
 }
 
 export type TestFocus = "sat" | "act" | "none";
@@ -489,14 +622,12 @@ export interface StudentProfilePreferences {
 }
 
 /**
- * Your story (specs/planner/next-steps/your-story.md): three short answers in the student's words, plain text up to
- * STORY_FIELD_MAX characters each, read by the story move, the brag sheet, and the essay move. A guardian never
- * receives the text (U7 strips it in profilesICanSee); `updatedAt` is kept.
+ * Your story (specs/planner/v3/guides/your-story.md): one narrative in the student's own words, plain text up to
+ * STORY_MAX characters, read by the story move, the brag sheet, and the essay move. A guardian never receives the text
+ * (profilesICanSee strips it); `updatedAt` is kept.
  */
 export interface StudentStory {
-  about: string;
-  thread: string;
-  majorWhy: string;
+  narrative: string;
   updatedAt: string | null;
 }
 
@@ -506,18 +637,20 @@ export interface StudentProfileData {
   tests: StudentProfileTests;
   plans: StudentProfilePlans;
   preferences: StudentProfilePreferences;
-  /** Next steps (your-story.md): null until any prompt is answered. */
+  /** Your story: null until anything is written. */
   story: StudentStory | null;
+  /** Plan v3 (guides/recommenders.md "Stored"): the teachers picked or asked, at most RECOMMENDERS_MAX. Visible to a guardian. */
+  recommenders: RecommenderEntry[];
 }
 
-/** Longest answer kept for each story prompt. */
-export const STORY_FIELD_MAX = 500;
-/** Same limit, the name the build plan uses (U7). */
-export const STORY_MAX = STORY_FIELD_MAX;
+/** Longest story kept. */
+export const STORY_MAX = 2000;
+/** The story counts as written (the move closes, the guide auto-ticks) at this many characters. */
+export const STORY_DONE_CHARS = 200;
 
 const ISO_INSTANT_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/;
 
-/** One story answer: plain text (tags and control characters removed, whitespace kept tidy), at most STORY_FIELD_MAX characters. */
+/** Story text: plain (tags and control characters removed, line endings normalized), trimmed, at most STORY_MAX characters. */
 function storyText(v: unknown): string {
   if (typeof v !== "string") return "";
   const plain = v
@@ -525,31 +658,54 @@ function storyText(v: unknown): string {
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
     .replace(/\r\n?/g, "\n")
     .trim();
-  return plain.slice(0, STORY_FIELD_MAX).trim();
+  return plain.slice(0, STORY_MAX).trim();
 }
 
-/** The story from untrusted input; null when all three answers are empty. `updatedAt` is an ISO date or time, else null. */
+/** The built story's three prompts (next-steps/your-story.md) and the label each gets when joined. */
+const LEGACY_STORY_PROMPTS: readonly (readonly ["about" | "thread" | "majorWhy", string])[] = [
+  ["about", "About you"],
+  ["thread", "The thread"],
+  ["majorWhy", "Why this major"],
+];
+
+/**
+ * The story from untrusted input; null when the narrative is empty. Accepts the new shape (`{ narrative, updatedAt }`)
+ * and the built three-prompt shape (`{ about, thread, majorWhy, updatedAt }`), joining the old answers as
+ * "About you: …", "The thread: …", "Why this major: …" separated by blank lines (plan v3 review note 4), so an old
+ * profile reads correctly and its next save writes the new shape. `updatedAt` is an ISO date or time, else null.
+ */
 export function sanitizeStory(input: unknown): StudentStory | null {
   if (!isObj(input)) return null;
-  const about = storyText(input.about);
-  const thread = storyText(input.thread);
-  const majorWhy = storyText(input.majorWhy);
-  if (!about && !thread && !majorWhy) return null;
+  let narrative: string;
+  if (typeof input.narrative === "string") {
+    narrative = storyText(input.narrative);
+  } else {
+    const parts = LEGACY_STORY_PROMPTS.flatMap(([key, label]) => {
+      const text = storyText(input[key]);
+      return text ? [`${label}: ${text}`] : [];
+    });
+    narrative = storyText(parts.join("\n\n"));
+  }
+  if (!narrative) return null;
   const at = typeof input.updatedAt === "string" && ISO_INSTANT_RE.test(input.updatedAt) && !Number.isNaN(Date.parse(input.updatedAt)) ? input.updatedAt : null;
-  return { about, thread, majorWhy, updatedAt: at };
+  return { narrative, updatedAt: at };
 }
 
 /**
- * The `story_missing` applies-key's rule (your-story.md "The prompts"; mirrored inline by
- * lib/planner/generators/season.ts moveApplies, which U1 wrote first): About and The thread are always required;
- * Why this major only when an intended major is set ("or 'not sure yet' is a fine answer" otherwise). True (missing)
- * until every applicable prompt is filled, so the "Write your story" move keeps showing.
+ * The `story_missing` applies-key's rule (guides/your-story.md): true until the narrative holds STORY_DONE_CHARS
+ * characters (trimmed), so the "Write your story" move keeps showing.
  */
-export function storyMissing(profile: Pick<StudentProfileData, "story" | "plans"> | null): boolean {
-  const story = profile?.story ?? null;
-  if (!story) return true;
-  const needsMajor = (profile?.plans.intendedMajors.length ?? 0) > 0;
-  return !story.about.trim() || !story.thread.trim() || (needsMajor && !story.majorWhy.trim());
+export function storyMissing(profile: Pick<StudentProfileData, "story"> | null): boolean {
+  return (profile?.story?.narrative.trim().length ?? 0) < STORY_DONE_CHARS;
+}
+
+/**
+ * The story's length as telemetry may record it (`story_filled {length_band}`; never the text): short under
+ * STORY_DONE_CHARS, long from 1,000 characters, medium between.
+ */
+export function storyLengthBand(narrative: string): "short" | "medium" | "long" {
+  const n = narrative.trim().length;
+  return n < STORY_DONE_CHARS ? "short" : n < 1000 ? "medium" : "long";
 }
 
 /**
@@ -559,7 +715,7 @@ export function storyMissing(profile: Pick<StudentProfileData, "story" | "plans"
  */
 export function redactStoryForGuardian(story: StudentStory | null): StudentStory | null {
   if (!story) return null;
-  return { about: "", thread: "", majorWhy: "", updatedAt: story.updatedAt };
+  return { narrative: "", updatedAt: story.updatedAt };
 }
 
 /**
@@ -606,6 +762,7 @@ export function emptyProfile(): StudentProfileData {
       firstGeneration: null,
       rankExpectation: null,
       activitiesNone: {},
+      connections: [],
     },
     tests: {
       satTotal: null,
@@ -622,10 +779,12 @@ export function emptyProfile(): StudentProfileData {
       practice: false,
       target: null,
       plannedDates: [],
+      registeredDates: [],
     },
     plans: { intendedMajors: [], earlyRoundInterest: null },
     preferences: { sizes: [], settings: [], statesOrRegions: [], maxAverageCost: null, types: [] },
     story: null,
+    recommenders: [],
   };
 }
 
@@ -732,10 +891,12 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     firstGeneration: nullableBool(ac.firstGeneration),
     rankExpectation: sanitizeRankExpectation(ac.rankExpectation),
     activitiesNone: sanitizeActivitiesNone(ac.activitiesNone),
+    connections: sanitizeConnections(ac.connections),
   };
 
   const t = isObj(input.tests) ? input.tests : {};
   const focus = TEST_FOCUS_VALUES.includes(t.focus as TestFocus) ? (t.focus as TestFocus) : null;
+  const plannedDates = arr(t.plannedDates, (x) => (isTestDateKey(x) ? x : null), PLANNED_DATES_MAX);
   const tests: StudentProfileTests = {
     satTotal: int(t.satTotal, 400, 1600),
     satReading: int(t.satReading, 200, 800),
@@ -750,7 +911,8 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     focus,
     practice: bool(t.practice),
     target: focus === "sat" ? int(t.target, 400, 1600) : focus === "act" ? int(t.target, 1, 36) : null,
-    plannedDates: arr(t.plannedDates, (x) => (isTestDateKey(x) ? x : null), PLANNED_DATES_MAX),
+    plannedDates,
+    registeredDates: arr(t.registeredDates, (x) => (typeof x === "string" && plannedDates.includes(x) ? x : null), PLANNED_DATES_MAX),
   };
 
   const pl = isObj(input.plans) ? input.plans : {};
@@ -768,7 +930,7 @@ export function sanitizeProfile(input: unknown): StudentProfileData {
     types: arr(pr.types, (x) => (SCHOOL_TYPE_VALUES.includes(x as SchoolType) ? (x as SchoolType) : null), 3),
   };
 
-  return { basics, academics, tests, plans, preferences, story: sanitizeStory(input.story) };
+  return { basics, academics, tests, plans, preferences, story: sanitizeStory(input.story), recommenders: sanitizeRecommenders(input.recommenders) };
 }
 
 /* ------------------------------------------------------------------ */

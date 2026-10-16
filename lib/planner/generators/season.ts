@@ -25,7 +25,7 @@ import { nextSeason, seasonBounds, seasonRank, type Season } from "../seasons.ts
 import { addDays } from "../stage.ts";
 import { taskKey } from "../tasks.ts";
 import type { GeneratedTask, GeneratorInput, PlanItem, PlanSchool, PlanVisit } from "../types.ts";
-import type { StudentProfileData } from "../../student-profile.ts";
+import { storyMissing, type StudentProfileData } from "../../student-profile.ts";
 import { STALE_DAYS } from "./cycle.ts";
 
 export type MoveApplies =
@@ -97,13 +97,9 @@ export function moveApplies(a: MoveApplies, facts: MoveFacts): boolean {
       return facts.items.length > 0;
     case "profile_incomplete":
       return !p || PROFILE_SECTIONS.some((s) => !sectionDone(p, s));
-    case "story_missing": {
-      // your-story.md: about and thread always; majorWhy only with an intended major (U7 owns the rule's details).
-      const story = p?.story ?? null;
-      if (!story) return true;
-      const needsMajor = (p?.plans.intendedMajors.length ?? 0) > 0;
-      return !story.about.trim() || !story.thread.trim() || (needsMajor && !story.majorWhy.trim());
-    }
+    case "story_missing":
+      // guides/your-story.md: the narrative under STORY_DONE_CHARS characters.
+      return storyMissing(p);
     case "no_visit_logged":
       return !facts.items.some((i) => i.visited_on !== null) && facts.visits.length === 0;
     case "tests_focus_null":

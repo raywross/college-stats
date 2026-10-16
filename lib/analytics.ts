@@ -102,7 +102,7 @@ export interface AnalyticsEvents {
   plan_applied: { round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" | "none" };
   plan_decision_recorded: { outcome: "admitted" | "denied" | "waitlisted" | "deferred" };
   plan_outcome_shared: { yes: boolean };
-  story_filled: { count: number };
+  story_filled: { length_band: "short" | "medium" | "long" };
   /** Server (U6): one season brief sent. */
   brief_sent: { season: Season; role: "student" | "guardian" };
   /** Visit events (specs/product/visit-events.md "Privacy and telemetry"): which surface and kind filter are viewed, never an address or a distance. */
@@ -210,7 +210,7 @@ export const EVENTS = {
   plan_applied: { properties: ["round"], side: "client", why: "Next steps: applications marked sent, by round" },
   plan_decision_recorded: { properties: ["outcome"], side: "client", why: "Next steps: decisions recorded" },
   plan_outcome_shared: { properties: ["yes"], side: "client", why: "Next steps: outcome sharing answered" },
-  story_filled: { properties: ["count"], side: "client", why: "Your story: how many prompts are filled (never the text)" },
+  story_filled: { properties: ["length_band"], side: "client", why: "Your story: how long the saved story is, by band (never the text)" },
   brief_sent: { properties: ["season", "role"], side: "server", why: "Next steps: season briefs sent" },
   visit_events_viewed: { properties: ["surface", "kind"], side: "client", why: "Visit events: which surface and kind filter get used" },
   visit_signup_clicked: { properties: ["unit_id", "kind", "near"], side: "client", why: "Visit events: sign-up clicks, by college, kind, and whether it was a near-you event" },

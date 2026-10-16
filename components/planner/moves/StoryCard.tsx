@@ -17,8 +17,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { activitiesReading } from "@/lib/chances/depth";
 import { noteText } from "@/lib/chances/notes";
-import { majorFamilyName } from "@/lib/majors";
-import { STORY_MAX, storyMissing } from "@/lib/student-profile";
+import { STORY_MAX, storyLengthBand, storyMissing } from "@/lib/student-profile";
 import { saveStory, type StorySaveState } from "@/lib/student-profile-store";
 import { taskDateLabel } from "@/lib/planner/tasks";
 import { track } from "@/lib/analytics";
@@ -41,7 +40,7 @@ function StoryField({ id, name, label, value, onChange, disabled }: { id: string
       <textarea
         id={id}
         name={name}
-        rows={2}
+        rows={6}
         maxLength={STORY_MAX}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -56,33 +55,14 @@ function StoryField({ id, name, label, value, onChange, disabled }: { id: string
 }
 
 /** The read-only text, for `readOnly` (the essay move's "Start from your story") and for a guardian's own view. */
-function StoryReadOnly({ about, thread, majorWhy, majorName }: { about: string; thread: string; majorWhy: string; majorName: string | null }) {
-  return (
-    <div className="mt-2 space-y-2 text-sm">
-      <p>
-        <span className="font-semibold">About you: </span>
-        {about || <span className="text-muted-foreground">Not written yet.</span>}
-      </p>
-      <p>
-        <span className="font-semibold">The thread: </span>
-        {thread || <span className="text-muted-foreground">Not written yet.</span>}
-      </p>
-      {majorName && (
-        <p>
-          <span className="font-semibold">Why {majorName}: </span>
-          {majorWhy || <span className="text-muted-foreground">Not written yet.</span>}
-        </p>
-      )}
-    </div>
-  );
+function StoryReadOnly({ narrative }: { narrative: string }) {
+  return <p className="mt-2 whitespace-pre-line text-sm">{narrative || <span className="text-muted-foreground">Not written yet.</span>}</p>;
 }
 
 export function StoryCard({ task, ctx, onSkip, pending, readOnly }: MoveCardProps & { readOnly?: boolean }) {
   const date = taskDateLabel(task, ctx.today);
   const data = ctx.profile;
   const story = data?.story ?? null;
-  const major = data?.plans.intendedMajors[0] ?? null;
-  const majorName = major ? majorFamilyName(major) : null;
   const isGuardian = ctx.viewer.relation !== "self";
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
 
@@ -102,7 +82,7 @@ export function StoryCard({ task, ctx, onSkip, pending, readOnly }: MoveCardProp
     return (
       <div className="rounded-xl bg-muted/30 p-3" id={`move-${task.id}-story`}>
         <p className="text-sm font-semibold">Your story</p>
-        <StoryReadOnly about={story?.about ?? ""} thread={story?.thread ?? ""} majorWhy={story?.majorWhy ?? ""} majorName={majorName} />
+        <StoryReadOnly narrative={story?.narrative ?? ""} />
       </div>
     );
   }
@@ -117,11 +97,7 @@ function StoryCardEditor({ task, ctx, onSkip, pending }: Pick<MoveCardProps, "ta
   const data = ctx.profile;
   const story = data?.story ?? null;
   const [state, action, savePending] = useActionState<StorySaveState, FormData>(saveStory, { status: "idle" });
-  const [about, setAbout] = useState(story?.about ?? "");
-  const [thread, setThread] = useState(story?.thread ?? "");
-  const [majorWhy, setMajorWhy] = useState(story?.majorWhy ?? "");
-  const major = data?.plans.intendedMajors[0] ?? null;
-  const majorName = major ? majorFamilyName(major) : null;
+  const [narrative, setNarrative] = useState(story?.narrative ?? "");
   const disabled = !ctx.viewer.canEdit || savePending;
 
   const { notes } = data ? activitiesReading(data.academics.activities, data.academics.awards) : { notes: [] };
@@ -129,8 +105,7 @@ function StoryCardEditor({ task, ctx, onSkip, pending }: Pick<MoveCardProps, "ta
 
   useEffect(() => {
     if (state.status !== "saved") return;
-    const filled = [about, thread, majorName ? majorWhy : null].filter((v) => v !== null && v.trim() !== "").length;
-    track("story_filled", { count: filled });
+    track("story_filled", { length_band: storyLengthBand(narrative) });
     router.refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
@@ -146,16 +121,10 @@ function StoryCardEditor({ task, ctx, onSkip, pending }: Pick<MoveCardProps, "ta
       {studentId && (
         <form action={action} className="mt-3 space-y-3">
           <input type="hidden" name="student_id" value={studentId} />
-          <StoryField id={`${task.id}-about`} name="about" label="What should someone reading your application know about you that your grades don't say?" value={about} onChange={setAbout} disabled={disabled} />
           <div>
-            <StoryField id={`${task.id}-thread`} name="thread" label="What ties the things you've spent your time on together?" value={thread} onChange={setThread} disabled={disabled} />
+            <StoryField id={`${task.id}-narrative`} name="narrative" label="What should someone reading your application know about you that your grades don't say?" value={narrative} onChange={setNarrative} disabled={disabled} />
             {depthLine && <p className="mt-1 text-xs text-muted-foreground">{depthLine}</p>}
           </div>
-          {majorName ? (
-            <StoryField id={`${task.id}-major-why`} name="majorWhy" label={`Why ${majorName}, in a few sentences? ("Not sure yet" is a fine answer.)`} value={majorWhy} onChange={setMajorWhy} disabled={disabled} />
-          ) : (
-            <input type="hidden" name="majorWhy" value={majorWhy} />
-          )}
 
           {ctx.viewer.canEdit && (
             <div className="flex flex-wrap items-center gap-2">

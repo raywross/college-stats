@@ -96,18 +96,27 @@ function nextDeadlineOf(load: PlanLoad | undefined): string | null {
  * always lands on one child now (decision 2026-10-11, no Everyone): `?for=` when it names a real child, else the
  * last child viewed (the `plan_child` cookie), else the child with the soonest open deadline, else the first.
  * `?tab=` opens a tab (links, so back and forward work); an unrecognized or unavailable one falls back to the
- * viewer's default (PlanFrame reconciles that). `?setup=1` opens the intake guide in edit mode.
+ * viewer's default (PlanFrame reconciles that). `?setup=1` opens the intake guide in edit mode; `?record=1` means the
+ * same thing (record/steps.md "Edit mode"), and `?step=n` (read by PlanIntake itself) opens it at a step; `?back=
+ * plan|record` says where saving or closing it returns to (default the plan).
  */
-export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string }> }) {
+export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string }> }) {
   await connection();
   return withTiming("/plan", () => renderPlan(props));
 }
 
-async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: string; tab?: string; setup?: string }> }) {
+async function renderPlan({
+  searchParams,
+}: {
+  searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string }>;
+}) {
   if (!authConfigured()) return <AuthUnavailable />;
-  const { for: forParam, tab: tabParam, setup: setupParam } = await searchParams;
+  const { for: forParam, tab: tabParam, setup: setupParam, record: recordParam, back: backParam } = await searchParams;
   const tab = parseTab(tabParam);
-  const setup = setupParam === "1";
+  // `record=1` means what `setup=1` means (record/steps.md "Edit mode"); `step` is additive and read by PlanIntake
+  // itself via useSearchParams, so it needs no server-side parsing here.
+  const setup = setupParam === "1" || recordParam === "1";
+  const back: "plan" | "record" = backParam === "record" ? "record" : "plan";
 
   const user = await getUser();
   if (!user) return <SignedOutPlan />;
@@ -142,6 +151,7 @@ async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: stri
         personId={null}
         tab={tab ?? defaultTab("student", false)}
         setup={setup}
+        back={back}
       />
     );
   }
@@ -206,6 +216,7 @@ async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: stri
       personId={selected}
       tab={tab ?? defaultTab("guardian", false)}
       setup={setup}
+      back={back}
     />
   );
 }

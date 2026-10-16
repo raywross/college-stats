@@ -134,6 +134,18 @@ function popularity(f: MajorFamily): number {
  * science); within each, the common families first, then A–Z. Families in `exclude` (already picked) never appear;
  * at most `limit`.
  */
+/**
+ * Moves a picked major up (`dir: -1`) or down (`dir: 1`) in the picked list (R2, MajorChips' arrows): swaps it with
+ * its neighbor; a move off either end, or an out-of-range index, leaves the order unchanged.
+ */
+export function moveMajor(majors: readonly MajorFamily[], index: number, dir: -1 | 1): MajorFamily[] {
+  const j = index + dir;
+  if (index < 0 || index >= majors.length || j < 0 || j >= majors.length) return [...majors];
+  const next = [...majors];
+  [next[index], next[j]] = [next[j], next[index]];
+  return next;
+}
+
 export function searchMajors(query: string, exclude: readonly MajorFamily[], limit = 6): MajorMatch[] {
   const skip = new Set<string>(exclude);
   const q = normalize(query);

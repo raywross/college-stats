@@ -1,20 +1,26 @@
 "use client";
 /**
- * The Plan's intake guide (specs/planner/redesign/intake.md): grades, test, AP courses, four optional activity steps
- * (sports, clubs, work, other), review, then Done; one save
- * at the end through `saveIntake` (lib/planner/store-plan.ts), every rule from lib/planner/intake.ts. Screens 1a
- * (phone) and 2a (desktop) of the design handoff.
+ * Your record's guided tour (specs/planner/record/steps.md, superseding specs/planner/redesign/intake.md): grades,
+ * test, AP courses, four optional activity steps, connections, the major, a few basics, where you'd go, your
+ * story, your recommenders, review, then Done; one save at the end through `saveIntake` (lib/planner/store-plan.ts),
+ * every rule from lib/planner/intake.ts. The rail, the progress bar, and each step's summary come from
+ * `RECORD_STEPS`/`stepSummary` (lib/planner/record.ts), so the tour and the overview agree.
  */
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ActivitiesStep } from "@/components/planner/intake/ActivitiesStep";
 import { ApStep } from "@/components/planner/intake/ApStep";
+import { BasicsStep } from "@/components/planner/intake/BasicsStep";
 import { ConnectionsStep } from "@/components/planner/intake/ConnectionsStep";
 import { DoneStep } from "@/components/planner/intake/DoneStep";
 import { GradesStep } from "@/components/planner/intake/GradesStep";
+import { MajorStep } from "@/components/planner/intake/MajorStep";
+import { RecommendersStep } from "@/components/planner/intake/RecommendersStep";
 import { ReviewStep } from "@/components/planner/intake/ReviewStep";
+import { StoryStep } from "@/components/planner/intake/StoryStep";
 import { TestStep } from "@/components/planner/intake/TestStep";
+import { WhereStep } from "@/components/planner/intake/WhereStep";
 import { track } from "@/lib/analytics";
 import {
   activityStepAt,
@@ -27,46 +33,27 @@ import {
   type IntakeDraft,
   type IntakeStep,
 } from "@/lib/planner/intake";
-import { stepRailSummary } from "@/lib/planner/activity-steps";
+import { RECORD_STEPS, recordPageHref, stepSummary } from "@/lib/planner/record";
 import { entryCount, intakeScrollFor, scrollBehavior } from "@/lib/planner/intake-scroll";
+import { MAJOR_FAMILIES } from "@/lib/majors";
 import { planHref } from "@/lib/planner/plan-tabs";
+import { seasonRank } from "@/lib/planner/seasons";
 import { saveIntake } from "@/lib/planner/store-plan";
 import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { cn } from "@/lib/utils";
 
-const RAIL_LABELS = ["Grades", "Test score", "AP courses", "Sports", "Clubs", "Work", "Connections", "Other", "Review"] as const;
+/** The rail's thirteen entry labels plus Review (steps.md "The steps"). */
+const RAIL_LABELS: readonly string[] = [...RECORD_STEPS.map((s) => s.rail), "Review"];
 /** Steps on the progress bar and rail (Done isn't one). */
 const STEP_COUNT = RAIL_LABELS.length;
-/**
- * The steps this screen shows, in order (Your record R1a renumbered Review to 13 and Done to 14; the major, basics,
- * where, story, and recommenders steps, 8–12, get their screens in R2, which rewires this component). Until then a
- * link or Edit to one of them opens Review.
- */
-const UI_STEPS: readonly IntakeStep[] = [0, 1, 2, 3, 4, 5, 6, 7, INTAKE_REVIEW];
+/** The tour's steps in rail order: the thirteen entry steps, then Review. */
+const UI_STEPS: readonly IntakeStep[] = [...RECORD_STEPS.map((s) => s.step), INTAKE_REVIEW];
+/** Whether Continue waits on a step (steps.md "First run": only Grades and Test). */
+const REQUIRED_STEPS = new Set<IntakeStep>(RECORD_STEPS.filter((s) => s.required).map((s) => s.step));
 const shownStep = (s: IntakeStep): IntakeStep => (UI_STEPS.includes(s) || s === INTAKE_DONE ? s : INTAKE_REVIEW);
 const stepAfter = (s: IntakeStep): IntakeStep => UI_STEPS[Math.min(UI_STEPS.indexOf(s) + 1, UI_STEPS.length - 1)];
 const stepBefore = (s: IntakeStep): IntakeStep => UI_STEPS[Math.max(UI_STEPS.indexOf(s) - 1, 0)];
-
-function railSummary(draft: IntakeDraft, step: IntakeStep): string | null {
-  if (step === 0) {
-    const parts = [draft.classYear ? `Class of ${draft.classYear}` : null, draft.gpa.trim() ? `GPA ${draft.gpa.trim()}` : null].filter(Boolean);
-    return parts.length ? parts.join(" · ") : null;
-  }
-  if (step === 1) {
-    if (draft.test === "none") return "Not testing";
-    if (draft.test === "sat" || draft.test === "act") return `${draft.test.toUpperCase()}${draft.score.trim() ? ` ${draft.score.trim()}` : ""}`;
-    return null;
-  }
-  if (step === 2) return draft.courses.length > 0 ? `${draft.courses.length} course${draft.courses.length === 1 ? "" : "s"}` : null;
-  if (step === 6) {
-    if (draft.connections.length > 0) return `${draft.connections.length} college${draft.connections.length === 1 ? "" : "s"}`;
-    return draft.activitiesNone.connections === true ? "None" : null;
-  }
-  const activity = activityStepAt(step);
-  if (activity) return stepRailSummary(activity, draft.activities, draft.awards, draft.activitiesNone[activity] === true);
-  return null;
-}
 
 /**
  * The guide's scrolling (lib/planner/intake-scroll.ts; owner, 2026-10-12): a step change goes to the page top and moves
@@ -103,24 +90,28 @@ export default function PlanIntake({
   mode,
   relation,
   firstName,
+  back = "plan",
 }: {
   ctx: PlanContext;
   view: PlanView;
-  /** "first": no numbers yet, ends on Done. "edit": opened from the ✎ on the numbers line, starts at Review. */
+  /** "first": no numbers yet, ends on Done. "edit": opened from a ✎, starts at Review or a linked step. */
   mode: "first" | "edit";
   relation: "self" | "guardian";
   /** The student's first name, for a guardian's copy. */
   firstName: string | null;
+  /** `?back=plan|record` (steps.md "Edit mode"): where saving in edit mode returns to. */
+  back?: "plan" | "record";
 }) {
   void firstName;
   const router = useRouter();
   // After a first-run save (below), the server stops rendering this component once `intakeNeeded` turns false
   // (PlanFrame), so a plain `setStep(4)` never survives the refresh that follows: the whole tree unmounts under it.
-  // `&done=1` on the URL (alongside `&setup=1`, which keeps PlanFrame rendering the guide regardless) tells the next
-  // mount to open on Done directly, instead of edit mode's usual Review.
+  // `&done=1` on the URL (alongside `&setup=1`/`&record=1`, which keep PlanFrame rendering the guide regardless) tells
+  // the next mount to open on Done directly, instead of edit mode's usual Review.
   const params = useSearchParams();
   const done = params.get("done") === "1";
-  // `&step=N` (the people line's "Next: add clubs", owner 2026-10-12) opens edit mode on that step instead of Review.
+  // `&step=N` (the people line's "Next: add clubs"; the record overview's Edit) opens edit mode on that step instead
+  // of Review.
   const linkedParam = intakeStepParam(params.get("step"));
   const linkedStep = linkedParam === null ? null : shownStep(linkedParam);
   const today = ctx.today;
@@ -137,7 +128,7 @@ export default function PlanIntake({
     })
     .filter((c): c is { unitId: string; name: string; state: string | null } => c !== null);
 
-  const [draft, setDraft] = useState<IntakeDraft>(() => draftFromProfile(ctx.profile, storedGradYear, today));
+  const [draft, setDraft] = useState<IntakeDraft>(() => draftFromProfile(ctx.profile, storedGradYear, today, { relation }));
   const [step, setStep] = useState<IntakeStep>(done ? INTAKE_DONE : mode === "edit" ? (linkedStep ?? INTAKE_REVIEW) : 0);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -148,6 +139,8 @@ export default function PlanIntake({
     setError(null);
     setStep(to);
   };
+
+  const closeHref = back === "record" && studentId ? recordPageHref(studentId) : planHref({ person, tab: null });
 
   const save = (after: () => void) => {
     if (!studentId) {
@@ -189,8 +182,10 @@ export default function PlanIntake({
   const canContinue1 = stepValid(draft, 1);
   const canSave = stepValid(draft, INTAKE_REVIEW);
   const activityStep = activityStepAt(step);
-  // AP courses, the four activity steps, and Connections can be skipped (they never block Continue either).
-  const skippable = step === 2 || step === 6 || activityStep !== null;
+  // Every step but Grades and Test can be skipped (they never block Continue either).
+  const skippable = step !== INTAKE_REVIEW && !REQUIRED_STEPS.has(step);
+  // Steps 11 and 12 on the first run (steps.md "First run"): the "most students write this later" note.
+  const firstRunNote = mode === "first" && (step === 11 || step === 12);
 
   const primaryLabel = step === INTAKE_REVIEW ? "Save and show my plan" : "Continue";
   const primaryDisabled = pending || (step === 0 ? !canContinue0 : step === 1 ? !canContinue1 : step === INTAKE_REVIEW ? !canSave : false);
@@ -204,7 +199,7 @@ export default function PlanIntake({
       // served from the browser's cache), so a router.refresh() on top only rendered the same page a second time.
       save(() => {
         if (mode === "edit") {
-          router.push(planHref({ person, tab: null }));
+          router.push(closeHref);
         } else {
           setStep(INTAKE_DONE);
           // Numbers are set now, so the next server render stops treating this as "first" (intakeNeeded turns
@@ -215,6 +210,9 @@ export default function PlanIntake({
       });
     }
   };
+
+  const majorName = draft.majors[0] ? MAJOR_FAMILIES[draft.majors[0]].toLowerCase() : null;
+  const canInviteRecommenders = seasonRank(ctx.season) >= seasonRank("senior_fall");
 
   return (
     <div className="lg:grid lg:grid-cols-[300px_1fr] lg:gap-14 lg:px-2">
@@ -227,7 +225,7 @@ export default function PlanIntake({
               const idx = UI_STEPS[i];
               const pos = UI_STEPS.indexOf(step);
               const state = i < pos ? "done" : i === pos ? "active" : "upcoming";
-              const sub = railSummary(draft, idx);
+              const sub = idx === INTAKE_REVIEW ? null : stepSummary(draft, idx);
               return (
                 <button
                   key={label}
@@ -296,6 +294,13 @@ export default function PlanIntake({
           {step === 2 && <ApStep draft={draft} setDraft={setDraft} today={today} />}
           {activityStep && <ActivitiesStep key={activityStep} step={activityStep} draft={draft} setDraft={setDraft} />}
           {step === 6 && <ConnectionsStep draft={draft} setDraft={setDraft} listColleges={listColleges} />}
+          {step === 8 && <MajorStep draft={draft} setDraft={setDraft} />}
+          {step === 9 && <BasicsStep draft={draft} setDraft={setDraft} />}
+          {step === 10 && <WhereStep draft={draft} setDraft={setDraft} />}
+          {step === 11 && <StoryStep draft={draft} setDraft={setDraft} majorName={majorName} firstRun={firstRunNote} />}
+          {step === 12 && (
+            <RecommendersStep draft={draft} setDraft={setDraft} today={today} canInvite={canInviteRecommenders} firstRun={firstRunNote} />
+          )}
           {step === INTAKE_REVIEW && <ReviewStep draft={draft} today={today} onEdit={(s) => go(INTAKE_REVIEW, shownStep(s))} />}
 
           {error && <p className="mt-4 text-sm text-amber-700 dark:text-amber-400">{error}</p>}
@@ -328,9 +333,9 @@ export default function PlanIntake({
                 I&apos;m not taking any AP courses
               </button>
             )}
-            {(activityStep || step === 6) && (
+            {skippable && step !== 2 && (
               <button type="button" onClick={() => go(step, stepAfter(step))} className="min-h-11 px-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
-                I&apos;ll add these later
+                I&apos;ll add this later
               </button>
             )}
             <button

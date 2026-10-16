@@ -7,6 +7,7 @@ import { PlanNotice } from "@/components/planner/PlanNotice";
 import { PlanTabPills, PlanTabs } from "@/components/planner/PlanTabs";
 import { UpcomingList } from "@/components/planner/calendar/UpcomingList";
 import { intakeNeeded } from "@/lib/planner/intake";
+import type { RecordBack } from "@/lib/planner/record";
 import { roundsPicked } from "@/lib/planner/list-row";
 import { nextUpInfo } from "@/lib/planner/plan-frame";
 import { defaultTab, planHref, tabsFor, type PlanTab } from "@/lib/planner/plan-tabs";
@@ -33,6 +34,7 @@ export function PlanFrame({
   personId,
   tab,
   setup,
+  back,
   people,
 }: {
   ctx: PlanContext;
@@ -44,8 +46,10 @@ export function PlanFrame({
   /** The student id for `?for=` links; null when a student is looking at their own plan. */
   personId: string | null;
   tab: PlanTab;
-  /** `?setup=1`: the people line's Edit opens the intake guide in edit mode, prefilled, starting at Review. */
+  /** `?setup=1` or `?record=1`: the people line's Edit opens the tour in edit mode, prefilled, starting at Review. */
   setup: boolean;
+  /** `?back=plan|record|inline` (record/steps.md "Edit mode"): where saving or closing the tour in edit mode returns to. */
+  back?: RecordBack;
   /** The plan's one top line (components/planner/PlanPeople.tsx), built by the page. */
   people?: ReactNode;
 }) {
@@ -69,7 +73,7 @@ export function PlanFrame({
   // Never for a read-only viewer — a guardian without edit rights who opens a child with no numbers just sees the
   // plan, with "No numbers yet" on the people line. A guardian keeps the people line above it to switch children.
   if (ctx.viewer.canEdit && (setup || needsIntake)) {
-    const intake = <PlanIntake ctx={ctx} view={view} mode={needsIntake ? "first" : "edit"} relation={relation} firstName={firstName} />;
+    const intake = <PlanIntake ctx={ctx} view={view} mode={needsIntake ? "first" : "edit"} relation={relation} firstName={firstName} back={back} />;
     return relation === "guardian" && people ? (
       <div className="space-y-6">
         {people}

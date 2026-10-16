@@ -22,7 +22,7 @@ import type { Account, MemberRole } from "@/lib/accounts";
  *
  *   household name · "3 of 6 seats"
  *   people strip: [Alex · Class of 2028] [Tracy · You · Guardian] [Jordan · Invited] [+ Add]
- *   {children}: the selected person's area (name line, ⋯ menu, List | Numbers) and their list or numbers
+ *   {children}: the selected person's area (name line, ⋯ menu, Plan | Record) and their list or record
  *   ▸ Household settings (collapsed): home address, Leave household
  *
  * Layouts persist across client navigation, so switching people swaps only `children`: no page transition and no

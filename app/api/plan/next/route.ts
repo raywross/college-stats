@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
-import { loadPlanFor, planViewer } from "@/lib/planner/load";
+import { planBundle } from "@/lib/bundles";
+import { planViewer } from "@/lib/planner/load";
 import { todayIso } from "@/lib/planner/context";
-import { hasDueSoon, hasNewMove } from "@/lib/planner/plan-frame";
+import { hasNewMove, tasksDueSoon } from "@/lib/planner/plan-frame";
+import type { PlanTask } from "@/lib/planner/types";
 import { createServerSupabase } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -26,8 +28,13 @@ async function lastOpens(userId: string, studentIds: string[]): Promise<Map<stri
  * GET /api/plan/next (specs/planner/redesign/page.md "Navigation"; next-steps notifications.md "Channels"): whether
  * the header's Plan dot should light up — a deadline within 7 days, or a move added since this viewer last opened the
  * student's Next steps tab (plan_opens.last_at), on the signed-in student's plan or on any child a signed-in guardian
- * can see. Fetched client-side after mount (components/layout/{Header,BottomNav}.tsx), never computed on the server,
- * so the public pages stay static. Signed out or any error: false.
+ * can see. Fetched client-side after mount (components/layout/usePlanDot.ts), never computed on the server, so the
+ * public pages stay static. Signed out or any error: false.
+ *
+ * Performance pass (2026-10-16): this used to run the whole plan load per student (the dataset, the estimate, the
+ * suggestion sync, the regenerated tasks) on every page view, a second full plan computation beside the page's own.
+ * Now it reads each student's stored plan bundle (one call each, side by side) and decides from the tasks alone
+ * (lib/planner/plan-frame.ts tasksDueSoon, hasNewMove).
  */
 export async function GET() {
   try {
@@ -37,9 +44,10 @@ export async function GET() {
     const studentIds = viewer.kind === "self" ? [viewer.student.id] : viewer.kind === "guardian" ? viewer.children.map((c) => c.studentId) : [];
     if (studentIds.length === 0) return json(false);
     const today = todayIso();
-    const [loads, opens] = await Promise.all([Promise.all(studentIds.map((id) => loadPlanFor(id))), lastOpens(user.id, studentIds)]);
-    const deadline = loads.some((l) => l.kind === "ready" && hasDueSoon(l.view, today));
-    const newMove = loads.some((l, i) => l.kind === "ready" && hasNewMove(l.ctx.tasks, opens.get(studentIds[i]) ?? null, today));
+    const [bundles, opens] = await Promise.all([Promise.all(studentIds.map((id) => planBundle(id))), lastOpens(user.id, studentIds)]);
+    const tasksOf = (i: number): PlanTask[] => (bundles[i]?.tasks ?? []) as PlanTask[];
+    const deadline = studentIds.some((_, i) => tasksDueSoon(tasksOf(i), today));
+    const newMove = studentIds.some((id, i) => hasNewMove(tasksOf(i), opens.get(id) ?? null, today));
     return json(deadline, newMove);
   } catch {
     return json(false);

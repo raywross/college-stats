@@ -1,22 +1,21 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
-import { Crest } from "@/components/school/Crest";
+import { AddCollegeBox } from "@/components/planner/AddCollegeBox";
 import { PlanRow, type RowPill } from "@/components/planner/PlanRow";
 import { EdPill } from "@/components/planner/EdPill";
 import { InterestPill } from "@/components/planner/InterestPill";
+import { personFor } from "@/components/planner/moves/MoveCard";
 import { edOpportunities, type EdCandidate } from "@/lib/planner/ed-opportunities";
 import { isOpen } from "@/lib/planner/tasks";
+import { GUIDES, guideHref } from "@/lib/planner/guides";
 import { ListExplainer } from "@/components/planner/ListExplainer";
 import { PlanNotice } from "@/components/planner/PlanNotice";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
-import { addToList, removeFromList } from "@/lib/lists";
+import { removeFromList } from "@/lib/lists";
 import { track } from "@/lib/analytics";
-import { searchSchoolsApi } from "@/lib/school-api";
-import type { SchoolIndexEntry } from "@/lib/dataset";
 import { setPlanDream } from "@/lib/planner/store-plan";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import { GROUP_HEADING, SEASON_STATUS_LABEL, groupedRows, headerCountsLine } from "@/lib/planner/list-row";
@@ -29,11 +28,11 @@ import { cn } from "@/lib/utils";
 const SENIOR_FALL_RANK = seasonRank("senior_fall");
 
 /**
- * The Colleges tab: the list as the plan (specs/planner/redesign/list.md). Grouped by Reach / Target / Likely, then
- * "Not sorted yet" — Quad's groups only, no chip to cycle and no sort menu. Owns its own copy of the rows so every
- * tap (the Dream, the capture panel's remove) updates at once; a refused write rolls the row back and shows
- * an inline message, and a successful one refreshes the server page so the notices, balance line, and tasks that
- * depend on more than one row stay correct.
+ * The Colleges tab: the list as the plan (specs/planner/redesign/list.md; row changed by plan v3's connections.md).
+ * Grouped by Reach / Target / Likely, then "Not sorted yet" — Quad's groups only, no chip to cycle and no sort menu.
+ * Owns its own copy of the rows so every tap (the Dream, the row's trash icon) updates at once; a refused write
+ * rolls the row back and shows an inline message, and a successful one refreshes the server page so the notices,
+ * balance line, and tasks that depend on more than one row stay correct.
  */
 export default function PlanList({ ctx, view }: PlanTabProps) {
   const router = useRouter();
@@ -41,11 +40,12 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   const [viewSeen, setViewSeen] = useState(view);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const canEdit = ctx.viewer.canEdit;
-  // A move's `open_row` link (`?row=<item id>&panel=ed|capture`) opens that row's drawer on the panel.
+  // A move's `open_row` link (`?row=<item id>&panel=ed`) opens that row's ED dialog on mount; any other `panel`
+  // value is ignored (there's no other panel left to open — capture's controls moved into the Show interest guide).
   const params = useSearchParams();
   const openRow = params?.get("row") ?? null;
-  const openPanelParam = params?.get("panel");
-  const openPanel = openPanelParam === "ed" || openPanelParam === "capture" ? openPanelParam : "capture";
+  const openEd = params?.get("panel") === "ed";
+  const person = personFor(ctx);
   // Good ED opportunities (ed-opportunities.md): computed once from the server's view; every candidate gets a pill.
   const edCandidates = edOpportunities(view.rows.map((r) => r.item), view.estimates, ctx.schools, { season: ctx.season, today: ctx.today });
   const edByItem = new Map<string, EdCandidate>(edCandidates.map((c) => [c.itemId, c]));
@@ -57,16 +57,8 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   );
   const pillFor = (row: PlanRowView): RowPill | undefined => {
     const c = edByItem.get(row.item.id);
-    if (c) {
-      return function edPill(open) {
-        return <EdPill candidate={c} onOpen={() => open("ed")} />;
-      };
-    }
-    if (interestItemIds.has(row.item.id)) {
-      return function interestPill(open) {
-        return <InterestPill onOpen={() => open("capture")} />;
-      };
-    }
+    if (c) return <EdPill row={row} ctx={ctx} candidate={c} openInitially={openEd && openRow === row.item.id} />;
+    if (interestItemIds.has(row.item.id)) return <InterestPill collegeUnitId={row.item.unit_id} name={row.school?.name ?? row.item.unit_id} person={person} />;
     return undefined;
   };
 
@@ -167,8 +159,7 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
                     onToggleDream={handleDream}
                     onRemove={handleRemove}
                     pill={pillFor(row)}
-                    edCandidate={edByItem.get(row.item.id) ?? null}
-                    openPanel={openRow === row.item.id ? openPanel : null}
+                    openEdDialog={openEd && openRow === row.item.id}
                   />
                 ))}
               </ul>
@@ -177,7 +168,22 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
         </section>
       )}
 
-      {canEdit && <AddCollegeBox listId={ctx.list.id} excludeIds={rows.map((r) => r.item.unit_id)} label={addLabel} onAdded={() => router.refresh()} />}
+      {/* The add pill, and beside it the Build your list guide (specs/planner/v3/guides/list-size.md). */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {canEdit && (
+          <div className="min-w-0 flex-1 basis-60">
+            <AddCollegeBox listId={ctx.list.id} excludeIds={rows.map((r) => r.item.unit_id)} label={addLabel} onAdded={() => router.refresh()} studentId={ctx.student?.id ?? null} />
+          </div>
+        )}
+        {ctx.student && (
+          <Link
+            href={guideHref("list", { person: ctx.viewer.relation === "self" ? null : ctx.student.id, from: "pill" })}
+            className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-primary hover:underline"
+          >
+            {GUIDES.list.button}
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
@@ -189,98 +195,5 @@ function GroupHeading({ group, count }: { group: ListCategory; count: number }) 
     <p className={cn("inline-flex h-8 items-center rounded-full px-3 text-xs font-bold", GROUP_CLASS[group])}>
       {GROUP_HEADING[group]} · {count}
     </p>
-  );
-}
-
-/** list.md "Around the list": a collapsed pill that expands into the search box; a new college arrives with its
- * group and round already filled (planView computes them live, and the next plan open stores them). */
-function AddCollegeBox({ listId, excludeIds, label, onAdded }: { listId: string; excludeIds: string[]; label: string; onAdded: () => void }) {
-  const [expanded, setExpanded] = useState(false);
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SchoolIndexEntry[]>([]);
-  const [open, setOpen] = useState(false);
-  const [pending, startTransition] = useTransition();
-  const [addedId, setAddedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const q = query.trim();
-    if (!q) return;
-    const controller = new AbortController();
-    searchSchoolsApi(q, { limit: 6, exclude: excludeIds, signal: controller.signal })
-      .then((rows) => {
-        if (!controller.signal.aborted) setResults(rows);
-      })
-      .catch(() => {});
-    return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
-  const visibleResults = query.trim() ? results : [];
-
-  const add = (unitId: string) => {
-    startTransition(async () => {
-      const result = await addToList(listId, unitId);
-      if (result.ok) {
-        setAddedId(unitId);
-        setQuery("");
-        setResults([]);
-        setOpen(false);
-        onAdded();
-      }
-    });
-  };
-
-  if (!expanded) {
-    return (
-      <button
-        id="add-college"
-        type="button"
-        onClick={() => setExpanded(true)}
-        className="flex h-11 w-full items-center justify-center rounded-full border border-dashed bg-card text-sm font-semibold text-primary hover:bg-muted/60"
-      >
-        + {label}
-      </button>
-    );
-  }
-
-  return (
-    <div id="add-college" className="relative">
-      <label className="flex h-11 items-center gap-2 rounded-full border bg-card px-4">
-        <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-        <input
-          autoFocus
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
-          placeholder="Add a college…"
-          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          aria-label={label}
-        />
-        {pending && <span className="text-xs text-muted-foreground">Adding…</span>}
-      </label>
-      {open && visibleResults.length > 0 && (
-        <div className="absolute inset-x-0 z-20 mt-1.5 overflow-hidden rounded-2xl border bg-popover p-1.5 shadow-xl">
-          {visibleResults.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              disabled={pending}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => add(s.id)}
-              className={cn("flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-muted disabled:opacity-60", addedId === s.id && "opacity-60")}
-            >
-              <Crest id={s.id} name={s.name} size="sm" brand={s.brand} />
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold">{s.name}</span>
-              <span className="text-xs text-muted-foreground">
-                {s.city}, {s.state}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }

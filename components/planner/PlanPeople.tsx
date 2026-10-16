@@ -35,13 +35,13 @@ export interface PlanPerson {
 }
 
 export interface PlanPersonDetail {
-  /** How many profile sections are in, of how many (lib/planner/profile-progress.ts); a plain count, never a score.
-   *  The ring alone reads from this; the "Next:" text and link read `next` first (next steps U1b), falling back to
-   *  this when there's no loaded plan to read a move from (the other children's chips). */
+  /** How many record sections are in, of how many (lib/planner/record.ts recordProgress); a plain count, never a
+   *  score. The ring alone reads from this; the "Next:" text and link read `next` first (next steps U1b), falling
+   *  back to this when there's no loaded plan to read a move from (the other children's chips). */
   progress: { done: number; total: number; nextLabel: string | null };
-  /** Where the next step is entered (the intake on that step, or the Numbers page), or null for a read-only viewer. */
+  /** Where the next step is entered (the intake on that step), or null for a read-only viewer. */
   nextHref: string | null;
-  /** The intake guide in edit mode (`?setup=1`), or null for a read-only viewer. */
+  /** The record overview (`recordPageHref`), or null for a read-only viewer. */
   editHref: string | null;
   /**
    * Next steps (seasons.md "The Next steps tab": "the people line's 'Next:' is the Now list's first card"): the
@@ -68,8 +68,8 @@ function ProgressRing({ done, total }: { done: number; total: number }) {
 /**
  * The plan's one top line (specs/planner/redesign/page.md "The people line"; owner, 2026-10-12): an initials circle
  * per student in their household color, the selected one expanded in place into a chip with the name, class year, a
- * quiet progress ring with the one next step ("Next: add clubs", linking to that intake step), and Edit (the intake
- * guide). No GPA or test score (owner: "a relic of older thinking"), the others shifted left as circles. Tapping another student's circle switches
+ * quiet progress ring with the one next step ("Next: add clubs", linking to that intake step), and Edit (the record
+ * overview, specs/planner/record/steps.md "The people line"). No GPA or test score (owner: "a relic of older thinking"), the others shifted left as circles. Tapping another student's circle switches
  * to their plan (and expands it at once while the page loads); tapping the selected circle folds or unfolds its chip.
  * A student's own plan is the same line with just their chip. Never wraps: the name and next step truncate instead, so
  * four students plus one chip fit at 390px. The status text, the big name heading, and "Your part" are no longer
@@ -89,7 +89,13 @@ export function PlanPeople({
 }) {
   const [open, setOpen] = useState(true);
   // The line has arrived: nothing is pending any more (app/plan/loading.tsx drew it from the snapshot meanwhile).
-  useEffect(() => setPendingPeople(null), [selected]);
+  // Remembering the shown child here, not only on a pick (performance pass, 2026-10-16): without the cookie a
+  // guardian's every /plan open loaded every child's plan to break the tie by deadline (two waves of reads, up to a
+  // second); with it, the next open loads one child in one wave, like a student's own plan.
+  useEffect(() => {
+    setPendingPeople(null);
+    if (selected) rememberChild(selected);
+  }, [selected]);
   const [pending, setPending] = useState<string | null>(null);
   const [selectedSeen, setSelectedSeen] = useState(selected);
   if (selected !== selectedSeen) {
@@ -188,7 +194,7 @@ export function PlanPeople({
                 {shown?.editHref && (
                   <Link
                     href={shown.editHref}
-                    aria-label={`Edit ${name}'s grades, test, and courses`}
+                    aria-label={p.studentId ? `${name}'s record` : "Your record"}
                     className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground sm:h-9 sm:px-3.5"
                   >
                     <Pencil className="hidden size-3.5 sm:block" aria-hidden />

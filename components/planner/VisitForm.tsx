@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { VISIT_KINDS, VISIT_KIND_LABELS, VISIT_NOTE_PROMPTS } from "@/lib/planner/actions";
-import { logVisit, updateVisit } from "@/lib/planner/store-actions";
+import { logVisit, updateVisit, type VisitInput } from "@/lib/planner/store-actions";
 import type { PlanVisit, VisitKind, VisitNotes } from "@/lib/planner/types";
 import type { VisitFormPrefill } from "@/components/visits/next-events-logic";
 
@@ -28,6 +28,7 @@ export function VisitForm({
   prefill,
   onDone,
   onCancel,
+  onSubmit,
 }: {
   itemId: string;
   visit?: PlanVisit | null;
@@ -40,6 +41,11 @@ export function VisitForm({
   prefill?: VisitFormPrefill;
   onDone?: () => void;
   onCancel?: () => void;
+  /**
+   * Plan v3 (show-interest.md "The return prompt"): saves a new visit some other way than `logVisit` (the Show interest
+   * guide confirms a pending act with the date the family picked). Ignored when `visit` is set.
+   */
+  onSubmit?: (input: VisitInput) => Promise<{ ok: true } | { ok: false; message: string }>;
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +94,7 @@ export function VisitForm({
         rating: isPast ? rating : null,
         notes: finalNotes,
       };
-      const result = visit ? await updateVisit(visit.id, input) : await logVisit(itemId, input);
+      const result = visit ? await updateVisit(visit.id, input) : onSubmit ? await onSubmit(input) : await logVisit(itemId, input);
       if (!result.ok) {
         setError(result.message);
         return;

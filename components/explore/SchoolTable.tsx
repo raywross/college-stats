@@ -12,6 +12,8 @@ import { AddToListButton } from "@/components/lists/AddToListButton";
 import { InfoTip } from "@/components/ui/info-tip";
 import { distanceFromHome, formatDriveTime, formatMiles, type NearHome } from "@/lib/home";
 import { cn } from "@/lib/utils";
+import type { StandingLevel } from "@/lib/chances/types";
+import { ForYouChip } from "./ForYouChip";
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -104,7 +106,8 @@ function SortHeader({
 }
 
 /** `home`: Explore's "Distance from home" filter, when set; the table then leads with a sortable distance column. */
-export async function SchoolTable({ schools, params, home = null }: { schools: School[]; params: Params; home?: NearHome | null }) {
+/** `levels`: each college's level key while Explore's "For you" filter is on (explore-levels.md), shown beside the name. */
+export async function SchoolTable({ schools, params, home = null, levels = null }: { schools: School[]; params: Params; home?: NearHome | null; levels?: Readonly<Record<string, StandingLevel>> | null }) {
   const { rankOf } = await getData();
   const sortBy = typeof params.sortBy === "string" ? params.sortBy : "applicants";
   const sortDir = typeof params.sortDir === "string" ? params.sortDir : sortBy === "applicants" ? "desc" : "asc";
@@ -186,6 +189,7 @@ export async function SchoolTable({ schools, params, home = null }: { schools: S
                       <Crest id={s.unit_id} name={s.name} size="sm" brand={crestBrand(s)} />
                       <span className="min-w-0">
                         <span className="block max-w-44 truncate font-semibold group-hover:text-primary">{s.name}</span>
+                        {levels?.[s.unit_id] && <ForYouChip level={levels[s.unit_id]} className="my-0.5" />}
                         <span className="block text-xs text-muted-foreground">
                           {s.location.city}, {s.location.state}
                         </span>

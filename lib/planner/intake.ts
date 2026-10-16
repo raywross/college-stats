@@ -1,6 +1,9 @@
 /**
- * The Plan's intake guide (specs/planner/redesign/intake.md): grades, test, AP courses, four optional activity steps
- * (sports, clubs, work, other; their rules in ./activity-steps.ts), review, and a Done screen, saved once at the end. Everything the guide decides lives here: the class-year chips, GPA scale
+ * The Plan's intake guide (specs/planner/redesign/intake.md), now the tour that fills Your record
+ * (specs/planner/record/steps.md; ./record.ts holds the steps' names and the summaries): grades, test, AP courses, four
+ * optional activity steps (sports, clubs, work, other; their rules in ./activity-steps.ts), connections, the major,
+ * a few basics, where you'd go, your story, your recommenders, review, and a Done screen, saved once at the end.
+ * Everything the guide decides lives here: the class-year chips, GPA scale
  * detection and validation, the score and target checks, the AP search and its aliases, the "When?" term chips, the
  * draft read from a saved profile, and the profile the save writes. Ported from the design prototype's script (Plan
  * Redesign.dc.html). Pure (no server or browser APIs), so the intake's UI, the `saveIntake` Server Action, and tests
@@ -20,12 +23,25 @@ import {
   sanitizeActivities,
   sanitizeActivitiesNone,
   sanitizeAwards,
+  sanitizeConnections,
   sanitizeProfile,
+  sanitizeStory,
+  OUTSIDE_US,
+  STORY_DONE_CHARS,
+  storyWritten,
   type ActivitiesNone,
+  type ConnectionEntry,
+  type EarlyRoundInterest,
   type GpaScale,
+  type RecommenderEntry,
   type StudentProfileData,
+  type StudentStory,
   type TestFocus,
 } from "../student-profile.ts";
+import { MAJOR_FAMILIES, type MajorFamily } from "../majors.ts";
+import type { SchoolType, SettingGroup, SizeBucket } from "../types.ts";
+import { SETTING_CHIPS, SIZE_CHIPS } from "./list-guide.ts";
+import { isUnitId } from "../follow-state.ts";
 import type { PlanContext } from "./types.ts";
 import { reconcileStepNone, stepReviewValue, type ActivityStep } from "./activity-steps.ts";
 
@@ -77,28 +93,73 @@ export interface IntakeDraft {
   activities: ActivityEntry[];
   /** The Other step's awards (inputs-beyond-academics.md "Awards"), capped by AWARDS_MAX. */
   awards: AwardEntry[];
-  /** The activity steps answered "None" (student-profile.ts academics.activitiesNone; owner, 2026-10-12). */
+  /**
+   * Plan v3's Connections step (specs/planner/v3/connections.md), between Work and Other: the colleges a parent,
+   * grandparent, or sibling went to, or that are recruiting the student, at most CONNECTIONS_MAX.
+   */
+  connections: ConnectionEntry[];
+  /** The activity steps (and plan v3's Connections step) answered "None" (student-profile.ts academics.activitiesNone; owner, 2026-10-12). */
   activitiesNone: ActivitiesNone;
+  /* Your record's steps 8–12 (specs/planner/record/steps.md "Mapping to the profile"), each as the profile stores it. */
+  /** Step 8: up to MAX_INTENDED_MAJORS families, first choice first (`plans.intendedMajors`); empty reads "Undecided". */
+  majors: MajorFamily[];
+  /** Step 9: a USPS code or OUTSIDE_US (`basics.stateOfResidence`). */
+  stateOfResidence: string | null;
+  /** Step 9, read-only: the household address's state (`profile.homeState`), shown when no state is entered; never saved. */
+  homeState?: string | null;
+  /** Step 9: yes / no; null is "not sure" or unanswered (`basics.feeWaiverEligible`). */
+  feeWaiverEligible: boolean | null;
+  /** Step 9: yes / no; null is "not sure" or unanswered (the built `academics.firstGeneration`). */
+  firstGeneration: boolean | null;
+  /** Step 10 (`preferences.*`): size, setting, states or regions (USPS codes, region names, OUTSIDE_US), type. */
+  sizes: SizeBucket[];
+  settings: SettingGroup[];
+  statesOrRegions: string[];
+  types: SchoolType[];
+  /** Step 10: the most the family would pay in a year, as typed ("35,000", "$35000"); `maxCostOf` reads it. */
+  maxAverageCost: string;
+  /** Step 10: ED · EA · none yet (`plans.earlyRoundInterest`). */
+  earlyRoundInterest: EarlyRoundInterest | null;
+  /**
+   * Step 11: the story's text ("" when nothing's written), or null for a guardian, whose copy never carries the text
+   * (the redacted profile): the save then keeps the stored story (review note 3).
+   */
+  story: string | null;
+  /** Whether the stored story reads as written (`storyWritten`): what a guardian's story step and summary show. */
+  storyWritten: boolean;
+  /** Step 12: the recommenders guide's rows (`recommenders`), first choice first. */
+  recommenders: RecommenderEntry[];
 }
 
-/** 0 grades, 1 test, 2 AP courses, 3 sports, 4 clubs, 5 work, 6 other (3–6 optional), 7 review, 8 done. */
-export type IntakeStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-export const INTAKE_REVIEW = 7;
-export const INTAKE_DONE = 8;
-/** The step each activity screen is. */
-export const ACTIVITY_STEP_INDEX: Readonly<Record<ActivityStep, 3 | 4 | 5 | 6>> = { sports: 3, clubs: 4, work: 5, other: 6 };
+/**
+ * Your record's steps (specs/planner/record/build-plan.md review note 2): 0 grades, 1 test, 2 AP courses, 3 sports,
+ * 4 clubs, 5 work, 6 connections, 7 other, 8 major, 9 basics, 10 where you'd go, 11 your story, 12 recommenders (2–12
+ * optional), 13 review, 14 done. ./record.ts re-exports these with the steps' names.
+ */
+export type RecordStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
+/** A step that enters something (not Review or Done). */
+export type RecordEntryStep = Exclude<RecordStep, 13 | 14>;
+export const RECORD_REVIEW = 13;
+export const RECORD_DONE = 14;
+/** The built name, kept so every import still compiles (review note 1). */
+export type IntakeStep = RecordStep;
+export const INTAKE_REVIEW = RECORD_REVIEW;
+export const INTAKE_DONE = RECORD_DONE;
+/** The step each activity screen is (Connections, step 6, isn't one of the four — it's handled directly in this module). */
+export const ACTIVITY_STEP_INDEX: Readonly<Record<ActivityStep, 3 | 4 | 5 | 7>> = { sports: 3, clubs: 4, work: 5, other: 7 };
 /** The activity screen a step index is, or null. */
 /**
- * A `&step=N` link into edit mode (the plan's people line, "Next: add clubs"; owner 2026-10-12): an entry step 0–6
- * (grades through Other), else null (Review, Done, and anything else aren't linkable this way).
+ * A `&step=N` link into edit mode (the plan's people line, "Next: add clubs"; owner 2026-10-12; the record overview's
+ * Edit): an entry step 0–12 (grades through Recommenders), else null (Review, Done, and anything else aren't linkable
+ * this way).
  */
-export function intakeStepParam(v: string | null | undefined): IntakeStep | null {
-  if (v == null || !/^[0-6]$/.test(v)) return null;
-  return Number(v) as IntakeStep;
+export function intakeStepParam(v: string | null | undefined): RecordEntryStep | null {
+  if (v == null || !/^(\d|1[0-2])$/.test(v)) return null;
+  return Number(v) as RecordEntryStep;
 }
 
 export function activityStepAt(step: IntakeStep): ActivityStep | null {
-  return step === 3 ? "sports" : step === 4 ? "clubs" : step === 5 ? "work" : step === 6 ? "other" : null;
+  return step === 3 ? "sports" : step === 4 ? "clubs" : step === 5 ? "work" : step === 7 ? "other" : null;
 }
 
 /** What `saveIntake` takes: the draft, checked and converted. */
@@ -119,7 +180,25 @@ export interface IntakeSave {
   courses: IntakeCourse[];
   activities: ActivityEntry[];
   awards: AwardEntry[];
+  connections: ConnectionEntry[];
   activitiesNone: ActivitiesNone;
+  /*
+   * Steps 8–12. Each is optional on the wire: a field left out (a client from before these steps) keeps the profile's
+   * value, so `applyIntake` writes only what's present. `intakeToSave` always sends them (a skipped step sends the
+   * values it opened with, which round-trip unchanged). `story` null also keeps the stored story (a guardian's).
+   */
+  majors?: MajorFamily[];
+  stateOfResidence?: string | null;
+  feeWaiverEligible?: boolean | null;
+  firstGeneration?: boolean | null;
+  sizes?: SizeBucket[];
+  settings?: SettingGroup[];
+  statesOrRegions?: string[];
+  types?: SchoolType[];
+  maxAverageCost?: number | null;
+  earlyRoundInterest?: EarlyRoundInterest | null;
+  story?: string | null;
+  recommenders?: RecommenderEntry[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -470,6 +549,113 @@ export function newIntakeCourse(key: string): IntakeCourse {
 }
 
 /* ------------------------------------------------------------------ */
+/* Connections (specs/planner/v3/connections.md)                       */
+/* ------------------------------------------------------------------ */
+
+let connectionCounter = 0;
+/** A fresh connection row id. */
+function newConnectionId(): string {
+  connectionCounter += 1;
+  return `connection-${Date.now().toString(36)}${connectionCounter}`;
+}
+
+/** A college just added on the Connections step: nothing picked yet (a card with nothing picked isn't saved). */
+export function newIntakeConnection(unitId: string): ConnectionEntry {
+  return { id: newConnectionId(), unitId, family: [], recruited: "none" };
+}
+
+/* ------------------------------------------------------------------ */
+/* Steps 8–12: major, basics, where you'd go, story, recommenders       */
+/* ------------------------------------------------------------------ */
+
+/** The cost limit's ceiling (`sanitizeProfile` keeps `preferences.maxAverageCost` within 0–400,000). */
+export const MAX_COST_LIMIT = 400_000;
+
+/**
+ * The cost limit as typed ("35,000", "$35000", "35000.00") as whole dollars: null when empty, NaN when it isn't a
+ * number from 0 to MAX_COST_LIMIT. Never blocks Continue; the step shows `maxCostCheck`'s hint.
+ */
+export function maxCostOf(typed: string): number | null {
+  const t = typed.trim().replace(/^\$\s*/, "").replace(/,/g, "");
+  if (t === "") return null;
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return NaN;
+  const n = Math.round(Number(t));
+  return n >= 0 && n <= MAX_COST_LIMIT ? n : NaN;
+}
+
+/** The cost field's state: ok, and the amber hint when what's typed isn't a dollar amount the profile can keep. */
+export function maxCostCheck(typed: string): { ok: boolean; hint: string | null } {
+  const n = maxCostOf(typed);
+  if (n === null || !Number.isNaN(n)) return { ok: true, hint: null };
+  return { ok: false, hint: "Enter a yearly amount in dollars, like 35,000." };
+}
+
+/** "$35,000". */
+export function dollars(n: number): string {
+  return `$${n.toLocaleString("en-US")}`;
+}
+
+const yesNo = (v: boolean | null) => (v === null ? "not sure" : v ? "yes" : "no");
+
+/** A state or place as the summaries show it: the USPS code or region name as stored, or "Outside the US". */
+export function placeLabel(place: string): string {
+  return place === OUTSIDE_US ? "Outside the US" : place;
+}
+
+/** "Engineering, Computer science", or "Undecided" with none picked (majors.md "Nothing picked is fine"). */
+export function majorsSummary(majors: readonly MajorFamily[]): string {
+  return majors.length === 0 ? "Undecided" : majors.map((m) => MAJOR_FAMILIES[m]).join(", ");
+}
+
+/**
+ * "NC · fee waiver: not sure"; with `withFirstGeneration` (the review line), "NC · fee waiver: not sure · first
+ * generation: no". Null when nothing on the step is answered.
+ */
+export function basicsSummary(d: Pick<IntakeDraft, "stateOfResidence" | "feeWaiverEligible" | "firstGeneration">, withFirstGeneration = false): string | null {
+  if (d.stateOfResidence === null && d.feeWaiverEligible === null && d.firstGeneration === null) return null;
+  const parts = [d.stateOfResidence ? placeLabel(d.stateOfResidence) : null, `fee waiver: ${yesNo(d.feeWaiverEligible)}`];
+  if (withFirstGeneration) parts.push(`first generation: ${yesNo(d.firstGeneration)}`);
+  return parts.filter(Boolean).join(" · ");
+}
+
+const EARLY_WORDS: Readonly<Record<EarlyRoundInterest, string>> = { ed: "early decision", ea: "early action", none: "no early round yet" };
+
+/**
+ * "Mid-sized, suburban, Southeast" (size, setting, places, type, in that order, the list guide's words); with
+ * `withCost` (the review line), the cost limit ("up to $35,000") and the early round too. Null when nothing is set.
+ */
+export function whereSummary(d: Pick<IntakeDraft, "sizes" | "settings" | "statesOrRegions" | "types" | "maxAverageCost" | "earlyRoundInterest">, withCost = false): string | null {
+  const words: string[] = [
+    ...SIZE_CHIPS.filter((c) => d.sizes.includes(c.key)).map((c) => c.word),
+    ...SETTING_CHIPS.filter((c) => d.settings.includes(c.key)).map((c) => c.word),
+    ...d.statesOrRegions.map(placeLabel),
+    ...d.types.map((t) => (t === "public" ? "public" : t === "private-nonprofit" ? "private" : "for-profit")),
+  ];
+  if (withCost) {
+    const cost = maxCostOf(d.maxAverageCost);
+    if (cost !== null && !Number.isNaN(cost)) words.push(`up to ${dollars(cost)}`);
+    if (d.earlyRoundInterest) words.push(EARLY_WORDS[d.earlyRoundInterest]);
+  }
+  if (words.length === 0) return null;
+  const out = words.join(", ");
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}
+
+/** "Written" / "Not yet": the student's text once it holds STORY_DONE_CHARS; a guardian's (no text) from the stored story. */
+export function storySummary(d: Pick<IntakeDraft, "story" | "storyWritten">): "Written" | "Not yet" {
+  const written = d.story === null ? d.storyWritten : d.story.trim().length >= STORY_DONE_CHARS;
+  return written ? "Written" : "Not yet";
+}
+
+/** "2 teachers, 1 asked", "1 teacher", or "Not yet" with none. */
+export function recommendersSummary(entries: readonly RecommenderEntry[]): string {
+  if (entries.length === 0) return "Not yet";
+  const asked = entries.filter((r) => r.status !== "thinking").length;
+  const teachers = `${entries.length} teacher${entries.length === 1 ? "" : "s"}`;
+  return asked > 0 ? `${teachers}, ${asked} asked` : teachers;
+}
+
+/* ------------------------------------------------------------------ */
 /* Profile ↔ draft                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -488,9 +674,11 @@ function trimNumber(n: number): string {
 
 /**
  * The draft the guide opens on: the saved numbers and AP courses (edit mode), or an empty draft. A GPA above 4.0 saved
- * on the 4.0 scale is weighted by definition (isWeightedGpa) and opens on the detected 5.0 weighted scale.
+ * on the 4.0 scale is weighted by definition (isWeightedGpa) and opens on the detected 5.0 weighted scale. Steps 8–12
+ * read back as stored. A guardian's draft (`relation: "guardian"`, or a redacted profile, whose story text is "")
+ * carries `story: null`, so the save keeps the stored story.
  */
-export function draftFromProfile(profile: StudentProfileData | null, gradYear: number | null, today: string): IntakeDraft {
+export function draftFromProfile(profile: StudentProfileData | null, gradYear: number | null, today: string, opts: { relation?: "self" | "guardian" } = {}): IntakeDraft {
   void today;
   const empty: IntakeDraft = {
     classYear: gradYear,
@@ -509,9 +697,24 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     courses: [],
     activities: [],
     awards: [],
+    connections: [],
     activitiesNone: {},
+    majors: [],
+    stateOfResidence: null,
+    feeWaiverEligible: null,
+    firstGeneration: null,
+    sizes: [],
+    settings: [],
+    statesOrRegions: [],
+    types: [],
+    maxAverageCost: "",
+    earlyRoundInterest: null,
+    story: opts.relation === "guardian" ? null : "",
+    storyWritten: false,
+    recommenders: [],
   };
   if (!profile) return empty;
+  const redacted = profile.story !== null && profile.story.narrative === "";
   const a = profile.academics;
   const t = profile.tests;
   const gpa = a.gpa === null ? "" : trimNumber(a.gpa);
@@ -539,7 +742,22 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     courses: a.courses.filter(isIntakeRow).map(intakeCourseFrom),
     activities: a.activities,
     awards: a.awards,
+    connections: a.connections,
     activitiesNone: a.activitiesNone ?? {},
+    majors: [...profile.plans.intendedMajors],
+    stateOfResidence: profile.basics.stateOfResidence,
+    homeState: profile.homeState ?? null,
+    feeWaiverEligible: profile.basics.feeWaiverEligible,
+    firstGeneration: a.firstGeneration,
+    sizes: [...profile.preferences.sizes],
+    settings: [...profile.preferences.settings],
+    statesOrRegions: [...profile.preferences.statesOrRegions],
+    types: [...profile.preferences.types],
+    maxAverageCost: profile.preferences.maxAverageCost === null ? "" : String(profile.preferences.maxAverageCost),
+    earlyRoundInterest: profile.plans.earlyRoundInterest,
+    story: opts.relation === "guardian" || redacted ? null : (profile.story?.narrative ?? ""),
+    storyWritten: storyWritten(profile),
+    recommenders: profile.recommenders,
   };
 }
 
@@ -556,8 +774,24 @@ const CLASS_STANDING_LABELS: Readonly<Record<ClassStanding, string>> = {
 
 const RANK_EXPECTATION_LABELS: Readonly<Record<RankExpectation, string>> = { valedictorian: "Valedictorian", salutatorian: "Salutatorian" };
 
-/** The review card's rows: label, value, and the step its Edit link opens. */
-export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2 | 3 | 4 | 5 | 6; label: string; value: string }[] {
+/**
+ * The Connections review line (specs/planner/v3/connections.md "Adding one"): "Duke (parent, grandparent), Michigan
+ * (sibling), Elon (recruited)", "None" when answered with nothing, or "Not set" when not answered at all. `names`
+ * maps a unit id to its display name (the caller passes the ones it has; an unknown id falls back to the id itself).
+ */
+function connectionsReviewValue(connections: readonly ConnectionEntry[], none: boolean, names: Record<string, string>): string {
+  if (connections.length === 0) return none ? "None" : "Not set";
+  return connections
+    .map((c) => {
+      const parts: string[] = [...c.family];
+      if (c.recruited !== "none") parts.push("recruited");
+      return `${names[c.unitId] ?? c.unitId} (${parts.join(", ")})`;
+    })
+    .join(", ");
+}
+
+/** The review card's rows: label, value, and the step its Edit link opens. `names` maps a connection's unit id to its display name. */
+export function reviewLines(d: IntakeDraft, today: string, names: Record<string, string> = {}): { step: RecordEntryStep; label: string; value: string }[] {
   const test = d.test;
   let testValue = "Not set";
   if (test === "none") testValue = "Not testing";
@@ -579,7 +813,13 @@ export function reviewLines(d: IntakeDraft, today: string): { step: 0 | 1 | 2 | 
     { step: 3, label: "Sports", value: stepReviewValue("sports", d.activities, d.awards, d.activitiesNone.sports === true) },
     { step: 4, label: "Clubs", value: stepReviewValue("clubs", d.activities, d.awards, d.activitiesNone.clubs === true) },
     { step: 5, label: "Work", value: stepReviewValue("work", d.activities, d.awards, d.activitiesNone.work === true) },
-    { step: 6, label: "Other", value: stepReviewValue("other", d.activities, d.awards, d.activitiesNone.other === true) },
+    { step: 6, label: "Connections", value: connectionsReviewValue(d.connections, d.activitiesNone.connections === true, names) },
+    { step: 7, label: "Other", value: stepReviewValue("other", d.activities, d.awards, d.activitiesNone.other === true) },
+    { step: 8, label: "Major", value: majorsSummary(d.majors) },
+    { step: 9, label: "Basics", value: basicsSummary(d, true) ?? "Not set" },
+    { step: 10, label: "Where you'd go", value: whereSummary(d, true) ?? "Not set" },
+    { step: 11, label: "Your story", value: storySummary(d) },
+    { step: 12, label: "Recommenders", value: recommendersSummary(d.recommenders) },
   ];
 }
 
@@ -592,11 +832,31 @@ export function courseCount(courses: readonly IntakeCourse[], classYear: number,
   return `${taken} taken · ${rest} taking or planned`;
 }
 
+/**
+ * Connections whose unit id is at least validly formatted (lib/follow-state.ts isUnitId); this module has no
+ * dataset access to check a college actually exists — the step's own search only ever offers real ones, so this
+ * just keeps a tampered or malformed id from being stored as a connection.
+ */
+function sanitizeIntakeConnections(input: unknown): ConnectionEntry[] {
+  const rows = Array.isArray(input) ? input.filter((c) => isUnitId((c as { unitId?: unknown } | null | undefined)?.unitId)) : input;
+  return sanitizeConnections(rows);
+}
+
+/**
+ * The Connections step's "None" (connections.md "A card with nothing picked isn't saved"), reconciled the way the
+ * four activity steps' own None is (owner, 2026-10-12): kept only while there are no connections entered; adding
+ * one clears it.
+ */
+function reconcileConnectionsNone(rawNone: ActivitiesNone, connectionsCount: number, base: ActivitiesNone): ActivitiesNone {
+  return rawNone.connections && connectionsCount === 0 ? { ...base, connections: true } : base;
+}
+
 /** The draft as a save, or null when the grades or test step isn't valid. Courses with nothing chosen are left out. */
 export function intakeToSave(d: IntakeDraft): IntakeSave | null {
   if (!stepValid(d, 0) || !stepValid(d, 1) || d.classYear === null || d.test === null) return null;
   const testing = d.test !== "none";
   const weightedGpa = d.weightedGpa.trim() === "" ? null : numberOf(d.weightedGpa);
+  const connections = sanitizeIntakeConnections(d.connections);
   return {
     classYear: d.classYear,
     gpa: numberOf(d.gpa),
@@ -615,9 +875,75 @@ export function intakeToSave(d: IntakeDraft): IntakeSave | null {
     courses: d.courses.filter((c) => c.year !== null).map((c) => ({ id: c.id, key: c.key, year: c.year, exam: c.exam })),
     activities: sanitizeActivities(d.activities),
     awards: sanitizeAwards(d.awards),
-    // A step with entries can't also be "None" (adding an entry clears it).
-    activitiesNone: reconcileStepNone(d.activities, d.awards, d.activitiesNone),
+    connections,
+    // A step with entries can't also be "None" (adding an entry clears it); same rule for Connections.
+    activitiesNone: reconcileConnectionsNone(d.activitiesNone, connections.length, reconcileStepNone(d.activities, d.awards, d.activitiesNone)),
+    // Steps 8–12 never block (record build-plan R1a): each goes through the profile's own sanitizer.
+    ...recordFields({
+      majors: d.majors,
+      stateOfResidence: d.stateOfResidence,
+      feeWaiverEligible: d.feeWaiverEligible,
+      firstGeneration: d.firstGeneration,
+      sizes: d.sizes,
+      settings: d.settings,
+      statesOrRegions: d.statesOrRegions,
+      types: d.types,
+      // A cost that isn't a number is left out (the stored one stays); empty clears it.
+      maxAverageCost: costForSave(d.maxAverageCost),
+      earlyRoundInterest: d.earlyRoundInterest,
+      story: d.story,
+      recommenders: d.recommenders,
+    }),
   };
+}
+
+function costForSave(typed: string): number | null | undefined {
+  const n = maxCostOf(typed);
+  return n !== null && Number.isNaN(n) ? undefined : n;
+}
+
+type RecordFields = Pick<IntakeSave, "majors" | "stateOfResidence" | "feeWaiverEligible" | "firstGeneration" | "sizes" | "settings" | "statesOrRegions" | "types" | "maxAverageCost" | "earlyRoundInterest" | "story" | "recommenders">;
+const RECORD_FIELDS: readonly (keyof RecordFields)[] = ["majors", "stateOfResidence", "feeWaiverEligible", "firstGeneration", "sizes", "settings", "statesOrRegions", "types", "maxAverageCost", "earlyRoundInterest", "story", "recommenders"];
+
+/** Longest story text the save accepts before `sanitizeStory` trims it to STORY_MAX (markup and line endings shrink it). */
+const STORY_MAX_INPUT = 20_000;
+
+/**
+ * Steps 8–12's fields from untrusted input, checked the way `sanitizeProfile` checks them (the same sanitizer runs on
+ * a one-off profile, so the rules can't drift): unknown majors, sizes, settings, types, and rounds dropped, at most
+ * three majors, a state up to 20 characters, yes/no or null, the cost within 0–400,000, recommenders through
+ * `sanitizeRecommenders`. A field that's missing (undefined) stays missing, so the save keeps the stored value; the
+ * story is a string (sanitized when applied) or null (keep the stored one); anything else reads as missing.
+ */
+function recordFields(input: Partial<Record<keyof RecordFields, unknown>>): RecordFields {
+  const p = sanitizeProfile({
+    basics: { stateOfResidence: input.stateOfResidence, feeWaiverEligible: input.feeWaiverEligible },
+    academics: { firstGeneration: input.firstGeneration },
+    plans: { intendedMajors: input.majors, earlyRoundInterest: input.earlyRoundInterest },
+    preferences: { sizes: input.sizes, settings: input.settings, statesOrRegions: input.statesOrRegions, types: input.types, maxAverageCost: input.maxAverageCost },
+    recommenders: input.recommenders,
+  });
+  const all: Required<RecordFields> = {
+    majors: p.plans.intendedMajors,
+    stateOfResidence: p.basics.stateOfResidence,
+    feeWaiverEligible: p.basics.feeWaiverEligible,
+    firstGeneration: p.academics.firstGeneration,
+    sizes: p.preferences.sizes,
+    settings: p.preferences.settings,
+    statesOrRegions: p.preferences.statesOrRegions,
+    types: p.preferences.types,
+    maxAverageCost: p.preferences.maxAverageCost,
+    earlyRoundInterest: p.plans.earlyRoundInterest,
+    story: typeof input.story === "string" ? input.story.slice(0, STORY_MAX_INPUT) : null,
+    recommenders: p.recommenders,
+  };
+  const out: RecordFields = {};
+  for (const k of RECORD_FIELDS) {
+    if (input[k] === undefined) continue;
+    if (k === "story" && input.story !== null && typeof input.story !== "string") continue;
+    (out as Record<string, unknown>)[k] = all[k];
+  }
+  return out;
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -715,8 +1041,23 @@ export function parseIntakeSave(input: unknown): IntakeSave | null {
   }
   const activities = sanitizeActivities(input.activities);
   const awards = sanitizeAwards(input.awards);
-  const activitiesNone = reconcileStepNone(activities, awards, sanitizeActivitiesNone(input.activitiesNone));
-  return { classYear, gpa, gpaScale, weightedGpa, classStanding, classRankPercentile, rankExpectation, focus, score, practice, target, highSchool, highSchoolId, courses, activities, awards, activitiesNone };
+  const connections = sanitizeIntakeConnections(input.connections);
+  const rawNone = sanitizeActivitiesNone(input.activitiesNone);
+  const activitiesNone = reconcileConnectionsNone(rawNone, connections.length, reconcileStepNone(activities, awards, rawNone));
+  return { classYear, gpa, gpaScale, weightedGpa, classStanding, classRankPercentile, rankExpectation, focus, score, practice, target, highSchool, highSchoolId, courses, activities, awards, connections, activitiesNone, ...recordFields(input) };
+}
+
+/**
+ * The story a save writes: the stored one when the save carries none (null or left out: a guardian's, review note 3)
+ * or the same text (so `updatedAt` survives an unchanged save); else the new text, dated today, through the story
+ * guide's sanitizer (empty text clears it).
+ */
+function storyFor(stored: StudentStory | null, text: string | null | undefined, today: string): StudentStory | null {
+  if (text === null || text === undefined) return stored;
+  const next = sanitizeStory({ narrative: text, updatedAt: today });
+  if (next === null) return null;
+  if (stored && stored.narrative === next.narrative) return stored;
+  return next;
 }
 
 /** The draft course a saved row would open as; an unchanged course keeps its saved row as it is. */
@@ -763,9 +1104,17 @@ export function applyIntake(profile: StudentProfileData, s: IntakeSave, today: s
   const tests = { ...profile.tests, focus: s.focus, practice: s.focus !== "none" && s.practice, target: s.focus === "none" ? null : s.target };
   if (s.focus === "sat" && s.score !== null) tests.satTotal = s.score;
   if (s.focus === "act" && s.score !== null) tests.actComposite = s.score;
+  const keep = <T,>(v: T | undefined, stored: T): T => (v === undefined ? stored : v);
   return sanitizeProfile({
     ...profile,
-    basics: { ...profile.basics, gradYear: s.classYear, highSchool: s.highSchool, highSchoolId: s.highSchoolId },
+    basics: {
+      ...profile.basics,
+      gradYear: s.classYear,
+      highSchool: s.highSchool,
+      highSchoolId: s.highSchoolId,
+      stateOfResidence: keep(s.stateOfResidence, profile.basics.stateOfResidence),
+      feeWaiverEligible: keep(s.feeWaiverEligible, profile.basics.feeWaiverEligible),
+    },
     // courseRigorCount null: the count follows the list, never re-adds placeholder rows for removed courses.
     academics: {
       ...profile.academics,
@@ -779,9 +1128,27 @@ export function applyIntake(profile: StudentProfileData, s: IntakeSave, today: s
       courseRigorCount: null,
       activities: s.activities,
       awards: s.awards,
+      // Plan v3: the Connections step now owns its own "None" key, reconciled in intakeToSave/parseIntakeSave.
+      connections: s.connections,
       activitiesNone: s.activitiesNone,
+      firstGeneration: keep(s.firstGeneration, profile.academics.firstGeneration),
     },
     tests,
+    plans: {
+      ...profile.plans,
+      intendedMajors: keep(s.majors, profile.plans.intendedMajors),
+      earlyRoundInterest: keep(s.earlyRoundInterest, profile.plans.earlyRoundInterest),
+    },
+    preferences: {
+      ...profile.preferences,
+      sizes: keep(s.sizes, profile.preferences.sizes),
+      settings: keep(s.settings, profile.preferences.settings),
+      statesOrRegions: keep(s.statesOrRegions, profile.preferences.statesOrRegions),
+      types: keep(s.types, profile.preferences.types),
+      maxAverageCost: keep(s.maxAverageCost, profile.preferences.maxAverageCost),
+    },
+    story: storyFor(profile.story, s.story, today),
+    recommenders: keep(s.recommenders, profile.recommenders),
   });
 }
 

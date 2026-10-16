@@ -1,5 +1,7 @@
 # The Planner: From the First List to the Deposit
 
+> **Plan v3 (2026-10-16):** replaced the row's details panel with a Connections step, the six-card Next steps with three cards and guides, and the parent's view with the whole season; see [v3/](v3/README.md).
+>
 > **Next steps (2026-10-14):** the plan now drives the work season by season; see [next-steps/](next-steps/README.md)
 > (a Next steps tab the plan opens to, good ED opportunities and interest prompts on the list, the shape of a good list,
 > the senior moves from submit to the deposit, briefs and texts, and the Your story prompts).
@@ -189,3 +191,7 @@ In addition to the [product rules for user data](../product/README.md#shared-rul
 ## Open questions for the owner
 None at the overview level as of 2026-10-07; each spec keeps its own small ones. The two that were here (the text
 provider, the letter threshold) were decided the same day and are recorded above.
+
+**Your record (2026-10-16):** one guided entry for everything about the student (the intake plus the Numbers tab, with
+major, basics, where you'd go, story, and recommenders as steps), a record overview with "How complete is this", an
+importance ranking for Now's three cards, and less text on every screen; see [record/README.md](record/README.md).

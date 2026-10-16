@@ -6,7 +6,8 @@ import { SIZE_BUCKETS } from "@/lib/metrics";
 import { INDICATORS, INDICATOR_KEYS, isDirection } from "@/lib/indicators";
 import { GENDER_BALANCE } from "@/lib/student-body";
 import { POLICY_BUCKETS } from "@/lib/test-policy";
-import { SELECTIVITY_TIER_LABELS } from "@/lib/chances/levels";
+import { SELECTIVITY_TIER_LABELS, STANDING_LEVEL_LABELS } from "@/lib/chances/levels";
+import { isStandingLevel } from "@/lib/params";
 import { isSelectivityTier } from "@/lib/selectivity-tier";
 import { HOUSING_FILTERS } from "@/lib/housing";
 import { FACTOR_FILTERS } from "@/lib/factors";
@@ -239,6 +240,11 @@ export function ActiveFilters({ showEstimates = true }: { showEstimates?: boolea
       label: `SAT ${minSAT ?? "…"}–${maxSAT ?? "1600"}`,
       onRemove: () => update({ minSAT: null, maxSAT: null }),
     });
+
+  // "For you" levels (explore-levels.md): one chip for the set, "For you: Reach, High reach", in the URL's order.
+  const forMe = getList("forMe").filter(isStandingLevel);
+  if (forMe.length)
+    chips.push({ key: "forMe", label: `For you: ${forMe.map((l) => STANDING_LEVEL_LABELS[l]).join(", ")}`, onRemove: () => update({ forMe: null }) });
 
   const mySAT = searchParams.get("mySAT");
   const myACT = searchParams.get("myACT");

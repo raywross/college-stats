@@ -42,6 +42,10 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // Next steps (specs/planner/next-steps/, seven parts) was specified 2026-10-14 from the owner's brief to drive actions
 // from students and parents by season (group "next-steps") and built the same day on feature/next-steps (nine units on
 // sub-branches, PR #160), so the group is gone; its overview page stays under ROADMAP_OVERVIEWS.
+// Plan v3 (specs/planner/v3/, nine parts) was specified 2026-10-15 and built 2026-10-16 (PR #165) from the owner's
+// review of the built Next steps: a Connections step in the profile, three cards instead of six, and a guide per task.
+// Your record (specs/planner/record/, six parts: steps, majors, ranking, reading, less-text, docs) was built 2026-10-16
+// on feature/plan-v3, so its group is gone; the overview stays under ROADMAP_OVERVIEWS.
 export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
@@ -409,6 +413,8 @@ export const ROADMAP: RoadmapSpec[] = [
 
 /** Readable background pages that aren't work items themselves (linked from the roadmap, not ranked). */
 export const ROADMAP_OVERVIEWS: { slug: string; file: string; title: string }[] = [
+  { slug: "record", file: "specs/planner/record/README.md", title: "Your record overview: the owner's review of the plan v3 preview, the name, the four parts, and the build order" },
+  { slug: "plan-v3", file: "specs/planner/v3/README.md", title: "Plan v3 overview: the owner's review of Next steps, the nine parts, the design principles, and the build order" },
   { slug: "next-steps", file: "specs/planner/next-steps/README.md", title: "Next steps overview: the research into how advisors run the process, the design principles, the seven parts, and the build order" },
   { slug: "planner-redesign", file: "specs/planner/redesign/README.md", title: "Planner redesign overview: the owner's review, the research, the design principles, and what stays and goes" },
   { slug: "planner", file: "specs/planner/README.md", title: "Planner overview: the six stages from the first list to the deposit, the research, the tiers, and the build order" },

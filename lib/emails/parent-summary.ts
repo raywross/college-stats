@@ -27,6 +27,13 @@ export interface ParentSummaryStudent {
    * Optional so older callers compile.
    */
   childMoves?: string[];
+  /**
+   * Plan v3 (specs/planner/v3/parents.md "Rules"; build-plan.md "U9 The parent's Next steps"): titles of the moves
+   * the student skipped in the last seven days (`dismissed_at`). Titles only, never a why or a number (the caller
+   * runs them through `outsideTitle`, which scrubs figures, so a `reach_score_*` title's own target never appears).
+   * Optional so older callers compile.
+   */
+  skipped?: string[];
 }
 
 /** The child's moves shown under Your part. */
@@ -62,7 +69,9 @@ const COLORS = { text: "#1c1f26", muted: "#6b7280", border: "#e4e4e7", bg: "#fff
 
 /** The email, or null when there's no student with anything to say this week. */
 export function buildParentSummary(input: ParentSummaryInput): BuiltParentSummary | null {
-  const students = input.students.filter((s) => s.yourPart.length > 0 || (s.childMoves ?? []).length > 0 || s.stuckSignals.length > 0 || s.tickedThisWeek.length > 0 || s.summary);
+  const students = input.students.filter(
+    (s) => s.yourPart.length > 0 || (s.childMoves ?? []).length > 0 || s.stuckSignals.length > 0 || s.tickedThisWeek.length > 0 || (s.skipped ?? []).length > 0 || s.summary,
+  );
   if (students.length === 0) return null;
   const planHref = utm(`${input.siteUrl}/household`);
   const unsubscribeHref = utm(`${input.siteUrl}/unsubscribe/${input.unsubscribeToken}/parent-summary`);
@@ -98,7 +107,12 @@ export function buildParentSummary(input: ParentSummaryInput): BuiltParentSummar
         }
         ${
           s.tickedThisWeek.length
-            ? `<p style="margin:0;color:${COLORS.muted};">Ticked this week: ${s.tickedThisWeek.map(escapeHtml).join(", ")}</p>`
+            ? `<p style="margin:0 0 4px;color:${COLORS.muted};">Ticked this week: ${s.tickedThisWeek.map(escapeHtml).join(", ")}</p>`
+            : ""
+        }
+        ${
+          (s.skipped ?? []).length
+            ? `<p style="margin:0;color:${COLORS.muted};">${escapeHtml(name)} skipped: ${(s.skipped ?? []).map(escapeHtml).join(", ")}</p>`
             : ""
         }
       </div>`;
@@ -134,6 +148,7 @@ export function buildParentSummary(input: ParentSummaryInput): BuiltParentSummar
     lines.push(s.summary);
     for (const t of s.stuckSignals) lines.push(`- ${t}`);
     if (s.tickedThisWeek.length) lines.push(`Ticked this week: ${s.tickedThisWeek.join(", ")}`);
+    if ((s.skipped ?? []).length) lines.push(`${name} skipped: ${(s.skipped ?? []).join(", ")}`);
     lines.push("");
   }
   lines.push(`Open the household: ${planHref}`, "", `Turn off the weekly summary: ${unsubscribeHref}`);

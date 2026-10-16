@@ -12,13 +12,17 @@
  * ed-opportunities,interest}.ts), with their words in MOVE_TEXT.
  *
  * Wording: a why is a fact or an advisor placement ("Advisors place this in junior spring"), never "you should".
+ * A title may hold `{target}` (plan v3 review note 8): `playbookTask` fills it from the profile, and skips the entry
+ * when it can't.
  * Pure; safe in server code, client components, and tests.
  */
-import { SECTION_STEP, sectionDone, PROFILE_SECTIONS } from "./profile-progress.ts";
+import { SECTION_STEP, sectionDone, PROFILE_SECTIONS, SECTION_MOVE_TITLE, firstMissingSection } from "./profile-progress.ts";
+import { listGapTitle, LIST_SHAPE } from "./list-shape.ts";
 import type { MoveApplies } from "./generators/season.ts";
 import type { Season } from "./seasons.ts";
 import type { Assignee, MoveAction, PlanItem, PlanSchool, TaskKind } from "./types.ts";
 import type { StudentProfileData } from "../student-profile.ts";
+import type { StandingLevel } from "../chances/types.ts";
 
 /** What an entry's action reads: the plan's student (for the Numbers page), its colleges, and the profile. */
 export interface PlaybookActionInput {
@@ -26,6 +30,9 @@ export interface PlaybookActionInput {
   items: readonly Pick<PlanItem, "id" | "unit_id" | "withdrawn_on" | "position">[];
   schools: Record<string, Pick<PlanSchool, "links" | "distanceMiles">>;
   profile: StudentProfileData | null;
+  /** The list's counts by level (shape_gap's `levelCounts`), null while nothing has an estimate yet
+   *  (`build_list`/`long_list`'s `titleFor`, plan-v3-fix-cards). */
+  counts: Record<StandingLevel, number> | null;
 }
 
 /** A dated entry's window: a start and end, or one due date (ISO). */
@@ -42,6 +49,9 @@ export interface PlaybookEntry {
   carries: boolean;
   applies: MoveApplies;
   action: (ctx: PlaybookActionInput) => MoveAction | null;
+  /** The entry's title computed from the plan, preferred over the static `title` (plan-v3-fix-cards, 2026-10-16); a
+   *  null result falls back to the static title (run through `fillTitle`), so the task key stays stable either way. */
+  titleFor?: (ctx: PlaybookActionInput) => string | null;
   /** Dated entries only: the window from the entry's own season's bounds (ISO, inclusive). */
   window?: (bounds: { start: string; end: string }) => PlaybookWindow | null;
   source: "advisors" | "profile" | "list" | "depth" | "story" | "shape" | "ed" | "interest";
@@ -59,18 +69,18 @@ export interface PlaybookEntry {
 /* Actions                                                             */
 /* ------------------------------------------------------------------ */
 
-const NUMBERS = (ctx: PlaybookActionInput): MoveAction => (ctx.studentId ? { kind: "href", href: `/household/${ctx.studentId}/numbers` } : { kind: "open_intake", step: 0 });
+const NUMBERS = (ctx: PlaybookActionInput): MoveAction => (ctx.studentId ? { kind: "href", href: `/household/${ctx.studentId}/record` } : { kind: "open_intake", step: 0 });
 const COLLEGES: MoveAction = { kind: "open_tab", tab: "colleges" };
 const TICK: MoveAction = { kind: "tick" };
 const PSAT_PAGE: MoveAction = { kind: "href", href: "https://satsuite.collegeboard.org/psat-nmsqt" };
 const FSA_ID_PAGE: MoveAction = { kind: "href", href: "https://studentaid.gov/fsa-id/create-account/launch" };
 
-/** The intake step of the first missing profile section (the Numbers page for major and state). */
+/** The intake step of the first missing profile section (every section is a tour step now; record.ts). */
 function firstMissingStep(ctx: PlaybookActionInput): MoveAction {
   const p = ctx.profile;
   const missing = p ? PROFILE_SECTIONS.find((s) => !sectionDone(p, s)) : "high_school";
   const step = missing ? SECTION_STEP[missing] : 0;
-  return step === "numbers" ? NUMBERS(ctx) : { kind: "open_intake", step };
+  return { kind: "open_intake", step };
 }
 
 const open = (ctx: PlaybookActionInput) => ctx.items.filter((i) => !i.withdrawn_on).sort((a, b) => a.position - b.position);
@@ -116,7 +126,8 @@ function earlyYears(season: "freshman" | "sophomore"): PlaybookEntry[] {
       why: "A practice run on the real format. Only the junior-year PSAT counts toward National Merit.",
       who: "student",
       carries: false,
-      applies: "always",
+      // Plan v3 (now.md "Timing rules"): no practice test for a student with a real score.
+      applies: "no_real_score",
       action: () => PSAT_PAGE,
       window: OCTOBER,
       source: "advisors",
@@ -148,6 +159,26 @@ function earlyYears(season: "freshman" | "sophomore"): PlaybookEntry[] {
   ];
 }
 
+/**
+ * "Work toward your {target}" (plan v3 review note 8; guides/test-prep.md): one entry per season from junior fall to
+ * senior fall, so each season's skip is its own. Only below the student's own target; the test guide is the button.
+ */
+function reachScore(season: "junior_fall" | "junior_winter" | "junior_spring" | "summer_before_senior" | "senior_fall"): PlaybookEntry[] {
+  return [
+    {
+      key: `reach_score_${season}`,
+      season,
+      title: "Work toward your {target}",
+      why: "Your target is your own. The dates below are the ones whose scores would arrive in time.",
+      who: "student",
+      carries: false,
+      applies: "below_target",
+      action: () => null,
+      source: "advisors",
+    },
+  ];
+}
+
 export const PLAYBOOK: readonly PlaybookEntry[] = [
   // A plan with no class year has one move (seasons.md "The season").
   {
@@ -171,6 +202,14 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     carries: true,
     applies: "profile_incomplete",
     action: firstMissingStep,
+    // Plan v3 fix (2026-10-16, owner: "it should say what's needed, like 'add APs'"): the first missing section's
+    // own words, in PROFILE_SECTIONS' order; "Add your class standing" once the GPA is already in.
+    titleFor: (ctx) => {
+      const section = firstMissingSection(ctx.profile);
+      if (section === null) return null;
+      if (section === "grades" && ctx.profile?.academics.gpa != null) return "Add your class standing";
+      return SECTION_MOVE_TITLE[section];
+    },
     source: "profile",
   },
   {
@@ -194,6 +233,9 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     carries: true,
     applies: "list_empty",
     action: () => COLLEGES,
+    // Plan v3 fix (2026-10-16): names the thinnest level once there's something to judge (list_empty rarely leaves
+    // a shortfall, but a late joiner's carried entry might).
+    titleFor: (ctx) => listGapTitle(ctx.counts, LIST_SHAPE.senior_fall!),
     source: "list",
   },
   {
@@ -216,7 +258,8 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     why: "The junior-year PSAT is the one that counts toward National Merit, and a practice run for the SAT.",
     who: "student",
     carries: false,
-    applies: "always",
+    // Plan v3 review note 9 (overview question 4): dropped too for a student with a real score.
+    applies: "no_real_score",
     action: () => PSAT_PAGE,
     window: OCTOBER,
     source: "advisors",
@@ -241,6 +284,9 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     carries: true,
     applies: "always",
     action: () => COLLEGES,
+    // Plan v3 fix (2026-10-16, owner: "it should say 'add a few reach schools'"): the level with the largest
+    // shortfall against the senior shape's minimums; the built title stays with no shortfall or no estimates yet.
+    titleFor: (ctx) => listGapTitle(ctx.counts, LIST_SHAPE.senior_fall!),
     source: "shape",
   },
   {
@@ -254,29 +300,7 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     action: nearestVisit,
     source: "interest",
   },
-  {
-    key: "notice_teachers",
-    season: "junior_fall",
-    title: "Notice two teachers you'd ask to write for you",
-    why: "Junior-year teachers in core subjects know your work best. The asking comes in spring.",
-    who: "student",
-    carries: true,
-    applies: "always",
-    action: () => TICK,
-    source: "advisors",
-  },
-  {
-    key: "story",
-    season: "junior_fall",
-    title: "Write your story",
-    why: "Three short prompts. The counselor's questionnaire and the essay both start from them.",
-    who: "student",
-    carries: true,
-    applies: "story_missing",
-    action: () => ({ kind: "story" }),
-    source: "story",
-    kind: "story",
-  },
+  ...reachScore("junior_fall"),
   {
     key: "net_price",
     season: "junior_fall",
@@ -289,6 +313,7 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     source: "advisors",
   },
   // Junior winter (Jan–Feb).
+  ...reachScore("junior_winter"),
   {
     key: "register_spring_test",
     season: "junior_winter",
@@ -349,6 +374,7 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     source: "advisors",
   },
   // Junior spring (Mar–May).
+  ...reachScore("junior_spring"),
   {
     key: "spring_break_visit",
     season: "junior_spring",
@@ -372,6 +398,34 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     source: "story",
   },
   // Summer before senior year (Jun–Jul).
+  ...reachScore("summer_before_senior"),
+  {
+    // R1b (specs/planner/record/ranking.md "Timing rules moved here"): moved from junior fall; the owner, 2026-10-16,
+    // "it probably doesn't need to be filled out until the summer before senior year."
+    key: "story",
+    season: "summer_before_senior",
+    title: "Write your story",
+    why: "One page in your own words. The counselor's questionnaire and the essay both start from it.",
+    who: "student",
+    carries: true,
+    applies: "story_missing",
+    action: () => ({ kind: "story" }),
+    source: "story",
+    kind: "story",
+  },
+  {
+    // R1b (ranking.md "Timing rules moved here"): moved from junior spring; same owner note as `story` above.
+    key: "pick_recommenders",
+    season: "summer_before_senior",
+    title: "Pick your recommenders",
+    why: "Junior-year teachers in core subjects know your work best. Advisors say ask before summer, while they remember it.",
+    who: "student",
+    carries: true,
+    applies: "recommenders_open",
+    // The recommenders guide is the button (lib/planner/guides.ts).
+    action: () => null,
+    source: "advisors",
+  },
   {
     key: "list_cost",
     season: "summer_before_senior",
@@ -384,6 +438,7 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     source: "advisors",
   },
   // Senior fall (Aug–Dec).
+  ...reachScore("senior_fall"),
   {
     key: "review_before_submit",
     season: "senior_fall",
@@ -445,8 +500,7 @@ export const SEASON_EXPLAINER: Record<Season, { lead: string; paragraph: string;
   },
   junior_fall: {
     lead: "Junior year is when the plan starts.",
-    paragraph:
-      "The PSAT/NMSQT in October, a first test date, and a list that grows toward something to visit and cut. Notice the teachers who know your work, and write your story while there's no deadline.",
+    paragraph: "The PSAT/NMSQT in October, a first test date, and a list that grows toward something to visit and cut.",
     next: "Next: junior winter, when you register for a spring test and choose senior-year courses.",
   },
   junior_winter: {
@@ -462,7 +516,8 @@ export const SEASON_EXPLAINER: Record<Season, { lead: string; paragraph: string;
   },
   summer_before_senior: {
     lead: "The summer for the essay and the final list.",
-    paragraph: "Draft the personal essay, settle the list, decide whether an early round makes sense, and check the list's cost together before applications open.",
+    paragraph:
+      "Draft the personal essay, settle the list, decide whether an early round makes sense, and check the list's cost together before applications open. Write your story while there's no deadline.",
     next: "Next: senior fall, when applications go out.",
   },
   senior_fall: {
@@ -513,7 +568,7 @@ export const MOVE_TEXT: Record<string, { title: string; why: string }> = {
   "shape_gap:likely_min": { title: "Add a Likely you'd be happy at", why: "{counts}" },
   "shape_gap:affordable": { title: "Add a Likely within your family's limit", why: "{counts}" },
   "shape_gap:target_min": { title: "Add a Target or two", why: "{counts}" },
-  "shape_gap:reach_min": { title: "Room for a Reach", why: "{counts}" },
+  "shape_gap:reach_min": { title: "Add a Reach school", why: "{counts}" },
   "shape_gap:over_max": { title: "Review the list", why: "Several High reaches crowd out colleges you'd get into; which would you drop?" },
   "shape_gap:total_off": { title: "Review the list's size", why: "Common App's own average is about seven applications." },
   "shape_gap:unsorted": { title: "Add your numbers so Quad can sort {count} colleges", why: "Quad sorts a college into a level once it has your numbers." },
@@ -522,5 +577,5 @@ export const MOVE_TEXT: Record<string, { title: string; why: string }> = {
   compare_offers: { title: "Compare your offers", why: "Side by side, the cost after grants is what differs most." },
   decide_by: { title: "Decide by May 1", why: "The national reply date, unless a college published its own." },
   outcome_share: { title: "Tell us where you landed", why: "It helps the next class's estimate. What's shared: the college, the round, the outcome, and your state; never your name." },
-  story: { title: "Write your story", why: "Three short prompts. The counselor's questionnaire and the essay both start from them." },
+  story: { title: "Write your story", why: "One page in your own words. The counselor's questionnaire and the essay both start from it." },
 };

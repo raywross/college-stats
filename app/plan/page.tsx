@@ -11,16 +11,20 @@ import { authConfigured, getUser } from "@/lib/auth";
 import { type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/planner/load";
 import { resolveSelectedChild, type SwitchableChild } from "@/lib/planner/plan-frame";
 import { profileProgress, SECTION_STEP } from "@/lib/planner/profile-progress";
+import { recordHref, recordProgress, type RecordBack } from "@/lib/planner/record";
+import { RecordInline } from "@/components/record/RecordInline";
 import { defaultTab, parseTab, planHref } from "@/lib/planner/plan-tabs";
 import { nowMoves, topMove } from "@/lib/planner/moves";
+import { importanceFactsFrom } from "@/lib/planner/importance-facts";
 import { withTiming } from "@/lib/timing-server";
 import { planBundle } from "@/lib/bundles";
 import { bundleKnownMissing } from "@/lib/bundle-read";
 import { myHome } from "@/lib/home-store";
 import { myLists } from "@/lib/lists";
 import { isUuid } from "@/lib/planner/plan-writes";
-import { profilesICanSee } from "@/lib/student-profile-store";
+import { profileFor, profilesICanSee } from "@/lib/student-profile-store";
 import type { StudentProfileData } from "@/lib/student-profile";
+import type { Season } from "@/lib/planner/seasons";
 
 export const metadata: Metadata = { title: "Plan" };
 
@@ -64,20 +68,32 @@ function planFallback(loaded: PlanLoad, first: string | null): ReactNode | null 
  */
 function detailFor(load: PlanLoad | undefined, person: string | null): PlanPersonDetail | null {
   if (!load || load.kind !== "ready") return null;
-  const { ctx } = load;
-  const base = detailFrom(ctx.profile, ctx.viewer.canEdit, ctx.student?.id ?? person, person);
-  const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: ctx.viewer.isGuardian ? "guardian" : "student" });
+  const { ctx, view } = load;
+  const base = detailFrom(ctx.profile, ctx.viewer.canEdit, ctx.student?.id ?? person, person, ctx.season);
+  const facts = importanceFactsFrom(ctx, view);
+  const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: ctx.viewer.isGuardian ? "guardian" : "student", facts });
   const move = topMove(groups);
   return { ...base, next: move ? { label: move.title, href: planHref({ person, tab: "next", move: move.id }) } : null };
 }
 
-/** The chip details from a profile alone: what detailFor shows once the plan is loaded, for every child at once. */
-function detailFrom(profile: StudentProfileData | null, canEdit: boolean, studentId: string | null, person: string | null): PlanPersonDetail {
-  const progress = profileProgress(profile);
+/**
+ * The chip details from a profile alone: what detailFor shows once the plan is loaded, for every child at once. The
+ * ring reads the record's completeness (`recordProgress`, the overview's thirteen steps) rather than the fourteen-
+ * section `profileProgress`, whose `next`/`nextLabel` still drive the "Next:" text and link (its own section order,
+ * story and recommenders gated by `season` once R3 has it: the batched "every child at once" branch below has no
+ * loaded plan yet, so no season there either, same as before). Edit opens the record overview, not the intake.
+ */
+function detailFrom(profile: StudentProfileData | null, canEdit: boolean, studentId: string | null, person: string | null, season?: Season): PlanPersonDetail {
+  const progress = profileProgress(profile, { season });
+  const record = recordProgress(profile);
   const where = progress.next ? SECTION_STEP[progress.next] : null;
-  const nextHref =
-    !canEdit || where === null ? null : where === "numbers" ? (studentId ? `/household/${studentId}/numbers` : null) : planHref({ person, setup: true, step: where });
-  return { progress, nextHref, editHref: canEdit ? planHref({ person, setup: true }) : null };
+  const nextHref = !canEdit || where === null ? null : planHref({ person, setup: true, step: where });
+  return {
+    progress: { done: record.done, total: record.total, nextLabel: progress.nextLabel },
+    nextHref,
+    // Edit expands the record on the plan page itself (owner, 2026-10-16), not the household's record page.
+    editHref: canEdit ? recordHref({ person }) : null,
+  };
 }
 
 /** The soonest open deadline still to meet on a ready plan (resolveSelectedChild's tie-breaker), or null. */
@@ -96,18 +112,30 @@ function nextDeadlineOf(load: PlanLoad | undefined): string | null {
  * always lands on one child now (decision 2026-10-11, no Everyone): `?for=` when it names a real child, else the
  * last child viewed (the `plan_child` cookie), else the child with the soonest open deadline, else the first.
  * `?tab=` opens a tab (links, so back and forward work); an unrecognized or unavailable one falls back to the
- * viewer's default (PlanFrame reconciles that). `?setup=1` opens the intake guide in edit mode.
+ * viewer's default (PlanFrame reconciles that). `?setup=1` opens the intake guide in edit mode; `?record=1` means the
+ * same thing (record/steps.md "Edit mode"), and `?step=n` (read by PlanIntake itself) opens it at a step; `?back=
+ * plan|record` says where saving or closing it returns to (default the plan).
  */
-export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string }> }) {
+export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string }> }) {
   await connection();
   return withTiming("/plan", () => renderPlan(props));
 }
 
-async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: string; tab?: string; setup?: string }> }) {
+async function renderPlan({
+  searchParams,
+}: {
+  searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string }>;
+}) {
   if (!authConfigured()) return <AuthUnavailable />;
-  const { for: forParam, tab: tabParam, setup: setupParam } = await searchParams;
+  const { for: forParam, tab: tabParam, setup: setupParam, record: recordParam, step: stepParam, back: backParam } = await searchParams;
+  // `record=1` alone expands the record overview on this page (RecordInline; owner 2026-10-16); with `step=n` it opens
+  // the tour at that step, as `setup=1` does.
+  const recordInline = recordParam === "1" && !stepParam;
   const tab = parseTab(tabParam);
-  const setup = setupParam === "1";
+  // `record=1` means what `setup=1` means (record/steps.md "Edit mode"); `step` is additive and read by PlanIntake
+  // itself via useSearchParams, so it needs no server-side parsing here.
+  const setup = setupParam === "1" || (recordParam === "1" && !!stepParam);
+  const back: RecordBack = backParam === "record" || backParam === "inline" ? backParam : "plan";
 
   const user = await getUser();
   if (!user) return <SignedOutPlan />;
@@ -131,6 +159,17 @@ async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: stri
     const fallback = planFallback(loaded, null);
     if (fallback || loaded.kind !== "ready") return fallback;
     const self: PlanPerson = { studentId: null, name: loaded.ctx.student?.display_name ?? "You", gradYear: loaded.ctx.student?.grad_year ?? null, colorSlot: 0, href: "/plan" };
+    if (recordInline && loaded.ctx.viewer.canEdit) {
+      const profile = await profileFor(viewer.student.id);
+      if (profile) {
+        return (
+          <div className="space-y-6">
+            <PlanPeople people={[self]} selected={null} detail={detailFor(loaded, null)} />
+            <RecordInline profile={profile} plan={loaded} person={null} />
+          </div>
+        );
+      }
+    }
     return (
       <PlanFrame
         people={<PlanPeople people={[self]} selected={null} detail={detailFor(loaded, null)} />}
@@ -142,6 +181,7 @@ async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: stri
         personId={null}
         tab={tab ?? defaultTab("student", false)}
         setup={setup}
+        back={back}
       />
     );
   }
@@ -195,6 +235,17 @@ async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: stri
       </div>
     );
   }
+  if (recordInline) {
+    const profile = await profileFor(selected);
+    if (profile) {
+      return (
+        <div className="space-y-6">
+          {line}
+          <RecordInline profile={profile} plan={load} person={selected} />
+        </div>
+      );
+    }
+  }
   return (
     <PlanFrame
       people={line}
@@ -206,6 +257,7 @@ async function renderPlan({ searchParams }: { searchParams: Promise<{ for?: stri
       personId={selected}
       tab={tab ?? defaultTab("guardian", false)}
       setup={setup}
+      back={back}
     />
   );
 }

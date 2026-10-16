@@ -260,6 +260,22 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
     },
   },
   {
+    key: "plan_interest_acts",
+    description:
+      "Each college page or test registration you opened from a plan guide (a tour's Register, an information request, a follow), with what you answered afterward (specs/planner/v3/guides/show-interest.md).",
+    run: async ({ supabase, userId }) => {
+      const { data, error } = await supabase
+        .from("plan_interest_acts")
+        .select("item_id, act, network, url, event_id, event_starts_at, event_place, event_title, clicked_at, prompted_at, emailed_at, status, resolved_at, resolved_via, visit_id")
+        .eq("user_id", userId)
+        .order("clicked_at", { ascending: false });
+      // Before the plan v3 migration is applied there's nothing to export.
+      if (error && (error.code === "42P01" || error.code === "PGRST205" || /does not exist|schema cache/i.test(error.message))) return [];
+      if (error) throw new Error(`export: reading plan_interest_acts failed: ${error.message}`);
+      return data ?? [];
+    },
+  },
+  {
     key: "access_log",
     description: "When guardians viewed your information, and when you viewed a student's as a guardian.",
     run: async ({ supabase, userId }) => ({

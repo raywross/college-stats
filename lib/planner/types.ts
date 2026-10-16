@@ -59,9 +59,16 @@ export interface PlanTask {
    */
   season: import("./seasons").Season | null;
   action: MoveAction | null;
+  /**
+   * Plan v3 (20261016120000_plan_v3.sql; specs/planner/v3/now.md "Skip, recorded"): when and by whom the move was
+   * skipped (`dismiss`), cleared with the flag (`undismiss`). Null before the migration is applied (read-plan.ts reads
+   * without them) and on a task skipped before it.
+   */
+  dismissed_at: string | null;
+  dismissed_by: string | null;
 }
 /** What a generator emits. `season` and `action` are optional (null when left out), so the older generators are untouched. */
-export type GeneratedTask = Omit<PlanTask, "id" | "list_id" | "done_at" | "done_by" | "snoozed_until" | "dismissed" | "orphaned" | "created_by" | "created_at" | "season" | "action"> & {
+export type GeneratedTask = Omit<PlanTask, "id" | "list_id" | "done_at" | "done_by" | "snoozed_until" | "dismissed" | "dismissed_at" | "dismissed_by" | "orphaned" | "created_by" | "created_at" | "season" | "action"> & {
   key: string;
   season?: import("./seasons").Season | null;
   action?: MoveAction | null;

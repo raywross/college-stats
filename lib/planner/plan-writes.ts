@@ -140,3 +140,23 @@ export function togglePlannedDate(profile: StudentProfileData, entryKey: unknown
   }
   return { ok: true, profile: { ...profile, tests: { ...profile.tests, plannedDates: now } } };
 }
+
+/**
+ * Confirming (or undoing) a registration (guides/test-prep.md "Upcoming dates"; build-plan.md "Act tracking"):
+ * `registeredDates` stays a subset of `plannedDates` (the sanitizer's rule), so turning registration on also plans
+ * the date when it wasn't already ("I'll take it" is implied by actually registering). Turning it off only clears
+ * the registered flag; the planned date itself is cleared by `togglePlannedDate(key, false)` instead, which already
+ * drops it from `registeredDates` too (sanitizeProfile's subset rule). Shared with `writeConfirmedAct`
+ * (interest-acts-server.ts), whose `test_register` act writes through this same pure logic.
+ */
+export function toggleRegisteredDate(profile: StudentProfileData, entryKey: unknown, on: boolean): { ok: true; profile: StudentProfileData } | { ok: false; message: string } {
+  if (!isTestDateKey(entryKey)) return { ok: false, message: "That isn't a test date we know." };
+  const tests = { ...profile.tests };
+  if (on) {
+    if (!tests.plannedDates.includes(entryKey)) tests.plannedDates = [...tests.plannedDates, entryKey];
+    tests.registeredDates = tests.registeredDates.includes(entryKey) ? tests.registeredDates : [...tests.registeredDates, entryKey];
+  } else {
+    tests.registeredDates = tests.registeredDates.filter((k) => k !== entryKey);
+  }
+  return { ok: true, profile: { ...profile, tests } };
+}

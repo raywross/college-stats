@@ -10,34 +10,9 @@ import { useMe } from "@/components/account/useMe";
 import { loginHref } from "@/lib/accounts";
 import { useCompareIds } from "@/lib/compare";
 import { cn } from "@/lib/utils";
+import { usePlanDot } from "./usePlanDot";
 
-/**
- * Whether a deadline is due within a week, fetched client-side after mount from `/api/plan/next` (page.md
- * "Navigation"): never computed on the server, so public pages stay static. Signed-out visitors and any fetch
- * error read as false.
- */
-function usePlanDueSoon(signedIn: boolean | undefined): { lit: boolean; label: string } {
-  const [fetched, setFetched] = useState<{ dueSoon: boolean; deadline?: boolean } | null>(null);
-  useEffect(() => {
-    if (!signedIn) return;
-    let active = true;
-    fetch("/api/plan/next", { cache: "no-store", credentials: "same-origin" })
-      .then((r) => (r.ok ? (r.json() as Promise<{ dueSoon: boolean; deadline?: boolean }>) : null))
-      .then((data) => {
-        if (active) setFetched(data ?? null);
-      })
-      .catch(() => {
-        if (active) setFetched(null);
-      });
-    return () => {
-      active = false;
-    };
-  }, [signedIn]);
-  const lit = Boolean(signedIn) && Boolean(fetched?.dueSoon);
-  // The dot lights for a deadline within a week or a move added since the plan was last opened (next-steps
-  // notifications.md "Channels"); its name says which.
-  return { lit, label: fetched?.deadline ? "A deadline in the next 7 days" : "Something new on your plan" };
-}
+// The Plan dot's hook lives in ./usePlanDot.ts (shared with Header.tsx; one fetch per page at most).
 
 type Sheet = "search" | "more" | null;
 
@@ -50,7 +25,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const compareIds = useCompareIds();
   const me = useMe();
-  const planDot = usePlanDueSoon(me?.signedIn);
+  const planDot = usePlanDot(me?.signedIn);
   const [sheet, setSheet] = useState<Sheet>(null);
 
   // Close sheets on navigation.

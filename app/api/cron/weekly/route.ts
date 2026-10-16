@@ -14,6 +14,7 @@ import { NO_MONEY, stuckSignals, summaryLine } from "@/lib/planner/summary";
 import { planCycleKey, readItems, todayIso } from "@/lib/planner/context";
 import { shortDay } from "@/lib/planner/generators/college";
 import { nowMoves, yourPartMoves } from "@/lib/planner/moves";
+import type { ImportanceFacts } from "@/lib/planner/importance";
 import { gradeForSeason } from "@/lib/planner/seasons";
 import { briefDue, briefSentKey, outsideTitle, parentSummaryOn, seasonBriefOn, yourWeekOn, yourWeekTasks } from "@/lib/planner/timeline";
 import {
@@ -85,7 +86,9 @@ async function run(request: NextRequest) {
       const plan = await movesFor(s);
       if (!plan) continue;
       summary.students++;
-      const week = yourWeekTasks(plan.tasks, { season: plan.season, gradYear: plan.gradYear, today });
+      // R1b (ranking.md): no profile or list deadlines for Your week's email either; see the facts note on childMoves below.
+      const weekFacts: ImportanceFacts = { season: plan.season, today, gradYear: plan.gradYear, profile: null, cycle: loadCycle(planCycleKey(plan.gradYear, today)), listDeadlines: [] };
+      const week = yourWeekTasks(plan.tasks, { season: plan.season, gradYear: plan.gradYear, today, facts: weekFacts });
       const any = week.moves.length + week.fresh.length + week.week.length > 0 || week.overdue !== null;
       if (email && s.user_id && any && (await sendYourWeek(client, s, plan, week, siteUrl))) summary.emails++;
       if (texts && (await sendWeekText(client, s, plan, week, siteUrl))) summary.texts++;
@@ -251,6 +254,9 @@ async function sendBrief(
   const stored = await readPrefs(client, userId);
   if (!seasonBriefOn(stored?.season_brief)) return false;
   const prefs = stored ?? (await ensurePrefs(client, userId));
+  // R1b (ranking.md): the weekly job reads no profile or list deadlines, so `reach_score`'s "no date would count"
+  // check can't run for these emails; it resolves true (the move can still appear) rather than being silently hidden.
+  const briefFacts: ImportanceFacts = { season: turn.season, today, gradYear: plan.gradYear, profile: null, cycle: loadCycle(planCycleKey(plan.gradYear, today)), listDeadlines: [] };
   const content = briefContent(plan.tasks, plan.names, {
     role,
     key: turn.key,
@@ -259,6 +265,7 @@ async function sendBrief(
     today,
     studentId: s.id,
     firstName: firstName(s.display_name),
+    facts: briefFacts,
   });
   const built = buildSeasonBrief(content, { siteUrl, unsubscribeToken: prefs.unsubscribe_token });
   const to = await emailOf(client, userId);
@@ -317,11 +324,16 @@ async function parentSummaryStudent(client: SupabaseClient, s: VisibleStudent, p
   const yourPart = yourPartMoves(taskRows, today)
     .slice(0, YOUR_PART_EMAIL_MAX)
     .map((t) => ({ title: outsideTitle(t, nameOf(t, plan)), when: taskDate(t) ? dayLabel(taskDate(t)!, today) : null }));
-  const childMoves = nowMoves(taskRows, { season: plan.season, gradYear: plan.gradYear, today, viewer: "guardian" })
+  // R1b (ranking.md): no profile or list deadlines are read for the weekly email (it already reads only titles),
+  // so `reach_score`'s "no date would count" rule always resolves true here rather than skipping the move.
+  const facts: ImportanceFacts = { season: plan.season, today, gradYear: plan.gradYear, profile: null, cycle, listDeadlines: [] };
+  const childMoves = nowMoves(taskRows, { season: plan.season, gradYear: plan.gradYear, today, viewer: "guardian", facts })
     .now.slice(0, CHILD_MOVES_EMAIL_MAX)
     .map((t) => outsideTitle(t, nameOf(t, plan)));
   const weekAgo = addDays(today, -7);
   const tickedThisWeek = taskRows.filter((t) => t.done_at !== null && t.done_at.slice(0, 10) >= weekAgo).map((t) => outsideTitle(t, nameOf(t, plan)));
+  // Plan v3 (specs/planner/v3/parents.md "Rules"): the week's skipped moves, titles only.
+  const skipped = taskRows.filter((t) => t.dismissed_at !== null && t.dismissed_at.slice(0, 10) >= weekAgo).map((t) => outsideTitle(t, nameOf(t, plan)));
   return {
     studentId: s.id,
     firstName: firstName(s.display_name),
@@ -330,6 +342,7 @@ async function parentSummaryStudent(client: SupabaseClient, s: VisibleStudent, p
     childMoves,
     stuckSignals: signals.map((sig) => sig.text),
     tickedThisWeek,
+    skipped,
   };
 }
 

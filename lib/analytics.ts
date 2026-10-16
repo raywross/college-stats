@@ -15,6 +15,7 @@ import type { StandingLabel, StandingLevel } from "./chances/types";
 import type { Season } from "./planner/seasons";
 import type { ShapeGapKind } from "./planner/list-shape";
 import type { VisitEventKind } from "./visit-events/types";
+import type { GuideFrom, GuideSlug } from "./planner/guides";
 
 /** How someone reached a college's page (`school_viewed.from`; see the spec's "Attribution of a school view"). */
 export type NavigationSource = "search" | "explore" | "compare" | "home" | "similar" | "direct" | "other";
@@ -67,11 +68,11 @@ export interface AnalyticsEvents {
   /** `test` is which test the plan uses (sat, act, none), never the score. */
   plan_numbers_set: { test: "sat" | "act" | "none"; practice: boolean };
   /** The intake guide (specs/planner/redesign/intake.md): which step was completed, never the values entered. */
-  plan_intake_step: { step: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7; mode: "first" | "edit" };
+  /** Your record (specs/planner/record/build-plan.md): steps 0–12 and 13 (Review, the save). */
+  plan_intake_step: { step: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13; mode: "first" | "edit" };
   plan_group_changed: { from_auto: boolean };
   plan_dream_set: { on: boolean };
   plan_round_changed: { from_auto: boolean; round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" };
-  plan_drawer_opened: { in_season: boolean };
   plan_college_removed: { dream: boolean };
   plan_round_problem_shown: { kind: string };
   plan_calendar_opened: { everyone: boolean; color_by: "child" | "round" };
@@ -85,7 +86,9 @@ export interface AnalyticsEvents {
   estimate_shown: { group: StandingLevel | "none"; label: StandingLabel | "none"; model_version: string };
   /* Next steps (specs/planner/next-steps/*.md "Telemetry"; build-plan.md "Telemetry"): kinds, seasons, levels, and
      rule names only; never a college, a score, or a number from the estimate. */
-  plan_move_shown: { kind: string; season: Season };
+  /* R1b (specs/planner/record/ranking.md "Rules"): rank is the card's 1-based position in Now (null outside the
+     ranked set); importance itself is never sent. */
+  plan_move_shown: { kind: string; season: Season; rank: number | null };
   plan_move_done: { kind: string; season: Season; by: "student" | "guardian" };
   plan_move_skipped: { kind: string; season: Season };
   plan_season_explainer_opened: { season: Season };
@@ -97,14 +100,46 @@ export interface AnalyticsEvents {
   /** `action`, not the brief's `act`: "act" is a denied property token (the ACT). */
   plan_interest_act: { action: string };
   plan_shape_gap_shown: { gap: ShapeGapKind; season: Season };
-  plan_rail_opened: { level: StandingLevel };
-  plan_rail_added: { level: StandingLevel };
   plan_applied: { round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" | "none" };
   plan_decision_recorded: { outcome: "admitted" | "denied" | "waitlisted" | "deferred" };
   plan_outcome_shared: { yes: boolean };
-  story_filled: { count: number };
+  story_filled: { length_band: "short" | "medium" | "long" };
   /** Server (U6): one season brief sent. */
   brief_sent: { season: Season; role: "student" | "guardian" };
+  /* Plan v3 (specs/planner/v3/build-plan.md "Telemetry"): slugs, kinds, seasons, levels, statuses, and counts; never a
+     college on a pill, a teacher's name, a score, a target, or the text of anything typed. "act" is a denied token
+     (the ACT), so the act-tracking events carry `action`, as plan_interest_act does. */
+  plan_guide_opened: { slug: GuideSlug; from: GuideFrom };
+  plan_move_restored: { kind: string; season: Season; by: "student" | "guardian" };
+  /** The list guide's Add: the level added at and how alike the college is (points of likeness, never an estimate number). */
+  plan_guide_added: { level: StandingLevel; likeness: number };
+  plan_guide_shape_explained: { season: Season };
+  plan_interest_confirmed: { action: string; via: "prompt" | "email" | "manual" };
+  plan_interest_expired: { action: string };
+  plan_test_registered: { test: "sat" | "act"; via: "prompt" | "email" | "manual" };
+  /** U5 (restored from the deleted Scores tab): "I'll take it" on a test date. */
+  plan_test_date_picked: { test: "sat" | "act" };
+  plan_courses_added: { count: number };
+  plan_recommender_status: { status: "thinking" | "asked" | "agreed" | "invited" };
+  recommenders_count: { n: number };
+  plan_parent_season_viewed: { season: Season };
+  plan_connection_added: { kind: "family" | "recruited" };
+  /* Your record (specs/planner/record/build-plan.md "Telemetry"): counts and the viewer, never a major or a value. */
+  record_major_picked: { count: number };
+  record_overview_opened: { viewer: "student" | "guardian" };
+  /** Less text (specs/planner/record/less-text.md): a `WhyFold` opened, by screen and which fold on it. */
+  plan_why_opened: { screen: string; section: string };
+  /** R6 (specs/planner/record/reading.md "Rules"): the "How Quad reads your record" section shown, once per mount —
+   * how many input kinds it's working from and whether it has a "not yet" prompt, never a college or a level. */
+  record_reading_shown: { inputs: number; missing: boolean };
+  /** R6: the add-college search's level chip shown, once per result set, by level (never the college). */
+  plan_add_level_shown: { level: StandingLevel };
+  /** R7 (specs/planner/record/explore-levels.md): Explore's "For you" levels changed: how many are picked, never which colleges. */
+  explore_for_me: { levels: number };
+  /** R7: the list guide's "Show me more" at a level, and whether it was the emphasized one (below the shape's minimum). */
+  plan_show_more: { level: StandingLevel; emphasized: boolean };
+  /** Server (U4): one interest-confirmation email sent, with how many acts it asks about. */
+  interest_confirm_sent: { acts: number };
   /** Visit events (specs/product/visit-events.md "Privacy and telemetry"): which surface and kind filter are viewed, never an address or a distance. */
   visit_events_viewed: { surface: "profile" | "me" | "planner"; kind: VisitEventKind | "all" };
   visit_signup_clicked: { unit_id: string; kind: VisitEventKind; near: boolean };
@@ -115,7 +150,7 @@ export interface AnalyticsEvents {
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -183,7 +218,6 @@ export const EVENTS = {
   plan_group_changed: { properties: ["from_auto"], side: "client", why: "Planner: how often a suggested group gets changed" },
   plan_dream_set: { properties: ["on"], side: "client", why: "Planner: Dreams marked" },
   plan_round_changed: { properties: ["from_auto", "round"], side: "client", why: "Planner: which rounds students pick over the starting round" },
-  plan_drawer_opened: { properties: ["in_season"], side: "client", why: "Planner: do row details get opened" },
   plan_college_removed: { properties: ["dream"], side: "client", why: "Planner: do students prune the list from the plan" },
   plan_round_problem_shown: { properties: ["kind"], side: "client", why: "Planner: which round conflicts come up" },
   plan_calendar_opened: { properties: ["everyone", "color_by"], side: "client", why: "Planner: calendar views, per child or for everyone" },
@@ -194,7 +228,7 @@ export const EVENTS = {
   course_plan_dismissed: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get set aside, by reason" },
   visit_alert_sent: { properties: ["college_count", "event_count"], side: "server", why: "Visit events: alerts sent, by size" },
   estimate_shown: { properties: ["group", "label", "model_version"], side: "client", why: "Quad's estimate: how often it is shown and as which group and label, per model version (never the inputs)" },
-  plan_move_shown: { properties: ["kind", "season"], side: "client", why: "Next steps: which moves families see, by season" },
+  plan_move_shown: { properties: ["kind", "season", "rank"], side: "client", why: "Next steps: which moves families see, by season, and in what order" },
   plan_move_done: { properties: ["kind", "season", "by"], side: "client", why: "Next steps: which moves get done, and by whom" },
   plan_move_skipped: { properties: ["kind", "season"], side: "client", why: "Next steps: which moves get a Not now" },
   plan_season_explainer_opened: { properties: ["season"], side: "client", why: "Next steps: is How this season works read" },
@@ -205,13 +239,32 @@ export const EVENTS = {
   plan_interest_move_shown: { properties: ["rule", "level"], side: "client", why: "Next steps: interest moves shown, by rule" },
   plan_interest_act: { properties: ["action"], side: "client", why: "Next steps: which ways of showing interest get used" },
   plan_shape_gap_shown: { properties: ["gap", "season"], side: "client", why: "Next steps: which list-shape gaps come up" },
-  plan_rail_opened: { properties: ["level"], side: "client", why: "Next steps: the college rail opened, by level" },
-  plan_rail_added: { properties: ["level"], side: "client", why: "Next steps: colleges added from the rail, by level" },
   plan_applied: { properties: ["round"], side: "client", why: "Next steps: applications marked sent, by round" },
   plan_decision_recorded: { properties: ["outcome"], side: "client", why: "Next steps: decisions recorded" },
   plan_outcome_shared: { properties: ["yes"], side: "client", why: "Next steps: outcome sharing answered" },
-  story_filled: { properties: ["count"], side: "client", why: "Your story: how many prompts are filled (never the text)" },
+  story_filled: { properties: ["length_band"], side: "client", why: "Your story: how long the saved story is, by band (never the text)" },
   brief_sent: { properties: ["season", "role"], side: "server", why: "Next steps: season briefs sent" },
+  plan_guide_opened: { properties: ["slug", "from"], side: "client", why: "Plan v3: which guides get opened, and from where" },
+  plan_move_restored: { properties: ["kind", "season", "by"], side: "client", why: "Plan v3: skipped moves brought back, and by whom" },
+  plan_guide_added: { properties: ["level", "likeness"], side: "client", why: "Plan v3: colleges added from the list guide, by level and likeness" },
+  plan_guide_shape_explained: { properties: ["season"], side: "client", why: "Plan v3: is the list guide's shape explainer read" },
+  plan_interest_confirmed: { properties: ["action", "via"], side: "server", why: "Plan v3: tracked acts confirmed, by act and how (sent where the answer is written)" },
+  plan_interest_expired: { properties: ["action"], side: "server", why: "Plan v3: tracked acts that expired unconfirmed (the morning job)" },
+  plan_test_registered: { properties: ["test", "via"], side: "client", why: "Plan v3: test registrations confirmed" },
+  plan_test_date_picked: { properties: ["test"], side: "client", why: "Plan v3: test dates picked with \"I'll take it\"" },
+  plan_courses_added: { properties: ["count"], side: "client", why: "Plan v3: courses added from the courses guide" },
+  plan_recommender_status: { properties: ["status"], side: "client", why: "Plan v3: recommender status changes (never a name)" },
+  recommenders_count: { properties: ["n"], side: "client", why: "Plan v3: how many recommenders a student lists" },
+  plan_parent_season_viewed: { properties: ["season"], side: "client", why: "Plan v3: parents reading the season's list" },
+  plan_connection_added: { properties: ["kind"], side: "client", why: "Plan v3: connections entered, family or recruiting" },
+  record_major_picked: { properties: ["count"], side: "client", why: "Your record: how many majors a student picks (never which)" },
+  record_overview_opened: { properties: ["viewer"], side: "client", why: "Your record: the overview opened, by students and parents" },
+  plan_why_opened: { properties: ["screen", "section"], side: "client", why: "Less text: which folded explanations get opened and read" },
+  record_reading_shown: { properties: ["inputs", "missing"], side: "client", why: "R6: how complete the record reads, and whether it has a next input to prompt" },
+  plan_add_level_shown: { properties: ["level"], side: "client", why: "R6: level chips shown on the add-college search, by level" },
+  explore_for_me: { properties: ["levels"], side: "client", why: "R7: is Explore's For you level filter used, and with how many levels" },
+  plan_show_more: { properties: ["level", "emphasized"], side: "client", why: "R7: the list guide's Show me more links, by level and whether it was the emphasized one" },
+  interest_confirm_sent: { properties: ["acts"], side: "server", why: "Plan v3: interest-confirmation emails sent, by act count" },
   visit_events_viewed: { properties: ["surface", "kind"], side: "client", why: "Visit events: which surface and kind filter get used" },
   visit_signup_clicked: { properties: ["unit_id", "kind", "near"], side: "client", why: "Visit events: sign-up clicks, by college, kind, and whether it was a near-you event" },
   visit_alert_muted: { properties: ["unit_id"], side: "client", why: "Visit events: per-college alert mutes" },

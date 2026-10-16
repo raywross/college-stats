@@ -21,11 +21,12 @@
   after saving.
 
 ## Steps
-One question per screen, eight steps and a Done screen (`IntakeStep` 0–8; `INTAKE_REVIEW` 7, `INTAKE_DONE` 8). Nothing
+One question per screen, nine steps and a Done screen (`IntakeStep` 0–9; `INTAKE_REVIEW` 8, `INTAKE_DONE` 9). Nothing
 is written until the last step. The single optional "More about you" step (U3, 2026-10-12) became four optional
 activity steps after AP courses (U13, 2026-10-12; owner: "sports and clubs their own items… autocomplete similar to
 the way we did APs… work and internships its own screen… other stuff as the last screen"), see
 [Activities, four steps](#activities-four-steps).
+**(Plan v3, 2026-10-16: step 6 Connections added; Other → 7, Review → 8, Done → 9; see [../v3/connections.md](../v3/connections.md).)**
 
 | Step | Headline | Asks |
 |---|---|---|
@@ -35,9 +36,10 @@ the way we did APs… work and internships its own screen… other stuff as the 
 | 3 Sports | "Your sports" | Optional: type-ahead over the sports catalog; per year a level (JV · Varsity · Captain, more behind "More…"); hours a week in season; recognition |
 | 4 Clubs | "Clubs and organizations" | Optional: type-ahead over the clubs catalog (acronyms: DECA, HOSA, MUN) or a typed name plus a one-tap "What's it about?"; a title per year; recognition |
 | 5 Work | "Work and internships" | Optional: jobs, internships, research positions, family responsibilities, as typed; type, hours, a role per year |
-| 6 Other | "Anything else?" | Optional: awards (type-ahead over the awards catalog), then volunteering, projects, anything else |
-| 7 Review | "Look right?" | One row per answer with Edit (jumps to its step); "Save and show my plan" |
-| 8 Done | "Your numbers are in." | First run only: "Add your first college" |
+| 6 Connections | "Your college connections" | Optional: add colleges (search or list), pick family relation (parent, grandparent, sibling) and recruiting status |
+| 7 Other | "Anything else?" | Optional: awards (type-ahead over the awards catalog), then volunteering, projects, anything else |
+| 8 Review | "Look right?" | One row per answer with Edit (jumps to its step); "Save and show my plan" |
+| 9 Done | "Your numbers are in." | First run only: "Add your first college" |
 
 ### Grades
 - **Class of**: four chips starting at the current senior class (`classYearOptions`: from July on, next year's
@@ -196,3 +198,9 @@ Rounds are unchanged: still the student's own once picked.
   kinds of inputs only.
 - Whether AP courses or the target score should feed the grouping (the design's open question): not yet; the target
   drives only the Scores tab's line.
+
+## Superseded (2026-10-16): Your record
+The guide is now the record's tour, **Your record** ([../record/steps.md](../record/steps.md)): thirteen steps (the nine
+here plus Major, Basics, Where you'd go, Your story, Recommenders), the Numbers tab's fields folded in, an overview page
+with "How complete is this", and `?record=1` as the edit-mode switch (`setup=1` still works). Every built step's rules
+above stand.

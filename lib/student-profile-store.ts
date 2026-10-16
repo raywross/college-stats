@@ -17,8 +17,10 @@ import { callBundle } from "@/lib/bundle-read";
 import { requestMemo } from "@/lib/request-memo";
 import { cache } from "react";
 import type { StudentAccess, StudentRecord } from "@/lib/accounts";
-import { coreAnswered, emptyProfile, profileForViewer, sanitizeProfile, sanitizeStory, type StudentProfileData } from "@/lib/student-profile";
+import { coreAnswered, emptyProfile, profileForViewer, sanitizeProfile, sanitizeRecommenders, sanitizeStory, withHomeState, type StudentProfileData } from "@/lib/student-profile";
 import { getHighSchool } from "@/lib/high-schools";
+import { stateOfHome } from "@/lib/home";
+import { myHome } from "@/lib/home-store";
 import { matriculationLine } from "@/lib/high-school-ui";
 
 function isMissingTable(error: { code?: string; message?: string }): boolean {
@@ -55,12 +57,14 @@ const readableProfiles = cache(
 
 /** Every student the signed-in user can see, each with their saved profile (or the empty shape if none yet). */
 export async function profilesICanSee(): Promise<ProfileAccess[]> {
-  const [access, rows] = await Promise.all([studentsICanSee(), readableProfiles()]);
+  const [access, rows, home] = await Promise.all([studentsICanSee(), readableProfiles(), myHome().catch(() => null)]);
   if (access.length === 0) return [];
+  const homeState = stateOfHome(home);
   return access.map((a: StudentAccess) => {
     const raw = rows.get(a.student.id);
     // Your story (next-steps/your-story.md): a guardian never receives the text, only that it's written.
-    return { student: a.student, relation: a.relation, canEdit: a.canEdit, data: profileForViewer(sanitizeProfile(raw), a.relation), saved: raw !== undefined };
+    const data = withHomeState(profileForViewer(sanitizeProfile(raw), a.relation), homeState);
+    return { student: a.student, relation: a.relation, canEdit: a.canEdit, data, saved: raw !== undefined };
   });
 }
 
@@ -140,8 +144,8 @@ async function syncStudentGradYear(supabase: SupabaseClient, studentId: string, 
 export type StorySaveState = { status: "idle" } | { status: "saved" } | { status: "error"; message: string };
 
 /**
- * Saves the three story prompts (specs/planner/next-steps/your-story.md), from the Numbers page's StorySection or
- * the move's StoryCard: a Server Action shape (`useActionState`), same pattern as app/me/actions.ts
+ * Saves the story's one narrative (form field `narrative`; specs/planner/v3/guides/your-story.md), from the Numbers
+ * page's StorySection, the move's StoryCard, or the story guide: a Server Action shape (`useActionState`), same pattern as app/me/actions.ts
  * saveStudentProfile. Reads the profile that's actually saved first and changes only `story`, so nothing else on the
  * profile is ever touched by this form. Student only (IECA's rule: nobody writes it but the student), even for a
  * guardian with edit access elsewhere — `profileFor` already strips the text for a guardian, so `access.data.story`
@@ -156,10 +160,28 @@ export async function saveStory(_prev: StorySaveState, form: FormData): Promise<
   if (!access) return { status: "error", message: "You don't have permission to edit this profile." };
   if (access.relation !== "self") return { status: "error", message: "Only the student can write their own story." };
   if (!access.canEdit) return { status: "error", message: "You don't have permission to edit this profile." };
-  const story = sanitizeStory({ about: form.get("about"), thread: form.get("thread"), majorWhy: form.get("majorWhy"), updatedAt: new Date().toISOString() });
+  const narrative = form.get("narrative");
+  const story = sanitizeStory({ narrative: typeof narrative === "string" ? narrative : "", updatedAt: new Date().toISOString() });
   const result = await saveProfile(studentId, { ...access.data, story });
   if (!result.ok) return { status: "error", message: result.message };
   return { status: "saved" };
+}
+
+/**
+ * Saves the recommenders list (guides/recommenders.md "Stored"): the student, or a guardian with edit access (a
+ * teacher's name isn't a private note, unlike the story). Reads the profile exactly as it's stored — not the
+ * viewer's copy, which `profileFor` redacts the story for a guardian — so a guardian's save can never blank out the
+ * student's own story: only `recommenders` changes.
+ */
+export async function saveRecommenders(studentId: string, entries: unknown): Promise<SaveProfileResult> {
+  const user = await getUser();
+  if (!user) return { ok: false, message: "Sign in to save your plan." };
+  const access = await profileFor(studentId);
+  if (!access) return { ok: false, message: "You don't have permission to edit this profile." };
+  if (!access.canEdit) return { ok: false, message: "You don't have permission to edit this profile." };
+  const rows = await readableProfiles();
+  const stored = sanitizeProfile(rows.get(studentId));
+  return saveProfile(studentId, { ...stored, recommenders: sanitizeRecommenders(entries) });
 }
 
 /**
@@ -199,6 +221,7 @@ function mergeProfiles(base: StudentProfileData, incoming: StudentProfileData): 
     preferences: pick(base.preferences, incoming.preferences),
     // Your story (next steps): the saved one wins; a signed-out copy fills it only when none is saved.
     story: base.story ?? incoming.story,
+    recommenders: base.recommenders.length > 0 ? base.recommenders : incoming.recommenders,
   };
 }
 

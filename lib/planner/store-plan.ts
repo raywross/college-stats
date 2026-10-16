@@ -18,13 +18,13 @@ import { allowed, NOT_ALLOWED_MESSAGE } from "@/lib/entitlements";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { myHome } from "@/lib/home-store";
 import { profileFor, profilesICanSee, saveProfile } from "@/lib/student-profile-store";
-import { effectiveGradYear, sanitizeProfile, type StudentProfileData } from "@/lib/student-profile";
+import { effectiveGradYear, sanitizeProfile, type StudentProfileData, type StudentStory } from "@/lib/student-profile";
 import type { ListRound } from "@/lib/list-rules";
 import { generatorInputFor, readPlan, todayIso, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView } from "./plan-view";
 import { planEstimates } from "./plan-estimates";
 import { generateTasks, mergeTasks } from "./tasks";
-import { applyNumbers, isUuid, parseNumbers, roundPatch, togglePlannedDate, type PlanNumbers } from "./plan-writes";
+import { applyNumbers, isUuid, parseNumbers, roundPatch, togglePlannedDate, toggleRegisteredDate, type PlanNumbers } from "./plan-writes";
 import { applyIntake, parseIntakeSave, type IntakeSave } from "./intake";
 import { mergeCoursesForSave } from "@/lib/chances/courses";
 import { span } from "@/lib/timing";
@@ -253,11 +253,20 @@ async function saveTheirProfileNow(
   if (!profile.canEdit) return { ok: false, message: NOT_EDITOR };
   const next = change(profile);
   if (!next.ok) return next;
-  const saved = await span("profile write", () => saveProfile(studentId, next.data));
+  // A guardian's copy never carries the story's text (profileForViewer redacts it), so a profile built from it holds
+  // a blanked story: the stored one goes back on before the write (only the student writes it: saveStory). Your
+  // record's tour saves through here with the story step (record build-plan review note 3).
+  let data = next.data;
+  if (profile.relation === "guardian") {
+    const stored = await span("story read", () => storedStory(r.supabase, studentId));
+    if (!stored.ok) return { ok: false, message: FAILED };
+    data = { ...sanitizeProfile(next.data), story: stored.story };
+  }
+  const saved = await span("profile write", () => saveProfile(studentId, data));
   if (!saved.ok) return saved;
   // Sanitized exactly like saveProfile's own write, so this matches what the database now holds: the follow-up pass
   // reads the student's grad year fresh (with the plan) but never re-reads the profile itself.
-  const known = { studentId, profile: sanitizeProfile(next.data) };
+  const known = { studentId, profile: sanitizeProfile(data) };
   const pass = async () => {
     const lists = await span("lists", () => studentLists(r.supabase, studentId));
     await followUp(r.supabase, lists, known);
@@ -265,6 +274,13 @@ async function saveTheirProfileNow(
   if (opts.background) await afterResponse("followUp", pass);
   else await span("followUp", pass);
   return { ok: true };
+}
+
+/** The story as stored (not the guardian's redacted copy); not ok when it can't be read, so a save never blanks it. */
+async function storedStory(supabase: Supabase, studentId: string): Promise<{ ok: true; story: StudentStory | null } | { ok: false }> {
+  const { data, error } = await supabase.from("student_profiles").select("data").eq("student_id", studentId).maybeSingle();
+  if (error) return { ok: false };
+  return { ok: true, story: sanitizeProfile((data as { data?: unknown } | null)?.data).story };
 }
 
 /** The numbers form (standing.md "The numbers"): GPA and scale, which test, the score, and the practice flag. */
@@ -309,6 +325,19 @@ export async function saveIntake(studentId: string, input: IntakeSave): Promise<
 export async function setPlannedDate(studentId: string, entryKey: string, on: boolean): Promise<PlanWriteResult> {
   return saveTheirProfile(studentId, (p) => {
     const t = togglePlannedDate(p.data, entryKey, Boolean(on));
+    return t.ok ? { ok: true, data: t.profile } : t;
+  });
+}
+
+/**
+ * Confirming (or undoing) a test registration directly on the plan (guides/test-prep.md "Upcoming dates"): the same
+ * pure rule `writeConfirmedAct` (lib/planner/interest-acts-server.ts) uses for a `test_register` act confirmed
+ * through the return prompt or the morning email. This action is for the guide's own UI (a manual edit on the
+ * calendar); it goes through the caller's own session, like `setPlannedDate`.
+ */
+export async function setRegisteredDate(studentId: string, entryKey: string, on: boolean): Promise<PlanWriteResult> {
+  return saveTheirProfile(studentId, (p) => {
+    const t = toggleRegisteredDate(p.data, entryKey, Boolean(on));
     return t.ok ? { ok: true, data: t.profile } : t;
   });
 }

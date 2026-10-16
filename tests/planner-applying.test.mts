@@ -209,6 +209,8 @@ test("outcome_share: generated once a college is enrolling; a dismissal (No than
     done_by: null,
     snoozed_until: null,
     dismissed: false,
+    dismissed_at: null,
+    dismissed_by: null,
     created_by: null,
     created_at: NOW,
   }));

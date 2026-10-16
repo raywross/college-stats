@@ -22,7 +22,7 @@ import {
   type CalendarMark,
   type YearRange,
 } from "@/lib/planner/calendar";
-import { KID_VARS, MONEY_VAR, ROUND_VAR, STRIPED, TEST_VAR } from "@/lib/planner/colors";
+import { KID_VARS, MONEY_VAR, ROUND_VAR, STRIPED, TEST_VAR, VISIT_VAR } from "@/lib/planner/colors";
 import { ROUND_LABELS, type ListRound } from "@/lib/list-rules";
 import { createCalendarToken, createViewerCalendarToken } from "@/lib/planner/store-timeline";
 import { track } from "@/lib/analytics";
@@ -93,6 +93,7 @@ export default function FamilyCalendar({ children, viewer, everyone }: CalendarT
       if (byChild) return { color: kidColor(colorSlot), striped };
       if (m.kind === "test") return { color: TEST_VAR, striped: false };
       if (m.kind === "money") return { color: MONEY_VAR, striped: false };
+      if (m.kind === "visit") return { color: VISIT_VAR, striped: false };
       if (m.kind === "window") return { color: "", striped: false };
       return { color: roundColor(m.round), striped };
     };
@@ -101,6 +102,7 @@ export default function FamilyCalendar({ children, viewer, everyone }: CalendarT
     if (byChild) return kidColor(colorSlot);
     if (e.shape === "test") return TEST_VAR;
     if (e.shape === "money") return MONEY_VAR;
+    if (e.shape === "visit") return VISIT_VAR;
     return roundColor(e.round!);
   };
   // Coming up mixes children, so its per-row color follows that row's own child's slot.

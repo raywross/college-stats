@@ -5,6 +5,8 @@ import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
 import { ClassStandingPick } from "@/components/me/ClassStandingPick";
 import { RankExpectationPick } from "@/components/me/RankExpectationPick";
 import { Headline } from "@/components/planner/intake/Headline";
+import { WhyFold } from "@/components/ui/why-fold";
+import { RECORD_STEPS } from "@/lib/planner/record";
 import {
   classYearOptions,
   effectiveScale,
@@ -43,7 +45,15 @@ export function GradesStep({
 
   return (
     <div className="space-y-8">
-      <Headline lead="Start with your" pop="grades" />
+      <div className="space-y-1">
+        <div className="flex items-center gap-1.5">
+          <Headline lead="Start with your" pop="grades" />
+          <WhyFold compact title="Why we ask" screen="record_tour" section="grades">
+            {RECORD_STEPS[0].why}
+          </WhyFold>
+        </div>
+        <p className="text-sm text-muted-foreground">{RECORD_STEPS[0].line}</p>
+      </div>
 
       <div className="space-y-2.5">
         <p className="text-sm font-semibold">Class of</p>

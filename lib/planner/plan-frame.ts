@@ -8,7 +8,7 @@
 import { addDays, parseStage } from "./stage.ts";
 import { planHref, tabForStage, type PlanTab } from "./plan-tabs.ts";
 import type { PlanView, PlanRowView } from "./plan-view.ts";
-import { isOpen } from "./tasks.ts";
+import { isOpen, taskDate } from "./tasks.ts";
 import type { PlanTask } from "./types.ts";
 
 /** A guardian's child, as far as route choice cares. */
@@ -181,6 +181,20 @@ export function joinNames(names: readonly string[]): string {
 export function hasDueSoon(view: PlanView, today: string, windowDays = 7): boolean {
   const limit = addDays(today, windowDays);
   return view.rows.some((r) => isOpenRow(r) && r.deadline !== null && r.deadline.iso >= today && r.deadline.iso <= limit);
+}
+
+/**
+ * The dot's deadline reason from the stored tasks alone (app/api/plan/next/route.ts; performance pass, 2026-10-16):
+ * an open, dated task within `windowDays`. The college generator dates each college's application in its chosen
+ * round, so the round deadlines `hasDueSoon` reads from the view are among these tasks, without building the view.
+ */
+export function tasksDueSoon(tasks: readonly Pick<PlanTask, "due_on" | "window_start" | "window_end" | "done_at" | "dismissed" | "snoozed_until" | "orphaned">[], today: string, windowDays = 7): boolean {
+  const limit = addDays(today, windowDays);
+  return tasks.some((t) => {
+    if (t.orphaned || !isOpen(t, today)) return false;
+    const d = taskDate(t);
+    return d !== null && d >= today && d <= limit;
+  });
 }
 
 /**

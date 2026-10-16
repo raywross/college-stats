@@ -2,8 +2,9 @@
  * The list's shape (lib/planner/list-shape.ts; specs/planner/next-steps/list-shape.md): every gap in priority
  * order, each season's shape, the three affordability states, unsorted rows excluded from the counts and given
  * their own move, one move at a time with the next appearing once the first resolves (via mergeTasks orphaning),
- * `balanceLineFor` and `shapeTasks` agreeing, and the rail's pure parts (`rankRail`, `excludeOverLimit`) with fake
- * inputs. A guard that no rail card or balance/move line carries a closeness number or a percentage. `npm test`.
+ * `balanceLineFor` and `shapeTasks` agreeing. A guard that no balance/move line carries a closeness number or a
+ * percentage. The rail these moves used to open became the Build your list guide (plan v3; its ordering, the cost
+ * exclusion, and its card's fields are tested in tests/planner-list-guide.test.mts). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -12,13 +13,13 @@ import {
   countLine,
   dreamAtHighReach,
   LIST_SHAPE,
+  listGapTitle,
   shapeFor,
   shapeGaps,
   shapeTasks,
   unsortedLine,
   type Shape,
 } from "../lib/planner/list-shape.ts";
-import { excludeOverLimit, rankRail, type RailCard } from "../lib/planner/rail.ts";
 import { balanceLineFor } from "../lib/planner/plan-view.ts";
 import { gradeOf, type Season } from "../lib/planner/seasons.ts";
 import { mergeTasks, applyMerge } from "../lib/planner/tasks.ts";
@@ -26,6 +27,7 @@ import { loadCycle, cycleFor } from "../lib/planner/cycle.ts";
 import type { GeneratorInput, PlanItem, PlanSchool } from "../lib/planner/types.ts";
 import type { EstimateResult, StandingLevel } from "../lib/chances/types.ts";
 import type { ListCategory } from "../lib/list-rules.ts";
+import { numberProblems } from "./helpers/copy-guard.mts";
 
 const LIST = "list-1";
 const G = 2028;
@@ -361,42 +363,54 @@ test("one gap move at a time: resolving the first lets the next regenerate in it
 });
 
 /* ------------------------------------------------------------------ */
-/* The rail's pure parts                                               */
-/* ------------------------------------------------------------------ */
-
-function card(unitId: string, level: StandingLevel, distanceMiles: number | null = null): RailCard {
-  return { unitId, name: unitId, state: "CA", level, avgCost: null, distanceMiles };
-}
-
-test("rankRail: keeps only the missing level, orders by closeness then distance, caps at 12", () => {
-  const rows = [
-    { school: { unit_id: "far", name: "Far" } as never, estimate: { group: "target", closeness: 1 } as EstimateResult, distanceMiles: 500 },
-    { school: { unit_id: "near", name: "Near" } as never, estimate: { group: "target", closeness: 1 } as EstimateResult, distanceMiles: 10 },
-    { school: { unit_id: "closest", name: "Closest" } as never, estimate: { group: "target", closeness: 3 } as EstimateResult, distanceMiles: 1000 },
-    { school: { unit_id: "wrong-level", name: "Wrong" } as never, estimate: { group: "reach", closeness: 3 } as EstimateResult, distanceMiles: 1 },
-    { school: { unit_id: "no-estimate", name: "None" } as never, estimate: undefined, distanceMiles: 1 },
-  ];
-  const ranked = rankRail(rows, "target");
-  assert.deepEqual(ranked.map((r) => r.school.unit_id), ["closest", "near", "far"]);
-});
-
-test("rankRail: caps at twelve", () => {
-  const rows = Array.from({ length: 20 }, (_, i) => ({ school: { unit_id: `s${i}`, name: `S${i}` } as never, estimate: { group: "target", closeness: 0 } as EstimateResult, distanceMiles: i }));
-  assert.equal(rankRail(rows, "target").length, 12);
-});
-
-test("excludeOverLimit: only filters when the gap is affordable and a limit is set", () => {
-  const schools = [{ unit_id: "cheap", cost: { avg_paid_all: 10000 } }, { unit_id: "pricey", cost: { avg_paid_all: 50000 } }, { unit_id: "unknown-cost", cost: {} }] as never[];
-  assert.deepEqual(excludeOverLimit(schools, "affordable", 20000).map((s) => (s as unknown as { unit_id: string }).unit_id), ["cheap", "unknown-cost"]);
-  assert.deepEqual(excludeOverLimit(schools, "affordable", null).length, 3, "no limit, nothing excluded");
-  assert.deepEqual(excludeOverLimit(schools, "target_min", 20000).length, 3, "not the affordable gap, nothing excluded");
-});
-
-/* ------------------------------------------------------------------ */
 /* Guard: no closeness, no percentage, anywhere a shape gap or card shows text */
 /* ------------------------------------------------------------------ */
 
-test("guard: no gap's line, no shape_gap/shape_cost task text, and no rail card carries a percentage or the word 'closeness'", () => {
+/* ------------------------------------------------------------------ */
+/* listGapTitle: the level with the thinnest list, against the senior shape's minimums (plan-v3-fix-cards)    */
+/* ------------------------------------------------------------------ */
+
+const SENIOR = LIST_SHAPE.senior_fall as Shape;
+
+test("listGapTitle: null with no counts yet (no estimates), or no shortfall at all", () => {
+  assert.equal(listGapTitle(null, SENIOR), null);
+  const full = counts({ high_reach: 2, reach: 3, target: 8, likely: 3, safe: 3 });
+  assert.equal(listGapTitle(full, SENIOR), null);
+});
+
+test("listGapTitle: each level, singular at a shortfall of one, 'a few' at two or more", () => {
+  // Reach min 2, Target min 5, Likely min 2, Safe min 2 (High reach has no minimum).
+  assert.equal(listGapTitle(counts({ reach: 1, target: 5, likely: 2, safe: 2 }), SENIOR), "Add a Reach school");
+  assert.equal(listGapTitle(counts({ reach: 0, target: 5, likely: 2, safe: 2 }), SENIOR), "Add a few Reach schools");
+  assert.equal(listGapTitle(counts({ reach: 2, target: 3, likely: 2, safe: 2 }), SENIOR), "Add a few Target schools");
+  assert.equal(listGapTitle(counts({ reach: 2, target: 5, likely: 1, safe: 2 }), SENIOR), "Add a Likely school");
+  assert.equal(listGapTitle(counts({ reach: 2, target: 5, likely: 0, safe: 2 }), SENIOR), "Add a few Likely schools");
+  assert.equal(listGapTitle(counts({ reach: 2, target: 5, likely: 2, safe: 1 }), SENIOR), "Add a Safe school");
+  assert.equal(listGapTitle(counts({ reach: 2, target: 5, likely: 2, safe: 0 }), SENIOR), "Add a few Safe schools");
+});
+
+test("listGapTitle: the largest shortfall wins; ties break Likely, Target, Reach, Safe", () => {
+  // Reach short by 2, Likely short by 1: Reach's shortfall is larger.
+  assert.equal(listGapTitle(counts({ reach: 0, target: 5, likely: 1, safe: 2 }), SENIOR), "Add a few Reach schools");
+  // Likely and Target tie (both short by 2): Likely comes first in the tie order.
+  assert.equal(listGapTitle(counts({ reach: 2, target: 3, likely: 0, safe: 2 }), SENIOR), "Add a few Likely schools");
+  // Target and Reach tie (both short by 2): Target wins over Reach.
+  assert.equal(listGapTitle(counts({ reach: 0, target: 3, likely: 2, safe: 2 }), SENIOR), "Add a few Target schools");
+  // Reach and Safe tie (both short by 1): Reach wins over Safe.
+  assert.equal(listGapTitle(counts({ reach: 1, target: 5, likely: 2, safe: 1 }), SENIOR), "Add a Reach school");
+});
+
+test("listGapTitle: no title carries a digit (the catalog's words guard)", () => {
+  const titles = [
+    listGapTitle(counts({ reach: 0 }), SENIOR),
+    listGapTitle(counts({ target: 0 }), SENIOR),
+    listGapTitle(counts({ likely: 0 }), SENIOR),
+    listGapTitle(counts({ safe: 0 }), SENIOR),
+  ];
+  for (const t of titles) assert.ok(t !== null && numberProblems(t).length === 0, t ?? "null");
+});
+
+test("guard: no gap's line and no shape_gap/shape_cost task text carries a percentage or the word 'closeness'", () => {
   const texts: string[] = [];
   for (const season of ["senior_fall", "junior_fall", "junior_spring"] as const) {
     for (const affordability of ["ok", "none", "unknown"] as const) {
@@ -413,11 +427,4 @@ test("guard: no gap's line, no shape_gap/shape_cost task text, and no rail card 
     assert.ok(!/closeness/i.test(t), t);
     assert.ok(!/\bodds\b/i.test(t), t);
   }
-  // RailCard's own shape carries no closeness or estimate field at all — a planted bad card would fail this.
-  const c = card("X", "target") as unknown as Record<string, unknown>;
-  assert.deepEqual(
-    Object.keys(c).sort(),
-    ["avgCost", "distanceMiles", "level", "name", "state", "unitId"],
-    "no closeness, no estimate number, nothing beyond the card's own fields",
-  );
 });

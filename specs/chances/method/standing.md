@@ -613,10 +613,16 @@ the major's science family, a club → computer science or science). It stays a 
 
 ### Rule 7: the high school's state
 `estimateContext` reads the student's high school's state (its record, else a public NCES id's FIPS prefix) and the
-model uses it where the student entered no state of residence: the pool's residency rate and the tier's pool both
+model uses it where the student has no state of residence: the pool's residency rate and the tier's pool both
 read it, the sentence says "Using your high school's state, New York; add yours if different."
 (`estimate.state_from_school`), and `state` is not listed as missing. The snapshot's `state` column records the state
 used (`SnapshotDetail.stateUsed`) when the student entered none.
+
+**Amended 2026-10-16 (owner: "Household address should be the priority but if it's not there it should fall back to
+high school").** Before this rule applies, the student's state is resolved outside the model as: the state entered on
+the record, else the state of the household's home address (`homeState`, read-only, never stored;
+`residencyState` in lib/student-profile.ts; [../../planner/record/steps.md](../../planner/record/steps.md)). This rule
+(the high school's state, with its sentence) runs only when both are missing.
 
 ### Rule 8: the top band of Ultra selective
 Ultra selective colleges whose [selectivity score](../selectivity-index.md) for all applicants is at least

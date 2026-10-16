@@ -9,11 +9,12 @@
  * link citation on every mark so a tooltip or the Coming-up list can always say where a date comes from.
  */
 import { ROUND_LABELS, type ListRound } from "../list-rules.ts";
+import { VISIT_KIND_LABELS } from "./actions.ts";
 import { applies, type AppliesFacts, type CycleEntry } from "./cycle.ts";
 import { ROUND_SHORT } from "./rounds.ts";
 import type { PlanView } from "./plan-view.ts";
 import { TEST_LABEL } from "./standing.ts";
-import type { PlanContext, PlanTask } from "./types.ts";
+import type { PlanContext, PlanTask, VisitKind } from "./types.ts";
 
 /** Weeks of work shown before each deadline (calendar.md "Bars"); there's no stored "Working on it" date yet, so
  *  every bar runs the same fixed six weeks back from the deadline (open question 2's placeholder, not the date the
@@ -115,7 +116,8 @@ export type CalendarMark =
   | { kind: "deadline"; date: string; round: ListRound; tip: string; cite: CalendarCite }
   | { kind: "decision"; from: string; date: string; round: ListRound; tip: string; cite: CalendarCite }
   | { kind: "test"; date: string; tip: string; past: boolean; cite: CalendarCite }
-  | { kind: "money"; date: string; tip: string; cite: CalendarCite };
+  | { kind: "money"; date: string; tip: string; cite: CalendarCite }
+  | { kind: "visit"; date: string; tip: string; cite: CalendarCite };
 
 export interface CalendarLane {
   key: string;
@@ -130,7 +132,7 @@ export interface CalendarLane {
 export interface CalendarEvent {
   date: string;
   studentId: string;
-  shape: "bar" | "test" | "money" | "decision";
+  shape: "bar" | "test" | "money" | "decision" | "visit";
   round?: ListRound;
   text: string;
   /** Short label for the dated-card list (calendar.md "Coming up", the 8-week default): the college or task name
@@ -219,6 +221,24 @@ function rawMoney(ctx: PlanContext): RawMoney[] {
   return [...fromCycle, ...fromTasks];
 }
 
+interface RawVisit {
+  itemId: string;
+  schoolName: string;
+  kind: VisitKind;
+  onDate: string;
+  atTime: string | null;
+}
+
+/** Logged (or planned) visits for colleges still on the list (QA finding 4: a confirmed act's visit, or one logged
+ *  by hand, belongs on the family calendar like any other visit). Joined against `view.rows` so a visit for a
+ *  college no longer on the dataset, or a withdrawn row, doesn't show. */
+function rawVisits(ctx: PlanContext, view: PlanView): RawVisit[] {
+  const names = new Map(view.rows.filter((r) => r.school).map((r) => [r.item.id, r.school!.name]));
+  return ctx.visits
+    .filter((v) => names.has(v.item_id))
+    .map((v) => ({ itemId: v.item_id, schoolName: names.get(v.item_id)!, kind: v.kind, onDate: v.on_date, atTime: v.at_time }));
+}
+
 /** Every row with a college still in the dataset, with its round and dates (calendar.md "Lanes" 4–5). */
 function rawColleges(view: PlanView): RawCollege[] {
   const out: RawCollege[] = [];
@@ -299,6 +319,21 @@ export function calendarFor(ctx: PlanContext, view: PlanView, range: YearRange):
     }
   }
 
+  // 3b. Visits: every logged (or planned) visit in range, whatever the round or application year.
+  const visits = rawVisits(ctx, view).filter((v) => rangeContains(range, v.onDate));
+  if (visits.length > 0) {
+    lanes.push({
+      key: "visits",
+      label: "Visits",
+      marks: visits.map((v) => ({
+        kind: "visit" as const,
+        date: v.onDate,
+        tip: `${v.schoolName}: ${VISIT_KIND_LABELS[v.kind]} · ${dayLabel(v.onDate)}`,
+        cite: null,
+      })),
+    });
+  }
+
   // 4. One lane per college with a deadline in range, ordered by deadline.
   const allColleges = rawColleges(view);
   const dated = allColleges.filter((c) => c.deadline && rangeContains(range, c.deadline.iso)).sort((a, b) => a.deadline!.iso.localeCompare(b.deadline!.iso));
@@ -369,6 +404,19 @@ export function eventsFor(ctx: PlanContext, view: PlanView, today: string, stude
       if (m.date < today) continue;
       out.push({ date: m.date, studentId, shape: "money", text: m.tip, label: m.tip, cite: m.cite, daysAway: daysBetween(today, m.date) });
     }
+  }
+
+  for (const v of rawVisits(ctx, view)) {
+    if (v.onDate < today) continue;
+    out.push({
+      date: v.onDate,
+      studentId,
+      shape: "visit",
+      text: `${v.schoolName}: ${VISIT_KIND_LABELS[v.kind]}`,
+      label: v.schoolName,
+      cite: null,
+      daysAway: daysBetween(today, v.onDate),
+    });
   }
 
   for (const c of rawColleges(view)) {

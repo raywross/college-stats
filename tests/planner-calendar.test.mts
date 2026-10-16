@@ -20,7 +20,7 @@ import {
   type CalendarEvent,
   type YearRange,
 } from "../lib/planner/calendar.ts";
-import type { PlanContext, PlanItem, PlanSchool, PlanTask } from "../lib/planner/types.ts";
+import type { PlanContext, PlanItem, PlanSchool, PlanTask, PlanVisit } from "../lib/planner/types.ts";
 import type { PlanRowView, PlanView } from "../lib/planner/plan-view.ts";
 import type { Cycle } from "../lib/planner/cycle.ts";
 
@@ -158,10 +158,31 @@ function task(over: Partial<PlanTask>): PlanTask {
     done_by: null,
     snoozed_until: null,
     dismissed: false,
+    dismissed_at: null,
+    dismissed_by: null,
     orphaned: false,
     position: 0,
     created_by: null,
     created_at: TODAY,
+    ...over,
+  };
+}
+
+function visit(itemId: string, over: Partial<PlanVisit> = {}): PlanVisit {
+  return {
+    id: `visit-${Math.random()}`,
+    item_id: itemId,
+    kind: "campus_tour",
+    on_date: TODAY,
+    at_time: null,
+    registered: true,
+    registration_url: null,
+    who: [],
+    rating: null,
+    notes: {},
+    created_by: "user-1",
+    created_at: TODAY,
+    updated_at: TODAY,
     ...over,
   };
 }
@@ -372,6 +393,51 @@ test("money lane: CSS Profile opening only appears when some college requires it
   });
   const withCssLanes = calendarFor(withCss, view([]), schoolYearOf(TODAY));
   assert.ok(withCssLanes.find((l) => l.key === "money")!.marks.some((m) => m.kind === "money" && m.tip.startsWith("CSS Profile")));
+});
+
+/* ------------------------------------------------------------------ */
+/* Visits lane (QA finding 4: a confirmed act's visit reaches the calendar)  */
+/* ------------------------------------------------------------------ */
+
+test("visits lane: a logged visit shows, labeled with the college and the visit kind", () => {
+  const r1 = row("1", "Elon");
+  const c = ctx({ visits: [visit(r1.item.id, { kind: "info_session", on_date: "2026-10-20" })] });
+  const lanes = calendarFor(c, view([r1]), schoolYearOf(TODAY));
+  const lane = lanes.find((l) => l.key === "visits")!;
+  assert.ok(lane, "the visits lane shows when there's a logged visit in range");
+  assert.ok(lane.marks.some((m) => m.kind === "visit" && m.date === "2026-10-20" && m.tip.includes("Elon: Information session")));
+});
+
+test("visits lane: nothing when no visit is logged", () => {
+  const lanes = calendarFor(ctx(), view([row("1", "Elon")]), schoolYearOf(TODAY));
+  assert.ok(!lanes.some((l) => l.key === "visits"));
+});
+
+test("visits lane: a visit for a college no longer on the list doesn't show", () => {
+  const c = ctx({ visits: [visit("item-gone", { on_date: "2026-10-20" })] });
+  const lanes = calendarFor(c, view([row("1", "Elon")]), schoolYearOf(TODAY));
+  assert.ok(!lanes.some((l) => l.key === "visits"));
+});
+
+test("eventsFor: a visit today shows on Coming up; yesterday's doesn't", () => {
+  const r1 = row("1", "Elon");
+  const c = ctx({ visits: [visit(r1.item.id, { kind: "campus_tour", on_date: TODAY }), visit(r1.item.id, { kind: "open_house", on_date: "2026-10-09" })] });
+  const events = eventsFor(c, view([r1]), TODAY, "student-1");
+  const visitEvents = events.filter((e) => e.shape === "visit");
+  assert.equal(visitEvents.length, 1, "yesterday's logged visit stays off Coming up (it's on the row's own logged line)");
+  assert.equal(visitEvents[0].text, "Elon: Campus tour");
+  assert.equal(visitEvents[0].label, "Elon");
+  assert.equal(visitEvents[0].date, TODAY);
+});
+
+test("eventsFor: a guardian's view shows the same logged visit as the student's own", () => {
+  const r1 = row("1", "Elon");
+  const visits = [visit(r1.item.id, { kind: "open_house", on_date: TODAY })];
+  const guardianCtx = ctx({ visits, viewer: { userId: "user-1", firstName: "Pat", canEdit: true, relation: "guardian", isGuardian: true } });
+  const studentCtx = ctx({ visits, viewer: { userId: "student-1", firstName: "Maya", canEdit: true, relation: "self", isGuardian: false } });
+  const v = view([r1]);
+  assert.ok(eventsFor(guardianCtx, v, TODAY, "student-1").some((e) => e.shape === "visit" && e.text === "Elon: Open house"));
+  assert.ok(eventsFor(studentCtx, v, TODAY, "student-1").some((e) => e.shape === "visit" && e.text === "Elon: Open house"));
 });
 
 /* ------------------------------------------------------------------ */

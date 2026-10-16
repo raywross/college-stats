@@ -76,7 +76,8 @@ export function planDataFromBundle(b: PlanBundle): PlanData | null {
   if (!b.list) return null;
   // Next steps' columns read as their defaults from a plan_bundle() defined before 20261014120000_next_steps.sql.
   const items = (b.items ?? []).map((i) => ({ ...i, ed_dismissed_at: i.ed_dismissed_at ?? null, ed_checks: i.ed_checks ?? {} }));
-  const tasks = (b.tasks ?? []).map((t) => ({ ...t, season: t.season ?? null, action: t.action ?? null }));
+  // Plan v3's skip record reads as null from a plan_bundle() defined before 20261016120000_plan_v3.sql.
+  const tasks = (b.tasks ?? []).map((t) => ({ ...t, season: t.season ?? null, action: t.action ?? null, dismissed_at: t.dismissed_at ?? null, dismissed_by: t.dismissed_by ?? null }));
   return { list: b.list, items, tasks, visits: b.visits ?? [], offers: b.offers ?? [], nudges: b.nudges ?? [] };
 }
 

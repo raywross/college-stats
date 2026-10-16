@@ -1,80 +1,90 @@
 /**
- * Your story (specs/planner/next-steps/your-story.md), U7: `storyMissing`'s major condition, the guardian strip
- * (lib/student-profile.ts `redactStoryForGuardian`/`profileForViewer`, wired into lib/student-profile-store.ts
- * `profilesICanSee`), the admin console's export never carrying the text, and the `story_missing` applies-key
- * closing the "Write your story" move once every applicable prompt is filled. `npm test`.
+ * Your story (specs/planner/v3/guides/your-story.md; plan v3 build-plan.md "Profile"): one narrative, `storyMissing`'s
+ * 200-character rule, the guardian strip (lib/student-profile.ts `redactStoryForGuardian`/`profileForViewer`, wired into
+ * lib/student-profile-store.ts `profilesICanSee`), the admin console's export never carrying the text, `saveStory`
+ * reading the one `narrative` field, and the `story_missing` applies-key closing the "Write your story" move once the
+ * narrative reaches STORY_DONE_CHARS. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   emptyProfile,
+  guardianStoryLine,
   profileForViewer,
   redactStoryForGuardian,
   sanitizeProfile,
-  sanitizeStory,
+  storyLengthBand,
   storyMissing,
-  STORY_FIELD_MAX,
+  STORY_DONE_CHARS,
   STORY_MAX,
   type StudentProfileData,
 } from "../lib/student-profile.ts";
+
+/** What a guardian's redacted copy carries instead of the text: whether the story counts as written (QA 2026-10-16). */
+const storyWrittenOf = (s: { narrative: string } | null) => !storyMissing({ story: s ? { narrative: s.narrative, updatedAt: null } : null });
 import { generate } from "../lib/planner/generators/season.ts";
 import { loadCycle, cycleFor } from "../lib/planner/cycle.ts";
 import { gradeOf, seasonOf } from "../lib/planner/seasons.ts";
 import { applyMerge, isOpen, mergeTasks } from "../lib/planner/tasks.ts";
 import type { GeneratorInput, PlanTask } from "../lib/planner/types.ts";
 
-const withMajor = (major: boolean): Pick<StudentProfileData, "plans"> => ({
-  plans: { intendedMajors: major ? ["11"] : [], earlyRoundInterest: null },
+const story = (narrative: string, updatedAt: string | null = "2026-10-14T12:00:00.000Z") => ({ narrative, updatedAt });
+
+test("the limits: STORY_MAX 2,000, done at 200", () => {
+  assert.equal(STORY_MAX, 2000);
+  assert.equal(STORY_DONE_CHARS, 200);
 });
 
-test("STORY_MAX is the same limit the sanitizer caps each prompt at (500)", () => {
-  assert.equal(STORY_MAX, 500);
-  assert.equal(STORY_MAX, STORY_FIELD_MAX);
-});
-
-test("storyMissing: true with no story at all", () => {
+test("storyMissing: true with no story, and until the narrative reaches STORY_DONE_CHARS (trimmed)", () => {
   assert.equal(storyMissing(null), true);
-  assert.equal(storyMissing({ story: null, ...withMajor(false) }), true);
+  assert.equal(storyMissing({ story: null }), true);
+  assert.equal(storyMissing({ story: story("x".repeat(STORY_DONE_CHARS - 1)) }), true, "199 characters is not yet");
+  assert.equal(storyMissing({ story: story("x".repeat(STORY_DONE_CHARS)) }), false, "200 is written");
+  // Whitespace doesn't count (sanitizeStory trims, but a hand-built fixture shouldn't fool the check either).
+  assert.equal(storyMissing({ story: story(" ".repeat(150) + "x".repeat(STORY_DONE_CHARS - 1) + " ".repeat(150)) }), true);
+  // Planted: a rule that only checked "anything written" would read a one-liner as done.
+  const naive = (s: { narrative: string } | null) => !s || s.narrative.trim() === "";
+  assert.equal(naive(story("One line.")), false);
+  assert.equal(storyMissing({ story: story("One line.") }), true, "the real rule still asks for more");
 });
 
-test("storyMissing: about and thread are always required", () => {
-  const base = { about: "", thread: "", majorWhy: "", updatedAt: "2026-10-14T00:00:00Z" };
-  assert.equal(storyMissing({ story: { ...base }, ...withMajor(false) }), true, "nothing written");
-  assert.equal(storyMissing({ story: { ...base, about: "Something." }, ...withMajor(false) }), true, "thread still blank");
-  assert.equal(storyMissing({ story: { ...base, about: "Something.", thread: "Also something." }, ...withMajor(false) }), false, "both written, no major to ask about");
-  // Whitespace-only is the same as blank (sanitizeStory trims, but a hand-built fixture shouldn't fool the check either).
-  assert.equal(storyMissing({ story: { ...base, about: "  ", thread: "x" }, ...withMajor(false) }), true);
-});
-
-test("storyMissing: majorWhy is required only once an intended major is set (your-story.md 'or not sure yet is a fine answer')", () => {
-  const filled = { about: "Something.", thread: "Also something.", majorWhy: "", updatedAt: null };
-  assert.equal(storyMissing({ story: filled, ...withMajor(false) }), false, "no major: about+thread is enough");
-  assert.equal(storyMissing({ story: filled, ...withMajor(true) }), true, "a major is set: majorWhy still blank");
-  assert.equal(storyMissing({ story: { ...filled, majorWhy: "Because I like it." }, ...withMajor(true) }), false, "all three filled");
-  // Planted: a guard that forgot the major condition (just checking about+thread) would wrongly read this as done.
-  const wronglyDone = !filled.about.trim() === false && !filled.thread.trim() === false;
-  assert.equal(wronglyDone, true, "about+thread alone look done — the real check must still catch the missing majorWhy");
-  assert.equal(storyMissing({ story: filled, ...withMajor(true) }), true);
+test("storyLengthBand: short under 200, medium under 1,000, long from 1,000", () => {
+  assert.equal(storyLengthBand(""), "short");
+  assert.equal(storyLengthBand("x".repeat(199)), "short");
+  assert.equal(storyLengthBand("x".repeat(200)), "medium");
+  assert.equal(storyLengthBand("x".repeat(999)), "medium");
+  assert.equal(storyLengthBand("x".repeat(1000)), "long");
 });
 
 test("redactStoryForGuardian: text becomes '', updatedAt survives; null in, null out", () => {
-  const story = { about: "I fix bikes.", thread: "Making things work.", majorWhy: "Because robots.", updatedAt: "2026-10-14T12:00:00.000Z" };
-  assert.deepEqual(redactStoryForGuardian(story), { about: "", thread: "", majorWhy: "", updatedAt: story.updatedAt });
+  const s = story("I fix bikes.");
+  assert.deepEqual(redactStoryForGuardian(s), { narrative: "", updatedAt: s.updatedAt, written: storyWrittenOf(s) });
   assert.equal(redactStoryForGuardian(null), null);
 });
 
+// QA fix (2026-10-16): the fixed "They has written their story" template didn't agree in number. A name takes
+// singular "has"; no name falls back to "Your student" (also singular), never the ungrammatical "They has".
+test("guardianStoryLine: a name reads 'has'/'hasn't'; no name falls back to 'Your student', never 'They has'", () => {
+  assert.equal(guardianStoryLine("Maya", true), "Maya has written their story.");
+  assert.equal(guardianStoryLine("Maya", false), "Maya hasn't written their story yet.");
+  assert.equal(guardianStoryLine(null, true), "Your student has written their story.");
+  assert.equal(guardianStoryLine(null, false), "Your student hasn't written their story yet.");
+  for (const written of [true, false]) {
+    assert.doesNotMatch(guardianStoryLine(null, written), /\bThey has\b/);
+  }
+});
+
 test("profileForViewer: a guardian's copy carries no story text (but keeps updatedAt, so 'has written' survives); the student's own copy is untouched", () => {
-  const story = { about: "I fix bikes.", thread: "Making things work.", majorWhy: "", updatedAt: "2026-10-14T12:00:00.000Z" };
-  const data = { ...sanitizeProfile({}), story };
+  const s = story("I fix bikes. Making things work.");
+  const data = { ...sanitizeProfile({}), story: s };
 
   const asSelf = profileForViewer(data, "self");
-  assert.deepEqual(asSelf.story, story, "the student sees their own words");
+  assert.deepEqual(asSelf.story, s, "the student sees their own words");
   assert.equal(asSelf, data, "unchanged reference: no copy needed for the student");
 
   const asGuardian = profileForViewer(data, "guardian");
-  assert.deepEqual(asGuardian.story, { about: "", thread: "", majorWhy: "", updatedAt: story.updatedAt });
-  assert.notEqual(asGuardian.story?.about, story.about);
+  assert.deepEqual(asGuardian.story, { narrative: "", updatedAt: s.updatedAt, written: storyWrittenOf(s) });
 
   // Planted: a loader that forgets to strip would just return `data` back unchanged for a guardian too.
   const forgotToStrip = data;
@@ -82,6 +92,12 @@ test("profileForViewer: a guardian's copy carries no story text (but keeps updat
 
   // Nothing else on the profile moves.
   assert.deepEqual({ ...asGuardian, story: null }, { ...data, story: null });
+});
+
+test("profileForViewer: a guardian's copy of an old three-prompt story is stripped too", () => {
+  const data = sanitizeProfile({ story: { about: "I fix bikes.", thread: "Making things work.", majorWhy: "", updatedAt: "2026-10-14T12:00:00.000Z" } });
+  assert.match(data.story?.narrative ?? "", /^About you: I fix bikes\./);
+  assert.deepEqual(profileForViewer(data, "guardian").story, { narrative: "", updatedAt: "2026-10-14T12:00:00.000Z", written: storyWrittenOf(data.story) });
 });
 
 test("profileForViewer: a guardian sees 'not yet' correctly when nothing was ever written", () => {
@@ -102,30 +118,34 @@ test("the admin console's student view (lib/admin/people.ts adminStudent) never 
   assert.match(fn, /redactStoryForGuardian\(/, "the admin console's student page must redact the story the same way a guardian's view does");
 });
 
-test("saveStory (lib/student-profile-store.ts) is student-only: a guardian, even with edit access, can't write it", () => {
+test("saveStory (lib/student-profile-store.ts) is student-only and reads the one `narrative` field", () => {
   const src = readFileSync(new URL("../lib/student-profile-store.ts", import.meta.url), "utf8");
-  const fn = src.slice(src.indexOf("export async function saveStory"));
+  const fn = src.slice(src.indexOf("export async function saveStory"), src.indexOf("export async function importLocalProfile"));
   assert.match(fn, /relation\s*!==\s*"self"/, "saveStory must check relation, not just canEdit");
+  assert.match(fn, /form\.get\("narrative"\)/, "the form's one field");
+  assert.doesNotMatch(fn, /form\.get\("(about|thread|majorWhy)"\)/, "the three prompts are gone");
 });
 
 /* ------------------------------------------------------------------ */
-/* story_filled telemetry: never the text, only a count                */
+/* story_filled telemetry: never the text, only a length band          */
 /* ------------------------------------------------------------------ */
 
-test("story_filled is registered as a count-only event (lib/analytics.ts)", async () => {
+test("story_filled is registered with a length band only (lib/analytics.ts)", async () => {
   const { EVENTS } = await import("../lib/analytics.ts");
   const entry = EVENTS.story_filled;
   assert.ok(entry, "story_filled must be a registered event");
-  assert.deepEqual(entry.properties, ["count"], "never the prompts' text, only how many are filled");
+  assert.deepEqual(entry.properties, ["length_band"], "never the text, only how long it is, by band");
 });
 
 /* ------------------------------------------------------------------ */
-/* The move: story_missing closes "Write your story" once filled       */
+/* The move: story_missing closes "Write your story" once written      */
 /* ------------------------------------------------------------------ */
 
 const LIST = "list-story-1";
 const G = 2028;
-const JUNIOR_FALL_DAY = "2026-11-15"; // mid junior_fall for the class of 2028 (tests/planner-season-generator.test.mts MID table)
+// R1b (specs/planner/record/ranking.md "Timing rules moved here"): the story move's season moved from junior_fall
+// to summer_before_senior, so the day used to generate it here moves too.
+const STORY_DAY = "2027-07-01"; // mid summer_before_senior for the class of 2028 (tests/planner-season-generator.test.mts MID table)
 
 function genInput(profile: StudentProfileData | null, over: Partial<GeneratorInput> = {}): GeneratorInput {
   return {
@@ -134,69 +154,42 @@ function genInput(profile: StudentProfileData | null, over: Partial<GeneratorInp
     schools: {},
     profile,
     cycle: loadCycle(cycleFor(G)),
-    grade: gradeOf(G, JUNIOR_FALL_DAY),
-    today: JUNIOR_FALL_DAY,
+    grade: gradeOf(G, STORY_DAY),
+    today: STORY_DAY,
     visits: [],
     offers: [],
     gradYear: G,
-    season: seasonOf(G, JUNIOR_FALL_DAY),
+    season: seasonOf(G, STORY_DAY),
     estimates: {},
     ...over,
   } as GeneratorInput;
 }
 
 const storyTaskKey = `${LIST}:playbook:story`;
+const written: StudentProfileData = { ...emptyProfile(), story: story("I fix bikes for neighbors. ".repeat(10)) };
 
-test("'Write your story' is generated while story_missing holds, and disappears once every applicable prompt is filled", () => {
-  // No profile at all: the move is generated (missing is the default).
-  const noProfile = generate(genInput(null));
-  assert.ok(noProfile.some((t) => t.key === storyTaskKey), "shows with no profile on file");
-
-  // A profile with no intended major and both required prompts filled: the move stops generating.
-  const filledNoMajor: StudentProfileData = {
-    ...emptyProfile(),
-    story: { about: "I fix bikes for neighbors.", thread: "Making things work again.", majorWhy: "", updatedAt: "2026-10-14T12:00:00Z" },
-  };
-  const doneNoMajor = generate(genInput(filledNoMajor));
-  assert.ok(!doneNoMajor.some((t) => t.key === storyTaskKey), "about+thread is enough with no intended major");
-
-  // A profile with an intended major but no majorWhy: still missing.
-  const majorNotAnswered: StudentProfileData = {
-    ...filledNoMajor,
-    plans: { intendedMajors: ["11"], earlyRoundInterest: null },
-  };
-  const stillOpen = generate(genInput(majorNotAnswered));
-  assert.ok(stillOpen.some((t) => t.key === storyTaskKey), "a major is set but majorWhy is still blank");
-
-  // All three answered: closed.
-  const allFilled: StudentProfileData = {
-    ...majorNotAnswered,
-    story: { ...majorNotAnswered.story!, majorWhy: "Robots are the future." },
-  };
-  const closed = generate(genInput(allFilled));
-  assert.ok(!closed.some((t) => t.key === storyTaskKey), "every applicable prompt filled: the move is gone from what's generated");
+test("'Write your story' is generated while story_missing holds, and disappears once the narrative reaches 200 characters", () => {
+  assert.ok(generate(genInput(null)).some((t) => t.key === storyTaskKey), "shows with no profile on file");
+  const short: StudentProfileData = { ...emptyProfile(), story: story("I fix bikes.") };
+  assert.ok(generate(genInput(short)).some((t) => t.key === storyTaskKey), "a short story keeps the move open");
+  assert.ok(written.story!.narrative.trim().length >= STORY_DONE_CHARS);
+  assert.ok(!generate(genInput(written)).some((t) => t.key === storyTaskKey), "written: the move is gone from what's generated");
 });
 
-test("the move closes through the real merge path (generateTasks-equivalent generate() + mergeTasks + applyMerge), not just in the generator's own output", () => {
-  // Round 1: nothing written yet — the story task is upserted and open.
+test("the move closes through the real merge path (generate() + mergeTasks + applyMerge), not just in the generator's own output", () => {
   const round1 = generate(genInput(null));
   const merge1 = mergeTasks([], round1);
   assert.ok(merge1.upserts.some((u) => u.key === storyTaskKey));
-  let tasks: PlanTask[] = applyMerge(LIST, [], merge1, JUNIOR_FALL_DAY);
+  let tasks: PlanTask[] = applyMerge(LIST, [], merge1, STORY_DAY);
   const storyTask = tasks.find((t) => t.key === storyTaskKey)!;
   assert.ok(storyTask, "the task exists after the first merge");
-  assert.equal(isOpen(storyTask, JUNIOR_FALL_DAY), true, "and it's open");
+  assert.equal(isOpen(storyTask, STORY_DAY), true, "and it's open");
 
-  // Round 2: the student fills in About and The thread (no intended major) — regenerate and merge again.
-  const filled: StudentProfileData = {
-    ...emptyProfile(),
-    story: { about: "I fix bikes for neighbors.", thread: "Making things work again.", majorWhy: "", updatedAt: "2026-10-14T12:00:00Z" },
-  };
-  const round2 = generate(genInput(filled));
+  const round2 = generate(genInput(written));
   assert.ok(!round2.some((t) => t.key === storyTaskKey), "no longer generated");
   const merge2 = mergeTasks(tasks, round2);
-  assert.ok(merge2.orphans.includes(storyTask.id), "the previously-open task is orphaned: story_missing's own guard, planted — a generator that still emitted it would leave orphans empty");
-  tasks = applyMerge(LIST, tasks, merge2, JUNIOR_FALL_DAY);
+  assert.ok(merge2.orphans.includes(storyTask.id), "the previously-open task is orphaned: a generator that still emitted it would leave orphans empty");
+  tasks = applyMerge(LIST, tasks, merge2, STORY_DAY);
   const after = tasks.find((t) => t.id === storyTask.id)!;
-  assert.equal(isOpen(after, JUNIOR_FALL_DAY), false, "the move is closed: no longer open");
+  assert.equal(isOpen(after, STORY_DAY), false, "the move is closed: no longer open");
 });

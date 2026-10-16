@@ -5,29 +5,80 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, ExternalLink, X } from "lucide-react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
+import { WhyFold } from "@/components/ui/why-fold";
 import { track } from "@/lib/analytics";
+import { guideHref } from "@/lib/planner/guides";
 import { ED_CAVEAT, edPillText, edSheetFacts, type EdCandidate, type EdCheckKey } from "@/lib/planner/ed-opportunities";
 import { dismissEd, setEdChecks, startEd } from "@/lib/planner/store-ed";
+import { SheetDialog } from "@/components/ui/sheet-dialog";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import type { AnyCited } from "@/lib/lineage";
 import { cn } from "@/lib/utils";
 
 /**
- * The ED sheet (specs/planner/next-steps/ed-opportunities.md "The sheet"), on top of the row's drawer: Quad's read,
- * what the college reports (its own numbers, cited), the caveat, the three questions (stored in `ed_checks`; the cost
- * one also reads as ticked once the cost check task for this college is done), the round's dates, and the buttons.
+ * Plan v3 (connections.md "The row"): the ED pill opens this as a dialog (`EdSheetDialog`, `SheetDialog` — a bottom
+ * sheet on phones, centered from `sm`) instead of inline under the row. `EdSheet`'s own contents are unchanged
+ * except for the "Visit before you decide" line, which links the Show interest guide for this college.
+ */
+export function EdSheetDialog({
+  row,
+  ctx,
+  candidate,
+  open,
+  onOpenChange,
+}: {
+  row: PlanRowView;
+  ctx: PlanContext;
+  candidate: EdCandidate;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const school = row.school ?? undefined;
+  const facts = edSheetFacts({ ...row.item, round: row.round }, school, row.estimate ?? undefined, candidate.round);
+  const pillText = edPillText(candidate.round, candidate.verdict).full;
+  const title = facts ? `${pillText}: ${facts.name}` : pillText;
+  const description = facts?.levelLabel ? `${facts.levelLabel} for you` : undefined;
+  return (
+    <SheetDialog open={open} onOpenChange={onOpenChange} title={title} description={description}>
+      <EdSheet row={row} ctx={ctx} candidate={candidate} chrome="dialog" onClose={() => onOpenChange(false)} />
+    </SheetDialog>
+  );
+}
+
+/**
+ * The ED sheet (specs/planner/next-steps/ed-opportunities.md "The sheet"), now opened as a dialog (`EdSheetDialog`
+ * above) rather than inline under the row: Quad's read, what the college reports (its own numbers, cited), the
+ * caveat, the three questions (stored in `ed_checks`; the cost one also reads as ticked once the cost check task for
+ * this college is done), a link to the Show interest guide before deciding, the round's dates, and the buttons.
  * The student sets the round (**Start it in ED / ED II**, or **Keep ED** when it's already there) or says **Not for
  * me**; a guardian sees the facts and questions, ticks the cost check as theirs, and reads "{First} picks the round".
  * Nothing here is a number from the estimate: the level is the only thing from it.
  */
-export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ctx: PlanContext; candidate: EdCandidate; onClose?: () => void }) {
+export function EdSheet({
+  row,
+  ctx,
+  candidate,
+  onClose,
+  chrome = "inline",
+}: {
+  row: PlanRowView;
+  ctx: PlanContext;
+  candidate: EdCandidate;
+  onClose?: () => void;
+  /** "dialog" (opened via `EdSheetDialog`) suppresses this component's own title row and ✕: `SheetDialog` already
+   * carries the title and the level line as its description, so a dialog never shows two of each. */
+  chrome?: "inline" | "dialog";
+}) {
   const router = useRouter();
   const school = row.school ?? undefined;
   const facts = edSheetFacts({ ...row.item, round: row.round }, school, row.estimate ?? undefined, candidate.round);
   const isStudent = !ctx.viewer.isGuardian && ctx.viewer.canEdit;
   const canEdit = ctx.viewer.canEdit;
   const first = ctx.student?.display_name?.trim().split(/\s+/)[0] || "Your student";
+  // MoveCard.tsx's personFor, inlined here to avoid importing a client card component: null for a signed-in
+  // student's own plan, else the child's id (the guardian's `?for=` on the guide link below).
+  const person = ctx.viewer.relation === "self" ? null : (ctx.student?.id ?? null);
   const costTaskDone = ctx.tasks.some((t) => t.kind === "cost_check" && t.item_id === row.item.id && t.done_at !== null);
   const [checks, setChecks] = useState<Record<string, boolean>>(() => ({ ...(row.item.ed_checks ?? {}) }));
   const [pending, startTransition] = useTransition();
@@ -82,20 +133,22 @@ export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ct
 
   return (
     <section aria-label={edPillText(round, candidate.verdict).full} className="space-y-4 rounded-2xl border bg-card p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-semibold">
-            {edPillText(round, candidate.verdict).full}: {facts.name}
-          </p>
-          {facts.levelLabel && <p className="text-xs text-muted-foreground">{facts.levelLabel} for you</p>}
-          {facts.onPlan && <p className="text-xs font-semibold text-primary">On your plan: {setRound === "ed2" ? "ED II" : "ED"}</p>}
+      {chrome === "inline" && (
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-semibold">
+              {edPillText(round, candidate.verdict).full}: {facts.name}
+            </p>
+            {facts.levelLabel && <p className="text-xs text-muted-foreground">{facts.levelLabel} for you</p>}
+          </div>
+          {onClose && (
+            <button type="button" onClick={onClose} aria-label="Close the ED facts" className="inline-flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-muted">
+              <X className="size-4" aria-hidden />
+            </button>
+          )}
         </div>
-        {onClose && (
-          <button type="button" onClick={onClose} aria-label="Close the ED facts" className="inline-flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-muted">
-            <X className="size-4" aria-hidden />
-          </button>
-        )}
-      </div>
+      )}
+      {facts.onPlan && <p className="text-xs font-semibold text-primary">On your plan: {setRound === "ed2" ? "ED II" : "ED"}</p>}
 
       <div className="space-y-1">
         <p>{facts.read}</p>
@@ -106,11 +159,10 @@ export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ct
             </MetricLabel>
           </p>
         )}
-        <p className="text-sm text-muted-foreground">{facts.framing}</p>
       </div>
 
-      <div className="space-y-1">
-        <p className="text-xs font-semibold text-muted-foreground">What {facts.name} reports</p>
+      <WhyFold title={`What ${facts.name} reports`} screen="ed_sheet" section="what_reports">
+        <p>{facts.framing}</p>
         {facts.reported ? (
           <p>
             <MetricLabel term="early-decision" cited={cite(facts.countsField)}>
@@ -122,17 +174,16 @@ export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ct
             {facts.overallFromAdmitRate && school.admitRateCite ? <MetricLabel cited={school.admitRateCite as AnyCited}><span className="sr-only">Overall rate source</span></MetricLabel> : null}
           </p>
         ) : (
-          facts.noCounts && <p className="text-muted-foreground">{facts.noCounts}</p>
+          facts.noCounts && <p>{facts.noCounts}</p>
         )}
-        {facts.share && <p className="text-muted-foreground">ED admits fill {facts.share}.</p>}
-        {facts.together && <p className="text-muted-foreground">ED I and ED II together.</p>}
-      </div>
-
-      <p className="text-muted-foreground">
-        {ED_CAVEAT.before}
-        <Term term="hooked-applicant">{ED_CAVEAT.term}</Term>
-        {ED_CAVEAT.after}
-      </p>
+        {facts.share && <p>ED admits fill {facts.share}.</p>}
+        {facts.together && <p>ED I and ED II together.</p>}
+        <p>
+          {ED_CAVEAT.before}
+          <Term term="hooked-applicant">{ED_CAVEAT.term}</Term>
+          {ED_CAVEAT.after}
+        </p>
+      </WhyFold>
 
       <ul className="space-y-1">
         {facts.questions.map((q) => {
@@ -164,6 +215,10 @@ export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ct
           );
         })}
       </ul>
+
+      <Link href={guideHref("interest", { college: row.item.unit_id, person, from: "card" })} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
+        Visit before you decide
+      </Link>
 
       {(facts.closing || facts.notification) && (
         <div className="space-y-1">

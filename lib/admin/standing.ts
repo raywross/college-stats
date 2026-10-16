@@ -20,7 +20,8 @@ import { gradeNow } from "@/lib/chances/courses";
 import { estimateContext, estimateWithDetail } from "@/lib/chances/estimate";
 import { estimateInputFromProfile } from "@/lib/chances/estimate-input";
 import { hooksFromPlan, type HooksItem } from "@/lib/planner/hooks";
-import { effectiveGradYear, sanitizeProfile } from "@/lib/student-profile";
+import { effectiveGradYear, sanitizeProfile, withHomeState } from "@/lib/student-profile";
+import { homeStateForStudent } from "@/lib/home-state";
 import { standingPanel, type StandingPanelView } from "./hidden";
 
 /** The list-item columns the hooks read (lib/planner/read-plan.ts PLAN_ITEM_HOOKS_COLUMNS and its neighbours). */
@@ -50,7 +51,8 @@ async function compute(studentId: string): Promise<StudentStanding> {
   if (visitsRes.error) return { ok: false, reason: `Reading the visits failed: ${visitsRes.error.message}` };
   const visits = (visitsRes.data ?? []) as { item_id: string }[];
 
-  const profileData = profileRes.data ? sanitizeProfile((profileRes.data as { data: unknown }).data) : null;
+  // Residency from the household's address when the record has none (owner, 2026-10-16), as profilesICanSee does.
+  const profileData = profileRes.data ? withHomeState(sanitizeProfile((profileRes.data as { data: unknown }).data), await homeStateForStudent(supabase, studentId)) : null;
   const gradYear = (studentRes.data as { grad_year: number | null } | null)?.grad_year ?? null;
   const grade = gradeNow(profileData ? effectiveGradYear(profileData.basics, gradYear) : gradYear, todayIso());
   const student = estimateInputFromProfile(profileData, "", null).student;
@@ -60,7 +62,7 @@ async function compute(studentId: string): Promise<StudentStanding> {
   for (const listId of listIds) {
     const rows = items.filter((i) => i.list_id === listId);
     // Each list is a plan of its own: its hooks come from its own rows and visits, as the planner reads them.
-    const hooks = hooksFromPlan(rows, visits);
+    const hooks = hooksFromPlan(rows, visits, profileData);
     for (const item of rows) {
       const school = ctx.schoolById(item.unit_id);
       if (!school) continue;

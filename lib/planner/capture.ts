@@ -1,8 +1,9 @@
 /**
- * The row capture panel's pure parts (specs/planner/redesign/list.md "The capture panel"; owner, 2026-10-12): which
- * page "Plan a visit" opens, what "We visited" shows for a college from its tracking date and logged visits, and the
- * college's social accounts with the link that opens each one to follow it. No server or browser APIs, so the panel
- * (components/planner/RowDrawer.tsx) and tests can import it.
+ * Pure helpers the Show interest guide reads (specs/planner/v3/guides/show-interest.md; build-plan.md U2b "What's
+ * removed"): which page "Plan a visit" opens, what "We visited" shows for a college from its tracking date and
+ * logged visits, and the college's social accounts with the link that opens each one to follow it. No server or
+ * browser APIs, so the guide and tests can import it. `rowToDo` (the row's old expand-control count) is gone with
+ * the row's now-deleted capture panel; the row itself has no to-do count any more.
  */
 import { SOCIAL_LABELS, SOCIAL_NETWORKS } from "../social.ts";
 import type { SchoolLinks, SocialNetwork } from "../types.ts";
@@ -52,29 +53,6 @@ export interface FollowTarget {
   /** Opens the college's account to follow it (X's follow intent, YouTube's subscribe prompt, else the profile). */
   href: string;
   followed: boolean;
-}
-
-/** What's left to capture for one college (the row's expand control draws attention to it; owner, 2026-10-12). */
-export type RowToDo = "interest" | "follow";
-
-/**
- * The gentle "more to do" on a row: at most two things, and only ones the family can act on.
- * - `interest`: no visit (`visited_on` or a logged visit, past or planned) and no information request yet.
- * - `follow`: the college has social accounts on record and the student follows none of them.
- * Legacy, sibling, and recruiting answered "no" are complete answers, never a to-do; neither is anything about the
- * estimate.
- */
-export function rowToDo(
-  item: { id: string; visited_on: string | null; info_requested_on?: string | null; followed_networks?: readonly string[] | null; follows_social?: boolean | null },
-  visits: readonly { item_id: string }[],
-  social: Partial<Record<SocialNetwork, string>> | null | undefined,
-): RowToDo[] {
-  const out: RowToDo[] = [];
-  const visited = item.visited_on !== null || visits.some((v) => v.item_id === item.id);
-  if (!visited && !item.info_requested_on) out.push("interest");
-  const hasAccounts = !!social && SOCIAL_NETWORKS.some((n) => social[n]);
-  if (hasAccounts && (item.followed_networks?.length ?? 0) === 0 && item.follows_social !== true) out.push("follow");
-  return out;
 }
 
 /** The college's accounts in the site's order (lib/social.ts), each with its follow link and whether it's followed. */

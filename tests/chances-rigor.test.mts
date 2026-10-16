@@ -361,11 +361,11 @@ test("a parent sees the list, grades, and AP exam scores, whatever the privacy s
   const list = aps(3, { final: "A", exam: 5 });
   assert.ok(withoutExams(list).every((c) => c.exam === null));
   assert.equal(withoutExams(list)[0].grades.final, "A", "grades stay");
-  // No path strips a guardian's copy any more: the plan loader, its estimates, the Numbers tab, and the course sheets.
-  for (const f of ["lib/planner/load.ts", "lib/planner/plan-estimates.ts", "components/me/StudentNumbers.tsx"]) {
+  // No path strips a guardian's copy any more: the plan loader, its estimates, the record overview, and the course sheets.
+  for (const f of ["lib/planner/load.ts", "lib/planner/plan-estimates.ts", "components/record/RecordOverview.tsx"]) {
     assert.doesNotMatch(read(f), /withoutExams\(|hideExams/, f);
   }
-  for (const f of ["components/me/ProfileForm.tsx", "components/planner/intake/PlanIntake.tsx"]) {
+  for (const f of ["components/planner/intake/PlanIntake.tsx"]) {
     assert.doesNotMatch(read(f), /apExamsPrivate[^\n]*(showExams|examsHidden)|(showExams|examsHidden)[^\n]*apExamsPrivate/, f);
   }
 });

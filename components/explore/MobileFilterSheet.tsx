@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
-import { FilterPanel, type FilterFacets } from "./FilterPanel";
+import { FilterPanel, type FilterFacets, type ForYouGroup } from "./FilterPanel";
 
 /** Bottom sheet on phones/tablets; the sidebar takes over at lg. */
 export function MobileFilterSheet({
@@ -10,12 +10,15 @@ export function MobileFilterSheet({
   activeCount,
   resultCount,
   estimates = true,
+  forYou = null,
 }: {
   facets: FilterFacets;
   /** Whether estimated break points are shown (the accuracy pilot's gate), passed to the panel. */
   estimates?: boolean;
   activeCount: number;
   resultCount: number;
+  /** Explore's "For you" levels, as the server decided them (FilterPanel ForYouGroup). */
+  forYou?: ForYouGroup | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -58,7 +61,7 @@ export function MobileFilterSheet({
               <X className="size-5" />
             </button>
             <div className="flex-1 overflow-y-auto px-5 pt-10 pb-4">
-              <FilterPanel facets={facets} estimates={estimates} />
+              <FilterPanel facets={facets} estimates={estimates} forYou={forYou} />
             </div>
             <div className="border-t p-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}>
               <button

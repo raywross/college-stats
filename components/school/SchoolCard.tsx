@@ -14,6 +14,8 @@ import { StandoutChip } from "@/components/school/StandoutChip";
 import { TrendIndicatorGrid } from "@/components/trends/TrendIndicators";
 import { distanceFromHome, distanceLine, type NearHome } from "@/lib/home";
 import type { PriceLine } from "@/lib/cost-at-income";
+import type { StandingLevel } from "@/lib/chances/types";
+import { ForYouChip } from "@/components/explore/ForYouChip";
 
 /** Nomad List-style meter: fill = where this school ranks among all colleges. */
 function Meter({ label, value, rank, color }: { label: string; value: string | null; rank: number | null; color: string }) {
@@ -38,17 +40,20 @@ function Meter({ label, value, rank, color }: { label: string; value: string | n
 /**
  * `home`: Explore's "Distance from home" filter, when set; the card then shows the straight-line miles and a drive time.
  * `priceAt`: Explore's family income, when set (specs/product/cost-by-income.md): "About $41K at $200K" replaces the average cost.
+ * `level`: the college's level for the viewer's student while Explore's "For you" filter is on (explore-levels.md): "Reach for you".
  */
 export async function SchoolCard({
   school,
   index = 0,
   home = null,
   priceAt = null,
+  level = null,
 }: {
   school: School;
   index?: number;
   home?: NearHome | null;
   priceAt?: PriceLine | null;
+  level?: StandingLevel | null;
 }) {
   const data = await getData();
   const { rankOf } = data;
@@ -84,6 +89,7 @@ export async function SchoolCard({
         <Crest id={school.unit_id} name={school.name} size="md" brand={crestBrand(school)} />
         <div className="min-w-0 flex-1">
           <h3 className="font-display text-base leading-snug font-bold group-hover:text-primary">{school.name}</h3>
+          {level && <ForYouChip level={level} className="my-1" />}
           <p className="text-xs text-muted-foreground">
             {school.location.city}, {school.location.state} · {typeShort(school.type)}
           </p>

@@ -8,7 +8,7 @@
  */
 import type { EstimateInput } from "./types.ts";
 import { allActivityStepsAnswered } from "../planner/activity-steps.ts";
-import { planGpaRange, planTest, unweightedGpa4, type StudentProfileData } from "../student-profile.ts";
+import { planGpaRange, planTest, residencyState, unweightedGpa4, type StudentProfileData } from "../student-profile.ts";
 
 /** The estimate's input for one college from the student's saved profile (the same numbers the plan reads). */
 export function estimateInputFromProfile(profile: StudentProfileData | null, unitId: string, round: string | null): EstimateInput {
@@ -26,7 +26,9 @@ export function estimateInputFromProfile(profile: StudentProfileData | null, uni
       actMath: t?.actMath ?? null,
       classRankPercentile: a?.classRankPercentile ?? null,
       courses: a?.courses ?? [],
-      state: b?.stateOfResidence ?? null,
+      // Residency: the record's own state, else the household's address (owner, 2026-10-16); with neither the model
+      // falls back to the high school's state and says so (model.ts ownerReading).
+      state: residencyState(profile).state,
       majors: profile?.plans.intendedMajors ?? [],
       round,
       highSchoolId: b?.highSchoolId ?? null,

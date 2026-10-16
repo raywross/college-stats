@@ -12,6 +12,7 @@
  */
 import { SITE_NAME } from "../brand.ts";
 import { SEASON_EXPLAINER } from "../planner/moves-catalog.ts";
+import type { ImportanceFacts } from "../planner/importance.ts";
 import { nowMoves, taskSeason, yourPartMoves } from "../planner/moves.ts";
 import { planHref } from "../planner/plan-tabs.ts";
 import { nextSeason, SEASON_LABELS, type Season } from "../planner/seasons.ts";
@@ -89,9 +90,9 @@ export function datedFirst(tasks: PlanTask[]): PlanTask[] {
 export function briefContent(
   tasks: PlanTask[],
   names: Record<string, string>,
-  opts: { role: "student" | "guardian"; key: BriefKey; season: Season; gradYear: number | null; today: string; studentId: string; firstName: string | null },
+  opts: { role: "student" | "guardian"; key: BriefKey; season: Season; gradYear: number | null; today: string; studentId: string; firstName: string | null; facts: ImportanceFacts },
 ): BriefContent {
-  const { role, key, season, gradYear, today, studentId } = opts;
+  const { role, key, season, gradYear, today, studentId, facts } = opts;
   const feb = key === "freshman_feb" || key === "sophomore_feb";
   const title = (t: PlanTask) => outsideTitle(t, t.item_id ? (names[t.item_id] ?? null) : null);
   const line = (t: PlanTask): BriefLine => ({ title: title(t), why: firstClause(t.detail), path: planHref({ person: studentId, tab: "next", move: t.id }) });
@@ -101,7 +102,7 @@ export function briefContent(
   let mine: PlanTask[];
   let child: PlanTask[];
   if (role === "student") {
-    mine = feb ? courseMoves : nowMoves(live, { season, gradYear, today, viewer: "student", max: BRIEF_MOVES_MAX }).now;
+    mine = feb ? courseMoves : nowMoves(live, { season, gradYear, today, viewer: "student", max: BRIEF_MOVES_MAX, facts }).now;
     child = [];
   } else {
     const part = yourPartMoves(live, today).filter((t) => {
@@ -109,7 +110,7 @@ export function briefContent(
       return taskSeason(t, gradYear, season) === season || (d !== null && d < today);
     });
     mine = part.slice(0, BRIEF_MOVES_MAX);
-    child = feb ? courseMoves.filter((t) => !mine.includes(t)) : nowMoves(live, { season, gradYear, today, viewer: "guardian" }).now;
+    child = feb ? courseMoves.filter((t) => !mine.includes(t)) : nowMoves(live, { season, gradYear, today, viewer: "guardian", facts }).now;
   }
 
   const next = feb

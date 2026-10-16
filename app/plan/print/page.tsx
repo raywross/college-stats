@@ -8,7 +8,7 @@ import { authConfigured, requireUser } from "@/lib/auth";
 import { ROUND_LABELS, type ListRound } from "@/lib/list-rules";
 import type { AnyCited } from "@/lib/lineage";
 import { dayLabel, schoolYearOf, type CalendarCite, type CalendarEvent } from "@/lib/planner/calendar";
-import { KID_VARS, MONEY_VAR, ROUND_VAR, STRIPED, TEST_VAR } from "@/lib/planner/colors";
+import { KID_VARS, MONEY_VAR, ROUND_VAR, STRIPED, TEST_VAR, VISIT_VAR } from "@/lib/planner/colors";
 import { todayIso } from "@/lib/planner/context";
 import { loadPlanFor, planViewer, type PlanLoad } from "@/lib/planner/load";
 import { planHref } from "@/lib/planner/plan-tabs";
@@ -50,7 +50,7 @@ function sourceText(cite: CalendarCite, ctx: PlanContext | undefined): string | 
 /**
  * /plan/print (specs/planner/redesign/calendar.md "Feed, print, share"): the Coming-up list for the whole school year,
  * grouped by month, for one child (`?for=`) or everyone, all together or a page per child (`?each=1`). Round colors
- * with shapes (◆ due, ○ decision, ▲ test, $ money) and the round named in each line, so it reads in grayscale too.
+ * with shapes (◆ due, ○ decision, ▲ test, $ money, ● visit) and the round named in each line, so it reads in grayscale too.
  * Signed in only; a student prints their own, a guardian the children the household grants them (loadPlanFor reads
  * with the viewer's session and logs a guardian's read for the student, as /plan does). The browser's print dialog
  * saves it as a PDF. `plan_calendar_printed` fires from the calendar's Print link (FamilyCalendar).
@@ -188,11 +188,18 @@ export default async function PlanPrintPage({ searchParams }: { searchParams: Pr
 /** The mark's shape in its color, as SVG so it prints whatever the browser's background setting: a filled diamond for
  *  a deadline (a white stripe for ED II and REA), a ring for a decision, a triangle for a test, a coin for money. */
 function Shape({ event }: { event: CalendarEvent }) {
-  const label = event.shape === "bar" ? "Deadline" : event.shape === "decision" ? "Decision" : event.shape === "test" ? "Test date" : "Money";
+  const label = event.shape === "bar" ? "Deadline" : event.shape === "decision" ? "Decision" : event.shape === "test" ? "Test date" : event.shape === "visit" ? "Visit" : "Money";
   if (event.shape === "test") {
     return (
       <svg width="14" height="14" viewBox="0 0 14 14" role="img" aria-label={label}>
         <path d="M7 1 L13 13 L1 13 Z" style={{ fill: TEST_VAR }} />
+      </svg>
+    );
+  }
+  if (event.shape === "visit") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" role="img" aria-label={label}>
+        <circle cx="7" cy="7" r="5" style={{ fill: VISIT_VAR }} />
       </svg>
     );
   }
@@ -238,6 +245,9 @@ function Legend() {
       </span>
       <span className="inline-flex items-center gap-1">
         <Shape event={{ date: "", studentId: "", shape: "money", text: "", cite: null, daysAway: 0 }} /> money
+      </span>
+      <span className="inline-flex items-center gap-1">
+        <Shape event={{ date: "", studentId: "", shape: "visit", text: "", cite: null, daysAway: 0 }} /> visit
       </span>
       <span className="inline-flex flex-wrap items-center gap-x-2">
         {rounds.map((r) => (

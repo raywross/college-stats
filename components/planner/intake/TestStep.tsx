@@ -1,7 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { Headline } from "@/components/planner/intake/Headline";
+import { WhyFold } from "@/components/ui/why-fold";
+import { guideHref } from "@/lib/planner/guides";
 import { scoreCheck, targetCheck, type IntakeDraft, type IntakeTest } from "@/lib/planner/intake";
+import { RECORD_STEPS } from "@/lib/planner/record";
 import { cn } from "@/lib/utils";
 
 const CARD_COPY: Record<"sat" | "act", { label: string; sub: string; placeholder: string }> = {
@@ -23,7 +27,15 @@ export function TestStep({ draft, setDraft }: { draft: IntakeDraft; setDraft: (n
 
   return (
     <div className="space-y-8">
-      <Headline lead="Your" pop="test" />
+      <div className="space-y-1">
+        <div className="flex items-center gap-1.5">
+          <Headline lead="Your" pop="test" />
+          <WhyFold compact title="Why we ask" screen="record_tour" section="test">
+            {RECORD_STEPS[1].why}
+          </WhyFold>
+        </div>
+        <p className="text-sm text-muted-foreground">{RECORD_STEPS[1].line}</p>
+      </div>
 
       <div className="space-y-2.5">
         <p className="text-sm font-semibold">Which test are you taking?</p>
@@ -102,6 +114,11 @@ export function TestStep({ draft, setDraft }: { draft: IntakeDraft; setDraft: (n
             />
             {target?.hint && <p className={cn("text-sm", target.tone === "amber" ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground")}>{target.hint}</p>}
           </div>
+
+          {/* Plan v3 (specs/planner/v3/guides/test-prep.md): the test guide's upcoming dates, from the intake too. */}
+          <Link href={guideHref("test")} target="_blank" rel="noopener" className="inline-block text-sm font-semibold text-primary hover:underline">
+            See upcoming {test === "sat" ? "SAT" : "ACT"} dates ↗
+          </Link>
         </>
       )}
 

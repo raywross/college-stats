@@ -18,7 +18,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CollegeHooks, EstimateInput, RecruitedPick, SchoolOffering } from "./types.ts";
 import { NO_HOOKS, RECRUITED_PICKS } from "./levels.ts";
 import { buildSnapshot, estimateInputFromProfile, type AppliedEstimate } from "./snapshot.ts";
-import { sanitizeProfile } from "../student-profile.ts";
+import { sanitizeProfile, withHomeState } from "../student-profile.ts";
+import { homeStateForStudent } from "../home-state.ts";
 
 /** The estimate to record for this input, or null; may throw or reject (the snapshot is then written without it). */
 export type AppliedEstimator = (input: EstimateInput) => Promise<AppliedEstimate | null> | AppliedEstimate | null;
@@ -121,7 +122,8 @@ export async function snapshotOnApplied(itemId: string, deps: SnapshotDeps): Pro
 
     const profileRes = await supabase.from("student_profiles").select("data").eq("student_id", studentId).maybeSingle();
     const raw = profileRes.error ? undefined : (profileRes.data as { data: unknown } | null)?.data;
-    const profile = raw === undefined ? null : sanitizeProfile(raw);
+    // Residency from the household's address when the record has none (owner, 2026-10-16), as profilesICanSee does.
+    const profile = raw === undefined ? null : withHomeState(sanitizeProfile(raw), await homeStateForStudent(supabase, studentId));
 
     const input: EstimateInput = { ...estimateInputFromProfile(profile, item.unit_id, item.round), hooks: await hooksForItem(supabase, itemId) };
     const hsId = input.student.highSchoolId;

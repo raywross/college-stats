@@ -9,7 +9,7 @@ import type { ListOwner } from "@/lib/list-rules";
 import { cn } from "@/lib/utils";
 import { PersonMenu } from "./PersonMenu";
 
-export type PersonTab = "list" | "numbers";
+export type PersonTab = "list" | "record";
 
 /** Whose lists a person's page shows: a student's record, or a guardian's own (lists.user_id). */
 export function personOwner(person: PersonPage): ListOwner {
@@ -41,8 +41,8 @@ const badgeCls = "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 tex
  * (2026-10-06)"). One name line: first and last name, "(you)", the role badge, "Class of 2028", a status while they
  * haven't finished joining, and their phone as a call icon; the "⋯" menu (PersonMenu) at the right holds the rare
  * actions (personActions() decides which). Under it, the guardian banner when a guardian is looking at a student,
- * then the Plan | Numbers segmented control (students only; specs/product/household-hub.md "Household cleanup
- * (2026-10-12)"), which links between the routes. No back link and no tabs row: the strip above is how you move
+ * then the Plan | Record segmented control (students only; specs/planner/record/steps.md "The overview": the
+ * Numbers tab, renamed), which links between the routes. No back link and no tabs row: the strip above is how you move
  * between people, and it never changes.
  *
  * The "Plan" pill (value `list`, the plain `/household/[id]` route) no longer embeds the old list board: a
@@ -114,7 +114,7 @@ export async function PersonHeader({ id, person, active }: { id: string; person:
           value={active}
           options={[
             { value: "list", label: "Plan", href: `/household/${id}` },
-            { value: "numbers", label: "Numbers", href: `/household/${id}/numbers` },
+            { value: "record", label: "Record", href: `/household/${id}/record` },
           ]}
         />
       )}

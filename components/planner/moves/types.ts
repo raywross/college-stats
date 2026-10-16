@@ -15,4 +15,7 @@ export interface MoveCardProps {
   onSkip: (t: PlanTask) => void;
   /** A write for this card is in flight. */
   pending: boolean;
+  /** The card's 1-based position in Now (plan-v3-build record/ranking.md "Rules"), for `plan_move_shown`'s `rank`;
+   *  undefined for a card that isn't part of the ranked Now set (Your part, the parent's rows). */
+  rank?: number;
 }

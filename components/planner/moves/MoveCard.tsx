@@ -23,7 +23,7 @@ import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import type { AnyCited } from "@/lib/lineage";
 import { guideFor, guideHref } from "@/lib/planner/guides";
-import { parentSafeTitle } from "@/lib/planner/moves";
+import { isReachScoreMove, nextTestNote, parentSafeTitle } from "@/lib/planner/moves";
 import { planHref } from "@/lib/planner/plan-tabs";
 import { assigneeLabel, isOverdue, taskDateLabel } from "@/lib/planner/tasks";
 import type { PlanContext, PlanTask } from "@/lib/planner/types";
@@ -161,6 +161,8 @@ export function MoveCard({ task, ctx, onDone, onSkip, pending, rank }: MoveCardP
   const showAssignee = task.assignee !== viewerAssignee;
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
   const title = ctx.viewer.isGuardian ? parentSafeTitle(task) : task.title;
+  // The picked test date folds into "Work toward your {target}" (owner, 2026-10-16): the soonest one, as an italic line.
+  const testNote = isReachScoreMove(task) ? nextTestNote(ctx.tasks, ctx.today, ctx.profile?.tests.registeredDates ?? []) : null;
 
   const guide = guideFor(task);
 
@@ -179,6 +181,7 @@ export function MoveCard({ task, ctx, onDone, onSkip, pending, rank }: MoveCardP
         {canEdit && <CornerMenu task={task} title={title} onDone={onDone} onSkip={onSkip} pending={pending} />}
       </div>
       {task.detail && <p className="mt-1 text-sm text-muted-foreground">{task.detail}</p>}
+      {testNote && <p className="mt-1 text-sm text-muted-foreground italic">{testNote}</p>}
       {showAssignee && (
         <span className="mt-1.5 inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
           <Term term="task-assignee">{assigneeLabel(task.assignee, { isGuardian: ctx.viewer.isGuardian }, firstName)}</Term>

@@ -100,6 +100,33 @@ export function isMove(t: Pick<PlanTask, "kind" | "key" | "orphaned">): boolean 
   return !t.orphaned && !LEGACY_TODO_KINDS.has(t.kind) && !isFinancialMove(t);
 }
 
+/** The "Work toward your {target}" move (the catalog's `reach_score_{season}` entries). */
+export const isReachScoreMove = (t: Pick<PlanTask, "key">): boolean => t.key !== null && /:playbook:reach_score_/.test(t.key);
+/** A picked test date's own moves: register by its deadline, and the day itself. */
+export const isTestDateMove = (t: Pick<PlanTask, "kind">): boolean => t.kind === "test_register" || t.kind === "test_day";
+
+const shortDate = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
+/**
+ * The italic line on the "Work toward your {target}" card (owner, 2026-10-16: "merge the card that shows an upcoming
+ * test with the work-toward-your-target card… if more than one, just show the soonest"): the soonest picked test date
+ * still ahead, and its registration deadline while it isn't registered. Null with no test date picked. Dates only,
+ * never a score, so it reads the same to a parent.
+ */
+export function nextTestNote(tasks: readonly PlanTask[], today: string, registeredKeys: readonly string[] = []): string | null {
+  const days = tasks
+    .filter((t) => t.kind === "test_day" && t.due_on !== null && t.due_on >= today && t.done_at === null && !t.orphaned)
+    .sort((a, b) => a.due_on!.localeCompare(b.due_on!));
+  const day = days[0];
+  if (!day) return null;
+  const entryKey = day.key?.slice(day.key.lastIndexOf(":") + 1) ?? "";
+  const label = day.title.replace(/ test day$/, "").replace(/\s*\(projected date\)/, "");
+  const reg = tasks.find((t) => t.kind === "test_register" && t.key?.endsWith(`:${entryKey}`));
+  const registered = registeredKeys.includes(entryKey) || (reg?.done_at ?? null) !== null;
+  const registerBy = !registered && reg?.due_on && reg.due_on >= today ? ` Register by ${shortDate(reg.due_on)}.` : "";
+  return `Your next test: the ${label} on ${shortDate(day.due_on!)}${registered ? " (registered)" : ""}.${registerBy}`;
+}
+
 export function nowMoves(
   tasks: PlanTask[],
   opts: { season: Season; gradYear: number | null; today: string; viewer: "student" | "guardian"; max?: number; facts: ImportanceFacts },
@@ -110,13 +137,17 @@ export function nowMoves(
   const live = tasks.filter(isMove);
   const seasonOf = (t: PlanTask) => taskSeason(t, gradYear, season);
   const forViewer = (t: PlanTask) => !(opts.viewer === "guardian" && isMine(t));
-  const open = live
+  const eligible = live
     .filter((t) => isOpen(t, today))
     .filter(forViewer)
     .filter((t) => eligibleNow(t, { season, gradYear, today }))
     // R1b (ranking.md): a move whose importance is 0 doesn't show at all, not even folded into More.
     .filter((t) => importance(t, facts) > 0)
     .sort((a, b) => compareByImportance(a, b, facts));
+  // A picked test's register and test-day moves fold into "Work toward your {target}" when that card is up (owner,
+  // 2026-10-16): its italic line names the soonest test (nextTestNote), the guide schedules another, and the dates
+  // stay on the calendar. Without the target card they show on their own as before.
+  const open = eligible.some(isReachScoreMove) ? eligible.filter((t) => !isTestDateMove(t)) : eligible;
   const comingUp = next
     ? live
         .filter((t) => isOpen(t, today) && seasonOf(t) === next)

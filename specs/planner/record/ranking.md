@@ -141,3 +141,10 @@ A junior saw "Ask the high school to send transcripts" and "Pay the application 
 rows per listed college). An undated application piece (the apply, fee, transcript, recommendation, supplement, portal,
 decision, and offer kinds, or any undated `college`-source row) is importance **0 before senior fall**
 (`beforeApplications`, lib/planner/importance.ts); dated ones follow the season gate as before.
+
+## Changed (owner, 2026-10-16): the picked test folds into "Work toward your target"
+"Merge the card that shows an upcoming test with the work-toward-your-target card… if more than one, just show the
+soonest. This would allow us to show another card." While an open `reach_score_*` move is eligible, the `test_register`
+and `test_day` moves leave Now (and More); the target card carries an italic line, "Your next test: the SAT on Dec 5.
+Register by Nov 20." (or "(registered)"), for the soonest picked date (`nextTestNote`, lib/planner/moves.ts). The dates
+stay on the calendar and in the test guide; without a target card the test moves show on their own as before.

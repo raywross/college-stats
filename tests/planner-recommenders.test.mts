@@ -2,8 +2,9 @@
  * The recommenders guide's pure helpers (lib/planner/recommenders.ts; specs/planner/v3/guides/recommenders.md):
  * ranking and `moveRank`, `setStatus`'s one-way ladder and its dates, `subjectsFrom`'s core-first ordering,
  * `collegesAskLine`'s citations, `thankSeason`, and that `THINK_ABOUT`/`HOW_TO_ASK` pass the catalog's words guard.
- * Also: `pick_recommenders` opens in junior spring, not junior fall, and closes once two are asked (the catalog and
- * season-generator guards U1 already proved; reconfirmed here against this unit's own fixtures). `npm test`.
+ * Also: `pick_recommenders` opens in the summer before senior year (R1b: moved from junior spring, ranking.md "Timing
+ * rules moved here"), not junior spring, and closes once two are asked (the catalog and season-generator guards U1
+ * already proved; reconfirmed here against this unit's own fixtures). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -240,12 +241,14 @@ test("recommenders_open: true under two asked/agreed/invited, false at two or mo
   assert.equal(moveApplies("recommenders_open", { ...baseFacts, profile: profileWith(invited) }), false);
 });
 
-test("pick_recommenders: in junior_spring's entries, carries, not in junior_fall's", () => {
-  assert.ok(entriesFor("junior_spring", PLAYBOOK).some((e) => e.key === "pick_recommenders"));
+test("pick_recommenders: in summer_before_senior's entries, carries, not in junior_fall's (R1b: moved from junior spring; junior_spring's own entriesFor still previews it as 'next')", () => {
+  assert.ok(entriesFor("summer_before_senior", PLAYBOOK).some((e) => e.key === "pick_recommenders"));
+  // junior_spring's entriesFor legitimately previews summer_before_senior's entries (nextSeason), so it's checked
+  // two seasons back instead, where it's neither this season's nor "next".
   assert.ok(!entriesFor("junior_fall", PLAYBOOK).some((e) => e.key === "pick_recommenders"));
   const e = PLAYBOOK.find((x) => x.key === "pick_recommenders");
   assert.ok(e);
-  assert.equal(e!.season, "junior_spring");
+  assert.equal(e!.season, "summer_before_senior");
   assert.equal(e!.carries, true);
   assert.equal(e!.applies, "recommenders_open");
 });

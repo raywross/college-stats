@@ -27,6 +27,8 @@ import { briefContent, briefSubject, buildSeasonBrief, firstClause } from "../li
 import { buildYourWeek } from "../lib/emails/your-week.ts";
 import { buildParentSummary } from "../lib/emails/parent-summary.ts";
 import { hasNewMove } from "../lib/planner/plan-frame.ts";
+import { cycleFor, loadCycle } from "../lib/planner/cycle.ts";
+import type { ImportanceFacts } from "../lib/planner/importance.ts";
 import { SEASONS, type Season } from "../lib/planner/seasons.ts";
 import type { PlanTask } from "../lib/planner/types.ts";
 
@@ -151,7 +153,10 @@ test("defaults per season: Your week and the parent summary on from junior sprin
 /* ------------------------------------------------------------------ */
 
 const TODAY = "2027-03-07";
-const OPTS = { season: "junior_spring" as Season, gradYear: CLASS, today: TODAY };
+/** R1b (specs/planner/record/ranking.md): a neutral facts fixture (no profile, no list deadlines) for `nowMoves`/
+ *  `briefContent`'s importance sort; these tests only check which moves are present, never their relative order. */
+const factsFor = (season: Season, today: string, gradYear: number | null = CLASS): ImportanceFacts => ({ season, today, gradYear, profile: null, cycle: loadCycle(cycleFor(gradYear ?? CLASS)), listDeadlines: [] });
+const OPTS = { season: "junior_spring" as Season, gradYear: CLASS, today: TODAY, facts: factsFor("junior_spring", TODAY) };
 
 test("a skipped (dismissed) move is never in a brief or a week", () => {
   const skipped = task({ title: "Skipped move", dismissed: true });
@@ -217,7 +222,7 @@ test("no figure in any line: a planted 'SAT 1400' title is scrubbed from the bri
   // Every brief turn's fixed text is figure-free too.
   for (const key of BRIEF_KEYS) {
     const season = key === "freshman_feb" ? "freshman" : key === "sophomore_feb" ? "sophomore" : key;
-    const b = buildSeasonBrief(briefContent([], {}, { role: "guardian", key, season, gradYear: CLASS, today: TODAY, studentId: STUDENT, firstName: null }), {
+    const b = buildSeasonBrief(briefContent([], {}, { role: "guardian", key, season, gradYear: CLASS, today: TODAY, studentId: STUDENT, firstName: null, facts: factsFor(season, TODAY) }), {
       siteUrl: "https://q.example",
       unsubscribeToken: "t".repeat(40),
     });
@@ -264,7 +269,7 @@ test("the parent's brief leads with their part, then the child's top three as re
 test("the February brief: the course-plan move and the PSAT result line", () => {
   const course = task({ key: "L:playbook:freshman_choose_courses", title: "Choose next year's courses", season: "freshman" });
   const other = task({ title: "Something else", season: "freshman" });
-  const c = briefContent([course, other], {}, { role: "student", key: "freshman_feb", season: "freshman", gradYear: 2030, today: "2027-02-07", studentId: STUDENT, firstName: "Ana" });
+  const c = briefContent([course, other], {}, { role: "student", key: "freshman_feb", season: "freshman", gradYear: 2030, today: "2027-02-07", studentId: STUDENT, firstName: "Ana", facts: factsFor("freshman", "2027-02-07", 2030) });
   assert.deepEqual(c.moves.map((m) => m.title), ["Choose next year's courses"]);
   assert.equal(c.notes.length, 1);
   assert.match(c.notes[0], /PSAT/);

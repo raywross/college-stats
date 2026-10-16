@@ -85,7 +85,9 @@ export interface AnalyticsEvents {
   estimate_shown: { group: StandingLevel | "none"; label: StandingLabel | "none"; model_version: string };
   /* Next steps (specs/planner/next-steps/*.md "Telemetry"; build-plan.md "Telemetry"): kinds, seasons, levels, and
      rule names only; never a college, a score, or a number from the estimate. */
-  plan_move_shown: { kind: string; season: Season };
+  /* R1b (specs/planner/record/ranking.md "Rules"): rank is the card's 1-based position in Now (null outside the
+     ranked set); importance itself is never sent. */
+  plan_move_shown: { kind: string; season: Season; rank: number | null };
   plan_move_done: { kind: string; season: Season; by: "student" | "guardian" };
   plan_move_skipped: { kind: string; season: Season };
   plan_season_explainer_opened: { season: Season };
@@ -211,7 +213,7 @@ export const EVENTS = {
   course_plan_dismissed: { properties: ["reason"], side: "client", why: "Course plan: do suggestions get set aside, by reason" },
   visit_alert_sent: { properties: ["college_count", "event_count"], side: "server", why: "Visit events: alerts sent, by size" },
   estimate_shown: { properties: ["group", "label", "model_version"], side: "client", why: "Quad's estimate: how often it is shown and as which group and label, per model version (never the inputs)" },
-  plan_move_shown: { properties: ["kind", "season"], side: "client", why: "Next steps: which moves families see, by season" },
+  plan_move_shown: { properties: ["kind", "season", "rank"], side: "client", why: "Next steps: which moves families see, by season, and in what order" },
   plan_move_done: { properties: ["kind", "season", "by"], side: "client", why: "Next steps: which moves get done, and by whom" },
   plan_move_skipped: { properties: ["kind", "season"], side: "client", why: "Next steps: which moves get a Not now" },
   plan_season_explainer_opened: { properties: ["season"], side: "client", why: "Next steps: is How this season works read" },

@@ -8,6 +8,7 @@
  */
 import type { IcsEvent } from "../ics.ts";
 import type { Grade } from "./cycle.ts";
+import type { ImportanceFacts } from "./importance.ts";
 import { nowMoves } from "./moves.ts";
 import { seasonBounds, type Season } from "./seasons.ts";
 import { addDays } from "./stage.ts";
@@ -240,7 +241,7 @@ export const NEW_MOVE_LINE_KINDS: ReadonlySet<PlanTask["kind"]> = new Set(["ed_d
  */
 export function yourWeekTasks(
   tasks: PlanTask[],
-  opts: { season: Season; gradYear: number | null; today: string },
+  opts: { season: Season; gradYear: number | null; today: string; facts: ImportanceFacts },
 ): { moves: PlanTask[]; fresh: PlanTask[]; week: PlanTask[]; overdue: PlanTask | null; done: PlanTask[] } {
   const { today } = opts;
   const now = nowMoves(tasks, { ...opts, viewer: "student" }).now.slice(0, WEEK_MOVES);

@@ -297,31 +297,34 @@ test("belowTarget reads the focus test's score only", () => {
   assert.equal(belowTarget({ tests: { ...p.tests, focus: "act", actComposite: 29, target: 30 } }), true);
 });
 
-test("pick_recommenders: junior spring, carries, not in junior fall; closes at two asked; notice_teachers is gone", () => {
+test("pick_recommenders: summer before senior year (R1b), carries, not in junior spring; closes at two asked; notice_teachers is gone", () => {
   const entry = PLAYBOOK.find((e) => e.key === "pick_recommenders");
   assert.ok(entry);
-  assert.equal(entry.season, "junior_spring");
+  assert.equal(entry.season, "summer_before_senior");
   assert.equal(entry.carries, true);
   assert.equal(entry.applies, "recommenders_open");
   assert.ok(!PLAYBOOK.some((e) => e.key === "notice_teachers"));
   const key = `${LIST}:playbook:pick_recommenders`;
   const p = emptyProfile();
-  // Junior fall: not this season's, not next season's (junior winter), so not generated at all.
+  // Junior fall: not this season's, not next season's (junior winter), so not generated at all. (Junior spring's own
+  // `entriesFor` legitimately previews it, since summer before senior is junior spring's "next".)
   assert.ok(!generate(input(MID.junior_fall)).some((t) => t.key === key), "not in junior fall");
-  assert.ok(generate(input(MID.junior_spring)).some((t) => t.key === key), "in junior spring");
+  assert.ok(generate(input(MID.summer_before_senior)).some((t) => t.key === key), "in summer before senior year");
   assert.ok(generate(input(MID.senior_fall)).some((t) => t.key === key), "carries into senior fall while open");
   const oneAsked: StudentProfileData = { ...p, recommenders: [rec("asked"), rec("thinking")] };
   const twoAsked: StudentProfileData = { ...p, recommenders: [rec("asked"), rec("agreed")] };
-  assert.ok(generate(input(MID.junior_spring, { profile: oneAsked })).some((t) => t.key === key), "one asked: still open");
-  assert.ok(!generate(input(MID.junior_spring, { profile: twoAsked })).some((t) => t.key === key), "two asked: closed");
+  assert.ok(generate(input(MID.summer_before_senior, { profile: oneAsked })).some((t) => t.key === key), "one asked: still open");
+  assert.ok(!generate(input(MID.summer_before_senior, { profile: twoAsked })).some((t) => t.key === key), "two asked: closed");
 });
 
-test("the story move's why and the junior-fall explainer (plan v3)", () => {
+test("the story move's why and the summer-before-senior explainer (R1b: moved from junior fall)", () => {
   const story = PLAYBOOK.find((e) => e.key === "story")!;
+  assert.equal(story.season, "summer_before_senior");
   assert.equal(story.why, "One page in your own words. The counselor's questionnaire and the essay both start from it.");
   assert.equal(MOVE_TEXT.story.why, story.why);
   assert.doesNotMatch(SEASON_EXPLAINER.junior_fall.paragraph, /Notice the teachers/);
-  assert.match(SEASON_EXPLAINER.junior_fall.paragraph, /Write your story while there's no deadline\./);
+  assert.doesNotMatch(SEASON_EXPLAINER.junior_fall.paragraph, /Write your story/);
+  assert.match(SEASON_EXPLAINER.summer_before_senior.paragraph, /Write your story while there's no deadline\./);
   assert.match(SEASON_EXPLAINER.junior_spring.paragraph, /asking two teachers before summer/);
 });
 

@@ -145,11 +145,12 @@ function ActionLink({ task, ctx }: { task: PlanTask; ctx: PlanContext }) {
   }
 }
 
-export function MoveCard({ task, ctx, onDone, onSkip, pending }: MoveCardProps) {
+export function MoveCard({ task, ctx, onDone, onSkip, pending, rank }: MoveCardProps) {
   // Once per card on mount (seasons.md "Rules"): a fresh instance (a new task id) fires again, a re-render of the
-  // same one doesn't.
+  // same one doesn't. R1b (ranking.md "Rules"): `rank` is the card's 1-based position in Now, undefined for a card
+  // outside the ranked set (Your part, a parent's rows).
   useEffect(() => {
-    track("plan_move_shown", { kind: task.kind, season: task.season ?? ctx.season });
+    track("plan_move_shown", { kind: task.kind, season: task.season ?? ctx.season, rank: rank ?? null });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per mounted card, by task id
   }, [task.id]);
 

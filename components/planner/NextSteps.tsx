@@ -36,6 +36,7 @@ import type { PlanTabProps } from "@/components/planner/tabs/types";
 import { track } from "@/lib/analytics";
 import { SEASON_EXPLAINER } from "@/lib/planner/moves-catalog";
 import { doneLabel, nowMoves, parentSafeTitle, skippedLabel, taskSeason, yourPartMoves } from "@/lib/planner/moves";
+import { importanceFactsFrom } from "@/lib/planner/importance-facts";
 import { SEASON_LABELS } from "@/lib/planner/seasons";
 import { dismiss, tick, undismiss, untick } from "@/lib/planner/store";
 import type { PlanTask } from "@/lib/planner/types";
@@ -76,7 +77,8 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
   const isGuardian = ctx.viewer.isGuardian;
   const by = isGuardian ? "guardian" : "student";
   const yourPart = isGuardian ? yourPartMoves(ctx.tasks, ctx.today) : [];
-  const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: "student" });
+  const facts = importanceFactsFrom(ctx, view);
+  const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: "student", facts });
   const classOf = ctx.gradYear !== null ? ` · Class of ${ctx.gradYear}` : "";
   const seasonOfTask = (t: PlanTask) => taskSeason(t, ctx.gradYear, ctx.season);
   const skipped = groups.skipped.filter((t) => !restored.has(t.id));
@@ -187,7 +189,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
     });
   }
 
-  function renderCard(task: PlanTask) {
+  function renderCard(task: PlanTask, rank?: number) {
     const ov = overlay[task.id];
     if (ov?.status === "skipped") return null;
     if (ov?.status === "done") {
@@ -212,7 +214,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
     const Card = MOVE_CARDS[task.kind] ?? MoveCard;
     return (
       <div key={task.id}>
-        <Card task={task} ctx={ctx} view={view} onDone={handleDone} onSkip={handleSkip} pending={pendingIds.has(task.id)} />
+        <Card task={task} ctx={ctx} view={view} onDone={handleDone} onSkip={handleSkip} pending={pendingIds.has(task.id)} rank={rank} />
         {errors[task.id] && (
           <p role="alert" className="mt-1 px-1 text-xs text-destructive">
             {errors[task.id]}
@@ -245,7 +247,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
       {isGuardian && yourPart.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-muted-foreground">Your part</h3>
-          <div className="space-y-3">{yourPart.map(renderCard)}</div>
+          <div className="space-y-3">{yourPart.map((task) => renderCard(task))}</div>
         </div>
       )}
 
@@ -255,7 +257,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
           <p className="text-sm text-muted-foreground">{SEASON_EXPLAINER[ctx.season].lead}</p>
         </div>
       ) : (
-        <div className="space-y-3">{groups.now.map(renderCard)}</div>
+        <div className="space-y-3">{groups.now.map((task, i) => renderCard(task, i + 1))}</div>
       )}
 
       {foldCount > 0 && (

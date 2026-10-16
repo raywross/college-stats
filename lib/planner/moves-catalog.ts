@@ -302,18 +302,6 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
   },
   ...reachScore("junior_fall"),
   {
-    key: "story",
-    season: "junior_fall",
-    title: "Write your story",
-    why: "One page in your own words. The counselor's questionnaire and the essay both start from it.",
-    who: "student",
-    carries: true,
-    applies: "story_missing",
-    action: () => ({ kind: "story" }),
-    source: "story",
-    kind: "story",
-  },
-  {
     key: "net_price",
     season: "junior_fall",
     title: "Run the net price calculator at three colleges on the list",
@@ -388,18 +376,6 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
   // Junior spring (Mar–May).
   ...reachScore("junior_spring"),
   {
-    key: "pick_recommenders",
-    season: "junior_spring",
-    title: "Pick your recommenders",
-    why: "Junior-year teachers in core subjects know your work best. Advisors say ask before summer, while they remember it.",
-    who: "student",
-    carries: true,
-    applies: "recommenders_open",
-    // The recommenders guide is the button (lib/planner/guides.ts).
-    action: () => null,
-    source: "advisors",
-  },
-  {
     key: "spring_break_visit",
     season: "junior_spring",
     title: "Visit over spring break",
@@ -423,6 +399,33 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
   },
   // Summer before senior year (Jun–Jul).
   ...reachScore("summer_before_senior"),
+  {
+    // R1b (specs/planner/record/ranking.md "Timing rules moved here"): moved from junior fall; the owner, 2026-10-16,
+    // "it probably doesn't need to be filled out until the summer before senior year."
+    key: "story",
+    season: "summer_before_senior",
+    title: "Write your story",
+    why: "One page in your own words. The counselor's questionnaire and the essay both start from it.",
+    who: "student",
+    carries: true,
+    applies: "story_missing",
+    action: () => ({ kind: "story" }),
+    source: "story",
+    kind: "story",
+  },
+  {
+    // R1b (ranking.md "Timing rules moved here"): moved from junior spring; same owner note as `story` above.
+    key: "pick_recommenders",
+    season: "summer_before_senior",
+    title: "Pick your recommenders",
+    why: "Junior-year teachers in core subjects know your work best. Advisors say ask before summer, while they remember it.",
+    who: "student",
+    carries: true,
+    applies: "recommenders_open",
+    // The recommenders guide is the button (lib/planner/guides.ts).
+    action: () => null,
+    source: "advisors",
+  },
   {
     key: "list_cost",
     season: "summer_before_senior",
@@ -497,8 +500,7 @@ export const SEASON_EXPLAINER: Record<Season, { lead: string; paragraph: string;
   },
   junior_fall: {
     lead: "Junior year is when the plan starts.",
-    paragraph:
-      "The PSAT/NMSQT in October, a first test date, and a list that grows toward something to visit and cut. Write your story while there's no deadline.",
+    paragraph: "The PSAT/NMSQT in October, a first test date, and a list that grows toward something to visit and cut.",
     next: "Next: junior winter, when you register for a spring test and choose senior-year courses.",
   },
   junior_winter: {
@@ -514,7 +516,8 @@ export const SEASON_EXPLAINER: Record<Season, { lead: string; paragraph: string;
   },
   summer_before_senior: {
     lead: "The summer for the essay and the final list.",
-    paragraph: "Draft the personal essay, settle the list, decide whether an early round makes sense, and check the list's cost together before applications open.",
+    paragraph:
+      "Draft the personal essay, settle the list, decide whether an early round makes sense, and check the list's cost together before applications open. Write your story while there's no deadline.",
     next: "Next: senior fall, when applications go out.",
   },
   senior_fall: {

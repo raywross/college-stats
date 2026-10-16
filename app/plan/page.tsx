@@ -13,6 +13,7 @@ import { resolveSelectedChild, type SwitchableChild } from "@/lib/planner/plan-f
 import { profileProgress, SECTION_STEP } from "@/lib/planner/profile-progress";
 import { defaultTab, parseTab, planHref } from "@/lib/planner/plan-tabs";
 import { nowMoves, topMove } from "@/lib/planner/moves";
+import { importanceFactsFrom } from "@/lib/planner/importance-facts";
 import { withTiming } from "@/lib/timing-server";
 import { planBundle } from "@/lib/bundles";
 import { bundleKnownMissing } from "@/lib/bundle-read";
@@ -64,9 +65,10 @@ function planFallback(loaded: PlanLoad, first: string | null): ReactNode | null 
  */
 function detailFor(load: PlanLoad | undefined, person: string | null): PlanPersonDetail | null {
   if (!load || load.kind !== "ready") return null;
-  const { ctx } = load;
+  const { ctx, view } = load;
   const base = detailFrom(ctx.profile, ctx.viewer.canEdit, ctx.student?.id ?? person, person);
-  const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: ctx.viewer.isGuardian ? "guardian" : "student" });
+  const facts = importanceFactsFrom(ctx, view);
+  const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: ctx.viewer.isGuardian ? "guardian" : "student", facts });
   const move = topMove(groups);
   return { ...base, next: move ? { label: move.title, href: planHref({ person, tab: "next", move: move.id }) } : null };
 }

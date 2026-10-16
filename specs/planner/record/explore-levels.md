@@ -1,6 +1,6 @@
 # Part 6, Explore by Your Level, and "Show Me More" From the List
 
-> Status: **planned** 2026-10-16. Extends Explore ([../../search-and-filtering.md](../../search-and-filtering.md)) and
+> Status: **built** 2026-10-16 (R7, branch feature/record-explore-levels). Extends Explore ([../../search-and-filtering.md](../../search-and-filtering.md)) and
 > the Build your list guide ([../v3/guides/list-size.md](../v3/guides/list-size.md)). Part 6 of [Your record](README.md).
 > The owner: "When you go to search and you're a logged-in user, you should be able to search by selectivity tailored
 > to you: show me reach or high reach or safety, based on the student's rating and the school rating we've calculated.
@@ -59,3 +59,33 @@ Tests: `tests/explore-for-me.test.mts` (parsing; the filter keeps only the picke
 unfiltered list and the sign-in line; the cap and its message; no estimate number in the page's markup),
 `tests/planner-list-guide.test.mts` (the link carries the level and the preferences; emphasis below the minimum; the
 shape card is gone).
+
+## As built by R7
+- **The cap is off.** `estimateMany` over all 1,893 colleges, a fresh context per run as a request makes, measured
+  73–87 ms for a student with a GPA and an SAT and 123–144 ms with eight AP courses on the record; the first run in a
+  fresh process (before the JIT warms) took 162–187 ms. Under 150 ms in steady state, so `FOR_ME_CAP` is `null`
+  (lib/explore-for-me.ts). The capped path stays and is tested (`forMeFilter(…, { cap })`, `closestFirst`,
+  `forMeCappedLine`), so turning it on is one line (`SPEC_CAP` is 600). A nearest-first cap would also hide most Safe
+  and High reach colleges (they sit far from the student's numbers by definition), another reason to leave it off.
+- `lib/params.ts` `parseForMe` (level keys in the URL's order, unknown dropped) sits beside `parseFilters` but outside
+  `SearchFilters`: the dataset never sees `forMe`. It counts as one active filter (`FILTER_KEYS`).
+- `lib/explore-for-me.ts` (server-only): `resolveForMeViewer()` (signed out / no student / no numbers / ready; the
+  plan's person: the student, or a guardian's `plan_child` child, else the first, via `resolveSelectedChild`) and
+  `forMeFilter(schools, levels, viewer)` returning `{ schools, levels, capped, cap, status, recordHref }`. The hooks are
+  the list's (`hooksFromPlan` over the plan bundle's items and visits) plus a record connection on a college not on
+  the list (a parent's college you haven't added still reads as legacy). `app/explore/page.tsx` calls both only inside
+  `if (forMe)`; a source guard in the test proves every other request does exactly the work it did.
+- The filter group: `FilterPanel`'s first section, "For you" with the `levels` glossary tip, five 44 px chips tinted in
+  `GROUP_CLASS` when picked. Without `forMe` in the URL the server hasn't looked at the viewer, so the panel goes by
+  the header's sign-in state (`useMe`): signed out shows the sign-in line, signed in shows the chips; a student with
+  no grades or test sees "Add your grades and a test choice…" once a level is picked (the server's answer then wins).
+  A signed-in viewer with no student gets that same line, linking `/plan?record=1`.
+- The chip on cards, rows, and the table: `components/explore/ForYouChip.tsx`, "Reach for you", from a `levels` map of
+  level keys the page passes down (all three are server components).
+- Active-filter chip: "For you: Reach, High reach" in the URL's order, ✕ clears `forMe`.
+- List guide: `showMoreHref(level, preferences)` and `showMoreLinks(row, preferences)` (lib/planner/list-guide.ts)
+  instead of the planned `showMoreHref(level, preferences, emphasized)`: the emphasis is computed from the row, so it
+  lives in `showMoreLinks`. The table's footer: the no-preferences line (a link for an editor, plain text for a
+  guardian who can't edit), then "Not seeing it?" with Search any college. The level sections keep their own search;
+  "Explore with your numbers" remains only on the freshman view, which has no shape table to replace it.
+- Telemetry: `explore_for_me { levels }` on each chip change; `plan_show_more { level, emphasized }` on each link.

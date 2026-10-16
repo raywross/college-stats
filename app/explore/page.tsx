@@ -3,7 +3,8 @@ import { Suspense } from "react";
 import { SearchX } from "lucide-react";
 import Link from "next/link";
 import { getData, paginate } from "@/lib/data";
-import { parseFilters, parseView, countActiveFilters } from "@/lib/params";
+import { parseFilters, parseForMe, parseView, countActiveFilters } from "@/lib/params";
+import { forMeCappedLine, forMeFilter, resolveForMeViewer, type ForMeResult } from "@/lib/explore-for-me";
 import { resolveNear } from "@/lib/zip-centroids";
 import { estimatesShown } from "@/lib/cost-curve";
 import { priceLine } from "@/lib/cost-at-income";
@@ -45,7 +46,18 @@ export default async function ExplorePage({
   filters.showEstimates = showEstimates;
   const home = filters.near ?? null;
   const view = parseView(params);
-  const schools = getSchools(filters);
+  // "For you" levels (specs/planner/record/explore-levels.md): only with `forMe` in the URL is the viewer resolved and
+  // the estimate run, after the other filters, so every other Explore request does exactly the work it did before.
+  const forMe = parseForMe(params);
+  let schools = getSchools(filters);
+  let forYou: ForMeResult | null = null;
+  if (forMe) {
+    forYou = await forMeFilter(schools, forMe, await resolveForMeViewer());
+    schools = forYou.schools;
+  }
+  const levels = forYou?.status === "applied" ? forYou.levels : null;
+  // What the filter group shows: the chips, or (with `forMe` set) the line for a viewer it can't apply to.
+  const forYouGroup = forYou ? { status: forYou.status, recordHref: forYou.recordHref } : null;
   const perPage = view === "table" ? 50 : 24;
   const pageNum = Number(typeof params.page === "string" ? params.page : 1) || 1;
   const paged = paginate(schools, pageNum, perPage);
@@ -105,7 +117,7 @@ export default async function ExplorePage({
         <aside className="hidden w-72 shrink-0 lg:block">
           <div className="sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-3xl border bg-card p-5 no-scrollbar">
             <Suspense>
-              <FilterPanel facets={facets} estimates={showEstimates} />
+              <FilterPanel facets={facets} estimates={showEstimates} forYou={forYouGroup} />
             </Suspense>
           </div>
         </aside>
@@ -115,7 +127,7 @@ export default async function ExplorePage({
             {/* Phones: two rows that always fit: Search · Filters, then Sort · View. */}
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:flex-wrap">
               <ExploreSearchInput />
-              <MobileFilterSheet facets={facets} estimates={showEstimates} activeCount={activeCount} resultCount={schools.length} />
+              <MobileFilterSheet facets={facets} estimates={showEstimates} activeCount={activeCount} resultCount={schools.length} forYou={forYouGroup} />
               <SortControl />
               <ViewToggle />
             </div>
@@ -127,6 +139,12 @@ export default async function ExplorePage({
             <p className="text-sm text-muted-foreground" role="status">
               We don&apos;t have a location for ZIP code {filters.nearZip}, so the distance filter isn&apos;t applied. Check the digits, or try a
               neighboring ZIP code.
+            </p>
+          )}
+
+          {forYou?.capped && (
+            <p className="text-sm text-muted-foreground" role="status">
+              {forMeCappedLine(forYou.cap ?? 0)}
             </p>
           )}
 
@@ -149,7 +167,7 @@ export default async function ExplorePage({
               </Link>
             </div>
           ) : view === "table" ? (
-            <SchoolTable schools={paged.items} params={params} home={home} />
+            <SchoolTable schools={paged.items} params={params} home={home} levels={levels} />
           ) : view === "map" ? (
             (() => {
               const map = mapPoints(schools);
@@ -246,13 +264,13 @@ export default async function ExplorePage({
               <ul className="space-y-2 sm:hidden">
                 {paged.items.map((s) => (
                   <li key={s.unit_id}>
-                    <SchoolRow school={s} home={home} priceAt={priceLines.get(s.unit_id)} />
+                    <SchoolRow school={s} home={home} priceAt={priceLines.get(s.unit_id)} level={levels?.[s.unit_id] ?? null} />
                   </li>
                 ))}
               </ul>
               <div className="hidden gap-4 sm:grid sm:grid-cols-2 2xl:grid-cols-3">
                 {paged.items.map((s, i) => (
-                  <SchoolCard key={s.unit_id} school={s} index={i} home={home} priceAt={priceLines.get(s.unit_id)} />
+                  <SchoolCard key={s.unit_id} school={s} index={i} home={home} priceAt={priceLines.get(s.unit_id)} level={levels?.[s.unit_id] ?? null} />
                 ))}
               </div>
             </>

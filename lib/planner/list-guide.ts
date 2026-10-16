@@ -17,6 +17,8 @@
 import type { StandingLevel } from "../chances/types.ts";
 import type { SchoolType, SettingGroup, SizeBucket } from "../types.ts";
 import type { Shape, ShapeGap, ShapeGapKind } from "./list-shape.ts";
+import { hasAnyMappedPreference, preferencesToExploreParams } from "../explore-fit.ts";
+import type { StudentProfilePreferences } from "../student-profile.ts";
 
 /* ------------------------------------------------------------------ */
 /* Size                                                                */
@@ -500,6 +502,42 @@ export function shapeRow(
   const count = SHAPE_LEVELS.reduce((s, l) => s + counts[l], 0) + unsorted;
   return { levels, total: { range: shape.total, count, text: `${shape.total[0]}–${shape.total[1]} in all · you ${count}` } };
 }
+
+/* ------------------------------------------------------------------ */
+/* "Show me more" (specs/planner/record/explore-levels.md)             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Explore at one level for the plan's student, narrowed by the record's preferences as Explore's own params
+ * (lib/explore-fit.ts preferencesToExploreParams: sizes, setting, states, types, maxCost): `/explore?forMe=target&
+ * sizes=medium&setting=suburban`. With no preferences the link carries only `forMe`.
+ */
+export function showMoreHref(level: StandingLevel, preferences: StudentProfilePreferences | null | undefined): string {
+  const q = new URLSearchParams({ forMe: level });
+  if (preferences) for (const [k, v] of Object.entries(preferencesToExploreParams(preferences).params)) if (v !== null) q.set(k, v);
+  return `/explore?${q.toString()}`;
+}
+
+export interface ShowMoreLink {
+  href: string;
+  /** Below the shape's minimum at this level: the link is the filled, primary one. A level with no range is quiet. */
+  emphasized: boolean;
+}
+
+/** One "Show me more" link per level of the shape row, emphasized where the count is below the level's minimum. */
+export function showMoreLinks(row: ShapeRowView, preferences: StudentProfilePreferences | null | undefined): Record<StandingLevel, ShowMoreLink> {
+  const out = {} as Record<StandingLevel, ShowMoreLink>;
+  for (const l of row.levels) out[l.level] = { href: showMoreHref(l.level, preferences), emphasized: l.range !== null && l.count < l.range[0] };
+  return out;
+}
+
+/** Whether the record has any preference Explore can filter by (else the table's footer line asks for one). */
+export function hasExplorePreferences(preferences: StudentProfilePreferences | null | undefined): boolean {
+  return !!preferences && hasAnyMappedPreference(preferencesToExploreParams(preferences));
+}
+
+/** The footer line under the shape table when the record has no preferences (explore-levels.md). */
+export const NO_PREFERENCES_LINE = "Add where you'd go to your record and these show colleges that fit it too";
 
 /** The season's sentence under the row (list-size.md "1. The shape"). */
 export function shapeSentence(season: string): string {

@@ -134,6 +134,10 @@ export interface AnalyticsEvents {
   record_reading_shown: { inputs: number; missing: boolean };
   /** R6: the add-college search's level chip shown, once per result set, by level (never the college). */
   plan_add_level_shown: { level: StandingLevel };
+  /** R7 (specs/planner/record/explore-levels.md): Explore's "For you" levels changed: how many are picked, never which colleges. */
+  explore_for_me: { levels: number };
+  /** R7: the list guide's "Show me more" at a level, and whether it was the emphasized one (below the shape's minimum). */
+  plan_show_more: { level: StandingLevel; emphasized: boolean };
   /** Server (U4): one interest-confirmation email sent, with how many acts it asks about. */
   interest_confirm_sent: { acts: number };
   /** Visit events (specs/product/visit-events.md "Privacy and telemetry"): which surface and kind filter are viewed, never an address or a distance. */
@@ -258,6 +262,8 @@ export const EVENTS = {
   plan_why_opened: { properties: ["screen", "section"], side: "client", why: "Less text: which folded explanations get opened and read" },
   record_reading_shown: { properties: ["inputs", "missing"], side: "client", why: "R6: how complete the record reads, and whether it has a next input to prompt" },
   plan_add_level_shown: { properties: ["level"], side: "client", why: "R6: level chips shown on the add-college search, by level" },
+  explore_for_me: { properties: ["levels"], side: "client", why: "R7: is Explore's For you level filter used, and with how many levels" },
+  plan_show_more: { properties: ["level", "emphasized"], side: "client", why: "R7: the list guide's Show me more links, by level and whether it was the emphasized one" },
   interest_confirm_sent: { properties: ["acts"], side: "server", why: "Plan v3: interest-confirmation emails sent, by act count" },
   visit_events_viewed: { properties: ["surface", "kind"], side: "client", why: "Visit events: which surface and kind filter get used" },
   visit_signup_clicked: { properties: ["unit_id", "kind", "near"], side: "client", why: "Visit events: sign-up clicks, by college, kind, and whether it was a near-you event" },

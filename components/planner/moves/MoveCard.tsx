@@ -114,12 +114,13 @@ function ActionLink({ task, ctx }: { task: PlanTask; ctx: PlanContext }) {
         </Link>
       );
     case "open_row": {
-      // PlanList reads `row`/`panel` and opens that row's drawer on that panel (ed-opportunities.md; U2's
-      // `edRowHref()` builds the same shape for the pill's own "See why"). planHref always leaves a `tab=colleges`
-      // in the string, so appending with `&` is safe.
-      const panel = action.panel ? `&panel=${action.panel}` : "";
+      // PlanList reads `row`/`panel=ed` and opens that row's ED dialog (ed-opportunities.md; EdDecideCard's
+      // `edRowHref()` builds the same shape). Every other kind of row task has its own guide now (plan v3
+      // build-plan.md U2b), so any other panel value (or none) renders no button here. planHref always leaves a
+      // `tab=colleges` in the string, so appending with `&` is safe.
+      if (action.panel !== "ed") return null;
       return (
-        <Link href={`${planHref({ person, tab: "colleges" })}&row=${action.itemId}${panel}`} className={SECONDARY}>
+        <Link href={`${planHref({ person, tab: "colleges" })}&row=${action.itemId}&panel=ed`} className={SECONDARY}>
           See the college
         </Link>
       );

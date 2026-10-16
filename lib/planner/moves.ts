@@ -89,8 +89,8 @@ const isMine = (t: PlanTask) => t.assignee === "guardian" || t.assignee === "eit
 
 /**
  * The old stage-3 to-dos (lib/planner/generators/actions.ts: a follow, an information request, and visit notes for
- * every college) are not moves: the row's "Details" count already marks them (lib/planner/capture.ts rowToDo), and
- * interest-and-visits.md gives the plan its own interest moves only where the college says interest counts. They stay
+ * every college) are not moves, and interest-and-visits.md gives the plan its own interest moves only where the
+ * college says interest counts. They stay
  * on the calendar as before; the Next steps tab leaves them out (QA 2026-10-14: a "Follow" and a "Request
  * information" card for every college, Emory included).
  */

@@ -413,8 +413,9 @@ test("estimate_shown is registered with the group, the label, and the model vers
 });
 
 test("the places that report an estimate send exactly those three and nothing from the student", () => {
-  // The plan row's panel stopped showing the estimate (owner, 2026-10-12), so it stopped reporting it too.
-  assert.doesNotMatch(read("components/planner/RowDrawer.tsx"), /estimate_shown/);
+  // The plan row stopped showing the estimate (owner, 2026-10-12; its capture panel is deleted as of plan v3), so
+  // it stopped reporting it too.
+  assert.doesNotMatch(read("components/planner/PlanRow.tsx"), /estimate_shown/);
   for (const f of ["components/chances/StandingCard.tsx"]) {
     const src = read(f);
     const calls = [...src.matchAll(/track\("estimate_shown",\s*\{([^}]*)\}/g)];
@@ -494,10 +495,10 @@ test("the core-subject legend is a heading inside its box, not a label on the bo
 });
 
 test("the plan explains the estimate once for the list, not per college; the profile's card keeps the full panel", () => {
-  // Owner, 2026-10-12: the row's ⓘ is a capture panel now (tests/planner-capture.test.mts); "How Quad reads your list"
-  // (components/planner/ListExplainer.tsx) carries the explanation. The college profile's card still shows the lines.
-  const drawer = read("components", "planner", "RowDrawer.tsx");
-  assert.doesNotMatch(drawer, /<WhatWentIn|panelParts\(/);
+  // Owner, 2026-10-12: "How Quad reads your list" (components/planner/ListExplainer.tsx) carries the explanation,
+  // not the row (whose capture panel is deleted as of plan v3). The college profile's card still shows the lines.
+  const row = read("components", "planner", "PlanRow.tsx");
+  assert.doesNotMatch(row, /<WhatWentIn|panelParts\(/);
   assert.match(read("components", "planner", "PlanList.tsx"), /<ListExplainer \/>/);
   assert.match(read("components", "chances", "StandingCard.tsx"), /<WhatWentIn\b/);
   assert.match(read("lib", "planner", "plan-view.ts"), /estimate: school \? est : null/);
@@ -596,7 +597,7 @@ test("nothing the new client components import is server-only code (Server Actio
   const touched = [
     "components/school/HsPrepTable.tsx",
     "components/school/RigorLine.tsx",
-    "components/planner/RowDrawer.tsx",
+    "components/planner/PlanRow.tsx",
     "components/planner/PlanPeople.tsx",
     "components/planner/SignedOutPlan.tsx",
     "components/planner/useEstimates.ts",

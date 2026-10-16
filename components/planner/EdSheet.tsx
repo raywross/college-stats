@@ -6,17 +6,46 @@ import { useRouter } from "next/navigation";
 import { Check, ExternalLink, X } from "lucide-react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
+import { guideHref } from "@/lib/planner/guides";
 import { ED_CAVEAT, edPillText, edSheetFacts, type EdCandidate, type EdCheckKey } from "@/lib/planner/ed-opportunities";
 import { dismissEd, setEdChecks, startEd } from "@/lib/planner/store-ed";
+import { SheetDialog } from "@/components/ui/sheet-dialog";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import type { AnyCited } from "@/lib/lineage";
 import { cn } from "@/lib/utils";
 
 /**
- * The ED sheet (specs/planner/next-steps/ed-opportunities.md "The sheet"), on top of the row's drawer: Quad's read,
- * what the college reports (its own numbers, cited), the caveat, the three questions (stored in `ed_checks`; the cost
- * one also reads as ticked once the cost check task for this college is done), the round's dates, and the buttons.
+ * Plan v3 (connections.md "The row"): the ED pill opens this as a dialog (`EdSheetDialog`, `SheetDialog` — a bottom
+ * sheet on phones, centered from `sm`) instead of inline under the row. `EdSheet`'s own contents are unchanged
+ * except for the "Visit before you decide" line, which links the Show interest guide for this college.
+ */
+export function EdSheetDialog({
+  row,
+  ctx,
+  candidate,
+  open,
+  onOpenChange,
+}: {
+  row: PlanRowView;
+  ctx: PlanContext;
+  candidate: EdCandidate;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const title = edPillText(candidate.round, candidate.verdict).full;
+  return (
+    <SheetDialog open={open} onOpenChange={onOpenChange} title={title}>
+      <EdSheet row={row} ctx={ctx} candidate={candidate} onClose={() => onOpenChange(false)} />
+    </SheetDialog>
+  );
+}
+
+/**
+ * The ED sheet (specs/planner/next-steps/ed-opportunities.md "The sheet"), now opened as a dialog (`EdSheetDialog`
+ * above) rather than inline under the row: Quad's read, what the college reports (its own numbers, cited), the
+ * caveat, the three questions (stored in `ed_checks`; the cost one also reads as ticked once the cost check task for
+ * this college is done), a link to the Show interest guide before deciding, the round's dates, and the buttons.
  * The student sets the round (**Start it in ED / ED II**, or **Keep ED** when it's already there) or says **Not for
  * me**; a guardian sees the facts and questions, ticks the cost check as theirs, and reads "{First} picks the round".
  * Nothing here is a number from the estimate: the level is the only thing from it.
@@ -28,6 +57,9 @@ export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ct
   const isStudent = !ctx.viewer.isGuardian && ctx.viewer.canEdit;
   const canEdit = ctx.viewer.canEdit;
   const first = ctx.student?.display_name?.trim().split(/\s+/)[0] || "Your student";
+  // MoveCard.tsx's personFor, inlined here to avoid importing a client card component: null for a signed-in
+  // student's own plan, else the child's id (the guardian's `?for=` on the guide link below).
+  const person = ctx.viewer.relation === "self" ? null : (ctx.student?.id ?? null);
   const costTaskDone = ctx.tasks.some((t) => t.kind === "cost_check" && t.item_id === row.item.id && t.done_at !== null);
   const [checks, setChecks] = useState<Record<string, boolean>>(() => ({ ...(row.item.ed_checks ?? {}) }));
   const [pending, startTransition] = useTransition();
@@ -164,6 +196,10 @@ export function EdSheet({ row, ctx, candidate, onClose }: { row: PlanRowView; ct
           );
         })}
       </ul>
+
+      <Link href={guideHref("interest", { college: row.item.unit_id, person, from: "card" })} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
+        Visit before you decide
+      </Link>
 
       {(facts.closing || facts.notification) && (
         <div className="space-y-1">

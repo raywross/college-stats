@@ -19,6 +19,7 @@ const ALL = readdirSync(DIR).filter((f) => f.endsWith(".sql")).sort();
 const BUNDLE = "20261012140000_plan_bundle.sql";
 const PAUSE = "20261013100000_viewer_bundle_pause.sql";
 const NEXT_STEPS = "20261014120000_next_steps.sql";
+const PLAN_V3 = "20261016120000_plan_v3.sql";
 
 async function boot(files = ALL): Promise<AuthDb> {
   const db = await PGlite.create({ extensions: { pg_trgm } });
@@ -47,7 +48,7 @@ const LIST_COLS = "id, student_id, user_id, name, is_default, share_enabled, cre
 const ITEM_COLS =
   "id, list_id, unit_id, category, status, outcome, round, position, added_by, added_at, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social, dream, priority, followed_networks, info_requested_on, application_platform, applied_on, complete_on, portal_url, committed_on, withdrawn_on, recommendations_count, supplements_count, transcript_shared, category_source, round_source, legacy, recruited, legacy_sibling, ed_dismissed_at, ed_checks";
 const TASK_COLS =
-  "id, list_id, item_id, key, kind, title, detail, due_on, window_start, window_end, assignee, source, source_field, source_edition, date_note, done_at, done_by, snoozed_until, dismissed, orphaned, position, created_by, created_at, season, action";
+  "id, list_id, item_id, key, kind, title, detail, due_on, window_start, window_end, assignee, source, source_field, source_edition, date_note, done_at, done_by, snoozed_until, dismissed, orphaned, position, created_by, created_at, season, action, dismissed_at, dismissed_by";
 const VISIT_COLS = "id, item_id, kind, on_date, at_time, registered, registration_url, who, rating, notes, created_by, created_at, updated_at";
 const OFFER_COLS = "id, item_id, award_year, letter_date, source, coa, gift, work_study, loans, quotes, pros, cons, confirmed_at, created_by, created_at";
 const NUDGE_COLS = "id, task_id, from_user, to_student, note, sent_at, channel, reply, replied_at";
@@ -243,12 +244,14 @@ test("save_student_profile(): a bad grad year never fails the profile write (the
 test("guard: a security definer bundle would leak another household's plan, and the comparison catches it", async () => {
   // The pause migration re-creates viewer_bundle(); leave it out too so the definer copy below is the only one.
   // The next-steps migration re-creates plan_bundle() too (20261014120000_next_steps.sql): it runs after the definer
-  // copy, made definer the same way, so the bundle under test is the current one.
-  const files = ALL.filter((f) => f !== BUNDLE && f !== PAUSE && f !== NEXT_STEPS);
+  // copy, made definer the same way, so the bundle under test is the current one. So does plan v3's
+  // (20261016120000_plan_v3.sql), after it.
+  const files = ALL.filter((f) => f !== BUNDLE && f !== PAUSE && f !== NEXT_STEPS && f !== PLAN_V3);
   const w = await world(files);
   const sql = readFileSync(join(DIR, BUNDLE), "utf8").replaceAll("security invoker", "security definer");
   await w.db.exec(sql);
   await w.db.exec(readFileSync(join(DIR, NEXT_STEPS), "utf8").replaceAll("security invoker", "security definer"));
+  await w.db.exec(readFileSync(join(DIR, PLAN_V3), "utf8").replaceAll("security invoker", "security definer"));
   const eve = await planByBundle(w, w.eve, w.student);
   assert.notDeepEqual(eve, await planByTables(w, w.eve, w.student), "definer: Eve sees Alice's plan, so the equality check fails");
 });

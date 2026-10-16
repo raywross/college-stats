@@ -10,6 +10,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   isMissingEdColumn,
   isMissingMoveColumn,
+  isMissingSkipColumn,
+  PLAN_TASK_MOVE_COLUMNS,
+  PLAN_TASK_SKIP_COLUMNS,
+  skipPatch,
+  updateTaskSkip,
   PLAN_ITEM_BASE_COLUMNS,
   PLAN_ITEM_COLUMNS,
   PLAN_TASK_BASE_COLUMNS,
@@ -162,7 +167,7 @@ test("next steps' columns present: items keep ed_dismissed_at/ed_checks, tasks k
   assert.equal(plan?.tasks[0].season, "junior_spring");
   assert.deepEqual(plan?.tasks[0].action, action);
   assert.deepEqual(selects.filter((s) => s.table === "plan_tasks").map((s) => s.columns), [PLAN_TASK_COLUMNS]);
-  assert.match(PLAN_TASK_COLUMNS, /, season, action$/);
+  assert.match(PLAN_TASK_COLUMNS, /, season, action, dismissed_at, dismissed_by$/);
 });
 
 test("without the ED columns: items retried without them only, read as null and {}", async () => {
@@ -239,4 +244,106 @@ test("upsertTaskRows: retried without season/action on a missing-column error na
   const other = fakeUpsert(() => ({ code: "23514", message: 'new row violates check constraint "plan_tasks_kind_check"' }));
   assert.match((await upsertTaskRows(other.client, rows))?.message ?? "", /kind_check/);
   assert.equal(other.calls.length, 1);
+});
+
+/* ------------------------------------------------------------------ */
+/* Plan v3: the skip record (dismissed_at, dismissed_by)                */
+/* ------------------------------------------------------------------ */
+
+const MISSING_SKIP = { code: "42703", message: "column plan_tasks.dismissed_at does not exist" };
+
+test("plan v3's skip columns: read when present; PLAN_TASK_COLUMNS lists them", async () => {
+  assert.deepEqual([...PLAN_TASK_SKIP_COLUMNS], ["dismissed_at", "dismissed_by"]);
+  assert.ok(PLAN_TASK_COLUMNS.endsWith(PLAN_TASK_SKIP_COLUMNS.join(", ")));
+  const { client, selects } = fakeClient((q) =>
+    q.table === "plan_tasks" ? { data: [{ ...TASK, season: "junior_fall", action: null, dismissed: true, dismissed_at: "2026-10-12T15:00:00Z", dismissed_by: "u1" }], error: null } : { data: [], error: null },
+  );
+  const r = await readTaskRows(client, "list-1");
+  assert.equal(r.data?.[0].dismissed_at, "2026-10-12T15:00:00Z");
+  assert.equal(r.data?.[0].dismissed_by, "u1");
+  assert.equal(selects.length, 1);
+});
+
+test("without the skip columns: tasks retried without them only (season/action still read), read as null", async () => {
+  const { client, selects } = fakeClient((q) => {
+    if (q.table !== "plan_tasks") return { data: [], error: null };
+    return q.columns.includes("dismissed_at") ? { data: null, error: MISSING_SKIP } : { data: [{ ...TASK, season: "junior_fall", action: null, dismissed: true }], error: null };
+  });
+  const r = await readTaskRows(client, "list-1");
+  assert.equal(r.error, null);
+  assert.equal(r.data?.[0].dismissed_at, null);
+  assert.equal(r.data?.[0].dismissed_by, null);
+  assert.equal(r.data?.[0].season, "junior_fall", "the move columns are still read");
+  assert.deepEqual(selects.map((s) => s.columns), [PLAN_TASK_COLUMNS, `${PLAN_TASK_BASE_COLUMNS}, ${PLAN_TASK_MOVE_COLUMNS}`]);
+});
+
+test("without the skip and the move columns: three reads, down to the base columns", async () => {
+  const { client, selects } = fakeClient((q) => {
+    if (q.table !== "plan_tasks") return { data: [], error: null };
+    if (q.columns.includes("dismissed_at")) return { data: null, error: MISSING_SKIP };
+    if (q.columns.includes("season")) return { data: null, error: MISSING_MOVE };
+    return { data: [TASK], error: null };
+  });
+  const r = await readTaskRows(client, "list-1");
+  assert.equal(r.data?.[0].season, null);
+  assert.equal(r.data?.[0].dismissed_at, null);
+  assert.deepEqual(selects.map((s) => s.columns), [PLAN_TASK_COLUMNS, `${PLAN_TASK_BASE_COLUMNS}, ${PLAN_TASK_MOVE_COLUMNS}`, PLAN_TASK_BASE_COLUMNS]);
+});
+
+test("isMissingSkipColumn names only the skip columns", () => {
+  assert.equal(isMissingSkipColumn(MISSING_SKIP), true);
+  assert.equal(isMissingSkipColumn({ code: "PGRST204", message: "Could not find the 'dismissed_by' column of 'plan_tasks' in the schema cache" }), true);
+  assert.equal(isMissingSkipColumn(MISSING_MOVE), false);
+  assert.equal(isMissingSkipColumn({ code: "23514", message: "dismissed_at check" }), false, "not a missing-column error");
+  assert.equal(isMissingMoveColumn(MISSING_SKIP), false, "a skip-column error isn't read as the move columns");
+});
+
+/** A stand-in for `.from("plan_tasks").update(patch).eq("id", …).select("id")`. */
+function fakeUpdate(answer: (patch: Record<string, unknown>) => { data: unknown; error: { code?: string; message?: string } | null }) {
+  const patches: Record<string, unknown>[] = [];
+  const client = {
+    from: () => ({
+      update: (patch: Record<string, unknown>) => {
+        patches.push(patch);
+        const chain = { eq: () => chain, select: () => Promise.resolve(answer(patch)) };
+        return chain;
+      },
+    }),
+  };
+  return { client: client as unknown as SupabaseClient, patches };
+}
+
+test("skipPatch: a skip stamps when and who; bringing back clears all three", () => {
+  assert.deepEqual(skipPatch(true, "u1", "2026-10-12T15:00:00Z"), { dismissed: true, dismissed_at: "2026-10-12T15:00:00Z", dismissed_by: "u1" });
+  assert.deepEqual(skipPatch(false, "u1", "2026-10-12T15:00:00Z"), { dismissed: false, dismissed_at: null, dismissed_by: null });
+});
+
+test("updateTaskSkip: writes the stamped patch; retried with { dismissed } alone when the skip columns are missing; other errors not retried", async () => {
+  const ok = fakeUpdate(() => ({ data: [{ id: "t1" }], error: null }));
+  const r = await updateTaskSkip(ok.client, "t1", true, "u1", "2026-10-12T15:00:00Z");
+  assert.deepEqual(r, { data: [{ id: "t1" }], error: null });
+  assert.deepEqual(ok.patches, [{ dismissed: true, dismissed_at: "2026-10-12T15:00:00Z", dismissed_by: "u1" }]);
+
+  const back = fakeUpdate(() => ({ data: [{ id: "t1" }], error: null }));
+  await updateTaskSkip(back.client, "t1", false, "u1");
+  assert.deepEqual(back.patches, [{ dismissed: false, dismissed_at: null, dismissed_by: null }]);
+
+  const missing = fakeUpdate((p) => ("dismissed_at" in p ? { data: null, error: MISSING_SKIP } : { data: [{ id: "t1" }], error: null }));
+  const m = await updateTaskSkip(missing.client, "t1", true, "u1");
+  assert.equal(m.error, null);
+  assert.deepEqual(missing.patches.at(-1), { dismissed: true }, "the flag alone, before the migration");
+  assert.equal(missing.patches.length, 2);
+
+  const other = fakeUpdate(() => ({ data: null, error: { code: "42501", message: "permission denied" } }));
+  const o = await updateTaskSkip(other.client, "t1", true, "u1");
+  assert.match(o.error?.message ?? "", /permission/);
+  assert.equal(other.patches.length, 1);
+});
+
+test("store.ts: dismiss writes through updateTaskSkip with the user id; undismiss is exported and clears it", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../lib/planner/store.ts", import.meta.url), "utf8");
+  const fn = src.slice(src.indexOf("export async function dismiss"), src.indexOf("export async function addOwnTask"));
+  assert.match(fn, /updateTaskSkip\(r\.supabase, taskId, Boolean\(dismissed\), r\.userId\)/);
+  assert.match(fn, /export async function undismiss\(taskId: string\)[\s\S]*dismiss\(taskId, false\)/);
 });

@@ -136,6 +136,8 @@ export function applyMerge(
         done_by: null,
         snoozed_until: null,
         dismissed: false,
+        dismissed_at: null,
+        dismissed_by: null,
         orphaned: false,
         created_by: null,
         created_at: now,

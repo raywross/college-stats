@@ -68,6 +68,8 @@ const stored = (over: Partial<PlanTask> = {}): PlanTask => ({
   done_by: null,
   snoozed_until: null,
   dismissed: false,
+  dismissed_at: null,
+  dismissed_by: null,
   orphaned: false,
   position: 0,
   created_by: null,

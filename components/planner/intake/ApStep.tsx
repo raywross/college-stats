@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { ApCourseCard } from "@/components/planner/intake/ApCourseCard";
 import { Headline } from "@/components/planner/intake/Headline";
+import { WhyFold } from "@/components/ui/why-fold";
 import { courseCount, courseSummary, newIntakeCourse, searchAp, type IntakeDraft } from "@/lib/planner/intake";
+import { RECORD_STEPS } from "@/lib/planner/record";
 import { cn } from "@/lib/utils";
 
 /** Step 2 (intake.md "AP courses"): the course list, each asking one thing, plus search for adding more. */
@@ -61,11 +63,13 @@ export function ApStep({
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <Headline lead="Your" pop="AP" tail="courses" />
-        <p className="text-sm text-muted-foreground">
-          Taken, taking now, or planned. <span className="hidden lg:inline">Pick the year; we&apos;ll ask for a score if you&apos;ve taken the exam.</span>
-          <span className="lg:hidden">Add as many as you like.</span>
-        </p>
+        <div className="flex items-center gap-1.5">
+          <Headline lead="Your" pop="AP" tail="courses" />
+          <WhyFold compact title="Why we ask" screen="record_tour" section="courses">
+            {RECORD_STEPS[2].why}
+          </WhyFold>
+        </div>
+        <p className="text-sm text-muted-foreground">{RECORD_STEPS[2].line}</p>
       </div>
 
       <div className="lg:grid lg:grid-cols-[1fr_320px] lg:items-start lg:gap-8">

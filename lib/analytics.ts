@@ -127,6 +127,8 @@ export interface AnalyticsEvents {
   /* Your record (specs/planner/record/build-plan.md "Telemetry"): counts and the viewer, never a major or a value. */
   record_major_picked: { count: number };
   record_overview_opened: { viewer: "student" | "guardian" };
+  /** Less text (specs/planner/record/less-text.md): a `WhyFold` opened, by screen and which fold on it. */
+  plan_why_opened: { screen: string; section: string };
   /** Server (U4): one interest-confirmation email sent, with how many acts it asks about. */
   interest_confirm_sent: { acts: number };
   /** Visit events (specs/product/visit-events.md "Privacy and telemetry"): which surface and kind filter are viewed, never an address or a distance. */
@@ -248,6 +250,7 @@ export const EVENTS = {
   plan_connection_added: { properties: ["kind"], side: "client", why: "Plan v3: connections entered, family or recruiting" },
   record_major_picked: { properties: ["count"], side: "client", why: "Your record: how many majors a student picks (never which)" },
   record_overview_opened: { properties: ["viewer"], side: "client", why: "Your record: the overview opened, by students and parents" },
+  plan_why_opened: { properties: ["screen", "section"], side: "client", why: "Less text: which folded explanations get opened and read" },
   interest_confirm_sent: { properties: ["acts"], side: "server", why: "Plan v3: interest-confirmation emails sent, by act count" },
   visit_events_viewed: { properties: ["surface", "kind"], side: "client", why: "Visit events: which surface and kind filter get used" },
   visit_signup_clicked: { properties: ["unit_id", "kind", "near"], side: "client", why: "Visit events: sign-up clicks, by college, kind, and whether it was a near-you event" },

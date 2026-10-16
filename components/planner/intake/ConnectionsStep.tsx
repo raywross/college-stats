@@ -9,9 +9,11 @@ import { Search } from "lucide-react";
 import { Chip } from "@/components/activities/chips";
 import { ConnectionCard } from "@/components/planner/intake/ConnectionCard";
 import { Headline } from "@/components/planner/intake/Headline";
+import { WhyFold } from "@/components/ui/why-fold";
 import { track } from "@/lib/analytics";
 import type { SchoolIndexEntry } from "@/lib/dataset";
 import { newIntakeConnection, type IntakeDraft } from "@/lib/planner/intake";
+import { RECORD_STEPS } from "@/lib/planner/record";
 import { searchSchoolsApi, useSchoolEntries } from "@/lib/school-api";
 import { CONNECTIONS_MAX, type ConnectionEntry } from "@/lib/student-profile";
 import { cn } from "@/lib/utils";
@@ -97,11 +99,13 @@ export function ConnectionsStep({
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <Headline lead="Any" pop="connections" tail="to a college?" />
-        <p className="text-sm text-muted-foreground">
-          A parent, grandparent, or sibling who went somewhere, or a coach who&apos;s recruiting you. Some colleges weigh these; we only use them where
-          the college says it does.
-        </p>
+        <div className="flex items-center gap-1.5">
+          <Headline lead="Any" pop="connections" tail="to a college?" />
+          <WhyFold compact title="Why we ask" screen="record_tour" section="connections">
+            {RECORD_STEPS[6].why}
+          </WhyFold>
+        </div>
+        <p className="text-sm text-muted-foreground">{RECORD_STEPS[6].line}</p>
       </div>
 
       <Chip role="checkbox" selected={none} onClick={chooseNone} ariaLabel="None: no connections to any college" className="min-h-11 px-5">

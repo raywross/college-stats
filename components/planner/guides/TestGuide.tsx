@@ -10,6 +10,7 @@
 import Link from "next/link";
 import { RangeBar } from "@/components/charts/RangeBar";
 import { MetricLabel } from "@/components/ui/info-tip";
+import { WhyFold } from "@/components/ui/why-fold";
 import type { AnyCited } from "@/lib/lineage";
 import { DOMAINS } from "@/lib/metrics";
 import { SECTION_STEP } from "@/lib/planner/profile-progress";
@@ -104,7 +105,6 @@ function TestGuideBody({ ctx, view, person, data }: GuideProps & { data: TestGui
         <h2 id="test-study" className="font-display text-lg font-bold">
           Study
         </h2>
-        <p className="text-sm text-muted-foreground">Official, free, and the ones advisors point to first:</p>
         <ul className="space-y-1 text-sm">
           {study.resources.map((r) => (
             <li key={r.href}>
@@ -114,7 +114,10 @@ function TestGuideBody({ ctx, view, person, data }: GuideProps & { data: TestGui
             </li>
           ))}
         </ul>
-        <p className="text-xs text-muted-foreground">{study.cadence}</p>
+        <WhyFold title="How much to study" screen="test_guide" section="study">
+          <p>Official, free, and the ones advisors point to first:</p>
+          <p className="text-xs">{study.cadence}</p>
+        </WhyFold>
       </section>
 
       <section className="space-y-3 rounded-3xl bg-card p-4 ring-1 ring-border sm:p-5" aria-labelledby="test-dates">

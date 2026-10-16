@@ -504,3 +504,92 @@ adding alongside R1a's `SECTION_MOVE_TITLE` change).
   sub-lines to fold; R5 should update steps.md/README.md's status lines and this file's roadmap-group removal; QA
   should check the overview at 390px and a guardian's read-only view by hand. The `#story` dead anchor above is the
   one loose end I'd flag loudest for integration.
+
+## As built by R4
+
+- **`components/ui/why-fold.tsx`** (new): one `<details>`-backed `WhyFold({ title = "Why this matters", screen,
+  section, defaultOpen = false, compact = false, children })`, closed by default, firing `plan_why_opened { screen,
+  section }` once per open via a `useRef` guard inside `onToggle` (not again until the next open). Two renderings of
+  the same mechanism, chosen by `compact`: the full row is a chevron (`lucide-react`'s `ChevronDown`, rotating on
+  `group-open`) plus `title`, for a guide section's fold ("Depth and breadth", "How much to study", "What to think
+  about", "How to ask", "What {college} reports"); `compact` is the round "?" button R2's two stand-in `InfoNote`s
+  already used (`BasicsStep`'s fee-waiver note, `RecommendersStep`'s advice note), reused here instead of duplicated,
+  for a headline row or a section title with a sentence or two. Both `InfoNote`s are gone, replaced by `WhyFold
+  compact`; the fee-waiver note kept its own one-off title ("What counts as fee-waiver eligible") since it isn't one
+  of `RECORD_STEPS`' own `why` lines.
+- **Every tour step's headline row**: `Headline` and a compact `WhyFold title="Why we ask" screen="record_tour"
+  section="<RecordSection>"` sit side by side in a `flex items-center gap-1.5` row, the fold holding
+  `RECORD_STEPS[step].why`; the line under them is `RECORD_STEPS[step].line` itself (not a local copy), so the tour
+  and `record.ts` can never drift. Two steps (`GradesStep`, `TestStep`) had no sub-line at all before this unit — the
+  built intake never wrote one — so this unit is what first puts `RECORD_STEPS[0].line`/`RECORD_STEPS[1].line` on
+  screen there, alongside the `?`. `ActivitiesStep.tsx`'s `COPY` table lost its per-step `sub` strings (and the extra
+  "Tap the years…"/"Colleges count these…" clauses some of them carried beyond `RECORD_STEPS`' own line) in favor of
+  one `const info = RECORD_STEPS.find((s) => s.section === step)!` lookup, read for both `.line` and `.why`; the four
+  steps' `lead`/`pop`/`tail` stay in `COPY` since `RECORD_STEPS` doesn't carry headline words, only the rail/line/why.
+  `ConnectionsStep`'s old two-sentence sub-line ("A parent, grandparent, or sibling… Some colleges weigh these…") and
+  `ApStep`'s responsive two-version sub-line (a longer desktop clause, a shorter phone one) both collapse to
+  `RECORD_STEPS[n].line` plus the fold; nothing in either dropped clause was a mistake-preventing hint (steps.md's
+  field hints — the GPA scale, the score ranges — are untouched, since they live in each step's own `check`/`hint`
+  values, never in the headline block this unit touches).
+- **Record overview**: no change. R3 already wrote the lead exactly as this spec's "Becomes" column calls for
+  ("Everything a college reads about you, in one place."), and the brief says there's nothing else on that screen to
+  fold — the per-row unlock lines are a different kind of text (an incentive, not a "why"), and the brief doesn't ask
+  for them to fold either. The caller's own note to touch only the lead line in `RecordOverview.tsx` (R6 is adding a
+  "How Quad reads your record" section elsewhere in that file at the same time) needed no action: zero lines changed.
+- **Build your list**: `d.sentence` (the season sentence, `shapeSentence()`) no longer prints under the shape row;
+  `ShapeExplainer` takes an optional `sentence` prop and prints it as the sheet's first paragraph, above
+  `SHAPE_EXPLAINER`'s own sections, so "Why this shape" now carries both — the owner's advisor-consensus paragraphs
+  and the season-specific sentence that used to sit outside it. The freshman/sophomore view's own one-line lead
+  (`data.sentence`, same `shapeSentence()` call, different season key) is untouched: that screen has no shape row or
+  "Why this shape" sheet to fold into, and its lead is already the screen's one allowed line. Each gap section's own
+  lead (`gap?.line`) was already one line; no change there.
+- **Show interest**: `InterestGuide.tsx`'s `Section` gained an optional `note` slot, rendered beside the numbered
+  title (`<h2 className="flex items-center gap-1.5 …">{n} {title} {note}</h2>`), so a compact `WhyFold` can sit right
+  on "Ask for information" and "Follow" without changing `Section`'s callers that don't need one (Visit has none,
+  matching show-interest.md, which gives Visit no per-section sentence to begin with). The two sentences
+  ("An information request or a mailing-list sign-up puts you in {name}'s system.", "No college says it counts a
+  follow; do it for yourself.") moved verbatim into their fold's children, word for word, off the section body and
+  onto the title row.
+- **Reach your score**: the Study section keeps only the resource links visible; the lead sentence ("Official, free,
+  and the ones advisors point to first:") and `study.cadence` ("A plan of a few hours a week…") both moved, unchanged,
+  into a `WhyFold title="How much to study"` after the links. The header line and the standing count line
+  (`sentence` from `standingCounts`) were already bare and stayed that way — the brief only asked for Study to fold.
+- **Your story**: `Frame` (the "Depth and breadth" paragraph) is now a closed `WhyFold`; `WhatYourRecordSays`
+  ("What your record says so far") is a `WhyFold` whose `defaultOpen` is a new `storyEmpty` flag computed in
+  `StoryGuide` (`!story?.narrative?.trim()`) — open the first time there's no story text to read instead, closed once
+  there is. The privacy line ("Private to you. Nobody at Quad reads it…") stays bare above both folds, per the
+  brief's "it's a rule the student must know." Both folds' bodies are byte-for-byte the same JSX that used to sit in
+  a bare `<section>`; only the wrapper and the now-redundant inline `text-sm text-muted-foreground` classes (inherited
+  from `WhyFold`'s own body styling) changed.
+- **Choose APs**: the two-sentence opener ("Schools ask for next year's choices in late winter. Colleges read the
+  courses as closely as the grades.") is one line now; the second sentence is simply dropped, not folded — the brief
+  calls for "One line" here, not a fold, and that clause isn't repeated anywhere else in the guide. The suggestion
+  cards' `depthTie` sentences (the "depth tie-in" the brief says stays) are untouched.
+- **Pick your recommenders**: the teachers list is now the first section, with "What to think about" and "How to
+  ask" following as two closed `WhyFold`s (neither passes `defaultOpen`). "What your colleges ask for" (`askLine`'s
+  own nested `<details>`) rides along inside "What to think about" exactly as it was nested before — a fold inside a
+  fold, which is valid HTML and reads fine since the outer one is closed by default. `THINK_ABOUT`/`HOW_TO_ASK`
+  (`lib/planner/recommenders.ts`) are untouched; only where they render moved.
+- **ED facts**: `EdSheet`'s "the read" (`facts.read` + `facts.readBasis`) and the three questions stay bare and
+  visible, in that order, as the brief asks. "What {facts.name} reports" (the reported-counts block) and `ED_CAVEAT`
+  now share one `WhyFold title={`What ${facts.name} reports`}`; `facts.framing`, which used to sit as its own
+  sentence between "the read" and "what it reports," moved into the same fold (it reads as an interpretation of the
+  numbers, the same kind of "how to think about it" text the brief folds elsewhere, and the table names only two
+  things to keep bare — the read and the questions — so framing wasn't on that list). `chrome="dialog"` vs `"inline"`
+  and the inline-only title row/close button (`tests/planner-ed-dialog.test.mts`'s guard) are both untouched.
+- **Telemetry**: `plan_why_opened { screen: string; section: string }` added to `lib/analytics.ts`'s `EVENTS` and
+  `EVENT_SPECS` (client-side), additive; no existing event's shape changed.
+- **Tests**: `tests/planner-less-text.test.mts` (new, 30 passing): a source-level guard per screen in the spec's
+  table, each with a planted-bad-case counterpart — the nine tour steps' one-paragraph-plus-fold intro (via a
+  depth-tracking `introBlock()` helper, since several steps nest a `flex` row around `Headline`+`WhyFold` inside the
+  outer intro `div`, and a naive "first `</div>`" search stops inside that nested row); `ActivitiesStep`'s
+  `RECORD_STEPS`-by-section lookup; the list guide's sentence handoff to `ShapeExplainer`; the interest guide's two
+  folded sentences (asserted verbatim); the test guide's Study fold; the story guide's two folds and `storyEmpty`;
+  the courses guide's one-line opener; the recommenders guide's order and closed folds; the ED sheet's fold grouping;
+  and the `plan_why_opened` registry entry. `npm run verify` and `npx next build` green (see this unit's report for
+  the run).
+- **Left for later units**: R5 should update less-text.md's status line and steps.md/README.md's references to the
+  tour's old longer sub-lines and the guides' old unfolded sections, now that this unit has changed both; QA should
+  check every fold at 390px (the compact "?" is a 24px circle with the 44px tap target `info-tip.tsx`'s own trigger
+  uses via `after:-inset-2.5`, worth a tap test on a phone) and that opening a fold doesn't shift the page under a
+  thumb mid-tap.

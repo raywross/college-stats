@@ -7,9 +7,11 @@
 import { useState } from "react";
 import { Headline } from "@/components/planner/intake/Headline";
 import { MajorChips } from "@/components/planner/intake/MajorChips";
+import { WhyFold } from "@/components/ui/why-fold";
 import { track } from "@/lib/analytics";
 import type { IntakeDraft } from "@/lib/planner/intake";
 import { searchMajors } from "@/lib/majors-search";
+import { RECORD_STEPS } from "@/lib/planner/record";
 import { MAX_INTENDED_MAJORS } from "@/lib/student-profile";
 import { cn } from "@/lib/utils";
 
@@ -30,8 +32,13 @@ export function MajorStep({ draft, setDraft }: { draft: IntakeDraft; setDraft: (
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <Headline lead="What might you" pop="study?" />
-        <p className="text-sm text-muted-foreground">Up to three. Undecided is fine; leave it blank.</p>
+        <div className="flex items-center gap-1.5">
+          <Headline lead="What might you" pop="study?" />
+          <WhyFold compact title="Why we ask" screen="record_tour" section="major">
+            {RECORD_STEPS[8].why}
+          </WhyFold>
+        </div>
+        <p className="text-sm text-muted-foreground">{RECORD_STEPS[8].line}</p>
       </div>
 
       {draft.majors.length > 0 && (

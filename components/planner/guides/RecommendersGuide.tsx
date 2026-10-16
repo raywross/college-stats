@@ -8,6 +8,7 @@
  */
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { WhyFold } from "@/components/ui/why-fold";
 import { track } from "@/lib/analytics";
 import { thirdPerson } from "@/lib/chances/courses";
 import { guideHref } from "@/lib/planner/guides";
@@ -124,33 +125,6 @@ export function RecommendersGuide({ ctx, move, person }: GuideProps) {
 
   return (
     <div className="space-y-8">
-      <section className="space-y-2">
-        <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">What to think about</h2>
-        <ul className="space-y-1.5 text-sm">
-          {THINK_ABOUT.map((t) => (
-            <li key={t}>{say(t)}</li>
-          ))}
-        </ul>
-        <p className="text-xs text-muted-foreground">
-          Sources:{" "}
-          {ADVISOR_SOURCES.map((s, i) => (
-            <span key={s.name}>
-              {i > 0 && ", "}
-              <a href={s.href} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
-                {s.name}
-              </a>
-            </span>
-          ))}
-          .
-        </p>
-        {askLine && (
-          <details className="rounded-xl border bg-background p-2.5 text-sm">
-            <summary className="cursor-pointer font-semibold">What your colleges ask for</summary>
-            <p className="mt-1.5 text-muted-foreground">{askLine.text}.</p>
-          </details>
-        )}
-      </section>
-
       <section className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
@@ -192,13 +166,38 @@ export function RecommendersGuide({ ctx, move, person }: GuideProps) {
         )}
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">How to ask</h2>
-        <p className="text-sm">{say(HOW_TO_ASK.join(" "))}</p>
-        <Link href={guideHref("story", { person, from: "card" })} className="inline-block text-sm font-semibold text-primary hover:underline">
+      <WhyFold title="What to think about" screen="recommenders_guide" section="what_to_think_about">
+        <ul className="space-y-1.5">
+          {THINK_ABOUT.map((t) => (
+            <li key={t}>{say(t)}</li>
+          ))}
+        </ul>
+        <p className="text-xs">
+          Sources:{" "}
+          {ADVISOR_SOURCES.map((s, i) => (
+            <span key={s.name}>
+              {i > 0 && ", "}
+              <a href={s.href} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
+                {s.name}
+              </a>
+            </span>
+          ))}
+          .
+        </p>
+        {askLine && (
+          <details className="rounded-xl border bg-background p-2.5 text-sm">
+            <summary className="cursor-pointer font-semibold">What your colleges ask for</summary>
+            <p className="mt-1.5 text-muted-foreground">{askLine.text}.</p>
+          </details>
+        )}
+      </WhyFold>
+
+      <WhyFold title="How to ask" screen="recommenders_guide" section="how_to_ask">
+        <p>{say(HOW_TO_ASK.join(" "))}</p>
+        <Link href={guideHref("story", { person, from: "card" })} className="inline-block font-semibold text-primary hover:underline">
           Open your story
         </Link>
-      </section>
+      </WhyFold>
 
       {showThank && (
         <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4">

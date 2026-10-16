@@ -19,7 +19,7 @@ import type { Season } from "@/lib/planner/seasons";
 import { GROUP_CLASS } from "@/lib/planner/colors";
 import { cn } from "@/lib/utils";
 
-export function ShapeExplainer({ season }: { season: Season }) {
+export function ShapeExplainer({ season, sentence }: { season: Season; sentence?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -36,6 +36,7 @@ export function ShapeExplainer({ season }: { season: Season }) {
       </button>
       <SheetDialog open={open} onOpenChange={setOpen} title="Why this shape">
         <div className="space-y-5 text-sm">
+          {sentence && <p className="text-muted-foreground">{sentence}</p>}
           {SHAPE_EXPLAINER.map((s) => (
             <section key={s.heading} className="space-y-1">
               <h3 className="font-semibold">{s.heading}</h3>

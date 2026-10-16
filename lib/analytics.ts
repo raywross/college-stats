@@ -97,8 +97,6 @@ export interface AnalyticsEvents {
   /** `action`, not the brief's `act`: "act" is a denied property token (the ACT). */
   plan_interest_act: { action: string };
   plan_shape_gap_shown: { gap: ShapeGapKind; season: Season };
-  plan_rail_opened: { level: StandingLevel };
-  plan_rail_added: { level: StandingLevel };
   plan_applied: { round: "ed" | "ed2" | "ea" | "rea" | "rd" | "rolling" | "none" };
   plan_decision_recorded: { outcome: "admitted" | "denied" | "waitlisted" | "deferred" };
   plan_outcome_shared: { yes: boolean };
@@ -222,8 +220,6 @@ export const EVENTS = {
   plan_interest_move_shown: { properties: ["rule", "level"], side: "client", why: "Next steps: interest moves shown, by rule" },
   plan_interest_act: { properties: ["action"], side: "client", why: "Next steps: which ways of showing interest get used" },
   plan_shape_gap_shown: { properties: ["gap", "season"], side: "client", why: "Next steps: which list-shape gaps come up" },
-  plan_rail_opened: { properties: ["level"], side: "client", why: "Next steps: the college rail opened, by level" },
-  plan_rail_added: { properties: ["level"], side: "client", why: "Next steps: colleges added from the rail, by level" },
   plan_applied: { properties: ["round"], side: "client", why: "Next steps: applications marked sent, by round" },
   plan_decision_recorded: { properties: ["outcome"], side: "client", why: "Next steps: decisions recorded" },
   plan_outcome_shared: { properties: ["yes"], side: "client", why: "Next steps: outcome sharing answered" },

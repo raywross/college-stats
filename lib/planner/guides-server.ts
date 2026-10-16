@@ -12,16 +12,17 @@ import type { GuideProps, GuideQuery } from "@/components/planner/guides/types";
 import { CoursesGuide, type CoursesGuideData } from "@/components/planner/guides/CoursesGuide";
 import {
   EdGuideStub,
-  InterestGuideStub,
   RecommendersGuideStub,
   StoryGuideStub,
   TestGuideStub,
 } from "@/components/planner/guides/stubs";
+import { InterestGuide } from "@/components/planner/guides/InterestGuide";
 import { ListGuide } from "@/components/planner/guides/ListGuide";
 import { courseTracks } from "../chances/depth";
 import { coursePlanViewFor } from "../chances/course-plan-server";
 import { offeringFor } from "../chances/rigor-server";
 import type { GuideSlug } from "./guides";
+import { loadInterestGuide } from "./interest-guide-server";
 import { listGuideFor } from "./list-guide-server";
 import type { PlanView } from "./plan-view";
 import type { PlanContext } from "./types";
@@ -33,7 +34,7 @@ export interface GuidePage {
 
 export const GUIDE_PAGES: Record<GuideSlug, GuidePage> = {
   list: { Component: ListGuide, load: listGuideFor },
-  interest: { Component: InterestGuideStub },
+  interest: { Component: InterestGuide, load: loadInterestGuide },
   test: { Component: TestGuideStub },
   story: { Component: StoryGuideStub },
   courses: { Component: CoursesGuide, load: loadCoursesGuide },

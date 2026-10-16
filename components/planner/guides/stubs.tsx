@@ -14,9 +14,6 @@ function Stub({ slug }: { slug: GuideSlug }) {
   );
 }
 
-export function InterestGuideStub() {
-  return <Stub slug="interest" />;
-}
 export function TestGuideStub() {
   return <Stub slug="test" />;
 }

@@ -6,6 +6,7 @@ import { PersonHeader } from "@/components/account/PersonHeader";
 import { RecordOverview } from "@/components/record/RecordOverview";
 import { AccountsSetupError, authConfigured, requireUser } from "@/lib/auth";
 import { personPage, scheduleStudentReadLog } from "@/lib/households";
+import { loadPlanFor } from "@/lib/planner/load";
 import { profileFor } from "@/lib/student-profile-store";
 
 /** "Their record" for a guardian, "Your record" for the student (the Numbers page's loader, same split). */
@@ -52,10 +53,15 @@ export default async function PersonRecordPage({ params }: { params: Promise<{ p
   if (!profile) notFound();
   if (profile.relation === "guardian") await scheduleStudentReadLog(profile.student.id, "student_profiles");
 
+  // R6 (specs/planner/record/reading.md "On the record overview"): the plan's estimates feed "How Quad reads your
+  // record right now". `access` here is the same access `profileFor` already resolved, so this doesn't repeat the
+  // viewer lookup; a plan that isn't ready yet (no list) reads as the empty state, never an error.
+  const plan = await loadPlanFor(profile.student.id, profile);
+
   return (
     <div className="space-y-6">
       <PersonHeader id={id} person={person} active="record" />
-      <RecordOverview profile={profile} />
+      <RecordOverview profile={profile} plan={plan} />
     </div>
   );
 }

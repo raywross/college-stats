@@ -172,7 +172,7 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {canEdit && (
           <div className="min-w-0 flex-1 basis-60">
-            <AddCollegeBox listId={ctx.list.id} excludeIds={rows.map((r) => r.item.unit_id)} label={addLabel} onAdded={() => router.refresh()} />
+            <AddCollegeBox listId={ctx.list.id} excludeIds={rows.map((r) => r.item.unit_id)} label={addLabel} onAdded={() => router.refresh()} studentId={ctx.student?.id ?? null} />
           </div>
         )}
         {ctx.student && (

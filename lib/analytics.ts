@@ -129,6 +129,11 @@ export interface AnalyticsEvents {
   record_overview_opened: { viewer: "student" | "guardian" };
   /** Less text (specs/planner/record/less-text.md): a `WhyFold` opened, by screen and which fold on it. */
   plan_why_opened: { screen: string; section: string };
+  /** R6 (specs/planner/record/reading.md "Rules"): the "How Quad reads your record" section shown, once per mount —
+   * how many input kinds it's working from and whether it has a "not yet" prompt, never a college or a level. */
+  record_reading_shown: { inputs: number; missing: boolean };
+  /** R6: the add-college search's level chip shown, once per result set, by level (never the college). */
+  plan_add_level_shown: { level: StandingLevel };
   /** Server (U4): one interest-confirmation email sent, with how many acts it asks about. */
   interest_confirm_sent: { acts: number };
   /** Visit events (specs/product/visit-events.md "Privacy and telemetry"): which surface and kind filter are viewed, never an address or a distance. */
@@ -251,6 +256,8 @@ export const EVENTS = {
   record_major_picked: { properties: ["count"], side: "client", why: "Your record: how many majors a student picks (never which)" },
   record_overview_opened: { properties: ["viewer"], side: "client", why: "Your record: the overview opened, by students and parents" },
   plan_why_opened: { properties: ["screen", "section"], side: "client", why: "Less text: which folded explanations get opened and read" },
+  record_reading_shown: { properties: ["inputs", "missing"], side: "client", why: "R6: how complete the record reads, and whether it has a next input to prompt" },
+  plan_add_level_shown: { properties: ["level"], side: "client", why: "R6: level chips shown on the add-college search, by level" },
   interest_confirm_sent: { properties: ["acts"], side: "server", why: "Plan v3: interest-confirmation emails sent, by act count" },
   visit_events_viewed: { properties: ["surface", "kind"], side: "client", why: "Visit events: which surface and kind filter get used" },
   visit_signup_clicked: { properties: ["unit_id", "kind", "near"], side: "client", why: "Visit events: sign-up clicks, by college, kind, and whether it was a near-you event" },

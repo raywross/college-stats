@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { ImportLocalProfile } from "@/components/me/ImportLocalProfile";
 import { RecordOverviewOpened } from "@/components/record/RecordOverviewOpened";
+import { RecordReading } from "@/components/record/RecordReading";
 import { RecordRow } from "@/components/record/RecordRow";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
+import type { PlanLoad } from "@/lib/planner/load";
 import { guideHref } from "@/lib/planner/guides";
 import { RECORD_STEPS, recordHref, recordNeeded, recordProgress, recordTitle } from "@/lib/planner/record";
 import type { ProfileAccess } from "@/lib/student-profile-store";
@@ -17,7 +19,7 @@ const RAIL_BY_STEP = new Map(RECORD_STEPS.map((s) => [s.step, s.rail]));
  * test links (those are moves, shown on Now). Server-rendered (the rows are static with links); the telemetry mount
  * is the one small client island (RecordOverviewOpened).
  */
-export function RecordOverview({ profile }: { profile: ProfileAccess }) {
+export function RecordOverview({ profile, plan }: { profile: ProfileAccess; plan: PlanLoad }) {
   const person = profile.relation === "self" ? null : profile.student.id;
   const firstName = profile.relation === "guardian" ? (profile.student.display_name?.trim().split(/\s+/)[0] ?? null) : null;
   const title = recordTitle(firstName);
@@ -98,6 +100,13 @@ export function RecordOverview({ profile }: { profile: ProfileAccess }) {
             );
           })}
         </ul>
+        <RecordReading
+          person={person}
+          canEdit={profile.canEdit}
+          profileData={profile.data}
+          estimates={plan.kind === "ready" ? plan.ctx.estimates : {}}
+          items={plan.kind === "ready" ? plan.ctx.items : []}
+        />
       </div>
     </div>
   );

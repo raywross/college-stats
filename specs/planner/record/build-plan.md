@@ -593,3 +593,115 @@ adding alongside R1a's `SECTION_MOVE_TITLE` change).
   check every fold at 390px (the compact "?" is a 24px circle with the 44px tap target `info-tip.tsx`'s own trigger
   uses via `after:-inset-2.5`, worth a tap test on a phone) and that opening a fold doesn't shift the page under a
   thumb mid-tap.
+
+## As built by R6
+
+- **`lib/planner/record-reading.ts`** (new, pure): `readingLines({ estimates, items, profile, student })` →
+  `{ workingFrom, notYet, listLine, empty }`. `workingFrom` is `yourNumbersList` over the union of every open row's
+  estimate's own `used: InputKind[]` (the spec's "the estimates' notes mark as used" reads, on the actual contract, as
+  `EstimateResult.used` itself — the notes are where that list is *explained*, not where it's *stored*; `used` is the
+  field `yourNumbersList`'s second argument already expects everywhere else it's called). `notYet` is
+  `mostUsefulMissing`'s note, with its `values.input` word reversed back to an `InputKind` through `INPUT_WORDS` (the
+  same reversal `promptedInput` already does internally) and then mapped to a `RecordSection` by a new table,
+  `MISSING_INPUT_SECTION` — documented there since the brief's "map its InputKind to the record section that supplies
+  it" undersells one real ambiguity: `mostUsefulMissing` can only name the nine kinds in its own `INPUT_ORDER` (gpa,
+  courses, class_rank, subject_grades, major, state, high_school, activities, test), and eight of those have one
+  obvious section (class rank and high school are both on the Grades step per `GradesStep.tsx`; math/science grades
+  come from the Courses step per `model.ts`'s `subjectFromGrades`) — but "activities" is the model's single combined
+  reading of sports, clubs, work, and other, and no one record section owns it. I mapped it to Sports, the first of
+  the four activity steps (`ACTIVITY_STEP_INDEX`), as a plain tie-break rather than inventing a fifth pseudo-section;
+  flagging this for the owner in case a different one of the four reads better. `listLine` is every nonzero level
+  among the list's open (non-withdrawn) rows, ascending selectivity ("1 Likely · 3 Targets · 4 Reaches · 1 High
+  reach"), built locally (not `countLine`, which writes a sentence and always names Likely even at zero — reading.md's
+  own mockup format skips a zero level and reads as a compact tally, not a sentence, so I wrote a small
+  `levelCountsLine` next to it rather than bend `countLine` to a second format it wasn't designed for). `empty` is
+  `"no_record"` when `hasNumbers(student)` is false, else `"no_list"` when the list has no open rows (including a
+  list that exists but is withdrawn down to nothing) — both checked before anything else is computed, so the three
+  other fields are always null together with `empty`. The two fixed-copy empty states and every label ("Working
+  from:", "Not yet:", "Your list today:") are the component's words, not this module's — the brief's own split
+  ("this file owns every fixed word; the lib supplies only the lines a result set can vary") is followed exactly, so
+  a future copy edit never touches this file.
+- **`components/record/RecordReading.tsx`** (new, client — see below) renders the section on `RecordOverview`, inside
+  the existing "How complete is this" card, right after its row list (`RecordOverview.tsx` gained one new prop,
+  `plan: PlanLoad`, and one new render line; its own "Everything a college reads about you" lead line is untouched,
+  left for R4). The ⓘ (only shown once the section has something to explain, i.e. not in either empty state) opens a
+  `SheetDialog` titled with the catalog's own `"estimate.panel_title"` ("What went into this estimate") containing one
+  line: the same `yourNumbersList` the panel's "Your numbers" line always uses (`noteText({ key:
+  "estimate.your_numbers", ... })`), built from the same used-kinds union as `workingFrom`. I did not reuse
+  `WhatWentIn.tsx` itself: it's built around one college's `panelParts` (a college's name, its own cited facts, its
+  "not used here" notes), and the record's reading has no single college to anchor that — so the sheet here only
+  ever shows the kinds-of-input sentence, never a college's reasons, which is the reading the spec's own words ask
+  for ("kinds of inputs, never weights") without the per-college apparatus `WhatWentIn` needs for its own job.
+  Component is a client component (like `ListExplainer`, the closest existing analog) because the sheet needs open
+  state; `RecordOverview` passes it plain, serializable props (`profileData`, `estimates`, `items`) rather than the
+  whole `ProfileAccess`/`PlanLoad`, so nothing non-serializable crosses the boundary. Telemetry:
+  `record_reading_shown { inputs, missing }`, a new tiny client island (`RecordReadingShown.tsx`, the
+  `RecordOverviewOpened.tsx` pattern) fired once per mount regardless of which state renders. `canEdit` gates the
+  "Fill it in" and "Add it" links the same way the overview's own tour-step rows gate Edit/Add (steps.md's rule); the
+  "Build your list →" guide link is never gated, matching every other guide link on the page.
+- **`app/household/[person]/record/page.tsx`**: one added import and one added line, `const plan = await
+  loadPlanFor(profile.student.id, profile)` — `profile` (a `ProfileAccess`) satisfies `loadPlanFor`'s `viewer?:
+  StudentAccess | null` structurally (same three fields, plus `data`/`saved` which the parameter type ignores), so no
+  second access lookup was needed. Updated the one existing test that asserted the old, prop-less render line
+  (`tests/planner-record-overview.test.mts`, R3's own file) to the new `<RecordOverview profile={profile}
+  plan={plan} />` — the only test in the repo that broke from this unit's changes.
+- **`app/api/plan/levels/route.ts`** (new): `loadPlanFor(studentId)` with no `viewer` arg (the caller is asking about
+  a student they may or may not be able to see, the same shape `/api/plan/list-guide` already uses) is the access
+  check; a `kind !== "ready"` result (not found, no list yet, or the planner tables missing) is a flat 404, matching
+  the brief exactly for "a student the caller can't see," and incidentally also covering "no list yet" the same way
+  (reasonable: there's nothing to estimate against either way). I dropped the brief's own `todayIso` suggestion for
+  `gradeNow`'s date and used `new Date().toISOString().slice(0, 10)` instead, the same inline form
+  `lib/chances/standing-store.ts`'s `myStandingInput` already uses for the identical call — `todayIso` lives in
+  `lib/planner/context.ts`, a much heavier module (the whole generator/read-plan/supabase chain) that this route has
+  no other reason to import, and the one-line inline form is already the established alternative elsewhere in the
+  chances code for exactly this call. When the profile has no grades or test (`hasNumbers` false), the route returns
+  `{ levels: {every id: null}, sorted: false }` before calling `estimateContext`/`estimateMany` at all — cheaper, and
+  it means the "sorted" chip-fallback path never touches the dataset.
+- **`components/planner/AddCollegeBox.tsx`**: new optional `studentId` prop (default `null`, so every existing caller
+  that doesn't pass it keeps working unchanged — `SignedOutPlan.tsx`'s own, unrelated `AddCollegeBox` function isn't
+  touched at all, matching the brief's "not now" on the signed-out case). With it, each result fetch is followed by
+  one `POST /api/plan/levels` for that result set's ids (capped to 12, matching the route); the chip reads
+  `${GROUP_HEADING[level]} for you` in `GROUP_CLASS[level]` colors, placed at the right of the row (name and
+  city/state truncate first, same as today, so a long name never pushes the chip off a narrow phone). `sorted ===
+  false` adds one line under the results linking the record page (`recordPageHref`) — I used "Add your grades" as
+  the link text (reading.md's own prose doesn't specify one) to match the sentence's own verb. `plan_add_level_shown`
+  fires once per (college, level) pair per mount via a `Set` keyed on `${unitId}:${level}`, so a re-render from the
+  same answer (React 18+ can re-run effects) never double-counts; wired both callers that have a `studentId` at hand
+  (`PlanList.tsx`'s Colleges tab, `ListGuide.tsx`'s "Search any college"), both via `ctx.student?.id ?? null`, already
+  the pattern each file used for its own, unrelated student-id reads.
+- **`components/chances/StandingCard.tsx`**: the "Add your numbers" link now reads `s.studentId ? recordPageHref(s.
+  studentId) : "/me"`. Getting a real id to the card meant threading one new field two layers down, since neither
+  `myStandingInput`'s `MyStanding` nor `useStanding`'s `StandingState` carried the signed-in student's own id before
+  this (only the numbers themselves) — `lib/chances/standing-store.ts` (`"use server"`) gained one `currentStudent()`
+  call beside its existing `myOwnProfile()` call and one new field, `studentId: string | null`, on `MyStanding`'s
+  signed-in branch; `components/chances/useStanding.ts`'s `"no-numbers"` state (the only one `StandingCard` reads for
+  this link) gained the same field, read from `server.studentId`. Both are small, additive changes to files this unit
+  doesn't otherwise own, made only because the brief named this exact link; `/me` stays as the fallback for the one
+  real edge (signed in, no student record yet), so the link never breaks, it just takes the slower redirect in that
+  one case. `app/me/page.tsx` already resolves to `/household/{id}/record` either way (R3), so this change is purely
+  about skipping that one redirect hop, not about reachability.
+- **`lib/analytics.ts`**: two additive entries, `record_reading_shown { inputs, missing }` and `plan_add_level_shown {
+  level }`, both client-side, in both the `AnalyticsEvents` interface and the `EVENTS` registry (the compile-time
+  check that every property is listed caught nothing to fix — both were written with their full property lists the
+  first time).
+- **Tests**: `tests/planner-record-reading.test.mts` (new): a full record across six planted colleges (every level,
+  a missing input that resolves to the Major section, the guard that no line ever carries a percentage, a multiple,
+  or "odds"), a bare one-college record, the `no_record` and `no_list` empty states (including an all-withdrawn
+  list), the unsorted-row exclusion from level counts, and a loop over all nine inputs `mostUsefulMissing` can name
+  proving each resolves to one of the thirteen real record sections, plus one planted case (an input word the
+  catalog itself doesn't recognize) proving that guard isn't vacuous. `tests/planner-levels-route.test.mts` (new):
+  runs the real route handler with `@/lib/auth`, `@/lib/planner/load`, and `next/server` stubbed through
+  `node:module`'s `registerHooks` (the same technique `tests/chances-estimate-ui.test.mts` uses for `server-only` and
+  `next/headers`, extended here to fake two app modules by exact specifier rather than by file content) — every other
+  import (`estimate.ts`, `estimate-input.ts`, `courses.ts`, `what-went-in.ts`, `hooks.ts`) is the real module. Covers
+  401 signed-out, the 12-id cap (and its passing edge at exactly 12), a 404 both for "can't see this student" and
+  "no list yet," the response's exact two keys (`levels`, `sorted`), and the `sorted: false`/all-null shape for a
+  profile with no numbers — chosen deliberately so no test here needs the real dataset or a running estimate
+  (`hasNumbers` false short-circuits the route before either is touched); a happier-path real-estimate test was left
+  out on purpose to keep this file fast and dataset-free, matching the brief's own three-item list (cap, shape,
+  denial) exactly. `npm run verify` and `npx next build` both green; the only pre-existing test this unit's changes
+  broke was `tests/planner-record-overview.test.mts`'s literal render-line match, updated for the new `plan` prop.
+- **Left undone / for later units**: the "activities → Sports" section mapping above is a judgment call, not a spec
+  answer — worth a one-line owner decision if a different activity step (or a fifth, combined entry point) reads
+  better. The add-college chip doesn't cover `SignedOutPlan.tsx`'s own local-storage plan (reading.md's open question
+  1, left "not now" on purpose). Nothing else from this unit's scope is left open.

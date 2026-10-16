@@ -339,3 +339,81 @@ current eleven-section `ProfileSection` from `lib/planner/profile-progress.ts` (
 `story`/`recommenders`) — when R1a lands, whoever merges should re-check that every new section still has a
 `profile:<section>` row (`connections`, `basics`, `where` is written "`profile:state`" today and will need renaming/
 adding alongside R1a's `SECTION_MOVE_TITLE` change).
+
+## As built by R2
+- **`PlanIntake.tsx` rewired**: `RAIL_LABELS` is `[...RECORD_STEPS.map(s => s.rail), "Review"]` (fourteen, the
+  thirteen entry steps plus Review) and `UI_STEPS` is `[...RECORD_STEPS.map(s => s.step), INTAKE_REVIEW]`; the local
+  `railSummary` is gone, replaced by `record.ts`'s `stepSummary(draft, step)` for every rail row. `REQUIRED_STEPS`
+  (a `Set` built from `RECORD_STEPS.filter(s => s.required)`) replaces the old ad hoc `step === 2 || step === 6 ||
+  activityStep !== null` check, so Skip (phone) and "I'll add this later" (desktop) cover every step 2–12 the same
+  way; the AP step keeps its own extra "I'm not taking any AP courses" desktop link (step 2 is excluded from the
+  generic "I'll add this later" so the two never show together). Steps 8–12 render `MajorStep`, `BasicsStep`,
+  `WhereStep`, `StoryStep`, and `RecommendersStep`. `firstRunNote` (`mode === "first" && (step === 11 || step ===
+  12)`) is passed to `StoryStep`/`RecommendersStep` as `firstRun`, which render steps.md's exact sentence under the
+  headline.
+- **`?record=1&step=n&back=plan|record`**: `app/plan/page.tsx` folds `record=1` into the same `setup` boolean as
+  `setup=1` (record.ts's own rule: they mean the same thing) and parses `back` into `"plan" | "record"` (default
+  `"plan"`), passed through `PlanFrame` (a new optional `back` prop, additive beside `setup`) to `PlanIntake` (a new
+  optional `back` prop, default `"plan"`). `step` needs no server-side parsing — `PlanIntake` already reads it itself
+  via `useSearchParams`. `PlanIntake` computes `closeHref` once (`back === "record" && studentId ?
+  recordPageHref(studentId) : planHref({ person, tab: null })`) and both the edit-mode save and (unchanged) the
+  first-run Done flow use it where the old code always went to the plan.
+- **Done screen**: `DoneStep.tsx`'s headline is now `{RECORD_LABEL} is <pop>in.</pop>` ("Your record is in."), so a
+  future rename of `RECORD_LABEL` moves this text with it, as the brief asks. Not listed in build-plan's R2 "Owns"
+  line for this unit, but steps.md and the R2 prompt both call for it, so it's included here.
+- **`MajorStep.tsx` + `MajorChips.tsx`** (new): the search input over `searchMajors`, eight common chips (hidden once
+  three are picked, replaced by the cap message "Three is the most; remove one to add another."), the result list's
+  muted `· {via}` alias text, and the picked list with "First choice" under the first row, ▲▼ arrows, native HTML5
+  drag-and-drop (cheap over three rows), and ✕. `lib/majors-search.ts` gains `moveMajor(majors, index, dir)` (additive,
+  mirrors `moveRank`), used by both the arrows and the drop handler. `record_major_picked { count }` fires on every
+  pick, never on reorder or remove (majors.md only calls for it "on each pick").
+- **`BasicsStep.tsx`** (new): a local combobox (`StateField`, HighSchoolPicker's shape, no network — it filters
+  `lib/states.ts STATES` plus `OUTSIDE_US` locally) for state of residence; Yes/No/Not sure chips for fee-waiver
+  eligible and first generation, mapped to `true`/`false`/`null`. A small `<details>`-based `InfoNote` (not a shared
+  component — R4's `why-fold.tsx` is the real fold; this is a stand-in `?` icon per the R2 prompt) holds the one-
+  sentence fee-waiver criteria. Decision: `null` reads as "Not sure" on a fresh draft too (the brief's own rule:
+  `firstGeneration`/`feeWaiverEligible` null means "not sure or unanswered, for both"), so that chip can appear
+  selected before the student has touched anything; there's no separate "untouched" state in the draft to distinguish
+  it.
+- **`WhereStep.tsx`** (new): size and setting chips read straight from `list-guide.ts`'s `SIZE_CHIPS`/`SETTING_CHIPS`
+  (`.label`, not `.word`, for the chip text — `.word` is the list guide's own sentence-building form). A local
+  `PlaceField` type-ahead (same no-network combobox shape as Basics' `StateField`) offers the 50 states, DC, the
+  territories, `OUTSIDE_US`, and the six region names (`REGIONS`, a local literal copied from
+  `lib/trend-groups.ts`'s own list — Northeast, Southeast, Midwest, Southwest, West, Territories — kept local since
+  trend-groups.ts pulls in more than this pure step needs); each pick adds a ✕-removable chip to
+  `draft.statesOrRegions`. `TYPE_OPTIONS` (public/private-nonprofit/private-forprofit) is copied from
+  `ProfileForm.tsx`'s `SCHOOL_TYPES` before that file is deleted, with the shorter chip words ("Public"/"Private"/
+  "For-profit") that `whereSummary`'s own word list already uses. The cost field is a single `$`-prefixed text input
+  over `maxCostOf`/`maxCostCheck` from `intake.ts` (no new helpers needed); its hint is the field's own amber error
+  when `maxCostCheck` isn't ok, else the steps.md hint text. Early-round chips (ED/EA/None yet) toggle off on a second
+  tap, like the built test step's optional picks.
+- **`StoryStep.tsx`** (new): `draft.story === null` (a guardian's draft, per R1a) renders only "Written"/"Not yet"
+  (`draft.storyWritten`); otherwise the guide's own textarea, character count, and `storyStarters`/`appendStarter`
+  from `lib/planner/story-guide.ts`, writing straight into `draft.story` (saved through the one `IntakeSave` at
+  Review, per review note 3 — no separate save here, unlike the guide's own `saveStory` action). `majorName` (for the
+  "Why {major}" starter) is computed in `PlanIntake` from `draft.majors[0]` and passed down, lowercased, matching
+  `story-guide.ts`'s own convention.
+- **`RecommendersStep.tsx`** (new): reuses `RecommenderRow` and `lib/planner/recommenders.ts`'s `moveRank`,
+  `nextRank`, `orderRecommenders`, `setStatus` directly against `draft.recommenders`; a local `InfoNote` (same shape
+  as Basics') replaces the guide's "What to think about"/"How to ask" sections with one sentence, per the prompt.
+  `subjects` (the subject chip suggestions) are derived from `draft.courses` (the AP picker's `IntakeCourse[]`, not
+  the full saved `CourseEntry[]` the guide's `subjectsFrom` expects) via a small inline `catalogCourse(c.key)?.name`
+  map rather than reusing `subjectsFrom` itself — the intake draft doesn't carry enough of a `CourseEntry` to satisfy
+  that function's type honestly. `canInvite` is computed once in `PlanIntake` (`seasonRank(ctx.season) >=
+  seasonRank("senior_fall")`) and passed down, rather than threading `ctx` into the step component.
+- **`ReviewStep.tsx`**: unchanged — it already rendered every row `reviewLines` produces (R1a's steps 8–12 rows
+  included), and `onEdit` already worked once `UI_STEPS`/`shownStep` covered 0–12 directly instead of collapsing them
+  to Review.
+- **Tests**: `tests/planner-intake-ui.test.mts` (new) — source-level guards (regex over `PlanIntake.tsx`'s own
+  source, the pattern `tests/planner-ed-dialog.test.mts` already uses) that the rail is built from `RECORD_STEPS`
+  rather than a hardcoded list, that every step 0–12 has a rendered branch (direct `step === n` for 0, 1, 2, 6, 8–12;
+  `activityStepAt` for 3, 4, 5, 7), and that the edit-mode save path reads `back` rather than a hardcoded
+  `planHref`; each guard has a planted-bad-case test proving it isn't vacuous. `moveMajor` (pure) is tested directly.
+  Ran alongside `tests/planner-intake.test.mts`, `tests/planner-record.test.mts`, `tests/majors-search.test.mts`,
+  `tests/planner-recommenders.test.mts`, `tests/planner-story-guide.test.mts`: 116 passing.
+- **Left for later units**: R4's real "why" fold (`components/ui/why-fold.tsx`) replaces the stand-in `InfoNote`
+  `?` icons added here (Basics' fee-waiver note, Recommenders' advice note) and folds each step's `why` line from
+  `RECORD_STEPS`; this unit didn't add that fold mechanism itself, only the two one-off `?` icons the prompt called
+  for directly. Drag-and-drop on `MajorChips` has no touch-drag fallback on a phone (only the arrows do there,
+  which is sufficient since `draggable` doesn't fire on touch); not treated as a gap since the prompt only asked for
+  drag "where cheap" and arrows cover every width.

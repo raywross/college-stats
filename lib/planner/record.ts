@@ -282,7 +282,14 @@ export function recordNeeded(ctx: Pick<PlanContext, "profile" | "student">): boo
  * The tour in edit mode: `/plan?for=<person>&record=1&step=<n>&back=<plan|record>` (steps.md "Edit mode"). Without a
  * step it opens at Review; `back` says where saving and closing return to (the plan when left out).
  */
-export function recordHref(opts: { person: string | null; step?: RecordStep | null; back?: "plan" | "record" }): string {
+/**
+ * Where saving or closing the tour returns to: the plan's tabs, the household's record page, or the record shown
+ * inline on the plan page (`/plan?record=1`; owner 2026-10-16: "when you hit edit on the plan page it expands to show
+ * your record").
+ */
+export type RecordBack = "plan" | "record" | "inline";
+
+export function recordHref(opts: { person: string | null; step?: RecordStep | null; back?: RecordBack }): string {
   const q = new URLSearchParams();
   if (opts.person) q.set("for", opts.person);
   q.set("record", "1");

@@ -257,7 +257,7 @@ test("MoveCard: Done and Skip for now live in the corner menu, with edit access 
   assert.doesNotMatch(editable, /Not now/);
   const guardian = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf({ viewer: { userId: "u2", firstName: "Jo", canEdit: true, relation: "guardian", isGuardian: true } }), onDone: noop, onSkip: noop, pending: false });
   assert.match(guardian, /<button[^>]*>Done<\/button>/);
-  assert.doesNotMatch(guardian, /Skip for now/, "a parent never skips for the student");
+  assert.match(guardian, /Skip for now/, "a parent with edit access can skip too (owner, 2026-10-16: 'there's no way to dismiss them')");
   const readOnly = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf({ viewer: { userId: "u1", firstName: "Jo", canEdit: false, relation: "self", isGuardian: false } }), onDone: noop, onSkip: noop, pending: false });
   assert.doesNotMatch(readOnly, /<button|<details/, "no menu at all without edit access");
   assert.doesNotMatch(readOnly, />Done<|Skip for now/);

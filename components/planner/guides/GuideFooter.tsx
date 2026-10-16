@@ -4,7 +4,7 @@
  * A guide's footer (specs/planner/v3/now.md "The guide pattern"; build-plan.md "The guide page"): with an open move
  * and edit access, **Done with this** and **Skip for now** (the built `tick` / `dismiss`, optimistic: the buttons
  * lock at once, a refused write unlocks them and shows its message), each then back to the plan's Next steps; always
- * "Back to your plan". A guardian never skips for the student (review note 14), so Skip is the student's alone.
+ * "Back to your plan". A guardian with edit access skips too (owner, 2026-10-16); `dismissed_by` records who.
  */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -61,16 +61,15 @@ export function GuideFooter({ move, canEdit, isGuardian, person }: GuideFooterPr
             >
               {busy === "done" ? "Saving…" : "Done with this"}
             </button>
-            {!isGuardian && (
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={() => act("skip")}
-                className="inline-flex min-h-11 items-center rounded-full px-5 text-sm font-semibold ring-1 ring-border hover:bg-muted disabled:opacity-60"
-              >
-                {busy === "skip" ? "Saving…" : "Skip for now"}
-              </button>
-            )}
+            {/* A parent with edit access skips too (owner, 2026-10-16); attributed by dismissed_by. */}
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => act("skip")}
+              className="inline-flex min-h-11 items-center rounded-full px-5 text-sm font-semibold ring-1 ring-border hover:bg-muted disabled:opacity-60"
+            >
+              {busy === "skip" ? "Saving…" : "Skip for now"}
+            </button>
           </>
         )}
         <Link href={back} className="inline-flex min-h-11 items-center px-3 text-sm font-semibold text-primary hover:underline sm:ml-auto">

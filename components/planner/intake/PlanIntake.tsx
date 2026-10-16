@@ -33,7 +33,7 @@ import {
   type IntakeDraft,
   type IntakeStep,
 } from "@/lib/planner/intake";
-import { RECORD_STEPS, recordPageHref, stepSummary } from "@/lib/planner/record";
+import { RECORD_STEPS, recordHref, recordPageHref, stepSummary, type RecordBack } from "@/lib/planner/record";
 import { entryCount, intakeScrollFor, scrollBehavior } from "@/lib/planner/intake-scroll";
 import { MAJOR_FAMILIES } from "@/lib/majors";
 import { planHref } from "@/lib/planner/plan-tabs";
@@ -99,8 +99,8 @@ export default function PlanIntake({
   relation: "self" | "guardian";
   /** The student's first name, for a guardian's copy. */
   firstName: string | null;
-  /** `?back=plan|record` (steps.md "Edit mode"): where saving in edit mode returns to. */
-  back?: "plan" | "record";
+  /** `?back=plan|record|inline` (steps.md "Edit mode"): where saving in edit mode returns to. */
+  back?: RecordBack;
 }) {
   void firstName;
   const router = useRouter();
@@ -140,7 +140,9 @@ export default function PlanIntake({
     setStep(to);
   };
 
-  const closeHref = back === "record" && studentId ? recordPageHref(studentId) : planHref({ person, tab: null });
+  // Where saving or closing returns (record/steps.md "Edit mode"): the household record page, the record inline on
+  // the plan (owner 2026-10-16), or the plan's tabs.
+  const closeHref = back === "record" && studentId ? recordPageHref(studentId) : back === "inline" ? recordHref({ person }) : planHref({ person, tab: null });
 
   const save = (after: () => void) => {
     if (!studentId) {

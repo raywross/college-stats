@@ -103,10 +103,11 @@ const DEFAULT_ON_PURPOSE: ReadonlySet<TaskKind> = new Set([
 ]);
 
 test("every TaskKind resolves to a table row (kind:<k>) or is in the explicit default allowlist; `story` is season-ruled, not a table row", () => {
-  const facts = factsFor();
+  // Senior fall: undated application pieces are 0 before it (beforeApplications; tests/planner-importance-application.test.mts).
+  const facts = factsFor({ season: "senior_fall" });
   for (const kind of ALL_KINDS) {
     if (kind === "story") continue; // season-ruled below, not a flat table row
-    const t: ImportanceTask = { kind, key: null, season: "junior_fall", window_start: null, window_end: null, due_on: null };
+    const t: ImportanceTask = { kind, key: null, season: "senior_fall", window_start: null, window_end: null, due_on: null };
     const base = baseImportance(t, facts);
     if (DEFAULT_ON_PURPOSE.has(kind)) {
       assert.equal(base, DEFAULT_IMPORTANCE, `${kind}: default on purpose`);

@@ -7,6 +7,7 @@ import { PlanNotice } from "@/components/planner/PlanNotice";
 import { PlanTabPills, PlanTabs } from "@/components/planner/PlanTabs";
 import { UpcomingList } from "@/components/planner/calendar/UpcomingList";
 import { intakeNeeded } from "@/lib/planner/intake";
+import type { RecordBack } from "@/lib/planner/record";
 import { roundsPicked } from "@/lib/planner/list-row";
 import { nextUpInfo } from "@/lib/planner/plan-frame";
 import { defaultTab, planHref, tabsFor, type PlanTab } from "@/lib/planner/plan-tabs";
@@ -47,8 +48,8 @@ export function PlanFrame({
   tab: PlanTab;
   /** `?setup=1` or `?record=1`: the people line's Edit opens the tour in edit mode, prefilled, starting at Review. */
   setup: boolean;
-  /** `?back=plan|record` (record/steps.md "Edit mode"): where saving or closing the tour in edit mode returns to. */
-  back?: "plan" | "record";
+  /** `?back=plan|record|inline` (record/steps.md "Edit mode"): where saving or closing the tour in edit mode returns to. */
+  back?: RecordBack;
   /** The plan's one top line (components/planner/PlanPeople.tsx), built by the page. */
   people?: ReactNode;
 }) {

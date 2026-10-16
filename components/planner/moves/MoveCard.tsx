@@ -6,7 +6,7 @@
  * calendar's warning color, only for a dated move), the assignee chip when it isn't the viewer, and **one button**:
  * the move's guide when it has one (`guideFor`, the guide's own words: "Help me build it"), else the built button from
  * `task.action`. **Done** and **Skip for now** live in the card's corner menu (`⋯`), only with edit access; a
- * guardian never skips for the student (plan v3 review note 14), so their menu has Done alone. Without
+ * guardian with edit access skips too (owner, 2026-10-16), attributed by `dismissed_by`. Without
  * `ctx.viewer.canEdit` the card has no menu; its button still opens the guide (read-only) or the link. Every kind
  * without its own entry in `registry.tsx` renders this card.
  *
@@ -62,7 +62,7 @@ function GuideLink({ task, ctx }: { task: PlanTask; ctx: PlanContext }) {
  * Done and Skip for now, folded into a corner menu (now.md "The tab"): a `<details>` whose `⋯` summary is a 44px,
  * keyboard-reachable button. Picking an item closes the menu.
  */
-function CornerMenu({ task, title, isGuardian, onDone, onSkip, pending }: { task: PlanTask; title: string; isGuardian: boolean; onDone: (t: PlanTask) => void; onSkip: (t: PlanTask) => void; pending: boolean }) {
+function CornerMenu({ task, title, onDone, onSkip, pending }: { task: PlanTask; title: string; onDone: (t: PlanTask) => void; onSkip: (t: PlanTask) => void; pending: boolean }) {
   const ref = useRef<HTMLDetailsElement>(null);
   const pick = (fn: (t: PlanTask) => void) => {
     if (ref.current) ref.current.open = false;
@@ -80,11 +80,10 @@ function CornerMenu({ task, title, isGuardian, onDone, onSkip, pending }: { task
         <button type="button" className={MENU_ITEM} disabled={pending} onClick={() => pick(onDone)}>
           Done
         </button>
-        {!isGuardian && (
-          <button type="button" className={MENU_ITEM} disabled={pending} onClick={() => pick(onSkip)}>
-            Skip for now
-          </button>
-        )}
+        {/* A parent with edit access skips too (owner, 2026-10-16: "there's no way to dismiss them"); attributed by dismissed_by. */}
+        <button type="button" className={MENU_ITEM} disabled={pending} onClick={() => pick(onSkip)}>
+          Skip for now
+        </button>
       </div>
     </details>
   );
@@ -177,7 +176,7 @@ export function MoveCard({ task, ctx, onDone, onSkip, pending, rank }: MoveCardP
             </span>
           </MetricLabel>
         </div>
-        {canEdit && <CornerMenu task={task} title={title} isGuardian={ctx.viewer.isGuardian} onDone={onDone} onSkip={onSkip} pending={pending} />}
+        {canEdit && <CornerMenu task={task} title={title} onDone={onDone} onSkip={onSkip} pending={pending} />}
       </div>
       {task.detail && <p className="mt-1 text-sm text-muted-foreground">{task.detail}</p>}
       {showAssignee && (

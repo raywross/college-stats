@@ -57,7 +57,7 @@ test("planted bad case: a step left unrendered (no branch at all) would fail the
 });
 
 test("the `back` param is honored: saving in edit mode with back=\"record\" returns to the record overview, not the plan", () => {
-  assert.match(src, /back === "record" && studentId \? recordPageHref\(studentId\) : planHref\(\{ person, tab: null \}\)/);
+  assert.match(src, /back === "record" && studentId \? recordPageHref\(studentId\) : back === "inline" \? recordHref\(\{ person \}\) : planHref\(\{ person, tab: null \}\)/, "record page, the record inline on the plan (owner 2026-10-16), or the plan");
   // The save path in edit mode routes through `closeHref`, not a hardcoded planHref.
   assert.match(src, /if \(mode === "edit"\) \{\s*router\.push\(closeHref\);/);
 });

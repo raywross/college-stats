@@ -19,7 +19,7 @@ const RAIL_BY_STEP = new Map(RECORD_STEPS.map((s) => [s.step, s.rail]));
  * test links (those are moves, shown on Now). Server-rendered (the rows are static with links); the telemetry mount
  * is the one small client island (RecordOverviewOpened).
  */
-export function RecordOverview({ profile, plan }: { profile: ProfileAccess; plan: PlanLoad }) {
+export function RecordOverview({ profile, plan, back = "record" }: { profile: ProfileAccess; plan: PlanLoad; /** Where a step's save returns: the household record page, or the record inline on the plan (RecordInline). */ back?: "record" | "inline" }) {
   const person = profile.relation === "self" ? null : profile.student.id;
   const firstName = profile.relation === "guardian" ? (profile.student.display_name?.trim().split(/\s+/)[0] ?? null) : null;
   const title = recordTitle(firstName);
@@ -38,7 +38,7 @@ export function RecordOverview({ profile, plan }: { profile: ProfileAccess; plan
         </div>
         {needed && profile.canEdit && (
           <Link
-            href={recordHref({ person, step: 0, back: "record" })}
+            href={recordHref({ person, step: 0, back })}
             className="inline-flex h-11 shrink-0 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground sm:h-10"
           >
             Fill it in
@@ -94,7 +94,7 @@ export function RecordOverview({ profile, plan }: { profile: ProfileAccess; plan
                 name={RAIL_BY_STEP.get(row.step) ?? row.section}
                 done={row.done}
                 text={row.done ? row.summary ?? "" : row.unlock}
-                href={profile.canEdit ? recordHref({ person, step: row.step, back: "record" }) : null}
+                href={profile.canEdit ? recordHref({ person, step: row.step, back }) : null}
                 action={row.done ? "Edit" : "Add"}
               />
             );

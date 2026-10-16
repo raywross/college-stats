@@ -121,8 +121,9 @@ test("the overview carries no number from the estimate: no digit in an unlock li
 
 test("the plan's detailFrom builds its ring from recordProgress and its Edit link from recordPageHref", () => {
   const src = read("app", "plan", "page.tsx");
-  assert.match(src, /import \{ recordPageHref, recordProgress \} from "@\/lib\/planner\/record";/);
+  assert.match(src, /import \{ recordHref, recordProgress, type RecordBack \} from "@\/lib\/planner\/record";/);
+  assert.match(src, /<RecordInline profile=\{profile\} plan=\{loaded\} person=\{null\} \/>/, "record=1 expands the record on the plan page (owner, 2026-10-16)");
   assert.match(src, /const record = recordProgress\(profile\);/);
   assert.match(src, /done: record\.done, total: record\.total/);
-  assert.match(src, /editHref: canEdit && studentId \? recordPageHref\(studentId\) : null/);
+  assert.match(src, /editHref: canEdit \? recordHref\(\{ person \}\) : null/);
 });

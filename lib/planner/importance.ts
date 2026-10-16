@@ -250,7 +250,25 @@ function profileSectionImportance(section: ProfileSection, season: Season): numb
   return MOVE_IMPORTANCE[`profile:${section}`] ?? DEFAULT_IMPORTANCE;
 }
 
-export type ImportanceTask = Pick<PlanTask, "kind" | "key" | "season" | "window_start" | "window_end" | "due_on">;
+export type ImportanceTask = Pick<PlanTask, "kind" | "key" | "season" | "window_start" | "window_end" | "due_on"> & Partial<Pick<PlanTask, "source">>;
+
+/**
+ * The pieces of an application (the college generator's rows per listed college): dated ones follow the season gate,
+ * undated ones ("Ask the high school to send transcripts", "Pay the application fee") belong to senior fall and are
+ * 0 before it (owner, 2026-10-16: a junior saw both; "she wouldn't apply until the fall of her senior year").
+ */
+const APPLICATION_KINDS: ReadonlySet<PlanTask["kind"]> = new Set([
+  "apply", "submit", "fee", "send_scores", "transcript", "recommendation", "supplement", "portal_setup", "portal_check",
+  "confirm_complete", "decision_expected", "continued_interest", "waitlist_accept", "waitlist_deposit_elsewhere", "ed2_conditional",
+  "reply_by", "housing_deposit", "deposit", "withdraw", "waitlist_decide", "add_offer", "decide_by", "compare_offers", "outcome_share",
+]);
+const SENIOR_FALL_RANK = seasonRank("senior_fall");
+
+/** Whether an undated application piece is showing before its time (senior fall). */
+export function beforeApplications(task: ImportanceTask, season: Season): boolean {
+  const applicationPiece = APPLICATION_KINDS.has(task.kind) || task.source === "college";
+  return applicationPiece && taskDate(task) === null && seasonRank(season) < SENIOR_FALL_RANK;
+}
 
 /**
  * The move's base importance (ranking.md "The rule"), before timing and carry: the season-varying rules first (they
@@ -262,6 +280,7 @@ export function baseImportance(task: ImportanceTask, facts: ImportanceFacts): nu
   const cycleKey = suffixAfter(task.key, "cycle");
   const shapeGapKey = suffixAfter(task.key, "shape_gap");
 
+  if (beforeApplications(task, facts.season)) return 0;
   if (task.kind === "story" || playbookKey === "story") return storyImportance(facts.season);
   if (playbookKey === "pick_recommenders" || cycleKey === "ask_recommenders") return recommendersImportance(facts.season);
   if (playbookKey === "freshman_choose_courses" || playbookKey === "sophomore_choose_courses" || playbookKey === "junior_choose_courses" || (cycleKey !== null && cycleKey.startsWith("choose_courses"))) {

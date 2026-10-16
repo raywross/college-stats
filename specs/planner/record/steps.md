@@ -133,3 +133,11 @@ step; the unlock lines; `recordProgress` for planted profiles), `tests/planner-i
 - `/me` redirects to `/household/{id}/record` for both student and guardian
 - PersonHeader segmented control shows Plan | Record
 - Parents can edit section moved from Numbers page to /account, guarded by guardians.length > 0
+
+## Changed (owner review, 2026-10-16, later): the record expands on the plan page
+"I like having it on the plan page when you hit edit. Make it so that when you hit edit on the plan page it expands to
+show your record, then have a save or cancel button to close it." The people line's Edit now opens `/plan?record=1`:
+the same overview (`RecordOverview`) under the people line in place of the tabs (`components/record/RecordInline.tsx`),
+each section's Edit opening the tour at that step and returning here (`back=inline`), with **Save** and **Cancel**
+closing it back to the plan's tabs (every step saves on its own when its tour saves). The household's Record tab keeps
+the standalone page.

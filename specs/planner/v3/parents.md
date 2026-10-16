@@ -59,3 +59,8 @@ Coming up · Summer before senior year (4) ▾
 - The weekly email includes skipped moves from the last seven days (dismissed within seven days), titles only: "Jordan skipped: Write your story".
 - Telemetry: `plan_parent_season_viewed {season}`, `plan_move_restored {kind, season, by: "guardian"}`.
 - **Set aside (2026-10-16, plan-v3-fix-cards).** Owner, after seeing the preview: "For now, when a parent looks at a student they should see what they see." `NextSteps.tsx` no longer routes a guardian to `GuardianNextSteps`; a guardian now gets the exact three-card student view (`now.md`), with their own Your part cards above it when non-empty. This file's component (`components/planner/ParentNextSteps.tsx`), and the `seasonRows`/`comingUpRows`/`parentSafeTitle` helpers in `lib/planner/moves.ts` this spec describes, are kept in place but unused, in case the fuller parent view (Coming up, the "{First}'s season" rows, Now/Next states) comes back. `parentSafeTitle` still does its one job either way: a guardian never sees a `reach_score_*` move's own number.
+
+## Changed (owner review, 2026-10-16, later): a parent can skip
+"There's no way to dismiss them." A guardian with edit access now gets **Skip for now** in a card's ⋯ menu and in a
+guide's footer, like the student; `dismissed_by` records who. (The earlier "a parent only brings back" was this spec's
+own recommendation, overridden by the owner.)

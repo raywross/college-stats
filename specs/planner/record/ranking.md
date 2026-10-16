@@ -135,3 +135,9 @@ reproduces; the timing boosts; the season-zero rules; three highest win; closing
 - Story and pick_recommenders now show from `summer_before_senior` onward (moved from earlier seasons)
 - Catalog entries' seasons updated; explainer paragraphs adjusted for story timing
 - `plan_move_shown` tracks rank (1–3 for Now, null for Your part or outside Now)
+
+## Changed (owner review, 2026-10-16, later): application pieces wait for senior fall
+A junior saw "Ask the high school to send transcripts" and "Pay the application fee" (the college generator's undated
+rows per listed college). An undated application piece (the apply, fee, transcript, recommendation, supplement, portal,
+decision, and offer kinds, or any undated `college`-source row) is importance **0 before senior fall**
+(`beforeApplications`, lib/planner/importance.ts); dated ones follow the season gate as before.

@@ -11,7 +11,8 @@ import { authConfigured, getUser } from "@/lib/auth";
 import { type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/planner/load";
 import { resolveSelectedChild, type SwitchableChild } from "@/lib/planner/plan-frame";
 import { profileProgress, SECTION_STEP } from "@/lib/planner/profile-progress";
-import { recordPageHref, recordProgress } from "@/lib/planner/record";
+import { recordHref, recordProgress, type RecordBack } from "@/lib/planner/record";
+import { RecordInline } from "@/components/record/RecordInline";
 import { defaultTab, parseTab, planHref } from "@/lib/planner/plan-tabs";
 import { nowMoves, topMove } from "@/lib/planner/moves";
 import { importanceFactsFrom } from "@/lib/planner/importance-facts";
@@ -21,7 +22,7 @@ import { bundleKnownMissing } from "@/lib/bundle-read";
 import { myHome } from "@/lib/home-store";
 import { myLists } from "@/lib/lists";
 import { isUuid } from "@/lib/planner/plan-writes";
-import { profilesICanSee } from "@/lib/student-profile-store";
+import { profileFor, profilesICanSee } from "@/lib/student-profile-store";
 import type { StudentProfileData } from "@/lib/student-profile";
 import type { Season } from "@/lib/planner/seasons";
 
@@ -90,7 +91,8 @@ function detailFrom(profile: StudentProfileData | null, canEdit: boolean, studen
   return {
     progress: { done: record.done, total: record.total, nextLabel: progress.nextLabel },
     nextHref,
-    editHref: canEdit && studentId ? recordPageHref(studentId) : null,
+    // Edit expands the record on the plan page itself (owner, 2026-10-16), not the household's record page.
+    editHref: canEdit ? recordHref({ person }) : null,
   };
 }
 
@@ -125,12 +127,15 @@ async function renderPlan({
   searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string }>;
 }) {
   if (!authConfigured()) return <AuthUnavailable />;
-  const { for: forParam, tab: tabParam, setup: setupParam, record: recordParam, back: backParam } = await searchParams;
+  const { for: forParam, tab: tabParam, setup: setupParam, record: recordParam, step: stepParam, back: backParam } = await searchParams;
+  // `record=1` alone expands the record overview on this page (RecordInline; owner 2026-10-16); with `step=n` it opens
+  // the tour at that step, as `setup=1` does.
+  const recordInline = recordParam === "1" && !stepParam;
   const tab = parseTab(tabParam);
   // `record=1` means what `setup=1` means (record/steps.md "Edit mode"); `step` is additive and read by PlanIntake
   // itself via useSearchParams, so it needs no server-side parsing here.
-  const setup = setupParam === "1" || recordParam === "1";
-  const back: "plan" | "record" = backParam === "record" ? "record" : "plan";
+  const setup = setupParam === "1" || (recordParam === "1" && !!stepParam);
+  const back: RecordBack = backParam === "record" || backParam === "inline" ? backParam : "plan";
 
   const user = await getUser();
   if (!user) return <SignedOutPlan />;
@@ -154,6 +159,17 @@ async function renderPlan({
     const fallback = planFallback(loaded, null);
     if (fallback || loaded.kind !== "ready") return fallback;
     const self: PlanPerson = { studentId: null, name: loaded.ctx.student?.display_name ?? "You", gradYear: loaded.ctx.student?.grad_year ?? null, colorSlot: 0, href: "/plan" };
+    if (recordInline && loaded.ctx.viewer.canEdit) {
+      const profile = await profileFor(viewer.student.id);
+      if (profile) {
+        return (
+          <div className="space-y-6">
+            <PlanPeople people={[self]} selected={null} detail={detailFor(loaded, null)} />
+            <RecordInline profile={profile} plan={loaded} person={null} />
+          </div>
+        );
+      }
+    }
     return (
       <PlanFrame
         people={<PlanPeople people={[self]} selected={null} detail={detailFor(loaded, null)} />}
@@ -218,6 +234,17 @@ async function renderPlan({
         {fallback}
       </div>
     );
+  }
+  if (recordInline) {
+    const profile = await profileFor(selected);
+    if (profile) {
+      return (
+        <div className="space-y-6">
+          {line}
+          <RecordInline profile={profile} plan={load} person={selected} />
+        </div>
+      );
+    }
   }
   return (
     <PlanFrame

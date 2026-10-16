@@ -46,7 +46,7 @@ test("the line: circles link to each plan, the selected one is a button with ari
   assert.match(src, /PLAN_CHILD_COOKIE = "plan_child"/, "a pick is remembered for the next visit");
   assert.match(src, /rememberChild\(p\.studentId\)/);
   const page = read("app", "plan", "page.tsx");
-  assert.match(page, /editHref: canEdit && studentId \? recordPageHref\(studentId\) : null/, "Edit opens the record overview");
+  assert.match(page, /editHref: canEdit \? recordHref\(\{ person \}\) : null/, "Edit expands the record on the plan page (owner, 2026-10-16)");
   assert.match(page, /planHref\(\{ person, setup: true, step: where \}\)/, "the next step opens the intake on that step");
   // No GPA or test score on the chip (owner, 2026-10-12): the progress ring and one next step instead.
   assert.doesNotMatch(page, /numbersLine|gpaAsEntered|TEST_LABEL/);

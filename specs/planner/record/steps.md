@@ -141,3 +141,10 @@ the same overview (`RecordOverview`) under the people line in place of the tabs 
 each section's Edit opening the tour at that step and returning here (`back=inline`), with **Save** and **Cancel**
 closing it back to the plan's tabs (every step saves on its own when its tour saves). The household's Record tab keeps
 the standalone page.
+
+## Changed (owner, 2026-10-16): the household's address fills an empty state
+"Maya has a high school in New York and an address for her household in New York as well. So the system should know."
+A record with no state of residence now reads the household home's state (`stateOfHome`, lib/home.ts) wherever the
+profile is read (`withHomeState` in `profilesICanSee`), so the estimate, Explore's levels, the record overview, and the
+Basics step (pre-filled) all use it, and the record's next save stores it. A state the student entered wins; with
+neither, the estimate still falls back to the high school's state and says so.

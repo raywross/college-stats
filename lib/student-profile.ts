@@ -771,6 +771,18 @@ export function guardianStoryLine(firstName: string | null, written: boolean): s
  * A saved profile as the signed-in viewer should receive it: unchanged for the student themselves, the story
  * redacted for a guardian (lib/student-profile-store.ts profilesICanSee calls this on every row it returns).
  */
+/**
+ * A record with no state of residence reads the household's address (owner, 2026-10-16: "Maya has a high school in New
+ * York and an address for her household in New York as well. So the system should know."). Applied where profiles are
+ * read (lib/student-profile-store.ts profilesICanSee), so every reader gets it: the estimate, Explore's levels, the
+ * record, the Basics step pre-filled; the next save of the record stores it. A state the student entered always wins;
+ * with neither, the estimate still falls back to the high school's state.
+ */
+export function withHomeState(data: StudentProfileData, homeState: string | null): StudentProfileData {
+  if (data.basics.stateOfResidence || !homeState) return data;
+  return { ...data, basics: { ...data.basics, stateOfResidence: homeState } };
+}
+
 export function profileForViewer(data: StudentProfileData, relation: "self" | "guardian"): StudentProfileData {
   if (relation !== "guardian") return data;
   return { ...data, story: redactStoryForGuardian(data.story) };

@@ -22,6 +22,20 @@ export interface HomeLocation extends LatLng {
   zip: string | null;
 }
 
+/**
+ * The two-letter state a home is in, read from its tidied label ("…, Brooklyn, NY 11201") or place ("Brooklyn, NY"),
+ * or null (a ZIP-only home, or nothing that reads as a state). Used where a student's record has no state of
+ * residence: the household's own address is a better answer than the high school's state (owner, 2026-10-16).
+ */
+export function stateOfHome(home: Pick<HomeLocation, "label" | "place"> | null | undefined): string | null {
+  if (!home) return null;
+  for (const text of [home.label, home.place]) {
+    const m = /,\s*([A-Z]{2})(?:\s+\d{5}(?:-\d{4})?)?\s*(?:,\s*(?:USA|United States))?\s*$/.exec(text ?? "");
+    if (m) return m[1];
+  }
+  return null;
+}
+
 /** Explore's `near` filter once the ZIP is resolved (lib/zip-centroids.ts resolveNear). */
 export interface NearHome extends LatLng {
   zip: string;

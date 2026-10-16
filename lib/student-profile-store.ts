@@ -17,8 +17,10 @@ import { callBundle } from "@/lib/bundle-read";
 import { requestMemo } from "@/lib/request-memo";
 import { cache } from "react";
 import type { StudentAccess, StudentRecord } from "@/lib/accounts";
-import { coreAnswered, emptyProfile, profileForViewer, sanitizeProfile, sanitizeRecommenders, sanitizeStory, type StudentProfileData } from "@/lib/student-profile";
+import { coreAnswered, emptyProfile, profileForViewer, sanitizeProfile, sanitizeRecommenders, sanitizeStory, withHomeState, type StudentProfileData } from "@/lib/student-profile";
 import { getHighSchool } from "@/lib/high-schools";
+import { stateOfHome } from "@/lib/home";
+import { myHome } from "@/lib/home-store";
 import { matriculationLine } from "@/lib/high-school-ui";
 
 function isMissingTable(error: { code?: string; message?: string }): boolean {
@@ -55,12 +57,14 @@ const readableProfiles = cache(
 
 /** Every student the signed-in user can see, each with their saved profile (or the empty shape if none yet). */
 export async function profilesICanSee(): Promise<ProfileAccess[]> {
-  const [access, rows] = await Promise.all([studentsICanSee(), readableProfiles()]);
+  const [access, rows, home] = await Promise.all([studentsICanSee(), readableProfiles(), myHome().catch(() => null)]);
   if (access.length === 0) return [];
+  const homeState = stateOfHome(home);
   return access.map((a: StudentAccess) => {
     const raw = rows.get(a.student.id);
     // Your story (next-steps/your-story.md): a guardian never receives the text, only that it's written.
-    return { student: a.student, relation: a.relation, canEdit: a.canEdit, data: profileForViewer(sanitizeProfile(raw), a.relation), saved: raw !== undefined };
+    const data = withHomeState(profileForViewer(sanitizeProfile(raw), a.relation), homeState);
+    return { student: a.student, relation: a.relation, canEdit: a.canEdit, data, saved: raw !== undefined };
   });
 }
 

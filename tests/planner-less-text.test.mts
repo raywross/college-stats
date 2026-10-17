@@ -192,7 +192,7 @@ test("Reach your score leads with the dates; where the score stands and how to s
   // Standing and study are never their own page sections; they live inside PopupButtons in the header card.
   assert.doesNotMatch(src, /<section[^>]*aria-labelledby="test-standing"/);
   assert.doesNotMatch(src, /<section[^>]*aria-labelledby="test-study"/);
-  assert.match(src, /<PopupButton label=\{`Where/);
+  assert.match(src, /<PopupButton label="Where it stands"/);
   assert.match(src, /<PopupButton label="How to study"/);
 });
 
@@ -210,7 +210,7 @@ test("StoryGuide folds 'Depth and breadth' (closed) and 'What your record says s
   const src = read("components/planner/guides/StoryGuide.tsx");
   assert.match(src, /<WhyFold title="Depth and breadth" screen="story_guide" section="depth_and_breadth">/);
   assert.match(src, /<WhyFold title="What your record says so far" screen="story_guide" section="record_so_far" defaultOpen=\{storyEmpty\}>/);
-  assert.match(src, /const storyEmpty = !story\?\.narrative\?\.trim\(\);/);
+  assert.match(src, /const storyEmpty = isGuardian \? !storyWritten\(ctx\.profile\) : !story\?\.narrative\?\.trim\(\);/);
   // The privacy line is a rule the student must know (less-text.md), so it stays bare, outside any fold.
   assert.match(src, /<p className="text-sm text-muted-foreground">Private to you\. Nobody at Quad reads it, and your parents can&apos;t see it\.<\/p>\s*\n\s*<Frame/);
   // Content unchanged: the depth sentence and the "add your activities" sentence both still appear verbatim.
@@ -268,7 +268,7 @@ test("RecommendersGuide lists the teachers before 'What to think about' and 'How
   assert.doesNotMatch(src.slice(askAt, askAt + 200), /defaultOpen/);
   // Content unchanged: THINK_ABOUT/HOW_TO_ASK are still the source, just rendered inside the fold now.
   assert.match(src, /\{THINK_ABOUT\.map/);
-  assert.match(src, /\{say\(HOW_TO_ASK\.join\(" "\)\)\}/);
+  assert.match(src, /\{HOW_TO_ASK\.join\(" "\)\}/);
 });
 
 test("planted bad case: 'What to think about' rendered before the teachers list would fail the order guard above", () => {

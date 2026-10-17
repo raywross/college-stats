@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import Link from "next/link";
 import { SourceTip } from "@/components/ui/info-tip";
 import { saveCourses } from "@/lib/chances/courses-store";
-import { newCourse, thirdPerson } from "@/lib/chances/courses";
+import { newCourse } from "@/lib/chances/courses";
 import { dismissSuggestion, markScheduleDone, saveSchoolOffers } from "@/lib/chances/course-plan-store";
 import { endpointFetch, ESTIMATE_MAX_COLLEGES, whatItChanges } from "@/lib/chances/course-plan-estimate";
 import type { CoursePlanView, SuggestionView } from "@/lib/chances/course-plan-view";
@@ -34,16 +34,13 @@ const STATUS_WORD: Record<"taken" | "in_progress" | "planned", string | null> = 
  * Choose next year's APs (specs/planner/v3/guides/ap-choices.md): the course list by subject track, the built
  * suggestions restored from `components/planner/NextYearCard.tsx` (now deleted; this is its new home), the AP search
  * to add anything else, and the one tap that marks next year's schedule chosen. Every change is a profile save, so
- * the Numbers page, the rigor reading, the estimate, and the depth tracks read it at once. A guardian is read-only.
+ * the Numbers page, the rigor reading, the estimate, and the depth tracks read it at once. A guardian with edit access edits it the same way (owner, 2026-10-16).
  */
 export function CoursesGuide({ ctx, move, person, data }: GuideProps) {
   const { plan, tracks } = (data as CoursesGuideData | undefined) ?? { plan: null, tracks: null };
   const profile = ctx.profile;
-  const isGuardian = ctx.viewer.isGuardian;
-  const editable = ctx.viewer.canEdit && !isGuardian;
+  const editable = ctx.viewer.canEdit;
   const studentId = ctx.student?.id ?? null;
-  const first = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
-  const say = (t: string) => (isGuardian ? thirdPerson(t, first) : t);
 
   const shown = useRef(false);
   useEffect(() => {
@@ -75,11 +72,11 @@ export function CoursesGuide({ ctx, move, person, data }: GuideProps) {
     <div className="space-y-8">
       <p className="text-sm text-muted-foreground">Schools ask for next year&apos;s choices in late winter.</p>
 
-      <WhatYouveTaken rows={rows} tracks={tracks} say={say} person={person} />
+      <WhatYouveTaken rows={rows} tracks={tracks} person={person} />
 
       {/* Once the schedule's chosen, the suggestions fold (ap-choices.md "Chosen"). */}
       {plan && plan.kind !== "none" && !plan.done && (
-        <Suggestions plan={plan} profile={profile} studentId={studentId} ctx={ctx} say={say} editable={editable} tracks={tracks} />
+        <Suggestions plan={plan} profile={profile} studentId={studentId} ctx={ctx} editable={editable} tracks={tracks} />
       )}
 
       <AddAnythingElse profile={profile} studentId={studentId} nextYear={nextYear} editable={editable} />
@@ -94,12 +91,10 @@ export function CoursesGuide({ ctx, move, person, data }: GuideProps) {
 function WhatYouveTaken({
   rows,
   tracks,
-  say,
   person,
 }: {
   rows: CourseRow[];
   tracks: CourseTracks | null;
-  say: (t: string) => string;
   person: string | null;
 }) {
   return (
@@ -137,7 +132,7 @@ function WhatYouveTaken({
                     {row.nextYear !== null && " → ?"}
                   </span>
                 </div>
-                {familyTrack && <p className="max-w-xs text-right text-xs text-muted-foreground">{say(noteText(familyTrack.note))}</p>}
+                {familyTrack && <p className="max-w-xs text-right text-xs text-muted-foreground">{(noteText(familyTrack.note))}</p>}
               </li>
             );
           })}
@@ -152,7 +147,6 @@ function Suggestions({
   profile,
   studentId,
   ctx,
-  say,
   editable,
   tracks,
 }: {
@@ -160,7 +154,6 @@ function Suggestions({
   profile: NonNullable<GuideProps["ctx"]["profile"]>;
   studentId: string;
   ctx: GuideProps["ctx"];
-  say: (t: string) => string;
   editable: boolean;
   tracks: CourseTracks | null;
 }) {
@@ -205,7 +198,7 @@ function Suggestions({
         <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">On the way to your major</h2>
         <ul className="space-y-1.5 text-sm">
           {plan.path.map((t) => (
-            <li key={t}>{say(t)}</li>
+            <li key={t}>{(t)}</li>
           ))}
         </ul>
       </section>
@@ -216,7 +209,7 @@ function Suggestions({
     return plan.messages.length > 0 ? (
       <section className="space-y-1 text-sm text-muted-foreground">
         {plan.messages.map((t) => (
-          <p key={t}>{say(t)}</p>
+          <p key={t}>{(t)}</p>
         ))}
       </section>
     ) : null;
@@ -233,7 +226,7 @@ function Suggestions({
             plan={plan}
             studentId={studentId}
             profile={profile}
-            say={say}
+           
             changeLine={changes[s.id] ?? null}
             editable={editable}
             depthTie={depthTieFor(tracks, s.subject)}
@@ -255,7 +248,6 @@ function SuggestionRow({
   plan,
   studentId,
   profile,
-  say,
   changeLine,
   editable,
   depthTie,
@@ -264,7 +256,6 @@ function SuggestionRow({
   plan: CoursePlanView;
   studentId: string;
   profile: NonNullable<GuideProps["ctx"]["profile"]>;
-  say: (t: string) => string;
   changeLine: string | null;
   editable: boolean;
   depthTie: string | null;
@@ -298,7 +289,7 @@ function SuggestionRow({
     <li className="rounded-xl border bg-background p-3">
       <p className="font-semibold">{s.name}</p>
       <p className="mt-0.5">
-        {say(s.sentence)}
+        {(s.sentence)}
         {s.evidence
           .filter((e) => e.cite)
           .slice(0, 3)
@@ -306,8 +297,8 @@ function SuggestionRow({
             <SourceTip key={e.label} cited={e.cite!} className="mx-0.5" />
           ))}
       </p>
-      {s.readingLine && <p className="mt-1 text-muted-foreground">{say(s.readingLine)}</p>}
-      {changeLine && <p className="mt-1 text-muted-foreground">{say(changeLine)}</p>}
+      {s.readingLine && <p className="mt-1 text-muted-foreground">{(s.readingLine)}</p>}
+      {changeLine && <p className="mt-1 text-muted-foreground">{(changeLine)}</p>}
       {depthTie && <p className="mt-1 text-muted-foreground">{depthTie}</p>}
       {s.evidence.some((e) => e.href) && (
         <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">

@@ -73,7 +73,7 @@ function CollegeGuide({ ctx, item, school, data }: CollegeProps) {
   const cited = school.cites[INTEREST_FIELD] as AnyCited | undefined;
   const edition = (school.cites[INTEREST_FIELD] as { cdsEdition?: string } | undefined)?.cdsEdition ?? null;
   const canEdit = ctx.viewer.canEdit;
-  const canFollow = canEdit && !ctx.viewer.isGuardian;
+  const canFollow = canEdit;
   const visits = ctx.visits.filter((v) => v.item_id === item.id);
   const logged = loggedParts(item, visits, ctx.today);
   const sentence = interestSentence(name, factor);
@@ -93,7 +93,7 @@ function CollegeGuide({ ctx, item, school, data }: CollegeProps) {
       </p>
 
       <Section n={1} title="Visit" weight="counts most" muted={muted}>
-        <VisitSection ctx={ctx} item={item} school={school} data={data} canEdit={canEdit} />
+        <VisitSection item={item} school={school} data={data} canEdit={canEdit} />
       </Section>
 
       <Section
@@ -121,7 +121,7 @@ function CollegeGuide({ ctx, item, school, data }: CollegeProps) {
           </WhyFold>
         }
       >
-        <FollowSection item={item} school={school} canFollow={canFollow} isGuardian={ctx.viewer.isGuardian} />
+        <FollowSection item={item} school={school} canFollow={canFollow} />
       </Section>
 
       <p className="text-sm text-muted-foreground">
@@ -237,7 +237,7 @@ function EventRow({ event, itemId, canEdit }: { event: GuideEvent; itemId: strin
   );
 }
 
-function VisitSection({ ctx, item, school, data, canEdit }: { ctx: GuideProps["ctx"]; item: PlanItem; school: PlanSchool; data: InterestGuideData | null; canEdit: boolean }) {
+function VisitSection({ item, school, data, canEdit }: { item: PlanItem; school: PlanSchool; data: InterestGuideData | null; canEdit: boolean }) {
   const router = useRouter();
   const [logging, setLogging] = useState(false);
   const name = school.name;
@@ -297,7 +297,6 @@ function VisitSection({ ctx, item, school, data, canEdit }: { ctx: GuideProps["c
           />
         )}
       </SheetDialog>
-      {ctx.viewer.isGuardian && <p className="text-xs text-muted-foreground">A visit you log is on the family calendar for everyone.</p>}
     </>
   );
 }
@@ -386,7 +385,7 @@ function InfoSection({ item, school, today, canEdit }: { item: PlanItem; school:
 /* 3 Follow                                                             */
 /* ------------------------------------------------------------------ */
 
-function FollowSection({ item, school, canFollow, isGuardian }: { item: PlanItem; school: PlanSchool; canFollow: boolean; isGuardian: boolean }) {
+function FollowSection({ item, school, canFollow }: { item: PlanItem; school: PlanSchool; canFollow: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -450,7 +449,7 @@ function FollowSection({ item, school, canFollow, isGuardian }: { item: PlanItem
           );
         })}
       </div>
-      {!canFollow && <p className="text-xs text-muted-foreground">{isGuardian ? "Following is the student's, from their own account." : "The student follows from their own account."}</p>}
+      {!canFollow && <p className="text-xs text-muted-foreground">The student follows from their own account.</p>}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}

@@ -24,7 +24,6 @@ export type PlanActionResult = { ok: true } | { ok: false; message: string };
 
 const FAILED = "That didn't work. Try again in a moment.";
 const SIGN_IN = "Sign in first.";
-const STUDENT_ONLY = "Only the student can mark a follow.";
 
 type Supa = Awaited<ReturnType<typeof createServerSupabase>>;
 type Ready = { userId: string; supabase: Supa };
@@ -54,16 +53,6 @@ async function listOfItem(supabase: Supa, itemId: string): Promise<string | null
   return (data as { list_id: string } | null)?.list_id ?? null;
 }
 
-/** Whether the signed-in user IS the student (not a guardian with edit access on the student's list). A guardian's
- *  own list (no student) is the guardian's own account, so always "themselves" there. */
-async function isStudentSelf(supabase: Supa, listId: string, userId: string): Promise<boolean> {
-  const list = await supabase.from("lists").select("student_id").eq("id", listId).maybeSingle();
-  const studentId = (list.data as { student_id: string | null } | null)?.student_id ?? null;
-  if (!studentId) return true;
-  const student = await supabase.from("students").select("user_id").eq("id", studentId).maybeSingle();
-  return ((student.data as { user_id: string | null } | null)?.user_id ?? null) === userId;
-}
-
 /** Ticks any open generated task of `kind` for this item (used when a direct write, not the task list, finishes it). */
 async function completeGeneratedTask(supabase: Supa, itemId: string, kind: string): Promise<void> {
   await supabase.from("plan_tasks").update({ done_at: new Date().toISOString() }).eq("item_id", itemId).eq("kind", kind).is("done_at", null);
@@ -75,7 +64,7 @@ async function completeGeneratedTask(supabase: Supa, itemId: string, kind: strin
 
 /**
  * Records (or clears) a network as followed: `followed_networks` (which) and `follows_social` (any), so the
- * tracking row built in the hub keeps working. Only the student's own account may mark a follow.
+ * tracking row built in the hub keeps working. Anyone who can edit the list may mark one: a guardian records it as the student would (owner, 2026-10-16).
  */
 export async function recordFollow(itemId: string, network: SocialNetwork, followed: boolean): Promise<PlanActionResult> {
   if (!isUuid(itemId) || !isNetwork(network) || typeof followed !== "boolean") return { ok: false, message: FAILED };
@@ -83,7 +72,6 @@ export async function recordFollow(itemId: string, network: SocialNetwork, follo
   if (!("supabase" in r)) return r;
   const listId = await listOfItem(r.supabase, itemId);
   if (!listId) return { ok: false, message: FAILED };
-  if (!(await isStudentSelf(r.supabase, listId, r.userId))) return { ok: false, message: STUDENT_ONLY };
   const { data: current, error: readError } = await r.supabase.from("list_items").select("followed_networks").eq("id", itemId).maybeSingle();
   if (readError || !current) return fail(readError, "recordFollow");
   const existing = ((current as { followed_networks: string[] }).followed_networks ?? []) as SocialNetwork[];

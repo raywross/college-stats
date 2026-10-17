@@ -108,7 +108,7 @@ export function SubmitCard({ task, ctx, onSkip, pending: skipPending }: MoveCard
       {subtasks.length > 0 && (
         <ul className="mt-3 divide-y border-t">
           {subtasks.map((t) => (
-            <TaskRow key={t.id} task={t} school={school} canEdit={canEdit} today={ctx.today} viewer={ctx.viewer} studentFirstName={studentFirstName} showCollege={false} />
+            <TaskRow key={t.id} task={t} school={school} canEdit={canEdit} today={ctx.today} studentFirstName={studentFirstName} showCollege={false} />
           ))}
         </ul>
       )}

@@ -5,11 +5,11 @@
  * narrative, framed by depth and breadth, beside a read-only look at what the student's record already says. Opens
  * from the `story` move, the Numbers page's Your story section, and the summer essay move's "start from your story".
  *
- * Private to the student: a guardian's whole view is one line ("{First} has written their story." / "hasn't …
- * yet.") and nothing else — never the field, never the record's sentences (lib/student-profile.ts
- * redactStoryForGuardian already strips the text server-side; this component never reaches for it on a guardian's
- * behalf either). Saved through the same `saveStory` action as the old Numbers-page field and move card, both of
- * which this unit replaces.
+ * A guardian sees the student's screen (owner, 2026-10-16: "using the student view"): the same framing and the same
+ * record sentences. Only the story's text stays the student's (lib/student-profile.ts redactStoryForGuardian strips it
+ * server-side and `saveStory` refuses a guardian), so in place of the field a guardian reads one line ("{First} has
+ * written their story." / "hasn't … yet."). Saved through the same `saveStory` action as the old Numbers-page field
+ * and move card, both of which this unit replaces.
  */
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -26,7 +26,7 @@ import { tick } from "@/lib/planner/store";
 import { isOpen } from "@/lib/planner/tasks";
 import { appendStarter, crossesStoryDone, storyStarters } from "@/lib/planner/story-guide";
 import { saveStory, type StorySaveState } from "@/lib/student-profile-store";
-import { guardianStoryLine, STORY_MAX, storyLengthBand } from "@/lib/student-profile";
+import { guardianStoryLine, STORY_MAX, storyLengthBand, storyWritten } from "@/lib/student-profile";
 import type { GuideProps } from "./types";
 
 /** What the guide's server `load` sends down (lib/planner/guides-server.ts "story" entry). */
@@ -34,11 +34,8 @@ export interface StoryGuideData {
   tracks: CourseTracks | null;
 }
 
-/**
- * The guardian's whole view (your-story.md "Rules": private to the student, never a guardian). No field, no record
- * sentences — just whether it's written.
- */
-function GuardianView({ written, firstName }: { written: boolean; firstName: string | null }) {
+/** What a guardian reads where the student's field is (your-story.md "Rules": the text is the student's alone). */
+function GuardianLine({ written, firstName }: { written: boolean; firstName: string | null }) {
   return <p className="text-sm text-muted-foreground">{guardianStoryLine(firstName, written)}</p>;
 }
 
@@ -111,10 +108,6 @@ export function StoryGuide({ ctx, move, person, data }: GuideProps) {
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
   const story = ctx.profile?.story ?? null;
 
-  if (isGuardian) {
-    return <GuardianView written={story !== null} firstName={firstName} />;
-  }
-
   if (!studentId) {
     return (
       <section className="rounded-3xl bg-card p-5 ring-1 ring-border sm:p-6">
@@ -125,7 +118,7 @@ export function StoryGuide({ ctx, move, person, data }: GuideProps) {
 
   const majorName = majorFamilyName(ctx.profile?.plans.intendedMajors[0] ?? null)?.toLowerCase() ?? null;
   const openMove = move && isOpen(move, ctx.today) ? move : null;
-  const storyEmpty = !story?.narrative?.trim();
+  const storyEmpty = isGuardian ? !storyWritten(ctx.profile) : !story?.narrative?.trim();
 
   return (
     <div className="space-y-8">
@@ -134,7 +127,11 @@ export function StoryGuide({ ctx, move, person, data }: GuideProps) {
       <Frame />
       <WhatYourRecordSays ctx={ctx} tracks={tracks} person={person} storyEmpty={storyEmpty} />
 
-      <StoryField studentId={studentId} initial={story?.narrative ?? ""} majorName={majorName} moveId={openMove?.id ?? null} />
+      {isGuardian ? (
+        <GuardianLine written={storyWritten(ctx.profile)} firstName={firstName} />
+      ) : (
+        <StoryField studentId={studentId} initial={story?.narrative ?? ""} majorName={majorName} moveId={openMove?.id ?? null} />
+      )}
     </div>
   );
 }

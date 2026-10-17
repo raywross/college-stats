@@ -328,9 +328,9 @@ export function isFreshmanView(ctx: Pick<PlanContext, "season" | "items">): bool
 }
 
 function exploreHrefFor(ctx: PlanContext): string {
-  // The built "Fits my scores" chip's navigation (components/me/ExploreFitChips.tsx: mySAT/myACT on /explore). The
-  // student's own scores never ride a guardian's link (README "Shared rules": no score in a parent's view).
-  if (ctx.viewer.relation !== "self" || !ctx.profile) return "/explore";
+  // The built "Fits my scores" chip's navigation (components/me/ExploreFitChips.tsx: mySAT/myACT on /explore), for a
+  // guardian too: a parent sees the student's view (owner, 2026-10-16), scores included (owner, 2026-10-11).
+  if (!ctx.profile) return "/explore";
   const q = new URLSearchParams();
   if (ctx.profile.tests.satTotal !== null) q.set("mySAT", String(ctx.profile.tests.satTotal));
   if (ctx.profile.tests.actComposite !== null) q.set("myACT", String(ctx.profile.tests.actComposite));

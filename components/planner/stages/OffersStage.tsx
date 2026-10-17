@@ -120,7 +120,7 @@ export default async function OffersStage({ ctx }: { ctx: PlanContext }) {
     const item = t.item_id ? ctx.items.find((i) => i.id === t.item_id) : null;
     const school = item ? (ctx.schools[item.unit_id] ?? null) : null;
     return (
-      <TaskRow key={t.id} task={t} school={school} cited={cite(t)} canEdit={ctx.viewer.canEdit} today={ctx.today} viewer={ctx.viewer} studentFirstName={studentFirst}>
+      <TaskRow key={t.id} task={t} school={school} cited={cite(t)} canEdit={ctx.viewer.canEdit} today={ctx.today} studentFirstName={studentFirst}>
         {children}
       </TaskRow>
     );

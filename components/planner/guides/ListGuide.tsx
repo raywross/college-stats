@@ -157,8 +157,7 @@ export function ListGuide({ ctx, move, data, person }: GuideProps) {
     return <FreshmanGuide ctx={ctx} data={d} studentId={studentId} onAdded={onAdded} />;
   }
 
-  const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] || null;
-  const whose = ctx.viewer.isGuardian && firstName ? `${firstName}'s record` : "your record";
+  const whose = "your record";
   const hasOverflow = d.row?.levels.some((l) => l.slots.includes("overflow")) ?? false;
   const hasDream = d.row?.levels.some((l) => l.slots.includes("dream")) ?? false;
   const preferences = ctx.profile?.preferences ?? null;

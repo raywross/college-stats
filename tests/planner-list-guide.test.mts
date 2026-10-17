@@ -625,9 +625,9 @@ test("listGuideFor: a junior-spring list of three Reaches opens the Likely secti
     const target = data.sections.find((s) => s.gap === "target_min");
     assert.ok(target && target.cards.length === 0, "a folded section waits to be opened");
   }
-  // A guardian's link never carries the student's score.
+  // A guardian's link is the student's (owner, 2026-10-16: a parent sees the student's view, scores included).
   const guardian = await server.listGuideFor({ ...ctx, viewer: { ...ctx.viewer, relation: "guardian", isGuardian: true } }, {} as never, { level: "target" });
-  assert.equal(guardian.exploreHref, "/explore");
+  assert.equal(guardian.exploreHref, "/explore?mySAT=1330");
   // A freshman: no shape, no levels, the chips from the profile.
   const fresh = await server.listGuideFor({ ...ctx, season: "freshman" }, {} as never, { level: null });
   assert.equal(fresh.row, null);

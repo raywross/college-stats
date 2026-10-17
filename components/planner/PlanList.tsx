@@ -112,7 +112,7 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   const dreamRow = rows.find((r) => r.dream) ?? null;
   const showStatusWord = seasonRank(ctx.season) >= SENIOR_FALL_RANK;
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] || null;
-  const addLabel = ctx.viewer.isGuardian && firstName ? `Add a college for ${firstName}` : "Add a college";
+  const addLabel = "Add a college";
 
   return (
     <div className="space-y-4">

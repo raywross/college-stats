@@ -13,9 +13,8 @@
  * `onDone`/`onSkip` are the parent's (NextSteps.tsx): this card is presentational plus the one link, and leaves the
  * write, the optimism, and the fold-with-undo to whoever placed it on the page.
  *
- * A guardian's title goes through `parentSafeTitle` (plan-v3-fix-cards, 2026-10-16): a `reach_score_*` move reads
- * "Work toward the target score" to a parent, never the student's own number (`task.title` holds it verbatim for the
- * student). The corner menu's `aria-label` uses the same safe title.
+ * A guardian sees exactly the student's card (owner, 2026-10-16: "make it so that it works the same for both parents
+ * and students, using the student view"): the same title, the same assignee chip, the same corner menu.
  */
 import Link from "next/link";
 import { useEffect, useRef } from "react";
@@ -23,7 +22,7 @@ import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import type { AnyCited } from "@/lib/lineage";
 import { guideFor, guideHref } from "@/lib/planner/guides";
-import { isReachScoreMove, nextTestNote, parentSafeTitle } from "@/lib/planner/moves";
+import { isReachScoreMove, nextTestNote } from "@/lib/planner/moves";
 import { planHref } from "@/lib/planner/plan-tabs";
 import { assigneeLabel, isOverdue, taskDateLabel } from "@/lib/planner/tasks";
 import type { PlanContext, PlanTask } from "@/lib/planner/types";
@@ -157,10 +156,9 @@ export function MoveCard({ task, ctx, onDone, onSkip, pending, rank }: MoveCardP
   const overdue = isOverdue(task, ctx.today);
   const school = schoolFor(task, ctx);
   const cited = task.source_field && school ? (school.cites[task.source_field] as AnyCited | undefined) : undefined;
-  const viewerAssignee = ctx.viewer.isGuardian ? "guardian" : "student";
-  const showAssignee = task.assignee !== viewerAssignee;
+  const showAssignee = task.assignee !== "student";
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
-  const title = ctx.viewer.isGuardian ? parentSafeTitle(task) : task.title;
+  const title = task.title;
   // The picked test date folds into "Work toward your {target}" (owner, 2026-10-16): the soonest one, as an italic line.
   const testNote = isReachScoreMove(task) ? nextTestNote(ctx.tasks, ctx.today, ctx.profile?.tests.registeredDates ?? []) : null;
 
@@ -184,7 +182,7 @@ export function MoveCard({ task, ctx, onDone, onSkip, pending, rank }: MoveCardP
       {testNote && <p className="mt-1 text-sm text-muted-foreground italic">{testNote}</p>}
       {showAssignee && (
         <span className="mt-1.5 inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
-          <Term term="task-assignee">{assigneeLabel(task.assignee, { isGuardian: ctx.viewer.isGuardian }, firstName)}</Term>
+          <Term term="task-assignee">{assigneeLabel(task.assignee, { isGuardian: false }, firstName)}</Term>
         </span>
       )}
       <div className="mt-3 flex flex-wrap justify-end gap-2 empty:hidden">{guide ? <GuideLink task={task} ctx={ctx} /> : <ActionLink task={task} ctx={ctx} />}</div>

@@ -21,8 +21,8 @@ const RAIL_BY_STEP = new Map(RECORD_STEPS.map((s) => [s.step, s.rail]));
  */
 export function RecordOverview({ profile, plan, back = "record" }: { profile: ProfileAccess; plan: PlanLoad; /** Where a step's save returns: the household record page, or the record inline on the plan (RecordInline). */ back?: "record" | "inline" }) {
   const person = profile.relation === "self" ? null : profile.student.id;
-  const firstName = profile.relation === "guardian" ? (profile.student.display_name?.trim().split(/\s+/)[0] ?? null) : null;
-  const title = recordTitle(firstName);
+  // A guardian reads the student's own title (owner, 2026-10-16: "using the student view").
+  const title = recordTitle(null);
   const needed = recordNeeded({ profile: profile.data, student: profile.student });
   const { done, total, rows } = recordProgress(profile.data, { relation: profile.relation });
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;

@@ -64,3 +64,26 @@ Coming up · Summer before senior year (4) ▾
 "There's no way to dismiss them." A guardian with edit access now gets **Skip for now** in a card's ⋯ menu and in a
 guide's footer, like the student; `dismissed_by` records who. (The earlier "a parent only brings back" was this spec's
 own recommendation, overridden by the owner.)
+
+## Changed (owner, 2026-10-16, after release): the student's view, everywhere on the plan
+"I had wanted the parent view to be the same… the plan suggestions are different for the parent than for the same
+child, also the helper screens are different… make it so that it works the same for both parents and students, using
+the student view." A guardian who opens a child's plan now sees what the student sees, word for word:
+
+- **Suggestions.** The three cards, the Done and skipped fold, and the people line's "Next:" all come from
+  `nowMoves(viewer: "student")`. No separate Your part list: a parent's own moves (`assignee` guardian or either) rank
+  among the three as they do for the student. Titles are verbatim (`parentSafeTitle` is no longer called on the site;
+  the owner's 2026-10-11 rule is that a student's data is never hidden from a guardian). The assignee chip reads as the
+  student's ("Parent" on a parent's move, no chip on the student's own).
+- **Helper screens.** The test, recommenders, courses, interest, list, and story guides, the ED sheet, task rows, and
+  the record's title use the student's words ("your score", "Your teachers", "Your record"). The courses guide is
+  editable by a guardian with edit access (it was read-only), the recommenders guide's thank-you Done shows for them,
+  and a guardian may record a follow (`recordFollow` no longer requires the student's own account; edit access, through
+  the list's row-level security, is the rule, as for Request information). The list guide's Explore link carries the
+  student's scores for a guardian too.
+- **What stays the student's alone.** The story's text: a guardian sees the guide's framing and the record's sentences,
+  and in place of the field the one line "{First} has written their story." (`saveStory` still refuses a guardian). The
+  ED round: "Start it in ED" / "Not for me" stay the student's (`store-ed.ts`), and a guardian reads "{First} picks the
+  round."
+- **Unchanged.** Parent emails (the weekly summary and the season brief) keep Your part; telemetry still records
+  `by: "guardian"`; the calendar's subscribe feed is still the guardian's own.

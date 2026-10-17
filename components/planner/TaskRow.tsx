@@ -27,7 +27,6 @@ export function TaskRow({
   cited,
   canEdit,
   today,
-  viewer,
   studentFirstName,
   showCollege = true,
   children,
@@ -38,7 +37,6 @@ export function TaskRow({
   cited?: unknown;
   canEdit: boolean;
   today: string;
-  viewer: { isGuardian: boolean };
   studentFirstName: string | null;
   showCollege?: boolean;
   children?: ReactNode;
@@ -101,12 +99,12 @@ export function TaskRow({
             </MetricLabel>
           )}
           <span className="rounded-full bg-muted px-2 py-0.5 font-semibold">
-            <Term term="task-assignee">{assigneeLabel(task.assignee, viewer, studentFirstName)}</Term>
+            <Term term="task-assignee">{assigneeLabel(task.assignee, { isGuardian: false }, studentFirstName)}</Term>
           </span>
           {note && <span>{note}</span>}
         </div>
         {task.detail && <p className="mt-1 text-xs text-muted-foreground">{task.detail}</p>}
-        {task.kind === "cycle" && !viewer.isGuardian && task.key?.includes(":cycle:choose_courses") && (
+        {task.kind === "cycle" && task.key?.includes(":cycle:choose_courses") && (
           <Link href="/plan?setup=1" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
             Update your courses
           </Link>

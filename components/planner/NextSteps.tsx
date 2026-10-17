@@ -9,14 +9,12 @@
  * the explainer's lead.
  *
  * Owner, 2026-10-16 (plan-v3-fix-cards; `specs/planner/v3/parents.md`'s "As built" note): "For now, when a parent
- * looks at a student they should see what they see." A guardian renders this same view — the same `nowMoves` call
- * with `viewer: "student"` so the student's set shows, the same header, the same Done and skipped fold with Bring
- * back for an editor — with their own **Your part** cards (`yourPartMoves`) above when non-empty. A guardian never
- * skips (`MoveCard`'s corner menu offers Done only for a guardian); Bring back still needs edit access. Every title a
- * guardian sees goes through `parentSafeTitle` so a `reach_score_*` move reads "Work toward the target score", never
- * the student's own number — `MoveCard` does this for the card body; the Done/skipped fold below does it for its own
- * rows. `ParentNextSteps.tsx` (the former guardian-only tab) is kept but unused; `specs/planner/v3/parents.md`
- * describes it.
+ * looks at a student they should see what they see"; later the same day: "make it so that it works the same for both
+ * parents and students, using the student view." A guardian renders exactly this view: the same `nowMoves` call
+ * with `viewer: "student"`, the same three cards with the same titles, the same header, the same Done and skipped
+ * fold. No separate Your part list (a parent's own moves rank among the three as they do for the student). Editing
+ * still needs edit access. `ParentNextSteps.tsx` (the former guardian-only tab) is kept but unused;
+ * `specs/planner/v3/parents.md` describes it.
  *
  * A card is `MOVE_CARDS[task.kind]` when one exists, else `MoveCard` (its one button opens the move's guide). Done,
  * Skip, and Bring back are optimistic and live here, not in the cards: Done folds the card with a check and Undo for a
@@ -35,7 +33,7 @@ import { SeasonExplainer } from "@/components/planner/SeasonExplainer";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
 import { track } from "@/lib/analytics";
 import { SEASON_EXPLAINER } from "@/lib/planner/moves-catalog";
-import { doneLabel, nowMoves, parentSafeTitle, skippedLabel, taskSeason, yourPartMoves } from "@/lib/planner/moves";
+import { doneLabel, nowMoves, skippedLabel, taskSeason } from "@/lib/planner/moves";
 import { importanceFactsFrom } from "@/lib/planner/importance-facts";
 import { SEASON_LABELS } from "@/lib/planner/seasons";
 import { dismiss, tick, undismiss, untick } from "@/lib/planner/store";
@@ -74,19 +72,13 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const scrolled = useRef(false);
 
-  const isGuardian = ctx.viewer.isGuardian;
-  const by = isGuardian ? "guardian" : "student";
+  const by = ctx.viewer.isGuardian ? "guardian" : "student";
   const facts = importanceFactsFrom(ctx, view);
   const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: "student", facts });
-  // A move for "either" (a visit, showing interest) is the student's card when it's among the three; Your part keeps
-  // only the guardian's moves that aren't already shown (QA 2026-10-16: two cards rendered twice for a parent).
-  const nowIds = new Set(groups.now.map((t) => t.id));
-  const yourPart = isGuardian ? yourPartMoves(ctx.tasks, ctx.today).filter((t) => !nowIds.has(t.id)) : [];
   const classOf = ctx.gradYear !== null ? ` · Class of ${ctx.gradYear}` : "";
   const seasonOfTask = (t: PlanTask) => taskSeason(t, ctx.gradYear, ctx.season);
   const skipped = groups.skipped.filter((t) => !restored.has(t.id));
   const foldCount = groups.done.length + skipped.length;
-  const titleFor = (t: PlanTask) => (isGuardian ? parentSafeTitle(t) : t.title);
 
   // `?move=<task id>`: scroll that card into view once, and ring it briefly.
   useEffect(() => {
@@ -202,7 +194,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
           <div className="flex min-w-0 items-center gap-2">
             <Check className="size-4 shrink-0 text-primary" aria-hidden />
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-muted-foreground line-through">{titleFor(task)}</p>
+              <p className="truncate text-sm font-medium text-muted-foreground line-through">{task.title}</p>
               {clause && <p className="truncate text-xs text-muted-foreground">{clause}</p>}
             </div>
           </div>
@@ -247,13 +239,6 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
       </div>
       <SeasonExplainer open={explainerOpen} onOpenChange={setExplainerOpen} season={ctx.season} />
 
-      {isGuardian && yourPart.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-muted-foreground">Your part</h3>
-          <div className="space-y-3">{yourPart.map((task) => renderCard(task))}</div>
-        </div>
-      )}
-
       {groups.now.length === 0 ? (
         <div className="space-y-1">
           <p className="font-semibold">Nothing to do right now. Enjoy it.</p>
@@ -274,7 +259,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
               <li key={t.id} className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
                 <span className="flex min-w-0 items-center gap-2">
                   <Check className="size-3.5 shrink-0 text-primary" aria-hidden />
-                  <span className="truncate line-through">{titleFor(t)}</span>
+                  <span className="truncate line-through">{t.title}</span>
                 </span>
                 {doneLabel(t, ctx.today) && <span className="shrink-0 text-xs">{doneLabel(t, ctx.today)}</span>}
               </li>
@@ -283,7 +268,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
               <li key={t.id} className="text-sm">
                 <div className="flex items-center justify-between gap-3">
                   <span className="min-w-0">
-                    <span className="block truncate">{titleFor(t)}</span>
+                    <span className="block truncate">{t.title}</span>
                     <span className="block text-xs text-muted-foreground">{skippedLabel(t, ctx.today)}</span>
                   </span>
                   {ctx.viewer.canEdit && (

@@ -5,7 +5,7 @@ import { TaskRow } from "@/components/planner/TaskRow";
 import { MetricLabel } from "@/components/ui/info-tip";
 import type { AnyCited } from "@/lib/lineage";
 import { requirementsFor } from "@/lib/planner/requirements";
-import type { PlanContext, PlanItem, PlanSchool, PlanTask, TaskKind } from "@/lib/planner/types";
+import type { PlanItem, PlanSchool, PlanTask, TaskKind } from "@/lib/planner/types";
 import type { StudentProfileData } from "@/lib/student-profile";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +36,6 @@ export function CollegeApplyCard({
   profile,
   canEdit,
   today,
-  viewer,
   studentFirstName,
 }: {
   item: PlanItem;
@@ -45,7 +44,6 @@ export function CollegeApplyCard({
   profile: StudentProfileData | null;
   canEdit: boolean;
   today: string;
-  viewer: PlanContext["viewer"];
   studentFirstName: string | null;
 }) {
   const requirements = requirementsFor(item, school, profile);
@@ -85,7 +83,7 @@ export function CollegeApplyCard({
               </summary>
               <ul className="divide-y border-t px-1">
                 {subtasks.map((task) => (
-                  <TaskRow key={task.id} task={task} school={school} canEdit={canEdit} today={today} viewer={viewer} studentFirstName={studentFirstName} showCollege={false} />
+                  <TaskRow key={task.id} task={task} school={school} canEdit={canEdit} today={today} studentFirstName={studentFirstName} showCollege={false} />
                 ))}
               </ul>
             </details>

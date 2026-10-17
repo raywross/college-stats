@@ -190,7 +190,6 @@ export function EdSheet({
           const ticked = !!checks[q.key] || (q.key === "cost" && costTaskDone);
           // A guardian's own question is the cost check; the other two are the student's to answer.
           const mine = canEdit && (isStudent || q.key === "cost");
-          const text = q.key === "cost" && ctx.viewer.isGuardian ? "Have you checked the cost?" : q.text;
           return (
             <li key={q.key} className="flex flex-wrap items-center gap-x-2">
               <button
@@ -204,7 +203,7 @@ export function EdSheet({
                 <span aria-hidden className={cn("inline-flex size-6 shrink-0 items-center justify-center rounded-md border-2", ticked ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/50")}>
                   {ticked && <Check className="size-3.5" />}
                 </span>
-                <span>{text}</span>
+                <span>{q.text}</span>
               </button>
               {q.key === "cost" && facts.calculator && (
                 <a href={facts.calculator} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-primary hover:underline">

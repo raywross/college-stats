@@ -10,7 +10,6 @@ import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { WhyFold } from "@/components/ui/why-fold";
 import { track } from "@/lib/analytics";
-import { thirdPerson } from "@/lib/chances/courses";
 import { guideHref } from "@/lib/planner/guides";
 import {
   collegesAskLine,
@@ -38,11 +37,8 @@ const ADVISOR_SOURCES: readonly { name: string; href: string }[] = [
 
 export function RecommendersGuide({ ctx, move, person }: GuideProps) {
   const profile = ctx.profile;
-  const isGuardian = ctx.viewer.isGuardian;
   const editable = ctx.viewer.canEdit;
   const studentId = ctx.student?.id ?? null;
-  const first = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
-  const say = (t: string) => (isGuardian ? thirdPerson(t, first) : t);
 
   const [entries, setEntries] = useState<RecommenderEntry[]>(() => orderRecommenders(profile?.recommenders ?? []));
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +124,7 @@ export function RecommendersGuide({ ctx, move, person }: GuideProps) {
       <section className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
-            {isGuardian ? `${first ?? "Their"}'s teachers` : "Your teachers"}
+            Your teachers
           </h2>
           {editable && <span className="text-xs text-muted-foreground">drag to rank, or use the arrows</span>}
         </div>
@@ -169,7 +165,7 @@ export function RecommendersGuide({ ctx, move, person }: GuideProps) {
       <WhyFold title="What to think about" screen="recommenders_guide" section="what_to_think_about">
         <ul className="space-y-1.5">
           {THINK_ABOUT.map((t) => (
-            <li key={t}>{say(t)}</li>
+            <li key={t}>{t}</li>
           ))}
         </ul>
         <p className="text-xs">
@@ -193,7 +189,7 @@ export function RecommendersGuide({ ctx, move, person }: GuideProps) {
       </WhyFold>
 
       <WhyFold title="How to ask" screen="recommenders_guide" section="how_to_ask">
-        <p>{say(HOW_TO_ASK.join(" "))}</p>
+        <p>{HOW_TO_ASK.join(" ")}</p>
         <Link href={guideHref("story", { person, from: "card" })} className="inline-block font-semibold text-primary hover:underline">
           Open your story
         </Link>
@@ -202,7 +198,7 @@ export function RecommendersGuide({ ctx, move, person }: GuideProps) {
       {showThank && (
         <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4">
           <p className="text-sm text-muted-foreground">Letters are in. A note by hand goes a long way.</p>
-          {editable && !isGuardian && thankOpen && (
+          {editable && thankOpen && (
             <button
               type="button"
               disabled={pending}

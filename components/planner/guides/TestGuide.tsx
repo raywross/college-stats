@@ -42,8 +42,7 @@ export default TestGuide;
 
 function TestGuideBody({ ctx, view, person, data }: GuideProps & { data: TestGuideData }) {
   const profile = ctx.profile;
-  const isGuardian = ctx.viewer.isGuardian;
-  const first = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
+  // A guardian reads the student's own screen, word for word (owner, 2026-10-16: "using the student view").
   const focus = profile?.tests.focus ?? null;
   const studentId = ctx.student?.id ?? null;
   const canEdit = ctx.viewer.canEdit;
@@ -53,7 +52,7 @@ function TestGuideBody({ ctx, view, person, data }: GuideProps & { data: TestGui
     return (
       <section className="rounded-3xl bg-card p-5 ring-1 ring-border sm:p-6">
         <p className="text-sm text-muted-foreground">
-          {isGuardian ? `Add ${first ?? "their"} SAT or ACT score` : "Add your SAT or ACT score"} to see where it stands and the dates for the test.{" "}
+          Add your SAT or ACT score to see where it stands and the dates for the test.{" "}
           <Link href={planHref({ person, setup: true, step: testStep })} className="font-semibold text-primary hover:underline">
             Pick a test
           </Link>
@@ -66,7 +65,7 @@ function TestGuideBody({ ctx, view, person, data }: GuideProps & { data: TestGui
   if (focus === "none") {
     return (
       <section className="rounded-3xl bg-card p-5 ring-1 ring-border sm:p-6">
-        <p className="text-sm text-muted-foreground">{isGuardian ? `${first ?? "They"} is` : "You're"} not testing. The groups use {isGuardian ? "their" : "your"} GPA alone.</p>
+        <p className="text-sm text-muted-foreground">You&apos;re not testing. The groups use your GPA alone.</p>
       </section>
     );
   }
@@ -76,12 +75,10 @@ function TestGuideBody({ ctx, view, person, data }: GuideProps & { data: TestGui
   const target = profile.tests.target;
   const practice = profile.tests.practice;
 
-  const subject = isGuardian ? (first ?? "They") : "You";
-  const verb = isGuardian ? "is" : "are";
   const header =
     target !== null
-      ? `${subject} ${verb} at ${score} on the ${TEST_LABEL[test]}, aiming for ${target}.`
-      : `${subject} ${verb} at ${score} on the ${TEST_LABEL[test]}.`;
+      ? `You are at ${score} on the ${TEST_LABEL[test]}, aiming for ${target}.`
+      : `You are at ${score} on the ${TEST_LABEL[test]}.`;
 
   const sentence = standingCounts(data.standing, target);
   const study = resourcesFor(test);
@@ -99,7 +96,7 @@ function TestGuideBody({ ctx, view, person, data }: GuideProps & { data: TestGui
           {practice && <span className="ml-2 text-sm font-semibold text-muted-foreground">(practice score)</span>}
         </p>
         <div className="flex flex-wrap gap-2">
-          <PopupButton label={`Where ${isGuardian ? "the score" : "it"} stands`} title={`Where ${isGuardian ? (first ?? "it") : "it"} stands on ${isGuardian ? "the" : "your"} list`} section="standing">
+          <PopupButton label="Where it stands" title="Where it stands on your list" section="standing">
             <div className="space-y-3" id="test-standing">
               {sentence && <p className="text-sm text-muted-foreground">{sentence}</p>}
               <StandingRows rows={view.rows.filter((r) => !r.item.withdrawn_on && r.school)} standing={data.standing} test={test} />
@@ -153,7 +150,7 @@ function TestGuideBody({ ctx, view, person, data }: GuideProps & { data: TestGui
 
       <section className="space-y-2 rounded-3xl bg-card p-4 ring-1 ring-border sm:p-5" aria-labelledby="test-calendar">
         <h2 id="test-calendar" className="font-display text-lg font-bold">
-          On {isGuardian ? "the" : "your"} calendar
+          On your calendar
         </h2>
         {planned.length === 0 ? (
           <p className="text-sm text-muted-foreground">No dates picked yet.</p>

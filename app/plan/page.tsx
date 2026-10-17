@@ -71,7 +71,7 @@ function detailFor(load: PlanLoad | undefined, person: string | null): PlanPerso
   const { ctx, view } = load;
   const base = detailFrom(ctx.profile, ctx.viewer.canEdit, ctx.student?.id ?? person, person, ctx.season);
   const facts = importanceFactsFrom(ctx, view);
-  const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: ctx.viewer.isGuardian ? "guardian" : "student", facts });
+  const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: "student", facts });
   const move = topMove(groups);
   return { ...base, next: move ? { label: move.title, href: planHref({ person, tab: "next", move: move.id }) } : null };
 }

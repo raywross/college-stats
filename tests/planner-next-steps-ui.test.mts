@@ -157,15 +157,16 @@ test("MoveCard: a past dated move is Overdue, in the warning color; the same dat
   assert.doesNotMatch(soon, /text-destructive/);
 });
 
-test("MoveCard: the assignee chip shows only when the assignee isn't the viewer, 'Either' always", () => {
-  const student = (assignee: PlanTask["assignee"], isGuardian: boolean) =>
-    render(moveCardMod.MoveCard as never, { task: taskOf({ assignee }), ctx: ctxOf({ viewer: { userId: "u1", firstName: "Jo", canEdit: true, relation: "self", isGuardian } }), onDone: noop, onSkip: noop, pending: false });
-  assert.doesNotMatch(student("student", false), /data-term="task-assignee"/, "a student sees no chip on their own move");
-  assert.match(student("student", true), /data-term="task-assignee"/, "a guardian sees a chip on the student's move");
-  assert.doesNotMatch(student("guardian", true), /data-term="task-assignee"/, "a guardian sees no chip on their own move");
-  assert.match(student("guardian", false), /data-term="task-assignee"/, "a student sees a chip on a guardian's move");
-  assert.match(student("either", false), /data-term="task-assignee"/);
-  assert.match(student("either", true), /data-term="task-assignee"/);
+test("MoveCard: the assignee chip shows only when the move isn't the student's, 'Either' always, the same for a guardian", () => {
+  const card = (assignee: PlanTask["assignee"], isGuardian: boolean) =>
+    render(moveCardMod.MoveCard as never, { task: taskOf({ assignee }), ctx: ctxOf({ viewer: { userId: "u1", firstName: "Jo", canEdit: true, relation: isGuardian ? "guardian" : "self", isGuardian } }), onDone: noop, onSkip: noop, pending: false });
+  // A guardian sees the student's card exactly (owner, 2026-10-16: "using the student view").
+  for (const isGuardian of [false, true]) {
+    assert.doesNotMatch(card("student", isGuardian), /data-term="task-assignee"/, "no chip on the student's own move");
+    assert.match(card("guardian", isGuardian), /data-term="task-assignee"/, "a chip on a parent's move");
+    assert.match(card("either", isGuardian), /data-term="task-assignee"/);
+    assert.equal(card("guardian", isGuardian), card("guardian", false));
+  }
 });
 
 test("MoveCard: the date is cited only when the task names a field the school actually has", () => {
@@ -280,7 +281,7 @@ test("personFor: null for a signed-in student's own plan, the child's id for a g
 /* NextSteps.tsx, SeasonExplainer.tsx: structural checks               */
 /* ------------------------------------------------------------------ */
 
-test("NextSteps: three cards, then one Done and skipped fold with Bring back; nothing else; the empty state; a guardian gets the same view plus Your part", () => {
+test("NextSteps: three cards, then one Done and skipped fold with Bring back; nothing else; the empty state; a guardian gets the same view", () => {
   const src = read("components", "planner", "NextSteps.tsx");
   assert.match(src, /export function NextSteps\(\{ ctx, view \}: PlanTabProps\)/);
   assert.match(src, /"use client"/);
@@ -290,20 +291,19 @@ test("NextSteps: three cards, then one Done and skipped fold with Bring back; no
   assert.match(src, /return <StudentNextSteps ctx=\{ctx\} view=\{view\} \/>;/);
   // Only the student's body, not the file's doc comment (which names the groups in prose).
   const body = src.slice(src.indexOf("function StudentNextSteps"));
-  const iYourPart = body.indexOf(">Your part<");
   const iNow = body.indexOf("groups.now.length === 0");
   const iFold = body.indexOf("Done and skipped ({foldCount})");
-  assert.ok(iYourPart > 0 && iYourPart < iNow && iNow < iFold, "Your part (guardian only), then Now, then the fold");
-  for (const gone of ["More this season", "Coming up", "groups.more", "groups.comingUp"]) assert.ok(!body.includes(gone), `no ${gone}`);
-  assert.match(body, /isGuardian \? yourPartMoves\(ctx\.tasks, ctx\.today\)\.filter\(\(t\) => !nowIds\.has\(t\.id\)\) : \[\]/, "a guardian's own Your part cards, minus the three already shown, hidden for the student");
-  assert.match(body, /isGuardian && yourPart\.length > 0/);
+  assert.ok(iNow > 0 && iNow < iFold, "Now, then the fold");
+  // Owner, 2026-10-16: "make it so that it works the same for both parents and students, using the student view."
+  for (const gone of ["More this season", "Coming up", "groups.more", "groups.comingUp", "Your part", "yourPartMoves", "parentSafeTitle"]) assert.ok(!body.includes(gone), `no ${gone}`);
+  assert.match(body, /nowMoves\(ctx\.tasks, \{ season: ctx\.season, gradYear: ctx\.gradYear, today: ctx\.today, viewer: "student", facts \}\)/);
   assert.match(body, /Nothing to do right now\. Enjoy it\./);
   assert.match(body, /SEASON_EXPLAINER\[ctx\.season\]\.lead/, "the empty state adds the explainer's lead");
   assert.match(body, /Bring back/);
   assert.match(body, /await undismiss\(task\.id\)/);
   assert.match(body, /track\("plan_move_restored", \{ kind: task\.kind, season: seasonOfTask\(task\), by \}\)/);
-  // Every title the fold shows goes through parentSafeTitle for a guardian, task.title verbatim for the student.
-  assert.match(body, /const titleFor = \(t: PlanTask\) => \(isGuardian \? parentSafeTitle\(t\) : t\.title\)/);
+  // The fold shows each title verbatim, to everyone.
+  assert.match(body, /\{t\.title\}/);
   assert.match(body, /skippedLabel\(t, ctx\.today\)/);
   assert.match(body, /doneLabel\(t, ctx\.today\)/);
   assert.match(body, /searchParams\.get\("move"\)/);
@@ -315,7 +315,7 @@ test("NextSteps: three cards, then one Done and skipped fold with Bring back; no
   assert.match(body, /MOVE_CARDS\[task\.kind\] \?\? MoveCard/, "a kind with no card of its own falls back to MoveCard");
 });
 
-test("a guardian's card title never carries a digit for a reach_score_* move (parentSafeTitle, plan-v3-fix-cards)", () => {
+test("a guardian's reach_score_* card reads exactly as the student's (owner, 2026-10-16: the student view for parents)", () => {
   const reachScore = taskOf({
     id: "t9",
     key: "l1:playbook:reach_score_junior_fall",
@@ -325,11 +325,12 @@ test("a guardian's card title never carries a digit for a reach_score_* move (pa
   });
   const guardianCtx = ctxOf({ viewer: { userId: "u2", firstName: "Jo", canEdit: true, relation: "guardian", isGuardian: true } });
   const html = render(moveCardMod.MoveCard as never, { task: reachScore, ctx: guardianCtx, onDone: noop, onSkip: noop, pending: false });
-  assert.match(html, /Work toward the target score/);
-  assert.doesNotMatch(html, /1400/, "a parent never sees the student's own target number");
-  // The student's own card still shows it.
+  assert.match(html, /Work toward your 1400/);
+  assert.doesNotMatch(html, /the target score/);
+  // Only the guide link's person differs (a guardian's carries the child's id).
   const studentHtml = render(moveCardMod.MoveCard as never, { task: reachScore, ctx: ctxOf(), onDone: noop, onSkip: noop, pending: false });
-  assert.match(studentHtml, /Work toward your 1400/);
+  const withoutLinks = (s: string) => s.replace(/href="[^"]*"/g, "");
+  assert.equal(withoutLinks(html), withoutLinks(studentHtml));
 });
 
 test("ParentNextSteps (plan v3 U9): Your part, {First}'s season, Coming up folded open, Done and skipped folded", () => {
@@ -375,7 +376,8 @@ test("The people line's Next: reads the loaded plan's top move first, the profil
   assert.match(page, /importanceFactsFrom\(ctx, view\)/);
   assert.match(
     page,
-    /nowMoves\(ctx\.tasks, \{ season: ctx\.season, gradYear: ctx\.gradYear, today: ctx\.today, viewer: ctx\.viewer\.isGuardian \? "guardian" : "student", facts \}\)/,
+    // A guardian's "Next:" is the student's top move (owner, 2026-10-16: the student view for parents).
+    /nowMoves\(ctx\.tasks, \{ season: ctx\.season, gradYear: ctx\.gradYear, today: ctx\.today, viewer: "student", facts \}\)/,
   );
   assert.match(page, /planHref\(\{ person, tab: "next", move: move\.id \}\)/);
   // Still there, unchanged: the profile-step fallback used for a child with no loaded plan (the other chips).

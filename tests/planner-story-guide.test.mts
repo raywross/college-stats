@@ -93,9 +93,9 @@ test("crossesStoryDone: planted bad rule — 'at or over 200' alone, with no 'wa
 /* Source guards                                                       */
 /* ------------------------------------------------------------------ */
 
-test("StoryGuide.tsx: the guardian's branch renders no textarea or other input, just the one line", () => {
+test("StoryGuide.tsx: a guardian gets the student's screen with the one line in place of the field", () => {
   const src = readFileSync(join(ROOT, "components/planner/guides/StoryGuide.tsx"), "utf8");
-  const guardianFn = src.slice(src.indexOf("function GuardianView"), src.indexOf("function Frame"));
+  const guardianFn = src.slice(src.indexOf("function GuardianLine"), src.indexOf("function Frame"));
   // QA fix (2026-10-16, finding 5): the line is now the shared `guardianStoryLine` helper (lib/student-profile.ts),
   // not a fixed "{name} has written…" template with a "They" fallback — that disagreed in number ("They has").
   assert.match(guardianFn, /guardianStoryLine\(firstName, written\)/);
@@ -103,10 +103,13 @@ test("StoryGuide.tsx: the guardian's branch renders no textarea or other input, 
   assert.doesNotMatch(guardianFn, /<input/i);
   assert.doesNotMatch(guardianFn, /<form/i);
 
-  // The main component returns the guardian view before reaching the field at all.
+  // The same framing and record sentences for everyone (owner, 2026-10-16: the student view for parents); only the
+  // field itself is the student's: a guardian reads the line there instead.
   const mainFn = src.slice(src.indexOf("export function StoryGuide("), src.indexOf("function StoryField"));
-  const guardianBranch = mainFn.slice(mainFn.indexOf("if (isGuardian)"), mainFn.indexOf("if (isGuardian)") + 120);
-  assert.match(guardianBranch, /return <GuardianView/);
+  assert.doesNotMatch(mainFn, /if \(isGuardian\)/);
+  assert.match(mainFn, /<Frame \/>/);
+  assert.match(mainFn, /<WhatYourRecordSays /);
+  assert.match(mainFn, /\{isGuardian \? \(\s*<GuardianLine written=\{storyWritten\(ctx\.profile\)\} firstName=\{firstName\} \/>\s*\) : \(\s*<StoryField /);
 });
 
 test("StoryCard is gone: not imported or referenced anywhere a guide, card, or test would reach it", () => {

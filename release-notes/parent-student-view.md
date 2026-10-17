@@ -1,7 +1,7 @@
 ---
 title: "Parents see the student's plan"
 pr: 166
-date: 2026-10-16
+date: 2026-10-17
 kind: improvement
 summary: "A parent who opens their child's plan now sees exactly what the student sees: the same three things to do and the same guides."
 ---

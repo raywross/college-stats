@@ -26,7 +26,7 @@ export function HealthFilterForm({
   csvHref: string;
 }) {
   return (
-    <form method="get" action="/admin/health" className="rounded-2xl border border-border bg-card p-4">
+    <form method="get" action="/admin/health/files" className="rounded-2xl border border-border bg-card p-4">
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <label className="block text-sm font-semibold">
           Status
@@ -107,7 +107,7 @@ export function HealthFilterForm({
         <button type="submit" className="inline-flex h-10 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground">
           Apply
         </button>
-        <Link href="/admin/health" className="inline-flex min-h-10 items-center text-sm underline decoration-dotted underline-offset-2">
+        <Link href="/admin/health/files" className="inline-flex min-h-10 items-center text-sm underline decoration-dotted underline-offset-2">
           Clear
         </Link>
         <a href={csvHref} className="inline-flex min-h-10 items-center text-sm underline decoration-dotted underline-offset-2 sm:ml-auto">

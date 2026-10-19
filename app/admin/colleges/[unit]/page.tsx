@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Empty, Fields, Muted, PageHeader, Panel } from "@/components/admin/Panel";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
+import { EstimateInputsPanel } from "@/components/admin/EstimateInputsPanel";
+import { collegeInputsFor } from "@/lib/admin/estimate-inputs-load";
 import { DailyViews, TopBars } from "@/components/admin/ViewCharts";
 import { SelectivityHistory } from "@/components/admin/SelectivityHistory";
 import { collegeHistory, historyInstalled, type SelectivityPoint } from "@/lib/admin/selectivity-history";
@@ -29,7 +31,8 @@ export const metadata: Metadata = { title: "College", robots: { index: false, fo
 /**
  * /admin/colleges/[unit] (specs/product/admin.md "A college"): the public header (name, tier, admit rate as cited),
  * then what the site computes but never shows: the selectivity breakdown (the one place the weights are visible), the
- * GPA the standing model reads, and every hidden registry field with its lineage; then the college's data health card
+ * GPA the standing model reads, and every hidden registry field with its lineage, all below the facts the estimate reads with
+ * their sources and dates (specs/product/admin-health-views.md); then the college's data health card
  * with its open failures and review-queue items, and a Rerun link that opens Operations with this college filled in.
  * Server-rendered behind requireAdmin(); nothing here reaches a client bundle.
  */
@@ -47,6 +50,10 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
   const looking = await collegeViewers(unit);
   const history = (await historyInstalled()) ? await collegeHistory(unit) : null;
   const every = (await searchParams).every === "1";
+  const inputs = await collegeInputsFor(unit).catch((err) => {
+    console.error("[admin college] the estimate inputs could not be worked out; the panel is left out.", err);
+    return null;
+  });
 
   return (
     <>
@@ -71,6 +78,7 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="min-w-0 space-y-5">
+          <EstimateInputsPanel inputs={inputs} />
           <SelectivityBlock panel={selectivity} school={school} />
           <HistoryBlock points={history} every={every} unit={unit} />
           <GpaBlock panel={gpa} school={school} />
@@ -241,7 +249,7 @@ async function HiddenBlock({ rows, school }: { rows: HiddenFieldRow[]; school: S
 
 function HealthBlock({ health, generated, opsHref }: { health: CollegeHealth | null; generated: string | null; opsHref: string }) {
   return (
-    <Panel title="Data health" id="health" aside={health ? <HealthChip status={health.overall} /> : undefined}>
+    <Panel title="Files and collection" id="health" aside={health ? <HealthChip status={health.overall} /> : undefined}>
       {!health ? (
         <Empty>No health card: this college isn&apos;t in the health file, or the file couldn&apos;t be read.</Empty>
       ) : (

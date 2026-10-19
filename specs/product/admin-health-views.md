@@ -1,6 +1,6 @@
 # Data health: two views
 
-Status: planned 2026-10-19 (owner request). Changes the Health page of the [admin console](admin.md#health).
+Status: built 2026-10-19 (owner request); see [As built](#as-built-2026-10-19). Changes the Health page of the [admin console](admin.md#health).
 
 ## Goal
 The Health page today judges each college by four data groups (federal, college-reported, identity, campus life).
@@ -97,15 +97,15 @@ The thresholds go in `lib/admin/health-rules.ts` beside the existing ones (`ESTI
 tune them in one place.
 
 ### The page
-`/admin/health` (the default view; `?view=inputs` is the same page):
+`/admin/health`, the default view (two tabs link the views; each is its own route):
 - **Stat row**: colleges by overall status, then per core input how many are not Fresh. Each count links to the
   filtered table.
 - **Filters** (in the URL, like today): `status`, `input` (with `status`, that input's status; alone, colleges where
   that input isn't Fresh), `state`, `tier`, `family=1`, `sort` (`worst`, `name`), `page`.
 - **Table**: one row per college. Name (links to the college's admin page), tier, overall, one cell per core input
   with its status chip and the year it describes (the reason is the tooltip). On phones, cards.
-- **CSV** at `/admin/health/csv?view=inputs`: one line per college, per core input its status, year, source, and
-  collected date.
+- **CSV** at `/admin/health/inputs-csv` (same query string): one line per college, per core input its status, the year
+  it describes, and the reason.
 - Computed once per server instance from the dataset (`getData()`), like the overview. No new files to deploy.
 
 ### On a college's admin page
@@ -115,7 +115,8 @@ collected. The existing health card stays in the side column, renamed **Files an
 
 ## View 2: Files
 
-`/admin/health?view=files`.
+`/admin/health/files`. Old bookmarks that filtered the per-college table (`/admin/health?group=…` or `?reason=…`)
+are redirected here with their query.
 
 ### Published files
 One row per source file in `data/meta.json` `sources` that names files: the IPEDS surveys (the file names in each
@@ -159,28 +160,30 @@ source-files` sends a HEAD request for each file and writes:
   `meta.json` has no entry, so a sync that brings in a new file can't merge undated.
 
 ### College documents
-Below the published files: the Common Data Sets and class profiles we read per college, summarized (how many
-colleges have the current edition, one behind, two or more behind, none; how many have open failures), then the
-**per-college table that exists today** (the four groups, its filters, its CSV), unchanged. That table is each
+Below the published files: the **per-college table that exists today** (the four groups, its stat row, filters, and
+CSV at `/admin/health/csv`), unchanged. Its College-reported counts are the summary of the Common Data Sets: Fresh is
+the current edition, Watch one behind, Stale two or more or none, Failing an open failure. That table is each
 college's own files and collection dates, so it belongs in this view.
 
 ## Files
 
 | File | What |
 |---|---|
-| `lib/admin/estimate-inputs.ts` | Pure: the twelve inputs and their fields, `estimateInputHealth(school, cite, rules)` per college, counts, CSV |
-| `lib/admin/estimate-inputs-load.ts` | Server only: computes every college once per instance from `getData()` |
+| `lib/admin/estimate-inputs.ts` | Pure: the twelve inputs and their fields, each fact's value, `collegeInputs(school, cite, ctx, publishedFor)`, counts |
+| `lib/admin/estimate-inputs-load.ts` | Server only: every college once per instance from `getData()` and the GPA models; the published files; which inputs each source feeds; the CSV |
 | `lib/admin/source-files.ts` | Pure: the file rows (meta sources × source-files.json × release calendar), their health |
 | `lib/admin/health-rules.ts` | Gains `ESTIMATE_INPUT_RULES` |
-| `lib/admin/health-view.ts` | Gains `view` and `input` in the URL filters |
+| `lib/admin/inputs-view.ts` | Pure: the Estimate inputs view's URL filters, filter, sort, and the old-bookmark test |
 | `scripts/source-files.mts`, `scripts/check-source-files.mts` | The dating run and its verify check |
 | `data/source-files.json` | Each file's published date |
-| `app/admin/health/page.tsx` | Two tabs: Estimate inputs, Files |
-| `app/admin/health/csv/route.ts` | `view=inputs` |
-| `components/admin/ops/EstimateInputs*.tsx`, `SourceFilesTable.tsx` | The new table, stat row, panel |
+| `app/admin/health/page.tsx` | Estimate inputs (the default) |
+| `app/admin/health/files/page.tsx` | Files: published files, then the per-college table (moved from `/admin/health`) |
+| `app/admin/health/inputs-csv/route.ts` | The Estimate inputs CSV |
+| `components/admin/ops/HealthTabs.tsx`, `EstimateInputs{Stats,FilterForm,Table}.tsx`, `SourceFilesTable.tsx` | The tabs and the two views |
+| `components/admin/EstimateInputsPanel.tsx` | The college page's panel |
 | `app/admin/colleges/[unit]/page.tsx` | The Estimate inputs panel |
 
-`data/source-files.json` and `data/meta.json` are traced for `/admin/**` (`next.config.ts`; a few KB).
+`data/source-files.json` (a few KB) is imported as a JSON module, so nothing new is traced for `/admin/**`.
 
 ## Tests
 - Every `ESTIMATE_FACT_PATHS` path is in exactly one input.
@@ -200,3 +203,17 @@ college's own files and collection dates, so it belongs in this view.
 - **Public citations.** The selectivity tier's public ⓘ names "IPEDS Admissions survey, Fall 2024" even where its
   inputs are newer CDS figures. The admin view works around it by listing the inputs' sources. Fixing the public
   citation is a separate lineage change.
+
+## As built (2026-10-19)
+- **First measurement** (1,893 colleges): 57 Fresh, 1,769 Watch, 67 Stale. By input, not Fresh: admit rate 1,751
+  (1,403 of them the IPEDS Fall 2024 rate, a cycle behind, because no newer CDS is on hand; 346 with no rate), test
+  scores 1,286, GPA 1,757 (827 the model's estimate only, 856 no GPA at all), academic factors 1,740, tier 347 not
+  rated. The quickest way to move a college to Fresh is its current Common Data Set.
+- **Published files**: all 17 files dated on the first run; every one Fresh (no newer release out yet; the IPEDS
+  winter release is expected 2026-12). `IC2023_AY` and `IC2023` show 2025 and 2026 dates: NCES revised them after
+  release, which is why the column says "file dated".
+- **GPA**: a college whose only average is weighted (Georgia Tech, Harvard) is Watch, because the estimate reads the
+  model's unweighted estimate there, not the weighted figure.
+- **Routes, not `?view=`**: each view is its own route so the existing components' links stay simple and a view can
+  be bookmarked; the old per-college filters redirect to `/admin/health/files`.
+- The college page's health card is renamed **Files and collection**; the new panel opens the main column.

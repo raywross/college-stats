@@ -102,6 +102,25 @@ export const CORE_FEDERAL_FIELDS: readonly { key: string; label: string; paths: 
   { key: "earnings", label: "earnings", paths: ["outcomes.median_earnings_10yr"] },
 ];
 
+/**
+ * The Estimate inputs view (specs/product/admin-health-views.md "Status per input"): how many admission cycles behind
+ * the current one a core input may be. The current cycle's fall is the CDS edition's, so the two views agree on it.
+ */
+export interface EstimateInputRules {
+  /** The fall of the current cycle: a value describing it (or later) is current. */
+  currentFall: number;
+  /** This many cycles behind is Watch. */
+  watchCyclesBehind: number;
+  /** This many cycles behind (or more) is Stale. */
+  staleCyclesBehind: number;
+}
+
+export const ESTIMATE_INPUT_RULES: EstimateInputRules = {
+  currentFall: CURRENT_CDS_EDITION_START,
+  watchCyclesBehind: 1,
+  staleCyclesBehind: 2,
+};
+
 /** Lineage records that date the identity group (links, social, brand). */
 export const IDENTITY_LINEAGE_PREFIXES: readonly string[] = ["links.", "social.", "brand."];
 

@@ -45,7 +45,8 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
           <h1 className="font-display text-3xl font-bold tracking-tight">Data health</h1>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
             How current the facts the admission estimate reads are, college by college. A core input is Fresh when it describes the current cycle (fall{" "}
-            {ESTIMATE_INPUT_RULES.currentFall}), Watch when it is a cycle behind or missing, and Stale when it is {ESTIMATE_INPUT_RULES.staleCyclesBehind} or more behind.
+            {ESTIMATE_INPUT_RULES.currentFall}), Watch when it is a cycle behind or missing, and Stale when it is {ESTIMATE_INPUT_RULES.staleCyclesBehind} or more behind. A
+            college with no admit rate that says it isn&apos;t open admission is Failing.
             Measured {dayLabel(overview.today)}.
           </p>
         </div>

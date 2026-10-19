@@ -28,10 +28,18 @@ import { ESTIMATE_INPUT_RULES, HEALTH_STATUSES, statusRank, type EstimateInputRu
 /* The inputs                                                          */
 /* ------------------------------------------------------------------ */
 
-type FactPath = (typeof ESTIMATE_FACT_PATHS)[number];
+/**
+ * The estimate's facts, plus fields that explain one of them without being read by the estimate: whether the college
+ * is open admission says why it has no admit rate (lib/open-admission.ts).
+ */
+const CONTEXT_PATHS = ["admissions.open_admission"] as const;
+type FactPath = (typeof ESTIMATE_FACT_PATHS)[number] | (typeof CONTEXT_PATHS)[number];
+
+/** Paths an input may list that the estimate doesn't read (the grouping test allows them). */
+export const INPUT_CONTEXT_PATHS: readonly string[] = CONTEXT_PATHS;
 
 export const ESTIMATE_INPUTS = [
-  { key: "admit_rate", label: "Admit rate", core: true, paths: ["admissions.acceptance_rate"] },
+  { key: "admit_rate", label: "Admit rate", core: true, paths: ["admissions.acceptance_rate", "admissions.open_admission"] },
   { key: "tests", label: "Test scores", core: true, paths: ["derived.sat_total", "admissions.act_composite_25_75"] },
   {
     key: "gpa",
@@ -146,6 +154,7 @@ const factor = (s: School, k: string) => words((profile(s)?.factors as Record<st
 /** Each fact's value for one college, as text; null when the college has none. */
 export const FACT_VALUES: Readonly<Record<FactPath, (school: School, ctx: ValueContext) => string | null>> = {
   "admissions.acceptance_rate": (s) => rate(s.admissions.acceptance_rate),
+  "admissions.open_admission": (s) => (s.admissions.open_admission === true ? "Yes" : s.admissions.open_admission === false ? "No" : null),
   "derived.sat_total": (s) => range(satTotal(s)),
   "admissions.act_composite_25_75": (s) => range(s.admissions.act_composite_25_75),
   "reported.admission_profile.gpa.average": (s) => {
@@ -285,12 +294,13 @@ function fieldOf(path: FactPath, school: School, ctx: ValueContext, cite: Cite, 
   const c = cite(path, school);
   const inputs = c.inputs ?? [];
   const sources = new Set(inputs.map((i) => i.label));
-  // A value derived from several sources names them: the field's own label can name a default source that wasn't used.
-  const several = sources.size > 1;
+  // A value derived from several sources is cited by its primary input when it names one (Quad's selectivity, by the
+  // admit rate it read); otherwise it lists them, since the field's own label would name a default source.
+  const hasPrimary = Boolean((FIELDS[path] as { derived?: { primary?: string } }).derived?.primary);
+  const several = sources.size > 1 && !hasPrimary;
   const short = (l: string) => shortSource(l, school.name);
   const from = inputs.length ? [...new Map(inputs.map((i) => [`${i.label}|${i.year ?? ""}`, { label: short(i.label), year: i.year }])).values()] : null;
-  // The tier's year is the class its inputs describe (school.selectivity.year), not its field's default vintage.
-  const describes = path.startsWith("selectivity.") ? (school.selectivity?.year ?? c.year) : several ? null : c.year;
+  const describes = several ? null : c.year;
   return {
     path,
     label,
@@ -327,12 +337,25 @@ function newest(fields: InputField[]): InputField | null {
   return fields.reduce<InputField | null>((best, f) => (best === null || (fallOf(f.describes) ?? -1) > (fallOf(best.describes) ?? -1) ? f : best), null);
 }
 
+/** An open-admission college with no admit rate: the estimate answers Likely without reading anything else. */
+const readsNothingElse = (school: School) => school.admissions.open_admission === true && school.admissions.acceptance_rate === null;
+
 function judge(key: EstimateInputKey, fields: InputField[], school: School, ctx: ValueContext, rules: EstimateInputRules): { status: HealthStatus; reason: string; year: string | null } {
+  if (key !== "admit_rate" && readsNothingElse(school)) {
+    return { status: "fresh", reason: "Not needed: the college is open admission, so the estimate doesn't read it.", year: null };
+  }
   switch (key) {
     case "admit_rate": {
       const f = present(fields, "admissions.acceptance_rate")[0];
-      if (!f) return { status: "watch", reason: "No admit rate: the estimate reads this college as open admission.", year: null };
-      return byAge(f, rules);
+      if (f) return byAge(f, rules);
+      const open = school.admissions.open_admission;
+      const said = present(fields, "admissions.open_admission")[0];
+      const by = said ? ` (${said.source}, ${said.describes})` : "";
+      if (open === true) return { status: "fresh", reason: `Open admission${by}: it admits everyone who applies, so it has no admit rate.`, year: said?.describes ?? null };
+      if (open === false) {
+        return { status: "failing", reason: `No admit rate, though the college says it isn't open admission${by}: the estimate reads it as open admission.`, year: null };
+      }
+      return { status: "watch", reason: "No admit rate, and IPEDS doesn't say whether the college is open admission: the estimate reads it as open admission.", year: null };
     }
     case "tests": {
       const f = newest(present(fields, "derived.sat_total", "admissions.act_composite_25_75"));
@@ -379,7 +402,7 @@ function supportingReason(fields: InputField[]): string {
 }
 
 /**
- * One college's estimate inputs and their health. Overall is the worst core input (Stale > Watch > Fresh); a
+ * One college's estimate inputs and their health. Overall is the worst core input (Failing > Stale > Watch > Fresh); a
  * supporting input never changes it.
  */
 export function collegeInputs(

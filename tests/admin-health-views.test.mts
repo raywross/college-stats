@@ -11,6 +11,7 @@ import { join } from "node:path";
 import {
   CORE_INPUT_KEYS,
   ESTIMATE_INPUTS,
+  INPUT_CONTEXT_PATHS,
   collegeInputs,
   countInputs,
   fallOf,
@@ -22,7 +23,8 @@ import { ESTIMATE_FACT_PATHS } from "../lib/chances/what-went-in.ts";
 import { ESTIMATE_INPUT_RULES, CURRENT_CDS_EDITION_START } from "../lib/admin/health-rules.ts";
 import { filesInEdition, lastModifiedDate, sourceFileRefs, sourceFileRows, undatedFiles, type SourceFilesRecord } from "../lib/admin/source-files.ts";
 import { filterInputRows, inputsQuery, isFilesQuery, parseInputFilters } from "../lib/admin/inputs-view.ts";
-import type { Cited } from "../lib/lineage.ts";
+import { lineageFor, type Cited } from "../lib/lineage.ts";
+import { FIELDS } from "../lib/fields.ts";
 import type { CollegeGpa } from "../lib/planner/gpa-model.ts";
 import type { School } from "../lib/types.ts";
 
@@ -87,7 +89,7 @@ test("every fact the estimate can cite is in exactly one input", () => {
   assert.deepEqual(ungroupedFactPaths(), []);
   const all = ESTIMATE_INPUTS.flatMap((i) => i.paths as readonly string[]);
   assert.equal(new Set(all).size, all.length, "a path is in two inputs");
-  for (const p of all) assert.ok((ESTIMATE_FACT_PATHS as readonly string[]).includes(p), `${p} isn't an estimate fact`);
+  for (const p of all) assert.ok((ESTIMATE_FACT_PATHS as readonly string[]).includes(p) || INPUT_CONTEXT_PATHS.includes(p), `${p} isn't an estimate fact`);
   assert.deepEqual([...CORE_INPUT_KEYS], ["admit_rate", "tests", "gpa", "academic_factors", "selectivity"]);
 });
 
@@ -125,11 +127,58 @@ test("a source that states no year is Watch", () => {
   assert.match(c.inputs[0].reason, /states no year/);
 });
 
-test("a missing admit rate is Watch, read as open admission, never Failing", () => {
-  const c = collegeInputs(school({ admissions: { acceptance_rate: null } }), citer(`Fall ${CURRENT}`), { gpa: reported });
-  assert.equal(statusOf(c, "admit_rate"), "watch");
-  assert.match(c.inputs[0].reason, /open admission/);
-  assert.notEqual(c.overall, "failing");
+test("a missing admit rate: Fresh when open admission, Failing when the college says it isn't, Watch when unknown", () => {
+  const cite = citer(`Fall ${CURRENT}`, { "admissions.open_admission": "2024–25" });
+  const open = collegeInputs(school({ admissions: { acceptance_rate: null, open_admission: true } }), cite, { gpa: reported });
+  assert.equal(statusOf(open, "admit_rate"), "fresh");
+  assert.match(open.inputs[0].reason, /^Open admission \(.*2024–25\)/);
+  const notOpen = collegeInputs(school({ admissions: { acceptance_rate: null, open_admission: false } }), cite, { gpa: reported });
+  assert.equal(statusOf(notOpen, "admit_rate"), "failing");
+  assert.equal(notOpen.overall, "failing");
+  const unknown = collegeInputs(school({ admissions: { acceptance_rate: null, open_admission: null } }), cite, { gpa: reported });
+  assert.equal(statusOf(unknown, "admit_rate"), "watch");
+  assert.match(unknown.inputs[0].reason, /doesn't say whether/);
+  // The estimate reads nothing else at an open-admission college, so missing scores or GPA don't count against it.
+  const bare = collegeInputs(school({ admissions: { acceptance_rate: null, open_admission: true, act_composite_25_75: null }, reported: null, selectivity: null }), cite, { gpa: null });
+  for (const k of CORE_INPUT_KEYS) assert.equal(statusOf(bare, k), "fresh", k);
+  assert.match(bare.inputs.find((i) => i.key === "tests")!.reason, /Not needed/);
+  // A college with a rate is judged by its rate, whatever the flag says.
+  const both = collegeInputs(school({ admissions: { open_admission: false } }), cite, { gpa: reported });
+  assert.equal(statusOf(both, "admit_rate"), "fresh");
+});
+
+test("open admission: OPENADMP 1 and 2, anything else unknown; its release names the IC file and year", async () => {
+  const { openAdmissionFrom, hasOpenAdmissionAnswers, applyOpenAdmission, icFileYear, openAdmissionMeta } = await import("../lib/open-admission.ts");
+  assert.equal(openAdmissionFrom({ OPENADMP: "1" }), true);
+  assert.equal(openAdmissionFrom({ OPENADMP: "2" }), false);
+  assert.equal(openAdmissionFrom({ OPENADMP: "-2" }), null);
+  assert.equal(openAdmissionFrom({ OPENADMP: "" }), null);
+  assert.equal(openAdmissionFrom(undefined), null);
+  assert.equal(hasOpenAdmissionAnswers([{ OPENADMP: "" }, { OPENADMP: "-2" }]), false);
+  assert.equal(hasOpenAdmissionAnswers([{ OPENADMP: "" }, { OPENADMP: "1" }]), true);
+  assert.equal(icFileYear("IC2024"), "2024–25");
+  const a = school();
+  const b = { ...school(), unit_id: "888888" } as unknown as School;
+  const counts = applyOpenAdmission([a, b], new Map([["999999", { OPENADMP: "1" }]]));
+  assert.deepEqual(counts, { open: 1, notOpen: 0, unknown: 1 });
+  assert.equal(a.admissions.open_admission, true);
+  assert.equal(b.admissions.open_admission, null);
+  assert.equal(a.lineage, undefined, "no per-college lineage: the release in meta.json cites it");
+  const m = openAdmissionMeta({ name: "IC2024", url: "https://x/IC2024.zip" });
+  assert.equal(m.vintage, "2024–25");
+  assert.equal(m.source.edition, "2024–25 (IC2024)");
+});
+
+test("the committed data cites open admission to its own release", () => {
+  const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+  assert.match(meta.sources["ipeds-ic-open"].edition, /^\d{4}–\d{2} \(IC\d{4}\)$/);
+  const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
+  const open = schools.filter((s) => s.admissions.open_admission === true);
+  assert.ok(open.length > 0);
+  for (const s of open) assert.equal(s.admissions.acceptance_rate, null, `${s.name}: an open-admission college has no admit rate`);
+  const c = lineageFor("admissions.open_admission", open[0], meta);
+  assert.equal(c.key, "ipeds-ic-open");
+  assert.equal(c.year, meta.vintages["ipeds-ic-open"]);
 });
 
 test("no test scores is Watch, unless the college doesn't consider them", () => {
@@ -194,6 +243,32 @@ test("counts tally overall and per core input", () => {
   assert.equal(counts.overall.fresh, 1);
   assert.equal(counts.overall.stale, 1);
   assert.equal(counts.inputs.gpa.watch, 1);
+});
+
+/* ------------------------------------------------------------------ */
+/* Quad's selectivity is cited by the admit rate it read               */
+/* ------------------------------------------------------------------ */
+
+test("a derived field's primary input is one of its inputs", () => {
+  for (const [path, def] of Object.entries(FIELDS) as [string, { derived?: { inputs: readonly string[]; primary?: string } }][]) {
+    const primary = def.derived?.primary;
+    if (primary) assert.ok(def.derived!.inputs.includes(primary), `${path}: primary ${primary} isn't among its inputs`);
+  }
+});
+
+test("every rated college's tier cites the year of the admit rate it read, not the field's default vintage", () => {
+  const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
+  const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+  let fromCollege = 0;
+  for (const s of schools) {
+    if (!s.selectivity?.tier) continue;
+    const c = lineageFor("selectivity.tier", s, meta);
+    assert.equal(c.year, s.selectivity.year, `${s.unit_id} ${s.name}`);
+    const rate = lineageFor("admissions.acceptance_rate", s, meta);
+    assert.equal(c.label, rate.label, `${s.unit_id}: the tier names the admit rate's source`);
+    if (c.key !== "ipeds-adm") fromCollege++;
+  }
+  assert.ok(fromCollege > 0, "some tiers read a college's own newer rate");
 });
 
 /* ------------------------------------------------------------------ */

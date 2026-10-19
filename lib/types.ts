@@ -49,6 +49,11 @@ export interface School {
     test_submission_rate_sat: number | null;
     test_submission_rate_act: number | null;
     test_policy?: TestPolicy;
+    /**
+     * Admits everyone who applies (IPEDS IC OPENADMP; lib/open-admission.ts): true, false, or null when IPEDS has no
+     * answer. Absent before the first sync that read it.
+     */
+    open_admission?: boolean | null;
     /** Applicants, admits, and enrollees who are men / women (IPEDS ADM; "another gender" and unknown count only in the totals). */
     by_sex?: { men: SexCounts; women: SexCounts } | null;
     /** True medians (IPEDS ADM, fall 2022 on), not the midpoint of the middle 50%. */
@@ -1434,7 +1439,7 @@ export interface CampusPrograms {
   intellectual_disability_program: boolean;
 }
 
-export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-ef-a" | "ipeds-ef-a-dist" | "ipeds-c" | "ipeds-om" | "ipeds-sal" | "ipeds-f" | "cds"
+export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "ipeds-ic-char" | "ipeds-ic-open" | "ipeds-hd" | "ipeds-ef" | "ipeds-ef-c" | "ipeds-ef-a" | "ipeds-ef-a-dist" | "ipeds-c" | "ipeds-om" | "ipeds-sal" | "ipeds-f" | "cds"
   /** A college's own website (class profile or CDS), read by the ingestion agent (specs/college-reported-data.md). Per-value lineage carries the document. */
   | "college-site"
   /** IPEDS Graduation Rates, Pell and subsidized-loan file (GR{Y}_PELL_SSL; specs/data-expansion/graduation-by-group.md). */

@@ -102,6 +102,12 @@
       "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip",
       "published": "2026-07-21",
       "status": 200
+    },
+    "IC2024": {
+      "source": "ipeds-ic-open",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2024.zip",
+      "published": "2026-08-31",
+      "status": 200
     }
   }
 }

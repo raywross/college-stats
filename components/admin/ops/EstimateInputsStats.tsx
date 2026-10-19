@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 
 const BASE = "/admin/health";
 const num = (n: number) => n.toLocaleString("en-US");
-/** No estimate input is Failing (specs/product/admin-health-views.md "Status per input"). */
-const STATUSES: HealthStatus[] = ["stale", "watch", "fresh"];
+/** Worst first. Only the admit rate can be Failing (specs/product/admin-health-views.md "Status per input"). */
+const STATUSES: HealthStatus[] = ["failing", "stale", "watch", "fresh"];
 
 /**
  * The Estimate inputs stat row: colleges by overall status, then per core input how many colleges are at each status.
@@ -21,7 +21,7 @@ export function EstimateInputsStats({ counts, filters }: { counts: InputCounts; 
       <h2 id="inputs-stats" className="sr-only">
         Colleges by the health of the estimate&apos;s inputs
       </h2>
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <li className="rounded-2xl border border-border bg-card p-4">
           <p className="text-sm text-muted-foreground">Colleges</p>
           <p className="mt-1 font-display text-3xl font-bold tabular-nums">{num(counts.total)}</p>

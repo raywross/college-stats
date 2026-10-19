@@ -74,23 +74,31 @@ October 2026) minus the fall the value describes ("Fall 2024" → 1 behind; "202
 
 | Input | Fresh | Watch | Stale |
 |---|---|---|---|
-| Admit rate | current cycle | 1 cycle behind, no year stated, or missing | 2+ behind |
+| Admit rate | current cycle, or none because the college is open admission | 1 cycle behind, no year stated, or missing with no open-admission answer | 2+ behind |
 | Test scores | current cycle | 1 behind, or missing (unless the college doesn't consider scores) | 2+ behind |
 | GPA | a reported figure (average or bands) from the current cycle | 1 behind, or only the model's estimate | 2+ behind |
 | Academic factors | current cycle | 1 behind, or missing | 2+ behind |
 | Selectivity tier | rated | not rated | — |
 
-A missing admit rate is Watch, not Failing: the estimate reads a college with no rate as open admission (Likely
-for everyone, lib/chances/baseline.ts), which is right for the open-admission colleges IPEDS leaves out of its
-Admissions file and wrong for a selective college that lost its rate. The data can't tell the two apart (346
-colleges had no rate on 2026-10-19, none flagged either way), so the reason says "No admit rate: the estimate reads
-this college as open admission", and the owner checks the list.
+**Open admission** (owner, 2026-10-19). The estimate reads a college with no admit rate as open admission (Likely for
+everyone, lib/chances/baseline.ts). That is right for an open-admission college and wrong for a selective one whose
+rate is missing, so the dataset records IPEDS's answer, `admissions.open_admission` (IC `OPENADMP`;
+lib/open-admission.ts), and a missing admit rate is judged by it:
+- **Open admission**: the admit rate is Fresh, and so is every other core input, since the estimate reads nothing else
+  ("Not needed: the college is open admission").
+- **Not open admission**: **Failing**, the only Failing in this view: the estimate is reading the college wrong.
+- **No answer**: Watch, as before.
+
+A new IC file leaves `OPENADMP` blank until NCES revises it (IC2025 was blank in October 2026), so the sync takes the
+newest IC file that answers it. That file is its own release in `data/meta.json`, `ipeds-ic-open` ("2024–25 (IC2024)"),
+so the value cites the right file and year, the Files view lists it, and the release calendar's July directory release
+`updates` it.
 
 An input with several fields is judged by the field the estimate prefers: the college's own figure over the model's
 estimate, and the newest year among the fields it has. The selectivity tier is judged on whether it is present: its
 age follows the admit rate, and its other inputs (retention, graduation) describe older classes by nature.
 
-A college's **overall** status for this view is its worst core input (Stale > Watch > Fresh; no estimate input is Failing). Each input
+A college's **overall** status for this view is its worst core input (Failing > Stale > Watch > Fresh). Each input
 has a one-sentence reason ("Fall 2024 (IPEDS Admissions survey): one cycle behind; 2025–26 Common Data Sets are out").
 
 The thresholds go in `lib/admin/health-rules.ts` beside the existing ones (`ESTIMATE_INPUT_RULES`), so the owner can
@@ -195,17 +203,26 @@ college's own files and collection dates, so it belongs in this view.
 - The dating check fails on a `meta.json` file with no entry in `source-files.json`.
 - The URL filters for `view` and `input` round-trip, and bad values are dropped.
 
+## Decisions (owner, 2026-10-19)
+- **Supporting inputs never count toward the status.**
+- **Record open admission**, so a missing admit rate at a college that isn't open admission is Failing (above).
+- **Fix the tier's public citation.** Quad's selectivity was cited by its field's default source ("IPEDS Admissions
+  survey, Fall 2024") whenever its inputs came from more than one source, even where it read a college's newer
+  figures. A derived field may now name a `primary` input (lib/fields.ts) that cites it when its inputs come from
+  several sources; the tier and its pools (and the hidden band and scores) name the admit rate they read, so the tier
+  cites what `selectivity.year` says it read. On 2026-10-19 that changed the public citation at 143 colleges (Georgia
+  Tech: "Fall 2025, the college's own figures"); every rated college's citation now matches its `selectivity.year`
+  (tested).
+
 ## Open questions
-- **Open admission.** Should the dataset record which colleges are open admission (IPEDS `OPENADMP` in HD), so a
-  missing admit rate on a selective college can be Failing? Not in this build.
-- **Supporting inputs.** Should any of them (test policy, residency rates) count toward the status? Built as above:
-  none do.
-- **Public citations.** The selectivity tier's public ⓘ names "IPEDS Admissions survey, Fall 2024" even where its
-  inputs are newer CDS figures. The admin view works around it by listing the inputs' sources. Fixing the public
-  citation is a separate lineage change.
+- **The estimate itself.** It still reads a college with no admit rate as open admission, including the 42 that say
+  they aren't. This view flags them; whether the estimate should treat them differently (no level, or "can't tell") is
+  a method question for specs/chances/.
 
 ## As built (2026-10-19)
-- **First measurement** (1,893 colleges): 57 Fresh, 1,769 Watch, 67 Stale. By input, not Fresh: admit rate 1,751
+- **After open admission** (1,893 colleges): 292 Fresh, 1,494 Watch, 65 Stale, 42 Failing. IC2024: 235 open
+  admission, 1,588 not, 70 no answer.
+- **First measurement**, before open admission: 57 Fresh, 1,769 Watch, 67 Stale. By input, not Fresh: admit rate 1,751
   (1,403 of them the IPEDS Fall 2024 rate, a cycle behind, because no newer CDS is on hand; 346 with no rate), test
   scores 1,286, GPA 1,757 (827 the model's estimate only, 856 no GPA at all), academic factors 1,740, tier 347 not
   rated. The quickest way to move a college to Fresh is its current Common Data Set.

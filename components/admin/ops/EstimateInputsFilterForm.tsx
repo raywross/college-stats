@@ -18,7 +18,7 @@ export function EstimateInputsFilterForm({ filters, states, familyAvailable, csv
           Status
           <select name="status" defaultValue={filters.status ?? ""} className={selectCls}>
             <option value="">Any</option>
-            {(["stale", "watch", "fresh"] as const).map((s) => (
+            {(["failing", "stale", "watch", "fresh"] as const).map((s) => (
               <option key={s} value={s}>
                 {STATUS_LABELS[s]}
               </option>

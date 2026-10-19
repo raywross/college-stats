@@ -142,23 +142,23 @@
         {
           "key": "small",
           "label": "Under 2,000 undergrads",
-          "n": 733,
+          "n": 734,
           "values": {
-            "shrank10": 0.6248,
-            "grew10": 0.1569,
-            "medianChange": -0.181,
-            "totalChange": -0.2206
+            "shrank10": 0.624,
+            "grew10": 0.1567,
+            "medianChange": -0.1809,
+            "totalChange": -0.22
           }
         },
         {
           "key": "medium",
           "label": "2,000–9,999",
-          "n": 591,
+          "n": 590,
           "values": {
-            "shrank10": 0.4839,
-            "grew10": 0.242,
-            "medianChange": -0.0893,
-            "totalChange": -0.1174
+            "shrank10": 0.4847,
+            "grew10": 0.2424,
+            "medianChange": -0.09,
+            "totalChange": -0.1175
           }
         },
         {
@@ -182,34 +182,34 @@
         {
           "key": "most",
           "label": "Under 25% admitted",
-          "n": 83,
+          "n": 84,
           "values": {
-            "shrank10": 0.0241,
-            "grew10": 0.3976,
-            "medianChange": 0.0589,
-            "totalChange": 0.1171
+            "shrank10": 0.0238,
+            "grew10": 0.3929,
+            "medianChange": 0.0584,
+            "totalChange": 0.1164
           }
         },
         {
           "key": "more",
           "label": "25–59% admitted",
-          "n": 242,
+          "n": 241,
           "values": {
-            "shrank10": 0.3802,
-            "grew10": 0.3264,
-            "medianChange": -0.0021,
-            "totalChange": 0.0836
+            "shrank10": 0.3817,
+            "grew10": 0.3278,
+            "medianChange": -0.0056,
+            "totalChange": 0.0837
           }
         },
         {
           "key": "less",
           "label": "60% or more",
-          "n": 1064,
+          "n": 1069,
           "values": {
-            "shrank10": 0.5705,
-            "grew10": 0.1927,
-            "medianChange": -0.1395,
-            "totalChange": -0.0364
+            "shrank10": 0.5716,
+            "grew10": 0.1918,
+            "medianChange": -0.1398,
+            "totalChange": -0.037
           }
         }
       ]
@@ -454,23 +454,23 @@
           {
             "key": "small",
             "label": "Under 2,000 undergrads",
-            "n": 744,
+            "n": 745,
             "values": {
-              "shrank10": 0.4987,
-              "grew10": 0.1452,
+              "shrank10": 0.498,
+              "grew10": 0.1463,
               "medianChange": -0.0998,
-              "totalChange": -0.1298
+              "totalChange": -0.1292
             }
           },
           {
             "key": "medium",
             "label": "2,000–9,999",
-            "n": 594,
+            "n": 593,
             "values": {
-              "shrank10": 0.4209,
-              "grew10": 0.165,
-              "medianChange": -0.0629,
-              "totalChange": -0.0783
+              "shrank10": 0.4216,
+              "grew10": 0.1636,
+              "medianChange": -0.0633,
+              "totalChange": -0.0784
             }
           },
           {
@@ -494,34 +494,34 @@
           {
             "key": "most",
             "label": "Under 25% admitted",
-            "n": 84,
+            "n": 85,
             "values": {
-              "shrank10": 0.0119,
-              "grew10": 0.1667,
+              "shrank10": 0.0118,
+              "grew10": 0.1647,
               "medianChange": 0.0392,
-              "totalChange": 0.0657
+              "totalChange": 0.0653
             }
           },
           {
             "key": "more",
             "label": "25–59% admitted",
-            "n": 244,
+            "n": 243,
             "values": {
-              "shrank10": 0.3156,
-              "grew10": 0.2295,
-              "medianChange": -0.0109,
+              "shrank10": 0.3169,
+              "grew10": 0.2305,
+              "medianChange": -0.0119,
               "totalChange": 0.0313
             }
           },
           {
             "key": "less",
             "label": "60% or more",
-            "n": 1062,
+            "n": 1067,
             "values": {
-              "shrank10": 0.4661,
-              "grew10": 0.1384,
-              "medianChange": -0.0887,
-              "totalChange": -0.0404
+              "shrank10": 0.4667,
+              "grew10": 0.1378,
+              "medianChange": -0.0888,
+              "totalChange": -0.0405
             }
           }
         ]
@@ -768,23 +768,23 @@
             {
               "key": "small",
               "label": "Under 2,000 undergrads",
-              "n": 670,
+              "n": 671,
               "values": {
-                "shrank10": 0.6328,
-                "grew10": 0.1433,
-                "medianChange": -0.1813,
-                "totalChange": -0.2085
+                "shrank10": 0.6319,
+                "grew10": 0.1431,
+                "medianChange": -0.181,
+                "totalChange": -0.208
               }
             },
             {
               "key": "medium",
               "label": "2,000–9,999",
-              "n": 538,
+              "n": 537,
               "values": {
-                "shrank10": 0.5,
-                "grew10": 0.21,
-                "medianChange": -0.0998,
-                "totalChange": -0.1253
+                "shrank10": 0.5009,
+                "grew10": 0.2104,
+                "medianChange": -0.1008,
+                "totalChange": -0.1254
               }
             },
             {
@@ -808,34 +808,34 @@
             {
               "key": "most",
               "label": "Under 25% admitted",
-              "n": 81,
+              "n": 82,
               "values": {
-                "shrank10": 0.0123,
-                "grew10": 0.3951,
-                "medianChange": 0.0589,
-                "totalChange": 0.1152
+                "shrank10": 0.0122,
+                "grew10": 0.3902,
+                "medianChange": 0.0584,
+                "totalChange": 0.1145
               }
             },
             {
               "key": "more",
               "label": "25–59% admitted",
-              "n": 230,
+              "n": 229,
               "values": {
-                "shrank10": 0.3739,
-                "grew10": 0.3217,
-                "medianChange": 0.0021,
-                "totalChange": 0.085
+                "shrank10": 0.3755,
+                "grew10": 0.3231,
+                "medianChange": 0.0014,
+                "totalChange": 0.0851
               }
             },
             {
               "key": "less",
               "label": "60% or more",
-              "n": 1007,
+              "n": 1012,
               "values": {
-                "shrank10": 0.5829,
-                "grew10": 0.1768,
-                "medianChange": -0.144,
-                "totalChange": -0.0776
+                "shrank10": 0.584,
+                "grew10": 0.1759,
+                "medianChange": -0.1451,
+                "totalChange": -0.0781
               }
             }
           ]
@@ -1070,23 +1070,23 @@
             {
               "key": "small",
               "label": "Under 2,000 undergrads",
-              "n": 674,
+              "n": 675,
               "values": {
-                "shrank10": 0.4955,
-                "grew10": 0.1306,
+                "shrank10": 0.4948,
+                "grew10": 0.1319,
                 "medianChange": -0.0985,
-                "totalChange": -0.1262
+                "totalChange": -0.1256
               }
             },
             {
               "key": "medium",
               "label": "2,000–9,999",
-              "n": 542,
+              "n": 541,
               "values": {
-                "shrank10": 0.4262,
-                "grew10": 0.1347,
-                "medianChange": -0.069,
-                "totalChange": -0.0843
+                "shrank10": 0.427,
+                "grew10": 0.1331,
+                "medianChange": -0.0691,
+                "totalChange": -0.0845
               }
             },
             {
@@ -1110,34 +1110,34 @@
             {
               "key": "most",
               "label": "Under 25% admitted",
-              "n": 82,
+              "n": 83,
               "values": {
-                "shrank10": 0.0122,
-                "grew10": 0.1585,
+                "shrank10": 0.012,
+                "grew10": 0.1566,
                 "medianChange": 0.0392,
-                "totalChange": 0.0635
+                "totalChange": 0.0631
               }
             },
             {
               "key": "more",
               "label": "25–59% admitted",
-              "n": 232,
+              "n": 231,
               "values": {
-                "shrank10": 0.3017,
-                "grew10": 0.2241,
-                "medianChange": -0.0098,
+                "shrank10": 0.303,
+                "grew10": 0.2251,
+                "medianChange": -0.0099,
                 "totalChange": 0.0323
               }
             },
             {
               "key": "less",
               "label": "60% or more",
-              "n": 1010,
+              "n": 1015,
               "values": {
-                "shrank10": 0.4733,
-                "grew10": 0.1228,
-                "medianChange": -0.0917,
-                "totalChange": -0.0601
+                "shrank10": 0.4739,
+                "grew10": 0.1222,
+                "medianChange": -0.0918,
+                "totalChange": -0.0602
               }
             }
           ]

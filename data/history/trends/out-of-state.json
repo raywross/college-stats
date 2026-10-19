@@ -294,15 +294,15 @@
         {
           "key": "less",
           "label": "60% or more",
-          "n": 397,
+          "n": 398,
           "values": {
-            "medianShare": [0.1049,0.1323],
-            "share30": [0.1612,0.2091],
-            "weightedShare": [0.1733,0.2016],
+            "medianShare": [0.1041,0.1315],
+            "share30": [0.1608,0.2085],
+            "weightedShare": [0.1731,0.2016],
             "lines": {
-              "medianShare": [0.085,null,0.0904,null,0.0937,null,0.0965,null,0.0974,null,0.1049,null,0.115,null,0.1168,null,0.1126,null,0.1327,null,0.1323],
-              "share30": [0.1166,null,0.1362,null,0.1253,null,0.1378,null,0.1501,null,0.1612,null,0.1713,null,0.1738,null,0.1806,null,0.2091,null,0.2091],
-              "weightedShare": [0.1469,null,0.152,null,0.1573,null,0.1575,null,0.1698,null,0.1733,null,0.1811,null,0.1811,null,0.181,null,0.209,null,0.2016]
+              "medianShare": [0.0848,null,0.0902,null,0.0934,null,0.0961,null,0.0972,null,0.1041,null,0.115,null,0.1167,null,0.1124,null,0.1293,null,0.1315],
+              "share30": [0.1163,null,0.1359,null,0.125,null,0.1374,null,0.1497,null,0.1608,null,0.1709,null,0.1734,null,0.1802,null,0.2085,null,0.2085],
+              "weightedShare": [0.1469,null,0.152,null,0.1573,null,0.1573,null,0.1696,null,0.1731,null,0.1811,null,0.1811,null,0.181,null,0.209,null,0.2016]
             }
           }
         }

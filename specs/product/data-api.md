@@ -1,66 +1,192 @@
-# Data API: The Dataset, History, and Lineage for Developers
+# Data API and MCP Server: The Dataset, History, and Lineage for Account Holders
 
-> Status: **planned** (not built). Independent of accounts (API keys are their own thing), though key management
-> moves into `/account` once accounts exist. Part of [product](README.md).
+> Status: **planned** (rewritten 2026-10-20 from the 2026-10-02 draft, for building now). For people with a Quad
+> account only (owner decision 2026-10-20): every request carries a key made on `/account`, and nothing is open to
+> anonymous callers. Builds on [accounts.md](accounts.md) (built), the deploy-carried dataset
+> ([serving-architecture.md](../serving-architecture.md), built), and [telemetry.md](telemetry.md) (built). Paid
+> tiers wait for [commercialization.md](commercialization.md). Part of [product](README.md).
 
 ## Goal
-Offer the site's cleaned, cross-checked dataset (1,893 colleges, the derived metrics, 20+ years of history, and
-per-field lineage) over a keyed HTTP API with bulk downloads, for researchers, journalists, and edtech teams. The
-strategy document prices it at $1,200+ a year. The raw federal data is public and the repo is public, so what's
-sold is convenience and trust: one schema, derived values that are documented and tested, lineage on every field,
-a changelog, uptime, and support.
+Offer the site's cleaned, cross-checked dataset (about 1,900 colleges, the derived metrics, 20+ years of history, and
+per-field lineage) two ways, to people who have signed up:
 
-## What exists today
-`/api/schools` (search and lookup for the site's own client components) and the JSON files in git. The API below
-is versioned and separate, so the internal route can change freely.
+1. **A keyed HTTP API** (`/api/v1`) for researchers, journalists, counselors with a spreadsheet, and anyone writing
+   code against the data.
+2. **An MCP server** (`/api/mcp`, the Model Context Protocol) so an assistant such as Claude, Cursor, or ChatGPT can
+   look up a college, compare several, read a field's lineage, or pull a history series on a person's behalf, with
+   the same key.
+
+The raw federal data is public and the repo is public, so what the API adds is convenience and trust: one schema,
+derived values that are documented and tested, lineage on every value, and the same numbers the site shows. Both
+surfaces are thin: every answer comes from `getData()` and the `lib/` code the pages use, serialized once by
+`lib/api/`, so the REST API, the MCP tools, and the site can never disagree.
+
+## What changed since the first draft (2026-10-02 → 2026-10-20)
+The draft assumed nothing but the JSON files and an internal `/api/schools` route. Since then:
+- **Accounts are built** ([accounts.md](accounts.md)): sign-in, `/account`, row-level security, a PGlite harness for
+  policy tests, and the admin console ([admin.md](admin.md)) with its own `is_admin()` rules. Key management lives on
+  `/account/api-keys` from day one; "keys issued by hand" is no longer needed.
+- **Account holders only.** The draft's keyless free tier is gone (owner decision 2026-10-20). A person signs up (13+,
+  birth year), then makes a key. One tier for now, "account", with limits below; the `tier` column is there for the
+  paid tier [commercialization.md](commercialization.md) adds later.
+- **The deploy carries the dataset** ([serving-architecture.md](../serving-architecture.md)): `data/*.json` is read
+  from disk once per instance, Supabase holds only people's data and the change log. So the API needs no dataset
+  tables, there is no "publish id" from Supabase (the dataset's `retrieved` date and the deploy stand in), and bulk
+  files would be a new storage decision. **Bulk downloads are deferred** (the files are in the public repository;
+  a signed download can come with the paid tier).
+- `/api/schools` is gone (search runs in the browser over `/search-index.json`), so the API is the only JSON surface
+  for the dataset. The planned app API ([iphone-app/api.md](../iphone-app/api.md)) serves rendered screens to our own
+  client and stays separate; both read the same `lib/` code.
+- **Hidden fields and the method.** The registry now marks fields computed for Quad's method and never shown
+  (`hidden: true`, `HIDDEN_FIELDS`: `selectivity.band`, `derived.selectivity_score*`), and the estimate's method is
+  proprietary ([chances/README.md](../chances/README.md)). The API never serializes a hidden field, `selectivity.band`,
+  or anything from `lib/selectivity.ts`, `lib/chances/`, or `lib/admin/`; `tests/admin-hidden.test.mts` already walks
+  what API routes import, and the API's own tests check the output.
+- **Telemetry is built**: `api_request` is a server event through `trackServer()` (`lib/analytics-server.ts`), and the
+  usage table below is what limits and, later, billing read.
+- **MCP is new.** The 2026-07-28 MCP spec is stateless over HTTP; Vercel's `mcp-handler` 2.x (with
+  `@modelcontextprotocol/server` 2 and zod 4) mounts a server in one Next.js route handler and verifies bearer
+  tokens with `withMcpAuth`, so the same API key authenticates both surfaces.
+
+## Who may call, and how
+- **A key belongs to a person** (`api_keys.user_id`, the signed-in account) and is made on `/account/api-keys`: a
+  name ("My notebook"), then the key shown **once**; the table stores only its SHA-256 hash and the first characters
+  for display. Up to **5 active keys** per account (a trigger enforces it). Revoke at any time; a revoked key fails at
+  once. A paused (`profiles.suspended_at`) or deleted account's keys fail too.
+- **Key format:** `quad_` + 40 lowercase base-32 characters (200 bits from `crypto.randomBytes`); the prefix lets
+  secret scanners and the error message recognize it. Sent as `Authorization: Bearer quad_…` on every request to
+  `/api/v1/*` (except `openapi.json`) and `/api/mcp`.
+- **Verification without the secret key.** Vercel holds only the publishable key, so the lookup is a `security definer`
+  function callable by `anon`: `api_key_use(p_hash text, p_endpoint text)`. It finds the unrevoked key whose hash
+  matches, refuses when the owner is paused or deleted, counts the request in `api_usage` for today, and returns
+  `{ key_id, user_id, tier, allowed, used_today, limit_per_day }`. Knowing the hash proves knowing the key, so exposing
+  the function to `anon` gives nobody anything a guess wouldn't (the same reasoning as `invitation_preview`). One
+  round trip per request.
+- **Limits** (`API_KEY_LIMITS` in `lib/api/keys.ts`, one typed object the docs page prints): **5,000 requests a day
+  per key** (the function's count) and **60 a minute per key** (an in-memory token bucket per server instance,
+  `lib/chances/rate-limit.ts`'s `TokenBuckets`, the burst guard). Over either: `429` with `Retry-After`. The MCP
+  server counts each tool call as one request against the same limits.
+- **Errors:** `{ error: { code, message } }`. `401 missing_key` / `401 invalid_key` (revoked, unknown, or the owner
+  paused; the message says to make one on `/account/api-keys`), `404 not_found`, `400 bad_request` (the parameter
+  named), `429 rate_limited`, `503 unavailable` when Supabase can't answer the key check (the dataset is fine; the
+  gate isn't).
+- **Admins** see nothing special here; the admin console may list a person's keys later ([admin.md](admin.md)).
 
 ## Endpoints (`/api/v1`)
+All `GET`, all JSON, all keyed unless marked. Query strings follow the site's (`lib/params.ts`), so an Explore URL's
+filters work as API parameters.
+
 | Endpoint | Returns | Notes |
 |---|---|---|
-| `GET /schools` | Paged list with the same filters as Explore (`lib/params.ts`), plus `fields=` to pick keys | Page size 100, cursor paging |
-| `GET /schools/{unit_id}` | One `School` record | The same object the site renders |
-| `GET /schools/{unit_id}/history` | The history shard | |
-| `GET /schools/{unit_id}/lineage` | Source, year, method, and quote (where present) per field | From `lib/lineage.ts`; the API's distinctive feature |
-| `GET /fields` | The field registry (`lib/fields.ts`): path, label, source, vintage, formula | Documentation generated from code |
-| `GET /meta` | Sources, vintages, release calendar, publish id | |
-| `GET /national` | National distributions and medians used for percentiles | |
-| `GET /bulk/{dataset}.{json\|csv}` | Signed download links for the whole snapshot, history, and (later) details | Built at publish time; CSV flattened with documented column names |
-| `GET /changelog` | Publishes with what changed (counts, sources, release notes) | |
+| `/schools` | `{ items: PublicSchool[], total, next_cursor }` | Explore's filters (`q`, `state`, `type`, `size`, `minAR`…, every key `parseFilters` reads), `sort` (`lib/dataset.ts` sort keys), `fields=` to pick top-level keys, `limit` ≤ 100 (default 50), `cursor` (opaque) |
+| `/schools/{unit_id}` | One `PublicSchool` | The same object the site renders, less hidden fields; `fields=` to pick keys |
+| `/schools/{unit_id}/history` | `SchoolHistory` (the shard) plus `series` definitions (`lib/history.ts SERIES`: label, unit, year kind, breaks) | 404 when the college has no history |
+| `/schools/{unit_id}/lineage` | `{ unit_id, fields: Record<FieldPath, Cited> }` | `lineageFor` per registered, non-hidden field the college has a value for; `fields=` to pick; the API's distinctive feature |
+| `/schools/{unit_id}/changes` | The college's recent `dataset_changes` rows with `describeChange` text | From Supabase (public read); `[]` when unconfigured |
+| `/fields` | The registry: path, label, topic, source, vintage, formula and inputs for derived fields, `notify` flags | Non-hidden fields only. Documentation generated from code |
+| `/meta` | `{ retrieved, sources, vintages, release_calendar, counts }` | What the Data page shows |
+| `/national` | Per metric (`lib/metrics.ts METRICS`): median, reporting count, distribution bins; plus `history/national.json` | What percentiles and "typical" lines use |
+| `/me` | The key's owner (display name, not email), key name, tier, `used_today`, limits | For checking a key works |
+| `/openapi.json` | OpenAPI 3.1 for everything above | **No key.** Generated from `lib/api/routes.ts` |
 
-Responses carry `X-Dataset-Publish` (the publish id) and `ETag`s. Every number is the same one the site shows,
-from `getData()`; the API never computes separately.
+Responses carry `X-Dataset-Retrieved` (the dataset's `meta.retrieved`), an `ETag` (hash of the body; `If-None-Match`
+→ `304`), and `Cache-Control: private, no-store` (keyed and counted; the CDN never serves them). Every number is the
+same one the site shows, from `getData()`; the API never computes separately, and the `Cited` records are
+`lib/lineage.ts`'s, unchanged.
 
-## Keys, limits, tiers
+### `PublicSchool`
+`lib/api/serialize.ts publicSchool(school)`: the `School` record with every `HIDDEN_FIELDS` path removed (including
+`selectivity.band`), `lineage` kept (it is the raw record; `/lineage` is the resolved form), and nothing added.
+`fields=` keeps `unit_id` and `name` always. A test asserts, for every college in the dataset, that no hidden path
+and no `band` key survives, and that every other leaf equals the dataset's.
+
+## MCP server (`/api/mcp`)
+`mcp-handler` in `app/api/mcp/route.ts` (GET and POST), wrapped in `withMcpAuth` using the same key check. Tools,
+each a thin call into `lib/api/`:
+
+| Tool | Input | Returns |
+|---|---|---|
+| `search_colleges` | `query` (name, nickname, or place) and/or Explore filters (`state`, `type`, `size`, admit-rate and score ranges), `limit` ≤ 50 | `SchoolIndexEntry`-like rows: id, name, city, state, type, admit rate |
+| `get_college` | `unit_id` or `name` (resolved through the same search; ambiguity returns candidates), optional `fields` | `PublicSchool` |
+| `compare_colleges` | `unit_ids` (2–10), optional `metrics` | The metrics table (`lib/metrics.ts` values with each college's rank and the national median) |
+| `get_history` | `unit_id`, optional `series` | The history series requested, with definitions |
+| `get_lineage` | `unit_id`, optional `fields` | Resolved `Cited` records: source, year, method, formula, quote |
+| `list_fields` | optional `topic` | The registry rows |
+| `get_dataset_info` | none | `/meta` |
+
+Results are JSON in the tool result's `text` (structured output when the client advertises support) and include
+`cited` on every value a tool returns outside a whole record, so an assistant can quote the source and year. Prompts
+(`how_to_cite`) and a resource (`quad://fields`) are nice-to-have, not required. Tool descriptions carry the terms
+below in one sentence.
+
+**Connecting:** Claude Code (`claude mcp add --transport http quad https://usequad.app/api/mcp --header
+"Authorization: Bearer quad_…"`), Cursor and Claude Desktop (`mcp-remote` with `--header`), shown with the person's
+real key prefix on `/account/api-keys` and generically on `/developers`. OAuth sign-in for MCP clients that can't send
+a header (claude.ai's connector directory) is an open question below.
+
+## Keys, usage, and the schema
 ```
-api_keys (id, owner_user_id | owner_org_id, name, key_hash, tier, created, last_used, revoked_at)
-api_usage (key_id, day, requests)
+api_keys  (id uuid pk, user_id uuid → auth.users, name text, key_prefix text, key_hash text unique, tier text default 'account',
+           created timestamptz, last_used_at timestamptz, revoked_at timestamptz)
+api_usage (key_id uuid → api_keys, day date, requests int, primary key (key_id, day))
 ```
-- Keys are shown once and stored hashed. `Authorization: Bearer`.
-- **Free** (with a key): 1,000 requests a day, no bulk, attribution required. **Paid** ($1,200/year, or $120/month):
-  100,000 a day, bulk downloads, history and lineage endpoints, email support, a changelog webhook.
-- Rate limiting in a small Postgres function (per key per minute) to start; Upstash or Vercel KV if the counting
-  load matters.
-- Usage is counted server-side (`api_request` in [telemetry.md](telemetry.md#event-registry) plus the usage table
-  for billing).
+- RLS: a person reads their own keys (never `key_hash`; a view or column grant hides it), inserts their own (the app
+  hashes), and revokes their own (update `revoked_at` only). `api_usage` is readable by the key's owner for `/me` and
+  the keys page; written only by `api_key_use()`.
+- `api_key_use(p_hash, p_endpoint)` (security definer, `search_path = ''`, `anon` and `authenticated` may execute):
+  described above. It also sets `last_used_at` (at most once a minute, to keep the write cheap).
+- Usage rows older than 90 days are deleted by the function when it writes a new day's row (no cron).
+- Telemetry: `api_request` (`side: "server"`, properties `endpoint`, `status`, `transport`: `rest` / `mcp`,
+  `key_id`) after each response, through `trackServer()`; never the query or the key.
 
 ## Terms
+Shown on `/developers` and in the key dialog; the person accepts them when making a key (a line, not a contract page).
 - Federal data is public domain; derived values and the schema are Quad's and are licensed for use with attribution
-  ("Data: Quad, from College Scorecard and IPEDS, {publish date}").
-- Common Data Set values are the colleges' own publications; the API passes them with their lineage and the user
-  takes on the same citation duty.
-- No reselling the bulk files as a dataset; no use for lead generation targeting students.
+  ("Data: Quad, from College Scorecard and IPEDS, {retrieved date}").
+- Common Data Set and college-reported values are the colleges' own publications; the API passes them with their
+  lineage and the user takes on the same citation duty.
+- No reselling the data as a dataset; no use for lead generation targeting students; no scraping around the limits.
+- Keys are personal: don't share one, and revoke one that leaks.
 
-## Docs
-`/developers`: generated from `/fields` and the endpoint table, with examples, the lineage model explained (the
-same text as the Data page), and the changelog. An OpenAPI document at `/api/v1/openapi.json`.
+## Pages
+- **`/account/api-keys`** (signed in): the keys table (name, prefix, created, last used, today's requests, Revoke),
+  "Make a key" (name, the terms line, then the key shown once with Copy and the connection snippets), and the limits.
+  A section on `/account` links to it. Phone layout per [mobile.md](../mobile.md).
+- **`/developers`** (public, static): what the API is, how to get a key (sign up → account → keys), authentication,
+  the endpoint table and the MCP tools generated from `lib/api/routes.ts`, the field registry (from `lib/fields.ts`,
+  non-hidden, grouped by topic with source and year labels from lineage), the lineage model in the Data page's words,
+  limits, errors, terms, and a link to `/api/v1/openapi.json`. Linked from the footer's Explore list and the Data page.
 
-## Files (planned)
-- `app/api/v1/**/route.ts`, `lib/api/` (auth, limits, serializers, CSV), `scripts/build-bulk.mts` (run by
-  `publish-data`), migration `…_api_keys.sql`, `app/developers/`, `tests/api-v1.test.mts` (auth, limits, parity:
-  the API's school record equals the dataset's object; CSV column set is stable).
+## Files
+- `supabase/migrations/20261020130000_api_keys.sql`
+- `lib/api/keys.ts` (pure: format, generate, hash, prefix, limits), `lib/api/auth.ts` (server: `authenticateApiRequest`,
+  the burst limiter, the telemetry call), `lib/api/respond.ts` (JSON, headers, ETag, errors), `lib/api/serialize.ts`
+  (pure: `publicSchool`, `schoolLineage`, `fieldRegistry`, `datasetMeta`, `national`, `compareTable`),
+  `lib/api/routes.ts` (pure: the endpoint and tool table the OpenAPI document, `/developers`, and tests read),
+  `lib/api/openapi.ts` (pure: the document from the table), `lib/api/mcp.ts` (tool definitions over the serializers),
+  `lib/api-keys-store.ts` (server: create, list, revoke with the user's session)
+- `app/api/v1/**/route.ts`, `app/api/mcp/route.ts`, `app/account/api-keys/` (page, actions, components),
+  `app/developers/page.tsx`
+- Tests: `tests/api-keys-policies.test.mts` (PGlite: owner-only reads, no hash readable, five-key limit, `api_key_use`
+  counts and refuses revoked / paused / over limit; a broken policy fails), `tests/api-keys.test.mts` (format,
+  hashing, prefix), `tests/api-v1.test.mts` (serializer parity against the dataset, hidden fields absent, `fields=`,
+  cursor paging, 401/404/429 with an injected key check, ETag/304, the OpenAPI document lists every route),
+  `tests/api-mcp.test.mts` (tool list matches the table; each tool's output equals the REST serializer's; no key →
+  401), `tests/developers-page.test.mts` (the page names every route and tool in the table)
+- Dependencies: `mcp-handler@^2`, `@modelcontextprotocol/server@^2`, `zod@^4`
+
+## Build order
+1. **Foundation:** migration and policy tests, `lib/api/*` (keys, auth, respond, serialize, routes, openapi), the
+   telemetry event, the dependencies, and `/me`, `/meta`, `/fields`, `/openapi.json`.
+2. In parallel: **routes** (`/schools*`, `/national`), **MCP** (`/api/mcp` and `lib/api/mcp.ts`), **pages**
+   (`/account/api-keys`, `/developers`, the links).
+3. Integrate, verify, QA, release note; the owner applies the migration to dev before testing a preview.
 
 ## Open questions
-1. Should the bulk files live in Supabase Storage or on Vercel Blob? Whichever `publish-data` can write with the
-   secret it already has; Supabase Storage keeps one vendor.
-2. Is there demand before accounts exist? Keys could be issued by hand (a row in the table) for the first few
-   users and a form on `/developers`, which is enough to learn.
+1. **OAuth for MCP clients that can't set a header** (claude.ai's connectors). Recommendation: not now; Claude Code,
+   Claude Desktop (via `mcp-remote`), and Cursor all send headers. Supabase Auth could be the authorization server
+   later (the 2026 spec's Client ID Metadata Documents), with `mcp-handler`'s `protectedResourceHandler`.
+2. **Bulk downloads and the paid tier.** Deferred to [commercialization.md](commercialization.md): the dataset is in
+   the public repository today; a signed bulk file and the 100,000-a-day tier come with billing and `entitlements()`.
+3. **Daily limit.** 5,000 a day and 60 a minute per key is the recommendation (a notebook that walks every college
+   once uses 1,900); raise it per key by hand (a `tier` value) if someone asks.

@@ -29,7 +29,7 @@ const n = (v: Params[string]) => {
   return Number.isFinite(x) ? x : undefined;
 };
 
-const SORT_KEYS: SortKey[] = [
+export const SORT_KEYS: SortKey[] = [
   "applicants", "name", "acceptance_rate", "enrollment", "sat", "pell", "first_gen", "diversity", "avg_cost", "aid_generosity", "net_price", "earnings", "grad_rate",
   "avg_cost_change", "admit_rate_change", "size_change", "apps_change", "diversity_change",
   "men_share", "part_time", "men_share_change", "admit_gap", "loan_rate", "loan_rate_change", "student_faculty", "completion_8yr", "completion_4yr",

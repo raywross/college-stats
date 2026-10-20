@@ -119,10 +119,31 @@ Results are JSON in the tool result's `text` (structured output when the client 
 (`how_to_cite`) and a resource (`quad://fields`) are nice-to-have, not required. Tool descriptions carry the terms
 below in one sentence.
 
-**Connecting:** Claude Code (`claude mcp add --transport http quad https://usequad.app/api/mcp --header
-"Authorization: Bearer quad_…"`), Cursor and Claude Desktop (`mcp-remote` with `--header`), shown with the person's
-real key prefix on `/account/api-keys` and generically on `/developers`. OAuth sign-in for MCP clients that can't send
-a header (claude.ai's connector directory) is an open question below.
+**Connecting** (shown with the person's real key on `/account/api-keys` right after it's made, and generically on
+`/developers`). Claude Code speaks Streamable HTTP and sends the header itself:
+
+```
+claude mcp add --transport http quad https://usequad.app/api/mcp --header "Authorization: Bearer quad_…"
+```
+
+Claude Desktop and Cursor run [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) as a local stdio bridge
+(`claude_desktop_config.json`, `~/.cursor/mcp.json`). Cursor and Claude Desktop on Windows don't escape spaces inside
+`args`, so the header goes in with no space after the colon and the `Bearer …` value comes from `env`, the form
+mcp-remote's README gives, which works on every client:
+
+```json
+{
+  "mcpServers": {
+    "quad": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://usequad.app/api/mcp", "--header", "Authorization:${QUAD_AUTH}"],
+      "env": { "QUAD_AUTH": "Bearer quad_…" }
+    }
+  }
+}
+```
+
+OAuth sign-in for MCP clients that can't send a header (claude.ai's connector directory) is an open question below.
 
 ## Keys, usage, and the schema
 ```
@@ -214,6 +235,51 @@ Decisions made while building:
   server and is recorded as `api_request` with endpoint `openapi`.
 - `ApiRoute.path` is the full path (`/api/v1/schools/{id}`); the route file is `app` + the path with `{x}` as `[x]` +
   `/route.ts`. `FieldRow` adds `source_label` and `notify`; `CompareRow` and the national metrics add `field`.
+
+## Built: MCP (2026-10-20)
+Unit C of the build (branch `feature/data-api-mcp`).
+
+| File | What it holds |
+|---|---|
+| `lib/api/mcp.ts` (pure) | `MCP_TOOL_DEFS` (the seven tools: title, description, zod 4 `inputSchema`, logic), `MCP_TOOL_NAMES`, `runTool(name, args, ctx)` (validate and run without HTTP), `registerQuadTools(server, { context, record })` (the `createMcpHandler` initializer), `resolveCollegeName`, `groupCitations`, `MCP_INSTRUCTIONS`, `MCP_ATTRIBUTION` |
+| `lib/api/mcp-route.ts` (server) | `createMcpRoute(deps?)`: `createMcpHandler` behind `withMcpAuth`; `verifyMcpToken` (wraps `verifyApiKeyToken(token, "mcp")`); `MCP_RESOURCE_METADATA_PATH` |
+| `app/api/mcp/route.ts` | `GET`, `POST`, `DELETE` = `createMcpRoute()` |
+| `app/.well-known/oauth-protected-resource/api/mcp/route.ts` | The RFC 9728 document the 401 challenge names: `resource` = the MCP endpoint, `authorization_servers: []` |
+| `lib/api/routes.ts` | `MCP_TOOLS`: one row per tool (name, summary, inputs) |
+| `tests/api-mcp.test.mts` | Tool names = `MCP_TOOLS` = the table above; inputs = the schemas; each tool's JSON = its serializer's; names, candidates, errors; no hidden field in any output; telemetry; the route's 401 / 429 / 503 and a full initialize → tools/list → tools/call |
+
+Decisions made while building:
+- **One key check per HTTP request**, endpoint `mcp`, through `verifyApiKeyToken` (the REST path): it counts one
+  request against the day and spends one token of the minute. A `tools/call` is one request, so each tool call counts
+  once; the protocol's own requests (2025-era `initialize`, `notifications/initialized`, `tools/list`, a `GET` probe)
+  count too, a handful per session. There is no second lookup per tool.
+- **Errors match REST.** `withMcpAuth` only knows 401, so the route keeps what the key check said: 429 (with
+  `Retry-After`) and 503 go out as themselves; a 401 keeps `withMcpAuth`'s challenge (`WWW-Authenticate: Bearer
+  error="invalid_token", …, resource_metadata="…/.well-known/oauth-protected-resource/api/mcp"`) with the API's error
+  body, which says where to make a key. The metadata sits at the path-inserted URL (RFC 9728 §3.1) so its `resource` is
+  `/api/mcp` itself; it lists no authorization servers until OAuth comes (open question 1).
+- **Telemetry:** each tool call records `api_request` with `transport: "mcp"`, `endpoint: "mcp.<tool>"`, a status
+  (200; 400 bad input; 404 unknown college or no history; 500), and the key id from `ctx.http.authInfo.clientId`
+  (`verifyToken` returns `{ token, clientId: keyId, scopes: [], extra: { userId } }`). A refused request records
+  endpoint `mcp` with no key. Arguments the SDK's own schema check rejects never reach the tool, so those calls aren't
+  recorded (the client still gets an `isError` result naming the argument).
+- **Outputs** are the serializers' (no arithmetic in the tools): `get_college` = `publicSchool` (or, for an ambiguous
+  name, `{ ambiguous, query, message, candidates: SchoolSummary[] }`); `get_lineage` = `{ unit_id, fields:
+  schoolLineage }` and `list_fields` = `{ fields: fieldRegistry }` (the REST shapes); `get_dataset_info` =
+  `datasetMeta`; `search_colleges` = `{ total, items: schoolSummary[], cited }` over `getSchools(parseFilters(…))`,
+  in Explore's order; `compare_colleges` = `{ colleges, metrics: compareTable, cited }`; `get_history` = `{ unit_id,
+  series, definitions (label, field, unit, year_kind, breaks, sources), repeated?, sources: historySources }`.
+  `cited` folds `schoolLineage` records by field, each distinct record once with its `unit_ids`, so ten colleges cost
+  about one college's citations. `structuredContent` goes with the small answers (search, compare, dataset info,
+  candidates); records, lineage, registry, and history go as text only.
+- **Names** resolve through `searchSchools` (the scorer search uses): an exact name only one college has, else the
+  scorer's best exact short name ("MIT", "ASU" → Arizona State), else a lone match; anything else returns up to 10
+  candidates.
+- Search inputs are Explore's filters with MCP-style names (`query`, `states`, `types`, `sizes`, `min_admit_rate` /
+  `max_admit_rate` in percent, `min_sat`…`max_act`, `limit` ≤ 50, default 10); `compare_colleges.metrics` and
+  `get_history.series` are enums of the public metric and series keys; `list_fields.topic` an enum of public topics.
+  `MCP_TOOLS` rows use `ApiParam` as it is: `in` is always `"query"`, and a list input is typed by its items with
+  "A list of …" in its description.
 
 ## Open questions
 1. **OAuth for MCP clients that can't set a header** (claude.ai's connectors). Recommendation: not now; Claude Code,

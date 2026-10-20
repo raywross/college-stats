@@ -91,8 +91,72 @@ export const API_ROUTES: readonly ApiRoute[] = [
   },
 ];
 
-/** The MCP server's tools (lib/api/mcp.ts registers them; the MCP build adds one row per tool). */
-export const MCP_TOOLS: readonly McpToolDoc[] = [];
+/**
+ * The MCP server's tools (lib/api/mcp.ts registers them; tests/api-mcp.test.mts checks the names and inputs match).
+ * An MCP input has no place in a URL, so every `in` is "query"; a list input is typed by its items and says "list".
+ */
+export const MCP_TOOLS: readonly McpToolDoc[] = [
+  {
+    name: "search_colleges",
+    summary: "Find colleges by name, nickname, or place and Explore's filters; each row has the unit_id, name, city, state, kind, and acceptance rate.",
+    inputs: [
+      { name: "query", in: "query", type: "string", description: "A college's name, short name or nickname (\"UGA\"), city, or state." },
+      { name: "states", in: "query", type: "string", description: "A list of two-letter state codes, e.g. [\"CA\", \"NY\"]." },
+      { name: "types", in: "query", type: "string", description: "A list of kinds of college.", enum: ["public", "private-nonprofit", "private-forprofit"] },
+      { name: "sizes", in: "query", type: "string", description: "A list of undergraduate enrollment sizes.", enum: ["small", "medium", "large", "xl"] },
+      { name: "min_admit_rate", in: "query", type: "number", description: "Lowest acceptance rate, in percent." },
+      { name: "max_admit_rate", in: "query", type: "number", description: "Highest acceptance rate, in percent." },
+      { name: "min_sat", in: "query", type: "integer", description: "Middle-50% SAT range reaches at least this total." },
+      { name: "max_sat", in: "query", type: "integer", description: "Middle-50% SAT range starts at or below this total." },
+      { name: "min_act", in: "query", type: "integer", description: "Middle-50% ACT range reaches at least this composite." },
+      { name: "max_act", in: "query", type: "integer", description: "Middle-50% ACT range starts at or below this composite." },
+      { name: "limit", in: "query", type: "integer", description: "How many colleges to return (default 10, at most 50)." },
+    ],
+  },
+  {
+    name: "get_college",
+    summary: "One college's full record, by unit_id or by name; a name several colleges share returns the candidates instead.",
+    inputs: [
+      { name: "unit_id", in: "query", type: "string", description: "The college's IPEDS unit_id (give this or name)." },
+      { name: "name", in: "query", type: "string", description: "The college's name or a short name, resolved the way search ranks them." },
+      { name: "fields", in: "query", type: "string", description: "A list of top-level keys to return; unit_id and name always come back." },
+    ],
+  },
+  {
+    name: "compare_colleges",
+    summary: "2 to 10 colleges metric by metric: each value with its percentile rank, the national median, and each value's lineage.",
+    inputs: [
+      { name: "unit_ids", in: "query", type: "string", description: "A list of 2 to 10 unit_ids.", required: true },
+      { name: "metrics", in: "query", type: "string", description: "A list of metric keys (default: every public metric)." },
+    ],
+  },
+  {
+    name: "get_history",
+    summary: "A college's year-by-year series with their definitions, breaks, and the federal files behind them.",
+    inputs: [
+      { name: "unit_id", in: "query", type: "string", description: "The college's IPEDS unit_id.", required: true },
+      { name: "series", in: "query", type: "string", description: "A list of series keys (default: every series the college has)." },
+    ],
+  },
+  {
+    name: "get_lineage",
+    summary: "The resolved source, year, method, formula, and quote behind each of a college's values.",
+    inputs: [
+      { name: "unit_id", in: "query", type: "string", description: "The college's IPEDS unit_id.", required: true },
+      { name: "fields", in: "query", type: "string", description: "A list of field paths or prefixes to narrow to." },
+    ],
+  },
+  {
+    name: "list_fields",
+    summary: "The public field registry: path, label, topic, default source and year, and formulas for calculated values.",
+    inputs: [{ name: "topic", in: "query", type: "string", description: "Only fields of this topic (e.g. admissions, prices, outcomes)." }],
+  },
+  {
+    name: "get_dataset_info",
+    summary: "When the dataset was retrieved, its sources and release years, the release calendar, and counts (what /meta returns).",
+    inputs: [],
+  },
+];
 
 /** The file that serves a route: `/api/v1/schools/{id}` → `app/api/v1/schools/[id]/route.ts`. */
 export function routeFilePath(route: Pick<ApiRoute, "path">): string {

@@ -1,0 +1,113 @@
+{
+  "checked": "2026-10-19",
+  "files": {
+    "Most-Recent-Cohorts-Field-of-Study_06102026": {
+      "source": "scorecard",
+      "url": "https://ed-public-download.scorecard.network/downloads/Most-Recent-Cohorts-Field-of-Study_06102026.zip",
+      "published": "2026-06-09",
+      "status": 200
+    },
+    "ADM2024": {
+      "source": "ipeds-adm",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/ADM2024.zip",
+      "published": "2025-12-11",
+      "status": 200
+    },
+    "SFA2324": {
+      "source": "ipeds-sfa",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/SFA2324.zip",
+      "published": "2025-12-11",
+      "status": 200
+    },
+    "COST2_2024": {
+      "source": "ipeds-sfa",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/COST2_2024.zip",
+      "published": "2025-12-11",
+      "status": 200
+    },
+    "IC2023_AY": {
+      "source": "ipeds-ic",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2023_AY.zip",
+      "published": "2025-12-11",
+      "status": 200
+    },
+    "IC2023": {
+      "source": "ipeds-ic",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2023.zip",
+      "published": "2026-01-07",
+      "status": 200
+    },
+    "HD2025": {
+      "source": "ipeds-hd",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/HD2025.zip",
+      "published": "2026-07-21",
+      "status": 200
+    },
+    "EF2024D": {
+      "source": "ipeds-ef",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024D.zip",
+      "published": "2025-12-31",
+      "status": 200
+    },
+    "OM2024": {
+      "source": "ipeds-om",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/OM2024.zip",
+      "published": "2025-12-11",
+      "status": 200
+    },
+    "GR2024_PELL_SSL": {
+      "source": "ipeds-gr",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/GR2024_PELL_SSL.zip",
+      "published": "2025-12-11",
+      "status": 200
+    },
+    "SAL2024_IS": {
+      "source": "ipeds-sal",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/SAL2024_IS.zip",
+      "published": "2025-12-30",
+      "status": 200
+    },
+    "IC2025": {
+      "source": "ipeds-ic-char",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2025.zip",
+      "published": "2026-07-21",
+      "status": 200
+    },
+    "DRVF2024": {
+      "source": "ipeds-f",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/DRVF2024.zip",
+      "published": "2025-12-30",
+      "status": 200
+    },
+    "EF2024C": {
+      "source": "ipeds-ef-c",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024C.zip",
+      "published": "2025-12-30",
+      "status": 200
+    },
+    "EF2024A": {
+      "source": "ipeds-ef-a",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024A.zip",
+      "published": "2025-12-30",
+      "status": 200
+    },
+    "EF2024A_DIST": {
+      "source": "ipeds-ef-a-dist",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/EF2024A_DIST.zip",
+      "published": "2025-12-30",
+      "status": 200
+    },
+    "C2025_A": {
+      "source": "ipeds-c",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/C2025_A.zip",
+      "published": "2026-07-21",
+      "status": 200
+    },
+    "IC2024": {
+      "source": "ipeds-ic-open",
+      "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2024.zip",
+      "published": "2026-08-31",
+      "status": 200
+    }
+  }
+}

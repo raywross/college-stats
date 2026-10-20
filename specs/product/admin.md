@@ -222,6 +222,10 @@ fields, which the endpoint never sets. A test checks that the public endpoint's 
 
 ## Health
 
+The Health page has two views since 2026-10-19: **Estimate inputs** (health as a function of the facts the
+admission estimate reads) and **Files** (every file we read, its year, publish date, and health, then the per-college
+table below). See [admin-health-views.md](admin-health-views.md).
+
 ### Per college
 A card with one row per **data group**, each with its newest retrieval date, its status, and what decided it:
 

@@ -193,6 +193,7 @@ export default async function DataPage() {
     "ipeds-ic": all.filter((s) => s.cost?.sticker).length,
     "ipeds-hd": all.filter((s) => s.campus?.setting).length,
     "ipeds-ic-char": all.filter((s) => s.campus?.calendar !== undefined && s.campus?.programs).length,
+    "ipeds-ic-open": all.filter((s) => s.admissions.open_admission != null).length,
     "ipeds-ef": all.filter((s) => s.academics?.student_faculty_ratio != null).length,
     "ipeds-om": all.filter((s) => s.outcomes?.eight_year?.all.award != null).length,
     "ipeds-gr": all.filter((s) => s.outcomes?.grad_cohorts != null).length,
@@ -220,7 +221,7 @@ export default async function DataPage() {
     for (const [, def] of STORED) if (def.source === key) topics.add(def.topic);
     return [...topics].map((t) => TOPIC_LABELS[t]);
   };
-  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "state-law", "directory", "wikidata", "wikipedia"];
+  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-ic-open", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "state-law", "directory", "wikidata", "wikipedia"];
 
   const toc = [
     ["why", "Why it lags"],

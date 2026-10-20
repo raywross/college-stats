@@ -24,7 +24,7 @@ export default async function AdminHome() {
     { label: "Paused accounts", value: counts.paused },
     { label: "Being deleted", value: counts.deleting, note: "Inside the 30 days" },
     { label: "Admins", value: counts.admins, href: "/admin/admins" },
-    { label: "Visit events, hosts read", value: visitEvents.newest?.hostsRead ?? 0, href: "/admin/health#visit-events", note: VISIT_EVENTS_TONE_LABEL[cardTone(visitEvents.newest, new Date())] },
+    { label: "Visit events, hosts read", value: visitEvents.newest?.hostsRead ?? 0, href: "/admin/health/files#visit-events", note: VISIT_EVENTS_TONE_LABEL[cardTone(visitEvents.newest, new Date())] },
   ];
   return (
     <>

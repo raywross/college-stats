@@ -47,6 +47,10 @@ const STUBS: Record<string, string> = {
   // lib/admin/health.ts reaches Supabase through a relative dynamic import; with no auth env the family lists are unavailable.
   "../supabase-server": "export function supabaseAuthEnv(){return false} export async function createServerSupabase(){throw new Error('no request')}",
   "@/lib/data": "export async function getData(){return {getSchoolById:(id)=>globalThis.__world.schools[id]??null}}",
+  // The Files view's published files and the estimate inputs (specs/product/admin-health-views.md), tested in
+  // tests/admin-health-views.test.mts; here only their shape matters.
+  "@/lib/admin/estimate-inputs-load":
+    "export async function loadSourceFiles(){return {rows:[],checked:'2026-10-19'}} export async function inputsOverview(){return {all:[],counts:{total:0,overall:{fresh:0,watch:0,stale:0,failing:0},inputs:{}},feeds:{},today:'2026-10-19'}} export function inputsCsv(){return ''}",
 };
 registerHooks({
   resolve(specifier, context, next) {
@@ -640,14 +644,16 @@ test("static: each exported action starts with requireAdmin(); the pages and rou
   const bodies = [...actions.matchAll(/export async function (\w+)\([^)]*\)[^{]*\{\n(.*)\n/g)];
   assert.equal(bodies.length, Object.keys(ACTION_FORMS).length);
   for (const [, name, firstLine] of bodies) assert.match(firstLine, /await requireAdmin\(\)/, `${name} starts with requireAdmin()`);
-  for (const file of ["app/admin/health/page.tsx", "app/admin/operations/page.tsx"]) {
+  for (const file of ["app/admin/health/page.tsx", "app/admin/health/files/page.tsx", "app/admin/operations/page.tsx"]) {
     const src = read(file);
     const body = src.slice(src.indexOf("export default async function"));
     assert.match(body, /\{\n\s+await requireAdmin\(\);/, `${file} calls requireAdmin() first`);
     assert.match(src, /robots: \{ index: false \}/, `${file} is noindex`);
   }
-  const route = read("app/admin/health/csv/route.ts");
-  assert.match(route.slice(route.indexOf("export async function GET")), /\{\n\s+await requireAdmin\(\);/);
+  for (const file of ["app/admin/health/csv/route.ts", "app/admin/health/inputs-csv/route.ts"]) {
+    const route = read(file);
+    assert.match(route.slice(route.indexOf("export async function GET")), /\{\n\s+await requireAdmin\(\);/, `${file} calls requireAdmin() first`);
+  }
 });
 
 test("static: client components import none of the server-only modules (the GitHub client, the App key's module, the log)", () => {
@@ -758,8 +764,8 @@ test("Operations shows the review queue's read error instead of a table", async 
   assert.equal(stubsIn(markup).filter((s) => s.name === "ReviewQueueTable").length, 0);
 });
 
-test("the Health page shows the inputs' date, hides the family filter when the lists can't be read, and links the CSV with the filters", async () => {
-  const page = await loadPage("app/admin/health/page.tsx");
+test("the Health page's Files view shows the inputs' date, hides the family filter when the lists can't be read, and links the CSV with the filters", async () => {
+  const page = await loadPage("app/admin/health/files/page.tsx");
   reset({ admin: true });
   const markup = html(await page({ searchParams: Promise.resolve({ status: "failing", state: "oh" }) }));
   const stubs = stubsIn(markup);
@@ -768,7 +774,8 @@ test("the Health page shows the inputs' date, hides the family filter when the l
   const filterForm = stubs.find((s) => s.name === "HealthFilterForm");
   assert.equal(filterForm?.props.familyAvailable, false, "no family lists in this environment, so the filter is hidden");
   assert.equal(filterForm?.props.csvHref, "/admin/health/csv?status=failing&state=OH");
-  assert.deepEqual(stubs.map((s) => s.name).filter((n) => n.startsWith("Health")), ["HealthStats", "HealthFilterForm", "HealthTable"]);
+  assert.deepEqual(stubs.map((s) => s.name).filter((n) => n.startsWith("Health")), ["HealthTabs", "HealthStats", "HealthFilterForm", "HealthTable"]);
+  assert.ok(stubs.some((s) => s.name === "SourceFilesTable"), "the published files come first");
   reset({ admin: false });
   await assert.rejects(page({ searchParams: Promise.resolve({}) }), is404);
 });
@@ -780,7 +787,7 @@ test("HealthFilterForm renders the family-list checkbox only when the lists were
   const withIt = html(mod.HealthFilterForm({ ...props, familyAvailable: true }));
   assert.doesNotMatch(without, /name="family"/);
   assert.match(withIt, /name="family"/);
-  assert.match(without, /<form [^>]*action="\/admin\/health" method="get"/);
+  assert.match(without, /<form [^>]*action="\/admin\/health\/files" method="get"/);
   assert.match(without, /<option value="stale" selected/, "the URL's filters are the form's values");
   assert.match(without, /<option value="fetch_failed" selected/);
   assert.match(without, /fetch failed \(3\)/);
@@ -811,9 +818,9 @@ test("HealthStats links every count to the table filtered to it and marks the fi
     groups: Object.fromEntries(rules.HEALTH_GROUPS.map((g) => [g, { ...zero, fresh: 5, stale: g === "reported" ? 4 : 0, unjudged: 0 }])),
   };
   const markup = html(mod.HealthStats({ counts, filters: filtersOf("status=stale&group=reported") }));
-  assert.match(markup, /href="\/admin\/health\?status=failing"/);
-  assert.match(markup, /<a href="\/admin\/health"[^>]*aria-current="true"[^>]*>4<\/a>/, "the filter that is on is marked, and clicking it clears it");
-  assert.match(markup, /href="\/admin\/health\?status=fresh&amp;group=federal"/);
+  assert.match(markup, /href="\/admin\/health\/files\?status=failing"/);
+  assert.match(markup, /<a href="\/admin\/health\/files"[^>]*aria-current="true"[^>]*>4<\/a>/, "the filter that is on is marked, and clicking it clears it");
+  assert.match(markup, /href="\/admin\/health\/files\?status=fresh&amp;group=federal"/);
   assert.doesNotMatch(markup, /Not judged/, "the column appears only when some group could not be judged");
   assert.match(html(mod.HealthStats({ counts: { ...counts, groups: { ...counts.groups, campus: { ...zero, unjudged: 2 } } }, filters: filtersOf("") })), /Not judged/);
 });

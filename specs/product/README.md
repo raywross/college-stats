@@ -53,6 +53,7 @@ the roadmap, with the award-letter analyzer as the last stage.
 | [telemetry.md](telemetry.md) | Product analytics with a typed event registry, privacy rules for minors, and usage reports (built 2026-10-07) | Medium |
 | [commercialization.md](commercialization.md) | Free / Plus / Pro tiers, what each gates, Stripe billing, entitlements, the pricing page | Large |
 | [counselor-portal.md](counselor-portal.md) | Organization accounts for counselors and consultants: caseloads, reports, scattergram uploads | Extra large |
+| [assistants.md](assistants.md) | Quad in ChatGPT, Claude, and Gemini: a read-only MCP server at `/mcp`, the same facts as plain `/api/v1` endpoints with an OpenAPI document, a downloadable skill file, and the `/connect` page with the steps for each (built 2026-10-20) | Medium |
 | [data-api.md](data-api.md) | A keyed public API over the dataset, history, and lineage, with a paid tier | Medium |
 | [data-steward.md](data-steward.md) | *Planned 2026-10-13*: an agent that turns the review queue into a few causes, proves each against the colleges' documents, and opens fixes for the owner to approve; Operations becomes Issues, Proposals, and Audits | Medium |
 | [admin.md](admin.md) | *Built 2026-10-13* ([console pages](admin-console-ui.md)): the admin console: people and households (search, details, email, password reset, deactivate, delete, link and unlink), the hidden selectivity index and a student's hidden odds, each college's data health by when its data was received, and reruns and data approvals through a GitHub App | Large |

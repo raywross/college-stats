@@ -11,8 +11,11 @@ sold is convenience and trust: one schema, derived values that are documented an
 a changelog, uptime, and support.
 
 ## What exists today
-`/api/schools` (search and lookup for the site's own client components) and the JSON files in git. The API below
-is versioned and separate, so the internal route can change freely.
+The free, read-only, assistant-facing surface built 2026-10-20 ([assistants.md](assistants.md)): the MCP server at
+`/mcp` and the plain endpoints `/api/v1/colleges` (search and Explore's filters), `/api/v1/colleges/{unit_id}` (the
+Compare table's facts, cited), `/api/v1/compare`, `/api/v1/glossary`, and `/api/v1/openapi.json`, unkeyed, 60 requests
+a minute per address, with `X-Dataset-Publish`. The keyed API below adds history, lineage per field, the field
+registry, bulk downloads, keys and tiers on top of those routes; the serializers in `lib/api/` are the starting point.
 
 ## Endpoints (`/api/v1`)
 | Endpoint | Returns | Notes |

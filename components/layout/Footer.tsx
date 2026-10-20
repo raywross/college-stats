@@ -31,6 +31,7 @@ export function Footer() {
             <li><Link className="hover:text-foreground" href="/data">Data: sources, years &amp; updates</Link></li>
             <li><Link className="hover:text-foreground" href="/roadmap">Roadmap: what&apos;s coming</Link></li>
             <li><Link className="hover:text-foreground" href="/release-notes">Release notes: what&apos;s new</Link></li>
+            <li><Link className="hover:text-foreground" href="/connect">Connect Quad to ChatGPT, Claude &amp; Gemini</Link></li>
           </ul>
         </div>
         <div>

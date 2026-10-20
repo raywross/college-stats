@@ -53,7 +53,7 @@ the roadmap, with the award-letter analyzer as the last stage.
 | [telemetry.md](telemetry.md) | Product analytics with a typed event registry, privacy rules for minors, and usage reports (built 2026-10-07) | Medium |
 | [commercialization.md](commercialization.md) | Free / Plus / Pro tiers, what each gates, Stripe billing, entitlements, the pricing page | Large |
 | [counselor-portal.md](counselor-portal.md) | Organization accounts for counselors and consultants: caseloads, reports, scattergram uploads | Extra large |
-| [data-api.md](data-api.md) | A keyed public API over the dataset, history, and lineage, with a paid tier | Medium |
+| [data-api.md](data-api.md) | A keyed API and an MCP server over the dataset, history, and lineage, for people with an account (rewritten 2026-10-20 for building; the paid tier waits for billing) | Medium |
 | [data-steward.md](data-steward.md) | *Planned 2026-10-13*: an agent that turns the review queue into a few causes, proves each against the colleges' documents, and opens fixes for the owner to approve; Operations becomes Issues, Proposals, and Audits | Medium |
 | [admin.md](admin.md) | *Built 2026-10-13* ([console pages](admin-console-ui.md)): the admin console: people and households (search, details, email, password reset, deactivate, delete, link and unlink), the hidden selectivity index and a student's hidden odds, each college's data health by when its data was received, and reruns and data approvals through a GitHub App | Large |
 | [admin-health-views.md](admin-health-views.md) | *Built 2026-10-19:* the Health page's two views: the facts the admission estimate reads (each with its source, the year it describes, when it was published and collected, and a status by age), and every file we read with its year, publish date, and health | Medium |
@@ -93,7 +93,7 @@ accounts ─► student-profile ─► saved-lists ─► chances-and-fit       
     │
 high-school-data ─► scattergrams (also after saved-lists)
 cds-admissions (data expansion) ─► early-decision-strategy
-data-api (independent)
+data-api (after accounts; independent of the planning tools)
 ```
 Telemetry first: it is small, and every later feature's success is measured with it. Accounts next: the planning
 tools are only worth building once a family can keep their work. Following colleges is the first thing to build on

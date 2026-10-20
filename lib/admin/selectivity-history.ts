@@ -8,7 +8,7 @@ import "server-only";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminSupabase } from "@/lib/admin/people";
 import type { SelectivityTier } from "@/lib/chances/types";
-import { tierMoves, type InputValue, type PointCause, type Pool, type RunChange, type SelectivityPoint } from "./selectivity-history-view";
+import { poolsOf, runChangesOf, tierMoves, type InputValue, type PointCause, type Pool, type RunChange, type SelectivityPoint } from "./selectivity-history-view";
 
 export type { Pool, SelectivityPoint } from "./selectivity-history-view";
 
@@ -76,16 +76,18 @@ export async function runs(): Promise<SelectivityRun[]> {
   return rows.map(toRun);
 }
 
-/** One college's points, every pool, oldest first. */
+/** One college's points (one per recorded publish, the three pools side by side), oldest first. */
 export async function collegeHistory(unitId: string): Promise<SelectivityPoint[]> {
   const supabase = await client();
-  type Row = { published_at: string; pool: Pool; score: number | string | null; rank: number | null; tier: SelectivityTier | null; tier_year: string | null; band: string | null; held: boolean; cause: PointCause; inputs: Record<string, InputValue>; selectivity_publishes: Pub | Pub[] | null };
   type Pub = { method: string; git_commit: string };
+  type Row = Record<string, unknown> & { published_at: string; rank: number | null; tier_year: string | null; band: string | null; cause: PointCause; inputs: Record<string, InputValue>; selectivity_publishes: Pub | Pub[] | null };
   const rows = check<Row[]>(
     "a college's selectivity history",
     await supabase
       .from("selectivity_history")
-      .select("published_at, pool, score, rank, tier, tier_year, band, held, cause, inputs, selectivity_publishes(method, git_commit)")
+      .select(
+        "published_at, rank, tier_year, band, score_all, tier_all, held_all, score_in_state, tier_in_state, held_in_state, score_out_of_state, tier_out_of_state, held_out_of_state, cause, inputs, selectivity_publishes(method, git_commit)",
+      )
       .eq("unit_id", unitId)
       .order("published_at", { ascending: true })
       .order("id", { ascending: true }),
@@ -94,27 +96,31 @@ export async function collegeHistory(unitId: string): Promise<SelectivityPoint[]
   const pub = (r: Row): Pub | null => (Array.isArray(r.selectivity_publishes) ? (r.selectivity_publishes[0] ?? null) : r.selectivity_publishes);
   return rows.map((r) => ({
     publishedAt: r.published_at,
-    pool: r.pool,
-    score: r.score === null ? null : Number(r.score),
     rank: r.rank,
-    tier: r.tier,
     tierYear: r.tier_year,
     band: r.band,
-    held: r.held,
     cause: r.cause,
     method: pub(r)?.method ?? "",
     gitCommit: pub(r)?.git_commit ?? "",
     inputs: r.inputs ?? {},
+    pools: poolsOf(r),
   }));
 }
 
-/** One run's rows with the rows they replaced. */
+/** PostgREST answers at most 1,000 rows; a method run records every rated college, so its changes are read in pages. */
+const PAGE = 1000;
+
+/** One run's changes, one per pool that moved, with what each replaced. */
 export async function runChanges(runId: number): Promise<RunChange[]> {
   const supabase = await client();
-  type Row = { unit_id: string; pool: Pool; score: number | string | null; tier: SelectivityTier | null; cause: PointCause; held: boolean; prev_score: number | string | null; prev_tier: SelectivityTier | null };
-  const rows = check<Row[]>("a run's changes", await supabase.rpc("admin_selectivity_run_changes", { p_run: runId }));
-  const num = (v: number | string | null) => (v === null ? null : Number(v));
-  return rows.map((r) => ({ unitId: r.unit_id, pool: r.pool, score: num(r.score), tier: r.tier, cause: r.cause, held: r.held, prevScore: num(r.prev_score), prevTier: r.prev_tier }));
+  type Row = Record<string, unknown> & { unit_id: string; cause: PointCause };
+  const rows: Row[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const page = check<Row[]>("a run's changes", await supabase.rpc("admin_selectivity_run_changes", { p_run: runId }).range(from, from + PAGE - 1));
+    rows.push(...page);
+    if (page.length < PAGE) break;
+  }
+  return rows.flatMap(runChangesOf);
 }
 
 /** The biggest score moves over a window (method changes left out unless asked for). */

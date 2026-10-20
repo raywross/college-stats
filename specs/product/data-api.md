@@ -1,6 +1,8 @@
 # Data API and MCP Server: The Dataset, History, and Lineage for Account Holders
 
-> Status: **planned** (rewritten 2026-10-20 from the 2026-10-02 draft, for building now). For people with a Quad
+> Status: **built** 2026-10-20 on `feature/data-api` ([foundation](#built-foundation-2026-10-20),
+> [routes and pages](#built-routes-and-pages-2026-10-20), [MCP](#built-mcp-2026-10-20)); rewritten the same day from the
+> 2026-10-02 draft. For people with a Quad
 > account only (owner decision 2026-10-20): every request carries a key made on `/account`, and nothing is open to
 > anonymous callers. Builds on [accounts.md](accounts.md) (built), the deploy-carried dataset
 > ([serving-architecture.md](../serving-architecture.md), built), and [telemetry.md](telemetry.md) (built). Paid
@@ -280,6 +282,52 @@ Decisions made while building:
   `get_history.series` are enums of the public metric and series keys; `list_fields.topic` an enum of public topics.
   `MCP_TOOLS` rows use `ApiParam` as it is: `in` is always `"query"`, and a list input is typed by its items with
   "A list of …" in its description.
+
+## Built: routes and pages (2026-10-20)
+Units B and D of the build (`feature/data-api-routes`, `feature/data-api-pages`), integrated on `feature/data-api`.
+
+### Routes (`app/api/v1/schools*`, `app/api/v1/national`)
+- `lib/api/query.ts` (pure) parses the list query: every key `parseFilters` reads (`states=`, `types=`, `sizes=`, the
+  ranges, `near`/`within`, `income`, …, exactly as Explore spells them), `sort` validated against Explore's `SORT_KEYS`
+  (now exported from `lib/params.ts`; `sortBy` accepted as an alias), `sortDir`, `limit` (1–100, default 50, above 100
+  clamped), `cursor` (base64url of the offset; anything non-canonical is a 400), and `fields`. **Unknown parameters
+  are a 400 naming the parameter**, so a misspelled filter can't silently return every college; Explore's `view`,
+  `page`, `chart`, and `forMe` are accepted and ignored so a pasted Explore URL works. `near` must be a ZIP the site
+  knows. The list applies `resolveNear` and `estimatesShown()` the way the Explore page does, so `sort=distance`,
+  `income`, and `minAidIncome` behave the same; a parity test checks several Explore URLs page by page.
+- `fields=` is validated: on records against the union of top-level keys across the dataset; on `/lineage` against
+  public registered paths or prefixes, so a hidden name is refused without being named.
+- `/history` answers `{ unit_id, history, definitions, sources }` (the shard, each public series' definition from
+  `lib/api/serialize.ts seriesDefinitions`, and `historySources`), the same shape the MCP tool uses. `/changes` reads
+  `getSchoolChanges` (empty without Supabase) and drops changes to hidden fields. `/national` is `nationalSummary`
+  over the metrics and `history/national.json`.
+- Tests (`tests/api-v1-routes.test.mts`) drive the real route files with a stubbed publishable-key client: Explore
+  parity, a cursor walk of the whole dataset with no repeats, 404s, hidden-field absence, `fields=`, and that every
+  `parseFilters` key is documented in `API_ROUTES`.
+
+### Pages (`/account/api-keys`, `/developers`)
+- `/account/api-keys`: the keys as a table from `sm` and stacked cards on phones (name, prefix, created, last used,
+  today's requests against the daily limit, Revoke with an inline two-step confirm). "Make a key" takes a name and the
+  terms line; the new key is shown once with Copy and the three connection snippets (curl, Claude Code, `mcp-remote`
+  JSON), built by `lib/api-snippets.ts connectionSnippets(origin, key)` with the request's origin, and stays until
+  "I've saved it". With five active keys the form becomes a note. Before the migration is applied the page shows the
+  store's setup notice. An account scheduled for deletion is sent to `/account`. `/account` gained an "API keys"
+  section between "Your data" and "Delete your account".
+- `/developers` (static): what the API and MCP server are, getting a key, authentication and limits (from
+  `API_KEY_LIMITS`), errors, the endpoint table and parameters from `API_ROUTES`, the MCP tools from `MCP_TOOLS`, the
+  connection snippets with a `quad_…` placeholder and `https://usequad.app` as the origin, the field registry from
+  `fieldRegistry(meta)` in closed `<details>` per topic (the Data page's topic labels, moved to `lib/topic-labels.ts`;
+  a row without a single release year reads "Dated on each value"), the lineage model in the Data page's words, the
+  terms (`lib/api-terms.ts`), and the `openapi.json` link. Linked from the footer's Explore list and the Data page's
+  Sources section. `tests/developers-page.test.mts` checks both pages read the tables and limits rather than literals
+  and carry no hard-coded year.
+- Shared pieces live in `components/api/` (`CopyButton`, `CodeBlock`, `ConnectionSnippets`) because both pages use them.
+
+### Not exercised in this environment
+The signed-in flow (making a key, calling the API with it, the MCP server with a real key) needs Supabase with the
+migration applied; this environment has neither. The policy tests prove the SQL against real Postgres, and the route
+and tool tests prove the handlers with an injected key check. The owner tests the whole path on a preview after
+applying `20261020130000_api_keys.sql` to dev.
 
 ## Open questions
 1. **OAuth for MCP clients that can't set a header** (claude.ai's connectors). Recommendation: not now; Claude Code,

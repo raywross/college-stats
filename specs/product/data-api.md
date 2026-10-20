@@ -80,7 +80,7 @@ filters work as API parameters.
 |---|---|---|
 | `/schools` | `{ items: PublicSchool[], total, next_cursor }` | Explore's filters (`q`, `state`, `type`, `size`, `minAR`…, every key `parseFilters` reads), `sort` (`lib/dataset.ts` sort keys), `fields=` to pick top-level keys, `limit` ≤ 100 (default 50), `cursor` (opaque) |
 | `/schools/{unit_id}` | One `PublicSchool` | The same object the site renders, less hidden fields; `fields=` to pick keys |
-| `/schools/{unit_id}/history` | `SchoolHistory` (the shard) plus `series` definitions (`lib/history.ts SERIES`: label, unit, year kind, breaks) | 404 when the college has no history |
+| `/schools/{unit_id}/history` | `{ unit_id, history, definitions, sources }`: the shard (`SchoolHistory`), each public series' definition (label, field, unit, `year_kind`, breaks, sources; `lib/api/serialize.ts seriesDefinitions`, shared with the MCP tool `get_history`), and the files behind them (`historySources`) | 404 when the college has no history |
 | `/schools/{unit_id}/lineage` | `{ unit_id, fields: Record<FieldPath, Cited> }` | `lineageFor` per registered, non-hidden field the college has a value for; `fields=` to pick; the API's distinctive feature |
 | `/schools/{unit_id}/changes` | The college's recent `dataset_changes` rows with `describeChange` text | From Supabase (public read); `[]` when unconfigured |
 | `/fields` | The registry: path, label, topic, source, vintage, formula and inputs for derived fields, `notify` flags | Non-hidden fields only. Documentation generated from code |

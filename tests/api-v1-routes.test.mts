@@ -7,7 +7,7 @@
  *   checked; a bad `sort`, `sortDir`, `cursor`, number, `types`, ZIP, or unknown parameter is `400` naming it;
  *   `fields=` trims records; every key `parseFilters` reads is documented, and the documented sort values are Explore's;
  * - /schools/{id}: the record `publicSchool` serves, 404 for an unknown id, `fields=`;
- * - /history: 404 for a college without a shard, 200 with the shard and `series` definitions for one that has;
+ * - /history: 404 for a college without a shard, 200 with the shard, its series' definitions, and sources for one that has;
  * - /lineage: every key a public registered field path, equal to `schoolLineage`, `fields=` narrows, hidden names refused;
  * - /changes: `[]` without Supabase (and when it can't be read), `describeChange` text on stored rows, hidden fields left out;
  * - /national: the serializer's numbers; every route answers 401 without a key.
@@ -324,7 +324,7 @@ test("/schools/{id}: fields= keeps the named keys plus unit_id and name; an unkn
 /* /history                                                            */
 /* ------------------------------------------------------------------ */
 
-test("/history: 404 for a college without a shard or an unknown id; the shard plus series definitions for one that has", async () => {
+test("/history: 404 for a college without a shard or an unknown id; the shard plus series definitions and sources for one that has", async () => {
   // Every college in the dataset has a shard today, so point the reader at a folder with none: that college has no history.
   const bare = mkdtempSync(join(tmpdir(), "quad-no-history-"));
   const here = process.cwd();
@@ -343,17 +343,23 @@ test("/history: 404 for a college without a shard or an unknown id; the shard pl
   assert.ok(hasShard(HARVARD), "Harvard has a shard");
   const res = await call(historyRoute, `/api/v1/schools/${HARVARD}/history`, HARVARD);
   assert.equal(res.status, 200);
-  const body = await json<{ unit_id: string; history: { unit_id: string; series: Record<string, unknown> }; series: Record<string, { label: string; unit: string; kind: string; breaks: unknown[]; field: string }> }>(res);
+  const body = await json<{
+    unit_id: string;
+    history: { unit_id: string; series: Record<string, unknown> };
+    definitions: Record<string, { label: string; unit: string; year_kind: string; breaks: unknown[]; field: string; sources: string[] }>;
+    sources: unknown[];
+  }>(res);
   assert.equal(body.unit_id, HARVARD);
   assert.deepEqual(body.history, JSON.parse(read(`data/history/schools/${HARVARD}.json`)));
   const keys = Object.keys(body.history.series);
   assert.ok(keys.length > 5);
-  assert.deepEqual(Object.keys(body.series).sort(), keys.sort(), "a definition for every series in the shard");
-  for (const def of Object.values(body.series)) {
-    assert.ok(def.label && def.unit.length > 0 && ["fall", "academic", "cohort"].includes(def.kind), JSON.stringify(def));
-    assert.ok(Array.isArray(def.breaks));
+  assert.deepEqual(Object.keys(body.definitions).sort(), keys.sort(), "a definition for every series in the shard");
+  for (const def of Object.values(body.definitions)) {
+    assert.ok(def.label && def.unit.length > 0 && ["fall", "academic", "cohort"].includes(def.year_kind), JSON.stringify(def));
+    assert.ok(Array.isArray(def.breaks) && def.sources.length > 0);
   }
-  assert.equal(body.series.sat_50?.breaks.length, 1, "the SAT break is carried");
+  assert.equal(body.definitions.sat_50?.breaks.length, 1, "the SAT break is carried");
+  assert.ok(Array.isArray(body.sources), "the files behind the series");
 });
 
 /* ------------------------------------------------------------------ */

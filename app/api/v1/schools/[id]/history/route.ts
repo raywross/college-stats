@@ -1,27 +1,23 @@
-import { getData, getHistory } from "@/lib/data";
-import { SERIES, isSeriesKey, type SeriesDef } from "@/lib/history";
+import { getData, getHistory, getHistoryFiles } from "@/lib/data";
+import { historySources } from "@/lib/history";
 import { notFound, withApiKey } from "@/lib/api/handler";
 import { apiJson } from "@/lib/api/respond";
-import { isHiddenPath } from "@/lib/api/serialize";
+import { publicSeriesKeys, seriesDefinitions } from "@/lib/api/serialize";
 
 /**
  * GET /api/v1/schools/{id}/history (specs/product/data-api.md "Endpoints"): the college's history shard
- * (data/history/schools/{id}.json, `getHistory()`) and, for each series in it, the definition the site charts it
- * with (lib/history.ts SERIES: label, the field it extends, unit, what a year means, breaks in comparability).
- * 404 when the college has no shard.
+ * (data/history/schools/{id}.json, `getHistory()`), and for each public series in it the definition the site charts it
+ * with (lib/api/serialize.ts seriesDefinitions: label, the field it extends, unit, what a year means, breaks in
+ * comparability, sources) and the files behind them (lib/history.ts historySources), the same shape the MCP tool
+ * `get_history` answers with. 404 when the college has no shard.
  */
 export const GET = withApiKey<{ id: string }>("schools.history", async ({ request, params }) => {
   const { getSchoolById, getMeta } = await getData();
   if (!getSchoolById(params.id)) return notFound(`No college with unit id ${params.id}.`);
   const history = await getHistory(params.id);
   if (!history) return notFound(`No history for unit id ${params.id}.`);
-  const series = Object.fromEntries(
-    Object.keys(history.series)
-      .filter((k) => isSeriesKey(k) && !isHiddenPath(SERIES[k].field))
-      .map((k) => {
-        const def: SeriesDef = SERIES[k as keyof typeof SERIES];
-        return [k, { label: def.label, short: def.short, field: def.field, unit: def.unit, kind: def.kind, ...("signed" in def ? { signed: true } : {}), breaks: def.breaks ?? [] }];
-      }),
-  );
-  return apiJson({ unit_id: params.id, history, series }, { retrieved: getMeta().retrieved, request });
+  const keys = publicSeriesKeys(history);
+  const hmeta = (await getHistoryFiles())?.meta ?? null;
+  const sources = hmeta ? historySources(keys, hmeta, getMeta()) : [];
+  return apiJson({ unit_id: params.id, history, definitions: seriesDefinitions(keys), sources }, { retrieved: getMeta().retrieved, request });
 });

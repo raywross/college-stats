@@ -19,7 +19,7 @@ import type { CallToolResult, McpServer, ServerContext } from "@modelcontextprot
 import type { Dataset } from "../dataset";
 import type { School } from "../types";
 import type { Cited } from "../lineage.ts";
-import { HISTORY_FAMILIES, SERIES, SERIES_KEYS, historySources, type HistoryMeta, type SchoolHistory, type SeriesKey } from "../history.ts";
+import { SERIES, SERIES_KEYS, historySources, type HistoryMeta, type SchoolHistory, type SeriesKey } from "../history.ts";
 import { aliasKey } from "../aliases.ts";
 import { parseFilters } from "../params.ts";
 import type { MetricKey } from "../metrics.ts";
@@ -31,8 +31,10 @@ import {
   fieldTopics,
   isHiddenPath,
   publicSchool,
+  publicSeriesKeys,
   schoolLineage,
   schoolSummary,
+  seriesDefinitions,
   type SchoolSummary,
 } from "./serialize.ts";
 
@@ -275,27 +277,12 @@ async function getHistoryTool(args: z.infer<typeof historyInput>, ctx: McpToolCo
   if (!data.getSchoolById(args.unit_id)) return notFound(args.unit_id);
   const history = await ctx.getHistory(args.unit_id);
   if (!history) return toolError(404, `Quad has no year-by-year history for unit_id ${args.unit_id}.`);
-  const have = (Object.keys(history.series) as SeriesKey[]).filter((k) => k in SERIES && !isHiddenPath(SERIES[k].field));
+  const have = publicSeriesKeys(history);
   const keys = args.series ? have.filter((k) => args.series!.includes(k)) : have;
   if (args.series && keys.length === 0) return toolError(404, `This college has none of those series. It has: ${have.join(", ")}.`);
   const series = Object.fromEntries(keys.map((k) => [k, history.series[k]]));
-  const definitions = Object.fromEntries(
-    keys.map((k) => {
-      const d = SERIES[k];
-      return [
-        k,
-        {
-          label: d.label,
-          field: d.field,
-          unit: d.unit,
-          year_kind: d.kind,
-          ...("signed" in d && d.signed ? { signed: true } : {}),
-          ...("breaks" in d && d.breaks ? { breaks: d.breaks } : {}),
-          sources: [...new Set(d.families.map((f) => HISTORY_FAMILIES[f].source))],
-        },
-      ];
-    }),
-  );
+  // The same definitions /api/v1/schools/{id}/history serves (lib/api/serialize.ts), so the two surfaces can't drift.
+  const definitions = seriesDefinitions(keys);
   const hmeta = ctx.getHistoryMeta ? await ctx.getHistoryMeta() : null;
   const sources = hmeta ? historySources(keys, hmeta, data.getMeta()) : [];
   return ok({ unit_id: history.unit_id, series, definitions, ...(history.repeated ? { repeated: history.repeated } : {}), sources }, false);

@@ -10,10 +10,10 @@
  *
  * Pure module (type-only imports aside from the registry, lineage, and metrics), so tests load it directly.
  */
-import type { DatasetMeta, School, SchoolSelectivity, SchoolType, Topic } from "../types";
+import type { DatasetMeta, School, SchoolSelectivity, SchoolType, SourceKey, Topic } from "../types";
 import type { Dataset } from "../dataset";
 import type { ReleaseCalendar } from "../releases";
-import type { NationalHistory } from "../history";
+import { HISTORY_FAMILIES, SERIES, type NationalHistory, type SchoolHistory, type SeriesBreak, type SeriesDef, type SeriesKey, type SeriesUnit, type YearKind } from "../history.ts";
 import { FIELDS, HIDDEN_FIELDS, PER_DOCUMENT_SOURCES, registeredPathFor, type FieldDef, type FieldPath, type VintageKey } from "../fields.ts";
 import { citesYear, leafPaths, lineageFor, yearLabel, type Cited } from "../lineage.ts";
 import { METRICS, type MetricKey } from "../metrics.ts";
@@ -241,4 +241,53 @@ export function nationalSummary(
     })),
     history: national,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* History series definitions (/schools/{id}/history and get_history)  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A history series as both surfaces describe it (specs/product/data-api.md "Endpoints", "MCP server"): lib/history.ts
+ * SERIES less its display-only fields, with the sources of the files it reads. One shape, so the REST route and the
+ * MCP tool can't drift.
+ */
+export interface SeriesDefinition {
+  label: string;
+  short: string;
+  /** The snapshot field the series extends back in time (a registered path). */
+  field: string;
+  unit: SeriesUnit;
+  /** What a year means: a fall term, an academic year, or an entering cohort. */
+  year_kind: YearKind;
+  /** Present when the value can be negative (net price below zero when grants exceed the cost of attendance). */
+  signed?: true;
+  breaks: SeriesBreak[];
+  /** The sources (data/meta.json `sources` keys) of the files behind the series. */
+  sources: SourceKey[];
+}
+
+/** The series in a shard the API may show: known to SERIES and not extending a hidden field. */
+export function publicSeriesKeys(history: Pick<SchoolHistory, "series">): SeriesKey[] {
+  return Object.keys(history.series).filter((k): k is SeriesKey => k in SERIES && !isHiddenPath(SERIES[k as SeriesKey].field));
+}
+
+/** The definitions of `keys`, keyed by series key. */
+export function seriesDefinitions(keys: readonly SeriesKey[]): Record<string, SeriesDefinition> {
+  return Object.fromEntries(
+    keys.map((k) => {
+      const d: SeriesDef = SERIES[k];
+      const def: SeriesDefinition = {
+        label: d.label,
+        short: d.short,
+        field: d.field,
+        unit: d.unit,
+        year_kind: d.kind,
+        ...(d.signed ? { signed: true as const } : {}),
+        breaks: [...(d.breaks ?? [])],
+        sources: [...new Set(d.families.map((f) => HISTORY_FAMILIES[f].source))],
+      };
+      return [k, def];
+    }),
+  );
 }

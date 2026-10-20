@@ -147,10 +147,12 @@ export interface AnalyticsEvents {
   visit_radius_changed: { miles: number };
   /** The nightly visit alert: how many colleges and events, never which or how far. */
   visit_alert_sent: { college_count: number; event_count: number };
+  /** The Data API (specs/product/data-api.md): one request, by route id or MCP tool, status, and transport; the key's id, never the key or the query ("" when no key was accepted). */
+  api_request: { endpoint: string; status: number; transport: "rest" | "mcp"; key_id: string };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -269,6 +271,7 @@ export const EVENTS = {
   visit_signup_clicked: { properties: ["unit_id", "kind", "near"], side: "client", why: "Visit events: sign-up clicks, by college, kind, and whether it was a near-you event" },
   visit_alert_muted: { properties: ["unit_id"], side: "client", why: "Visit events: per-college alert mutes" },
   visit_radius_changed: { properties: ["miles"], side: "client", why: "Visit events: radius changes" },
+  api_request: { properties: ["endpoint", "status", "transport", "key_id"], side: "server", why: "Data API: requests by endpoint, status, and transport" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

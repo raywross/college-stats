@@ -182,6 +182,39 @@ Shown on `/developers` and in the key dialog; the person accepts them when makin
    (`/account/api-keys`, `/developers`, the links).
 3. Integrate, verify, QA, release note; the owner applies the migration to dev before testing a preview.
 
+## Built: foundation (2026-10-20)
+Unit A of the build (branch `feature/data-api-foundation`). What later units build on:
+
+| File | Exports |
+|---|---|
+| `lib/api/keys.ts` (pure) | `API_KEY_PREFIX`, `API_KEY_LIMITS`, `generateApiKey`, `isApiKey`, `hashApiKey`, `apiKeyPrefix`, `bearerToken`, `normalizeKeyName` (1–60 characters, trimmed), `base32` |
+| `lib/api/auth.ts` (server) | `authenticateApiRequest(request, endpoint, deps?)`, `verifyApiKeyToken(token, endpoint, deps?)` (the same check from a bare token, for the MCP server's `verifyToken`), `recordApiRequest`, `lookupKeyInfo(request)` (for `/me`), `MINUTE_BUCKETS`, `AUTH_MESSAGES`; `ApiAuthDeps` takes `lookup`, `now`, and `buckets` |
+| `lib/api/respond.ts` | `apiJson`, `apiError`, `authFailure`, `etagFor`, `etagMatches` |
+| `lib/api/handler.ts` (server) | `withApiKey<P>(id, handler, deps?)`, `badRequest(param, message)`, `notFound(message)` |
+| `lib/api/serialize.ts` (pure) | `publicSchool`, `stripPaths`, `schoolLineage`, `fieldMatches`, `fieldRegistry`, `fieldTopics`, `datasetMeta`, `schoolSummary`, `compareTable`, `nationalSummary`, `COMPARE_DEFAULT_METRICS` |
+| `lib/api/routes.ts` (pure) | `API_ROUTES` (me, meta, fields, openapi), `MCP_TOOLS` (empty), `API_BASE`, `MCP_PATH`, `routeFilePath(route)`, `apiRoute(id)` |
+| `lib/api/openapi.ts` (pure) | `buildOpenApi(routes, { serverUrl })` |
+| `lib/api-keys-store.ts` (server) | `listMyApiKeys`, `createMyApiKey`, `revokeMyApiKey`, `sortApiKeys`, `ApiKeysSetupError`, `API_KEYS_NOT_SET_UP` |
+
+Decisions made while building:
+- **`key_hash` is hidden by column privileges**: `authenticated` may select every `api_keys` column but `key_hash`
+  (`select *` is refused). The app reads `api_keys_public`, a `security_invoker` view of those columns plus today's
+  `used_today`, so the keys page is one read. Inserts may set only `id, user_id, name, key_prefix, key_hash` (never
+  `tier`); updates only `revoked_at`, once (a trigger also refuses any other change and un-revoking).
+- **`/me` reads names through a second anon-callable function**, `api_key_info(p_hash)` (key name, prefix, dates,
+  the owner's display name; never the email; counts nothing), so `api_key_use()` keeps exactly the contract's columns.
+- **The burst guard runs before the database**, keyed by the key's hash: a request over 60 a minute is refused
+  without a round trip and isn't counted against the day. A malformed key is refused without one too. Only requests
+  that pass spend a token, so an unknown key always gets 401.
+- **429 for the day** carries `Retry-After` until midnight UTC; **503** carries `Retry-After: 60`; **401** carries
+  `WWW-Authenticate: Bearer realm="Quad API"`.
+- **`api_key_use()` keeps counting past the limit** (the count is what billing will read) and answers `allowed:
+  false`; `p_endpoint` is checked for shape (`^[a-z][a-z0-9_.]{0,79}$`) and not stored yet.
+- `/fields` takes `topic=` (an unknown topic is `400 bad_request`); `/openapi.json` uses the request's origin as its
+  server and is recorded as `api_request` with endpoint `openapi`.
+- `ApiRoute.path` is the full path (`/api/v1/schools/{id}`); the route file is `app` + the path with `{x}` as `[x]` +
+  `/route.ts`. `FieldRow` adds `source_label` and `notify`; `CompareRow` and the national metrics add `field`.
+
 ## Open questions
 1. **OAuth for MCP clients that can't set a header** (claude.ai's connectors). Recommendation: not now; Claude Code,
    Claude Desktop (via `mcp-remote`), and Cursor all send headers. Supabase Auth could be the authorization server

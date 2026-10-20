@@ -142,6 +142,16 @@ test("a missing admit rate: Fresh when open admission, Failing when the college 
   const bare = collegeInputs(school({ admissions: { acceptance_rate: null, open_admission: true, act_composite_25_75: null }, reported: null, selectivity: null }), cite, { gpa: null });
   for (const k of CORE_INPUT_KEYS) assert.equal(statusOf(bare, k), "fresh", k);
   assert.match(bare.inputs.find((i) => i.key === "tests")!.reason, /Not needed/);
+  // Fewer than 10 applicants: no rate on purpose (a tiny pool), so Watch, not Failing, whatever the flag says.
+  for (const flag of [false, null]) {
+    const tiny = collegeInputs(school({ admissions: { acceptance_rate: null, open_admission: flag, applicants: 7 } }), cite, { gpa: reported });
+    assert.equal(statusOf(tiny, "admit_rate"), "watch", `open_admission ${flag}`);
+    assert.match(tiny.inputs[0].reason, /Too few applicants to give an admit rate \(7 reported; a rate needs 10\)/);
+  }
+  const none = collegeInputs(school({ admissions: { acceptance_rate: null, open_admission: false, applicants: 0 } }), cite, { gpa: reported });
+  assert.equal(statusOf(none, "admit_rate"), "watch", "zero applicants is a tiny pool too");
+  const unreported = collegeInputs(school({ admissions: { acceptance_rate: null, open_admission: false, applicants: null } }), cite, { gpa: reported });
+  assert.equal(statusOf(unreported, "admit_rate"), "failing", "no applicant count either: a real gap");
   // A college with a rate is judged by its rate, whatever the flag says.
   const both = collegeInputs(school({ admissions: { open_admission: false } }), cite, { gpa: reported });
   assert.equal(statusOf(both, "admit_rate"), "fresh");

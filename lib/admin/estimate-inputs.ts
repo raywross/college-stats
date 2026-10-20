@@ -10,6 +10,7 @@
 import { FIELDS, type FieldPath } from "../fields.ts";
 import { pct, pctSmart } from "../format.ts";
 import { satTotal } from "../score-bands.ts";
+import { MIN_APPLICANTS_FOR_RATE } from "../derive.ts";
 import { admitRatesByResidency } from "../cds/residency-display.ts";
 import { edRate } from "../cds/admissions.ts";
 import { bandMean, type CollegeGpa } from "../planner/gpa-model.ts";
@@ -352,6 +353,15 @@ function judge(key: EstimateInputKey, fields: InputField[], school: School, ctx:
       const said = present(fields, "admissions.open_admission")[0];
       const by = said ? ` (${said.source}, ${said.describes})` : "";
       if (open === true) return { status: "fresh", reason: `Open admission${by}: it admits everyone who applies, so it has no admit rate.`, year: said?.describes ?? null };
+      // Under MIN_APPLICANTS_FOR_RATE applicants no rate is given on purpose (lib/derive.ts): a tiny pool, not a gap.
+      const applicants = school.admissions.applicants;
+      if (applicants !== null && applicants !== undefined && applicants < MIN_APPLICANTS_FOR_RATE) {
+        return {
+          status: "watch",
+          reason: `Too few applicants to give an admit rate (${applicants} reported; a rate needs ${MIN_APPLICANTS_FOR_RATE}): the estimate reads it as open admission.`,
+          year: null,
+        };
+      }
       if (open === false) {
         return { status: "failing", reason: `No admit rate, though the college says it isn't open admission${by}: the estimate reads it as open admission.`, year: null };
       }

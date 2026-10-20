@@ -56,6 +56,8 @@ In addition to next steps' ([../next-steps/README.md](../next-steps/README.md#de
   pill opens the ED sheet as a dialog; the interest pill opens the Show interest guide for that college.
 - **The intake**: a ninth step, Connections, between Work and Other; the people line's ring counts it.
 - **A parent's `/plan`**: their part first, then the season's full list with Done and Skipped marks ([parents.md](parents.md)).
+- **Testing only**: with `PLANNER_ALL_MOVES=1`, the Next steps tab lists every move by season instead
+  ([all-moves-preview.md](all-moves-preview.md)).
 
 ## What this replaces
 | Built | Now |

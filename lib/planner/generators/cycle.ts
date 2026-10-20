@@ -97,21 +97,24 @@ export function generate(input: GeneratorInput): GeneratedTask[] {
   const cutoff = addDays(input.today, -STALE_DAYS);
   const planned = new Set(input.profile?.tests.plannedDates ?? []);
   const out: GeneratedTask[] = [];
+  // The all-moves preview (lib/planner/all-moves.ts): every entry whatever applies and however old, except the national
+  // test dates, which stay one per date the student picked.
+  const all = input.allMoves === true;
   input.cycle.entries.forEach((entry, i) => {
     if (entry.applies === "committed") return;
-    if (!applies(entry, facts)) return;
+    if (!(all && entry.applies !== "plans_tests") && !applies(entry, facts)) return;
     if (entry.applies === "plans_tests") {
       if (!planned.has(entry.key)) return;
       for (const t of testDateTasks(entry, input.list.id, i)) {
         const last = t.due_on ?? t.window_end;
-        if (last !== null && last < cutoff) continue;
+        if (!all && last !== null && last < cutoff) continue;
         out.push(t);
       }
       return;
     }
     const t = cycleTask(entry, input.list.id, i);
     const last = t.due_on ?? t.window_end;
-    if (last !== null && last < cutoff) return;
+    if (!all && last !== null && last < cutoff) return;
     out.push(t);
   });
   return out;

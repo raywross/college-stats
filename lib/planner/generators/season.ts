@@ -222,9 +222,11 @@ export function playbookTask(entry: PlaybookEntry, input: GeneratorInput, positi
   const range = w ? ("due" in w ? { start: w.due, end: w.due } : w) : null;
   if (builtInCycle(entry, range, input)) return null;
   const last = w ? ("due" in w ? w.due : w.end) : null;
-  if (last !== null && last < addDays(input.today, -STALE_DAYS)) return null;
+  if (!input.allMoves && last !== null && last < addDays(input.today, -STALE_DAYS)) return null;
   const actionCtx = { studentId: input.list.student_id, items: input.items, schools: input.schools, profile: input.profile, counts };
-  const title = entry.titleFor ? (entry.titleFor(actionCtx) ?? fillTitle(entry.title, input.profile)) : fillTitle(entry.title, input.profile);
+  const filled = entry.titleFor ? (entry.titleFor(actionCtx) ?? fillTitle(entry.title, input.profile)) : fillTitle(entry.title, input.profile);
+  // The preview shows an entry it can't fill too ("Work toward your target score" with no target set).
+  const title = filled ?? (input.allMoves ? entry.title.replaceAll("{target}", "target score") : null);
   if (title === null) return null;
   return {
     key: taskKey(input.list.id, "playbook", entry.key),
@@ -246,12 +248,20 @@ export function playbookTask(entry: PlaybookEntry, input: GeneratorInput, positi
   };
 }
 
+/**
+ * The all-moves preview (lib/planner/all-moves.ts): every season's entries, whatever applies and whatever replaces
+ * what. The class-year move only without a class year.
+ */
+function allEntries(season: Season, playbook: readonly PlaybookEntry[]): PlaybookEntry[] {
+  return playbook.filter((e) => e.season !== "unknown" || season === "unknown");
+}
+
 /** generate() over a given playbook (tests plant entries; the app uses PLAYBOOK). */
 export function generateFrom(input: GeneratorInput, playbook: readonly PlaybookEntry[]): GeneratedTask[] {
   if (input.list.student_id === null) return [];
   const facts = moveFacts(input);
-  const entries = entriesFor(input.season, playbook).filter((e) => moveApplies(e.applies, facts));
-  const replaced = new Set(entries.map((e) => e.replaces).filter((k): k is string => Boolean(k)));
+  const entries = input.allMoves ? allEntries(input.season, playbook) : entriesFor(input.season, playbook).filter((e) => moveApplies(e.applies, facts));
+  const replaced = new Set(input.allMoves ? [] : entries.map((e) => e.replaces).filter((k): k is string => Boolean(k)));
   const out: GeneratedTask[] = [];
   for (const entry of entries) {
     if (replaced.has(entry.key)) continue;

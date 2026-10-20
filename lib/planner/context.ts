@@ -16,6 +16,7 @@ import type { School } from "@/lib/types";
 import type { StudentProfileData } from "@/lib/student-profile";
 import { currentCycle, cycleFor, cycleStartFromEntering, gradeOf, loadCycle } from "./cycle";
 import { stageOf } from "./stage";
+import { allMovesEnabled } from "./all-moves-server";
 import { sameDocumentTotals } from "@/lib/early";
 import { redConflictCount } from "./rounds";
 import type { MergeResult } from "./tasks";
@@ -310,6 +311,7 @@ export async function generatorInputFor(
     gradYear: opts.gradYear,
     season: seasonOf(opts.gradYear, opts.today),
     estimates: opts.estimates ?? {},
+    allMoves: allMovesEnabled(),
   };
 }
 

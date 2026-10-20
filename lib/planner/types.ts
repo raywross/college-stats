@@ -143,6 +143,11 @@ export interface PlanContext {
    * signed-out plan and when the student has no profile.
    */
   coursePlan?: import("../chances/course-plan-view").CoursePlanView | null;
+  /**
+   * The all-moves preview (lib/planner/all-moves.ts; `PLANNER_ALL_MOVES=1`, off by default): the generators emit every
+   * season's moves whatever applies, and the Next steps tab lists them by season instead of Now's three.
+   */
+  allMoves?: boolean;
 }
 /** The college facts stages read, cut from School on the server with citations already resolved
  *  (`citeField` → the serializable Citation the InfoTip takes). U1 defines and fills it; add fields additively. */
@@ -182,6 +187,6 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
 /* ------------------------------------------------------------------ */
 
 /** What a generator reads: a PlanContext without its tasks, stages, and viewer (generators/index.ts). Pure input. */
-export type GeneratorInput = Pick<PlanContext, "list" | "items" | "schools" | "profile" | "cycle" | "grade" | "today" | "visits" | "offers" | "gradYear" | "season" | "estimates">;
+export type GeneratorInput = Pick<PlanContext, "list" | "items" | "schools" | "profile" | "cycle" | "grade" | "today" | "visits" | "offers" | "gradYear" | "season" | "estimates" | "allMoves">;
 /** One generator module's export: pure, no I/O, returns every task it wants to exist right now. */
 export type Generator = (input: GeneratorInput) => GeneratedTask[];

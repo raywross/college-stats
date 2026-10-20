@@ -12,7 +12,7 @@ export interface ZipEntry {
 }
 
 const FIXED_DOS_TIME = 0x0000; // 00:00:00
-const FIXED_DOS_DATE = ((2026 - 1980) << 9) | (1 << 5) | 1; // 2026-01-01, so the bytes don't change per build
+const FIXED_DOS_DATE = ((2026 - 1980) << 9) | (1 << 5) | 1; // the first day of 2026, so the bytes don't change per build
 
 function u16(n: number): number[] {
   return [n & 0xff, (n >>> 8) & 0xff];

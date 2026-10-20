@@ -122,7 +122,7 @@ has a denied token (`gpa`, `sat`, `act`, `score`, `income`, `agi`, `asset`, `ema
 | `visit_alert_sent` (server, `college_count`, `event_count`) | as listed; never which events or how far | `app/api/cron/visit-alerts/route.ts`, after each alert is sent ([visit-events.md](visit-events.md#privacy-and-telemetry)) | Visit events |
 | `list_item_added`, `standing_viewed`, `estimate_run`, `offer_added`, `scattergram_viewed` | `unit_id` and coarse flags only | Later features, each defined in its spec and added to the registry then | |
 | `subscribe_started`, `subscribe_completed`, `subscription_cancelled` (server) | `tier`, `interval` | [commercialization.md](commercialization.md) | Commercial |
-| `api_request` (server) | key id, endpoint, status | [data-api.md](data-api.md) | |
+| `api_request` (server) | `endpoint` (the route id, e.g. `schools.get`, or `mcp.<tool>`), `status`, `transport`: `rest` / `mcp`, `key_id` (`""` when no key was accepted); never the key or the query | `withApiKey` (`lib/api/handler.ts`) and the MCP server, after each response, through `recordApiRequest` (`lib/api/auth.ts`) ([data-api.md](data-api.md)) | Data API: requests by endpoint, status, and transport |
 
 Property values are strings, numbers, or booleans; never objects or arrays, never free text typed by a user (the
 search query is not sent; the result-count bucket is).

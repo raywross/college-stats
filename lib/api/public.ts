@@ -41,7 +41,7 @@ export interface CollegeSummary {
   type: School["type"];
   /** The site's page for this college. */
   url: string;
-  /** A share, 0–1, as the site stores it; null when not reported. */
+  /** A share, 0–1, to four places; null when not reported. */
   acceptance_rate: number | null;
   undergrad_enrollment: number | null;
   /** Quad's selectivity tier in words ("Highly selective"), both pools where a public's differ; never a number. */
@@ -113,7 +113,7 @@ export function summarize(s: School, origin: string): CollegeSummary {
     state: s.location.state,
     type: s.type,
     url: collegeUrl(origin, s.unit_id),
-    acceptance_rate: s.admissions.acceptance_rate ?? null,
+    acceptance_rate: s.admissions.acceptance_rate == null ? null : Math.round(s.admissions.acceptance_rate * 10000) / 10000,
     undergrad_enrollment: s.demographics?.undergrad_enrollment ?? null,
     selectivity: tierText(s),
   };

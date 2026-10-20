@@ -142,7 +142,7 @@ test("explore_colleges: Explore's own filters apply (the same set as getSchools)
   assert.equal(r.total, expected.length);
   assert.ok(r.items.length <= 50);
   assert.ok(r.items.every((c) => c.state === "GA" && c.acceptance_rate !== null && c.acceptance_rate <= 0.4));
-  assert.equal(r.items[0].acceptance_rate, expected[0].admissions.acceptance_rate);
+  assert.equal(r.items[0].acceptance_rate, Math.round(expected[0].admissions.acceptance_rate! * 10000) / 10000);
   // forMe (the signed-in estimate) is ignored rather than applied.
   const same = structured(call("explore_colleges", { filters: { ...filters, forMe: "1" } })) as { total: number };
   assert.equal(same.total, r.total);

@@ -1,7 +1,7 @@
 ---
 title: "Selectivity cites the year it read, and a closer watch on estimate data"
 pr: 167
-date: 2026-10-19
+date: 2026-10-20
 kind: improvement
 summary: "Quad's selectivity now names the figures it was rated on, and our data-health checks track how current each fact behind a college's admission estimate is."
 ---

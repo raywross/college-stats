@@ -1,8 +1,8 @@
 /**
  * Records Quad's selectivity for a deployed commit (specs/chances/selectivity-history.md): compares the commit's
  * data/selectivity-index.json and data/schools.json with the last recorded rows and writes the rows that changed
- * (scripts/lib/selectivity-history.mts) with record_selectivity_run(), one transaction. Re-running for a recorded
- * commit writes nothing. The "Publish changes" workflow runs it after publish-changes.
+ * (scripts/lib/selectivity-history.mts) with record_selectivity_run(), one transaction. A publish that changes no
+ * college records nothing, not even its run; re-running for a recorded commit writes nothing. The "Publish changes" workflow runs it after publish-changes.
  *
  *   npm run publish-selectivity-history                       # HEAD
  *   npm run publish-selectivity-history -- --head <sha>       # the deployed commit
@@ -53,6 +53,8 @@ try {
   for (const line of describeRows(rows, names)) console.log(line);
   if (dryRun) {
     console.log("(dry run, nothing written)");
+  } else if (!rows.length) {
+    console.log("no college's selectivity changed; nothing recorded");
   } else {
     const id = await recordRun(client!, run, rows);
     console.log(id === null ? "already recorded; nothing written" : `recorded run ${id}`);

@@ -40,7 +40,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
   const tierParam = first(params.tier);
   const tier = SELECTIVITY_TIERS.includes(tierParam as SelectivityTier) ? (tierParam as SelectivityTier) : undefined;
   const causeParam = first(params.cause);
-  const CAUSES: PointCause[] = ["data", "new_pool", "unrated", "method", "backfill"];
+  const CAUSES: PointCause[] = ["data", "new", "unrated", "method", "backfill"];
   const cause = CAUSES.includes(causeParam as PointCause) ? (causeParam as PointCause) : undefined;
   const countsParam = first(params.counts);
   const countsPool: Pool = POOLS.includes(countsParam as Pool) ? (countsParam as Pool) : "all";
@@ -49,7 +49,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
     return (
       <>
         <PageHeader title="Selectivity history" />
-        <Empty>Not set up yet: apply supabase/migrations/20261013150000_selectivity_history.sql, then run npm run backfill-selectivity-history.</Empty>
+        <Empty>Not set up yet: apply supabase/migrations/20261013150000_selectivity_history.sql and 20261020120000_selectivity_history_one_row.sql, then run npm run backfill-selectivity-history.</Empty>
       </>
     );
   }

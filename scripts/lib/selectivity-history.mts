@@ -1,13 +1,17 @@
 /**
  * Quad's selectivity history (specs/chances/selectivity-history.md): which rows a publish records, and what each row
- * carries. Pure: the publish and backfill scripts read the commits and the table, and this decides.
+ * carries. Pure: the publish, backfill, and rebuild scripts read the commits and the table, and this decides.
  *
- * Every change is recorded (owner, 2026-10-13: "we should track everything"; Decision 2). A row is written for a
- * college and pool when anything differs from that pool's last recorded row: the score at its two stored decimals,
- * the rank, the tier, the tier's admissions year, the top-of-Ultra band, the hysteresis hold, or any input; when the
- * pool is new (`new_pool`) or lost its rating (`unrated`, score and tier null); and for every rated college and pool
- * when the method changed (`method`, so a method change never reads as a college moving). There is no threshold: the
- * console hides moves under DISPLAY_MOVE_MIN by default, as a display filter.
+ * One row per college per publish, with all three pools side by side (owner, 2026-10-20: "store those all in one row
+ * with 3 columns instead of 3 rows"): the score, tier, and hysteresis hold for all applicants, in-state, and
+ * out-of-state, the all-applicants rank, the tier's admissions year, the top-of-Ultra band, and the inputs.
+ *
+ * A row is written only when something about the college differs from its last recorded row (owner, 2026-10-20: "we
+ * shouldn't store history records when the data doesn't change"): any pool's score at its two stored decimals, tier,
+ * or hold, the rank, the year, the band, or any input. A college recorded for the first time is `new`; one that is no
+ * longer rated in any pool is `unrated` (every pool null); a method change records every rated college (`method`, so a
+ * method change never reads as a college moving). There is no threshold: the console hides moves under
+ * DISPLAY_MOVE_MIN by default, as a display filter. A publish that changes nothing records nothing, not even its run.
  */
 import type { DatasetMeta, School } from "../../lib/types";
 import type { SelectivityTier } from "../../lib/chances/types.ts";
@@ -19,22 +23,8 @@ import type { SelectivityIndexFile } from "./selectivity.mts";
 export const HISTORY_POOLS = ["all", "in_state", "out_of_state"] as const;
 export type HistoryPool = (typeof HISTORY_POOLS)[number];
 
-
-export type RowCause = "data" | "method" | "backfill" | "new_pool" | "unrated";
+export type RowCause = "data" | "method" | "backfill" | "new" | "unrated";
 export type RunCause = "data" | "method" | "backfill";
-
-/** The last recorded row for a college and pool (selectivity_latest_rows()). */
-export interface Recorded {
-  unit_id: string;
-  pool: HistoryPool;
-  score: number | null;
-  rank: number | null;
-  tier: string | null;
-  tier_year: string | null;
-  band: string | null;
-  held: boolean;
-  inputs: Record<string, InputValue>;
-}
 
 export interface InputValue {
   v: number | null;
@@ -43,17 +33,26 @@ export interface InputValue {
   imputed?: boolean;
 }
 
-export interface HistoryRow {
+/** What a row holds about a college (and what the next publish is compared against). */
+export interface CollegeState {
   unit_id: string;
-  pool: HistoryPool;
-  score: number | null;
   rank: number | null;
-  tier: SelectivityTier | null;
   tier_year: string | null;
   band: string | null;
-  held: boolean;
-  cause: RowCause;
+  score_all: number | null;
+  tier_all: SelectivityTier | null;
+  held_all: boolean;
+  score_in_state: number | null;
+  tier_in_state: SelectivityTier | null;
+  held_in_state: boolean;
+  score_out_of_state: number | null;
+  tier_out_of_state: SelectivityTier | null;
+  held_out_of_state: boolean;
   inputs: Record<string, InputValue>;
+}
+
+export interface HistoryRow extends CollegeState {
+  cause: RowCause;
 }
 
 export interface HistoryRun {
@@ -77,23 +76,47 @@ export interface SelectivityAt {
   method: string;
 }
 
-const key = (unit: string, pool: string) => `${unit}|${pool}`;
+/**
+ * The method each early index commit was built with, for the files written before the index carried `method`. The
+ * first version (five tiers, many tied at the top) is 2026.10.12.1, so its jumps read as method changes.
+ */
+export const BACKFILL_METHODS: Record<string, string> = {
+  "1bbc2596": "2026.10.12.1",
+  "491ecb37": "2026.10.12.2",
+  a118cc13: "2026.10.12.3",
+  "3c5b4280": "2026.10.12.3",
+};
+export const backfillMethodFor = (sha: string) => Object.entries(BACKFILL_METHODS).find(([short]) => sha.startsWith(short))?.[1] ?? null;
+
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/** The field each input is dated by, per pool (the admit rate differs by pool). */
-const INPUT_PATHS: Record<string, (pool: HistoryPool) => FieldPath> = {
-  admit_rate: (pool) => (pool === "in_state" ? "derived.admit_rate_in_state" : pool === "out_of_state" ? "derived.admit_rate_out_of_state" : "admissions.acceptance_rate") as FieldPath,
-  sat_p75: () => "admissions.sat_math_25_75" as FieldPath,
-  yield: () => "admissions.admitted" as FieldPath,
-  retention: () => "outcomes.retention_rate" as FieldPath,
-  graduation: () => "outcomes.graduation_rate" as FieldPath,
+/** The column name of a pool's score, tier, and hold. */
+export const poolColumns = (pool: HistoryPool) => ({ score: `score_${pool}`, tier: `tier_${pool}`, held: `held_${pool}` }) as const;
+
+/** The admit rate's key in `inputs` for each pool; the other inputs are the same for every pool. */
+export const ADMIT_RATE_KEY: Record<HistoryPool, string> = { all: "admit_rate", in_state: "admit_rate_in_state", out_of_state: "admit_rate_out_of_state" };
+
+/** The field each input is dated by. */
+const INPUT_PATHS: Record<string, FieldPath> = {
+  admit_rate: "admissions.acceptance_rate" as FieldPath,
+  admit_rate_in_state: "derived.admit_rate_in_state" as FieldPath,
+  admit_rate_out_of_state: "derived.admit_rate_out_of_state" as FieldPath,
+  sat_p75: "admissions.sat_math_25_75" as FieldPath,
+  yield: "admissions.admitted" as FieldPath,
+  retention: "outcomes.retention_rate" as FieldPath,
+  graduation: "outcomes.graduation_rate" as FieldPath,
 };
 
-/** The raw values the score read for this pool, each with its year and source kind (no weights, no percentiles). */
-export function inputsFor(school: School, pool: HistoryPool, meta: DatasetMeta): Record<string, InputValue> {
+/**
+ * The raw values the scores read, each with its year and source kind (no weights, no percentiles): the admit rate for
+ * each pool the college has, then the inputs every pool shares.
+ */
+export function inputsFor(school: School, meta: DatasetMeta): Record<string, InputValue> {
   const raw = rawInputs(school);
   const values: Record<string, number | null> = {
-    admit_rate: pool === "in_state" ? raw.inStateRate : pool === "out_of_state" ? raw.outOfStateRate : raw.admitRate,
+    admit_rate: raw.admitRate,
+    ...(raw.inStateRate !== null ? { admit_rate_in_state: raw.inStateRate } : {}),
+    ...(raw.outOfStateRate !== null ? { admit_rate_out_of_state: raw.outOfStateRate } : {}),
     sat_p75: raw.sat75,
     yield: raw.yield,
     retention: raw.retention,
@@ -105,7 +128,7 @@ export function inputsFor(school: School, pool: HistoryPool, meta: DatasetMeta):
     let source: string | null = null;
     if (v !== null) {
       try {
-        const c = lineageFor(INPUT_PATHS[name](pool), school, meta);
+        const c = lineageFor(INPUT_PATHS[name], school, meta);
         year = c.year;
         source = c.key;
       } catch {
@@ -117,90 +140,99 @@ export function inputsFor(school: School, pool: HistoryPool, meta: DatasetMeta):
   return out;
 }
 
-/** Whether anything recorded differs: score (two decimals), rank, tier, year, band, hold, or an input. */
-function differsFrom(last: Recorded, row: HistoryRow): boolean {
-  return (
-    round2(Number(last.score)) !== row.score ||
-    (last.rank ?? null) !== row.rank ||
-    last.tier !== row.tier ||
-    last.tier_year !== row.tier_year ||
-    last.band !== row.band ||
-    Boolean(last.held) !== row.held ||
-    JSON.stringify(sortKeys(last.inputs ?? {})) !== JSON.stringify(sortKeys(row.inputs))
+/** Inputs compared key by key, whatever order the database returned them in. */
+function inputsKey(inputs: Record<string, InputValue>): string {
+  return JSON.stringify(
+    Object.keys(inputs)
+      .sort()
+      .map((k) => {
+        const v = inputs[k];
+        return [k, { v: v.v ?? null, year: v.year ?? null, source: v.source ?? null, ...(v.imputed ? { imputed: true } : {}) }];
+      }),
   );
 }
 
-/** Inputs compared key by key, whatever order the database returned them in. */
-function sortKeys(inputs: Record<string, InputValue>): [string, InputValue][] {
-  return Object.keys(inputs)
-    .sort()
-    .map((k) => {
-      const v = inputs[k];
-      return [k, { v: v.v ?? null, year: v.year ?? null, source: v.source ?? null, ...(v.imputed ? { imputed: true } : {}) }];
-    });
+const num = (v: number | string | null | undefined) => (v === null || v === undefined ? null : round2(Number(v)));
+
+/** Whether anything recorded about the college differs: a pool's score, tier, or hold, the rank, year, band, or an input. */
+export function differs(last: CollegeState, next: CollegeState): boolean {
+  for (const pool of HISTORY_POOLS) {
+    const c = poolColumns(pool);
+    if (num(last[c.score]) !== num(next[c.score]) || (last[c.tier] ?? null) !== (next[c.tier] ?? null) || Boolean(last[c.held]) !== Boolean(next[c.held])) return true;
+  }
+  return (
+    (last.rank ?? null) !== (next.rank ?? null) ||
+    (last.tier_year ?? null) !== (next.tier_year ?? null) ||
+    (last.band ?? null) !== (next.band ?? null) ||
+    inputsKey(last.inputs ?? {}) !== inputsKey(next.inputs ?? {})
+  );
 }
+
+const rated = (s: CollegeState) => HISTORY_POOLS.some((p) => s[poolColumns(p).score] !== null);
 
 const tierOf = (school: School, pool: HistoryPool): SelectivityTier | null =>
   ((pool === "all" ? school.selectivity?.tier : school.selectivity?.[pool]) ?? null) as SelectivityTier | null;
 
+/** A college's state in a commit: each pool's score and tier (a pool without both is null), and what they read. */
+export function stateOf(school: School, entry: SelectivityIndexFile["colleges"][string], at: Pick<SelectivityAt, "meta" | "method">): CollegeState {
+  const state = {
+    unit_id: school.unit_id,
+    rank: entry.rank ?? null,
+    tier_year: school.selectivity?.year ?? null,
+    band: school.selectivity?.band ?? null,
+    inputs: inputsFor(school, at.meta),
+  } as CollegeState;
+  for (const pool of HISTORY_POOLS) {
+    const c = poolColumns(pool);
+    const score = pool === "all" ? entry.all : entry[pool];
+    const tier = tierOf(school, pool);
+    const ratedHere = score !== undefined && score !== null && tier !== null;
+    Object.assign(state, {
+      [c.score]: ratedHere ? round2(score) : null,
+      [c.tier]: ratedHere ? tier : null,
+      // Held is read with today's cutoffs, so it's only known for rows built with today's method.
+      [c.held]: ratedHere && at.method === SELECTIVITY_METHOD && tier !== selectivityTier(score, null),
+    });
+  }
+  return state;
+}
+
+/** The state recorded when a college is no longer rated anywhere: every pool null, the inputs it still has. */
+function unratedState(last: CollegeState, school: School | undefined, meta: DatasetMeta): CollegeState {
+  const state = { unit_id: last.unit_id, rank: null, tier_year: null, band: null, inputs: school ? inputsFor(school, meta) : {} } as CollegeState;
+  for (const pool of HISTORY_POOLS) Object.assign(state, { [poolColumns(pool).score]: null, [poolColumns(pool).tier]: null, [poolColumns(pool).held]: false });
+  return state;
+}
+
 /**
- * The rows a publish records. `prev`: the last recorded row per college and pool; `lastMethod`: the method of the last
- * recorded run (null before the first). `backfill` marks every row `backfill` (the rules still decide which rows).
+ * The rows a publish records: one per college whose state differs from its last recorded row. `prev`: the last
+ * recorded state per college; `lastMethod`: the method of the last recorded run (null before the first). `backfill`
+ * marks every row `backfill` (the rules still decide which rows).
  */
-export function historyRows(prev: ReadonlyMap<string, Recorded>, next: SelectivityAt, opts: { lastMethod: string | null; backfill?: boolean }): HistoryRow[] {
+export function historyRows(prev: ReadonlyMap<string, CollegeState>, next: SelectivityAt, opts: { lastMethod: string | null; backfill?: boolean }): HistoryRow[] {
   const methodChanged = opts.lastMethod !== null && opts.lastMethod !== next.method;
   const rows: HistoryRow[] = [];
   const seen = new Set<string>();
   for (const school of next.schools) {
     const entry = next.index.colleges[school.unit_id];
     if (!entry) continue;
-    for (const pool of HISTORY_POOLS) {
-      const score = pool === "all" ? entry.all : entry[pool];
-      const tier = tierOf(school, pool);
-      if (score === undefined || score === null || tier === null) continue;
-      seen.add(key(school.unit_id, pool));
-      const last = prev.get(key(school.unit_id, pool));
-      const tierYear = school.selectivity?.year ?? null;
-      const band = pool === "all" ? (school.selectivity?.band ?? null) : null;
-      const row: HistoryRow = {
-        unit_id: school.unit_id,
-        pool,
-        score: round2(score),
-        rank: entry.rank ?? null,
-        tier,
-        tier_year: tierYear,
-        band,
-        // Held is read with today's cutoffs, so it's only known for rows built with today's method.
-        held: next.method === SELECTIVITY_METHOD && tier !== selectivityTier(score, null),
-        cause: "data",
-        inputs: inputsFor(school, pool, next.meta),
-      };
-      let cause: RowCause | null = null;
-      if (methodChanged) cause = "method";
-      else if (!last || last.score === null) cause = "new_pool";
-      else if (differsFrom(last, row)) cause = "data";
-      if (!cause) continue;
-      rows.push({ ...row, cause: opts.backfill ? "backfill" : cause });
-    }
+    const state = stateOf(school, entry, next);
+    if (!rated(state)) continue;
+    seen.add(school.unit_id);
+    const last = prev.get(school.unit_id);
+    let cause: RowCause | null = null;
+    if (methodChanged) cause = "method";
+    else if (!last || !rated(last)) cause = "new";
+    else if (differs(last, state)) cause = "data";
+    if (cause) rows.push({ ...state, cause: opts.backfill ? "backfill" : cause });
   }
-  // A pool recorded as rated that this publish no longer rates.
+  // A college recorded as rated that this publish no longer rates in any pool.
   for (const last of prev.values()) {
-    if (last.score === null || seen.has(key(last.unit_id, last.pool))) continue;
+    if (!rated(last) || seen.has(last.unit_id)) continue;
     const school = next.schools.find((s) => s.unit_id === last.unit_id);
-    rows.push({
-      unit_id: last.unit_id,
-      pool: last.pool,
-      score: null,
-      rank: null,
-      tier: null,
-      tier_year: null,
-      band: null,
-      held: false,
-      cause: opts.backfill ? "backfill" : "unrated",
-      inputs: school ? inputsFor(school, last.pool, next.meta) : {},
-    });
+    rows.push({ ...unratedState(last, school, next.meta), cause: opts.backfill ? "backfill" : "unrated" });
   }
-  return rows.sort((a, b) => a.unit_id.localeCompare(b.unit_id) || HISTORY_POOLS.indexOf(a.pool) - HISTORY_POOLS.indexOf(b.pool));
+  return rows.sort((a, b) => a.unit_id.localeCompare(b.unit_id));
 }
 
 /** The publish's summary row. */
@@ -218,15 +250,25 @@ export function historyRun(next: SelectivityAt, opts: { gitCommit: string; publi
   };
 }
 
-/** The recorded rows a run leaves as "last recorded", for the next run in the same process (the backfill walks several). */
-export function advance(prev: Map<string, Recorded>, rows: readonly HistoryRow[]): Map<string, Recorded> {
+/** The recorded states a run leaves as "last recorded", for the next run in the same process (backfill, rebuild). */
+export function advance(prev: Map<string, CollegeState>, rows: readonly HistoryRow[]): Map<string, CollegeState> {
   const out = new Map(prev);
-  for (const r of rows) out.set(key(r.unit_id, r.pool), { unit_id: r.unit_id, pool: r.pool, score: r.score, rank: r.rank, tier: r.tier, tier_year: r.tier_year, band: r.band, held: r.held, inputs: r.inputs });
+  for (const { cause: _cause, ...state } of rows) out.set(state.unit_id, state);
   return out;
 }
 
-export function recordedMap(rows: readonly Recorded[]): Map<string, Recorded> {
-  return new Map(rows.map((r) => [key(r.unit_id, r.pool), { ...r, score: r.score === null ? null : Number(r.score), rank: r.rank ?? null, held: Boolean(r.held), inputs: r.inputs ?? {} }]));
+/** The last recorded rows as read from the table (numerics may arrive as strings). */
+export function recordedMap(rows: readonly CollegeState[]): Map<string, CollegeState> {
+  return new Map(
+    rows.map((r) => {
+      const state = { ...r, rank: r.rank ?? null, inputs: r.inputs ?? {} } as CollegeState;
+      for (const pool of HISTORY_POOLS) {
+        const c = poolColumns(pool);
+        Object.assign(state, { [c.score]: num(r[c.score]), [c.tier]: r[c.tier] ?? null, [c.held]: Boolean(r[c.held]) });
+      }
+      return [r.unit_id, state];
+    }),
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -242,38 +284,69 @@ export function selectivityAt(readAt: (sha: string, path: string) => string, sha
   return { index, schools: read<School[]>("data/schools.json"), meta: read<DatasetMeta>("data/meta.json"), method };
 }
 
+type Result = PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
+interface Ranged extends Result {
+  range(from: number, to: number): Result;
+}
+
 /** The minimal client surface the scripts use, so tests can stub it. */
 export interface HistoryClient {
-  rpc(fn: string, args?: Record<string, unknown>): PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
+  rpc(fn: string, args?: Record<string, unknown>): Ranged;
   from(table: string): {
     select(cols: string): {
-      order(col: string, o: { ascending: boolean }): { limit(n: number): PromiseLike<{ data: unknown; error: { message: string } | null }> };
-      eq(col: string, v: string): { limit(n: number): PromiseLike<{ data: unknown; error: { message: string } | null }> };
+      order(col: string, o: { ascending: boolean }): { limit(n: number): Result };
+      eq(col: string, v: string): { limit(n: number): Result };
     };
   };
 }
 
-/** The last recorded rows and the last recorded method. */
-export async function readRecorded(client: HistoryClient): Promise<{ prev: Map<string, Recorded>; lastMethod: string | null; commits: Set<string> }> {
-  const latest = await client.rpc("selectivity_latest_rows");
-  if (latest.error) throw new Error(`reading the last recorded rows: ${latest.error.message}`);
+/** A page of rows a read returns (PostgREST caps every response at 1,000 rows). */
+export const PAGE = 1000;
+
+/**
+ * Every row a set-returning function gives, page by page. A single read stops at 1,000 rows: reading the last
+ * recorded rows in one call once lost every college past the 1,000th, so each publish re-recorded them as new.
+ */
+export async function readAllPages<T>(page: (from: number, to: number) => Result, what: string): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await page(from, from + PAGE - 1);
+    if (error) throw new Error(`reading ${what}: ${error.message}`);
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < PAGE) return out;
+  }
+}
+
+/** The last recorded rows (every college, every page) and the last recorded method. */
+export async function readRecorded(client: HistoryClient): Promise<{ prev: Map<string, CollegeState>; lastMethod: string | null; commits: Set<string> }> {
+  const latest = await readAllPages<CollegeState>((from, to) => client.rpc("selectivity_latest_rows").range(from, to), "the last recorded rows");
   const runs = await client.from("selectivity_publishes").select("git_commit, method").order("id", { ascending: false }).limit(10000);
   if (runs.error) throw new Error(`reading selectivity_publishes: ${runs.error.message}`);
   const list = (runs.data ?? []) as { git_commit: string; method: string }[];
-  return { prev: recordedMap((latest.data ?? []) as Recorded[]), lastMethod: list[0]?.method ?? null, commits: new Set(list.map((r) => r.git_commit)) };
+  return { prev: recordedMap(latest), lastMethod: list[0]?.method ?? null, commits: new Set(list.map((r) => r.git_commit)) };
 }
 
-/** Records one run; null when the commit was already recorded. */
+/** Records one run; null when the commit was already recorded or there is nothing to record. */
 export async function recordRun(client: HistoryClient, run: HistoryRun, rows: readonly HistoryRow[]): Promise<number | null> {
+  if (!rows.length) return null;
   const { data, error } = await client.rpc("record_selectivity_run", { p_run: run, p_rows: rows });
   if (error) throw new Error(`record_selectivity_run: ${error.message}`);
   return (data as number | null) ?? null;
 }
 
-/** "3 rows: UT Austin all 72.45 (data), …" for the log. */
+const scoreText = (s: CollegeState, pool: HistoryPool) => {
+  const c = poolColumns(pool);
+  return s[c.score] === null ? null : `${pool} ${s[c.score]} ${s[c.tier]}${s[c.held] ? " (held)" : ""}`;
+};
+
+/** "3 row(s): UT Austin · all 72.45 highly_selective, out_of_state 80.49 elite · data" for the log. */
 export function describeRows(rows: readonly HistoryRow[], names: ReadonlyMap<string, string>, limit = 12): string[] {
   const byCause = new Map<string, number>();
   for (const r of rows) byCause.set(r.cause, (byCause.get(r.cause) ?? 0) + 1);
   const head = `${rows.length} row(s)${rows.length ? `: ${[...byCause].map(([c, n]) => `${n} ${c}`).join(", ")}` : ""}`;
-  return [head, ...rows.slice(0, limit).map((r) => `  ${names.get(r.unit_id) ?? r.unit_id} · ${r.pool} · ${r.score ?? "unrated"} · ${r.tier ?? "-"}${r.held ? " (held)" : ""} · ${r.cause}`)];
+  return [
+    head,
+    ...rows.slice(0, limit).map((r) => `  ${names.get(r.unit_id) ?? r.unit_id} · ${HISTORY_POOLS.map((p) => scoreText(r, p)).filter(Boolean).join(", ") || "unrated"} · ${r.cause}`),
+  ];
 }

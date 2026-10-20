@@ -606,7 +606,7 @@ test("the OpenAPI document: 3.1.0, every route with its security and errors, a b
   assert.deepEqual(doc.servers, [{ url: "https://usequad.app" }]);
   assert.deepEqual(doc.security, [{ bearerAuth: [] }]);
   // A path parameter (as the routes build adds) is required and typed.
-  const withParam = [...API_ROUTES, { id: "schools.get", method: "GET" as const, path: "/api/v1/schools/{id}", summary: "s", description: "d", keyed: true, params: [{ name: "id", in: "path" as const, type: "string" as const, description: "IPEDS unit id" }] }];
+  const withParam = [...API_ROUTES, { id: "schools.probe", method: "GET" as const, path: "/api/v1/schools/{id}/probe", summary: "s", description: "d", keyed: true, params: [{ name: "id", in: "path" as const, type: "string" as const, description: "IPEDS unit id" }] }];
   assert.deepEqual(openApiProblems(buildOpenApi(withParam, { serverUrl: "https://usequad.app" }), withParam), []);
 });
 

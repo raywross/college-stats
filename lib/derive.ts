@@ -39,9 +39,12 @@ export function raceShares(race: (field: (typeof SCORECARD_RACE_FIELDS)[number])
   return Object.fromEntries(Object.entries(values).map(([k, v]) => [k, round(v ?? 0)])) as NonNullable<School["demographics"]["racial_diversity"]>;
 }
 
-/** Admitted ÷ applicants, rounded to 4 places; null under 10 applicants, where a rate is meaningless (0 of 1). */
+/** Fewer applicants than this and no admit rate is given: the rate would be meaningless (0 of 1 admitted). */
+export const MIN_APPLICANTS_FOR_RATE = 10;
+
+/** Admitted ÷ applicants, rounded to 4 places; null under MIN_APPLICANTS_FOR_RATE applicants. */
 export function acceptanceRate(applicants: number | null, admitted: number | null): number | null {
-  return applicants && applicants >= 10 && admitted !== null ? round(Math.min(1, admitted / applicants)) : null;
+  return applicants && applicants >= MIN_APPLICANTS_FOR_RATE && admitted !== null ? round(Math.min(1, admitted / applicants)) : null;
 }
 
 /* ---- Admission factors (IPEDS ADMCON1–12; specs/data-expansion/admission-factors.md) ---- */

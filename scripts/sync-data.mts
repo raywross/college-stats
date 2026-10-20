@@ -57,7 +57,7 @@ import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom
 import { addFieldOfStudyMeta, buildProgramDetails, fetchFieldOfStudy } from "./lib/field-of-study-sync.mts";
 import { fetchValueLabels } from "./lib/ipeds-dictionary.mts";
 import { religionFrom } from "../lib/religion.ts";
-import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
+import { MIN_APPLICANTS_FOR_RATE, acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 import { normalizeUrl, websiteMismatch } from "../lib/links.ts";
 import { addIdentityMeta, applyIdentity } from "../lib/identity.ts";
 import { buildSelectivity, formatIndexFile, readIndexFile, selectivityProblems } from "./lib/selectivity.mts";
@@ -355,10 +355,10 @@ function toSchool(
   const applicants = ipedsNum(adm, "APPLCN");
   const admitted = ipedsNum(adm, "ADMSSN");
   const enrolled = ipedsNum(adm, "ENRLT");
-  // Fewer than 10 applicants makes a rate meaningless (e.g. 0 of 1 admitted).
+  // Fewer than MIN_APPLICANTS_FOR_RATE applicants makes a rate meaningless (e.g. 0 of 1 admitted).
   const rateFromCounts = acceptanceRate(applicants, admitted);
   const scorecardRate = numOrNull(sc["latest.admissions.admission_rate.overall"]);
-  const acceptance = rateFromCounts ?? (applicants !== null && applicants < 10 ? null : scorecardRate);
+  const acceptance = rateFromCounts ?? (applicants !== null && applicants < MIN_APPLICANTS_FOR_RATE ? null : scorecardRate);
   const satPct = ipedsNum(adm, "SATPCT");
   const actPct = ipedsNum(adm, "ACTPCT");
 

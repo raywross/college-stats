@@ -37,8 +37,10 @@ export function connectionSnippets(origin: string, key: string): ConnectionSnipp
   return {
     curl: `curl -H "Authorization: Bearer ${key}" ${base}${API_BASE}/schools/${EXAMPLE_UNIT_ID}`,
     claudeCode: `claude mcp add --transport http quad ${mcpUrl} --header "Authorization: Bearer ${key}"`,
+    // The header's value goes through an env variable (mcp-remote's README): some clients split an argument at its
+    // space, which would break "Bearer <key>" written inline. The same form the spec's "Connecting" section gives.
     mcpJson: JSON.stringify(
-      { mcpServers: { quad: { command: "npx", args: ["-y", "mcp-remote", mcpUrl, "--header", `Authorization:Bearer ${key}`] } } },
+      { mcpServers: { quad: { command: "npx", args: ["-y", "mcp-remote", mcpUrl, "--header", "Authorization:${QUAD_AUTH}"], env: { QUAD_AUTH: `Bearer ${key}` } } } },
       null,
       2,
     ),

@@ -78,9 +78,11 @@ test("mcpServers snippet is valid JSON that runs mcp-remote with the header", ()
   const parsed = JSON.parse(mcpJson);
   assert.deepEqual(parsed, {
     mcpServers: {
-      quad: { command: "npx", args: ["-y", "mcp-remote", `https://example.test${MCP_PATH}`, "--header", `Authorization:Bearer ${KEY}`] },
+      quad: { command: "npx", args: ["-y", "mcp-remote", `https://example.test${MCP_PATH}`, "--header", "Authorization:${QUAD_AUTH}"], env: { QUAD_AUTH: `Bearer ${KEY}` } },
     },
   });
+  // The key never appears inside an argument, where a client that splits on spaces would break it.
+  assert.ok(!mcpJson.includes(`Bearer ${KEY}"]`));
 });
 
 test("snippets use the origin as given, without a doubled slash, and the placeholder on /developers", () => {

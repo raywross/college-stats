@@ -308,7 +308,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
 }
 
 /**
- * The all-moves preview (lib/planner/all-moves.ts; `PLANNER_ALL_MOVES=1`): every move by the season it belongs to, the
+ * The all-moves preview (lib/planner/all-moves.ts; the `planner.all_moves` setting on /admin/settings): every move by the season it belongs to, the
  * current season open, each open move as its real card (Done, Skip, and the guide work), done ones with Undo, skipped
  * ones with Bring back, then the rule moves this plan has no row for yet.
  */

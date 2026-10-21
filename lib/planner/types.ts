@@ -144,7 +144,7 @@ export interface PlanContext {
    */
   coursePlan?: import("../chances/course-plan-view").CoursePlanView | null;
   /**
-   * The all-moves preview (lib/planner/all-moves.ts; `PLANNER_ALL_MOVES=1`, off by default): the generators emit every
+   * The all-moves preview (lib/planner/all-moves.ts; the `planner.all_moves` setting on /admin/settings, off by default): the generators emit every
    * season's moves whatever applies, and the Next steps tab lists them by season instead of Now's three.
    */
   allMoves?: boolean;

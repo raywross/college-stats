@@ -297,7 +297,8 @@ export async function generatorInputFor(
   opts: { gradYear: number | null; profile: StudentProfileData | null; home: HomeLocation | null; today: string; estimates?: Record<string, EstimateResult> },
 ): Promise<GeneratorInput> {
   const cycle = loadCycle(planCycleKey(opts.gradYear, opts.today));
-  const schools = await planSchools(plan.items.map((i) => i.unit_id), cycle.startYear, opts.home);
+  // The setting's read overlaps the dataset slice (it's one small row).
+  const [schools, allMoves] = await Promise.all([planSchools(plan.items.map((i) => i.unit_id), cycle.startYear, opts.home), allMovesEnabled()]);
   return {
     list: plan.list,
     items: plan.items,
@@ -311,7 +312,7 @@ export async function generatorInputFor(
     gradYear: opts.gradYear,
     season: seasonOf(opts.gradYear, opts.today),
     estimates: opts.estimates ?? {},
-    allMoves: allMovesEnabled(),
+    allMoves,
   };
 }
 

@@ -1,7 +1,7 @@
 # All-Moves Preview
 
 > Status: **built** 2026-10-20. A testing setting, off by default. Code: `lib/planner/all-moves.ts` (grouping),
-> `lib/planner/all-moves-server.ts` (the setting), `generators/season.ts` and `generators/cycle.ts` (`input.allMoves`),
+> `lib/planner/all-moves-server.ts` (reads the setting), `app/admin/settings/` (the switch), `generators/season.ts` and `generators/cycle.ts` (`input.allMoves`),
 > `components/planner/NextSteps.tsx` (`AllMoves`). Tests: `tests/planner-all-moves.test.mts`.
 
 ## Why
@@ -11,9 +11,14 @@ default, but on for now that way I can use the students I have loaded in to play
 doesn't apply to a student, can't be opened or tried without changing the student or the date.
 
 ## The setting
-`PLANNER_ALL_MOVES=1` in the server's environment turns it on for every plan that server opens; unset (the default) it
-is off and nothing below happens. On a local server it goes in `.env.local`; on Vercel it is an environment variable
-per environment (Preview and Development share the dev database). Restart a local dev server after changing it.
+An admin switches it on **/admin/settings** ("Every next step, by season": Turn on / Turn off). It is the
+`planner.all_moves` row of `public.app_settings` (migration `20261021120000_app_settings.sql`), so it applies to every
+server reading that database: on dev, the local servers and every Vercel preview at once; production has its own
+database and stays off until someone switches it there. No row, or no table yet, means off. Each change is logged
+(`setting.set`, with the old and new value). Plans pick it up on their next open; no restart.
+
+(Changed 2026-10-21 from a `PLANNER_ALL_MOVES` environment variable, owner: "make it so that I can toggle on and off
+through the admin screen".)
 
 ## What changes with it on
 - **The moves exist.** The season generator emits every [playbook](../next-steps/seasons.md) entry of every season,

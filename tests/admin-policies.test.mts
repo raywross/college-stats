@@ -198,6 +198,7 @@ function functionCalls(w: World): [name: string, sql: string, params: unknown[]]
     ["admin_grant", "select public.admin_grant($1)", [w.eve]],
     ["admin_revoke", "select public.admin_revoke($1)", [w.quinn]],
     ["admin_note_ops", "select public.admin_note_ops('ops.dispatch', '{}')", []],
+    ["admin_set_setting", "select public.admin_set_setting('planner.all_moves', 'true')", []],
   ];
 }
 
@@ -414,6 +415,23 @@ test("admin_set_email_confirmed: confirms, unconfirms and signs them out, logs b
 
   await assert.rejects(asAdmin(w, "select public.admin_set_email_confirmed($1, false)", [w.quinn]), /cannot_change_self/);
   await assert.rejects(asAdmin(w, "select public.admin_set_email_confirmed($1, null)", [w.alice]), /invalid_state/);
+});
+
+test("admin_set_setting: known keys and value types only, logged with the old and new value; anyone reads; nobody writes the table", async () => {
+  const w = await world();
+  const read = async (who: string) => (await as<{ value: unknown }>(w.db, who, "select value from public.app_settings where key = 'planner.all_moves'", [], { console: false }))[0]?.value ?? null;
+  assert.equal(await read(w.eve), null, "no row until an admin sets it");
+  await asAdmin(w, "select public.admin_set_setting('planner.all_moves', 'true')");
+  await asAdmin(w, "select public.admin_set_setting('planner.all_moves', 'false')");
+  assert.equal(await read(w.eve), false);
+  const log = (await w.db.query<{ action: string; target_id: string; details: { from: unknown; to: unknown } }>("select action, target_id, details from public.admin_log where action = 'setting.set' order by id")).rows;
+  assert.deepEqual(log.map((r) => [r.target_id, r.details.from, r.details.to]), [["planner.all_moves", null, true], ["planner.all_moves", true, false]]);
+  await assert.rejects(asAdmin(w, "select public.admin_set_setting('planner.nope', 'true')"), /unknown_setting/);
+  await assert.rejects(asAdmin(w, "select public.admin_set_setting('planner.all_moves', '\"yes\"')"), /invalid_value/);
+  await assert.rejects(as(w.db, w.eve, "update public.app_settings set value = 'true'", [], { console: false }), /permission denied/);
+  await assert.rejects(as(w.db, w.quinn, "update public.app_settings set value = 'true'"), /permission denied/, "an admin writes only through the function");
+  assert.equal(await read(w.eve), false);
+  await assert.rejects(as(w.db, w.eve, "insert into public.app_settings (key, value) values ('planner.other', 'true')", [], { console: false }));
 });
 
 test("college views: anyone records a view under their own session; repeats fold; only admins and the person read them", async () => {

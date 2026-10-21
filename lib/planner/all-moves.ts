@@ -1,8 +1,8 @@
 /**
  * The all-moves preview (owner, 2026-10-20: "show all possible tasks for a student organized by the season we'd
  * recommend… off by default, but on for now", to walk each move's workflow with the students loaded on dev). Turned on
- * by `PLANNER_ALL_MOVES=1` on the server (lib/planner/all-moves-server.ts), which sets `allMoves` on the generator input
- * and the PlanContext. With it on:
+ * by the `planner.all_moves` site setting, switched on /admin/settings (lib/planner/all-moves-server.ts), which sets
+ * `allMoves` on the generator input and the PlanContext. With it on:
  *
  * - The season generator emits every playbook entry of every season, whatever its `applies`, `replaces`, or staleness
  *   says (generators/season.ts), and the cycle generator every entry of the student's cycle whatever applies and however

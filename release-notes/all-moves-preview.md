@@ -15,7 +15,9 @@ summary: A setting, off on the live site, that lists every next step a student c
 
 ## Behind the scenes
 
-- The setting is `PLANNER_ALL_MOVES=1`; unset, it's off. With it on, the season and cycle generators emit every move
-  whatever their conditions, and the tab groups them by season (`lib/planner/all-moves.ts`).
+- Admins switch it on a new **Settings** page in the admin console, and each change is logged. It's stored in a new
+  `app_settings` table (`planner.all_moves`; no row means off), written only through `admin_set_setting`.
+- With it on, the season and cycle generators emit every move whatever their conditions, and the tab groups them by
+  season (`lib/planner/all-moves.ts`).
 - Turning it off removes the extra moves from each plan on its next open; turning it back on restores them.
 - Spec: `specs/planner/v3/all-moves-preview.md`. Tests: `tests/planner-all-moves.test.mts`.

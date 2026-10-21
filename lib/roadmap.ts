@@ -220,15 +220,6 @@ export const ROADMAP: RoadmapSpec[] = [
     after: ["commercialization"],
   },
   {
-    slug: "data-api",
-    file: "specs/product/data-api.md",
-    group: "business",
-    summary: "A keyed API and bulk downloads for the dataset, its history, and the lineage of every field.",
-    complexity: 2,
-    complexityNote: "Versioned routes over the existing dataset, API keys with limits, and generated documentation.",
-    status: "planned",
-  },
-  {
     slug: "manual-collection",
     file: "specs/manual-collection.md",
     group: "business",

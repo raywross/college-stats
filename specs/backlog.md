@@ -294,8 +294,11 @@ shared rules for user data are in that README. All user data lives only in Supab
   pricing page; legal setup; public data stays free.
 - [ ] **Counselor portal** ([product/counselor-portal.md](product/counselor-portal.md)): organizations (IECs first,
   schools with a data agreement), caseload dashboard, co-branded PDF dossiers, scattergram uploads, seats.
-- [ ] **Data API** ([product/data-api.md](product/data-api.md)): `/api/v1` with keys, limits, lineage and history
-  endpoints, bulk downloads, `/developers` docs; free and paid tiers.
+- [x] **Data API** ([product/data-api.md](product/data-api.md)), built 2026-10-20: `/api/v1` and an MCP server at
+  `/api/mcp` for account holders, keys on `/account/api-keys`, limits, lineage and history endpoints, `/developers`
+  docs. Merged 2026-10-21 with [product/assistants.md](product/assistants.md): the same server without a key at
+  `/mcp` for the connector menus of Claude, ChatGPT, and Gemini, a skill file, and `/connect`. Still open: bulk
+  downloads and the paid tier (with billing), OAuth for a signed-in tool set.
 
 ## iPhone app
 Specs in [iphone-app/](iphone-app/README.md) (2026-10-06): every feature and function of the site as a native iPhone app.

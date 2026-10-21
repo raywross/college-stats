@@ -1,13 +1,15 @@
-import { openApiDocument } from "@/lib/api/openapi";
-import { json, originOf, preflight, PUBLIC_CACHE } from "@/lib/api/http";
+import { recordApiRequest } from "@/lib/api/auth";
+import { buildOpenApi } from "@/lib/api/openapi";
+import { API_ROUTES } from "@/lib/api/routes";
 
-/** GET /api/v1/openapi.json: the public endpoints' OpenAPI 3.1 document, with this deployment as its server. */
-export const dynamic = "force-dynamic";
-
-export async function OPTIONS() {
-  return preflight();
-}
-
+/**
+ * GET /api/v1/openapi.json (specs/product/data-api.md "Endpoints"): the OpenAPI 3.1 document for the Data API, built
+ * from lib/api/routes.ts with the request's origin as its server. The one route without a key; public and cached for
+ * an hour (it changes only with a deploy).
+ */
 export async function GET(request: Request) {
-  return json(openApiDocument(originOf(request)), { cache: PUBLIC_CACHE });
+  const doc = buildOpenApi(API_ROUTES, { serverUrl: new URL(request.url).origin });
+  const res = Response.json(doc, { headers: { "Cache-Control": "public, max-age=3600" } });
+  await recordApiRequest({ endpoint: "openapi", status: res.status, transport: "rest", keyId: null });
+  return res;
 }

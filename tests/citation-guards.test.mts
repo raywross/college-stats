@@ -47,9 +47,7 @@ test("no hard-coded data years in app code (years come from lineage, so they upd
   // e.g. "Fall 2024", "2023–24", "2024-25": these go stale silently when the data is refreshed.
   // The one exception: lib/cds-template.ts imports the CDS template table of one template edition by name; its codes
   // are only valid within that edition, so the file is named for it and a new edition is a new file, not a refresh.
-  // And lib/api/mcp.ts names the Model Context Protocol's revisions ("2025-06-18"), which are protocol identifiers
-  // the spec fixes, not data years; they change when the server speaks a new revision, never with a data release.
-  const allow = (f: string) => f === "lib/cds-template.ts" || f === "lib/api/mcp.ts";
+  const allow = (f: string) => f === "lib/cds-template.ts";
   assert.deepEqual(offenders(/\b[Ff]all 20\d\d\b|\b20\d\d[–-]\d\d\b/, allow, APP_CODE), []);
 });
 

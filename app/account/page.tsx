@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { Download, KeyRound, Trash2 } from "lucide-react";
+import { Code2, Download, KeyRound, Trash2 } from "lucide-react";
 import { AccessLogList } from "@/components/account/AccessLogList";
 import { AccountSection } from "@/components/account/AccountSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
@@ -138,6 +138,17 @@ export default async function AccountPage() {
           </Link>
           .
         </p>
+      </AccountSection>
+
+      <AccountSection
+        id="api-keys"
+        title="API keys"
+        description="Keys for using Quad's data from a spreadsheet, a script, or an AI assistant."
+      >
+        <Link href="/account/api-keys" className="inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted">
+          <Code2 className="size-4" />
+          Make or manage API keys
+        </Link>
       </AccountSection>
 
       <AccountSection

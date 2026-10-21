@@ -3,10 +3,12 @@
 import { useState, useSyncExternalStore } from "react";
 import { Check, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { API_BASE, MCP_PUBLIC_PATH } from "@/lib/api/routes";
 
 /**
  * The addresses on /connect that depend on where the site is running: the MCP endpoint, the skill download, the API
- * document, Claude's prefilled install link, and the CLI snippets (specs/product/assistants.md). Read from the
+ * document, Claude's prefilled install link, and the CLI snippets (specs/product/assistants.md); the paths come from
+ * lib/api/routes.ts. Read from the
  * browser's own origin so a preview deploy hands out its own address; the server renders a path until it knows.
  */
 
@@ -21,13 +23,13 @@ export function useOrigin(): string {
 }
 
 export function mcpUrl(origin: string): string {
-  return `${origin}/mcp`;
+  return `${origin}${MCP_PUBLIC_PATH}`;
 }
 export function skillUrl(origin: string): string {
   return `${origin}/connect/quad-skill.zip`;
 }
 export function openApiUrl(origin: string): string {
-  return `${origin}/api/v1/openapi.json`;
+  return `${origin}${API_BASE}/openapi.json`;
 }
 /** Claude's documented prefilled dialog: the person still reviews and confirms. */
 export function claudeInstallLink(origin: string): string {

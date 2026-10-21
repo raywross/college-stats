@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Bot, Code2, ExternalLink, Plug, ShieldCheck, Sparkles } from "lucide-react";
 import { ClaudeInstallButton, GeminiSnippets, McpAddress, QuadAddresses, SkillDownloadButton } from "@/components/connect/ConnectAddresses";
+import { API_KEY_LIMITS } from "@/lib/api/keys";
 
 export const metadata: Metadata = {
   title: "Connect Quad to ChatGPT, Claude, and Gemini",
@@ -47,15 +48,15 @@ export default function ConnectPage() {
         <P>
           Every assistant asks for one of these. The <strong>MCP server</strong> is the live connection (the Model
           Context Protocol, the standard the three assistants share). The <strong>skill file</strong> teaches an
-          assistant how to use Quad even without a connection, by reading the public pages. The{" "}
-          <strong>API document</strong> is for developers.
+          assistant how to use Quad well, with or without the connection. The <strong>API document</strong> describes
+          the keyed API for developers.
         </P>
         <div className="max-w-2xl rounded-3xl border bg-card p-4 sm:p-5">
           <QuadAddresses />
         </div>
         <P>
-          No key or sign-in is needed. The connection is read-only and public: it has no access to your Quad account,
-          your list, or your plan ({" "}
+          No key or sign-in is needed at this address. The connection is read-only and public: it has no access to
+          your Quad account, your list, or your plan ({" "}
           <a href="#what" className="font-semibold text-foreground underline-offset-2 hover:underline">
             what your assistant can see
           </a>
@@ -192,7 +193,7 @@ export default function ConnectPage() {
           </li>
           <li>
             <strong className="text-foreground">What Quad records:</strong> request counts per address, to keep the
-            service fair (about sixty requests a minute each). Not the questions, and not who asked.
+            service fair (a minute&apos;s worth of requests per address, with a key for more). Not the questions, and not who asked.
           </li>
         </ul>
         <P>
@@ -203,23 +204,21 @@ export default function ConnectPage() {
         </P>
       </Section>
 
-      <Section id="developers" eyebrow="For developers" title="The same data as plain JSON" icon={<Code2 className="size-4" />}>
+      <Section id="developers" eyebrow="For developers" title="The same data with a key" icon={<Code2 className="size-4" />}>
         <P>
-          The MCP server&apos;s tools are also plain GET endpoints, documented in the OpenAPI document above. No key; about
-          sixty requests a minute per address; every response carries{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-xs">X-Dataset-Publish</code> with the data&apos;s date.
+          The connection above is for the assistants&apos; menus, which can&apos;t send a key, so it is limited per address.
+          With a Quad account you can make an API key and get the same tools, plus plain JSON over GET (a college&apos;s
+          record, its year-by-year history, the source behind each value, Explore&apos;s filters), at{" "}
+          {API_KEY_LIMITS.perDay.toLocaleString("en-US")} requests a day per key. The{" "}
+          <Link href="/developers" className="font-semibold text-foreground underline-offset-2 hover:underline">
+            Developers page
+          </Link>{" "}
+          has the endpoints, the MCP tools, the field registry, and how to connect Claude Code, Claude Desktop, and
+          Cursor with your key.
         </P>
-        <ul className="max-w-3xl space-y-1.5 font-mono text-xs text-muted-foreground">
-          <li>GET /api/v1/colleges?q=emory</li>
-          <li>GET /api/v1/colleges?states=GA,NC&amp;maxAR=40&amp;sortBy=net_price</li>
-          <li>GET /api/v1/colleges/139658</li>
-          <li>GET /api/v1/compare?ids=139658,199120</li>
-          <li>GET /api/v1/glossary?term=acceptance-rate</li>
-          <li>POST /mcp (JSON-RPC 2.0; tools: search, fetch, find_colleges, college_facts, compare_colleges, explore_colleges, glossary)</li>
-        </ul>
         <P>
-          Please credit the data as Quad gives it: &quot;Data: Quad (College Scorecard, IPEDS, and each college&apos;s Common
-          Data Set, as cited per value)&quot;. Where the numbers come from, and how often they update, is on the{" "}
+          Please credit the data as Quad gives it: &quot;Data: Quad, from College Scorecard and IPEDS&quot;, with the retrieved
+          date each response carries. Where the numbers come from, and how often they update, is on the{" "}
           <Link href="/data" className="font-semibold text-foreground underline-offset-2 hover:underline">
             Data page
           </Link>

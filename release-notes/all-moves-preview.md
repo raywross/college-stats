@@ -1,7 +1,7 @@
 ---
 title: "A testing view of every next step, by season"
 pr: 171
-date: 2026-10-20
+date: 2026-10-21
 kind: infra
 summary: A setting, off on the live site, that lists every next step a student could get by the season it belongs to, so each one can be tried and refined before families see it.
 ---

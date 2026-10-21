@@ -86,7 +86,12 @@ rate is missing, so the dataset records IPEDS's answer, `admissions.open_admissi
 lib/open-admission.ts), and a missing admit rate is judged by it:
 - **Open admission**: the admit rate is Fresh, and so is every other core input, since the estimate reads nothing else
   ("Not needed: the college is open admission").
-- **Not open admission**: **Failing**, the only Failing in this view: the estimate is reading the college wrong.
+- **Fewer than 10 applicants** (`MIN_APPLICANTS_FOR_RATE`, lib/derive.ts): Watch, "Too few applicants to give an admit
+  rate". The sync leaves the rate blank on purpose below 10 applicants; a tiny pool isn't a gap (owner, 2026-10-20,
+  after reviewing the 42 colleges first marked Failing: 40 reported 0–9 applicants).
+- **Not open admission**, with no applicant count either: **Failing**, the only Failing in this view: the rate is
+  genuinely missing and the estimate reads the college wrong (2 colleges on 2026-10-20: Montana Bible College and NewU
+  University).
 - **No answer**: Watch, as before.
 
 A new IC file leaves `OPENADMP` blank until NCES revises it (IC2025 was blank in October 2026), so the sync takes the
@@ -220,6 +225,7 @@ college's own files and collection dates, so it belongs in this view.
   a method question for specs/chances/.
 
 ## As built (2026-10-19)
+- **After the small-pool rule** (2026-10-20): 292 Fresh, 1,534 Watch, 65 Stale, 2 Failing.
 - **After open admission** (1,893 colleges): 292 Fresh, 1,494 Watch, 65 Stale, 42 Failing. IC2024: 235 open
   admission, 1,588 not, 70 no answer.
 - **First measurement**, before open admission: 57 Fresh, 1,769 Watch, 67 Stale. By input, not Fresh: admit rate 1,751

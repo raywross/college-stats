@@ -384,6 +384,19 @@ Reading a diff, editing anything other than the two files above, changing a work
 token ([setup section 9](../college-reported-setup.md#9-archive-repo-and-token)) stay where they are. The console
 links to GitHub everywhere a thing has a page there.
 
+## Settings
+`/admin/settings` (built 2026-10-21; linked under "Who is an admin" in the rail): switches for the whole site. Each is a
+row of `public.app_settings` (key, jsonb value, who and when; migration `20261021120000_app_settings.sql`). Anyone may
+read a setting, since none is a secret; the only write is `admin_set_setting(key, value)`, which checks `is_admin()`,
+refuses a key it doesn't know (`unknown_setting`) or a value of the wrong type (`invalid_value`), and logs
+`setting.set` with the old and new value. A missing row means the setting's default.
+
+| Key | Value | What it does |
+|---|---|---|
+| `planner.all_moves` | boolean, default off | The planner's all-moves preview ([all-moves-preview.md](../planner/v3/all-moves-preview.md)) |
+
+A new setting adds its key to `admin_set_setting`'s list in a migration, and a panel to the page.
+
 ## Model
 One migration, `supabase/migrations/2026…_admin.sql`, additive, applied to dev before prod:
 

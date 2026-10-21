@@ -991,6 +991,6 @@ test("isNextControlFlow recognizes redirect() and notFound(), and nothing a data
 
 test("the console files are all under the paths this unit owns", () => {
   const owned = ["app/admin/layout.tsx", "app/admin/page.tsx"];
-  const dirs = ["people", "households", "students", "log", "admins", "mfa"].map((d) => `app/admin/${d}/`);
+  const dirs = ["people", "households", "students", "log", "admins", "mfa", "settings"].map((d) => `app/admin/${d}/`);
   for (const f of adminFiles) assert.ok(owned.includes(f) || dirs.some((d) => f.startsWith(d)) || /^app\/admin\/(colleges|health|operations|high-schools|selectivity)\//.test(f), relative(ROOT, join(ROOT, f)));
 });

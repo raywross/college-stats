@@ -54,6 +54,18 @@ export function AdminRail() {
               Who is an admin
             </Link>
           </li>
+          <li className="max-lg:snap-start max-lg:shrink-0">
+            <Link
+              href="/admin/settings"
+              aria-current={pathname.startsWith("/admin/settings") ? "page" : undefined}
+              className={cn(
+                "flex min-h-11 items-center rounded-xl px-3.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                pathname.startsWith("/admin/settings") && "bg-muted text-foreground",
+              )}
+            >
+              Settings
+            </Link>
+          </li>
         </ul>
       </nav>
     </aside>

@@ -69,4 +69,6 @@ export const ADMIN_ERRORS: Record<string, string> = {
   no_email: "That account has no email address to confirm.",
   cannot_change_self: "You can't unconfirm your own email: you'd be locked out. Ask another admin.",
   invalid_state: "Pick confirmed or unconfirmed.",
+  unknown_setting: "That isn't a setting the console knows.",
+  invalid_value: "That value doesn't fit the setting.",
 };

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { Code2, Download, KeyRound, Trash2 } from "lucide-react";
+import { Code2, Download, KeyRound, ShieldCheck, Trash2 } from "lucide-react";
 import { AccessLogList } from "@/components/account/AccessLogList";
 import { AccountSection } from "@/components/account/AccountSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
@@ -14,6 +14,7 @@ import { AccountSwitches } from "@/components/planner/parents/AccountSwitches";
 import { Term } from "@/components/ui/info-tip";
 import { VisitAlertSettings } from "@/components/visits/VisitAlertSettings";
 import { AccountsSetupError, authConfigured, currentStudent, getAccount, requireUser } from "@/lib/auth";
+import { adminState } from "@/lib/admin/auth";
 import { myAccessLog, myHouseholds } from "@/lib/households";
 import { DELETE_GRACE_DAYS, shortDate } from "@/lib/household-rules";
 import { getData } from "@/lib/data";
@@ -44,7 +45,8 @@ export default async function AccountPage() {
 
   if (profile.deleted_at) return <ScheduledForDeletion deletedAt={profile.deleted_at} />;
 
-  const [households, student] = await Promise.all([myHouseholds(), currentStudent()]);
+  const [households, student, admin] = await Promise.all([myHouseholds(), currentStudent(), adminState()]);
+  const isAdmin = admin.kind === "admin" || admin.kind === "needs-mfa";
   const accessLog = student ? await myAccessLog() : [];
   // The student's own switch over their parents' edit access (household-hub.md "Parents can edit: the student's
   // switch"), moved here from the Numbers page: the same guardians lookup it used, through myHouseholds().
@@ -72,6 +74,15 @@ export default async function AccountPage() {
       <AccountSection id="profile" title="Profile">
         <ProfileForm profile={profile} email={user.email} />
       </AccountSection>
+
+      {isAdmin && (
+        <AccountSection id="admin" title="Admin console">
+          <Link href="/admin" className="inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted">
+            <ShieldCheck className="size-4" />
+            Open the admin console
+          </Link>
+        </AccountSection>
+      )}
 
       <AccountSection id="password" title="Password" description="Sign in with your email and a password, or with an emailed link.">
         <Link href="/account/password" className="inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold hover:bg-muted">

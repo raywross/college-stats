@@ -8,7 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { deadlineFor, type DeadlineGrid } from "../lib/list-rules.ts";
 import { requirementsFor, platformsFor } from "../lib/planner/requirements.ts";
-import { isOffered, roundsOffered, type RoundsSchool } from "../lib/planner/rounds.ts";
+import { isOffered, lastCycleNote, roundDates, roundsOffered, type RoundsSchool } from "../lib/planner/rounds.ts";
 import { applyDate } from "../lib/planner/generators/college.ts";
 import type { PlanItem, PlanSchool } from "../lib/planner/types.ts";
 import type { SchoolApply } from "../lib/common-app/types.ts";
@@ -277,6 +277,42 @@ test("platformsFor: a Texas public member gets ApplyTexas alongside the Common A
 /* ------------------------------------------------------------------ */
 /* Rounds offered from the grid                                                                                       */
 /* ------------------------------------------------------------------ */
+
+test("roundDates: the grid's ISO date comes first, cited to apply.deadlines, with the grid's cycle as the edition; rolling and notifications stay with the CDS", () => {
+  const base: RoundsSchool = {
+    unit_id: "100",
+    name: "Example",
+    profile: { early_decision: { offered: true, first: { closing: { month: 11, day: 15 }, notification: { month: 12, day: 15 } }, other: { closing: null, notification: null }, applicants: null, admitted: null } },
+    logistics: { edition: "2025-26", regular_closing: { month: 1, day: 15 }, priority_date: { month: 12, day: 1 }, notification: { kind: "rolling", rolling_from: { month: 10, day: 1 }, by_date: null, other_date: null, other_text: null }, reply: null, housing_deposit: null, deferred_admission: null } as unknown as RoundsSchool["logistics"],
+    cycleStartYear: 2026,
+    editionIsLastCycle: false,
+    cites: {},
+    admitRate: null,
+    avgCost: null,
+    links: null,
+    apply: member({ deadlines: { ...NO_DEADLINES, ed: "2026-11-01", regular: "2027-01-01" } }),
+  };
+  // ED: the grid's date (not the CDS November 15), the CDS notification, the grid's cycle, this cycle.
+  const ed = roundDates(base, "ed");
+  assert.deepEqual(ed.closing, { iso: "2026-11-01", field: "apply.deadlines" });
+  assert.equal(ed.notification?.iso, "2026-12-15");
+  assert.equal(ed.edition, "2026–27");
+  assert.equal(ed.lastCycle, false);
+  // RD likewise; the signed-out plan and every other roundDates reader now see the grid's regular deadline.
+  assert.deepEqual(roundDates(base, "rd").closing, { iso: "2027-01-01", field: "apply.deadlines" });
+  // A round the grid leaves blank falls through to the CDS exactly as before.
+  assert.equal(roundDates(base, "ed2").closing, null);
+  // A rolling regular round has no closing date in the grid: the CDS priority date still answers for "rolling".
+  const rolling: RoundsSchool = { ...base, apply: member({ deadlines: { ...NO_DEADLINES, regular: "rolling" } }) };
+  assert.equal(roundDates(rolling, "rd").closing?.iso, "2027-01-15", "the CDS regular closing, since the grid gives no date");
+  assert.equal(roundDates(rolling, "rolling").closing?.field, "reported.admissions_logistics.priority_date");
+  // A student in the 2027–28 cycle reading the 2026-27 grid: last cycle, worded like a CDS edition.
+  const later = roundDates({ ...base, cycleStartYear: 2027 }, "ed");
+  assert.equal(later.lastCycle, true);
+  assert.equal(lastCycleNote(later, 2027), "2026–27 dates; the college hasn't published 2027–28");
+  // No grid row at all: unchanged.
+  assert.equal(roundDates({ ...base, apply: null }, "ed").closing?.field, "reported.admission_profile.early_decision.first.closing");
+});
 
 test("isOffered: the grid's own deadlines decide when the college has a grid row, even against a different CDS answer", () => {
   // The CDS record says no ED; the grid (the newer, member-specific source) says otherwise.

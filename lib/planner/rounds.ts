@@ -9,7 +9,7 @@
  * line); the advantage is a multiple of the non-ED rate, never odds; dates come from the edition on record, and a date
  * from an earlier cycle's edition says so.
  */
-import { ROUND_LABELS, type DeadlineGrid, type ListRound } from "../list-rules.ts";
+import { ROUND_LABELS, gridDeadline, type DeadlineGrid, type ListRound } from "../list-rules.ts";
 import { money as usd } from "../format.ts";
 import { advantageLine, classShareLine, earlyMeasures, type EarlyMeasures } from "../early.ts";
 import type { PlanItem, PlanSchool } from "./types.ts";
@@ -176,9 +176,28 @@ export function cycleLabel(startYear: number): string {
   return `${startYear}–${String((startYear + 1) % 100).padStart(2, "0")}`;
 }
 
-/** A round's closing and notification dates resolved in the student's cycle, with their fields and edition. */
+/** The field every grid date is cited to (lib/fields.ts; PlanSchool.cites["apply.deadlines"]). */
+export const GRID_DEADLINES_FIELD = "apply.deadlines";
+
+/** "2026-27" (the grid's cycle) → 2026; null for anything else. */
+const gridCycleStart = (cycle: string | null | undefined) => {
+  const m = cycle?.match(/^(\d{4})[-–]\d{2}$/);
+  return m ? Number(m[1]) : null;
+};
+
+/**
+ * A round's closing and notification dates resolved in the student's cycle, with their fields and edition. The
+ * Common App Requirements Grid's own date for the round comes first when the college has a grid row (the same
+ * precedence as lib/list-rules.ts deadlineFor; specs/data-expansion/common-app.md "Store"): an ISO date already in
+ * the grid's cycle, cited to `apply.deadlines`, with the grid's cycle as the edition (so a grid from an earlier
+ * cycle than the student's says "last cycle" like a CDS edition would). The grid has no notification dates and no
+ * priority date for rolling admission, so those still come from the CDS; a "rolling" regular round has no closing
+ * date and falls through to the CDS as well.
+ */
 export function roundDates(school: RoundsSchool | null | undefined, round: ListRound): RoundDates {
   if (!school) return { closing: null, notification: null, edition: null, lastCycle: false };
+  const grid = gridDeadline(school.apply?.deadlines, round);
+  const gridIso = grid && grid !== "rolling" ? grid : null;
   const ed = school.profile?.early_decision;
   const ea = school.profile?.early_action;
   const lg = school.logistics;
@@ -208,8 +227,17 @@ export function roundDates(school: RoundsSchool | null | undefined, round: ListR
       break;
   }
   const f = ROUND_FIELDS[round];
-  const c = resolveMonthDay(closing, school.cycleStartYear);
   const n = resolveMonthDay(notification, school.cycleStartYear);
+  if (gridIso) {
+    const start = gridCycleStart(school.apply?.common_app.cycle);
+    return {
+      closing: { iso: gridIso, field: GRID_DEADLINES_FIELD },
+      notification: n && f.notification ? { iso: n, field: f.notification } : null,
+      edition: start !== null ? cycleLabel(start) : null,
+      lastCycle: start !== null ? start < school.cycleStartYear : false,
+    };
+  }
+  const c = resolveMonthDay(closing, school.cycleStartYear);
   const edition = editionOf(school, c ? f.closing : n ? f.notification : f.closing);
   const start = editionStart(edition);
   return {

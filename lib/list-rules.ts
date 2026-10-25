@@ -360,7 +360,7 @@ export interface DeadlineGrid {
  * resolve to whichever of the grid's `ea`/`ea2`/`rea` columns the college actually filled in, so a student's "ea"
  * round still finds a restrictive-only college's date and vice versa. `rolling` only applies to the regular round.
  */
-function gridDeadline(deadlines: DeadlineGrid | null | undefined, round: ListRound | null): string | "rolling" | null {
+export function gridDeadline(deadlines: DeadlineGrid | null | undefined, round: ListRound | null): string | "rolling" | null {
   if (!deadlines) return null;
   switch (round) {
     case "ed":

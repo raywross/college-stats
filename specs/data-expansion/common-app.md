@@ -335,3 +335,12 @@ applies the block before its reported merge. `npm run verify` includes `check:co
 **Open questions, closed.** 1: asked; Common App said yes (2026-10-25). 2: the Explore join, 1,177 cached requests a
 year. 3: the international fee is stored and not shown. 4: no Direct Admissions flag; the owner asks Common App for
 the list. Not built: essay prompts, the Direct Admissions list, state-level report tables.
+
+**QA (2026-10-25, Playwright at 1280 and 390 px; report in `common-app-build/qa/`).** Nine checks over Vanderbilt,
+Albright, a non-member, Barnard, the five Explore filters, /trends, the test-optional study, and the signed-out plan;
+all passed except three findings, two fixed before the PR left draft: the planner's `roundDates` (the signed-out plan,
+ED opportunities, interest, the plan view) read only the CDS, so it now takes the grid's ISO date first, cited to
+`apply.deadlines`, with the grid's cycle as its edition; and the Explore toolbar listed the housing chips twice (a
+duplicate "No application fee ×" with a React key warning, present before this build), now once. The third is a
+decision, not a defect: a member whose fee is $0 shows "No application fee." and not its fee-waiver value, because
+there is nothing to waive; the waiver stays stored and cited for the filters.

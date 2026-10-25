@@ -10,6 +10,7 @@ import { matchesPolicy } from "./test-policy";
 import { tierRank } from "./selectivity-tier";
 import { hasFewLoans } from "./repayment";
 import { hasTuitionGuarantee, noApplicationFee, requiresLiveOn } from "./housing";
+import { APPLYING_FILTERS } from "./common-app/filters.ts";
 import { FACTOR_FILTERS } from "./factors";
 import { RESIDENCY_FILTERS } from "./cds/residency-display";
 import { hasHonorsProgram } from "./cds/academics-display";
@@ -348,6 +349,8 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     if (filters.liveOn) results = results.filter(requiresLiveOn);
     if (filters.noFee) results = results.filter(noApplicationFee);
     if (filters.guarantee) results = results.filter(hasTuitionGuarantee);
+    // The Common App's "Applying" chips (lib/common-app/filters.ts): colleges with no grid row never match.
+    for (const f of APPLYING_FILTERS) if (filters[f.param]) results = results.filter(f.predicate);
     for (const f of FACTOR_FILTERS) if (filters[f.param]) results = results.filter(f.test);
     // Where applicants live: colleges without a residency grid never match (cds-residency-admissions.md).
     for (const f of RESIDENCY_FILTERS) if (filters[f.param]) results = results.filter(f.test);

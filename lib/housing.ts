@@ -3,6 +3,7 @@
  * rules. Pure, so the dataset, the profile, and tests share one definition.
  */
 import type { School } from "./types";
+import { applicationFeeKnown } from "./common-app/filters.ts";
 
 /** Beds per 100 undergrads, rounded; null without housing capacity. Capacity can include graduate housing. */
 export function bedsPer100(s: Pick<School, "campus" | "demographics">): number | null {
@@ -12,7 +13,11 @@ export function bedsPer100(s: Pick<School, "campus" | "demographics">): number |
 }
 
 export const requiresLiveOn = (s: Pick<School, "campus">) => s.campus?.housing?.first_years_required === true;
-export const noApplicationFee = (s: Pick<School, "admissions">) => s.admissions.application_fee === 0;
+/**
+ * No application fee: the newest statement (specs/data-expansion/common-app.md "Store", newest-wins at display
+ * time) — the Requirements Grid's U.S. fee for a member with a grid row this cycle, else the federal/CDS fee.
+ */
+export const noApplicationFee = (s: Pick<School, "apply" | "admissions">) => applicationFeeKnown(s) === 0;
 export const hasTuitionGuarantee = (s: Pick<School, "cost">) => !!s.cost?.tuition_plans?.includes("guarantee");
 
 export type HousingFilterParam = "liveOn" | "noFee" | "guarantee";

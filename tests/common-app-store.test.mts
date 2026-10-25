@@ -13,32 +13,45 @@ import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { FieldPath } from "../lib/fields";
 import type { GridEdition, GridRow, Member, MembersFile } from "../lib/common-app/types";
-import { GRID_POLICY, gridCycleFall } from "../lib/common-app/test-policy.ts";
+import { GRID_POLICY, cdsPolicyAsOf, gridCycleFall, gridPolicyVerdict } from "../lib/common-app/test-policy.ts";
 import { lineageFor, shortSource, sourcesForFields, validateLineage, validateRegistry, validateSchool } from "../lib/lineage.ts";
-import {
-  COMMON_APP_HOME,
-  addCommonAppMeta,
-  applyCommonApp,
-  cdsPolicyAsOf,
-  gridPolicyVerdict,
-  gridVintage,
-  membersVintage,
-  mergeCommonApp,
-  ownSiteLink,
-} from "../scripts/lib/common-app/merge.mts";
+import { COMMON_APP_HOME, addCommonAppMeta, applyBlock, applyCommonApp, gridVintage, membersVintage, mergeCommonApp, ownSiteLink } from "../scripts/lib/common-app/merge.mts";
 import { commonAppAliasRows } from "../scripts/lib/aliases-sync.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const META: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
 const ALL: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const byId = new Map(ALL.map((s) => [s.unit_id, s]));
 
 const VU = "221999"; // a CDS policy (2025–26 C8, read 2026-10-03) already replaced the federal one
 const ACU = "222178"; // federal policy only: a member with a grid row
 const ABAC = "138558"; // a member with no grid row
 const ADELPHI = "188429"; // not a member
-const SCHOOLS = [VU, ACU, ABAC, ADELPHI].map((id) => structuredClone(byId.get(id)!));
 const TODAY = "2026-10-25";
+
+/**
+ * The committed data carries the real Common App block, so the fixtures start from the data with Common App taken
+ * out: meta without the source and its vintages, and each school with its block, Explore facts, and grid policy
+ * removed by `applyCommonApp` with no members (which also settles the test policy back to the CDS or federal one).
+ */
+const BASE_META: DatasetMeta = (() => {
+  const m = structuredClone(META);
+  delete (m.sources as Record<string, unknown>)["common-app"];
+  delete (m.vintages as Record<string, unknown>)["common-app-grid"];
+  delete (m.vintages as Record<string, unknown>)["common-app-members"];
+  return m;
+})();
+const NO_MEMBERS: MembersFile = { retrieved: TODAY, sitemap_url: "https://example.org/sitemap.xml", members: [] };
+const BASE = new Map(
+  applyCommonApp(ALL.filter((s) => [VU, ACU, ABAC, ADELPHI].includes(s.unit_id)), edition(), NO_MEMBERS, TODAY).schools.map((s) => [s.unit_id, s]),
+);
+/** The school before any Common App block (see BASE). */
+const base = (id: string): School => BASE.get(id)!;
+const SCHOOLS = [VU, ACU, ABAC, ADELPHI].map((id) => structuredClone(base(id)));
+/** The school carrying a grid row with test code `code` from edition `e`: `gridPolicyVerdict` reads the school alone. */
+const withApply = (school: School, e: GridEdition, code: GridRow["test_policy"]["code"] = "N"): School => ({
+  ...school,
+  apply: applyBlock(member("x", school.unit_id), row(school.name, school.unit_id, code), e),
+});
 
 const APPLY_PATHS: FieldPath[] = [
   "apply.common_app",
@@ -151,7 +164,7 @@ test("code map: N, I, A, F, S to the site's vocabulary; cycle 2026-27 enters fal
 test("a member with a grid row gets every apply.* key; Explore facts land on aid and links", () => {
   const { schools, summary } = run();
   const acu = get(schools, ACU);
-  assert.deepEqual(acu.apply!.common_app, { member: true, member_id: "M-abilene-christian-university", slug: "abilene-christian-university", cycle: "2026-27", updated: "2026-09-25" });
+  assert.deepEqual(acu.apply!.common_app, { member: true, member_id: "M-abilene-christian-university", slug: "abilene-christian-university", cycle: "2026-27", updated: "2026-09-25", retrieved: "2026-10-25" });
   assert.equal(acu.apply!.deadlines!.regular, "rolling");
   assert.deepEqual(acu.apply!.fee, { us: 50, international: 50 });
   assert.equal(acu.apply!.test_policy!.code, "S");
@@ -174,11 +187,12 @@ test("a member without a grid row: common_app with cycle null, every other key n
   const abac = get(run().schools, ABAC);
   assert.equal(abac.apply!.common_app.cycle, null);
   assert.equal(abac.apply!.common_app.updated, null);
+  assert.equal(abac.apply!.common_app.retrieved, null);
   for (const [k, v] of Object.entries(abac.apply!)) if (k !== "common_app") assert.equal(v, null, k);
   // An unanswered international-aid question leaves the key absent.
   assert.equal("international_offered" in abac.aid!, false);
   // No grid row, no policy change.
-  assert.deepEqual(abac.admissions, byId.get(ABAC)!.admissions);
+  assert.deepEqual(abac.admissions, base(ABAC).admissions);
 });
 
 test("a non-member is untouched (same object); a stale block is removed and the school put back exactly", () => {
@@ -189,7 +203,7 @@ test("a non-member is untouched (same object); a stale block is removed and the 
   mf.members = mf.members.filter((m) => m.ipeds !== ACU);
   const second = run(first.schools, edition(), mf);
   assert.equal(second.summary.removed, 1);
-  assert.deepEqual(JSON.stringify(get(second.schools, ACU)), JSON.stringify(byId.get(ACU)));
+  assert.deepEqual(JSON.stringify(get(second.schools, ACU)), JSON.stringify(base(ACU)));
 });
 
 test("re-applying is a no-op", () => {
@@ -204,7 +218,7 @@ test("re-applying is a no-op", () => {
 test("against federal only, the grid's policy wins; the federal one is kept and cited in the ⓘ", () => {
   const acu = get(run().schools, ACU);
   assert.equal(acu.admissions.test_policy, "required-some");
-  assert.deepEqual(acu.admissions.federal_tests, { policy: { year: null, test_policy: byId.get(ACU)!.admissions.test_policy } });
+  assert.deepEqual(acu.admissions.federal_tests, { policy: { year: null, test_policy: base(ACU).admissions.test_policy } });
   assert.deepEqual(acu.lineage!["admissions.test_policy"], { source: "common-app", year: "2026-27 cycle, updated September 25, 2026", url: COMMON_APP_HOME, retrieved: "2026-10-25" });
   const c = lineageFor("admissions.test_policy", acu, meta());
   assert.equal(c.key, "common-app");
@@ -217,7 +231,7 @@ test("against federal only, the grid's policy wins; the federal one is kept and 
 const earlyEdition = (over: Partial<GridEdition> = {}) => edition({ updated: "2025-12-01", ...over });
 
 test("the CDS as-of date is its edition's (January 1 of the second year), never the day Quad read it", () => {
-  const vu = byId.get(VU)!;
+  const vu = base(VU);
   assert.equal(vu.lineage!["reported.test_policy"]!.retrieved, "2026-10-03");
   assert.equal(cdsPolicyAsOf(vu), "2026-01-01");
   const noEdition = structuredClone(vu);
@@ -226,9 +240,9 @@ test("the CDS as-of date is its edition's (January 1 of the second year), never 
 });
 
 test("same cycle, CDS edition older than the grid's stamp: the grid wins; the federal block stays as the CDS kept it", () => {
-  const vu = byId.get(VU)!;
+  const vu = base(VU);
   // Read 2026-10-03, after the grid's 2026-09-25 stamp: the read date doesn't matter, the 2025–26 edition does.
-  assert.equal(gridPolicyVerdict(vu, edition()), "grid");
+  assert.equal(gridPolicyVerdict(withApply(vu, edition())), "grid");
   const { schools, summary } = run(SCHOOLS, edition({ rows: [row("Vanderbilt University", VU, "A")] }));
   const out = get(schools, VU);
   assert.equal(out.admissions.test_policy, "required");
@@ -243,8 +257,8 @@ test("same cycle, CDS edition older than the grid's stamp: the grid wins; the fe
 });
 
 test("a grid stamped before the CDS edition's as-of date leaves the CDS policy", () => {
-  const vu = byId.get(VU)!;
-  assert.equal(gridPolicyVerdict(vu, earlyEdition()), "cds-newer");
+  const vu = base(VU);
+  assert.equal(gridPolicyVerdict(withApply(vu, earlyEdition())), "cds-newer");
   const { schools, summary } = run(SCHOOLS, earlyEdition());
   const out = get(schools, VU);
   assert.deepEqual(out.admissions, vu.admissions);
@@ -253,13 +267,15 @@ test("a grid stamped before the CDS edition's as-of date leaves the CDS policy",
 });
 
 test("a 2026–27 CDS stating the policy for fall 2028 applicants beats the grid by cycle", () => {
-  const vu = structuredClone(byId.get(VU)!);
+  const vu = structuredClone(base(VU));
   vu.reported!.test_policy!.cycle = 2028;
   vu.lineage!["reported.test_policy"]!.edition = "2026–27";
   assert.equal(cdsPolicyAsOf(vu), "2027-01-01");
-  assert.equal(gridPolicyVerdict(vu, edition()), "cds-newer");
+  assert.equal(gridPolicyVerdict(withApply(vu, edition())), "cds-newer");
   // The cycle check comes first: even a grid stamped after the edition's as-of date loses.
-  assert.equal(gridPolicyVerdict(vu, edition({ updated: "2027-02-01" })), "cds-newer");
+  assert.equal(gridPolicyVerdict(withApply(vu, edition({ updated: "2027-02-01" }))), "cds-newer");
+  // No grid row at all: nothing to judge.
+  assert.equal(gridPolicyVerdict(vu), "no-grid");
 });
 
 /* ---- Lineage ---- */
@@ -292,7 +308,7 @@ test("validateLineage passes on the result, and the guard refuses broken grid po
 });
 
 test("meta may lack Common App until the merge runs; after that, the source and both vintages are required", () => {
-  assert.deepEqual(validateRegistry(META).filter((e) => e.includes("common-app")), []);
+  assert.deepEqual(validateRegistry(BASE_META).filter((e) => e.includes("common-app")), []);
   const m = meta();
   assert.deepEqual(validateRegistry(m), []);
   const noSource: DatasetMeta = { ...m, sources: { ...m.sources, "common-app": undefined } };
@@ -302,7 +318,7 @@ test("meta may lack Common App until the merge runs; after that, the source and 
   assert.ok(validateRegistry(noVintage).includes("meta.json: vintages.common-app-members is missing"));
   // A school holding Common App values needs them even when meta never had the source.
   const acu = get(run().schools, ACU);
-  assert.ok(validateSchool(acu, META).some((e) => e.includes("meta.json has no sources.common-app")));
+  assert.ok(validateSchool(acu, BASE_META).some((e) => e.includes("meta.json has no sources.common-app")));
 });
 
 test("vintages come from the files: grid edition and member pages", () => {
@@ -359,7 +375,7 @@ function scratch(schools: School[]): string {
   const root = mkdtempSync(join(tmpdir(), "common-app-"));
   mkdirSync(join(root, "data", "common-app", "grid"), { recursive: true });
   writeFileSync(join(root, "data", "schools.json"), `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
-  writeFileSync(join(root, "data", "meta.json"), `${JSON.stringify(META, null, 2)}\n`);
+  writeFileSync(join(root, "data", "meta.json"), `${JSON.stringify(BASE_META, null, 2)}\n`);
   writeFileSync(join(root, "data", "common-app", "grid", "2025-26_2025-09-20.json"), JSON.stringify(edition({ cycle: "2025-26", updated: "2025-09-20", rows: [] })));
   writeFileSync(join(root, "data", "common-app", "grid", "2026-27_2026-09-25.json"), JSON.stringify(edition()));
   writeFileSync(join(root, "data", "common-app", "members.json"), JSON.stringify(membersFile()));

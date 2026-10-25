@@ -129,6 +129,11 @@ export interface SchoolApply {
     /** The grid edition the row came from; null for a member with no grid row (transfer-only, or not yet joined). */
     cycle: string | null;
     updated: string | null;
+    /**
+     * The day the grid PDF was read (the edition's `retrieved`); null without a grid row. The test policy the grid
+     * supplies cites it (lib/common-app/test-policy.ts). Added by U1b.
+     */
+    retrieved?: string | null;
   };
   deadlines: GridDeadlines | null;
   fee: GridFee | null;

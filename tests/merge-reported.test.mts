@@ -35,7 +35,12 @@ const OTHER = "222178";
 
 function school(unitId: string): School {
   const s = structuredClone(allSchools.find((x) => x.unit_id === unitId)!);
-  return stripReported(s); // clean, in case a prior local merge left a block in the committed file
+  // A school before any statement newer than the federal one: stripReported drops the reported block and puts the
+  // federal test blocks back, and the Common App block goes too, because the newest-tests step would otherwise put
+  // the grid's test policy straight back (lib/common-app/test-policy.ts applyGridPolicy reads `school.apply`).
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping `apply` is the point
+  const { apply: _apply, ...rest } = stripReported(s);
+  return rest as School;
 }
 
 function goodExtraction(): Extraction {

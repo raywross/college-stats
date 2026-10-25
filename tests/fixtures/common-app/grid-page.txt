@@ -1,0 +1,43 @@
+=== Page 1 ===
+@310 2026-27 | @507 Updated: 09-25-2026
+@271 First-year deadlines, fees | @523 * See bottom of document for notes
+@289 and requirements
+@295 Application fees and fee waiver ²
+@407 Common App | @471 Supplements ⁶ | @535 Minimum standard test required ⁷ | @678 Recommendations ⁸
+@185 Deadlines | @330 (USDƮ)
+@28 Common App | @83 School | @266 RD/ | @356 Common App | @399 Personal | @429 Courses & | @531 Test | @561 SAT/ACT | @606 English | @752 Saves
+@35 member | @84 type ¹ | @121 ED | @149 EDII | @179 EA | @207 EAII | @237 REA | @263 Rolling | @299 US | @331 Int'l | @360 fee waiver | @401 essay ³ | @432 Grades ⁴ | @462 Portfolio ⁵ | @497 Writing | @529 policy | @560 tests used | @602 proficiency | @647 TE | @674 OE | @701 MR | @729 CR | @753 forms
+@21 Aberystwyth University | @85 Coed | @264 Rolling | @300 $0 | @332 $20 | @363 Accepted | @408 Y | @535 F | @559 See website | @603 See website | @731 Y | @759 Y
+
+@552 SAT without essay | @27 Abilene Christian
+@85 Coed | @172 11/1/2026 | @259 02/01/2027 | @298 $50 | @332 $50 | @363 Accepted | @535 F | @559 or ACT with | @605 D or I or T
+@35 University | @564 science
+
+@24 Agnes Scott College | @83 Women | @112 11/01/2026 | @171 11/15/2026 | @202 1/15/2027 | @259 03/15/2027 | @300 $0 | @332 $30 | @363 U.S. only | @408 Y | @534 N | @566 None | @605 D or I or T
+
+@28 College of Saint
+@79 Coordinate | @172 11/1/2026 | @202 12/1/2026 | @259 01/15/2027 | @300 $0 | @333 $0 | @534 S | @559 See website | @600 D or I or T or P
+@36 Benedict
+
+@25 Harvard University | @85 Coed | @231 11/1/2026 | @259 01/01/2027 | @298 $95 | @332 $95 | @363 Accepted | @408 Y | @471 SR | @534 A | @559 See website | @603 See website | @649 2 | @704 Y | @731 Y | @759 Y
+
+@21 Worcester Polytechnic
+@85 Coed | @114 11/1/2026 | @144 1/5/2027 | @172 11/1/2026 | @203 1/5/2027 | @259 02/01/2027 | @298 $70 | @332 $70 | @363 Accepted | @408 Y | @503 Y | @534 N | @559 See website | @603 See website | @649 1 | @704 Y | @731 Y | @759 Y
+@37 Institute
+
+@20 Woodbury University –
+@26 now University of | @85 Coed | @172 11/1/2026 | @202 12/1/2026 | @260 1/15/2027 | @300 $0 | @333 $0 | @534 N | @566 None | @603 See website
+@21 Redlands, Los Angeles
+
+@552 SAT without essay
+@24 Winthrop University | @85 Coed | @264 Rolling | @300 $0 | @333 $0 | @534 S | @556 or ACT without | @603 See website | @759 Y
+@554 science or writing
+
+@21 American University in | @596 C or D or I or T or
+@85 Coed | @172 1/15/2027 | @202 3/15/2027 | @259 05/15/2027 | @300 $0 | @333 $0 | @363 Accepted | @408 Y | @534 S | @559 See website | @649 1 | @759 Y
+@37 Bulgaria | @614 P
+
+@24 Simmons University | @83 Women | @172 11/1/2026 | @202 12/1/2026 | @259 02/01/2027 | @300 $0 | @333 $0 | @408 Y | @534 N | @562 #ERROR! | @600 D or I or T or P | @649 1 | @704 Y | @731 Y | @759 Y
+
+@20 Albizu University-Miami | @85 Coed | @264 Rolling | @298 $25 | @332 $25 | @359 Not Accepted | @440 Y | @469 COL | @534 I | @566 None | @676 1 | @612 N
+@380 Page 1

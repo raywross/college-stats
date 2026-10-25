@@ -43,6 +43,7 @@
     "sync-hs-profiles": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-hs-profiles.mts",
     "sync-visit-events": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-visit-events.mts",
     "check:visit-events": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/check-visit-events.mts",
+    "sync-common-app": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-common-app.mts",
     "sync-ap-ledger": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-ap-ledger.mts",
     "check:lineage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-lineage.mts",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.mts\"",

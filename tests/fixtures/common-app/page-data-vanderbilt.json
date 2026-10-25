@@ -1,0 +1,42 @@
+{
+  "componentChunkName": "component---src-templates-school-js",
+  "path": "/explore/vanderbilt-university",
+  "result": {
+    "data": {
+      "nodeSchool": {
+        "title": "Vanderbilt University",
+        "field_member_id": "277",
+        "field_member_id_apply": null,
+        "field_community_college": false,
+        "relationships": {
+          "field_site_update": {
+            "field_su_addr_country": "United States of America",
+            "field_su_addr_city": "Nashville",
+            "field_su_addr_state": "TN",
+            "field_su_addr_adm_phone": "(615) 322-2561",
+            "field_su_addr_adm_email": "admissions@vanderbilt.edu",
+            "field_su_addr_fy_adm_website": "https://admissions.vanderbilt.edu/",
+            "field_su_addr_fy_finaid_website": "http://www.vanderbilt.edu/financialaid/undergraduate/index.php",
+            "field_su_addr_fy_daca": "https://www.vanderbilt.edu/financialaid/undergraduate/international/",
+            "field_transfer_guaranteed_admiss": "https://www.commonapp.org/transfer",
+            "field_su_tb_about_us": "Located in the heart of Nashville, TN, Vanderbilt is a mid-sized, research university.",
+            "field_su_ipeds": "221999",
+            "field_su_alternate_names": "VU, Vandy, , vandy",
+            "field_su_ff_fy_per": "Yes",
+            "field_su_ff_fy_tp": "Yes",
+            "field_su_ff_fy_caf": null,
+            "field_su_ff_fy_srs": "Yes",
+            "field_su_ff_fy_rec_req": "Yes"
+          },
+          "field_membership_profile": {
+            "field_membership_member_id": "277",
+            "field_mp_fac_merit_fa": "Yes",
+            "field_mp_fac_need_fa": "Yes",
+            "field_mp_fac_international_fa": "No"
+          },
+          "field_components": [{ "field_quote": "I love it here." }]
+        }
+      }
+    }
+  }
+}

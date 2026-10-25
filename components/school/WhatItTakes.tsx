@@ -39,7 +39,7 @@ export function WhatItTakes({ school, cite, id }: { school: School; cite: (path:
   const testPolicy = siteLabel ? testPolicySentence(apply, siteLabel) : null;
 
   const regularCited = cite("reported.admissions_logistics.regular_closing", school);
-  const reconciled = newestRegularDeadline(apply, school.reported?.admissions_logistics, regularCited.retrieved);
+  const reconciled = newestRegularDeadline(apply, school.reported?.admissions_logistics);
 
   return (
     <Block id={id} title="What it takes to apply">

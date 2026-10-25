@@ -11,6 +11,7 @@ import type { CdsDate, ReportedLogistics } from "../types";
 import type { TermKey } from "../glossary";
 import type { SchoolApply } from "./types";
 import { money } from "../format.ts";
+import { cdsEditionAsOf } from "./test-policy.ts";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -186,20 +187,21 @@ export interface NewestRegularDeadline {
 
 /**
  * Picks between the grid's regular-round date and the college's Common Data Set `regular_closing`, by which
- * statement is newer: the grid's `updated` stamp vs. `cdsAsOf` (the CDS value's own citation `retrieved` date), both
- * `YYYY-MM-DD`. Null when either side has no date to compare (rolling admission has no deadline to reconcile; no CDS
- * closing date; no grid row). `components/school/ApplyingBox.tsx` drops its own line when the grid wins, and
- * `WhatItTakes` shows the loser's date as a muted line cited to its own field.
+ * statement is newer: the grid's `updated` stamp vs. the CDS edition's as-of date (January 1 of the edition's second
+ * year, the same rule the store uses for the test policy: lib/common-app/test-policy.ts `cdsEditionAsOf`; never the
+ * day Quad read the document), both `YYYY-MM-DD`. Null when either side has no date to compare (rolling admission has
+ * no deadline to reconcile; no CDS closing date or edition; no grid row). `components/school/ApplyingBox.tsx` drops
+ * its own line when the grid wins, and `WhatItTakes` shows the loser's date as a muted line cited to its own field.
  */
 export function newestRegularDeadline(
   apply: SchoolApply,
-  logistics: Pick<ReportedLogistics, "regular_closing"> | null | undefined,
-  cdsAsOf: string | null
+  logistics: Pick<ReportedLogistics, "regular_closing" | "edition"> | null | undefined
 ): NewestRegularDeadline | null {
   const gridDate = apply.deadlines?.regular ?? null;
   const gridUpdated = apply.common_app.updated;
   if (!gridDate || gridDate === "rolling" || !gridUpdated) return null;
   const cdsDate = logistics?.regular_closing ?? null;
+  const cdsAsOf = cdsEditionAsOf(logistics?.edition);
   if (!concreteCdsDate(cdsDate) || !cdsAsOf) return null;
   const gridText = isoMonthDayText(gridDate);
   const cdsText = cdsDateText(cdsDate);

@@ -20,7 +20,7 @@ export function ApplyingBox({ school, cite, id }: { school: School; cite: (path:
   // The Common App Requirements Grid's own regular-round date, when it's the newer statement: this line drops, and
   // the grid's card (WhatItTakes) shows the Common Data Set's date instead, as a muted line under its rounds.
   if (school.apply) {
-    const reconciled = newestRegularDeadline(school.apply, l, cite("reported.admissions_logistics.regular_closing", school).retrieved);
+    const reconciled = newestRegularDeadline(school.apply, l);
     if (reconciled?.winner === "grid") lines = lines.filter((line) => line.key !== "regular_closing");
   }
   if (!lines.length) return null;

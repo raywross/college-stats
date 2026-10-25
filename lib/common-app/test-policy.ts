@@ -47,13 +47,19 @@ export function gridVintage(edition: { cycle: string; updated: string }): string
 }
 
 /**
- * The as-of date of the college's CDS test policy (C8): its edition's publication date, taken as January 1 of the
- * edition's second year (an edition is published during its academic year); null without an edition. Never the
- * record's `retrieved` date: that is when Quad read the CDS, which says nothing about which statement is newer.
+ * The as-of date of a CDS edition ("2025–26" or "2025-26"): its publication date, taken as January 1 of the edition's
+ * second year (an edition is published during its academic year); null for text that isn't an edition. Never a
+ * record's `retrieved` date: that is when Quad read the CDS, which says nothing about which statement is newer. The
+ * one rule for every grid-vs-CDS comparison (the test policy here, the regular deadline in lib/common-app/display.ts).
  */
-export function cdsPolicyAsOf(school: School): string | null {
-  const m = /^(\d{4})[–-](\d{2})/.exec(school.lineage?.["reported.test_policy"]?.edition ?? "");
+export function cdsEditionAsOf(edition: string | null | undefined): string | null {
+  const m = /^(\d{4})[–-](\d{2})/.exec(edition ?? "");
   return m ? `${Number(m[1]) + 1}-01-01` : null;
+}
+
+/** The as-of date of the college's CDS test policy (C8): its edition's (`cdsEditionAsOf`); null without an edition. */
+export function cdsPolicyAsOf(school: School): string | null {
+  return cdsEditionAsOf(school.lineage?.["reported.test_policy"]?.edition);
 }
 
 export type PolicyVerdict = "grid" | "cds-newer" | "no-grid";

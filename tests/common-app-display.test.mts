@@ -208,27 +208,32 @@ test("cycleLabel: null without a cycle", () => {
 /* newestRegularDeadline                                               */
 /* ------------------------------------------------------------------ */
 
-test("newestRegularDeadline: the grid wins when its 'updated' stamp is later than the CDS record's as-of date", () => {
+test("newestRegularDeadline: the grid wins when its 'updated' stamp is later than the CDS edition's as-of date (January 1 of its second year)", () => {
   const a = apply({ common_app: { member: true, member_id: "1", slug: "x", cycle: "2026-27", updated: "2026-09-25" }, deadlines: { ed: null, ed2: null, ea: null, ea2: null, rea: null, regular: "2027-01-01" } });
-  const result = newestRegularDeadline(a, { regular_closing: { month: 11, day: 1 } }, "2026-08-01");
+  // A 2025–26 edition is as of 2026-01-01, before the grid's 2026-09-25 stamp: the grid wins, whenever Quad read the CDS.
+  const result = newestRegularDeadline(a, { regular_closing: { month: 11, day: 1 }, edition: "2025-26" });
   assert.deepEqual(result, { winner: "grid", loserText: "November 1" });
+  // The en-dash spelling of an edition reads the same.
+  assert.deepEqual(newestRegularDeadline(a, { regular_closing: { month: 11, day: 1 }, edition: "2025–26" }), result);
 });
 
-test("newestRegularDeadline: the CDS wins when it was read after the grid's update", () => {
+test("newestRegularDeadline: the CDS wins when its edition is as of a date after the grid's update", () => {
   const a = apply({ common_app: { member: true, member_id: "1", slug: "x", cycle: "2026-27", updated: "2026-09-25" }, deadlines: { ed: null, ed2: null, ea: null, ea2: null, rea: null, regular: "2026-11-01" } });
-  const result = newestRegularDeadline(a, { regular_closing: { month: 1, day: 5 } }, "2026-10-10");
+  // A 2026–27 edition is as of 2027-01-01, after the grid's stamp.
+  const result = newestRegularDeadline(a, { regular_closing: { month: 1, day: 5 }, edition: "2026-27" });
   assert.deepEqual(result, { winner: "cds", loserText: "November 1" });
 });
 
 test("newestRegularDeadline: null for a rolling regular round (nothing to reconcile)", () => {
   const a = apply({ deadlines: { ed: null, ed2: null, ea: null, ea2: null, rea: null, regular: "rolling" } });
-  assert.equal(newestRegularDeadline(a, { regular_closing: { month: 1, day: 5 } }, "2026-10-10"), null);
+  assert.equal(newestRegularDeadline(a, { regular_closing: { month: 1, day: 5 }, edition: "2025-26" }), null);
 });
 
-test("newestRegularDeadline: null without a CDS closing date", () => {
+test("newestRegularDeadline: null without a CDS closing date, or without an edition to date it", () => {
   const a = apply({ deadlines: { ed: null, ed2: null, ea: null, ea2: null, rea: null, regular: "2027-01-01" } });
-  assert.equal(newestRegularDeadline(a, { regular_closing: null }, "2026-10-10"), null);
-  assert.equal(newestRegularDeadline(a, undefined, "2026-10-10"), null);
+  assert.equal(newestRegularDeadline(a, { regular_closing: null, edition: "2025-26" }), null);
+  assert.equal(newestRegularDeadline(a, undefined), null);
+  assert.equal(newestRegularDeadline(a, { regular_closing: { month: 1, day: 5 }, edition: "unknown" }), null);
 });
 
 /* ------------------------------------------------------------------ */

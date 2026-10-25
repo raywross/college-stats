@@ -49,6 +49,14 @@ export function MakeKeyForm({ origin, activeKeys }: { origin: string; activeKeys
           <h3 className="font-display text-lg font-bold">Connect</h3>
           <p className="mb-3 text-sm text-muted-foreground">These already have your key in them.</p>
           <ConnectionSnippets origin={origin} apiKey={state.key} />
+          <p className="mt-3 text-sm text-muted-foreground">
+            Using ChatGPT, Gemini, or Claude&apos;s connector menu instead of code? Those don&apos;t take a key — their menus
+            can&apos;t send one. See{" "}
+            <Link href="/connect" className="font-semibold text-primary hover:underline">
+              Connect Quad to ChatGPT, Claude, and Gemini
+            </Link>{" "}
+            for the address and the steps.
+          </p>
         </div>
         <button
           type="button"

@@ -83,8 +83,46 @@ const ED_OTHER = "reported.admission_profile.early_decision.other";
 const EA = "reported.admission_profile.early_action";
 const LOGISTICS = "reported.admissions_logistics";
 
-/** The application date for a round (null round: the regular round), from the college's own record. */
+/**
+ * The Common App Requirements Grid's own ISO date for a round, when the college has a grid row (common-app-build/
+ * brief.md U4 "Rounds offered" and "`applyDate`"): `ea`/`rea` resolve to whichever of the grid's `ea`/`ea2`/`rea`
+ * columns is filled in, same as `lib/list-rules.ts#deadlineFor`'s grid resolution (duplicated in miniature here so
+ * this module stays pure and doesn't import that file's student-override plumbing). `edition` is the grid's own
+ * cycle ("2026-27"), not a CDS edition, so `isLastCycle`'s year extraction still works: a grid from an earlier
+ * cycle than the student's still reads "last_cycle". Rolling has no fixed date here (`priority_date`, CDS only).
+ */
+function gridApplyDate(school: PlanSchool, round: ListRound | null): CollegeDate | null {
+  const deadlines = school.apply?.deadlines;
+  if (!deadlines) return null;
+  let raw: string | "rolling" | null;
+  switch (round) {
+    case "ed":
+      raw = deadlines.ed;
+      break;
+    case "ed2":
+      raw = deadlines.ed2;
+      break;
+    case "ea":
+      raw = deadlines.ea ?? deadlines.ea2 ?? deadlines.rea ?? null;
+      break;
+    case "rea":
+      raw = deadlines.rea ?? deadlines.ea ?? deadlines.ea2 ?? null;
+      break;
+    case "rolling":
+      raw = null;
+      break;
+    default:
+      raw = deadlines.regular;
+      break;
+  }
+  if (!raw || raw === "rolling") return null;
+  return { date: raw, field: "apply.deadlines", edition: school.apply?.common_app.cycle ?? null };
+}
+
+/** The application date for a round (null round: the regular round): the grid's own date first, then the college's own CDS record. */
 export function applyDate(school: PlanSchool, round: ListRound | null): CollegeDate | null {
+  const grid = gridApplyDate(school, round);
+  if (grid) return grid;
   const ed = school.profile?.early_decision;
   const ea = school.profile?.early_action;
   const lg = school.logistics;

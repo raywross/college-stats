@@ -180,6 +180,13 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
    * without a second dataset read. Built by planSchoolFor from the same School.
    */
   poolSchool: import("../chances/pool-rate").PoolSchool;
+  /**
+   * Common App build (additive, specs/data-expansion/common-app.md): the Requirements Grid block, straight from
+   * `School.apply`, null for a non-member. `cites` carries the citation for each `apply.*` key this college has a
+   * value for (`apply.deadlines`, `apply.fee`, `apply.fee_waiver`, `apply.essay_required`, `apply.writing_supplement`,
+   * `apply.courses_grades_required`, `apply.recommendations`, `apply.test_policy`, `apply.common_app`).
+   */
+  apply?: import("../common-app/types").SchoolApply | null;
 }
 
 /* ------------------------------------------------------------------ */

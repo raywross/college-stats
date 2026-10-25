@@ -1690,6 +1690,15 @@ export interface SearchFilters {
   liveOn?: boolean;
   noFee?: boolean;
   guarantee?: boolean;
+  /**
+   * The Common App's "Applying" chips (lib/common-app/filters.ts APPLYING_FILTERS, specs/data-expansion/
+   * common-app.md "Display"): takes the fee waiver, offers Early Decision, ED II, or Early Action (EA, EA II, or
+   * Restrictive EA). Colleges with no Requirements Grid row never match.
+   */
+  feeWaiver?: boolean;
+  ed?: boolean;
+  ed2?: boolean;
+  ea?: boolean;
   /** Only colleges where at most 20% of undergraduates have a federal loan (lib/repayment.ts). */
   fewLoans?: boolean;
   /** Only colleges whose Pell graduation gap is under 5 points (lib/graduation-groups.ts). */

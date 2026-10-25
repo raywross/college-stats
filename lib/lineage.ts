@@ -122,7 +122,22 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   // Undated references (UNDATED_SOURCES): the retrieval date in meta.json's edition stands in for a year.
   wikidata: null,
   wikipedia: null,
+  // The Requirements Grid's edition: a test policy the grid replaced carries the edition text in its own record.
+  "common-app": "common-app-grid",
 };
+
+/**
+ * Sources added by a later step than the full sync (the Common App merge, scripts/lib/common-app/merge.mts) and the
+ * vintages they write. A written meta.json may lack such a source until its merge first runs; once meta has any of
+ * the vintages, or any school holds a value from the source, the source and every one of its vintages are required.
+ */
+const MERGED_LATER: Partial<Record<SourceKey, readonly VintageKey[]>> = { "common-app": ["common-app-grid", "common-app-members"] };
+
+/** A merged-later source that this meta hasn't received yet (neither the source nor any of its vintages). */
+function notMergedYet(meta: DatasetMeta, key: SourceKey): boolean {
+  const vintages = MERGED_LATER[key];
+  return !!vintages && !meta.sources?.[key] && !vintages.some((v) => v in (meta.vintages ?? {}));
+}
 
 /**
  * A source's entry in meta, or a neutral placeholder. Production can build new code before the publish that adds the
@@ -299,9 +314,11 @@ export function shortSource(s: CitedSource): string {
                 ? "Directories"
                 : s.key === "policy-page"
                   ? "Policy page"
-                  : s.key === "scorecard" || s.key === "scorecard-fos"
-                    ? "Scorecard"
-                    : "IPEDS";
+                  : s.key === "common-app"
+                    ? "Common App"
+                    : s.key === "scorecard" || s.key === "scorecard-fos"
+                      ? "Scorecard"
+                      : "IPEDS";
   return s.year ? `${name} ${s.year}` : name;
 }
 
@@ -310,12 +327,20 @@ const sourceId = (s: CitedSource) => `${s.key}|${s.url}|${s.year ?? ""}`;
 /** Sources a college either has a value from (with its own lineage record) or has nothing to cite from. */
 const PER_COLLEGE_ONLY: ReadonlySet<SourceKey> = new Set<SourceKey>(["college-site", "state-law", "directory", "org-estimate", "policy-page"]);
 
+/**
+ * Per-college sources with a vintage (specs/data-expansion/common-app.md "Lineage"): their values carry no lineage
+ * record of their own (the year comes from meta.vintages), but only some colleges have them. A college with no value
+ * at the path (absent or null) has nothing to cite, so a non-member's footnotes never list Common App.
+ */
+const PRESENT_ONLY: ReadonlySet<SourceKey> = new Set<SourceKey>(["common-app"]);
+
 /** Distinct sources behind a value: a derived value cites its inputs, recursively. */
 function underlyingSources(path: FieldPath, school: School | undefined, meta: DatasetMeta, seen = new Set<string>()): CitedSource[] {
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
   const overridden = !!school?.lineage?.[path] || !!curatedCitation(path, school);
   // A college-reported field or state law this college has no value for (no lineage record) has nothing to cite.
   if (school && !overridden && PER_COLLEGE_ONLY.has(def.source) && !("derived" in def && def.derived)) return [];
+  if (school && !overridden && PRESENT_ONLY.has(def.source) && !("derived" in def && def.derived) && valueAt(school, path) == null) return [];
   if (!("derived" in def) || !def.derived || overridden || seen.has(path)) return [sourceFor(path, school, meta)];
   seen.add(path);
   const out = new Map<string, CitedSource>();
@@ -475,6 +500,8 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
   "scorecard-retention",
   "scorecard-latest",
   "scorecard-fos",
+  "common-app-grid",
+  "common-app-members",
 ];
 /** Releases that must resolve to a year (the rest may be null). */
 const YEAR_REQUIRED: readonly VintageKey[] = ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-hd", "ipeds-ic-char", "ipeds-ic-open", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-enrollment", "scorecard-age", "scorecard-cost", "ipeds-om"];
@@ -507,12 +534,16 @@ function valueAt(school: School, path: string): unknown {
 export function validateRegistry(meta: DatasetMeta): string[] {
   const errors: string[] = [];
   // The app tolerates a missing source mid-publish (sourceInfo); a written dataset must have every one.
+  const pending = new Set((Object.keys(MERGED_LATER) as SourceKey[]).filter((k) => notMergedYet(meta, k)));
+  const pendingVintages = new Set([...pending].flatMap((k) => MERGED_LATER[k] ?? []));
   for (const k of Object.keys(SOURCE_VINTAGE) as SourceKey[]) {
     const s = meta.sources?.[k];
+    if (!s && pending.has(k)) continue;
     if (!s) errors.push(`meta.json: sources.${k} is missing`);
     else if (!s.label || !s.url) errors.push(`meta.json: sources.${k} has no label or url`);
   }
   for (const k of VINTAGE_KEYS) {
+    if (pendingVintages.has(k)) continue;
     if (!(k in (meta.vintages ?? {}))) errors.push(`meta.json: vintages.${k} is missing`);
     else if (YEAR_REQUIRED.includes(k) && !meta.vintages[k]) errors.push(`meta.json: vintages.${k} has no year`);
   }
@@ -531,7 +562,7 @@ export function validateRegistry(meta: DatasetMeta): string[] {
     done.add(p);
   };
   for (const [path, def] of Object.entries(FIELDS) as [FieldPath, (typeof FIELDS)[FieldPath]][]) {
-    if (!(def.source in meta.sources)) errors.push(`fields.ts: ${path} uses unknown source "${def.source}"`);
+    if (!(def.source in meta.sources) && !pending.has(def.source)) errors.push(`fields.ts: ${path} uses unknown source "${def.source}"`);
     if (def.vintage && !VINTAGE_KEYS.includes(def.vintage)) errors.push(`fields.ts: ${path} uses unknown vintage "${def.vintage}"`);
     if (!PER_DOCUMENT_SOURCES.has(def.source) && !UNDATED_SOURCES.has(def.source) && !def.vintage && !("derived" in def)) errors.push(`fields.ts: ${path} has no vintage`);
     if ("derived" in def && def.derived) {
@@ -609,11 +640,33 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     const rec = school.lineage?.[path];
     if (rec?.source !== "policy-page" || !rec.retrieved || !rec.year) errors.push(`${where}: ${path} must cite source "policy-page" with the date checked`);
   }
+  errors.push(...mergedLaterProblems(school, meta, where));
   errors.push(...validateNewest(school, where));
   errors.push(...validateNewestGroups(school, where, meta));
   errors.push(...validateAdmissionProfile(school, where));
   errors.push(...validateTests(school, where));
   errors.push(...financialAidProblems(school));
+  return errors;
+}
+
+/**
+ * A school holding a value from a merged-later source (a registered path whose default source it is, or a lineage
+ * record citing it) needs that source and its vintages in meta: validateRegistry lets them be absent only before the
+ * source's merge first ran.
+ */
+function mergedLaterProblems(school: School, meta: DatasetMeta, where: string): string[] {
+  const errors: string[] = [];
+  for (const key of Object.keys(MERGED_LATER) as SourceKey[]) {
+    const holds =
+      Object.values(school.lineage ?? {}).some((r) => r?.source === key) ||
+      leafPaths(school).some((leaf) => {
+        const p = registeredPathFor(leaf);
+        return !!p && FIELDS[p].source === key;
+      });
+    if (!holds) continue;
+    if (!meta.sources?.[key]) errors.push(`${where}: holds ${key} values, but meta.json has no sources.${key}`);
+    for (const v of MERGED_LATER[key] ?? []) if (!meta.vintages?.[v]) errors.push(`${where}: holds ${key} values, but meta.json has no vintages.${v}`);
+  }
   return errors;
 }
 

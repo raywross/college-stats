@@ -23,6 +23,7 @@
     "merge-state-laws": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-state-laws.mts",
     "merge-reported": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-reported.mts",
     "merge-identity": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-identity.mts",
+    "merge-common-app": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-common-app.mts",
     "sync-wikidata": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-wikidata.mts",
     "probe-sites": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/probe-sites.mts",
     "sync-brand": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-brand.mts",

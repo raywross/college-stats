@@ -65,6 +65,9 @@ const nextConfig: NextConfig = {
     return [
       // /sources grew into the Data tab (specs/data-page.md).
       { source: "/sources", destination: "/data", permanent: true },
+      // The event calendar moved from `?view=events` on the overview to its own route, so the overview stays
+      // prerendered (specs/product/visit-events.md "Display"); older links (emails, bookmarks) still land on it.
+      { source: "/schools/:id", has: [{ type: "query", key: "view", value: "events" }], destination: "/schools/:id/events", permanent: false },
       // Following became the Updates switch on each college on your list (specs/product/household-hub.md "What
       // goes"); /me/list sends the person on to their own list. Not permanent: /me/list's own target may move.
       { source: "/me/following", destination: "/me/list", permanent: false },

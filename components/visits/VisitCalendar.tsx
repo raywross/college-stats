@@ -1,9 +1,9 @@
 /**
- * The college page's event calendar view (specs/product/visit-events.md "Display"): rendered by app/schools/[id]/page.tsx
- * in place of the stats when the URL carries `?view=events`, under the unchanged hero. A back link first, then the next
- * three on campus and the next three near the person, then the whole calendar with the kind chips and the state filter
- * open from the start. Signed out, the view redirects to sign-up and returns here. Server component: reads with the
- * viewer's own session (lib/visit-events/read.ts).
+ * The college's event calendar view (specs/product/visit-events.md "Display"): rendered by
+ * app/schools/[id]/events/page.tsx in place of the stats, under the same hero as the overview. A back link first, then
+ * the next three on campus and the next three near the person, then the whole calendar with the kind chips and the
+ * state filter open from the start. Signed out, the view redirects to sign-up and returns here. Server component:
+ * reads with the viewer's own session (lib/visit-events/read.ts), which is why the calendar has a route of its own.
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -22,7 +22,7 @@ export async function VisitCalendar({ unitId, schoolName }: { unitId: string; sc
   const back = `/schools/${unitId}`;
   if (!authConfigured()) redirect(back);
   const user = await getUser();
-  if (!user) redirect(signupHref(`${back}?view=events`));
+  if (!user) redirect(signupHref(`${back}/events`));
 
   const [events, point, lastSeen] = await Promise.all([eventsForUnit(unitId, { limit: 1000 }), myMeasuringPoint(), readAt(unitId)]);
   const shown = events.filter((e) => isShownKind(e.kind));

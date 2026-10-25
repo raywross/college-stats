@@ -203,10 +203,16 @@ allowed; name, inviter, side, expiry, state; never the email), `log_access(stude
   and sends them as user metadata, which the `on_auth_user_created` trigger copies into `profiles`. "New here? Create
   an account" opens the same fields directly. (This tells a visitor whether an email has an account, as Supabase's own
   API already does.)
-- **Header state comes from `GET /api/me`** (`private, no-store`) fetched by `useMe()` in the browser. A visitor
-  without an `sb-` auth cookie gets an answer without a call to Supabase. Public pages never read cookies, so they keep
-  their static/ISR rendering (checked with `next build`; a test fails if a page outside the account routes imports
-  `next/headers`, `lib/auth`, or `lib/supabase-server`).
+- **Header state** is known at hydration (performance review, 2026-10-25): the server sets a plain `quad_signed_in`
+  cookie ("1", not httpOnly, the session cookies' own lifetime) beside the `sb-` session cookies and clears it with
+  them (`signedInCookieFor` in `lib/accounts.ts`, called from `lib/supabase-server.ts` and `proxy.ts`), so `useMe()`
+  shows "Sign in" or the avatar in the same pass as hydration instead of after a request. The marker carries no
+  identity and the server never reads it. The name and id come from **`GET /api/me`** (`private, no-store`), kept in
+  `sessionStorage` for five minutes and asked again when stale, after a name change (`refreshMe()`), or when the cookie
+  and the last answer disagree; a signed-out visitor asks once per tab (to learn whether sign-in is configured here).
+  A visitor without an `sb-` auth cookie gets that answer without a call to Supabase. Public pages never read cookies,
+  so they keep their static/ISR rendering (checked with `next build`; a test fails if a page outside the account
+  routes imports `next/headers`, `lib/auth`, or `lib/supabase-server`).
 - **`proxy.ts` runs only on** `/login`, `/auth/*`, `/account/*`, `/me/*`, `/invite/*`, `/api/me`, and only when an
   `sb-` cookie is present. Later account routes add their prefix to the matcher and to `ACCOUNT_ROUTES` in
   `tests/accounts.test.mts`. Server Actions on public pages (Follow, Add to list) refresh the session themselves.

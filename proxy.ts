@@ -12,6 +12,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { signedInCookieFor } from "@/lib/accounts";
 import { AUTH_COOKIE_OPTIONS } from "@/lib/supabase-server";
 import { timingEnabled } from "@/lib/timing";
 
@@ -29,9 +30,12 @@ export async function proxy(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(toSet, headers) {
-        for (const { name, value } of toSet) request.cookies.set(name, value);
+        // The signed-in marker (lib/accounts.ts SIGNED_IN_COOKIE) travels with the session cookies it mirrors.
+        const marker = signedInCookieFor(toSet);
+        const all = marker ? [...toSet, marker] : toSet;
+        for (const { name, value } of all) request.cookies.set(name, value);
         response = NextResponse.next({ request });
-        for (const { name, value, options } of toSet) response.cookies.set(name, value, options);
+        for (const { name, value, options } of all) response.cookies.set(name, value, options);
         for (const [k, v] of Object.entries(headers ?? {})) response.headers.set(k, v);
       },
     },

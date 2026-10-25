@@ -154,12 +154,12 @@ export function withoutGridPolicy(school: School): School {
 }
 
 /**
- * The as-of date of the college's CDS test policy (C8): the day its record was read (`retrieved`), else January 1 of
- * the second year of its CDS edition ("2025–26" → 2026-01-01), else null.
+ * The as-of date of the college's CDS test policy (C8): its edition's publication date, taken as January 1 of the
+ * edition's second year ("2025–26" is published during 2025–26 → 2026-01-01); null without an edition. Never the
+ * record's `retrieved` date: that is when Quad read the CDS, which says nothing about which statement is newer.
  */
 export function cdsPolicyAsOf(school: School): string | null {
   const rec = school.lineage?.["reported.test_policy"];
-  if (rec?.retrieved) return rec.retrieved;
   const m = /^(\d{4})[–-](\d{2})/.exec(rec?.edition ?? "");
   return m ? `${Number(m[1]) + 1}-01-01` : null;
 }

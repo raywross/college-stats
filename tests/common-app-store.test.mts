@@ -213,35 +213,53 @@ test("against federal only, the grid's policy wins; the federal one is kept and 
   assert.equal(c.replaces?.text, "Test-optional");
 });
 
-test("against a CDS policy read later than the grid's stamp, the CDS stays", () => {
+/** An edition stamped before the CDS edition's as-of date (2026-01-01), so the CDS is the newer statement. */
+const earlyEdition = (over: Partial<GridEdition> = {}) => edition({ updated: "2025-12-01", ...over });
+
+test("the CDS as-of date is its edition's (January 1 of the second year), never the day Quad read it", () => {
   const vu = byId.get(VU)!;
-  assert.equal(cdsPolicyAsOf(vu), "2026-10-03");
-  assert.equal(gridPolicyVerdict(vu, edition()), "cds-newer");
-  const out = get(run().schools, VU);
-  assert.deepEqual(out.admissions, vu.admissions);
-  assert.equal(out.lineage!["admissions.test_policy"]!.source, "college-site");
+  assert.equal(vu.lineage!["reported.test_policy"]!.retrieved, "2026-10-03");
+  assert.equal(cdsPolicyAsOf(vu), "2026-01-01");
+  const noEdition = structuredClone(vu);
+  delete noEdition.lineage!["reported.test_policy"]!.edition;
+  assert.equal(cdsPolicyAsOf(noEdition), null);
 });
 
-test("against a CDS policy older than the grid's stamp, the grid wins and the federal block stays as the CDS kept it", () => {
-  const later = edition({ updated: "2026-10-20", rows: [row("Vanderbilt University", VU, "A")] });
+test("same cycle, CDS edition older than the grid's stamp: the grid wins; the federal block stays as the CDS kept it", () => {
   const vu = byId.get(VU)!;
-  assert.equal(gridPolicyVerdict(vu, later), "grid");
-  const { schools, summary } = run(SCHOOLS, later);
+  // Read 2026-10-03, after the grid's 2026-09-25 stamp: the read date doesn't matter, the 2025–26 edition does.
+  assert.equal(gridPolicyVerdict(vu, edition()), "grid");
+  const { schools, summary } = run(SCHOOLS, edition({ rows: [row("Vanderbilt University", VU, "A")] }));
   const out = get(schools, VU);
   assert.equal(out.admissions.test_policy, "required");
+  assert.equal(out.lineage!["admissions.test_policy"]!.source, "common-app");
   assert.deepEqual(out.admissions.federal_tests, vu.admissions.federal_tests, "the federal block is kept, never the CDS value");
   assert.equal(summary.testPolicy.overCds, 1);
   // An edition the CDS beats puts the CDS policy back, byte for byte (the same as never having applied the grid's).
-  const back = get(run(schools, edition()).schools, VU);
-  assert.equal(JSON.stringify(back), JSON.stringify(get(run().schools, VU)));
+  const back = get(run(schools, earlyEdition()).schools, VU);
+  assert.equal(JSON.stringify(back), JSON.stringify(get(run(SCHOOLS, earlyEdition()).schools, VU)));
   assert.deepEqual(back.admissions, vu.admissions);
   assert.deepEqual(Object.keys(back.lineage!), Object.keys(vu.lineage!));
 });
 
-test("a CDS policy for a later entering fall beats the grid", () => {
+test("a grid stamped before the CDS edition's as-of date leaves the CDS policy", () => {
+  const vu = byId.get(VU)!;
+  assert.equal(gridPolicyVerdict(vu, earlyEdition()), "cds-newer");
+  const { schools, summary } = run(SCHOOLS, earlyEdition());
+  const out = get(schools, VU);
+  assert.deepEqual(out.admissions, vu.admissions);
+  assert.equal(out.lineage!["admissions.test_policy"]!.source, "college-site");
+  assert.equal(summary.testPolicy.cdsNewer, 1);
+});
+
+test("a 2026–27 CDS stating the policy for fall 2028 applicants beats the grid by cycle", () => {
   const vu = structuredClone(byId.get(VU)!);
   vu.reported!.test_policy!.cycle = 2028;
-  assert.equal(gridPolicyVerdict(vu, edition({ updated: "2026-12-01" })), "cds-newer");
+  vu.lineage!["reported.test_policy"]!.edition = "2026–27";
+  assert.equal(cdsPolicyAsOf(vu), "2027-01-01");
+  assert.equal(gridPolicyVerdict(vu, edition()), "cds-newer");
+  // The cycle check comes first: even a grid stamped after the edition's as-of date loses.
+  assert.equal(gridPolicyVerdict(vu, edition({ updated: "2027-02-01" })), "cds-newer");
 });
 
 /* ---- Lineage ---- */

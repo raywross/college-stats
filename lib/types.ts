@@ -3,6 +3,7 @@ import type { Direction, IndicatorKey } from "./indicators";
 import type { GenderBalance } from "./student-body";
 import type { Council, DirectorySummary, PolicyCheck, Tradition } from "./directories";
 import type { SelectivityTier } from "./chances/types";
+import type { SchoolApply } from "./common-app/types";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
@@ -260,6 +261,11 @@ export interface School {
      * for the ⓘ ("Replaces: … Common Data Set 2024–25: 77%"); `aid.cds` itself is removed then.
      */
     cds_previous?: CdsAidPrevious;
+    /**
+     * Whether the college offers aid to international first-years, from its Common App member page
+     * (`field_mp_fac_international_fa`: Yes → true, No → false; unanswered → absent). specs/data-expansion/common-app.md.
+     */
+    international_offered?: boolean;
   };
   /** Housing and campus services (IPEDS Institutional Characteristics, same year as the prices), and the campus profile. */
   /** Academics (specs/data-expansion/student-faculty-ratio.md; later majors, faculty, class sizes). */
@@ -392,6 +398,11 @@ export interface School {
    * Every value here has an `extracted` (or `derived`) lineage record with its quote, URL, retrieval date, and year.
    */
   reported?: ReportedData;
+  /**
+   * Common App membership and the Requirements Grid row (specs/data-expansion/common-app.md "Store";
+   * scripts/lib/common-app/merge.mts): present only on members found on Common App's Explore pages with an IPEDS id.
+   */
+  apply?: SchoolApply;
 }
 
 /**
@@ -1460,7 +1471,12 @@ export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "
   /** An organization's estimate for one campus (tier C, e.g. Hillel's Jewish-student count), credited and dated. */
   | "org-estimate"
   /** A college's own policy page, checked on a date with a quote (tier A; lgbtq-life.md policies, `PolicyCheck`). */
-  | "policy-page";
+  | "policy-page"
+  /**
+   * Common App (specs/data-expansion/common-app.md): the Requirements Grid (vintage `common-app-grid`) and the members'
+   * Explore pages (vintage `common-app-members`). Present-only: a college that isn't a member cites nothing from it.
+   */
+  | "common-app";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
 export type GradRaceGroup = "white" | "asian" | "hispanic" | "black" | "two_or_more" | "international" | "aian" | "nhpi";
 
@@ -1503,6 +1519,10 @@ export interface SchoolLinks {
   virtual_tour?: string | null;
   veterans?: string | null;
   disability_services?: string | null;
+  /** The college's transfer guarantee page, from its Common App member page (a URL on the college's own site). */
+  transfer_guarantee?: string | null;
+  /** The college's page on aid for DACA and undocumented students, from its Common App member page (its own site). */
+  daca_aid?: string | null;
 }
 
 /** Social networks, in the order the profile shows them (the order students use them, not alphabetical). */

@@ -49,7 +49,14 @@ export type VintageKey =
   | "scorecard-retention"
   | "scorecard-latest"
   /** College Scorecard Field of Study bulk CSV: each metric pools a different, independently-refreshed cohort, so like scorecard-latest this has no single year. */
-  | "scorecard-fos";
+  | "scorecard-fos"
+  /**
+   * Common App Requirements Grid (specs/data-expansion/common-app.md): the cycle and "Updated" stamp, built by
+   * scripts/lib/common-app/merge.mts from the newest edition file, never typed.
+   */
+  | "common-app-grid"
+  /** Common App members' Explore pages: the day they were read, from data/common-app/members.json. */
+  | "common-app-members";
 
 export interface FieldDef {
   label: string;
@@ -135,7 +142,11 @@ const siteFound = (label: string): FieldDef => ({ label, topic: "institution", s
 const wikidata = (label: string): FieldDef => ({ label, topic: "institution", source: "wikidata", vintage: null });
 const wikipedia = (label: string): FieldDef => ({ label, topic: "institution", source: "wikipedia", vintage: null });
 /** Derived at sync time from the college's colors (lib/brand-colors.ts), so the app does no color math. */
-const brandDerived = (label: string, formula: string): FieldDef => ({ ...wikipedia(label), derived: { formula, inputs: ["brand.colors"] } });
+/** A Common App Requirements Grid value (specs/data-expansion/common-app.md "Store"): only on members, so present-only. */
+const grid = (label: string): FieldDef => ({ label, topic: "admissions", source: "common-app", vintage: "common-app-grid" });
+/** A value from a member's Common App Explore page (aid offered, links on the college's own site). */
+const member = (label: string, topic: Topic): FieldDef => ({ label, topic, source: "common-app", vintage: "common-app-members" });
+const brandDerived =(label: string, formula: string): FieldDef => ({ ...wikipedia(label), derived: { formula, inputs: ["brand.colors"] } });
 
 /** What Quad's selectivity reads (specs/chances/selectivity-index.md "Inputs"), in words: kinds, not weights. */
 const SELECTIVITY_FORMULA =
@@ -967,6 +978,25 @@ export const FIELDS = {
       inputs: ["derived.next_year_price", "cost.tuition_fees", "cost.components"],
     },
   },
+
+  /* ---- Common App (specs/data-expansion/common-app.md; scripts/lib/common-app/merge.mts) ---- */
+  // Only on members found on Common App's Explore pages; a college that isn't a member has none of these and cites
+  // nothing from Common App (lib/lineage.ts PRESENT_ONLY). Deadlines and fees stay here: the display reads apply.* first.
+  "apply.common_app": grid("Common App member, and the Requirements Grid edition its row is from"),
+  "apply.deadlines": grid("Application deadlines by round (Common App Requirements Grid)"),
+  "apply.fee": grid("Application fee, U.S. and international applicants (Common App Requirements Grid)"),
+  "apply.fee_waiver": grid("Whether the college takes the Common App fee waiver (Common App Requirements Grid)"),
+  "apply.essay_required": grid("Whether the Common App personal essay is required (Common App Requirements Grid)"),
+  "apply.courses_grades_required": grid("Whether the Courses & Grades section is required (Common App Requirements Grid)"),
+  "apply.writing_supplement": grid("Whether the college asks for its own writing supplement (Common App Requirements Grid)"),
+  "apply.portfolio": grid("Portfolio for arts applicants, and where it is sent (Common App Requirements Grid)"),
+  "apply.test_policy": grid("Test policy, tests used, and English proficiency tests (Common App Requirements Grid)"),
+  "apply.recommendations": grid("Recommendations and reports required (Common App Requirements Grid)"),
+  "apply.school_type": grid("Coed, women's, men's, or coordinate college (Common App Requirements Grid)"),
+  "apply.saves_forms": grid("Whether the college saves recommendation forms for later cycles (Common App Requirements Grid)"),
+  "aid.international_offered": member("Whether the college offers aid to international students (Common App member page)", "aid"),
+  "links.transfer_guarantee": member("Transfer guarantee page (from the college's Common App member page)", "institution"),
+  "links.daca_aid": member("Aid for DACA and undocumented students page (from the college's Common App member page)", "institution"),
 } satisfies Record<string, FieldDef>;
 
 export type FieldPath = keyof typeof FIELDS;

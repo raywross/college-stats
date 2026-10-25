@@ -28,6 +28,7 @@ import { readRecords } from "./lib/college-reported/records.mts";
 import { DETAIL_TABLES, formatDetail, type DetailTableKey, type SchoolDetail } from "../lib/detail.ts";
 import { financialAidDetails } from "../lib/cds/financial-aid.ts";
 import { detailFileProblems, readDetails } from "./lib/publish-details.mts";
+import { applyCommonApp, loadCommonApp } from "./lib/common-app/merge.mts";
 
 // MERGE_REPORTED_ROOT lets tests point this at a scratch directory holding just data/schools.json,
 // data/college-reported.json, and data/meta.json, without copying the whole repo.
@@ -68,7 +69,11 @@ function main() {
 
   // The CDS records (data/cds-records/) then supply the newest groups (specs/data-expansion/cds-student-body-and-outcomes.md).
   const records = readRecords(CDS_RECORDS);
-  const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, { records, meta, table: CDS_TEMPLATE });
+  const { schools: reportedMerged, merged: mergedCount, removed } = mergeReported(schools, reported, { records, meta, table: CDS_TEMPLATE });
+  // The CDS merge restores and re-applies every test block, which takes out a Common App grid policy: re-apply the
+  // committed Common App block (scripts/lib/common-app/merge.mts) so the newest policy stays. Skipped without its files.
+  const commonApp = loadCommonApp(ROOT);
+  const merged = commonApp ? applyCommonApp(reportedMerged, commonApp.edition, commonApp.members, new Date().toISOString().slice(0, 10)).schools : reportedMerged;
   const { details, changed } = withRecordTables(readDetails(ROOT) ?? [], financialAidDetails(schools, records));
 
   const problems = [...validateLineage(merged, meta), ...detailFileProblems(details.filter((d) => changed.has(d.unit_id)), merged, meta)];

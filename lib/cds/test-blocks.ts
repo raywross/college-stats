@@ -7,12 +7,14 @@
  *
  * Called with one line each from `lib/newest.ts#applyNewest` and `#restoreFederal`. Also: the ⓘ's replaced value
  * (`replacedTest`), `derived.sat_total`'s inputs, and the lineage guard (`validateTests`). Pure: type-only imports plus
- * lib/score-bands.ts and lib/test-policy.ts.
+ * lib/score-bands.ts, lib/test-policy.ts, and lib/common-app/test-policy.ts (a policy the Common App grid replaced
+ * later, scripts/lib/common-app/merge.mts, keeps the same federal block and passes the same guard).
  */
 import type { FieldPath } from "../fields";
 import type { ActBlock, FederalTests, KeptBlock, LineageRecord, PolicyBlock, SatBlock, School } from "../types";
 import { MIN_SUBMITTERS, lineageFall, satTotalFromCds, submitters } from "../score-bands.ts";
 import { POLICY_LABELS } from "../test-policy.ts";
+import { GRID_POLICY } from "../common-app/test-policy.ts";
 
 type BlockKey = keyof FederalTests;
 type AdmKey = keyof PolicyBlock | keyof SatBlock | keyof ActBlock;
@@ -182,7 +184,9 @@ function formatKept(k: AdmKey, v: unknown): string {
 export function replacedTest(path: FieldPath, school: School | undefined): { value: number | null; year: string | null; text: string } | null {
   const at = BLOCK_OF[path];
   const kept = at && school?.admissions.federal_tests?.[at[0]];
-  if (!at || !kept || school?.lineage?.[path]?.source !== "college-site") return null;
+  const source = school?.lineage?.[path]?.source;
+  // A policy the Common App grid replaced (scripts/lib/common-app/merge.mts) keeps the federal block the same way.
+  if (!at || !kept || (source !== "college-site" && !(source === "common-app" && at[0] === "policy"))) return null;
   const block = kept as KeptBlock<Record<string, unknown>>;
   const v = block[at[1]];
   const rec = block.records?.[at[1]];
@@ -218,18 +222,39 @@ export function validateTests(school: School, where: string): string[] {
         if (!rec.quote || !rec.url || !rec.retrieved || !rec.year) errors.push(`${where}: ${path} cites the college's site but lacks quote, url, retrieved, or year`);
         if (!kept?.[b]) errors.push(`${where}: ${path} cites the college's site, but admissions.federal_tests.${b} doesn't keep the block it replaced`);
       }
-      if (kept?.[b] && a[k] !== null && a[k] !== undefined && rec?.source !== "college-site") {
+      if (kept?.[b] && a[k] !== null && a[k] !== undefined && rec?.source !== "college-site" && !(b === "policy" && rec?.source === "common-app")) {
         errors.push(`${where}: ${path} is inside a replaced ${b} block but isn't cited to the college's Common Data Set`);
       }
     }
   }
+  errors.push(...commonAppPolicyProblems(school, where));
   const rp = school.reported?.test_policy;
-  if (rp && kept?.policy) {
+  if (rp && kept?.policy && school.lineage?.["admissions.test_policy"]?.source === "college-site") {
     const fall = kept.policy.year ?? school.admissions.federal?.year ?? school.admissions.year;
     if (fall !== null && rp.cycle <= fall) errors.push(`${where}: reported.test_policy.cycle ${rp.cycle} isn't after the federal policy's fall ${fall}`);
   }
-  if (school.admissions.test_policy === "required-some" && school.lineage?.["admissions.test_policy"]?.source !== "college-site") {
-    errors.push(`${where}: admissions.test_policy "required-some" comes only from a college's Common Data Set`);
+  const policySource = school.lineage?.["admissions.test_policy"]?.source;
+  if (school.admissions.test_policy === "required-some" && policySource !== "college-site" && policySource !== "common-app") {
+    errors.push(`${where}: admissions.test_policy "required-some" comes only from a college's Common Data Set or the Common App grid`);
   }
+  return errors;
+}
+
+/**
+ * A test policy cited to the Common App grid (specs/data-expansion/common-app.md, newest wins): the record names the
+ * grid edition (year), the homepage (url), and the day the grid was read (retrieved); the school still has its grid
+ * row; the value is the grid code's mapping (GRID_POLICY); and `admissions.federal_tests.policy` keeps what it replaced.
+ */
+function commonAppPolicyProblems(school: School, where: string): string[] {
+  const rec = school.lineage?.["admissions.test_policy"];
+  if (rec?.source !== "common-app") return [];
+  const errors: string[] = [];
+  if (!rec.year || !rec.url || !rec.retrieved) errors.push(`${where}: admissions.test_policy cites the Common App grid but lacks year, url, or retrieved`);
+  const code = school.apply?.test_policy?.code;
+  if (!code) errors.push(`${where}: admissions.test_policy cites the Common App grid, but the school has no apply.test_policy`);
+  else if (school.admissions.test_policy !== GRID_POLICY[code]) {
+    errors.push(`${where}: admissions.test_policy "${school.admissions.test_policy}" disagrees with the grid's code ${code} ("${GRID_POLICY[code]}")`);
+  }
+  if (!school.admissions.federal_tests?.policy) errors.push(`${where}: admissions.test_policy cites the Common App grid, but admissions.federal_tests.policy doesn't keep the policy it replaced`);
   return errors;
 }

@@ -63,6 +63,7 @@ import { addIdentityMeta, applyIdentity } from "../lib/identity.ts";
 import { buildSelectivity, formatIndexFile, readIndexFile, selectivityProblems } from "./lib/selectivity.mts";
 import { loadIdentityInputs } from "./lib/identity-sync.mts";
 import { writeAliasTable } from "./lib/aliases-sync.mts";
+import { addCommonAppMeta, applyCommonApp, loadCommonApp, summaryLine } from "./lib/common-app/merge.mts";
 import { runSiteProbe } from "./lib/site-probe.mts";
 import { fetchOpenAdmissionFile } from "./lib/open-admission.mts";
 import { applyOpenAdmission, openAdmissionMeta } from "../lib/open-admission.ts";
@@ -637,7 +638,9 @@ function buildMeta(
       "scorecard-latest": null,
       // Set with its source by addFieldOfStudyMeta; also no single year (every metric pools a different cohort).
       "scorecard-fos": null,
-    },
+      // The Common App vintages are set with their source by addCommonAppMeta (scripts/lib/common-app/merge.mts), only
+      // when data/common-app/ holds an edition; until then meta has neither (lib/lineage.ts MERGED_LATER).
+    } satisfies Omit<DatasetMeta["vintages"], "common-app-grid" | "common-app-members"> as DatasetMeta["vintages"],
   };
 }
 
@@ -968,6 +971,16 @@ async function main() {
     schools.splice(0, schools.length, ...merged.schools);
     reportedMerged = merged.merged;
   }
+  // Common App (specs/data-expansion/common-app.md): the committed grid edition and member records, re-applied exactly
+  // as `npm run merge-common-app` does. After the CDS merge above, since the grid's test policy wins only when it is
+  // newer than the CDS policy that merge just applied (and restoreFederal there would undo a grid policy applied before).
+  const commonApp = loadCommonApp(ROOT);
+  if (commonApp) {
+    const applied = applyCommonApp(schools, commonApp.edition, commonApp.members, new Date().toISOString().slice(0, 10));
+    schools.splice(0, schools.length, ...applied.schools);
+    addCommonAppMeta(meta, commonApp.edition, commonApp.members);
+    console.log(`  Common App: ${summaryLine(applied.summary)}`);
+  } else console.log("  Common App: no data/common-app/ edition or members.json yet; skipped");
 
   // Transfers in: the level codes must still mean transfer-ins and first-time students (lib/transfers.ts).
   const transfersChecked = await checkTransfers(efa.table, efa.year, schools.map((s) => s.unit_id), join(ROOT, ".cache", "ipeds"));

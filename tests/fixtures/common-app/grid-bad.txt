@@ -1,0 +1,15 @@
+=== Page 1 ===
+@310 2026-27 | @507 Updated: 09-25-2026
+@271 First-year deadlines, fees | @523 * See bottom of document for notes
+@28 Common App | @83 School | @266 RD/ | @356 Common App | @399 Personal | @429 Courses & | @531 Test | @561 SAT/ACT | @606 English | @752 Saves
+@35 member | @84 type ¹ | @121 ED | @149 EDII | @179 EA | @207 EAII | @237 REA | @263 Rolling | @299 US | @331 Int'l | @360 fee waiver | @401 essay ³ | @432 Grades ⁴ | @462 Portfolio ⁵ | @497 Writing | @529 policy | @560 tests used | @602 proficiency | @647 TE | @674 OE | @701 MR | @729 CR | @753 forms
+@21 Late Deadline College | @85 Coed | @259 09/15/2027 | @300 $0 | @333 $0 | @534 N | @566 None | @603 See website
+
+@28 Common App member | @85 Coed | @264 Rolling | @300 $0 | @333 $0 | @534 N | @566 None
+
+@26 Twice Read College | @85 Coed | @264 Rolling | @298 $50 | @332 $50 | @363 Accepted | @534 N | @566 None | @605 D or I or T
+
+@26 Twice Read College | @85 Coed | @264 Rolling | @298 $50 | @332 $50 | @363 Accepted | @534 N | @566 None | @605 D or I or T
+
+@26 Dear College | @85 Coed | @264 Rolling | @298 $300 | @332 $50 | @363 Accepted | @534 N | @566 None | @605 D or I or T
+@380 Page 1

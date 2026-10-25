@@ -1,12 +1,14 @@
 /**
  * Writes data/aliases.json (specs/school-identity/aliases.md; lib/aliases.ts): the IPEDS directory's IALIAS column
  * when a fresh HD file is at hand (sync-data), else the IPEDS rows already in the file (merge-identity), plus
- * Wikidata's other names, the homepage domain, and data/aliases-curated.json.
+ * Wikidata's other names, the homepage domain, data/aliases-curated.json, and Common App members' other names
+ * (data/common-app/members.json; specs/data-expansion/common-app.md).
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { School } from "../../lib/types";
 import type { WikidataEntry } from "../../lib/identity-files";
+import type { MembersFile } from "../../lib/common-app/types";
 import {
   aliasTableProblems,
   buildAliasRow,
@@ -23,6 +25,8 @@ export interface AliasTableInputs {
   /** Fresh HD rows by unit id (sync-data); null keeps the IPEDS rows already in data/aliases.json (merge-identity). */
   hdRows: Map<string, Record<string, string>> | null;
   wikidata: Map<string, WikidataEntry>;
+  /** Common App members (merge-common-app); undefined reads data/common-app/members.json when it exists. */
+  commonApp?: MembersFile | null;
 }
 
 function readJson<T>(path: string, fallback: T): T {
@@ -35,10 +39,37 @@ export function formatAliasRows(rows: readonly AliasRow[]): string {
 }
 
 /**
- * Rebuilds data/aliases.json from every source and writes it. Throws, writing nothing, if the result would fail
- * its own invariant (a duplicate (unit_id, key), or a row for a college not in `inputs.schools`).
+ * Common App members' other names (data/common-app/members.json `alternate_names`, already split on commas; specs/
+ * data-expansion/common-app.md "Store"), joined by IPEDS id, weight 2 like Wikidata's.
  */
-export function writeAliasTable(root: string, inputs: AliasTableInputs): void {
+export function commonAppAliasRows(schools: readonly School[], members: MembersFile | null): AliasRow[] {
+  if (!members) return [];
+  const nameById = new Map(schools.map((s) => [s.unit_id, s.name]));
+  const rows: AliasRow[] = [];
+  for (const m of members.members) {
+    const name = m.ipeds ? nameById.get(m.ipeds) : undefined;
+    if (!name) continue;
+    for (const alias of m.alternate_names.flatMap((a) => splitAliasField(a))) {
+      if (shouldDropAlias(alias, name)) continue;
+      rows.push(buildAliasRow(m.ipeds!, alias, "common-app"));
+    }
+  }
+  return rows;
+}
+
+/**
+ * Rebuilds data/aliases.json from every source and writes it. Throws, writing nothing, if the result would fail
+ * its own invariant (a duplicate (unit_id, key), or a row for a college not in `inputs.schools`). Returns the row
+ * counts (all rows, and Common App's after the dedupe).
+ */
+export function writeAliasTable(root: string, inputs: AliasTableInputs): { rows: number; commonApp: number } {
+  const final = buildAliasTable(root, inputs);
+  writeFileSync(join(root, "data", "aliases.json"), formatAliasRows(final));
+  return { rows: final.length, commonApp: final.filter((r) => r.source === "common-app").length };
+}
+
+/** The table `writeAliasTable` writes, checked; throws on a broken invariant. Reads data/ but writes nothing. */
+export function buildAliasTable(root: string, inputs: AliasTableInputs): AliasRow[] {
   const dataDir = join(root, "data");
   const aliasesPath = join(dataDir, "aliases.json");
   const curatedPath = join(dataDir, "aliases-curated.json");
@@ -90,8 +121,12 @@ export function writeAliasTable(root: string, inputs: AliasTableInputs): void {
     rows.push(buildAliasRow(c.unit_id, c.alias, "curated", c.weight));
   }
 
+  // Common App members' other names; without `inputs.commonApp`, the committed members file (if any).
+  const members = inputs.commonApp !== undefined ? inputs.commonApp : readJson<MembersFile | null>(join(dataDir, "common-app", "members.json"), null);
+  rows.push(...commonAppAliasRows(inputs.schools, members));
+
   const final = dedupeAliases(rows);
   const problems = aliasTableProblems(final, schoolIds);
   if (problems.length) throw new Error(`writeAliasTable: refused to write an invalid table:\n  ${problems.slice(0, 10).join("\n  ")}`);
-  writeFileSync(aliasesPath, formatAliasRows(final));
+  return final;
 }

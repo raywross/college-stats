@@ -93,7 +93,10 @@ nothing was replaced).
   replaced an older one: the value from `admissions.federal`, the year from its lineage record (a CDS edition) or
   "Fall {federal.year}". Yield's inputs are the pair it was calculated from: enrolled and admitted when they describe
   the same class, otherwise `admissions.federal`.
-- `sourcesForFields(paths, school, meta)` → distinct sources (derived values expand to inputs), for footnotes.
+- `sourcesForFields(paths, school, meta)` → distinct sources (derived values expand to inputs), for footnotes. A
+  per-college source (college-site, state law, directories) with no lineage record at the school cites nothing; a
+  **present-only** source with a vintage (`PRESENT_ONLY`: `common-app`) cites nothing where the school has no value
+  (absent or null), so a college that isn't a Common App member never lists Common App.
 - App wrappers in `lib/data.ts`: `citeField(path, school?)`, `sourcesForFields(paths, school?)`,
   `sourcesForSchools(paths, schools)`.
 - `yearLabel`, `shortSource` live here (not in the `"use client"` info-tip module) so server components can call them.
@@ -141,7 +144,10 @@ Supabase, so the new code can prerender against the previous publish. A new sour
 PR #36's production build crashed on `/data` that way (2026-09-30). So the app treats a missing source as
 "being published": `sourceInfo()` returns a placeholder citation, history leaves the family out, and the Data page skips
 the card. The workflow's revalidation, after the publish and again after the deploy, replaces those pages. Only the
-app is lenient: the sync and `check:lineage` still refuse a dataset missing any source.
+app is lenient: the sync and `check:lineage` still refuse a dataset missing any source. One exception: a source a
+later merge adds (`MERGED_LATER` in `lib/lineage.ts`: `common-app`, written by `npm run merge-common-app`) may be
+absent together with all its vintages; once meta has any of them, or any school holds a value from it, the source and
+every vintage are required.
 
 ## Not built yet
 - Superscript numbers linking values to the numbered source list (the popover links straight to the source instead).

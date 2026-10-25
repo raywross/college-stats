@@ -104,7 +104,7 @@ export function shouldDropAlias(alias: string, officialName: string, opts: { cur
 /* 4. Weight, build, and dedupe                                        */
 /* ------------------------------------------------------------------ */
 
-export const ALIAS_WEIGHTS = { curated: 4, ipeds: 3, wikidata: 2, domain: 2 } as const satisfies Record<AliasRow["source"], number>;
+export const ALIAS_WEIGHTS = { curated: 4, ipeds: 3, wikidata: 2, "common-app": 2, domain: 2 } as const satisfies Record<AliasRow["source"], number>;
 
 /** One curated entry (data/aliases-curated.json): see specs/school-identity/aliases.md for the format. */
 export interface CuratedAliasEntry {
@@ -120,7 +120,7 @@ export function buildAliasRow(unitId: string, alias: string, source: AliasRow["s
 }
 
 /** Source priority used only to break a tie in weight (e.g. Wikidata's "UGA" over the domain label "uga": both weight 2). */
-const SOURCE_PRIORITY: Record<AliasRow["source"], number> = { curated: 4, ipeds: 3, wikidata: 2, domain: 1 };
+const SOURCE_PRIORITY: Record<AliasRow["source"], number> = { curated: 5, ipeds: 4, wikidata: 3, "common-app": 2, domain: 1 };
 
 /**
  * Collapses to one row per (unit_id, key), keeping the highest weight; a tie keeps the higher-priority source. The

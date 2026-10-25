@@ -50,7 +50,8 @@ export function Header() {
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="mx-auto flex h-(--header-h) max-w-7xl items-center gap-4 px-4 sm:px-6">
-        <Link href="/" className="group shrink-0" aria-label="Quad home">
+        {/* No prefetch: the home page's payload is the largest on the site (~60 KB) and few visits go back to it. */}
+        <Link href="/" prefetch={false} className="group shrink-0" aria-label="Quad home">
           <Logo />
         </Link>
 

@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import {
+  SIGNED_IN_COOKIE,
   birthYearAllowed,
   initialsFor,
   loginHref,
@@ -15,6 +16,7 @@ import {
   parseBirthYear,
   resolveStudentAccess,
   safeNextPath,
+  signedInCookieFor,
   wantsOwnStudent,
   type HouseholdMember,
   type StudentRecord,
@@ -178,6 +180,31 @@ test("wantsOwnStudent: students (and people who didn't say) get a student record
   assert.deepEqual([wantsOwnStudent("student"), wantsOwnStudent(null), wantsOwnStudent("guardian"), wantsOwnStudent("counselor")], [true, true, false, false]);
 });
 
+/* ------------------------------------------------------------------ */
+/* Header state: the signed-in marker cookie                           */
+/* ------------------------------------------------------------------ */
+
+const sessionCookie = (value: string, maxAge = 400 * 86400) => ({ name: "sb-abc-auth-token.0", value, options: { httpOnly: true, sameSite: "lax", path: "/", maxAge } });
+
+test("signedInCookieFor: written with the session cookies (their lifetime, readable by scripts), cleared with them, absent otherwise", () => {
+  const set = signedInCookieFor([sessionCookie("eyJ…"), { ...sessionCookie("rest"), name: "sb-abc-auth-token.1" }]);
+  assert.deepEqual(set, { name: SIGNED_IN_COOKIE, value: "1", options: { httpOnly: false, sameSite: "lax", path: "/", maxAge: 400 * 86400 } });
+
+  // @supabase/ssr clears a cookie with an empty value and maxAge 0.
+  const cleared = signedInCookieFor([sessionCookie("", 0)]);
+  assert.deepEqual(cleared, { name: SIGNED_IN_COOKIE, value: "", options: { httpOnly: false, sameSite: "lax", path: "/", maxAge: 0 } });
+
+  assert.equal(signedInCookieFor([]), null);
+  assert.equal(signedInCookieFor([{ name: "age_gate", value: "refused", options: { httpOnly: true, maxAge: 86400 } }]), null);
+});
+
+test("the marker is set wherever the session cookies are, and the header reads it instead of waiting on /api/me", () => {
+  for (const file of ["lib/supabase-server.ts", "proxy.ts"]) assert.match(readFileSync(join(ROOT, file), "utf8"), /signedInCookieFor\(/, `${file} doesn't mirror the session cookies`);
+  const useMe = readFileSync(join(ROOT, "components/account/useMe.ts"), "utf8");
+  assert.match(useMe, /SIGNED_IN_COOKIE/);
+  assert.match(useMe, /document\.cookie/);
+});
+
 test("initialsFor", () => {
   // One letter: the first name's (household-hub.md "Names, not logins").
   assert.equal(initialsFor("Ada Lovelace", "a@b.c"), "A");
@@ -336,6 +363,18 @@ function sessionReadProblems(entries: { file: string; route: string; src: string
 test("only account routes read cookies or the session (public pages stay static)", () => {
   const entries = files(join(ROOT, "app")).map((file) => ({ file: relative(ROOT, file), route: routeOf(file), src: readFileSync(file, "utf8") }));
   assert.deepEqual(sessionReadProblems(entries), []);
+});
+
+test("the college overview takes no searchParams and renders no session-reading view: it is prerendered (the event calendar has its own route)", () => {
+  const uncommented = (file: string) => readFileSync(join(ROOT, file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  const overview = uncommented("app/schools/[id]/page.tsx");
+  assert.doesNotMatch(overview, /searchParams/);
+  assert.doesNotMatch(overview, /VisitCalendar/);
+  assert.match(overview, /generateStaticParams/);
+  // The hero's button links to the calendar route and reads no session itself (the route redirects a visitor to sign up).
+  const button = uncommented("components/visits/EventCalendarButton.tsx");
+  assert.doesNotMatch(button, /getUser\(/);
+  assert.match(button, /\/schools\/\$\{unitId\}\/events/);
 });
 
 test("guard: a public page that reads the session is flagged", () => {

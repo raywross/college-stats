@@ -416,13 +416,14 @@ pure in `lib/emails/visit-alert.ts` like `lib/digest.ts`, with the HTML and plai
 ## Display (signed in)
 - **College page**: an **Event calendar** button in the hero, to the right of the social bar, with the count of
   upcoming events (owner, 2026-10-13: the calendar shows only when asked for, never as the first thing on the page).
-  It opens the same page with `?view=events`: the college's header stays, and the stats below are replaced by the
-  calendar: a "Back to the college" link, the next three on-campus events and the next three near the family ("Near
+  It opens the calendar route, `/schools/<id>/events` (until 2026-10-25 the same page with `?view=events`, which now
+  redirects there, so the overview can stay prerendered): the college's header stays, and the stats below are replaced
+  by the calendar: a "Back to the college" link, the next three on-campus events and the next three near the family ("Near
   you: Decatur High School, Mon 19 Oct, 14 miles"), each with the date, time, place, open/full, and a Sign up link,
   then the whole calendar with the kind chips (Campus tours · Sessions · Near you · Online · Everything) and a state
   filter for the travel calendar. The button turns into "Back to the college" while the view is open. Signed out, the
-  button (and a direct `?view=events` link) goes to the sign-up form (`/login?mode=signup`) and returns to the
-  calendar afterwards; the count is the one public figure.
+  calendar route goes to the sign-up form (`/login?mode=signup`) and returns to the calendar afterwards; the button
+  itself reads no session (the overview is served from the cache), and the count is the one public figure.
 - **`/me/visits`**: every upcoming event at the colleges on the person's lists, nearest first, then by date; a
   **Near you** section at the top with the radius control; per college, the alert switch (the same mute as the email
   footer). Guardians see the same for the colleges they follow.
@@ -511,8 +512,10 @@ last-attempt timestamp, and the retry rules came in round 2 (below).
 **Pages** (U2, then the owner's review): `lib/visit-events/read.ts` and `view.ts` (pure grouping, chips, wording),
 `store.ts`; `components/visits/`; `/me/visits`; settings on `/account` beside the Updates switch (`/me` redirects).
 The first build put an "Upcoming visits" block under the hero; the owner's review the same day replaced it with the
-**Event calendar** button (`EventCalendarButton`, a `trailing` slot in `HeroIdentity`) and the `?view=events` view
-(`VisitCalendar`, rendered by `app/schools/[id]/page.tsx` in place of the stats). `/login` gained `?mode=signup`,
+**Event calendar** button (`EventCalendarButton`, a `trailing` slot in `HeroIdentity`) and the calendar view
+(`VisitCalendar`, first rendered by `app/schools/[id]/page.tsx` for `?view=events`; since 2026-10-25 by its own route,
+`app/schools/[id]/events/page.tsx`, under the shared `ProfileHero`, because the session read had made every college
+overview render per request: [serving-architecture.md](../serving-architecture.md#follow-up-2026-10-25-launch-performance-review)). `/login` gained `?mode=signup`,
 which opens the form on "Create an account". Chips: Sessions = `info_session` + `open_house` + `other`; Near you = `travel`. "Add to calendar" is
 a client-side `.ics` from `lib/ics.ts`. No React render test (the repo's only pattern compiles `.tsx` by hand).
 

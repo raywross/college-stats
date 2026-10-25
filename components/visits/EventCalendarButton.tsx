@@ -1,12 +1,13 @@
 /**
  * The "Event calendar" button in the college hero, to the right of the social bar (specs/product/visit-events.md
- * "Display"; owner 2026-10-13: the calendar shows only when asked for). Signed in, it opens the calendar view of the
- * same page (`?view=events`), which keeps the college's header and replaces the stats below; signed out, it goes to
- * the sign-up form and comes back here afterwards. Nothing renders for a college with no events on file.
+ * "Display"; owner 2026-10-13: the calendar shows only when asked for). It opens the calendar route
+ * (`/schools/<id>/events`), which keeps the college's header and replaces the stats below; that route sends a
+ * signed-out visitor to the sign-up form and back. Nothing renders for a college with no events on file. The button
+ * reads no session, so the overview it sits on stays prerendered; the count is the one public figure.
  */
 import Link from "next/link";
 import { ArrowLeft, CalendarDays } from "lucide-react";
-import { authConfigured, getUser } from "@/lib/auth";
+import { authConfigured } from "@/lib/auth";
 import { loginHref } from "@/lib/accounts";
 import { countForUnit } from "@/lib/visit-events/read";
 import { cn } from "@/lib/utils";
@@ -19,11 +20,10 @@ export function signupHref(next: string): string {
 
 export async function EventCalendarButton({ unitId, active }: { unitId: string; active: boolean }) {
   if (!authConfigured()) return null;
-  const [count, user] = await Promise.all([countForUnit(unitId), getUser()]);
+  const count = await countForUnit(unitId);
   if (count === 0) return null;
 
-  const calendar = `/schools/${unitId}?view=events`;
-  const href = !user ? signupHref(calendar) : active ? `/schools/${unitId}` : calendar;
+  const href = active ? `/schools/${unitId}` : `/schools/${unitId}/events`;
   const label = active ? "Back to the college" : "Event calendar";
   const Icon = active ? ArrowLeft : CalendarDays;
   return (

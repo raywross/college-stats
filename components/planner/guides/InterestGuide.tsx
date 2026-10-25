@@ -262,7 +262,7 @@ function VisitSection({ item, school, data, canEdit }: { item: PlanItem; school:
       )}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {events.length > 0 && (
-          <Link href={`/schools/${school.unit_id}?view=events`} className={SECONDARY}>
+          <Link href={`/schools/${school.unit_id}/events`} className={SECONDARY}>
             All of {name}&apos;s events
           </Link>
         )}

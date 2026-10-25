@@ -2,43 +2,33 @@
  * The Common App block on data/schools.json (specs/data-expansion/common-app.md "Store"; common-app-build/brief.md
  * "Shared contracts"): `applyCommonApp` is pure and puts each member's Requirements Grid row and Explore facts on its
  * school; `mergeCommonApp` reads the committed files (the newest data/common-app/grid/*.json and
- * data/common-app/members.json), applies them to the committed data/schools.json, refreshes the source and its two
- * vintages in meta.json, rebuilds data/aliases.json, and writes nothing unless the lineage check passes, like
- * `mergeIdentity` (scripts/lib/identity-sync.mts). `npm run merge-common-app`; `npm run sync-data` and
- * `npm run merge-reported` re-apply the block from the same files (`loadCommonApp`).
+ * data/common-app/members.json), applies them to the committed data/schools.json, re-runs the reported merge so the
+ * test policy settles exactly as `npm run merge-reported` would leave it, refreshes the source and its two vintages
+ * in meta.json, rebuilds data/aliases.json, and writes nothing unless the lineage check passes, like `mergeIdentity`
+ * (scripts/lib/identity-sync.mts). `npm run merge-common-app`; `npm run sync-data` applies the block from the same
+ * files (`loadCommonApp`) before its reported merge.
  *
- * Newest wins for the test policy (brief "Store"): the grid's policy goes into `admissions.test_policy` when the grid
- * is the newest statement, keeping the replaced block in `admissions.federal_tests.policy` exactly as
- * lib/cds/test-blocks.ts does, and citing `common-app`. Deadlines and fees are never written outside `apply.*`.
+ * Newest wins for the test policy (brief "Store"): the grid's policy is part of the newest test values themselves
+ * (lib/common-app/test-policy.ts `applyGridPolicy`, run by lib/cds/test-blocks.ts `applyNewestTests` after the CDS
+ * blocks, from `school.apply`), so every merge that restores and re-applies them (merge-reported, sync-data) keeps it.
+ * Deadlines and fees are never written outside `apply.*`.
  */
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, LineageRecord, School, SourceInfo } from "../../../lib/types";
 import type { FieldPath } from "../../../lib/fields";
 import type { GridEdition, GridRow, Member, MembersFile, SchoolApply } from "../../../lib/common-app/types";
-import { GRID_POLICY, gridCycleFall } from "../../../lib/common-app/test-policy.ts";
+import { COMMON_APP_HOME, gridCycleFall, gridPolicyVerdict, gridVintage, longDate, placeLineageRecords } from "../../../lib/common-app/test-policy.ts";
 import { applyNewestTests, restoreFederalTests } from "../../../lib/cds/test-blocks.ts";
-import { lineageFall } from "../../../lib/score-bands.ts";
 import { validateLineage } from "../../../lib/lineage.ts";
+import { mergeReported } from "../../../lib/reported-merge.ts";
+import type { ReportedFile } from "../../../lib/reported.ts";
+import { CDS_TEMPLATE } from "../../../lib/cds-template.ts";
+import { readRecords } from "../college-reported/records.mts";
 import { formatSchools, loadIdentityInputs } from "../identity-sync.mts";
 import { buildAliasTable, formatAliasRows } from "../aliases-sync.mts";
 
-/** The only commonapp.org URL the site may show or cite (brief "Lineage"; tests/common-app-guards.test.mts). */
-export const COMMON_APP_HOME = "https://www.commonapp.org";
-
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-/** "2026-09-25" → "September 25, 2026". */
-export function longDate(iso: string): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
-  if (!m) throw new Error(`common-app: "${iso}" isn't an ISO date`);
-  return `${MONTHS[Number(m[2]) - 1]} ${Number(m[3])}, ${m[1]}`;
-}
-
-/** meta.vintages["common-app-grid"]: "2026-27 cycle, updated September 25, 2026", from the edition file. */
-export function gridVintage(edition: Pick<GridEdition, "cycle" | "updated">): string {
-  return `${edition.cycle} cycle, updated ${longDate(edition.updated)}`;
-}
+export { COMMON_APP_HOME, gridVintage, longDate };
 
 /** meta.vintages["common-app-members"]: "Member pages read October 25, 2026", from members.json. */
 export function membersVintage(members: Pick<MembersFile, "retrieved">): string {
@@ -69,9 +59,16 @@ export function addCommonAppMeta(meta: DatasetMeta, edition: GridEdition, member
 /* ------------------------------------------------------------------ */
 
 /** `school.apply` for a member: the grid row's values, or `common_app` alone (cycle null) and every other key null. */
-export function applyBlock(member: Member, row: GridRow | null, edition: Pick<GridEdition, "cycle" | "updated">): SchoolApply {
+export function applyBlock(member: Member, row: GridRow | null, edition: Pick<GridEdition, "cycle" | "updated" | "retrieved">): SchoolApply {
   return {
-    common_app: { member: true, member_id: member.member_id, slug: member.slug, cycle: row ? edition.cycle : null, updated: row ? edition.updated : null },
+    common_app: {
+      member: true,
+      member_id: member.member_id,
+      slug: member.slug,
+      cycle: row ? edition.cycle : null,
+      updated: row ? edition.updated : null,
+      retrieved: row ? edition.retrieved : null,
+    },
     deadlines: row ? { ...row.deadlines } : null,
     fee: row ? { ...row.fee } : null,
     fee_waiver: row ? row.fee_waiver : null,
@@ -130,90 +127,34 @@ export function ownSiteLink(url: string | null, website: string | null | undefin
 }
 
 /* ------------------------------------------------------------------ */
-/* Test policy: newest wins                                            */
+/* Test policy                                                         */
 /* ------------------------------------------------------------------ */
 
-/** True when `admissions.test_policy` currently cites the grid. */
-const citesGrid = (s: School) => s.lineage?.["admissions.test_policy"]?.source === "common-app";
-
 /**
- * Takes the grid's policy back out: puts every replaced test block back (restoreFederalTests) and re-applies the
- * college's newer CDS blocks (applyNewestTests), which is exactly the state lib/reported-merge.ts leaves before the
- * grid. Lineage records that survive keep their places (the round trip alone would move every test record to the end,
- * so a re-run would reorder the file). The same object when the policy doesn't cite the grid.
+ * The newest test values re-settled after `apply` changed: every replaced block restored, then the CDS blocks and the
+ * grid's policy re-applied (restoreFederalTests, applyNewestTests), with the keys that survive kept in their places
+ * (lineage records and `admissions` keys) and new lineage records where applyGridPolicy puts them. The same object
+ * when nothing changes. `mergeCommonApp` then re-runs the reported merge, which is the order-defining path.
  */
-export function withoutGridPolicy(school: School): School {
-  if (!citesGrid(school)) return school;
+export function settleTestPolicy(school: School): School {
   const ref = applyNewestTests(restoreFederalTests(school));
+  if (ref === school) return school;
+  const keep = <T extends Record<string, unknown>>(cur: T, next: T): T => {
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(cur)) if (k in next) out[k] = next[k];
+    for (const k of Object.keys(next)) if (!(k in out)) out[k] = next[k];
+    return out as T;
+  };
+  const admissions = keep(school.admissions as unknown as Record<string, unknown>, ref.admissions as unknown as Record<string, unknown>) as unknown as School["admissions"];
+  // Surviving records keep their places; new ones (the grid's) go where applyGridPolicy puts them.
   const cur = school.lineage ?? {};
   const next = ref.lineage ?? {};
-  const lineage: Record<string, LineageRecord | undefined> = {};
-  for (const k of Object.keys(cur)) if (k in next) lineage[k] = next[k as FieldPath];
-  for (const k of Object.keys(next)) if (!(k in lineage)) lineage[k] = next[k as FieldPath];
-  return Object.keys(lineage).length ? { ...ref, lineage: lineage as School["lineage"] } : ref;
-}
-
-/**
- * The as-of date of the college's CDS test policy (C8): its edition's publication date, taken as January 1 of the
- * edition's second year ("2025–26" is published during 2025–26 → 2026-01-01); null without an edition. Never the
- * record's `retrieved` date: that is when Quad read the CDS, which says nothing about which statement is newer.
- */
-export function cdsPolicyAsOf(school: School): string | null {
-  const rec = school.lineage?.["reported.test_policy"];
-  const m = /^(\d{4})[–-](\d{2})/.exec(rec?.edition ?? "");
-  return m ? `${Number(m[1]) + 1}-01-01` : null;
-}
-
-export type PolicyVerdict = "grid" | "cds-newer" | "no-cycle";
-
-/**
- * Whether the grid's policy is the newest statement for this school (a school already without the grid's policy):
- * against a CDS policy (`reported.test_policy.policy`), the grid's entering fall must be ≥ the CDS cycle and its
- * `updated` stamp later than the CDS record's as-of date (`cdsPolicyAsOf`); with no CDS policy the grid always beats
- * the federal (or hand-imported) value.
- */
-export function gridPolicyVerdict(school: School, edition: Pick<GridEdition, "cycle" | "updated">): PolicyVerdict {
-  const fall = gridCycleFall(edition.cycle);
-  if (fall === null) return "no-cycle";
-  const rp = school.reported?.test_policy;
-  if (!rp?.policy) return "grid";
-  if (fall < rp.cycle) return "cds-newer";
-  const asOf = cdsPolicyAsOf(school);
-  return asOf === null || edition.updated > asOf ? "grid" : "cds-newer";
-}
-
-/** The lineage record on a test policy the grid supplied: the edition's vintage text, the homepage, the read date. */
-export function gridPolicyRecord(edition: Pick<GridEdition, "cycle" | "updated" | "retrieved">): LineageRecord {
-  return { source: "common-app", year: gridVintage(edition), url: COMMON_APP_HOME, retrieved: edition.retrieved };
-}
-
-/**
- * Writes the grid's policy into `admissions.test_policy` (the school must have `apply.test_policy`). The block it
- * replaces is kept in `admissions.federal_tests.policy` the way applyNewestTests keeps it: when a CDS policy already
- * replaced the federal one, that federal block is already kept and stays; otherwise the current value and its record
- * become the kept block, and `admissions.federal_tests` (appended last, as the CDS does) gets the record too.
- */
-export function withGridPolicy(school: School, edition: Pick<GridEdition, "cycle" | "updated" | "retrieved">): School {
-  const code = school.apply?.test_policy?.code;
-  if (!code) return school;
-  const a = school.admissions as unknown as Record<string, unknown>;
-  const oldLineage = school.lineage ?? {};
-  const lineage: Partial<Record<FieldPath, LineageRecord>> = { ...oldLineage };
-  const kept = { ...(school.admissions.federal_tests ?? {}) };
-  if (!kept.policy) {
-    const prev = oldLineage["admissions.test_policy"];
-    kept.policy = {
-      year: prev ? lineageFall(prev.year) : null,
-      ...("test_policy" in a ? { test_policy: school.admissions.test_policy } : {}),
-      ...(prev ? { records: { test_policy: { ...prev } } } : {}),
-    };
-    if (prev && !lineage["admissions.federal_tests"]) lineage["admissions.federal_tests"] = { ...prev };
-  }
-  const admissions: Record<string, unknown> = { ...a, test_policy: GRID_POLICY[code] };
-  delete admissions.federal_tests;
-  admissions.federal_tests = kept;
-  lineage["admissions.test_policy"] = gridPolicyRecord(edition);
-  return { ...school, admissions: admissions as School["admissions"], lineage };
+  const survivors = Object.fromEntries(Object.keys(cur).filter((k) => k in next).map((k) => [k, next[k as FieldPath]])) as NonNullable<School["lineage"]>;
+  const fresh = (Object.keys(next) as FieldPath[]).filter((k) => !(k in cur)).map((k) => [k, next[k]!] as [FieldPath, LineageRecord]);
+  const lineage = placeLineageRecords(survivors, fresh);
+  const out = { ...school, admissions, lineage } as School;
+  if (!Object.keys(lineage).length) delete out.lineage;
+  return sameJson(out, school) ? school : out;
 }
 
 /* ------------------------------------------------------------------ */
@@ -241,16 +182,29 @@ export interface CommonAppSummary {
   /** Members whose school has no `aid` block, so the answer couldn't be stored. */
   aidBlockMissing: number;
   links: { transfer_guarantee: number; daca_aid: number; offSite: number };
-  /** Test policy: grid written into admissions.test_policy, CDS kept as newer, of which replaced a CDS-applied one. */
+  /** Test policy: from the grid (of which over a CDS policy), and grid rows a newer CDS policy beat. */
   testPolicy: { grid: number; cdsNewer: number; overCds: number };
   /** Two members claiming the same IPEDS id (the first wins) and two grid rows joined to one unit id. */
   duplicateMembers: string[];
   duplicateRows: string[];
 }
 
+/** Test-policy counts over a settled dataset. */
+export function policyCounts(schools: readonly School[]): CommonAppSummary["testPolicy"] {
+  const out = { grid: 0, cdsNewer: 0, overCds: 0 };
+  for (const s of schools) {
+    if (s.lineage?.["admissions.test_policy"]?.source === "common-app") {
+      out.grid++;
+      if (s.reported?.test_policy?.policy) out.overCds++;
+    } else if (gridPolicyVerdict(s) === "cds-newer") out.cdsNewer++;
+  }
+  return out;
+}
+
 /**
- * Applies the grid edition and member records to `schools` (see the file comment). Pure: returns new school objects
- * for every school it changes and the same object for the rest. `today` (ISO) guards against a stamp in the future.
+ * Applies the grid edition and member records to `schools` (see the file comment), then settles each school's test
+ * policy (`settleTestPolicy`). Pure: returns new school objects for every school it changes and the same object for the
+ * rest. `today` (ISO) guards against a stamp in the future.
  */
 export function applyCommonApp(schools: readonly School[], edition: GridEdition, members: MembersFile, today: string): { schools: School[]; summary: CommonAppSummary } {
   if (edition.updated > today) throw new Error(`common-app: the grid's "Updated" stamp ${edition.updated} is after today (${today})`);
@@ -296,56 +250,52 @@ export function applyCommonApp(schools: readonly School[], edition: GridEdition,
 
   const out = schools.map((original) => {
     const member = memberById.get(original.unit_id);
-    if (!member) return removeStale(original, summary);
-    let school = withoutGridPolicy(original);
-    const row = rowById.get(school.unit_id) ?? null;
-    school = placeApply(school, applyBlock(member, row, edition));
-    summary.applied++;
-    if (row) summary.withGridRow++;
-    else summary.withoutGridRow++;
-
-    // aid.international_offered: Yes/No from the member page; unanswered leaves the key absent.
-    if (school.aid) {
-      const aid = { ...school.aid };
-      if (member.aid.international === null) delete aid.international_offered;
-      else {
-        aid.international_offered = member.aid.international;
-        summary.internationalAid[member.aid.international ? "yes" : "no"]++;
-      }
-      school = { ...school, aid };
-    } else if (member.aid.international !== null) summary.aidBlockMissing++;
-
-    // The two links, when present and on the college's own site.
-    if (school.links) {
-      const links = { ...school.links };
-      for (const key of ["transfer_guarantee", "daca_aid"] as const) {
-        const raw = member.links[key];
-        const url = ownSiteLink(raw, links.website);
-        if (raw && !url) summary.links.offSite++;
-        if (url) {
-          links[key] = url;
-          summary.links[key]++;
-        } else delete links[key];
-      }
-      school = { ...school, links };
-    }
-
-    if (row) {
-      const verdict = gridPolicyVerdict(school, edition);
-      if (verdict === "grid") {
-        if (school.lineage?.["admissions.test_policy"]?.source === "college-site") summary.testPolicy.overCds++;
-        school = withGridPolicy(school, edition);
-        summary.testPolicy.grid++;
-      } else summary.testPolicy.cdsNewer++;
-    }
-    return sameJson(school, original) ? original : school;
+    const school = member ? withMember(original, member, rowById.get(original.unit_id) ?? null, edition, summary) : removeStale(original, summary);
+    const settled = settleTestPolicy(school);
+    return sameJson(settled, original) ? original : settled;
   });
+  summary.testPolicy = policyCounts(out);
   return { schools: out, summary };
 }
 
-/** A school that isn't a member (any more): its `apply`, the Explore facts, and a grid-cited policy removed. */
+/** A member's school with its `apply` block, the international-aid answer, and the two links. */
+function withMember(original: School, member: Member, row: GridRow | null, edition: GridEdition, summary: CommonAppSummary): School {
+  let school = placeApply(original, applyBlock(member, row, edition));
+  summary.applied++;
+  if (row) summary.withGridRow++;
+  else summary.withoutGridRow++;
+
+  // aid.international_offered: Yes/No from the member page; unanswered leaves the key absent.
+  if (school.aid) {
+    const aid = { ...school.aid };
+    if (member.aid.international === null) delete aid.international_offered;
+    else {
+      aid.international_offered = member.aid.international;
+      summary.internationalAid[member.aid.international ? "yes" : "no"]++;
+    }
+    school = { ...school, aid };
+  } else if (member.aid.international !== null) summary.aidBlockMissing++;
+
+  // The two links, when present and on the college's own site.
+  if (school.links) {
+    const links = { ...school.links };
+    for (const key of ["transfer_guarantee", "daca_aid"] as const) {
+      const raw = member.links[key];
+      const url = ownSiteLink(raw, links.website);
+      if (raw && !url) summary.links.offSite++;
+      if (url) {
+        links[key] = url;
+        summary.links[key]++;
+      } else delete links[key];
+    }
+    school = { ...school, links };
+  }
+  return school;
+}
+
+/** A school that isn't a member (any more): its `apply` and the Explore facts removed (the policy settles after). */
 function removeStale(original: School, summary: CommonAppSummary): School {
-  let school = withoutGridPolicy(original);
+  let school = original;
   if (school.apply) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping `apply` is the point
     const { apply: _apply, ...rest } = school;
@@ -389,11 +339,24 @@ export function readMembers(root: string): MembersFile | null {
   return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as MembersFile) : null;
 }
 
-/** Both committed inputs, or null when either is missing (sync-data and merge-reported then skip the block). */
+/** Both committed inputs, or null when either is missing (sync-data then skips the block). */
 export function loadCommonApp(root: string): { edition: GridEdition; members: MembersFile } | null {
   const edition = readNewestEdition(root);
   const members = readMembers(root);
   return edition && members ? { edition, members } : null;
+}
+
+/**
+ * The reported merge over `schools` from the committed inputs under `root` (data/college-reported.json and
+ * data/cds-records/), exactly as scripts/merge-reported.mts runs it, so the result is what a later merge-reported
+ * reproduces byte for byte. Null when root has no data/college-reported.json (a scratch directory).
+ */
+export function remergeReported(root: string, schools: School[], meta: DatasetMeta): School[] | null {
+  const path = join(root, "data", "college-reported.json");
+  if (!existsSync(path)) return null;
+  const reported: ReportedFile = JSON.parse(readFileSync(path, "utf8"));
+  const records = readRecords(join(root, "data", "cds-records"));
+  return mergeReported(schools, reported, { records, meta, table: CDS_TEMPLATE }).schools;
 }
 
 /** One line for the sync logs. */
@@ -412,9 +375,9 @@ export interface MergeCommonAppSummary extends CommonAppSummary {
 }
 
 /**
- * Re-applies the Common App block to `root`/data/schools.json from the newest edition file and members.json, sets
- * the source and its vintages in meta.json, and rebuilds data/aliases.json. Throws, writing nothing, when an input is
- * missing or the result fails the lineage check (with the first 30 problems).
+ * Re-applies the Common App block to `root`/data/schools.json from the newest edition file and members.json, re-runs
+ * the reported merge (`remergeReported`), sets the source and its vintages in meta.json, and rebuilds data/aliases.json.
+ * Throws, writing nothing, when an input is missing or the result fails the lineage check (with the first 30 problems).
  */
 export function mergeCommonApp(root: string, opts: { dryRun?: boolean; today?: string } = {}): MergeCommonAppSummary {
   const inputs = loadCommonApp(root);
@@ -424,7 +387,9 @@ export function mergeCommonApp(root: string, opts: { dryRun?: boolean; today?: s
   const schools: School[] = JSON.parse(readFileSync(schoolsPath, "utf8"));
   const meta: DatasetMeta = JSON.parse(readFileSync(metaPath, "utf8"));
   const today = opts.today ?? new Date().toISOString().slice(0, 10);
-  const { schools: merged, summary } = applyCommonApp(schools, inputs.edition, inputs.members, today);
+  const applied = applyCommonApp(schools, inputs.edition, inputs.members, today);
+  const merged = remergeReported(root, applied.schools, meta) ?? applied.schools;
+  const summary = { ...applied.summary, testPolicy: policyCounts(merged) };
   addCommonAppMeta(meta, inputs.edition, inputs.members);
   const problems = validateLineage(merged, meta);
   if (problems.length) {
@@ -432,8 +397,7 @@ export function mergeCommonApp(root: string, opts: { dryRun?: boolean; today?: s
     throw new Error(`merge-common-app: lineage check failed (${problems.length}); nothing written:\n  ${problems.slice(0, 30).join("\n  ")}${more}`);
   }
   // Built (and checked) before anything is written, so a bad alias table also writes nothing.
-  const aliasInputs = { schools: merged, hdRows: null, wikidata: loadIdentityInputs(root).wikidata, commonApp: inputs.members };
-  const aliases = buildAliasTable(root, aliasInputs);
+  const aliases = buildAliasTable(root, { schools: merged, hdRows: null, wikidata: loadIdentityInputs(root).wikidata, commonApp: inputs.members });
   if (!opts.dryRun) {
     writeFileSync(metaPath, `${JSON.stringify(meta, null, 2)}\n`);
     writeFileSync(schoolsPath, formatSchools(merged));

@@ -7,14 +7,15 @@
  *
  * Called with one line each from `lib/newest.ts#applyNewest` and `#restoreFederal`. Also: the ⓘ's replaced value
  * (`replacedTest`), `derived.sat_total`'s inputs, and the lineage guard (`validateTests`). Pure: type-only imports plus
- * lib/score-bands.ts, lib/test-policy.ts, and lib/common-app/test-policy.ts (a policy the Common App grid replaced
- * later, scripts/lib/common-app/merge.mts, keeps the same federal block and passes the same guard).
+ * lib/score-bands.ts, lib/test-policy.ts, and lib/common-app/test-policy.ts: after the CDS blocks, the Common App
+ * grid's policy (from `school.apply`) replaces the policy when it is newer, keeping the same federal block, so
+ * `restoreFederalTests` undoes it too and the same guard checks it.
  */
 import type { FieldPath } from "../fields";
 import type { ActBlock, FederalTests, KeptBlock, LineageRecord, PolicyBlock, SatBlock, School } from "../types";
 import { MIN_SUBMITTERS, lineageFall, satTotalFromCds, submitters } from "../score-bands.ts";
 import { POLICY_LABELS } from "../test-policy.ts";
-import { GRID_POLICY } from "../common-app/test-policy.ts";
+import { GRID_POLICY, applyGridPolicy } from "../common-app/test-policy.ts";
 
 type BlockKey = keyof FederalTests;
 type AdmKey = keyof PolicyBlock | keyof SatBlock | keyof ActBlock;
@@ -89,12 +90,18 @@ function replacements(school: School): Replacement[] {
 }
 
 /**
- * The school with its newer C8 policy and C9 SAT/ACT blocks in `admissions.*` (see the file comment). The same object
+ * The school with its newer C8 policy and C9 SAT/ACT blocks in `admissions.*` (see the file comment), then the Common
+ * App grid's policy when the grid is newer still (lib/common-app/test-policy.ts `applyGridPolicy`). The same object
  * when nothing is newer, or when the blocks were already applied (`admissions.federal_tests` present).
  */
 export function applyNewestTests(school: School): School {
-  const a = school.admissions as unknown as Record<string, unknown>;
   if (school.admissions.federal_tests) return school;
+  return applyGridPolicy(applyCdsTests(school));
+}
+
+/** The CDS C8/C9 part of `applyNewestTests`. */
+function applyCdsTests(school: School): School {
+  const a = school.admissions as unknown as Record<string, unknown>;
   const reps = replacements(school);
   if (!reps.length) return school;
 

@@ -5,7 +5,7 @@
  *   2. the title normalized: case, curly quotes, and the spaces and dash kinds around a hyphen ("University of
  *      Michigan- Dearborn" ≡ "University of Michigan-Dearborn", "Marian University - Indiana" ≡ "Marian University-Indiana");
  *   3. a row of data/aliases.json whose key equals the grid name's `aliasKey` and whose unit_id is exactly one
- *      member's IPEDS id;
+ *      member's IPEDS id, unless another grid row already joins that member by title;
  *   4. data/common-app/name-map.json (grid name → slug), checked by hand against the Explore record.
  * Never a similarity guess: a name no rule matches goes to `unmatched`. A name the grid prints on several differing
  * rows ("Siena University" ×3 in 2026-27) is never joined, since nothing says which row is which.
@@ -94,6 +94,14 @@ export function joinNames(
   let ipeds_not_carried = 0;
   const claims = new Map<string, string[]>();
 
+  // A member another grid row already names by its title can't be claimed through an alias: IPEDS lists "North
+  // Central University" as an alias of North Central College (IL), while the grid's North Central University is the
+  // Minneapolis college, which has no Explore record.
+  const titled = new Set<string>();
+  for (const r of rows) {
+    const m = byTitle.get(r.name) ?? byNorm.get(normalizeTitle(r.name));
+    if (m && !repeated.has(r.name.trim().toLowerCase())) titled.add(m.slug);
+  }
   for (const r of rows) {
     let m: Member | undefined;
     let how: JoinRule | null = null;
@@ -102,8 +110,12 @@ export function joinNames(
       else if ((m = byNorm.get(normalizeTitle(r.name)))) how = "normalized";
       else {
         const ids = aliasIds.get(aliasKey(r.name));
-        if (ids && ids.size === 1 && (m = byIpeds.get([...ids][0]))) how = "alias";
-        else if (nameMap[r.name] && (m = bySlug.get(nameMap[r.name]))) how = "name-map";
+        const viaAlias = ids && ids.size === 1 ? byIpeds.get([...ids][0]) : undefined;
+        if (viaAlias && !titled.has(viaAlias.slug)) {
+          m = viaAlias;
+          how = "alias";
+        } else if (nameMap[r.name] && (m = bySlug.get(nameMap[r.name]))) how = "name-map";
+        else m = undefined;
       }
     }
     if (!m || !how) {

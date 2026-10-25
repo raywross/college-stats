@@ -338,6 +338,18 @@ test("joinNames never guesses: near names, ambiguous aliases, and stale map entr
   assert.deepEqual(j.staleMap, ["Gone College → gone-college (not a member)"]);
 });
 
+test("an alias never claims a member another grid row joins by title (North Central University ≠ North Central College)", () => {
+  const base = row("Harvard University");
+  const members = [member({ slug: "north-central-college", title: "North Central College", ipeds: "147660" })];
+  const aliases = [{ unit_id: "147660", key: "northcentraluniversity" }];
+  const both = joinNames([{ ...base, name: "North Central College" }, { ...base, name: "North Central University" }], members, aliases, {}, [{ unit_id: "147660" }]);
+  assert.deepEqual(both.unmatched, ["North Central University"]);
+  assert.equal(both.sharedSlugs.size, 0);
+  // Alone, the alias joins (the member isn't named by any title in the grid).
+  const alone = joinNames([{ ...base, name: "North Central University" }], members, aliases, {}, [{ unit_id: "147660" }]);
+  assert.deepEqual(alone.rule, ["alias"]);
+});
+
 /* ---------------------------------------------------------------- */
 /* Edition file                                                      */
 /* ---------------------------------------------------------------- */

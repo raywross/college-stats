@@ -328,8 +328,8 @@ export interface ResolvedDeadline {
   date: string | null;
   /** Free text when there's no date (e.g. "varies") or the student's own note. */
   text: string | null;
-  /** Whether this came from the college's own reported data, or the student's typed override. */
-  source: "reported" | "student" | null;
+  /** Whether this came from the Common App Requirements Grid, the college's own reported data, or the student's typed override. */
+  source: "common-app" | "reported" | "student" | null;
 }
 
 /** A month/day with no year, as CDS dates are stored (lib/types.ts CdsDate) — either part may be missing. */
@@ -345,10 +345,46 @@ function monthDayToIso(md: MonthDay, cycleStartYear: number): string | null {
   return `${year}-${String(md.month).padStart(2, "0")}-${String(md.day).padStart(2, "0")}`;
 }
 
+/** The slice of `School.apply.deadlines` this module reads (lib/common-app/types.ts GridDeadlines, kept loose here so this pure file imports nothing server-side). */
+export interface DeadlineGrid {
+  ed: string | null;
+  ed2: string | null;
+  ea: string | null;
+  ea2: string | null;
+  rea: string | null;
+  regular: string | "rolling" | null;
+}
+
 /**
- * The deadline to show for a list item's chosen round: the college's own reported data when it has it for that
- * round (specs/product/saved-lists.md "Display" — CDS C14/C21/C22 via reported.admissions_logistics and
- * admission_profile), else the student's own override date/text, else null.
+ * The grid's date for a round, in the site's vocabulary (common-app-build/brief.md U4 "Rounds offered"): `ea`/`rea`
+ * resolve to whichever of the grid's `ea`/`ea2`/`rea` columns the college actually filled in, so a student's "ea"
+ * round still finds a restrictive-only college's date and vice versa. `rolling` only applies to the regular round.
+ */
+function gridDeadline(deadlines: DeadlineGrid | null | undefined, round: ListRound | null): string | "rolling" | null {
+  if (!deadlines) return null;
+  switch (round) {
+    case "ed":
+      return deadlines.ed;
+    case "ed2":
+      return deadlines.ed2;
+    case "ea":
+      return deadlines.ea ?? deadlines.ea2 ?? deadlines.rea ?? null;
+    case "rea":
+      return deadlines.rea ?? deadlines.ea ?? deadlines.ea2 ?? null;
+    case "rolling":
+      return deadlines.regular === "rolling" ? "rolling" : null;
+    case "rd":
+    case null:
+      return deadlines.regular;
+  }
+}
+
+/**
+ * The deadline to show for a list item's chosen round: the Common App Requirements Grid's own ISO date for that
+ * round first (specs/data-expansion/common-app.md "Store"; `apply.deadlines`, "rolling" shown as a word with no
+ * date), then the college's own reported data (specs/product/saved-lists.md "Display" — CDS C14/C21/C22 via
+ * reported.admissions_logistics and admission_profile), else the student's own override date/text, else null. A
+ * round the grid doesn't offer for this college falls through to the CDS date, then the override.
  */
 export function deadlineFor(
   round: ListRound | null,
@@ -359,7 +395,12 @@ export function deadlineFor(
   } | null | undefined,
   cycleStartYear: number,
   override: { text: string | null; date: string | null },
+  apply?: { deadlines?: DeadlineGrid | null } | null,
 ): ResolvedDeadline {
+  const grid = gridDeadline(apply?.deadlines, round);
+  if (grid === "rolling") return { date: null, text: "Rolling", source: "common-app" };
+  if (grid) return { date: grid, text: null, source: "common-app" };
+
   let md: MonthDay | null | undefined = null;
   if (round === "rd" || round === null) md = logistics?.regular_closing;
   else if (round === "ed") md = admissionProfile?.early_decision?.first?.closing;

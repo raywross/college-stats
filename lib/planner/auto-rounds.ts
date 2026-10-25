@@ -11,7 +11,7 @@ import type { ListRound } from "../list-rules.ts";
 import type { StandingLevel } from "../chances/types.ts";
 import { isOffered, type RoundsSchool } from "./rounds.ts";
 
-export type AutoRoundsSchool = Pick<RoundsSchool, "profile" | "logistics"> & { type?: string | null };
+export type AutoRoundsSchool = Pick<RoundsSchool, "profile" | "logistics" | "apply"> & { type?: string | null };
 
 export interface AutoRoundsItem {
   id: string;

@@ -55,12 +55,20 @@ export default async function ApiKeysPage() {
         </Link>
         <h1 className="mt-3 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">API keys</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          A key lets a script, a spreadsheet, or an AI assistant ask Quad for the same numbers the site shows, with the source and year of each. It
-          is yours: it counts against your limits, and anything done with it is done as you. How to use one is on the{" "}
+          A key lets a script, a spreadsheet, Claude Code, Claude Desktop, or Cursor ask Quad for the same numbers the site shows, with the source
+          and year of each. It is yours: it counts against your limits, and anything done with it is done as you. How to use one is on the{" "}
           <Link href="/developers" className={link}>
             developers page
           </Link>
           .
+        </p>
+        <p className="mt-2 max-w-2xl text-muted-foreground">
+          Looking to add Quad to <b className="font-semibold text-foreground">ChatGPT</b>, <b className="font-semibold text-foreground">Gemini</b>,
+          or Claude&apos;s connector menu? Those don&apos;t use a key — see{" "}
+          <Link href="/connect" className={link}>
+            Connect Quad to ChatGPT, Claude, and Gemini
+          </Link>{" "}
+          for the address and the steps.
         </p>
       </header>
 

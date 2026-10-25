@@ -284,6 +284,17 @@ const ADDED_FIELDS = [
   // Online share (specs/data-expansion/online-share.md): one line under the Students page's campus size.
   "demographics.online_share",
   "demographics.online_any_share",
+  // "What it takes to apply" (common-app-build/brief.md "U2"): the Common App Requirements Grid's own card.
+  "apply.common_app",
+  "apply.deadlines",
+  "apply.fee",
+  "apply.fee_waiver",
+  "apply.essay_required",
+  "apply.courses_grades_required",
+  "apply.writing_supplement",
+  "apply.portfolio",
+  "apply.test_policy",
+  "apply.recommendations",
 ] as const;
 
 test("every topic has a route file and a fields list", () => {

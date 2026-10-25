@@ -233,6 +233,17 @@ export const TOPIC_FIELDS: Readonly<Record<TopicKey, readonly FieldPath[]>> = {
     "reported.transfer.min_hs_gpa",
     "reported.transfer.min_college_gpa",
     "reported.transfer.dates",
+    // What it takes to apply: the Common App Requirements Grid (common-app-build/brief.md "U2").
+    "apply.common_app",
+    "apply.deadlines",
+    "apply.fee",
+    "apply.fee_waiver",
+    "apply.essay_required",
+    "apply.courses_grades_required",
+    "apply.writing_supplement",
+    "apply.portfolio",
+    "apply.test_policy",
+    "apply.recommendations",
     // Applying and What you'll need in high school: CDS C3–C5, C13–C18 (specs/data-expansion/cds-application-logistics.md).
     "reported.admissions_logistics.fee",
     "reported.admissions_logistics.regular_closing",

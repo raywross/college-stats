@@ -44,6 +44,8 @@ const nextConfig: NextConfig = {
       // History, national trend files, and per-college detail tables, read per page (lib/data.ts).
       "./data/history/**/*.json",
       "./data/detail/**/*.json",
+      // "This season on the Common App" (lib/data.ts getCommonAppTrends()), the hand-reviewed national figures.
+      "./data/trends/common-app.json",
       // High school shards, read when HIGH_SCHOOLS_SOURCE is json (CI, a keyless Preview; lib/high-schools.ts).
       "./data/high-schools/**/*.json",
       // Names, sites, and logos of the campus directories' organizations (lib/organizations.ts).

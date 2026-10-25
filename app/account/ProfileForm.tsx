@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { ROLE_HINTS, type Profile } from "@/lib/accounts";
+import { refreshMe } from "@/components/account/useMe";
 import { updateProfile, type ProfileFormState } from "./actions";
 
 const inputCls =
@@ -10,6 +11,10 @@ const inputCls =
 /** Name, birth year, and "I'm a…" on /account. Email is shown, not edited (changing it is a later feature). */
 export function ProfileForm({ profile, email }: { profile: Profile; email: string | null }) {
   const [state, action, pending] = useActionState<ProfileFormState, FormData>(updateProfile, { status: "idle" });
+  // The header's avatar letter comes from the saved name (useMe keeps the last answer); a save asks again.
+  useEffect(() => {
+    if (state.status === "saved") refreshMe();
+  }, [state]);
   return (
     <form action={action} className="grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">

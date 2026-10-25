@@ -337,7 +337,10 @@ Answered 2026-10-07 and recorded [above](#owner-decisions-2026-10-07): what the 
 by redeploying; search empty, then fast a minute later) and the plans (stay free). Still open:
 1. **Regions.** Which region the Vercel project and the Supabase project run in. If they differ, every signed-in
    query pays the distance; it is worth knowing before the prod project is created at the formal release, since a
-   project's region can't be changed afterwards.
+   project's region can't be changed afterwards. **Answered 2026-10-25:** they differ. Vercel serves from `iad1`
+   (Virginia); the dev Supabase project is in `ca-central-1` (Montreal), so each round trip crosses the border
+   (roughly 15–20 ms more than a same-region call, paid once per wave of queries). Create the prod project in
+   `us-east-1` (N. Virginia), the closest Supabase region to `iad1`.
 2. Keep `/api/revalidate`? Built as kept: unused in the normal path, handy by hand; it costs nothing.
 
 ## Built (2026-10-07)
@@ -486,3 +489,92 @@ Preview or Production, then redeploy; locally `QUAD_TIMING=1 npx next start`). T
 The line and the header carry route labels, table names, counts, and milliseconds only: never an id, a query string,
 a name, or a value (`tests/timing.test.mts`). Off, the Supabase clients use their own `fetch` and nothing is
 recorded. Turn it off again by deleting the variable.
+
+## Follow-up (2026-10-25): launch performance review
+The owner's report: on the live site, "Sign in" or the avatar appears a couple of seconds after the page. A review
+of that path and of the site's speed in general, measured against production (`usequad.app`) on 2026-10-25.
+
+### What was measured
+**Server time to first byte** (curl from a laptop, two runs each; `x-vercel-cache` says whether the CDN had it):
+
+| Page | TTFB | Cache | Why |
+|---|---|---|---|
+| `/` | 0.09–0.20 s | HIT | prerendered, daily revalidate |
+| `/schools/166027/admissions` (and the other topic tabs) | 0.07–0.33 s | HIT | prerendered |
+| `/schools/166027` (the overview) | 0.39–0.53 s | **MISS, `private, no-store`** | **rendered per request**: the hero's Event calendar button called `getUser()` (a cookie read) and the page took `searchParams` for `?view=events`, so `revalidate` and `generateStaticParams` had no effect; `next build` listed it as ƒ beside its ● siblings |
+| `/explore` | 0.33–1.18 s | MISS | dynamic by design (the URL is the filter state); the 1.2 s was a cold instance |
+| `/trends`, `/compare` | 0.08–0.20 s | HIT / cheap | |
+| `/api/me`, signed out | 0.21 s | (never cached) | the header's state, fetched after hydration on every page |
+| `/search-index.json` | 0.09–0.17 s | HIT | 523 KB raw, 99 KB gzipped |
+
+**Lighthouse, mobile, simulated throttling** (performance category only):
+
+| Page | Score | FCP | LCP | Total blocking | Speed Index | Notes |
+|---|---|---|---|---|---|---|
+| `/` | 52 | 1.6 s | 5.3 s | 920 ms | 7.0 s | the document is 1.2 MB raw (142 KB gzipped), 580 KB of it the inline RSC payload; 284 inline SVGs; 3.3 s of main-thread work |
+| `/schools/166027` | 88 | 1.2 s | 3.6 s | 130 ms | 2.4 s | 35 KB document |
+| `/explore` | 66 | 1.5 s | 5.5 s | 360 ms | 2.5 s | layout shift 0.12 on the phone result list (`ul.space-y-2`), after hydration |
+
+**Client JavaScript**: every page loads the root layout's 19 scripts, about **355 KB gzipped** (the five largest 72,
+66, 43, 40, and 39 KB; `@base-ui/react` and its floating-ui appear in three of them, react-dom and Next's runtime in
+the 72 KB one), plus a **58 KB prefetch of the home page's payload** from the header logo's `Link` on every page.
+
+**Regions**: Vercel `iad1`, Supabase `ca-central-1` ([open question 1](#open-questions-for-the-owner), now answered).
+
+**The header's delay, traced.** The header is a client component on static pages, so it learns the account state
+from `/api/me` after hydration: HTML → JavaScript (355 KB) → hydrate → `fetch('/api/me')` → `proxy.ts` (session
+check) → the route handler (`getClaims()` again, then `getAccount()`, which is the `viewer_bundle()` RPC: account,
+students, memberships, households, profiles, home, to read one display name) → the answer. Until then the header
+holds a blank 36 px space. Every navigation repeated the fetch (the hook re-ran on each pathname), so a signed-in
+person made one Supabase round trip per page for the header alone; a cold function (the Hobby plan has no warm
+instance) or a cold Supabase project (the free plan pauses after a week; a Nano instance) turned the wait into
+seconds. The dataset itself never entered this path.
+
+### Built (this PR)
+1. **The header knows the state at hydration.** `lib/supabase-server.ts` and `proxy.ts` set a plain `quad_signed_in`
+   cookie ("1", the session cookies' lifetime, not httpOnly) whenever they write the `sb-` session cookies, and clear
+   it when they clear them (`signedInCookieFor`, `lib/accounts.ts`). `useMe()` reads that cookie before the first
+   render: no cookie means signed out, shown in the same pass as hydration with no request (one `/api/me` per tab, to
+   learn whether sign-in is configured here); with the cookie, the last `/api/me` answer (sessionStorage, five
+   minutes) shows at once and is refreshed when stale, when the cookie and the answer disagree (just signed in or
+   out), or after a name change on `/account` (`refreshMe()`). The marker carries no identity and the server never
+   reads it; the session cookies stay httpOnly. `/api/me` is unchanged.
+2. **The college overview is prerendered again.** The event calendar has its own route, `/schools/[id]/events`
+   (dynamic: it reads the viewer's session and sends a visitor to sign up), rendering the same hero through the new
+   `components/profile/ProfileHero.tsx`; the overview takes no `searchParams`, and `EventCalendarButton` no longer
+   calls `getUser()` (it links to the route, which does the sign-in check). `?view=events` on the overview redirects
+   to the route (`next.config.ts`), so older links keep working. A guard in `tests/accounts.test.mts` keeps
+   `searchParams` and `VisitCalendar` out of the overview.
+3. **The logo link no longer prefetches the home page** (`prefetch={false}`): 58 KB less on every page view.
+
+### Left, in the order of expected gain
+1. **The home page's weight.** 1.2 MB of HTML (142 KB gzipped) for a prerendered page, 580 KB of it the RSC
+   payload the client components need; two `ScatterPlot`s of 400 points each receive their points as props, and
+   every lens, leaderboard, and matchup renders a crest. Trim `ScatterPoint` to the fields the chart draws, keep the
+   below-the-fold charts out of the first paint (a client boundary that mounts on scroll, or a static SVG), and check
+   each `Crest` for what it serializes. Target: a document under 60 KB gzipped and total blocking time under 300 ms.
+2. **355 KB of shared JavaScript.** Attribute it first (a bundle analysis; the Turbopack chunks keep no module
+   names, so string scans only hint): `@base-ui/react` is in the root layout through the account menu, tooltips,
+   and selects; `SchoolSearch` and its scorer ride in every header; `BottomNav` imports fourteen icons. Candidates:
+   mount the account menu's popup and the search box's logic on first interaction; check that `lib/aliases.ts`
+   isn't pulling the alias table into the client.
+3. **Explore's layout shift (0.12 on phones).** The result list moves after hydration; something above it (the
+   toolbar's client controls, `ActiveFilters`, or `ExploreFitChips`) renders a different height than the server
+   HTML. Reserve the height or render the same thing on both sides.
+4. **`/explore` is dynamic** (0.3 s warm, 1.2 s cold). The URL being the filter state is right; Cache Components
+   (`'use cache'` keyed by the params) is the listed [later option](#7-later-options-with-their-triggers) once the
+   Next 16 migration settles, and would serve repeated filter combinations from the cache.
+5. **Supabase, free plan.** With the header off its path, the remaining Supabase waits are the signed-in pages
+   themselves (plan, household, lists) and `proxy.ts`'s session check on account routes, both already measured in
+   the [real-speed follow-up](#follow-up-2026-10-12-real-speed-timing-and-batched-reads). The pause after a week
+   of inactivity and the Nano instance are plan limits; the prod project (Pro, `us-east-1`) at the formal release is
+   the fix, as already decided.
+6. **Cold starts.** `data/schools.json` has grown from 16.7 MB to 27 MB since the serving change; the first request
+   on a new instance pays the parse. Read the `[data] loaded … ms` line in production logs over a week; the
+   precomputed derived files in [section 7](#7-later-options-with-their-triggers) remain the lever if it shows.
+
+### Measurement after this PR
+`next build` lists `/schools/[id]` as ● (prerendered) and `/schools/[id]/events` as ƒ; on the live site the overview
+should answer with `x-vercel-cache: HIT` like its topic tabs. The header's state should appear with the page's first
+paint for signed-out visitors and with the cached answer for signed-in ones; `/api/me` should appear in the network
+panel once per tab when signed out and about once per five minutes when signed in.

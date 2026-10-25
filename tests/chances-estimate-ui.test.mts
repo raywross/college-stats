@@ -436,7 +436,9 @@ test("the places that report an estimate send exactly those three and nothing fr
 /* ------------------------------------------------------------------ */
 
 test("the chip is in the profile hero and on the overview's admissions card; the card sits on the admissions page with its anchor", () => {
-  assert.match(read("app", "schools", "[id]", "page.tsx"), /<StandingChip unitId=\{school\.unit_id\} \/>/);
+  // The hero is components/profile/ProfileHero.tsx, shared by the overview and the event calendar route.
+  assert.match(read("components", "profile", "ProfileHero.tsx"), /<StandingChip unitId=\{school\.unit_id\} \/>/);
+  assert.match(read("app", "schools", "[id]", "page.tsx"), /<ProfileHero profile=\{p\} \/>/);
   assert.match(read("components", "profile", "AdmissionsCard.tsx"), /<StandingChip unitId=\{school\.unit_id\}/);
   const admissions = read("app", "schools", "[id]", "admissions", "page.tsx");
   assert.match(admissions, /<StandingSection school=\{school\} id="standing"/);

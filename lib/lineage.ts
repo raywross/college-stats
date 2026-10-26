@@ -100,6 +100,7 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   "ipeds-ic": "ipeds-ic",
   "ipeds-hd": "ipeds-hd",
   "ipeds-ic-char": "ipeds-ic-char",
+  "ipeds-ic-open": "ipeds-ic-open",
   "ipeds-ef": "ipeds-ef",
   "ipeds-om": "ipeds-om",
   "ipeds-gr": "ipeds-gr",
@@ -374,8 +375,9 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
   const rec = school?.lineage?.[path];
   const derived = "derived" in def ? def.derived : undefined;
   const inputs = derived ? underlyingSources(path, school, meta) : undefined;
+  const primary = derived && "primary" in derived ? derived.primary : undefined;
   return {
-    ...(derived && !rec && inputs?.length === 1 ? inputs[0] : sourceFor(path, school, meta)),
+    ...(derived && !rec && inputs?.length === 1 ? inputs[0] : primary && !rec ? primarySource(primary, school, meta) : sourceFor(path, school, meta)),
     path,
     field: def.label,
     method: rec?.method ?? (derived ? "derived" : "reported"),
@@ -396,6 +398,16 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     ...replacedFactor(path, school, meta),
     ...replacedTestBy(path, school, meta),
   };
+}
+
+/**
+ * The source a value from several sources is cited by: its primary input's (lib/fields.ts `derived.primary`), so
+ * Quad's selectivity names the admit rate it read ("Common Data Set 2025–26, Fall 2025") rather than the field's
+ * default source and vintage.
+ */
+function primarySource(primary: string, school: School | undefined, meta: DatasetMeta): CitedSource {
+  const { key, label, publisher, year, url, retrieved } = lineageFor(primary as FieldPath, school, meta);
+  return { key, label, publisher, year, url, retrieved };
 }
 
 /** The quote behind a curated value (a program's or a major-admission unit's own words), when there is one. */
@@ -447,6 +459,7 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
   "ipeds-ic",
   "ipeds-hd",
   "ipeds-ic-char",
+  "ipeds-ic-open",
   "ipeds-ef",
   "ipeds-om",
   "ipeds-gr",
@@ -464,7 +477,7 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
   "scorecard-fos",
 ];
 /** Releases that must resolve to a year (the rest may be null). */
-const YEAR_REQUIRED: readonly VintageKey[] = ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-hd", "ipeds-ic-char", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-enrollment", "scorecard-age", "scorecard-cost", "ipeds-om"];
+const YEAR_REQUIRED: readonly VintageKey[] = ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-hd", "ipeds-ic-char", "ipeds-ic-open", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-enrollment", "scorecard-age", "scorecard-cost", "ipeds-om"];
 const METHODS = new Set(["reported", "derived", "extracted"]);
 
 /** Fields read from the hand-kept state-law table (data/state-laws.json). */

@@ -24,7 +24,7 @@
  * `?move=<task id>` (`planHref({ tab: "next", move })`, the people line's "Next:") scrolls that card into view on
  * mount and rings it briefly.
  */
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check } from "lucide-react";
 import { MOVE_CARDS } from "@/components/planner/moves/registry";
@@ -35,6 +35,7 @@ import { track } from "@/lib/analytics";
 import { SEASON_EXPLAINER } from "@/lib/planner/moves-catalog";
 import { doneLabel, nowMoves, skippedLabel, taskSeason } from "@/lib/planner/moves";
 import { importanceFactsFrom } from "@/lib/planner/importance-facts";
+import { allMovesBySeason, conditionalMoves, hiddenNote } from "@/lib/planner/all-moves";
 import { SEASON_LABELS } from "@/lib/planner/seasons";
 import { dismiss, tick, undismiss, untick } from "@/lib/planner/store";
 import type { PlanTask } from "@/lib/planner/types";
@@ -239,7 +240,17 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
       </div>
       <SeasonExplainer open={explainerOpen} onOpenChange={setExplainerOpen} season={ctx.season} />
 
-      {groups.now.length === 0 ? (
+      {ctx.allMoves ? (
+        <AllMoves
+          ctx={ctx}
+          renderCard={renderCard}
+          pendingIds={pendingIds}
+          restored={restored}
+          errors={errors}
+          onBringBack={handleBringBack}
+          onUndo={handleUndo}
+        />
+      ) : groups.now.length === 0 ? (
         <div className="space-y-1">
           <p className="font-semibold">Nothing to do right now. Enjoy it.</p>
           <p className="text-sm text-muted-foreground">{SEASON_EXPLAINER[ctx.season].lead}</p>
@@ -248,7 +259,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
         <div className="space-y-3">{groups.now.map((task, i) => renderCard(task, i + 1))}</div>
       )}
 
-      {foldCount > 0 && (
+      {!ctx.allMoves && foldCount > 0 && (
         <details className="group rounded-3xl bg-card p-4 ring-1 ring-border">
           <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold marker:hidden [&::-webkit-details-marker]:hidden">
             Done and skipped ({foldCount})
@@ -293,6 +304,121 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
         </details>
       )}
     </section>
+  );
+}
+
+/**
+ * The all-moves preview (lib/planner/all-moves.ts; the `planner.all_moves` setting on /admin/settings): every move by the season it belongs to, the
+ * current season open, each open move as its real card (Done, Skip, and the guide work), done ones with Undo, skipped
+ * ones with Bring back, then the rule moves this plan has no row for yet.
+ */
+function AllMoves({
+  ctx,
+  renderCard,
+  pendingIds,
+  restored,
+  errors,
+  onBringBack,
+  onUndo,
+}: {
+  ctx: PlanTabProps["ctx"];
+  renderCard: (task: PlanTask) => ReactNode;
+  pendingIds: ReadonlySet<string>;
+  restored: ReadonlySet<string>;
+  errors: Record<string, string>;
+  onBringBack: (task: PlanTask) => void;
+  onUndo: (task: PlanTask) => void;
+}) {
+  const sections = allMovesBySeason(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today });
+  const waiting = conditionalMoves(ctx.tasks);
+  const rowButton = "inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-sm font-semibold text-primary ring-1 ring-border hover:bg-muted disabled:opacity-60";
+  return (
+    <div className="space-y-3">
+      <p className="rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground">
+        Preview: every move, by the season it belongs to. The real tab shows only this season&apos;s top three.
+      </p>
+      {sections.map((s) => {
+        const skipped = s.skipped.filter((t) => !restored.has(t.id));
+        const total = s.open.length + s.done.length + skipped.length;
+        return (
+          <details key={s.season} open={s.season === ctx.season} className="group rounded-3xl bg-card p-4 ring-1 ring-border">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 font-semibold marker:hidden [&::-webkit-details-marker]:hidden">
+              <span>
+                {SEASON_LABELS[s.season]}
+                {s.season === ctx.season && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">Now</span>}
+              </span>
+              <span className="text-xs font-normal text-muted-foreground">
+                {s.open.length} open · {total} in all
+              </span>
+            </summary>
+            <div className="mt-3 space-y-3">
+              {s.open.map((t) => {
+                const note = hiddenNote(t);
+                return (
+                  <div key={t.id}>
+                    {note && <p className="mb-1 px-1 text-xs text-muted-foreground">{note}</p>}
+                    {renderCard(t)}
+                  </div>
+                );
+              })}
+              {(s.done.length > 0 || skipped.length > 0) && (
+                <ul className="space-y-2 pt-1">
+                  {s.done.map((t) => (
+                    <li key={t.id} className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Check className="size-3.5 shrink-0 text-primary" aria-hidden />
+                        <span className="truncate line-through">{t.title}</span>
+                      </span>
+                      {ctx.viewer.canEdit && (
+                        <button type="button" disabled={pendingIds.has(t.id)} onClick={() => onUndo(t)} className={rowButton}>
+                          Undo
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                  {skipped.map((t) => (
+                    <li key={t.id} className="text-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="min-w-0">
+                          <span className="block truncate">{t.title}</span>
+                          <span className="block text-xs text-muted-foreground">{skippedLabel(t, ctx.today)}</span>
+                        </span>
+                        {ctx.viewer.canEdit && (
+                          <button type="button" disabled={pendingIds.has(t.id)} onClick={() => onBringBack(t)} className={rowButton}>
+                            Bring back
+                          </button>
+                        )}
+                      </div>
+                      {errors[t.id] && (
+                        <p role="alert" className="mt-1 text-xs text-destructive">
+                          {errors[t.id]}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </details>
+        );
+      })}
+      {waiting.length > 0 && (
+        <details className="group rounded-3xl bg-card p-4 ring-1 ring-border">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 font-semibold marker:hidden [&::-webkit-details-marker]:hidden">
+            When the list calls for them
+            <span className="text-xs font-normal text-muted-foreground">{waiting.length} not on this plan yet</span>
+          </summary>
+          <ul className="mt-3 space-y-2">
+            {waiting.map((m) => (
+              <li key={m.key} className="text-sm">
+                <span className="block font-medium">{m.title}</span>
+                <span className="block text-xs text-muted-foreground">{m.why}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
   );
 }
 

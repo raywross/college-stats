@@ -57,13 +57,15 @@ import { apCreditFrom, athleticsFrom, calendarFrom, disabilityFrom, programsFrom
 import { addFieldOfStudyMeta, buildProgramDetails, fetchFieldOfStudy } from "./lib/field-of-study-sync.mts";
 import { fetchValueLabels } from "./lib/ipeds-dictionary.mts";
 import { religionFrom } from "../lib/religion.ts";
-import { acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
+import { MIN_APPLICANTS_FOR_RATE, acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 import { normalizeUrl, websiteMismatch } from "../lib/links.ts";
 import { addIdentityMeta, applyIdentity } from "../lib/identity.ts";
 import { buildSelectivity, formatIndexFile, readIndexFile, selectivityProblems } from "./lib/selectivity.mts";
 import { loadIdentityInputs } from "./lib/identity-sync.mts";
 import { writeAliasTable } from "./lib/aliases-sync.mts";
 import { runSiteProbe } from "./lib/site-probe.mts";
+import { fetchOpenAdmissionFile } from "./lib/open-admission.mts";
+import { applyOpenAdmission, openAdmissionMeta } from "../lib/open-admission.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -353,10 +355,10 @@ function toSchool(
   const applicants = ipedsNum(adm, "APPLCN");
   const admitted = ipedsNum(adm, "ADMSSN");
   const enrolled = ipedsNum(adm, "ENRLT");
-  // Fewer than 10 applicants makes a rate meaningless (e.g. 0 of 1 admitted).
+  // Fewer than MIN_APPLICANTS_FOR_RATE applicants makes a rate meaningless (e.g. 0 of 1 admitted).
   const rateFromCounts = acceptanceRate(applicants, admitted);
   const scorecardRate = numOrNull(sc["latest.admissions.admission_rate.overall"]);
-  const acceptance = rateFromCounts ?? (applicants !== null && applicants < 10 ? null : scorecardRate);
+  const acceptance = rateFromCounts ?? (applicants !== null && applicants < MIN_APPLICANTS_FOR_RATE ? null : scorecardRate);
   const satPct = ipedsNum(adm, "SATPCT");
   const actPct = ipedsNum(adm, "ACTPCT");
 
@@ -612,6 +614,8 @@ function buildMeta(
       "ipeds-ic": sfaYears,
       "ipeds-hd": `${hd.name.slice(2)}–${String(Number(hd.name.slice(2)) + 1).slice(2)}`,
       "ipeds-ic-char": academicYear(icChar.name.slice(2)),
+      // Set from the open-admission file once it is chosen (openAdmissionMeta, after buildMeta).
+      "ipeds-ic-open": null,
       "ipeds-ef": `Fall ${efd.name.slice(2, 6)}`,
       "ipeds-om": `Students entering fall ${Number(om.name.slice(2)) - OM_LAG}`,
       "ipeds-gr": `Entered fall ${grCohortYear(grPell.name)}`,
@@ -924,6 +928,11 @@ async function main() {
   }
 
   schools.sort((a, b) => a.name.localeCompare(b.name));
+  // Open admission (lib/open-admission.ts): the newest IC file that answers OPENADMP, often older than icChar.
+  const openFile = await fetchOpenAdmissionFile(IC_CHAR_NAMES, join(ROOT, ".cache", "ipeds"));
+  if (!openFile) throw new Error("No IPEDS IC file answers OPENADMP");
+  const open = applyOpenAdmission(schools, openFile.rows);
+  console.log(`  open admission (${openFile.name}): ${open.open} open, ${open.notOpen} not, ${open.unknown} unknown`);
   // school.trends comes from `npm run sync-history`; keep it until that runs again (run both: npm run sync-all).
   if (existsSync(OUT)) {
     const previous = new Map((JSON.parse(readFileSync(OUT, "utf8")) as School[]).map((s) => [s.unit_id, s.trends]));
@@ -934,6 +943,10 @@ async function main() {
   }
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
   const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell, sal, drvf, drvfFiscalYear);
+  // Open admission is its own release: the IC file it came from is often older than icChar (lib/open-admission.ts).
+  const openMeta = openAdmissionMeta(openFile);
+  meta.sources["ipeds-ic-open"] = openMeta.source;
+  meta.vintages["ipeds-ic-open"] = openMeta.vintage;
   addResidenceMeta(meta, efc.table, efc.year);
   addTransferMeta(meta, efa.table, efa.year);
   addOnlineShareMeta(meta, efaDist.table, efaDist.year);

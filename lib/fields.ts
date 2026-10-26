@@ -18,6 +18,11 @@ export type VintageKey =
   | "ipeds-hd"
   /** IPEDS Institutional Characteristics (IC{Y}, not the price files): athletics, programs, services. Its own year. */
   | "ipeds-ic-char"
+  /**
+   * IPEDS IC{Y}'s open-admission answer (OPENADMP; lib/open-admission.ts): the newest IC file that answers it, often a
+   * year behind ipeds-ic-char, since a new IC file leaves the column blank until NCES revises it.
+   */
+  | "ipeds-ic-open"
   /** IPEDS Fall Enrollment part D (EF{Y}D): the student-to-faculty ratio. Fall, like admissions. */
   | "ipeds-ef"
   /** IPEDS Outcome Measures (OM{Y}): students who entered in fall Y − 8, followed for 8 years. */
@@ -54,7 +59,12 @@ export interface FieldDef {
   /** Which release year the default source's value describes; `cds` values carry their own edition. */
   vintage: VintageKey | null;
   /** Calculated from other fields. Inputs are field paths; citations expand to the inputs' sources. */
-  derived?: { formula: string; inputs: readonly string[] };
+  /**
+   * `primary`: the input a value from several sources is cited by (its source and year), when one input decides which
+   * class the value describes: Quad's selectivity is cited by the admit rate it read (selectivity.year), not by the
+   * field's default source. Without it, such a value cites the field's default source.
+   */
+  derived?: { formula: string; inputs: readonly string[]; primary?: string };
   /** Computed at render time (lib/metrics.ts), never stored in data/schools.json. */
   computed?: true;
   /**
@@ -209,6 +219,8 @@ export const FIELDS = {
   "admissions.test_submission_rate_sat": adm("Share submitting SAT"),
   "admissions.test_submission_rate_act": adm("Share submitting ACT"),
   "admissions.test_policy": { ...adm("Test policy"), notify: { unit: "text", phrase: "{value}" } },
+  // IPEDS IC OPENADMP (lib/open-admission.ts), from its own release: the newest IC file that answers it.
+  "admissions.open_admission": { label: "Open admission (admits everyone who applies)", topic: "admissions", source: "ipeds-ic-open", vintage: "ipeds-ic-open" },
   "admissions.by_sex": adm("Applicants, admits, and enrollees by sex"),
   "admissions.factors": adm("What's considered in admission (GPA, essay, legacy, and more)"),
   "admissions.sat_reading_median": adm("SAT Reading & Writing, median"),
@@ -701,7 +713,7 @@ export const FIELDS = {
     topic: "admissions",
     source: "ipeds-adm",
     vintage: "ipeds-adm",
-    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS, primary: "admissions.acceptance_rate" },
     notify: { unit: "text", ownInputsOnly: false, tierPool: "all" },
   },
   "selectivity.in_state": {
@@ -709,7 +721,7 @@ export const FIELDS = {
     topic: "admissions",
     source: "ipeds-adm",
     vintage: "ipeds-adm",
-    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from its state`, inputs: ["derived.admit_rate_in_state", ...SELECTIVITY_INPUTS] },
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from its state`, inputs: ["derived.admit_rate_in_state", ...SELECTIVITY_INPUTS], primary: "derived.admit_rate_in_state" },
     notify: { unit: "text", ownInputsOnly: false, tierPool: "in_state" },
   },
   "selectivity.out_of_state": {
@@ -717,7 +729,7 @@ export const FIELDS = {
     topic: "admissions",
     source: "ipeds-adm",
     vintage: "ipeds-adm",
-    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from other states`, inputs: ["derived.admit_rate_out_of_state", ...SELECTIVITY_INPUTS] },
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from other states`, inputs: ["derived.admit_rate_out_of_state", ...SELECTIVITY_INPUTS], primary: "derived.admit_rate_out_of_state" },
     notify: { unit: "text", ownInputsOnly: false, tierPool: "out_of_state" },
   },
   // The top band of Ultra selective (method/standing.md "Revision 3", rule 8): a word the estimate reads, never shown.
@@ -726,7 +738,7 @@ export const FIELDS = {
     topic: "admissions",
     source: "ipeds-adm",
     vintage: "ipeds-adm",
-    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS, primary: "admissions.acceptance_rate" },
     hidden: true,
   },
   "selectivity.year": adm("Fall of the admit rate Quad's selectivity read"),
@@ -739,7 +751,7 @@ export const FIELDS = {
     vintage: "ipeds-adm",
     computed: true,
     hidden: true,
-    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS },
+    derived: { formula: SELECTIVITY_FORMULA, inputs: SELECTIVITY_INPUTS, primary: "admissions.acceptance_rate" },
   },
   "derived.selectivity_score_in_state": {
     label: "Quad's selectivity score (0–100), in-state applicants",
@@ -748,7 +760,7 @@ export const FIELDS = {
     vintage: "ipeds-adm",
     computed: true,
     hidden: true,
-    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from its state`, inputs: ["derived.admit_rate_in_state", ...SELECTIVITY_INPUTS] },
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from its state`, inputs: ["derived.admit_rate_in_state", ...SELECTIVITY_INPUTS], primary: "derived.admit_rate_in_state" },
   },
   "derived.selectivity_score_out_of_state": {
     label: "Quad's selectivity score (0–100), out-of-state applicants",
@@ -757,7 +769,7 @@ export const FIELDS = {
     vintage: "ipeds-adm",
     computed: true,
     hidden: true,
-    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from other states`, inputs: ["derived.admit_rate_out_of_state", ...SELECTIVITY_INPUTS] },
+    derived: { formula: `${SELECTIVITY_FORMULA}; the admit rate is the college's own rate for applicants from other states`, inputs: ["derived.admit_rate_out_of_state", ...SELECTIVITY_INPUTS], primary: "derived.admit_rate_out_of_state" },
   },
 
   /* ---- Computed at render time (lib/metrics.ts) ---- */

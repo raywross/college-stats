@@ -5,7 +5,7 @@ import { healthHref, type HealthFilters } from "@/lib/admin/health-view";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
 import { cn } from "@/lib/utils";
 
-const BASE = "/admin/health";
+const BASE = "/admin/health/files";
 const num = (n: number) => n.toLocaleString("en-US");
 
 /**

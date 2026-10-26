@@ -6,6 +6,7 @@ import { getData } from "@/lib/data";
 import { getHighSchoolMeta } from "@/lib/high-schools";
 import type { SourceKey, Topic } from "@/lib/types";
 import { num } from "@/lib/format";
+import { TOPIC_LABELS } from "@/lib/topic-labels";
 import { FIELDS, type FieldDef, type FieldPath, type VintageKey } from "@/lib/fields";
 import { VINTAGE_KEYS, yearLabel } from "@/lib/lineage";
 import {
@@ -35,19 +36,6 @@ export const metadata: Metadata = { title: "Data" };
 
 // "Today" on the timeline, overdue releases, and the review warning move with the calendar, so re-render daily.
 export const revalidate = 86400;
-
-const TOPIC_LABELS: Record<Topic, string> = {
-  institution: "Name, location & type",
-  admissions: "Admissions & test scores",
-  enrollment: "Enrollment",
-  demographics: "Student background",
-  cost: "Net price & cost",
-  prices: "Sticker prices",
-  outcomes: "Earnings, graduation & debt",
-  aid: "Financial aid",
-  campus: "Housing & campus life",
-  academics: "Academics",
-};
 
 // Hidden fields (computed for Quad's method, never on a public page) are left out, as on every other page.
 const STORED = (Object.entries(FIELDS) as [FieldPath, FieldDef][]).filter(([, def]) => !def.computed && !def.hidden);
@@ -193,6 +181,7 @@ export default async function DataPage() {
     "ipeds-ic": all.filter((s) => s.cost?.sticker).length,
     "ipeds-hd": all.filter((s) => s.campus?.setting).length,
     "ipeds-ic-char": all.filter((s) => s.campus?.calendar !== undefined && s.campus?.programs).length,
+    "ipeds-ic-open": all.filter((s) => s.admissions.open_admission != null).length,
     "ipeds-ef": all.filter((s) => s.academics?.student_faculty_ratio != null).length,
     "ipeds-om": all.filter((s) => s.outcomes?.eight_year?.all.award != null).length,
     "ipeds-gr": all.filter((s) => s.outcomes?.grad_cohorts != null).length,
@@ -220,7 +209,7 @@ export default async function DataPage() {
     for (const [, def] of STORED) if (def.source === key) topics.add(def.topic);
     return [...topics].map((t) => TOPIC_LABELS[t]);
   };
-  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "state-law", "directory", "wikidata", "wikipedia"];
+  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-ic-open", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "state-law", "directory", "wikidata", "wikipedia"];
 
   const toc = [
     ["why", "Why it lags"],
@@ -516,6 +505,13 @@ export default async function DataPage() {
 
       {/* 6. Sources */}
       <Section id="sources" eyebrow="Sources" title="The datasets" icon={<BookMarked className="size-4" aria-hidden />}>
+        <p className="max-w-3xl text-sm text-muted-foreground">
+          Want these numbers in a spreadsheet or an assistant?{" "}
+          <Link href="/developers" className="font-semibold text-primary hover:underline">
+            Developers: the same data by API
+          </Link>
+          .
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
           {order.map((key) => {
             const s = meta.sources[key];

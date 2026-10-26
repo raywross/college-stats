@@ -1,6 +1,7 @@
 # Quad's Selectivity History: Every Score and Tier Change, per Pool, for the Admin Console
 
-> Status: **built** 2026-10-13 (PR #140, with the admin console; see "As built" at the end). Planned 2026-10-13. Owner request after UT Austin's fall 2025 Common Data Set moved it up
+> Status: **built** 2026-10-13 (PR #140, with the admin console; see "As built" at the end); **changed** 2026-10-20 to
+> one row per college with the three pools side by side, recorded only when something changed (see "As changed"). Planned 2026-10-13. Owner request after UT Austin's fall 2025 Common Data Set moved it up
 > (data PR #145): "We really should track the scores that our algorithm is spitting out… we need to track for both in
 > and out of state… it wouldn't need to be on the main site, but I'd want to see it in the admin screens." Extends
 > [selectivity-index.md](selectivity-index.md); read by the [admin console](../product/admin.md), which is being built
@@ -107,25 +108,27 @@ create table public.selectivity_publishes (
   cause text not null check (cause in ('data', 'method', 'backfill'))
 );
 
+-- One row per college per publish, the three pools side by side (as changed 2026-10-20; see the end).
 create table public.selectivity_history (
   id bigint generated always as identity primary key,
   run_id bigint not null references public.selectivity_publishes (id) on delete cascade,
   published_at timestamptz not null,
   unit_id text not null,
-  pool text not null check (pool in ('all', 'in_state', 'out_of_state')),
-  score numeric(5,2),           -- null when the college stopped being rated (row records the drop)
-  rank integer,                 -- the all-applicants rank on every row, for context
-  tier text,                    -- 'elite' (shown as Ultra selective), 'highly_selective', …, 'open'; null if unrated
+  rank integer,                 -- the all-applicants rank, for context
   tier_year text,               -- school.selectivity.year, e.g. 'Fall 2025'
   band text,                    -- the top-of-Ultra band, when set
-  held boolean not null default false,  -- hysteresis kept the previous tier although the score crossed a cutoff
-  cause text not null check (cause in ('data', 'method', 'backfill', 'new_pool', 'unrated')),
-  inputs jsonb not null,        -- {"admit_rate":{"v":0.2222,"year":"Fall 2025","source":"cds"}, "sat_p75":{...}, …}
-  unique (run_id, unit_id, pool)
+  score_all numeric(5,2), tier_all text, held_all boolean not null default false,
+  score_in_state numeric(5,2), tier_in_state text, held_in_state boolean not null default false,
+  score_out_of_state numeric(5,2), tier_out_of_state text, held_out_of_state boolean not null default false,
+                                -- a pool's score and tier are null together: not rated in that pool
+  cause text not null check (cause in ('data', 'method', 'backfill', 'new', 'unrated')),
+  inputs jsonb not null,        -- {"admit_rate":{…}, "admit_rate_in_state":{…}, "admit_rate_out_of_state":{…}, "sat_p75":{…}, …}
+  unique (run_id, unit_id)
 );
-create index on public.selectivity_history (unit_id, pool, published_at desc);
+create index on public.selectivity_history (unit_id, published_at desc);
 create index on public.selectivity_history (published_at desc) where cause <> 'backfill';
 ```
+The first version (2026-10-13) had one row per pool; see [As changed](#as-changed-2026-10-20-one-row-per-college-and-only-real-changes).
 RLS on, `select` for `is_admin()` ([admin.md](../product/admin.md#model)), all writes to `service_role` only. One
 migration: `supabase/migrations/<ts>_selectivity_history.sql`.
 
@@ -255,3 +258,36 @@ None.
   tier fields are also suppressed when the earlier commit had no `data/selectivity-index.json` at all, so a first
   publish can't announce every college's tier as new. A method unknown on one side (an index from before the `method`
   field) counts as unchanged.
+
+## As changed (2026-10-20): one row per college, and only real changes
+Owner, 2026-10-20, looking at UT Austin's history: "I'm seeing multiple changes per day, but the data isn't
+changing. I don't think we should store history records when the data doesn't change." And: "we should store those
+all in one row with 3 columns instead of 3 rows. Then display it the same way."
+
+- **The bug.** The writer read the last recorded rows (`selectivity_latest_rows()`) in one request, and PostgREST
+  answers at most 1,000 rows. There were about 2,300 (one per college and pool), so every college past the 1,000th
+  looked new on every publish and was re-recorded as `new_pool`: about 660 rows a publish, 18,812 rows in all by
+  2026-10-17, 63 of them UT Austin's. The comparison itself was right; it never ran for those colleges. The writer
+  now reads every page (`readAllPages`, tested past 2,000 rows), and so do the console's reads that can pass 1,000
+  (a run's changes).
+- **One row per college per publish** (`20261020120000_selectivity_history_one_row.sql`): `score_*`, `tier_*`, and
+  `held_*` for `all`, `in_state`, and `out_of_state`, with the rank, tier year, band, and inputs once. The inputs carry
+  each pool's admit rate (`admit_rate`, `admit_rate_in_state`, `admit_rate_out_of_state`) and the inputs the pools
+  share. A pool that appears or goes away is a `data` row with that pool's columns filled or null. Causes: `data`,
+  `method` (every rated college), `backfill`, `new` (the college's first row), `unrated` (no longer rated in any
+  pool; every pool null).
+- **Nothing changed, nothing recorded.** A college gets a row only when a pool's score, tier, or hold, the rank, year,
+  band, or an input differs from its last row. A publish that changes no college records nothing, not even its run:
+  `record_selectivity_run()` returns null for empty rows, and the publish script doesn't call it.
+- **Rebuilt from git.** The migration replaced the table; `npm run rebuild-selectivity-history` replayed every
+  recorded publish from its commit with the new rules, keeping each publish's date, method, and cause. On dev
+  (2026-10-20): 24 publishes and 18,812 rows became 6 publishes and 6,154 rows; UT Austin has 5 rows (three backfilled
+  method versions, #145's fall 2025 CDS, and the next data run's 0.01 drift).
+- **Display.** The college page keeps a chart per pool and shows one table row per recorded publish with All
+  applicants, In-state, and Out-of-state side by side (score, change, tier, "held"), then rank, cause, and what
+  changed. The default "hide small moves" filter hides a row only when every pool kept its tier and moved under 0.25.
+  `/admin/selectivity` is unchanged on screen: the reads unpivot the pools for movers, tier counts, and the latest
+  publish.
+- **Owner steps.** Apply the migration on production after `20261013150000_selectivity_history.sql` (at launch), then
+  run `npm run rebuild-selectivity-history` (nothing to replay on a new project) and `npm run
+  backfill-selectivity-history`.

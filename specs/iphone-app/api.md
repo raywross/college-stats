@@ -172,7 +172,7 @@ before `signUp`, and the `profiles` trigger and `/account` edit path enforce the
 - Guardian reads are logged with `log_access` through `openStudentAs` as today, so "Who viewed your information"
   stays complete.
 - Rate limits: a small per-token (or per-IP for public routes) limiter in Postgres, as planned for
-  [data-api.md](../product/data-api.md#keys-limits-tiers), with `429` and `Retry-After`.
+  [data-api.md](../product/data-api.md#who-may-call-and-how), with `429` and `Retry-After`.
 
 ## Refactor Server Actions into lib functions
 Each action in `app/*/actions.ts` becomes `lib/<area>.ts: fn(client, input)` with the action and the route as two thin

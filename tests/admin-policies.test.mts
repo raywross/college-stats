@@ -198,6 +198,7 @@ function functionCalls(w: World): [name: string, sql: string, params: unknown[]]
     ["admin_grant", "select public.admin_grant($1)", [w.eve]],
     ["admin_revoke", "select public.admin_revoke($1)", [w.quinn]],
     ["admin_note_ops", "select public.admin_note_ops('ops.dispatch', '{}')", []],
+    ["admin_set_setting", "select public.admin_set_setting('planner.all_moves', 'true')", []],
   ];
 }
 
@@ -416,6 +417,23 @@ test("admin_set_email_confirmed: confirms, unconfirms and signs them out, logs b
   await assert.rejects(asAdmin(w, "select public.admin_set_email_confirmed($1, null)", [w.alice]), /invalid_state/);
 });
 
+test("admin_set_setting: known keys and value types only, logged with the old and new value; anyone reads; nobody writes the table", async () => {
+  const w = await world();
+  const read = async (who: string) => (await as<{ value: unknown }>(w.db, who, "select value from public.app_settings where key = 'planner.all_moves'", [], { console: false }))[0]?.value ?? null;
+  assert.equal(await read(w.eve), null, "no row until an admin sets it");
+  await asAdmin(w, "select public.admin_set_setting('planner.all_moves', 'true')");
+  await asAdmin(w, "select public.admin_set_setting('planner.all_moves', 'false')");
+  assert.equal(await read(w.eve), false);
+  const log = (await w.db.query<{ action: string; target_id: string; details: { from: unknown; to: unknown } }>("select action, target_id, details from public.admin_log where action = 'setting.set' order by id")).rows;
+  assert.deepEqual(log.map((r) => [r.target_id, r.details.from, r.details.to]), [["planner.all_moves", null, true], ["planner.all_moves", true, false]]);
+  await assert.rejects(asAdmin(w, "select public.admin_set_setting('planner.nope', 'true')"), /unknown_setting/);
+  await assert.rejects(asAdmin(w, "select public.admin_set_setting('planner.all_moves', '\"yes\"')"), /invalid_value/);
+  await assert.rejects(as(w.db, w.eve, "update public.app_settings set value = 'true'", [], { console: false }), /permission denied/);
+  await assert.rejects(as(w.db, w.quinn, "update public.app_settings set value = 'true'"), /permission denied/, "an admin writes only through the function");
+  assert.equal(await read(w.eve), false);
+  await assert.rejects(as(w.db, w.eve, "insert into public.app_settings (key, value) values ('planner.other', 'true')", [], { console: false }));
+});
+
 test("college views: anyone records a view under their own session; repeats fold; only admins and the person read them", async () => {
   const w = await world();
   const view = (who: string | null, unit: string, page = "overview") =>
@@ -459,41 +477,54 @@ test("college views: anyone records a view under their own session; repeats fold
   assert.equal(Number((await w.db.query<{ n: number }>("select count(*)::int as n from public.college_views where user_id is null")).rows[0].n), 3);
 });
 
-test("selectivity history: only the service role records, once per commit; only an admin in the console reads", async () => {
+test("selectivity history: one row per college with its three pools; nothing recorded for an empty publish; only an admin in the console reads", async () => {
   const w = await world();
   const run = (commit: string, at: string, method: string, cause: string, rows: unknown[]) =>
     asService<{ v: number | null }>(w.db, "select public.record_selectivity_run($1::jsonb, $2::jsonb) as v", [
       JSON.stringify({ git_commit: commit, published_at: at, method, elite_index: 80, counts: { elite: 29 }, elite_any_pool: 29, rated: 2, cause }),
       JSON.stringify(rows),
     ]).then((r) => r[0].v);
-  const row = (unit: string, pool: string, score: number | null, tier: string | null, cause: string) => ({ unit_id: unit, pool, score, rank: 58, tier, tier_year: "Fall 2025", band: null, held: false, cause, inputs: { admit_rate: { v: 0.2222, year: "Fall 2025", source: "college-site" } } });
+  type Pools = { all?: [number, string]; in_state?: [number, string]; out_of_state?: [number, string] };
+  const row = (unit: string, pools: Pools, cause: string) => ({
+    unit_id: unit,
+    rank: 58,
+    tier_year: "Fall 2025",
+    band: null,
+    ...Object.fromEntries((["all", "in_state", "out_of_state"] as const).flatMap((p) => [[`score_${p}`, pools[p]?.[0] ?? null], [`tier_${p}`, pools[p]?.[1] ?? null], [`held_${p}`, false]])),
+    cause,
+    inputs: { admit_rate: { v: 0.2222, year: "Fall 2025", source: "college-site" } },
+  });
 
   const now = new Date();
   const ago = (d: number) => new Date(now.getTime() - d * 86_400_000).toISOString();
-  const first = await run("1bbc2596", ago(40), "2026.10.12.3", "backfill", [row("228778", "all", 70.92, "highly_selective", "backfill"), row("166027", "all", 91.65, "elite", "backfill")]);
+  const first = await run("1bbc2596", ago(40), "2026.10.12.3", "backfill", [row("228778", { all: [70.92, "highly_selective"] }, "backfill"), row("166027", { all: [91.65, "elite"] }, "backfill")]);
   assert.ok(first);
-  assert.equal(await run("1bbc2596", ago(40), "2026.10.12.3", "backfill", []), null, "a recorded commit writes nothing");
+  assert.equal(await run("1bbc2596", ago(40), "2026.10.12.3", "backfill", [row("228778", { all: [70.92, "highly_selective"] }, "backfill")]), null, "a recorded commit writes nothing");
+  assert.equal(await run("e330a588", ago(20), "2026.10.12.3", "data", []), null, "a publish that changed no college writes nothing");
+  assert.equal((await asService(w.db, "select * from public.selectivity_publishes")).length, 1, "not even its run");
   const second = await run("3c5b4280", ago(1), "2026.10.12.3", "data", [
-    row("228778", "all", 72.45, "highly_selective", "data"),
-    row("228778", "out_of_state", 80.49, "elite", "new_pool"),
-    row("166027", "all", 79.5, "highly_selective", "data"),
+    row("228778", { all: [72.45, "highly_selective"], out_of_state: [80.49, "elite"] }, "data"),
+    row("166027", { all: [79.5, "highly_selective"] }, "data"),
   ]);
+  // A score without its tier (or the reverse) is refused.
+  await assert.rejects(asService(w.db, "insert into public.selectivity_history (run_id, published_at, unit_id, score_all, cause) values ($1, now(), '100654', 50, 'data')", [second]));
 
   // Nobody else writes; only an admin in the console reads.
   await assert.rejects(asUser(w.db, w.quinn, "select public.record_selectivity_run('{}'::jsonb, '[]'::jsonb)"));
-  await assert.rejects(asUser(w.db, w.quinn, "insert into public.selectivity_history (run_id, published_at, unit_id, pool, cause) values ($1, now(), '228778', 'all', 'data')", [second]));
+  await assert.rejects(asUser(w.db, w.quinn, "insert into public.selectivity_history (run_id, published_at, unit_id, cause) values ($1, now(), '228778', 'data')", [second]));
   assert.equal((await asUser(w.db, w.alice, "select * from public.selectivity_history")).length, 0);
   await assert.rejects(asUser(w.db, null, "select * from public.selectivity_history"));
   assert.equal((await as(w.db, w.quinn, "select * from public.selectivity_history", [], { console: false })).length, 0, "the console header is needed");
-  assert.equal((await asAdmin(w, "select * from public.selectivity_history")).length, 5);
-  assert.equal((await asService(w.db, "select * from public.selectivity_latest_rows()")).length, 3);
+  assert.equal((await asAdmin(w, "select * from public.selectivity_history")).length, 4, "one row per college per publish");
+  type Latest = { unit_id: string; score_all: string; score_out_of_state: string | null };
+  const latest = await asService<Latest>(w.db, "select * from public.selectivity_latest_rows()");
+  assert.deepEqual(latest.map((l) => [l.unit_id, Number(l.score_all), l.score_out_of_state === null ? null : Number(l.score_out_of_state)]), [["166027", 79.5, null], ["228778", 72.45, 80.49]]);
 
-  type Change = { unit_id: string; pool: string; tier: string; prev_tier: string | null; prev_score: string | null };
+  type Change = { unit_id: string; tier_all: string; prev_tier_all: string | null; tier_out_of_state: string | null; prev_tier_out_of_state: string | null };
   const changes = await asAdmin<Change>(w, "select * from public.admin_selectivity_run_changes($1)", [second]);
-  assert.deepEqual(changes.map((c) => [c.unit_id, c.pool, c.prev_tier, c.tier]), [
-    ["166027", "all", "elite", "highly_selective"],
-    ["228778", "all", "highly_selective", "highly_selective"],
-    ["228778", "out_of_state", null, "elite"],
+  assert.deepEqual(changes.map((c) => [c.unit_id, c.prev_tier_all, c.tier_all, c.prev_tier_out_of_state, c.tier_out_of_state]), [
+    ["166027", "elite", "highly_selective", null, null],
+    ["228778", "highly_selective", "highly_selective", null, "elite"],
   ]);
   type Mover = { unit_id: string; pool: string; delta: string | null };
   const moved = await asAdmin<Mover>(w, "select * from public.admin_selectivity_movers(30)");
@@ -502,9 +533,13 @@ test("selectivity history: only the service role records, once per commit; only 
     ["228778", "all", 1.53],
     ["228778", "out_of_state", null],
   ]);
+  const outOnly = await asAdmin<Mover>(w, "select * from public.admin_selectivity_movers(30, 'out_of_state')");
+  assert.deepEqual(outOnly.map((m) => [m.unit_id, m.pool]), [["228778", "out_of_state"]]);
   type Count = { cause: string; counts: Record<string, number> };
   const counts = await asAdmin<Count>(w, "select * from public.admin_selectivity_tier_counts('all')");
   assert.deepEqual(counts.map((c) => c.counts), [{ elite: 1, highly_selective: 1 }, { highly_selective: 2 }]);
+  const outCounts = await asAdmin<Count>(w, "select * from public.admin_selectivity_tier_counts('out_of_state')");
+  assert.deepEqual(outCounts.map((c) => c.counts), [{}, { elite: 1 }]);
 });
 
 test("admin_user_auth_activity: sessions, the account's dates, its audit log (no token refreshes), and support's actions; never an address", async () => {

@@ -29,12 +29,13 @@
       "label": "IPEDS directory and institutional characteristics (provisional)",
       "brings": [
         "Directory 2026–27 (HD2026): setting, Carnegie classes, designations, locations",
-        "Institutional characteristics 2026–27 (IC2026): athletics, ROTC, study abroad, services, calendar"
+        "Institutional characteristics 2026–27 (IC2026): athletics, ROTC, study abroad, services, calendar",
+        "Open admission, 2025–26 (IC2025 revised): which colleges admit everyone who applies"
       ],
-      "updates": ["ipeds-hd", "ipeds-ic-char"],
+      "updates": ["ipeds-hd", "ipeds-ic-char", "ipeds-ic-open"],
       "expected": "2027-07",
       "status": "estimated",
-      "basis": "HD2025 was published Jul 21, 2026, and IC2025 Jul 28, 2026",
+      "basis": "HD2025 was published Jul 21, 2026, and IC2025 Jul 28, 2026; the revised IC2024, the first with open-admission answers for 2024–25, is dated Aug 31, 2026",
       "url": "https://nces.ed.gov/ipeds/survey-components/data-release-schedule",
       "files": ["HD2026", "IC2026"]
     },

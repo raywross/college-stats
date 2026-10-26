@@ -218,6 +218,34 @@ export function wantsOwnStudent(roleHint: RoleHint | null): boolean {
 /* Header state (/api/me)                                              */
 /* ------------------------------------------------------------------ */
 
+/**
+ * A plain cookie set beside the session cookies and cleared with them (lib/supabase-server.ts, proxy.ts): "1" while a
+ * session is stored. The one cookie page scripts read (useMe), so the header knows at hydration whether to show
+ * "Sign in" or the avatar, without a request. It carries no identity and the server never trusts it; the session
+ * cookies themselves stay httpOnly.
+ */
+export const SIGNED_IN_COOKIE = "quad_signed_in";
+
+/** One cookie as @supabase/ssr hands them to `setAll` (the options are the `cookie` package's). */
+export interface CookieToSet<O extends { maxAge?: number; httpOnly?: boolean } = { maxAge?: number; httpOnly?: boolean }> {
+  name: string;
+  value: string;
+  options: O;
+}
+
+/**
+ * The marker cookie to set beside a batch of session cookies, or null when the batch sets none: "1" with the session
+ * cookie's own lifetime when a session is written, and the same cleared (empty, maxAge 0, the way @supabase/ssr
+ * clears) when the session is. Never httpOnly, so scripts can read it.
+ */
+export function signedInCookieFor<O extends { maxAge?: number; httpOnly?: boolean }>(toSet: readonly CookieToSet<O>[]): CookieToSet<O> | null {
+  const session = toSet.filter((c) => c.name.startsWith("sb-"));
+  if (session.length === 0) return null;
+  const writing = session.some((c) => c.value !== "" && (c.options.maxAge ?? 1) > 0);
+  const options = writing ? { ...session[0].options, httpOnly: false } : { ...session[0].options, httpOnly: false, maxAge: 0 };
+  return { name: SIGNED_IN_COOKIE, value: writing ? "1" : "", options };
+}
+
 /** What /api/me tells the header's AccountMenu. Nothing more than the menu shows. */
 export interface MeState {
   /** Sign-in is available on this deployment. */

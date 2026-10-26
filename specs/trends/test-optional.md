@@ -101,3 +101,36 @@ What stands out, to confirm before publishing:
 2. Enrollment-weighted companion: "of all first-years at these colleges, X% submitted an SAT." The hub asks each study
    to say colleges or students; this study shows the median college and offers the student-weighted figure as one
    sentence.
+
+## Update (2026-10-25): this cycle, on the Common App grid
+The owner's read, after the Common App build ([common-app.md](../data-expansion/common-app.md), PR #175): now that the
+pandemic is past, test-optional is moving back the other way, and the study should say so rather than end at the
+federal fall 2024 point. The Requirements Grid gives each member college's stated policy for the 2026-27 cycle, two
+falls ahead of the federal data, in a finer vocabulary (A always required, F flexible, S sometimes required, N never,
+I ignored).
+
+**Block.** `thisCycle` in `test-optional.json`, built by `scripts/trends/studies/test-optional.mts` from each school's
+`apply.test_policy.code` and the shards' federal policy at the newest fall, over the member colleges with both
+(1,004 at build). Shares this cycle: required (A or F) 16.6%, required for some (S) 29.5%, test-optional (N) 52.1%,
+test-blind (I) 1.8%. The same colleges by the federal count in fall 2024: 3.5% required, 74.4% optional, 22.1% blind.
+Named lists: `backToRequiring` (not required federally in fall 2024, A on the grid: 23 colleges, among them Brown,
+Caltech, Cornell, Dartmouth, Johns Hopkins, Penn, Stanford, Ohio State, UT Austin, Auburn, Georgia State) and
+`wentOptional` (required federally, N or I on the grid: Texas State, UConn, Southern Maine). Null without a grid, so
+the study stands on the federal data alone.
+
+**What readers see.** A new section after the national line, "This cycle, on the Common App grid": four tiles (the
+four shares, each with the federal share for the same colleges beside it, cited to the grid's cycle and stamp through
+`gridCitation`), the caveat that "required for some" has no federal counterpart (most of those colleges read
+"considered" federally, so part of the gap is a finer instrument, not a change of policy), the named list of colleges
+requiring a test again with their fall 2024 federal answer, and the one line for colleges that went the other way. The
+takeaway and the hub card's sentence gain a clause on the movement back. The federal "went back to requiring"
+list (fall 2022 → 2024) stays as it was.
+
+**Rules kept.** No cycle or date literal in the page: the cycle text and the vintage come from the block and
+`gridVintage`. The grid's A and F both count as required (the site's own code map); its S is shown as its own tile and
+never folded into either side of the comparison. The headline stat stays federal (the panel's 66% → 5%), so Home fact
+3 and the study never disagree; the grid block is a look ahead for members only, said so in the method note.
+
+**Tests** (`tests/trends-test-optional.test.mts`): the block recomputed from `schools.json` and the shards (n, codes,
+shares, cycle and stamp); the back-to-requiring list recomputed, every member reading "required" on the site, and the
+went-optional list recomputed.

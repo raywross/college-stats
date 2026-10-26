@@ -12,10 +12,13 @@ import { PRE_PANDEMIC_FALL } from "../../history/build.mts";
 import { TEST_BLIND_FROM, TEST_POLICY_CODES, historyYearLabel } from "../../../lib/history.ts";
 import { pct } from "../../../lib/format.ts";
 import { POLICY_LABELS } from "../../../lib/test-policy.ts";
+import { GRID_POLICY } from "../../../lib/common-app/test-policy.ts";
+import type { GridTestCode } from "../../../lib/common-app/types.ts";
+import type { TestPolicyAnswer } from "../../../lib/types.ts";
 import { GROUP_FLOOR } from "../../../lib/trend-groups.ts";
 import { at, byGroup, fixedPanel, medianBy, nationalRow, reporting, round4, shareBy, weightedBy, yearly, type Member } from "../../../lib/trend-panel.ts";
 import { studyBySlug } from "../../../lib/trend-studies.ts";
-import type { ScoreRangeRow, TestOptionalFile, TestOptionalValues } from "../../../lib/trends.ts";
+import type { GridCycleBlock, ScoreRangeRow, TestOptionalFile, TestOptionalValues } from "../../../lib/trends.ts";
 import type { TrendBuilder, TrendContext, TrendOutput } from "../context.mts";
 
 const SLUG = "test-optional";
@@ -108,6 +111,50 @@ function wentBackToRequiring(panel: readonly Member[], blindFrom: number, to: nu
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** The site's answer for a federal policy code (the inverse of TEST_POLICY_CODES), for its label. */
+const ANSWER_BY_CODE: Record<number, TestPolicyAnswer> = Object.fromEntries(Object.entries(TEST_POLICY_CODES).map(([k, v]) => [v, k])) as Record<number, TestPolicyAnswer>;
+
+/**
+ * This cycle on the Common App Requirements Grid (specs/trends/test-optional.md "Update"; the grid itself is
+ * specs/data-expansion/common-app.md): the member colleges' stated test policy for the current cycle, beside the same
+ * colleges' federal policy at fall `to`. The grid's vocabulary is finer than the federal code (its S, "sometimes
+ * required", has no federal answer; those colleges mostly read "considered" federally), so the clearest signal is the
+ * named list of colleges that were optional or blind federally and now always require a test. Null without a grid
+ * (or under the group floor), so the study stands on the federal data alone.
+ */
+function thisCycle(members: readonly Member[], to: number): GridCycleBlock | null {
+  const ms = members.filter((m) => m.school.apply?.test_policy?.code && m.school.apply.common_app.cycle && m.school.apply.common_app.updated && hasPolicy(m, to));
+  if (ms.length < GROUP_FLOOR) return null;
+  const code = (m: Member): GridTestCode => m.school.apply!.test_policy!.code;
+  const codes: GridCycleBlock["codes"] = { A: 0, F: 0, S: 0, N: 0, I: 0 };
+  for (const m of ms) codes[code(m)]++;
+  const share = (n: number) => round4(n / ms.length);
+  const thenLabel = (m: Member) => POLICY_LABELS[ANSWER_BY_CODE[at(m, "test_policy", to)!]] ?? "Test-optional";
+  const byName = <T extends { name: string }>(a: T, b: T) => a.name.localeCompare(b.name);
+  const { cycle, updated } = ms[0].school.apply!.common_app;
+  return {
+    cycle: cycle!,
+    updated: updated!,
+    n: ms.length,
+    codes,
+    now: { required: share(codes.A + codes.F), requiredSome: share(codes.S), optional: share(codes.N), blind: share(codes.I) },
+    then: {
+      fall: to,
+      required: share(ms.filter((m) => required(m, to)).length),
+      optional: share(ms.filter((m) => optional(m, to)).length),
+      blind: share(ms.filter((m) => blind(m, to)).length),
+    },
+    backToRequiring: ms
+      .filter((m) => !required(m, to) && code(m) === "A")
+      .map((m) => ({ id: m.school.unit_id, name: m.school.name, thenLabel: thenLabel(m) }))
+      .sort(byName),
+    wentOptional: ms
+      .filter((m) => required(m, to) && (code(m) === "N" || code(m) === "I"))
+      .map((m) => ({ id: m.school.unit_id, name: m.school.name, policyNow: POLICY_LABELS[GRID_POLICY[code(m)]] }))
+      .sort(byName),
+  };
+}
+
 export function buildTestOptional(ctx: TrendContext): TrendOutput {
   const study = studyBySlug(SLUG)!;
   const from = PRE_PANDEMIC_FALL;
@@ -136,9 +183,14 @@ export function buildTestOptional(ctx: TrendContext): TrendOutput {
     groupings: study.groupings.map((g) => byGroup(panel, g, compute)),
     scoreRanges: scoreRanges(panel, from, to),
     wentBackToRequiring: wentBackToRequiring(panel, TEST_BLIND_FROM, to),
+    thisCycle: thisCycle(ctx.members, to),
   };
   const v = file.national.values!;
   const fall = (y: number) => historyYearLabel(y, "fall").toLowerCase();
+  const tc = file.thisCycle;
+  const cycleSentence = tc
+    ? ` For the ${tc.cycle.replace("-", "–")} cycle, the Common App grid shows ${pct(tc.now.required)} of ${tc.n.toLocaleString("en-US")} member colleges requiring a test, and ${tc.backToRequiring.length} requiring it again after being optional or test-blind in ${fall(tc.then.fall)}.`
+    : "";
   return {
     name: SLUG,
     file,
@@ -148,7 +200,8 @@ export function buildTestOptional(ctx: TrendContext): TrendOutput {
       headline: { value: v.required[1], format: "pct", caption: "of colleges still require the SAT or ACT" },
       sentence:
         `In ${fall(from)}, ${pct(v.required[0])} of colleges required the SAT or ACT; in ${fall(to)}, ${pct(v.required[1])} did, ` +
-        `while the median college's SAT submission share fell from ${pct(v.satSubmitMedian[0])} to ${pct(v.satSubmitMedian[1])}.`,
+        `while the median college's SAT submission share fell from ${pct(v.satSubmitMedian[0])} to ${pct(v.satSubmitMedian[1])}.` +
+        cycleSentence,
       spark: {
         start: lineFrom,
         kind: "fall",

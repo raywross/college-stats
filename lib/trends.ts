@@ -660,6 +660,31 @@ export interface TestOptionalFile extends StudyFile<TestOptionalValues> {
   scoreRanges: ScoreRangeRow[];
   /** Colleges that required tests again by the newest fall after being optional or blind in fall 2022. */
   wentBackToRequiring: { id: string; name: string; policyNow: string }[];
+  /**
+   * The Common App Requirements Grid's statement of each member college's test policy for the current cycle
+   * (specs/data-expansion/common-app.md; specs/trends/test-optional.md "Update"), beside the same colleges' federal
+   * policy at fall `to`: a newer and finer reading than the federal code. Null when no grid is on file.
+   */
+  thisCycle: GridCycleBlock | null;
+}
+
+/** The test-optional study's "this cycle" block, from the Requirements Grid (lib/common-app/types.ts GridTestCode). */
+export interface GridCycleBlock {
+  /** The grid's cycle ("2026-27") and "Updated" stamp (ISO): the citation's label is built from these, never typed. */
+  cycle: string;
+  updated: string;
+  /** Member colleges with a grid row and a federal policy at `then.fall`. */
+  n: number;
+  /** Grid codes among them: A always required, F flexible (a choice of tests), S sometimes, N never, I ignored. */
+  codes: Record<"A" | "F" | "S" | "N" | "I", number>;
+  /** Shares this cycle per the grid: required (A or F), required for some (S), test-optional (N), test-blind (I). */
+  now: { required: number; requiredSome: number; optional: number; blind: number };
+  /** The same colleges' federal policy at fall `fall` (IPEDS has no "required for some" answer). */
+  then: { fall: number; required: number; optional: number; blind: number };
+  /** Not required federally at `then.fall`, "always required" on the grid: the clearest sign of a reversal, named. */
+  backToRequiring: { id: string; name: string; thenLabel: string }[];
+  /** Required federally at `then.fall`, test-optional or test-blind on the grid. */
+  wentOptional: { id: string; name: string; policyNow: string }[];
 }
 
 /* ------------------------------------------------------------------ */

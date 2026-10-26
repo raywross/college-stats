@@ -68,6 +68,7 @@ function main() {
 
   // The CDS records (data/cds-records/) then supply the newest groups (specs/data-expansion/cds-student-body-and-outcomes.md).
   const records = readRecords(CDS_RECORDS);
+  // The Common App grid's test policy rides along: applyNewestTests re-applies it from each school's `apply` block.
   const { schools: merged, merged: mergedCount, removed } = mergeReported(schools, reported, { records, meta, table: CDS_TEMPLATE });
   const { details, changed } = withRecordTables(readDetails(ROOT) ?? [], financialAidDetails(schools, records));
 

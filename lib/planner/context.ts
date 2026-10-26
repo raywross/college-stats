@@ -107,6 +107,16 @@ export const PLAN_CITE_PATHS = [
   "derived.gpa_band_mean",
   "derived.gpa_middle_half",
   "derived.gpa_estimate",
+  // Common App build (additive, specs/data-expansion/common-app.md): the Requirements Grid block.
+  "apply.common_app",
+  "apply.deadlines",
+  "apply.fee",
+  "apply.fee_waiver",
+  "apply.essay_required",
+  "apply.writing_supplement",
+  "apply.courses_grades_required",
+  "apply.recommendations",
+  "apply.test_policy",
 ] as const satisfies readonly FieldPath[];
 
 /** Cited by hand in planSchoolFor: not real dot paths on School. */
@@ -187,6 +197,7 @@ export function planSchoolFor(
     gpaAverage,
     standing,
     poolSchool: school,
+    apply: school.apply ?? null,
   };
 }
 

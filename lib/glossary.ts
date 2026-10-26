@@ -1200,6 +1200,34 @@ const entries = {
     category: "Admissions",
     related: ["regular-decision"],
   },
+  // Common App "What it takes to apply" card (common-app-build/brief.md "U2").
+  "writing-supplement": {
+    term: "Writing supplement",
+    short: "Extra essays or short answers a college asks for beyond the Common App's own personal essay, specific to that college.",
+    why: "A supplement takes real time and is usually due with the rest of the application, so it's worth knowing about well before the deadline.",
+    category: "Admissions",
+  },
+  "courses-and-grades": {
+    term: "Courses & Grades",
+    short: "The section of the Common App where a school counselor reports an applicant's courses and grades, term by term, instead of (or alongside) an official transcript.",
+    category: "Admissions",
+  },
+  "mid-year-report": {
+    term: "Mid-year report",
+    short: "A school counselor's update sent partway through senior year, usually first-semester or first-trimester grades, after the application itself.",
+    why: "It's one more reason senior-year grades still matter after you've applied: a sharp drop can come up in a mid-year report before a decision is made.",
+    category: "Admissions",
+  },
+  "counselor-recommendation": {
+    term: "Counselor recommendation",
+    short: "A recommendation letter from an applicant's school counselor, distinct from a teacher's. Most colleges that require recommendations ask for one of each.",
+    category: "Admissions",
+  },
+  "teacher-evaluation": {
+    term: "Teacher evaluation",
+    short: "A recommendation letter from a teacher who has taught the applicant, usually in a core academic subject. Some colleges ask for more than one.",
+    category: "Admissions",
+  },
   "reach-school": {
     term: "Reach",
     short: "A college where your profile is below what's typically admitted: a real chance, not a guarantee.",

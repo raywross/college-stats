@@ -118,13 +118,43 @@ function fullSchool(over: Partial<PlanSchool> = {}): PlanSchool {
       "reported.test_policy": cite("2026–27"),
     },
     applicationFee: 75,
+    // Common App build (common-app-build/brief.md U4): a member with a grid row. Deadlines left null throughout so
+    // the existing CDS-sourced deadline assertions below are untouched (deadlineFor/applyDate fall back to the CDS
+    // record when the grid doesn't offer a round).
+    apply: {
+      common_app: { member: true, member_id: "1234", slug: "michigan", cycle: "2026-27", updated: "2026-09-25" },
+      deadlines: { ed: null, ed2: null, ea: null, ea2: null, rea: null, regular: null },
+      fee: { us: 75, international: 75 },
+      fee_waiver: "accepted",
+      essay_required: true,
+      courses_grades_required: false,
+      writing_supplement: false,
+      portfolio: null,
+      test_policy: { code: "N", tests_used: null, english_tests: [] },
+      recommendations: { teacher: 2, other: 0, counselor: true, mid_year_report: true },
+      school_type: "coed",
+      saves_forms: true,
+    },
     ...over,
   } as PlanSchool;
 }
 
-/** A college with no CDS record at all. */
-function emptySchool(): PlanSchool {
-  return fullSchool({ unit_id: "200", name: "Quiet College", profile: null, logistics: null, aid: null, testPolicy: null, satRange: null, actRange: null, cites: {}, applicationFee: null });
+/** A college with no CDS record at all, and (unless overridden) no Common App grid data either. */
+function emptySchool(over: Partial<PlanSchool> = {}): PlanSchool {
+  return fullSchool({
+    unit_id: "200",
+    name: "Quiet College",
+    profile: null,
+    logistics: null,
+    aid: null,
+    testPolicy: null,
+    satRange: null,
+    actRange: null,
+    cites: {},
+    applicationFee: null,
+    apply: null,
+    ...over,
+  });
 }
 
 const input = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
@@ -149,7 +179,8 @@ const input = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
 
 test("requirementsFor: every line is published for a college with full CDS data", () => {
   const reqs = requirementsFor(item(), fullSchool(), null);
-  assert.equal(reqs.length, 8);
+  // Common App build (U4): the grid adds a ninth line, "recommendations".
+  assert.equal(reqs.length, 9);
   for (const r of reqs) assert.equal(r.published, true, r.key);
   assert.match(reqs.find((r) => r.key === "deadline")!.text, /Apply by Jan 15/);
   assert.match(reqs.find((r) => r.key === "fee")!.text, /\$75/);
@@ -157,11 +188,12 @@ test("requirementsFor: every line is published for a college with full CDS data"
   assert.match(reqs.find((r) => r.key === "aid_forms")!.text, /FAFSA/);
   assert.match(reqs.find((r) => r.key === "interest")!.text, /considers your interest/);
   assert.match(reqs.find((r) => r.key === "interview")!.text, /isn't considered/);
+  assert.match(reqs.find((r) => r.key === "recommendations")!.text, /two teacher evaluations/i);
 });
 
 test("requirementsFor: a college with no CDS record says the rest isn't published, and falls back to the student's own deadline and the federal fee", () => {
   const noFee = requirementsFor(item(), emptySchool(), null);
-  for (const key of ["test_policy", "aid_forms", "interest", "interview"] as const) {
+  for (const key of ["test_policy", "aid_forms", "interest", "interview", "recommendations"] as const) {
     const r = noFee.find((x) => x.key === key)!;
     assert.equal(r.published, false, key);
     assert.match(r.text, /hasn't published/);
@@ -317,17 +349,21 @@ test("generate: a withdrawn college gets no sub-tasks", () => {
 });
 
 test("platformsFor offers only the platforms a college can take", () => {
-  const school = (over: Partial<Pick<PlanSchool, "state" | "type" | "name" | "links">>) => ({ state: "FL", type: "public" as const, name: "University of Florida", links: null, ...over });
-  // Florida's public flagship: no ApplyTexas, no UC application.
-  assert.deepEqual(platformsFor(school({})), ["common_app", "coalition", "own", "other"]);
+  const school = (over: Partial<Pick<PlanSchool, "state" | "type" | "name" | "links" | "apply">>) => ({ state: "FL", type: "public" as const, name: "University of Florida", links: null, ...over });
+  // common-app-build/brief.md U4: the Common App is offered only to a college the grid marks as a member.
+  const member = { common_app: { member: true as const, member_id: null, slug: "university-of-florida", cycle: "2026-27", updated: "2026-09-25" } } as PlanSchool["apply"];
+  // Florida's public flagship, not a Common App member here: no ApplyTexas, no UC application, no Common App either.
+  assert.deepEqual(platformsFor(school({})), ["coalition", "own", "other"]);
+  // The same college as a Common App member: Common App leads the list.
+  assert.deepEqual(platformsFor(school({ apply: member })), ["common_app", "coalition", "own", "other"]);
   // A Texas public college gets ApplyTexas; so does anyone whose apply link points there.
-  assert.deepEqual(platformsFor(school({ state: "TX", name: "The University of Texas at Austin" })), ["common_app", "coalition", "apply_texas", "own", "other"]);
+  assert.deepEqual(platformsFor(school({ state: "TX", name: "The University of Texas at Austin" })), ["coalition", "apply_texas", "own", "other"]);
   assert.ok(platformsFor(school({ links: { apply: "https://www.applytexas.org/" } as PlanSchool["links"] })).includes("apply_texas"));
   // A Texas private college doesn't.
   assert.ok(!platformsFor(school({ state: "TX", type: "private-nonprofit", name: "Rice University" })).includes("apply_texas"));
-  // The University of California takes only its own application.
-  assert.deepEqual(platformsFor(school({ state: "CA", name: "University of California-Berkeley" })), ["uc", "other"]);
-  assert.deepEqual(platformsFor(school({ state: "CA", name: "Stanford University", type: "private-nonprofit" })), ["common_app", "coalition", "own", "other"]);
-  // No school at all: the general set.
-  assert.deepEqual(platformsFor(null), ["common_app", "coalition", "own", "other"]);
+  // The University of California takes only its own application, member or not.
+  assert.deepEqual(platformsFor(school({ state: "CA", name: "University of California-Berkeley", apply: member })), ["uc", "other"]);
+  assert.deepEqual(platformsFor(school({ state: "CA", name: "Stanford University", type: "private-nonprofit", apply: member })), ["common_app", "coalition", "own", "other"]);
+  // No school at all: the general set, no Common App without a known membership.
+  assert.deepEqual(platformsFor(null), ["coalition", "own", "other"]);
 });

@@ -175,6 +175,13 @@
       "edition": "2024–25 (IC2024)",
       "url": "https://nces.ed.gov/ipeds/complete-data-files/IC2024.zip",
       "description": "Whether the college admits everyone who applies (an open-admission policy). From the newest Institutional Characteristics file that answers it: NCES leaves the answer blank in a new file until it revises it."
+    },
+    "common-app": {
+      "label": "Common App",
+      "publisher": "Common App, Inc.",
+      "edition": "2026-27 Requirements Grid, updated September 25, 2026; member pages read October 25, 2026",
+      "url": "https://www.commonapp.org",
+      "description": "The application more than a thousand colleges share. Its Requirements Grid lists, for each member college, the application deadlines by round, the fee and whether the Common App fee waiver is taken, the essay, writing supplement, and Courses & Grades requirements, the test policy, and the recommendations required. Each member's own Common App page adds whether it offers aid to international students, its other names, and links to its transfer guarantee and DACA aid pages. Shown only for members; read with Common App's permission."
     }
   },
   "vintages": {
@@ -198,6 +205,8 @@
     "scorecard-retention": "Entered fall 2023",
     "scorecard-latest": null,
     "scorecard-fos": null,
-    "ipeds-ic-open": "2024–25"
+    "ipeds-ic-open": "2024–25",
+    "common-app-grid": "2026-27 cycle, updated September 25, 2026",
+    "common-app-members": "Member pages read October 25, 2026"
   }
 }

@@ -9,7 +9,7 @@
  * line); the advantage is a multiple of the non-ED rate, never odds; dates come from the edition on record, and a date
  * from an earlier cycle's edition says so.
  */
-import { ROUND_LABELS, type ListRound } from "../list-rules.ts";
+import { ROUND_LABELS, gridDeadline, type DeadlineGrid, type ListRound } from "../list-rules.ts";
 import { money as usd } from "../format.ts";
 import { advantageLine, classShareLine, earlyMeasures, type EarlyMeasures } from "../early.ts";
 import type { PlanItem, PlanSchool } from "./types.ts";
@@ -20,7 +20,7 @@ import type { PlanItem, PlanSchool } from "./types.ts";
 
 /** The slice of PlanSchool this module reads. */
 export type RoundsSchool = Pick<PlanSchool, "unit_id" | "name" | "profile" | "logistics" | "cycleStartYear" | "editionIsLastCycle" | "cites" | "admitRate" | "avgCost" | "links"> &
-  Partial<Pick<PlanSchool, "type" | "edTotals">>;
+  Partial<Pick<PlanSchool, "type" | "edTotals" | "apply">>;
 
 /** The slice of a list item this module reads. */
 export type RoundsItem = Pick<PlanItem, "id" | "unit_id" | "category" | "status" | "outcome" | "round" | "position"> & Partial<Pick<PlanItem, "dream" | "priority">>;
@@ -38,11 +38,41 @@ export const EARLY: readonly ListRound[] = ["ed", "ed2", "ea", "rea"];
 /* ------------------------------------------------------------------ */
 
 /**
- * Whether a college offers `round` in its published rounds: true, false (the record says no), or null (the college
- * hasn't published that part). ED and ED II read C21 (ED II is the "other" round), EA and REA read C22 (restrictive
- * splits them; single-choice early action is restrictive in the CDS), rolling and regular read C16/C14.
+ * Whether the Requirements Grid's own deadlines say a round is offered (common-app-build/brief.md U4 "Rounds
+ * offered"): true/false whenever the college has a grid row (a blank cell is a real "not offered", the grid is
+ * complete per row), null without one, so the caller falls back to the CDS record. `ea` folds in the grid's `ea2`
+ * column (Early Action II; the site has no separate round for it, so either makes `ea` true); `rd` is false only
+ * when the regular round is "rolling" (a rolling-only college with no fixed regular deadline).
  */
-export function isOffered(school: Pick<RoundsSchool, "profile" | "logistics"> | null | undefined, round: ListRound): boolean | null {
+function gridOffered(deadlines: DeadlineGrid | null | undefined, round: ListRound): boolean | null {
+  if (!deadlines) return null;
+  switch (round) {
+    case "ed":
+      return deadlines.ed !== null;
+    case "ed2":
+      return deadlines.ed2 !== null;
+    case "ea":
+      return deadlines.ea !== null || deadlines.ea2 !== null;
+    case "rea":
+      return deadlines.rea !== null;
+    case "rolling":
+      return deadlines.regular === "rolling";
+    case "rd":
+      return deadlines.regular === null ? null : deadlines.regular !== "rolling";
+  }
+}
+
+/**
+ * Whether a college offers `round` in its published rounds: true, false (the record says no), or null (the college
+ * hasn't published that part). The Requirements Grid's own deadlines decide first when the college has a grid row
+ * (U4: "prefer the grid's non-null deadlines... over the CDS C21/C22 when the grid is present"); otherwise ED and
+ * ED II read C21 (ED II is the "other" round), EA and REA read C22 (restrictive splits them; single-choice early
+ * action is restrictive in the CDS), rolling and regular read C16/C14. The CDS ED applicant/admit counts stay the
+ * advantage math's own source either way (lib/early.ts, unaffected by this).
+ */
+export function isOffered(school: Pick<RoundsSchool, "profile" | "logistics" | "apply"> | null | undefined, round: ListRound): boolean | null {
+  const grid = gridOffered(school?.apply?.deadlines, round);
+  if (grid !== null) return grid;
   const ed = school?.profile?.early_decision;
   const ea = school?.profile?.early_action;
   const lg = school?.logistics ?? null;
@@ -73,15 +103,15 @@ export interface RoundsOffered {
   published: boolean;
 }
 
-export function roundsOffered(school: Pick<RoundsSchool, "profile" | "logistics"> | null | undefined): RoundsOffered {
+export function roundsOffered(school: Pick<RoundsSchool, "profile" | "logistics" | "apply"> | null | undefined): RoundsOffered {
   const offered = ROUND_ORDER.filter((r) => isOffered(school, r) === true);
   const pickable = ROUND_ORDER.filter((r) => isOffered(school, r) !== false);
-  const published = !!(school?.profile?.early_decision || school?.profile?.early_action || school?.logistics);
+  const published = !!(school?.apply?.deadlines || school?.profile?.early_decision || school?.profile?.early_action || school?.logistics);
   return { offered, pickable, published };
 }
 
 /** Whether the college offers any early round (the stage machine's "a college that offers an early round"). */
-export function offersEarly(school: Pick<RoundsSchool, "profile" | "logistics"> | null | undefined): boolean {
+export function offersEarly(school: Pick<RoundsSchool, "profile" | "logistics" | "apply"> | null | undefined): boolean {
   return EARLY.some((r) => isOffered(school, r) === true);
 }
 
@@ -146,9 +176,28 @@ export function cycleLabel(startYear: number): string {
   return `${startYear}–${String((startYear + 1) % 100).padStart(2, "0")}`;
 }
 
-/** A round's closing and notification dates resolved in the student's cycle, with their fields and edition. */
+/** The field every grid date is cited to (lib/fields.ts; PlanSchool.cites["apply.deadlines"]). */
+export const GRID_DEADLINES_FIELD = "apply.deadlines";
+
+/** "2026-27" (the grid's cycle) → 2026; null for anything else. */
+const gridCycleStart = (cycle: string | null | undefined) => {
+  const m = cycle?.match(/^(\d{4})[-–]\d{2}$/);
+  return m ? Number(m[1]) : null;
+};
+
+/**
+ * A round's closing and notification dates resolved in the student's cycle, with their fields and edition. The
+ * Common App Requirements Grid's own date for the round comes first when the college has a grid row (the same
+ * precedence as lib/list-rules.ts deadlineFor; specs/data-expansion/common-app.md "Store"): an ISO date already in
+ * the grid's cycle, cited to `apply.deadlines`, with the grid's cycle as the edition (so a grid from an earlier
+ * cycle than the student's says "last cycle" like a CDS edition would). The grid has no notification dates and no
+ * priority date for rolling admission, so those still come from the CDS; a "rolling" regular round has no closing
+ * date and falls through to the CDS as well.
+ */
 export function roundDates(school: RoundsSchool | null | undefined, round: ListRound): RoundDates {
   if (!school) return { closing: null, notification: null, edition: null, lastCycle: false };
+  const grid = gridDeadline(school.apply?.deadlines, round);
+  const gridIso = grid && grid !== "rolling" ? grid : null;
   const ed = school.profile?.early_decision;
   const ea = school.profile?.early_action;
   const lg = school.logistics;
@@ -178,8 +227,17 @@ export function roundDates(school: RoundsSchool | null | undefined, round: ListR
       break;
   }
   const f = ROUND_FIELDS[round];
-  const c = resolveMonthDay(closing, school.cycleStartYear);
   const n = resolveMonthDay(notification, school.cycleStartYear);
+  if (gridIso) {
+    const start = gridCycleStart(school.apply?.common_app.cycle);
+    return {
+      closing: { iso: gridIso, field: GRID_DEADLINES_FIELD },
+      notification: n && f.notification ? { iso: n, field: f.notification } : null,
+      edition: start !== null ? cycleLabel(start) : null,
+      lastCycle: start !== null ? start < school.cycleStartYear : false,
+    };
+  }
+  const c = resolveMonthDay(closing, school.cycleStartYear);
   const edition = editionOf(school, c ? f.closing : n ? f.notification : f.closing);
   const start = editionStart(edition);
   return {

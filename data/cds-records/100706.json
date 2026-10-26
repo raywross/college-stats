@@ -559,7 +559,7 @@
       "D.210": {"v":294,"status":"passed","page":12,"line":631,"quote":"Females | 703 | 516 | 294"},
       "D.211": {"status":"not-found"},
       "D.212": {"v":626,"status":"passed","page":12,"line":633,"quote":"Total | 1,380 | 1,024 | 626"},
-      "D.301": {"v":true,"status":"failed","page":12,"line":636,"quote":"Fall","failures":[{"check":"number-on-line","detail":"true isn't on line 636: \"@66 Fall\""}]},
+      "D.301": {"status":"blank","page":12,"line":636},
       "D.302": {"status":"not-found"},
       "D.303": {"status":"not-found"},
       "D.304": {"status":"not-found"},

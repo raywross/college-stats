@@ -774,7 +774,7 @@
       "H.101": {"v":"2024-2025 Final","status":"failed","page":19,"line":1045,"quote":"X","failures":[{"check":"number-on-line","detail":"2024-2025 Final isn't on line 1045: \"@535 X\""}]},
       "H.102": {"status":"not-found"},
       "H.103": {"status":"not-found"},
-      "H.104": {"v":true,"status":"failed","page":19,"line":1050,"quote":"X | Both FM and IM","failures":[{"check":"inconsistent","detail":"institutional methodology without the CSS Profile or the college's own form"}]},
+      "H.104": {"v":true,"status":"passed","page":19,"line":1050,"quote":"X | Both FM and IM"},
       "H.105": {"v":12198205,"status":"passed","page":20,"line":1061,"quote":"Federal | $12,198,205 | $15,088"},
       "H.106": {"v":1829604,"status":"passed","page":20,"line":1062,"quote":"State all states, not only the state in which your institution is located | $1,829,604 | $89,238"},
       "H.107": {"v":24499501,"status":"passed","page":20,"line":1064,"quote":"awarded by the college, excluding athletic aid and tuition waivers (which are | $24,499,501 | $18,903,901"},

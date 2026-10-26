@@ -926,7 +926,7 @@
       "H.1408": {"status":"not-found"},
       "H.1409": {"status":"not-found"},
       "H.1410": {"status":"not-found"},
-      "H.1411": {"v":true,"status":"failed","page":23,"line":1195,"quote":"Academics","failures":[{"check":"number-on-line","detail":"true isn't on line 1195: \"@78 Academics\""}]},
+      "H.1411": {"status":"blank","page":23,"line":1195},
       "H.1412": {"status":"not-found"},
       "H.1413": {"status":"not-found"},
       "H.1414": {"status":"not-found"},

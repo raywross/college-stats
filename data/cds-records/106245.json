@@ -683,7 +683,7 @@
       "F.114": {"status":"not-read"},
       "F.115": {"status":"not-read"},
       "F.116": {"status":"not-read"},
-      "F.201": {"v":true,"status":"failed","page":21,"line":751,"quote":"Campus Ministries","failures":[{"check":"number-on-line","detail":"true isn't on line 751: \"@40 Campus Ministries\""}]},
+      "F.201": {"status":"blank","page":21,"line":751},
       "F.202": {"status":"not-read"},
       "F.203": {"status":"not-read"},
       "F.204": {"status":"not-read"},

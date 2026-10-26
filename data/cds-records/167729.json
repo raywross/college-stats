@@ -919,7 +919,7 @@
       "H.1401": {"status":"not-found"},
       "H.1402": {"status":"not-found"},
       "H.1403": {"status":"not-found"},
-      "H.1404": {"v":true,"status":"failed","page":37,"line":1294,"lines":[1294,1289],"quote":"Athletics | ܆ | ܆ / H14. Check off criteria used in awarding institutional aid. Check all that apply.","failures":[{"check":"number-on-line","detail":"true isn't on line 1294, 1289: \"@71 Athletics | @219 ܆ | @309 ܆\""}]},
+      "H.1404": {"status":"blank","page":37,"line":1294,"lines":[1294,1289]},
       "H.1405": {"status":"not-found"},
       "H.1406": {"status":"not-found"},
       "H.1407": {"status":"not-found"},

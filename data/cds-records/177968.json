@@ -774,7 +774,7 @@
       "H.101": {"v":"2024-2025 Final","status":"passed","cell":"CDS-H!AC2","quote":"Academic Year | 2024-2025 Final"},
       "H.102": {"status":"blank"},
       "H.103": {"status":"blank"},
-      "H.104": {"v":true,"status":"failed","cell":"CDS-H!AC5","quote":"Both FM and IM | X","failures":[{"check":"inconsistent","detail":"institutional methodology without the CSS Profile or the college's own form"}]},
+      "H.104": {"v":true,"status":"passed","cell":"CDS-H!AC5","quote":"Both FM and IM | X"},
       "H.105": {"v":10486684,"status":"passed","cell":"CDS-H!AC6","quote":"Federal | 10486684"},
       "H.106": {"v":5862668.93,"status":"passed","cell":"CDS-H!AC7","quote":"State all states, not only the state in which your institution is located | 5862668.93"},
       "H.107": {"v":22067621.26,"status":"passed","cell":"CDS-H!AC8","quote":"Institutional: Endowed scholarships, annual gifts and tuition funded grants, awarded by the college, excluding athletic aid and tuition waivers (… | 22067621.26"},

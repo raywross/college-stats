@@ -133,10 +133,13 @@ export function rawInputs(school: School): RawInputs {
   const a = school.admissions;
   const sat = satTotal(school);
   const act = a.act_composite_25_75;
-  const res = school.type === "public" ? admitRatesByResidency(school) : null;
+  // An open-admission college (lib/open-admission.ts) is unrated in every pool: it admits everyone, so a rate its CDS
+  // states, overall or by residency, says nothing about selectivity (University of Alaska Fairbanks, 2026-10-26).
+  const open = a.open_admission === true;
+  const res = school.type === "public" && !open ? admitRatesByResidency(school) : null;
   const pools = res && res.in_state !== null && res.out_of_state !== null;
   return {
-    admitRate: a.acceptance_rate,
+    admitRate: open ? null : a.acceptance_rate,
     inStateRate: pools ? res.in_state : null,
     outOfStateRate: pools ? res.out_of_state : null,
     sat75: sat ? sat[1] : act ? actToSat(act[1]) : null,

@@ -751,7 +751,7 @@
       "G.201": {"status":"not-read"},
       "G.202": {"status":"not-read"},
       "G.301": {"v":false,"status":"passed","page":19,"line":925,"lines":[925,927],"quote":"Yes | No / X"},
-      "G.401": {"v":false,"status":"failed","page":19,"line":929,"lines":[929,930],"quote":"G4 Do tuition and fees vary by undergraduate instructional / X","failures":[{"check":"number-on-line","detail":"false isn't on line 929, 930: \"@58 G4 Do tuition and fees vary by undergraduate instructional\""}]},
+      "G.401": {"status":"blank","page":19,"line":929,"lines":[929,930]},
       "G.402": {"status":"not-found"},
       "G.501": {"v":1120,"status":"passed","page":19,"line":938,"quote":"Books and supplies: | $1,120 | $1,120 | $1,120"},
       "G.502": {"v":2110,"status":"passed","page":19,"line":942,"quote":"Transportation: | $2,110 | $2,800 | $2,800"},

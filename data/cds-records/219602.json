@@ -893,7 +893,7 @@
       "H.1001": {"status":"not-found"},
       "H.1002": {"status":"not-found"},
       "H.1003": {"status":"not-found"},
-      "H.1004": {"v":true,"status":"failed","page":35,"line":1255,"quote":"4 Students notified on a rolling basis","failures":[{"check":"number-on-line","detail":"true isn't on line 1255: \"@80 4 Students notified on a rolling basis\""}]},
+      "H.1004": {"status":"blank","page":35,"line":1255},
       "H.1005": {"v":2,"status":"passed","page":35,"line":1256,"quote":"2 | 1"},
       "H.1006": {"v":1,"status":"passed","page":35,"line":1256,"quote":"2 | 1"},
       "H.1101": {"status":"not-found"},

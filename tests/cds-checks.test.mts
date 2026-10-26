@@ -28,6 +28,7 @@ import {
   reviewItemsFor,
   runItemChecks,
   valueOnLine,
+  markState,
   type CheckContext,
   type FederalBaseline,
 } from "../lib/cds-checks.ts";
@@ -239,6 +240,58 @@ test("universal (model reads): the value must be on its cited line, and the line
   assert.ok(valueOnLine("Closing date: November 1", 11, { value_type: "month" }));
 });
 
+test("universal (model reads): a checkbox passes on a mark glyph, is unreadable on a bare label, and is held on an empty box", () => {
+  // Marks as extraction prints them: Wingdings' private-use check (U+F0FC) and crossed box (U+F0FE) are marks; an
+  // empty box (☐, or the box glyph U+057F) answers "no".
+  assert.ok(valueOnLine("Does your institution have an application fee? | \uf0fc", true, { value_type: "check" }));
+  assert.ok(valueOnLine("\uf0fe | Accelerated Program", true, { value_type: "check" }));
+  assert.ok(valueOnLine("☐ Fraternity/sorority housing", false, { value_type: "check" }));
+  assert.ok(valueOnLine("տ Study abroad", false, { value_type: "check" }));
+  assert.ok(!valueOnLine("☐ Fraternity/sorority housing", true, { value_type: "check" }));
+  assert.equal(markState("@72 Fraternity/sorority housing"), null);
+  assert.equal(markState("@72 Coed residence halls | @287 \uf0fc"), "marked");
+  assert.equal(markState("☐ Campus Ministries"), "unmarked");
+
+  // A box whose mark never reached the text: the model's answer is unreadable, and the item ends blank, not held.
+  const { d, lines } = modelDoc();
+  lines[18] = "Does your institution offer an early decision plan?";
+  const r = runItemChecks(d, { table: T, lines });
+  assert.deepEqual(r.unreadable, ["C.2101"]);
+  assert.ok(!r.byCode["C.2101"]?.some((f) => f.check === "number-on-line"), "no line hold on an unreadable box");
+  const blank = applyChecks(d, { table: T, lines }).items["C.2101"];
+  assert.equal(blank.status, "blank");
+  assert.equal(blank.v, undefined);
+  assert.equal(blank.failures, undefined);
+  // An empty box beside the label contradicts "true": held, as before.
+  lines[18] = "☐ Does your institution offer an early decision plan?";
+  assert.deepEqual(runItemChecks(d, { table: T, lines }).byCode["C.2101"].map((f) => f.check), ["number-on-line"]);
+  assert.equal(applyChecks(d, { table: T, lines }).items["C.2101"].status, "failed");
+  // Decided before the checks run: the ED counts' C21 check sees the box as unread in the same pass, and a second
+  // pass changes nothing (check-cds-records relies on that).
+  lines[18] = "Does your institution offer an early decision plan?";
+  const once = applyChecks(d, { table: T, lines });
+  assert.ok(once.items["C.2110"].failures?.some((f) => f.check === "inconsistent"), "C21 sees no ED answer");
+  assert.deepEqual(applyChecks(once, { table: T, lines }), once);
+
+  // A re-check without the archived lines judges a checkbox's kept hold from the line its detail quotes.
+  const held = (line: string): DocumentRecord => {
+    const { d: h } = modelDoc();
+    h.items["C.2101"] = { v: true, status: "failed", page: 7, line: 19, failures: [{ check: "number-on-line", detail: `true isn't on line 19: "${line}"` }] };
+    return h;
+  };
+  const passes = applyChecks(held("@60 \uf0fc Does your institution offer an early decision plan?"), { table: T }).items["C.2101"];
+  assert.equal(passes.status, "passed");
+  assert.equal(passes.failures, undefined);
+  const unreadable = applyChecks(held("@60 Does your institution offer an early decision plan?"), { table: T }).items["C.2101"];
+  assert.equal(unreadable.status, "blank");
+  assert.equal(unreadable.v, undefined);
+  const contradicted = applyChecks(held("☐ Does your institution offer an early decision plan?"), { table: T }).items["C.2101"];
+  assert.equal(contradicted.status, "failed");
+  assert.deepEqual(contradicted.failures?.map((f) => f.check), ["number-on-line"]);
+  const again = applyChecks(held("@60 Does your institution offer an early decision plan?"), { table: T });
+  assert.deepEqual(applyChecks(again, { table: T }), again);
+});
+
 test("universal (model reads): the cover's edition must be the one the document is filed under", () => {
   const { d, lines } = modelDoc();
   assert.equal(coverEdition(lines), "2025-26");
@@ -406,6 +459,11 @@ test("H4, H5, H6: class ≤ B1; borrowers in order; federal-row debt near Scorec
 
 test("H8, H9–H11: FAFSA with any form; aid dates in cycle order", () => {
   failsExactly(VU, (d) => (d.items["H.801"] = { status: "blank" }), "inconsistent", ["H.803"]);
+  // The methodology rules need the other boxes read as unchecked: an unread box (blank) says nothing.
+  assert.equal(added(VU, (d) => { set(d, "H.103", true); set(d, "H.803", false); }).size, 0, "H.802 unread: no verdict");
+  failsExactly(VU, (d) => { set(d, "H.103", true); set(d, "H.104", false); set(d, "H.802", false); set(d, "H.803", false); }, "inconsistent", ["H.103", "H.104"]);
+  assert.equal(added(VU, (d) => { set(d, "H.102", true); }).size, 0, "H.103/H.104 unread: federal-only is not established");
+  failsExactly(VU, (d) => { set(d, "H.102", true); set(d, "H.103", false); set(d, "H.104", false); }, "inconsistent", ["H.102", "H.803"]);
   failsExactly(VU, (d) => set(d, "H.1101", 3), "date-order", ["H.1101", "H.1102"]);
 });
 

@@ -66,7 +66,10 @@ export function applyNewest(school: School, opts: { factorsYear?: number | null 
   const replacedCounts = COUNTS.filter((k) => k in values);
 
   let rateReplaced = false;
-  if (replaceable("acceptance_rate")) {
+  // An open-admission college (IPEDS, lib/open-admission.ts) has no admit rate: its CDS funnel may say it admitted
+  // everyone, but the rate stays null, as the health view, the estimate, and selectivity all read it (Cameron
+  // University's 748 of 748, run 20261019-191037-103).
+  if (a.open_admission !== true && replaceable("acceptance_rate")) {
     if (r.acceptance_rate != null) {
       values.acceptance_rate = r.acceptance_rate;
       const rec = copy(rep("acceptance_rate"));

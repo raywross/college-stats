@@ -773,7 +773,7 @@
       "G.605": {"v":890,"status":"passed","page":11,"line":693,"quote":"NONRESIDENTS: | $890"},
       "H.101": {"v":"2024-2025 Final","status":"passed","page":13,"line":746,"lines":[746,748],"quote":"2025-2026 Estimated | 2024-2025 Final / X"},
       "H.102": {"status":"not-found"},
-      "H.103": {"v":true,"status":"failed","page":13,"line":753,"quote":"X | Both FM and IM","failures":[{"check":"inconsistent","detail":"institutional methodology without the CSS Profile or the college's own form"}]},
+      "H.103": {"v":true,"status":"passed","page":13,"line":753,"quote":"X | Both FM and IM"},
       "H.104": {"status":"not-found"},
       "H.105": {"v":4871505,"status":"passed","page":13,"line":762,"quote":"Federal | $4,871,505 | $0"},
       "H.106": {"v":2608748,"status":"passed","page":13,"line":763,"quote":"State all states, not only the state in which your institution is located | $2,608,748 | $249,257"},

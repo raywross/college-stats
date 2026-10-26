@@ -498,7 +498,7 @@
       "C.1303": {"status":"not-found"},
       "C.1304": {"status":"not-found"},
       "C.1305": {"status":"not-found"},
-      "C.1401": {"v":false,"status":"failed","page":14,"line":602,"quote":"Does your institution have an application closing date?","failures":[{"check":"number-on-line","detail":"false isn't on line 602: \"@65 Does your institution have an application closing date?\""}]},
+      "C.1401": {"status":"blank","page":14,"line":602},
       "C.1402": {"status":"not-found"},
       "C.1403": {"status":"not-found"},
       "C.1404": {"status":"not-found"},

@@ -773,7 +773,7 @@
       "G.605": {"status":"not-found"},
       "H.101": {"v":"2023-2024","status":"failed","page":21,"line":1007,"quote":"X","failures":[{"check":"number-on-line","detail":"2023-2024 isn't on line 1007: \"@345 X\""}]},
       "H.102": {"status":"not-found"},
-      "H.103": {"v":true,"status":"failed","page":22,"line":1014,"quote":"X | Both FM and IM","failures":[{"check":"inconsistent","detail":"institutional methodology without the CSS Profile or the college's own form"}]},
+      "H.103": {"v":true,"status":"passed","page":22,"line":1014,"quote":"X | Both FM and IM"},
       "H.104": {"status":"not-found"},
       "H.105": {"v":2677988,"status":"passed","page":22,"line":1027,"quote":"Federal | $2,677,988 | $0"},
       "H.106": {"v":2374603,"status":"passed","page":22,"line":1029,"quote":"$2,374,603 | $0"},

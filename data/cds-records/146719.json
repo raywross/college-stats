@@ -297,7 +297,7 @@
       "C.128": {"v":362,"status":"passed","page":11,"line":460,"quote":"Total first-time, first-year (degree-seeking) who applied | 20089 | 15530 | 7973 | 362 ##"},
       "C.129": {"v":164,"status":"passed","page":11,"line":461,"quote":"Total first-time, first-year (degree-seeking) who were | 15546 | 13530 | 3769 | 164 ##"},
       "C.130": {"status":"not-found"},
-      "C.201": {"v":false,"status":"failed","page":11,"line":465,"lines":[465,468],"quote":"Do you have a policy of placing students on a waiting list? / Number of qualified applicants offered a place on waiting | 0","failures":[{"check":"number-on-line","detail":"false isn't on line 465, 468: \"@63 Do you have a policy of placing students on a waiting list?\""}]},
+      "C.201": {"status":"blank","page":11,"line":465,"lines":[465,468]},
       "C.202": {"status":"not-found"},
       "C.203": {"status":"not-found"},
       "C.204": {"status":"not-found"},

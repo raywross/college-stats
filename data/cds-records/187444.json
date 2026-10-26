@@ -607,7 +607,7 @@
       "D.930": {"status":"not-found"},
       "D.931": {"status":"not-found"},
       "D.932": {"status":"not-found"},
-      "D.933": {"v":true,"status":"failed","page":15,"line":735,"quote":"D9 | Rolling","failures":[{"check":"number-on-line","detail":"true isn't on line 735: \"@44 D9 | @377 Rolling\""}]},
+      "D.933": {"status":"blank","page":15,"line":735},
       "D.934": {"status":"not-found"},
       "D.935": {"status":"not-found"},
       "D.936": {"status":"not-found"},

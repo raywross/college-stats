@@ -10399,7 +10399,7 @@
         "acceptanceRate": 0.7958,
         "avgCost": 18904,
         "outOfState": 0.3138,
-        "testOptionalShare": 0.5333,
+        "testOptionalShare": 0.5,
         "netInflow": 0.1658
       },
       "all": {
@@ -11863,7 +11863,7 @@
       },
       "map": {
         "undergradChange": -0.0492,
-        "acceptanceRate": 0.7068,
+        "acceptanceRate": 0.7035,
         "avgCost": 33912,
         "outOfState": 0.1141,
         "testOptionalShare": 0.7606,
@@ -21481,7 +21481,7 @@
         "acceptanceRate": 0.7654,
         "avgCost": 24492,
         "outOfState": 0.1121,
-        "testOptionalShare": 0.5455,
+        "testOptionalShare": 0.5325,
         "netInflow": 0.0869
       },
       "all": {
@@ -21991,7 +21991,7 @@
         "acceptanceRate": 0.76,
         "avgCost": 20507,
         "outOfState": 0.1039,
-        "testOptionalShare": 0.25,
+        "testOptionalShare": 0.2917,
         "netInflow": 0.2091
       },
       "all": {
@@ -22566,7 +22566,7 @@
       },
       "map": {
         "undergradChange": -0.086,
-        "acceptanceRate": 0.8674,
+        "acceptanceRate": 0.862,
         "avgCost": 30116,
         "outOfState": 0.3064,
         "testOptionalShare": 0.88,
@@ -23584,7 +23584,7 @@
       },
       "map": {
         "undergradChange": -0.173,
-        "acceptanceRate": 0.8205,
+        "acceptanceRate": 0.8294,
         "avgCost": 28858,
         "outOfState": 0.1446,
         "testOptionalShare": 0.7009,
@@ -26305,7 +26305,7 @@
       },
       "map": {
         "undergradChange": -0.1608,
-        "acceptanceRate": 0.6927,
+        "acceptanceRate": 0.6915,
         "avgCost": 21445,
         "outOfState": 0.1141,
         "testOptionalShare": 0.4091,

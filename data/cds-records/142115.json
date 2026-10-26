@@ -726,7 +726,7 @@
       "F.413": {"status":"not-read"},
       "F.414": {"status":"not-read"},
       "G.001": {"v":"https://www.boisestate.edu/ie/wp-content/uploads/sites/501/2022/05/CDS_2021-22-5.23.22.pdf","status":"failed","page":18,"line":818,"quote":"G0 Please provide the URL of your institution’s net price calculator:","failures":[{"check":"number-on-line","detail":"https://www.boisestate.edu/ie/wp-content/uploads/sites/501/2022/05/CDS_2021-22-5.23.22.pdf isn't on line 818: \"@44 G0 Please provide the URL of your institution’s net price calculator:\""}]},
-      "G.002": {"v":true,"status":"failed","page":18,"line":821,"quote":"XX | Check here if your institution's 2022-2023 academic year costs of attendance are not available at this time","failures":[{"check":"number-on-line","detail":"true isn't on line 821: \"@46 XX | @68 Check here if your institution's 2022-2023 academic year costs of attendance are not av\""}]},
+      "G.002": {"status":"blank","page":18,"line":821},
       "G.003": {"v":"--06-01","status":"passed","page":18,"line":824,"quote":"June 1, 2022"},
       "G.101": {"status":"not-found"},
       "G.102": {"status":"not-found"},

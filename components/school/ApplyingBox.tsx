@@ -3,6 +3,7 @@ import type { Cited } from "@/lib/lineage";
 import type { FieldPath } from "@/lib/fields";
 import type { TermKey } from "@/lib/glossary";
 import { applyingLines } from "@/lib/cds/application-logistics-display";
+import { newestRegularDeadline } from "@/lib/common-app/display";
 import { Block } from "@/components/profile/Panel";
 import { MetricLabel } from "@/components/ui/info-tip";
 
@@ -14,8 +15,15 @@ import { MetricLabel } from "@/components/ui/info-tip";
  */
 export function ApplyingBox({ school, cite, id }: { school: School; cite: (path: FieldPath, school?: School) => Cited; id?: string }) {
   const l = school.reported?.admissions_logistics;
-  const lines = applyingLines(school);
-  if (!l || !lines.length) return null;
+  if (!l) return null;
+  let lines = applyingLines(school);
+  // The Common App Requirements Grid's own regular-round date, when it's the newer statement: this line drops, and
+  // the grid's card (WhatItTakes) shows the Common Data Set's date instead, as a muted line under its rounds.
+  if (school.apply) {
+    const reconciled = newestRegularDeadline(school.apply, l);
+    if (reconciled?.winner === "grid") lines = lines.filter((line) => line.key !== "regular_closing");
+  }
+  if (!lines.length) return null;
   const term = (key: string): TermKey | undefined =>
     key === "priority_date"
       ? "priority-date"

@@ -154,17 +154,8 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote: "Measures from Common Data Set numbers the agent already collects, plus a profile section and filters.",
     status: "planned",
   },
-  {
-    slug: "common-app",
-    file: "specs/data-expansion/common-app.md",
-    group: "planning",
-    summary:
-      "Deadlines, fees, essays, recommendations, and this cycle's test policy for the thousand colleges that take the Common App, plus how the application season is going nationally months before federal data, once Common App agrees to the use.",
-    complexity: 2,
-    complexityNote:
-      "A PDF grid parsed by column, a name-to-id join, a block of fields and a source, one profile card, six filters, and a permission letter that sets the start date.",
-    status: "planned",
-  },
+  // common-app (specs/data-expansion/common-app.md) was built 2026-10-25 on feature/common-app after Common App agreed
+  // to the use; see the spec's "As built" section.
   // visit-events (specs/product/visit-events.md) was planned and built the same day, 2026-10-13, on feature/visit-events
   // as a four-college pilot; the research is in specs/ideas/visit-events.md (promoted).
   {

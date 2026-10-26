@@ -3,6 +3,7 @@ import { getTrendFile } from "@/lib/data";
 import { STUDIES, type StudyDef } from "@/lib/trend-studies";
 import type { TrendCard } from "@/lib/trends";
 import { StudyCard } from "@/components/trends/StudyCard";
+import { CommonAppSeason } from "@/components/trends/CommonAppSeason";
 import { MoversEntry } from "@/components/trends/movers/MoversEntry";
 import { ConferencesEntry } from "@/components/trends/conferences/ConferencesEntry";
 import { StatesEntry } from "@/components/trends/states/StatesEntry";
@@ -59,6 +60,8 @@ export default async function TrendsPage() {
             </p>
           )}
         </section>
+
+        <CommonAppSeason />
 
         {/* ── Entry sections: Movers, conferences, states. ── */}
         <MoversEntry />

@@ -7,6 +7,7 @@ import { createDatasetLoader } from "./dataset-loader";
 import { fetchSchoolChanges, supabaseClient, type HistoryFiles } from "./supabase";
 import type { SchoolHistory } from "./history";
 import type { TrendFileName, TrendFiles } from "./trends";
+import type { CommonAppTrendsFile } from "./common-app/trends";
 import type { SchoolDetail } from "./detail";
 import type { StoredChange } from "./changes";
 
@@ -130,6 +131,20 @@ export const getTrendFile = cache(async <N extends TrendFileName>(name: N): Prom
     return readOptionalJson<TrendFiles[N]>(join(process.cwd(), "data", "history", "trends", `${name}.json`));
   } catch (err) {
     console.error(`Loading trend file ${name} failed; the page renders without it.`, err);
+    return null;
+  }
+});
+
+/**
+ * "This season on the Common App" (specs/data-expansion/common-app.md "National and state figures"): the hand-
+ * reviewed national figures, data/trends/common-app.json. Null when the file hasn't been added yet, like
+ * getTrendFile; the component renders nothing without it.
+ */
+export const getCommonAppTrends = cache(async (): Promise<CommonAppTrendsFile | null> => {
+  try {
+    return readOptionalJson<CommonAppTrendsFile>(join(process.cwd(), "data", "trends", "common-app.json"));
+  } catch (err) {
+    console.error("Loading data/trends/common-app.json failed; the Common App season block renders without it.", err);
     return null;
   }
 });

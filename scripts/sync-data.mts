@@ -63,6 +63,7 @@ import { addIdentityMeta, applyIdentity } from "../lib/identity.ts";
 import { buildSelectivity, formatIndexFile, readIndexFile, selectivityProblems } from "./lib/selectivity.mts";
 import { loadIdentityInputs } from "./lib/identity-sync.mts";
 import { writeAliasTable } from "./lib/aliases-sync.mts";
+import { addCommonAppMeta, applyCommonApp, loadCommonApp, policyCounts, summaryLine, type CommonAppSummary } from "./lib/common-app/merge.mts";
 import { runSiteProbe } from "./lib/site-probe.mts";
 import { fetchOpenAdmissionFile } from "./lib/open-admission.mts";
 import { applyOpenAdmission, openAdmissionMeta } from "../lib/open-admission.ts";
@@ -637,7 +638,9 @@ function buildMeta(
       "scorecard-latest": null,
       // Set with its source by addFieldOfStudyMeta; also no single year (every metric pools a different cohort).
       "scorecard-fos": null,
-    },
+      // The Common App vintages are set with their source by addCommonAppMeta (scripts/lib/common-app/merge.mts), only
+      // when data/common-app/ holds an edition; until then meta has neither (lib/lineage.ts MERGED_LATER).
+    } satisfies Omit<DatasetMeta["vintages"], "common-app-grid" | "common-app-members"> as DatasetMeta["vintages"],
   };
 }
 
@@ -958,6 +961,17 @@ async function main() {
   // them into the committed data/schools.json later (lib/reported-merge.ts), so the two can't disagree. Adds
   // `school.reported` and lineage for `reported.*` paths only; never touches a federal field. `schools` here was
   // just built fresh from Scorecard/IPEDS, so no school has a `reported` block yet to strip.
+  // Common App (specs/data-expansion/common-app.md): the committed grid edition and member records, applied exactly as
+  // `npm run merge-common-app` does, before the reported merge: its newest test values include the grid's policy (read
+  // from `school.apply`, lib/common-app/test-policy.ts), so the merge settles it against the CDS policy.
+  const commonAppFiles = loadCommonApp(ROOT);
+  let commonApp: { summary: CommonAppSummary } | null = null;
+  if (commonAppFiles) {
+    const applied = applyCommonApp(schools, commonAppFiles.edition, commonAppFiles.members, new Date().toISOString().slice(0, 10));
+    schools.splice(0, schools.length, ...applied.schools);
+    addCommonAppMeta(meta, commonAppFiles.edition, commonAppFiles.members);
+    commonApp = applied;
+  }
   let reportedMerged = 0;
   // CDS records (data/cds-records/, round 3) merge in the same call, after buildMeta (the newest groups need meta's
   // federal years); their detail tables join the sync's below.
@@ -968,6 +982,8 @@ async function main() {
     schools.splice(0, schools.length, ...merged.schools);
     reportedMerged = merged.merged;
   }
+  if (commonApp) console.log(`  Common App: ${summaryLine({ ...commonApp.summary, testPolicy: policyCounts(schools) })}`);
+  else console.log("  Common App: no data/common-app/ edition or members.json yet; skipped");
 
   // Transfers in: the level codes must still mean transfer-ins and first-time students (lib/transfers.ts).
   const transfersChecked = await checkTransfers(efa.table, efa.year, schools.map((s) => s.unit_id), join(ROOT, ".cache", "ipeds"));

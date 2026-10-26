@@ -28,6 +28,7 @@ import { TRANSFER_FILTER } from "@/lib/cds/transfer-display";
 import { GREEK_COUNCIL_FILTERS, GREEK_FILTER_LABEL, MIN_GREEK_OPTIONS } from "@/lib/cds/greek-display";
 import type { Council } from "@/lib/directories";
 import { LOGISTICS_FILTERS, type LogisticsFilterParam } from "@/lib/cds/application-logistics-display";
+import { APPLYING_FILTERS, type ApplyingFilterParam } from "@/lib/common-app/filters";
 import { DESIGNATION_KEYS, DESIGNATION_LABELS, RESEARCH_TIERS, SETTING_GROUPS } from "@/lib/campus-profile";
 import { ONLINE_FILTER_LABELS } from "@/lib/online-share";
 import { DIVISION_FILTERS, DIVISION_SHORT, ROTC_BRANCHES, ROTC_LABELS } from "@/lib/campus-services";
@@ -110,6 +111,8 @@ export interface FilterFacets {
   greekCouncils: Partial<Record<Council, number>>;
   /** Colleges matching the gap-year chip (lib/cds/application-logistics-display.ts). */
   logistics: Record<LogisticsFilterParam, number>;
+  /** Colleges matching each Common App "Applying" chip (lib/common-app/filters.ts). */
+  applying: Record<ApplyingFilterParam, number>;
   /** Colleges that offer merit aid, reported or by the federal proxy (lib/merit.ts offersMerit). */
   merit: number;
 }
@@ -275,7 +278,7 @@ export function FilterPanel({ facets, onDone, estimates = true, forYou = null }:
   const fieldOptions = MAJOR_FAMILY_CODES.filter((f) => (facets.fields[f]?.[0] ?? 0) > 0).sort((a, b) => MAJOR_FAMILIES[a].localeCompare(MAJOR_FAMILIES[b]));
 
   const hasFilters = [
-    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "minApplicants", "minUndergrads", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "online", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup", "lgbtqCenter", "lgbtqHousing", "lgbtqNondiscrimination", "greekCouncils", "minAidIncome", "merit"],
+    ...["q", "types", "sizes", "regions", "states", "minAR", "maxAR", "minSAT", "maxSAT", "minCost", "maxCost", "minEnroll", "maxEnroll", "minApplicants", "minUndergrads", "balance", "fullTime", "fewLoans", "liveOn", "noFee", "guarantee", "feeWaiver", "ed", "ed2", "ea", "noLegacy", "noEssay", "gpaRequired", "setting", "research", "designation", "opportunity", "online", "division", "conference", "football", "rotc", "ugResearch", "studyAbroad", "maxRatio", "pellGap", "minFullTimeFaculty", "national", "field", "byRes", "oosEven", "gpa", "aidForms", "intlAid", "honors", "transfers", "minGreek", "gapYear", "faith", "faithGroup", "lgbtqCenter", "lgbtqHousing", "lgbtqNondiscrimination", "greekCouncils", "minAidIncome", "merit"],
     ...INDICATOR_KEYS.map((k) => INDICATORS[k].param),
     "policy",
     "selectivity",
@@ -832,6 +835,26 @@ export function FilterPanel({ facets, onDone, estimates = true, forYou = null }:
           &quot;Live on campus&quot; is the strict rule: every full-time first-year, no exceptions. Many more colleges expect it with
           exceptions.
         </p>
+      </Section>
+
+      <Section title="Applying">
+        <div className="flex flex-wrap gap-1.5">
+          {APPLYING_FILTERS.map((f) => {
+            const active = searchParams.get(f.param) === "1";
+            return (
+              <Chip
+                key={f.key}
+                active={active}
+                onClick={() => update({ [f.param]: active ? null : "1" })}
+                count={facets.applying[f.param]}
+                term={f.param === "feeWaiver" ? "fee-waiver" : undefined}
+              >
+                {f.label}
+              </Chip>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-muted-foreground">Only colleges with a current Requirements Grid row can match.</p>
       </Section>
 
       <Section title="Region" term="region">

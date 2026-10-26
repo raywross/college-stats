@@ -1,8 +1,8 @@
 # Common App: Deadlines, Requirements, and Application Trends (Requirements Grid, Explore pages, research reports)
 
-> Status: **planned**. Specified 2026-10-06 from a survey of commonapp.org (every number below was measured that day;
-> nothing is built). **Waits on Common App's permission**: its terms of use forbid the pull as written, so the
-> [Permission](#permission) section comes first and the build starts only after a written yes. Reads alongside
+> Status: **built** 2026-10-25 (PR #175, `feature/common-app`; see [As built](#as-built-2026-10-25) at the end). Specified
+> 2026-10-06 from a survey of commonapp.org (every number in the sections above was measured that day). Common App
+> gave its written yes to the [Permission](#permission) letter on 2026-10-25, and the build started that day. Reads alongside
 > [cds-application-logistics.md](cds-application-logistics.md) and [cds-test-scores-and-policy.md](cds-test-scores-and-policy.md)
 > (the same facts from each college's own Common Data Set, for the few colleges with one on file), feeds the
 > application tracker in [saved-lists.md](../product/saved-lists.md), the early-rounds view in
@@ -263,3 +263,84 @@ filters, two product hooks, and a reviewed figures file. The permission step is 
    share. Recommendation: in the popover, not the card.
 4. **Direct Admissions flag.** Worth a yearly browser pass to mark the 234 members? Recommendation: ask Common App
    for the list in the same letter; a flag with no date is worse than none.
+
+## As built (2026-10-25)
+Built on `feature/common-app` (PR #175) the day Common App answered the letter, in six units on their own branches
+plus one integration fix, from a brief kept outside the repo (`~/Projects/college-stats/common-app-build/`): U1a grid
+parser, member reader, name join, `sync-common-app` (opus); U1b types, registry, lineage, `merge-common-app`,
+newest-wins, guards (opus); U2 the profile card (sonnet); U3 Explore filters (sonnet); U4 planner hooks (sonnet); U5
+the trends block (sonnet). Where this section and the sections above disagree, this section is what runs.
+
+**Sources and files.** One source `common-app` (label "Common App", publisher Common App, Inc., url the homepage, the
+only commonapp.org URL the site may link; a guard test enforces it) with two vintages: `common-app-grid` ("2026-27
+cycle, updated September 25, 2026", from the edition file) for `apply.*`, and `common-app-members` ("Member pages read
+October 25, 2026") for the Explore-derived fields and aliases. The ⓘ reads "Common App, 2026-27 cycle, updated
+September 25, 2026". Editions live at `data/common-app/grid/<cycle>_<updated>.json` with the PDF beside them;
+`data/common-app/members.json` caches the 1,177 member pages; `data/common-app/name-map.json` is the hand map.
+`apply.common_app` also carries `retrieved`, the day the PDF was read. Non-members never list Common App in a footnote
+(`sourcesForFields` skips a per-college source the school has no value for).
+
+**The grid, measured.** 1,128 rows (55 pages, stamp 09-25-2026). 1,059 members are in the dataset, 1,025 with a grid
+row and 34 without (transfer-only, or not yet joined); 67 members have no IPEDS id on Explore and 50 more are not
+colleges the site carries. Eight row names matched nothing and stay in `unmatched`: Andrews University, Jack Kent
+Cooke Foundation (not a college), Morris Brown College, North Central University (MN), Wiley University (no Explore
+record), and three rows all named "Siena University". Two Explore records and two grid rows share Oberlin's IPEDS id
+(204501); the first (Arts and Sciences) is kept and the merge warns. International aid: 410 yes, 89 no. Links kept:
+75 transfer guarantees, 165 DACA aid pages; 6 skipped because they pointed off the college's own site. 1,166 alias rows.
+
+**Blank means no.** The grid prints Y only where something is required, so a blank essay, Courses & Grades, writing
+supplement, or saves-forms cell is stored as `false`, not null; null appears only without a grid row. The 2026-27 grid
+carries **no writing-supplement marks at all** (checked against the PDF text), so the card shows that line only when
+true and the "No essay beyond the Common App" filter was not built.
+
+**Newest wins, as built.** Only the grid's **test policy** is written into `admissions.test_policy`; deadlines and
+fees stay in `apply.*` and the display layer reads them first (the card, the Applying box, the "No application fee"
+filter, the planner's deadlines). The as-of date of a CDS statement is its edition's publication date, taken as
+January 1 of the edition's second year ("2025–26" → 2026-01-01), never the day Quad read the document; the grid's
+entering fall must also be ≥ the CDS cycle. The grid's policy is applied inside the CDS test step
+(`applyNewestTests` → `applyGridPolicy`, read from `school.apply`), so `merge-reported`, `sync-data`,
+`merge-common-app`, and the CDS tests' re-merges all land on the same bytes and `restoreFederalTests` undoes it. Code
+map as specified (N → test-optional, I → test-blind, A and F → required, S → required for some; the card says
+"flexible" for F). Result: the grid supplies the policy at 1,025 colleges, 153 of them over a same-cycle 2025–26 CDS
+policy (owner-confirmed), none beaten by a newer CDS. Against the dataset before this build, **607 colleges changed
+policy**: 241 test-optional → required for some (code S), 151 test-blind → test-optional (N), 105 test-optional →
+required (90 F, 15 A), 41 test-blind → required for some, 26 test-blind → required, and smaller groups. The
+test-optional trend files (`data/history/trends/test-optional.json`, `states.json`) were rebuilt and follow; the
+state test-optional shares fall accordingly. Selectivity tiers were rebuilt and none moved. The F → required and
+S → required-for-some mappings drive most of the shift and are the thing to revisit if families report colleges
+shown as requiring tests that admit without them.
+
+**Display, as built.** The card "What it takes to apply" (block id `apply`, before "Applying") renders nothing for a
+non-member; its regular deadline beats the CDS one by the same edition rule, and the Applying box then drops its
+line while the card shows the CDS date muted, cited to its own field. Glossary terms added: `writing-supplement`,
+`courses-and-grades`, `mid-year-report`, `counselor-recommendation`, `teacher-evaluation` (`early-decision-ii`
+already existed). Explore gained an "Applying" group of four chips: Takes the fee waiver (accepted or U.S. only),
+Early Decision, ED II, Early Action (EA, EA II, or REA); "No application fee" reads the grid's U.S. fee first;
+"Test-optional this cycle" is the existing policy filter, which the newest-wins already feeds; no "Common App" chip.
+The planner's `deadlineFor` takes the grid's dates first ("Rolling" as a word, no date), the CDS month/day second;
+requirements lines for the essay, writing supplement, recommendations, Courses & Grades, fee waiver, and the platform
+("Takes the Common App"), each cited; `common_app` is offered as a platform only for members; rounds offered come from
+the grid for every member; the stored plan schema is unchanged. On /trends, "This season on the Common App" (after the
+studies) shows five figures from `data/trends/common-app.json`: 2 End-of-Season reports (2025–26 dated 2026-08-20,
+2024–25 dated 2025-08-13), 16 rows (8 measures × 2 seasons), each with report, page, and a verbatim quote, cited by
+report name and date; state figures are images in the PDF and are left out ("state figures to come"). No separate
+`common-app-reports` source: the rows cite `common-app` with the report date as the year. The state pages' block and
+the international fee (stored, not shown) were not built.
+
+**Sync.** `npm run sync-common-app` (`--grid-only`, `--members-only`, `--refresh-members`, `--limit`, `--dry-run`)
+is a no-op when the PDF's "Updated" stamp matches the newest edition; `npm run merge-common-app` applies the committed
+files, re-runs the reported merge, refreshes meta and aliases, and writes nothing on a lineage failure; `sync-data`
+applies the block before its reported merge. `npm run verify` includes `check:common-app-trends`.
+
+**Open questions, closed.** 1: asked; Common App said yes (2026-10-25). 2: the Explore join, 1,177 cached requests a
+year. 3: the international fee is stored and not shown. 4: no Direct Admissions flag; the owner asks Common App for
+the list. Not built: essay prompts, the Direct Admissions list, state-level report tables.
+
+**QA (2026-10-25, Playwright at 1280 and 390 px; report in `common-app-build/qa/`).** Nine checks over Vanderbilt,
+Albright, a non-member, Barnard, the five Explore filters, /trends, the test-optional study, and the signed-out plan;
+all passed except three findings, two fixed before the PR left draft: the planner's `roundDates` (the signed-out plan,
+ED opportunities, interest, the plan view) read only the CDS, so it now takes the grid's ISO date first, cited to
+`apply.deadlines`, with the grid's cycle as its edition; and the Explore toolbar listed the housing chips twice (a
+duplicate "No application fee ×" with a React key warning, present before this build), now once. The third is a
+decision, not a defect: a member whose fee is $0 shows "No application fee." and not its fee-waiver value, because
+there is nothing to waive; the waiver stays stored and cited for the filters.

@@ -151,6 +151,6 @@ export interface AliasRow {
   alias: string;
   /** The search key: lower case, no accents, punctuation, or spaces ("uga"). */
   key: string;
-  source: "curated" | "ipeds" | "wikidata" | "domain";
+  source: "curated" | "ipeds" | "wikidata" | "domain" | "common-app";
   weight: number;
 }

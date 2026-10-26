@@ -170,10 +170,17 @@ export async function ListPage({
     const school = getSchoolById(item.unit_id);
     const logistics = school?.reported?.admissions_logistics ?? null;
     const admissionProfile = school?.reported?.admission_profile ?? null;
-    const deadline = deadlineFor(item.round as ListRound | null, logistics, admissionProfile, cycleStartYear(logistics?.cycle), {
-      text: item.deadline_text,
-      date: item.deadline_date,
-    });
+    const deadline = deadlineFor(
+      item.round as ListRound | null,
+      logistics,
+      admissionProfile,
+      cycleStartYear(logistics?.cycle),
+      {
+        text: item.deadline_text,
+        date: item.deadline_date,
+      },
+      school?.apply,
+    );
     const nextTask = nextByItem[item.id] ?? null;
     const planSchool = plan?.schools[item.unit_id] ?? null;
     return {

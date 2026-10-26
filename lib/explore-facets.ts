@@ -14,6 +14,7 @@ import { hasHonorsProgram } from "./cds/academics-display.ts";
 import { TRANSFER_FILTER } from "./cds/transfer-display.ts";
 import { GREEK_COUNCIL_FILTERS, MIN_GREEK_OPTIONS, hasGreekCouncil, meetsGreekThreshold } from "./cds/greek-display.ts";
 import { LOGISTICS_FILTERS } from "./cds/application-logistics-display.ts";
+import { APPLYING_FILTERS } from "./common-app/filters.ts";
 import { DESIGNATION_KEYS, RESEARCH_TIERS, SETTING_GROUPS, designationsOf, isOpportunityCollege } from "./campus-profile.ts";
 import { DIVISION_FILTERS, ROTC_BRANCHES, divisionFilterOf } from "./campus-services.ts";
 import { MAX_RATIO_OPTIONS, MIN_FULL_TIME_FACULTY_OPTIONS } from "./academics.ts";
@@ -153,6 +154,7 @@ export function buildFacets({ getAllSchools, histogram, meritInfoFor }: FacetSou
     minGreek: Object.fromEntries(MIN_GREEK_OPTIONS.map((n) => [n, all.filter((s) => meetsGreekThreshold(s, n)).length])),
     greekCouncils: Object.fromEntries(GREEK_COUNCIL_FILTERS.map((f) => [f.key, all.filter((s) => hasGreekCouncil(s, f.key)).length])) as FilterFacets["greekCouncils"],
     logistics: Object.fromEntries(LOGISTICS_FILTERS.map((f) => [f.param, all.filter(f.test).length])) as FilterFacets["logistics"],
+    applying: Object.fromEntries(APPLYING_FILTERS.map((f) => [f.param, all.filter(f.predicate).length])) as FilterFacets["applying"],
     merit: all.filter((s) => offersMerit(meritInfoFor(s))).length,
     campus,
     faith,

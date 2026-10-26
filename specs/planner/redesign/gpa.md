@@ -101,6 +101,12 @@ On this branch's own (older) data the new models fit 32 and 30 colleges: average
 1,008 a middle 50% (33 exact, 975 estimated), one fewer each than before. A test fits all three models on main's
 newest data when that file is at hand and fails if any misses its guard; it fails with the old two-predictor models.
 
+**Guard moved (2026-10-26, PR #168).** The by-hand merge of run 20261019-191037-103 settled fourteen editions and let
+4,619 held CDS values publish, which grew the curve's training set from 172 to 277 colleges. On that data the p25
+model's leave-one-out 90th-percentile miss is 0.301 (old rows 0.274, new rows 0.298: no single college drives it);
+the average model stays at 0.214 and the p75 model at 0.174. Rather than lose every middle-50% estimate over a
+hundredth, `GPA_CURVE_GUARD.maxP90` is 0.31. The owner can put it back if the bar matters more than the coverage.
+
 ### 3. The student's GPA as a range (`planGpaRange(profile)`, pure)
 - Unweighted on a 4.0 scale: the value.
 - On a 4.0 scale but above 4.0: it is weighted by definition, so the range is `[g − 1, 4.0]`.

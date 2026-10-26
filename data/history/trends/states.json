@@ -10396,7 +10396,7 @@
       },
       "map": {
         "undergradChange": -0.064,
-        "acceptanceRate": 0.7974,
+        "acceptanceRate": 0.7958,
         "avgCost": 18904,
         "outOfState": 0.3138,
         "testOptionalShare": 0.5,
@@ -19041,7 +19041,7 @@
       },
       "map": {
         "undergradChange": -0.0546,
-        "acceptanceRate": 0.9166,
+        "acceptanceRate": 0.9032,
         "avgCost": 15469,
         "outOfState": 0.2267,
         "testOptionalShare": 0.4,

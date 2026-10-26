@@ -86,6 +86,19 @@ test("a missing SAT is filled from the other inputs; a missing yield, retention,
   assert.deepEqual([gaps.yield, gaps.retention, gaps.graduation], [0, 0, 0]);
 });
 
+test("an open-admission college is unrated in every pool, whatever rate its CDS states", () => {
+  const base = byName("University of Alaska Fairbanks");
+  assert.equal(base.admissions.open_admission, true);
+  const stated = { ...base, admissions: { ...base.admissions, acceptance_rate: 1 } } as School;
+  const r = rawInputs(stated);
+  assert.equal(r.admitRate, null);
+  assert.equal(r.inStateRate, null);
+  assert.equal(r.outOfStateRate, null);
+  const notOpen = { ...stated, admissions: { ...stated.admissions, open_admission: false } } as School;
+  assert.equal(rawInputs(notOpen).admitRate, 1, "the guard is the flag, not the value");
+  assert.equal(rawInputs(notOpen).inStateRate !== null, true, "its residency rates read again without the flag");
+});
+
 test("the score: required admit rate, no cap at the top, two decimals", () => {
   const sc = scales(FIELD);
   assert.equal(selectivityScore(raw({ admitRate: null }), sc), null, "the admit rate is required");

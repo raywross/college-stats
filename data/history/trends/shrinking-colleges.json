@@ -204,12 +204,12 @@
         {
           "key": "less",
           "label": "60% or more",
-          "n": 1069,
+          "n": 1065,
           "values": {
-            "shrank10": 0.5716,
-            "grew10": 0.1918,
-            "medianChange": -0.1398,
-            "totalChange": -0.037
+            "shrank10": 0.57,
+            "grew10": 0.1925,
+            "medianChange": -0.1393,
+            "totalChange": -0.0364
           }
         }
       ]
@@ -516,12 +516,12 @@
           {
             "key": "less",
             "label": "60% or more",
-            "n": 1067,
+            "n": 1063,
             "values": {
-              "shrank10": 0.4667,
-              "grew10": 0.1378,
-              "medianChange": -0.0888,
-              "totalChange": -0.0405
+              "shrank10": 0.4657,
+              "grew10": 0.1383,
+              "medianChange": -0.0887,
+              "totalChange": -0.0403
             }
           }
         ]
@@ -830,12 +830,12 @@
             {
               "key": "less",
               "label": "60% or more",
-              "n": 1012,
+              "n": 1008,
               "values": {
-                "shrank10": 0.584,
-                "grew10": 0.1759,
-                "medianChange": -0.1451,
-                "totalChange": -0.0781
+                "shrank10": 0.5823,
+                "grew10": 0.1766,
+                "medianChange": -0.1434,
+                "totalChange": -0.0776
               }
             }
           ]
@@ -1132,12 +1132,12 @@
             {
               "key": "less",
               "label": "60% or more",
-              "n": 1015,
+              "n": 1011,
               "values": {
-                "shrank10": 0.4739,
-                "grew10": 0.1222,
-                "medianChange": -0.0918,
-                "totalChange": -0.0602
+                "shrank10": 0.4728,
+                "grew10": 0.1227,
+                "medianChange": -0.0917,
+                "totalChange": -0.06
               }
             }
           ]

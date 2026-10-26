@@ -107,6 +107,20 @@ test("no stated rate but both counts: admitted ÷ applicants, derived from the c
   });
 });
 
+test("open admission: the rate stays null however the college states it; the counts still replace", () => {
+  const before = school({ applicants: 748, admitted: 748, acceptance_rate: 1 });
+  before.admissions.open_admission = true;
+  before.admissions.acceptance_rate = null;
+  const s = applyNewest(before);
+  assert.equal(s.admissions.acceptance_rate, null);
+  assert.equal(s.admissions.applicants, 748);
+  assert.equal(s.admissions.admitted, 748);
+  assert.equal(s.lineage!["admissions.acceptance_rate"], undefined);
+  // The same college not flagged open admission publishes its stated rate (the guard is the flag, not the value).
+  const selective = school({ applicants: 748, admitted: 748, acceptance_rate: 1 });
+  assert.equal(applyNewest(selective).admissions.acceptance_rate, 1);
+});
+
 test("a previous rate of null stays null, with no record", () => {
   const before = school({ applicants: 50000 });
   before.admissions.acceptance_rate = null;

@@ -507,7 +507,7 @@
       "C.1601": {"status":"not-found"},
       "C.1602": {"status":"not-found"},
       "C.1603": {"status":"not-found"},
-      "C.1604": {"v":true,"status":"failed","page":11,"line":610,"quote":"By (date): | 1-Apr","failures":[{"check":"number-on-line","detail":"true isn't on line 610: \"@61 By (date): | @192 1-Apr\""}]},
+      "C.1604": {"status":"blank","page":11,"line":610},
       "C.1605": {"v":4,"status":"passed","page":11,"line":610,"quote":"By (date): | 1-Apr"},
       "C.1606": {"v":1,"status":"passed","page":11,"line":610,"quote":"By (date): | 1-Apr"},
       "C.1607": {"status":"not-found"},

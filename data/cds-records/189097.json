@@ -546,7 +546,7 @@
       "C.2205": {"status":"not-found"},
       "C.2206": {"status":"not-found"},
       "D.101": {"v":true,"status":"passed","page":24,"line":749,"quote":"D1. Does your institution enroll transfer students? ☐ Yes ☐ No"},
-      "D.102": {"v":true,"status":"failed","page":24,"line":751,"quote":"If yes, may transfer students earn advanced standing credit by transferring credits earned from course work","failures":[{"check":"number-on-line","detail":"true isn't on line 751: \"@77 If yes, may transfer students earn advanced standing credit by transferring credits earned from \""}]},
+      "D.102": {"status":"blank","page":24,"line":751},
       "D.201": {"status":"not-found"},
       "D.202": {"v":1142,"status":"passed","page":24,"line":758,"quote":"Women | 1142 | 262 | 142"},
       "D.203": {"status":"not-found"},

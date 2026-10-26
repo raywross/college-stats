@@ -772,7 +772,7 @@
       "G.604": {"v":654,"status":"passed","page":20,"line":959,"quote":"Out-of-state: | $654.00"},
       "G.605": {"v":654,"status":"passed","page":20,"line":960,"quote":"NONRESIDENTS: | $654.00"},
       "H.101": {"v":"2024-2025","status":"passed","page":22,"line":1018,"lines":[1018,1014],"quote":"X / 2024-2025 | 2023-2024"},
-      "H.102": {"v":true,"status":"failed","page":22,"line":1021,"quote":"Federal methodology (FM)","failures":[{"check":"number-on-line","detail":"true isn't on line 1021: \"@64 Federal methodology (FM)\""}]},
+      "H.102": {"status":"blank","page":22,"line":1021},
       "H.103": {"status":"not-found"},
       "H.104": {"status":"not-found"},
       "H.105": {"v":43276241,"status":"passed","page":22,"line":1036,"quote":"Federal | $43,276,241 | $10,799"},

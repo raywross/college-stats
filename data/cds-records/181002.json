@@ -493,7 +493,7 @@
       "C.1130": {"status":"not-found"},
       "C.1201": {"status":"not-found"},
       "C.1202": {"status":"not-found"},
-      "C.1301": {"v":false,"status":"failed","page":2,"line":32,"quote":"&RPPRQ 'DWD 6HW \u0015\u0013\u0015\u0018\u0010\u0015\u0013\u0015\u0019","failures":[{"check":"number-on-line","detail":"false isn't on line 32: \"@246 &RPPRQ 'DWD 6HW \u0015\u0013\u0015\u0018\u0010\u0015\u0013\u0015\u0019\""}]},
+      "C.1301": {"status":"blank","page":2,"line":32},
       "C.1302": {"status":"not-found"},
       "C.1303": {"status":"not-found"},
       "C.1304": {"status":"not-found"},

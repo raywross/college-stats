@@ -527,7 +527,7 @@
       "C.1801": {"v":false,"status":"passed","page":29,"line":898,"quote":"No"},
       "C.1802": {"status":"not-found"},
       "C.1901": {"status":"not-read"},
-      "C.2101": {"v":false,"status":"failed","page":30,"line":920,"quote":"If “yes,” please complete the following:","failures":[{"check":"number-on-line","detail":"false isn't on line 920: \"@77 If “yes,” please complete the following:\""}]},
+      "C.2101": {"status":"blank","page":30,"line":920},
       "C.2102": {"status":"not-found"},
       "C.2103": {"status":"not-found"},
       "C.2104": {"status":"not-found"},

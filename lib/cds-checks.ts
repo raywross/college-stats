@@ -166,6 +166,8 @@ export interface ItemCheckResult {
   derived: Record<CdsCode, DerivedTotal>;
   /** Template-workbook codes whose visible-form value passed every check of its group and is published instead. */
   resolved: CdsCode[];
+  /** Model-read checkboxes whose cited line carries no mark of either kind: unreadable, blanked by `applyChecks`. */
+  unreadable: CdsCode[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -1131,10 +1133,14 @@ function checkH6(x: Ctx) {
 function checkH8(x: Ctx) {
   const forms = run("H", 801, 806).filter((k) => x.v.bool(k) === true);
   if (forms.length && x.v.bool("H.801") !== true) x.fail("inconsistent", forms, "H8 lists forms but not the FAFSA (every college here takes federal aid)");
+  // Both rules need the other boxes read as unchecked, not merely unread: a flat PDF's unchecked box leaves nothing in
+  // the text (blank, never false), and "no CSS Profile" was firing on every document whose H8 wasn't read at all
+  // (12 of the 16 H.103 holds in run 20261019-191037-103).
   const im = x.v.bool("H.103") === true || x.v.bool("H.104") === true;
-  const css = x.v.bool("H.803") === true || x.v.bool("H.802") === true;
-  if (im && !css) x.fail("inconsistent", ["H.103", "H.104"], "institutional methodology without the CSS Profile or the college's own form");
-  if (x.v.bool("H.102") === true && !im && x.v.bool("H.803") === true) x.fail("inconsistent", ["H.102", "H.803"], "federal methodology only, yet the CSS Profile is required");
+  const noForms = x.v.bool("H.803") === false && x.v.bool("H.802") === false;
+  if (im && noForms) x.fail("inconsistent", ["H.103", "H.104"], "institutional methodology without the CSS Profile or the college's own form");
+  const fmOnly = x.v.bool("H.102") === true && x.v.bool("H.103") === false && x.v.bool("H.104") === false;
+  if (fmOnly && x.v.bool("H.803") === true) x.fail("inconsistent", ["H.102", "H.803"], "federal methodology only, yet the CSS Profile is required");
 }
 
 /** H9–H11: valid dates; not both deadline and no deadline, nor dated and rolling notification; cycle order Sept → Aug. */
@@ -1232,7 +1238,25 @@ const TEXT_FAILS = new Set(["B1", "B2", "B4", "B5", "B22", "C1"]);
 
 const NUMERIC_TYPES = new Set(["count", "percent", "currency", "decimal", "gpa", "sat-section", "sat-composite", "act", "act-writing", "month", "day"]);
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-const MARK = /(?:^|[\s|(])(?:x|✔|✓|☒|☑|yes|y)\*?(?:$|[\s|)])/i;
+/**
+ * A checked box as extracted text prints it: a letter or word, a check mark or crossed box, or the private-use code
+ * points Wingdings-style fonts leave behind (U+F0FC ✓, U+F0FE ☒, U+F058 ✗: 302 held checkboxes in run 20261019-191037-103
+ * sat on lines with one of these and nothing else).
+ */
+const MARK = /(?:^|[\s|(])(?:x|✔|✓|☒|☑|\uf0fc|\uf0fe|\uf058|yes|y)\*?(?:$|[\s|)])/i;
+/** An unchecked box: an empty box (☐, or the box glyph some fonts extract as U+057F "տ"), or "no". */
+const UNMARKED = /(?:^|[\s|(])(?:☐|\u057f|no|n)(?:$|[\s|)])/i;
+
+/**
+ * What a line says about a box: "marked", "unmarked", or null when no mark of either kind survived extraction. A box
+ * drawn as a form field or a vector glyph leaves only its label in the text ("Fraternity/sorority housing"); a model
+ * reading that text can't tell checked from unchecked, so its answer is unreadable rather than wrong (1,088 such
+ * holds in run 20261019-191037-103, two thirds of its checkbox holds).
+ */
+export function markState(rawLine: string): "marked" | "unmarked" | null {
+  const line = stripLayoutTags(rawLine);
+  return MARK.test(line) ? "marked" : UNMARKED.test(line) ? "unmarked" : null;
+}
 
 /** Whether an item was read by a model call (a value with no workbook cell or form field, from a model-read call). */
 export function isModelRead(doc: DocumentRecord, code: CdsCode, table: TemplateTable): boolean {
@@ -1260,7 +1284,7 @@ export function valueOnLine(rawLine: string, v: Value, item: Pick<TemplateItem, 
   // Layout tags first: "@243 1,2 74" would otherwise join the tag's digits into the printer-split number.
   const line = stripLayoutTags(rawLine);
   const t = item.value_type;
-  if (typeof v === "boolean") return v ? MARK.test(line) : /(?:^|[\s|])(?:no|n)(?:$|[\s|])/i.test(line);
+  if (typeof v === "boolean") return v ? MARK.test(line) : UNMARKED.test(line);
   if (typeof v === "number") {
     const nums = numbersOn(line);
     if (t === "month" && MONTHS.some((m) => new RegExp(`\\b${m}`, "i").test(line) && MONTHS.indexOf(m) + 1 === v)) return true;
@@ -1390,6 +1414,42 @@ function keptVerdict(ctx: Pick<CheckContext, "lines" | "editionAssumed">, textCo
     (ctx.editionAssumed === undefined && f.check === "edition-mismatch" && f.detail.startsWith("the document states no edition") && !textConfirms);
 }
 
+/** The line a line check quoted in its detail (its first 100 characters), the only text a re-check without lines has. */
+const quotedLine = (f: ItemFailure) => /: "([\s\S]*)"$/.exec(f.detail)?.[1];
+
+/**
+ * A checkbox's kept line hold, judged again from the quoted line: the value passes when the line carries its mark
+ * after all (a glyph MARK learned later); otherwise the hold stands (an unreadable box was blanked before this).
+ */
+function rejudgeMark(f: ItemFailure, v: boolean): ItemFailure[] {
+  const line = quotedLine(f);
+  return line !== undefined && valueOnLine(line, v, { value_type: "check" }) ? [] : [f];
+}
+
+/**
+ * Model-read checkboxes the text can't answer: the value isn't on any cited line and no cited line carries a mark of
+ * either kind (the box was a form field or a drawn glyph, so only its label survived extraction). Decided before any
+ * check runs, so the checks that read other boxes (C21's "early decision offered?", H0's one methodology) see the box
+ * as unread in the same pass, and a second pass changes nothing. Without the archived lines, the line each kept
+ * hold quotes stands in for the document.
+ */
+function unreadableMarks(doc: DocumentRecord, items: Record<CdsCode, ItemResult>, ctx: CheckContext): CdsCode[] {
+  const out: CdsCode[] = [];
+  for (const [code, it] of Object.entries(items)) {
+    const v = it.v;
+    if (typeof v !== "boolean" || it.method === "derived" || !isModelRead(doc, code, ctx.table)) continue;
+    if (ctx.lines) {
+      const lines = ctx.lines;
+      const cited = (it.lines?.length ? it.lines : it.line !== undefined ? [it.line] : []).filter((n) => Number.isInteger(n) && n >= 1 && n <= lines.length);
+      if (cited.length && !cited.some((n) => valueOnLine(lines[n - 1], v, { value_type: "check" })) && !cited.some((n) => markState(lines[n - 1]))) out.push(code);
+    } else {
+      const held = (doc.items[code]?.failures ?? []).filter((f) => f.check === "number-on-line" || f.check === "mark-unreadable");
+      if (held.length && held.every((f) => { const line = quotedLine(f); return line !== undefined && !valueOnLine(line, v, { value_type: "check" }) && markState(line) === null; })) out.push(code);
+    }
+  }
+  return out;
+}
+
 function reset(items: Record<CdsCode, ItemResult>, keep: (f: ItemFailure) => boolean = () => false): Record<CdsCode, ItemResult> {
   const out: Record<CdsCode, ItemResult> = {};
   for (const [code, it0] of Object.entries(items)) {
@@ -1406,7 +1466,8 @@ function reset(items: Record<CdsCode, ItemResult>, keep: (f: ItemFailure) => boo
       if (quote) it.quote = quote;
     }
     if (it.method === "derived") it = { status: "blank" };
-    const kept = (it.failures ?? []).filter((f) => !OWN_CHECKS.has(f.check) || keep(f));
+    const v = it.v;
+    const kept = (it.failures ?? []).filter((f) => !OWN_CHECKS.has(f.check) || keep(f)).flatMap((f) => (typeof v === "boolean" && f.check === "number-on-line" ? rejudgeMark(f, v) : [f]));
     if (kept.length) it.failures = kept;
     else delete it.failures;
     if (it.status === "failed" || it.status === "passed") it.status = kept.length ? "failed" : it.v !== undefined ? "passed" : it.form ? "failed" : "blank";
@@ -1454,6 +1515,8 @@ function runAll(
 export function runItemChecks(doc: DocumentRecord, ctx: CheckContext): ItemCheckResult {
   const items = reset(doc.items);
   const federal = ctx.federal !== undefined ? ctx.federal : ctx.school ? federalBaseline(ctx.school, { gradYear: ctx.gradYear }) : null;
+  const unreadable = unreadableMarks(doc, items, ctx);
+  for (const k of unreadable) delete items[k].v;
   const m = valuesOf(items);
   const derived = deriveTotals(m, items);
   let failures = runAll(doc, items, m, ctx, federal, new Set(), derived);
@@ -1491,7 +1554,7 @@ export function runItemChecks(doc: DocumentRecord, ctx: CheckContext): ItemCheck
       if (!list.some((g) => g.check === f.check && g.detail === f.detail)) list.push({ check: f.check, detail: f.detail });
     }
   }
-  return { failures, byCode, derived, resolved: [...resolved] };
+  return { failures, byCode, derived, resolved: [...resolved], unreadable };
 }
 
 const QUOTE_MAX = 160;
@@ -1513,6 +1576,14 @@ function quoteFor(label: string, v: Value | null): string {
 export function applyChecks(doc: DocumentRecord, ctx: CheckContext): DocumentRecord {
   const result = runItemChecks(doc, ctx);
   const items = reset(doc.items, keptVerdict(ctx, itemTextEdition(doc.items, doc.edition).confirmed));
+  for (const k of result.unreadable) {
+    // Nothing in the text says whether the box is checked: blank (never published, never held), as an unread box is.
+    const it = items[k];
+    delete it.v;
+    delete it.quote;
+    delete it.failures;
+    it.status = "blank";
+  }
   const resolved = new Set(result.resolved);
   for (const [code, it] of Object.entries(items)) {
     const item = ctx.table.byCode.get(code);

@@ -563,7 +563,7 @@
       "D.302": {"status":"not-found"},
       "D.303": {"status":"not-found"},
       "D.304": {"status":"not-found"},
-      "D.401": {"v":true,"status":"failed","page":15,"line":602,"quote":"Must a transfer applicant have a minimum number of | 28","failures":[{"check":"number-on-line","detail":"true isn't on line 602: \"@99 Must a transfer applicant have a minimum number of | @400 28\""}]},
+      "D.401": {"status":"blank","page":15,"line":602},
       "D.402": {"v":28,"status":"passed","page":15,"line":602,"quote":"Must a transfer applicant have a minimum number of | 28"},
       "D.403": {"status":"not-found"},
       "D.501": {"v":"Required of All","status":"passed","page":15,"line":611,"quote":"High school transcript | X"},

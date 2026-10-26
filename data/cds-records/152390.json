@@ -718,7 +718,7 @@
       "F.405": {"status":"not-read"},
       "F.406": {"status":"not-read"},
       "F.407": {"status":"not-read"},
-      "F.408": {"v":true,"status":"failed","page":14,"line":1306,"quote":"Expenses in $","failures":[{"check":"number-on-line","detail":"true isn't on line 1306: \"@476 Expenses in $\""}]},
+      "F.408": {"status":"blank","page":14,"line":1306},
       "F.409": {"status":"not-read"},
       "F.410": {"status":"not-read"},
       "F.411": {"status":"not-read"},

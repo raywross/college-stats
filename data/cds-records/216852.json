@@ -774,7 +774,7 @@
       "H.101": {"v":"2023-2024","status":"passed","page":22,"line":1050,"lines":[1050,1052],"quote":"2023-2024 | 2022-2023 / X"},
       "H.102": {"status":"not-found"},
       "H.103": {"status":"not-found"},
-      "H.104": {"v":true,"status":"failed","page":23,"line":1060,"quote":"X | Both FM and IM","failures":[{"check":"inconsistent","detail":"institutional methodology without the CSS Profile or the college's own form"}]},
+      "H.104": {"v":true,"status":"passed","page":23,"line":1060,"quote":"X | Both FM and IM"},
       "H.105": {"v":6789698,"status":"passed","page":23,"line":1063,"quote":"Federal | $6,789,698 | $112,068"},
       "H.106": {"v":3445485,"status":"passed","page":23,"line":1065,"quote":"$3,445,485 | $0"},
       "H.107": {"v":68454490,"status":"passed","page":23,"line":1068,"quote":"waivers (which are reported below). | $68,454,490 | $13,827,904"},

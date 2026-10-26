@@ -353,7 +353,7 @@
       "C.717": {"v":"Not Considered","status":"passed","page":14,"line":448,"quote":"Work experience | x","column":{"heading":"Not Considered","read":"Considered","checked":"2026-10-13"}},
       "C.718": {"v":"Not Considered","status":"passed","page":14,"line":449,"quote":"Level of applicant’s interest | x","column":{"heading":"Not Considered","read":"Considered","checked":"2026-10-13"}},
       "C.719": {"status":"not-found"},
-      "C.801": {"v":true,"status":"failed","page":14,"line":454,"quote":"C8A Does your institution make use of SAT or ACT scores in admission","failures":[{"check":"number-on-line","detail":"true isn't on line 454: \"@44 C8A Does your institution make use of SAT or ACT scores in admission\""}]},
+      "C.801": {"status":"blank","page":14,"line":454},
       "C.802": {"v":"Not required for admission, but considered if submitted","status":"passed","page":15,"line":467,"quote":"SAT or ACT | x","column":{"heading":"Not required for admission, but considered if submitted","checked":"2026-10-13"}},
       "C.803": {"status":"not-found"},
       "C.804": {"status":"not-found"},

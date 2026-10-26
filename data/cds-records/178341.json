@@ -773,7 +773,7 @@
       "G.605": {"v":627,"status":"passed","page":30,"field":"TUIT_ALIEN_PT_D","quote":"NONRESIDENTS: | 627"},
       "H.101": {"v":"2025-2026 Estimated","status":"passed","page":32,"field":"ACAD_YR","quote":"Academic Year | 2025-2026 Estimated"},
       "H.102": {"status":"blank"},
-      "H.103": {"v":true,"status":"failed","page":32,"field":"METH_IM","quote":"Institutional methodology (IM) | X","failures":[{"check":"inconsistent","detail":"institutional methodology without the CSS Profile or the college's own form"}]},
+      "H.103": {"v":true,"status":"passed","page":32,"field":"METH_IM","quote":"Institutional methodology (IM) | X"},
       "H.104": {"status":"blank"},
       "H.105": {"v":7501355,"status":"passed","page":32,"field":"SCHOL_NB_FED_D","quote":"Federal | 7501355"},
       "H.106": {"v":1625720,"status":"passed","page":32,"field":"SCHOL_NB_STATE_D","quote":"State all states, not only the state in which your institution is located | 1625720"},

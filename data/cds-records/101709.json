@@ -545,7 +545,7 @@
       "C.2204": {"status":"not-found"},
       "C.2205": {"status":"not-found"},
       "C.2206": {"status":"not-found"},
-      "D.101": {"v":true,"status":"failed","page":36,"line":1258,"lines":[1258,1259],"quote":"…enrolled within 12 months of their high school graduation. / Yes, we have fi rst-time students who enrolled within 12 months of their high school graduation.","failures":[{"check":"number-on-line","detail":"true isn't on line 1258, 1259: \"@50 No, we do not have any fi rst-time students who enrolled within 12 months of their high school g\""}]},
+      "D.101": {"status":"blank","page":36,"line":1258,"lines":[1258,1259]},
       "D.102": {"status":"not-found"},
       "D.201": {"status":"not-found"},
       "D.202": {"status":"not-found"},

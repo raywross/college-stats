@@ -504,7 +504,7 @@
       "C.1404": {"status":"not-found"},
       "C.1405": {"status":"not-found"},
       "C.1501": {"status":"not-read"},
-      "C.1601": {"v":true,"status":"failed","page":11,"line":525,"quote":"On a rolling basis beginning: | 10/1","failures":[{"check":"number-on-line","detail":"true isn't on line 525: \"@81 On a rolling basis beginning: | @263 10/1\""}]},
+      "C.1601": {"status":"blank","page":11,"line":525},
       "C.1602": {"v":10,"status":"passed","page":11,"line":525,"quote":"On a rolling basis beginning: | 10/1"},
       "C.1603": {"v":1,"status":"passed","page":11,"line":525,"quote":"On a rolling basis beginning: | 10/1"},
       "C.1604": {"status":"not-found"},

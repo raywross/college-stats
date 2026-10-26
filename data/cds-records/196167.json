@@ -498,7 +498,7 @@
       "C.1303": {"v":true,"status":"passed","page":21,"line":671,"quote":"x"},
       "C.1304": {"v":"Same fee","status":"passed","page":21,"line":675,"quote":"x Same fee"},
       "C.1305": {"v":true,"status":"passed","page":21,"line":680,"quote":"x"},
-      "C.1401": {"v":false,"status":"failed","page":21,"line":684,"lines":[684,685],"quote":"Does your institution have an application closing / x","failures":[{"check":"number-on-line","detail":"false isn't on line 684, 685: \"@73 Does your institution have an application closing\""}]},
+      "C.1401": {"status":"blank","page":21,"line":684,"lines":[684,685]},
       "C.1402": {"status":"not-found"},
       "C.1403": {"status":"not-found"},
       "C.1404": {"v":3,"status":"passed","page":21,"line":689,"quote":"Priority Date | March 1st"},

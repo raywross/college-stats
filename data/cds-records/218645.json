@@ -563,7 +563,7 @@
       "D.302": {"status":"not-found"},
       "D.303": {"v":true,"status":"passed","page":12,"line":679,"quote":"x | Spring"},
       "D.304": {"v":true,"status":"passed","page":12,"line":680,"quote":"x | Summer"},
-      "D.401": {"v":false,"status":"failed","page":12,"line":682,"lines":[682,683],"quote":"D4 | Must a transfer applicant have a minimum number of / credits completed or else must apply as an entering first- | x","failures":[{"check":"number-on-line","detail":"false isn't on line 682, 683: \"@44 D4 | @63 Must a transfer applicant have a minimum number of\""}]},
+      "D.401": {"status":"blank","page":12,"line":682,"lines":[682,683]},
       "D.402": {"status":"not-found"},
       "D.403": {"status":"not-found"},
       "D.501": {"v":"Recommended of Some","status":"passed","page":12,"line":691,"quote":"High school transcript | x"},

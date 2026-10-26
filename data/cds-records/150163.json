@@ -773,7 +773,7 @@
       "G.605": {"status":"not-found"},
       "H.101": {"v":"2024-2025","status":"passed","page":42,"line":1330,"quote":"H101 | 2024-2025 | x"},
       "H.102": {"status":"not-found"},
-      "H.103": {"v":true,"status":"failed","page":42,"line":1336,"quote":"H103 | Federal methodology (FM) | x","failures":[{"check":"inconsistent","detail":"institutional methodology without the CSS Profile or the college's own form"}]},
+      "H.103": {"v":true,"status":"passed","page":42,"line":1336,"quote":"H103 | Federal methodology (FM) | x"},
       "H.104": {"status":"not-found"},
       "H.105": {"v":5513242,"status":"passed","page":42,"line":1343,"quote":"H106 | Federal | $5,513,242"},
       "H.106": {"v":6394832,"status":"passed","page":42,"line":1345,"quote":"H107 | institution is located | $6,394,832"},

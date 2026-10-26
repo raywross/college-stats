@@ -919,7 +919,7 @@
       "H.1401": {"status":"not-found"},
       "H.1402": {"status":"not-found"},
       "H.1403": {"status":"not-found"},
-      "H.1404": {"v":true,"status":"failed","page":32,"line":1261,"quote":"Athletics","failures":[{"check":"number-on-line","detail":"true isn't on line 1261: \"@48 Athletics\""}]},
+      "H.1404": {"status":"blank","page":32,"line":1261},
       "H.1405": {"status":"not-found"},
       "H.1406": {"status":"not-found"},
       "H.1407": {"status":"not-found"},

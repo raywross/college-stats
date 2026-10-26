@@ -773,7 +773,7 @@
       "G.605": {"v":8448,"status":"passed","page":41,"line":1117,"quote":"NONRESIDENTS: | $8,448.00"},
       "H.101": {"v":"2023-2024 estimated","status":"passed","page":44,"line":1176,"quote":"☒ 2023-2024 estimated or ☐ 2022-2023 Final"},
       "H.102": {"status":"not-found"},
-      "H.103": {"v":true,"status":"failed","page":44,"line":1180,"quote":"☒ Institutional methodology (IM)","failures":[{"check":"inconsistent","detail":"institutional methodology without the CSS Profile or the college's own form"}]},
+      "H.103": {"v":true,"status":"passed","page":44,"line":1180,"quote":"☒ Institutional methodology (IM)"},
       "H.104": {"status":"not-found"},
       "H.105": {"v":6947140.28,"status":"passed","page":44,"line":1187,"quote":"Federal | $6,947,140.28 | $2,511,630.00"},
       "H.106": {"v":1959716,"status":"passed","page":44,"line":1189,"quote":"$1,959,716 | $88,591.00"},

@@ -774,7 +774,7 @@
       "H.101": {"v":"2025-2026 Estimated","status":"passed","page":29,"field":"ACAD_YR","quote":"Academic Year | 2025-2026 Estimated"},
       "H.102": {"status":"blank"},
       "H.103": {"status":"blank"},
-      "H.104": {"v":true,"status":"failed","page":29,"field":"METH_FM_IM","quote":"Both FM and IM | X","failures":[{"check":"inconsistent","detail":"institutional methodology without the CSS Profile or the college's own form"}]},
+      "H.104": {"v":true,"status":"passed","page":29,"field":"METH_FM_IM","quote":"Both FM and IM | X"},
       "H.105": {"v":1601960,"status":"passed","page":29,"field":"SCHOL_NB_FED_D","quote":"Federal | 1601960"},
       "H.106": {"v":192940,"status":"passed","page":29,"field":"SCHOL_NB_STATE_D","quote":"State all states, not only the state in which your institution is located | 192940"},
       "H.107": {"v":33181534,"status":"passed","page":29,"field":"SCHOL_NB_INST_D","quote":"Institutional: Endowed scholarships, annual gifts and tuition funded grants, awarded by the college, excluding athletic aid and tuition waivers (whi… | 33181534"},

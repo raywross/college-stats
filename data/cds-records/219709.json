@@ -539,7 +539,7 @@
       "C.2110": {"status":"not-found"},
       "C.2111": {"status":"not-found"},
       "C.2112": {"status":"not-found"},
-      "C.2201": {"v":false,"status":"failed","page":23,"line":756,"quote":"տ Yes \u0003 տ\u00031R ✔ | 1\u0012$","failures":[{"check":"number-on-line","detail":"false isn't on line 756: \"@76 տ Yes \u0003 տ\u00031R ✔ | @152 1\u0012$\""}]},
+      "C.2201": {"v":false,"status":"passed","page":23,"line":756,"quote":"տ Yes \u0003 տ\u00031R ✔ | 1\u0012$"},
       "C.2202": {"status":"not-found"},
       "C.2203": {"status":"not-found"},
       "C.2204": {"status":"not-found"},

@@ -357,7 +357,7 @@
       "C.802": {"v":"Not required for admission, but considered if submitted","status":"failed","page":17,"line":577,"quote":"SAT or ACT | ☐ | ☐ | ☐ | ☒ | ☐","failures":[{"check":"grid-column","detail":"C8A: read by a model from flattened text; which column each mark sits under isn't checked yet"}]},
       "C.803": {"status":"not-found"},
       "C.804": {"status":"not-found"},
-      "C.8D": {"v":false,"status":"failed","page":17,"line":583,"quote":"NA","failures":[{"check":"number-on-line","detail":"false isn't on line 583: \"@97 NA\""}]},
+      "C.8D": {"status":"blank","page":17,"line":583},
       "C.8E01": {"status":"not-read"},
       "C.8E02": {"status":"not-read"},
       "C.8F": {"status":"blank"},

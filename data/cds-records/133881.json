@@ -773,7 +773,7 @@
       "G.605": {"status":"not-found"},
       "H.101": {"v":"2024-2025","status":"passed","page":38,"line":1387,"quote":"2024-2025 | x"},
       "H.102": {"status":"not-found"},
-      "H.103": {"v":true,"status":"failed","page":38,"line":1393,"quote":"H103 | Federal methodology (FM) | x","failures":[{"check":"inconsistent","detail":"institutional methodology without the CSS Profile or the college's own form"}]},
+      "H.103": {"v":true,"status":"passed","page":38,"line":1393,"quote":"H103 | Federal methodology (FM) | x"},
       "H.104": {"status":"not-found"},
       "H.105": {"status":"not-found"},
       "H.106": {"v":5352420,"status":"failed","page":39,"line":1401,"quote":"H107 | located | $5,352,420","failures":[{"check":"parts-sum","detail":"H1 need-based grants: parts sum to 45,043,339, the total says 53,243,559 (allowed ±1,000)"}]},

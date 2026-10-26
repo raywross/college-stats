@@ -718,7 +718,7 @@
       "F.405": {"status":"not-read"},
       "F.406": {"status":"not-read"},
       "F.407": {"status":"not-read"},
-      "F.408": {"v":true,"status":"failed","page":18,"line":903,"quote":"Fraternity/sorority housing","failures":[{"check":"number-on-line","detail":"true isn't on line 903: \"@63 Fraternity/sorority housing\""}]},
+      "F.408": {"status":"blank","page":18,"line":903},
       "F.409": {"status":"not-read"},
       "F.410": {"status":"not-read"},
       "F.411": {"status":"not-read"},

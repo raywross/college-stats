@@ -498,7 +498,7 @@
       "C.1303": {"status":"not-found"},
       "C.1304": {"v":"Same fee","status":"passed","page":3,"line":535,"quote":"…ne application option, please indicate policy for students who apply on-line: | Same fee | | | | Undergraduates | First-time, first-year | All | All | All | x"},
       "C.1305": {"status":"not-found"},
-      "C.1401": {"v":true,"status":"failed","page":3,"line":537,"lines":[537,573],"quote":"…cation date: Month | | First-Time, First-Year Admission | Admission Policies | Early Decision | Undergraduates | First-time, first-year | All | All | All | MM","failures":[{"check":"number-on-line","detail":"true isn't on line 537, 573: \"@A233 | @B233 Percent who had GPA between 3.75 and 3.99 | @C233 | @D233 0.2302 | @E233 0.1897 | @F23\""}]},
+      "C.1401": {"status":"blank","page":3,"line":537,"lines":[537,573]},
       "C.1402": {"v":6,"status":"passed","page":3,"line":538,"quote":"…(fall): Month | 6 | First-Time, First-Year Admission | Admission Policies | Application Dates | Undergraduates | First-time, first-year | All | All | All | MM"},
       "C.1403": {"v":1,"status":"passed","page":3,"line":539,"quote":"…e (fall): Day | 1 | First-Time, First-Year Admission | Admission Policies | Application Dates | Undergraduates | First-time, first-year | All | All | All | DD"},
       "C.1404": {"v":11,"status":"passed","page":3,"line":540,"quote":"…Date: Month | 11 | First-Time, First-Year Admission | Admission Policies | Application Dates | Undergraduates | First-time, first-year | All | All | All | MM"},

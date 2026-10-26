@@ -357,7 +357,7 @@
       "C.802": {"v":"Recommend","status":"failed","page":15,"line":497,"quote":"SAT or ACT | տ | տ ✔ | տ | տ | տ","failures":[{"check":"grid-column","detail":"C8A: read by a model from flattened text; which column each mark sits under isn't checked yet"}]},
       "C.803": {"status":"not-found"},
       "C.804": {"status":"not-found"},
-      "C.8D": {"v":false,"status":"failed","page":16,"line":525,"lines":[525,526],"quote":"&\u001b'\u0011\u0003 ,Q\u0003DGGLWLRQ\u000f\u0003GRHV\u0003\\RXU\u0003LQVWLWXWLRQ\u0003XVH\u0003DSSOLFDQWV \u0003WHVW\u0003VFRUHV\u0003IRU\u0003DFDGHPLF\u0003DGYLVLQJ\" / <HV\u0003 | ✔ 1R\u0003","failures":[{"check":"number-on-line","detail":"false isn't on line 525, 526: \"@69 &\u001b'\u0011\u0003 ,Q\u0003DGGLWLRQ\u000f\u0003GRHV\u0003\\RXU\u0003LQVWLWXWLRQ\u0003XVH\u0003DSSOLFDQWV \u0003WHVW\u0003VFRUHV\u0003IRU\u0003DFDGHPLF\u0003DGYLVLQJ\"\""}]},
+      "C.8D": {"status":"blank","page":16,"line":525,"lines":[525,526]},
       "C.8E01": {"status":"not-read"},
       "C.8E02": {"status":"not-read"},
       "C.8F": {"status":"not-found"},

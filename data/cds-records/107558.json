@@ -774,7 +774,7 @@
       "H.101": {"v":"2025-2026 estimated","status":"passed","page":25,"line":736,"quote":"☒ 2025-2026 estimated or ☐ 2024-2025 Final"},
       "H.102": {"status":"not-found"},
       "H.103": {"status":"not-found"},
-      "H.104": {"v":true,"status":"failed","page":25,"line":740,"quote":"☒ Both FM and IM","failures":[{"check":"inconsistent","detail":"institutional methodology without the CSS Profile or the college's own form"}]},
+      "H.104": {"v":true,"status":"passed","page":25,"line":740,"quote":"☒ Both FM and IM"},
       "H.105": {"v":2076129.61,"status":"passed","page":25,"line":746,"quote":"Federal | $2,076,129.61 | $7,544.00"},
       "H.106": {"v":719472.05,"status":"passed","page":25,"line":748,"quote":"$719,472.05 | $475,881.45"},
       "H.107": {"v":6557399.2,"status":"passed","page":25,"line":751,"quote":"funded grants, awarded by the college, excluding athletic aid | $6,557,399.20 | $5,078,606.03"},

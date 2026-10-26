@@ -504,7 +504,7 @@
       "C.1404": {"v":1,"status":"passed","page":17,"line":834,"quote":"Application closing date (fall) | 15-Jan"},
       "C.1405": {"v":15,"status":"passed","page":17,"line":834,"quote":"Application closing date (fall) | 15-Jan"},
       "C.1501": {"status":"not-read"},
-      "C.1601": {"v":true,"status":"failed","page":17,"line":841,"quote":"Beginning date | 1-Apr","failures":[{"check":"number-on-line","detail":"true isn't on line 841: \"@466 Beginning date | @768 1-Apr\""}]},
+      "C.1601": {"status":"blank","page":17,"line":841},
       "C.1602": {"v":4,"status":"passed","page":17,"line":841,"quote":"Beginning date | 1-Apr"},
       "C.1603": {"v":1,"status":"passed","page":17,"line":841,"quote":"Beginning date | 1-Apr"},
       "C.1604": {"status":"not-found"},

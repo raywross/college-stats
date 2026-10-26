@@ -1,11 +1,16 @@
 # Manual Collection: Documents a Person Has to Fetch
 
-> Status: **planned** (not built). Independent; builds on the college-reported engine's review queue
-> ([college-reported-data.md](college-reported-data.md)), the campus-life blocked lists
-> ([campus-sources-later.md](campus-sources-later.md)), and the high school profile pilot
-> ([product/high-school-data.md](product/high-school-data.md#pilot-results-profile-pdfs-2026-10-05)). Revises one
-> campus-life access rule (owner decision needed, [Rules](#rules)). Written 2026-10-06 from the Roslyn High School
-> case.
+> Status: **folded** into [product/data-steward.md](product/data-steward.md#documents-a-person-has-to-fetch) 2026-10-26
+> (roadmap review of 2026-10-25); no longer a roadmap item. Planned 2026-10-06 from the Roslyn High School case as its
+> own system: an inventory, a wave scheduler paced per host, from-file entry points for each extractor, and a Claude in
+> Chrome skill. Three things since then made the separate system unnecessary: the Data Steward spec (2026-10-13)
+> already defines an **acquisition** issue kind with a **To do** list and an upload for exactly these documents;
+> [collegedata.fyi](https://www.collegedata.fyi) (evaluated 2026-10-13) publishes archived copies of Common Data Set
+> files for hosts that block us, so most CDS items here need `npm run archive-doc`, not a browser; and the College Board
+> AP Course Ledger ([product/high-school-data.md](product/high-school-data.md)) gives every high school's AP list, which
+> was the main reason to fetch school profile PDFs. What this file keeps: the **access rules** (what a person may open,
+> what an assistant may never do), which the Steward's To do list follows word for word, and the inventory's data
+> model, which the To do list reuses as its row shape. The text below is the plan as written.
 
 ## Why
 The crawlers obey robots.txt and stop at bot challenges, and they should. That leaves a growing pile of public

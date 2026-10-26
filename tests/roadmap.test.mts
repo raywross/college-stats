@@ -54,9 +54,10 @@ test("roadmap entries are well formed", () => {
 
 test("links between roadmap specs stay on the site; other repo links go to GitHub", () => {
   const from = "specs/data-expansion/residence.md";
-  assert.equal(resolveHref("metro-area.md#store", from), "/roadmap/metro-area#store");
-  // Built specs leave the roadmap, so links to them go to GitHub.
+  assert.equal(resolveHref("../product/commercialization.md#feature-map", from), "/roadmap/commercialization#feature-map");
+  // Built and retired specs leave the roadmap, so links to them go to GitHub (metro-area was retired 2026-10-26).
   assert.equal(resolveHref("majors.md", from), "https://github.com/raywross/college-stats/blob/main/specs/data-expansion/majors.md");
+  assert.equal(resolveHref("metro-area.md#store", from), "https://github.com/raywross/college-stats/blob/main/specs/data-expansion/metro-area.md#store");
   assert.equal(resolveHref("README.md", from), "/roadmap/data-expansion");
   assert.equal(resolveHref("../campus-pilot-accuracy.md", from), "/roadmap/campus-pilot-accuracy");
   assert.equal(resolveHref("../religious-life.md", from), "https://github.com/raywross/college-stats/blob/main/specs/religious-life.md");

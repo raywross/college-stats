@@ -66,11 +66,20 @@ In the order they could be built; each is a page on the roadmap.
 | [Getting into the major](getting-into-the-major.md) | Do I apply to the college or the major, and can I change in later? | The fine print every buyer's guide prints | Kickstart's department admit rates, with the question families actually have |
 | [Visit events](visit-events.md) (added 2026-10-13; **promoted the same day** to [product/visit-events.md](../product/visit-events.md) after the desktop research) | When can we visit, and when is the college coming to our town? | CampusBooker's event listings, from the family's list | Checking a dozen college calendars one by one |
 
+*Roadmap review, 2026-10-26.* Four of the seven were rewritten against what the site built in October: **Near and far**
+(the map view and distance exist; rings, airports, trips, and travel cost remain), **Worst plausible spring** (the plan's
+list shape counts the gaps; the scenarios remain, over five levels), **Cycle watch** (a diff of Common App grid editions
+rather than CDS editions), and **Getting into the major** (its first wave is inside Quad's estimate; the second wave is
+secondary admission and change-of-major rules). **Guides**, **Cost to a degree**, and **Colleges that would compete for
+you** stand as written, with two notes: "Guides" now collides with the plan's task guides (`/plan/guide/<slug>`), so the
+name is open again; and the compete idea's signals read the five levels and the selectivity tier in place of the retired
+chances-and-fit rules.
+
 ## Smaller additions proposed for existing specs (not applied)
 Each belongs inside a spec that already exists; listed here so they aren't lost, for the owner to accept into those
 specs or drop.
 
-1. **[chances-and-fit.md](../product/chances-and-fit.md): standing with its direction.** Beside the standing, the
+1. **Quad's estimate ([../chances/estimate.md](../chances/estimate.md); chances-and-fit.md is retired): standing with its direction.** Beside the standing, the
    five-year change in the admit rate and score ranges: "Target, and tightening: admitted 45% in 2019, 28% in 2024."
    Kickstart uses only the prior class; Quad has the series. (Google Flights' "typical vs now".)
 2. **[saved-lists.md](../product/saved-lists.md): the list as a calendar feed.** An ICS subscription of every
@@ -87,11 +96,11 @@ specs or drop.
 5. **[data-lineage.md](../data-lineage.md): check this number.** Every citation popover gets a permalink, a
    "copy citation" button, and "report a discrepancy", which files the value, its source, and the reporter's note to
    the review queue. CollegeIQ has a data-update form per site; this is per value, which the lineage makes possible.
-6. **[cds-financial-aid.md](../data-expansion/cds-financial-aid.md): a price after merit for families without
+6. *Built 2026-10-10 as the merit line of [cost-by-income.md](../product/cost-by-income.md).* **[cds-financial-aid.md](../data-expansion/cds-financial-aid.md): a price after merit for families without
    need.** From H2A N and O, shown on the Cost page as "first-years without need who got a merit award: 54%,
    averaging $14,200 (2024–25)", with the price after that award when the share is 40% or more. A cited figure in
    place of CollegeIQ's trademarked meter.
-7. **[student-profile.md](../product/student-profile.md): home ZIP and "hours from home".** The two fields
+7. *Built 2026-10-05 as [home-and-distance.md](../product/home-and-distance.md) (a full address, with the drive time).* **[student-profile.md](../product/student-profile.md): home ZIP and "hours from home".** The two fields
    [near-and-far.md](near-and-far.md) needs, treated like every profile value.
 8. **[commercialization.md](../product/commercialization.md): say what the money never buys.** The pricing page's
    line about ads should also say "no featured listings, no leads sold to colleges, no advisor commissions", the

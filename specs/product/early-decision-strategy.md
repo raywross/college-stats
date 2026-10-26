@@ -1,7 +1,25 @@
 # Early Decision and Early Action: Does Applying Early Help?
 
-> Status: **planned** (not built). After [cds-admissions.md](../data-expansion/cds-admissions.md) (which collects CDS
-> C21/C22 through the [college-reported data agent](../college-reported-data.md)). Part of [product](README.md).
+> Status: **built** (retired from the roadmap 2026-10-26). Planned 2026-10-02 on top of
+> [cds-admissions.md](../data-expansion/cds-admissions.md); built in pieces by four later specs and marked built after
+> the roadmap review of 2026-10-25. Where each part went:
+>
+> | This spec's part | Where it was built |
+> |---|---|
+> | The measures (ED rate, non-ED rate, the advantage as a multiple, share of the class from ED, the checks) | `lib/early.ts`, pure and tested, written to this spec's "Data" section for the planner's rounds stage ([planner/early-rounds.md](../planner/early-rounds.md), 2026-10-08) |
+> | Profile, Admissions → "Applying early" (ED and EA offered, dates, the ED rate beside the same document's overall rate, the caveat) | `components/school/EarlyRounds.tsx` ([cds-admissions.md](../data-expansion/cds-admissions.md), Display 2) |
+> | Compare rows | "Early decision" and "Early action" rows (`lib/cds/compare-rows.ts`) |
+> | Explore filters "Offers ED", "Offers EA" | The **Applying** chips (Early Decision, ED II, Early Action) from the Common App Requirements Grid, which knows the rounds of 1,025 members ([common-app.md](../data-expansion/common-app.md#as-built-2026-10-25), 2026-10-25) |
+> | The ED fact in the estimate ("ED admitted 18% here against 6% overall") | [chances/base-rates.md](../chances/base-rates.md#early-decision-as-a-fact) |
+> | The "Should I apply early here?" checklist | **ED opportunities** on the plan ([planner/next-steps/ed-opportunities.md](../planner/next-steps/ed-opportunities.md), 2026-10-14): the pill says where a binding round would move the college up a level for *this* student, with the facts, the caveats, the cost question, and the round button; the owner's decision that the plan may name an opportunity (2026-10-14) replaced this spec's "no recommendation sentence" |
+> | Keep history (a series per edition) | The CDS records keep every edition ([cds-admissions.md](../data-expansion/cds-admissions.md#keep-history)); no chart draws the series yet |
+>
+> **Not built, not planned:** the paired bar and "share of the class filled by ED" line on the profile (the 0.95
+> yield assumption was never checked against a class profile), the "Fills under 40% of class early" filter, the home
+> fact, and the EA-count extension of the class-profile schema. Coverage on 2026-10-25: ED counts at 81 colleges, EA
+> offered at 143, rounds offered at 1,025 members through the grid. If the share-of-class line is wanted later it is
+> a Small item on top of `lib/early.ts`; it is on the backlog, not the roadmap. The text below is the plan as written.
+> Part of [product](README.md).
 
 ## Goal
 Show, per college and per year, the early decision (ED) admit rate against the regular decision (RD) rate, how much

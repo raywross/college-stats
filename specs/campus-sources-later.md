@@ -1,10 +1,11 @@
 # Campus Life: Sources We Couldn't Read
 
-> Status: **deferred** 2026-10-04. Collects every source the religious-life, greek-life, and lgbtq-life tracks found
-> but couldn't read during the 2026-10-04 build (`feature/campus-life-2`): national directories left out of
-> [campus-directories.md](campus-directories.md), and pages the 25-college pilot hit during its reconnaissance. Parked
-> until the owner picks a fix for a given source; each is independent, so fixes can land one at a time, alongside
-> whichever feature needs that source next. Companion to
+> Status: **folded** into [product/data-steward.md](product/data-steward.md#documents-a-person-has-to-fetch) 2026-10-26
+> (roadmap review of 2026-10-25): this file is a catalog, not a work item, and the Steward's To do list is where its
+> rows become tasks. Deferred 2026-10-04. Collects every source the religious-life, greek-life, and lgbtq-life tracks
+> found but couldn't read during the 2026-10-04 build (`feature/campus-life-2`): national directories left out of
+> [campus-directories.md](campus-directories.md), and pages the 25-college pilot hit during its reconnaissance. Each
+> row is independent, so fixes can land one at a time, alongside whichever feature needs that source next. Companion to
 > [religious-life.md](religious-life.md), [greek-life.md](greek-life.md), and [lgbtq-life.md](lgbtq-life.md).
 
 ## How to read the tables

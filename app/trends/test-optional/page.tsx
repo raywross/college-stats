@@ -13,7 +13,9 @@ import { SmallMultiples } from "@/components/trends/SmallMultiples";
 import { StudyPage } from "@/components/trends/StudyPage";
 import { TrendStat } from "@/components/trends/TrendStat";
 import { groupingTiles } from "@/components/trends/tiles";
-import { Term } from "@/components/ui/info-tip";
+import { MetricLabel, Term } from "@/components/ui/info-tip";
+import { gridCitation } from "@/lib/common-app/trends";
+import { gridVintage } from "@/lib/common-app/test-policy";
 
 const study = studyBySlug("test-optional")!;
 
@@ -51,6 +53,11 @@ export default async function TestOptionalPage() {
   const r1 = row("research", "R1");
   const dropped = file.scoreRanges.find((r) => r.key === "dropped") ?? null;
   const kept = file.scoreRanges.find((r) => r.key === "required-both") ?? null;
+  // This cycle on the Common App grid (specs/trends/test-optional.md "Update"): the member colleges' stated policy.
+  const tc = file.thisCycle;
+  const cycleText = tc ? tc.cycle.replace("-", "–") : null;
+  const gridCite = (field: string, label: string) => gridCitation({ cycle: tc!.cycle, updated: tc!.updated }, field, label);
+  const names = (list: { name: string }[], max: number) => list.slice(0, max).map((c) => c.name).join(", ");
 
   return (
     <StudyPage
@@ -157,6 +164,15 @@ export default async function TestOptionalPage() {
             {file.wentBackToRequiring.length > 0 && (
               <>{file.wentBackToRequiring.length} colleges have already reversed course and require tests again; see the list below.</>
             )}
+            {tc && cycleText && (
+              <>
+                {" "}
+                The movement back is now visible ahead of the federal data: for the {cycleText} cycle, the Common App grid has {pct(tc.now.required)} of{" "}
+                {tc.n.toLocaleString("en-US")} member colleges requiring a test, and {tc.backToRequiring.length} that were optional or test-blind in{" "}
+                {fall(tc.then.fall)}
+                {tc.backToRequiring.length > 0 && <>, including {names(tc.backToRequiring, 3)},</>} require one again.
+              </>
+            )}
           </p>
           <p className="text-muted-foreground">
             A <Term term="test-optional">test-optional</Term> or test-blind <Term term="test-policy">policy</Term> changes who submits a score, not just whether a
@@ -185,12 +201,88 @@ export default async function TestOptionalPage() {
           <b className="text-foreground">Yearly lines</b> run from {fall(lineFrom)} over the panel colleges reporting each fall; a year is left out of a line when
           under {Math.round(MIN_YEAR_COVERAGE * 100)}% of its colleges reported.
         </>,
+        ...(tc
+          ? [
+              <>
+                <b className="text-foreground">This cycle</b> counts the Common App member colleges with a Requirements Grid row and a federal policy in{" "}
+                {fall(tc.then.fall)} ({tc.n.toLocaleString("en-US")} colleges, not the study&apos;s panel). The grid&apos;s &quot;always required&quot; and
+                &quot;flexible&quot; (a choice of tests) both count as required; its &quot;sometimes required&quot; has no federal counterpart, so the two
+                vocabularies are compared only where they overlap. Each figure is cited to the grid&apos;s cycle and update stamp.
+              </>,
+            ]
+          : []),
       ]}
       links={[
         { href: "/glossary#test-optional", label: "Glossary: test-optional and test-blind" },
         { href: "/#whats-changed", label: "Home: Test-optional went mainstream" },
       ]}
     >
+      {tc && cycleText && (
+        <section aria-labelledby="this-cycle" className="min-w-0">
+          <h2 id="this-cycle" className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">
+            This cycle, on the Common App grid
+          </h2>
+          <p className="mt-2 max-w-3xl text-muted-foreground">
+            Federal data ends at {fall(tc.then.fall)}. For the {cycleText} cycle, Common App&apos;s Requirements Grid ({gridVintage({ cycle: tc.cycle, updated: tc.updated })})
+            states the <Term term="test-policy">test policy</Term> of {tc.n.toLocaleString("en-US")} member colleges in finer terms than the federal code: always required,
+            a choice of tests, <Term term="required-for-some">required for some applicants</Term>, never required, or ignored. The same colleges by the federal count in{" "}
+            {fall(tc.then.fall)}: {pct(tc.then.required)} required a test, {pct(tc.then.optional)} were test-optional, {pct(tc.then.blind)} test-blind.
+          </p>
+          <div className="mt-5 grid gap-4 max-sm:gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {(
+              [
+                { key: "required", label: "Require a test", value: tc.now.required, then: tc.then.required, note: "always, or a choice of tests" },
+                { key: "requiredSome", label: "Required for some applicants", value: tc.now.requiredSome, then: null, note: "no federal answer for this" },
+                { key: "optional", label: "Test-optional", value: tc.now.optional, then: tc.then.optional, note: "never required" },
+                { key: "blind", label: "Test-blind", value: tc.now.blind, then: tc.then.blind, note: "scores ignored" },
+              ] as const
+            ).map((t) => (
+              <div key={t.key} className="rounded-3xl border bg-card p-4 sm:p-5">
+                <MetricLabel cited={gridCite(t.key, t.label)} className="text-xs font-bold tracking-[0.08em] text-muted-foreground uppercase">
+                  {t.label}
+                </MetricLabel>
+                <p className="mt-1 font-display text-3xl font-extrabold tracking-tight tabular-nums sm:text-4xl">{pct(t.value)}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t.note}
+                  {t.then !== null ? <>; {pct(t.then)} by the federal count in {fall(tc.then.fall)}</> : null}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
+            Most colleges the grid marks &quot;required for some&quot; read &quot;considered but not required&quot; in federal data, which has no such answer, so part of
+            the gap between the two counts is a finer instrument, not a change of policy. The clearest sign of a reversal is the list below: test-optional or
+            test-blind by the federal count in {fall(tc.then.fall)}, and &quot;always required&quot; on this cycle&apos;s grid.
+          </p>
+          {tc.backToRequiring.length > 0 && (
+            <>
+              <h3 className="mt-6 text-lg font-bold">
+                <MetricLabel cited={gridCite("backToRequiring", "Went back to requiring tests")}>Require a test again this cycle</MetricLabel>
+              </h3>
+              <ul className="mt-3 divide-y rounded-3xl border bg-card">
+                {tc.backToRequiring.map((c) => (
+                  <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                    <Link href={`/schools/${c.id}`} className="font-semibold hover:text-primary hover:underline">
+                      {c.name}
+                    </Link>
+                    <span className="shrink-0 text-muted-foreground">
+                      {c.thenLabel} in {fall(tc.then.fall)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {tc.wentOptional.length > 0 && (
+            <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
+              {tc.wentOptional.length === 1 ? "One college went" : `${tc.wentOptional.length} colleges went`} the other way, from required in {fall(tc.then.fall)} to{" "}
+              {tc.wentOptional.every((c) => c.policyNow === tc.wentOptional[0].policyNow) ? tc.wentOptional[0].policyNow.toLowerCase() : "optional or test-blind"} this cycle:{" "}
+              {names(tc.wentOptional, 6)}.
+            </p>
+          )}
+        </section>
+      )}
+
       <section aria-labelledby="who-submits" className="min-w-0">
         <h2 id="who-submits" className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">
           Who still submits

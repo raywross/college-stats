@@ -523,5 +523,163 @@
       "name": "University of Memphis",
       "policyNow": "Test scores required"
     }
-  ]
+  ],
+  "thisCycle": {
+    "cycle": "2026-27",
+    "updated": "2026-09-25",
+    "n": 1004,
+    "codes": {
+      "A": 50,
+      "F": 117,
+      "S": 296,
+      "N": 523,
+      "I": 18
+    },
+    "now": {
+      "required": 0.1663,
+      "requiredSome": 0.2948,
+      "optional": 0.5209,
+      "blind": 0.0179
+    },
+    "then": {
+      "fall": 2024,
+      "required": 0.0349,
+      "optional": 0.744,
+      "blind": 0.2211
+    },
+    "backToRequiring": [
+      {
+        "id": "100858",
+        "name": "Auburn University",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "217156",
+        "name": "Brown University",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "110404",
+        "name": "California Institute of Technology",
+        "thenLabel": "Test-blind"
+      },
+      {
+        "id": "190415",
+        "name": "Cornell University",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "182670",
+        "name": "Dartmouth College",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "139940",
+        "name": "Georgia State University",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "242653",
+        "name": "Inter American University of Puerto Rico-Metro",
+        "thenLabel": "Test-blind"
+      },
+      {
+        "id": "162928",
+        "name": "Johns Hopkins University",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "486840",
+        "name": "Kennesaw State University",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "140447",
+        "name": "Mercer University",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "176053",
+        "name": "Mississippi Christian University",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "178341",
+        "name": "Missouri Southern State University",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "136215",
+        "name": "Nova Southeastern University",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "204796",
+        "name": "Ohio State University-Main Campus",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "160630",
+        "name": "Southern University at New Orleans",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "243744",
+        "name": "Stanford University",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "228778",
+        "name": "The University of Texas at Austin",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "228796",
+        "name": "The University of Texas at El Paso",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "243443",
+        "name": "Universidad del Sagrado Corazon",
+        "thenLabel": "Test-blind"
+      },
+      {
+        "id": "224323",
+        "name": "University of Dallas",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "482680",
+        "name": "University of North Georgia",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "215062",
+        "name": "University of Pennsylvania",
+        "thenLabel": "Test-optional"
+      },
+      {
+        "id": "197221",
+        "name": "Webb Institute",
+        "thenLabel": "Test-optional"
+      }
+    ],
+    "wentOptional": [
+      {
+        "id": "228459",
+        "name": "Texas State University",
+        "policyNow": "Test-optional"
+      },
+      {
+        "id": "129020",
+        "name": "University of Connecticut",
+        "policyNow": "Test-optional"
+      },
+      {
+        "id": "161554",
+        "name": "University of Southern Maine",
+        "policyNow": "Test-optional"
+      }
+    ]
+  }
 }

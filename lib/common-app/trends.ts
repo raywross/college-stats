@@ -10,6 +10,7 @@
  * figures) are images, so nothing here is parsed from a PDF.
  */
 import type { AnyCited } from "../lineage";
+import { gridVintage } from "./test-policy.ts";
 
 /** The measures this reader understands. A row with any other measure fails validation. */
 export const COMMON_APP_MEASURES = [
@@ -122,6 +123,27 @@ export function citationFor(row: CommonAppTrendRow, file: CommonAppTrendsFile): 
     quote: row.quote,
     page: row.page,
     document: report?.title,
+  };
+}
+
+/**
+ * The `AnyCited` a SourceTip needs for a figure read off the Requirements Grid itself (the test-optional study's
+ * "this cycle" block, app/trends/test-optional/page.tsx): "Common App", the grid's cycle and stamp as the year label
+ * (never typed), the homepage as the only link.
+ */
+export function gridCitation(edition: { cycle: string; updated: string }, field: string, label: string): AnyCited {
+  return {
+    key: "common-app" as const,
+    label: "Common App",
+    publisher: "Common App, Inc.",
+    year: gridVintage(edition),
+    url: "https://www.commonapp.org",
+    retrieved: edition.updated,
+    path: `common-app-grid.${field}`,
+    field: label,
+    method: "reported" as const,
+    isDefault: true,
+    document: `Requirements Grid, ${edition.cycle}`,
   };
 }
 

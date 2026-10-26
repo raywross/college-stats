@@ -124,3 +124,45 @@ test("colleges that went back to requiring tests weren't required in fall 2022 b
     assert.equal(val(h!, "test_policy", to), CODES.required);
   }
 });
+
+/* ---- This cycle, on the Common App grid (specs/trends/test-optional.md "Update") ---- */
+
+test("this cycle: the grid block is the member colleges with a grid row and a federal policy at the newest fall, recomputed", () => {
+  const tc = file.thisCycle;
+  assert.ok(tc, "the committed data carries a Requirements Grid, so the block exists");
+  const members = shards.filter((h) => byId.get(h.unit_id)?.apply?.test_policy?.code && val(h, "test_policy", to) !== null);
+  assert.equal(tc.n, members.length);
+  assert.ok(tc.n >= GROUP_FLOOR);
+  const code = (h: SchoolHistory) => byId.get(h.unit_id)!.apply!.test_policy!.code;
+  const codes = { A: 0, F: 0, S: 0, N: 0, I: 0 };
+  for (const h of members) codes[code(h)]++;
+  assert.deepEqual(tc.codes, codes);
+  assert.equal(tc.now.required, r4((codes.A + codes.F) / members.length));
+  assert.equal(tc.now.requiredSome, r4(codes.S / members.length));
+  assert.equal(tc.now.optional, r4(codes.N / members.length));
+  assert.equal(tc.now.blind, r4(codes.I / members.length));
+  assert.equal(tc.then.fall, to);
+  const fedShare = (ok: (p: number) => boolean) => r4(members.filter((h) => ok(val(h, "test_policy", to)!)).length / members.length);
+  assert.equal(tc.then.required, fedShare((p) => p === CODES.required));
+  assert.equal(tc.then.optional, fedShare((p) => p === CODES.considered || p === CODES.recommended));
+  assert.equal(tc.then.blind, fedShare((p) => p === CODES["not-considered"]));
+  // The cycle and stamp come from the grid edition on each school, never typed in the builder.
+  const any = byId.get(members[0].unit_id)!.apply!.common_app;
+  assert.equal(tc.cycle, any.cycle);
+  assert.equal(tc.updated, any.updated);
+});
+
+test("this cycle: 'back to requiring' is not required federally at the newest fall and 'always required' on the grid; the site agrees", () => {
+  const tc = file.thisCycle!;
+  const members = shards.filter((h) => byId.get(h.unit_id)?.apply?.test_policy?.code && val(h, "test_policy", to) !== null);
+  const back = members.filter((h) => val(h, "test_policy", to) !== CODES.required && byId.get(h.unit_id)!.apply!.test_policy!.code === "A").map((h) => h.unit_id).sort();
+  assert.deepEqual(tc.backToRequiring.map((c) => c.id).sort(), back);
+  assert.ok(back.length > 0, "the 2026-27 grid names colleges that require tests again");
+  for (const c of tc.backToRequiring) {
+    assert.equal(byId.get(c.id)!.admissions.test_policy, "required", `${c.name}: the site shows the grid's policy`);
+    assert.match(c.thenLabel, /^(Test-optional|Test-blind|Test scores recommended)$/);
+  }
+  assert.deepEqual([...tc.backToRequiring.map((c) => c.name)], [...tc.backToRequiring.map((c) => c.name)].sort((a, b) => a.localeCompare(b)), "named list is alphabetical");
+  const went = members.filter((h) => val(h, "test_policy", to) === CODES.required && ["N", "I"].includes(byId.get(h.unit_id)!.apply!.test_policy!.code)).map((h) => h.unit_id).sort();
+  assert.deepEqual(tc.wentOptional.map((c) => c.id).sort(), went);
+});

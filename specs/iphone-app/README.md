@@ -66,7 +66,7 @@ Phase 1 alone is shippable: it is the public site with nothing gated. Phase 2 re
 - **Cite everything.** A value with no citation is a bug; the API test fails on it as `tests/citation-guards.test.mts` does.
 - **No hard-coded years.** Year labels come from the API, which takes them from lineage.
 - **Public data stays free and signed out.** Signing in adds memory and tools, never access to a number
-  ([commercialization.md](../product/commercialization.md#what-stays-free)); the tiers gate the app exactly as the site.
+  ([commercialization.md](../product/commercialization.md#what-stays-free)); the advisor gates the app exactly as the site.
 - **The method stays on the server** ([chances/README.md](../chances/README.md#quads-estimate-is-proprietary)).
 - **Minors.** Same age gate (13 and older), no behavioral ads, no replay, no location beyond what the person types.
 - **User data lives only in Supabase**, behind the same row-level security.

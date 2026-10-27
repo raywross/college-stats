@@ -72,7 +72,7 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     key: "business",
     title: "Platform, measurement, and business",
     description:
-      "The production database, an assistant that clears the data review queue and keeps the list of documents a person has to fetch, paid tiers that keep public data free, and counselor accounts.",
+      "The production database, an assistant that clears the data review queue and keeps the list of documents a person has to fetch, the advisor as the one paid product with public data free, and free counselor accounts.",
   },
   {
     key: "apps",
@@ -165,10 +165,10 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/product/commercialization.md",
     group: "business",
     summary:
-      "Free, Plus, and Pro drawn around the built plan, visit alerts, and the Data API: what each includes, how billing works, and a pricing page, with the public data always free.",
+      "The advisor: the plan as the one paid product, $20 a year for a student or $30 for a family, with everything else on the site free, including the counselor's portal.",
     complexity: 3,
     complexityNote:
-      "Stripe billing, webhooks, the entitlement map behind the planner's built capability hook, and the legal setup before launch.",
+      "Stripe billing for two yearly products, webhooks, the entitlement map behind the planner's built capability hook, a pricing page, and the legal setup before launch.",
     status: "planned",
   },
   {
@@ -176,7 +176,7 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/product/counselor-portal.md",
     group: "business",
     summary:
-      "Organization accounts for counselors and consultants: a caseload dashboard over students' plans, co-branded reports, and, as its last phase, scattergrams uploaded from the school's own records.",
+      "Free organization accounts for counselors and consultants: a caseload dashboard over students' plans, co-branded reports, and, as its last phase, scattergrams uploaded from the school's own records.",
     complexity: 4,
     complexityNote:
       "A second kind of account with its own grants, dashboards, PDF reports, data agreements for schools, and the scattergram upload with its scrubbing and thresholds.",

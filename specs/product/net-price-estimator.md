@@ -108,7 +108,7 @@ URL and date, registered in `lib/fields.ts` as derived fields so every output is
 
 ## Open questions
 1. Free or paid? Recommendation: the SAI and Pell estimate free (families should never pay to learn federal aid); the
-   per-college range and the four-year total with the planner's tier ([commercialization.md](commercialization.md#feature-map)).
+   per-college range and the four-year total with the advisor ([commercialization.md](commercialization.md#feature-map)).
 2. Does cost-by-income's pilot need to pass first? Yes for the estimated part of the curve; the published part (to
    $110K) and the SAI are enough for most families, so the personal layer can ship on the published bands while the
    gate is closed, saying so.

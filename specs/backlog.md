@@ -289,12 +289,14 @@ shared rules for user data are in that README. All user data lives only in Supab
   approve; Operations becomes Issues, Proposals, To do (the documents a person has to fetch, folded in from
   manual-collection.md and campus-sources-later.md), Decisions, Audits. Step 0: collegedata.fyi's source URLs into
   discovery. Needs the document archive repo first.
-- [ ] **Commercialization** ([product/commercialization.md](product/commercialization.md), rewritten 2026-10-26): Free /
-  Plus ($1.99 or $15.99/yr) / Pro ($49 pass); the feature map drawn around the built plan (its eight capability names),
-  visit alerts, and the Data API; Stripe Checkout, Billing, webhooks; pricing page; legal setup; public data stays free.
-- [ ] **Counselor portal** ([product/counselor-portal.md](product/counselor-portal.md), revised 2026-10-26): organizations
-  (IECs first, schools with a data agreement), a caseload dashboard over students' plans, co-branded PDF dossiers,
-  students invited by a counselor free, seats, and scattergram uploads as the last phase.
+- [ ] **Commercialization** ([product/commercialization.md](product/commercialization.md), redrawn 2026-10-26 on the owner's
+  decision): the advisor (the plan) as the one paid product, $20 a year per student or $30 a family, annual only; everything
+  else free, counselors' organizations included; the feature map behind the planner's eight capability names; Stripe
+  Checkout and Billing for two products, webhooks; the pricing page; legal setup. Open: the free taste (three colleges
+  or a 14-day trial), the name on the site.
+- [ ] **Counselor portal** ([product/counselor-portal.md](product/counselor-portal.md), revised 2026-10-26, free by the
+  owner's decision): organizations (IECs first, schools with a data agreement), a caseload dashboard over students' plans
+  showing who has the advisor, co-branded PDF dossiers, and scattergram uploads as the last phase.
 - [x] **Data API** ([product/data-api.md](product/data-api.md)), built 2026-10-20: `/api/v1` and an MCP server at
   `/api/mcp` for account holders, keys on `/account/api-keys`, limits, lineage and history endpoints, `/developers`
   docs. Merged 2026-10-21 with [product/assistants.md](product/assistants.md): the same server without a key at

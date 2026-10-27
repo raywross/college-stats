@@ -102,12 +102,12 @@ specs or drop.
    place of CollegeIQ's trademarked meter.
 7. *Built 2026-10-05 as [home-and-distance.md](../product/home-and-distance.md) (a full address, with the drive time).* **[student-profile.md](../product/student-profile.md): home ZIP and "hours from home".** The two fields
    [near-and-far.md](near-and-far.md) needs, treated like every profile value.
-8. **[commercialization.md](../product/commercialization.md): say what the money never buys.** The pricing page's
+8. *The first half taken into the 2026-10-26 commercialization spec; the counselor-pricing half superseded by the owner's decision that counselors use Quad free.* **[commercialization.md](../product/commercialization.md): say what the money never buys.** The pricing page's
    line about ads should also say "no featured listings, no leads sold to colleges, no advisor commissions", the
    three models the research found (CollegeIQ's Featured flag, Zillow's Premier Agent, camp advisors). And revisit
    counselor pricing before launch: $299 to $599 per organization is two to six times under Kickstart; per seat with a
    student cap (the portal spec's open question) and an IECA/HECA code would read as serious rather than cheap.
-9. **[counselor-portal.md](../product/counselor-portal.md): students invited by a counselor are free.** Kickstart's
+9. *Superseded 2026-10-26: the owner's model is the reverse, counselors free and families paying for the advisor.* **[counselor-portal.md](../product/counselor-portal.md): students invited by a counselor are free.** Kickstart's
    acquisition pattern: a counselor's subscription covers their students' accounts. The brief in
    [cycle-watch.md](cycle-watch.md) is the content channel the portal needs.
 

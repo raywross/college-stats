@@ -49,7 +49,7 @@ tables, and the events the site already reads.
 - "One flight" uses nonstop airport pairs from the same BTS data.
 
 ## Tier
-Rings and the airport line free (public coordinates). Visit trips with the planner's tier. The travel-cost line with
+Rings and the airport line free (public coordinates). Visit trips with the advisor. The travel-cost line with
 the family's price, whatever tier that takes ([../product/commercialization.md](../product/commercialization.md#feature-map)).
 
 ## Complexity

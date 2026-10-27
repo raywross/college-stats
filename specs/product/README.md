@@ -51,8 +51,8 @@ the roadmap, with the award-letter analyzer as the last stage.
 | Spec | Adds | Complexity |
 |---|---|---|
 | [telemetry.md](telemetry.md) | Product analytics with a typed event registry, privacy rules for minors, and usage reports (built 2026-10-07) | Medium |
-| [commercialization.md](commercialization.md) | *Rewritten 2026-10-26:* Free / Plus / Pro drawn around the built plan, visit alerts, and the Data API; the entitlement map behind the planner's capability hook; Stripe billing; the pricing page | Large |
-| [counselor-portal.md](counselor-portal.md) | *Revised 2026-10-26:* organization accounts for counselors and consultants: caseloads over students' plans, reports, students invited by a counselor free, and scattergram uploads as the last phase | Extra large |
+| [commercialization.md](commercialization.md) | *Redrawn 2026-10-26 (owner):* the advisor, the plan as the one paid product at $20 a year per student or $30 a family; everything else free, counselors included; the entitlement map behind the planner's capability hook; Stripe billing; the pricing page | Large |
+| [counselor-portal.md](counselor-portal.md) | *Revised 2026-10-26, free by the owner's decision:* organization accounts for counselors and consultants: caseloads over students' plans, reports, and scattergram uploads as the last phase; the families buy the advisor | Extra large |
 | [data-api.md](data-api.md) | *Built 2026-10-20:* a keyed API and an MCP server over the dataset, history, and lineage, for people with an account (keys on `/account/api-keys`, docs on `/developers`); bulk downloads and the paid tier wait for billing | Medium |
 | [assistants.md](assistants.md) | *Built 2026-10-20:* Quad in ChatGPT, Claude, and Gemini: the same MCP server without a key at `/mcp` for the assistants' connector menus, a downloadable skill file, and the `/connect` page with the steps for each | Medium |
 | [data-steward.md](data-steward.md) | *Planned 2026-10-13, revised 2026-10-26*: an agent that turns the review queue into a few causes, proves each against the colleges' documents, and opens fixes for the owner to approve; Operations becomes Issues, Proposals, To do (the documents a person has to fetch), Decisions, and Audits | Large |
@@ -63,7 +63,7 @@ the roadmap, with the award-letter analyzer as the last stage.
 | Idea document | Where it went |
 |---|---|
 | Commercialization strategy: tiers, pricing, pricing page | [commercialization.md](commercialization.md) |
-| Commercialization strategy: B2B counselors, data API | [counselor-portal.md](counselor-portal.md), [data-api.md](data-api.md) |
+| Commercialization strategy: B2B counselors, data API | [counselor-portal.md](counselor-portal.md) (free since the owner's 2026-10-26 decision), [data-api.md](data-api.md) (built, free with an account) |
 | Commercialization strategy: Niche-style high school integration | [high-school-data.md](high-school-data.md) (data), [scattergrams.md](scattergrams.md) (feeder and scattergram use) |
 | Feature roadmap A: real cost and aid estimator | [net-price-estimator.md](net-price-estimator.md) |
 | Feature roadmap B: localized scattergrams | [scattergrams.md](scattergrams.md) |

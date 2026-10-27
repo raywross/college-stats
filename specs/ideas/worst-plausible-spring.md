@@ -66,7 +66,7 @@ $25K with nursing within six hours"), the guide's built rail does the rest. The 
   "what went into it" panel.
 
 ## Tier
-With the planner, whatever tier the planner takes; the price lines appear when the family's price exists.
+With the advisor; the price lines appear when the family's price exists.
 
 ## Complexity
 Small: one pure function over the plan's rows (`lib/planner/stress-test.ts`, tested with a fixture list) and a fold.

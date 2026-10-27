@@ -145,9 +145,9 @@ Settings and is recorded like the text consent. The digest email stays email.
 ## In-app purchase
 Apple takes its commission on a digital subscription sold inside the app, and the rules forbid steering to a cheaper
 web price from within it. Options, decided with [commercialization.md](../product/commercialization.md#billing) when
-tiers exist: (a) sell Plus and Pro through StoreKit with the same products, Apple's receipt written to the same
-`subscriptions` table by a server webhook; (b) sell nothing in the app, show the tier a person has, and let the site
-sell. (b) is simpler and legal; (a) is where the money is for an app-first family. Recommendation: (b) at launch, (a)
+the advisor is sold: (a) sell the advisor's two yearly products through StoreKit, Apple's receipt written to the same
+`subscriptions` table by a server webhook; (b) sell nothing in the app, show whether a student has the advisor, and
+let the site sell. (b) is simpler and legal; (a) is where the money is for an app-first family. Recommendation: (b) at launch, (a)
 once the site's subscriptions prove out.
 
 ## Design system on iOS

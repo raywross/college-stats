@@ -1,7 +1,9 @@
 # Counselor Portal: Quad for Counselors
 
-> Status: **planned** (not built); **revised** 2026-10-26 after the roadmap review. After
-> [commercialization.md](commercialization.md) (organization billing reuses its Stripe products). Builds on what is
+> Status: **planned** (not built); **revised** 2026-10-26 after the roadmap review, and **free** by the owner's decision
+> the same day ("let them use the site for free to help them manage and collect data from their students; the students
+> will pay, the advisors will get the site for free"; [commercialization.md](commercialization.md#counselors)). After
+> [commercialization.md](commercialization.md) only because the caseload page shows which students have the advisor. Builds on what is
 > built since this was written on 2026-10-02: accounts and households with roles ([accounts.md](accounts.md),
 > [household-hub.md](household-hub.md)), the planner as the student's list ([../planner/README.md](../planner/README.md)),
 > the student's record ([../planner/record/README.md](../planner/record/README.md)), Quad's estimate and its levels
@@ -13,9 +15,10 @@
 ## Goal
 An **organization** account for an independent educational consultant (IEC) or a school counseling office: a
 caseload of students, each with their own Quad account and list, seen in one dashboard; the school's scattergram
-data; and co-branded PDF reports for family meetings. Priced per the strategy document at $299–$599 a year by
-seats. It bridges the tools counselors use for applications (Naviance, Scoir, Common App) and the cost and outcome
-data Quad has.
+data; and co-branded PDF reports for family meetings. **Free** (owner, 2026-10-26): an organization account costs
+nothing, for an independent consultant or a school office alike; the students' families buy the advisor
+([commercialization.md](commercialization.md#prices)), and the counselor's office is how they hear of it. It bridges the
+tools counselors use for applications (Naviance, Scoir, Common App) and the cost and outcome data Quad has.
 
 ## Research (2026-10-02)
 - Scoir's institutional plans start in the thousands per month; Naviance is district-licensed. Neither sells to
@@ -42,10 +45,11 @@ org_students  (org_id, student_id, status: invited | active | ended, invited_ema
 Students verify as a school's students through the organization (an invite code or a roster email domain), which
 is also what unlocks the school's scattergrams for them ([scattergrams.md](scattergrams.md#who-sees-it)).
 
-- **A student invited by a counselor pays nothing.** The organization's plan covers its students' accounts at whatever
-  tier the map in [commercialization.md](commercialization.md#feature-map) gives organization students; this is the
-  acquisition pattern College Kickstart proved ([ideas/README.md](../ideas/README.md), proposal 9) and the reason the
-  portal is the first paid product worth selling.
+- **The counselor pays nothing; the family buys the advisor.** An invited student gets a free account and the plan's
+  free taste like anyone; the advisor ($20 a year, or $30 for the family) is the family's purchase
+  ([commercialization.md](commercialization.md#feature-map)). The caseload page shows which students have it, so the
+  office knows who can open the guides it is talking about. (The 2026-10-03 proposal that counselor-invited students
+  are free, [ideas/README.md](../ideas/README.md) proposal 9, is superseded.)
 - **The student's record and plan are the student's.** A counselor reads what the grant allows and writes list items
   and notes, attributed. Nothing a counselor enters changes Quad's estimate: the estimate reads the record, and the
   record is the student's (a counselor may fix a typo in a course list with edit access, like a guardian).
@@ -65,7 +69,7 @@ is also what unlocks the school's scattergrams for them ([scattergrams.md](scatt
   share, offers if any, deadlines, sources page), with the organization's logo and the Quad citation footer; and a
   caseload summary PDF/CSV for the office.
 - **Scattergrams:** the upload flow from [scattergrams.md](scattergrams.md#import) and a match-review queue.
-- **Members and billing:** seats, invitations, Stripe Customer Portal.
+- **Members:** invitations and roles; no seats, no billing (the account is free).
 - Phones: the dashboard reads as a list of student rows ([mobile.md](../mobile.md)).
 
 ## Scattergrams
@@ -111,9 +115,7 @@ and Scoir show them inside a school's own account; families whose counselor does
   another organization sees nothing).
 
 ## Open questions
-1. Seat pricing: per counselor or per student? Recommendation: per counselor seat with a soft student cap
-   (e.g. 60 per seat), matching how IECs think about caseloads. The 2026-10-03 research
-   ([ideas/README.md](../ideas/README.md), proposal 8) found $299 to $599 per organization two to six times under
-   College Kickstart; price per seat and revisit before launch.
+1. ~~Seat pricing~~ Closed 2026-10-26: the portal is free. Open instead: may an organization buy the advisor for its
+   students as a block at the family price? Not in the first build ([commercialization.md](commercialization.md#open-questions)).
 2. School-office phase: start with the two Clearinghouse-publishing states' public schools, where outcomes data is
    already public and the value is obvious.

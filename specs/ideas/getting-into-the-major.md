@@ -68,7 +68,7 @@ closed` needs a quote that says so. A program with no completions in that CIP fa
 than two admissions cycles is shown with its year and re-read when the page changes (the archive's manifest knows).
 
 ## Tier
-Free on profiles: it is data about the college. The Explore filters and the row line with the planner's tier.
+Free on profiles: it is data about the college. The Explore filters and the row line with the advisor.
 
 ## Complexity
 Medium: a recipe for the agent with checks and review, two fields on a built type, a profile block, two filters, and a

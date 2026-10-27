@@ -1,3 +1,4 @@
+import { planHref } from "@/lib/planner/plan-tabs";
 import type { NextRequest } from "next/server";
 import { isAuthorized } from "@/lib/revalidate";
 import { supabaseClient } from "@/lib/supabase";
@@ -46,7 +47,7 @@ async function run(request: NextRequest) {
       const task = dueTomorrow(plan.tasks, today)[0];
       if (!task) continue;
       const title = outsideTitle(task, task.item_id ? (plan.names[task.item_id] ?? null) : null);
-      const body = composeDayBeforeText({ title, when: null }, `${siteUrl}/household/${consent.student_id}/plan`);
+      const body = composeDayBeforeText({ title, when: null }, `${siteUrl}${planHref({ person: consent.student_id })}`);
       const result = await deliverText(client, consent, "day_before", body, { taskId: task.id });
       if (result.sent) summary.sent++;
     } catch (err) {

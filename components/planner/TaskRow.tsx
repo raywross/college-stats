@@ -1,5 +1,6 @@
 "use client";
 
+import { planHref } from "@/lib/planner/plan-tabs";
 import Link from "next/link";
 import { useState, useTransition, type ReactNode } from "react";
 import { AlarmClockOff, Check } from "lucide-react";
@@ -105,7 +106,7 @@ export function TaskRow({
         </div>
         {task.detail && <p className="mt-1 text-xs text-muted-foreground">{task.detail}</p>}
         {task.kind === "cycle" && task.key?.includes(":cycle:choose_courses") && (
-          <Link href="/plan?setup=1" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
+          <Link href={planHref({ setup: true })} className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
             Update your courses
           </Link>
         )}

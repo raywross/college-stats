@@ -14,6 +14,7 @@ import { profileProgress, SECTION_STEP } from "@/lib/planner/profile-progress";
 import { recordHref, recordProgress, type RecordBack } from "@/lib/planner/record";
 import { RecordInline } from "@/components/record/RecordInline";
 import { defaultTab, parseTab, planHref } from "@/lib/planner/plan-tabs";
+import { ADVISOR_SHORT } from "@/lib/planner/advisor";
 import { nowMoves, topMove } from "@/lib/planner/moves";
 import { importanceFactsFrom } from "@/lib/planner/importance-facts";
 import { withTiming } from "@/lib/timing-server";
@@ -26,7 +27,7 @@ import { profileFor, profilesICanSee } from "@/lib/student-profile-store";
 import type { StudentProfileData } from "@/lib/student-profile";
 import type { Season } from "@/lib/planner/seasons";
 
-export const metadata: Metadata = { title: "Plan" };
+export const metadata: Metadata = { title: ADVISOR_SHORT };
 
 /** Set by `PlanPeople.tsx` on every pick; read here so a guardian's next visit opens the same child (page.md
  * "Routes", decision 2026-10-11). A plain non-`httpOnly` cookie: a per-viewer convenience, nothing sensitive. */
@@ -107,7 +108,7 @@ function nextDeadlineOf(load: PlanLoad | undefined): string | null {
 }
 
 /**
- * /plan (specs/planner/redesign/page.md): one address for a student's own plan and for a parent's family. Signed
+ * /advisor, formerly /plan (specs/product/advisor.md; specs/planner/redesign/page.md): one address for a student's own plan and for a parent's family. Signed
  * out: the pitch and the numbers step (SignedOutPlan). A student: their own plan, Colleges by default. A guardian
  * always lands on one child now (decision 2026-10-11, no Everyone): `?for=` when it names a real child, else the
  * last child viewed (the `plan_child` cookie), else the child with the soonest open deadline, else the first.
@@ -118,7 +119,7 @@ function nextDeadlineOf(load: PlanLoad | undefined): string | null {
  */
 export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string }> }) {
   await connection();
-  return withTiming("/plan", () => renderPlan(props));
+  return withTiming("/advisor", () => renderPlan(props));
 }
 
 async function renderPlan({
@@ -158,7 +159,7 @@ async function renderPlan({
     const loaded = await loadPlanFor(viewer.student.id, undefined, candidate === null ? { early } : {});
     const fallback = planFallback(loaded, null);
     if (fallback || loaded.kind !== "ready") return fallback;
-    const self: PlanPerson = { studentId: null, name: loaded.ctx.student?.display_name ?? "You", gradYear: loaded.ctx.student?.grad_year ?? null, colorSlot: 0, href: "/plan" };
+    const self: PlanPerson = { studentId: null, name: loaded.ctx.student?.display_name ?? "You", gradYear: loaded.ctx.student?.grad_year ?? null, colorSlot: 0, href: planHref({}) };
     if (recordInline && loaded.ctx.viewer.canEdit) {
       const profile = await profileFor(viewer.student.id);
       if (profile) {
@@ -209,7 +210,7 @@ async function renderPlan({
   // Every child, in roster order, as an initials circle (page.md "The people line"); the status text is gone.
   const people: PlanPerson[] = children.map((c) => ({ studentId: c.studentId, name: c.name, gradYear: c.gradYear, colorSlot: c.colorSlot, href: planHref({ person: c.studentId }) }));
   // Each child's chip details from their profile, so tapping a circle shows the chip and Edit at once (PlanPeople,
-  // app/plan/loading.tsx) while that child's plan loads.
+  // app/advisor/loading.tsx) while that child's plan loads.
   const profileOf = new Map(profiles.map((p) => [p.student.id, p]));
   const details: Record<string, PlanPersonDetail> = Object.fromEntries(
     children.map((c) => {

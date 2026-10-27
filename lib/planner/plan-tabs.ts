@@ -1,10 +1,12 @@
 /**
- * The Plan page's tabs and links (specs/planner/redesign/page.md; build-plan.md "Tabs and routing"). Pure: which
- * tabs a view shows, which one opens first, where an old `?stage=` link lands, and the `/plan` URL for a person and
- * tab. Students and parents open on Next steps (specs/planner/next-steps/seasons.md; owner, 2026-10-14); "Everyone" (a parent's view across children) is the calendar alone;
+ * The advisor page's tabs and links (specs/planner/redesign/page.md; build-plan.md "Tabs and routing"). Pure: which
+ * tabs a view shows, which one opens first, where an old `?stage=` link lands, and the `/advisor` URL for a person
+ * and tab (`/plan` until the rename, specs/product/advisor.md "1. The name"; `/plan/*` redirects). Students and parents open on Next steps (specs/planner/next-steps/seasons.md; owner, 2026-10-14); "Everyone" (a parent's view across children) is the calendar alone;
  * Offers appears once a decision is recorded. The Scores tab was dropped (owner, 2026-10-12: "a relic now that we've
  * got so many more inputs"), so an old `?tab=scores` link is unrecognized and opens the default tab.
  */
+
+import { ADVISOR_PATH } from "./advisor.ts";
 
 export type PlanTab = "next" | "colleges" | "calendar" | "offers";
 export const PLAN_TABS: readonly PlanTab[] = ["next", "colleges", "calendar", "offers"];
@@ -41,7 +43,7 @@ export function tabForStage(stage: number): PlanTab {
 }
 
 /**
- * "/plan", "/plan?for=<person>", "/plan?for=<person>&tab=calendar" (the person is a student id). `setup` adds
+ * "/advisor", "/advisor?for=<person>", "/advisor?for=<person>&tab=calendar" (the person is a student id). `setup` adds
  * `&setup=1`: the intake guide in edit mode (specs/planner/redesign/intake.md "Edit mode"); with `step`, opened on that
  * step (`&step=4`, the people line's next-step link). `move` (next steps) adds `&move=<task id>` on the Next steps
  * tab, so the people line's "Next:" opens the tab scrolled to that card; ignored on any other tab.
@@ -54,5 +56,17 @@ export function planHref(opts: { person?: string | null; tab?: PlanTab | null; s
   if (opts.setup) q.set("setup", "1");
   if (opts.setup && opts.step != null) q.set("step", String(opts.step));
   const s = q.toString();
-  return s ? `/plan?${s}` : "/plan";
+  return s ? `${ADVISOR_PATH}?${s}` : ADVISOR_PATH;
+}
+
+/**
+ * The printed calendar (app/advisor/print/page.tsx): "/advisor/print", "/advisor/print?for=<person>", or with `each`
+ * "/advisor/print?each=1" (a page per child).
+ */
+export function planPrintHref(opts: { person?: string | null; each?: boolean } = {}): string {
+  const q = new URLSearchParams();
+  if (opts.person) q.set("for", opts.person);
+  if (opts.each) q.set("each", "1");
+  const s = q.toString();
+  return s ? `${ADVISOR_PATH}/print?${s}` : `${ADVISOR_PATH}/print`;
 }

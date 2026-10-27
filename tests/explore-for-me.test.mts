@@ -126,8 +126,8 @@ test("a viewer who isn't a student gets the list unchanged and the group's line"
   const noNumbers = await forMeFilter(some, ["reach"], { kind: "no-numbers", person: "kid-1" });
   assert.equal(noNumbers.schools, some);
   assert.equal(noNumbers.status, "no-numbers");
-  assert.equal(noNumbers.recordHref, "/plan?for=kid-1&record=1", "the plan's person's record");
-  assert.equal((await forMeFilter(some, ["reach"], { kind: "no-numbers", person: null })).recordHref, "/plan?record=1");
+  assert.equal(noNumbers.recordHref, "/advisor?for=kid-1&record=1", "the plan's person's record");
+  assert.equal((await forMeFilter(some, ["reach"], { kind: "no-numbers", person: null })).recordHref, "/advisor?record=1");
   // The group's lines, as the panel shows them.
   const panel = read("components", "explore", "FilterPanel.tsx");
   assert.match(panel, /Sign in and add your grades to filter by your level/);

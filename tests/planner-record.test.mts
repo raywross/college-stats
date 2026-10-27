@@ -299,10 +299,10 @@ test("recordProgress: a full record, and a guardian's view of it (story Written,
 /* ------------------------------------------------------------------ */
 
 test("recordHref, recordPageHref, recordTitle, recordNeeded", () => {
-  assert.equal(recordHref({ person: null }), "/plan?record=1");
-  assert.equal(recordHref({ person: "abc", step: 8, back: "record" }), "/plan?for=abc&record=1&step=8&back=record");
-  assert.equal(recordHref({ person: null, step: 0, back: "plan" }), "/plan?record=1&step=0&back=plan");
-  assert.equal(recordHref({ person: null, step: RECORD_REVIEW }), "/plan?record=1", "Review is where edit mode opens anyway");
+  assert.equal(recordHref({ person: null }), "/advisor?record=1");
+  assert.equal(recordHref({ person: "abc", step: 8, back: "record" }), "/advisor?for=abc&record=1&step=8&back=record");
+  assert.equal(recordHref({ person: null, step: 0, back: "plan" }), "/advisor?record=1&step=0&back=plan");
+  assert.equal(recordHref({ person: null, step: RECORD_REVIEW }), "/advisor?record=1", "Review is where edit mode opens anyway");
   assert.equal(recordPageHref("1b2c"), "/household/1b2c/record");
   assert.equal(RECORD_LABEL, "Your record");
   assert.equal(recordTitle(null), "Your record");

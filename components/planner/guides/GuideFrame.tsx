@@ -2,7 +2,7 @@
  * The frame every guide page shares (specs/planner/v3/now.md "The guide pattern"; build-plan.md "The guide page"): the
  * header (← Back to your plan, the season and class year, the guide's title, and the open move's why under it, else
  * the guide's purpose), the guide's body, and the footer (GuideFooter: the move's Done and Skip, and the way back).
- * The plan's width (app/plan/layout.tsx's container) without the tabs; one column, so it reads the same at 390 px.
+ * The plan's width (app/advisor/layout.tsx's container) without the tabs; one column, so it reads the same at 390 px.
  * Server component; the footer and the open telemetry are its two client islands.
  */
 import Link from "next/link";

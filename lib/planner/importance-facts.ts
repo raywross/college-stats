@@ -1,6 +1,6 @@
 /**
  * `ImportanceFacts` built the same way everywhere (build-plan.md "R1b"): `NextSteps.tsx`, `ParentNextSteps.tsx`, and
- * `app/plan/page.tsx`'s `detailFor` all call this rather than assembling the shape themselves, so a `reach_score`
+ * `app/advisor/page.tsx`'s `detailFor` all call this rather than assembling the shape themselves, so a `reach_score`
  * move reads the same list deadlines wherever it's ranked. The deadlines come from `view.rows` the way
  * `guides-server.ts`'s `loadTestGuide` already builds them for the test guide, so the two never disagree.
  * Pure; client-safe.

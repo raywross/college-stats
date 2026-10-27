@@ -122,7 +122,7 @@ test("the footer: Your week's unsubscribe, one-click headers, and a link to the 
   assert.match(email.html, /Turn off Your week<\/a>/);
   assert.ok(email.html.includes(UNSUB));
   assert.deepEqual(email.headers, { "List-Unsubscribe": `<${UNSUB}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" });
-  assert.ok(email.text.includes(`${SITE}/plan?utm_source=interest-confirm`));
+  assert.ok(email.text.includes(`${SITE}/advisor?utm_source=interest-confirm`));
 });
 
 /** Every number in an email that isn't a date, a clock time, or inside a URL. */

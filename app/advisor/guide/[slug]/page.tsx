@@ -14,19 +14,20 @@ import { resolveSelectedChild } from "@/lib/planner/plan-frame";
 import { isUuid } from "@/lib/planner/plan-writes";
 import { span } from "@/lib/timing";
 import { withTiming } from "@/lib/timing-server";
+import { ADVISOR_PATH, ADVISOR_SHORT } from "@/lib/planner/advisor";
 
 type Params = Promise<{ slug: string }>;
 type Search = Promise<{ for?: string; move?: string; college?: string; level?: string; from?: string }>;
 
-/** Set by PlanPeople.tsx on every pick (app/plan/page.tsx reads it the same way). */
+/** Set by PlanPeople.tsx on every pick (app/advisor/page.tsx reads it the same way). */
 const PLAN_CHILD_COOKIE = "plan_child";
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const slug = parseGuideSlug((await params).slug);
-  return { title: slug ? GUIDES[slug].title : "Plan" };
+  return { title: slug ? GUIDES[slug].title : ADVISOR_SHORT };
 }
 
-/** "No list yet" / "not set up yet" / "can't see this": the same fallbacks /plan shows (app/plan/page.tsx). */
+/** "No list yet" / "not set up yet" / "can't see this": the same fallbacks /plan shows (app/advisor/page.tsx). */
 function Fallback({ loaded }: { loaded: Exclude<PlanLoad, { kind: "ready" }> }) {
   const body =
     loaded.kind === "empty" ? (
@@ -46,24 +47,24 @@ function Fallback({ loaded }: { loaded: Exclude<PlanLoad, { kind: "ready" }> }) 
 }
 
 /**
- * /plan/guide/<slug> (specs/planner/v3/now.md "The guide pattern"; build-plan.md "The guide page"): one guide for one
+ * /advisor/guide/<slug> (specs/planner/v3/now.md "The guide pattern"; build-plan.md "The guide page"): one guide for one
  * student. The student is resolved as /plan does: a student's own plan, or for a guardian the child `?for=` names
  * (else the last child viewed, else the first). `?move=` opens the move's footer when it is one of this plan's tasks;
  * `?college=`, `?level=` are the guide's own; `?from=` is where it was opened from (telemetry). An unknown slug is a
- * 404; signed out goes to /plan.
+ * 404; signed out goes to /advisor.
  */
 export default async function GuidePageRoute({ params, searchParams }: { params: Params; searchParams: Search }) {
   await connection();
   const slug = parseGuideSlug((await params).slug);
   if (!slug) notFound();
-  return withTiming(`/plan/guide/${slug}`, () => renderRoute(slug, searchParams));
+  return withTiming(`/advisor/guide/${slug}`, () => renderRoute(slug, searchParams));
 }
 
 /** The route's work, timed as one request (`QUAD_TIMING=1`; lib/timing-server.ts) like /plan's. */
 async function renderRoute(slug: GuideSlug, searchParams: Search) {
   if (!authConfigured()) return <AuthUnavailable />;
   const user = await getUser();
-  if (!user) redirect("/plan");
+  if (!user) redirect(ADVISOR_PATH);
   const sp = await searchParams;
 
   // As /plan does (performance pass, 2026-10-16): the plan most likely to be shown starts loading now, beside the

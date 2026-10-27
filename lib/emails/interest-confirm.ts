@@ -10,6 +10,7 @@
  * own event title passes through (escaped); a test registration is named "SAT" or "ACT" and nothing else, whatever
  * its stored title says.
  */
+import { ADVISOR_PATH } from "../planner/advisor.ts";
 import { SITE_NAME } from "../brand.ts";
 import { actLabel, coalesceByKey, confirmUrl, shortDate, testOf, whenLabel, type InterestActRow } from "../planner/interest-acts.ts";
 import { SOCIAL_LABELS } from "../social.ts";
@@ -125,7 +126,7 @@ export function buildInterestConfirm(input: InterestConfirmInput): BuiltInterest
   const zones = input.zones ?? {};
   const zoneOf = (a: ConfirmAct) => (a.event_id ? (zones[a.event_id] ?? null) : null);
   const site = input.siteUrl.replace(/\/$/, "");
-  const planHref = `${site}/plan?utm_source=interest-confirm`;
+  const planHref = `${site}${ADVISOR_PATH}?utm_source=interest-confirm`;
   const unsubscribeHref = input.unsubscribeUrl;
 
   const { opened, question } = leadLines(lead, input.names, zoneOf(lead), now);

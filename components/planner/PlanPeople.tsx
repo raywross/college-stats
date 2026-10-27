@@ -9,7 +9,7 @@ import { initialsOf } from "@/lib/planner/plan-frame";
 import { setPendingPeople } from "@/lib/planner/people-snapshot";
 import { cn } from "@/lib/utils";
 
-/** Set on every pick, read server-side by `app/plan/page.tsx` so a guardian's next `/plan` open lands on the same
+/** Set on every pick, read server-side by `app/advisor/page.tsx` so a guardian's next `/plan` open lands on the same
  * child (page.md "Routes", decision 2026-10-11). A plain cookie, a year out: a per-viewer convenience. */
 const PLAN_CHILD_COOKIE = "plan_child";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -88,7 +88,7 @@ export function PlanPeople({
   details?: Record<string, PlanPersonDetail>;
 }) {
   const [open, setOpen] = useState(true);
-  // The line has arrived: nothing is pending any more (app/plan/loading.tsx drew it from the snapshot meanwhile).
+  // The line has arrived: nothing is pending any more (app/advisor/loading.tsx drew it from the snapshot meanwhile).
   // Remembering the shown child here, not only on a pick (performance pass, 2026-10-16): without the cookie a
   // guardian's every /plan open loaded every child's plan to break the tie by deadline (two waves of reads, up to a
   // second); with it, the next open loads one child in one wave, like a student's own plan.

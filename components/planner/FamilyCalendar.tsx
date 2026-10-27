@@ -1,5 +1,6 @@
 "use client";
 
+import { planPrintHref } from "@/lib/planner/plan-tabs";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -231,7 +232,7 @@ function RangeStepper({ range, onStep }: { range: YearRange; onStep: (r: YearRan
 }
 
 function PrintLink({ everyone, studentId }: { everyone: boolean; studentId: string | null }) {
-  const href = everyone || !studentId ? "/plan/print" : `/plan/print?for=${studentId}`;
+  const href = planPrintHref({ person: everyone ? null : studentId });
   return (
     <Link href={href} onClick={() => track("plan_calendar_printed", { everyone })} className="inline-flex h-9 items-center gap-1.5 rounded-full border bg-card px-3 text-xs font-semibold hover:bg-muted">
       <Printer className="size-4" /> Print

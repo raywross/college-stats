@@ -6,6 +6,7 @@
  * never sees exam scores while they are private, so what they post carries none: the saved scores stay on the rows
  * that remain (mergeCoursesForSave), and a guardian can't change the privacy switch.
  */
+import { ADVISOR_PATH } from "../planner/advisor";
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/lib/auth";
 import { profileFor, saveProfile } from "@/lib/student-profile-store";
@@ -36,7 +37,7 @@ export async function saveCourses(
   });
   const result = await saveProfile(studentId, next);
   if (!result.ok) return result;
-  revalidatePath("/plan");
+  revalidatePath(ADVISOR_PATH);
   revalidatePath("/household", "layout");
   return { ok: true };
 }

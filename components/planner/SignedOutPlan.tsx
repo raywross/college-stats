@@ -1,5 +1,6 @@
 "use client";
 
+import { ADVISOR_PATH } from "@/lib/planner/advisor";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Heart, Search } from "lucide-react";
@@ -345,7 +346,7 @@ export default function SignedOutPlan() {
       {Object.values(estimates).some((r) => r.missing.includes("state")) && (
         <p className="text-xs text-muted-foreground">
           {noteText({ key: "pool.add_state_prompt", values: {} })}{" "}
-          <Link href={loginHref("/plan")} className="font-semibold text-primary hover:underline">
+          <Link href={loginHref(ADVISOR_PATH)} className="font-semibold text-primary hover:underline">
             Add your state
           </Link>
         </p>
@@ -386,7 +387,7 @@ export default function SignedOutPlan() {
       <section className="flex flex-col items-start gap-2 rounded-3xl border bg-pop/10 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <p className="text-sm text-muted-foreground">Sign up to keep this plan across devices, share it with a parent, and get reminders.</p>
         <Link
-          href={loginHref("/plan")}
+          href={loginHref(ADVISOR_PATH)}
           onClick={() => track("plan_signed_out_saved", { has_numbers: hasNumbers })}
           className="inline-flex h-11 shrink-0 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90"
         >

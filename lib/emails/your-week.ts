@@ -34,7 +34,7 @@ export interface YourWeekInput {
   done?: string[];
   /** Origin, no trailing slash. */
   siteUrl: string;
-  /** The person's plan page path ("/household/{id}/plan"). */
+  /** The person's advisor page path (planHref: "/advisor?for={id}"). */
   planPath: string;
   unsubscribeToken: string;
 }

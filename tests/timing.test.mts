@@ -53,7 +53,7 @@ test("waves: overlapping calls are one wave; a call that starts after the wave e
 
 test("the line and the Server-Timing value: route, counts, tables, spans, milliseconds; nothing personal", () => {
   let now = 0;
-  const t = new RequestTiming("/plan save", () => now);
+  const t = new RequestTiming("/advisor save", () => now);
   t.recordDb("student_profiles", 0, 40);
   t.recordDb("students", 50, 30);
   t.recordDb("household_members", 55, 30);
@@ -61,14 +61,14 @@ test("the line and the Server-Timing value: route, counts, tables, spans, millis
   t.responded();
   now = 400;
   const line = t.line();
-  assert.match(line, /^\/plan save 120ms \(\+280ms after\): db 3× in 2 waves 75ms \(student_profiles 40; students 30 ‖ household_members 30\)$/);
+  assert.match(line, /^\/advisor save 120ms \(\+280ms after\): db 3× in 2 waves 75ms \(student_profiles 40; students 30 ‖ household_members 30\)$/);
   const header = t.serverTiming();
   assert.match(header, /^db;dur=75;desc="3 queries, 2 waves", total;dur=400$/);
 });
 
 test("spans nest under the request; same-named spans are summed", async () => {
   let now = 0;
-  const t = new RequestTiming("/plan", () => now);
+  const t = new RequestTiming("/advisor", () => now);
   await runWithTiming(t, async () => {
     assert.equal(currentTiming(), t);
     await span("estimates", () => {
@@ -92,7 +92,7 @@ test("outside a timed request, span and timedFetch are pass-throughs that record
   }) as typeof fetch;
   try {
     await timedFetch("https://x.supabase.co/rest/v1/lists?id=eq.1");
-    const t = new RequestTiming("/plan");
+    const t = new RequestTiming("/advisor");
     await runWithTiming(t, () => timedFetch("https://x.supabase.co/rest/v1/lists?id=eq.1"));
     assert.equal(called, 2);
     assert.deepEqual(

@@ -148,7 +148,7 @@ export function EdSheet({
           )}
         </div>
       )}
-      {facts.onPlan && <p className="text-xs font-semibold text-primary">On your plan: {setRound === "ed2" ? "ED II" : "ED"}</p>}
+      {facts.onPlan && <p className="text-xs font-semibold text-primary">On your list: {setRound === "ed2" ? "ED II" : "ED"}</p>}
 
       <div className="space-y-1">
         <p>{facts.read}</p>

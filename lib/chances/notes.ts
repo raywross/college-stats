@@ -193,7 +193,7 @@ export const NOTES: Record<NoteKey, Note> = {
   /** "It would make your schedule most of what your school offers." */
   "course_plan.reading_moves": (v) => `It would make your schedule ${s(v, "label")}.`,
   /** The You column's line on the college profile. */
-  "course_plan.profile_line": (v) => `${s(v, "subject")}: ${s(v, "recommended")} recommended, you're on track for ${s(v, "have")}. See next year's options in your plan.`,
+  "course_plan.profile_line": (v) => `${s(v, "subject")}: ${s(v, "recommended")} recommended, you're on track for ${s(v, "have")}. See next year's options in your advisor.`,
 
   /* Added by the estimate core (lib/chances/baseline.ts, model.ts): the published sentences of the planner's standing
    * rules (specs/planner/redesign/standing.md, gpa.md), so an estimate carries only catalog sentences. */

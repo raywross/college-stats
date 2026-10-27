@@ -48,7 +48,7 @@ export function RecommendersGuide({ ctx, move, person }: GuideProps) {
   if (!profile || !studentId) {
     return (
       <section className="rounded-3xl bg-card p-5 ring-1 ring-border sm:p-6">
-        <p className="text-sm text-muted-foreground">Set up your plan to see this guide.</p>
+        <p className="text-sm text-muted-foreground">Set up your advisor to see this guide.</p>
       </section>
     );
   }

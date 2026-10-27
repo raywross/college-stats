@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { track } from "@/lib/analytics";
+import { advisorTitle } from "@/lib/planner/advisor";
 import { KID_VARS } from "@/lib/planner/colors";
 import { initialsOf } from "@/lib/planner/plan-frame";
 import { setPendingPeople } from "@/lib/planner/people-snapshot";
@@ -106,7 +107,7 @@ export function PlanPeople({
   const current = pending ?? selected;
 
   return (
-    <div className="flex min-w-0 items-center gap-2" role="group" aria-label="Whose plan">
+    <div className="flex min-w-0 items-center gap-2" role="group" aria-label="Whose advisor">
       {people.map((p) => {
         const name = p.name?.trim() || "Student";
         const isCurrent = p.studentId === current;
@@ -124,7 +125,7 @@ export function PlanPeople({
             <Link
               key={p.studentId ?? "self"}
               href={p.href}
-              aria-label={`Show ${name}'s plan`}
+              aria-label={`Show ${advisorTitle(name)}`}
               title={name}
               onClick={() => {
                 if (p.studentId) {

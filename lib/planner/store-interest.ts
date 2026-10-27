@@ -79,7 +79,7 @@ export async function recordAct(input: RecordActInput): Promise<RecordActResult>
   if (!("supabase" in r)) return r;
   if (input.itemId) {
     const { data: canEdit } = await r.supabase.rpc("can_edit_item", { p_item: input.itemId });
-    if (canEdit !== true) return { ok: false, message: "Only someone who can edit this plan can do that." };
+    if (canEdit !== true) return { ok: false, message: "Only someone who can edit this list can do that." };
     if (input.act === "follow" && !(await isStudentOfItem(r.supabase, input.itemId, r.userId))) return { ok: false, message: "Only the student can mark a follow." };
   }
   const network = input.act === "follow" ? (input.network ?? null) : null;

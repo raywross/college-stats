@@ -198,7 +198,7 @@ async function sendYourWeek(client: SupabaseClient, s: StudentRow, plan: Student
   const prefs = stored ?? (await ensurePrefs(client, userId));
   const built = buildYourWeek({
     firstName: firstName(s.display_name),
-    moves: [...week.moves.map((t) => weekLine(t, plan, { why: true })), ...week.fresh.map((t) => weekLine(t, plan, { when: "new on your plan" }))],
+    moves: [...week.moves.map((t) => weekLine(t, plan, { why: true })), ...week.fresh.map((t) => weekLine(t, plan, { when: "new in your advisor" }))],
     week: week.week.map((t) => weekLine(t, plan)),
     overdue: week.overdue ? weekLine(week.overdue, plan) : null,
     done: week.done.map((t) => outsideTitle(t, nameOf(t, plan))),

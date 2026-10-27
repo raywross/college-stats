@@ -31,7 +31,7 @@ export function ComingUp({
         <p className="mt-2 text-sm text-muted-foreground">Nothing dated yet.</p>
       ) : (
         <table className="mt-2 w-full border-collapse text-sm">
-          <caption className="sr-only">The next {events.length} dates on the plan, soonest first</caption>
+          <caption className="sr-only">The next {events.length} dates on the calendar, soonest first</caption>
           <thead className="sr-only">
             <tr>
               <th scope="col">Date</th>

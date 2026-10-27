@@ -134,7 +134,7 @@ function noActivitySignal(input: StuckSignalsInput): StuckSignal | null {
   const last = stamps.sort().at(-1) ?? null;
   const cutoff = addDaysIso(input.today, -14);
   if (last !== null && last.slice(0, 10) > cutoff) return null;
-  return { id: "no_activity", text: "No activity on the plan for 14 days.", link: null };
+  return { id: "no_activity", text: "No activity in the advisor for 14 days.", link: null };
 }
 
 /** No Likely on the list. */

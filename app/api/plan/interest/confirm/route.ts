@@ -22,8 +22,8 @@ import { escapeHtml, unsubscribePage } from "@/app/unsubscribe/[token]/visits/sh
  * worse than a missing one (spec "Tracking": the owner's fallback is not adopted). The plan regenerates on its next
  * open, which closes the interest move.
  */
-const TITLE = "Your plan";
-const INVALID = `<p style="margin:0;">That link isn't valid. Open <a href="${ADVISOR_PATH}">your plan</a> to answer it there.</p>`;
+const TITLE = "Your advisor";
+const INVALID = `<p style="margin:0;">That link isn't valid. Open <a href="${ADVISOR_PATH}">your advisor</a> to answer it there.</p>`;
 const BUTTON = "background:#5b3df5;color:#ffffff;border:none;border-radius:999px;font-weight:600;font-size:15px;padding:12px 24px;cursor:pointer;";
 
 type Answer = "yes" | "no";
@@ -74,8 +74,8 @@ async function lookup(request: NextRequest) {
 }
 
 function alreadyPage(status: InterestActRow["status"]): Response {
-  if (status === "expired") return unsubscribePage(TITLE, `<p style="margin:0;">This one has expired, so nothing was added. You can still log it from <a href="${ADVISOR_PATH}">your plan</a>.</p>`);
-  return unsubscribePage(TITLE, `<p style="margin:0;">You already answered this one. <a href="${ADVISOR_PATH}">Open your plan</a>.</p>`);
+  if (status === "expired") return unsubscribePage(TITLE, `<p style="margin:0;">This one has expired, so nothing was added. You can still log it in <a href="${ADVISOR_PATH}">your advisor</a>.</p>`);
+  return unsubscribePage(TITLE, `<p style="margin:0;">You already answered this one. <a href="${ADVISOR_PATH}">Open your advisor</a>.</p>`);
 }
 
 export async function GET(request: NextRequest) {
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (err) {
     console.error(`interest confirm: ${err instanceof Error ? err.message : err}`);
-    return unsubscribePage(TITLE, `<p style="margin:0;">Something went wrong. Try again in a moment, or answer it on <a href="${ADVISOR_PATH}">your plan</a>.</p>`);
+    return unsubscribePage(TITLE, `<p style="margin:0;">Something went wrong. Try again in a moment, or answer it in <a href="${ADVISOR_PATH}">your advisor</a>.</p>`);
   }
 }
 
@@ -110,16 +110,16 @@ export async function POST(request: NextRequest) {
     if (outcome.kind === "already") return alreadyPage(outcome.status);
     if (outcome.kind === "need_date") {
       const href = unitId ? guideHref("interest", { college: unitId }) : ADVISOR_PATH;
-      return unsubscribePage(TITLE, `<p style="margin:0;">Great. Pick the date on <a href="${escapeHtml(href)}">your plan</a> and it goes on the calendar.</p>`);
+      return unsubscribePage(TITLE, `<p style="margin:0;">Great. Pick the date in <a href="${escapeHtml(href)}">your advisor</a> and it goes on the calendar.</p>`);
     }
     if (outcome.kind === "error") throw new Error(outcome.message);
     if (outcome.answer === "declined") return unsubscribePage(TITLE, `<p style="margin:0;font-weight:600;">Okay, we won't add it.</p>`);
     await trackServer("plan_interest_confirmed", { action: row.act, via: "email" }, row.user_id);
     const what = escapeHtml(capitalize(describe(row, name, zone)));
-    const where = outcome.visitId ? "on your calendar" : "on your plan";
-    return unsubscribePage(TITLE, `<p style="margin:0;font-weight:600;">Thanks. ${what} is ${where}.</p><p style="margin:12px 0 0;"><a href="${ADVISOR_PATH}">Open your plan</a></p>`);
+    const where = outcome.visitId ? "on your calendar" : "on your list";
+    return unsubscribePage(TITLE, `<p style="margin:0;font-weight:600;">Thanks. ${what} is ${where}.</p><p style="margin:12px 0 0;"><a href="${ADVISOR_PATH}">Open your advisor</a></p>`);
   } catch (err) {
     console.error(`interest confirm: ${err instanceof Error ? err.message : err}`);
-    return unsubscribePage(TITLE, `<p style="margin:0;">Something went wrong. Try again in a moment, or answer it on <a href="${ADVISOR_PATH}">your plan</a>.</p>`);
+    return unsubscribePage(TITLE, `<p style="margin:0;">Something went wrong. Try again in a moment, or answer it in <a href="${ADVISOR_PATH}">your advisor</a>.</p>`);
   }
 }

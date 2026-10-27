@@ -125,7 +125,7 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
             )}
           </Panel>
 
-          <Panel title="Plan" id="plan">
+          <Panel title="Advisor" id="plan">
             <PlanBlock plan={student.plan} />
           </Panel>
 

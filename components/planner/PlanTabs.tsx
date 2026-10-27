@@ -21,7 +21,7 @@ const ICONS: Record<PlanTab, typeof ListChecks> = { next: Footprints, colleges: 
 export function PlanTabPills({ tabs, tab, person }: { tabs: readonly PlanTab[]; tab: PlanTab; person: string | null }) {
   return (
     // One line on a phone (owner, 2026-10-15): no wrap, tighter padding, the icon only from `sm:` up.
-    <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2" role="tablist" aria-label="Plan views">
+    <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2" role="tablist" aria-label="Advisor views">
       {tabs.map((t) => {
         const Icon = ICONS[t];
         const active = t === tab;

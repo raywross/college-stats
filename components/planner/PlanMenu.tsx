@@ -75,10 +75,10 @@ export function PlanMenu({
     <SheetDialog
       open={open}
       onOpenChange={setOpen}
-      title="Plan menu"
+      title="Advisor menu"
       trigger={{
         className: "inline-flex size-11 items-center justify-center rounded-full border hover:bg-muted sm:size-10 print:hidden",
-        label: "Plan menu: calendar, print, texts",
+        label: "Advisor menu: calendar, print, texts",
         content: <Menu className="size-4" aria-hidden />,
       }}
     >

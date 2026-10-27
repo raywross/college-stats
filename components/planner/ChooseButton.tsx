@@ -87,7 +87,7 @@ export function ChooseButton({
       }}
     >
       <div className="space-y-3 text-sm">
-        <p>The plan turns to what the choice sets off:</p>
+        <p>Your advisor turns to what the choice sets off:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>the enrollment deposit by the reply date, and the housing deposit when the college publishes one;</li>
           {others > 0 && (

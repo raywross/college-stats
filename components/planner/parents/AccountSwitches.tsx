@@ -55,7 +55,7 @@ export async function AccountSwitches({ isGuardian, hasStudent }: { isGuardian: 
             </form>
             <p className="mt-2 text-xs text-muted-foreground">
               <Term term="nudge">Nudge</Term> emails are <strong>{nudgeEmailsOn ? "on" : "off"}</strong>. Turning them off doesn&apos;t hide a
-              nudge in the plan; a guardian who nudges you sees that you read nudges there instead.
+              nudge in your advisor; a guardian who nudges you sees that you read nudges there instead.
             </p>
           </div>
         )}

@@ -84,7 +84,7 @@ export default async function PlanPrintPage({ searchParams }: { searchParams: Pr
     </div>
   );
 
-  if (forId && !candidates.some((c) => c.studentId === forId)) return message("That plan isn't one you can see.");
+  if (forId && !candidates.some((c) => c.studentId === forId)) return message("That student's advisor isn't one you can see.");
   const chosen = forId ? candidates.filter((c) => c.studentId === forId) : candidates;
   if (chosen.length === 0) return message("No student yet, so there's nothing to print.");
 
@@ -94,7 +94,7 @@ export default async function PlanPrintPage({ searchParams }: { searchParams: Pr
     if (load.kind !== "ready") return [];
     return [{ studentId: c.studentId, name: firstName(c.name) ?? "Student", colorSlot: c.colorSlot, ctx: load.ctx, view: load.view }];
   });
-  if (children.length === 0) return message("No plan yet, so there's nothing to print.");
+  if (children.length === 0) return message("Nothing to print yet.");
 
   const layout: PrintLayout = forId || self ? { kind: "one", studentId: children[0].studentId } : each === "1" ? { kind: "each" } : { kind: "together" };
   const events = yearEvents(children, range);

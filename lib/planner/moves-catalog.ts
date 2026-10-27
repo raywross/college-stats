@@ -185,7 +185,7 @@ export const PLAYBOOK: readonly PlaybookEntry[] = [
     key: "class_year",
     season: "unknown",
     title: "Add your class year",
-    why: "The plan follows the school calendar, so it needs to know when you graduate.",
+    why: "Your advisor follows the school calendar, so it needs to know when you graduate.",
     who: "student",
     carries: false,
     applies: "always",
@@ -491,7 +491,7 @@ export const SEASON_EXPLAINER: Record<Season, { lead: string; paragraph: string;
   freshman: {
     lead: "This year is for trying things.",
     paragraph:
-      "Take the courses that interest you at the level you can do well in, try activities, and keep the ones you like. The plan asks for little now: your numbers, a long list if you want one, and a campus walk when you're nearby anyway.",
+      "Take the courses that interest you at the level you can do well in, try activities, and keep the ones you like. Your advisor asks for little now: your numbers, a long list if you want one, and a campus walk when you're nearby anyway.",
   },
   sophomore: {
     lead: "This year is for trying things, and keeping what you like.",
@@ -499,7 +499,7 @@ export const SEASON_EXPLAINER: Record<Season, { lead: string; paragraph: string;
       "Go deeper in one or two activities, take the PSAT for practice, and plan next year's courses with an eye on what you might study. Nothing here is a deadline yet.",
   },
   junior_fall: {
-    lead: "Junior year is when the plan starts.",
+    lead: "Junior year is when your advisor gets busy.",
     paragraph: "The PSAT/NMSQT in October, a first test date, and a list that grows toward something to visit and cut.",
     next: "Next: junior winter, when you register for a spring test and choose senior-year courses.",
   },
@@ -541,11 +541,11 @@ export const SEASON_EXPLAINER: Record<Season, { lead: string; paragraph: string;
   },
   graduated: {
     lead: "On to college.",
-    paragraph: "The plan stays here for reference.",
+    paragraph: "Your advisor stays here for reference.",
   },
   unknown: {
     lead: "Add your class year to start.",
-    paragraph: "The plan follows the school calendar: what to do this season and what's next. It needs to know when you graduate.",
+    paragraph: "Your advisor follows the school calendar: what to do this season and what's next. It needs to know when you graduate.",
   },
 };
 

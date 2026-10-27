@@ -39,7 +39,7 @@ export type PlanWriteResult = { ok: true } | { ok: false; message: string };
 
 const FAILED = "That didn't work. Try again in a moment.";
 const SIGN_IN = "Sign in first.";
-const NOT_EDITOR = "Only someone who can edit this plan can change it.";
+const NOT_EDITOR = "Only someone who can edit this list can change it.";
 
 type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
 

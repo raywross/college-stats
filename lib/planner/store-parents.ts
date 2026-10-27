@@ -127,12 +127,12 @@ export async function sendNudge(taskId: string, note: string, channel: "email" |
           .catch(() => ({ data: null, error: null }) as { data: { user: { email?: string | null } } | null; error: unknown });
         const to = admin.data?.user?.email ?? null;
         if (to) {
-          const body = trimmed ? `"${trimmed}"` : "Take a look at one step on your plan.";
+          const body = trimmed ? `"${trimmed}"` : "Take a look at one step in your advisor.";
           await sendEmail({
             to,
-            subject: "A nudge on your plan",
-            html: `<p>${body}</p><p><a href="${planHref({ person: contact.studentId })}">Open the plan</a></p>`,
-            text: `${body}\n\nOpen the plan: ${planHref({ person: contact.studentId })}`,
+            subject: "A nudge in your advisor",
+            html: `<p>${body}</p><p><a href="${planHref({ person: contact.studentId })}">Open your advisor</a></p>`,
+            text: `${body}\n\nOpen your advisor: ${planHref({ person: contact.studentId })}`,
           });
           delivered = "email";
         }
@@ -149,7 +149,7 @@ export async function sendNudge(taskId: string, note: string, channel: "email" |
         .is("provider_opt_out_at", null)
         .maybeSingle();
       if (consent.data) {
-        const body = `${trimmed ? `"${trimmed}" ` : ""}— a nudge on your plan.`;
+        const body = `${trimmed ? `"${trimmed}" ` : ""}— a nudge in your advisor.`;
         const sent = await deliverText(supabaseClient("publish"), consent.data as ConsentRow, "nudge", body, { taskId, forName: contact.studentFirst });
         if (sent.sent && delivered === null) delivered = "sms";
       }
@@ -198,7 +198,7 @@ export async function reassignTask(taskId: string, assignee: Assignee): Promise<
     console.error(`planner parents: reassignTask failed: ${error.message}`);
     return { ok: false, message: FAILED };
   }
-  if (!data?.length) return { ok: false, message: "Only someone who can edit this plan can reassign a step." };
+  if (!data?.length) return { ok: false, message: "Only someone who can edit this list can reassign a step." };
   refresh();
   return { ok: true };
 }

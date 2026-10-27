@@ -39,7 +39,7 @@ export async function RemindersSection({ student }: { student: StudentRecord | n
   const on = yourWeekOn(stored, season);
   const briefOn = seasonBriefOn(storedBrief);
   return (
-    <AccountSection id="reminders" title="Plan reminders" description="Short reminders of the plan's next steps. Everything in them is also on the plan.">
+    <AccountSection id="reminders" title="Advisor reminders" description="Short reminders of the next steps in your advisor. Everything in them is also there.">
       <div className="space-y-5">
         {student && (
           <div>

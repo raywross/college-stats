@@ -56,7 +56,7 @@ export default function ConnectPage() {
         </div>
         <P>
           No key or sign-in is needed at this address. The connection is read-only and public: it has no access to
-          your Quad account, your list, or your plan ({" "}
+          your Quad account, your list, or your advisor ({" "}
           <a href="#what" className="font-semibold text-foreground underline-offset-2 hover:underline">
             what your assistant can see
           </a>
@@ -129,6 +129,7 @@ export default function ConnectPage() {
           </li>
         </Steps>
         <Note>
+          {/* advisor-words: ok: ChatGPT's subscription plan */}
           On a personal Plus account, look in <b>Plugins</b> for the <b>+</b> button; if it isn&apos;t there, your plan
           doesn&apos;t yet allow custom servers. Custom GPTs are being retired by OpenAI and personal accounts can no longer
           create them, so Quad doesn&apos;t offer one. Quad&apos;s connection is also usable by ChatGPT&apos;s deep research, which
@@ -183,12 +184,12 @@ export default function ConnectPage() {
           </li>
           <li>
             <strong className="text-foreground">Can&apos;t see:</strong> your account, your household, your student&apos;s
-            numbers, lists, plans, visits, or notes. The connection has no sign-in, so there is nothing of yours for it
+            numbers, lists, visits, notes, or advisor. The connection has no sign-in, so there is nothing of yours for it
             to reach.
           </li>
           <li>
             <strong className="text-foreground">Won&apos;t say:</strong> a person&apos;s chances. Quad&apos;s estimate of where a
-            student stands lives in the signed-in plan only; the connection and the skill both tell the assistant not
+            student stands lives in the signed-in advisor only; the connection and the skill both tell the assistant not
             to invent odds on Quad&apos;s behalf.
           </li>
           <li>

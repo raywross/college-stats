@@ -406,7 +406,7 @@ function AllMoves({
         <details className="group rounded-3xl bg-card p-4 ring-1 ring-border">
           <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 font-semibold marker:hidden [&::-webkit-details-marker]:hidden">
             When the list calls for them
-            <span className="text-xs font-normal text-muted-foreground">{waiting.length} not on this plan yet</span>
+            <span className="text-xs font-normal text-muted-foreground">{waiting.length} not in your advisor yet</span>
           </summary>
           <ul className="mt-3 space-y-2">
             {waiting.map((m) => (

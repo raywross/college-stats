@@ -35,7 +35,7 @@ test("the line: circles link to each plan, the selected one is a button with ari
   const src = read("components", "planner", "PlanPeople.tsx");
   assert.match(src, /aria-expanded=\{showDetail\}/);
   assert.match(src, /aria-label=\{name\}/);
-  assert.match(src, /aria-label=\{`Show \$\{name\}'s plan`\}/);
+  assert.match(src, /aria-label=\{`Show \$\{advisorTitle\(name\)\}`\}/);
   assert.match(src, /href=\{shown\.editHref\}/, "Edit from the loaded detail, or a tapped child's while theirs loads (U20)");
   // The record overview's label (record/steps.md "The people line"), not the retired "Edit {name}'s grades, test, and courses".
   assert.match(src, /aria-label=\{p\.studentId \? `\$\{name\}'s record` : "Your record"\}/);

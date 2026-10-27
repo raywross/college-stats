@@ -22,11 +22,10 @@ export function WhatItReads({ data }: { data: SplashData }) {
         <li className={CARD} style={{ animationDelay: "90ms" }}>
           <p className="font-display text-3xl font-extrabold">Their own filings</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Common Data Sets from {num(r.cdsColleges)} colleges;{" "}
+            Common Data Sets from {num(r.cdsColleges)} colleges, and{" "}
             <MetricLabel cited={r.commonAppCite}>
-              <span>Common App requirements for {num(r.commonAppColleges)}</span>
+              <span>Common App requirements for {num(r.commonAppColleges)}.</span>
             </MetricLabel>
-            .
           </p>
         </li>
         <li className={CARD} style={{ animationDelay: "180ms" }}>

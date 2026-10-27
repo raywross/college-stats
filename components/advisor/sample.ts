@@ -168,7 +168,8 @@ function calendarOf(f: SampleFixture, ds: SampleDataset, schoolOf: (id: string) 
   const today = f.calendarToday;
   const month = today.slice(0, 7);
   const range: YearRange = { startYear: Number(today.slice(0, 4)), from: `${month}-01`, to: lastDayOf(month) };
-  const ticks = [1, 8, 15, 22, 29].map((d) => `${month}-${String(d).padStart(2, "0")}`).filter((iso) => iso <= range.to).map((iso) => ({ iso, label: dayLabel(iso) }));
+  // Four week ticks: a fifth (the 29th) sits at the lane's right edge and runs into the one before it on a phone.
+  const ticks = [1, 8, 15, 22].map((d) => `${month}-${String(d).padStart(2, "0")}`).filter((iso) => iso <= range.to).map((iso) => ({ iso, label: dayLabel(iso) }));
   const cycle = loadCycle(currentCycle(today));
   const lanes: CalendarLane[] = [];
   const cites: Record<string, { url: string }> = {};
@@ -314,7 +315,9 @@ export function buildSplash(f: SampleFixture, ds: SampleDataset, facts: Record<s
     offers,
     reads: {
       colleges: ds.getDatasetSummary().count,
-      cdsColleges: ds.cdsSchools().length,
+      // Colleges with any college-reported figures (the agent's CDS and class-profile reads), not only the hand-imported
+      // Common Data Sets `cdsSchools()` counts (8).
+      cdsColleges: all.filter((s) => s.reported && Object.keys(s.reported).length > 0).length,
       commonAppColleges: all.filter((s) => s.apply?.common_app?.member).length,
       commonAppCite: cite(ds.citeField("apply.common_app")),
     },

@@ -289,7 +289,8 @@ shared rules for user data are in that README. All user data lives only in Supab
   approve; Operations becomes Issues, Proposals, To do (the documents a person has to fetch, folded in from
   manual-collection.md and campus-sources-later.md), Decisions, Audits. Step 0: collegedata.fyi's source URLs into
   discovery. Needs the document archive repo first.
-- [ ] **The advisor** ([product/advisor.md](product/advisor.md), planned 2026-10-26 on the owner's decisions): rename the
+- [ ] **The advisor** ([product/advisor.md](product/advisor.md), planned 2026-10-26 on the owner's decisions; the rename and
+  the splash page built 2026-10-27 on `feature/advisor`, the trial left): rename the
   plan Quad Advisor (tab "Advisor", `/advisor` with `/plan` redirecting; decided); a 14-day
   free trial with the card collected up front and the yearly charge after, one trial per student, one reminder email;
   the splash page a signed-out visitor sees when they open the tab, built from the plan's own components over a sample

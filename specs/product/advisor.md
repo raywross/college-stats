@@ -1,6 +1,7 @@
 # The Advisor: The Plan's New Name, the Trial, and the Page That Sells It
 
-> Status: **planned** 2026-10-26 from the owner's decisions that day: the plan is the one paid product
+> Status: **planned** 2026-10-26; **parts 1 and 2 built 2026-10-27** on `feature/advisor` (see [As built](#as-built-2026-10-27-parts-1-and-2));
+> part 3, the trial, waits for the Stripe work in [commercialization.md](commercialization.md). From the owner's decisions of 2026-10-26: the plan is the one paid product
 > ([commercialization.md](commercialization.md)); "we should rename the 'plan' function, a play on a virtual advisor";
 > "14-day trial is what I'd do, collect the credit card, then actively cancel or the charge hits; annual only"; and "a
 > splashy page for when you click on it and don't have an account, something that will entice the user to sign up for a
@@ -140,3 +141,60 @@ with a labeled sample student, so the page looks exactly like what they get.
    step as the page's hero frame, live.
 3. **The family price on a student's trial.** A parent starting a trial for one child picks student or family at
    checkout; should the page default to family when the household has two students? Recommended yes.
+
+## As built (2026-10-27, parts 1 and 2)
+Built in three units on sub-branches (`feature/advisor-routes`, `feature/advisor-words`, `feature/advisor-splash`, all
+opus) from the brief in `~/Projects/college-stats/advisor-build/`, merged on `feature/advisor`. Where this section and the
+plan above disagree, this section is what runs.
+
+**The name.** `lib/planner/advisor.ts` (pure): `ADVISOR_NAME` "Quad Advisor", `ADVISOR_SHORT` "Advisor", `ADVISOR_PATH`
+`/advisor`, `advisorTitle(firstName)` ("Your advisor", "Jordan's advisor"). It is its own module rather than a line in
+`record.ts`, so the nav components import something tiny. `planHref()` keeps its name and returns `/advisor…`; a new
+`planPrintHref({ person?, each? })` builds the print link. The page tree moved with `git mv` to `app/advisor/**`;
+`next.config.ts` redirects `/plan` and `/plan/:path*` to `/advisor` for good, with the query string carried (`/plan?for=…
+&tab=calendar` lands on the same tab); `/me/plan` and the household redirects go straight to `planHref`, no longer through
+two hops. `proxy.ts` matches `/advisor/:path*` (and still `/plan/:path*`). The tab bar, header, and the household's pill
+read `ADVISOR_SHORT`; the tab bar's sign-in line reads "Your colleges, your record, your advisor". Internal names kept
+"plan": the `plan_child` cookie, `/api/plan/*`, telemetry event names, `PlanTab`, `PlanContext`, file names.
+`tests/advisor-routes.test.mts` checks the names, the hrefs, both redirects (by importing the config), the matcher, that
+`app/plan` is gone, and sweeps `app components lib proxy.ts` for any literal `/plan` route outside `/api/plan` (its first
+run caught seven in the interest-confirm route).
+
+**The words.** Every string a person reads in `components/**`, `app/**`, `lib/emails/**`, `lib/sms.ts`, `lib/digest.ts`,
+the move catalog, the guides, the glossary's planner entries, the unsubscribe pages, and the calendar feeds says
+"your advisor" / "Jordan's advisor" / "the Advisor tab" where it meant the product, and "your list" where it meant the
+colleges ("On your list: ED", "Yes puts it on your list"). The SMS label is "Advisor:"; the personal calendar feed is named
+"Quad Advisor", the family feed "Quad family calendar"; the glossary key `plan` stays (old links work) with the term
+renamed "Advisor". Kept as plans of action: the course plan, the College Financing Plan, loan repayment plans, "the plan
+for most families" (tuition), "plan to apply test-optional", and the admin fallback's "planner's tables".
+`tests/advisor-words.test.mts` parses each file with the TypeScript compiler and reads only string literals, template
+text, and JSX text (comments and identifiers ignored), failing on "your/the/their/my plan", "'s plan", "the planner", and
+a bare "Plan" label, with an allowlist of the kept senses and a per-line `advisor-words: ok` escape; the brief's broad
+"plan to / plan for" allowance was narrowed because it hid real misses. 71 files changed.
+
+**The page.** `components/advisor/Splash.tsx` (server) and one file per section under `components/advisor/sections/`,
+rendered by `app/advisor/page.tsx` for a signed-out visitor in place of the deleted `SignedOutPlan.tsx` (its local list,
+`lib/planner/local-plan.ts`, and `ImportLocalPlan` stay one more release; `components/planner/NumbersForm.tsx` is now
+unused). The fixture `data/reference/sample-plan.json`: Jordan, class of 2028, junior spring, home state Georgia; five
+colleges with declared levels (Vanderbilt High reach, Wake Forest Reach and Dream, Clemson Target, Kennesaw State
+Likely, Georgia Southern Safe); the moves are the catalog's own titles and whys ("Add a few Target schools", "Show Wake
+Forest University you're interested", "Work toward your 1400"), and the test checks them against the code; the calendar
+shows November with today set to the 14th so the bubble reads "Tomorrow: Wake Forest ED I application is due"; the two
+offers' gifts and loans are illustrative letters over each college's published full price. Every college figure (name,
+city, admit rate as "1 in N", cost, deadlines, interest factor, Common App count) is read from the dataset and cited;
+"Sample: Jordan, class of 2028" sits in every frame's corner (`SampleBadge`). Real components where they take plain
+data: `CalendarLane`, `OffersTable`, `CollegeChip`, `Crest`, `ListExplainer`, the `GROUP_CLASS` pills; presentational
+twins with the same classes where the real one needs a `PlanContext` or a store: `SampleList` (PlanRow), `SampleNow`
+(MoveCard), `SampleParent`. The hero's phone frame shows from `md` up; on phones the same cards are the third section.
+Frames rise and pills pop as they scroll into view (`animation-timeline: view()` where supported, once on load
+elsewhere), off under Reduce Motion. The button "Start free" opens the sign-up form (`/login?next=%2Fadvisor&mode=signup`)
+and the price line reads "Free while Quad is in preview." until the trial ships; no trial or "14 days" wording anywhere.
+Counselors' contact is a GitHub issue link until the portal exists. The home hero gained "Try Quad Advisor →".
+Telemetry: `advisor_page_viewed { signed_in }`, `advisor_cta_tapped { section }`. The page is **dynamic**, not the spec's
+daily-revalidated static page: `/advisor` reads the session first and this is its signed-out branch.
+`tests/advisor-splash.test.mts` (10 tests) validates the fixture against the dataset and the catalog and renders every
+section with react-dom/server.
+
+**Not built, by design:** part 3 (the trial, Stripe, the reminder email, `/account`'s row, the lapsed read-only state),
+the 14-day and price wording that goes with it, and the "Ask a parent" path for students under 16 (nothing to ask for
+until the trial exists).

@@ -114,7 +114,7 @@ export async function setEdChecks(itemId: string, checks: { attend?: boolean; co
   const { data, error } = await r.supabase.from("list_items").update({ ed_checks: { ...stored, ...patch } }).eq("id", itemId).select("id");
   if (error || !data?.length) {
     if (error) console.error(`planner ed: setEdChecks failed: ${error.message}`);
-    return { ok: false, message: error ? FAILED : "Only someone who can edit this plan can change it." };
+    return { ok: false, message: error ? FAILED : "Only someone who can edit this list can change it." };
   }
   revalidatePath(ADVISOR_PATH);
   return { ok: true };

@@ -106,7 +106,7 @@ export function AddOwnTask({ listId, colleges }: { listId: string; colleges: Col
       open={open}
       onOpenChange={setOpen}
       title="Add your own step"
-      description="Anything the plan doesn't list: a scholarship form, a portfolio, an alumni interview."
+      description="Anything your advisor doesn't list: a scholarship form, a portfolio, an alumni interview."
       trigger={{
         className: "inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold hover:bg-muted sm:h-9 print:hidden",
         label: "Add your own step",

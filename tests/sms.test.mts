@@ -91,7 +91,7 @@ test("never a number from the profile; at most three tasks; skipped when nothing
   const day = composeDayBeforeText({ title: "Michigan: reply to the offer, deposit $400", when: null }, "https://q.example/p");
   assert.ok(!day.includes("400") && !day.includes("$"));
   assert.match(day, /Tomorrow: Michigan: reply to the offer/);
-  assert.match(composeConfirmText("Alex"), /Alex's college plan are on\. At most one a day, never at night\. Reply STOP to stop/);
+  assert.match(composeConfirmText("Alex"), /Alex's advisor are on\. At most one a day, never at night\. Reply STOP to stop/);
 });
 
 test("the STOP webhook: STOP and its synonyms, Twilio's OptOutType, anything else is nothing", () => {

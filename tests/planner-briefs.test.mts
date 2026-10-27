@@ -263,7 +263,7 @@ test("the parent's brief leads with their part, then the child's top three as re
   assert.match(student.text, /Next: the summer before senior year/);
   assert.match(student.unsubscribeHref, /\/unsubscribe\/t+\/season-brief/);
   assert.equal(student.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
-  assert.equal(briefSubject({ role: "student", key: "freshman_feb", firstName: null }), "Freshman-year February: your plan");
+  assert.equal(briefSubject({ role: "student", key: "freshman_feb", firstName: null }), "Freshman-year February: your advisor");
 });
 
 test("the February brief: the course-plan move and the PSAT result line", () => {

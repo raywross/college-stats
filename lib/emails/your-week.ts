@@ -81,7 +81,7 @@ export function buildYourWeek(input: YourWeekInput): BuiltYourWeek | null {
     : week.length
       ? `Your week: ${week.length} step${week.length === 1 ? "" : "s"} due`
       : "Your week: one step is overdue";
-  const intro = moves.length ? `${hello}'s your week on the plan.` : `${hello}'s what's due in the next seven days.`;
+  const intro = moves.length ? `${hello}'s your week from your advisor.` : `${hello}'s what's due in the next seven days.`;
 
   const items = week.map((l) => `<li style="margin-bottom:6px;">${escapeHtml(lineText(l))}</li>`).join("");
   const moveItems = moves
@@ -96,9 +96,9 @@ export function buildYourWeek(input: YourWeekInput): BuiltYourWeek | null {
       ${input.overdue ? `<p style="margin:0 0 12px;color:${COLORS.warn};font-weight:700;">Overdue: ${escapeHtml(lineText(input.overdue))}</p>` : ""}
       ${moves.length ? `<p style="margin:0 0 4px;font-weight:700;">Next steps</p><ul style="margin:0 0 12px;padding-left:20px;">${moveItems}</ul>` : ""}
       ${week.length ? `${moves.length ? `<p style="margin:0 0 4px;font-weight:700;">Due this week</p>` : ""}<ul style="margin:0 0 12px;padding-left:20px;">${items}</ul>` : ""}
-      ${more > 0 ? `<p style="margin:0 0 12px;">…and ${more} more on your plan.</p>` : ""}
+      ${more > 0 ? `<p style="margin:0 0 12px;">…and ${more} more in your advisor.</p>` : ""}
       ${done.length ? `<p style="margin:0 0 12px;color:${COLORS.muted};">Done: ${escapeHtml(done.join(", "))}</p>` : ""}
-      <p style="margin:0 0 20px;"><a href="${escapeHtml(planHref)}" style="color:${COLORS.link};font-weight:700;">Open your plan</a></p>
+      <p style="margin:0 0 20px;"><a href="${escapeHtml(planHref)}" style="color:${COLORS.link};font-weight:700;">Open your advisor</a></p>
       <hr style="border:none;border-top:1px solid ${COLORS.border};margin:20px 0 16px;" />
       <p style="color:${COLORS.muted};font-size:12px;margin:0;">
         You get this because Your week is on for your ${escapeHtml(SITE_NAME)} account.
@@ -118,9 +118,9 @@ export function buildYourWeek(input: YourWeekInput): BuiltYourWeek | null {
   }
   for (const l of week) lines.push(`- ${lineText(l)}`);
   if (week.length) lines.push("");
-  if (more > 0) lines.push(`…and ${more} more on your plan.`, "");
+  if (more > 0) lines.push(`…and ${more} more in your advisor.`, "");
   if (done.length) lines.push(`Done: ${done.join(", ")}`, "");
-  lines.push(`Open your plan: ${planHref}`, "", `Turn off Your week: ${unsubscribeHref}`);
+  lines.push(`Open your advisor: ${planHref}`, "", `Turn off Your week: ${unsubscribeHref}`);
 
   return {
     subject,

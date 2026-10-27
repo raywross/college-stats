@@ -352,7 +352,7 @@ export default async function OffersStage({ ctx }: { ctx: PlanContext }) {
           <h3 id="offers-choice" className="font-display text-lg font-bold">
             The choice
           </h3>
-          <p className="text-sm text-muted-foreground">When {self ? "you know" : `${studentFirst ?? "they"} know${studentFirst ? "s" : ""}`}, say so here: the plan turns to the deposit, the other colleges, and the summer.</p>
+          <p className="text-sm text-muted-foreground">When {self ? "you know" : `${studentFirst ?? "they"} know${studentFirst ? "s" : ""}`}, say so here: {self ? "your" : "their"} advisor turns to the deposit, the other colleges, and the summer.</p>
           <div className="flex flex-wrap gap-2">
             {admitted
               .filter((i) => !i.withdrawn_on)

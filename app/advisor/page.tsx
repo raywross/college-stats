@@ -42,21 +42,21 @@ function planFallback(loaded: PlanLoad, first: string | null): ReactNode | null 
     return (
       <section className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground sm:p-6">
         <h2 className="font-display text-xl font-bold text-foreground">No list yet</h2>
-        <p className="mt-1">The plan starts from {first ? `${first}'s` : "the"} list. Add colleges from Explore or any college&apos;s page to get started.</p>
+        <p className="mt-1">{first ? `${first}'s advisor starts from their list.` : "Your advisor starts from your list."} Add colleges from Explore or any college&apos;s page to get started.</p>
       </section>
     );
   }
   if (loaded.kind === "setup-missing") {
     return (
       <section className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground sm:p-6">
-        <h2 className="font-display text-xl font-bold text-foreground">The plan isn&apos;t set up yet</h2>
+        <h2 className="font-display text-xl font-bold text-foreground">Your advisor isn&apos;t set up yet</h2>
         <p className="mt-1">The planner&apos;s tables haven&apos;t been added to the database. The list still works.</p>
       </section>
     );
   }
   return (
     <section className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground sm:p-6">
-      That plan isn&apos;t one you can see.
+      That student&apos;s advisor isn&apos;t one you can see.
     </section>
   );
 }
@@ -190,7 +190,7 @@ async function renderPlan({
   if (viewer.kind === "none") {
     return (
       <section className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground sm:p-6">
-        No student yet. Add one from <Link href="/household" className="font-semibold text-primary hover:underline">Household</Link> to start a plan.
+        No student yet. Add one from <Link href="/household" className="font-semibold text-primary hover:underline">Household</Link> to get started.
       </section>
     );
   }

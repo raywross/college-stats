@@ -148,18 +148,18 @@ export function composeWeekText(tasks: TextTask[], planUrl: string): string | nu
   if (tasks.length === 0) return null;
   const shown = tasks.slice(0, WEEK_TEXT_MAX).map(line);
   const more = tasks.length > WEEK_TEXT_MAX ? ` and ${tasks.length - WEEK_TEXT_MAX} more` : "";
-  return `${BRAND} · This week: ${shown.join("; ")}${more}. Plan: ${planUrl} ${STOP_LINE}`;
+  return `${BRAND} · This week: ${shown.join("; ")}${more}. Advisor: ${planUrl} ${STOP_LINE}`;
 }
 
 /** The day-before text for one hard deadline. */
 export function composeDayBeforeText(task: TextTask, planUrl: string): string {
-  return `${BRAND} · Tomorrow: ${scrubNumbers(task.title)}. Plan: ${planUrl} ${STOP_LINE}`;
+  return `${BRAND} · Tomorrow: ${scrubNumbers(task.title)}. Advisor: ${planUrl} ${STOP_LINE}`;
 }
 
 /** The first text after someone turns texts on: what they'll get, and how to stop. */
 export function composeConfirmText(forName: string | null): string {
   const whose = forName ? `${scrubNumbers(forName)}'s` : "your";
-  return `${BRAND}: texts about ${whose} college plan are on. At most one a day, never at night. Reply STOP to stop, HELP for help.`;
+  return `${BRAND}: texts from ${whose} advisor are on. At most one a day, never at night. Reply STOP to stop, HELP for help.`;
 }
 
 /* ------------------------------------------------------------------ */

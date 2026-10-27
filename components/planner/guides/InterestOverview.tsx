@@ -58,7 +58,7 @@ export function InterestOverview({ ctx, view, person, notOnList = false }: Guide
     <div className="min-w-0 space-y-5">
       {notOnList && <p className="text-sm text-muted-foreground">That college isn&apos;t on the list. Here is every college that is.</p>}
       <p className="max-w-prose text-sm text-muted-foreground">
-        Where a college says <Term term="demonstrated-interest">applicant interest</Term> counts, in the order the plan works on them.
+        Where a college says <Term term="demonstrated-interest">applicant interest</Term> counts, in the order your advisor works on them.
       </p>
       {shown.length ? (
         <ul className="space-y-2">{shown.map(row)}</ul>

@@ -24,7 +24,7 @@ const INVALID = `<p style="margin:0;">That link isn't valid. You can turn off th
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   if (!isUnsubscribeToken(token)) return page(INVALID);
-  return page(`<p style="margin:0 0 20px;">Stop the weekly parent summary? The plan stays as it is.</p>
+  return page(`<p style="margin:0 0 20px;">Stop the weekly parent summary? Your student's advisor stays as it is.</p>
 <form method="post"><button type="submit" style="background:#5b3df5;color:#ffffff;border:none;border-radius:999px;font-weight:600;font-size:15px;padding:12px 24px;cursor:pointer;">Turn off the weekly summary</button></form>`);
 }
 

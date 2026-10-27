@@ -28,7 +28,7 @@ export function OnYourPlan({ unitId }: { unitId: string }) {
   if (!plan) return null;
   return (
     <p className="text-sm">
-      <span className="font-semibold">On your plan: </span>
+      <span className="font-semibold">On your list: </span>
       {plan.round ? <abbr title={ROUND_LABELS[plan.round]} className="no-underline">{ROUND_SHORT[plan.round]}</abbr> : "no round chosen yet"}
       <Link href={plan.href} className="ml-2 font-semibold text-primary underline-offset-2 hover:underline">
         Rounds

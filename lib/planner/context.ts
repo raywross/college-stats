@@ -273,7 +273,7 @@ export async function writeAutoWrites(supabase: SupabaseClient, writes: { id: st
 /** Re-reads only a list's tasks (after writeMerge). */
 export async function readTasks(supabase: SupabaseClient, listId: string): Promise<PlanTask[]> {
   const { data, error } = await readTaskRows(supabase, listId);
-  if (error) throw new Error(`Reading the plan's tasks failed: ${error.message}`);
+  if (error) throw new Error(`Reading the list's tasks failed: ${error.message}`);
   return data ?? [];
 }
 

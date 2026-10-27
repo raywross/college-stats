@@ -189,7 +189,7 @@ export default function PlanIntake({
   // Steps 11 and 12 on the first run (steps.md "First run"): the "most students write this later" note.
   const firstRunNote = mode === "first" && (step === 11 || step === 12);
 
-  const primaryLabel = step === INTAKE_REVIEW ? "Save and show my plan" : "Continue";
+  const primaryLabel = step === INTAKE_REVIEW ? "Save and open my advisor" : "Continue";
   const primaryDisabled = pending || (step === 0 ? !canContinue0 : step === 1 ? !canContinue1 : step === INTAKE_REVIEW ? !canSave : false);
 
   const onPrimary = () => {
@@ -221,7 +221,7 @@ export default function PlanIntake({
       {/* Desktop rail */}
       <aside className="hidden lg:flex lg:flex-col lg:justify-between lg:py-2">
         <div className="space-y-6">
-          <h1 className="font-display text-xl font-extrabold">Set up your plan</h1>
+          <h1 className="font-display text-xl font-extrabold">Set up your advisor</h1>
           <nav className="space-y-2">
             {RAIL_LABELS.map((label, i) => {
               const idx = UI_STEPS[i];

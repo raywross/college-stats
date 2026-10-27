@@ -33,15 +33,15 @@ function Fallback({ loaded }: { loaded: Exclude<PlanLoad, { kind: "ready" }> }) 
     loaded.kind === "empty" ? (
       <>
         <h2 className="font-display text-xl font-bold text-foreground">No list yet</h2>
-        <p className="mt-1">The plan starts from the list. Add colleges from Explore or any college&apos;s page to get started.</p>
+        <p className="mt-1">Your advisor starts from your list. Add colleges from Explore or any college&apos;s page to get started.</p>
       </>
     ) : loaded.kind === "setup-missing" ? (
       <>
-        <h2 className="font-display text-xl font-bold text-foreground">The plan isn&apos;t set up yet</h2>
+        <h2 className="font-display text-xl font-bold text-foreground">Your advisor isn&apos;t set up yet</h2>
         <p className="mt-1">The planner&apos;s tables haven&apos;t been added to the database. The list still works.</p>
       </>
     ) : (
-      <>That plan isn&apos;t one you can see.</>
+      <>That student&apos;s advisor isn&apos;t one you can see.</>
     );
   return <section className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground sm:p-6">{body}</section>;
 }
@@ -78,7 +78,7 @@ async function renderRoute(slug: GuideSlug, searchParams: Search) {
   if (viewer.kind === "none") {
     return (
       <section className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground sm:p-6">
-        No student yet. Add one from <Link href="/household" className="font-semibold text-primary hover:underline">Household</Link> to start a plan.
+        No student yet. Add one from <Link href="/household" className="font-semibold text-primary hover:underline">Household</Link> to get started.
       </section>
     );
   }

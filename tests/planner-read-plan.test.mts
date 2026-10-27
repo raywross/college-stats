@@ -136,7 +136,7 @@ test("a missing planner table is still a setup error (not retried as a column)",
 
 test("any other error on the items is thrown, not retried", async () => {
   const { client, selects } = fakeClient(tables(() => ({ data: null, error: { code: "57014", message: "canceling statement due to statement timeout" } })));
-  await assert.rejects(readPlan(client, "list-1"), (err: Error) => !(err instanceof PlannerSetupError) && /Reading the plan failed/.test(err.message));
+  await assert.rejects(readPlan(client, "list-1"), (err: Error) => !(err instanceof PlannerSetupError) && /Reading the list's rows failed/.test(err.message));
   assert.equal(selects.filter((s) => s.table === "list_items").length, 1);
 });
 

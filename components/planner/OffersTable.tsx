@@ -133,6 +133,7 @@ const LINES: Line[] = [
             <span className="block text-[11px] text-muted-foreground">
               on {usd(c.four.student.principal)} of student loans at {(c.four.student.rate * 100).toFixed(2)}%
               {c.four.student.exact ? "" : ` (the ${awardYearLabel(c.four.student.rateYear)} rate, the newest published)`}
+              {/* advisor-words: ok: a loan repayment plan */}
               {c.four.student.tier ? `; the ${c.four.student.tier.plan.toLowerCase()} plan runs ${c.four.student.tier.years} years: ${usd(c.four.student.tier.monthly)} a month` : ""}
             </span>
           </span>

@@ -197,7 +197,7 @@ export function ReturnPrompt({
       <SheetDialog open={asking !== null} onOpenChange={(open) => !open && setAsking(null)} title={asking ? question(asking) : ""}>
         {asking && (
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">We can&apos;t see the college&apos;s page, so we ask. Only a yes goes on your plan.</p>
+            <p className="text-sm text-muted-foreground">We can&apos;t see the college&apos;s page, so we ask. Only a yes goes on your list.</p>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <button type="button" disabled={busy} onClick={() => confirm(asking, "prompt")} className={PRIMARY}>
                 {yesLabel}

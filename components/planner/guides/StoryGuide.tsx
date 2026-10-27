@@ -83,7 +83,7 @@ function WhatYourRecordSays({
     <WhyFold title="What your record says so far" screen="story_guide" section="record_so_far" defaultOpen={storyEmpty}>
       {activities.length === 0 && (
         <p>
-          Add your activities and the plan will show what they say.{" "}
+          Add your activities and your advisor will show what they say.{" "}
           <Link href={planHref({ person, setup: true, step: ACTIVITY_STEP_INDEX.clubs })} className="font-semibold text-primary hover:underline">
             Add them
           </Link>

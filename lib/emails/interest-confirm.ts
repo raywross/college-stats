@@ -154,11 +154,11 @@ export function buildInterestConfirm(input: InterestConfirmInput): BuiltInterest
       <p style="margin:0 0 14px;font-weight:700;">${escapeHtml(question)}</p>
       <p style="margin:0 0 18px;">${button(yes, "Yes", true)}&nbsp;&nbsp;${button(no, "No", false)}</p>
       ${lines.length ? `<p style="margin:0 0 4px;font-weight:700;">Also waiting for an answer</p><ul style="margin:0 0 14px;padding-left:20px;">${otherItems}</ul>` : ""}
-      <p style="margin:0 0 20px;color:${COLORS.muted};">Yes puts it on your plan; a visit goes on the family calendar. No leaves your plan as it is.</p>
-      <p style="margin:0 0 20px;"><a href="${escapeHtml(planHref)}" style="color:${COLORS.link};font-weight:700;">Open your plan</a></p>
+      <p style="margin:0 0 20px;color:${COLORS.muted};">Yes puts it on your list; a visit goes on the family calendar. No leaves your list as it is.</p>
+      <p style="margin:0 0 20px;"><a href="${escapeHtml(planHref)}" style="color:${COLORS.link};font-weight:700;">Open your advisor</a></p>
       <hr style="border:none;border-top:1px solid ${COLORS.border};margin:20px 0 16px;" />
       <p style="color:${COLORS.muted};font-size:12px;margin:0;">
-        You get this because Your week, your plan's reminders, is on for your ${escapeHtml(SITE_NAME)} account.
+        You get this because Your week, your advisor's reminders, is on for your ${escapeHtml(SITE_NAME)} account.
         <a href="${escapeHtml(unsubscribeHref)}" style="color:${COLORS.link};">Turn off Your week</a>
       </p>
     </div>
@@ -171,7 +171,7 @@ export function buildInterestConfirm(input: InterestConfirmInput): BuiltInterest
     for (const l of lines) text.push(`- ${l.text}. Yes: ${l.yes} No: ${l.no}`);
     text.push("");
   }
-  text.push("Yes puts it on your plan; a visit goes on the family calendar. No leaves your plan as it is.", "", `Open your plan: ${planHref}`, "", `Turn off Your week: ${unsubscribeHref}`);
+  text.push("Yes puts it on your list; a visit goes on the family calendar. No leaves your list as it is.", "", `Open your advisor: ${planHref}`, "", `Turn off Your week: ${unsubscribeHref}`);
 
   return {
     subject: subjectFor(lead, input.names),

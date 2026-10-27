@@ -12,6 +12,7 @@
  * inside this user-session action, best effort (a delivery failure never undoes the nudge, which is already
  * recorded and visible in the plan).
  */
+import { planHref } from "./plan-tabs";
 import { revalidatePath } from "next/cache";
 import { authConfigured, getUser, studentsICanSee } from "@/lib/auth";
 import { allowed, NOT_ALLOWED_MESSAGE, type Capability } from "@/lib/entitlements";
@@ -130,8 +131,8 @@ export async function sendNudge(taskId: string, note: string, channel: "email" |
           await sendEmail({
             to,
             subject: "A nudge on your plan",
-            html: `<p>${body}</p><p><a href="/household/${contact.studentId}/plan">Open the plan</a></p>`,
-            text: `${body}\n\nOpen the plan: /household/${contact.studentId}/plan`,
+            html: `<p>${body}</p><p><a href="${planHref({ person: contact.studentId })}">Open the plan</a></p>`,
+            text: `${body}\n\nOpen the plan: ${planHref({ person: contact.studentId })}`,
           });
           delivered = "email";
         }

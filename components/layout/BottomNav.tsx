@@ -8,6 +8,7 @@ import { ThemeSegmented } from "@/components/ThemeToggle";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useMe } from "@/components/account/useMe";
 import { loginHref } from "@/lib/accounts";
+import { ADVISOR_PATH, ADVISOR_SHORT } from "@/lib/planner/advisor";
 import { useCompareIds } from "@/lib/compare";
 import { cn } from "@/lib/utils";
 import { usePlanDot } from "./usePlanDot";
@@ -56,7 +57,7 @@ export function BottomNav() {
         <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
           <Tab href="/explore" label="Explore" icon={<Compass />} active={isActive("/explore") && !sheet} />
           <Tab label="Search" icon={<Search />} active={sheet === "search"} onClick={() => setSheet(sheet === "search" ? null : "search")} />
-          <Tab href="/plan" label="Plan" icon={<ListChecks />} active={isActive("/plan") && !sheet} dot={planDot.lit && planDot.label} />
+          <Tab href={ADVISOR_PATH} label={ADVISOR_SHORT} icon={<ListChecks />} active={isActive(ADVISOR_PATH) && !sheet} dot={planDot.lit && planDot.label} />
           <Tab
             href={compareHref}
             label="Compare"

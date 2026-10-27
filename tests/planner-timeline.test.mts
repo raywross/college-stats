@@ -419,7 +419,7 @@ test("digest: a task due within seven days adds a line; a digest with no changes
 });
 
 test("Your week: lines and one link, nothing when nothing is due; the default by grade", () => {
-  const base = { firstName: "Alex", siteUrl: "https://q.example", planPath: "/household/s1/plan", unsubscribeToken: "t".repeat(40) };
+  const base = { firstName: "Alex", siteUrl: "https://q.example", planPath: "/advisor?for=s1", unsubscribeToken: "t".repeat(40) };
   assert.equal(buildYourWeek({ ...base, week: [], overdue: null }), null);
   const built = buildYourWeek({
     ...base,
@@ -428,7 +428,7 @@ test("Your week: lines and one link, nothing when nothing is due; the default by
   })!;
   assert.match(built.text, /Overdue: Tufts: decision expected \(EA\): Oct 2/);
   assert.match(built.text, /- FAFSA opens: Oct 1 \(Parent\)/);
-  assert.match(built.text, /Open your plan: https:\/\/q\.example\/household\/s1\/plan\?utm_source=your-week/);
+  assert.match(built.text, /Open your plan: https:\/\/q\.example\/advisor\?for=s1&utm_source=your-week/);
   assert.equal(built.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
   assert.match(built.unsubscribeHref, /\/unsubscribe\/t+\/week/);
   assert.equal(yourWeekDefault("junior_fall"), false);

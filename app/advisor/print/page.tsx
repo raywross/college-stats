@@ -11,12 +11,12 @@ import { dayLabel, schoolYearOf, type CalendarCite, type CalendarEvent } from "@
 import { KID_VARS, MONEY_VAR, ROUND_VAR, STRIPED, TEST_VAR, VISIT_VAR } from "@/lib/planner/colors";
 import { todayIso } from "@/lib/planner/context";
 import { loadPlanFor, planViewer, type PlanLoad } from "@/lib/planner/load";
-import { planHref } from "@/lib/planner/plan-tabs";
+import { planHref, planPrintHref } from "@/lib/planner/plan-tabs";
 import { printSections, yearEvents, type PrintLayout } from "@/lib/planner/print";
 import type { PlanContext } from "@/lib/planner/types";
 import type { PlanView } from "@/lib/planner/plan-view";
 
-export const metadata: Metadata = { title: "Print the plan", robots: { index: false } };
+export const metadata: Metadata = { title: "Print the calendar", robots: { index: false } };
 
 interface PrintChild {
   studentId: string;
@@ -48,7 +48,7 @@ function sourceText(cite: CalendarCite, ctx: PlanContext | undefined): string | 
 }
 
 /**
- * /plan/print (specs/planner/redesign/calendar.md "Feed, print, share"): the Coming-up list for the whole school year,
+ * /advisor/print (specs/planner/redesign/calendar.md "Feed, print, share"): the Coming-up list for the whole school year,
  * grouped by month, for one child (`?for=`) or everyone, all together or a page per child (`?each=1`). Round colors
  * with shapes (◆ due, ○ decision, ▲ test, $ money, ● visit) and the round named in each line, so it reads in grayscale too.
  * Signed in only; a student prints their own, a guardian the children the household grants them (loadPlanFor reads
@@ -60,7 +60,7 @@ export default async function PlanPrintPage({ searchParams }: { searchParams: Pr
   if (!authConfigured()) return <AuthUnavailable />;
   const { for: forParam, each } = await searchParams;
   const forId = typeof forParam === "string" && forParam ? forParam : null;
-  await requireUser(forId ? `/plan/print?for=${encodeURIComponent(forId)}` : "/plan/print");
+  await requireUser(planPrintHref({ person: forId }));
 
   const today = todayIso();
   const range = schoolYearOf(today);
@@ -117,10 +117,10 @@ export default async function PlanPrintPage({ searchParams }: { searchParams: Pr
         <div className="flex flex-wrap items-center gap-2">
           {!self && !forId && children.length > 1 && (
             <div className="inline-flex rounded-full border bg-card p-0.5 text-xs font-semibold" role="group" aria-label="Layout">
-              <Link href="/plan/print" aria-current={layout.kind === "together" ? "page" : undefined} className={`rounded-full px-3 py-2 ${layout.kind === "together" ? "bg-muted" : "text-muted-foreground hover:text-foreground"}`}>
+              <Link href={planPrintHref()} aria-current={layout.kind === "together" ? "page" : undefined} className={`rounded-full px-3 py-2 ${layout.kind === "together" ? "bg-muted" : "text-muted-foreground hover:text-foreground"}`}>
                 All together
               </Link>
-              <Link href="/plan/print?each=1" aria-current={layout.kind === "each" ? "page" : undefined} className={`rounded-full px-3 py-2 ${layout.kind === "each" ? "bg-muted" : "text-muted-foreground hover:text-foreground"}`}>
+              <Link href={planPrintHref({ each: true })} aria-current={layout.kind === "each" ? "page" : undefined} className={`rounded-full px-3 py-2 ${layout.kind === "each" ? "bg-muted" : "text-muted-foreground hover:text-foreground"}`}>
                 A page per child
               </Link>
             </div>

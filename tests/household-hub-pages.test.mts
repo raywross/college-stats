@@ -179,12 +179,12 @@ test("a person's own page is their student record's, else their user id's", () =
 /* ------------------------------------------------------------------ */
 
 test("a student's list page points into the planner; a guardian's own list has no planner equivalent", () => {
-  assert.equal(personListHref("student", "s1"), "/plan?for=s1");
+  assert.equal(personListHref("student", "s1"), "/advisor?for=s1");
   assert.equal(personListHref("guardian", "u1"), null);
 });
 
 test("the planner link encodes the person id", () => {
-  assert.equal(personListHref("student", "s 1/x"), "/plan?for=s%201%2Fx");
+  assert.equal(personListHref("student", "s 1/x"), "/advisor?for=s%201%2Fx");
 });
 
 /* ------------------------------------------------------------------ */

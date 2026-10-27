@@ -13,6 +13,7 @@
  * Copies store-actions.ts's `ready` and `isStudentSelf` pattern (sign in, `allowed()`, the user's own session).
  * A "use server" module exports only async functions.
  */
+import { ADVISOR_PATH } from "./advisor";
 import { revalidatePath } from "next/cache";
 import { authConfigured, getUser } from "@/lib/auth";
 import { allowed, NOT_ALLOWED_MESSAGE } from "@/lib/entitlements";
@@ -91,7 +92,7 @@ export async function dismissEd(itemId: string): Promise<EdActionResult> {
     return { ok: false, message: FAILED };
   }
   await regenerate(listId);
-  revalidatePath("/plan");
+  revalidatePath(ADVISOR_PATH);
   revalidatePath("/household", "layout");
   return { ok: true };
 }
@@ -115,6 +116,6 @@ export async function setEdChecks(itemId: string, checks: { attend?: boolean; co
     if (error) console.error(`planner ed: setEdChecks failed: ${error.message}`);
     return { ok: false, message: error ? FAILED : "Only someone who can edit this plan can change it." };
   }
-  revalidatePath("/plan");
+  revalidatePath(ADVISOR_PATH);
   return { ok: true };
 }

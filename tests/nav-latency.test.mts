@@ -21,7 +21,7 @@ const read = (rel: string) => readFileSync(join(ROOT, rel), "utf8");
 /* Loading boundaries                                                   */
 /* ------------------------------------------------------------------ */
 
-const LOADING_FILES = ["app/household/[person]/loading.tsx", "app/explore/loading.tsx", "app/plan/loading.tsx"] as const;
+const LOADING_FILES = ["app/household/[person]/loading.tsx", "app/explore/loading.tsx", "app/advisor/loading.tsx"] as const;
 
 /** What a loading file must not use: anything that reads the request or the session, and anything that fetches. */
 const REQUEST_READS = /\b(cookies|headers)\s*\(|\bgetUser\b|@\/lib\/(auth|supabase-server|households|lists|home-store)|["']next\/headers["']|\bawait\b/;
@@ -38,7 +38,7 @@ function fixedWideClasses(html: string): string[] {
 
 /** Renders a `.tsx` component with no props: TypeScript's JSX transform, then a plain import (no build step in tests). */
 async function renderLoading(rel: string): Promise<string> {
-  // app/plan/loading.tsx wraps its header skeleton in PendingPeopleLine (a client component that shows its children
+  // app/advisor/loading.tsx wraps its header skeleton in PendingPeopleLine (a client component that shows its children
   // when nothing is pending, as on every server render): stand it in here, since this renders the one file alone.
   const src = read(rel).replace(
     /^import \{ PendingPeopleLine \} from "@\/components\/planner\/PendingPeopleLine";$/m,

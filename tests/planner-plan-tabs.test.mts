@@ -1,7 +1,7 @@
 /**
  * The Plan page's tabs and links (lib/planner/plan-tabs.ts; specs/planner/redesign/page.md, build-plan.md "Tabs and
  * routing"): parsing, the default tab per viewer, Everyone as the calendar alone, Offers only after a decision, old
- * stage links, and `/plan` hrefs. `npm test`.
+ * stage links, and `/advisor` hrefs. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -36,24 +36,24 @@ test("old ?stage= links: List, Rounds, Actions, Apply → Colleges; Timeline →
 });
 
 test("planHref builds /plan with the person and the tab, leaving out what's missing", () => {
-  assert.equal(planHref({}), "/plan");
-  assert.equal(planHref({ person: null, tab: null }), "/plan");
-  assert.equal(planHref({ tab: "offers" }), "/plan?tab=offers");
-  assert.equal(planHref({ person: "6b0f1c1e-0000-4000-8000-000000000001" }), "/plan?for=6b0f1c1e-0000-4000-8000-000000000001");
-  assert.equal(planHref({ person: "abc", tab: "calendar" }), "/plan?for=abc&tab=calendar");
-  assert.equal(planHref({ person: "a b&c" }), "/plan?for=a+b%26c");
+  assert.equal(planHref({}), "/advisor");
+  assert.equal(planHref({ person: null, tab: null }), "/advisor");
+  assert.equal(planHref({ tab: "offers" }), "/advisor?tab=offers");
+  assert.equal(planHref({ person: "6b0f1c1e-0000-4000-8000-000000000001" }), "/advisor?for=6b0f1c1e-0000-4000-8000-000000000001");
+  assert.equal(planHref({ person: "abc", tab: "calendar" }), "/advisor?for=abc&tab=calendar");
+  assert.equal(planHref({ person: "a b&c" }), "/advisor?for=a+b%26c");
   // The intake's edit mode (the ✎ on the numbers line).
-  assert.equal(planHref({ person: "abc", setup: true }), "/plan?for=abc&setup=1");
-  assert.equal(planHref({ setup: true }), "/plan?setup=1");
-  assert.equal(planHref({ person: "abc", setup: false }), "/plan?for=abc");
+  assert.equal(planHref({ person: "abc", setup: true }), "/advisor?for=abc&setup=1");
+  assert.equal(planHref({ setup: true }), "/advisor?setup=1");
+  assert.equal(planHref({ person: "abc", setup: false }), "/advisor?for=abc");
   // A step into edit mode (the people line's next-step link); ignored without setup.
-  assert.equal(planHref({ person: "abc", setup: true, step: 4 }), "/plan?for=abc&setup=1&step=4");
-  assert.equal(planHref({ setup: true, step: 0 }), "/plan?setup=1&step=0");
-  assert.equal(planHref({ step: 4 }), "/plan");
+  assert.equal(planHref({ person: "abc", setup: true, step: 4 }), "/advisor?for=abc&setup=1&step=4");
+  assert.equal(planHref({ setup: true, step: 0 }), "/advisor?setup=1&step=0");
+  assert.equal(planHref({ step: 4 }), "/advisor");
   // Next steps: the people line's Next: opens the tab scrolled to the card; `move` is ignored on any other tab.
-  assert.equal(planHref({ person: "abc", tab: "next", move: "t-1" }), "/plan?for=abc&tab=next&move=t-1");
-  assert.equal(planHref({ tab: "next" }), "/plan?tab=next");
-  assert.equal(planHref({ person: "abc", tab: "colleges", move: "t-1" }), "/plan?for=abc&tab=colleges");
+  assert.equal(planHref({ person: "abc", tab: "next", move: "t-1" }), "/advisor?for=abc&tab=next&move=t-1");
+  assert.equal(planHref({ tab: "next" }), "/advisor?tab=next");
+  assert.equal(planHref({ person: "abc", tab: "colleges", move: "t-1" }), "/advisor?for=abc&tab=colleges");
 });
 
 test("intakeStepParam takes the entry steps 0–12 and nothing else (Your record: Major 8 through Recommenders 12; Review 13 and Done 14 aren't links)", () => {

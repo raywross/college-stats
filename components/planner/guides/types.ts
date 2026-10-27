@@ -1,6 +1,6 @@
 /**
  * Props every guide component takes (specs/planner/v3/build-plan.md "The guide page"). Types only. The page
- * (app/plan/guide/[slug]/page.tsx) builds them once: the plan as the viewer sees it, the open move (or none), the
+ * (app/advisor/guide/[slug]/page.tsx) builds them once: the plan as the viewer sees it, the open move (or none), the
  * guide's query, and whatever the slug's server `load` returned. A client guide component receives `ctx`/`view`
  * serialized exactly as the plan's tabs do.
  */

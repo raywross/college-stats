@@ -1,5 +1,6 @@
 "use client";
 
+import { planHref } from "@/lib/planner/plan-tabs";
 import Link from "next/link";
 import { useState } from "react";
 import { useMyCourses } from "@/components/me/useMyCourses";
@@ -176,7 +177,7 @@ export function HsPrepTable({
             <li key={l.subject}>
               {l.before}
               {mine.signedIn ? (
-                <Link href="/plan?setup=1" className="font-semibold text-primary hover:underline">
+                <Link href={planHref({ setup: true })} className="font-semibold text-primary hover:underline">
                   {l.link}
                 </Link>
               ) : (

@@ -1,5 +1,5 @@
 /**
- * The printed calendar (specs/planner/redesign/calendar.md "Feed, print, share"; app/plan/print/page.tsx): the
+ * The printed calendar (specs/planner/redesign/calendar.md "Feed, print, share"; app/advisor/print/page.tsx): the
  * Coming-up list for a whole school year, grouped by month, for one child or everyone (all together, or one page per
  * child). Pure: the events come from lib/planner/calendar.ts eventsFor, so the page prints exactly what the Calendar
  * tab shows.

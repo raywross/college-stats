@@ -130,10 +130,10 @@ test("no guide title, button, or purpose carries a number from the estimate (the
 });
 
 test("guideHref: the slug, then for, move, college, level, from, only those given", () => {
-  assert.equal(guideHref("list"), "/plan/guide/list");
-  assert.equal(guideHref("list", { level: "likely", from: "notice" }), "/plan/guide/list?level=likely&from=notice");
-  assert.equal(guideHref("interest", { person: "s1", move: "t1", college: "198419", from: "move" }), "/plan/guide/interest?for=s1&move=t1&college=198419&from=move");
-  assert.equal(guideHref("test", { person: null, move: null, college: null, level: null }), "/plan/guide/test");
+  assert.equal(guideHref("list"), "/advisor/guide/list");
+  assert.equal(guideHref("list", { level: "likely", from: "notice" }), "/advisor/guide/list?level=likely&from=notice");
+  assert.equal(guideHref("interest", { person: "s1", move: "t1", college: "198419", from: "move" }), "/advisor/guide/interest?for=s1&move=t1&college=198419&from=move");
+  assert.equal(guideHref("test", { person: null, move: null, college: null, level: null }), "/advisor/guide/test");
 });
 
 const task = (over: Partial<PlanTask>): PlanTask =>
@@ -142,15 +142,15 @@ const task = (over: Partial<PlanTask>): PlanTask =>
 test("hrefFor: the move and from=move; the interest and ED guides add the college; the list guide adds a shape gap's level", () => {
   const items = [{ id: "item-1", unit_id: "198419" }];
   const interest = task({ id: "t9", kind: "show_interest", item_id: "item-1" });
-  assert.equal(guideFor(interest)!.hrefFor(interest, { person: "s1", items }), "/plan/guide/interest?for=s1&move=t9&college=198419&from=move");
-  assert.equal(guideFor(interest)!.hrefFor(interest, { person: null }), "/plan/guide/interest?move=t9&from=move", "no rows passed: no college");
+  assert.equal(guideFor(interest)!.hrefFor(interest, { person: "s1", items }), "/advisor/guide/interest?for=s1&move=t9&college=198419&from=move");
+  assert.equal(guideFor(interest)!.hrefFor(interest, { person: null }), "/advisor/guide/interest?move=t9&from=move", "no rows passed: no college");
   const ed = task({ id: "t8", kind: "ed_decide", item_id: "item-1" });
-  assert.equal(guideFor(ed)!.hrefFor(ed, { person: null, items }), "/plan/guide/ed?move=t8&college=198419&from=move");
+  assert.equal(guideFor(ed)!.hrefFor(ed, { person: null, items }), "/advisor/guide/ed?move=t8&college=198419&from=move");
   const gap = task({ id: "t7", kind: "shape_gap", action: { kind: "show_rail", level: "likely", gap: "likely_min" } });
-  assert.equal(guideFor(gap)!.hrefFor(gap, { person: null }), "/plan/guide/list?move=t7&level=likely&from=move");
+  assert.equal(guideFor(gap)!.hrefFor(gap, { person: null }), "/advisor/guide/list?move=t7&level=likely&from=move");
   const story = task({ id: "t6", kind: "story", key: `${L}:playbook:story` });
-  assert.equal(guideFor(story)!.hrefFor(story, { person: "s2" }), "/plan/guide/story?for=s2&move=t6&from=move");
-  assert.equal(GUIDES.test.hrefFor(null, { person: null }), "/plan/guide/test", "no move: the bare guide");
+  assert.equal(guideFor(story)!.hrefFor(story, { person: "s2" }), "/advisor/guide/story?for=s2&move=t6&from=move");
+  assert.equal(GUIDES.test.hrefFor(null, { person: null }), "/advisor/guide/test", "no move: the bare guide");
 });
 
 test("every slug has a guide page (lib/planner/guides-server.ts) and, until replaced, a stub", () => {
@@ -160,10 +160,10 @@ test("every slug has a guide page (lib/planner/guides-server.ts) and, until repl
   assert.deepEqual(keys, [...GUIDE_SLUGS].sort());
   assert.match(src, /^import "server-only";/m);
   // The page resolves the slug through the registry and 404s an unknown one.
-  const page = readFileSync(join(ROOT, "app", "plan", "guide", "[slug]", "page.tsx"), "utf8");
+  const page = readFileSync(join(ROOT, "app", "advisor", "guide", "[slug]", "page.tsx"), "utf8");
   assert.match(page, /parseGuideSlug\(/);
   assert.match(page, /notFound\(\)/);
-  assert.match(page, /redirect\("\/plan"\)/);
+  assert.match(page, /redirect\(ADVISOR_PATH\)/);
   assert.match(page, /GUIDE_PAGES\[slug\]/);
 });
 

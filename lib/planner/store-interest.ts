@@ -10,6 +10,7 @@
  * A pending act is the actor's own: `pendingActs` reads only the viewer's rows, so a parent never sees a student's
  * unconfirmed click and the reverse (spec "Rules": shown to no one else).
  */
+import { ADVISOR_PATH } from "./advisor";
 import { revalidatePath } from "next/cache";
 import { authConfigured, getUser } from "@/lib/auth";
 import { allowed, NOT_ALLOWED_MESSAGE } from "@/lib/entitlements";
@@ -187,7 +188,7 @@ export async function resolveAct(
     await trackServer("plan_interest_confirmed", { action: row.act, via }, r.userId);
     if (outcome.listId) await regenerate(outcome.listId);
   }
-  revalidatePath("/plan", "layout");
+  revalidatePath(ADVISOR_PATH, "layout");
   revalidatePath("/household", "layout");
   return { ok: true, visitId: outcome.visitId };
 }

@@ -103,7 +103,7 @@ export function BottomNav() {
               {me?.configured && (me.signedIn ? (
                 <MoreLink href="/account" icon={<UserRound className="size-5" />} title="Account" sub={me.name ?? me.email ?? "Your profile and household"} active={isActive("/account")} />
               ) : (
-                <MoreLink href={loginHref(pathname === "/login" ? undefined : pathname)} icon={<LogIn className="size-5" />} title="Sign in" sub="Save your colleges and plans" active={isActive("/login")} />
+                <MoreLink href={loginHref(pathname === "/login" ? undefined : pathname)} icon={<LogIn className="size-5" />} title="Sign in" sub="Your colleges, your record, your advisor" active={isActive("/login")} />
               ))}
               <MoreLink href="/trends" icon={<LineChart className="size-5" />} title="National trends" sub="How college is changing" active={isActive("/trends")} />
               <MoreLink href="/high-schools" icon={<GraduationCap className="size-5" />} title="High schools" sub="Rigor, outcomes & where graduates go" active={isActive("/high-schools")} />

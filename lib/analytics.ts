@@ -149,6 +149,10 @@ export interface AnalyticsEvents {
   visit_alert_sent: { college_count: number; event_count: number };
   /** The Data API (specs/product/data-api.md): one request, by route id or MCP tool, status, and transport; the key's id, never the key or the query ("" when no key was accepted). */
   api_request: { endpoint: string; status: number; transport: "rest" | "mcp"; key_id: string };
+  /** Quad Advisor's splash page (specs/product/advisor.md "3. The page"): one view, and whether the viewer is signed in. */
+  advisor_page_viewed: { signed_in: boolean };
+  /** The splash page's "Start free" (or "Sign in") tapped, by the section it sits in ("hero", "close", ...). */
+  advisor_cta_tapped: { section: string };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
@@ -272,6 +276,8 @@ export const EVENTS = {
   visit_alert_muted: { properties: ["unit_id"], side: "client", why: "Visit events: per-college alert mutes" },
   visit_radius_changed: { properties: ["miles"], side: "client", why: "Visit events: radius changes" },
   api_request: { properties: ["endpoint", "status", "transport", "key_id"], side: "server", why: "Data API: requests by endpoint, status, and transport" },
+  advisor_page_viewed: { properties: ["signed_in"], side: "client", why: "Quad Advisor: how many people see the splash page, signed in or not" },
+  advisor_cta_tapped: { properties: ["section"], side: "client", why: "Quad Advisor: which section's button starts an account" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

@@ -349,14 +349,12 @@ test("the request carries the core answers and the grade, sanitized, and likeYou
 });
 
 test("the live-preview hook sends the core answers and the student's grade, as the server load does", () => {
-  // NumbersForm's own live preview is gone with the intake redesign (specs/planner/redesign/intake.md): numbers are
-  // edited through the intake guide, which saves once rather than previewing the list client-side. SignedOutPlan is
-  // the hook's one remaining caller.
+  // NumbersForm's own live preview is gone with the intake redesign (specs/planner/redesign/intake.md), and the
+  // signed-out plan, the hook's last caller, gave way to the splash page (specs/product/advisor.md "3. The page").
   const hook = read("components", "planner", "useEstimates.ts");
   assert.match(hook, /JSON\.stringify\(\{ student, unitIds, context, hooks \}\)/);
   assert.match(hook, /gradeNow\(gradYear/);
   assert.match(hook, /coreAtTopLevel: profile\?\.academics\.coreAtTopLevel/);
-  assert.match(read("components", "planner", "SignedOutPlan.tsx"), /useEstimates\(/);
   assert.match(read("app", "api", "estimate", "route.ts"), /estimateContext\(student, context\)/);
   // The route and the loader pass the same two extras to the same function.
   assert.match(read("lib", "planner", "plan-estimates.ts"), /estimateContext\(input, \{ coreAtTopLevel: profile\?\.academics\.coreAtTopLevel \?\? null, grade: gradeNow\(/);
@@ -484,13 +482,6 @@ test("the Data page's jump chip for the accuracy section reads as the section's 
   assert.equal(chip, "How well Quad's estimate did");
 });
 
-test("a long college name in the signed-out plan row can shrink to an ellipsis on a phone", () => {
-  const src = read("components", "planner", "SignedOutPlan.tsx");
-  const row = src.slice(src.indexOf("function LocalRow"));
-  assert.match(row, /<li className="grid grid-cols-\[auto_minmax\(0,1fr\)\]/, "the phone grid's name column may shrink below its content");
-  assert.match(row, /<span className="flex min-w-0 max-w-full [^"]*">\s*\{school && <Crest[\s\S]*?<span className="min-w-0 truncate">\{name\}<\/span>/, "the wrapper may shrink so the name's truncate takes effect");
-});
-
 test("the core-subject legend is a heading inside its box, not a label on the border", () => {
   const src = read("components", "profile", "CoreSubjects.tsx");
   assert.match(src, /<legend className="[^"]*\bfloat-left\b[^"]*\bw-full\b/);
@@ -506,9 +497,8 @@ test("the plan explains the estimate once for the list, not per college; the pro
   assert.match(read("lib", "planner", "plan-view.ts"), /estimate: school \? est : null/);
 });
 
-test("the signed-out plan shows the most useful missing input; the plan's people line doesn't", () => {
+test("the plan's people line doesn't show the most useful missing input", () => {
   assert.doesNotMatch(read("components", "planner", "PlanPeople.tsx"), /MostUsefulInput/);
-  assert.match(read("components", "planner", "SignedOutPlan.tsx"), /<MostUsefulInput estimates=\{estimates\}/);
   assert.match(read("components", "chances", "MostUsefulInput.tsx"), /mostUsefulMissing\(Object\.values\(estimates\)\)/);
 });
 
@@ -601,7 +591,6 @@ test("nothing the new client components import is server-only code (Server Actio
     "components/school/RigorLine.tsx",
     "components/planner/PlanRow.tsx",
     "components/planner/PlanPeople.tsx",
-    "components/planner/SignedOutPlan.tsx",
     "components/planner/useEstimates.ts",
   ];
   const clients = [...NEW_UI.filter((f) => /^\s*["']use client["']/.test(read(f)) || shared.some((s) => f.endsWith(s))), ...touched];

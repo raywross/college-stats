@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { PlanFrame } from "@/components/planner/PlanFrame";
 import { PlanPeople, type PlanPerson, type PlanPersonDetail } from "@/components/planner/PlanPeople";
-import SignedOutPlan from "@/components/planner/SignedOutPlan";
+import { Splash } from "@/components/advisor/Splash";
 import { authConfigured, getUser } from "@/lib/auth";
 import { type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/planner/load";
 import { resolveSelectedChild, type SwitchableChild } from "@/lib/planner/plan-frame";
@@ -109,7 +109,7 @@ function nextDeadlineOf(load: PlanLoad | undefined): string | null {
 
 /**
  * /advisor, formerly /plan (specs/product/advisor.md; specs/planner/redesign/page.md): one address for a student's own plan and for a parent's family. Signed
- * out: the pitch and the numbers step (SignedOutPlan). A student: their own plan, Colleges by default. A guardian
+ * out: Quad Advisor's splash page (components/advisor/Splash.tsx; advisor.md "3. The page"). A student: their own plan, Colleges by default. A guardian
  * always lands on one child now (decision 2026-10-11, no Everyone): `?for=` when it names a real child, else the
  * last child viewed (the `plan_child` cookie), else the child with the soonest open deadline, else the first.
  * `?tab=` opens a tab (links, so back and forward work); an unrecognized or unavailable one falls back to the
@@ -139,7 +139,7 @@ async function renderPlan({
   const back: RecordBack = backParam === "record" || backParam === "inline" ? backParam : "plan";
 
   const user = await getUser();
-  if (!user) return <SignedOutPlan />;
+  if (!user) return <Splash />;
 
   // The plan most likely to be shown starts loading now, alongside who the viewer is (U20 "real speed"): the child
   // named by `?for=` or last viewed, else (null) the viewer's own. loadPlanFor uses it only if it's that student's.

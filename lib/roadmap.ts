@@ -161,6 +161,17 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
   },
   {
+    slug: "advisor",
+    file: "specs/product/advisor.md",
+    group: "business",
+    summary:
+      "The plan gets a new name as the site's advisor, a 14-day free trial with your card on file and a yearly price after, and a page that shows a visitor exactly what they'd get before they sign up.",
+    complexity: 2,
+    complexityNote:
+      "One label constant and route redirects, a marketing page built from the plan's own components over a sample student, and the trial flow on Stripe Checkout with one reminder email.",
+    status: "planned",
+  },
+  {
     slug: "commercialization",
     file: "specs/product/commercialization.md",
     group: "business",
@@ -170,6 +181,7 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote:
       "Stripe billing for two yearly products, webhooks, the entitlement map behind the planner's built capability hook, a pricing page, and the legal setup before launch.",
     status: "planned",
+    after: ["advisor"],
   },
   {
     slug: "counselor-portal",

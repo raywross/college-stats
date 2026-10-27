@@ -93,7 +93,7 @@ ios/
   sends projected paths). Hover becomes tap (value card) and drag (crosshair).
 
 ## Navigation and deep links
-- **Tab bar:** Explore · Search · **Plan** · Compare · More, the site's `BottomNav` exactly, with the Plan tab's dot
+- **Tab bar:** Explore · Search · **Plan** (to be renamed with the site, [advisor.md](../product/advisor.md#1-the-name)) · Compare · More, the site's `BottomNav` exactly, with the Plan tab's dot
   (a deadline soon or a new move) and the compare count badge. Home is the Explore tab's root (the logo's destination on
   the site). More holds Account or Sign in, National trends, High schools, Glossary, Data, Roadmap, Release notes,
   Connect, Developers, Appearance, and About.

@@ -8,14 +8,17 @@
 > document ([ideas/](ideas/quad_commercialization_strategy.md)) and the per-seat organization plans. The entitlement
 > hook exists: every planner write asks `allowed(user, capability)` in `lib/entitlements.ts`, which answers yes to
 > everything today. After [launch-database.md](../launch-database.md) (the production project) and the legal setup
-> below. Part of [product](README.md).
+> below. The owner's further decisions the same day, specified in [advisor.md](advisor.md): a **14-day trial with the
+> card collected up front** ("then actively cancel or the charge hits"), **annual only**, the plan **renamed** as a play
+> on a virtual advisor, and a **splash page** for a visitor who opens the tab without an account. Part of [product](README.md).
 
 ## The model in one paragraph
 The public site is free, and so is an account with the student's record and Quad's estimate on every college page.
 **The plan is the product**: the list sorted by level with the shape of a good list, the season's three things to do
 now with a guide for each, the calendar with its feeds and texts, offers side by side, and the alerts that go with
-them. The owner's working name for it is the **virtual advisor**; on the site it is "the advisor" (one constant,
-`ADVISOR_LABEL`, so the word is a one-line change, as `RECORD_LABEL` is). It costs **$20 a year for one student** or
+them. The owner's working name for it is the **virtual advisor**; the name on the site, the tab, and the route are decided
+in [advisor.md](advisor.md#1-the-name) (recommended: **Quad Advisor**, the tab **Advisor**, "your advisor" in a
+sentence; one constant, `ADVISOR_LABEL`, so the word is a one-line change, as `RECORD_LABEL` is). It costs **$20 a year for one student** or
 **$30 a year for a family**, which covers every student in the guardian's households. **Counselors pay nothing**: an
 organization account ([counselor-portal.md](counselor-portal.md)) is free, so a counseling office or an independent
 consultant can see their students' plans and collect their school's data, and the students' families pay the $20.
@@ -36,10 +39,11 @@ placements, no featured listings, no advisor commissions: the three models the 2
 | For | Everyone; a family looking; a counselor's office | One student's plan through senior year | A guardian with more than one student |
 | Price | $0 | **$20 a year** | **$30 a year** |
 | Covers | | one student, whoever pays | every student in the guardian's active households, now and added later |
-| Bought by | | the student (with a guardian's permission, see [Billing](#billing)) or a guardian | a guardian |
+| Bought by | | a guardian, or the student at 18; a younger student asks a parent ([advisor.md](advisor.md#2-the-trial)) | a guardian |
+| Trial | | 14 days, card up front | 14 days, card up front |
 
-Annual only: a plan runs on the school year's rhythm, and a monthly price invites a family to subscribe in December and
-leave in May. At $20, Stripe's $0.30 + 2.9% is about 4.4% of revenue, so no annual-versus-monthly steering is needed on
+**Annual only** (owner, 2026-10-26): a plan runs on the school year's rhythm, and a monthly price invites a family to
+subscribe in December and leave in May. At $20, Stripe's $0.30 + 2.9% is about 4.4% of revenue, so no annual-versus-monthly steering is needed on
 the pricing page. Stripe Tax handles sales tax where digital goods are taxed. Renewal is yearly with a reminder email
 two weeks before; a plan that lapses keeps its data and turns read-only ([below](#when-a-plan-lapses)).
 
@@ -59,7 +63,7 @@ are new names the same hook takes.
 | Cost by income at the household's income on a college's page ([cost-by-income.md](cost-by-income.md)) | — | ✓ | ✓ |
 | The family's price: SAI and Pell ([net-price-estimator.md](net-price-estimator.md)) | — | ✓ | ✓ |
 | Data API: a personal key, 5,000 requests a day ([data-api.md](data-api.md)) | `api.key` | ✓ | ✓ |
-| **The plan**: the list with levels and the shape, Now with its three cards and every guide ([../planner/v3/README.md](../planner/v3/README.md)) | `planner.tab` | **a taste** (below) | ✓ |
+| **The plan**: the list with levels and the shape, Now with its three cards and every guide ([../planner/v3/README.md](../planner/v3/README.md)) | `planner.tab` | the 14-day trial ([advisor.md](advisor.md#2-the-trial)) | ✓ |
 | Early rounds: the ED opportunity pills and the ED sheet | `planner.rounds` | | ✓ |
 | Visit log and the Show interest guide's tracking | `planner.actions.visits` | | ✓ |
 | The Calendar tab, the feed, print ([../planner/redesign/calendar.md](../planner/redesign/calendar.md)) | `planner.calendar` | | ✓ |
@@ -72,12 +76,11 @@ are new names the same hook takes.
 | Family PDF dossier (the plan, levels, prices, offers, deadlines) | `plan.dossier` | | ✓ |
 | Counselor organization: caseload, reports, scattergram uploads ([counselor-portal.md](counselor-portal.md)) | `org.*` | ✓ (free) | — |
 
-**The taste.** A family should see what the advisor is before paying, and the site already has a signed-out plan
-(`SignedOutPlan`) and a first-time setup. Recommendation, for the owner to confirm: with a free account the plan opens
-with the list **capped at three colleges**, their levels, the shape line, and Now's cards readable but their guides
-closed behind the advisor chip; everything else in the map is the advisor's. Three colleges is enough to see the
-level, the shape, and the season; a real list is twelve to fifteen. The alternative is a 14-day trial, which the owner
-can pick instead; both are one constant.
+**The trial, not a taste** (owner, 2026-10-26). There is no free slice of the plan: a visitor who opens the Advisor tab
+without an account sees the splash page ([advisor.md](advisor.md#3-the-page-advisor-signed-out)), and the way in is a
+**14-day free trial with a card on file**, after which the yearly charge hits unless the family cancels. One trial per
+student, started by a guardian or a student 18 or older; the rules are in advisor.md. A lapsed or cancelled plan turns
+read-only ([below](#when-a-plan-lapses)), so nothing a family entered is lost.
 
 Rules the map follows:
 - **Nothing public moves behind a price**, and neither does the estimate: Quad's answer to "where do I stand" stays on
@@ -108,18 +111,21 @@ household keeps their own plan's data under their own account, as the accounts s
   student plan applies to that student alone, whoever views the plan (a guardian viewing a paid student's plan sees it
   all, the owner's rule that a parent sees the student's view word for word). Server Actions and pages enforce it; the
   UI only reflects it.
-- **Refunds:** 14 days, no questions, if the plan has fewer than three colleges and no guide completed. Stated on the
-  pricing page.
+- **The trial** is the refund policy: 14 days free with the card on file, cancel before the end and nothing is charged
+  ([advisor.md](advisor.md#2-the-trial)). After a charge, a refund within 14 days on request if the plan has fewer than
+  three colleges and no guide completed. Stated on the pricing page.
 - **Minors paying:** under-18s can't form contracts in most states; the Terms say a purchase by a minor is made with a
   guardian's permission, and the checkout asks the student to confirm it. **Apple's in-app purchase rules** apply the day
   the iPhone app ships ([../iphone-app/app.md](../iphone-app/app.md#in-app-purchase)): the app either sells the advisor
   through StoreKit with the same two products or sells nothing and the site sells; decided with the app.
-- Telemetry events `subscribe_started` / `subscribe_completed` / `subscription_cancelled` from the server
-  ([telemetry.md](telemetry.md#event-registry)), with `product` and never an amount beyond the two list prices.
+- Telemetry events `trial_started`, `trial_reminder_sent`, `trial_converted`, `trial_cancelled`, and
+  `subscription_cancelled` from the server ([telemetry.md](telemetry.md#event-registry)), with `product` and never an
+  amount beyond the two list prices.
 
 ## Pricing page (`/pricing`)
-Two cards, one student and one family, each with the price and "a year"; one sentence on what the advisor is and that
-everything else on the site is free; the feature map as a comparison table (Free · Advisor); a line for counselors
+The splash page at `/advisor` ([advisor.md](advisor.md#3-the-page-advisor-signed-out)) is where the selling happens;
+`/pricing` is the plain reference it links to. Two cards, one student and one family, each with the price, "a year", and
+"14 days free"; one sentence on what the advisor is and that everything else on the site is free; the feature map as a comparison table (Free · Advisor); a line for counselors
 ("Counselors and consultants use Quad free: see your students' plans and bring your school's data"); FAQ (what stays
 free, refunds, minors, lapsing, cancel any time); and a section on what the money never buys: no ads, no featured
 listings, no leads sold to colleges, no advisor commissions. Linked from the footer, the upgrade sheet, and the
@@ -149,10 +155,8 @@ is a prerequisite, and the estimate's method moves private at launch ([../chance
 - Env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ADVISOR_STUDENT`, `STRIPE_PRICE_ADVISOR_FAMILY`.
 
 ## Open questions
-1. **The taste**: three colleges, or a 14-day trial? Recommendation: three colleges; it never expires, so a sophomore
-   can look for a year and buy as a junior.
-2. **The name on the site.** The owner's phrase is "virtual advisor"; "the advisor" is shorter and reads well in the
-   upgrade chip and the pricing cards. One constant either way.
+1. ~~The taste~~ Decided 2026-10-26: a 14-day trial with the card up front ([advisor.md](advisor.md)).
+2. **The name on the site**: the owner picks from [advisor.md](advisor.md#1-the-name) (recommended: Advisor).
 3. Should an organization be able to buy the advisor for its students (a block of plans at the family price)? Not in
    the first build; the owner's model is that families pay. Revisit if offices ask.
 4. A "counselor recommended" code for a first-year discount is cheap in Stripe (promotion codes) and fits the channel;

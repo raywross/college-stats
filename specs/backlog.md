@@ -289,11 +289,16 @@ shared rules for user data are in that README. All user data lives only in Supab
   approve; Operations becomes Issues, Proposals, To do (the documents a person has to fetch, folded in from
   manual-collection.md and campus-sources-later.md), Decisions, Audits. Step 0: collegedata.fyi's source URLs into
   discovery. Needs the document archive repo first.
+- [ ] **The advisor** ([product/advisor.md](product/advisor.md), planned 2026-10-26 on the owner's decisions): rename the
+  plan as the site's advisor (recommended "Quad Advisor", tab "Advisor", `/advisor` with `/plan` redirecting); a 14-day
+  free trial with the card collected up front and the yearly charge after, one trial per student, one reminder email;
+  the splash page a signed-out visitor sees when they open the tab, built from the plan's own components over a sample
+  student. Owner to pick the name.
 - [ ] **Commercialization** ([product/commercialization.md](product/commercialization.md), redrawn 2026-10-26 on the owner's
   decision): the advisor (the plan) as the one paid product, $20 a year per student or $30 a family, annual only; everything
   else free, counselors' organizations included; the feature map behind the planner's eight capability names; Stripe
-  Checkout and Billing for two products, webhooks; the pricing page; legal setup. Open: the free taste (three colleges
-  or a 14-day trial), the name on the site.
+  Checkout and Billing for two products with the 14-day trial, webhooks; the pricing page; legal setup. The free taste
+  question closed 2026-10-26: a card-up-front trial, specified in advisor.md.
 - [ ] **Counselor portal** ([product/counselor-portal.md](product/counselor-portal.md), revised 2026-10-26, free by the
   owner's decision): organizations (IECs first, schools with a data agreement), a caseload dashboard over students' plans
   showing who has the advisor, co-branded PDF dossiers, and scattergram uploads as the last phase.

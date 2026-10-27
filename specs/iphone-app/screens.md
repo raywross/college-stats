@@ -22,7 +22,7 @@ popovers become a sheet on tap; the phone layout ([mobile.md](../mobile.md)) is 
 ## Shell
 | Site | App | API |
 |---|---|---|
-| `BottomNav`: Explore · Search · **Plan** (with the dot for a deadline or a new move) · Compare (count badge) · More | `TabView` with the same five tabs; the Plan tab's badge from the dot endpoint | `GET /api/plan/next` (built) |
+| `BottomNav`: Explore · Search · **Plan** (renamed with the site, [advisor.md](../product/advisor.md); with the dot for a deadline or a new move) · Compare (count badge) · More | `TabView` with the same five tabs; the Plan tab's badge from the dot endpoint | `GET /api/plan/next` (built) |
 | Header: logo (home), `AccountMenu` (Sign in, or avatar: Your account, Household, Your record, Plan, Following, API keys, Admin for admins) | Home is the logo's tab root on Explore; the account button opens Account or Sign in | `GET /me` |
 | Header nav from `md` (Explore, Compare, High schools, Glossary, Data), compact search | Not needed on iPhone; iPad sidebar | |
 | Search sheet | Search tab, field focused; recents; offline index fallback | `GET /search`, the search index |

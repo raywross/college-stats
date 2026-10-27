@@ -18,10 +18,11 @@ today:
   the distance filter and the state pages do its job. Two lists of documents our crawlers can't read now live inside
   the Data Steward plan as its To do list, and scattergrams became the last phase of the counselor portal.
 - **Nine plans were rewritten.** The family's price is now the personal layer on the cost curve the site already shows.
-  Paying for Quad is now one thing: the plan, as a yearly "advisor" for a student or for a whole family, with everything
-  else on the site free, counselors' tools included (the owner's decision this day). Four ideas (near and far, the stress test for a list, cycle watch, getting into the major) shrank to what the
+  Paying for Quad is now one thing: the plan, as a yearly "advisor" for a student or for a whole family, after a 14-day
+  free trial, with everything else on the site free, counselors' tools included (the owner's decisions this day). A new
+  plan describes the advisor's name, the trial, and the page a visitor sees before signing up. Four ideas (near and far, the stress test for a list, cycle watch, getting into the major) shrank to what the
   site hasn't built yet. The three iPhone app plans now describe the site that exists, with the plan at their center.
-- The roadmap lists **18 items in five groups**, down from 26 in six.
+- The roadmap lists **19 items in five groups**, down from 26 in six, the one addition being the advisor.
 
 ## Behind the scenes
 

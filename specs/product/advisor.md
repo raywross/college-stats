@@ -4,7 +4,9 @@
 > ([commercialization.md](commercialization.md)); "we should rename the 'plan' function, a play on a virtual advisor";
 > "14-day trial is what I'd do, collect the credit card, then actively cancel or the charge hits; annual only"; and "a
 > splashy page for when you click on it and don't have an account, something that will entice the user to sign up for a
-> free trial." Three parts, in that order: the name, the trial, the page. After nothing: the plan is built
+> free trial." **Decided 2026-10-26** (owner: "I like your recommendations, let's go with them; fine to allow students 16
+> and older to pay with a card"): the name is **Quad Advisor**, the tab **Advisor**, the route `/advisor`; students 16
+> and older may start a trial with their own card. Three parts, in that order: the name, the trial, the page. After nothing: the plan is built
 > ([../planner/README.md](../planner/README.md)); billing lands with commercialization.md, and the page can ship before
 > it with the trial button pointed at sign-up. Part of [product](README.md).
 
@@ -14,8 +16,8 @@ in 28 files. It is the right word for a list and a calendar and the wrong word f
 that reads a student's record, sorts the list, says what to do this season and how, nudges a parent, and texts the
 night before a deadline. The owner's phrase is **virtual advisor**.
 
-### Recommendation: "Advisor"
-| Where | Today | Recommended |
+### Decided: "Advisor" (owner, 2026-10-26)
+| Where | Today | Decided |
 |---|---|---|
 | The product's name (pricing page, emails, the App Store) | the plan | **Quad Advisor** |
 | The tab bar's middle tab, the header, the account menu | Plan | **Advisor** |
@@ -31,7 +33,7 @@ the plan already writes ("Your advisor suggests…"); it does not collide with a
 guides, the record is the record, the portal's people are counselors); and a parent understands "your kid's advisor"
 in one word, which is what a $20 purchase needs.
 
-Alternatives considered, for the owner's pick:
+Alternatives considered and set aside:
 | Name | For | Against |
 |---|---|---|
 | **Coach** ("Quad Coach", "your coach") | Active; fits "three things to do now"; friendly to a 16-year-old | Sporty; a coach drills, an advisor knows things; "your coach says apply ED" sounds pushy |
@@ -51,10 +53,11 @@ essay"). Routes: `app/advisor/**` is the page tree; `app/plan/**` becomes redire
 ## 2. The trial
 Owner's rule: **14 days free, card up front, annual only; cancel before the end or the charge hits.**
 
-- **Who can start one.** A guardian, or a student 18 or older, from their own account. A student under 18 sees "Ask a
-  parent to start your trial": the household's invitation, prefilled, carries the parent to the splash page with the
-  student already attached; the trial then belongs to the parent's account and covers that student (or the whole
-  family, if they pick the family price). Minors don't enter cards.
+- **Who can start one.** A guardian, or a student **16 or older** (owner, 2026-10-26), from their own account; the
+  checkout asks a student under 18 to confirm they have a parent's permission, as the Terms say. A student under 16 sees
+  "Ask a parent to start your trial": the household's invitation, prefilled, carries the parent to the splash page with
+  the student already attached; the trial then belongs to the parent's account and covers that student (or the whole
+  family, if they pick the family price). The age comes from the birth year the account already holds.
 - **One trial per student.** A student who has been covered by a trial (their own or a family's) can't be trialed again;
   the check is on the student, so a second parent can't restart it. Recorded in `subscriptions` with the student ids it
   covered.
@@ -94,7 +97,7 @@ with a labeled sample student, so the page looks exactly like what they get.
 | **What it reads** | Three short facts with citations: 1,893 colleges, every number with its source and year; each college's own filings (Common Data Set, Common App); your record, entered once |
 | **What it never does** | No ads, no leads sold to colleges, no featured listings, no percentage chances, nothing about a minor sold or shared ([telemetry.md](telemetry.md#privacy)) |
 | **Counselors** | One line: counselors and consultants use Quad free to see their students' advisors and bring their school's data; link to the portal when built, a contact until then |
-| **Questions** | Trial, card, cancel, what stays free, under 18, the family price, what happens when it lapses |
+| **Questions** | Trial, card, cancel, what stays free, under 16, the family price, what happens when it lapses |
 | **Close** | The button again, the price line, "Already have an account? Sign in" |
 
 **Rules.**
@@ -106,8 +109,8 @@ with a labeled sample student, so the page looks exactly like what they get.
   applies: a title and one line per section). "Splashy" is the frames moving in with the site's rise and pop-in, not
   more words; off under Reduce Motion.
 - No grades, no "best", no percentage, no made-up testimonial. If the page quotes anyone, it quotes the owner's rules.
-- The button's path: signed out → sign-up (birth year, role) → under 18: "Ask a parent" (the invitation) · 18+: Stripe
-  Checkout → back to `/advisor` with the first-time setup. Signed in, no advisor → Checkout. Signed in, lapsed → the
+- The button's path: signed out → sign-up (birth year, role) → under 16: "Ask a parent" (the invitation) · 16 and
+  older: Stripe Checkout → back to `/advisor` with the first-time setup. Signed in, no advisor → Checkout. Signed in, lapsed → the
   read-only plan with its banner, not this page.
 - Public and static (`revalidate` daily like the home page), so it ranks for the searches families type; `/advisor` is
   the canonical URL; the home page's hero gains one line linking it ("Try the advisor free for 14 days").
@@ -131,7 +134,7 @@ with a labeled sample student, so the page looks exactly like what they get.
 - `lib/stripe.ts` trial options, the `trial_will_end` webhook handler, `lib/emails/trial-ending.ts`, the `/account` row.
 
 ## Open questions
-1. **The name**: Advisor (recommended), Coach, Mentor, or another. One constant either way.
+1. ~~The name~~ Decided 2026-10-26: Quad Advisor.
 2. **Keep a browser-kept try-before-sign-up?** The old signed-out plan let a visitor build a list with no account. The
    recommendation is no: the trial is the try, and the page shows the real thing. If sign-ups fall, bring back the numbers
    step as the page's hero frame, live.

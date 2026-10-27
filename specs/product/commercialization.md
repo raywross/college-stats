@@ -16,9 +16,9 @@
 The public site is free, and so is an account with the student's record and Quad's estimate on every college page.
 **The plan is the product**: the list sorted by level with the shape of a good list, the season's three things to do
 now with a guide for each, the calendar with its feeds and texts, offers side by side, and the alerts that go with
-them. The owner's working name for it is the **virtual advisor**; the name on the site, the tab, and the route are decided
-in [advisor.md](advisor.md#1-the-name) (recommended: **Quad Advisor**, the tab **Advisor**, "your advisor" in a
-sentence; one constant, `ADVISOR_LABEL`, so the word is a one-line change, as `RECORD_LABEL` is). It costs **$20 a year for one student** or
+them. Its name is **Quad Advisor** (owner, 2026-10-26; [advisor.md](advisor.md#1-the-name)): the tab says **Advisor**, a
+sentence says "your advisor", the route is `/advisor`; one constant, `ADVISOR_LABEL`, so the word is a one-line change,
+as `RECORD_LABEL` is. It costs **$20 a year for one student** or
 **$30 a year for a family**, which covers every student in the guardian's households. **Counselors pay nothing**: an
 organization account ([counselor-portal.md](counselor-portal.md)) is free, so a counseling office or an independent
 consultant can see their students' plans and collect their school's data, and the students' families pay the $20.
@@ -39,7 +39,7 @@ placements, no featured listings, no advisor commissions: the three models the 2
 | For | Everyone; a family looking; a counselor's office | One student's plan through senior year | A guardian with more than one student |
 | Price | $0 | **$20 a year** | **$30 a year** |
 | Covers | | one student, whoever pays | every student in the guardian's active households, now and added later |
-| Bought by | | a guardian, or the student at 18; a younger student asks a parent ([advisor.md](advisor.md#2-the-trial)) | a guardian |
+| Bought by | | a guardian, or the student at 16 or older; a younger student asks a parent ([advisor.md](advisor.md#2-the-trial)) | a guardian |
 | Trial | | 14 days, card up front | 14 days, card up front |
 
 **Annual only** (owner, 2026-10-26): a plan runs on the school year's rhythm, and a monthly price invites a family to
@@ -114,8 +114,9 @@ household keeps their own plan's data under their own account, as the accounts s
 - **The trial** is the refund policy: 14 days free with the card on file, cancel before the end and nothing is charged
   ([advisor.md](advisor.md#2-the-trial)). After a charge, a refund within 14 days on request if the plan has fewer than
   three colleges and no guide completed. Stated on the pricing page.
-- **Minors paying:** under-18s can't form contracts in most states; the Terms say a purchase by a minor is made with a
-  guardian's permission, and the checkout asks the student to confirm it. **Apple's in-app purchase rules** apply the day
+- **Minors paying:** students 16 and older may pay with their own card (owner, 2026-10-26); under-18s can't form
+  contracts in most states, so the Terms say a purchase by a minor is made with a guardian's permission and the checkout
+  asks the student to confirm it. Under 16, the trial starts from a parent's account ([advisor.md](advisor.md#2-the-trial)). **Apple's in-app purchase rules** apply the day
   the iPhone app ships ([../iphone-app/app.md](../iphone-app/app.md#in-app-purchase)): the app either sells the advisor
   through StoreKit with the same two products or sells nothing and the site sells; decided with the app.
 - Telemetry events `trial_started`, `trial_reminder_sent`, `trial_converted`, `trial_cancelled`, and
@@ -156,7 +157,7 @@ is a prerequisite, and the estimate's method moves private at launch ([../chance
 
 ## Open questions
 1. ~~The taste~~ Decided 2026-10-26: a 14-day trial with the card up front ([advisor.md](advisor.md)).
-2. **The name on the site**: the owner picks from [advisor.md](advisor.md#1-the-name) (recommended: Advisor).
+2. ~~The name on the site~~ Decided 2026-10-26: Quad Advisor ([advisor.md](advisor.md#1-the-name)).
 3. Should an organization be able to buy the advisor for its students (a block of plans at the family price)? Not in
    the first build; the owner's model is that families pay. Revisit if offices ask.
 4. A "counselor recommended" code for a first-year discount is cheap in Stripe (promotion codes) and fits the channel;

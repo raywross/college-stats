@@ -290,10 +290,10 @@ shared rules for user data are in that README. All user data lives only in Supab
   manual-collection.md and campus-sources-later.md), Decisions, Audits. Step 0: collegedata.fyi's source URLs into
   discovery. Needs the document archive repo first.
 - [ ] **The advisor** ([product/advisor.md](product/advisor.md), planned 2026-10-26 on the owner's decisions): rename the
-  plan as the site's advisor (recommended "Quad Advisor", tab "Advisor", `/advisor` with `/plan` redirecting); a 14-day
+  plan Quad Advisor (tab "Advisor", `/advisor` with `/plan` redirecting; decided); a 14-day
   free trial with the card collected up front and the yearly charge after, one trial per student, one reminder email;
   the splash page a signed-out visitor sees when they open the tab, built from the plan's own components over a sample
-  student. Owner to pick the name.
+  student. Students 16 and older may pay with their own card.
 - [ ] **Commercialization** ([product/commercialization.md](product/commercialization.md), redrawn 2026-10-26 on the owner's
   decision): the advisor (the plan) as the one paid product, $20 a year per student or $30 a family, annual only; everything
   else free, counselors' organizations included; the feature map behind the planner's eight capability names; Stripe

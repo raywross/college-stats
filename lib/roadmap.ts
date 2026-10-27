@@ -165,7 +165,7 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/product/advisor.md",
     group: "business",
     summary:
-      "The plan gets a new name as the site's advisor, a 14-day free trial with your card on file and a yearly price after, and a page that shows a visitor exactly what they'd get before they sign up.",
+      "The plan becomes Quad Advisor, with a 14-day free trial with your card on file and a yearly price after, and a page that shows a visitor exactly what they'd get before they sign up.",
     complexity: 2,
     complexityNote:
       "One label constant and route redirects, a marketing page built from the plan's own components over a sample student, and the trial flow on Stripe Checkout with one reminder email.",

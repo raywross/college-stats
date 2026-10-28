@@ -673,12 +673,17 @@ test("fetchRunCost: data/reports/ on main, newest summary first until a full run
   });
   const cost = await gh.fetchRunCost(deps(f, PAT_ENV));
   assert.ok(cost && cost.last);
-  assert.equal(cost.last.run, "20261019-191037-103", "the newest run over every college");
-  assert.ok(cost.last.colleges >= FULL_RUN_MIN_COLLEGES && cost.last.costUsd >= 0);
   const runs = names.filter((n) => /^college-reported-run-.+\.json$/.test(n)).sort().reverse();
-  assert.equal(cost.projection?.run, runs[0].replace(/^college-reported-run-|\.json$/g, ""), "the newest projection");
+  // The newest summary whose scope was every college (`total` at or above the full-run floor), read from the folder
+  // rather than pinned, since every scheduled run over the whole dataset adds one (2026-10-28).
+  const runOf = (n: string) => n.replace(/^college-reported-run-|\.json$/g, "");
+  const fullRun = runs.find((n) => ((JSON.parse(readFileSync(join(ROOT, "data", "reports", n), "utf8")) as { total?: number }).total ?? 0) >= FULL_RUN_MIN_COLLEGES)!;
+  assert.ok(fullRun, "a run over every college exists in data/reports");
+  assert.equal(cost.last.run, runOf(fullRun), "the newest run over every college");
+  assert.ok(cost.last.colleges >= FULL_RUN_MIN_COLLEGES && cost.last.costUsd >= 0);
+  assert.equal(cost.projection?.run, runOf(runs[0]), "the newest projection");
   const fetched = f.api().filter((c) => c.url.includes("/contents/data/reports/")).map((c) => c.url.match(/reports\/([^?]+)/)![1]);
-  assert.deepEqual(fetched, runs.slice(0, runs.indexOf("college-reported-run-20261019-191037-103.json") + 1), "only run summaries, newest first, stopping at the full run");
+  assert.deepEqual(fetched, runs.slice(0, runs.indexOf(fullRun) + 1), "only run summaries, newest first, stopping at the full run");
   const before = f.api().length;
   await gh.fetchRunCost(deps(f, PAT_ENV));
   assert.equal(f.api().length, before + 1, "a second call lists the folder and reuses the summaries it read");

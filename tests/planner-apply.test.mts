@@ -349,21 +349,24 @@ test("generate: a withdrawn college gets no sub-tasks", () => {
 });
 
 test("platformsFor offers only the platforms a college can take", () => {
-  const school = (over: Partial<Pick<PlanSchool, "state" | "type" | "name" | "links" | "apply">>) => ({ state: "FL", type: "public" as const, name: "University of Florida", links: null, ...over });
+  const school = (over: Partial<Pick<PlanSchool, "state" | "type" | "name" | "links" | "apply" | "coalition">>) => ({ state: "FL", type: "public" as const, name: "University of Florida", links: null, ...over });
   // common-app-build/brief.md U4: the Common App is offered only to a college the grid marks as a member.
   const member = { common_app: { member: true as const, member_id: null, slug: "university-of-florida", cycle: "2026-27", updated: "2026-09-25" } } as PlanSchool["apply"];
-  // Florida's public flagship, not a Common App member here: no ApplyTexas, no UC application, no Common App either.
-  assert.deepEqual(platformsFor(school({})), ["coalition", "own", "other"]);
+  // Florida's public flagship, not a Common App member here: no ApplyTexas, no UC application, no Common App either;
+  // and no Coalition form unless Scoir lists it (specs/data-expansion/coalition-app.md).
+  assert.deepEqual(platformsFor(school({})), ["own", "other"]);
   // The same college as a Common App member: Common App leads the list.
-  assert.deepEqual(platformsFor(school({ apply: member })), ["common_app", "coalition", "own", "other"]);
+  assert.deepEqual(platformsFor(school({ apply: member })), ["common_app", "own", "other"]);
+  // On Scoir's list: the Coalition form follows the Common App.
+  assert.deepEqual(platformsFor(school({ apply: member, coalition: { member: true, via_scoir: true, retrieved: "2026-10-28" } })), ["common_app", "coalition", "own", "other"]);
   // A Texas public college gets ApplyTexas; so does anyone whose apply link points there.
-  assert.deepEqual(platformsFor(school({ state: "TX", name: "The University of Texas at Austin" })), ["coalition", "apply_texas", "own", "other"]);
+  assert.deepEqual(platformsFor(school({ state: "TX", name: "The University of Texas at Austin" })), ["apply_texas", "own", "other"]);
   assert.ok(platformsFor(school({ links: { apply: "https://www.applytexas.org/" } as PlanSchool["links"] })).includes("apply_texas"));
   // A Texas private college doesn't.
   assert.ok(!platformsFor(school({ state: "TX", type: "private-nonprofit", name: "Rice University" })).includes("apply_texas"));
   // The University of California takes only its own application, member or not.
   assert.deepEqual(platformsFor(school({ state: "CA", name: "University of California-Berkeley", apply: member })), ["uc", "other"]);
-  assert.deepEqual(platformsFor(school({ state: "CA", name: "Stanford University", type: "private-nonprofit", apply: member })), ["common_app", "coalition", "own", "other"]);
+  assert.deepEqual(platformsFor(school({ state: "CA", name: "Stanford University", type: "private-nonprofit", apply: member })), ["common_app", "own", "other"]);
   // No school at all: the general set, no Common App without a known membership.
-  assert.deepEqual(platformsFor(null), ["coalition", "own", "other"]);
+  assert.deepEqual(platformsFor(null), ["own", "other"]);
 });

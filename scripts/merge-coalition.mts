@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { validateLineage } from "../lib/lineage.ts";
 import type { DatasetMeta, School } from "../lib/types.ts";
 import { addCoalitionMeta, applyCoalition, readCoalition, summaryLine } from "./lib/coalition/merge.mts";
+import { formatSchools } from "./lib/identity-sync.mts";
 
 // MERGE_COALITION_ROOT lets tests point this at a scratch directory holding data/.
 const ROOT = process.env.MERGE_COALITION_ROOT ?? join(import.meta.dirname, "..");
@@ -32,7 +33,7 @@ try {
     throw new Error(`lineage check failed (${problems.length}); nothing written:\n  ${problems.slice(0, 30).join("\n  ")}${more}`);
   }
   if (!dryRun) {
-    writeFileSync(schoolsPath, `${JSON.stringify(applied.schools)}\n`);
+    writeFileSync(schoolsPath, formatSchools(applied.schools));
     writeFileSync(metaPath, `${JSON.stringify(meta, null, 2)}\n`);
   }
   console.log(`coalition: ${summaryLine(applied.summary)}${dryRun ? " (--dry-run, nothing written)" : ""}`);

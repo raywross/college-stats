@@ -1,7 +1,7 @@
 # Coalition Application: Which Colleges Take It (Coalition for College member list, Scoir's list)
 
-> Status: **planned** 2026-10-28 (owner: "add a spec and then go ahead and build it"), built the same day; see
-> [As built](#as-built-2026-10-28). A small companion to [common-app.md](common-app.md): the site knows which colleges
+> Status: **built** 2026-10-28 (PR #182, `feature/coalition-app`; see [As built](#as-built-2026-10-28)); specified the
+> same morning (owner: "add a spec and then go ahead and build it"). A small companion to [common-app.md](common-app.md): the site knows which colleges
 > take the Common App and nothing about the other shared application. Feeds the "What it takes to apply" card
 > ([common-app.md](common-app.md#display)), the planner's platform picker ([../planner/applications.md](../planner/applications.md)),
 > and the glossary. Part of [data-expansion](README.md).

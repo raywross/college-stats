@@ -465,6 +465,24 @@ can make most of them through the Management API with `SUPABASE_ACCESS_TOKEN` an
 ### Resend
 - One domain, `usequad.app` (region us-east-1), verified 2026-10-13; one API key, used both by Supabase's SMTP and by
   the app (`RESEND_API_KEY`). The free tier allows 100 emails a day, so the Auth rate limit above stays under it.
+- `EMAIL_FROM` is `Quad Advisor <advisor@usequad.app>` (2026-10-28; was the support address); every app email carries
+  `reply_to: support@usequad.app` (`lib/email.ts`). Sign-in emails keep the support sender (Supabase's SMTP setting).
+
+### Email addresses (Google Workspace, 2026-10-28)
+All aliases of the support mailbox, named in one module, `lib/contacts.ts`; a page or an email never spells one itself.
+
+| Address | For | Where it's named |
+|---|---|---|
+| `support@` | Account help; the sign-in emails' sender; replies to every email | The privacy page; Supabase's SMTP sender; `reply_to` |
+| `hello@` | Counselors and consultants, partnerships (Common App, Technolutions, the campus-life data asks), press | The advisor splash page's counselor line |
+| `privacy@` | Data questions: exports, deletion, a parent asking about a student, counselor data agreements | The privacy page |
+| `data@` | Corrections to a figure, a mark coming down, document and data asks from the Data Steward | The Data page's mark-removal line (the GitHub issue form stays as a second route) |
+| `advisor@` | The sender of the advisor's mail: digests, visit alerts, your week, briefs, interest confirmations | `EMAIL_FROM` on Vercel |
+| `billing@` | Receipts, refunds, chargebacks, once billing ships | [commercialization.md](product/commercialization.md) |
+| `ops@` | Machine mail: Vercel, Supabase, Resend, GitHub, Twilio notices; the Steward's owner alerts | The owner registers it with each provider by hand |
+| `dmarc@` | DMARC reports | The DMARC record |
+
+`postmaster@` and `abuse@` are reserved by Google Workspace and handled by it.
 
 ## History
 How the dataset was served from 2026-09-28 to 2026-10-07, kept for the record (the full text is in git before the

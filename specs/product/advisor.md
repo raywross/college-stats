@@ -189,7 +189,8 @@ twins with the same classes where the real one needs a `PlanContext` or a store:
 Frames rise and pills pop as they scroll into view (`animation-timeline: view()` where supported, once on load
 elsewhere), off under Reduce Motion. The button "Start free" opens the sign-up form (`/login?next=%2Fadvisor&mode=signup`)
 and the price line reads "Free while Quad is in preview." until the trial ships; no trial or "14 days" wording anywhere.
-Counselors' contact is a GitHub issue link until the portal exists. The home hero gained "Try Quad Advisor →".
+Counselors' contact is `hello@usequad.app` (`lib/contacts.ts`, 2026-10-28; a GitHub issue link for one day before the
+addresses existed). The home hero gained "Try Quad Advisor →".
 Telemetry: `advisor_page_viewed { signed_in }`, `advisor_cta_tapped { section }`. The page is **dynamic**, not the spec's
 daily-revalidated static page: `/advisor` reads the session first and this is its signed-out branch.
 `tests/advisor-splash.test.mts` (10 tests) validates the fixture against the dataset and the catalog and renders every

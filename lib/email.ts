@@ -1,6 +1,8 @@
 /**
- * Sending email (invitations, update digests). A provider seam: with RESEND_API_KEY and EMAIL_FROM set it sends
- * through Resend's HTTP API (plain fetch, no SDK); otherwise it sends nothing and says so. Nothing here throws, so
+ * Sending email (invitations, update digests, the advisor's mail). A provider seam: with RESEND_API_KEY and EMAIL_FROM
+ * set it sends through Resend's HTTP API (plain fetch, no SDK); otherwise it sends nothing and says so. The sender is
+ * `EMAIL_FROM` ("Quad Advisor <advisor@usequad.app>" on Vercel since 2026-10-28); replies go to the support mailbox
+ * (`reply_to`), so a person reads them. Nothing here throws, so
  * an unset or failing provider never breaks a page or an action: callers show the link on screen either way
  * (specs/product/accounts.md, "Email").
  *
@@ -9,8 +11,12 @@
  * Next.js imports so tests can run it.
  */
 
+import { SUPPORT_EMAIL } from "./contacts.ts";
+
 export interface EmailMessage {
   to: string | string[];
+  /** Where a reply lands; the support mailbox unless a message says otherwise (lib/contacts.ts). */
+  replyTo?: string;
   subject: string;
   html: string;
   /** Plain-text alternative; always send one. */
@@ -56,6 +62,7 @@ export async function sendEmail(
       body: JSON.stringify({
         from: env.EMAIL_FROM,
         to,
+        reply_to: message.replyTo ?? SUPPORT_EMAIL,
         subject: message.subject,
         html: message.html,
         text: message.text,

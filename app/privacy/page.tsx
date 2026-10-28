@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { mailto, PRIVACY_EMAIL, SUPPORT_EMAIL } from "@/lib/contacts";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Clock, EyeOff, Gauge, History, ListChecks, ServerCog, ShieldCheck, SlidersHorizontal, UserRound } from "lucide-react";
@@ -79,6 +80,13 @@ export default function PrivacyPage() {
               account page
             </Link>
             .
+          </li>
+          <li>
+            Questions about your data, or a parent&apos;s question about a student&apos;s: write to{" "}
+            <a href={mailto(PRIVACY_EMAIL)} className={link}>
+              {PRIVACY_EMAIL}
+            </a>
+            . Help with an account: <a href={mailto(SUPPORT_EMAIL)} className={link}>{SUPPORT_EMAIL}</a>.
           </li>
         </ul>
       </Section>

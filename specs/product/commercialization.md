@@ -144,7 +144,8 @@ personal key stays free with its limits, and bulk downloads wait for a reason to
 ## Legal and operational before launch
 Terms of service, privacy policy (the built `/privacy` page, extended: telemetry, minors, data export and deletion,
 texts, payments), refund policy, a business entity and bank account for Stripe, sales-tax registration where Stripe Tax
-says it's needed, a support email, and a status page. The production database ([launch-database.md](../launch-database.md))
+says it's needed, the support and billing addresses (`support@` and `billing@usequad.app`, set up 2026-10-28;
+`lib/contacts.ts`), and a status page. The production database ([launch-database.md](../launch-database.md))
 is a prerequisite, and the estimate's method moves private at launch ([../chances/estimate.md](../chances/estimate.md)).
 
 ## Files (planned)

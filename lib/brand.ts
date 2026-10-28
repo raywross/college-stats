@@ -1,5 +1,7 @@
 import type { School } from "./types";
 
+import { DATA_EMAIL, mailto } from "./contacts.ts";
+
 export const SITE_NAME = "Quad";
 export const SITE_TAGLINE = "College data, decoded.";
 
@@ -148,11 +150,12 @@ export function brandTint(school: Pick<School, "unit_id" | "brand">, alpha = 0.1
 
 /**
  * Where a college asks for its mark to come down (brand.md safeguards: honored within a day by `logo: false` in
- * data/brand-overrides.json). The owner hasn't chosen an address yet; until then, a prefilled issue on the public repo.
+ * data/brand-overrides.json): an email to the data address (lib/contacts.ts, set up 2026-10-28), prefilled; the
+ * issue form on the public repository stays as a second route for people who prefer it.
  */
-export const BRAND_REMOVAL_CONTACT = `https://github.com/raywross/college-stats/issues/new?title=${encodeURIComponent(`Remove our mark from ${SITE_NAME}`)}&body=${encodeURIComponent(
-  "College:\nYour role at the college:\nAnything else (for example, corrected colors and the brand guide that publishes them):\n",
-)}`;
+const BRAND_REMOVAL_BODY = "College:\nYour role at the college:\nAnything else (for example, corrected colors and the brand guide that publishes them):\n";
+export const BRAND_REMOVAL_CONTACT = mailto(DATA_EMAIL, { subject: `Remove our mark from ${SITE_NAME}`, body: BRAND_REMOVAL_BODY });
+export const BRAND_REMOVAL_ISSUE = `https://github.com/raywross/college-stats/issues/new?title=${encodeURIComponent(`Remove our mark from ${SITE_NAME}`)}&body=${encodeURIComponent(BRAND_REMOVAL_BODY)}`;
 
 /** Compare-slot colors (validated all-pairs, both themes). Slot order = pick order. */
 export const SLOT_COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)"];

@@ -24,7 +24,8 @@ import {
 } from "@/lib/releases";
 import { DataAgeTimeline, type DataAgeRow } from "@/components/charts/DataAgeTimeline";
 import { Crest } from "@/components/school/Crest";
-import { BRAND_REMOVAL_CONTACT, brandMarksOn, crestBrand } from "@/lib/brand";
+import { BRAND_REMOVAL_CONTACT, BRAND_REMOVAL_ISSUE, brandMarksOn, crestBrand } from "@/lib/brand";
+import { DATA_EMAIL } from "@/lib/contacts";
 import { Term } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 import { ChancesAccuracy } from "@/components/data/ChancesAccuracy";
@@ -616,8 +617,9 @@ export default async function DataPage() {
             site, and this site endorses no college.
           </p>
           <p>
-            A college that wants its mark taken down can{" "}
-            <ExtLink href={BRAND_REMOVAL_CONTACT}>ask here</ExtLink>. We honor a request within a day, and its monogram returns.
+            A college that wants its mark taken down can write to <ExtLink href={BRAND_REMOVAL_CONTACT}>{DATA_EMAIL}</ExtLink> (or{" "}
+            <ExtLink href={BRAND_REMOVAL_ISSUE}>open a request</ExtLink> on our public repository). We honor a request within a day, and
+            its monogram returns. The same address takes corrections to any figure on the site.
           </p>
         </div>
       </Section>

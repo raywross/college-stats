@@ -249,6 +249,7 @@ test("sendEmail posts to Resend when configured, and reports failures without th
   assert.deepEqual(JSON.parse(request!.init.body as string), {
     from: "Quad <hello@example.com>",
     to: ["a@example.com"],
+    reply_to: "support@usequad.app",
     subject: "Hi",
     html: "<p>Hi</p>",
     text: "Hi",

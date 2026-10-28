@@ -56,7 +56,9 @@ export type VintageKey =
    */
   | "common-app-grid"
   /** Common App members' Explore pages: the day they were read, from data/common-app/members.json. */
-  | "common-app-members";
+  | "common-app-members"
+  /** The Coalition's member list and Scoir's list, read on one day (specs/data-expansion/coalition-app.md). */
+  | "coalition-members";
 
 export interface FieldDef {
   label: string;
@@ -146,6 +148,8 @@ const wikipedia = (label: string): FieldDef => ({ label, topic: "institution", s
 const grid = (label: string): FieldDef => ({ label, topic: "admissions", source: "common-app", vintage: "common-app-grid" });
 /** A value from a member's Common App Explore page (aid offered, links on the college's own site). */
 const member = (label: string, topic: Topic): FieldDef => ({ label, topic, source: "common-app", vintage: "common-app-members" });
+/** A Coalition for College fact (specs/data-expansion/coalition-app.md "Store"): only on members, so present-only. */
+const coalition = (label: string): FieldDef => ({ label, topic: "admissions", source: "coalition", vintage: "coalition-members" });
 const brandDerived =(label: string, formula: string): FieldDef => ({ ...wikipedia(label), derived: { formula, inputs: ["brand.colors"] } });
 
 /** What Quad's selectivity reads (specs/chances/selectivity-index.md "Inputs"), in words: kinds, not weights. */
@@ -997,6 +1001,11 @@ export const FIELDS = {
   "aid.international_offered": member("Whether the college offers aid to international students (Common App member page)", "aid"),
   "links.transfer_guarantee": member("Transfer guarantee page (from the college's Common App member page)", "institution"),
   "links.daca_aid": member("Aid for DACA and undocumented students page (from the college's Common App member page)", "institution"),
+
+  /* ---- Coalition application (specs/data-expansion/coalition-app.md; scripts/lib/coalition/merge.mts) ---- */
+  "coalition.member": coalition("Coalition for College member (its member list)"),
+  "coalition.via_scoir": coalition("Takes the Coalition application through Scoir (Scoir's list)"),
+  "coalition.retrieved": coalition("The day the Coalition's member list and Scoir's list were read"),
 } satisfies Record<string, FieldDef>;
 
 export type FieldPath = keyof typeof FIELDS;

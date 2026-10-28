@@ -2,6 +2,7 @@ import type { School } from "@/lib/types";
 import type { Cited } from "@/lib/lineage";
 import type { FieldPath } from "@/lib/fields";
 import { Block } from "@/components/profile/Panel";
+import { coalitionSentence } from "@/lib/coalition";
 import { MetricLabel } from "@/components/ui/info-tip";
 import { POLICY_LABELS } from "@/lib/test-policy";
 import { cycleLabel, feeSentence, materialsLines, newestRegularDeadline, recommendationsSentence, roundLines, testPolicySentence } from "@/lib/common-app/display";
@@ -39,6 +40,8 @@ export function WhatItTakes({ school, cite, id }: { school: School; cite: (path:
   const testPolicy = siteLabel ? testPolicySentence(apply, siteLabel) : null;
 
   const regularCited = cite("reported.admissions_logistics.regular_closing", school);
+  // Coalition application (specs/data-expansion/coalition-app.md "Display"): one line, only for a college on Scoir's list.
+  const coalition = coalitionSentence(school);
   const reconciled = newestRegularDeadline(apply, school.reported?.admissions_logistics);
 
   return (
@@ -78,6 +81,13 @@ export function WhatItTakes({ school, cite, id }: { school: School; cite: (path:
         {recommendations && (
           <p>
             <MetricLabel cited={cite("apply.recommendations", school)}>{recommendations}</MetricLabel>
+          </p>
+        )}
+        {coalition && (
+          <p>
+            <MetricLabel term="coalition-application" cited={cite("coalition.via_scoir", school)}>
+              {coalition}
+            </MetricLabel>
           </p>
         )}
         {testPolicy && (

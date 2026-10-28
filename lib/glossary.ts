@@ -1160,6 +1160,13 @@ const entries = {
     category: "Admissions",
     related: ["early-decision", "binding", "early-action"],
   },
+  "coalition-application": {
+    term: "Coalition application",
+    short: "The Common App's smaller rival: one shared application that about 150 member colleges of the Coalition for College accept, filled out through Scoir since 2023.",
+    long: "Most Coalition members also take the Common App, so for most students it is a choice of form rather than of colleges; a few take the Coalition form and not the Common App. A college's page says when it takes the Coalition application, read from Scoir's list of colleges that accept applications through it.",
+    category: "Admissions",
+    related: ["early-decision", "writing-supplement"],
+  },
   "single-choice-early-action": {
     term: "Single-choice early action",
     short: "Another name for restrictive early action: a non-binding early round where you agree not to apply early elsewhere, except where the college allows it.",

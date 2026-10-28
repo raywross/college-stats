@@ -4,6 +4,7 @@ import type { GenderBalance } from "./student-body";
 import type { Council, DirectorySummary, PolicyCheck, Tradition } from "./directories";
 import type { SelectivityTier } from "./chances/types";
 import type { SchoolApply } from "./common-app/types";
+import type { SchoolCoalition } from "./coalition";
 
 export type SchoolType = "public" | "private-nonprofit" | "private-forprofit";
 
@@ -403,6 +404,8 @@ export interface School {
    * scripts/lib/common-app/merge.mts): present only on members found on Common App's Explore pages with an IPEDS id.
    */
   apply?: SchoolApply;
+  /** Coalition for College membership and whether it takes the Coalition application through Scoir (specs/data-expansion/coalition-app.md); present only on members. */
+  coalition?: SchoolCoalition;
 }
 
 /**
@@ -1476,7 +1479,9 @@ export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "
    * Common App (specs/data-expansion/common-app.md): the Requirements Grid (vintage `common-app-grid`) and the members'
    * Explore pages (vintage `common-app-members`). Present-only: a college that isn't a member cites nothing from it.
    */
-  | "common-app";
+  | "common-app"
+  /** The Coalition for College's member list and Scoir's list (specs/data-expansion/coalition-app.md); present-only. */
+  | "coalition";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
 export type GradRaceGroup = "white" | "asian" | "hispanic" | "black" | "two_or_more" | "international" | "aian" | "nhpi";
 

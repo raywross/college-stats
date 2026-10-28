@@ -39,6 +39,8 @@ import { TransferringInCard } from "@/components/school/TransferringInCard";
 import { transferCard } from "@/lib/cds/transfer-display";
 import { ApplyingBox } from "@/components/school/ApplyingBox";
 import { WhatItTakes } from "@/components/school/WhatItTakes";
+import { HowToApply } from "@/components/school/HowToApply";
+import { coalitionSentence } from "@/lib/coalition";
 import { HsPrepBox } from "@/components/school/HsPrepBox";
 import { applyingLines, feeWaiverSentence, showsHsPrep } from "@/lib/cds/application-logistics-display";
 
@@ -116,7 +118,7 @@ export default async function AdmissionsPage({ params }: Props) {
     { id: "standing", label: "Where you stand" },
     { id: "factors", label: "What they look at" },
     ...(transferCard(school) ? [{ id: "transfer", label: "Transferring in" }] : []),
-    ...(school.apply?.deadlines ? [{ id: "apply", label: "What it takes to apply" }] : []),
+    ...(school.apply?.deadlines ? [{ id: "apply", label: "What it takes to apply" }] : coalitionSentence(school) ? [{ id: "apply", label: "How to apply" }] : []),
     ...(applyingLines(school).length ? [{ id: "applying", label: "Applying" }] : []),
     ...(showsHsPrep(school) ? [{ id: "hs-prep", label: "What you'll need in high school" }] : []),
     { id: "map", label: "Admissions map" },
@@ -270,10 +272,16 @@ export default async function AdmissionsPage({ params }: Props) {
           </div>
         )}
         <TransferringInCard id="transfer" className="mt-4" school={school} cite={citeField} color={DOMAINS.admissions.color} />
-        {school.apply?.deadlines && (
+        {school.apply?.deadlines ? (
           <div className="mt-4">
             <WhatItTakes id="apply" school={school} cite={citeField} />
           </div>
+        ) : (
+          coalitionSentence(school) && (
+            <div className="mt-4">
+              <HowToApply id="apply" school={school} cite={citeField} />
+            </div>
+          )
         )}
         {(applyingLines(school).length > 0 || showsHsPrep(school)) && (
           <div className="mt-4 grid gap-4 lg:grid-cols-2">

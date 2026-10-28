@@ -62,19 +62,21 @@ function applyHost(url: string | null | undefined): string | null {
  * The platforms a college can be applied through, from what the site knows (applications.md "Platforms",
  * common-app-build/brief.md U4): the University of California takes only its own application; ApplyTexas is for
  * Texas public colleges (and anyone whose apply link points there); the Common App is offered only to a college the
- * Requirements Grid marks as a member (`apply.common_app.member`), now that the site knows the member list — a
- * non-member may still take the Coalition, its own site, or "other". A platform already saved that isn't in the
+ * Requirements Grid marks as a member (`apply.common_app.member`), now that the site knows the member list, and the
+ * Coalition application only to a college Scoir lists as taking it (`coalition.via_scoir`); any college may still
+ * take its own site's form or "other". A platform already saved that isn't in the
  * list stays selectable, marked "(not offered)" (the picker's own rule, not this function's).
  */
 export function platformsFor(
-  school: Pick<PlanSchool, "state" | "type" | "name" | "links"> & Partial<Pick<PlanSchool, "apply">> | null | undefined,
+  school: Pick<PlanSchool, "state" | "type" | "name" | "links"> & Partial<Pick<PlanSchool, "apply" | "coalition">> | null | undefined,
 ): Platform[] {
   const host = applyHost(school?.links?.apply);
   const uc = (school?.state === "CA" && /^University of California\b/i.test(school.name ?? "")) || host?.endsWith("universityofcalifornia.edu") === true;
   if (uc) return ["uc", "other"];
   const out: Platform[] = [];
   if (school?.apply?.common_app.member === true) out.push("common_app");
-  out.push("coalition");
+  // The Coalition form only where Scoir lists the college as taking it (specs/data-expansion/coalition-app.md).
+  if (school?.coalition?.via_scoir === true) out.push("coalition");
   if ((school?.state === "TX" && school.type === "public") || host?.endsWith("applytexas.org") === true) out.push("apply_texas");
   out.push("own", "other");
   return out;
@@ -184,12 +186,15 @@ function interviewRequirement(school: PlanSchool): Requirement {
  * — the student hasn't chosen a platform, but the college's membership is already known. A non-member with no pick
  * stays "Not set yet." (U4: "non-members: unchanged").
  */
-function platformRequirement(item: Pick<PlanItem, "application_platform">, school: Pick<PlanSchool, "apply">): Requirement {
+function platformRequirement(item: Pick<PlanItem, "application_platform">, school: Pick<PlanSchool, "apply" | "coalition">): Requirement {
   const p = item.application_platform ?? null;
   if (p) return { key: "platform", label: "Platform", text: PLATFORM_LABELS[p], cite: null, published: true };
-  if (school.apply?.common_app.member === true) {
-    return { key: "platform", label: "Platform", text: "Takes the Common App.", cite: "apply.common_app", published: true };
-  }
+  const commonApp = school.apply?.common_app.member === true;
+  const coalition = school.coalition?.via_scoir === true;
+  // Coalition application (specs/data-expansion/coalition-app.md "Display"): the known facts before the student picks.
+  if (commonApp && coalition) return { key: "platform", label: "Platform", text: "Takes the Common App and the Coalition application.", cite: "apply.common_app", published: true };
+  if (commonApp) return { key: "platform", label: "Platform", text: "Takes the Common App.", cite: "apply.common_app", published: true };
+  if (coalition) return { key: "platform", label: "Platform", text: "Takes the Coalition application, through Scoir.", cite: "coalition.via_scoir", published: true };
   return { key: "platform", label: "Platform", text: "Not set yet.", cite: null, published: true };
 }
 

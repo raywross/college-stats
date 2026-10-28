@@ -64,6 +64,7 @@ import { buildSelectivity, formatIndexFile, readIndexFile, selectivityProblems }
 import { loadIdentityInputs } from "./lib/identity-sync.mts";
 import { writeAliasTable } from "./lib/aliases-sync.mts";
 import { addCommonAppMeta, applyCommonApp, loadCommonApp, policyCounts, summaryLine, type CommonAppSummary } from "./lib/common-app/merge.mts";
+import { addCoalitionMeta, applyCoalition, readCoalition, summaryLine as coalitionSummaryLine } from "./lib/coalition/merge.mts";
 import { runSiteProbe } from "./lib/site-probe.mts";
 import { fetchOpenAdmissionFile } from "./lib/open-admission.mts";
 import { applyOpenAdmission, openAdmissionMeta } from "../lib/open-admission.ts";
@@ -640,7 +641,7 @@ function buildMeta(
       "scorecard-fos": null,
       // The Common App vintages are set with their source by addCommonAppMeta (scripts/lib/common-app/merge.mts), only
       // when data/common-app/ holds an edition; until then meta has neither (lib/lineage.ts MERGED_LATER).
-    } satisfies Omit<DatasetMeta["vintages"], "common-app-grid" | "common-app-members"> as DatasetMeta["vintages"],
+    } satisfies Omit<DatasetMeta["vintages"], "common-app-grid" | "common-app-members" | "coalition-members"> as DatasetMeta["vintages"],
   };
 }
 
@@ -972,6 +973,15 @@ async function main() {
     addCommonAppMeta(meta, commonAppFiles.edition, commonAppFiles.members);
     commonApp = applied;
   }
+  // Coalition application (specs/data-expansion/coalition-app.md): the committed lists, applied as `npm run
+  // merge-coalition` does; nothing downstream reads the block, so it can follow the Common App step directly.
+  const coalitionFile = readCoalition(ROOT);
+  if (coalitionFile) {
+    const applied = applyCoalition(schools, coalitionFile);
+    schools.splice(0, schools.length, ...applied.schools);
+    addCoalitionMeta(meta, coalitionFile);
+    console.log(`  Coalition: ${coalitionSummaryLine(applied.summary)}`);
+  } else console.log("  Coalition: no data/coalition/members.json yet; skipped");
   let reportedMerged = 0;
   // CDS records (data/cds-records/, round 3) merge in the same call, after buildMeta (the newest groups need meta's
   // federal years); their detail tables join the sync's below.

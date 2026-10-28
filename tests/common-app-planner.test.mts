@@ -257,11 +257,16 @@ test("requirementsFor: the platform line says 'Takes the Common App' for a membe
 /* platformsFor: member / non-member / UC / Texas                                                                     */
 /* ------------------------------------------------------------------ */
 
-test("platformsFor: the Common App is offered only to a member", () => {
-  assert.deepEqual(platformsFor(memberSchool()), ["common_app", "coalition", "own", "other"]);
-  assert.deepEqual(platformsFor(nonMemberSchool()), ["coalition", "own", "other"]);
+test("platformsFor: the Common App is offered only to a member, the Coalition form only to a college on Scoir's list", () => {
+  assert.deepEqual(platformsFor(memberSchool()), ["common_app", "own", "other"]);
+  assert.deepEqual(platformsFor(nonMemberSchool()), ["own", "other"]);
   // No apply block at all (a plain object, as an older caller might pass): same as a non-member.
-  assert.deepEqual(platformsFor({ state: "NY", type: "private-nonprofit", name: "Example College", links: null }), ["coalition", "own", "other"]);
+  assert.deepEqual(platformsFor({ state: "NY", type: "private-nonprofit", name: "Example College", links: null }), ["own", "other"]);
+  // Coalition application (specs/data-expansion/coalition-app.md): on Scoir's list, member or not.
+  const viaScoir = { member: true as const, via_scoir: true, retrieved: "2026-10-28" };
+  assert.deepEqual(platformsFor({ ...memberSchool(), coalition: viaScoir }), ["common_app", "coalition", "own", "other"]);
+  assert.deepEqual(platformsFor({ ...nonMemberSchool(), coalition: viaScoir }), ["coalition", "own", "other"]);
+  assert.deepEqual(platformsFor({ ...nonMemberSchool(), coalition: { ...viaScoir, via_scoir: false } }), ["own", "other"]);
 });
 
 test("platformsFor: the University of California takes only its own application, member or not", () => {
@@ -271,7 +276,7 @@ test("platformsFor: the University of California takes only its own application,
 
 test("platformsFor: a Texas public member gets ApplyTexas alongside the Common App", () => {
   const texas = memberSchool({ state: "TX", type: "public", name: "The University of Texas at Dallas" });
-  assert.deepEqual(platformsFor(texas), ["common_app", "coalition", "apply_texas", "own", "other"]);
+  assert.deepEqual(platformsFor(texas), ["common_app", "apply_texas", "own", "other"]);
 });
 
 /* ------------------------------------------------------------------ */

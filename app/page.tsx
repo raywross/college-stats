@@ -17,6 +17,7 @@ import { InfoTip, Term } from "@/components/ui/info-tip";
 import { SourceNote } from "@/components/sources/SourceNote";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 import { WhatsChanged } from "@/components/history/WhatsChanged";
+import { ADVISOR_NAME, ADVISOR_PATH } from "@/lib/planner/advisor";
 
 const LENSES: { title: string; blurb: string; query: string; domain: Domain; icon: typeof Crown; ranked?: boolean }[] = [
   { title: "The most selective", blurb: "Admit rates of 10% or less", query: "maxAR=10&sortBy=acceptance_rate", domain: "admissions", icon: Crown },
@@ -118,6 +119,11 @@ export default async function HomePage() {
                   </Link>
                 ))}
               </div>
+              {/* The advisor's one line on the home page (specs/product/advisor.md "3. The page"); the trial's "free for
+                  14 days" joins it with part 3. A plain link, so the page stays static. */}
+              <Link href={ADVISOR_PATH} className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+                Try {ADVISOR_NAME} <ArrowRight className="size-4" aria-hidden />
+              </Link>
             </div>
           </div>
 

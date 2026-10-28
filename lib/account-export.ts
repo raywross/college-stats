@@ -189,7 +189,7 @@ export const ACCOUNT_EXPORTERS: AccountExporter[] = [
   {
     key: "planner",
     description:
-      "The plan for your own and managed students' lists, and lists you own yourself: tasks, visits, offers, letter metadata (not the files), nudges you sent or received, and text consents (specs/planner/model.md; specs/planner/parents.md).",
+      "The advisor for your own and managed students' lists, and lists you own yourself: tasks, visits, offers, letter metadata (not the files), nudges you sent or received, and text consents (specs/planner/model.md; specs/planner/parents.md).",
     run: async ({ supabase, studentIds, userId }) => {
       type ListRow = { id: string; student_id: string | null; user_id: string | null };
       const [studentLists, ownLists] = await Promise.all([

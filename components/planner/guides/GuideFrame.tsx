@@ -1,8 +1,8 @@
 /**
  * The frame every guide page shares (specs/planner/v3/now.md "The guide pattern"; build-plan.md "The guide page"): the
- * header (← Back to your plan, the season and class year, the guide's title, and the open move's why under it, else
+ * header (← Back to your advisor, the season and class year, the guide's title, and the open move's why under it, else
  * the guide's purpose), the guide's body, and the footer (GuideFooter: the move's Done and Skip, and the way back).
- * The plan's width (app/plan/layout.tsx's container) without the tabs; one column, so it reads the same at 390 px.
+ * The plan's width (app/advisor/layout.tsx's container) without the tabs; one column, so it reads the same at 390 px.
  * Server component; the footer and the open telemetry are its two client islands.
  */
 import Link from "next/link";
@@ -35,7 +35,7 @@ export function GuideFrame({ slug, from, Component, ctx, view, move, query, data
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
           <Link href={planHref({ person, tab: "next" })} className="-ml-2 inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-sm font-semibold text-primary hover:underline">
             <ArrowLeft className="size-4" aria-hidden />
-            Back to your plan
+            Back to your advisor
           </Link>
           <p className="text-sm text-muted-foreground">
             {SEASON_LABELS[ctx.season]}

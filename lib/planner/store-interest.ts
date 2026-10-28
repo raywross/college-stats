@@ -10,6 +10,7 @@
  * A pending act is the actor's own: `pendingActs` reads only the viewer's rows, so a parent never sees a student's
  * unconfirmed click and the reverse (spec "Rules": shown to no one else).
  */
+import { ADVISOR_PATH } from "./advisor";
 import { revalidatePath } from "next/cache";
 import { authConfigured, getUser } from "@/lib/auth";
 import { allowed, NOT_ALLOWED_MESSAGE } from "@/lib/entitlements";
@@ -78,7 +79,7 @@ export async function recordAct(input: RecordActInput): Promise<RecordActResult>
   if (!("supabase" in r)) return r;
   if (input.itemId) {
     const { data: canEdit } = await r.supabase.rpc("can_edit_item", { p_item: input.itemId });
-    if (canEdit !== true) return { ok: false, message: "Only someone who can edit this plan can do that." };
+    if (canEdit !== true) return { ok: false, message: "Only someone who can edit this list can do that." };
     if (input.act === "follow" && !(await isStudentOfItem(r.supabase, input.itemId, r.userId))) return { ok: false, message: "Only the student can mark a follow." };
   }
   const network = input.act === "follow" ? (input.network ?? null) : null;
@@ -187,7 +188,7 @@ export async function resolveAct(
     await trackServer("plan_interest_confirmed", { action: row.act, via }, r.userId);
     if (outcome.listId) await regenerate(outcome.listId);
   }
-  revalidatePath("/plan", "layout");
+  revalidatePath(ADVISOR_PATH, "layout");
   revalidatePath("/household", "layout");
   return { ok: true, visitId: outcome.visitId };
 }

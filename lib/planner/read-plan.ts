@@ -254,13 +254,13 @@ export async function readPlan(supabase: SupabaseClient, listId: string): Promis
   ]);
   if (list.error) {
     if (isMissing(list.error)) throw new PlannerSetupError(list.error.message ?? "");
-    throw new Error(`Reading the plan's list failed: ${list.error.message}`);
+    throw new Error(`Reading the list failed: ${list.error.message}`);
   }
   if (!list.data) return null;
   for (const r of [items, tasks]) {
     if (r.error) {
       if (isMissing(r.error)) throw new PlannerSetupError(r.error.message ?? "");
-      throw new Error(`Reading the plan failed: ${r.error.message}`);
+      throw new Error(`Reading the list's rows failed: ${r.error.message}`);
     }
   }
   const itemRows = items.data ?? [];
@@ -273,7 +273,7 @@ export async function readPlan(supabase: SupabaseClient, listId: string): Promis
     taskIds.length ? supabase.from("plan_nudges").select(NUDGE_COLUMNS).in("task_id", taskIds).order("sent_at", { ascending: false }) : Promise.resolve({ data: [], error: null }),
   ]);
   for (const r of [visits, offers, nudges]) {
-    if (r.error) throw new Error(`Reading the plan failed: ${r.error.message}`);
+    if (r.error) throw new Error(`Reading the list's rows failed: ${r.error.message}`);
   }
   return {
     list: list.data as PlanList,

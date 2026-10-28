@@ -6,6 +6,7 @@ import { myHouseholds, type PersonPage } from "@/lib/households";
 import { personActions, statusLabel } from "@/lib/household-hub";
 import { formatPhone, type HouseholdView, type RosterMember } from "@/lib/household-rules";
 import type { ListOwner } from "@/lib/list-rules";
+import { ADVISOR_SHORT } from "@/lib/planner/advisor";
 import { cn } from "@/lib/utils";
 import { PersonMenu } from "./PersonMenu";
 
@@ -41,11 +42,11 @@ const badgeCls = "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 tex
  * (2026-10-06)"). One name line: first and last name, "(you)", the role badge, "Class of 2028", a status while they
  * haven't finished joining, and their phone as a call icon; the "⋯" menu (PersonMenu) at the right holds the rare
  * actions (personActions() decides which). Under it, the guardian banner when a guardian is looking at a student,
- * then the Plan | Record segmented control (students only; specs/planner/record/steps.md "The overview": the
+ * then the Advisor | Record segmented control (students only; specs/planner/record/steps.md "The overview": the
  * Numbers tab, renamed), which links between the routes. No back link and no tabs row: the strip above is how you move
  * between people, and it never changes.
  *
- * The "Plan" pill (value `list`, the plain `/household/[id]` route) no longer embeds the old list board: a
+ * The "Advisor" pill (value `list`, the plain `/household/[id]` route) no longer embeds the old list board: a
  * student's colleges, levels, and deadlines live in the planner now, so the route shows a card linking there
  * instead (app/household/[person]/page.tsx). The control used to have a third pill that just redirected straight to
  * `/plan` — removed as the same kind of dead-end tab this cleanup removes elsewhere.
@@ -113,7 +114,7 @@ export async function PersonHeader({ id, person, active }: { id: string; person:
           label={`${title}'s pages`}
           value={active}
           options={[
-            { value: "list", label: "Plan", href: `/household/${id}` },
+            { value: "list", label: ADVISOR_SHORT, href: `/household/${id}` },
             { value: "record", label: "Record", href: `/household/${id}/record` },
           ]}
         />

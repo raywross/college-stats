@@ -147,7 +147,7 @@ function GuardianNudge({
             placeholder="Optional: the essay first?"
             className="w-full rounded-xl border p-3 text-sm"
           />
-          {studentNudgeEmailsOff && <p className="text-xs text-muted-foreground">{studentFirstName ?? "They"} reads nudges in the plan; email nudges are off for them.</p>}
+          {studentNudgeEmailsOff && <p className="text-xs text-muted-foreground">{studentFirstName ?? "They"} reads nudges in their advisor; email nudges are off for them.</p>}
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}

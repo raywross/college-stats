@@ -12,7 +12,7 @@ const block = "animate-pulse bg-muted";
 
 export default function PlanLoading() {
   return (
-    <div className="space-y-6" role="status" aria-busy="true" aria-label="Loading your plan">
+    <div className="space-y-6" role="status" aria-busy="true" aria-label="Loading your advisor">
       <PendingPeopleLine>
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]" aria-hidden>
           <div className="rounded-3xl border bg-card p-5">

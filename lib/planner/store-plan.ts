@@ -12,6 +12,7 @@
  * A "use server" module exports only async functions (a const export breaks `next build`); the validation and write
  * sets are pure, in lib/planner/plan-writes.ts.
  */
+import { ADVISOR_PATH } from "./advisor";
 import { revalidatePath } from "next/cache";
 import { authConfigured, getUser } from "@/lib/auth";
 import { allowed, NOT_ALLOWED_MESSAGE } from "@/lib/entitlements";
@@ -38,7 +39,7 @@ export type PlanWriteResult = { ok: true } | { ok: false; message: string };
 
 const FAILED = "That didn't work. Try again in a moment.";
 const SIGN_IN = "Sign in first.";
-const NOT_EDITOR = "Only someone who can edit this plan can change it.";
+const NOT_EDITOR = "Only someone who can edit this list can change it.";
 
 type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
 
@@ -54,7 +55,7 @@ async function ready(): Promise<{ userId: string; supabase: Supabase } | { ok: f
 function refresh() {
   void span("revalidate", () => {
     try {
-      revalidatePath("/plan");
+      revalidatePath(ADVISOR_PATH);
       revalidatePath("/household", "layout");
     } catch (err) {
       // After the response (the intake's background pass) there is no client to refresh; never fail the pass on it.
@@ -302,7 +303,7 @@ export async function saveIntake(studentId: string, input: IntakeSave): Promise<
   if (!parsed) return { ok: false, message: "Check your answers: one of them is out of range." };
   const today = todayIso();
   return withTiming(
-    "/plan save",
+    "/advisor save",
     () =>
       saveTheirProfile(
         studentId,

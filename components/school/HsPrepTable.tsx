@@ -1,5 +1,6 @@
 "use client";
 
+import { planHref } from "@/lib/planner/plan-tabs";
 import Link from "next/link";
 import { useState } from "react";
 import { useMyCourses } from "@/components/me/useMyCourses";
@@ -39,10 +40,10 @@ function fallShort(rows: HsPrepTableRow[], courses: CourseEntry[], core: CoreAtT
     const you = youYears(courses, core, subject);
     if (!you || you.years >= r.recommended) continue;
     const text = noteText({ key: "course_plan.profile_line", values: { subject: r.label, recommended: r.recommended, have: you.years } });
-    const tail = " See next year's options in your plan.";
+    const tail = " See next year's options in your advisor.";
     // The plan's Scores tab (and its next-year card) is gone (owner, 2026-10-12): the link opens the plan's setup,
     // where the AP courses step takes planned courses, instead of "next year's options".
-    out.push({ subject: r.label, before: text.endsWith(tail) ? `${text.slice(0, -tail.length)} ` : text, link: text.endsWith(tail) ? "Update your courses in your plan." : "" });
+    out.push({ subject: r.label, before: text.endsWith(tail) ? `${text.slice(0, -tail.length)} ` : text, link: text.endsWith(tail) ? "Update your courses in your advisor." : "" });
   }
   return out;
 }
@@ -176,7 +177,7 @@ export function HsPrepTable({
             <li key={l.subject}>
               {l.before}
               {mine.signedIn ? (
-                <Link href="/plan?setup=1" className="font-semibold text-primary hover:underline">
+                <Link href={planHref({ setup: true })} className="font-semibold text-primary hover:underline">
                   {l.link}
                 </Link>
               ) : (

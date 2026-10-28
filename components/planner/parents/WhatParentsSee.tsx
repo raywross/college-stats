@@ -17,7 +17,7 @@ export function WhatParentsSee({ summary, stuckSignals, tickedThisWeek }: { summ
       open={open}
       onOpenChange={setOpen}
       title="What your parents see"
-      description="The weekly email a guardian who's turned it on gets about you, if either household member can see this plan."
+      description="The weekly email a guardian who's turned it on gets about you, if either household member can see your advisor."
       trigger={{
         className: "text-sm font-semibold text-primary underline-offset-2 hover:underline",
         label: "What your parents see",

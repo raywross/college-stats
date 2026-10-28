@@ -2,7 +2,7 @@
  * The guides registry (specs/planner/v3/now.md "The guide pattern"; build-plan.md review note 1 and "Guides"): which
  * guide a move opens, the guide's words (title, the card's button, its one-line purpose), and the guide page's URL.
  * A move's card asks `guideFor(task)` first; when there is a guide, its one button is the guide's, otherwise the
- * built action stays. Each guide is a page at `/plan/guide/<slug>` (app/plan/guide/[slug]/page.tsx), its component in
+ * built action stays. Each guide is a page at `/plan/guide/<slug>` (app/advisor/guide/[slug]/page.tsx), its component in
  * lib/planner/guides-server.ts.
  *
  * Matching, first hit wins: the task's kind, then its playbook key (`{list}:playbook:<key>`), then its cycle key
@@ -11,6 +11,7 @@
  * Every word here passes the catalog guard (tests/planner-guides.test.mts): no number from the estimate, no "odds".
  * Pure (no React, no server imports); safe in client components and tests.
  */
+import { ADVISOR_PATH } from "./advisor.ts";
 import { STANDING_LEVELS } from "../chances/levels.ts";
 import type { StandingLevel } from "../chances/types.ts";
 import type { PlanItem, PlanTask, TaskKind } from "./types.ts";
@@ -55,7 +56,7 @@ export interface GuideEntry {
   hrefFor: (task: PlanTask | null, opts: GuideHrefOpts) => string;
 }
 
-/** `/plan/guide/{slug}?for=…&move=…&college=…&level=…&from=…` (only the parts given, in that order). */
+/** `/advisor/guide/{slug}?for=…&move=…&college=…&level=…&from=…` (only the parts given, in that order). */
 export function guideHref(slug: GuideSlug, q: GuideHrefQuery = {}): string {
   const p = new URLSearchParams();
   if (q.person) p.set("for", q.person);
@@ -64,7 +65,7 @@ export function guideHref(slug: GuideSlug, q: GuideHrefQuery = {}): string {
   if (q.level) p.set("level", q.level);
   if (q.from) p.set("from", q.from);
   const s = p.toString();
-  return s ? `/plan/guide/${slug}?${s}` : `/plan/guide/${slug}`;
+  return s ? `${ADVISOR_PATH}/guide/${slug}?${s}` : `${ADVISOR_PATH}/guide/${slug}`;
 }
 
 /** The unit id of the task's college, when the caller passed the rows. */

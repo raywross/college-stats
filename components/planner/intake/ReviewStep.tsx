@@ -26,7 +26,7 @@ export function ReviewStep({ draft, today, onEdit }: { draft: IntakeDraft; today
           </div>
         ))}
       </div>
-      <p className="text-sm text-muted-foreground">You can change any of this later from the top of your plan.</p>
+      <p className="text-sm text-muted-foreground">You can change any of this later from the top of the Advisor tab.</p>
     </div>
   );
 }

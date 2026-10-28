@@ -4,6 +4,7 @@
  * line. No Next.js, server, or browser APIs, so tests (tests/household-hub-pages.test.mts), Server Actions, and
  * client components can all import it. Server reads live in lib/households.ts; shared rules in lib/household-rules.ts.
  */
+import { ADVISOR_PATH } from "./planner/advisor.ts";
 import type { MemberRole } from "./accounts.ts";
 import { EMAIL_RE, HOUSEHOLD_ERRORS, canRemove, editAccessControl, isPending, memberName, normalizePhone, shortDate, type RosterMember } from "./household-rules.ts";
 
@@ -182,7 +183,7 @@ export function ownPersonPath(studentId: string | null, userId: string): string 
  * place rather than 404.
  */
 export function personListHref(personKind: "student" | "guardian", personId: string): string | null {
-  return personKind === "student" ? `/plan?for=${encodeURIComponent(personId)}` : null;
+  return personKind === "student" ? `${ADVISOR_PATH}?for=${encodeURIComponent(personId)}` : null;
 }
 
 /* ------------------------------------------------------------------ */

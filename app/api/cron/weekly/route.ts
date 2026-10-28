@@ -1,3 +1,4 @@
+import { planHref } from "@/lib/planner/plan-tabs";
 import type { NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isAuthorized } from "@/lib/revalidate";
@@ -197,12 +198,12 @@ async function sendYourWeek(client: SupabaseClient, s: StudentRow, plan: Student
   const prefs = stored ?? (await ensurePrefs(client, userId));
   const built = buildYourWeek({
     firstName: firstName(s.display_name),
-    moves: [...week.moves.map((t) => weekLine(t, plan, { why: true })), ...week.fresh.map((t) => weekLine(t, plan, { when: "new on your plan" }))],
+    moves: [...week.moves.map((t) => weekLine(t, plan, { why: true })), ...week.fresh.map((t) => weekLine(t, plan, { when: "new in your advisor" }))],
     week: week.week.map((t) => weekLine(t, plan)),
     overdue: week.overdue ? weekLine(week.overdue, plan) : null,
     done: week.done.map((t) => outsideTitle(t, nameOf(t, plan))),
     siteUrl,
-    planPath: `/household/${s.id}/plan`,
+    planPath: planHref({ person: s.id }),
     unsubscribeToken: prefs.unsubscribe_token,
   });
   if (!built) return false;
@@ -228,7 +229,7 @@ async function sendWeekText(client: SupabaseClient, s: StudentRow, plan: Student
     const l = weekLine(t, plan);
     return { title: l.title, when: l.when, who: l.who };
   });
-  const body = composeWeekText(tasks, `${siteUrl}/household/${s.id}/plan`);
+  const body = composeWeekText(tasks, `${siteUrl}${planHref({ person: s.id })}`);
   if (!body) return false;
   const result = await deliverText(client, data as ConsentRow, "week", body, { forName: firstName(s.display_name) });
   return result.sent;

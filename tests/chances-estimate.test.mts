@@ -401,9 +401,9 @@ test("the planner reads estimates computed on the server or fetched from the end
   assert.doesNotMatch(view, /standingFor\(|scoreToMoveUp\(|chances\/model|chances\/estimate"/);
   assert.match(read("lib", "planner", "load.ts"), /planEstimates\(/);
   assert.match(read("lib", "planner", "store-plan.ts"), /planEstimates\(/);
-  // The intake redesign (specs/planner/redesign/intake.md) drops NumbersForm's live preview: numbers are now edited
-  // through the intake guide, which saves once and re-reads the server's estimates on refresh (no client preview).
-  for (const f of ["components/planner/SignedOutPlan.tsx"]) assert.match(read(f), /useEstimates\(/, f);
+  // The intake redesign (specs/planner/redesign/intake.md) drops NumbersForm's live preview, and the splash page
+  // (specs/product/advisor.md "3. The page") replaced the signed-out plan, the hook's last caller; the hook stays, still
+  // reading the endpoint, never the model.
   const hook = read("components", "planner", "useEstimates.ts");
   assert.match(hook, /fetch\("\/api\/estimate"/);
   assert.match(hook, /ESTIMATE_DEBOUNCE_MS = 400/);

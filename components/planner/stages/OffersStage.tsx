@@ -1,3 +1,4 @@
+import { planPrintHref } from "@/lib/planner/plan-tabs";
 import Link from "next/link";
 import { FileText, PartyPopper } from "lucide-react";
 import { StagePanel } from "@/components/planner/StagePanel";
@@ -132,7 +133,7 @@ export default async function OffersStage({ ctx }: { ctx: PlanContext }) {
       ctx={ctx}
       actions={
         ctx.student ? (
-          <Link href={`/household/${ctx.student.id}/plan/print`} className="inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold hover:bg-muted sm:min-h-10 print:hidden">
+          <Link href={planPrintHref({ person: ctx.student.id })} className="inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold hover:bg-muted sm:min-h-10 print:hidden">
             <FileText className="size-4" aria-hidden /> Family dossier
           </Link>
         ) : null
@@ -351,7 +352,7 @@ export default async function OffersStage({ ctx }: { ctx: PlanContext }) {
           <h3 id="offers-choice" className="font-display text-lg font-bold">
             The choice
           </h3>
-          <p className="text-sm text-muted-foreground">When {self ? "you know" : `${studentFirst ?? "they"} know${studentFirst ? "s" : ""}`}, say so here: the plan turns to the deposit, the other colleges, and the summer.</p>
+          <p className="text-sm text-muted-foreground">When {self ? "you know" : `${studentFirst ?? "they"} know${studentFirst ? "s" : ""}`}, say so here: {self ? "your" : "their"} advisor turns to the deposit, the other colleges, and the summer.</p>
           <div className="flex flex-wrap gap-2">
             {admitted
               .filter((i) => !i.withdrawn_on)

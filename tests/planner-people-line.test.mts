@@ -35,7 +35,7 @@ test("the line: circles link to each plan, the selected one is a button with ari
   const src = read("components", "planner", "PlanPeople.tsx");
   assert.match(src, /aria-expanded=\{showDetail\}/);
   assert.match(src, /aria-label=\{name\}/);
-  assert.match(src, /aria-label=\{`Show \$\{name\}'s plan`\}/);
+  assert.match(src, /aria-label=\{`Show \$\{advisorTitle\(name\)\}`\}/);
   assert.match(src, /href=\{shown\.editHref\}/, "Edit from the loaded detail, or a tapped child's while theirs loads (U20)");
   // The record overview's label (record/steps.md "The people line"), not the retired "Edit {name}'s grades, test, and courses".
   assert.match(src, /aria-label=\{p\.studentId \? `\$\{name\}'s record` : "Your record"\}/);
@@ -45,7 +45,7 @@ test("the line: circles link to each plan, the selected one is a button with ari
   assert.doesNotMatch(src, /flex-wrap/);
   assert.match(src, /PLAN_CHILD_COOKIE = "plan_child"/, "a pick is remembered for the next visit");
   assert.match(src, /rememberChild\(p\.studentId\)/);
-  const page = read("app", "plan", "page.tsx");
+  const page = read("app", "advisor", "page.tsx");
   assert.match(page, /editHref: canEdit \? recordHref\(\{ person \}\) : null/, "Edit expands the record on the plan page (owner, 2026-10-16)");
   assert.match(page, /planHref\(\{ person, setup: true, step: where \}\)/, "the next step opens the intake on that step");
   // No GPA or test score on the chip (owner, 2026-10-12): the progress ring and one next step instead.
@@ -59,7 +59,7 @@ test("the top of the plan no longer shows the status text, the name heading, You
   const frame = read("components", "planner", "PlanFrame.tsx");
   assert.doesNotMatch(frame, /PlanHeaderCard|YourPartLine|NothingDue/);
   for (const f of ["PlanHeaderCard.tsx", "ChildSwitcher.tsx", "parents/NothingDue.tsx", "parents/YourPartLine.tsx"]) assert.equal(existsSync(join(ROOT, "components", "planner", f)), false, f);
-  assert.doesNotMatch(read("app", "plan", "page.tsx"), /shortSummaryLine|summaryLine/);
+  assert.doesNotMatch(read("app", "advisor", "page.tsx"), /shortSummaryLine|summaryLine/);
   // The helpers behind them stay.
   assert.match(read("lib", "planner", "plan-frame.ts"), /export function shortSummaryLine/);
   assert.match(read("lib", "planner", "plan-frame.ts"), /export function seasonWords/);

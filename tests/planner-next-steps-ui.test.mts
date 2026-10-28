@@ -4,7 +4,7 @@
  * the move's guide when it has one, else the built action; Done and Skip for now in the corner menu, only with edit
  * access, and no Skip for a guardian) rendered for real with `react-dom/server`, no bundler (the same technique as
  * tests/chances-estimate-ui.test.mts); and, for `NextSteps.tsx`, `ParentNextSteps.tsx`, `SeasonExplainer.tsx`, `PlanRow.tsx`,
- * `PlanPeople.tsx`, and `app/plan/page.tsx` (whose client-only hooks and dialog primitive aren't worth stubbing here),
+ * `PlanPeople.tsx`, and `app/advisor/page.tsx` (whose client-only hooks and dialog primitive aren't worth stubbing here),
  * structural checks on the source: three cards and the Done and skipped fold for the student, the empty state, the
  * guardian's tab kept as built, `?move=` scrolling, and the people line's "Next:" reading the loaded plan's top move
  * before the profile step. `npm test`.
@@ -196,10 +196,10 @@ test("MoveCard: one button per action kind for a move with no guide; tick and th
   assert.match(hrefHtml, /target="_blank"/);
 
   const intakeHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "open_intake", step: 3 } }), ctx, onDone: noop, onSkip: noop, pending: false });
-  assert.match(intakeHtml, /href="\/plan\?setup=1&amp;step=3"/);
+  assert.match(intakeHtml, /href="\/advisor\?setup=1&amp;step=3"/);
 
   const tabHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "open_tab", tab: "colleges" } }), ctx, onDone: noop, onSkip: noop, pending: false });
-  assert.match(tabHtml, /href="\/plan\?tab=colleges"/);
+  assert.match(tabHtml, /href="\/advisor\?tab=colleges"/);
 
   // Plan v3 (build-plan.md U2b): every row task but the ED sheet's has its own guide now, so `open_row` without
   // `panel: "ed"` renders no button here (PlanList's row no longer has a drawer for it to open).
@@ -209,7 +209,7 @@ test("MoveCard: one button per action kind for a move with no guide; tick and th
   // PlanList reads `row`/`panel=ed` on the Colleges tab and opens that row's ED dialog (EdDecideCard's edRowHref()
   // builds the same shape for its own links).
   const rowWithPanelHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "open_row", itemId: "i9", panel: "ed" } }), ctx, onDone: noop, onSkip: noop, pending: false });
-  assert.match(rowWithPanelHtml, /href="\/plan\?tab=colleges&amp;row=i9&amp;panel=ed"/);
+  assert.match(rowWithPanelHtml, /href="\/advisor\?tab=colleges&amp;row=i9&amp;panel=ed"/);
   assert.match(rowWithPanelHtml, /See the college/);
 
   const tickHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "tick" } }), ctx, onDone: noop, onSkip: noop, pending: false });
@@ -218,7 +218,7 @@ test("MoveCard: one button per action kind for a move with no guide; tick and th
   // The brag-sheet playbook entry (junior spring) carries action.kind "story": the Numbers page's story section,
   // the same route for self and a guardian (the lead's merge notice, after U7's StorySection landed there).
   const storyHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "story" } }), ctx: ctxOf({ student: { id: "s9", display_name: "Maya", grad_year: 2028, user_id: "u1" } }), onDone: noop, onSkip: noop, pending: false });
-  assert.match(storyHtml, /href="\/plan\/guide\/story\?from=card"/);
+  assert.match(storyHtml, /href="\/advisor\/guide\/story\?from=card"/);
 
   const otherUnitHtml = render(moveCardMod.MoveCard as never, { task: taskOf({ action: { kind: "mark_applied", itemId: "i1" } }), ctx, onDone: noop, onSkip: noop, pending: false });
   assert.doesNotMatch(otherUnitHtml, /See the college|Open</, "no button for a kind without its own card yet; the title alone stands in");
@@ -233,11 +233,11 @@ test("MoveCard: a move with a guide has one button, the guide's, linking the gui
     onSkip: noop,
     pending: false,
   });
-  assert.match(interest, /href="\/plan\/guide\/interest\?move=t5&amp;college=198419&amp;from=move"/);
+  assert.match(interest, /href="\/advisor\/guide\/interest\?move=t5&amp;college=198419&amp;from=move"/);
   assert.match(interest, />Show me how</);
   assert.doesNotMatch(interest, /See the college/, "the built action gives way to the guide");
   const recs = render(moveCardMod.MoveCard as never, { task: taskOf({ id: "t6", key: "l1:playbook:pick_recommenders", action: null }), ctx, onDone: noop, onSkip: noop, pending: false });
-  assert.match(recs, /href="\/plan\/guide\/recommenders\?move=t6&amp;from=move"[^>]*>Help me pick</);
+  assert.match(recs, /href="\/advisor\/guide\/recommenders\?move=t6&amp;from=move"[^>]*>Help me pick</);
   // A guardian's link carries the child.
   const guardian = render(moveCardMod.MoveCard as never, {
     task: taskOf({ id: "t7", key: "l1:playbook:build_list", action: { kind: "open_tab", tab: "colleges" } }),
@@ -246,7 +246,7 @@ test("MoveCard: a move with a guide has one button, the guide's, linking the gui
     onSkip: noop,
     pending: false,
   });
-  assert.match(guardian, /href="\/plan\/guide\/list\?for=kid-1&amp;move=t7&amp;from=move"[^>]*>Help me build it</, "a read-only guardian still opens the guide");
+  assert.match(guardian, /href="\/advisor\/guide\/list\?for=kid-1&amp;move=t7&amp;from=move"[^>]*>Help me build it</, "a read-only guardian still opens the guide");
 });
 
 test("MoveCard: Done and Skip for now live in the corner menu, with edit access only; a guardian's menu has no Skip", () => {
@@ -366,11 +366,11 @@ test("PlanRow: the row carries an id for ?move= / #row- to scroll to", () => {
 });
 
 /* ------------------------------------------------------------------ */
-/* The people line's "Next:" (app/plan/page.tsx, PlanPeople.tsx)       */
+/* The people line's "Next:" (app/advisor/page.tsx, PlanPeople.tsx)       */
 /* ------------------------------------------------------------------ */
 
 test("The people line's Next: reads the loaded plan's top move first, the profile step otherwise", () => {
-  const page = read("app", "plan", "page.tsx");
+  const page = read("app", "advisor", "page.tsx");
   assert.match(page, /topMove\(groups\)/);
   // R1b (ranking.md): the facts object (importanceFactsFrom) feeds nowMoves' importance sort.
   assert.match(page, /importanceFactsFrom\(ctx, view\)/);

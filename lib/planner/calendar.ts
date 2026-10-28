@@ -138,7 +138,7 @@ export interface CalendarEvent {
   /** Short label for the dated-card list (calendar.md "Coming up", the 8-week default): the college or task name
    *  alone, with the round (when there is one) shown separately so a card can put it in its own badge. `text` stays
    *  the full sentence the accessible ComingUp table reads. Optional (a few other builders of CalendarEvent, e.g.
-   *  app/plan/print/page.tsx, don't set it yet); `UpcomingList` falls back to `text` when it's missing. */
+   *  app/advisor/print/page.tsx, don't set it yet); `UpcomingList` falls back to `text` when it's missing. */
   label?: string;
   /** The college is the student's Dream (college events only). */
   dream?: boolean;

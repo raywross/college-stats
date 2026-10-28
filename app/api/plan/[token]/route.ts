@@ -47,7 +47,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     visits as Parameters<typeof feedEvents>[1],
     names,
   );
-  const body = icsCalendar(events, { name: `${SITE_NAME} plan` });
+  const body = icsCalendar(events, { name: `${SITE_NAME} Advisor` });
   return new Response(body, {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",

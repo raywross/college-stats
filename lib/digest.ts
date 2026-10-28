@@ -163,7 +163,7 @@ export function renderDigestHtml(d: Pick<BuiltDigest, "colleges" | "moreCount" |
   const tasks = d.tasks?.length
     ? `
     <div style="border:1px solid ${COLORS.border};border-radius:16px;padding:16px 18px;margin-bottom:14px;">
-      <div style="font-weight:700;font-size:16px;">Coming up on your plan</div>
+      <div style="font-weight:700;font-size:16px;">Coming up in your advisor</div>
       <ul style="margin:10px 0 0;padding-left:20px;">
         ${d.tasks.map((t) => `<li style="margin-bottom:6px;">${escapeHtml(t.title)} · ${escapeHtml(t.when)}</li>`).join("")}
       </ul>
@@ -195,7 +195,7 @@ export function renderDigestHtml(d: Pick<BuiltDigest, "colleges" | "moreCount" |
 export function renderDigestText(d: Pick<BuiltDigest, "colleges" | "moreCount" | "updatesHref" | "unsubscribeHref" | "reasons"> & { dataHref: string; tasks?: DigestTaskLine[] }): string {
   const lines: string[] = [];
   if (d.tasks?.length) {
-    lines.push("Coming up on your plan", "");
+    lines.push("Coming up in your advisor", "");
     for (const t of d.tasks) lines.push(`- ${t.title} · ${t.when}`);
     lines.push("");
   }

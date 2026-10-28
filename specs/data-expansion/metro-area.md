@@ -1,7 +1,14 @@
 # Metro Area (IPEDS HD)
 
-> Status: **deferred** 2026-09-30. Split out of [campus-profile.md](campus-profile.md), which built everything else from
-> the directory file. Parked until a feature needs it. Part of [data-expansion](README.md).
+> Status: **retired** 2026-10-26 (roadmap review of 2026-10-25). Deferred 2026-09-30 when it was split out of
+> [campus-profile.md](campus-profile.md), which built everything else from the directory file, and parked "until a
+> feature needs it". Nothing has: the uses below are served another way. "Nearby colleges" and a metro filter are
+> covered by the home address and Explore's distance filter with its nearest-first sort
+> ([../product/home-and-distance.md](../product/home-and-distance.md), built 2026-10-05) and by Similar schools; a
+> metro-level breakdown of the national trends was never asked for, and the state pages
+> ([../trends/states.md](../trends/states.md)) took that role. The source notes are kept here so that, if a reader
+> ever asks "which other colleges are in this metro", the column names and the label-table question are ready; it would
+> be a Small spec again. No longer listed on `/roadmap`. Part of [data-expansion](README.md).
 
 ## Question it answers
 *Which metro area is it in? What other colleges are in the same metro?*

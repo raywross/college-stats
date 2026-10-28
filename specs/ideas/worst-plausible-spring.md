@@ -1,67 +1,76 @@
 # Worst Plausible Spring: A Stress Test for the List, Not a Grade
 
-> Status: **idea** (2026-10-03). After [saved-lists.md](../product/saved-lists.md); better with
-> [chances-and-fit.md](../product/chances-and-fit.md) and [net-price-estimator.md](../product/net-price-estimator.md).
-> Part of [ideas](README.md).
+> Status: **idea** (2026-10-03; **rewritten** 2026-10-26 after the roadmap review). The counting half of the first
+> draft is built: the plan's **list shape** states the season's target and the gap in one line ("Your list has 3 Reaches,
+> 2 Targets, and no Likely yet") and offers colleges at the missing level
+> ([../planner/next-steps/list-shape.md](../planner/next-steps/list-shape.md), 2026-10-14;
+> [../planner/v3/guides/list-size.md](../planner/v3/guides/list-size.md), 2026-10-16). Levels are five
+> ([../chances/levels.md](../chances/levels.md)), the plan sorts the list by Quad's estimate (the student no longer
+> picks a category), and the family's cost limit is a record field. What remains is the **scenario** view: what spring
+> looks like if the top of the list says no. After the family's price ([../product/net-price-estimator.md](../product/net-price-estimator.md))
+> for its cost lines. Part of [ideas](README.md).
 
 ## Question it answers
-*If every Reach says no, what are we left with, and can we afford it?* It is the question families lie awake over in
-December. Counselors answer it by hand ("do you have two Likelies you'd be happy at and can pay for?"). College
-Kickstart answers it with a letter grade for the list, which its own customers say disagrees with their outcomes.
+*If every Reach says no, what are we left with, and can we afford it?* The shape says what's missing; this says what
+would be true in April. Counselors ask it by hand ("do you have two colleges you'd be happy at and can pay for?").
+College Kickstart answers it with a letter grade for the list, which its own customers say disagrees with their
+outcomes.
 
 ## Why it's fresh
-A stress test, the way a planner tests a retirement plan against a bad year: show what would be true in spring under a
-pessimistic case rather than scoring the list. Nothing is graded. The panel lists what each scenario leaves the family
-with and what is missing, as facts with their figures. The scenarios use the student's own categories, which the
-[saved list](../product/saved-lists.md) keeps as the student's choice with the site's suggestion beside it.
+A stress test, the way a planner tests a retirement plan against a bad year: show what each scenario leaves the family
+with, as facts with their figures, rather than scoring the list. Nothing is graded. It is the plan's shape read the
+other way round: the shape counts what's missing; the stress test names what's left.
 
 ## Scenarios
-From the list's rows: category, standing when the profile has numbers, deadlines, the cost figures, the family's price
-range when a guardian has run the estimator, the intended major's program size from majors, and distance once
-[near-and-far.md](near-and-far.md) exists.
+From the plan's rows: Quad's level per college, the cost figures, the family's cost limit or price range when one
+exists, the intended major's program size, the distance from home, and the deadlines.
 
 | Scenario | Colleges counted | Reads as |
 |---|---|---|
-| Only the Likelies | category Likely (the site's standing when the student hasn't chosen one) | "If nothing else comes through" |
-| Likelies and Targets | plus Target | "A normal spring" |
-| Everything | all | "The best case" |
+| Only the Safes | level Safe | "If nothing else comes through" |
+| Safes and Likelies | plus Likely | "A cautious spring" |
+| Through the Targets | plus Target | "A normal spring" |
+| Everything | all, Reaches and High reaches too | "The best case" |
 
 For each scenario the panel states, with the figures cited:
-- how many colleges, and whether at least two are Likely (the usual counselor floor);
-- the **cheapest estimated price** among them (the family's range when available, else average paid for the family's
-  income band, else average paid), and whether any is under the family's "can pay" line;
-- whether any offers the intended major with a meaningful program (25 or more graduates a year);
-- the nearest one, when distances exist;
-- the earliest deadline among them, and whether the Likelies' deadlines fall **before** early-round results arrive
-  (a student with early good news could then skip them);
-- the gaps, as sentences: "No Likely under $25,000 a year." "No Likely with nursing." "Both Likelies are more than
-  eight hours away."
+- how many colleges, and whether at least two are Likely or Safe (the shape's own floor);
+- the **cheapest estimated price** among them (the family's range when available, else the college's curve at the
+  household's income ([../product/cost-by-income.md](../product/cost-by-income.md)), else average paid), and whether
+  any is under the family's limit;
+- whether any offers the intended major with a meaningful program (25 or more graduates a year), and whether any admits
+  to that major directly ([getting-into-the-major.md](getting-into-the-major.md));
+- the nearest one, with its drive time (built);
+- the earliest deadline among them, and whether the Likelies' deadlines fall **before** early-round results arrive, so a
+  student with early good news could skip them;
+- the gaps, as sentences: "No Safe under $25,000 a year." "No Likely with nursing." "Both Safes are more than eight
+  hours away."
 
-Each gap links to the Explore query or [guide](guides.md) that would fill it ("Likelies under $25K with nursing within
-six hours"), and to [would-compete-for-you.md](would-compete-for-you.md) when the student has numbers. The panel never
-names a college to add.
+Each gap links to the Build your list guide at the missing level with the matching Explore filters ("Likelies under
+$25K with nursing within six hours"), the guide's built rail does the rest. The panel never names a college to add.
 
 ## Display
-- `/me/list`: a "Stress test" panel under the balance line; three columns on desktop, a segmented control on phones.
-- The family dossier (Pro): the same table on one page.
-- The counselor view ([counselor-portal.md](../product/counselor-portal.md)): the caseload alert "3 students have no
-  Likely under budget" comes from the same function.
+- The plan's Colleges tab: a **Stress test** fold under the balance notice (the notice stays one sentence; the fold is
+  the four scenarios, a segmented control on phones).
+- The parent's plan: the same fold.
+- The counselor view ([../product/counselor-portal.md](../product/counselor-portal.md)): the caseload alert "3 students
+  have no Safe under budget" from the same function.
+- Senior spring: entered outcomes (denied, waitlisted) move a college out of every scenario, so the panel reads as
+  "what you have", the same function with real data.
 
 ## Rules
 - No score, no grade, no color that reads as a verdict. Gaps are sentences with numbers.
-- The student's category wins in the scenarios; the panel says when the site's standing differs ("You've marked Emory
-  as Target; the site's standing says Reach because its admit rate is 11%").
-- Price figures carry the same confidence words and sources as the estimator.
-- Nothing here is stored; the panel is computed from the list on view.
+- Price figures carry the same words and sources as the cost curve and the family's price (estimate, families like
+  yours, never "you will pay").
+- Nothing is stored; the panel is computed from the plan on view, with the same `estimateMany` call the list uses.
+- Levels come from the estimate's output only; the panel never explains how a level was reached beyond the built
+  "what went into it" panel.
 
 ## Tier
-Free with the list when it uses the student's own categories and public figures. The family price range appears when
-the guardian has run the estimator (the whole list with Pro).
+With the advisor; the price lines appear when the family's price exists.
 
 ## Complexity
-Small: one pure function over the list's rows (`lib/stress-test.ts`, tested with a fixture list) and a panel.
+Small: one pure function over the plan's rows (`lib/planner/stress-test.ts`, tested with a fixture list) and a fold.
 
 ## Open questions
-1. Count all Targets in "a normal spring", or half? All, and label it; a fourth scenario would be false precision.
-2. In spring, entered outcomes (denied, waitlisted) move a college out of every scenario; the panel then reads as
-   "what you have", which is the same function with real data.
+1. Four scenarios or three? Four, because Safe and Likely are different promises now; a fifth would be false precision.
+2. Should the fold open by default in senior fall? Measure with the Colleges tab's telemetry after it ships.

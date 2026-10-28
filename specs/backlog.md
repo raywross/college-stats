@@ -202,9 +202,8 @@ on the roadmap under Later) and a permanent mark-removal address (chosen at the 
 ## Later
 Worked out, then set aside until another feature needs them; each spec says what it gets built with. Also the last
 section on `/roadmap`.
-- [ ] **Metro area** ([metro-area.md](data-expansion/metro-area.md)): each college's metro and county from the directory
-  file, for a "nearby colleges" list, a metro filter, or metro-level national trends. Deferred from campus profile
-  (2026-09-30).
+- [x] **Metro area** ([data-expansion/metro-area.md](data-expansion/metro-area.md)): retired 2026-10-26; the distance
+  filter, Similar schools, and the state pages serve its uses. The column notes stay in the spec.
 
 ## Product: accounts, planning tools, high schools, business
 Specified 2026-10-02 in [product/](product/README.md) from three idea documents plus research; build order and
@@ -255,8 +254,8 @@ shared rules for user data are in that README. All user data lives only in Supab
   old family dossier print does not come back (its address redirects to the calendar print); no revoke button for the
   calendar link; parent screens approved; a weighted GPA shows as entered (4.4, not 4.0). Still to do: drop
   `list_items.priority` and `lists.rounds_plan_accepted_at` once no release reads them; the share image.
-- [ ] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): rules-based standing with
-  reasons (never a probability), fit against preferences, a pilot against real outcomes before the chip ships.
+- [x] **Chances and fit** ([product/chances-and-fit.md](product/chances-and-fit.md)): marked built 2026-10-26; every part
+  shipped under the chances specs, Explore-by-level, and the fit chips. The retired spec says where each went.
 - [x] **Admission chances** (built 2026-10-11 on `feature/chances`; planned 2026-10-10 in [chances/](chances/README.md)). Quad's estimate is proprietary: these
   site shows inputs and outputs only; the method is in [chances/method/](chances/method/standing.md) until launch, then
   moves private. Seven units:
@@ -269,31 +268,41 @@ shared rules for user data are in that README. All user data lives only in Supab
   the break point where need-based aid ends; merit classes from CDS H2A or the IPEDS grants-without-federal-aid proxy;
   curated published promises (`data/aid-policies.json`); a 25-college pilot against net price calculators gates every
   estimate. Redesigns the Cost page, the overview card, Compare, and Explore.
-- [ ] **Net price estimator** ([product/net-price-estimator.md](product/net-price-estimator.md)): 2026–27 Student
-  Aid Index and Pell as versioned reference data; per-college range from income-band net price, CDS need met, and
-  H2A merit; 4-year projection from history; pilot of 20 colleges × 5 scenarios against their own calculators.
+- [ ] **Net price estimator** ([product/net-price-estimator.md](product/net-price-estimator.md), rewritten 2026-10-26): the
+  family's own numbers on the built cost curve: Student Aid Index and Pell as versioned tables, a range per college,
+  the "what we can pay" line, a four-year total; pilot of 20 colleges × 5 scenarios against their own calculators.
 - [ ] **Award letter analyzer**: moved 2026-10-07 into the planner as its decisions-and-offers stage
   ([planner/offers.md](planner/offers.md)): College Financing Plan layout, form first and upload with Pro, one upload
   for admission and aid letters, loans separated, renewability flags, 4-year totals, questions to ask, appeal summary,
   the choice and its tasks; pooled anonymized offers as a later decision.
-- [ ] **Early decision strategy** ([product/early-decision-strategy.md](product/early-decision-strategy.md)): ED
-  vs non-ED admit rates and share of class filled early from CDS C21/C22 (after
-  [cds-admissions.md](data-expansion/cds-admissions.md)); a three-question checklist for signed-in students.
+- [x] **Early decision strategy** ([product/early-decision-strategy.md](product/early-decision-strategy.md)): marked built
+  2026-10-26 (`lib/early.ts`, the profile's "Applying early", Compare's rows, the Common App Explore filters, ED
+  opportunities on the plan). Left on the backlog, not the roadmap: the share-of-class-filled-early line and its chart.
 - [ ] **High school data** ([product/high-school-data.md](product/high-school-data.md)): NCES CCD + EDFacts + CRDC
   for all public high schools (phase 1), state report cards (phase 2), school profile PDFs through the
   college-reported engine (pilot of 100 schools, phase 3), private schools (phase 4); `/high-schools/{ncessch}`.
-- [ ] **Scattergrams** ([product/scattergrams.md](product/scattergrams.md)): counselor CSV upload (Scoir/Naviance
-  columns) scrubbed in the browser, binned, 10-point threshold; shown to that school's verified students over the
-  national ranges; opt-in pooled self-reported outcomes.
-- [ ] **Data Steward** ([product/data-steward.md](product/data-steward.md)): an agent in Actions that clusters the
-  review queue into causes, proves each against the documents, and opens proposals (check fix, hold, correct,
-  refile, re-read, recipe) for the owner to approve; Operations becomes Issues, Proposals, Audits. Needs the
-  document archive repo first.
-- [ ] **Commercialization** ([product/commercialization.md](product/commercialization.md)): Free / Plus ($1.99 or
-  $15.99/yr) / Pro ($49 pass); the feature map as one entitlement object; Stripe Checkout, Billing, webhooks;
-  pricing page; legal setup; public data stays free.
-- [ ] **Counselor portal** ([product/counselor-portal.md](product/counselor-portal.md)): organizations (IECs first,
-  schools with a data agreement), caseload dashboard, co-branded PDF dossiers, scattergram uploads, seats.
+- [ ] **Scattergrams** ([product/scattergrams.md](product/scattergrams.md)): folded 2026-10-26 into the counselor portal
+  as its last phase; the self-reported half is built as calibration. The file keeps the import, binning, threshold, and
+  visibility rules.
+- [ ] **Data Steward** ([product/data-steward.md](product/data-steward.md), revised 2026-10-26): an agent in Actions that
+  clusters the review queue into causes, proves each against the documents, and opens proposals for the owner to
+  approve; Operations becomes Issues, Proposals, To do (the documents a person has to fetch, folded in from
+  manual-collection.md and campus-sources-later.md), Decisions, Audits. Step 0: collegedata.fyi's source URLs into
+  discovery. Needs the document archive repo first.
+- [ ] **The advisor** ([product/advisor.md](product/advisor.md), planned 2026-10-26 on the owner's decisions; the rename and
+  the splash page built 2026-10-27 on `feature/advisor`, the trial left): rename the
+  plan Quad Advisor (tab "Advisor", `/advisor` with `/plan` redirecting; decided); a 14-day
+  free trial with the card collected up front and the yearly charge after, one trial per student, one reminder email;
+  the splash page a signed-out visitor sees when they open the tab, built from the plan's own components over a sample
+  student. Students 16 and older may pay with their own card.
+- [ ] **Commercialization** ([product/commercialization.md](product/commercialization.md), redrawn 2026-10-26 on the owner's
+  decision): the advisor (the plan) as the one paid product, $20 a year per student or $30 a family, annual only; everything
+  else free, counselors' organizations included; the feature map behind the planner's eight capability names; Stripe
+  Checkout and Billing for two products with the 14-day trial, webhooks; the pricing page; legal setup. The free taste
+  question closed 2026-10-26: a card-up-front trial, specified in advisor.md.
+- [ ] **Counselor portal** ([product/counselor-portal.md](product/counselor-portal.md), revised 2026-10-26, free by the
+  owner's decision): organizations (IECs first, schools with a data agreement), a caseload dashboard over students' plans
+  showing who has the advisor, co-branded PDF dossiers, and scattergram uploads as the last phase.
 - [x] **Data API** ([product/data-api.md](product/data-api.md)), built 2026-10-20: `/api/v1` and an MCP server at
   `/api/mcp` for account holders, keys on `/account/api-keys`, limits, lineage and history endpoints, `/developers`
   docs. Merged 2026-10-21 with [product/assistants.md](product/assistants.md): the same server without a key at
@@ -302,14 +311,17 @@ shared rules for user data are in that README. All user data lives only in Supab
 
 ## iPhone app
 Specs in [iphone-app/](iphone-app/README.md) (2026-10-06): every feature and function of the site as a native iPhone app.
-- [ ] **App API** ([iphone-app/api.md](iphone-app/api.md)): `/api/app/v1` screen documents built from the same `lib/`
-  code as the pages, a citation on every value, a fixed block catalog, OpenAPI document for the Swift models, bearer-token
-  user routes that reuse the Server Actions' logic once it moves into `lib/`.
-- [ ] **The app** ([iphone-app/app.md](iphone-app/app.md)): native SwiftUI, server-described screens, Supabase Auth with
-  Sign in with Apple, universal links for every site URL, offline document cache, the design tokens generated from
-  `globals.css`, accessibility, telemetry, App Store release, test plan; phase 1 signed-out parity, phase 2 accounts.
-- [ ] **Screens** ([iphone-app/screens.md](iphone-app/screens.md)): the parity map every phase is checked against, and a
-  `check-app-parity` script so a new site route must be added to the map in the same PR.
+- [ ] **App API** ([iphone-app/api.md](iphone-app/api.md), rewritten 2026-10-26): `/api/app/v1` screen documents as a
+  second route family on the built Data API library, a citation on every value, the plan's screens and actions, a fixed
+  block catalog, an OpenAPI document for the Swift models, bearer-token user routes over the Server Actions' logic once
+  it moves into `lib/`.
+- [ ] **The app** ([iphone-app/app.md](iphone-app/app.md), rewritten 2026-10-26): native SwiftUI, server-described screens,
+  the site's tab bar with Plan in the middle, Supabase Auth with Sign in with Apple, universal links for every site URL,
+  offline document cache, push for visit alerts and deadlines (phase 3), in-app purchase decided with commercialization,
+  App Store release, test plan; phase 1 signed-out parity, phase 2 accounts and the plan.
+- [ ] **Screens** ([iphone-app/screens.md](iphone-app/screens.md), rewritten 2026-10-26 at the route level): every page
+  route with its owning spec, phase, and API call; the admin console out of scope; a `check-app-parity` script so a new
+  site route must be added to the map in the same PR.
 
 ## Ideas
 Not planned work: directions from the 2026-10-03 competitive analysis (CollegeIQ, College Kickstart) and a survey of
@@ -320,18 +332,21 @@ moves into a section above.
   query with its criteria shown, recomputed at every publish.
 - [ ] **Cost to a degree** ([ideas/cost-to-a-degree.md](ideas/cost-to-a-degree.md)): the four-year plan beside the
   typical time to finish and the debt of those who leave.
-- [ ] **Near and far** ([ideas/near-and-far.md](ideas/near-and-far.md)): an Explore map view, distance and drive time
-  from a home ZIP, visit trips from the list, and the cost of getting home in the projection. *Built 2026-10-05:* the
-  home address, Explore's distance filter, and distance on lists ([product/home-and-distance.md](product/home-and-distance.md));
-  the map, airports, trips, and travel cost remain.
-- [ ] **Worst plausible spring** ([ideas/worst-plausible-spring.md](ideas/worst-plausible-spring.md)): a stress test
-  of the saved list under three scenarios, with gaps as facts, instead of a grade.
+- [ ] **Near and far** ([ideas/near-and-far.md](ideas/near-and-far.md), rewritten 2026-10-26): drive-time rings on the
+  built Explore map, the nearest airport, visit trips from the plan with each college's next tour, and the cost of getting
+  home in the family's price. The home, the distance filter, the map view, and distance on the plan are built.
+- [ ] **Worst plausible spring** ([ideas/worst-plausible-spring.md](ideas/worst-plausible-spring.md), rewritten 2026-10-26):
+  four scenarios over the plan's five levels (Safes only through everything), with gaps as facts, under the built list
+  shape's balance notice; never a grade.
 - [ ] **Colleges that would compete for you** ([ideas/would-compete-for-you.md](ideas/would-compete-for-you.md)):
   above the range, merit without need routine, demand softened, with the reasons.
-- [ ] **Cycle watch** ([ideas/cycle-watch.md](ideas/cycle-watch.md)): what changed for the coming cycle at every
-  college, from the agent's editions, plus an opt-in brief for counselors.
-- [ ] **Getting into the major** ([ideas/getting-into-the-major.md](ideas/getting-into-the-major.md)): admission
-  unit, direct admission, secondary admission, and change-of-major rules, read by the agent with quotes.
+- [ ] **Cycle watch** ([ideas/cycle-watch.md](ideas/cycle-watch.md), rewritten 2026-10-26): what changed for the coming
+  cycle, as a diff of Common App Requirements Grid editions (the CDS for non-members), on a trends page, in the digest,
+  and as a move on the plan.
+- [ ] **Getting into the major** ([ideas/getting-into-the-major.md](ideas/getting-into-the-major.md), rewritten 2026-10-26
+  as the second wave): secondary admission and change-of-major rules read by the agent at 200 colleges, a profile block,
+  two filters; the admission unit, direct admission, and published rates are built in Quad's estimate (9 universities
+  by hand so far).
 - [ ] Smaller additions proposed for existing specs (standing with its direction, the list as a calendar feed, follow
   a search, the household timeline, "check this number", a price after merit, a home ZIP, what the money never buys,
   counselor-invited students free) are listed in the ideas README, unapplied.

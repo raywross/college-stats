@@ -117,7 +117,7 @@ rigor-in-context ──► course-plan ◄──┘ (its "what it changes" line)
 ## What happens to existing specs
 | Spec | Change |
 |---|---|
-| [chances-and-fit.md](../product/chances-and-fit.md) | Its **Display**, **Fit**, and **Caveats** stay its own work item. Its published rules become the open baseline (development and, after launch, anywhere the private package isn't installed) ([estimate.md](estimate.md#architecture)); "published on the glossary" no longer applies to the production method |
+| [chances-and-fit.md](../product/chances-and-fit.md) | **Marked built 2026-10-26**: its Display, Fit, and Caveats shipped under these specs, Explore-by-level, and the fit chips; the retired spec says where each went. As planned on 2026-10-10: its **Display**, **Fit**, and **Caveats** stay its own work item. Its published rules become the open baseline (development and, after launch, anywhere the private package isn't installed) ([estimate.md](estimate.md#architecture)); "published on the glossary" no longer applies to the production method |
 | [../planner/redesign/standing.md](../planner/redesign/standing.md) | Unchanged in PR #105; [estimate.md](estimate.md) later moves `standingFor` behind the server-side interface |
 | [getting-into-the-major.md](../ideas/getting-into-the-major.md) | Stays an idea; base-rates and major-and-grades promote a first wave of its data |
 | [scattergrams.md](../product/scattergrams.md) | Unchanged; its uploads become an outcome source |

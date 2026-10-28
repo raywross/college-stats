@@ -1,5 +1,6 @@
 "use client";
 
+import { planHref } from "@/lib/planner/plan-tabs";
 import { useState, useTransition } from "react";
 import { Check } from "lucide-react";
 import Link from "next/link";
@@ -40,7 +41,7 @@ export function YourPart({ groups, today }: { groups: YourPartGroupView[]; today
       <div className="mt-2 space-y-4">
         {groups.map((g) => (
           <div key={g.studentId}>
-            <Link href={`/household/${g.studentId}/plan`} className="text-sm font-semibold text-primary underline-offset-2 hover:underline">
+            <Link href={planHref({ person: g.studentId })} className="text-sm font-semibold text-primary underline-offset-2 hover:underline">
               {g.name ?? "Student"}
             </Link>
             <ul className="mt-1 divide-y">

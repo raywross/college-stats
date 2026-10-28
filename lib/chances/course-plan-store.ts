@@ -6,6 +6,7 @@
  * field of `academics`, and saves it back through sanitizeProfile. Adding a suggested course uses the existing
  * courses save (lib/chances/courses-store.ts saveCourses): it is a planned row on the list like any other.
  */
+import { ADVISOR_PATH } from "../planner/advisor";
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/lib/auth";
 import { profileFor, saveProfile } from "@/lib/student-profile-store";
@@ -24,7 +25,7 @@ async function change(studentId: string, edit: (academics: ReturnType<typeof san
   const next = sanitizeProfile({ ...access.data, academics: { ...access.data.academics, ...edit(access.data.academics) } });
   const result = await saveProfile(studentId, next);
   if (!result.ok) return result;
-  revalidatePath("/plan");
+  revalidatePath(ADVISOR_PATH);
   revalidatePath("/household", "layout");
   return { ok: true };
 }

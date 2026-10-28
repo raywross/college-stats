@@ -10,6 +10,7 @@
  *   20261008133000_planner_rounds.sql sets `priority_by` from the session) and the order before, for "Put it back".
  * - priorityAttribution: the "Reordered by Dad" line. myPlanRound: the profile's "On your plan: EA" line.
  */
+import { planHref } from "./plan-tabs";
 import { revalidatePath } from "next/cache";
 import { authConfigured, getUser } from "@/lib/auth";
 import { allowed, NOT_ALLOWED_MESSAGE, type Capability } from "@/lib/entitlements";
@@ -79,5 +80,5 @@ export async function myPlanRound(unitId: string): Promise<{ round: ListRound | 
   if (items.error || found.length === 0) return null;
   const defaultId = rows.find((l) => l.is_default)?.id;
   const item = found.find((i) => i.list_id === defaultId) ?? found[0];
-  return { round: isListRound(item.round) ? item.round : null, href: `/household/${studentId}/plan?stage=2` };
+  return { round: isListRound(item.round) ? item.round : null, href: planHref({ person: studentId, tab: "colleges" }) };
 }

@@ -75,5 +75,5 @@ export function usePlanDot(signedIn: boolean | undefined): { lit: boolean; label
   }, [signedIn]);
   const lit = Boolean(signedIn) && Boolean(fetched?.dueSoon);
   // The dot lights for a deadline within a week or a move added since the plan was last opened; its name says which.
-  return { lit, label: fetched?.deadline ? "A deadline in the next 7 days" : "Something new on your plan" };
+  return { lit, label: fetched?.deadline ? "A deadline in the next 7 days" : "Something new in your advisor" };
 }

@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { PlanFrame } from "@/components/planner/PlanFrame";
 import { PlanPeople, type PlanPerson, type PlanPersonDetail } from "@/components/planner/PlanPeople";
-import SignedOutPlan from "@/components/planner/SignedOutPlan";
+import { Splash } from "@/components/advisor/Splash";
 import { authConfigured, getUser } from "@/lib/auth";
 import { type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/planner/load";
 import { resolveSelectedChild, type SwitchableChild } from "@/lib/planner/plan-frame";
@@ -14,6 +14,7 @@ import { profileProgress, SECTION_STEP } from "@/lib/planner/profile-progress";
 import { recordHref, recordProgress, type RecordBack } from "@/lib/planner/record";
 import { RecordInline } from "@/components/record/RecordInline";
 import { defaultTab, parseTab, planHref } from "@/lib/planner/plan-tabs";
+import { ADVISOR_SHORT } from "@/lib/planner/advisor";
 import { nowMoves, topMove } from "@/lib/planner/moves";
 import { importanceFactsFrom } from "@/lib/planner/importance-facts";
 import { withTiming } from "@/lib/timing-server";
@@ -26,7 +27,7 @@ import { profileFor, profilesICanSee } from "@/lib/student-profile-store";
 import type { StudentProfileData } from "@/lib/student-profile";
 import type { Season } from "@/lib/planner/seasons";
 
-export const metadata: Metadata = { title: "Plan" };
+export const metadata: Metadata = { title: ADVISOR_SHORT };
 
 /** Set by `PlanPeople.tsx` on every pick; read here so a guardian's next visit opens the same child (page.md
  * "Routes", decision 2026-10-11). A plain non-`httpOnly` cookie: a per-viewer convenience, nothing sensitive. */
@@ -41,21 +42,21 @@ function planFallback(loaded: PlanLoad, first: string | null): ReactNode | null 
     return (
       <section className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground sm:p-6">
         <h2 className="font-display text-xl font-bold text-foreground">No list yet</h2>
-        <p className="mt-1">The plan starts from {first ? `${first}'s` : "the"} list. Add colleges from Explore or any college&apos;s page to get started.</p>
+        <p className="mt-1">{first ? `${first}'s advisor starts from their list.` : "Your advisor starts from your list."} Add colleges from Explore or any college&apos;s page to get started.</p>
       </section>
     );
   }
   if (loaded.kind === "setup-missing") {
     return (
       <section className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground sm:p-6">
-        <h2 className="font-display text-xl font-bold text-foreground">The plan isn&apos;t set up yet</h2>
+        <h2 className="font-display text-xl font-bold text-foreground">Your advisor isn&apos;t set up yet</h2>
         <p className="mt-1">The planner&apos;s tables haven&apos;t been added to the database. The list still works.</p>
       </section>
     );
   }
   return (
     <section className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground sm:p-6">
-      That plan isn&apos;t one you can see.
+      That student&apos;s advisor isn&apos;t one you can see.
     </section>
   );
 }
@@ -107,8 +108,8 @@ function nextDeadlineOf(load: PlanLoad | undefined): string | null {
 }
 
 /**
- * /plan (specs/planner/redesign/page.md): one address for a student's own plan and for a parent's family. Signed
- * out: the pitch and the numbers step (SignedOutPlan). A student: their own plan, Colleges by default. A guardian
+ * /advisor, formerly /plan (specs/product/advisor.md; specs/planner/redesign/page.md): one address for a student's own plan and for a parent's family. Signed
+ * out: Quad Advisor's splash page (components/advisor/Splash.tsx; advisor.md "3. The page"). A student: their own plan, Colleges by default. A guardian
  * always lands on one child now (decision 2026-10-11, no Everyone): `?for=` when it names a real child, else the
  * last child viewed (the `plan_child` cookie), else the child with the soonest open deadline, else the first.
  * `?tab=` opens a tab (links, so back and forward work); an unrecognized or unavailable one falls back to the
@@ -118,7 +119,7 @@ function nextDeadlineOf(load: PlanLoad | undefined): string | null {
  */
 export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string }> }) {
   await connection();
-  return withTiming("/plan", () => renderPlan(props));
+  return withTiming("/advisor", () => renderPlan(props));
 }
 
 async function renderPlan({
@@ -138,7 +139,7 @@ async function renderPlan({
   const back: RecordBack = backParam === "record" || backParam === "inline" ? backParam : "plan";
 
   const user = await getUser();
-  if (!user) return <SignedOutPlan />;
+  if (!user) return <Splash />;
 
   // The plan most likely to be shown starts loading now, alongside who the viewer is (U20 "real speed"): the child
   // named by `?for=` or last viewed, else (null) the viewer's own. loadPlanFor uses it only if it's that student's.
@@ -158,7 +159,7 @@ async function renderPlan({
     const loaded = await loadPlanFor(viewer.student.id, undefined, candidate === null ? { early } : {});
     const fallback = planFallback(loaded, null);
     if (fallback || loaded.kind !== "ready") return fallback;
-    const self: PlanPerson = { studentId: null, name: loaded.ctx.student?.display_name ?? "You", gradYear: loaded.ctx.student?.grad_year ?? null, colorSlot: 0, href: "/plan" };
+    const self: PlanPerson = { studentId: null, name: loaded.ctx.student?.display_name ?? "You", gradYear: loaded.ctx.student?.grad_year ?? null, colorSlot: 0, href: planHref({}) };
     if (recordInline && loaded.ctx.viewer.canEdit) {
       const profile = await profileFor(viewer.student.id);
       if (profile) {
@@ -189,7 +190,7 @@ async function renderPlan({
   if (viewer.kind === "none") {
     return (
       <section className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground sm:p-6">
-        No student yet. Add one from <Link href="/household" className="font-semibold text-primary hover:underline">Household</Link> to start a plan.
+        No student yet. Add one from <Link href="/household" className="font-semibold text-primary hover:underline">Household</Link> to get started.
       </section>
     );
   }
@@ -209,7 +210,7 @@ async function renderPlan({
   // Every child, in roster order, as an initials circle (page.md "The people line"); the status text is gone.
   const people: PlanPerson[] = children.map((c) => ({ studentId: c.studentId, name: c.name, gradYear: c.gradYear, colorSlot: c.colorSlot, href: planHref({ person: c.studentId }) }));
   // Each child's chip details from their profile, so tapping a circle shows the chip and Edit at once (PlanPeople,
-  // app/plan/loading.tsx) while that child's plan loads.
+  // app/advisor/loading.tsx) while that child's plan loads.
   const profileOf = new Map(profiles.map((p) => [p.student.id, p]));
   const details: Record<string, PlanPersonDetail> = Object.fromEntries(
     children.map((c) => {

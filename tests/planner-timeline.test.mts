@@ -373,7 +373,7 @@ test("the feed: titles only, never a detail, a note, or a number", () => {
     events.map((e) => e.summary),
     ["FAFSA opens", "Michigan: apply (ED I)", "Michigan: campus tour", "Retake the SAT for a and send", "Thank your recommenders (until Jan 31)"],
   );
-  const ics = icsCalendar(events, { name: "Quad plan", stamp: NOW });
+  const ics = icsCalendar(events, { name: "Quad Advisor", stamp: NOW });
   assert.ok(!/DESCRIPTION:/.test(ics), "no descriptions");
   assert.ok(!ics.includes("$") && !ics.includes("1500") && !ics.includes("3.9") && !ics.includes("File early"));
 });
@@ -412,14 +412,14 @@ test("digest: a task due within seven days adds a line; a digest with no changes
   const changes = [{ publish_id: 1, published_at: NOW, unit_id: "100", field: "admissions.acceptance_rate", kind: "updated", old_value: 0.2, new_value: 0.18, old_year: null, new_year: null, source: null, old_source: null, release: null }];
   const built = buildDigest([{ unit_id: "100", name: "Michigan", changes } as never], { siteUrl: "https://q.example", unsubscribeToken: "x".repeat(40) }, { tasks: [{ title: "Michigan: apply (ED I)", when: "Nov 1" }] });
   assert.ok(built);
-  assert.match(built.text, /Coming up on your plan\n\n- Michigan: apply \(ED I\) · Nov 1/);
-  assert.match(built.html, /Coming up on your plan/);
+  assert.match(built.text, /Coming up in your advisor\n\n- Michigan: apply \(ED I\) · Nov 1/);
+  assert.match(built.html, /Coming up in your advisor/);
   assert.equal(built.tasks.length, 1);
   assert.equal(buildDigest([], { siteUrl: "https://q.example", unsubscribeToken: "x".repeat(40) }, { tasks: [{ title: "A", when: "Nov 1" }] }), null);
 });
 
 test("Your week: lines and one link, nothing when nothing is due; the default by grade", () => {
-  const base = { firstName: "Alex", siteUrl: "https://q.example", planPath: "/household/s1/plan", unsubscribeToken: "t".repeat(40) };
+  const base = { firstName: "Alex", siteUrl: "https://q.example", planPath: "/advisor?for=s1", unsubscribeToken: "t".repeat(40) };
   assert.equal(buildYourWeek({ ...base, week: [], overdue: null }), null);
   const built = buildYourWeek({
     ...base,
@@ -428,7 +428,7 @@ test("Your week: lines and one link, nothing when nothing is due; the default by
   })!;
   assert.match(built.text, /Overdue: Tufts: decision expected \(EA\): Oct 2/);
   assert.match(built.text, /- FAFSA opens: Oct 1 \(Parent\)/);
-  assert.match(built.text, /Open your plan: https:\/\/q\.example\/household\/s1\/plan\?utm_source=your-week/);
+  assert.match(built.text, /Open your advisor: https:\/\/q\.example\/advisor\?for=s1&utm_source=your-week/);
   assert.equal(built.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
   assert.match(built.unsubscribeHref, /\/unsubscribe\/t+\/week/);
   assert.equal(yourWeekDefault("junior_fall"), false);

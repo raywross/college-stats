@@ -109,7 +109,7 @@ export async function digestTaskLines(
       for (const { task, closed } of changedCollegeMoves(tasks, units, changedSet, changed.since, today)) {
         shown.add(task.id);
         const d = task.due_on ?? task.window_end;
-        moveLines.push({ title: outsideTitle(task, nameOf(task)), when: closed ? "no longer needed" : d ? shortDay(d) : "new on your plan" });
+        moveLines.push({ title: outsideTitle(task, nameOf(task)), when: closed ? "no longer needed" : d ? shortDay(d) : "new in your advisor" });
       }
     }
     for (const t of dueSoon(tasks, today)) {

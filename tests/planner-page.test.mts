@@ -1,6 +1,6 @@
 /**
  * The redesigned Plan page's frame (lib/planner/plan-frame.ts; specs/planner/redesign/page.md, build-plan.md "U2
- * Page frame & navigation"): which child a guardian's `/plan` opens on, where an old `?stage=` person link lands,
+ * Page frame & navigation"): which child a guardian's `/advisor` opens on, where an old `?stage=` person link lands,
  * the header card's season words, Next up, the header nav dot, first-time setup, and the top-level nav order.
  * `npm test`.
  */
@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ADVISOR_SHORT } from "../lib/planner/advisor.ts";
 import {
   dayLabel,
   daysBetween,
@@ -56,12 +57,12 @@ test("resolveSelectedChild: ?for= wins, else the last viewed, else the soonest o
 });
 
 test("personPlanRedirectHref: an old person-plan link becomes /plan?for=<id>, with ?stage= mapped to a tab", () => {
-  assert.equal(personPlanRedirectHref("p1", undefined), "/plan?for=p1");
-  assert.equal(personPlanRedirectHref("p1", "1"), "/plan?for=p1&tab=colleges");
-  assert.equal(personPlanRedirectHref("p1", "4"), "/plan?for=p1&tab=calendar");
-  assert.equal(personPlanRedirectHref("p1", "6"), "/plan?for=p1&tab=offers");
-  assert.equal(personPlanRedirectHref("p1", ["5"]), "/plan?for=p1&tab=colleges");
-  assert.equal(personPlanRedirectHref("p1", "not-a-stage"), "/plan?for=p1");
+  assert.equal(personPlanRedirectHref("p1", undefined), "/advisor?for=p1");
+  assert.equal(personPlanRedirectHref("p1", "1"), "/advisor?for=p1&tab=colleges");
+  assert.equal(personPlanRedirectHref("p1", "4"), "/advisor?for=p1&tab=calendar");
+  assert.equal(personPlanRedirectHref("p1", "6"), "/advisor?for=p1&tab=offers");
+  assert.equal(personPlanRedirectHref("p1", ["5"]), "/advisor?for=p1&tab=colleges");
+  assert.equal(personPlanRedirectHref("p1", "not-a-stage"), "/advisor?for=p1");
 });
 
 /* ------------------------------------------------------------------ */
@@ -228,18 +229,21 @@ test("shortSummaryLine drops the Dream and shortens next: Name, Date (Round) to 
 /* Nav order                                                           */
 /* ------------------------------------------------------------------ */
 
-test("the desktop header lists Explore, Plan, Compare, High schools, Glossary, Data, with Plan second", () => {
+/** A label as written: a string literal, or `ADVISOR_SHORT` (lib/planner/advisor.ts) read as its value. */
+const labelOf = (m: RegExpMatchArray) => m[1] ?? (m[2] === "ADVISOR_SHORT" ? ADVISOR_SHORT : m[2]);
+
+test("the desktop header lists Explore, Advisor, Compare, High schools, Glossary, Data, with Advisor second (the Plan tab, renamed: specs/product/advisor.md)", () => {
   const src = read("components/layout/Header.tsx");
-  const labels = [...src.matchAll(/label:\s*"([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(labels, ["Explore", "Plan", "Compare", "High schools", "Glossary", "Data"]);
+  const labels = [...src.matchAll(/label:\s*(?:"([^"]+)"|([A-Z_]+)\b)/g)].map(labelOf);
+  assert.deepEqual(labels, ["Explore", "Advisor", "Compare", "High schools", "Glossary", "Data"]);
 });
 
-test("the phone tab bar is Explore, Search, Plan, Compare, More, with Plan's icon ListChecks and no Home tab", () => {
+test("the phone tab bar is Explore, Search, Advisor, Compare, More, with Advisor's icon ListChecks and no Home tab", () => {
   const src = read("components/layout/BottomNav.tsx");
-  const tabLabels = [...src.matchAll(/<Tab\b[^>]*\blabel="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(tabLabels, ["Explore", "Search", "Plan", "Compare", "More"]);
+  const tabLabels = [...src.matchAll(/<Tab\b[^>]*?\blabel=(?:"([^"]+)"|\{([A-Z_]+)\})/g)].map(labelOf);
+  assert.deepEqual(tabLabels, ["Explore", "Search", "Advisor", "Compare", "More"]);
   assert.doesNotMatch(src, /label="Home"/);
-  assert.match(src, /href="\/plan"[^]*?icon=\{<ListChecks/);
+  assert.match(src, /href=\{ADVISOR_PATH\}[^]*?icon=\{<ListChecks/);
   assert.match(src, /from "lucide-react"/);
   assert.match(src, /\bListChecks\b/);
 });
@@ -248,7 +252,7 @@ test("the plan opens on Next steps (owner, 2026-10-14): the page and the frame f
   const { defaultTab } = await import("../lib/planner/plan-tabs.ts");
   assert.equal(defaultTab("student", false), "next");
   assert.equal(defaultTab("guardian", false), "next");
-  const page = read("app/plan/page.tsx");
+  const page = read("app/advisor/page.tsx");
   assert.match(page, /tab=\{tab \?\? defaultTab\("student", false\)\}/);
   assert.match(page, /tab=\{tab \?\? defaultTab\("guardian", false\)\}/);
   assert.match(read("components/planner/PlanFrame.tsx"), /: defaultTab\(viewer, false\)/);
@@ -257,8 +261,8 @@ test("the plan opens on Next steps (owner, 2026-10-14): the page and the frame f
   assert.match(tabs, /tab === "next" && <NextSteps /);
 });
 
-test("guard: a header missing Plan, or out of order, is caught by the label check", () => {
+test("guard: a header missing Advisor, or out of order, is caught by the label check", () => {
   const bad = 'const NAV_ITEMS = [{ label: "Explore", href: "/explore" }, { label: "Compare", href: "/compare" }];';
-  const labels = [...bad.matchAll(/label:\s*"([^"]+)"/g)].map((m) => m[1]);
-  assert.notDeepEqual(labels, ["Explore", "Plan", "Compare", "High schools", "Glossary", "Data"]);
+  const labels = [...bad.matchAll(/label:\s*(?:"([^"]+)"|([A-Z_]+)\b)/g)].map(labelOf);
+  assert.notDeepEqual(labels, ["Explore", "Advisor", "Compare", "High schools", "Glossary", "Data"]);
 });

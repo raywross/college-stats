@@ -1,8 +1,24 @@
 # Scattergrams: Outcomes From Your High School
 
-> Status: **planned** (not built). After [high-school-data.md](high-school-data.md), [accounts.md](accounts.md), and
-> [saved-lists.md](saved-lists.md); the upload side belongs with [counselor-portal.md](counselor-portal.md). Part of
-> [product](README.md).
+> Status: **folded** into [counselor-portal.md](counselor-portal.md#scattergrams) 2026-10-26 (roadmap review of
+> 2026-10-25); not a roadmap item of its own any more. Planned 2026-10-02 after [high-school-data.md](high-school-data.md)
+> (built), [accounts.md](accounts.md) (built), and saved lists (built, now the planner's list). What changed:
+>
+> - **The self-reported half is built** as [chances/calibration.md](../chances/calibration.md) (2026-10-11): outcome
+>   snapshots with the student's consent, the pooled set, "students like you" counts with the 50-outcome floor, and
+>   the published accuracy summary. The "Self-reported outcomes" section below describes it as planned; calibration.md
+>   is what runs.
+> - **The counselor-upload half cannot be built before the portal**: the uploader is an organization member, students
+>   are verified through the organization, and the organization owns the data. So it is a phase of the portal, specified
+>   there, and this file keeps the rules the phase will follow (the import's client-side scrubbing, the bins, the
+>   10-point threshold, who sees what).
+> - **The estimate does not change.** The "local mode" standing below ("From your school, 8 of 11 applicants with your
+>   numbers or better were admitted") is replaced by a fact line beside Quad's estimate, drawn from the dots and cited to
+>   the upload. Quad's estimate never uses the high school and says so
+>   ([chances/README.md](../chances/README.md#quads-estimate-is-proprietary), the commitment); the day that changes,
+>   the site says it, as the commitment promises.
+>
+> The text below is the plan as written on 2026-10-02. Part of [product](README.md).
 
 ## Goal
 A scattergram plots past applicants from one high school to one college by GPA and test score, marked admitted,

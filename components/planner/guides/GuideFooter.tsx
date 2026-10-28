@@ -4,7 +4,7 @@
  * A guide's footer (specs/planner/v3/now.md "The guide pattern"; build-plan.md "The guide page"): with an open move
  * and edit access, **Done with this** and **Skip for now** (the built `tick` / `dismiss`, optimistic: the buttons
  * lock at once, a refused write unlocks them and shows its message), each then back to the plan's Next steps; always
- * "Back to your plan". A guardian with edit access skips too (owner, 2026-10-16); `dismissed_by` records who.
+ * "Back to your advisor". A guardian with edit access skips too (owner, 2026-10-16); `dismissed_by` records who.
  */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -73,7 +73,7 @@ export function GuideFooter({ move, canEdit, isGuardian, person }: GuideFooterPr
           </>
         )}
         <Link href={back} className="inline-flex min-h-11 items-center px-3 text-sm font-semibold text-primary hover:underline sm:ml-auto">
-          Back to your plan
+          Back to your advisor
         </Link>
       </div>
       {error && (

@@ -72,7 +72,7 @@ export function TextConsent({ view, target, studentName }: { view: ConsentView; 
       ) : (
         <p className="text-muted-foreground">
           {view.who === "guardian"
-            ? "For students under 18, a parent or guardian turns texts on from the student's plan."
+            ? "For students under 18, a parent or guardian turns texts on from the student's advisor."
             : "Students 18 and older turn texts on for themselves."}
         </p>
       )}

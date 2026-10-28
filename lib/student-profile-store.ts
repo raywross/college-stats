@@ -175,7 +175,7 @@ export async function saveStory(_prev: StorySaveState, form: FormData): Promise<
  */
 export async function saveRecommenders(studentId: string, entries: unknown): Promise<SaveProfileResult> {
   const user = await getUser();
-  if (!user) return { ok: false, message: "Sign in to save your plan." };
+  if (!user) return { ok: false, message: "Sign in to save your recommenders." };
   const access = await profileFor(studentId);
   if (!access) return { ok: false, message: "You don't have permission to edit this profile." };
   if (!access.canEdit) return { ok: false, message: "You don't have permission to edit this profile." };

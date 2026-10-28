@@ -57,7 +57,7 @@ const FEB_LEAD = "February is for choosing next year's courses.";
 const PSAT_LINE = "If you took the PSAT in the fall, its score report is out: read it for what to practice, not as a grade.";
 const FEB_NEXT: Record<"freshman_feb" | "sophomore_feb", string> = {
   freshman_feb: "Next: sophomore year, from August.",
-  sophomore_feb: "Next: junior year, when the plan starts.",
+  sophomore_feb: "Next: junior year, when your advisor gets busy.",
 };
 
 /** The brief's name for its turn: "Junior spring", "Freshman-year February". */
@@ -152,7 +152,7 @@ const COLORS = { text: "#1c1f26", muted: "#6b7280", border: "#e4e4e7", bg: "#fff
 export function briefSubject(c: Pick<BriefContent, "role" | "key" | "firstName">): string {
   const label = briefLabel(c.key);
   if (c.role === "guardian") return `${c.firstName ? `${c.firstName}'s` : "Your student's"} ${label[0].toLowerCase()}${label.slice(1)}: your part`;
-  return c.firstName ? `${label} for ${c.firstName}` : `${label}: your plan`;
+  return c.firstName ? `${label} for ${c.firstName}` : `${label}: your advisor`;
 }
 
 /** The email. Every line is already scrubbed of figures by briefContent; the subject carries only a name. */

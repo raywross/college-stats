@@ -8,6 +8,7 @@
  * The draft, the save, and the profile mapping stay in ./intake.ts (build-plan.md review note 1); the per-section rule
  * is ./profile-progress.ts `sectionDone`. Pure and client-safe (no server imports).
  */
+import { ADVISOR_PATH } from "./advisor.ts";
 import {
   activityStepAt,
   basicsSummary,
@@ -295,7 +296,7 @@ export function recordHref(opts: { person: string | null; step?: RecordStep | nu
   q.set("record", "1");
   if (opts.step != null && opts.step !== RECORD_REVIEW && opts.step !== RECORD_DONE) q.set("step", String(opts.step));
   if (opts.back) q.set("back", opts.back);
-  return `/plan?${q.toString()}`;
+  return `${ADVISOR_PATH}?${q.toString()}`;
 }
 
 /** The record overview's address (the Numbers page's, renamed): `/household/{id}/record`. */

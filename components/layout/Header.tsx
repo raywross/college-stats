@@ -10,6 +10,7 @@ import { useMe } from "@/components/account/useMe";
 import { Logo } from "@/components/layout/Logo";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useCompareIds } from "@/lib/compare";
+import { ADVISOR_PATH, ADVISOR_SHORT } from "@/lib/planner/advisor";
 import { cn } from "@/lib/utils";
 import { usePlanDot } from "./usePlanDot";
 
@@ -17,7 +18,7 @@ import { usePlanDot } from "./usePlanDot";
 
 const NAV_ITEMS = [
   { label: "Explore", href: "/explore" },
-  { label: "Plan", href: "/plan" },
+  { label: ADVISOR_SHORT, href: ADVISOR_PATH },
   { label: "Compare", href: "/compare" },
   { label: "High schools", href: "/high-schools" },
   { label: "Glossary", href: "/glossary" },
@@ -79,7 +80,7 @@ export function Header() {
                     {compareIds.length}
                   </span>
                 )}
-                {item.href === "/plan" && planDot.lit && (
+                {item.href === ADVISOR_PATH && planDot.lit && (
                   <span className="inline-flex size-2 animate-pop-in rounded-full bg-pop" aria-label={planDot.label} />
                 )}
               </Link>

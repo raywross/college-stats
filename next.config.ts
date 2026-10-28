@@ -73,6 +73,12 @@ const nextConfig: NextConfig = {
       // Following became the Updates switch on each college on your list (specs/product/household-hub.md "What
       // goes"); /me/list sends the person on to their own list. Not permanent: /me/list's own target may move.
       { source: "/me/following", destination: "/me/list", permanent: false },
+      // The plan became Quad Advisor (specs/product/advisor.md "1. The name", "How the rename is built"): the page tree
+      // moved from /plan to /advisor. Permanent, for good: emails, texts, and calendar feeds already carry /plan links.
+      // The query string passes through (`/plan?for=…&tab=calendar` → `/advisor?for=…&tab=calendar`); /api/plan/*
+      // is a different path and stays.
+      { source: "/plan", destination: "/advisor", permanent: true },
+      { source: "/plan/:path*", destination: "/advisor/:path*", permanent: true },
     ];
   },
   async rewrites() {

@@ -63,7 +63,7 @@ export function ChancesAccuracy({ view, seasonInProgress }: { view: SummaryView 
         <Card title={NOT_ENOUGH}>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             The first summary comes after the season for the class entering in fall {seasonInProgress}, once students
-            who applied share their results. Sharing is a choice each student makes in their plan, and it can be turned
+            who applied share their results. Sharing is a choice each student makes in their advisor, and it can be turned
             off any time.
           </p>
         </Card>

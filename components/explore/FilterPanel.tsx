@@ -1,5 +1,6 @@
 "use client";
 
+import { ADVISOR_PATH } from "@/lib/planner/advisor";
 import { useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -234,7 +235,7 @@ function ForYouSection({ group }: { group: ForYouGroup | null }) {
         </p>
       ) : status === "no-numbers" || status === "no-student" ? (
         <p className="text-sm text-muted-foreground">
-          <Link href={group?.recordHref ?? "/plan?record=1"} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
+          <Link href={group?.recordHref ?? `${ADVISOR_PATH}?record=1`} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
             Add your grades and a test choice to filter by your level
           </Link>
         </p>

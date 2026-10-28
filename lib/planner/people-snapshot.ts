@@ -1,6 +1,6 @@
 /**
  * The people line a guardian just tapped, held in the browser for the moment between the tap and the new plan
- * arriving (U20 "real speed"): PlanPeople writes it on a tap, app/plan/loading.tsx's PendingPeopleLine reads it so
+ * arriving (U20 "real speed"): PlanPeople writes it on a tap, app/advisor/loading.tsx's PendingPeopleLine reads it so
  * the tapped student's chip and Edit show at once instead of a skeleton. Module state in the browser tab only (never
  * the server: a server render always starts with nothing pending); a snapshot older than a few seconds is ignored,
  * and the real line clears it when it mounts.

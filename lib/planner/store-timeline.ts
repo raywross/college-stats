@@ -132,7 +132,7 @@ export async function planIcsOnce(listId: string): Promise<{ ok: true; ics: stri
     plan.visits,
     collegeNames(plan.items, byUnit),
   );
-  return { ok: true, ics: icsCalendar(events, { name: `${SITE_NAME} plan` }), filename: "plan.ics" };
+  return { ok: true, ics: icsCalendar(events, { name: `${SITE_NAME} Advisor` }), filename: "plan.ics" };
 }
 
 /* ------------------------------------------------------------------ */
@@ -170,7 +170,7 @@ export async function editOwnTask(
   if (!("supabase" in r)) return r;
   const { data, error } = await r.supabase.from("plan_tasks").update(row).eq("id", taskId).eq("source", "own").select("id");
   if (error) return fail(error, "editOwnTask");
-  if (!data?.length) return { ok: false, message: "Only the family's own tasks can be changed, by someone who can edit the plan." };
+  if (!data?.length) return { ok: false, message: "Only the family's own tasks can be changed, by someone who can edit the list." };
   refresh();
   return { ok: true };
 }
@@ -182,7 +182,7 @@ export async function deleteOwnTask(taskId: string): Promise<TimelineResult> {
   if (!("supabase" in r)) return r;
   const { data, error } = await r.supabase.from("plan_tasks").delete().eq("id", taskId).eq("source", "own").select("id");
   if (error) return fail(error, "deleteOwnTask");
-  if (!data?.length) return { ok: false, message: "Only the family's own tasks can be deleted, by someone who can edit the plan." };
+  if (!data?.length) return { ok: false, message: "Only the family's own tasks can be deleted, by someone who can edit the list." };
   refresh();
   return { ok: true };
 }

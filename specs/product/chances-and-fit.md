@@ -1,13 +1,22 @@
 # Chances and Fit: Where You Stand
 
-> Status: **planned** (not built). After [student-profile.md](student-profile.md) and [saved-lists.md](saved-lists.md);
-> better with [cds-admissions.md](../data-expansion/cds-admissions.md) (GPA bands) and
-> [scattergrams.md](scattergrams.md) (local outcomes). Part of [product](README.md).
-> *2026-10-10:* the rules below became the planner's `standingFor` (planner redesign, PR #105). They are now the
-> **open baseline** only: production uses Quad's proprietary estimate, whose method is never shown on the site
-> ([chances/README.md](../chances/README.md#quads-estimate-is-proprietary), [chances/estimate.md](../chances/estimate.md)).
-> The pilot became [chances/calibration.md](../chances/calibration.md). The **Display**, **Fit**, and **Caveats** here
-> remain this spec's work.
+> Status: **built** (retired from the roadmap 2026-10-26; nothing left to build here). Planned 2026-10-02; superseded
+> piece by piece and marked built after the roadmap review of 2026-10-25. Where each part went:
+>
+> | This spec's part | Where it was built |
+> |---|---|
+> | The rules (Reach / Target / Likely from score and GPA position and the admit rate) | The planner's `standingFor` (PR #105, 2026-10-10), then the **open baseline** behind Quad's proprietary estimate ([chances/estimate.md](../chances/estimate.md#architecture)); production uses the five-level method ([chances/levels.md](../chances/levels.md)) |
+> | The "Where you stand" chip and `StandingCard` on the profile; Compare's row; the planner's panel | [chances/estimate.md "As built (the estimate on the site)"](../chances/estimate.md#as-built-2026-10-11-the-estimate-on-the-site) |
+> | The Explore standing facet | **For you** levels, five chips, server-side ([planner/record/explore-levels.md](../planner/record/explore-levels.md), 2026-10-16) |
+> | Fit against the student's preferences | Explore's "Fits my scores" and "Fits my preferences" chips ([student-profile.md](student-profile.md#display), `lib/explore-fit.ts`); the Build your list guide's candidates ([planner/v3/guides/list-size.md](../planner/v3/guides/list-size.md)) read the same preferences. The "best fit" sort and a matches-and-mismatches list were not built and are not planned |
+> | The caveats shown every time | Catalog sentences `estimate.caveat.*` under every card |
+> | The pilot against real outcomes | [chances/calibration.md](../chances/calibration.md) (snapshots with consent, the published accuracy summary) |
+> | Local outcomes from the student's high school | Waits for the counselor portal ([counselor-portal.md](counselor-portal.md#scattergrams)); the estimate does not use the high school and says so |
+>
+> The open questions are answered: weighted GPA is an input of the method since 2026-10-12
+> ([chances/inputs-beyond-academics.md](../chances/inputs-beyond-academics.md)), and tiers are
+> [commercialization.md](commercialization.md)'s to draw. The text below is kept as the record of the open baseline
+> and of the display that was planned; the sections it names are built as the table says. Part of [product](README.md).
 
 ## Goal
 For each college, tell a student where their numbers sit relative to admitted students, and suggest **Reach /

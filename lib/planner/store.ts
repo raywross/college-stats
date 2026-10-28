@@ -117,7 +117,7 @@ async function updateTask(taskId: string, patch: Record<string, unknown>, what: 
   if (!("supabase" in r)) return r;
   const { data, error } = await r.supabase.from("plan_tasks").update(patch).eq("id", taskId).select("id");
   if (error) return fail(error, what);
-  if (!data?.length) return { ok: false, message: "Only someone who can edit this plan can change it." };
+  if (!data?.length) return { ok: false, message: "Only someone who can edit this list can change it." };
   refresh();
   return { ok: true };
 }
@@ -149,7 +149,7 @@ export async function dismiss(taskId: string, dismissed = true): Promise<PlanAct
   if (!("supabase" in r)) return r;
   const { data, error } = await updateTaskSkip(r.supabase, taskId, Boolean(dismissed), r.userId);
   if (error) return fail(error, "dismiss");
-  if (!data?.length) return { ok: false, message: "Only someone who can edit this plan can change it." };
+  if (!data?.length) return { ok: false, message: "Only someone who can edit this list can change it." };
   refresh();
   return { ok: true };
 }

@@ -1032,7 +1032,7 @@ const entries = {
     term: "Weighted GPA",
     short: "A GPA where honors, AP, or IB classes earn extra: often half a point for honors and a full point for AP or IB, so an A in an AP class counts 5. It can run above 4.0.",
     long: "How much extra each class earns depends on the high school, so a weighted GPA can't be turned into an unweighted one without the transcript. It can be placed roughly: weighting only adds, at most a point per class, so a weighted 4.4 means an unweighted GPA somewhere from 3.4 to 4.0.",
-    why: "A college's weighted average (some publish 4.2 or 4.5) can't be compared with an unweighted 3.8, so the plan reads a weighted GPA as that rough range.",
+    why: "A college's weighted average (some publish 4.2 or 4.5) can't be compared with an unweighted 3.8, so Quad reads a weighted GPA as that rough range.",
     category: "Admissions",
     related: ["unweighted-gpa", "high-school-gpa", "gpa-estimate"],
   },
@@ -1047,7 +1047,7 @@ const entries = {
   "gpa-estimate": {
     term: "Estimated GPA",
     short: "For a college that doesn't publish an unweighted GPA average, the range typical of colleges with similar test scores and admit rates. It's an estimate, never the college's own figure.",
-    long: "Colleges' average GPAs follow their test scores and admit rates closely, so the plan fits that relationship on the colleges that publish an unweighted average and applies it to the rest. The fit also reads each college's graduation rate and the share of first-years who sent test scores, because at a test-optional college the test scores describe only the students who sent them. The range is as wide as the fit's usual miss, and a college that publishes only a weighted average is kept within what that average allows. The ⓘ beside it names the formula, how many colleges it was fitted on, and how far off it typically is.",
+    long: "Colleges' average GPAs follow their test scores and admit rates closely, so Quad fits that relationship on the colleges that publish an unweighted average and applies it to the rest. The fit also reads each college's graduation rate and the share of first-years who sent test scores, because at a test-optional college the test scores describe only the students who sent them. The range is as wide as the fit's usual miss, and a college that publishes only a weighted average is kept within what that average allows. The ⓘ beside it names the formula, how many colleges it was fitted on, and how far off it typically is.",
     category: "Admissions",
     related: ["unweighted-gpa", "weighted-gpa", "high-school-gpa"],
   },
@@ -1163,7 +1163,7 @@ const entries = {
   "single-choice-early-action": {
     term: "Single-choice early action",
     short: "Another name for restrictive early action: a non-binding early round where you agree not to apply early elsewhere, except where the college allows it.",
-    long: "Most such colleges allow early applications to public universities and to colleges with non-binding rolling admission; some allow other early action; all forbid early decision elsewhere. The Common Data Set only says whether the plan is restrictive, so check the college's own page for what it allows.",
+    long: "Most such colleges allow early applications to public universities and to colleges with non-binding rolling admission; some allow other early action; all forbid early decision elsewhere. The Common Data Set only says whether the round is restrictive, so check the college's own page for what it allows.",
     category: "Admissions",
     related: ["restrictive-early-action", "early-action", "early-decision"],
   },
@@ -1702,17 +1702,17 @@ const entries = {
     related: ["follow"],
   },
 
-  // The planner (specs/planner/model.md)
+  // The advisor (specs/product/advisor.md "1. The name"; the key stays `plan` so old links keep working)
   plan: {
-    term: "Plan",
-    short: "A student's college plan: their list seen as six stages, from building the list to choosing a college, with the dated steps each college and the season call for.",
-    long: "The Plan tab sits beside List and Numbers on a student's page. It reads the same list (one college, one row), so ticking a step in the plan and changing the row on the list are the same fact. Steps come from each college's own published dates, the dates every applicant shares (the FAFSA, the reply date), and the stage the student is in; the family can add their own. Parents see the same plan under the household's rules.",
+    term: "Advisor",
+    short: "Quad Advisor: a student's college advisor that reads their list and record, sorts the colleges, says what to do this season and how, and keeps every date.",
+    long: "The Advisor tab is the middle tab. It reads the same list (one college, one row), so ticking a step in the advisor and changing the row on the list are the same fact. Steps come from each college's own published dates, the dates every applicant shares (the FAFSA, the reply date), and the season the student is in; the family can add their own. Parents see the same advisor under the household's rules.",
     category: "Your account",
     related: ["stage", "task-assignee", "dream-school"],
   },
   stage: {
     term: "Stage",
-    short: "Where a student is in the plan: List, Rounds, Actions, Timeline, Apply, or Offers. Worked out from the list itself, never set by hand.",
+    short: "Where a student is in their advisor: List, Rounds, Actions, Timeline, Apply, or Offers. Worked out from the list itself, never set by hand.",
     long: "A stage is open while it has work (colleges to sort, rounds to choose, applications not yet in) and done once that work is finished. The stages are a map, not a gate: any of them can be opened at any time. Actions (following and visiting) is always open, and the Timeline stays open once its first step's date arrives.",
     category: "Your account",
     related: ["plan"],
@@ -1734,21 +1734,21 @@ const entries = {
   },
   "task-assignee": {
     term: "Whose step",
-    short: "Who a step in the plan belongs to: the student, a parent, or either. Parents' steps (the FAFSA, deposits) also show on their own page.",
-    long: "Steps that need a payment or a parent's tax information default to a parent; essays and asks default to the student. Anyone who can edit the plan can tick a step, and the tick says who did it.",
+    short: "Who a step in the advisor belongs to: the student, a parent, or either. Parents' steps (the FAFSA, deposits) also show on their own page.",
+    long: "Steps that need a payment or a parent's tax information default to a parent; essays and asks default to the student. Anyone who can edit the list can tick a step, and the tick says who did it.",
     category: "Your account",
     related: ["plan", "guardian"],
   },
   "calendar-feed": {
     term: "Calendar link",
-    short: "A private web address your calendar app subscribes to, so the plan's dated steps and visits show up beside everything else and update on their own.",
-    long: "It carries titles and dates only (\"Michigan: apply (ED I)\"), never notes or numbers. Anyone with the link sees those titles, so treat it like a key: stop it from the Plan menu and make a new one if it gets shared.",
+    short: "A private web address your calendar app subscribes to, so the advisor's dated steps and visits show up beside everything else and update on their own.",
+    long: "It carries titles and dates only (\"Michigan: apply (ED I)\"), never notes or numbers. Anyone with the link sees those titles, so treat it like a key: stop it from the Advisor menu and make a new one if it gets shared.",
     category: "Your account",
     related: ["plan"],
   },
   "your-week": {
     term: "Your week",
-    short: "A Sunday-evening email with the plan's steps due in the next seven days and the first overdue one, one line each.",
+    short: "A Sunday-evening email with the advisor's steps due in the next seven days and the first overdue one, one line each.",
     long: "On by default for seniors in season and off for juniors until spring. Texts, when someone turns them on, carry the first three of the same steps, at most one a day and never at night.",
     category: "Your account",
     related: ["plan", "calendar-feed"],
@@ -1764,7 +1764,7 @@ const entries = {
   // Parents (specs/planner/parents.md)
   nudge: {
     term: "Nudge",
-    short: "A parent's one-line, optional note on one step of the plan, delivered by the site instead of across the kitchen table.",
+    short: "A parent's one-line, optional note on one step in the advisor, delivered by the site instead of across the kitchen table.",
     long: "Rate-limited by design: once per step every three days, and at most three a week from one guardian to one student. The student sees who sent it and can tick the step, snooze it, or send back a one-line reply that closes it. Another guardian sees that a nudge was sent, never its text.",
     why: "A parent can help without turning into a second stream of reminders: the site reminds, the parent nudges, and the limit is the feature.",
     category: "Your account",
@@ -1773,7 +1773,7 @@ const entries = {
   "your-part": {
     term: "Your part",
     short: "Every open step assigned to a guardian or either, across every student they can see, in one place on their own page.",
-    long: "The FAFSA and CSS Profile, priority dates, fees a parent said they'd pay, deposits once a choice is made, and visits they're booking — with the same ticks and dates as the plan itself. The weekly summary email leads with it.",
+    long: "The FAFSA and CSS Profile, priority dates, fees a parent said they'd pay, deposits once a choice is made, and visits they're booking — with the same ticks and dates as the advisor itself. The weekly summary email leads with it.",
     category: "Your account",
     related: ["task-assignee", "nudge", "your-week"],
   },
@@ -1781,14 +1781,14 @@ const entries = {
   // Stage 3, actions (specs/planner/actions.md)
   "virtual-tour": {
     term: "Virtual tour",
-    short: "A video or interactive walk-through of campus, for a family that can't visit in person. A visit kind in the plan, logged like any other visit.",
+    short: "A video or interactive walk-through of campus, for a family that can't visit in person. A visit kind in the advisor, logged like any other visit.",
     long: "Most colleges' own visit pages link one, often hosted by CampusReel or YouVisit; a real visit still tells you more (how the dining hall smells, how far the walk to class actually is), but a virtual tour is better than nothing for a long-distance college on the list.",
     category: "Your account",
     related: ["demonstrated-interest"],
   },
   "information-session": {
     term: "Information session",
-    short: "A presentation by an admissions officer, in person or online, about the college and how it admits students. A visit kind in the plan.",
+    short: "A presentation by an admissions officer, in person or online, about the college and how it admits students. A visit kind in the advisor.",
     long: "Usually followed by questions; some colleges log attendance as a sign of interest. An open house folds one or more sessions into a bigger on-campus event.",
     category: "Your account",
     related: ["demonstrated-interest"],
@@ -1806,7 +1806,7 @@ const entries = {
   "application-portal": {
     term: "Application portal",
     short: "The college's own website for checking an application's status, once it's submitted. You paste its link here; the site never logs in.",
-    long: "Each college gives applicants a separate account, usually by email a week or two after submitting. The plan stores the link you paste, nothing more, and reminds you to check it weekly until you confirm everything's received.",
+    long: "Each college gives applicants a separate account, usually by email a week or two after submitting. Your advisor stores the link you paste, nothing more, and reminds you to check it weekly until you confirm everything's received.",
     category: "Your account",
     related: ["plan"],
   },
@@ -1820,7 +1820,7 @@ const entries = {
   "fee-waiver": {
     term: "Fee waiver",
     short: "Skipping a college's application fee because you meet criteria most colleges and the Common App recognize (Pell-likely, first-generation, and others).",
-    long: "You answer the question once on your profile; the plan's fee line then says so for every college that lists a waiver. The site never applies for one on your behalf — most colleges grant it automatically once you check the box on their own application.",
+    long: "You answer the question once on your profile; your advisor's fee line then says so for every college that lists a waiver. The site never applies for one on your behalf — most colleges grant it automatically once you check the box on their own application.",
     category: "Your account",
     related: ["plan"],
   },

@@ -39,8 +39,8 @@ export function ParentsCanEdit({ on: initial, guardians, bare = false }: { on: b
         )}
         <p className={cn("text-sm text-muted-foreground", !bare && "mt-0.5")}>
           {on
-            ? `${guardians === 1 ? "Your parent" : "Your parents"} can change your list, plan, and record, not just look. Switch it off and they can only look.`
-            : `${guardians === 1 ? "Your parent" : "Your parents"} can see your list, plan, and record but can't change them.`}
+            ? `${guardians === 1 ? "Your parent" : "Your parents"} can change your list, advisor, and record, not just look. Switch it off and they can only look.`
+            : `${guardians === 1 ? "Your parent" : "Your parents"} can see your list, advisor, and record but can't change them.`}
         </p>
       </div>
       <button

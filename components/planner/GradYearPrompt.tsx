@@ -17,7 +17,7 @@ export function GradYearPrompt({ studentId, years, canEdit, firstName }: { stude
   if (!canEdit) {
     return (
       <p className="rounded-2xl border bg-muted/40 p-4 text-sm text-muted-foreground">
-        The plan&apos;s dates follow the student&apos;s class year, which isn&apos;t set yet. The student, or a guardian who can edit, can set it here.
+        The dates here follow the student&apos;s class year, which isn&apos;t set yet. The student, or a guardian who can edit, can set it here.
       </p>
     );
   }
@@ -36,7 +36,7 @@ export function GradYearPrompt({ studentId, years, canEdit, firstName }: { stude
     >
       <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-semibold">
         What is {who} high school class year?
-        <span className="text-xs font-normal text-muted-foreground">Every date in the plan follows from it.</span>
+        <span className="text-xs font-normal text-muted-foreground">Every date here follows from it.</span>
         <select value={year} onChange={(e) => setYear(e.target.value)} className="mt-1 h-11 rounded-full border bg-background px-3 text-sm sm:max-w-48" required>
           <option value="">Class of…</option>
           {years.map((y) => (

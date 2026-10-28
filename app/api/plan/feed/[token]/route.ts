@@ -43,7 +43,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const { getSchoolsByIds } = await getData();
   const unitIds = [...new Set(rows.map((r) => r.unit_id).filter((u): u is string => !!u))];
   const names = new Map(getSchoolsByIds(unitIds).map((s) => [s.unit_id, s.name]));
-  const body = icsCalendar(viewerFeedEvents(rows, (u) => names.get(u) ?? null), { name: `${SITE_NAME} family plan` });
+  const body = icsCalendar(viewerFeedEvents(rows, (u) => names.get(u) ?? null), { name: `${SITE_NAME} family calendar` });
   return new Response(body, {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",

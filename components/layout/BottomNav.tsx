@@ -8,6 +8,7 @@ import { ThemeSegmented } from "@/components/ThemeToggle";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useMe } from "@/components/account/useMe";
 import { loginHref } from "@/lib/accounts";
+import { ADVISOR_PATH, ADVISOR_SHORT } from "@/lib/planner/advisor";
 import { useCompareIds } from "@/lib/compare";
 import { cn } from "@/lib/utils";
 import { usePlanDot } from "./usePlanDot";
@@ -56,7 +57,7 @@ export function BottomNav() {
         <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
           <Tab href="/explore" label="Explore" icon={<Compass />} active={isActive("/explore") && !sheet} />
           <Tab label="Search" icon={<Search />} active={sheet === "search"} onClick={() => setSheet(sheet === "search" ? null : "search")} />
-          <Tab href="/plan" label="Plan" icon={<ListChecks />} active={isActive("/plan") && !sheet} dot={planDot.lit && planDot.label} />
+          <Tab href={ADVISOR_PATH} label={ADVISOR_SHORT} icon={<ListChecks />} active={isActive(ADVISOR_PATH) && !sheet} dot={planDot.lit && planDot.label} />
           <Tab
             href={compareHref}
             label="Compare"
@@ -102,7 +103,7 @@ export function BottomNav() {
               {me?.configured && (me.signedIn ? (
                 <MoreLink href="/account" icon={<UserRound className="size-5" />} title="Account" sub={me.name ?? me.email ?? "Your profile and household"} active={isActive("/account")} />
               ) : (
-                <MoreLink href={loginHref(pathname === "/login" ? undefined : pathname)} icon={<LogIn className="size-5" />} title="Sign in" sub="Save your colleges and plans" active={isActive("/login")} />
+                <MoreLink href={loginHref(pathname === "/login" ? undefined : pathname)} icon={<LogIn className="size-5" />} title="Sign in" sub="Your colleges, your record, your advisor" active={isActive("/login")} />
               ))}
               <MoreLink href="/trends" icon={<LineChart className="size-5" />} title="National trends" sub="How college is changing" active={isActive("/trends")} />
               <MoreLink href="/high-schools" icon={<GraduationCap className="size-5" />} title="High schools" sub="Rigor, outcomes & where graduates go" active={isActive("/high-schools")} />

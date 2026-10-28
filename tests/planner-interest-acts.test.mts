@@ -653,7 +653,7 @@ test("the guide's own words carry no number and no promise: the C7 sentences pas
   const fixed = [
     "An information request or a mailing-list sign-up puts you in Elon's system.",
     "No college says it counts a follow; do it for yourself.",
-    "We can't see the college's page, so we ask. Only a yes goes on your plan.",
+    "We can't see the college's page, so we ask. Only a yes goes on your list.",
   ];
   for (const line of fixed) assert.deepEqual(numberProblems(line), [], line);
   // The guard is live: a planted promise fails it.

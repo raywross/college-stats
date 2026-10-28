@@ -215,7 +215,7 @@ test("StoryGuide folds 'Depth and breadth' (closed) and 'What your record says s
   assert.match(src, /<p className="text-sm text-muted-foreground">Private to you\. Nobody at Quad reads it, and your parents can&apos;t see it\.<\/p>\s*\n\s*<Frame/);
   // Content unchanged: the depth sentence and the "add your activities" sentence both still appear verbatim.
   assert.match(src, /Colleges that read beyond the numbers look for two things:/);
-  assert.match(src, /Add your activities and the plan will show what they say\./);
+  assert.match(src, /Add your activities and your advisor will show what they say\./);
 });
 
 test("planted bad case: Frame rendered as a bare section (no fold) would fail the guard above", () => {

@@ -252,11 +252,20 @@ test("12. a newer C7 'not considered' flips legacy; restore is byte for byte; fe
 /* ---- 13. Same-class ED comparison ---- */
 
 test("13. the overall rate beside the ED rate comes from the same document's C1, never another year's funnel", () => {
-  const wm = schools.find((s) => s.unit_id === WM)!;
-  const rate = sameDocumentRate(wm);
-  assert.ok(rate !== null && Math.abs(rate - 6245 / 16895) < 1e-9);
-  // Illinois's funnel is a class profile (another document): no overall rate beside a CDS ED figure.
-  const otherDoc = structuredClone(wm);
+  // A college whose funnel and ED counts were read from the same CDS document (39 on 2026-10-28). Found, not pinned:
+  // a later run can replace a college's funnel with a newer class profile (William & Mary's, 2026-10-26), and then
+  // that college is the other case below, not this one.
+  const same = schools.find((s) => {
+    const ed = s.reported?.admission_profile?.early_decision;
+    const a = s.lineage?.["admissions.applicants"]?.url;
+    const e = s.lineage?.["reported.admission_profile.early_decision.applicants"]?.url;
+    return !!ed && ed.applicants != null && ed.admitted != null && !!a && a === e && !!s.admissions.applicants && !!s.admissions.admitted;
+  })!;
+  assert.ok(same, "some college's funnel and ED counts come from one document");
+  const rate = sameDocumentRate(same);
+  assert.ok(rate !== null && Math.abs(rate - same.admissions.admitted! / same.admissions.applicants!) < 1e-9, same.name);
+  // A funnel from another document (a class profile, a newer edition): no overall rate beside the CDS ED figure.
+  const otherDoc = structuredClone(same);
   otherDoc.lineage!["admissions.applicants"] = { ...otherDoc.lineage!["admissions.applicants"]!, url: "https://example.edu/class-profile" };
   assert.equal(sameDocumentRate(otherDoc), null);
 });

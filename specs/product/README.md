@@ -35,27 +35,28 @@ the roadmap, with the award-letter analyzer as the last stage.
 ### Planning tools
 | Spec | Adds | Complexity |
 |---|---|---|
-| [chances-and-fit.md](chances-and-fit.md) | "Where you stand" at each college from the student's numbers; a transparent rules-based classification, never a probability | Large |
+| [chances-and-fit.md](chances-and-fit.md) | *Built as [the chances specs](../chances/README.md)* (2026-10-11/12; marked built 2026-10-26): "Where you stand" on five levels from Quad's estimate, the chip and card, Compare's row, Explore's For you levels, and the fit chips; the rules here became the open baseline | Large |
 | [cost-by-income.md](cost-by-income.md) | *Built 2026-10-10* (estimates gated until the pilot): cost as a curve over family income: published prices to $110K, a calibrated estimate above, where need-based aid ends for each college, and what merit aid can still do; replaces the average-first cost display | Large |
-| [net-price-estimator.md](net-price-estimator.md) | What *this* family would pay: federal Student Aid Index plus each college's aid pattern, as a range, with a 4-year projection | Large |
-| [early-decision-strategy.md](early-decision-strategy.md) | Early decision and early action admit rates vs regular decision, from Common Data Sets, with the caveats | Medium |
+| [net-price-estimator.md](net-price-estimator.md) | *Rewritten 2026-10-26:* the family's own numbers on the built cost curve: the Student Aid Index and Pell as versioned tables, a range per college, the "what we can pay" line, a four-year total | Large |
+| [early-decision-strategy.md](early-decision-strategy.md) | *Built in pieces* (marked 2026-10-26): the measures in `lib/early.ts`, the profile's "Applying early", Compare's rows, the Common App Explore filters, and ED opportunities on the plan | Medium |
 | [../planner/offers.md](../planner/offers.md) | Real aid offers side by side, standardized the way the federal College Financing Plan does, with loans and 4-year totals made visible; moved into the planner on 2026-10-07 as its decisions-and-offers stage | Large |
 
 ### High school context
 | Spec | Adds | Complexity |
 |---|---|---|
 | [high-school-data.md](high-school-data.md) | A high school dataset (NCES, EDFacts, Civil Rights Data Collection, state report cards, school profiles) and high school pages | Extra large |
-| [scattergrams.md](scattergrams.md) | Counselor-uploaded application outcomes from one high school, scrubbed and thresholded, drawn over the college's ranges | Large |
+| [scattergrams.md](scattergrams.md) | *Folded 2026-10-26 into the [counselor portal](counselor-portal.md#scattergrams)*: counselor-uploaded outcomes from one high school, scrubbed and thresholded, drawn beside Quad's estimate; the self-reported half is built as [calibration](../chances/calibration.md) | Large |
 
 ### Platform, measurement, and business
 | Spec | Adds | Complexity |
 |---|---|---|
 | [telemetry.md](telemetry.md) | Product analytics with a typed event registry, privacy rules for minors, and usage reports (built 2026-10-07) | Medium |
-| [commercialization.md](commercialization.md) | Free / Plus / Pro tiers, what each gates, Stripe billing, entitlements, the pricing page | Large |
-| [counselor-portal.md](counselor-portal.md) | Organization accounts for counselors and consultants: caseloads, reports, scattergram uploads | Extra large |
+| [commercialization.md](commercialization.md) | *Redrawn 2026-10-26 (owner):* the advisor, the plan as the one paid product at $20 a year per student or $30 a family; everything else free, counselors included; the entitlement map behind the planner's capability hook; Stripe billing; the pricing page | Large |
+| [advisor.md](advisor.md) | *Planned 2026-10-26 (owner):* the plan renamed Quad Advisor (the tab Advisor, `/advisor`), the 14-day trial with the card up front and the yearly charge after, and the signed-out splash page that shows the real thing over a sample student | Medium |
+| [counselor-portal.md](counselor-portal.md) | *Revised 2026-10-26, free by the owner's decision:* organization accounts for counselors and consultants: caseloads over students' plans, reports, and scattergram uploads as the last phase; the families buy the advisor | Extra large |
 | [data-api.md](data-api.md) | *Built 2026-10-20:* a keyed API and an MCP server over the dataset, history, and lineage, for people with an account (keys on `/account/api-keys`, docs on `/developers`); bulk downloads and the paid tier wait for billing | Medium |
 | [assistants.md](assistants.md) | *Built 2026-10-20:* Quad in ChatGPT, Claude, and Gemini: the same MCP server without a key at `/mcp` for the assistants' connector menus, a downloadable skill file, and the `/connect` page with the steps for each | Medium |
-| [data-steward.md](data-steward.md) | *Planned 2026-10-13*: an agent that turns the review queue into a few causes, proves each against the colleges' documents, and opens fixes for the owner to approve; Operations becomes Issues, Proposals, and Audits | Medium |
+| [data-steward.md](data-steward.md) | *Planned 2026-10-13, revised 2026-10-26*: an agent that turns the review queue into a few causes, proves each against the colleges' documents, and opens fixes for the owner to approve; Operations becomes Issues, Proposals, To do (the documents a person has to fetch), Decisions, and Audits | Large |
 | [admin.md](admin.md) | *Built 2026-10-13* ([console pages](admin-console-ui.md)): the admin console: people and households (search, details, email, password reset, deactivate, delete, link and unlink), the hidden selectivity index and a student's hidden odds, each college's data health by when its data was received, and reruns and data approvals through a GitHub App | Large |
 | [admin-health-views.md](admin-health-views.md) | *Built 2026-10-19:* the Health page's two views: the facts the admission estimate reads (each with its source, the year it describes, when it was published and collected, and a status by age), and every file we read with its year, publish date, and health | Medium |
 
@@ -63,38 +64,28 @@ the roadmap, with the award-letter analyzer as the last stage.
 | Idea document | Where it went |
 |---|---|
 | Commercialization strategy: tiers, pricing, pricing page | [commercialization.md](commercialization.md) |
-| Commercialization strategy: B2B counselors, data API | [counselor-portal.md](counselor-portal.md), [data-api.md](data-api.md) |
+| Commercialization strategy: B2B counselors, data API | [counselor-portal.md](counselor-portal.md) (free since the owner's 2026-10-26 decision), [data-api.md](data-api.md) (built, free with an account) |
 | Commercialization strategy: Niche-style high school integration | [high-school-data.md](high-school-data.md) (data), [scattergrams.md](scattergrams.md) (feeder and scattergram use) |
 | Feature roadmap A: real cost and aid estimator | [net-price-estimator.md](net-price-estimator.md) |
 | Feature roadmap B: localized scattergrams | [scattergrams.md](scattergrams.md) |
 | Feature roadmap C: award letter evaluator | [../planner/offers.md](../planner/offers.md) (the planner's last stage, since 2026-10-07) |
 | Feature roadmap D: major-level ROI | Already planned: [field-of-study.md](../data-expansion/field-of-study.md) (Scorecard Field of Study). The Pro tier gates its deeper views ([commercialization.md](commercialization.md#feature-map)) |
-| Feature roadmap E: ED/EA strategy engine | [early-decision-strategy.md](early-decision-strategy.md), on top of [cds-admissions.md](../data-expansion/cds-admissions.md) |
+| Feature roadmap E: ED/EA strategy engine | [early-decision-strategy.md](early-decision-strategy.md) (built in pieces: `lib/early.ts`, the profile block, the Common App filters, ED opportunities on the plan) |
 | High school data spec: sources, pipeline, use cases A–C | [high-school-data.md](high-school-data.md) |
 | High school data spec: use case D, counselor portal | [counselor-portal.md](counselor-portal.md) |
 
 Added here beyond the documents: households with parent-only finances ([accounts.md](accounts.md)), a student
-profile shared by every tool, Reach / Target / Likely classification with published rules
-([chances-and-fit.md](chances-and-fit.md)), telemetry, award-letter renewability and appeal support, following
+profile shared by every tool (now the record), Quad's estimate on five levels
+([../chances/README.md](../chances/README.md), which grew out of [chances-and-fit.md](chances-and-fit.md)), telemetry, award-letter renewability and appeal support, following
 colleges with update emails ([follow-colleges.md](follow-colleges.md), added 2026-10-02), and the privacy rules for
 minors' data that run through all of it.
 
 ## Build order
+What is left, after the roadmap review of 2026-10-26 (everything else in this file is built):
 ```
-telemetry ──────────────────────────────────────────────────────────┐
-accounts ─► student-profile ─► saved-lists ─► chances-and-fit        │
-    │                             │                                  │
-    │                             ├─► commercialization ─► counselor-portal
-    │                             │
-    ├─► net-price-estimator ─► planner/offers (the award-letter analyzer, now the planner's last stage)
-    │
-    ├─► follow-colleges (lists follow automatically; pays off once the scheduled data refresh runs)
-    │
-    ├─► household-hub ─► the planner (planner/README.md: model, list, rounds, actions, timeline, applications, offers, parents)
-    │
-high-school-data ─► scattergrams (also after saved-lists)
-cds-admissions (data expansion) ─► early-decision-strategy
-data-api (after accounts; independent of the planning tools)
+advisor (the name and the page first) ─► launch-database ─► commercialization (the trial's billing) ─► counselor-portal (scattergrams as its last phase)
+cost-by-income's pilot ─► net-price-estimator
+data-steward (after the archive repo; independent of the rest)
 ```
 Telemetry first: it is small, and every later feature's success is measured with it. Accounts next: the planning
 tools are only worth building once a family can keep their work. Following colleges is the first thing to build on

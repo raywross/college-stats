@@ -46,11 +46,16 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // review of the built Next steps: a Connections step in the profile, three cards instead of six, and a guide per task.
 // Your record (specs/planner/record/, six parts: steps, majors, ranking, reading, less-text, docs) was built 2026-10-16
 // on feature/plan-v3, so its group is gone; the overview stays under ROADMAP_OVERVIEWS.
+// Roadmap review, 2026-10-25/26: every remaining entry was read against the built site. Retired as built elsewhere:
+// chances-and-fit (the estimate, Explore-by-level, the fit chips), early-decision-strategy (lib/early.ts, the profile's
+// "Applying early", the Common App filters, ED opportunities); retired as unneeded: metro-area. Folded into other
+// entries: manual-collection and campus-sources-later into data-steward's To do list, scattergrams into the counselor
+// portal (so the "high-school" group is gone). Rewritten against what exists: net-price-estimator, commercialization,
+// near-and-far, worst-plausible-spring, cycle-watch, getting-into-the-major, and the three iPhone specs.
 export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
   | "planning"
-  | "high-school"
   | "business"
   | "apps"
   | "ideas"
@@ -61,19 +66,13 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     key: "planning",
     title: "Planning tools",
     description:
-      "Where your numbers stand, what your family would pay, and whether applying early helps; the planner builds on all three.",
-  },
-  {
-    key: "high-school",
-    title: "High school context",
-    description:
-      "A record for every high school, and what happened to applicants from yours, so national ranges get local context.",
+      "What your family would pay at each college, from your own numbers, on the cost curve the site already shows.",
   },
   {
     key: "business",
     title: "Platform, measurement, and business",
     description:
-      "Usage measurement that respects minors, paid tiers that keep public data free, counselor accounts, and a developer API.",
+      "The production database, an assistant that clears the data review queue and keeps the list of documents a person has to fetch, the advisor as the one paid product with public data free, and free counselor accounts.",
   },
   {
     key: "apps",
@@ -124,50 +123,21 @@ export interface RoadmapSpec {
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
   {
-    slug: "chances-and-fit",
-    file: "specs/product/chances-and-fit.md",
-    group: "planning",
-    summary: "Where your numbers stand at each college, with the reasons spelled out and never a made-up percentage.",
-    complexity: 3,
-    complexityNote:
-      "Published rules across several data sources, a pilot against real outcomes, and new views on profiles, lists, and Explore.",
-    status: "planned",
-  },
-  {
     slug: "net-price-estimator",
     file: "specs/product/net-price-estimator.md",
     group: "planning",
-    summary: "What your family would likely pay at each college, as a range with its reasoning, and over four years.",
+    summary:
+      "Your family's own numbers on each college's cost curve: the federal Student Aid Index and Pell, a range per college, the line for what you can pay, and a four-year total.",
     complexity: 3,
     complexityNote:
-      "The federal aid formula as versioned data, three grant estimates combined, and a hand-checked pilot against colleges' own calculators.",
+      "The federal aid formula as versioned data, guardian-only inputs placed on the built cost curve, and a hand-checked pilot against colleges' own calculators.",
     status: "planned",
   },
   // The award-letter analyzer moved into the planner on 2026-10-07 as its last stage (slug "offers").
-  {
-    slug: "early-decision-strategy",
-    file: "specs/product/early-decision-strategy.md",
-    group: "planning",
-    summary:
-      "Early decision and early action admit rates against regular decision, how much of the class is filled early, and a checklist before you commit.",
-    complexity: 2,
-    complexityNote: "Measures from Common Data Set numbers the agent already collects, plus a profile section and filters.",
-    status: "planned",
-  },
   // common-app (specs/data-expansion/common-app.md) was built 2026-10-25 on feature/common-app after Common App agreed
   // to the use; see the spec's "As built" section.
   // visit-events (specs/product/visit-events.md) was planned and built the same day, 2026-10-13, on feature/visit-events
   // as a four-college pilot; the research is in specs/ideas/visit-events.md (promoted).
-  {
-    slug: "scattergrams",
-    file: "specs/product/scattergrams.md",
-    group: "high-school",
-    summary:
-      "Past applicants from your high school to each college, scrubbed of names and shown over the national ranges with you on the chart.",
-    complexity: 3,
-    complexityNote: "A counselor upload with client-side scrubbing, small-count thresholds, name matching, and a new chart.",
-    status: "planned",
-  },
   {
     slug: "launch-database",
     file: "specs/launch-database.md",
@@ -184,42 +154,46 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/product/data-steward.md",
     group: "business",
     summary:
-      "Behind the scenes: an assistant that works through the figures our checks hold back, proves each fix against the college's own document, and asks before anything changes on the site.",
+      "Behind the scenes: an assistant that works through the figures our checks hold back, proves each fix against the college's own document, asks before anything changes on the site, and keeps the list of documents only a person can fetch.",
     complexity: 3,
     complexityNote:
-      "An agent run in GitHub Actions with a budget and no power to merge, clustering of the review queue, a document archive it can read, and a redesigned Operations page.",
+      "An agent run in GitHub Actions with a budget and no power to merge, clustering of the review queue, a document archive it can read, a To do list for documents a person must fetch, and a redesigned Operations page.",
+    status: "planned",
+  },
+  {
+    slug: "advisor",
+    file: "specs/product/advisor.md",
+    group: "business",
+    summary:
+      "The plan becomes Quad Advisor, with a 14-day free trial with your card on file and a yearly price after, and a page that shows a visitor exactly what they'd get before they sign up.",
+    complexity: 2,
+    complexityNote:
+      "One label constant and route redirects, a marketing page built from the plan's own components over a sample student, and the trial flow on Stripe Checkout with one reminder email.",
     status: "planned",
   },
   {
     slug: "commercialization",
     file: "specs/product/commercialization.md",
     group: "business",
-    summary: "Free, Plus, and Pro: what each includes, how billing works, and a pricing page, with the public data always free.",
+    summary:
+      "The advisor: the plan as the one paid product, $20 a year for a student or $30 for a family, with everything else on the site free, including the counselor's portal.",
     complexity: 3,
-    complexityNote: "Stripe billing, webhooks, an entitlement map every gated feature reads, and the legal setup before launch.",
+    complexityNote:
+      "Stripe billing for two yearly products, webhooks, the entitlement map behind the planner's built capability hook, a pricing page, and the legal setup before launch.",
     status: "planned",
+    after: ["advisor"],
   },
   {
     slug: "counselor-portal",
     file: "specs/product/counselor-portal.md",
     group: "business",
     summary:
-      "Organization accounts for counselors and consultants: a caseload dashboard, co-branded reports, and scattergram uploads.",
+      "Free organization accounts for counselors and consultants: a caseload dashboard over students' plans, co-branded reports, and, as its last phase, scattergrams uploaded from the school's own records.",
     complexity: 4,
-    complexityNote: "A second kind of account with its own grants, dashboards, PDF reports, and data agreements for schools.",
+    complexityNote:
+      "A second kind of account with its own grants, dashboards, PDF reports, data agreements for schools, and the scattergram upload with its scrubbing and thresholds.",
     status: "planned",
     after: ["commercialization"],
-  },
-  {
-    slug: "manual-collection",
-    file: "specs/manual-collection.md",
-    group: "business",
-    summary:
-      "An inventory of public documents our crawlers can't read (sites that block automated reading), prioritized and paced, worked through in a supervised browser session that feeds the same extractors.",
-    complexity: 2,
-    complexityNote:
-      "An inventory built from the existing blocked lists, a wave scheduler with per-host pacing, from-file entry points for each extractor, and a Claude in Chrome skill; one access-rule decision for the owner.",
-    status: "planned",
   },
   // The serving architecture (specs/serving-architecture.md) was planned and built on 2026-10-07 (#98), so it is
   // no longer listed.
@@ -249,10 +223,10 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/ideas/near-and-far.md",
     group: "ideas",
     summary:
-      "A map view with drive-time rings, nearest airports, what getting home costs, and the colleges on your list grouped into visit trips. The home address, Explore's distance filter, and distance on lists are already built (specs/product/home-and-distance.md).",
-    complexity: 3,
+      "Drive-time rings on Explore's map, the nearest airport, the colleges on your plan grouped into visit trips with their next tours, and what getting home costs. The home, the distance filter, the map view, and distance on the plan are already built.",
+    complexity: 2,
     complexityNote:
-      "A new kind of view (the map), an airport table, and lines in Compare and the estimator; the home and the ZIP table exist now.",
+      "Two reference files (airports, fares), rings on the built map, a clustering function over the plan, and a line in the family's price.",
     status: "idea",
     // Also uses each college's visit link (specs/school-identity/links.md, built 2026-10-04).
   },
@@ -261,9 +235,9 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/ideas/worst-plausible-spring.md",
     group: "ideas",
     summary:
-      "If every Reach says no: what your list leaves you with, what it would cost, and what's missing, as facts rather than a grade.",
+      "If every Reach says no: what your plan leaves you with at each level, what it would cost, and what's missing, as facts rather than a grade. The plan's list shape already counts the gaps; this names what's left.",
     complexity: 1,
-    complexityNote: "One pure function over the saved list's rows and a panel; the figures come from the specs it builds on.",
+    complexityNote: "One pure function over the plan's rows and a fold under the balance notice; the figures come from the specs it builds on.",
     status: "idea",
   },
   {
@@ -275,17 +249,17 @@ export const ROADMAP: RoadmapSpec[] = [
     complexity: 2,
     complexityNote: "A query over standing, merit, and history fields, one page, one Explore chip, and a hand-checked pilot.",
     status: "idea",
-    // Also needs the CDS merit awards (cds-financial-aid), built 2026-10-03 and so no longer on the roadmap.
-    after: ["chances-and-fit"],
+    // Also needs the CDS merit awards (cds-financial-aid), built 2026-10-03, and Quad's estimate (chances/, built
+    // 2026-10-12), so no longer on the roadmap; the signals read the five levels and the selectivity tier.
   },
   {
     slug: "cycle-watch",
     file: "specs/ideas/cycle-watch.md",
     group: "ideas",
     summary:
-      "What changed for the coming application cycle at every college: test policy, early rounds, deadlines, fees, and aid forms, each in the college's own words.",
-    complexity: 2,
-    complexityNote: "A change table built at publish from the agent's editions, one public page, a digest kind, and an email variant.",
+      "What changed for the coming application cycle at every college: test policy, early rounds, deadlines, fees, and requirements, from one edition of the Common App Requirements Grid to the next, with the CDS for the rest.",
+    complexity: 1,
+    complexityNote: "A diff over grid editions the site already stores, one trends page, a digest kind, and a move on the plan.",
     status: "idea",
     // Also needs the CDS policy, early-round, and logistics records, built 2026-10-03 and so no longer on the roadmap.
   },
@@ -294,35 +268,15 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/ideas/getting-into-the-major.md",
     group: "ideas",
     summary:
-      "Whether a college admits to the major or to the university, which programs admit directly, what it takes to get in after year one, and whether you can change in later.",
-    complexity: 3,
-    complexityNote: "A new recipe type for the agent with checks and review, new fields, a profile block, two filters, and a pilot.",
+      "What it takes to get into the major after year one and whether you can change in later, at 200 colleges read by the agent; which unit admits and who admits directly is already in Quad's estimate for the first colleges.",
+    complexity: 2,
+    complexityNote: "A recipe for the agent with checks and review, two fields on a built record, a profile block, two filters, and a pilot.",
     status: "idea",
     // Also needs the round-3 agent (college-reported-round-3), built 2026-10-03 and so no longer on the roadmap.
   },
   // visit-events was an idea here until 2026-10-13, when the desktop research (UF and Duke traced) and the owner's
   // decisions made it a planned product spec under "planning" (specs/product/visit-events.md); the idea file keeps the
   // research and is marked promoted.
-  {
-    slug: "metro-area",
-    file: "specs/data-expansion/metro-area.md",
-    group: "later",
-    summary: "Each college's metro area and county, for a \"nearby colleges\" list, a metro filter, and metro-level trends.",
-    complexity: 1,
-    complexityNote: "Columns from a file the site already reads, plus a table of metro names.",
-    status: "deferred",
-  },
-  {
-    slug: "campus-sources-later",
-    file: "specs/campus-sources-later.md",
-    group: "later",
-    summary:
-      "More campus-life sources once we can read them: national chapter directories now rendered only by JavaScript, pages sitting behind a login or bot challenge, and facts only the organization itself can give us.",
-    complexity: 2,
-    complexityNote:
-      "Several independent fixes, not one project: a headless-browser renderer for JavaScript-only pages, hand reading for challenge-protected ones, and data-partnership requests to about a dozen organizations.",
-    status: "deferred",
-  },
   {
     slug: "campus-pilot-accuracy",
     file: "specs/campus-pilot-accuracy.md",
@@ -361,10 +315,10 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/iphone-app/api.md",
     group: "apps",
     summary:
-      "Every screen of the site as JSON for the iPhone app, computed by the same code as the pages, with a citation on every value.",
+      "Every screen of the site as JSON for the iPhone app, computed by the same code as the pages, with a citation on every value and the plan's moves and guides as actions.",
     complexity: 3,
     complexityNote:
-      "About forty public endpoints and the signed-in ones built over existing lib code, a fixed block catalog, an OpenAPI document the Swift models are generated from, and the Server Actions' logic moved into lib so both clients share it.",
+      "A second route family on the built Data API library: the public screens, the plan's screens and actions, a fixed block catalog, an OpenAPI document the Swift models are generated from, and the Server Actions' logic moved into lib so both clients share it.",
     status: "planned",
   },
   {
@@ -372,7 +326,7 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/iphone-app/app.md",
     group: "apps",
     summary:
-      "A native iPhone app with everything the site does: the same charts, words, and citations, plus Face ID sign-in, offline reading, and share links that open the site.",
+      "A native iPhone app with everything the site does, the plan first: the same charts, words, levels, and citations, plus Face ID sign-in, offline reading, push for visit alerts and deadlines, and share links that open the site.",
     complexity: 4,
     complexityNote:
       "A SwiftUI codebase with a renderer per block kind, Supabase Auth with Sign in with Apple, universal links, an offline cache, design tokens generated from the site's CSS, and an App Store release with its own tests and CI job.",
@@ -384,10 +338,10 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/iphone-app/screens.md",
     group: "apps",
     summary:
-      "The page-by-page map of what each part of the site becomes in the app, so nothing the site does is left out.",
+      "The route-by-route map of what each page of the site becomes in the app, so nothing the site does is left out.",
     complexity: 3,
     complexityNote:
-      "Every route and control of the site mapped to a screen and an API call in two phases, and a check that a new site route must be added to the map in the same change.",
+      "Every page route of the site mapped to a screen, its owning spec, and an API call in two phases, and a check that a new site route must be added to the map in the same change.",
     status: "planned",
     after: ["app-api", "ios-app"],
   },

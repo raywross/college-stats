@@ -1,106 +1,116 @@
-# Net Price Estimator: What This Family Would Pay
+# Your Family's Price: The Personal Layer on the Cost Curve
 
-> Status: **planned** (not built). After [accounts.md](accounts.md) (guardian-only finances). Since 2026-10-10 the
-> school-level half (each college's cost curve over income, where need-based aid ends, merit) is its own spec,
-> [cost-by-income.md](cost-by-income.md); this estimator becomes the personal layer on that curve (SAI, Pell, the
-> household's own inputs) and replaces its band anchor below with the curve. Reuses
-> [cost-outcomes.md](../cost-outcomes.md) and history ([trends-data.md](../trends-data.md)). Part of [product](README.md).
+> Status: **planned** (not built); **rewritten** 2026-10-26 after the roadmap review. First written 2026-10-02 as a
+> complete estimator. Half of it shipped on 2026-10-10 as [cost-by-income.md](cost-by-income.md): each college's cost as a
+> curve over family income, the break point where need-based aid ends, the merit facts, and the published promises,
+> with the estimated part gated behind a pilot against the colleges' own calculators. This spec is what remains: the
+> **family's own inputs** (income, assets, household, state) placed on that curve, the federal Student Aid Index and
+> Pell as versioned tables, the "what we can pay" line, and a four-year total. After [accounts.md](accounts.md) (built:
+> guardian-only finances) and cost-by-income's pilot. Part of [product](README.md).
 
 ## Goal
-Published net prices are averages over everyone who got federal aid. A family wants *their* number. Given a
-guardian's income, assets, household size, and the student's state, estimate what the family would pay at each
-college on the student's list, as a **range with its reasoning**, plus a four-year projection. Link to the college's
-own net price calculator for the authoritative figure; this tool is for comparing many colleges in minutes before
+The cost curve answers "what do families like ours pay here" at a typed income. A family wants the next step: *our*
+number, from *our* FAFSA inputs, against *our* budget, across the whole list, over four years, and a link to each
+college's own calculator for the authoritative figure. This tool is for comparing fifteen colleges in minutes before
 running six 20-minute calculators.
 
-## Research (2026-10-02)
-- **Student Aid Index (SAI).** The 2026–27 federal need analysis (FAFSA Simplification Act) has published tables:
-  income protection allowance $44,880 for a family of four with a dependent student, $11,770 for the student;
-  parent available income assessed in brackets from 22% to 47%; parent assets assessed at 12% with an asset
-  protection allowance of $0 for the third year; student income assessed at 50% above the allowance and student
-  assets at 20%. The number in college no longer divides the SAI. SAI can be negative (down to −1,500), which
-  matters for Pell. The tables change every award year, so they're versioned data, not code.
-- **Pell.** Maximum Pell when SAI ≤ 0 or when AGI is under a poverty-line multiple (175%–225% depending on
-  family type); partial Pell down to the minimum; none above a cutoff. Also table-driven per year.
+## What is built, and what this adds
+| Built (cost-by-income.md, 2026-10-10) | This spec adds |
+|---|---|
+| The curve: published federal bands to $110K, a calibrated estimate above, per college | The family's **point** on it, from income and the inputs below, with a range |
+| The break point where need-based aid ends; merit classes; 54 colleges' published promises (`data/aid-policies.json`) | The family's **SAI** and **Pell** estimate, which say *why* the point is where it is |
+| The planner's Cost line (the estimate at the household's income, to the guardian) | The **"what we can pay"** line, the gap "to borrow or fund", and the family's price on every plan row |
+| The 25-college pilot that gates every estimate | A second pilot, **5 family scenarios × 20 colleges**, for the personal layer |
+| "Families like yours typically pay", never "you will pay" | The same words; one more: "estimated from your inputs" |
+
+What the first draft had and this drops: the three-estimate grant blend (income-band anchor, need met, merit). The
+curve replaces the band anchor and the need-met line, and merit stays a separate fact as cost-by-income built it
+("18% of students without need got merit aid, averaging $22K"), applied to no one.
+
+## Research (2026-10-02, checked 2026-10-26)
+- **Student Aid Index (SAI).** The FAFSA Simplification Act's need analysis has published tables per award year:
+  income protection allowances, parent available-income brackets (22% to 47%), a parent asset rate of 12% with an asset
+  protection allowance, student income at 50% above an allowance and assets at 20%. The number in college no longer
+  divides the SAI. SAI can be negative (to −1,500), which matters for Pell. **The tables change every award year**, so
+  they are versioned data, not code: the 2026–27 tables the first draft cited are last year's for the class of 2027,
+  who enter in 2027–28; the build reads the award year from the student's grad year.
+- **Pell.** Maximum Pell when SAI ≤ 0 or AGI is under a poverty-line multiple by family type; partial down to the
+  minimum; none above a cutoff. Table-driven per year.
 - **Institutional methodology.** About 200 colleges (CSS Profile) use their own formula, counting home equity and
-  more. For those, the federal SAI is a floor on need, and the estimate is wider.
-- **What colleges actually give** is the harder half. Sources the site already has or has planned: net price by
-  income band (Scorecard, five bands, federal-aid recipients); aid generosity and grant per student (IPEDS SFA);
-  CDS section H (percent of need met, average need-based grant, **H2A** non-need "merit" awards: count and
-  average, so share = H2A count ÷ first-year enrollment). MyinTuition shows a 6-question estimator is enough for a
-  ballpark; its partner colleges publish nothing we can reuse, but its design (a range, three minutes) is the bar.
-- Every Title IV college must host a net price calculator; Scorecard gives its URL (`school.links.price_calculator`),
-  already shown on profiles.
+  siblings; `derived.aid_methodology` and the CDS H8 forms (built) say which. For those the federal SAI is a floor on
+  need and the range is wider; cost-by-income's `aid-policies.json` already records home-equity and sibling rules for
+  54 colleges.
+- Every Title IV college hosts a net price calculator; `school.links.price_calculator` is shown on profiles.
 
 ## Inputs
-Guardian-owned, stored in `household_finances` and never visible to a student
-([accounts.md](accounts.md#privacy-model)). Also usable signed out, in memory only, with nothing saved.
+Guardian-owned, in `household_finances`, never readable by a student ([accounts.md](accounts.md#privacy-model)): the one
+place on the site where a guardian's data is hidden from the student, by the owner's rule that privacy otherwise means
+siblings, never parents ([household-hub.md](household-hub.md)). Also usable signed out, in memory, nothing saved.
 
 | Input | Why |
 |---|---|
-| Filing status, parents' AGI, untaxed income (optional), number in household, **number of children in college** (affects institutional aid at some colleges, not SAI), state of residence | SAI, in-state pricing |
+| Parents' AGI, filing status, untaxed income (optional), number in household, number of children in college, state of residence | SAI; in-state pricing; CSS sibling rules |
 | Parent assets (cash and investments; not retirement, not the home) | SAI (12%) |
 | Student income and assets (optional) | SAI |
 | Home equity (optional) | CSS Profile colleges only |
-| Which student(s) in the household this applies to | A household with two students in college gets separate estimates |
+| **What we can pay** a year (optional) | The line on every chart and the "to borrow or fund" gap |
+| Which students in the household this applies to | Two students in college get separate figures |
 
-Six fields are enough for a first range (AGI, household size, number in college, state, assets, student). The form
-says so and lets the rest be skipped.
+Four fields are enough for a first range (AGI, household size, number in college, state); the form says so.
 
 ## Method
-Computed in `lib/net-price/` (pure, tested); tables in `data/reference/need-analysis/{award-year}.json` with a
-source URL and date, registered in `lib/fields.ts` as derived fields so every output is cited.
+Computed in `lib/net-price/` (pure, tested); tables in `data/reference/need-analysis/{award-year}.json` with a source
+URL and date, registered in `lib/fields.ts` as derived fields so every output is cited.
 
-1. **SAI** from the federal formula for the award year the student will enter (grad year + 1); Pell estimate from
+1. **SAI** from the federal formula for the award year the student enters (grad year + 1), and the Pell estimate from
    the same tables.
-2. **Cost of attendance** per college: the site's full price (`cost.breakdown.full_price`, on-campus), using the
-   in-state or out-of-state sticker by the student's state; projected to the entry year with the college's own
-   10-year price trend from history (`trends`), capped at the national rate.
-3. **Need** = COA − SAI (floored at 0).
-4. **Expected grant**, three estimates, combined into a range:
-   - *Income band anchor:* the college's net price for the family's income band (Scorecard, aided students) gives
-     an implied grant = COA − band net price. Weight high for families under $110K (the bands cover them) and low
-     above (the top band is open-ended).
-   - *Need met:* CDS H "percent of need met" × need, when the college has CDS; otherwise the sector median from
-     the colleges that do.
-   - *Merit:* if the college reports H2A, the share of first-years with a non-need award and its average; shown as
-     a separate "possible merit" line, applied only when the student's standing is Target or Likely
-     ([chances-and-fit.md](chances-and-fit.md)); never promised.
-5. **Estimated price** = COA − grant range, shown as "about $28K–$36K a year". Loans are never subtracted. The
-   gap between the range and the family's "what we can pay" input (optional) is shown as "to borrow or fund".
-6. **Four years:** price grows at the college's trend; grants assumed flat unless the college has a tuition
-   guarantee ([housing-and-policies.md](../data-expansion/housing-and-policies.md)); total and a monthly figure at
-   the current federal loan rate if borrowed (rates in the same reference file).
-
-Every output shows the inputs used, the sources with years, and a confidence word (wider range when a college has
-no CDS, is CSS Profile, or the family is in the top band). A line always says: "Run this college's net price
-calculator for its own estimate" with the link.
+2. **The point on the curve.** `lib/cost-curve.ts` (built) gives the college's price at the family's income for the
+   reference family. The personal layer adjusts it for how this family differs from the reference: the SAI relative to
+   the reference family's SAI at the same income (assets, household size, number in college), and the in-state or
+   out-of-state sticker by the student's state (built in the curve for publics). The adjustment is bounded by the
+   curve's own range, and a college with a published promise keeps it where it applies.
+3. **Range and words.** "About $28K–$36K a year, estimated from your inputs", wider when the college is CSS Profile,
+   has no CDS, or the family is above $110K; a line always says "Run this college's net price calculator for its own
+   estimate" with the link. Loans are never subtracted.
+4. **The gap.** Price range minus "what we can pay", shown as "to borrow or fund"; the shape's affordability check
+   ([../planner/next-steps/list-shape.md](../planner/next-steps/list-shape.md)) reads this instead of the cost limit
+   when it exists.
+5. **Four years.** Price grows at the college's own ten-year trend (history, capped at the national rate); grants
+   assumed flat unless the college has a tuition guarantee ([../data-expansion/housing-and-policies.md](../data-expansion/housing-and-policies.md));
+   total, and a monthly figure at the award year's federal loan rate if the gap were borrowed. The typical-time-to-degree
+   variant belongs to [ideas/cost-to-a-degree.md](../ideas/cost-to-a-degree.md) and is built with it, not here.
 
 ## Display
-- `/me/costs` (guardian) and a "Costs" block on each list row: range per college, a sortable table across the list,
-  a `RangeBar`-style chart with the family's "can pay" line, and the four-year total.
-- **Profile, Cost & outcomes** (guardian signed in): "For your family: about $X–$Y" beside the all-student average,
-  with the reasoning in a popover.
-- **Student's view:** only what the guardian shares ([accounts.md](accounts.md#privacy-model)): a range per college
-  and the "to borrow" gap, no inputs; otherwise "Ask a parent to run the cost estimate".
-- **Compare:** a "Your estimated price" row for guardians.
-- **Glossary:** `student-aid-index`, `need`, `percent-of-need-met`, `merit-aid`, `css-profile`, `tuition-guarantee`.
+- **The record's household step** (guardian): the form, with "Why we ask" folded ([../planner/record/less-text.md](../planner/record/less-text.md)).
+- **The plan**: the family's range on each row's panel in place of the built Cost line, and the "can pay" line on the
+  Colleges tab's cost view; the student sees the range and the gap, never the inputs; the guardian sees both. This
+  follows the owner's rule that a parent sees the student's view word for word
+  ([../planner/v3/parents.md](../planner/v3/parents.md)): the only difference is the inputs, which are the guardian's.
+- **Profile, Cost page** (signed in with finances): "For your family: about $X–$Y" beside the curve, with the SAI and
+  Pell in the popover.
+- **Compare**: a "Your estimated price" row.
+- **Glossary**: `student-aid-index` (built), `need`, `percent-of-need-met`, `css-profile`, `tuition-guarantee`.
+- **Financial-aid moves** on the plan stay hidden until the owner turns them on (decision 2026-10-15); this spec adds
+  no move. When they return, "run the family's price" is the first.
 
 ## Validation
-- Unit tests pin the SAI formula to the Department of Education's worked examples for 2026–27.
-- **Pilot:** 20 colleges (mix of CDS and not, public and private, CSS Profile and not), 5 family scenarios each,
-  run through the colleges' own calculators by hand; record both numbers. Ship only if the college's figure falls
-  inside the range at least 80% of the time; publish the check on the Data page and repeat yearly.
-- Tables must be updated each award year (a release-calendar entry; the page warns when the entry year is older
-  than the student's entry year).
+- Unit tests pin the SAI formula to the Department of Education's worked examples for the award year.
+- **Pilot:** 20 colleges (CDS and not, public and private, CSS Profile and not; the 25 of cost-by-income's pilot are the
+  pool), 5 family scenarios each, run through the colleges' own calculators by hand; ship only if the college's figure
+  falls inside the range at least 80% of the time; publish the check on the Data page beside cost-by-income's and
+  repeat yearly.
+- The tables are a release-calendar entry; the page warns when the newest table is older than the student's award year.
 
 ## Files (planned)
-- `lib/net-price/{sai,pell,grant,project}.ts`, `data/reference/need-analysis/2026-27.json`, `app/me/costs/`,
-  `components/costs/`, migration `…_household_finances.sql`, `tests/net-price.test.mts`.
+- `lib/net-price/{sai,pell,point,project}.ts`, `data/reference/need-analysis/{award-year}.json`, the household step in
+  the record, `components/costs/`, migration `…_household_finances.sql` (guardian-only policies, tested in the PGlite
+  harness), `tests/net-price.test.mts`.
 
 ## Open questions
-1. Free or Pro? Recommendation: the SAI and Pell estimate free (families should never pay to learn federal aid);
-   per-college ranges for up to 3 colleges free, the whole list and projections with Pro
-   ([commercialization.md](commercialization.md#feature-map)).
-2. Which net price calculators publish their logic? If a college's calculator is the federal template, its inputs
-   are known and the estimate could call it; worth checking in the pilot.
+1. Free or paid? Recommendation: the SAI and Pell estimate free (families should never pay to learn federal aid); the
+   per-college range and the four-year total with the advisor ([commercialization.md](commercialization.md#feature-map)).
+2. Does cost-by-income's pilot need to pass first? Yes for the estimated part of the curve; the published part (to
+   $110K) and the SAI are enough for most families, so the personal layer can ship on the published bands while the
+   gate is closed, saying so.
+3. Which calculators publish their logic? If a college's calculator is the federal template, its inputs are known and the
+   pilot can call it; check in the pilot.

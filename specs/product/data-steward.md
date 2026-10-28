@@ -1,11 +1,15 @@
 # Data Steward: An Agent That Clears the Review Queue, and Operations Built Around It
 
-> Status: **planned** 2026-10-13. Asked by the owner after Operations went live: "it's not particularly usable from
-> there, as it's going to require some type of agentic workflow." Written after one pass of exactly that work, done
-> by hand in a Claude Code session (PR [#153](https://github.com/raywross/college-stats/pull/153)): the pass's
-> findings are the evidence for every choice below. Replaces the Review queue and Approvals halves of
-> [admin.md Operations](admin.md#operations-reruns-and-approvals); Runs and Start a run stay. Part of
-> [product](README.md).
+> Status: **planned** 2026-10-13; **revised** 2026-10-26 after the roadmap review (the acquisition work of
+> [manual-collection.md](../manual-collection.md) and the catalog in [campus-sources-later.md](../campus-sources-later.md)
+> folded in as [Documents a person has to fetch](#documents-a-person-has-to-fetch); the Review page placed on the built
+> college admin page; a step 0 for collegedata.fyi's archive; model names brought current). Asked by the owner after
+> Operations went live: "it's not particularly usable from there, as it's going to require some type of agentic
+> workflow." Written after one pass of exactly that work, done by hand in a Claude Code session (PR
+> [#153](https://github.com/raywross/college-stats/pull/153)): the pass's findings are the evidence for every choice
+> below. Replaces the Review queue and Approvals halves of [admin.md Operations](admin.md#operations-reruns-and-approvals);
+> Runs and Start a run stay. The queue held 12,947 items on 2026-10-26 (14,568 after the first pass; the grid-column
+> check and the by-hand merge of PR #168 took the rest). Part of [product](README.md).
 
 ## Goal
 The owner should never read the review queue item by item. An agent, the **Data Steward**, reads it after every
@@ -98,10 +102,12 @@ repository cloned and GitHub credentials through a vault, and the archive token 
 Actions while the pipeline itself runs there. Revisit if the Steward needs to run longer than a job's 6-hour limit.
 
 ### Models and cost
-- The Steward itself: **`claude-opus-5`**, adaptive thinking, effort `high` (triage and proofs are judgment-heavy).
-- Reading a cluster's sample of documents fans out to sub-agents on **`claude-sonnet-5`** (`claude-haiku-4-5` for a
-  plain "what does line N say"), each returning a short structured finding, so the main context holds conclusions,
-  not PDFs.
+- The Steward itself: the most capable current model (**Opus 5.5**, `claude-opus-5-5`, as of 2026-10-26), adaptive
+  thinking, effort `high` (triage and proofs are judgment-heavy). The id lives in one place in the workflow so a newer
+  model is a one-line change.
+- Reading a cluster's sample of documents fans out to sub-agents on **Sonnet 5** (`claude-sonnet-5`; **Haiku 4.5**,
+  `claude-haiku-4-5-20251001`, for a plain "what does line N say"), each returning a short structured finding, so the
+  main context holds conclusions, not PDFs.
 - Budget per run: **$5 default, $20 on dispatch**, shown on the dispatch form. The first pass's investigation,
   done by hand, would have been about 30 document reads and a few hours of agent time.
 - Re-reads stay on the pipeline's Batch API path at half price, exactly as today; the Steward only proposes them.
@@ -122,8 +128,10 @@ right) is a value issue with the recommendation "publish; differs from federal b
 the figure.
 
 ### The college's Review page: `/admin/colleges/[unit]/review`
-Everything pending for one school on one page, linked from the college's admin page, its Health row, and every
-proposal that touches it. One row per field (Neumann, as it stood after the first pass; proposal numbers are
+Everything pending for one school on one page. Since 2026-10-13 the console has a page per college
+(`/admin/colleges/[unit]`, [admin.md](admin.md): the public header, the selectivity breakdown, data health, the
+estimate's inputs, views), so the Review page is a **tab of that page**, not a new place: linked from its header, from
+the college's Health row, and from every proposal that touches it. One row per field (Neumann, as it stood after the first pass; proposal numbers are
 illustrative):
 
 | Field | On the site now | Proposed | From | Issue | Recommends | Proposal |
@@ -169,6 +177,52 @@ changes are generated from that file by a script (`npm run apply-proposal`), so:
 
 Approve is refused while checks are pending or failed; Decline closes the whole proposal with a reason.
 
+## Documents a person has to fetch
+*Folded in 2026-10-26 from [manual-collection.md](../manual-collection.md) (2026-10-06) and
+[campus-sources-later.md](../campus-sources-later.md) (2026-10-04).* The crawlers obey robots.txt and stop at bot
+challenges, and they should. That leaves public documents we know about but can't read by machine: Common Data Sets on a
+university's Google Drive or behind a WAF, class profiles, campus-life pages and national chapter directories behind
+Cloudflare or a member login, high school profiles on hosts whose robots.txt disallows crawlers, and federal and state
+files that answer scripts with a bot check. The **To do** list is where every one of these lands, and it is the whole
+of what used to be a separate system (an inventory, a wave scheduler, a browser skill). What changed between the two
+plans:
+
+- **Most CDS items need no browser.** [collegedata.fyi](https://www.collegedata.fyi) (open, MIT-licensed; evaluated
+  2026-10-13) keeps an archived copy of each CDS file it indexes, with the college's own `source_url` beside it. Of its
+  490 colleges with a recent CDS that are on our site, we lacked 250 on 2026-10-13, 74 of them Google Drive links our
+  discovery never finds. So **step 0** below feeds its source URLs into `data/reference/cds-urls.json` (discovery's
+  first stop) and, for hosts that block us, fetches the archived copy with `npm run archive-doc`; our own pipeline then
+  reads the file, so quotes and lineage stay ours.
+- **High school profiles matter less.** The College Board AP Course Ledger
+  ([high-school-data.md](high-school-data.md)) now gives the AP list for about 23,000 schools; a profile PDF still adds
+  the grading scale and the matriculation list, so the item stays, lower.
+- **Upload is the route to scale**, not a browser session: a counselor or student adds their school's profile or the
+  college's document through the console's upload (and later the counselor portal), and the Steward reads it like any
+  archived document.
+
+**The To do row** keeps the inventory's shape (`ManualItem` in manual-collection.md "Inventory"): kind, subject,
+edition, the landing page, the document URL once located, the host, why a machine couldn't (`robots-path`,
+`robots-host`, `challenge`, `bot-check`, `viewer`, `js-only`, `terms`, `login`), reach (subjects the document covers),
+demand (a signed-in student's high school, a college on a plan, a follow), status, route, and every attempt. Rows come
+from the engines' own records: the review queue's `unreachable` items, `data/college-failures.json`, the campus
+`blocked.json` and the tables in campus-sources-later.md, and the high school pilot's located-but-blocked profiles.
+The Steward opens a row when it meets an acquisition issue and closes it when the document arrives; a person works the
+list from Operations, highest reach first, current edition before history.
+
+**Routes, in order of preference:** (1) a public archive's copy (`archive-doc`); (2) a partnership or data request to
+the organization (Hillel, OCF, oSTEM, UT Austin's FSL reports, the NPC sororities: the asks already drafted in
+campus-sources-later.md); (3) a headless render of a page whose own JavaScript builds the list, offered only where no
+challenge or login stands in front of it; (4) the owner opening the document once in their own browser, at a person's
+pace, and dropping it on the upload. Route 4 is for dozens of documents a year, not thousands.
+
+**Rules** (manual-collection.md "Rules", unchanged, and now the To do list's): only public links for the public; no
+sign-in, no challenge or CAPTCHA, no user-agent change, no endpoint the page doesn't link; a page that says the document
+is for counselors, members, or staff is `ask`; a site whose terms forbid automated access, or whose robots.txt itself is
+refused, is `ask`; every fetch recorded (who, when, route, hash) and every output reviewed in a PR; removal honored,
+permanently. One rule still **needs the owner's confirmation**: a person in their own browser may open a document the
+page links even where robots.txt disallows crawlers (the crawlers never do); the campus-life decision 1's other halves,
+never bypass a challenge or a login by any route, stand.
+
 ## Operations, redesigned
 | Section | Today | New |
 |---|---|---|
@@ -176,7 +230,7 @@ Approve is refused while checks are pending or failed; Decline closes the whole 
 | Runs | last 30 runs | kept; Steward runs show proposals opened and spend |
 | Open data PRs | data PRs with Approve, Hold, Close | becomes **Proposals**: systemic first, then value proposals, then pipeline PRs |
 | Review queue | 25 items per page of 14,000 | becomes **Colleges to review** (per school, above) and **Issues** (clusters by cause, with status: new, investigating, proposed, waiting on owner, left) |
-| — | — | **To do**: acquisition tasks for a person, each with the college, what's missing, the hosts tried, and an upload |
+| — | — | **To do**: acquisition tasks for a person ([above](#documents-a-person-has-to-fetch)), each with the subject, what's missing, why a machine couldn't, the hosts tried, the route to try next, and an upload |
 | — | — | **Decisions**: policy questions waiting on the owner, with the Steward's recommendation and what each answer changes |
 | — | — | **Audits**: per check family, the latest sample's error rate and the values found wrong |
 
@@ -187,18 +241,24 @@ happen. A decision is always about a field at a college (the Review page) or abo
 1. **The document archive** ([college-reported-setup.md §9](../college-reported-setup.md#9-archive-repo-and-token)).
    `COLLEGE_DOCS_REPO` isn't set, so every document is archived only in the Actions cache (evicted after 7 days
    unused), and every manifest entry reads `local:`. Without it the Steward can't read a document it didn't fetch
-   itself, and a re-judge can't re-run the line checks (`number-on-line`, the cover check). **Blocking.**
+   itself, and a re-judge can't re-run the line checks (`number-on-line`, the cover check). **Blocking**, and still
+   unset on 2026-10-26.
 2. **Line text kept with each PDF** (`<sha>.lines.json.gz`, already written when the archive repo is set): lets a
    check-fix proposal re-judge line checks and lets a grid-column check exist.
 3. `ANTHROPIC_API_KEY` in Actions (exists), and the Quad console App's permissions plus **Issues: write** if Issues
    are mirrored to GitHub (not required).
 
 ## Build order
+0. **collegedata.fyi into discovery** ($0, independent of the archive): a script reads its `cds_manifest` rows for
+   our colleges, writes each `source_url` into `data/reference/cds-urls.json` where we have none, and lists the hosts
+   that block us with the archived copy's URL for `archive-doc`. One PR; the next college-reported run picks the
+   links up. The 250 colleges it covers that we lack are the largest single gain available to the pipeline.
 1. Archive repo set up; a backfill job re-fetches every manifest document still on its source and uploads it.
 2. `lib/admin/clusters.ts`: the clustering, tested on the committed queue (pure, $0). Issues section on Operations.
 3. The college **Review** page over today's data (the queue, records, and what the site shows), before any agent:
-   it's useful on its own and is where the Steward's rows will land. **To do** from `college-failures.json` and the
-   blocked hosts, with the upload (`archive-doc`).
+   it's useful on its own and is where the Steward's rows will land. **To do** from `college-failures.json`, the
+   review queue's `unreachable` items, and the campus blocked lists, with the upload (`archive-doc`)
+   ([above](#documents-a-person-has-to-fetch)).
 4. `steward.yml` + the Steward's instructions (`.claude/agents/steward.md`) + the proposal checks (a CI job that
    fails a systemic PR missing Evidence or Sample, or a value PR whose change doesn't match its rows file). First
    runs dispatched by hand, budget $5.

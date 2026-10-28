@@ -56,6 +56,7 @@ export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
   | "planning"
+  | "essays"
   | "business"
   | "apps"
   | "ideas"
@@ -67,6 +68,12 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     title: "Planning tools",
     description:
       "What your family would pay at each college, from your own numbers, on the cost curve the site already shows.",
+  },
+  {
+    key: "essays",
+    title: "Essays",
+    description:
+      "What each college asks students to write, a workspace for the drafts that works with Google Docs and Word on any device, and a reader's notes that never rewrite a word.",
   },
   {
     key: "business",
@@ -138,6 +145,40 @@ export const ROADMAP: RoadmapSpec[] = [
   // to the use; see the spec's "As built" section.
   // visit-events (specs/product/visit-events.md) was planned and built the same day, 2026-10-13, on feature/visit-events
   // as a four-college pilot; the research is in specs/ideas/visit-events.md (promoted).
+  // Essays (specs/product/essays/, planned 2026-10-28 from the owner's brief): the prompts first, then the workspace,
+  // then the reviewer; the Google Docs connection follows Google sign-in.
+  {
+    slug: "essay-prompts",
+    file: "specs/product/essays/prompts.md",
+    group: "essays",
+    summary:
+      "Every essay and short-answer prompt a college publishes, with its limit and whether it's required, quoted from the college's own page; a line on the college's page and a count across your list.",
+    complexity: 2,
+    complexityNote: "A new recipe for the college-reported agent with checks and fixtures, a reported block with lineage, a fold on the apply card, and the plan's count.",
+    status: "planned",
+  },
+  {
+    slug: "essay-workspace",
+    file: "specs/product/essays/workspace.md",
+    group: "essays",
+    summary:
+      "One place for every essay: a plain editor built for phones with a count against each prompt's limit, autosave and versions, one draft reused across colleges, Word and Google Docs round trips, sharing with a parent for comments, and a package to paste from.",
+    complexity: 3,
+    complexityNote: "New tables with their own sharing model, an editor that must be right on phones, file generation and parsing, and later a Google Drive connection.",
+    status: "planned",
+    after: ["essay-prompts"],
+  },
+  {
+    slug: "essay-reviewer",
+    file: "specs/product/essays/reviewer.md",
+    group: "essays",
+    summary:
+      "A reader's notes on a draft when you ask: typos, run-ons, a sentence that doesn't answer the prompt, a claim without a detail; questions and observations, never a rewrite, from guidance gathered from admissions offices and writing centers.",
+    complexity: 3,
+    complexityNote: "A research run that the owner reviews before it runs, a model call with a schema and a guard that drops any rewrite, a notes model with limits and privacy, and an evaluation harness.",
+    status: "planned",
+    after: ["essay-workspace"],
+  },
   {
     slug: "launch-database",
     file: "specs/launch-database.md",
@@ -349,6 +390,7 @@ export const ROADMAP: RoadmapSpec[] = [
 
 /** Readable background pages that aren't work items themselves (linked from the roadmap, not ranked). */
 export const ROADMAP_OVERVIEWS: { slug: string; file: string; title: string }[] = [
+  { slug: "essays", file: "specs/product/essays/README.md", title: "Essays overview: the prompts, the workspace, and the reviewer; the student's own words, the platform's signature" },
   { slug: "record", file: "specs/planner/record/README.md", title: "Your record overview: the owner's review of the plan v3 preview, the name, the four parts, and the build order" },
   { slug: "plan-v3", file: "specs/planner/v3/README.md", title: "Plan v3 overview: the owner's review of Next steps, the nine parts, the design principles, and the build order" },
   { slug: "next-steps", file: "specs/planner/next-steps/README.md", title: "Next steps overview: the research into how advisors run the process, the design principles, the seven parts, and the build order" },

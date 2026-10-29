@@ -1,0 +1,8 @@
+{ "unit_id": "137847", "name": "The University of Tampa", "held": "2026-10-29",
+  "problems": [
+    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
+  ],
+  "record": {"unit_id":"137847","name":"The University of Tampa","cycle":"2026-27","status":"refers_to_form","source_url":"https://www.ut.edu/academics/college-of-social-sciences-mathematics-and-education/department-of-education---education-degrees/applicants-perspective-on-education-essay","retrieved":"2026-10-29","sha256":"fc761e2630d30b28d9e354e85a35a77f4b21ed6396dd12605abacebe8c057d2e","archive":"local:fc761e2630d30b28d9e354e85a35a77f4b21ed6396dd12605abacebe8c057d2e.html","cycle_quote":"","cycle_assumed":true,"status_quote":"Respond to ONE of the following prompts.","via":"sitemap","model":"claude-opus-5","reader":"2026.10.29.3",
+    "prompts": []
+  }
+}

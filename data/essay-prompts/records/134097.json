@@ -1,0 +1,3 @@
+{"unit_id":"134097","name":"Florida State University","cycle":"2026-27","status":"refers_to_form","source_url":"https://admissions.fsu.edu/first-year/apply","retrieved":"2026-10-29","sha256":"774bb5df72bcc512dd78c6333c61115008a5756cddb2d84a71593e01e7fc11de","archive":"local:774bb5df72bcc512dd78c6333c61115008a5756cddb2d84a71593e01e7fc11de.html","cycle_quote":"","cycle_assumed":true,"status_quote":"FSU requires the Profile, Family, Education (excluding Grades and Current / Most Recent Year Courses), Writing, Institution-Specific Questions, and Recommenders & FERPA sections of the Common App.","via":"picker","model":"claude-opus-5","reader":"2026.10.29.3",
+  "prompts": []
+}

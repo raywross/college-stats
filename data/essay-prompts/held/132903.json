@@ -1,0 +1,8 @@
+{ "unit_id": "132903", "name": "University of Central Florida", "held": "2026-10-29",
+  "problems": [
+    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
+  ],
+  "record": {"unit_id":"132903","name":"University of Central Florida","cycle":"2026-27","status":"refers_to_form","source_url":"https://www.ucf.edu/admissions/undergraduate/freshman/","retrieved":"2026-10-29","sha256":"5639b49b324bf185f2281cdbf14dffec4b13594f30d2af03536267c02afb2e51","archive":"local:5639b49b324bf185f2281cdbf14dffec4b13594f30d2af03536267c02afb2e51.html","cycle_quote":"The Early Action material submission deadline for Summer and Fall 2027 is November 15.","status_quote":"Application essay (strongly encouraged but not required)","via":"picker","model":"claude-opus-5","reader":"2026.10.29.3",
+    "prompts": []
+  }
+}

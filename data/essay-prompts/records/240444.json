@@ -1,0 +1,6 @@
+{"unit_id":"240444","name":"University of Wisconsin-Madison","cycle":"2026-27","status":"published","source_url":"https://www.admissions.wisc.edu/essays","final_url":"https://admissions.wisc.edu/essays/","retrieved":"2026-10-29","sha256":"b8255227293ee2056772951ebaccf3912ed24c9730dacb15dd218c17a053f08d","archive":"local:b8255227293ee2056772951ebaccf3912ed24c9730dacb15dd218c17a053f08d.html","cycle_quote":"","cycle_assumed":true,"via":"well-known-path","model":"claude-opus-5","reader":"2026.10.29.3",
+  "prompts": [
+  {"id":"240444:2026-27:1","text":"Each student is unique. Please tell us about the particular life experiences, talents, commitments, and/or interests you will bring to our campus.","kind":"essay","limit":{"kind":"words","max":650},"required":true,"applies_to":"all","quote":"If you apply with the Universities of Wisconsin Application, you will need to answer the following prompt:"},
+  {"id":"240444:2026-27:2","text":"Tell us why you would like to attend the University of Wisconsin–Madison. In addition, please include why you are interested in studying the major(s) you have selected. If you selected undecided, please describe your areas of possible academic interest.","kind":"why_us","limit":{"kind":"words","max":650},"required":true,"applies_to":"all","quote":"All applicants will also need to respond to this prompt:"}
+]
+}

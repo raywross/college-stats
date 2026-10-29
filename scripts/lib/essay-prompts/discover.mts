@@ -9,7 +9,9 @@
  *      step, scripts/lib/college-reported/probe.mts);
  *   5. one cheap model call (Haiku) picking among the links found on the pages fetched so far.
  * Every request goes through the engine's PoliteHttp (robots.txt, pacing, the honest user agent). The model never
- * fetches; it only picks a number from a list of links we found. Pure apart from the injected http and client.
+ * fetches; it only picks a number from a list of links we found. Pages on a shared application platform
+ * (PLATFORM_HOSTS) are never the college's: not fetched, not accepted, not offered. Pure apart from the injected http
+ * and client.
  */
 import type Anthropic from "@anthropic-ai/sdk";
 import { ROUND3_MODELS } from "../../../lib/reported.ts";
@@ -141,13 +143,30 @@ const origin = (u: string) => {
   }
 };
 
-/** The admissions hosts to probe: the apply and admissions links' origins first, then the website's. */
+/**
+ * Shared application platforms and system-wide application portals. A page on one of them is never a college's own
+ * essay page: a Common App member's apply link points at commonapp.org, whose homepage reads like "the prompts are in
+ * the form" (the first run recorded twelve colleges that way). Never a start page, never accepted, never offered to
+ * the picker. The UC's shared admissions site is not here: its personal insight questions page is the campuses' own.
+ */
+export const PLATFORM_HOSTS = /(^|\.)(commonapp\.org|coalitionforcollegeaccess\.org|mycoalition\.org|scoir\.com|applytexas\.org|calstate\.edu|suny\.edu|applyweb\.com|universalcollegeapp\.com|questbridge\.org)$/i;
+
+/** True for a URL on a shared application platform (PLATFORM_HOSTS). */
+export function isPlatformUrl(url: string): boolean {
+  try {
+    return PLATFORM_HOSTS.test(new URL(url).host);
+  } catch {
+    return false;
+  }
+}
+
+/** The admissions hosts to probe: the apply and admissions links' origins first, then the website's; never a platform's. */
 export function startPages(school: DiscoverSchool): string[] {
   const out: string[] = [];
   for (const u of [school.links?.apply, school.links?.admissions, school.links?.website]) {
     if (!u) continue;
     const abs = /^https?:\/\//i.test(u) ? u : `https://${u}`;
-    if (origin(abs) && !out.includes(abs)) out.push(abs);
+    if (origin(abs) && !isPlatformUrl(abs) && !out.includes(abs)) out.push(abs);
   }
   return out;
 }
@@ -170,6 +189,7 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
 
   const fetchPage = async (url: string, via: FoundVia, conditional?: { etag?: string; last_modified?: string }): Promise<{ page: FoundPage; text: string } | null> => {
     if (tried.includes(url) || tried.length >= DISCOVER_LIMITS.requests) return null;
+    if (isPlatformUrl(url)) return null;
     tried.push(url);
     let res: Response | null;
     try {
@@ -186,10 +206,15 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
     const meta = { etag: res.headers.get("etag") ?? undefined, last_modified: res.headers.get("last-modified") ?? undefined };
     if (res.status === 304) return { page: { url, final_url: url, bytes: new Uint8Array(0), format: "html", via, unchanged: true, ...meta }, text: "" };
     if (!res.ok) return null;
+    const final_url = res.url || url;
+    // A redirect onto a platform ("Apply" → commonapp.org) is not the college's page either.
+    if (isPlatformUrl(final_url)) {
+      log(`  ${url}: redirects to a platform (${new URL(final_url).host}), skipped`);
+      return null;
+    }
     const bytes = new Uint8Array(await res.arrayBuffer());
     const format = detectFormat(bytes, res.headers.get("content-type"), url);
     if (format === "xlsx") return null;
-    const final_url = res.url || url;
     if (format === "pdf") return { page: { url, final_url, bytes, format: "pdf", via, ...meta }, text: "" };
     const html = new TextDecoder().decode(bytes);
     pageLinks.push(...findLinks(html, final_url));
@@ -277,7 +302,7 @@ export function buildPickerRequest(school: Pick<School, "unit_id" | "name">, lin
   const seen = new Set<string>();
   let chars = 0;
   for (const l of links.slice(0, DISCOVER_LIMITS.pickerLinks)) {
-    if (seen.has(l.url) || !/^https?:\/\//.test(l.url)) continue;
+    if (seen.has(l.url) || !/^https?:\/\//.test(l.url) || isPlatformUrl(l.url)) continue;
     const row = `${uniq.length + 1} | ${l.text.replace(/\s+/g, " ").trim().slice(0, 100)} | ${l.url}`;
     if (chars + row.length > PICKER_MAX_CHARS) break;
     seen.add(l.url);

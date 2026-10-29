@@ -17,6 +17,8 @@ export interface RunSummary {
   counts: { passed: number; held: number; unchanged: number; not_found: number; failed: number; found: number };
   passed: { unit_id: string; name: string; status: string; prompts: number }[];
   held: { unit_id: string; name: string; problems: string[] }[];
+  /** Passed records whose page names no cycle, so the open cycle was assumed (for a look, not a hold). */
+  assumed?: { unit_id: string; name: string }[];
   not_found: { unit_id: string; name: string; blocked?: string }[];
   failed: { unit_id: string; name: string; reason: string }[];
 }
@@ -28,7 +30,7 @@ export function prBody(s: RunSummary): string {
   const lines = [
     `Essay prompts run ${s.run} for the ${s.cycle} cycle (specs/product/essays/prompts.md).`,
     "",
-    `- Colleges: ${s.colleges}; passed ${c.passed}, held ${c.held}, unchanged ${c.unchanged}, not found ${c.not_found}, failed ${c.failed}`,
+    `- Colleges: ${s.colleges}; passed ${c.passed}${s.assumed?.length ? ` (${s.assumed.length} with the cycle assumed)` : ""}, held ${c.held}, unchanged ${c.unchanged}, not found ${c.not_found}, failed ${c.failed}`,
     `- Spent $${s.spent_usd.toFixed(2)} of the $${s.budget_usd.toFixed(2)} budget${s.stopped ? `; stopped: ${s.stopped}` : ""}`,
     "",
     "Held records are in `data/essay-prompts/held/` and never merged; review them, fix by hand or re-run.",
@@ -37,6 +39,12 @@ export function prBody(s: RunSummary): string {
     lines.push("", "### Held", "", row(["College", "Unit", "Why"]), row(["---", "---", "---"]));
     for (const h of s.held.slice(0, 60)) lines.push(row([h.name, h.unit_id, h.problems.slice(0, 3).join("; ")]));
     if (s.held.length > 60) lines.push("", `… and ${s.held.length - 60} more.`);
+  }
+  const assumed = s.assumed ?? [];
+  if (assumed.length) {
+    lines.push("", "### Cycle assumed", "", `These pages name no application cycle, so the open cycle (${s.cycle}) was assumed. A glance at each page confirms it is this year's.`, "", row(["College", "Unit"]), row(["---", "---"]));
+    for (const a of assumed.slice(0, 80)) lines.push(row([a.name, a.unit_id]));
+    if (assumed.length > 80) lines.push("", `… and ${assumed.length - 80} more.`);
   }
   const blocked = s.not_found.filter((n) => n.blocked);
   if (blocked.length) {

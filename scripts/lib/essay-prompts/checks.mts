@@ -3,7 +3,11 @@
  * record with any problem is held under data/essay-prompts/held/ and listed, never merged. Pure.
  *
  * - The cycle: named on the page (its words found in the page's text) and not older than the open cycle (nor more
- *   than one cycle ahead, which points to a misread year).
+ *   than one cycle ahead, which points to a misread year). A page that names none gets the open cycle, marked
+ *   `cycle_assumed` and listed in the PR for a look (most colleges' pages print no year); a record with neither a
+ *   cycle quote nor that mark is held.
+ * - `choose` ("answer four of the eight"): a whole number of the listed prompts, fewer than listed, its sentence on the
+ *   page; under it no prompt is marked required.
  * - Each prompt: 10 to 1,500 characters, found verbatim in the page's text; its quote found verbatim too.
  * - A limit: a whole number from 25 to 2,000 words or 100 to 10,000 characters; a minimum under the maximum.
  * - `required` from the page's own word: false needs an optional word ("optional", "if you wish", "you may"); true is
@@ -20,7 +24,9 @@ export const PROMPT_CHARS = { min: 10, max: 1500 } as const;
 export const LIMIT_RANGE = { words: { min: 25, max: 2000 }, characters: { min: 100, max: 10_000 } } as const;
 
 const OPTIONAL_WORD = /\boptional(ly)?\b|if you (wish|choose|would like|like)|\byou may\b|\bmay (choose|submit|also|wish)\b|\bencouraged\b|\bnot required\b|\bnot mandatory\b/i;
-const REQUIRED_WORD = /\brequired\b|\bmust\b|\ball (first[- ]year )?applicants\b|\bplease (respond|answer|complete|write)\b|\brespond to (each|all|both|the following)\b|\banswer (each|all|both|the following)\b/i;
+/** "choose four of the eight", "respond to 2 of the following", "select one from these topics": a pick-some list. */
+export const CHOOSE_WORD = /\b(choose|select|pick|answer|respond to|complete|write|submit)\b[^.;]{0,60}?\b(\d+|one|two|three|four|five|six|seven|eight)\b[^.;]{0,40}?\b(of|from|among|out of)\b[^.;]{0,40}?\b(\d+|the following|these|them|those|the (prompts|questions|topics|options|essays)|(prompts|questions|topics|options|essays)( below| listed)?)\b/i;
+const REQUIRED_WORD =/\brequired\b|\bmust\b|\ball (first[- ]year )?applicants\b|\bplease (respond|answer|complete|write)\b|\brespond to (each|all|both|the following)\b|\banswer (each|all|both|the following)\b/i;
 const WHY_US = /\bwhy\b[^?.]{0,120}\b(college|university|school|institute|program|major|community|campus|here|us)\b|\b(draws?|attracts?|brings?|led) you to\b|\byou want to (attend|study|be)\b|\binterest(ed|s)? (you )?in (attending|studying at|our)\b|\bchoose to (attend|apply)\b|\bwhat about\b[^?]{0,80}\b(college|university|program|school)\b/i;
 
 /** Text compared for "verbatim": curly quotes and dashes as their plain forms, runs of whitespace as one space. */
@@ -44,8 +50,8 @@ export interface CheckContext {
   pageText?: string;
 }
 
-/** Problems with one prompt (empty when it passes). `where` prefixes each. */
-export function promptProblems(p: EssayPrompt, where: string, page: string | null): string[] {
+/** Problems with one prompt (empty when it passes). `where` prefixes each; `choose` when the page says to pick some. */
+export function promptProblems(p: EssayPrompt, where: string, page: string | null, choose = false): string[] {
   const out: string[] = [];
   const text = p.text?.trim() ?? "";
   if (text.length < PROMPT_CHARS.min || text.length > PROMPT_CHARS.max) out.push(`${where}: prompt is ${text.length} characters (${PROMPT_CHARS.min} to ${PROMPT_CHARS.max} allowed)`);
@@ -61,8 +67,12 @@ export function promptProblems(p: EssayPrompt, where: string, page: string | nul
     }
   }
   const words = `${p.quote ?? ""} ${text}`;
-  if (p.required === false && !OPTIONAL_WORD.test(words)) out.push(`${where}: marked optional, but neither the prompt nor its quote says optional`);
-  if (p.required === true && OPTIONAL_WORD.test(words) && !REQUIRED_WORD.test(words.replace(/\bnot (required|mandatory)\b/gi, ""))) out.push(`${where}: marked required, but the page's word is optional`);
+  if (choose) {
+    if (p.required === true) out.push(`${where}: marked required, but the page says to choose some of the prompts`);
+  } else {
+    if (p.required === false && !OPTIONAL_WORD.test(words) && !CHOOSE_WORD.test(words)) out.push(`${where}: marked optional, but neither the prompt nor its quote says optional`);
+    if (p.required === true && OPTIONAL_WORD.test(words) && !REQUIRED_WORD.test(words.replace(/\bnot (required|mandatory)\b/gi, ""))) out.push(`${where}: marked required, but the page's word is optional`);
+  }
   if (p.kind === "why_us" && !WHY_US.test(text)) out.push(`${where}: kind why_us, but the prompt doesn't ask why this college or program`);
   const program = typeof p.applies_to === "object" ? p.applies_to.program?.trim() : null;
   if (p.kind === "program" && !program) out.push(`${where}: kind program, but applies_to names no program`);
@@ -82,7 +92,21 @@ export function checkRecord(r: EssayRecord, ctx: CheckContext): string[] {
   if (start === null) out.push(r.cycle_quote ? `the page's cycle words ${JSON.stringify(r.cycle_quote)} name no cycle` : "the page names no cycle");
   else if (start < open) out.push(`cycle ${r.cycle} is older than the open cycle ${openCycle(ctx.today)}`);
   else if (start > open + 1) out.push(`cycle ${r.cycle} is more than one cycle ahead of ${openCycle(ctx.today)}`);
+  if (r.cycle_assumed) {
+    if (r.cycle_quote) out.push("cycle_assumed is set, but the page names a cycle");
+    if (start !== null && start !== open) out.push(`an assumed cycle must be the open one, ${openCycle(ctx.today)}, not ${r.cycle}`);
+  } else if (start !== null && !r.cycle_quote) out.push("the page names no cycle (the reader marks such a record cycle_assumed)");
   if (r.cycle_quote && page !== null && !page.includes(normalizeForMatch(r.cycle_quote))) out.push("the cycle's words aren't on the page verbatim");
+  if (r.choose) {
+    const { n, of, quote } = r.choose;
+    if (r.status !== "published") out.push(`choose is set, but status is ${r.status}`);
+    if (!Number.isInteger(n) || n < 1) out.push(`choose: ${JSON.stringify(n)} isn't a whole number of prompts to answer`);
+    if (!Number.isInteger(of) || of <= n) out.push(`choose: ${n} of ${JSON.stringify(of)} isn't a choice (of must be a whole number above n)`);
+    if (r.status === "published" && of !== r.prompts.length) out.push(`choose says ${of} prompts, but the record lists ${r.prompts.length}`);
+    if (!quote?.trim()) out.push("choose: no quote");
+    else if (page !== null && !page.includes(normalizeForMatch(quote))) out.push("choose: the quote isn't on the page verbatim");
+    else if (!CHOOSE_WORD.test(quote) && !/\b(\d+|one|two|three|four|five|six|seven|eight)\b/i.test(quote)) out.push("choose: the quote doesn't say to choose some of the prompts");
+  }
   if (!/^https?:\/\//.test(r.source_url)) out.push(`source_url ${JSON.stringify(r.source_url)} isn't a web address`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(r.retrieved)) out.push(`retrieved ${JSON.stringify(r.retrieved)} isn't an ISO date`);
   if (r.status === "published" && !r.prompts.length) out.push("status published, but no prompts");
@@ -98,7 +122,7 @@ export function checkRecord(r: EssayRecord, ctx: CheckContext): string[] {
     const key = normalizeForMatch(p.text ?? "");
     if (seen.has(key) && typeof p.applies_to === "string") out.push(`${where}: the same prompt twice`);
     seen.add(key);
-    out.push(...promptProblems(p, where, page));
+    out.push(...promptProblems(p, where, page, !!r.choose));
   });
   return out;
 }

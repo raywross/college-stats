@@ -14,7 +14,8 @@ function limitsParen(prompts: readonly EssayPrompt[]): string {
   const limited = prompts.filter((p): p is EssayPrompt & { limit: NonNullable<EssayPrompt["limit"]> } => p.limit !== null);
   if (!limited.length) return "";
   const sameUnit = limited.every((p) => p.limit.kind === limited[0]!.limit.kind);
-  const parts = sameUnit ? limited.map((p) => String(p.limit.max)) : limited.map((p) => `${p.limit.max} ${p.limit.kind}`);
+  // Each distinct limit once: eight prompts at 350 words read "(350 words)", not "(350, 350, … words)".
+  const parts = [...new Set(sameUnit ? limited.map((p) => String(p.limit.max)) : limited.map((p) => `${p.limit.max} ${p.limit.kind}`))];
   const joined = new Intl.ListFormat("en", { style: "long", type: "conjunction" }).format(parts);
   return sameUnit ? ` (${joined} ${limited[0]!.limit.kind})` : ` (${joined})`;
 }
@@ -31,6 +32,11 @@ export function essayCardLine(essays: SchoolEssays | null | undefined): string |
   const { prompts } = essays;
   const shortAnswers = prompts.filter((p) => p.kind === "short_answer");
   const essayPrompts = prompts.filter((p) => p.kind !== "short_answer");
+  if (essays.choose) {
+    // "Choose 4 of 8 essays (350 words)": the page asks for some of the listed prompts, so none is required on its own.
+    const noun = essayPrompts.length >= shortAnswers.length ? "essay" : "short answer";
+    return `Choose ${essays.choose.n} of ${essays.choose.of} ${noun}s${limitsParen(prompts)}`;
+  }
   const optionalCount = prompts.filter((p) => !p.required).length;
   const segments: string[] = [];
   if (essayPrompts.length) segments.push(`${pluralize(essayPrompts.length, "essay")}${limitsParen(essayPrompts)}`);
@@ -56,7 +62,8 @@ export function planEssayCount(schoolsEssays: readonly (SchoolEssays | null | un
       continue;
     }
     if (essays.status === "published") {
-      total += essays.prompts.length;
+      // A college that says "choose 4 of 8" adds four to the list's count, not eight.
+      total += essays.choose ? essays.choose.n : essays.prompts.length;
       whyUs += essays.prompts.filter((p) => p.kind === "why_us").length;
     }
   }

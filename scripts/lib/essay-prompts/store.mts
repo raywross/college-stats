@@ -13,7 +13,7 @@ import { dirname, join } from "node:path";
 import type { EssayPrompt, PlatformPromptsFile, SchoolEssays } from "../../../lib/types.ts";
 
 /** Bumped when the reader's prompt or schema changes, so a re-read is distinguishable from a page change. */
-export const READER_VERSION = "2026.10.29.1";
+export const READER_VERSION = "2026.10.29.2";
 
 /** How the page was found (./discover.mts). */
 export type FoundVia = "known-link" | "well-known-path" | "apply-page-link" | "sitemap" | "picker" | "recipe";
@@ -28,8 +28,10 @@ export interface EssayRecord extends SchoolEssays {
   sha256: string;
   /** Where the archive keeps the bytes ("local:<sha>.html" or "gh:<release>/<sha>.html"). */
   archive?: string;
-  /** The page's own words the cycle was read from ("2026–2027 Supplemental Essays"). */
+  /** The page's own words the cycle was read from ("2026–2027 Supplemental Essays"); empty when the page names none. */
   cycle_quote: string;
+  /** True when the page names no cycle and `cycle` is the one open on the day it was read (listed in the PR for a look). */
+  cycle_assumed?: boolean;
   /** For `none` and `refers_to_form`: the sentence that says so. */
   status_quote?: string;
   via: FoundVia;

@@ -1809,6 +1809,11 @@ export interface SchoolEssays {
   source_url: string;
   /** ISO date the page was read. */
   retrieved: string;
+  /**
+   * Present when the page says applicants answer some of the listed prompts ("choose four of the eight"): how many
+   * (`n`) of how many listed (`of`), and the sentence that says so. Each prompt is then `required: false` on its own.
+   */
+  choose?: { n: number; of: number; quote: string };
   /** Empty unless status is "published". */
   prompts: EssayPrompt[];
 }

@@ -21,7 +21,7 @@
  */
 import { taskKey } from "../tasks.ts";
 import type { GeneratedTask, GeneratorInput, PlanItem, PlanSchool, TaskKind } from "../types.ts";
-import type { ListRound } from "../../list-rules.ts";
+import { gridDateInCycle, type ListRound } from "../../list-rules.ts";
 
 type Day = { month: number | null; day: number | null } | null | undefined;
 
@@ -87,9 +87,12 @@ const LOGISTICS = "reported.admissions_logistics";
  * The Common App Requirements Grid's own ISO date for a round, when the college has a grid row (common-app-build/
  * brief.md U4 "Rounds offered" and "`applyDate`"): `ea`/`rea` resolve to whichever of the grid's `ea`/`ea2`/`rea`
  * columns is filled in, same as `lib/list-rules.ts#deadlineFor`'s grid resolution (duplicated in miniature here so
- * this module stays pure and doesn't import that file's student-override plumbing). `edition` is the grid's own
- * cycle ("2026-27"), not a CDS edition, so `isLastCycle`'s year extraction still works: a grid from an earlier
- * cycle than the student's still reads "last_cycle". Rolling has no fixed date here (`priority_date`, CDS only).
+ * this module stays pure and doesn't import that file's student-override plumbing). The grid's date is printed for
+ * the grid's cycle; `gridDateInCycle` moves it into the student's (a junior reading the 2026-27 grid applies on
+ * 2027-11-01, not 2026-11-01: the Next steps tab otherwise showed a junior three "Apply" cards the week before the
+ * current seniors' deadline). `edition` is the grid's own cycle ("2026-27"), not a CDS edition, so `isLastCycle`'s
+ * year extraction still works: a grid from an earlier cycle than the student's still reads "last_cycle". Rolling has
+ * no fixed date here (`priority_date`, CDS only).
  */
 function gridApplyDate(school: PlanSchool, round: ListRound | null): CollegeDate | null {
   const deadlines = school.apply?.deadlines;
@@ -116,7 +119,8 @@ function gridApplyDate(school: PlanSchool, round: ListRound | null): CollegeDate
       break;
   }
   if (!raw || raw === "rolling") return null;
-  return { date: raw, field: "apply.deadlines", edition: school.apply?.common_app.cycle ?? null };
+  const cycle = school.apply?.common_app.cycle ?? null;
+  return { date: gridDateInCycle(raw, cycle, school.cycleStartYear), field: "apply.deadlines", edition: cycle };
 }
 
 /** The application date for a round (null round: the regular round): the grid's own date first, then the college's own CDS record. */

@@ -55,14 +55,16 @@ const factsFor = (season: Season, today: string, gradYear: number | null = G): I
 const opts = { season: "junior_spring" as const, gradYear: G, today: TODAY, viewer: "student" as const, facts: factsFor("junior_spring", TODAY) };
 
 test("Now's order: importance desc (base importance, then timing), ties dated before undated then position then title", () => {
+  // Senior fall (Sep 1, 2027 for the class of 2028): an application piece is only a move from then on (eligibleNow).
+  const seniorFall = { ...opts, season: "senior_fall" as const, today: "2027-09-01", facts: factsFor("senior_fall", "2027-09-01") };
   // kind:apply is base 100 (ranking.md's table); +20 timing (due in 5 days) clamps at 100.
-  const applyEd = task({ title: "Apply ED", kind: "apply", source: "college", season: null, key: "item-1:apply:ed", due_on: "2027-04-20" });
-  // kind:ed_decide is base 95, no timing boost this far out.
+  const applyEd = task({ title: "Apply ED", kind: "apply", source: "college", season: null, key: "item-1:apply:ed", due_on: "2027-09-06" });
+  // kind:ed_decide is base 95, no timing boost this far out, -10 carried from junior spring: 85.
   const edDecide = task({ title: "Decide on ED", kind: "ed_decide", source: "stage", season: "junior_spring", window_start: "2027-04-01", window_end: "2027-10-15" });
-  // No table entry for this kind/key: DEFAULT_IMPORTANCE (50), tied on position.
+  // No table entry for this kind/key: DEFAULT_IMPORTANCE (50), -10 carried, tied on position.
   const playbookLate = task({ title: "Playbook second", position: 20 });
   const playbookEarly = task({ title: "Playbook first", position: 10 });
-  const g = nowMoves([playbookLate, edDecide, playbookEarly, applyEd], { ...opts, max: 6 });
+  const g = nowMoves([playbookLate, edDecide, playbookEarly, applyEd], { ...seniorFall, max: 6 });
   assert.deepEqual(g.now.map((t) => t.title), ["Apply ED", "Decide on ED", "Playbook first", "Playbook second"]);
   assert.equal(topMove(g)?.title, "Apply ED");
 });
@@ -188,6 +190,29 @@ test("the 14-day lead: 'Common App opens Aug 1' shows on Jul 20 and not on Jul 1
   assert.deepEqual(nowMoves([commonApp], summer("2027-07-10")).now, []);
   assert.equal(eligibleNow(commonApp, summer("2027-07-18")), true, "exactly fourteen days ahead");
   assert.equal(eligibleNow(commonApp, summer("2027-07-17")), false, "fifteen days ahead");
+});
+
+test("the 14-day lead never admits a piece of an application before senior fall, whatever its date (a junior's three 'Apply' cards, 2026-10-29)", () => {
+  // Junior fall, Oct 29, 2026: apply tasks that landed on the current seniors' dates (the grid's cycle, before the fix).
+  const juniorFall = { season: "junior_fall" as const, gradYear: G, today: "2026-10-29", viewer: "student" as const, facts: factsFor("junior_fall", "2026-10-29") };
+  const applyEa = task({ title: "Apply (EA)", kind: "apply", source: "college", season: null, key: "item-1:apply:-", due_on: "2026-11-01" });
+  const applyEd = task({ title: "Apply (ED I)", kind: "apply", source: "college", season: null, key: "item-2:apply:-", due_on: "2026-11-01" });
+  const fee = task({ title: "Pay the application fee", kind: "fee", source: "college", season: null, key: "item-1:fee:-", due_on: "2026-11-01" });
+  const real = task({ title: "Take a practice PSAT", season: "junior_fall" });
+  const g = nowMoves([applyEa, applyEd, fee, real], juniorFall);
+  assert.deepEqual(g.now.map((t) => t.title), ["Take a practice PSAT"]);
+  assert.deepEqual(g.more, []);
+  for (const t of [applyEa, applyEd, fee]) assert.equal(eligibleNow(t, juniorFall), false, t.title);
+  // The lead still serves the cycle's own moves (a PSAT-week registration deadline, say) in the same week.
+  const cycleMove = task({ title: "Register for the December SAT", kind: "cycle", source: "cycle", season: null, key: "list-1:cycle:sat_dec_register", due_on: "2026-11-06" });
+  assert.equal(eligibleNow(cycleMove, juniorFall), true);
+  // A senior the same week: the lead admits the apply task as before (its season is the current one anyway).
+  const senior = { season: "senior_fall" as const, gradYear: 2027, today: "2026-10-29", viewer: "student" as const, facts: factsFor("senior_fall", "2026-10-29", 2027) };
+  assert.equal(eligibleNow(applyEa, senior), true);
+  assert.deepEqual(nowMoves([applyEa, applyEd, fee], senior).now.map((t) => t.title), ["Apply (EA)", "Apply (ED I)", "Pay the application fee"]);
+  // Summer before senior year, two weeks before an Aug 15 deadline: still gated; the move belongs to senior fall.
+  const summer = { season: "summer_before_senior" as const, gradYear: G, today: "2027-08-01", viewer: "student" as const, facts: factsFor("summer_before_senior", "2027-08-01") };
+  assert.equal(eligibleNow(task({ title: "Apply (rolling)", kind: "apply", source: "college", season: null, key: "item-3:apply:-", due_on: "2027-08-15" }), summer), false);
 });
 
 test("a skipped move is in skipped, not now; brought back (undismissed), it returns to now", () => {

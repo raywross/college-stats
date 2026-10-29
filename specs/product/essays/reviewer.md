@@ -220,3 +220,61 @@ with its own limits and privacy, the editor's margin, and an evaluation harness.
 2. Should counselors (the portal) be able to add their own guidance to the corpus for their students? Later, and only
    as a separate, attributed section; the first corpus is one for everyone.
 3. ~~Opus 5 or Sonnet 5 as the reader?~~ Decided 2026-10-28 (owner): Opus 5; the cost table above is the budget.
+
+## As built (2026-10-29)
+Built on `feature/essays` with the workspace. The guidance corpus was researched first (54 institutional sources, 34
+on craft and 20 on approach; `data/reference/essay-guidance/`) and is a **draft** until the owner answers the
+"Questions for the owner" at the end of `guidance.md`; the reader uses it as merged. The evaluation needs
+`ANTHROPIC_API_KEY`, which lives in GitHub Actions: the owner dispatches `.github/workflows/eval-reviewer.yml`, which
+writes `reviewer-eval.md` to the job summary. Nothing has made a live call yet.
+
+- **The corpus** (`scripts/research-essay-guidance.mts`, `npm run research-essay-guidance`): pages fetched through
+  `PoliteHttp` with the honest user agent and robots honored; whole sentences in page order, at most 300 words per
+  source, picked by anchor phrases chosen after reading each page (no model, no key); refusals recorded in
+  `sources.json` (Harvard's writing center and Michigan refused, UVA's blog disallows robots, UChicago's page renders
+  by script; Common App's pages are off limits beyond its homepage by the repository's own guard). `guidance.md` has
+  one section per category and one per question of approach; each paragraph cites its sources by organization and
+  url with at most one quoted sentence per source, and every disagreement tells the reader to ask rather than advise
+  (`tests/essay-guidance.test.mts` enforces all of it).
+- **The call** (`lib/essays/review.ts`, server-only): `claude-opus-5`, adaptive thinking at effort `medium`, the
+  rubric and the kind's guidance as a cached system block, a JSON schema for the notes, `max_tokens` 8000; a refusal
+  or a cut-off answer stores no notes; API errors are not recorded and don't count against the caps. The reader sees
+  numbered paragraphs and returns the paragraph and the exact words; the code finds the span, and a quote not in the
+  draft drops the note. `REVIEW_METHOD` is `2026.10.29.1`.
+- **The guard** (`lib/essays/review-guard.ts`, pure): the spec's rules plus no offered wording ("try writing…", a
+  quoted passage of four or more words that isn't from the draft or the prompt), shape and span validity, and at most
+  twelve notes; grade words that come from the prompt itself or from the student's own quoted words are not treated
+  as grading. Every rule has a test that plants the violation.
+- **What the reader knows** (`lib/essays/review-context.ts`): the spec's table, with the student's display name
+  removed from the story and from the other drafts' openings; college facts only for why-us and program prompts;
+  the depth reading's categories; a test walks the assembled context for forbidden fields.
+- **Storage and caps** (`supabase/migrations/20261029130000_essay_reviews.sql`): `essay_reviews` and `essay_notes`
+  are written only through `record_essay_review(...)`, which checks the owner, the version, the caps (five per draft
+  and fifty per student in the last 24 hours, sixty per draft per cycle from 1 August) under a per-student lock, and
+  inserts the review and its notes in one transaction; `essay_review_allowance(essay)` answers the caps before the
+  call. Notes allow an update of `state` only, by the student. Refusals and malformed answers count (each is a paid
+  call).
+- **The route** (`POST /api/essays/review` `{ essayId, versionId? }`): session, `allowed(user, "advisor.reviews")`,
+  the caps, the estimate's token-bucket limiter, then the review. Without `versionId` it reads the draft as saved and,
+  if the newest version differs, first saves one labelled "Notes asked for", so notes always belong to the words that
+  were read. `GET` lists a draft's notes; `PATCH` marks one done or ignored. `proxy.ts` refreshes the session on
+  `/api/essays/*`.
+- **The notes on screen** (`components/essays/Notes.tsx`, `lib/essays/notes-view.ts`): "Read this draft" and "A
+  reader's notes" with the spec's disclaimer; mechanics first; under the field on phones and as margin marks measured
+  against the field on wide screens; done and ignored; a guardian sees them. The rubric never ships to the browser (a
+  test checks the import graph). Glossary: `reader-notes`.
+- **Evaluation** (`scripts/eval-reviewer.mts`, `scripts/lib/essay-review/eval.mts`, `tests/fixtures/essays/`):
+  thirty drafts for six fictional students and four fictional colleges with labeled planted issues (mechanics 10,
+  prompt 9, specific 10, structure 7, voice 7, care 6, showcase 7, interest 9), three clean spots that measure
+  unwarranted notes, the refusal set and the consistency set; notes that match no label are listed for a person to
+  read. Exit 2 when a target is missed, 1 without the key. `--sizes` prints request sizes without a call.
+- **Cost, from the prompts as built**: the cached prefix is about 10–11K tokens (the guidance runs about 4,500 words,
+  twice the plan's guess), the context 400–650 tokens, a 650-word draft about 900, and thinking plus notes 3–4.5K
+  output tokens. About $0.09–$0.13 a review with a warm cache and $0.15–$0.19 cold, at Opus 5's list prices.
+  Trimming which guidance sections each prompt kind receives is the lever if cost matters.
+- **Telemetry**: `essay_review_requested {prompt_kind}`, `essay_review_notes {count, categories}`,
+  `essay_review_dropped {reason}`, server-side; never text.
+- **Not built**: the per-essay and per-account off switch (needs a column and a decision on where it lives); the
+  privacy page's wording on the provider and what is sent; a one-hour cache (`ttl: "1h"` costs twice as much to write;
+  decide once traffic is known); a notes slot inside the editor so the notes sit right under the field rather than
+  after the comments and versions.

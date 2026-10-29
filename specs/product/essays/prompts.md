@@ -189,6 +189,23 @@ $3.87. Reading its records showed four more faults, fixed as `READER_VERSION` 20
   prompts, and the reader recorded them as the college's own. A prompt equal to one of the platforms' prompts in the
   reference file now holds the record, and the reader is told to leave them out.
 
+### The fourth reader (2026-10-29, after the third run merged)
+Forty-four colleges landed from the third run (PR #190). Four things it still got wrong, fixed as `READER_VERSION`
+2026.10.29.4 for the next run:
+- **Half the colleges had no page found.** The ladder's cheap steps started from the apply and admissions links and
+  looked only at the links on those pages; the essay link usually sits one level deeper, on the first-year "how to
+  apply" page. Discovery now fetches up to three such pages on the college's own hosts (`rankApplyLinks`) for their
+  links before the well-known paths, the sitemaps, and the picker.
+- **"See the form" from a general page.** Cornell, Dartmouth, Tufts and Boston University publish their supplements,
+  but the page read was a general "how to apply" page that mentions the Common App. When the first read lists no
+  prompts, the ladder now runs once more past that page; a page that reads as published replaces the first answer
+  (the second read costs about two cents, only for those colleges).
+- **One read per shared page.** The nine UC campuses share one personal insight questions page; nine reads of it
+  disagreed on one question's kind and three campuses were held. A run now reads a page once (by its bytes' hash) and
+  answers every college on it from that read.
+- **A test's essay section is not an application essay.** "UNF does not require the essay section of the SAT, ACT or
+  CLT" had passed as "no essays"; such a quote now holds the record.
+
 The third run's data PR then failed CI on the "re-merge changes nothing" tests, the first time real blocks met them:
 the college-reported merge re-appends its lineage records last and the tiers build re-inserts `selectivity` right
 before `directories`, so `lineage.essays` now sits before the first `reported.*` record and `essays` before

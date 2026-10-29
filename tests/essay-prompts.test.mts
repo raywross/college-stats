@@ -20,7 +20,7 @@ import type { ModelClient } from "../scripts/lib/college-reported/models.mts";
 import { SpendCap, SpendCapReached } from "../scripts/lib/high-schools/profiles/budget.mts";
 import { checkRecord, normalizeForMatch } from "../scripts/lib/essay-prompts/checks.mts";
 import { normalizeCycle, openCycle } from "../scripts/lib/essay-prompts/cycle.mts";
-import { buildPickerRequest, discoverEssayPage, essayLinkScore, isPlatformUrl, looksLikeEssayPage, rankLinks, startPages, wellKnownUrls, type DiscoverHttp } from "../scripts/lib/essay-prompts/discover.mts";
+import { applyLinkScore, buildPickerRequest, discoverEssayPage, essayLinkScore, isPlatformUrl, looksLikeEssayPage, rankApplyLinks, rankLinks, startPages, wellKnownUrls, type DiscoverHttp } from "../scripts/lib/essay-prompts/discover.mts";
 import { promptProblems } from "../scripts/lib/essay-prompts/checks.mts";
 import { applyEssays, lineageOf, placeEssaysLineage, platformProblems, stripEssays } from "../scripts/lib/essay-prompts/merge.mts";
 import { READ_MAX_TOKENS, READ_MODEL, READ_SCHEMA, READ_SYSTEM, ReadFailed, buildReadRequest, pageText, parseReadResponse, readEssayPage, toRecord, type ReadAnswer } from "../scripts/lib/essay-prompts/read.mts";
@@ -817,4 +817,101 @@ test("report: the PR body lists the colleges whose cycle was assumed", () => {
   assert.match(body, /passed 2 \(1 with the cycle assumed\)/);
   assert.match(body, /### Cycle assumed[\s\S]*the open cycle \(2026-27\) was assumed[\s\S]*\| A \| 1 \|/);
   assert.ok(!/\| B \| 2 \|/.test(body));
+});
+
+/* ------------------------------------------------------------------ */
+/* The fourth reader: one level deeper, a second look, one read per page */
+/* ------------------------------------------------------------------ */
+
+test("discovery: first-year 'how to apply' links are followed one level deeper for the essay link", async () => {
+  assert.equal(applyLinkScore({ url: "https://admissions.example.edu/first-year/how-to-apply", text: "How to apply as a first-year student" }), 3);
+  assert.equal(applyLinkScore({ url: "https://admissions.example.edu/freshman", text: "Freshman applicants" }), 2);
+  assert.equal(applyLinkScore({ url: "https://admissions.example.edu/apply", text: "Apply" }), 0, "a bare Apply leads to the portal");
+  assert.equal(applyLinkScore({ url: "https://admissions.example.edu/requirements", text: "Admission requirements" }), 1);
+  assert.equal(applyLinkScore({ url: "https://admissions.example.edu/graduate/apply", text: "Graduate applicants" }), 0);
+  assert.equal(applyLinkScore({ url: "https://admissions.example.edu/transfer/how-to-apply", text: "Transfer: how to apply" }), 0);
+  assert.deepEqual(rankApplyLinks([{ url: "https://elsewhere.org/first-year/apply", text: "First-year apply" }, { url: "https://www.commonapp.org/apply", text: "First-year apply" }], ["https://admissions.example.edu"]), [], "other hosts and platforms never");
+
+  // The start page links only to a first-year page; that page links to the prompts.
+  const http = fakeSite({
+    "https://admissions.example.edu/apply": '<a href="/first-year/how-to-apply">First-year applicants: how to apply</a><a href="/visit">Visit</a>',
+    "https://admissions.example.edu/first-year/how-to-apply": '<p>Welcome, first-year applicants. Here is what to send.</p><a href="/first-year/essay-prompts">Essay prompts</a>',
+    "https://admissions.example.edu/first-year/essay-prompts": readFileSync(join(FIX, "plain-list.html"), "utf8"),
+  });
+  const r = await discoverEssayPage(SITE_SCHOOL, undefined, { http });
+  assert.equal(r.found?.url, "https://admissions.example.edu/first-year/essay-prompts");
+  assert.ok(http.requested.includes("https://admissions.example.edu/first-year/how-to-apply"), "the first-year page was fetched for its links");
+  assert.ok(!http.requested.includes("https://admissions.example.edu/visit"), "a visit page is never fetched");
+  assert.equal(r.cost, 0, "no model call");
+});
+
+test("discovery: skip looks past a page already read", async () => {
+  const http = fakeSite({
+    "https://admissions.example.edu/apply": readFileSync(join(FIX, "apply-page.html"), "utf8"),
+    "https://admissions.example.edu/apply/first-year/supplemental-essay-prompts": readFileSync(join(FIX, "plain-list.html"), "utf8"),
+    "https://admissions.example.edu/apply/writing-supplement": readFileSync(join(FIX, "table-limits.html"), "utf8"),
+  });
+  const first = await discoverEssayPage(SITE_SCHOOL, undefined, { http });
+  assert.equal(first.found?.url, "https://admissions.example.edu/apply/first-year/supplemental-essay-prompts");
+  const second = await discoverEssayPage(SITE_SCHOOL, undefined, { http, skip: [first.found!.url, first.found!.final_url] });
+  assert.equal(second.found?.url, "https://admissions.example.edu/apply/writing-supplement", "the next candidate");
+});
+
+test("runCollege: a general page that points to the form gets a second look, and the prompts page one link away wins", async () => {
+  const HOW_TO = '<h1>How to apply</h1><p>Submit the essay with your Common Application. Our supplemental essay questions are listed on the writing supplement page.</p><p>What else? When?</p><a href="/apply/writing-supplement">Writing supplement</a>';
+  const http = fakeSite({
+    "https://admissions.example.edu/apply": HOW_TO,
+    "https://admissions.example.edu/apply/writing-supplement": readFileSync(join(FIX, "table-limits.html"), "utf8"),
+  });
+  const { client, calls } = fakeClient((p) => {
+    const body = JSON.stringify(p.messages);
+    return body.includes("How to apply")
+      ? message({ cycle_quote: null, status: "refers_to_form", status_quote: "Submit the essay with your Common Application.", choose: null, prompts: [] })
+      : message(ANSWERS["table-limits.html"]);
+  });
+  const out = await runCollege(SITE_SCHOOL, undefined, null, { http, client, cap: new SpendCap(5), today: TODAY });
+  assert.equal(out.kind, "passed", JSON.stringify(out));
+  if (out.kind !== "passed") return;
+  assert.equal(out.record.status, "published");
+  assert.equal(out.record.source_url, "https://admissions.example.edu/apply/writing-supplement");
+  assert.equal(out.recipe.url, "https://admissions.example.edu/apply/writing-supplement", "the recipe remembers the page that had the prompts");
+  assert.equal(calls.length, 2, "two reads: the general page, then the prompts page");
+
+  // When nothing better exists, the first answer stands (no second read).
+  const alone = fakeSite({ "https://admissions.example.edu/apply": HOW_TO.replace('<a href="/apply/writing-supplement">Writing supplement</a>', "") });
+  const only = fakeClient(() => message({ cycle_quote: null, status: "refers_to_form", status_quote: "Submit the essay with your Common Application.", choose: null, prompts: [] }));
+  const kept = await runCollege(SITE_SCHOOL, undefined, null, { http: alone, client: only.client, cap: new SpendCap(5), today: TODAY });
+  assert.equal(kept.kind, "passed");
+  if (kept.kind === "passed") assert.equal(kept.record.status, "refers_to_form");
+  assert.equal(only.calls.length, 1);
+});
+
+test("runCollege: two colleges on one shared page cost one read and agree", async () => {
+  const shared = readFileSync(join(FIX, "plain-list.html"), "utf8");
+  const http = fakeSite({
+    "https://admissions.example.edu/apply": '<a href="/apply/first-year/supplemental-essay-prompts">Supplemental essay prompts</a>',
+    "https://admissions.example.edu/apply/first-year/supplemental-essay-prompts": shared,
+  });
+  const { client, calls } = fakeClient(() => message(ANSWERS["plain-list.html"]));
+  const readCache = new Map();
+  const deps = { http, client, cap: new SpendCap(5), today: TODAY, readCache };
+  const a = await runCollege(SITE_SCHOOL, undefined, null, deps);
+  const b = await runCollege({ ...SITE_SCHOOL, unit_id: "999002", name: "Example University-Downtown" }, undefined, null, deps);
+  assert.equal(a.kind, "passed");
+  assert.equal(b.kind, "passed");
+  assert.equal(calls.length, 1, "the second college is answered from the cache");
+  if (a.kind === "passed" && b.kind === "passed") {
+    assert.equal(b.record.unit_id, "999002");
+    assert.equal(b.record.prompts[0].id, "999002:2026-27:1", "ids are the college's own");
+    assert.deepEqual(b.record.prompts.map((p) => p.text), a.record.prompts.map((p) => p.text));
+  }
+});
+
+test("checks: a 'none' quote about a test's essay section is not a none", () => {
+  const q = "UNF does not require the essay section of the SAT, ACT or CLT.";
+  const r: EssayRecord = { ...good(), status: "none", status_quote: q, prompts: [] };
+  const problems = checkRecord(r, { today: TODAY, pageText: `${PAGE} ${q}` });
+  assert.ok(problems.some((p) => /about a test's essay section/.test(p)), JSON.stringify(problems));
+  const ok: EssayRecord = { ...good(), status: "none", status_quote: "Example University does not require a supplemental essay.", prompts: [] };
+  assert.deepEqual(checkRecord(ok, { today: TODAY, pageText: `${PAGE} Example University does not require a supplemental essay.` }), []);
 });

@@ -84,7 +84,8 @@
     "sync-coalition": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-coalition.mts",
     "merge-coalition": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-coalition.mts",
     "sync-essay-prompts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-essay-prompts.mts",
-    "merge-essay-prompts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-essay-prompts.mts"
+    "merge-essay-prompts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-essay-prompts.mts",
+    "research-essay-guidance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/research-essay-guidance.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

@@ -137,3 +137,63 @@ export async function runCollege(school: Pick<School, "unit_id" | "name" | "link
   }
   return problems.length ? { kind: "held", cost, recipe: next, record, problems } : { kind: "passed", cost, recipe: next, record };
 }
+
+/* ------------------------------------------------------------------ */
+/* Reconciling colleges that share a page                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The held college's record rebuilt from a passing read of the same page (same bytes, so the same prompts): the
+ * passing record's answer with this college's own ids. The nine UC campuses share one personal insight questions page;
+ * read nine times under four workers, the model called one question "why us" on three reads and not on six, and the
+ * three were held for a difference that isn't on the page. Pure.
+ */
+export function adoptRecord(held: EssayRecord, from: EssayRecord): EssayRecord {
+  const { previous: _p, ...rest } = held;
+  void _p;
+  const out: EssayRecord = {
+    ...rest,
+    cycle: from.cycle,
+    cycle_quote: from.cycle_quote,
+    status: from.status,
+    model: from.model,
+    reader: from.reader,
+    prompts: from.prompts.map((p, i) => ({ ...p, id: `${held.unit_id}:${from.cycle}:${i + 1}` })),
+  };
+  delete out.cycle_assumed;
+  delete out.status_quote;
+  delete out.choose;
+  if (from.cycle_assumed) out.cycle_assumed = true;
+  if (from.status_quote) out.status_quote = from.status_quote;
+  if (from.choose) out.choose = { ...from.choose };
+  if (held.previous) out.previous = held.previous;
+  return out;
+}
+
+/**
+ * After a run: every held outcome whose page bytes match a passing record's (from this run, or already committed) is
+ * rebuilt from that record and re-checked; one that now passes becomes a passed outcome. Returns the outcomes with
+ * those replaced, and who adopted whose read. Pure apart from the check.
+ */
+export function reconcileHeld(
+  outcomes: ReadonlyMap<string, Outcome>,
+  committed: readonly EssayRecord[],
+  ctx: { today: string; platformTexts?: readonly string[] },
+): { outcomes: Map<string, Outcome>; adopted: { unit_id: string; from: string }[] } {
+  const bySha = new Map<string, EssayRecord>();
+  for (const r of committed) bySha.set(r.sha256, r);
+  for (const o of outcomes.values()) if (o.kind === "passed") bySha.set(o.record.sha256, o.record);
+  const out = new Map(outcomes);
+  const adopted: { unit_id: string; from: string }[] = [];
+  for (const [id, o] of outcomes) {
+    if (o.kind !== "held") continue;
+    const from = bySha.get(o.record.sha256);
+    if (!from || from.unit_id === id) continue;
+    const record = adoptRecord(o.record, from);
+    const problems = checkRecord(record, { today: ctx.today, platformTexts: ctx.platformTexts });
+    if (problems.length) continue;
+    out.set(id, { kind: "passed", cost: o.cost, recipe: o.recipe, record });
+    adopted.push({ unit_id: id, from: from.unit_id });
+  }
+  return { outcomes: out, adopted };
+}

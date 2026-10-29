@@ -25,7 +25,7 @@ import { promptProblems } from "../scripts/lib/essay-prompts/checks.mts";
 import { applyEssays, lineageOf, placeEssaysLineage, platformProblems, stripEssays } from "../scripts/lib/essay-prompts/merge.mts";
 import { READ_MAX_TOKENS, READ_MODEL, READ_SCHEMA, READ_SYSTEM, ReadFailed, buildReadRequest, pageText, parseReadResponse, readEssayPage, toRecord, type ReadAnswer } from "../scripts/lib/essay-prompts/read.mts";
 import { prBody, releaseNote, type RunSummary } from "../scripts/lib/essay-prompts/report.mts";
-import { runCollege } from "../scripts/lib/essay-prompts/run.mts";
+import { reconcileHeld, runCollege, type Outcome } from "../scripts/lib/essay-prompts/run.mts";
 import { READER_VERSION, serializeHeld, serializeRecord, type EssayRecord } from "../scripts/lib/essay-prompts/store.mts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -914,4 +914,67 @@ test("checks: a 'none' quote about a test's essay section is not a none", () => 
   assert.ok(problems.some((p) => /about a test's essay section/.test(p)), JSON.stringify(problems));
   const ok: EssayRecord = { ...good(), status: "none", status_quote: "Example University does not require a supplemental essay.", prompts: [] };
   assert.deepEqual(checkRecord(ok, { today: TODAY, pageText: `${PAGE} Example University does not require a supplemental essay.` }), []);
+});
+
+/* ------------------------------------------------------------------ */
+/* The fifth reader: shared pages reconciled, transfer pages never      */
+/* ------------------------------------------------------------------ */
+
+test("reconcile: a college held on a page another college passed on takes that read, with its own ids", () => {
+  const passed = chooseRecord();
+  const noisy: EssayRecord = { ...chooseRecord(), unit_id: "999002", name: "Example University-Downtown", prompts: chooseRecord().prompts.map((p, i) => ({ ...p, id: `999002:2026-27:${i + 1}`, kind: i === 7 ? "why_us" : p.kind })) };
+  const problems = checkRecord(noisy, { today: TODAY, pageText: CHOOSE_PAGE });
+  assert.ok(problems.some((p) => /kind why_us/.test(p)), "the noisy read is held on its own");
+  const outcomes = new Map<string, Outcome>([
+    ["999001", { kind: "passed", cost: 0.02, recipe: { url: passed.source_url, via: "picker", checked: TODAY, sha256: passed.sha256 }, record: passed }],
+    ["999002", { kind: "held", cost: 0.02, recipe: { url: noisy.source_url, via: "picker", checked: TODAY, sha256: noisy.sha256 }, record: noisy, problems }],
+  ]);
+  const r = reconcileHeld(outcomes, [], { today: TODAY });
+  assert.deepEqual(r.adopted, [{ unit_id: "999002", from: "999001" }]);
+  const o = r.outcomes.get("999002")!;
+  assert.equal(o.kind, "passed");
+  if (o.kind === "passed") {
+    assert.equal(o.record.unit_id, "999002");
+    assert.equal(o.record.name, "Example University-Downtown");
+    assert.deepEqual(o.record.prompts.map((p) => p.id), passed.prompts.map((_, i) => `999002:2026-27:${i + 1}`));
+    assert.deepEqual(o.record.prompts.map((p) => p.kind), passed.prompts.map((p) => p.kind), "the passing read's kinds");
+    assert.deepEqual(o.record.choose, passed.choose);
+    assert.equal(o.record.cycle_assumed, true);
+    assert.equal(o.record.source_url, noisy.source_url, "its own page record");
+  }
+  assert.equal(r.outcomes.get("999001"), outcomes.get("999001"), "the passing outcome is untouched");
+
+  // A committed record from an earlier run serves too; a held college on a different page is left alone.
+  const other: EssayRecord = { ...noisy, sha256: "c".repeat(64) };
+  const r2 = reconcileHeld(new Map([["999002", { kind: "held", cost: 0, recipe: { url: "", via: null, checked: TODAY }, record: other, problems }]]), [passed], { today: TODAY });
+  assert.deepEqual(r2.adopted, [], "different bytes: not the same page");
+  const r3 = reconcileHeld(new Map([["999002", { kind: "held", cost: 0, recipe: { url: "", via: null, checked: TODAY }, record: noisy, problems }]]), [passed], { today: TODAY });
+  assert.deepEqual(r3.adopted, [{ unit_id: "999002", from: "999001" }], "a committed passing record of the same page serves");
+});
+
+test("report: a held college with a passing record on file says so; reconciled colleges are listed", () => {
+  const s: RunSummary = {
+    run: "2026-10-29T12:00:00Z", started: "", finished: "", cycle: "2026-27", budget_usd: 40, spent_usd: 1, stopped: null, dry_run: false, colleges: 2,
+    counts: { passed: 1, held: 1, unchanged: 0, not_found: 0, failed: 0, found: 0 },
+    passed: [{ unit_id: "1", name: "A", status: "published", prompts: 8 }],
+    held: [{ unit_id: "2", name: "B", problems: ["prompt 1: kind why_us, but the prompt doesn't ask why this college or program"], kept: "2026-10-01" }],
+    reconciled: [{ unit_id: "3", name: "C", from: "A" }],
+    not_found: [],
+    failed: [],
+  };
+  const body = prBody(s);
+  assert.match(body, /\| B \| 2 \| prompt 1: kind why_us[^|]*\(a passing record from 2026-10-01 stays on file\) \|/);
+  assert.match(body, /### Took another college's read of the same page[\s\S]*\| C \| 3 \| A \|/);
+});
+
+test("discovery: transfer and graduate pages are never fetched, even as the best-scoring link", async () => {
+  assert.equal(essayLinkScore({ url: "https://admissions.example.edu/apply-dartmouth/transfer-application-essays", text: "Transfer application essays" }), 0);
+  const http = fakeSite({
+    "https://admissions.example.edu/apply": '<a href="/apply/transfer/essay-prompts">Essay prompts</a><a href="/apply/graduate/essays">Essay prompts</a><a href="/apply/first-year/supplemental-essay-prompts">Supplemental essay prompts</a>',
+    "https://admissions.example.edu/apply/transfer/essay-prompts": readFileSync(join(FIX, "table-limits.html"), "utf8"),
+    "https://admissions.example.edu/apply/first-year/supplemental-essay-prompts": readFileSync(join(FIX, "plain-list.html"), "utf8"),
+  });
+  const r = await discoverEssayPage(SITE_SCHOOL, undefined, { http });
+  assert.equal(r.found?.url, "https://admissions.example.edu/apply/first-year/supplemental-essay-prompts");
+  assert.ok(!http.requested.some((u) => /transfer|graduate/.test(u)), `requested ${JSON.stringify(http.requested)}`);
 });

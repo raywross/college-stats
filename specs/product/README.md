@@ -41,6 +41,14 @@ the roadmap, with the award-letter analyzer as the last stage.
 | [early-decision-strategy.md](early-decision-strategy.md) | *Built in pieces* (marked 2026-10-26): the measures in `lib/early.ts`, the profile's "Applying early", Compare's rows, the Common App Explore filters, and ED opportunities on the plan | Medium |
 | [../planner/offers.md](../planner/offers.md) | Real aid offers side by side, standardized the way the federal College Financing Plan does, with loans and 4-year totals made visible; moved into the planner on 2026-10-07 as its decisions-and-offers stage | Large |
 
+### Essays
+| Spec | Adds | Complexity |
+|---|---|---|
+| [essays/README.md](essays/README.md) | *Planned 2026-10-28:* the overview: Quad is the workspace up to the button, the student's own words always, the platform is the signature | — |
+| [essays/prompts.md](essays/prompts.md) | Every supplemental essay and short-answer prompt a college publishes, quoted and cited, on the apply card and counted across the plan | Medium |
+| [essays/workspace.md](essays/workspace.md) | The editor (plain text, phones first, autosave, versions, counts), reuse across colleges, Word and Google Docs round trips, parents and advisors reading and commenting, the package per college | Large |
+| [essays/reviewer.md](essays/reviewer.md) | A reader's notes on demand, never a rewrite, from a cited guidance corpus the owner reviews; a guard and an eval | Large |
+
 ### High school context
 | Spec | Adds | Complexity |
 |---|---|---|

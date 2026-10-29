@@ -289,6 +289,11 @@ shared rules for user data are in that README. All user data lives only in Supab
   approve; Operations becomes Issues, Proposals, To do (the documents a person has to fetch, folded in from
   manual-collection.md and campus-sources-later.md), Decisions, Audits. Step 0: collegedata.fyi's source URLs into
   discovery. Needs the document archive repo first.
+- [ ] **Essays** ([product/essays/](product/essays/README.md), planned 2026-10-28 from the owner's brief): the prompts
+  each college publishes, read by the agent with quotes (Medium); the writing workspace with a phone-first plain editor,
+  versions, Word and Google Docs round trips, sharing, and a package per college (Large); a reader's notes that never
+  rewrite, from a cited guidance corpus with a guard and an eval (Large). The Google Drive connection follows Google
+  sign-in.
 - [ ] **The advisor** ([product/advisor.md](product/advisor.md), planned 2026-10-26 on the owner's decisions; the rename and
   the splash page built 2026-10-27 on `feature/advisor`, the trial left): rename the
   plan Quad Advisor (tab "Advisor", `/advisor` with `/plan` redirecting; decided); a 14-day

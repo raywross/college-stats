@@ -1,6 +1,8 @@
 # Part 3, The Reviewer: A Reader's Notes, Never a Rewrite
 
-> Status: **planned** 2026-10-28. Part 3 of [essays](README.md). After [workspace.md](workspace.md). Builds on the
+> Status: **built** 2026-10-29 (`feature/essays`; see [As built](#as-built-2026-10-29)); the guidance corpus is a
+> draft until the owner reviews it, and the evaluation run needs the owner's API key. Planned 2026-10-28. Part 3 of
+> [essays](README.md). After [workspace.md](workspace.md). Builds on the
 > estimate's architecture (server-only model code, a note catalog, a method version;
 > [../../chances/estimate.md](../../chances/estimate.md)) and the Data Steward's agent pattern for the research run
 > ([../data-steward.md](../data-steward.md)). Part of [product](../README.md).

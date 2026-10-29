@@ -189,6 +189,13 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
   apply?: import("../common-app/types").SchoolApply | null;
   /** Coalition application (additive, specs/data-expansion/coalition-app.md): the block, null for a non-member; `cites["coalition.via_scoir"]`. */
   coalition?: import("../coalition").SchoolCoalition | null;
+  /**
+   * Essays build, U2 (additive, specs/product/essays/prompts.md "Display"): straight from `School.essays`, null
+   * when the college's essay page hasn't been read (counted "not on file" by `planEssayCount`). The Colleges tab's
+   * count line isn't a MetricLabel (it's an aggregate across the list, like `headerCountsLine`'s college count), so
+   * this carries no entry in `cites`.
+   */
+  essays?: import("../types").SchoolEssays | null;
 }
 
 /* ------------------------------------------------------------------ */

@@ -202,6 +202,7 @@ export function planSchoolFor(
     poolSchool: school,
     apply: school.apply ?? null,
     coalition: school.coalition ?? null,
+    essays: school.essays ?? null,
   };
 }
 

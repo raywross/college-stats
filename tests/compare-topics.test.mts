@@ -104,6 +104,8 @@ const SINGLE_PAGE_LABELS: readonly string[] = Object.freeze([
   "New transfer students this fall",
   "Transfers, share of new undergraduates",
   "Transfer acceptance rate",
+  // Essays build, U2 (specs/product/essays/prompts.md "Display"): a new row, added here deliberately.
+  "Essays",
   "Diversity index",
   "Average cost, all students (est.)",
   "Aid generosity (grants ÷ full price)",

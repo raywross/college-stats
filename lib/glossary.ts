@@ -1214,6 +1214,27 @@ const entries = {
     why: "A supplement takes real time and is usually due with the rest of the application, so it's worth knowing about well before the deadline.",
     category: "Admissions",
   },
+  // Essays, the prompts (specs/product/essays/prompts.md "Display"; essays-build/brief.md "U2").
+  "supplemental-essay": {
+    term: "Supplemental essay",
+    short: "An essay a college asks for beyond the Common App's own personal essay, published on the college's own site with its own prompt and limit.",
+    why: "Most colleges' supplements are some version of \"why us\"; reading them early means you're not drafting from scratch at the deadline.",
+    category: "Admissions",
+    related: ["writing-supplement", "why-us-essay", "short-answer"],
+  },
+  "short-answer": {
+    term: "Short answer",
+    short: "A supplemental question with a tight limit, often 50 to 150 words, asked alongside or instead of a longer essay.",
+    category: "Admissions",
+    related: ["supplemental-essay"],
+  },
+  "why-us-essay": {
+    term: "\"Why us\" essay",
+    short: "A supplement that asks specifically why you want to attend this college or a program within it, read from the prompt's own words, never guessed from a generic supplement.",
+    why: "A strong answer names something specific to that college; the same paragraph shouldn't work for two different ones.",
+    category: "Admissions",
+    related: ["supplemental-essay"],
+  },
   "courses-and-grades": {
     term: "Courses & Grades",
     short: "The section of the Common App where a school counselor reports an applicant's courses and grades, term by term, instead of (or alongside) an official transcript.",

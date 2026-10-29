@@ -17,8 +17,8 @@ import { OutcomeShareCard } from "./OutcomeShareCard";
 
 export const MOVE_CARDS: Partial<Record<TaskKind, ComponentType<MoveCardProps>>> = {
   // Plan v3 (build-plan.md "What's removed" U6): `story`'s move opens the Your story guide now (guideFor maps it,
-  // the "brag_sheet" playbook key, and the "personal_essay_draft" cycle key all to it), so it has no card of its own
-  // either and falls back to MoveCard. Its old inline card is deleted.
+  // and the "brag_sheet" playbook key to it), so it has no card of its own either and falls back to MoveCard. Its old
+  // inline card is deleted. The "personal_essay_draft" cycle key opens the essay workspace (its action, essays U3).
   ed_decide: EdDecideCard,
   ed2_decide: EdDecideCard,
   // Plan v3 (build-plan.md "What's removed" U7): the course-choice playbook entries open the courses guide now

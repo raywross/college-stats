@@ -12,8 +12,11 @@
  * Applying": "read both generators and decide which built row is the move").
  */
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExternalLink } from "lucide-react";
+import { essaysHref } from "@/lib/essays/rows";
+import { personFor } from "./MoveCard";
 import { TaskRow } from "@/components/planner/TaskRow";
 import { MetricLabel } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
@@ -103,6 +106,9 @@ export function SubmitCard({ task, ctx, onSkip, pending: skipPending }: MoveCard
             Common App <ExternalLink className="size-3" aria-hidden />
           </a>
         )}
+        <Link href={essaysHref({ college: school.unit_id, person: personFor(ctx) })} className="text-xs font-semibold text-primary hover:underline">
+          Essays for {school.name}
+        </Link>
       </div>
 
       {subtasks.length > 0 && (

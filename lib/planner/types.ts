@@ -108,7 +108,7 @@ export interface PlanItemColumns { dream: boolean; priority: number | null; foll
 export type PlanItem = import("../list-rules").ListItem & PlanItemColumns;
 /** lists gains: sort text null, rounds_plan_accepted_at timestamptz null. */
 export type ListSort = "mine" | "category" | "dream_priority" | "next_date" | "admit_rate" | "avg_cost" | "distance" | "standing";
-export type Capability = "planner.tab" | "planner.rounds" | "planner.actions.visits" | "planner.calendar" | "planner.reminders" | "planner.texts" | "planner.parents.nudge" | "planner.offers";
+export type Capability = "planner.tab" | "planner.rounds" | "planner.actions.visits" | "planner.calendar" | "planner.reminders" | "planner.texts" | "planner.parents.nudge" | "planner.offers" | "advisor.essays";
 
 /** Everything a stage panel gets, computed once by PlanPage (server) and passed down. Serializable: client stage
  *  components receive the parts they need as props; no functions. */

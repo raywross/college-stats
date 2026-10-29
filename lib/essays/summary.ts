@@ -33,17 +33,28 @@ export function essayCardLine(essays: SchoolEssays | null | undefined): string |
   const shortAnswers = prompts.filter((p) => p.kind === "short_answer");
   const essayPrompts = prompts.filter((p) => p.kind !== "short_answer");
   if (essays.choose) {
-    // "Choose 4 of 8 essays (350 words)": the page asks for some of the listed prompts, so none is required on its own.
-    const noun = essayPrompts.length >= shortAnswers.length ? "essay" : "short answer";
-    return `Choose ${essays.choose.n} of ${essays.choose.of} ${noun}s${limitsParen(prompts)}`;
+    // The optional prompts are the set to pick from; required ones stand on their own. "Choose 4 of 8 essays (350
+    // words)" for the UC; "1 essay (250 words); choose 1 of 5 more" for Duke's shape.
+    const set = prompts.filter((p) => !p.required);
+    const own = prompts.filter((p) => p.required);
+    const noun = set.filter((p) => p.kind !== "short_answer").length >= set.filter((p) => p.kind === "short_answer").length ? "essay" : "short answer";
+    if (!own.length) return `Choose ${essays.choose.n} of ${essays.choose.of} ${noun}s${limitsParen(set)}`;
+    return `${requiredLine(own)}; choose ${essays.choose.n} of ${essays.choose.of} more${limitsParen(set)}`;
   }
   const optionalCount = prompts.filter((p) => !p.required).length;
+  let line = requiredLine(prompts);
+  if (optionalCount > 0) line += `; ${optionalCount} optional`;
+  return line;
+}
+
+/** "2 essays (250 and 400 words) and 3 short answers", or "No prompts listed". */
+function requiredLine(prompts: readonly EssayPrompt[]): string {
+  const shortAnswers = prompts.filter((p) => p.kind === "short_answer");
+  const essayPrompts = prompts.filter((p) => p.kind !== "short_answer");
   const segments: string[] = [];
   if (essayPrompts.length) segments.push(`${pluralize(essayPrompts.length, "essay")}${limitsParen(essayPrompts)}`);
   if (shortAnswers.length) segments.push(pluralize(shortAnswers.length, "short answer"));
-  let line = segments.length ? segments.join(" and ") : "No prompts listed";
-  if (optionalCount > 0) line += `; ${optionalCount} optional`;
-  return line;
+  return segments.length ? segments.join(" and ") : "No prompts listed";
 }
 
 /**
@@ -62,8 +73,8 @@ export function planEssayCount(schoolsEssays: readonly (SchoolEssays | null | un
       continue;
     }
     if (essays.status === "published") {
-      // A college that says "choose 4 of 8" adds four to the list's count, not eight.
-      total += essays.choose ? essays.choose.n : essays.prompts.length;
+      // A college that says "choose 4 of 8" adds four to the list's count, not eight, plus any prompt it requires on its own.
+      total += essays.choose ? essays.choose.n + essays.prompts.filter((p) => p.required).length : essays.prompts.length;
       whyUs += essays.prompts.filter((p) => p.kind === "why_us").length;
     }
   }

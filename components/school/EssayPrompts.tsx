@@ -37,8 +37,8 @@ function PromptRow({ prompt, cited, choose }: { prompt: EssayPrompt; cited: Cite
   const kind = KIND_LABEL[prompt.kind];
   const limit = limitText(prompt.limit);
   const applies = appliesToText(prompt.applies_to);
-  // Under "choose 4 of 8", no prompt is required or optional on its own; the fold's heading says how many to pick.
-  const requirement = choose ? null : prompt.required ? "Required" : "Optional";
+  // Under "choose 4 of 8", an optional prompt is one of the set to pick from; a required one stands on its own.
+  const requirement = prompt.required ? "Required" : choose ? `One of ${choose.of} to choose from` : "Optional";
   const meta = [kind.label, limit, requirement, applies].filter(Boolean).join(" · ");
   return (
     <li className="space-y-1">
@@ -110,7 +110,7 @@ export function EssayPrompts({
             {essays.choose && (
               <p className="text-xs text-muted-foreground">
                 <MetricLabel cited={cite("essays.choose", school)}>
-                  {`Answer ${essays.choose.n} of these ${essays.choose.of}.`}
+                  {prompts.some((p) => p.required) ? `Answer ${essays.choose.n} of the ${essays.choose.of} marked as a choice.` : `Answer ${essays.choose.n} of these ${essays.choose.of}.`}
                 </MetricLabel>
               </p>
             )}

@@ -275,4 +275,9 @@ test("essayCardLine: 'choose 4 of 8' reads as a choice, each distinct limit once
   assert.equal(essayCardLine(uc), "Choose 4 of 8 essays (350 words)");
   assert.equal(planEssayCount([uc, essays()]), "5 essays and short answers");
   assert.equal(essayCardLine(essays({ prompts: [prompt(), prompt({ id: "123456:2026-27:2", text: "Second?", limit: { kind: "words", max: 400 } })] })), "2 essays (400 words)", "the same limit twice is said once");
+  // Duke's shape: one essay required of everyone beside a pick-some set of five.
+  const five = Array.from({ length: 5 }, (_, i) => prompt({ id: `123456:2026-27:${i + 2}`, text: `Option ${i + 1}.`, limit: { kind: "words", max: 250 }, required: false }));
+  const duke = essays({ choose: { n: 2, of: 5, quote: "Please respond to up to 2 of the following 5 prompts." }, prompts: [prompt({ kind: "why_us", limit: { kind: "words", max: 250 } }), ...five] });
+  assert.equal(essayCardLine(duke), "1 essay (250 words); choose 2 of 5 more (250 words)");
+  assert.equal(planEssayCount([duke]), "3 essays and short answers, 1 of them \"why us\"");
 });

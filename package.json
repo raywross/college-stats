@@ -47,6 +47,7 @@
     "sync-common-app": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-common-app.mts",
     "sync-ap-ledger": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-ap-ledger.mts",
     "check:lineage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-lineage.mts",
+    "eval:reviewer": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/eval-reviewer.mts",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.mts\"",
     "typecheck": "next typegen && tsc --noEmit",
     "verify": "npm run typecheck && npm run lint && npm test && npm run check:lineage && npm run check:college-health && npm run check:source-files && npm run check:cycle && npm run check:aid-policies && npm run check:course-catalog && npm run check:guaranteed-admission && npm run check:major-admission && npm run check:major-course-expectations && npm run check:legacy-bans && npm run check:awards-catalog && npm run check:activity-catalogs && npm run check:depth-groups && npm run check:selectivity && npm run check:common-app-trends && npm run auth-emails -- --check",

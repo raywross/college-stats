@@ -82,6 +82,7 @@
     "chances-calibration": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/chances-calibration.mts",
     "fix-fraction-rates": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/fix-fraction-rates.mts",
     "sync-coalition": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-coalition.mts",
+    "research-essay-guidance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/research-essay-guidance.mts",
     "merge-coalition": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-coalition.mts"
   },
   "dependencies": {

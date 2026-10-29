@@ -1,0 +1,147 @@
+{
+  "note": "Fictional colleges and students for the reader's evaluation (scripts/eval-reviewer.mts) and tests/essays-review-fixtures.test.mts. Written for the test: no real student, no real college's figures. Records carry the fields the reader must never see (grades, test results, a sibling's name) so the shape test can prove they stay out.",
+  "colleges": {
+    "harlow": {
+      "unit_id": "990001",
+      "name": "Harlow College",
+      "type": "private-nonprofit",
+      "city": "Harlow",
+      "state": "VT",
+      "undergrad_enrollment": 1940,
+      "setting": "Town: Distant",
+      "tier": "very_selective",
+      "factors": { "essay": "very_important", "character": "very_important", "talent": "important", "extracurriculars": "important", "interest": "considered" },
+      "majors_top": ["English Language and Literature, General", "Biology/Biological Sciences, General", "Environmental Studies", "Economics, General", "History, General"],
+      "programs": { "study_abroad": true, "undergrad_research": true, "rotc": [] }
+    },
+    "ridgefield": {
+      "unit_id": "990002",
+      "name": "Ridgefield State University",
+      "type": "public",
+      "city": "Ridgefield",
+      "state": "OH",
+      "undergrad_enrollment": 31800,
+      "setting": "City: Midsize",
+      "tier": "selective",
+      "factors": { "essay": "considered", "character": "considered", "interest": "not_considered" },
+      "majors_top": ["Business Administration and Management, General", "Nursing", "Psychology, General", "Mechanical Engineering", "Computer Science"],
+      "programs": { "study_abroad": true, "undergrad_research": true, "rotc": ["army", "air_force"] }
+    },
+    "corliss": {
+      "unit_id": "990003",
+      "name": "Corliss Institute of Technology",
+      "type": "private-nonprofit",
+      "city": "Corliss",
+      "state": "MA",
+      "undergrad_enrollment": 4300,
+      "setting": "Suburb: Large",
+      "tier": "elite",
+      "factors": { "essay": "important", "character": "very_important", "talent": "very_important", "extracurriculars": "important", "interest": "not_considered" },
+      "majors_top": ["Mechanical Engineering", "Computer Science", "Electrical and Electronics Engineering", "Physics, General", "Mathematics, General"],
+      "programs": { "study_abroad": false, "undergrad_research": true, "rotc": ["navy"] }
+    },
+    "brennan": {
+      "unit_id": "990004",
+      "name": "St. Brennan University",
+      "type": "private-nonprofit",
+      "city": "Lowell Falls",
+      "state": "PA",
+      "undergrad_enrollment": 6200,
+      "setting": "Suburb: Midsize",
+      "tier": "very_selective",
+      "factors": { "essay": "important", "character": "very_important", "interest": "important" },
+      "majors_top": ["Registered Nursing/Registered Nurse", "Biology/Biological Sciences, General", "Psychology, General", "Finance, General", "Communication, General"],
+      "programs": { "study_abroad": true, "undergrad_research": false, "rotc": [] }
+    }
+  },
+  "records": {
+    "maya": {
+      "name": "Maya Ortiz",
+      "gpa": 3.91,
+      "sat": 1490,
+      "story": "I build things that move. Maya started in a garage with my dad's old drill and a kit from the library, and by ninth grade I was on the robotics team. I care about making machines that help people who can't do a task alone, like my grandmother after her stroke.",
+      "majors": ["14", "11"],
+      "activities": [
+        { "name": "Robotics team", "kind": "club", "family": "engineering", "years": [9, 10, 11, 12], "roles": { "9": "member", "10": "member", "11": "officer", "12": "leader" }, "recognition": 2 },
+        { "name": "Bike shop job", "kind": "work", "family": "business", "years": [10, 11, 12], "roles": {}, "hoursPerWeek": 12 },
+        { "name": "Math club", "kind": "club", "family": "math", "years": [11, 12], "roles": {} }
+      ],
+      "connections": [{ "college": "corliss", "family": ["parent"] }],
+      "interest": { "corliss": { "visited": true, "requestedInfo": true, "followsSocial": false }, "harlow": { "visited": false, "requestedInfo": true, "followsSocial": true } },
+      "sibling": "Lucia Ortiz"
+    },
+    "jonah": {
+      "name": "Jonah Abernathy",
+      "gpa": 3.62,
+      "sat": 1380,
+      "story": "Arguing is how I figure out what I think. Debate taught me to listen for the strongest version of the other side, and the school paper taught me that a story is only as good as the people you talk to.",
+      "majors": ["23", "45"],
+      "activities": [
+        { "name": "Debate", "kind": "club", "family": "english", "years": [9, 10, 11, 12], "roles": { "11": "officer", "12": "leader" }, "recognition": 2 },
+        { "name": "School newspaper", "kind": "club", "family": "media", "years": [10, 11, 12], "roles": { "12": "officer" } },
+        { "name": "Food pantry", "kind": "service", "family": "service", "years": [11, 12], "roles": {} }
+      ],
+      "connections": [],
+      "interest": { "harlow": { "visited": true, "requestedInfo": false, "followsSocial": false } },
+      "sibling": "Ruth Abernathy"
+    },
+    "priya": {
+      "name": "Priya Raman",
+      "gpa": 3.84,
+      "sat": 1410,
+      "story": "I want to be the nurse who explains things. I have volunteered at the hospital since tenth grade and run cross country, which taught me to keep going when it hurts.",
+      "majors": ["51"],
+      "activities": [
+        { "name": "Hospital volunteer", "kind": "service", "family": "health", "years": [10, 11, 12], "roles": { "12": "officer" } },
+        { "name": "Cross country", "kind": "sport", "family": "athletics", "years": [9, 10, 11, 12], "roles": { "12": "leader" } },
+        { "name": "Spanish club", "kind": "club", "family": "language", "years": [11], "roles": {} }
+      ],
+      "connections": [{ "college": "brennan", "family": ["sibling"] }],
+      "interest": { "brennan": { "visited": true, "requestedInfo": true, "followsSocial": true } },
+      "sibling": "Anika Raman"
+    },
+    "theo": {
+      "name": "Theo Nguyen",
+      "gpa": 3.55,
+      "sat": null,
+      "story": "After school I work at my family's restaurant, and on slow nights I write code at the corner table. I built the ordering system we use now.",
+      "majors": ["11"],
+      "activities": [
+        { "name": "Family restaurant", "kind": "family", "family": "business", "years": [9, 10, 11, 12], "roles": { "12": "leader" }, "hoursPerWeek": 20 },
+        { "name": "Coding club", "kind": "club", "family": "cs", "years": [10, 11, 12], "roles": { "12": "leader" }, "recognition": 3 }
+      ],
+      "connections": [],
+      "interest": { "ridgefield": { "visited": false, "requestedInfo": false, "followsSocial": false } },
+      "sibling": null
+    },
+    "ana": {
+      "name": "Ana Lucero",
+      "gpa": 3.97,
+      "sat": 1520,
+      "story": "History is people deciding things under pressure, and theater is rehearsing that. I have done both for four years and I want to study how communities remember.",
+      "majors": ["54", "50"],
+      "activities": [
+        { "name": "Theater", "kind": "arts", "family": "arts", "years": [9, 10, 11, 12], "roles": { "11": "officer", "12": "leader" }, "recognition": 3 },
+        { "name": "Choir", "kind": "arts", "family": "arts", "years": [9, 10, 11], "roles": {} },
+        { "name": "Local history society", "kind": "service", "family": "history", "years": [11, 12], "roles": {} }
+      ],
+      "connections": [{ "college": "harlow", "family": ["grandparent"] }],
+      "interest": { "harlow": { "visited": true, "requestedInfo": true, "followsSocial": true } },
+      "sibling": "Marco Lucero"
+    },
+    "sam": {
+      "name": "Sam Whitfield",
+      "gpa": 3.7,
+      "sat": 1450,
+      "story": "",
+      "majors": ["26"],
+      "activities": [
+        { "name": "Lab research internship", "kind": "research", "family": "science", "years": [11, 12], "roles": {} },
+        { "name": "Swim team", "kind": "sport", "family": "athletics", "years": [9, 10, 11, 12], "roles": { "12": "leader" } }
+      ],
+      "connections": [{ "college": "ridgefield", "recruited": "contact" }],
+      "interest": {},
+      "sibling": null
+    }
+  }
+}

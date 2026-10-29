@@ -166,10 +166,17 @@ export interface AnalyticsEvents {
   essay_imported: { format: "uploaded" | "pasted" };
   /** A college's package page opened, and whether any of its prompts has a draft started yet. */
   essay_package_opened: { started: boolean };
+  /* The reader's notes (specs/product/essays/reviewer.md "Privacy"): sent by POST /api/essays/review; never text. */
+  /** "Read this draft" asked, by the prompt's kind. */
+  essay_review_requested: { prompt_kind: string };
+  /** A review stored: how many notes passed the guard, and their categories (comma-separated, in the list's order). */
+  essay_review_notes: { count: number; categories: string };
+  /** A note the guard dropped, or a whole answer with no notes (refusal, max_tokens, malformed), by why. */
+  essay_review_dropped: { reason: string };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -297,6 +304,9 @@ export const EVENTS = {
   essay_exported: { properties: ["format"], side: "client", why: "Essays: downloads and copies, by format" },
   essay_imported: { properties: ["format"], side: "client", why: "Essays: imports, by file or paste" },
   essay_package_opened: { properties: ["started"], side: "client", why: "Essays: how often the per-college package page is opened, before or after any writing has started" },
+  essay_review_requested: { properties: ["prompt_kind"], side: "server", why: "Essays: reader's notes asked for, by the prompt's kind (each is a model call)" },
+  essay_review_notes: { properties: ["count", "categories"], side: "server", why: "Essays: how many notes a review keeps, and of which kinds" },
+  essay_review_dropped: { properties: ["reason"], side: "server", why: "Essays: what the guard drops, and answers with no notes, by why" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

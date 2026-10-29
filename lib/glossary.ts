@@ -2018,6 +2018,15 @@ const entries = {
     category: "Cost & outcomes",
     related: ["gift-aid"],
   },
+  /** specs/product/essays/reviewer.md "Honesty": what the reader reads and leaves, inputs and outputs only. */
+  "reader-notes": {
+    term: "A reader's notes",
+    short: "Notes on an essay draft, when the student asks: a typo, a run-on, a sentence that drifts from the prompt, a claim with no detail. Each is a question or an observation, never a rewrite and never a grade.",
+    long: "When a student taps \"Read this draft\", a reader reads that version for its prompt and its college, with what the student's record already says: their own story, the few things they have gone deepest in, their other drafts for that college, the major they intend, any family connection to the college, and what the college says it values. It never sees the student's name, grades, test results, or finances, or any draft for another college. The notes fall into eight kinds: mechanics, the prompt, specifics, structure, voice, care (something personal the student may or may not want to share, always asked as a question), what the essay shows that the rest of the application doesn't, and, for a \"why us\" essay, whether its reasons belong to this college. Every note is checked before it is shown: only a mechanics note may suggest a corrected word, and no note may grade the essay, predict an admission decision, or offer wording to paste in. The guidance behind the notes comes from public advice by admissions offices and writing centers, cited on each note. A student can ask a few times a day per draft; parents in the household see the notes too.",
+    why: "The writing is the part of applying a student controls most late in the process. A careful second reader helps, as long as the words stay the student's own.",
+    category: "Your account",
+    related: ["depth"],
+  },
   "summer-melt": {
     term: "Summer melt",
     short: "When a student who chose a college over the spring doesn't show up in the fall, often because a summer step (a form, a bill, orientation) slipped. A short summer checklist and reminders help.",

@@ -8,6 +8,7 @@ import { SignInPrompt } from "@/components/account/SignInPrompt";
 import { Editor } from "@/components/essays/Editor";
 import { ExportMenu } from "@/components/essays/ExportMenu";
 import { ImportSheet } from "@/components/essays/ImportSheet";
+import { Notes } from "@/components/essays/Notes";
 import { ReusePicker } from "@/components/essays/PromptPicker";
 import { WhyFold } from "@/components/ui/why-fold";
 import { authConfigured } from "@/lib/auth";
@@ -151,6 +152,9 @@ async function render(id: string, searchParams: Search) {
         planColleges={colleges}
         label={essay.title || prompt.title}
       />
+
+      {/* A reader's notes (specs/product/essays/reviewer.md): the student asks; a guardian reads them. */}
+      <Notes essayId={essay.id} canRequest={canWrite} />
     </article>
   );
 }

@@ -1,0 +1,76 @@
+# The reader's evaluation (scripts/eval-reviewer.mts; specs/product/essays/reviewer.md "Evaluation"): runs the thirty
+# fixture drafts, the refusal set, and the consistency set against the live model where the Anthropic key lives (the
+# repository secret ANTHROPIC_API_KEY), and keeps the summary (specs/product/essays/reviewer-eval.md) as a run
+# artifact and in the job summary. The owner commits it with the REVIEW_METHOD bump it checked. About $3 a run.
+# Dispatched by hand only.
+name: Reviewer eval
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: Draft ids to run, comma-separated (empty runs the whole set)
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eval-reviewer
+  cancel-in-progress: false
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the API key
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "::error::ANTHROPIC_API_KEY is not set (repository secret)."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Run the evaluation
+        id: eval
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          set +e
+          if [ -n "$ONLY" ]; then
+            npm run eval:reviewer -- --only "$ONLY"
+          else
+            npm run eval:reviewer
+          fi
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          # 2 = a target missed: the summary is still written and kept.
+          if [ "$code" != "0" ] && [ "$code" != "2" ]; then exit "$code"; fi
+
+      - name: Add the summary to the job page
+        if: always()
+        run: |
+          if [ -f specs/product/essays/reviewer-eval.md ]; then cat specs/product/essays/reviewer-eval.md >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reviewer-eval
+          path: specs/product/essays/reviewer-eval.md
+          if-no-files-found: ignore
+
+      - name: Fail when a target was missed
+        if: steps.eval.outputs.exit_code == '2'
+        run: |
+          echo "::error::The reader missed a target; see the summary above."
+          exit 1

@@ -2,7 +2,7 @@
   "problems": [
     "status none without the page's sentence that says so"
   ],
-  "record": {"unit_id":"191241","name":"Fordham University","cycle":"2026-27","status":"none","source_url":"https://www.fordham.edu/media/review/content-assets/migrated/pdfs/jadu-single-folder-pdfs/Preface_Supplement.pdf","retrieved":"2026-10-29","sha256":"d4f7968304267a4ee02a655c3d17a650682496823fc69098c23d516ec564d19f","archive":"local:d4f7968304267a4ee02a655c3d17a650682496823fc69098c23d516ec564d19f.pdf","cycle_quote":"","cycle_assumed":true,"via":"sitemap","model":"claude-opus-5","reader":"2026.10.29.3",
+  "record": {"unit_id":"191241","name":"Fordham University","cycle":"2026-27","status":"none","source_url":"https://www.fordham.edu/media/review/content-assets/migrated/pdfs/jadu-single-folder-pdfs/Preface_Supplement.pdf","retrieved":"2026-10-29","sha256":"d4f7968304267a4ee02a655c3d17a650682496823fc69098c23d516ec564d19f","archive":"local:d4f7968304267a4ee02a655c3d17a650682496823fc69098c23d516ec564d19f.pdf","cycle_quote":"","cycle_assumed":true,"via":"sitemap","model":"claude-opus-5","reader":"2026.10.29.4",
     "prompts": []
   }
 }

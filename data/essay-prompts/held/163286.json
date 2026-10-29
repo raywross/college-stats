@@ -2,7 +2,7 @@
   "problems": [
     "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
   ],
-  "record": {"unit_id":"163286","name":"University of Maryland-College Park","cycle":"2026-27","status":"refers_to_form","source_url":"https://www.admissions.umd.edu/apply/","final_url":"https://admissions.umd.edu/how-to-apply","retrieved":"2026-10-29","sha256":"8a19aef869f71ae19fc67bb12442a41c16ce69b27b97e3585d2095da966097f5","archive":"local:8a19aef869f71ae19fc67bb12442a41c16ce69b27b97e3585d2095da966097f5.html","cycle_quote":"","cycle_assumed":true,"status_quote":"Use the links to access our freshman and transfer application platforms.","via":"known-link","model":"claude-opus-5","reader":"2026.10.29.3",
+  "record": {"unit_id":"163286","name":"University of Maryland-College Park","cycle":"2026-27","status":"refers_to_form","source_url":"https://www.admissions.umd.edu/apply/","final_url":"https://admissions.umd.edu/how-to-apply","retrieved":"2026-10-29","sha256":"8a19aef869f71ae19fc67bb12442a41c16ce69b27b97e3585d2095da966097f5","archive":"local:8a19aef869f71ae19fc67bb12442a41c16ce69b27b97e3585d2095da966097f5.html","cycle_quote":"","cycle_assumed":true,"status_quote":"Use the links to access our freshman and transfer application platforms.","via":"known-link","model":"claude-opus-5","reader":"2026.10.29.4",
     "prompts": []
   }
 }

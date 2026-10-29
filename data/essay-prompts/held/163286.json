@@ -1,0 +1,8 @@
+{ "unit_id": "163286", "name": "University of Maryland-College Park", "held": "2026-10-29",
+  "problems": [
+    "the page names no cycle"
+  ],
+  "record": {"unit_id":"163286","name":"University of Maryland-College Park","cycle":"","status":"refers_to_form","source_url":"https://www.admissions.umd.edu/apply/","final_url":"https://admissions.umd.edu/how-to-apply","retrieved":"2026-10-29","sha256":"8a19aef869f71ae19fc67bb12442a41c16ce69b27b97e3585d2095da966097f5","archive":"local:8a19aef869f71ae19fc67bb12442a41c16ce69b27b97e3585d2095da966097f5.html","cycle_quote":"","status_quote":"We're so glad you're considering applying to the University of Maryland (UMD)! Use the links to access our freshman and transfer application platforms.","via":"known-link","model":"claude-opus-5","reader":"2026.10.29.1",
+    "prompts": []
+  }
+}

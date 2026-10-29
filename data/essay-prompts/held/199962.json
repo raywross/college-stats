@@ -1,0 +1,11 @@
+{ "unit_id": "199962", "name": "Wingate University", "held": "2026-10-29",
+  "problems": [
+    "the page names no cycle",
+    "prompt 1: marked optional, but neither the prompt nor its quote says optional"
+  ],
+  "record": {"unit_id":"199962","name":"Wingate University","cycle":"","status":"published","source_url":"https://www.wingate.edu/admissions/undergraduate-admissions","retrieved":"2026-10-29","sha256":"b8a64a388cfcd22bfb5b30431a4d697b2fa9e16efce99de10f6230b876e5340d","archive":"local:b8a64a388cfcd22bfb5b30431a4d697b2fa9e16efce99de10f6230b876e5340d.html","cycle_quote":"","via":"picker","model":"claude-opus-5","reader":"2026.10.29.1",
+    "prompts": [
+    {"id":"199962::1","text":"*If you can't provide one of these scores, please submit a 250 word personal essay on a topic of your choice.","kind":"essay","limit":{"kind":"words","max":250},"required":false,"applies_to":"all","quote":"*If you can't provide one of these scores, please submit a 250 word personal essay on a topic of your choice."}
+  ]
+  }
+}

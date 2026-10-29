@@ -1,0 +1,10 @@
+{ "unit_id": "236939", "name": "Washington State University", "held": "2026-10-29",
+  "problems": [
+    "the page names no cycle"
+  ],
+  "record": {"unit_id":"236939","name":"Washington State University","cycle":"","status":"published","source_url":"https://admission.wsu.edu/apply/first-year-students/","retrieved":"2026-10-29","sha256":"5882f713e68160880ce959d3f1c4b4e9bed4993c85ab7c0d97e0477f4fd972f0","archive":"local:5882f713e68160880ce959d3f1c4b4e9bed4993c85ab7c0d97e0477f4fd972f0.html","cycle_quote":"","via":"picker","model":"claude-opus-5","reader":"2026.10.29.1",
+    "prompts": [
+    {"id":"236939::1","text":"A brief essay (no more than one page) addressing why you want to attend WSU.","kind":"why_us","limit":null,"required":true,"applies_to":"all","quote":"Send supporting materials. Because the usual application may not tell your story — it’s been a while since high school, maybe also a while since your last college class — we ask you to provide other information and tell us a bit about your experiences since then."}
+  ]
+  }
+}

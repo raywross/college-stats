@@ -1,0 +1,9 @@
+{ "unit_id": "131520", "name": "Howard University", "held": "2026-10-29",
+  "problems": [
+    "the page names no cycle",
+    "status none without the page's sentence that says so"
+  ],
+  "record": {"unit_id":"131520","name":"Howard University","cycle":"","status":"none","source_url":"https://admission.howard.edu/","retrieved":"2026-10-29","sha256":"e84fd53302a2f7433120928a34a35e42a34588285d87ff4617c6db8c0747cf7d","archive":"local:e84fd53302a2f7433120928a34a35e42a34588285d87ff4617c6db8c0747cf7d.html","cycle_quote":"","via":"picker","model":"claude-opus-5","reader":"2026.10.29.1",
+    "prompts": []
+  }
+}

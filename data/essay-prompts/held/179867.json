@@ -1,0 +1,16 @@
+{ "unit_id": "179867", "name": "Washington University in St Louis", "held": "2026-10-29",
+  "problems": [
+    "the page names no cycle",
+    "prompt 1: marked optional, but neither the prompt nor its quote says optional",
+    "prompt 2: marked optional, but neither the prompt nor its quote says optional",
+    "prompt 3: marked optional, but neither the prompt nor its quote says optional",
+    "prompt 3: kind why_us, but the prompt doesn't ask why this college or program"
+  ],
+  "record": {"unit_id":"179867","name":"Washington University in St Louis","cycle":"","status":"published","source_url":"https://admissions.washu.edu/how-to-apply/optional-video-supplement/","retrieved":"2026-10-29","sha256":"cfd36fee47d6c9ab17d0c100bf35f9cedd7d6a82bb9f7004fac258c36a9fb573","archive":"local:cfd36fee47d6c9ab17d0c100bf35f9cedd7d6a82bb9f7004fac258c36a9fb573.html","cycle_quote":"","via":"apply-page-link","model":"claude-opus-5","reader":"2026.10.29.1",
+    "prompts": [
+    {"id":"179867::1","text":"Do you have a hobby? Show us how you spend your free time.","kind":"optional","limit":null,"required":false,"applies_to":"all","quote":"All applicants have the option to upload a video to help the admissions committee get to know you better."},
+    {"id":"179867::2","text":"How do you express your most authentic self? Through art, cooking, poetry, stand-up comedy?","kind":"optional","limit":null,"required":false,"applies_to":"all","quote":"All applicants have the option to upload a video to help the admissions committee get to know you better."},
+    {"id":"179867::3","text":"What do you most want to experience at WashU?","kind":"why_us","limit":null,"required":false,"applies_to":"all","quote":"All applicants have the option to upload a video to help the admissions committee get to know you better."}
+  ]
+  }
+}

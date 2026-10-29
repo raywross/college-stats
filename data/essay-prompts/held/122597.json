@@ -1,0 +1,8 @@
+{ "unit_id": "122597", "name": "San Francisco State University", "held": "2026-10-29",
+  "problems": [
+    "the page names no cycle"
+  ],
+  "record": {"unit_id":"122597","name":"San Francisco State University","cycle":"","status":"none","source_url":"https://future.sfsu.edu/node/15","final_url":"https://future.sfsu.edu/admissions/freshmen","retrieved":"2026-10-29","sha256":"e64a5dcbf80e115d50b0b7430d0ee2339117f819836e690995bd86ba2cd0463f","archive":"local:e64a5dcbf80e115d50b0b7430d0ee2339117f819836e690995bd86ba2cd0463f.html","cycle_quote":"","status_quote":"SF State uses your self-reported information from the application to make an admission decision, so it is extremely important that you answer all questions on the application completely and accurately.","via":"picker","model":"claude-opus-5","reader":"2026.10.29.1",
+    "prompts": []
+  }
+}

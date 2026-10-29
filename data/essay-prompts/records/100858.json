@@ -1,0 +1,5 @@
+{"unit_id":"100858","name":"Auburn University","cycle":"2026-27","status":"published","source_url":"https://auburn.edu/admissions/prospective-students/freshmen/index.php","retrieved":"2026-10-29","sha256":"00da7228037ac4d40b19f60e747668a8573ee5edc117b6cb13fcdcd8a58947d1","archive":"local:00da7228037ac4d40b19f60e747668a8573ee5edc117b6cb13fcdcd8a58947d1.html","cycle_quote":"For summer and fall 2027, admission decisions will be released in rounds.","via":"picker","model":"claude-opus-5","reader":"2026.10.29.1",
+  "prompts": [
+  {"id":"100858:2026-27:1","text":"Your personal statement is your chance to show us who you are. In your statement, you can share:","kind":"optional","limit":null,"required":false,"applies_to":"all","quote":"Personal Statement - Optional"}
+]
+}

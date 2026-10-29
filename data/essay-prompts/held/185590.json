@@ -1,0 +1,15 @@
+{ "unit_id": "185590", "name": "Montclair State University", "held": "2026-10-29",
+  "problems": [
+    "the page names no cycle",
+    "prompt 1: marked required, but the page's word is optional",
+    "prompt 1: kind why_us, but the prompt doesn't ask why this college or program"
+  ],
+  "record": {"unit_id":"185590","name":"Montclair State University","cycle":"","status":"published","source_url":"https://www.montclair.edu/admissions/essay-prompts","final_url":"https://www.montclair.edu/admissions-aid/how-apply-montclair-state-university/how-apply-montclairs-undergraduate-programs/essay-prompts","retrieved":"2026-10-29","sha256":"1731b8313c3eb558fa9503329bc335cca4824d29be286921fc7b26eaf1bd372a","archive":"local:1731b8313c3eb558fa9503329bc335cca4824d29be286921fc7b26eaf1bd372a.html","cycle_quote":"","via":"well-known-path","model":"claude-opus-5","reader":"2026.10.29.1",
+    "prompts": [
+    {"id":"185590::1","text":"Explain your reasons for seeking admission to Montclair State University, including what you believe are your academic strengths and interests. Be sure to explain any situations that may have had an impact, either positively or negatively, on your academic record.\nIn place of an essay, you may instead submit a writing sample from a graded class assignment.","kind":"why_us","limit":null,"required":true,"applies_to":"all","quote":"Explain your reasons for seeking admission to Montclair State University, including what you believe are your academic strengths and interests."},
+    {"id":"185590::2","text":"Discuss why you wish to study your program of choice in the College of the Arts at Montclair. Include highlights of your experience related to your chosen academic program and how those experiences have shaped your current career goals.","kind":"why_us","limit":null,"required":true,"applies_to":{"program":"College of the Arts majors (Animation and Visual Effects, Illustration, Dance, Music, Music Therapy, Musical Theater, Recording Arts and Production, Theatre, Visual Arts, Graphic Design)"},"quote":"Discuss why you wish to study your program of choice in the College of the Arts at Montclair."},
+    {"id":"185590::3","text":"Provide a brief personal statement describing why you wish to pursue a career in nursing.","kind":"program","limit":null,"required":true,"applies_to":{"program":"School of Nursing applicants (BSN)"},"quote":"Provide a brief personal statement describing why you wish to pursue a career in nursing."},
+    {"id":"185590::4","text":"Submit a personal statement that demonstrates what you have learned through formal education and/or life experiences.","kind":"essay","limit":null,"required":true,"applies_to":{"program":"Adult learner applicants (excluding RN to BSN)"},"quote":"Submit a personal statement that demonstrates what you have learned through formal education and/or life experiences."}
+  ]
+  }
+}

@@ -1,0 +1,9 @@
+{ "unit_id": "366711", "name": "California State University-San Marcos", "held": "2026-10-29",
+  "problems": [
+    "the page names no cycle",
+    "status none without the page's sentence that says so"
+  ],
+  "record": {"unit_id":"366711","name":"California State University-San Marcos","cycle":"","status":"none","source_url":"https://www.csusm.edu/admissions/how-to-apply/freshman/index.html","retrieved":"2026-10-29","sha256":"1db7c576e00cb9f3cd2b22d67fc0d688db3793b4b8a474de4cfcd01a726bc9b4","archive":"local:1db7c576e00cb9f3cd2b22d67fc0d688db3793b4b8a474de4cfcd01a726bc9b4.html","cycle_quote":"","via":"picker","model":"claude-opus-5","reader":"2026.10.29.1",
+    "prompts": []
+  }
+}

@@ -1,0 +1,10 @@
+{ "unit_id": "129020", "name": "University of Connecticut", "held": "2026-10-29",
+  "problems": [
+    "the page names no cycle"
+  ],
+  "record": {"unit_id":"129020","name":"University of Connecticut","cycle":"","status":"published","source_url":"https://admissions.uconn.edu/apply/first-year/instructions/","retrieved":"2026-10-29","sha256":"c22e187c24af4574b96689e371155553eb16cb5039d48961e04f0a67cac6b460","archive":"local:c22e187c24af4574b96689e371155553eb16cb5039d48961e04f0a67cac6b460.html","cycle_quote":"","via":"apply-page-link","model":"claude-opus-5","reader":"2026.10.29.1",
+    "prompts": [
+    {"id":"129020::1","text":"Discuss the factors that have influenced your motivation to pursue a career in Nursing. Please include any activities, academics and/or life experiences that have shaped your interest in nursing .","kind":"program","limit":null,"required":true,"applies_to":{"program":"Elisabeth DeLuca School of Nursing"},"quote":"Elisabeth DeLuca School of Nursing applicants will be prompted to answer the following question as part of the application for admission: Discuss the factors that have influenced your motivation to pursue a career in Nursing. Please include any activities, academics and/or life experiences that have shaped your interest in nursing ."}
+  ]
+  }
+}

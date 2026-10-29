@@ -1,0 +1,10 @@
+{ "unit_id": "195003", "name": "Rochester Institute of Technology", "held": "2026-10-29",
+  "problems": [
+    "the page names no cycle"
+  ],
+  "record": {"unit_id":"195003","name":"Rochester Institute of Technology","cycle":"","status":"published","source_url":"https://www.rit.edu/admissions/first-year-application","retrieved":"2026-10-29","sha256":"3d5ba0fb308fc23238b0f11223e62c8cc1878d6de6c7006fd3c986203a5a05f1","archive":"local:3d5ba0fb308fc23238b0f11223e62c8cc1878d6de6c7006fd3c986203a5a05f1.html","cycle_quote":"","via":"picker","model":"claude-opus-5","reader":"2026.10.29.1",
+    "prompts": [
+    {"id":"195003::1","text":"Supplemental Essay requirement: RIT is pleased to be able to offer a limited number of students the opportunity to customize a degree pathway. What personal or professional outcome are you hoping to achieve? In what ways have you prepared yourself for this distinctive educational experience?","kind":"program","limit":null,"required":true,"applies_to":{"program":"School of Individualized Study (SOIS)"},"quote":"Supplemental Essay requirement: RIT is pleased to be able to offer a limited number of students the opportunity to customize a degree pathway."}
+  ]
+  }
+}

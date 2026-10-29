@@ -1,0 +1,11 @@
+{ "unit_id": "201885", "name": "University of Cincinnati-Main Campus", "held": "2026-10-29",
+  "problems": [
+    "the page names no cycle",
+    "prompt 1: kind why_us, but the prompt doesn't ask why this college or program"
+  ],
+  "record": {"unit_id":"201885","name":"University of Cincinnati-Main Campus","cycle":"","status":"published","source_url":"https://www.admissions.uc.edu/apply/apply-tips/prompts.html","retrieved":"2026-10-29","sha256":"0b1df89487b6fe8775d9af9a5ce8ceed315eca550ce11a2d6f206ffdfd187807","archive":"local:0b1df89487b6fe8775d9af9a5ce8ceed315eca550ce11a2d6f206ffdfd187807.html","cycle_quote":"","via":"picker","model":"claude-opus-5","reader":"2026.10.29.1",
+    "prompts": [
+    {"id":"201885::1","text":"What motivated you to choose your first-choice academic program? In your response, please share personal insights, interests, goals, or experiences—especially those not already included in your application.","kind":"why_us","limit":{"kind":"words","max":500},"required":false,"applies_to":"all","quote":"Students may submit a personal statement in response to the following prompt in approximately 500 words:"}
+  ]
+  }
+}

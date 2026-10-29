@@ -99,6 +99,14 @@ function ActionLink({ task, ctx }: { task: PlanTask; ctx: PlanContext }) {
   const person = personFor(ctx);
   switch (action.kind) {
     case "href":
+      // A page of the site's own (the essay workspace) opens in place, for the child this plan is for.
+      if (action.href.startsWith("/")) {
+        return (
+          <Link href={person ? `${action.href}?for=${person}` : action.href} className={PRIMARY}>
+            Open
+          </Link>
+        );
+      }
       return (
         <a href={action.href} target="_blank" rel="noreferrer" className={SECONDARY}>
           Open

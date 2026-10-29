@@ -46,6 +46,8 @@ export function cycleTask(entry: CycleEntry, listId: string, position: number): 
     source_edition: null,
     date_note: null,
     position,
+    // Essays (specs/product/essays/README.md "Where it shows"): the summer's "Draft the personal essay" opens the workspace.
+    ...(entry.key === "personal_essay_draft" ? { action: { kind: "href" as const, href: "/advisor/essays" } } : {}),
   };
 }
 

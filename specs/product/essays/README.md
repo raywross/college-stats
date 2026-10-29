@@ -68,3 +68,12 @@ its own unit of work before any model runs.
 Part of Quad Advisor ([../commercialization.md](../commercialization.md#feature-map)): the prompts are public facts and
 show on every college's page free; the workspace and the reviewer are the advisor's. The reviewer has a daily cap per
 essay, since each review is a model call.
+
+## As built (2026-10-29)
+All three parts were built together on `feature/essays` the day after this overview, in six units run by agents
+(the prompts data, the workspace core, the guidance corpus, the prompts display, the round trip and package, the
+reviewer) and merged into one PR. Each part's spec has an "As built" section. Left for later: the Google Drive
+connection (after Google sign-in), counselor grants (after the portal), and the two live runs that need
+`ANTHROPIC_API_KEY`: the prompts read over colleges and the reviewer's evaluation, both the owner's to run. The
+guidance corpus is a draft until the owner reviews it (`data/reference/essay-guidance/guidance.md`, "Questions for
+the owner").

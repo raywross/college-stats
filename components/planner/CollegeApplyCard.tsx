@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { ApplyCardControls } from "@/components/planner/ApplyCardControls";
+import { essaysHref } from "@/lib/essays/rows";
 import { ApplyStatusControl } from "@/components/planner/ApplyStatusControl";
 import { CollegeChip } from "@/components/planner/CollegeChip";
 import { TaskRow } from "@/components/planner/TaskRow";
@@ -75,6 +77,10 @@ export function CollegeApplyCard({
           <div className="mt-3">
             <ApplyCardControls item={item} school={school} canEdit={canEdit} />
           </div>
+
+          <Link href={essaysHref({ college: school.unit_id })} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline">
+            Essays for {school.name}
+          </Link>
 
           {subtasks.length > 0 && (
             <details className="mt-3 rounded-xl border" open={false}>

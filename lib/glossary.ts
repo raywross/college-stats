@@ -1214,6 +1214,27 @@ const entries = {
     why: "A supplement takes real time and is usually due with the rest of the application, so it's worth knowing about well before the deadline.",
     category: "Admissions",
   },
+  // Essays, the prompts (specs/product/essays/prompts.md "Display"; essays-build/brief.md "U2").
+  "supplemental-essay": {
+    term: "Supplemental essay",
+    short: "An essay a college asks for beyond the Common App's own personal essay, published on the college's own site with its own prompt and limit.",
+    why: "Most colleges' supplements are some version of \"why us\"; reading them early means you're not drafting from scratch at the deadline.",
+    category: "Admissions",
+    related: ["writing-supplement", "why-us-essay", "short-answer"],
+  },
+  "short-answer": {
+    term: "Short answer",
+    short: "A supplemental question with a tight limit, often 50 to 150 words, asked alongside or instead of a longer essay.",
+    category: "Admissions",
+    related: ["supplemental-essay"],
+  },
+  "why-us-essay": {
+    term: "\"Why us\" essay",
+    short: "A supplement that asks specifically why you want to attend this college or a program within it, read from the prompt's own words, never guessed from a generic supplement.",
+    why: "A strong answer names something specific to that college; the same paragraph shouldn't work for two different ones.",
+    category: "Admissions",
+    related: ["supplemental-essay"],
+  },
   "courses-and-grades": {
     term: "Courses & Grades",
     short: "The section of the Common App where a school counselor reports an applicant's courses and grades, term by term, instead of (or alongside) an official transcript.",
@@ -1996,6 +2017,15 @@ const entries = {
     short: "When an outside scholarship lowers the aid a college gives, because the total can't exceed the student's need or the cost. Colleges differ in whether they cut loans first or grants.",
     category: "Cost & outcomes",
     related: ["gift-aid"],
+  },
+  /** specs/product/essays/reviewer.md "Honesty": what the reader reads and leaves, inputs and outputs only. */
+  "reader-notes": {
+    term: "A reader's notes",
+    short: "Notes on an essay draft, when the student asks: a typo, a run-on, a sentence that drifts from the prompt, a claim with no detail. Each is a question or an observation, never a rewrite and never a grade.",
+    long: "When a student taps \"Read this draft\", a reader reads that version for its prompt and its college, with what the student's record already says: their own story, the few things they have gone deepest in, their other drafts for that college, the major they intend, any family connection to the college, and what the college says it values. It never sees the student's name, grades, test results, or finances, or any draft for another college. The notes fall into eight kinds: mechanics, the prompt, specifics, structure, voice, care (something personal the student may or may not want to share, always asked as a question), what the essay shows that the rest of the application doesn't, and, for a \"why us\" essay, whether its reasons belong to this college. Every note is checked before it is shown: only a mechanics note may suggest a corrected word, and no note may grade the essay, predict an admission decision, or offer wording to paste in. The guidance behind the notes comes from public advice by admissions offices and writing centers, cited on each note. A student can ask a few times a day per draft; parents in the household see the notes too.",
+    why: "The writing is the part of applying a student controls most late in the process. A careful second reader helps, as long as the words stay the student's own.",
+    category: "Your account",
+    related: ["depth"],
   },
   "summer-melt": {
     term: "Summer melt",

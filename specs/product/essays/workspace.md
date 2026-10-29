@@ -1,6 +1,7 @@
 # Part 2, The Workspace: Drafts, Versions, and the Round Trip With Docs and Word
 
-> Status: **planned** 2026-10-28. Part 2 of [essays](README.md). After [prompts.md](prompts.md) (for the prompt picker;
+> Status: **built** 2026-10-29 (`feature/essays`, phase 1; see [As built](#as-built-2026-10-29)); the Google Drive
+> connection (phase 2) waits for Google sign-in. Planned 2026-10-28. Part 2 of [essays](README.md). After [prompts.md](prompts.md) (for the prompt picker;
 > the Common App's main essay works without it). Builds on the advisor's guides
 > ([../../planner/v3/now.md](../../planner/v3/now.md#the-guide-pattern)), the story guide
 > ([../../planner/v3/guides/your-story.md](../../planner/v3/guides/your-story.md)), and the planner's tables
@@ -151,3 +152,47 @@ parsing, and later a Drive integration.
    useful? Build both if the package page is cheap, else the package only.
 3. Should the main essay's count warn at the Common App's 250-word minimum as well as the 650 maximum? Yes; the form
    enforces both.
+
+## As built (2026-10-29)
+Phase 1 on `feature/essays`: the editor, versions, comments, the `.docx` and text round trip, and the package. The
+dev project's migration is the owner's step; until it runs, the pages show the sign-in invitation and the row-level
+security proof is the PGlite harness (`tests/essays-policies.test.mts`).
+
+- **Tables** (`supabase/migrations/20261029120000_essays.sql`): `essays`, `essay_versions` (insert-only),
+  `essay_links`, `essay_comments`, with a 200-drafts-per-student trigger. Only the student's own account writes
+  (`is_own_student`); a managed student without an account can have no drafts. Any active guardian in the household
+  reads everything and writes only comments (`can_read_student`, the same rule as the plan's viewer bundle). A trigger
+  sets each comment's `author_id` and `author_role` (`student` | `guardian` | `counselor`, ready for the portal); only
+  the student resolves a comment, only its author deletes it, and comment text can't be edited. The tables are revoked
+  from `anon`, and a test proves the Data API references none of them.
+- **Code**: `lib/essays/count.ts` (words are whitespace tokens, characters are code points; the Common App's examples
+  pinned), `normalize.ts`, `variants.ts` (link a draft to another prompt or make a variant with `base_id`; a variant
+  whose text names another college on the plan gets a warning), `prompts.ts` (a `prompt_ref` resolves to a title,
+  text, limit and college, or "Prompt not on file"; never throws), `rows.ts` (pure grouping and version rules),
+  `load.ts` (server-only reads and the viewer resolution the plan uses, `plan_child` cookie and `?for=`),
+  `store.ts` (Server Actions on `ready("advisor.essays")`), `docx.ts` (build and parse).
+- **Versions**: on the first save, ten minutes or more after the last version, on any import, and on "Mark a
+  version". Restore first saves the current text as "Before a restore", then adds a `restored` version. The main
+  essay is one draft: asking for `platform:common_app:main` again opens the existing one.
+- **Pages**: `/advisor/essays` (drafts grouped by college, the main essay first, open-comment counts, the prompt
+  picker with the plan's colleges' prompts, the platforms' prompts from the reference file, or free);
+  `/advisor/essays/<id>` (the `<textarea>` at 18 px on phones with the sticky count bar, autosave to localStorage at
+  once and to the server a second after typing stops with a conflict prompt, the prompt heading with its limit and
+  the college's own sentence in a fold, versions, comments, "use for another college", status, export and import);
+  `/advisor/essays/package/<unit>` (every prompt in order with the draft and a copy button or "Not started yet.", the
+  activities list in the Common App's shape from the profile's activities, the checklist, `.docx` and `.txt`
+  downloads, the first line saying the submission happens in the form). A guardian sees the same pages with the field
+  read-only, the comment box live, and the lead line "Only {first} edits a draft; you can read and comment."
+- **The round trip**: `GET /advisor/essays/<id>/export?format=docx|txt` and the package's own export route, both
+  through the viewer's session. The `.docx` writes every line as its own paragraph so the text comes back byte for
+  byte through mammoth. An upload or paste is always a **new version** (`uploaded` or `pasted`), never the current
+  text; the student compares in the version list and restores the one to keep. Comments and tracked changes in a
+  `.docx` are dropped, and the import sheet says so.
+- **Where it hooks in**: the "Draft the personal essay" move (`lib/planner/generators/cycle.ts`) opens
+  `/advisor/essays`; the Submit move's card links "Essays for {college}" and "The essay package".
+- **Telemetry**: `essay_created {prompt_kind}`, `essay_saved_version {source}`, `essay_commented {role}`,
+  `essay_exported {format}`, `essay_imported {format}`, `essay_package_opened {started}`. Never text.
+- **Not built** (phase 2 or later): the Google Drive connection; a PDF of the package; the draft's deadline in the
+  heading (needs the round's deadline citation); unread-comment marks for a parent (the list shows open-comment
+  counts); a child switcher on the essays pages (`?for=` and the plan's cookie choose the child); focus mode beyond
+  the plain field. The activities list has no description column because the profile's `ActivityEntry` has none.

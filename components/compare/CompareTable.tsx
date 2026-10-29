@@ -4,7 +4,7 @@ import type { School } from "@/lib/types";
 import { DOMAINS } from "@/lib/metrics";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { linkHost } from "@/lib/links";
-import { LOGISTICS_ROW_LABELS, compareTopicOf, type CompareTableGroup } from "@/lib/compare-topics";
+import { ALL_OR_NOTHING_ROW_LABELS, LOGISTICS_ROW_LABELS, compareTopicOf, type CompareTableGroup } from "@/lib/compare-topics";
 import { admissionProfileCellField } from "@/lib/cds/compare-rows";
 import { InfoTip, SourceTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
@@ -49,7 +49,8 @@ export function CompareTable({ schools, citeField, groups }: { schools: School[]
           const color = domain ? DOMAINS[domain].color : "var(--primary)";
           const rows = group.rows
             .map(([label, term, field, fmt]) => ({ label, term, field, values: schools.map((s) => fmt(s)) }))
-            .filter((r) => !LOGISTICS_ROW_LABELS.has(r.label) || r.values.some((v) => v !== null));
+            .filter((r) => !LOGISTICS_ROW_LABELS.has(r.label) || r.values.some((v) => v !== null))
+            .filter((r) => !ALL_OR_NOTHING_ROW_LABELS.has(r.label) || r.values.every((v) => v !== null));
           const same = rows.map((r) => allSame(r.values));
           return (
             <tbody key={group.topic} className="divide-y border-t tabular-nums">

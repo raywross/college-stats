@@ -13,6 +13,7 @@ import { isOpen } from "@/lib/planner/tasks";
 import { GUIDES, guideHref } from "@/lib/planner/guides";
 import { ListExplainer } from "@/components/planner/ListExplainer";
 import { PlanNotice } from "@/components/planner/PlanNotice";
+import { planEssayCount } from "@/lib/essays/summary";
 import type { PlanTabProps } from "@/components/planner/tabs/types";
 import { removeFromList } from "@/lib/lists";
 import { track } from "@/lib/analytics";
@@ -113,10 +114,13 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   const showStatusWord = seasonRank(ctx.season) >= SENIOR_FALL_RANK;
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] || null;
   const addLabel = "Add a college";
+  // Essays build, U2 (specs/product/essays/prompts.md "Display"): the count across the list, under the balance notice.
+  const essayCount = planEssayCount(rows.map((r) => r.school?.essays ?? null));
 
   return (
     <div className="space-y-4">
       <PlanNotice ctx={ctx} view={view} className="lg:hidden" />
+      {essayCount && <p className="text-sm text-muted-foreground lg:hidden">Your list asks for {essayCount}.</p>}
 
       {rows.length === 0 ? (
         <div className="rounded-2xl border bg-card p-6 text-center text-sm text-muted-foreground">

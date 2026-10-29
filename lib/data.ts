@@ -10,6 +10,7 @@ import type { TrendFileName, TrendFiles } from "./trends";
 import type { CommonAppTrendsFile } from "./common-app/trends";
 import type { SchoolDetail } from "./detail";
 import type { StoredChange } from "./changes";
+import type { PlatformPromptsFile } from "./types";
 
 export { paginate, toIndexEntry, type Dataset, type SchoolIndexEntry, type ScatterPointData } from "./dataset";
 
@@ -140,6 +141,20 @@ export const getTrendFile = cache(async <N extends TrendFileName>(name: N): Prom
  * reviewed national figures, data/trends/common-app.json. Null when the file hasn't been added yet, like
  * getTrendFile; the component renders nothing without it.
  */
+/**
+ * The application platforms' own essay prompts (data/reference/platform-prompts.json, written by
+ * scripts/sync-essay-prompts.mts's reference step). Null when the file is missing; the essays workspace then offers
+ * the main essay without the platform's prompt list.
+ */
+export const getPlatformPrompts = cache(async (): Promise<PlatformPromptsFile | null> => {
+  try {
+    return readOptionalJson<PlatformPromptsFile>(join(process.cwd(), "data", "reference", "platform-prompts.json"));
+  } catch (err) {
+    console.error("Loading data/reference/platform-prompts.json failed; the essays workspace renders without it.", err);
+    return null;
+  }
+});
+
 export const getCommonAppTrends = cache(async (): Promise<CommonAppTrendsFile | null> => {
   try {
     return readOptionalJson<CommonAppTrendsFile>(join(process.cwd(), "data", "trends", "common-app.json"));

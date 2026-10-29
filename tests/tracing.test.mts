@@ -20,6 +20,8 @@ const EXPECTED = [
   "./data/history/**/*.json",
   "./data/detail/**/*.json",
   "./data/trends/common-app.json",
+  "./data/reference/platform-prompts.json",
+  "./data/reference/essay-guidance/guidance.md",
   "./data/high-schools/**/*.json",
   "./data/directories/organizations.json",
   "./data/reference/zcta-centroids.csv",

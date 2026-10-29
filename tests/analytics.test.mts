@@ -53,7 +53,7 @@ test("server events are exactly the ones trackServer accepts", () => {
     .filter(([, spec]) => spec.side === "server")
     .map(([name]) => name)
     .sort();
-  const expected: ServerAnalyticsEvent[] = ["api_request", "brief_sent", "interest_confirm_sent", "plan_interest_confirmed", "plan_interest_expired", "plan_text_consented", "plan_text_opted_out", "signup_completed", "signup_started", "visit_alert_sent"];
+  const expected: ServerAnalyticsEvent[] = ["api_request", "brief_sent", "essay_review_dropped", "essay_review_notes", "essay_review_requested", "interest_confirm_sent", "plan_interest_confirmed", "plan_interest_expired", "plan_text_consented", "plan_text_opted_out", "signup_completed", "signup_started", "visit_alert_sent"];
   assert.deepEqual(server, expected);
 });
 

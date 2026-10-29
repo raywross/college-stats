@@ -1,6 +1,7 @@
 # Part 1, The Prompts: What Each College Asks Students to Write
 
-> Status: **planned** 2026-10-28. Part 1 of [essays](README.md). Builds on the college-reported agent
+> Status: **built** 2026-10-29 (`feature/essays`; see [As built](#as-built-2026-10-29)); the first live read over
+> colleges is the owner's to run (the `essay-prompts` workflow). Planned 2026-10-28. Part 1 of [essays](README.md). Builds on the college-reported agent
 > ([../../college-reported-data.md](../../college-reported-data.md), its archive and recipes) and the Common App card
 > ([../../data-expansion/common-app.md](../../data-expansion/common-app.md)); feeds the workspace
 > ([workspace.md](workspace.md)) and the plan. Part of [product](../README.md).
@@ -43,7 +44,7 @@ Per college, a college-reported block like the class profile's, with per-value l
 the cycle as the edition):
 
 ```ts
-reported.essays: {
+essays: {                                 // a top-level block on the record (as built; the plan said reported.essays)
   cycle: "2026-27";                       // as the page states it; a page with no cycle is held for review
   source_url: string; retrieved: string;
   status: "published" | "none" | "refers_to_form";  // none: the page says there is no supplement; refers_to_form: "see the Common App"
@@ -58,8 +59,9 @@ reported.essays: {
   }[];
 }
 ```
-Registered in `lib/fields.ts` as `reported.essays.*` (source `college-site`, per-document lineage like every reported
-field); the display cites each prompt to its page and date. `status: "none"` is a fact worth showing ("No essays
+Registered in `lib/fields.ts` as `essays.*` (source `college-site`); one lineage record per college at
+`lineage.essays` (method `extracted`, year = the cycle, the page's url, the date read, the page's own cycle line as the
+quote) covers every `essays.*` path, so the display cites each prompt to its page and date. `status: "none"` is a fact worth showing ("No essays
 beyond the Common App's"); `refers_to_form` shows nothing and counts as unknown.
 
 ## Checks
@@ -101,3 +103,45 @@ the plan's count, and a reference file.
    we have ruled out.
 2. ~~The platforms' prompts: store the text, or only link?~~ Decided 2026-10-28 (owner): **store the text** for both,
    with each organization's homepage as the link, so the workspace shows the prompt beside the draft.
+
+## As built (2026-10-29)
+Built on `feature/essays` the day after the plan, with the workspace and the reviewer. No college has a block yet:
+the first read is the owner's to run (`.github/workflows/essay-prompts.yml`, by hand, with `units`, `top`, and
+`budget`; it opens a data PR and never auto-merges).
+
+- **The block is top-level** (`school.essays`, `SchoolEssays` in `lib/types.ts`), placed before the later keys like
+  the Coalition block, with one lineage record per college at `lineage.essays` rather than per value. The lineage
+  check (`essaysProblems` in `lib/lineage.ts`) requires that record, rejects stray keys and records under `essays.*`,
+  and requires prompts only when `status` is `published`.
+- **The reader** (`scripts/lib/essay-prompts/`): `discover.mts` tries the recipe, then the essay links on the apply
+  and admissions pages the record already holds, fourteen well-known paths, the sitemaps robots.txt lists, and
+  finally one cheap model pick among candidates; `read.mts` makes one `claude-opus-5` read per page (adaptive
+  thinking, cached system block, a JSON schema for the record); `checks.mts` holds any record whose prompts or quotes
+  are not on the page word for word, whose cycle is missing or stale, or whose limits are inferred. Held records go to
+  `data/essay-prompts/held/`, never into the dataset. `cycle.mts` opens the cycle on 1 August; records from an older
+  cycle are dropped at merge so last year's prompts never show. A record keeps the previous cycle's prompts in
+  `previous` when they changed.
+- **Scripts**: `npm run sync-essay-prompts -- --units | --top N | --on-plans <file> | --dry-run | --budget <dollars>
+  | --force | --discover-only | --report body|note` (exit 3 when the budget stops it); `npm run merge-essay-prompts`
+  applies records and `data/reference/platform-prompts.json` to `data/schools.json` (one college per line, refusing
+  to write on a lineage failure); `sync-data` runs the same step after the Coalition one. A price line for
+  `claude-opus-5` was added to the engine's spend cap.
+- **The platforms' prompts** (`data/reference/platform-prompts.json`, read at runtime through
+  `getPlatformPrompts()` in `lib/data.ts`): the Common App's seven prompts and the Coalition's, verbatim, each with
+  its homepage as `source_url` and the page actually read in `read_from`. The Common App's pages do not state the
+  650/250-word limits, so its entry has `limit: null` and a `limit_note`; the workspace applies 650/250 from the
+  form's own rules. The Coalition page names no cycle (`cycle_note`); its "about 500-650 words" sentence is the limit.
+- **Display** (`components/school/EssayPrompts.tsx`, `lib/essays/summary.ts`): one cited line on the "What it takes
+  to apply" card ("2 essays (250 and 400 words) and 3 short answers; 1 optional"; "No essays beyond the Common App's"
+  for `none`; nothing for `refers_to_form`), a fold with every prompt cited, the platform's own prompts linked above
+  only for platforms the college takes, and the one-line warning about questions inside the form. A college with
+  prompts and no Common App card gets the block on its own beside "How to apply". The plan's Colleges tab says "Your
+  list asks for 14 essays and short answers, 9 of them 'why us'; 3 colleges not on file" under the balance notice;
+  compare shows an "Essays" row only when every compared college has something to say. Glossary:
+  `supplemental-essay`, `short-answer`, `why-us-essay`.
+- **Tests**: `tests/essay-prompts.test.mts` (the reader on four fixture pages with a fake model, every check on
+  planted bad values, discovery's ordering, the merge's placement and removal, the lineage check, the platform
+  file's shape, the workflow's structure) and `tests/essay-display.test.mts` (the strings, the fold's citations, no
+  hard-coded 650).
+- **Not built**: a query of the plans for `--on-plans` (it takes a file of unit ids); feeding held records to the
+  admin review queue (they are files plus the PR's table); writing blocked hosts to the shared blocked-hosts file.

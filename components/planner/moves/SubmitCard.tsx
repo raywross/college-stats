@@ -12,8 +12,11 @@
  * Applying": "read both generators and decide which built row is the move").
  */
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExternalLink } from "lucide-react";
+import { essaysHref } from "@/lib/essays/rows";
+import { personFor } from "./MoveCard";
 import { TaskRow } from "@/components/planner/TaskRow";
 import { MetricLabel } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
@@ -27,6 +30,11 @@ import type { MoveCardProps } from "./types";
 
 const SUBSTEP_KINDS: ReadonlySet<TaskKind> = new Set(["supplement", "recommendation"]);
 const COMMON_APP_URL = "https://apply.commonapp.org";
+
+/** The package page for one college (U4 "Where it lives"), with the guardian's child when the viewer isn't the student. */
+function packageHref(unitId: string, person: string | null): string {
+  return person ? `/advisor/essays/package/${unitId}?for=${person}` : `/advisor/essays/package/${unitId}`;
+}
 
 export function SubmitCard({ task, ctx, onSkip, pending: skipPending }: MoveCardProps) {
   const item = ctx.items.find((i) => i.id === task.item_id) ?? null;
@@ -103,6 +111,12 @@ export function SubmitCard({ task, ctx, onSkip, pending: skipPending }: MoveCard
             Common App <ExternalLink className="size-3" aria-hidden />
           </a>
         )}
+        <Link href={essaysHref({ college: school.unit_id, person: personFor(ctx) })} className="text-xs font-semibold text-primary hover:underline">
+          Essays for {school.name}
+        </Link>
+        <Link href={packageHref(school.unit_id, personFor(ctx))} className="text-xs font-semibold text-primary hover:underline">
+          The essay package
+        </Link>
       </div>
 
       {subtasks.length > 0 && (

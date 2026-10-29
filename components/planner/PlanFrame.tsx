@@ -4,6 +4,7 @@ import { ImportLocalPlan } from "@/components/planner/ImportLocalPlan";
 import { NextUp } from "@/components/planner/NextUp";
 import PlanIntake from "@/components/planner/intake/PlanIntake";
 import { PlanNotice } from "@/components/planner/PlanNotice";
+import { planEssayCount } from "@/lib/essays/summary";
 import { PlanTabPills, PlanTabs } from "@/components/planner/PlanTabs";
 import { UpcomingList } from "@/components/planner/calendar/UpcomingList";
 import { intakeNeeded } from "@/lib/planner/intake";
@@ -94,6 +95,8 @@ export function PlanFrame({
   const nextUpCard = hasNextUp ? <NextUp view={view} today={today} cycleStartYear={ctx.cycle.startYear} /> : null;
 
   const pills = <PlanTabPills tabs={tabs} tab={openTab} person={personId} />;
+  // Essays build, U2 (specs/product/essays/prompts.md "Display"): the count across the list, under the balance notice.
+  const essayCount = planEssayCount(view.rows.map((r) => r.school?.essays ?? null));
 
   return (
     <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
@@ -113,6 +116,7 @@ export function PlanFrame({
         {nextUpCard}
         <UpcomingList ctx={ctx} view={view} studentId={studentId} variant="aside" fullYearHref={fullYearHref} />
         <PlanNotice ctx={ctx} view={view} />
+        {essayCount && <p className="text-sm text-muted-foreground">Your list asks for {essayCount}.</p>}
       </aside>
     </div>
   );

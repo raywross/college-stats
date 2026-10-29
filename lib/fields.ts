@@ -1006,6 +1006,16 @@ export const FIELDS = {
   "coalition.member": coalition("Coalition for College member (its member list)"),
   "coalition.via_scoir": coalition("Takes the Coalition application through Scoir (Scoir's list)"),
   "coalition.retrieved": coalition("The day the Coalition's member list and Scoir's list were read"),
+
+  /* ---- Essay prompts (specs/product/essays/prompts.md; scripts/lib/essay-prompts/merge.mts) ---- */
+  // Only on colleges whose essay page was read. One lineage record at `lineage.essays` (the page, its cycle line, the
+  // day read) cites every path below (lib/lineage.ts BLOCK_LINEAGE); the block path itself is registered for it.
+  essays: reported("Essay prompts, as the college's own page publishes them"),
+  "essays.cycle": reported("The application cycle the essay page names"),
+  "essays.status": reported("Whether the college publishes its own essay prompts, says it has none, or points to the application"),
+  "essays.source_url": reported("The college's essay prompts page"),
+  "essays.retrieved": reported("The day the essay prompts page was read"),
+  "essays.prompts": reported("Each essay and short-answer prompt, its limit, and whether it is required"),
 } satisfies Record<string, FieldDef>;
 
 export type FieldPath = keyof typeof FIELDS;

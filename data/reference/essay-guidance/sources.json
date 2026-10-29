@@ -1,0 +1,1093 @@
+{
+  "user_agent": "QuadCollegeData/1.0 (college admissions figures; +https://college-stats-nine.vercel.app/data)",
+  "note": "Short excerpts from public guidance pages, kept for the essay reviewer's guidance (guidance.md). Fair use: at most 300 words per source, cited by organization and url. No student essays. Refresh: npm run research-essay-guidance.",
+  "sources": [
+    {
+      "id": "purdue-run-ons",
+      "organization": "Purdue OWL (Purdue University Writing Lab)",
+      "title": "Run On Sentences",
+      "url": "https://owl.purdue.edu/owl/general_writing/punctuation/independent_and_dependent_clauses/runonsentences.html",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "mechanics"
+      ],
+      "excerpts": [
+        "Run-ons, comma splices, and fused sentences are all names given to compound sentences that are not punctuated correctly.",
+        "Join the two independent clauses with one of the coordinating conjunctions (and, but, for, or, nor, so, yet), and use a comma before the connecting word.",
+        "When you do not have a connecting word (or when you use a connecting word other than and, but, for, or nor, so, or yet between the two independent clauses) use a semicolon (;).",
+        "So, run-ons and fused sentences are terms describing two independent clauses that are joined together with no connecting word or punctuation to separate the clauses."
+      ]
+    },
+    {
+      "id": "purdue-commas",
+      "organization": "Purdue OWL (Purdue University Writing Lab)",
+      "title": "Extended Rules for Commas",
+      "url": "https://owl.purdue.edu/owl/general_writing/punctuation/commas/extended_rules_for_commas.html",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "mechanics"
+      ],
+      "excerpts": [
+        "Use commas to separate independent clauses when they are joined by any of these seven coordinating conjunctions: and, but, for, or, nor, so, yet.",
+        "Use commas after introductory a) clauses, b) phrases, or c) words that come before the main clause.",
+        "Use a pair of commas in the middle of a sentence to set off clauses, phrases, and words that are not essential to the meaning of the sentence."
+      ]
+    },
+    {
+      "id": "purdue-conciseness",
+      "organization": "Purdue OWL (Purdue University Writing Lab)",
+      "title": "Concision",
+      "url": "https://owl.purdue.edu/owl/general_writing/academic_writing/conciseness/index.html",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "voice",
+        "mechanics"
+      ],
+      "excerpts": [
+        "The goal of concise writing is to use the most effective words.",
+        "Concise writing does not always have the fewest words, but it always uses the strongest ones.",
+        "Words and phrases should be deliberately chosen for the work they are doing.",
+        "As a general rule, more specific words lead to more concise writing.",
+        "Check every word to make sure that it is providing something important and unique to a sentence."
+      ]
+    },
+    {
+      "id": "purdue-clarity",
+      "organization": "Purdue OWL (Purdue University Writing Lab)",
+      "title": "Sentence Clarity",
+      "url": "https://owl.purdue.edu/owl/general_writing/mechanics/sentence_clarity.html",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "mechanics",
+        "voice"
+      ],
+      "excerpts": [
+        "Avoid interrupting the main clause with a phrase or subordinate clause if the interruption will cause confusion.",
+        "Sentences in active voice are usually easier to understand than those in passive voice because active-voice constructions indicate clearly the performer of the action expressed in the verb.",
+        "When you have a series of words, phrases, or clauses, put them in parallel form (similar grammatical construction) so that the reader can identify the linking relationship more easily and clearly.",
+        "Use verbs when possible rather than noun forms known as \" nominalizations .\"",
+        "Use affirmative forms rather than several negatives because multiple negatives are difficult to understand."
+      ]
+    },
+    {
+      "id": "purdue-application-essays",
+      "organization": "Purdue OWL (Purdue University Writing Lab)",
+      "title": "Advice for Writing Application Essays",
+      "url": "https://owl.purdue.edu/owl/general_writing/undergraduate_applications/undergraduate_application_timeline/advice_for_writing_application_essays.html",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "prompt",
+        "specific",
+        "structure",
+        "supplements"
+      ],
+      "excerpts": [
+        "Don't use boilerplate essays.",
+        "That is, resist the urge to reuse the exact same essay for different schools if each of them is giving you a slightly different writing prompt.",
+        "You can, of course, adapt the same essay for similar prompts.",
+        "Before you can start writing your essay, you will need to begin by reading the prompts and questions carefully.",
+        "Just make sure that you eventually come to have a rough draft that is about one thing.",
+        "After reading your essay, does it seem like anyone could have written this?",
+        "Successful essays relate an experience or analyze a pattern from the writer’s life.",
+        "It is not enough to make general claims about what impacted your decision to go to college, for instance; you must elaborate by including evidence that answers “how” and “why” when you make your claims.",
+        "That is not meant to add an extra layer of anxiety to your writing process, but to highlight the fact that you don’t necessarily need to have something life-changing to write about in order to write a successful essay.",
+        "Ask yourself if the essay answers the prompt.",
+        "As you are drafting and revising, feel free to fix any mistakes that you catch in terms of spelling, grammar, and mechanics, but don’t spend too much time editing early on in the writing process.",
+        "Working on lower-order concerns can give you the impression that the essay is ready to submit prematurely."
+      ]
+    },
+    {
+      "id": "purdue-admissions-handout",
+      "organization": "Purdue OWL (Purdue University Writing Lab)",
+      "title": "Admissions Application Essay: Writing your Way to College (handout)",
+      "url": "https://owl.purdue.edu/owl/general_writing/undergraduate_applications/undergraduate_application_timeline/documents/admissions_essay_handout.pdf",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "showcase",
+        "specific",
+        "structure",
+        "voice"
+      ],
+      "excerpts": [
+        "You want to use your essay to quickly capture their attention and provide them with new information that is not readily found elsewhere on your application in a clear and concise manner.",
+        "While we know you have many accomplishments to talk about, talking about too many things with such a limited word count will inevitably make your discussions more surface-level and detract from your essay.",
+        "Don’t tell them you’re resourceful, show them how you’ve developed and demonstrated that trait.",
+        "While you may have many guest stars in your paper and be super thankful to your band teacher, make sure you are highlighting your special skills and unique attributes.",
+        "Gimmicks, cliches, and humor are all risks.",
+        "Think about the structure of the paper including the overall theme, introduction, the body paragraphs, and how you’re going to purposefully use your conclusion to do more than summarize."
+      ]
+    },
+    {
+      "id": "purdue-personal-statement",
+      "organization": "Purdue OWL (Purdue University Writing Lab)",
+      "title": "The Personal Statement",
+      "url": "https://owl.purdue.edu/owl/job_search_writing/preparing_an_application/writing_the_personal_statement/index.html",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "prompt",
+        "specific",
+        "structure",
+        "care"
+      ],
+      "excerpts": [
+        "What details of your life (personal or family problems, history, people or events that have shaped you or influenced your goals) might help the committee better understand you or help set you apart from other applicants?",
+        "Don't be tempted to use the same statement for all applications.",
+        "In every case, be sure your answer fits the question being asked.",
+        "Think in terms of showing or demonstrating through concrete experience.",
+        "Don't, for example, state that you would make an excellent doctor unless you can back it up with specific reasons.",
+        "The lead or opening paragraph is generally the most important."
+      ]
+    },
+    {
+      "id": "purdue-revising",
+      "organization": "Purdue OWL (Purdue University Writing Lab)",
+      "title": "Steps for Revising",
+      "url": "https://owl.purdue.edu/owl/general_writing/the_writing_process/proofreading/steps_for_revising.html",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "mechanics",
+        "structure"
+      ],
+      "excerpts": [
+        "Read your paper out loud and listen for awkward pauses and unclear ideas.",
+        "Cut out extra words, vagueness, and misused words.",
+        "If you think something is wrong, you should make a note of it, even if you don't know how to fix it.",
+        "Try to detach yourself from what you've written; pretend that you are reviewing someone else's work."
+      ]
+    },
+    {
+      "id": "unc-fragments-run-ons",
+      "organization": "The Writing Center, University of North Carolina at Chapel Hill",
+      "title": "Fragments and Run-ons",
+      "url": "https://writingcenter.unc.edu/tips-and-tools/fragments-and-run-ons/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "mechanics"
+      ],
+      "excerpts": [
+        "A sentence fragment is an incomplete sentence.",
+        "Finally, you need to know that every dependent clause needs to be attached to an independent clause (remember, the independent clause can stand on its own).",
+        "You are making a run-on when you put two complete sentences (a subject and its predicate and another subject and its predicate) together in one sentence without separating them properly.",
+        "NOTE : You CANNOT simply add a comma between the two sentences, or you’ll end up with what’s called a “ comma splice .”",
+        "You can fix a comma splice the same way you fix a run-on—either change the punctuation or add a conjunction.",
+        "The good news is that writers tend to be either comma splicers or run-on artists, but almost never both."
+      ]
+    },
+    {
+      "id": "unc-commas",
+      "organization": "The Writing Center, University of North Carolina at Chapel Hill",
+      "title": "Commas",
+      "url": "https://writingcenter.unc.edu/tips-and-tools/commas/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "mechanics"
+      ],
+      "excerpts": [
+        "Read what comes after FANBOYS all by itself.",
+        "If you don’t have FANBOYS between the two complete and separate thoughts, using a comma alone causes a “comma splice” or “fused sentence” (some instructors may call it a run-on).",
+        "Some readers (especially professors) will think of this as a serious error."
+      ]
+    },
+    {
+      "id": "unc-application-essays",
+      "organization": "The Writing Center, University of North Carolina at Chapel Hill",
+      "title": "Application Essays",
+      "url": "https://writingcenter.unc.edu/tips-and-tools/application-essays/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "prompt",
+        "specific",
+        "voice",
+        "showcase",
+        "short-answers",
+        "care"
+      ],
+      "excerpts": [
+        "One of the basic tasks of the application essay is to follow the directions.",
+        "Make sure you follow page and word limits exactly—err on the side of shortness, not length.",
+        "Find the most relevant, memorable, concrete statements and focus in on them.",
+        "Eliminate any generalizations or platitudes (“I’m a people person”, “Doctors save lives”, or “Mr. Calleson’s classes changed my life”), or anything that could be cut and pasted into anyone else’s application.",
+        "Eliminate irrelevant issues (“I was a track star in high school, so I think I’ll make a good veterinarian.”) or issues that might be controversial for your reader (“My faith is the one true faith, and only nurses with that faith are worthwhile,” or “Lawyers who only care about money are evil.”).",
+        "Just make sure that you replace the generalizations with examples as you revise.",
+        "A hint: you may find yourself writing a good, specific sentence right after a general, meaningless one.",
+        "Applications that have several short-answer essays require even more detail.",
+        "Get straight to the point in every case, and address what they’ve asked you to address.",
+        "Do address any information about yourself and your application that needs to be explained (for example, weak grades or unusual coursework for your program).",
+        "Don’t waste space with information you have provided in the rest of the application.",
+        "The voice you use in your essay should be yours.",
+        "BUT be careful not to let your drama turn into melodrama.",
+        "Don’t invent drama where there isn’t any, and don’t let the drama take over."
+      ]
+    },
+    {
+      "id": "unc-introductions",
+      "organization": "The Writing Center, University of North Carolina at Chapel Hill",
+      "title": "Introductions",
+      "url": "https://writingcenter.unc.edu/tips-and-tools/introductions/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "structure"
+      ],
+      "excerpts": [
+        "Try writing your introduction last.",
+        "Essentially, this kind of weaker introduction contains several sentences that are vague and don’t really say much.",
+        "Restating the question can sometimes be an effective strategy, but it can be easy to stop at JUST restating the question instead of offering a more specific, interesting introduction to your paper.",
+        "This kind of introduction generally makes broad, sweeping statements about the relevance of this topic since the beginning of time, throughout the world, etc. It is usually very general (similar to the placeholder introduction) and fails to connect to the thesis."
+      ]
+    },
+    {
+      "id": "unc-conclusions",
+      "organization": "The Writing Center, University of North Carolina at Chapel Hill",
+      "title": "Conclusions",
+      "url": "https://writingcenter.unc.edu/tips-and-tools/conclusions/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "structure"
+      ],
+      "excerpts": [
+        "You can also use this strategy on your own, asking yourself “So What?” as you develop your ideas or your draft.",
+        "Include a brief summary of the paper’s main points, but don’t simply repeat things that were in your paper.",
+        "This conclusion just restates the thesis and is usually painfully short.",
+        "It does not push the ideas forward."
+      ]
+    },
+    {
+      "id": "unc-paragraphs",
+      "organization": "The Writing Center, University of North Carolina at Chapel Hill",
+      "title": "Paragraphs",
+      "url": "https://writingcenter.unc.edu/tips-and-tools/paragraphs/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "structure"
+      ],
+      "excerpts": [
+        "Paragraphs are the building blocks of papers.",
+        "Ultimately, a paragraph is a sentence or group of sentences that support one main idea.",
+        "Unified : All of the sentences in a single paragraph should be related to a single controlling idea (often expressed in the topic sentence of the paragraph)."
+      ]
+    },
+    {
+      "id": "unc-word-choice",
+      "organization": "The Writing Center, University of North Carolina at Chapel Hill",
+      "title": "Word Choice",
+      "url": "https://writingcenter.unc.edu/tips-and-tools/word-choice/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "voice"
+      ],
+      "excerpts": [
+        "The main way to avoid clichés is first to recognize them and then to create shorter, fresher equivalents.",
+        "In contrast, if you find yourself frustrated, tiredly repeating the same nouns, verbs, or adjectives, or making the same point over and over, you are probably being redundant.",
+        "Be careful when using the thesaurus.",
+        "Don’t try to impress your reader or sound unduly authoritative."
+      ]
+    },
+    {
+      "id": "unc-style",
+      "organization": "The Writing Center, University of North Carolina at Chapel Hill",
+      "title": "Style",
+      "url": "https://writingcenter.unc.edu/tips-and-tools/style/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "voice"
+      ],
+      "excerpts": [
+        "First, remember that your goal in academic writing is not to sound intelligent, but to get your intelligent point across.",
+        "And don’t blindly accept the recommendations of your word processing program’s thesaurus—these tools may be dangerous unless you double-check the meaning of the words in a dictionary.",
+        "In fact, it’s often okay to repeat the same word(s) in your paper, particularly when they are significant or central terms."
+      ]
+    },
+    {
+      "id": "unc-conciseness",
+      "organization": "The Writing Center, University of North Carolina at Chapel Hill",
+      "title": "Writing Concisely",
+      "url": "https://writingcenter.unc.edu/tips-and-tools/conciseness-handout/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "voice",
+        "mechanics"
+      ],
+      "excerpts": [
+        "Common examples of redundant pairs include: full and complete, each and every, hopes and dreams, whole entire, first and foremost, true and accurate, always and forever.",
+        "“In the event that” and “under circumstances in which” can be replaced with if.”It is necessary that” and “cannot be avoided” can be replaced with must or should."
+      ]
+    },
+    {
+      "id": "unc-proofreading",
+      "organization": "The Writing Center, University of North Carolina at Chapel Hill",
+      "title": "Editing and Proofreading",
+      "url": "https://writingcenter.unc.edu/tips-and-tools/editing-and-proofreading/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "mechanics"
+      ],
+      "excerpts": [
+        "When you’ve worked hard to develop and present your ideas, you don’t want careless errors distracting your reader from what you have to say.",
+        "Try to keep the editing and proofreading processes separate.",
+        "Don’t rely entirely on spelling checkers.",
+        "In addition, spell checkers will not catch misspellings that form another valid word.",
+        "Read the paper backwards."
+      ]
+    },
+    {
+      "id": "wisc-active-voice",
+      "organization": "The Writing Center, University of Wisconsin–Madison",
+      "title": "Use the active voice",
+      "url": "https://writing.wisc.edu/handbook/grammarandstyle/ccs_activevoice/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "voice",
+        "mechanics"
+      ],
+      "excerpts": [
+        "Generally, try to use the active voice whenever possible.",
+        "Passive voice sentences often use more words, can be vague, and can lead to a tangle of prepositional phrases.",
+        "There are sometimes good reasons to use the passive voice."
+      ]
+    },
+    {
+      "id": "wisc-program-statements",
+      "organization": "The Writing Center, University of Wisconsin–Madison",
+      "title": "Writing Personal Statements for Academic Programs within an Undergraduate College",
+      "url": "https://writing.wisc.edu/handbook/professionalwriting/writing-personal-statements-for-academic-programs/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "interest",
+        "specific",
+        "structure"
+      ],
+      "excerpts": [
+        "But remember: when you narrate your life story, you will reflect on what you have learned from those experiences.",
+        "For this, it is key to familiarize yourself with the program’s website: their mission, faculty, courses, values, opportunities, etc. Identify keywords you might use when narrating and evaluating your past experiences.",
+        "You do not need to narrate all these experiences, but show how they entail your goals, interests, and decisions.",
+        "Though you surely have plenty to say, remember that “less is more”: pick the most essential elements of your story to share, and really focus on those.",
+        "For instance, instead of enumerating a series of past experiences, focus on two or three that are the most representative of your career path and your professional mission."
+      ]
+    },
+    {
+      "id": "uvu-comma-splices",
+      "organization": "Writing Center, Utah Valley University",
+      "title": "Comma Splices, Run-ons, & Sentence Fragments",
+      "url": "https://www.uvu.edu/writingcenter/handouts/comma-splices.html",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "mechanics"
+      ],
+      "excerpts": [
+        "A comma splice occurs when two sentences or independent clauses are joined together by a comma, while a run-on sentence occurs when two sentences or independent clauses are joined without proper punctuation.",
+        "Sentences or independent clauses must be separated by punctuation other than a comma or by a comma with a coordinating conjunction ( for, and, nor, but, or, yet, so ).",
+        "Both comma splices and run-ons are fixed using the same methods."
+      ]
+    },
+    {
+      "id": "wfu-run-ons",
+      "organization": "Writing Center, Wake Forest University",
+      "title": "Run-Ons and Comma Splices (handout)",
+      "url": "https://prod.wp.cdn.aws.wfu.edu/sites/579/2026/08/Run-Ons-and-Comma-Splices.pdf",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "mechanics"
+      ],
+      "excerpts": [
+        "A run-on sentence occurs when two independent clauses are mistakenly combined into one sentence without any punctuation.",
+        "Note that this means that a sentence can become a run-on if it has a coordinating conjunction but no comma.",
+        "The sentence doesn't have to be long to be a run-on.",
+        "If the two thoughts are not very closely tied together, then use a period instead."
+      ]
+    },
+    {
+      "id": "mit-essays",
+      "organization": "MIT Admissions",
+      "title": "Essays, activities & academics",
+      "url": "https://mitadmissions.org/apply/firstyear/essays-activities-academics/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "voice",
+        "short-answers"
+      ],
+      "excerpts": [
+        "Remember that this is not a writing test.",
+        "Be honest, be open, be authentic—this is your opportunity to connect with us.",
+        "You should certainly be thoughtful about your essays, but if you’re thinking too much—spending a lot of time stressing or strategizing about what makes you “look best,” as opposed to the answers that are honest and easy—you’re doing it wrong.",
+        "Depending on the question, we’re looking for responses of approximately 100–200 words each.",
+        "There is only space for 40 to 50 words each."
+      ]
+    },
+    {
+      "id": "mit-word-count",
+      "organization": "MIT Admissions",
+      "title": "Is it ok to go over the essay word count?",
+      "url": "https://mitadmissions.org/help/faq/essays-word-count/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "prompt",
+        "mechanics"
+      ],
+      "excerpts": [
+        "We require applicants to follow the word limits provided on the application.",
+        "Your information will not be saved if the responses are too long."
+      ]
+    },
+    {
+      "id": "yale-essays",
+      "organization": "Yale Undergraduate Admissions",
+      "title": "Essays",
+      "url": "https://admissions.yale.edu/essays",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "voice",
+        "showcase",
+        "short-answers"
+      ],
+      "excerpts": [
+        "We know that no one can fit an entire life story into a few short pieces of writing, and we don’t expect you to try.",
+        "Pick topics that will give us an idea of who you are.",
+        "We have read wonderful essays on common topics and weak essays on highly unusual ones.",
+        "Your perspective – the lens through which you view your topic – is far more important than the specific topic itself.",
+        "Share your essays with at least one or two people who know you well – such as a parent, teacher, counselor, or friend – and ask for feedback.",
+        "Remember that you ultimately have control over your essays, and your essays should retain your own voice, but others may be able to catch mistakes that you missed and help suggest areas to cut if you are over the word limit.",
+        "Applicants submitting the Coalition Application or Common Application will also respond to the following short answer questions, in no more than 200 characters (approximately 35 words):"
+      ]
+    },
+    {
+      "id": "tufts-essay-tips",
+      "organization": "Tufts University Admissions",
+      "title": "Essay Writing Tips",
+      "url": "https://admissions.tufts.edu/blogs/inside-admissions/post/essay-writing-tips/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "prompt",
+        "specific",
+        "voice",
+        "short-answers"
+      ],
+      "excerpts": [
+        "The word limits for these essays often land at less than 300 words (except for the Personal Statement), so while you may be used to writing more than that for school, you will need to practice dialing it back and being a bit more concise for these essays.",
+        "Details : Some students feel constrained by prompted essays, but in reality, the prompts simply serve as a frame for the reader to understand your writing.",
+        "No matter which topic you choose, be sure to include specifics and details so that your painting can truly “pop.”",
+        "Grammar + Spelling Checks : Be sure to ask someone to look over and check your essays for spelling, grammar, or other mistakes that might detract from the readability and meaning of your essay.",
+        "Letting many people read and edit your essay might result in your voice and personal style being jumbled and lost in edits."
+      ]
+    },
+    {
+      "id": "tufts-four-tips",
+      "organization": "Tufts University Admissions",
+      "title": "The Only Four College Essay Writing Tips You'll Ever Need",
+      "url": "https://admissions.tufts.edu/blogs/inside-admissions/post/the-only-four-college-essay-writing-tips-youll-ever-need/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "specific",
+        "voice",
+        "showcase",
+        "depth"
+      ],
+      "excerpts": [
+        "Often your instinct is to write about something else - an experience, another person, a favorite activity - rather than your personality, passions, or quirks.",
+        "You may use these people or experiences as launching pads to discuss yourself, but that is all they should be.",
+        "It's all about detail : As I see it, you have two options when exploring a topic in your college essay: go broad or go deep.",
+        "By focusing on details, you set yourself apart; many people love museums and could list some artists that they like.",
+        "Telling me that your friends would describe you as silly and outgoing is, unfortunately, not enough.",
+        "Of course editing is important (spell check people), but when you have many different people giving you feedback, you often lose your voice in all the changes.",
+        "Then show your essays to two people - one who is a strong writer, and one who knows you really well (they can tell you if your essay is genuinely YOU)."
+      ]
+    },
+    {
+      "id": "uc-piq",
+      "organization": "University of California Admissions",
+      "title": "Personal insight questions",
+      "url": "https://admission.universityofcalifornia.edu/how-to-apply/applying-as-a-first-year/personal-insight-questions.html",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "prompt",
+        "specific",
+        "mechanics",
+        "short-answers",
+        "showcase",
+        "care"
+      ],
+      "excerpts": [
+        "Each response is limited to a maximum of 350 words.",
+        "If you choose to write about educational barriers you've faced, how did you overcome or strive to overcome them?",
+        "All are given equal consideration in the application review process, which means there is no advantage or disadvantage to choosing certain questions over others.",
+        "There is no right or wrong way to answer these questions.",
+        "This shouldn't be an essay, but rather a place to note unusual circumstances or anything that might be unclear in other parts of the application.",
+        "Making a list of accomplishments, activities, awards or work will lessen the impact of your words.",
+        "Expand on a topic by using specific, concrete examples to support the points you want to make.",
+        "Although you will not be evaluated on grammar, spelling or sentence structure, you should proofread your work and make sure your writing is clear.",
+        "Grammatical and spelling errors can be distracting to the reader and get in the way of what you’re trying to communicate.",
+        "Your answers should reflect your own ideas and be written by you alone, but others — family, teachers and friends can offer valuable suggestions."
+      ]
+    },
+    {
+      "id": "uva-dean-tips",
+      "organization": "University of Virginia College of Arts & Sciences",
+      "title": "UVA Admission Essays Are Posted. Learn How to Write...",
+      "url": "https://as.virginia.edu/news/uva-admission-essays-are-posted-learn-how-write-your-best-one",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "voice",
+        "structure",
+        "prompt"
+      ],
+      "excerpts": [
+        "“I think that it helps us get insight into the personality, voice and style of the student,” she said.",
+        "“The topic is just a vehicle that the student uses.",
+        "“Don’t feel limited to the formulaic way that most students are taught to write for class,” she said.",
+        "“It’d be foolish to submit an essay without having someone you trust take a look first and give feedback, but essays shouldn’t read like they were done by committee.",
+        "When you submit it, it should feel good to you, and it should sound like you.”"
+      ]
+    },
+    {
+      "id": "vanderbilt-personal-essay",
+      "organization": "Vanderbilt University Undergraduate Admissions",
+      "title": "How To: Write Your Personal Essay",
+      "url": "https://admissions.vanderbilt.edu/vandybloggers/2013/09/how-to-write-your-personal-essay/",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "voice",
+        "showcase",
+        "mechanics",
+        "care"
+      ],
+      "excerpts": [
+        "While the essay is a valuable tool that we use to understand you better, it is rarely if ever a “make or break” component of your application.",
+        "To be honest, we don’t really care that much what you write about, as long as you’re writing about you.",
+        "Don’t try to guess what the reader wants to hear.",
+        "Feel free to be funny or creative – but don’t overreach.",
+        "Do not use this space to summarize your extracurricular involvement or your academic achievements if we’ve already seen these things in your resume and transcript.",
+        "Keep in mind, however, that a 45-year-old lawyer writes quite differently from an 18-year-old student, so if your dad ends up writing the bulk of your essay, we’re probably going to notice.",
+        "Treat this essay just like any class assignment – write it early, proof and revise, keep an eagle eye out for spelling and grammatical errors, and make sure it is presented in a clean and polished way.",
+        "That said, you don’t have to include anything about yourself that you don’t feel comfortable sharing."
+      ]
+    },
+    {
+      "id": "gt-personal-essays",
+      "organization": "Georgia Tech Undergraduate Admission",
+      "title": "Personal Essays",
+      "url": "https://admission.gatech.edu/first-year/personal-essays",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "prompt",
+        "showcase",
+        "mechanics",
+        "care"
+      ],
+      "excerpts": [
+        "Demonstrate authenticity & self-awareness.",
+        "Deepen our understanding of you or your interests.",
+        "Answer the chosen prompt completely and thoughtfully.",
+        "Sometimes cutting and pasting can change punctuation marks in the text box.",
+        "If you start to focus on what you think we want to hear, pause.",
+        "The Responsibilities and Circumstances section and the Additional Information section both provide spaces for students to share impacts or important contextual information.",
+        "We want you to know: Per Georgia state law and Georgia Tech policy , all admission staff are mandatory reporters who are required by law to report suspected abuse or neglect of minors to appropriate authorities."
+      ]
+    },
+    {
+      "id": "coalition-revising",
+      "organization": "Coalition for College",
+      "title": "How to Revise College Essays",
+      "url": "https://www.coalitionforcollegeaccess.org/mycoalition-counselor-all/revising-college-essays-t3dkj",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "mechanics",
+        "voice",
+        "structure"
+      ],
+      "excerpts": [
+        "Be sure to use your own judgment when accepting these recommendations that are offered by spelling and grammar check features to make sure edits are accurate and to take complete ownership of your writing.",
+        "“While AI does a thorough editing job, it can sometimes be too thorough, often simplifying and condensing phrases to maximize concision, and eliminating the uniqueness of your own voice.",
+        "If the reader struggles with a sentence or section, that might indicate you’ve been too wordy, or that your phrasing isn’t intuitive to many people (this is why YOU reading it aloud to yourself is less effective; you’re prone to interpret words and phrases as you intended them).",
+        "Finally, ask them what the point or moral of the essay is.",
+        "If you ask too many people for feedback, you’ll end up incorporating so many extensive and varied edits that your final product will no longer sound like you, but like a junk sculpture composed of a gazillion voices that all sound different rather than your own strong and confident voice.",
+        "Finally, don’t obsess over any one word or sentence."
+      ]
+    },
+    {
+      "id": "coalition-ai-essay",
+      "organization": "Coalition for College",
+      "title": "AI Rules for College Essays",
+      "url": "https://www.coalitionforcollegeaccess.org/mycoalition-counselor-all/ai-and-the-college-essay",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "voice"
+      ],
+      "excerpts": [
+        "The essay isn’t about writing perfectly—it’s about being you.",
+        "It is important to know that some colleges have specific AI policies, and admissions offices follow those guidelines when reviewing applications.",
+        "Admissions counselors generally agree that AI can be used as a support tool, but not as a replacement for a student’s work.",
+        "Create personal stories or reflections you didn’t experience",
+        "Essays that sound generic or disconnected from the rest of an application often raise concerns, regardless of how they were produced."
+      ]
+    },
+    {
+      "id": "coalition-jhu-pro-tips",
+      "organization": "Coalition for College (from Johns Hopkins University Admissions)",
+      "title": "Johns Hopkins Essay Tips",
+      "url": "https://www.coalitionforcollegeaccess.org/mycoalition-counselor-all/pro-tips-on-writing-your-personal-statement",
+      "retrieved": "2026-10-29",
+      "half": "craft",
+      "topics": [
+        "prompt",
+        "showcase",
+        "voice",
+        "mechanics"
+      ],
+      "excerpts": [
+        "The essays reveal how you learn, what you value, or how you approach challenges, which helps the admissions committee imagine how you might approach the living and learning environment at their school.",
+        "This may seem obvious, but make sure your essay answers what is being asked!",
+        "Instead of listing all of your extracurricular involvements again, use this opportunity to show a different aspect of yourself.",
+        "Your essay works together with all parts of your application and doesn’t stand alone.",
+        "Spell-check doesn’t catch everything."
+      ]
+    },
+    {
+      "id": "nacac-guide-essays",
+      "organization": "National Association for College Admission Counseling (NACAC)",
+      "title": "Guide to the College Admission Process (2022), chapters 3 and 6",
+      "url": "https://www.nacacnet.org/wp-content/uploads/2022/10/NACAC-GCAP-2022-Report-1022_1.pdf",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "showcase",
+        "supplements",
+        "interest",
+        "short-answers"
+      ],
+      "excerpts": [
+        "The specificity, care, and intentionality that goes into your response is, for colleges that track it, an important demonstration of interest.",
+        "In general, optional is rarely ever authentically optional when it comes to college admissions, with the exception of standardized testing (more to come on that in Chapter 5).",
+        "While essays also allow colleges to assess your writing abilities, their primary purpose is to tell the admission committee something in depth about you and what you care about that isn’t captured in another part of the application.",
+        "This is a general, longer-form essay about you; it should not be tailored to specific colleges.",
+        "Avoid the temptation to talk about every activity or experience you’ve had in high school in your Personal Statement.",
+        "It should not serve as a narrative resumé.",
+        "These essays are typically shorter than the Personal Statement, around 100-350 words a piece, but that does not mean they should be taken any less seriously or given any less effort than the Personal Statement.",
+        "Avoid talking about the general criteria that may have initially put the college on your radar—size, location, weather, reputation, etc., as those are likely unifying draws for all applicants.",
+        "This essay should be so specific and tailored to the individual school that it can’t be recycled from college to college."
+      ]
+    },
+    {
+      "id": "mit-what-we-look-for",
+      "organization": "MIT Admissions",
+      "title": "What we look for",
+      "url": "https://mitadmissions.org/apply/process/what-we-look-for/",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "showcase",
+        "depth"
+      ],
+      "excerpts": [
+        "Ask any admissions officer at MIT, and they will tell you that while grades and scores are important in understanding your academic preparedness for MIT , it’s really the match between the applicant and the Institute that drives our selection process .",
+        "Remember that there are many ways to make an impact—we’re not looking for applicants to have cured all infectious diseases in the world by the time they’re 15.",
+        "We don’t expect applicants to do a million things.",
+        "Put your heart into a few things that you truly care about right now (we’re not particularly picky as to what) and share your enthusiasm with us.",
+        "Our application’s essay question , “Tell us about something you do simply for the pleasure of it.” is not a trick question."
+      ]
+    },
+    {
+      "id": "yale-what-we-look-for",
+      "organization": "Yale Undergraduate Admissions",
+      "title": "What Yale Looks For",
+      "url": "https://admissions.yale.edu/what-yale-looks-for",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "showcase",
+        "voice"
+      ],
+      "excerpts": [
+        "The Yale application tries to get at the personal side of the applicant through the use of several short essays whose scope is broad enough to accommodate most writers.",
+        "We encourage you to take the writing of the essays seriously and to write openly and honestly about activities, interests, or experiences that have been meaningful to you.",
+        "If an essay doesn’t sound like the person who writes it, it cannot serve very well as a personal statement.",
+        "As with every document in the application, we read essays very carefully and try to get a full sense of the real person behind them."
+      ]
+    },
+    {
+      "id": "princeton-helpful-tips",
+      "organization": "Princeton University Admission",
+      "title": "Helpful Tips",
+      "url": "https://admission.princeton.edu/apply/before-you-apply/helpful-tips",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "showcase",
+        "interest",
+        "voice"
+      ],
+      "excerpts": [
+        "We'll ask for your transcript and recommendations, and we will want to know more than just the statistics in your file.",
+        "Tell us how you would seize the academic and nonacademic opportunities at Princeton and contribute to the Princeton community.",
+        "This is your opportunity to display your best writing as well as your ability to convey ideas in your own voice.",
+        "While you may want to have a parent, school counselor or teacher proofread your essays, it is extremely important that the essays be your own work."
+      ]
+    },
+    {
+      "id": "coalition-harvard-what-colleges-look-for",
+      "organization": "Coalition for College (from Harvard College Admissions)",
+      "title": "What Selective Colleges Look For",
+      "url": "https://www.coalitionforcollegeaccess.org/mycoalition-counselor-all/harvard-what-colleges-are-looking-for",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "showcase",
+        "depth"
+      ],
+      "excerpts": [
+        "Many selective colleges practice an admissions process that looks at the applicant as a whole person.",
+        "Describing how you have spent your time over the past four years—in the “extracurricular” section of the application, your essays, or anywhere else you feel is appropriate—can help admissions officers understand what has been important to you during high school, and how you might contribute to student life on our campus.",
+        "When we review applications, we look at students’ essays and recommendations from their teachers and guidance counselors to learn about their relationships with those around them.",
+        "Personal essays and recommendations that paint a picture of your personal qualities help admissions committees to envision you as part of their community."
+      ]
+    },
+    {
+      "id": "coalition-getting-started",
+      "organization": "Coalition for College",
+      "title": "Starting Your College Essay",
+      "url": "https://www.coalitionforcollegeaccess.org/mycoalition-counselor-all/getting-started-on-your-college-essay",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "showcase"
+      ],
+      "excerpts": [
+        "The point of brainstorming is to think of lots of ideas, instead of focusing on one right answer.",
+        "Rest assured, there is never a particular story or topic that we’re looking for.",
+        "Take a deep breath, do some self-reflection, and write about whatever feels true to you."
+      ]
+    },
+    {
+      "id": "coalition-why-this-college",
+      "organization": "Coalition for College",
+      "title": "How to Write \"Why This College?\"",
+      "url": "https://www.coalitionforcollegeaccess.org/mycoalition-counselor-all/answering-why-this-college-essay-questions",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "interest"
+      ],
+      "excerpts": [
+        "Admissions counselors aren’t looking for perfect answers or praise about the institution.",
+        "Clear connections between you and the college",
+        "This isn’t about naming everything the college offers—it’s about explaining why certain things matter to you.",
+        "Start by reflecting on what you want from college, then research the school with those priorities in mind.",
+        "Choose a few meaningful examples and explain how they connect to your goals.",
+        "List facts without explaining why they matter",
+        "Use generic language that could apply to many colleges",
+        "Focus only on rankings, location, or prestige without explaining why it matters to you",
+        "If your essay could be reused for another school, it likely needs more detail or reflection."
+      ]
+    },
+    {
+      "id": "coalition-demonstrated-interest",
+      "organization": "Coalition for College",
+      "title": "Guide to Demonstrated Interest",
+      "url": "https://www.coalitionforcollegeaccess.org/mycoalition-counselor-all/demonstrated-interest-what-it-means-and-why-it-matters",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "interest"
+      ],
+      "excerpts": [
+        "Demonstrated interest refers to how a student engages with a college during the admissions process.",
+        "Not all colleges will track or use demonstrated interest, and it is rarely a deciding factor on its own.",
+        "Each college will define and measure demonstrated interest differently.",
+        "Many colleges are transparent about whether they consider demonstrated interest, and some do not track it at all.",
+        "Students are not expected to attend every event or interact in ways that feel forced or inaccessible."
+      ]
+    },
+    {
+      "id": "coalition-supplemental-essays",
+      "organization": "Coalition for College",
+      "title": "Recording: Standout Supplemental Essays",
+      "url": "https://www.coalitionforcollegeaccess.org/mycoalition-counselor-all/standout-supplemental-essays",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "supplements",
+        "interest"
+      ],
+      "excerpts": [
+        "The \"Why Us?\" prompts and short-answer questions are critical components of your application, and admissions officers evaluate them closely."
+      ]
+    },
+    {
+      "id": "tufts-supplement",
+      "organization": "Tufts University Admissions",
+      "title": "Application Checklist: The Supplement",
+      "url": "https://admissions.tufts.edu/blogs/inside-admissions/post/application-checklist-the-supplement",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "supplements",
+        "interest",
+        "showcase"
+      ],
+      "excerpts": [
+        "The best thing that you can do for yourself as you plan your essays is to have each one touch upon a different part of who you are or come at a topic from a different angle.",
+        "If you are a tea-obsessed globetrotting chemist with a love of 1970s Swedish pop, use the various essays to highlight each individual piece.",
+        "Part of what we do when reading a Why Tufts is to see whether or not you’ve done your homework on us, what specifically about us you’re interested in.",
+        "Tell us about an academic program or research project or club that you’re interested in joining.",
+        "If you are fiercely passionate about something and haven’t told us about it yet, this is your chance."
+      ]
+    },
+    {
+      "id": "tufts-supplement-advice",
+      "organization": "Tufts University Admissions",
+      "title": "Essay Advice: The Ghost of My Supplement Past",
+      "url": "https://admissions.tufts.edu/blogs/inside-admissions/post/essay-advice-the-ghost-of-my-supplement-past/",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "interest",
+        "showcase"
+      ],
+      "excerpts": [
+        "If you can replace the word Tufts with any other school in your \"Why Tufts,\" the essay is probably not specific enough!!!!",
+        "To summarize, these are some things to keep in mind when you are writing/tweaking your essays: be specific, make sure the focus is on you, throw in your personality, show your intellectual side!",
+        "Its okay to not have the most sophisticated intellectual topics to write about."
+      ]
+    },
+    {
+      "id": "jhu-supplemental-essay",
+      "organization": "Johns Hopkins University Undergraduate Admissions",
+      "title": "Advice For Crafting Your Supplemental Essay",
+      "url": "https://apply.jhu.edu/hopkins-insider/advice-for-crafting-your-supplemental-essay/",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "supplements",
+        "interest",
+        "prompt",
+        "structure"
+      ],
+      "excerpts": [
+        "It’s different from the personal statement, which is more universal and includes a variety of prompts you can choose from.",
+        "Because the supplemental essay is school-specific, it helps an admissions committee determine if your values align with those of their institution.",
+        "Before you start writing, take a close look at what the prompt is asking.",
+        "Small, one-time moments can be impactful too, like navigating a misunderstanding with your friend or participating in a classroom discussion that challenged your thinking.",
+        "Focus on the process, rather than the outcome, in your essay.",
+        "You don’t need to be the hero of the story!"
+      ]
+    },
+    {
+      "id": "jhu-application-resources",
+      "organization": "Johns Hopkins University Undergraduate Admissions (Hopkins Insider, a student contributor)",
+      "title": "Application Resources and Suggestions",
+      "url": "https://apply.jhu.edu/hopkins-insider/application-resources-and-suggestions/",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "interest"
+      ],
+      "excerpts": [
+        "I thought that it was really helpful to look through the student organizations available on campus to get an idea of what groups I thought that I might get involved with on campus.",
+        "Classes are a very important part of college, so I would suggest looking at the catalogue and seeing if there are any classes, either within your intended major or outside of it, that make you really excited.",
+        "Every university has its own unique programs and experiences, I suggest looking into them and maybe mentioning one or two if they spark your interest.",
+        "If you’ve had the opportunity to visit campus, either through a formal campus visit or another time, and some aspect of campus stood out to you, feel free to mention it within your essay."
+      ]
+    },
+    {
+      "id": "gt-supplemental-essays",
+      "organization": "Georgia Tech Undergraduate Admission",
+      "title": "Supplemental Essays 101",
+      "url": "https://sites.gatech.edu/admission-blog/2019/07/12/will-saying-im-a-blueberry-get-me-into-college-supplemental-essays-101/",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "supplements",
+        "interest",
+        "short-answers",
+        "mechanics"
+      ],
+      "excerpts": [
+        "Not all colleges or universities have supplemental questions, but if they do, you should take them seriously.",
+        "What have I not had a chance to say?",
+        "The purpose of this question is to understand how you think and give the committee a glimpse into your personality.",
+        "Scanning the college website to glean some key words or phrases to include in your answer is not enough.",
+        "To answer this question well, you need to research, and real research starts with curiosity.",
+        "If you use the name of the college, university or institute in the supplemental essay, get the name right.",
+        "That being said, proof this writing piece as thoroughly as your main essay!"
+      ]
+    },
+    {
+      "id": "gt-asking-why",
+      "organization": "Georgia Tech Undergraduate Admission",
+      "title": "Preparing Your College Application: You Are Asking the Wrong Questions",
+      "url": "https://sites.gatech.edu/admission-blog/2024/10/07/preparing-your-college-application-you-are-asking-the-wrong-questions/",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "showcase",
+        "depth",
+        "interest"
+      ],
+      "excerpts": [
+        "Why is this school good… for you?",
+        "Instead of thinking of a checklist of accomplishments for your college application, why do you enjoy a particular activity?",
+        "Think about it this way: would you rather share with me a task list, or a record of some of your most satisfying moments in high school?"
+      ]
+    },
+    {
+      "id": "gt-completing-application",
+      "organization": "Georgia Tech Undergraduate Admission",
+      "title": "Coffee, Conversations, and Completing Your College Application",
+      "url": "https://sites.gatech.edu/admission-blog/2026/10/06/coffee-conversations-and-completing-your-college-application/",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "showcase"
+      ],
+      "excerpts": [
+        "I would say, “Tell me something I might not already know about you.”",
+        "That is my purpose when I read an essay.",
+        "If there is something that just doesn’t fit with the rest of the conversation, but you feel is important, then check yes to the Additional Information question on the Common App and tell us more."
+      ]
+    },
+    {
+      "id": "nyu-activities",
+      "organization": "NYU Admissions",
+      "title": "Tips for Writing a Winning Activities Section",
+      "url": "https://meet.nyu.edu/advice/tips-for-writing-a-winning-activities-section/",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "short-answers",
+        "depth",
+        "mechanics"
+      ],
+      "excerpts": [
+        "Rank your activities in order of their importance to you .",
+        "Don’t just showcase what seems most glamorous or exciting—this is about communicating what you are passionate about.",
+        "Your activity descriptions should look like very well-composed tweets.",
+        "There’s nothing more confusing than a beautifully composed essay right next to an activities section littered with errors and misspellings.",
+        "When it comes to acronyms and abbreviations, you should only be using them if they are universal."
+      ]
+    },
+    {
+      "id": "ut-short-answers",
+      "organization": "The University of Texas at Austin Admissions",
+      "title": "Essays & Short Answers",
+      "url": "https://admissions.utexas.edu/apply/application-materials/essays-and-short-answers/",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "short-answers",
+        "supplements"
+      ],
+      "excerpts": [
+        "They allow students to share their stories, interests and additional information that may not be reflected in the application.",
+        "It can be one you’ve already written, one that responds to a different prompt or one of your own design.",
+        "Answers are limited to no more than 40 lines, or about 250-300 words per prompt, typically the length of one paragraph.",
+        "The statement of purpose is not meant to be a listing of accomplishments in high school/college or a record of your participation in school-related activities."
+      ]
+    },
+    {
+      "id": "rice-supplement",
+      "organization": "Rice University Admission",
+      "title": "First-Year Domestic Applicants",
+      "url": "https://admission.rice.edu/apply/first-year-domestic-applicants",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "interest",
+        "supplements"
+      ],
+      "excerpts": [
+        "This is your chance to tell us why you are interested in Rice and what you would like to pursue as a student here."
+      ]
+    },
+    {
+      "id": "bowdoin-supplement",
+      "organization": "Bowdoin College Admissions",
+      "title": "Apply: the Bowdoin Supplement",
+      "url": "https://www.bowdoin.edu/admissions/apply/index.html",
+      "retrieved": "2026-10-29",
+      "half": "approach",
+      "topics": [
+        "voice",
+        "care"
+      ],
+      "excerpts": [
+        "The strongest applications are personal and genuine.",
+        "Read our guidance on the use of AI in your application."
+      ]
+    }
+  ],
+  "refused": [
+    {
+      "id": "harvard-wc-introductions",
+      "organization": "Harvard College Writing Center",
+      "url": "https://writingcenter.fas.harvard.edu/introductions",
+      "reason": "refused (HTTP 403)",
+      "checked": "2026-10-29"
+    },
+    {
+      "id": "harvard-wc-conclusions",
+      "organization": "Harvard College Writing Center",
+      "url": "https://writingcenter.fas.harvard.edu/conclusions",
+      "reason": "refused (HTTP 403)",
+      "checked": "2026-10-29"
+    },
+    {
+      "id": "harvard-wc-revising",
+      "organization": "Harvard College Writing Center",
+      "url": "https://writingcenter.fas.harvard.edu/revising-draft",
+      "reason": "refused (HTTP 403)",
+      "checked": "2026-10-29"
+    },
+    {
+      "id": "uchicago-essays",
+      "organization": "University of Chicago College Admissions",
+      "url": "https://collegeadmissions.uchicago.edu/apply/essay/",
+      "reason": "the page has almost no text without a browser (36 characters read; it renders by script)",
+      "checked": "2026-10-29"
+    },
+    {
+      "id": "uva-notes-from-peabody",
+      "organization": "University of Virginia Office of Undergraduate Admission (Notes from Peabody)",
+      "url": "https://uvaadmission.blogspot.com/",
+      "reason": "robots.txt disallows it",
+      "checked": "2026-10-29"
+    },
+    {
+      "id": "umich-essays",
+      "organization": "University of Michigan Undergraduate Admissions",
+      "url": "https://admissions.umich.edu/apply/first-year-applicants/essays",
+      "reason": "refused (HTTP 403)",
+      "checked": "2026-10-29"
+    }
+  ]
+}

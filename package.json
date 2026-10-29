@@ -47,6 +47,7 @@
     "sync-common-app": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-common-app.mts",
     "sync-ap-ledger": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-ap-ledger.mts",
     "check:lineage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-lineage.mts",
+    "eval:reviewer": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/eval-reviewer.mts",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/**/*.test.mts\"",
     "typecheck": "next typegen && tsc --noEmit",
     "verify": "npm run typecheck && npm run lint && npm test && npm run check:lineage && npm run check:college-health && npm run check:source-files && npm run check:cycle && npm run check:aid-policies && npm run check:course-catalog && npm run check:guaranteed-admission && npm run check:major-admission && npm run check:major-course-expectations && npm run check:legacy-bans && npm run check:awards-catalog && npm run check:activity-catalogs && npm run check:depth-groups && npm run check:selectivity && npm run check:common-app-trends && npm run auth-emails -- --check",
@@ -82,7 +83,10 @@
     "chances-calibration": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/chances-calibration.mts",
     "fix-fraction-rates": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/fix-fraction-rates.mts",
     "sync-coalition": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-coalition.mts",
-    "merge-coalition": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-coalition.mts"
+    "merge-coalition": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-coalition.mts",
+    "sync-essay-prompts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-essay-prompts.mts",
+    "merge-essay-prompts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-essay-prompts.mts",
+    "research-essay-guidance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/research-essay-guidance.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
@@ -98,7 +102,9 @@
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
     "d3-geo": "^3.1.1",
+    "docx": "^9.15.0",
     "lucide-react": "^1.48.0",
+    "mammoth": "^1.13.0",
     "marked": "^18.0.14",
     "mcp-handler": "^2.3.0",
     "next": "16.3.6",

@@ -6,6 +6,8 @@ import { ArrowLeft } from "lucide-react";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { SignInPrompt } from "@/components/account/SignInPrompt";
 import { Editor } from "@/components/essays/Editor";
+import { ExportMenu } from "@/components/essays/ExportMenu";
+import { ImportSheet } from "@/components/essays/ImportSheet";
 import { ReusePicker } from "@/components/essays/PromptPicker";
 import { WhyFold } from "@/components/ui/why-fold";
 import { authConfigured } from "@/lib/auth";
@@ -131,11 +133,11 @@ async function render(id: string, searchParams: Search) {
           </p>
         )}
         {read.variants > 0 && <p className="text-sm text-muted-foreground">{read.variants === 1 ? "1 copy of this draft is" : `${read.variants} copies of this draft are`} used for other prompts.</p>}
-        {canWrite && (
-          <div className="pt-1">
-            <ReusePicker essayId={essay.id} choices={choices} person={person} />
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          {canWrite && <ReusePicker essayId={essay.id} choices={choices} person={person} />}
+          <ExportMenu essayId={essay.id} person={person} text={essay.body} />
+          {canWrite && <ImportSheet essayId={essay.id} />}
+        </div>
       </header>
 
       <Editor

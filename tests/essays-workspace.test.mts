@@ -291,7 +291,23 @@ test("the capability is listed and the store asks for it on every action", () =>
   const exported = [...store.matchAll(/^export async function (\w+)/gm)].map((m) => m[1]);
   assert.deepEqual(
     exported.sort(),
-    ["addComment", "createEssay", "deleteComment", "deleteEssay", "linkEssay", "makeVariant", "openVersion", "renameEssay", "resolveComment", "restoreVersion", "saveEssay", "setEssayStatus", "unlinkEssay"].sort(),
+    [
+      "addComment",
+      "createEssay",
+      "deleteComment",
+      "deleteEssay",
+      "importPastedText",
+      "importUploadedFile",
+      "linkEssay",
+      "makeVariant",
+      "openVersion",
+      "renameEssay",
+      "resolveComment",
+      "restoreVersion",
+      "saveEssay",
+      "setEssayStatus",
+      "unlinkEssay",
+    ].sort(),
   );
   for (const name of exported) {
     const body = store.slice(store.indexOf(`export async function ${name}`)).split(/\nexport /)[0];

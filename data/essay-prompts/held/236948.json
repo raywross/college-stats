@@ -1,0 +1,8 @@
+{ "unit_id": "236948", "name": "University of Washington-Seattle Campus", "held": "2026-10-29",
+  "problems": [
+    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
+  ],
+  "record": {"unit_id":"236948","name":"University of Washington-Seattle Campus","cycle":"2026-27","status":"refers_to_form","source_url":"https://admit.washington.edu/apply/first-year/","retrieved":"2026-10-29","sha256":"27a4519a9c66eaa5a00bc62ea89bd7b73824447074ab350a749ef95baf0eea2b","archive":"local:27a4519a9c66eaa5a00bc62ea89bd7b73824447074ab350a749ef95baf0eea2b.html","cycle_quote":"","cycle_assumed":true,"status_quote":"The entire application, including the essay and extracurricular activities, is important in the individualized review.","via":"picker","model":"claude-opus-5","reader":"2026.10.29.3",
+    "prompts": []
+  }
+}

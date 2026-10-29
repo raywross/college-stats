@@ -11,8 +11,12 @@ import { cycleStart, openCycle } from "./cycle.mts";
 import { LIMIT_RANGE, PROMPT_CHARS } from "./checks.mts";
 import type { EssayRecord } from "./store.mts";
 
-/** Top-level keys later pipelines own (lib/identity.ts LATER_KEYS): a new `essays` goes right before the first of them. */
-const LATER_KEYS = ["directories", "lineage", "trends", "reported"];
+/**
+ * Top-level keys later pipelines own: a new `essays` goes right before the first of them. `selectivity` is here
+ * because the tiers build (scripts/lib/selectivity.mts placeSelectivity) re-inserts its key right before `directories`
+ * on every rebuild; the two blocks can only both be stable if `essays` sits before it.
+ */
+const LATER_KEYS = ["selectivity", "directories", "lineage", "trends", "reported"];
 
 /** The block a record puts on its college. */
 export function blockOf(r: EssayRecord): SchoolEssays {
@@ -45,11 +49,27 @@ function placeKey(school: School, key: string, value: unknown, anchors: readonly
   return Object.fromEntries([...entries.slice(0, at), [key, value], ...entries.slice(at)]) as unknown as School;
 }
 
+/**
+ * The lineage object with the essays record in its settled place: before the first `reported.*` record (at the end
+ * when there is none). The college-reported merge strips and re-appends its own records last, so a record left after
+ * them would move on the next re-merge and `data/schools.json` would never be stable (tests/merge-reported). Moving a
+ * record already there to the same place is a no-op, so applying twice changes nothing.
+ */
+export function placeEssaysLineage(lineage: NonNullable<School["lineage"]>, record: LineageRecord): NonNullable<School["lineage"]> {
+  const entries = Object.entries(lineage).filter(([k]) => k !== "essays");
+  let at = entries.findIndex(([k]) => k.startsWith("reported."));
+  if (at < 0) at = entries.length;
+  return Object.fromEntries([...entries.slice(0, at), ["essays", record], ...entries.slice(at)]);
+}
+
 /** Sets the block and its lineage record, keeping each one's place when it was already there. */
 export function placeEssays(school: School, r: EssayRecord): School {
-  const withBlock = placeKey(school, "essays", blockOf(r), LATER_KEYS);
+  // Always re-place the block (never keep an old position): the settled spot is right before the first later key.
+  const { essays: _old, ...rest } = school;
+  void _old;
+  const withBlock = placeKey(rest as School, "essays", blockOf(r), LATER_KEYS);
   // `lineage` itself goes before trends and reported when the college had none (lib/identity.ts placeTopLevel).
-  return placeKey(withBlock, "lineage", { ...(school.lineage ?? {}), essays: lineageOf(r) }, ["trends", "reported"]);
+  return placeKey(withBlock, "lineage", placeEssaysLineage(school.lineage ?? {}, lineageOf(r)), ["trends", "reported"]);
 }
 
 /** The college without the block or its lineage record; a lineage left empty is dropped. */

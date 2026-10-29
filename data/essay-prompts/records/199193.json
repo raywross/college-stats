@@ -1,0 +1,5 @@
+{"unit_id":"199193","name":"North Carolina State University at Raleigh","cycle":"2026-27","status":"published","source_url":"https://admissions.ncsu.edu/apply/first-year/","retrieved":"2026-10-29","sha256":"9fd4071b2965136781996069143b3135844b9db92ffab6598671da405c2654f9","archive":"local:9fd4071b2965136781996069143b3135844b9db92ffab6598671da405c2654f9.html","cycle_quote":"","cycle_assumed":true,"via":"picker","model":"claude-opus-5","reader":"2026.10.29.3",
+  "prompts": [
+  {"id":"199193:2026-27:1","text":"Explain why you selected the academic program(s) above and why you are interested in studying these at NC State.","kind":"why_us","limit":null,"required":true,"applies_to":"all","quote":"Required Short Answer Question"}
+]
+}

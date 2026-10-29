@@ -1,0 +1,8 @@
+{ "unit_id": "139940", "name": "Georgia State University", "held": "2026-10-29",
+  "problems": [
+    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
+  ],
+  "record": {"unit_id":"139940","name":"Georgia State University","cycle":"2026-27","status":"refers_to_form","source_url":"https://www.gsu.edu/apply/essays","final_url":"https://admissions.gsu.edu/bachelors-degree/apply/high-school/","retrieved":"2026-10-29","sha256":"e55c5c8cf11a1f6953090b6f33cab8a30c94676b8e4a7431e6db108f2c45d92b","archive":"local:e55c5c8cf11a1f6953090b6f33cab8a30c94676b8e4a7431e6db108f2c45d92b.html","cycle_quote":"","cycle_assumed":true,"status_quote":"If you’re a senior in high school or if you graduated from high school within the last five years, you’ll apply to begin your bachelor’s degree program using the Common Application.","via":"well-known-path","model":"claude-opus-5","reader":"2026.10.29.3",
+    "prompts": []
+  }
+}

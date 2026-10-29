@@ -1,0 +1,10 @@
+{ "unit_id": "126614", "name": "University of Colorado Boulder", "held": "2026-10-29",
+  "problems": [
+    "prompt 1: kind why_us, but the prompt doesn't ask why this college or program"
+  ],
+  "record": {"unit_id":"126614","name":"University of Colorado Boulder","cycle":"2026-27","status":"published","source_url":"https://www.colorado.edu/admissions/process/first-year/apply","retrieved":"2026-10-29","sha256":"d68a5bed8b414b1d10375f1da8e396ea11be6b3c946a0f9ad0672213cadd79bf","archive":"local:d68a5bed8b414b1d10375f1da8e396ea11be6b3c946a0f9ad0672213cadd79bf.html","cycle_quote":"","cycle_assumed":true,"via":"known-link","model":"claude-opus-5","reader":"2026.10.29.3",
+    "prompts": [
+    {"id":"126614:2026-27:1","text":"What do you hope to study, and why, at CU Boulder? Or if you don't know quite yet, think about your studies so far, extracurricular/after-school activities, jobs, volunteering, future goals or anything else that has shaped your interests.","kind":"why_us","limit":{"kind":"words","max":250},"required":true,"applies_to":"all","quote":"Required question (250 word limit): What do you hope to study, and why, at CU Boulder? Or if you don't know quite yet, think about your studies so far, extracurricular/after-school activities, jobs, volunteering, future goals or anything else that has shaped your interests."}
+  ]
+  }
+}

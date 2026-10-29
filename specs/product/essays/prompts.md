@@ -188,3 +188,8 @@ $3.87. Reading its records showed four more faults, fixed as `READER_VERSION` 20
 - **The Common App's seven prompts, copied.** Rutgers's and Pace's pages reproduce the Common App's personal essay
   prompts, and the reader recorded them as the college's own. A prompt equal to one of the platforms' prompts in the
   reference file now holds the record, and the reader is told to leave them out.
+
+The third run's data PR then failed CI on the "re-merge changes nothing" tests, the first time real blocks met them:
+the college-reported merge re-appends its lineage records last and the tiers build re-inserts `selectivity` right
+before `directories`, so `lineage.essays` now sits before the first `reported.*` record and `essays` before
+`selectivity`. Both placements are idempotent, and a re-merge or rebuild leaves every college byte for byte.

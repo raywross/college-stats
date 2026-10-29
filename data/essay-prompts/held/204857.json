@@ -1,0 +1,8 @@
+{ "unit_id": "204857", "name": "Ohio University-Main Campus", "held": "2026-10-29",
+  "problems": [
+    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
+  ],
+  "record": {"unit_id":"204857","name":"Ohio University-Main Campus","cycle":"2026-27","status":"refers_to_form","source_url":"https://www.ohio.edu/admissions/freshman/apply","retrieved":"2026-10-29","sha256":"13549a0bc6f7cf92818152ede371370bce68833f01bc66211808197789cab71e","archive":"local:13549a0bc6f7cf92818152ede371370bce68833f01bc66211808197789cab71e.html","cycle_quote":"","cycle_assumed":true,"status_quote":"Applicants are encouraged to apply using the Common App, which opens annually in August.","via":"picker","model":"claude-opus-5","reader":"2026.10.29.3",
+    "prompts": []
+  }
+}

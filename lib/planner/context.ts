@@ -117,6 +117,9 @@ export const PLAN_CITE_PATHS = [
   "apply.courses_grades_required",
   "apply.recommendations",
   "apply.test_policy",
+  // Coalition application (additive, specs/data-expansion/coalition-app.md).
+  "coalition.member",
+  "coalition.via_scoir",
 ] as const satisfies readonly FieldPath[];
 
 /** Cited by hand in planSchoolFor: not real dot paths on School. */
@@ -198,6 +201,7 @@ export function planSchoolFor(
     standing,
     poolSchool: school,
     apply: school.apply ?? null,
+    coalition: school.coalition ?? null,
   };
 }
 

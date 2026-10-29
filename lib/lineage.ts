@@ -124,6 +124,7 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   wikipedia: null,
   // The Requirements Grid's edition: a test policy the grid replaced carries the edition text in its own record.
   "common-app": "common-app-grid",
+  "coalition": "coalition-members",
 };
 
 /**
@@ -131,7 +132,10 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
  * vintages they write. A written meta.json may lack such a source until its merge first runs; once meta has any of
  * the vintages, or any school holds a value from the source, the source and every one of its vintages are required.
  */
-const MERGED_LATER: Partial<Record<SourceKey, readonly VintageKey[]>> = { "common-app": ["common-app-grid", "common-app-members"] };
+const MERGED_LATER: Partial<Record<SourceKey, readonly VintageKey[]>> = {
+  "common-app": ["common-app-grid", "common-app-members"],
+  coalition: ["coalition-members"],
+};
 
 /** A merged-later source that this meta hasn't received yet (neither the source nor any of its vintages). */
 function notMergedYet(meta: DatasetMeta, key: SourceKey): boolean {
@@ -316,9 +320,11 @@ export function shortSource(s: CitedSource): string {
                   ? "Policy page"
                   : s.key === "common-app"
                     ? "Common App"
-                    : s.key === "scorecard" || s.key === "scorecard-fos"
-                      ? "Scorecard"
-                      : "IPEDS";
+                    : s.key === "coalition"
+                      ? "Coalition for College"
+                      : s.key === "scorecard" || s.key === "scorecard-fos"
+                        ? "Scorecard"
+                        : "IPEDS";
   return s.year ? `${name} ${s.year}` : name;
 }
 
@@ -332,7 +338,7 @@ const PER_COLLEGE_ONLY: ReadonlySet<SourceKey> = new Set<SourceKey>(["college-si
  * record of their own (the year comes from meta.vintages), but only some colleges have them. A college with no value
  * at the path (absent or null) has nothing to cite, so a non-member's footnotes never list Common App.
  */
-const PRESENT_ONLY: ReadonlySet<SourceKey> = new Set<SourceKey>(["common-app"]);
+const PRESENT_ONLY: ReadonlySet<SourceKey> = new Set<SourceKey>(["common-app", "coalition"]);
 
 /** Distinct sources behind a value: a derived value cites its inputs, recursively. */
 function underlyingSources(path: FieldPath, school: School | undefined, meta: DatasetMeta, seen = new Set<string>()): CitedSource[] {
@@ -502,6 +508,7 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
   "scorecard-fos",
   "common-app-grid",
   "common-app-members",
+  "coalition-members",
 ];
 /** Releases that must resolve to a year (the rest may be null). */
 const YEAR_REQUIRED: readonly VintageKey[] = ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-hd", "ipeds-ic-char", "ipeds-ic-open", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-enrollment", "scorecard-age", "scorecard-cost", "ipeds-om"];

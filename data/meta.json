@@ -182,6 +182,13 @@
       "edition": "2026-27 Requirements Grid, updated September 25, 2026; member pages read October 25, 2026",
       "url": "https://www.commonapp.org",
       "description": "The application more than a thousand colleges share. Its Requirements Grid lists, for each member college, the application deadlines by round, the fee and whether the Common App fee waiver is taken, the essay, writing supplement, and Courses & Grades requirements, the test policy, and the recommendations required. Each member's own Common App page adds whether it offers aid to international students, its other names, and links to its transfer guarantee and DACA aid pages. Shown only for members; read with Common App's permission."
+    },
+    "coalition": {
+      "label": "Coalition for College",
+      "publisher": "Coalition for College",
+      "edition": "Member list read October 28, 2026; Scoir's list as of October 20, 2026",
+      "url": "https://www.coalitionforcollegeaccess.org",
+      "description": "The Common App's smaller rival: a nonprofit whose member colleges share an application with an access mission, delivered through Scoir since 2023. Its member list says which colleges belong; Scoir's list says which of them take applications through it. Shown only for members, as one line on how to apply."
     }
   },
   "vintages": {
@@ -207,6 +214,7 @@
     "scorecard-fos": null,
     "ipeds-ic-open": "2024–25",
     "common-app-grid": "2026-27 cycle, updated September 25, 2026",
-    "common-app-members": "Member pages read October 25, 2026"
+    "common-app-members": "Member pages read October 25, 2026",
+    "coalition-members": "Member list read October 28, 2026"
   }
 }

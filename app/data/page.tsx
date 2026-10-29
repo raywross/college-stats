@@ -206,13 +206,15 @@ export default async function DataPage() {
     wikipedia: all.filter((s) => s.brand?.colors?.length).length,
     // Common App (specs/data-expansion/common-app.md): members found on its Explore pages.
     "common-app": all.filter((s) => s.apply).length,
+    // Coalition for College (specs/data-expansion/coalition-app.md): members found on its list.
+    coalition: all.filter((s) => s.coalition).length,
   };
   const sourceUses = (key: SourceKey) => {
     const topics = new Set<Topic>();
     for (const [, def] of STORED) if (def.source === key) topics.add(def.topic);
     return [...topics].map((t) => TOPIC_LABELS[t]);
   };
-  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-ic-open", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "common-app", "state-law", "directory", "wikidata", "wikipedia"];
+  const order: SourceKey[] = ["scorecard", "ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-ic-char", "ipeds-ic-open", "ipeds-hd", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-om", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-fos", "cds", "college-site", "common-app", "coalition", "state-law", "directory", "wikidata", "wikipedia"];
 
   const toc = [
     ["why", "Why it lags"],

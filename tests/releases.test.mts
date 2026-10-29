@@ -60,8 +60,9 @@ test("the calendar file is well-formed", () => {
 });
 
 test("every federal release on the site has a next release or an irregular one", () => {
-  // The Common App vintages aren't federal releases: `npm run sync-common-app` reads each new grid edition itself.
-  for (const v of VINTAGE_KEYS.filter((k) => !k.startsWith("common-app-"))) assert.ok(nextReleaseFor(v, CALENDAR), `nothing in the calendar updates ${v}`);
+  // The Common App and Coalition vintages aren't federal releases: `npm run sync-common-app` reads each new grid
+  // edition itself, and `npm run sync-coalition` the member lists.
+  for (const v of VINTAGE_KEYS.filter((k) => !k.startsWith("common-app-") && !k.startsWith("coalition-"))) assert.ok(nextReleaseFor(v, CALENDAR), `nothing in the calendar updates ${v}`);
 });
 
 test("periodStart reads display years", () => {

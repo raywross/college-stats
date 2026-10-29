@@ -187,6 +187,8 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
    * `apply.courses_grades_required`, `apply.recommendations`, `apply.test_policy`, `apply.common_app`).
    */
   apply?: import("../common-app/types").SchoolApply | null;
+  /** Coalition application (additive, specs/data-expansion/coalition-app.md): the block, null for a non-member; `cites["coalition.via_scoir"]`. */
+  coalition?: import("../coalition").SchoolCoalition | null;
 }
 
 /* ------------------------------------------------------------------ */

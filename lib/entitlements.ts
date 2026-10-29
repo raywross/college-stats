@@ -18,6 +18,7 @@ export const CAPABILITIES: readonly Capability[] = [
   "planner.texts",
   "planner.parents.nudge",
   "planner.offers",
+  "advisor.essays",
 ];
 
 /** Whether `user` may use `capability`. Nothing is gated yet (README "Owner decisions": tiers come after the build). */

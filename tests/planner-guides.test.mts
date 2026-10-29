@@ -55,7 +55,6 @@ test("now.md's table: every move maps to its guide", () => {
     // Your story
     [kind("story", `${L}:playbook:story`), "story"],
     [playbook("brag_sheet"), "story"],
-    [cycle("personal_essay_draft"), "story"],
     // Courses
     [playbook("freshman_choose_courses"), "courses"],
     [playbook("sophomore_choose_courses"), "courses"],
@@ -100,7 +99,8 @@ test("every playbook pattern names entries that exist", () => {
   for (const k of ["build_list", "long_list", "fall_break_visit", "spring_break_visit", "pick_test", "register_spring_test", "brag_sheet", "junior_choose_courses", "pick_recommenders"]) {
     assert.ok(keys.includes(k), k);
   }
-  assert.ok(GUIDE_BY_CYCLE_KEY.length >= 3);
+  // Two since essays U3: `personal_essay_draft` opens the essay workspace (its action), not the story guide.
+  assert.ok(GUIDE_BY_CYCLE_KEY.length >= 2);
 });
 
 test("the buttons and titles are the contract's", () => {

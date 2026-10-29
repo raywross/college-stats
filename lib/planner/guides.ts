@@ -162,7 +162,6 @@ export const GUIDE_BY_PLAYBOOK_KEY: readonly (readonly [pattern: RegExp, slug: G
 /** Cycle-file keys (data/application-cycle.json) with a guide. `choose_courses_YYYY` is beyond the brief: it's the built course choice that stands in for the playbook's. */
 export const GUIDE_BY_CYCLE_KEY: readonly (readonly [pattern: RegExp, slug: GuideSlug])[] = [
   [/^(ask_recommenders|thank_recommenders)$/, "recommenders"],
-  [/^personal_essay_draft$/, "story"],
   [/^choose_courses_\d{4}$/, "courses"],
 ];
 

@@ -153,6 +153,13 @@ export interface AnalyticsEvents {
   advisor_page_viewed: { signed_in: boolean };
   /** The splash page's "Start free" (or "Sign in") tapped, by the section it sits in ("hero", "close", ...). */
   advisor_cta_tapped: { section: string };
+  /* Essays (specs/product/essays/workspace.md "Telemetry"): counts and kinds only, never a word of text, a title, or a college. */
+  /** A draft started, by the prompt's kind (`personal`, `why_us`, `free`, ...). */
+  essay_created: { prompt_kind: string };
+  /** A version saved, by where its text came from (`typed`, `pasted`, `uploaded`, `docs`, `restored`). */
+  essay_saved_version: { source: string };
+  /** A comment left on a draft, by who left it. */
+  essay_commented: { role: "student" | "guardian" | "counselor" };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
@@ -278,6 +285,9 @@ export const EVENTS = {
   api_request: { properties: ["endpoint", "status", "transport", "key_id"], side: "server", why: "Data API: requests by endpoint, status, and transport" },
   advisor_page_viewed: { properties: ["signed_in"], side: "client", why: "Quad Advisor: how many people see the splash page, signed in or not" },
   advisor_cta_tapped: { properties: ["section"], side: "client", why: "Quad Advisor: which section's button starts an account" },
+  essay_created: { properties: ["prompt_kind"], side: "client", why: "Essays: drafts started, by the prompt's kind" },
+  essay_saved_version: { properties: ["source"], side: "client", why: "Essays: versions saved, by where the text came from" },
+  essay_commented: { properties: ["role"], side: "client", why: "Essays: comments left on drafts, by student or guardian" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

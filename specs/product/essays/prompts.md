@@ -99,6 +99,5 @@ the plan's count, and a reference file.
 1. Prompts that exist only inside the form (the 50-word program question): leave them to the student's own reading of
    the form, with the card's one-line warning? Recommendation: yes; the alternative is reading a student's form, which
    we have ruled out.
-2. The platforms' prompts: store the text, or only link? Recommendation: store the Coalition's with a link (its page
-   carries no terms); for the Common App's, store the text with the homepage link, since the prompts are republished
-   everywhere and the letter's spirit was per-college data; ask if in doubt.
+2. ~~The platforms' prompts: store the text, or only link?~~ Decided 2026-10-28 (owner): **store the text** for both,
+   with each organization's homepage as the link, so the workspace shows the prompt beside the draft.

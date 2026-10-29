@@ -46,7 +46,7 @@ the roadmap, with the award-letter analyzer as the last stage.
 |---|---|---|
 | [essays/README.md](essays/README.md) | *Planned 2026-10-28:* the overview: Quad is the workspace up to the button, the student's own words always, the platform is the signature | — |
 | [essays/prompts.md](essays/prompts.md) | Every supplemental essay and short-answer prompt a college publishes, quoted and cited, on the apply card and counted across the plan | Medium |
-| [essays/workspace.md](essays/workspace.md) | The editor (plain text, phones first, autosave, versions, counts), reuse across colleges, Word and Google Docs round trips, sharing for comments, the package per college | Large |
+| [essays/workspace.md](essays/workspace.md) | The editor (plain text, phones first, autosave, versions, counts), reuse across colleges, Word and Google Docs round trips, parents and advisors reading and commenting, the package per college | Large |
 | [essays/reviewer.md](essays/reviewer.md) | A reader's notes on demand, never a rewrite, from a cited guidance corpus the owner reviews; a guard and an eval | Large |
 
 ### High school context

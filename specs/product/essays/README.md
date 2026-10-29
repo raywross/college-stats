@@ -26,8 +26,8 @@ their own ([../../data-expansion/coalition-app.md](../../data-expansion/coalitio
 | Part | Spec | Adds | Complexity |
 |---|---|---|---|
 | 1 | [prompts.md](prompts.md) | Every supplemental essay and short-answer prompt a college publishes, with its limit and whether it is required, read from the college's own site by the college-reported agent, quoted and cited; the Common App's and the Coalition's own prompts; a line on the "What it takes to apply" card and a count across the plan | Medium |
-| 2 | [workspace.md](workspace.md) | The editor: plain text, autosave, versions, a count against each prompt's limit, built for a phone first; one draft reused across prompts; Word and Google Docs round trips by download and upload, then a Google Drive connection; a per-college package to paste from; sharing a draft with a parent or counselor for comments | Large |
-| 3 | [reviewer.md](reviewer.md) | A reader's notes on a draft, on demand: typos, run-ons, a sentence that doesn't answer the prompt, a claim without a detail, an opening that starts too far back; each note a question or an observation, never a rewrite; the rules behind it written from public guidance by admissions offices and writing centers, cited, versioned, and reviewed by the owner before they run | Large |
+| 2 | [workspace.md](workspace.md) | The editor: plain text, autosave, versions, a count against each prompt's limit, built for a phone first; one draft reused across prompts; Word and Google Docs round trips by download and upload, then a Google Drive connection; a per-college package to paste from; parents and advisors reading every draft and leaving comments | Large |
+| 3 | [reviewer.md](reviewer.md) | A reader's notes on a draft, on demand: typos, run-ons, a sentence that doesn't answer the prompt, a claim without a detail, an essay that repeats the activities list instead of showing something new, a "why us" that could be about any college; each note a question or an observation, never a rewrite. The reader knows what the student is trying to showcase (the record, the story, the major, the college's own stated interests) and reads with guidance distilled from public advice on how to approach these essays, cited, versioned, and reviewed by the owner before it runs | Large |
 
 ## Design principles
 In addition to the planner's ([../../planner/README.md](../../planner/README.md)) and Plan v3's
@@ -41,8 +41,9 @@ In addition to the planner's ([../../planner/README.md](../../planner/README.md)
    date, and the card says the application may ask a few short questions beyond the published ones.
 4. **A phone is the first screen.** Students write on phones and in Notes; the editor is a big plain text field with a
    count, no toolbar, and the draft is never lost.
-5. **The student decides who reads.** A draft is the student's: a parent or counselor sees it when the student shares
-   it, as the story is today (owner, 2026-10-16); the reviewer runs when the student asks, never on its own.
+5. **The student writes; parents and advisors read and comment.** Only the student edits a draft (owner, 2026-10-28:
+   "student drafts only"); a guardian in the household, and a counselor with a grant once the portal exists, can open
+   every draft and leave comments, never change the text. The reviewer runs when the student asks, never on its own.
 6. **Nothing is graded.** No score for an essay, no "strong" or "weak", no prediction. A note names a thing a reader
    noticed and why it matters.
 
@@ -61,7 +62,7 @@ its own unit of work before any model runs.
   the summer before senior year ([../../planner/record/ranking.md](../../planner/record/ranking.md) ranks the summer's
   writing already), opening the workspace.
 - **`/advisor/essays`**: the workspace, with one page per draft and a package per college.
-- **The parent's view**: the drafts the student shared, with comments; counts for the rest.
+- **The parent's view**: every draft, read-only, with the comment thread; the same for a counselor with a grant.
 
 ## Tier
 Part of Quad Advisor ([../commercialization.md](../commercialization.md#feature-map)): the prompts are public facts and

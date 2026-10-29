@@ -53,7 +53,6 @@ essays          (id, student_id, prompt_ref, title, body text, count_kind, count
                  created, updated)
 essay_versions  (id, essay_id, body, count, source: typed|pasted|uploaded|docs|restored, label, created)
 essay_links     (essay_id, prompt_ref)              -- one draft serving several prompts (the same "why us" for two colleges)
-essay_shares    (essay_id, user_id, role: parent|counselor, can_comment, created, revoked)
 essay_comments  (id, essay_id, version_id, author_id, anchor {paragraph, start, end} null, body, created, resolved)
 essay_docs      (essay_id, provider: google, file_id, last_pulled, last_pushed)   -- phase 2
 ```
@@ -62,12 +61,16 @@ essay_docs      (essay_id, provider: google, file_id, last_pulled, last_pushed) 
 - `base_id` marks a variant: a "why us" draft copied from a base draft for another college keeps the link, so the
   workspace can show "3 colleges use a version of this" and warn when the base changed after the variant was made.
 - `status`: `draft`, `ready`, `submitted` (the student says so; it also marks the plan's apply card).
-- Row-level security as the planner's: the student owns every row; a guardian or counselor reads through
-  `essay_shares` only; the Data API never serves these tables.
-- **Privacy rule.** A draft is the student's. The story text is student-only today (owner, 2026-10-16), and essays
-  follow it: a parent sees a draft when the student shares it, per essay, and can comment but not edit; the student
-  can revoke. The parent's plan shows counts ("4 drafts, 2 ready") without text. This is the one place the household's
-  "parents see everything" default does not apply, because the essay is the student's voice and the colleges say so.
+- Row-level security as the planner's: the student owns every row and is the only one who may write `essays`,
+  `essay_versions`, and `essay_links`; a guardian in the household (the `viewer_bundle` rule the plan uses) and a
+  counselor with a grant ([../counselor-portal.md](../counselor-portal.md)) read every draft and write only
+  `essay_comments`; the Data API never serves these tables.
+- **The rule (owner, 2026-10-28): "student drafts only," and parents and advisors review and comment.** Only the
+  student edits a draft; a parent or counselor opens any draft read-only, with the version list, and leaves comments
+  anchored to a paragraph or a span, which the student resolves. No per-essay sharing switch: this follows the
+  household's rule that a student's data is never hidden from a guardian
+  ([../household-hub.md](../household-hub.md)), with the one distinction that nobody but the student types in the
+  essay. (The story text stays student-only as decided on 2026-10-16; the owner may want the same reading rule there.)
 
 ## Reuse
 - **One draft, many prompts.** From a draft, "Use for another college" picks a prompt of the same kind and either
@@ -102,10 +105,11 @@ Phase 2, after Google sign-in ships ([../../backlog.md](../../backlog.md) "Platf
 
 ## Where it lives
 - **`/advisor/essays`**: the list: drafts grouped by college with status and counts, the main essay first, "Write a
-  new one" with the prompt picker (every prompt from the plan's colleges, the platforms' own, or free). The parent's
-  version lists what is shared.
-- **`/advisor/essays/<id>`**: the editor, the version list, share, download, upload, "use for another college", and
-  the reviewer's notes ([reviewer.md](reviewer.md)).
+  new one" with the prompt picker (every prompt from the plan's colleges, the platforms' own, or free). A parent or
+  counselor sees the same list, read-only, with unread comments marked.
+- **`/advisor/essays/<id>`**: the editor, the version list, the comment thread, download, upload, "use for another
+  college", and the reviewer's notes ([reviewer.md](reviewer.md)); for a parent or counselor the same page with the
+  field read-only and the comment box live.
 - **`/advisor/essays/package/<unit_id>`**: the package page: everything for one college, with copy buttons per
   field and the download; a checklist beside it ("paste the main essay", "answer the short questions in the form",
   "re-read the limit in the form").
@@ -125,24 +129,24 @@ Phase 2, after Google sign-in ships ([../../backlog.md](../../backlog.md) "Platf
 
 ## Telemetry
 `essay_created {prompt_kind}`, `essay_saved_version {source}`, `essay_exported {format}`, `essay_imported {format}`,
-`essay_shared {role}`, `essay_package_opened`; never text, never a title.
+`essay_commented {role}`, `essay_package_opened`; never text, never a title.
 
 ## Files (planned)
 - Migration `…_essays.sql` (the tables, RLS, the per-student limit of 200 drafts), `lib/essays/{count,normalize,
   docx,variants}.ts` (pure), `lib/essays/store.ts` (Server Actions on the planner's `ready(capability)` pattern,
   capability `advisor.essays`), `app/advisor/essays/**`, `components/essays/{Editor,CountBar,VersionList,
-  PromptPicker,Package,ShareSheet}.tsx`, `tests/essays-*.test.mts` (the count rule against the forms' examples; the
-  normalizer; a `.docx` round trip byte-for-byte on text; RLS: a parent can't read an unshared draft; a variant warns
-  when its base changed; the package's order).
+  PromptPicker,Package,Comments}.tsx`, `tests/essays-*.test.mts` (the count rule against the forms' examples; the
+  normalizer; a `.docx` round trip byte-for-byte on text; RLS: a guardian reads and comments but a write to the text
+  is refused, a student in another household sees nothing; a variant warns when its base changed; the package's
+  order).
 - Phase 2: `lib/essays/google-docs.ts`, the Drive scope on the Google OAuth client, `essay_docs`.
 
 ## Complexity
-Large: a new set of tables with their own sharing model, an editor that must be right on phones, file generation and
+Large: a new set of tables with their own reading-and-commenting rules, an editor that must be right on phones, file generation and
 parsing, and later a Drive integration.
 
 ## Open questions
-1. Should counselors (the portal, once built) see drafts by default for students they advise? Recommendation: no;
-   the student shares, as with parents; the portal shows counts.
+1. ~~Should counselors see drafts by default?~~ Decided 2026-10-28 (owner): yes, read and comment, like parents.
 2. A `.pdf` of the package is for the family's printer; is a printable one-page "what's left to write" list more
    useful? Build both if the package page is cheap, else the package only.
 3. Should the main essay's count warn at the Common App's 250-word minimum as well as the 650 maximum? Yes; the form

@@ -162,7 +162,7 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/product/essays/workspace.md",
     group: "essays",
     summary:
-      "One place for every essay: a plain editor built for phones with a count against each prompt's limit, autosave and versions, one draft reused across colleges, Word and Google Docs round trips, sharing with a parent for comments, and a package to paste from.",
+      "One place for every essay: a plain editor built for phones with a count against each prompt's limit, autosave and versions, one draft reused across colleges, Word and Google Docs round trips, parents and advisors reading and commenting, and a package to paste from.",
     complexity: 3,
     complexityNote: "New tables with their own sharing model, an editor that must be right on phones, file generation and parsing, and later a Google Drive connection.",
     status: "planned",
@@ -173,7 +173,7 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/product/essays/reviewer.md",
     group: "essays",
     summary:
-      "A reader's notes on a draft when you ask: typos, run-ons, a sentence that doesn't answer the prompt, a claim without a detail; questions and observations, never a rewrite, from guidance gathered from admissions offices and writing centers.",
+      "A reader's notes on a draft when you ask: typos, run-ons, a sentence that doesn't answer the prompt, an essay that repeats your activities list, a 'why us' that fits any college; questions and observations, never a rewrite, from a reader that knows what you're trying to show and from guidance distilled from admissions offices and writing centers.",
     complexity: 3,
     complexityNote: "A research run that the owner reviews before it runs, a model call with a schema and a guard that drops any rewrite, a notes model with limits and privacy, and an evaluation harness.",
     status: "planned",

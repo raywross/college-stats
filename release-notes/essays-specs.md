@@ -17,8 +17,8 @@ Essays:
   3 short answers, 1 optional," and your list will say how many essays it asks for in all.
 - **The workspace.** One place for every draft: a plain editor made for phones first, a count against each prompt's
   limit, saved as you type on any device, kept in versions, one "why us" reused where several colleges ask the same
-  thing, download and upload with Word and Google Docs (and later a direct Google Docs connection), sharing a draft
-  with a parent for comments, and a package per college to paste from when it's time. The submission stays in your
+  thing, download and upload with Word and Google Docs (and later a direct Google Docs connection), parents and
+  advisors reading along and leaving comments, and a package per college to paste from when it's time. The submission stays in your
   hands, in the real form.
 - **A reader's notes.** When you ask, a reader marks what a careful adult would mark: a typo, a run-on, a sentence
   that doesn't answer the prompt, a claim with no detail behind it. Each note is a question or an observation with the
@@ -29,5 +29,5 @@ Essays:
 
 The plans record why there is no "submit from Quad": none of the application platforms offers a way for a third party
 to submit for a student, a robot that fills the form is a bot under their terms, and the student signs that the work
-and the submission are their own. They also set the privacy rule for drafts (the student's, shared by choice), the
+and the submission are their own. They also set the rule for drafts (only the student writes; parents and advisors read and comment), the
 cost of a review, and the evaluation the reviewer must pass before it ships.

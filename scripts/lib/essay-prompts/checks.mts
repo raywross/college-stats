@@ -121,6 +121,8 @@ export function checkRecord(r: EssayRecord, ctx: CheckContext): string[] {
   if (r.status !== "published" && r.status_quote?.trim()) {
     const q = r.status_quote;
     if (r.status === "none" && !NONE_SENTENCE.test(q)) out.push("status none, but the quoted sentence doesn't say there are no essays");
+    // "UNF does not require the essay section of the SAT, ACT or CLT" is about a test, not an application essay.
+    if (r.status === "none" && /\b(SAT|ACT|CLT|test)\b/.test(q) && /\bessay\b[^.]{0,40}\b(section|portion|component|score)\b|\b(section|portion)\b[^.]{0,20}\bessay/i.test(q)) out.push("status none, but the quoted sentence is about a test's essay section, not an application essay");
     if (r.status === "refers_to_form" && !(REFERS_SENTENCE.test(q) && FORM_WORD.test(q))) out.push("status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of");
   }
   if (ctx.platformTexts?.length && r.prompts.length) {

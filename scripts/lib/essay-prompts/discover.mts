@@ -2,8 +2,9 @@
  * Finding a college's essay prompts page (specs/product/essays/prompts.md "Sources"), cheapest first, stopping at the
  * first page that reads like one:
  *   1. the recipe's page from an earlier run (data/essay-prompts/pages.json);
- *   2. the admissions and apply links the dataset already holds (`links.apply`, `links.admissions`), and the essay
- *      links on those pages, best first (`rankLinks`);
+ *   2. the admissions and apply links the dataset already holds (`links.apply`, `links.admissions`), then the
+ *      first-year "how to apply" pages they link to (one level deeper, `rankApplyLinks`), and the essay links on all
+ *      of those pages, best first (`rankLinks`);
  *   3. well-known paths on the admissions host (`/apply/essays`, `/admission/essay-prompts`, …);
  *   4. the site's own index: the `Sitemap:` files its robots.txt names, filtered to essay URLs (the engine's sitemap
  *      step, scripts/lib/college-reported/probe.mts);
@@ -46,7 +47,43 @@ export const ESSAY_PATHS = [
  * Request limits per college: pages fetched in all (the well-known paths stop `reserve` short, leaving room for the
  * sitemap and the picker's page), links followed from a page, sitemap files read, links shown to the picker.
  */
-export const DISCOVER_LIMITS = { requests: 40, reserve: 8, follow: 4, sitemaps: 3, pickerLinks: 300 } as const;
+export const DISCOVER_LIMITS = { requests: 40, reserve: 8, follow: 4, applyFollow: 3, sitemaps: 3, pickerLinks: 300 } as const;
+
+/** Words that mark a link as a first-year "how to apply" page: one level deeper, where the essay link usually is. */
+const FIRST_YEAR = /first[\s_-]*year|freshm[ae]n|first[\s_-]*time/i;
+// Not a bare "apply": every link under /apply/ would qualify, and "Apply now" leads to the portal.
+const HOW_TO_APPLY = /how[\s_-]*to[\s_-]*apply|application[\s_-]*(process|requirements|checklist|instructions)|admission[\s_-]*requirements|applying[\s_-]*(as|to)|what[\s_-]*(we|you)[\s_-]*(need|require|look)/i;
+
+/**
+ * How strongly a link points to a first-year application page worth fetching for its links (0 = don't). A link that
+ * names first-year applicants and applying scores highest; graduate, transfer, and tips pages never.
+ */
+export function applyLinkScore(link: FoundLink): number {
+  let path = link.url;
+  try {
+    path = new URL(link.url).pathname;
+  } catch {
+    // not a URL: score it as written
+  }
+  const hay = `${link.text} ${safeDecodeUri(path)}`;
+  if (NOT_PROMPTS.test(hay) || /graduate|transfer|international|visit|tour|deposit|financial|tuition|housing|faq/i.test(hay)) return 0;
+  const fy = FIRST_YEAR.test(hay);
+  const how = HOW_TO_APPLY.test(hay);
+  if (fy && how) return 3;
+  if (fy) return 2;
+  if (how) return 1;
+  return 0;
+}
+
+/** First-year application pages worth one fetch each, best first, on the college's own hosts only. */
+export function rankApplyLinks(links: readonly FoundLink[], origins: readonly string[]): FoundLink[] {
+  const seen = new Set<string>();
+  return links
+    .map((l, i) => ({ l, i, s: applyLinkScore(l) }))
+    .filter(({ l, s }) => s > 0 && origins.includes(origin(l.url) ?? "") && !isPlatformUrl(l.url) && !seen.has(l.url) && (seen.add(l.url), true))
+    .sort((a, b) => b.s - a.s || a.i - b.i)
+    .map(({ l }) => l);
+}
 
 /** Words that mark a link (its text or URL) as the essay page. */
 const STRONG = /essay[\s_-]*(prompt|question|topic)s?|supplement(al)?[\s_-]*(essay|question|writing)s?|writing[\s_-]*supplement|short[\s_-]*answer[\s_-]*(question|prompt)s?|member[\s_-]*questions/i;
@@ -132,6 +169,8 @@ export interface DiscoverDeps {
   client?: ModelClient;
   cap?: SpendCap;
   log?: (m: string) => void;
+  /** Pages never to return (a page already read this run that listed no prompts): the ladder looks past them. */
+  skip?: readonly string[];
 }
 
 type DiscoverSchool = Pick<School, "unit_id" | "name" | "links">;
@@ -190,7 +229,7 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
 
   const fetchPage = async (url: string, via: FoundVia, conditional?: { etag?: string; last_modified?: string }): Promise<{ page: FoundPage; text: string } | null> => {
     if (tried.includes(url) || tried.length >= DISCOVER_LIMITS.requests) return null;
-    if (isPlatformUrl(url)) return null;
+    if (isPlatformUrl(url) || deps.skip?.includes(url)) return null;
     tried.push(url);
     let res: Response | null;
     try {
@@ -222,7 +261,8 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
     return { page: { url, final_url, bytes, format: "html", via, ...meta }, text: htmlToText(html) };
   };
   const done = (page: FoundPage): DiscoverResult => ({ found: page, tried, cost, ...(blocked ? { blocked } : {}) });
-  const accept = (got: { page: FoundPage; text: string } | null) => !!got && (got.page.unchanged || got.page.format === "pdf" || looksLikeEssayPage(got.text));
+  const accept = (got: { page: FoundPage; text: string } | null) =>
+    !!got && !deps.skip?.includes(got.page.final_url) && (got.page.unchanged || got.page.format === "pdf" || looksLikeEssayPage(got.text));
 
   // 1. The recipe's page.
   if (recipe?.url) {
@@ -235,6 +275,15 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
   for (const s of starts) {
     const got = await fetchPage(s, "known-link");
     if (got && got.page.format === "html" && STRONG.test(got.text.slice(0, 4000)) && looksLikeEssayPage(got.text)) return done(got.page);
+  }
+  // 2b. One level deeper: the first-year "how to apply" pages the start pages link to usually hold the essay link the
+  // start pages don't (the first runs found no page for half the colleges). Fetched on the college's own hosts for
+  // their links, and taken as the page when one reads like it.
+  const origins = [...new Set(starts.map(origin).filter((o): o is string => !!o))];
+  for (const link of rankApplyLinks(pageLinks, origins).slice(0, DISCOVER_LIMITS.applyFollow)) {
+    if (tried.length >= DISCOVER_LIMITS.requests - DISCOVER_LIMITS.reserve) break;
+    const got = await fetchPage(link.url, "apply-page-link");
+    if (got && accept(got)) return done(got.page);
   }
   for (const link of rankLinks(pageLinks).slice(0, DISCOVER_LIMITS.follow)) {
     const got = await fetchPage(link.url, "apply-page-link");
@@ -250,7 +299,6 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
 
   // 4. The site's sitemaps.
   if (deps.http.sitemaps) {
-    const origins = [...new Set(starts.map(origin).filter((o): o is string => !!o))];
     const maps: string[] = [];
     for (const o of origins) maps.push(...(await deps.http.sitemaps(o).catch(() => [] as string[])));
     const locs: FoundLink[] = [];

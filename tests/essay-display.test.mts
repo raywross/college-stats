@@ -268,3 +268,11 @@ test("the display never types the Common App's 650-word figure: the Common App's
   assert.doesNotMatch(read("components", "school", "EssayPrompts.tsx"), /650/);
   assert.doesNotMatch(read("lib", "essays", "summary.ts"), /650/);
 });
+
+test("essayCardLine: 'choose 4 of 8' reads as a choice, each distinct limit once; the plan counts four", () => {
+  const eight = Array.from({ length: 8 }, (_, i) => prompt({ id: `123456:2026-27:${i + 1}`, text: `Question ${i + 1}?`, limit: { kind: "words", max: 350 }, required: false }));
+  const uc = essays({ choose: { n: 4, of: 8, quote: "You must respond to only 4 of the 8 questions." }, prompts: eight });
+  assert.equal(essayCardLine(uc), "Choose 4 of 8 essays (350 words)");
+  assert.equal(planEssayCount([uc, essays()]), "5 essays and short answers");
+  assert.equal(essayCardLine(essays({ prompts: [prompt(), prompt({ id: "123456:2026-27:2", text: "Second?", limit: { kind: "words", max: 400 } })] })), "2 essays (400 words)", "the same limit twice is said once");
+});

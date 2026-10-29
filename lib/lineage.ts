@@ -687,7 +687,7 @@ function essaysProblems(school: School, where: string): string[] {
   if (!block) return errors;
   // `essays` itself is registered (for its lineage record), so a stray key under it would resolve to it: list them.
   for (const key of Object.keys(block)) {
-    if (!["cycle", "status", "source_url", "retrieved", "prompts"].includes(key)) errors.push(`${where}: "essays.${key}" isn't a field of the essays block`);
+    if (!["cycle", "status", "source_url", "retrieved", "choose", "prompts"].includes(key)) errors.push(`${where}: "essays.${key}" isn't a field of the essays block`);
   }
   const rec = school.lineage?.essays;
   if (!rec) return [...errors, `${where}: essays is stored without a lineage record at lineage.essays`];

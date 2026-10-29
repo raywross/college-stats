@@ -16,12 +16,25 @@ const LATER_KEYS = ["directories", "lineage", "trends", "reported"];
 
 /** The block a record puts on its college. */
 export function blockOf(r: EssayRecord): SchoolEssays {
-  return { cycle: r.cycle, status: r.status, source_url: r.source_url, retrieved: r.retrieved, prompts: r.status === "published" ? r.prompts : [] };
+  const published = r.status === "published";
+  return {
+    cycle: r.cycle,
+    status: r.status,
+    source_url: r.source_url,
+    retrieved: r.retrieved,
+    ...(published && r.choose ? { choose: r.choose } : {}),
+    prompts: published ? r.prompts : [],
+  };
 }
 
-/** The one lineage record that cites every `essays.*` path: the page, the cycle as its year, its own cycle line. */
+/**
+ * The one lineage record that cites every `essays.*` path: the page, the cycle as its year, its own cycle line. A page
+ * that names no cycle (`cycle_assumed`) has no cycle line, so the quote is the page's sentence the prompts were read
+ * from (the first prompt's, or the sentence that says there are none): an extracted record always carries its words.
+ */
 export function lineageOf(r: EssayRecord): LineageRecord {
-  return { source: "college-site", method: "extracted", year: r.cycle, url: r.source_url, retrieved: r.retrieved, quote: r.cycle_quote };
+  const quote = r.cycle_quote || r.status_quote || r.prompts[0]?.quote || "";
+  return { source: "college-site", method: "extracted", year: r.cycle, url: r.source_url, retrieved: r.retrieved, quote };
 }
 
 function placeKey(school: School, key: string, value: unknown, anchors: readonly string[]): School {

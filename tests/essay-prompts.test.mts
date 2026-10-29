@@ -20,9 +20,10 @@ import type { ModelClient } from "../scripts/lib/college-reported/models.mts";
 import { SpendCap, SpendCapReached } from "../scripts/lib/high-schools/profiles/budget.mts";
 import { checkRecord, normalizeForMatch } from "../scripts/lib/essay-prompts/checks.mts";
 import { normalizeCycle, openCycle } from "../scripts/lib/essay-prompts/cycle.mts";
-import { discoverEssayPage, essayLinkScore, looksLikeEssayPage, rankLinks, startPages, wellKnownUrls, type DiscoverHttp } from "../scripts/lib/essay-prompts/discover.mts";
+import { buildPickerRequest, discoverEssayPage, essayLinkScore, isPlatformUrl, looksLikeEssayPage, rankLinks, startPages, wellKnownUrls, type DiscoverHttp } from "../scripts/lib/essay-prompts/discover.mts";
+import { promptProblems } from "../scripts/lib/essay-prompts/checks.mts";
 import { applyEssays, platformProblems, stripEssays } from "../scripts/lib/essay-prompts/merge.mts";
-import { READ_MAX_TOKENS, READ_MODEL, ReadFailed, buildReadRequest, pageText, parseReadResponse, readEssayPage, toRecord, type ReadAnswer } from "../scripts/lib/essay-prompts/read.mts";
+import { READ_MAX_TOKENS, READ_MODEL, READ_SCHEMA, READ_SYSTEM, ReadFailed, buildReadRequest, pageText, parseReadResponse, readEssayPage, toRecord, type ReadAnswer } from "../scripts/lib/essay-prompts/read.mts";
 import { prBody, releaseNote, type RunSummary } from "../scripts/lib/essay-prompts/report.mts";
 import { runCollege } from "../scripts/lib/essay-prompts/run.mts";
 import { READER_VERSION, serializeHeld, serializeRecord, type EssayRecord } from "../scripts/lib/essay-prompts/store.mts";
@@ -81,6 +82,7 @@ const ANSWERS: Record<string, ReadAnswer> = {
     cycle_quote: "2026–2027 Supplemental Essay Prompts",
     status: "published",
     status_quote: null,
+    choose: null,
     prompts: [
       all("Why are you interested in attending Example University? Tell us about the parts of our community you hope to join.", "Each response should be no more than 250 words.", { kind: "why_us", limit: { kind: "words", max: 250, min: null } }),
       all("Describe a time you changed your mind about something important to you. What did you learn from it?", "Each response should be no more than 250 words.", { limit: { kind: "words", max: 250, min: null } }),
@@ -91,6 +93,7 @@ const ANSWERS: Record<string, ReadAnswer> = {
     cycle_quote: "These questions are for students applying for fall 2027 entry.",
     status: "published",
     status_quote: null,
+    choose: null,
     prompts: [
       all("What is a problem you would like to help solve, and why does it matter to you?", "What is a problem you would like to help solve, and why does it matter to you? | Up to 1,500 characters | Required", { limit: { kind: "characters", max: 1500, min: null } }),
       all("List three books, films, or podcasts that have shaped your thinking.", "List three books, films, or podcasts that have shaped your thinking. | Up to 200 characters | Required", { kind: "short_answer", limit: { kind: "characters", max: 200, min: null } }),
@@ -101,6 +104,7 @@ const ANSWERS: Record<string, ReadAnswer> = {
     cycle_quote: "First-Year Essay Questions for 2026-27",
     status: "published",
     status_quote: null,
+    choose: null,
     prompts: [
       all("Tell us about a community you belong to and the role you play in it.", "All applicants must answer this question in 300 words or fewer:", { limit: { kind: "words", max: 300, min: null } }),
       all("Describe something you built, fixed, or designed, and what you would change about it now.", "Applicants to the College of Engineering must also answer the following in 200 words or fewer.", { kind: "program", limit: { kind: "words", max: 200, min: null }, applies_to: { kind: "program", program: "College of Engineering" } }),
@@ -111,6 +115,7 @@ const ANSWERS: Record<string, ReadAnswer> = {
     cycle_quote: "Application Essays, 2026–27",
     status: "none",
     status_quote: "Plainfield College does not require a supplemental essay.",
+    choose: null,
     prompts: [],
   },
 };
@@ -410,10 +415,21 @@ test("runCollege: found, read, checked, passed; the same bytes again are unchang
   assert.equal(again.kind, "unchanged");
   assert.equal(calls.length, 1, "an unchanged page is never read twice");
 
-  const bad = fakeClient(() => message({ ...ANSWERS["plain-list.html"], cycle_quote: null }));
+  // A page that names no cycle passes with the open cycle assumed, marked for the PR's list (most pages print no year).
+  const unnamed = fakeClient(() => message({ ...ANSWERS["plain-list.html"], cycle_quote: null }));
+  const assumed = await runCollege(SITE_SCHOOL, undefined, null, { ...deps, client: unnamed.client });
+  assert.equal(assumed.kind, "passed");
+  if (assumed.kind === "passed") {
+    assert.equal(assumed.record.cycle, "2026-27");
+    assert.equal(assumed.record.cycle_assumed, true);
+    assert.equal(assumed.record.cycle_quote, "");
+    assert.equal(assumed.record.prompts[0].id, "999001:2026-27:1");
+  }
+
+  const bad = fakeClient(() => message({ ...ANSWERS["plain-list.html"], prompts: ANSWERS["plain-list.html"].prompts.map((p, i) => (i === 1 ? { ...p, text: "Describe a time you changed your socks." } : p)) }));
   const held = await runCollege(SITE_SCHOOL, undefined, null, { ...deps, client: bad.client });
   assert.equal(held.kind, "held");
-  if (held.kind === "held") assert.ok(held.problems.includes("the page names no cycle"));
+  if (held.kind === "held") assert.ok(held.problems.some((p) => /prompt 2: prompt text isn't on the page verbatim/.test(p)), JSON.stringify(held.problems));
 
   const refused = fakeClient(() => message("", "refusal"));
   const failed = await runCollege(SITE_SCHOOL, undefined, null, { ...deps, client: refused.client });
@@ -577,4 +593,126 @@ test("the workflow: dispatched by hand with units, top, and budget; opens a PR; 
   assert.match(yml, /npm run merge-essay-prompts/);
   assert.match(yml, /npm run check:lineage/);
   assert.ok(!/\t/.test(yml), "YAML takes no tabs");
+});
+
+/* ------------------------------------------------------------------ */
+/* The second reader: an assumed cycle, "choose N of M", platform hosts */
+/* ------------------------------------------------------------------ */
+
+const CHOOSE_PAGE =
+  "Personal insight questions. You will have 8 questions to choose from. You must respond to only 4 of the 8 questions. Each response is limited to a maximum of 350 words. " +
+  "1. Describe an example of your leadership experience. 2. Every person has a creative side. 3. What would you say is your greatest talent or skill? " +
+  "4. Describe how you have taken advantage of a significant educational opportunity. 5. Describe the most significant challenge you have faced. " +
+  "6. Think about an academic subject that inspires you. 7. What have you done to make your school or your community a better place? " +
+  "8. Beyond what has already been shared in your application, what do you believe makes you a strong candidate?";
+const CHOOSE_TEXTS = [
+  "Describe an example of your leadership experience.",
+  "Every person has a creative side.",
+  "What would you say is your greatest talent or skill?",
+  "Describe how you have taken advantage of a significant educational opportunity.",
+  "Describe the most significant challenge you have faced.",
+  "Think about an academic subject that inspires you.",
+  "What have you done to make your school or your community a better place?",
+  "Beyond what has already been shared in your application, what do you believe makes you a strong candidate?",
+];
+
+/** A page that names no cycle and says to answer four of its eight prompts (the UC's shape). */
+function chooseRecord(): EssayRecord {
+  return {
+    ...good(),
+    cycle_quote: "",
+    cycle_assumed: true,
+    choose: { n: 4, of: 8, quote: "You must respond to only 4 of the 8 questions." },
+    prompts: CHOOSE_TEXTS.map((text, i) => ({ id: `999001:2026-27:${i + 1}`, text, kind: "essay" as const, limit: { kind: "words" as const, max: 350 }, required: false, applies_to: "all" as const, quote: "Each response is limited to a maximum of 350 words." })),
+  };
+}
+
+test("checks: a page with no cycle passes with the open cycle assumed; a pick-some list passes with choose", () => {
+  assert.deepEqual(checkRecord(chooseRecord(), { today: TODAY, pageText: CHOOSE_PAGE }), []);
+  assert.deepEqual(checkRecord({ ...good(), cycle_quote: "", cycle_assumed: true }, { today: TODAY, pageText: PAGE }), []);
+});
+
+test("checks: the assumed-cycle and choose rules each catch their planted bad value", () => {
+  const plant = (change: (r: EssayRecord) => void, expect: RegExp) => {
+    const r = chooseRecord();
+    change(r);
+    const problems = checkRecord(r, { today: TODAY, pageText: CHOOSE_PAGE });
+    assert.ok(problems.some((p) => expect.test(p)), `expected ${expect} in ${JSON.stringify(problems)}`);
+  };
+  plant((r) => (r.cycle_assumed = false), /the page names no cycle \(the reader marks such a record cycle_assumed\)/);
+  plant((r) => (r.cycle_quote = "2026-27"), /cycle_assumed is set, but the page names a cycle/);
+  plant((r) => ((r.cycle = "2027-28"), r.prompts.forEach((p, i) => (p.id = `999001:2027-28:${i + 1}`))), /an assumed cycle must be the open one, 2026-27, not 2027-28/);
+  plant((r) => (r.choose!.of = 7), /choose says 7 prompts, but the record lists 8/);
+  plant((r) => (r.choose!.n = 8), /isn't a choice/);
+  plant((r) => (r.choose!.n = 0), /isn't a whole number of prompts to answer/);
+  plant((r) => (r.choose!.quote = "You must respond to all of the questions."), /choose: the quote isn't on the page verbatim/);
+  plant((r) => (r.choose!.quote = ""), /choose: no quote/);
+  plant((r) => (r.prompts[2].required = true), /prompt 3: marked required, but the page says to choose some of the prompts/);
+  plant((r) => ((r.status = "none"), (r.prompts = [])), /choose is set, but status is none/);
+  // Without `choose`, "choose two of the following" in a prompt's quote still counts as the page's optional word.
+  assert.deepEqual(promptProblems({ id: "1:2026-27:1", text: "Describe a community you belong to.", kind: "essay", limit: null, required: false, applies_to: "all", quote: "Choose two of the following prompts and respond in 300 words." }, "p", null), []);
+  assert.deepEqual(promptProblems({ id: "1:2026-27:1", text: "Describe a community you belong to.", kind: "essay", limit: null, required: false, applies_to: "all", quote: "Respond to the following in 300 words." }, "p", null), ["p: marked optional, but neither the prompt nor its quote says optional"]);
+});
+
+test("reader: a page with no cycle words gets the open cycle, marked assumed; choose comes through", () => {
+  const answer: ReadAnswer = { ...ANSWERS["plain-list.html"], cycle_quote: null, choose: { n: 2, of: 3, quote: "Pick two." } };
+  const r = toRecord(answer, { school: SCHOOL, url: "https://admissions.example.edu/x", retrieved: TODAY, sha256: "a".repeat(64), via: "picker", model: READ_MODEL });
+  assert.equal(r.cycle, "2026-27");
+  assert.equal(r.cycle_assumed, true);
+  assert.equal(r.cycle_quote, "");
+  assert.deepEqual(r.choose, { n: 2, of: 3, quote: "Pick two." });
+  const named = toRecord({ ...answer, cycle_quote: "2026–2027 Supplemental Essay Prompts" }, { school: SCHOOL, url: "https://x.edu", retrieved: TODAY, sha256: "a".repeat(64), via: "picker", model: READ_MODEL });
+  assert.equal(named.cycle_assumed, undefined);
+  assert.ok(JSON.stringify(READ_SCHEMA).includes('"choose"'), "the schema asks for choose");
+  assert.match(READ_SYSTEM, /choose: when the page says applicants answer a set number/);
+});
+
+test("discovery: a shared application platform is never the college's page", async () => {
+  assert.ok(isPlatformUrl("https://www.commonapp.org/"));
+  assert.ok(isPlatformUrl("https://apply.commonapp.org/login"));
+  assert.ok(isPlatformUrl("https://www2.calstate.edu/apply"));
+  assert.ok(isPlatformUrl("https://www.applytexas.org/"));
+  assert.ok(!isPlatformUrl("https://admission.universityofcalifornia.edu/how-to-apply/personal-insight-questions.html"), "the UC's shared page is the campuses' own");
+  assert.ok(!isPlatformUrl("https://admissions.example.edu/apply"));
+
+  const member = { unit_id: "1", name: "X", links: { website: "www.x.edu", price_calculator: null, apply: "https://apply.commonapp.org/x", admissions: "https://admissions.x.edu/" } } as Pick<School, "unit_id" | "name" | "links">;
+  assert.deepEqual(startPages(member), ["https://admissions.x.edu/", "https://www.x.edu"], "the Common App apply link is not a start page");
+
+  // The apply page's best essay link points at the Common App: never fetched, never found.
+  const http = fakeSite({
+    "https://admissions.example.edu/apply": '<a href="https://www.commonapp.org/apply/essay-prompts">Essay prompts</a><a href="/apply/deadlines">Deadlines</a>',
+  });
+  const r = await discoverEssayPage(SITE_SCHOOL, undefined, { http });
+  assert.equal(r.found, null);
+  assert.ok(!http.requested.some((u) => u.includes("commonapp.org")), `requested ${JSON.stringify(http.requested)}`);
+
+  const { links } = buildPickerRequest(SCHOOL, [{ url: "https://www.commonapp.org/apply/essay-prompts", text: "Essay prompts" }, { url: "https://admissions.example.edu/qs", text: "Questions" }]);
+  assert.deepEqual(links.map((l) => l.url), ["https://admissions.example.edu/qs"], "the picker never sees a platform link");
+});
+
+test("merge and lineage: choose is kept on the block, an assumed cycle has no quote, and the college validates", () => {
+  const r = recordFor(withLineage, { ...chooseRecord(), unit_id: withLineage.unit_id, name: withLineage.name });
+  r.prompts = r.prompts.map((p, i) => ({ ...p, id: `${withLineage.unit_id}:2026-27:${i + 1}` }));
+  const [merged] = applyEssays([withLineage], [r], TODAY).schools;
+  assert.deepEqual(Object.keys(merged.essays!), ["cycle", "status", "source_url", "retrieved", "choose", "prompts"]);
+  assert.deepEqual(merged.essays!.choose, { n: 4, of: 8, quote: "You must respond to only 4 of the 8 questions." });
+  assert.deepEqual(merged.lineage!.essays, { source: "college-site", method: "extracted", year: "2026-27", url: "https://admissions.example.edu/essays", retrieved: TODAY, quote: "Each response is limited to a maximum of 350 words." }, "no cycle line: the record quotes the sentence the prompts were read from");
+  assert.deepEqual(validateSchool(merged, meta), []);
+  assert.deepEqual(stripEssays(merged), withLineage);
+});
+
+test("report: the PR body lists the colleges whose cycle was assumed", () => {
+  const s: RunSummary = {
+    run: "2026-10-29T12:00:00Z", started: "", finished: "", cycle: "2026-27", budget_usd: 40, spent_usd: 1.25, stopped: null, dry_run: false, colleges: 2,
+    counts: { passed: 2, held: 0, unchanged: 0, not_found: 0, failed: 0, found: 0 },
+    passed: [{ unit_id: "1", name: "A", status: "published", prompts: 8 }, { unit_id: "2", name: "B", status: "published", prompts: 2 }],
+    assumed: [{ unit_id: "1", name: "A" }],
+    held: [],
+    not_found: [],
+    failed: [],
+  };
+  const body = prBody(s);
+  assert.match(body, /passed 2 \(1 with the cycle assumed\)/);
+  assert.match(body, /### Cycle assumed[\s\S]*the open cycle \(2026-27\) was assumed[\s\S]*\| A \| 1 \|/);
+  assert.ok(!/\| B \| 2 \|/.test(body));
 });

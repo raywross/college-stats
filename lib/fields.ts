@@ -1016,6 +1016,7 @@ export const FIELDS = {
   "essays.source_url": reported("The college's essay prompts page"),
   "essays.retrieved": reported("The day the essay prompts page was read"),
   "essays.prompts": reported("Each essay and short-answer prompt, its limit, and whether it is required"),
+  "essays.choose": reported("How many of the listed prompts an applicant answers, when the page says to choose some of them"),
 } satisfies Record<string, FieldDef>;
 
 export type FieldPath = keyof typeof FIELDS;

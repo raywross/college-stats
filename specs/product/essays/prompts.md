@@ -48,6 +48,7 @@ essays: {                                 // a top-level block on the record (as
   cycle: "2026-27";                       // as the page states it; a page with no cycle is held for review
   source_url: string; retrieved: string;
   status: "published" | "none" | "refers_to_form";  // none: the page says there is no supplement; refers_to_form: "see the Common App"
+  choose?: { n: number; of: number; quote: string }; // "answer four of the eight": each prompt is then optional on its own
   prompts: {
     id: string;                           // stable within the cycle: "{unit_id}:{cycle}:{n}"
     text: string;                         // verbatim
@@ -145,3 +146,25 @@ the first read is the owner's to run (`.github/workflows/essay-prompts.yml`, by 
   hard-coded 650).
 - **Not built**: a query of the plans for `--on-plans` (it takes a file of unit ids); feeding held records to the
   admin review queue (they are files plus the PR's table); writing blocked hosts to the shared blocked-hosts file.
+
+### The second reader (2026-10-29, after the first run)
+The first run over the 200 most-applied-to colleges read 200 pages for $3.65: 22 passed, 73 held, 105 not found, 40
+hosts blocked. Three faults in the reader, fixed the same day (`READER_VERSION` 2026.10.29.2):
+- **A platform's page is never the college's.** A Common App member's apply link points at commonapp.org, whose
+  homepage reads like "the prompts are in the form"; twelve colleges, Cornell and Stanford among them, were recorded
+  that way. Discovery now skips shared platforms and system portals (`PLATFORM_HOSTS`: the Common App, the
+  Coalition and Scoir, ApplyTexas, Cal State Apply, SUNY, QuestBridge, and so on) as start pages, as fetched pages
+  including after a redirect, and in the picker's list. The UC's shared admissions site is not on the list: its
+  personal insight questions page is the campuses' own.
+- **A page that names no cycle is not held.** Seventy of the 73 holds were "the page names no cycle", and for fifty it
+  was the only reason: the UC's page, Vanderbilt's, Notre Dame's and Dartmouth's simply print no year. The reader now
+  uses the cycle open on the day it read the page, marks the record `cycle_assumed`, and the data PR lists those
+  colleges under "Cycle assumed" for a glance. The lineage record carries no quote for them. A record with neither a
+  cycle quote nor the mark is still held.
+- **"Answer four of the eight."** The block gained `choose: { n, of, quote }` for pages whose prompts are a set to pick
+  from (the UC's eight personal insight questions, four answered). The reader returns it with the sentence that says
+  so; the checks require `of` to match the prompts listed and refuse any prompt marked required under it; the card
+  line reads "Choose 4 of 8 essays (350 words)", the fold says "Answer 4 of these 8." and drops the per-prompt
+  Required/Optional word, and the plan's count adds four, not eight. Registered as `essays.choose`.
+The 105 not-found colleges are a discovery problem for a later round: the cheap steps found few pages and the model
+picker found 57.

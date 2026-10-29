@@ -3,7 +3,7 @@ import { MetricLabel } from "@/components/ui/info-tip";
 import { essayCardLine } from "@/lib/essays/summary";
 import type { FieldPath } from "@/lib/fields";
 import type { Cited } from "@/lib/lineage";
-import type { EssayPrompt, PlatformPromptsFile, School } from "@/lib/types";
+import type { EssayPrompt, PlatformPromptsFile, School, SchoolEssays } from "@/lib/types";
 import platformPromptsFile from "@/data/reference/platform-prompts.json" with { type: "json" };
 
 const PLATFORM_PROMPTS = platformPromptsFile as PlatformPromptsFile;
@@ -33,11 +33,13 @@ function appliesToText(appliesTo: EssayPrompt["applies_to"]): string | null {
   return `${appliesTo.program} applicants`;
 }
 
-function PromptRow({ prompt, cited }: { prompt: EssayPrompt; cited: Cited }) {
+function PromptRow({ prompt, cited, choose }: { prompt: EssayPrompt; cited: Cited; choose?: SchoolEssays["choose"] }) {
   const kind = KIND_LABEL[prompt.kind];
   const limit = limitText(prompt.limit);
   const applies = appliesToText(prompt.applies_to);
-  const meta = [kind.label, limit, prompt.required ? "Required" : "Optional", applies].filter(Boolean).join(" · ");
+  // Under "choose 4 of 8", no prompt is required or optional on its own; the fold's heading says how many to pick.
+  const requirement = choose ? null : prompt.required ? "Required" : "Optional";
+  const meta = [kind.label, limit, requirement, applies].filter(Boolean).join(" · ");
   return (
     <li className="space-y-1">
       <MetricLabel term={kind.term} cited={cited} className="items-start text-sm font-medium">
@@ -105,9 +107,16 @@ export function EssayPrompts({
                 )}
               </p>
             )}
+            {essays.choose && (
+              <p className="text-xs text-muted-foreground">
+                <MetricLabel cited={cite("essays.choose", school)}>
+                  {`Answer ${essays.choose.n} of these ${essays.choose.of}.`}
+                </MetricLabel>
+              </p>
+            )}
             <ul className="space-y-3">
               {prompts.map((p) => (
-                <PromptRow key={p.id} prompt={p} cited={cited} />
+                <PromptRow key={p.id} prompt={p} cited={cited} choose={essays.choose} />
               ))}
             </ul>
             <p className="text-xs text-muted-foreground">The application may ask a few short questions beyond these.</p>

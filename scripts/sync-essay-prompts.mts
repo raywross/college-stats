@@ -144,6 +144,7 @@ function record(id: string, o: Outcome) {
     case "passed":
       summary.counts.passed++;
       summary.passed.push({ unit_id: id, name: s.name, status: o.record.status, prompts: o.record.prompts.length });
+      if (o.record.cycle_assumed) (summary.assumed ??= []).push({ unit_id: id, name: s.name });
       if (!DRY) {
         writeEssayRecord(P.records, o.record);
         clearHeld(P.held, id);

@@ -1,0 +1,5 @@
+{"unit_id":"236939","name":"Washington State University","cycle":"2026-27","status":"published","source_url":"https://admission.wsu.edu/apply/first-year-students/","retrieved":"2026-10-29","sha256":"f42e6bad72845b495507d2329f7227afd1736971248ee8367913767d2050eadb","archive":"local:f42e6bad72845b495507d2329f7227afd1736971248ee8367913767d2050eadb.html","cycle_quote":"","via":"picker","model":"claude-opus-5","reader":"2026.10.29.2",
+  "prompts": [
+  {"id":"236939:2026-27:1","text":"A brief essay (no more than one page) addressing why you want to attend WSU.","kind":"why_us","limit":null,"required":true,"applies_to":"all","quote":"A brief essay (no more than one page) addressing why you want to attend WSU."}
+]
+}

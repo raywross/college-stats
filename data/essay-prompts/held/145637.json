@@ -1,0 +1,15 @@
+{ "unit_id": "145637", "name": "University of Illinois Urbana-Champaign", "held": "2026-10-29",
+  "problems": [
+    "prompt 3: marked required, but the page's word is optional"
+  ],
+  "record": {"unit_id":"145637","name":"University of Illinois Urbana-Champaign","cycle":"2026-27","status":"published","source_url":"https://admissions.illinois.edu/essays","final_url":"https://www.admissions.illinois.edu/essays","retrieved":"2026-10-29","sha256":"30f3bc93eb61973e82762b4a98e66f740ee70c4ec256d6c6048bfbb0e66c9b80","archive":"local:30f3bc93eb61973e82762b4a98e66f740ee70c4ec256d6c6048bfbb0e66c9b80.html","cycle_quote":"","via":"well-known-path","model":"claude-opus-5","reader":"2026.10.29.2",
+    "prompts": [
+    {"id":"145637:2026-27:1","text":"Explain, in detail, an experience you’ve had in the past 3 to 4 years related to your first-choice major. This can be an experience from an extracurricular activity, in a class you’ve taken, or through something else.","kind":"short_answer","limit":{"kind":"words","max":150},"required":true,"applies_to":"all","quote":"Each essay should be about 150 words ."},
+    {"id":"145637:2026-27:2","text":"Describe your personal and/or career goals after graduating from Illinois and how your selected first-choice major will help you achieve them.","kind":"short_answer","limit":{"kind":"words","max":150},"required":true,"applies_to":"all","quote":"Each essay should be about 150 words ."},
+    {"id":"145637:2026-27:3","text":"What are your future career or academic goals? You may include courses you took in high school and how these impacted your goals.","kind":"short_answer","limit":{"kind":"words","max":150},"required":true,"applies_to":"all","quote":"Complete these prompts instead of the standard first-choice major essay prompts."},
+    {"id":"145637:2026-27:4","text":"What are your academic interests? Please include 2-3 majors you’re considering at Illinois and why.","kind":"short_answer","limit":{"kind":"words","max":150},"required":true,"applies_to":"all","quote":"Complete these prompts instead of the standard first-choice major essay prompts."},
+    {"id":"145637:2026-27:5","text":"Please explain your interest in your second-choice major or your overall academic or career goals.","kind":"short_answer","limit":{"kind":"words","max":150},"required":true,"applies_to":"all","quote":"When you apply with a second‑choice major, you’ll answer this additional prompt."},
+    {"id":"145637:2026-27:6","text":"You’ll also pick one essay prompt from Common App’s list of prompts .","kind":"essay","limit":{"kind":"words","max":650,"min":250},"required":true,"applies_to":"all","quote":"Your essay should be 250 to 650 words ."}
+  ]
+  }
+}

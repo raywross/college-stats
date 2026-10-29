@@ -1,0 +1,1314 @@
+{
+  "run": "2026-10-29T16:15:45Z",
+  "started": "2026-10-29T16:15:45.505Z",
+  "finished": "2026-10-29T16:51:51.371Z",
+  "cycle": "2026-27",
+  "budget_usd": 40,
+  "spent_usd": 3.872692,
+  "stopped": null,
+  "dry_run": false,
+  "colleges": 200,
+  "counts": {
+    "passed": 68,
+    "held": 20,
+    "unchanged": 0,
+    "not_found": 112,
+    "failed": 0,
+    "found": 0
+  },
+  "passed": [
+    {
+      "unit_id": "110662",
+      "name": "University of California-Los Angeles",
+      "status": "published",
+      "prompts": 8
+    },
+    {
+      "unit_id": "110653",
+      "name": "University of California-Irvine",
+      "status": "published",
+      "prompts": 8
+    },
+    {
+      "unit_id": "110635",
+      "name": "University of California-Berkeley",
+      "status": "published",
+      "prompts": 8
+    },
+    {
+      "unit_id": "110680",
+      "name": "University of California-San Diego",
+      "status": "published",
+      "prompts": 8
+    },
+    {
+      "unit_id": "110644",
+      "name": "University of California-Davis",
+      "status": "published",
+      "prompts": 8
+    },
+    {
+      "unit_id": "110705",
+      "name": "University of California-Santa Barbara",
+      "status": "published",
+      "prompts": 8
+    },
+    {
+      "unit_id": "228778",
+      "name": "The University of Texas at Austin",
+      "status": "published",
+      "prompts": 4
+    },
+    {
+      "unit_id": "134130",
+      "name": "University of Florida",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "110583",
+      "name": "California State University-Long Beach",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "123961",
+      "name": "University of Southern California",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "240444",
+      "name": "University of Wisconsin-Madison",
+      "status": "published",
+      "prompts": 2
+    },
+    {
+      "unit_id": "134097",
+      "name": "Florida State University",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "236948",
+      "name": "University of Washington-Seattle Campus",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "110714",
+      "name": "University of California-Santa Cruz",
+      "status": "published",
+      "prompts": 8
+    },
+    {
+      "unit_id": "190415",
+      "name": "Cornell University",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "186380",
+      "name": "Rutgers University-New Brunswick",
+      "status": "published",
+      "prompts": 7
+    },
+    {
+      "unit_id": "151351",
+      "name": "Indiana University-Bloomington",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "164988",
+      "name": "Boston University",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "217882",
+      "name": "Clemson University",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "132903",
+      "name": "University of Central Florida",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "163286",
+      "name": "University of Maryland-College Park",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "110671",
+      "name": "University of California-Riverside",
+      "status": "published",
+      "prompts": 8
+    },
+    {
+      "unit_id": "233921",
+      "name": "Virginia Polytechnic Institute and State University",
+      "status": "published",
+      "prompts": 4
+    },
+    {
+      "unit_id": "196097",
+      "name": "Stony Brook University",
+      "status": "published",
+      "prompts": 3
+    },
+    {
+      "unit_id": "129020",
+      "name": "University of Connecticut",
+      "status": "published",
+      "prompts": 2
+    },
+    {
+      "unit_id": "100858",
+      "name": "Auburn University",
+      "status": "published",
+      "prompts": 3
+    },
+    {
+      "unit_id": "228723",
+      "name": "Texas A&M University-College Station",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "135726",
+      "name": "University of Miami",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "221759",
+      "name": "The University of Tennessee-Knoxville",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "221999",
+      "name": "Vanderbilt University",
+      "status": "published",
+      "prompts": 1
+    },
+    {
+      "unit_id": "162928",
+      "name": "Johns Hopkins University",
+      "status": "published",
+      "prompts": 1
+    },
+    {
+      "unit_id": "199193",
+      "name": "North Carolina State University at Raleigh",
+      "status": "published",
+      "prompts": 1
+    },
+    {
+      "unit_id": "191241",
+      "name": "Fordham University",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "146719",
+      "name": "Loyola University Chicago",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "130943",
+      "name": "University of Delaware",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "201645",
+      "name": "Case Western Reserve University",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "232423",
+      "name": "James Madison University",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "137847",
+      "name": "The University of Tampa",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "122755",
+      "name": "San Jose State University",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "139658",
+      "name": "Emory University",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "186399",
+      "name": "Rutgers University-Newark",
+      "status": "published",
+      "prompts": 7
+    },
+    {
+      "unit_id": "168148",
+      "name": "Tufts University",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "186371",
+      "name": "Rutgers University-Camden",
+      "status": "published",
+      "prompts": 7
+    },
+    {
+      "unit_id": "110592",
+      "name": "California State University-Los Angeles",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "190594",
+      "name": "CUNY Hunter College",
+      "status": "published",
+      "prompts": 3
+    },
+    {
+      "unit_id": "196060",
+      "name": "University at Albany",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "445188",
+      "name": "University of California-Merced",
+      "status": "published",
+      "prompts": 8
+    },
+    {
+      "unit_id": "195003",
+      "name": "Rochester Institute of Technology",
+      "status": "published",
+      "prompts": 1
+    },
+    {
+      "unit_id": "194310",
+      "name": "Pace University",
+      "status": "published",
+      "prompts": 7
+    },
+    {
+      "unit_id": "152080",
+      "name": "University of Notre Dame",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "145600",
+      "name": "University of Illinois Chicago",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "182670",
+      "name": "Dartmouth College",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "216597",
+      "name": "Villanova University",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "122597",
+      "name": "San Francisco State University",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "131469",
+      "name": "George Washington University",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "236939",
+      "name": "Washington State University",
+      "status": "published",
+      "prompts": 1
+    },
+    {
+      "unit_id": "204857",
+      "name": "Ohio University-Main Campus",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "186584",
+      "name": "Seton Hall University",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "100654",
+      "name": "Alabama A & M University",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "228875",
+      "name": "Texas Christian University",
+      "status": "published",
+      "prompts": 2
+    },
+    {
+      "unit_id": "136172",
+      "name": "University of North Florida",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "183044",
+      "name": "University of New Hampshire-Main Campus",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "166638",
+      "name": "University of Massachusetts-Boston",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "366711",
+      "name": "California State University-San Marcos",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "228787",
+      "name": "The University of Texas at Dallas",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
+      "unit_id": "433660",
+      "name": "Florida Gulf Coast University",
+      "status": "none",
+      "prompts": 0
+    },
+    {
+      "unit_id": "122931",
+      "name": "Santa Clara University",
+      "status": "published",
+      "prompts": 1
+    },
+    {
+      "unit_id": "200004",
+      "name": "Western Carolina University",
+      "status": "none",
+      "prompts": 0
+    }
+  ],
+  "held": [
+    {
+      "unit_id": "243780",
+      "name": "Purdue University-Main Campus",
+      "problems": [
+        "prompt 8: kind why_us, but the prompt doesn't ask why this college or program",
+        "prompt 10: kind why_us, but the prompt doesn't ask why this college or program"
+      ]
+    },
+    {
+      "unit_id": "145637",
+      "name": "University of Illinois Urbana-Champaign",
+      "problems": [
+        "prompt 3: marked required, but the page's word is optional"
+      ]
+    },
+    {
+      "unit_id": "126614",
+      "name": "University of Colorado Boulder",
+      "problems": [
+        "choose says 7 prompts, but the record lists 8",
+        "prompt 8: marked required, but the page says to choose some of the prompts",
+        "prompt 8: kind why_us, but the prompt doesn't ask why this college or program"
+      ]
+    },
+    {
+      "unit_id": "198419",
+      "name": "Duke University",
+      "problems": [
+        "choose says 3 prompts, but the record lists 5",
+        "prompt 1: marked required, but the page says to choose some of the prompts",
+        "prompt 2: marked required, but the page says to choose some of the prompts"
+      ]
+    },
+    {
+      "unit_id": "130794",
+      "name": "Yale University",
+      "problems": [
+        "choose says 3 prompts, but the record lists 8",
+        "prompt 1: marked required, but the page says to choose some of the prompts",
+        "prompt 2: marked required, but the page says to choose some of the prompts",
+        "prompt 3: marked required, but the page says to choose some of the prompts",
+        "prompt 4: marked required, but the page says to choose some of the prompts",
+        "prompt 5: marked required, but the page says to choose some of the prompts"
+      ]
+    },
+    {
+      "unit_id": "164924",
+      "name": "Boston College",
+      "problems": [
+        "choose says 4 prompts, but the record lists 5",
+        "prompt 5: marked required, but the page says to choose some of the prompts"
+      ]
+    },
+    {
+      "unit_id": "196088",
+      "name": "University at Buffalo",
+      "problems": [
+        "status none without the page's sentence that says so"
+      ]
+    },
+    {
+      "unit_id": "209551",
+      "name": "University of Oregon",
+      "problems": [
+        "choose says 2 prompts, but the record lists 4",
+        "prompt 1: marked required, but the page says to choose some of the prompts",
+        "prompt 2: marked required, but the page says to choose some of the prompts"
+      ]
+    },
+    {
+      "unit_id": "126818",
+      "name": "Colorado State University-Fort Collins",
+      "problems": [
+        "choose says 7 prompts, but the record lists 9",
+        "choose: the quote doesn't say to choose some of the prompts"
+      ]
+    },
+    {
+      "unit_id": "227757",
+      "name": "Rice University",
+      "problems": [
+        "choose says 2 prompts, but the record lists 11",
+        "prompt 1: marked required, but the page says to choose some of the prompts",
+        "prompt 2: marked required, but the page says to choose some of the prompts",
+        "prompt 2: kind why_us, but the prompt doesn't ask why this college or program",
+        "prompt 5: marked required, but the page says to choose some of the prompts",
+        "prompt 6: marked required, but the page says to choose some of the prompts",
+        "prompt 7: marked required, but the page says to choose some of the prompts",
+        "prompt 8: the same prompt twice",
+        "prompt 8: marked required, but the page says to choose some of the prompts",
+        "prompt 9: the same prompt twice",
+        "prompt 9: marked required, but the page says to choose some of the prompts",
+        "prompt 9: kind why_us, but the prompt doesn't ask why this college or program",
+        "prompt 10: the same prompt twice",
+        "prompt 11: the same prompt twice"
+      ]
+    },
+    {
+      "unit_id": "201885",
+      "name": "University of Cincinnati-Main Campus",
+      "problems": [
+        "prompt 1: kind why_us, but the prompt doesn't ask why this college or program"
+      ]
+    },
+    {
+      "unit_id": "139940",
+      "name": "Georgia State University",
+      "problems": [
+        "prompt 1: marked optional, but neither the prompt nor its quote says optional",
+        "prompt 2: marked optional, but neither the prompt nor its quote says optional",
+        "prompt 3: marked optional, but neither the prompt nor its quote says optional",
+        "prompt 4: marked optional, but neither the prompt nor its quote says optional",
+        "prompt 5: marked optional, but neither the prompt nor its quote says optional",
+        "prompt 6: marked optional, but neither the prompt nor its quote says optional",
+        "prompt 7: marked optional, but neither the prompt nor its quote says optional"
+      ]
+    },
+    {
+      "unit_id": "179867",
+      "name": "Washington University in St Louis",
+      "problems": [
+        "prompt 1: marked optional, but neither the prompt nor its quote says optional",
+        "prompt 2: marked optional, but neither the prompt nor its quote says optional",
+        "prompt 3: marked optional, but neither the prompt nor its quote says optional"
+      ]
+    },
+    {
+      "unit_id": "199962",
+      "name": "Wingate University",
+      "problems": [
+        "prompt 1: marked optional, but neither the prompt nor its quote says optional"
+      ]
+    },
+    {
+      "unit_id": "166683",
+      "name": "Massachusetts Institute of Technology",
+      "problems": [
+        "prompt 5: marked optional, but neither the prompt nor its quote says optional"
+      ]
+    },
+    {
+      "unit_id": "199139",
+      "name": "University of North Carolina at Charlotte",
+      "problems": [
+        "choose: the quote doesn't say to choose some of the prompts"
+      ]
+    },
+    {
+      "unit_id": "131496",
+      "name": "Georgetown University",
+      "problems": [
+        "prompt 4: marked required, but the page's word is optional"
+      ]
+    },
+    {
+      "unit_id": "185590",
+      "name": "Montclair State University",
+      "problems": [
+        "prompt 1: kind why_us, but the prompt doesn't ask why this college or program"
+      ]
+    },
+    {
+      "unit_id": "195809",
+      "name": "St. John's University-New York",
+      "problems": [
+        "prompt 2: kind why_us, but the prompt doesn't ask why this college or program"
+      ]
+    },
+    {
+      "unit_id": "190637",
+      "name": "CUNY Lehman College",
+      "problems": [
+        "status none without the page's sentence that says so"
+      ]
+    }
+  ],
+  "not_found": [
+    {
+      "unit_id": "193900",
+      "name": "New York University"
+    },
+    {
+      "unit_id": "170976",
+      "name": "University of Michigan-Ann Arbor",
+      "blocked": "admissions.umich.edu"
+    },
+    {
+      "unit_id": "122409",
+      "name": "San Diego State University"
+    },
+    {
+      "unit_id": "214777",
+      "name": "Pennsylvania State University-Main Campus"
+    },
+    {
+      "unit_id": "167358",
+      "name": "Northeastern University"
+    },
+    {
+      "unit_id": "204796",
+      "name": "Ohio State University-Main Campus"
+    },
+    {
+      "unit_id": "482705",
+      "name": "Northeastern University Professional Programs"
+    },
+    {
+      "unit_id": "110422",
+      "name": "California Polytechnic State University-San Luis Obispo"
+    },
+    {
+      "unit_id": "104151",
+      "name": "Arizona State University Campus Immersion",
+      "blocked": "webapp4.asu.edu"
+    },
+    {
+      "unit_id": "137351",
+      "name": "University of South Florida"
+    },
+    {
+      "unit_id": "139755",
+      "name": "Georgia Institute of Technology-Main Campus"
+    },
+    {
+      "unit_id": "215062",
+      "name": "University of Pennsylvania"
+    },
+    {
+      "unit_id": "171100",
+      "name": "Michigan State University"
+    },
+    {
+      "unit_id": "100751",
+      "name": "The University of Alabama"
+    },
+    {
+      "unit_id": "196079",
+      "name": "Binghamton University"
+    },
+    {
+      "unit_id": "215293",
+      "name": "University of Pittsburgh-Pittsburgh Campus",
+      "blocked": "pitt.mycollegeapplication.org"
+    },
+    {
+      "unit_id": "218663",
+      "name": "University of South Carolina-Columbia"
+    },
+    {
+      "unit_id": "190150",
+      "name": "Columbia University in the City of New York",
+      "blocked": "www.columbia.edu"
+    },
+    {
+      "unit_id": "234076",
+      "name": "University of Virginia-Main Campus",
+      "blocked": "admission.virginia.edu"
+    },
+    {
+      "unit_id": "104179",
+      "name": "University of Arizona"
+    },
+    {
+      "unit_id": "199120",
+      "name": "University of North Carolina at Chapel Hill",
+      "blocked": "www.unc.edu"
+    },
+    {
+      "unit_id": "243744",
+      "name": "Stanford University"
+    },
+    {
+      "unit_id": "110565",
+      "name": "California State University-Fullerton"
+    },
+    {
+      "unit_id": "104717",
+      "name": "Grand Canyon University"
+    },
+    {
+      "unit_id": "166629",
+      "name": "University of Massachusetts-Amherst"
+    },
+    {
+      "unit_id": "110529",
+      "name": "California State Polytechnic University-Pomona"
+    },
+    {
+      "unit_id": "147767",
+      "name": "Northwestern University"
+    },
+    {
+      "unit_id": "217156",
+      "name": "Brown University"
+    },
+    {
+      "unit_id": "166027",
+      "name": "Harvard University"
+    },
+    {
+      "unit_id": "159391",
+      "name": "Louisiana State University and Agricultural & Mechanical College"
+    },
+    {
+      "unit_id": "196413",
+      "name": "Syracuse University"
+    },
+    {
+      "unit_id": "139959",
+      "name": "University of Georgia"
+    },
+    {
+      "unit_id": "223232",
+      "name": "Baylor University",
+      "blocked": "admissions.web.baylor.edu"
+    },
+    {
+      "unit_id": "183026",
+      "name": "Southern New Hampshire University"
+    },
+    {
+      "unit_id": "144050",
+      "name": "University of Chicago",
+      "blocked": "www.uchicago.edu"
+    },
+    {
+      "unit_id": "186131",
+      "name": "Princeton University",
+      "blocked": "www.princeton.edu"
+    },
+    {
+      "unit_id": "174066",
+      "name": "University of Minnesota-Twin Cities",
+      "blocked": "admissions.tc.umn.edu"
+    },
+    {
+      "unit_id": "216339",
+      "name": "Temple University"
+    },
+    {
+      "unit_id": "105330",
+      "name": "Northern Arizona University"
+    },
+    {
+      "unit_id": "204024",
+      "name": "Miami University-Oxford"
+    },
+    {
+      "unit_id": "227216",
+      "name": "University of North Texas"
+    },
+    {
+      "unit_id": "212054",
+      "name": "Drexel University"
+    },
+    {
+      "unit_id": "131520",
+      "name": "Howard University"
+    },
+    {
+      "unit_id": "199102",
+      "name": "North Carolina A & T State University"
+    },
+    {
+      "unit_id": "211440",
+      "name": "Carnegie Mellon University"
+    },
+    {
+      "unit_id": "486840",
+      "name": "Kennesaw State University"
+    },
+    {
+      "unit_id": "229115",
+      "name": "Texas Tech University",
+      "blocked": "www.gototexastech.com"
+    },
+    {
+      "unit_id": "225511",
+      "name": "University of Houston"
+    },
+    {
+      "unit_id": "190567",
+      "name": "CUNY City College",
+      "blocked": "www.ccny.cuny.edu"
+    },
+    {
+      "unit_id": "228459",
+      "name": "Texas State University"
+    },
+    {
+      "unit_id": "157085",
+      "name": "University of Kentucky",
+      "blocked": "www.uky.edu"
+    },
+    {
+      "unit_id": "176017",
+      "name": "University of Mississippi"
+    },
+    {
+      "unit_id": "106397",
+      "name": "University of Arkansas"
+    },
+    {
+      "unit_id": "133951",
+      "name": "Florida International University"
+    },
+    {
+      "unit_id": "160755",
+      "name": "Tulane University of Louisiana",
+      "blocked": "admission.tulane.edu"
+    },
+    {
+      "unit_id": "217819",
+      "name": "College of Charleston",
+      "blocked": "charleston.edu"
+    },
+    {
+      "unit_id": "133669",
+      "name": "Florida Atlantic University"
+    },
+    {
+      "unit_id": "110608",
+      "name": "California State University-Northridge"
+    },
+    {
+      "unit_id": "144740",
+      "name": "DePaul University"
+    },
+    {
+      "unit_id": "190549",
+      "name": "CUNY Brooklyn College",
+      "blocked": "www.cuny.edu"
+    },
+    {
+      "unit_id": "209542",
+      "name": "Oregon State University"
+    },
+    {
+      "unit_id": "190512",
+      "name": "CUNY Bernard M Baruch College",
+      "blocked": "www.cuny.edu"
+    },
+    {
+      "unit_id": "217484",
+      "name": "University of Rhode Island"
+    },
+    {
+      "unit_id": "170082",
+      "name": "Grand Valley State University"
+    },
+    {
+      "unit_id": "153658",
+      "name": "University of Iowa"
+    },
+    {
+      "unit_id": "138947",
+      "name": "Clark Atlanta University"
+    },
+    {
+      "unit_id": "230764",
+      "name": "University of Utah"
+    },
+    {
+      "unit_id": "198464",
+      "name": "East Carolina University",
+      "blocked": "admissions.ecu.edu"
+    },
+    {
+      "unit_id": "110617",
+      "name": "California State University-Sacramento"
+    },
+    {
+      "unit_id": "231174",
+      "name": "University of Vermont"
+    },
+    {
+      "unit_id": "229027",
+      "name": "The University of Texas at San Antonio"
+    },
+    {
+      "unit_id": "232186",
+      "name": "George Mason University"
+    },
+    {
+      "unit_id": "191649",
+      "name": "Hofstra University"
+    },
+    {
+      "unit_id": "207500",
+      "name": "University of Oklahoma-Norman Campus"
+    },
+    {
+      "unit_id": "207388",
+      "name": "Oklahoma State University-Main Campus",
+      "blocked": "admissions.okstate.edu"
+    },
+    {
+      "unit_id": "122612",
+      "name": "University of San Francisco"
+    },
+    {
+      "unit_id": "190655",
+      "name": "CUNY New York City College of Technology",
+      "blocked": "cuny.edu"
+    },
+    {
+      "unit_id": "153603",
+      "name": "Iowa State University"
+    },
+    {
+      "unit_id": "228769",
+      "name": "The University of Texas at Arlington"
+    },
+    {
+      "unit_id": "197869",
+      "name": "Appalachian State University",
+      "blocked": "www.appstate.edu"
+    },
+    {
+      "unit_id": "203517",
+      "name": "Kent State University at Kent"
+    },
+    {
+      "unit_id": "160621",
+      "name": "Southern University and A & M College",
+      "blocked": "www.subr.edu"
+    },
+    {
+      "unit_id": "178396",
+      "name": "University of Missouri-Columbia"
+    },
+    {
+      "unit_id": "130226",
+      "name": "Quinnipiac University"
+    },
+    {
+      "unit_id": "147703",
+      "name": "Northern Illinois University"
+    },
+    {
+      "unit_id": "232557",
+      "name": "Liberty University"
+    },
+    {
+      "unit_id": "163453",
+      "name": "Morgan State University"
+    },
+    {
+      "unit_id": "176080",
+      "name": "Mississippi State University",
+      "blocked": "www.admissions.msstate.edu"
+    },
+    {
+      "unit_id": "117946",
+      "name": "Loyola Marymount University"
+    },
+    {
+      "unit_id": "110538",
+      "name": "California State University-Chico"
+    },
+    {
+      "unit_id": "133650",
+      "name": "Florida Agricultural and Mechanical University"
+    },
+    {
+      "unit_id": "155317",
+      "name": "University of Kansas"
+    },
+    {
+      "unit_id": "199218",
+      "name": "University of North Carolina Wilmington"
+    },
+    {
+      "unit_id": "202480",
+      "name": "University of Dayton"
+    },
+    {
+      "unit_id": "190664",
+      "name": "CUNY Queens College",
+      "blocked": "www2.cuny.edu"
+    },
+    {
+      "unit_id": "129941",
+      "name": "University of New Haven",
+      "blocked": "newhaven.edu"
+    },
+    {
+      "unit_id": "180461",
+      "name": "Montana State University"
+    },
+    {
+      "unit_id": "145813",
+      "name": "Illinois State University",
+      "blocked": "www.admissions.illinoisstate.edu"
+    },
+    {
+      "unit_id": "169248",
+      "name": "Central Michigan University"
+    },
+    {
+      "unit_id": "110556",
+      "name": "California State University-Fresno"
+    },
+    {
+      "unit_id": "169798",
+      "name": "Eastern Michigan University",
+      "blocked": "www.emich.edu"
+    },
+    {
+      "unit_id": "230728",
+      "name": "Utah State University"
+    },
+    {
+      "unit_id": "201441",
+      "name": "Bowling Green State University-Main Campus",
+      "blocked": "choose.bgsu.edu"
+    },
+    {
+      "unit_id": "218724",
+      "name": "Coastal Carolina University",
+      "blocked": "www.coastal.edu"
+    },
+    {
+      "unit_id": "195030",
+      "name": "University of Rochester"
+    },
+    {
+      "unit_id": "150136",
+      "name": "Ball State University",
+      "blocked": "www.bsu.edu"
+    },
+    {
+      "unit_id": "234030",
+      "name": "Virginia Commonwealth University"
+    },
+    {
+      "unit_id": "172699",
+      "name": "Western Michigan University"
+    },
+    {
+      "unit_id": "139931",
+      "name": "Georgia Southern University"
+    },
+    {
+      "unit_id": "192448",
+      "name": "Long Island University"
+    },
+    {
+      "unit_id": "110547",
+      "name": "California State University-Dominguez Hills",
+      "blocked": "www.csudh.edu"
+    },
+    {
+      "unit_id": "164076",
+      "name": "Towson University"
+    }
+  ],
+  "failed": [],
+  "assumed": [
+    {
+      "unit_id": "110662",
+      "name": "University of California-Los Angeles"
+    },
+    {
+      "unit_id": "110653",
+      "name": "University of California-Irvine"
+    },
+    {
+      "unit_id": "110635",
+      "name": "University of California-Berkeley"
+    },
+    {
+      "unit_id": "110680",
+      "name": "University of California-San Diego"
+    },
+    {
+      "unit_id": "110644",
+      "name": "University of California-Davis"
+    },
+    {
+      "unit_id": "110705",
+      "name": "University of California-Santa Barbara"
+    },
+    {
+      "unit_id": "228778",
+      "name": "The University of Texas at Austin"
+    },
+    {
+      "unit_id": "134130",
+      "name": "University of Florida"
+    },
+    {
+      "unit_id": "123961",
+      "name": "University of Southern California"
+    },
+    {
+      "unit_id": "240444",
+      "name": "University of Wisconsin-Madison"
+    },
+    {
+      "unit_id": "134097",
+      "name": "Florida State University"
+    },
+    {
+      "unit_id": "236948",
+      "name": "University of Washington-Seattle Campus"
+    },
+    {
+      "unit_id": "110714",
+      "name": "University of California-Santa Cruz"
+    },
+    {
+      "unit_id": "190415",
+      "name": "Cornell University"
+    },
+    {
+      "unit_id": "186380",
+      "name": "Rutgers University-New Brunswick"
+    },
+    {
+      "unit_id": "151351",
+      "name": "Indiana University-Bloomington"
+    },
+    {
+      "unit_id": "164988",
+      "name": "Boston University"
+    },
+    {
+      "unit_id": "217882",
+      "name": "Clemson University"
+    },
+    {
+      "unit_id": "163286",
+      "name": "University of Maryland-College Park"
+    },
+    {
+      "unit_id": "110671",
+      "name": "University of California-Riverside"
+    },
+    {
+      "unit_id": "135726",
+      "name": "University of Miami"
+    },
+    {
+      "unit_id": "221759",
+      "name": "The University of Tennessee-Knoxville"
+    },
+    {
+      "unit_id": "221999",
+      "name": "Vanderbilt University"
+    },
+    {
+      "unit_id": "199193",
+      "name": "North Carolina State University at Raleigh"
+    },
+    {
+      "unit_id": "191241",
+      "name": "Fordham University"
+    },
+    {
+      "unit_id": "146719",
+      "name": "Loyola University Chicago"
+    },
+    {
+      "unit_id": "130943",
+      "name": "University of Delaware"
+    },
+    {
+      "unit_id": "201645",
+      "name": "Case Western Reserve University"
+    },
+    {
+      "unit_id": "232423",
+      "name": "James Madison University"
+    },
+    {
+      "unit_id": "137847",
+      "name": "The University of Tampa"
+    },
+    {
+      "unit_id": "122755",
+      "name": "San Jose State University"
+    },
+    {
+      "unit_id": "186399",
+      "name": "Rutgers University-Newark"
+    },
+    {
+      "unit_id": "168148",
+      "name": "Tufts University"
+    },
+    {
+      "unit_id": "186371",
+      "name": "Rutgers University-Camden"
+    },
+    {
+      "unit_id": "190594",
+      "name": "CUNY Hunter College"
+    },
+    {
+      "unit_id": "196060",
+      "name": "University at Albany"
+    },
+    {
+      "unit_id": "445188",
+      "name": "University of California-Merced"
+    },
+    {
+      "unit_id": "195003",
+      "name": "Rochester Institute of Technology"
+    },
+    {
+      "unit_id": "152080",
+      "name": "University of Notre Dame"
+    },
+    {
+      "unit_id": "145600",
+      "name": "University of Illinois Chicago"
+    },
+    {
+      "unit_id": "182670",
+      "name": "Dartmouth College"
+    },
+    {
+      "unit_id": "216597",
+      "name": "Villanova University"
+    },
+    {
+      "unit_id": "122597",
+      "name": "San Francisco State University"
+    },
+    {
+      "unit_id": "131469",
+      "name": "George Washington University"
+    },
+    {
+      "unit_id": "236939",
+      "name": "Washington State University"
+    },
+    {
+      "unit_id": "204857",
+      "name": "Ohio University-Main Campus"
+    },
+    {
+      "unit_id": "186584",
+      "name": "Seton Hall University"
+    },
+    {
+      "unit_id": "100654",
+      "name": "Alabama A & M University"
+    },
+    {
+      "unit_id": "228875",
+      "name": "Texas Christian University"
+    },
+    {
+      "unit_id": "183044",
+      "name": "University of New Hampshire-Main Campus"
+    },
+    {
+      "unit_id": "166638",
+      "name": "University of Massachusetts-Boston"
+    },
+    {
+      "unit_id": "366711",
+      "name": "California State University-San Marcos"
+    },
+    {
+      "unit_id": "228787",
+      "name": "The University of Texas at Dallas"
+    },
+    {
+      "unit_id": "433660",
+      "name": "Florida Gulf Coast University"
+    },
+    {
+      "unit_id": "122931",
+      "name": "Santa Clara University"
+    },
+    {
+      "unit_id": "200004",
+      "name": "Western Carolina University"
+    }
+  ]
+}

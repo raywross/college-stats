@@ -1,0 +1,8 @@
+{ "unit_id": "196088", "name": "University at Buffalo", "held": "2026-10-29",
+  "problems": [
+    "status none without the page's sentence that says so"
+  ],
+  "record": {"unit_id":"196088","name":"University at Buffalo","cycle":"2026-27","status":"none","source_url":"https://www.buffalo.edu/admissions/apply/first-year.html","retrieved":"2026-10-29","sha256":"5c71156e209ad8fa7e15a91588ad9fa424df4c6d6f59e6f9cd3af37589fabc32","archive":"local:5c71156e209ad8fa7e15a91588ad9fa424df4c6d6f59e6f9cd3af37589fabc32.html","cycle_quote":"","via":"picker","model":"claude-opus-5","reader":"2026.10.29.2",
+    "prompts": []
+  }
+}

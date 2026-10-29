@@ -1,0 +1,8 @@
+{ "unit_id": "190637", "name": "CUNY Lehman College", "held": "2026-10-29",
+  "problems": [
+    "status none without the page's sentence that says so"
+  ],
+  "record": {"unit_id":"190637","name":"CUNY Lehman College","cycle":"2026-27","status":"none","source_url":"https://www.lehman.edu/media/About/Documents-/Jan-2021-Supplemental-Information-Report.pdf","retrieved":"2026-10-29","sha256":"d59295fe2cac3df3fbd21948e26aea8c390c23e22764959d4f223117232d5a46","archive":"local:d59295fe2cac3df3fbd21948e26aea8c390c23e22764959d4f223117232d5a46.pdf","cycle_quote":"","via":"sitemap","model":"claude-opus-5","reader":"2026.10.29.2",
+    "prompts": []
+  }
+}

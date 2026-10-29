@@ -1,0 +1,46 @@
+{
+  "unit_id": "194310",
+  "name": "Pace University",
+  "held": "2026-10-29",
+  "problems": [
+    "prompt 1 describes the application's own personal statement (250-650 words), and prompt 2 is quoted from a sentence about applicants with fewer than 32 college credits (transfer); neither is a Pace first-year prompt (held by hand, 2026-10-29)"
+  ],
+  "record": {
+    "unit_id": "194310",
+    "name": "Pace University",
+    "cycle": "2026-27",
+    "status": "published",
+    "source_url": "https://www.pace.edu/admission-and-aid/undergraduate-admission/how-apply",
+    "retrieved": "2026-10-29",
+    "sha256": "88bf68985bc96ca685caf4c24dff83d4d30141faf56e666f3e0cccd3d9d4ecd3",
+    "archive": "local:88bf68985bc96ca685caf4c24dff83d4d30141faf56e666f3e0cccd3d9d4ecd3.html",
+    "cycle_quote": "Follow the key dates and deadlines below for Fall 2027.",
+    "via": "picker",
+    "model": "claude-opus-5",
+    "reader": "2026.10.29.4",
+    "prompts": [
+      {
+        "id": "194310:2026-27:1",
+        "text": "One essay/personal statement, approximately 250-650 words in length, which will assist the Admission Committee in reviewing your application. The essay/personal statement you submit must consist solely of your own original work. You may write on a subject of your choice or one of the following subjects:",
+        "kind": "essay",
+        "limit": {
+          "kind": "words",
+          "max": 650,
+          "min": 250
+        },
+        "required": true,
+        "applies_to": "all",
+        "quote": "One essay/personal statement, approximately 250-650 words in length, which will assist the Admission Committee in reviewing your application."
+      },
+      {
+        "id": "194310:2026-27:2",
+        "text": "A Written Essay or Personal Statement (on a topic of your choice)",
+        "kind": "essay",
+        "limit": null,
+        "required": true,
+        "applies_to": "transfer",
+        "quote": "If you have completed fewer than 32 college credits since graduating from high school, please submit the following;"
+      }
+    ]
+  }
+}

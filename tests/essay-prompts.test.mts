@@ -22,7 +22,7 @@ import { checkRecord, normalizeForMatch } from "../scripts/lib/essay-prompts/che
 import { normalizeCycle, openCycle } from "../scripts/lib/essay-prompts/cycle.mts";
 import { buildPickerRequest, discoverEssayPage, essayLinkScore, isPlatformUrl, looksLikeEssayPage, rankLinks, startPages, wellKnownUrls, type DiscoverHttp } from "../scripts/lib/essay-prompts/discover.mts";
 import { promptProblems } from "../scripts/lib/essay-prompts/checks.mts";
-import { applyEssays, platformProblems, stripEssays } from "../scripts/lib/essay-prompts/merge.mts";
+import { applyEssays, lineageOf, placeEssaysLineage, platformProblems, stripEssays } from "../scripts/lib/essay-prompts/merge.mts";
 import { READ_MAX_TOKENS, READ_MODEL, READ_SCHEMA, READ_SYSTEM, ReadFailed, buildReadRequest, pageText, parseReadResponse, readEssayPage, toRecord, type ReadAnswer } from "../scripts/lib/essay-prompts/read.mts";
 import { prBody, releaseNote, type RunSummary } from "../scripts/lib/essay-prompts/report.mts";
 import { runCollege } from "../scripts/lib/essay-prompts/run.mts";
@@ -455,11 +455,17 @@ test("merge: sets the block before the later keys with one lineage record, repla
   assert.deepEqual(set.summary, { colleges: 2, published: 1, none: 1, refersToForm: 0, prompts: 3, removed: 0, stale: 0, unjoined: 0 });
   const [a, b] = set.schools;
   const keys = Object.keys(a);
-  const later = keys.findIndex((k) => ["directories", "lineage", "trends", "reported"].includes(k));
-  assert.equal(keys.indexOf("essays"), later - 1, "right before the first later key");
+  const later = keys.findIndex((k) => ["selectivity", "directories", "lineage", "trends", "reported"].includes(k));
+  assert.equal(keys.indexOf("essays"), later - 1, "right before the first later key (selectivity included: the tiers rebuild re-places it before directories)");
   assert.deepEqual(Object.keys(a.essays!), ["cycle", "status", "source_url", "retrieved", "prompts"]);
   assert.deepEqual(a.lineage!.essays, { source: "college-site", method: "extracted", year: "2026-27", url: "https://admissions.example.edu/essays", retrieved: TODAY, quote: "2026–2027 Essay Prompts" });
-  assert.deepEqual(Object.keys(a.lineage!).slice(0, -1), Object.keys(withLineage.lineage!), "other lineage records kept, in order");
+  assert.deepEqual(Object.keys(a.lineage!).filter((k) => k !== "essays"), Object.keys(withLineage.lineage!), "other lineage records kept, in order");
+  // The record sits before the college-reported records, where a re-merge of those leaves it (tests/merge-reported).
+  const lk = Object.keys(a.lineage!);
+  const firstReported = lk.findIndex((k) => k.startsWith("reported."));
+  if (firstReported >= 0) assert.ok(lk.indexOf("essays") < firstReported, `essays at ${lk.indexOf("essays")}, first reported.* at ${firstReported}`);
+  assert.deepEqual(Object.keys(placeEssaysLineage({ "links.visit": { source: "college-site" }, "reported.admissions.year": { source: "cds" }, "admissions.federal": { source: "ipeds-adm" } } as NonNullable<School["lineage"]>, lineageOf(recordFor(withLineage)))), ["links.visit", "essays", "reported.admissions.year", "admissions.federal"]);
+  assert.deepEqual(Object.keys(placeEssaysLineage({ "links.visit": { source: "college-site" } } as NonNullable<School["lineage"]>, lineageOf(recordFor(withLineage)))), ["links.visit", "essays"], "no reported records: at the end");
   assert.deepEqual(b.essays!.prompts, []);
   assert.ok(b.lineage, "a college without lineage gets one for the block");
 

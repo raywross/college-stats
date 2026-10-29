@@ -11,3 +11,4 @@ summary: "Read the 2026-27 essay and short-answer prompts from 44 colleges' own 
 
 ## Behind the scenes
 - Run 2026-10-29T17:15:16Z: 35 held for review (two by hand: a quote about the SAT essay, a description of the application's own essay), 121 with no essay page found, $3.61 spent.
+- The essays block and its lineage record now sit where the other merges leave them (before `selectivity`, and before the college-reported lineage records), so re-merging or rebuilding the dataset changes nothing. The first data run exposed this; the fix rides with the data.

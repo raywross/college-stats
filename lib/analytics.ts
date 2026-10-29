@@ -160,6 +160,12 @@ export interface AnalyticsEvents {
   essay_saved_version: { source: string };
   /** A comment left on a draft, by who left it. */
   essay_commented: { role: "student" | "guardian" | "counselor" };
+  /** A draft or a package downloaded or copied (specs/product/essays/workspace.md "The round trip"), by format. */
+  essay_exported: { format: "docx" | "txt" | "copy" };
+  /** A draft imported from a file or a paste, by source. */
+  essay_imported: { format: "uploaded" | "pasted" };
+  /** A college's package page opened, and whether any of its prompts has a draft started yet. */
+  essay_package_opened: { started: boolean };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
@@ -288,6 +294,9 @@ export const EVENTS = {
   essay_created: { properties: ["prompt_kind"], side: "client", why: "Essays: drafts started, by the prompt's kind" },
   essay_saved_version: { properties: ["source"], side: "client", why: "Essays: versions saved, by where the text came from" },
   essay_commented: { properties: ["role"], side: "client", why: "Essays: comments left on drafts, by student or guardian" },
+  essay_exported: { properties: ["format"], side: "client", why: "Essays: downloads and copies, by format" },
+  essay_imported: { properties: ["format"], side: "client", why: "Essays: imports, by file or paste" },
+  essay_package_opened: { properties: ["started"], side: "client", why: "Essays: how often the per-college package page is opened, before or after any writing has started" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

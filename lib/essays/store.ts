@@ -23,6 +23,7 @@ import { normalizeText } from "./normalize";
 import { KIND_LABEL, MAIN_REF, parsePromptRef, resolvePrompt, type EssayKind, type ResolvedPrompt } from "./prompts";
 import { promptLookup } from "./load";
 import { shouldVersion, ESSAY_STATUSES, type CommentAnchor, type EssayStatus, type VersionSource } from "./rows";
+import { textFromUpload, uploadKindOf } from "./docx";
 
 export type EssayActionResult = { ok: true } | { ok: false; message: string };
 
@@ -345,4 +346,75 @@ export async function deleteEssay(id: string): Promise<EssayActionResult> {
   if (!data?.length) return { ok: false, message: STUDENT_ONLY };
   refresh();
   return { ok: true };
+}
+
+/* ------------------------------------------------------------------ */
+/* U4: the round trip (workspace.md "The round trip", phase 1)         */
+/* ------------------------------------------------------------------ */
+
+/** A `.docx` upload's largest size this reads (no embedded media is expected in an essay). */
+const MAX_UPLOAD_BYTES = 10_000_000;
+
+export type ImportResult = { ok: true; versionId: string; count: number } | Fail;
+
+/**
+ * An import never overwrites the current text (workspace.md: "an import or a pull never overwrites the current
+ * text; it makes a version the student picks"): a new `essay_versions` row only, left for `restoreVersion` to bring
+ * across once the student compares it with what's there.
+ */
+async function insertImportedVersion(supabase: Supabase, id: string, text: string, source: "uploaded" | "pasted"): Promise<ImportResult> {
+  const current = await supabase.from("essays").select("id, count_kind").eq("id", id).maybeSingle();
+  if (current.error) return fail(current.error, "insertImportedVersion");
+  const row = current.data as { id: string; count_kind: CountKind } | null;
+  if (!row) return { ok: false, message: FAILED };
+  const count = countText(text, row.count_kind);
+  const { data, error } = await supabase.from("essay_versions").insert({ essay_id: id, body: text, count, source, label: null }).select("id").single();
+  if (error || !data) {
+    if (/row-level security/i.test(error?.message ?? "")) return { ok: false, message: STUDENT_ONLY };
+    return fail(error, "insertImportedVersion");
+  }
+  return { ok: true, versionId: (data as { id: string }).id, count };
+}
+
+/** A paste from the clipboard (Notes, a phone's Docs app) imported as a new version, source `pasted`. */
+export async function importPastedText(id: string, text: string): Promise<ImportResult> {
+  if (!isUuid(id) || typeof text !== "string") return { ok: false, message: FAILED };
+  const body = normalizeText(text);
+  if (!body.trim()) return { ok: false, message: "That paste has no text in it." };
+  if (body.length > MAX_BODY) return { ok: false, message: "That's longer than a draft can be here." };
+  const r = await ready();
+  if (!("supabase" in r)) return r;
+  const result = await insertImportedVersion(r.supabase, id, body, "pasted");
+  if (result.ok) refresh();
+  return result;
+}
+
+/**
+ * A `.docx` or `.txt` upload (the file picker on desktop; the share sheet on a phone), read server-side (`mammoth`
+ * for `.docx`, text only — a comment or a tracked change is dropped, which the import sheet says in its own copy)
+ * and imported as a new version, source `uploaded`. A form post: `essayId`, `file`.
+ */
+export async function importUploadedFile(form: FormData): Promise<ImportResult> {
+  const id = String(form.get("essayId") ?? "");
+  const file = form.get("file");
+  if (!isUuid(id)) return { ok: false, message: FAILED };
+  if (!(file instanceof File) || file.size === 0) return { ok: false, message: "Choose a file first." };
+  if (file.size > MAX_UPLOAD_BYTES) return { ok: false, message: "That file is too large." };
+  const kind = uploadKindOf(file.name, file.type);
+  if (kind === "unsupported") return { ok: false, message: "Upload a .docx or a .txt file." };
+  let text: string;
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    text = normalizeText(await textFromUpload(buffer, kind));
+  } catch (err) {
+    console.error(`essays: importUploadedFile failed to read the file: ${err instanceof Error ? err.message : String(err)}`);
+    return { ok: false, message: "That file couldn't be read. Try downloading it as a .docx or a .txt, or paste the text instead." };
+  }
+  if (!text.trim()) return { ok: false, message: "That file has no text in it." };
+  if (text.length > MAX_BODY) return { ok: false, message: "That's longer than a draft can be here." };
+  const r = await ready();
+  if (!("supabase" in r)) return r;
+  const result = await insertImportedVersion(r.supabase, id, text, "uploaded");
+  if (result.ok) refresh();
+  return result;
 }

@@ -31,6 +31,11 @@ import type { MoveCardProps } from "./types";
 const SUBSTEP_KINDS: ReadonlySet<TaskKind> = new Set(["supplement", "recommendation"]);
 const COMMON_APP_URL = "https://apply.commonapp.org";
 
+/** The package page for one college (U4 "Where it lives"), with the guardian's child when the viewer isn't the student. */
+function packageHref(unitId: string, person: string | null): string {
+  return person ? `/advisor/essays/package/${unitId}?for=${person}` : `/advisor/essays/package/${unitId}`;
+}
+
 export function SubmitCard({ task, ctx, onSkip, pending: skipPending }: MoveCardProps) {
   const item = ctx.items.find((i) => i.id === task.item_id) ?? null;
   const school = item ? ctx.schools[item.unit_id] : null;
@@ -108,6 +113,9 @@ export function SubmitCard({ task, ctx, onSkip, pending: skipPending }: MoveCard
         )}
         <Link href={essaysHref({ college: school.unit_id, person: personFor(ctx) })} className="text-xs font-semibold text-primary hover:underline">
           Essays for {school.name}
+        </Link>
+        <Link href={packageHref(school.unit_id, personFor(ctx))} className="text-xs font-semibold text-primary hover:underline">
+          The essay package
         </Link>
       </div>
 

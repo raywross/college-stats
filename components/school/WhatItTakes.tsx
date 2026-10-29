@@ -2,7 +2,9 @@ import type { School } from "@/lib/types";
 import type { Cited } from "@/lib/lineage";
 import type { FieldPath } from "@/lib/fields";
 import { Block } from "@/components/profile/Panel";
+import { EssayPrompts } from "@/components/school/EssayPrompts";
 import { coalitionSentence } from "@/lib/coalition";
+import { essayCardLine } from "@/lib/essays/summary";
 import { MetricLabel } from "@/components/ui/info-tip";
 import { POLICY_LABELS } from "@/lib/test-policy";
 import { cycleLabel, feeSentence, materialsLines, newestRegularDeadline, recommendationsSentence, roundLines, testPolicySentence } from "@/lib/common-app/display";
@@ -43,6 +45,7 @@ export function WhatItTakes({ school, cite, id }: { school: School; cite: (path:
   // Coalition application (specs/data-expansion/coalition-app.md "Display"): one line, only for a college on Scoir's list.
   const coalition = coalitionSentence(school);
   const reconciled = newestRegularDeadline(apply, school.reported?.admissions_logistics);
+  const essayLine = essayCardLine(school.essays);
 
   return (
     <Block id={id} title="What it takes to apply">
@@ -96,6 +99,12 @@ export function WhatItTakes({ school, cite, id }: { school: School; cite: (path:
           </p>
         )}
       </div>
+      {/* Essay prompts (specs/product/essays/prompts.md "Display"): the card line, opening a fold of every prompt. */}
+      {essayLine && (
+        <div className="mt-3 border-t pt-3">
+          <EssayPrompts school={school} cite={cite} />
+        </div>
+      )}
     </Block>
   );
 }

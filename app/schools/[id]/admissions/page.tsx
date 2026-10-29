@@ -40,6 +40,8 @@ import { transferCard } from "@/lib/cds/transfer-display";
 import { ApplyingBox } from "@/components/school/ApplyingBox";
 import { WhatItTakes } from "@/components/school/WhatItTakes";
 import { HowToApply } from "@/components/school/HowToApply";
+import { EssayPrompts } from "@/components/school/EssayPrompts";
+import { essayCardLine } from "@/lib/essays/summary";
 import { coalitionSentence } from "@/lib/coalition";
 import { HsPrepBox } from "@/components/school/HsPrepBox";
 import { applyingLines, feeWaiverSentence, showsHsPrep } from "@/lib/cds/application-logistics-display";
@@ -118,7 +120,11 @@ export default async function AdmissionsPage({ params }: Props) {
     { id: "standing", label: "Where you stand" },
     { id: "factors", label: "What they look at" },
     ...(transferCard(school) ? [{ id: "transfer", label: "Transferring in" }] : []),
-    ...(school.apply?.deadlines ? [{ id: "apply", label: "What it takes to apply" }] : coalitionSentence(school) ? [{ id: "apply", label: "How to apply" }] : []),
+    ...(school.apply?.deadlines
+      ? [{ id: "apply", label: "What it takes to apply" }]
+      : coalitionSentence(school) || essayCardLine(school.essays)
+        ? [{ id: "apply", label: "How to apply" }]
+        : []),
     ...(applyingLines(school).length ? [{ id: "applying", label: "Applying" }] : []),
     ...(showsHsPrep(school) ? [{ id: "hs-prep", label: "What you'll need in high school" }] : []),
     { id: "map", label: "Admissions map" },
@@ -277,9 +283,12 @@ export default async function AdmissionsPage({ params }: Props) {
             <WhatItTakes id="apply" school={school} cite={citeField} />
           </div>
         ) : (
-          coalitionSentence(school) && (
-            <div className="mt-4">
+          (coalitionSentence(school) || essayCardLine(school.essays)) && (
+            <div className="mt-4 space-y-4">
               <HowToApply id="apply" school={school} cite={citeField} />
+              {/* Essay prompts (specs/product/essays/prompts.md "Display"): a college with no Common App card,
+                  shown on its own, next to "How to apply". */}
+              <EssayPrompts school={school} cite={citeField} standalone id={coalitionSentence(school) ? undefined : "apply"} />
             </div>
           )
         )}

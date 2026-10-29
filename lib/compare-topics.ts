@@ -22,6 +22,7 @@ import { compareClassesUnder20 } from "./cds/academics-display.ts";
 import { compareTransferAdmitRate } from "./cds/transfer-display.ts";
 import { compareFratPct, compareGreekCouncils, compareSorPct } from "./cds/greek-display.ts";
 import { compareDeadlines, compareGapYear } from "./cds/application-logistics-display.ts";
+import { essayCardLine } from "./essays/summary.ts";
 import { compareTopicOf, type CompareTopicKey } from "./compare-routes.ts";
 
 export * from "./compare-routes.ts";
@@ -45,6 +46,13 @@ export interface CompareTableGroup {
 
 /** Compare rows from CDS C14–C18, hidden when no compared college has the data (cds-application-logistics.md). */
 export const LOGISTICS_ROW_LABELS: ReadonlySet<string> = new Set(["Deadlines & deposit", "Gap year allowed"]);
+
+/**
+ * The opposite rule, for rows the brief said to leave out rather than show half-blank: hidden unless every
+ * compared college has something to say (prompts.md "Display": "an Essays row... only when every compared
+ * college has a block; else the row is left out").
+ */
+export const ALL_OR_NOTHING_ROW_LABELS: ReadonlySet<string> = new Set(["Essays"]);
 
 function opt<T>(v: T | null, f: (v: T) => string): string | null {
   return v === null ? null : f(v);
@@ -140,6 +148,9 @@ const ADMISSIONS_ROWS = (
       s.admissions.accepts_ap_credit == null ? null : s.admissions.accepts_ap_credit ? "Yes" : "Not listed"],
     // CDS D2 (specs/data-expansion/cds-transfer.md): blank, never 0, without a transfer funnel.
     ["Transfer acceptance rate", "transfer-admission", "reported.transfer.admit_rate", compareTransferAdmitRate],
+    // Essays build, U2 (specs/product/essays/prompts.md "Display"): only when every compared college has an
+    // `essays` block (ALL_OR_NOTHING_ROW_LABELS), else the row is left out rather than showing "–" for the rest.
+    ["Essays", "supplemental-essay", "essays.prompts", (s: School) => essayCardLine(s.essays)],
   ] as const
 ) satisfies readonly CompareRow[];
 

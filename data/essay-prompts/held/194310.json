@@ -1,0 +1,37 @@
+{
+  "unit_id": "194310",
+  "name": "Pace University",
+  "held": "2026-10-29",
+  "problems": [
+    "prompt 1 describes the application's own personal statement (250-650 words), not a Pace prompt (held by hand, 2026-10-29)"
+  ],
+  "record": {
+    "unit_id": "194310",
+    "name": "Pace University",
+    "cycle": "2026-27",
+    "status": "published",
+    "source_url": "https://www.pace.edu/admission-and-aid/undergraduate-admission/how-apply",
+    "retrieved": "2026-10-29",
+    "sha256": "7954668d74d7eb1f951fbe4b4853224ffbb57af28e68b15be3c39a79e751a862",
+    "archive": "local:7954668d74d7eb1f951fbe4b4853224ffbb57af28e68b15be3c39a79e751a862.html",
+    "cycle_quote": "Follow the key dates and deadlines below for Fall 2027.",
+    "via": "picker",
+    "model": "claude-opus-5",
+    "reader": "2026.10.29.3",
+    "prompts": [
+      {
+        "id": "194310:2026-27:1",
+        "text": "One essay/personal statement, approximately 250-650 words in length, which will assist the Admission Committee in reviewing your application. The essay/personal statement you submit must consist solely of your own original work. You may write on a subject of your choice or one of the following subjects:",
+        "kind": "essay",
+        "limit": {
+          "kind": "words",
+          "max": 650,
+          "min": 250
+        },
+        "required": true,
+        "applies_to": "all",
+        "quote": "One essay/personal statement, approximately 250-650 words in length, which will assist the Admission Committee in reviewing your application."
+      }
+    ]
+  }
+}

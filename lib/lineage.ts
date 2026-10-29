@@ -80,9 +80,25 @@ export type AnyCited = Cited<AnySourceKey, string>;
 
 /**
  * Identity values found on the college's own site (a visit link, a footer account, its icon; specs/school-identity/):
- * they come from its homepage or admissions page, never from the admissions document `reported.admissions` names.
+ * they come from its homepage or admissions page, never from the admissions document `reported.admissions` names. The
+ * essay prompts (`essays`, `essays.*`) come from the college's essay page, likewise never from that document.
  */
-const IDENTITY_PATH = /^(links|social|brand)\./;
+const IDENTITY_PATH = /^((links|social|brand)\.|essays(\.|$))/;
+
+/**
+ * Blocks cited by one lineage record at the block's own path (specs/product/essays/prompts.md "Store"): every value
+ * under `essays.` was read from the one essay page, so `lineage.essays` cites `essays.cycle`, `essays.prompts`, and the
+ * rest. A record at the exact path still wins.
+ */
+const BLOCK_LINEAGE: readonly FieldPath[] = ["essays"];
+
+/** The lineage record behind a path: its own, else its block's (BLOCK_LINEAGE). */
+function recordFor(school: School | undefined, path: FieldPath): LineageRecord | undefined {
+  const own = school?.lineage?.[path];
+  if (own || !school?.lineage) return own;
+  const block = BLOCK_LINEAGE.find((b) => path.startsWith(`${b}.`));
+  return block ? school.lineage[block] : undefined;
+}
 
 /** The funnel paths `applyNewest` may replace, keyed to their `admissions.federal` counterparts. */
 const FEDERAL_COUNTERPART: Partial<Record<FieldPath, keyof FederalAdmissions>> = {
@@ -252,7 +268,7 @@ function sourceFor(path: FieldPath, school: School | undefined, meta: DatasetMet
   const def = FIELDS[path];
   const curated = curatedCitation(path, school);
   if (curated) return curated.source;
-  const rec = school?.lineage?.[path];
+  const rec = recordFor(school, path);
   const key = rec?.source ?? def.source;
   const info = sourceInfo(meta, key);
   if (key === "cds" && school?.cds) {
@@ -343,7 +359,7 @@ const PRESENT_ONLY: ReadonlySet<SourceKey> = new Set<SourceKey>(["common-app", "
 /** Distinct sources behind a value: a derived value cites its inputs, recursively. */
 function underlyingSources(path: FieldPath, school: School | undefined, meta: DatasetMeta, seen = new Set<string>()): CitedSource[] {
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
-  const overridden = !!school?.lineage?.[path] || !!curatedCitation(path, school);
+  const overridden = !!recordFor(school, path) || !!curatedCitation(path, school);
   // A college-reported field or state law this college has no value for (no lineage record) has nothing to cite.
   if (school && !overridden && PER_COLLEGE_ONLY.has(def.source) && !("derived" in def && def.derived)) return [];
   if (school && !overridden && PRESENT_ONLY.has(def.source) && !("derived" in def && def.derived) && valueAt(school, path) == null) return [];
@@ -393,7 +409,7 @@ function gpaEstimateInputs(school: School): FieldPath[] {
 
 /** True when a value and everything it's calculated from use their fields' default sources. */
 function usesDefaults(path: FieldPath, school: School | undefined, seen = new Set<string>()): boolean {
-  if (school?.lineage?.[path]) return false;
+  if (recordFor(school, path)) return false;
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
   if (!("derived" in def) || !def.derived || seen.has(path)) return true;
   seen.add(path);
@@ -403,7 +419,7 @@ function usesDefaults(path: FieldPath, school: School | undefined, seen = new Se
 /** Full citation for one value of one school (or the dataset default without a school). */
 export function lineageFor(path: FieldPath, school: School | undefined, meta: DatasetMeta): Cited {
   const def = FIELDS[path] as (typeof FIELDS)[FieldPath];
-  const rec = school?.lineage?.[path];
+  const rec = recordFor(school, path);
   const derived = "derived" in def ? def.derived : undefined;
   const inputs = derived ? underlyingSources(path, school, meta) : undefined;
   const primary = derived && "primary" in derived ? derived.primary : undefined;
@@ -648,11 +664,44 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     if (rec?.source !== "policy-page" || !rec.retrieved || !rec.year) errors.push(`${where}: ${path} must cite source "policy-page" with the date checked`);
   }
   errors.push(...mergedLaterProblems(school, meta, where));
+  errors.push(...essaysProblems(school, where));
   errors.push(...validateNewest(school, where));
   errors.push(...validateNewestGroups(school, where, meta));
   errors.push(...validateAdmissionProfile(school, where));
   errors.push(...validateTests(school, where));
   errors.push(...financialAidProblems(school));
+  return errors;
+}
+
+/**
+ * The essay prompts block (specs/product/essays/prompts.md "Store"; scripts/lib/essay-prompts/merge.mts): one
+ * `extracted` record at `lineage.essays` naming the page, its cycle as the year, the day read, and the page's own cycle
+ * line; no record at any path under it; prompts only when published, each id "{unit_id}:{cycle}:{n}" in page order.
+ */
+function essaysProblems(school: School, where: string): string[] {
+  const block = school.essays;
+  const errors: string[] = [];
+  for (const path of Object.keys(school.lineage ?? {})) {
+    if (path.startsWith("essays.")) errors.push(`${where}: ${path} has its own lineage record; the block's record at lineage.essays cites it`);
+  }
+  if (!block) return errors;
+  // `essays` itself is registered (for its lineage record), so a stray key under it would resolve to it: list them.
+  for (const key of Object.keys(block)) {
+    if (!["cycle", "status", "source_url", "retrieved", "prompts"].includes(key)) errors.push(`${where}: "essays.${key}" isn't a field of the essays block`);
+  }
+  const rec = school.lineage?.essays;
+  if (!rec) return [...errors, `${where}: essays is stored without a lineage record at lineage.essays`];
+  if (rec.source !== "college-site" || rec.method !== "extracted") errors.push(`${where}: lineage.essays must cite source "college-site" with method "extracted"`);
+  if (rec.year !== block.cycle) errors.push(`${where}: lineage.essays year ${JSON.stringify(rec.year ?? null)} isn't the block's cycle ${block.cycle}`);
+  if (rec.url !== block.source_url) errors.push(`${where}: lineage.essays url isn't the block's source_url`);
+  if (rec.retrieved !== block.retrieved) errors.push(`${where}: lineage.essays retrieved isn't the block's retrieved`);
+  if (block.status !== "published" && block.prompts.length) errors.push(`${where}: essays.status is ${block.status} but the block lists prompts`);
+  if (block.status === "published" && !block.prompts.length) errors.push(`${where}: essays.status is published but the block lists no prompts`);
+  block.prompts.forEach((p, i) => {
+    const id = `${school.unit_id}:${block.cycle}:${i + 1}`;
+    if (p.id !== id) errors.push(`${where}: essays.prompts[${i}] id ${p.id} should be ${id}`);
+    if (!p.text?.trim() || !p.quote?.trim()) errors.push(`${where}: essays.prompts[${i}] needs its text and quote`);
+  });
   return errors;
 }
 

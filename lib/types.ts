@@ -406,6 +406,12 @@ export interface School {
   apply?: SchoolApply;
   /** Coalition for College membership and whether it takes the Coalition application through Scoir (specs/data-expansion/coalition-app.md); present only on members. */
   coalition?: SchoolCoalition;
+  /**
+   * The supplemental essay and short-answer prompts the college publishes on its own site for the open cycle
+   * (specs/product/essays/prompts.md "Store"; scripts/lib/essay-prompts/merge.mts): present only on colleges read. One
+   * lineage record at `lineage.essays` (the page, its cycle line, the day read) cites every `essays.*` path.
+   */
+  essays?: SchoolEssays;
 }
 
 /**
@@ -1772,4 +1778,65 @@ export interface SearchFilters {
   showEstimates?: boolean;
   sortBy?: SortKey;
   sortDir?: "asc" | "desc";
+}
+
+/* ------------------------------------------------------------------ */
+/* Essay prompts (specs/product/essays/prompts.md)                     */
+/* ------------------------------------------------------------------ */
+
+/** One prompt as the college's (or platform's) page prints it. */
+export interface EssayPrompt {
+  /** "{unit_id}:{cycle}:{n}", n from 1 in page order; a platform's: "platform:common_app:{n}", "platform:coalition:{n}". */
+  id: string;
+  /** The prompt, verbatim. */
+  text: string;
+  /** Read from the prompt's own words, never inferred: `why_us` only when it asks why this college or program. */
+  kind: "essay" | "short_answer" | "why_us" | "program" | "activity" | "optional" | "other";
+  limit: { kind: "words" | "characters"; max: number; min?: number } | null;
+  /** From the page's own word (required, optional, "if you wish"). */
+  required: boolean;
+  applies_to: "all" | "transfer" | "international" | { program: string };
+  /** The sentence the limit and requirement were read from. */
+  quote: string;
+}
+
+/** `school.essays`: what one college's essay page says for one cycle. */
+export interface SchoolEssays {
+  /** The cycle as the page states it, normalized: "2026-27". */
+  cycle: string;
+  /** none: the page says there is no supplement; refers_to_form: it points to the application ("see the Common App"). */
+  status: "published" | "none" | "refers_to_form";
+  source_url: string;
+  /** ISO date the page was read. */
+  retrieved: string;
+  /** Empty unless status is "published". */
+  prompts: EssayPrompt[];
+}
+
+/** One platform's own prompts in data/reference/platform-prompts.json, kept by hand from its public page. */
+export interface PlatformPrompts {
+  /** The cycle, normalized: "2026-27". */
+  cycle: string;
+  /** The page's own line the cycle was read from, or null when the page names none (then `cycle_note` says why). */
+  cycle_quote: string | null;
+  cycle_note?: string;
+  /** The link the site shows: the organization's homepage (Common App's terms allow linking only there). */
+  source_url: string;
+  /** The page the prompts were read from (kept for the record, never linked). */
+  read_from: string;
+  /** ISO date the page was read. */
+  retrieved: string;
+  /** The page's instruction for choosing among the prompts, verbatim, or null when it prints none. */
+  instructions: string | null;
+  /** The length the page asks for, with its sentence; null when the page prints none (then `limit_note` says so). */
+  limit: EssayPrompt["limit"];
+  limit_quote: string | null;
+  limit_note?: string;
+  prompts: EssayPrompt[];
+}
+
+/** data/reference/platform-prompts.json. */
+export interface PlatformPromptsFile {
+  common_app: PlatformPrompts;
+  coalition: PlatformPrompts;
 }

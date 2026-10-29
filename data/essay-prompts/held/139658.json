@@ -2,7 +2,7 @@
   "problems": [
     "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
   ],
-  "record": {"unit_id":"139658","name":"Emory University","cycle":"2026-27","status":"refers_to_form","source_url":"https://apply.emory.edu/apply/first-year","retrieved":"2026-10-29","sha256":"8cbba5b204cc7bdf702079e79934240183e88ea4c33350cb25f96965d3abafcb","archive":"local:8cbba5b204cc7bdf702079e79934240183e88ea4c33350cb25f96965d3abafcb.html","cycle_quote":"NOTE: Emory is test optional for the 2026–2027 application cycle.","status_quote":"College Questions: Answer the two additional short answer questions specific to Emory's application.","via":"picker","model":"claude-opus-5","reader":"2026.10.29.3",
+  "record": {"unit_id":"139658","name":"Emory University","cycle":"2026-27","status":"refers_to_form","source_url":"https://apply.emory.edu/apply/first-year","retrieved":"2026-10-29","sha256":"8cbba5b204cc7bdf702079e79934240183e88ea4c33350cb25f96965d3abafcb","archive":"local:8cbba5b204cc7bdf702079e79934240183e88ea4c33350cb25f96965d3abafcb.html","cycle_quote":"NOTE: Emory is test optional for the 2026–2027 application cycle.","status_quote":"College Questions: Answer the two additional short answer questions specific to Emory's application.","via":"apply-page-link","model":"claude-opus-5","reader":"2026.10.29.4",
     "prompts": []
   }
 }

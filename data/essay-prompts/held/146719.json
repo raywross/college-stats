@@ -1,0 +1,8 @@
+{ "unit_id": "146719", "name": "Loyola University Chicago", "held": "2026-10-29",
+  "problems": [
+    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
+  ],
+  "record": {"unit_id":"146719","name":"Loyola University Chicago","cycle":"2026-27","status":"refers_to_form","source_url":"https://www.luc.edu/undergrad/admissions/first-yearstudents/","retrieved":"2026-10-29","sha256":"19ba6d5e53371c8f9690ce7407bd36c494ad58156523dbe05f9bc43bee560571","archive":"local:19ba6d5e53371c8f9690ce7407bd36c494ad58156523dbe05f9bc43bee560571.html","cycle_quote":"","cycle_assumed":true,"status_quote":"Submit the Common Application or Loyola’s online application .","via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
+    "prompts": []
+  }
+}

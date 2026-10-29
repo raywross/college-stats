@@ -1,0 +1,8 @@
+{ "unit_id": "134097", "name": "Florida State University", "held": "2026-10-29",
+  "problems": [
+    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
+  ],
+  "record": {"unit_id":"134097","name":"Florida State University","cycle":"2026-27","status":"refers_to_form","source_url":"https://admissions.fsu.edu/first-year/apply","retrieved":"2026-10-29","sha256":"0832cfa8254db7c907c63806fc0938b8d5256a0dd9cb9bea2f276c2d86544186","archive":"local:0832cfa8254db7c907c63806fc0938b8d5256a0dd9cb9bea2f276c2d86544186.html","cycle_quote":"","cycle_assumed":true,"status_quote":"Upload your essay and resume/list of activities.","via":"apply-page-link","model":"claude-opus-5","reader":"2026.10.29.4",
+    "prompts": []
+  }
+}

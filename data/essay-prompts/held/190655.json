@@ -1,0 +1,8 @@
+{ "unit_id": "190655", "name": "CUNY New York City College of Technology", "held": "2026-10-29",
+  "problems": [
+    "status none without the page's sentence that says so"
+  ],
+  "record": {"unit_id":"190655","name":"CUNY New York City College of Technology","cycle":"2026-27","status":"none","source_url":"https://www.citytech.cuny.edu/admissions/docs/Freshman_Student_Checklist.pdf","retrieved":"2026-10-29","sha256":"8bf1d5b633f963fcaba4c38527aea68a8d8c96ccd0b3002e8b170bd328d277b6","archive":"local:8bf1d5b633f963fcaba4c38527aea68a8d8c96ccd0b3002e8b170bd328d277b6.pdf","cycle_quote":"","cycle_assumed":true,"via":"apply-page-link","model":"claude-opus-5","reader":"2026.10.29.4",
+    "prompts": []
+  }
+}

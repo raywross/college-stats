@@ -65,6 +65,8 @@ import { loadIdentityInputs } from "./lib/identity-sync.mts";
 import { writeAliasTable } from "./lib/aliases-sync.mts";
 import { addCommonAppMeta, applyCommonApp, loadCommonApp, policyCounts, summaryLine, type CommonAppSummary } from "./lib/common-app/merge.mts";
 import { addCoalitionMeta, applyCoalition, readCoalition, summaryLine as coalitionSummaryLine } from "./lib/coalition/merge.mts";
+import { applyEssays, summaryLine as essaysSummaryLine } from "./lib/essay-prompts/merge.mts";
+import { essayPaths, readEssayRecords } from "./lib/essay-prompts/store.mts";
 import { runSiteProbe } from "./lib/site-probe.mts";
 import { fetchOpenAdmissionFile } from "./lib/open-admission.mts";
 import { applyOpenAdmission, openAdmissionMeta } from "../lib/open-admission.ts";
@@ -982,6 +984,14 @@ async function main() {
     addCoalitionMeta(meta, coalitionFile);
     console.log(`  Coalition: ${coalitionSummaryLine(applied.summary)}`);
   } else console.log("  Coalition: no data/coalition/members.json yet; skipped");
+  // Essay prompts (specs/product/essays/prompts.md "Store"): the committed records, applied as `npm run
+  // merge-essay-prompts` does. The page is the college's own site (source college-site), so meta needs nothing new.
+  const essayRecords = readEssayRecords(essayPaths(ROOT).records);
+  if (essayRecords.length) {
+    const applied = applyEssays(schools, essayRecords, new Date().toISOString().slice(0, 10));
+    schools.splice(0, schools.length, ...applied.schools);
+    console.log(`  Essay prompts: ${essaysSummaryLine(applied.summary)}`);
+  } else console.log("  Essay prompts: no data/essay-prompts/records/ yet; skipped");
   let reportedMerged = 0;
   // CDS records (data/cds-records/, round 3) merge in the same call, after buildMeta (the newest groups need meta's
   // federal years); their detail tables join the sync's below.

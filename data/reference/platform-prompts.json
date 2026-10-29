@@ -1,0 +1,41 @@
+{
+  "common_app": {
+    "cycle": "2026-27",
+    "cycle_quote": "Here is the full set of essay prompts for 2026–2027",
+    "source_url": "https://www.commonapp.org/",
+    "read_from": "https://www.commonapp.org/apply/essay-prompts",
+    "retrieved": "2026-10-28",
+    "instructions": null,
+    "limit": null,
+    "limit_quote": null,
+    "limit_note": "The prompts page (and Common App's 2026–2027 announcement post) prints no length. The personal essay's length is set inside the application, which we don't read; a cited length needs a public Common App page that states it.",
+    "prompts": [
+      { "id": "platform:common_app:1", "text": "Some students have a background, identity, interest, or talent that is so meaningful they believe their application would be incomplete without it. If this sounds like you, then please share your story.", "kind": "essay", "limit": null, "required": false, "applies_to": "all", "quote": "Here is the full set of essay prompts for 2026–2027" },
+      { "id": "platform:common_app:2", "text": "The lessons we take from obstacles we encounter can be fundamental to later success. Recount a time when you faced a challenge, setback, or failure. How did it affect you, and what did you learn from the experience?", "kind": "essay", "limit": null, "required": false, "applies_to": "all", "quote": "Here is the full set of essay prompts for 2026–2027" },
+      { "id": "platform:common_app:3", "text": "Reflect on a time when you questioned or challenged a belief or idea. What prompted your thinking? What was the outcome?", "kind": "essay", "limit": null, "required": false, "applies_to": "all", "quote": "Here is the full set of essay prompts for 2026–2027" },
+      { "id": "platform:common_app:4", "text": "Reflect on something that someone has done for you that has made you happy or thankful in a surprising way. How has this gratitude affected or motivated you?", "kind": "essay", "limit": null, "required": false, "applies_to": "all", "quote": "Here is the full set of essay prompts for 2026–2027" },
+      { "id": "platform:common_app:5", "text": "Discuss an accomplishment, event, or realization that sparked a period of personal growth and a new understanding of yourself or others.", "kind": "essay", "limit": null, "required": false, "applies_to": "all", "quote": "Here is the full set of essay prompts for 2026–2027" },
+      { "id": "platform:common_app:6", "text": "Describe a topic, idea, or concept you find so engaging that it makes you lose all track of time. Why does it captivate you? What or who do you turn to when you want to learn more?", "kind": "essay", "limit": null, "required": false, "applies_to": "all", "quote": "Here is the full set of essay prompts for 2026–2027" },
+      { "id": "platform:common_app:7", "text": "Share an essay on any topic of your choice. It can be one you've already written, one that responds to a different prompt, or one of your own design.", "kind": "essay", "limit": null, "required": false, "applies_to": "all", "quote": "Here is the full set of essay prompts for 2026–2027" }
+    ]
+  },
+  "coalition": {
+    "cycle": "2026-27",
+    "cycle_quote": null,
+    "cycle_note": "The Coalition's essay page names no year; read on 2026-10-28, while the 2026-27 cycle was open.",
+    "source_url": "https://www.coalitionforcollegeaccess.org/",
+    "read_from": "https://www.coalitionforcollegeaccess.org/essays",
+    "retrieved": "2026-10-28",
+    "instructions": "Select a prompt from the list below, and share an essay of about 500-650 words that will help admissions counselors get to know you.",
+    "limit": { "kind": "words", "max": 650, "min": 500 },
+    "limit_quote": "Select a prompt from the list below, and share an essay of about 500-650 words that will help admissions counselors get to know you.",
+    "prompts": [
+      { "id": "platform:coalition:1", "text": "Tell a story from your life, describing an experience that either demonstrates your character or helped to shape it.", "kind": "essay", "limit": { "kind": "words", "max": 650, "min": 500 }, "required": false, "applies_to": "all", "quote": "Select a prompt from the list below, and share an essay of about 500-650 words that will help admissions counselors get to know you." },
+      { "id": "platform:coalition:2", "text": "What interests or excites you? How does it shape who you are now or who you might become in the future?", "kind": "essay", "limit": { "kind": "words", "max": 650, "min": 500 }, "required": false, "applies_to": "all", "quote": "Select a prompt from the list below, and share an essay of about 500-650 words that will help admissions counselors get to know you." },
+      { "id": "platform:coalition:3", "text": "Describe a time when you had a positive impact on others. What were the challenges? What were the rewards?", "kind": "essay", "limit": { "kind": "words", "max": 650, "min": 500 }, "required": false, "applies_to": "all", "quote": "Select a prompt from the list below, and share an essay of about 500-650 words that will help admissions counselors get to know you." },
+      { "id": "platform:coalition:4", "text": "Has there been a time when an idea or belief of yours was questioned? How did you respond? What did you learn?", "kind": "essay", "limit": { "kind": "words", "max": 650, "min": 500 }, "required": false, "applies_to": "all", "quote": "Select a prompt from the list below, and share an essay of about 500-650 words that will help admissions counselors get to know you." },
+      { "id": "platform:coalition:5", "text": "What success have you achieved or obstacle have you faced? What advice would you give a sibling or friend going through a similar experience?", "kind": "essay", "limit": { "kind": "words", "max": 650, "min": 500 }, "required": false, "applies_to": "all", "quote": "Select a prompt from the list below, and share an essay of about 500-650 words that will help admissions counselors get to know you." },
+      { "id": "platform:coalition:6", "text": "Submit an essay on a topic of your choice.", "kind": "essay", "limit": { "kind": "words", "max": 650, "min": 500 }, "required": false, "applies_to": "all", "quote": "Select a prompt from the list below, and share an essay of about 500-650 words that will help admissions counselors get to know you." }
+    ]
+  }
+}

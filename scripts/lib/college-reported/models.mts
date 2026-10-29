@@ -60,6 +60,8 @@ export const MODEL_PRICES: Record<string, ModelPrice> = {
   "claude-haiku-4-5": rates(1, 5, 0.1),
   "claude-sonnet-5": rates(2, 10, 0.2),
   "claude-opus-5-5": rates(4, 20, 0.2),
+  // The essay prompts reader (scripts/lib/essay-prompts/read.mts): Opus 5 at $5/$25, cache reads $0.50 (0.1×).
+  "claude-opus-5": rates(5, 25, 0.5),
 };
 
 /** Web search is billed per search on top of tokens ($10 per 1,000); assumed not discounted in batches. Fetch is free. */

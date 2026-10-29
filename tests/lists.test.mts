@@ -8,6 +8,7 @@ import {
   applyOutcome,
   balanceLine,
   deadlineFor,
+  gridDateInCycle,
   parseCsv,
   setStatus,
   toCsv,
@@ -83,6 +84,37 @@ test("deadlineFor: prefers the college's own reported date for the chosen round"
   assert.deepEqual(deadlineFor("ed", logistics, profile, 2026, { text: null, date: null }), { date: "2026-11-01", text: null, source: "reported" });
   assert.deepEqual(deadlineFor("ed2", logistics, profile, 2026, { text: null, date: null }), { date: "2027-01-01", text: null, source: "reported" });
   assert.deepEqual(deadlineFor("ea", logistics, profile, 2026, { text: null, date: null }), { date: "2026-11-15", text: null, source: "reported" });
+});
+
+test("gridDateInCycle: a grid date moves into the student's cycle by whole years; same or unknown cycle leaves it as printed", () => {
+  // The 2026-27 grid read by a junior (cycle start 2027): one year on, month and day kept, on both sides of New Year.
+  assert.equal(gridDateInCycle("2026-11-01", "2026-27", 2027), "2027-11-01");
+  assert.equal(gridDateInCycle("2027-01-05", "2026-27", 2027), "2028-01-05");
+  // A sophomore: two years on.
+  assert.equal(gridDateInCycle("2026-11-01", "2026-27", 2028), "2028-11-01");
+  // The student's own cycle, or a grid newer than the student (a senior still on last year's cycle): as printed.
+  assert.equal(gridDateInCycle("2026-11-01", "2026-27", 2026), "2026-11-01");
+  assert.equal(gridDateInCycle("2027-11-01", "2027-28", 2026), "2027-11-01");
+  // No readable grid cycle, no student cycle, or a malformed date: as printed, never a throw.
+  assert.equal(gridDateInCycle("2026-11-01", null, 2027), "2026-11-01");
+  assert.equal(gridDateInCycle("2026-11-01", "Fall 2026", 2027), "2026-11-01");
+  assert.equal(gridDateInCycle("2026-11-01", "2026-27", null), "2026-11-01");
+  assert.equal(gridDateInCycle("rolling", "2026-27", 2027), "rolling");
+  // The en dash the site prints cycles with reads the same as the hyphen the grid file uses.
+  assert.equal(gridDateInCycle("2026-11-01", "2026–27", 2027), "2027-11-01");
+  // Feb 29 into a common year lands on Feb 28 rather than an impossible date.
+  assert.equal(gridDateInCycle("2028-02-29", "2027-28", 2028), "2029-02-28");
+});
+
+test("deadlineFor: the grid's date lands in the student's cycle, not the grid's (a junior's list board showed the current seniors' deadline)", () => {
+  const apply = { deadlines: { ed: "2026-11-01", ed2: "2027-01-01", ea: null, ea2: null, rea: null, regular: "2027-01-05" as const }, common_app: { cycle: "2026-27" } };
+  // A junior (class of 2028): the 2026-27 grid's dates a year on.
+  assert.deepEqual(deadlineFor("ed", null, null, 2027, { text: null, date: null }, apply), { date: "2027-11-01", text: null, source: "common-app" });
+  assert.deepEqual(deadlineFor("rd", null, null, 2027, { text: null, date: null }, apply), { date: "2028-01-05", text: null, source: "common-app" });
+  // A senior in the grid's own cycle: unchanged.
+  assert.deepEqual(deadlineFor("ed", null, null, 2026, { text: null, date: null }, apply), { date: "2026-11-01", text: null, source: "common-app" });
+  // The old call shape (deadlines only, no cycle): as printed, since there's nothing to shift from.
+  assert.deepEqual(deadlineFor("ed", null, null, 2027, { text: null, date: null }, { deadlines: apply.deadlines }), { date: "2026-11-01", text: null, source: "common-app" });
 });
 
 test("deadlineFor: falls back to the student's own override, then null", () => {

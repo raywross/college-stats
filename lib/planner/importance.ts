@@ -264,10 +264,19 @@ const APPLICATION_KINDS: ReadonlySet<PlanTask["kind"]> = new Set([
 ]);
 const SENIOR_FALL_RANK = seasonRank("senior_fall");
 
+/** A piece of an application: one of the college generator's kinds, or any row the college generator wrote. */
+export function isApplicationPiece(task: Pick<ImportanceTask, "kind" | "source">): boolean {
+  return APPLICATION_KINDS.has(task.kind) || task.source === "college";
+}
+
+/** Whether a season comes before senior fall, when applications begin ("unknown" doesn't: no class year, no gate). */
+export function beforeSeniorFall(season: Season): boolean {
+  return season !== "unknown" && seasonRank(season) < SENIOR_FALL_RANK;
+}
+
 /** Whether an undated application piece is showing before its time (senior fall). */
 export function beforeApplications(task: ImportanceTask, season: Season): boolean {
-  const applicationPiece = APPLICATION_KINDS.has(task.kind) || task.source === "college";
-  return applicationPiece && taskDate(task) === null && seasonRank(season) < SENIOR_FALL_RANK;
+  return isApplicationPiece(task) && taskDate(task) === null && beforeSeniorFall(season);
 }
 
 /**

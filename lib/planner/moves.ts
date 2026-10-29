@@ -23,7 +23,7 @@
  *   in Now.
  * Pure; safe in client components.
  */
-import { compareByImportance, importance, type ImportanceFacts } from "./importance.ts";
+import { beforeSeniorFall, compareByImportance, importance, isApplicationPiece, type ImportanceFacts } from "./importance.ts";
 import { addDays } from "./stage.ts";
 import { yourPart } from "./summary.ts";
 import { compareTasks, dayLabel, isOpen, taskDate } from "./tasks.ts";
@@ -59,8 +59,16 @@ export function taskSeason(t: Pick<PlanTask, "season" | "due_on" | "window_start
  * The season gate (now.md "Ranking" 1; review note 6): a move is the student's now when its season is the current one
  * or an earlier one (the generators only emit earlier entries that carry), or it is dated within SOON_DAYS ("Common
  * App opens Aug 1" shows from Jul 18). A later season's move is otherwise invisible: not in Now, not in a fold.
+ *
+ * A piece of an application (`isApplicationPiece`: a college's apply date and what follows it) is never eligible
+ * before senior fall, whatever its date says: a junior doesn't apply this fall. Its season comes from its date alone
+ * (the college generator sets none), so a wrong date would otherwise read as this season's move, or take the lead
+ * (owner, 2026-10-29: a junior saw three "Apply" cards, the grid's dates for the current seniors; the dates are fixed
+ * in the generator, and this keeps a wrong one from ever ranking a junior's senior-year deadline into Now). The same
+ * rule already zeroes the undated pieces (importance.ts beforeApplications).
  */
 export function eligibleNow(t: PlanTask, opts: { season: Season; gradYear: number | null; today: string }): boolean {
+  if (beforeSeniorFall(opts.season) && isApplicationPiece(t)) return false;
   if (seasonRank(taskSeason(t, opts.gradYear, opts.season)) <= seasonRank(opts.season)) return true;
   const d = taskDate(t);
   return d !== null && d <= addDays(opts.today, SOON_DAYS);

@@ -31,8 +31,10 @@ import { cfpView, isEnteredOffer } from "@/lib/planner/offers";
 import type { PlanOffer } from "@/lib/planner/types";
 
 /**
- * The cycle a college's regular-round dates belong to: its logistics block names the entering class ("Fall 2027"),
- * whose applications go out in the fall before (the cycle starting in 2026). Without one, the cycle under way.
+ * The cycle a college's regular-round dates belong to when the list has no plan to say whose cycle: its logistics
+ * block names the entering class ("Fall 2027"), whose applications go out in the fall before (the cycle starting in
+ * 2026). Without one, the cycle under way. A plan knows the student's own cycle (PlanSchool.cycleStartYear), which
+ * wins: a junior's Deadline column then shows next fall's dates, the same ones the plan's apply task carries.
  */
 function cycleStartYear(entering: string | undefined): number {
   return cycleStartFromEntering(entering) ?? cycleStartOf(currentCycle(todayIso()))!;
@@ -170,11 +172,12 @@ export async function ListPage({
     const school = getSchoolById(item.unit_id);
     const logistics = school?.reported?.admissions_logistics ?? null;
     const admissionProfile = school?.reported?.admission_profile ?? null;
+    const planSchool = plan?.schools[item.unit_id] ?? null;
     const deadline = deadlineFor(
       item.round as ListRound | null,
       logistics,
       admissionProfile,
-      cycleStartYear(logistics?.cycle),
+      planSchool?.cycleStartYear ?? cycleStartYear(logistics?.cycle),
       {
         text: item.deadline_text,
         date: item.deadline_date,
@@ -182,7 +185,6 @@ export async function ListPage({
       school?.apply,
     );
     const nextTask = nextByItem[item.id] ?? null;
-    const planSchool = plan?.schools[item.unit_id] ?? null;
     return {
       ...item,
       school: {

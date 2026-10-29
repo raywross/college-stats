@@ -360,6 +360,32 @@ export interface DeadlineGrid {
  * resolve to whichever of the grid's `ea`/`ea2`/`rea` columns the college actually filled in, so a student's "ea"
  * round still finds a restrictive-only college's date and vice versa. `rolling` only applies to the regular round.
  */
+/** "2026-27" (the grid's cycle, lib/common-app/types.ts) → 2026; null for anything else. */
+export function gridCycleStart(cycle: string | null | undefined): number | null {
+  const m = cycle?.match(/^(\d{4})[-–]\d{2}$/);
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * A grid date moved into the student's cycle. The Requirements Grid is published for one cycle ("2026-27": ED on
+ * 2026-11-01), but a junior applies a year later, so the same month and day belong to the next calendar year for
+ * them, exactly as a CDS month/day resolves against the student's cycle (monthDayToIso). The year moves forward by
+ * the gap between the grid's cycle and the student's; a grid from the student's own cycle, a later one, or one with
+ * no readable cycle leaves the date as printed. A Feb 29 that doesn't exist in the target year becomes Feb 28. The
+ * reader marks the date "last cycle" from the grid's cycle as before; this only fixes which year it lands in.
+ */
+export function gridDateInCycle(iso: string, gridCycle: string | null | undefined, cycleStartYear: number | null | undefined): string {
+  const start = gridCycleStart(gridCycle);
+  if (start === null || cycleStartYear == null || cycleStartYear <= start) return iso;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return iso;
+  const year = Number(m[1]) + (cycleStartYear - start);
+  const shifted = `${year}-${m[2]}-${m[3]}`;
+  // The only month/day that can stop existing when the year changes is Feb 29.
+  const exists = new Date(`${shifted}T00:00:00Z`).toISOString().slice(0, 10) === shifted;
+  return exists ? shifted : `${year}-02-28`;
+}
+
 export function gridDeadline(deadlines: DeadlineGrid | null | undefined, round: ListRound | null): string | "rolling" | null {
   if (!deadlines) return null;
   switch (round) {
@@ -382,7 +408,7 @@ export function gridDeadline(deadlines: DeadlineGrid | null | undefined, round: 
 /**
  * The deadline to show for a list item's chosen round: the Common App Requirements Grid's own ISO date for that
  * round first (specs/data-expansion/common-app.md "Store"; `apply.deadlines`, "rolling" shown as a word with no
- * date), then the college's own reported data (specs/product/saved-lists.md "Display" — CDS C14/C21/C22 via
+ * date), moved into the student's cycle when the grid is from an earlier one (gridDateInCycle), then the college's own reported data (specs/product/saved-lists.md "Display" — CDS C14/C21/C22 via
  * reported.admissions_logistics and admission_profile), else the student's own override date/text, else null. A
  * round the grid doesn't offer for this college falls through to the CDS date, then the override.
  */
@@ -395,11 +421,11 @@ export function deadlineFor(
   } | null | undefined,
   cycleStartYear: number,
   override: { text: string | null; date: string | null },
-  apply?: { deadlines?: DeadlineGrid | null } | null,
+  apply?: { deadlines?: DeadlineGrid | null; common_app?: { cycle?: string | null } | null } | null,
 ): ResolvedDeadline {
   const grid = gridDeadline(apply?.deadlines, round);
   if (grid === "rolling") return { date: null, text: "Rolling", source: "common-app" };
-  if (grid) return { date: grid, text: null, source: "common-app" };
+  if (grid) return { date: gridDateInCycle(grid, apply?.common_app?.cycle, cycleStartYear), text: null, source: "common-app" };
 
   let md: MonthDay | null | undefined = null;
   if (round === "rd" || round === null) md = logistics?.regular_closing;

@@ -194,6 +194,22 @@ test("applyDate: without a grid date for the round, the CDS date still drives th
   assert.notEqual(apply?.field, "apply.deadlines");
 });
 
+test("applyDate: a junior reading this year's grid gets next year's date, marked last cycle (the Next steps bug of 2026-10-29)", () => {
+  // Class of 2028 in October 2026: the 2026-27 grid's ED date is the current seniors' Nov 1, not hers.
+  const junior = memberSchool({ cycleStartYear: 2027, apply: member({ deadlines: { ...NO_DEADLINES, ed: "2026-11-01", regular: "2027-01-05" } }) });
+  const ed = applyDate(junior, "ed");
+  assert.equal(ed?.date, "2027-11-01", "a year on, in senior fall for the class of 2028");
+  assert.equal(ed?.field, "apply.deadlines");
+  assert.equal(ed?.edition, "2026-27", "the grid's own cycle stays the edition, so the task reads 'last cycle; confirm on the college's page'");
+  assert.equal(applyDate(junior, "rd")?.date, "2028-01-05");
+  // A sophomore: two years on. A senior in the grid's cycle: as printed.
+  assert.equal(applyDate(memberSchool({ ...junior, cycleStartYear: 2028 }), "ed")?.date, "2028-11-01");
+  assert.equal(applyDate(memberSchool({ ...junior, cycleStartYear: 2026 }), "ed")?.date, "2026-11-01");
+  // The CDS path already did this (resolveDay against the student's cycle); the two sources now agree for a junior.
+  const cdsJunior = memberSchool({ cycleStartYear: 2027, apply: member() });
+  assert.equal(applyDate(cdsJunior, "ed")?.date, "2027-11-01");
+});
+
 /* ------------------------------------------------------------------ */
 /* requirementsFor: new lines on a member and a non-member                                                            */
 /* ------------------------------------------------------------------ */
@@ -311,8 +327,10 @@ test("roundDates: the grid's ISO date comes first, cited to apply.deadlines, wit
   const rolling: RoundsSchool = { ...base, apply: member({ deadlines: { ...NO_DEADLINES, regular: "rolling" } }) };
   assert.equal(roundDates(rolling, "rd").closing?.iso, "2027-01-15", "the CDS regular closing, since the grid gives no date");
   assert.equal(roundDates(rolling, "rolling").closing?.field, "reported.admissions_logistics.priority_date");
-  // A student in the 2027–28 cycle reading the 2026-27 grid: last cycle, worded like a CDS edition.
+  // A student in the 2027–28 cycle reading the 2026-27 grid: the date a year on, last cycle, worded like a CDS edition.
   const later = roundDates({ ...base, cycleStartYear: 2027 }, "ed");
+  assert.deepEqual(later.closing, { iso: "2027-11-01", field: "apply.deadlines" }, "the grid's Nov 1 in the student's own cycle");
+  assert.equal(later.notification?.iso, "2027-12-15", "the CDS notification was already resolved in the student's cycle");
   assert.equal(later.lastCycle, true);
   assert.equal(lastCycleNote(later, 2027), "2026–27 dates; the college hasn't published 2027–28");
   // No grid row at all: unchanged.

@@ -25,6 +25,8 @@ export interface RunDeps {
   force?: boolean;
   /** Find pages only; no model read (free apart from the picker, which needs a client). */
   discoverOnly?: boolean;
+  /** The platforms' own prompt texts, for the check that a college prompt isn't one of them. */
+  platformTexts?: readonly string[];
 }
 
 export type Outcome =
@@ -40,8 +42,11 @@ const samePrompts = (a: EssayRecord, b: EssayRecord) => JSON.stringify(a.prompts
 /** Runs one college. Throws only SpendCapReached (the run stops there); every other failure is an outcome. */
 export async function runCollege(school: Pick<School, "unit_id" | "name" | "links">, recipe: PageRecipe | undefined, prior: EssayRecord | null, deps: RunDeps): Promise<Outcome> {
   const log = deps.log ?? (() => {});
-  // A conditional GET only when there is a record to stand for a 304.
-  const ask = recipe && prior ? recipe : recipe ? { ...recipe, etag: undefined, last_modified: undefined } : undefined;
+  // A conditional GET only when there is a record to stand for a 304. A record that lists no prompts (none,
+  // refers_to_form) may have come from a general page the ladder settled for; discovery starts over for it each run,
+  // so a better page can still be found (the same page again costs no read: its bytes are unchanged).
+  const settled = prior?.status === "published";
+  const ask = recipe && prior && settled ? recipe : recipe && settled ? { ...recipe, etag: undefined, last_modified: undefined } : undefined;
   const found = await discoverEssayPage(school, ask, { http: deps.http, client: deps.client, cap: deps.cap, log });
   let cost = found.cost;
   if (!found.found) {
@@ -79,6 +84,6 @@ export async function runCollege(school: Pick<School, "unit_id" | "name" | "link
       record.previous = { cycle: prior.cycle, source_url: prior.source_url, retrieved: prior.retrieved, prompts: prior.prompts };
     } else if (prior.previous && prior.previous.cycle !== record.cycle) record.previous = prior.previous;
   }
-  const problems = checkRecord(record, { today: deps.today, pageText: text });
+  const problems = checkRecord(record, { today: deps.today, pageText: text, platformTexts: deps.platformTexts });
   return problems.length ? { kind: "held", cost, recipe: next, record, problems } : { kind: "passed", cost, recipe: next, record };
 }

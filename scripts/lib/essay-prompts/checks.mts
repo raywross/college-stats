@@ -6,8 +6,12 @@
  *   than one cycle ahead, which points to a misread year). A page that names none gets the open cycle, marked
  *   `cycle_assumed` and listed in the PR for a look (most colleges' pages print no year); a record with neither a
  *   cycle quote nor that mark is held.
- * - `choose` ("answer four of the eight"): a whole number of the listed prompts, fewer than listed, its sentence on the
- *   page; under it no prompt is marked required.
+ * - `choose` ("answer four of the eight"): the prompts marked optional are the set to pick from, so `of` is their count
+ *   and `n` is fewer; prompts marked required stand outside the set (Duke's one required essay beside its pick-some
+ *   list); the sentence is on the page and says to choose.
+ * - A `none` quote says there are no essays; a `refers_to_form` quote names the essay and the application it lives in.
+ * - A prompt that is one of the platforms' own (the Common App's seven, reproduced on many colleges' pages) is not
+ *   the college's prompt: the record is held.
  * - Each prompt: 10 to 1,500 characters, found verbatim in the page's text; its quote found verbatim too.
  * - A limit: a whole number from 25 to 2,000 words or 100 to 10,000 characters; a minimum under the maximum.
  * - `required` from the page's own word: false needs an optional word ("optional", "if you wish", "you may"); true is
@@ -27,7 +31,7 @@ const OPTIONAL_WORD = /\boptional(ly)?\b|if you (wish|choose|would like|like)|\b
 /** "choose four of the eight", "respond to 2 of the following", "select one from these topics": a pick-some list. */
 export const CHOOSE_WORD = /\b(choose|select|pick|answer|respond to|complete|write|submit)\b[^.;]{0,60}?\b(\d+|one|two|three|four|five|six|seven|eight)\b[^.;]{0,40}?\b(of|from|among|out of)\b[^.;]{0,40}?\b(\d+|the following|these|them|those|the (prompts|questions|topics|options|essays)|(prompts|questions|topics|options|essays)( below| listed)?)\b/i;
 const REQUIRED_WORD =/\brequired\b|\bmust\b|\ball (first[- ]year )?applicants\b|\bplease (respond|answer|complete|write)\b|\brespond to (each|all|both|the following)\b|\banswer (each|all|both|the following)\b/i;
-const WHY_US = /\bwhy\b[^?.]{0,120}\b(college|university|school|institute|program|major|community|campus|here|us)\b|\b(draws?|attracts?|brings?|led) you to\b|\byou want to (attend|study|be)\b|\binterest(ed|s)? (you )?in (attending|studying at|our)\b|\bchoose to (attend|apply)\b|\bwhat about\b[^?]{0,80}\b(college|university|program|school)\b/i;
+const WHY_US = /\bwhy\b[^?.]{0,120}\b(college|university|school|institute|program|major|community|campus|here|us|match|fit)\b|\b(draws?|attracts?|brings?|led) you to\b|\byou want to (attend|study|be)\b|\binterest(ed|s)? (you )?in (attending|studying at|our)\b|\bchoose to (attend|apply)\b|\bwhat about\b[^?]{0,80}\b(college|university|program|school)\b/i;
 
 /** Text compared for "verbatim": curly quotes and dashes as their plain forms, runs of whitespace as one space. */
 export function normalizeForMatch(s: string): string {
@@ -48,7 +52,15 @@ export interface CheckContext {
   today: string;
   /** The page's text as the model read it; without it the verbatim checks are skipped (a re-check of a committed record). */
   pageText?: string;
+  /** The platforms' own prompt texts (data/reference/platform-prompts.json): a college prompt equal to one is held. */
+  platformTexts?: readonly string[];
 }
+
+/** "does not require a supplemental essay", "no additional essays", "no essays beyond the Common App's". */
+const NONE_SENTENCE = /\b(no|not|never|without|doesn.t|does not|don.t|do not|aren.t|are not|isn.t|is not)\b[^.]{0,80}\b(essays?|supplement(al)?|writing|prompts?|short[\s-]answers?)\b|\b(essays?|supplement(al)?|writing|prompts?)\b[^.]{0,60}\b(not|no longer|aren.t|are not|isn.t|is not)\s+(required|needed|necessary|part of|accepted|considered)/i;
+/** The essay and the application it lives in: "complete the essay on the Common Application", "the Cornell questions in the Common App". */
+const REFERS_SENTENCE = /\b(essays?|prompts?|questions?|writing|supplement|short[\s-]answers?|personal statement)\b/i;
+const FORM_WORD = /\b(common app(lication)?|coalition|apply ?texas|cal state apply|questbridge|scoir|the application|your application|our application|online application|application (form|portal|platform)|within the application|in the application|as part of (the|your) application)\b/i;
 
 /** Problems with one prompt (empty when it passes). `where` prefixes each; `choose` when the page says to pick some. */
 export function promptProblems(p: EssayPrompt, where: string, page: string | null, choose = false): string[] {
@@ -67,12 +79,10 @@ export function promptProblems(p: EssayPrompt, where: string, page: string | nul
     }
   }
   const words = `${p.quote ?? ""} ${text}`;
-  if (choose) {
-    if (p.required === true) out.push(`${where}: marked required, but the page says to choose some of the prompts`);
-  } else {
-    if (p.required === false && !OPTIONAL_WORD.test(words) && !CHOOSE_WORD.test(words)) out.push(`${where}: marked optional, but neither the prompt nor its quote says optional`);
-    if (p.required === true && OPTIONAL_WORD.test(words) && !REQUIRED_WORD.test(words.replace(/\bnot (required|mandatory)\b/gi, ""))) out.push(`${where}: marked required, but the page's word is optional`);
-  }
+  // Under `choose`, the optional prompts are the set to pick from and need no optional word of their own; a required
+  // one stands outside the set and keeps the usual rule.
+  if (p.required === false && !choose && !OPTIONAL_WORD.test(words) && !CHOOSE_WORD.test(words)) out.push(`${where}: marked optional, but neither the prompt nor its quote says optional`);
+  if (p.required === true && OPTIONAL_WORD.test(words) && !REQUIRED_WORD.test(words.replace(/\bnot (required|mandatory)\b/gi, ""))) out.push(`${where}: marked required, but the page's word is optional`);
   if (p.kind === "why_us" && !WHY_US.test(text)) out.push(`${where}: kind why_us, but the prompt doesn't ask why this college or program`);
   const program = typeof p.applies_to === "object" ? p.applies_to.program?.trim() : null;
   if (p.kind === "program" && !program) out.push(`${where}: kind program, but applies_to names no program`);
@@ -99,13 +109,25 @@ export function checkRecord(r: EssayRecord, ctx: CheckContext): string[] {
   if (r.cycle_quote && page !== null && !page.includes(normalizeForMatch(r.cycle_quote))) out.push("the cycle's words aren't on the page verbatim");
   if (r.choose) {
     const { n, of, quote } = r.choose;
+    const optional = r.prompts.filter((p) => !p.required).length;
     if (r.status !== "published") out.push(`choose is set, but status is ${r.status}`);
     if (!Number.isInteger(n) || n < 1) out.push(`choose: ${JSON.stringify(n)} isn't a whole number of prompts to answer`);
     if (!Number.isInteger(of) || of <= n) out.push(`choose: ${n} of ${JSON.stringify(of)} isn't a choice (of must be a whole number above n)`);
-    if (r.status === "published" && of !== r.prompts.length) out.push(`choose says ${of} prompts, but the record lists ${r.prompts.length}`);
+    if (r.status === "published" && of !== optional) out.push(`choose says ${of} prompts to pick from, but ${optional} ${optional === 1 ? "is" : "are"} marked optional (the set is the optional prompts; required ones stand outside it)`);
     if (!quote?.trim()) out.push("choose: no quote");
     else if (page !== null && !page.includes(normalizeForMatch(quote))) out.push("choose: the quote isn't on the page verbatim");
-    else if (!CHOOSE_WORD.test(quote) && !/\b(\d+|one|two|three|four|five|six|seven|eight)\b/i.test(quote)) out.push("choose: the quote doesn't say to choose some of the prompts");
+    else if (!CHOOSE_WORD.test(quote) && !/\b(choose|select|pick|one of|any of|\d+|one|two|three|four|five|six|seven|eight)\b/i.test(quote)) out.push("choose: the quote doesn't say to choose some of the prompts");
+  }
+  if (r.status !== "published" && r.status_quote?.trim()) {
+    const q = r.status_quote;
+    if (r.status === "none" && !NONE_SENTENCE.test(q)) out.push("status none, but the quoted sentence doesn't say there are no essays");
+    if (r.status === "refers_to_form" && !(REFERS_SENTENCE.test(q) && FORM_WORD.test(q))) out.push("status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of");
+  }
+  if (ctx.platformTexts?.length && r.prompts.length) {
+    const platform = new Set(ctx.platformTexts.map((t) => normalizeForMatch(t).toLowerCase()));
+    r.prompts.forEach((p, i) => {
+      if (platform.has(normalizeForMatch(p.text ?? "").toLowerCase())) out.push(`prompt ${i + 1}: this is one of the application platform's own prompts, reproduced on the page, not the college's`);
+    });
   }
   if (!/^https?:\/\//.test(r.source_url)) out.push(`source_url ${JSON.stringify(r.source_url)} isn't a web address`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(r.retrieved)) out.push(`retrieved ${JSON.stringify(r.retrieved)} isn't an ISO date`);

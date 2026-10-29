@@ -53,7 +53,7 @@ const STRONG = /essay[\s_-]*(prompt|question|topic)s?|supplement(al)?[\s_-]*(ess
 const ESSAY_WORD = /\bessays?\b|supplement|short[\s_-]*answer/i;
 const APPLY_WORD = /apply|application|requirement|first[\s_-]*year|freshman|how[\s_-]*to/i;
 /** Links that talk about essays but aren't the college's prompts. */
-const NOT_PROMPTS = /blog|news|\bstor(y|ies)\b|event|podcast|webinar|tips?\b|advice|how[\s_-]*to[\s_-]*write|examples?|essays[\s_-]*that[\s_-]*worked|that[\s_-]*worked|magazine|faculty|course|catalog|library|scholarship|graduate|transfer[\s_-]*credit|\.(jpg|png|gif|mp4)($|\?)/i;
+const NOT_PROMPTS = /blog|news|\bstor(y|ies)\b|event|podcast|webinar|tips?\b|advice|how[\s_-]*to[\s_-]*write|examples?|essays[\s_-]*that[\s_-]*worked|that[\s_-]*worked|magazine|faculty|course|catalog|library|scholarship|graduate|transfer[\s_-]*credit|supplemental[\s_-]*(instruction|pay|funds?|income|insurance|retirement)|tutoring|financial[\s_-]*aid|payroll|human[\s_-]*resources|stipend|comptroller|contest|\.(jpg|png|gif|mp4)($|\?)/i;
 
 /**
  * How strongly a link points to the essay prompts page. 0 = don't follow. A link whose text or URL names essay prompts
@@ -90,7 +90,8 @@ export function rankLinks(links: readonly FoundLink[]): FoundLink[] {
  * limit ("250 words", "100 characters"), several questions, or says there is no supplement. Cheap, before any model.
  */
 export function looksLikeEssayPage(text: string): boolean {
-  if (!/essay|short[\s-]answer|supplement|writing\s+(section|requirement)/i.test(text)) return false;
+  // "Supplement" alone is not enough: supplemental instruction, pay, and funds pages all say it.
+  if (!/essay|short[\s-]answer|supplement(al)?\s+(essay|question|writing|prompt)|writing\s+(supplement|section|requirement)|personal\s+(statement|insight)/i.test(text)) return false;
   const limit = /\b\d{2,5}\s*(-|–)?\s*(words?|characters?)\b/i.test(text);
   const questions = (text.match(/\?/g) ?? []).length >= 2;
   const none = /(no|not\s+(require|have)\s+(a|any))\s+(supplemental|additional|writing)\s+(essays?|supplement|questions?)|does\s+not\s+require\s+(a\s+)?(supplemental|additional)\s+essay/i.test(text);
@@ -292,7 +293,7 @@ export const PICKER_MODEL = ROUND3_MODELS.picker;
 export const PICKER_MAX_TOKENS = 64;
 const PICKER_MAX_CHARS = 14_000;
 
-export const PICKER_SYSTEM = `You pick one link for a program that reads U.S. colleges' published essay prompts for first-year applicants. You get a numbered list of links found on one college's own admissions pages (link text and URL). Answer with the number of the link to the college's own page listing its supplemental essay or short-answer prompts (often called "essay prompts", "writing supplement", or "supplemental questions"), or leave "page" out when no link fits. Never pick essay-writing tips, blogs, student stories, or another organization's page. Choose only from the list.`;
+export const PICKER_SYSTEM = `You pick one link for a program that reads U.S. colleges' published essay prompts for first-year applicants. You get a numbered list of links found on one college's own admissions pages (link text and URL). Answer with the number of the link to the college's own page listing its supplemental essay or short-answer prompts (often called "essay prompts", "writing supplement", or "supplemental questions"), or leave "page" out when no link fits. Never pick essay-writing tips, blogs, student stories, another organization's page, or a page about something else that shares a word (supplemental instruction or pay, financial aid, an essay contest, a course). Prefer a first-year admissions page that lists the prompts over a general "how to apply" page. Choose only from the list.`;
 const PICKER_SCHEMA = { type: "object", additionalProperties: false, properties: { page: { type: "integer" } } } as const;
 
 /** The picker's request: the links, deduplicated, capped at about 4 K tokens. */

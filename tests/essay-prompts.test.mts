@@ -642,13 +642,109 @@ test("checks: the assumed-cycle and choose rules each catch their planted bad va
   plant((r) => (r.cycle_assumed = false), /the page names no cycle \(the reader marks such a record cycle_assumed\)/);
   plant((r) => (r.cycle_quote = "2026-27"), /cycle_assumed is set, but the page names a cycle/);
   plant((r) => ((r.cycle = "2027-28"), r.prompts.forEach((p, i) => (p.id = `999001:2027-28:${i + 1}`))), /an assumed cycle must be the open one, 2026-27, not 2027-28/);
-  plant((r) => (r.choose!.of = 7), /choose says 7 prompts, but the record lists 8/);
+  plant((r) => (r.choose!.of = 7), /choose says 7 prompts to pick from, but 8 are marked optional/);
   plant((r) => (r.choose!.n = 8), /isn't a choice/);
   plant((r) => (r.choose!.n = 0), /isn't a whole number of prompts to answer/);
   plant((r) => (r.choose!.quote = "You must respond to all of the questions."), /choose: the quote isn't on the page verbatim/);
   plant((r) => (r.choose!.quote = ""), /choose: no quote/);
-  plant((r) => (r.prompts[2].required = true), /prompt 3: marked required, but the page says to choose some of the prompts/);
+  plant((r) => (r.prompts[2].required = true), /choose says 8 prompts to pick from, but 7 are marked optional/);
   plant((r) => ((r.status = "none"), (r.prompts = [])), /choose is set, but status is none/);
+});
+
+const DUKE_PAGE =
+  "Essay prompts. All applicants must answer the following in 250 words or fewer: What is your sense of Duke as a university and a community, and why do you consider it a good match for you? " +
+  "We also want to give you the opportunity to share more about yourself. Please respond to up to 2 of the following 5 prompts in 250 words or fewer each. " +
+  "1. We believe a wide range of viewpoints strengthens our community. 2. Tell us about an experience in the past year or two that reflects your imagination. " +
+  "3. We recognize that not fully expressing your sexual orientation or gender identity can be painful. 4. We seek a diverse student body. 5. Tell us about a time you took a risk.";
+
+/** Duke's shape: one essay required of everyone beside a pick-some set; `of` counts the set, the required one stands outside it. */
+function dukeRecord(): EssayRecord {
+  const set = [
+    "We believe a wide range of viewpoints strengthens our community.",
+    "Tell us about an experience in the past year or two that reflects your imagination.",
+    "We recognize that not fully expressing your sexual orientation or gender identity can be painful.",
+    "We seek a diverse student body.",
+    "Tell us about a time you took a risk.",
+  ];
+  return {
+    ...good(),
+    cycle_quote: "",
+    cycle_assumed: true,
+    choose: { n: 2, of: 5, quote: "Please respond to up to 2 of the following 5 prompts in 250 words or fewer each." },
+    prompts: [
+      { id: "999001:2026-27:1", text: "What is your sense of Duke as a university and a community, and why do you consider it a good match for you?", kind: "why_us", limit: { kind: "words", max: 250 }, required: true, applies_to: "all", quote: "All applicants must answer the following in 250 words or fewer:" },
+      ...set.map((text, i) => ({ id: `999001:2026-27:${i + 2}`, text, kind: "essay" as const, limit: { kind: "words" as const, max: 250 }, required: false, applies_to: "all" as const, quote: "Please respond to up to 2 of the following 5 prompts in 250 words or fewer each." })),
+    ],
+  };
+}
+
+test("checks: a required essay beside a pick-some set passes; the set is the optional prompts", () => {
+  assert.deepEqual(checkRecord(dukeRecord(), { today: TODAY, pageText: DUKE_PAGE }), []);
+  const r = dukeRecord();
+  r.choose!.of = 6;
+  assert.ok(checkRecord(r, { today: TODAY, pageText: DUKE_PAGE }).some((p) => /choose says 6 prompts to pick from, but 5 are marked optional/.test(p)));
+});
+
+test("checks: a none quote must say there are no essays; a refers_to_form quote must name the essay and the application", () => {
+  const base = { ...good(), prompts: [] as EssayPrompt[] };
+  const page = (q: string) => `${PAGE} ${q}`;
+  const check = (status: EssayRecord["status"], q: string) => checkRecord({ ...base, status, status_quote: q }, { today: TODAY, pageText: page(q) });
+  assert.deepEqual(check("none", "Example University does not require a supplemental essay."), []);
+  assert.deepEqual(check("none", "No supplemental essays or writing prompts are required other than the essay required by the Common App."), []);
+  assert.ok(check("none", "Supplemental Instruction provides regularly scheduled review sessions open to all students.").some((p) => /status none, but the quoted sentence doesn't say there are no essays/.test(p)));
+  assert.ok(check("none", "The Center for Italian Cultural Studies holds an essay contest each spring.").some((p) => /doesn't say there are no essays/.test(p)));
+  assert.deepEqual(check("refers_to_form", "Complete the essay component of at least 250 words on the Common Application."), []);
+  assert.deepEqual(check("refers_to_form", "As part of your Common Application, you'll be asked to fill out the Example University Questions."), []);
+  assert.ok(check("refers_to_form", "Ready to apply? Example University is a member of The Common Application.").some((p) => /doesn't name the essay and the application/.test(p)));
+  assert.ok(check("refers_to_form", "Upload your essay and resume.").some((p) => /doesn't name the essay and the application/.test(p)));
+});
+
+test("checks: a prompt that is the Common App's own is held, with the platform texts from the reference file", () => {
+  const platform = JSON.parse(readFileSync(join(ROOT, "data", "reference", "platform-prompts.json"), "utf8")) as { common_app: { prompts: { text: string }[] } };
+  const copied = platform.common_app.prompts[0].text;
+  const r = { ...good(), prompts: [{ ...good().prompts[1], text: copied }] };
+  const problems = checkRecord(r, { today: TODAY, platformTexts: platform.common_app.prompts.map((p) => p.text) });
+  assert.ok(problems.some((p) => /prompt 1: this is one of the application platform's own prompts/.test(p)), JSON.stringify(problems));
+  assert.ok(!checkRecord(good(), { today: TODAY, pageText: PAGE, platformTexts: platform.common_app.prompts.map((p) => p.text) }).length);
+});
+
+test("store: cycle_assumed and choose survive the round trip to disk", async () => {
+  const r = dukeRecord();
+  const back = JSON.parse(serializeRecord(r)) as EssayRecord;
+  assert.equal(back.cycle_assumed, true);
+  assert.deepEqual(back.choose, r.choose);
+  assert.deepEqual(back, JSON.parse(JSON.stringify(r)));
+  const keys = Object.keys(back);
+  assert.ok(keys.indexOf("cycle_assumed") > keys.indexOf("cycle_quote") && keys.indexOf("choose") < keys.indexOf("prompts"));
+});
+
+test("discovery: a page that only says 'supplemental' (instruction, pay, funds) isn't an essay page", () => {
+  assert.equal(looksLikeEssayPage("Supplemental Instruction (SI) provides review sessions. Who leads them? When do they meet? Up to 50 words of notes."), false);
+  assert.equal(looksLikeEssayPage("Supplemental pay is the eForm used to pay stipends. Who approves it? When is it paid?"), false);
+  assert.equal(looksLikeEssayPage("The Supplemental Application for Transfer is an online application. Who must file? When?"), false);
+  assert.equal(looksLikeEssayPage("Supplemental essay questions for first-year applicants. Why us? What else? 250 words."), true);
+  assert.equal(looksLikeEssayPage("Personal insight questions. You must respond to only 4 of the 8 questions. Each response is limited to a maximum of 350 words."), true);
+  assert.equal(essayLinkScore({ url: "https://x.edu/tutoring/supplemental-instruction", text: "Supplemental Instruction" }), 0);
+  assert.equal(essayLinkScore({ url: "https://x.edu/hr/supplemental-pay", text: "Supplemental pay essay form" }), 0);
+});
+
+test("runCollege: a record with no prompts starts discovery over next run; a published one is reused", async () => {
+  const pages = {
+    "https://admissions.example.edu/apply": readFileSync(join(FIX, "apply-page.html"), "utf8"),
+    "https://admissions.example.edu/apply/first-year/supplemental-essay-prompts": readFileSync(join(FIX, "plain-list.html"), "utf8"),
+  };
+  const http = fakeSite(pages);
+  const { client } = fakeClient(() => message(ANSWERS["plain-list.html"]));
+  const deps = { http, client, cap: new SpendCap(5), today: TODAY };
+  const first = await runCollege(SITE_SCHOOL, undefined, null, deps);
+  assert.equal(first.kind, "passed");
+  if (first.kind !== "passed") return;
+  const before = http.requested.length;
+  await runCollege(SITE_SCHOOL, first.recipe, first.record, deps);
+  assert.equal(http.requested.length, before + 1, "a published record: only the recipe's page is fetched");
+  const refers: EssayRecord = { ...first.record, status: "refers_to_form", status_quote: "x", prompts: [] };
+  await runCollege(SITE_SCHOOL, first.recipe, refers, deps);
+  assert.ok(http.requested.length > before + 2, "a refers_to_form record: the ladder runs again from the start pages");
   // Without `choose`, "choose two of the following" in a prompt's quote still counts as the page's optional word.
   assert.deepEqual(promptProblems({ id: "1:2026-27:1", text: "Describe a community you belong to.", kind: "essay", limit: null, required: false, applies_to: "all", quote: "Choose two of the following prompts and respond in 300 words." }, "p", null), []);
   assert.deepEqual(promptProblems({ id: "1:2026-27:1", text: "Describe a community you belong to.", kind: "essay", limit: null, required: false, applies_to: "all", quote: "Respond to the following in 300 words." }, "p", null), ["p: marked optional, but neither the prompt nor its quote says optional"]);

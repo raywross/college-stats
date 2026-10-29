@@ -168,3 +168,23 @@ hosts blocked. Three faults in the reader, fixed the same day (`READER_VERSION` 
   Required/Optional word, and the plan's count adds four, not eight. Registered as `essays.choose`.
 The 105 not-found colleges are a discovery problem for a later round: the cheap steps found few pages and the model
 picker found 57.
+
+### The third reader (2026-10-29, after the second run)
+The second run passed 68 (27 published, 26 pointing to the form, 15 with none), held 20, found no page for 112, for
+$3.87. Reading its records showed four more faults, fixed as `READER_VERSION` 2026.10.29.3:
+- **The serializer dropped the new fields.** Records are written with a fixed key order, and `cycle_assumed` and
+  `choose` weren't in the list, so every UC campus read as "8 optional essays" on disk. Both keys are written now, and
+  a test round-trips them.
+- **A required essay beside a pick-some set.** Duke, Yale, Boston College, Rice and Oregon list a prompt everyone
+  answers and then a set to choose from. `choose.of` now counts the prompts marked optional (the set); a required
+  prompt stands outside it. The card line reads "1 essay (250 words); choose 2 of 5 more (250 words)", the fold marks
+  each set member "One of 5 to choose from", and the plan's count adds the required ones plus `n`.
+- **"None" from the wrong page.** The picker had chosen pages about supplemental instruction, supplemental pay,
+  supplemental funds and an essay contest, and the reader called each "no essays". A `none` quote must now say there
+  are no essays; a `refers_to_form` quote must name the essay and the application it is part of; a page that only
+  says "supplemental" no longer reads like an essay page; those words score zero as links; and the picker is told
+  not to choose them. A record that lists no prompts also starts discovery over on the next run instead of being
+  reused, so a better page can still be found.
+- **The Common App's seven prompts, copied.** Rutgers's and Pace's pages reproduce the Common App's personal essay
+  prompts, and the reader recorded them as the college's own. A prompt equal to one of the platforms' prompts in the
+  reference file now holds the record, and the reader is told to leave them out.

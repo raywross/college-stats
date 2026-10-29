@@ -32,7 +32,7 @@ import { PICKER_MODEL } from "./lib/essay-prompts/discover.mts";
 import { READ_MODEL } from "./lib/essay-prompts/read.mts";
 import { prBody, releaseNote, type RunSummary } from "./lib/essay-prompts/report.mts";
 import { runCollege, type Outcome } from "./lib/essay-prompts/run.mts";
-import { clearHeld, essayPaths, readEssayRecord, readPages, writeEssayRecord, writeHeld, writePages } from "./lib/essay-prompts/store.mts";
+import { clearHeld, essayPaths, readEssayRecord, readPages, readPlatformPrompts, writeEssayRecord, writeHeld, writePages } from "./lib/essay-prompts/store.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const P = essayPaths(ROOT);
@@ -115,6 +115,9 @@ if (!discoverOnly) {
   };
 }
 const cap = new SpendCap(num("budget", 40));
+/** The platforms' own prompt texts: a college prompt equal to one of them is the platform's, not the college's. */
+const platformFile = readPlatformPrompts(P.platform);
+const platformTexts = platformFile ? [...(platformFile.common_app?.prompts ?? []), ...(platformFile.coalition?.prompts ?? [])].map((p) => p.text) : [];
 const archive = DRY ? undefined : createArchive({ log: (m) => console.log(m) });
 const pages = readPages(P.pages);
 const RUN = new Date().toISOString().replace(/\.\d+Z$/, "Z");
@@ -182,7 +185,7 @@ const workers = Array.from({ length: Math.max(1, num("concurrency", 4)) }, async
     const id = queue.shift()!;
     const s = byId.get(id)!;
     try {
-      record(id, await runCollege(s, pages.pages[id], readEssayRecord(P.records, id), { http, client, cap, archive, today, force: flags.force === true, discoverOnly, log: (m) => console.log(m) }));
+      record(id, await runCollege(s, pages.pages[id], readEssayRecord(P.records, id), { http, client, cap, archive, today, force: flags.force === true, discoverOnly, platformTexts, log: (m) => console.log(m) }));
     } catch (err) {
       if (err instanceof SpendCapReached) summary.stopped = err.message;
       else if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) summary.stopped = `the API key was refused (${err.status})`;

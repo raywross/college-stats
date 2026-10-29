@@ -10,7 +10,7 @@ import "server-only";
  */
 import { cookies } from "next/headers";
 import { getUser } from "@/lib/auth";
-import { getData } from "@/lib/data";
+import { getData, getPlatformPrompts } from "@/lib/data";
 import { scheduleStudentReadLog } from "@/lib/households";
 import { getListWithItems, myLists, namesFor } from "@/lib/lists";
 import { createServerSupabase } from "@/lib/supabase-server";
@@ -59,15 +59,9 @@ export async function essaysViewer(forParam: string | undefined): Promise<Essays
   return { kind: "ready", userId: user.id, student: { id: child.studentId, name: child.name }, canWrite: false, role: "guardian", person: child.studentId, children: viewer.children };
 }
 
-/**
- * The platforms' prompts (data/reference/platform-prompts.json, U1's file). Not read yet on this branch: the file
- * doesn't exist until the prompts unit merges, and next.config.ts must trace any file the runtime reads
- * (tests/tracing.test.mts). At the merge: add `getPlatformPrompts()` to lib/data.ts (a `readOptionalJson` of that
- * file under the working directory, like getCommonAppTrends), trace the file in next.config.ts, and return
- * `asPlatformPrompts(await getPlatformPrompts())` here. Until then the main essay works without its seven prompts.
- */
+/** The platforms' prompts (data/reference/platform-prompts.json, traced in next.config.ts); null when the file is missing. */
 export async function platformPrompts(): Promise<PlatformPrompts | null> {
-  return asPlatformPrompts(null);
+  return asPlatformPrompts(await getPlatformPrompts());
 }
 
 /** What prompts.ts resolves against: the dataset's colleges and the platforms' file. */

@@ -14,8 +14,8 @@ import { WhyFold } from "@/components/ui/why-fold";
 import { authConfigured } from "@/lib/auth";
 import { countLabel } from "@/lib/essays/count";
 import { essaysViewer, planColleges, promptLookup, readEssay } from "@/lib/essays/load";
-import { KIND_LABEL, pickerGroups, resolvePrompt, type ResolvedPrompt } from "@/lib/essays/prompts";
-import { refsOf, rowLimit } from "@/lib/essays/rows";
+import { KIND_LABEL, pickerGroups, refUnitId, resolvePrompt, type ResolvedPrompt } from "@/lib/essays/prompts";
+import { essaysHref, refsOf, rowLimit } from "@/lib/essays/rows";
 import { baseChangedSince, reuseChoices } from "@/lib/essays/variants";
 import { withTiming } from "@/lib/timing-server";
 
@@ -93,7 +93,8 @@ async function render(id: string, searchParams: Search) {
   return (
     <article className="mx-auto min-w-0 max-w-5xl space-y-5" aria-labelledby="essay-title">
       <header className="space-y-2">
-        <Link href={`/advisor/essays${q}`} className="-ml-2 inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-sm font-semibold text-primary hover:underline">
+        {/* Back to the Essays tab (specs/product/essays/tab.md), on this draft's college's card when it's for one. */}
+        <Link href={essaysHref({ person, college: refUnitId(essay.prompt_ref) })} className="-ml-2 inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-sm font-semibold text-primary hover:underline">
           <ArrowLeft className="size-4" aria-hidden />
           All essays
         </Link>

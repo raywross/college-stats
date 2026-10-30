@@ -40,7 +40,7 @@ test("every event has a side, a reason, and a non-empty list of distinct snake_c
   assert.ok(entries.length >= 16);
   for (const [name, spec] of entries) {
     assert.match(name, SNAKE, `event name ${name}`);
-    assert.ok(spec.side === "client" || spec.side === "server", `${name}.side`);
+    assert.ok(spec.side === "client" || spec.side === "server" || spec.side === "both", `${name}.side`);
     assert.ok(spec.why.trim().length > 0, `${name}.why`);
     assert.ok(spec.properties.length > 0, `${name}.properties`);
     assert.equal(new Set(spec.properties).size, spec.properties.length, `${name} lists a property twice`);
@@ -50,10 +50,10 @@ test("every event has a side, a reason, and a non-empty list of distinct snake_c
 
 test("server events are exactly the ones trackServer accepts", () => {
   const server = Object.entries(EVENTS)
-    .filter(([, spec]) => spec.side === "server")
+    .filter(([, spec]) => spec.side !== "client")
     .map(([name]) => name)
     .sort();
-  const expected: ServerAnalyticsEvent[] = ["api_request", "brief_sent", "essay_review_dropped", "essay_review_notes", "essay_review_requested", "interest_confirm_sent", "plan_interest_confirmed", "plan_interest_expired", "plan_text_consented", "plan_text_opted_out", "signup_completed", "signup_started", "visit_alert_sent"];
+  const expected: ServerAnalyticsEvent[] = ["api_request", "brief_sent", "essay_review_dropped", "essay_review_notes", "essay_review_requested", "essays_move_done", "interest_confirm_sent", "plan_interest_confirmed", "plan_interest_expired", "plan_text_consented", "plan_text_opted_out", "signup_completed", "signup_started", "visit_alert_sent"];
   assert.deepEqual(server, expected);
 });
 

@@ -23,7 +23,7 @@
  *   in Now.
  * Pure; safe in client components.
  */
-import { beforeSeniorFall, compareByImportance, importance, isApplicationPiece, type ImportanceFacts } from "./importance.ts";
+import { beforeApplicationSeason, compareByImportance, importance, type ImportanceFacts } from "./importance.ts";
 import { addDays } from "./stage.ts";
 import { yourPart } from "./summary.ts";
 import { compareTasks, dayLabel, isOpen, taskDate } from "./tasks.ts";
@@ -65,10 +65,11 @@ export function taskSeason(t: Pick<PlanTask, "season" | "due_on" | "window_start
  * (the college generator sets none), so a wrong date would otherwise read as this season's move, or take the lead
  * (owner, 2026-10-29: a junior saw three "Apply" cards, the grid's dates for the current seniors; the dates are fixed
  * in the generator, and this keeps a wrong one from ever ranking a junior's senior-year deadline into Now). The same
- * rule already zeroes the undated pieces (importance.ts beforeApplications).
+ * rule already zeroes the undated pieces (importance.ts beforeApplications). The essays move is a piece too, whose
+ * season opens a step earlier, in the summer before senior year (importance.ts beforeApplicationSeason).
  */
 export function eligibleNow(t: PlanTask, opts: { season: Season; gradYear: number | null; today: string }): boolean {
-  if (beforeSeniorFall(opts.season) && isApplicationPiece(t)) return false;
+  if (beforeApplicationSeason(t, opts.season)) return false;
   if (seasonRank(taskSeason(t, opts.gradYear, opts.season)) <= seasonRank(opts.season)) return true;
   const d = taskDate(t);
   return d !== null && d <= addDays(opts.today, SOON_DAYS);

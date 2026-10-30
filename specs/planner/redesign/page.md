@@ -121,6 +121,10 @@ Phone                                   Desktop (lg:)
   pill, ink fill on the active tab (the coral retake dot went with the Scores tab). Both the
   student's and a guardian's default tab are Colleges now (**changed 2026-10-11**; a guardian's `/plan` no longer
   has a calendar-first family view to default to — see Routes).
+- **Changed 2026-10-30**: the strip is **Next steps, Colleges, Essays, Calendar** (and **Offers** once a decision is
+  recorded), Essays added third ([../../product/essays/tab.md](../../product/essays/tab.md)). The phone strip stays
+  a one-row segmented control at four or five cells, 44 px tall, never scrolling sideways, as that spec's "The tab
+  strip" rule.
 - **Layout**: two columns on desktop (`lg:`) — left, the header with the tabs beside it, then the open tab's body;
   right (~380px, sticky), Next up/NothingDue, then the 8-week "Coming up" list (`UpcomingList` `variant="aside"`,
   [calendar.md](calendar.md)), then the one notice (`PlanNotice`, [list.md](list.md) `view.notices[0]`). On a phone

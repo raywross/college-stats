@@ -3,7 +3,9 @@
 /**
  * The prompt picker (specs/product/essays/workspace.md "Where it lives", "Reuse"), a bottom sheet on phones:
  * - `new`: "Write a new one": every prompt from the plan's colleges, the platforms' own, or free; picking one starts
- *   a draft (or opens the main essay when it exists already).
+ *   a draft (or opens the main essay when it exists already). With `college` (the Essays tab's "Add what {College}
+ *   asks", specs/product/essays/tab.md "The screen") it opens on that college alone: its prompts when any are on file,
+ *   and the free prompt, which the student titles with the college's own prompt in the editor.
  * - `reuse`: "Use for another college": prompts of the same kind; each either uses this draft as it is (a link) or
  *   makes a copy that remembers this one (a variant), the suggested choice first.
  */
@@ -26,11 +28,46 @@ function LimitLine({ p }: { p: PickerPrompt }) {
 
 const editorHref = (id: string, person: string | null) => `/advisor/essays/${id}${person ? `?for=${person}` : ""}`;
 
-export function PromptPicker({ groups, person, label = "Write a new one", primary = true }: { groups: PickerGroup[]; person: string | null; label?: string; primary?: boolean }) {
+/** The college the picker opens on ("Add what {College} asks"); `ownRef` is the prompt ref a draft written for it takes, when there is one (else the free prompt). */
+export interface PickerCollege {
+  unit_id: string;
+  name: string;
+  ownRef?: string | null;
+}
+
+/** The groups the picker shows for one college: its own group (prompts on file, if any), then the free prompt, named for the college. */
+export function collegeGroups(groups: readonly PickerGroup[], college: PickerCollege): PickerGroup[] {
+  const own = groups.find((g) => g.key === college.unit_id);
+  const free = groups.find((g) => g.key === "free")?.prompts[0] ?? { ref: "free", title: "Your own essay", text: null, limit: null, kind: "free" as const, required: null };
+  const out: PickerGroup[] = [];
+  if (own && own.prompts.length > 0) out.push({ ...own, note: null });
+  out.push({
+    key: "free",
+    label: own && own.prompts.length > 0 ? "Something else it asks" : `What ${college.name} asks`,
+    prompts: [{ ...free, ref: college.ownRef ?? free.ref, title: `Your own essay for ${college.name}` }],
+    note: null,
+  });
+  return out;
+}
+
+export function PromptPicker({
+  groups,
+  person,
+  label = "Write a new one",
+  primary = true,
+  college = null,
+}: {
+  groups: PickerGroup[];
+  person: string | null;
+  label?: string;
+  primary?: boolean;
+  college?: PickerCollege | null;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const shown = college ? collegeGroups(groups, college) : groups;
 
   const pick = (p: PickerPrompt) =>
     start(async () => {
@@ -41,6 +78,7 @@ export function PromptPicker({ groups, person, label = "Write a new one", primar
         return;
       }
       track("essay_created", { prompt_kind: r.kind });
+      track("essay_started_from", { where: "picker" });
       setOpen(false);
       router.push(editorHref(r.id, person));
     });
@@ -49,12 +87,16 @@ export function PromptPicker({ groups, person, label = "Write a new one", primar
     <SheetDialog
       open={open}
       onOpenChange={setOpen}
-      title="Which prompt?"
-      description="Pick what you're writing for. You can reuse a draft for other colleges later."
+      title={college ? `What does ${college.name} ask?` : "Which prompt?"}
+      description={
+        college
+          ? `Start a draft, then give it ${college.name}'s prompt as its title so you know what it answers.`
+          : "Pick what you're writing for. You can reuse a draft for other colleges later."
+      }
       trigger={{ className: cn(TRIGGER, primary ? "bg-foreground text-background" : "ring-1 ring-border hover:bg-muted"), label, content: label }}
     >
       <div className="mt-4 space-y-5">
-        {groups.map((g) => (
+        {shown.map((g) => (
           <section key={g.key} aria-label={g.label}>
             <h3 className="text-sm font-semibold text-muted-foreground">{g.label}</h3>
             {g.note && <p className="mt-1 text-sm text-muted-foreground italic">{g.note}</p>}

@@ -9,7 +9,7 @@ import { defaultTab, parseTab, PLAN_TABS, planHref, TAB_LABELS, tabForStage, tab
 import { intakeStepParam } from "../lib/planner/intake.ts";
 
 test("parseTab keeps the four tabs and nothing else; the dropped Scores tab falls back to the default (owner, 2026-10-12)", () => {
-  for (const t of ["next", "colleges", "calendar", "offers"]) assert.equal(parseTab(t), t);
+  for (const t of ["next", "colleges", "essays", "calendar", "offers"]) assert.equal(parseTab(t), t);
   for (const v of ["", "Colleges", "list", "scores", null, undefined, 3, ["colleges"]]) assert.equal(parseTab(v), null);
 });
 
@@ -25,8 +25,9 @@ test("a student opens on Next steps, and a guardian too (owner, 2026-10-14; it w
 test("Everyone is the calendar alone; Offers appears only once a decision is recorded", () => {
   assert.deepEqual(tabsFor({ everyone: true, hasDecision: true }), ["calendar"]);
   assert.deepEqual(tabsFor({ everyone: true, hasDecision: false }), ["calendar"]);
-  assert.deepEqual(tabsFor({ everyone: false, hasDecision: false }), ["next", "colleges", "calendar"]);
-  assert.deepEqual(tabsFor({ everyone: false, hasDecision: true }), ["next", "colleges", "calendar", "offers"]);
+  // Essays (specs/product/essays/tab.md): third, on every plan.
+  assert.deepEqual(tabsFor({ everyone: false, hasDecision: false }), ["next", "colleges", "essays", "calendar"]);
+  assert.deepEqual(tabsFor({ everyone: false, hasDecision: true }), ["next", "colleges", "essays", "calendar", "offers"]);
 });
 
 test("old ?stage= links: List, Rounds, Actions, Apply → Colleges; Timeline → Calendar; Offers → Offers", () => {

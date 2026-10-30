@@ -24,6 +24,7 @@ export type TaskKind =
   | "shape_gap" | "shape_cost"                                                                         // next steps U4
   | "confirm_complete" | "compare_offers" | "decide_by" | "outcome_share"                              // next steps U5
   | "story"                                                                                            // next steps U7
+  | "essays"                                                                                           // essays part 4 (specs/product/essays/moves.md): the one list-wide essays move
   | "own";
 /**
  * What a move's one button does (specs/planner/next-steps/seasons.md "Moves"; build-plan.md "Moves"), stored in
@@ -32,7 +33,8 @@ export type TaskKind =
 export type MoveAction =
   | { kind: "href"; href: string }
   | { kind: "open_intake"; step: number }
-  | { kind: "open_tab"; tab: import("./plan-tabs").PlanTab }
+  /** `college` (a unit id, additive; essays part 4): on the Essays tab, the card to land on (planHref's anchor). */
+  | { kind: "open_tab"; tab: import("./plan-tabs").PlanTab; college?: string }
   | { kind: "open_row"; itemId: string; panel?: "ed" | "capture" }
   | { kind: "mark_applied"; itemId: string }
   | { kind: "record_decision"; itemId: string }
@@ -148,6 +150,17 @@ export interface PlanContext {
    * season's moves whatever applies, and the Next steps tab lists them by season instead of Now's three.
    */
   allMoves?: boolean;
+  /**
+   * Essays, part 4 (specs/product/essays/moves.md "What counts as work left"): the student's drafts (no bodies) and
+   * their prompt links, read with the plan by the list's student (lib/planner/read-plan.ts), for the essays generator,
+   * the move's card, and the Essays tab. Null when the essays tables aren't set up or the plan has no student.
+   */
+  essays?: PlanEssays | null;
+}
+/** The drafts a plan reads (lib/essays/rows.ts shapes; never a body). */
+export interface PlanEssays {
+  rows: import("../essays/rows").EssayRow[];
+  links: import("../essays/rows").EssayLinkRow[];
 }
 /** The college facts stages read, cut from School on the server with citations already resolved
  *  (`citeField` → the serializable Citation the InfoTip takes). U1 defines and fills it; add fields additively. */
@@ -203,6 +216,6 @@ export interface PlanSchool { unit_id: string; name: string; city: string | null
 /* ------------------------------------------------------------------ */
 
 /** What a generator reads: a PlanContext without its tasks, stages, and viewer (generators/index.ts). Pure input. */
-export type GeneratorInput = Pick<PlanContext, "list" | "items" | "schools" | "profile" | "cycle" | "grade" | "today" | "visits" | "offers" | "gradYear" | "season" | "estimates" | "allMoves">;
+export type GeneratorInput = Pick<PlanContext, "list" | "items" | "schools" | "profile" | "cycle" | "grade" | "today" | "visits" | "offers" | "gradYear" | "season" | "estimates" | "allMoves" | "essays">;
 /** One generator module's export: pure, no I/O, returns every task it wants to exist right now. */
 export type Generator = (input: GeneratorInput) => GeneratedTask[];

@@ -157,3 +157,13 @@ test("no source file under app/, components/, lib/, or proxy.ts writes a /plan r
   const files = [...sourceFiles(join(ROOT, "app")), ...sourceFiles(join(ROOT, "components")), ...sourceFiles(join(ROOT, "lib")), join(ROOT, "proxy.ts")];
   assert.deepEqual(planRouteHits(files), [], "build links with planHref / planPrintHref / ADVISOR_PATH (lib/planner)");
 });
+
+test("next.config.ts redirects the bare /advisor/essays to the Essays tab for good; a ?college= link is left to the page's own redirect (the card anchor)", async () => {
+  const redirects = await nextConfig.redirects!();
+  const rule = redirects.find((r) => r.source === "/advisor/essays");
+  assert.ok(rule, "a rule for /advisor/essays");
+  assert.equal(rule!.destination, "/advisor?tab=essays");
+  assert.equal(rule!.permanent, true);
+  // Without this guard the rule would swallow a `?college=` link's card anchor (specs/product/essays/tab.md).
+  assert.deepEqual(rule!.missing, [{ type: "query", key: "college" }]);
+});

@@ -83,6 +83,10 @@ const nextConfig: NextConfig = {
       // is a different path and stays.
       { source: "/plan", destination: "/advisor", permanent: true },
       { source: "/plan/:path*", destination: "/advisor/:path*", permanent: true },
+      // The essay workspace's list became the Essays tab (specs/product/essays/tab.md "The tab strip"). A real 308 here;
+      // the page's own redirect (app/advisor/essays/page.tsx) stays for a `?college=` link, which needs the card anchor
+      // the config can't write. The query string passes through (`?for=`).
+      { source: "/advisor/essays", missing: [{ type: "query", key: "college" }], destination: "/advisor?tab=essays", permanent: true },
     ];
   },
   async rewrites() {

@@ -140,6 +140,8 @@ export const ROADMAP: RoadmapSpec[] = [
   // as a four-college pilot; the research is in specs/ideas/visit-events.md (promoted).
   // Essays (specs/product/essays/: the prompts, the workspace, the reviewer) were planned 2026-10-28 and built the next
   // day on feature/essays; see each spec's "As built" section. The Google Drive connection waits for Google sign-in.
+  // Essays parts 4 and 5 (the move and the tab, group "essays") were built 2026-10-30 on feature/essays-next (PR
+  // #194); see each spec's "As built" section.
   {
     slug: "launch-database",
     file: "specs/launch-database.md",

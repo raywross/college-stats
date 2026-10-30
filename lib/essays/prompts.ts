@@ -5,6 +5,10 @@
  * - `platform:coalition:<n>`: one of the Coalition's prompts (data/reference/platform-prompts.json);
  * - `college:<unit_id>:<cycle>:<n>`: one of a college's published prompts (`school.essays.prompts[].id` with the
  *   `college:` prefix);
+ * - `college:<unit_id>:<cycle>:own-<n>`: a prompt the student typed in for a college whose prompts aren't on file
+ *   ("Add what {College} asks", specs/product/essays/tab.md; essays-next brief "Shared contracts"): it ties the draft
+ *   to the college with no prompt on file, `own-1`, `own-2`, … per college and cycle (`ownRef`/`nextOwnRef` in
+ *   lib/essays/progress.ts). Parsed as a `college` ref with `own: true`, so the grouping and the package see the college;
  * - `free`: a draft with no prompt yet.
  *
  * `resolvePrompt` turns a ref into what the workspace shows: a title, the prompt's text, its limit, its college, its
@@ -72,10 +76,10 @@ export const KIND_LABEL: Record<EssayKind, string> = {
 export type ParsedRef =
   | { kind: "main" }
   | { kind: "coalition"; n: number }
-  | { kind: "college"; unitId: string; cycle: string; n: number; promptId: string }
+  | { kind: "college"; unitId: string; cycle: string; n: number; promptId: string; own?: true }
   | { kind: "free" };
 
-/** A ref string, checked; null for anything that isn't one of the four shapes. */
+/** A ref string, checked; null for anything that isn't one of the five shapes (four kinds; a college ref may be an own one). */
 export function parsePromptRef(ref: unknown): ParsedRef | null {
   if (typeof ref !== "string" || ref.length > 200) return null;
   if (ref === MAIN_REF) return { kind: "main" };
@@ -84,6 +88,8 @@ export function parsePromptRef(ref: unknown): ParsedRef | null {
   if (m) return { kind: "coalition", n: Number(m[1]) };
   m = /^college:(\d{1,12}):(\d{4}-\d{2,4}):([1-9]\d{0,2})$/.exec(ref);
   if (m) return { kind: "college", unitId: m[1], cycle: m[2], n: Number(m[3]), promptId: `${m[1]}:${m[2]}:${m[3]}` };
+  m = /^college:(\d{1,12}):(\d{4}-\d{2,4}):own-([1-9]\d{0,2})$/.exec(ref);
+  if (m) return { kind: "college", unitId: m[1], cycle: m[2], n: Number(m[3]), promptId: `${m[1]}:${m[2]}:own-${m[3]}`, own: true };
   return null;
 }
 
@@ -220,6 +226,8 @@ export function resolvePrompt(ref: string, lookup: PromptLookup): ResolvedPrompt
   }
   const school = lookup.school(p.unitId) ?? null;
   const college = school ? { unit_id: school.unit_id, name: school.name } : null;
+  // A prompt the student typed in for the college (an own ref): found, the student's own kind, tied to the college.
+  if (p.own) return { ref, found: true, title: KIND_LABEL.free, text: null, options: [], limit: null, college, kind: "free", required: null, source: null, quote: null };
   const essays = essaysOf(school);
   const prompt = essays?.status === "published" ? (essays.prompts.find((x) => x.id === p.promptId) ?? null) : null;
   if (!essays || !prompt) return notOnFile(ref, college);

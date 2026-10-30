@@ -53,6 +53,7 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // portal (so the "high-school" group is gone). Rewritten against what exists: net-price-estimator, commercialization,
 // near-and-far, worst-plausible-spring, cycle-watch, getting-into-the-major, and the three iPhone specs.
 export type RoadmapGroupKey =
+  | "essays"
   | "college-reported"
   | "campus-life"
   | "planning"
@@ -62,6 +63,12 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
+  {
+    key: "essays",
+    title: "Essays",
+    description:
+      "The prompts a college never publishes: a likely tier from one permitted source, a person's read of the form, and families confirming the questions they meet, each marked for what it is.",
+  },
   {
     key: "planning",
     title: "Planning tools",
@@ -122,6 +129,17 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
+  // Essays part 6 (2026-10-30): the owner's question about Florida's missing prompts; parts 4–5 were built the same day.
+  {
+    slug: "essays-sources",
+    file: "specs/product/essays/sources.md",
+    group: "essays",
+    summary:
+      "Prompts the college never publishes: likely (College Essay Guy, under permission), confirmed (a person's read of the form, or two families reporting the same question and the owner approving), each marked for what it is and never shown as the college's own words.",
+    complexity: 2,
+    complexityNote: "One more recipe in the college-reported engine, two small tables with a consent box and a consensus rule, and a review row in the Data Steward's queue.",
+    status: "planned",
+  },
   {
     slug: "net-price-estimator",
     file: "specs/product/net-price-estimator.md",
@@ -140,6 +158,8 @@ export const ROADMAP: RoadmapSpec[] = [
   // as a four-college pilot; the research is in specs/ideas/visit-events.md (promoted).
   // Essays (specs/product/essays/: the prompts, the workspace, the reviewer) were planned 2026-10-28 and built the next
   // day on feature/essays; see each spec's "As built" section. The Google Drive connection waits for Google sign-in.
+  // Essays parts 4 and 5 (the move and the tab, group "essays") were built 2026-10-30 on feature/essays-next (PR
+  // #194); see each spec's "As built" section.
   {
     slug: "launch-database",
     file: "specs/launch-database.md",

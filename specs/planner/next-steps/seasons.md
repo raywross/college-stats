@@ -103,7 +103,7 @@ The season advisors call pivotal; the tab leads with the list and the first ED p
 ### Summer before senior year (Jun–Jul)
 | Move | Who | Source | Action | Carries |
 |---|---|---|---|---|
-| Draft the personal essay (4–8 drafts is normal) | student | cycle window `personal_essay_draft` | tick; "start from your story" | yes |
+| Write your essays (the personal essay first; college prompts arrive by August) | student | the essays move ([essays/moves.md](../../product/essays/moves.md)) | open the Essays tab | yes |
 | Final list: 12–15 | student | list-shape senior shape | gap moves | yes |
 | Decide on ED (due Nov 1 or 15) | student + parent | ed-opportunities `ed_decide` | the ED sheet | yes |
 | Retake if a realistic gain would move a college up | student | scores coach | test dates | no |
@@ -119,7 +119,7 @@ Dated moves lead; the applying moves are in [applying.md](applying.md).
 | Show interest at the colleges where it counts, if you haven't | student | interest-and-visits | one-tap options | no |
 | Last test date for early rounds (October) | student | scores coach | official page | no |
 | Review before they submit; don't write | parent | advisors (NACAC) | a tick on each submit move's parent lane | no |
-| Write the supplements (n per college) | student | built `supplement` tasks | tick | n/a |
+| Finish each college's essays (earliest deadline first) | student | the essays move ([essays/moves.md](../../product/essays/moves.md)) | open the Essays tab | n/a |
 
 ### Senior winter (Jan–Feb)
 | Move | Who | Source | Action | Carries |

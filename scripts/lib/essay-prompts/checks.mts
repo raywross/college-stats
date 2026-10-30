@@ -19,9 +19,15 @@
  * - The kind read, not inferred: `why_us` only when the prompt asks why this college or program; `program` only with
  *   a named program in `applies_to` (and that name on the page).
  * - The status agrees with the prompts: published lists some; none and refers_to_form list none and quote the page.
+ * - Held first, so the PR's table names them: a page under a graduate, professional-school, or transfer path (or one
+ *   whose title names a graduate program); a refers_to_form whose quote counts the questions ("There are five required
+ *   short-answer questions": Harvard's checklist said so while its requirements page printed them); a refers_to_form
+ *   whose quote describes the platform's own essay (the Common App's seven prompts, 650 words), which says nothing
+ *   about the college's supplement.
  */
 import type { EssayPrompt } from "../../../lib/types.ts";
 import { cycleStart, openCycle } from "./cycle.mts";
+import { graduateHeading, isGraduateUrl } from "./discover.mts";
 import type { EssayRecord } from "./store.mts";
 
 export const PROMPT_CHARS = { min: 10, max: 1500 } as const;
@@ -62,6 +68,38 @@ const NONE_SENTENCE = /\b(no|not|never|without|doesn.t|does not|don.t|do not|are
 const REFERS_SENTENCE = /\b(essays?|prompts?|questions?|writing|supplement|short[\s-]answers?|personal statement)\b/i;
 const FORM_WORD = /\b(common app(lication)?|coalition|apply ?texas|cal state apply|questbridge|scoir|the application|your application|our application|online application|application (form|portal|platform)|within the application|in the application|as part of (the|your) application)\b/i;
 
+/** A sentence that counts the questions or prompts: "five required short-answer questions", "3 essay prompts". */
+export const COUNTS_QUESTIONS = /\b(\d+|two|three|four|five|six|seven|eight|nine|ten)\s+(?:(?:required|additional|supplemental|short[\s-]answer|essay|writing|brief|college[\s-]specific|school[\s-]specific)\s+){0,3}(questions|prompts|short[\s-]answers)\b/i;
+/** The platform's own essay by its numbers: the Common App's seven prompts and its 650-word limit. */
+const PLATFORM_ESSAY_NUMBERS = /\b(seven|7)\s+(essay\s+)?prompts\b|\b650[\s-]*(-|–)?\s*words?\b|\b650[\s-]word\b/i;
+/** The platform's own essay by its name: "the Common App personal essay". */
+const PLATFORM_ESSAY_NAME = /\b(common app(lication)?|coalition)\b[^.]{0,80}\b(personal (essay|statement)|main essay)\b|\bpersonal (essay|statement)\b[^.]{0,80}\b(common app(lication)?|coalition)\b/i;
+/** Words naming the college's own supplement: a quote with these is about the college, even beside the platform's essay. */
+const COLLEGE_SUPPLEMENT = /\bsupplement(al)?\b|\bshort[\s-]answers?\b|\b(college|school|university)[\s-]specific\b|\b[A-Z][\w.]*\s+(University|College)\s+(questions|essays?)\b/;
+
+/**
+ * True when a quote describes the application platform's own essay rather than the college's supplement ("The Common
+ * App essay … has a 650-word maximum word limit, and there are seven prompts to choose from").
+ */
+export function describesPlatformEssay(quote: string): boolean {
+  return PLATFORM_ESSAY_NUMBERS.test(quote) || (PLATFORM_ESSAY_NAME.test(quote) && !COLLEGE_SUPPLEMENT.test(quote));
+}
+
+/** The holds listed first (see the header): the page's path or heading, and what a refers_to_form quote says. */
+function headProblems(r: EssayRecord, ctx: CheckContext): string[] {
+  const out: string[] = [];
+  const grad = [r.source_url, r.final_url].find((u): u is string => !!u && isGraduateUrl(u));
+  if (grad) out.push(`the page is under a graduate, professional-school, or transfer path (${grad}), not the first-year page`);
+  else if (ctx.pageText !== undefined && graduateHeading(ctx.pageText)) out.push("the page's title or heading names a graduate or professional program, not the first-year application");
+  if (r.status === "refers_to_form" && r.status_quote?.trim()) {
+    const q = r.status_quote;
+    const count = q.match(COUNTS_QUESTIONS);
+    if (count) out.push(`status refers_to_form, but the quoted sentence counts the questions ("${count[0]}"): a page that counts them often prints them; held for a look`);
+    if (describesPlatformEssay(q)) out.push("status refers_to_form, but the quoted sentence describes the application platform's own essay (the Common App's seven prompts, 650 words), not the college's supplement");
+  }
+  return out;
+}
+
 /** Problems with one prompt (empty when it passes). `where` prefixes each; `choose` when the page says to pick some. */
 export function promptProblems(p: EssayPrompt, where: string, page: string | null, choose = false): string[] {
   const out: string[] = [];
@@ -97,6 +135,7 @@ export function promptProblems(p: EssayPrompt, where: string, page: string | nul
 export function checkRecord(r: EssayRecord, ctx: CheckContext): string[] {
   const out: string[] = [];
   const page = ctx.pageText === undefined ? null : normalizeForMatch(ctx.pageText);
+  out.push(...headProblems(r, ctx));
   const start = cycleStart(r.cycle);
   const open = cycleStart(openCycle(ctx.today))!;
   if (start === null) out.push(r.cycle_quote ? `the page's cycle words ${JSON.stringify(r.cycle_quote)} name no cycle` : "the page names no cycle");

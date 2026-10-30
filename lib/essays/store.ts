@@ -24,6 +24,12 @@ import { KIND_LABEL, MAIN_REF, parsePromptRef, resolvePrompt, type EssayKind, ty
 import { promptLookup } from "./load";
 import { shouldVersion, ESSAY_STATUSES, type CommentAnchor, type EssayStatus, type VersionSource } from "./rows";
 import { textFromUpload, uploadKindOf } from "./docx";
+import { tickEssaysMove } from "./move-tick";
+import { trackServer } from "@/lib/analytics-server";
+import { profileFor } from "@/lib/student-profile-store";
+import { effectiveGradYear } from "@/lib/student-profile";
+import { loadCycle } from "@/lib/planner/cycle";
+import { planCycleKey, planSchools, todayIso } from "@/lib/planner/context";
 
 export type EssayActionResult = { ok: true } | { ok: false; message: string };
 
@@ -54,9 +60,48 @@ function fail(error: { message?: string } | null | undefined, what: string): Fai
 function refresh() {
   try {
     revalidatePath("/advisor/essays", "layout");
+    revalidatePath("/advisor");
   } catch (err) {
     console.error(`essays: revalidate failed: ${err instanceof Error ? err.message : String(err)}`);
   }
+}
+
+/**
+ * After a write that can finish the essays (essays-next brief "Shared contracts"; specs/product/essays/moves.md
+ * "Done"): read the student's progress and tick `{list}:essays:next` when every essay is ready
+ * (lib/essays/move-tick.ts tickEssaysMove). Never fails the write it follows: an error is logged. Not exported (a
+ * "use server" module's exports are callable from the browser).
+ */
+async function afterEssayWrite(r: Ready, studentId: string | null | undefined): Promise<void> {
+  if (!studentId) return;
+  try {
+    const result = await tickEssaysMove(r.supabase, studentId, { schools: (ids) => studentSchools(r.supabase, studentId, ids) });
+    if (result.ticked) {
+      await trackServer("essays_move_done", { by: "store" }, r.userId);
+      try {
+        revalidatePath("/advisor");
+      } catch {
+        /* outside a request: nothing to refresh */
+      }
+    }
+  } catch (err) {
+    console.error(`essays: ticking the essays move failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+/** The plan's colleges in the student's cycle (their effective graduation year), as the plan load builds them. */
+async function studentSchools(supabase: Supabase, studentId: string, unitIds: string[]) {
+  const [profile, student] = await Promise.all([profileFor(studentId), supabase.from("students").select("grad_year").eq("id", studentId).maybeSingle()]);
+  const stored = (student.data as { grad_year: number | null } | null)?.grad_year ?? null;
+  const gradYear = profile ? effectiveGradYear(profile.data.basics, stored) : stored;
+  const cycle = loadCycle(planCycleKey(gradYear, todayIso()));
+  return planSchools(unitIds, cycle.startYear, null);
+}
+
+/** Whose draft this is (for the tick after a link or an unlink). */
+async function studentOfEssay(r: Ready, id: string): Promise<string | null> {
+  const { data } = await r.supabase.from("essays").select("student_id").eq("id", id).maybeSingle();
+  return (data as { student_id: string } | null)?.student_id ?? null;
 }
 
 const limitOf = (p: ResolvedPrompt): EssayLimit | null => p.limit;
@@ -107,6 +152,7 @@ export async function createEssay(promptRef: string): Promise<{ ok: true; id: st
     .select("id")
     .single();
   if (error || !data) return fail(error, "createEssay");
+  await afterEssayWrite(r, own.id);
   refresh();
   return { ok: true, id: (data as { id: string }).id, kind: cols.kind };
 }
@@ -181,9 +227,10 @@ export async function setEssayStatus(id: string, status: EssayStatus): Promise<E
   if (!isUuid(id) || !ESSAY_STATUSES.includes(status)) return { ok: false, message: FAILED };
   const r = await ready();
   if (!("supabase" in r)) return r;
-  const { data, error } = await r.supabase.from("essays").update({ status }).eq("id", id).select("id");
+  const { data, error } = await r.supabase.from("essays").update({ status }).eq("id", id).select("id, student_id");
   if (error) return fail(error, "setEssayStatus");
   if (!data?.length) return { ok: false, message: STUDENT_ONLY };
+  await afterEssayWrite(r, (data[0] as { student_id?: string }).student_id);
   refresh();
   return { ok: true };
 }
@@ -198,6 +245,7 @@ export async function linkEssay(id: string, promptRef: string): Promise<EssayAct
     if (/row-level security/i.test(error.message ?? "")) return { ok: false, message: STUDENT_ONLY };
     return fail(error, "linkEssay");
   }
+  await afterEssayWrite(r, await studentOfEssay(r, id));
   refresh();
   return { ok: true };
 }
@@ -208,6 +256,7 @@ export async function unlinkEssay(id: string, promptRef: string): Promise<EssayA
   if (!("supabase" in r)) return r;
   const { error } = await r.supabase.from("essay_links").delete().eq("essay_id", id).eq("prompt_ref", promptRef);
   if (error) return fail(error, "unlinkEssay");
+  await afterEssayWrite(r, await studentOfEssay(r, id));
   refresh();
   return { ok: true };
 }
@@ -341,9 +390,10 @@ export async function deleteEssay(id: string): Promise<EssayActionResult> {
   if (!isUuid(id)) return { ok: false, message: FAILED };
   const r = await ready();
   if (!("supabase" in r)) return r;
-  const { data, error } = await r.supabase.from("essays").delete().eq("id", id).select("id");
+  const { data, error } = await r.supabase.from("essays").delete().eq("id", id).select("id, student_id");
   if (error) return fail(error, "deleteEssay");
   if (!data?.length) return { ok: false, message: STUDENT_ONLY };
+  await afterEssayWrite(r, (data[0] as { student_id?: string }).student_id);
   refresh();
   return { ok: true };
 }

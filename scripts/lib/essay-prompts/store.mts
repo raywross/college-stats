@@ -13,7 +13,7 @@ import { dirname, join } from "node:path";
 import type { EssayPrompt, PlatformPromptsFile, SchoolEssays } from "../../../lib/types.ts";
 
 /** Bumped when the reader's prompt or schema changes, so a re-read is distinguishable from a page change. */
-export const READER_VERSION = "2026.10.29.4";
+export const READER_VERSION = "2026.10.30.1";
 
 /** How the page was found (./discover.mts). */
 export type FoundVia = "known-link" | "well-known-path" | "apply-page-link" | "sitemap" | "picker" | "recipe";

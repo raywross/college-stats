@@ -26,7 +26,7 @@ import { inRegistrationWindow } from "@/lib/chances/course-plan-view";
 import { span } from "@/lib/timing";
 import { planBundle, type PlanBundle } from "@/lib/bundles";
 import { bundleKnownMissing, planDataFromBundle } from "@/lib/bundle-read";
-import type { PlanData } from "./read-plan";
+import { readPlanEssays, type PlanData } from "./read-plan";
 
 export type PlanLoad =
   /** The plan, ready for the tabs. */
@@ -70,18 +70,23 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
   })();
   // Without the bundle (known missing a moment ago), the lists read starts in the first wave too.
   const listsP = bundleKnownMissing("plan_bundle") ? myLists(owner) : null;
+  // Essays, part 4 (specs/product/essays/moves.md): the student's drafts and links ride in the first wave beside the
+  // plan bundle (row-level security decides who reads them); null without the tables.
+  const supabaseP = createServerSupabase();
+  const essaysP = supabaseP.then((s) => readPlanEssays(s, studentId)).catch(() => null);
   const [accessList, account, profile, home, bundle] = await span("access+plan", () =>
     Promise.all([viewer ? Promise.resolve(null) : studentsICanSee(), getAccount(), profileFor(studentId), myHome(), bundleP]),
   );
   const access = viewer ?? accessList?.find((a) => a.student.id === studentId) ?? null;
   if (!access || access.student.id !== studentId) return { kind: "not-found" };
   const { student, canEdit, relation } = access;
-  const supabase = await createServerSupabase();
+  const supabase = await supabaseP;
 
   let plan: PlanData | null = null;
   let listId: string | null = bundle?.list?.id ?? null;
   if (bundle && listId) {
-    plan = planDataFromBundle(bundle);
+    const fromBundle = planDataFromBundle(bundle);
+    plan = fromBundle ? { ...fromBundle, essays: await essaysP } : null;
   } else {
     if (!bundle) {
       const lists = await span("lists", () => listsP ?? myLists(owner));
@@ -99,7 +104,7 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
   if (!plan) {
     try {
       const id = listId;
-      plan = await span("readPlan", () => readPlan(supabase, id));
+      plan = await span("readPlan", () => readPlan(supabase, id, { essays: essaysP }));
     } catch (err) {
       if (err instanceof PlannerSetupError) return { kind: "setup-missing", access };
       throw err;

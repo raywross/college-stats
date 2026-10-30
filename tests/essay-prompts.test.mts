@@ -859,8 +859,10 @@ test("discovery: skip looks past a page already read", async () => {
 
 test("runCollege: a general page that points to the form gets a second look, and the prompts page one link away wins", async () => {
   const HOW_TO = '<h1>How to apply</h1><p>Submit the essay with your Common Application. Our supplemental essay questions are listed on the writing supplement page.</p><p>What else? When?</p><a href="/apply/writing-supplement">Writing supplement</a>';
+  // The page doesn't link to the prompts (a link would be followed by discovery before any read; see "points to the
+  // application" below), but they sit at a well-known path the second look reaches.
   const http = fakeSite({
-    "https://admissions.example.edu/apply": HOW_TO,
+    "https://admissions.example.edu/apply": HOW_TO.replace('<a href="/apply/writing-supplement">Writing supplement</a>', ""),
     "https://admissions.example.edu/apply/writing-supplement": readFileSync(join(FIX, "table-limits.html"), "utf8"),
   });
   const { client, calls } = fakeClient((p) => {

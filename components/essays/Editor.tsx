@@ -16,7 +16,7 @@ import { track } from "@/lib/analytics";
 import { countText, type CountKind, type EssayLimit } from "@/lib/essays/count";
 import { anchorFor } from "@/lib/essays/normalize";
 import { deleteEssay, renameEssay, restoreVersion, saveEssay, setEssayStatus } from "@/lib/essays/store";
-import { ESSAY_STATUSES, STATUS_LABEL, type CommentAnchor, type EssayStatus, type VersionRow } from "@/lib/essays/rows";
+import { ESSAY_STATUSES, essaysHref, STATUS_LABEL, type CommentAnchor, type EssayStatus, type VersionRow } from "@/lib/essays/rows";
 import { nameWarning, otherCollegesNamed } from "@/lib/essays/variants";
 import { CountBar } from "./CountBar";
 import { Comments, type CommentView } from "./Comments";
@@ -380,7 +380,7 @@ function DraftSettings({ id, title, person }: { id: string; title: string; perso
             if (!window.confirm("Delete this draft and every version of it? This can't be undone.")) return;
             start(async () => {
               const r = await deleteEssay(id);
-              if (r.ok) router.push(`/advisor/essays${person ? `?for=${person}` : ""}`);
+              if (r.ok) router.push(essaysHref({ person }));
               else setMessage(r.message);
             });
           }}

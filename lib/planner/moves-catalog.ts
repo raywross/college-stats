@@ -517,12 +517,12 @@ export const SEASON_EXPLAINER: Record<Season, { lead: string; paragraph: string;
   summer_before_senior: {
     lead: "The summer for the essay and the final list.",
     paragraph:
-      "Draft the personal essay, settle the list, decide whether an early round makes sense, and check the list's cost together before applications open. Write your story while there's no deadline.",
+      "Write your essays: the summer is for the personal essay; the fall for each college's supplements, earliest deadline first. Settle the list, decide whether an early round makes sense, and check the list's cost together before applications open. Write your story while there's no deadline.",
     next: "Next: senior fall, when applications go out.",
   },
   senior_fall: {
     lead: "Applications go out.",
-    paragraph: "Dated moves lead: each college's deadline in the round you chose, the FAFSA and CSS Profile from October, and showing interest where it counts. A parent reviews; the student writes.",
+    paragraph: "Dated moves lead: each college's deadline in the round you chose, the FAFSA and CSS Profile from October, and showing interest where it counts. Your essays follow the list: each college's supplements, earliest deadline first, after the personal essay from the summer. A parent reviews; the student writes.",
     next: "Next: senior winter, for early decisions and the regular round.",
   },
   senior_winter: {

@@ -48,7 +48,7 @@ export interface AnalyticsEvents {
   /* The planner (specs/planner/model.md "Telemetry"): that a stage was used and which college, never a title, a
    * date, a phone number, a count, or a note. */
   /** The redesign (specs/planner/redesign/*.md "Telemetry"): which tab, whose view, and whether it's Everyone. */
-  plan_opened: { tab: "next" | "colleges" | "calendar" | "offers"; viewer: "student" | "guardian"; everyone: boolean };
+  plan_opened: { tab: "next" | "colleges" | "essays" | "calendar" | "offers"; viewer: "student" | "guardian"; everyone: boolean };
   plan_task_ticked: { kind: string; source: "college" | "cycle" | "stage" | "own" | "season"; assignee: "student" | "guardian" | "either" };
   plan_stage_done: { stage: number };
   plan_nudge_sent: { channel: "email" | "sms" | "app" };
@@ -166,6 +166,8 @@ export interface AnalyticsEvents {
   essay_imported: { format: "uploaded" | "pasted" };
   /** A college's package page opened, and whether any of its prompts has a draft started yet. */
   essay_package_opened: { started: boolean };
+  /** Where a draft was started from (specs/product/essays/tab.md "Telemetry"): a prompt row on the Essays tab, the essays move, or the picker. Never a college. */
+  essay_started_from: { where: "tab" | "move" | "picker" };
   /* The reader's notes (specs/product/essays/reviewer.md "Privacy"): sent by POST /api/essays/review; never text. */
   /** "Read this draft" asked, by the prompt's kind. */
   essay_review_requested: { prompt_kind: string };
@@ -173,14 +175,17 @@ export interface AnalyticsEvents {
   essay_review_notes: { count: number; categories: string };
   /** A note the guard dropped, or a whole answer with no notes (refusal, max_tokens, malformed), by why. */
   essay_review_dropped: { reason: string };
+  /** The essays move (specs/product/essays/moves.md "Telemetry") done: ticked by the store when nothing is left, or by hand. Never a college or a count of words. */
+  essays_move_done: { by: "store" | "hand" };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
-  side: "client" | "server";
+  /** `both`: sent with `track()` from the browser and with `trackServer()` from a Server Action (essays_move_done: by hand, by the store). */
+  side: "client" | "server" | "both";
   why: string;
 };
 
@@ -304,9 +309,11 @@ export const EVENTS = {
   essay_exported: { properties: ["format"], side: "client", why: "Essays: downloads and copies, by format" },
   essay_imported: { properties: ["format"], side: "client", why: "Essays: imports, by file or paste" },
   essay_package_opened: { properties: ["started"], side: "client", why: "Essays: how often the per-college package page is opened, before or after any writing has started" },
+  essay_started_from: { properties: ["where"], side: "client", why: "Essays: where drafts are started (the Essays tab's prompt rows, the essays move, the picker)" },
   essay_review_requested: { properties: ["prompt_kind"], side: "server", why: "Essays: reader's notes asked for, by the prompt's kind (each is a model call)" },
   essay_review_notes: { properties: ["count", "categories"], side: "server", why: "Essays: how many notes a review keeps, and of which kinds" },
   essay_review_dropped: { properties: ["reason"], side: "server", why: "Essays: what the guard drops, and answers with no notes, by why" },
+  essays_move_done: { properties: ["by"], side: "both", why: "Essays: the essays move finished, ticked by the store when every essay is ready or by hand" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

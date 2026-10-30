@@ -9,6 +9,11 @@
  *   4. the site's own index: the `Sitemap:` files its robots.txt names, filtered to essay URLs (the engine's sitemap
  *      step, scripts/lib/college-reported/probe.mts);
  *   5. one cheap model call (Haiku) picking among the links found on the pages fetched so far.
+ * A page any step accepts that says its essays are in the application and prints none (`refersOnly`), or a hub that
+ * prints none but names the essay page in a link, is looked past one level first (`take`, `rankDeeperLinks`): Cornell's,
+ * Dartmouth's, and UW's "how to apply" pages pointed to the form while their prompts pages sat one link away.
+ * Graduate, professional-school, and transfer pages (`isGraduateUrl`, `graduateHeading`) are never fetched or taken:
+ * a run took Villanova's law school's "how to apply" page for the college's.
  * Every request goes through the engine's PoliteHttp (robots.txt, pacing, the honest user agent). The model never
  * fetches; it only picks a number from a list of links we found. Pages on a shared application platform
  * (PLATFORM_HOSTS) are never the college's: not fetched, not accepted, not offered. Pure apart from the injected http
@@ -45,9 +50,126 @@ export const ESSAY_PATHS = [
 
 /**
  * Request limits per college: pages fetched in all (the well-known paths stop `reserve` short, leaving room for the
- * sitemap and the picker's page), links followed from a page, sitemap files read, links shown to the picker.
+ * sitemap and the picker's page), links followed from a page, links followed one level past a page that only points
+ * to the application (`deeper`), sitemap files read, links shown to the picker.
  */
-export const DISCOVER_LIMITS = { requests: 40, reserve: 8, follow: 4, applyFollow: 3, sitemaps: 3, pickerLinks: 300 } as const;
+export const DISCOVER_LIMITS = { requests: 40, reserve: 8, follow: 4, applyFollow: 3, deeper: 3, sitemaps: 3, pickerLinks: 300 } as const;
+
+/* ------------------------------------------------------------------ */
+/* Graduate and professional schools                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A path segment (or a host's first label) naming a graduate or professional school. The reader is for first-year
+ * applicants: Villanova's run landed on its law school's "how to apply" page ("Personal Statement … maximum 3 pages")
+ * and recorded it as the college's essays.
+ */
+const GRADUATE_SEGMENT = /^(law|law-?school|school-?of-?law|college-?of-?law|medicine|medical|med|school-?of-?medicine|college-?of-?medicine|medical-?school|business|business-?school|school-?of-?business|nursing|school-?of-?nursing|graduate|grad|gradschool|graduate-?school|graduate-?admissions?|graduate-?studies|graduate-?programs?|mba|phd|doctoral|dentistry|dental|pharmacy|veterinary|vetmed|divinity|seminary|transfer)$/i;
+const GRADUATE_HOST = /^(law|med|medicine|mba|business|grad|graduate|gradschool|gradadmissions|nursing|dental|pharmacy)\./i;
+
+/** True for a URL under a graduate or professional school's path or host (or a transfer path): never the page. */
+export function isGraduateUrl(url: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return false;
+  }
+  if (GRADUATE_HOST.test(u.host)) return true;
+  return safeDecodeUri(u.pathname)
+    .split("/")
+    .map((s) => s.replace(/\.(s?html?|php|aspx?)$/i, ""))
+    .some((s) => GRADUATE_SEGMENT.test(s) || /^(transfer|graduate)[_-]|[_-](transfer|graduate)$|[_-](transfer|graduate)[_-]/i.test(s));
+}
+
+/** Words in a page's title or heading that name a graduate or professional program. */
+const GRADUATE_PROGRAM = /\b(school of law|law school|college of law|J\.?D\.? (program|application)|juris doctor|LL\.?M|M\.?B\.?A\b|graduate (admissions?|school|programs?|studies|applicants?)|medical school|school of medicine|college of medicine|M\.?D\.? program|doctoral|Ph\.?D|master'?s (program|degree|applicants?)|DNP\b|LSAT|GMAT|MCAT)/i;
+
+/**
+ * True when a page's title (its first line) or one of its first headings names a graduate or professional program.
+ * Only the head of the page: an undergraduate page's menu names the law and business schools too.
+ */
+export function graduateHeading(text: string): boolean {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const head = [lines[0] ?? "", ...lines.filter((l) => l.startsWith("## ")).slice(0, 4)];
+  return head.some((l) => GRADUATE_PROGRAM.test(l));
+}
+
+/* ------------------------------------------------------------------ */
+/* A page that only points to the application                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Words saying the essays live inside the application: "as part of your Common Application, you'll be asked to fill
+ * out the Cornell University supplement", "There are five required short-answer questions", "Detailed instructions can
+ * be found on the application".
+ */
+const REFERS_TO_FORM = /\bas part of (your|the) (common |coalition )?app(lication)?\b|\b(with|in|within|on|through) (the|your) (common |coalition )?app(lication)?\b[^.]{0,80}\b(essays?|supplement|questions?|prompts?)|\b(essays?|supplement|questions?|prompts?)\b[^.]{0,120}\b(with|in|within|on|through|part of) (the|your) (common |coalition |online )?app(lication)?\b|\b(fill out|complete|submit)\b[^.]{0,80}\b(writing supplement|supplement(al)? (essays?|questions?)|[A-Z][\w.]* (University|College) (supplement|questions))|\b(\d+|two|three|four|five|six|seven|eight) required (short[\s-]answer |essay |supplemental )?(questions|prompts)\b|\binstructions can be found (on|in) the application\b|\b(applicant|application) portal\b[^.]{0,80}\b(supplement|essays?|questions?)/i;
+
+/** A line that reads like a prompt: a question of eight words or more, or a sentence that starts by asking to write. */
+const PROMPT_START = /^(?:-\s*)?(?:(?:prompt|question|option)\s*(?:\d+|[a-h]|one|two|three|four|five|six|seven|eight)\s*[:.)-]\s*|\d{1,2}[.)]\s+|[A-H][.)]\s+)?(?:please\s+|briefly\s+)?(describe|tell us|explain|share|discuss|reflect|recount|introduce yourself|using your|elaborate|imagine|think about|write about|consider)\b/i;
+
+/** A question asked of the applicant ("How will … enable you to contribute?"), not a question the applicant asks. */
+const PROMPT_QUESTION = /\b(you|your|yourself)\b/i;
+/**
+ * An FAQ entry or a form field: first person ("How do I monitor …?", "Can I change my application …?"), a yes/no
+ * question about the process ("Do you accept AP …?", "Are you willing to study …?"), or an instruction quoting the
+ * form ("Select Yes when asked …").
+ */
+const FAQ_QUESTION = /\b(I|I.m|my|me|we)\b|^(-\s*)?(do|does|are|is|can|will|when|where|should|may)\b|\b(asked|select|check the box)\b/i;
+
+/**
+ * Whether a page prints prompts (cheap, before any model): two prompt-like lines, or one beside a stated limit. Lines
+ * that are a link's whole text don't count (a list of FAQ questions, a blog post's title).
+ */
+export function printsPrompts(text: string, linkTexts: readonly string[] = []): boolean {
+  const links = new Set(linkTexts.map((t) => t.replace(/\s+/g, " ").trim().toLowerCase()).filter(Boolean));
+  let n = 0;
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line || line.startsWith("##") || line.length < 40 || line.length > 1500) continue;
+    if (links.has(line.replace(/^-\s*/, "").toLowerCase())) continue;
+    const words = line.split(/\s+/).length;
+    if (words < 8) continue;
+    if (PROMPT_START.test(line) || (/\?\s*["”]?$/.test(line) && PROMPT_QUESTION.test(line) && !FAQ_QUESTION.test(line))) n++;
+  }
+  const limit = /\b\d{2,4}\s*(-|–)?\s*(words?|characters?)\b|\b\d{2,4}-word\b/i.test(text);
+  return n >= 2 || (n >= 1 && limit);
+}
+
+/** True for a page that says its essays are in the application and prints none of them: worth one more level. */
+export function refersOnly(text: string, linkTexts: readonly string[] = []): boolean {
+  return REFERS_TO_FORM.test(text) && !printsPrompts(text, linkTexts);
+}
+
+/** Words in an anchor (its text or URL) that name the essays, one level past a page that only points to the form. */
+const DEEPER_WORD = /\bessays?\b|prompts?\b|writing[\s_-]*(supplement|section|requirement)s?|short[\s_-]*answers?|\bquestions?\b|supplement(al)?[\s_-]*(essay|question|writing)s?/i;
+
+/**
+ * Links worth one more fetch past a page that only points to the application, best first: the college's own hosts,
+ * never a platform, a graduate or transfer page, tips, or an FAQ; a first-year URL before others.
+ */
+export function rankDeeperLinks(links: readonly FoundLink[], origins: readonly string[]): FoundLink[] {
+  const seen = new Set<string>();
+  return links
+    .map((l, i) => {
+      let path = l.url;
+      try {
+        const u = new URL(l.url);
+        path = u.pathname + u.search;
+      } catch {
+        // as written
+      }
+      const hay = `${l.text} ${safeDecodeUri(path)}`;
+      let s = essayLinkScore(l);
+      if (!s && DEEPER_WORD.test(hay) && !NOT_PROMPTS.test(hay) && !/faq|frequently|ask(ed)? questions|contact|glossary-question/i.test(hay)) s = 1;
+      if (s && FIRST_YEAR.test(hay)) s += 0.5;
+      return { l, i, s };
+    })
+    .filter(({ l, s }) => s > 0 && origins.includes(origin(l.url) ?? "") && !isPlatformUrl(l.url) && !isGraduateUrl(l.url) && !seen.has(l.url) && (seen.add(l.url), true))
+    .sort((a, b) => b.s - a.s || a.i - b.i)
+    .map(({ l }) => l);
+}
 
 /** Words that mark a link as a first-year "how to apply" page: one level deeper, where the essay link usually is. */
 const FIRST_YEAR = /first[\s_-]*year|freshm[ae]n|first[\s_-]*time/i;
@@ -59,6 +181,7 @@ const HOW_TO_APPLY = /how[\s_-]*to[\s_-]*apply|application[\s_-]*(process|requir
  * names first-year applicants and applying scores highest; graduate, transfer, and tips pages never.
  */
 export function applyLinkScore(link: FoundLink): number {
+  if (isGraduateUrl(link.url)) return 0;
   let path = link.url;
   try {
     path = new URL(link.url).pathname;
@@ -66,7 +189,7 @@ export function applyLinkScore(link: FoundLink): number {
     // not a URL: score it as written
   }
   const hay = `${link.text} ${safeDecodeUri(path)}`;
-  if (NOT_PROMPTS.test(hay) || /graduate|transfer|international|visit|tour|deposit|financial|tuition|housing|faq/i.test(hay)) return 0;
+  if (NOT_PROMPTS.test(hay) || /(?<!under)graduate|transfer|international|visit|tour|deposit|financial|tuition|housing|faq/i.test(hay)) return 0;
   const fy = FIRST_YEAR.test(hay);
   const how = HOW_TO_APPLY.test(hay);
   if (fy && how) return 3;
@@ -89,14 +212,19 @@ export function rankApplyLinks(links: readonly FoundLink[], origins: readonly st
 const STRONG = /essay[\s_-]*(prompt|question|topic)s?|supplement(al)?[\s_-]*(essay|question|writing)s?|writing[\s_-]*supplement|short[\s_-]*answer[\s_-]*(question|prompt)s?|member[\s_-]*questions/i;
 const ESSAY_WORD = /\bessays?\b|supplement|short[\s_-]*answer/i;
 const APPLY_WORD = /apply|application|requirement|first[\s_-]*year|freshman|how[\s_-]*to/i;
-/** Links that talk about essays but aren't the college's prompts. */
-const NOT_PROMPTS = /blog|news|\bstor(y|ies)\b|event|podcast|webinar|tips?\b|advice|how[\s_-]*to[\s_-]*write|examples?|essays[\s_-]*that[\s_-]*worked|that[\s_-]*worked|magazine|faculty|course|catalog|library|scholarship|graduate|\btransfer\b|supplemental[\s_-]*(instruction|pay|funds?|income|insurance|retirement)|tutoring|financial[\s_-]*aid|payroll|human[\s_-]*resources|stipend|comptroller|contest|\.(jpg|png|gif|mp4)($|\?)/i;
+/**
+ * Links that talk about essays but aren't the college's prompts. "graduate" never inside "undergraduate": every link
+ * under Villanova's /undergraduate-admission/ scored zero, so the only first-year-looking link left was the law
+ * school's "how to apply".
+ */
+const NOT_PROMPTS = /blog|news|\bstor(y|ies)\b|event|podcast|webinar|tips?\b|advice|how[\s_-]*to[\s_-]*write|examples?|essays[\s_-]*that[\s_-]*worked|that[\s_-]*worked|magazine|faculty|course|catalog|library|scholarship|(?<!under)graduate|\btransfer\b|supplemental[\s_-]*(instruction|pay|funds?|income|insurance|retirement)|tutoring|financial[\s_-]*aid|payroll|human[\s_-]*resources|stipend|comptroller|contest|\.(jpg|png|gif|mp4)($|\?)/i;
 
 /**
  * How strongly a link points to the essay prompts page. 0 = don't follow. A link whose text or URL names essay prompts
  * or a writing supplement scores highest; "essays" with an apply word next; a page of tips, stories, or a blog never.
  */
 export function essayLinkScore(link: FoundLink): number {
+  if (isGraduateUrl(link.url)) return 0;
   // The link's text and its path, never its host ("admissions.example.edu" names no examples page).
   let path = link.url;
   try {
@@ -227,12 +355,13 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
   let blocked: string | undefined;
   const log = deps.log ?? (() => {});
 
-  const fetchPage = async (url: string, via: FoundVia, conditional?: { etag?: string; last_modified?: string }): Promise<{ page: FoundPage; text: string } | null> => {
+  type Got = { page: FoundPage; text: string; links: FoundLink[] };
+  const fetchPage = async (url: string, via: FoundVia, conditional?: { etag?: string; last_modified?: string }): Promise<Got | null> => {
     if (tried.includes(url) || tried.length >= DISCOVER_LIMITS.requests) return null;
     if (isPlatformUrl(url) || deps.skip?.includes(url)) return null;
-    // A first-year reader: transfer and graduate pages are never the page (the second look once took Dartmouth's
-    // transfer essays for its first-year ones).
-    if (/\/(transfer|graduate|grad)([/_-]|$)|[/_-](transfer|graduate)[/_-]/i.test(url)) return null;
+    // A first-year reader: transfer, graduate, and professional-school pages are never the page (the second look once
+    // took Dartmouth's transfer essays for its first-year ones; a run took Villanova's law school's page).
+    if (isGraduateUrl(url)) return null;
     tried.push(url);
     let res: Response | null;
     try {
@@ -247,7 +376,7 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
     }
     if ([401, 403, 429].includes(res.status)) blocked ??= new URL(url).host;
     const meta = { etag: res.headers.get("etag") ?? undefined, last_modified: res.headers.get("last-modified") ?? undefined };
-    if (res.status === 304) return { page: { url, final_url: url, bytes: new Uint8Array(0), format: "html", via, unchanged: true, ...meta }, text: "" };
+    if (res.status === 304) return { page: { url, final_url: url, bytes: new Uint8Array(0), format: "html", via, unchanged: true, ...meta }, text: "", links: [] };
     if (!res.ok) return null;
     const final_url = res.url || url;
     // A redirect onto a platform ("Apply" → commonapp.org) is not the college's page either.
@@ -255,49 +384,90 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
       log(`  ${url}: redirects to a platform (${new URL(final_url).host}), skipped`);
       return null;
     }
+    if (isGraduateUrl(final_url)) {
+      log(`  ${url}: redirects to a graduate, professional, or transfer page, skipped`);
+      return null;
+    }
     const bytes = new Uint8Array(await res.arrayBuffer());
     const format = detectFormat(bytes, res.headers.get("content-type"), url);
     if (format === "xlsx") return null;
-    if (format === "pdf") return { page: { url, final_url, bytes, format: "pdf", via, ...meta }, text: "" };
+    if (format === "pdf") return { page: { url, final_url, bytes, format: "pdf", via, ...meta }, text: "", links: [] };
     const html = new TextDecoder().decode(bytes);
-    pageLinks.push(...findLinks(html, final_url));
-    return { page: { url, final_url, bytes, format: "html", via, ...meta }, text: htmlToText(html) };
+    const text = htmlToText(html);
+    // A page whose title or first headings name a graduate program (a law school's "how to apply") is not the page,
+    // and its links lead further into that school.
+    if (graduateHeading(text)) {
+      log(`  ${url}: a graduate or professional program's page, skipped`);
+      return null;
+    }
+    const links = findLinks(html, final_url);
+    pageLinks.push(...links);
+    return { page: { url, final_url, bytes, format: "html", via, ...meta }, text, links };
   };
   const done = (page: FoundPage): DiscoverResult => ({ found: page, tried, cost, ...(blocked ? { blocked } : {}) });
-  const accept = (got: { page: FoundPage; text: string } | null) =>
+  const accept = (got: Got | null) =>
     !!got && !deps.skip?.includes(got.page.final_url) && (got.page.unchanged || got.page.format === "pdf" || looksLikeEssayPage(got.text));
+  const pointsToForm = (got: Got) => got.page.format === "html" && !got.page.unchanged && refersOnly(got.text, got.links.map((l) => l.text));
+  const starts = startPages(school);
+  const origins = [...new Set(starts.map(origin).filter((o): o is string => !!o))];
+  /**
+   * An accepted page that says the essays are in the application and prints none (Cornell's, Dartmouth's, and
+   * UW's "how to apply" pages): its own links that name essays, prompts, a writing supplement, short answers, or
+   * questions, on the college's own hosts, are tried first (one level, capped); a page there that reads like an essay
+   * page and doesn't only point to the form wins. Otherwise the first page stands, and the read may call it
+   * refers_to_form. A hub page that prints no prompts but links to one by name ("First-Year Writing Supplement" on
+   * Villanova's "Applying to Villanova") is followed the same way, to a page that prints them.
+   */
+  const take = async (got: Got): Promise<DiscoverResult> => {
+    if (got.page.format !== "html" || got.page.unchanged) return done(got.page);
+    const refers = pointsToForm(got);
+    const own = [...new Set([...origins, origin(got.page.final_url)].filter((o): o is string => !!o))];
+    let links = rankDeeperLinks(got.links, own);
+    if (!refers) {
+      if (printsPrompts(got.text, got.links.map((l) => l.text))) return done(got.page);
+      links = links.filter((l) => essayLinkScore(l) >= 3);
+    }
+    for (const link of links.slice(0, DISCOVER_LIMITS.deeper)) {
+      const next = await fetchPage(link.url, "apply-page-link");
+      if (next && accept(next) && !pointsToForm(next) && (refers || next.page.format === "pdf" || printsPrompts(next.text, next.links.map((l) => l.text)))) {
+        log(`  ${school.name}: ${got.page.url} ${refers ? "points to the application" : "prints no prompts"}; took ${next.page.final_url} one level on`);
+        return done(next.page);
+      }
+    }
+    return done(got.page);
+  };
 
   // 1. The recipe's page.
   if (recipe?.url) {
     const got = await fetchPage(recipe.url, "recipe", { etag: recipe.etag, last_modified: recipe.last_modified });
-    if (got && accept(got)) return done(got.page);
+    if (got && accept(got)) return take(got);
   }
 
-  // 2. The links the dataset holds, and the essay links on them.
-  const starts = startPages(school);
+  // 2. The links the dataset holds, and the essay links on them. A start page is taken when it names the essay page
+  // near its top, or when it prints the prompts further down (Harvard's application requirements page lists its five
+  // questions under "Completing the Harvard supplement questions").
   for (const s of starts) {
     const got = await fetchPage(s, "known-link");
-    if (got && got.page.format === "html" && STRONG.test(got.text.slice(0, 4000)) && looksLikeEssayPage(got.text)) return done(got.page);
+    if (got && got.page.format === "html" && looksLikeEssayPage(got.text) && (STRONG.test(got.text.slice(0, 4000)) || (STRONG.test(got.text) && printsPrompts(got.text, got.links.map((l) => l.text))))) return take(got);
   }
   // 2b. One level deeper: the first-year "how to apply" pages the start pages link to usually hold the essay link the
   // start pages don't (the first runs found no page for half the colleges). Fetched on the college's own hosts for
   // their links, and taken as the page when one reads like it.
-  const origins = [...new Set(starts.map(origin).filter((o): o is string => !!o))];
   for (const link of rankApplyLinks(pageLinks, origins).slice(0, DISCOVER_LIMITS.applyFollow)) {
     if (tried.length >= DISCOVER_LIMITS.requests - DISCOVER_LIMITS.reserve) break;
     const got = await fetchPage(link.url, "apply-page-link");
-    if (got && accept(got)) return done(got.page);
+    if (got && accept(got)) return take(got);
   }
   for (const link of rankLinks(pageLinks).slice(0, DISCOVER_LIMITS.follow)) {
     const got = await fetchPage(link.url, "apply-page-link");
-    if (got && accept(got)) return done(got.page);
+    if (got && accept(got)) return take(got);
   }
 
   // 3. Well-known paths.
   for (const url of wellKnownUrls(starts)) {
     if (tried.length >= DISCOVER_LIMITS.requests - DISCOVER_LIMITS.reserve) break;
     const got = await fetchPage(url, "well-known-path");
-    if (got && accept(got)) return done(got.page);
+    if (got && accept(got)) return take(got);
   }
 
   // 4. The site's sitemaps.
@@ -320,7 +490,7 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
     }
     for (const link of rankLinks(locs).slice(0, DISCOVER_LIMITS.follow)) {
       const got = await fetchPage(link.url, "sitemap");
-      if (got && accept(got)) return done(got.page);
+      if (got && accept(got)) return take(got);
     }
   }
 
@@ -330,7 +500,7 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
     cost += pick.cost;
     if (pick.url) {
       const got = await fetchPage(pick.url, "picker");
-      if (got && accept(got)) return done(got.page);
+      if (got && accept(got)) return take(got);
     }
   }
   return { found: null, tried, cost, ...(blocked ? { blocked } : {}) };

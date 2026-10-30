@@ -90,7 +90,7 @@ const STRONG = /essay[\s_-]*(prompt|question|topic)s?|supplement(al)?[\s_-]*(ess
 const ESSAY_WORD = /\bessays?\b|supplement|short[\s_-]*answer/i;
 const APPLY_WORD = /apply|application|requirement|first[\s_-]*year|freshman|how[\s_-]*to/i;
 /** Links that talk about essays but aren't the college's prompts. */
-const NOT_PROMPTS = /blog|news|\bstor(y|ies)\b|event|podcast|webinar|tips?\b|advice|how[\s_-]*to[\s_-]*write|examples?|essays[\s_-]*that[\s_-]*worked|that[\s_-]*worked|magazine|faculty|course|catalog|library|scholarship|graduate|transfer[\s_-]*credit|supplemental[\s_-]*(instruction|pay|funds?|income|insurance|retirement)|tutoring|financial[\s_-]*aid|payroll|human[\s_-]*resources|stipend|comptroller|contest|\.(jpg|png|gif|mp4)($|\?)/i;
+const NOT_PROMPTS = /blog|news|\bstor(y|ies)\b|event|podcast|webinar|tips?\b|advice|how[\s_-]*to[\s_-]*write|examples?|essays[\s_-]*that[\s_-]*worked|that[\s_-]*worked|magazine|faculty|course|catalog|library|scholarship|graduate|\btransfer\b|supplemental[\s_-]*(instruction|pay|funds?|income|insurance|retirement)|tutoring|financial[\s_-]*aid|payroll|human[\s_-]*resources|stipend|comptroller|contest|\.(jpg|png|gif|mp4)($|\?)/i;
 
 /**
  * How strongly a link points to the essay prompts page. 0 = don't follow. A link whose text or URL names essay prompts
@@ -230,6 +230,9 @@ export async function discoverEssayPage(school: DiscoverSchool, recipe: PageReci
   const fetchPage = async (url: string, via: FoundVia, conditional?: { etag?: string; last_modified?: string }): Promise<{ page: FoundPage; text: string } | null> => {
     if (tried.includes(url) || tried.length >= DISCOVER_LIMITS.requests) return null;
     if (isPlatformUrl(url) || deps.skip?.includes(url)) return null;
+    // A first-year reader: transfer and graduate pages are never the page (the second look once took Dartmouth's
+    // transfer essays for its first-year ones).
+    if (/\/(transfer|graduate|grad)([/_-]|$)|[/_-](transfer|graduate)[/_-]/i.test(url)) return null;
     tried.push(url);
     let res: Response | null;
     try {

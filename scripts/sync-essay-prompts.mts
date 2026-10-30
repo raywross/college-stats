@@ -31,8 +31,8 @@ import { openCycle } from "./lib/essay-prompts/cycle.mts";
 import { PICKER_MODEL } from "./lib/essay-prompts/discover.mts";
 import { READ_MODEL } from "./lib/essay-prompts/read.mts";
 import { prBody, releaseNote, type RunSummary } from "./lib/essay-prompts/report.mts";
-import { runCollege, type Outcome } from "./lib/essay-prompts/run.mts";
-import { clearHeld, essayPaths, readEssayRecord, readPages, readPlatformPrompts, writeEssayRecord, writeHeld, writePages } from "./lib/essay-prompts/store.mts";
+import { reconcileHeld, runCollege, type Outcome } from "./lib/essay-prompts/run.mts";
+import { clearHeld, essayPaths, readEssayRecord, readEssayRecords, readPages, readPlatformPrompts, writeEssayRecord, writeHeld, writePages } from "./lib/essay-prompts/store.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const P = essayPaths(ROOT);
@@ -156,12 +156,16 @@ function record(id: string, o: Outcome) {
       }
       console.log(`  ${s.name}: ${o.record.status}, ${o.record.prompts.length} prompt(s), $${o.cost.toFixed(4)}`);
       break;
-    case "held":
+    case "held": {
       summary.counts.held++;
-      summary.held.push({ unit_id: id, name: s.name, problems: o.problems });
+      // A passing record from an earlier run stays on file (held is never merged, and a hold can be the model's noise
+      // on a re-read); the PR says so, so the owner can judge which to believe.
+      const kept = readEssayRecord(P.records, id);
+      summary.held.push({ unit_id: id, name: s.name, problems: o.problems, ...(kept ? { kept: kept.retrieved } : {}) });
       if (!DRY) writeHeld(P.held, { unit_id: id, name: s.name, held: today, problems: o.problems, record: o.record });
-      console.log(`  ${s.name}: HELD (${o.problems.length}): ${o.problems.slice(0, 2).join("; ")}`);
+      console.log(`  ${s.name}: HELD (${o.problems.length}): ${o.problems.slice(0, 2).join("; ")}${kept ? ` (a passing record from ${kept.retrieved} stays on file)` : ""}`);
       break;
+    }
     case "not-found":
       summary.counts.not_found++;
       summary.not_found.push({ unit_id: id, name: s.name, ...(o.recipe.blocked ? { blocked: o.recipe.blocked } : {}) });
@@ -182,12 +186,14 @@ function record(id: string, o: Outcome) {
 }
 
 const queue = [...ids];
+/** Outcomes are kept until every worker is done, so colleges sharing a page can be reconciled before anything is written. */
+const outcomes = new Map<string, Outcome>();
 const workers = Array.from({ length: Math.max(1, num("concurrency", 4)) }, async () => {
   while (queue.length && !summary.stopped) {
     const id = queue.shift()!;
     const s = byId.get(id)!;
     try {
-      record(id, await runCollege(s, pages.pages[id], readEssayRecord(P.records, id), { http, client, cap, archive, today, force: flags.force === true, discoverOnly, platformTexts, readCache, log: (m) => console.log(m) }));
+      outcomes.set(id, await runCollege(s, pages.pages[id], readEssayRecord(P.records, id), { http, client, cap, archive, today, force: flags.force === true, discoverOnly, platformTexts, readCache, log: (m) => console.log(m) }));
     } catch (err) {
       if (err instanceof SpendCapReached) summary.stopped = err.message;
       else if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) summary.stopped = `the API key was refused (${err.status})`;
@@ -199,6 +205,12 @@ const workers = Array.from({ length: Math.max(1, num("concurrency", 4)) }, async
   }
 });
 await Promise.all(workers);
+
+// Colleges held on a page another college passed on (the UC campuses' shared page) take that read.
+const reconciled = reconcileHeld(outcomes, readEssayRecords(P.records), { today, platformTexts });
+for (const a of reconciled.adopted) console.log(`  ${byId.get(a.unit_id)!.name}: held, then took the passing read of the same page from ${byId.get(a.from)?.name ?? a.from}`);
+if (reconciled.adopted.length) summary.reconciled = reconciled.adopted.map((a) => ({ unit_id: a.unit_id, name: byId.get(a.unit_id)!.name, from: byId.get(a.from)?.name ?? a.from }));
+for (const [id, o] of reconciled.outcomes) record(id, o);
 
 summary.finished = new Date().toISOString();
 summary.spent_usd = roundUsd(cap.spent);

@@ -206,6 +206,20 @@ Forty-four colleges landed from the third run (PR #190). Four things it still go
 - **A test's essay section is not an application essay.** "UNF does not require the essay section of the SAT, ACT or
   CLT" had passed as "no essays"; such a quote now holds the record.
 
+### The fifth reader (2026-10-29, after the fourth run merged)
+Fifty-three colleges after the fourth run (PR #192). Three more corrections, no change to the model call:
+- **Colleges that share a page agree after the run.** The per-run read cache couldn't help the UC campuses: four
+  workers hit their shared page at once, before the first read finished, and three campuses were held on a kind the
+  model gave one question on some reads and not others. Outcomes are now kept until every worker is done; a held
+  college whose page bytes match a passing record's (this run's or a committed one) takes that read with its own
+  ids, is re-checked, and passes. The PR lists who took whose read.
+- **Transfer and graduate pages are never the page.** The second look took Dartmouth's transfer essays for its
+  first-year ones. A URL with a transfer or graduate segment is never fetched, and such links score zero.
+- **A hold says when a passing record stays on file.** Held is never merged, and a hold on a re-read can be the
+  model's noise, so the earlier passing record is kept; the PR's held table now says so with its date, for the owner
+  to judge. Harvard's "see the form" read is a true reading of its checklist page (the five questions live
+  elsewhere), so it stays until discovery finds that page.
+
 The third run's data PR then failed CI on the "re-merge changes nothing" tests, the first time real blocks met them:
 the college-reported merge re-appends its lineage records last and the tiers build re-inserts `selectivity` right
 before `directories`, so `lineage.essays` now sits before the first `reported.*` record and `essays` before

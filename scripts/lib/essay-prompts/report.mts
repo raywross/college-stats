@@ -16,9 +16,12 @@ export interface RunSummary {
   colleges: number;
   counts: { passed: number; held: number; unchanged: number; not_found: number; failed: number; found: number };
   passed: { unit_id: string; name: string; status: string; prompts: number }[];
-  held: { unit_id: string; name: string; problems: string[] }[];
+  /** `kept`: the retrieved date of a passing record from an earlier run that stays on file while this read is held. */
+  held: { unit_id: string; name: string; problems: string[]; kept?: string }[];
   /** Passed records whose page names no cycle, so the open cycle was assumed (for a look, not a hold). */
   assumed?: { unit_id: string; name: string }[];
+  /** Held colleges that took the passing read of the same page from another college (the UC campuses). */
+  reconciled?: { unit_id: string; name: string; from: string }[];
   not_found: { unit_id: string; name: string; blocked?: string }[];
   failed: { unit_id: string; name: string; reason: string }[];
 }
@@ -37,8 +40,13 @@ export function prBody(s: RunSummary): string {
   ];
   if (s.held.length) {
     lines.push("", "### Held", "", row(["College", "Unit", "Why"]), row(["---", "---", "---"]));
-    for (const h of s.held.slice(0, 60)) lines.push(row([h.name, h.unit_id, h.problems.slice(0, 3).join("; ")]));
+    for (const h of s.held.slice(0, 60)) lines.push(row([h.name, h.unit_id, `${h.problems.slice(0, 3).join("; ")}${h.kept ? ` (a passing record from ${h.kept} stays on file)` : ""}`]));
     if (s.held.length > 60) lines.push("", `… and ${s.held.length - 60} more.`);
+  }
+  const reconciled = s.reconciled ?? [];
+  if (reconciled.length) {
+    lines.push("", "### Took another college's read of the same page", "", row(["College", "Unit", "From"]), row(["---", "---", "---"]));
+    for (const r of reconciled) lines.push(row([r.name, r.unit_id, r.from]));
   }
   const assumed = s.assumed ?? [];
   if (assumed.length) {

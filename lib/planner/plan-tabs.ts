@@ -8,10 +8,11 @@
 
 import { ADVISOR_PATH } from "./advisor.ts";
 
-export type PlanTab = "next" | "colleges" | "calendar" | "offers";
-export const PLAN_TABS: readonly PlanTab[] = ["next", "colleges", "calendar", "offers"];
+/** Essays (specs/product/essays/tab.md "The tab strip"): third, between the list and the calendar. */
+export type PlanTab = "next" | "colleges" | "essays" | "calendar" | "offers";
+export const PLAN_TABS: readonly PlanTab[] = ["next", "colleges", "essays", "calendar", "offers"];
 
-export const TAB_LABELS: Record<PlanTab, string> = { next: "Next steps", colleges: "Colleges", calendar: "Calendar", offers: "Offers" };
+export const TAB_LABELS: Record<PlanTab, string> = { next: "Next steps", colleges: "Colleges", essays: "Essays", calendar: "Calendar", offers: "Offers" };
 
 export function parseTab(v: unknown): PlanTab | null {
   return typeof v === "string" && (PLAN_TABS as readonly string[]).includes(v) ? (v as PlanTab) : null;
@@ -29,10 +30,10 @@ export function defaultTab(viewer: "student" | "guardian", everyone: boolean): P
   return "next";
 }
 
-/** The tabs a view shows, in order. Everyone → the calendar only; Offers only once a decision is recorded. */
+/** The tabs a view shows, in order. Everyone → the calendar only; Offers only once a decision is recorded. Essays is on every plan (tab.md open question 1). */
 export function tabsFor(opts: { everyone: boolean; hasDecision: boolean }): PlanTab[] {
   if (opts.everyone) return ["calendar"];
-  return opts.hasDecision ? ["next", "colleges", "calendar", "offers"] : ["next", "colleges", "calendar"];
+  return opts.hasDecision ? ["next", "colleges", "essays", "calendar", "offers"] : ["next", "colleges", "essays", "calendar"];
 }
 
 /** Where an old six-stage link (`?stage=N`) lands: List, Rounds, Actions, Apply → Colleges; Timeline → Calendar; Offers → Offers. */
@@ -46,9 +47,11 @@ export function tabForStage(stage: number): PlanTab {
  * "/advisor", "/advisor?for=<person>", "/advisor?for=<person>&tab=calendar" (the person is a student id). `setup` adds
  * `&setup=1`: the intake guide in edit mode (specs/planner/redesign/intake.md "Edit mode"); with `step`, opened on that
  * step (`&step=4`, the people line's next-step link). `move` (next steps) adds `&move=<task id>` on the Next steps
- * tab, so the people line's "Next:" opens the tab scrolled to that card; ignored on any other tab.
+ * tab, so the people line's "Next:" opens the tab scrolled to that card; ignored on any other tab. `college` (a
+ * unit id) on the Essays tab adds `#college-<unit id>`, so a move or a card lands on that college's card
+ * (specs/product/essays/tab.md); ignored on any other tab.
  */
-export function planHref(opts: { person?: string | null; tab?: PlanTab | null; setup?: boolean; step?: number | null; move?: string | null }): string {
+export function planHref(opts: { person?: string | null; tab?: PlanTab | null; setup?: boolean; step?: number | null; move?: string | null; college?: string | null }): string {
   const q = new URLSearchParams();
   if (opts.person) q.set("for", opts.person);
   if (opts.tab) q.set("tab", opts.tab);
@@ -56,7 +59,13 @@ export function planHref(opts: { person?: string | null; tab?: PlanTab | null; s
   if (opts.setup) q.set("setup", "1");
   if (opts.setup && opts.step != null) q.set("step", String(opts.step));
   const s = q.toString();
-  return s ? `${ADVISOR_PATH}?${s}` : ADVISOR_PATH;
+  const anchor = opts.tab === "essays" && opts.college ? `#${collegeAnchor(opts.college)}` : "";
+  return (s ? `${ADVISOR_PATH}?${s}` : ADVISOR_PATH) + anchor;
+}
+
+/** The id of a college's card on the Essays tab: "college-<unit id>" (the `college` anchor planHref writes). */
+export function collegeAnchor(unitId: string): string {
+  return `college-${unitId}`;
 }
 
 /**

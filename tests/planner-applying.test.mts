@@ -252,8 +252,8 @@ test("ed2_conditional: a deferral from ED keeps the ED II line, while an ED II c
 /* ------------------------------------------------------------------ */
 
 test("tabsFor: the Offers tab appears only once a decision is recorded", () => {
-  assert.deepEqual(tabsFor({ everyone: false, hasDecision: false }), ["next", "colleges", "calendar"]);
-  assert.deepEqual(tabsFor({ everyone: false, hasDecision: true }), ["next", "colleges", "calendar", "offers"]);
+  assert.deepEqual(tabsFor({ everyone: false, hasDecision: false }), ["next", "colleges", "essays", "calendar"]);
+  assert.deepEqual(tabsFor({ everyone: false, hasDecision: true }), ["next", "colleges", "essays", "calendar", "offers"]);
 });
 
 /* ------------------------------------------------------------------ */

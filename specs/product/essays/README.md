@@ -28,6 +28,8 @@ their own ([../../data-expansion/coalition-app.md](../../data-expansion/coalitio
 | 1 | [prompts.md](prompts.md) | Every supplemental essay and short-answer prompt a college publishes, with its limit and whether it is required, read from the college's own site by the college-reported agent, quoted and cited; the Common App's and the Coalition's own prompts; a line on the "What it takes to apply" card and a count across the plan | Medium |
 | 2 | [workspace.md](workspace.md) | The editor: plain text, autosave, versions, a count against each prompt's limit, built for a phone first; one draft reused across prompts; Word and Google Docs round trips by download and upload, then a Google Drive connection; a per-college package to paste from; parents and advisors reading every draft and leaving comments | Large |
 | 3 | [reviewer.md](reviewer.md) | A reader's notes on a draft, on demand: typos, run-ons, a sentence that doesn't answer the prompt, a claim without a detail, an essay that repeats the activities list instead of showing something new, a "why us" that could be about any college; each note a question or an observation, never a rewrite. The reader knows what the student is trying to showcase (the record, the story, the major, the college's own stated interests) and reads with guidance distilled from public advice on how to approach these essays, cited, versioned, and reviewed by the owner before it runs | Large |
+| 4 | [moves.md](moves.md) | One essays move on Next steps from the summer before senior year: always pointed at the earliest-deadline college with essays left, counting what's ready from the workspace, rising in urgency into the fall; replaces the three overlapping essay tasks | Medium |
+| 5 | [tab.md](tab.md) | Essays as its own tab beside Next steps, Colleges, and Calendar, on one row on phones and desktop; the screen by college in deadline order with a row per prompt and its status | Medium |
 
 ## Design principles
 In addition to the planner's ([../../planner/README.md](../../planner/README.md)) and Plan v3's
@@ -58,10 +60,10 @@ its own unit of work before any model runs.
 
 ## Where it shows
 - **The college's admissions page**: the prompts under "What it takes to apply".
-- **The plan**: "Your list asks for 14 essays and short answers" on the Colleges tab; a **Write your essays** move from
-  the summer before senior year ([../../planner/record/ranking.md](../../planner/record/ranking.md) ranks the summer's
-  writing already), opening the workspace.
-- **`/advisor/essays`**: the workspace, with one page per draft and a package per college.
+- **The plan**: "Your list asks for 14 essays and short answers" on the Colleges tab; one **essays move** on Next
+  steps from the summer before senior year, pointed at the next college with essays left ([moves.md](moves.md)).
+- **The Essays tab** ([tab.md](tab.md)): the workspace's list beside Next steps, Colleges, and Calendar, by college in
+  deadline order; one page per draft and a package per college under `/advisor/essays`.
 - **The parent's view**: every draft, read-only, with the comment thread; the same for a counselor with a grant.
 
 ## Tier

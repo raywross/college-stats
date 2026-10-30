@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, FileCheck2, Footprints, ListChecks } from "lucide-react";
+import { CalendarDays, FileCheck2, Footprints, ListChecks, PenLine } from "lucide-react";
 import FamilyCalendar from "@/components/planner/FamilyCalendar";
 import { NextSteps } from "@/components/planner/NextSteps";
 import { PlanOpened } from "@/components/planner/PlanOpened";
@@ -11,7 +11,7 @@ import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { cn } from "@/lib/utils";
 
-const ICONS: Record<PlanTab, typeof ListChecks> = { next: Footprints, colleges: ListChecks, calendar: CalendarDays, offers: FileCheck2 };
+const ICONS: Record<PlanTab, typeof ListChecks> = { next: Footprints, colleges: ListChecks, essays: PenLine, calendar: CalendarDays, offers: FileCheck2 };
 
 /**
  * The tab pills alone (specs/planner/redesign/page.md "The page"): a segmented control, ink fill on the active tab.

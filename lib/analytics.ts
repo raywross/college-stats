@@ -48,7 +48,7 @@ export interface AnalyticsEvents {
   /* The planner (specs/planner/model.md "Telemetry"): that a stage was used and which college, never a title, a
    * date, a phone number, a count, or a note. */
   /** The redesign (specs/planner/redesign/*.md "Telemetry"): which tab, whose view, and whether it's Everyone. */
-  plan_opened: { tab: "next" | "colleges" | "calendar" | "offers"; viewer: "student" | "guardian"; everyone: boolean };
+  plan_opened: { tab: "next" | "colleges" | "essays" | "calendar" | "offers"; viewer: "student" | "guardian"; everyone: boolean };
   plan_task_ticked: { kind: string; source: "college" | "cycle" | "stage" | "own" | "season"; assignee: "student" | "guardian" | "either" };
   plan_stage_done: { stage: number };
   plan_nudge_sent: { channel: "email" | "sms" | "app" };

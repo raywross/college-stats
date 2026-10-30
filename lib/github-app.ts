@@ -639,6 +639,13 @@ export async function closePull(n: number, admin: string, deps: GithubDeps = {})
 
 /** Repository paths the console may write: the review queue's three files and its own release notes. */
 export const WRITABLE_PATHS = new Set(["data/overrides.json", "data/review-queue.json", "data/college-sources.json"]);
+/** A hand-read essay record (specs/product/essays/sources.md): one file per college, named by its unit id. */
+const CONFIRMED_ESSAYS_PATH = /^data\/essay-prompts\/confirmed\/\d{1,12}\.json$/;
+
+/** Whether the console may write `path`: one of the review queue's files, or a college's confirmed essay record. */
+export function isWritablePath(path: string): boolean {
+  return WRITABLE_PATHS.has(path) || CONFIRMED_ESSAYS_PATH.test(path);
+}
 const RELEASE_NOTE_PATH = /^release-notes\/[a-z0-9-]+\.md$/;
 
 /** `unchanged`: the blob sha equals `knownSha`, so the content wasn't downloaded (it is ""). */
@@ -699,7 +706,7 @@ async function putFile(deps: GithubDeps, path: string, body: Record<string, unkn
 export async function commitFileAndOpenPull(opts: CommitAndPullOptions, deps: GithubDeps = {}): Promise<CommitAndPullResult> {
   if (!githubConfigured(deps.env ?? process.env)) return { ok: false, reason: "not_configured" };
   if (!opts.branch.startsWith("review/") || !BRANCH.test(opts.branch)) return { ok: false, reason: "bad_branch" };
-  if (!WRITABLE_PATHS.has(opts.path)) return { ok: false, reason: "path_not_writable" };
+  if (!isWritablePath(opts.path)) return { ok: false, reason: "path_not_writable" };
   if (!RELEASE_NOTE_PATH.test(opts.releaseNote.path)) return { ok: false, reason: "bad_release_note_path" };
   const log = logger(deps);
   let branchCreated = false;

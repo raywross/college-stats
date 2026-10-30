@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * The console's navigation (specs/product/admin.md "The console"): a left rail from `lg` with the global search in
- * its header, and on phones a top strip (search, then the five sections in one swipeable row). The console supports
+ * its header, and on phones a top strip (search, then the sections in one swipeable row). The console supports
  * phones but does not favor them (specs/mobile.md): every control is 44px tall, nothing scrolls sideways but the
  * strip. The active section is `aria-current`.
  */

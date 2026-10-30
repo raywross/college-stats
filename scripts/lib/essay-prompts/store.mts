@@ -3,6 +3,9 @@
  * - data/essay-prompts/records/<unit_id>.json: one college's page as read and checked, with the model's quotes; the
  *   merge applies these to data/schools.json (./merge.mts).
  * - data/essay-prompts/held/<unit_id>.json: a read the checks held, with why; never merged, listed in the run's PR.
+ * - data/essay-prompts/confirmed/<unit_id>.json: a college's prompts read from the application form by a person
+ *   through the admin console (specs/product/essays/sources.md "The hand read"); the merge applies these when the
+ *   reader has no `published` record for the college.
  * - data/essay-prompts/pages.json: where each college's essay page was found (so a later run fetches it, conditional
  *   on its sha, instead of discovering it again), and colleges where nothing was found.
  * - data/reference/platform-prompts.json: the Common App's and the Coalition's own prompts, kept by hand.
@@ -10,13 +13,39 @@
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { EssayPrompt, PlatformPromptsFile, SchoolEssays } from "../../../lib/types.ts";
+import type { EssayFormKind, EssayPrompt, PlatformPromptsFile, SchoolEssays } from "../../../lib/types.ts";
 
 /** Bumped when the reader's prompt or schema changes, so a re-read is distinguishable from a page change. */
 export const READER_VERSION = "2026.10.30.1";
 
 /** How the page was found (./discover.mts). */
 export type FoundVia = "known-link" | "well-known-path" | "apply-page-link" | "sitemap" | "picker" | "recipe";
+
+/**
+ * One college's prompts as a person read them in the application form (sources.md "The hand read"; the console's
+ * /admin/essays/[unit] form writes it). `quote` on each prompt is the prompt's own text: a hand read has no surrounding
+ * sentence. Replaced whole on each save; history is the git log.
+ */
+export interface ConfirmedRecord {
+  unit_id: string;
+  name: string;
+  /** "2026-27". A record whose cycle isn't the open one is skipped by the merge. */
+  cycle: string;
+  /** none: the form shows no college questions beyond the platform's. */
+  status: "published" | "none";
+  confidence: "confirmed";
+  source: "form-by-hand";
+  form: EssayFormKind;
+  /** ISO date the form was read. */
+  read_on: string;
+  /** The reader's initials, 1–4 letters. */
+  reader: string;
+  /** ids "{unit_id}:{cycle}:{n}", n from 1 in the form's order; empty when status is none. */
+  prompts: EssayPrompt[];
+  choose?: { n: number; of: number; quote: string };
+  /** For the PR body only ("the Honors prompt is separate"). */
+  note?: string;
+}
 
 /** One college's essay page as read: the block the merge applies, plus how it was read and the quotes behind it. */
 export interface EssayRecord extends SchoolEssays {
@@ -75,6 +104,7 @@ export function essayPaths(root: string) {
     dir,
     records: join(dir, "records"),
     held: join(dir, "held"),
+    confirmed: join(dir, "confirmed"),
     pages: join(dir, "pages.json"),
     platform: join(root, "data", "reference", "platform-prompts.json"),
     cache: join(root, ".cache", "essay-prompts"),

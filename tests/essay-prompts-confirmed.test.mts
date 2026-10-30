@@ -148,7 +148,7 @@ test("validateConfirmed: each guard fails when its rule is broken", () => {
   fails(record({ reader: "R.R." }), /reader "R.R." isn't 1 to 4 letters/);
   fails(record({ reader: "ABCDE" }), /isn't 1 to 4 letters/);
   fails(record({ reader: "" }), /isn't 1 to 4 letters/);
-  fails(record({ prompts: [] }), /status published, but no prompts/);
+  fails(record({ prompts: [] }), /the form asks questions, but none are entered/);
   fails(record({ status: "none" }), /status none, but 2 prompt\(s\)/);
   fails(record({ note: "x".repeat(501) }), /note must be text of at most 500/);
   fails({ ...record(), extra: 1 } as never, /"extra" isn't a field of a hand-read record/);
@@ -168,13 +168,13 @@ test("validateConfirmed: each guard fails when its rule is broken", () => {
   fails(withPrompt({ required: "yes" as never }), /required must be true or false/);
   fails(withPrompt({ extra: 1 } as never), /"extra" isn't a field of a prompt/);
   // Limits and applies_to (the reader's rules).
-  fails(withPrompt({ limit: { kind: "words", max: 5000 } }), /limit 5000 words is outside 25 to 2000/);
-  fails(withPrompt({ limit: { kind: "characters", max: 50 } }), /limit 50 characters is outside 100 to 10000/);
-  fails(withPrompt({ limit: { kind: "words", max: 250, min: 250 } }), /minimum 250 isn't a whole number below the maximum/);
-  fails(withPrompt({ limit: { kind: "pages" as never, max: 2 } }), /limit kind "pages" isn't words or characters/);
+  fails(withPrompt({ limit: { kind: "words", max: 5000 } }), /prompt 1: a limit of 5000 words is outside 25 to 2000/);
+  fails(withPrompt({ limit: { kind: "characters", max: 50 } }), /a limit of 50 characters is outside 100 to 10000/);
+  fails(withPrompt({ limit: { kind: "words", max: 250, min: 250 } }), /prompt 1: the minimum 250 isn't a whole number below the maximum/);
+  fails(withPrompt({ limit: { kind: "pages" as never, max: 2 } }), /a limit counted in "pages" must be in words or characters/);
   fails(withPrompt({ applies_to: "everyone" as never }), /applies_to "everyone" isn't all/);
   fails(withPrompt({ kind: "program", applies_to: "all" }), /kind program, but applies_to names no program/);
-  fails(withPrompt({ applies_to: { program: " " } }), /applies_to names an empty program/);
+  fails(withPrompt({ applies_to: { program: " " } }), /applies to a program, but names none/);
   // Ids in order, no repeats.
   const r = record();
   r.prompts[1] = { ...r.prompts[1], id: `${UF}:${CYCLE}:3` };
@@ -185,7 +185,7 @@ test("validateConfirmed: each guard fails when its rule is broken", () => {
   // Choose.
   fails(record({ choose: { n: 1, of: 2, quote: "Answer one." } }), /choose says 2 prompts to pick from, but 0 are marked optional/);
   fails(record({ choose: { n: 2, of: 2, quote: "Answer two." } }), /isn't a choice/);
-  fails(record({ choose: { n: 0, of: 2, quote: "Answer." } }), /isn't a whole number of prompts to answer/);
+  fails(record({ choose: { n: 0, of: 2, quote: "Answer." } }), /choose: how many to answer \(0\) must be a whole number of at least 1/);
   fails(record({ status: "none", prompts: [], choose: { n: 1, of: 2, quote: "x" } }), /choose is set, but status is none/);
   const noQuote = record({ prompts: [prompt(1, "Placeholder choice A: a challenge you met.", { required: false }), prompt(2, "Placeholder choice B: an idea you love.", { required: false })], choose: { n: 1, of: 2, quote: "" } });
   fails(noQuote, /choose: no quote/);
@@ -215,8 +215,24 @@ test("validateConfirmed keeps the reader's rules: the same limits and lengths, a
     { ...base, kind: "program", applies_to: "all" },
   ];
   // The reader's rules that need no page: length, limit, applies_to (quotes, the optional word, and why_us need the page).
+  // The console words some messages its own way ("a limit of …", "the minimum …"), so the verdicts are compared by rule.
+  const RULES: [string, RegExp][] = [
+    ["length", /prompt is \d+ characters/],
+    ["limit-kind", /words or characters/],
+    ["limit-range", /is outside \d+ to \d+/],
+    ["minimum", /minimum .* below the maximum/],
+    ["program", /kind program, but applies_to names no program/],
+    ["empty-program", /applies_to names an empty program|applies to a program, but names none/],
+    ["applies", /isn't all, transfer, international, or a program/],
+  ];
+  const rules = (msgs: string[]) => msgs.flatMap((m) => RULES.filter(([, re]) => re.test(m)).map(([k]) => k)).sort();
   const pageless = (msgs: string[]) => msgs.filter((m) => !/quote|optional|required|why_us|on the page|isn't named/.test(m));
-  for (const p of fixtures) assert.deepEqual(confirmedPromptProblems(p, "prompt 1"), pageless(promptProblems(p, "prompt 1", null)), JSON.stringify(p));
+  for (const p of fixtures) {
+    const mine = confirmedPromptProblems(p, "prompt 1");
+    const theirs = pageless(promptProblems(p, "prompt 1", null));
+    assert.equal(mine.length, rules(mine).length, `every console message maps to one rule: ${JSON.stringify(mine)}`);
+    assert.deepEqual(rules(mine), rules(theirs), JSON.stringify(p));
+  }
   // Guard: a different limit range here would disagree with the reader on the 24-word fixture.
   const drifted = confirmedPromptProblems({ ...base, limit: { kind: "words", max: 24 } }, "prompt 1");
   assert.ok(drifted.length > 0, "the 24-word limit must be refused by both, or the comparison proves nothing");

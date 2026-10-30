@@ -143,16 +143,16 @@ export function confirmedPromptProblems(p: EssayPrompt, where: string): string[]
   if (text.length < PROMPT_CHARS.min || text.length > PROMPT_CHARS.max) out.push(`${where}: prompt is ${text.length} characters (${PROMPT_CHARS.min} to ${PROMPT_CHARS.max} allowed)`);
   if (p.limit) {
     const r = LIMIT_RANGE[p.limit.kind as keyof typeof LIMIT_RANGE];
-    if (!r) out.push(`${where}: limit kind ${JSON.stringify(p.limit.kind)} isn't words or characters`);
+    if (!r) out.push(`${where}: a limit counted in ${JSON.stringify(p.limit.kind)} must be in words or characters`);
     else {
-      if (!Number.isInteger(p.limit.max) || p.limit.max < r.min || p.limit.max > r.max) out.push(`${where}: limit ${p.limit.max} ${p.limit.kind} is outside ${r.min} to ${r.max}`);
-      if (p.limit.min !== undefined && (!Number.isInteger(p.limit.min) || p.limit.min < 1 || p.limit.min >= p.limit.max)) out.push(`${where}: minimum ${p.limit.min} isn't a whole number below the maximum`);
+      if (!Number.isInteger(p.limit.max) || p.limit.max < r.min || p.limit.max > r.max) out.push(`${where}: a limit of ${p.limit.max} ${p.limit.kind} is outside ${r.min} to ${r.max}`);
+      if (p.limit.min !== undefined && (!Number.isInteger(p.limit.min) || p.limit.min < 1 || p.limit.min >= p.limit.max)) out.push(`${where}: the minimum ${p.limit.min} isn't a whole number below the maximum`);
     }
-  } else if (p.limit !== null) out.push(`${where}: limit must be null or { kind, max }`);
+  } else if (p.limit !== null) out.push(`${where}: a limit must be none or { kind, max }`);
   const program = typeof p.applies_to === "object" && p.applies_to !== null ? p.applies_to.program?.trim() : null;
   if (p.kind === "program" && !program) out.push(`${where}: kind program, but applies_to names no program`);
   if (typeof p.applies_to === "object" && p.applies_to !== null) {
-    if (!program) out.push(`${where}: applies_to names an empty program`);
+    if (!program) out.push(`${where}: applies to a program, but names none`);
   } else if (!["all", "transfer", "international"].includes(p.applies_to as string)) out.push(`${where}: applies_to ${JSON.stringify(p.applies_to)} isn't all, transfer, international, or a program`);
   return out;
 }
@@ -180,7 +180,7 @@ export function validateConfirmed(record: ConfirmedRecord, today: string = new D
 
   const prompts = Array.isArray(r.prompts) ? r.prompts : null;
   if (!prompts) out.push("prompts must be a list");
-  else if (r.status === "published" && !prompts.length) out.push("status published, but no prompts");
+  else if (r.status === "published" && !prompts.length) out.push("the form asks questions, but none are entered");
   else if (r.status === "none" && prompts.length) out.push(`status none, but ${prompts.length} prompt(s)`);
 
   const seen = new Set<string>();
@@ -211,7 +211,7 @@ export function validateConfirmed(record: ConfirmedRecord, today: string = new D
     const of = c?.of;
     const optional = (prompts ?? []).filter((p) => p && p.required === false).length;
     if (r.status !== "published") out.push(`choose is set, but status is ${r.status}`);
-    if (!Number.isInteger(n) || (n as number) < 1) out.push(`choose: ${JSON.stringify(n)} isn't a whole number of prompts to answer`);
+    if (!Number.isInteger(n) || (n as number) < 1) out.push(`choose: how many to answer (${JSON.stringify(n)}) must be a whole number of at least 1`);
     if (!Number.isInteger(of) || (of as number) <= (n as number)) out.push(`choose: ${n} of ${JSON.stringify(of)} isn't a choice (of must be a whole number above n)`);
     else if (r.status === "published" && of !== optional) out.push(`choose says ${of} prompts to pick from, but ${optional} ${optional === 1 ? "is" : "are"} marked optional (the set is the optional prompts; required ones stand outside it)`);
     if (typeof c?.quote !== "string" || !c.quote.trim()) out.push("choose: no quote (the form's own words, \"Answer two of the following\")");

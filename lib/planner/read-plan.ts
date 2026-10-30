@@ -19,7 +19,8 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ListRecord } from "../list-rules.ts";
-import type { ListSort, PlanItem, PlanNudge, PlanOffer, PlanTask, PlanVisit } from "./types.ts";
+import type { EssayLinkRow, EssayRow } from "../essays/rows.ts";
+import type { ListSort, PlanEssays, PlanItem, PlanNudge, PlanOffer, PlanTask, PlanVisit } from "./types.ts";
 
 export const PLAN_LIST_COLUMNS = "id, student_id, user_id, name, is_default, share_enabled, created_by, created, sort, rounds_plan_accepted_at";
 /** list_items columns that exist without the redesign migration. */
@@ -58,6 +59,38 @@ export interface PlanData {
   nudges: PlanNudge[];
   /** The database doesn't have the redesign's source columns yet: show suggestions, but write none. */
   sourcesMissing?: boolean;
+  /**
+   * Essays, part 4 (specs/product/essays/moves.md): the list's student's drafts (no bodies) and their links, read
+   * with the plan (`readPlanEssays`). Null without a student or while the essays tables aren't set up; absent from a
+   * plan built some other way (read as null).
+   */
+  essays?: PlanEssays | null;
+}
+
+/** The essays' list columns (lib/essays/load.ts ESSAY_LIST_COLUMNS): never the body. */
+export const PLAN_ESSAY_COLUMNS = "id, student_id, prompt_ref, title, count_kind, count, limit_max, limit_min, status, kind, base_id, created, updated";
+
+/**
+ * The student's drafts and their links (specs/product/essays/moves.md "Files"): two reads side by side, the links
+ * joined to their drafts by the student (the `essays!inner` filter lib/essays/store.ts uses). Null without a student
+ * and while the essays tables aren't set up (the `isMissingTable` pattern of lib/essays/load.ts); a failed read logs
+ * and reads as null rather than failing the plan. Row-level security decides: a guardian in the household reads them.
+ */
+export async function readPlanEssays(supabase: SupabaseClient, studentId: string | null | undefined): Promise<PlanEssays | null> {
+  if (!studentId) return null;
+  const [essays, links] = await Promise.all([
+    supabase.from("essays").select(PLAN_ESSAY_COLUMNS).eq("student_id", studentId).order("updated", { ascending: false }),
+    supabase.from("essay_links").select("essay_id, prompt_ref, created, essays!inner(student_id)").eq("essays.student_id", studentId),
+  ]);
+  for (const r of [essays, links]) {
+    if (r.error) {
+      if (!isMissing(r.error)) console.error(`planner: reading the essays failed: ${r.error.message}`);
+      return null;
+    }
+  }
+  const rows = (essays.data ?? []) as unknown as EssayRow[];
+  const linkRows = ((links.data ?? []) as unknown as (EssayLinkRow & { essays?: unknown })[]).map(({ essay_id, prompt_ref, created }) => ({ essay_id, prompt_ref, created }));
+  return { rows, links: linkRows };
 }
 
 type PgError = { code?: string; message?: string };
@@ -221,6 +254,14 @@ export async function updateTaskSkip(
   return { data: (retry.data ?? null) as { id: string }[] | null, error: retry.error };
 }
 
+/** Task kinds added after the kind check was last widened everywhere: `essays` (20261030120000_essays_move.sql). */
+export const NEWER_KINDS: readonly string[] = ["essays"];
+
+/** The write broke `plan_tasks_kind_check` (a kind its migration hasn't added yet). */
+export function isKindCheckError(error: PgError): boolean {
+  return error.code === "23514" && /plan_tasks_kind_check/.test(error.message ?? "");
+}
+
 /**
  * Upserts generated task rows on (list_id, key). On a missing-column error naming `season` or `action` (the
  * next-steps migration not applied yet), retries once without those two fields (review note 5). Returns the error of
@@ -229,6 +270,12 @@ export async function updateTaskSkip(
 export async function upsertTaskRows(supabase: SupabaseClient, rows: Record<string, unknown>[]): Promise<PgError | null> {
   const { error } = await supabase.from("plan_tasks").upsert(rows, { onConflict: "list_id,key" });
   if (!error) return null;
+  // A kind the database's check doesn't list yet (the essays move before 20261030120000_essays_move.sql is applied):
+  // the rest of the rows still go in; the new kind's waits for the migration.
+  if (isKindCheckError(error) && rows.some((r) => NEWER_KINDS.includes(r.kind as string))) {
+    const known = rows.filter((r) => !NEWER_KINDS.includes(r.kind as string));
+    return known.length > 0 ? upsertTaskRows(supabase, known) : null;
+  }
   if (!isMissingMoveColumn(error)) return error;
   const stripped = rows.map((r) => {
     const copy = { ...r };
@@ -244,7 +291,7 @@ export async function upsertTaskRows(supabase: SupabaseClient, rows: Record<stri
  * Reads a list's plan in one round after the list (items, tasks, visits, offers, nudges in parallel). Null when the
  * list isn't visible. Throws `PlannerSetupError` when the planner migration isn't applied yet, so a page can say so.
  */
-export async function readPlan(supabase: SupabaseClient, listId: string): Promise<PlanData | null> {
+export async function readPlan(supabase: SupabaseClient, listId: string, opts: { essays?: Promise<PlanEssays | null> } = {}): Promise<PlanData | null> {
   // The list, its items, and its tasks don't depend on each other: one round together (U20 "real speed"; it was the
   // list, then the other two). An unreadable list still returns null, whatever the other two said.
   const [list, items, tasks] = await Promise.all([
@@ -267,10 +314,12 @@ export async function readPlan(supabase: SupabaseClient, listId: string): Promis
   const taskRows = (tasks.data ?? []) as PlanTask[];
   const itemIds = itemRows.map((i) => i.id);
   const taskIds = taskRows.map((t) => t.id);
-  const [visits, offers, nudges] = await Promise.all([
+  // The essays (by the list's student) ride in the same round; a caller that already started them passes them in.
+  const [visits, offers, nudges, essays] = await Promise.all([
     itemIds.length ? supabase.from("plan_visits").select(VISIT_COLUMNS).in("item_id", itemIds).order("on_date") : Promise.resolve({ data: [], error: null }),
     itemIds.length ? supabase.from("plan_offers").select(OFFER_COLUMNS).in("item_id", itemIds).order("created_at") : Promise.resolve({ data: [], error: null }),
     taskIds.length ? supabase.from("plan_nudges").select(NUDGE_COLUMNS).in("task_id", taskIds).order("sent_at", { ascending: false }) : Promise.resolve({ data: [], error: null }),
+    opts.essays ?? readPlanEssays(supabase, (list.data as PlanList).student_id),
   ]);
   for (const r of [visits, offers, nudges]) {
     if (r.error) throw new Error(`Reading the list's rows failed: ${r.error.message}`);
@@ -282,6 +331,7 @@ export async function readPlan(supabase: SupabaseClient, listId: string): Promis
     visits: (visits.data ?? []) as PlanVisit[],
     offers: (offers.data ?? []) as PlanOffer[],
     nudges: (nudges.data ?? []) as PlanNudge[],
+    essays,
     ...(items.sourcesMissing ? { sourcesMissing: true } : {}),
   };
 }

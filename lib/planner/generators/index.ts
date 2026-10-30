@@ -12,6 +12,7 @@ import { generate as actions } from "./actions.ts";
 import { generate as apply } from "./apply.ts";
 import { generate as offers } from "./offers.ts";
 import { generate as season } from "./season.ts";
+import { generate as essays } from "./essays.ts";
 
 export const GENERATORS: readonly { name: string; generate: Generator }[] = [
   { name: "cycle", generate: cycle },
@@ -20,6 +21,8 @@ export const GENERATORS: readonly { name: string; generate: Generator }[] = [
   { name: "actions", generate: actions },
   { name: "apply", generate: apply },
   { name: "offers", generate: offers },
+  // Essays, part 4 (specs/product/essays/moves.md "Files"): the one list-wide essays move, after apply.
+  { name: "essays", generate: essays },
   // Next steps (seasons.md "Moves"): the playbook and the rule modules' moves, last so a built task's key wins.
   { name: "season", generate: season },
 ];

@@ -269,7 +269,9 @@ test("generate: the sub-tasks once a college is applying", () => {
   assert.ok(kinds.includes("submit"));
   assert.ok(kinds.includes("portal_setup"));
   assert.equal(kinds.filter((k) => k === "recommendation").length, 2);
-  assert.equal(kinds.filter((k) => k === "supplement").length, 1);
+  // Essays part 4 (specs/product/essays/moves.md "What goes"): the student's supplement count no longer makes rows;
+  // the one essays move covers them (tests/planner-essays-move.test.mts).
+  assert.equal(kinds.filter((k) => k === "supplement").length, 0);
 });
 
 test("generate: the fee task mentions the waiver when the profile says eligible", () => {
@@ -296,13 +298,13 @@ test("generate: a college with transcript_shared off gets its own transcript tas
   assert.ok(!tasks.some((t) => t.kind === "transcript" && t.item_id === null));
 });
 
-test("generate: Common App colleges share one personal-essay task", () => {
-  const a = item({ id: ITEM_A, application_platform: "common_app" });
-  const b = item({ id: ITEM_B, application_platform: "common_app", position: 1 });
+test("generate: no essay rows at all, shared or per college; the item keeps its supplements count (essays part 4)", () => {
+  const a = item({ id: ITEM_A, application_platform: "common_app", supplements_count: 3 });
+  const b = item({ id: ITEM_B, application_platform: "common_app", position: 1, supplements_count: 2 });
   const tasks = generate(input({ items: [a, b] }));
-  const shared = tasks.filter((t) => t.kind === "supplement" && t.item_id === null);
-  assert.equal(shared.length, 1);
-  assert.match(shared[0].detail ?? "", /2 Common App colleges/);
+  assert.equal(tasks.filter((t) => t.kind === "supplement").length, 0);
+  assert.ok(!tasks.some((t) => /personal essay|Supplement \d+ of \d+/i.test(t.title)));
+  assert.equal(a.supplements_count, 3, "the student's own count stays on the item");
 });
 
 test("generate: the portal check runs weekly after applied_on and stops once complete_on is set", () => {

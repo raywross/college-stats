@@ -1,0 +1,48 @@
+{
+  "unit_id": "195809",
+  "name": "St. John's University-New York",
+  "held": "2026-10-30",
+  "problems": [
+    "prompt 1 is a checklist label ('Personal Essay (recommended)') quoted from a test-optional sentence, not a prompt; prompt 2 is the pharmacy program's essay (held by hand, 2026-10-30)"
+  ],
+  "record": {
+    "unit_id": "195809",
+    "name": "St. John's University-New York",
+    "cycle": "2026-27",
+    "status": "published",
+    "source_url": "https://www.stjohns.edu/admission/undergraduate-admission/application-requirements",
+    "retrieved": "2026-10-30",
+    "sha256": "7597841eb615c1e5b998b77f41d1f395426fbaabcbc243250b55373a012f2722",
+    "archive": "local:7597841eb615c1e5b998b77f41d1f395426fbaabcbc243250b55373a012f2722.html",
+    "cycle_quote": "",
+    "cycle_assumed": true,
+    "via": "picker",
+    "model": "claude-opus-5",
+    "reader": "2026.10.29.4",
+    "prompts": [
+      {
+        "id": "195809:2026-27:1",
+        "text": "Personal Essay (recommended)",
+        "kind": "optional",
+        "limit": null,
+        "required": false,
+        "applies_to": "all",
+        "quote": "If applying Test-optional:"
+      },
+      {
+        "id": "195809:2026-27:2",
+        "text": "Personal Essay (250 words as to \"Why\" you wish to pursue Pharmacy and why you are applying to PharmD at St. John's University.)",
+        "kind": "program",
+        "limit": {
+          "kind": "words",
+          "max": 250
+        },
+        "required": true,
+        "applies_to": {
+          "program": "Six-Year Pharm.D."
+        },
+        "quote": "Personal Essay (250 words as to \"Why\" you wish to pursue Pharmacy and why you are applying to PharmD at St. John's University.)"
+      }
+    ]
+  }
+}

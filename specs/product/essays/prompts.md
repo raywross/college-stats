@@ -224,3 +224,44 @@ The third run's data PR then failed CI on the "re-merge changes nothing" tests, 
 the college-reported merge re-appends its lineage records last and the tiers build re-inserts `selectivity` right
 before `directories`, so `lineage.essays` now sits before the first `reported.*` record and `essays` before
 `selectivity`. Both placements are idempotent, and a re-merge or rebuild leaves every college byte for byte.
+
+### The sixth reader (2026-10-30, the misses)
+The fifth run's records had colleges that publish their prompts stored as `refers_to_form`. Each was fetched by hand
+(robots.txt honored, the honest user agent) to see what the site really prints, then fixed by a general rule where one
+exists; `READER_VERSION` 2026.10.30.1, so the next run re-reads every college:
+- **Never a graduate or professional school's page.** Villanova landed on its law school's "how to apply" page. The
+  cause was a regex: "graduate" matched inside "undergraduate", so every link under Villanova's
+  `/undergraduate-admission/` scored zero and the law school's "How to Apply" was the only first-year-looking link
+  left. Now "graduate" never matches inside "undergraduate", and `isGraduateUrl` refuses any URL whose path segment or
+  host names law, medicine, business, nursing, graduate, MBA, PhD, dentistry, pharmacy (and transfer), before the
+  fetch, after a redirect, and in every ranking; a page whose title or first headings name a graduate program
+  (`graduateHeading`) is refused too.
+- **One level past a page that points to the form.** A page any step accepts that says the essays are in the
+  application and prints none of them (`refersOnly`: "as part of your Common Application … the Cornell University
+  supplement", "five required short-answer questions") has its own essay, prompt, writing-section, short-answer, and
+  question links on the college's own hosts tried first (at most three, first-year URLs first, never an FAQ, transfer,
+  or graduate page); a page there that reads like an essay page and doesn't itself only point to the form wins, else
+  the first page stands. A hub page that prints no prompts but links one by name ("First-Year Writing Supplement" on
+  "Applying to Villanova") is followed the same way, to a page that prints them. Whether a page prints prompts
+  (`printsPrompts`) counts lines that ask the applicant something or ask them to write, leaving out FAQ questions (first
+  person, yes/no about the process) and lines that are a link's whole text.
+- **A start page that prints its prompts below the fold.** Harvard's application requirements page (its dataset apply
+  link) lists the five questions under "Completing the Harvard supplement questions", past the first 4,000 characters
+  the start-page test looked at; a start page that prints prompts anywhere is now taken.
+- **Holds, first in the problem list so the PR's table shows them**: a page under a graduate, professional-school, or
+  transfer path, or whose heading names a graduate program; a `refers_to_form` whose quote counts the questions or
+  prompts ("There are five required short-answer questions"), since a page that counts them often prints them; a
+  `refers_to_form` whose quote describes the platform's own essay (the Common App's seven prompts, 650 words) and not
+  the college's supplement.
+- **The read's instructions** now say outright: a page that prints the text of any of the college's own prompts is
+  `published`, even when it says the answers go in the application; a sentence that counts the questions is never
+  `refers_to_form` when they are printed on the page.
+
+What the sites print (2026-10-30): Villanova, Harvard, and Dartmouth print their prompts and the rules now reach each
+page without hand help (Dartmouth's stale recipe, its transfer essays page, and Villanova's law page were corrected in
+`pages.json`). UW's writing section page prints only the Common App's seven prompts: UW has no prompts of its own this
+cycle, so its read will be `refers_to_form` or `none` and the platform-copy hold flags the old quote. Cornell prints
+its prompts on eight per-school pages ("First-Year ILR Applicants", "Arts & Sciences Application Writing Prompt", …),
+linked by the school's name, so no one page holds them; reading a college across several pages is not built. Boston
+University's site names its supplemental essay but prints no prompt; George Washington, Indiana, and Delaware point to
+the application too (Indiana's FAQ prints the IU-specific essay, which only its own Apply IU form asks for).

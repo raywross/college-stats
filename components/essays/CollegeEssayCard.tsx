@@ -6,7 +6,13 @@
  * choose set under its "Choose 1 of 5" heading, then optional ones), each with its state glyph, its title, and on the
  * right the status with the count or **Start**. A college whose prompts we haven't read says so and offers "Add what
  * {College} asks" (the picker, that college chosen). Also the personal essay's card and the prompt row the Coalition
- * fold reuses. Rows are 44 px targets; a status wraps under its title on a narrow phone; no essay text anywhere.
+ * fold reuses. Rows are 44 px targets; a status wraps under its title on a narrow phone; no essay text anywhere (a
+ * prompt's text is the college's own words).
+ *
+ * A row's title unfolds the whole prompt (owner, 2026-10-30: the short title stays, "clicking will expand and show
+ * everything"): a `<details>` whose summary is the glyph and title, with the college's full prompt beneath. The
+ * status on the right ("Draft · 180 of 250 words") is the link to the draft; Start is where it was. A prompt whose
+ * text isn't on file (an own ref) has a plain title.
  *
  * Start creates the draft for that prompt (`createEssay`) and opens the editor; a guardian sees the same card with
  * Start and Add hidden (only the student writes).
@@ -14,7 +20,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { PromptPicker } from "@/components/essays/PromptPicker";
 import { track } from "@/lib/analytics";
 import { countLabel } from "@/lib/essays/count";
@@ -104,34 +110,58 @@ export function PromptRow({
 }) {
   const title = promptTitle(p, text);
   const right = stateLine(p);
-  const left = (
-    <span className="flex min-w-0 flex-1 items-start gap-2.5">
-      <Glyph state={p.state} />
-      <span className="min-w-0">
-        <span className="sr-only">{STATE_WORD[p.state]}: </span>
-        <span className="block font-semibold break-words">{title}</span>
-        {(also || comments > 0) && (
-          <span className="block text-xs text-muted-foreground">
-            {[also, comments > 0 ? `${comments} ${comments === 1 ? "comment" : "comments"}` : null].filter(Boolean).join(" · ")}
-          </span>
-        )}
-      </span>
+  const heading = (
+    <span className="min-w-0 flex-1">
+      <span className="sr-only">{STATE_WORD[p.state]}: </span>
+      <span className="block font-semibold break-words">{title}</span>
+      {(also || comments > 0) && (
+        <span className="block text-xs text-muted-foreground">
+          {[also, comments > 0 ? `${comments} ${comments === 1 ? "comment" : "comments"}` : null].filter(Boolean).join(" · ")}
+        </span>
+      )}
     </span>
   );
-  if (p.essayId) {
-    return (
-      <li data-prompt-row={p.state}>
-        <Link href={editorHref(p.essayId, person)} className={cn(ROW, "hover:bg-muted/50")}>
-          {left}
-          <span className={cn("shrink-0 text-sm tabular-nums", p.state === "ready" ? "font-semibold text-primary" : "text-muted-foreground")}>{right}</span>
-        </Link>
-      </li>
-    );
-  }
+  // The title unfolds the whole prompt when its text is on file; a summary is a 44 px target and keyboard-reachable.
+  const left = text ? (
+    <details className="group min-w-0 flex-1" data-prompt-fold>
+      <summary className="-mx-1 flex min-h-11 cursor-pointer list-none items-start gap-2.5 rounded-xl px-1 py-0.5 hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
+        <Glyph state={p.state} />
+        {heading}
+        <ChevronDown className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+      </summary>
+      <p className="mt-1 pb-1 pl-[26px] text-sm whitespace-pre-line text-muted-foreground" data-prompt-text>
+        {text}
+      </p>
+    </details>
+  ) : (
+    <span className="flex min-w-0 flex-1 items-start gap-2.5">
+      <Glyph state={p.state} />
+      {heading}
+    </span>
+  );
+  const status = p.essayId ? (
+    <Link
+      href={editorHref(p.essayId, person)}
+      className={cn(
+        "inline-flex min-h-11 shrink-0 items-center self-start rounded-full px-2 text-sm tabular-nums hover:bg-muted/50 hover:underline",
+        p.state === "ready" ? "font-semibold text-primary" : "text-muted-foreground",
+      )}
+      data-open-draft
+    >
+      {right}
+      <span className="sr-only">: open the draft</span>
+    </Link>
+  ) : canWrite ? (
+    <span className="shrink-0 self-start">
+      <StartButton promptRef={p.ref} person={person} />
+    </span>
+  ) : (
+    <span className="shrink-0 self-start py-2.5 text-sm text-muted-foreground">{STATE_WORD.not_started}</span>
+  );
   return (
-    <li data-prompt-row={p.state} className={ROW}>
+    <li data-prompt-row={p.state} className={cn(ROW, "items-start")}>
       {left}
-      {canWrite ? <StartButton promptRef={p.ref} person={person} /> : <span className="shrink-0 text-sm text-muted-foreground">{STATE_WORD.not_started}</span>}
+      {status}
     </li>
   );
 }

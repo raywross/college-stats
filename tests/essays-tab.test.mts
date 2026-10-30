@@ -78,6 +78,7 @@ registerHooks({
 
 const React = (await import("react")).default;
 const { renderToStaticMarkup } = await import("react-dom/server");
+const { PromptRow } = await import("../components/essays/CollegeEssayCard.tsx");
 const { EssaysTab } = (await import("../components/planner/EssaysTab.tsx")) as {
   EssaysTab: (p: { ctx: PlanContext; essays: EssaysTabData | null; person: string | null; canWrite: boolean }) => ReactElement;
 };
@@ -263,6 +264,24 @@ test("inside a card: required first, the choose set under its heading, then opti
   const gt = card(html, GT);
   assert.match(gt, /Optional/);
   assert.match(gt, /also used for Duke/);
+});
+
+test("a row's title unfolds the whole prompt (owner, 2026-10-30); the status is the link to the draft; a row with no text on file has no fold", () => {
+  const html = render(ctxWith());
+  const duke = card(html, DUKE);
+  // The short title stays in the summary; the college's full prompt sits in the fold beneath it.
+  assert.match(duke, /<details[^>]*data-prompt-fold[^>]*>\s*<summary[^>]*>[\s\S]*?Short answer \(150 words\) · “Prompt number 4 of the…”[\s\S]*?<\/summary>\s*<p[^>]*data-prompt-text[^>]*>Prompt number 4 of the/);
+  // The status, not the title, opens the draft.
+  assert.match(duke, /<a[^>]*href="\/advisor\/essays\/[^"]+"[^>]*data-open-draft[^>]*>Draft · 180 of 250 words/);
+  assert.doesNotMatch(duke, /<a[^>]*>\s*<details/, "the fold is never inside a link");
+  // The summary is a 44 px target.
+  assert.match(duke, /<summary class="[^"]*min-h-11/);
+  // Guard: a row whose prompt text isn't on file keeps a plain title (no fold to open on nothing).
+  const bare = renderToStaticMarkup(
+    React.createElement(PromptRow, { p: { ref: "college:100001:2026-27:own-1", title: "Your own essay", kind: "free", limit: null, state: "draft", essayId: "e-own", count: 12 }, text: null, also: null, comments: 0, person: null, canWrite: true }),
+  );
+  assert.doesNotMatch(bare, /data-prompt-fold/);
+  assert.match(bare, /data-open-draft/);
 });
 
 test("the three lines: not on file (with Add what {College} asks), none, and refers to the form", () => {

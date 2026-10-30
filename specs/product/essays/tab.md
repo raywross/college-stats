@@ -169,5 +169,14 @@ Calendar.
   reading from inside the Essays tab's own data, else it opens the tab; a guardian's read of a draft from the tab
   is still written to the household read log, as any other draft view is.
 
+## Changed (owner review, 2026-10-30, later): the row unfolds the whole prompt
+UT Austin's first prompt read "Essay (650 words) · “Share an essay on any…”" and the owner asked whether the text was
+stored cut off. It is stored in full (148 characters); the row shortens it to five words by design. Decision: leave the
+short title, "but clicking will expand and show everything". A prompt row whose text is on file is now a `<details>`:
+the summary is the glyph and the short title (a 44 px target, keyboard-reachable, a chevron that turns), and the fold
+beneath holds the college's full prompt. The status on the right ("Draft · 180 of 250 words") is the link to the draft,
+where before the whole row was; Start stays where it was. A row with no text on file (an own ref) keeps a plain title.
+`components/essays/CollegeEssayCard.tsx` `PromptRow`; `tests/essays-tab.test.mts`.
+
 ## Not built
 - Nothing from this part is deferred; both open questions were decided and built.

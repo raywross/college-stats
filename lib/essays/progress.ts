@@ -58,6 +58,8 @@ export interface CollegeEssayProgress {
   /** ISO, via applyDate in the student's cycle. */
   deadline: string | null;
   onFile: "published" | "none" | "refers_to_form" | "not_on_file";
+  /** ISO day a person read the college's prompts in the application form (a hand-read block, sources.md); else absent. */
+  confirmedOn?: string;
   required: PromptProgress[];
   optional: PromptProgress[];
   /** Drafts on the college's own refs (the prompts the student added for it). */
@@ -240,6 +242,7 @@ export function essayProgress(input: { items: PlanItem[]; schools: Record<string
       round: item.round,
       deadline: deadlineOf(item, school),
       onFile,
+      ...(school.essays?.confidence === "confirmed" && school.essays.read_on ? { confirmedOn: school.essays.read_on } : {}),
       required,
       optional,
       own,

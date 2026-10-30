@@ -34,6 +34,17 @@ const readDay = (iso: string) => {
 /** Where the prompt was read: the college's page (or the platform's homepage) and the day, as the prompt's citation. */
 function PromptSource({ prompt }: { prompt: ResolvedPrompt }) {
   if (!prompt.source) return null;
+  // A prompt read from the application form by hand (sources.md "The hand read"): credited to the form, linked to the platform.
+  if (prompt.source.handRead) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        <a href={prompt.source.url} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">
+          {prompt.source.handRead}
+        </a>
+        .
+      </p>
+    );
+  }
   const who = prompt.college ? `${prompt.college.name}'s site` : "the platform's site";
   return (
     <p className="text-xs text-muted-foreground">

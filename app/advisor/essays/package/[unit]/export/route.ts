@@ -38,7 +38,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ unit
 
   const commonApp = !!school.apply?.common_app;
   const coalitionPrompts = school.coalition ? lookup.platform?.coalition?.prompts ?? [] : [];
-  const refs = packagePromptRefs(school.essays ?? null, { commonApp, coalitionPrompts });
+  const refs = packagePromptRefs(lookup.schoolRecord(unit)?.essays ?? null, { commonApp, coalitionPrompts });
   const matched = refs.map((ref) => ({ ref, essay: read.essays.find((e) => refsOf(e, read.links).includes(ref)) ?? null }));
 
   const bodies = new Map<string, string>();

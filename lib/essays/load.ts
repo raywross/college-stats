@@ -18,6 +18,7 @@ import { planViewer, type PlanChild } from "@/lib/planner/load";
 import { resolveSelectedChild } from "@/lib/planner/plan-frame";
 import { isUuid } from "@/lib/planner/plan-writes";
 import type { School } from "@/lib/types";
+import { readEssayOverrides, withOverride } from "./overrides";
 import { asPlatformPrompts, type PlatformPrompts, type PromptLookup } from "./prompts";
 import type { CommentRow, EssayLinkRow, EssayRow, VersionRow } from "./rows";
 
@@ -64,10 +65,17 @@ export async function platformPrompts(): Promise<PlatformPrompts | null> {
   return asPlatformPrompts(await getPlatformPrompts());
 }
 
-/** What prompts.ts resolves against: the dataset's colleges and the platforms' file. */
+/**
+ * What prompts.ts resolves against: the dataset's colleges, each with the console's saved hand-read prompts laid over
+ * its block (lib/essays/overrides.ts; one query for the open cycle's rows), and the platforms' file.
+ */
 export async function promptLookup(): Promise<PromptLookup & { schoolRecord: (unitId: string) => School | null }> {
-  const [{ getSchoolById }, platform] = await Promise.all([getData(), platformPrompts()]);
-  return { school: (id) => getSchoolById(id), schoolRecord: (id) => getSchoolById(id), platform };
+  const [{ getSchoolById }, platform, overrides] = await Promise.all([getData(), platformPrompts(), readEssayOverrides(null)]);
+  const record = (id: string) => {
+    const s = getSchoolById(id);
+    return s ? withOverride(s, overrides) : null;
+  };
+  return { school: record, schoolRecord: record, platform };
 }
 
 /** The colleges on the student's default list, in the list's order (the picker's and the grouping's colleges). */

@@ -20,6 +20,7 @@
  * Pure; safe in server code, client components, and tests.
  */
 import type { EssayLimit } from "./count.ts";
+import { handReadLine } from "../essay-prompts/confirmed.ts";
 
 /* The contract's shapes (U1 adds the same to lib/types.ts). */
 export type EssayPromptKind = "essay" | "short_answer" | "why_us" | "program" | "activity" | "optional" | "other";
@@ -38,6 +39,9 @@ export interface SchoolEssaysLocal {
   source_url: string;
   retrieved: string;
   prompts: EssayPromptLocal[];
+  /** A block read from the application form by a person (sources.md "The hand read"): the day read. */
+  confidence?: "confirmed";
+  read_on?: string;
 }
 /** One platform's block in data/reference/platform-prompts.json. */
 export interface PlatformBlock {
@@ -108,6 +112,11 @@ export interface PromptSource {
   url: string;
   retrieved: string;
   cycle: string;
+  /**
+   * For a block read from the application form by a person: the credit to show in place of "As published on
+   * {College}'s site" ("From the application form, read by hand on {date}"); `url` is then the platform's homepage.
+   */
+  handRead?: string;
 }
 
 export interface ResolvedPrompt {
@@ -175,7 +184,9 @@ export function essaysOf(school: unknown): SchoolEssaysLocal | null {
   const status = e.status === "published" || e.status === "none" || e.status === "refers_to_form" ? e.status : null;
   if (!status || typeof e.cycle !== "string") return null;
   const block = asBlock({ ...e, prompts: Array.isArray(e.prompts) ? e.prompts : [] });
-  return block ? { ...block, status } : null;
+  if (!block) return null;
+  const handRead = e.confidence === "confirmed" && typeof e.read_on === "string" ? { confidence: "confirmed" as const, read_on: e.read_on } : {};
+  return { ...block, status, ...handRead };
 }
 
 /** The reference file's contents, checked; null when it's missing or isn't the shape. */
@@ -192,8 +203,12 @@ function notOnFile(ref: string, college: ResolvedPrompt["college"]): ResolvedPro
   return { ref, found: false, title: NOT_ON_FILE, text: null, options: [], limit: null, college, kind: "other", required: null, source: null, quote: null };
 }
 
-const sourceOf = (b: { source_url: string; retrieved: string; cycle: string }): PromptSource | null =>
-  b.source_url ? { url: b.source_url, retrieved: b.retrieved, cycle: b.cycle } : null;
+/** Where a block was read; a hand-read block says so (`handRead`), with the platform's homepage as its url. */
+export const sourceOf = (b: { source_url: string; retrieved: string; cycle: string; confidence?: "confirmed"; read_on?: string }): PromptSource | null => {
+  if (!b.source_url) return null;
+  const source: PromptSource = { url: b.source_url, retrieved: b.retrieved, cycle: b.cycle };
+  return b.confidence === "confirmed" && b.read_on ? { ...source, handRead: handReadLine(b.read_on) } : source;
+};
 
 /** A ref as the workspace shows it. Never throws. */
 export function resolvePrompt(ref: string, lookup: PromptLookup): ResolvedPrompt {

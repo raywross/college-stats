@@ -677,6 +677,10 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
  * The essay prompts block (specs/product/essays/prompts.md "Store"; scripts/lib/essay-prompts/merge.mts): one
  * `extracted` record at `lineage.essays` naming the page, its cycle as the year, the day read, and the page's own cycle
  * line; no record at any path under it; prompts only when published, each id "{unit_id}:{cycle}:{n}" in page order.
+ * A hand-read block (`confidence: "confirmed"`, sources.md "The hand read") is cited the same way except that its
+ * record's method is `reported` (a person read the form; nothing was extracted from a fetched page), with the same
+ * quote, url, retrieved, and year required; it carries `form`, `read_on` (equal to `retrieved`), and `reader`, which a
+ * block from the college's page never does.
  */
 function essaysProblems(school: School, where: string): string[] {
   const block = school.essays;
@@ -687,11 +691,22 @@ function essaysProblems(school: School, where: string): string[] {
   if (!block) return errors;
   // `essays` itself is registered (for its lineage record), so a stray key under it would resolve to it: list them.
   for (const key of Object.keys(block)) {
-    if (!["cycle", "status", "source_url", "retrieved", "choose", "prompts"].includes(key)) errors.push(`${where}: "essays.${key}" isn't a field of the essays block`);
+    if (!["cycle", "status", "source_url", "retrieved", "choose", "prompts", "confidence", "form", "read_on", "reader"].includes(key)) errors.push(`${where}: "essays.${key}" isn't a field of the essays block`);
   }
   const rec = school.lineage?.essays;
   if (!rec) return [...errors, `${where}: essays is stored without a lineage record at lineage.essays`];
-  if (rec.source !== "college-site" || rec.method !== "extracted") errors.push(`${where}: lineage.essays must cite source "college-site" with method "extracted"`);
+  const confirmed = block.confidence !== undefined;
+  if (confirmed) {
+    if (block.confidence !== "confirmed") errors.push(`${where}: essays.confidence ${JSON.stringify(block.confidence)} isn't "confirmed"`);
+    if (block.status === "refers_to_form") errors.push(`${where}: a hand-read essays block is published or none, never refers_to_form`);
+    if (!block.form || !block.read_on || !block.reader) errors.push(`${where}: a hand-read essays block needs its form, read_on, and reader`);
+    if (block.read_on !== block.retrieved) errors.push(`${where}: essays.read_on isn't the block's retrieved`);
+    if (rec.source !== "college-site" || rec.method !== "reported") errors.push(`${where}: lineage.essays for a hand-read block must cite source "college-site" with method "reported"`);
+    if (!rec.quote || !rec.url || !rec.retrieved || !rec.year) errors.push(`${where}: lineage.essays for a hand-read block lacks quote, url, retrieved, or year`);
+  } else {
+    if (block.form !== undefined || block.read_on !== undefined || block.reader !== undefined) errors.push(`${where}: essays.form, read_on, and reader belong to a hand-read block (confidence "confirmed") only`);
+    if (rec.source !== "college-site" || rec.method !== "extracted") errors.push(`${where}: lineage.essays must cite source "college-site" with method "extracted"`);
+  }
   if (rec.year !== block.cycle) errors.push(`${where}: lineage.essays year ${JSON.stringify(rec.year ?? null)} isn't the block's cycle ${block.cycle}`);
   if (rec.url !== block.source_url) errors.push(`${where}: lineage.essays url isn't the block's source_url`);
   if (rec.retrieved !== block.retrieved) errors.push(`${where}: lineage.essays retrieved isn't the block's retrieved`);

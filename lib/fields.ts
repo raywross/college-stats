@@ -1017,6 +1017,12 @@ export const FIELDS = {
   "essays.retrieved": reported("The day the essay prompts page was read"),
   "essays.prompts": reported("Each essay and short-answer prompt, its limit, and whether it is required"),
   "essays.choose": reported("How many of the listed prompts an applicant answers, when the page says to choose some of them"),
+  // A block read from the application form by a person (specs/product/essays/sources.md "The hand read";
+  // data/essay-prompts/confirmed/): only then present. The same one lineage record cites them, method "reported".
+  "essays.confidence": reported("Whether the prompts were confirmed by a person reading the application form"),
+  "essays.form": reported("Which application form the prompts were read in (Common App, Coalition, the college's own, ApplyTexas, UC)"),
+  "essays.read_on": reported("The day a person read the prompts in the application form"),
+  "essays.reader": reported("The initials of the person who read the prompts in the application form"),
 } satisfies Record<string, FieldDef>;
 
 export type FieldPath = keyof typeof FIELDS;

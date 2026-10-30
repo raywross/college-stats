@@ -1,7 +1,8 @@
 /**
- * Applies data/essay-prompts/records/ to the committed data/schools.json (specs/product/essays/prompts.md "Store"),
- * after checking data/reference/platform-prompts.json, refusing to write on a lineage failure. No network. The page is
- * the college's own site (source `college-site`), so data/meta.json needs nothing new and isn't written.
+ * Applies data/essay-prompts/records/ and the hand-read data/essay-prompts/confirmed/ (sources.md "The hand read") to
+ * the committed data/schools.json (specs/product/essays/prompts.md "Store"), after checking
+ * data/reference/platform-prompts.json, refusing to write on a lineage failure. No network. Both cite the college's own
+ * words (source `college-site`), so data/meta.json needs nothing new and isn't written.
  *
  *   npm run merge-essay-prompts              # writes data/schools.json
  *   npm run merge-essay-prompts -- --dry-run # checks, writes nothing
@@ -13,8 +14,8 @@ import { join } from "node:path";
 import { validateLineage } from "../lib/lineage.ts";
 import type { DatasetMeta, School } from "../lib/types.ts";
 import { formatSchools } from "./lib/identity-sync.mts";
-import { applyEssays, platformProblems, summaryLine } from "./lib/essay-prompts/merge.mts";
-import { essayPaths, readEssayRecords, readPlatformPrompts } from "./lib/essay-prompts/store.mts";
+import { applyEssays, confirmedProblems, platformProblems, summaryLine } from "./lib/essay-prompts/merge.mts";
+import { essayPaths, readConfirmedRecords, readEssayRecords, readPlatformPrompts } from "./lib/essay-prompts/store.mts";
 
 // MERGE_ESSAY_PROMPTS_ROOT lets tests point this at a scratch directory holding data/.
 const ROOT = process.env.MERGE_ESSAY_PROMPTS_ROOT ?? join(import.meta.dirname, "..");
@@ -28,7 +29,10 @@ try {
   const schoolsPath = join(ROOT, "data", "schools.json");
   const schools: School[] = JSON.parse(readFileSync(schoolsPath, "utf8"));
   const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-  const applied = applyEssays(schools, readEssayRecords(P.records), today);
+  const confirmed = readConfirmedRecords(P.confirmed);
+  const hand = confirmedProblems(confirmed, today);
+  if (hand.length) throw new Error(`hand-read records check failed; nothing written:\n  ${hand.join("\n  ")}`);
+  const applied = applyEssays(schools, readEssayRecords(P.records), today, confirmed);
   const problems = validateLineage(applied.schools, meta);
   if (problems.length) {
     const more = problems.length > 30 ? `\n  … and ${problems.length - 30} more` : "";

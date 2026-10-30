@@ -1,5 +1,6 @@
 import { Block } from "@/components/profile/Panel";
 import { MetricLabel } from "@/components/ui/info-tip";
+import { handReadLine } from "@/lib/essay-prompts/confirmed";
 import { essayCardLine } from "@/lib/essays/summary";
 import type { FieldPath } from "@/lib/fields";
 import type { Cited } from "@/lib/lineage";
@@ -56,7 +57,9 @@ function PromptRow({ prompt, cited, choose }: { prompt: EssayPrompt; cited: Cite
  * requirement, each cited to the college's page, the platform's own prompts (Common App's, the Coalition's) linked
  * above when this college takes them, and a closing line that the application may ask more than these. Embedded
  * (no wrapper) inside `WhatItTakes`; `standalone` wraps it in its own `Block` for a college with prompts but no
- * Common App card (next to `HowToApply`).
+ * Common App card (next to `HowToApply`). A hand-read block (`confidence: "confirmed"`) carries "From the application
+ * form, read by hand on {date}" under the line and at the top of the fold, linked to the platform's homepage, and
+ * drops the closing line (it was read from the application itself).
  */
 export function EssayPrompts({
   school,
@@ -75,6 +78,14 @@ export function EssayPrompts({
   if (!line) return null;
   const cited = cite("essays.prompts", school);
 
+  // A hand-read block (sources.md "The hand read"): credited to the application form, linked to the platform's homepage.
+  const handRead = essays.confidence === "confirmed" && essays.read_on ? handReadLine(essays.read_on) : null;
+  const credit = handRead ? (
+    <a href={essays.source_url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+      {handRead}
+    </a>
+  ) : null;
+
   const takesCommonApp = !!school.apply;
   const takesCoalition = !!school.coalition;
   const prompts = essays.status === "published" ? essays.prompts : [];
@@ -86,12 +97,14 @@ export function EssayPrompts({
           {line}
         </MetricLabel>
       </p>
+      {credit && <p className="text-xs text-muted-foreground">{credit}</p>}
       {prompts.length > 0 && (
         <details className="group mt-2">
           <summary className="cursor-pointer list-none text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
             Show the prompts
           </summary>
           <div className="mt-2 space-y-3">
+            {credit && <p className="text-xs font-semibold text-muted-foreground">{credit}</p>}
             {(takesCommonApp || takesCoalition) && (
               <p className="text-xs text-muted-foreground">
                 {takesCommonApp && (
@@ -119,7 +132,7 @@ export function EssayPrompts({
                 <PromptRow key={p.id} prompt={p} cited={cited} choose={essays.choose} />
               ))}
             </ul>
-            <p className="text-xs text-muted-foreground">The application may ask a few short questions beyond these.</p>
+            {!handRead && <p className="text-xs text-muted-foreground">The application may ask a few short questions beyond these.</p>}
           </div>
         </details>
       )}

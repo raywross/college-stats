@@ -258,6 +258,19 @@ test("EssayPrompts: standalone wraps in its own Block titled Essays", () => {
   assert.match(out, /<h3>Essays<\/h3>/);
 });
 
+test("EssayPrompts: a hand-read block reads 'From the application form, read by hand on {date}' under the line and atop the fold, linked to the platform's homepage", () => {
+  const handRead = essays({ source_url: "https://www.commonapp.org", retrieved: "2026-10-30", confidence: "confirmed", form: "common_app", read_on: "2026-10-30", reader: "RR", prompts: [prompt({ id: "a" })] });
+  const out = html(fixtureSchool(handRead));
+  const credit = /<a href="https:\/\/www\.commonapp\.org" target="_blank" rel="noopener noreferrer" class="hover:underline">From the application form, read by hand on October 30, 2026<\/a>/g;
+  assert.equal(out.match(credit)?.length, 2, "the card line's credit and the fold's heading");
+  assert.doesNotMatch(out, /The application may ask a few short questions beyond these/, "read from the application itself");
+  const none = html(fixtureSchool(essays({ ...handRead, status: "none", prompts: [] })));
+  assert.match(none, /No essays beyond the Common App&#x27;s/);
+  assert.equal(none.match(credit)?.length, 1, "a hand-read none: the credit under the line, no fold");
+  // A block from the college's own page carries no hand-read credit.
+  assert.doesNotMatch(html(fixtureSchool(essays({ prompts: [prompt({ id: "a" })] }))), /read by hand/);
+});
+
 /* ------------------------------------------------------------------ */
 /* Guards: the display reads the data, never a hard-coded limit         */
 /* ------------------------------------------------------------------ */

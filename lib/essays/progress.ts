@@ -85,7 +85,7 @@ export function essayProgress(input: { items: PlanItem[]; schools: Record<string
         else optional.push(row);
       }
     }
-    const dated = item.deadline_date ?? applyDate(school, item.round)?.date ?? null;
+    const dated = applyDate(school, item.round)?.date ?? (item.round === "rolling" ? null : applyDate(school, null)?.date) ?? null;
     const deadline = dated && /^\d{4}-\d{2}-\d{2}$/.test(dated) ? dated : null;
     const fixed = required.filter((r) => !r.chooseGroup);
     const chosen = required.filter((r) => r.chooseGroup);

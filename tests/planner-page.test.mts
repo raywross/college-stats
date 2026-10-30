@@ -261,6 +261,26 @@ test("the plan opens on Next steps (owner, 2026-10-14): the page and the frame f
   assert.match(tabs, /tab === "next" && <NextSteps /);
 });
 
+test("the Essays tab (specs/product/essays/tab.md): ?tab=essays opens it on every plan, third with PenLine, and PlanTabs renders EssaysTab with the tab's read", async () => {
+  const { parseTab, tabsFor, planHref } = await import("../lib/planner/plan-tabs.ts");
+  assert.equal(parseTab("essays"), "essays");
+  assert.equal(tabsFor({ everyone: false, hasDecision: false })[2], "essays");
+  assert.equal(planHref({ tab: "essays", college: "198419" }), "/advisor?tab=essays#college-198419");
+  const tabs = read("components/planner/PlanTabs.tsx");
+  assert.match(tabs, /essays: PenLine/);
+  assert.match(tabs, /tab === "essays" && <EssaysTab /);
+  // The page reads the drafts only for this tab and hands them to the frame, which passes them to the tab.
+  const page = read("app/advisor/page.tsx");
+  assert.match(page, /const essays = await essaysFor\(loaded, tab, "student"\);/);
+  assert.match(page, /const essays = await essaysFor\(load, tab, "guardian"\);/);
+  assert.match(read("components/planner/PlanFrame.tsx"), /<PlanTabs [^>]*essays=\{essays\} person=\{personId\} \/>/);
+});
+
+test("guard: a PlanTabs without the essays branch fails the routing check", () => {
+  const without = read("components/planner/PlanTabs.tsx").replace(/tab === "essays" && <EssaysTab [^\n]*/, "");
+  assert.doesNotMatch(without, /tab === "essays" && <EssaysTab /);
+});
+
 test("guard: a header missing Advisor, or out of order, is caught by the label check", () => {
   const bad = 'const NAV_ITEMS = [{ label: "Explore", href: "/explore" }, { label: "Compare", href: "/compare" }];';
   const labels = [...bad.matchAll(/label:\s*(?:"([^"]+)"|([A-Z_]+)\b)/g)].map(labelOf);

@@ -13,7 +13,7 @@ import Link from "next/link";
 import { CollegeEssayCard, MainEssayCard, PromptRow } from "@/components/essays/CollegeEssayCard";
 import { EssayList } from "@/components/essays/EssayList";
 import { PromptPicker } from "@/components/essays/PromptPicker";
-import { essayProgress, progressLine, type PromptProgress } from "@/lib/essays/progress";
+import { cycleLabel, essayProgress, nextOwnRef, progressLine, type PromptProgress } from "@/lib/essays/progress";
 import { groupEssays, isMainEssay, refsOf } from "@/lib/essays/rows";
 import { collegesByEssay, type EssaysTabData } from "@/lib/essays/tab-view";
 import { roundsPicked } from "@/lib/planner/list-row";
@@ -79,6 +79,10 @@ export function EssaysTab({ ctx, essays, person, canWrite }: { ctx: PlanContext;
       ? { state: !mainRow ? ("not_started" as const) : mainRow.status === "draft" ? ("draft" as const) : ("ready" as const), essayId: mainRow?.id ?? null, count: mainRow?.count ?? 0, limit: 650 }
       : null);
   const usedBy = progress.colleges.filter((c) => c.takesCommonApp).length;
+  // "Add what {College} asks" starts a draft on the college's next own ref (`college:<unit>:<cycle>:own-<n>`), so it
+  // counts on that college's card from then on (lib/essays/progress.ts).
+  const cycle = cycleLabel(ctx.cycle.startYear);
+  const ownRefs: Record<string, string> = Object.fromEntries(progress.colleges.map((c) => [c.unit_id, nextOwnRef(c.unit_id, cycle, { rows, links })]));
   // Before senior year no round is picked yet, so a card names no round or date (as the Colleges tab's rows don't).
   const dated = roundsPicked(ctx.grade);
 
@@ -115,7 +119,7 @@ export function EssaysTab({ ctx, essays, person, canWrite }: { ctx: PlanContext;
       ) : (
         <div className="space-y-3">
           {progress.colleges.map((c) => (
-            <CollegeEssayCard key={c.unit_id} college={c} texts={texts} byEssay={byEssay} openComments={openComments} person={person} canWrite={canWrite} picker={picker} dated={dated} />
+            <CollegeEssayCard key={c.unit_id} college={c} texts={texts} byEssay={byEssay} openComments={openComments} person={person} canWrite={canWrite} picker={picker} dated={dated} ownRef={ownRefs[c.unit_id]} />
           ))}
         </div>
       )}

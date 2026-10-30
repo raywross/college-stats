@@ -42,7 +42,7 @@ export default function Link({ href, children, ...rest }) { return React.createE
   "@/lib/analytics": `export function track() {}`,
   // The picker is its own client component (tests/essays-workspace.test.mts covers its groups); here, what it was given.
   "@/components/essays/PromptPicker": `import React from "react";
-export function PromptPicker({ label = "Write a new one", college = null }) { return React.createElement("span", { "data-picker": college ? college.unit_id : "new" }, label); }`,
+export function PromptPicker({ label = "Write a new one", college = null }) { return React.createElement("span", { "data-picker": college ? college.unit_id : "new", "data-own": college?.ownRef ?? undefined }, label); }`,
 };
 const stubUrl = (name: string) => pathToFileURL(join(STUB_DIR, `${name.replace(/[^a-z]/gi, "_")}.mjs`)).href;
 const STUB_SOURCES = new Map(Object.entries(STUBS).map(([name, src]) => [stubUrl(name), src]));
@@ -167,6 +167,7 @@ const LINKS: EssayLinkRow[] = [{ essay_id: "e-duke-why", prompt_ref: `college:${
 function ctxWith(over: { items?: unknown[]; schools?: Record<string, unknown>; season?: string; grade?: string; guardian?: boolean } = {}): PlanContext {
   return {
     grade: over.grade ?? "senior_fall",
+    cycle: { startYear: 2026 },
     items: over.items ?? ITEMS,
     schools: over.schools ?? SCHOOLS,
     season: over.season ?? "senior_fall",
@@ -269,7 +270,8 @@ test("the three lines: not on file (with Add what {College} asks), none, and ref
   const yale = card(html, YALE);
   assert.match(yale, /prompts not on file/);
   assert.match(yale, /We haven&#x27;t read Yale&#x27;s essay page yet\. Yale&#x27;s own site has it\./);
-  assert.match(yale, /data-picker="100003">Add what Yale asks</);
+  // Add starts a draft on the college's next own ref, so it counts on this card (lib/essays/progress.ts nextOwnRef).
+  assert.match(yale, /data-picker="100003" data-own="college:100003:2026-27:own-1">Add what Yale asks</);
   assert.doesNotMatch(yale, />Package</, "nothing started, no Package link");
   assert.match(card(html, ELON), /no essays beyond the Common App&#x27;s/);
   assert.doesNotMatch(card(html, ELON), /data-picker/);
@@ -298,6 +300,13 @@ test("guard: a student's render would fail the guardian's checks", () => {
   const html = render(ctxWith());
   assert.match(html, />Start</);
   assert.doesNotMatch(html, /Only Maya edits a draft/);
+});
+
+test("without the tab's own read the drafts come from the plan (ctx.essays, read by loadPlanFor)", () => {
+  const ctx = { ...ctxWith(), essays: { rows: ROWS, links: LINKS } } as PlanContext;
+  const html = render(ctx, { essays: null });
+  assert.match(html, /data-progress-line="true">3 of 6 ready · next: Georgia Tech, Oct 15<\/p>/);
+  assert.deepEqual(cardOrder(html), [GT, DUKE, YALE, RICE, ELON]);
 });
 
 test("the workspace isn't set up: one line, no cards", () => {

@@ -177,6 +177,7 @@ export function CollegeEssayCard({
   canWrite,
   picker,
   dated = true,
+  ownRef = null,
 }: {
   college: CollegeEssayProgress;
   texts: Record<string, string>;
@@ -187,6 +188,8 @@ export function CollegeEssayCard({
   picker: PickerGroup[];
   /** False before senior year: the round and its date aren't picked yet (list.md "Round picked senior year"), so the heading is the name alone. */
   dated?: boolean;
+  /** The prompt ref "Add what {College} asks" starts a draft on (the college's next own ref); null: the free prompt. */
+  ownRef?: string | null;
 }) {
   const fixed = c.required.filter((p) => !p.chooseGroup);
   const chosen = c.required.filter((p) => p.chooseGroup);
@@ -230,7 +233,7 @@ export function CollegeEssayCard({
           <p className="text-sm text-muted-foreground" data-college-note>
             {note}
           </p>
-          {canWrite && <PromptPicker groups={picker} person={person} label={`Add what ${c.name} asks`} primary={false} college={{ unit_id: c.unit_id, name: c.name }} />}
+          {canWrite && <PromptPicker groups={picker} person={person} label={`Add what ${c.name} asks`} primary={false} college={{ unit_id: c.unit_id, name: c.name, ownRef }} />}
         </div>
       )}
       {(fixed.length > 0 || chosen.length > 0 || c.optional.length > 0 || c.own.length > 0) && (

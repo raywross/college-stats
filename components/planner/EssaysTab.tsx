@@ -16,6 +16,7 @@ import { PromptPicker } from "@/components/essays/PromptPicker";
 import { essayProgress, progressLine, type PromptProgress } from "@/lib/essays/progress";
 import { groupEssays, isMainEssay, refsOf } from "@/lib/essays/rows";
 import { collegesByEssay, type EssaysTabData } from "@/lib/essays/tab-view";
+import { roundsPicked } from "@/lib/planner/list-row";
 import { planHref } from "@/lib/planner/plan-tabs";
 import type { PlanContext } from "@/lib/planner/types";
 
@@ -78,6 +79,8 @@ export function EssaysTab({ ctx, essays, person, canWrite }: { ctx: PlanContext;
       ? { state: !mainRow ? ("not_started" as const) : mainRow.status === "draft" ? ("draft" as const) : ("ready" as const), essayId: mainRow?.id ?? null, count: mainRow?.count ?? 0, limit: 650 }
       : null);
   const usedBy = progress.colleges.filter((c) => c.takesCommonApp).length;
+  // Before senior year no round is picked yet, so a card names no round or date (as the Colleges tab's rows don't).
+  const dated = roundsPicked(ctx.grade);
 
   // Folds: the Coalition's prompts when a listed college takes it; drafts for no college; drafts for colleges no longer listed.
   const takesCoalition = ctx.items.some((i) => !!ctx.schools[i.unit_id]?.coalition);
@@ -112,7 +115,7 @@ export function EssaysTab({ ctx, essays, person, canWrite }: { ctx: PlanContext;
       ) : (
         <div className="space-y-3">
           {progress.colleges.map((c) => (
-            <CollegeEssayCard key={c.unit_id} college={c} texts={texts} byEssay={byEssay} openComments={openComments} person={person} canWrite={canWrite} picker={picker} />
+            <CollegeEssayCard key={c.unit_id} college={c} texts={texts} byEssay={byEssay} openComments={openComments} person={person} canWrite={canWrite} picker={picker} dated={dated} />
           ))}
         </div>
       )}

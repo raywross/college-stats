@@ -176,6 +176,7 @@ export function CollegeEssayCard({
   person,
   canWrite,
   picker,
+  dated = true,
 }: {
   college: CollegeEssayProgress;
   texts: Record<string, string>;
@@ -184,6 +185,8 @@ export function CollegeEssayCard({
   person: string | null;
   canWrite: boolean;
   picker: PickerGroup[];
+  /** False before senior year: the round and its date aren't picked yet (list.md "Round picked senior year"), so the heading is the name alone. */
+  dated?: boolean;
 }) {
   const fixed = c.required.filter((p) => !p.chooseGroup);
   const chosen = c.required.filter((p) => p.chooseGroup);
@@ -206,7 +209,7 @@ export function CollegeEssayCard({
   return (
     <section id={collegeAnchor(c.unit_id)} aria-label={c.name} data-college={c.unit_id} className="scroll-mt-20 rounded-3xl border bg-card">
       <header className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 pt-3 pb-2 sm:px-5">
-        <h3 className="min-w-0 font-semibold break-words">{collegeHeading(c)}</h3>
+        <h3 className="min-w-0 font-semibold break-words">{collegeHeading(dated ? c : { name: c.name, round: null, deadline: null })}</h3>
         <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
           <span className={cn(done && "font-semibold text-primary")} data-college-status>
             {collegeStatus(c)}

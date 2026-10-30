@@ -164,8 +164,9 @@ const ROWS: EssayRow[] = [
 ];
 const LINKS: EssayLinkRow[] = [{ essay_id: "e-duke-why", prompt_ref: `college:${GT}:${CYCLE}:1`, created: "" }];
 
-function ctxWith(over: { items?: unknown[]; schools?: Record<string, unknown>; season?: string; guardian?: boolean } = {}): PlanContext {
+function ctxWith(over: { items?: unknown[]; schools?: Record<string, unknown>; season?: string; grade?: string; guardian?: boolean } = {}): PlanContext {
   return {
+    grade: over.grade ?? "senior_fall",
     items: over.items ?? ITEMS,
     schools: over.schools ?? SCHOOLS,
     season: over.season ?? "senior_fall",
@@ -231,6 +232,12 @@ test("one card per college in the plan's deadline order, undated last, each anch
   for (const u of [GT, DUKE, YALE, RICE, ELON]) assert.match(html, new RegExp(`<section id="college-${u}"`));
   assert.match(card(html, DUKE), /Duke · ED · by Nov 1/);
   assert.match(card(html, ELON), /Elon · rolling/);
+});
+
+test("before senior year a card names the college alone: no round is picked yet (as the Colleges tab's rows)", () => {
+  const html = render(ctxWith({ grade: "junior_spring", season: "junior_spring" }));
+  assert.match(card(html, DUKE), /<h3[^>]*>Duke<\/h3>/);
+  assert.doesNotMatch(html, /· by /);
 });
 
 test("guard: an alphabetical order would fail the deadline-order check", () => {

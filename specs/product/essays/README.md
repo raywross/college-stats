@@ -79,3 +79,8 @@ connection (after Google sign-in), counselor grants (after the portal), and the 
 `ANTHROPIC_API_KEY`: the prompts read over colleges and the reviewer's evaluation, both the owner's to run. The
 guidance corpus is a draft until the owner reviews it (`data/reference/essay-guidance/guidance.md`, "Questions for
 the owner").
+
+## As built (2026-10-30)
+Parts 4 and 5 were built together on `feature/essays-next` (PR #194), in three units: the move, the tab, and this
+round of docs and QA. Each part's spec has its own "As built" section. `/advisor/essays` now redirects to the Essays
+tab; the editor and the package page are unchanged.

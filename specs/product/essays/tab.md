@@ -1,6 +1,6 @@
 # Part 5, The Essays Tab: Essays Beside Next Steps, Colleges, and Calendar
 
-> Status: **planned** 2026-10-30. Part 5 of [essays](README.md). Moves the workspace's list
+> Status: **built** 2026-10-30 (PR #194). Part 5 of [essays](README.md). Moves the workspace's list
 > ([workspace.md](workspace.md) "Where it lives") onto the advisor page as its own tab and gives it the shape of
 > the work: by college, earliest deadline first. Reads the same `essayProgress` as [moves.md](moves.md). Part of
 > [product](../README.md).
@@ -133,3 +133,41 @@ Medium: a tab, a strip rule, and one new screen composed from the built list's p
    strip under a student's feet.
 2. Should Offers push the strip to five on phones or replace Calendar in the segmented row? Recommendation: five
    cells; the guard proves they fit.
+
+## As built (2026-10-30)
+Both open questions were built as recommended: the tab is on every plan's strip, including freshmen and sophomores
+(`tabsFor`, `lib/planner/plan-tabs.ts`), and Offers pushes the phone strip to five cells rather than replacing
+Calendar.
+
+- `lib/planner/plan-tabs.ts` (`PlanTab`, `PLAN_TABS`, `TAB_LABELS`, `planHref`'s `college` anchor, `collegeAnchor`);
+  `components/planner/PlanTabs.tsx` (`PlanTabPills`, the `STRIP_RAIL`/`STRIP_CELL` classes, the `essays` branch);
+  `app/advisor/page.tsx` and `app/advisor/loading.tsx`; `components/planner/EssaysTab.tsx` (new) and
+  `components/essays/CollegeEssayCard.tsx` (new, also `MainEssayCard`, `PromptRow`, `StartButton`); `lib/essays/tab-view.ts`
+  and `lib/essays/tab-data.ts` (new, the tab's words and its read); `app/advisor/essays/page.tsx` (the 308 redirect);
+  `app/advisor/essays/[id]/page.tsx` and `package/[unit]/page.tsx` (the back link); `components/planner/moves/SubmitCard.tsx`,
+  `PlanFrame.tsx`, `PlanList.tsx` (the count line link); `components/planner/guides/StoryGuide.tsx`.
+- **Phone strip measurements differ from the spec's arithmetic**: the spec's `px-1` and "5×70 px + gaps" don't fit
+  358 px (366 px, over by 8). The build uses `px-0` (`STRIP_CELL` in `PlanTabs.tsx`): five cells measure 68.4 px
+  each, "Next steps" needs 62.3 px, so it fits with no padding, not the 1 px side padding the spec described.
+  `tests/planner-tab-strip.test.mts` proves `px-1` fails at this width. Measured at 390×844: four tabs, strip 358 px,
+  cells 86.5 px, no sideways scroll; five tabs, strip 358 px, cells 68.4 px, no sideways scroll; every cell 44 px
+  tall. At 1440: pills one line, 487 px (four) / 593 px (five).
+- **Header line** (`progressLine`, `lib/essays/progress.ts`): with nothing on file and nothing added yet it reads the
+  summer line exactly as specified; with only unread colleges (no prompts on file anywhere and nothing added) it
+  reads "0 of 1 ready · next: {College}…", not the summer line — the spec's two header states didn't cover a list
+  whose only colleges haven't had their pages read yet.
+- `essaysHref` (`lib/essays/rows.ts`) points every existing link (Submit card, the editor's "All essays" back link)
+  at the tab with the college anchor; the Submit card and the Colleges tab's apply card needed no changes beyond
+  that helper. The redirect (`essaysListRedirect`) keeps `?for=` only when it's a UUID and turns `?college=` into the
+  anchor only when it's a unit id.
+- A college's card shows the college name alone (no round or deadline) before senior year, matching how the Colleges
+  tab reads a college before rounds are chosen; open-comment counts show on a student's own view of their rows too,
+  not just a parent's; the personal essay card shows on an empty list from the summer before senior year through
+  senior spring, not only once a college is added; card headings use their own round words ("ED", "rolling"), not
+  `lib/essays/progress.ts`'s `roundWord`; the fold "Colleges no longer on your list" keeps a removed college's
+  drafts reachable; the story guide's "start from your story" link opens the main essay's editor directly when
+  reading from inside the Essays tab's own data, else it opens the tab; a guardian's read of a draft from the tab
+  is still written to the household read log, as any other draft view is.
+
+## Not built
+- Nothing from this part is deferred; both open questions were decided and built.

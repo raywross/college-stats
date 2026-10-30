@@ -105,18 +105,19 @@ Phase 2, after Google sign-in ships ([../../backlog.md](../../backlog.md) "Platf
   download and upload cover it, and Word on iPad shares a `.docx` straight to the browser.
 
 ## Where it lives
-- **`/advisor/essays`**: the list: drafts grouped by college with status and counts, the main essay first, "Write a
-  new one" with the prompt picker (every prompt from the plan's colleges, the platforms' own, or free). A parent or
-  counselor sees the same list, read-only, with unread comments marked.
+- **`/advisor/essays`**: redirects (308) to the advisor's **Essays tab** ([tab.md](tab.md), built 2026-10-30): the
+  list by college, deadline order, with status and counts, the main essay first, "Write a new one" with the prompt
+  picker (every prompt from the plan's colleges, the platforms' own, or free). A parent or counselor sees the same
+  tab, read-only, with unread comments marked.
 - **`/advisor/essays/<id>`**: the editor, the version list, the comment thread, download, upload, "use for another
   college", and the reviewer's notes ([reviewer.md](reviewer.md)); for a parent or counselor the same page with the
   field read-only and the comment box live.
 - **`/advisor/essays/package/<unit_id>`**: the package page: everything for one college, with copy buttons per
   field and the download; a checklist beside it ("paste the main essay", "answer the short questions in the form",
   "re-read the limit in the form").
-- **Reached from**: a **Write your essays** move on Now from the summer before senior year (the summer's writing,
-  ranked 78 in [ranking.md](../../planner/record/ranking.md)); the apply card on each college's row; the story guide
-  ("start from your story"); the count on the Colleges tab.
+- **Reached from**: the **essays move** on Next steps from the summer before senior year ([moves.md](moves.md),
+  ranked 72 there and 85 in senior fall and winter in [ranking.md](../../planner/record/ranking.md)); the Essays tab
+  itself; the story guide ("start from your story"); the count on the Colleges tab.
 - **Phones**: the list is rows; the editor is the field and the count bar; the package page is cards with copy
   buttons; no sideways scroll ([../../mobile.md](../../mobile.md)).
 

@@ -76,8 +76,12 @@ export const MOVE_IMPORTANCE: Record<string, number> = {
   "profile:grades": 85,
   // 80 | the record's test (score or target, or "not testing") | The estimate's second input | always
   "profile:test": 80,
-  // 78 | personal_essay_draft (cycle) | The summer's main work | summer before senior year
-  "cycle:personal_essay_draft": 78,
+  // 72 → 85 | essays (the one list-wide essays move) | The essays the list asks for | 72 summer before senior year; 85 senior fall and winter; 0 otherwise
+  // (essaysImportance below; the entry is its resting value, as story's is)
+  "kind:essays": 85,
+  // 0 | personal_essay_draft, supplements (cycle) | The essays move replaces both on Next steps; they stay on the calendar (specs/product/essays/moves.md "What goes")
+  "cycle:personal_essay_draft": 0,
+  "cycle:supplements": 0,
   // 75 | the record's AP courses | Rigor is read from them | always
   "profile:courses": 75,
   // 75 | register_spring_test (junior winter), pick_test (junior fall) | A test date before applications | junior fall/winter
@@ -198,6 +202,17 @@ function storyImportance(season: Season): number {
   return 0;
 }
 
+/**
+ * The essays move (specs/product/essays/moves.md "When it shows, and how urgent"): 72 in the summer before senior
+ * year (just above the story's 70), 85 in senior fall and winter, 0 otherwise. The named college's deadline adds
+ * the standard timing boost.
+ */
+export function essaysImportance(season: Season): number {
+  if (season === "summer_before_senior") return 72;
+  if (season === "senior_fall" || season === "senior_winter") return 85;
+  return 0;
+}
+
 /** Pick/ask your recommenders: the same shape as the story's. */
 function recommendersImportance(season: Season): number {
   if (season === "summer_before_senior") return 68;
@@ -261,8 +276,14 @@ const APPLICATION_KINDS: ReadonlySet<PlanTask["kind"]> = new Set([
   "apply", "submit", "fee", "send_scores", "transcript", "recommendation", "supplement", "portal_setup", "portal_check",
   "confirm_complete", "decision_expected", "continued_interest", "waitlist_accept", "waitlist_deposit_elsewhere", "ed2_conditional",
   "reply_by", "housing_deposit", "deposit", "withdraw", "waitlist_decide", "add_offer", "decide_by", "compare_offers", "outcome_share",
+  // Essays, part 4 (moves.md "When it shows"): a junior never sees the essays move, whatever its date says. Its gate
+  // opens a season earlier than the other pieces' (APPLICATION_OPENS below): the summer is the personal essay's.
+  "essays",
 ]);
 const SENIOR_FALL_RANK = seasonRank("senior_fall");
+
+/** A piece whose applications season opens before senior fall: the essays move opens with the summer before senior year. */
+const APPLICATION_OPENS: Partial<Record<PlanTask["kind"], Season>> = { essays: "summer_before_senior" };
 
 /** A piece of an application: one of the college generator's kinds, or any row the college generator wrote. */
 export function isApplicationPiece(task: Pick<ImportanceTask, "kind" | "source">): boolean {
@@ -274,9 +295,19 @@ export function beforeSeniorFall(season: Season): boolean {
   return season !== "unknown" && seasonRank(season) < SENIOR_FALL_RANK;
 }
 
-/** Whether an undated application piece is showing before its time (senior fall). */
+/**
+ * Whether a piece of an application is showing before its season: senior fall for every piece but the essays move,
+ * which opens in the summer before senior year (APPLICATION_OPENS). "unknown" never gates (no class year).
+ */
+export function beforeApplicationSeason(task: Pick<ImportanceTask, "kind" | "source">, season: Season): boolean {
+  if (!isApplicationPiece(task) || season === "unknown") return false;
+  const opens = (task.source !== "college" && APPLICATION_OPENS[task.kind]) || "senior_fall";
+  return seasonRank(season) < seasonRank(opens);
+}
+
+/** Whether an undated application piece is showing before its time (senior fall; the essays move, the summer before). */
 export function beforeApplications(task: ImportanceTask, season: Season): boolean {
-  return isApplicationPiece(task) && taskDate(task) === null && beforeSeniorFall(season);
+  return taskDate(task) === null && beforeApplicationSeason(task, season);
 }
 
 /**
@@ -291,6 +322,7 @@ export function baseImportance(task: ImportanceTask, facts: ImportanceFacts): nu
 
   if (beforeApplications(task, facts.season)) return 0;
   if (task.kind === "story" || playbookKey === "story") return storyImportance(facts.season);
+  if (task.kind === "essays") return essaysImportance(facts.season);
   if (playbookKey === "pick_recommenders" || cycleKey === "ask_recommenders") return recommendersImportance(facts.season);
   if (playbookKey === "freshman_choose_courses" || playbookKey === "sophomore_choose_courses" || playbookKey === "junior_choose_courses" || (cycleKey !== null && cycleKey.startsWith("choose_courses"))) {
     return chooseCoursesImportance(task, facts.today);

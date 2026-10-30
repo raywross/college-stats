@@ -374,7 +374,7 @@ test("the block and its lineage: the platform's homepage, the day read, the firs
   assert.deepEqual(lineageOf(record(), uf), { source: "college-site", method: "reported", year: CYCLE, url: "https://www.commonapp.org", retrieved: TODAY, quote: record().prompts[0].text });
   assert.equal(lineageOf(record({ status: "none", prompts: [] }), uf).quote, "No college questions beyond the platform's; read in the Common App by hand");
   assert.equal(blockOf(record({ form: "own" }), uf).source_url, uf.links!.apply, "the college's own form: its apply page");
-  assert.throws(() => blockOf(record({ form: "own" }), { links: null }), /no page to cite/);
+  assert.throws(() => blockOf(record({ form: "own" }), { links: undefined }), /no page to cite/);
 });
 
 /* ------------------------------------------------------------------ */

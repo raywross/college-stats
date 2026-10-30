@@ -452,7 +452,7 @@ function recordFor(school: School, o: Partial<EssayRecord> = {}): EssayRecord {
 
 test("merge: sets the block before the later keys with one lineage record, replaces it in place, removes it", () => {
   const set = applyEssays([withLineage, withoutLineage], [recordFor(withLineage), recordFor(withoutLineage, { status: "none", status_quote: "None.", prompts: [] })], TODAY);
-  assert.deepEqual(set.summary, { colleges: 2, published: 1, none: 1, refersToForm: 0, prompts: 3, removed: 0, stale: 0, unjoined: 0 });
+  assert.deepEqual(set.summary, { colleges: 2, published: 1, none: 1, refersToForm: 0, prompts: 3, removed: 0, stale: 0, unjoined: 0, confirmed: 0, confirmedOutranked: 0, confirmedSkipped: 0, confirmedUnjoined: 0 });
   const [a, b] = set.schools;
   const keys = Object.keys(a);
   const later = keys.findIndex((k) => ["selectivity", "directories", "lineage", "trends", "reported"].includes(k));

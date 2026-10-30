@@ -294,7 +294,7 @@ test("the three lines: not on file (with Add what {College} asks), none, and ref
   assert.doesNotMatch(yale, />Package</, "nothing started, no Package link");
   assert.match(card(html, ELON), /no essays beyond the Common App&#x27;s/);
   assert.doesNotMatch(card(html, ELON), /data-picker/);
-  assert.match(card(html, RICE), /Rice asks its questions inside the application; add them here as you meet them\./);
+  assert.match(card(html, RICE), /Rice doesn&#x27;t publish its questions on its site; they&#x27;re inside the application\. Add each one here as you meet it\./);
 });
 
 test("the folds: drafts not tied to a college", () => {

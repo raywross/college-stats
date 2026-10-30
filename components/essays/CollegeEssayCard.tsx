@@ -263,7 +263,7 @@ export function CollegeEssayCard({
           <p className="text-sm text-muted-foreground" data-college-note>
             {note}
           </p>
-          {canWrite && <PromptPicker groups={picker} person={person} label={`Add what ${c.name} asks`} primary={false} college={{ unit_id: c.unit_id, name: c.name, ownRef }} />}
+          {canWrite && !c.confirmedOn && <PromptPicker groups={picker} person={person} label={`Add what ${c.name} asks`} primary={false} college={{ unit_id: c.unit_id, name: c.name, ownRef }} />}
         </div>
       )}
       {(fixed.length > 0 || chosen.length > 0 || c.optional.length > 0 || c.own.length > 0) && (

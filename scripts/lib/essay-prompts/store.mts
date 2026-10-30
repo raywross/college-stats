@@ -13,7 +13,8 @@
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { EssayFormKind, EssayPrompt, PlatformPromptsFile, SchoolEssays } from "../../../lib/types.ts";
+import type { ConfirmedRecord } from "../../../lib/essay-prompts/confirmed.ts";
+import type { EssayPrompt, PlatformPromptsFile, SchoolEssays } from "../../../lib/types.ts";
 
 /** Bumped when the reader's prompt or schema changes, so a re-read is distinguishable from a page change. */
 export const READER_VERSION = "2026.10.30.1";
@@ -23,29 +24,10 @@ export type FoundVia = "known-link" | "well-known-path" | "apply-page-link" | "s
 
 /**
  * One college's prompts as a person read them in the application form (sources.md "The hand read"; the console's
- * /admin/essays/[unit] form writes it). `quote` on each prompt is the prompt's own text: a hand read has no surrounding
- * sentence. Replaced whole on each save; history is the git log.
+ * /admin/essays/[unit] form writes it). Declared in lib/essay-prompts/confirmed.ts (pure, so the console loads it too)
+ * and re-exported here, so the two can never differ.
  */
-export interface ConfirmedRecord {
-  unit_id: string;
-  name: string;
-  /** "2026-27". A record whose cycle isn't the open one is skipped by the merge. */
-  cycle: string;
-  /** none: the form shows no college questions beyond the platform's. */
-  status: "published" | "none";
-  confidence: "confirmed";
-  source: "form-by-hand";
-  form: EssayFormKind;
-  /** ISO date the form was read. */
-  read_on: string;
-  /** The reader's initials, 1–4 letters. */
-  reader: string;
-  /** ids "{unit_id}:{cycle}:{n}", n from 1 in the form's order; empty when status is none. */
-  prompts: EssayPrompt[];
-  choose?: { n: number; of: number; quote: string };
-  /** For the PR body only ("the Honors prompt is separate"). */
-  note?: string;
-}
+export type { ConfirmedRecord, FormKind } from "../../../lib/essay-prompts/confirmed.ts";
 
 /** One college's essay page as read: the block the merge applies, plus how it was read and the quotes behind it. */
 export interface EssayRecord extends SchoolEssays {
@@ -154,6 +136,8 @@ function readDir<T extends { unit_id: string }>(dir: string): T[] {
 
 export const readEssayRecords = (dir: string) => readDir<EssayRecord>(dir);
 export const readHeld = (dir: string) => readDir<HeldRecord>(dir);
+/** The hand-read records (data/essay-prompts/confirmed/), by unit id; a file named for another college throws. */
+export const readConfirmedRecords = (dir: string) => readDir<ConfirmedRecord>(dir);
 
 export function readEssayRecord(dir: string, unitId: string): EssayRecord | null {
   const f = join(dir, `${unitId}.json`);

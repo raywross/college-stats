@@ -12,7 +12,7 @@
  * page-word rules (verbatim on the page, an optional word for `required: false`) don't apply: a hand read has no page,
  * and the form marks a prompt required or optional itself.
  */
-import type { EssayFormKind, EssayPrompt } from "../types.ts";
+import type { EssayFormKind, EssayPrompt, SchoolEssays } from "../types.ts";
 
 export type FormKind = EssayFormKind;
 export const FORM_KINDS: readonly FormKind[] = ["common_app", "coalition", "own", "apply_texas", "uc"];
@@ -271,8 +271,72 @@ function ordered<T extends object>(o: T, keys: readonly string[]): Record<string
  * records in), so a re-save of the same read is byte-identical and a changed prompt is a one-line diff.
  */
 export function recordJson(record: ConfirmedRecord): string {
-  const head = JSON.stringify(ordered(record, HEAD_KEYS));
+  // Nested objects too: a row read back from Postgres jsonb has its keys reordered ({"max":250,"kind":"words"}), and
+  // the export must still write the same bytes.
+  const choose = record.choose && typeof record.choose === "object" ? ordered(record.choose, ["n", "of", "quote"]) : record.choose;
+  const head = JSON.stringify(ordered({ ...record, choose }, HEAD_KEYS));
   const prompts = record.prompts ?? [];
-  const lines = prompts.length ? `[\n${prompts.map((p) => `  ${JSON.stringify(ordered(p, PROMPT_KEYS))}`).join(",\n")}\n]` : "[]";
+  const prompt = (p: EssayPrompt) => {
+    const limit = p.limit && typeof p.limit === "object" ? ordered(p.limit, ["kind", "max", "min"]) : p.limit;
+    const applies = p.applies_to && typeof p.applies_to === "object" ? ordered(p.applies_to, ["program"]) : p.applies_to;
+    return JSON.stringify(ordered({ ...p, limit, applies_to: applies } as EssayPrompt, PROMPT_KEYS));
+  };
+  const lines = prompts.length ? `[\n${prompts.map((p) => `  ${prompt(p)}`).join(",\n")}\n]` : "[]";
   return `${head.slice(0, -1)},\n  "prompts": ${lines}\n}\n`;
+}
+
+/* ------------------------------------------------------------------ */
+/* The block, and the advisor's live overlay                           */
+/* ------------------------------------------------------------------ */
+
+/** The cycle open on `today` (ISO): from 1 August to 31 July (scripts/lib/essay-prompts/cycle.mts openCycle, ported). */
+export function openCycleOf(today: string): string {
+  const y = Number(today.slice(0, 4));
+  const start = Number(today.slice(5, 7)) >= 8 ? y : y - 1;
+  return `${start}-${String((start + 1) % 100).padStart(2, "0")}`;
+}
+
+type LinksHolder = { links?: { apply?: string | null; admissions?: string | null; website?: string | null } | null } | null | undefined;
+
+/**
+ * The `school.essays` block a hand-read record makes (the merge's `blockOf` for a confirmed record, and the advisor's
+ * overlay, so the two never differ): the platform's homepage as `source_url`, the day read as `retrieved`, the prompts
+ * only when published, then `confidence`, `form`, `read_on`, `reader`. Null when there's no page to cite (the
+ * college's own form with no apply page on file).
+ */
+export function confirmedBlock(r: ConfirmedRecord, school?: LinksHolder): SchoolEssays | null {
+  const url = platformHomepage(r.form, school, r.note);
+  if (!url) return null;
+  const published = r.status === "published";
+  return {
+    cycle: r.cycle,
+    status: r.status,
+    source_url: url,
+    retrieved: r.read_on,
+    ...(published && r.choose ? { choose: r.choose } : {}),
+    prompts: published ? r.prompts : [],
+    confidence: "confirmed",
+    form: r.form,
+    read_on: r.read_on,
+    reader: r.reader,
+  };
+}
+
+/**
+ * The advisor's live view of a college's prompts (the hand-read brief, "The advisor overlays the table live"): the
+ * dataset's block with the console's saved row (`public.essay_prompt_overrides`) laid over it by the merge's
+ * precedence. A block from the college's own page with `status: "published"` wins; otherwise the row's record becomes
+ * the block (it beats `refers_to_form`, `none`, no block at all, and an older hand read exported to the dataset). A row
+ * that isn't for the open cycle, fails `validateConfirmed`, or names another college changes nothing. Pure.
+ */
+export function overlayEssays(
+  school: { unit_id: string; essays?: SchoolEssays | null } & NonNullable<LinksHolder>,
+  override: ConfirmedRecord | null | undefined,
+  today: string,
+): SchoolEssays | undefined {
+  const current = school.essays ?? undefined;
+  if (!override || override.unit_id !== school.unit_id) return current;
+  if (override.cycle !== openCycleOf(today) || validateConfirmed(override, today).length) return current;
+  if (current?.status === "published" && current.confidence !== "confirmed") return current;
+  return confirmedBlock(override, school) ?? current;
 }

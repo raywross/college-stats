@@ -13,7 +13,7 @@
  * and counted.
  */
 import type { LineageRecord, PlatformPrompts, PlatformPromptsFile, School, SchoolEssays } from "../../../lib/types.ts";
-import { noneSentence, platformHomepage, validateConfirmed, type ConfirmedRecord } from "../../../lib/essay-prompts/confirmed.ts";
+import { confirmedBlock, noneSentence, platformHomepage, validateConfirmed, type ConfirmedRecord } from "../../../lib/essay-prompts/confirmed.ts";
 import { cycleStart, openCycle } from "./cycle.mts";
 import { LIMIT_RANGE, PROMPT_CHARS } from "./checks.mts";
 import type { EssayRecord } from "./store.mts";
@@ -37,17 +37,22 @@ export const isConfirmed = (r: AnyEssayRecord): r is ConfirmedRecord => (r as Co
  * `confidence`, `form`, `read_on`, and `reader` after the prompts; a reader record carries none of them.
  */
 export function blockOf(r: AnyEssayRecord, school?: Pick<School, "links"> | null): SchoolEssays {
+  // A hand read: the same block the advisor's live overlay builds (lib/essay-prompts/confirmed.ts confirmedBlock).
+  // applyEssays skips (and counts) a record with no page to cite before it gets here.
+  if (isConfirmed(r)) {
+    const block = confirmedBlock(r, school);
+    if (!block) throw new Error(`essays: hand-read record ${r.unit_id} has no page to cite (form "own" with no apply page)`);
+    return block;
+  }
   const published = r.status === "published";
-  const base = {
+  return {
     cycle: r.cycle,
     status: r.status,
-    source_url: isConfirmed(r) ? (platformHomepage(r.form, school, r.note) ?? "") : r.source_url,
-    retrieved: isConfirmed(r) ? r.read_on : r.retrieved,
+    source_url: r.source_url,
+    retrieved: r.retrieved,
     ...(published && r.choose ? { choose: r.choose } : {}),
     prompts: published ? r.prompts : [],
   };
-  if (!isConfirmed(r)) return base;
-  return { ...base, confidence: "confirmed", form: r.form, read_on: r.read_on, reader: r.reader };
 }
 
 /**

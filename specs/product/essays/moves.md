@@ -1,6 +1,6 @@
 # Part 4, Finish Your Essays: One Move That Follows the List
 
-> Status: **planned** 2026-10-30. Part 4 of [essays](README.md). After [prompts.md](prompts.md) and
+> Status: **built** 2026-10-30 (PR #194). Part 4 of [essays](README.md). After [prompts.md](prompts.md) and
 > [workspace.md](workspace.md); shown on the Next steps tab ([../../planner/v3/now.md](../../planner/v3/now.md)) and
 > ranked by [../../planner/record/ranking.md](../../planner/record/ranking.md); its screen is
 > [tab.md](tab.md). Part of [product](../README.md).
@@ -163,3 +163,45 @@ Medium: one pure module, one generator, a kind, a migration line, and the store 
    named and its why says "including your personal essay (410 of 650)".
 2. Program prompts: required when the student's intended major matches? Recommendation: optional for now; the tab
    shows them under the college so the student decides.
+
+## As built (2026-10-30)
+Open question 1 was built as recommended: `lib/essays/progress.ts`'s `takesCommonApp` marks a college that uses the
+personal essay, and an unfinished personal essay makes every such college "work left" (its why adds "including your
+personal essay (n of 650)" in `lib/planner/generators/essays.ts`'s `essaysMove`). Open question 2 was not built:
+program prompts stay optional for everyone (`applies_to: "all"` only counts as required), as recommended.
+
+- `lib/essays/progress.ts` (`essayProgress`, pure) is the one reading, shared by the generator, the card, and the
+  Essays tab ([tab.md](tab.md)). `lib/planner/generators/essays.ts` (`generate`, `essaysMove`, `essaysMoveState`,
+  `essaysButton`) is the generator; `lib/planner/importance.ts` (`essaysImportance`) and
+  `lib/planner/moves-catalog.ts` carry the ranking and the season explainer; `lib/planner/types.ts` gained
+  `TaskKind: "essays"` and `MoveAction.open_tab.college`; `supabase/migrations/20261030120000_essays_move.sql` widens
+  `plan_tasks_kind_check`. `components/planner/moves/MoveCard.tsx` renders the card (no separate `EssaysCard`); the
+  anchor on `open_tab` opens the Essays tab scrolled to the named college. `lib/essays/move-tick.ts` holds the tick
+  logic; `lib/essays/store.ts` calls it after `createEssay`, `setEssayStatus`, `linkEssay`, `unlinkEssay`, and
+  `deleteEssay`.
+- **Gate**: the season gate is `beforeApplicationSeason` (`lib/planner/importance.ts`), not a new function of its
+  own; `essays` opens with `summer_before_senior`, every other application piece with `senior_fall`.
+- **Free drafts tied to a college**: a draft on an **own ref**, `college:<unit_id>:<cycle>:own-<n>` (`ownRef`,
+  `nextOwnRef` in `progress.ts`), not a `free` draft with no link as the spec's rule sketch assumed. `parsePromptRef`
+  (`lib/essays/prompts.ts`) reads it as a college ref with `own: true`; a plain `free` draft with no link still
+  counts nowhere.
+- **Done**: the store ticks on `allReady` (`progress.ts`): something to write, all of it ready, and no college still
+  waiting for its prompts — not the spec's bare `remaining === 0` (the worked example's Nov 3 row, where every known
+  essay is ready but Yale isn't on file, would have ticked under the spec's wording but stays open as built, since
+  "ready" shouldn't include a college nobody has read yet).
+- **Choose sets**: `essays.choose`'s members are read by `ready`/`total`, never `required.length`, exactly as
+  specified; several drafts serving one prompt resolve written-for first, then most recently edited.
+- Withdrawn colleges, and any college whose recorded outcome isn't enrolling, are out, as specified.
+- **Telemetry**: `essays_move_done {by: "store" | "hand"}` only — no `remaining` field (the spec's draft telemetry
+  line names one; the build leaves it off since the move's own remaining count is read fresh from `essayProgress`
+  whenever it matters, never stored on the event).
+- **Worked example** (the table above), as the build's fixture actually reaches each state: the **Oct 3** row needs
+  two of Duke's three essays ready, not one, to reach "1 of 3 to go… Then Michigan"; **Oct 25** is 7 days from the
+  EA deadline, so the timing boost is **+20**, giving **85 + 20 = 105, clamped to 100** (not 95); **Nov 20**'s total
+  across main plus every college is **10**, not 9 (the personal essay counts once in that total, as the main `main`
+  field describes, on top of the colleges' nine).
+
+## Not built
+- Program prompts required by intended major (open question 2): left optional, as recommended.
+- Counselor grants on the move or its data (out of scope for this build; the tab still only reads a student's own
+  draft rows).

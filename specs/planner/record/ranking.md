@@ -38,7 +38,7 @@ The base importance by what the move is for, highest first. "Rises" means the ba
 | 85 | `compare_offers` | The money decision before May 1 | senior spring |
 | 85 | the record's **grades** (`profile` entry when grades are the missing section) | The estimate reads nothing without a GPA and class year | always |
 | 80 | the record's **test** (score or target, or "not testing") | The estimate's second input | always |
-| 78 | `personal_essay_draft` (cycle) | The summer's main work | summer before senior year |
+| 72 → 85 | `essays` (the one list-wide essays move) | The essays the list asks for | 72 summer before senior year; 85 senior fall and winter; **0** otherwise |
 | 75 | the record's **AP courses** | Rigor is read from them | always |
 | 75 | `register_spring_test` (junior winter), `pick_test` (junior fall) | A test date before applications | junior fall/winter |
 | 75 | `shape_gap:likely_min` (no Likely or Safe you'd attend) | The list's one must-have | junior spring on |
@@ -68,6 +68,7 @@ The base importance by what the move is for, highest first. "Rises" means the ba
 | 20 | `keep_grades` | Informational | senior spring |
 | 0 | the financial moves (`aid_forms`, `cost_check`, `shape_cost`, `money_talk`, `net_price`, `walk_away`, `fsa_ids`, `list_cost`, FAFSA/CSS) | Hidden for now (owner, 2026-10-15) | |
 | 0 | `follow`, `request_info`, `write_visit_notes` (the old per-college to-dos) | Not moves | |
+| 0 | `personal_essay_draft`, `supplements` (cycle) | The essays move replaces both on Next steps; they stay on the calendar ([../../product/essays/moves.md](../../product/essays/moves.md) "What goes") | |
 
 A kind not in the table gets **50**. The table lives in code as `MOVE_IMPORTANCE` (`lib/planner/importance.ts`), one
 entry per row, with the season rules as small functions; the spec and the code are kept in step by a test that lists
@@ -148,3 +149,19 @@ soonest. This would allow us to show another card." While an open `reach_score_*
 and `test_day` moves leave Now (and More); the target card carries an italic line, "Your next test: the SAT on Dec 5.
 Register by Nov 20." (or "(registered)"), for the soonest picked date (`nextTestNote`, lib/planner/moves.ts). The dates
 stay on the calendar and in the test guide; without a target card the test moves show on their own as before.
+
+## Changed (2026-10-30): the essays move
+One list-wide `essays` move ([../../product/essays/moves.md](../../product/essays/moves.md)) replaces three
+overlapping essay tasks. Its base importance (`essaysImportance`, `lib/planner/importance.ts`) is **72** in the
+summer before senior year (just above the story's 70, since the essay feeds off it) and **85** in senior fall and
+winter, same as any other piece of a dated application; it is generated only inside that span, so there's no "0
+otherwise" season to show. The timing boost from the named college's deadline is the standard one, so a close
+deadline with essays left can reach 100.
+
+The cycle file's own **`personal_essay_draft`** and **`supplements`** entries stay on the calendar (the dates still
+print), but their moves are importance **0** — the two cycle keys `cycle:personal_essay_draft` and
+`cycle:supplements` in `MOVE_IMPORTANCE` — so they never take a Now slot again; the essays move is the one card for
+all of it. The apply generator's per-college **`supplement` rows** ("Supplement n of N") and its shared "Write the
+Common App personal essay" row are gone entirely (not just zeroed): `lib/planner/generators/apply.ts` no longer
+emits them, though `supplements_count` stays on the item for the Submit card. The `supplement` `TaskKind` itself
+stays in the type union (row above, importance 75) for any future per-piece use; it just has no live rows.

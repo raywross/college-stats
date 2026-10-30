@@ -53,7 +53,6 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // portal (so the "high-school" group is gone). Rewritten against what exists: net-price-estimator, commercialization,
 // near-and-far, worst-plausible-spring, cycle-watch, getting-into-the-major, and the three iPhone specs.
 export type RoadmapGroupKey =
-  | "essays"
   | "college-reported"
   | "campus-life"
   | "planning"
@@ -63,12 +62,6 @@ export type RoadmapGroupKey =
   | "later";
 
 export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description: string }[] = [
-  {
-    key: "essays",
-    title: "Essays",
-    description:
-      "The essays as a next step and as a tab: one move that follows the list from the summer before senior year into the fall, and the work by college in deadline order.",
-  },
   {
     key: "planning",
     title: "Planning tools",
@@ -129,27 +122,6 @@ export interface RoadmapSpec {
 
 /** In build order within each group (the backlog's order, specs/backlog.md). */
 export const ROADMAP: RoadmapSpec[] = [
-  // Essays parts 4 and 5 (2026-10-30): the owner's review of the essays build (parts 1–3, 2026-10-29).
-  {
-    slug: "essays-moves",
-    file: "specs/product/essays/moves.md",
-    group: "essays",
-    summary:
-      "One essays move on Next steps from the summer before senior year, always pointed at the earliest-deadline college with essays left, rising in urgency into the fall.",
-    complexity: 2,
-    complexityNote: "A pure progress reading shared with the tab, one generator, a task kind, and a store hook that ticks the move.",
-    status: "planned",
-  },
-  {
-    slug: "essays-tab",
-    file: "specs/product/essays/tab.md",
-    group: "essays",
-    summary:
-      "Essays as its own tab beside Next steps, Colleges, and Calendar, on one row on phones and desktop; the screen by college in deadline order with a row per prompt.",
-    complexity: 2,
-    complexityNote: "A tab, a phone strip rule with a width guard, and one screen composed from the built list's parts.",
-    status: "planned",
-  },
   {
     slug: "net-price-estimator",
     file: "specs/product/net-price-estimator.md",
@@ -168,6 +140,8 @@ export const ROADMAP: RoadmapSpec[] = [
   // as a four-college pilot; the research is in specs/ideas/visit-events.md (promoted).
   // Essays (specs/product/essays/: the prompts, the workspace, the reviewer) were planned 2026-10-28 and built the next
   // day on feature/essays; see each spec's "As built" section. The Google Drive connection waits for Google sign-in.
+  // Essays parts 4 and 5 (the move and the tab, group "essays") were built 2026-10-30 on feature/essays-next (PR
+  // #194); see each spec's "As built" section.
   {
     slug: "launch-database",
     file: "specs/launch-database.md",

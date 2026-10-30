@@ -1,33 +1,39 @@
 {
-  "run": "2026-10-29T22:27:42Z",
-  "started": "2026-10-29T22:27:42.192Z",
-  "finished": "2026-10-29T23:03:40.307Z",
+  "run": "2026-10-30T10:09:31Z",
+  "started": "2026-10-30T10:09:31.117Z",
+  "finished": "2026-10-30T10:45:26.160Z",
   "cycle": "2026-27",
   "budget_usd": 40,
-  "spent_usd": 3.638769,
+  "spent_usd": 3.086751,
   "stopped": null,
   "dry_run": false,
   "colleges": 200,
   "counts": {
-    "passed": 38,
-    "held": 46,
-    "unchanged": 9,
-    "not_found": 107,
+    "passed": 34,
+    "held": 37,
+    "unchanged": 23,
+    "not_found": 106,
     "failed": 0,
     "found": 0
   },
   "passed": [
     {
+      "unit_id": "110662",
+      "name": "University of California-Los Angeles",
+      "status": "published",
+      "prompts": 8
+    },
+    {
+      "unit_id": "110705",
+      "name": "University of California-Santa Barbara",
+      "status": "published",
+      "prompts": 8
+    },
+    {
       "unit_id": "228778",
       "name": "The University of Texas at Austin",
       "status": "published",
-      "prompts": 4
-    },
-    {
-      "unit_id": "134130",
-      "name": "University of Florida",
-      "status": "refers_to_form",
-      "prompts": 0
+      "prompts": 6
     },
     {
       "unit_id": "240444",
@@ -42,26 +48,14 @@
       "prompts": 0
     },
     {
-      "unit_id": "236948",
-      "name": "University of Washington-Seattle Campus",
-      "status": "refers_to_form",
-      "prompts": 0
-    },
-    {
-      "unit_id": "190415",
-      "name": "Cornell University",
-      "status": "refers_to_form",
-      "prompts": 0
-    },
-    {
       "unit_id": "104151",
       "name": "Arizona State University Campus Immersion",
       "status": "none",
       "prompts": 0
     },
     {
-      "unit_id": "151351",
-      "name": "Indiana University-Bloomington",
+      "unit_id": "186380",
+      "name": "Rutgers University-New Brunswick",
       "status": "refers_to_form",
       "prompts": 0
     },
@@ -78,14 +72,8 @@
       "prompts": 0
     },
     {
-      "unit_id": "130794",
-      "name": "Yale University",
-      "status": "published",
-      "prompts": 8
-    },
-    {
-      "unit_id": "243744",
-      "name": "Stanford University",
+      "unit_id": "110671",
+      "name": "University of California-Riverside",
       "status": "published",
       "prompts": 8
     },
@@ -99,24 +87,12 @@
       "unit_id": "100858",
       "name": "Auburn University",
       "status": "published",
-      "prompts": 3
-    },
-    {
-      "unit_id": "228723",
-      "name": "Texas A&M University-College Station",
-      "status": "refers_to_form",
-      "prompts": 0
+      "prompts": 1
     },
     {
       "unit_id": "135726",
       "name": "University of Miami",
       "status": "none",
-      "prompts": 0
-    },
-    {
-      "unit_id": "166027",
-      "name": "Harvard University",
-      "status": "refers_to_form",
       "prompts": 0
     },
     {
@@ -126,16 +102,22 @@
       "prompts": 1
     },
     {
+      "unit_id": "166027",
+      "name": "Harvard University",
+      "status": "refers_to_form",
+      "prompts": 0
+    },
+    {
       "unit_id": "162928",
       "name": "Johns Hopkins University",
       "status": "published",
       "prompts": 1
     },
     {
-      "unit_id": "164924",
-      "name": "Boston College",
+      "unit_id": "146719",
+      "name": "Loyola University Chicago",
       "status": "published",
-      "prompts": 5
+      "prompts": 1
     },
     {
       "unit_id": "209551",
@@ -144,14 +126,20 @@
       "prompts": 4
     },
     {
-      "unit_id": "130943",
-      "name": "University of Delaware",
+      "unit_id": "232423",
+      "name": "James Madison University",
+      "status": "published",
+      "prompts": 1
+    },
+    {
+      "unit_id": "186399",
+      "name": "Rutgers University-Newark",
       "status": "refers_to_form",
       "prompts": 0
     },
     {
-      "unit_id": "229115",
-      "name": "Texas Tech University",
+      "unit_id": "186371",
+      "name": "Rutgers University-Camden",
       "status": "refers_to_form",
       "prompts": 0
     },
@@ -174,26 +162,14 @@
       "prompts": 1
     },
     {
-      "unit_id": "152080",
-      "name": "University of Notre Dame",
-      "status": "published",
-      "prompts": 5
-    },
-    {
       "unit_id": "194310",
       "name": "Pace University",
       "status": "published",
-      "prompts": 2
+      "prompts": 1
     },
     {
       "unit_id": "216597",
       "name": "Villanova University",
-      "status": "refers_to_form",
-      "prompts": 0
-    },
-    {
-      "unit_id": "199139",
-      "name": "University of North Carolina at Charlotte",
       "status": "refers_to_form",
       "prompts": 0
     },
@@ -210,20 +186,14 @@
       "prompts": 1
     },
     {
-      "unit_id": "232186",
-      "name": "George Mason University",
-      "status": "published",
-      "prompts": 1
-    },
-    {
       "unit_id": "178396",
       "name": "University of Missouri-Columbia",
       "status": "refers_to_form",
       "prompts": 0
     },
     {
-      "unit_id": "228875",
-      "name": "Texas Christian University",
+      "unit_id": "195809",
+      "name": "St. John's University-New York",
       "status": "published",
       "prompts": 2
     },
@@ -240,6 +210,12 @@
       "prompts": 0
     },
     {
+      "unit_id": "122931",
+      "name": "Santa Clara University",
+      "status": "published",
+      "prompts": 1
+    },
+    {
       "unit_id": "228787",
       "name": "The University of Texas at Dallas",
       "status": "refers_to_form",
@@ -248,25 +224,10 @@
   ],
   "held": [
     {
-      "unit_id": "110662",
-      "name": "University of California-Los Angeles",
-      "problems": [
-        "prompt 8: kind why_us, but the prompt doesn't ask why this college or program"
-      ]
-    },
-    {
-      "unit_id": "110705",
-      "name": "University of California-Santa Barbara",
-      "problems": [
-        "prompt 8: kind why_us, but the prompt doesn't ask why this college or program"
-      ]
-    },
-    {
       "unit_id": "243780",
       "name": "Purdue University-Main Campus",
       "problems": [
         "prompt 1: kind why_us, but the prompt doesn't ask why this college or program",
-        "prompt 3: marked optional, but neither the prompt nor its quote says optional",
         "prompt 3: kind why_us, but the prompt doesn't ask why this college or program"
       ]
     },
@@ -282,19 +243,15 @@
       "name": "Florida State University",
       "problems": [
         "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
-      ]
+      ],
+      "kept": "2026-10-29"
     },
     {
-      "unit_id": "186380",
-      "name": "Rutgers University-New Brunswick",
+      "unit_id": "145637",
+      "name": "University of Illinois Urbana-Champaign",
       "problems": [
-        "prompt 1: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 2: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 3: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 4: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 5: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 6: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 7: this is one of the application platform's own prompts, reproduced on the page, not the college's"
+        "prompt 3: marked required, but the page's word is optional",
+        "prompt 5: kind why_us, but the prompt doesn't ask why this college or program"
       ]
     },
     {
@@ -319,13 +276,6 @@
       ]
     },
     {
-      "unit_id": "215293",
-      "name": "University of Pittsburgh-Pittsburgh Campus",
-      "problems": [
-        "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
-      ]
-    },
-    {
       "unit_id": "132903",
       "name": "University of Central Florida",
       "problems": [
@@ -333,15 +283,15 @@
       ]
     },
     {
-      "unit_id": "110671",
-      "name": "University of California-Riverside",
+      "unit_id": "215293",
+      "name": "University of Pittsburgh-Pittsburgh Campus",
       "problems": [
-        "prompt 8: kind why_us, but the prompt doesn't ask why this college or program"
+        "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
       ]
     },
     {
-      "unit_id": "146719",
-      "name": "Loyola University Chicago",
+      "unit_id": "199120",
+      "name": "University of North Carolina at Chapel Hill",
       "problems": [
         "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
       ]
@@ -351,13 +301,6 @@
       "name": "Fordham University",
       "problems": [
         "status none without the page's sentence that says so"
-      ]
-    },
-    {
-      "unit_id": "232423",
-      "name": "James Madison University",
-      "problems": [
-        "prompt 1: marked optional, but neither the prompt nor its quote says optional"
       ]
     },
     {
@@ -383,19 +326,6 @@
       ]
     },
     {
-      "unit_id": "186399",
-      "name": "Rutgers University-Newark",
-      "problems": [
-        "prompt 1: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 2: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 3: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 4: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 5: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 6: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 7: this is one of the application platform's own prompts, reproduced on the page, not the college's"
-      ]
-    },
-    {
       "unit_id": "137847",
       "name": "The University of Tampa",
       "problems": [
@@ -406,13 +336,7 @@
       "unit_id": "227757",
       "name": "Rice University",
       "problems": [
-        "choose says 2 prompts to pick from, but 4 are marked optional (the set is the optional prompts; required ones stand outside it)",
-        "prompt 2: kind why_us, but the prompt doesn't ask why this college or program",
-        "prompt 8: the same prompt twice",
-        "prompt 9: the same prompt twice",
-        "prompt 9: kind why_us, but the prompt doesn't ask why this college or program",
-        "prompt 10: the same prompt twice",
-        "prompt 11: the same prompt twice"
+        "prompt 2: kind why_us, but the prompt doesn't ask why this college or program"
       ]
     },
     {
@@ -430,16 +354,10 @@
       ]
     },
     {
-      "unit_id": "186371",
-      "name": "Rutgers University-Camden",
+      "unit_id": "139940",
+      "name": "Georgia State University",
       "problems": [
-        "prompt 1: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 2: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 3: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 4: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 5: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 6: this is one of the application platform's own prompts, reproduced on the page, not the college's",
-        "prompt 7: this is one of the application platform's own prompts, reproduced on the page, not the college's"
+        "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
       ]
     },
     {
@@ -447,14 +365,8 @@
       "name": "CUNY Hunter College",
       "problems": [
         "prompt 2: marked optional, but neither the prompt nor its quote says optional"
-      ]
-    },
-    {
-      "unit_id": "139940",
-      "name": "Georgia State University",
-      "problems": [
-        "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
-      ]
+      ],
+      "kept": "2026-10-29"
     },
     {
       "unit_id": "145600",
@@ -488,9 +400,9 @@
       "unit_id": "182670",
       "name": "Dartmouth College",
       "problems": [
-        "choose says 7 prompts to pick from, but 9 are marked optional (the set is the optional prompts; required ones stand outside it)",
-        "prompt 1: kind why_us, but the prompt doesn't ask why this college or program"
-      ]
+        "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
+      ],
+      "kept": "2026-10-29"
     },
     {
       "unit_id": "131496",
@@ -500,18 +412,17 @@
       ]
     },
     {
+      "unit_id": "185590",
+      "name": "Montclair State University",
+      "problems": [
+        "prompt 1: kind why_us, but the prompt doesn't ask why this college or program"
+      ]
+    },
+    {
       "unit_id": "204857",
       "name": "Ohio University-Main Campus",
       "problems": [
         "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
-      ]
-    },
-    {
-      "unit_id": "185590",
-      "name": "Montclair State University",
-      "problems": [
-        "prompt 1: marked required, but the page's word is optional",
-        "prompt 1: kind why_us, but the prompt doesn't ask why this college or program"
       ]
     },
     {
@@ -525,19 +436,19 @@
       "unit_id": "190655",
       "name": "CUNY New York City College of Technology",
       "problems": [
-        "status none without the page's sentence that says so"
-      ]
-    },
-    {
-      "unit_id": "195809",
-      "name": "St. John's University-New York",
-      "problems": [
-        "prompt 2: kind why_us, but the prompt doesn't ask why this college or program"
+        "status none, but the quoted sentence doesn't say there are no essays"
       ]
     },
     {
       "unit_id": "100654",
       "name": "Alabama A & M University",
+      "problems": [
+        "status none without the page's sentence that says so"
+      ]
+    },
+    {
+      "unit_id": "190637",
+      "name": "CUNY Lehman College",
       "problems": [
         "status none without the page's sentence that says so"
       ]
@@ -551,24 +462,10 @@
       ]
     },
     {
-      "unit_id": "190637",
-      "name": "CUNY Lehman College",
-      "problems": [
-        "status none without the page's sentence that says so"
-      ]
-    },
-    {
       "unit_id": "136172",
       "name": "University of North Florida",
       "problems": [
         "status none, but the quoted sentence is about a test's essay section, not an application essay"
-      ]
-    },
-    {
-      "unit_id": "145813",
-      "name": "Illinois State University",
-      "problems": [
-        "prompt 1: prompt text isn't on the page verbatim"
       ]
     },
     {
@@ -579,24 +476,17 @@
       ]
     },
     {
-      "unit_id": "122931",
-      "name": "Santa Clara University",
+      "unit_id": "200004",
+      "name": "Western Carolina University",
       "problems": [
-        "prompt 1: kind why_us, but the prompt doesn't ask why this college or program"
+        "status none, but the quoted sentence doesn't say there are no essays"
       ]
     },
     {
       "unit_id": "433660",
       "name": "Florida Gulf Coast University",
       "problems": [
-        "status none, but the quoted sentence doesn't say there are no essays"
-      ]
-    },
-    {
-      "unit_id": "200004",
-      "name": "Western Carolina University",
-      "problems": [
-        "status none, but the quoted sentence doesn't say there are no essays"
+        "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
       ]
     }
   ],
@@ -625,10 +515,6 @@
     {
       "unit_id": "482705",
       "name": "Northeastern University Professional Programs"
-    },
-    {
-      "unit_id": "145637",
-      "name": "University of Illinois Urbana-Champaign"
     },
     {
       "unit_id": "204796",
@@ -665,10 +551,6 @@
     {
       "unit_id": "218663",
       "name": "University of South Carolina-Columbia"
-    },
-    {
-      "unit_id": "199120",
-      "name": "University of North Carolina at Chapel Hill"
     },
     {
       "unit_id": "190150",
@@ -721,11 +603,6 @@
       "name": "Syracuse University"
     },
     {
-      "unit_id": "223232",
-      "name": "Baylor University",
-      "blocked": "admissions.web.baylor.edu"
-    },
-    {
       "unit_id": "183026",
       "name": "Southern New Hampshire University"
     },
@@ -734,14 +611,14 @@
       "name": "University of Georgia"
     },
     {
+      "unit_id": "223232",
+      "name": "Baylor University",
+      "blocked": "admissions.web.baylor.edu"
+    },
+    {
       "unit_id": "144050",
       "name": "University of Chicago",
       "blocked": "www.uchicago.edu"
-    },
-    {
-      "unit_id": "186131",
-      "name": "Princeton University",
-      "blocked": "www.princeton.edu"
     },
     {
       "unit_id": "174066",
@@ -751,6 +628,11 @@
     {
       "unit_id": "196088",
       "name": "University at Buffalo"
+    },
+    {
+      "unit_id": "186131",
+      "name": "Princeton University",
+      "blocked": "www.princeton.edu"
     },
     {
       "unit_id": "216339",
@@ -793,10 +675,6 @@
       "name": "Kennesaw State University"
     },
     {
-      "unit_id": "225511",
-      "name": "University of Houston"
-    },
-    {
       "unit_id": "190567",
       "name": "CUNY City College",
       "blocked": "www.ccny.cuny.edu"
@@ -804,6 +682,10 @@
     {
       "unit_id": "228459",
       "name": "Texas State University"
+    },
+    {
+      "unit_id": "225511",
+      "name": "University of Houston"
     },
     {
       "unit_id": "157085",
@@ -833,7 +715,8 @@
     },
     {
       "unit_id": "217819",
-      "name": "College of Charleston"
+      "name": "College of Charleston",
+      "blocked": "charleston.edu"
     },
     {
       "unit_id": "133669",
@@ -844,13 +727,13 @@
       "name": "DePaul University"
     },
     {
-      "unit_id": "110608",
-      "name": "California State University-Northridge"
-    },
-    {
       "unit_id": "190549",
       "name": "CUNY Brooklyn College",
       "blocked": "www.cuny.edu"
+    },
+    {
+      "unit_id": "110608",
+      "name": "California State University-Northridge"
     },
     {
       "unit_id": "209542",
@@ -882,13 +765,13 @@
       "name": "University of Utah"
     },
     {
-      "unit_id": "110617",
-      "name": "California State University-Sacramento"
-    },
-    {
       "unit_id": "198464",
       "name": "East Carolina University",
       "blocked": "admissions.ecu.edu"
+    },
+    {
+      "unit_id": "110617",
+      "name": "California State University-Sacramento"
     },
     {
       "unit_id": "231174",
@@ -903,14 +786,14 @@
       "name": "Hofstra University"
     },
     {
-      "unit_id": "207388",
-      "name": "Oklahoma State University-Main Campus",
-      "blocked": "admissions.okstate.edu"
-    },
-    {
       "unit_id": "207500",
       "name": "University of Oklahoma-Norman Campus",
       "blocked": "www.ou.edu"
+    },
+    {
+      "unit_id": "207388",
+      "name": "Oklahoma State University-Main Campus",
+      "blocked": "admissions.okstate.edu"
     },
     {
       "unit_id": "122612",
@@ -927,7 +810,7 @@
     {
       "unit_id": "197869",
       "name": "Appalachian State University",
-      "blocked": "www.appstate.edu"
+      "blocked": "admissions.appstate.edu"
     },
     {
       "unit_id": "203517",
@@ -956,11 +839,8 @@
     },
     {
       "unit_id": "176080",
-      "name": "Mississippi State University"
-    },
-    {
-      "unit_id": "133650",
-      "name": "Florida Agricultural and Mechanical University"
+      "name": "Mississippi State University",
+      "blocked": "www.admissions.msstate.edu"
     },
     {
       "unit_id": "117946",
@@ -969,6 +849,10 @@
     {
       "unit_id": "110538",
       "name": "California State University-Chico"
+    },
+    {
+      "unit_id": "133650",
+      "name": "Florida Agricultural and Mechanical University"
     },
     {
       "unit_id": "199218",
@@ -987,12 +871,13 @@
       "name": "Montana State University"
     },
     {
-      "unit_id": "169248",
-      "name": "Central Michigan University"
+      "unit_id": "145813",
+      "name": "Illinois State University",
+      "blocked": "www.admissions.illinoisstate.edu"
     },
     {
-      "unit_id": "110556",
-      "name": "California State University-Fresno"
+      "unit_id": "169248",
+      "name": "Central Michigan University"
     },
     {
       "unit_id": "169798",
@@ -1000,17 +885,21 @@
       "blocked": "www.emich.edu"
     },
     {
-      "unit_id": "230728",
-      "name": "Utah State University"
+      "unit_id": "110556",
+      "name": "California State University-Fresno"
     },
     {
       "unit_id": "195030",
       "name": "University of Rochester"
     },
     {
-      "unit_id": "150136",
-      "name": "Ball State University",
-      "blocked": "www.bsu.edu"
+      "unit_id": "230728",
+      "name": "Utah State University"
+    },
+    {
+      "unit_id": "201441",
+      "name": "Bowling Green State University-Main Campus",
+      "blocked": "choose.bgsu.edu"
     },
     {
       "unit_id": "218724",
@@ -1018,9 +907,9 @@
       "blocked": "www.coastal.edu"
     },
     {
-      "unit_id": "201441",
-      "name": "Bowling Green State University-Main Campus",
-      "blocked": "choose.bgsu.edu"
+      "unit_id": "150136",
+      "name": "Ball State University",
+      "blocked": "www.bsu.edu"
     },
     {
       "unit_id": "234030",
@@ -1039,14 +928,13 @@
       "name": "Georgia Southern University"
     },
     {
+      "unit_id": "192448",
+      "name": "Long Island University"
+    },
+    {
       "unit_id": "110547",
       "name": "California State University-Dominguez Hills",
       "blocked": "www.csudh.edu"
-    },
-    {
-      "unit_id": "192448",
-      "name": "Long Island University",
-      "blocked": "liu.edu"
     },
     {
       "unit_id": "164076",
@@ -1054,14 +942,35 @@
     }
   ],
   "failed": [],
+  "reconciled": [
+    {
+      "unit_id": "110662",
+      "name": "University of California-Los Angeles",
+      "from": "University of California-Merced"
+    },
+    {
+      "unit_id": "110705",
+      "name": "University of California-Santa Barbara",
+      "from": "University of California-Merced"
+    },
+    {
+      "unit_id": "110671",
+      "name": "University of California-Riverside",
+      "from": "University of California-Merced"
+    }
+  ],
   "assumed": [
+    {
+      "unit_id": "110662",
+      "name": "University of California-Los Angeles"
+    },
+    {
+      "unit_id": "110705",
+      "name": "University of California-Santa Barbara"
+    },
     {
       "unit_id": "228778",
       "name": "The University of Texas at Austin"
-    },
-    {
-      "unit_id": "134130",
-      "name": "University of Florida"
     },
     {
       "unit_id": "240444",
@@ -1072,48 +981,48 @@
       "name": "California State University-Long Beach"
     },
     {
-      "unit_id": "236948",
-      "name": "University of Washington-Seattle Campus"
-    },
-    {
-      "unit_id": "190415",
-      "name": "Cornell University"
-    },
-    {
-      "unit_id": "151351",
-      "name": "Indiana University-Bloomington"
+      "unit_id": "186380",
+      "name": "Rutgers University-New Brunswick"
     },
     {
       "unit_id": "164988",
       "name": "Boston University"
     },
     {
-      "unit_id": "243744",
-      "name": "Stanford University"
+      "unit_id": "110671",
+      "name": "University of California-Riverside"
     },
     {
       "unit_id": "135726",
       "name": "University of Miami"
     },
     {
+      "unit_id": "199193",
+      "name": "North Carolina State University at Raleigh"
+    },
+    {
       "unit_id": "166027",
       "name": "Harvard University"
     },
     {
-      "unit_id": "199193",
-      "name": "North Carolina State University at Raleigh"
+      "unit_id": "146719",
+      "name": "Loyola University Chicago"
     },
     {
       "unit_id": "209551",
       "name": "University of Oregon"
     },
     {
-      "unit_id": "130943",
-      "name": "University of Delaware"
+      "unit_id": "232423",
+      "name": "James Madison University"
     },
     {
-      "unit_id": "229115",
-      "name": "Texas Tech University"
+      "unit_id": "186399",
+      "name": "Rutgers University-Newark"
+    },
+    {
+      "unit_id": "186371",
+      "name": "Rutgers University-Camden"
     },
     {
       "unit_id": "196060",
@@ -1124,10 +1033,6 @@
       "name": "Rochester Institute of Technology"
     },
     {
-      "unit_id": "152080",
-      "name": "University of Notre Dame"
-    },
-    {
       "unit_id": "131469",
       "name": "George Washington University"
     },
@@ -1136,12 +1041,8 @@
       "name": "Washington State University"
     },
     {
-      "unit_id": "232186",
-      "name": "George Mason University"
-    },
-    {
-      "unit_id": "228875",
-      "name": "Texas Christian University"
+      "unit_id": "195809",
+      "name": "St. John's University-New York"
     },
     {
       "unit_id": "129941",
@@ -1150,6 +1051,10 @@
     {
       "unit_id": "183044",
       "name": "University of New Hampshire-Main Campus"
+    },
+    {
+      "unit_id": "122931",
+      "name": "Santa Clara University"
     },
     {
       "unit_id": "228787",

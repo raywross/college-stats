@@ -1,5 +1,5 @@
-{"unit_id":"199193","name":"North Carolina State University at Raleigh","cycle":"2026-27","status":"published","source_url":"https://admissions.ncsu.edu/apply/first-year/","retrieved":"2026-10-29","sha256":"a6130e6c91de66c0cf560baab1a317d3bf38534c9d6602cf7cfa41773e127afe","archive":"local:a6130e6c91de66c0cf560baab1a317d3bf38534c9d6602cf7cfa41773e127afe.html","cycle_quote":"","cycle_assumed":true,"via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
+{"unit_id":"199193","name":"North Carolina State University at Raleigh","cycle":"2026-27","status":"published","source_url":"https://admissions.ncsu.edu/apply/first-year/","retrieved":"2026-10-30","sha256":"046b7649839e7c1a819eca7ab107c081c557c48974a356631801f426f72b86bc","archive":"local:046b7649839e7c1a819eca7ab107c081c557c48974a356631801f426f72b86bc.html","cycle_quote":"","cycle_assumed":true,"via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
   "prompts": [
-  {"id":"199193:2026-27:1","text":"Explain why you selected the academic program(s) above and why you are interested in studying these at NC State.","kind":"why_us","limit":null,"required":true,"applies_to":"all","quote":"Required Short Answer Question"}
+  {"id":"199193:2026-27:1","text":"Explain why you selected the academic program(s) above and why you are interested in studying these at NC State.","kind":"why_us","limit":null,"required":true,"applies_to":"all","quote":"## Required Short Answer Question"}
 ]
 }

@@ -1,0 +1,8 @@
+{ "unit_id": "199120", "name": "University of North Carolina at Chapel Hill", "held": "2026-10-30",
+  "problems": [
+    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
+  ],
+  "record": {"unit_id":"199120","name":"University of North Carolina at Chapel Hill","cycle":"2026-27","status":"refers_to_form","source_url":"https://admissions.unc.edu/apply/types-of-applications/first-year/","retrieved":"2026-10-30","sha256":"0311207109edc6a394682bdda2079218ac6a1559c91917a9fbf967f0675aff5e","archive":"local:0311207109edc6a394682bdda2079218ac6a1559c91917a9fbf967f0675aff5e.html","cycle_quote":"","cycle_assumed":true,"status_quote":"Apply online through the Common Application.","via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
+    "prompts": []
+  }
+}

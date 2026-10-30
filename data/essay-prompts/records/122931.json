@@ -1,0 +1,5 @@
+{"unit_id":"122931","name":"Santa Clara University","cycle":"2026-27","status":"published","source_url":"https://www.scu.edu/admission/undergraduate/first-year-students/","retrieved":"2026-10-30","sha256":"14b2c64e63e1b09701d1108ee527873e8dcaa1c0e1b053e9ebebb34cca01008b","archive":"local:14b2c64e63e1b09701d1108ee527873e8dcaa1c0e1b053e9ebebb34cca01008b.html","cycle_quote":"","cycle_assumed":true,"via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
+  "prompts": [
+  {"id":"122931:2026-27:1","text":"At Santa Clara University, we encourage our students to be creative, embrace challenges, and become changemakers. Think about an issue you care about and believe is important to address. This can be something happening in your local community or more globally. How can an SCU education help you prepare for and address this challenge? (150-300 words)","kind":"optional","limit":{"kind":"words","max":300,"min":150},"required":false,"applies_to":"all","quote":"Optional supplemental essay to share more about yourself with us at any time through your SCU application portal"}
+]
+}

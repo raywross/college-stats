@@ -1,8 +1,8 @@
-{ "unit_id": "215293", "name": "University of Pittsburgh-Pittsburgh Campus", "held": "2026-10-29",
+{ "unit_id": "215293", "name": "University of Pittsburgh-Pittsburgh Campus", "held": "2026-10-30",
   "problems": [
     "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
   ],
-  "record": {"unit_id":"215293","name":"University of Pittsburgh-Pittsburgh Campus","cycle":"2026-27","status":"refers_to_form","source_url":"https://admissions.pitt.edu/first-year-student/","retrieved":"2026-10-29","sha256":"9fc34eff97d0d6d4e1d756ffed9272169e3742e7a7451a3408f49136788e09c1","archive":"local:9fc34eff97d0d6d4e1d756ffed9272169e3742e7a7451a3408f49136788e09c1.html","cycle_quote":"The Fall 2027 Application is open!","status_quote":"A personal statement is your opportunity to communicate directly with the Admissions Committee and is required to be considered for scholarships.","via":"apply-page-link","model":"claude-opus-5","reader":"2026.10.29.4",
+  "record": {"unit_id":"215293","name":"University of Pittsburgh-Pittsburgh Campus","cycle":"2026-27","status":"refers_to_form","source_url":"https://admissions.pitt.edu/first-year-student/","retrieved":"2026-10-30","sha256":"6f01abb2be119172df9830e108d989ae50b16dee7df0552dde88492f73fd3df5","archive":"local:6f01abb2be119172df9830e108d989ae50b16dee7df0552dde88492f73fd3df5.html","cycle_quote":"The Fall 2027 Application is open!","status_quote":"A personal statement is your opportunity to communicate directly with the Admissions Committee and is required to be considered for scholarships.","via":"apply-page-link","model":"claude-opus-5","reader":"2026.10.29.4",
     "prompts": []
   }
 }

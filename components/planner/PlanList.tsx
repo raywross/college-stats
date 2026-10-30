@@ -10,6 +10,7 @@ import { InterestPill } from "@/components/planner/InterestPill";
 import { personFor } from "@/components/planner/moves/MoveCard";
 import { edOpportunities, type EdCandidate } from "@/lib/planner/ed-opportunities";
 import { isOpen } from "@/lib/planner/tasks";
+import { planHref } from "@/lib/planner/plan-tabs";
 import { GUIDES, guideHref } from "@/lib/planner/guides";
 import { ListExplainer } from "@/components/planner/ListExplainer";
 import { PlanNotice } from "@/components/planner/PlanNotice";
@@ -120,7 +121,12 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
   return (
     <div className="space-y-4">
       <PlanNotice ctx={ctx} view={view} className="lg:hidden" />
-      {essayCount && <p className="text-sm text-muted-foreground lg:hidden">Your list asks for {essayCount}.</p>}
+      {/* The count line opens the Essays tab (specs/product/essays/tab.md "Where it is reached from"). */}
+      {essayCount && (
+        <Link href={planHref({ person, tab: "essays" })} className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground hover:underline lg:hidden">
+          Your list asks for {essayCount}.
+        </Link>
+      )}
 
       {rows.length === 0 ? (
         <div className="rounded-2xl border bg-card p-6 text-center text-sm text-muted-foreground">

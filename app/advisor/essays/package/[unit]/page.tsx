@@ -11,7 +11,7 @@ import { getData } from "@/lib/data";
 import { activitiesForPackage, limitLine, packagePromptRefs, type PackageActivity } from "@/lib/essays/docx";
 import { essaysViewer, promptLookup, readEssay, readEssays } from "@/lib/essays/load";
 import { resolvePrompt } from "@/lib/essays/prompts";
-import { refsOf } from "@/lib/essays/rows";
+import { essaysHref, refsOf } from "@/lib/essays/rows";
 import { profileFor } from "@/lib/student-profile-store";
 import { withTiming } from "@/lib/timing-server";
 
@@ -89,7 +89,7 @@ async function render(unitId: string, searchParams: Search) {
   const activities: PackageActivity[] = activitiesForPackage(profileAccess?.data.academics.activities ?? []);
   const person = viewer.person;
   const back = (
-    <Link href={`/advisor/essays${person ? `?for=${person}` : ""}`} className="-ml-2 inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-sm font-semibold text-primary hover:underline">
+    <Link href={essaysHref({ person, college: unitId })} className="-ml-2 inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-sm font-semibold text-primary hover:underline">
       <ArrowLeft className="size-4" aria-hidden />
       All essays
     </Link>

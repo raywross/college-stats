@@ -22,6 +22,7 @@ import { noteText } from "@/lib/chances/notes";
 import { majorFamilyName } from "@/lib/majors";
 import { ACTIVITY_STEP_INDEX } from "@/lib/planner/intake";
 import { planHref } from "@/lib/planner/plan-tabs";
+import { isMainEssay } from "@/lib/essays/rows";
 import { tick } from "@/lib/planner/store";
 import { isOpen } from "@/lib/planner/tasks";
 import { appendStarter, crossesStoryDone, storyStarters } from "@/lib/planner/story-guide";
@@ -132,8 +133,25 @@ export function StoryGuide({ ctx, move, person, data }: GuideProps) {
       ) : (
         <StoryField studentId={studentId} initial={story?.narrative ?? ""} majorName={majorName} moveId={openMove?.id ?? null} />
       )}
+
+      {/* "Start from your story" (specs/product/essays/tab.md "Where it is reached from"): the personal essay's draft
+          when there is one, else the Essays tab, where its card starts it. */}
+      <p className="text-sm text-muted-foreground">
+        The personal essay starts from here.{" "}
+        <Link href={personalEssayHref(ctx, person)} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
+          Your personal essay
+        </Link>
+      </p>
     </div>
   );
+}
+
+/** The main essay's editor when the student has the draft (`ctx.essays`, read with the plan), else the Essays tab. */
+export function personalEssayHref(ctx: GuideProps["ctx"], person: string | null): string {
+  const rows = ctx.essays?.rows ?? [];
+  const links = ctx.essays?.links ?? [];
+  const main = rows.find((e) => isMainEssay(e, links)) ?? null;
+  return main ? `/advisor/essays/${main.id}${person ? `?for=${person}` : ""}` : planHref({ person, tab: "essays" });
 }
 
 function StoryField({ studentId, initial, majorName, moveId }: { studentId: string; initial: string; majorName: string | null; moveId: string | null }) {

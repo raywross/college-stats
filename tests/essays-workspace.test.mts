@@ -23,7 +23,7 @@ import {
   type PromptLookup,
 } from "../lib/essays/prompts.ts";
 import { baseChangedSince, nameForms, nameWarning, otherCollegesNamed, reuseChoices, suggestedMode } from "../lib/essays/variants.ts";
-import { essaysHref, groupEssays, isMainEssay, refsOf, shouldVersion, VERSION_PAUSE_MS, type EssayLinkRow, type EssayRow } from "../lib/essays/rows.ts";
+import { essaysHref, essaysListRedirect, groupEssays, isMainEssay, refsOf, shouldVersion, VERSION_PAUSE_MS, type EssayLinkRow, type EssayRow } from "../lib/essays/rows.ts";
 import { CAPABILITIES } from "../lib/entitlements.ts";
 import { EVENTS } from "../lib/analytics.ts";
 import { cycleTask } from "../lib/planner/generators/cycle.ts";
@@ -263,8 +263,9 @@ test("refs and the main essay", () => {
   assert.deepEqual(refsOf(ESSAYS[4], LINKS), [MAIN_REF, `college:${DUKE}:2026-27:9`]);
   assert.equal(isMainEssay(ESSAYS[4], LINKS), true);
   assert.equal(isMainEssay({ id: "x", prompt_ref: FREE_REF }, [{ essay_id: "x", prompt_ref: MAIN_REF, created: "" }]), true);
-  assert.equal(essaysHref(), "/advisor/essays");
-  assert.equal(essaysHref({ college: DUKE, person: "abc" }), `/advisor/essays?for=abc&college=${DUKE}`);
+  // The list is the advisor's Essays tab since essays-next (specs/product/essays/tab.md): a college is its card's anchor.
+  assert.equal(essaysHref(), "/advisor?tab=essays");
+  assert.equal(essaysHref({ college: DUKE, person: "abc" }), `/advisor?for=abc&tab=essays#college-${DUKE}`);
 });
 
 test("versions: after ten minutes since the last one, on every import, on a mark; not for an unchanged typed save", () => {
@@ -334,19 +335,47 @@ test("the apply surfaces link 'Essays for {college}' to the list filtered by tha
   }
 });
 
-test("telemetry: the three events carry no text (no body, title, prompt, or college)", () => {
+test("telemetry: the events carry no text (no body, title, prompt, or college)", () => {
   assert.deepEqual([...EVENTS.essay_created.properties], ["prompt_kind"]);
   assert.deepEqual([...EVENTS.essay_saved_version.properties], ["source"]);
   assert.deepEqual([...EVENTS.essay_commented.properties], ["role"]);
-  for (const name of ["essay_created", "essay_saved_version", "essay_commented"] as const) {
+  assert.deepEqual([...EVENTS.essay_started_from.properties], ["where"]);
+  for (const name of ["essay_created", "essay_saved_version", "essay_commented", "essay_started_from"] as const) {
     for (const p of EVENTS[name].properties) assert.doesNotMatch(p, /text|body|title|prompt_text|unit|college|name/, `${name}.${p}`);
   }
-  const calls = ["components/essays/PromptPicker.tsx", "components/essays/Editor.tsx", "components/essays/Comments.tsx"]
+  const calls = ["components/essays/PromptPicker.tsx", "components/essays/Editor.tsx", "components/essays/Comments.tsx", "components/essays/CollegeEssayCard.tsx"]
     .map((f) => read(f))
     .join("\n")
     .match(/track\("essay_[a-z_]+", \{[^}]*\}\)/g);
-  assert.ok(calls && calls.length >= 4, "the components send the events");
-  for (const c of calls!) assert.match(c, /\{ (prompt_kind: r\.kind|source: "(typed|restored)"|role: r\.role) \}/, c);
+  assert.ok(calls && calls.length >= 6, "the components send the events");
+  for (const c of calls!) assert.match(c, /\{ (prompt_kind: r\.kind|source: "(typed|restored)"|role: r\.role|where: "(tab|picker)") \}/, c);
+});
+
+test("the old list page is a 308 to the Essays tab, keeping ?for= and turning ?college= into the card's anchor", () => {
+  const uuid = "6f1c2a7e-1b2c-4d3e-8f90-0123456789ab";
+  assert.equal(essaysListRedirect({}), "/advisor?tab=essays");
+  assert.equal(essaysListRedirect({ for: uuid }), `/advisor?for=${uuid}&tab=essays`);
+  assert.equal(essaysListRedirect({ for: uuid, college: DUKE }), `/advisor?for=${uuid}&tab=essays#college-${DUKE}`);
+  assert.equal(essaysListRedirect({ college: [DUKE, "1"] }), `/advisor?tab=essays#college-${DUKE}`);
+  // Anything malformed is dropped, never carried into the URL.
+  assert.equal(essaysListRedirect({ for: "javascript:alert(1)", college: "x#y" }), "/advisor?tab=essays");
+  const page = read("app", "advisor", "essays", "page.tsx");
+  assert.match(page, /permanentRedirect\(essaysListRedirect\(await searchParams\)\)/);
+  assert.doesNotMatch(page, /EssayList|readEssays/, "the list page renders nothing of its own");
+});
+
+test("guard: a list page that still rendered, or a plain (307) redirect, fails the redirect check", () => {
+  const bad = ['export default async function P() { redirect(essaysListRedirect(await searchParams)); }', "export default function P() { return <EssayList />; }"];
+  for (const src of bad) assert.doesNotMatch(src, /permanentRedirect\(essaysListRedirect\(await searchParams\)\)/);
+});
+
+test("the editor's, the package's, and the delete's way back is the Essays tab, not the old list", () => {
+  assert.match(read("app", "advisor", "essays", "[id]", "page.tsx"), /href=\{essaysHref\(\{ person, college: refUnitId\(essay\.prompt_ref\) \}\)\}/);
+  assert.match(read("app", "advisor", "essays", "package", "[unit]", "page.tsx"), /href=\{essaysHref\(\{ person, college: unitId \}\)\}/);
+  assert.match(read("components", "essays", "Editor.tsx"), /router\.push\(essaysHref\(\{ person \}\)\)/);
+  for (const f of [["app", "advisor", "essays", "[id]", "page.tsx"], ["app", "advisor", "essays", "package", "[unit]", "page.tsx"], ["components", "essays", "Editor.tsx"]]) {
+    assert.doesNotMatch(read(...f), /`\/advisor\/essays\$\{/, `${f.join("/")} links the old list`);
+  }
 });
 
 test("the public Data API (app/api/v1, lib/api) reads none of the essay tables", () => {

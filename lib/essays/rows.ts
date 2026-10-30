@@ -4,6 +4,7 @@
  * counts, the main essay first"). Pure; safe in server code, client components, and tests.
  */
 import type { CountKind } from "./count.ts";
+import { planHref } from "../planner/plan-tabs.ts";
 import { MAIN_REF, parsePromptRef, type EssayKind } from "./prompts.ts";
 
 export type EssayStatus = "draft" | "ready" | "submitted";
@@ -58,13 +59,28 @@ export interface CommentRow {
   resolved_at: string | null;
 }
 
-/** The workspace's list, optionally narrowed to one college, for a guardian's child (`for`). */
+/**
+ * The essays list, which is the advisor's Essays tab since essays-next (specs/product/essays/tab.md): `/advisor?tab=
+ * essays`, with the guardian's child (`for`) and, for one college, its card's anchor (`#college-<unit id>`).
+ */
 export function essaysHref(opts: { college?: string | null; person?: string | null } = {}): string {
-  const q = new URLSearchParams();
-  if (opts.person) q.set("for", opts.person);
-  if (opts.college) q.set("college", opts.college);
-  const s = q.toString();
-  return s ? `/advisor/essays?${s}` : "/advisor/essays";
+  return planHref({ tab: "essays", person: opts.person ?? null, college: opts.college ?? null });
+}
+
+const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
+/**
+ * Where the old list page's address goes (app/advisor/essays/page.tsx, a 308): the Essays tab, keeping a well-formed
+ * `?for=` (a student id) and turning a well-formed `?college=` (a unit id) into the card's anchor; anything else is
+ * dropped rather than carried into the URL.
+ */
+export function essaysListRedirect(sp: { for?: string | string[]; college?: string | string[] }): string {
+  const person = one(sp.for);
+  const college = one(sp.college);
+  return essaysHref({
+    person: person && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(person) ? person : null,
+    college: college && /^\d{1,12}$/.test(college) ? college : null,
+  });
 }
 
 /** Every prompt a draft serves: its own and the ones linked to it. */

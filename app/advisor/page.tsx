@@ -13,7 +13,7 @@ import { resolveSelectedChild, type SwitchableChild } from "@/lib/planner/plan-f
 import { profileProgress, SECTION_STEP } from "@/lib/planner/profile-progress";
 import { recordHref, recordProgress, type RecordBack } from "@/lib/planner/record";
 import { RecordInline } from "@/components/record/RecordInline";
-import { defaultTab, parseTab, planHref } from "@/lib/planner/plan-tabs";
+import { defaultTab, parseTab, planHref, type PlanTab } from "@/lib/planner/plan-tabs";
 import { ADVISOR_SHORT } from "@/lib/planner/advisor";
 import { nowMoves, topMove } from "@/lib/planner/moves";
 import { importanceFactsFrom } from "@/lib/planner/importance-facts";
@@ -22,6 +22,8 @@ import { planBundle } from "@/lib/bundles";
 import { bundleKnownMissing } from "@/lib/bundle-read";
 import { myHome } from "@/lib/home-store";
 import { myLists } from "@/lib/lists";
+import { essaysTabData } from "@/lib/essays/tab-data";
+import type { EssaysTabData } from "@/lib/essays/tab-view";
 import { isUuid } from "@/lib/planner/plan-writes";
 import { profileFor, profilesICanSee } from "@/lib/student-profile-store";
 import type { StudentProfileData } from "@/lib/student-profile";
@@ -95,6 +97,21 @@ function detailFrom(profile: StudentProfileData | null, canEdit: boolean, studen
     // Edit expands the record on the plan page itself (owner, 2026-10-16), not the household's record page.
     editHref: canEdit ? recordHref({ person }) : null,
   };
+}
+
+/**
+ * The Essays tab's read (specs/product/essays/tab.md "Files"): the drafts, links, and open-comment counts by the plan's
+ * student, the picker's groups, and the prompt lookup, only when that tab is the one opening (the other tabs never pay
+ * for it). A failed read leaves the tab on the plan's own `ctx.essays` (U1), logged, rather than failing the page.
+ */
+async function essaysFor(load: PlanLoad, tab: PlanTab | null, viewer: "student" | "guardian"): Promise<EssaysTabData | null> {
+  if (tab !== "essays" || load.kind !== "ready") return null;
+  try {
+    return await essaysTabData(load.ctx, viewer);
+  } catch (err) {
+    console.error(`advisor: reading the essays tab failed: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  }
 }
 
 /** The soonest open deadline still to meet on a ready plan (resolveSelectedChild's tie-breaker), or null. */
@@ -171,6 +188,7 @@ async function renderPlan({
         );
       }
     }
+    const essays = await essaysFor(loaded, tab, "student");
     return (
       <PlanFrame
         people={<PlanPeople people={[self]} selected={null} detail={detailFor(loaded, null)} />}
@@ -183,6 +201,7 @@ async function renderPlan({
         tab={tab ?? defaultTab("student", false)}
         setup={setup}
         back={back}
+        essays={essays}
       />
     );
   }
@@ -247,6 +266,7 @@ async function renderPlan({
       );
     }
   }
+  const essays = await essaysFor(load, tab, "guardian");
   return (
     <PlanFrame
       people={line}
@@ -259,6 +279,7 @@ async function renderPlan({
       tab={tab ?? defaultTab("guardian", false)}
       setup={setup}
       back={back}
+      essays={essays}
     />
   );
 }

@@ -32,9 +32,11 @@ export default function PlanLoading() {
           </div>
         </div>
       </PendingPeopleLine>
-      <div className="flex flex-wrap items-center gap-2" aria-hidden>
-        {[0, 1, 2].map((i) => (
-          <div key={i} className={`${block} h-11 w-28 rounded-full`} />
+      {/* The tab strip's shape (components/planner/PlanTabs.tsx STRIP_RAIL; essays tab.md "The tab strip"): four equal
+          44 px cells in one rail on a phone, four pills from `sm`. Never wraps. */}
+      <div className="grid grid-flow-col auto-cols-fr gap-1 rounded-full ring-1 ring-border sm:flex sm:flex-nowrap sm:items-center sm:gap-2 sm:ring-0" aria-hidden>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={`${block} h-11 min-w-0 rounded-full sm:w-28 sm:shrink-0`} />
         ))}
       </div>
       <ul className="space-y-2" aria-hidden>

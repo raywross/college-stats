@@ -166,6 +166,8 @@ export interface AnalyticsEvents {
   essay_imported: { format: "uploaded" | "pasted" };
   /** A college's package page opened, and whether any of its prompts has a draft started yet. */
   essay_package_opened: { started: boolean };
+  /** Where a draft was started from (specs/product/essays/tab.md "Telemetry"): a prompt row on the Essays tab, the essays move, or the picker. Never a college. */
+  essay_started_from: { where: "tab" | "move" | "picker" };
   /* The reader's notes (specs/product/essays/reviewer.md "Privacy"): sent by POST /api/essays/review; never text. */
   /** "Read this draft" asked, by the prompt's kind. */
   essay_review_requested: { prompt_kind: string };
@@ -304,6 +306,7 @@ export const EVENTS = {
   essay_exported: { properties: ["format"], side: "client", why: "Essays: downloads and copies, by format" },
   essay_imported: { properties: ["format"], side: "client", why: "Essays: imports, by file or paste" },
   essay_package_opened: { properties: ["started"], side: "client", why: "Essays: how often the per-college package page is opened, before or after any writing has started" },
+  essay_started_from: { properties: ["where"], side: "client", why: "Essays: where drafts are started (the Essays tab's prompt rows, the essays move, the picker)" },
   essay_review_requested: { properties: ["prompt_kind"], side: "server", why: "Essays: reader's notes asked for, by the prompt's kind (each is a model call)" },
   essay_review_notes: { properties: ["count", "categories"], side: "server", why: "Essays: how many notes a review keeps, and of which kinds" },
   essay_review_dropped: { properties: ["reason"], side: "server", why: "Essays: what the guard drops, and answers with no notes, by why" },

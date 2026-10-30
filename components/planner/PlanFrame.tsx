@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import type { CalendarChild } from "@/components/planner/tabs/types";
+import type { EssaysTabData } from "@/lib/essays/tab-view";
 import { ImportLocalPlan } from "@/components/planner/ImportLocalPlan";
 import { NextUp } from "@/components/planner/NextUp";
 import PlanIntake from "@/components/planner/intake/PlanIntake";
@@ -37,6 +39,7 @@ export function PlanFrame({
   setup,
   back,
   people,
+  essays = null,
 }: {
   ctx: PlanContext;
   view: PlanView;
@@ -53,6 +56,8 @@ export function PlanFrame({
   back?: RecordBack;
   /** The plan's one top line (components/planner/PlanPeople.tsx), built by the page. */
   people?: ReactNode;
+  /** The Essays tab's read (lib/essays/tab-data.ts), passed only when that tab is open (specs/product/essays/tab.md). */
+  essays?: EssaysTabData | null;
 }) {
   const today = ctx.today;
   const studentId = ctx.student?.id ?? personId ?? "";
@@ -95,7 +100,8 @@ export function PlanFrame({
   const nextUpCard = hasNextUp ? <NextUp view={view} today={today} cycleStartYear={ctx.cycle.startYear} /> : null;
 
   const pills = <PlanTabPills tabs={tabs} tab={openTab} person={personId} />;
-  // Essays build, U2 (specs/product/essays/prompts.md "Display"): the count across the list, under the balance notice.
+  // Essays build, U2 (specs/product/essays/prompts.md "Display"): the count across the list, under the balance notice;
+  // a link to the Essays tab since essays-next (tab.md).
   const essayCount = planEssayCount(view.rows.map((r) => r.school?.essays ?? null));
 
   return (
@@ -109,14 +115,19 @@ export function PlanFrame({
         {relation === "self" && <ImportLocalPlan studentId={studentId} canEdit={ctx.viewer.canEdit} />}
         <div className="space-y-4">
           <div className="lg:hidden">{pills}</div>
-          <PlanTabs ctx={ctx} view={view} tab={openTab} calendarChild={calendarChild} viewer={viewer} />
+          <PlanTabs ctx={ctx} view={view} tab={openTab} calendarChild={calendarChild} viewer={viewer} essays={essays} person={personId} />
         </div>
       </div>
       <aside className="mt-6 hidden space-y-4 lg:top-6 lg:mt-0 lg:block lg:sticky">
         {nextUpCard}
         <UpcomingList ctx={ctx} view={view} studentId={studentId} variant="aside" fullYearHref={fullYearHref} />
         <PlanNotice ctx={ctx} view={view} />
-        {essayCount && <p className="text-sm text-muted-foreground">Your list asks for {essayCount}.</p>}
+        {/* The count line opens the Essays tab (specs/product/essays/tab.md "Where it is reached from"). */}
+        {essayCount && (
+          <Link href={planHref({ person: personId, tab: "essays" })} className="block text-sm text-muted-foreground hover:text-foreground hover:underline">
+            Your list asks for {essayCount}.
+          </Link>
+        )}
       </aside>
     </div>
   );

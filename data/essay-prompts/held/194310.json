@@ -1,9 +1,9 @@
 {
   "unit_id": "194310",
   "name": "Pace University",
-  "held": "2026-10-29",
+  "held": "2026-10-30",
   "problems": [
-    "prompt 1 describes the application's own personal statement (250-650 words), and prompt 2 is quoted from a sentence about applicants with fewer than 32 college credits (transfer); neither is a Pace first-year prompt (held by hand, 2026-10-29)"
+    "prompt 1 describes the application's own personal statement (250-650 words), not a Pace prompt (held by hand, 2026-10-30; also held by hand 2026-10-29)"
   ],
   "record": {
     "unit_id": "194310",
@@ -11,9 +11,9 @@
     "cycle": "2026-27",
     "status": "published",
     "source_url": "https://www.pace.edu/admission-and-aid/undergraduate-admission/how-apply",
-    "retrieved": "2026-10-29",
-    "sha256": "88bf68985bc96ca685caf4c24dff83d4d30141faf56e666f3e0cccd3d9d4ecd3",
-    "archive": "local:88bf68985bc96ca685caf4c24dff83d4d30141faf56e666f3e0cccd3d9d4ecd3.html",
+    "retrieved": "2026-10-30",
+    "sha256": "5e72fd2ea955ff87b1c9577df61e0c502ddacd72e6e0b3b3d6eda1efd80b1290",
+    "archive": "local:5e72fd2ea955ff87b1c9577df61e0c502ddacd72e6e0b3b3d6eda1efd80b1290.html",
     "cycle_quote": "Follow the key dates and deadlines below for Fall 2027.",
     "via": "picker",
     "model": "claude-opus-5",
@@ -31,15 +31,6 @@
         "required": true,
         "applies_to": "all",
         "quote": "One essay/personal statement, approximately 250-650 words in length, which will assist the Admission Committee in reviewing your application."
-      },
-      {
-        "id": "194310:2026-27:2",
-        "text": "A Written Essay or Personal Statement (on a topic of your choice)",
-        "kind": "essay",
-        "limit": null,
-        "required": true,
-        "applies_to": "transfer",
-        "quote": "If you have completed fewer than 32 college credits since graduating from high school, please submit the following;"
       }
     ]
   }

@@ -1,8 +1,8 @@
-{ "unit_id": "145600", "name": "University of Illinois Chicago", "held": "2026-10-29",
+{ "unit_id": "145600", "name": "University of Illinois Chicago", "held": "2026-10-30",
   "problems": [
     "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
   ],
-  "record": {"unit_id":"145600","name":"University of Illinois Chicago","cycle":"2026-27","status":"refers_to_form","source_url":"https://admissions.uic.edu/undergraduate/application-process","retrieved":"2026-10-29","sha256":"f1ca2027d053e6a63f8cbc67adc77a095d528883d9d7038a4a4a79ce541a9505","archive":"local:f1ca2027d053e6a63f8cbc67adc77a095d528883d9d7038a4a4a79ce541a9505.html","cycle_quote":"","cycle_assumed":true,"status_quote":"First Year Applicants: complete the Common Application .","via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
+  "record": {"unit_id":"145600","name":"University of Illinois Chicago","cycle":"2026-27","status":"refers_to_form","source_url":"https://admissions.uic.edu/undergraduate/application-process","retrieved":"2026-10-30","sha256":"00c97fecef1caa545529a1bee921f7cc16a4a5d9240d2df90c5f89e63072bf0f","archive":"local:00c97fecef1caa545529a1bee921f7cc16a4a5d9240d2df90c5f89e63072bf0f.html","cycle_quote":"","cycle_assumed":true,"status_quote":"First Year Applicants: complete the Common Application .","via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
     "prompts": []
   }
 }

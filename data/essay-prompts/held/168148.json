@@ -1,8 +1,8 @@
-{ "unit_id": "168148", "name": "Tufts University", "held": "2026-10-29",
+{ "unit_id": "168148", "name": "Tufts University", "held": "2026-10-30",
   "problems": [
     "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
   ],
-  "record": {"unit_id":"168148","name":"Tufts University","cycle":"2026-27","status":"refers_to_form","source_url":"https://admissions.tufts.edu/","retrieved":"2026-10-29","sha256":"915e2c3a9abbdd95b595c3c55c9387e860ce05b3b20f2006ed0be02c75f3a5f9","archive":"local:915e2c3a9abbdd95b595c3c55c9387e860ce05b3b20f2006ed0be02c75f3a5f9.html","cycle_quote":"","cycle_assumed":true,"status_quote":"First-year applicants to Tufts University are asked to respond to two required short answer prompts, which vary depending on the program to which you are applying.","via":"known-link","model":"claude-opus-5","reader":"2026.10.29.4",
+  "record": {"unit_id":"168148","name":"Tufts University","cycle":"2026-27","status":"refers_to_form","source_url":"https://admissions.tufts.edu/","retrieved":"2026-10-30","sha256":"f91b8f7001ff4c6d678556ae3abe5bb230c4475f5a1b34d61aa08a843822e26c","archive":"local:f91b8f7001ff4c6d678556ae3abe5bb230c4475f5a1b34d61aa08a843822e26c.html","cycle_quote":"","cycle_assumed":true,"status_quote":"First-year applicants to Tufts University are asked to respond to two required short answer prompts, which vary depending on the program to which you are applying.","via":"known-link","model":"claude-opus-5","reader":"2026.10.29.4",
     "prompts": []
   }
 }

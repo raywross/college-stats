@@ -1,8 +1,8 @@
-{ "unit_id": "136172", "name": "University of North Florida", "held": "2026-10-29",
+{ "unit_id": "136172", "name": "University of North Florida", "held": "2026-10-30",
   "problems": [
     "status none, but the quoted sentence is about a test's essay section, not an application essay"
   ],
-  "record": {"unit_id":"136172","name":"University of North Florida","cycle":"2026-27","status":"none","source_url":"https://www.unf.edu/admissions/freshman.html","retrieved":"2026-10-29","sha256":"2897fd3968229c2d16ae9d137b7bd5f17ec1c332bba0b15e93b4acea6bff9d13","archive":"local:2897fd3968229c2d16ae9d137b7bd5f17ec1c332bba0b15e93b4acea6bff9d13.html","cycle_quote":"Summer/Fall 2027 Important Dates","status_quote":"UNF does not require the essay section of the SAT, ACT or CLT.","via":"apply-page-link","model":"claude-opus-5","reader":"2026.10.29.4",
+  "record": {"unit_id":"136172","name":"University of North Florida","cycle":"2026-27","status":"none","source_url":"https://www.unf.edu/admissions/freshman.html","retrieved":"2026-10-30","sha256":"2897fd3968229c2d16ae9d137b7bd5f17ec1c332bba0b15e93b4acea6bff9d13","archive":"local:2897fd3968229c2d16ae9d137b7bd5f17ec1c332bba0b15e93b4acea6bff9d13.html","cycle_quote":"Summer/Fall 2027 Important Dates","status_quote":"UNF does not require the essay section of the SAT, ACT or CLT.","via":"apply-page-link","model":"claude-opus-5","reader":"2026.10.29.4",
     "prompts": []
   }
 }

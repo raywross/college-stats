@@ -60,6 +60,7 @@ function fail(error: { message?: string } | null | undefined, what: string): Fai
 function refresh() {
   try {
     revalidatePath("/advisor/essays", "layout");
+    revalidatePath("/advisor");
   } catch (err) {
     console.error(`essays: revalidate failed: ${err instanceof Error ? err.message : String(err)}`);
   }

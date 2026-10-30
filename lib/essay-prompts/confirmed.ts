@@ -39,7 +39,7 @@ export function validateConfirmed(r: ConfirmedRecord): string[] {
   if (!/^\d{1,12}$/.test(r.unit_id ?? "")) out.push("the college's unit id isn't a number");
   if (!r.name?.trim()) out.push("no college name");
   const m = /^(20\d\d)-(\d\d)$/.exec(r.cycle ?? "");
-  if (!m || (Number(m[1]) + 1) % 100 !== Number(m[2])) out.push(`cycle ${JSON.stringify(r.cycle)} isn't a cycle like 2026-27`);
+  if (!m || (Number(m[1]) + 1) % 100 !== Number(m[2])) out.push(`cycle ${JSON.stringify(r.cycle)} isn't a cycle like YYYY-YY`);
   if (r.status !== "published" && r.status !== "none") out.push("status must be published or none");
   if (r.confidence !== "confirmed") out.push("confidence must be confirmed");
   if (r.source !== "form-by-hand") out.push("source must be form-by-hand");

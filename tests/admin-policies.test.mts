@@ -199,6 +199,8 @@ function functionCalls(w: World): [name: string, sql: string, params: unknown[]]
     ["admin_revoke", "select public.admin_revoke($1)", [w.quinn]],
     ["admin_note_ops", "select public.admin_note_ops('ops.dispatch', '{}')", []],
     ["admin_set_setting", "select public.admin_set_setting('planner.all_moves', 'true')", []],
+    ["admin_set_essay_prompts", "select public.admin_set_essay_prompts('100005', '2026-27', '{}')", []],
+    ["admin_delete_essay_prompts", "select public.admin_delete_essay_prompts('100005', '2026-27')", []],
   ];
 }
 

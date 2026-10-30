@@ -90,7 +90,7 @@ export function EssayPromptsForm({ action, unitId, name, initial, openCycle, tod
           <label className={labelCls} htmlFor={`${id}-cycle`}>
             Cycle
           </label>
-          <input id={`${id}-cycle`} value={draft.cycle} onChange={(e) => set({ cycle: e.target.value })} placeholder="2026-27" autoComplete="off" className={cn(inputCls, "mt-1.5")} />
+          <input id={`${id}-cycle`} value={draft.cycle} onChange={(e) => set({ cycle: e.target.value })} placeholder={openCycle} autoComplete="off" className={cn(inputCls, "mt-1.5")} />
         </div>
         <div>
           <label className={labelCls} htmlFor={`${id}-form`}>

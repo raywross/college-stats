@@ -28,26 +28,21 @@ test("plan_tasks gains season (every Season) and action (a jsonb object)", () =>
   assert.match(CODE, /alter table public\.plan_tasks add column action jsonb check \(action is null or jsonb_typeof\(action\) = 'object'\)/);
 });
 
-/** Kinds added to the check by a later migration (each re-states the whole list), so this one lists the rest. */
-const ADDED_SINCE = ["essays"]; // 20261030120000_essays_move.sql
-
-const kindsIn = (code: string) => {
-  const m = /add constraint plan_tasks_kind_check check \(kind in \(([\s\S]*?)\)\)/.exec(code);
-  assert.ok(m);
-  return [...m[1].matchAll(/'([a-z0-9_]+)'/g)].map((x) => x[1]).sort();
-};
-
-test("the newest migration's kind check lists exactly TaskKind", () => {
+/** The newest migration that sets plan_tasks_kind_check (essays part 4's 20261030120000_essays_move.sql widened it), comments stripped. */
+function latestKindCheck(): string {
   const dir = join(ROOT, "supabase", "migrations");
-  const newest = readdirSync(dir)
-    .filter((f) => f.endsWith(".sql") && /add constraint plan_tasks_kind_check/.test(readFileSync(join(dir, f), "utf8")))
-    .sort()
-    .at(-1)!;
-  assert.deepEqual(kindsIn(readFileSync(join(dir, newest), "utf8").replace(/--.*$/gm, "")), codeKinds(), newest);
-});
+  const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
+  const sets = files.map((f) => readFileSync(join(dir, f), "utf8").replace(/--.*$/gm, "")).filter((sql) => /add constraint plan_tasks_kind_check/.test(sql));
+  assert.ok(sets.length > 0);
+  return sets[sets.length - 1];
+}
 
-test("the kind check lists exactly TaskKind (but the kinds added since), and the source check gains 'season'", () => {
-  assert.deepEqual(kindsIn(CODE), codeKinds().filter((k) => !ADDED_SINCE.includes(k)));
+test("the kind check lists exactly TaskKind (the newest migration that sets it), and the source check gains 'season'", () => {
+  // This migration's own list is every kind of its day; a later one (the essays move) widens it, and the newest wins.
+  assert.match(CODE, /add constraint plan_tasks_kind_check check \(kind in \(/);
+  const m = /add constraint plan_tasks_kind_check check \(kind in \(([\s\S]*?)\)\)/.exec(latestKindCheck());
+  assert.ok(m);
+  assert.deepEqual([...m[1].matchAll(/'([a-z0-9_]+)'/g)].map((x) => x[1]).sort(), codeKinds());
   for (const k of ["playbook", "ed_decide", "ed2_decide", "visit_ed", "show_interest", "shape_gap", "shape_cost", "confirm_complete", "compare_offers", "decide_by", "outcome_share", "story"]) {
     assert.ok(codeKinds().includes(k), k);
   }

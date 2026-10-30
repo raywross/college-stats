@@ -329,6 +329,8 @@ export async function generatorInputFor(
     season: seasonOf(opts.gradYear, opts.today),
     estimates: opts.estimates ?? {},
     allMoves,
+    // Essays, part 4: the drafts read with the plan (read-plan.ts readPlanEssays); null when there are none to read.
+    essays: plan.essays ?? null,
   };
 }
 

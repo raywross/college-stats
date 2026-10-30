@@ -33,7 +33,8 @@ export type TaskKind =
 export type MoveAction =
   | { kind: "href"; href: string }
   | { kind: "open_intake"; step: number }
-  | { kind: "open_tab"; tab: import("./plan-tabs").PlanTab }
+  /** `college` (a unit id, additive; essays part 4): on the Essays tab, the card to land on (planHref's anchor). */
+  | { kind: "open_tab"; tab: import("./plan-tabs").PlanTab; college?: string }
   | { kind: "open_row"; itemId: string; panel?: "ed" | "capture" }
   | { kind: "mark_applied"; itemId: string }
   | { kind: "record_decision"; itemId: string }

@@ -1,11 +1,12 @@
 /**
  * The `apply` generator (U6; specs/planner/applications.md "Sub-tasks"): the application sub-tasks (fee, test
- * scores, transcript, recommendations, supplements, submit, portal setup), the weekly portal check, and the
- * deferral and wait-list follow-ups. Pure; no I/O.
+ * scores, transcript, recommendations, submit, portal setup), the weekly portal check, and the deferral and wait-list
+ * follow-ups. Pure; no I/O. The essays (the shared personal essay and each college's supplements) are the essays
+ * move's (generators/essays.ts; specs/product/essays/moves.md "What goes"), not rows here.
  *
  * Sub-tasks are generated once a college is `applying` or later (not `considering`); the transcript request is one
  * shared task by default (`transcript_shared !== false` on the item), or one per college when the student turned
- * that off. Common App colleges share the main personal essay (one shared `supplement` task). The portal check
+ * that off. The portal check
  * (`portal_check`) runs weekly from `applied_on` until `complete_on`: each week is its own key (`{item}:portal_check:
  * {n}`), so a completed week's task is replaced by the next week's rather than reopened (timeline.md's merge never
  * resets `done_at`). Deferral (`continued_interest`, plus the ED II pointer only when an ED II college exists) and
@@ -110,23 +111,9 @@ export function generate(input: GeneratorInput): GeneratedTask[] {
     );
   }
 
-  // Common App colleges share the main personal essay (applications.md "Display").
-  const commonApp = inProgress.filter((i) => i.application_platform === "common_app");
-  if (commonApp.length > 0) {
-    out.push(
-      sharedTask(
-        input.list.id,
-        "supplement",
-        "essay",
-        {
-          title: "Write the Common App personal essay",
-          detail: `Shared across ${commonApp.length} Common App college${commonApp.length === 1 ? "" : "s"}.`,
-          assignee: "student",
-        },
-        1,
-      ),
-    );
-  }
+  // No essay rows here (specs/product/essays/moves.md "What goes"): the shared personal-essay row and the per-college
+  // "Supplement n of N" rows gave way to the one essays move (generators/essays.ts). `supplements_count` stays on the
+  // item as the student's own count.
 
   for (const item of inProgress) {
     const school = input.schools[item.unit_id];
@@ -164,11 +151,7 @@ export function generate(input: GeneratorInput): GeneratedTask[] {
       out.push(itemTask(item, "recommendation", n, { title: `Recommendation ${n} of ${recs}`, detail: "Ask, then confirm it's submitted. Names stay in your own notes.", assignee: "student" }, offset++));
     }
 
-    // 5. Supplements, the student's own count (the Common App essay above is shared, not counted here).
-    const supps = Math.min(item.supplements_count ?? 0, MAX_SUBITEMS);
-    for (let n = 1; n <= supps; n++) {
-      out.push(itemTask(item, "supplement", n, { title: `Supplement ${n} of ${supps}`, detail: null, assignee: "student" }, offset++));
-    }
+    // 5. (Supplements: no rows; the essays move covers them, moves.md "What goes".)
 
     // 6. Submit (ties to applied_on: store-apply.ts markApplied ticks the matching apply task, not this one).
     out.push(itemTask(item, "submit", null, { title: "Submit the application", detail: null, assignee: "student" }, offset++));

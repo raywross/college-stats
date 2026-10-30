@@ -21,6 +21,8 @@ import { useEffect, useRef } from "react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import type { AnyCited } from "@/lib/lineage";
+import { essayProgress } from "@/lib/essays/progress";
+import { essaysButton } from "@/lib/planner/generators/essays";
 import { guideFor, guideHref } from "@/lib/planner/guides";
 import { isReachScoreMove, nextTestNote } from "@/lib/planner/moves";
 import { planHref } from "@/lib/planner/plan-tabs";
@@ -119,8 +121,18 @@ function ActionLink({ task, ctx }: { task: PlanTask; ctx: PlanContext }) {
         </Link>
       );
     case "open_tab":
+      // The essays move (specs/product/essays/moves.md): the Essays tab at the named college's card, "Write it" with
+      // work left, "See them" when all is ready (the same reading the tab shows).
+      if (task.kind === "essays") {
+        const words = essaysButton(essayProgress({ items: ctx.items, schools: ctx.schools, essays: ctx.essays ?? null }));
+        return (
+          <Link href={planHref({ person, tab: action.tab, college: action.college ?? null })} className={PRIMARY}>
+            {words}
+          </Link>
+        );
+      }
       return (
-        <Link href={planHref({ person, tab: action.tab })} className={SECONDARY}>
+        <Link href={planHref({ person, tab: action.tab, college: action.college ?? null })} className={SECONDARY}>
           Open
         </Link>
       );

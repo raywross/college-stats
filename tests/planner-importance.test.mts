@@ -86,6 +86,7 @@ const ALL_KINDS: readonly TaskKind[] = [
   "shape_gap", "shape_cost",
   "confirm_complete", "compare_offers", "decide_by", "outcome_share",
   "story",
+  "essays",
   "own",
 ];
 

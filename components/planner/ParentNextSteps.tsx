@@ -134,6 +134,7 @@ export function GuardianNextSteps({ ctx, view }: PlanTabProps) {
         return;
       }
       track("plan_move_done", { kind: task.kind, season: task.season ?? ctx.season, by: viewerRole });
+      if (task.kind === "essays") track("essays_move_done", { by: "hand" });
       router.refresh();
     });
   }

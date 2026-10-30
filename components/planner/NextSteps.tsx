@@ -132,6 +132,8 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
         return;
       }
       track("plan_move_done", { kind: task.kind, season: seasonOfTask(task), by });
+      // The essays move ticked by hand (specs/product/essays/moves.md "Done"); the store's own tick sends `by: "store"`.
+      if (task.kind === "essays") track("essays_move_done", { by: "hand" });
       router.refresh();
     });
   }

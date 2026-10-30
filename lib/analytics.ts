@@ -175,14 +175,17 @@ export interface AnalyticsEvents {
   essay_review_notes: { count: number; categories: string };
   /** A note the guard dropped, or a whole answer with no notes (refusal, max_tokens, malformed), by why. */
   essay_review_dropped: { reason: string };
+  /** The essays move (specs/product/essays/moves.md "Telemetry") done: ticked by the store when nothing is left, or by hand. Never a college or a count of words. */
+  essays_move_done: { by: "store" | "hand" };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
-  side: "client" | "server";
+  /** `both`: sent with `track()` from the browser and with `trackServer()` from a Server Action (essays_move_done: by hand, by the store). */
+  side: "client" | "server" | "both";
   why: string;
 };
 
@@ -310,6 +313,7 @@ export const EVENTS = {
   essay_review_requested: { properties: ["prompt_kind"], side: "server", why: "Essays: reader's notes asked for, by the prompt's kind (each is a model call)" },
   essay_review_notes: { properties: ["count", "categories"], side: "server", why: "Essays: how many notes a review keeps, and of which kinds" },
   essay_review_dropped: { properties: ["reason"], side: "server", why: "Essays: what the guard drops, and answers with no notes, by why" },
+  essays_move_done: { properties: ["by"], side: "both", why: "Essays: the essays move finished, ticked by the store when every essay is ready or by hand" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

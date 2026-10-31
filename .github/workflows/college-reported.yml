@@ -1,22 +1,19 @@
-# Runs the college-reported ingestion agent (specs/college-reported-data.md) and, when it changes data/**, opens a
-# pull request with a generated body (counts, cost, circuit-breaker status, review-queue table) and its own release
-# note, auto-merging only when asked and the circuit breaker didn't trip. See specs/college-reported-setup.md for
-# the one-time repository setup (secrets, auto-merge, branch protection) this workflow depends on.
-#
-# Checkout and all git/gh steps use `secrets.COLLEGE_REPORTED_TOKEN` when it's set, falling back to the default
-# `github.token`. The default token works for commits and comments, but a PR opened with it does NOT trigger
-# `pull_request` workflows (so Verify, and therefore auto-merge, would never run) — set COLLEGE_REPORTED_TOKEN to a
-# fine-grained PAT (Contents: read/write, Pull requests: read/write) to get CI on these PRs and real auto-merge.
+# Runs the college-reported ingestion agent (specs/college-reported-data.md). Since the data platform's phase 2
+# (specs/data-platform/pipelines.md) the run writes its state to the data store, not to data/: one change set per
+# run (source college-reported, run_ref the run id), closed `applied`, or `held` when the circuit breaker tripped or
+# the run stopped early, and kept open while Message Batches are open. The job ends by asking the publisher for a
+# snapshot (repository_dispatch publish-snapshot) unless the set is held or still open; a held set waits in the
+# admin console (Holds, Change sets). No commit, no pull request, no release note.
 #
 # Round 3 (specs/college-reported-round-3.md, Decision 5): extraction runs as Message Batches. The `run` job prepares,
-# discovers, submits, and polls until its deadline; if batches are still open (data/college-batches.json lists any)
-# it opens the PR as a DRAFT. The `collect` job (every 30 minutes, or by hand with mode = collect) finishes a draft
-# pipeline PR whose batches are open: collect, escalate, merge-reported, commit, and mark it ready.
+# discovers, submits, and polls until its deadline; batches still open stay in `reported.batches` with the change set
+# open. The `collect` job (every 30 minutes, or by hand with mode = collect) finds the oldest open batch's run on the
+# store, collects it into the same change set, closes the set when no batch is left, and dispatches the publisher.
 name: College-reported data
 
 # The admin console passes request_id on dispatch so it can find its run (specs/product/admin.md, "Reruns"); a run
-# without one keeps GitHub's usual title: the PR title, the commit message, or the workflow's name.
-run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.event.pull_request.title || github.event.head_commit.message || github.workflow }}"
+# without one keeps GitHub's usual title.
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.event.head_commit.message || github.workflow }}"
 
 on:
   workflow_dispatch:
@@ -35,7 +32,7 @@ on:
         type: boolean
         default: false
       auto_merge:
-        description: Auto-merge the resulting PR once CI passes (on by default; values that passed their checks publish)
+        description: "No effect since data runs open no pull request (kept so the console's dispatches stay valid)"
         type: boolean
         default: true
       max_discoveries:
@@ -62,29 +59,32 @@ on:
     # whether this particular firing should actually run (specs/college-reported-data.md#schedule).
     - cron: "0 13 * * 1" # every Monday 13:00 UTC — proceeds only Aug–Nov (fall class-profile season)
     - cron: "0 13 1 * *" # the 1st of every month, 13:00 UTC — proceeds only Dec–Jul (CDS edition season)
-    # The collect job: exits at once unless a draft pipeline PR has open batches. Only the collect job runs on it.
+    # The collect job: exits at once unless the store lists an open batch. Only the collect job runs on it.
     - cron: "*/30 * * * *"
 
+# contents: write is what sending repository_dispatch (the publisher) needs; nothing is pushed.
 permissions:
   contents: write
-  pull-requests: write
 
 concurrency:
   group: college-reported
   cancel-in-progress: false
 
-# Both jobs share this group, so a collect never runs while a run is writing the same branch's state.
+env:
+  # The data project (shared contracts), with the publisher's fallback (.github/workflows/publish-snapshot.yml).
+  DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+  DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
+
+# Both jobs share this group, so a collect never runs while a run is writing the same change set.
 jobs:
   run:
     if: github.event.schedule != '*/30 * * * *' && (github.event_name != 'workflow_dispatch' || inputs.mode != 'collect')
     runs-on: ubuntu-latest
-    # GitHub-hosted jobs stop at 6 hours; the script polls batches until COLLEGE_REPORTED_POLL_UNTIL (300 minutes in),
-    # leaving the rest for the merge, PR, and release-note steps. Open batches go to the collect job.
+    # GitHub-hosted jobs stop at 6 hours; the script polls batches until COLLEGE_REPORTED_POLL_UNTIL (300 minutes in).
+    # Open batches go to the collect job.
     timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
 
       - name: Check schedule window
         id: window
@@ -109,7 +109,6 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
             echo "mode=all" >> "$GITHUB_OUTPUT"
-            echo "auto_merge=true" >> "$GITHUB_OUTPUT"
             echo "college=" >> "$GITHUB_OUTPUT"
             echo "rediscover=false" >> "$GITHUB_OUTPUT"
             echo "max_discoveries=100" >> "$GITHUB_OUTPUT"
@@ -123,7 +122,6 @@ jobs:
               exit 1
             fi
             echo "mode=$mode" >> "$GITHUB_OUTPUT"
-            echo "auto_merge=${{ inputs.auto_merge }}" >> "$GITHUB_OUTPUT"
             echo "college=$college" >> "$GITHUB_OUTPUT"
             echo "rediscover=${{ inputs.rediscover }}" >> "$GITHUB_OUTPUT"
             echo "max_discoveries=${{ inputs.max_discoveries }}" >> "$GITHUB_OUTPUT"
@@ -139,12 +137,15 @@ jobs:
           # The script stops polling open batches at this time (ISO, UTC) and leaves them to the collect job.
           echo "poll_until=$(date -u -d '+300 minutes' +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
-      - name: Check for the Anthropic API key
+      - name: Check for the Anthropic API key and the data store
         id: secret
         if: github.event_name != 'schedule' || steps.window.outputs.proceed == 'true'
         run: |
           if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
             echo "::notice::ANTHROPIC_API_KEY is not set; skipping this run. See specs/college-reported-setup.md."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set; skipping this run (the state lives on the data store)."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
@@ -154,7 +155,7 @@ jobs:
         id: flags
         if: steps.secret.outputs.ready == 'true'
         run: |
-          flags="--run ${{ steps.run_id.outputs.id }}"
+          flags="--store supabase --run ${{ steps.run_id.outputs.id }}"
           case "${{ steps.params.outputs.mode }}" in
             pilot) flags="$flags --pilot" ;;
             all) flags="$flags --all" ;;
@@ -197,6 +198,8 @@ jobs:
           restore-keys: |
             college-docs-
 
+      # Writes to the store after every college; the script writes `change_set`, `status` (open | applied | held) and
+      # `open_batches` to this step's outputs.
       - name: Run the ingestion pipeline
         id: sync
         if: steps.secret.outputs.ready == 'true'
@@ -211,224 +214,56 @@ jobs:
           set -e
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           # 0 = normal, 2 = circuit breaker tripped, 3 = stopped early (the run's max_cost, the spend limit, credit
-          # balance, or key refused);
-          # 2 and 3 still write files. 1 = error. Only 1 fails the step. The script writes its files after every
-          # college, so even a failed or cancelled run leaves what it finished for the steps below.
+          # balance, or key refused); 2 and 3 close the change set held. 1 = error (the set is held too) fails the step.
           if [ "$code" = "1" ]; then
             echo "::error::sync-college-reported exited 1 (error); see the job log above."
             exit 1
           fi
 
-      # Merges data/college-reported.json into the committed data/schools.json (Decision 5,
-      # specs/college-reported-round-2.md), so this PR carries the site's figures too — its Vercel preview shows
-      # them without anyone running `npm run sync-data` by hand. always(): a stopped or cancelled run still wrote
-      # whatever it finished, and that should still merge. No network, no API key; nothing to fail on an empty
-      # college-reported.json (merges 0, removes 0, exits 0).
-      - name: Merge the published figures into schools.json
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run merge-reported
-
-      # merge-reported rewrites data/schools.json; re-run the directory merge so it stays exactly a fresh merge of
-      # data/directories/ and data/campus-pages.json (the "merge: idempotent" CI check compares committed
-      # data/schools.json against this). No network; reads only committed files.
-      - name: Re-merge the directory listings into schools.json
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run merge-directories
-
-      # New admissions figures move Quad's selectivity, so the tiers in data/schools.json and data/selectivity-index.json
-      # are rebuilt here (specs/chances/selectivity-history.md, "Fix that comes with it"); check:selectivity fails a
-      # PR whose tiers are stale. No network; hysteresis runs against the committed tiers.
-      - name: Rebuild Quad's selectivity
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run build-selectivity
-
-      # Some national trends group colleges by the current dataset (data/schools.json), so the merges above change
-      # them; tests/trends-foundation.test.mts fails a PR whose data/history/trends/ isn't what build-trends makes.
-      # No network. The rebuilt files are under data/, so the PR step's `git add data` commits them.
-      - name: Rebuild the national trends
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run build-trends
-
-      # The research list of colleges where the pipeline failed (specs/college-data-failures.md), rebuilt from the
-      # state files this run wrote, so the PR carries it and the next production deploy loads it. No network; it is
-      # under data/, so the PR step commits it with the rest.
-      - name: Rebuild the college data failures list
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run college-failures
-
-      # The admin console's compact health file (lib/admin/health.ts, specs/product/admin.md "Files the deploy must
-      # carry"), rebuilt from the files this run changed; `npm run verify` fails a PR whose copy is stale.
-      - name: Rebuild the compact health file
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run college-health
-
-      # The draft signal: data/college-batches.json lists the batches still open when the script exits (it is written
-      # after every submit and collect). Any open batch → the PR opens as a draft and waits for the collect job.
-      - name: Check for open batches
-        id: batches
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: |
-          open=$(node -e "const fs=require('fs');const f='data/college-batches.json';console.log(fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')).batches.length:0)")
-          echo "open=$open" >> "$GITHUB_OUTPUT"
-          echo "Open batches: $open"
-
-      # always(): also after a cancelled run, so the colleges it finished still reach a PR and the artifact.
-      - name: Keep this run's files as an artifact
-        if: always() && steps.secret.outputs.ready == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: college-reported-${{ steps.run_id.outputs.id }}
-          path: |
-            data/college-sources.json
-            data/college-reported.json
-            data/review-queue.json
-            data/college-batches.json
-            data/college-failures.json
-            data/college-health.json
-            data/reports/college-reported-run-${{ steps.run_id.outputs.id }}.json
-            data/reports/college-reported-calls-${{ steps.run_id.outputs.id }}.jsonl
-          if-no-files-found: ignore
-
-      - name: Check for data changes
-        id: diff
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: |
-          if git status --porcelain -- data | grep -q .; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No changes under data/ this run; nothing to open a PR for."
-          fi
-
-      - name: Open a pull request
-        id: pr
-        if: always() && steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true'
+      # The run's tail (shared contracts): ask the publisher for a snapshot, unless the set is held (exit 2 or 3, or
+      # an error) or still open (batches pending: the collect job dispatches once they are in).
+      - name: Ask the publisher for a snapshot
+        if: always() && steps.secret.outputs.ready == 'true' && steps.sync.outputs.exit_code == '0' && steps.sync.outputs.status == 'applied'
         env:
-          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
-          RUN_ID: ${{ steps.run_id.outputs.id }}
-          OPEN_BATCHES: ${{ steps.batches.outputs.open }}
-          AUTO_MERGE: ${{ steps.params.outputs.auto_merge }}
-        run: |
-          branch="data/college-reported-${RUN_ID}"
-          git checkout -b "$branch"
-          git add data
-          printf 'College-reported data: run %s\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n' "$RUN_ID" > /tmp/college-reported-commit-msg.txt
-          git -c user.name="college-reported-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/college-reported-commit-msg.txt
-          git push -u origin "$branch"
-          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-reported-pr-body.mts body \
-            --summary "data/reports/college-reported-run-${RUN_ID}.json" \
-            --queue data/review-queue.json \
-            --reported data/college-reported.json \
-            --schools data/schools.json > /tmp/college-reported-pr-body.md
-          # The collect job reads this back to apply the run's auto-merge choice once the batches are in.
-          printf '\n<!-- college-reported: auto_merge=%s -->\n' "$AUTO_MERGE" >> /tmp/college-reported-pr-body.md
-          draft=""
-          if [ "${OPEN_BATCHES:-0}" != "0" ]; then
-            draft="--draft"
-            printf '\n> Draft: %s batch(es) still open. The collect job (every 30 minutes) collects them, commits, and marks this PR ready.\n' "$OPEN_BATCHES" >> /tmp/college-reported-pr-body.md
-          fi
-          gh pr create --base main --head "$branch" $draft \
-            --title "College-reported data: run ${RUN_ID}" \
-            --body-file /tmp/college-reported-pr-body.md
-          number=$(gh pr view "$branch" --json number -q .number)
-          echo "number=$number" >> "$GITHUB_OUTPUT"
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/dispatches -f event_type=publish-snapshot
 
-      # The PR number is only known once the PR exists, so the release note (specs/release-notes.md) is written and
-      # pushed as a second commit onto the same branch, naming it.
-      - name: Add the release note
-        if: always() && steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true' && steps.pr.outputs.number != ''
+      - name: Say why there is no publish
+        if: always() && steps.secret.outputs.ready == 'true' && !(steps.sync.outputs.exit_code == '0' && steps.sync.outputs.status == 'applied')
         env:
-          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
-          RUN_ID: ${{ steps.run_id.outputs.id }}
-          PR_NUMBER: ${{ steps.pr.outputs.number }}
-        run: |
-          date=$(date -u +%Y-%m-%d)
-          note="release-notes/college-reported-${RUN_ID}.md"
-          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-reported-pr-body.mts note \
-            --summary "data/reports/college-reported-run-${RUN_ID}.json" \
-            --queue data/review-queue.json \
-            --pr "$PR_NUMBER" --date "$date" --out "$note"
-          git add "$note"
-          printf 'Release note for #%s\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n' "$PR_NUMBER" > /tmp/college-reported-note-commit-msg.txt
-          git -c user.name="college-reported-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/college-reported-note-commit-msg.txt
-          git push
-
-      - name: Auto-merge, or explain why this PR waits for a person
-        if: always() && steps.secret.outputs.ready == 'true' && steps.diff.outputs.changed == 'true' && steps.pr.outputs.number != ''
-        env:
-          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
-          PR_NUMBER: ${{ steps.pr.outputs.number }}
           EXIT_CODE: ${{ steps.sync.outputs.exit_code }}
-          AUTO_MERGE: ${{ steps.params.outputs.auto_merge }}
-          OPEN_BATCHES: ${{ steps.batches.outputs.open }}
+          STATUS: ${{ steps.sync.outputs.status }}
+          CHANGE_SET: ${{ steps.sync.outputs.change_set }}
+          OPEN_BATCHES: ${{ steps.sync.outputs.open_batches }}
         run: |
-          if [ "${OPEN_BATCHES:-0}" != "0" ]; then
-            gh pr comment "$PR_NUMBER" --body "Draft until its ${OPEN_BATCHES} open batch(es) are collected: the collect job finishes this PR and then applies the merge rules."
-          elif [ "$AUTO_MERGE" = "true" ] && [ "$EXIT_CODE" = "0" ]; then
-            gh pr merge "$PR_NUMBER" --auto --squash
+          if [ "$STATUS" = "open" ]; then
+            echo "::notice::Change set ${CHANGE_SET} stays open: ${OPEN_BATCHES} batch(es) still open. The collect job finishes them and asks for the snapshot."
+          elif [ "$EXIT_CODE" = "2" ]; then
+            echo "::warning::The circuit breaker tripped: change set ${CHANGE_SET} is held. Look at it in the console (Change sets): Publish anyway or Revert."
+          elif [ "$EXIT_CODE" = "3" ]; then
+            echo "::warning::The run stopped early: change set ${CHANGE_SET} is held with what it finished. Publish anyway or Revert in the console."
           else
-            if [ -z "$EXIT_CODE" ]; then
-              reason="the run was cancelled before it finished; this PR holds the colleges it completed (see the run summary) — review and merge by hand"
-            elif [ "$EXIT_CODE" = "3" ]; then
-              reason="the run stopped early (its max_cost cap or the Anthropic spend limit or credit balance was reached, or the API key was refused); this PR holds the colleges it completed and the next run picks up the rest — review and merge by hand"
-            elif [ "$EXIT_CODE" = "2" ]; then
-              reason="the circuit breaker tripped (more than 25% of already-published values came back different in one run, which points to a systematic misread) — review the PR body before merging by hand"
-            elif [ "$AUTO_MERGE" != "true" ]; then
-              reason="auto-merge was turned off for this run — review and merge by hand once CI is green"
-            else
-              reason="the run exited with an unexpected code ($EXIT_CODE) — review before merging"
-            fi
-            gh pr comment "$PR_NUMBER" --body "Waiting for a person: ${reason}."
+            echo "::warning::The run did not finish (exit ${EXIT_CODE:-none}); its change set ${CHANGE_SET:-} is held or was never opened."
           fi
 
   collect:
     if: github.event.schedule == '*/30 * * * *' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'collect')
     runs-on: ubuntu-latest
     # Shorter than the cron's 30 minutes, so a collect never queues behind another and (through the shared concurrency
-    # group) never displaces a pending scheduled run. Collecting is idempotent: a collect cut off before its push leaves
-    # the state file as it was, and the next one collects the same batches again (results are kept 29 days).
+    # group) never displaces a pending scheduled run. Collecting is idempotent: a collect cut off before it writes leaves
+    # the batches listed, and the next one collects them again (results are kept 29 days).
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
 
-      # The oldest open draft PR from the pipeline (branch data/college-reported-<run>) whose branch still lists open
-      # batches in data/college-batches.json. None → every later step is skipped and the job ends at once.
-      - name: Find a draft pipeline PR with open batches
-        id: find
-        env:
-          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
-        run: |
-          pr=$(gh pr list --state open --json number,headRefName,isDraft \
-            --jq '[.[] | select(.isDraft and (.headRefName | startswith("data/college-reported-")))] | sort_by(.number) | .[0].number // empty')
-          if [ -z "$pr" ]; then
-            echo "No draft pipeline PR; nothing to collect."
-            echo "found=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          branch=$(gh pr view "$pr" --json headRefName -q .headRefName)
-          git fetch --depth 1 origin "$branch"
-          git checkout -B "$branch" FETCH_HEAD
-          open=$(node -e "const fs=require('fs');const f='data/college-batches.json';console.log(fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')).batches.length:0)")
-          if [ "$open" = "0" ]; then
-            echo "::notice::Draft PR #$pr lists no open batches; nothing to collect (mark it ready by hand if it is done)."
-            echo "found=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "Collecting $open open batch(es) for PR #$pr ($branch)."
-          echo "found=true" >> "$GITHUB_OUTPUT"
-          echo "number=$pr" >> "$GITHUB_OUTPUT"
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
-          echo "run_id=${branch#data/college-reported-}" >> "$GITHUB_OUTPUT"
-
-      - name: Check for the Anthropic API key
+      - name: Check for the Anthropic API key and the data store
         id: secret
-        if: steps.find.outputs.found == 'true'
         run: |
           if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
             echo "::notice::ANTHROPIC_API_KEY is not set; skipping. See specs/college-reported-setup.md."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set; skipping."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
@@ -443,16 +278,31 @@ jobs:
       - run: npm ci
         if: steps.secret.outputs.ready == 'true'
 
+      # The run of the oldest open batch on the store (`reported.batches`). None → every later step is skipped.
+      - name: Find a run with open batches
+        id: find
+        if: steps.secret.outputs.ready == 'true'
+        run: |
+          run_id=$(node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-college-reported.mts --print-open-run --store supabase | tail -n 1)
+          if [ -z "$run_id" ]; then
+            echo "No open batches on the store; nothing to collect."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Collecting the open batches of run $run_id."
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
       # pdftotext (poppler) lays out each PDF so C7/C8A marks are placed under their column headings after a model
       # read (scripts/lib/college-reported/grid-place.mts). Without it the marks stay held by the grid-column check.
       - name: Install pdftotext
-        if: steps.secret.outputs.ready == 'true'
+        if: steps.find.outputs.found == 'true'
         run: command -v pdftotext || (sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils)
 
       # The same document cache as the run job (escalation re-reads archived text). Its own key per collect, so a
       # collect never writes over the run's entry; restore-keys picks the newest.
       - name: Restore document cache
-        if: steps.secret.outputs.ready == 'true'
+        if: steps.find.outputs.found == 'true'
         uses: actions/cache@v4
         with:
           path: .cache/college-docs
@@ -460,16 +310,17 @@ jobs:
           restore-keys: |
             college-docs-
 
+      # Writes into the run's open change set (or a new one with the same run_ref) and closes it when no batch is left.
       - name: Collect the open batches
         id: sync
-        if: steps.secret.outputs.ready == 'true'
+        if: steps.find.outputs.found == 'true'
         continue-on-error: true
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           RUN_ID: ${{ steps.find.outputs.run_id }}
         run: |
           set +e
-          npm run sync-college-reported -- --phase collect --run "$RUN_ID"
+          npm run sync-college-reported -- --store supabase --phase collect --run "$RUN_ID"
           code=$?
           set -e
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
@@ -479,112 +330,23 @@ jobs:
             exit 1
           fi
 
-      - name: Merge the published figures into schools.json
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run merge-reported
-
-      # As in the run job: re-run the directory merge so data/schools.json stays exactly a fresh merge of
-      # data/directories/ and data/campus-pages.json. No network; reads only committed files.
-      - name: Re-merge the directory listings into schools.json
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run merge-directories
-
-      # New admissions figures move Quad's selectivity, so the tiers in data/schools.json and data/selectivity-index.json
-      # are rebuilt here (specs/chances/selectivity-history.md, "Fix that comes with it"); check:selectivity fails a
-      # PR whose tiers are stale. No network; hysteresis runs against the committed tiers.
-      - name: Rebuild Quad's selectivity
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run build-selectivity
-
-      # As in the run job: the trends follow the merged schools.json (committed below with `git add data`).
-      - name: Rebuild the national trends
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run build-trends
-
-      # As in the run job: the failures list follows the collected state (committed below with the rest of data/).
-      - name: Rebuild the college data failures list
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run college-failures
-
-      # The admin console's compact health file (lib/admin/health.ts, specs/product/admin.md "Files the deploy must
-      # carry"), rebuilt from the files this run changed; `npm run verify` fails a PR whose copy is stale.
-      - name: Rebuild the compact health file
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: npm run college-health
-
-      - name: Check for open batches
-        id: batches
-        if: always() && steps.secret.outputs.ready == 'true'
-        run: |
-          open=$(node -e "const fs=require('fs');const f='data/college-batches.json';console.log(fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')).batches.length:0)")
-          echo "open=$open" >> "$GITHUB_OUTPUT"
-          echo "Open batches after collect: $open"
-
-      # Once every batch is in, the release note is rewritten from the final summary (the file the run job wrote).
-      - name: Rewrite the release note
-        if: always() && steps.secret.outputs.ready == 'true' && steps.batches.outputs.open == '0'
+      # As in the run job: the publisher, once the set closed applied (skipped when held or still open).
+      - name: Ask the publisher for a snapshot
+        if: always() && steps.find.outputs.found == 'true' && steps.sync.outputs.exit_code == '0' && steps.sync.outputs.status == 'applied'
         env:
-          RUN_ID: ${{ steps.find.outputs.run_id }}
-          PR_NUMBER: ${{ steps.find.outputs.number }}
-        run: |
-          date=$(date -u +%Y-%m-%d)
-          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-reported-pr-body.mts note \
-            --summary "data/reports/college-reported-run-${RUN_ID}.json" \
-            --queue data/review-queue.json \
-            --pr "$PR_NUMBER" --date "$date" --out "release-notes/college-reported-${RUN_ID}.md"
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/dispatches -f event_type=publish-snapshot
 
-      - name: Commit and push
-        if: always() && steps.secret.outputs.ready == 'true'
+      - name: Say why there is no publish
+        if: always() && steps.find.outputs.found == 'true' && !(steps.sync.outputs.exit_code == '0' && steps.sync.outputs.status == 'applied')
         env:
-          RUN_ID: ${{ steps.find.outputs.run_id }}
-          BRANCH: ${{ steps.find.outputs.branch }}
-        run: |
-          git add data release-notes
-          if git diff --cached --quiet; then
-            echo "Nothing new to commit."
-            exit 0
-          fi
-          printf 'College-reported data: collect for run %s\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n' "$RUN_ID" > /tmp/college-reported-collect-msg.txt
-          git -c user.name="college-reported-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/college-reported-collect-msg.txt
-          git push origin "HEAD:${BRANCH}"
-
-      # Still open (an escalation batch, or resubmitted requests): the PR stays a draft and the next collect continues.
-      # All in: refresh the body, mark it ready, and apply the run's merge rules (as the run job does).
-      - name: Mark ready and apply the merge rules
-        if: always() && steps.secret.outputs.ready == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
-          PR_NUMBER: ${{ steps.find.outputs.number }}
-          RUN_ID: ${{ steps.find.outputs.run_id }}
-          OPEN_BATCHES: ${{ steps.batches.outputs.open }}
           EXIT_CODE: ${{ steps.sync.outputs.exit_code }}
+          STATUS: ${{ steps.sync.outputs.status }}
+          CHANGE_SET: ${{ steps.sync.outputs.change_set }}
+          OPEN_BATCHES: ${{ steps.sync.outputs.open_batches }}
         run: |
-          if [ "${OPEN_BATCHES:-1}" != "0" ]; then
-            echo "Batches still open (${OPEN_BATCHES:-unknown}); PR #$PR_NUMBER stays a draft."
-            exit 0
-          fi
-          auto_merge=$(gh pr view "$PR_NUMBER" --json body -q .body | sed -n 's/.*<!-- college-reported: auto_merge=\([a-z]*\) -->.*/\1/p' | head -n 1)
-          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/college-reported-pr-body.mts body \
-            --summary "data/reports/college-reported-run-${RUN_ID}.json" \
-            --queue data/review-queue.json \
-            --reported data/college-reported.json \
-            --schools data/schools.json > /tmp/college-reported-pr-body.md
-          printf '\n<!-- college-reported: auto_merge=%s -->\n' "$auto_merge" >> /tmp/college-reported-pr-body.md
-          gh pr edit "$PR_NUMBER" --body-file /tmp/college-reported-pr-body.md
-          gh pr ready "$PR_NUMBER"
-          if [ "$auto_merge" = "true" ] && [ "$EXIT_CODE" = "0" ]; then
-            gh pr merge "$PR_NUMBER" --auto --squash
+          if [ "$STATUS" = "open" ]; then
+            echo "Change set ${CHANGE_SET} stays open: ${OPEN_BATCHES} batch(es) still open; the next collect continues."
           else
-            if [ -z "$EXIT_CODE" ]; then
-              reason="the collect was cancelled before it finished — review and merge by hand"
-            elif [ "$EXIT_CODE" = "3" ]; then
-              reason="the collect stopped early (the cost cap, the Anthropic spend limit or credit balance, or the API key) — review and merge by hand"
-            elif [ "$EXIT_CODE" = "2" ]; then
-              reason="the circuit breaker tripped — review the PR body before merging by hand"
-            elif [ "$auto_merge" != "true" ]; then
-              reason="auto-merge was turned off for this run — review and merge by hand once CI is green"
-            else
-              reason="the collect exited with an unexpected code ($EXIT_CODE) — review before merging"
-            fi
-            gh pr comment "$PR_NUMBER" --body "Waiting for a person: ${reason}."
+            echo "::warning::The collect ended with exit ${EXIT_CODE:-none}: change set ${CHANGE_SET:-} is held. Look at it in the console (Change sets)."
           fi

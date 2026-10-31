@@ -290,7 +290,9 @@ test("every Server Action goes through withAdmin() (an admin at aal2), and the M
     assert.match(src, /^"use server";/);
     // Operations' actions call requireAdmin() first (an admin at aal2, else a 404; tests/admin-ops.test.mts proves it
     // runs before the form is read), the same gate as withAdmin() with a 404 for a stale tab instead of a message.
-    const guard = f.includes("/mfa/") ? /adminState\(\)/ : f.includes("/operations/") ? /await requireAdmin\(\)/ : /return withAdmin\(/;
+    // Data's actions do the same (tests/admin-data.test.mts): they also dispatch a workflow, which needs
+    // lib/admin/ops.ts's dependencies rather than the People family's AdminContext.
+    const guard = f.includes("/mfa/") ? /adminState\(\)/ : /\/(operations|data)\//.test(f) ? /await requireAdmin\(\)/ : /return withAdmin\(/;
     assert.deepEqual(unguardedActions(src, guard), [], f);
   }
 });
@@ -992,5 +994,5 @@ test("isNextControlFlow recognizes redirect() and notFound(), and nothing a data
 test("the console files are all under the paths this unit owns", () => {
   const owned = ["app/admin/layout.tsx", "app/admin/page.tsx"];
   const dirs = ["people", "households", "students", "log", "admins", "mfa", "settings"].map((d) => `app/admin/${d}/`);
-  for (const f of adminFiles) assert.ok(owned.includes(f) || dirs.some((d) => f.startsWith(d)) || /^app\/admin\/(colleges|health|operations|essays|high-schools|selectivity)\//.test(f), relative(ROOT, join(ROOT, f)));
+  for (const f of adminFiles) assert.ok(owned.includes(f) || dirs.some((d) => f.startsWith(d)) || /^app\/admin\/(colleges|health|operations|essays|high-schools|selectivity|data)\//.test(f), relative(ROOT, join(ROOT, f)));
 });

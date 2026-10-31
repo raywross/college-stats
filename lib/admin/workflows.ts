@@ -15,7 +15,7 @@
  * from `main` through lib/github-app.ts `fetchRunCost` (data/reports/ isn't in the deploy).
  */
 
-export type WorkflowFile = "college-reported.yml" | "identity-refresh.yml" | "publish-changes.yml" | "verify.yml" | "visit-events.yml";
+export type WorkflowFile = "college-reported.yml" | "identity-refresh.yml" | "publish-changes.yml" | "publish-snapshot.yml" | "verify.yml" | "visit-events.yml";
 
 export type RunInput =
   | { name: string; label: string; kind: "unit"; required: true }
@@ -24,7 +24,7 @@ export type RunInput =
   | { name: string; label: string; kind: "money"; default: string }
   | { name: string; label: string; kind: "text"; default: string };
 
-export type RunId = "college" | "pilot" | "all" | "collect" | "identity" | "publish" | "verify" | "visit-events";
+export type RunId = "college" | "pilot" | "all" | "collect" | "identity" | "publish" | "verify" | "visit-events" | "publish-snapshot" | "point-snapshot";
 
 export interface DispatchableRun {
   id: RunId;
@@ -138,6 +138,29 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
       { name: "discover", label: "Also look for Slate hosts not in the table yet", kind: "boolean", default: false },
     ],
     guards: { oneAtATime: { concurrencyGroup: "visit-events" } },
+    ref: "main",
+  },
+  // The data platform's publisher (specs/data-platform/publish.md "The admin's publish controls"), dispatched from
+  // the Data console's Overview and Snapshots screens (lib/admin/data-actions.ts) through this same table and
+  // dispatchRun(), so each dispatch is logged `ops.dispatch` exactly as every other run is.
+  {
+    id: "publish-snapshot",
+    label: "Publish now",
+    description: "Publishes the layers in Supabase as the next snapshot.",
+    workflow: "publish-snapshot.yml",
+    fixed: { force: "true" },
+    inputs: [],
+    guards: { oneAtATime: { concurrencyGroup: "publish-snapshot" } },
+    ref: "main",
+  },
+  {
+    id: "point-snapshot",
+    label: "Point back here",
+    description: "Moves the live pointer to an older snapshot, without a rebuild.",
+    workflow: "publish-snapshot.yml",
+    fixed: {},
+    inputs: [{ name: "point", label: "Snapshot id", kind: "text", default: "" }],
+    guards: { oneAtATime: { concurrencyGroup: "publish-snapshot" } },
     ref: "main",
   },
 ];

@@ -44,6 +44,18 @@ export function AdminRail() {
           ))}
           <li className="max-lg:snap-start max-lg:shrink-0 lg:mt-3 lg:border-t lg:pt-3">
             <Link
+              href="/admin/data"
+              aria-current={pathname.startsWith("/admin/data") ? "page" : undefined}
+              className={cn(
+                "flex min-h-11 items-center rounded-xl px-3.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                pathname.startsWith("/admin/data") && "bg-muted text-foreground",
+              )}
+            >
+              Data
+            </Link>
+          </li>
+          <li className="max-lg:snap-start max-lg:shrink-0">
+            <Link
               href="/admin/admins"
               aria-current={pathname.startsWith("/admin/admins") ? "page" : undefined}
               className={cn(

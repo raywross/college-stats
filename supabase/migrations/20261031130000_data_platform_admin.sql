@@ -193,9 +193,10 @@ begin
       using errcode = 'P0001';
   end if;
 
-  -- For each touched document, the body before the set's first version of it (null: absent or deleted).
+  -- For each touched document, the body before the set's first version of it (null: absent or deleted), as the stored
+  -- text exactly (json::text keeps key order), which is what data_write_documents takes.
   select coalesce(jsonb_agg(jsonb_build_object('collection', t.collection, 'key', t.key, 'body', (
-      select case when p.deleted then null else p.body end from public.data_document_versions p
+      select case when p.deleted then null else to_jsonb(p.body::text) end from public.data_document_versions p
       where p.collection = t.collection and p.key = t.key and p.version < t.first_v
       order by p.version desc limit 1
     )) order by t.collection, t.key), '[]'::jsonb)
@@ -252,17 +253,18 @@ begin
   select * into v_doc from public.data_documents d where d.collection = 'reported.review_queue' and d.key = p_key;
   if v_doc.key is null then raise exception 'review_item_not_found' using errcode = 'P0002'; end if;
 
-  v_body := (v_doc.body - 'resolved_note')
+  -- Rebuilt as jsonb (the review queue isn't rendered byte for byte), written back as its text.
+  v_body := (v_doc.body::jsonb - 'resolved_note')
     || jsonb_build_object('resolved', p_resolution, 'resolved_on', to_char(current_date, 'YYYY-MM-DD'))
     || case when v_note is null then '{}'::jsonb else jsonb_build_object('resolved_note', v_note) end;
   v_set := public.data_open_change_set('edit', 'console', null, jsonb_build_object('review', p_key));
   perform public.data_write_documents(v_set, jsonb_build_array(jsonb_build_object(
-    'collection', 'reported.review_queue', 'key', p_key, 'body', v_body, 'expect_version', v_doc.version)));
+    'collection', 'reported.review_queue', 'key', p_key, 'body', v_body::text, 'expect_version', v_doc.version)));
   perform public.data_close_change_set(v_set, 'applied', null, null);
 
   perform public.admin_log_write('data.review', 'document', left(p_key, 80), jsonb_build_object(
     'collection', 'reported.review_queue', 'key', p_key, 'change_set', v_set, 'note', v_note,
-    'before', jsonb_build_object('resolved', v_doc.body -> 'resolved', 'resolved_on', v_doc.body -> 'resolved_on'),
+    'before', jsonb_build_object('resolved', v_doc.body::jsonb -> 'resolved', 'resolved_on', v_doc.body::jsonb -> 'resolved_on'),
     'after', jsonb_build_object('resolved', p_resolution, 'resolved_on', v_body -> 'resolved_on')));
 end;
 $$;
@@ -303,10 +305,11 @@ $$;
 -- Replace a reference document whole (the release calendar, aid policies, state laws, …), in an 'edit' change set.
 -- p_name is the document's key. The document must already exist (the import writes them) in a `reference` collection
 -- (`reference` or `reference.*`) or `base.release_calendar`, and the key must name exactly one of them, so the
--- console needn't know how the import named each collection. The body is validated by the console with the
--- document's own validator; here only that it is an object or array. Returns the change set's id (0 written when the
+-- console needn't know how the import named each collection. p_body is the document's JSON text, stored as written
+-- (key order kept); the console validates it with the document's own validator, here only that it is an object or
+-- array. Returns the change set's id (0 written when the
 -- body is unchanged). The log carries the versions, not the bodies (the versions table has them).
-create function public.admin_data_set_reference(p_name text, p_body jsonb, p_note text) returns bigint
+create function public.admin_data_set_reference(p_name text, p_body text, p_note text) returns bigint
 language plpgsql
 security definer
 set search_path = ''
@@ -315,11 +318,17 @@ declare
   v_note text := nullif(btrim(coalesce(p_note, '')), '');
   v_doc public.data_documents%rowtype;
   v_matches integer;
+  v_type text;
   v_set bigint;
   v_written integer;
 begin
   if not public.is_admin() then raise exception 'admin only' using errcode = '42501'; end if;
-  if jsonb_typeof(p_body) is null or jsonb_typeof(p_body) not in ('object', 'array') then
+  begin
+    v_type := jsonb_typeof(p_body::jsonb);
+  exception when others then
+    raise exception 'invalid_body' using errcode = '22023';
+  end;
+  if v_type is null or v_type not in ('object', 'array') then
     raise exception 'invalid_body' using errcode = '22023';
   end if;
   if char_length(v_note) > 500 then raise exception 'invalid_note' using errcode = '22023'; end if;
@@ -354,7 +363,7 @@ revoke execute on function public.admin_data_unhold(bigint) from public, anon;
 revoke execute on function public.admin_data_revert(bigint, text) from public, anon;
 revoke execute on function public.admin_data_resolve_review(text, text, text) from public, anon;
 revoke execute on function public.admin_data_point_snapshot(bigint) from public, anon;
-revoke execute on function public.admin_data_set_reference(text, jsonb, text) from public, anon;
+revoke execute on function public.admin_data_set_reference(text, text, text) from public, anon;
 grant execute on function public.admin_data_edit(text, text, jsonb, text) to authenticated;
 grant execute on function public.admin_data_release_edit(bigint) to authenticated;
 grant execute on function public.admin_data_hold(bigint, text) to authenticated;
@@ -362,4 +371,4 @@ grant execute on function public.admin_data_unhold(bigint) to authenticated;
 grant execute on function public.admin_data_revert(bigint, text) to authenticated;
 grant execute on function public.admin_data_resolve_review(text, text, text) to authenticated;
 grant execute on function public.admin_data_point_snapshot(bigint) to authenticated;
-grant execute on function public.admin_data_set_reference(text, jsonb, text) to authenticated;
+grant execute on function public.admin_data_set_reference(text, text, text) to authenticated;

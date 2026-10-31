@@ -18,6 +18,7 @@ import {
   doc,
   errorOf,
   openSet,
+  rawDoc,
   run,
   service,
   user,
@@ -74,6 +75,45 @@ test("a change set: open, write three documents at version 1, equal bodies write
   const uab = (await current(w)).find((d) => d.key === "100663")!;
   assert.deepEqual([uab.version, uab.body], [2, { name: "UAB", city: "Birmingham" }]);
   assert.deepEqual((await versions(w, "100663")).map((v) => [v.version, v.deleted]), [[1, false], [2, false]]);
+});
+
+test("bodies are json text: key order (integer-like keys too) and spacing survive a round trip; order alone is no change", async () => {
+  const w = await bootDataDb();
+  const set = await openSet(w.db, "sync-data");
+  const text = '{"b":1,"a":{"z":true,"y":[3,{"10":"ten","2":"two"}]},"10":null,"2":"x"}';
+  assert.equal(await write(w.db, set, [rawDoc("base.colleges", "100654", text)]), 1);
+  const stored = async () =>
+    (await w.db.query<{ body: string; version: number }>("select body::text as body, version from public.data_documents where key = '100654'")).rows[0];
+  assert.deepEqual(await stored(), { body: text, version: 1 });
+  const read = await run<{ body: string }>(w.db, service, "select body::text as body from public.data_read_collection('base.colleges')");
+  assert.deepEqual(read.map((r) => r.body), [text]);
+  assert.equal((await w.db.query<{ body: string }>("select body::text as body from public.data_document_versions")).rows[0].body, text);
+
+  // The same document with its keys in another order, or spaced differently: nothing written, the stored text kept.
+  const reordered = '{"2":"x","10":null,"a":{"y":[3,{"2":"two","10":"ten"}],"z":true},"b":1}';
+  assert.equal(await write(w.db, set, [rawDoc("base.colleges", "100654", reordered), rawDoc("base.colleges", "100654", JSON.stringify(JSON.parse(text), null, 2))]), 0);
+  assert.deepEqual(await stored(), { body: text, version: 1 });
+
+  // A changed value is a new version, stored as written.
+  const changed = '{"b":2,"a":{"z":true,"y":[3,{"10":"ten","2":"two"}]},"10":null,"2":"x"}';
+  assert.equal(await write(w.db, set, [rawDoc("base.colleges", "100654", changed)]), 1);
+  assert.deepEqual(await stored(), { body: changed, version: 2 });
+
+  // A revert restores the earlier text exactly.
+  await close(w.db, set);
+  const next = await openSet(w.db);
+  await write(w.db, next, [rawDoc("base.colleges", "100654", '{"z":0,"b":3}')]);
+  await close(w.db, next);
+  await run(w.db, user(w.quinn), "select public.admin_data_revert($1, null)", [next]);
+  assert.deepEqual(await stored(), { body: changed, version: 4 });
+
+  // Bodies must be JSON text of an object or array.
+  const other = await openSet(w.db);
+  for (const body of ["not json", "12", '"text"', "null"]) {
+    assert.match(await errorOf(write(w.db, other, [rawDoc("base.colleges", "1", body)])), /invalid_document/, body);
+  }
+  assert.match(await errorOf(write(w.db, other, [{ collection: "base.colleges", key: "1", body: { a: 1 } }])), /invalid_document/, "an object, not its text");
+  assert.equal(await write(w.db, other, [rawDoc("base.colleges", "1", "[1,2]")]), 1);
 });
 
 test("expect_version: a mismatch is a conflict (40001) and nothing in the call is written; 0 means 'no document yet'", async () => {
@@ -321,9 +361,11 @@ test("admin_data_set_reference: replaces an existing reference document whole as
   const set = await openSet(w.db, "import", "import");
   await write(w.db, set, [doc("reference.state_laws", "state-laws", { TX: 1 }), doc("base.release_calendar", "calendar", { ipeds: "x" }), doc("base.colleges", "state-laws", { not: "reference" })]);
   await close(w.db, set);
-  const id = Number(await value(w.db, admin(w), "public.admin_data_set_reference('state-laws', $1, 'TX top 6%')", [JSON.stringify({ TX: 2 })]));
+  const id = Number(await value(w.db, admin(w), "public.admin_data_set_reference('state-laws', $1, 'TX top 6%')", ['{"TX":2,"AL":1}']));
   const laws = (await current(w, "reference.state_laws"))[0];
-  assert.deepEqual([laws.version, laws.body, Number(laws.change_set_id)], [2, { TX: 2 }, id]);
+  assert.deepEqual([laws.version, laws.body, Number(laws.change_set_id)], [2, { TX: 2, AL: 1 }, id]);
+  const text = (await w.db.query<{ t: string }>("select body::text as t from public.data_documents where collection = 'reference.state_laws'")).rows[0].t;
+  assert.equal(text, '{"TX":2,"AL":1}', "stored as written");
   const log = (await logs(w)).at(-1)!;
   assert.deepEqual([log.action, log.target_kind, log.target_id], ["data.reference", "document", "state-laws"]);
   assert.deepEqual([log.details.collection, log.details.before, log.details.after], ["reference.state_laws", { version: 1 }, { version: 2 }]);
@@ -331,6 +373,7 @@ test("admin_data_set_reference: replaces an existing reference document whole as
   assert.equal((await current(w, "base.release_calendar"))[0].version, 2);
   assert.match(await errorOf(run(w.db, admin(w), "select public.admin_data_set_reference('nope', '{}', null)")), /reference_not_found/);
   assert.match(await errorOf(run(w.db, admin(w), "select public.admin_data_set_reference('calendar', '\"text\"', null)")), /invalid_body/);
+  assert.match(await errorOf(run(w.db, admin(w), "select public.admin_data_set_reference('calendar', 'not json', null)")), /invalid_body/);
 });
 
 /* ------------------------------------------------------------------ */
@@ -338,7 +381,7 @@ test("admin_data_set_reference: replaces an existing reference document whole as
 /* ------------------------------------------------------------------ */
 
 test("guard: without the equal-body skip, writing the same bodies again makes new versions (the idempotence check catches it)", async () => {
-  const w = await bootDataDb({ transform: { file: DATA_MIGRATION, edit: (sql) => sql.replace("    if v_body is not null and v_current.body = v_body then continue; end if;\n", "") } });
+  const w = await bootDataDb({ transform: { file: DATA_MIGRATION, edit: (sql) => sql.replace("    if v_body is not null and v_current.body::jsonb = v_body then continue; end if;\n", "") } });
   const set = await openSet(w.db);
   await write(w.db, set, THREE);
   assert.notEqual(await write(w.db, set, THREE), 0);

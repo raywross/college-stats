@@ -108,9 +108,14 @@ export async function value<T>(db: AuthDb, who: Caller, expr: string, params: un
   return rows[0].v;
 }
 
-/** A document entry for data_write_documents. */
-export const doc = (collection: string, key: string, body: unknown, expectVersion?: number) =>
-  expectVersion === undefined ? { collection, key, body } : { collection, key, body, expect_version: expectVersion };
+/** A document entry for data_write_documents: the body as its JSON text (null deletes), as the store sends it. */
+export const doc = (collection: string, key: string, body: unknown, expectVersion?: number) => {
+  const text = body === null ? null : JSON.stringify(body);
+  return expectVersion === undefined ? { collection, key, body: text } : { collection, key, body: text, expect_version: expectVersion };
+};
+
+/** A document entry with its body text exactly as given. */
+export const rawDoc = (collection: string, key: string, body: string | null) => ({ collection, key, body });
 
 /** Opens a pipeline change set as the service role; returns its id. */
 export const openSet = (db: AuthDb, source = "test", kind = "pipeline") =>

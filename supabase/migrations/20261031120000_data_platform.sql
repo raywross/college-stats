@@ -10,6 +10,9 @@
 --   admin's session). Nobody writes a table directly, the service role included: select is the only grant, and
 --   writes go through the security-definer functions below (pipelines, the publisher) and the admin_data_*()
 --   functions (the console). data_document_versions is append-only by construction.
+-- * Document bodies are `json`, not `jsonb`: json keeps the text exactly as written (key order included), so a
+--   document read back renders today's files byte for byte (the phase gate, specs/data-platform/rollout.md). Equality
+--   checks cast to jsonb, so a difference in key order or whitespace alone is not a change.
 -- * A document's version counts up from 1 and never repeats: a deleted document leaves the current table and its last
 --   version row says deleted = true; writing it again continues from that version. A write whose body equals the
 --   current body (jsonb equality) writes nothing, so re-running a pipeline over unchanged data is free.
@@ -59,7 +62,7 @@ create table public.data_documents (
   collection    text not null check (collection ~ '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$'),
   key           text not null check (length(key) between 1 and 200),
   version       integer not null check (version >= 1),
-  body          jsonb not null,
+  body          json not null,
   change_set_id bigint not null references public.data_change_sets (id),
   updated_at    timestamptz not null default now(),
   primary key (collection, key)
@@ -72,7 +75,7 @@ create table public.data_document_versions (
   collection    text not null,
   key           text not null,
   version       integer not null,
-  body          jsonb,
+  body          json,
   deleted       boolean not null default false,
   change_set_id bigint not null references public.data_change_sets (id),
   created_at    timestamptz not null default now(),
@@ -146,11 +149,13 @@ begin
 end;
 $$;
 
--- Writes documents in one transaction. p_documents is an array of {collection, key, body, expect_version?}; a body of
--- null deletes. For each, in order:
+-- Writes documents in one transaction. p_documents is an array of {collection, key, body, expect_version?} where body
+-- is the document's JSON text as a string (an object or array, stored as written) or null to delete. For each, in
+-- order:
 -- * expect_version (when given and not null) must equal the current version, 0 meaning "no current document";
 --   otherwise 'version conflict' (40001) and nothing in the call is written.
--- * A body equal to the current one, or a delete of a document that doesn't exist, writes nothing.
+-- * A body equal to the current one (compared as jsonb: key order and whitespace don't count), or a delete of a
+--   document that doesn't exist, writes nothing.
 -- * Otherwise the next version (one past the newest version row, so a re-created document never reuses a number) goes
 --   into data_document_versions and the current row is replaced, or removed for a delete.
 -- Returns the number of versions written.
@@ -165,6 +170,7 @@ declare
   v_doc jsonb;
   v_collection text;
   v_key text;
+  v_text text;
   v_body jsonb;
   v_expect integer;
   v_current public.data_documents%rowtype;
@@ -181,6 +187,7 @@ begin
 
   for v_doc in select d from jsonb_array_elements(p_documents) d loop
     if jsonb_typeof(v_doc) <> 'object' or not (v_doc ? 'body')
+       or jsonb_typeof(v_doc -> 'body') not in ('string', 'null')
        or jsonb_typeof(v_doc -> 'collection') is distinct from 'string'
        or jsonb_typeof(v_doc -> 'key') is distinct from 'string' then
       raise exception 'invalid_document' using errcode = '22023';
@@ -190,7 +197,18 @@ begin
     if v_collection !~ '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$' or length(v_key) not between 1 and 200 then
       raise exception 'invalid_document' using errcode = '22023';
     end if;
-    v_body := case when jsonb_typeof(v_doc -> 'body') = 'null' then null else v_doc -> 'body' end;
+    v_text := v_doc ->> 'body';
+    v_body := null;
+    if v_text is not null then
+      begin
+        v_body := v_text::jsonb;
+      exception when others then
+        raise exception 'invalid_document' using errcode = '22023', detail = format('%s/%s: body is not JSON', v_collection, v_key);
+      end;
+      if jsonb_typeof(v_body) not in ('object', 'array') then
+        raise exception 'invalid_document' using errcode = '22023', detail = format('%s/%s: body is not an object or array', v_collection, v_key);
+      end if;
+    end if;
 
     select * into v_current from public.data_documents d
       where d.collection = v_collection and d.key = v_key for update;
@@ -204,20 +222,20 @@ begin
     end if;
 
     if v_body is null and v_current.version is null then continue; end if;
-    if v_body is not null and v_current.body = v_body then continue; end if;
+    if v_body is not null and v_current.body::jsonb = v_body then continue; end if;
 
     select max(v.version) into v_last from public.data_document_versions v
       where v.collection = v_collection and v.key = v_key;
     v_last := greatest(coalesce(v_last, 0), coalesce(v_current.version, 0)) + 1;
 
     insert into public.data_document_versions (collection, key, version, body, deleted, change_set_id)
-    values (v_collection, v_key, v_last, v_body, v_body is null, p_change_set);
+    values (v_collection, v_key, v_last, v_text::json, v_text is null, p_change_set);
 
     if v_body is null then
       delete from public.data_documents d where d.collection = v_collection and d.key = v_key;
     else
       insert into public.data_documents (collection, key, version, body, change_set_id, updated_at)
-      values (v_collection, v_key, v_last, v_body, p_change_set, now())
+      values (v_collection, v_key, v_last, v_text::json, p_change_set, now())
       on conflict (collection, key) do update
         set version = excluded.version, body = excluded.body, change_set_id = excluded.change_set_id,
             updated_at = excluded.updated_at;

@@ -15,6 +15,11 @@ This spec answers in two parts: what is actually happening (measured and cited),
 version: **the in-memory query layer is the right design for this dataset and stays; the way the data reaches it,
 and the way search reaches the data, are wrong for a serverless host and change.**
 
+> **Revisited 2026-10-31** ([data-platform/](data-platform/README.md)): the verdict on serving stands (the whole dataset
+> in memory, queried there, never row by row from Postgres), and the data's source moves from git to Supabase layers
+> rendered into snapshots in Storage. "The deploy carries the dataset" becomes "the instance loads the newest snapshot
+> and carries a bundled fallback". The measurements and reasons below are why the serving half isn't changing.
+
 ## Verdict in short
 | Owner's point | Finding | Verdict |
 |---|---|---|

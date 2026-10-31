@@ -1,0 +1,88 @@
+# The base layer (scripts/sync-data.mts; specs/data-platform/pipelines.md "sync-data"): every college from College
+# Scorecard and the IPEDS files, checked, then written to the data project as base.colleges, base.detail, base.meta,
+# base.release_calendar, base.aliases and base.source_files in one change set. The later layers are the publisher's.
+# - Weekly (Mondays, 09:00 UTC): the release-calendar check only (releases-only), which marks a release published
+#   once NCES has its files; the full sync is then run by hand.
+# - By hand, or from the console: the full sync, or releases-only.
+# The last step asks the publisher for a snapshot when the run succeeded. No commit, no PR.
+name: Sync data
+
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.workflow }}"
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      releases-only:
+        description: Only check NCES for upcoming releases (no full sync)
+        type: boolean
+        default: false
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
+
+# contents: write lets the last step send the publish-snapshot repository_dispatch.
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-data
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+      DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
+      COLLEGE_SCORECARD_API_KEY: ${{ secrets.COLLEGE_SCORECARD_API_KEY }}
+      # The schedule runs the calendar check only.
+      RELEASES_ONLY: ${{ (github.event_name == 'schedule' || inputs.releases-only) && 'true' || 'false' }}
+    steps:
+      - name: Check the secrets
+        run: |
+          if [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::error::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set (repository secrets)."
+            exit 1
+          fi
+          if [ "$RELEASES_ONLY" != "true" ] && [ -z "$COLLEGE_SCORECARD_API_KEY" ]; then
+            echo "::error::COLLEGE_SCORECARD_API_KEY is not set (repository secret)."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # IPEDS and Scorecard downloads, kept between runs (the script refreshes what is older than it accepts).
+      - if: env.RELEASES_ONLY != 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/ipeds
+            .cache/scorecard
+          key: sync-data-downloads-${{ github.run_id }}
+          restore-keys: sync-data-downloads-
+
+      - name: Build the base layer
+        id: sync
+        run: |
+          set +e
+          if [ "$RELEASES_ONLY" = "true" ]; then
+            npm run sync-data -- --store supabase --releases-only
+          else
+            npm run sync-data -- --store supabase
+          fi
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
+
+      - name: Ask for a snapshot
+        if: steps.sync.outputs.exit_code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/dispatches -f event_type=publish-snapshot

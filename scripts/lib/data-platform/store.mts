@@ -36,6 +36,12 @@ export interface DataStore {
    * `expectVersion` (optimistic concurrency between two runs on one layer).
    */
   readVersioned<T>(collection: string, keyPrefix?: string): Promise<Map<string, { version: number; body: T }>>;
+  /**
+   * Addition to the spec's interface: a handle on a change set someone else opened (a workflow's first step opens
+   * one set for several scripts, each given `--change-set <id>`). Refuses unless the set is `open`. Closing through
+   * an attached handle is allowed but is normally left to whoever opened it.
+   */
+  attach?(id: number): Promise<ChangeSetHandle>;
 }
 
 export interface ChangeSetHandle {
@@ -248,6 +254,16 @@ export function fileStore(root: string, opts: { now?: () => Date } = {}): DataSt
       const id = sets.reduce((m, s) => Math.max(m, s.id), 0) + 1;
       sets.push({ id, kind, source, run_ref: runRef || null, status: "open", held_reason: null, summary: { ...(summary ?? {}) }, created_at: now(), closed_at: null, versions: [] });
       writeSets(sets);
+      return handleFor(id);
+    },
+    async attach(id) {
+      const set = readSets().find((s) => s.id === id);
+      if (!set || set.status !== "open") throw new Error(`change set ${id} is not open`);
+      return handleFor(id);
+    },
+  };
+
+  function handleFor(id: number): ChangeSetHandle {
       return {
         id,
         async write(collection, docs) {
@@ -268,8 +284,7 @@ export function fileStore(root: string, opts: { now?: () => Date } = {}): DataSt
           writeSets(rows);
         },
       };
-    },
-  };
+  }
 }
 
 /** The file store's change sets (tests, the import's report). */
@@ -391,7 +406,18 @@ export function supabaseStore(url: string, secretKey: string, opts: SupabaseStor
         c.rpc("data_open_change_set", { p_kind: kind, p_source: source, p_run_ref: runRef || null, p_summary: summary ?? {} }) as unknown as PromiseLike<CallResult<number>>
       );
       if (typeof id !== "number" && typeof id !== "string") throw new Error("data store: data_open_change_set returned no id");
-      const setId = Number(id);
+      return handleFor(Number(id));
+    },
+    async attach(id) {
+      const row = await call<{ status: string }>(`reading change set ${id}`, (c) =>
+        c.from("data_change_sets").select("status").eq("id", id).maybeSingle() as unknown as PromiseLike<CallResult<{ status: string }>>
+      );
+      if (!row || row.status !== "open") throw new Error(`change set ${id} is not open`);
+      return handleFor(id);
+    },
+  };
+
+  function handleFor(setId: number): ChangeSetHandle {
       const send = async (collection: string, docs: { key: string; body: unknown; expectVersion?: number }[]) => {
         for (const d of docs) checkDoc(collection, d.key);
         for (let i = 0; i < docs.length; i += WRITE_CHUNK) {
@@ -418,8 +444,7 @@ export function supabaseStore(url: string, secretKey: string, opts: SupabaseStor
           );
         },
       };
-    },
-  };
+  }
 }
 
 /** `%`, `_` and `\` taken literally in a `like` pattern. */

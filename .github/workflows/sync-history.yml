@@ -1,7 +1,7 @@
 # The history build (scripts/sync-history.mts; specs/trends-data.md): year-by-year history for every college from the
 # NCES files and College Scorecard, checked, then written to the data project as history.schools and history.shared in
 # one change set (specs/data-platform/pipelines.md). The publisher derives school.trends and the national trend files
-# from this layer (no build-trends step). Monthly, by hand, or from the console; the last step asks the publisher for
+# from this layer (no separate trends step). Monthly, by hand, or from the console; the last step asks the publisher for
 # a snapshot when the run succeeded. No commit, no PR.
 name: Sync history
 

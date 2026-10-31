@@ -320,3 +320,18 @@ test("documentText drops NUL escapes (Postgres json refuses them) and chunkRows 
   assert.deepEqual([...chunkRows([{ body: null }, { body: null }], 200, 10)].map(([s, r]) => [s, r.length]), [[0, 2]], "deletes weigh nothing");
   assert.deepEqual([...chunkRows([], 200, 10)], []);
 });
+
+test("supabase store: attach reads the set's status and writes into it; a set that isn't open is refused", async () => {
+  const { client, calls } = fakeClient((call) => {
+    if (call.kind === "select") return { data: { status: call.ops.some((o) => o[0] === "eq" && o[2] === 5) ? "open" : "applied" }, error: null };
+    return { data: 1, error: null };
+  });
+  const store = supabaseStore("https://x.supabase.co", "k", { client, waits: [] });
+  const handle = await store.attach!(5);
+  assert.equal(handle.id, 5);
+  await handle.write("base.meta", [{ key: "meta", body: { a: 1 } }]);
+  assert.deepEqual(calls[0].ops, [["select", "status"], ["eq", "id", 5], ["maybeSingle"]]);
+  assert.equal(calls[0].name, "data_change_sets");
+  assert.equal((calls[1].args as { p_change_set: number }).p_change_set, 5);
+  await assert.rejects(store.attach!(6), /change set 6 is not open/);
+});

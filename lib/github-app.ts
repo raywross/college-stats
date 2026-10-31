@@ -455,10 +455,6 @@ export interface DataPull {
   draft: boolean;
   autoMerge: boolean;
   checks: ChecksState;
-  /** The run number in a `data/college-reported-<date>-<time>-<run number>` branch: the run that opened it. */
-  runNumber: number | null;
-  /** Waits for a person: the circuit breaker tripped, or the run stopped early (college-reported-setup.md section 8). */
-  flagged: "breaker" | "stopped" | null;
   url: string;
   createdAt: string;
   author: string | null;
@@ -481,14 +477,10 @@ export interface RawPull {
   merged?: boolean;
 }
 
-/** Why a data PR waits for a person, read from the body the pipeline wrote (scripts/college-reported-pr-body.mts). */
-export function pullFlag(body: string): DataPull["flagged"] {
-  if (/\*\*Tripped:\*\*/.test(body)) return "breaker";
-  if (/\*\*Stopped early\*\*/.test(body)) return "stopped";
-  return null;
-}
-
-/** Open PRs on `main` whose head branch starts with `data/` or `review/`, with their checks; flagged ones first. */
+/**
+ * Open PRs on `main` whose head branch starts with `data/` or `review/`, with their checks, newest first. Data runs
+ * open no PRs any more (a held run is a held change set in the Data console), so these are leftovers and code PRs.
+ */
 export async function listDataPulls(deps: GithubDeps = {}): Promise<DataPull[]> {
   if (!githubConfigured(deps.env ?? process.env)) return [];
   try {
@@ -500,7 +492,6 @@ export async function listDataPulls(deps: GithubDeps = {}): Promise<DataPull[]> 
       pulls.map(async (p): Promise<DataPull> => {
         const branch = p.head?.ref ?? "";
         const body = p.body ?? "";
-        const run = branch.match(/^data\/college-reported-\d{8}-\d{6}-(\d+)$/);
         return {
           number: p.number,
           title: p.title ?? "",
@@ -510,8 +501,6 @@ export async function listDataPulls(deps: GithubDeps = {}): Promise<DataPull[]> 
           draft: Boolean(p.draft),
           autoMerge: Boolean(p.auto_merge),
           checks: p.head?.sha ? await checksFor(p.head.sha, deps) : "none",
-          runNumber: run ? Number(run[1]) : null,
-          flagged: pullFlag(body),
           url: p.html_url ?? "",
           createdAt: p.created_at ?? "",
           author: p.user?.login ?? null,
@@ -519,21 +508,11 @@ export async function listDataPulls(deps: GithubDeps = {}): Promise<DataPull[]> 
         };
       }),
     );
-    return out.sort((a, b) => Number(Boolean(b.flagged)) - Number(Boolean(a.flagged)) || b.number - a.number);
+    return out.sort((a, b) => b.number - a.number);
   } catch (e) {
     logger(deps)(`github-app: listDataPulls: ${describe(e)}`);
     return [];
   }
-}
-
-/** The data PR a pipeline run opened: its run number in the branch (college-reported), or its date (identity refresh). */
-export function pullForRun(run: WorkflowRun, pulls: readonly DataPull[]): DataPull | null {
-  if (run.workflow === "college-reported.yml") return pulls.find((p) => p.runNumber === run.runNumber) ?? null;
-  if (run.workflow === "identity-refresh.yml") {
-    const day = run.createdAt.slice(0, 10).replace(/-/g, "");
-    return pulls.find((p) => p.branch === `data/identity-refresh-${day}`) ?? null;
-  }
-  return null;
 }
 
 async function getPull(n: number, deps: GithubDeps): Promise<RawPull> {

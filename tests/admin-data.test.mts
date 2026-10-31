@@ -924,7 +924,7 @@ test("no email (or any form field) reaches a dispatch input from Publish anyway 
   assert.equal(f.dispatches.length, 2);
   for (const d of f.dispatches) {
     for (const [key, value] of Object.entries(d.inputs)) {
-      assert.ok(["force", "college", "rediscover", "auto_merge", "mode"].includes(key), `unexpected input "${key}"`);
+      assert.ok(["force", "college", "rediscover", "mode"].includes(key), `unexpected input "${key}"`);
       assert.doesNotMatch(value, /@/);
     }
   }

@@ -57,8 +57,6 @@ export type RunRow = {
   consoleAdmin: string | null;
   /** The failed job and step of a failed run. */
   failedStep: string | null;
-  /** The open data PR this run opened. */
-  pull: gh.DataPull | null;
 };
 
 export interface OperationsData {
@@ -105,7 +103,6 @@ export async function loadOperations(): Promise<OperationsData> {
       run,
       consoleAdmin: run.requestId ? (admins.get(run.requestId) ?? null) : null,
       failedStep: stepOf.get(run.id) ?? null,
-      pull: gh.pullForRun(run, pulls),
     })),
     pulls,
     cost,

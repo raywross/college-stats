@@ -420,15 +420,15 @@ const itemId = (i: ReviewItem) => reviewKey(i);
 async function checkLogBeforeSend(m: typeof opsActions) {
   // dispatch
   let f = fakeOps();
-  let r = await m.dispatchRun(f.deps, { run: "college", values: { college: "999001", rediscover: false, auto_merge: true } });
+  let r = await m.dispatchRun(f.deps, { run: "college", values: { college: "999001", rediscover: false } });
   assert.deepEqual(f.log, ["note ops.dispatch", "dispatch college-reported.yml"], "dispatch: logged first");
   assert.equal(f.notes[0].requestId, REQ, "the log row carries the request id the run is found by");
   assert.equal(f.dispatches[0].requestId, REQ);
-  assert.deepEqual(f.notes[0].details, { run: "college", workflow: "college-reported.yml", ref: "main", inputs: { college: "999001", rediscover: "false", auto_merge: "true", mode: "college" } });
+  assert.deepEqual(f.notes[0].details, { run: "college", workflow: "college-reported.yml", ref: "main", inputs: { college: "999001", rediscover: "false", mode: "college" } });
   assert.equal(r.status, "done");
   // a log that fails stops the dispatch
   f = fakeOps({ noteOk: false });
-  r = await m.dispatchRun(f.deps, { run: "pilot", values: { auto_merge: true } });
+  r = await m.dispatchRun(f.deps, { run: "pilot", values: {} });
   assert.deepEqual(f.log, ["note ops.dispatch"], "dispatch: nothing is sent that the log doesn't show");
   assert.equal(r.status, "error");
   // merge, hold, close
@@ -481,15 +481,15 @@ test("the log-before-send check fails when an action sends first or ignores a fa
 
 test("dispatch guards: the typed table, the word for a full run, the one-at-a-time rule, and a refused send", async () => {
   let f = fakeOps();
-  let r = await opsActions.dispatchRun(f.deps, { run: "all", values: { auto_merge: true, max_cost: "150" } });
+  let r = await opsActions.dispatchRun(f.deps, { run: "all", values: { max_cost: "150" } });
   assert.equal(r.status, "error", "a full run needs the word");
   assert.deepEqual(f.log, [], "refused before anything is logged or sent");
-  r = await opsActions.dispatchRun(f.deps, { run: "all", values: { auto_merge: true, max_cost: "150" }, confirm: "all" });
+  r = await opsActions.dispatchRun(f.deps, { run: "all", values: { max_cost: "150" }, confirm: "all" });
   assert.equal(r.status, "done");
-  assert.deepEqual(f.dispatches[0].inputs, { auto_merge: "true", max_cost: "150", mode: "all" });
+  assert.deepEqual(f.dispatches[0].inputs, { max_cost: "150", mode: "all" });
 
   f = fakeOps({ runs: [run({ status: "in_progress" })] });
-  r = await opsActions.dispatchRun(f.deps, { run: "college", values: { college: "999001", rediscover: false, auto_merge: true } });
+  r = await opsActions.dispatchRun(f.deps, { run: "college", values: { college: "999001", rediscover: false } });
   assert.equal(r.status, "error");
   assert.match(r.status === "error" ? r.message : "", /already in progress/);
   assert.deepEqual(f.log, [], "a running workflow is not logged or dispatched again");
@@ -499,14 +499,14 @@ test("dispatch guards: the typed table, the word for a full run, the one-at-a-ti
   assert.equal((await opsActions.dispatchRun(f.deps, { run: "publish-snapshot", values: {} })).status, "done", "another workflow's run doesn't block the publisher");
 
   f = fakeOps();
-  r = await opsActions.dispatchRun(f.deps, { run: "college", values: { college: "12", rediscover: false, auto_merge: true } });
+  r = await opsActions.dispatchRun(f.deps, { run: "college", values: { college: "12", rediscover: false } });
   assert.equal(r.status, "error", "a unit id is six digits");
   assert.deepEqual(f.log, []);
   r = await opsActions.dispatchRun(f.deps, { run: "rm-rf", values: {} });
   assert.equal(r.status, "error", "only the console's own table can be dispatched");
 
   f = fakeOps({ dispatch: { ok: false, reason: "dispatch 422" } });
-  r = await opsActions.dispatchRun(f.deps, { run: "pilot", values: { auto_merge: true } });
+  r = await opsActions.dispatchRun(f.deps, { run: "pilot", values: {} });
   assert.deepEqual(f.log, ["note ops.dispatch", "dispatch college-reported.yml", "note ops.failed"], "a refused send is logged as a failure");
   assert.equal(f.notes[1].details.reason, "dispatch 422");
   assert.equal(r.status, "error");
@@ -520,7 +520,7 @@ test("dispatch guards: the typed table, the word for a full run, the one-at-a-ti
 
 test("a dispatch finds its run by request id and links it; when GitHub hasn't listed it yet, it says so", async () => {
   let f = fakeOps();
-  let r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false, auto_merge: true } });
+  let r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false } });
   assert.deepEqual(r, { status: "done", message: "Refresh links, social, brand started.", link: { href: "https://github.com/raywross/college-stats/actions/runs/1", label: "Run #49 on GitHub" } });
   f = fakeOps();
   let looked = 0;
@@ -528,7 +528,7 @@ test("a dispatch finds its run by request id and links it; when GitHub hasn't li
     looked++;
     return null;
   };
-  r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false, auto_merge: true } });
+  r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false } });
   assert.equal(looked, opsActions.FIND_RUN_ATTEMPTS);
   assert.equal(r.status, "done");
   assert.match(r.status === "done" ? r.message : "", /appears under Runs/);
@@ -622,7 +622,7 @@ test("Reject resolves the item rejected with the note; Re-run discovery dispatch
 
   f = fakeOps();
   await opsActions.rediscoverReviewItem(f.review, itemId(HELD));
-  assert.deepEqual(f.dispatches[0].inputs, { college: "999002", rediscover: "true", auto_merge: "true", mode: "college" });
+  assert.deepEqual(f.dispatches[0].inputs, { college: "999002", rediscover: "true", mode: "college" });
   assert.deepEqual(f.notes[0].details, { run: "college", workflow: "college-reported.yml", ref: "main", inputs: f.dispatches[0].inputs, unit: "999002", code: "H.210" });
   assert.deepEqual([f.edits, f.resolves], [[], []], "Re-run discovery only dispatches");
 
@@ -637,7 +637,7 @@ test("Reject resolves the item rejected with the note; Re-run discovery dispatch
 test("nothing is logged or sent when GitHub isn't configured", async () => {
   const f = fakeOps({ configured: false });
   const results = [
-    await opsActions.dispatchRun(f.deps, { run: "pilot", values: { auto_merge: true } }),
+    await opsActions.dispatchRun(f.deps, { run: "pilot", values: {} }),
     await opsActions.mergeDataPull(f.deps, 7),
     await opsActions.holdDataPull(f.deps, 7),
     await opsActions.closeDataPull(f.deps, 7),
@@ -648,8 +648,8 @@ test("nothing is logged or sent when GitHub isn't configured", async () => {
 });
 
 test("readDispatchForm reads each shown input: a ticked box is true, an unticked box false", () => {
-  const college = opsActions.readDispatchForm(form({ run: "college", college: " 999001 ", auto_merge: "on" }));
-  assert.deepEqual(college, { run: "college", values: { college: " 999001 ", rediscover: false, auto_merge: true }, confirm: "", branch: "" });
+  const college = opsActions.readDispatchForm(form({ run: "college", college: " 999001 " }));
+  assert.deepEqual(college, { run: "college", values: { college: " 999001 ", rediscover: false }, confirm: "", branch: "" });
   const unknown = opsActions.readDispatchForm(form({ run: "nope", sneaky: "1" }));
   assert.deepEqual(unknown.values, {}, "fields the table doesn't declare are never passed on");
   assert.equal(opsActions.pullNumber(form({ pull: "12" })), 12);
@@ -668,7 +668,7 @@ const formData = (fields: Record<string, string>) => {
   return f;
 };
 const ACTION_FORMS: Record<string, Record<string, string>> = {
-  dispatchAction: { run: "pilot", auto_merge: "on" },
+  dispatchAction: { run: "pilot" },
   mergeAction: { pull: "7" },
   holdAction: { pull: "7" },
   closeAction: { pull: "7" },
@@ -1022,8 +1022,6 @@ test("run display: who started it, how long, how it ended, and the merge block",
   assert.equal(opsView.mergeBlock({ draft: false, checks: "success" }), null);
   for (const checks of ["pending", "none", "failure"] as const) assert.ok(opsView.mergeBlock({ draft: false, checks }), checks);
   assert.ok(opsView.mergeBlock({ draft: true, checks: "success" }));
-  assert.match(opsView.flagLabel("breaker") ?? "", /circuit breaker/);
-  assert.equal(opsView.flagLabel(null), null);
 });
 
 test("review queue view: parameters, filters, and item labels", () => {

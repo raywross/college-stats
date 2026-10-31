@@ -286,7 +286,7 @@ export async function rediscoverReviewItem(deps: ReviewDeps, key: string): Promi
   if (!found.ok) return found.state;
   return dispatchRun(
     deps.ops,
-    { run: "college", values: { college: found.item.unit_id, rediscover: true, auto_merge: true } },
+    { run: "college", values: { college: found.item.unit_id, rediscover: true } },
     { logAction: "review.rediscover", details: { unit: found.item.unit_id, code: found.item.code ?? null } },
   );
 }

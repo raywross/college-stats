@@ -86,13 +86,6 @@ export const CHECKS_LABELS: Readonly<Record<ChecksState, string>> = {
   none: "Checks not started",
 };
 
-/** Why a pull request waits for a person (college-reported-setup.md section 8), or null. */
-export function flagLabel(flag: DataPull["flagged"]): string | null {
-  if (flag === "breaker") return "A circuit breaker tripped: the run held its changes for a person to look at.";
-  if (flag === "stopped") return "The run stopped early (its cost cap or a time limit): it holds only the colleges it finished.";
-  return null;
-}
-
 /** Whether Approve and merge can succeed now, and the reason it can't (the merge itself refuses the same cases). */
 export function mergeBlock(pull: Pick<DataPull, "draft" | "checks">): string | null {
   if (pull.draft) return "A draft: it is still collecting batches. Finish open batches first.";

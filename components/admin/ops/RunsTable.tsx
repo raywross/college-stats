@@ -4,7 +4,8 @@ import { RunChip } from "@/components/admin/ops/OpsStatusChip";
 
 /**
  * The last runs of the workflows the console can start: status (a failed run names its failed step), who or what
- * started it, when, how long it took, and the data PR it opened while that PR is still open. Each links to GitHub.
+ * started it, when, and how long it took. Each links to GitHub. Data runs open no pull requests: what a run wrote is
+ * its change set in the Data console.
  */
 export function RunsTable({ runs }: { runs: RunRow[] }) {
   if (!runs.length) {
@@ -28,13 +29,10 @@ export function RunsTable({ runs }: { runs: RunRow[] }) {
             <th scope="col" className="px-3 py-2 font-medium">
               Duration
             </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Opened
-            </th>
           </tr>
         </thead>
         <tbody>
-          {runs.map(({ run, consoleAdmin, failedStep, pull }) => {
+          {runs.map(({ run, consoleAdmin, failedStep }) => {
             const outcome = runOutcome(run);
             return (
               <tr key={run.id} className="border-t border-border align-top">
@@ -53,15 +51,6 @@ export function RunsTable({ runs }: { runs: RunRow[] }) {
                   <div className="text-xs text-muted-foreground">{startedBy(run, consoleAdmin)}</div>
                 </td>
                 <td className="px-3 py-2 tabular-nums">{formatDuration(run.durationMs)}</td>
-                <td className="px-3 py-2">
-                  {pull ? (
-                    <a href={pull.url} target="_blank" rel="noopener noreferrer" className="underline decoration-dotted underline-offset-2">
-                      Pull request #{pull.number}
-                    </a>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </td>
               </tr>
             );
           })}

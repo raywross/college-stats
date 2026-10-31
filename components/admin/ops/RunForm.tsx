@@ -120,7 +120,7 @@ export function RunForm({
           <label htmlFor={`branch-${run.id}`} className="block text-sm font-semibold">
             Pull request branch
           </label>
-          <input id={`branch-${run.id}`} name="branch" required placeholder="data/identity-refresh-20261012" className={`${inputCls} mt-1.5 sm:max-w-md`} />
+          <input id={`branch-${run.id}`} name="branch" required placeholder="The pull request's branch"className={`${inputCls} mt-1.5 sm:max-w-md`} />
         </div>
       )}
       {run.guards.showCost && <CostNote cost={cost} />}

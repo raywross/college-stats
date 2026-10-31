@@ -47,7 +47,8 @@ export interface DispatchableRun {
   ref: "main" | "pull-branch";
 }
 
-const AUTO_MERGE: RunInput = { name: "auto_merge", label: "Auto-merge the PR once CI passes", kind: "boolean", default: true };
+// Data runs open no pull requests any more (data platform phase 2: they write the store and ask the publisher), so no
+// run sends `auto_merge`; a workflow that still declares the input ignores it.
 const COLLEGE_REPORTED_GROUP = { concurrencyGroup: "college-reported" };
 
 /** The spec's Reruns table, with each workflow's own input defaults (.github/workflows/*.yml). */
@@ -61,7 +62,6 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     inputs: [
       { name: "college", label: "Unit id", kind: "unit", required: true },
       { name: "rediscover", label: "Re-run discovery even if the college has a recipe", kind: "boolean", default: false },
-      AUTO_MERGE,
     ],
     guards: { oneAtATime: COLLEGE_REPORTED_GROUP },
     ref: "main",
@@ -72,7 +72,7 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     description: "The pilot colleges, with the workflow's default cost cap.",
     workflow: "college-reported.yml",
     fixed: { mode: "pilot" },
-    inputs: [AUTO_MERGE],
+    inputs: [],
     guards: { oneAtATime: COLLEGE_REPORTED_GROUP },
     ref: "main",
   },
@@ -84,14 +84,14 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     fixed: { mode: "all" },
     // The dispatch form's max_cost default is 25 US dollars, which would stop a full run early; the scheduled full
     // run uses 150 (the workflow's "Resolve run parameters" step), so the console offers that.
-    inputs: [AUTO_MERGE, { name: "max_cost", label: "Stop at this estimated cost (US dollars)", kind: "money", default: "150" }],
+    inputs: [{ name: "max_cost", label: "Stop at this estimated cost (US dollars)", kind: "money", default: "150" }],
     guards: { oneAtATime: COLLEGE_REPORTED_GROUP, confirmWord: "all", showCost: true },
     ref: "main",
   },
   {
     id: "collect",
     label: "Finish open batches",
-    description: "Collects a draft pipeline PR's open batches now instead of waiting for the half-hourly job.",
+    description: "Collects a run's open batches now instead of waiting for the half-hourly job.",
     workflow: "college-reported.yml",
     fixed: { mode: "collect" },
     inputs: [],
@@ -104,7 +104,7 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     description: "Re-syncs Wikidata, re-probes every college's site, and re-reads college colors.",
     workflow: "identity-refresh.yml",
     fixed: {},
-    inputs: [{ name: "force", label: "Run even if the last probe is under 28 days old", kind: "boolean", default: false }, AUTO_MERGE],
+    inputs: [{ name: "force", label: "Run even if the last probe is under 28 days old", kind: "boolean", default: false }],
     guards: { oneAtATime: { concurrencyGroup: "identity-refresh" } },
     ref: "main",
   },

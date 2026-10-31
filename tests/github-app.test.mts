@@ -347,7 +347,7 @@ test("isConsolePull: a fork's PR with a data/ branch is never listed, merged, he
   assert.equal(gh.isConsolePull(ours, { GITHUB_REPO: "elsewhere/repo" }), false, "the configured repository decides");
 });
 
-test("listDataPulls: open PRs on main from data/ or review/ branches, with checks, flagged ones first", async () => {
+test("listDataPulls: open PRs on main from data/ or review/ branches, with checks, newest first; no run or PR-body mapping", async () => {
   gh.resetTokenCache();
   const pulls = [
     pull(140, "feature/something"),
@@ -362,19 +362,16 @@ test("listDataPulls: open PRs on main from data/ or review/ branches, with check
   const f = fakeGithub((c) => (c.url.includes("/pulls?") ? { status: 200, body: pulls } : checks(c)));
   const list = await gh.listDataPulls(deps(f, PAT_ENV));
   assert.equal(f.api()[0].url, `${REPO}/pulls?state=open&base=main&per_page=100`);
-  assert.deepEqual(list.map((p) => p.number), [141, 143, 142]);
-  const [breaker, review, identity] = list;
-  assert.equal(breaker.flagged, "breaker");
-  assert.equal(breaker.runNumber, 53);
-  assert.equal(breaker.checks, "success");
+  assert.deepEqual(list.map((p) => p.number), [143, 142, 141]);
+  const [review, identity, older] = list;
+  assert.equal(older.checks, "success");
   assert.equal(review.kind, "review");
   assert.equal(review.checks, "none");
   assert.equal(identity.autoMerge, true);
   assert.equal(identity.checks, "pending");
-  assert.equal(gh.pullFlag("> **Stopped early** after 3 of 90 colleges"), "stopped");
-  // The run that opened a PR.
-  assert.equal(gh.pullForRun(gh.toRun({ ...RAW_RUN, run_number: 53 }), list)?.number, 141);
-  assert.equal(gh.pullForRun(gh.toRun({ ...RAW_RUN, path: ".github/workflows/identity-refresh.yml", created_at: "2026-10-12T06:00:00Z" }), list)?.number, 142);
+  // Data runs open no PRs any more: nothing maps a run to a PR or reads a breaker from a PR body.
+  for (const name of ["pullFlag", "pullForRun"]) assert.ok(!(name in gh), `lib/github-app.ts no longer exports ${name}`);
+  assert.ok(!("flagged" in older) && !("runNumber" in older));
 });
 
 function mergeFixture(checks: CheckFixture, extra: Record<string, unknown> = {}, ref = "data/college-reported-20261011-102854-53") {
@@ -542,7 +539,7 @@ test("run-name: the console's title is '<workflow> · <request id>', which reque
 test("buildDispatch: types, defaults, the unit id, the 'all' confirmation, and Re-run CI's branch", () => {
   const college = buildDispatch("college", { college: " 166027 " });
   assert.ok(college.ok);
-  if (college.ok) assert.deepEqual(college.inputs, { college: "166027", rediscover: "false", auto_merge: "true", mode: "college" });
+  if (college.ok) assert.deepEqual(college.inputs, { college: "166027", rediscover: "false", mode: "college" });
   assert.equal(buildDispatch("college", { college: "MIT" }).ok, false);
   assert.equal(buildDispatch("college", {}).ok, false);
   assert.equal(buildDispatch("college", { college: "166027", mode: "all" }).ok, false, "a fixed input can't be overridden");
@@ -550,9 +547,10 @@ test("buildDispatch: types, defaults, the unit id, the 'all' confirmation, and R
 
   assert.equal(buildDispatch("all", {}).ok, false, "all needs the word");
   assert.equal(buildDispatch("all", {}, { confirm: "ALL" }).ok, false);
-  const all = buildDispatch("all", { auto_merge: false }, { confirm: "all" });
+  const all = buildDispatch("all", {}, { confirm: "all" });
+  assert.equal(buildDispatch("all", { auto_merge: false }, { confirm: "all" }).ok, false, "no run sends auto_merge: data runs open no pull requests");
   assert.ok(all.ok);
-  if (all.ok) assert.deepEqual(all.inputs, { auto_merge: "false", max_cost: "150", mode: "all" });
+  if (all.ok) assert.deepEqual(all.inputs, { max_cost: "150", mode: "all" });
   assert.equal(buildDispatch("all", { max_cost: "lots" }, { confirm: "all" }).ok, false);
   assert.ok(runById("all")!.guards.showCost);
 
@@ -701,10 +699,10 @@ test("a resolved item (rejected or accepted) stays resolved when the next run re
 });
 
 test("Re-run discovery: the college run with rediscover", () => {
-  const r = buildDispatch("college", { college: "166027", rediscover: true, auto_merge: true });
+  const r = buildDispatch("college", { college: "166027", rediscover: true });
   assert.ok(r.ok);
   if (r.ok) {
     assert.equal(r.file, "college-reported.yml");
-    assert.deepEqual(r.inputs, { college: "166027", rediscover: "true", auto_merge: "true", mode: "college" });
+    assert.deepEqual(r.inputs, { college: "166027", rediscover: "true", mode: "college" });
   }
 });

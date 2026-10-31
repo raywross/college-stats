@@ -70,10 +70,14 @@ export interface CollegeListFile {
 
 /** Unit ids from a college list file (`{ colleges: [{ unit_id }] }`), in order, without duplicates. */
 export function readCollegeList(file: string): string[] {
-  const f = JSON.parse(readFileSync(file, "utf8")) as CollegeListFile;
-  if (!Array.isArray(f.colleges)) throw new Error(`${file}: expected { "colleges": [{ "unit_id": … }] }`);
+  return collegeListIds(JSON.parse(readFileSync(file, "utf8")) as CollegeListFile, file);
+}
+
+/** A college list's unit ids, checked (`label` names it in an error). */
+export function collegeListIds(f: CollegeListFile, label: string): string[] {
+  if (!f || !Array.isArray(f.colleges)) throw new Error(`${label}: expected { "colleges": [{ "unit_id": … }] }`);
   const ids = f.colleges.map((c) => String(c.unit_id));
-  if (ids.some((id) => !/^\d{6}$/.test(id))) throw new Error(`${file}: every unit_id must be six digits`);
+  if (ids.some((id) => !/^\d{6}$/.test(id))) throw new Error(`${label}: every unit_id must be six digits`);
   return [...new Set(ids)];
 }
 

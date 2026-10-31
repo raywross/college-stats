@@ -2,33 +2,35 @@
  * Wikidata sync (specs/school-identity/social-accounts.md): social accounts, the Wikipedia article, the Commons
  * logo file, and other names for every college with a Wikidata item (P1771 = its IPEDS unit id).
  *
- *   npm run sync-wikidata
+ *   npm run sync-wikidata -- --store supabase                  # the data project (default when DATA_SUPABASE_URL is set)
+ *   npm run sync-wikidata -- --store file:/tmp/layers          # a folder (the file store)
+ *   npm run sync-wikidata -- --change-set 42                   # write into the workflow's open change set
+ *   npm run sync-wikidata -- --dry-run                         # query and count; write nothing
  *
- * Reads data/schools.json (each college's own homepage, to resolve the rare unit id with two Wikidata items) and
- * data/site-probe.json when the site probe has already run (to flag disagreements with the homepage's own footer
- * links; an empty list until then). Writes data/wikidata.json and data/wikidata-issues.json, then calls
- * mergeIdentity so `school.social` and meta.json's retrieval date are refreshed on the committed data/schools.json
- * without a full sync.
+ * Reads the colleges from the store (each college's own homepage, to resolve the rare unit id with two Wikidata items:
+ * the base with identity applied, as the publisher composes it) and `identity.probe` (to flag disagreements with the
+ * homepage's own footer links). Writes `identity.wikidata` and `identity.wikidata_issues`, one document per college,
+ * in one change set (its own, source `identity-refresh`, unless `--change-set` names the workflow's). The publisher
+ * applies them to the colleges (specs/data-platform/pipelines.md).
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { School } from "../lib/types";
-import type { SiteProbeEntry } from "../lib/identity-files";
 import { SOCIAL_NETWORKS } from "../lib/social.ts";
-import { mergeIdentity } from "./lib/identity-sync.mts";
+import { flagValue, storeFromFlag } from "./lib/data-platform/store.mts";
+import { changeSetFlag, withRunSet } from "./lib/data-platform/change-set.mts";
+import { readProbe, storeColleges, writeWikidata } from "./lib/identity-store.mts";
 import { MIN_MATCHED_COLLEGES, assertEnoughMatches, buildWikidataEntries, fetchWikidataResults, rawItemsFromResults } from "./lib/wikidata.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const SCHOOLS = join(ROOT, "data", "schools.json");
-const PROBE = join(ROOT, "data", "site-probe.json");
-const OUT = join(ROOT, "data", "wikidata.json");
-const ISSUES = join(ROOT, "data", "wikidata-issues.json");
 const CACHE_DIR = join(ROOT, ".cache", "wikidata");
+const argv = process.argv.slice(2);
 
 async function main() {
-  const schools: School[] = JSON.parse(readFileSync(SCHOOLS, "utf8"));
+  const store = storeFromFlag(flagValue(argv, "--store"));
+  const dryRun = argv.includes("--dry-run");
+  const schools = await storeColleges(store);
+  if (!schools.length) throw new Error("the store has no colleges (base.colleges): import or sync the base first");
   const homepageByUnitId = new Map(schools.map((s) => [s.unit_id, s.links?.website ?? null]));
-  const probeEntries: SiteProbeEntry[] = existsSync(PROBE) ? JSON.parse(readFileSync(PROBE, "utf8")) : [];
+  const probeEntries = await readProbe(store);
   const probeByUnitId = new Map(probeEntries.map((p) => [p.unit_id, p] as const));
 
   console.log("Querying Wikidata (one request per property; see scripts/lib/wikidata.mts for why)…");
@@ -40,21 +42,17 @@ async function main() {
   // Fewer than MIN_MATCHED_COLLEGES means the query broke or Wikidata is down: fail loudly, write nothing.
   assertEnoughMatches(entries.length);
 
-  writeFileSync(OUT, `[\n${entries.map((e) => JSON.stringify(e)).join(",\n")}\n]\n`);
-  writeFileSync(ISSUES, `${JSON.stringify(issues, null, 2)}\n`);
+  if (!dryRun) await withRunSet(store, { source: "identity-refresh", changeSet: changeSetFlag(argv) }, (handle) => writeWikidata(store, handle, entries, issues));
 
   const withAny = entries.filter((e) => Object.keys(e.accounts).length > 0).length;
   const perNetwork = SOCIAL_NETWORKS.map((n) => `${n} ${entries.filter((e) => e.accounts[n]).length}`).join(", ");
-  console.log(`\nWrote ${entries.length} colleges to data/wikidata.json (of ${schools.length} in the dataset; guard is ${MIN_MATCHED_COLLEGES})`);
+  console.log(`\n${dryRun ? "Dry run, nothing written: " : "Wrote "}${entries.length} colleges to identity.wikidata (of ${schools.length} in the dataset; guard is ${MIN_MATCHED_COLLEGES})`);
   console.log(`  any account:  ${withAny}`);
   console.log(`  by network:   ${perNetwork}`);
   console.log(`  Commons logo: ${entries.filter((e) => e.logo_file).length}`);
   console.log(`  alt labels:   ${entries.filter((e) => e.alt_labels.length).length}`);
   console.log(`  duplicate unit ids (two items): ${duplicateUnitIds}`);
-  console.log(`  issues logged: ${issues.length} (data/wikidata-issues.json)${probeEntries.length ? "" : " — site probe hasn't run yet, so no homepage disagreements checked"}`);
-
-  const r = mergeIdentity(ROOT);
-  console.log(`\nmerge-identity: ${r.schools} colleges; social accounts now on ${r.withSocial}`);
+  console.log(`  issues logged: ${issues.length} (identity.wikidata_issues)${probeEntries.length ? "" : " — site probe hasn't run yet, so no homepage disagreements checked"}`);
 }
 
 main().catch((err) => {

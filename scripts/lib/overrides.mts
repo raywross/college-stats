@@ -6,6 +6,7 @@
  */
 import type { School } from "../../lib/types";
 import { lineageForPatch } from "../../lib/lineage.ts";
+import { trendSummary, type CpiTable, type HistoryMeta, type SchoolHistory } from "../../lib/history.ts";
 
 /** One college's patch: nested values to set; keys starting with `_` are notes and are skipped. */
 export type Patch = { [key: string]: unknown };
@@ -47,4 +48,24 @@ export function carryTrends(schools: School[], previous: ReadonlyMap<string, Sch
     const t = previous.get(s.unit_id);
     if (t) s.trends = t;
   }
+}
+
+/**
+ * `school.trends` derived from the history layer, the way `npm run sync-history` writes it: each college's
+ * `trendSummary` over its history (no history, or an empty summary, removes the block). In place; returns how many
+ * colleges have trends. Data platform phase 2: sync-history writes `history.*` only, so the publisher can call this in
+ * place of `carryTrends` and a history run reaches the site (on the committed data it gives every college's trends
+ * back byte for byte; tests/data-platform-sources.test.mts).
+ */
+export function deriveTrends(schools: School[], histories: ReadonlyMap<string, SchoolHistory>, cpi: CpiTable, hmeta: Pick<HistoryMeta, "latest">): number {
+  let withTrends = 0;
+  for (const s of schools) {
+    const h = histories.get(s.unit_id);
+    const t = h ? trendSummary(h, cpi, hmeta) : {};
+    if (Object.keys(t).length) {
+      s.trends = t;
+      withTrends++;
+    } else delete s.trends;
+  }
+  return withTrends;
 }

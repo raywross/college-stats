@@ -1,25 +1,27 @@
 /**
  * Crawls national directories of campus chapters and groups and matches them to colleges (specs/campus-directories.md).
  *
- *   npm run sync-directories                          # every adapter
+ *   npm run sync-directories -- --store supabase      # every adapter (--store file:<dir> for a folder)
  *   npm run sync-directories -- --org ssa             # one (repeat --org, or comma-separate, for several)
  *   npm run sync-directories -- --domain faith        # faith | greek | lgbtq
  *   npm run sync-directories -- --refresh             # ignore the .cache/directories copies
  *   npm run sync-directories -- --max-age-days 7      # reuse cached pages younger than this (default 30)
+ *   npm run sync-directories -- --change-set 42       # write into a workflow's open change set
  *   npm run sync-directories -- --dry-run             # crawl and match, print counts, write nothing
  *
- * Writes data/directories/<org>.json and unmatched/<org>.json per adapter, and data/directories/blocked.json for
- * lists that refuse us (never bypassed; owner decision 1). A failed or blocked adapter keeps its previous file. Then
- * run `npm run merge-directories` to put the listings into the dataset.
+ * Writes `directories.listings` and `directories.unmatched` per adapter and `directories.blocked` for lists that
+ * refuse us (never bypassed; owner decision 1), in one change set (source `directories`). A failed or blocked adapter
+ * keeps its previous documents. The publisher puts the listings into the dataset (`npm run merge-directories` still
+ * does it for the files under data/).
  */
 import { join } from "node:path";
 import { DIRECTORY_DOMAINS, type DirectoryDomain } from "../lib/directories.ts";
-import { Blocked } from "./lib/directories/contract.mts";
 import { createContext, directoryHttp, DEFAULT_MAX_AGE_DAYS } from "./lib/directories/context.mts";
-import { loadMatchIndex } from "./lib/directories/colleges.mts";
-import { clearBlocks, readBlocked, recordBlock, writeBlocked, writeOrgFiles } from "./lib/directories/files.mts";
 import { loadAdapters } from "./lib/directories/registry.mts";
-import { runAdapter } from "./lib/directories/run.mts";
+import { matchIndexFromStore, syncDirectories } from "./lib/directories/store.mts";
+import { storeFromFlag, type ChangeSetHandle } from "./lib/data-platform/store.mts";
+import { withRunSet } from "./lib/data-platform/change-set.mts";
+import { storeColleges } from "./lib/identity-store.mts";
 
 const ROOT = process.env.SYNC_DIRECTORIES_ROOT ?? join(import.meta.dirname, "..");
 
@@ -29,6 +31,8 @@ function args(argv: string[]) {
   let maxAgeDays = DEFAULT_MAX_AGE_DAYS;
   let refresh = false;
   let dryRun = false;
+  let store: string | undefined;
+  let changeSet: string | undefined;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--org") orgs.push(...(argv[++i] ?? "").split(",").filter(Boolean));
@@ -39,9 +43,12 @@ function args(argv: string[]) {
     } else if (a === "--max-age-days") maxAgeDays = Number(argv[++i]);
     else if (a === "--refresh") refresh = true;
     else if (a === "--dry-run") dryRun = true;
+    else if (a === "--store") store = argv[++i];
+    else if (a.startsWith("--store=")) store = a.slice("--store=".length);
+    else if (a === "--change-set") changeSet = argv[++i];
     else throw new Error(`unknown argument ${a}`);
   }
-  return { orgs, domain, maxAgeDays, refresh, dryRun };
+  return { orgs, domain, maxAgeDays, refresh, dryRun, store, changeSet };
 }
 
 async function main() {
@@ -54,37 +61,17 @@ async function main() {
   if (!adapters.length) throw new Error("no adapters selected");
 
   console.log(`sync-directories: ${adapters.length} adapter${adapters.length === 1 ? "" : "s"} (${adapters.map((a) => a.key).join(", ")})`);
-  const index = loadMatchIndex(ROOT);
+  const store = storeFromFlag(opts.store);
+  const schools = await storeColleges(store);
+  if (!schools.length) throw new Error("the store has no colleges (base.colleges): import or sync the base first");
+  const index = await matchIndexFromStore(store, schools, ROOT);
   const http = directoryHttp();
-  let blocked = readBlocked(ROOT);
-  let failed = 0;
+  const contextFor = (adapter: { key: string }) => createContext(adapter.key, { cacheDir: join(ROOT, ".cache", "directories"), maxAgeDays: opts.maxAgeDays, refresh: opts.refresh, today, http });
+  const run = (handle: ChangeSetHandle | null) => syncDirectories(store, handle, adapters, { index, today, contextFor });
 
-  for (const adapter of adapters) {
-    const ctx = createContext(adapter.key, { cacheDir: join(ROOT, ".cache", "directories"), maxAgeDays: opts.maxAgeDays, refresh: opts.refresh, today, http });
-    try {
-      const { file, unmatched, placeholders } = await runAdapter(adapter, ctx, index);
-      const c = file.counts;
-      console.log(
-        `  ${adapter.key}: ${c.entries} entries → ${c.matched} matched (${c.multi} serving several colleges), ${c.unmatched} unmatched; ${c.colleges} colleges` +
-          (placeholders ? `; ${placeholders} placeholder${placeholders === 1 ? "" : "s"} dropped` : "")
-      );
-      if (!opts.dryRun) {
-        writeOrgFiles(ROOT, file, unmatched);
-        blocked = clearBlocks(blocked, adapter.key);
-      }
-    } catch (err) {
-      if (err instanceof Blocked) {
-        console.log(`  ${adapter.key}: BLOCKED (${err.reason}) at ${err.url}; recorded in data/directories/blocked.json, previous file kept`);
-        blocked = recordBlock(blocked, { org: adapter.key, url: err.url, reason: err.reason, detail: err.message }, today);
-      } else {
-        failed++;
-        console.error(`  ${adapter.key}: FAILED: ${err instanceof Error ? err.message : String(err)} (previous file kept)`);
-      }
-    }
-  }
-  if (!opts.dryRun) writeBlocked(ROOT, blocked);
-  console.log(opts.dryRun ? "Dry run: nothing written." : "Next: npm run merge-directories");
-  if (failed) process.exit(1);
+  const result = opts.dryRun ? await run(null) : await withRunSet(store, { source: "directories", changeSet: opts.changeSet }, run);
+  console.log(opts.dryRun ? "Dry run: nothing written." : `Wrote ${result.written.length} adapters' documents; the publisher puts them live.`);
+  if (result.failed.length) process.exit(1);
 }
 
 main().catch((err) => {

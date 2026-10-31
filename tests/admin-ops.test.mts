@@ -108,6 +108,8 @@ type HealthGroup = import("../lib/admin/health-rules.ts").HealthGroup;
 type WorkflowRun = import("../lib/github-app.ts").WorkflowRun;
 type ReviewItem = import("../lib/reported.ts").ReviewItem;
 type OpsDeps = import("../lib/admin/ops-actions.ts").OpsDeps;
+type ReviewDeps = import("../lib/admin/ops-actions.ts").ReviewDeps;
+const { reviewKey } = await import("../lib/reported.ts");
 
 /** A 404 as Next.js throws it. */
 const is404 = (e: unknown) => (e as { digest?: string })?.digest === "NEXT_HTTP_ERROR_FALLBACK;404";
@@ -321,12 +323,8 @@ function c1Item(code: string, value: number, over: Partial<ReviewItem> = {}): Re
 }
 const TRIO = [c1Item("C.116", 7956), c1Item("C.117", 5006), c1Item("C.118", 1040)];
 const HELD = c1Item("H.210", 12, { unit_id: "999002", name: "Other College" });
-const QUEUE_TEXT = reviewQueue.linesJson("2026-10-11", "items", [...TRIO, HELD]);
-const OVERRIDES_TEXT = read("data/overrides.json");
-const FILES: Record<string, { content: string; sha: string }> = {
-  "data/review-queue.json": { content: QUEUE_TEXT, sha: "q1" },
-  "data/overrides.json": { content: OVERRIDES_TEXT, sha: "o1" },
-};
+/** The held items as the store keys them (`unit|edition|code`, lib/reported.ts reviewKey). */
+const ITEMS = new Map([...TRIO, HELD].map((i) => [reviewKey(i), i] as const));
 
 function run(over: Partial<WorkflowRun> = {}): WorkflowRun {
   return {
@@ -342,8 +340,11 @@ interface FakeOver {
   runs?: WorkflowRun[];
   dispatch?: { ok: true } | { ok: false; reason: string };
   merge?: Awaited<ReturnType<OpsDeps["gh"]["mergePull"]>>;
-  commit?: Awaited<ReturnType<OpsDeps["gh"]["commitFileAndOpenPull"]>>;
   name?: string;
+  /** The held items the store holds (default ITEMS). */
+  items?: Map<string, ReviewItem>;
+  /** The nth admin_data_edit call (0-based) fails with this message. */
+  editFails?: { at: number; message: string };
 }
 
 /** Fake dependencies that record every call in order, so a test can read the sequence. */
@@ -351,7 +352,8 @@ function fakeOps(over: FakeOver = {}) {
   const log: string[] = [];
   const notes: { action: string; details: Record<string, unknown>; requestId: string | null }[] = [];
   const dispatches: { file: string; inputs: Record<string, string>; requestId: string; ref: string }[] = [];
-  const commits: import("../lib/github-app.ts").CommitAndPullOptions[] = [];
+  const edits: { unit: string; path: string; value: unknown; note: string }[] = [];
+  const resolves: { key: string; resolution: string; note: string | null }[] = [];
   const comments: { call: string; admin: string }[] = [];
   const deps: OpsDeps = {
     gh: {
@@ -377,13 +379,6 @@ function fakeOps(over: FakeOver = {}) {
         comments.push({ call: "close", admin });
         return { ok: true };
       },
-      readRepoFile: async (path) => ({ ok: true, ...FILES[path] }),
-      commitFileAndOpenPull: async (opts) => {
-        log.push(`commit ${opts.branch}`);
-        commits.push(opts);
-        return over.commit ?? { ok: true, number: 150, url: "https://github.com/raywross/college-stats/pull/150", autoMerge: true };
-      },
-      readQueue: async () => reviewQueue.readQueue(async (path) => ({ ok: true, ...FILES[path] })),
     },
     note: async (action, details, requestId) => {
       log.push(`note ${action}`);
@@ -395,25 +390,45 @@ function fakeOps(over: FakeOver = {}) {
     requestId: () => REQ,
     sleep: async () => undefined,
   };
-  return { deps, log, notes, dispatches, commits, comments };
+  const items = over.items ?? ITEMS;
+  /** The held items' dependencies: the store read and the two admin_data_* functions, recorded in `log` too. */
+  const review: ReviewDeps = {
+    ops: deps,
+    readItems: async (keys) => {
+      log.push(`read ${keys.length}`);
+      return new Map(keys.filter((k) => items.has(k)).map((k) => [k, items.get(k)!] as const));
+    },
+    edit: async (unit, path, value, note) => {
+      const at = edits.length;
+      log.push(`edit ${path}`);
+      edits.push({ unit, path, value, note });
+      return over.editFails?.at === at ? { ok: false, message: over.editFails.message } : { ok: true };
+    },
+    resolve: async (key, resolution, note) => {
+      log.push(`resolve ${resolution} ${key}`);
+      resolves.push({ key, resolution, note });
+      return { ok: true };
+    },
+  };
+  return { deps, review, log, notes, dispatches, edits, resolves, comments };
 }
 
 const form = (fields: Record<string, string>) => ({ get: (name: string) => fields[name] ?? null });
-const itemId = (i: ReviewItem) => reviewQueue.rowId(i);
+const itemId = (i: ReviewItem) => reviewKey(i);
 
 /** Every action's log-before-send contract, run against an `ops-actions` module (the real one, or a broken copy). */
 async function checkLogBeforeSend(m: typeof opsActions) {
   // dispatch
   let f = fakeOps();
-  let r = await m.dispatchRun(f.deps, { run: "college", values: { college: "999001", rediscover: false, auto_merge: true } });
+  let r = await m.dispatchRun(f.deps, { run: "college", values: { college: "999001", rediscover: false } });
   assert.deepEqual(f.log, ["note ops.dispatch", "dispatch college-reported.yml"], "dispatch: logged first");
   assert.equal(f.notes[0].requestId, REQ, "the log row carries the request id the run is found by");
   assert.equal(f.dispatches[0].requestId, REQ);
-  assert.deepEqual(f.notes[0].details, { run: "college", workflow: "college-reported.yml", ref: "main", inputs: { college: "999001", rediscover: "false", auto_merge: "true", mode: "college" } });
+  assert.deepEqual(f.notes[0].details, { run: "college", workflow: "college-reported.yml", ref: "main", inputs: { college: "999001", rediscover: "false", mode: "college" } });
   assert.equal(r.status, "done");
   // a log that fails stops the dispatch
   f = fakeOps({ noteOk: false });
-  r = await m.dispatchRun(f.deps, { run: "pilot", values: { auto_merge: true } });
+  r = await m.dispatchRun(f.deps, { run: "pilot", values: {} });
   assert.deepEqual(f.log, ["note ops.dispatch"], "dispatch: nothing is sent that the log doesn't show");
   assert.equal(r.status, "error");
   // merge, hold, close
@@ -426,21 +441,14 @@ async function checkLogBeforeSend(m: typeof opsActions) {
     await fn(f.deps, 7);
     assert.deepEqual(f.log, [`note ${action}`], `${action}: not sent when it can't be logged`);
   }
-  // review: accept, reject, re-run discovery
+  // re-run discovery: the one review action that reaches GitHub (Accept and Reject are admin_data_* functions, which
+  // log in the same transaction as their change: tests/data-platform-functions.test.mts)
   f = fakeOps();
-  r = await m.acceptReviewItem(f.deps, itemId(TRIO[0]));
-  assert.equal(r.status, "done", JSON.stringify(r));
-  assert.deepEqual(f.log.map((l) => l.split(" ")[0] + " " + l.split(" ")[1]?.split("/")[0]), ["note review.accept", "commit review"], "accept: logged before the PR is opened");
-  f = fakeOps();
-  await m.rejectReviewItem(f.deps, itemId(TRIO[0]));
-  assert.equal(f.log[0], "note review.reject");
-  assert.match(f.log[1], /^commit review\//);
-  f = fakeOps();
-  await m.rediscoverReviewItem(f.deps, itemId(TRIO[0]));
-  assert.deepEqual(f.log, ["note review.rediscover", "dispatch college-reported.yml"], "re-run discovery: logged, then one dispatch and no PR");
+  await m.rediscoverReviewItem(f.review, itemId(TRIO[0]));
+  assert.deepEqual(f.log, ["read 1", "note review.rediscover", "dispatch college-reported.yml"], "re-run discovery: logged, then one dispatch");
   f = fakeOps({ noteOk: false });
-  await m.acceptReviewItem(f.deps, itemId(TRIO[0]));
-  assert.deepEqual(f.log, ["note review.accept"], "accept: no PR when it can't be logged");
+  await m.rediscoverReviewItem(f.review, itemId(TRIO[0]));
+  assert.deepEqual(f.log, ["read 1", "note review.rediscover"], "re-run discovery: not sent when it can't be logged");
 }
 
 test("every Operations action logs to the admin log before it sends anything to GitHub", async () => {
@@ -473,30 +481,32 @@ test("the log-before-send check fails when an action sends first or ignores a fa
 
 test("dispatch guards: the typed table, the word for a full run, the one-at-a-time rule, and a refused send", async () => {
   let f = fakeOps();
-  let r = await opsActions.dispatchRun(f.deps, { run: "all", values: { auto_merge: true, max_cost: "150" } });
+  let r = await opsActions.dispatchRun(f.deps, { run: "all", values: { max_cost: "150" } });
   assert.equal(r.status, "error", "a full run needs the word");
   assert.deepEqual(f.log, [], "refused before anything is logged or sent");
-  r = await opsActions.dispatchRun(f.deps, { run: "all", values: { auto_merge: true, max_cost: "150" }, confirm: "all" });
+  r = await opsActions.dispatchRun(f.deps, { run: "all", values: { max_cost: "150" }, confirm: "all" });
   assert.equal(r.status, "done");
-  assert.deepEqual(f.dispatches[0].inputs, { auto_merge: "true", max_cost: "150", mode: "all" });
+  assert.deepEqual(f.dispatches[0].inputs, { max_cost: "150", mode: "all" });
 
   f = fakeOps({ runs: [run({ status: "in_progress" })] });
-  r = await opsActions.dispatchRun(f.deps, { run: "college", values: { college: "999001", rediscover: false, auto_merge: true } });
+  r = await opsActions.dispatchRun(f.deps, { run: "college", values: { college: "999001", rediscover: false } });
   assert.equal(r.status, "error");
   assert.match(r.status === "error" ? r.message : "", /already in progress/);
   assert.deepEqual(f.log, [], "a running workflow is not logged or dispatched again");
   f = fakeOps({ runs: [run({ status: "in_progress" })] });
-  assert.equal((await opsActions.dispatchRun(f.deps, { run: "publish", values: { what: "all" } })).status, "done", "publish has no one-at-a-time guard");
+  assert.equal((await opsActions.dispatchRun(f.deps, { run: "publish", values: { what: "all" } })).status, "error", "publish-changes.yml is retired: its row is gone from the table");
+  assert.deepEqual(f.log, []);
+  assert.equal((await opsActions.dispatchRun(f.deps, { run: "publish-snapshot", values: {} })).status, "done", "another workflow's run doesn't block the publisher");
 
   f = fakeOps();
-  r = await opsActions.dispatchRun(f.deps, { run: "college", values: { college: "12", rediscover: false, auto_merge: true } });
+  r = await opsActions.dispatchRun(f.deps, { run: "college", values: { college: "12", rediscover: false } });
   assert.equal(r.status, "error", "a unit id is six digits");
   assert.deepEqual(f.log, []);
   r = await opsActions.dispatchRun(f.deps, { run: "rm-rf", values: {} });
   assert.equal(r.status, "error", "only the console's own table can be dispatched");
 
   f = fakeOps({ dispatch: { ok: false, reason: "dispatch 422" } });
-  r = await opsActions.dispatchRun(f.deps, { run: "pilot", values: { auto_merge: true } });
+  r = await opsActions.dispatchRun(f.deps, { run: "pilot", values: {} });
   assert.deepEqual(f.log, ["note ops.dispatch", "dispatch college-reported.yml", "note ops.failed"], "a refused send is logged as a failure");
   assert.equal(f.notes[1].details.reason, "dispatch 422");
   assert.equal(r.status, "error");
@@ -510,7 +520,7 @@ test("dispatch guards: the typed table, the word for a full run, the one-at-a-ti
 
 test("a dispatch finds its run by request id and links it; when GitHub hasn't listed it yet, it says so", async () => {
   let f = fakeOps();
-  let r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false, auto_merge: true } });
+  let r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false } });
   assert.deepEqual(r, { status: "done", message: "Refresh links, social, brand started.", link: { href: "https://github.com/raywross/college-stats/actions/runs/1", label: "Run #49 on GitHub" } });
   f = fakeOps();
   let looked = 0;
@@ -518,7 +528,7 @@ test("a dispatch finds its run by request id and links it; when GitHub hasn't li
     looked++;
     return null;
   };
-  r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false, auto_merge: true } });
+  r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false } });
   assert.equal(looked, opsActions.FIND_RUN_ATTEMPTS);
   assert.equal(r.status, "done");
   assert.match(r.status === "done" ? r.message : "", /appears under Runs/);
@@ -533,54 +543,113 @@ test("merge: a refusal comes back in words and is logged as a failure", async ()
   assert.match((await opsActions.mergeDataPull(failed.deps, 7)).status === "error" ? "ok" : "", /ok/);
 });
 
-test("review: Accept opens the override PR with the item; a refusal is the plan's reason and sends nothing", async () => {
-  let f = fakeOps();
-  const r = await opsActions.acceptReviewItem(f.deps, itemId(TRIO[0]));
-  assert.equal(r.status, "done");
-  assert.equal(f.commits[0].branch, `review/999001-c-116-${TODAY}`);
-  assert.equal(f.commits[0].path, "data/overrides.json");
-  assert.deepEqual(f.notes[0].details, { unit: "999001", code: "C.116", edition: "2025-26", branch: `review/999001-c-116-${TODAY}`, items: ["C.116", "C.117", "C.118"] });
-  assert.equal(r.status === "done" ? r.link?.href : "", "https://github.com/raywross/college-stats/pull/150");
+test("Accept the value: today's mapping as field edits (the C1 trio together), then each item resolved accepted, in that order", async () => {
+  const f = fakeOps();
+  const r = await opsActions.acceptReviewItem(f.review, itemId(TRIO[1]));
+  assert.equal(r.status, "done", JSON.stringify(r));
+  assert.deepEqual(
+    f.log,
+    [
+      "read 3",
+      "edit admissions.year",
+      "edit admissions.applicants",
+      "edit admissions.admitted",
+      "edit admissions.enrolled",
+      "edit admissions.acceptance_rate",
+      "resolve accepted 999001|2025-26|C.116",
+      "resolve accepted 999001|2025-26|C.117",
+      "resolve accepted 999001|2025-26|C.118",
+    ],
+    "the item and its two siblings are read, every edit is written before any item is marked accepted",
+  );
+  assert.deepEqual(
+    f.edits.map((e) => [e.path, e.value]),
+    [
+      ["admissions.year", 2025],
+      ["admissions.applicants", 7956],
+      ["admissions.admitted", 5006],
+      ["admissions.enrolled", 1040],
+      ["admissions.acceptance_rate", 0.6292],
+    ],
+  );
+  assert.ok(f.edits.every((e) => e.unit === "999001" && e.note === "Accepted from the review queue: https://www.example.edu/ir/cds-2025-2026.pdf"), "the note names the document");
+  assert.deepEqual(f.dispatches, [], "nothing is sent to GitHub");
 
-  f = fakeOps();
-  const refused = await opsActions.acceptReviewItem(f.deps, itemId(HELD));
+  // A single share: one edit, one resolve.
+  const share = c1Item("C.901", 0.34);
+  const g = fakeOps({ items: new Map([[reviewKey(share), share]]) });
+  assert.equal((await opsActions.acceptReviewItem(g.review, reviewKey(share))).status, "done");
+  assert.deepEqual(g.edits.map((e) => [e.path, e.value]), [["admissions.test_submission_rate_sat", 0.34]]);
+  assert.deepEqual(g.resolves, [{ key: reviewKey(share), resolution: "accepted", note: null }]);
+});
+
+test("Accept the value refuses, writing nothing, what the mapping can't express; a failed edit stops before any item is marked accepted", async () => {
+  let f = fakeOps();
+  const refused = await opsActions.acceptReviewItem(f.review, itemId(HELD));
   assert.equal(refused.status, "error");
   assert.match(refused.status === "error" ? refused.message : "", /H\.210/, "the plan's own reason");
-  assert.deepEqual(f.log, [], "an item that can't be accepted is not logged as accepted or committed");
+  assert.deepEqual(f.edits, []);
+  assert.deepEqual(f.resolves, []);
+
+  f = fakeOps({ items: new Map([[reviewKey(TRIO[0]), TRIO[0]], [reviewKey(TRIO[1]), TRIO[1]]]) });
+  const incomplete = await opsActions.acceptReviewItem(f.review, itemId(TRIO[0]));
+  assert.match(incomplete.status === "error" ? incomplete.message : "", /C\.116–C\.118/, "a C1 total without its siblings");
+  assert.deepEqual(f.edits, []);
 
   f = fakeOps();
-  assert.equal((await opsActions.acceptReviewItem(f.deps, "999999|x|y")).status, "error", "an id that isn't in the queue on main");
-  assert.deepEqual(f.log, []);
+  const missing = await opsActions.acceptReviewItem(f.review, "999999|x|y");
+  assert.match(missing.status === "error" ? missing.message : "", /no longer held/, "a key that isn't held");
+  assert.deepEqual(f.edits, []);
 
-  f = fakeOps();
-  const rejected = await opsActions.rejectReviewItem(f.deps, itemId(HELD));
+  const done = { ...HELD, resolved: "rejected" as const };
+  f = fakeOps({ items: new Map([[reviewKey(done), done]]) });
+  const again = await opsActions.acceptReviewItem(f.review, reviewKey(done));
+  assert.match(again.status === "error" ? again.message : "", /already rejected/);
+
+  f = fakeOps({ editFails: { at: 2, message: "That isn't a field the console can edit." } });
+  const partial = await opsActions.acceptReviewItem(f.review, itemId(TRIO[0]));
+  assert.equal(partial.status, "error");
+  assert.match(partial.status === "error" ? partial.message : "", /Stopped after 2 of 5 edits \(admissions\.admitted failed\)/);
+  assert.deepEqual(f.resolves, [], "no item is marked accepted when its value wasn't saved");
+});
+
+test("Reject resolves the item rejected with the note; Re-run discovery dispatches the college run; neither writes an edit", async () => {
+  let f = fakeOps();
+  const rejected = await opsActions.rejectReviewItem(f.review, itemId(HELD), "The scan misread the table.");
   assert.equal(rejected.status, "done", "an item that can't be accepted can still be rejected");
-  assert.equal(f.commits[0].path, "data/review-queue.json");
+  assert.deepEqual(f.resolves, [{ key: "999002|2025-26|H.210", resolution: "rejected", note: "The scan misread the table." }]);
+  assert.deepEqual(f.edits, []);
 
   f = fakeOps();
-  await opsActions.rediscoverReviewItem(f.deps, itemId(HELD));
-  assert.deepEqual(f.dispatches[0].inputs, { college: "999002", rediscover: "true", auto_merge: "true", mode: "college" });
-  assert.deepEqual(f.commits, [], "Re-run discovery only dispatches");
+  await opsActions.rediscoverReviewItem(f.review, itemId(HELD));
+  assert.deepEqual(f.dispatches[0].inputs, { college: "999002", rediscover: "true", mode: "college" });
+  assert.deepEqual(f.notes[0].details, { run: "college", workflow: "college-reported.yml", ref: "main", inputs: f.dispatches[0].inputs, unit: "999002", code: "H.210" });
+  assert.deepEqual([f.edits, f.resolves], [[], []], "Re-run discovery only dispatches");
+
+  // The form's key and note are checked before anything runs.
+  assert.equal(opsActions.reviewKeyFromForm(form({ item: "999002|2025-26|H.210" })), "999002|2025-26|H.210");
+  assert.equal(opsActions.reviewKeyFromForm(form({ item: "117946||" })), "117946||", "a round-1/2 entry has no edition or code");
+  for (const bad of ["", "x", "999002|2025-26", "a|b|c", "999002|2025-26|H.210|extra"]) assert.equal(opsActions.reviewKeyFromForm(form({ item: bad })), null, bad);
+  assert.equal(opsActions.noteFromForm(form({ note: "  two\n lines  " })), "two lines");
+  assert.equal(opsActions.noteFromForm(form({ note: "   " })), null);
 });
 
 test("nothing is logged or sent when GitHub isn't configured", async () => {
   const f = fakeOps({ configured: false });
   const results = [
-    await opsActions.dispatchRun(f.deps, { run: "pilot", values: { auto_merge: true } }),
+    await opsActions.dispatchRun(f.deps, { run: "pilot", values: {} }),
     await opsActions.mergeDataPull(f.deps, 7),
     await opsActions.holdDataPull(f.deps, 7),
     await opsActions.closeDataPull(f.deps, 7),
-    await opsActions.acceptReviewItem(f.deps, "x"),
-    await opsActions.rejectReviewItem(f.deps, "x"),
-    await opsActions.rediscoverReviewItem(f.deps, "x"),
+    await opsActions.rediscoverReviewItem(f.review, itemId(HELD)),
   ];
   assert.ok(results.every((r) => r.status === "error"));
   assert.deepEqual(f.log, []);
 });
 
 test("readDispatchForm reads each shown input: a ticked box is true, an unticked box false", () => {
-  const college = opsActions.readDispatchForm(form({ run: "college", college: " 999001 ", auto_merge: "on" }));
-  assert.deepEqual(college, { run: "college", values: { college: " 999001 ", rediscover: false, auto_merge: true }, confirm: "", branch: "" });
+  const college = opsActions.readDispatchForm(form({ run: "college", college: " 999001 " }));
+  assert.deepEqual(college, { run: "college", values: { college: " 999001 ", rediscover: false }, confirm: "", branch: "" });
   const unknown = opsActions.readDispatchForm(form({ run: "nope", sneaky: "1" }));
   assert.deepEqual(unknown.values, {}, "fields the table doesn't declare are never passed on");
   assert.equal(opsActions.pullNumber(form({ pull: "12" })), 12);
@@ -599,14 +668,11 @@ const formData = (fields: Record<string, string>) => {
   return f;
 };
 const ACTION_FORMS: Record<string, Record<string, string>> = {
-  dispatchAction: { run: "pilot", auto_merge: "on" },
+  dispatchAction: { run: "pilot" },
   mergeAction: { pull: "7" },
   holdAction: { pull: "7" },
   closeAction: { pull: "7" },
   rerunCiAction: { branch: "data/x-1" },
-  acceptAction: { item: "x" },
-  rejectAction: { item: "x" },
-  rediscoverAction: { item: "x" },
 };
 
 test("every Server Action is a 404 for a non-admin before it builds dependencies or reads the form", async () => {
@@ -710,7 +776,7 @@ const stubsIn = (markup: string) => [...markup.matchAll(/data-stub="(\w+)" data-
 
 test("Operations without GitHub credentials shows the setup notice and no buttons or forms", async () => {
   const page = await loadPage("app/admin/operations/page.tsx");
-  reset({ admin: true, operations: async () => ({ configured: null, runs: [], pulls: [], queue: null, cost: null }) });
+  reset({ admin: true, operations: async () => ({ configured: null, runs: [], pulls: [], cost: null }) });
   const markup = html(await page({ searchParams: Promise.resolve({}) }));
   assert.match(markup, /Operations isn&#x27;t set up yet/);
   assert.match(markup, /GITHUB_APP_ID/);
@@ -725,21 +791,19 @@ test("Operations without GitHub credentials shows the setup notice and no button
 test("loadOperations makes no GitHub call without credentials", async () => {
   const real = (await import("../lib/admin/ops.ts")) as typeof import("../lib/admin/ops.ts");
   const before = networkCalls;
-  assert.deepEqual(await real.loadOperations(), { configured: null, runs: [], pulls: [], queue: null, cost: null });
+  assert.deepEqual(await real.loadOperations(), { configured: null, runs: [], pulls: [], cost: null });
   assert.equal(networkCalls, before);
 });
 
 test("Operations with credentials: a form per dispatchable run, the running one shown instead of its button, ?unit= prefilled", async () => {
   const page = await loadPage("app/admin/operations/page.tsx");
   const running = run({ status: "in_progress", runNumber: 51 });
-  const queueRows = reviewQueue.queueRows({ updated: "2026-10-11", items: [...TRIO, HELD] } as never);
   reset({
     admin: true,
     operations: async () => ({
       configured: { mode: "app" },
       runs: [{ run: running, consoleAdmin: null, failedStep: null, pull: null }],
       pulls: [],
-      queue: { ok: true, updated: "2026-10-11", rows: queueRows, items: [...TRIO, HELD] },
       cost: { last: { run: "r", finished: null, colleges: 1900, costUsd: 15.56 }, projection: null },
     }),
   });
@@ -752,16 +816,19 @@ test("Operations with credentials: a form per dispatchable run, the running one 
   assert.match(markup, /Run #51 on GitHub/);
   assert.ok(stubs.filter((s) => s.name === "RunForm").every((s) => s.props.prefillUnit === "999001"), "?unit= prefills the college run");
   assert.match(markup, /<details open=""[^>]*>[\s\S]*?Re-read one college/, "and opens the college run");
-  assert.equal(stubs.filter((s) => s.name === "ReviewQueueTable").length, 1);
-  assert.match(markup, /for college 999001/, "the queue is narrowed to the college");
+  assert.match(markup, /href="\/admin\/data\/holds\?unit=999001"/, "the review queue is a link to Holds, narrowed to the college");
 });
 
-test("Operations shows the review queue's read error instead of a table", async () => {
+test("Operations no longer shows the review queue: it links Holds, reads nothing from the store or GitHub for it, and keeps Approvals", async () => {
   const page = await loadPage("app/admin/operations/page.tsx");
-  reset({ admin: true, operations: async () => ({ configured: { mode: "pat" }, runs: [], pulls: [], queue: { ok: false, reason: "read 404" }, cost: null }) });
+  reset({ admin: true, operations: async () => ({ configured: { mode: "pat" }, runs: [], pulls: [], cost: null }) });
   const markup = html(await page({ searchParams: Promise.resolve({}) }));
-  assert.match(markup, /Couldn&#x27;t read the review queue from GitHub: read 404/);
-  assert.equal(stubsIn(markup).filter((s) => s.name === "ReviewQueueTable").length, 0);
+  assert.match(markup, /href="\/admin\/data\/holds"/);
+  assert.match(markup, /Approvals/);
+  assert.doesNotMatch(markup, /ReviewQueueTable|OpsActionForm|<form/, "no review actions (or any form outside the run forms) on Operations");
+  assert.doesNotMatch(read("app/admin/operations/actions.ts"), /acceptAction|rejectAction|rediscoverAction/);
+  assert.ok(!existsSync(join(ROOT, "components/admin/ops/ReviewQueueTable.tsx")), "the old GitHub-backed table is gone");
+  assert.doesNotMatch(read("lib/admin/ops.ts"), /review-queue|readQueue/, "Operations doesn't read the queue");
 });
 
 test("the Health page's Files view shows the inputs' date, hides the family filter when the lists can't be read, and links the CSV with the filters", async () => {
@@ -862,7 +929,7 @@ test("the acting admin's name comes from their profile's display name; an email 
   assert.equal(await real.realOpsDeps({ userId: "u1" }).adminName(), "an admin");
 });
 
-test("hold, close, and the review PRs carry the display name and no email: every request body GitHub receives is checked", async () => {
+test("hold and close carry the display name and no email: every request body GitHub receives is checked", async () => {
   // The real client over a fake fetch, with an admin whose profile name is an email address.
   const API = "https://api.github.com/repos/raywross/college-stats";
   const bodies: string[] = [];
@@ -882,26 +949,22 @@ test("hold, close, and the review PRs carry the display name and no email: every
   assert.deepEqual(await gh.holdPull(7, name, { env, fetch: fetchImpl, log: () => undefined }), { ok: true });
   assert.deepEqual(await gh.closePull(7, name, { env, fetch: fetchImpl, log: () => undefined }), { ok: true });
   assert.ok(bodies.some((b) => b.includes("Held by an admin")) && bodies.some((b) => b.includes("Closed by an admin")));
-
-  // The review change: commit message, PR title and body, release note, with the same name.
-  const built = reviewQueue.acceptChange(TRIO[0], { content: OVERRIDES_TEXT, sha: "o1" }, TRIO, { admin: name, today: TODAY, placeholder: gh.PR_NUMBER_PLACEHOLDER });
-  assert.ok(built.ok);
-  if (built.ok) for (const text of [built.change.message, built.change.title, built.change.body, built.change.releaseNote.content, built.change.branch]) assert.doesNotMatch(text, EMAIL);
   for (const text of bodies) assert.doesNotMatch(text, EMAIL);
 
   // And through the action: whatever name the dependencies give, an email-shaped one never reaches the client.
   const f = fakeOps({ name });
   await opsActions.holdDataPull(f.deps, 7);
   await opsActions.closeDataPull(f.deps, 7);
-  await opsActions.acceptReviewItem(f.deps, itemId(TRIO[0]));
   assert.deepEqual(f.comments.map((c) => c.admin), ["an admin", "an admin"]);
-  for (const c of f.commits) for (const text of [c.message, c.title, c.body, c.releaseNote.content]) assert.doesNotMatch(text, EMAIL);
+  // Re-run discovery's dispatch carries only the item's unit id and fixed flags, never a name or address.
+  await opsActions.rediscoverReviewItem(f.review, itemId(TRIO[0]));
+  for (const d of f.dispatches) for (const v of Object.values(d.inputs)) assert.doesNotMatch(v, EMAIL);
 });
 
-test("the leak check fails when a raw email is used as the admin's name", () => {
-  const built = reviewQueue.acceptChange(TRIO[0], { content: OVERRIDES_TEXT, sha: "o1" }, TRIO, { admin: "rayuno@gmail.com", today: TODAY, placeholder: gh.PR_NUMBER_PLACEHOLDER });
-  assert.ok(built.ok);
-  if (built.ok) assert.match(built.change.message, EMAIL, "an email as the name reaches the commit message: why publicName stands in front of every call");
+test("the leak check fails when a raw email is used as the admin's name", async () => {
+  const f = fakeOps({ name: "rayuno@gmail.com" });
+  await opsActions.holdDataPull(f.deps, 7);
+  assert.match(f.comments[0].admin, EMAIL, "a raw name reaches the hold comment: why publicName stands in front of every call (realOpsDeps)");
 });
 
 test("the action and library sources never read an auth email", () => {
@@ -959,12 +1022,10 @@ test("run display: who started it, how long, how it ended, and the merge block",
   assert.equal(opsView.mergeBlock({ draft: false, checks: "success" }), null);
   for (const checks of ["pending", "none", "failure"] as const) assert.ok(opsView.mergeBlock({ draft: false, checks }), checks);
   assert.ok(opsView.mergeBlock({ draft: true, checks: "success" }));
-  assert.match(opsView.flagLabel("breaker") ?? "", /circuit breaker/);
-  assert.equal(opsView.flagLabel(null), null);
 });
 
 test("review queue view: parameters, filters, and item labels", () => {
-  const rows = reviewQueue.queueRows({ updated: null, items: [...TRIO, HELD, { ...c1Item("C.901", 0.3), resolved: "rejected" as const, resolved_on: TODAY }] } as never);
+  const rows = reviewQueue.queueRows([...TRIO, HELD, { ...c1Item("C.901", 0.3), resolved: "rejected" as const, resolved_on: TODAY }]);
   const p = (q: Record<string, string>) => opsView.parseOperationsParams(q);
   assert.deepEqual(p({}), { unit: null, queueStatus: "open", code: null, college: null, page: 1 });
   assert.deepEqual(p({ unit: "12345", qstatus: "weird", code: "c.116", qpage: "0" }), { unit: null, queueStatus: "open", code: "C.116", college: null, page: 1 });

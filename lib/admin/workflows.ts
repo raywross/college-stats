@@ -15,7 +15,18 @@
  * from `main` through lib/github-app.ts `fetchRunCost` (data/reports/ isn't in the deploy).
  */
 
-export type WorkflowFile = "college-reported.yml" | "identity-refresh.yml" | "publish-changes.yml" | "publish-snapshot.yml" | "verify.yml" | "visit-events.yml";
+// publish-changes.yml is retired (data platform phase 2): the change log, the high-school tables and the college data
+// failures are steps of the publisher (publish-snapshot.yml).
+export type WorkflowFile =
+  | "college-reported.yml"
+  | "identity-refresh.yml"
+  | "common-app.yml"
+  | "coalition.yml"
+  | "sync-history.yml"
+  | "sync-data.yml"
+  | "publish-snapshot.yml"
+  | "verify.yml"
+  | "visit-events.yml";
 
 export type RunInput =
   | { name: string; label: string; kind: "unit"; required: true }
@@ -24,7 +35,20 @@ export type RunInput =
   | { name: string; label: string; kind: "money"; default: string }
   | { name: string; label: string; kind: "text"; default: string };
 
-export type RunId = "college" | "pilot" | "all" | "collect" | "identity" | "publish" | "verify" | "visit-events" | "publish-snapshot" | "point-snapshot";
+export type RunId =
+  | "college"
+  | "pilot"
+  | "all"
+  | "collect"
+  | "identity"
+  | "common-app"
+  | "coalition"
+  | "history"
+  | "sync-data"
+  | "verify"
+  | "visit-events"
+  | "publish-snapshot"
+  | "point-snapshot";
 
 export interface DispatchableRun {
   id: RunId;
@@ -45,7 +69,8 @@ export interface DispatchableRun {
   ref: "main" | "pull-branch";
 }
 
-const AUTO_MERGE: RunInput = { name: "auto_merge", label: "Auto-merge the PR once CI passes", kind: "boolean", default: true };
+// Data runs open no pull requests any more (data platform phase 2: they write the store and ask the publisher), so no
+// run sends `auto_merge`; a workflow that still declares the input ignores it.
 const COLLEGE_REPORTED_GROUP = { concurrencyGroup: "college-reported" };
 
 /** The spec's Reruns table, with each workflow's own input defaults (.github/workflows/*.yml). */
@@ -59,7 +84,6 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     inputs: [
       { name: "college", label: "Unit id", kind: "unit", required: true },
       { name: "rediscover", label: "Re-run discovery even if the college has a recipe", kind: "boolean", default: false },
-      AUTO_MERGE,
     ],
     guards: { oneAtATime: COLLEGE_REPORTED_GROUP },
     ref: "main",
@@ -70,7 +94,7 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     description: "The pilot colleges, with the workflow's default cost cap.",
     workflow: "college-reported.yml",
     fixed: { mode: "pilot" },
-    inputs: [AUTO_MERGE],
+    inputs: [],
     guards: { oneAtATime: COLLEGE_REPORTED_GROUP },
     ref: "main",
   },
@@ -82,14 +106,14 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     fixed: { mode: "all" },
     // The dispatch form's max_cost default is 25 US dollars, which would stop a full run early; the scheduled full
     // run uses 150 (the workflow's "Resolve run parameters" step), so the console offers that.
-    inputs: [AUTO_MERGE, { name: "max_cost", label: "Stop at this estimated cost (US dollars)", kind: "money", default: "150" }],
+    inputs: [{ name: "max_cost", label: "Stop at this estimated cost (US dollars)", kind: "money", default: "150" }],
     guards: { oneAtATime: COLLEGE_REPORTED_GROUP, confirmWord: "all", showCost: true },
     ref: "main",
   },
   {
     id: "collect",
     label: "Finish open batches",
-    description: "Collects a draft pipeline PR's open batches now instead of waiting for the half-hourly job.",
+    description: "Collects a run's open batches now instead of waiting for the half-hourly job.",
     workflow: "college-reported.yml",
     fixed: { mode: "collect" },
     inputs: [],
@@ -102,18 +126,8 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     description: "Re-syncs Wikidata, re-probes every college's site, and re-reads college colors.",
     workflow: "identity-refresh.yml",
     fixed: {},
-    inputs: [{ name: "force", label: "Run even if the last probe is under 28 days old", kind: "boolean", default: false }, AUTO_MERGE],
+    inputs: [{ name: "force", label: "Run even if the last probe is under 28 days old", kind: "boolean", default: false }],
     guards: { oneAtATime: { concurrencyGroup: "identity-refresh" } },
-    ref: "main",
-  },
-  {
-    id: "publish",
-    label: "Publish",
-    description: "Writes the change log, high school tables, or college data failures to the production database.",
-    workflow: "publish-changes.yml",
-    fixed: {},
-    inputs: [{ name: "what", label: "What to publish", kind: "choice", options: ["all", "changes", "high-schools", "college-failures"], default: "all" }],
-    guards: {},
     ref: "main",
   },
   {
@@ -125,6 +139,51 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     inputs: [],
     guards: {},
     ref: "pull-branch",
+  },
+  // The sources' hand-run syncs (data platform phase 2, E3): each writes its layer to the store in one change set and
+  // asks the publisher for a snapshot at the end. Inputs mirror each workflow's workflow_dispatch.inputs.
+  {
+    id: "common-app",
+    label: "Common App",
+    description: "Refresh the Common App grid and members.",
+    workflow: "common-app.yml",
+    fixed: {},
+    inputs: [
+      { name: "mode", label: "What to refresh", kind: "choice", options: ["default", "refresh-members", "grid-only", "members-only"], default: "default" },
+      { name: "limit", label: "Fetch at most this many member records (empty for no limit)", kind: "text", default: "" },
+    ],
+    guards: { oneAtATime: { concurrencyGroup: "common-app" } },
+    ref: "main",
+  },
+  {
+    id: "coalition",
+    label: "Coalition",
+    description: "Refresh the Coalition members.",
+    workflow: "coalition.yml",
+    fixed: {},
+    inputs: [],
+    guards: { oneAtATime: { concurrencyGroup: "coalition" } },
+    ref: "main",
+  },
+  {
+    id: "history",
+    label: "History",
+    description: "Rebuild the year-by-year history.",
+    workflow: "sync-history.yml",
+    fixed: {},
+    inputs: [{ name: "ids", label: "Unit ids to rebuild, comma-separated (empty for every college)", kind: "text", default: "" }],
+    guards: { oneAtATime: { concurrencyGroup: "sync-history" } },
+    ref: "main",
+  },
+  {
+    id: "sync-data",
+    label: "Base dataset",
+    description: "Rebuild the base dataset from IPEDS and Scorecard.",
+    workflow: "sync-data.yml",
+    fixed: {},
+    inputs: [{ name: "releases-only", label: "Only check NCES for upcoming releases (no full sync)", kind: "boolean", default: false }],
+    guards: { oneAtATime: { concurrencyGroup: "sync-data" } },
+    ref: "main",
   },
   {
     id: "visit-events",

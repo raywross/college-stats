@@ -9,31 +9,35 @@
  *   npm run campus-pilot -- --rediscover       # ignore saved links and run discovery again
  *   npm run campus-pilot -- --cap 15           # spend cap in dollars across every pilot run (default 15)
  *   npm run campus-pilot -- --no-batch         # make extraction and second-check calls directly (default: Message Batches)
+ *   npm run campus-pilot -- --store file:<dir> # the store (default: supabase when DATA_SUPABASE_URL is set)
+ *   npm run campus-pilot -- --change-set 42    # write into the workflow's open change set (it closes the set)
+ *   npm run campus-pilot -- --apply            # close its own change set applied (default: held for review)
  *
  * A run only changes the colleges it reads: every other college's published facts and recipe are kept as they were
  * (files.mts mergeRun).
  *
- * Needs ANTHROPIC_API_KEY (.env.local). Writes data/campus-sources.json (links and page hashes per college),
- * data/campus-pages.json (published facts), data/reports/campus-pilot-<run>.json (everything: raw extractions,
- * dropped facts with reasons, second checks, per-call usage), and refusals to data/directories/blocked.json. The
- * dataset picks the facts up through `npm run merge-directories` (or `npm run sync-data`).
+ * Needs ANTHROPIC_API_KEY (.env.local). Reads the colleges and its own prior state from the data store and writes, in
+ * one change set (source `campus-pilot`): `campus.sources` (links and page hashes per college), `campus.pages`
+ * (published facts), the report `campus-pilot-<run>.json` in `reported.reports` (everything: raw extractions, dropped
+ * facts with reasons, second checks, per-call usage), and refusals to `directories.blocked`. A pilot's results are
+ * reviewed before they go live, so its own change set closes `held` ("Publish anyway" in the console puts it live)
+ * unless `--apply`; the publisher composes the facts into the dataset.
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { School } from "../lib/types";
 import { directoryHttp } from "./lib/directories/context.mts";
-import { readBlocked, recordBlock, writeBlocked } from "./lib/directories/files.mts";
 import { Budget, PILOT_MODELS, type CollegeRef, type Ctx } from "./lib/campus-pilot/llm.mts";
 import { PageFetcher, httpLogHook } from "./lib/campus-pilot/pages.mts";
 import { runCollege, type CampusRecipe, type CollegeResult } from "./lib/campus-pilot/run.mts";
-import { DEFAULT_COLLEGES_FILE, formatPagesFile, formatSourcesFile, mergeRun, readCollegeList, readPagesFile, readSourcesFile } from "./lib/campus-pilot/files.mts";
+import { DEFAULT_COLLEGES_FILE } from "./lib/campus-pilot/files.mts";
+import { readCollegeListFrom, readSourcesDoc, reportKey, saveCampusRun } from "./lib/campus-pilot/store.mts";
 import { BatchCaller, directCaller, type PilotBatchApi } from "./lib/campus-pilot/batch.mts";
+import { storeFromFlag } from "./lib/data-platform/store.mts";
+import { changeSetFlag, withRunSet } from "./lib/data-platform/change-set.mts";
+import { storeColleges } from "./lib/identity-store.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const SOURCES = join(ROOT, "data", "campus-sources.json");
-const PAGES = join(ROOT, "data", "campus-pages.json");
-const REPORTS = join(ROOT, "data", "reports");
 const CACHE = join(ROOT, ".cache", "campus-pages");
 const LEDGER = join(CACHE, "spent.json");
 const batch = !process.argv.includes("--no-batch");
@@ -49,16 +53,17 @@ async function main() {
   if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not set (add it to .env.local)");
   const today = new Date().toISOString().slice(0, 10);
   const run = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-  const listFile = join(ROOT, values("colleges-file")[0] ?? DEFAULT_COLLEGES_FILE);
-  const ids = values("college").length ? values("college") : readCollegeList(listFile);
+  const store = storeFromFlag(values("store")[0]);
+  const schools = await storeColleges(store);
+  const listFile = values("colleges-file")[0] ?? DEFAULT_COLLEGES_FILE;
+  const ids = values("college").length ? values("college") : await readCollegeListFrom(store, listFile, ROOT);
   const colleges = ids.map((id) => {
     const s = schools.find((x) => x.unit_id === id);
-    if (!s) throw new Error(`no college ${id} in data/schools.json`);
+    if (!s) throw new Error(`no college ${id} in the store (base.colleges)`);
     return s;
   });
 
-  const sourcesFile = readSourcesFile(SOURCES, today);
+  const sourcesFile = await readSourcesDoc(store, today);
   const recipes = new Map(sourcesFile.recipes.map((r) => [r.unit_id, r]));
   const runRecipes: CampusRecipe[] = [];
   const ledger: { spent: number } = existsSync(LEDGER) ? JSON.parse(readFileSync(LEDGER, "utf8")) : { spent: 0 };
@@ -102,21 +107,22 @@ async function main() {
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
 
   // Recipes and published facts: only this run's colleges change; every other college's entries are kept as they were.
-  const merged = mergeRun(readPagesFile(PAGES), sourcesFile, { results, recipes: runRecipes }, today);
-  writeFileSync(SOURCES, formatSourcesFile(merged.sources));
-  writeFileSync(PAGES, formatPagesFile(merged.pages));
-
-  let blocked = readBlocked(ROOT);
-  for (const b of fetcher.blocked) blocked = recordBlock(blocked, { org: "campus-pilot", url: b.url, reason: b.reason as never, detail: "college page (campus-life pilot); hand reading per owner decision 1" }, today);
-  writeBlocked(ROOT, blocked);
-
-  mkdirSync(REPORTS, { recursive: true });
-  const report = join(REPORTS, `campus-pilot-${run}.json`);
-  writeFileSync(
-    report,
-    `${JSON.stringify({ run, today, models: PILOT_MODELS, cap, spent_total: budget.spent, spent_run: Math.round((budget.spent - ledger.spent) * 1e6) / 1e6, requests: fetcher.requests, blocked: fetcher.blocked, batches: batcher?.sent ?? [], discovery: Object.fromEntries(runRecipes.map((r) => [r.unit_id, r.discovery ?? null])), calls: budget.rows, results }, null, 1)}\n`
+  const spentRun = Math.round((budget.spent - ledger.spent) * 1e6) / 1e6;
+  const report = { run, today, models: PILOT_MODELS, cap, spent_total: budget.spent, spent_run: spentRun, requests: fetcher.requests, blocked: fetcher.blocked, batches: batcher?.sent ?? [], discovery: Object.fromEntries(runRecipes.map((r) => [r.unit_id, r.discovery ?? null])), calls: budget.rows, results };
+  const apply = flag("apply");
+  await withRunSet(
+    store,
+    {
+      source: "campus-pilot",
+      changeSet: changeSetFlag(args),
+      close: () =>
+        apply
+          ? { status: "applied", summary: { cost_usd: spentRun } }
+          : { status: "held", reason: `Campus-life pilot run ${run}: review the facts before they go live`, summary: { cost_usd: spentRun } },
+    },
+    (handle) => saveCampusRun(store, handle, { results, recipes: runRecipes, blocked: fetcher.blocked, report: { run, body: report }, today })
   );
-  console.log(`done: $${budget.spent.toFixed(2)} spent in all; report ${report}`);
+  console.log(`done: $${budget.spent.toFixed(2)} spent in all; report ${reportKey(run)} in reported.reports`);
 }
 
 main().catch((err) => {

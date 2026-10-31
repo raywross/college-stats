@@ -4,17 +4,13 @@ import type { ReactNode } from "react";
 import { requireAdmin } from "@/lib/admin/auth";
 import { loadOperations } from "@/lib/admin/ops";
 import { DISPATCHABLE_RUNS, blockingRun } from "@/lib/admin/workflows";
-import { QUEUE_PAGE_SIZE, dayLabel, filterQueueRows, operationsQuery, parseOperationsParams, queueCodes, QUEUE_STATUSES, timeLabel } from "@/lib/admin/ops-view";
-import { pageOf } from "@/lib/admin/health-view";
+import { parseOperationsParams, timeLabel } from "@/lib/admin/ops-view";
 import { dispatchAction } from "@/app/admin/operations/actions";
 import { RunForm } from "@/components/admin/ops/RunForm";
 import { RunsTable } from "@/components/admin/ops/RunsTable";
 import { PullList } from "@/components/admin/ops/PullList";
-import { ReviewQueueTable } from "@/components/admin/ops/ReviewQueueTable";
 
 export const metadata: Metadata = { title: "Operations", robots: { index: false } };
-
-const selectCls = "mt-1 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
 function Section({ id, title, hint, children }: { id: string; title: string; hint?: string; children: ReactNode }) {
   return (
@@ -45,9 +41,10 @@ function SetupNotice() {
 }
 
 /**
- * Workflow runs, open data pull requests, and the review queue (specs/product/admin.md "Operations: reruns and
+ * Workflow runs and approvals of the pull requests still open (specs/product/admin.md "Operations: reruns and
  * approvals"). Everything here reads and writes GitHub as the console's App; each button logs to the admin log before it
- * sends. `?unit=` prefills the college run and narrows the queue to that college.
+ * sends. `?unit=` prefills the college run. The review queue moved to the Data console's Holds
+ * (specs/data-platform/change-sets.md "Holds and review"), which this page links.
  */
 export default async function OperationsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireAdmin();
@@ -63,27 +60,20 @@ export default async function OperationsPage({ searchParams }: { searchParams: P
     );
   }
 
-  const queue = ops.queue;
-  const queueRows = queue?.ok ? filterQueueRows(queue.rows, params) : [];
-  const queuePage = pageOf(queueRows, params.page, QUEUE_PAGE_SIZE);
   const allRuns = ops.runs.map((r) => r.run);
-  const queryWith = (change: Partial<typeof params>) => {
-    const q = operationsQuery({ ...params, page: 1, ...change });
-    return q ? `/admin/operations?${q}` : "/admin/operations";
-  };
 
   return (
     <div className="space-y-10">
       <header>
         <h1 className="font-display text-3xl font-bold tracking-tight">Operations</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-          Start a run, approve or hold the data changes it opens, and settle the review queue. Connected as {ops.configured.mode === "app" ? "the Quad console GitHub App" : "a personal access token"}. Each action is logged before it is sent.
+          Start a run and approve or hold the pull requests still open. Connected as {ops.configured.mode === "app" ? "the Quad console GitHub App" : "a personal access token"}. Each action is logged before it is sent.
         </p>
         <nav aria-label="On this page" className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
           <a href="#start-a-run" className="underline decoration-dotted underline-offset-2">Start a run</a>
           <a href="#runs" className="underline decoration-dotted underline-offset-2">Runs</a>
-          <a href="#pulls" className="underline decoration-dotted underline-offset-2">Open data PRs ({ops.pulls.length})</a>
-          <a href="#review-queue" className="underline decoration-dotted underline-offset-2">Review queue</a>
+          <a href="#pulls" className="underline decoration-dotted underline-offset-2">Approvals ({ops.pulls.length})</a>
+          <Link href="/admin/data/holds" className="underline decoration-dotted underline-offset-2">Holds</Link>
         </nav>
       </header>
 
@@ -120,94 +110,17 @@ export default async function OperationsPage({ searchParams }: { searchParams: P
         <RunsTable runs={ops.runs} />
       </Section>
 
-      <Section id="pulls" title="Open data PRs" hint="Pull requests from the pipelines (data/) and from the review queue (review/). The ones waiting for a person come first.">
+      <Section id="pulls" title="Approvals" hint="Open pull requests from data/ and review/ branches, for code changes that still go through one. The ones waiting for a person come first.">
         <PullList pulls={ops.pulls} />
       </Section>
 
-      <Section
-        id="review-queue"
-        title="Review queue"
-        hint="Values the automatic checks held back. Accept writes an override with the document as its citation; Reject keeps the value off the site; Re-run discovery looks for the college's documents again. Each opens a pull request or a run."
-      >
-        {!queue ? null : !queue.ok ? (
-          <p role="alert" className="rounded-2xl border border-destructive/50 p-4 text-sm text-destructive">
-            Couldn&apos;t read the review queue from GitHub: {queue.reason}.
-          </p>
-        ) : (
-          <>
-            <form method="get" action="/admin/operations#review-queue" className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-4">
-              <label className="block text-sm font-semibold">
-                College
-                <input name="college" defaultValue={params.college ?? ""} placeholder="Name" className={selectCls} />
-              </label>
-              <label className="block text-sm font-semibold">
-                Code
-                <select name="code" defaultValue={params.code ?? ""} className={selectCls}>
-                  <option value="">Any</option>
-                  {queueCodes(queue.rows).map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block text-sm font-semibold">
-                Status
-                <select name="qstatus" defaultValue={params.queueStatus} className={selectCls}>
-                  {QUEUE_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="flex items-end gap-3">
-                {params.unit && <input type="hidden" name="unit" value={params.unit} />}
-                <button type="submit" className="inline-flex h-10 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground">
-                  Filter
-                </button>
-                <Link href="/admin/operations#review-queue" className="inline-flex min-h-10 items-center text-sm underline decoration-dotted underline-offset-2">
-                  Clear
-                </Link>
-              </div>
-            </form>
-            <p className="text-sm text-muted-foreground" role="status">
-              {queuePage.total.toLocaleString("en-US")} item{queuePage.total === 1 ? "" : "s"}
-              {params.unit && (
-                <>
-                  {" "}for college {params.unit} ·{" "}
-                  <Link href={queryWith({ unit: null })} className="underline decoration-dotted underline-offset-2">
-                    show all colleges
-                  </Link>
-                </>
-              )}
-              {queue.updated && ` · queue updated ${dayLabel(queue.updated)}`}
-              {queuePage.total > 0 && ` · showing ${queuePage.from.toLocaleString("en-US")} to ${queuePage.to.toLocaleString("en-US")}`}
-            </p>
-            <ReviewQueueTable rows={queuePage.rows} />
-            {queuePage.pages > 1 && (
-              <nav aria-label="Review queue pages" className="flex items-center justify-between gap-3 text-sm">
-                {queuePage.page > 1 ? (
-                  <Link href={`${queryWith({ page: queuePage.page - 1 })}#review-queue`} rel="prev" className="inline-flex min-h-10 items-center underline decoration-dotted underline-offset-2">
-                    Previous {QUEUE_PAGE_SIZE}
-                  </Link>
-                ) : (
-                  <span />
-                )}
-                <span className="text-muted-foreground">
-                  Page {queuePage.page} of {queuePage.pages}
-                </span>
-                {queuePage.page < queuePage.pages ? (
-                  <Link href={`${queryWith({ page: queuePage.page + 1 })}#review-queue`} rel="next" className="inline-flex min-h-10 items-center underline decoration-dotted underline-offset-2">
-                    Next {QUEUE_PAGE_SIZE}
-                  </Link>
-                ) : (
-                  <span />
-                )}
-              </nav>
-            )}
-          </>
-        )}
+      <Section id="review-queue" title="Review queue">
+        <p className="rounded-2xl border border-border bg-card p-4 text-sm">
+          Values the automatic checks held back are in the Data console now: Accept the value, Reject, and Re-run discovery act on the data directly.{" "}
+          <Link href={params.unit ? `/admin/data/holds?unit=${params.unit}` : "/admin/data/holds"} className="font-semibold underline decoration-dotted underline-offset-2">
+            Open Holds{params.unit ? ` for college ${params.unit}` : ""}
+          </Link>
+        </p>
       </Section>
     </div>
   );

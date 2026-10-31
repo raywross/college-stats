@@ -59,3 +59,13 @@ Phases 1 and 2 are the bulk. Phase 3 is small once 2 exists. Phase 4 is wide but
 Very large: new tables and functions with policies, a publisher that must reproduce today's data exactly, a loader
 that swaps safely, every producer touched, the console's biggest new section, and a test suite re-pointed at a
 fixture. Built in four phases with the byte-equality proof as the gate between them.
+
+## As built, phases 1 and 2 (2026-10-31)
+Phase 1 merged as PR #201 (gate: byte-for-byte). Phase 2 is one PR; its production switch is the owner's three
+steps in the PR body (GitHub secrets, `DATA_SNAPSHOT_URL`, one publish). The owner chose to stay on the free plan for
+now ("comfortable going to prod as is… beta"), so two things changed: the publisher calls a Vercel deploy hook after
+each publish (egress near zero), and the dev database made room by archiving past and removed visit events (PR #202:
+385 MB → 151 MB for that table; 522 MB → 289 MB for the database; 417 MB after importing every layer). The
+high-school shards were not imported (the tables already hold them). Two faults the first real import found are
+fixed in the store: a NUL escape in one CDS record (Postgres JSON refuses it) and 16 MB write calls that timed out
+(calls are bounded by bytes). The pending essay prompts run under the sixth reader goes through the new pipeline.

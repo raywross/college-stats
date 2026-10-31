@@ -1,6 +1,7 @@
 /**
- * The run summary (data/essay-prompts/last-run.json) and what the workflow builds from it: the data PR's body and its
- * release note (specs/release-notes.md). Pure.
+ * The run summary (the `essays.runs` document) and what is built from it: the report the change set carries as its
+ * `summary.body` (the old data PR's body), and a release note for when a person asks for one from the console
+ * (specs/release-notes.md). Pure.
  */
 
 export interface RunSummary {
@@ -36,7 +37,7 @@ export function prBody(s: RunSummary): string {
     `- Colleges: ${s.colleges}; passed ${c.passed}${s.assumed?.length ? ` (${s.assumed.length} with the cycle assumed)` : ""}, held ${c.held}, unchanged ${c.unchanged}, not found ${c.not_found}, failed ${c.failed}`,
     `- Spent $${s.spent_usd.toFixed(2)} of the $${s.budget_usd.toFixed(2)} budget${s.stopped ? `; stopped: ${s.stopped}` : ""}`,
     "",
-    "Held records are in `data/essay-prompts/held/` and never merged; review them, fix by hand or re-run.",
+    "Held records are holds in the console (Data, Holds) and are never published; review them, fix by hand or re-run.",
   ];
   if (s.held.length) {
     lines.push("", "### Held", "", row(["College", "Unit", "Why"]), row(["---", "---", "---"]));
@@ -66,7 +67,7 @@ export function prBody(s: RunSummary): string {
   return `${lines.join("\n")}\n`;
 }
 
-/** The release note for the data PR. */
+/** A release note for the run, when a person asks for one (no data PR exists any more). */
 export function releaseNote(s: RunSummary, pr: number, date: string): string {
   const n = s.counts.passed;
   return `---

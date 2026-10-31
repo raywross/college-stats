@@ -108,6 +108,27 @@ test("composing twice gives the same bytes and leaves the layers as they were", 
   assert.deepEqual([...a.objects.keys()], [...b.objects.keys()]);
 });
 
+test("trends come from the history layer: a changed history document changes the college's trends", () => {
+  for (const s of first.schools) assert.deepEqual(s.trends, committed.find((c) => c.unit_id === s.unit_id)!.trends, `${s.name}: derived as sync-history wrote it`);
+  const histories = new Map(layers.history.schools);
+  const duke = structuredClone(histories.get("198419")!);
+  const applicants = duke.series.applicants!;
+  applicants.values[applicants.values.length - 1] = 60000;
+  histories.set("198419", duke);
+  // The previous snapshot's trends no longer win over the history layer.
+  const changed = composeFixture({ ...layers, history: { ...layers.history, schools: histories } });
+  const trends = changed.schools.find((s) => s.unit_id === "198419")!.trends!;
+  assert.equal(trends.applicants?.to, 60000);
+  assert.notDeepEqual(trends, first.schools.find((s) => s.unit_id === "198419")!.trends);
+  assert.deepEqual(changed.problems, []);
+  // A college with no history document keeps the previous snapshot's trends.
+  const without = new Map(layers.history.schools);
+  without.delete("123457");
+  const previous = committed.map((s) => (s.unit_id === "123457" ? { ...s, trends: { applicants: { since: 2014, from: 1, to: 2, change: 1 } } } : s)) as School[];
+  const kept = composeFixture({ ...layers, history: { ...layers.history, schools: without } }, previous);
+  assert.deepEqual(kept.schools.find((s) => s.unit_id === "123457")!.trends, { applicants: { since: 2014, from: 1, to: 2, change: 1 } });
+});
+
 test("the manifest records each layer's newest version", () => {
   assert.equal(first.versions[COLLECTIONS.base.colleges], 1);
   assert.equal(first.versions[COLLECTIONS.history.schools], 1);

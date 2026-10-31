@@ -205,10 +205,10 @@ test("the console says what changed in words, and finds the tier moves and Ultra
   );
 });
 
-test("the college-reported workflow rebuilds selectivity after merging, and the publisher records the history", () => {
+test("the college-reported workflow leaves selectivity to the publisher, which rebuilds the tiers and records the history", () => {
   const reported = readFileSync(join(ROOT, ".github/workflows/college-reported.yml"), "utf8");
-  assert.equal((reported.match(/run: npm run build-selectivity/g) ?? []).length, 2, "both jobs");
-  assert.ok(reported.indexOf("npm run merge-directories") < reported.indexOf("npm run build-selectivity"));
+  assert.doesNotMatch(reported, /run: npm run (build-selectivity|merge-reported|merge-directories)/, "no merge or build step: the publisher composes");
+  assert.equal((reported.match(/event_type=publish-snapshot/g) ?? []).length, 2, "both jobs ask the publisher for a snapshot");
   assert.match(readFileSync(join(ROOT, "scripts/publish-snapshot.mts"), "utf8"), /await recordTiers\(/);
 });
 

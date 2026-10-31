@@ -9,8 +9,10 @@ import "server-only";
  *   - the link prober's findings (`data/link-issues.json`),
  *   - each publish's changed fields (`dataset_changes` in Supabase; informational).
  *
- * The first five are 42 MB, so `npm run college-health` reduces them to `data/college-health.json` (lib/admin/
- * health-files.ts) in each data PR, and the deployed page reads only that file. `collegeHealth()` is pure and takes
+ * The first five are 42 MB, so each college-reported run (and `npm run college-health`) reduces them to the compact
+ * health document (lib/admin/health-files.ts), `health.colleges` on the data store, which the page reads with the
+ * viewer's session (one query, cached per instance), falling back to `data/college-health.json` in the deploy when the
+ * store holds none. `collegeHealth()` is pure and takes
  * its thresholds from lib/admin/health-rules.ts, so the tests pin both. `healthOverview()` builds the overview once
  * per server instance and caches it; the changes read is kept for a few minutes only, since "Publish changes" writes
  * it after the deploy that started the instance.
@@ -411,9 +413,36 @@ function readCompactFromDisk(): CompactHealth {
   return parseCompact(readFileSync(path, "utf8"));
 }
 
+/** The data store's collection and key of the compact health document (scripts/lib/data-platform/layers.mts). */
+export const HEALTH_DOCUMENT = { collection: "health.colleges", key: "health" } as const;
+
+/**
+ * The compact health document from the data store (`data_documents`, select open to every role), in one query; null
+ * when the table holds none, so the caller falls back to the file. A failed read throws.
+ */
+export async function readCompactFromStore(client: TableClient | null): Promise<CompactHealth | null> {
+  if (!client) return null;
+  const { data, error } = await client.from("data_documents").select("body").eq("collection", HEALTH_DOCUMENT.collection).eq("key", HEALTH_DOCUMENT.key).limit(1);
+  if (error) throw new Error(`Supabase: reading ${HEALTH_DOCUMENT.collection} failed: ${error.message}`);
+  const body = data?.[0]?.body;
+  if (body === undefined || body === null) return null;
+  return parseCompact(typeof body === "string" ? body : JSON.stringify(body));
+}
+
+/** The store's document (read with the viewer's session), else the file in the deploy; a failed store read falls back too. */
+export async function readCompact(deps: { client: () => Promise<TableClient | null>; disk: () => CompactHealth }): Promise<CompactHealth> {
+  try {
+    const fromStore = await readCompactFromStore(await deps.client());
+    if (fromStore) return fromStore;
+  } catch (err) {
+    console.error("[admin health] reading health.colleges from the data store failed; using data/college-health.json.", err);
+  }
+  return deps.disk();
+}
+
 const realDeps: HealthDeps = {
   async compact() {
-    return readCompactFromDisk();
+    return readCompact({ client: defaultAdminClient, disk: readCompactFromDisk });
   },
   async changes() {
     // Changes live only in Supabase, written after each deploy (lib/data.ts getSchoolChanges): without SUPABASE_URL there are none.

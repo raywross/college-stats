@@ -5,7 +5,7 @@
 #
 # Target: `prod` (the default on the schedule) writes to the production project with PROD_SUPABASE_*; `dev` (the pilot,
 # or by hand) writes to the dev project with DEV_SUPABASE_*. A target whose secrets aren't set skips cleanly, like
-# publish-changes.yml, so the schedule can exist before the formal release. Until the owner switches the schedule's
+# publish-snapshot.yml, so the schedule can exist before the formal release. Until the owner switches the schedule's
 # target, the pilot runs on dev every night.
 #
 # Every source is a college's own public page: honest user agent, robots.txt honored, one request a second per host

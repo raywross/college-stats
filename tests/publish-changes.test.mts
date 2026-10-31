@@ -1,12 +1,12 @@
 /**
- * The change-log publish (scripts/publish-changes.mts, scripts/lib/publish-changes.mts; specs/serving-architecture.md
- * section 2): both datasets read from git blobs (a stubbed `git show`), the diff, the first publish, the dry run, the
- * default base, and a re-run that is reused. The SQL side (publish_changes, the retire migration) is checked against
+ * The change-log library (scripts/lib/publish-changes.mts; specs/serving-architecture.md section 2), which the
+ * snapshot publisher calls (scripts/lib/data-platform/changelog.mts; its CLI and workflow are retired): both datasets
+ * read from git blobs (a stubbed `git show`), the diff, the first publish, the dry run, the default base, and a re-run
+ * that is reused. The SQL side (publish_changes, the retire migration) is checked against
  * PGlite in tests/follows-policies.test.mts. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
@@ -253,14 +253,6 @@ test("the real git access reads this repository's files at HEAD", () => {
   assert.equal(typeof meta.retrieved, "string");
 });
 
-test("without SUPABASE_URL/SUPABASE_SECRET_KEY the script says so and exits 0", () => {
-  const env = { ...process.env };
-  delete env.SUPABASE_URL;
-  delete env.SUPABASE_SECRET_KEY;
-  const out = execFileSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", "publish-changes.mts")], { cwd: ROOT, env, encoding: "utf8" });
-  assert.match(out, /SUPABASE_URL or SUPABASE_SECRET_KEY is not set; no changes recorded/);
-});
-
 /* ------------------------------------------------------------------ */
 /* Guard: nothing still writes or reads a retired table                */
 /* ------------------------------------------------------------------ */
@@ -288,7 +280,7 @@ function walk(dir: string): string[] {
 const headRequests = (source: string) => source.split("\n").filter((line) => line.includes("head: true") && !/^\s*(\*|\/\/)/.test(line));
 
 test("guard: the publish scripts check tables with a one-row select, never head: true (a missing table looks fine to HEAD)", () => {
-  for (const file of ["scripts/publish-changes.mts", "scripts/lib/publish-changes.mts", "scripts/publish-high-schools.mts", "scripts/lib/publish-high-schools.mts"]) {
+  for (const file of ["scripts/lib/publish-changes.mts", "scripts/publish-high-schools.mts", "scripts/lib/publish-high-schools.mts", "scripts/lib/publish-college-failures.mts", "scripts/lib/data-platform/publish-tables.mts"]) {
     assert.deepEqual(headRequests(readFileSync(join(ROOT, file), "utf8")), [], `${file}: table checks must not use head: true`);
   }
   assert.deepEqual(headRequests(`  const { error } = await client.from("dataset_change_staging").select("unit_id", { head: true });`).length, 1, "the check itself");

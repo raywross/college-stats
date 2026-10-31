@@ -15,6 +15,7 @@ import type { FieldEdit } from "../../../lib/data-platform/edits.ts";
 import type { OverrideRow } from "../essay-prompts/export-confirmed.mts";
 import { fileStoreChangeSets } from "./store.mts";
 import type { SnapshotRow } from "./upload.mts";
+import type { RecordedManifest } from "./publish-tables.mts";
 
 /** A closed change set the next snapshot would carry. */
 export interface PendingChangeSet {
@@ -33,8 +34,8 @@ export interface PublishLedger {
   manifest(id: number): Promise<Partial<SnapshotManifest> | null>;
   /** A `building` row; returns its id. */
   begin(changeSetIds: readonly number[], previous: number | null): Promise<number>;
-  /** `published` (the pointer moved to it) or `failed`. */
-  finish(id: number, status: "published" | "failed", manifest: SnapshotManifest | null, notes: string | null): Promise<void>;
+  /** `published` (the pointer moved to it) or `failed`; a published row's manifest also carries the table step's log. */
+  finish(id: number, status: "published" | "failed", manifest: SnapshotManifest | RecordedManifest | null, notes: string | null): Promise<void>;
   /** The unreleased field edits. */
   fieldEdits(): Promise<FieldEdit[]>;
   /** The console's hand-read prompts, or null when this ledger has no such table (the compose then keeps the layer's). */

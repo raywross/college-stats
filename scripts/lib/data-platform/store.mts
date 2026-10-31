@@ -4,7 +4,8 @@
  * same semantics:
  *
  * - `supabaseStore(url, secretKey)`: the data project. Reads page through `data_documents` (select is open to every
- *   role, 1,000 rows a page); writes go through the security-definer functions `data_open_change_set`,
+ *   role, 1,000 rows a page; `body` is a `json` column, so a document comes back with its stored key order and
+ *   nothing here re-sorts it); each document's body is sent as its text (`documentText`); writes go through the security-definer functions `data_open_change_set`,
  *   `data_write_documents` (200 documents a call) and `data_close_change_set`
  *   (supabase/migrations/20261031120000_data_platform.sql). A failed call that isn't the database refusing (a network
  *   error, a 5xx, a project still waking from a pause) is retried three times, after 5, 20, and 60 seconds.
@@ -89,6 +90,13 @@ function sortKeys(value: unknown): unknown {
   }
   return value;
 }
+
+/**
+ * A document's stored text: `JSON.stringify` with the producer's key order. Both stores store exactly this (the file
+ * store as the `body` of its file, the Supabase store as the string it sends for the `json` column), so a body read back
+ * from either serializes to the same bytes; equality for idempotence is `orderedJson` (here) or a jsonb cast (there).
+ */
+export const documentText = (body: unknown): string => JSON.stringify(body);
 
 /** Key-to-file-name encoding of the file store: `encodeURIComponent`, so `essay-guidance/guidance` and `1|2|C1` are one file each. */
 export const encodeKey = (key: string) => encodeURIComponent(key);
@@ -218,8 +226,8 @@ export function fileStore(root: string, opts: { now?: () => Date } = {}): DataSt
       }
       if (cur && orderedJson(cur.body) === orderedJson(d.body)) continue;
       const version = Math.max(cur?.version ?? 0, last.get(`${collection}\u0000${d.key}`) ?? 0) + 1;
-      const file: FileDocument = { version, change_set_id: setId, body: d.body };
-      writeAtomic(docPath(collection, d.key), `${JSON.stringify(file)}\n`);
+      // `{version, change_set_id, body}` with the body's text from documentText (the bytes the Supabase store sends).
+      writeAtomic(docPath(collection, d.key), `{"version":${version},"change_set_id":${setId},"body":${documentText(d.body)}}\n`);
       set.versions.push({ collection, key: d.key, version, deleted: false });
     }
     writeSets(sets);
@@ -390,7 +398,8 @@ export function supabaseStore(url: string, secretKey: string, opts: SupabaseStor
           const chunk = docs.slice(i, i + WRITE_CHUNK).map((d) => ({
             collection,
             key: d.key,
-            body: d.body === undefined ? null : d.body,
+            // The document's text, key order as the producer built it (the column is `json`, which keeps it); null deletes.
+            body: d.body === undefined || d.body === null ? null : documentText(d.body),
             ...(d.expectVersion !== undefined ? { expect_version: d.expectVersion } : {}),
           }));
           const written = await call<number>(`writing ${collection} (${i + 1}–${i + chunk.length} of ${docs.length})`, (c) =>

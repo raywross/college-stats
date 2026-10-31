@@ -236,11 +236,36 @@ test("supabase store: open, write in chunks of 200, remove, close call the data_
   const writes = calls.filter((c) => c.name === "data_write_documents").map((c) => c.args as { p_change_set: number; p_documents: Record<string, unknown>[] });
   assert.deepEqual(writes.map((w) => w.p_documents.length), [WRITE_CHUNK, WRITE_CHUNK, 1, 1, 1]);
   assert.ok(writes.every((w) => w.p_change_set === 42));
-  assert.deepEqual(writes[0].p_documents[0], { collection: "essays.records", key: "0", body: { i: 0 } });
-  assert.deepEqual(writes[3].p_documents[0], { collection: "essays.records", key: "x", body: { v: 2 }, expect_version: 3 });
+  assert.deepEqual(writes[0].p_documents[0], { collection: "essays.records", key: "0", body: '{"i":0}' });
+  assert.deepEqual(writes[3].p_documents[0], { collection: "essays.records", key: "x", body: '{"v":2}', expect_version: 3 });
   assert.deepEqual(writes[4].p_documents[0], { collection: "essays.held", key: "9", body: null });
   assert.deepEqual(calls.at(-1)!.args, { p_change_set: 42, p_status: "held", p_held_reason: "over half held", p_summary: { held: 30 } });
   assert.equal(calls.at(-1)!.name, "data_close_change_set");
+});
+
+test("supabase store: a body is sent as its text with the producer's key order, the same text the file store holds; reads keep the stored order", async () => {
+  const { client, calls } = fakeClient((call) => {
+    if (call.name === "data_open_change_set") return { data: 1, error: null };
+    if (call.name === "data_documents") return { data: [{ key: "k", version: 1, body: JSON.parse('{"b":1,"a":2}') }], error: null };
+    return { data: 1, error: null };
+  });
+  const store = supabaseStore("u", "k", { client });
+  const set = await store.open("pipeline", "x", "r");
+  await set.write(COLLECTIONS.base.meta, [{ key: "meta", body: { b: 1, a: 2 } }]);
+  const sent = (calls.find((c) => c.name === "data_write_documents")!.args as { p_documents: { body: unknown }[] }).p_documents[0].body;
+  assert.equal(sent, '{"b":1,"a":2}');
+  // The file store holds the same text for the same body.
+  const root = tmp();
+  try {
+    const fset = await fileStore(root).open("pipeline", "x", "r");
+    await fset.write(COLLECTIONS.base.meta, [{ key: "meta", body: { b: 1, a: 2 } }]);
+    assert.equal(readFileSync(join(root, COLLECTIONS.base.meta, "meta.json"), "utf8"), `{"version":1,"change_set_id":1,"body":${sent}}\n`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+  // A json column's body comes back in its stored order; the store doesn't re-sort it.
+  const read = await store.read<Record<string, number>>(COLLECTIONS.base.meta);
+  assert.equal(JSON.stringify(read.get("k")), '{"b":1,"a":2}');
 });
 
 test("supabase store: retries a failed call three times, never a refusal; 40001 is a StoreConflictError", async () => {

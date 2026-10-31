@@ -589,39 +589,3 @@ export async function syncIcons(opts: {
   const entries = [...rows.values()].sort((a, b) => a.unit_id.localeCompare(b.unit_id));
   return { entries, outcomes, requests };
 }
-
-const readJson = <T,>(path: string, fallback: T): T => (existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as T) : fallback);
-
-/** One row per line, so a refresh's diff shows which colleges changed. */
-const formatRows = (rows: readonly object[]) => (rows.length ? `[\n${rows.map((r) => JSON.stringify(r)).join(",\n")}\n]\n` : "[]\n");
-
-/**
- * The icon step on disk: reads data/site-probe.json, data/brand-logos.json, and data/brand-overrides.json, writes
- * public/brand/*.webp and data/brand-logos.json. The site probe may call this after writing its file;
- * `npm run sync-brand -- --icons` runs it alone.
- */
-export async function syncBrandIcons(
-  root: string,
-  opts: { ids?: ReadonlySet<string>; deps?: Partial<IconDeps>; probePath?: string } = {},
-): Promise<Awaited<ReturnType<typeof syncIcons>>> {
-  const probePath = opts.probePath ?? join(root, "data", "site-probe.json");
-  if (!existsSync(probePath)) throw new Error(`${probePath} is missing: run the site probe first (\`npm run probe-sites\`; it lists each college's icons)`);
-  const logosPath = join(root, "data", "brand-logos.json");
-  const run = await syncIcons({
-    probe: JSON.parse(readFileSync(probePath, "utf8")) as SiteProbeEntry[],
-    previous: readJson<BrandLogoEntry[]>(logosPath, []),
-    overrides: readJson<Record<string, BrandOverride>>(join(root, "data", "brand-overrides.json"), {}),
-    brandDir: join(root, "public", "brand"),
-    ids: opts.ids,
-    names: new Map(readJson<{ unit_id: string; name: string }[]>(join(root, "data", "schools.json"), []).map((s) => [s.unit_id, s.name])),
-    deps: {
-      fetch: globalThis.fetch,
-      now: () => Date.now(),
-      sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
-      log: (m) => console.log(m),
-      ...opts.deps,
-    },
-  });
-  writeFileSync(logosPath, formatRows(run.entries));
-  return run;
-}

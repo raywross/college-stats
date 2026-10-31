@@ -102,7 +102,7 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     description: "Re-syncs Wikidata, re-probes every college's site, and re-reads college colors.",
     workflow: "identity-refresh.yml",
     fixed: {},
-    inputs: [{ name: "force", label: "Run even if the last probe is under 28 days old", kind: "boolean", default: false }, AUTO_MERGE],
+    inputs: [{ name: "force", label: "Run even if the last probe is under 28 days old", kind: "boolean", default: false }],
     guards: { oneAtATime: { concurrencyGroup: "identity-refresh" } },
     ref: "main",
   },

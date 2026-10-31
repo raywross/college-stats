@@ -1178,8 +1178,13 @@ export interface LineageRecord {
   url?: string;
   /** ISO date the value was retrieved. */
   retrieved?: string;
-  /** reported = as published; derived = calculated by us; extracted = read from a document by the ingestion agent and checked. */
-  method?: "reported" | "derived" | "extracted";
+  /**
+   * reported = as published; derived = calculated by us; extracted = read from a document by the ingestion agent and
+   * checked; edited = set by Quad's editors in the console (source `quad-edit`, `retrieved` the day).
+   */
+  method?: "reported" | "derived" | "extracted" | "edited";
+  /** An edit's note, shown in the citation popover ("Per the registrar's email, …"). Edits only. */
+  note?: string;
   /** Extracted values: the verbatim text the number came from. */
   quote?: string;
   page?: number;
@@ -1487,7 +1492,12 @@ export type SourceKey = "scorecard" | "ipeds-adm" | "ipeds-sfa" | "ipeds-ic" | "
    */
   | "common-app"
   /** The Coalition for College's member list and Scoir's list (specs/data-expansion/coalition-app.md); present-only. */
-  | "coalition";
+  | "coalition"
+  /**
+   * Quad's editors (specs/data-platform/change-sets.md "Admin edits"): a value an admin set in the console, applied
+   * last by the publisher. Each record carries the day (`retrieved`, method `edited`); present-only, no vintage.
+   */
+  | "quad-edit";
 /** Race/ethnicity groups for graduation rates (lib/graduation-groups.ts RACE_GROUPS). */
 export type GradRaceGroup = "white" | "asian" | "hispanic" | "black" | "two_or_more" | "international" | "aian" | "nhpi";
 

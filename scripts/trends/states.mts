@@ -16,7 +16,7 @@ import { campusExclusionOf, exclusionSets, type MoverExclusionSets } from "../..
 import { stateByPostal } from "../../lib/states.ts";
 import type { StateEntry, StateFlows, StateMapMeasures, StateMeasures, StateOutOfState, StateOutOfStateSide, StateResearchUni, StateSparkLines, StateTopSendingState, StatesFile } from "../../lib/trends.ts";
 import type { TrendBuilder, TrendContext, TrendOutput } from "./context.mts";
-import { loadMoverExclusions, moversFor } from "./movers.mts";
+import { contextExclusions, moversFor } from "./movers.mts";
 
 /** The five colleges in a state taking the most of its inflow (flows rule). */
 const RECEIVING_SHOWN = 5;
@@ -338,7 +338,7 @@ export function buildStates(ctx: TrendContext): TrendOutput {
   // First-years crossing state lines (specs/trends/states.md, "Planned addition"): one snapshot fall, the detail
   // files' newest year, over campus-based colleges only (rule 1).
   const flowsYear = parseFlowsYear(ctx);
-  const campuses = exclusionSets(loadMoverExclusions(ctx.root).campuses).campuses;
+  const campuses = exclusionSets(contextExclusions(ctx)).campuses;
   const { byState: flowsByState, excluded: flowsExcluded } = flowsYear === null ? { byState: new Map<string, StateFlows>(), excluded: { onlineFirst: 0, forProfit: 0, campuses: 0 } } : allFlowsOf(ctx, flowsYear, campuses);
 
   const states = [...byState.entries()]

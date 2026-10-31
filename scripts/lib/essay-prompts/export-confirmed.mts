@@ -32,11 +32,16 @@ export interface ExportPlan {
   cycle: string;
 }
 
-/** What to write and remove so the directory (its files' text by unit id) mirrors the open cycle's rows. */
-export function planExport(rows: readonly OverrideRow[], files: ReadonlyMap<string, string>, today: string): ExportPlan {
+/**
+ * The open cycle's rows that pass, as hand-read records (by unit id), and the ones skipped with why. A skipped row
+ * with a well-formed unit id is in `held`: its college keeps what it had (the export leaves its file; the publisher,
+ * scripts/lib/data-platform/compose.mts, keeps the layer's record). Shared by the nightly export and the publisher.
+ */
+export function confirmedFromRows(rows: readonly OverrideRow[], today: string): { cycle: string; records: ConfirmedRecord[]; skipped: string[]; held: Set<string> } {
   const cycle = openCycle(today);
-  const plan: ExportPlan = { writes: new Map(), removes: [], unchanged: 0, skipped: [], cycle };
-  const keep = new Set<string>();
+  const records: ConfirmedRecord[] = [];
+  const skipped: string[] = [];
+  const held = new Set<string>();
   for (const row of [...rows].sort((a, b) => a.unit_id.localeCompare(b.unit_id))) {
     if (row.cycle !== cycle) continue;
     const r = row.record;
@@ -44,14 +49,25 @@ export function planExport(rows: readonly OverrideRow[], files: ReadonlyMap<stri
     if (r && typeof r === "object" && (r.unit_id !== row.unit_id || r.cycle !== row.cycle)) problems.unshift(`the record is for ${r.unit_id} ${r.cycle}, not its row's ${row.unit_id} ${row.cycle}`);
     if (!/^\d{1,12}$/.test(row.unit_id)) problems.unshift(`unit id ${JSON.stringify(row.unit_id)} isn't 1 to 12 digits`);
     if (problems.length) {
-      plan.skipped.push(`${row.unit_id}: ${problems.join("; ")}`);
-      if (/^\d{1,12}$/.test(row.unit_id)) keep.add(row.unit_id);
+      skipped.push(`${row.unit_id}: ${problems.join("; ")}`);
+      if (/^\d{1,12}$/.test(row.unit_id)) held.add(row.unit_id);
       continue;
     }
-    keep.add(row.unit_id);
+    records.push(r);
+  }
+  return { cycle, records, skipped, held };
+}
+
+/** What to write and remove so the directory (its files' text by unit id) mirrors the open cycle's rows. */
+export function planExport(rows: readonly OverrideRow[], files: ReadonlyMap<string, string>, today: string): ExportPlan {
+  const picked = confirmedFromRows(rows, today);
+  const plan: ExportPlan = { writes: new Map(), removes: [], unchanged: 0, skipped: picked.skipped, cycle: picked.cycle };
+  const keep = new Set<string>(picked.held);
+  for (const r of picked.records) {
+    keep.add(r.unit_id);
     const text = recordJson(r);
-    if (files.get(row.unit_id) === text) plan.unchanged++;
-    else plan.writes.set(row.unit_id, text);
+    if (files.get(r.unit_id) === text) plan.unchanged++;
+    else plan.writes.set(r.unit_id, text);
   }
   plan.removes = [...files.keys()].filter((id) => !keep.has(id)).sort();
   return plan;

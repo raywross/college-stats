@@ -179,10 +179,12 @@ export interface AnalyticsEvents {
   essays_move_done: { by: "store" | "hand" };
   /** The data platform (specs/data-platform/publish.md "Timing and telemetry"): an instance swapped to another snapshot, from which id (`legacy` for data/) to which, and how long the download and build took. */
   data_snapshot_swap: { from: number | string; to: number; ms: number };
+  /** The data platform's publisher (scripts/publish-snapshot.mts) published a snapshot: its id, how many change sets it carried, and how long the run took. */
+  data_publish: { snapshot: number; change_sets: number; ms: number };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done" | "data_snapshot_swap";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done" | "data_snapshot_swap" | "data_publish";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -317,6 +319,7 @@ export const EVENTS = {
   essay_review_dropped: { properties: ["reason"], side: "server", why: "Essays: what the guard drops, and answers with no notes, by why" },
   essays_move_done: { properties: ["by"], side: "both", why: "Essays: the essays move finished, ticked by the store when every essay is ready or by hand" },
   data_snapshot_swap: { properties: ["from", "to", "ms"], side: "server", why: "Data platform: how often instances pick up a new snapshot, and how long the swap takes" },
+  data_publish: { properties: ["snapshot", "change_sets", "ms"], side: "server", why: "Data platform: each published snapshot, how many change sets it carried, and how long the publish took" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

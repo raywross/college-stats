@@ -1055,7 +1055,7 @@ export function registeredPathFor(path: string): FieldPath | null {
 export const METADATA_KEYS = new Set(["lineage", "cds"]);
 
 /** Sources whose values each carry their own document and year in lineage, so their fields have no vintage. */
-export const PER_DOCUMENT_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["cds", "college-site", "state-law", "directory", "org-estimate", "policy-page"]);
+export const PER_DOCUMENT_SOURCES: ReadonlySet<SourceKey> = new Set<SourceKey>(["cds", "college-site", "state-law", "directory", "org-estimate", "policy-page", "quad-edit"]);
 
 /**
  * Community-edited references with no release year (specs/school-identity/): their fields have no vintage, and the

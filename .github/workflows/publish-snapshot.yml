@@ -1,0 +1,109 @@
+# The data platform's publisher (specs/data-platform/publish.md "The publisher"): composes the layers in the data
+# project into a snapshot, uploads it to the `snapshots` bucket, moves the pointer, revalidates the sites, and records
+# the change log and tier history. No PR, no deploy, nothing posted to GitHub.
+# - publish: each pipeline's last step sends a `publish-snapshot` repository_dispatch; a nightly run at 08:00 UTC
+#   catches up; the console's Publish now dispatches it with `force`. A held change set stops an automatic run (the
+#   script exits 2, shown here as a notice); `force` publishes past it.
+# - point: the console's Point back here records the point-back (admin_data_point_snapshot), then dispatches this with
+#   `point` set: the pointer moves to that snapshot and the sites revalidate. No rebuild, no change log.
+# Skips cleanly while the data project's secrets aren't set.
+name: Publish snapshot
+
+# The admin console passes request_id on dispatch so it can find its run (specs/product/admin.md, "Reruns").
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.workflow }}"
+
+on:
+  repository_dispatch:
+    types: [publish-snapshot]
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Publish even with nothing new, or past a held change set
+        type: boolean
+        default: false
+      point:
+        description: Point the site back at this snapshot id (no rebuild); leave empty to publish
+        type: string
+        default: ""
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+# One publish at a time; a queued run is never cancelled (each run publishes everything since the last snapshot).
+concurrency:
+  group: publish-snapshot
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event_name != 'workflow_dispatch' || inputs.point == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+      DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
+      REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+      # Comma-separated site origins to revalidate after the pointer moves (production, and the preview while it reads
+      # the same snapshots).
+      REVALIDATE_URLS: ${{ vars.REVALIDATE_URLS || 'https://usequad.app' }}
+      NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{ secrets.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
+      FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force && '--force' || '' }}
+    steps:
+      - name: Check for the data project's secrets
+        id: secrets
+        run: |
+          if [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set; nothing published."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@v4
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
+      # Exit 2: held change sets block the publish (the console lists them); not a failure of this run.
+      - if: steps.secrets.outputs.ready == 'true'
+        run: |
+          set +e
+          npm run publish-snapshot -- --store supabase $FORCE
+          code=$?
+          if [ "$code" -eq 2 ]; then
+            echo "::notice::Held change sets block the publish; publish anyway or revert them in the console."
+            exit 0
+          fi
+          exit "$code"
+
+  point:
+    if: github.event_name == 'workflow_dispatch' && inputs.point != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+      DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
+      REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+      REVALIDATE_URLS: ${{ vars.REVALIDATE_URLS || 'https://usequad.app' }}
+      POINT: ${{ inputs.point }}
+    steps:
+      - name: Check the input and the data project's secrets
+        run: |
+          if ! [[ "$POINT" =~ ^[0-9]+$ ]]; then echo "::error::point must be a snapshot id"; exit 1; fi
+          if [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then echo "::error::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set"; exit 1; fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run publish-snapshot -- --store supabase --point "$POINT"

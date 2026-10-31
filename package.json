@@ -37,6 +37,7 @@
     "rebuild-selectivity-history": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/rebuild-selectivity-history.mts",
     "backfill-connections": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/backfill-connections.mts",
     "import-data-from-git": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/import-data-from-git.mts",
+    "publish-snapshot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/publish-snapshot.mts",
     "publish-changes":"node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/publish-changes.mts",
     "publish-high-schools": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/publish-high-schools.mts",
     "build-cip": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-cip.mts",

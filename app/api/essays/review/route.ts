@@ -9,6 +9,7 @@ import { loadGuidance } from "@/lib/essays/guidance";
 import { isMissingTable, promptLookup } from "@/lib/essays/load";
 import { resolvePrompt, type EssayKind } from "@/lib/essays/prompts";
 import { handleReview, type Allowance, type LoadedDraft, type RecordInput, type ReviewDeps, type StoredReview } from "@/lib/essays/review";
+import { reviewResponse } from "@/lib/essays/review-response";
 import type { ContextDraft, ContextInput } from "@/lib/essays/review-context";
 import type { NoteCategory } from "@/lib/essays/rubric";
 import { myLists } from "@/lib/lists";
@@ -19,9 +20,13 @@ import { createServerSupabase } from "@/lib/supabase-server";
 /**
  * /api/essays/review (specs/product/essays/reviewer.md; the Essays build brief "U5b Reviewer"):
  *
- *   POST  { essayId, versionId? }  → { review, message }   A reader's notes on a version of the student's draft (the draft
+ *   POST  { essayId, versionId? }  → NDJSON events         A reader's notes on a version of the student's draft (the draft
  *                                                           as saved now when no version is named; it is kept as a
  *                                                           version first, so the notes stay with the words they read).
+ *                                                           Refusals before the read are JSON { error } with a status;
+ *                                                           once the read starts: reading, note…, then done { review,
+ *                                                           message } or error { error } (reviewer.md "the notes
+ *                                                           stream in").
  *   GET   ?essayId=…               → { reviews }           The draft's reviews, newest first, with their notes (the
  *                                                           student or a guardian in the household; RLS decides).
  *   PATCH { noteId, state }        → { ok }                The student marks a note done, ignored, or open again.
@@ -211,8 +216,11 @@ export async function POST(request: Request) {
   } catch {
     return json({ error: "Send a JSON body." }, 400);
   }
-  const reply = await handleReview(deps(request, createServerSupabase()), body);
-  return json(reply.body, reply.status, reply.headers);
+  // Checks before the model call answer as JSON; once the read starts, the events stream as NDJSON.
+  return reviewResponse(
+    (send) => handleReview(deps(request, createServerSupabase()), body, send),
+    (reply) => json(reply.body, reply.status, reply.headers),
+  );
 }
 
 export async function GET(request: Request) {

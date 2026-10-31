@@ -201,6 +201,15 @@ function functionCalls(w: World): [name: string, sql: string, params: unknown[]]
     ["admin_set_setting", "select public.admin_set_setting('planner.all_moves', 'true')", []],
     ["admin_set_essay_prompts", "select public.admin_set_essay_prompts('100005', '2026-27', '{}')", []],
     ["admin_delete_essay_prompts", "select public.admin_delete_essay_prompts('100005', '2026-27')", []],
+    // The data platform's console functions (20261031130000_data_platform_admin.sql; tests/data-platform-*.test.mts).
+    ["admin_data_edit", "select public.admin_data_edit('100654', 'name', '\"Hacked\"', null)", []],
+    ["admin_data_release_edit", "select public.admin_data_release_edit(1)", []],
+    ["admin_data_hold", "select public.admin_data_hold(1, 'hold')", []],
+    ["admin_data_unhold", "select public.admin_data_unhold(1)", []],
+    ["admin_data_revert", "select public.admin_data_revert(1, null)", []],
+    ["admin_data_resolve_review", "select public.admin_data_resolve_review('100654||', 'rejected', null)", []],
+    ["admin_data_point_snapshot", "select public.admin_data_point_snapshot(1)", []],
+    ["admin_data_set_reference", "select public.admin_data_set_reference('calendar', '{}', null)", []],
   ];
 }
 

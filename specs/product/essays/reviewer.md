@@ -84,7 +84,7 @@ the cache, $25 per million output; thinking tokens bill as output):
 | The student's context (story, depth summary, the college's facts, prior notes) | about 2,000 | $0.010 |
 | The draft (650 words is about 900 tokens; short answers less) | about 1,000 | $0.005 |
 | Thinking at effort `medium` | about 1,500 to 3,000 | $0.04 to $0.075 |
-| The notes (up to twelve, structured) | about 1,500 | $0.0375 |
+| The notes (up to twelve, structured; eight since 2026-10-31) | about 1,500 | $0.0375 |
 | **One review** | | **about $0.10, up to $0.15 cold** |
 
 | Per student, per cycle | Reviews | Cost |
@@ -153,9 +153,38 @@ than a sentence of any source; the corpus never contains a student's essay.
 - **Stored** per version: the notes, `REVIEW_METHOD`, the model, and the usage; a note's state (open, done, ignored)
   is the student's. Old notes stay with their version.
 - **Shown** in the editor beside the span (a mark in the margin on desktop; a list under the field on a phone, each
-  opening to the spot); `mechanics` first, then the rest in draft order; never more than twelve notes per review (the
-  reader picks the ones that matter; the rubric says so).
+  opening to the spot); `mechanics` first, then the rest in draft order; never more than eight notes per review (the
+  reader picks the ones that matter; the rubric says so; twelve until 2026-10-31, see below).
 - **A parent or counselor** reading the draft sees the notes too, and can comment on them like anything else.
+
+### Changed (owner, 2026-10-31): the notes stream in
+**Why.** After the first live read the owner wrote: "it took about a minute for the results to show… it came back
+with a lot of results, maybe we could have the results stream in?" So the notes now appear one by one as the reader
+finds them, there are fewer and shorter of them, and the panel says what is happening.
+
+- **Streaming.** The model's answer streams (`client.messages.stream`); `lib/essays/review-stream.ts` follows the JSON
+  as it arrives and hands over each object of the `notes` array the moment its closing brace lands. Each note passes
+  the guard on the spot (the same rules, one note at a time) before the student sees it.
+- **The response is NDJSON** (`Content-Type: application/x-ndjson`, one JSON object per line, no caching or proxy
+  buffering). Every check before the model call still answers as JSON with its status, exactly as before. Once the read
+  starts: `{"kind":"reading"}`; `{"kind":"note","note":…}` per note that passed (a stored note's fields without `id`
+  and `state`); after storing, `{"kind":"done","review":<the stored review>,"message":<string|null>}`; or
+  `{"kind":"error","error":…}` for a failure after the stream began (the reader busy or failed, a cap reached at record
+  time, the record failed), with the same words the JSON errors used. Recording and telemetry run as before.
+- **A cut answer keeps what arrived whole.** When the answer hits `max_tokens`, the notes whose objects completed (and
+  passed) are kept and stored, and the review's outcome is `max_tokens`; before streaming everything was dropped.
+  `malformed` now means nothing parsed at all. A refusal still keeps nothing.
+- **Eight notes, shorter.** `MAX_NOTES` 12 → 8. The rubric asks for an observation of at most about twenty words and a
+  why of at most about twenty-five, and says twice that fewer, sharper notes win; the schema's descriptions say the
+  same. `REVIEW_METHOD` → `2026.10.31.1`. The database's ceiling stays at twelve (looser is harmless; no migration).
+- **The cache for an hour.** The system block's `cache_control` is `{ type: "ephemeral", ttl: "1h" }`: the prefix
+  stays warm between a student's reads in one sitting. A one-hour write costs twice the base input price (a
+  five-minute write 1.25 times); a read is a tenth either way.
+- **The panel.** On Read it says "Reading… notes appear as the reader finds them" and lists each note as it arrives,
+  in the same card, with Done and Ignore disabled until `done` swaps in the stored review (which has ids). A read
+  that ran out of room says "The reader stopped early; these notes are kept." A read that stopped before the server
+  recorded it keeps the notes on screen with "The reader stopped early; these notes weren't kept." A reload lists the
+  stored reviews through GET as before.
 
 ## The guard
 `lib/essays/review-guard.ts` (pure, tested) runs on every response before it is stored:
@@ -238,12 +267,18 @@ writes `reviewer-eval.md` to the job summary. Nothing has made a live call yet.
   (`tests/essay-guidance.test.mts` enforces all of it).
 - **The call** (`lib/essays/review.ts`, server-only): `claude-opus-5`, adaptive thinking at effort `medium`, the
   rubric and the kind's guidance as a cached system block, a JSON schema for the notes, `max_tokens` 8000; a refusal
-  or a cut-off answer stores no notes; API errors are not recorded and don't count against the caps. The reader sees
+  or a cut-off answer stored no notes (since 2026-10-31 a cut answer keeps its whole notes); API errors are not recorded and don't count against the caps. The reader sees
   numbered paragraphs and returns the paragraph and the exact words; the code finds the span, and a quote not in the
-  draft drops the note. `REVIEW_METHOD` is `2026.10.29.1`.
+  draft drops the note. `REVIEW_METHOD` was `2026.10.29.1` at the first build.
+- **Streaming (2026-10-31, `feature/reviewer-streaming`; see "Changed (owner, 2026-10-31)" above)**: the call streams
+  and each note is guarded and sent as NDJSON the moment its object completes (`lib/essays/review-stream.ts`, the
+  incremental parser; `lib/essays/review-response.ts`, the route's stream adapter and the panel's line splitter); a
+  cut answer keeps its whole notes; at most eight notes, shorter; the system block cached for an hour; the panel shows
+  notes as they arrive. `REVIEW_METHOD` is `2026.10.31.1`.
 - **The guard** (`lib/essays/review-guard.ts`, pure): the spec's rules plus no offered wording ("try writing…", a
   quoted passage of four or more words that isn't from the draft or the prompt), shape and span validity, and at most
-  twelve notes; grade words that come from the prompt itself or from the student's own quoted words are not treated
+  `MAX_NOTES` notes (twelve at the first build, eight since 2026-10-31; `noteGuard` checks one note at a time for the
+  stream); grade words that come from the prompt itself or from the student's own quoted words are not treated
   as grading. Every rule has a test that plants the violation.
 - **What the reader knows** (`lib/essays/review-context.ts`): the spec's table, with the student's display name
   removed from the story and from the other drafts' openings; college facts only for why-us and program prompts;
@@ -275,6 +310,5 @@ writes `reviewer-eval.md` to the job summary. Nothing has made a live call yet.
 - **Telemetry**: `essay_review_requested {prompt_kind}`, `essay_review_notes {count, categories}`,
   `essay_review_dropped {reason}`, server-side; never text.
 - **Not built**: the per-essay and per-account off switch (needs a column and a decision on where it lives); the
-  privacy page's wording on the provider and what is sent; a one-hour cache (`ttl: "1h"` costs twice as much to write;
-  decide once traffic is known); a notes slot inside the editor so the notes sit right under the field rather than
+  privacy page's wording on the provider and what is sent; a notes slot inside the editor so the notes sit right under the field rather than
   after the comments and versions.

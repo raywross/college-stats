@@ -7,6 +7,7 @@ Structured documentation for the Higher Education Data Explorer ("Quad").
 | File | Description |
 |---|---|
 | [architecture.md](architecture.md) | Tech stack, project structure, key decisions |
+| [data-platform/](data-platform/README.md) | *Planned 2026-10-31:* Supabase as the source of truth for the college data (versioned layers, change sets, revert), a published snapshot the site reads, admin edits in the console; the repository goes back to code and specs. Six parts |
 | [design-system.md](design-system.md) | Brand, type, color tokens, palettes, motion, responsive rules |
 | [design-research.md](design-research.md) | Comparable-site research and which patterns we adopted |
 | [mobile.md](mobile.md) | Phone layout: bottom tab bar, swipe rails, result rows, no-sideways-scroll rules and their guards |

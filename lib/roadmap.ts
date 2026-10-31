@@ -57,6 +57,7 @@ export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
   | "planning"
+  | "platform"
   | "business"
   | "apps"
   | "ideas"
@@ -74,6 +75,12 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     title: "Planning tools",
     description:
       "What your family would pay at each college, from your own numbers, on the cost curve the site already shows.",
+  },
+  {
+    key: "platform",
+    title: "The data platform",
+    description:
+      "Where the college data lives and how a change becomes live: the database as the source of truth with history and revert, a published snapshot the site reads, and an admin console that edits values directly.",
   },
   {
     key: "business",
@@ -160,6 +167,17 @@ export const ROADMAP: RoadmapSpec[] = [
   // day on feature/essays; see each spec's "As built" section. The Google Drive connection waits for Google sign-in.
   // Essays parts 4 and 5 (the move and the tab, group "essays") were built 2026-10-30 on feature/essays-next (PR
   // #194); see each spec's "As built" section.
+  {
+    slug: "data-platform",
+    file: "specs/data-platform/rollout.md",
+    group: "platform",
+    summary:
+      "Every data pipeline writes to the database instead of committing files; a published snapshot is what the site reads; every change is a change set with history and a revert; admins edit any value in the console and see it at once. The repository goes back to being code and specs.",
+    complexity: 3,
+    complexityNote:
+      "New tables and functions with policies, a publisher that must reproduce today's data byte for byte, a loader that swaps snapshots safely, every producer touched, the console's largest new section, and a test suite re-pointed at a fixture; four phases, each leaving the site no worse.",
+    status: "planned",
+  },
   {
     slug: "launch-database",
     file: "specs/launch-database.md",
@@ -371,6 +389,7 @@ export const ROADMAP: RoadmapSpec[] = [
 
 /** Readable background pages that aren't work items themselves (linked from the roadmap, not ranked). */
 export const ROADMAP_OVERVIEWS: { slug: string; file: string; title: string }[] = [
+  { slug: "data-platform-overview", file: "specs/data-platform/README.md", title: "Data platform overview: the owner's brief and decisions, what lives where today, the design in one paragraph, the six parts, principles" },
   { slug: "record", file: "specs/planner/record/README.md", title: "Your record overview: the owner's review of the plan v3 preview, the name, the four parts, and the build order" },
   { slug: "plan-v3", file: "specs/planner/v3/README.md", title: "Plan v3 overview: the owner's review of Next steps, the nine parts, the design principles, and the build order" },
   { slug: "next-steps", file: "specs/planner/next-steps/README.md", title: "Next steps overview: the research into how advisors run the process, the design principles, the seven parts, and the build order" },

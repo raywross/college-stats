@@ -314,12 +314,14 @@ export interface ReviewItem {
   /** Round 3: the item's value as read (the code table's, for a template workbook). */
   value?: number | string | boolean | null;
   /**
-   * A person reviewed the item and rejected it (the admin console's Reject, lib/admin/review-queue.ts): the checks were
-   * right and nothing is publishable from this document. Kept so the next run doesn't queue it again; `resolved_on` is
-   * the ISO date.
+   * A person settled the item in the console's Holds (lib/admin/review-queue.ts, `admin_data_resolve_review`):
+   * `rejected` (the checks were right and nothing is publishable from this document) or `accepted` (the value was
+   * written as a field edit). Kept so the next run doesn't queue the same document's value again; `resolved_on` is the
+   * ISO date and `resolved_note` the admin's optional note.
    */
-  resolved?: "rejected";
+  resolved?: "rejected" | "accepted";
   resolved_on?: string;
+  resolved_note?: string;
 }
 
 /** The review queue's key: college + edition + code. Round-1/2 entries (no code) share one key per college. */
@@ -337,12 +339,12 @@ function sameDocument(a: ReviewItem, b: ReviewItem): boolean {
 /**
  * Adds items to the queue, replacing only entries with the same key (college + edition + code). Replacing one
  * college's H2 entry leaves its C1 entry and every other code alone (Decision 9; the round-2 `enqueue` replaced every
- * item of the college). An entry a person rejected stays, and the same document's item is not queued again; a newer
- * document's item replaces it.
+ * item of the college). An entry a person resolved (rejected, or accepted as a field edit) stays, and the same
+ * document's item is not queued again; a newer document's item replaces it.
  */
 export function enqueueItems(queue: readonly ReviewItem[], items: readonly ReviewItem[]): ReviewItem[] {
-  const rejected = queue.filter((q) => q.resolved === "rejected");
-  const incoming = items.filter((i) => !rejected.some((r) => sameDocument(r, i)));
+  const resolved = queue.filter((q) => q.resolved === "rejected" || q.resolved === "accepted");
+  const incoming = items.filter((i) => !resolved.some((r) => sameDocument(r, i)));
   const keys = new Set(incoming.map(reviewKey));
   return [...queue.filter((q) => !keys.has(reviewKey(q))), ...incoming];
 }

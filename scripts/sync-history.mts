@@ -45,6 +45,8 @@ import {
   buildNational,
   coverage,
   coverageDrops,
+  formatHistoryShard,
+  historyJson,
   lastPointMismatches,
   ruleOneProblems,
   missingColumns,
@@ -293,14 +295,7 @@ async function crossCheck(schools: School[], histories: Map<string, SchoolHistor
 /* Write                                                               */
 /* ------------------------------------------------------------------ */
 
-/** One series per line, so a yearly refresh or a revision reads as a small diff. */
-function formatShard(h: SchoolHistory): string {
-  const lines = Object.entries(h.series).map(([k, s]) => `    ${JSON.stringify(k)}: ${JSON.stringify(s)}`);
-  const repeated = h.repeated ? `,\n  "repeated": ${JSON.stringify(h.repeated)}` : "";
-  return `{\n  "unit_id": ${JSON.stringify(h.unit_id)},\n  "series": {\n${lines.join(",\n")}\n  }${repeated}\n}\n`;
-}
-
-const writeJson = (path: string, value: unknown) => writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
+const writeJson = (path: string, value: unknown) => writeFileSync(path, historyJson(value));
 
 /* ------------------------------------------------------------------ */
 /* Main                                                                */
@@ -452,7 +447,7 @@ async function main() {
       if (existsSync(join(SHARDS, `${id}.json`))) rmSync(join(SHARDS, `${id}.json`));
       continue;
     }
-    writeFileSync(join(SHARDS, `${id}.json`), formatShard(h));
+    writeFileSync(join(SHARDS, `${id}.json`), formatHistoryShard(h));
     written++;
   }
   hmeta.schools = readdirSync(SHARDS).filter((f) => f.endsWith(".json")).length;

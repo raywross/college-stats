@@ -611,7 +611,7 @@ test("every dispatchable workflow declares request_id (optional, default '') and
   assert.deepEqual(workflowProblems(yml.replace(/^run-name: .*\n/m, ""), []), ["run-name doesn't carry inputs.request_id"]);
   assert.deepEqual(workflowProblems(yml, ["max_cost"]), ['no input "max_cost"']);
   // Only the table's workflows are dispatchable; the pilots aren't.
-  assert.deepEqual([...DISPATCHABLE_FILES].sort(), ["college-reported.yml", "identity-refresh.yml", "publish-changes.yml", "verify.yml", "visit-events.yml"]);
+  assert.deepEqual([...DISPATCHABLE_FILES].sort(), ["college-reported.yml", "identity-refresh.yml", "publish-changes.yml", "publish-snapshot.yml", "verify.yml", "visit-events.yml"]);
 });
 
 test("run-name: the console's title is '<workflow> · <request id>', which requestIdFromTitle reads back", () => {

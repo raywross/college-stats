@@ -254,15 +254,31 @@ export async function publishChanges(opts: PublishChangesOptions): Promise<Publi
     return { head, base, changes, result: null };
   }
 
-  const db = client!;
+  const result = await recordPublish(client!, { changes, schoolCount: next.schools.length, retrieved: next.meta.retrieved, gitCommit: head, publishedBy: opts.publishedBy, log, label: short(head) });
+  return { head, base, changes, result };
+}
+
+/**
+ * Stages `changes` and records them as one publish with publish_changes() (one transaction), then reads the count back.
+ * `gitCommit` names the publish (a commit sha, or the publisher's `snapshot:<id>`); a re-run with the same name is
+ * "reused" and writes nothing. Shared by `npm run publish-changes` and the snapshot publisher
+ * (scripts/lib/data-platform/changelog.mts). Throws on any failure, naming the step.
+ */
+export async function recordPublish(
+  db: Pick<SupabaseClient, "from" | "rpc">,
+  opts: { changes: readonly DatasetChange[]; schoolCount: number; retrieved: string; gitCommit: string; publishedBy: string; log?: (line: string) => void; label?: string }
+): Promise<PublishResult> {
+  const { changes } = opts;
+  const log = opts.log ?? ((line: string) => console.log(line));
+  const label = opts.label ?? opts.gitCommit;
   if ((await changeTablesState(db)) === "missing") {
     throw new Error(`dataset_change_staging isn't on this project. Apply supabase/migrations/20261005140000_follows.sql, 20261005145000_change_old_source.sql and ${PUBLISH_CHANGES_MIGRATION}.`);
   }
   await stageChanges(db, changes);
   const { data, error } = await db.rpc("publish_changes", {
-    p_school_count: next.schools.length,
-    p_retrieved: next.meta.retrieved,
-    p_git_commit: head,
+    p_school_count: opts.schoolCount,
+    p_retrieved: opts.retrieved,
+    p_git_commit: opts.gitCommit,
     p_published_by: opts.publishedBy,
     p_expected_changes: changes.length,
   });
@@ -272,8 +288,8 @@ export async function publishChanges(opts: PublishChangesOptions): Promise<Publi
   }
   const result = data as PublishResult;
   if (result.reused) {
-    log(`reused: ${short(head)} was already recorded as publish ${result.publish_id} (${result.changes} changes); nothing written.`);
-    return { head, base, changes, result };
+    log(`reused: ${label} was already recorded as publish ${result.publish_id} (${result.changes} changes); nothing written.`);
+    return result;
   }
 
   // Read the count back: what the panel and digest will see.
@@ -281,6 +297,6 @@ export async function publishChanges(opts: PublishChangesOptions): Promise<Publi
   if (cError || count !== changes.length) {
     throw new Error(`dataset_changes for publish ${result.publish_id}: read back ${count ?? "?"} rows, expected ${changes.length}${cError ? ` (${cError.message})` : ""}.`);
   }
-  log(`Recorded ${changeSummary(changes)} as publish ${result.publish_id} for ${short(head)}; read back and verified.`);
-  return { head, base, changes, result };
+  log(`Recorded ${changeSummary(changes)} as publish ${result.publish_id} for ${label}; read back and verified.`);
+  return result;
 }

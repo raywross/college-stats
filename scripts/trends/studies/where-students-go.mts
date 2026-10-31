@@ -32,7 +32,7 @@ import type {
 } from "../../../lib/trends.ts";
 import { PRE_PANDEMIC_FALL } from "../../history/build.mts";
 import type { TrendBuilder, TrendContext, TrendOutput } from "../context.mts";
-import { loadMoverExclusions } from "../movers.mts";
+import { contextExclusions } from "../movers.mts";
 import { MIN_UNDERGRADS, shrinkingPanel } from "./shrinking-colleges.mts";
 
 const SLUG = "where-students-go";
@@ -330,7 +330,7 @@ export function buildWhereStudentsGo(ctx: TrendContext): TrendOutput {
   const toMoney = ctx.hmeta.latest.academic;
   const fromMoney = toMoney - study.window;
   const pre = PRE_PANDEMIC_FALL;
-  const { campuses } = exclusionSets(loadMoverExclusions(ctx.root).campuses);
+  const { campuses } = exclusionSets(contextExclusions(ctx));
 
   const all = shrinkingPanel(ctx.members, from, to);
   const kindOf = (m: Member): StudentsKindRow["key"] => {

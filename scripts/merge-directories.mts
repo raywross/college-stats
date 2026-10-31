@@ -17,9 +17,9 @@ import { validateLineage } from "../lib/lineage.ts";
 import { formatDetail } from "../lib/detail.ts";
 import { detailFileProblems, readDetails } from "./lib/publish-details.mts";
 import { readDirectoryFiles } from "./lib/directories/files.mts";
-import { addDirectoryMeta, applyCccuMembership, applyDirectories, chapterFiles, directoryDetails, orphanSummaries, withDirectoryTables } from "./lib/directories/merge.mts";
+import { orphanSummaries, withDirectoryTables } from "./lib/directories/merge.mts";
 import { readPagesFile } from "./lib/campus-pilot/files.mts";
-import { applyLgbtqPolicies, campusPagesDetails, pilotDirectoryFiles, withTable } from "./lib/campus-pilot/merge.mts";
+import { applyDirectoryLayers, withTable } from "./lib/campus-pilot/merge.mts";
 
 // MERGE_DIRECTORIES_ROOT lets tests point this at a scratch copy holding data/schools.json, meta.json, detail/, directories/.
 const ROOT = process.env.MERGE_DIRECTORIES_ROOT ?? join(import.meta.dirname, "..");
@@ -36,12 +36,9 @@ function main() {
   // tier A facts get their own detail table (scripts/lib/campus-pilot/merge.mts). Membership lists (CCCU) aren't
   // chapters: they set `religion.cccu_member` instead (specs/campus-directories.md).
   const pages = readPagesFile(join(ROOT, "data", "campus-pages.json"));
-  const ids = new Set(schools.map((s) => s.unit_id));
-  const built = directoryDetails([...chapterFiles(files), ...pilotDirectoryFiles(pages)], ids);
-  const merged = applyLgbtqPolicies(applyCccuMembership(applyDirectories(schools, built), files), pages);
-  addDirectoryMeta(meta, files);
+  const { schools: merged, tables: built, pagesTables } = applyDirectoryLayers(schools, files, pages, meta);
   const step1 = withDirectoryTables(readDetails(ROOT) ?? [], built);
-  const step2 = withTable(step1.details, campusPagesDetails(pages, ids), "campus_pages");
+  const step2 = withTable(step1.details, pagesTables, "campus_pages");
   const details = step2.details;
   const changed = new Set([...step1.changed, ...step2.changed]);
 

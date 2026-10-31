@@ -6,6 +6,11 @@ the high-school table, and the record of what changed**; the college dataset its
 read from the function's own files. For the rules that decide what belongs in a table, see
 [database-architecture.md](database-architecture.md).
 
+> **Changing (planned 2026-10-31):** [data-platform/](data-platform/README.md) makes Supabase the source of truth for
+> the college dataset, with pipelines writing versioned layers, a publisher rendering snapshots to Storage, and the app
+> loading a snapshot per instance. The sections below describe the design in force until that build's phase 2 switches
+> production; the people's-data rules, keys, Edge Functions and environments sections stay in force throughout.
+
 ## Design: git is the source, the deploy serves it
 
 ```

@@ -80,13 +80,23 @@ export function applyCoalition(schools: readonly School[], file: CoalitionFile):
     }
     if (s.coalition) {
       summary.removed++;
-      const { coalition: _gone, ...rest } = s;
-      void _gone;
-      return rest as School;
+      return stripCoalition(s);
     }
     return s;
   });
   return { schools: out, summary };
+}
+
+/**
+ * The college without its Coalition block: what `applyCoalition` leaves on a college that isn't on the list. The
+ * inverse of the apply: the data platform's import strips the committed dataset back to its base layer with it
+ * (specs/data-platform/pipelines.md "The import"). The same object when there's nothing to remove.
+ */
+export function stripCoalition(school: School): School {
+  if (!("coalition" in school)) return school;
+  const { coalition: _gone, ...rest } = school;
+  void _gone;
+  return rest as School;
 }
 
 export function summaryLine(s: CoalitionSummary): string {

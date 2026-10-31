@@ -141,6 +141,8 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
   // The Requirements Grid's edition: a test policy the grid replaced carries the edition text in its own record.
   "common-app": "common-app-grid",
   "coalition": "coalition-members",
+  // An admin's edit carries its own day (method "edited", `retrieved`); it has no release year.
+  "quad-edit": null,
 };
 
 /**
@@ -151,6 +153,9 @@ const SOURCE_VINTAGE: Record<SourceKey, VintageKey | null> = {
 const MERGED_LATER: Partial<Record<SourceKey, readonly VintageKey[]>> = {
   "common-app": ["common-app-grid", "common-app-members"],
   coalition: ["coalition-members"],
+  // Present only once an edit is published: meta gets the source from the publisher's compose, which adds it when any
+  // college carries an edit (scripts/lib/data-platform/compose.mts).
+  "quad-edit": [],
 };
 
 /** A merged-later source that this meta hasn't received yet (neither the source nor any of its vintages). */
@@ -528,7 +533,10 @@ export const VINTAGE_KEYS: readonly VintageKey[] = [
 ];
 /** Releases that must resolve to a year (the rest may be null). */
 const YEAR_REQUIRED: readonly VintageKey[] = ["ipeds-adm", "ipeds-sfa", "ipeds-ic", "ipeds-hd", "ipeds-ic-char", "ipeds-ic-open", "ipeds-ef", "ipeds-ef-c", "ipeds-ef-a", "ipeds-ef-a-dist", "ipeds-c", "ipeds-gr", "ipeds-sal", "ipeds-f", "scorecard-enrollment", "scorecard-age", "scorecard-cost", "ipeds-om"];
-const METHODS = new Set(["reported", "derived", "extracted"]);
+const METHODS = new Set(["reported", "derived", "extracted", "edited"]);
+
+/** An admin's edit: it beats every pipeline's source for its path, so the per-source rules below skip it. */
+const isEdit = (rec: LineageRecord | undefined): boolean => rec?.source === "quad-edit" && rec.method === "edited";
 
 /** Fields read from the hand-kept state-law table (data/state-laws.json). */
 const STATE_LAW_PATHS = (Object.keys(FIELDS) as FieldPath[]).filter((p) => FIELDS[p].source === "state-law");
@@ -616,6 +624,9 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     if ("computed" in FIELDS[path]) errors.push(`${where}: lineage for computed field "${path}"`);
     if (!(rec.source in meta.sources)) errors.push(`${where}: ${path} lineage has unknown source "${rec.source}"`);
     if (rec.method && !METHODS.has(rec.method)) errors.push(`${where}: ${path} lineage has unknown method "${rec.method}"`);
+    // An admin's edit (specs/data-platform/change-sets.md "Admin edits"): cites Quad's editors and the day, nothing more.
+    if ((rec.method === "edited") !== (rec.source === "quad-edit")) errors.push(`${where}: ${path} lineage: method "edited" goes with source "quad-edit", and only it`);
+    if (rec.method === "edited" && !rec.retrieved) errors.push(`${where}: ${path} is edited but lacks retrieved (the day of the edit)`);
     if (valueAt(school, path) === undefined) errors.push(`${where}: lineage for ${path}, which has no value`);
     if (rec.source === "cds") {
       if (!school.cds) errors.push(`${where}: ${path} cites a Common Data Set but the school has no "cds" record`);
@@ -640,6 +651,7 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
     if (value === undefined || value === null) continue;
     const rec = school.lineage?.[path];
     if (!rec) errors.push(`${where}: ${path} is stored without a lineage record`);
+    else if (isEdit(rec)) continue;
     else if (rec.source !== "college-site") errors.push(`${where}: ${path} must cite source "college-site", not "${rec.source}"`);
     else if (rec.method !== "extracted" && rec.method !== "derived") errors.push(`${where}: ${path} must have method "extracted" or "derived"`);
   }
@@ -647,6 +659,7 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
   for (const path of STATE_LAW_PATHS) {
     if (valueAt(school, path) == null) continue;
     const rec = school.lineage?.[path];
+    if (isEdit(rec)) continue;
     if (rec?.source !== "state-law" || !rec.url || !rec.year) errors.push(`${where}: ${path} must cite source "state-law" with the statute's URL and effective date`);
   }
   // Directory summaries (specs/campus-directories.md): each cites the directories and the date they were read; the
@@ -654,6 +667,7 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
   for (const path of DIRECTORY_PATHS) {
     if (valueAt(school, path) == null) continue;
     const rec = school.lineage?.[path];
+    if (isEdit(rec)) continue;
     if ((rec?.source !== "directory" && rec?.source !== "org-estimate") || !rec.retrieved || !rec.year) errors.push(`${where}: ${path} must cite source "directory" with the date the lists were read`);
   }
   // Campus-life pilot policy facts (specs/lgbtq-life.md phase 4; scripts/lib/campus-pilot/merge.mts
@@ -661,6 +675,7 @@ export function validateSchool(school: School, meta: DatasetMeta): string[] {
   for (const path of POLICY_PAGE_PATHS) {
     if (valueAt(school, path) == null) continue;
     const rec = school.lineage?.[path];
+    if (isEdit(rec)) continue;
     if (rec?.source !== "policy-page" || !rec.retrieved || !rec.year) errors.push(`${where}: ${path} must cite source "policy-page" with the date checked`);
   }
   errors.push(...mergedLaterProblems(school, meta, where));
@@ -776,7 +791,7 @@ function validateNewest(school: School, where: string): string[] {
   // A replaced count differs from the one it replaced: that difference must be cited to the college's own document.
   if (federal) {
     for (const k of ["applicants", "admitted", "enrolled", "acceptance_rate"] as const) {
-      if (a[k] !== federal[k] && !isCollegeSite(k)) errors.push(`${where}: admissions.${k} differs from admissions.federal.${k} but isn't cited to the college's site`);
+      if (a[k] !== federal[k] && !isCollegeSite(k) && !isEdit(school.lineage?.[`admissions.${k}` as FieldPath])) errors.push(`${where}: admissions.${k} differs from admissions.federal.${k} but isn't cited to the college's site`);
     }
   }
   return errors;

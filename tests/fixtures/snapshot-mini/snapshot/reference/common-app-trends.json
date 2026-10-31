@@ -1,0 +1,165 @@
+{
+  "description": "National figures from Common App's own End-of-Season reports (August each year): first-year applicants, applications, applications per applicant, member institutions, and year-over-year growth for fee-waiver-eligible and first-generation applicants, typed from the key-findings text with a page and a verbatim quote. These are Common App's counts of its members' applicants, not federal data. State-level figures are appendix tables printed as images in the PDF and are left out (specs/data-expansion/common-app.md).",
+  "reports": [
+    {
+      "id": "eos-25-26",
+      "title": "End-of-season report, 2025–2026: First-year application trends",
+      "date": "2026-08-20",
+      "url": "https://commonapp.org/files/DAR/deadline-updates/2025-26/Common-App-End-of-Season-Report_25-26.pdf",
+      "pages": 50
+    },
+    {
+      "id": "eos-24-25",
+      "title": "End-of-season report, 2024–2025: First-year application trends",
+      "date": "2025-08-13",
+      "url": "https://www.commonapp.org/files/DAR/deadline-updates/Common-App-End-of-Season-Report_24-25.pdf",
+      "pages": 52
+    }
+  ],
+  "rows": [
+    {
+      "season": "2025-26",
+      "measure": "applicants",
+      "value": 1527328,
+      "unit": "count",
+      "report": "eos-25-26",
+      "page": 6,
+      "quote": "1,527,328 distinct first-year applicants applied to 1,146 member institutions, an increase of 2% from 1,495,475 applicants in 2024–25."
+    },
+    {
+      "season": "2025-26",
+      "measure": "applications",
+      "value": 10786782,
+      "unit": "count",
+      "report": "eos-25-26",
+      "page": 10,
+      "quote": "First-year applications increased from 10,157,068 in 2024–25 to 10,786,782 in 2025–26, an increase of 6%, as illustrated in Figure 5."
+    },
+    {
+      "season": "2025-26",
+      "measure": "applications_per_applicant",
+      "value": 7.06,
+      "unit": "ratio",
+      "report": "eos-25-26",
+      "page": 10,
+      "quote": "Figure 6 illustrates that applications per applicant increased 4% from 6.79 in 2024–25 to 7.06 in 2025–26."
+    },
+    {
+      "season": "2025-26",
+      "measure": "members",
+      "value": 1146,
+      "unit": "count",
+      "report": "eos-25-26",
+      "page": 8,
+      "quote": "Figure 1 charts growth in the number of member institutions receiving applications from 1,097 in 2024–25 to 1,146 in 2025–26, an increase of 4%."
+    },
+    {
+      "season": "2025-26",
+      "measure": "applicants_growth",
+      "value": 2,
+      "unit": "growth",
+      "report": "eos-25-26",
+      "page": 6,
+      "quote": "1,527,328 distinct first-year applicants applied to 1,146 member institutions, an increase of 2% from 1,495,475 applicants in 2024–25."
+    },
+    {
+      "season": "2025-26",
+      "measure": "fee_waiver_eligible_growth",
+      "value": 6,
+      "unit": "growth",
+      "report": "eos-25-26",
+      "page": 14,
+      "quote": "Applicants reporting eligibility for the Common App fee waiver grew at over five times the rate of other applicants (6% versus less than 1%) between the 2024–25 and 2025–26 seasons."
+    },
+    {
+      "season": "2025-26",
+      "measure": "first_generation_growth",
+      "value": 6,
+      "unit": "growth",
+      "report": "eos-25-26",
+      "page": 6,
+      "quote": "Applicants identifying as first-generation grew at a rate of 6%, while continuing-generation applicants declined by less than 1% from 2024–25 to 2025–26."
+    },
+    {
+      "season": "2025-26",
+      "measure": "share_members_requiring_scores",
+      "value": 5,
+      "unit": "share",
+      "report": "eos-25-26",
+      "page": 22,
+      "quote": "In 2025-26, 5% of members require a test score to submit an application."
+    },
+    {
+      "season": "2024-25",
+      "measure": "applicants",
+      "value": 1498199,
+      "unit": "count",
+      "report": "eos-24-25",
+      "page": 6,
+      "quote": "1,498,199 distinct first-year applicants applied to 1,097 member institutions, an increase of 5% from 1,423,466 applicants in 2023–24."
+    },
+    {
+      "season": "2024-25",
+      "measure": "applications",
+      "value": 10193579,
+      "unit": "count",
+      "report": "eos-24-25",
+      "page": 12,
+      "quote": "First-year applications increased from 9,447,544 in 2023–24 to 10,193,579 in 2024–25, an increase of 8%, as illustrated in Figure 5."
+    },
+    {
+      "season": "2024-25",
+      "measure": "applications_per_applicant",
+      "value": 6.8,
+      "unit": "ratio",
+      "report": "eos-24-25",
+      "page": 12,
+      "quote": "Figure 6 illustrates that applications per applicant increased 2% from 6.64 in 2023–24 to 6.80 in 2024–25."
+    },
+    {
+      "season": "2024-25",
+      "measure": "members",
+      "value": 1097,
+      "unit": "count",
+      "report": "eos-24-25",
+      "page": 8,
+      "quote": "Figure 1 charts growth in the number of member institutions receiving applications from 1,068 in 2023–24 to 1,097 in 2024–25, an increase of 3%."
+    },
+    {
+      "season": "2024-25",
+      "measure": "applicants_growth",
+      "value": 5,
+      "unit": "growth",
+      "report": "eos-24-25",
+      "page": 6,
+      "quote": "1,498,199 distinct first-year applicants applied to 1,097 member institutions, an increase of 5% from 1,423,466 applicants in 2023–24."
+    },
+    {
+      "season": "2024-25",
+      "measure": "fee_waiver_eligible_growth",
+      "value": 10,
+      "unit": "growth",
+      "report": "eos-24-25",
+      "page": 17,
+      "quote": "Applicants reporting eligibility for the Common App fee waiver grew at over three times the rate of other applicants (10% versus 3%) between the 2023–24 and 2024–25 seasons."
+    },
+    {
+      "season": "2024-25",
+      "measure": "first_generation_growth",
+      "value": 14,
+      "unit": "growth",
+      "report": "eos-24-25",
+      "page": 6,
+      "quote": "Applicants identifying as first-generation grew at a substantial rate of 14%, while continuing-gen applicants grew 1% from 2023–24 to 2024–25."
+    },
+    {
+      "season": "2024-25",
+      "measure": "share_members_requiring_scores",
+      "value": 5,
+      "unit": "share",
+      "report": "eos-24-25",
+      "page": 24,
+      "quote": "This season, 5% of members require a test score to submit an application."
+    }
+  ]
+}

@@ -82,6 +82,11 @@ publish_collection(p_collection, p_files json, p_expected integer)       -- one 
 > **Decided 2026-10-07:** option 1, bundle the JSON, with search moved into the browser and the dataset tables
 > retired a cycle later. The reasons, measurements, phases, and owner steps are in
 > [serving-architecture.md](serving-architecture.md). The text below is the question as it stood.
+>
+> **Decided again 2026-10-31** ([data-platform/](data-platform/README.md)): the source of truth moves to Supabase as
+> versioned layer documents (not typed tables; the document reasoning above holds), and serving becomes option 2's
+> shape: one gzipped object per collection in Storage, read once per instance, with the deploy carrying a fallback.
+> "Publishing without redeploying" now matters because admins edit data in the console and pipelines no longer open PRs.
 
 Every data change reaches production as a merge to `main`, which already triggers a Vercel build. Serving the
 dataset from Supabase therefore buys little that bundling the JSON into the build wouldn't, and it costs:

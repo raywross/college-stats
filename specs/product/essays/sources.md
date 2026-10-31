@@ -189,7 +189,8 @@ effect right away, not be committed and pushed to the site through git." So the 
   `promptLookup`, and the package export route, so the Essays tab, the picker, the package, the editor's heading, and
   the essays move show a save on the next load. The college's own `published` page still wins; a newer row beats an
   older exported hand read.
-- **Git catches up nightly**: `scripts/export-essay-confirmed.mts` (workflow `essay-confirmed.yml`, nightly and on
+- **Git catches up nightly** (to be retired by [data-platform/](../../data-platform/README.md) phase 2, where the
+  publisher reads the table directly): `scripts/export-essay-confirmed.mts` (workflow `essay-confirmed.yml`, nightly and on
   dispatch) mirrors the open cycle's rows into `data/essay-prompts/confirmed/<unit_id>.json` and opens a
   `data/essay-confirmed-<date>` PR with auto-merge, so the static college pages, the lineage checks, and the citation
   trail follow on their own. The merge applies a confirmed record when the reader has no `published` block, with

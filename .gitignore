@@ -47,5 +47,8 @@ next-env.d.ts
 # Downloaded NCES files, reused between history builds (npm run sync-history)
 /.cache/
 
+# The bundled data snapshot, downloaded at build time (npm run fetch-snapshot; specs/data-platform/publish.md)
+/.data/
+
 # Supabase CLI state (written by `supabase link`)
 supabase/.temp/

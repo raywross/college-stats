@@ -25,7 +25,12 @@ const EXPECTED = [
   "./data/high-schools/**/*.json",
   "./data/directories/organizations.json",
   "./data/reference/zcta-centroids.csv",
+  // The bundled snapshot (lib/data-platform/loader.ts; specs/data-platform/publish.md "The loader"). Not in a checkout.
+  "./.data/snapshot/**",
 ];
+
+/** Traced paths written at build time and absent from a checkout: the existence check skips them when missing. */
+const BUILT_AT_BUILD_TIME = ["./.data/snapshot/**"];
 
 /**
  * What only the admin console's routes read (lib/admin/health.ts; specs/product/admin.md "Files the deploy must carry"):
@@ -66,13 +71,16 @@ function filesUnder(dir: string): string[] {
   return readdirSync(join(ROOT, dir), { recursive: true, encoding: "utf8" }).filter((f) => statSync(join(ROOT, dir, f)).isFile());
 }
 
+/** The folders app code reads data from: data/ (committed) and .data/ (the bundled snapshot). */
+const DATA_ROOTS = ["data", ".data"];
+
 /**
- * The data paths app code reads with fs: the literal segments after "data" in `join(<root>, "data", "a", …)` (one level
+ * The data paths app code reads with fs: the literal segments after "data" (or ".data") in `join(<root>, "data", "a", …)` (one level
  * of nested calls, like `process.cwd()`, is fine). A segment built at run time (`${id}.json`) ends the path, so a
  * per-college read shows up as its directory (data/history/schools); a read with no literal segment after "data"
  * shows up as "data" itself.
  */
-function dataPathsRead(): { path: string; where: string }[] {
+function dataPathsRead(): { path: string; where: string; tail: string[] }[] {
   const literal = (arg: string) => arg.trim().match(/^"([^"$]*)"$/)?.[1];
   const leadingLiterals = (args: string[]) => {
     const out: string[] = [];
@@ -86,14 +94,15 @@ function dataPathsRead(): { path: string; where: string }[] {
   const files = ["lib", "app", "components"]
     .flatMap((dir) => filesUnder(dir).filter((f) => /\.(ts|tsx)$/.test(f)).map((f) => join(dir, f)))
     .concat(existsSync(join(ROOT, "proxy.ts")) ? ["proxy.ts"] : []);
-  const found: { path: string; where: string }[] = [];
+  const found: { path: string; where: string; tail: string[] }[] = [];
   for (const file of files) {
     const text = readFileSync(join(ROOT, file), "utf8");
     for (const m of text.matchAll(/\bjoin\(((?:[^()]|\([^()]*\))*)\)/g)) {
       const args = m[1].split(",");
-      const at = args.findIndex((a) => literal(a) === "data");
+      const at = args.findIndex((a) => DATA_ROOTS.includes(literal(a) ?? ""));
       if (at < 0) continue;
-      found.push({ path: ["data", ...leadingLiterals(args.slice(at + 1))].join("/"), where: file });
+      const literals = leadingLiterals(args.slice(at + 1));
+      found.push({ path: [literal(args[at])!, ...literals].join("/"), where: file, tail: args.slice(at + 1 + literals.length).map((a) => a.trim()) });
     }
   }
   return found;
@@ -110,6 +119,7 @@ test('outputFileTracingIncludes["/admin/**"] is exactly the data health files', 
 test("every traced path exists (a glob's root is a directory holding matching files)", () => {
   for (const include of [...tracedForAllRoutes(), ...tracedForAdmin()]) {
     const root = rootOf(include);
+    if (BUILT_AT_BUILD_TIME.includes(include) && !existsSync(join(ROOT, root))) continue;
     assert.ok(existsSync(join(ROOT, root)), `${include}: ${root} does not exist`);
     if (isGlob(include)) {
       assert.ok(statSync(join(ROOT, root)).isDirectory(), `${include}: ${root} is not a directory`);
@@ -121,16 +131,28 @@ test("every traced path exists (a glob's root is a directory holding matching fi
   }
 });
 
+/** What may follow a read's literal folders: nothing, or one `${id}.ext` file name (the bundler then ships only *.ext). */
+const scopedTail = (tail: string[]) => tail.length === 0 || (tail.length === 1 && /^`\$\{[^}]+\}\.[a-z]+`$/.test(tail[0]));
+
+test("a per-item read ends in a literal extension, never a bare variable (which traces the whole project)", () => {
+  const unscoped = dataPathsRead().filter((r) => !scopedTail(r.tail));
+  assert.deepEqual(unscoped.map((r) => `${r.where}: ${r.path}/${r.tail.join("/")}`), []);
+  // The rule bites: a read ending in a variable name is caught.
+  assert.equal(scopedTail(["key"]), false);
+  assert.equal(scopedTail(["`${key}.json`"]), true);
+});
+
 test("every read under data/ names its folder or file literally, so the bundler doesn't trace all of data/", () => {
   // e.g. join(process.cwd(), "data", name) lets Next's file tracer ship every working file in data/ with each function.
-  const vague = dataPathsRead().filter((r) => r.path === "data");
+  const vague = dataPathsRead().filter((r) => DATA_ROOTS.includes(r.path));
   assert.deepEqual(vague, [], 'spell out the folder or file after "data" at the read');
 });
 
 test("the lists and the paths app code reads haven't drifted apart", () => {
   const includes = [...tracedForAllRoutes(), ...tracedForAdmin()];
-  const reads = dataPathsRead().filter((r) => r.path !== "data");
+  const reads = dataPathsRead().filter((r) => !DATA_ROOTS.includes(r.path));
   assert.ok(reads.some((r) => r.path === "data/schools.json"), "the scan finds lib/data.ts's reads (sanity check)");
+  assert.ok(reads.some((r) => r.path === ".data/snapshot/colleges.json"), "and the loader's bundled-copy reads");
   const untraced = reads.filter((r) => !includes.some((i) => covers(i, r.path)));
   assert.deepEqual(untraced, [], "read at runtime but not traced into the deploy: add it to next.config.ts");
   const unread = includes.filter((i) => !reads.some((r) => covers(i, r.path)));

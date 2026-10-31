@@ -6,8 +6,8 @@ import "server-only";
  * (lib/planner/context.ts planSchools) and the essays lookup (lib/essays/load.ts promptLookup) lay the saved row over
  * the dataset's block with `overlayEssays` (lib/essay-prompts/confirmed.ts, pure: the merge's precedence), so the
  * Essays tab, the picker, the package, the editor's prompt heading, and the essays move see a save on the next load.
- * The public college page doesn't read the table: it shows the record the nightly export
- * (scripts/export-essay-confirmed.mts) writes into the dataset.
+ * The public college page doesn't read the table: it shows the record the publisher composes into the next snapshot
+ * from the same table (scripts/lib/data-platform/compose.mts, `confirmedFromRows`).
  *
  * One query per request and argument set (React `cache`); every reader may read the table (its policy is `using
  * (true)`). A missing table (the migration not applied yet) or any error is logged and reads as no rows: the advisor

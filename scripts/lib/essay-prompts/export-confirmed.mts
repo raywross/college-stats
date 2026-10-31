@@ -5,7 +5,11 @@
  * catch up with what the advisor already shows live. The directory mirrors the table: a file with no open-cycle row
  * (deleted in the console, or a closed cycle's) is removed. A row that fails `validateConfirmed`, or whose record names
  * another college or cycle than its row, is skipped and listed, and that college's file is left as it was. Pure but
- * for `readConfirmedFiles`/`applyExport` (node:fs); scripts/export-essay-confirmed.mts reads the table and calls these.
+ * for `readConfirmedFiles`/`applyExport` (node:fs).
+ *
+ * The nightly export and its workflow are retired (data platform phase 2): the publisher reads the table itself and
+ * takes the open cycle's valid rows through `confirmedFromRows` (scripts/lib/data-platform/compose.mts). The plan and
+ * apply helpers stay for a one-off mirror into the files while they are still in the repository.
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

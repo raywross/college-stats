@@ -11,7 +11,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
@@ -637,23 +637,13 @@ test("the export writes exactly recordJson's bytes, removes files with no open-c
   }
 });
 
-test("the export script and its workflow: the service role's env names, nightly and by hand, a data PR that auto-merges", () => {
-  const script = readFileSync(join(ROOT, "scripts", "export-essay-confirmed.mts"), "utf8");
-  assert.match(script, /process\.env\.SUPABASE_URL \|\| !process\.env\.SUPABASE_SECRET_KEY/);
-  assert.match(script, /from\("essay_prompt_overrides"\)/);
-  assert.match(script, /merge-essay-prompts\.mts/);
+test("the nightly export is retired: no script, no npm name, no workflow; the publisher reads the table instead", () => {
+  assert.equal(existsSync(join(ROOT, "scripts", "export-essay-confirmed.mts")), false);
   const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
-  assert.match(pkg.scripts["export-essay-confirmed"], /scripts\/export-essay-confirmed\.mts/);
-  const yml = readFileSync(join(ROOT, ".github", "workflows", "essay-confirmed.yml"), "utf8");
-  assert.match(yml, /^on:\n {2}schedule:\n {4}- cron: "[^"]+"[^\n]*\n {2}workflow_dispatch:/m);
-  assert.match(yml, /SUPABASE_URL: \$\{\{ secrets\.PROD_SUPABASE_URL \}\}/);
-  assert.match(yml, /SUPABASE_SECRET_KEY: \$\{\{ secrets\.PROD_SUPABASE_SECRET_KEY \}\}/);
-  assert.match(yml, /npm run export-essay-confirmed/);
-  assert.match(yml, /npm run check:lineage/);
-  assert.match(yml, /branch="data\/essay-confirmed-\$\{date\}"/);
-  assert.match(yml, /gh pr merge "\$PR_NUMBER" --auto --squash/);
-  assert.match(yml, /kind: data/);
-  assert.doesNotMatch(yml, /scrape|\bAI\b/i);
+  assert.equal(pkg.scripts["export-essay-confirmed"], undefined);
+  assert.equal(existsSync(join(ROOT, ".github", "workflows", "essay-confirmed.yml")), false);
+  const compose = readFileSync(join(ROOT, "scripts", "lib", "data-platform", "compose.mts"), "utf8");
+  assert.match(compose, /confirmedFromRows\(layers\.promptOverrides, today\)/, "the compose takes the open cycle's rows as hand-read records");
 });
 
 /* ------------------------------------------------------------------ */

@@ -1,0 +1,86 @@
+# The history build (scripts/sync-history.mts; specs/trends-data.md): year-by-year history for every college from the
+# NCES files and College Scorecard, checked, then written to the data project as history.schools and history.shared in
+# one change set (specs/data-platform/pipelines.md). The publisher derives school.trends and the national trend files
+# from this layer (no separate trends step). Monthly, by hand, or from the console; the last step asks the publisher for
+# a snapshot when the run succeeded. No commit, no PR.
+name: Sync history
+
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.workflow }}"
+
+on:
+  schedule:
+    - cron: "0 9 3 * *" # the 3rd of every month, 09:00 UTC
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: Unit ids to rebuild, comma-separated (empty for every college)
+        type: string
+        default: ""
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
+
+# contents: write lets the last step send the publish-snapshot repository_dispatch.
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-history
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+      DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
+      COLLEGE_SCORECARD_API_KEY: ${{ secrets.COLLEGE_SCORECARD_API_KEY }}
+      BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+    steps:
+      - name: Check the secrets
+        run: |
+          if [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::error::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set (repository secrets)."
+            exit 1
+          fi
+          if [ -z "$COLLEGE_SCORECARD_API_KEY" ]; then
+            echo "::error::COLLEGE_SCORECARD_API_KEY is not set (repository secret)."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # NCES and Scorecard downloads are cached for a week by the script; keep them between runs.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/ipeds
+            .cache/scorecard
+          key: history-downloads-${{ github.run_id }}
+          restore-keys: history-downloads-
+
+      - name: Build the history
+        id: sync
+        env:
+          IDS: ${{ inputs.ids }}
+        run: |
+          set +e
+          if [ -n "$IDS" ]; then
+            npm run sync-history -- --store supabase --ids "$IDS"
+          else
+            npm run sync-history -- --store supabase
+          fi
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
+
+      - name: Ask for a snapshot
+        if: steps.sync.outputs.exit_code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/dispatches -f event_type=publish-snapshot

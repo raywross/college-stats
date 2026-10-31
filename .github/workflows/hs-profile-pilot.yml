@@ -1,11 +1,16 @@
 # Runs the high school profile pilot (scripts/sync-hs-profiles.mts; specs/product/high-school-data.md "Pilot results")
-# where the Anthropic key lives (the repository secret ANTHROPIC_API_KEY; there is no key in local .env files).
-# Dispatch it on the branch that should carry the results ("Use workflow from": a data branch, never main): it runs the
-# pilot's 100 schools (data/high-schools/profile-pilot.json), extracts the answer key's schools, scores the extraction
-# against data/reference/hs-profile-answer-key.json, checks lineage, and commits the data back to that same branch for
-# review. Never auto-merges; never runs on a schedule (the spec: demand-driven expansion, never all high schools).
-# The spend cap counts spend recorded by earlier runs in profile-pilot.json.
+# where the Anthropic key lives (the repository secret ANTHROPIC_API_KEY; there is no key in local .env files). It runs
+# the pilot's 100 schools (the profile-pilot document), extracts the answer key's schools, and scores the extraction
+# against data/reference/hs-profile-answer-key.json, writing the high-school layers (specs/data-platform/pipelines.md)
+# in one change set that all three steps share (opened and closed with scripts/data-change-set.mts).
+#
+# The pilot's results were reviewed on a branch before; now the change set closes held, so nothing from a pilot is
+# published until the owner looks at it in the console (Change sets) and chooses Publish anyway or Revert. So this
+# workflow never asks for a snapshot. No commit, no PR; never runs on a schedule (the spec: demand-driven expansion,
+# never all high schools). The spend cap counts spend recorded by earlier runs in the profile-pilot document.
 name: High school profile pilot
+
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.workflow }}"
 
 on:
   workflow_dispatch:
@@ -22,9 +27,13 @@ on:
         description: Also extract the answer key's schools and score against the key
         type: boolean
         default: true
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: hs-profile-pilot
@@ -34,38 +43,46 @@ jobs:
   pilot:
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    env:
+      DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+      DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Refuse to run on main
-        if: github.ref_name == 'main'
-        run: |
-          echo "::error::Dispatch this on a data branch; the run commits its results to the branch it runs on."
-          exit 1
-
-      - name: Check the API key
+      - name: Check the secrets
         run: |
           if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
             echo "::error::ANTHROPIC_API_KEY is not set (repository secret)."
             exit 1
           fi
+          if [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::error::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set (repository secrets)."
+            exit 1
+          fi
 
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
 
+      - name: Open the change set
+        id: set
+        run: |
+          id=$(node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/data-change-set.mts open --kind pipeline --source high-schools --run-ref "$GITHUB_RUN_ID" | tail -n 1)
+          if ! [[ "$id" =~ ^[0-9]+$ ]]; then echo "::error::no change set id (got: $id)"; exit 1; fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
       - name: Run the pilot
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CAP: ${{ inputs.cap }}
           ONLY: ${{ inputs.only }}
+          SET: ${{ steps.set.outputs.id }}
         run: |
           if [ -n "$ONLY" ]; then
-            npm run sync-hs-profiles -- --only "$ONLY" --cap "${CAP:-30}"
+            npm run sync-hs-profiles -- --store supabase --change-set "$SET" --only "$ONLY" --cap "${CAP:-30}"
           else
-            npm run sync-hs-profiles -- --pilot --cap "${CAP:-30}"
+            npm run sync-hs-profiles -- --store supabase --change-set "$SET" --pilot --cap "${CAP:-30}"
           fi
 
       - name: Extract the answer key's schools and score
@@ -73,20 +90,21 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CAP: ${{ inputs.cap }}
+          SET: ${{ steps.set.outputs.id }}
         run: |
-          npm run sync-hs-profiles -- --answer-key --cap "${CAP:-30}"
-          npm run sync-hs-profiles -- --score
+          npm run sync-hs-profiles -- --store supabase --change-set "$SET" --answer-key --cap "${CAP:-30}"
+          npm run sync-hs-profiles -- --store supabase --change-set "$SET" --score
 
-      - name: Check lineage
-        run: npm run check:lineage
-
-      - name: Commit the results to this branch
+      # Held either way: a finished pilot waits for a look; a failed one keeps what its steps wrote, also for a look.
+      - name: Close the change set
+        if: always() && steps.set.outputs.id != ''
+        env:
+          SET: ${{ steps.set.outputs.id }}
+          OUTCOME: ${{ job.status }}
         run: |
-          git add data specs/product/high-school-data.md
-          if git diff --cached --quiet; then
-            echo "No data changes."
-            exit 0
+          if [ "$OUTCOME" = "success" ]; then
+            reason="High school profile pilot: the results wait for a look before they are published."
+          else
+            reason="High school profile pilot: a step failed; the results so far wait for a look."
           fi
-          printf 'Data: high school profile pilot run\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n' > /tmp/hs-pilot-msg.txt
-          git -c user.name="hs-profile-pilot-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/hs-pilot-msg.txt
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/data-change-set.mts close --id "$SET" --status held --reason "$reason"

@@ -241,7 +241,7 @@ function dataWorkflowProblems(steps: readonly Step[], scripts: readonly string[]
 test("identity-refresh.yml: one change set around the three scripts, no commit or PR, the dispatch only when applied", () => {
   const wf = workflow("identity-refresh.yml");
   const steps = wf.steps;
-  assert.deepEqual(dataWorkflowProblems(steps, ["npm run sync-wikidata", "npm run probe-sites", "npm run sync-brand"]), []);
+  assert.deepEqual(dataWorkflowProblems(steps, ["npm run sync-wikidata", "npm run probe-sites", "npm run sync-brand", "npm run college-health"]), []);
   assert.match(steps.find((s) => s.id === "sync_brand")!.run!, /--colors/, "colors only: the marks are files in the code");
   assert.match(steps.find((s) => s.id === "due")!.run!, /identity-refresh\.mts due --store supabase/);
   assert.deepEqual(Object.keys(wf.inputs).sort(), ["force", "request_id"]);
@@ -258,7 +258,7 @@ test("identity-refresh.yml: one change set around the three scripts, no commit o
 test("campus-pilot.yml: one change set around the pilot and its score, held unless `publish`, no commit", () => {
   const wf = workflow("campus-pilot.yml");
   const steps = wf.steps;
-  assert.deepEqual(dataWorkflowProblems(steps, ["npm run campus-pilot", "npm run --silent score-campus-pilot"]), []);
+  assert.deepEqual(dataWorkflowProblems(steps, ["npm run campus-pilot", "npm run --silent score-campus-pilot", "npm run college-health"]), []);
   const close = steps.find((s) => s.id === "close")!.run!;
   assert.match(close, /--status held --reason "Campus-life pilot run/, "held for review by default");
   assert.match(close, /PUBLISH" = "true" \]; then\s+node [^\n]+--status applied/);

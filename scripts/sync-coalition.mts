@@ -74,7 +74,13 @@ try {
     console.log("--dry-run: nothing written");
   } else {
     const run = await openProducerRun(store, "coalition", { changeSet });
-    await run.handle.write(COLLECTIONS.coalition.members, [{ key: SINGLE_KEYS.members, body: coalitionDocument(built.file) }]);
+    try {
+      await run.handle.write(COLLECTIONS.coalition.members, [{ key: SINGLE_KEYS.members, body: coalitionDocument(built.file) }]);
+    } catch (err) {
+      // Leaving the set open serves no one: hold it with why, so the console shows it instead of a stuck "open" run.
+      await run.finish("held", `stopped: ${err instanceof Error ? err.message : String(err)}`.slice(0, 500)).catch(() => {});
+      throw err;
+    }
     await run.finish("applied", undefined, { members: built.file.members.length, unmatched: built.file.unmatched.length });
     console.log(`wrote ${COLLECTIONS.coalition.members}/${SINGLE_KEYS.members} in change set ${run.handle.id}`);
   }

@@ -68,7 +68,14 @@ async function done(code = 0): Promise<never> {
     });
     if (!unchanged) {
       const run = await openProducerRun(store, "high-schools", { changeSet });
-      const changed = await writeHighSchoolChanges(run.handle, scratch.before, after);
+      let changed: { sent: number; removed: number };
+      try {
+        changed = await writeHighSchoolChanges(run.handle, scratch.before, after);
+      } catch (err) {
+        // Leaving the set open serves no one: hold it with why, so the console shows it instead of a stuck "open" run.
+        await run.finish("held", `stopped: ${err instanceof Error ? err.message : String(err)}`.slice(0, 500)).catch(() => {});
+        throw err;
+      }
       await run.finish("applied", undefined, { documents_sent: changed.sent, documents_removed: changed.removed });
       console.log(`Change set ${run.handle.id}: ${changed.sent} documents sent, ${changed.removed} removed.`);
     }

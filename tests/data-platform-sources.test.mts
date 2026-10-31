@@ -22,7 +22,7 @@ import { importLayers, stripLaterLayers, writeImport } from "../scripts/import-d
 import { ESSAY_COLLECTIONS, essaysBreaker, heldDocument, loadEssayState, recordDocument, writeEssayRun, type EssayRecord, type HeldRecord, type PageRecipe } from "../scripts/lib/essay-prompts/store.mts";
 import { coalitionDocument } from "../scripts/lib/coalition/sync.mts";
 import { editionFileText } from "../scripts/lib/common-app/edition-file.mts";
-import { membersFileText } from "../scripts/lib/common-app/members.mts";
+import { fetchSlugs, membersFileText } from "../scripts/lib/common-app/members.mts";
 import type { GridEdition, MembersFile } from "../lib/common-app/types.ts";
 import { formatHistoryShard } from "../scripts/history/build.mts";
 import { deriveTrends } from "../scripts/lib/overrides.mts";
@@ -215,6 +215,42 @@ test("common app: the edition and members documents are the files' parsed text, 
   for (const c of ["COLLECTIONS.commonApp.grid", "COLLECTIONS.commonApp.members", "COLLECTIONS.commonApp.nameMap"]) assert.ok(script.includes(c), c);
   assert.match(script, /createArchive\(.*\)\.put\(sha, gridBytes, "pdf"\)/, "the PDF goes to the archive");
   assert.doesNotMatch(script, /writeFileSync|writeMembersFile|newestEdition\(|data", "common-app/, "no file under data/");
+  // The change set is opened lazily inside the members loop and closed only at a clean finish; a thrown error or a
+  // cancelled workflow (SIGINT/SIGTERM) must still close it `held`, not leave it `open` forever.
+  assert.match(script, /process\.on\(signal/, "a SIGINT/SIGTERM handler");
+  assert.match(script, /main\(\)\s*\n\s*\.then\(/, "a catch-all around the run");
+  assert.match(script, /holdOpenRun/, "both paths close the run the same way");
+});
+
+test("sync-common-app's safety net: a throw after the change set opens (mid-loop) leaves it held with the reason, not open", async () => {
+  const dir = scratch("common-app-safety-net");
+  try {
+    const store = fileStore(dir);
+    // Mirrors the script's lazy-open: the first periodic save opens the run and writes successfully…
+    let run: Awaited<ReturnType<typeof openProducerRun>> | null = null;
+    const runSet = async () => (run ??= await openProducerRun(store, "common-app", {}));
+    await (await runSet()).handle.write(COLLECTIONS.commonApp.members, [{ key: SINGLE_KEYS.members, body: { retrieved: "2026-01-01", sitemap_url: "https://www.commonapp.org/sitemap-0.xml", members: [] } }]);
+    assert.equal(fileStoreChangeSets(dir).at(-1)?.status, "open", "opened by the first save, same as the real script");
+    // …then a later request throws (a fake fetch standing in for the network), caught by the same catch-all
+    // sync-common-app.mts has around its run: hold the set with why, then rethrow.
+    const fakeHttp = { get: async (url: string) => { throw new Error(`${url}: ECONNRESET`); } };
+    await assert.rejects(
+      (async () => {
+        try {
+          await fetchSlugs(fakeHttp);
+        } catch (err) {
+          await run!.finish("held", `stopped: ${err instanceof Error ? err.message : String(err)}`.slice(0, 500));
+          throw err;
+        }
+      })(),
+      /ECONNRESET/
+    );
+    const set = fileStoreChangeSets(dir).at(-1)!;
+    assert.equal(set.status, "held", "never left open");
+    assert.match(set.held_reason ?? "", /^stopped: .*ECONNRESET/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 /* ------------------------------------------------------------------ */
@@ -380,7 +416,35 @@ test("sync-data --out: the publisher's compose over the new base laid on the sto
 /* ------------------------------------------------------------------ */
 
 const workflow = (name: string) => readFileSync(join(ROOT, ".github", "workflows", name), "utf8");
-const DISPATCH = /- name: Ask for a snapshot\n\s+if: steps\.sync\.outputs\.exit_code == '0'\n\s+env:\n\s+GH_TOKEN: \$\{\{ github\.token \}\}\n\s+run: gh api repos\/\$\{\{ github\.repository \}\}\/dispatches -f event_type=publish-snapshot\n/;
+// essay-prompts.yml isn't part of this round's fix (Finding 1 doesn't name it) and keeps its own, older dispatch
+// guard (just the sync step's exit code); the files this round touches gate the dispatch on the secrets check too,
+// so a run that skipped cleanly (secrets unset) never asks the publisher for anything.
+const DISPATCH_PLAIN = /- name: Ask for a snapshot\n\s+if: steps\.sync\.outputs\.exit_code == '0'\n\s+env:\n\s+GH_TOKEN: \$\{\{ github\.token \}\}\n\s+run: gh api repos\/\$\{\{ github\.repository \}\}\/dispatches -f event_type=publish-snapshot\n/;
+const DISPATCH =
+  /- name: Ask for a snapshot\n\s+if: steps\.secrets\.outputs\.ready == 'true' && steps\.sync\.outputs\.exit_code == '0'\n\s+env:\n\s+GH_TOKEN: \$\{\{ github\.token \}\}\n\s+run: gh api repos\/\$\{\{ github\.repository \}\}\/dispatches -f event_type=publish-snapshot\n/;
+
+/**
+ * The "Check the …secrets" step's own script (just its body, not the rest of the job): every data workflow skips
+ * cleanly with an `::notice::` and `ready=false` when a required secret is unset, never `::error::`/`exit 1`
+ * (that would fail the job instead of skipping it). See publish-snapshot.yml and college-reported.yml, the pattern
+ * this follows.
+ */
+function secretsCheckStep(yml: string): string {
+  const m = /- name: Check[^\n]*\n\s+id: secrets\n\s+run: \|\n([\s\S]*?)\n {6}- /.exec(yml);
+  assert.ok(m, "no 'Check …secrets' step with id: secrets");
+  return m![1];
+}
+
+/** Every required secret this step checks gets its own `::notice::` naming it and sets `ready=false`; no `exit 1`. */
+function assertSkipsCleanly(yml: string, name: string, requiredSecrets: readonly string[]): void {
+  const step = secretsCheckStep(yml);
+  assert.doesNotMatch(step, /::error::/, `${name}: the secrets check must not use ::error:: (that fails the job)`);
+  assert.doesNotMatch(step, /exit 1\b/, `${name}: the secrets check must not exit 1 (that fails the job)`);
+  assert.match(step, /echo "ready=true" >> "\$GITHUB_OUTPUT"/, `${name}: sets ready=true when everything is set`);
+  for (const secret of requiredSecrets) {
+    assert.match(step, new RegExp(`::notice::[^\\n]*${secret}[^\\n]*\\n\\s+echo "ready=false" >> "\\$GITHUB_OUTPUT"`), `${name}: a missing ${secret} gets a notice and ready=false`);
+  }
+}
 
 test("workflows: no commit, no PR, no release note; the data project's secrets; the snapshot asked for only after a clean run", () => {
   for (const name of ["essay-prompts.yml", "common-app.yml", "coalition.yml", "sync-history.yml", "sync-data.yml", "hs-profile-pilot.yml"]) {
@@ -392,9 +456,20 @@ test("workflows: no commit, no PR, no release note; the data project's secrets; 
     assert.match(yml, /^ {6}request_id:\n/m, `${name}: the console can find its run`);
     assert.ok(!/\t/.test(yml), `${name}: no tabs`);
     if (name !== "hs-profile-pilot.yml") {
-      assert.match(yml, DISPATCH, `${name}: the dispatch, guarded`);
+      assert.match(yml, name === "essay-prompts.yml" ? DISPATCH_PLAIN : DISPATCH, `${name}: the dispatch, guarded`);
       assert.match(yml, /^permissions:\n {2}contents: write\n/m, `${name}: the token may send the dispatch`);
     }
+    const requiredSecrets =
+      name === "sync-data.yml"
+        ? ["DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY", "COLLEGE_SCORECARD_API_KEY"]
+        : name === "sync-history.yml"
+          ? ["DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY", "COLLEGE_SCORECARD_API_KEY"]
+          : name === "hs-profile-pilot.yml"
+            ? ["ANTHROPIC_API_KEY", "DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY"]
+            : name === "essay-prompts.yml"
+              ? null // essay-prompts.yml follows its own established pattern (exit 2/3), checked separately above
+              : ["DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY"];
+    if (requiredSecrets) assertSkipsCleanly(yml, name, requiredSecrets);
   }
   // Exit 2 (held) and 3 (stopped) end the essays step cleanly but leave exit_code non-zero, so no snapshot is asked for.
   assert.match(workflow("essay-prompts.yml"), /if \[ "\$code" = "2" \]; then .*exit 0; fi\n\s+if \[ "\$code" = "3" \]; then .*exit 0; fi/);

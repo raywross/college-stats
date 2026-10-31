@@ -774,10 +774,16 @@ async function updateReleaseCalendar(calendar: ReleaseCalendar): Promise<Release
 async function writeBase(store: DataStore, docs: BaseDocuments, changeSet: number | undefined): Promise<void> {
   const run = await openProducerRun(store, "sync-data", { changeSet });
   const counts: Record<string, { sent: number; removed: number }> = {};
-  for (const [collection, next] of docs) {
-    const before = await store.read(collection);
-    counts[collection] = await writeChanged(run.handle, collection, before, next, { mirror: MIRRORED_BASE.has(collection) });
-    console.log(`  ${collection}: ${next.size} documents, ${counts[collection].sent} sent, ${counts[collection].removed} removed`);
+  try {
+    for (const [collection, next] of docs) {
+      const before = await store.read(collection);
+      counts[collection] = await writeChanged(run.handle, collection, before, next, { mirror: MIRRORED_BASE.has(collection) });
+      console.log(`  ${collection}: ${next.size} documents, ${counts[collection].sent} sent, ${counts[collection].removed} removed`);
+    }
+  } catch (err) {
+    // Leaving the set open serves no one: hold it with why, so the console shows it instead of a stuck "open" run.
+    await run.finish("held", `stopped: ${err instanceof Error ? err.message : String(err)}`.slice(0, 500)).catch(() => {});
+    throw err;
   }
   await run.finish("applied", undefined, { colleges: docs.get(COLLECTIONS.base.colleges)?.size ?? 0, sent: counts });
   console.log(`Change set ${run.handle.id}${run.attached ? " (the workflow's)" : ""}: applied`);

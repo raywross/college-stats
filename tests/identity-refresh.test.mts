@@ -205,6 +205,29 @@ function workflow(file: string): Workflow {
   return { text, inputs, steps };
 }
 
+/**
+ * The "Check the …secrets" step's own script (just its body, not the rest of the job): every data workflow skips
+ * cleanly with an `::notice::` and `ready=false` when a required secret is unset, never `::error::`/`exit 1`
+ * (that would fail the job instead of skipping it). See publish-snapshot.yml and college-reported.yml, the pattern
+ * this follows.
+ */
+function secretsCheckStep(text: string): string {
+  const m = /- name: Check[^\n]*\n\s+id: secrets\n\s+run: \|\n([\s\S]*?)\n {6}- /.exec(text);
+  assert.ok(m, "no 'Check …secrets' step with id: secrets");
+  return m![1];
+}
+
+/** Every required secret this step checks gets its own `::notice::` naming it and sets `ready=false`; no `exit 1`. */
+function assertSkipsCleanly(text: string, name: string, requiredSecrets: readonly string[]): void {
+  const step = secretsCheckStep(text);
+  assert.doesNotMatch(step, /::error::/, `${name}: the secrets check must not use ::error:: (that fails the job)`);
+  assert.doesNotMatch(step, /exit 1\b/, `${name}: the secrets check must not exit 1 (that fails the job)`);
+  assert.match(step, /echo "ready=true" >> "\$GITHUB_OUTPUT"/, `${name}: sets ready=true when everything is set`);
+  for (const secret of requiredSecrets) {
+    assert.match(step, new RegExp(`::notice::[^\\n]*${secret}[^\\n]*\\n\\s+echo "ready=false" >> "\\$GITHUB_OUTPUT"`), `${name}: a missing ${secret} gets a notice and ready=false`);
+  }
+}
+
 /** What a data workflow's steps must look like (specs/data-platform/pipelines.md; brief "The run's tail"). */
 function dataWorkflowProblems(steps: readonly Step[], scripts: readonly string[]): string[] {
   const problems: string[] = [];
@@ -253,6 +276,15 @@ test("identity-refresh.yml: one change set around the three scripts, no commit o
   assert.deepEqual(dataWorkflowProblems(unguarded, []), ["the dispatch isn't guarded by the set closing applied"]);
   const noSet = steps.map((s) => (s.id === "probe_sites" ? { ...s, run: "npm run probe-sites -- --store supabase" } : s));
   assert.deepEqual(dataWorkflowProblems(noSet, ["npm run probe-sites"]), ["npm run probe-sites doesn't write into the run's change set"]);
+  // It skips cleanly (a notice, not a failure) when the data project's secrets aren't set, before "Check whether a
+  // refresh is due" runs, and every later step (through the dispatch) is guarded on it.
+  assertSkipsCleanly(wf.text, "identity-refresh.yml", ["DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY"]);
+  const secretsIdx = steps.findIndex((s) => s.id === "secrets");
+  const dueIdx = steps.findIndex((s) => s.id === "due");
+  assert.ok(secretsIdx >= 0 && secretsIdx < dueIdx, "the secrets check runs before the due check");
+  for (const s of steps.slice(dueIdx)) {
+    assert.match(s.if ?? "", /steps\.secrets\.outputs\.ready == 'true'|steps\.gate\.outputs\.proceed == 'true'|steps\.change_set\.outputs\.id != ''|steps\.close\.outputs\.status == 'applied'/, `${s.name ?? s.id}: guarded on the secrets check (directly or transitively)`);
+  }
 });
 
 test("campus-pilot.yml: one change set around the pilot and its score, held unless `publish`, no commit", () => {
@@ -263,4 +295,6 @@ test("campus-pilot.yml: one change set around the pilot and its score, held unle
   assert.match(close, /--status held --reason "Campus-life pilot run/, "held for review by default");
   assert.match(close, /PUBLISH" = "true" \]; then\s+node [^\n]+--status applied/);
   assert.equal(wf.inputs.publish.default, "false");
+  // Skips cleanly (not a failure) when either the Anthropic key or the data project's secrets aren't set.
+  assertSkipsCleanly(wf.text, "campus-pilot.yml", ["ANTHROPIC_API_KEY", "DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY"]);
 });

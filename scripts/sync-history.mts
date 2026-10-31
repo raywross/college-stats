@@ -1,7 +1,11 @@
 /**
- * Builds data/history/: year-by-year history for every college in data/schools.json (specs/trends-data.md).
+ * Builds the history layer (`history.schools` by unit id, `history.shared`: national, facts, cpi, meta): year-by-year
+ * history for every college in the base layer (specs/trends-data.md), written through the data store in one change
+ * set (source `history`; specs/data-platform/pipelines.md). `school.trends` and the national trend files are derived
+ * by the publisher from this layer; nothing under data/ is written.
  *
- *   npm run sync-history                          # everything (what CI / a release runs)
+ *   npm run sync-history -- --store supabase      # everything (what the monthly workflow runs)
+ *   npm run sync-history -- --store file:/tmp/dp  # a folder (the file store); --change-set <id> joins an open set
  *   npm run sync-history -- --ids 221999,170976   # write shards for just these colleges (national stats still cover all)
  *   npm run sync-history -- --refresh             # re-download every NCES file instead of using .cache/ipeds
  *   npm run sync-history -- --no-crosscheck       # skip the Urban Institute spot-check
@@ -11,13 +15,16 @@
  * Steps: fetch NCES files per era (scripts/history/registry.mts), check every mapped column exists, build each
  * college's series with the same functions as sync-data (lib/derive.ts), then check before writing anything:
  *   - coverage per series and year doesn't drop more than 20% from the year before (unless allow-listed below),
- *   - each series' latest point equals today's value in data/schools.json (rule 1),
+ *   - each series' latest point equals today's value in the base layer (rule 1),
  *   - a sample matches the Urban Institute's independently harmonized copy of IPEDS.
  * Year-over-year jumps over 3× are listed for review. Downloads ~80 NCES zips and ~100 College Scorecard pages on the
  * first run (needs COLLEGE_SCORECARD_API_KEY from .env.local); both are cached for a week.
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { COLLECTIONS, SINGLE_KEYS } from "./lib/data-platform/layers.mts";
+import { changeSetFromArgv, datasetColleges, openProducerRun, storeFromArgv, writeChanged } from "./lib/data-platform/producer.mts";
+import { deriveTrends } from "./lib/overrides.mts";
 import type { DatasetMeta, School } from "../lib/types.ts";
 import {
   GRAD_RACE_SERIES,
@@ -29,7 +36,6 @@ import {
   type HistoryFile,
   type CpiTable,
   type HistoryMeta,
-  trendSummary,
   type SchoolHistory,
   type SeriesKey,
   type YearKind,
@@ -58,12 +64,9 @@ import {
 import { buildCpi } from "./history/cpi.mts";
 import { COHORT_LAG, GRAD_RACE_FROM, fetchScorecardHistory, gradByRaceFields } from "./history/scorecard.mts";
 import { gradByGroupMismatches } from "./history/graduation-groups.mts";
-import { buildTrends } from "./trends/build.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const DATA = join(ROOT, "data");
-const OUT = join(DATA, "history");
-const SHARDS = join(OUT, "schools");
 const CACHE = join(ROOT, ".cache", "ipeds");
 const SCORECARD_CACHE = join(ROOT, ".cache", "scorecard");
 /** First year Scorecard reports undergrads (fall 1996). */
@@ -295,15 +298,19 @@ async function crossCheck(schools: School[], histories: Map<string, SchoolHistor
 /* Write                                                               */
 /* ------------------------------------------------------------------ */
 
-const writeJson = (path: string, value: unknown) => writeFileSync(path, historyJson(value));
+/** A document as the file's text parses (the import reads data/history/*.json the same way). */
+const historyDocument = (value: unknown) => JSON.parse(historyJson(value)) as unknown;
 
 /* ------------------------------------------------------------------ */
 /* Main                                                                */
 /* ------------------------------------------------------------------ */
 
 async function main() {
-  const schools: School[] = JSON.parse(readFileSync(join(DATA, "schools.json"), "utf8"));
-  const meta: DatasetMeta = JSON.parse(readFileSync(join(DATA, "meta.json"), "utf8"));
+  const store = storeFromArgv(args);
+  const changeSet = changeSetFromArgv(args);
+  // The base layer (sync-data keeps it current): the colleges and their meta. data/ only for an empty file store.
+  const schools: School[] = await datasetColleges(store, ROOT);
+  const meta: DatasetMeta = (await store.readOne<DatasetMeta>(COLLECTIONS.base.meta, SINGLE_KEYS.meta)) ?? JSON.parse(readFileSync(join(DATA, "meta.json"), "utf8"));
   const universe = new Set(schools.map((s) => s.unit_id));
   if (IDS) {
     const unknown = IDS.filter((id) => !universe.has(id));
@@ -355,8 +362,7 @@ async function main() {
 
   console.log(OFFLINE ? "Using the saved CPI table (offline)…" : "Fetching CPI from BLS…");
   const firstMoneyYear = Math.min(...fetched.filter((f) => f.family === "prices").map((f) => f.year));
-  const cpiPath = join(OUT, "cpi.json");
-  const saved: CpiTable | null = existsSync(cpiPath) ? JSON.parse(readFileSync(cpiPath, "utf8")) : null;
+  const saved: CpiTable | null = await store.readOne<CpiTable>(COLLECTIONS.history.shared, "cpi");
   const cpi: CpiTable =
     OFFLINE && saved
       ? saved
@@ -434,53 +440,48 @@ async function main() {
   const metaProblems = validateHistoryMeta(hmeta, meta);
   if (metaProblems.length) fail("history metadata is inconsistent.", metaProblems);
 
-  /* ---- Write ---- */
-  mkdirSync(SHARDS, { recursive: true });
-  if (!IDS) {
-    // A full build replaces every shard, so colleges that left the dataset don't linger.
-    for (const f of readdirSync(SHARDS)) if (f.endsWith(".json") && !universe.has(f.replace(/\.json$/, ""))) rmSync(join(SHARDS, f));
-  }
+  // school.trends for every college (like national.json), even when --ids limits the shards: the publisher derives it
+  // from the history layer the same way (scripts/lib/overrides.mts deriveTrends). Checked here, before anything is
+  // written, so a summary the registry doesn't know never reaches the layer.
+  const withTrendsCopy = structuredClone(schools);
+  const withTrends = deriveTrends(withTrendsCopy, histories, cpi, hmeta);
+  const lineageProblems = validateLineage(withTrendsCopy, meta);
+  if (lineageProblems.length) fail("trends summary fails the lineage check (register it in lib/fields.ts).", lineageProblems);
+
+  /* ---- Write: history.schools by unit id, history.shared by name, in one change set ---- */
+  const before = await store.read<SchoolHistory>(COLLECTIONS.history.schools);
+  const next = new Map(before);
+  // A full build replaces every shard, so colleges that left the dataset don't linger.
+  if (!IDS) for (const id of before.keys()) if (!universe.has(id)) next.delete(id);
   let written = 0;
   for (const id of targets) {
     const h = histories.get(id)!;
     if (!Object.keys(h.series).length) {
-      if (existsSync(join(SHARDS, `${id}.json`))) rmSync(join(SHARDS, `${id}.json`));
+      next.delete(id);
       continue;
     }
-    writeFileSync(join(SHARDS, `${id}.json`), formatHistoryShard(h));
+    next.set(id, JSON.parse(formatHistoryShard(h)) as SchoolHistory);
     written++;
   }
-  hmeta.schools = readdirSync(SHARDS).filter((f) => f.endsWith(".json")).length;
-  writeJson(join(OUT, "national.json"), buildNational(all, window, cpi));
-  writeJson(join(OUT, "facts.json"), buildFacts(all, window, cpi));
-  writeJson(join(OUT, "cpi.json"), cpi);
-  writeJson(join(OUT, "meta.json"), hmeta);
-
-  // school.trends in data/schools.json: every college (like national.json), even when --ids limits the shards.
-  let withTrends = 0;
-  for (const s of schools) {
-    const t = trendSummary(histories.get(s.unit_id)!, cpi, hmeta);
-    if (Object.keys(t).length) {
-      s.trends = t;
-      withTrends++;
-    } else delete s.trends;
-  }
-  const lineageProblems = validateLineage(schools, meta);
-  if (lineageProblems.length) fail("trends summary fails the lineage check (register it in lib/fields.ts).", lineageProblems);
-  // Same layout as sync-data: one college per line.
-  writeFileSync(join(DATA, "schools.json"), `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
+  hmeta.schools = next.size;
+  const run = await openProducerRun(store, "history", { changeSet });
+  const shards = await writeChanged(run.handle, COLLECTIONS.history.schools, before, next, { mirror: true });
+  await run.handle.write(COLLECTIONS.history.shared, [
+    { key: "national", body: historyDocument(buildNational(all, window, cpi)) },
+    { key: "facts", body: historyDocument(buildFacts(all, window, cpi)) },
+    { key: "cpi", body: historyDocument(cpi) },
+    { key: "meta", body: historyDocument(hmeta) },
+  ]);
+  await run.finish("applied", undefined, { colleges: written, shards_sent: shards.sent, shards_removed: shards.removed, latest });
 
   const count = (fam: HistoryFamily) => `${files[fam][0].year}–${files[fam][files[fam].length - 1].year}`;
-  console.log(`\nWrote ${written} college histories to data/history/schools/ (${hmeta.schools} in the folder), plus national, facts, cpi, meta.`);
-  console.log(`  10-year summaries (school.trends) in data/schools.json: ${withTrends} colleges.`);
+  console.log(`\nBuilt ${written} college histories (${hmeta.schools} in history.schools; ${shards.sent} sent, ${shards.removed} removed), plus national, facts, cpi, meta, in change set ${run.handle.id}.`);
+  console.log(`  10-year summaries (school.trends, derived at publish): ${withTrends} colleges.`);
   console.log(`  Admissions: IC ${count("ic-admissions")}, ADM ${count("adm")} · Prices ${count("prices")} · Aid ${count("sfa")}`);
   console.log(`  Scorecard: undergrads ${count("scorecard-enrollment")} · graduation (entering class) ${count("scorecard-completion")} · debt ${count("scorecard-debt")}`);
   console.log(`  Latest: fall ${latest.fall}, ${latest.academic}–${String(latest.academic + 1).slice(2)}. Provisional: ${Object.entries(provisional).map(([f, y]) => `${f} ${y}`).join(", ") || "none"}.`);
-
-  // National trend studies, lists, and group pages (specs/national-trends.md), from the files just written, so a data
-  // release refreshes them too. The same step as `npm run build-trends`.
-  console.log("\nNational trends (data/history/trends/):");
-  buildTrends(ROOT);
+  // The national trend files are derived by the publisher from the composed colleges and this layer (no build-trends
+  // step any more; `npm run build-trends` stays for a local look at data/history/trends/).
 }
 
 main().catch((err) => {

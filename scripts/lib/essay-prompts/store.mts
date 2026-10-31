@@ -10,11 +10,16 @@
  *   on its sha, instead of discovering it again), and colleges where nothing was found.
  * - data/reference/platform-prompts.json: the Common App's and the Coalition's own prompts, kept by hand.
  * Key order is fixed and prompts are one per line, so a run's diff shows exactly which prompts changed.
+ *
+ * Since the data platform's phase 2 the reader writes none of these files: a run reads and writes the `essays.*`
+ * layers through the data store (the end of this file). The files stay in the repository for the merge CLI, the
+ * import and the tests until phase 4; `confirmed/` is no longer exported (the publisher reads essay_prompt_overrides).
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { ConfirmedRecord } from "../../../lib/essay-prompts/confirmed.ts";
 import type { EssayPrompt, PlatformPromptsFile, SchoolEssays } from "../../../lib/types.ts";
+import type { ChangeSetHandle, DataStore } from "../data-platform/store.mts";
 
 /** Bumped when the reader's prompt or schema changes, so a re-read is distinguishable from a page change. */
 export const READER_VERSION = "2026.10.30.1";
@@ -170,4 +175,66 @@ export function writePages(file: string, f: PagesFile): void {
 
 export function readPlatformPrompts(file: string): PlatformPromptsFile | null {
   return existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as PlatformPromptsFile) : null;
+}
+
+/* ------------------------------------------------------------------ */
+/* The data store (specs/data-platform/pipelines.md)                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The reader's state as layers: `essays.records` and `essays.held` by unit id (each document the file's parsed text,
+ * so its key order is the file's, as scripts/import-data-from-git.mts imports it), `essays.pages` by unit id (a
+ * `PageRecipe`), `essays.runs` by the run stamp (the `RunSummary`). The files above stay for the merge CLI and the
+ * import; a run reads and writes only these.
+ */
+export const ESSAY_COLLECTIONS = { records: "essays.records", held: "essays.held", pages: "essays.pages", runs: "essays.runs" } as const;
+
+/** A record as its document: `serializeRecord`'s key order. */
+export const recordDocument = (r: EssayRecord): EssayRecord => JSON.parse(serializeRecord(r)) as EssayRecord;
+export const heldDocument = (h: HeldRecord): HeldRecord => JSON.parse(serializeHeld(h)) as HeldRecord;
+
+export interface EssayState {
+  records: Map<string, EssayRecord>;
+  held: Map<string, HeldRecord>;
+  pages: Map<string, PageRecipe>;
+}
+
+/** The reader's prior state from the store. */
+export async function loadEssayState(store: Pick<DataStore, "read">): Promise<EssayState> {
+  return {
+    records: await store.read<EssayRecord>(ESSAY_COLLECTIONS.records),
+    held: await store.read<HeldRecord>(ESSAY_COLLECTIONS.held),
+    pages: await store.read<PageRecipe>(ESSAY_COLLECTIONS.pages),
+  };
+}
+
+/** What one run changes: passing records, held reads, colleges that left the held list, page recipes seen, the summary. */
+export interface EssayRunWrites {
+  records: EssayRecord[];
+  held: HeldRecord[];
+  cleared: string[];
+  pages: ReadonlyMap<string, PageRecipe>;
+  summary: { run: string };
+}
+
+/** Writes a run's documents into its change set (unchanged ones write nothing). */
+export async function writeEssayRun(handle: ChangeSetHandle, before: EssayState, w: EssayRunWrites): Promise<void> {
+  if (w.records.length) await handle.write(ESSAY_COLLECTIONS.records, w.records.map((r) => ({ key: r.unit_id, body: recordDocument(r) })));
+  if (w.held.length) await handle.write(ESSAY_COLLECTIONS.held, w.held.map((h) => ({ key: h.unit_id, body: heldDocument(h) })));
+  const cleared = w.cleared.filter((id) => before.held.has(id));
+  if (cleared.length) await handle.remove(ESSAY_COLLECTIONS.held, cleared);
+  const pages = [...w.pages].filter(([id, p]) => JSON.stringify(before.pages.get(id)) !== JSON.stringify(p));
+  if (pages.length) await handle.write(ESSAY_COLLECTIONS.pages, pages.map(([key, body]) => ({ key, body })));
+  await handle.write(ESSAY_COLLECTIONS.runs, [{ key: w.summary.run, body: w.summary }]);
+}
+
+/**
+ * The run's own breaker (pipelines.md "essay-prompts"): the change set closes `held` when more than half of the
+ * colleges read this run were held. "Read" means a read reached the checks (passed or held); unchanged pages, misses
+ * and failures don't count. Null when the run is fine.
+ */
+export function essaysBreaker(counts: { passed: number; held: number }): string | null {
+  const read = counts.passed + counts.held;
+  if (!read || counts.held * 2 <= read) return null;
+  return `${counts.held} of the ${read} colleges read this run were held (more than half): look at the held records before publishing`;
 }

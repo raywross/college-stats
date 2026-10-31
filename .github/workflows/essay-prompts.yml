@@ -1,12 +1,15 @@
 # Reads colleges' essay prompts pages (scripts/sync-essay-prompts.mts; specs/product/essays/prompts.md) where the
-# Anthropic key lives (the repository secret ANTHROPIC_API_KEY; there is no key in local .env files), applies the
-# passing records to data/schools.json (npm run merge-essay-prompts), checks lineage, and opens a data PR with the
-# run's counts, the held records, and its own release note, as the college-reported workflow does. Never auto-merges:
-# the owner reviews each PR. Dispatched by hand only (the owner runs it): the first wave is `top: 200`, then units.
+# Anthropic key lives (the repository secret ANTHROPIC_API_KEY; there is no key in local .env files) and writes the
+# reader's layers (essays.records, essays.held, essays.pages, essays.runs) to the data project in one change set
+# (specs/data-platform/pipelines.md). Held records become holds in the console; the run's report is the change set's
+# summary. The last step asks the publisher for a snapshot, unless the change set closed held (more than half of the
+# colleges read were held: exit 2) or the run stopped early (budget or key: exit 3); the nightly publish catches up.
+# Dispatched by hand only (the owner runs it): the first wave is `top: 200`, then units.
 #
-# Checkout and the git/gh steps use secrets.COLLEGE_REPORTED_TOKEN when it's set (so the PR triggers Verify), falling
-# back to github.token. COLLEGE_DOCS_REPO, when set, keeps every page read in the GitHub-release archive.
+# COLLEGE_DOCS_REPO, when set, keeps every page read in the GitHub-release archive.
 name: Essay prompts
+
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.workflow }}"
 
 on:
   workflow_dispatch:
@@ -23,10 +26,14 @@ on:
         description: Stop the run (keeping finished colleges) before a call that could pass this many US dollars
         type: string
         default: "40"
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
 
+# contents: write lets the last step send the publish-snapshot repository_dispatch.
 permissions:
   contents: write
-  pull-requests: write
 
 concurrency:
   group: essay-prompts
@@ -36,15 +43,20 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 240
+    env:
+      DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+      DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
 
-      - name: Check the API key
+      - name: Check the secrets
         run: |
           if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
             echo "::error::ANTHROPIC_API_KEY is not set (repository secret)."
+            exit 1
+          fi
+          if [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::error::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set (repository secrets)."
             exit 1
           fi
 
@@ -66,76 +78,19 @@ jobs:
         run: |
           set +e
           if [ -n "$UNITS" ]; then
-            npm run sync-essay-prompts -- --units "$UNITS" --budget "${BUDGET:-40}"
+            npm run sync-essay-prompts -- --store supabase --units "$UNITS" --budget "${BUDGET:-40}"
           else
-            npm run sync-essay-prompts -- --top "${TOP:-200}" --budget "${BUDGET:-40}"
+            npm run sync-essay-prompts -- --store supabase --top "${TOP:-200}" --budget "${BUDGET:-40}"
           fi
           code=$?
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          # 3 = stopped early (budget or key): the colleges finished still go to the PR.
-          if [ "$code" != "0" ] && [ "$code" != "3" ]; then exit "$code"; fi
+          # 2 = the change set closed held; 3 = stopped early (budget or key), the colleges finished are kept.
+          if [ "$code" = "2" ]; then echo "::notice::More than half of the colleges read were held: the change set is held for a look in the console."; exit 0; fi
+          if [ "$code" = "3" ]; then echo "::notice::The run stopped early (its budget, or the API key was refused); the colleges it finished are kept."; exit 0; fi
+          exit "$code"
 
-      - name: Apply the records and check lineage
-        run: |
-          npm run merge-essay-prompts
-          npm run check:lineage
-
-      - name: Check for data changes
-        id: diff
-        run: |
-          if git status --porcelain -- data | grep -q .; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No changes under data/ this run; nothing to open a PR for."
-          fi
-
-      - name: Open a pull request
-        id: pr
-        if: steps.diff.outputs.changed == 'true'
+      - name: Ask for a snapshot
+        if: steps.sync.outputs.exit_code == '0'
         env:
-          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
-          RUN_ID: ${{ github.run_id }}
-        run: |
-          branch="data/essay-prompts-${RUN_ID}"
-          git checkout -b "$branch"
-          git add data
-          printf 'Essay prompts: run %s\n\nCo-Authored-By: Claude Opus 5 <noreply@anthropic.com>\n' "$RUN_ID" > /tmp/essay-prompts-commit-msg.txt
-          git -c user.name="essay-prompts-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/essay-prompts-commit-msg.txt
-          git push -u origin "$branch"
-          npm run --silent sync-essay-prompts -- --report body > /tmp/essay-prompts-pr-body.md
-          gh pr create --base main --head "$branch" \
-            --title "Essay prompts: run ${RUN_ID}" \
-            --body-file /tmp/essay-prompts-pr-body.md
-          number=$(gh pr view "$branch" --json number -q .number)
-          echo "number=$number" >> "$GITHUB_OUTPUT"
-
-      # The PR number is only known once the PR exists, so the release note (specs/release-notes.md) is written and
-      # pushed as a second commit onto the same branch, naming it.
-      - name: Add the release note
-        if: steps.diff.outputs.changed == 'true' && steps.pr.outputs.number != ''
-        env:
-          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
-          RUN_ID: ${{ github.run_id }}
-          PR_NUMBER: ${{ steps.pr.outputs.number }}
-        run: |
-          date=$(date -u +%Y-%m-%d)
-          note="release-notes/essay-prompts-${RUN_ID}.md"
-          npm run --silent sync-essay-prompts -- --report note --pr "$PR_NUMBER" --date "$date" --out "$note"
-          git add "$note"
-          printf 'Release note for #%s\n\nCo-Authored-By: Claude Opus 5 <noreply@anthropic.com>\n' "$PR_NUMBER" > /tmp/essay-prompts-note-msg.txt
-          git -c user.name="essay-prompts-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/essay-prompts-note-msg.txt
-          git push
-
-      - name: Say why this PR waits for a person
-        if: steps.diff.outputs.changed == 'true' && steps.pr.outputs.number != ''
-        env:
-          GH_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN || github.token }}
-          PR_NUMBER: ${{ steps.pr.outputs.number }}
-          EXIT_CODE: ${{ steps.sync.outputs.exit_code }}
-        run: |
-          reason="essay prompts PRs never auto-merge — review the held records and merge by hand once CI is green"
-          if [ "$EXIT_CODE" = "3" ]; then
-            reason="the run stopped early (its budget, or the API key was refused); this PR holds the colleges it finished — ${reason}"
-          fi
-          gh pr comment "$PR_NUMBER" --body "Waiting for a person: ${reason}."
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/dispatches -f event_type=publish-snapshot

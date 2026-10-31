@@ -1,0 +1,78 @@
+# The Common App sync (scripts/sync-common-app.mts; specs/data-expansion/common-app.md "Sync"): downloads the
+# Requirements Grid and the member records and writes common_app.grid and common_app.members to the data project in one
+# change set (specs/data-platform/pipelines.md). By hand, or from the console; the last step asks the publisher for a
+# snapshot when the run succeeded. No commit, no PR.
+#
+# COLLEGE_DOCS_REPO, when set, keeps the grid's PDF in the GitHub-release archive.
+name: Common App
+
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.workflow }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: What to refresh (grid and new members; every member, yearly; the grid only; members only)
+        type: choice
+        options: [default, refresh-members, grid-only, members-only]
+        default: default
+      limit:
+        description: Fetch at most this many member records (empty for no limit)
+        type: string
+        default: ""
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
+
+# contents: write lets the last step send the publish-snapshot repository_dispatch.
+permissions:
+  contents: write
+
+concurrency:
+  group: common-app
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+      DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
+    steps:
+      - name: Check the data project's secrets
+        run: |
+          if [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::error::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set (repository secrets)."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Sync the grid and the members
+        id: sync
+        env:
+          COLLEGE_DOCS_REPO: ${{ vars.COLLEGE_DOCS_REPO }}
+          COLLEGE_REPORTED_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN }}
+          MODE: ${{ inputs.mode }}
+          LIMIT: ${{ inputs.limit }}
+        run: |
+          set +e
+          flags=()
+          if [ "$MODE" != "default" ] && [ -n "$MODE" ]; then flags+=("--$MODE"); fi
+          if [ -n "$LIMIT" ]; then flags+=(--limit "$LIMIT"); fi
+          npm run sync-common-app -- --store supabase "${flags[@]}"
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
+
+      - name: Ask for a snapshot
+        if: steps.sync.outputs.exit_code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/dispatches -f event_type=publish-snapshot

@@ -13,9 +13,14 @@
  *
  * Flags: --cap <usd> (default 30: the pilot's whole budget; spend recorded by earlier runs in profile-pilot.json counts
  * toward it, and a run stops before a model call that could pass what is left), --concurrency <n> (default 4),
- * --free (no paid discovery steps), --force (re-extract unchanged profiles), --dry-run (write nothing), --limit <n>.
- * Writes data/high-schools/{profile-recipes,profile-pilot,review-queue}.json and detail/{id}.json (passing schools
- * only); downloads are cached in .cache/hs-profiles/ (git-ignored). Every request goes through the college-reported
+ * --free (no paid discovery steps), --force (re-extract unchanged profiles), --dry-run (write nothing), --limit <n>,
+ * --store supabase|file:<dir> (default supabase when DATA_SUPABASE_URL is set), --change-set <id> (write into a set
+ * the workflow opened: the pilot workflow runs this script three times in one set).
+ * Writes the high-school layers (specs/data-platform/pipelines.md): `high_schools.shared` profile-recipes,
+ * profile-pilot and review-queue, and `high_schools.detail/<id>` (passing schools only), in one change set (source
+ * `high-schools`); the script runs on a scratch copy of the layers laid out as data/high-schools/
+ * (scripts/lib/high-schools/data-store.mts), so nothing under data/ is written. The answer key stays
+ * data/reference/hs-profile-answer-key.json. Downloads are cached in .cache/hs-profiles/ (git-ignored). Every request goes through the college-reported
  * engine's PoliteHttp: robots.txt, per-host crawl delays, conditional GETs, an honest user agent.
  */
 import Anthropic from "@anthropic-ai/sdk";
@@ -37,20 +42,48 @@ import { measure, runProfiles, type RunSchool } from "./lib/high-schools/profile
 import { scoreAgainstKey, type KeyValues } from "./lib/high-schools/profiles/score.mts";
 import { PILOT_METROS, PILOT_SEED, selectPilot, selectionRule } from "./lib/high-schools/profiles/select.mts";
 import { mergeQueue, profilePaths, readAnswerKey, readJson, writeDetail, writeJson, writeRecipes, type HsReviewQueue, type PilotFile } from "./lib/high-schools/profiles/store.mts";
+import { highSchoolScratch, writeHighSchoolChanges } from "./lib/high-schools/data-store.mts";
+import { changeSetFromArgv, datasetAliases, datasetColleges, openProducerRun, storeFromArgv } from "./lib/data-platform/producer.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const P = profilePaths(ROOT);
-const flags = parseFlags(process.argv.slice(2));
+const argv = process.argv.slice(2);
+const flags = parseFlags(argv);
 const today = new Date().toISOString().slice(0, 10);
 const DRY = flags["dry-run"] === true;
 const num = (k: string, d: number) => (typeof flags[k] === "string" ? Number(flags[k]) : d);
 
+const store = storeFromArgv(argv);
+const changeSet = changeSetFromArgv(argv);
+/** The layers as data/high-schools/ under a scratch root: every path below reads and writes there. */
+const scratch = await highSchoolScratch(store);
+const P = { ...profilePaths(scratch.root), answerKey: profilePaths(ROOT).answerKey, cache: profilePaths(ROOT).cache };
+
+/** Ends the script: what the run changed in the scratch copy goes into the change set (unless --dry-run). */
+async function done(code = 0): Promise<never> {
+  if (!DRY && code === 0) {
+    const after = scratch.read();
+    const unchanged = [...after].every(([c, docs]) => {
+      const was = scratch.before.get(c) ?? new Map();
+      return docs.size === was.size && [...docs].every(([k, v]) => JSON.stringify(was.get(k)) === JSON.stringify(v));
+    });
+    if (!unchanged) {
+      const run = await openProducerRun(store, "high-schools", { changeSet });
+      const changed = await writeHighSchoolChanges(run.handle, scratch.before, after);
+      await run.finish("applied", undefined, { documents_sent: changed.sent, documents_removed: changed.removed });
+      console.log(`Change set ${run.handle.id}: ${changed.sent} documents sent, ${changed.removed} removed.`);
+    }
+  }
+  scratch.remove();
+  process.exit(code);
+}
+
 function usage(msg: string): never {
   console.error(msg);
+  scratch.remove();
   process.exit(1);
 }
 
-const shardRows = (): HighSchool[] => readAllShards(join(ROOT, "data", "high-schools")).flatMap((s) => s.shard.schools);
+const shardRows = (): HighSchool[] => readAllShards(scratch.dir).flatMap((s) => s.shard.schools);
 
 /* --select ----------------------------------------------------------- */
 if (flags.select === true) {
@@ -69,7 +102,7 @@ if (flags.select === true) {
   if (!DRY) writeJson(P.pilot, file);
   const by = (k: string) => schools.filter((s) => `${s.metro}/${s.kind}` === k).length;
   console.log(`Chose ${schools.length} schools: ${PILOT_METROS.map((m) => `${m.label} ${by(`${m.key}/public`)} public + ${by(`${m.key}/private`)} private`).join("; ")}`);
-  process.exit(0);
+  await done();
 }
 
 /* --dump <id> -------------------------------------------------------- */
@@ -82,7 +115,7 @@ if (typeof flags.dump === "string") {
   const doc = await readProfileDocument(new Uint8Array(readFileSync(file)), r.profile.format === "html" ? "text/html" : "application/pdf");
   console.log(`${r.name} — ${r.profile.url} (${doc.pageCount} page(s))\n`);
   console.log(renderProfileLines(doc.lines));
-  process.exit(0);
+  await done();
 }
 
 /* --score ------------------------------------------------------------ */
@@ -103,12 +136,12 @@ if (flags.score === true) {
   if (!acc) usage("nothing to score: needs an answer key and a run with extractions");
   console.log(JSON.stringify({ schools: acc.schools, overall: acc.overall, fields: Object.fromEntries(Object.entries(acc.fields).map(([k, v]) => [k, v.accuracy])), mean_f1: acc.mean_f1 }, null, 2));
   if (!DRY) writeJson(P.pilot, { ...pilot, accuracy: acc });
-  process.exit(0);
+  await done();
 }
 
-function collegeIndex() {
-  const colleges = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
-  const aliases = JSON.parse(readFileSync(join(ROOT, "data", "aliases.json"), "utf8")) as AliasRow[];
+async function collegeIndex() {
+  const colleges: School[] = await datasetColleges(store, ROOT);
+  const aliases: AliasRow[] = await datasetAliases(store, ROOT);
   return buildCollegeIndex(colleges.map((c) => ({ unit_id: c.unit_id, name: c.name, state: c.location.state })), aliases);
 }
 
@@ -116,7 +149,7 @@ function collegeIndex() {
 if (flags["match-key"] === true) {
   const key = readAnswerKey(P.answerKey);
   if (!key) usage("no answer key");
-  const index = collegeIndex();
+  const index = await collegeIndex();
   const per = key.schools.filter((s) => s.matriculation?.entries.length).map((s) => ({ id: s.id, name: s.name, ...matchList(index, s.matriculation!.entries.map((e) => e.name)) }));
   const all = matchList(index, key.schools.flatMap((s) => s.matriculation?.entries.map((e) => e.name) ?? []));
   for (const p of per) console.log(`${p.id} ${p.name}: ${p.matched}/${p.listed} matched, ${p.ambiguous} ambiguous, ${p.unmatched} unmatched`);
@@ -126,7 +159,7 @@ if (flags["match-key"] === true) {
   const pilot = readJson<PilotFile>(P.pilot);
   const overall = { listed: all.listed, matched: all.matched, ambiguous: all.ambiguous, unmatched: all.unmatched, match_rate: all.match_rate, by_rule: all.by_rule };
   if (pilot && !DRY) writeJson(P.pilot, { ...pilot, key_match: { measured: today, overall, per_school: per.map(({ ambiguous_names, unmatched_names, ...rest }) => ({ ...rest, ambiguous_names, unmatched_names })) } });
-  process.exit(0);
+  await done();
 }
 
 /* A run --------------------------------------------------------------- */
@@ -155,7 +188,7 @@ const schools: RunSchool[] = ids.map((id) => {
   return { id, name: r.name, city: r.city, state: r.state, district: r.district?.name ?? null, kind: r.kind, grade12: r.enrollment?.by_grade?.["12"] ?? null };
 });
 
-const index = collegeIndex();
+const index = await collegeIndex();
 
 const seeds = typeof flags.seeds === "string" ? (JSON.parse(readFileSync(resolve(process.cwd(), flags.seeds), "utf8")) as Record<string, string[]>) : undefined;
 const recipes = readJson<RecipesFile>(P.recipes) ?? { updated: today, recipes: {} };
@@ -206,7 +239,7 @@ const out = await runProfiles(schools, recipes.recipes, {
 
 const m = measure(schools, out.results);
 console.log(`\nFound ${m.found}/${m.schools}; published ${m.published}; failed checks ${m.failed_checks}; spent $${cap.spent.toFixed(4)}${out.stopped ? `; STOPPED: ${out.stopped}` : ""}`);
-if (DRY) process.exit(0);
+if (DRY) await done();
 
 writeRecipes(P.recipes, { updated: today, recipes: out.recipes });
 for (const d of out.details) writeDetail(P.detailDir, d);
@@ -235,3 +268,4 @@ if (pilot && (flags.pilot === true || flags["answer-key"] === true)) {
   writeJson(P.pilot, next);
 }
 console.log(`Wrote ${out.details.length} detail file(s), ${out.review.length} review item(s).`);
+await done();

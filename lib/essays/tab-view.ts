@@ -6,6 +6,7 @@
  * student's). Pure; safe in server code, client components, and tests.
  */
 import { countLabel } from "./count.ts";
+import { handReadLine } from "../essay-prompts/confirmed.ts";
 import { KIND_LABEL, refUnitId, type EssayKind, type PickerGroup } from "./prompts.ts";
 import { refsOf, type EssayLinkRow, type EssayRow } from "./rows.ts";
 import type { CollegeEssayProgress, PromptProgress, PromptState } from "./progress.ts";
@@ -51,10 +52,15 @@ export function collegeStatus(c: Pick<CollegeEssayProgress, "onFile" | "ready" |
 /** Every prompt on the card is ready (and there was at least one). */
 export const collegeDone = (c: Pick<CollegeEssayProgress, "ready" | "total">) => c.total > 0 && c.ready >= c.total;
 
-/** The line under a card whose prompts we can't list (tab.md "A college not on file"), or null. */
-export function collegeNote(c: Pick<CollegeEssayProgress, "onFile" | "name">): string | null {
+/**
+ * The line under a card: where a hand-read college's prompts came from (sources.md §3, "From the application form,
+ * read by hand on {date}"), or why a college's prompts can't be listed (tab.md "A college not on file"; the
+ * `refers_to_form` line as sources.md §3 rewords it), or null.
+ */
+export function collegeNote(c: Pick<CollegeEssayProgress, "onFile" | "name" | "confirmedOn">): string | null {
+  if (c.confirmedOn) return `${handReadLine(c.confirmedOn)}.`;
   if (c.onFile === "not_on_file") return `We haven't read ${c.name}'s essay page yet. ${c.name}'s own site has it.`;
-  if (c.onFile === "refers_to_form") return `${c.name} asks its questions inside the application; add them here as you meet them.`;
+  if (c.onFile === "refers_to_form") return `${c.name} doesn't publish its questions on its site; they're inside the application. Add each one here as you meet it.`;
   return null;
 }
 

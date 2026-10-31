@@ -28,6 +28,7 @@ import { gpaCurve as fittedGpaCurve, gpaModel as fittedGpaModel } from "./gpa-mo
 import { autoWriteBatches } from "./plan-writes";
 import { readTaskRows, upsertTaskRows, type PlanData } from "./read-plan";
 import { seasonOf } from "./seasons";
+import { readEssayOverrides, withOverride } from "@/lib/essays/overrides";
 import type { EstimateResult } from "@/lib/chances/types";
 
 export {
@@ -220,10 +221,12 @@ export async function planSchools(unitIds: string[], studentCycleStart: number, 
   const { getSchoolById, citeField } = await span("dataset", () => getData());
   const gpaModel = await fittedGpaModel();
   const gpaCurve = await fittedGpaCurve();
+  // The console's saved hand-read prompts, laid over each college's essays block (lib/essays/overrides.ts): one query.
+  const overrides = await readEssayOverrides(unitIds);
   const out: Record<string, PlanSchool> = {};
   for (const id of unitIds) {
     const school = getSchoolById(id);
-    if (school) out[id] = planSchoolFor(school, citeField, { studentCycleStart, home, gpaModel, gpaCurve });
+    if (school) out[id] = planSchoolFor(withOverride(school, overrides), citeField, { studentCycleStart, home, gpaModel, gpaCurve });
   }
   return out;
 }

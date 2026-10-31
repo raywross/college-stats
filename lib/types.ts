@@ -1816,7 +1816,19 @@ export interface SchoolEssays {
   choose?: { n: number; of: number; quote: string };
   /** Empty unless status is "published". */
   prompts: EssayPrompt[];
+  /**
+   * A block read from the application form by a person (specs/product/essays/sources.md "Confirmed";
+   * data/essay-prompts/confirmed/<unit_id>.json): present only then. Absent means the block came from the college's
+   * own page. `source_url` is then the platform's homepage; `read_on` the day the form was read; `reader` initials.
+   */
+  confidence?: "confirmed";
+  form?: EssayFormKind;
+  read_on?: string;
+  reader?: string;
 }
+
+/** Which application form a hand-read block was read in (sources.md "The hand read"). */
+export type EssayFormKind = "common_app" | "coalition" | "own" | "apply_texas" | "uc";
 
 /** One platform's own prompts in data/reference/platform-prompts.json, kept by hand from its public page. */
 export interface PlatformPrompts {

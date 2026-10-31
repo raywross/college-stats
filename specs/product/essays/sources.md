@@ -172,6 +172,39 @@ Guy recipe, once the answer is yes.
 Medium: one more recipe in an existing engine, two small tables, a consent control, and a review row in a queue that
 exists.
 
+## As built, step 3: the hand read (2026-10-30, PR #199)
+The owner changed one thing while it was being built: "If I'm making changes in the admin page, I'd want them to take
+effect right away, not be committed and pushed to the site through git." So the hand read is **database first**:
+- **The table** `essay_prompt_overrides` (migration `20261030150000_essay_prompt_overrides.sql`): one row per college
+  and cycle holding the `ConfirmedRecord`, `status`, `read_on`, `reader`, `updated_at`, `updated_by`. Everyone may
+  read it (the prompts are public facts); the only writes are `admin_set_essay_prompts` and `admin_delete_essay_prompts`
+  (security definer, `is_admin()`, logged as `essays.set` / `essays.delete`).
+- **The console** (`/admin/essays`, section "Essays"): counts by status; the hand-read checklist (colleges on at least
+  one family's list whose block is absent, "refers to the form", or "none", and that have no row, most-listed first);
+  a search; "Read by hand" for the ones done. `/admin/essays/[unit]`: what the reader found, then the form (cycle = the
+  open one, the form read, the date, initials, a paste box that splits into rows, text/kind/limit/required/applies-to
+  per row, a "Choose n of these" group, a note), validated inline with `validateConfirmed` before any call; **Save**
+  writes the row and revalidates the advisor; Delete needs the typed word. The console opens no pull request for this.
+- **The advisor overlays the table live** (`lib/essays/overrides.ts`, one cached query per request): `planSchools`,
+  `promptLookup`, and the package export route, so the Essays tab, the picker, the package, the editor's heading, and
+  the essays move show a save on the next load. The college's own `published` page still wins; a newer row beats an
+  older exported hand read.
+- **Git catches up nightly**: `scripts/export-essay-confirmed.mts` (workflow `essay-confirmed.yml`, nightly and on
+  dispatch) mirrors the open cycle's rows into `data/essay-prompts/confirmed/<unit_id>.json` and opens a
+  `data/essay-confirmed-<date>` PR with auto-merge, so the static college pages, the lineage checks, and the citation
+  trail follow on their own. The merge applies a confirmed record when the reader has no `published` block, with
+  `lineage.essays` citing `college-site`, method `reported`, the platform's homepage, `read_on`, and the first prompt.
+- **Wording**: "From the application form, read by hand on {date}" on the college card, the tab, and the editor
+  (the spec's "confirmed {date}" was shortened to say how). The "refers to the form" line now says why: "{College}
+  doesn't publish its questions on its site; they're inside the application. Add each one here as you meet it." The
+  share clause waits for step 4.
+- **Pure module** `lib/essay-prompts/confirmed.ts` (`validateConfirmed`, `splitPastedPrompts`, `recordJson`,
+  `platformHomepage`, `confirmedBlock`, `overlayEssays`) is shared by the console, the merge, the overlay, and the
+  export; `recordJson` orders nested keys because Postgres's jsonb reorders them.
+- **Proof on real data**: Florida with a placeholder record passes `validateLineage` against the real `meta.json`, and
+  re-merging (essays, college-reported, selectivity) is byte-for-byte stable.
+- Not in this step: the share box and consensus (step 4), the College Essay Guy read (step 5, after the letter).
+
 ## Open questions
 1. Should a `likely` prompt count as required work in the essays move, or only as "something to check"? Recommendation:
    it counts; the student will have to write it either way, and the card says to confirm it.

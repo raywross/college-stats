@@ -86,6 +86,7 @@
     "merge-coalition": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-coalition.mts",
     "sync-essay-prompts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-essay-prompts.mts",
     "merge-essay-prompts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/merge-essay-prompts.mts",
+    "export-essay-confirmed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/export-essay-confirmed.mts",
     "research-essay-guidance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/research-essay-guidance.mts"
   },
   "dependencies": {

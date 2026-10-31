@@ -3,6 +3,9 @@
  * - data/essay-prompts/records/<unit_id>.json: one college's page as read and checked, with the model's quotes; the
  *   merge applies these to data/schools.json (./merge.mts).
  * - data/essay-prompts/held/<unit_id>.json: a read the checks held, with why; never merged, listed in the run's PR.
+ * - data/essay-prompts/confirmed/<unit_id>.json: a college's prompts read from the application form by a person
+ *   through the admin console (specs/product/essays/sources.md "The hand read"); the merge applies these when the
+ *   reader has no `published` record for the college.
  * - data/essay-prompts/pages.json: where each college's essay page was found (so a later run fetches it, conditional
  *   on its sha, instead of discovering it again), and colleges where nothing was found.
  * - data/reference/platform-prompts.json: the Common App's and the Coalition's own prompts, kept by hand.
@@ -10,6 +13,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import type { ConfirmedRecord } from "../../../lib/essay-prompts/confirmed.ts";
 import type { EssayPrompt, PlatformPromptsFile, SchoolEssays } from "../../../lib/types.ts";
 
 /** Bumped when the reader's prompt or schema changes, so a re-read is distinguishable from a page change. */
@@ -17,6 +21,13 @@ export const READER_VERSION = "2026.10.30.1";
 
 /** How the page was found (./discover.mts). */
 export type FoundVia = "known-link" | "well-known-path" | "apply-page-link" | "sitemap" | "picker" | "recipe";
+
+/**
+ * One college's prompts as a person read them in the application form (sources.md "The hand read"; the console's
+ * /admin/essays/[unit] form writes it). Declared in lib/essay-prompts/confirmed.ts (pure, so the console loads it too)
+ * and re-exported here, so the two can never differ.
+ */
+export type { ConfirmedRecord, FormKind } from "../../../lib/essay-prompts/confirmed.ts";
 
 /** One college's essay page as read: the block the merge applies, plus how it was read and the quotes behind it. */
 export interface EssayRecord extends SchoolEssays {
@@ -75,6 +86,7 @@ export function essayPaths(root: string) {
     dir,
     records: join(dir, "records"),
     held: join(dir, "held"),
+    confirmed: join(dir, "confirmed"),
     pages: join(dir, "pages.json"),
     platform: join(root, "data", "reference", "platform-prompts.json"),
     cache: join(root, ".cache", "essay-prompts"),
@@ -124,6 +136,8 @@ function readDir<T extends { unit_id: string }>(dir: string): T[] {
 
 export const readEssayRecords = (dir: string) => readDir<EssayRecord>(dir);
 export const readHeld = (dir: string) => readDir<HeldRecord>(dir);
+/** The hand-read records (data/essay-prompts/confirmed/), by unit id; a file named for another college throws. */
+export const readConfirmedRecords = (dir: string) => readDir<ConfirmedRecord>(dir);
 
 export function readEssayRecord(dir: string, unitId: string): EssayRecord | null {
   const f = join(dir, `${unitId}.json`);

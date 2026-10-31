@@ -64,3 +64,34 @@ import takes the committed `schools.json` and **strips the later layers** with t
 appliers re-run) to recover the base. The proof that the import is faithful: the publisher composed from the imported
 layers renders `colleges.json` **byte for byte equal** to the committed `schools.json` (`tests/data-platform-import.test.mts`,
 on the real data in phase 1, on the mini fixture after).
+
+## As built, phase 2 (2026-10-31)
+Every producer in the table above writes its layer through the store (`--store supabase|file:<dir>`), one change set
+per run, keyed as `scripts/import-data-from-git.mts` keys documents (tests show an import and a run agree). Details
+that differ from the plan:
+- **A shared change-set CLI**, `scripts/data-change-set.mts` (`open --source … --run-ref …` prints the id; `--reuse`
+  continues an open set; `close --id … --status applied|held --reason …`), lets a workflow open one set around
+  several scripts, each given `--change-set <id>`. Library: `scripts/lib/data-platform/change-set.mts` and
+  `producer.mts` (`openProducerRun`, `writeChanged`, `datasetColleges`). The store gained `attach(id)` and
+  `findOpen(source, runRef)`.
+- **College-reported** keeps its state in `scripts/lib/college-reported/state.mts`, writes only changed documents
+  after every college, derives `reported.failures` and `health.colleges` into its own set before closing, closes
+  `held` on exit 1, 2 or 3, and stays `open` while Message Batches are open (the `collect` job continues it). The
+  console's health page reads `health.colleges` with the file as fallback. `hold-misread` writes a `hold-misread` set.
+- **Identity refresh** runs `sync-wikidata`, `probe-sites`, `sync-brand --colors` and `college-health` in one set; a
+  failed step closes it `held` with the step's name. Brand marks (`public/brand/*.webp`) are code assets and stay a
+  local refresh plus a code PR. **Directories** has no workflow (run by hand). **The campus pilot** closes `held` by
+  default (a person publishes it) unless the `publish` input is set.
+- **Essays** opens its set at the end of the run (its writes are batched until shared pages are reconciled); a run
+  closes `held` only when more than half of the colleges read were held. **Common App**'s grid PDF goes to the
+  archive. **History** writes `history.schools` and `history.shared`; the publisher derives trends from them
+  (`deriveTrends`, `scripts/lib/overrides.mts`), carrying a college's trends forward only when it has no history
+  document. **High schools** run on a scratch copy of their layers laid out as the old folder, then write back only
+  what changed. **`sync-data`** writes `base.*` only and refuses `--links` (the probe belongs to identity refresh);
+  `--out <dir>` renders the old file layout through the publisher's compose, so no merge logic is duplicated.
+- **Retired**: `publish-changes.yml` and its three CLIs (library code kept for the publisher), `essay-confirmed.yml`
+  and `export-essay-confirmed.mts`, `college-reported-pr-body.mts`'s CLI (its summary feeds the change set),
+  `identity-refresh.mts`'s PR subcommands, the GitHub-App file-commit path (`WRITABLE_PATHS`, `commitFileAndOpenPull`).
+- **Not moved**: `fetchRunCost` (the "Run all colleges" form's cost) still reads run reports from GitHub and should
+  read `reported.reports`; `scripts/lib/college-reported/college-failures` and `college-health` treat only
+  `rejected` items as dismissed, not `accepted` ones.

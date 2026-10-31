@@ -80,3 +80,20 @@ anyway. Actions go through `withAdmin` and `callAdminRpc` like Operations. Every
 ## Telemetry
 Server events, never values: `data_publish {snapshot, change_sets, ms}`, `data_change_set_closed {source, status}`,
 `data_edit {path_topic}`, `data_revert {kind}`, `data_point_back`.
+
+## As built, phase 2 (2026-10-31)
+The console's Change sets, Holds and Snapshots screens exist (`app/admin/data/**`; pure helpers in
+`lib/admin/change-set-view.ts`). Differences from the plan:
+- **Revert** refuses when a later set touched a document; the console turns the function's message into "Change set
+  #N changed X after this one. Revert #N first". **Publish anyway** is `admin_data_unhold` plus a forced publish
+  dispatch, logged first. **Write a release note** shows the note's text with a Copy button; the console no longer
+  commits anything, so a person pastes it into a code PR when a routine refresh deserves one.
+- **Holds** lists open review items and held essay records most-listed college first. **Accept the value** writes
+  one field edit per value through `admin_data_edit` (today's `acceptPlan` mapping: the three C1 totals with the
+  derived rate and year, or a test-submission share) with the note "Accepted from the review queue: {document}",
+  then resolves the item `accepted`; if an edit fails it stops before any item is marked. Each held essay links to its
+  hand-read form. **Re-run discovery** dispatches as before.
+- `lib/reported.ts`'s `resolved` is `"rejected" | "accepted"`; `enqueueItems` keeps both out.
+- The queue is read from the store, paged by key, cached per instance and re-read after a write or five minutes.
+- Not built: the `data_revert` and other telemetry events in this part (the console logs every action to `admin_log`
+  instead); the admin field editor and the live edits overlay are phase 3.

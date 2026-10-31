@@ -21,6 +21,8 @@ export interface SnapshotPointer {
   manifest_sha256: string;
 }
 
+import type { LineageRecord } from "../types.ts";
+
 /** Objects every snapshot carries, relative to `snapshots/<id>/`. Per-college and per-name objects use the helpers. */
 export const SNAPSHOT_OBJECTS = {
   colleges: "colleges.json.gz",
@@ -30,7 +32,30 @@ export const SNAPSHOT_OBJECTS = {
   historyShared: "history/shared.json.gz",
   searchIndex: "search-index.json",
   manifest: "manifest.json",
+  /** The admin edits this snapshot baked in, each with the pipelines' value it covers (SnapshotEditsObject). */
+  edits: "edits.json",
 } as const;
+
+/**
+ * `edits.json` (specs/data-platform/change-sets.md "Admin edits", precedence): every live field edit the publisher
+ * applied, with the value and lineage the composed college had at that path *before* the edit (null when the
+ * pipelines had none). The console reads the current snapshot's copy to say "a newer pipeline value exists" when a
+ * pipeline's value differs from the edit's and was retrieved after it; the app never reads this object.
+ */
+export interface SnapshotEditsObject {
+  snapshot: number;
+  edits: {
+    id: number;
+    unit_id: string;
+    path: string;
+    value: unknown;
+    note: string | null;
+    /** ISO timestamp of the edit. */
+    created_at: string;
+    /** What the layers composed to at this path without the edit, or null when nothing was there. */
+    pipeline: { value: unknown; lineage: LineageRecord | null } | null;
+  }[];
+}
 
 export const historyObject = (unitId: string) => `history/${unitId}.json`;
 export const detailObject = (unitId: string) => `detail/${unitId}.json`;

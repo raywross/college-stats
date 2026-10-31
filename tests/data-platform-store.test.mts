@@ -13,6 +13,8 @@ import {
   READ_PAGE,
   StoreConflictError,
   WRITE_CHUNK,
+  chunkRows,
+  documentText,
   decodeKey,
   encodeKey,
   fileStore,
@@ -305,4 +307,16 @@ test("--store: file:<dir>, supabase with the env fallbacks, and no silent defaul
   assert.throws(() => parseStoreFlag("postgres", {}), /expected supabase or file/);
   assert.throws(() => parseStoreFlag("file:", {}), /needs a folder/);
   assert.equal(typeof storeFromFlag("file:/tmp/never-written", {}).read, "function");
+});
+
+test("documentText drops NUL escapes (Postgres json refuses them) and chunkRows bounds a call by documents and bytes", () => {
+  assert.equal(documentText({ q: "a\u0000b", n: 1 }), '{"q":"ab","n":1}');
+  assert.equal(documentText({ q: "plain" }), '{"q":"plain"}');
+  const small = Array.from({ length: 5 }, (_, i) => ({ body: "x".repeat(10) + i }));
+  assert.deepEqual([...chunkRows(small, 2, 1_000)].map(([s, r]) => [s, r.length]), [[0, 2], [2, 2], [4, 1]], "by count");
+  const big = [{ body: "a".repeat(600) }, { body: "b".repeat(600) }, { body: "c".repeat(600) }, { body: "d".repeat(2_000) }, { body: "e".repeat(10) }];
+  assert.deepEqual([...chunkRows(big, 200, 1_000)].map(([s, r]) => [s, r.length]), [[0, 1], [1, 1], [2, 1], [3, 1], [4, 1]], "by bytes: each 600-byte body alone under a 1,000-byte cap; the 2,000-byte one alone too");
+  assert.deepEqual([...chunkRows(big, 200, 1_300)].map(([s, r]) => [s, r.length]), [[0, 2], [2, 1], [3, 1], [4, 1]], "two 600s fit a 1,300 cap, a third doesn't");
+  assert.deepEqual([...chunkRows([{ body: null }, { body: null }], 200, 10)].map(([s, r]) => [s, r.length]), [[0, 2]], "deletes weigh nothing");
+  assert.deepEqual([...chunkRows([], 200, 10)], []);
 });

@@ -1,5 +1,5 @@
 /**
- * The publisher (scripts/publish-snapshot.mts, scripts/lib/data-platform/{compose,render,upload,changelog,ledger}.mts;
+ * The publisher (scripts/publish-snapshot.mts, scripts/lib/data-platform/{compose,render,upload,changelog,ledger,publish-tables}.mts;
  * specs/data-platform/publish.md). The layers fixture is three real colleges stripped by the import's own code
  * (scripts/import-data-from-git.mts `importLayers`) into a file store in a temp folder: Duke (Common App, Coalition,
  * essays, college-reported with a CDS record, directories, the campus pilot's policies), Simpson University (CCCU,
@@ -10,7 +10,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
@@ -19,7 +19,11 @@ import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import type { DatasetMeta, School } from "../lib/types";
 import { formatDetail } from "../lib/detail.ts";
 import { validateLineage, validateSchool } from "../lib/lineage.ts";
-import { POINTER_OBJECT, SNAPSHOT_OBJECTS, detailObject, historyObject, snapshotPath, type SnapshotPointer } from "../lib/data-platform/snapshot.ts";
+import { POINTER_OBJECT, SNAPSHOT_OBJECTS, detailObject, historyObject, snapshotPath, type SnapshotManifest, type SnapshotPointer } from "../lib/data-platform/snapshot.ts";
+import type { ConfirmedRecord } from "../lib/essay-prompts/confirmed.ts";
+import { openCycle } from "../scripts/lib/essay-prompts/cycle.mts";
+import type { FailureRow } from "../scripts/lib/college-failures.mts";
+import type { HighSchoolData } from "../scripts/lib/publish-high-schools.mts";
 import { withEdits, type FieldEdit } from "../lib/data-platform/edits.ts";
 import { formatAliasRows } from "../scripts/lib/aliases-sync.mts";
 import { formatSchools } from "../scripts/lib/identity-sync.mts";
@@ -33,6 +37,7 @@ import { renderSnapshot, sha256 } from "../scripts/lib/data-platform/render.mts"
 import { fileBucket, movePointer, pointerFor, prune, snapshotsToKeep, uploadSnapshot, type BucketClient, type SnapshotRow } from "../scripts/lib/data-platform/upload.mts";
 import { recordChanges, recordTiers, snapshotCommit, tierSuppression } from "../scripts/lib/data-platform/changelog.mts";
 import { fileLedger, FIELD_EDITS_FILE } from "../scripts/lib/data-platform/ledger.mts";
+import { failureRowsFrom, highSchoolDataFrom, highSchoolDigest, publishTables, tablesDigestAfter, type RecordedManifest, type TablesDeps } from "../scripts/lib/data-platform/publish-tables.mts";
 import { EXIT, publishSnapshot, type PublishOptions } from "../scripts/publish-snapshot.mts";
 import { AUTH_STUB_SQL } from "./helpers/pg-auth.mts";
 
@@ -304,7 +309,6 @@ test("selectivity_publishes takes snapshot:<id> as its commit (migration 2026103
   const dir = join(ROOT, "supabase", "migrations");
   const db = await PGlite.create({ extensions: { pg_trgm } });
   await db.exec(AUTH_STUB_SQL);
-  const { readdirSync } = await import("node:fs");
   for (const f of readdirSync(dir).filter((n) => n.endsWith(".sql")).sort()) await db.exec(readFileSync(join(dir, f), "utf8"));
   const insert = (commit: string) =>
     db.query(`insert into public.selectivity_publishes (git_commit, published_at, method, elite_index, counts, elite_any_pool, rated, rows_recorded, cause) values ($1, now(), 'm', 1, '{}', 0, 0, 0, 'data')`, [commit]);
@@ -412,5 +416,258 @@ test("fileBucket refuses to overwrite an object, like Storage", async () => {
     assert.equal((await b.upload("1/a.json", Buffer.from("y"), { contentType: "application/json", cacheControl: "1", upsert: false })).error?.statusCode, "409");
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* The hand-read prompts, as the retired nightly export applied them   */
+/* ------------------------------------------------------------------ */
+
+/** A hand-read record for Hilbert College (placeholder prompts, not the college's text). */
+const handRead = (): ConfirmedRecord => ({
+  unit_id: "191621",
+  name: "Hilbert College",
+  cycle: openCycle(TODAY),
+  status: "published",
+  confidence: "confirmed",
+  source: "form-by-hand",
+  form: "common_app",
+  read_on: TODAY,
+  reader: "RR",
+  prompts: [1, 2].map((n) => ({
+    id: `191621:${openCycle(TODAY)}:${n}`,
+    text: `Placeholder question ${n}: tell us about something you care about and why it matters to you.`,
+    kind: "short_answer" as const,
+    limit: { kind: "words" as const, max: 250 },
+    required: true,
+    applies_to: "all" as const,
+    quote: `Placeholder question ${n}: tell us about something you care about and why it matters to you.`,
+  })),
+});
+
+test("a valid essay_prompt_overrides row composes exactly as the export's confirmed file did", () => {
+  const record = handRead();
+  const fromRow = composeFixture({ ...layers, promptOverrides: [{ unit_id: record.unit_id, cycle: record.cycle, record }] });
+  // The retired nightly export wrote the row to data/essay-prompts/confirmed/, which the layer holds.
+  const fromLayer = composeFixture({ ...layers, essays: { ...layers.essays, confirmed: [record] }, promptOverrides: null });
+  assert.deepEqual(fromRow.problems, []);
+  assert.deepEqual(fromRow.warnings.filter((w) => w.includes("essay_prompt_overrides")), []);
+  assert.equal(formatSchools(fromRow.schools), formatSchools(fromLayer.schools));
+  const hilbert = fromRow.schools.find((s) => s.unit_id === "191621")!;
+  assert.notEqual(JSON.stringify(hilbert.essays), JSON.stringify(first.schools.find((s) => s.unit_id === "191621")!.essays), "the hand read lands on the college");
+  // A row for a closed cycle is ignored, and the layer's record (none here) stands.
+  const closed = composeFixture({ ...layers, promptOverrides: [{ unit_id: "191621", cycle: "2020-21", record: { ...record, cycle: "2020-21" } }] });
+  assert.equal(formatSchools(closed.schools), formatSchools(first.schools));
+});
+
+/* ------------------------------------------------------------------ */
+/* The table step: college_data_failures and the high-school tables    */
+/* ------------------------------------------------------------------ */
+
+const failure = (unit: string, reason = "no_document"): FailureRow =>
+  ({ unit_id: unit, name: `College ${unit}`, reason_code: reason, stage: "discovery", detail: "x", url: null, edition: null, check_ids: [], first_seen: "2026-10-01", last_seen: "2026-10-30" }) as unknown as FailureRow;
+
+/** Fakes for the table step's library calls, recording what each received. */
+function fakeTables(over: Partial<TablesDeps> = {}) {
+  const calls: string[] = [];
+  const loaded: FailureRow[][] = [];
+  const written: HighSchoolData[] = [];
+  const deps: TablesDeps = {
+    failuresTableProblem: async () => (calls.push("failures?"), null),
+    loadCollegeFailures: async (_c, rows) => (calls.push("failures"), loaded.push([...rows]), { upserted: rows.length, resolved: 1 }),
+    highSchoolFileProblems: () => (calls.push("hs-files"), []),
+    highSchoolTablesProblem: async () => (calls.push("hs?"), null),
+    publishHighSchools: async (_c, data) => (calls.push("hs"), written.push(data), { schools: data.rows.length, details: data.details.length, removed: 0 }),
+    ...over,
+  };
+  return { deps, calls, loaded, written };
+}
+
+const hsCollections = (): Map<string, Map<string, unknown>> =>
+  new Map([
+    [COLLECTIONS.highSchools.schools, new Map<string, unknown>([["VT", { state: "VT", schools: [{ id: "500001", kind: "public" }] }]])],
+    [COLLECTIONS.highSchools.shared, new Map<string, unknown>([["meta", { generated: "2026-10-30" }], ["medians", {}]])],
+  ]);
+
+const manifestWith = (objects: Record<string, string>): SnapshotManifest => ({
+  id: 2,
+  created_at: "",
+  previous_id: 1,
+  colleges: 3,
+  objects: Object.fromEntries(Object.entries(objects).map(([k, sha]) => [k, { bytes: 1, sha256: sha }])),
+  layers: {},
+  change_set_ids: [],
+});
+
+test("highSchoolDataFrom gives the shape readHighSchoolData reads; the digest covers only high-schools/ objects", () => {
+  const data = highSchoolDataFrom(hsCollections())!;
+  assert.deepEqual(data.shards.map((s) => s.file), ["VT.json"]);
+  assert.deepEqual(data.rows.map((r) => r.id), ["500001"]);
+  assert.deepEqual(data.meta, { generated: "2026-10-30" });
+  assert.equal(highSchoolDataFrom(new Map()), null);
+  // The fixture's composed layers (one state file, the shared files) map too.
+  const fixture = highSchoolDataFrom(first.highSchools)!;
+  assert.ok(fixture.meta && fixture.medians && fixture.stateFiles.length > 0);
+
+  const a = highSchoolDigest(manifestWith({ "colleges.json.gz": "1", "high-schools/meta.json": "2" }).objects);
+  assert.equal(a, highSchoolDigest(manifestWith({ "colleges.json.gz": "other", "high-schools/meta.json": "2" }).objects), "college objects don't count");
+  assert.notEqual(a, highSchoolDigest(manifestWith({ "high-schools/meta.json": "3" }).objects));
+  assert.equal(highSchoolDigest(manifestWith({ "colleges.json.gz": "1" }).objects), null);
+  // A snapshot from before the table step: its own objects stand for what the tables hold.
+  assert.equal(tablesDigestAfter(manifestWith({ "high-schools/meta.json": "2" })), a);
+  assert.equal(tablesDigestAfter(null), null);
+  const rows = failureRowsFrom(new Map([["1", [failure("1")]], ["2", [failure("2"), failure("2", "failed_checks")]]]));
+  assert.deepEqual(rows.map((r) => r.unit_id), ["1", "2", "2"]);
+});
+
+test("the table step loads the failures every time and the high-school tables only when they changed, retrying a failure", async () => {
+  const failures = new Map([["198419", [failure("198419")]]]);
+  const manifest = manifestWith({ "high-schools/meta.json": "aa", "high-schools/schools/VT.json": "bb" });
+  const input = { collegeIds: new Set(IDS), highSchools: hsCollections(), manifest, previous: null, failures };
+  const quiet = () => {};
+  const f = fakeTables();
+  const log = await publishTables({} as never, input, { deps: f.deps, log: quiet });
+  assert.deepEqual(log.college_data_failures, { status: "published", upserted: 1, resolved: 1 });
+  assert.deepEqual(f.loaded, [[failure("198419")]]);
+  assert.equal(log.high_schools.status, "published", "a first publish writes the tables");
+  assert.equal(log.high_schools.tables_digest, highSchoolDigest(manifest.objects));
+  assert.deepEqual(f.calls, ["failures?", "failures", "hs-files", "hs?", "hs"]);
+
+  // The next snapshot, same high schools: nothing written; the failures load again.
+  const next = fakeTables();
+  const again = await publishTables({} as never, { ...input, previous: { ...manifest, tables: log } }, { deps: next.deps, log: quiet });
+  assert.equal(again.high_schools.status, "unchanged");
+  assert.deepEqual(next.calls, ["failures?", "failures"]);
+  // --republish-high-schools writes them anyway.
+  const forced = fakeTables();
+  const forcedLog = await publishTables({} as never, { ...input, previous: { ...manifest, tables: log } }, { deps: forced.deps, forceHighSchools: true, log: quiet });
+  assert.equal(forcedLog.high_schools.status, "published");
+
+  // A changed shard whose write fails is logged, never thrown, and the next snapshot retries it.
+  const changed = manifestWith({ "high-schools/meta.json": "aa", "high-schools/schools/VT.json": "cc" });
+  const failing = fakeTables({
+    publishHighSchools: async () => {
+      throw new Error("statement timeout");
+    },
+  });
+  const failed = await publishTables({} as never, { ...input, manifest: changed, previous: { ...manifest, tables: log } }, { deps: failing.deps, log: quiet });
+  assert.equal(failed.high_schools.status, "failed");
+  assert.match(failed.high_schools.message ?? "", /statement timeout/);
+  assert.equal(failed.high_schools.tables_digest, log.high_schools.tables_digest, "the tables still hold the older high schools");
+  const retry = fakeTables();
+  const retried = await publishTables({} as never, { ...input, manifest: changed, previous: { ...changed, tables: failed } }, { deps: retry.deps, log: quiet });
+  assert.equal(retried.high_schools.status, "published");
+
+  // File problems stop the write; an empty failures layer resolves nothing; a missing table is skipped, not failed.
+  const bad = fakeTables({ highSchoolFileProblems: () => ["high-schools/meta.json is missing"] });
+  const badLog = await publishTables({} as never, { ...input, failures: new Map() }, { deps: bad.deps, log: quiet });
+  assert.equal(badLog.college_data_failures.status, "skipped");
+  assert.deepEqual(bad.loaded, [], "an empty layer never resolves every open row");
+  assert.equal(badLog.high_schools.status, "failed");
+  assert.ok(!bad.calls.includes("hs"));
+  const missing = fakeTables({ failuresTableProblem: async () => ({ missing: true, message: "Apply the migration first." }), highSchoolTablesProblem: async () => "relation does not exist. Apply it first." });
+  const missingLog = await publishTables({} as never, input, { deps: missing.deps, log: quiet });
+  assert.equal(missingLog.college_data_failures.status, "skipped");
+  assert.equal(missingLog.high_schools.status, "skipped");
+  const broken = fakeTables({
+    loadCollegeFailures: async () => {
+      throw new Error("network");
+    },
+  });
+  assert.equal((await publishTables({} as never, input, { deps: broken.deps, log: quiet })).college_data_failures.status, "failed");
+});
+
+test("the CLI: tables after the pointer, logged in the row's manifest; then the wait, the revalidate, and the deploy hook once", async () => {
+  const dir = await fixtureStore();
+  try {
+    const fetched: { url: string; method?: string }[] = [];
+    const fakeFetch = (async (url: string | URL, init?: RequestInit) => {
+      fetched.push({ url: String(url), method: init?.method });
+      return new Response(null, { status: 201 });
+    }) as typeof fetch;
+    const env = { REVALIDATE_SECRET: "s", REVALIDATE_URLS: "https://a.example", VERCEL_DEPLOY_HOOK_URL: "https://hooks.example/deploy/secret-id" };
+    const deps = (tables: Partial<TablesDeps>, at: string) => ({ now: () => new Date(at), changelogClient: {}, tables, fetch: fakeFetch });
+    const opts = cliOptions(dir, { skipChangelog: true, env, deps: deps(fakeTables().deps, "2026-10-31T08:00:00.000Z") });
+    assert.equal(await publishSnapshot(opts), EXIT.ok);
+    assert.deepEqual(
+      fetched,
+      [
+        { url: "https://a.example/api/revalidate", method: "POST" },
+        { url: "https://hooks.example/deploy/secret-id", method: "POST" },
+      ],
+      "the revalidate, then the hook, each once"
+    );
+    assert.ok(opts.lines.includes("deploy hook: answered 201"));
+    assert.ok(!opts.lines.some((l) => l.includes("secret-id")), "the hook's URL is never logged");
+    const at = (prefix: string) => opts.lines.findIndex((l) => l.includes(prefix));
+    assert.ok(at("is live; the pointer names it") >= 0 && at("is live; the pointer names it") < at("college data failures:"), "tables after the pointer");
+    assert.ok(at("high schools:") < at("deploy hook:"));
+    const manifest = (await fileLedger(dir).manifest(1)) as RecordedManifest;
+    assert.equal(manifest.tables?.college_data_failures.status, "published");
+    assert.equal(manifest.tables?.college_data_failures.upserted, 4, "the fixture's four failure rows");
+    assert.equal(manifest.tables?.high_schools.status, "published");
+    assert.equal(manifest.objects[SNAPSHOT_OBJECTS.colleges].sha256, sha256(readFileSync(join(dir, "_bucket", snapshotPath(1, SNAPSHOT_OBJECTS.colleges)))), "the bucket manifest's fields are kept");
+    const bucketManifest = JSON.parse(readFileSync(join(dir, "_bucket", snapshotPath(1, SNAPSHOT_OBJECTS.manifest)), "utf8"));
+    assert.equal(bucketManifest.tables, undefined, "the bucket's manifest stays as rendered (the pointer names its hash)");
+
+    // A forced re-publish: the high schools are unchanged; --skip-deploy calls no hook.
+    fetched.length = 0;
+    const again = cliOptions(dir, { previous: "auto", force: true, skipChangelog: true, skipDeploy: true, env, deps: deps(fakeTables().deps, "2026-10-31T09:00:00.000Z") });
+    assert.equal(await publishSnapshot(again), EXIT.ok);
+    assert.equal(((await fileLedger(dir).manifest(2)) as RecordedManifest).tables?.high_schools.status, "unchanged");
+    assert.deepEqual(fetched.map((c) => c.url), ["https://a.example/api/revalidate"]);
+    assert.ok(again.lines.includes("deploy hook: skipped (--skip-deploy)"));
+    // --skip-tables writes none and carries the tables' digest forward.
+    const third = fakeTables();
+    const skipped = cliOptions(dir, { previous: "auto", force: true, skipChangelog: true, skipTables: true, env: {}, deps: deps(third.deps, "2026-10-31T10:00:00.000Z") });
+    assert.equal(await publishSnapshot(skipped), EXIT.ok);
+    assert.deepEqual(third.calls, []);
+    const log3 = ((await fileLedger(dir).manifest(3)) as RecordedManifest).tables!;
+    assert.equal(log3.high_schools.status, "skipped");
+    assert.equal(log3.high_schools.tables_digest, manifest.tables?.high_schools.tables_digest);
+
+    // A point-back moves the pointer, then revalidates and rebuilds the bundle through the hook; no tables.
+    fetched.length = 0;
+    const point = fakeTables();
+    const back = cliOptions(dir, { point: 1, env, deps: deps(point.deps, "2026-10-31T11:00:00.000Z") });
+    assert.equal(await publishSnapshot(back), EXIT.ok);
+    assert.deepEqual(fetched.map((c) => c.url), ["https://a.example/api/revalidate", "https://hooks.example/deploy/secret-id"]);
+    assert.deepEqual(point.calls, []);
+    // A hook that fails is logged; the run still succeeds.
+    const refused = (async () => {
+      throw new Error("connection refused");
+    }) as typeof fetch;
+    const down = cliOptions(dir, { point: 1, env: { VERCEL_DEPLOY_HOOK_URL: "https://hooks.example/x" }, deps: { fetch: refused } });
+    assert.equal(await publishSnapshot(down), EXIT.ok);
+    assert.ok(down.lines.includes("deploy hook: failed: connection refused"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* Retired: publish-changes.yml and the git-based CLIs                 */
+/* ------------------------------------------------------------------ */
+
+test("publish-changes.yml and its CLIs are retired; the publisher's workflow passes every secret it reads", () => {
+  for (const f of [".github/workflows/publish-changes.yml", "scripts/publish-changes.mts", "scripts/publish-selectivity-history.mts", "scripts/publish-college-failures.mts"]) {
+    assert.ok(!existsSync(join(ROOT, f)), `${f} is gone`);
+  }
+  // Their library code stays: the publisher calls it.
+  for (const f of ["scripts/lib/publish-changes.mts", "scripts/lib/selectivity-history.mts", "scripts/lib/publish-college-failures.mts", "scripts/lib/publish-high-schools.mts"]) {
+    assert.ok(existsSync(join(ROOT, f)), `${f} stays`);
+  }
+  const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
+  for (const s of ["publish-changes", "publish-selectivity-history", "publish-college-failures"]) assert.equal(pkg.scripts[s], undefined, `npm run ${s}`);
+  for (const f of readdirSync(join(ROOT, ".github", "workflows"))) {
+    assert.doesNotMatch(readFileSync(join(ROOT, ".github", "workflows", f), "utf8"), /npm run publish-(changes|selectivity-history|college-failures)\b/, f);
+  }
+  const yml = readFileSync(join(ROOT, ".github", "workflows", "publish-snapshot.yml"), "utf8");
+  const jobs = yml.split(/^ {2}(?=publish:|point:)/m).slice(1);
+  assert.equal(jobs.length, 2);
+  for (const job of jobs) {
+    for (const name of ["DATA_SUPABASE_URL", "DATA_SUPABASE_SECRET_KEY", "REVALIDATE_SECRET", "REVALIDATE_URLS", "VERCEL_DEPLOY_HOOK_URL"]) {
+      assert.match(job, new RegExp(`${name}: \\$\\{\\{ secrets\\.${name}\\b`), `${job.slice(0, 6)} ${name}`);
+    }
   }
 });

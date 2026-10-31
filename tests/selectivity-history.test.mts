@@ -205,11 +205,11 @@ test("the console says what changed in words, and finds the tier moves and Ultra
   );
 });
 
-test("the college-reported workflow rebuilds selectivity after merging, and the publish workflow records the history", () => {
+test("the college-reported workflow leaves selectivity to the publisher, which rebuilds the tiers and records the history", () => {
   const reported = readFileSync(join(ROOT, ".github/workflows/college-reported.yml"), "utf8");
-  assert.equal((reported.match(/run: npm run build-selectivity/g) ?? []).length, 2, "both jobs");
-  assert.ok(reported.indexOf("npm run merge-directories") < reported.indexOf("npm run build-selectivity"));
-  assert.match(readFileSync(join(ROOT, ".github/workflows/publish-changes.yml"), "utf8"), /npm run publish-selectivity-history -- --head "\$SHA"/);
+  assert.doesNotMatch(reported, /run: npm run (build-selectivity|merge-reported|merge-directories)/, "no merge or build step: the publisher composes");
+  assert.equal((reported.match(/event_type=publish-snapshot/g) ?? []).length, 2, "both jobs ask the publisher for a snapshot");
+  assert.match(readFileSync(join(ROOT, "scripts/publish-snapshot.mts"), "utf8"), /await recordTiers\(/);
 });
 
 /* ------------------------------------------------------------------ */
@@ -256,7 +256,7 @@ test("a tier moved only by other colleges' figures is announced; a method change
 });
 
 test("the backfill, the rebuild, and the history publish never stage follower changes", () => {
-  for (const f of ["scripts/backfill-selectivity-history.mts", "scripts/rebuild-selectivity-history.mts", "scripts/publish-selectivity-history.mts", "scripts/lib/selectivity-history.mts"]) {
+  for (const f of ["scripts/backfill-selectivity-history.mts", "scripts/rebuild-selectivity-history.mts", "scripts/lib/selectivity-history.mts"]) {
     assert.doesNotMatch(readFileSync(join(ROOT, f), "utf8"), /dataset_changes|publish_changes\(|stageChanges/, f);
   }
 });

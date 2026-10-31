@@ -486,7 +486,7 @@ test("dispatch guards: the typed table, the word for a full run, the one-at-a-ti
   assert.match(r.status === "error" ? r.message : "", /already in progress/);
   assert.deepEqual(f.log, [], "a running workflow is not logged or dispatched again");
   f = fakeOps({ runs: [run({ status: "in_progress" })] });
-  assert.equal((await opsActions.dispatchRun(f.deps, { run: "publish", values: { what: "all" } })).status, "done", "publish has no one-at-a-time guard");
+  assert.equal((await opsActions.dispatchRun(f.deps, { run: "publish-snapshot", values: {} })).status, "done", "another workflow's run doesn't block the publisher");
 
   f = fakeOps();
   r = await opsActions.dispatchRun(f.deps, { run: "college", values: { college: "12", rediscover: false, auto_merge: true } });

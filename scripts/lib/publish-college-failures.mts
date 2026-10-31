@@ -1,6 +1,8 @@
 /**
- * Loads data/college-failures.json into public.college_data_failures
- * (supabase/migrations/20261010140000_college_data_failures.sql; specs/college-data-failures.md).
+ * Loads the college data failures (the `reported.failures` layer, once data/college-failures.json) into
+ * public.college_data_failures (supabase/migrations/20261010140000_college_data_failures.sql;
+ * specs/college-data-failures.md). The snapshot publisher calls it after each publish
+ * (scripts/lib/data-platform/publish-tables.mts); the standalone CLI and its workflow job are retired.
  *
  * Rows in the file are upserted on (unit_id, reason_code) with resolved_at cleared; rows still open in the table but
  * no longer in the file get resolved_at set. Nothing is deleted. Safe to re-run: a second load of the same file

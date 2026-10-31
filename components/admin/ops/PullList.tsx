@@ -1,13 +1,13 @@
 import type { DataPull } from "@/lib/github-app";
-import { CHECKS_LABELS, dayLabel, flagLabel, mergeBlock } from "@/lib/admin/ops-view";
+import { CHECKS_LABELS, dayLabel, mergeBlock } from "@/lib/admin/ops-view";
 import { renderPullBody } from "@/lib/admin/pr-markdown";
 import { closeAction, holdAction, mergeAction, rerunCiAction } from "@/app/admin/operations/actions";
 import { OpsActionForm } from "@/components/admin/ops/OpsActionForm";
 
 /**
- * Open data pull requests (the pipelines' `data/` branches and the console's own `review/` ones): the ones waiting
- * for a person first, each with the body its workflow wrote rendered as the PR shows it (as untrusted text:
- * lib/admin/pr-markdown.ts), its CI status, whether auto-merge is on, and Approve and merge, Hold, Close. A refusal
+ * Open pull requests from `data/` and `review/` branches (Approvals: data runs open none any more, so these are code
+ * changes and leftovers), newest first, each with its description rendered as untrusted text
+ * (lib/admin/pr-markdown.ts), its CI status, whether auto-merge is on, and Approve and merge, Hold, Close. A refusal
  * (checks pending or failed) comes back from the Server Action in words and is also shown here before the click.
  */
 export function PullList({ pulls }: { pulls: DataPull[] }) {
@@ -17,15 +17,9 @@ export function PullList({ pulls }: { pulls: DataPull[] }) {
   return (
     <ul className="space-y-4">
       {pulls.map((pull) => {
-        const flag = flagLabel(pull.flagged);
         const block = mergeBlock(pull);
         return (
-          <li key={pull.number} className={`rounded-2xl border bg-card p-4 ${flag ? "border-warning ring-1 ring-warning/50" : "border-border"}`}>
-            {flag && (
-              <p className="mb-3 rounded-lg bg-warning/15 px-3 py-2 text-sm font-medium" role="note">
-                Waits for a person. {flag}
-              </p>
-            )}
+          <li key={pull.number} className="rounded-2xl border border-border bg-card p-4">
             <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
               <h3 className="min-w-0 text-base font-semibold">
                 <a href={pull.url} target="_blank" rel="noopener noreferrer" className="underline decoration-dotted underline-offset-2">
@@ -44,8 +38,8 @@ export function PullList({ pulls }: { pulls: DataPull[] }) {
             </p>
 
             {pull.body.trim() && (
-              <details className="mt-3 rounded-xl border border-border" open={Boolean(flag)}>
-                <summary className="min-h-10 cursor-pointer px-3 py-2 text-sm font-semibold">What this run reports</summary>
+              <details className="mt-3 rounded-xl border border-border">
+                <summary className="min-h-10 cursor-pointer px-3 py-2 text-sm font-semibold">Description</summary>
                 <div className="spec-prose border-t border-border px-3 py-3 text-sm" dangerouslySetInnerHTML={{ __html: renderPullBody(pull.body) }} />
               </details>
             )}

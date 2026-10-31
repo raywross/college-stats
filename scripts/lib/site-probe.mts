@@ -1042,7 +1042,20 @@ export async function cachedDirectory(root: string, ids: ReadonlySet<string>): P
   return null;
 }
 
+/**
+ * Where a run's state lives when it isn't the files under data/ (the data store: scripts/lib/identity-store.mts
+ * `probeStateFromStore`): the previous entries and link issues, and where the new ones go. With a state the run
+ * neither reads nor writes data/ and doesn't re-apply identity (the publisher composes).
+ */
+export interface ProbeState {
+  previous: readonly SiteProbeEntry[];
+  issues: readonly LinkIssue[];
+  save(probe: SiteProbeEntry[], issues: LinkIssue[]): Promise<void>;
+}
+
 export interface RunSiteProbeOptions {
+  /** The run's state (the data store); default the files under `root`/data. Needs `schools`. */
+  state?: ProbeState;
   /** Only these colleges (unit ids); the file keeps everyone else's entries. */
   ids?: readonly string[];
   /** A spread sample of this many colleges (the same ones every run). */
@@ -1068,16 +1081,18 @@ export interface RunSiteProbeOptions {
 /**
  * Probes the colleges, writes data/site-probe.json (this run's entries over the file's) and data/link-issues.json
  * (`nextLinkIssues`), then runs `mergeIdentity`, so the visit pages and nulled links reach data/schools.json in the same
- * change. Returns the run's summary.
+ * change. With `state` (the data store, as `npm run probe-sites` runs it), the same entries and issues go there instead
+ * and nothing under data/ is read or written. Returns the run's summary.
  */
 export async function runSiteProbe(root: string, opts: RunSiteProbeOptions = {}): Promise<ProbeSummary> {
   const log = opts.log ?? ((m: string) => console.log(m));
   const today = opts.today ?? new Date().toISOString().slice(0, 10);
   const probePath = join(root, "data", "site-probe.json");
   const issuesPath = join(root, "data", "link-issues.json");
+  if (opts.state && !opts.schools) throw new Error("runSiteProbe: a store-backed run needs the colleges (schools)");
   const schools: readonly School[] = opts.schools ?? JSON.parse(readFileSync(join(root, "data", "schools.json"), "utf8"));
   const datasetIds = new Set(schools.map((s) => s.unit_id));
-  const previous = readJson<SiteProbeEntry[]>(probePath, []);
+  const previous: readonly SiteProbeEntry[] = opts.state ? opts.state.previous : readJson<SiteProbeEntry[]>(probePath, []);
 
   let chosen = [...schools];
   if (opts.ids?.length) {
@@ -1137,13 +1152,19 @@ export async function runSiteProbe(root: string, opts: RunSiteProbeOptions = {})
   clearInterval(watchdog);
   const entries = results.filter((e): e is SiteProbeEntry => !!e);
 
-  writeFileSync(probePath, formatRows(mergeProbeEntries(previous, entries, datasetIds)));
-  const issues = nextLinkIssues(readJson<LinkIssue[]>(issuesPath, []).filter((i) => datasetIds.has(i.unit_id)), entries, today);
-  writeFileSync(issuesPath, formatRows(issues));
+  const probe = mergeProbeEntries(previous, entries, datasetIds);
+  const priorIssues = opts.state ? [...opts.state.issues] : readJson<LinkIssue[]>(issuesPath, []);
+  const issues = nextLinkIssues(priorIssues.filter((i) => datasetIds.has(i.unit_id)), entries, today);
+  if (opts.state) await opts.state.save(probe, issues);
+  else {
+    writeFileSync(probePath, formatRows(probe));
+    writeFileSync(issuesPath, formatRows(issues));
+  }
   const blockedHosts = new Set((http.blockedSeen?.() ?? []).map((b) => b.host)).size;
   const summary = summarize(entries, { seconds: Math.round((Date.now() - started) / 1000), blockedHosts, issues, picker: opts.picker ?? null });
-  log(`  wrote data/site-probe.json (${entries.length} probed) and data/link-issues.json (${issues.length} issues, ${summary.issues.dead} links null after ${FAILURES_TO_NULL} failed runs)`);
-  if (opts.merge !== false) {
+  const [probeAt, issuesAt] = opts.state ? ["identity.probe", "identity.link_issues"] : ["data/site-probe.json", "data/link-issues.json"];
+  log(`  wrote ${probeAt} (${entries.length} probed) and ${issuesAt} (${issues.length} issues, ${summary.issues.dead} links null after ${FAILURES_TO_NULL} failed runs)`);
+  if (!opts.state && opts.merge !== false) {
     const merged = mergeIdentity(root);
     log(`  identity re-applied: ${merged.withVisit} colleges with a visit page`);
   }

@@ -1,17 +1,11 @@
 /**
- * Builds the two documents the college-reported workflow (.github/workflows/college-reported.yml) attaches to a
- * run's pull request: the PR body (counts, cost, circuit-breaker status, a table of this run's review-queue items)
- * and the release note (specs/release-notes.md). Pure functions so they're unit-tested without a real run
- * (tests/college-reported-pr-body.test.mts); a small CLI wraps them for the workflow.
- *
- *   node scripts/college-reported-pr-body.mts body  --summary <run-summary.json> --queue <review-queue.json>
- *   node scripts/college-reported-pr-body.mts note  --summary <run-summary.json> --queue <review-queue.json> --pr <n> --date <YYYY-MM-DD> --out <file>
- *
- * "body" prints the PR body to stdout. "note" writes the release note to --out (release-notes/<slug>.md).
+ * A college-reported run's summary text: `prBody` (counts, cost, circuit-breaker status, a table of this run's
+ * review-queue items), which the run stores as its change set's `summary.body` (scripts/lib/college-reported/state.mts
+ * `changeSetSummary`; the console shows it), and `releaseNote` (specs/release-notes.md), for when a person asks the
+ * console for a release note. Data runs open no pull request and write no release note, so there is no CLI. Pure
+ * functions, unit-tested without a real run (tests/college-reported-pr-body.test.mts).
  */
-import { readFileSync, writeFileSync } from "node:fs";
 import type { REPORTED_MODELS, ReportedEntry, ReportedFile, ReviewItem, ReviewQueueFile, RunSummary, RunSummaryV3 } from "../lib/reported.ts";
-import type { School } from "../lib/types";
 import { CDS_CODE, itemOfCode } from "../lib/cds-sections.ts";
 
 type ModelJob = keyof typeof REPORTED_MODELS;
@@ -351,57 +345,4 @@ export function releaseNote(summary: RunSummary, queue: ReviewQueueFile, pr: num
     body,
     "",
   ].join("\n");
-}
-
-/* ------------------------------------------------------------------ */
-/* CLI                                                                 */
-/* ------------------------------------------------------------------ */
-
-function arg(name: string): string | undefined {
-  const i = process.argv.indexOf(`--${name}`);
-  return i >= 0 ? process.argv[i + 1] : undefined;
-}
-
-async function main() {
-  const mode = process.argv[2];
-  if (mode !== "body" && mode !== "note") {
-    console.error(
-      "Usage: college-reported-pr-body.mts <body|note> --summary <file> --queue <file> [--reported <file>] [--schools <file>] [--pr <n> --date <YYYY-MM-DD> --out <file>]",
-    );
-    process.exit(1);
-  }
-  const summaryPath = arg("summary");
-  const queuePath = arg("queue");
-  if (!summaryPath || !queuePath) {
-    console.error("--summary and --queue are required.");
-    process.exit(1);
-  }
-  const summary: RunSummary = JSON.parse(readFileSync(summaryPath, "utf8"));
-  const queue: ReviewQueueFile = JSON.parse(readFileSync(queuePath, "utf8"));
-  const reportedPath = arg("reported");
-  const reported: ReportedFile | undefined = reportedPath ? JSON.parse(readFileSync(reportedPath, "utf8")) : undefined;
-  const schoolsPath = arg("schools");
-  const names: Map<string, string> | undefined = schoolsPath
-    ? new Map((JSON.parse(readFileSync(schoolsPath, "utf8")) as School[]).map((s) => [s.unit_id, s.name]))
-    : undefined;
-
-  if (mode === "body") {
-    console.log(prBody(summary, queue, reported, names));
-    return;
-  }
-
-  const pr = Number(arg("pr"));
-  const date = arg("date");
-  const out = arg("out");
-  if (!Number.isInteger(pr) || pr <= 0 || !date || !out) {
-    console.error("note mode requires --pr, --date (YYYY-MM-DD), and --out.");
-    process.exit(1);
-  }
-  writeFileSync(out, releaseNote(summary, queue, pr, date));
-  console.log(`Wrote ${out}`);
-}
-
-// Only run the CLI when this file is the entry point (so tests can import the functions above without side effects).
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
 }

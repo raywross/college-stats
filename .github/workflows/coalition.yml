@@ -1,0 +1,66 @@
+# The Coalition sync (scripts/sync-coalition.mts; specs/data-expansion/coalition-app.md): reads the member list and
+# Scoir's list, joins the names, and writes coalition.members to the data project in one change set
+# (specs/data-platform/pipelines.md). By hand, or from the console; the last step asks the publisher for a snapshot
+# when the run succeeded. No commit, no PR.
+name: Coalition
+
+run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.workflow }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: Set by the admin console to find its run; leave empty
+        type: string
+        default: ""
+
+# contents: write lets the last step send the publish-snapshot repository_dispatch.
+permissions:
+  contents: write
+
+concurrency:
+  group: coalition
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+      DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
+    steps:
+      - name: Check the data project's secrets
+        id: secrets
+        run: |
+          if [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set; skipping this run."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@v4
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Sync the lists
+        id: sync
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          set +e
+          npm run sync-coalition -- --store supabase
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
+
+      - name: Ask for a snapshot
+        if: steps.secrets.outputs.ready == 'true' && steps.sync.outputs.exit_code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/dispatches -f event_type=publish-snapshot

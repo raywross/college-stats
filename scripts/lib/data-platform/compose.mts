@@ -2,7 +2,7 @@
  * The publisher's compose (specs/data-platform/publish.md "The publisher", step 3): the layers in the store
  * (storage.md "Collections") become the documents the app reads, by calling the functions `npm run sync-data` calls,
  * in its order, so the two can't disagree. Nothing here re-implements a merge; where sync-data did something inline,
- * the step was lifted into its module and both call it (`applyOverride`, `carryTrends`, `applyDirectoryLayers`,
+ * the step was lifted into its module and both call it (`applyOverride`, `deriveTrends`, `applyDirectoryLayers`,
  * `aliasRowsFrom`, `trendContextFrom`, `confirmedFromRows`).
  *
  * The order, with each call's module:
@@ -11,7 +11,8 @@
  *   3. the legacy overrides                                     scripts/lib/overrides.mts applyOverride (lineageForPatch)
  *      then the name sort                                       layers.mts datasetOrder
  *   4. (applyOpenAdmission: its input is IPEDS's IC rows, which no layer holds; the base copy carries its result)
- *   5. trends carried from the previous snapshot                 scripts/lib/overrides.mts carryTrends
+ *   5. trends from the history layer (deriveTrends); a college    scripts/lib/overrides.mts deriveTrends, carryTrends
+ *      without a history document keeps the previous snapshot's
  *   6. meta: base.meta + addIdentityMeta                         lib/identity.ts (the IPEDS stages' add*Meta are in base.meta)
  *   7. Common App: applyCommonApp, addCommonAppMeta              scripts/lib/common-app/merge.mts
  *   8. Coalition: applyCoalition, addCoalitionMeta               scripts/lib/coalition/merge.mts
@@ -56,7 +57,7 @@ import type { CampusExclusionEntry } from "../../../lib/movers.ts";
 import type { SearchIndex } from "../../../lib/search-index.ts";
 import { buildSearchIndex } from "../../../lib/search-index.ts";
 import { editProblem, quadEditSource, withEdits, type FieldEdit } from "../../../lib/data-platform/edits.ts";
-import { applyOverride, carryTrends } from "../overrides.mts";
+import { applyOverride, carryTrends, deriveTrends } from "../overrides.mts";
 import { addCommonAppMeta, applyCommonApp } from "../common-app/merge.mts";
 import { addCoalitionMeta, applyCoalition } from "../coalition/merge.mts";
 import { applyEssays, confirmedProblems } from "../essay-prompts/merge.mts";
@@ -249,8 +250,14 @@ export function composeSnapshot(input: PublishLayers, opts: ComposeOptions): Com
   });
   schools = datasetOrder(schools);
 
-  // 5. Trends, carried from the previous snapshot (only sync-history rebuilds them).
-  if (opts.previous) carryTrends(schools, new Map(opts.previous.map((s) => [s.unit_id, s.trends])));
+  // 5. Trends, derived from the history layer as sync-history writes them, so a history run reaches the site. A
+  // college with no history document keeps the previous snapshot's trends (or the base copy's).
+  const carried = new Map(opts.previous?.map((s) => [s.unit_id, s.trends]) ?? []);
+  const { schools: histories, shared: historyShared } = layers.history;
+  if (historyShared.cpi && historyShared.meta) {
+    deriveTrends(schools.filter((s) => histories.has(s.unit_id)), histories, historyShared.cpi, historyShared.meta);
+    carryTrends(schools.filter((s) => !histories.has(s.unit_id)), carried);
+  } else carryTrends(schools, carried);
 
   // 6. Meta: the base's (the IPEDS stages' add*Meta already ran in sync-data), then each later layer's.
   const meta = base.meta;

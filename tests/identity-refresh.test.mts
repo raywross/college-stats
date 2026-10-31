@@ -1,29 +1,43 @@
 /**
- * The identity-refresh workflow's due check, PR body, and release note (scripts/identity-refresh.mts), against a
- * few real schools cloned and given synthetic links/social/brand so a full School object doesn't need to be
- * hand-built. `npm test`. See .github/workflows/identity-refresh.yml and specs/school-identity/follow-ups.md,
- * "The monthly refresh".
+ * The identity refresh on the data store: the due check (scripts/identity-refresh.mts), the identity producers'
+ * writes (scripts/lib/identity-store.mts: sync-wikidata, sync-brand; the probe's are in tests/site-probe.test.mts), and
+ * the workflow (.github/workflows/identity-refresh.yml): one change set opened first and closed last, no commit or
+ * pull request, the publish dispatch only when the set closed applied. File store only. `npm test`. See
+ * specs/school-identity/follow-ups.md, "The monthly refresh", and specs/data-platform/pipelines.md.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { LinkIssue } from "../lib/identity-files";
-import type { School } from "../lib/types";
-import { parseReleaseNote, releaseNoteProblem } from "../lib/release-notes.ts";
-import { MIN_REFRESH_DAYS, diffIdentity, newestRetrieved, prBody, refreshDue, releaseNote, releaseNoteSlug } from "../scripts/identity-refresh.mts";
+import type { BrandColorEntry, WikidataEntry } from "../lib/identity-files";
+import { MIN_REFRESH_DAYS, newestRetrieved, refreshDue } from "../scripts/identity-refresh.mts";
+import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/store.mts";
+import { COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
+import { readBrandColors, readWikidata, writeBrandColors, writeBrandLogos, writeWikidata, readBrandLogos } from "../scripts/lib/identity-store.mts";
+import type { WikidataIssue } from "../scripts/lib/wikidata.mts";
+import { importLayers, writeImport } from "../scripts/import-data-from-git.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const byId = new Map(schools.map((s) => [s.unit_id, s]));
-const pick = (id: string): School => structuredClone(byId.get(id)!);
+const UNITS = new Set(["139959", "221999", "166027", "100654", "228778"]);
+const IDENTITY = [
+  COLLECTIONS.identity.wikidata,
+  COLLECTIONS.identity.wikidataIssues,
+  COLLECTIONS.identity.probe,
+  COLLECTIONS.identity.linkIssues,
+  COLLECTIONS.identity.brandColors,
+  COLLECTIONS.identity.brandLogos,
+  COLLECTIONS.identity.brandOverrides,
+];
 
-// Real unit ids (also used by tests/identity.test.mts), so these are ordinary, fully-shaped School objects.
-const UGA = "139959";
-const VANDERBILT = "221999";
-const THIRD = "166027";
-
-const BRAND_BASE = { colors: null, names: null, accent: null, on_accent: null, tint_light: null, tint_dark: null } as const;
+/** A file store holding the committed identity files for a few colleges, keyed by the import. */
+async function importedIdentity(): Promise<{ root: string; store: ReturnType<typeof fileStore> }> {
+  const root = mkdtempSync(join(tmpdir(), "identity-store-"));
+  const store = fileStore(root);
+  await writeImport(store, importLayers(ROOT, { only: new Set(IDENTITY), units: UNITS }), "fixture");
+  return { root, store };
+}
 
 /* ------------------------------------------------------------------ */
 /* due                                                                 */
@@ -35,7 +49,7 @@ test("refreshDue is the spec's 28-day rule: not due at 27 days, due at 28", () =
   assert.equal(refreshDue([{ retrieved: "2026-09-06" }], "2026-10-04"), true); // 28 days old
 });
 
-test("refreshDue is true with no file (an empty probe has never run)", () => {
+test("refreshDue is true with no entries (an empty probe has never run)", () => {
   assert.equal(refreshDue([], "2026-10-04"), true);
   assert.equal(newestRetrieved([]), null);
 });
@@ -47,151 +61,240 @@ test("refreshDue goes by the newest retrieved date among several entries, not th
   assert.equal(refreshDue(entries, "2026-10-08"), true); // newest is 28 days old
 });
 
-/* ------------------------------------------------------------------ */
-/* diffIdentity                                                        */
-/* ------------------------------------------------------------------ */
-
-test("diffIdentity counts visit/social/colors/marks before and after, and names who gained or lost each", () => {
-  const before = [pick(UGA), pick(VANDERBILT), pick(THIRD)];
-  const after = [pick(UGA), pick(VANDERBILT), pick(THIRD)];
-
-  // Pin every fixture school to a known baseline (no visit, no social, no colors, no mark) first, so the counts
-  // below don't depend on what these three real colleges happen to already have in the committed dataset.
-  const bareLinks = { website: "https://example.edu/", price_calculator: null };
-  for (const s of [...before, ...after]) {
-    s.links = { ...bareLinks };
-    s.social = {};
-    s.brand = { ...BRAND_BASE, logo: null };
+test("`due` reads the probe layer from the store (--store file:<dir>), and is due on an empty store", async () => {
+  const { root, store } = await importedIdentity();
+  const empty = mkdtempSync(join(tmpdir(), "identity-empty-"));
+  try {
+    const due = (dir: string, today: string) =>
+      execFileSync("node", ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", "identity-refresh.mts"), "due", "--store", `file:${dir}`, "--today", today], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        env: process.env,
+      });
+    const probe = [...(await store.read<{ retrieved: string }>(COLLECTIONS.identity.probe)).values()];
+    const newest = newestRetrieved(probe)!;
+    const day = (n: number) => new Date(Date.parse(`${newest}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+    assert.equal(due(root, day(MIN_REFRESH_DAYS - 1)), "false\n");
+    assert.equal(due(root, day(MIN_REFRESH_DAYS)), "true\n");
+    assert.equal(due(empty, day(0)), "true\n");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(empty, { recursive: true, force: true });
   }
-
-  // UGA gains a visit page and its colors.
-  after[0].links = { ...bareLinks, visit: "https://visit.uga.edu/" };
-  after[0].brand = { ...BRAND_BASE, colors: ["#BA0C2F"], logo: null };
-
-  // Vanderbilt loses its social accounts.
-  before[1].social = { x: "vanderbiltu" };
-
-  // The third college gains a mark.
-  after[2].brand = { ...BRAND_BASE, logo: { source_url: "https://example.edu/favicon.ico", retrieved: "2026-11-01", width: 192 } };
-
-  const diff = diffIdentity(before, after, [], "2026-11-01");
-
-  assert.deepEqual(diff.visit, { before: 0, after: 1, gained: [{ unit_id: UGA, name: before[0].name }], lost: [] });
-  assert.deepEqual(diff.colors, { before: 0, after: 1, gained: [{ unit_id: UGA, name: before[0].name }], lost: [] });
-  assert.deepEqual(diff.social, { before: 1, after: 0, gained: [], lost: [{ unit_id: VANDERBILT, name: before[1].name }] });
-  assert.deepEqual(diff.marks, { before: 0, after: 1, gained: [{ unit_id: THIRD, name: before[2].name }], lost: [] });
-  assert.equal(diff.marksAdded.length, 1);
-  assert.equal(diff.marksAdded[0].unit_id, THIRD);
-  assert.equal(diff.marksAdded[0].source_url, "https://example.edu/favicon.ico");
-  assert.equal(diff.marksRemoved.length, 0);
-});
-
-test("a school absent from a category both before and after is neither a gain nor a loss", () => {
-  const before = [pick(UGA)];
-  const after = [pick(UGA)];
-  before[0].social = undefined;
-  after[0].social = undefined;
-  const diff = diffIdentity(before, after, [], "2026-11-01");
-  assert.deepEqual(diff.social.gained, []);
-  assert.deepEqual(diff.social.lost, []);
-});
-
-test("a link that goes from a real value to null is reported as 'became null'; staying null, or starting null, is not", () => {
-  const before = [pick(UGA)];
-  const after = [pick(UGA)];
-  before[0].links = { website: "https://uga.edu/", price_calculator: null, admissions: "https://admissions.uga.edu/", apply: null };
-  after[0].links = { website: "https://uga.edu/", price_calculator: null, admissions: null, apply: null };
-  const diff = diffIdentity(before, after, [], "2026-11-01");
-  assert.equal(diff.becameNull.length, 1);
-  assert.deepEqual(diff.becameNull[0], { unit_id: UGA, name: before[0].name, field: "admissions", was: "https://admissions.uga.edu/" });
-});
-
-test("failedThisRun keeps only link-issues last failed today; an older, still-open failure is left out", () => {
-  const school = pick(UGA);
-  const issues: LinkIssue[] = [
-    { unit_id: UGA, field: "veterans", url: "https://uga.edu/veterans", failures: 1, last_status: 404, first_failed: "2026-11-01", last_failed: "2026-11-01" },
-    { unit_id: UGA, field: "apply", url: "https://uga.edu/apply", failures: 2, last_status: 500, first_failed: "2026-09-01", last_failed: "2026-09-15" },
-  ];
-  const diff = diffIdentity([school], [school], issues, "2026-11-01");
-  assert.equal(diff.failedThisRun.length, 1);
-  assert.equal(diff.failedThisRun[0].field, "veterans");
-  assert.equal(diff.failedThisRun[0].name, school.name);
 });
 
 /* ------------------------------------------------------------------ */
-/* prBody                                                              */
+/* The producers' writes                                               */
 /* ------------------------------------------------------------------ */
 
-test("prBody shows the summary table, names a gain, and says plainly when there is nothing to report", () => {
-  const before = [pick(UGA)];
-  const after = [pick(UGA)];
-  before[0].links = { website: "https://uga.edu/", price_calculator: null };
-  after[0].links = { website: "https://uga.edu/", price_calculator: null, visit: "https://visit.uga.edu/" };
-  const diff = diffIdentity(before, after, [], "2026-11-01");
-  const body = prBody(diff);
-  assert.match(body, /\| Visit page \| 0 \| 1 \| 1 \| 0 \|/);
-  assert.match(body, new RegExp(`Gained: .*\\(${UGA}\\)`));
-  assert.match(body, /No stored link failed a liveness check this run\./);
-  assert.match(body, /No stored link went from a working value to null this run\./);
-  assert.match(body, /No college's mark was added or removed this run\./);
+test("the identity writers key the committed files as the import does: writing them back writes nothing", async () => {
+  const { root, store } = await importedIdentity();
+  try {
+    const issues = [...(await store.read<WikidataIssue[]>(COLLECTIONS.identity.wikidataIssues)).values()].flat();
+    const handle = await store.open("pipeline", "identity-refresh", "resave");
+    await writeWikidata(store, handle, await readWikidata(store), issues);
+    await writeBrandColors(store, handle, await readBrandColors(store));
+    await writeBrandLogos(store, handle, await readBrandLogos(store));
+    await handle.close("applied");
+    assert.ok((await readWikidata(store)).length >= 4, "the fixture has the colleges' Wikidata rows");
+    assert.equal(fileStoreChangeSets(root).at(-1)!.summary.documents, 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
-test("prBody lists a failed link and a mark added, with the college's name", () => {
-  const school = pick(UGA);
-  const before = [school];
-  const after = [structuredClone(school)];
-  // Pinned explicitly (not just left at UGA's real baseline) so this passes regardless of whether the real
-  // dataset already has a mark for UGA.
-  before[0].brand = { ...BRAND_BASE, logo: null };
-  after[0].brand = { ...BRAND_BASE, logo: { source_url: "https://uga.edu/favicon.ico", retrieved: "2026-11-01", width: 192 } };
-  const issues: LinkIssue[] = [{ unit_id: UGA, field: "veterans", url: "https://uga.edu/veterans", failures: 1, last_status: 404, first_failed: "2026-11-01", last_failed: "2026-11-01" }];
-  const body = prBody(diffIdentity(before, after, issues, "2026-11-01"));
-  assert.match(body, /## Links that failed this run/);
-  assert.match(body, new RegExp(`${school.name}.*\\(${UGA}\\).*veterans.*404`));
-  assert.match(body, /## Marks added and removed/);
-  assert.match(body, /1 mark added/);
-  assert.match(body, /https:\/\/uga\.edu\/favicon\.ico/);
+test("sync-wikidata's write replaces the layer: a college gone from Wikidata loses its document, issues group per college", async () => {
+  const { root, store } = await importedIdentity();
+  try {
+    const entries = await readWikidata(store);
+    const [dropped, ...kept] = entries;
+    const changed: WikidataEntry = { ...kept[0], alt_labels: [...kept[0].alt_labels, "A new name"] };
+    const issues: WikidataIssue[] = [
+      { unit_id: changed.unit_id, network: "x", reason: "one" },
+      { unit_id: changed.unit_id, network: "facebook", reason: "two" },
+    ];
+    const handle = await store.open("pipeline", "identity-refresh", "1");
+    await writeWikidata(store, handle, [changed, ...kept.slice(1)], issues);
+    await handle.close("applied");
+    const after = await store.read<WikidataEntry>(COLLECTIONS.identity.wikidata);
+    assert.equal(after.has(dropped.unit_id), false);
+    assert.deepEqual(after.get(changed.unit_id)?.alt_labels.at(-1), "A new name");
+    assert.deepEqual([...(await store.read<WikidataIssue[]>(COLLECTIONS.identity.wikidataIssues))], [[changed.unit_id, issues]]);
+    const set = fileStoreChangeSets(root).at(-1)!;
+    assert.deepEqual([set.source, set.summary.changed, set.summary.collections], ["identity-refresh", 1, [COLLECTIONS.identity.wikidata, COLLECTIONS.identity.wikidataIssues]]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("sync-brand --ids replaces only those colleges' colors (one with no colors this run loses its row); a full run replaces all", async () => {
+  const { root, store } = await importedIdentity();
+  try {
+    const before = await readBrandColors(store);
+    assert.ok(before.length >= 3, "the fixture has brand colors");
+    const [a, b, c] = before;
+    const recolored: BrandColorEntry = { ...a, colors: [...a.colors].reverse() };
+    const h1 = await store.open("pipeline", "identity-refresh", "ids");
+    await writeBrandColors(store, h1, [recolored], new Set([a.unit_id, b.unit_id]));
+    await h1.close("applied");
+    const mid = await store.read<BrandColorEntry>(COLLECTIONS.identity.brandColors);
+    assert.deepEqual(mid.get(a.unit_id), recolored);
+    assert.equal(mid.has(b.unit_id), false, "named, and no colors this run: removed");
+    assert.deepEqual(mid.get(c.unit_id), c, "not named: kept");
+
+    const h2 = await store.open("pipeline", "identity-refresh", "full");
+    await writeBrandColors(store, h2, [c]);
+    await h2.close("applied");
+    assert.deepEqual([...(await store.read(COLLECTIONS.identity.brandColors)).keys()], [c.unit_id]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 /* ------------------------------------------------------------------ */
-/* releaseNote                                                        */
+/* The workflow                                                        */
 /* ------------------------------------------------------------------ */
 
-test("releaseNoteSlug matches the branch name without its data/ prefix", () => {
-  assert.equal(releaseNoteSlug("2026-11-01"), "identity-refresh-20261101");
+type Step = { name?: string; id?: string; if?: string; run?: string; uses?: string };
+interface Workflow {
+  text: string;
+  /** workflow_dispatch's inputs, by name, with their `default` as written. */
+  inputs: Record<string, { default?: string }>;
+  /** The (one) job's steps. */
+  steps: Step[];
+}
+
+/** The parts of a workflow file the tests read: the dispatch inputs and the one job's steps (block or inline `run`). */
+function workflow(file: string): Workflow {
+  const text = readFileSync(join(ROOT, ".github", "workflows", file), "utf8");
+  const lines = text.split("\n");
+  const inputs: Workflow["inputs"] = {};
+  const inputsAt = lines.findIndex((l) => l === "    inputs:");
+  for (let i = inputsAt + 1, name = ""; inputsAt >= 0 && i < lines.length && /^ {6}\S|^ {8}/.test(lines[i]); i++) {
+    const head = /^ {6}([a-z_]+):$/.exec(lines[i]);
+    if (head) inputs[(name = head[1])] = {};
+    const def = /^ {8}default: (.*)$/.exec(lines[i]);
+    if (def && name) inputs[name].default = def[1].replace(/^"(.*)"$/, "$1");
+  }
+  const steps: Step[] = [];
+  const stepsAt = lines.findIndex((l) => l === "    steps:");
+  let cur: string[] | null = null;
+  const flush = () => {
+    if (!cur) return;
+    const step: Step = {};
+    for (let i = 0; i < cur.length; i++) {
+      const m = /^ {8}(name|id|if|uses|run): ?(.*)$/.exec(cur[i]);
+      if (!m) continue;
+      const key = m[1] as keyof Step;
+      if (key === "run" && m[2] === "|") {
+        const body: string[] = [];
+        for (i++; i < cur.length && (/^ {10}/.test(cur[i]) || cur[i] === ""); i++) body.push(cur[i].slice(10));
+        i--;
+        step.run = body.join("\n");
+      } else step[key] = m[2];
+    }
+    steps.push(step);
+  };
+  for (const line of lines.slice(stepsAt + 1)) {
+    if (/^ {6}- /.test(line)) {
+      flush();
+      cur = [`        ${line.slice(8)}`];
+    } else if (cur) cur.push(line);
+  }
+  flush();
+  return { text, inputs, steps };
+}
+
+/**
+ * The "Check the …secrets" step's own script (just its body, not the rest of the job): every data workflow skips
+ * cleanly with an `::notice::` and `ready=false` when a required secret is unset, never `::error::`/`exit 1`
+ * (that would fail the job instead of skipping it). See publish-snapshot.yml and college-reported.yml, the pattern
+ * this follows.
+ */
+function secretsCheckStep(text: string): string {
+  const m = /- name: Check[^\n]*\n\s+id: secrets\n\s+run: \|\n([\s\S]*?)\n {6}- /.exec(text);
+  assert.ok(m, "no 'Check …secrets' step with id: secrets");
+  return m![1];
+}
+
+/** Every required secret this step checks gets its own `::notice::` naming it and sets `ready=false`; no `exit 1`. */
+function assertSkipsCleanly(text: string, name: string, requiredSecrets: readonly string[]): void {
+  const step = secretsCheckStep(text);
+  assert.doesNotMatch(step, /::error::/, `${name}: the secrets check must not use ::error:: (that fails the job)`);
+  assert.doesNotMatch(step, /exit 1\b/, `${name}: the secrets check must not exit 1 (that fails the job)`);
+  assert.match(step, /echo "ready=true" >> "\$GITHUB_OUTPUT"/, `${name}: sets ready=true when everything is set`);
+  for (const secret of requiredSecrets) {
+    assert.match(step, new RegExp(`::notice::[^\\n]*${secret}[^\\n]*\\n\\s+echo "ready=false" >> "\\$GITHUB_OUTPUT"`), `${name}: a missing ${secret} gets a notice and ready=false`);
+  }
+}
+
+/** What a data workflow's steps must look like (specs/data-platform/pipelines.md; brief "The run's tail"). */
+function dataWorkflowProblems(steps: readonly Step[], scripts: readonly string[]): string[] {
+  const problems: string[] = [];
+  const runs = steps.map((s) => s.run ?? "");
+  for (const [i, r] of runs.entries()) {
+    if (/\bgit (add|commit|push|checkout -b)\b/.test(r)) problems.push(`step ${i}: git writes`);
+    if (/\bgh pr\b/.test(r)) problems.push(`step ${i}: opens or merges a pull request`);
+    if (/release-note/.test(r)) problems.push(`step ${i}: writes a release note`);
+  }
+  const open = runs.findIndex((r) => /data-change-set\.mts open\b/.test(r));
+  const close = steps.findIndex((s) => /data-change-set\.mts close\b/.test(s.run ?? ""));
+  const dispatch = steps.findIndex((s) => /dispatches/.test(s.run ?? "") && /event_type=publish-snapshot/.test(s.run ?? ""));
+  if (open < 0) problems.push("no change-set open step");
+  if (close < 0) problems.push("no change-set close step");
+  else if (!/always\(\)/.test(steps[close].if ?? "")) problems.push("the close step doesn't run after a failure");
+  if (dispatch < 0) problems.push("no publish-snapshot dispatch");
+  else {
+    if (dispatch < close) problems.push("the dispatch comes before the close");
+    if (!/steps\.close\.outputs\.status == 'applied'/.test(steps[dispatch].if ?? "")) problems.push("the dispatch isn't guarded by the set closing applied");
+  }
+  for (const script of scripts) {
+    const at = runs.findIndex((r) => r.includes(script));
+    if (at < 0) problems.push(`${script} doesn't run`);
+    else {
+      if (!/--store supabase/.test(runs[at])) problems.push(`${script} without --store supabase`);
+      if (!/--change-set/.test(runs[at])) problems.push(`${script} doesn't write into the run's change set`);
+      if (open >= 0 && at < open) problems.push(`${script} runs before the change set opens`);
+      if (close >= 0 && at > close) problems.push(`${script} runs after the change set closes`);
+    }
+  }
+  return problems;
+}
+
+test("identity-refresh.yml: one change set around the three scripts, no commit or PR, the dispatch only when applied", () => {
+  const wf = workflow("identity-refresh.yml");
+  const steps = wf.steps;
+  assert.deepEqual(dataWorkflowProblems(steps, ["npm run sync-wikidata", "npm run probe-sites", "npm run sync-brand", "npm run college-health"]), []);
+  assert.match(steps.find((s) => s.id === "sync_brand")!.run!, /--colors/, "colors only: the marks are files in the code");
+  assert.match(steps.find((s) => s.id === "due")!.run!, /identity-refresh\.mts due --store supabase/);
+  assert.deepEqual(Object.keys(wf.inputs).sort(), ["force", "request_id"]);
+  assert.doesNotMatch(wf.text, /pull-requests:/);
+  // The guard fails when the rule is broken.
+  const commit = [...steps, { run: "git add data && git commit -m x" }];
+  assert.deepEqual(dataWorkflowProblems(commit, []), [`step ${steps.length}: git writes`]);
+  const unguarded = steps.map((s) => (/dispatches/.test(s.run ?? "") ? { ...s, if: "always()" } : s));
+  assert.deepEqual(dataWorkflowProblems(unguarded, []), ["the dispatch isn't guarded by the set closing applied"]);
+  const noSet = steps.map((s) => (s.id === "probe_sites" ? { ...s, run: "npm run probe-sites -- --store supabase" } : s));
+  assert.deepEqual(dataWorkflowProblems(noSet, ["npm run probe-sites"]), ["npm run probe-sites doesn't write into the run's change set"]);
+  // It skips cleanly (a notice, not a failure) when the data project's secrets aren't set, before "Check whether a
+  // refresh is due" runs, and every later step (through the dispatch) is guarded on it.
+  assertSkipsCleanly(wf.text, "identity-refresh.yml", ["DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY"]);
+  const secretsIdx = steps.findIndex((s) => s.id === "secrets");
+  const dueIdx = steps.findIndex((s) => s.id === "due");
+  assert.ok(secretsIdx >= 0 && secretsIdx < dueIdx, "the secrets check runs before the due check");
+  for (const s of steps.slice(dueIdx)) {
+    assert.match(s.if ?? "", /steps\.secrets\.outputs\.ready == 'true'|steps\.gate\.outputs\.proceed == 'true'|steps\.change_set\.outputs\.id != ''|steps\.close\.outputs\.status == 'applied'/, `${s.name ?? s.id}: guarded on the secrets check (directly or transitively)`);
+  }
 });
 
-test("releaseNote parses as a valid note: kind data, no # heading, a non-empty summary", () => {
-  const before = [pick(UGA)];
-  const after = [pick(UGA)];
-  before[0].links = { website: "https://uga.edu/", price_calculator: null };
-  after[0].links = { website: "https://uga.edu/", price_calculator: null, visit: "https://visit.uga.edu/" };
-  const diff = diffIdentity(before, after, [], "2026-11-01");
-  const text = releaseNote(diff, 80, "2026-11-01");
-  const slug = releaseNoteSlug("2026-11-01");
-  const note = parseReleaseNote(`release-notes/${slug}.md`, text);
-  assert.equal(note.pr, 80);
-  assert.equal(note.date, "2026-11-01");
-  assert.equal(note.kind, "data");
-  assert.ok(note.summary.length > 0);
-  assert.doesNotMatch(text, /^#\s/m);
-  assert.match(text, /visit page/i);
-});
-
-test("releaseNote says plainly when a run finds nothing new", () => {
-  const school = pick(UGA);
-  const diff = diffIdentity([school], [structuredClone(school)], [], "2026-11-01");
-  const text = releaseNote(diff, 80, "2026-11-01");
-  assert.match(text, /nothing new to show this time/);
-});
-
-test("releaseNoteProblem passes the note for its own PR number, and fails it for any other (the CI guard this protects)", () => {
-  const school = pick(UGA);
-  const diff = diffIdentity([school], [structuredClone(school)], [], "2026-11-01");
-  const text = releaseNote(diff, 80, "2026-11-01");
-  const file = `release-notes/${releaseNoteSlug("2026-11-01")}.md`;
-  assert.equal(releaseNoteProblem(80, [{ file, text }]), null);
-  const problem = releaseNoteProblem(81, [{ file, text }]);
-  assert.ok(problem);
-  assert.match(problem!, /no release note/);
+test("campus-pilot.yml: one change set around the pilot and its score, held unless `publish`, no commit", () => {
+  const wf = workflow("campus-pilot.yml");
+  const steps = wf.steps;
+  assert.deepEqual(dataWorkflowProblems(steps, ["npm run campus-pilot", "npm run --silent score-campus-pilot", "npm run college-health"]), []);
+  const close = steps.find((s) => s.id === "close")!.run!;
+  assert.match(close, /--status held --reason "Campus-life pilot run/, "held for review by default");
+  assert.match(close, /PUBLISH" = "true" \]; then\s+node [^\n]+--status applied/);
+  assert.equal(wf.inputs.publish.default, "false");
+  // Skips cleanly (not a failure) when either the Anthropic key or the data project's secrets aren't set.
+  assertSkipsCleanly(wf.text, "campus-pilot.yml", ["ANTHROPIC_API_KEY", "DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY"]);
 });

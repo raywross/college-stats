@@ -110,3 +110,18 @@ One bucket, in the data project. `DATA_SNAPSHOT_URL` is the same on Vercel Produ
 `.env.local`. People's data keeps `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` per environment. The pipelines and the
 publisher write with `DATA_SUPABASE_URL`/`DATA_SUPABASE_SECRET_KEY` (GitHub secrets), which today are the dev
 project's values and at launch may stay there or move to a dedicated data project without touching the app.
+
+## As built, phase 2 (2026-10-31)
+- **Step order** differs from the plan: objects → manifest → pointer → the tables (`college_data_failures` upsert on
+  every publish; the high-school tables when the snapshot's high-school objects' hashes changed) →
+  `data_finish_snapshot` with the tables' log in the row's manifest → change log and tier history → wait 75 s →
+  revalidate → **deploy hook** (`VERCEL_DEPLOY_HOOK_URL`, so the deploy's bundled copy stays current and cold starts
+  download nothing; a failure never fails the publish; `--skip-deploy`) → prune. A `--point` run also waits,
+  revalidates and calls the hook. Flags: `--skip-tables`, `--republish-high-schools`, `--skip-deploy`.
+- **Trends** are derived from the history layer (`deriveTrends`) rather than carried; a college with no history
+  document keeps the previous snapshot's.
+- **Tables** are written with the data project's client; if the app's project ever differs from the data project,
+  the change log, failures and high-school tables must move to the app's.
+- **First real publish**: snapshot 1 from the dev project's layers, 3,809 objects, 52 MB, in 201 s; the change log
+  recorded "no changes" against the committed files; a local server with `DATA_SNAPSHOT_URL` set loaded 1,893
+  colleges from it. `DATA_SNAPSHOT_URL` is `<project url>/storage/v1/object/public/snapshots`.

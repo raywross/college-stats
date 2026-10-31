@@ -36,6 +36,13 @@ export interface DataStore {
    * `expectVersion` (optimistic concurrency between two runs on one layer).
    */
   readVersioned<T>(collection: string, keyPrefix?: string): Promise<Map<string, { version: number; body: T }>>;
+  /**
+   * Addition to the spec's interface: a handle on a change set that is already open, by id, so one workflow run can
+   * open a set (scripts/data-change-set.mts) and pass it to several scripts. Refuses unless the set is open.
+   */
+  attach(id: number): Promise<ChangeSetHandle>;
+  /** Addition: the newest open change set with this source and run_ref, or null (a job that continues a run's set). */
+  findOpen(source: string, runRef: string): Promise<number | null>;
 }
 
 export interface ChangeSetHandle {
@@ -96,7 +103,15 @@ function sortKeys(value: unknown): unknown {
  * store as the `body` of its file, the Supabase store as the string it sends for the `json` column), so a body read back
  * from either serializes to the same bytes; equality for idempotence is `orderedJson` (here) or a jsonb cast (there).
  */
-export const documentText = (body: unknown): string => JSON.stringify(body);
+/**
+ * A document's text: `JSON.stringify` with the producer's key order, minus any NUL character. Postgres `json` and
+ * `jsonb` refuse the `\u0000` escape, and a NUL in a document is never meaning, only a PDF reader's artifact (one CDS
+ * record's quote carried one in the first import), so both stores drop it and their texts stay equal.
+ */
+export const documentText = (body: unknown): string => JSON.stringify(body).replace(/\\u0000/g, "");
+
+/** A write call carries at most this many documents and about this many bytes of text: a 16 MB call of CDS records timed out on a Nano instance. */
+export const WRITE_CHUNK_BYTES = 1_500_000;
 
 /** Key-to-file-name encoding of the file store: `encodeURIComponent`, so `essay-guidance/guidance` and `1|2|C1` are one file each. */
 export const encodeKey = (key: string) => encodeURIComponent(key);
@@ -248,6 +263,20 @@ export function fileStore(root: string, opts: { now?: () => Date } = {}): DataSt
       const id = sets.reduce((m, s) => Math.max(m, s.id), 0) + 1;
       sets.push({ id, kind, source, run_ref: runRef || null, status: "open", held_reason: null, summary: { ...(summary ?? {}) }, created_at: now(), closed_at: null, versions: [] });
       writeSets(sets);
+      return handleFor(id);
+    },
+    async attach(id) {
+      const set = readSets().find((s) => s.id === id);
+      if (!set || set.status !== "open") throw new Error(`change set ${id} is not open`);
+      return handleFor(id);
+    },
+    async findOpen(source, runRef) {
+      const open = readSets().filter((s) => s.status === "open" && s.source === source && s.run_ref === (runRef || null));
+      return open.length ? Math.max(...open.map((s) => s.id)) : null;
+    },
+  };
+
+  function handleFor(id: number): ChangeSetHandle {
       return {
         id,
         async write(collection, docs) {
@@ -268,8 +297,7 @@ export function fileStore(root: string, opts: { now?: () => Date } = {}): DataSt
           writeSets(rows);
         },
       };
-    },
-  };
+  }
 }
 
 /** The file store's change sets (tests, the import's report). */
@@ -292,6 +320,26 @@ export const compareKeys = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0
 export const READ_PAGE = 1000;
 /** Documents per `data_write_documents` call. */
 export const WRITE_CHUNK = 200;
+
+/**
+ * Splits write rows into calls of at most WRITE_CHUNK documents and about WRITE_CHUNK_BYTES of body text (a single
+ * document larger than that goes alone). Yields [start index, rows].
+ */
+export function* chunkRows<T extends { body: string | null }>(rows: readonly T[], maxDocs = WRITE_CHUNK, maxBytes = WRITE_CHUNK_BYTES): Generator<[number, T[]]> {
+  let start = 0;
+  while (start < rows.length) {
+    let end = start;
+    let bytes = 0;
+    while (end < rows.length && end - start < maxDocs) {
+      const size = rows[end].body?.length ?? 0;
+      if (end > start && bytes + size > maxBytes) break;
+      bytes += size;
+      end++;
+    }
+    yield [start, rows.slice(start, end)];
+    start = end;
+  }
+}
 /** Waits before each retry of a failed call, in ms: a paused free project takes a minute or so to wake. */
 export const RETRY_WAITS = [5_000, 20_000, 60_000] as const;
 
@@ -391,21 +439,45 @@ export function supabaseStore(url: string, secretKey: string, opts: SupabaseStor
         c.rpc("data_open_change_set", { p_kind: kind, p_source: source, p_run_ref: runRef || null, p_summary: summary ?? {} }) as unknown as PromiseLike<CallResult<number>>
       );
       if (typeof id !== "number" && typeof id !== "string") throw new Error("data store: data_open_change_set returned no id");
-      const setId = Number(id);
+      return handleFor(Number(id));
+    },
+    async attach(id) {
+      const row = await call<{ status: string }>(`reading change set ${id}`, (c) =>
+        c.from("data_change_sets").select("status").eq("id", id).maybeSingle() as unknown as PromiseLike<CallResult<{ status: string }>>
+      );
+      if (!row || row.status !== "open") throw new Error(`change set ${id} is not open`);
+      return handleFor(id);
+    },
+    async findOpen(source, runRef) {
+      const rows = await call<{ id: number }[]>(`finding an open ${source} change set`, (c) =>
+        c
+          .from("data_change_sets")
+          .select("id")
+          .eq("status", "open")
+          .eq("source", source)
+          .eq("run_ref", runRef)
+          .order("id", { ascending: false })
+          .limit(1) as unknown as PromiseLike<CallResult<{ id: number }[]>>
+      );
+      return rows?.length ? Number(rows[0].id) : null;
+    },
+  };
+
+  function handleFor(setId: number): ChangeSetHandle {
       const send = async (collection: string, docs: { key: string; body: unknown; expectVersion?: number }[]) => {
         for (const d of docs) checkDoc(collection, d.key);
-        for (let i = 0; i < docs.length; i += WRITE_CHUNK) {
-          const chunk = docs.slice(i, i + WRITE_CHUNK).map((d) => ({
-            collection,
-            key: d.key,
-            // The document's text, key order as the producer built it (the column is `json`, which keeps it); null deletes.
-            body: d.body === undefined || d.body === null ? null : documentText(d.body),
-            ...(d.expectVersion !== undefined ? { expect_version: d.expectVersion } : {}),
-          }));
-          const written = await call<number>(`writing ${collection} (${i + 1}–${i + chunk.length} of ${docs.length})`, (c) =>
+        // The document's text, key order as the producer built it (the column is `json`, which keeps it); null deletes.
+        const rows = docs.map((d) => ({
+          collection,
+          key: d.key,
+          body: d.body === undefined || d.body === null ? null : documentText(d.body),
+          ...(d.expectVersion !== undefined ? { expect_version: d.expectVersion } : {}),
+        }));
+        for (const [start, chunk] of chunkRows(rows)) {
+          const written = await call<number>(`writing ${collection} (${start + 1}–${start + chunk.length} of ${docs.length})`, (c) =>
             c.rpc("data_write_documents", { p_change_set: setId, p_documents: chunk }) as unknown as PromiseLike<CallResult<number>>
           );
-          opts.log?.(`  ${collection}: ${i + chunk.length} of ${docs.length} sent, ${written ?? 0} written`);
+          opts.log?.(`  ${collection}: ${start + chunk.length} of ${docs.length} sent, ${written ?? 0} written`);
         }
       };
       return {
@@ -418,8 +490,7 @@ export function supabaseStore(url: string, secretKey: string, opts: SupabaseStor
           );
         },
       };
-    },
-  };
+  }
 }
 
 /** `%`, `_` and `\` taken literally in a `like` pattern. */

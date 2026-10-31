@@ -589,15 +589,13 @@ test("report: the PR body lists held and blocked colleges; the release note name
   assert.match(note, /^---\ntitle: "Essay prompts for 1 more college"\npr: 321\ndate: 2026-10-29\nkind: data\nsummary: /);
 });
 
-test("the workflow: dispatched by hand with units, top, and budget; opens a PR; never auto-merges", () => {
+test("the workflow: dispatched by hand with units, top, and budget; writes the data store, opens no PR (tests/data-platform-sources has the tail)", () => {
   const yml = readFileSync(join(ROOT, ".github", "workflows", "essay-prompts.yml"), "utf8");
   assert.match(yml, /^on:\n {2}workflow_dispatch:\n {4}inputs:\n/m);
-  for (const input of ["units", "top", "budget"]) assert.match(yml, new RegExp(`^ {6}${input}:\\n`, "m"));
+  for (const input of ["units", "top", "budget", "request_id"]) assert.match(yml, new RegExp(`^ {6}${input}:\\n`, "m"));
   assert.ok(!/^ {2}schedule:/m.test(yml), "no schedule: the owner runs it");
-  assert.match(yml, /gh pr create --base main/);
-  assert.ok(!/gh pr merge/.test(yml), "auto-merge off");
-  assert.match(yml, /npm run merge-essay-prompts/);
-  assert.match(yml, /npm run check:lineage/);
+  assert.match(yml, /npm run sync-essay-prompts -- --store supabase --units/);
+  assert.doesNotMatch(yml, /gh pr |merge-essay-prompts/, "no PR, no merge into data/");
   assert.ok(!/\t/.test(yml), "YAML takes no tabs");
 });
 

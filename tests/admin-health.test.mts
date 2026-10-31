@@ -767,8 +767,8 @@ function fixtureRoot(): string {
   return root;
 }
 
-function runScript(script: string, root: string) {
-  return spawnSync("node", ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", script)], { env: { ...process.env, COLLEGE_HEALTH_ROOT: root }, encoding: "utf8" });
+function runScript(script: string, root: string, ...args: string[]) {
+  return spawnSync("node", ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", script), ...args], { env: { ...process.env, COLLEGE_HEALTH_ROOT: root }, encoding: "utf8" });
 }
 
 test("npm run college-health writes the file; check:college-health passes, then fails when a source changes", () => {
@@ -778,7 +778,7 @@ test("npm run college-health writes the file; check:college-health passes, then 
     assert.equal(missing.status, 1);
     assert.match(missing.stderr, /does not exist.*npm run college-health/);
 
-    const wrote = runScript("college-health.mts", root);
+    const wrote = runScript("college-health.mts", root, "--out", "data");
     assert.equal(wrote.status, 0, wrote.stderr);
     const file = parseCompact(readFileSync(join(root, "data", "college-health.json"), "utf8"));
     assert.equal(file.generated, "2026-10-11", "the newest date among the sources, not today");
@@ -832,4 +832,40 @@ test("the real data: the committed compact file is current, small, and judges ev
     assert.ok(direct.rows.every((r) => r.status !== null), `${s.unit_id} has an unjudged group`);
     assert.deepEqual(collegeHealth(s.unit_id, inputsFromCompact(compact, s.unit_id, ctx)!), direct, `${s.unit_id}: the compact file judges differently`);
   }
+});
+
+test("the compact health is read from the data store in one query, falling back to the file when the store has none", async () => {
+  const { readCompact, readCompactFromStore, HEALTH_DOCUMENT } = health;
+  const compact = await overviewDeps().deps.compact();
+  const queries: string[] = [];
+  /** A client whose data_documents read answers `rows` (or an error), recording the filters. */
+  const client = (rows: { body: unknown }[] | null, error: string | null = null) => ({
+    from(table: string) {
+      const q = {
+        select: () => q,
+        eq: (c: string, v: unknown) => (queries.push(`${table}.${c}=${String(v)}`), q),
+        lt: () => q,
+        order: () => q,
+        range: () => q,
+        limit: () => q,
+        then: (ok: (r: unknown) => unknown) => Promise.resolve({ data: rows, error: error ? { message: error } : null }).then(ok),
+      };
+      return q as never;
+    },
+  });
+  const disk = () => ({ ...compact, generated: "from-disk" });
+
+  const fromStore = await readCompact({ client: async () => client([{ body: compact }]), disk });
+  assert.equal(fromStore.generated, compact.generated, "the store's document");
+  assert.deepEqual(queries, [`data_documents.collection=${HEALTH_DOCUMENT.collection}`, `data_documents.key=${HEALTH_DOCUMENT.key}`], "one query, by collection and key");
+  assert.equal((await readCompact({ client: async () => client([]), disk })).generated, "from-disk", "an empty table falls back to the file");
+  assert.equal((await readCompact({ client: async () => null, disk })).generated, "from-disk", "no session falls back to the file");
+  const quiet = console.error;
+  console.error = () => {};
+  try {
+    assert.equal((await readCompact({ client: async () => client(null, "paused project"), disk })).generated, "from-disk", "a failed read falls back too");
+  } finally {
+    console.error = quiet;
+  }
+  await assert.rejects(readCompactFromStore(client([{ body: { version: 0 } }]) as never), /npm run college-health/, "a malformed document is refused, not shown as empty");
 });

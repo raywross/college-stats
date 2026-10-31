@@ -6,7 +6,8 @@
  * (`validateConfirmed`, through `draftProblems`), and writes the row with `admin_set_essay_prompts` on the admin's own
  * session, as `admin_set_setting` is called (the function checks is_admin() and logs `essays.set`); Delete removes it
  * with `admin_delete_essay_prompts` after a typed confirmation. Both revalidate the advisor and the console's pages.
- * Git catches up nightly (scripts/export-essay-confirmed.mts); the console never writes a file or opens a PR.
+ * The next snapshot carries it to the public pages (the publisher reads the table); the console never writes a file
+ * or opens a PR.
  *
  * Only Server Actions are exported here (every export of a "use server" module is callable from a browser).
  */

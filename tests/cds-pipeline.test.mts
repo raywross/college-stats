@@ -7,8 +7,12 @@ import { answerJson, askedCodes } from "./helpers/answers.mts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/store.mts";
+import { COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
+import { callsKey, loadReportedState, oldestOpenRun, openReportedRun, recordBody, summaryKey } from "../scripts/lib/college-reported/state.mts";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { Extraction, Recipe } from "../lib/reported.ts";
 import type { School } from "../lib/types";
@@ -191,8 +195,10 @@ function pipeline(o: {
   now?: Date;
   writer?: ReturnType<typeof memoryCallLogWriter>;
   gridLayout?: (bytes: Uint8Array, type: string) => string[] | null;
+  onProgress?: (state: Round3State) => void;
 }) {
   return createRound3({
+    onProgress: o.onProgress,
     // No pdftotext in tests unless a test gives the layout: C7/C8A marks stay as read (and held).
     gridLayout: o.gridLayout ?? (() => null),
     client: o.client ?? fakeClient().client,
@@ -801,4 +807,121 @@ test("share links: a viewer page at the direct download isn't archived, and is q
   assert.ok(q, "queued, so the failures table lists it");
   assert.deepEqual(q.urls, [shareLink]);
   assert.match(q.failures[0].detail, /box link answered with a viewer page/);
+});
+
+/* ------------------------------------------------------------------ */
+/* On the data store: one change set per run (specs/data-platform)     */
+/* ------------------------------------------------------------------ */
+
+/** A file store in a temp dir, seeded with the recipes as an import would leave them; and an empty repo root (no data/meta.json). */
+async function seededStore(recipes: Recipe[]) {
+  const dir = mkdtempSync(join(tmpdir(), "reported-store-"));
+  const store = fileStore(join(dir, "layers"));
+  const seed = await store.open("import", "git", "fixture");
+  await seed.write(COLLECTIONS.reported.sources, recipes.map((r) => ({ key: r.unit_id, body: r })));
+  await seed.close("applied");
+  return { dir, root: join(dir, "layers"), store, repo: join(dir, "repo") };
+}
+
+/** The pipeline's change sets (the seed is the import's). */
+const pipelineSets = (root: string) => fileStoreChangeSets(root).filter((s) => s.kind === "pipeline");
+
+test("on the store: a run writes one change set with its collections, the derived failures and health, and closes applied", async () => {
+  const { dir, root, store, repo } = await seededStore([recipe(XLSX_ID, [{ kind: "cds", url: xlsxUrl, format: "xlsx" }])]);
+  try {
+    const served = [school(XLSX_ID)];
+    const run = await openReportedRun(store, { run: "r1", root: repo, served, today: () => "2026-10-02" });
+    const { fn } = fakeFetch({ [xlsxUrl]: XLSX });
+    const out = await pipeline({ fetch: fn, batches: batchApi(), archive: memoryArchive(), writer: run.callLog, onProgress: run.save }).run(run.state, runOpts(served));
+    assert.equal(out.exit, 0);
+    assert.equal(await run.finish(out.exit, out.message), "applied");
+
+    const sets = pipelineSets(root);
+    assert.equal(sets.length, 1, "one change set for the run");
+    const [set] = sets;
+    assert.deepEqual([set.source, set.run_ref, set.status, set.held_reason], ["college-reported", "r1", "applied", null]);
+    const collections = new Set(set.versions.map((v) => v.collection));
+    for (const c of [COLLECTIONS.reported.cdsRecords, COLLECTIONS.reported.docs, COLLECTIONS.reported.entries, COLLECTIONS.reported.sources, COLLECTIONS.reported.reports, COLLECTIONS.health.colleges]) assert.ok(collections.has(c), c);
+    assert.ok([...collections].every((c) => c.startsWith("reported.") || c === "health.colleges" || c === "reference.files"), "only the run's own collections");
+    assert.equal(set.versions.filter((v) => v.collection === COLLECTIONS.reported.cdsRecords && v.key === XLSX_ID).length >= 1, true);
+    assert.equal(set.summary.published, 1);
+    assert.match(String(set.summary.body), /College-reported/i, "the PR body's text is the summary");
+
+    // What the store now holds reads back as the state the run ended with, keyed as the import keys it.
+    const back = await loadReportedState(store, run.state.summary);
+    assert.deepEqual(back.reported.entries, run.state.reported.entries);
+    assert.deepEqual(back.records.get(XLSX_ID), recordBody(run.state.records.get(XLSX_ID)!));
+    assert.deepEqual([...back.manifest.documents.map((d) => d.sha256)], run.state.manifest.documents.map((d) => d.sha256));
+    assert.ok(await store.readOne(COLLECTIONS.reported.reports, summaryKey("r1")), "the run summary");
+    const health = await store.readOne<{ colleges: Record<string, unknown> }>(COLLECTIONS.health.colleges, "health");
+    assert.ok(health?.colleges[XLSX_ID], "health for the college");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("on the store: a tripped breaker closes the run's change set held with the breaker's sentence", async () => {
+  const { dir, root, store, repo } = await seededStore([recipe(PDF_ID, [{ kind: "cds", url: pdfUrl, format: "pdf" }])]);
+  try {
+    const served = [school(PDF_ID)];
+    const run = await openReportedRun(store, { run: "r2", root: repo, served, today: () => "2026-10-02" });
+    const f = fakeFetch({ [pdfUrl]: PDF });
+    const api = batchApi({ C: { ...C_PLAN, "C.116": [48000, /were admitted/] }, rest: REST_PLAN });
+    const out = await pipeline({ fetch: f.fn, batches: api, archive: memoryArchive(), writer: run.callLog, onProgress: run.save }).run(run.state, runOpts(served, { run: "r2" }));
+    assert.equal(out.exit, 2);
+    assert.equal(await run.finish(out.exit, `Circuit breaker tripped: ${out.message}`), "held");
+    const [set] = pipelineSets(root);
+    assert.equal(set.status, "held");
+    assert.match(set.held_reason!, /Circuit breaker tripped: 1 of 1 colleges failed C1 checks/);
+    assert.ok(set.versions.some((v) => v.collection === COLLECTIONS.reported.reviewQueue), "the held values are in the review queue");
+    const calls = await store.readOne<{ text: string }>(COLLECTIONS.reported.reports, callsKey("r2"));
+    assert.ok(run.callLog.rows.length > 0);
+    assert.equal(calls!.text.trim().split("\n").length, run.callLog.rows.length, "one calls-log line per model call");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("on the store: open batches keep the change set open; the collect job writes into it and closes it", async () => {
+  const { dir, root, store, repo } = await seededStore([recipe(PDF_ID, [{ kind: "cds", url: pdfUrl, format: "pdf" }])]);
+  try {
+    const s = school(PDF_ID);
+    const api = batchApi({ C: C_PLAN, rest: REST_PLAN }, { pollsUntilEnded: 1 });
+    const archive = memoryArchive();
+    const first = await openReportedRun(store, { run: "r3", root: repo, served: [s], today: () => "2026-10-02" });
+    const out = await pipeline({ fetch: fakeFetch({ [pdfUrl]: PDF }).fn, batches: api, archive, writer: first.callLog, onProgress: first.save }).run(first.state, runOpts([s], { run: "r3" }));
+    assert.equal(out.exit, 0);
+    assert.equal(await first.finish(0), "open");
+    assert.equal(pipelineSets(root)[0].status, "open");
+    assert.equal(await oldestOpenRun(store), "r3", "the collect job finds the run");
+
+    // The collect job: a new process reading the state back from the store.
+    const second = await openReportedRun(store, { run: "r3", root: repo, served: [s], today: () => "2026-10-02" });
+    assert.equal(second.handle!.id, first.handle!.id, "the same change set");
+    assert.equal(second.state.batches.batches.length, 1);
+    const out2 = await pipeline({ fetch: fakeFetch({}).fn, batches: api, archive, writer: second.callLog, onProgress: second.save }).run(second.state, runOpts([], { run: "r3", phase: "collect", allSchools: [s] }));
+    assert.equal(out2.exit, 0);
+    assert.equal(await second.finish(0), "applied");
+    const sets = pipelineSets(root);
+    assert.equal(sets.length, 1, "still one change set for the run");
+    assert.equal(sets[0].status, "applied");
+    assert.ok(sets[0].versions.some((v) => v.collection === COLLECTIONS.reported.batches && v.deleted), "the collected batch is removed");
+    assert.equal(await oldestOpenRun(store), null);
+    assert.equal((await store.readOne<{ unit_id: string; documents: { items: Record<string, { v?: unknown }> }[] }>(COLLECTIONS.reported.cdsRecords, PDF_ID))!.documents[0].items["C.116"].v, 48000);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("on the store: a dry run opens no change set and writes nothing", async () => {
+  const { dir, root, store, repo } = await seededStore([recipe(XLSX_ID, [{ kind: "cds", url: xlsxUrl, format: "xlsx" }])]);
+  try {
+    const run = await openReportedRun(store, { run: "r4", root: repo, served: [school(XLSX_ID)], dry: true });
+    await pipeline({ fetch: fakeFetch({ [xlsxUrl]: XLSX }).fn, batches: batchApi(), archive: memoryArchive(), onProgress: run.save }).run(run.state, runOpts([school(XLSX_ID)], { run: "r4" }));
+    assert.equal(await run.finish(0), null);
+    assert.equal(pipelineSets(root).length, 0);
+    assert.equal(await store.readOne(COLLECTIONS.reported.entries, XLSX_ID), null);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

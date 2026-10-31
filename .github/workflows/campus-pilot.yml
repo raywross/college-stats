@@ -1,11 +1,13 @@
 # Runs the campus-life pilot (scripts/campus-pilot.mts; specs/religious-life.md phase 2, greek-life.md phase 2,
 # lgbtq-life.md phase 4) on a list of pilot colleges (default: round 3's 25, data/reference/campus-pilot-3-colleges.json),
-# where the Anthropic key lives (the repository secret ANTHROPIC_API_KEY; there is no key in local .env files). Dispatch it on the branch that should carry the results
-# ("Use workflow from": the pilot or integration branch): it runs the pilot, scores it against the hand-checked answer
-# key when one is committed (data/reports/campus-pilot-answer-key.json), merges the published facts into the dataset,
-# and commits the data back to that same branch for review. Never auto-merges; never runs on a schedule (owner
-# decision 2: pilot colleges only, no full run). A run changes only the colleges it reads: every other college's
-# published facts (data/campus-pages.json) and recipes (data/campus-sources.json) are kept byte for byte.
+# where the Anthropic key lives (the repository secret ANTHROPIC_API_KEY; there is no key in local .env files). It runs
+# the pilot and scores it against the hand-checked answer key when one exists, writing campus.pages, campus.sources,
+# the reports and refusals to the data store in one change set (source campus-pilot), which this workflow opens first
+# and closes last (scripts/data-change-set.mts; specs/data-platform/pipelines.md). Pilot results are reviewed before
+# they go live, so the set closes held for the console's Holds ("Publish anyway" puts it live) unless `publish` is
+# set; only an applied set asks the publisher for a snapshot. Never runs on a schedule (owner decision 2: pilot
+# colleges only, no full run). A run changes only the colleges it reads: every other college's published facts and
+# recipes are kept as they were. No commit, no pull request.
 name: Campus-life pilot
 
 on:
@@ -31,9 +33,13 @@ on:
         description: Send extraction and second checks as Message Batches (half price; a batch not done in 20 minutes is cancelled and its calls made directly)
         type: boolean
         default: true
+      publish:
+        description: Publish the results without review (default holds them in the console's Holds)
+        type: boolean
+        default: false
 
 permissions:
-  contents: write
+  contents: write # the publish-snapshot dispatch
 
 concurrency:
   group: campus-pilot
@@ -43,24 +49,43 @@ jobs:
   pilot:
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    env:
+      DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+      DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check the API key
-        id: secret
+      - name: Check the secrets
+        id: secrets
         run: |
           if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
-            echo "::error::ANTHROPIC_API_KEY is not set (repository secret)."
-            exit 1
+            echo "::notice::ANTHROPIC_API_KEY is not set; skipping this run."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set; skipping this run."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-node@v4
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Open the change set
+        id: change_set
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          id=$(node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/data-change-set.mts open --store supabase --source campus-pilot --run-ref "$GITHUB_RUN_ID")
+          echo "id=$id" >> "$GITHUB_OUTPUT"
 
       - name: Run the pilot
+        id: pilot
+        if: steps.secrets.outputs.ready == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           COLLEGES: ${{ inputs.college }}
@@ -68,34 +93,55 @@ jobs:
           CAP: ${{ inputs.cap }}
           REDISCOVER: ${{ inputs.rediscover }}
           BATCH: ${{ inputs.batch }}
+          CHANGE_SET: ${{ steps.change_set.outputs.id }}
         run: |
-          args="--cap ${CAP:-15} --colleges-file ${COLLEGES_FILE:-data/reference/campus-pilot-3-colleges.json}"
+          args="--store supabase --change-set $CHANGE_SET --cap ${CAP:-15} --colleges-file ${COLLEGES_FILE:-data/reference/campus-pilot-3-colleges.json}"
           for id in $COLLEGES; do args="$args --college $id"; done
           if [ "$REDISCOVER" = "true" ]; then args="$args --rediscover"; fi
           if [ "$BATCH" = "false" ]; then args="$args --no-batch"; fi
           npm run campus-pilot -- $args
 
       - name: Score against the answer key
+        id: score
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          CHANGE_SET: ${{ steps.change_set.outputs.id }}
         run: |
-          if [ -f data/reports/campus-pilot-answer-key.json ]; then
-            npm run score-campus-pilot -- --key data/reports/campus-pilot-answer-key.json
+          if npm run --silent score-campus-pilot -- --key data/reports/campus-pilot-answer-key.json --store supabase --change-set "$CHANGE_SET"; then
+            echo "Scored."
           else
-            echo "::notice::No answer key committed; skipping the score."
+            echo "::notice::No answer key (or no report) to score against; skipping the score."
           fi
 
-      - name: Merge into the dataset and check it
-        run: |
-          npm run merge-directories
-          npm run college-health
-          npm run check:lineage
+      # The console's health document counts campus-page facts and blocked hosts; rebuilt into the same change set.
+      - name: Rebuild the health document
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          CHANGE_SET: ${{ steps.change_set.outputs.id }}
+        run: npm run college-health -- --store supabase --change-set "$CHANGE_SET"
 
-      - name: Commit the results to this branch
+      - name: Close the change set
+        id: close
+        if: always() && steps.change_set.outputs.id != ''
+        env:
+          ID: ${{ steps.change_set.outputs.id }}
+          PILOT_OK: ${{ steps.pilot.outcome }}
+          PUBLISH: ${{ inputs.publish }}
         run: |
-          git add data
-          if git diff --cached --quiet; then
-            echo "No data changes."
-            exit 0
+          if [ "$PILOT_OK" != "success" ]; then
+            node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/data-change-set.mts close --store supabase --id "$ID" --status held --reason "The campus-life pilot did not finish (${PILOT_OK:-n/a}); this set holds whatever it wrote"
+            echo "status=held" >> "$GITHUB_OUTPUT"
+          elif [ "$PUBLISH" = "true" ]; then
+            node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/data-change-set.mts close --store supabase --id "$ID" --status applied
+            echo "status=applied" >> "$GITHUB_OUTPUT"
+          else
+            node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/data-change-set.mts close --store supabase --id "$ID" --status held --reason "Campus-life pilot run ${GITHUB_RUN_ID}: review the facts before they go live"
+            echo "status=held" >> "$GITHUB_OUTPUT"
           fi
-          printf 'Data: campus-life pilot run\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n' > /tmp/campus-pilot-msg.txt
-          git -c user.name="campus-pilot-bot" -c user.email="noreply@anthropic.com" commit -F /tmp/campus-pilot-msg.txt
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      # The run's tail: ask the publisher for a snapshot, unless the set was held (the console shows the hold).
+      - name: Ask the publisher for a snapshot
+        if: always() && steps.close.outputs.status == 'applied'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/${{ github.repository }}/dispatches" -f event_type=publish-snapshot

@@ -1,26 +1,32 @@
 /**
  * Essay prompts (specs/product/essays/prompts.md): finds each college's essay prompts page on its own site, reads it
- * once with the model, checks the record, and writes data/essay-prompts/records/ (passing) and held/ (for review).
- * `npm run merge-essay-prompts` then applies the records to data/schools.json.
+ * once with the model, checks the record, and writes the reader's layers through the data store
+ * (specs/data-platform/pipelines.md): `essays.records` (passing), `essays.held` (for review: holds in the console),
+ * `essays.pages` (where each page was found) and `essays.runs` (the run's summary), in one change set (source
+ * `essay-prompts`). The publisher applies the records; no file under data/ is written.
  *
- *   npm run sync-essay-prompts -- --units 166027,190150     # these colleges
- *   npm run sync-essay-prompts -- --top 200                 # the 200 colleges with the most applicants
+ *   npm run sync-essay-prompts -- --store supabase --units 166027,190150     # these colleges
+ *   npm run sync-essay-prompts -- --store file:/tmp/dp --top 200             # a folder (the file store)
  *   npm run sync-essay-prompts -- --on-plans ids.json       # a file of unit ids (a JSON array, or one per line):
  *                                                           # the plans' colleges, exported from the database
  *   npm run sync-essay-prompts -- --top 200 --discover-only # find pages only (no reads; free without --picker)
- *   npm run sync-essay-prompts -- --report body             # print the last run's PR body
- *   npm run sync-essay-prompts -- --report note --pr 123 --date 2026-10-29 --out release-notes/x.md
  *
- * Flags: --budget <usd> (default 40: the first wave's estimate; a run stops before a call that could pass it),
- * --dry-run (writes nothing), --force (re-read pages whose bytes haven't changed), --limit <n>, --concurrency <n>
- * (default 4; requests to one host are paced anyway). Needs ANTHROPIC_API_KEY unless --discover-only. Every request
- * goes through the college-reported engine's PoliteHttp (robots.txt, pacing, the honest user agent); every page read
- * is kept in the archive by sha (COLLEGE_DOCS_REPO selects the GitHub-release archive, as for the CDS run).
+ * Flags: --store supabase|file:<dir> (default supabase when DATA_SUPABASE_URL is set), --change-set <id> (write into
+ * a set the workflow opened), --budget <usd> (default 40: the first wave's estimate; a run stops before a call that
+ * could pass it), --dry-run (writes nothing, opens no change set), --force (re-read pages whose bytes haven't
+ * changed), --limit <n>, --concurrency <n> (default 4; requests to one host are paced anyway). Needs ANTHROPIC_API_KEY
+ * unless --discover-only. Every request goes through the college-reported engine's PoliteHttp (robots.txt, pacing,
+ * the honest user agent); every page read is kept in the archive by sha (COLLEGE_DOCS_REPO selects the GitHub-release
+ * archive, as for the CDS run).
+ *
+ * The change set closes `held` only when the run's own breaker trips (more than half of the colleges read were held;
+ * `essaysBreaker`), and the script then exits 2; a run stopped early (budget or key) closes `applied` with what it
+ * finished and exits 3. The run's report (the old PR body) is the change set's `summary.body`.
  */
 import Anthropic from "@anthropic-ai/sdk";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { School } from "../lib/types.ts";
+import type { PlatformPromptsFile } from "../lib/types.ts";
 import { createArchive } from "./lib/college-reported/archive.mts";
 import { PoliteHttp } from "./lib/college-reported/http.mts";
 import { assertPriced, roundUsd, type ModelClient } from "./lib/college-reported/models.mts";
@@ -30,14 +36,16 @@ import { SpendCap, SpendCapReached } from "./lib/high-schools/profiles/budget.mt
 import { openCycle } from "./lib/essay-prompts/cycle.mts";
 import { PICKER_MODEL } from "./lib/essay-prompts/discover.mts";
 import { READ_MODEL } from "./lib/essay-prompts/read.mts";
-import { prBody, releaseNote, type RunSummary } from "./lib/essay-prompts/report.mts";
+import { prBody, type RunSummary } from "./lib/essay-prompts/report.mts";
 import { reconcileHeld, runCollege, type Outcome } from "./lib/essay-prompts/run.mts";
-import { clearHeld, essayPaths, readEssayRecord, readEssayRecords, readPages, readPlatformPrompts, writeEssayRecord, writeHeld, writePages } from "./lib/essay-prompts/store.mts";
+import { essayPaths, essaysBreaker, loadEssayState, readPlatformPrompts, writeEssayRun, type EssayRecord, type HeldRecord, type PageRecipe } from "./lib/essay-prompts/store.mts";
+import { changeSetFromArgv, datasetColleges, EXIT, openProducerRun, storeFromArgv } from "./lib/data-platform/producer.mts";
+import { COLLECTIONS } from "./lib/data-platform/layers.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const P = essayPaths(ROOT);
-const SUMMARY = join(P.dir, "last-run.json");
-const flags = parseFlags(process.argv.slice(2));
+const argv = process.argv.slice(2);
+const flags = parseFlags(argv);
 const today = new Date().toISOString().slice(0, 10);
 const DRY = flags["dry-run"] === true;
 const num = (k: string, d: number) => (typeof flags[k] === "string" ? Number(flags[k]) : d);
@@ -47,20 +55,10 @@ function usage(msg: string): never {
   process.exit(1);
 }
 
-/* --report ----------------------------------------------------------- */
-if (typeof flags.report === "string") {
-  if (!existsSync(SUMMARY)) usage("no data/essay-prompts/last-run.json; run the sync first");
-  const s = JSON.parse(readFileSync(SUMMARY, "utf8")) as RunSummary;
-  if (flags.report === "body") process.stdout.write(prBody(s));
-  else if (flags.report === "note") {
-    if (typeof flags.pr !== "string" || typeof flags.date !== "string" || typeof flags.out !== "string") usage("--report note needs --pr, --date, and --out");
-    writeFileSync(flags.out, releaseNote(s, Number(flags.pr), flags.date));
-  } else usage(`--report ${flags.report}: expected body or note`);
-  process.exit(0);
-}
-
 /* Which colleges ------------------------------------------------------ */
-const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
+const store = storeFromArgv(argv);
+const changeSet = changeSetFromArgv(argv);
+const schools = await datasetColleges(store, ROOT);
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 let ids: string[];
 if (typeof flags.units === "string") ids = flags.units.split(",").map((s) => s.trim()).filter(Boolean);
@@ -75,9 +73,9 @@ else if (typeof flags.top === "string") {
   if (typeof flags["on-plans"] !== "string") usage("--on-plans needs a file of unit ids (the plans' colleges live in the database; export them first)");
   const raw = readFileSync(resolve(process.cwd(), flags["on-plans"]), "utf8").trim();
   ids = raw.startsWith("[") ? (JSON.parse(raw) as unknown[]).map(String) : raw.split(/[\s,]+/).filter(Boolean);
-} else usage("pass --units <ids>, --top <n>, --on-plans <file>, or --report body|note");
+} else usage("pass --units <ids>, --top <n>, or --on-plans <file>");
 ids = [...new Set(ids)];
-for (const id of ids) if (!byId.has(id)) usage(`${id}: not in data/schools.json`);
+for (const id of ids) if (!byId.has(id)) usage(`${id}: not in the dataset (base.colleges)`);
 if (flags.limit) ids = ids.slice(0, num("limit", ids.length));
 
 const discoverOnly = flags["discover-only"] === true;
@@ -115,13 +113,15 @@ if (!discoverOnly) {
   };
 }
 const cap = new SpendCap(num("budget", 40));
+/** The reader's prior state: records, held reads, page recipes (the store, never data/). */
+const state = await loadEssayState(store);
 /** The platforms' own prompt texts: a college prompt equal to one of them is the platform's, not the college's. */
-const platformFile = readPlatformPrompts(P.platform);
+const platformFile = (await store.readOne<PlatformPromptsFile>(COLLECTIONS.reference.files, "platform-prompts")) ?? readPlatformPrompts(P.platform);
 const platformTexts = platformFile ? [...(platformFile.common_app?.prompts ?? []), ...(platformFile.coalition?.prompts ?? [])].map((p) => p.text) : [];
 /** One read per page per run (the UC campuses share one page). */
 const readCache = new Map<string, { answer: import("./lib/essay-prompts/read.mts").ReadAnswer; model: string }>();
 const archive = DRY ? undefined : createArchive({ log: (m) => console.log(m) });
-const pages = readPages(P.pages);
+const pages = new Map<string, PageRecipe>();
 const RUN = new Date().toISOString().replace(/\.\d+Z$/, "Z");
 
 const summary: RunSummary = {
@@ -142,27 +142,29 @@ const summary: RunSummary = {
 };
 console.log(`Run ${RUN}: ${ids.length} colleges for the ${summary.cycle} cycle, ${discoverOnly ? "discovery only" : `budget $${cap.cap}`}${DRY ? " (dry run)" : ""}`);
 
+const passed: EssayRecord[] = [];
+const held: HeldRecord[] = [];
+const cleared: string[] = [];
+
 function record(id: string, o: Outcome) {
   const s = byId.get(id)!;
-  pages.pages[id] = o.recipe;
+  pages.set(id, o.recipe);
   switch (o.kind) {
     case "passed":
       summary.counts.passed++;
       summary.passed.push({ unit_id: id, name: s.name, status: o.record.status, prompts: o.record.prompts.length });
       if (o.record.cycle_assumed) (summary.assumed ??= []).push({ unit_id: id, name: s.name });
-      if (!DRY) {
-        writeEssayRecord(P.records, o.record);
-        clearHeld(P.held, id);
-      }
+      passed.push(o.record);
+      cleared.push(id);
       console.log(`  ${s.name}: ${o.record.status}, ${o.record.prompts.length} prompt(s), $${o.cost.toFixed(4)}`);
       break;
     case "held": {
       summary.counts.held++;
       // A passing record from an earlier run stays on file (held is never merged, and a hold can be the model's noise
       // on a re-read); the PR says so, so the owner can judge which to believe.
-      const kept = readEssayRecord(P.records, id);
+      const kept = state.records.get(id) ?? null;
       summary.held.push({ unit_id: id, name: s.name, problems: o.problems, ...(kept ? { kept: kept.retrieved } : {}) });
-      if (!DRY) writeHeld(P.held, { unit_id: id, name: s.name, held: today, problems: o.problems, record: o.record });
+      held.push({ unit_id: id, name: s.name, held: today, problems: o.problems, record: o.record });
       console.log(`  ${s.name}: HELD (${o.problems.length}): ${o.problems.slice(0, 2).join("; ")}${kept ? ` (a passing record from ${kept.retrieved} stays on file)` : ""}`);
       break;
     }
@@ -193,7 +195,7 @@ const workers = Array.from({ length: Math.max(1, num("concurrency", 4)) }, async
     const id = queue.shift()!;
     const s = byId.get(id)!;
     try {
-      outcomes.set(id, await runCollege(s, pages.pages[id], readEssayRecord(P.records, id), { http, client, cap, archive, today, force: flags.force === true, discoverOnly, platformTexts, readCache, log: (m) => console.log(m) }));
+      outcomes.set(id, await runCollege(s, state.pages.get(id), state.records.get(id) ?? null, { http, client, cap, archive, today, force: flags.force === true, discoverOnly, platformTexts, readCache, log: (m) => console.log(m) }));
     } catch (err) {
       if (err instanceof SpendCapReached) summary.stopped = err.message;
       else if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) summary.stopped = `the API key was refused (${err.status})`;
@@ -207,7 +209,7 @@ const workers = Array.from({ length: Math.max(1, num("concurrency", 4)) }, async
 await Promise.all(workers);
 
 // Colleges held on a page another college passed on (the UC campuses' shared page) take that read.
-const reconciled = reconcileHeld(outcomes, readEssayRecords(P.records), { today, platformTexts });
+const reconciled = reconcileHeld(outcomes, [...state.records.values()], { today, platformTexts });
 for (const a of reconciled.adopted) console.log(`  ${byId.get(a.unit_id)!.name}: held, then took the passing read of the same page from ${byId.get(a.from)?.name ?? a.from}`);
 if (reconciled.adopted.length) summary.reconciled = reconciled.adopted.map((a) => ({ unit_id: a.unit_id, name: byId.get(a.unit_id)!.name, from: byId.get(a.from)?.name ?? a.from }));
 for (const [id, o] of reconciled.outcomes) record(id, o);
@@ -216,10 +218,29 @@ summary.finished = new Date().toISOString();
 summary.spent_usd = roundUsd(cap.spent);
 const c = summary.counts;
 console.log(`\nPassed ${c.passed}, held ${c.held}, unchanged ${c.unchanged}, found ${c.found}, not found ${c.not_found}, failed ${c.failed}; spent $${cap.spent.toFixed(4)}${summary.stopped ? `; STOPPED: ${summary.stopped}` : ""}`);
+const breaker = essaysBreaker(c);
+if (breaker) console.log(`HELD: ${breaker}`);
 if (!DRY) {
-  pages.updated = today;
-  writePages(P.pages, pages);
-  writeFileSync(SUMMARY, `${JSON.stringify(summary, null, 2)}\n`);
+  const run = await openProducerRun(store, "essay-prompts", { changeSet, summary: { run: RUN, cycle: summary.cycle } });
+  try {
+    await writeEssayRun(run.handle, state, { records: passed, held, cleared, pages, summary });
+  } catch (err) {
+    // Leaving the set open serves no one: hold it with why, so the console shows it instead of a stuck "open" run.
+    await run.finish("held", `stopped: ${err instanceof Error ? err.message : String(err)}`.slice(0, 500)).catch(() => {});
+    throw err;
+  }
+  await run.finish(breaker ? "held" : "applied", breaker ?? undefined, {
+    run: RUN,
+    cycle: summary.cycle,
+    colleges: summary.colleges,
+    counts: summary.counts,
+    cost_usd: summary.spent_usd,
+    budget_usd: summary.budget_usd,
+    stopped: summary.stopped,
+    body: prBody(summary),
+  });
+  console.log(`Change set ${run.handle.id}${run.attached ? " (the workflow's)" : ""}: ${breaker ? "held" : "applied"}`);
 }
-// Exit 3 when the run stopped early (budget or key), like the college-reported run, so the workflow can say why.
-process.exit(summary.stopped ? 3 : 0);
+// Exit 2 when the breaker held the set, 3 when the run stopped early (budget or key), like the college-reported run,
+// so the workflow skips the publish and says why.
+process.exit(breaker ? EXIT.held : summary.stopped ? EXIT.stopped : EXIT.applied);

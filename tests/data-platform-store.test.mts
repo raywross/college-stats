@@ -13,6 +13,8 @@ import {
   READ_PAGE,
   StoreConflictError,
   WRITE_CHUNK,
+  chunkRows,
+  documentText,
   decodeKey,
   encodeKey,
   fileStore,
@@ -305,4 +307,31 @@ test("--store: file:<dir>, supabase with the env fallbacks, and no silent defaul
   assert.throws(() => parseStoreFlag("postgres", {}), /expected supabase or file/);
   assert.throws(() => parseStoreFlag("file:", {}), /needs a folder/);
   assert.equal(typeof storeFromFlag("file:/tmp/never-written", {}).read, "function");
+});
+
+test("documentText drops NUL escapes (Postgres json refuses them) and chunkRows bounds a call by documents and bytes", () => {
+  assert.equal(documentText({ q: "a\u0000b", n: 1 }), '{"q":"ab","n":1}');
+  assert.equal(documentText({ q: "plain" }), '{"q":"plain"}');
+  const small = Array.from({ length: 5 }, (_, i) => ({ body: "x".repeat(10) + i }));
+  assert.deepEqual([...chunkRows(small, 2, 1_000)].map(([s, r]) => [s, r.length]), [[0, 2], [2, 2], [4, 1]], "by count");
+  const big = [{ body: "a".repeat(600) }, { body: "b".repeat(600) }, { body: "c".repeat(600) }, { body: "d".repeat(2_000) }, { body: "e".repeat(10) }];
+  assert.deepEqual([...chunkRows(big, 200, 1_000)].map(([s, r]) => [s, r.length]), [[0, 1], [1, 1], [2, 1], [3, 1], [4, 1]], "by bytes: each 600-byte body alone under a 1,000-byte cap; the 2,000-byte one alone too");
+  assert.deepEqual([...chunkRows(big, 200, 1_300)].map(([s, r]) => [s, r.length]), [[0, 2], [2, 1], [3, 1], [4, 1]], "two 600s fit a 1,300 cap, a third doesn't");
+  assert.deepEqual([...chunkRows([{ body: null }, { body: null }], 200, 10)].map(([s, r]) => [s, r.length]), [[0, 2]], "deletes weigh nothing");
+  assert.deepEqual([...chunkRows([], 200, 10)], []);
+});
+
+test("supabase store: attach reads the set's status and writes into it; a set that isn't open is refused", async () => {
+  const { client, calls } = fakeClient((call) => {
+    if (call.kind === "select") return { data: { status: call.ops.some((o) => o[0] === "eq" && o[2] === 5) ? "open" : "applied" }, error: null };
+    return { data: 1, error: null };
+  });
+  const store = supabaseStore("https://x.supabase.co", "k", { client, waits: [] });
+  const handle = await store.attach!(5);
+  assert.equal(handle.id, 5);
+  await handle.write("base.meta", [{ key: "meta", body: { a: 1 } }]);
+  assert.deepEqual(calls[0].ops, [["select", "status"], ["eq", "id", 5], ["maybeSingle"]]);
+  assert.equal(calls[0].name, "data_change_sets");
+  assert.equal((calls[1].args as { p_change_set: number }).p_change_set, 5);
+  await assert.rejects(store.attach!(6), /change set 6 is not open/);
 });

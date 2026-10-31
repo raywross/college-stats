@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { citedUrls, GUIDANCE_HEADINGS, guidanceText, loadGuidance, missingSections, OWNER_SECTION, parseGuidance, sectionsFor } from "../lib/essays/guidance.ts";
 import { ESSAY_KINDS } from "../lib/essays/prompts.ts";
 import { givesInstruction, hasGradeWord, hasPrediction, sentenceCount } from "../lib/essays/review-guard.ts";
-import { CATEGORY_LABEL, CATEGORY_RULES, FIX_MAX_WORDS, MAX_NOTES, NOTE_CATEGORIES, QUOTE_RUN_MAX, REFUSALS, REVIEW_CAPS, REVIEW_METHOD, REVIEW_MODEL, rubricText } from "../lib/essays/rubric.ts";
+import { CATEGORY_LABEL, CATEGORY_RULES, FIX_MAX_WORDS, MAX_NOTES, NOTE_CATEGORIES, OBSERVATION_WORDS, QUOTE_RUN_MAX, REFUSALS, REVIEW_CAPS, REVIEW_METHOD, REVIEW_MODEL, rubricText, WHY_WORDS } from "../lib/essays/rubric.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
@@ -38,7 +38,32 @@ test("the eight categories, in the list's order (mechanics first), match the mig
 test("the caps match the migration's numbers", () => {
   const sql = read("supabase/migrations/20261029130000_essay_reviews.sql");
   assert.match(sql, new RegExp(`v_draft_day < ${REVIEW_CAPS.perDraftPerDay} and v_student_day < ${REVIEW_CAPS.perStudentPerDay} and v_draft_cycle < ${REVIEW_CAPS.perDraftPerCycle}`));
-  assert.match(sql, new RegExp(`jsonb_array_length\\(p_notes\\) > ${MAX_NOTES}`));
+  // The database's ceiling stays at the first build's twelve (no migration for a tighter rubric); the guard's limit
+  // must never exceed it, or a read would fail to record.
+  const ceiling = /jsonb_array_length\(p_notes\) > (\d+)/.exec(sql);
+  assert.ok(ceiling, "the record function caps the notes");
+  assert.ok(MAX_NOTES <= Number(ceiling[1]), `MAX_NOTES ${MAX_NOTES} fits the database's ${ceiling[1]}`);
+});
+
+test("tighter notes (owner, 2026-10-31): at most eight, the rubric's word limits, fewer sharper notes, the schema agrees", () => {
+  assert.equal(MAX_NOTES, 8);
+  assert.equal(OBSERVATION_WORDS, 20);
+  assert.equal(WHY_WORDS, 25);
+  const text = rubricText();
+  assert.ok(text.includes("At most 8 notes"), "the note limit");
+  assert.ok(text.includes(`observation: what you noticed, in one sentence of at most about ${OBSERVATION_WORDS} words`), "the observation's length");
+  assert.ok(text.includes(`one sentence of at most about ${WHY_WORDS} words`), "the why's length");
+  assert.ok((text.match(/fewer, sharper notes win/gi) ?? []).length >= 2, "says twice that fewer, sharper notes win");
+  const src = read("lib/essays/review.ts");
+  assert.match(src, /description: "At most eight notes, the ones that matter most; fewer, sharper notes win/);
+  assert.match(src, /at most about twenty words/);
+  assert.match(src, /at most about twenty-five words/);
+});
+
+test("REVIEW_METHOD was bumped for the tighter rubric and is listed in the spec's As built", () => {
+  assert.notEqual(REVIEW_METHOD, "2026.10.29.1", "the first build's edition");
+  assert.ok(REVIEW_METHOD >= "2026.10.31.1", REVIEW_METHOD);
+  assert.ok(read("specs/product/essays/reviewer.md").includes(`\`REVIEW_METHOD\` is \`${REVIEW_METHOD}\``), "the spec names the current edition");
 });
 
 test("the rubric states every category, every rule, and every refusal, with the guard's numbers", () => {

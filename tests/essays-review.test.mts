@@ -1,11 +1,13 @@
 /**
  * The reader's call and POST /api/essays/review's decision (lib/essays/review.ts; specs/product/essays/reviewer.md "How
  * it reads", "When it runs"), with a fake model client and fake I/O: the request's shape (Opus 5, adaptive thinking at
- * effort medium, the schema through output_config.format, the cached system block, 8,000 tokens, no prefill); the
- * stop reasons (a refusal is no notes; a cut answer is dropped with its reason); typed API errors (nothing recorded, no
- * cap spent); the session, the entitlement, the limiter, the student-only rule, the caps (five per draft per day, fifty
- * per student, sixty per cycle); the guard before storing; telemetry without text. The route file is read to check it
- * wires exactly this. `npm test`.
+ * effort medium, the schema through output_config.format, the system block cached for an hour, 8,000 tokens, no
+ * prefill, streamed); the stop reasons (a refusal is no notes; a cut answer keeps only whole notes); typed API errors
+ * (an error event, nothing recorded, no cap spent); the session, the entitlement, the limiter, the student-only rule,
+ * the caps (five per draft per day, fifty per student, sixty per cycle) as JSON errors before the read; the guard
+ * before storing; telemetry without text. The route file is read to check it wires exactly this. The stream's own
+ * rules (the parser, onNote, the event order, the NDJSON response) are in tests/essays-review-stream.test.mts.
+ * `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -25,6 +27,7 @@ registerHooks({
 
 const { default: Anthropic } = await import("@anthropic-ai/sdk");
 const review = await import("../lib/essays/review.ts");
+const { fakeStream } = await import("./helpers/fake-review-stream.mts");
 const { parseGuidance } = await import("../lib/essays/guidance.ts");
 const { reviewContext } = await import("../lib/essays/review-context.ts");
 const { NOTE_CATEGORIES, REVIEW_METHOD } = await import("../lib/essays/rubric.ts");
@@ -33,7 +36,8 @@ type ReviewDeps = import("../lib/essays/review.ts").ReviewDeps;
 type RecordInput = import("../lib/essays/review.ts").RecordInput;
 type ReviewEvent = import("../lib/essays/review.ts").ReviewEvent;
 type Message = import("@anthropic-ai/sdk").default.Message;
-type Params = import("@anthropic-ai/sdk").default.MessageCreateParamsNonStreaming;
+type Params = import("@anthropic-ai/sdk").default.MessageStreamParams;
+type StreamEvent = import("../lib/essays/review.ts").ReviewStreamEvent;
 
 const ROOT = join(import.meta.dirname, "..");
 const GUIDANCE = parseGuidance(readFileSync(join(ROOT, "data/reference/essay-guidance/guidance.md"), "utf8"));
@@ -95,9 +99,15 @@ function world(over: Partial<ReviewDeps> & { reply?: () => Message | Promise<Mes
     guidance: () => GUIDANCE,
     client: () => ({
       messages: {
-        create: async (p: Params) => {
+        stream: (p: Params) => {
           w.calls.push(p);
-          return reply();
+          const pending = Promise.resolve().then(reply);
+          return {
+            async *[Symbol.asyncIterator]() {
+              yield* fakeStream(await pending);
+            },
+            finalMessage: () => pending,
+          };
         },
       },
     }),
@@ -114,13 +124,29 @@ function world(over: Partial<ReviewDeps> & { reply?: () => Message | Promise<Mes
   return w;
 }
 
-const ask = (w: World, body: unknown = { essayId: ESSAY, versionId: VERSION }) => review.handleReview(w.deps, body);
+/** The decision with its stream events collected: JSON refusals have a body; a read has `sent` (reading … done | error). */
+async function ask(w: World, body: unknown = { essayId: ESSAY, versionId: VERSION }) {
+  const sent: StreamEvent[] = [];
+  const reply = await review.handleReview(w.deps, body, (e) => sent.push(e));
+  return Object.assign(reply, { sent });
+}
+const errorOf = (r: object) => ("body" in r ? (r.body as { error: string }).error : "");
+function doneOf(r: { sent: StreamEvent[] }) {
+  const last = r.sent.at(-1);
+  assert.equal(last?.kind, "done", JSON.stringify(last));
+  return last as Extract<StreamEvent, { kind: "done" }>;
+}
+function streamErrorOf(r: { sent: StreamEvent[] }) {
+  const last = r.sent.at(-1);
+  assert.equal(last?.kind, "error", JSON.stringify(last));
+  return (last as Extract<StreamEvent, { kind: "error" }>).error;
+}
 
 /* ------------------------------------------------------------------ */
 /* The request                                                         */
 /* ------------------------------------------------------------------ */
 
-test("the request: Opus 5, adaptive thinking at medium effort, the schema through output_config, a cached system block, 8,000 tokens, no prefill", async () => {
+test("the request: Opus 5, adaptive thinking at medium effort, the schema through output_config, the system block cached for an hour, 8,000 tokens, no prefill", async () => {
   const w = world();
   await ask(w);
   assert.equal(w.calls.length, 1);
@@ -133,7 +159,8 @@ test("the request: Opus 5, adaptive thinking at medium effort, the schema throug
   assert.equal(p.max_tokens, 8000);
   const system = p.system as { type: string; text: string; cache_control?: { type: string } }[];
   assert.equal(system.length, 1);
-  assert.deepEqual(system[0].cache_control, { type: "ephemeral" });
+  assert.deepEqual(system[0].cache_control, { type: "ephemeral", ttl: "1h" }, "the prefix stays warm for an hour");
+  assert.deepEqual(Object.keys(p).sort(), ["max_tokens", "messages", "model", "output_config", "system", "thinking"], "nothing else in the request");
   assert.deepEqual(p.messages.map((m) => m.role), ["user"], "one user turn: no assistant prefill");
   const user = p.messages[0].content as string;
   assert.ok(user.includes("[¶0] Their was a customer"), "the draft, paragraphs numbered");
@@ -173,7 +200,8 @@ test("a good answer: the notes pass the guard, are stored with the method and us
   assert.equal(rec.outcome, "notes");
   assert.deepEqual(rec.usage, { input_tokens: 1200, output_tokens: 2400, cache_creation_input_tokens: 0, cache_read_input_tokens: 9800 });
   assert.deepEqual(rec.notes.map((n) => [n.category, n.span, n.fix]), [["mechanics", { paragraph: 0, start: 0, end: 9 }, "There was"], ["specific", { paragraph: 1, start: 0, end: 39 }, null]]);
-  assert.ok("review" in r.body && r.body.review.notes.length === 2 && r.body.message === null);
+  const done = doneOf(r);
+  assert.ok(done.review.notes.length === 2 && done.message === null);
   assert.deepEqual(w.events, [
     { event: "essay_review_requested", properties: { prompt_kind: "why_us" } },
     { event: "essay_review_notes", properties: { count: 2, categories: "mechanics,specific" } },
@@ -199,13 +227,14 @@ test("every note dropped: stored as nothing to note, and the student sees 'Nothi
   const r = await ask(w);
   assert.equal(r.status, 200);
   assert.equal(w.recorded[0].outcome, "none");
-  assert.ok("review" in r.body && r.body.message === review.NOTHING_TO_NOTE);
+  assert.equal(doneOf(r).message, review.NOTHING_TO_NOTE);
 });
 
-test("stop reasons: a refusal is no notes; a cut answer and malformed JSON are dropped with their reason; each still counts", async () => {
+test("stop reasons: a refusal is no notes; a cut answer with no whole note and malformed JSON keep nothing, with their reason; each still counts", async () => {
+  const cut = JSON.stringify({ notes: NOTES }).slice(0, 60);
   for (const [reply, outcome] of [
     [() => message({ stop_reason: "refusal" }), "refusal"],
-    [() => message({ stop_reason: "max_tokens" }), "max_tokens"],
+    [() => message({ stop_reason: "max_tokens", content: [{ type: "text", text: cut, citations: null }] as Message["content"] }), "max_tokens"],
     [() => message({ content: [{ type: "text", text: "Here are my notes: …", citations: null }] as Message["content"] }), "malformed"],
     [() => message({ json: { comments: [] } }), "malformed"],
   ] as const) {
@@ -214,23 +243,22 @@ test("stop reasons: a refusal is no notes; a cut answer and malformed JSON are d
     assert.equal(r.status, 200, outcome);
     assert.equal(w.recorded[0].outcome, outcome);
     assert.equal(w.recorded[0].notes.length, 0);
-    assert.ok("review" in r.body && r.body.message === review.NOTHING_TO_NOTE);
+    assert.equal(doneOf(r).message, review.NOTHING_TO_NOTE);
     assert.deepEqual(w.events.find((e) => e.event === "essay_review_dropped")?.properties, { reason: outcome });
   }
 });
 
-test("typed API errors: rate limited is 'busy' (503), any other API error 502; nothing recorded, no cap spent", async () => {
+test("typed API errors (the read has begun, so they are error events): rate limited is 'busy', any other failure the read failed; nothing recorded, no cap spent", async () => {
   const limited = world({ reply: () => Promise.reject(new Anthropic.RateLimitError(429, {}, "rate limited", new Headers())) });
   const r1 = await ask(limited);
-  assert.equal(r1.status, 503);
-  assert.equal(r1.headers?.["Retry-After"], "60");
+  assert.equal(streamErrorOf(r1), "The reader is busy. Try again in a minute.");
   assert.equal(limited.recorded.length, 0);
   const failed = world({ reply: () => Promise.reject(new Anthropic.InternalServerError(500, {}, "boom", new Headers())) });
   const r2 = await ask(failed);
-  assert.equal(r2.status, 502);
+  assert.equal(streamErrorOf(r2), "The reader couldn't read this draft just now. Try again in a moment.");
   assert.equal(failed.recorded.length, 0);
   const thrown = world({ reply: () => Promise.reject(new Error("socket hang up")) });
-  assert.equal((await ask(thrown)).status, 502);
+  assert.equal(streamErrorOf(await ask(thrown)), review.READ_FAILED);
   assert.ok(review.readDraft.length > 0);
 });
 
@@ -257,7 +285,9 @@ test("signed out 401; not entitled 403; over the limiter 429 with Retry-After; a
     assert.equal(r.status, status, JSON.stringify(Object.keys(over)) + JSON.stringify(body ?? ""));
     assert.equal(w.calls.length, 0, "no model call");
     assert.equal(w.recorded.length, 0);
-    if (status === 429) assert.equal(r.headers?.["Retry-After"], "7");
+    if (status === 429) assert.equal(("headers" in r ? r.headers : undefined)?.["Retry-After"], "7");
+    assert.deepEqual(r.sent, [], "a refusal before the read is JSON, never a stream");
+    assert.ok(errorOf(r), "with its words");
   }
 });
 
@@ -265,7 +295,7 @@ test("a guardian (not the student) is refused before any call: the reader runs o
   const w = world({ loadDraft: async () => ({ kind: "not-student" }) });
   const r = await ask(w);
   assert.equal(r.status, 403);
-  assert.match((r.body as { error: string }).error, /Only the student/);
+  assert.match(errorOf(r), /Only the student/);
   assert.equal(w.calls.length, 0);
   const w2 = world({ allowance: async () => ({ ok: false, reason: "not_yours" }) });
   assert.equal((await ask(w2)).status, 403);
@@ -277,22 +307,26 @@ test("the caps: five reads of a draft go through, the sixth is refused before th
   for (let i = 0; i < 5; i++) assert.equal((await ask(w)).status, 200, `read ${i + 1}`);
   const sixth = await ask(w);
   assert.equal(sixth.status, 429);
-  assert.equal((sixth.body as { error: string }).error, review.CAP_MESSAGE.draft_day);
+  assert.equal(errorOf(sixth), review.CAP_MESSAGE.draft_day);
   assert.equal(w.calls.length, 5, "no sixth model call");
   for (const reason of ["student_day", "draft_cycle"] as const) {
     const capped = world({ allowance: async () => ({ ok: false, reason }) });
     const r = await ask(capped);
     assert.equal(r.status, 429);
-    assert.equal((r.body as { error: string }).error, review.CAP_MESSAGE[reason]);
+    assert.equal(errorOf(r), review.CAP_MESSAGE[reason]);
     assert.equal(capped.calls.length, 0);
   }
 });
 
-test("a cap reached while the read ran (the record function refuses): 429, nothing shown", async () => {
+test("a cap reached while the read ran (the record function refuses): an error event with the cap's words, no done", async () => {
   const w = world({ record: async () => ({ ok: false, reason: "cap" }) });
   const r = await ask(w);
-  assert.equal(r.status, 429);
-  assert.equal((r.body as { error: string }).error, review.CAP_REACHED);
+  assert.equal(streamErrorOf(r), review.CAP_REACHED);
+  assert.ok(!r.sent.some((e) => e.kind === "done"), "nothing kept, so no stored review");
+  const failed = world({ record: async () => ({ ok: false, reason: "failed" }) });
+  assert.equal(streamErrorOf(await ask(failed)), "That didn't work. Try again in a moment.");
+  const threw = world({ record: async () => Promise.reject(new Error("socket")) });
+  assert.equal(streamErrorOf(await ask(threw)), review.DIDNT_WORK, "a record that throws is an error event, never a throw");
 });
 
 test("guard: without the allowance check, a sixth read is a sixth model call", async () => {
@@ -321,7 +355,8 @@ test("the route: POST is handleReview with the real I/O; the advisor.reviews cap
   const src = readFileSync(join(ROOT, "app/api/essays/review/route.ts"), "utf8");
   const exported = [...src.matchAll(/^export (?:async function|const) (\w+)/gm)].map((m) => m[1]).sort();
   assert.deepEqual(exported, ["GET", "PATCH", "POST", "maxDuration"]);
-  assert.match(src, /handleReview\(deps\(request, createServerSupabase\(\)\), body\)/);
+  assert.match(src, /handleReview\(deps\(request, createServerSupabase\(\)\), body, send\)/);
+  assert.match(src, /return reviewResponse\(/, "the stream adapter (lib/essays/review-response.ts)");
   assert.match(src, /allowed\(user, "advisor\.reviews"\)/);
   assert.match(src, /createLimiter\(/);
   assert.match(src, /rpc\("essay_review_allowance"/);

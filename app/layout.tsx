@@ -10,6 +10,8 @@ import { CompareTray } from "@/components/compare/CompareTray";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/brand";
+import { getSnapshotId } from "@/lib/data";
+import { SNAPSHOT_HEADER } from "@/lib/data-platform/snapshot";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,13 +29,23 @@ const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: `${SITE_NAME}: ${SITE_TAGLINE}`,
-    template: `%s · ${SITE_NAME}`,
-  },
-  description: "Explore and compare U.S. college admissions, test scores, and student demographics through interactive charts.",
-};
+/**
+ * Every page also names the data snapshot it was rendered from in a `<meta name="x-quad-snapshot">` tag
+ * (specs/data-platform/publish.md "Timing and telemetry"). A tag, not only a header: a page can't set response headers,
+ * and proxy.ts runs apart from the render (on Vercel, in its own function), so it can't know which snapshot a render
+ * used. next.config.ts adds the header where the id is fixed for the deploy (data/ or a bundled copy), and
+ * /search-index.json carries it always. With no snapshot configured this reads no data.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: {
+      default: `${SITE_NAME}: ${SITE_TAGLINE}`,
+      template: `%s · ${SITE_NAME}`,
+    },
+    description: "Explore and compare U.S. college admissions, test scores, and student demographics through interactive charts.",
+    other: { [SNAPSHOT_HEADER]: await getSnapshotId().catch(() => "unknown") },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

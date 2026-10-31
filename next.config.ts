@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { NextConfig } from "next";
 
 /**
@@ -20,6 +22,21 @@ export function posthogRewrites(host: string) {
     { source: "/ingest/static/:path*", destination: `${posthogAssetHostFor(base)}/static/:path*` },
     { source: "/ingest/:path*", destination: `${base}/:path*` },
   ];
+}
+
+/**
+ * The `x-quad-snapshot` response header (specs/data-platform/publish.md "Timing and telemetry") where the snapshot is
+ * fixed for the life of the deploy: `legacy` when the dataset comes from data/, the bundled copy's id when
+ * `.data/snapshot/` exists and no DATA_SNAPSHOT_URL is set. With DATA_SNAPSHOT_URL the served snapshot changes at run
+ * time, so a header written here would go stale: none is set, and pages carry the id in their
+ * `<meta name="x-quad-snapshot">` (app/layout.tsx) and /search-index.json in its own header. Read when the config
+ * loads (`next build`, `next dev`), after the prebuild's fetch-snapshot.
+ */
+export function deploySnapshotHeader(env: Record<string, string | undefined> = process.env, root = process.cwd()): string | null {
+  if (env.DATA_SNAPSHOT_URL?.trim()) return null;
+  const manifest = join(root, ".data", "snapshot", "manifest.json");
+  if (!existsSync(manifest)) return "legacy";
+  return String((JSON.parse(readFileSync(manifest, "utf8")) as { id: number }).id);
 }
 
 const nextConfig: NextConfig = {
@@ -56,6 +73,10 @@ const nextConfig: NextConfig = {
       "./data/directories/organizations.json",
       // ZIP code centers for the distance-from-home filter (lib/zip-centroids.ts).
       "./data/reference/zcta-centroids.csv",
+      // The bundled snapshot (specs/data-platform/publish.md "The loader"): what `npm run fetch-snapshot` writes at
+      // build time and lib/data-platform/loader.ts reads. Ignored by version control, so absent from a checkout; the
+      // data/ entries above stay until phase 2 (specs/data-platform/rollout.md).
+      "./.data/snapshot/**",
     ],
     // The admin console's data health (lib/admin/health.ts; specs/product/admin.md "Files the deploy must carry") reads
     // one compact file, which `npm run college-health` builds in each data PR from the college-reported documents,
@@ -88,6 +109,11 @@ const nextConfig: NextConfig = {
       // the config can't write. The query string passes through (`?for=`).
       { source: "/advisor/essays", missing: [{ type: "query", key: "college" }], destination: "/advisor?tab=essays", permanent: true },
     ];
+  },
+  async headers() {
+    const snapshot = deploySnapshotHeader();
+    // Every route but Next's own static files, which carry no data.
+    return snapshot === null ? [] : [{ source: "/((?!_next/).*)", headers: [{ key: "x-quad-snapshot", value: snapshot }] }];
   },
   async rewrites() {
     return posthogRewrites(posthogHost);

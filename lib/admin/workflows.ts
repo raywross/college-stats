@@ -15,7 +15,9 @@
  * from `main` through lib/github-app.ts `fetchRunCost` (data/reports/ isn't in the deploy).
  */
 
-export type WorkflowFile = "college-reported.yml" | "identity-refresh.yml" | "publish-changes.yml" | "publish-snapshot.yml" | "verify.yml" | "visit-events.yml";
+// publish-changes.yml is retired (data platform phase 2): the change log, the high-school tables and the college data
+// failures are steps of the publisher (publish-snapshot.yml).
+export type WorkflowFile = "college-reported.yml" | "identity-refresh.yml" | "publish-snapshot.yml" | "verify.yml" | "visit-events.yml";
 
 export type RunInput =
   | { name: string; label: string; kind: "unit"; required: true }
@@ -24,7 +26,7 @@ export type RunInput =
   | { name: string; label: string; kind: "money"; default: string }
   | { name: string; label: string; kind: "text"; default: string };
 
-export type RunId = "college" | "pilot" | "all" | "collect" | "identity" | "publish" | "verify" | "visit-events" | "publish-snapshot" | "point-snapshot";
+export type RunId = "college" | "pilot" | "all" | "collect" | "identity" | "verify" | "visit-events" | "publish-snapshot" | "point-snapshot";
 
 export interface DispatchableRun {
   id: RunId;
@@ -104,16 +106,6 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     fixed: {},
     inputs: [{ name: "force", label: "Run even if the last probe is under 28 days old", kind: "boolean", default: false }, AUTO_MERGE],
     guards: { oneAtATime: { concurrencyGroup: "identity-refresh" } },
-    ref: "main",
-  },
-  {
-    id: "publish",
-    label: "Publish",
-    description: "Writes the change log, high school tables, or college data failures to the production database.",
-    workflow: "publish-changes.yml",
-    fixed: {},
-    inputs: [{ name: "what", label: "What to publish", kind: "choice", options: ["all", "changes", "high-schools", "college-failures"], default: "all" }],
-    guards: {},
     ref: "main",
   },
   {

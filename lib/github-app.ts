@@ -13,7 +13,7 @@ import "server-only";
  * Rules: nothing here throws into a page (every export returns a result or an empty list and logs the failure without
  * any token); every network call goes through `deps.fetch` so tests run with no network; only the workflows in the
  * console's own table (lib/admin/workflows.ts) can be dispatched, always on `main` unless the table says the run takes
- * a pull request's branch (Re-run CI); the console never pushes to `main` (commits go to a new branch and a PR).
+ * a pull request's branch (Re-run CI); the console never commits (data changes go to the data store, not git).
  * Server only (holds the key), free of Next.js imports so tests can run it.
  */
 import { createPrivateKey, createSign, randomUUID } from "node:crypto";
@@ -23,10 +23,11 @@ export const DEFAULT_REPO = "raywross/college-stats";
 export const GITHUB_API = "https://api.github.com";
 /** The branch every dispatch and every console PR targets. */
 export const BASE_BRANCH = "main";
-/** Head-branch prefixes of the pipelines' PRs (`data/…`) and the console's own review-queue PRs (`review/…`). */
+/**
+ * Head-branch prefixes of the pipelines' PRs (`data/…`) and the console's former review-queue PRs (`review/…`, kept
+ * so any still open can be merged or closed from Approvals; the console opens no new ones).
+ */
 export const DATA_PULL_PREFIXES = ["data/", "review/"] as const;
-/** Written into a release note the console prepares before its PR exists; replaced by the PR's number. */
-export const PR_NUMBER_PLACEHOLDER = "{{PR_NUMBER}}";
 
 type Env = Record<string, string | undefined>;
 
@@ -584,7 +585,6 @@ export async function mergePull(n: number, deps: GithubDeps = {}): Promise<Merge
 export type PullActionResult = { ok: true } | { ok: false; reason: string };
 
 const DISABLE_AUTO_MERGE = "mutation($id: ID!) { disablePullRequestAutoMerge(input: { pullRequestId: $id }) { clientMutationId } }";
-const ENABLE_AUTO_MERGE = "mutation($id: ID!) { enablePullRequestAutoMerge(input: { pullRequestId: $id, mergeMethod: SQUASH }) { clientMutationId } }";
 
 /** A short label for who acted, safe for a public comment: one line, no markdown links or mentions. */
 function adminLabel(admin: string): string {
@@ -634,27 +634,16 @@ export async function closePull(n: number, admin: string, deps: GithubDeps = {})
 }
 
 /* ------------------------------------------------------------------ */
-/* Files and the review-queue PR                                       */
+/* Files                                                               */
 /* ------------------------------------------------------------------ */
-
-/** Repository paths the console may write: the review queue's three files and its own release notes. */
-export const WRITABLE_PATHS = new Set(["data/overrides.json", "data/review-queue.json", "data/college-sources.json"]);
-/** A hand-read essay record (specs/product/essays/sources.md): one file per college, named by its unit id. */
-const CONFIRMED_ESSAYS_PATH = /^data\/essay-prompts\/confirmed\/\d{1,12}\.json$/;
-
-/** Whether the console may write `path`: one of the review queue's files, or a college's confirmed essay record. */
-export function isWritablePath(path: string): boolean {
-  return WRITABLE_PATHS.has(path) || CONFIRMED_ESSAYS_PATH.test(path);
-}
-const RELEASE_NOTE_PATH = /^release-notes\/[a-z0-9-]+\.md$/;
 
 /** `unchanged`: the blob sha equals `knownSha`, so the content wasn't downloaded (it is ""). */
 export type ReadFileResult = { ok: true; content: string; sha: string; unchanged?: boolean } | { ok: false; reason: string };
 
 /**
- * A file on `main` (or `ref`) and its blob sha, so an edit is computed from what is committed now rather than from the
- * deployed copy, and `commitFileAndOpenPull({ baseSha })` can refuse if it changed meanwhile. Files over 1 MB (the
- * review queue) come through the raw media type. With `knownSha` (the sha last read), an unchanged file isn't downloaded.
+ * A file on `main` (or `ref`) and its blob sha (the run summaries `fetchRunCost` reads). Files over 1 MB come through
+ * the raw media type. With `knownSha` (the sha last read), an unchanged file isn't downloaded. The console writes no
+ * files: the review queue's Accept, Reject and Re-run discovery act on the data store (lib/admin/ops-actions.ts).
  */
 export async function readRepoFile(path: string, deps: GithubDeps & { ref?: string; knownSha?: string } = {}): Promise<ReadFileResult> {
   if (!githubConfigured(deps.env ?? process.env)) return { ok: false, reason: "not_configured" };
@@ -674,98 +663,6 @@ export async function readRepoFile(path: string, deps: GithubDeps & { ref?: stri
     return { ok: true, content: raw.data, sha: meta.data.sha };
   } catch (e) {
     logger(deps)(`github-app: readRepoFile ${path}: ${describe(e)}`);
-    return { ok: false, reason: describe(e) };
-  }
-}
-
-export interface CommitAndPullOptions {
-  branch: string;
-  path: string;
-  content: string;
-  message: string;
-  title: string;
-  body: string;
-  /** Its content may hold `PR_NUMBER_PLACEHOLDER`, replaced with the PR's number once the PR exists. */
-  releaseNote: { path: string; content: string };
-  /** The blob sha the edit was computed from (`readRepoFile`): refuse with `file_changed` if `main` has moved on. */
-  baseSha?: string;
-}
-
-export type CommitAndPullResult = { ok: true; number: number; url: string; autoMerge: boolean } | { ok: false; reason: string };
-
-async function putFile(deps: GithubDeps, path: string, body: Record<string, unknown>) {
-  return api(deps, "PUT", `/contents/${path.split("/").map(encodeURIComponent).join("/")}`, { body, timeoutMs: deps.timeoutMs ?? 60_000 });
-}
-
-/**
- * The console's file change, made the way a person would: a new branch from `main`, one commit of `path` through the
- * Contents API, a PR into `main` with the generated body, then the release note (it names the PR's number, so it is a
- * second commit on the same branch, as the pipelines do), and auto-merge on (squash). CI runs as on any PR. A failure
- * before the PR exists deletes the branch; auto-merge that can't be turned on leaves the PR open (`autoMerge: false`).
- */
-export async function commitFileAndOpenPull(opts: CommitAndPullOptions, deps: GithubDeps = {}): Promise<CommitAndPullResult> {
-  if (!githubConfigured(deps.env ?? process.env)) return { ok: false, reason: "not_configured" };
-  if (!opts.branch.startsWith("review/") || !BRANCH.test(opts.branch)) return { ok: false, reason: "bad_branch" };
-  if (!isWritablePath(opts.path)) return { ok: false, reason: "path_not_writable" };
-  if (!RELEASE_NOTE_PATH.test(opts.releaseNote.path)) return { ok: false, reason: "bad_release_note_path" };
-  const log = logger(deps);
-  let branchCreated = false;
-  try {
-    const head = await api<{ object?: { sha?: string } }>(deps, "GET", `/git/ref/heads/${BASE_BRANCH}`);
-    const mainSha = head.data?.object?.sha;
-    if (head.status !== 200 || !mainSha) return { ok: false, reason: `main ${head.status}` };
-
-    const created = await api(deps, "POST", `/git/refs`, { body: { ref: `refs/heads/${opts.branch}`, sha: mainSha } });
-    if (created.status === 422) return { ok: false, reason: "branch_exists" };
-    if (created.status !== 201) return { ok: false, reason: `branch ${created.status}` };
-    branchCreated = true;
-
-    const existing = await api<{ sha?: string }>(deps, "GET", `/contents/${opts.path}?ref=${encodeURIComponent(opts.branch)}`, {
-      accept: "application/vnd.github.object+json",
-    });
-    const fileSha = existing.status === 200 ? existing.data?.sha : undefined;
-    if (existing.status !== 200 && existing.status !== 404) throw new GithubError(`read ${existing.status}`, existing.status);
-    if (opts.baseSha && fileSha !== opts.baseSha) throw new GithubError("file_changed");
-
-    const put = await putFile(deps, opts.path, {
-      message: opts.message,
-      content: Buffer.from(opts.content, "utf8").toString("base64"),
-      branch: opts.branch,
-      ...(fileSha ? { sha: fileSha } : {}),
-    });
-    if (put.status !== 200 && put.status !== 201) throw new GithubError(`commit ${put.status}`, put.status);
-
-    const pr = await api<{ number?: number; html_url?: string; node_id?: string }>(deps, "POST", `/pulls`, {
-      body: { title: opts.title, head: opts.branch, base: BASE_BRANCH, body: opts.body },
-    });
-    if (pr.status !== 201 || !pr.data?.number) throw new GithubError(`pull ${pr.status}`, pr.status);
-    branchCreated = false; // the PR owns the branch now
-    const number = pr.data.number;
-    const url = pr.data.html_url ?? "";
-
-    const note = opts.releaseNote.content.split(PR_NUMBER_PLACEHOLDER).join(String(number));
-    const notePut = await putFile(deps, opts.releaseNote.path, {
-      message: `Release note for #${number}`,
-      content: Buffer.from(note, "utf8").toString("base64"),
-      branch: opts.branch,
-    });
-    if (notePut.status !== 201 && notePut.status !== 200) {
-      log(`github-app: release note for #${number}: ${notePut.status}`);
-      return { ok: false, reason: `release_note ${notePut.status} (PR #${number} is open without its note)` };
-    }
-
-    let autoMerge = false;
-    if (pr.data.node_id) {
-      const g = await graphql(deps, ENABLE_AUTO_MERGE, { id: pr.data.node_id });
-      autoMerge = g.ok;
-      if (!g.ok) log(`github-app: auto-merge for #${number}: ${g.detail}`);
-    }
-    return { ok: true, number, url, autoMerge };
-  } catch (e) {
-    log(`github-app: commitFileAndOpenPull ${opts.branch}: ${describe(e)}`);
-    if (branchCreated) {
-      await api(deps, "DELETE", `/git/refs/heads/${opts.branch}`).catch(() => undefined);
-    }
     return { ok: false, reason: describe(e) };
   }
 }

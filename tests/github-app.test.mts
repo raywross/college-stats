@@ -1,8 +1,10 @@
 /**
  * The admin console's GitHub side (specs/product/admin.md, "Operations: reruns and approvals"): the client
  * (lib/github-app.ts) with a fake `fetch` (no network: the global fetch throws), the dispatchable-runs table
- * (lib/admin/workflows.ts) against the workflow files themselves, and the review-queue edits
- * (lib/admin/review-queue.ts) against the real data files and the repo's own override validation. `npm test`.
+ * (lib/admin/workflows.ts) against the workflow files themselves, and the held review items' Accept mapping
+ * (lib/admin/review-queue.ts `acceptPlan`) against the field registry an admin edit must stay inside. The console's
+ * old write path (a branch, a commit and a PR per review action) is gone: Accept and Reject act on the data store
+ * (tests/admin-ops.test.mts, tests/admin-data.test.mts). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -10,10 +12,8 @@ import { generateKeyPairSync, createVerify } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import * as nodeModule from "node:module";
 import { join } from "node:path";
-import { validateOverrides } from "../lib/lineage.ts";
-import { parseReleaseNote } from "../lib/release-notes.ts";
-import { enqueueItems, type ReviewItem, type ReviewQueueFile } from "../lib/reported.ts";
-import { linesJson as scriptsLinesJson } from "../scripts/lib/college-reported/files.mts";
+import { editProblem } from "../lib/data-platform/edits.ts";
+import { enqueueItems, type ReviewItem } from "../lib/reported.ts";
 import {
   DISPATCHABLE_FILES,
   DISPATCHABLE_RUNS,
@@ -23,23 +23,7 @@ import {
   lastFullRunCost,
   runById,
 } from "../lib/admin/workflows.ts";
-import {
-  acceptChange,
-  acceptEdit,
-  acceptPlan,
-  linesJson,
-  overridesJson,
-  queueRows,
-  readMainQueue,
-  readQueue,
-  rediscoverChange,
-  rediscoverEdit,
-  rejectChange,
-  rejectEdit,
-  releaseNotePath,
-  reviewBranch,
-  rowId,
-} from "../lib/admin/review-queue.ts";
+import { acceptNote, acceptPlan, queueRows, siblingKeys } from "../lib/admin/review-queue.ts";
 
 // lib/github-app.ts starts with `import "server-only"`, which only Next.js resolves; stand in an empty module.
 type ResolveResult = { url: string; shortCircuit?: boolean };
@@ -212,11 +196,7 @@ test("nothing throws into a page: a network failure comes back as a result", asy
   assert.deepEqual(await gh.dispatchWorkflow("verify.yml", {}, REQ, d), { ok: false, reason: "ECONNRESET" });
   assert.deepEqual(await gh.listRuns({ workflows: ["verify.yml"] }, d), []);
   assert.deepEqual(await gh.mergePull(3, d), { ok: false, reason: "error", detail: "ECONNRESET" });
-  const r = await gh.commitFileAndOpenPull(
-    { branch: "review/1-c-116-2026-10-12", path: "data/overrides.json", content: "{}", message: "m", title: "t", body: "b", releaseNote: { path: "release-notes/1-c-116-2026-10-12.md", content: "x" } },
-    d,
-  );
-  assert.equal(r.ok, false);
+  assert.equal((await gh.readRepoFile("data/reports", d)).ok, false);
 });
 
 /* ------------------------------------------------------------------ */
@@ -483,19 +463,6 @@ test("readRepoFile: a small file from its base64 content, a large one through th
   assert.equal(f.calls.at(-1)!.headers.Accept, "application/vnd.github.raw+json");
 });
 
-function commitFixture(opts: { fileSha?: string; branchStatus?: number } = {}) {
-  return fakeGithub((c) => {
-    if (c.method === "GET" && c.url === `${REPO}/git/ref/heads/main`) return { status: 200, body: { object: { sha: "mainsha" } } };
-    if (c.method === "POST" && c.url === `${REPO}/git/refs`) return { status: opts.branchStatus ?? 201, body: {} };
-    if (c.method === "GET" && c.url.startsWith(`${REPO}/contents/data/overrides.json?ref=`)) return { status: 200, body: { sha: opts.fileSha ?? "blob1" } };
-    if (c.method === "PUT" && c.url.startsWith(`${REPO}/contents/`)) return { status: c.url.includes("release-notes") ? 201 : 200, body: {} };
-    if (c.method === "POST" && c.url === `${REPO}/pulls`) return { status: 201, body: { number: 150, html_url: "https://github.com/raywross/college-stats/pull/150", node_id: "PR_150" } };
-    if (c.url === `${API}/graphql`) return { status: 200, body: { data: {} } };
-    if (c.method === "DELETE") return { status: 204 };
-    return undefined;
-  });
-}
-
 /** A per-item C1 trio from one CDS, as the round-3 pipeline queues it. */
 function c1Item(code: string, value: number, over: Partial<ReviewItem> = {}): ReviewItem {
   return {
@@ -514,65 +481,14 @@ function c1Item(code: string, value: number, over: Partial<ReviewItem> = {}): Re
   };
 }
 const TRIO = [c1Item("C.116", 7956), c1Item("C.117", 5006), c1Item("C.118", 1040)];
-const CTX = { admin: "Ray", today: TODAY, placeholder: gh.PR_NUMBER_PLACEHOLDER };
 
-test("commitFileAndOpenPull: branch from main, one commit, the PR, the release note naming its number, auto-merge on", async () => {
-  gh.resetTokenCache();
-  const overrides = read("data/overrides.json");
-  const built = acceptChange(TRIO[0], { content: overrides, sha: "blob1" }, TRIO, CTX);
-  assert.ok(built.ok);
-  if (!built.ok) return;
-  const f = commitFixture();
-  const r = await gh.commitFileAndOpenPull(built.change, deps(f));
-  assert.deepEqual(r, { ok: true, number: 150, url: "https://github.com/raywross/college-stats/pull/150", autoMerge: true });
-  const calls = f.api();
-  assert.deepEqual(
-    calls.map((c) => `${c.method} ${c.url.replace(API, "")}`),
-    [
-      "GET /repos/raywross/college-stats/git/ref/heads/main",
-      "POST /repos/raywross/college-stats/git/refs",
-      "GET /repos/raywross/college-stats/contents/data/overrides.json?ref=review%2F999001-c-116-2026-10-12",
-      "PUT /repos/raywross/college-stats/contents/data/overrides.json",
-      "POST /repos/raywross/college-stats/pulls",
-      "PUT /repos/raywross/college-stats/contents/release-notes/999001-c-116-2026-10-12.md",
-      "POST /graphql",
-    ],
-  );
-  assert.deepEqual(calls[1].body, { ref: "refs/heads/review/999001-c-116-2026-10-12", sha: "mainsha" });
-  const put = calls[3].body as { message: string; content: string; branch: string; sha: string };
-  assert.equal(put.branch, "review/999001-c-116-2026-10-12");
-  assert.equal(put.sha, "blob1");
-  assert.match(put.message, /^Review queue: accept C\.116 for Example College \(999001\)\n\nFrom the admin console, by Ray\./);
-  const committed = Buffer.from(put.content, "base64").toString("utf8");
-  assert.equal(committed, built.change.content);
-  assert.deepEqual(validateOverrides(JSON.parse(committed)), [], "the committed overrides pass the lineage check");
-  assert.deepEqual(calls[4].body, { title: "Review queue: accept C.116 for Example College", head: "review/999001-c-116-2026-10-12", base: "main", body: built.change.body });
-  const note = Buffer.from((calls[5].body as { content: string }).content, "base64").toString("utf8");
-  const parsed = parseReleaseNote("release-notes/999001-c-116-2026-10-12.md", note);
-  assert.equal(parsed.pr, 150);
-  assert.equal(parsed.kind, "data");
-  assert.equal(parsed.date, TODAY);
-  assert.match((calls[6].body as { query: string }).query, /enablePullRequestAutoMerge[\s\S]*SQUASH/);
-});
-
-test("commitFileAndOpenPull refuses other paths and branches, an existing branch, and a file that changed on main", async () => {
-  gh.resetTokenCache();
-  const base = { branch: "review/999001-c-116-2026-10-12", path: "data/overrides.json", content: "{}\n", message: "m", title: "t", body: "b", releaseNote: { path: "release-notes/999001-c-116-2026-10-12.md", content: "n" } };
-  const none = commitFixture();
-  assert.deepEqual(await gh.commitFileAndOpenPull({ ...base, path: ".github/workflows/verify.yml" }, deps(none)), { ok: false, reason: "path_not_writable" });
-  assert.deepEqual(await gh.commitFileAndOpenPull({ ...base, path: "data/schools.json" }, deps(none)), { ok: false, reason: "path_not_writable" });
-  assert.deepEqual(await gh.commitFileAndOpenPull({ ...base, branch: "main" }, deps(none)), { ok: false, reason: "bad_branch" });
-  assert.deepEqual(await gh.commitFileAndOpenPull({ ...base, releaseNote: { path: "release-notes/Bad.Name.md", content: "n" } }, deps(none)), { ok: false, reason: "bad_release_note_path" });
-  assert.equal(none.calls.length, 0);
-
-  const exists = commitFixture({ branchStatus: 422 });
-  assert.deepEqual(await gh.commitFileAndOpenPull(base, deps(exists)), { ok: false, reason: "branch_exists" });
-
-  const moved = commitFixture({ fileSha: "blob2" });
-  assert.deepEqual(await gh.commitFileAndOpenPull({ ...base, baseSha: "blob1" }, deps(moved)), { ok: false, reason: "file_changed" });
-  const del = moved.api().find((c) => c.method === "DELETE");
-  assert.equal(del?.url, `${REPO}/git/refs/heads/review/999001-c-116-2026-10-12`, "the new branch is deleted");
-  assert.equal(moved.api().filter((c) => c.method === "PUT").length, 0, "nothing committed");
+test("the console's write path is gone: no commit, branch, or PR helpers, and no writable paths", async () => {
+  for (const name of ["commitFileAndOpenPull", "WRITABLE_PATHS", "isWritablePath", "PR_NUMBER_PLACEHOLDER"]) assert.ok(!(name in gh), `lib/github-app.ts no longer exports ${name}`);
+  const src = read("lib/github-app.ts").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  const writes = /"PUT", `\/contents|"POST", `\/git\/refs`|enablePullRequestAutoMerge|"POST", `\/pulls`/;
+  assert.doesNotMatch(src, writes, "nothing creates a branch, writes a file, opens a PR, or turns on auto-merge (merging an open PR stays)");
+  // The guard fails when the rule is broken: the old commit call would match.
+  assert.match('const put = await api(deps, "PUT", `/contents/${path}`)', writes);
 });
 
 /* ------------------------------------------------------------------ */
@@ -611,7 +527,8 @@ test("every dispatchable workflow declares request_id (optional, default '') and
   assert.deepEqual(workflowProblems(yml.replace(/^run-name: .*\n/m, ""), []), ["run-name doesn't carry inputs.request_id"]);
   assert.deepEqual(workflowProblems(yml, ["max_cost"]), ['no input "max_cost"']);
   // Only the table's workflows are dispatchable; the pilots aren't.
-  assert.deepEqual([...DISPATCHABLE_FILES].sort(), ["college-reported.yml", "identity-refresh.yml", "publish-changes.yml", "publish-snapshot.yml", "verify.yml", "visit-events.yml"]);
+  // publish-changes.yml is retired (its jobs are publisher steps): it is no longer dispatchable.
+  assert.deepEqual([...DISPATCHABLE_FILES].sort(), ["college-reported.yml", "identity-refresh.yml", "publish-snapshot.yml", "verify.yml", "visit-events.yml"]);
 });
 
 test("run-name: the console's title is '<workflow> · <request id>', which requestIdFromTitle reads back", () => {
@@ -639,9 +556,9 @@ test("buildDispatch: types, defaults, the unit id, the 'all' confirmation, and R
   assert.equal(buildDispatch("all", { max_cost: "lots" }, { confirm: "all" }).ok, false);
   assert.ok(runById("all")!.guards.showCost);
 
-  const publish = buildDispatch("publish", { what: "high-schools" });
-  assert.ok(publish.ok && publish.inputs.what === "high-schools");
-  assert.equal(buildDispatch("publish", { what: "everything" }).ok, false);
+  assert.equal(buildDispatch("publish", { what: "high-schools" }).ok, false, "publish-changes.yml's row is retired");
+  const publish = buildDispatch("publish-snapshot", {});
+  assert.ok(publish.ok && publish.file === "publish-snapshot.yml" && publish.inputs.force === "true");
 
   assert.equal(buildDispatch("verify", {}).ok, false, "Re-run CI needs the PR's branch");
   assert.equal(buildDispatch("verify", {}, { branch: "main" }).ok, false);
@@ -658,7 +575,8 @@ test("blockingRun: a queued or running run of the same workflow blocks a one-at-
   assert.equal(blockingRun(runById("college")!, runs), null);
   assert.deepEqual(blockingRun(runById("identity")!, runs), runs[0]);
   assert.deepEqual(blockingRun(runById("pilot")!, [{ workflow: "college-reported.yml", status: "queued" }]), { workflow: "college-reported.yml", status: "queued" });
-  assert.equal(blockingRun(runById("publish")!, [{ workflow: "publish-changes.yml", status: "in_progress" }]), null, "no guard on publish");
+  assert.equal(blockingRun(runById("verify")!, [{ workflow: "verify.yml", status: "in_progress" }]), null, "no guard on Re-run CI");
+  assert.equal(runById("publish"), null, "publish-changes.yml's row is retired");
 });
 
 test("fetchRunCost: data/reports/ on main, newest summary first until a full run, then cached by sha", async () => {
@@ -700,48 +618,6 @@ test("lastFullRunCost: a newer full run wins; pilot-sized runs never count as fu
   assert.deepEqual(lastFullRunCost([]), { last: null, projection: null });
 });
 
-test("readQueue: rows from main's queue and overrides, downloaded again only when a blob sha changes", async () => {
-  const queueText = linesJson("2026-10-11", "items", [...TRIO, { ...c1Item("C.901", 0.3), resolved: "rejected" as const, resolved_on: TODAY }]);
-  const accepted = acceptEdit(TRIO[0], read("data/overrides.json"), { queue: TRIO, today: TODAY });
-  assert.ok(accepted.ok);
-  const files: Record<string, { content: string; sha: string }> = {
-    "data/review-queue.json": { content: queueText, sha: "q1" },
-    "data/overrides.json": { content: accepted.ok ? accepted.content : "", sha: "o1" },
-  };
-  const reads: string[] = [];
-  const reader = async (path: string, knownSha?: string) => {
-    const same = knownSha === files[path].sha;
-    reads.push(`${path}${same ? " (unchanged)" : ""}`);
-    return same ? { ok: true as const, content: "", sha: files[path].sha, unchanged: true } : { ok: true as const, ...files[path] };
-  };
-  const first = await readQueue(reader);
-  assert.ok(first.ok);
-  if (first.ok) assert.deepEqual(first.rows.map((r) => r.status), ["accepted", "accepted", "accepted", "rejected"]);
-  const second = await readQueue(reader);
-  assert.ok(second.ok && first.ok && second.rows === first.rows, "served from the cache");
-  assert.deepEqual(reads.slice(2), ["data/review-queue.json (unchanged)", "data/overrides.json (unchanged)"]);
-  files["data/overrides.json"] = { content: read("data/overrides.json"), sha: "o2" };
-  const third = await readQueue(reader);
-  assert.ok(third.ok);
-  if (third.ok) assert.deepEqual(third.rows.map((r) => r.status), ["open", "open", "open", "rejected"]);
-  assert.deepEqual(await readQueue(async () => ({ ok: false as const, reason: "read 404" })), { ok: false, reason: "read 404" });
-});
-
-test("readMainQueue: null without GitHub credentials; otherwise main's files through the Contents API", async () => {
-  assert.equal(await readMainQueue({ env: {}, fetch: fakeGithub(() => undefined).fetch }), null);
-  gh.resetTokenCache();
-  const queueText = linesJson("2026-10-11", "items", TRIO);
-  const f = fakeGithub((c) => {
-    const body = (text: string, sha: string) => ({ status: 200, body: { sha, encoding: "base64", content: Buffer.from(text).toString("base64") } });
-    if (c.url === `${REPO}/contents/data/review-queue.json?ref=main`) return body(queueText, "mq1");
-    if (c.url === `${REPO}/contents/data/overrides.json?ref=main`) return body(read("data/overrides.json"), "mo1");
-    return undefined;
-  });
-  const r = await readMainQueue(deps(f, PAT_ENV));
-  assert.ok(r && r.ok);
-  if (r && r.ok) assert.deepEqual(r.rows.map((x) => x.item.code), ["C.116", "C.117", "C.118"]);
-});
-
 test("readRepoFile with knownSha: an unchanged file isn't downloaded", async () => {
   gh.resetTokenCache();
   const f = fakeGithub((c) => (c.headers.Accept === "application/vnd.github.object+json" ? { status: 200, body: { sha: "def", encoding: "none", content: "" } } : { status: 200, text: "big" }));
@@ -750,99 +626,48 @@ test("readRepoFile with knownSha: an unchanged file isn't downloaded", async () 
   assert.deepEqual(await gh.readRepoFile("data/review-queue.json", { ...deps(f, PAT_ENV), knownSha: "old" }), { ok: true, content: "big", sha: "def" });
 });
 
+
 /* ------------------------------------------------------------------ */
-/* Review queue edits                                                  */
+/* Held review items: the Accept mapping                               */
 /* ------------------------------------------------------------------ */
 
-test("linesJson matches the pipeline's writer, and the queue and sources files round-trip byte for byte", () => {
-  const items = [{ unit_id: "1", a: [1, 2] }, { unit_id: "2" }];
-  assert.equal(linesJson("2026-10-12", "items", items), scriptsLinesJson("2026-10-12", "items", items));
-  assert.equal(linesJson(null, "items", []), scriptsLinesJson(null, "items", []));
-  const queue = read("data/review-queue.json");
-  const q = JSON.parse(queue) as ReviewQueueFile;
-  assert.equal(linesJson(q.updated, "items", q.items), queue);
-  const sources = read("data/college-sources.json");
-  const s = JSON.parse(sources) as { updated: string; recipes: unknown[] };
-  assert.equal(linesJson(s.updated, "recipes", s.recipes), sources);
-  const overrides = read("data/overrides.json");
-  assert.equal(overridesJson(JSON.parse(overrides)), overrides);
+test("Accept: a C1 trio becomes five field edits from one document, every path one an admin edit may set", () => {
+  const plan = acceptPlan(TRIO[2], TRIO);
+  assert.ok(plan.ok, plan.ok ? "" : plan.message);
+  if (!plan.ok) return;
+  assert.deepEqual(plan.values, {
+    "admissions.year": 2025,
+    "admissions.applicants": 7956,
+    "admissions.admitted": 5006,
+    "admissions.enrolled": 1040,
+    "admissions.acceptance_rate": 0.6292,
+  });
+  assert.deepEqual(plan.items.map((i) => i.code), ["C.116", "C.117", "C.118"]);
+  assert.equal(plan.url, "https://www.example.edu/ir/cds-2025-2026.pdf");
+  for (const path of Object.keys(plan.values)) assert.equal(editProblem({ unit_id: "999001", path }), null, `${path} is editable`);
+  // The guard: a path the registry computes or hides is refused (the function checks only the shape).
+  assert.match(editProblem({ unit_id: "999001", path: "admissions.nope" }) ?? "", /not a registered field/);
+  // The siblings are found by key, as the store holds them.
+  assert.deepEqual(siblingKeys("999001|2025-26|C.117"), ["999001|2025-26|C.116", "999001|2025-26|C.117", "999001|2025-26|C.118"]);
+  assert.deepEqual(siblingKeys("999001|2025-26|C.901"), ["999001|2025-26|C.901"]);
+  assert.equal(acceptNote(plan.url), "Accepted from the review queue: https://www.example.edu/ir/cds-2025-2026.pdf");
+  assert.equal(acceptNote(`https://x.test/${"a".repeat(600)}`).length, 500, "within the function's 500 characters");
+  // The queue shows the rows as open, with what Accept would write.
+  const rows = queueRows(TRIO);
+  assert.deepEqual(rows.map((r) => r.status), ["open", "open", "open"]);
+  assert.deepEqual(rows[0].accept, { ok: true, fields: Object.keys(plan.values) });
+  assert.equal(rows[0].id, "999001|2025-26|C.116", "a row's id is its document's key");
 });
 
-test("review branch, release-note path, and release note: review/<unit>-<code>-<date>, a valid note of kind data", () => {
-  assert.equal(reviewBranch(TRIO[0], TODAY), "review/999001-c-116-2026-10-12");
-  assert.equal(reviewBranch({ unit_id: "100706", code: "H.2A01" }, TODAY), "review/100706-h-2a01-2026-10-12");
-  assert.equal(reviewBranch({ unit_id: "117946" }, TODAY), "review/117946-c1-2026-10-12");
-  assert.equal(releaseNotePath("review/999001-c-116-2026-10-12"), "release-notes/999001-c-116-2026-10-12.md");
-  const queue = linesJson("2026-10-11", "items", TRIO);
-  for (const built of [
-    acceptChange(TRIO[1], { content: read("data/overrides.json"), sha: "s" }, TRIO, CTX),
-    rejectChange(TRIO[1], { content: queue, sha: "s" }, CTX),
-  ]) {
-    assert.ok(built.ok);
-    if (!built.ok) continue;
-    const note = built.change.releaseNote;
-    assert.equal(note.path, "release-notes/999001-c-117-2026-10-12.md");
-    assert.equal(built.change.branch, "review/999001-c-117-2026-10-12");
-    assert.ok(note.content.includes(`pr: ${gh.PR_NUMBER_PLACEHOLDER}`));
-    const parsed = parseReleaseNote(note.path, note.content.replace(gh.PR_NUMBER_PLACEHOLDER, "151"));
-    assert.equal(parsed.kind, "data");
-    assert.equal(parsed.slug, "999001-c-117-2026-10-12");
-    assert.match(built.change.body, /by Ray/);
-    assert.match(built.change.body, /residency-sum/);
-    assert.match(built.change.body, /https:\/\/www\.example\.edu\/ir\/cds-2025-2026\.pdf/);
-  }
+test("Accept: the submission shares are one edit each, as fractions", () => {
+  const sat = acceptPlan(c1Item("C.901", 0.34567), []);
+  assert.ok(sat.ok && sat.values["admissions.test_submission_rate_sat"] === 0.3457);
+  const act = acceptPlan(c1Item("C.902", 0.12), []);
+  assert.ok(act.ok && Object.keys(act.values).join() === "admissions.test_submission_rate_act");
 });
 
-test("Accept: a C1 trio becomes one override with source cds and the document's citation that passes validateOverrides", () => {
-  const text = read("data/overrides.json");
-  const r = acceptEdit(TRIO[2], text, { queue: TRIO, today: TODAY });
-  assert.ok(r.ok, r.ok ? "" : r.message);
-  if (!r.ok) return;
-  const after = JSON.parse(r.content) as Record<string, Record<string, unknown>>;
-  const before = JSON.parse(text) as Record<string, unknown>;
-  // Every other patch is untouched.
-  for (const k of Object.keys(before)) assert.deepEqual(after[k], before[k], k);
-  const patch = after["999001"];
-  assert.deepEqual(patch.cds, { edition: "2025-26", url: "https://www.example.edu/ir/cds-2025-2026.pdf" });
-  assert.equal(patch._imported, TODAY);
-  assert.deepEqual(patch.admissions, { year: 2025, applicants: 7956, admitted: 5006, enrolled: 1040, acceptance_rate: 0.6292 });
-  const lineage = patch.lineage as Record<string, { source: string; year: string; url: string; retrieved: string }>;
-  assert.deepEqual(Object.keys(lineage).sort(), ["admissions.acceptance_rate", "admissions.admitted", "admissions.applicants", "admissions.enrolled", "admissions.year"]);
-  assert.deepEqual(lineage["admissions.applicants"], { source: "cds", year: "2025-26", url: "https://www.example.edu/ir/cds-2025-2026.pdf", retrieved: "2026-10-11" });
-  assert.deepEqual(r.items.map((i) => i.code), ["C.116", "C.117", "C.118"]);
-  // The repo's own override validation (npm run check:lineage) accepts the whole file.
-  assert.deepEqual(validateOverrides(after), []);
-  // …and the guard catches a broken patch: no citation, or a field an override may not set.
-  assert.equal(validateOverrides({ ...after, "999001": { ...patch, cds: undefined, _lineage: undefined } }).length, 1);
-  assert.equal(validateOverrides({ ...after, "999001": { ...patch, outcomes: { retention_rate: 0.9 } } }).length, 1);
-  // acceptEdit runs that check itself: a result the lineage check would refuse is never offered as a PR.
-  const uncited = acceptEdit(TRIO[0], JSON.stringify({ "999001": { admissions: { year: 2024 } } }), { queue: TRIO, today: TODAY });
-  assert.deepEqual(uncited.ok ? null : uncited.reason, "invalid_override");
-  // The queue shows the accepted rows, and accepting again is refused.
-  const rows = queueRows({ updated: "", items: TRIO }, after);
-  assert.deepEqual(rows.map((x) => x.status), ["accepted", "accepted", "accepted"]);
-  assert.equal(acceptEdit(TRIO[0], r.content, { queue: TRIO, today: TODAY }).ok, false);
-});
-
-test("Accept into a college that already has an override: the new values cite the new document, the old ones keep theirs", () => {
-  const text = read("data/overrides.json");
-  const unit = "110635"; // Berkeley: CDS 2024-25 in overrides.json
-  const sat = c1Item("C.901", 0.34, { unit_id: unit, name: "University of California-Berkeley", urls: ["https://example.berkeley.edu/cds-2025-26.xlsx"] });
-  const r = acceptEdit(sat, text, { queue: [sat], today: TODAY });
-  assert.ok(r.ok, r.ok ? "" : r.message);
-  if (!r.ok) return;
-  const after = JSON.parse(r.content) as Record<string, Record<string, Record<string, unknown>>>;
-  const before = JSON.parse(text) as Record<string, Record<string, Record<string, unknown>>>;
-  assert.equal(after[unit].admissions.test_submission_rate_sat, 0.34);
-  assert.deepEqual(after[unit].cds, before[unit].cds, "the patch's own citation stays");
-  assert.equal((after[unit].lineage["admissions.test_submission_rate_sat"] as unknown as { url: string }).url, "https://example.berkeley.edu/cds-2025-26.xlsx");
-  assert.deepEqual(after[unit].lineage["aid.cds"], before[unit].lineage["aid.cds"]);
-  assert.deepEqual(validateOverrides(after), []);
-});
-
-test("Accept is refused for items an override can't express, an incomplete C1 set, implausible counts, and non-CDS documents", () => {
+test("Accept is refused for items no editable field reaches, an incomplete C1 set, implausible counts, non-CDS documents, and resolved items", () => {
   const b = c1Item("B.430", 12);
-  assert.deepEqual(acceptPlan(b, [b]).ok, false);
   assert.equal((acceptPlan(b, [b]) as { reason: string }).reason, "no_override_path");
   assert.equal((acceptPlan(TRIO[0], TRIO.slice(0, 2)) as { reason: string }).reason, "c1_incomplete");
   const otherDoc = [TRIO[0], TRIO[1], c1Item("C.118", 1040, { sha256: "b".repeat(64) })];
@@ -851,62 +676,35 @@ test("Accept is refused for items an override can't express, an incomplete C1 se
   assert.equal((acceptPlan(funnel[0], funnel) as { reason: string }).reason, "implausible");
   assert.equal((acceptPlan(c1Item("C.901", 34), []) as { reason: string }).reason, "implausible", "shares are fractions");
   assert.equal((acceptPlan({ ...TRIO[0], resolved: "rejected" }, TRIO) as { reason: string }).reason, "not_open");
+  assert.equal((acceptPlan({ ...TRIO[0], resolved: "accepted" }, TRIO) as { reason: string }).reason, "not_open");
+  const accepted = TRIO.map((i) => ({ ...i, resolved: "accepted" as const }));
+  assert.equal((acceptPlan(TRIO[0], [TRIO[0], ...accepted.slice(1)]) as { reason: string }).reason, "c1_incomplete", "accepted siblings aren't accepted twice");
   // Round-1/2 entries: a C1 extraction from a CDS is accepted; a class profile isn't a CDS.
   const extraction = { cohort: "first-year" as const, scope: "all-rounds" as const, entering_term: "Fall 2025", applicants: 22798, admitted: 10992, enrolled: 1536, acceptance_rate: null, quotes: {} };
   const legacy: ReviewItem = { unit_id: "117946", name: "Loyola Marymount University", urls: ["https://academics.lmu.edu/media/CDS%202025-26_20260518.pdf"], entering_term: "Fall 2025", extraction, failures: [{ check: "sources-agree", detail: "x" }], queued: "2026-10-04", run: "r" };
   const plan = acceptPlan(legacy, [legacy]);
   assert.ok(plan.ok && plan.edition === "2025-26" && plan.values["admissions.acceptance_rate"] === 0.4821);
   assert.equal((acceptPlan({ ...legacy, urls: ["https://www.usfca.edu/law/admissions/jd/class-profile"] }, []) as { reason: string }).reason, "not_cds");
-  const legacyEdit = acceptEdit(legacy, read("data/overrides.json"), { queue: [legacy], today: TODAY });
-  assert.ok(legacyEdit.ok);
-  if (legacyEdit.ok) assert.deepEqual(validateOverrides(JSON.parse(legacyEdit.content)), []);
 });
 
-test("Reject: the real queue file with one line changed, resolved: rejected", () => {
-  const text = read("data/review-queue.json");
-  const queue = JSON.parse(text) as ReviewQueueFile;
-  const target = queue.items.find((i) => i.code === "C.119")!;
-  const r = rejectEdit(target, text, { today: TODAY });
-  assert.ok(r.ok);
-  if (!r.ok) return;
-  const before = text.split("\n");
-  const after = r.content.split("\n");
-  assert.equal(after.length, before.length);
-  const changed = after.map((l, i) => (l === before[i] ? -1 : i)).filter((i) => i >= 0);
-  assert.equal(changed.length, 1, "exactly one line changes");
-  const item = JSON.parse(after[changed[0]].trim().replace(/,$/, "")) as ReviewItem;
-  assert.equal(item.resolved, "rejected");
-  assert.equal(item.resolved_on, TODAY);
-  assert.equal(rowId(item), rowId(target));
-  // Rejecting it again, or an item that isn't there, is refused.
-  assert.equal(rejectEdit(target, r.content, { today: TODAY }).ok, false);
-  assert.equal(rejectEdit(c1Item("C.116", 1), text, { today: TODAY }).ok, false);
-});
-
-test("a rejected item stays rejected when the next run reads the same document, and a newer document replaces it", () => {
-  const rejected: ReviewItem = { ...TRIO[0], resolved: "rejected", resolved_on: TODAY };
-  const sameDoc = { ...TRIO[0], run: "next-run", queued: "2026-10-20" };
-  assert.deepEqual(enqueueItems([rejected], [sameDoc]), [rejected]);
-  const newDoc = { ...sameDoc, sha256: "c".repeat(64) };
-  assert.deepEqual(enqueueItems([rejected], [newDoc]), [newDoc]);
+test("a resolved item (rejected or accepted) stays resolved when the next run reads the same document, and a newer document replaces it", () => {
+  for (const resolved of ["rejected", "accepted"] as const) {
+    const done: ReviewItem = { ...TRIO[0], resolved, resolved_on: TODAY };
+    const sameDoc = { ...TRIO[0], run: "next-run", queued: "2026-10-20" };
+    assert.deepEqual(enqueueItems([done], [sameDoc]), [done], resolved);
+    const newDoc = { ...sameDoc, sha256: "c".repeat(64) };
+    assert.deepEqual(enqueueItems([done], [newDoc]), [newDoc], resolved);
+  }
   // The guard: an open item is replaced by the same document's re-read, as before.
+  const sameDoc = { ...TRIO[0], run: "next-run", queued: "2026-10-20" };
   assert.deepEqual(enqueueItems([TRIO[0]], [sameDoc]), [sameDoc]);
 });
 
-test("Re-run discovery: the college run with rediscover, and the recipe cleared from data/college-sources.json", () => {
-  const text = read("data/college-sources.json");
-  const unit = (JSON.parse(text) as { recipes: { unit_id: string }[] }).recipes[3].unit_id;
-  const r = rediscoverEdit(unit, text);
-  assert.ok(r.dispatch.ok);
-  if (r.dispatch.ok) {
-    assert.equal(r.dispatch.file, "college-reported.yml");
-    assert.deepEqual(r.dispatch.inputs, { college: unit, rediscover: "true", auto_merge: "true", mode: "college" });
+test("Re-run discovery: the college run with rediscover", () => {
+  const r = buildDispatch("college", { college: "166027", rediscover: true, auto_merge: true });
+  assert.ok(r.ok);
+  if (r.ok) {
+    assert.equal(r.file, "college-reported.yml");
+    assert.deepEqual(r.inputs, { college: "166027", rediscover: "true", auto_merge: "true", mode: "college" });
   }
-  assert.ok(r.content);
-  assert.equal(r.content!.split("\n").length, text.split("\n").length - 1, "one recipe line fewer");
-  assert.ok(!r.content!.includes(`{"unit_id":"${unit}"`));
-  assert.equal(rediscoverEdit("000000", text).content, null, "no recipe, no file change");
-  const built = rediscoverChange({ ...TRIO[0], unit_id: unit }, { content: text, sha: "s" }, CTX);
-  assert.equal(built.change?.path, "data/college-sources.json");
-  assert.equal(built.change?.branch, `review/${unit}-c-116-2026-10-12`);
 });

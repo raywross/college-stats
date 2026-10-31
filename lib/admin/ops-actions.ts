@@ -8,15 +8,19 @@
  * - **Log before sending.** `deps.note` (the `admin_note_ops` function: one `admin_log` row) is awaited before the
  *   first call that changes anything on GitHub, and a failed note stops the action: nothing is sent that the log does
  *   not show. A send that then fails is logged too (`ops.failed` / `review.failed`).
- * - **Public text carries a display name, never an email.** The repository is public; hold and close comments, commit
- *   messages, and PR bodies name the admin by `deps.adminName()` (which falls back to "an admin"), and `publicName`
- *   refuses anything that looks like an address.
- * - **The form is not trusted.** A dispatch is rebuilt from the console's own table (`buildDispatch`); a review item
- *   is found on `main` by its id, and the file edits come from the committed files, not from the form.
+ * - **Public text carries a display name, never an email.** The repository is public; hold and close comments name
+ *   the admin by `deps.adminName()` (which falls back to "an admin"), and `publicName` refuses anything that looks
+ *   like an address.
+ * - **The form is not trusted.** A dispatch is rebuilt from the console's own table (`buildDispatch`); a held review
+ *   item is read from the store by its key, and the values an Accept writes come from that document, not the form.
+ *
+ * The held review items (specs/data-platform/change-sets.md "Holds and review") no longer open pull requests: Accept
+ * the value writes field edits through `admin_data_edit`, Reject resolves the item through `admin_data_resolve_review`
+ * (both log `data.*` in the same transaction as the change), and Re-run discovery dispatches as before.
  */
-import { PR_NUMBER_PLACEHOLDER } from "../github-app.ts";
-import type { CommitAndPullOptions, CommitAndPullResult, DispatchResult, MergeResult, PullActionResult, ReadFileResult, WorkflowRun } from "../github-app.ts";
-import { OVERRIDES_PATH, QUEUE_PATH, acceptChange, rejectChange, type ChangeResult, type QueueRow, type readQueue } from "./review-queue.ts";
+import type { DispatchResult, MergeResult, PullActionResult, WorkflowRun } from "../github-app.ts";
+import { reviewKey, type ReviewItem } from "../reported.ts";
+import { acceptNote, acceptPlan, siblingKeys } from "./review-queue.ts";
 import { blockingRun, buildDispatch, runById, type DispatchableRun } from "./workflows.ts";
 
 export type OpsState = { status: "idle" } | { status: "done"; message: string; link?: { href: string; label: string } } | { status: "error"; message: string };
@@ -30,10 +34,6 @@ export interface OpsGithub {
   mergePull(n: number): Promise<MergeResult>;
   holdPull(n: number, admin: string): Promise<PullActionResult>;
   closePull(n: number, admin: string): Promise<PullActionResult>;
-  readRepoFile(path: string): Promise<ReadFileResult>;
-  commitFileAndOpenPull(opts: CommitAndPullOptions): Promise<CommitAndPullResult>;
-  /** The review queue on `main`; null when GitHub isn't configured. */
-  readQueue(): Promise<Awaited<ReturnType<typeof readQueue>> | null>;
 }
 
 export interface OpsDeps {
@@ -195,78 +195,98 @@ export async function closeDataPull(deps: OpsDeps, n: number): Promise<OpsState>
 }
 
 /* ------------------------------------------------------------------ */
-/* The review queue                                                    */
+/* Held review items: Accept the value, Reject, Re-run discovery       */
 /* ------------------------------------------------------------------ */
 
-async function openRow(deps: OpsDeps, id: string): Promise<{ ok: true; row: QueueRow; items: QueueRow["item"][] } | { ok: false; state: OpsState }> {
-  const queue = await deps.gh.readQueue();
-  if (!queue) return { ok: false, state: NOT_CONFIGURED };
-  if (!queue.ok) return { ok: false, state: err(`Couldn't read the review queue from GitHub: ${queue.reason}.`) };
-  const row = queue.rows.find((r) => r.id === id);
-  if (!row) return { ok: false, state: err("That item is no longer in the review queue on main. Reload the page.") };
-  if (row.status !== "open") return { ok: false, state: err(`That item was already ${row.status}.`) };
-  return { ok: true, row, items: queue.items };
-}
-
-function itemDetails(row: QueueRow, change: Extract<ChangeResult, { ok: true }>) {
-  return {
-    unit: row.item.unit_id,
-    code: row.item.code ?? null,
-    edition: row.item.edition ?? row.item.entering_term ?? null,
-    branch: change.change.branch,
-    items: change.items.map((i) => i.code ?? "C1"),
-  };
-}
-
-async function openReviewPull(deps: OpsDeps, action: "accept" | "reject", id: string): Promise<OpsState> {
-  if (!deps.gh.configured()) return NOT_CONFIGURED;
-  const found = await openRow(deps, id);
-  if (!found.ok) return found.state;
-  const path = action === "accept" ? OVERRIDES_PATH : QUEUE_PATH;
-  const file = await deps.gh.readRepoFile(path);
-  if (!file.ok) return err(`Couldn't read ${path} from GitHub: ${file.reason}.`);
-
-  const ctx = { admin: await deps.adminName(), today: deps.now().toISOString().slice(0, 10), placeholder: PR_NUMBER_PLACEHOLDER };
-  const change =
-    action === "accept"
-      ? acceptChange(found.row.item, { content: file.content, sha: file.sha }, found.items, ctx)
-      : rejectChange(found.row.item, { content: file.content, sha: file.sha }, ctx);
-  if (!change.ok) return err(change.message);
-
-  const requestId = deps.requestId();
-  const blocked = await logBefore(deps, `review.${action}`, itemDetails(found.row, change), requestId);
-  if (blocked) return blocked;
-
-  const opened = await deps.gh.commitFileAndOpenPull(change.change);
-  if (!opened.ok) {
-    await logFailure(deps, "review", `review.${action}`, opened.reason, requestId);
-    return err(opened.reason === "branch_exists" ? "A change to this item was already started today; look for its pull request." : `Couldn't open the pull request: ${opened.reason}.`);
-  }
-  const verb = action === "accept" ? "Accepted" : "Rejected";
-  return {
-    status: "done",
-    message: `${verb}: pull request #${opened.number} opened${opened.autoMerge ? " with auto-merge on" : ""}. It merges when its checks pass.`,
-    link: { href: opened.url, label: `Pull request #${opened.number}` },
-  };
-}
-
-/** Accept the value: a PR that writes the override (`acceptChange`). Refusals come back as the plan's own message. */
-export const acceptReviewItem = (deps: OpsDeps, id: string) => openReviewPull(deps, "accept", id);
-
-/** Reject: a PR that marks the item rejected so the next run doesn't queue it again. */
-export const rejectReviewItem = (deps: OpsDeps, id: string) => openReviewPull(deps, "reject", id);
+export type RpcResult = { ok: true } | { ok: false; message: string };
 
 /**
- * Re-run discovery: just dispatches a `college` run with `rediscover: true` (the workflow climbs the discovery ladder
- * from the start and its own PR carries the new recipe); no second PR is opened. Logged as `review.rediscover`.
+ * What the held items' three actions need besides GitHub: the review items in the store (with the admin's session),
+ * and the two `admin_data_*` functions. The real ones are in app/admin/data/actions.ts; `message` is already in plain
+ * words (lib/admin/data-actions.ts `dataErrorMessage`).
  */
-export async function rediscoverReviewItem(deps: OpsDeps, id: string): Promise<OpsState> {
-  if (!deps.gh.configured()) return NOT_CONFIGURED;
-  const found = await openRow(deps, id);
+export interface ReviewDeps {
+  ops: OpsDeps;
+  /** `reported.review_queue` documents by key; a key that isn't there is left out. */
+  readItems(keys: string[]): Promise<Map<string, ReviewItem>>;
+  /** `admin_data_edit(unit, path, value, note)`: one field edit, logged `data.edit`. */
+  edit(unit: string, path: string, value: unknown, note: string): Promise<RpcResult>;
+  /** `admin_data_resolve_review(key, resolution, note)`, logged `data.review`. */
+  resolve(key: string, resolution: "accepted" | "rejected", note: string | null): Promise<RpcResult>;
+}
+
+/** A review item's key from a form (`unit|edition|code`), or null when it isn't one. */
+export function reviewKeyFromForm(form: FormLike): string | null {
+  const key = text(form, "item");
+  return /^\d{1,12}\|[^|]{0,40}\|[^|]{0,20}$/.test(key) ? key : null;
+}
+
+/** An optional note from a form: one trimmed string up to 500 characters, or null. */
+export function noteFromForm(form: FormLike): string | null {
+  const note = text(form, "note").replace(/\s+/g, " ").trim();
+  return note ? note.slice(0, 500) : null;
+}
+
+async function openItem(deps: ReviewDeps, key: string, keys: string[] = [key]): Promise<{ ok: true; item: ReviewItem; items: Map<string, ReviewItem> } | { ok: false; state: OpsState }> {
+  let items: Map<string, ReviewItem>;
+  try {
+    items = await deps.readItems(keys);
+  } catch (e) {
+    return { ok: false, state: err(`Couldn't read the held item: ${e instanceof Error ? e.message : String(e)}.`) };
+  }
+  const item = items.get(key);
+  if (!item) return { ok: false, state: err("That item is no longer held. Reload the page.") };
+  if (item.resolved) return { ok: false, state: err(`That item was already ${item.resolved}.`) };
+  return { ok: true, item, items };
+}
+
+/**
+ * Accept the value: today's mapping (`acceptPlan`) as field edits, one `admin_data_edit` per field with the note
+ * "Accepted from the review queue: {document}", then each settled item resolved `accepted`. Nothing is written when
+ * the plan refuses. The edits go first so an item is never marked accepted without its value; an edit that fails stops
+ * the rest and says how far it got (the edits already made stand, each its own change set, and Accept can be pressed
+ * again once the cause is fixed: the item is still open).
+ */
+export async function acceptReviewItem(deps: ReviewDeps, key: string): Promise<OpsState> {
+  const found = await openItem(deps, key, siblingKeys(key));
+  if (!found.ok) return found.state;
+  const plan = acceptPlan(found.item, [...found.items.values()]);
+  if (!plan.ok) return err(plan.message);
+
+  const note = acceptNote(plan.url);
+  const fields = Object.entries(plan.values);
+  for (const [i, [path, value]] of fields.entries()) {
+    const r = await deps.edit(found.item.unit_id, path, value, note);
+    if (!r.ok) return err(i === 0 ? `Nothing was accepted: ${r.message}` : `Stopped after ${i} of ${fields.length} edits (${path} failed): ${r.message}`);
+  }
+  for (const settled of plan.items) {
+    const r = await deps.resolve(reviewKey(settled), "accepted", null);
+    if (!r.ok) return err(`The values were saved as edits, but ${settled.code ?? "the item"} couldn't be marked accepted: ${r.message}`);
+  }
+  const n = fields.length;
+  return { status: "done", message: `Accepted: ${n} value${n === 1 ? "" : "s"} for ${found.item.name} saved as edits. The next snapshot publishes them.` };
+}
+
+/** Reject: the item is resolved `rejected` (with the admin's optional note) so the next run doesn't hold it again. */
+export async function rejectReviewItem(deps: ReviewDeps, key: string, note: string | null = null): Promise<OpsState> {
+  const found = await openItem(deps, key);
+  if (!found.ok) return found.state;
+  const r = await deps.resolve(key, "rejected", note);
+  if (!r.ok) return err(`Not rejected: ${r.message}`);
+  return { status: "done", message: `Rejected: ${found.item.code ?? "C1"} for ${found.item.name} stays off the site.` };
+}
+
+/**
+ * Re-run discovery: dispatches a `college` run with `rediscover: true` (the workflow climbs the discovery ladder from
+ * the start and writes the new recipe to the store). Logged `review.rediscover` before it is sent, like every dispatch.
+ */
+export async function rediscoverReviewItem(deps: ReviewDeps, key: string): Promise<OpsState> {
+  if (!deps.ops.gh.configured()) return NOT_CONFIGURED;
+  const found = await openItem(deps, key);
   if (!found.ok) return found.state;
   return dispatchRun(
-    deps,
-    { run: "college", values: { college: found.row.item.unit_id, rediscover: true, auto_merge: true } },
-    { logAction: "review.rediscover", details: { unit: found.row.item.unit_id, code: found.row.item.code ?? null } },
+    deps.ops,
+    { run: "college", values: { college: found.item.unit_id, rediscover: true, auto_merge: true } },
+    { logAction: "review.rediscover", details: { unit: found.item.unit_id, code: found.item.code ?? null } },
   );
 }

@@ -10,7 +10,6 @@ import "server-only";
 import * as gh from "@/lib/github-app";
 import { adminSupabase } from "@/lib/admin/people";
 import { DISPATCHABLE_RUNS } from "@/lib/admin/workflows";
-import { readMainQueue } from "@/lib/admin/review-queue";
 import { publicName, type OpsDeps } from "@/lib/admin/ops-actions";
 import { runFailed } from "@/lib/admin/ops-view";
 
@@ -35,9 +34,6 @@ export function realOpsDeps(admin: { userId: string }): OpsDeps {
       mergePull: (n) => gh.mergePull(n),
       holdPull: (n, name) => gh.holdPull(n, name),
       closePull: (n, name) => gh.closePull(n, name),
-      readRepoFile: (path) => gh.readRepoFile(path),
-      commitFileAndOpenPull: (opts) => gh.commitFileAndOpenPull(opts),
-      readQueue: () => readMainQueue(),
     },
     async note(action, details, requestId) {
       try {
@@ -69,7 +65,6 @@ export interface OperationsData {
   configured: { mode: "app" | "pat" } | null;
   runs: RunRow[];
   pulls: gh.DataPull[];
-  queue: Awaited<ReturnType<typeof readMainQueue>>;
   cost: Awaited<ReturnType<typeof gh.fetchRunCost>>;
 }
 
@@ -95,9 +90,9 @@ async function consoleAdmins(requestIds: string[]): Promise<Map<string, string>>
 /** Everything the Operations page shows, read in parallel. With no GitHub credentials, `configured` is null and the rest is empty. */
 export async function loadOperations(): Promise<OperationsData> {
   const configured = gh.githubConfigured();
-  if (!configured) return { configured: null, runs: [], pulls: [], queue: null, cost: null };
+  if (!configured) return { configured: null, runs: [], pulls: [], cost: null };
   const workflows = [...new Set(DISPATCHABLE_RUNS.map((r) => r.workflow))];
-  const [runs, pulls, queue, cost] = await Promise.all([gh.listRuns({ workflows, perPage: 30 }), gh.listDataPulls(), readMainQueue(), gh.fetchRunCost()]);
+  const [runs, pulls, cost] = await Promise.all([gh.listRuns({ workflows, perPage: 30 }), gh.listDataPulls(), gh.fetchRunCost()]);
   const failed = runs.filter(runFailed).slice(0, FAILED_STEP_LOOKUPS);
   const [admins, steps] = await Promise.all([
     consoleAdmins(runs.map((r) => r.requestId).filter((id): id is string => Boolean(id))),
@@ -113,7 +108,6 @@ export async function loadOperations(): Promise<OperationsData> {
       pull: gh.pullForRun(run, pulls),
     })),
     pulls,
-    queue,
     cost,
   };
 }

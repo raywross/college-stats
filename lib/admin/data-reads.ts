@@ -1,8 +1,9 @@
 import "server-only";
 /**
- * The Data console's reads (specs/data-platform/change-sets.md "The console", Overview and Snapshots rows;
- * specs/data-platform/publish.md "Environments"): which snapshot each environment serves, the last publish, the
- * change sets since it, the held sets, and the full snapshot list. Server only, like lib/admin/ops.ts.
+ * The Data console's reads (specs/data-platform/change-sets.md "The console"; specs/data-platform/publish.md
+ * "Environments"): which snapshot each environment serves, the last publish, the change sets since it, the held sets,
+ * the full snapshot list, and the Change sets screens (the list, one set, the documents it touched, one document's
+ * before and after). The held review items are read in lib/admin/review-queue.ts. Server only, like lib/admin/ops.ts.
  *
  * `data_documents`/`data_change_sets`/`data_snapshots` select for everyone (specs/data-platform/storage.md
  * "Row-level security"), so these reads work with the admin's own session (adminSupabase()); the console header is
@@ -10,6 +11,8 @@ import "server-only";
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SNAPSHOT_OBJECTS, snapshotPath } from "@/lib/data-platform/snapshot";
+import { githubRepo } from "@/lib/github-app";
+import type { ChangeSetRow, TouchedVersion } from "@/lib/admin/change-set-view";
 
 /* ------------------------------------------------------------------ */
 /* Which snapshot each environment serves                              */
@@ -195,4 +198,89 @@ export function manifestDownloadUrl(id: number): string | null {
   const base = process.env.DATA_SNAPSHOT_URL;
   if (!base) return null;
   return `${base.replace(/\/+$/, "")}/${snapshotPath(id, SNAPSHOT_OBJECTS.manifest)}`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Change sets: the list, one set, the documents it touched, one diff  */
+/* ------------------------------------------------------------------ */
+
+const CHANGE_SET_COLUMNS = "id, kind, source, run_ref, status, held_reason, summary, created_by, created_at, closed_at, snapshot_id, reverted_by";
+
+/** How many change sets the list shows (newest first). */
+export const CHANGE_SET_PAGE = 50;
+export const CHANGE_SET_STATUSES = ["open", "applied", "held", "reverted"] as const;
+
+/** `?status=` on the list, validated: one of the four statuses, or null for all of them. */
+export function parseStatusFilter(raw: string | string[] | undefined): (typeof CHANGE_SET_STATUSES)[number] | null {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  return (CHANGE_SET_STATUSES as readonly string[]).includes(v ?? "") ? (v as (typeof CHANGE_SET_STATUSES)[number]) : null;
+}
+
+/** The newest change sets, newest first, optionally of one status. */
+export async function loadChangeSets(supabase: SupabaseClient, opts: { status?: string | null } = {}): Promise<ChangeSetRow[]> {
+  let query = supabase.from("data_change_sets").select(CHANGE_SET_COLUMNS);
+  if (opts.status) query = query.eq("status", opts.status);
+  return rows<ChangeSetRow>("data_change_sets", query.order("id", { ascending: false }).limit(CHANGE_SET_PAGE));
+}
+
+/** One change set, or null when the id names none. */
+export async function loadChangeSet(supabase: SupabaseClient, id: number): Promise<ChangeSetRow | null> {
+  const { data, error } = await supabase.from("data_change_sets").select(CHANGE_SET_COLUMNS).eq("id", id).maybeSingle();
+  if (error) throw new Error(`admin: reading data_change_sets failed: ${error.message}`);
+  return (data as ChangeSetRow | null) ?? null;
+}
+
+/** How many version rows the detail page lists (an import touches every document; its summary has the totals). */
+export const TOUCHED_LIMIT = 1000;
+
+/** The versions a change set wrote (collection, key, version, deleted), at most `TOUCHED_LIMIT`, and whether there were more. */
+export async function touchedDocuments(supabase: SupabaseClient, id: number): Promise<{ rows: TouchedVersion[]; truncated: boolean }> {
+  const found = await rows<TouchedVersion>(
+    "data_document_versions",
+    supabase.from("data_document_versions").select("collection, key, version, deleted").eq("change_set_id", id).order("id", { ascending: true }).limit(TOUCHED_LIMIT + 1),
+  );
+  return { rows: found.slice(0, TOUCHED_LIMIT), truncated: found.length > TOUCHED_LIMIT };
+}
+
+/** A document's chosen version on the detail page: `?c=<collection>&k=<key>`, validated as the tables check them. */
+export function parseDocumentParam(c: string | string[] | undefined, k: string | string[] | undefined): { collection: string; key: string } | null {
+  const collection = Array.isArray(c) ? c[0] : c;
+  const key = Array.isArray(k) ? k[0] : k;
+  if (!collection || !/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$/.test(collection) || collection.length > 80) return null;
+  if (!key || key.length > 200) return null;
+  return { collection, key };
+}
+
+export interface DocumentVersion {
+  version: number;
+  body: unknown;
+  deleted: boolean;
+  change_set_id: number;
+  created_at: string;
+}
+
+/**
+ * One document as a change set left it and as it was just before: `after` is the set's last version of it, `before`
+ * the version just before the set's first (versions count up by one per write, so that is `first − 1`), null when the
+ * set created it. Null when the set didn't touch the document.
+ */
+export async function documentBeforeAfter(supabase: SupabaseClient, id: number, collection: string, key: string): Promise<{ before: DocumentVersion | null; after: DocumentVersion } | null> {
+  const COLUMNS = "version, body, deleted, change_set_id, created_at";
+  const mine = await rows<DocumentVersion>(
+    "data_document_versions",
+    supabase.from("data_document_versions").select(COLUMNS).eq("collection", collection).eq("key", key).eq("change_set_id", id),
+  );
+  if (!mine.length) return null;
+  const sorted = [...mine].sort((a, b) => a.version - b.version);
+  const first = sorted[0].version;
+  const after = sorted[sorted.length - 1];
+  if (first <= 1) return { before: null, after };
+  const { data, error } = await supabase.from("data_document_versions").select(COLUMNS).eq("collection", collection).eq("key", key).eq("version", first - 1).maybeSingle();
+  if (error) throw new Error(`admin: reading data_document_versions failed: ${error.message}`);
+  return { before: (data as DocumentVersion | null) ?? null, after };
+}
+
+/** The GitHub repository a pipeline run links to (`GITHUB_REPO`, else the default). */
+export function runRepo(): string {
+  return githubRepo();
 }

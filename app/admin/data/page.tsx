@@ -29,16 +29,19 @@ export default async function DataOverviewPage() {
     <>
       <PageHeader
         title="Data"
-        subtitle={
-          <>
-            The college dataset&apos;s source of truth, published as snapshots. See{" "}
-            <Link href="/admin/data/snapshots" className="underline decoration-dotted underline-offset-2">
-              Snapshots
-            </Link>{" "}
-            for the full list.
-          </>
-        }
+        subtitle="The college dataset's source of truth, published as snapshots."
       />
+      <nav aria-label="Data screens" className="mb-5 flex flex-wrap gap-2 text-sm">
+        {[
+          { href: "/admin/data/change-sets", label: "Change sets" },
+          { href: "/admin/data/holds", label: "Holds" },
+          { href: "/admin/data/snapshots", label: "Snapshots" },
+        ].map((l) => (
+          <Link key={l.href} href={l.href} className="inline-flex min-h-10 items-center rounded-full border border-border px-4 font-semibold hover:bg-muted">
+            {l.label}
+          </Link>
+        ))}
+      </nav>
       <div className="space-y-5">
         <Panel title="Live on">
           {overview.environments.length === 0 ? (
@@ -101,7 +104,10 @@ export default async function DataOverviewPage() {
               {overview.holds.map((h) => (
                 <li key={h.id} className="rounded-xl border border-warning bg-warning/10 p-3">
                   <div className="font-semibold">
-                    Change set #{h.id} · {h.kind} · {h.source}
+                    <Link href={`/admin/data/change-sets/${h.id}`} className="underline decoration-dotted underline-offset-2">
+                      Change set #{h.id}
+                    </Link>{" "}
+                    · {h.kind} · {h.source}
                   </div>
                   <div className="mt-0.5 text-muted-foreground">{h.held_reason ?? "No reason recorded."}</div>
                   <div className="mt-0.5 text-xs text-muted-foreground">{fmtDateTime(h.created_at)}</div>

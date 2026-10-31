@@ -71,9 +71,23 @@ export function writeAliasTable(root: string, inputs: AliasTableInputs): { rows:
 /** The table `writeAliasTable` writes, checked; throws on a broken invariant. Reads data/ but writes nothing. */
 export function buildAliasTable(root: string, inputs: AliasTableInputs): AliasRow[] {
   const dataDir = join(root, "data");
-  const aliasesPath = join(dataDir, "aliases.json");
-  const curatedPath = join(dataDir, "aliases-curated.json");
+  return aliasRowsFrom({
+    ...inputs,
+    existing: inputs.hdRows ? [] : readJson<AliasRow[]>(join(dataDir, "aliases.json"), []),
+    curated: readJson<CuratedAliasEntry[]>(join(dataDir, "aliases-curated.json"), []),
+    commonApp: inputs.commonApp !== undefined ? inputs.commonApp : readJson<MembersFile | null>(join(dataDir, "common-app", "members.json"), null),
+  });
+}
 
+/**
+ * The alias table from its inputs, pure (what `buildAliasTable` builds from data/, and the publisher,
+ * scripts/lib/data-platform/compose.mts, from the layers): `existing` stands in for the IPEDS rows when `hdRows` is
+ * null (the rows of the table as it was), `curated` is data/aliases-curated.json, `commonApp` the members file.
+ * Throws on a broken invariant.
+ */
+export function aliasRowsFrom(
+  inputs: Omit<AliasTableInputs, "commonApp"> & { existing: readonly AliasRow[]; curated: readonly CuratedAliasEntry[]; commonApp: MembersFile | null }
+): AliasRow[] {
   const nameById = new Map(inputs.schools.map((s) => [s.unit_id, s.name]));
   const schoolIds = new Set(nameById.keys());
   const rows: AliasRow[] = [];
@@ -89,7 +103,7 @@ export function buildAliasTable(root: string, inputs: AliasTableInputs): AliasRo
       }
     }
   } else {
-    for (const row of readJson<AliasRow[]>(aliasesPath, [])) {
+    for (const row of inputs.existing) {
       if (row.source === "ipeds" && schoolIds.has(row.unit_id)) rows.push(row);
     }
   }
@@ -111,7 +125,7 @@ export function buildAliasTable(root: string, inputs: AliasTableInputs): AliasRo
   }
 
   // Curated, hand-picked short names (data/aliases-curated.json), for the owner to review.
-  for (const c of readJson<CuratedAliasEntry[]>(curatedPath, [])) {
+  for (const c of inputs.curated) {
     const name = nameById.get(c.unit_id);
     if (!name) {
       console.warn(`  aliases-curated.json: unit_id ${c.unit_id} ("${c.alias}") is not in data/schools.json; skipped`);
@@ -121,9 +135,8 @@ export function buildAliasTable(root: string, inputs: AliasTableInputs): AliasRo
     rows.push(buildAliasRow(c.unit_id, c.alias, "curated", c.weight));
   }
 
-  // Common App members' other names; without `inputs.commonApp`, the committed members file (if any).
-  const members = inputs.commonApp !== undefined ? inputs.commonApp : readJson<MembersFile | null>(join(dataDir, "common-app", "members.json"), null);
-  rows.push(...commonAppAliasRows(inputs.schools, members));
+  // Common App members' other names.
+  rows.push(...commonAppAliasRows(inputs.schools, inputs.commonApp));
 
   const final = dedupeAliases(rows);
   const problems = aliasTableProblems(final, schoolIds);

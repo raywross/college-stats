@@ -36,8 +36,8 @@ import type { AliasRow } from "../lib/identity-files";
 import { applyEssays, stripEssays } from "./lib/essay-prompts/merge.mts";
 import { applyCoalition, stripCoalition } from "./lib/coalition/merge.mts";
 import { applyCommonApp, stripCommonApp } from "./lib/common-app/merge.mts";
-import { applyCccuMembership, applyDirectories, chapterFiles, directoryDetails, stripCccuMembership, stripDirectories } from "./lib/directories/merge.mts";
-import { applyLgbtqPolicies, campusPagesDetails, pilotDirectoryFiles, stripLgbtqPolicies } from "./lib/campus-pilot/merge.mts";
+import { stripCccuMembership, stripDirectories } from "./lib/directories/merge.mts";
+import { applyDirectoryLayers, stripLgbtqPolicies } from "./lib/campus-pilot/merge.mts";
 import { buildSelectivity, placeSelectivity } from "./lib/selectivity.mts";
 import { commonAppAliasRows, formatAliasRows } from "./lib/aliases-sync.mts";
 import { fileStore, flagValue, orderedJson, parseStoreFlag, storeFromFlag, type DataStore } from "./lib/data-platform/store.mts";
@@ -456,13 +456,12 @@ export async function reapplyLaterLayers(
   const reported = await loadReportedLayer(store);
   schools = mergeReported(schools, reported.file, { records: reported.records, meta: base.meta, table: CDS_TEMPLATE }).schools;
   const { files, pages } = await loadDirectoriesLayer(store);
-  const ids = new Set(schools.map((s) => s.unit_id));
-  const tables = directoryDetails([...chapterFiles(files), ...pilotDirectoryFiles(pages)], ids);
-  schools = applyLgbtqPolicies(applyCccuMembership(applyDirectories(schools, tables), files), pages);
+  const directories = applyDirectoryLayers(schools, files, pages);
+  schools = directories.schools;
   schools = opts.rebuildSelectivity
     ? buildSelectivity(schools, opts.rebuildSelectivity.meta, { previous: opts.previous }).schools
     : schools.map((s) => placeSelectivity(s, opts.previous.get(s.unit_id)));
-  const details = mergeDetails(base.details, financialAidDetails(schools, reported.records), tables, campusPagesDetails(pages, ids));
+  const details = mergeDetails(base.details, financialAidDetails(schools, reported.records), directories.tables, directories.pagesTables);
   const aliases = dedupeAliases([...base.aliases, ...commonAppAliasRows(schools, commonApp?.members ?? null)]);
   return { schools, details, aliases };
 }

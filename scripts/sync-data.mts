@@ -26,7 +26,7 @@ import { mkdtempSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } from "../lib/types";
-import { lineageForPatch, validateLineage } from "../lib/lineage.ts";
+import { validateLineage } from "../lib/lineage.ts";
 import { COLLEGE_SITE_SOURCE, type ReportedFile } from "../lib/reported.ts";
 import { mergeReported } from "../lib/reported-merge.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
@@ -46,9 +46,8 @@ import { addLgbtq, addStateLawMeta, fetchLgbtqInputs, lgbtqSummary } from "./lib
 import { addMajorsMeta, buildMajorDetails, checkTotals, fetchCompletions, majorsFor, unknownCodes } from "./lib/majors-sync.mts";
 import { mergeDetails } from "../lib/detail.ts";
 import { readDirectoryFiles } from "./lib/directories/files.mts";
-import { addDirectoryMeta, applyCccuMembership, applyDirectories, chapterFiles, directoryDetails } from "./lib/directories/merge.mts";
 import { readPagesFile } from "./lib/campus-pilot/files.mts";
-import { applyLgbtqPolicies, campusPagesDetails, pilotDirectoryFiles } from "./lib/campus-pilot/merge.mts";
+import { applyDirectoryLayers } from "./lib/campus-pilot/merge.mts";
 import { financialAidDetails } from "../lib/cds/financial-aid.ts";
 import { transferInFrom } from "../lib/transfers.ts";
 import { onlineSharesFrom } from "../lib/online-share.ts";
@@ -70,7 +69,7 @@ import { essayPaths, readConfirmedRecords, readEssayRecords } from "./lib/essay-
 import { runSiteProbe } from "./lib/site-probe.mts";
 import { fetchOpenAdmissionFile } from "./lib/open-admission.mts";
 import { applyOpenAdmission, openAdmissionMeta } from "../lib/open-admission.ts";
-import { deepMerge, type Patch } from "./lib/overrides.mts";
+import { applyOverride, carryTrends, type Patch } from "./lib/overrides.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -909,9 +908,7 @@ async function main() {
     const patch = overrides[school.unit_id];
     if (patch) {
       // Every value the patch sets is attributed to the patch's source (throws if it names none).
-      const patchLineage = lineageForPatch(school.unit_id, patch);
-      school = deepMerge(school, patch);
-      school.lineage = { ...(school.lineage ?? {}), ...patchLineage };
+      school = applyOverride(school, patch);
       stats.overridden++;
     }
     if (school.admissions.acceptance_rate !== null) stats.withAdmissions++;
@@ -926,13 +923,7 @@ async function main() {
   const open = applyOpenAdmission(schools, openFile.rows);
   console.log(`  open admission (${openFile.name}): ${open.open} open, ${open.notOpen} not, ${open.unknown} unknown`);
   // school.trends comes from `npm run sync-history`; keep it until that runs again (run both: npm run sync-all).
-  if (existsSync(OUT)) {
-    const previous = new Map((JSON.parse(readFileSync(OUT, "utf8")) as School[]).map((s) => [s.unit_id, s.trends]));
-    for (const s of schools) {
-      const t = previous.get(s.unit_id);
-      if (t) s.trends = t;
-    }
-  }
+  if (existsSync(OUT)) carryTrends(schools, new Map((JSON.parse(readFileSync(OUT, "utf8")) as School[]).map((s) => [s.unit_id, s.trends])));
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
   const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell, sal, drvf, drvfFiscalYear);
   // Open admission is its own release: the IC file it came from is often older than icChar (lib/open-admission.ts).
@@ -1023,16 +1014,15 @@ async function main() {
   // The campus-life pilot (data/campus-pages.json): its groups join the listings; its tier A facts get their own table.
   // Membership lists (CCCU) set `religion.cccu_member` rather than listings.
   const campusPages = readPagesFile(join(ROOT, "data", "campus-pages.json"));
-  const directoryTables = directoryDetails([...chapterFiles(directoryFiles), ...pilotDirectoryFiles(campusPages)], new Set(schools.map((s) => s.unit_id)));
-  schools.splice(0, schools.length, ...applyLgbtqPolicies(applyCccuMembership(applyDirectories(schools, directoryTables), directoryFiles), campusPages));
-  addDirectoryMeta(meta, directoryFiles);
+  const directories = applyDirectoryLayers(schools, directoryFiles, campusPages, meta);
+  schools.splice(0, schools.length, ...directories.schools);
   const details = mergeDetails(
     buildDetails(schools, efc.table, meta),
     buildMajorDetails(schools, completions.table, meta),
     programs.details,
     financialAidDetails(schools, cdsRecords),
-    directoryTables,
-    campusPagesDetails(campusPages, new Set(schools.map((s) => s.unit_id)))
+    directories.tables,
+    directories.pagesTables
   );
   const detailIssues = detailProblems(schools, details, meta);
   if (detailIssues.length) throw new Error(`Detail files failed their checks:\n  ${detailIssues.slice(0, 20).join("\n  ")}`);

@@ -208,6 +208,8 @@ export default async function DataPage() {
     "common-app": all.filter((s) => s.apply).length,
     // Coalition for College (specs/data-expansion/coalition-app.md): members found on its list.
     coalition: all.filter((s) => s.coalition).length,
+    // Admin edits (specs/data-platform/change-sets.md): colleges with a value set by Quad's editors. Not in `order`.
+    "quad-edit": all.filter((s) => Object.values(s.lineage ?? {}).some((r) => r?.source === "quad-edit")).length,
   };
   const sourceUses = (key: SourceKey) => {
     const topics = new Set<Topic>();

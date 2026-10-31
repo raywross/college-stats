@@ -39,9 +39,14 @@ export function loadMoverExclusions(root: string): { campuses: CampusExclusionEn
   return { campuses: JSON.parse(readFileSync(join(root, EXCLUDED_CAMPUSES_FILE), "utf8")) as CampusExclusionEntry[] };
 }
 
+/** The reviewed campus exclusions a trend build uses: the context's own (the publisher's, from its layer), else the file. */
+export function contextExclusions(ctx: Pick<TrendContext, "root" | "excludedCampuses">): CampusExclusionEntry[] {
+  return ctx.excludedCampuses ?? loadMoverExclusions(ctx.root).campuses;
+}
+
 /** The ranking context for a trend build: inflation, newest years, and the reviewed campus exclusions. */
 export function moverContext(ctx: TrendContext): MoverContext {
-  return { cpi: ctx.cpi, latest: ctx.hmeta.latest, exclusions: exclusionSets(loadMoverExclusions(ctx.root).campuses) };
+  return { cpi: ctx.cpi, latest: ctx.hmeta.latest, exclusions: exclusionSets(contextExclusions(ctx)) };
 }
 
 /**

@@ -10,7 +10,8 @@
 import { DETAIL_TABLES, formatDetail, type DetailTableKey, type SchoolDetail } from "../../../lib/detail.ts";
 import { checkedDates, checkedLabel, type CampusPagesRows } from "../../../lib/campus-pages.ts";
 import { readLabel, type Classification, type DirectoryTier, type PolicyCheck } from "../../../lib/directories.ts";
-import type { LineageRecord, School } from "../../../lib/types.ts";
+import type { DatasetMeta, LineageRecord, School } from "../../../lib/types.ts";
+import { addDirectoryMeta, applyCccuMembership, applyDirectories, chapterFiles, directoryDetails } from "../directories/merge.mts";
 import type { DirectoryFile, MatchedEntry } from "../directories/files.mts";
 import type { PagesFile } from "./files.mts";
 
@@ -218,4 +219,24 @@ export function withTable(existing: readonly SchoolDetail[], built: readonly Sch
     if (Object.keys(d.tables).length) out.push(d);
   }
   return { details: out, changed };
+}
+
+/**
+ * The directories step as sync-data, `npm run merge-directories` and the publisher (scripts/lib/data-platform/
+ * compose.mts) run it, in one place so they can't drift: the chapter lists and the pilot's lists become `directories`
+ * tables (`directoryDetails`), then `applyDirectories`, `applyCccuMembership` (membership lists) and
+ * `applyLgbtqPolicies` (the pilot's tier A facts), and the pilot's own `campus_pages` tables. `meta` gets
+ * `addDirectoryMeta` when given.
+ */
+export function applyDirectoryLayers(
+  schools: readonly School[],
+  files: readonly DirectoryFile[],
+  pages: PagesFile,
+  meta?: DatasetMeta
+): { schools: School[]; tables: SchoolDetail[]; pagesTables: SchoolDetail[] } {
+  const ids = new Set(schools.map((s) => s.unit_id));
+  const tables = directoryDetails([...chapterFiles(files), ...pilotDirectoryFiles(pages)], ids);
+  const out = applyLgbtqPolicies(applyCccuMembership(applyDirectories(schools, tables), files), pages);
+  if (meta) addDirectoryMeta(meta, files);
+  return { schools: out, tables, pagesTables: campusPagesDetails(pages, new Set(out.map((s) => s.unit_id))) };
 }

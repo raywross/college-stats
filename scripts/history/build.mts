@@ -887,3 +887,17 @@ export function bigJumps(histories: readonly SchoolHistory[], keys: readonly Ser
 }
 
 export type { Era, FileChoice };
+
+/**
+ * A college's shard as data/history/schools/{id}.json holds it: one series per line, so a yearly refresh or a revision
+ * reads as a small diff. `npm run sync-history` writes it and the publisher renders each snapshot's history/{id}.json
+ * with it (scripts/lib/data-platform/render.mts).
+ */
+export function formatHistoryShard(h: SchoolHistory): string {
+  const lines = Object.entries(h.series).map(([k, s]) => `    ${JSON.stringify(k)}: ${JSON.stringify(s)}`);
+  const repeated = h.repeated ? `,\n  "repeated": ${JSON.stringify(h.repeated)}` : "";
+  return `{\n  "unit_id": ${JSON.stringify(h.unit_id)},\n  "series": {\n${lines.join(",\n")}\n  }${repeated}\n}\n`;
+}
+
+/** The shared history files' format (meta, national, facts, cpi): two-space JSON and a closing newline. */
+export const historyJson = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;

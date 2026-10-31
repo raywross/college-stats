@@ -497,7 +497,7 @@ function dispatchInputs(yml: string): Map<string, string> {
   const block = yml.match(/\n  workflow_dispatch:\n    inputs:\n((?: {6,}.*\n|\s*\n)+)/);
   const out = new Map<string, string>();
   if (!block) return out;
-  for (const m of block[1].matchAll(/^ {6}([a-z_]+):\n((?: {8,}.*\n)*)/gm)) out.set(m[1], m[2]);
+  for (const m of block[1].matchAll(/^ {6}([a-z_-]+):\n((?: {8,}.*\n)*)/gm)) out.set(m[1], m[2]);
   return out;
 }
 
@@ -525,7 +525,27 @@ test("every dispatchable workflow declares request_id (optional, default '') and
   assert.deepEqual(workflowProblems(yml, ["max_cost"]), ['no input "max_cost"']);
   // Only the table's workflows are dispatchable; the pilots aren't.
   // publish-changes.yml is retired (its jobs are publisher steps): it is no longer dispatchable.
-  assert.deepEqual([...DISPATCHABLE_FILES].sort(), ["college-reported.yml", "identity-refresh.yml", "publish-snapshot.yml", "verify.yml", "visit-events.yml"]);
+  assert.deepEqual([...DISPATCHABLE_FILES].sort(), [
+    "coalition.yml",
+    "college-reported.yml",
+    "common-app.yml",
+    "identity-refresh.yml",
+    "publish-snapshot.yml",
+    "sync-data.yml",
+    "sync-history.yml",
+    "verify.yml",
+    "visit-events.yml",
+  ]);
+  // The sources' hand-run syncs send their own inputs, typed as the workflows declare them.
+  const commonApp = buildDispatch("common-app", { mode: "grid-only", limit: "25" });
+  assert.ok(commonApp.ok && commonApp.inputs.mode === "grid-only" && commonApp.inputs.limit === "25");
+  assert.equal(buildDispatch("common-app", { mode: "everything" }).ok, false);
+  const history = buildDispatch("history", {});
+  assert.ok(history.ok && history.file === "sync-history.yml" && history.inputs.ids === "");
+  const base = buildDispatch("sync-data", { "releases-only": true });
+  assert.ok(base.ok && base.inputs["releases-only"] === "true");
+  const coalition = buildDispatch("coalition", {});
+  assert.ok(coalition.ok && Object.keys(coalition.inputs).length === 0);
 });
 
 test("run-name: the console's title is '<workflow> · <request id>', which requestIdFromTitle reads back", () => {

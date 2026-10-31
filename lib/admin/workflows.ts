@@ -17,7 +17,16 @@
 
 // publish-changes.yml is retired (data platform phase 2): the change log, the high-school tables and the college data
 // failures are steps of the publisher (publish-snapshot.yml).
-export type WorkflowFile = "college-reported.yml" | "identity-refresh.yml" | "publish-snapshot.yml" | "verify.yml" | "visit-events.yml";
+export type WorkflowFile =
+  | "college-reported.yml"
+  | "identity-refresh.yml"
+  | "common-app.yml"
+  | "coalition.yml"
+  | "sync-history.yml"
+  | "sync-data.yml"
+  | "publish-snapshot.yml"
+  | "verify.yml"
+  | "visit-events.yml";
 
 export type RunInput =
   | { name: string; label: string; kind: "unit"; required: true }
@@ -26,7 +35,20 @@ export type RunInput =
   | { name: string; label: string; kind: "money"; default: string }
   | { name: string; label: string; kind: "text"; default: string };
 
-export type RunId = "college" | "pilot" | "all" | "collect" | "identity" | "verify" | "visit-events" | "publish-snapshot" | "point-snapshot";
+export type RunId =
+  | "college"
+  | "pilot"
+  | "all"
+  | "collect"
+  | "identity"
+  | "common-app"
+  | "coalition"
+  | "history"
+  | "sync-data"
+  | "verify"
+  | "visit-events"
+  | "publish-snapshot"
+  | "point-snapshot";
 
 export interface DispatchableRun {
   id: RunId;
@@ -117,6 +139,51 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     inputs: [],
     guards: {},
     ref: "pull-branch",
+  },
+  // The sources' hand-run syncs (data platform phase 2, E3): each writes its layer to the store in one change set and
+  // asks the publisher for a snapshot at the end. Inputs mirror each workflow's workflow_dispatch.inputs.
+  {
+    id: "common-app",
+    label: "Common App",
+    description: "Refresh the Common App grid and members.",
+    workflow: "common-app.yml",
+    fixed: {},
+    inputs: [
+      { name: "mode", label: "What to refresh", kind: "choice", options: ["default", "refresh-members", "grid-only", "members-only"], default: "default" },
+      { name: "limit", label: "Fetch at most this many member records (empty for no limit)", kind: "text", default: "" },
+    ],
+    guards: { oneAtATime: { concurrencyGroup: "common-app" } },
+    ref: "main",
+  },
+  {
+    id: "coalition",
+    label: "Coalition",
+    description: "Refresh the Coalition members.",
+    workflow: "coalition.yml",
+    fixed: {},
+    inputs: [],
+    guards: { oneAtATime: { concurrencyGroup: "coalition" } },
+    ref: "main",
+  },
+  {
+    id: "history",
+    label: "History",
+    description: "Rebuild the year-by-year history.",
+    workflow: "sync-history.yml",
+    fixed: {},
+    inputs: [{ name: "ids", label: "Unit ids to rebuild, comma-separated (empty for every college)", kind: "text", default: "" }],
+    guards: { oneAtATime: { concurrencyGroup: "sync-history" } },
+    ref: "main",
+  },
+  {
+    id: "sync-data",
+    label: "Base dataset",
+    description: "Rebuild the base dataset from IPEDS and Scorecard.",
+    workflow: "sync-data.yml",
+    fixed: {},
+    inputs: [{ name: "releases-only", label: "Only check NCES for upcoming releases (no full sync)", kind: "boolean", default: false }],
+    guards: { oneAtATime: { concurrencyGroup: "sync-data" } },
+    ref: "main",
   },
   {
     id: "visit-events",

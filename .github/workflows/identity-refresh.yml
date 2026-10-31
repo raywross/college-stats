@@ -124,6 +124,13 @@ jobs:
         id: sync_brand
         run: npm run sync-brand -- --colors --store supabase --change-set "${{ steps.change_set.outputs.id }}"
 
+      # The console's health document (health.colleges) counts link issues and brand gaps, so it is rebuilt into the
+      # same change set after an identity refresh (scripts/college-health.mts reads the store).
+      - name: Rebuild the health document
+        if: steps.gate.outputs.proceed == 'true'
+        id: college_health
+        run: npm run college-health -- --store supabase --change-set "${{ steps.change_set.outputs.id }}"
+
       # always(): a step above can fail partway through (e.g. probe-sites' ~20-minute run hitting the job timeout)
       # while an earlier one still wrote real changes; the set is closed either way, held when anything failed.
       - name: Close the change set

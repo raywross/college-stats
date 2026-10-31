@@ -103,6 +103,12 @@ jobs:
             echo "::notice::No answer key (or no report) to score against; skipping the score."
           fi
 
+      # The console's health document counts campus-page facts and blocked hosts; rebuilt into the same change set.
+      - name: Rebuild the health document
+        env:
+          CHANGE_SET: ${{ steps.change_set.outputs.id }}
+        run: npm run college-health -- --store supabase --change-set "$CHANGE_SET"
+
       - name: Close the change set
         id: close
         if: always() && steps.change_set.outputs.id != ''

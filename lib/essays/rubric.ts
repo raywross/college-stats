@@ -12,7 +12,7 @@
  * labels below do (the notes list's headings).
  */
 
-export const REVIEW_METHOD = "2026.10.29.1";
+export const REVIEW_METHOD = "2026.10.31.1";
 
 /** The reader (owner, 2026-10-28: "we should use Opus"). */
 export const REVIEW_MODEL = "claude-opus-5";
@@ -28,13 +28,19 @@ export const isNoteCategory = (v: unknown): v is NoteCategory => typeof v === "s
 export { CATEGORY_LABEL } from "./notes-view.ts";
 
 /** The limits the rubric states and the guard enforces. */
-export const MAX_NOTES = 12;
+export const MAX_NOTES = 8;
 /** A `mechanics` note's `fix`: the corrected word or punctuation, at most this many words. */
 export const FIX_MAX_WORDS = 8;
 /** No field may repeat more than this many consecutive words of the draft (quoting back is the span's job). */
 export const QUOTE_RUN_MAX = 8;
 /** `observation`, `why`, and `ask` are each one or two sentences. */
 export const MAX_SENTENCES = 2;
+/**
+ * How long the rubric asks an observation and a why to be, in words (owner, 2026-10-31: shorter notes). The rubric and
+ * the schema say "about"; the guard doesn't count them (a long note is a style miss, not a rule broken).
+ */
+export const OBSERVATION_WORDS = 20;
+export const WHY_WORDS = 25;
 
 /** The per-day and per-cycle caps (reviewer.md "When it runs"); the migration's essay_review_allowance enforces them. */
 export const REVIEW_CAPS = { perDraftPerDay: 5, perStudentPerDay: 50, perDraftPerCycle: 60 } as const;
@@ -117,17 +123,18 @@ export const REFUSALS: readonly string[] = [
 
 /** The rules every note follows, in the order the system block states them. */
 export const NOTE_RULES: readonly string[] = [
-  `At most ${MAX_NOTES} notes. Pick the ones that matter most; fewer, right notes beat many. A clean passage gets no note, and a draft with nothing worth noting gets an empty list.`,
+  `At most ${MAX_NOTES} notes. Pick the ones that matter most; fewer, sharper notes win over many. A clean passage gets no note, and a draft with nothing worth noting gets an empty list.`,
   "category: one of the eight below.",
   "paragraph and quote: the paragraph's number as given in the draft ([¶0] is the first) and the exact words the note is about, copied from that paragraph (a word, a phrase, or a sentence). Both null for a note on the whole draft.",
-  "observation: what you noticed, in one sentence (two at most).",
-  "why: why a reader of applications cares, in one sentence (two at most), drawn from the guidance.",
+  `observation: what you noticed, in one sentence of at most about ${OBSERVATION_WORDS} words (two sentences at most).`,
+  `why: why a reader of applications cares, in one sentence of at most about ${WHY_WORDS} words (two at most), drawn from the guidance.`,
   "source: the url of the guidance source the why draws on, exactly as the guidance cites it; null when none fits.",
   "ask: a question to the student or a pointer to the spot, in one sentence (two at most). Never words for the essay.",
   `fix: only for mechanics, the corrected word or punctuation (at most ${FIX_MAX_WORDS} words); null for every other category and for a mechanics note that asks rather than corrects.`,
   "Write to the student as 'you', plainly, as a careful adult reader would; no praise, no grades, no hedging filler.",
   "Use the context (the student's story, what their record shows depth in, the other drafts, the college) only to notice and ask; never repeat the record back as advice, and never mention a field the context doesn't hold.",
   "Earlier notes on this draft are listed with what the student did with them: don't repeat one marked done or ignored unless the passage changed.",
+  "Short and few: a student reads every note, so say each in as few words as it takes, and leave out a note that isn't among the ones that matter most. Fewer, sharper notes win.",
 ];
 
 /** The rubric half of the system block: the role, the note rules, the categories, the refusals. */

@@ -188,7 +188,7 @@ test("rule 6: offered wording is dropped, quoting the draft or the prompt is not
 });
 
 /* ------------------------------------------------------------------ */
-/* 7. Shape and spans; 8. at most twelve                               */
+/* 7. Shape and spans; 8. at most eight                                */
 /* ------------------------------------------------------------------ */
 
 test("rule 7: an unknown category, a missing field, or a quote that isn't in the draft is dropped", () => {
@@ -210,9 +210,9 @@ test("spans: the quote found in its paragraph, another paragraph when the number
   assert.deepEqual(resolveSpan(paras, 2, "i LEARNED   leadership"), { ok: true, span: { paragraph: 2, start: 0, end: "I learned leadership".length } }, "case and spacing");
 });
 
-test("rule 8: at most twelve notes; the rest are dropped as over the limit", () => {
-  const r = guardNotes(Array.from({ length: 14 }, () => ok()), DRAFT, { promptText: PROMPT });
-  assert.equal(r.kept.length, 12);
+test("rule 8: at most eight notes (MAX_NOTES); the rest are dropped as over the limit", () => {
+  const r = guardNotes(Array.from({ length: 10 }, () => ok()), DRAFT, { promptText: PROMPT });
+  assert.equal(r.kept.length, 8);
   assert.deepEqual(r.dropped.map((d) => d.reason), ["over_limit", "over_limit"]);
 });
 

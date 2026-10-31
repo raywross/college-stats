@@ -13,7 +13,7 @@
  * Also, beyond the spec's list, because the product rule is "Quad never writes a sentence of the essay": 6. no field
  * proposes wording (a quoted passage of four or more words that is not the draft's or the prompt's own, or "try
  * writing…", "something like…", "a stronger version"); 7. the note has the schema's shape, a known category, and a span
- * that points at words actually in the draft; 8. at most twelve notes per review.
+ * that points at words actually in the draft; 8. at most MAX_NOTES (eight) notes per review.
  *
  * Pure; safe anywhere. Never throws on any input.
  */
@@ -340,9 +340,17 @@ export function checkNote(raw: unknown, ctx: CheckContext): { ok: true; note: Gu
   return { ok: true, note: { category, span: span.span, observation, why, source, ask, fix } };
 }
 
-/** Every note of an answer checked; the passing ones (at most twelve, in the model's order) and the reasons for the rest. */
-export function guardNotes(raw: unknown, draft: string, opts: GuardOptions = {}): GuardResult {
-  const list = Array.isArray(raw) ? raw : [];
+/**
+ * The guard one note at a time, for a streamed answer (./review-stream.ts): `check` each note as its JSON object
+ * completes; the first MAX_NOTES that pass are kept, in the model's order, and the rest are dropped with their reason.
+ */
+export interface NoteGuard {
+  check(item: unknown): { ok: true; note: GuardedNote } | { ok: false; dropped: Dropped };
+  readonly kept: readonly GuardedNote[];
+  readonly dropped: readonly Dropped[];
+}
+
+export function noteGuard(draft: string, opts: GuardOptions = {}): NoteGuard {
   const paragraphs = paragraphsOf(draft);
   const draftWords = wordsOf(draft);
   const promptWords = wordsOf(opts.promptText ?? "");
@@ -355,13 +363,29 @@ export function guardNotes(raw: unknown, draft: string, opts: GuardOptions = {})
   };
   const kept: GuardedNote[] = [];
   const dropped: Dropped[] = [];
-  for (const item of list) {
-    const category = typeof item === "object" && item !== null && isNoteCategory((item as { category?: unknown }).category) ? (item as { category: string }).category : "unknown";
-    const checked = checkNote(item, ctx);
-    if (!checked.ok) dropped.push({ category, reason: checked.reason });
-    else if (kept.length >= MAX_NOTES) dropped.push({ category, reason: "over_limit" });
-    else kept.push(checked.note);
-  }
+  return {
+    kept,
+    dropped,
+    check(item) {
+      const category = typeof item === "object" && item !== null && isNoteCategory((item as { category?: unknown }).category) ? (item as { category: string }).category : "unknown";
+      const checked = checkNote(item, ctx);
+      if (checked.ok && kept.length < MAX_NOTES) {
+        kept.push(checked.note);
+        return { ok: true, note: checked.note };
+      }
+      const d: Dropped = { category, reason: checked.ok ? "over_limit" : checked.reason };
+      dropped.push(d);
+      return { ok: false, dropped: d };
+    },
+  };
+}
+
+/** Every note of an answer checked; the passing ones (at most MAX_NOTES, in the model's order) and the reasons for the rest. */
+export function guardNotes(raw: unknown, draft: string, opts: GuardOptions = {}): GuardResult {
+  const guard = noteGuard(draft, opts);
+  for (const item of Array.isArray(raw) ? raw : []) guard.check(item);
+  const kept = [...guard.kept];
+  const dropped = [...guard.dropped];
   return { kept, dropped };
 }
 

@@ -8,19 +8,28 @@
  * margin beside its line of the field (measured against the field, `#essay-field`, so the editor stays untouched).
  * `mechanics` first, then the rest in draft order (the server stores them in that order).
  *
- * The data comes from /api/essays/review (GET for the reads, POST for a new one, PATCH for a note's state).
+ * The data comes from /api/essays/review (GET for the reads, POST for a new one, PATCH for a note's state). POST
+ * streams (reviewer.md "the notes stream in"): each note shows as the reader finds it, with Done and Ignore disabled
+ * until the `done` event swaps in the stored review (which has ids); a refusal before the read is JSON, as before.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 // Types only from the server module (erased): the reader's code and rubric never reach this bundle.
-import type { StoredNote, StoredReview } from "@/lib/essays/review";
+import type { ReviewStreamEvent, StoredNote, StoredReview } from "@/lib/essays/review";
 import { CATEGORY_LABEL, spanOffsets } from "@/lib/essays/notes-view";
+import { lineSplitter } from "@/lib/essays/review-response";
 import { InfoTip } from "@/components/ui/info-tip";
 import { cn } from "@/lib/utils";
 
 const FIELD_ID = "essay-field";
 const DISCLAIMER = "Questions and things a careful reader noticed. Nothing here is a grade, and the words stay yours.";
+/** While a read runs (reviewer.md "the notes stream in"): the notes appear one by one under it. */
+const READING_LINE = "Reading… notes appear as the reader finds them";
+/** A read cut short that the server still recorded (the answer ran out of room; the whole notes are kept). */
+const KEPT_LINE = "The reader stopped early; these notes are kept.";
+/** A read that stopped before the server recorded it: the notes shown stay on screen but weren't kept. */
+const NOT_KEPT_LINE = "The reader stopped early; these notes weren't kept.";
 const when = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 const NO_REVIEWS: StoredReview[] = [];
@@ -75,6 +84,10 @@ export function Notes({ essayId, canRequest }: { essayId: string; canRequest: bo
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [moved, setMoved] = useState<string | null>(null);
+  // The notes of the read under way, as they stream in (no ids yet: Done and Ignore wait for the stored review).
+  const [streamed, setStreamed] = useState<StoredNote[]>(NO_NOTES);
+  // The read stopped before the server recorded it: the streamed notes stay on screen, marked as not kept.
+  const [lost, setLost] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -93,19 +106,64 @@ export function Notes({ essayId, canRequest }: { essayId: string; canRequest: bo
   const read = async () => {
     setBusy(true);
     setMessage(null);
+    setStreamed([]);
+    setLost(false);
+    // Notes shown as they arrived; kept on screen (marked not kept) if the read stops before the server records it.
+    const arrived: StoredNote[] = [];
+    let finished = false;
     try {
       const r = await fetch("/api/essays/review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ essayId }) });
-      const body = (await r.json().catch(() => ({}))) as { review?: StoredReview; message?: string | null; error?: string };
-      if (!r.ok || !body.review) {
+      const isStream = (r.headers.get("Content-Type") ?? "").includes("application/x-ndjson");
+      if (!r.ok || !isStream || !r.body) {
+        // A refusal before the read (JSON with an error status): as before streaming.
+        const body = (await r.json().catch(() => ({}))) as { error?: string };
         setMessage(body.error ?? "That didn't work. Try again in a moment.");
+        finished = true;
         return;
       }
-      const review = body.review;
-      setLoad((l) => ({ kind: "ready", reviews: [review, ...(l.kind === "ready" ? l.reviews : [])] }));
-      setMessage(body.message ?? null);
-      router.refresh();
+      const reader = r.body.getReader();
+      const decoder = new TextDecoder();
+      const lines = lineSplitter();
+      const handle = (line: string) => {
+        let e: ReviewStreamEvent;
+        try {
+          e = JSON.parse(line) as ReviewStreamEvent;
+        } catch {
+          return;
+        }
+        if (e.kind === "note") {
+          arrived.push({ ...e.note, id: `streamed-${arrived.length}`, state: "open" });
+          setStreamed([...arrived]);
+        } else if (e.kind === "done") {
+          finished = true;
+          const review = e.review;
+          setStreamed([]);
+          setLoad((l) => ({ kind: "ready", reviews: [review, ...(l.kind === "ready" ? l.reviews : [])] }));
+          setMessage(e.message ?? null);
+          router.refresh();
+        } else if (e.kind === "error") {
+          finished = true;
+          setMessage(e.error);
+          setLost(arrived.length > 0);
+        }
+      };
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        for (const line of lines.push(decoder.decode(value, { stream: true }))) handle(line);
+      }
+      for (const line of lines.push(decoder.decode())) handle(line);
+      for (const line of lines.end()) handle(line);
+      if (!finished) {
+        finished = true;
+        setMessage("That didn't work. Try again in a moment.");
+        setLost(arrived.length > 0);
+      }
     } catch {
-      setMessage("That didn't work. Try again in a moment.");
+      if (!finished) {
+        setMessage("That didn't work. Try again in a moment.");
+        setLost(arrived.length > 0);
+      }
     } finally {
       setBusy(false);
     }
@@ -142,7 +200,7 @@ export function Notes({ essayId, canRequest }: { essayId: string; canRequest: bo
       <p className="text-sm text-muted-foreground">{DISCLAIMER}</p>
       {busy && (
         <p className="text-sm text-muted-foreground" role="status">
-          Reading the draft. This can take up to a minute.
+          {READING_LINE}
         </p>
       )}
       {message && (
@@ -151,11 +209,19 @@ export function Notes({ essayId, canRequest }: { essayId: string; canRequest: bo
         </p>
       )}
       {load.kind === "error" && <p className="text-sm text-muted-foreground">{load.message}</p>}
-      {load.kind === "ready" && !latest && !busy && <p className="text-sm text-muted-foreground">{canRequest ? "No notes yet." : "No notes yet. The student asks for them."}</p>}
+      {load.kind === "ready" && !latest && !busy && streamed.length === 0 && <p className="text-sm text-muted-foreground">{canRequest ? "No notes yet." : "No notes yet. The student asks for them."}</p>}
+
+      {streamed.length > 0 && (busy || lost) && (
+        <div className="space-y-2" aria-live="polite">
+          <p className="text-xs text-muted-foreground">{busy ? "This read so far" : NOT_KEPT_LINE}</p>
+          <NoteList notes={streamed} canMark={canRequest} pending onMark={mark} onShow={show} moved={moved} />
+        </div>
+      )}
 
       {latest && (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">Read {when(latest.created)}</p>
+          {latest.outcome === "max_tokens" && latest.notes.length > 0 && <p className="text-sm text-muted-foreground">{KEPT_LINE}</p>}
           {latest.notes.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nothing to note this time.</p>
           ) : (
@@ -183,7 +249,8 @@ export function Notes({ essayId, canRequest }: { essayId: string; canRequest: bo
   );
 }
 
-function NoteList({ notes, canMark, onMark, onShow, moved }: { notes: StoredNote[]; canMark: boolean; onMark: (n: StoredNote, s: StoredNote["state"]) => void; onShow: (n: StoredNote) => void; moved: string | null }) {
+/** `pending`: notes streamed in before the review is stored (no ids yet), so Done and Ignore wait, disabled. */
+function NoteList({ notes, canMark, pending = false, onMark, onShow, moved }: { notes: StoredNote[]; canMark: boolean; pending?: boolean; onMark: (n: StoredNote, s: StoredNote["state"]) => void; onShow: (n: StoredNote) => void; moved: string | null }) {
   return (
     <ol className="space-y-2">
       {notes.map((n, i) => {
@@ -227,10 +294,10 @@ function NoteList({ notes, canMark, onMark, onShow, moved }: { notes: StoredNote
               )}
               {canMark && !closed && (
                 <>
-                  <button type="button" onClick={() => onMark(n, "done")} className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold ring-1 ring-border hover:bg-muted">
+                  <button type="button" disabled={pending} onClick={() => onMark(n, "done")} className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold ring-1 ring-border hover:bg-muted disabled:opacity-50 disabled:hover:bg-transparent">
                     Done
                   </button>
-                  <button type="button" onClick={() => onMark(n, "ignored")} className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-muted-foreground hover:bg-muted">
+                  <button type="button" disabled={pending} onClick={() => onMark(n, "ignored")} className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-muted-foreground hover:bg-muted disabled:opacity-50 disabled:hover:bg-transparent">
                     Ignore
                   </button>
                 </>

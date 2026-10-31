@@ -465,13 +465,20 @@ async function main() {
   }
   hmeta.schools = next.size;
   const run = await openProducerRun(store, "history", { changeSet });
-  const shards = await writeChanged(run.handle, COLLECTIONS.history.schools, before, next, { mirror: true });
-  await run.handle.write(COLLECTIONS.history.shared, [
-    { key: "national", body: historyDocument(buildNational(all, window, cpi)) },
-    { key: "facts", body: historyDocument(buildFacts(all, window, cpi)) },
-    { key: "cpi", body: historyDocument(cpi) },
-    { key: "meta", body: historyDocument(hmeta) },
-  ]);
+  let shards: { sent: number; removed: number };
+  try {
+    shards = await writeChanged(run.handle, COLLECTIONS.history.schools, before, next, { mirror: true });
+    await run.handle.write(COLLECTIONS.history.shared, [
+      { key: "national", body: historyDocument(buildNational(all, window, cpi)) },
+      { key: "facts", body: historyDocument(buildFacts(all, window, cpi)) },
+      { key: "cpi", body: historyDocument(cpi) },
+      { key: "meta", body: historyDocument(hmeta) },
+    ]);
+  } catch (err) {
+    // Leaving the set open serves no one: hold it with why, so the console shows it instead of a stuck "open" run.
+    await run.finish("held", `stopped: ${err instanceof Error ? err.message : String(err)}`.slice(0, 500)).catch(() => {});
+    throw err;
+  }
   await run.finish("applied", undefined, { colleges: written, shards_sent: shards.sent, shards_removed: shards.removed, latest });
 
   const count = (fam: HistoryFamily) => `${files[fam][0].year}–${files[fam][files[fam].length - 1].year}`;

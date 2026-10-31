@@ -55,7 +55,14 @@ try {
     where = "the high_schools layers";
     if (!dryRun && out.written) {
       const run = await openProducerRun(store, "high-schools", { changeSet });
-      const changed = await writeHighSchoolChanges(run.handle, ran.before, ran.after);
+      let changed: { sent: number; removed: number };
+      try {
+        changed = await writeHighSchoolChanges(run.handle, ran.before, ran.after);
+      } catch (err) {
+        // Leaving the set open serves no one: hold it with why, so the console shows it instead of a stuck "open" run.
+        await run.finish("held", `stopped: ${err instanceof Error ? err.message : String(err)}`.slice(0, 500)).catch(() => {});
+        throw err;
+      }
       await run.finish("applied", undefined, { schools: out.rows.length, documents_sent: changed.sent, documents_removed: changed.removed });
       where = `${where} (change set ${run.handle.id}: ${changed.sent} documents sent, ${changed.removed} removed)`;
     }

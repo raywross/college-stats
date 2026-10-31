@@ -55,28 +55,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check the API key
-        id: secret
+      - name: Check the secrets
+        id: secrets
         run: |
           if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
-            echo "::error::ANTHROPIC_API_KEY is not set (repository secret)."
-            exit 1
+            echo "::notice::ANTHROPIC_API_KEY is not set; skipping this run."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set; skipping this run."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-node@v4
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
 
       - name: Open the change set
         id: change_set
+        if: steps.secrets.outputs.ready == 'true'
         run: |
           id=$(node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/data-change-set.mts open --store supabase --source campus-pilot --run-ref "$GITHUB_RUN_ID")
           echo "id=$id" >> "$GITHUB_OUTPUT"
 
       - name: Run the pilot
         id: pilot
+        if: steps.secrets.outputs.ready == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           COLLEGES: ${{ inputs.college }}
@@ -94,6 +103,7 @@ jobs:
 
       - name: Score against the answer key
         id: score
+        if: steps.secrets.outputs.ready == 'true'
         env:
           CHANGE_SET: ${{ steps.change_set.outputs.id }}
         run: |
@@ -105,6 +115,7 @@ jobs:
 
       # The console's health document counts campus-page facts and blocked hosts; rebuilt into the same change set.
       - name: Rebuild the health document
+        if: steps.secrets.outputs.ready == 'true'
         env:
           CHANGE_SET: ${{ steps.change_set.outputs.id }}
         run: npm run college-health -- --store supabase --change-set "$CHANGE_SET"

@@ -42,20 +42,27 @@ jobs:
       DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
     steps:
       - name: Check the data project's secrets
+        id: secrets
         run: |
           if [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
-            echo "::error::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set (repository secrets)."
-            exit 1
+            echo "::notice::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set; skipping this run."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@v4
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
 
       - name: Sync the grid and the members
         id: sync
+        if: steps.secrets.outputs.ready == 'true'
         env:
           COLLEGE_DOCS_REPO: ${{ vars.COLLEGE_DOCS_REPO }}
           COLLEGE_REPORTED_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN }}
@@ -72,7 +79,7 @@ jobs:
           exit "$code"
 
       - name: Ask for a snapshot
-        if: steps.sync.outputs.exit_code == '0'
+        if: steps.secrets.outputs.ready == 'true' && steps.sync.outputs.exit_code == '0'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh api repos/${{ github.repository }}/dispatches -f event_type=publish-snapshot

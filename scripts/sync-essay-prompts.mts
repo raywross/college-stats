@@ -222,7 +222,13 @@ const breaker = essaysBreaker(c);
 if (breaker) console.log(`HELD: ${breaker}`);
 if (!DRY) {
   const run = await openProducerRun(store, "essay-prompts", { changeSet, summary: { run: RUN, cycle: summary.cycle } });
-  await writeEssayRun(run.handle, state, { records: passed, held, cleared, pages, summary });
+  try {
+    await writeEssayRun(run.handle, state, { records: passed, held, cleared, pages, summary });
+  } catch (err) {
+    // Leaving the set open serves no one: hold it with why, so the console shows it instead of a stuck "open" run.
+    await run.finish("held", `stopped: ${err instanceof Error ? err.message : String(err)}`.slice(0, 500)).catch(() => {});
+    throw err;
+  }
   await run.finish(breaker ? "held" : "applied", breaker ?? undefined, {
     run: RUN,
     cycle: summary.cycle,

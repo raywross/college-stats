@@ -58,15 +58,27 @@ jobs:
 
       - run: npm ci
 
+      - name: Check the data project's secrets
+        id: secrets
+        run: |
+          if [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set; skipping this run."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       # identity.probe's newest `retrieved` date, compared with today (specs/school-identity/follow-ups.md).
       - name: Check whether a refresh is due
         id: due
+        if: steps.secrets.outputs.ready == 'true'
         run: |
           due=$(node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/identity-refresh.mts due --store supabase)
           echo "due=$due" >> "$GITHUB_OUTPUT"
 
       - name: Decide whether to proceed
         id: gate
+        if: steps.secrets.outputs.ready == 'true'
         env:
           DUE: ${{ steps.due.outputs.due }}
         run: |
@@ -87,7 +99,7 @@ jobs:
       # Keyed per run (so it always saves the latest state at the end) with a prefix restore-key (so it always
       # restores the newest prior entry).
       - name: Restore identity caches (Wikipedia, Wikidata)
-        if: steps.gate.outputs.proceed == 'true'
+        if: steps.secrets.outputs.ready == 'true' && steps.gate.outputs.proceed == 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -100,7 +112,7 @@ jobs:
       # One change set for the whole run; each script below writes into it.
       - name: Open the change set
         id: change_set
-        if: steps.gate.outputs.proceed == 'true'
+        if: steps.secrets.outputs.ready == 'true' && steps.gate.outputs.proceed == 'true'
         run: |
           id=$(node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/data-change-set.mts open --store supabase --source identity-refresh --run-ref "$GITHUB_RUN_ID")
           echo "id=$id" >> "$GITHUB_OUTPUT"

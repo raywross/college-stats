@@ -1,24 +1,30 @@
 /**
  * The site probe (specs/school-identity/links.md, "As built: the probe"): visits each college's homepage and admissions
  * page politely (robots.txt, one request a second per host, an honest user agent) and records its campus visit page,
- * its homepage's social links and icon candidates, and whether each stored link still answers. Writes
- * data/site-probe.json and data/link-issues.json, then re-applies identity to data/schools.json (merge-identity).
- * Free: HTTP only. The Haiku picker for colleges the scorer misses runs only with --picker (paid, capped).
+ * its homepage's social links and icon candidates, and whether each stored link still answers. Writes `identity.probe`
+ * and `identity.link_issues` (one document per college) in one change set, its own (source `identity-refresh`) unless
+ * `--change-set <id>` names the workflow's; the publisher applies them to the colleges. Free: HTTP only. The Haiku
+ * picker for colleges the scorer misses runs only with --picker (paid, capped).
  *
- *   npm run probe-sites                            # every college in data/schools.json (10–30 minutes)
- *   npm run probe-sites -- --ids 139959,221999     # these colleges only; the file keeps everyone else's entries
+ *   npm run probe-sites -- --store supabase        # every college in the store (10–30 minutes); --store file:<dir> for a folder
+ *   npm run probe-sites -- --ids 139959,221999     # these colleges only; everyone else's entries are kept
  *   npm run probe-sites -- --sample 50             # a spread sample (the same 50 every run)
  *   npm run probe-sites -- --concurrency 48        # colleges at a time (default 32)
  *   npm run probe-sites -- --missing               # only colleges without a visit page yet
  *   npm run probe-sites -- --picker --picker-cap 2 # Haiku picks the visit page where the scorer found none; stops at $2
+ *   npm run probe-sites -- --change-set 42         # write into the workflow's open change set
+ *   npm run probe-sites -- --dry-run               # probe and report; nothing written
  *
- * The links probed are the ones data/schools.json stores plus the IPEDS directory's (the cached HD file under
- * .cache/ipeds, if any), so a run before the next full sync still checks every HD link. `npm run sync-data -- --links`
- * runs the same probe right after a sync.
+ * The links probed are the colleges' stored ones (the base with identity applied, as the publisher composes it) plus the
+ * IPEDS directory's (the cached HD file under .cache/ipeds, if any), so a run before the next full sync still checks
+ * every HD link. `npm run sync-data -- --links` runs the same probe right after a sync.
  */
 import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { VisitPicker, runSiteProbe, type ProbeSummary } from "./lib/site-probe.mts";
+import { storeFromFlag, type ChangeSetHandle } from "./lib/data-platform/store.mts";
+import { changeSetFlag, withRunSet } from "./lib/data-platform/change-set.mts";
+import { probeStateFromStore, storeColleges } from "./lib/identity-store.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const args = process.argv.slice(2);
@@ -66,13 +72,21 @@ async function main() {
     picker = new VisitPicker(new Anthropic(), { capUsd: cap, log: (m) => console.warn(m) });
     console.log(`  picker on: ${picker.model}, capped at $${cap}`);
   }
-  const summary = await runSiteProbe(ROOT, {
-    ids,
-    sample: number("--sample"),
-    missing: args.includes("--missing"),
-    concurrency: number("--concurrency"),
-    picker,
-  });
+  const store = storeFromFlag(value("--store"));
+  const schools = await storeColleges(store);
+  if (!schools.length) throw new Error("the store has no colleges (base.colleges): import or sync the base first");
+  const probe = async (handle: ChangeSetHandle | null) =>
+    runSiteProbe(ROOT, {
+      schools,
+      state: await probeStateFromStore(store, handle),
+      ids,
+      sample: number("--sample"),
+      missing: args.includes("--missing"),
+      concurrency: number("--concurrency"),
+      picker,
+    });
+  // --dry-run probes and reports but writes nothing (no change set).
+  const summary = args.includes("--dry-run") ? await probe(null) : await withRunSet(store, { source: "identity-refresh", changeSet: changeSetFlag(args) }, probe);
   report(summary);
 }
 

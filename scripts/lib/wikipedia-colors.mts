@@ -243,29 +243,6 @@ export function formatRows(rows: readonly object[]): string {
   return rows.length ? `[\n${rows.map((r) => JSON.stringify(r)).join(",\n")}\n]\n` : "[]\n";
 }
 
-/**
- * The color step on disk: reads the article links (data/wikidata.json, or `wikidataPath`), fetches, joins, and writes
- * data/brand-colors.json. With `ids`, only those colleges' rows are replaced. sync-wikidata may call this after
- * writing its file; `npm run sync-brand -- --colors` runs it alone.
- */
-export async function syncBrandColors(
-  root: string,
-  opts: { ids?: ReadonlySet<string>; refresh?: boolean; wikidataPath?: string; deps?: WikiDeps } = {},
-): Promise<ColorsRun> {
-  const wikidataPath = opts.wikidataPath ?? join(root, "data", "wikidata.json");
-  if (!existsSync(wikidataPath)) throw new Error(`${wikidataPath} is missing: run \`npm run sync-wikidata\` first (it gives each college's Wikipedia article)`);
-  const wikidata = JSON.parse(readFileSync(wikidataPath, "utf8")) as Pick<WikidataEntry, "unit_id" | "wikipedia">[];
-  const run = await buildBrandColors(wikidata, join(root, ".cache", "wikipedia"), opts.deps ?? defaultDeps(), opts);
-  const outPath = join(root, "data", "brand-colors.json");
-  let rows = run.entries;
-  if (opts.ids) {
-    const kept = readJson<BrandColorEntry[]>(outPath, []).filter((e) => !opts.ids!.has(e.unit_id));
-    rows = [...kept, ...run.entries].sort((a, b) => a.unit_id.localeCompare(b.unit_id));
-  }
-  writeFileSync(outPath, formatRows(rows));
-  return { ...run, entries: rows };
-}
-
 export interface ColorsRun {
   entries: BrandColorEntry[];
   /** Colleges with an article whose lead gave no colors, by reason, for the run summary. */

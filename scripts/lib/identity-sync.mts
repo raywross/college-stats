@@ -1,8 +1,9 @@
 /**
  * School identity on disk (specs/school-identity/README.md): loads the committed files `applyIdentity` reads
- * (lib/identity-files.ts) and re-applies identity to the committed data/schools.json (`mergeIdentity`), which
- * `npm run merge-identity`, `npm run sync-wikidata`, the site probe, and the brand step all call after writing their
- * files. `npm run sync-data` loads the same inputs and applies them to its fresh build.
+ * (lib/identity-files.ts) and re-applies identity to the committed data/schools.json (`mergeIdentity`, for
+ * `npm run merge-identity`). `npm run sync-data` loads the same inputs and applies them to its fresh build. The
+ * identity producers (sync-wikidata, probe-sites, sync-brand) write the data store's identity layers instead
+ * (./identity-store.mts) and the publisher applies them.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

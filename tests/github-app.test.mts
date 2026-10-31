@@ -611,7 +611,7 @@ test("every dispatchable workflow declares request_id (optional, default '') and
   assert.deepEqual(workflowProblems(yml.replace(/^run-name: .*\n/m, ""), []), ["run-name doesn't carry inputs.request_id"]);
   assert.deepEqual(workflowProblems(yml, ["max_cost"]), ['no input "max_cost"']);
   // Only the table's workflows are dispatchable; the pilots aren't.
-  assert.deepEqual([...DISPATCHABLE_FILES].sort(), ["college-reported.yml", "identity-refresh.yml", "publish-changes.yml", "publish-snapshot.yml", "verify.yml", "visit-events.yml"]);
+  assert.deepEqual([...DISPATCHABLE_FILES].sort(), ["college-reported.yml", "identity-refresh.yml", "publish-snapshot.yml", "verify.yml", "visit-events.yml"]);
 });
 
 test("run-name: the console's title is '<workflow> · <request id>', which requestIdFromTitle reads back", () => {
@@ -639,9 +639,7 @@ test("buildDispatch: types, defaults, the unit id, the 'all' confirmation, and R
   assert.equal(buildDispatch("all", { max_cost: "lots" }, { confirm: "all" }).ok, false);
   assert.ok(runById("all")!.guards.showCost);
 
-  const publish = buildDispatch("publish", { what: "high-schools" });
-  assert.ok(publish.ok && publish.inputs.what === "high-schools");
-  assert.equal(buildDispatch("publish", { what: "everything" }).ok, false);
+  assert.equal(buildDispatch("publish", { what: "high-schools" }).ok, false, "publish-changes.yml is retired: the publisher writes those tables");
 
   assert.equal(buildDispatch("verify", {}).ok, false, "Re-run CI needs the PR's branch");
   assert.equal(buildDispatch("verify", {}, { branch: "main" }).ok, false);
@@ -658,7 +656,7 @@ test("blockingRun: a queued or running run of the same workflow blocks a one-at-
   assert.equal(blockingRun(runById("college")!, runs), null);
   assert.deepEqual(blockingRun(runById("identity")!, runs), runs[0]);
   assert.deepEqual(blockingRun(runById("pilot")!, [{ workflow: "college-reported.yml", status: "queued" }]), { workflow: "college-reported.yml", status: "queued" });
-  assert.equal(blockingRun(runById("publish")!, [{ workflow: "publish-changes.yml", status: "in_progress" }]), null, "no guard on publish");
+  assert.equal(blockingRun(runById("verify")!, [{ workflow: "verify.yml", status: "in_progress" }]), null, "no guard on Re-run CI");
 });
 
 test("fetchRunCost: data/reports/ on main, newest summary first until a full run, then cached by sha", async () => {

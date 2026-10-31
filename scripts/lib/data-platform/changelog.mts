@@ -1,7 +1,7 @@
 /**
  * The change log and tier history from snapshots (specs/data-platform/publish.md "The change log and tier history"):
- * what `npm run publish-changes` and `npm run publish-selectivity-history` did with two git commits, done with the
- * previous snapshot and the new one. Both call those scripts' library code (scripts/lib/publish-changes.mts
+ * what the retired `npm run publish-changes` and `npm run publish-selectivity-history` did with two git commits, done
+ * with the previous snapshot and the new one. Both call those scripts' library code (scripts/lib/publish-changes.mts
  * `computeChanges`/`recordPublish`, scripts/lib/selectivity-history.mts `historyRows`/`historyRun`/`recordRun`), and
  * each names the publish `snapshot:<id>` in place of a commit, so a re-run for a recorded snapshot writes nothing
  * (publish_changes reuses a recorded `git_commit`; record_selectivity_run skips one). A point-back never calls these.

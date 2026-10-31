@@ -8,6 +8,9 @@
  *   npm run publish-snapshot -- --store supabase --force                 publish with nothing new, or past a hold
  *   npm run publish-snapshot -- --store supabase --point 41              point back at snapshot 41 (no rebuild)
  *   … --skip-changelog          no change log or tier history (a re-publish, a test)
+ *   … --skip-tables             no college_data_failures upsert and no high-school tables (a re-publish, a test)
+ *   … --republish-high-schools  write the high-school tables even when this snapshot's high schools match theirs
+ *   … --skip-deploy             don't call the deploy hook (VERCEL_DEPLOY_HOOK_URL)
  *   … --previous auto|git|none  what the tiers' hysteresis, the carried trends and the change log compare with:
  *                               the last published snapshot (auto), falling back to data/schools.json while git still
  *                               holds it (phase 1); `none` for a first publish from nothing
@@ -20,16 +23,20 @@
  * none stops it ("nothing to publish") unless --force. (2) Load the layers, the live field edits and the console's
  * hand-read prompts. (3) Compose (scripts/lib/data-platform/compose.mts); a lineage failure records the snapshot as
  * failed, prints the first ten problems and exits 1, uploading nothing. (4) Render (render.mts). (5) Upload the
- * objects, then the manifest, then the pointer (upload.mts); wait 75 s (a warm instance re-reads the pointer at most
- * once a minute, so revalidating sooner would rebuild pages from the old snapshot) and POST /api/revalidate on each
- * site. (6) Record: data_finish_snapshot, the change log and tier history (changelog.mts). (7) Prune old snapshots'
+ * objects, then the manifest, then the pointer (upload.mts). (6) Record: the tables the app reads beside the snapshot
+ * (publish-tables.mts: the college_data_failures upsert, and the high-school tables when the snapshot's high schools
+ * changed), data_finish_snapshot with the tables' log in the row's manifest, the change log and tier history
+ * (changelog.mts); then wait 75 s (a warm instance re-reads the pointer at most once a minute, so revalidating sooner
+ * would rebuild pages from the old snapshot), POST /api/revalidate on each site, and POST the deploy hook so the next
+ * build bundles the new snapshot (cold starts then read the bundle and download nothing). (7) Prune old snapshots'
  * objects. `--dry-run` stops after (4), writing the objects and the manifest under `--out` when given, and writes
- * nothing anywhere else.
+ * nothing anywhere else. `--point` moves the pointer, then waits, revalidates and calls the hook (no tables).
  *
  * With `--store file:<dir>` the ledger is the folder's (`_change_sets.json`, `_snapshots.json`) and the bucket is
  * `<dir>/_bucket/`; nothing touches the network. Env: DATA_SUPABASE_URL / DATA_SUPABASE_SECRET_KEY (falling back to
  * SUPABASE_URL / SUPABASE_SECRET_KEY), REVALIDATE_SECRET and REVALIDATE_URLS (comma-separated site origins; else
- * SITE_URL) for the revalidate call, NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN for the `data_publish` event.
+ * SITE_URL) for the revalidate call, VERCEL_DEPLOY_HOOK_URL (optional) for the deploy hook, NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
+ * for the `data_publish` event.
  */
 import { mkdirSync, readFileSync, existsSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -44,6 +51,9 @@ import { renderSnapshot, renderedBytes, sha256, type RenderedSnapshot } from "./
 import { fileBucket, movePointer, pointerFor, prune, snapshotsToKeep, supabaseBucket, uploadSnapshot, type BucketClient } from "./lib/data-platform/upload.mts";
 import { fileLedger, lastPublished, supabaseLedger, type PublishLedger } from "./lib/data-platform/ledger.mts";
 import { recordChanges, recordTiers, tierSuppression } from "./lib/data-platform/changelog.mts";
+import { publishTables, skippedTables, type RecordedManifest, type TablesDeps, type TablesLog } from "./lib/data-platform/publish-tables.mts";
+import { COLLECTIONS, readLayer } from "./lib/data-platform/layers.mts";
+import type { FailureRow } from "./lib/college-failures.mts";
 import { readRecorded, type HistoryClient } from "./lib/selectivity-history.mts";
 import { SELECTIVITY_METHOD } from "../lib/selectivity.ts";
 
@@ -61,6 +71,12 @@ export interface PublishOptions {
   out?: string;
   force: boolean;
   skipChangelog: boolean;
+  /** No table step (college_data_failures, the high-school tables). */
+  skipTables?: boolean;
+  /** Write the high-school tables even when their digest matches. */
+  republishHighSchools?: boolean;
+  /** Don't call the deploy hook. */
+  skipDeploy?: boolean;
   point?: number;
   previous: "auto" | "git" | "none";
   today: string;
@@ -70,8 +86,8 @@ export interface PublishOptions {
   log: (line: string) => void;
   /** Where data/ lives for `--previous git` (the repository). */
   root: string;
-  /** Overrides for tests: the bucket, the ledger, the change-log client, fetch. */
-  deps?: Partial<{ bucket: BucketClient; ledger: PublishLedger; changelogClient: unknown; fetch: typeof fetch; now: () => Date }>;
+  /** Overrides for tests: the bucket, the ledger, the secret-key client (change log, tables), the tables' library calls, fetch. */
+  deps?: Partial<{ bucket: BucketClient; ledger: PublishLedger; changelogClient: unknown; tables: Partial<TablesDeps>; fetch: typeof fetch; now: () => Date }>;
 }
 
 /** Parses argv into options (process.env and console for the rest). */
@@ -86,6 +102,9 @@ export function parseArgs(argv: readonly string[], env: Env = process.env): Publ
     out: flagValue(argv, "--out"),
     force: argv.includes("--force"),
     skipChangelog: argv.includes("--skip-changelog"),
+    skipTables: argv.includes("--skip-tables"),
+    republishHighSchools: argv.includes("--republish-high-schools"),
+    skipDeploy: argv.includes("--skip-deploy"),
     point: point === undefined ? undefined : Number(point),
     previous,
     today: flagValue(argv, "--today") ?? new Date().toISOString().slice(0, 10),
@@ -100,7 +119,7 @@ export function parseArgs(argv: readonly string[], env: Env = process.env): Publ
 interface Backend {
   ledger: PublishLedger;
   bucket: BucketClient;
-  /** The secret-key client for the change log and tier history (null for the file store). */
+  /** The secret-key client for the change log, tier history and the tables (null for the file store). */
   client: (HistoryClient & Parameters<typeof recordChanges>[0]) | null;
 }
 
@@ -148,17 +167,52 @@ export function writeRendered(dir: string, rendered: RenderedSnapshot): void {
   writeFileSync(join(dir, SNAPSHOT_OBJECTS.manifest), rendered.manifestBytes);
 }
 
+const revalidateSites = (env: Env) => (env.REVALIDATE_URLS || env.SITE_URL || "").split(",").map((s) => s.trim().replace(/\/+$/, "")).filter(Boolean);
+const revalidateConfigured = (env: Env) => !!env.REVALIDATE_SECRET && revalidateSites(env).length > 0;
+const hookUrl = (opts: PublishOptions) => (opts.skipDeploy ? "" : (opts.env.VERCEL_DEPLOY_HOOK_URL ?? "").trim());
+
+/**
+ * After the pointer moves: the wait (so warm instances have read the new pointer), the revalidate on each site, then
+ * the deploy hook. The wait is skipped when neither the revalidate nor the hook is configured.
+ */
+async function afterPointer(opts: PublishOptions): Promise<void> {
+  if (opts.revalidateWaitS > 0 && (revalidateConfigured(opts.env) || hookUrl(opts))) {
+    opts.log(`revalidate: waiting ${opts.revalidateWaitS} s so warm instances have read the new pointer`);
+    await new Promise((r) => setTimeout(r, opts.revalidateWaitS * 1000));
+  }
+  await revalidate(opts);
+  await deployHook(opts);
+}
+
+/**
+ * POST the Vercel deploy hook (VERCEL_DEPLOY_HOOK_URL), so the next build bundles the snapshot the pointer names and
+ * cold starts read it from disk. Logs the answer's status, never the URL (it is a secret); never throws.
+ */
+async function deployHook(opts: PublishOptions): Promise<void> {
+  if (opts.skipDeploy) {
+    opts.log("deploy hook: skipped (--skip-deploy)");
+    return;
+  }
+  const url = hookUrl(opts);
+  if (!url) {
+    opts.log("deploy hook: VERCEL_DEPLOY_HOOK_URL not set; skipped (the next build bundles the snapshot)");
+    return;
+  }
+  try {
+    const res = await (opts.deps?.fetch ?? fetch)(url, { method: "POST" });
+    opts.log(`deploy hook: answered ${res.status}`);
+  } catch (err) {
+    opts.log(`deploy hook: failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 /** POST /api/revalidate on each configured site; failures are logged, never thrown (the pointer has already moved). */
 async function revalidate(opts: PublishOptions): Promise<void> {
   const secret = opts.env.REVALIDATE_SECRET;
-  const sites = (opts.env.REVALIDATE_URLS || opts.env.SITE_URL || "").split(",").map((s) => s.trim().replace(/\/+$/, "")).filter(Boolean);
+  const sites = revalidateSites(opts.env);
   if (!secret || !sites.length) {
     opts.log("revalidate: REVALIDATE_SECRET or REVALIDATE_URLS/SITE_URL not set; skipped (pages pick the snapshot up as they regenerate)");
     return;
-  }
-  if (opts.revalidateWaitS > 0) {
-    opts.log(`revalidate: waiting ${opts.revalidateWaitS} s so warm instances have read the new pointer`);
-    await new Promise((r) => setTimeout(r, opts.revalidateWaitS * 1000));
   }
   const f = opts.deps?.fetch ?? fetch;
   for (const site of sites) {
@@ -189,7 +243,10 @@ async function trackPublish(opts: PublishOptions, props: { snapshot: number; cha
   }
 }
 
-/** `--point <id>`: moves the pointer back to a published snapshot (no rebuild, no change log), then revalidates. */
+/**
+ * `--point <id>`: moves the pointer back to a published snapshot (no compose, no change log, no tables), then waits,
+ * revalidates and calls the deploy hook, so new builds bundle the snapshot the pointer names.
+ */
 async function pointBack(opts: PublishOptions, b: Backend, id: number): Promise<number> {
   const row = (await b.ledger.snapshots()).find((r) => r.id === id);
   if (!row || row.status !== "published") {
@@ -204,7 +261,7 @@ async function pointBack(opts: PublishOptions, b: Backend, id: number): Promise<
   }
   await movePointer(b.bucket, pointer, { log: opts.log });
   opts.log(`pointer moved back to snapshot ${id}`);
-  await revalidate(opts);
+  await afterPointer(opts);
   return EXIT.ok;
 }
 
@@ -281,10 +338,32 @@ export async function publishSnapshot(opts: PublishOptions): Promise<number> {
     await b.ledger.finish(id, "failed", rendered.manifest, err instanceof Error ? err.message : String(err)).catch(() => {});
     throw err;
   }
-  await b.ledger.finish(id, "published", rendered.manifest, null);
-  opts.log(`snapshot ${id} published; the pointer names it`);
+  opts.log(`snapshot ${id} is live; the pointer names it`);
 
-  // 6. Record the change log and tier history, then revalidate (after the wait).
+  // 6. The tables beside the snapshot (logged in the row's manifest), the row, the change log and tier history; then
+  // the wait, the revalidate and the deploy hook.
+  const previousManifest = last ? await b.ledger.manifest(last.id) : null;
+  let tables: TablesLog;
+  if (opts.skipTables || !b.client) {
+    const why = opts.skipTables ? "--skip-tables" : "the file store has no tables";
+    tables = skippedTables({ manifest: rendered.manifest, previous: previousManifest }, why);
+    opts.log(`tables: skipped (${why})`);
+  } else {
+    // The pointer has moved: a failed read leaves the failures table as it is rather than stopping the run.
+    const failures = await readLayer<FailureRow[]>(store, COLLECTIONS.reported.failures).catch((err: unknown) => {
+      opts.log(`college data failures: reading ${COLLECTIONS.reported.failures} failed: ${err instanceof Error ? err.message : String(err)}`);
+      return new Map<string, FailureRow[]>();
+    });
+    tables = await publishTables(
+      b.client as unknown as Parameters<typeof publishTables>[0],
+      { collegeIds: new Set(composed.schools.map((s) => s.unit_id)), highSchools: composed.highSchools, manifest: rendered.manifest, previous: previousManifest, failures },
+      { forceHighSchools: opts.republishHighSchools, log: opts.log, deps: opts.deps?.tables }
+    );
+  }
+  const recordedManifest: RecordedManifest = { ...rendered.manifest, tables };
+  await b.ledger.finish(id, "published", recordedManifest, null);
+  opts.log(`snapshot ${id} published`);
+
   if (opts.skipChangelog) opts.log("change log: skipped (--skip-changelog)");
   else if (!b.client) opts.log("change log: skipped (the file store has no change-log tables)");
   else {
@@ -296,7 +375,7 @@ export async function publishSnapshot(opts: PublishOptions): Promise<number> {
     });
     await recordTiers(b.client, { schools: composed.schools, meta: composed.meta, index: composed.selectivity }, id, { publishId: result.publish_id, recorded, log: opts.log });
   }
-  await revalidate(opts);
+  await afterPointer(opts);
 
   // 7. Prune: the newest snapshots and every one pointed back to stay.
   const rows = await b.ledger.snapshots();

@@ -6,7 +6,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -39,6 +39,11 @@ import {
   type HostLookup,
   type PageAnchor,
 } from "../scripts/lib/site-probe.mts";
+import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/store.mts";
+import { COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
+import { withRunSet } from "../scripts/lib/data-platform/change-set.mts";
+import { probeStateFromStore, storeColleges } from "../scripts/lib/identity-store.mts";
+import { importLayers, writeImport } from "../scripts/import-data-from-git.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const FIXTURES = join(import.meta.dirname, "fixtures", "site-probe");
@@ -869,4 +874,62 @@ test("runSiteProbe writes both files one row per line, keeps other colleges' ent
   assert.equal(final[1].links?.website, null, "two failed runs: the link is null");
   assert.equal(final[0].links?.visit, "https://admissions.example.edu/en/visit/", "the other college keeps its visit page");
   assert.deepEqual(mergeProbeEntries(again, [], new Set([UGA.unit_id])).map((e) => e.unit_id), [UGA.unit_id]);
+});
+
+/* ------------------------------------------------------------------ */
+/* A run on the data store (specs/data-platform/pipelines.md)          */
+/* ------------------------------------------------------------------ */
+
+test("runSiteProbe on the file store: reads and writes identity.probe and identity.link_issues per college, never data/", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "site-probe-store-"));
+  const store = fileStore(join(dir, "layers"));
+  const a = { ...structuredClone(UGA), links: { website: "https://www.example.edu/", price_calculator: "https://npc.shared-calculators.com/example", admissions: "https://admissions.example.edu/en/" } } as School;
+  const b = { ...structuredClone(schools.find((s) => s.unit_id === "221999")!), links: { website: "https://gone.example.org/", price_calculator: null } } as School;
+  // The base as the import keys it (one document per unit id), plus another college's probe entry from an earlier run.
+  const seed = await store.open("import", "seed", "fixture");
+  await seed.write(COLLECTIONS.base.colleges, [a, b].map((s) => ({ key: s.unit_id, body: s })));
+  await seed.write(COLLECTIONS.identity.probe, [{ key: "100000", body: entry("100000", {}) }]);
+  await seed.close("applied");
+
+  const colleges = await storeColleges(store);
+  assert.deepEqual(colleges.map((s) => s.unit_id).sort(), [UGA.unit_id, "221999"].sort());
+  const run = async (opts: { ids?: string[]; today: string }) =>
+    withRunSet(store, { source: "identity-refresh", runRef: opts.today }, async (handle) =>
+      runSiteProbe(dir, { schools: colleges, state: await probeStateFromStore(store, handle), http: politeHttp(fakeFetch(COLLEGE_ROUTES).fn), hosts: fakeHosts(COLLEGE_ROUTES), hdRows: null, log: () => {}, concurrency: 2, ...opts })
+    );
+  const summary = await run({ today: TODAY });
+  assert.deepEqual([summary.colleges, summary.visit], [2, 1]);
+  assert.deepEqual([...(await store.read(COLLECTIONS.identity.probe)).keys()], [UGA.unit_id, "221999"], "one document per college; a college not in the dataset is removed");
+  const issues = await store.read<LinkIssue[]>(COLLECTIONS.identity.linkIssues);
+  assert.deepEqual([...issues].map(([k, rows]) => [k, rows.map((i) => [i.field, i.failures])]), [["221999", [["website", 1]]]], "issues grouped per college, as the import keys them");
+  assert.equal(existsSync(join(dir, "data")), false, "nothing under data/ is read or written");
+
+  // A partial run the next day: the other college's entry stays; the dead homepage's issue counts a second failure.
+  await run({ ids: ["221999"], today: "2026-11-04" });
+  const probe = await store.read<SiteProbeEntry>(COLLECTIONS.identity.probe);
+  assert.deepEqual([...probe].map(([k, e]) => [k, e.retrieved]), [[UGA.unit_id, TODAY], ["221999", "2026-11-04"]]);
+  assert.equal((await store.read<LinkIssue[]>(COLLECTIONS.identity.linkIssues)).get("221999")?.[0].failures, 2);
+  const sets = fileStoreChangeSets(join(dir, "layers"));
+  assert.deepEqual(sets.slice(1).map((s) => [s.source, s.status, s.summary.collections]), [
+    ["identity-refresh", "applied", [COLLECTIONS.identity.linkIssues, COLLECTIONS.identity.probe]],
+    ["identity-refresh", "applied", [COLLECTIONS.identity.linkIssues, COLLECTIONS.identity.probe]],
+  ]);
+
+  // The publisher's compose applies the layer: the visit page reaches the college.
+  const composed = await storeColleges(store);
+  assert.equal(composed.find((s) => s.unit_id === UGA.unit_id)?.links?.visit, "https://admissions.example.edu/en/visit/");
+  assert.equal(composed.find((s) => s.unit_id === "221999")?.links?.website, null, "two failed runs: the link is null");
+});
+
+test("the probe's store save keys the committed files exactly as the import does (saving them again writes nothing)", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "site-probe-import-"));
+  const units = new Set(["139959", "221999", "166027", "100654"]);
+  const store = fileStore(dir);
+  await writeImport(store, importLayers(ROOT, { only: new Set([COLLECTIONS.identity.probe, COLLECTIONS.identity.linkIssues]), units }), "fixture");
+  const handle = await store.open("pipeline", "identity-refresh", "resave");
+  const state = await probeStateFromStore(store, handle);
+  assert.ok(state.previous.length > 0);
+  await state.save([...state.previous], [...state.issues]);
+  await handle.close("applied");
+  assert.equal(fileStoreChangeSets(dir).at(-1)!.summary.documents, 0);
 });

@@ -510,7 +510,7 @@ test("dispatch guards: the typed table, the word for a full run, the one-at-a-ti
 
 test("a dispatch finds its run by request id and links it; when GitHub hasn't listed it yet, it says so", async () => {
   let f = fakeOps();
-  let r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false, auto_merge: true } });
+  let r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false } });
   assert.deepEqual(r, { status: "done", message: "Refresh links, social, brand started.", link: { href: "https://github.com/raywross/college-stats/actions/runs/1", label: "Run #49 on GitHub" } });
   f = fakeOps();
   let looked = 0;
@@ -518,7 +518,7 @@ test("a dispatch finds its run by request id and links it; when GitHub hasn't li
     looked++;
     return null;
   };
-  r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false, auto_merge: true } });
+  r = await opsActions.dispatchRun(f.deps, { run: "identity", values: { force: false } });
   assert.equal(looked, opsActions.FIND_RUN_ATTEMPTS);
   assert.equal(r.status, "done");
   assert.match(r.status === "done" ? r.message : "", /appears under Runs/);

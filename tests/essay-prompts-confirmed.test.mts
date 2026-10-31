@@ -648,8 +648,6 @@ test("the export script and its workflow: the service role's env names, nightly 
   assert.match(yml, /^on:\n {2}schedule:\n {4}- cron: "[^"]+"[^\n]*\n {2}workflow_dispatch:/m);
   assert.match(yml, /SUPABASE_URL: \$\{\{ secrets\.PROD_SUPABASE_URL \}\}/);
   assert.match(yml, /SUPABASE_SECRET_KEY: \$\{\{ secrets\.PROD_SUPABASE_SECRET_KEY \}\}/);
-  const publish = readFileSync(join(ROOT, ".github", "workflows", "publish-changes.yml"), "utf8");
-  assert.match(publish, /SUPABASE_SECRET_KEY: \$\{\{ secrets\.PROD_SUPABASE_SECRET_KEY \}\}/, "the same secret names publish-changes uses");
   assert.match(yml, /npm run export-essay-confirmed/);
   assert.match(yml, /npm run check:lineage/);
   assert.match(yml, /branch="data\/essay-confirmed-\$\{date\}"/);

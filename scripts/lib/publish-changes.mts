@@ -1,8 +1,11 @@
 /**
  * The change log (specs/serving-architecture.md section 2; specs/product/follow-colleges.md#detecting-changes;
- * lib/changes.ts): `npm run publish-changes` (scripts/publish-changes.mts) after each production deploy.
+ * lib/changes.ts). The snapshot publisher records the change log through `computeChanges` and `recordPublish`
+ * (scripts/lib/data-platform/changelog.mts), with two snapshots in place of two commits; the git-based CLI
+ * (`npm run publish-changes`) and its workflow are retired. `publishChanges` and `gitAccess` stay for the backfill and
+ * rebuild scripts and the tests.
  *
- * Both datasets come from git, never from the network: data/schools.json, data/meta.json and
+ * In `publishChanges`, both datasets come from git, never from the network: data/schools.json, data/meta.json and
  * data/release-calendar.json at the base commit (the last one recorded in dataset_publishes) and at the deployed
  * commit, read with `git show <sha>:<path>`. The changes between them are staged with stage_dataset_changes(), then
  * publish_changes() records the publish and moves them into dataset_changes in one transaction
@@ -261,7 +264,7 @@ export async function publishChanges(opts: PublishChangesOptions): Promise<Publi
 /**
  * Stages `changes` and records them as one publish with publish_changes() (one transaction), then reads the count back.
  * `gitCommit` names the publish (a commit sha, or the publisher's `snapshot:<id>`); a re-run with the same name is
- * "reused" and writes nothing. Shared by `npm run publish-changes` and the snapshot publisher
+ * "reused" and writes nothing. Shared by `publishChanges` and the snapshot publisher
  * (scripts/lib/data-platform/changelog.mts). Throws on any failure, naming the step.
  */
 export async function recordPublish(

@@ -316,6 +316,17 @@ function removeStale(original: School, summary: CommonAppSummary): School {
   return school;
 }
 
+/**
+ * The college without anything the Common App step put on it (`apply`, `aid.international_offered`, the two links),
+ * with its test policy settled again: exactly what `applyCommonApp` leaves on a college that isn't a member. The
+ * inverse of the apply: the data platform's import strips the committed dataset back to its base layer with it, after
+ * `stripReported` (specs/data-platform/pipelines.md "The import"). The same object when there's nothing to remove.
+ */
+export function stripCommonApp(school: School): School {
+  const settled = settleTestPolicy(removeStale(school, { removed: 0 } as CommonAppSummary));
+  return sameJson(settled, school) ? school : settled;
+}
+
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 /* ------------------------------------------------------------------ */

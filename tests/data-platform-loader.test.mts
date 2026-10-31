@@ -608,7 +608,9 @@ test("fetch-snapshot's flags: --if-configured is a no-op without DATA_SNAPSHOT_U
     assert.match(fixture.lines.join("\n"), /the mini fixture isn't built yet/);
   }
 
-  // The real prebuild command, as npm runs it: exits 0 and prints nothing when nothing is configured.
+  // The real prebuild command, as npm runs it: exits 0 and prints nothing when nothing is configured, and writes
+  // nothing new (the --fixture call above may already have written cwd/.data, now that the mini fixture exists).
+  rmSync(join(cwd, ".data"), { recursive: true, force: true });
   const env = { ...process.env };
   delete env.DATA_SNAPSHOT_URL;
   const run = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", "fetch-snapshot.mts"), "--if-configured"], { cwd, env, encoding: "utf8" });

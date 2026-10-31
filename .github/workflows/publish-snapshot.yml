@@ -1,11 +1,15 @@
 # The data platform's publisher (specs/data-platform/publish.md "The publisher"): composes the layers in the data
-# project into a snapshot, uploads it to the `snapshots` bucket, moves the pointer, revalidates the sites, and records
-# the change log and tier history. No PR, no deploy, nothing posted to GitHub.
+# project into a snapshot, uploads it to the `snapshots` bucket, moves the pointer, writes the tables the app reads
+# beside it (college_data_failures; the high-school tables when they changed), records the change log and tier
+# history, revalidates the sites, and calls the Vercel deploy hook (VERCEL_DEPLOY_HOOK_URL, optional) so the next
+# build bundles the new snapshot and cold starts download nothing. No PR, nothing committed or posted to GitHub.
+# It replaces publish-changes.yml (retired): its three jobs are steps of this one.
 # - publish: each pipeline's last step sends a `publish-snapshot` repository_dispatch; a nightly run at 08:00 UTC
 #   catches up; the console's Publish now dispatches it with `force`. A held change set stops an automatic run (the
 #   script exits 2, shown here as a notice); `force` publishes past it.
 # - point: the console's Point back here records the point-back (admin_data_point_snapshot), then dispatches this with
-#   `point` set: the pointer moves to that snapshot and the sites revalidate. No rebuild, no change log.
+#   `point` set: the pointer moves to that snapshot, the sites revalidate and the deploy hook rebuilds the bundle. No
+#   compose, no change log, no tables.
 # Skips cleanly while the data project's secrets aren't set.
 name: Publish snapshot
 
@@ -44,14 +48,17 @@ jobs:
   publish:
     if: github.event_name != 'workflow_dispatch' || inputs.point == ''
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # A high-school table write (about 35,000 rows in batches, then read back) can take a while.
+    timeout-minutes: 60
     env:
       DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
       DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
       REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
       # Comma-separated site origins to revalidate after the pointer moves (production, and the preview while it reads
       # the same snapshots).
-      REVALIDATE_URLS: ${{ vars.REVALIDATE_URLS || 'https://usequad.app' }}
+      REVALIDATE_URLS: ${{ secrets.REVALIDATE_URLS || vars.REVALIDATE_URLS || 'https://usequad.app' }}
+      # Optional: unset, the publish skips the hook and the next build bundles the snapshot.
+      VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
       NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{ secrets.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
       FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force && '--force' || '' }}
     steps:
@@ -93,7 +100,9 @@ jobs:
       DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
       DATA_SUPABASE_SECRET_KEY: ${{ secrets.DATA_SUPABASE_SECRET_KEY || secrets.PROD_SUPABASE_SECRET_KEY }}
       REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
-      REVALIDATE_URLS: ${{ vars.REVALIDATE_URLS || 'https://usequad.app' }}
+      REVALIDATE_URLS: ${{ secrets.REVALIDATE_URLS || vars.REVALIDATE_URLS || 'https://usequad.app' }}
+      # A point-back rebuilds the bundle too, so cold starts serve the snapshot the pointer names.
+      VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
       POINT: ${{ inputs.point }}
     steps:
       - name: Check the input and the data project's secrets

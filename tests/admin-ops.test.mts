@@ -496,6 +496,7 @@ test("dispatch guards: the typed table, the word for a full run, the one-at-a-ti
   f = fakeOps({ runs: [run({ status: "in_progress" })] });
   assert.equal((await opsActions.dispatchRun(f.deps, { run: "publish", values: { what: "all" } })).status, "error", "publish-changes.yml is retired: its row is gone from the table");
   assert.deepEqual(f.log, []);
+  assert.equal((await opsActions.dispatchRun(f.deps, { run: "publish-snapshot", values: {} })).status, "done", "another workflow's run doesn't block the publisher");
 
   f = fakeOps();
   r = await opsActions.dispatchRun(f.deps, { run: "college", values: { college: "12", rediscover: false, auto_merge: true } });

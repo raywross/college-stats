@@ -556,7 +556,7 @@ test("buildDispatch: types, defaults, the unit id, the 'all' confirmation, and R
   assert.equal(buildDispatch("all", { max_cost: "lots" }, { confirm: "all" }).ok, false);
   assert.ok(runById("all")!.guards.showCost);
 
-  assert.equal(buildDispatch("publish", { what: "high-schools" }).ok, false, "publish-changes.yml's row is retired");
+  assert.equal(buildDispatch("publish", { what: "high-schools" }).ok, false, "publish-changes.yml is retired: the publisher writes those tables");
   const publish = buildDispatch("publish-snapshot", {});
   assert.ok(publish.ok && publish.file === "publish-snapshot.yml" && publish.inputs.force === "true");
 

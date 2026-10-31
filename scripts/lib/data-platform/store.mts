@@ -96,7 +96,15 @@ function sortKeys(value: unknown): unknown {
  * store as the `body` of its file, the Supabase store as the string it sends for the `json` column), so a body read back
  * from either serializes to the same bytes; equality for idempotence is `orderedJson` (here) or a jsonb cast (there).
  */
-export const documentText = (body: unknown): string => JSON.stringify(body);
+/**
+ * A document's text: `JSON.stringify` with the producer's key order, minus any NUL character. Postgres `json` and
+ * `jsonb` refuse the `\u0000` escape, and a NUL in a document is never meaning, only a PDF reader's artifact (one CDS
+ * record's quote carried one in the first import), so both stores drop it and their texts stay equal.
+ */
+export const documentText = (body: unknown): string => JSON.stringify(body).replace(/\\u0000/g, "");
+
+/** A write call carries at most this many documents and about this many bytes of text: a 16 MB call of CDS records timed out on a Nano instance. */
+export const WRITE_CHUNK_BYTES = 1_500_000;
 
 /** Key-to-file-name encoding of the file store: `encodeURIComponent`, so `essay-guidance/guidance` and `1|2|C1` are one file each. */
 export const encodeKey = (key: string) => encodeURIComponent(key);
@@ -292,6 +300,26 @@ export const compareKeys = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0
 export const READ_PAGE = 1000;
 /** Documents per `data_write_documents` call. */
 export const WRITE_CHUNK = 200;
+
+/**
+ * Splits write rows into calls of at most WRITE_CHUNK documents and about WRITE_CHUNK_BYTES of body text (a single
+ * document larger than that goes alone). Yields [start index, rows].
+ */
+export function* chunkRows<T extends { body: string | null }>(rows: readonly T[], maxDocs = WRITE_CHUNK, maxBytes = WRITE_CHUNK_BYTES): Generator<[number, T[]]> {
+  let start = 0;
+  while (start < rows.length) {
+    let end = start;
+    let bytes = 0;
+    while (end < rows.length && end - start < maxDocs) {
+      const size = rows[end].body?.length ?? 0;
+      if (end > start && bytes + size > maxBytes) break;
+      bytes += size;
+      end++;
+    }
+    yield [start, rows.slice(start, end)];
+    start = end;
+  }
+}
 /** Waits before each retry of a failed call, in ms: a paused free project takes a minute or so to wake. */
 export const RETRY_WAITS = [5_000, 20_000, 60_000] as const;
 
@@ -394,18 +422,18 @@ export function supabaseStore(url: string, secretKey: string, opts: SupabaseStor
       const setId = Number(id);
       const send = async (collection: string, docs: { key: string; body: unknown; expectVersion?: number }[]) => {
         for (const d of docs) checkDoc(collection, d.key);
-        for (let i = 0; i < docs.length; i += WRITE_CHUNK) {
-          const chunk = docs.slice(i, i + WRITE_CHUNK).map((d) => ({
-            collection,
-            key: d.key,
-            // The document's text, key order as the producer built it (the column is `json`, which keeps it); null deletes.
-            body: d.body === undefined || d.body === null ? null : documentText(d.body),
-            ...(d.expectVersion !== undefined ? { expect_version: d.expectVersion } : {}),
-          }));
-          const written = await call<number>(`writing ${collection} (${i + 1}–${i + chunk.length} of ${docs.length})`, (c) =>
+        // The document's text, key order as the producer built it (the column is `json`, which keeps it); null deletes.
+        const rows = docs.map((d) => ({
+          collection,
+          key: d.key,
+          body: d.body === undefined || d.body === null ? null : documentText(d.body),
+          ...(d.expectVersion !== undefined ? { expect_version: d.expectVersion } : {}),
+        }));
+        for (const [start, chunk] of chunkRows(rows)) {
+          const written = await call<number>(`writing ${collection} (${start + 1}–${start + chunk.length} of ${docs.length})`, (c) =>
             c.rpc("data_write_documents", { p_change_set: setId, p_documents: chunk }) as unknown as PromiseLike<CallResult<number>>
           );
-          opts.log?.(`  ${collection}: ${i + chunk.length} of ${docs.length} sent, ${written ?? 0} written`);
+          opts.log?.(`  ${collection}: ${start + chunk.length} of ${docs.length} sent, ${written ?? 0} written`);
         }
       };
       return {

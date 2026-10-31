@@ -15,12 +15,15 @@ what the console filters on: change sets, holds, edits.
 ## Tables
 
 ### `data_documents`: the current version of every document
+Bodies are Postgres `json`, not `jsonb` (as built): `jsonb` reorders object keys, and a document read back must render
+the same bytes it was written from. `data_write_documents` takes each body as a JSON string and stores it as written;
+"unchanged" is judged with a `jsonb` cast, so a key-order-only rewrite writes no version.
 ```sql
 create table public.data_documents (
   collection    text not null check (collection ~ '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$'),
   key           text not null check (length(key) between 1 and 200),
   version       integer not null check (version >= 1),
-  body          jsonb not null,
+  body          json not null,
   change_set_id bigint not null references public.data_change_sets(id),
   updated_at    timestamptz not null default now(),
   primary key (collection, key)
@@ -37,7 +40,7 @@ create table public.data_document_versions (
   collection    text not null,
   key           text not null,
   version       integer not null,
-  body          jsonb,                      -- null when deleted
+  body          json,                       -- null when deleted
   deleted       boolean not null default false,
   change_set_id bigint not null references public.data_change_sets(id),
   created_at    timestamptz not null default now(),
@@ -195,7 +198,7 @@ create function public.admin_data_unhold(p_change_set bigint) returns void;     
 create function public.admin_data_revert(p_change_set bigint, p_note text) returns bigint;                            -- writes a 'revert' change set restoring prior versions; logs data.revert
 create function public.admin_data_resolve_review(p_key text, p_resolution text, p_note text) returns void;           -- 'rejected' | 'accepted'; writes the review item's document; logs data.review
 create function public.admin_data_point_snapshot(p_snapshot bigint) returns void;                                     -- records a point-back (the Storage pointer is moved by the publisher's small 'point' job); logs data.point
-create function public.admin_data_set_reference(p_name text, p_body jsonb, p_note text) returns bigint;               -- a reference document (release calendar, aid policies, …); logs data.reference
+create function public.admin_data_set_reference(p_name text, p_body text, p_note text) returns bigint;                -- a reference document (release calendar, aid policies, …) as JSON text, stored as written; logs data.reference
 ```
 `admin_log.target_kind`'s check constraint gains `'college'`, `'change_set'`, `'snapshot'`, `'document'`. Every
 function follows the existing shape: `is_admin()` first, named exceptions with error codes, one `admin_log_write` in

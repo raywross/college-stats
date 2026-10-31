@@ -412,8 +412,8 @@ test("readShard(): fetched for the snapshot's id with force-cache; 404 is none; 
   const root = bundledRoot(5);
   const unit = THREE[0].unit_id;
   const base = "https://storage.test/storage/v1/object/public/snapshots";
-  assert.equal(loader.shardUrl("history", unit, 12, base), `${base}/snapshots/12/history/${unit}.json`);
-  assert.equal(loader.shardUrl("reference", "essay-guidance.md", 12, base), `${base}/snapshots/12/reference/essay-guidance.md`);
+  assert.equal(loader.shardUrl("history", unit, 12, base), `${base}/12/history/${unit}.json`);
+  assert.equal(loader.shardUrl("reference", "essay-guidance.md", 12, base), `${base}/12/reference/essay-guidance.md`);
   assert.equal(loader.shardUrl("trend", "movers", null, base), null, "no snapshot id, no URL");
 
   const realFetch = globalThis.fetch;
@@ -428,7 +428,7 @@ test("readShard(): fetched for the snapshot's id with force-cache; 404 is none; 
   try {
     await withConsole(async (logs) => {
       assert.deepEqual(await loader.readShard("history", unit, { id: 12, base, root }), { from: "storage" });
-      assert.deepEqual(seen[0], { url: `${base}/snapshots/12/history/${unit}.json`, cache: "force-cache" });
+      assert.deepEqual(seen[0], { url: `${base}/12/history/${unit}.json`, cache: "force-cache" });
       assert.equal(await loader.readShard("reference", "essay-guidance.md", { id: 12, base, root }), "# from storage");
       mode = "404";
       assert.equal(await loader.readShard("detail", unit, { id: 12, base, root }), null, "the snapshot has none");

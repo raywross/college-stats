@@ -119,7 +119,7 @@ async function getOk(get: HttpGet, url: string): Promise<Buffer> {
   return body;
 }
 
-/** `snapshots/current.json`, with a query string so a CDN copy of the pointer is never served. */
+/** `current.json` in the bucket, with a query string so a CDN copy of the pointer is never served. */
 export async function fetchPointer(base: string, get: HttpGet = httpGet, now = Date.now()): Promise<SnapshotPointer> {
   const body = await getOk(get, `${trimBase(base)}/${POINTER_OBJECT}?t=${now}`);
   const pointer = JSON.parse(body.toString("utf8")) as SnapshotPointer;

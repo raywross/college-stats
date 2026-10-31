@@ -7,8 +7,11 @@
 /** The bucket's name in the data project; its objects are public-read. */
 export const SNAPSHOT_BUCKET = "snapshots";
 
-/** The pointer object: which snapshot is live. Served with no caching. */
-export const POINTER_OBJECT = "snapshots/current.json";
+/**
+ * The pointer object: which snapshot is live. Served with no caching. Object keys are relative to the bucket, which
+ * is already named `snapshots`, so a public URL is `…/object/public/snapshots/current.json`, never a doubled prefix.
+ */
+export const POINTER_OBJECT = "current.json";
 
 export interface SnapshotPointer {
   id: number;
@@ -35,8 +38,8 @@ export const trendObject = (name: string) => `trends/${name}.json`;
 export const referenceObject = (name: string) => `reference/${name}`;
 export const highSchoolObject = (file: string) => `high-schools/${file}`;
 
-/** `snapshots/<id>/<object>`: the full path in the bucket. */
-export const snapshotPath = (id: number, object: string) => `snapshots/${id}/${object}`;
+/** `<id>/<object>`: the object's key in the bucket (the bucket itself is `snapshots`). */
+export const snapshotPath = (id: number, object: string) => `${id}/${object}`;
 
 export interface SnapshotManifest {
   id: number;

@@ -25,9 +25,11 @@ four minutes. Steps:
    failure fails the publish (status `failed`, the console shows the first problems); nothing is uploaded.
 4. **Render** the objects (below), each gzipped, with a sha256 in the manifest. Rendering is deterministic: the same
    layer versions give the same bytes (`tests/data-platform-publish.test.mts` proves it on the mini fixture).
-5. **Upload** to the bucket under `snapshots/<id>/`, then write the manifest, then move the pointer
-   `snapshots/current.json` to the new id. Objects are immutable once written (cache headers a year); the pointer is
-   `no-cache`.
+5. **Upload** to the bucket under `<id>/` (the bucket is itself named `snapshots`, so a public URL reads
+   `…/object/public/snapshots/<id>/colleges.json.gz`), then write the manifest, then move the pointer `current.json` to
+   the new id. Objects are immutable once written (cache headers a year); the pointer is `no-cache`. The publisher then
+   **waits 75 seconds** before the revalidate call in step 6: a warm instance re-reads the pointer at most once a
+   minute, and revalidating sooner would regenerate static pages from the old snapshot.
 6. **Record**: `data_finish_snapshot(published)`; the change log (`diffSchools` of this snapshot's colleges against the
    previous snapshot's, with the release calendar, through `stage_dataset_changes`/`publish_changes`, `git_commit =
    "snapshot:<id>"`); selectivity history (`record_selectivity_run`); `college_data_failures` upsert; the high-school
@@ -79,8 +81,14 @@ write policy for the service role only.
   so `next build` and the test suite work with no network and no keys. `outputFileTracingIncludes` traces
   `.data/snapshot/**` into every function in place of the `data/**` entries.
 - **Timing and telemetry.** `[data] loaded N colleges (snapshot <id>) in M ms` once per load and once per swap;
-  a `data_snapshot_swap` server event with `{from, to, ms}`; the health page shows which snapshot each environment
-  serves (a header `x-quad-snapshot` on every HTML response, read by the console).
+  a `data_snapshot_swap` server event with `{from, to, ms}`; the console shows which snapshot each environment serves
+  by reading the `<meta name="x-quad-snapshot">` tag every page carries (as built: a response header can't follow a
+  swap because `proxy.ts` and `headers()` can't see the loader's state; the header exists only where the id is fixed
+  for the deploy, and on `/search-index.json`).
+- **Big objects are fetched with `node:http(s)`, not `fetch`** (as built): Next patches `fetch`, and an uncached fetch
+  during a static render would make the page dynamic. Shards use `fetch` with `force-cache`. No swap happens during
+  `next build`, so every prerendered page comes from one snapshot. A swap follows any pointer change, newer or older,
+  so a point-back is honored, and every object's hash is checked against the manifest before the swap.
 
 ## The change log and tier history
 `scripts/publish-changes.mts` and `publish-selectivity-history.mts` stop running on `deployment_status`. The publisher

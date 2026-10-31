@@ -25,6 +25,8 @@ import { addDirectoryMeta, applyCccuMembership, applyDirectories, chapterFiles, 
 import { applyLgbtqPolicies, pilotDirectoryFiles, stripLgbtqPolicies } from "../scripts/lib/campus-pilot/merge.mts";
 import { placeSelectivity } from "../scripts/lib/selectivity.mts";
 import { formatAliasRows } from "../scripts/lib/aliases-sync.mts";
+import { deepMerge, type Patch } from "../scripts/lib/overrides.mts";
+import { lineageForPatch } from "../lib/lineage.ts";
 import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/store.mts";
 import {
   COLLECTIONS,
@@ -208,6 +210,18 @@ test("identity stays in the base, and re-applying it from its own layers changes
     }
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("the legacy overrides stay in the base, and re-applying them as sync-data does changes nothing (real data)", () => {
+  const overrides = readData<Record<string, Patch>>("overrides.json");
+  const ids = Object.keys(overrides).filter((k) => !k.startsWith("_"));
+  assert.ok(ids.length > 0);
+  for (const id of ids) {
+    const base = stripLaterLayers(committed.find((s) => s.unit_id === id)!);
+    const again = deepMerge(base, overrides[id]);
+    again.lineage = { ...(again.lineage ?? {}), ...lineageForPatch(id, overrides[id]) };
+    assert.equal(JSON.stringify(again), JSON.stringify(base), id);
   }
 });
 

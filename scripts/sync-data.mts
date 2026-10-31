@@ -70,6 +70,7 @@ import { essayPaths, readConfirmedRecords, readEssayRecords } from "./lib/essay-
 import { runSiteProbe } from "./lib/site-probe.mts";
 import { fetchOpenAdmissionFile } from "./lib/open-admission.mts";
 import { applyOpenAdmission, openAdmissionMeta } from "../lib/open-admission.ts";
+import { deepMerge, type Patch } from "./lib/overrides.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "data", "schools.json");
@@ -720,21 +721,6 @@ function addPrices(school: School, ic: IpedsFile, sfa: Record<string, string> | 
     year,
     ...cost,
   };
-}
-
-type Patch = { [key: string]: unknown };
-
-function deepMerge<T>(target: T, patch: Patch): T {
-  const out = structuredClone(target) as Record<string, unknown>;
-  for (const [k, v] of Object.entries(patch)) {
-    if (k.startsWith("_")) continue; // comments / provenance notes
-    const cur = out[k];
-    out[k] =
-      v && typeof v === "object" && !Array.isArray(v) && cur && typeof cur === "object" && !Array.isArray(cur)
-        ? deepMerge(cur, v as Patch)
-        : v;
-  }
-  return out as T;
 }
 
 /* ------------------------------------------------------------------ */

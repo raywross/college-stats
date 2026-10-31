@@ -1,0 +1,1 @@
+{"version":1,"change_set_id":1,"body":{"_readme":"Hand-verified patches applied after each sync (npm run sync-data). Keyed by IPEDS unit ID; any subset of School fields. Keys starting with _ are ignored."}}

@@ -36,6 +36,7 @@ export default async function DataOverviewPage() {
           { href: "/admin/data/change-sets", label: "Change sets" },
           { href: "/admin/data/holds", label: "Holds" },
           { href: "/admin/data/snapshots", label: "Snapshots" },
+          { href: "/admin/data/reference", label: "Reference" },
         ].map((l) => (
           <Link key={l.href} href={l.href} className="inline-flex min-h-10 items-center rounded-full border border-border px-4 font-semibold hover:bg-muted">
             {l.label}

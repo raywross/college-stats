@@ -1,9 +1,17 @@
 /**
  * `npm run check:visit-events` (specs/product/visit-events.md, "Checks"): per host, over its live upcoming rows, the
- * event count, the staff share (a host above 40% has a new noise pattern the title rules miss), the ZIP share of placed
- * rows (target 95%; below 80% fails), duplicates (one title at one start and place), starts more than 18 months out,
- * and rows whose start is more than a day before they were first seen. Pure: the CLI reads the rows.
+ * event count, the staff share, the ZIP share of placed rows (target 95%; below 80% warns), duplicates (one title at
+ * one start and place), starts more than 18 months out, and rows whose start is more than a day before they were
+ * first seen. Pure: the CLI reads the rows.
+ *
+ * The staff share is split by why a row is staff (lib/visit-events/kinds.ts `staffReason`). A host whose
+ * **logistics** rows (shipping, pickups, filled slots) pass 40% fails: a college has a new housekeeping wording the
+ * rules now count, or the rules are over-matching, and someone must look. A host whose staff rows pass 40% because
+ * they are **graduate or other non-admissions events** only warns: the rows are hidden on purpose, and the host is
+ * simply mostly a graduate database (Clarkson's `gradapp`, Lehman's graduate office hours; 2026-11-01), which the
+ * nightly job should report, not fail on.
  */
+import { staffReason } from "../../../lib/visit-events/kinds.ts";
 import { isShownKind, type VisitEventKind } from "../../../lib/visit-events/types.ts";
 import type { StoredEvent } from "./sync.mts";
 
@@ -17,7 +25,10 @@ export interface HostCheck {
   unitId: string;
   events: number;
   kinds: Partial<Record<VisitEventKind, number>>;
+  /** Of every row: the share stored as `staff`, whatever the reason. */
   staffShare: number;
+  /** Of every row: the share that is staff for a logistics reason (the part the failure rule measures). */
+  logisticsShare: number;
   /** Of every row: the share never shown (`other` + `staff`), what the host's Slate database exposes by accident. */
   hiddenShare: number;
   /** Of the detailed rows (shown kinds away from campus, page read): the share with a ZIP. Null when there are none. */
@@ -70,17 +81,22 @@ export function checkHosts(rows: readonly StoredEvent[], now: Date): HostCheck[]
     const farOut = list.filter((r) => Date.parse(r.starts_at) - now.getTime() > MONTHS_18).map((r) => `${r.title} (${r.starts_at})`);
     const startsBeforeSeen = list.filter((r) => Date.parse(r.first_seen) - Date.parse(r.starts_at) > DAY).map((r) => `${r.title} (${r.starts_at})`);
     const staffShare = list.length ? staff.length / list.length : 0;
+    const logistics = staff.filter((r) => staffReason(r.title) === "logistics");
+    const logisticsShare = list.length ? logistics.length / list.length : 0;
     const failures: string[] = [];
-    if (staffShare > MAX_STAFF_SHARE) {
-      const titles = uniq(staff.map((r) => r.title)).slice(0, 15);
-      failures.push(`staff share ${pct(staffShare)} is above ${pct(MAX_STAFF_SHARE)}; staff titles: ${titles.join("; ")}. A new title pattern may be counting real events as staff, or a host is mostly logistics.`);
-    }
     const warnings: string[] = [];
+    if (logisticsShare > MAX_STAFF_SHARE) {
+      const titles = uniq(logistics.map((r) => r.title)).slice(0, 15);
+      failures.push(`logistics share ${pct(logisticsShare)} is above ${pct(MAX_STAFF_SHARE)}; staff titles: ${titles.join("; ")}. A new title pattern may be counting real events as staff, or a host is mostly logistics.`);
+    } else if (staffShare > MAX_STAFF_SHARE) {
+      const titles = uniq(staff.filter((r) => staffReason(r.title) !== "logistics").map((r) => r.title)).slice(0, 15);
+      warnings.push(`staff share ${pct(staffShare)} is above ${pct(MAX_STAFF_SHARE)}, mostly graduate or other non-admissions events (hidden on purpose): ${titles.join("; ")}. A graduate-only host can be set off.`);
+    }
     if (locatedShare != null && locatedShare < MIN_ZIP_SHARE) {
       const titles = uniq(placed.filter((r) => r.lat == null).map((r) => r.title)).slice(0, 15);
       warnings.push(`located share ${pct(locatedShare)} is below ${pct(MIN_ZIP_SHARE)}; rows with no coordinates: ${titles.join("; ")}`);
     }
-    out.push({ host, unitId: list[0].unit_id, events: list.length, kinds, staffShare, hiddenShare, zipShare, locatedShare, duplicates, farOut, startsBeforeSeen, failures, warnings });
+    out.push({ host, unitId: list[0].unit_id, events: list.length, kinds, staffShare, logisticsShare, hiddenShare, zipShare, locatedShare, duplicates, farOut, startsBeforeSeen, failures, warnings });
   }
   return out;
 }

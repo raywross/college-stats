@@ -202,7 +202,7 @@ test("coalition: the CLI on the file store writes coalition.members as the impor
     const seeded = new Map<string, { unit_id: string; name: string; links: { website: string } }>();
     const seedAliases: AliasRow[] = [];
     const placeholder = (id: string, website: string) => ({ unit_id: id, name: `Seed ${id}`, links: { website } });
-    for (const m of committed.members) if (m.unit_id) seeded.set(m.unit_id, placeholder(m.unit_id, m.join === "domain" ? m.admissions_url : `https://seed-${m.unit_id}.example`));
+    for (const m of committed.members) if (m.unit_id) seeded.set(m.unit_id, placeholder(m.unit_id, m.join === "domain" && m.admissions_url ? m.admissions_url : `https://seed-${m.unit_id}.example`));
     for (const s of committed.scoir.names) if (s.unit_id && !seeded.has(s.unit_id)) seeded.set(s.unit_id, placeholder(s.unit_id, `https://seed-${s.unit_id}.example`));
     for (const x of [...committed.members, ...committed.scoir.names]) {
       if (!x.unit_id) continue;

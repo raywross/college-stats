@@ -1,10 +1,10 @@
 /**
- * The profile pipeline's files (all under data/high-schools/ unless noted):
+ * The profile pipeline's files (all under the high-schools folder, a scratch copy of the layers, unless noted):
  *   profile-recipes.json   where each school's profile is and how it was found (RecipesFile)
  *   profile-pilot.json     the pilot's chosen schools, the rule, the latest run's results and measurements
  *   review-queue.json      failed checks and college names to resolve (HsReviewQueue)
  *   detail/{id}.json       one HighSchoolDetail per school whose extraction passed
- *   data/reference/hs-profile-answer-key.json   the hand-read answer key
+ *   the reference document hs-profile-answer-key   the hand-read answer key
  * Writers keep a stable key order and end files with a newline so diffs stay small.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -14,6 +14,8 @@ import type { RecipesFile } from "./discover.mts";
 import type { HsReviewItem, Measurements, SchoolResult } from "./run.mts";
 import type { PilotSchool } from "./select.mts";
 import type { AccuracyReport, AnswerKeyFile } from "./score.mts";
+import type { DataStore } from "../../data-platform/store.mts";
+import { readReferenceDocument } from "../../data-platform/bundled.mts";
 
 export interface HsReviewQueue {
   updated: string;
@@ -61,13 +63,12 @@ export function writeJson(file: string, data: unknown): void {
   writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
 }
 
-export const profilePaths = (root: string) => ({
-  recipes: join(root, "data", "high-schools", "profile-recipes.json"),
-  pilot: join(root, "data", "high-schools", "profile-pilot.json"),
-  queue: join(root, "data", "high-schools", "review-queue.json"),
-  detailDir: join(root, "data", "high-schools", "detail"),
-  answerKey: join(root, "data", "reference", "hs-profile-answer-key.json"),
-  cache: join(root, ".cache", "hs-profiles"),
+/** The profile files of a high-school folder in the old layout (`dir`: a scratch copy of the layers, ../data-store.mts). */
+export const profilePaths = (dir: string) => ({
+  recipes: join(dir, "profile-recipes.json"),
+  pilot: join(dir, "profile-pilot.json"),
+  queue: join(dir, "review-queue.json"),
+  detailDir: join(dir, "detail"),
 });
 
 /** Recipes sorted by id. */
@@ -104,4 +105,13 @@ export function writeDetail(dir: string, d: HighSchoolDetail): void {
 
 export function readAnswerKey(file: string): AnswerKeyFile | null {
   return readJson<AnswerKeyFile>(file);
+}
+
+/** The reference document `hs-profile-answer-key`: the store's `reference.files`, else the bundled copy's (null when neither has it). */
+export async function readAnswerKeyDocument(store: Pick<DataStore, "readOne">): Promise<AnswerKeyFile | null> {
+  try {
+    return await readReferenceDocument<AnswerKeyFile>(store, "hs-profile-answer-key");
+  } catch {
+    return null;
+  }
 }

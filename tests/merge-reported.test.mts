@@ -8,9 +8,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { Extraction } from "../lib/reported";
@@ -24,7 +22,6 @@ import { readDirectoryFiles } from "../scripts/lib/directories/files.mts";
 import { applyCccuMembership, stripCccuMembership } from "../scripts/lib/directories/merge.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const SCRIPT = join(ROOT, "scripts", "merge-reported.mts");
 const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
 const allSchools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
 
@@ -152,7 +149,7 @@ test("a hand-imported CDS college: admissions.federal holds the override's value
 const CCCU_COLLEGE = "110361"; // California Baptist University
 
 test("merge-reported and merge-directories' CCCU membership step agree on lineage key order, whichever runs first", () => {
-  const files = readDirectoryFiles(ROOT);
+  const files = readDirectoryFiles(join(ROOT, "data"));
   // Start from a clean slate (the committed fixture is already a flagged CCCU member): stripCccuMembership removes
   // the flag and its lineage the same way a fresh re-merge does, so both orders below start from the same place.
   const base = stripCccuMembership(school(CCCU_COLLEGE));
@@ -189,122 +186,4 @@ test("stripping a college's block leaves no empty lineage behind", () => {
   const withBlock = mergeReported([school(PRINCETON)], { updated: "2026-10-03", entries: [entryFor(PRINCETON)] }).schools[0];
   const stripped = mergeReported([withBlock], { updated: "2026-10-04", entries: [] }).schools[0];
   assert.equal(JSON.stringify(stripped), JSON.stringify(school(PRINCETON)));
-});
-
-/* ------------------------------------------------------------------ */
-/* The CLI, against a scratch copy of real data (line format, refusal on bad lineage)  */
-/* ------------------------------------------------------------------ */
-
-function runCli(dir: string, args: string[] = []): { status: number; stdout: string; stderr: string } {
-  try {
-    const stdout = execFileSync("node", ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", SCRIPT, ...args], {
-      env: { ...process.env, MERGE_REPORTED_ROOT: dir },
-      encoding: "utf8",
-    });
-    return { status: 0, stdout, stderr: "" };
-  } catch (err) {
-    const e = err as { status: number; stdout: string; stderr: string };
-    return { status: e.status, stdout: e.stdout, stderr: e.stderr };
-  }
-}
-
-function scratchDir(schools: School[], reported: ReportedFile): string {
-  const dir = mkdtempSync(join(tmpdir(), "merge-reported-"));
-  const dataDir = join(dir, "data");
-  mkdirSync(dataDir, { recursive: true });
-  writeFileSync(join(dataDir, "schools.json"), `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
-  writeFileSync(join(dataDir, "college-reported.json"), JSON.stringify(reported));
-  writeFileSync(join(dataDir, "meta.json"), JSON.stringify(meta));
-  return dir;
-}
-
-test("the CLI writes schools.json one school per line, matching sync-data's format", () => {
-  const princeton = school(PRINCETON);
-  const other = school(OTHER);
-  const reported: ReportedFile = { updated: "2026-10-03", entries: [entryFor(PRINCETON)] };
-  const dir = scratchDir([princeton, other], reported);
-  try {
-    const result = runCli(dir);
-    assert.equal(result.status, 0);
-    assert.match(result.stdout, /college-reported: 1 colleges merged, 0 removed/);
-
-    const text = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    assert.equal(text, `[\n${[princeton, other].map((s) => JSON.stringify(mergeReported([s], reported).schools[0])).join(",\n")}\n]\n`);
-    // Every school is its own line (plus the opening/closing bracket lines).
-    const lines = text.split("\n").filter((l) => l.trim().length);
-    assert.equal(lines.length, 4); // "[", princeton, "other,", "]"
-
-    const parsed: School[] = JSON.parse(text);
-    assert.equal(parsed.length, 2);
-    assert.equal(parsed.find((s) => s.unit_id === PRINCETON)?.reported?.admissions?.applicants, 46618);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test("the CLI is idempotent on its own output", () => {
-  const princeton = school(PRINCETON);
-  const reported: ReportedFile = { updated: "2026-10-03", entries: [entryFor(PRINCETON)] };
-  const dir = scratchDir([princeton], reported);
-  try {
-    runCli(dir);
-    const once = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    runCli(dir);
-    const twice = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    assert.equal(once, twice);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test("the CLI removes a college's block when it drops out of college-reported.json", () => {
-  const princeton = school(PRINCETON);
-  const reported: ReportedFile = { updated: "2026-10-03", entries: [entryFor(PRINCETON)] };
-  const dir = scratchDir([princeton], reported);
-  try {
-    runCli(dir);
-    const withBlock: School[] = JSON.parse(readFileSync(join(dir, "data", "schools.json"), "utf8"));
-    assert.ok(withBlock[0].reported?.admissions);
-
-    writeFileSync(join(dir, "data", "college-reported.json"), JSON.stringify({ updated: "2026-10-04", entries: [] }));
-    const result = runCli(dir);
-    assert.match(result.stdout, /college-reported: 0 colleges merged, 1 removed/);
-    const withoutBlock: School[] = JSON.parse(readFileSync(join(dir, "data", "schools.json"), "utf8"));
-    assert.equal(withoutBlock[0].reported, undefined);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test("the CLI refuses to write when an entry's year isn't newer than the federal year", () => {
-  const princeton = school(PRINCETON);
-  const bad = entryFor(PRINCETON);
-  bad.admissions.year = 2020; // not newer than Princeton's federal 2024
-  const reported: ReportedFile = { updated: "2026-10-03", entries: [bad] };
-  const dir = scratchDir([princeton], reported);
-  try {
-    const result = runCli(dir);
-    assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /isn't newer than the federal year/);
-    const text = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    assert.doesNotMatch(text, /"reported":/); // untouched: the original (reported-less) file is still there (the key; "reported" is also a status value)
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test("--dry-run prints without writing", () => {
-  const princeton = school(PRINCETON);
-  const reported: ReportedFile = { updated: "2026-10-03", entries: [entryFor(PRINCETON)] };
-  const dir = scratchDir([princeton], reported);
-  try {
-    const before = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    const result = runCli(dir, ["--dry-run"]);
-    assert.equal(result.status, 0);
-    assert.match(result.stdout, /--dry-run, nothing written/);
-    const after = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    assert.equal(before, after);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
 });

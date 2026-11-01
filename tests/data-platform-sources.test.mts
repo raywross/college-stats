@@ -339,7 +339,7 @@ test("high schools: a sync on the scratch folder writes back only what it change
     assert.deepEqual(set.versions.map((v) => `${v.collection}/${v.key}${v.deleted ? " (removed)" : ""}`).sort(), ["high_schools.detail/999999999999", "high_schools.schools/DE (removed)", "high_schools.shared/meta"]);
     assert.equal(((await store.readOne<{ built: string }>(COLLECTIONS.highSchools.shared, "meta"))!).built, "2099-01-01");
     const s = await highSchoolScratch(store);
-    assert.ok(existsSync(join(s.root, "data", "high-schools", "schools", "DC.json")), "the scratch root stands in for the repository root");
+    assert.ok(existsSync(join(s.dir, "schools", "DC.json")), "the scratch root stands in for the repository root");
     s.remove();
     assert.equal(existsSync(s.root), false);
   } finally {

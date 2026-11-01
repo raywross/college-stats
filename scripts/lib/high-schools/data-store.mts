@@ -1,10 +1,10 @@
 /**
  * The high-school syncs on the data store (specs/data-platform/pipelines.md "high schools"): the `high_schools.*`
- * layers, keyed exactly as scripts/import-data-from-files.mts keys data/high-schools/ (one document per state shard,
+ * layers, keyed exactly as scripts/import-data-from-files.mts keys the old high-schools folder (one document per state shard,
  * ledger, state file and detail file by its file name without `.json`, and one per shared top-level file), are laid
  * out as that folder in a scratch directory, the existing file-based sync runs on it unchanged, and whatever it
  * changed, added or removed is written back in the run's change set. So the adapters, merges and checks keep their
- * tests on folders, and a run reads its prior state from the store, never from data/.
+ * tests on folders, and a run reads its prior state from the store.
  *
  * The tables (`high_schools`, …) stay the serving copy: the publisher loads them when this layer changed.
  */
@@ -15,7 +15,7 @@ import { COLLECTIONS } from "../data-platform/layers.mts";
 import type { ChangeSetHandle, DataStore } from "../data-platform/store.mts";
 import { writeChanged } from "../data-platform/producer.mts";
 
-/** Each high-school collection and the folder (under data/high-schools/) its documents are files of; "" is the folder itself. */
+/** Each high-school collection and the folder (under the high-schools folder) its documents are files of; "" is the folder itself. */
 export const HIGH_SCHOOL_FOLDERS: Readonly<Record<string, string>> = {
   [COLLECTIONS.highSchools.schools]: "schools",
   [COLLECTIONS.highSchools.ledger]: "ledger",
@@ -74,9 +74,9 @@ export async function writeHighSchoolChanges(handle: ChangeSetHandle, before: Hi
   return { sent, removed };
 }
 
-/** A scratch copy of the layers as `<root>/data/high-schools/`, for a script that reads and writes paths under a root. */
+/** A scratch copy of the layers as `<root>/high-schools/` (`dir`), for a script that reads and writes paths under it. */
 export interface HighSchoolScratch {
-  /** Stands in for the repository root: `<root>/data/high-schools/` holds the layers. */
+  /** The scratch folder: `<root>/high-schools/` (`dir`) holds the layers. */
   root: string;
   dir: string;
   before: HighSchoolLayers;
@@ -87,19 +87,19 @@ export interface HighSchoolScratch {
 
 export async function highSchoolScratch(store: Pick<DataStore, "read">): Promise<HighSchoolScratch> {
   const root = mkdtempSync(join(tmpdir(), "hs-layers-"));
-  const dir = join(root, "data", "high-schools");
+  const dir = join(root, "high-schools");
   const before = await readHighSchoolLayers(store);
   writeHighSchoolFolder(dir, before);
   return { root, dir, before, read: () => readHighSchoolFolder(dir), remove: () => rmSync(root, { recursive: true, force: true }) };
 }
 
 /**
- * Runs `fn` on a scratch copy of the layers laid out as data/high-schools/ (the folder `fn` receives), then returns
+ * Runs `fn` on a scratch copy of the layers laid out as the old high-schools folder (the folder `fn` receives), then returns
  * the layers before and after. The scratch folder is removed afterwards.
  */
 export async function onHighSchoolFolder<T>(store: Pick<DataStore, "read">, fn: (dir: string) => Promise<T>): Promise<{ result: T; before: HighSchoolLayers; after: HighSchoolLayers }> {
   const scratch = mkdtempSync(join(tmpdir(), "hs-layers-"));
-  const dir = join(scratch, "data", "high-schools");
+  const dir = join(scratch, "high-schools");
   try {
     const before = await readHighSchoolLayers(store);
     writeHighSchoolFolder(dir, before);

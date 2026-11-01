@@ -1,23 +1,26 @@
 /**
  * Prints the current state of the college-reported data: one line per published college (name, term, source kind,
- * which values are present, URL, run), totals by term and by source kind, and how many colleges in
- * data/schools.json currently carry a `reported` block — so a person (or `npm run merge-reported`'s caller) can
- * see at a glance whether the merge has happened. Read-only: no network, no writes. See specs/college-reported-setup.md.
+ * which values are present, URL, run), totals by term and by source kind, and how many colleges of the bundled copy
+ * carry a `reported` block, so a person can see at a glance whether the last publish carried the store's entries.
+ * Read-only: no network beyond the store, no writes. See specs/college-reported-setup.md.
  *
- *   npm run report-college-reported
+ *   npm run report-college-reported -- --store supabase      # the data project's reported.entries
+ *   npm run report-college-reported -- --store file:<dir>
+ *
+ * The entries are `reported.entries` (with `import.headers` "college-reported.json" for the `updated` date); the
+ * colleges are the bundled copy's (`.data/snapshot/colleges.json`, after `npm run fetch-snapshot`).
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import type { School } from "../lib/types";
+import type { ReportedEntry, ReportedFile } from "../lib/reported.ts";
 import { collegeRows, mergedCount, totals } from "../lib/reported-report.ts";
-import { dataPaths, readReported } from "./lib/college-reported/files.mts";
+import { COLLECTIONS, readLayer } from "./lib/data-platform/layers.mts";
+import { storeFromArgv } from "./lib/data-platform/producer.mts";
+import { readBundledColleges } from "./lib/data-platform/bundled.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const paths = dataPaths(ROOT);
-
-function main() {
-  const reported = readReported(paths.reported);
-  const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+async function main() {
+  const store = storeFromArgv(process.argv.slice(2));
+  const header = (await store.readOne<{ updated?: string | null }>(COLLECTIONS.import.headers, "college-reported.json")) ?? {};
+  const reported: ReportedFile = { updated: header.updated ?? null, entries: [...(await readLayer<ReportedEntry>(store, COLLECTIONS.reported.entries)).values()] };
+  const schools = readBundledColleges();
   const names = new Map(schools.map((s) => [s.unit_id, s.name]));
   const rows = collegeRows(reported, names);
 
@@ -44,10 +47,11 @@ function main() {
   for (const [kind, n] of Object.entries(byKind).sort()) console.log(`  ${kind}: ${n}`);
 
   const merged = mergedCount(schools);
-  console.log(`\ndata/schools.json: ${merged} of ${schools.length} colleges currently carry a "reported" block.`);
-  if (merged !== rows.length) {
-    console.log(`  (${rows.length} are published in data/college-reported.json — run "npm run merge-reported" to bring schools.json in sync.)`);
-  }
+  console.log(`\nThe bundled copy: ${merged} of ${schools.length} colleges carry a "reported" block.`);
+  if (merged !== rows.length) console.log(`  (${rows.length} are in reported.entries: the next publish brings the snapshot in line.)`);
 }
 
-main();
+main().catch((err) => {
+  console.error(err instanceof Error ? err.message : err);
+  process.exit(1);
+});

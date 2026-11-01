@@ -1,11 +1,14 @@
 /**
- * Import a college's Common Data Set (official Excel template) into data/overrides.json.
+ * Import a college's Common Data Set (official Excel template) as its legacy override patch (`overrides.legacy`, keyed
+ * by unit id), through the data store in one change set (kind pipeline, source import-cds).
  *
- *   npm run import-cds -- --id 221999 --edition 2024-25 \
+ *   npm run import-cds -- --store supabase --id 221999 --edition 2024-25 \
  *     --url https://cdn.vanderbilt.edu/.../CDS_2024-2025.xlsx
  *
  *   (--url also accepts a local file path; add --link <public url> so the citation points somewhere
- *   readers can open.) Then run `npm run sync-data`.
+ *   readers can open; --dry-run prints the patch and writes nothing.) The next sync-data and publish apply it.
+ *   A workbook's full record (every item, every check) is `npm run cds-records-from-workbooks`, which writes
+ *   `reported.cds_records` and `reported.docs`.
  *
  * Reads, by row label rather than fixed cell, from the standard CDS sheets:
  *   C1     applied / admitted / enrolled
@@ -16,14 +19,15 @@
  * Anything it can't find is left out of the patch, so federal data fills the gap.
  * PDF-only Common Data Sets aren't supported.
  */
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { c1Total, flat, flatItems, frac, numbers, readWorkbook, round4, row, type C1Verb } from "./lib/cds-xlsx.mts";
+import { COLLECTIONS } from "./lib/data-platform/layers.mts";
+import { storeFromArgv } from "./lib/data-platform/producer.mts";
+import { readBundledColleges } from "./lib/data-platform/bundled.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const OVERRIDES = join(ROOT, "data", "overrides.json");
-const SCHOOLS = join(ROOT, "data", "schools.json");
+const SOURCE = "import-cds";
 
 /* ------------------------------------------------------------------ */
 /* CLI                                                                 */
@@ -73,7 +77,8 @@ async function main() {
   const H = book.get("CDS-H");
   if (!B && !C && !H) throw new Error(`Not a CDS template workbook. Sheets found: ${[...book.keys()].join(", ")}`);
 
-  const school = (JSON.parse(readFileSync(SCHOOLS, "utf8")) as { unit_id: string; name: string }[]).find((s) => s.unit_id === id);
+  const school = readBundledColleges().find((s) => s.unit_id === id);
+  const store = storeFromArgv(process.argv.slice(2));
   const found: string[] = [];
   const missing: string[] = [];
   const note = (label: string, ok: boolean) => (ok ? found : missing).push(label);
@@ -130,20 +135,23 @@ async function main() {
     cds: { edition, url: link },
   };
   if (Object.keys(admissions).length > 1) patch.admissions = admissions;
-  const previous = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8"))[id!] : undefined;
+  const previous = (await store.readOne<Record<string, unknown>>(COLLECTIONS.overrides.legacy, id!)) ?? undefined;
   if (previous?.aid) patch.aid = previous.aid;
   if (previous?.lineage) patch.lineage = previous.lineage;
 
   if (warnings.length) patch._warnings = warnings;
-  const overrides = existsSync(OVERRIDES) ? JSON.parse(readFileSync(OVERRIDES, "utf8")) : {};
-  overrides[id!] = patch;
-  writeFileSync(OVERRIDES, `${JSON.stringify(overrides, null, 2)}\n`);
-
-  console.log(`${school?.name ?? `Unit ${id} (not in data/schools.json)`}: CDS ${edition}`);
+  console.log(`${school?.name ?? `Unit ${id} (not in the bundled copy)`}: CDS ${edition}`);
   console.log(`  found:   ${found.join(", ") || "nothing"}`);
   if (missing.length) console.log(`  missing: ${missing.join(", ")} (federal data will be used)`);
   for (const w of warnings) console.log(`  warning: ${w}`);
-  console.log(`Wrote data/overrides.json. Run \`npm run sync-data\` to apply.`);
+  if (process.argv.includes("--dry-run")) {
+    console.log(`Dry run: overrides.legacy/${id} would be\n${JSON.stringify(patch, null, 2)}`);
+    return;
+  }
+  const handle = await store.open("pipeline", SOURCE, `${SOURCE}-${id}-${new Date().toISOString()}`, { note: `${school?.name ?? id} Common Data Set ${edition}` });
+  await handle.write(COLLECTIONS.overrides.legacy, [{ key: id!, body: patch }]);
+  await handle.close("applied");
+  console.log(`Wrote overrides.legacy/${id} in change set ${handle.id}. The next publish applies it.`);
 }
 
 main().catch((err) => {

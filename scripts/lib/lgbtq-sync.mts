@@ -7,7 +7,6 @@
  * this falls back to the newest one that has them (cached like the history files) and gives each value a lineage
  * record with that file's year and URL, since the field's default vintage then describes a newer fall.
  */
-import { readFileSync } from "node:fs";
 import type { DatasetMeta, LineageRecord, School } from "../../lib/types.ts";
 import type { FieldPath } from "../../lib/fields.ts";
 import { fetchIpedsTable } from "./ipeds.mts";
@@ -71,12 +70,11 @@ export interface LgbtqInputs {
   laws: StateLawTable;
 }
 
-export async function fetchLgbtqInputs(efa: GenderFile, adm: GenderFile, cacheDir: string, lawsPath: string): Promise<LgbtqInputs> {
+export async function fetchLgbtqInputs(efa: GenderFile, adm: GenderFile, cacheDir: string, laws: StateLawTable): Promise<LgbtqInputs> {
   const ef = await newestWith("EF", efa, cacheDir);
   const ad = await newestWith("ADM", adm, cacheDir);
-  const laws: StateLawTable = JSON.parse(readFileSync(lawsPath, "utf8"));
   const problems = validateStateLaws(laws);
-  if (problems.length) throw new Error(`data/state-laws.json failed its checks:\n  ${problems.join("\n  ")}`);
+  if (problems.length) throw new Error(`the reference document state-laws failed its checks:\n  ${problems.join("\n  ")}`);
   return { ef: ef.file, adm: ad.file, efFallback: ef.fallback, admFallback: ad.fallback, laws };
 }
 

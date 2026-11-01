@@ -12,6 +12,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { isAbsolute, join } from "node:path";
 import type { DatasetMeta, School } from "../../../lib/types";
 import { BUNDLED_SNAPSHOT_DIR, FIXTURE_SNAPSHOT_ID, type SnapshotManifest } from "../../../lib/data-platform/snapshot.ts";
+import type { DataStore } from "./store.mts";
+import { COLLECTIONS } from "./layers.mts";
 
 export const REPO_ROOT = join(import.meta.dirname, "..", "..", "..");
 
@@ -92,4 +94,13 @@ export function bundledHistoryUnits(dir?: string): string[] {
     .filter((f) => f.endsWith(".json") && f !== "shared.json")
     .map((f) => f.slice(0, -".json".length))
     .sort();
+}
+
+/**
+ * A reference document from the store's `reference.files` (the current version, what the console edits), else the
+ * bundled copy's rendered object (the version the last fetched snapshot carried); throws when neither has it.
+ */
+export async function readReferenceDocument<T = unknown>(store: Pick<DataStore, "readOne"> | null, name: string, dir?: string): Promise<T> {
+  const fromStore = store ? await store.readOne<T>(COLLECTIONS.reference.files, name) : null;
+  return fromStore ?? readBundledReference<T>(name, dir);
 }

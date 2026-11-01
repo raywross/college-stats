@@ -8,7 +8,6 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -529,13 +528,6 @@ test("registry: the block and its five paths are college-site, admissions, no vi
     assert.equal(FIELDS[p].topic, "admissions");
     assert.equal(FIELDS[p].vintage, null);
   }
-});
-
-test("merge-essay-prompts --dry-run runs on the committed data", () => {
-  const r = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", "merge-essay-prompts.mts"), "--dry-run"], { encoding: "utf8" });
-  assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, /^essays: \d+ colleges/);
-  assert.match(r.stdout, /--dry-run, nothing written/);
 });
 
 /* ------------------------------------------------------------------ */

@@ -1,23 +1,14 @@
 /**
- * Applying data/coalition/members.json to the dataset (specs/data-expansion/coalition-app.md "Store"): the block on
- * every member the file joined to a college, removed from any college no longer on the list, and the source and
- * vintage in meta.json built from the file's dates (never typed). `npm run merge-coalition` and `sync-data` both call
- * these, so the two can't disagree. Pure apart from the file reads.
+ * Applying the Coalition member list (`coalition.members`) to the dataset (specs/data-expansion/coalition-app.md
+ * "Store"): the block on every member the list joined to a college, removed from any college no longer on it, and the
+ * source and vintage in meta built from the list's dates (never typed). The publisher's compose calls these. Pure.
  */
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { COALITION_HOME, type CoalitionFile, type SchoolCoalition } from "../../../lib/coalition.ts";
 import type { DatasetMeta, School, SourceInfo } from "../../../lib/types.ts";
 import { longDate } from "../common-app/merge.mts";
 
 /** Top-level keys later pipelines own (lib/identity.ts LATER_KEYS): a new `coalition` goes right before the first of them. */
 const LATER_KEYS = ["directories", "lineage", "trends", "reported"];
-
-export function readCoalition(root: string): CoalitionFile | null {
-  const path = join(root, "data", "coalition", "members.json");
-  if (!existsSync(path)) return null;
-  return JSON.parse(readFileSync(path, "utf8")) as CoalitionFile;
-}
 
 /** meta.vintages["coalition-members"]: "Member list read October 28, 2026". */
 export function coalitionVintage(file: Pick<CoalitionFile, "retrieved">): string {

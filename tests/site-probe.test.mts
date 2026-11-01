@@ -6,7 +6,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -827,53 +827,6 @@ test("the committed data/site-probe.json and data/link-issues.json are well form
   const issues: LinkIssue[] = JSON.parse(readFileSync(join(ROOT, "data", "link-issues.json"), "utf8"));
   for (const i of issues) if (!byId.has(i.unit_id) || !web(i.url) || i.failures < 1) problems.push(`link-issues ${i.unit_id} ${i.field}`);
   assert.deepEqual(problems.slice(0, 20), []);
-});
-
-/* ------------------------------------------------------------------ */
-/* A run: the files and merge-identity                                 */
-/* ------------------------------------------------------------------ */
-
-test("runSiteProbe writes both files one row per line, keeps other colleges' entries, and applies the visit page", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "site-probe-"));
-  mkdirSync(join(dir, "data"));
-  const a = { ...structuredClone(UGA), links: { website: "https://www.example.edu/", price_calculator: "https://npc.shared-calculators.com/example", admissions: "https://admissions.example.edu/en/" } } as School;
-  const b = { ...structuredClone(schools.find((s) => s.unit_id === "221999")!), links: { website: "https://gone.example.org/", price_calculator: null } } as School;
-  writeFileSync(join(dir, "data", "schools.json"), formatRows([a, b]));
-  writeFileSync(join(dir, "data", "meta.json"), `${JSON.stringify(meta, null, 2)}\n`);
-  const other = entry("100000", {});
-  writeFileSync(join(dir, "data", "site-probe.json"), formatRows([other]));
-  const http = politeHttp(fakeFetch(COLLEGE_ROUTES).fn);
-  const summary = await runSiteProbe(dir, { http, hosts: fakeHosts(COLLEGE_ROUTES), hdRows: null, today: TODAY, log: () => {}, concurrency: 2 });
-  const written: SiteProbeEntry[] = JSON.parse(readFileSync(join(dir, "data", "site-probe.json"), "utf8"));
-  assert.deepEqual(
-    written.map((e) => e.unit_id),
-    [UGA.unit_id, "221999"],
-    "sorted by unit id; an entry for a college not in the dataset is dropped",
-  );
-  assert.equal(readFileSync(join(dir, "data", "site-probe.json"), "utf8").split("\n").length, 5, "one entry per line");
-  const issues: LinkIssue[] = JSON.parse(readFileSync(join(dir, "data", "link-issues.json"), "utf8"));
-  assert.deepEqual(
-    issues.map((i) => [i.unit_id, i.field, i.failures, i.last_error ?? i.last_status]),
-    [["221999", "website", 1, "dns"]],
-  );
-  const merged: School[] = JSON.parse(readFileSync(join(dir, "data", "schools.json"), "utf8"));
-  assert.equal(merged[0].links?.visit, "https://admissions.example.edu/en/visit/");
-  assert.equal(merged[0].lineage?.["links.visit"]?.quote, "Visit Campus");
-  assert.equal(merged[1].links?.visit, null);
-  assert.deepEqual([summary.colleges, summary.visit, summary.homepages, summary.checks.failed.dns], [2, 1, 1, 1]);
-
-  // A partial run (one college) keeps the other's entry, and a second failure the next day nulls the dead homepage.
-  const next = await runSiteProbe(dir, { http: politeHttp(fakeFetch(COLLEGE_ROUTES).fn), hosts: fakeHosts(COLLEGE_ROUTES), hdRows: null, ids: ["221999"], today: "2026-11-04", log: () => {} });
-  assert.equal(next.colleges, 1);
-  const again: SiteProbeEntry[] = JSON.parse(readFileSync(join(dir, "data", "site-probe.json"), "utf8"));
-  assert.deepEqual(again.map((e) => [e.unit_id, e.retrieved]), [
-    [UGA.unit_id, TODAY],
-    ["221999", "2026-11-04"],
-  ]);
-  const final: School[] = JSON.parse(readFileSync(join(dir, "data", "schools.json"), "utf8"));
-  assert.equal(final[1].links?.website, null, "two failed runs: the link is null");
-  assert.equal(final[0].links?.visit, "https://admissions.example.edu/en/visit/", "the other college keeps its visit page");
-  assert.deepEqual(mergeProbeEntries(again, [], new Set([UGA.unit_id])).map((e) => e.unit_id), [UGA.unit_id]);
 });
 
 /* ------------------------------------------------------------------ */

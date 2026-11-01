@@ -36,6 +36,7 @@ import { loadZipTable } from "./lib/visit-events/geo.mts";
 import { discoveryTargets, dueHosts } from "./lib/visit-events/hosts.mts";
 import { readHosts, supabaseStore, upsertHosts } from "./lib/visit-events/store.mts";
 import { HOST_POOL, pool, runSync, type EventStore } from "./lib/visit-events/sync.mts";
+import { readBundledColleges, readBundledReference } from "./lib/data-platform/bundled.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const args = process.argv.slice(2);
@@ -69,9 +70,10 @@ const configured = !!process.env.SUPABASE_URL && !!process.env.SUPABASE_SECRET_K
 if (!configured && !DRY_RUN) fail("SUPABASE_URL and SUPABASE_SECRET_KEY are not set (see specs/supabase.md); use --dry-run to read without writing.");
 const client = configured ? supabaseClient("publish") : null;
 
-const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
+// The colleges and the blocked hosts from the bundled copy (`.data/snapshot/`, after `npm run fetch-snapshot`).
+const schools: School[] = readBundledColleges();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
-const blockedFile = JSON.parse(readFileSync(join(ROOT, "data", "reference", "blocked-hosts.json"), "utf8")) as BlockedHostsFile;
+const blockedFile = readBundledReference<BlockedHostsFile>("blocked-hosts");
 const now = new Date();
 const today = now.toISOString().slice(0, 10);
 const isBlocked = (host: string) => isBlockedHost(blockedFile, host, today);
@@ -219,7 +221,7 @@ const memoryStore: EventStore = {
   updateHost: async () => {},
   recordSync: async () => {},
 };
-const zips = loadZipTable(ROOT);
+const zips = loadZipTable();
 console.log(`Reading ${chosen.length} host${chosen.length === 1 ? "" : "s"}${DRY_RUN ? " (dry run)" : ""}…`);
 const { results, record } = await runSync(chosen, {
   http,

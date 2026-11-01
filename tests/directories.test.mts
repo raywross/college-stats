@@ -6,8 +6,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
@@ -428,7 +427,7 @@ test("lineage: the committed data fails the checks when a real listing loses its
 /* ------------------------------------------------------------------ */
 
 test("merge: idempotent (deepEqual), and the committed data is exactly a fresh merge of data/directories/", () => {
-  const files = readDirectoryFiles(ROOT);
+  const files = readDirectoryFiles(join(ROOT, "data"));
   const known = new Set(allSchools.map((s) => s.unit_id));
   // CCCU is a membership fact (specs/religious-life.md#measures item 2), not a chapter: applyCccuMembership handles
   // it separately, so the chapter table is built from every other file (chapterFiles).
@@ -445,7 +444,7 @@ test("merge: idempotent (deepEqual), and the committed data is exactly a fresh m
 });
 
 test("CCCU membership: a membership fact, kept out of the chapter table and applied to school.religion.cccu_member", () => {
-  const files = readDirectoryFiles(ROOT);
+  const files = readDirectoryFiles(join(ROOT, "data"));
   const cccu = files.find((f) => f.org === "cccu");
   assert.ok(cccu, "the cccu adapter's file is committed");
   assert.ok(cccu!.entries.length > 50, "most CCCU voting members should match");
@@ -465,30 +464,6 @@ test("CCCU membership: a membership fact, kept out of the chapter table and appl
   assert.deepEqual(applyCccuMembership(withFlag, files), withFlag);
   const stripped = applyCccuMembership(withFlag, []);
   assert.ok(!stripped.some((s) => s.religion?.cccu_member || s.lineage?.["religion.cccu_member"]));
-});
-
-test("merge CLI: a second run changes nothing (scratch copy)", () => {
-  const dir = mkdtempSync(join(tmpdir(), "merge-directories-"));
-  try {
-    mkdirSync(join(dir, "data", "detail", "schools"), { recursive: true });
-    const keep = allSchools.filter((s) => s.directories).slice(0, 3);
-    writeFileSync(join(dir, "data", "schools.json"), `[\n${keep.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
-    cpSync(join(ROOT, "data", "meta.json"), join(dir, "data", "meta.json"));
-    for (const s of keep) cpSync(join(ROOT, "data", "detail", "schools", `${s.unit_id}.json`), join(dir, "data", "detail", "schools", `${s.unit_id}.json`));
-    cpSync(join(ROOT, "data", "directories"), join(dir, "data", "directories"), { recursive: true });
-    const run = () =>
-      execFileSync("node", ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", "merge-directories.mts")], {
-        env: { ...process.env, MERGE_DIRECTORIES_ROOT: dir },
-        encoding: "utf8",
-      });
-    const snapshot = () => [readFileSync(join(dir, "data", "schools.json"), "utf8"), ...keep.map((s) => readFileSync(join(dir, "data", "detail", "schools", `${s.unit_id}.json`), "utf8"))];
-    run();
-    const first = snapshot();
-    assert.match(run(), /0 detail files changed/);
-    assert.deepEqual(snapshot(), first);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
 });
 
 /* ------------------------------------------------------------------ */

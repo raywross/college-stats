@@ -256,7 +256,7 @@ test("a tier moved only by other colleges' figures is announced; a method change
 });
 
 test("the backfill, the rebuild, and the history publish never stage follower changes", () => {
-  for (const f of ["scripts/backfill-selectivity-history.mts", "scripts/rebuild-selectivity-history.mts", "scripts/lib/selectivity-history.mts"]) {
+  for (const f of ["scripts/lib/selectivity-history.mts"]) {
     assert.doesNotMatch(readFileSync(join(ROOT, f), "utf8"), /dataset_changes|publish_changes\(|stageChanges/, f);
   }
 });

@@ -47,7 +47,7 @@ test("directories: the runner's writers key the committed files as the import do
   try {
     const listings = await store.read<DirectoryFile>(COLLECTIONS.directories.listings);
     const unmatched = await store.read<UnmatchedFile>(COLLECTIONS.directories.unmatched);
-    assert.equal(listings.size, readDirectoryFiles(ROOT).length);
+    assert.equal(listings.size, readDirectoryFiles(join(ROOT, "data")).length);
     const handle = await store.open("pipeline", "directories", "resave");
     for (const [org, file] of listings) await writeOrgDocs(store, handle, file, unmatched.get(org) ?? { org, crawled: file.crawled, entries: [] });
     await writeBlockedDoc(handle, await readBlockedDoc(store));

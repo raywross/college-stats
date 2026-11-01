@@ -11,7 +11,7 @@ import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { addIdentityMeta, applyIdentity, applyIdentityOverride, emptyIdentityInputs } from "../lib/identity.ts";
 import { citesYear, lineageFor, validateLineage, validateRegistry } from "../lib/lineage.ts";
-import { formatSchools, loadIdentityInputs, mergeIdentity } from "../scripts/lib/identity-sync.mts";
+import { loadIdentityInputs } from "../scripts/lib/identity-sync.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
@@ -21,7 +21,7 @@ const UGA = "139959";
 const sample = [UGA, "221999", "166027", "110635", "139755"].map((id) => byId.get(id)!);
 
 test("applying identity twice gives the same school as applying it once", () => {
-  const inputs = loadIdentityInputs(ROOT);
+  const inputs = loadIdentityInputs(join(ROOT, "data"));
   for (const s of sample) {
     const once = applyIdentity(structuredClone(s), inputs);
     const twice = applyIdentity(structuredClone(once), inputs);
@@ -30,7 +30,7 @@ test("applying identity twice gives the same school as applying it once", () => 
 });
 
 test("re-applying identity to the committed data changes no byte, so a refresh's diff shows only real changes", () => {
-  const inputs = loadIdentityInputs(ROOT);
+  const inputs = loadIdentityInputs(join(ROOT, "data"));
   const changed = schools.filter((s) => JSON.stringify(applyIdentity(structuredClone(s), inputs)) !== JSON.stringify(s)).map((s) => s.unit_id);
   assert.deepEqual(changed.slice(0, 10), [], `${changed.length} colleges reordered or changed; run \`npm run merge-identity\``);
 });
@@ -61,7 +61,7 @@ test("new identity keys take fixed places, clear of the keys other pipelines re-
 });
 
 test("applying identity never leaves an empty lineage behind", () => {
-  const inputs = loadIdentityInputs(ROOT);
+  const inputs = loadIdentityInputs(join(ROOT, "data"));
   const bare = schools.filter((s) => !s.lineage).slice(0, 50);
   assert.ok(bare.length > 0);
   for (const s of bare) {
@@ -125,16 +125,4 @@ test("identity sources are dated by the newest retrieval in their files and need
   assert.equal(m.sources.wikipedia?.edition, "Not retrieved yet");
   assert.deepEqual(validateRegistry(m), []);
   assert.deepEqual(validateLineage([], m), []);
-});
-
-test("merge-identity writes the same bytes when it has nothing new to apply, and is idempotent", () => {
-  const dir = mkdtempSync(join(tmpdir(), "identity-"));
-  mkdirSync(join(dir, "data"));
-  writeFileSync(join(dir, "data", "schools.json"), formatSchools(sample));
-  writeFileSync(join(dir, "data", "meta.json"), `${JSON.stringify(meta, null, 2)}\n`);
-  mergeIdentity(dir);
-  const first = readFileSync(join(dir, "data", "schools.json"), "utf8");
-  assert.equal(first, formatSchools(sample.map((s) => applyIdentity(structuredClone(s), loadIdentityInputs(dir)))));
-  mergeIdentity(dir);
-  assert.equal(readFileSync(join(dir, "data", "schools.json"), "utf8"), first);
 });

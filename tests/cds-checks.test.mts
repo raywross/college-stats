@@ -8,7 +8,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { School } from "../lib/types";
 import type { CdsCode, DocumentRecord, ItemResult } from "../lib/cds-sections.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { indexRecords, newestPassed } from "../lib/cds-records.ts";
@@ -35,24 +34,28 @@ import {
 import { enqueueItems, REPORTED_MODELS, type ReviewItem, type ReviewQueueFile, type RunSummary } from "../lib/reported.ts";
 import { restoreFederal } from "../lib/newest.ts";
 import { federalYears } from "../lib/newest-groups.ts";
-import { readRecords } from "../scripts/lib/college-reported/records.mts";
 import { perItemTable, prBody } from "../scripts/college-reported-pr-body.mts";
+import { miniMeta, miniSchools, miniLayerDocument } from "./helpers/snapshot.mts";
+import type { CollegeRecord } from "../lib/cds-sections.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const T = CDS_TEMPLATE;
-const records = indexRecords(readRecords(join(ROOT, "data", "cds-records")));
-const schools = new Map((JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[]).map((s) => [s.unit_id, s]));
-
 const VU = "221999";
 const CU = "190415";
 const WM = "231624";
 const IL = "145637";
+const records = indexRecords(
+  await Promise.all(
+    [VU, CU, WM, IL].map((id) => miniLayerDocument<CollegeRecord>("reported.cds_records", id).then((r) => r!)),
+  ),
+);
+const schools = new Map(miniSchools().map((s) => [s.unit_id, s]));
 
 /** A fresh copy of a college's committed (already checked) 2025–26 document. */
 const doc = (id: string): DocumentRecord => structuredClone(records.get(id)!.documents[0]);
 const school = (id: string) => restoreFederal(schools.get(id)!);
 /** The entering fall of the federal graduation class (meta.vintages["ipeds-gr"]): which grid the checks compare. */
-const GRAD_YEAR = federalYears(JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"))).graduation;
+const GRAD_YEAR = federalYears(miniMeta()).graduation;
 const ctx = (id: string, over: Partial<CheckContext> = {}): CheckContext => ({ table: T, school: school(id), gradYear: GRAD_YEAR, ...over });
 const fed = (id: string, over: Partial<FederalBaseline>): FederalBaseline => ({ ...federalBaseline(school(id), { gradYear: GRAD_YEAR }), ...over });
 

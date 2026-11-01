@@ -6,11 +6,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { miniReference } from "./helpers/snapshot.mts";
 import { join } from "node:path";
 import { citationFor, newestSeason, rowFor, seasonsIn, validateCommonAppTrends, type CommonAppTrendsFile } from "../lib/common-app/trends.ts";
 
 const ROOT = join(import.meta.dirname, "..");
-const committed: CommonAppTrendsFile = JSON.parse(readFileSync(join(ROOT, "data", "trends", "common-app.json"), "utf8"));
+const committed: CommonAppTrendsFile = miniReference("common-app-trends");
 
 /** A minimal valid file, for tests that break one rule at a time. */
 function baseFile(): CommonAppTrendsFile {

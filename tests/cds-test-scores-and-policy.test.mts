@@ -29,10 +29,18 @@ import { mergeTestScores, policyCycle, policyFromDocument, reportedTestsFromReco
 import { applyNewestTests, restoreFederalTests, validateTests } from "../lib/cds/test-blocks.ts";
 import { applyNewest, restoreFederal } from "../lib/newest.ts";
 import { validateSchool } from "../lib/lineage.ts";
+import { miniMeta, miniSchools, miniLayerDocument } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const record = (id: string): CollegeRecord => JSON.parse(readFileSync(join(ROOT, "data", "cds-records", `${id}.json`), "utf8"));
+const meta: DatasetMeta = miniMeta();
+const records = new Map(
+  await Promise.all(
+    ["221999", "190415", "231624", "145637"].map(
+      async (id) => [id, (await miniLayerDocument<CollegeRecord>("reported.cds_records", id))!] as const,
+    ),
+  ),
+);
+const record = (id: string): CollegeRecord => structuredClone(records.get(id)!);
 const VU = record("221999");
 const CU = record("190415");
 
@@ -265,7 +273,7 @@ test("7. guard: a federal median inside a replaced block, a block without federa
 });
 
 test("7. the committed dataset: the four colleges carry their CDS blocks and pass the guard", () => {
-  const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+  const schools: School[] = miniSchools();
   const by = (id: string) => schools.find((s) => s.unit_id === id)!;
   assert.equal(by("190415").admissions.test_policy, "required", "Cornell requires tests for fall 2027 applicants");
   assert.equal(by("190415").admissions.federal_tests?.policy?.test_policy, "considered");

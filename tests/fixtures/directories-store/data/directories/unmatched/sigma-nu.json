@@ -1,0 +1,8 @@
+{
+  "org": "sigma-nu",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"Batten University","name":"Iota Beta (Sigma Nu)","reason":"no college matches (no state given)","candidates":[{"unit_id":"188429","name":"Adelphi University","score":0.5},{"unit_id":"142832","name":"Adler University","score":0.5},{"unit_id":"133872","name":"AdventHealth University","score":0.5}]},
+    {"campus":"University of Arkansas at Fort Smith","name":"Nu Alpha (Sigma Nu)","reason":"no college matches (no state given)","candidates":[{"unit_id":"106397","name":"University of Arkansas","score":0.75},{"unit_id":"106704","name":"University of Central Arkansas","score":0.67},{"unit_id":"457402","name":"University of Fort Lauderdale","score":0.67}]}
+  ]
+}

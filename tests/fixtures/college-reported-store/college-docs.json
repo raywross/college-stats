@@ -1,0 +1,41 @@
+{
+  "updated": "2026-10-26",
+  "documents": [
+    {
+      "sha256": "c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb",
+      "unit_id": "232256",
+      "url": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf",
+      "kind": "cds",
+      "type": "pdf-flat",
+      "edition": "2025-26",
+      "edition_from": "url",
+      "retrieved": "2026-10-11",
+      "bytes": 1303910,
+      "pages": 48,
+      "body_chars": 86030,
+      "archive": "local:c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb.pdf"
+    },
+    {
+      "sha256": "15de6c937a5d6412e2059098b632ae2ce24cc3a2fb2c2a17ce8fff50d712f53b",
+      "unit_id": "232256",
+      "url": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2024-25Factbook.pdf",
+      "kind": "class-profile",
+      "type": "class-profile",
+      "edition": null,
+      "retrieved": "2026-10-11",
+      "bytes": 1243799,
+      "archive": "local:15de6c937a5d6412e2059098b632ae2ce24cc3a2fb2c2a17ce8fff50d712f53b.html"
+    },
+    {
+      "sha256": "a90d1b53c7d03f5db4c17cfc3567c68f19eda482599bb7568d6fa88b5166ccc9",
+      "unit_id": "232256",
+      "url": "https://www.hsc.edu/about-h-sc/facts-and-figures",
+      "kind": "class-profile",
+      "type": "class-profile",
+      "edition": null,
+      "retrieved": "2026-10-11",
+      "bytes": 46474,
+      "archive": "local:a90d1b53c7d03f5db4c17cfc3567c68f19eda482599bb7568d6fa88b5166ccc9.html"
+    }
+  ]
+}

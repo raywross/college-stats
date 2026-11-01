@@ -43,14 +43,14 @@ import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/sto
 import { COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
 import { withRunSet } from "../scripts/lib/data-platform/change-set.mts";
 import { probeStateFromStore, storeColleges } from "../scripts/lib/identity-store.mts";
-import { importLayers, writeImport } from "../scripts/import-data-from-files.mts";
+import { writeImport } from "../scripts/import-data-from-files.mts";
+import { miniMeta, miniSchools, miniLayers } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
 const FIXTURES = join(import.meta.dirname, "fixtures", "site-probe");
 const HOMEPAGE = readFileSync(join(FIXTURES, "homepage.html"), "utf8");
 const ADMISSIONS = readFileSync(join(FIXTURES, "admissions.html"), "utf8");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const meta: DatasetMeta = miniMeta();
+const schools: School[] = miniSchools();
 /** UGA without anything the probe sets (the committed dataset may already hold a previous run's visit page). */
 const UGA = (() => {
   const s = structuredClone(schools.find((x) => x.unit_id === "139959")!);
@@ -796,10 +796,10 @@ test("probeCollege falls back to the homepage's links when the admissions page r
 /* The committed files                                                 */
 /* ------------------------------------------------------------------ */
 
-test("the committed data/site-probe.json and data/link-issues.json are well formed and apply with sound lineage", () => {
-  const probePath = join(ROOT, "data", "site-probe.json");
-  const text = readFileSync(probePath, "utf8");
-  const probed: SiteProbeEntry[] = JSON.parse(text);
+test("the committed data/site-probe.json and data/link-issues.json are well formed and apply with sound lineage", async () => {
+  // The mini fixture's layers (identity.probe, identity.link_issues), unit-filtered, in place of the real files.
+  const probed: SiteProbeEntry[] = [...(await miniLayers().read<SiteProbeEntry>("identity.probe")).values()];
+  const text = formatRows(probed);
   assert.equal(text, formatRows(mergeProbeEntries([], probed)), "sorted by unit id, one entry per line");
   const byId = new Map(schools.map((s) => [s.unit_id, s]));
   const problems: string[] = [];
@@ -824,7 +824,7 @@ test("the committed data/site-probe.json and data/link-issues.json are well form
       problems.push(...validateSchool(applied, meta).filter((p) => p.includes("links.")));
     }
   }
-  const issues: LinkIssue[] = JSON.parse(readFileSync(join(ROOT, "data", "link-issues.json"), "utf8"));
+  const issues: LinkIssue[] = [...(await miniLayers().read<LinkIssue[]>("identity.link_issues")).values()].flat();
   for (const i of issues) if (!byId.has(i.unit_id) || !web(i.url) || i.failures < 1) problems.push(`link-issues ${i.unit_id} ${i.field}`);
   assert.deepEqual(problems.slice(0, 20), []);
 });
@@ -876,9 +876,14 @@ test("runSiteProbe on the file store: reads and writes identity.probe and identi
 
 test("the probe's store save keys the committed files exactly as the import does (saving them again writes nothing)", async () => {
   const dir = mkdtempSync(join(tmpdir(), "site-probe-import-"));
-  const units = new Set(["139959", "221999", "166027", "100654"]);
+  const units = ["139959", "221999", "166027", "100654"];
   const store = fileStore(dir);
-  await writeImport(store, importLayers(join(ROOT, "data"), { only: new Set([COLLECTIONS.identity.probe, COLLECTIONS.identity.linkIssues]), units }), "fixture");
+  // The mini fixture's own layers for these four colleges, in place of importLayers(ROOT, …) over the real data/.
+  const layers = new Map([
+    [COLLECTIONS.identity.probe, new Map((await Promise.all(units.map(async (id) => [id, await miniLayers().readOne(COLLECTIONS.identity.probe, id)] as const))).filter(([, v]) => v != null))],
+    [COLLECTIONS.identity.linkIssues, new Map((await Promise.all(units.map(async (id) => [id, await miniLayers().readOne(COLLECTIONS.identity.linkIssues, id)] as const))).filter(([, v]) => v != null))],
+  ]);
+  await writeImport(store, layers, "fixture");
   const handle = await store.open("pipeline", "identity-refresh", "resave");
   const state = await probeStateFromStore(store, handle);
   assert.ok(state.previous.length > 0);

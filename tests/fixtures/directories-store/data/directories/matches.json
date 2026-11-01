@@ -1,0 +1,274 @@
+{
+  "_about": "Hand-checked answers the directory matcher uses before its own rules (specs/campus-directories.md#review). Key: the campus exactly as a list prints it, a bar, and the two-letter state the list gives (empty when it gives none). Value: the IPEDS unit ids it means ([] = checked, not a college on the site). Add one only after checking the college; say why in _why.",
+  "_why": {
+    "Alabama-Birmingham|AL": "Pi Kappa Phi; city Birmingham, AL.",
+    "Alabama|AL": "Pi Kappa Phi's marker title gives the bare state name; city Tuscaloosa, AL names the flagship.",
+    "Bloomsburg|PA": "Pi Kappa Phi; city Bloomsburg, PA is now Commonwealth University of Pennsylvania's Bloomsburg campus (merged 2022).",
+    "California University of Pennsylvania|": "Merged into Pennsylvania Western University (PennWest) in July 2022; California is one of its campuses.",
+    "California-Merced|CA": "Pi Kappa Phi; city Merced, CA.",
+    "California-Riverside|CA": "Pi Kappa Phi; city Riverside, CA.",
+    "California-San Diego|CA": "Pi Kappa Phi; city La Jolla, CA (UCSD's campus).",
+    "California-Santa Barbara|CA": "Pi Kappa Phi; city Santa Barbara, CA.",
+    "Central Florida|FL": "Pi Kappa Phi; city Orlando, FL.",
+    "Cheney, Washington|": "Kappa Sigma's table had no school name for this row, only the host city/state; Cheney, WA is Eastern Washington University's only college.",
+    "Clarion University of Pennsylvania|": "Merged into Pennsylvania Western University (PennWest) in July 2022; Clarion is one of its campuses.",
+    "College of William and Mary|": "Renamed William & Mary (same IPEDS unit 231624).",
+    "Colorado-Colorado Springs|CO": "Pi Kappa Phi; city Colorado Springs, CO.",
+    "Colorado|CO": "Pi Kappa Phi's bare state name; city Boulder, CO names the flagship.",
+    "Emory & Henry College|": "Renamed Emory & Henry University (same IPEDS unit 232025).",
+    "Ewing Township NJ|": "Kappa Sigma's table had no school name for this row, only the host city/state; Ewing Township, NJ is The College of New Jersey's campus.",
+    "Florida|FL": "Pi Kappa Phi's bare state name; city Gainesville, FL names the flagship.",
+    "Georgia|GA": "Pi Kappa Phi's bare state name; city Athens, GA names the flagship, Georgia's only college there.",
+    "Greeley|CO": "Pi Kappa Phi; city Greeley, CO is University of Northern Colorado's only college.",
+    "Hobart and William Smith Colleges|": "IPEDS lists it without \"and\": Hobart William Smith Colleges (same institution).",
+    "Humboldt State University|": "Renamed California State Polytechnic University, Humboldt in 2022 (same IPEDS unit 115755).",
+    "Illinois-Urbana-Champaign|IL": "Pi Kappa Phi; city Champaign, IL.",
+    "Indiana Wesleyan University|IN": "CCCU's member listing names the university, not a campus; its IPEDS record splits the physical Marion campus (151801) from the National & Global online division (488679) — the physical campus is the CCCU member.",
+    "Kentucky|KY": "Pi Kappa Phi's bare state name; city Lexington, KY names the flagship.",
+    "Louisiana State University - Baton Rouge|LA": "Sigma Phi Epsilon's own institution name for LSU's Baton Rouge campus.",
+    "Louisville|KY": "Pi Kappa Phi; city Louisville, KY names University of Louisville.",
+    "Loyola-Chicago|IL": "Pi Kappa Phi; city Chicago, IL names Loyola University Chicago specifically.",
+    "Marist College|": "Renamed Marist University (same IPEDS unit 192819).",
+    "Massachusetts-Amherst|MA": "Pi Kappa Phi; city Amherst, MA.",
+    "Miami-Ohio|OH": "Pi Kappa Phi; city Oxford, OH is Miami University's campus (not University of Miami).",
+    "Miami|FL": "Pi Kappa Phi; city Coral Gables, FL (University of Miami's campus).",
+    "Mississippi|MS": "Pi Kappa Phi's bare state name; city \"University\", MS is Ole Miss's own town.",
+    "Missouri-Columbia|MO": "Pi Kappa Phi; city Columbia, MO.",
+    "Moravian College|PA": "Renamed Moravian University in 2021 (same IPEDS unit 214157).",
+    "New Hampshire|NH": "Pi Kappa Phi; city Durham, NH names UNH's main campus.",
+    "North Georgia|GA": "Pi Kappa Phi; city Dahlonega, GA.",
+    "Northeastern|MA": "Pi Kappa Phi; city Boston, MA names Northeastern University (not its Professional Programs entity).",
+    "Oklahoma|OK": "Pi Kappa Phi's bare state name; city Norman, OK names the flagship.",
+    "Orange California|": "Kappa Sigma's table had no school name for this colony, only the host city/state; Orange, CA is Chapman University's only college.",
+    "Oregon|OR": "Pi Kappa Phi's bare state name; city Eugene, OR names the flagship.",
+    "Penn State Behrend|": "Penn State's Erie campus, officially Pennsylvania State University-Penn State Erie-Behrend College.",
+    "Pennsylvania Western University-Edinboro|PA": "Lambda Chi Alpha's own institution name for PennWest's Edinboro campus (merged into one IPEDS unit, 498571, in 2022).",
+    "Pittsburgh|PA": "Pi Kappa Phi; city Pittsburgh, PA names University of Pittsburgh's main campus.",
+    "Reno|NV": "Pi Kappa Phi; city Reno, NV.",
+    "Saint John’s University|": "The Consortium's and the Trans Policy Clearinghouse's 'Saint John's University' (men's college, no state given) is the Collegeville, MN campus coordinate with the College of Saint Benedict, not St. John's University-New York: both lists' entries for it link csbsju.edu, the Minnesota campus's shared domain with Saint Benedict.",
+    "Sewanee: The University of The South|TN": "Lambda Chi Alpha's own name for Sewanee (IPEDS: The University of the South, 221519).",
+    "Sewanee: The University of the South|": "Sigma Nu's own name for Sewanee (IPEDS: The University of the South, 221519); its table gave no state.",
+    "South Alabama|AL": "Pi Kappa Phi; city Mobile, AL.",
+    "South Florida|FL": "Pi Kappa Phi; city Tampa, FL.",
+    "Southern Mississippi|MS": "Pi Kappa Phi; city Hattiesburg, MS.",
+    "St. John's University-Staten Island|": "St. John's University (NY) once had a Staten Island campus; same institution as St. John's University-New York (195809), its current IPEDS entry.",
+    "Tampa|FL": "Pi Kappa Phi; city Tampa, FL, distinct from the separate \"South Florida\" listing (USF) also in Tampa.",
+    "Tennessee|TN": "Pi Kappa Phi's bare state name; city Knoxville, TN names the flagship.",
+    "Texas A&M University-Commerce|": "Renamed East Texas A&M University in 2023 (same IPEDS unit 224554).",
+    "Texas-Arlington|TX": "Pi Kappa Phi; city Arlington, TX.",
+    "Texas-Austin|TX": "Pi Kappa Phi; city Austin, TX.",
+    "Texas-Dallas|TX": "Pi Kappa Phi; city Richardson, TX is UT Dallas's campus.",
+    "Texas-San Antonio|TX": "Pi Kappa Phi; city San Antonio, TX.",
+    "Toledo|OH": "Pi Kappa Phi; city Toledo, OH.",
+    "UC-Denver|": "The Consortium's center map names 'UC-Denver' once but its description lists three Auraria Campus institutions sharing one center: Community College of Denver (a two-year college, not on this site), University of Colorado Denver (126562), and Metropolitan State University of Denver, formerly Metropolitan State College of Denver (127565).",
+    "University Park|CA": "Pi Kappa Phi; \"University Park\" is USC's own campus name, city Los Angeles, CA.",
+    "Virginia|VA": "Pi Kappa Phi's bare state name; city Charlottesville, VA names the flagship, Virginia's only college there.",
+    "West Florida|": "Kappa Sigma's short form for University of West Florida.",
+    "West Haven, Connecticut|": "Kappa Sigma's table had no school name for this row, only the host city/state; West Haven, CT is University of New Haven's only college.",
+    "West Long Branch, New Jersey|": "Kappa Sigma's table had no school name for this row, only the host city/state; West Long Branch, NJ is Monmouth University's only college.",
+    "Wisconsin-Madison|WI": "Pi Kappa Phi; city Madison, WI.",
+    "Worcester Polytechnic Institute (WPI)|": "The Consortium's map spells out the acronym in parentheses; same college as 'Worcester Polytechnic Institute' (168421)."
+  },
+  "Alabama-Birmingham|AL": [
+    "100663"
+  ],
+  "Alabama|AL": [
+    "100751"
+  ],
+  "Bloomsburg|PA": [
+    "498562"
+  ],
+  "California University of Pennsylvania|": [
+    "498571"
+  ],
+  "California-Merced|CA": [
+    "445188"
+  ],
+  "California-Riverside|CA": [
+    "110671"
+  ],
+  "California-San Diego|CA": [
+    "110680"
+  ],
+  "California-Santa Barbara|CA": [
+    "110705"
+  ],
+  "Central Florida|FL": [
+    "132903"
+  ],
+  "Cheney, Washington|": [
+    "235097"
+  ],
+  "Clarion University of Pennsylvania|": [
+    "498571"
+  ],
+  "College of William and Mary|": [
+    "231624"
+  ],
+  "Colorado-Colorado Springs|CO": [
+    "126580"
+  ],
+  "Colorado|CO": [
+    "126614"
+  ],
+  "Emory & Henry College|": [
+    "232025"
+  ],
+  "Ewing Township NJ|": [
+    "187134"
+  ],
+  "Florida|FL": [
+    "134130"
+  ],
+  "Georgia|GA": [
+    "139959"
+  ],
+  "Greeley|CO": [
+    "127741"
+  ],
+  "Hobart and William Smith Colleges|": [
+    "191630"
+  ],
+  "Humboldt State University|": [
+    "115755"
+  ],
+  "Illinois-Urbana-Champaign|IL": [
+    "145637"
+  ],
+  "Indiana Wesleyan University|IN": [
+    "151801"
+  ],
+  "Kentucky|KY": [
+    "157085"
+  ],
+  "Louisiana State University - Baton Rouge|LA": [
+    "159391"
+  ],
+  "Louisville|KY": [
+    "157289"
+  ],
+  "Loyola-Chicago|IL": [
+    "146719"
+  ],
+  "Marist College|": [
+    "192819"
+  ],
+  "Massachusetts-Amherst|MA": [
+    "166629"
+  ],
+  "Miami-Ohio|OH": [
+    "204024"
+  ],
+  "Miami|FL": [
+    "135726"
+  ],
+  "Mississippi|MS": [
+    "176017"
+  ],
+  "Missouri-Columbia|MO": [
+    "178396"
+  ],
+  "Moravian College|PA": [
+    "214157"
+  ],
+  "New Hampshire|NH": [
+    "183044"
+  ],
+  "North Georgia|GA": [
+    "482680"
+  ],
+  "Northeastern|MA": [
+    "167358"
+  ],
+  "Oklahoma|OK": [
+    "207500"
+  ],
+  "Orange California|": [
+    "111948"
+  ],
+  "Oregon|OR": [
+    "209551"
+  ],
+  "Penn State Behrend|": [
+    "214591"
+  ],
+  "Pennsylvania Western University-Edinboro|PA": [
+    "498571"
+  ],
+  "Pittsburgh|PA": [
+    "215293"
+  ],
+  "Reno|NV": [
+    "182290"
+  ],
+  "Saint John’s University|": [
+    "174792"
+  ],
+  "Sewanee: The University of The South|TN": [
+    "221519"
+  ],
+  "Sewanee: The University of the South|": [
+    "221519"
+  ],
+  "South Alabama|AL": [
+    "102094"
+  ],
+  "South Florida|FL": [
+    "137351"
+  ],
+  "Southern Mississippi|MS": [
+    "176372"
+  ],
+  "St. John's University-Staten Island|": [
+    "195809"
+  ],
+  "Tampa|FL": [
+    "137847"
+  ],
+  "Tennessee|TN": [
+    "221759"
+  ],
+  "Texas A&M University-Commerce|": [
+    "224554"
+  ],
+  "Texas-Arlington|TX": [
+    "228769"
+  ],
+  "Texas-Austin|TX": [
+    "228778"
+  ],
+  "Texas-Dallas|TX": [
+    "228787"
+  ],
+  "Texas-San Antonio|TX": [
+    "229027"
+  ],
+  "Toledo|OH": [
+    "206084"
+  ],
+  "UC-Denver|": [
+    "126562",
+    "127565"
+  ],
+  "University Park|CA": [
+    "123961"
+  ],
+  "Virginia|VA": [
+    "234076"
+  ],
+  "West Florida|": [
+    "138354"
+  ],
+  "West Haven, Connecticut|": [
+    "129941"
+  ],
+  "West Long Branch, New Jersey|": [
+    "185572"
+  ],
+  "Wisconsin-Madison|WI": [
+    "240444"
+  ],
+  "Worcester Polytechnic Institute (WPI)|": [
+    "168421"
+  ]
+}

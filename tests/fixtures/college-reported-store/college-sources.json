@@ -1,0 +1,158 @@
+{
+  "updated": "2026-10-26",
+  "recipes": [
+    {
+      "unit_id": "232256",
+      "sources": [
+        {
+          "kind": "cds",
+          "url": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf",
+          "format": "pdf",
+          "checked": "2026-10-11",
+          "sha256": "c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb"
+        },
+        {
+          "kind": "class-profile",
+          "url": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2024-25Factbook.pdf",
+          "format": "pdf",
+          "checked": "2026-10-11",
+          "sha256": "15de6c937a5d6412e2059098b632ae2ce24cc3a2fb2c2a17ce8fff50d712f53b",
+          "extraction": {
+            "cohort": "first-year",
+            "scope": "all-rounds",
+            "entering_term": "Fall 2024",
+            "applicants": 3177,
+            "admitted": 1300,
+            "enrolled": 296,
+            "acceptance_rate": 0.409,
+            "quotes": {
+              "applicants": "Applied 3,177",
+              "admitted": "Admitted 1300",
+              "enrolled": "Enrolled 296",
+              "acceptance_rate": "Acceptance Rate 40.9%"
+            },
+            "page": 10
+          },
+          "read_as": "pdf",
+          "processed": "2026-10-11"
+        },
+        {
+          "kind": "class-profile",
+          "url": "https://www.hsc.edu/about-h-sc/facts-and-figures",
+          "format": "html",
+          "checked": "2026-10-11",
+          "sha256": "a90d1b53c7d03f5db4c17cfc3567c68f19eda482599bb7568d6fa88b5166ccc9",
+          "extraction": {
+            "cohort": "unknown",
+            "scope": "unknown",
+            "entering_term": null,
+            "applicants": null,
+            "admitted": null,
+            "enrolled": null,
+            "acceptance_rate": null,
+            "quotes": {},
+            "page": null
+          },
+          "processed": "2026-10-11"
+        }
+      ],
+      "index_urls": [
+        "https://www.hsc.edu/institutional-effectiveness/factbook"
+      ],
+      "learned": "2026-10-11",
+      "model": "claude-sonnet-5",
+      "discovery": {
+        "path": "full",
+        "tried": [
+          {
+            "step": 0,
+            "via": "none",
+            "at": "2026-10-05",
+            "result": "none",
+            "cost_usd": 0
+          },
+          {
+            "step": 1,
+            "via": "probe-sitemap",
+            "at": "2026-10-05",
+            "result": "none",
+            "detail": "1 sitemap(s), 0 hit(s)",
+            "cost_usd": 0
+          },
+          {
+            "step": 1,
+            "via": "probe-host",
+            "at": "2026-10-05",
+            "result": "none",
+            "detail": "0 IR host request(s)",
+            "cost_usd": 0
+          },
+          {
+            "step": 1,
+            "via": "probe-crawl",
+            "at": "2026-10-05",
+            "result": "none",
+            "detail": "2 page(s) crawled",
+            "cost_usd": 0
+          },
+          {
+            "step": 0,
+            "via": "none",
+            "at": "2026-10-11",
+            "result": "none",
+            "cost_usd": 0
+          },
+          {
+            "step": 1,
+            "via": "probe-sitemap",
+            "at": "2026-10-11",
+            "result": "none",
+            "detail": "1 sitemap(s), 0 hit(s)",
+            "cost_usd": 0
+          },
+          {
+            "step": 1,
+            "via": "probe-host",
+            "at": "2026-10-11",
+            "result": "none",
+            "detail": "0 IR host request(s)",
+            "cost_usd": 0
+          },
+          {
+            "step": 1,
+            "via": "probe-crawl",
+            "at": "2026-10-11",
+            "result": "none",
+            "detail": "2 page(s) crawled",
+            "cost_usd": 0
+          },
+          {
+            "step": 2,
+            "via": "picker",
+            "at": "2026-10-11",
+            "result": "found",
+            "detail": "https://www.hsc.edu/about-h-sc/facts-and-figures",
+            "cost_usd": 0.0014
+          },
+          {
+            "step": 3,
+            "via": "search",
+            "at": "2026-10-11",
+            "result": "found",
+            "detail": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2024-25Factbook.pdf",
+            "cost_usd": 0.0821
+          },
+          {
+            "step": 4,
+            "via": "full",
+            "at": "2026-10-11",
+            "result": "found",
+            "detail": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf",
+            "cost_usd": 0.0522
+          }
+        ]
+      },
+      "notes": "Hampden-Sydney does not post a standalone Common Data Set file; instead its Office of Institutional Effectiveness publishes an annual Factbook (PDF) that is explicitly sourced from the Common Data Set and covers the most recent fall cohort. The factbook index page lists each year's edition, with the newest being the 2025-26 Factbook (covering Fall 2025), replacing the 2024-25 edition covering Fall 2024. No separate class-profile/admissions news page with newer figures was found on hsc.edu."
+    }
+  ]
+}

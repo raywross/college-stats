@@ -7,7 +7,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, LineageRecord, School } from "../lib/types";
 import type { CdsCode, CollegeRecord, DocumentRecord } from "../lib/cds-sections.ts";
@@ -20,13 +20,19 @@ import { detailText, indicatorOf } from "../lib/indicators.ts";
 import { lastYear, type HistoryMeta, type SchoolHistory } from "../lib/history.ts";
 import { lastPointMismatches } from "../scripts/history/build.mts";
 import { gradByGroupMismatches } from "../scripts/history/graduation-groups.mts";
-import { readRecords } from "../scripts/lib/college-reported/records.mts";
+import { miniMeta, miniSchools, miniLayerDocument, miniLayers, miniHistoryFiles, miniHistory } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const meta: DatasetMeta = miniMeta();
+const schools: School[] = miniSchools();
 const byId = (id: string) => structuredClone(schools.find((s) => s.unit_id === id)!);
-const records = new Map(readRecords(join(ROOT, "data", "cds-records")).map((r) => [r.unit_id, r]));
+const records = new Map(
+  await Promise.all(
+    ["221999", "190415", "231624", "145637"].map(
+      async (id) => [id, (await miniLayerDocument<CollegeRecord>("reported.cds_records", id))!] as const,
+    ),
+  ),
+);
 const VANDERBILT = "221999";
 const CORNELL = "190415";
 const WM = "231624";
@@ -128,16 +134,20 @@ test("B4–B11: the subsidized-loan group of 29 has no rates (cohort kept); 4 �
 });
 
 test("B4–B11: a grid whose cohort lines are zeros and whose completer lines are blank is empty, not a class of nobody", () => {
-  // The Citadel's 2025–26 workbook prints 0 on line C (B.409–B.412) and leaves every other line blank.
-  const CITADEL = "217864";
-  const d = doc(CITADEL);
+  // The Citadel's real 2025–26 workbook (not in the mini fixture; not one of the four CDS academics colleges)
+  // prints 0 on line C (B.409–B.412) and leaves every other line blank; built here by hand from that shape.
+  const d: DocumentRecord = structuredClone(doc(CORNELL));
+  for (let c = 401; c <= 432; c++) d.items[`B.${c}` as CdsCode] = { status: "blank" };
+  for (let c = 501; c <= 532; c++) d.items[`B.${c}` as CdsCode] = { status: "blank" };
+  for (let i = 0; i < 4; i++) d.items[`B.${409 + i}` as CdsCode] = { status: "passed", v: 0, quote: `B.${409 + i} | 0`, cell: `CDS-B!Z${i}` };
   assert.equal(d.items["B.412"]?.v, 0);
   assert.equal(d.items["B.416"]?.status, "blank");
-  const r = checkGrid(d, baseline(CITADEL).outcomes);
+  const fed = baseline(CORNELL);
+  const r = checkGrid(d, fed.outcomes);
   assert.equal(r.value, null);
   assert.deepEqual(r.problems.map((p) => p.check), ["missing"]);
   // The record's value set has no graduation group and no 4- and 5-year shares, and reading it throws nothing.
-  const found = studentBodyFromRecord(records.get(CITADEL)!, baseline(CITADEL)).found;
+  const found = studentBodyFromRecord({ unit_id: "217864", documents: [d] }, fed).found;
   assert.equal(found.groups.graduation, undefined);
   assert.equal(found.graduation, undefined);
   // The same grid with a real total cohort is read as before.
@@ -200,8 +210,11 @@ function foundFor(s: School, delta = 1): FoundValues {
   };
 }
 
-/** A federal-only college (no lineage at all). */
-const plain = () => restoreFederal(stripReported(structuredClone(schools.find((s) => !s.lineage && s.outcomes?.grad_cohorts && s.demographics.racial_diversity)!)));
+// A federal-only college: no newest-group replacement has touched its demographics or outcomes (no `.federal`
+// sub-object there), so its lineage, if any, is for unrelated fields (directories, social links, …). The real
+// dataset has colleges with no lineage at all; the mini fixture's (Abraham Baldwin, 138558, "none of the later
+// layers") has a little, none of it on these fields, which is what this test actually needs.
+const plain = () => restoreFederal(stripReported(structuredClone(schools.find((s) => !s.demographics.federal && !s.outcomes?.federal && s.outcomes?.grad_cohorts && s.demographics.racial_diversity)!)));
 
 test("each group replaces when newer, keeping the federal values; the school passes the lineage check", () => {
   const before = plain();
@@ -324,11 +337,12 @@ test("rule 8: the 4- and 5-year shares describe the class of the six-year rates 
   assert.match(errs(s), /reported\.outcomes\.graduation describes the class that entered in/);
 });
 
-test("rule 9: an override can't set a newest group's path; check:lineage's override check fails", () => {
+test("rule 9: an override can't set a newest group's path; check:lineage's override check fails", async () => {
   const patch = { cds: { edition: "2024-25", url: "https://example.edu/cds.xlsx" }, demographics: { racial_diversity: { asian: 0.2, white: 0.8 } } };
   assert.throws(() => lineageForPatch("1", patch), /comes from the college's CDS record/);
   assert.match(validateOverrides({ "1": patch }).join("\n"), /demographics\.racial_diversity/);
-  assert.deepEqual(validateOverrides(JSON.parse(readFileSync(join(ROOT, "data", "overrides.json"), "utf8"))), []);
+  const overrides = Object.fromEntries(await miniLayers().read("overrides.legacy"));
+  assert.deepEqual(validateOverrides(overrides), []);
 });
 
 test("citations: race's replaced value is the federal object with its fall; graduation rates cite the anchor's edition", () => {
@@ -357,10 +371,12 @@ test("citations: race's replaced value is the federal object with its fall; grad
 /* 4. The merge and the former overrides                               */
 /* ------------------------------------------------------------------ */
 
-test("the 8 former override colleges have federal enrollment and race baselines; the records replace them where newer", () => {
-  const overrides = JSON.parse(readFileSync(join(ROOT, "data", "overrides.json"), "utf8")) as Record<string, Record<string, unknown>>;
+test("the former override colleges have federal enrollment and race baselines; the records replace them where newer", async () => {
+  // The real dataset has 8 former-override colleges; the mini fixture's layers carry only the ones among its
+  // 38 colleges (see build-mini-fixture.mts), so "exactly 8" isn't meaningful here.
+  const overrides = Object.fromEntries(await miniLayers().read<Record<string, unknown>>("overrides.legacy"));
   const ids = Object.keys(overrides).filter((k) => !k.startsWith("_"));
-  assert.equal(ids.length, 8);
+  assert.ok(ids.length > 0);
   for (const id of ids) {
     assert.equal(overrides[id].demographics, undefined, id);
     const s = byId(id);
@@ -384,15 +400,17 @@ test("import-cds no longer writes B1/B2", () => {
 /* ------------------------------------------------------------------ */
 
 test("history rule 1 compares a replaced college's men_share and grad_rate_pell with the kept federal values", () => {
-  const HISTORY = join(ROOT, "data", "history");
-  const hmeta: HistoryMeta = JSON.parse(readFileSync(join(HISTORY, "meta.json"), "utf8"));
-  const shard = (id: string): SchoolHistory => JSON.parse(readFileSync(join(HISTORY, "schools", `${id}.json`), "utf8"));
+  const hmeta: HistoryMeta = miniHistoryFiles().meta;
+  const shard = (id: string): SchoolHistory => structuredClone(miniHistory(id)!);
   const c = byId(CORNELL);
   const histories = new Map([[CORNELL, shard(CORNELL)]]);
   const only = (l: string[], key: string) => l.filter((m) => m.includes(` ${key}:`));
   assert.deepEqual(only(lastPointMismatches([c], histories, hmeta.latest), "men_share"), []);
-  // The newest class any college's history reaches is the one the snapshot's federal file describes.
-  const all = new Map(readdirSync(join(HISTORY, "schools")).slice(0, 300).map((f) => [f.replace(/\.json$/, ""), shard(f.replace(/\.json$/, ""))]));
+  // The newest class any college's history reaches is the one the snapshot's federal file describes; the real
+  // dataset checks this against 300 colleges' shards, the mini fixture against every college it carries one for.
+  const all = new Map(
+    schools.map((s) => s.unit_id).filter((id) => miniHistory(id)).map((id) => [id, shard(id)] as const),
+  );
   all.set(CORNELL, shard(CORNELL));
   assert.equal(lastYear(shard(CORNELL).series.grad_rate_pell!), hmeta.latest.cohort);
   assert.deepEqual(gradByGroupMismatches([c], all), []);

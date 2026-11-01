@@ -31,7 +31,7 @@ import { createContext, DIRECTORY_USER_AGENT } from "../scripts/lib/directories/
 import { Blocked, HttpError, defineAdapter, type CrawlContext } from "../scripts/lib/directories/contract.mts";
 import { adapterProblems, loadAdapters } from "../scripts/lib/directories/registry.mts";
 import { buildFiles, isPlaceholder, runAdapter } from "../scripts/lib/directories/run.mts";
-import { clearBlocks, readDirectoryFiles, recordBlock } from "../scripts/lib/directories/files.mts";
+import { clearBlocks, recordBlock, type DirectoryFile } from "../scripts/lib/directories/files.mts";
 import { applyCccuMembership, applyDirectories, chapterFiles, directoryDetails, orphanSummaries } from "../scripts/lib/directories/merge.mts";
 import { campusOf, entriesFrom } from "../scripts/lib/directories/adapters/ssa.mts";
 import { parsePage as rufParsePage } from "../scripts/lib/directories/adapters/ruf.mts";
@@ -41,12 +41,19 @@ import { entriesFrom as navigatorsEntriesFrom } from "../scripts/lib/directories
 import { entriesFrom as cccuEntriesFrom } from "../scripts/lib/directories/adapters/cccu.mts";
 import { entriesFrom as sigmaDeltaTauEntriesFrom } from "../scripts/lib/directories/adapters/sigma-delta-tau.mts";
 import { entriesFrom as sigmaNuEntriesFrom } from "../scripts/lib/directories/adapters/sigma-nu.mts";
-import { readDetails } from "../scripts/lib/publish-details.mts";
+import { miniMeta, miniSchools, miniLayers, miniDetail, miniReference } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const allSchools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const index = buildIndex(collegesFrom(allSchools), new Map([["179867", ["WashU"]]]), { "Boston Area|MA": ["164988", "167358"] });
+const meta: DatasetMeta = miniMeta();
+const allSchools: School[] = miniSchools();
+// The matcher's hard cases name real colleges outside the mini fixture's 38 (same name, different campus;
+// consortia; subdomains); tests/fixtures/directories/README.md.
+const EXTRA: School[] = JSON.parse(readFileSync(join(import.meta.dirname, "fixtures", "directories", "extra-colleges.json"), "utf8"));
+const index = buildIndex(collegesFrom([...allSchools, ...EXTRA]), new Map([["179867", ["WashU"]]]), { "Boston Area|MA": ["164988", "167358"] });
+// The fixture's directories.listings layer (28 real organizations, trimmed to the mini fixture's colleges) and the
+// mini colleges' detail shards, in place of readDirectoryFiles(ROOT) and readDetails(ROOT) over the real `data/`.
+const MINI_DIRECTORY_FILES: DirectoryFile[] = [...(await miniLayers().read<DirectoryFile>("directories.listings")).values()];
+const MINI_DETAILS: SchoolDetail[] = allSchools.map((s) => miniDetail(s.unit_id)).filter((d): d is SchoolDetail => d != null);
 
 const ids = (r: MatchResult) => (r.status === "matched" ? r.matches.map((m) => m.unit_id).sort() : r.status);
 const match = (campus: string, extra: Partial<MatchInput> = {}) => ids(matchEntry(index, { campus, ...extra }));
@@ -148,9 +155,10 @@ test("matcher: the college's own domain decides or confirms; disagreement and we
   assert.equal(match("Sierra College"), "unmatched"); // a community college, not on the site
 });
 
-test("matcher: every flagship names exactly one college in data/schools.json", () => {
+test("matcher: every flagship names exactly one college (allSchools plus the matcher's extra real colleges)", () => {
+  const combined = [...allSchools, ...EXTRA];
   for (const [key, name] of Object.entries(FLAGSHIPS)) {
-    assert.equal(allSchools.filter((s) => s.name === name).length, 1, `${key} → ${name}`);
+    assert.equal(combined.filter((s) => s.name === name).length, 1, `${key} → ${name}`);
   }
 });
 
@@ -397,7 +405,7 @@ test("lineage: checkDirectoryRows refuses each kind of uncredited or malformed l
 });
 
 test("lineage: the committed data fails the checks when a real listing loses its source (proved on a copy)", () => {
-  const details = readDetails(join(ROOT, "data", "detail", "schools")) ?? [];
+  const details = MINI_DETAILS;
   const withTable = details.find((d) => d.tables.directories);
   assert.ok(withTable, "the example adapter's listings are in the detail files");
   const school = allSchools.find((s) => s.unit_id === withTable.unit_id)!;
@@ -427,7 +435,7 @@ test("lineage: the committed data fails the checks when a real listing loses its
 /* ------------------------------------------------------------------ */
 
 test("merge: idempotent (deepEqual), and the committed data is exactly a fresh merge of data/directories/", () => {
-  const files = readDirectoryFiles(join(ROOT, "data"));
+  const files = MINI_DIRECTORY_FILES;
   const known = new Set(allSchools.map((s) => s.unit_id));
   // CCCU is a membership fact (specs/religious-life.md#measures item 2), not a chapter: applyCccuMembership handles
   // it separately, so the chapter table is built from every other file (chapterFiles).
@@ -437,17 +445,18 @@ test("merge: idempotent (deepEqual), and the committed data is exactly a fresh m
   assert.deepEqual(twice, once);
   assert.equal(JSON.stringify(twice), JSON.stringify(once), "byte-identical, key order included");
   assert.equal(JSON.stringify(once), JSON.stringify(allSchools), "run `npm run merge-directories`");
-  const committed = new Map((readDetails(join(ROOT, "data", "detail", "schools")) ?? []).map((d) => [d.unit_id, d.tables.directories]));
+  const committed = new Map(MINI_DETAILS.map((d) => [d.unit_id, d.tables.directories]));
   for (const d of built) assert.deepEqual(committed.get(d.unit_id), d.tables.directories, d.unit_id);
   assert.equal([...committed.values()].filter(Boolean).length, built.length);
   assert.deepEqual(validateLineage(once, meta), []);
 });
 
 test("CCCU membership: a membership fact, kept out of the chapter table and applied to school.religion.cccu_member", () => {
-  const files = readDirectoryFiles(join(ROOT, "data"));
+  const files = MINI_DIRECTORY_FILES;
   const cccu = files.find((f) => f.org === "cccu");
   assert.ok(cccu, "the cccu adapter's file is committed");
-  assert.ok(cccu!.entries.length > 50, "most CCCU voting members should match");
+  // The real CCCU membership list has >50 entries; the mini fixture's layer carries only the colleges among its 38.
+  assert.ok(cccu!.entries.length > 0, "at least one CCCU member in the mini fixture");
   // None of CCCU's entries land in anyone's chapter table.
   const known = new Set(allSchools.map((s) => s.unit_id));
   const built = directoryDetails(chapterFiles(files), known);
@@ -647,8 +656,7 @@ test("organizationProblems: website https, hex colors, wikidata shape, logo file
 });
 
 test("data/directories/organizations.json: one entry per adapter key, https URLs, logo files exist and are small, license allowed", async () => {
-  const path = join(ROOT, "data", "directories", "organizations.json");
-  const file = JSON.parse(readFileSync(path, "utf8")) as OrganizationsFile;
+  const file = miniReference<OrganizationsFile>("organizations");
   const adapterKeys = (await loadAdapters()).map((a) => a.key);
   assert.deepEqual(Object.keys(file.organizations).sort(), [...adapterKeys].sort(), "one organizations.json entry per adapter, and no extra keys");
   const problems: string[] = [];

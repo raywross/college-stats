@@ -1,0 +1,83 @@
+{
+  "updated": "2026-10-26",
+  "entries": [
+    {
+      "unit_id": "232256",
+      "admissions": {
+        "entering_term": "Fall 2025",
+        "year": 2025,
+        "applicants": 3284,
+        "admitted": 1227,
+        "enrolled": 249,
+        "acceptance_rate": 0.3736297198538368,
+        "source_kind": "cds"
+      },
+      "lineage": {
+        "reported.admissions.entering_term": {
+          "source": "college-site",
+          "method": "extracted",
+          "year": "Fall 2025",
+          "url": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf",
+          "retrieved": "2026-10-11",
+          "page": 9,
+          "quote": "Applied | 3,284 | 3,177 | 2,222 | 3,265 | 2,911"
+        },
+        "reported.admissions.year": {
+          "source": "college-site",
+          "method": "extracted",
+          "year": "Fall 2025",
+          "url": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf",
+          "retrieved": "2026-10-11",
+          "page": 9,
+          "quote": "Applied | 3,284 | 3,177 | 2,222 | 3,265 | 2,911"
+        },
+        "reported.admissions.source_kind": {
+          "source": "college-site",
+          "method": "extracted",
+          "year": "Fall 2025",
+          "url": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf",
+          "retrieved": "2026-10-11",
+          "page": 9,
+          "quote": "Applied | 3,284 | 3,177 | 2,222 | 3,265 | 2,911"
+        },
+        "reported.admissions.applicants": {
+          "source": "college-site",
+          "method": "extracted",
+          "year": "Fall 2025",
+          "url": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf",
+          "retrieved": "2026-10-11",
+          "page": 9,
+          "quote": "Applied | 3,284 | 3,177 | 2,222 | 3,265 | 2,911"
+        },
+        "reported.admissions.admitted": {
+          "source": "college-site",
+          "method": "extracted",
+          "year": "Fall 2025",
+          "url": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf",
+          "retrieved": "2026-10-11",
+          "page": 9,
+          "quote": "Admitted | 1,227 | 1300 | 1,115 | 1,298 | 1,070"
+        },
+        "reported.admissions.enrolled": {
+          "source": "college-site",
+          "method": "extracted",
+          "year": "Fall 2025",
+          "url": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf",
+          "retrieved": "2026-10-11",
+          "page": 9,
+          "quote": "Enrolled | 249 | 296 | 240 | 280 | 222"
+        },
+        "reported.admissions.acceptance_rate": {
+          "source": "college-site",
+          "method": "extracted",
+          "year": "Fall 2025",
+          "url": "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf",
+          "retrieved": "2026-10-11",
+          "page": 9,
+          "quote": "Admitted | 1,227 | 1300 | 1,115 | 1,298 | 1,070 / Applied | 3,284 | 3,177 | 2,222 | 3,265 | 2,911"
+        }
+      },
+      "run": "20261011-080007-50"
+    }
+  ]
+}

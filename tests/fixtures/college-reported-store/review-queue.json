@@ -1,0 +1,185 @@
+{
+  "updated": "2026-10-26",
+  "items": [
+    {
+      "unit_id": "232256",
+      "name": "Hampden-Sydney College",
+      "urls": [
+        "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf"
+      ],
+      "entering_term": "Fall 2024 cohort to Fall 2025",
+      "failures": [
+        {
+          "check": "federal-disagrees",
+          "detail": "B22 retention 77.891156% vs federal 83.68% one cohort older (more than 5 points)"
+        }
+      ],
+      "queued": "2026-10-11",
+      "run": "20261011-080007-50",
+      "code": "B.2201",
+      "edition": "2025-26",
+      "sha256": "c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb",
+      "value": 294
+    },
+    {
+      "unit_id": "232256",
+      "name": "Hampden-Sydney College",
+      "urls": [
+        "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf"
+      ],
+      "entering_term": "Fall 2024 cohort to Fall 2025",
+      "failures": [
+        {
+          "check": "federal-disagrees",
+          "detail": "B22 retention 77.891156% vs federal 83.68% one cohort older (more than 5 points)"
+        }
+      ],
+      "queued": "2026-10-11",
+      "run": "20261011-080007-50",
+      "code": "B.2202",
+      "edition": "2025-26",
+      "sha256": "c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb",
+      "value": 229
+    },
+    {
+      "unit_id": "232256",
+      "name": "Hampden-Sydney College",
+      "urls": [
+        "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf"
+      ],
+      "entering_term": "Fall 2024 cohort to Fall 2025",
+      "failures": [
+        {
+          "check": "federal-disagrees",
+          "detail": "B22 retention 77.891156% vs federal 83.68% one cohort older (more than 5 points)"
+        }
+      ],
+      "queued": "2026-10-11",
+      "run": "20261011-080007-50",
+      "code": "B.2203",
+      "edition": "2025-26",
+      "sha256": "c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb",
+      "value": 0.779
+    },
+    {
+      "unit_id": "232256",
+      "name": "Hampden-Sydney College",
+      "urls": [
+        "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf"
+      ],
+      "entering_term": "Fall 2025",
+      "failures": [
+        {
+          "check": "number-on-line",
+          "detail": "0.12 isn't on line 201: \"@90 n | @155 30 | @212 22 | @267 35 | @321 60 | @375 38\""
+        }
+      ],
+      "queued": "2026-10-11",
+      "run": "20261011-080007-50",
+      "code": "C.901",
+      "edition": "2025-26",
+      "sha256": "c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb",
+      "value": 0.12
+    },
+    {
+      "unit_id": "232256",
+      "name": "Hampden-Sydney College",
+      "urls": [
+        "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf"
+      ],
+      "entering_term": "Fall 2025",
+      "failures": [
+        {
+          "check": "number-on-line",
+          "detail": "0.056 isn't on line 233: \"@92 n | @158 14 | @214 14 | @272 8 | @325 19 | @380 43\""
+        }
+      ],
+      "queued": "2026-10-11",
+      "run": "20261011-080007-50",
+      "code": "C.902",
+      "edition": "2025-26",
+      "sha256": "c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb",
+      "value": 0.056
+    },
+    {
+      "unit_id": "232256",
+      "name": "Hampden-Sydney College",
+      "urls": [
+        "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf"
+      ],
+      "entering_term": "Fall 2025",
+      "failures": [
+        {
+          "check": "number-on-line",
+          "detail": "0.284 isn't on line 527: \"@90 Total | @167 263 | @221 255 | @275 257\""
+        }
+      ],
+      "queued": "2026-10-11",
+      "run": "20261011-080007-50",
+      "code": "F.102",
+      "edition": "2025-26",
+      "sha256": "c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb",
+      "value": 0.284
+    },
+    {
+      "unit_id": "232256",
+      "name": "Hampden-Sydney College",
+      "urls": [
+        "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf"
+      ],
+      "entering_term": "2025–26",
+      "failures": [
+        {
+          "check": "number-on-line",
+          "detail": "2025-2026 isn't on line 904: \"@64 Winter25 | @170 Financial Aid Recipients | @362 Recipients | @481 Recipients\""
+        }
+      ],
+      "queued": "2026-10-11",
+      "run": "20261011-080007-50",
+      "code": "H.101",
+      "edition": "2025-26",
+      "sha256": "c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb",
+      "value": "2025-2026"
+    },
+    {
+      "unit_id": "232256",
+      "name": "Hampden-Sydney College",
+      "urls": [
+        "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf"
+      ],
+      "entering_term": "Fall 2025",
+      "failures": [
+        {
+          "check": "number-on-line",
+          "detail": "920 isn't on line 495: \"@60 S-to-F Ratio | @145 8.4 | @210 9.2 | @275 9.0 | @340 9.0 | @406 9.0\""
+        }
+      ],
+      "queued": "2026-10-11",
+      "run": "20261011-080007-50",
+      "code": "I.202",
+      "edition": "2025-26",
+      "sha256": "c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb",
+      "value": 920
+    },
+    {
+      "unit_id": "232256",
+      "name": "Hampden-Sydney College",
+      "urls": [
+        "https://www.hsc.edu/Documents/Research/Fact%20Books%202017-/2025-26Factbook.pdf"
+      ],
+      "entering_term": "Fall 2025",
+      "failures": [
+        {
+          "check": "number-on-line",
+          "detail": "109 isn't on line 495: \"@60 S-to-F Ratio | @145 8.4 | @210 9.2 | @275 9.0 | @340 9.0 | @406 9.0\""
+        }
+      ],
+      "queued": "2026-10-11",
+      "run": "20261011-080007-50",
+      "code": "I.203",
+      "edition": "2025-26",
+      "sha256": "c756476384b3f318c73c5b0697137bce1d3f8dc8ba82f5c6ef597b9de8353bcb",
+      "value": 109
+    }
+  ]
+}

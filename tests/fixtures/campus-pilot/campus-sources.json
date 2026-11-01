@@ -1,0 +1,263 @@
+{
+ "updated": "2026-10-04",
+ "recipes": [
+  {
+   "unit_id": "152080",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": "https://admissions.nd.edu/why-nd/student-life/",
+     "notes": "Notre Dame's official admissions site states there are no fraternities or sororities at Notre Dame; the residence hall system (33 single-sex residential communities) is the focus of social, religious, and intramural athletic activities instead. No Greek life office, chapter reports, or recruitment pages exist since the college does not have fraternities/sororities."
+    },
+    "faith": {
+     "faith_office": "https://campusministry.nd.edu/",
+     "faith_groups": "https://dulac.nd.edu/campus-life/faith/",
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": "Found Notre Dame's Campus Ministry office page (campusministry.nd.edu) and the student affairs \"Faith and Spirituality\" page listing faith communities/groups (dulac.nd.edu/campus-life/faith/). Also found studentaffairs.nd.edu/campus-ministry/ as an alternate office page and admissions.nd.edu story on Campus Ministry engagement for students of all faiths. Was unable to locate a specific institutional report on student religious affiliation percentages or faith-group-specific student-served estimates (e.g., Hillel, Chabad) due to search tool rate limits encountered during this session before further queries could be completed."
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": null,
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": "Unable to complete web searches for this college because the web_search tool returned \"too many calls this turn\" errors on every attempt (including after waiting between turns), so no URLs could be verified. Per instructions not to guess URLs that weren't seen in search results, all fields are left null. A retry with working search access is needed to find: Notre Dame's Gender Relations Center (likely handles LGBTQ+ support in lieu of a dedicated LGBTQ center), student group pages (e.g., PrismND), the university's nondiscrimination statement, housing policy, registrar chosen-name/pronoun policy, student health plan summary, all-gender restroom list, and the du Lac student code of conduct (relevant as a Catholic institution's conduct/community standards document)."
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "greek_none",
+     "url": "https://admissions.nd.edu/why-nd/student-life/",
+     "status": "ok",
+     "sha256": "3fac5d4f8472a07d742e4c530609716ab71f3b3c8386ccffad10585380ecd163"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_office",
+     "url": "https://campusministry.nd.edu/",
+     "status": "ok",
+     "sha256": "5ad48d85aae1a43d74b5c08a08c09697bf278dffc9655682ce4497b947e19402"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_groups",
+     "url": "https://dulac.nd.edu/campus-life/faith/",
+     "status": "ok",
+     "sha256": "3dfaf2f0d3bba74f2658e4e31555e16c1a2e2c0b3b7644b1fdd2b8364b3c2148"
+    },
+    {
+     "domain": "faith",
+     "type": "followed",
+     "url": "https://campusministry.nd.edu/care-and-support/chaplaincy/",
+     "status": "ok",
+     "sha256": "3a66ca02d466e144ae8765be804a9eafca2d8bd3b319c4a13337b5cdb6151fc6"
+    }
+   ]
+  },
+  {
+   "unit_id": "176017",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": "https://olemiss.edu/greeks/",
+     "fsl_reports": [
+      "https://olemiss.edu/greeks/"
+     ],
+     "recruitment": "https://olemiss.edu/greeks/",
+     "greek_none": null,
+     "notes": "Found the Office of Fraternity and Sorority Life main page (https://olemiss.edu/greeks/). Web search tool hit a usage limit before I could locate more specific sub-pages for chapter size/grade reports or recruitment rules (likely under this same site, e.g. /greeks/recruitment or /greeks/reports, but these specific URLs were not confirmed via search). Recommend checking the main FSL office page for links to these resources directly."
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": null,
+     "religion_report": null,
+     "faith_estimate": [],
+     "notes": "Web search tool became unavailable (\"Server tool use limit exceeded\") for this task before any successful searches could be completed, so I was unable to verify specific URLs on olemiss.edu for the religious/spiritual life office, religious student organization listings, religious affiliation reports, or campus faith group estimates. All fields are left null/empty rather than guessing unverified URLs."
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": null,
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": "Web search tool became unavailable (server tool use limit exceeded) for this session after the first attempt, so I was unable to retrieve or verify specific URLs for University of Mississippi's LGBTQ+ center, student groups, nondiscrimination statement, housing, name policy, health plan, or restroom pages. No URLs are included since I could not confirm them via search, per instructions not to guess unseen URLs. A retry with working search access would be needed to populate these fields."
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "fsl_office",
+     "url": "https://olemiss.edu/greeks/",
+     "status": "ok",
+     "sha256": "de4b695948eadb8f94ebbdda62a073a6a7efb495b944deab256cba9b952bb68e"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://olemiss.edu/departments/student-affairs/greeks/join/index.php",
+     "status": "ok",
+     "sha256": "b5f5f48b7dc38b599588366e5d32aa437694d9ff103568fdd435e6f13692eef6"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://olemiss.edu/departments/student-affairs/greeks/ifc/index.php",
+     "status": "ok",
+     "sha256": "9ddc584c50daa9ea887b2449a15081b8f97abe2ef4742f1d50affa596689212f"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://olemiss.edu/departments/student-affairs/greeks/nphc/index.php",
+     "status": "ok",
+     "sha256": "f456f65f3b5d298c7597206cbb7f87d61cc3ba1a63cd92d7c148556dfb3ce5a7"
+    },
+    {
+     "domain": "greek",
+     "type": "followed",
+     "url": "https://olemiss.edu/departments/student-affairs/greeks/cph/index.php",
+     "status": "ok",
+     "sha256": "05201500678a160eccbb94fd201e391a6fe14be02ed51dcb3c236166f59ea16c"
+    }
+   ]
+  },
+  {
+   "unit_id": "209922",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": "https://www.reed.edu/campus-life/",
+     "notes": "Reed College's own Campus Life page states: \"At Reed, we don't have fraternities, sororities, or varsity sports.\" This is confirmed by the Clubs & Activities page as well. No fraternity/sorority life office, reports, or recruitment pages exist since Reed has no Greek life."
+    },
+    "faith": {
+     "faith_office": null,
+     "faith_groups": "https://www.reed.edu/campus-life/student-groups.html",
+     "religion_report": null,
+     "faith_estimate": [
+      "https://www.reed.edu/campus-life/clubs-activities/student-engagement/student-clubs-fair.html"
+     ],
+     "notes": "Reed College does not appear to have a dedicated chaplaincy/spiritual life office or an institutional religious-affiliation report. The Student Groups page lists the Jewish Student Union as a religious/identity-based club, and the Student Clubs Fair page lists other faith-related groups (Chabad at Reed, Jewish Student Union, Reed Christian Fellowship) but without membership/service numbers. No admissions or IR page found reporting students' religious affiliation."
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": null,
+     "nondiscrimination": null,
+     "housing": null,
+     "name_policy": null,
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": null,
+     "notes": "Unable to complete web searches due to a persistent \"tool use limit exceeded\" error affecting the web_search function for the entirety of this session, despite multiple retries across separate attempts. No verified URLs could be obtained from reed.edu, so all fields are left null rather than guessing unseen URLs. A retry in a new session is recommended to properly locate Reed College's LGBTQ+ center (likely branded as SEEDS - Sexuality and Equity Empowerment Diversity Services), student groups page, nondiscrimination policy, gender-inclusive housing policy, chosen name/pronoun registrar policy, student health insurance plan details, and all-gender restroom list."
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "greek_none",
+     "url": "https://www.reed.edu/campus-life/",
+     "status": "ok",
+     "sha256": "28b21f93458d2590a12345654a807f37de1382b5d9ef5f2748e0382856592969"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_groups",
+     "url": "https://www.reed.edu/campus-life/student-groups.html",
+     "status": "ok",
+     "sha256": "3164d82f934e2ccb84e36aaa69acf9df3e1352bc9c80ee64a36ac744d22084f2"
+    },
+    {
+     "domain": "faith",
+     "type": "faith_estimate",
+     "url": "https://www.reed.edu/campus-life/clubs-activities/student-engagement/student-clubs-fair.html",
+     "status": "ok",
+     "sha256": "61fc41a9c74b7a2b61e77a268412e28179aba87636dea0b6a92f06c484dbd057"
+    }
+   ]
+  },
+  {
+   "unit_id": "230038",
+   "learned": "2026-10-04",
+   "model": "claude-sonnet-5",
+   "links": {
+    "greek": {
+     "fsl_office": null,
+     "fsl_reports": [],
+     "recruitment": null,
+     "greek_none": "https://universe.byu.edu/2001/01/06/fraternities-and-sororities-pose-new-challenges-for-utah-schools/",
+     "notes": "BYU does not have fraternities or sororities. According to BYU's student newspaper (BYU Daily Universe, a BYU domain), the university eliminated social institutions resembling Greek fraternities and sororities decades ago, per a BYU student leadership administrator. No FSL office, chapter reports, or recruitment pages exist because BYU has no Greek system. Confirmed also by BYU's Common Data Set filings which report 0% participation in fraternities/sororities."
+    },
+    "lgbtq": {
+     "lgbtq_center": null,
+     "lgbtq_groups": "https://www.usgabyu.com/",
+     "nondiscrimination": "https://www.fire.org/sites/default/files/2025/05/Nondiscrimination%20and%20Equal%20Opportunity%20Policy-BYU.pdf",
+     "housing": null,
+     "name_policy": "https://idcenter.byu.edu/id-card-policies",
+     "health_plan": null,
+     "restrooms": null,
+     "trans_admission": null,
+     "conduct_code": "https://policy.byu.edu/view/church-educational-system-honor-code",
+     "notes": "BYU has no official LGBTQ+ center; USGA (Understanding Sexuality, Gender, and Allyship) is an unofficial, non-university-recognized student group (usgabyu.com) - not an official campus resource. No official university LGBTQ center exists as of recent reporting; searches did not find official pages for gender-inclusive housing, all-gender restrooms list, or student health plan transition-care coverage - likely because BYU (as a religious institution following the Honor Code's chastity/same-sex behavior restrictions) does not publish such pages. The Honor Code (Church Educational System Honor Code) at policy.byu.edu serves as the conduct code applicable to students, including provisions on chastity and \"abstaining from same-sex romantic behavior.\" The nondiscrimination/equal opportunity policy PDF (mirrored via FIRE) is the official BYU policy; a legal.byuh.edu version also exists for BYU-Hawaii (different campus) - included BYU's own PDF for main campus. Name policy: ID Center page describes preferred first name options on ID card/records; did not find a dedicated registrar chosen-name/pronouns policy page beyond this. No trans admission policy found/applicable (BYU is not single-sex). Health insurance plan and restroom map pages not located in search."
+    }
+   },
+   "sources": [
+    {
+     "domain": "greek",
+     "type": "greek_none",
+     "url": "https://universe.byu.edu/2001/01/06/fraternities-and-sororities-pose-new-challenges-for-utah-schools/",
+     "status": "blocked",
+     "detail": "forbidden"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "lgbtq_groups",
+     "url": "https://www.usgabyu.com/",
+     "status": "error",
+     "detail": "host didn't answer"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "nondiscrimination",
+     "url": "https://www.fire.org/sites/default/files/2025/05/Nondiscrimination%20and%20Equal%20Opportunity%20Policy-BYU.pdf",
+     "status": "ok",
+     "sha256": "1ca5b775ddc931bd340c8f697bb0a84ca759350ca46f9704b61b47a9b5ae6d1a",
+     "etag": "\"681bae7f-385ec\"",
+     "last_modified": "Wed, 07 May 2025 19:03:27 GMT"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "name_policy",
+     "url": "https://idcenter.byu.edu/id-card-policies",
+     "status": "blocked",
+     "detail": "forbidden"
+    },
+    {
+     "domain": "lgbtq",
+     "type": "conduct_code",
+     "url": "https://policy.byu.edu/view/church-educational-system-honor-code",
+     "status": "ok",
+     "sha256": "0dc781d7885807a566774cd81113c766143f6928e6182c9972065172b393f838"
+    }
+   ]
+  }
+ ]
+}

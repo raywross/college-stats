@@ -19,9 +19,9 @@ import { parseRobots, robotsAllows, sha256 } from "../scripts/lib/college-report
 import { linesJson } from "../scripts/lib/college-reported/files.mts";
 import { pickPilot } from "../scripts/lib/college-reported/pilot.mts";
 import type { ModelClient } from "../scripts/lib/college-reported/models.mts";
+import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const META: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const META: DatasetMeta = miniMeta();
 const FIXTURES = join(import.meta.dirname, "fixtures");
 const XLSX = readFileSync(join(FIXTURES, "cds-c1.xlsx"));
 const PDF = readFileSync(join(FIXTURES, "cds-c1.pdf"));
@@ -125,7 +125,7 @@ test("an Excel CDS is read deterministically: C1 totals, edition, and quotes, wi
 
   // The real Harvard record (federal fall 2024), so the published entry can be run through the lineage guard.
   // stripReported: the federal baseline the pipeline compares against, without a previous run's newer values.
-  const harvard = stripReported((JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[]).find((s) => s.unit_id === "166027")!);
+  const harvard = stripReported(miniSchools().find((s) => s.unit_id === "166027")!);
   assert.equal(harvard.admissions.year, 2024);
   const url = "https://c166027.edu/ir/CDS_2025-26.xlsx";
   const { client, calls } = fakeClient({});

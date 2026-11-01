@@ -26,7 +26,12 @@ import { holdMisread } from "../scripts/hold-misread.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const UNIT = "232256";
-const json = <T,>(rel: string): T => JSON.parse(readFileSync(join(ROOT, "data", rel), "utf8")) as T;
+// This college's slice of every state file (tests/fixtures/college-reported-store/README.md): the mini fixture's
+// layers leave out reported.sources, reported.review_queue, and reported.docs (pipeline bookkeeping, not
+// unit-filtered by the import), and this unit isn't one of the four CDS academics colleges whose record the
+// layers do carry.
+const FIXTURES = join(ROOT, "tests", "fixtures", "college-reported-store");
+const json = <T,>(rel: string): T => JSON.parse(readFileSync(join(FIXTURES, rel), "utf8")) as T;
 
 /** One real college's slice of every state file, plus an open batch and a blocked host. */
 function realState(): Round3State {
@@ -34,7 +39,7 @@ function realState(): Round3State {
   const reported = json<ReportedFile>("college-reported.json");
   const queue = json<ReviewQueueFile>("review-queue.json");
   const docs = json<CollegeDocsFile>("college-docs.json");
-  const record = json<CollegeRecord>(`cds-records/${UNIT}.json`);
+  const record = json<CollegeRecord>(`${UNIT}.json`);
   const batch: BatchEntry = { id: "msgbatch_x1", phase: "extract", submitted: "2026-10-30T10:00:00Z", requests: 2, reserved_usd: 0.5, custom_ids: [`u${UNIT}-abcdef01-C-v1`], run: "r9", model: "claude-haiku-4-5" };
   return {
     sources: { updated: sources.updated, recipes: sources.recipes.filter((r) => r.unit_id === UNIT) },

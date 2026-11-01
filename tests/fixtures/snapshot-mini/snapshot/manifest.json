@@ -2,11 +2,11 @@
   "id": 0,
   "created_at": "1970-01-01T00:00:00.000Z",
   "previous_id": null,
-  "colleges": 12,
+  "colleges": 38,
   "objects": {
     "colleges.json.gz": {
-      "bytes": 581453,
-      "sha256": "3340c627cfc5bec8d3c3bb567bc82af0166b96e54d1cfcea33a98e9a6b74e57f"
+      "bytes": 1606069,
+      "sha256": "4ea3535a1ecd6be63d7aa3c52aa6801f5c2fc2ad2affd76f17d0982bc46ff299"
     },
     "meta.json": {
       "bytes": 17154,
@@ -17,16 +17,16 @@
       "sha256": "4f51159e7b2e94646d26159795102fbe8ec053395003a0cf7f0a51f8d3e09857"
     },
     "aliases.json": {
-      "bytes": 8516,
-      "sha256": "b7ef721affa2a13bb93def732762e57cbc43f28a00e85a8e61fed3e4d5df8e79"
+      "bytes": 18832,
+      "sha256": "00f860112e9cc6887d09d4185fd5c5aa952eda701133ccee7b17d19ce05fbb3b"
     },
     "edits.json": {
       "bytes": 35,
       "sha256": "68550324239bd37e6ad541dbe10e081de9e28cee99e30ccdeed2d07aef74e405"
     },
     "search-index.json": {
-      "bytes": 4904,
-      "sha256": "b3924f97c88ca9c4523eb6ca4c9d971cfb51d98696bc1304f25b0dea80ceb9c6"
+      "bytes": 13470,
+      "sha256": "e9555ef4a0812f77178d153031a77b9c3d2ee106f7c09bc686067c173c470937"
     },
     "detail/221999.json": {
       "bytes": 28988,
@@ -124,6 +124,214 @@
       "bytes": 13449,
       "sha256": "1ba2490f142d1252db859ec0735fbec5b1c60fe675faf3b29da1557952d7d310"
     },
+    "detail/100654.json": {
+      "bytes": 7564,
+      "sha256": "cd9f65f7b2b77c7380965b220688d0dfd25e056d08a2ce3799731f260efbc1ff"
+    },
+    "history/100654.json": {
+      "bytes": 14799,
+      "sha256": "921a68a9815c4e653c57c4a9d13ff3495bb6f0817b5c3fa4994a0809e6e14add"
+    },
+    "detail/198419.json": {
+      "bytes": 24766,
+      "sha256": "c59b9b35c0a0506e3daec0642c9620078558f54c3f2756a157588338be10138b"
+    },
+    "history/198419.json": {
+      "bytes": 15334,
+      "sha256": "5fa215672a3b2db53894506a08caa1c02aa796602ad5524784c4fa134ab3031a"
+    },
+    "detail/243780.json": {
+      "bytes": 37558,
+      "sha256": "80f00d4259d87fcee8b50ab5735c746223ce66bf0b39da7dc1cb9cd5006c54d7"
+    },
+    "history/243780.json": {
+      "bytes": 16557,
+      "sha256": "8ba3f5d10b79c645196855556551114aa8e3e652a7920af018318f7abd30458d"
+    },
+    "detail/243744.json": {
+      "bytes": 21647,
+      "sha256": "78ae768aa5fc450b872225b149475b9f3162de7ee50fc7174050fcfb32655483"
+    },
+    "history/243744.json": {
+      "bytes": 15082,
+      "sha256": "a134b869d6144373684c16019df209a9e428765d04502cbb488a2d8bdc500b23"
+    },
+    "detail/199847.json": {
+      "bytes": 28666,
+      "sha256": "0984049ef7d7d96c52441efb9d18529993da82dc70aae2a905fa0ecb8fde6645"
+    },
+    "history/199847.json": {
+      "bytes": 15306,
+      "sha256": "ed82c67e0900c487009bfdbb077c320d792a8c49bf323873b7be23d4e0dc722d"
+    },
+    "detail/134130.json": {
+      "bytes": 33421,
+      "sha256": "bfd90739272808bf5fff987266b544633d478e3bf3a02887ec6280be7b55013c"
+    },
+    "history/134130.json": {
+      "bytes": 16245,
+      "sha256": "4adcb711000aed0600ab7d963c3c2f7bfaad81a538a71795c10dc12aaf73846d"
+    },
+    "detail/100724.json": {
+      "bytes": 6463,
+      "sha256": "0a1e94bc1f6805d948cf80095c50b7bf4e9b30c113f3e35fe01cfdf1c80a2dd7"
+    },
+    "history/100724.json": {
+      "bytes": 14415,
+      "sha256": "ff3908211eff831aa3ea86764534206a58a8a0af9dc1e5c3b90e7c7439f6fc41"
+    },
+    "detail/139959.json": {
+      "bytes": 42339,
+      "sha256": "cd09c8531039524ac8cfed4e8015f6995ea0cfa2356a81007f56a09da8aefe80"
+    },
+    "history/139959.json": {
+      "bytes": 16519,
+      "sha256": "dfdff711d72737c9142390ba42a00f40055a4592a68f8fc22ff28f4f39fe418e"
+    },
+    "detail/199120.json": {
+      "bytes": 18022,
+      "sha256": "15b3f145c32b513f6398344d5fe2b126729bf3098ece7b1dd400b7fe014f3f6f"
+    },
+    "history/199120.json": {
+      "bytes": 16035,
+      "sha256": "d13f41293aabd76ae8d45ff957391326b6ff6e57bf20b9ab8b75d1a4bce65427"
+    },
+    "detail/123457.json": {
+      "bytes": 5957,
+      "sha256": "6643b8916b521b67f997127d4ac19f91e434a85b02d08d745eb76522ea52f1f1"
+    },
+    "history/123457.json": {
+      "bytes": 13712,
+      "sha256": "d5a9baeed59a823aac65544c1c9123502491e6c753dc73970531baf67ce391bb"
+    },
+    "detail/100706.json": {
+      "bytes": 18964,
+      "sha256": "671a8d0d1db2a5d4ef523e12cb00f9bce0c6fa321ed0a24f04df93db19607248"
+    },
+    "history/100706.json": {
+      "bytes": 15054,
+      "sha256": "a2a589e46baf6c87fe14bb0ff4ac4bf52ab4edf6c27469791327d5a85768b706"
+    },
+    "detail/204796.json": {
+      "bytes": 31172,
+      "sha256": "3032a9a135d4b2fdf08aabfb7529fb97aad4fa79d4c24048b4dc51208f059a06"
+    },
+    "history/204796.json": {
+      "bytes": 16469,
+      "sha256": "c224979e47f822dd9ff894c26de97b28b1fb29bf51d5ce325f7abc2133fe9095"
+    },
+    "detail/198516.json": {
+      "bytes": 26605,
+      "sha256": "8e69d0cc95e8c31805d621de42ccb25154a55e60ba3080ad26323b74f0bca2d7"
+    },
+    "history/198516.json": {
+      "bytes": 15604,
+      "sha256": "32e040e4823d1664ca1668d1bf9ff1b14c331829414ea11749faf915ba5da846"
+    },
+    "detail/170976.json": {
+      "bytes": 31797,
+      "sha256": "681449ca7712ad2c9f0e3cb1180ee52e1415470eebc9d6ca0e293ec2b902f627"
+    },
+    "history/170976.json": {
+      "bytes": 16254,
+      "sha256": "af3e9b799d2dd1756f9f0d00daae3e3afaf86f2d9e5b83981ebbd991f9b996c3"
+    },
+    "detail/191621.json": {
+      "bytes": 5311,
+      "sha256": "8d4b4b47d607ed2fafeb267fe0ccd3bba8943e5adc5339410166057a1b983d55"
+    },
+    "history/191621.json": {
+      "bytes": 13193,
+      "sha256": "519e958118daf1d7cc9e63b20e39e0937779d3101c947aaad7c6549a2845a5a5"
+    },
+    "detail/123961.json": {
+      "bytes": 33083,
+      "sha256": "1525f296d85e2f7aa52fe967e9a970d9b0df9595ae1ff141eeb2ee6ef2ab767c"
+    },
+    "history/123961.json": {
+      "bytes": 16317,
+      "sha256": "7cb15327be0ab00482de54d280800a1895fa8aa519fd88d68ccb8049b00a3c5e"
+    },
+    "detail/204024.json": {
+      "bytes": 40586,
+      "sha256": "58a7300ffcaf99235e547c2c093645cac7d85c5f8a719e37af814558a38d8df7"
+    },
+    "history/204024.json": {
+      "bytes": 16192,
+      "sha256": "12e7f81c0d85514a2f74bfed8ec55d900349e27466e4d449303ab817142d4c5e"
+    },
+    "detail/100663.json": {
+      "bytes": 20752,
+      "sha256": "3be881c48a76e78aa3ab1f55af966100de4ceb25d1d4419ec4ff586bd080db2d"
+    },
+    "history/100663.json": {
+      "bytes": 15674,
+      "sha256": "ff4544e7cd1c53e5075def47205716819980745060615c5b17d5fa7d7fa28ca1"
+    },
+    "detail/200004.json": {
+      "bytes": 22342,
+      "sha256": "b55d4325c26e4774788362cf66c38f2f4deac7aaae131643bd1129cb5b4b6c6d"
+    },
+    "history/200004.json": {
+      "bytes": 15547,
+      "sha256": "bf495155471f9a8f4f630221d28ba8d08fc73ca1fc90788768a3e337ce2a769b"
+    },
+    "detail/186131.json": {
+      "bytes": 10786,
+      "sha256": "1d7577ecf00624c568ce18767860287cf589f9729e1b950703f9c25c5028e68d"
+    },
+    "history/186131.json": {
+      "bytes": 14669,
+      "sha256": "ee1f22f4578aa07db266ff3f7d6dd7cc472d3cbee2cdaaa492cd7eb2954724d0"
+    },
+    "detail/176910.json": {
+      "bytes": 1762,
+      "sha256": "f9399632e0417fbfd6251f4aa28158903f2b4933d6d6ee6684d383ae39528300"
+    },
+    "history/176910.json": {
+      "bytes": 10655,
+      "sha256": "5fb010ac74a1a1ac0d129d8a6acc6c11dc48255d1070000eed789adb59f75feb"
+    },
+    "detail/131520.json": {
+      "bytes": 28858,
+      "sha256": "9e5a187ed07ea1f550b266b6df0f6593dcbaf7c6d978dfef10f79da6aff81a12"
+    },
+    "history/131520.json": {
+      "bytes": 15319,
+      "sha256": "78f27faad22d15ebb296930aecc18dc76a58f735b6f8c0640fcb8aa52b6ff936"
+    },
+    "detail/228723.json": {
+      "bytes": 25983,
+      "sha256": "9828e905081f8d34b56ca43bbf1f4ddd2507e861b80d00cf30d8bc70caa4ce85"
+    },
+    "history/228723.json": {
+      "bytes": 16500,
+      "sha256": "69f1aede4d025ca976c3d1bfa21f17aa306029bc0776523d6f0accb66907858f"
+    },
+    "detail/218663.json": {
+      "bytes": 36157,
+      "sha256": "3e37716279d4a97e861d0277a4872a88e7599ccae7d114cb46a5a206737804db"
+    },
+    "history/218663.json": {
+      "bytes": 15891,
+      "sha256": "e348da89d16f0a68f41cf6e73421e461d1fcc07923468859794667fcbf52458e"
+    },
+    "detail/183026.json": {
+      "bytes": 12947,
+      "sha256": "55dfec0aa5afc810c5a61086abeb56cdce38130632d6f840c0683420013586e0"
+    },
+    "history/183026.json": {
+      "bytes": 14870,
+      "sha256": "0d7bcc8f3b4230c7e0cb7d4286a98afc15dc3bfb7baec00a2603320092f0466e"
+    },
+    "detail/135726.json": {
+      "bytes": 32101,
+      "sha256": "59a7576e5cf16fe9462b77a108687d01923d7a2a31caf595e6b73a6f751f0a99"
+    },
+    "history/135726.json": {
+      "bytes": 16304,
+      "sha256": "7b088571f6fd41b679b30085b8b032318fe04e48e042cde126362ee7599de0b7"
+    },
     "history/shared.json.gz": {
       "bytes": 106402,
       "sha256": "f07f3a3acb2f55ae1e8f65ee116e687be12cdfc5585b4f4293f396a8ce160f79"
@@ -152,11 +360,139 @@
       "bytes": 2712,
       "sha256": "9b7785860973861c6523634e56b1008c05df45565fcc4abca45814e07f25d9f8"
     },
-    "high-schools/sc.json": {
+    "reference/activity-roles.json": {
+      "bytes": 4134,
+      "sha256": "ee647626957f0d154fc403f2eb19ffac2e17230b0a0c6b1ff14db0fd3ceefc0c"
+    },
+    "reference/aid-policies.json": {
+      "bytes": 25308,
+      "sha256": "6c55862dd724c8ad0c7b23e3833469baf111cc6057722fe84983a38414638592"
+    },
+    "reference/aliases-curated.json": {
+      "bytes": 6446,
+      "sha256": "c72688b27fd131bf322d4db530d0bd87cf8a5f20c1b2e7bc0c30cce3fa6be42f"
+    },
+    "reference/ap-courses.json": {
+      "bytes": 24577,
+      "sha256": "277edbd7144071e91df0a87c458039f60cdd9cc5a7815463a301d45aa51387a2"
+    },
+    "reference/application-cycle.json": {
+      "bytes": 40914,
+      "sha256": "2a4a9c7c8e9192037a6a6a0041c45b2c968222ccfe88f52409002426127a6e52"
+    },
+    "reference/awards.json": {
+      "bytes": 10217,
+      "sha256": "3f9775a8df91b92645d70cd2da8b4c43da4ba08946108d1f94ec94ac20dcba41"
+    },
+    "reference/blocked-hosts.json": {
+      "bytes": 55644,
+      "sha256": "e41fc1e944e77084c993410511364c1439fe63963451a1e4c8bde97abcabfa72"
+    },
+    "reference/campus-pilot-2-colleges.json": {
+      "bytes": 3376,
+      "sha256": "7467bafeb719066fbdfe52c673f050c8ccb20e633381ee324be80c242d7acaa3"
+    },
+    "reference/campus-pilot-3-colleges.json": {
+      "bytes": 3288,
+      "sha256": "d110ba090db4d83d8ab9a095ca2bb6827c39689b0217f48b7c2192a3c055cb57"
+    },
+    "reference/cds-template-2025-26.json": {
+      "bytes": 539454,
+      "sha256": "3034dca853ed4abd91bbcc2a245172d0f2cedeb13e7fddd72a9df9b4e5f05729"
+    },
+    "reference/cds-urls.json": {
+      "bytes": 80732,
+      "sha256": "0ce92bb13110c159844fc896773244f4662a552de5b17cf6b5a2cb9afb290a57"
+    },
+    "reference/cip2020.json": {
+      "bytes": 150552,
+      "sha256": "ec789036a858d9041260d55788e23f687ba916553ca0e267b2d8e2083ca5b88b"
+    },
+    "reference/clubs.json": {
+      "bytes": 30660,
+      "sha256": "b5c7a0e650fed978408680e9395795830cad3f1d4f62d243f46c7557b973d48d"
+    },
+    "reference/college-reported-answer-key.json": {
+      "bytes": 23680,
+      "sha256": "1ef8984ebce28fc0d91fdbec8bfda42b306758bab40259dd5d4edbd967d84bc0"
+    },
+    "reference/college-reported-pilot.json": {
+      "bytes": 7324,
+      "sha256": "74e603bfb8ea9f2d29db600c11e64822fc9c0ace591733e1e1f27c880b175507"
+    },
+    "reference/cost-curve-pilot.json": {
+      "bytes": 6360,
+      "sha256": "22192d2617c1ec2c5604ec42f21494cc7ba905c659a9d6089fced83fe46bb979"
+    },
+    "reference/depth-groups.json": {
+      "bytes": 6158,
+      "sha256": "2612e0ee1154fffb3885af1f2c6eacf28b6d85b9f5dbcd09c1afefee8e4feb9c"
+    },
+    "reference/essay-guidance/sources.json": {
+      "bytes": 59575,
+      "sha256": "1c4816157a3fefd7dcc10be46d85b385035e1d5d5034d8cae08999b0abd73b22"
+    },
+    "reference/excluded-campuses.json": {
+      "bytes": 11331,
+      "sha256": "b72b2f16bad0617da295be1fdbbe2b1e24af357fe1d11f3c11fd29ff89b13a89"
+    },
+    "reference/federal-loans.json": {
+      "bytes": 5659,
+      "sha256": "a4bfad701fb7da06a0056e7ac0d80fe119a322f23b5567c6b501fa700e57bdab"
+    },
+    "reference/guaranteed-admission.json": {
+      "bytes": 9482,
+      "sha256": "f42f932c8edca426f37b2781983a5afa45153228d74dbb7048f3831c249c1b11"
+    },
+    "reference/hs-profile-answer-key.json": {
+      "bytes": 78294,
+      "sha256": "30faa04d8f7a8a7ba511384165cd7f69e44db7f600be683bc6247378674bf9cf"
+    },
+    "reference/ib-courses.json": {
+      "bytes": 27953,
+      "sha256": "5398ba164312bf66f148f8f4ff2376e4f98c96b7525020ca23c5939ab9b85b3a"
+    },
+    "reference/income-above-110k.json": {
+      "bytes": 3801,
+      "sha256": "c18d242b8c82ebe8f90f22e19c509c4ce3267e5992d372b922226de31213a67a"
+    },
+    "reference/legacy-bans.json": {
+      "bytes": 1213,
+      "sha256": "62c95eff5a7585f0dc48e6275520505d7f8e41af347da5d0361bd5b2eb1b4ba3"
+    },
+    "reference/major-admission.json": {
+      "bytes": 11330,
+      "sha256": "f6cf0cf11d0764f85126859fb60223de131a5ebcb977afc2e8fe42538bf9c67d"
+    },
+    "reference/major-course-expectations.json": {
+      "bytes": 6024,
+      "sha256": "f838693dff53bb2b1e2a0fa556f7d22efe0da0e4dd77cbcff8a7acae65dcfc74"
+    },
+    "reference/sample-plan.json": {
+      "bytes": 3961,
+      "sha256": "0406ec11806ce2b4ac56ae5c515b34e45129e1d7eee8fb528d940bcab5d2d32e"
+    },
+    "reference/selectivity-method.json": {
+      "bytes": 36886,
+      "sha256": "94f01a48b42f7f9a4297156ed53c8a1f57421f61d1a2b9847a32da9e274c5fb9"
+    },
+    "reference/sports.json": {
+      "bytes": 13786,
+      "sha256": "08fe1e5d811288cbd56e32c19cf6455ef10a0012bbadbc001b12d88417c2911f"
+    },
+    "reference/state-laws.json": {
+      "bytes": 6017,
+      "sha256": "5772573f87cfc92298984427bcab3d944e557230d776eb310a30ef467fac9b46"
+    },
+    "source-files.json": {
+      "bytes": 3408,
+      "sha256": "7ecbe45ba66a88c97b7538153ea9f6d77ad679fa7e7a468ec38a6b7f2407feba"
+    },
+    "high-schools/state/sc.json": {
       "bytes": 33092,
       "sha256": "d91f5ce91cd6bf73a59be91bb5fa39c5f154fd802695da41faaa22264dc6c117"
     },
-    "high-schools/ct.json": {
+    "high-schools/state/ct.json": {
       "bytes": 37991,
       "sha256": "15d0ef55e082af8937438b467ee16d083e33fef43e6d7923fe04d8ac7e08eb96"
     },

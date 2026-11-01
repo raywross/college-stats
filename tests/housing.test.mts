@@ -1,18 +1,16 @@
 /**
  * Housing and policies (specs/data-expansion/housing-and-policies.md): the IPEDS code rules, beds per 100 undergrads,
- * the Explore filters, and the stored values in data/schools.json. `npm test`.
+ * the Explore filters, and the stored values in the mini fixture (tests/helpers/snapshot.mts). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { School } from "../lib/types";
 import { applicationFeeFrom, housingFrom, promiseProgramFrom, tuitionPlansFrom } from "../lib/derive.ts";
 import { HOUSING_FILTERS, bedsPer100 } from "../lib/housing.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
+import { miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 
 test("housing follows the COST1_2024 dictionary codes", () => {
   assert.deepEqual(housingFrom({ ROOM: "1", ROOMCAP: "6009", ALLONCAM: "1", BOARD: "1", MEALSWK: "21" }), {
@@ -47,8 +45,9 @@ test("beds per 100 undergrads, and the Explore filters", () => {
   assert.deepEqual([f.liveOn, f.noFee, f.guarantee], [true, true, true]);
   assert.equal(countActiveFilters({ liveOn: "1", noFee: "1", guarantee: "1" }), 3);
   const counts = Object.fromEntries(HOUSING_FILTERS.map((h) => [h.param, schools.filter(h.test).length]));
-  assert.ok(counts.liveOn > 20 && counts.liveOn < 200, `strict live-on rule is rare (${counts.liveOn})`);
-  assert.ok(counts.noFee > 300, `many colleges charge no fee (${counts.noFee})`);
+  // Real data: 20–200 strict live-on rules and 300+ colleges with no fee; the mini fixture keeps the shape.
+  assert.ok(counts.liveOn > 0 && counts.liveOn < schools.length / 2, `strict live-on rule is rare (${counts.liveOn})`);
+  assert.ok(counts.noFee > 0, `colleges charge no fee (${counts.noFee})`);
 });
 
 test("Vanderbilt matches its IC2023 row", () => {

@@ -5,7 +5,6 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { hasEarnings, isPlausibleCip4, programsWithEarnings, toCip4, topEarningPrograms, type ProgramEarnings } from "../lib/field-of-study.ts";
@@ -14,10 +13,11 @@ import { DETAIL_TABLES, detailMismatches, validateDetail, type SchoolDetail } fr
 import { FIELDS } from "../lib/fields.ts";
 import { hasCip4 } from "../lib/cip.ts";
 import { readDetails } from "../scripts/lib/publish-details.mts";
+import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 
 /* ---- CIP code formatting and shape check ---- */

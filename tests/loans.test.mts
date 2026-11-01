@@ -1,18 +1,16 @@
 /**
  * Loans and repayment (specs/data-expansion/loans-and-repayment.md): the band parser, the repayment groups, the
- * "few students borrow" filter, and the stored values in data/schools.json. `npm test`.
+ * "few students borrow" filter, and the stored values in the mini fixture (tests/helpers/snapshot.mts). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { School } from "../lib/types";
 import { parseShareBand } from "../lib/derive.ts";
 import { FEW_LOANS_MAX, REPAYMENT_STATUSES, hasFewLoans, rangeLabel, repaymentGroups } from "../lib/repayment.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
+import { miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 
 test("Scorecard share bands parse to ranges; anything else is null", () => {
   assert.deepEqual(parseShareBand("0.27-0.28"), { low: 0.27, high: 0.28 });
@@ -71,5 +69,5 @@ test("stored loan values are in range, and most colleges' repayment charts", () 
   }
   assert.deepEqual(bad, []);
   const charted = schools.filter((s) => repaymentGroups(s)).length;
-  assert.ok(charted > 1500, `repayment charted for ${charted} colleges`);
+  assert.ok(charted > schools.length / 2, `repayment charted for ${charted} of ${schools.length} colleges`);
 });

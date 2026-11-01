@@ -164,7 +164,7 @@ test("candidates: the largest touch icon first, then declared icons by size, the
 });
 
 test("candidates as the site probe writes them: fallbacks after declared icons of a known size", () => {
-  // UGA's entry in data/site-probe.json (2026-10-04): a declared /favicon.ico of unknown size, then the probe's fallback.
+  // UGA's entry in the site probe (identity.probe, 2026-10-04): a declared /favicon.ico of unknown size, then the probe's fallback.
   const uga = rankIconCandidates([c("https://www.uga.edu/favicon.ico", "icon"), c("https://www.uga.edu/apple-touch-icon.png", "fallback")]);
   assert.deepEqual(uga.map((r) => r.url), ["https://www.uga.edu/apple-touch-icon.png", "https://www.uga.edu/favicon.ico"]);
   const stanford = rankIconCandidates([

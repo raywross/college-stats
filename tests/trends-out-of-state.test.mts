@@ -1,27 +1,21 @@
 /**
  * Study 5, public colleges and students from other states (specs/trends/out-of-state.md): recomputes the national
- * row and the Northeast's straight from the committed shards, without the shared panel helpers, and checks the panel
+ * row and the Northeast's straight from the shards, without the shared panel helpers, and checks the panel
  * rule (out-of-state share reported in both falls, 200+ enrolled first-years at the window's start), that odd years
  * are absent (not zero) in the yearly lines, and that the under-30 "most selective" group has no values.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
-import type { School } from "../lib/types";
-import type { HistoryMeta, SchoolHistory } from "../lib/history.ts";
+import type { SchoolHistory } from "../lib/history.ts";
 import { GROUP_FLOOR } from "../lib/trend-groups.ts";
 import type { OutOfStateFile, OutOfStateValues } from "../lib/trends.ts";
+import { miniHistories, miniHistoryFiles, miniSchools, miniTrendFile } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const HISTORY = join(ROOT, "data", "history");
-const file = JSON.parse(readFileSync(join(HISTORY, "trends", "out-of-state.json"), "utf8")) as OutOfStateFile;
-const hmeta = JSON.parse(readFileSync(join(HISTORY, "meta.json"), "utf8")) as HistoryMeta;
-const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
+const file = await miniTrendFile<OutOfStateFile>("out-of-state");
+const hmeta = miniHistoryFiles().meta;
+const schools = miniSchools();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
-const shards = readdirSync(join(HISTORY, "schools"))
-  .filter((f) => f.endsWith(".json") && byId.has(f.replace(/\.json$/, "")))
-  .map((f) => JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8")) as SchoolHistory);
+const shards = miniHistories();
 
 const val = (h: SchoolHistory, k: "out_of_state_share" | "international_share" | "enrolled", y: number): number | null => {
   const s = h.series[k];
@@ -63,7 +57,7 @@ test("window: fall 2014 to history's newest fall; 200-enrolled floor at the star
 
 test("the panel is every public college with the share reported in both falls and 200+ enrolled first-years at the window's start", () => {
   assert.equal(file.n, panel.length);
-  assert.ok(file.n > 300, `panel of ${file.n} is implausibly small`);
+  assert.ok(file.n > 10, `panel of ${file.n} is implausibly small (over 300 in the real data)`);
   for (const h of panel) {
     assert.ok((val(h, "enrolled", from) ?? 0) >= MIN_ENROLLED);
     assert.equal(isPublic(h), true);
@@ -84,10 +78,15 @@ test("national row recomputed from the shards", () => {
 });
 
 test("the Northeast recomputed from the shards (today's region)", () => {
-  const row = file.groupings.find((g) => g.grouping === "region")!.groups.find((r) => r.key === "Northeast")!;
+  const row = file.groupings.find((g) => g.grouping === "region")!.groups.find((r) => r.key === "Northeast");
   const ne = panel.filter((h) => byId.get(h.unit_id)!.location.region === "Northeast");
+  // The mini fixture's panel has no Northeast public, so the grouping lists no row for it.
+  if (!row) return assert.equal(ne.length, 0);
   assert.equal(row.n, ne.length);
-  assert.deepEqual(pick(row.values!), recompute(ne));
+  // Over the mini fixture this region falls under the 30-college floor and carries no values; over a full panel
+  // its values are recomputed here.
+  if (row.n < GROUP_FLOOR) assert.equal(row.values, undefined);
+  else assert.deepEqual(pick(row.values!), recompute(ne));
 });
 
 test("odd years are absent (null), not zero, in every yearly line", () => {

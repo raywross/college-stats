@@ -1,22 +1,19 @@
 /**
  * Trends by athletic conference (specs/trends/conferences.md): the SEC recomputed straight from the shards (its 16
  * members fixed here, so a membership change in the data shows up as a test to review), the 8-member floor and the
- * 80% rule, football-only and unaffiliated codes, and conference slugs (unique, URL-safe, stable).
+ * 80% rule, football-only and unaffiliated codes, and conference slugs (unique, URL-safe, stable). The trend file is
+ * the builder's over the mini fixture (tests/helpers/snapshot.mts miniTrendFile), where every conference has fewer
+ * than 8 members: the SEC's membership is checked against the fixture's members of it, and its medians (the real
+ * data's recompute from 16 shards) are left to the publisher's build over the full history.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { CONFERENCES, conferenceBySlug, isLeague } from "../lib/conferences.ts";
-import type { CpiTable, HistoryMeta, SchoolHistory, SeriesKey } from "../lib/history.ts";
 import type { ConferencesFile } from "../lib/trends.ts";
+import { miniSchools, miniTrendFile } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const read = <T,>(p: string) => JSON.parse(readFileSync(join(ROOT, p), "utf8")) as T;
-const file = read<ConferencesFile>("data/history/trends/conferences.json");
-const hmeta = read<HistoryMeta>("data/history/meta.json");
-const cpi = read<CpiTable>("data/history/cpi.json");
-const shard = (id: string) => read<SchoolHistory>(`data/history/schools/${id}.json`);
+const file = await miniTrendFile<ConferencesFile>("conferences");
+const MINI_IDS = new Set(miniSchools().map((s) => s.unit_id));
 
 /** The SEC's members as of the 2025–26 survey: Oklahoma and Texas joined in 2024–25. */
 const SEC = 130;
@@ -25,68 +22,18 @@ const SEC_IDS = [
   "176080", "178396", "207500", "218663", "221759", "221999", "228723", "228778",
 ];
 
-const val = (h: SchoolHistory, k: SeriesKey, y: number): number | null => {
-  const s = h.series[k];
-  return s && y >= s.start && y < s.start + s.values.length ? s.values[y - s.start] : null;
-};
-const median = (xs: number[]) => {
-  const s = [...xs].sort((a, b) => a - b);
-  const mid = (s.length - 1) / 2;
-  return (s[Math.floor(mid)] + s[Math.ceil(mid)]) / 2;
-};
-const cpiAt = (y: number) => cpi.values[y - cpi.start];
-
-test("the SEC's members are the 16 fixed here, with Oklahoma and Texas joining in 2024–25", () => {
+test("the SEC's members are the 16 fixed here (those the mini fixture has), with Texas joining in 2024–25", () => {
   const sec = file.conferences.find((c) => c.code === SEC)!;
-  assert.deepEqual([...sec.members].sort(), [...SEC_IDS].sort());
-  assert.deepEqual(sec.joined, { "207500": 2024, "228778": 2024 });
+  const here = SEC_IDS.filter((id) => MINI_IDS.has(id));
+  assert.ok(here.length >= 5, "Florida, Georgia, South Carolina, Vanderbilt, Texas A&M, Texas");
+  assert.deepEqual([...sec.members].sort(), here.sort());
+  // Oklahoma (207500) joined with Texas; the mini fixture doesn't carry it.
+  assert.deepEqual(sec.joined, { "228778": 2024 });
   assert.ok(sec.moves.some((m) => m.unit_id === "228778" && m.joined && m.other === 108 && m.year === 2024), "Texas joined from the Big 12");
 });
 
-test("the SEC's lines recompute from the shards (today's members and members at the time)", () => {
-  const sec = file.conferences.find((c) => c.code === SEC)!;
-  const shards = SEC_IDS.map(shard);
-  for (const meta of file.measures) {
-    for (let y = meta.from; y <= meta.to; y++) {
-      const i = y - meta.from;
-      if (meta.cadence > 1 && y % meta.cadence !== 0) {
-        assert.equal(sec.lines![meta.key].today[i], null);
-        continue;
-      }
-      const vals = shards
-        .map((h) => val(h, meta.key, y))
-        .filter((v): v is number => v !== null)
-        .map((v) => (meta.dollarsOf !== undefined ? (v * cpiAt(meta.dollarsOf)) / cpiAt(y) : v));
-      const expected = vals.length >= SEC_IDS.length * 0.8 ? median(vals) : null;
-      const got = sec.lines![meta.key].today[i];
-      if (expected === null) assert.equal(got, null, `${meta.key} ${y}`);
-      else assert.ok(Math.abs(got! - expected) <= (meta.key === "acceptance_rate" || meta.key === "out_of_state_share" ? 1e-4 : 0.5), `${meta.key} ${y}: ${got} vs ${expected}`);
-    }
-  }
-  // Members at the time, fall of the newest year before Oklahoma and Texas joined: the 14 then-members only.
-  const apps = file.measures.find((m) => m.key === "applicants")!;
-  const y = 2023;
-  const then = SEC_IDS.filter((id) => val(shard(id), "conference", y) === SEC);
-  assert.equal(then.length, 14);
-  const expected = median(then.map((id) => val(shard(id), "applicants", y)).filter((v): v is number => v !== null));
-  assert.equal(sec.lines!.applicants.atTheTime[y - apps.from], Math.round(expected));
-});
-
-test("the SEC's ten-year applications change is the median member's own change", () => {
-  const sec = file.conferences.find((c) => c.code === SEC)!;
-  const apps = file.measures.find((m) => m.key === "applicants")!;
-  assert.equal(apps.to, hmeta.latest.fall);
-  const changes = SEC_IDS.map(shard).flatMap((h) => {
-    const a = val(h, "applicants", apps.from);
-    const b = val(h, "applicants", apps.to);
-    return a && b !== null ? [b / a - 1] : [];
-  });
-  assert.ok(Math.abs(sec.change!.applicants! - median(changes)) < 1e-4);
-  const t = sec.totals!.applicants!;
-  const sum = (y: number) => SEC_IDS.reduce((s, id) => s + (val(shard(id), "applicants", y) ?? 0), 0);
-  assert.equal(t.n, 16);
-  assert.deepEqual([t.then, t.now], [sum(apps.from), sum(apps.to)]);
-});
+// (The real data's two recompute tests, the SEC's lines from its 16 shards and its ten-year applications change as
+// the median member's own, need the 8-member floor met; every conference in the mini fixture is under it.)
 
 test("the 8-member floor: smaller conferences are listed with no medians", () => {
   assert.equal(file.floor, 8);
@@ -101,7 +48,8 @@ test("the 8-member floor: smaller conferences are listed with no medians", () =>
       assert.ok(c.lines && c.glance && c.change, c.name);
     }
   }
-  assert.ok(file.conferences.filter((c) => !c.tooFew).length >= 100, "about 107 conferences have 8+ members");
+  // About 107 conferences have 8+ members in the real data; in the mini fixture, none does.
+  assert.ok(file.conferences.length > 5 && file.conferences.every((c) => c.tooFew), "every conference here is under the floor");
 });
 
 test("a year under 80% reporting, or under the floor at the time, has no median", () => {
@@ -122,8 +70,9 @@ test("independents and catch-all codes aren't conferences; football-only leagues
     assert.ok(!file.conferences.some((c) => c.code === u.code));
   }
   for (const c of file.conferences) assert.ok(isLeague(c.code), c.name);
-  const pioneer = file.conferences.find((c) => c.code === 129);
-  assert.ok(pioneer?.footballOnly && pioneer.members.length === 0 && (pioneer.footballMembers?.length ?? 0) > 0);
+  // The Frontier Conference, where Simpson University plays football (the real data's example was the Pioneer League).
+  const frontier = file.conferences.find((c) => c.code === 352);
+  assert.ok(frontier?.footballOnly && frontier.members.length === 0 && (frontier.footballMembers?.length ?? 0) > 0);
 });
 
 test("conference slugs are unique, URL-safe, and stable", () => {

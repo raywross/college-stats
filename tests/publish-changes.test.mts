@@ -21,11 +21,12 @@ import {
   type GitAccess,
   type PublishResult,
 } from "../scripts/lib/publish-changes.mts";
+import { miniMeta, miniReleaseCalendar, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const SCHOOLS = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
-const META = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as DatasetMeta;
-const CALENDAR = JSON.parse(readFileSync(join(ROOT, "data", "release-calendar.json"), "utf8")) as ReleaseCalendar;
+const SCHOOLS = miniSchools();
+const META = miniMeta();
+const CALENDAR = miniReleaseCalendar();
 
 const BASE = "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111";
 const HEAD = "bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222";

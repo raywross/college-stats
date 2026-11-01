@@ -1,6 +1,6 @@
 /**
  * The Data API's foundation (specs/product/data-api.md; lib/api/*, app/api/v1/{me,meta,fields,openapi.json}):
- * - serializer parity for every college in data/schools.json: every non-hidden leaf equals the dataset's, no hidden
+ * - serializer parity for every college in the mini fixture: every non-hidden leaf equals the dataset's, no hidden
  *   path, no hidden lineage record, and no selectivity band survives; `fields=` keeps the named keys plus unit_id and
  *   name; resolved lineage names only public fields and equals lineageFor; the registry lists every public field;
  * - the key check with an injected lookup: no key → 401 missing_key, unknown → 401 invalid_key, over the day → 429
@@ -20,6 +20,7 @@ import { pathToFileURL } from "node:url";
 import * as nodeModule from "node:module";
 import type { DatasetMeta, School } from "../lib/types";
 import type { ReleaseCalendar } from "../lib/releases";
+import { miniMeta, miniReleaseCalendar, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
@@ -77,9 +78,9 @@ type KeyUseRow = import("../lib/api/auth.ts").KeyUseRow;
 type FieldPath = import("../lib/fields.ts").FieldPath;
 type FieldDef = import("../lib/fields.ts").FieldDef;
 
-const schools = JSON.parse(read("data/schools.json")) as School[];
-const meta = JSON.parse(read("data/meta.json")) as DatasetMeta;
-const calendar = JSON.parse(read("data/release-calendar.json")) as ReleaseCalendar;
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
+const calendar: ReleaseCalendar = miniReleaseCalendar();
 const data = createDataset({ schools, meta, releaseCalendar: calendar });
 const HIDDEN = new Set<string>(HIDDEN_FIELDS);
 const HARVARD = "166027";
@@ -187,7 +188,7 @@ function lineageProblems(school: School, cited: Record<string, unknown>): string
 test("schoolLineage: for every college every key is a public registered field; every record is lineageFor's (a sample)", () => {
   const badKeys = schools.flatMap((s) => Object.keys(serialize.schoolLineage(s, meta)).filter((k) => !(k in FIELDS) || HIDDEN.has(k)).map((k) => `${s.unit_id}: ${k}`));
   assert.deepEqual(badKeys, []);
-  const sample = schools.filter((_, i) => i % 15 === 0).concat(byId.get(HARVARD)!, ...schools.filter((s) => s.selectivity && "band" in s.selectivity));
+  const sample = schools.filter((_, i) => i % 5 === 0).concat(byId.get(HARVARD)!, ...schools.filter((s) => s.selectivity && "band" in s.selectivity));
   for (const s of sample) assert.deepEqual(lineageProblems(s, serialize.schoolLineage(s, meta)), []);
   const harvard = serialize.schoolLineage(byId.get(HARVARD)!, meta);
   assert.ok("admissions.acceptance_rate" in harvard && "name" in harvard);

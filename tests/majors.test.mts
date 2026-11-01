@@ -6,8 +6,6 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import {
   FIELD_MIN_OPTIONS,
@@ -41,13 +39,12 @@ import { forEachCsvRow } from "../scripts/lib/ipeds.mts";
 import { completionsKey, completionsYearLabel, familyKey } from "../scripts/lib/majors-sync.mts";
 import { ERAS } from "../scripts/history/registry.mts";
 import { buildCollege, lastPointMismatches, majorsShift } from "../scripts/history/build.mts";
-import { detailFileProblems, readDetails } from "../scripts/lib/publish-details.mts";
+import { miniDetail, miniHistory, miniHistoryFiles, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
-/** True once data/ has been rebuilt with majors (until then, committed-data tests skip). */
+/** True once the dataset carries majors (until then, the stored-data tests skip). */
 const HAS_DATA = !!meta.vintages["ipeds-c"] && schools.some((s) => s.academics?.majors_top);
 
 /** A C{Y}_A row as the CSV has it (C2020_A quotes codes and zero-pads AWLEVEL; C2025_A doesn't). */
@@ -350,7 +347,7 @@ test("every majors field, series, and table is registered and cited as IPEDS Com
 
 /* ---- Committed data ---- */
 
-test("committed data: Vanderbilt's majors, and every college's majors agree with its detail table", { skip: !HAS_DATA && "data/ not rebuilt with majors yet" }, () => {
+test("stored data: Vanderbilt's majors, and every college's majors agree with its detail table", { skip: !HAS_DATA && "the dataset has no majors yet" }, () => {
   const vu = byId("221999");
   assert.ok(vu.academics?.majors_top?.length === MAJORS_TOP_N);
   assert.ok((vu.academics?.bachelors_awarded ?? 0) > 1000);
@@ -362,20 +359,23 @@ test("committed data: Vanderbilt's majors, and every college's majors agree with
     assert.ok(sum <= 1.0005, s.name);
     assert.equal(Object.values(s.academics!.bachelors_by_family!).reduce((a, b) => a + b, 0), s.academics!.bachelors_awarded, s.name);
   }
-  const details = readDetails(ROOT)!;
-  assert.deepEqual(detailFileProblems(details, schools, meta), []);
+  // The mini fixture's detail shards, each valid and agreeing with its college's snapshot fields.
+  const details = schools.map((s) => miniDetail(s.unit_id)).filter((d): d is SchoolDetail => d !== null);
+  assert.ok(details.length > 0);
+  const ids = new Set(schools.map((s) => s.unit_id));
+  assert.deepEqual(details.flatMap((d) => [...validateDetail(d, meta, ids), ...detailMismatches(byId(d.unit_id), d)]), []);
   const withTable = new Set(details.filter((d) => d.tables.majors).map((d) => d.unit_id));
   for (const s of with_) assert.ok(withTable.has(s.unit_id), `${s.name} has top majors but no majors table`);
 });
 
-test("committed history: field shares end on the snapshot, and the Home fact is computed", { skip: (!HAS_DATA || !existsSync(join(ROOT, "data", "history", "schools", "221999.json"))) && "history not rebuilt with majors yet" }, () => {
-  const h: SchoolHistory = JSON.parse(readFileSync(join(ROOT, "data", "history", "schools", "221999.json"), "utf8"));
+test("stored history: field shares end on the snapshot, and the Home fact is computed", { skip: (!HAS_DATA || !miniHistory("221999")) && "history not rebuilt with majors yet" }, () => {
+  const h: SchoolHistory = miniHistory("221999")!;
   const vu = byId("221999");
   if (!h.series.bachelors) return;
   assert.equal(h.series.bachelors.values.at(-1), vu.academics!.bachelors_awarded);
   const total = vu.academics!.bachelors_awarded!;
   assert.equal(h.series.major_11!.values.at(-1), Math.round((vu.academics!.bachelors_by_family!["11"] / total) * 10_000) / 10_000);
-  const facts = JSON.parse(readFileSync(join(ROOT, "data", "history", "facts.json"), "utf8"));
+  const facts = miniHistoryFiles().facts;
   assert.ok(facts.majors && facts.majors.n > 1000, "fixed panel");
   assert.equal(facts.majors.to - facts.majors.from, 10);
 });

@@ -18,6 +18,7 @@ import { pathToFileURL } from "node:url";
 import * as nodeModule from "node:module";
 import type { DatasetMeta, School } from "../lib/types";
 import type { ReleaseCalendar } from "../lib/releases";
+import { miniAliases, miniMeta, miniReleaseCalendar, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
@@ -60,10 +61,11 @@ const { zipNames, zipRead } = await import("../lib/api/zip.ts");
 type McpToolContext = import("../lib/api/mcp.ts").McpToolContext;
 type ToolOutcome = import("../lib/api/mcp.ts").ToolOutcome;
 
-const schools = JSON.parse(read("data/schools.json")) as School[];
-const meta = JSON.parse(read("data/meta.json")) as DatasetMeta;
-const calendar = JSON.parse(read("data/release-calendar.json")) as ReleaseCalendar;
-const aliases = existsSync(join(ROOT, "data/aliases.json")) ? JSON.parse(read("data/aliases.json")) : [];
+// The mini fixture (tests/helpers/snapshot.mts).
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
+const calendar: ReleaseCalendar = miniReleaseCalendar();
+const aliases = miniAliases();
 const data = createDataset({ schools, meta, releaseCalendar: calendar, aliases });
 const ctx: McpToolContext = { data, getHistory: async () => null, origin: "https://quad.test" };
 const run = (name: string, args: unknown) => mcp.runTool(name, args, ctx);

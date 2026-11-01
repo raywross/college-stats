@@ -19,6 +19,8 @@ import { deleteEssay, renameEssay, restoreVersion, saveEssay, setEssayStatus } f
 import { ESSAY_STATUSES, essaysHref, STATUS_LABEL, type CommentAnchor, type EssayStatus, type VersionRow } from "@/lib/essays/rows";
 import { nameWarning, otherCollegesNamed } from "@/lib/essays/variants";
 import { CountBar } from "./CountBar";
+import { Marks, MarksLegend } from "./Marks";
+import { usePublishMarksText } from "./marks-context";
 import { Comments, type CommentView } from "./Comments";
 import { VersionList } from "./VersionList";
 import { cn } from "@/lib/utils";
@@ -109,6 +111,8 @@ export function Editor({
     el.style.height = `${Math.max(el.scrollHeight, 320)}px`;
   }, []);
   useEffect(grow, [text, grow]);
+  // The marks in the draft (Marks.tsx) draw under the field's live text.
+  usePublishMarksText(text);
 
   const save = useCallback(
     async (body: string, opts: { force?: boolean; mark?: string } = {}) => {
@@ -271,20 +275,22 @@ export function Editor({
           <label htmlFor="essay-field" className="sr-only">
             {label}
           </label>
-          <textarea
-            id="essay-field"
-            ref={field}
-            value={text}
-            readOnly={!canWrite}
-            onChange={(e) => onChange(e.target.value)}
-            spellCheck
-            autoCapitalize="sentences"
-            placeholder={canWrite ? "Start writing" : "Nothing written yet"}
-            className={cn(
-              "block min-h-80 w-full resize-none overflow-hidden rounded-3xl border bg-background px-4 py-4 text-[18px] leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-6 sm:text-lg",
-              !canWrite && "bg-muted/30",
-            )}
-          />
+          <MarksLegend className="mb-2" />
+          {/* The field over its marks (Marks.tsx): the wrapper carries the background and border; the field is transparent. */}
+          <div className={cn("relative rounded-3xl border bg-background", !canWrite && "bg-muted/30")}>
+            <Marks />
+            <textarea
+              id="essay-field"
+              ref={field}
+              value={text}
+              readOnly={!canWrite}
+              onChange={(e) => onChange(e.target.value)}
+              spellCheck
+              autoCapitalize="sentences"
+              placeholder={canWrite ? "Start writing" : "Nothing written yet"}
+              className="relative z-10 block min-h-80 w-full resize-none overflow-hidden rounded-3xl bg-transparent px-4 py-4 text-[18px] leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-6 sm:text-lg"
+            />
+          </div>
         </div>
         <div className="sticky bottom-[calc(var(--tabbar-h,0px)+0.5rem)] z-10 mt-3 lg:top-[calc(var(--header-h)+1rem)] lg:bottom-auto lg:mt-0">
           <CountBar count={count} limit={essay.limit} kind={essay.countKind} saveLine={canWrite ? SAVE_LINE[saveState] : "Read only"} />

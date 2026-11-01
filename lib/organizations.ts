@@ -1,6 +1,6 @@
 /**
  * National organizations behind the campus directories (specs/campus-directories.md, "Organizations"): each adapter's
- * display name, home page, Greek letters, colors, and logo, from `data/directories/organizations.json` (shape below).
+ * display name, home page, Greek letters, colors, and logo, from the reference document `organizations` (the bundled copy's `.data/snapshot/reference/organizations.json`; shape below).
  * Logos are the organizations' own, from their sites, used only to identify them (owner decision 2026-10-04), or a
  * freely licensed Commons file; either way the credit sits in the listing's ⓘ, never on the page. The Religious,
  * Greek, and LGBTQ+ life blocks read the file through this one module.
@@ -93,7 +93,7 @@ let memo: OrganizationsFile | null = null;
  */
 export function loadOrganizations(root = process.cwd()): OrganizationsFile {
   if (memo && root === process.cwd()) return memo;
-  const path = join(root, "data", "directories", "organizations.json");
+  const path = join(root, ".data", "snapshot", "reference", "organizations.json");
   let file = EMPTY;
   if (existsSync(path)) {
     try {

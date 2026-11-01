@@ -6,9 +6,9 @@
  * lib/chances/catalog.ts) and `ActivityEntry.catalogKey`/`family`/`titles`. Checked by
  * scripts/check-activity-catalogs.mts in `npm run verify`. Pure and client-safe (no server or browser APIs).
  */
-import sportsFile from "../../data/reference/sports.json" with { type: "json" };
-import clubsFile from "../../data/reference/clubs.json" with { type: "json" };
-import rolesFile from "../../data/reference/activity-roles.json" with { type: "json" };
+import sportsFile from "../../.data/snapshot/reference/sports.json" with { type: "json" };
+import clubsFile from "../../.data/snapshot/reference/clubs.json" with { type: "json" };
+import rolesFile from "../../.data/snapshot/reference/activity-roles.json" with { type: "json" };
 import type { ActivityFamily, ActivityKind, ActivityRole } from "./types.ts";
 
 export interface CatalogActivity {

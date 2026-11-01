@@ -1,5 +1,5 @@
 /**
- * High school files on disk (data/high-schools/, or the directory in HIGH_SCHOOLS_DIR): readers shared by the app's
+ * High school files on disk (the bundled copy's .data/snapshot/high-schools/, or the directory in HIGH_SCHOOLS_DIR): readers shared by the app's
  * json mode (lib/high-schools.ts), check:lineage, publish-high-schools, the syncs, and tests. Plain Node module (node:fs, no
  * Next.js or server-only imports) so scripts and tests load it directly.
  *
@@ -20,10 +20,10 @@ import type {
 } from "./high-school-types";
 import { buildHighSchoolView, isHighSchoolId, mergeStateReport, searchRows, stateOfHighSchoolId } from "./high-school-core.ts";
 
-/** data/high-schools under the working directory, or HIGH_SCHOOLS_DIR (absolute, or relative to the working directory). */
+/** .data/snapshot/high-schools (the bundled copy) under the working directory, or HIGH_SCHOOLS_DIR (absolute, or relative to the working directory). */
 export function highSchoolsDir(env: Record<string, string | undefined> = process.env, cwd = process.cwd()): string {
   const dir = env.HIGH_SCHOOLS_DIR?.trim();
-  if (!dir) return join(cwd, "data", "high-schools");
+  if (!dir) return join(cwd, ".data", "snapshot", "high-schools");
   return isAbsolute(dir) ? dir : join(cwd, dir);
 }
 

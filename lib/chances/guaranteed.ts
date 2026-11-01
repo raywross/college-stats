@@ -6,7 +6,7 @@
  * `reference.guaranteed_admission.*` (lib/fields.ts), which lib/lineage.ts resolves to the program's source.
  * Pure: safe in server and client code and in tests. Whether a program applies to a student is pool-rate.ts's.
  */
-import file from "../../data/guaranteed-admission.json" with { type: "json" };
+import file from "../../.data/snapshot/reference/guaranteed-admission.json" with { type: "json" };
 
 export interface GuaranteedRule {
   /** Applies to students in the top N% of their class (5 = top 5%); null when the rule isn't by rank. */

@@ -6,7 +6,7 @@
  * scripts/check-major-admission.mts in `npm run verify`; cited as `reported.major_admission.*` (lib/fields.ts),
  * which lib/lineage.ts resolves to the unit's own page. Pure: safe in server and client code and in tests.
  */
-import file from "../../data/major-admission.json" with { type: "json" };
+import file from "../../.data/snapshot/reference/major-admission.json" with { type: "json" };
 import { isMajorFamily } from "../majors.ts";
 import { catalogCourse, COURSE_SUBJECTS } from "./catalog.ts";
 import { isHttpsUrl, isIsoDate } from "./guaranteed.ts";

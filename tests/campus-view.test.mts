@@ -49,7 +49,7 @@ const pages: CampusPagesRows = {
   },
 };
 
-const fixture = JSON.parse(readFileSync(join(FIXTURE_ROOT, "data", "directories", "organizations.json"), "utf8")) as OrganizationsFile;
+const fixture = JSON.parse(readFileSync(join(FIXTURE_ROOT, ".data", "snapshot", "reference", "organizations.json"), "utf8")) as OrganizationsFile;
 
 test("greekView: the college's councils take the lists' chapters; a council only the lists know gets its own row; no mixed total", () => {
   const v = greekView(greekCouncils(pages, "2026-10-05"), listingsFor(rows, "greek"), {});

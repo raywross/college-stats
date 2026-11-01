@@ -3,14 +3,16 @@ import "server-only";
  * The Essays tab's reads (specs/product/essays/tab.md "Files": "the tab's data is read in app/advisor/page.tsx next
  * to the plan read"). The drafts and their links come with the plan (`ctx.essays`, read by loadPlanFor), so beside
  * the plan this reads only what the plan doesn't carry: the prompt lookup (the picker's groups, the names of colleges
- * a draft is for that are off the list) and the open-comment counts. When the plan carries no drafts (`ctx.essays`
+ * a draft is for that are off the list), the open-comment counts, and the suggestion counts (open per draft; a
+ * guardian's own newest per draft). When the plan carries no drafts (`ctx.essays`
  * null: the tables aren't there, or the read failed) it falls back to `readEssays`, which says whether the workspace is
  * set up. Read only when the open tab is Essays. Runs with the viewer's session, so row-level security decides.
  */
 import type { PlanContext } from "@/lib/planner/types";
 import { scheduleStudentReadLog } from "@/lib/households";
 import { createServerSupabase } from "@/lib/supabase-server";
-import { promptLookup, readEssays } from "./load";
+import { getUser } from "@/lib/auth";
+import { promptLookup, readEssays, suggestionCounts, type SuggestionCounts } from "./load";
 import { parsePromptRef, pickerGroups } from "./prompts";
 import type { EssayLinkRow, EssayRow } from "./rows";
 import type { EssaysTabData } from "./tab-view";
@@ -40,20 +42,25 @@ export async function essaysTabData(ctx: PlanContext, viewer: "student" | "guard
   let rows: EssayRow[];
   let links: EssayLinkRow[];
   let openComments: Record<string, number>;
+  let counts: SuggestionCounts;
   let lookup: Awaited<ReturnType<typeof promptLookup>>;
+  // A guardian's own suggestions are found by their user id (the "Waiting for {first}" rows).
+  const userId = viewer === "guardian" ? ((await getUser())?.id ?? null) : null;
   if (ctx.essays) {
     rows = ctx.essays.rows;
     links = ctx.essays.links;
     // The household's read log, as readEssays keeps it (a guardian opening the student's drafts).
     if (viewer === "guardian") void scheduleStudentReadLog(studentId, "essays");
-    [lookup, openComments] = await Promise.all([promptLookup(), openCommentCounts(rows.map((r) => r.id))]);
+    const ids = rows.map((r) => r.id);
+    [lookup, openComments, counts] = await Promise.all([promptLookup(), openCommentCounts(ids), suggestionCounts(ids, { role: viewer, userId })]);
   } else {
-    const [read, l] = await Promise.all([readEssays(studentId, { role: viewer }), promptLookup()]);
+    const [read, l] = await Promise.all([readEssays(studentId, { role: viewer, userId }), promptLookup()]);
     lookup = l;
-    if (read.kind === "setup-missing") return { kind: "setup-missing", rows: [], links: [], openComments: {}, picker: pickerGroups(colleges, lookup), collegeNames: {} };
+    if (read.kind === "setup-missing") return { kind: "setup-missing", rows: [], links: [], openComments: {}, openSuggestions: {}, mySuggestions: {}, picker: pickerGroups(colleges, lookup), collegeNames: {} };
     rows = read.essays;
     links = read.links;
     openComments = read.openComments;
+    counts = { openSuggestions: read.openSuggestions, mySuggestions: read.mySuggestions };
   }
 
   const collegeNames: Record<string, string> = Object.fromEntries(colleges.map((c) => [c.unit_id, c.name]));
@@ -61,5 +68,5 @@ export async function essaysTabData(ctx: PlanContext, viewer: "student" | "guard
     const p = parsePromptRef(ref);
     if (p?.kind === "college" && !collegeNames[p.unitId]) collegeNames[p.unitId] = lookup.schoolRecord(p.unitId)?.name ?? "A college";
   }
-  return { kind: "ready", rows, links, openComments, picker: pickerGroups(colleges, lookup), collegeNames };
+  return { kind: "ready", rows, links, openComments, ...counts, picker: pickerGroups(colleges, lookup), collegeNames };
 }

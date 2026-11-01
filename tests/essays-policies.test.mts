@@ -3,14 +3,16 @@
  * specs/product/essays/workspace.md "The model": "student drafts only," and parents review and comment), against real
  * Postgres (PGlite + the auth stub, tests/helpers/pg-auth.mts). A student writes; a guardian in the household reads
  * everything and comments, but a write to a draft is refused; a student or guardian elsewhere sees nothing; versions
- * are insert-only; 200 drafts at most; a comment's author is always the caller. The last tests break a policy and
- * show the checks catch it. `npm test`.
+ * are insert-only; 200 drafts at most; a comment's author is always the caller. Suggestions
+ * (20261101120000_essay_suggestions.sql; specs/product/essays/editors.md "The model"): a guardian suggests and edits
+ * only their own open suggestion; the student decides and never rewrites a proposal; a decision freezes it. The guard
+ * tests break a policy and show the checks catch it. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { affectedAsUser, asUser, createAuthDb, createUser, type AuthDb } from "./helpers/pg-auth.mts";
 
-const MIGRATIONS = ["20261005120000_accounts.sql", "20261029120000_essays.sql"];
+const MIGRATIONS = ["20261005120000_accounts.sql", "20261029120000_essays.sql", "20261101120000_essay_suggestions.sql"];
 
 interface World {
   db: AuthDb;
@@ -202,4 +204,107 @@ test("guard: without the author trigger, a guardian could sign a comment as the 
   await db.exec("drop trigger essay_comments_set_author on public.essay_comments");
   const c = await one(asUser<{ author_id: string }>(db, mom, "insert into public.essay_comments (essay_id, body, author_id, author_role) values ($1, 'x', $2, 'student') returning author_id", [essay, alice]));
   assert.equal(c.author_id, alice, "the author assertion would now fail");
+});
+
+/* ------------------------------------------------------------------ */
+/* Suggestions (editors.md "The model")                                */
+/* ------------------------------------------------------------------ */
+
+const SUGGEST = "insert into public.essay_suggestions (essay_id, base_version_id, base_body, proposed_body, note) values ($1, $2, 'My first draft.', $3, $4) returning id, author_id, author_role, status, decisions";
+type Suggestion = { id: string; author_id: string; author_role: string; status: string; decisions: Record<string, string> };
+
+test("a guardian suggests (as themself, whatever they claim) and edits or withdraws their own open suggestion", async () => {
+  const { db, alice, mom, essay, version } = await world();
+  const claimed = `insert into public.essay_suggestions (essay_id, base_body, proposed_body, author_id, author_role, status, decisions)
+    values ($1, 'My first draft.', 'My best draft.', $2, 'counselor', 'decided', '{"k":"accepted"}') returning id, author_id, author_role, status, decisions`;
+  const s = await one(asUser<Suggestion>(db, mom, claimed, [essay, alice]));
+  assert.deepEqual({ ...s, id: undefined }, { id: undefined, author_id: mom, author_role: "guardian", status: "open", decisions: {} });
+  assert.equal(await affectedAsUser(db, mom, "update public.essay_suggestions set proposed_body = 'My finest draft.', note = 'Your call.' where id = $1", [s.id]), 1);
+  const row = await one(asUser<{ proposed_body: string; note: string }>(db, alice, "select proposed_body, note from public.essay_suggestions where id = $1", [s.id]));
+  assert.deepEqual(row, { proposed_body: "My finest draft.", note: "Your call." }, "the student reads it");
+  assert.equal(await affectedAsUser(db, mom, "update public.essay_suggestions set status = 'withdrawn' where id = $1", [s.id]), 1);
+  const again = await one(asUser<Suggestion>(db, mom, SUGGEST, [essay, version, "My first draft, again.", null]));
+  assert.equal(again.status, "open", "once withdrawn, a new one may be sent");
+});
+
+test("one open suggestion per author per draft; a view-only and an editing guardian may each have their own", async () => {
+  const { db, mom, dad, essay, version } = await world();
+  await asUser(db, mom, SUGGEST, [essay, version, "A.", null]);
+  await assert.rejects(asUser(db, mom, SUGGEST, [essay, version, "B.", null]), /essay_suggestions_one_open|duplicate key/);
+  const d = await one(asUser<Suggestion>(db, dad, SUGGEST, [essay, version, "C.", "From Dad"]));
+  assert.equal(d.author_id, dad);
+});
+
+test("a guardian can't change the draft, another guardian's suggestion, or her own once a decision exists", async () => {
+  const { db, alice, mom, dad, essay, version } = await world();
+  const s = await one(asUser<Suggestion>(db, mom, SUGGEST, [essay, version, "My best draft.", null]));
+  assert.equal(await affectedAsUser(db, mom, "update public.essays set body = 'My best draft.' where id = $1", [essay]), 0, "the draft is the student's");
+  await assert.rejects(asUser(db, dad, "update public.essay_suggestions set proposed_body = 'Dad edits Mom' where id = $1", [s.id]), /essay_suggestion_not_yours/);
+  await assert.rejects(asUser(db, mom, `update public.essay_suggestions set decisions = '{"k":"accepted"}' where id = $1`, [s.id]), /essay_suggestion_author/, "the author doesn't decide");
+  await assert.rejects(asUser(db, mom, "update public.essay_suggestions set base_body = 'x' where id = $1", [s.id]), /essay_suggestion_fixed/);
+  assert.equal(await affectedAsUser(db, alice, `update public.essay_suggestions set decisions = '{"k":"rejected"}' where id = $1`, [s.id]), 1);
+  await assert.rejects(asUser(db, mom, "update public.essay_suggestions set proposed_body = 'Too late' where id = $1", [s.id]), /essay_suggestion_decided/);
+  await assert.rejects(asUser(db, mom, "update public.essay_suggestions set status = 'withdrawn' where id = $1", [s.id]), /essay_suggestion_decided/);
+  for (const u of [mom, alice]) await assert.rejects(asUser(db, u, "delete from public.essay_suggestions where id = $1", [s.id]), /permission denied/, "no delete");
+});
+
+test("the student decides (decisions, status, decided_at) but never rewrites the proposal, and never suggests on her own draft", async () => {
+  const { db, alice, mom, essay, version } = await world();
+  const s = await one(asUser<Suggestion>(db, mom, SUGGEST, [essay, version, "My best draft.", "Try this"]));
+  await assert.rejects(asUser(db, alice, "update public.essay_suggestions set proposed_body = 'What Mom meant' where id = $1", [s.id]), /essay_suggestion_student/);
+  await assert.rejects(asUser(db, alice, "update public.essay_suggestions set note = 'x' where id = $1", [s.id]), /essay_suggestion_student/);
+  await assert.rejects(asUser(db, alice, "update public.essay_suggestions set status = 'withdrawn' where id = $1", [s.id]), /essay_suggestion_status/);
+  assert.equal(await affectedAsUser(db, alice, `update public.essay_suggestions set decisions = '{"k":"accepted"}', status = 'decided', decided_at = now() where id = $1`, [s.id]), 1);
+  await assert.rejects(asUser(db, alice, "update public.essay_suggestions set status = 'open' where id = $1", [s.id]), /essay_suggestion_status/, "decided stays decided");
+  await assert.rejects(asUser(db, alice, SUGGEST, [essay, version, "Self-help.", null]), /row-level security|essay_suggestion_own/);
+  const v = await one(asUser<{ source: string }>(db, alice, "insert into public.essay_versions (essay_id, body, count, source, label) values ($1, 'My best draft.', 3, 'suggested', 'Accepted 1 of 1 change from Mom') returning source", [essay]));
+  assert.equal(v.source, "suggested");
+  await assert.rejects(asUser(db, alice, "insert into public.essay_versions (essay_id, body, source) values ($1, 'x', 'magic')", [essay]), /essay_versions_source_check/);
+});
+
+test("a stranger reads nothing and can't suggest; anon is refused; deleting the draft removes its suggestions", async () => {
+  const { db, alice, mom, eve, bob, essay, version } = await world();
+  await asUser(db, mom, SUGGEST, [essay, version, "My best draft.", null]);
+  for (const u of [eve, bob]) {
+    assert.equal(await count(db, u, "essay_suggestions", essay), 0);
+    await assert.rejects(asUser(db, u, SUGGEST, [essay, version, "x", null]), /row-level security/);
+    assert.equal(await affectedAsUser(db, u, "update public.essay_suggestions set status = 'withdrawn' where essay_id = $1", [essay]), 0);
+  }
+  await assert.rejects(asUser(db, null as unknown as string, "select id from public.essay_suggestions"), /permission denied/);
+  assert.equal(await count(db, alice, "essay_suggestions", essay), 1, "the student reads it");
+  assert.equal(await affectedAsUser(db, alice, "delete from public.essays where id = $1", [essay]), 1);
+  assert.equal((await db.query("select 1 from public.essay_suggestions")).rows.length, 0);
+});
+
+test("a base version from another draft is refused", async () => {
+  const { db, alice, mom, aliceStudent, essay } = await world();
+  const { id: other } = await one(asUser<{ id: string }>(db, alice, "insert into public.essays (student_id, prompt_ref) values ($1, 'free') returning id", [aliceStudent]));
+  const { id: otherVersion } = await one(asUser<{ id: string }>(db, alice, "insert into public.essay_versions (essay_id, body, source) values ($1, 'x', 'typed') returning id", [other]));
+  await assert.rejects(asUser(db, mom, SUGGEST, [essay, otherVersion, "y", null]), /essay_version/);
+});
+
+test("guard: without the update trigger, the student could rewrite the proposal", async () => {
+  const { db, alice, mom, essay, version } = await world();
+  const s = await one(asUser<Suggestion>(db, mom, SUGGEST, [essay, version, "My best draft.", null]));
+  await db.exec("drop trigger essay_suggestions_guard_update on public.essay_suggestions");
+  assert.equal(await affectedAsUser(db, alice, "update public.essay_suggestions set proposed_body = 'What Mom meant' where id = $1", [s.id]), 1, "the student-can't-rewrite assertion would now fail");
+});
+
+test("guard: without the partial index, one author could have two open suggestions", async () => {
+  const { db, mom, essay, version } = await world();
+  await db.exec("drop index public.essay_suggestions_one_open");
+  await asUser(db, mom, SUGGEST, [essay, version, "A.", null]);
+  await asUser(db, mom, SUGGEST, [essay, version, "B.", null]);
+  assert.equal((await asUser(db, mom, "select id from public.essay_suggestions where status = 'open'")).length, 2, "the one-open assertion would now fail");
+});
+
+test("guard: an insert policy without `not is_own_essay`, and no trigger, lets the student suggest on her own draft", async () => {
+  const { db, alice, essay, version } = await world();
+  await db.exec(`
+    drop trigger essay_suggestions_set_author on public.essay_suggestions;
+    drop policy "Essay suggestions: readers suggest" on public.essay_suggestions;
+    create policy "broken" on public.essay_suggestions for insert to authenticated with check (public.can_read_essay(essay_id));
+  `);
+  const s = await one(asUser<Suggestion>(db, alice, SUGGEST, [essay, version, "Self-help.", null]));
+  assert.ok(s.id, "the student-never-suggests assertion would now fail");
 });

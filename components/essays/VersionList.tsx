@@ -11,7 +11,7 @@ import type { VersionRow, VersionSource } from "@/lib/essays/rows";
 import { countLabel, type CountKind } from "@/lib/essays/count";
 import { cn } from "@/lib/utils";
 
-const SOURCE_LABEL: Record<VersionSource, string> = { typed: "Typed", pasted: "Pasted", uploaded: "Uploaded", docs: "From Docs", restored: "Restored" };
+const SOURCE_LABEL: Record<VersionSource, string> = { typed: "Typed", pasted: "Pasted", uploaded: "Uploaded", docs: "From Docs", restored: "Restored", suggested: "Accepted changes" };
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });

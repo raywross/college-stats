@@ -137,7 +137,7 @@ PostHog dashboards, one per question, reviewed weekly:
 6. **Performance** (Vercel Speed Insights): LCP, INP, CLS per route, phone vs desktop.
 7. **Errors:** `error_shown` by route, plus Vercel's function logs.
 The insight definitions for each dashboard are in [Setup](#setup-owner). A monthly summary (numbers and one-line
-observations) is written into `data/reports/usage-{month}.md` by hand from `data/reports/usage-template.md` for
+observations) is written into `specs/product/usage-reports/usage-{month}.md` by hand from `specs/product/usage-template.md` for
 now; a scheduled job could draft it from PostHog's API later.
 
 ## Environments
@@ -296,7 +296,7 @@ INP, CLS (the "Real Experience Score" is the headline). Copy the p75 values into
   events, identify), `components/analytics/TrackedLink.tsx` (a `next/link` that tracks on click, for server
   components), `components/analytics/ErrorTracker.tsx`, `lib/analytics-server.ts` (`posthog-node`),
   `next.config.ts` rewrites for `/ingest`, `app/layout.tsx` (provider + `@vercel/speed-insights`), `app/error.tsx`,
-  `app/global-error.tsx`, `app/privacy/page.tsx`, `tests/analytics.test.mts`, `data/reports/usage-template.md`.
+  `app/global-error.tsx`, `app/privacy/page.tsx`, `tests/analytics.test.mts`, `specs/product/usage-template.md`.
 - From the PostHog wizard install (#100, kept): `instrumentation.ts` (server-side log export to PostHog over
   OpenTelemetry, used by `app/api/revalidate/route.ts`), and the SDK's exception capture (`capture_exceptions`), now
   set in the provider's init. Its `instrumentation-client.ts` and inline `posthog.capture` calls were replaced by the

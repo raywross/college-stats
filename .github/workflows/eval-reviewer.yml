@@ -40,6 +40,16 @@ jobs:
           cache: npm
       - run: npm ci
 
+      # The bundled copy (.data/snapshot/): the evaluation reads the platforms' prompts from it. npm ci's postinstall
+      # leaves the mini fixture there when nothing is configured, so this fetch is what makes it read the real ones.
+      - name: Fetch the current snapshot
+        env:
+          DATA_SNAPSHOT_URL: ${{ vars.DATA_SNAPSHOT_URL }}
+          DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+        run: |
+          export DATA_SNAPSHOT_URL="${DATA_SNAPSHOT_URL:-${DATA_SUPABASE_URL%/}/storage/v1/object/public/snapshots}"
+          npm run fetch-snapshot
+
       - name: Run the evaluation
         id: eval
         env:

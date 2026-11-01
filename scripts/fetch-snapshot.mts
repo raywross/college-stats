@@ -79,6 +79,14 @@ export async function fetchSnapshot(options: { base: string; dir: string; fetch?
   }
   const manifest = JSON.parse(manifestBytes.toString("utf8")) as SnapshotManifest;
   if (manifest.id !== pointer.id) throw new Error(`snapshot ${pointer.id}: the manifest says id ${manifest.id}`);
+  // The app imports its reference tables and source-files.json from the bundled copy (specs/data-platform/git-ci-tests.md,
+  // phase 4). A snapshot rendered by an older publisher lacks them, and the build would then fail on a missing import
+  // instead of saying why; so say why here, before downloading anything.
+  if (!(SNAPSHOT_OBJECTS.sourceFiles in manifest.objects)) {
+    throw new Error(
+      `snapshot ${manifest.id} predates the publisher that renders every reference document (no ${SNAPSHOT_OBJECTS.sourceFiles} in its manifest); publish a snapshot first (Actions → Publish snapshot, with force), then build`,
+    );
+  }
 
   mkdirSync(dir, { recursive: true });
   rmSync(join(dir, SNAPSHOT_OBJECTS.manifest), { force: true });

@@ -6,7 +6,7 @@ import { buildSearchIndex } from "@/lib/search-index";
  * The search index (specs/serving-architecture.md#3-search-in-the-browser): one entry per college, matched in the
  * browser by lib/search-client.ts so typing never calls a function. Prerendered at `next build` and cached by the
  * CDN; with a published snapshot it is rebuilt when the publisher revalidates. Built from the served dataset and its
- * alias rows (data/aliases.json, or the snapshot's aliases.json), so the index and the pages always agree. Public data
+ * alias rows (the snapshot's aliases.json), so the index and the pages always agree. Public data
  * only; reads no cookies or session, so it stays static.
  *
  * It carries `x-quad-snapshot` (specs/data-platform/publish.md "Timing and telemetry"): the snapshot this very body

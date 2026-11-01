@@ -29,7 +29,7 @@ const COLOR = study.color;
 
 /**
  * Study 2 (specs/trends/test-optional.md): who still requires the SAT or ACT, who submits scores, and what happened
- * to published score ranges. Every number and year comes from data/history/trends/test-optional.json.
+ * to published score ranges. Every number and year comes from the snapshot's trends/test-optional.json.
  */
 export default async function TestOptionalPage() {
   const [file, files] = await Promise.all([getTrendFile("test-optional"), getHistoryFiles()]);

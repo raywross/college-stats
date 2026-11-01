@@ -2,7 +2,7 @@
  * Quad Advisor's splash page (specs/product/advisor.md "3. The page: /advisor, signed out"): what the Advisor tab
  * shows a visitor without an account, in place of the old signed-out plan. Every section is a title, one line, and a
  * frame that renders the product's own components (or a presentational twin with the same primitives where the real
- * one needs a plan's context or store) for one labeled sample student, `data/reference/sample-plan.json`. College
+ * one needs a plan's context or store) for one labeled sample student, `the snapshot's reference/sample-plan.json`. College
  * figures come from the dataset and are cited as everywhere else.
  *
  * Dynamic, not the spec's daily-revalidated static page: `/advisor` reads the session first (app/advisor/page.tsx

@@ -5,7 +5,7 @@ import { nationalSummary } from "@/lib/api/serialize";
 
 /**
  * GET /api/v1/national (specs/product/data-api.md "Endpoints"): per metric (lib/metrics.ts METRICS) the national
- * median, how many colleges report it, and its distribution, plus data/history/national.json (null when no history
+ * median, how many colleges report it, and its distribution, plus the snapshot's shared history (national) (null when no history
  * has been built). What the site's percentiles and "typical" lines use.
  */
 export const GET = withApiKey("national", async ({ request }) => {

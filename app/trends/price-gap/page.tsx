@@ -26,7 +26,7 @@ const COLOR = study.color;
 const BAND_LABELS = ["$0–30K", "$30–48K", "$48–75K", "$75–110K", "$110K+"];
 
 /**
- * Study 4, the price gap (specs/trends/price-gap.md): every number comes from data/history/trends/price-gap.json;
+ * Study 4, the price gap (specs/trends/price-gap.md): every number comes from the snapshot's trends/price-gap.json;
  * only the sentences are written here.
  */
 export default async function PriceGapPage() {

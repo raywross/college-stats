@@ -6,7 +6,7 @@ import { publicSeriesKeys, seriesDefinitions } from "@/lib/api/serialize";
 
 /**
  * GET /api/v1/schools/{id}/history (specs/product/data-api.md "Endpoints"): the college's history shard
- * (data/history/schools/{id}.json, `getHistory()`), and for each public series in it the definition the site charts it
+ * (the snapshot's history/{id}.json, `getHistory()`), and for each public series in it the definition the site charts it
  * with (lib/api/serialize.ts seriesDefinitions: label, the field it extends, unit, what a year means, breaks in
  * comparability, sources) and the files behind them (lib/history.ts historySources), the same shape the MCP tool
  * `get_history` answers with. 404 when the college has no shard.

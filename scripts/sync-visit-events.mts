@@ -18,7 +18,7 @@
  *   npm run sync-visit-events -- --limit 20                     at most 20 colleges
  *
  * Every request goes through PoliteHttp (robots.txt honored, at least a second between requests to one host, the
- * project's user agent); hosts in data/reference/blocked-hosts.json are skipped. Writes use the secret key
+ * project's user agent); hosts in the blocked-hosts reference document are skipped. Writes use the secret key
  * (SUPABASE_URL, SUPABASE_SECRET_KEY in .env.local).
  */
 import type { School } from "../lib/types";
@@ -104,7 +104,7 @@ if (DISCOVER) {
     const results = await pool(chunk, HOST_POOL, async (unitId): Promise<[string, Discovered | null]> => {
       const s = byId.get(unitId);
       if (!s) {
-        console.log(`  ${unitId}: not in data/schools.json; skipped`);
+        console.log(`  ${unitId}: not in the snapshot's colleges; skipped`);
         return [unitId, null];
       }
       const d = await discoverSlateHost(unitId, s.links?.visit ?? null, s.links?.apply ?? null, http, { isBlocked, log: (m) => console.log(m) });
@@ -203,7 +203,7 @@ if (UNITS.length) {
 }
 chosen = chosen.filter((h) => {
   if (!isBlocked(h.host)) return true;
-  console.log(`  ${h.host} is in data/reference/blocked-hosts.json; skipped`);
+  console.log(`  ${h.host} is a blocked host (the blocked-hosts reference document); skipped`);
   return false;
 });
 chosen = chosen.slice(0, LIMIT);

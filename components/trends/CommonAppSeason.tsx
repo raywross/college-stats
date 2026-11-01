@@ -21,7 +21,7 @@ function SeasonTile({ label, term, row, file, value, growth, className }: { labe
  * "This season on the Common App" (specs/data-expansion/common-app.md "National and state figures";
  * common-app-build/brief.md "U5"), rendered on /trends after the Studies grid: the newest season's applicants,
  * applications per applicant, member institutions, and the growth figures as stat tiles, each cited to the report
- * that stated it. Renders nothing without data/trends/common-app.json (like the other entry sections).
+ * that stated it. Renders nothing without the snapshot's reference/common-app-trends.json (like the other entry sections).
  */
 export async function CommonAppSeason() {
   const file = await getCommonAppTrends();

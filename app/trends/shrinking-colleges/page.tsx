@@ -87,7 +87,7 @@ function studentsView(groupings: readonly GroupingResult<ShrinkingValues>[], key
 
 /**
  * Study 3 (specs/trends/shrinking-colleges.md): half of colleges have 10%+ fewer undergraduates than ten years ago.
- * Every number and year comes from data/history/trends/shrinking-colleges.json; only the sentences are written here.
+ * Every number and year comes from the snapshot's trends/shrinking-colleges.json; only the sentences are written here.
  */
 export default async function ShrinkingCollegesPage() {
   const [file, files] = await Promise.all([getTrendFile("shrinking-colleges"), getHistoryFiles()]);

@@ -82,7 +82,7 @@ for (const c of pilot.colleges) {
 }
 
 if (!filled) {
-  console.log("No calculator results recorded yet in data/reference/cost-curve-pilot.json (see specs/product/cost-by-income-pilot.md).");
+  console.log("No calculator results recorded yet in the cost-curve-pilot reference document (see specs/product/cost-by-income-pilot.md).");
   process.exit(2);
 }
 console.table(rows);

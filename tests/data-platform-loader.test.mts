@@ -59,11 +59,14 @@ const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex
 const collegesText = (schools: unknown[]) => `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`;
 
 /** Snapshot `id`'s objects (bucket-relative path → bytes) plus its pointer, as the publisher would upload them. */
-function buildSnapshot(id: number, options: { rename?: string } = {}): { objects: Map<string, Buffer>; pointer: Buffer } {
+function buildSnapshot(id: number, options: { rename?: string; legacyRenderer?: boolean } = {}): { objects: Map<string, Buffer>; pointer: Buffer } {
   const schools = THREE.map((s, i) => (i === 0 && options.rename ? { ...s, name: options.rename } : s));
   const unit = THREE[0].unit_id;
   const plain: Record<string, Buffer> = {
     "colleges.json.gz": gzipSync(collegesText(schools)),
+    // Every snapshot since phase 4 carries source-files.json (the publisher renders it with every reference document);
+    // `legacyRenderer` builds one from before, which fetch-snapshot must refuse.
+    ...(options.legacyRenderer ? {} : { "source-files.json": Buffer.from(JSON.stringify({ checked: "2026-11-01", files: [] })) }),
     "meta.json": Buffer.from(JSON.stringify(miniMeta())),
     "release-calendar.json": Buffer.from(JSON.stringify(miniReleaseCalendar())),
     "aliases.json": Buffer.from(JSON.stringify((miniAliases() as { unit_id: string }[]).filter((a) => IDS.has(a.unit_id)))),
@@ -540,7 +543,7 @@ test("fetch-snapshot downloads pointer → manifest → objects, checks hashes, 
     const first = await fetchScript.fetchSnapshot({ base, dir });
     assert.equal(first.id, 1);
     assert.equal(first.skipped, 0);
-    assert.equal(first.downloaded, 8);
+    assert.equal(first.downloaded, 9);
     assert.equal(readFileSync(join(dir, "colleges.json"), "utf8"), collegesText(THREE), "ungzipped, one college per line");
     assert.ok(existsSync(join(dir, "history", "shared.json")));
     assert.ok(!existsSync(join(dir, "colleges.json.gz")));
@@ -551,7 +554,7 @@ test("fetch-snapshot downloads pointer → manifest → objects, checks hashes, 
     // Again: everything present with the right hash is skipped.
     hits.length = 0;
     const again = await fetchScript.fetchSnapshot({ base, dir });
-    assert.deepEqual([again.downloaded, again.skipped], [0, 8]);
+    assert.deepEqual([again.downloaded, again.skipped], [0, 9]);
     assert.deepEqual(hits.sort(), [POINTER_OBJECT, snapshotPath(1, "manifest.json")].sort());
 
     // A file changed on disk (plain or ungzipped) is fetched again; a stray file is removed.
@@ -576,6 +579,22 @@ test("fetch-snapshot downloads pointer → manifest → objects, checks hashes, 
     await assert.rejects(fetchScript.fetchSnapshot({ base, dir }), /doesn't match its hash/);
     assert.ok(!existsSync(join(dir, "manifest.json")));
     assert.equal(loader.hasBundled(dirname(dirname(dir))), false);
+  } finally {
+    server.close();
+  }
+});
+
+test("fetch-snapshot refuses a snapshot from the publisher before phase 4 (no source-files.json): the build would otherwise fail on a missing import", async () => {
+  const objects = new Map<string, Buffer>();
+  const old = buildSnapshot(1, { legacyRenderer: true });
+  for (const [k, v] of old.objects) objects.set(k, v);
+  objects.set(POINTER_OBJECT, old.pointer);
+  const { base, server, hits } = await serveBucket(objects);
+  try {
+    const dir = join(mkdtempSync(join(tmpdir(), "dp-fetch-old-")), ".data", "snapshot");
+    await assert.rejects(fetchScript.fetchSnapshot({ base, dir }), /predates the publisher .* publish a snapshot first/);
+    assert.ok(!existsSync(join(dir, "manifest.json")), "nothing written");
+    assert.deepEqual(hits.filter((h) => !h.endsWith("current.json") && !h.endsWith("manifest.json")), [], "nothing downloaded before refusing");
   } finally {
     server.close();
   }

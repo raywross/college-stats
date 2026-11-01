@@ -70,6 +70,9 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
             {school.location.city}, {school.location.state} · {rate === null ? "No admit rate" : `${pctSmart(rate)} admitted`} · unit {unit} ·{" "}
             <Link href={`/schools/${unit}`} className="underline-offset-4 hover:underline">
               Public profile
+            </Link>{" "}
+            <Link href={`/admin/colleges/${unit}/edit`} className="ml-1 inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+              Edit
             </Link>
           </>
         }

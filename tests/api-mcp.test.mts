@@ -24,6 +24,7 @@ import { pathToFileURL } from "node:url";
 import * as nodeModule from "node:module";
 import type { DatasetMeta, School } from "../lib/types";
 import type { ReleaseCalendar } from "../lib/releases";
+import { miniAliases, miniHistory, miniHistoryFiles, miniMeta, miniReleaseCalendar, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
@@ -76,26 +77,26 @@ type ToolOutcome = import("../lib/api/mcp.ts").ToolOutcome;
 type SchoolHistory = import("../lib/history.ts").SchoolHistory;
 type HistoryMeta = import("../lib/history.ts").HistoryMeta;
 
-const schools = JSON.parse(read("data/schools.json")) as School[];
-const meta = JSON.parse(read("data/meta.json")) as DatasetMeta;
-const calendar = JSON.parse(read("data/release-calendar.json")) as ReleaseCalendar;
-const aliases = existsSync(join(ROOT, "data/aliases.json")) ? JSON.parse(read("data/aliases.json")) : [];
+// The mini fixture (tests/helpers/snapshot.mts): 38 real colleges, their history shards, and the shared history files.
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
+const calendar: ReleaseCalendar = miniReleaseCalendar();
+const aliases = miniAliases();
 const data = createDataset({ schools, meta, releaseCalendar: calendar, aliases });
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const HIDDEN = new Set<string>(HIDDEN_FIELDS);
 
-const historyFile = (id: string) => join(ROOT, "data/history/schools", `${id}.json`);
 const ctx: McpToolContext = {
   data,
-  getHistory: async (id) => (existsSync(historyFile(id)) ? (JSON.parse(readFileSync(historyFile(id), "utf8")) as SchoolHistory) : null),
-  getHistoryMeta: async () => (existsSync(join(ROOT, "data/history/meta.json")) ? (JSON.parse(read("data/history/meta.json")) as HistoryMeta) : null),
+  getHistory: async (id) => miniHistory(id) as SchoolHistory | null,
+  getHistoryMeta: async () => miniHistoryFiles().meta as HistoryMeta,
 };
 
 const HARVARD = "166027";
 const BERKELEY = "110635";
 const MIT = "166683";
 const banded = schools.filter((s) => s.selectivity && "band" in s.selectivity);
-const SAMPLE = [HARVARD, BERKELEY, MIT, ...banded.slice(0, 3).map((s) => s.unit_id), ...schools.filter((_, i) => i % 400 === 0).map((s) => s.unit_id)];
+const SAMPLE = [HARVARD, BERKELEY, MIT, ...banded.slice(0, 3).map((s) => s.unit_id), ...schools.filter((_, i) => i % 10 === 0).map((s) => s.unit_id)];
 
 /** The JSON a tool answered (its text), after checking it isn't an error. */
 function body(out: ToolOutcome): Record<string, unknown> {
@@ -285,11 +286,12 @@ test("get_college by name: an exact name or short name resolves; an ambiguous on
   assert.equal(body(await run("get_college", { name: "MIT" })).unit_id, MIT, "an exact short name");
   assert.deepEqual(body(await run("get_college", { name: "MIT", fields: ["admissions"] })), json(serialize.publicSchool(byId.get(MIT)!, ["admissions"])));
 
-  const columbia = body(await run("get_college", { name: "Columbia" }));
-  assert.equal(columbia.ambiguous, true);
-  const candidates = columbia.candidates as { unit_id: string; name: string }[];
+  // The mini fixture's four Alabama colleges (the real data's example was "Columbia").
+  const alabama = body(await run("get_college", { name: "Alabama" }));
+  assert.equal(alabama.ambiguous, true);
+  const candidates = alabama.candidates as { unit_id: string; name: string }[];
   assert.ok(candidates.length > 1 && candidates.length <= mcp.NAME_CANDIDATES);
-  assert.deepEqual(candidates, json(data.searchSchools("Columbia", mcp.NAME_CANDIDATES).map((h) => serialize.schoolSummary(byId.get(h.id)!))));
+  assert.deepEqual(candidates, json(data.searchSchools("Alabama", mcp.NAME_CANDIDATES).map((h) => serialize.schoolSummary(byId.get(h.id)!))));
 
   // Several colleges with exactly this name: the candidates are those colleges.
   const twins = Object.entries(Object.groupBy(schools, (s) => s.name)).find(([, list]) => (list?.length ?? 0) > 1);
@@ -323,7 +325,7 @@ test("errors are tool results with isError and a plain sentence", async () => {
     assert.match((out.result.content[0] as { text: string }).text, message);
   }
   // A college without a history shard.
-  const noShard = schools.find((s) => !existsSync(historyFile(s.unit_id)));
+  const noShard = schools.find((s) => miniHistory(s.unit_id) === null);
   if (noShard) assert.equal((await run("get_history", { unit_id: noShard.unit_id })).status, 404);
 });
 

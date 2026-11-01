@@ -5,18 +5,16 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { Release } from "../lib/releases";
 import type { ResidencyPrices } from "../lib/types";
 import { FIELDS, NOTIFY_FIELDS, type FieldPath } from "../lib/fields.ts";
 import { describeChange, diffSchools, formatChangeValue, periodLabel, periodStart, recentPublishes, type DatasetChange, type StoredChange } from "../lib/changes.ts";
 import { changeSummary, changeTablesState, computeChanges, formatChangeList, stageChanges } from "../scripts/lib/publish-changes.mts";
+import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const SCHOOLS = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
-const META = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as DatasetMeta;
+const SCHOOLS = miniSchools();
+const META = miniMeta();
 
 type Full = School & {
   cost: NonNullable<School["cost"]> & { sticker: ResidencyPrices; tuition_fees: ResidencyPrices };

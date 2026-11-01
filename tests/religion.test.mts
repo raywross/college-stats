@@ -1,13 +1,11 @@
 /**
  * Religious life, phase 1 (specs/religious-life.md): IPEDS RELAFFIL → `school.religion` with NCES's dictionary label,
  * the faith families and Explore filter, the profile block's display rules, "Faith-centered" (C7 only), and the CDS
- * step `mergeReligion` (H14, F2) with its lineage and idempotence. Real records: data/cds-records/{221999,199120,
- * 110680}.json. `npm test`.
+ * step `mergeReligion` (H14, F2) with its lineage and idempotence. Real records: the mini fixture's
+ * reported.cds_records (Vanderbilt and Cornell are the two read here). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { CdsCode, CollegeRecord, ItemResult } from "../lib/cds-sections.ts";
 import { FIELDS } from "../lib/fields.ts";
@@ -26,12 +24,11 @@ import {
 import { RELIGION_LINEAGE_PREFIX, mergeReligion, religionFromRecord } from "../lib/cds/religion.ts";
 import { valueLabelsFrom } from "../scripts/lib/ipeds-dictionary.mts";
 import type { Workbook } from "../scripts/lib/cds-xlsx.mts";
-import { readRecords } from "../scripts/lib/college-reported/records.mts";
+import { miniLayers, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const records = readRecords(join(ROOT, "data", "cds-records"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
+const records: CollegeRecord[] = [...(await miniLayers().read<CollegeRecord>("reported.cds_records")).values()];
 const record = (id: string) => structuredClone(records.find((r) => r.unit_id === id)!);
 const school = (id: string) => structuredClone(schools.find((s) => s.unit_id === id)!);
 
@@ -170,14 +167,14 @@ test("F2 comes from the newest document that read section F: a newer blank hides
   assert.equal(religionFromRecord({ unit_id: "1", documents: [old, notRead] } as unknown as CollegeRecord).religion?.campus_ministries, true);
 });
 
-test("real records: Vanderbilt and UNC mark religious scholarships; every F2 mark is stored; lineage validates", () => {
+test("real records: Vanderbilt marks religious scholarships; every F2 mark is stored; lineage validates", () => {
   const vu = mergeReligion(school("221999"), record("221999"));
   assert.deepEqual(vu.reported?.religion, { aid_by_affiliation: { non_need: true, need: false }, campus_ministries: true });
   assert.equal(vu.lineage?.["reported.religion.aid_by_affiliation"]?.cell, "CDS-H!AC155");
   assert.deepEqual(validateSchool(vu, meta), []);
-  assert.deepEqual(mergeReligion(school("199120"), record("199120")).reported?.religion?.aid_by_affiliation, { non_need: true, need: false });
-  // UC San Diego: a flat PDF whose F2 line was read; no H14 religion mark.
-  assert.deepEqual(mergeReligion(school("110680"), record("110680")).reported?.religion, { campus_ministries: true });
+  // Cornell: an F2 line read, no H14 religion mark. (The real data's examples were UNC, 199120, which marks religious
+  // scholarships too, and UC San Diego, 110680, a flat PDF; the mini fixture keeps neither record.)
+  assert.deepEqual(mergeReligion(school("190415"), record("190415")).reported?.religion, { campus_ministries: true });
   // Dropping the lineage record fails the guard.
   const broken = structuredClone(vu);
   delete broken.lineage!["reported.religion.campus_ministries"];
@@ -200,7 +197,7 @@ test("registry: phase-1 fields only, cited to IPEDS IC and the college", () => {
   assert.equal(FIELDS["reported.religion.campus_ministries"].source, "college-site");
 });
 
-test("data/schools.json: every stored affiliation has a family and one label per code; only private colleges are affiliated", () => {
+test("the dataset: every stored affiliation has a family and one label per code; only private colleges are affiliated", () => {
   const labels = new Map<number, string>();
   for (const s of schools) {
     const a = s.religion?.affiliation;
@@ -210,5 +207,8 @@ test("data/schools.json: every stored affiliation has a family and one label per
     labels.set(a.code, a.label);
     assert.notEqual(s.type, "public", `${s.name} is public but affiliated`);
   }
-  assert.ok(!schools.some((s) => s.reported?.religion && !records.some((r) => r.unit_id === s.unit_id)), "only colleges with records");
+  // Only colleges with records: the mini fixture keeps four CDS records, so a college's religion block must at least
+  // carry the lineage mergeReligion writes from its record.
+  const unsourced = schools.filter((s) => s.reported?.religion && !Object.keys(s.lineage ?? {}).some((k) => k.startsWith(RELIGION_LINEAGE_PREFIX)));
+  assert.deepEqual(unsourced.map((s) => s.name), [], "only colleges with records");
 });

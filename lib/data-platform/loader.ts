@@ -24,25 +24,28 @@ import {
 /**
  * The runtime side of the data platform (specs/data-platform/publish.md "The loader"): where the dataset's bytes come
  * from, the pointer check, the swap, and the per-request shards. lib/data.ts is the only caller; it keeps every
- * exported function and contract it had, and in the legacy source (no DATA_SNAPSHOT_URL, no bundled copy) nothing
- * here touches the network or a new file, so today's deploys behave exactly as before.
+ * exported function and contract it had.
  *
  * Sources, in order:
  * - `storage`: DATA_SNAPSHOT_URL is set (the bucket's public base). The first load reads the bundled copy when one
  *   exists (else downloads the current snapshot), then `maybeRefresh()` re-reads the pointer at most once a minute
  *   and swaps when it moves. Shards are fetched for the snapshot the request's dataset came from.
- * - `bundled`: no URL, but `.data/snapshot/manifest.json` exists (what `npm run fetch-snapshot` wrote at build time).
- * - `legacy`: neither; lib/data.ts reads data/ as it always has.
+ * - `bundled`: no URL, but `.data/snapshot/manifest.json` exists (what `npm run fetch-snapshot` wrote at build time,
+ *   or `--ensure` at install: the current snapshot when configured, else the mini fixture, id 0).
+ * - Neither: there is no dataset, and `snapshotSource()` throws NO_SNAPSHOT_MESSAGE.
  *
  * The big objects (pointer, manifest, colleges) are read with node:http(s), not `fetch`: Next.js patches `fetch`, and
  * an uncacheable fetch made while a static page renders would turn that page dynamic. Shards use `fetch` with
  * `cache: "force-cache"` on purpose: the snapshot id is in the URL, so each snapshot is its own cache key.
  */
 
-export type SnapshotSource = { kind: "storage"; base: string } | { kind: "bundled" } | { kind: "legacy" };
+export type SnapshotSource = { kind: "storage"; base: string } | { kind: "bundled" };
 
-/** A published snapshot's id, or `legacy` for the files under data/. */
-export type SnapshotId = number | "legacy";
+/** A published snapshot's id (0 for the mini fixture). */
+export type SnapshotId = number;
+
+/** What getData() throws when there is neither a bundled copy nor DATA_SNAPSHOT_URL. */
+export const NO_SNAPSHOT_MESSAGE = "No data snapshot: run `npm run fetch-snapshot -- --ensure`";
 
 /** What one load or swap produces, before lib/data.ts builds a Dataset from it. */
 export interface SnapshotContent {
@@ -60,12 +63,15 @@ export const REFRESH_INTERVAL_MS = 60_000;
 
 const trimBase = (url: string) => url.trim().replace(/\/+$/, "");
 
-/** Where the dataset comes from, from the environment and whether a bundled copy exists under `root`. */
+/**
+ * Where the dataset comes from, from the environment and whether a bundled copy exists under `root`. Throws
+ * NO_SNAPSHOT_MESSAGE when there is neither.
+ */
 export function snapshotSource(env: Record<string, string | undefined> = process.env, root = process.cwd()): SnapshotSource {
   const base = env.DATA_SNAPSHOT_URL?.trim();
   if (base) return { kind: "storage", base: trimBase(base) };
   if (hasBundled(root)) return { kind: "bundled" };
-  return { kind: "legacy" };
+  throw new Error(NO_SNAPSHOT_MESSAGE);
 }
 
 /** Whether `.data/snapshot/manifest.json` exists: fetch-snapshot writes it last, so its presence means a whole copy. */
@@ -194,8 +200,6 @@ export interface SnapshotHolder<T> {
 
 export interface HolderOptions<T> {
   source: SnapshotSource;
-  /** Today's files under data/ (lib/data.ts keeps these reads and their log line). */
-  readLegacy: () => SnapshotContent;
   build: (content: SnapshotContent) => T;
   root?: string;
   get?: HttpGet;
@@ -205,10 +209,7 @@ export interface HolderOptions<T> {
   onSwap?: (swap: { from: SnapshotId; to: number; ms: number }) => void;
 }
 
-const loadedLine = (colleges: number, id: SnapshotId, ms: number) =>
-  id === "legacy"
-    ? `[data] loaded ${colleges} colleges from data/ in ${Math.round(ms)} ms`
-    : `[data] loaded ${colleges} colleges (snapshot ${id}) in ${Math.round(ms)} ms`;
+const loadedLine = (colleges: number, id: SnapshotId, ms: number) => `[data] loaded ${colleges} colleges (snapshot ${id}) in ${Math.round(ms)} ms`;
 
 /**
  * The once-per-instance holder. The served snapshot lives in one variable that a swap replaces in a single assignment
@@ -216,7 +217,7 @@ const loadedLine = (colleges: number, id: SnapshotId, ms: number) =>
  * one keeps it (lib/data.ts caches it per request).
  */
 export function createSnapshotHolder<T>(options: HolderOptions<T>): SnapshotHolder<T> {
-  const { source, readLegacy, build, root = process.cwd(), get = httpGet, intervalMs = REFRESH_INTERVAL_MS } = options;
+  const { source, build, root = process.cwd(), get = httpGet, intervalMs = REFRESH_INTERVAL_MS } = options;
   const now = options.now ?? (() => performance.now());
   let current: Served<T> | null = null;
   let lastCheck = Number.NEGATIVE_INFINITY;
@@ -226,17 +227,12 @@ export function createSnapshotHolder<T>(options: HolderOptions<T>): SnapshotHold
   const serve = (content: SnapshotContent): Served<T> => ({ id: content.id, value: build(content), content });
 
   async function readFirst(): Promise<SnapshotContent> {
-    if (source.kind === "legacy") return readLegacy();
     if (source.kind === "bundled" || hasBundled(root)) return readBundled(root);
     // Storage with no bundled copy (local work, a build that skipped fetch-snapshot): download the current snapshot.
-    try {
-      const pointer = await fetchPointer(source.base, get);
-      lastCheck = now();
-      return await fetchSnapshotFiles(source.base, pointer.id, get, pointer.manifest_sha256);
-    } catch (err) {
-      console.error("[data] the current snapshot could not be loaded; falling back to data/", err);
-      return readLegacy();
-    }
+    // A failure has nothing to fall back on, so it throws; the next call tries again (createDatasetLoader).
+    const pointer = await fetchPointer(source.base, get);
+    lastCheck = now();
+    return await fetchSnapshotFiles(source.base, pointer.id, get, pointer.manifest_sha256);
   }
 
   const first = createDatasetLoader(async () => {
@@ -326,12 +322,10 @@ const OBJECT_FOR: Record<ShardKind, (key: string) => string> = {
 };
 
 /** A shard's public URL in snapshot `id` (default: the one this instance serves) under `base` (default: DATA_SNAPSHOT_URL). */
-export function shardUrl(kind: ShardKind, key: string, id: number | null = numericId(currentSnapshotId()), base = process.env.DATA_SNAPSHOT_URL ?? ""): string | null {
+export function shardUrl(kind: ShardKind, key: string, id: number | null = currentSnapshotId(), base = process.env.DATA_SNAPSHOT_URL ?? ""): string | null {
   if (id === null || !base.trim()) return null;
   return `${trimBase(base)}/${snapshotPath(id, OBJECT_FOR[kind](key))}`;
 }
-
-const numericId = (id: SnapshotId | null) => (typeof id === "number" ? id : null);
 
 const isText = (kind: ShardKind, key: string) => kind === "reference" && !key.endsWith(".json");
 
@@ -363,7 +357,7 @@ let shardFailureLogged = Number.NEGATIVE_INFINITY;
  * the bundled copy's file, logged at most once a minute.
  */
 export async function readShard<T>(kind: ShardKind, key: string, options: { id?: number | null; base?: string; root?: string } = {}): Promise<T | null> {
-  const url = shardUrl(kind, key, options.id === undefined ? numericId(currentSnapshotId()) : options.id, options.base);
+  const url = shardUrl(kind, key, options.id === undefined ? currentSnapshotId() : options.id, options.base);
   if (url) {
     try {
       const res = await fetch(url, { cache: "force-cache" });

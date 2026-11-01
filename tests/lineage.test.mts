@@ -1,31 +1,41 @@
 /**
- * Lineage: resolution, validation, and the real dataset. `npm test`.
+ * Lineage: resolution, validation, and the dataset (the mini fixture, tests/helpers/snapshot.mts; the publisher runs
+ * the same check over the full snapshot). `npm test`.
  * See specs/data-lineage.md.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { FIELDS, PER_DOCUMENT_SOURCES, UNDATED_SOURCES, registeredPathFor } from "../lib/fields.ts";
 import { applyNewest } from "../lib/newest.ts";
 import { lineageFor, lineageForPatch, sourcesForFields, validateLineage, validateRegistry, validateSchool } from "../lib/lineage.ts";
+import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const meta: DatasetMeta = miniMeta();
+const schools: School[] = miniSchools();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const VANDERBILT = "221999"; // a Common Data Set override, replaced by its newer college-reported class (fall 2025)
-const NYU = "193900"; // a Common Data Set override and no newer college-reported class
+// A Common Data Set override and no newer college-reported class (the real data's example was NYU, 193900).
+const CORNELL = "190415";
 
-/** A minimal valid school to mutate in validation tests. */
+/**
+ * A minimal valid school to mutate in validation tests: Abraham Baldwin, which has none of the later layers (its only
+ * lineage is the identity fields: directories, links, social, brand), with that lineage and those fields removed.
+ */
 function fixture(): School {
-  return structuredClone(schools.find((s) => !s.lineage && s.admissions.applicants)!);
+  const s = structuredClone(byId.get("138558")!);
+  const bare = s as unknown as Record<string, unknown>;
+  for (const key of Object.keys(s.lineage ?? {})) {
+    const [top] = key.split(".");
+    if (["directories", "links", "social", "brand"].includes(top)) delete bare[top];
+  }
+  delete s.lineage;
+  return s;
 }
 
-/* ---- The real dataset ---- */
+/* ---- The dataset ---- */
 
-test("the committed dataset passes the lineage check", () => {
+test("the dataset passes the lineage check", () => {
   assert.deepEqual(validateLineage(schools, meta), []);
 });
 
@@ -60,7 +70,7 @@ test("a default value cites its field's default source and release year", () => 
 });
 
 test("CDS values cite the college's own file; untouched fields stay federal", () => {
-  const v = byId.get(NYU)!;
+  const v = byId.get(CORNELL)!;
   const applicants = lineageFor("admissions.applicants", v, meta);
   assert.equal(applicants.key, "cds");
   assert.equal(applicants.url, v.cds!.url);
@@ -81,12 +91,12 @@ test("derived values cite their inputs' sources", () => {
   const cost = new Set(sourcesForFields(["cost.avg_paid_all"], s, meta).map((x) => x.key));
   assert.ok(cost.has("ipeds-ic") && cost.has("ipeds-sfa"), [...cost].join(","));
   // A derived value over CDS inputs cites the CDS.
-  const vYield = lineageFor("derived.yield", byId.get(NYU)!, meta);
+  const vYield = lineageFor("derived.yield", byId.get(CORNELL)!, meta);
   assert.deepEqual(vYield.inputs?.map((i) => i.key), ["cds"]);
 });
 
 test("a derived value from non-default inputs is flagged non-default (so it gets a chip)", () => {
-  const v = byId.get(NYU)!;
+  const v = byId.get(CORNELL)!;
   for (const p of ["derived.yield", "derived.sat_composite", "derived.sat_mid"] as const) {
     assert.equal(lineageFor(p, v, meta).isDefault, false, p);
   }

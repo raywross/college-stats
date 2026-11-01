@@ -4,17 +4,15 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { School } from "../lib/types";
 import { OM_COLUMNS, completion4, eightYearFrom, isCumulative, timeToDegreeCoverage, timeToDegreeHeadline } from "../lib/outcome-measures.ts";
 import { ERAS, requiredColumns } from "../scripts/history/registry.mts";
 import { lastPointMismatches } from "../scripts/history/build.mts";
 import { parseFilters } from "../lib/params.ts";
 import type { SchoolHistory } from "../lib/history.ts";
+import { miniHistory, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 
 /** A pivoted OM row for the all-students cohort (50): adjusted cohort, awards by 4/6/8 years, 8-year status. */
@@ -78,7 +76,7 @@ test("stored values: every shown group is cumulative, and coverage matches the 8
       assert.ok(g.award_4 <= g.award_6 && g.award_6 <= g.award, `${s.name}: ${g.award_4} ≤ ${g.award_6} ≤ ${g.award}`);
     }
   }
-  assert.ok(groups > 4000, `${groups} groups`);
+  assert.ok(groups > 2 * schools.length, `${groups} groups: several per college`);
   const { shown, missing } = timeToDegreeCoverage(schools);
   assert.ok(missing <= shown * 0.01, `${missing} of ${shown} shown groups lack 4/6-year shares (sync-data's limit is 1%)`);
   // Vanderbilt, all entering students of fall 2016 (OM2024): 88.7% / 92.8% / 93.1%.
@@ -92,7 +90,7 @@ test("Explore sorts by finishing within 4 years", () => {
 });
 
 test("history: the 4- and 6-year series cover the same classes as 8 years and end on the snapshot (rule 1)", () => {
-  const h: SchoolHistory = JSON.parse(readFileSync(join(ROOT, "data", "history", "schools", "221999.json"), "utf8"));
+  const h: SchoolHistory = miniHistory("221999")!;
   const s = byId("221999");
   const o = s.outcomes!.eight_year!;
   assert.equal(h.series.om_award_4!.start, h.series.om_award!.start);

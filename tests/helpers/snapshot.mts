@@ -5,7 +5,8 @@
  * shards, the shared history files, every reference document, two high-school states, and the layers they composed
  * from. Not a test file. No test reads `data/`, the live snapshot, or the database: it reads this.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../../lib/types";
 import type { SchoolDetail } from "../../lib/detail";
@@ -16,6 +17,7 @@ import type { HistoryFiles } from "../../lib/supabase";
 import { register } from "node:module";
 import type { Dataset } from "../../lib/dataset.ts";
 import { fileStore, type DataStore } from "../../scripts/lib/data-platform/store.mts";
+import type { TrendContext } from "../../scripts/trends/context.mts";
 
 let resolverInstalled = false;
 
@@ -45,6 +47,23 @@ const FIXTURE_DIR = join(ROOT, "tests", "fixtures", "snapshot-mini");
 /** `tests/fixtures/snapshot-mini/snapshot/`: the bundled layout `fetch-snapshot --fixture` copies to `.data/snapshot/`. */
 export function miniSnapshotDir(): string {
   return join(FIXTURE_DIR, "snapshot");
+}
+
+/**
+ * Makes the mini fixture the bundled copy for code that reads `.data/snapshot/` under the working directory
+ * (lib/data.ts's `getData()`, `readBundledShard`), whatever `.data/snapshot/` holds in the checkout (the real snapshot
+ * after a local `npm run fetch-snapshot`): makes a temporary root whose `.data/snapshot` links to the fixture's
+ * snapshot folder, changes the working directory to it, and unsets DATA_SNAPSHOT_URL. Call it before the first
+ * `getData()`; it changes this test process's working directory for good (each test file runs in its own process).
+ * Returns the temporary root.
+ */
+export function installMiniAsBundledCopy(): string {
+  const root = mkdtempSync(join(tmpdir(), "quad-mini-root-"));
+  mkdirSync(join(root, ".data"));
+  symlinkSync(miniSnapshotDir(), join(root, ".data", "snapshot"), "dir");
+  delete process.env.DATA_SNAPSHOT_URL;
+  process.chdir(root);
+  return root;
 }
 
 /** `tests/fixtures/snapshot-mini/layers/`: the file store (scripts/lib/data-platform/store.mts) over the mini fixture's layers. */
@@ -150,6 +169,63 @@ export function miniReference<T = unknown>(name: string): T {
 /** `snapshot/high-schools/`: the JSON fallback's folder (HIGH_SCHOOLS_DIR) with two states, ct and sc. */
 export function miniHighSchoolsDir(): string {
   return join(miniSnapshotDir(), "high-schools");
+}
+
+/** Every history shard the mini fixture has, for its colleges in dataset order. */
+export function miniHistories(): SchoolHistory[] {
+  return miniSchools().flatMap((s) => {
+    const h = miniHistory(s.unit_id);
+    return h ? [h] : [];
+  });
+}
+
+let cachedTrendContext: Promise<TrendContext> | null = null;
+
+/**
+ * The national-trend builders' context over the mini fixture (scripts/trends/context.mts `trendContextFrom`, as the
+ * publisher's compose builds it): its colleges, history shards and shared history files, detail shards, and the
+ * excluded-campuses reference document. Built once.
+ */
+export function miniTrendContext(): Promise<TrendContext> {
+  if (!cachedTrendContext) {
+    cachedTrendContext = import("../../scripts/trends/context.mts").then(({ trendContextFrom }) => {
+      const files = miniHistoryFiles();
+      return trendContextFrom({
+        root: "",
+        schools: miniSchools(),
+        histories: new Map(miniHistories().map((h) => [h.unit_id, h])),
+        hmeta: files.meta,
+        cpi: files.cpi,
+        national: files.national,
+        facts: files.facts,
+        detail: (id) => miniDetail(id),
+        excludedCampuses: miniReference("excluded-campuses"),
+      });
+    });
+  }
+  return cachedTrendContext;
+}
+
+const trendBuilds = new Map<string, Promise<unknown>>();
+
+/**
+ * One national trend file as its builder (scripts/trends/index.mts BUILDERS) makes it from the mini fixture: the
+ * fixture ships only `trends/index.json` (copied from the real snapshot), so a study's test recomputes it here and
+ * checks it against its own long-way computation over the same shards. Panels are the fixture's 38 colleges, so every
+ * group sits under its floor. Throws when the builder can't run on so few colleges.
+ */
+export function miniTrendFile<T = unknown>(name: string): Promise<T> {
+  if (!trendBuilds.has(name)) {
+    trendBuilds.set(
+      name,
+      Promise.all([import("../../scripts/trends/index.mts"), miniTrendContext()]).then(([{ BUILDERS }, ctx]) => {
+        const builder = BUILDERS.find((b) => b.name === name);
+        if (!builder) throw new Error(`no trend builder named ${name}`);
+        return builder.build(ctx).file;
+      }),
+    );
+  }
+  return trendBuilds.get(name) as Promise<T>;
 }
 
 /** One layer document from the mini fixture's file store (`collection`, `key`), or null. */

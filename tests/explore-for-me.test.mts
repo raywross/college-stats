@@ -140,7 +140,8 @@ test("the cap: measured under 150 ms over every college, so it's off; when on, t
   assert.equal(SPEC_CAP, 600);
   assert.equal(forMeCappedLine(600), "Showing levels for the 600 colleges closest to your numbers; narrow the filters to see more.");
 
-  const cap = 120;
+  // The bundled copy is the mini fixture in CI (38 colleges): a cap of 20 still leaves some out.
+  const cap = 20;
   const s = student();
   const r = await forMeFilter(all, [...STANDING_LEVELS], ready(s), { cap });
   assert.equal(r.capped, true);
@@ -158,7 +159,7 @@ test("the cap: measured under 150 ms over every college, so it's off; when on, t
   const naive = new Set(all.slice(0, cap).map((x) => x.unit_id));
   assert.ok([...naive].some((id) => !nearest.has(id)));
   // Under the cap, nothing is capped.
-  const small = await forMeFilter(all.slice(0, 50), ["target"], ready(), { cap });
+  const small = await forMeFilter(all.slice(0, 10), ["target"], ready(), { cap });
   assert.equal(small.capped, false);
   assert.equal(small.cap, null);
   // An ACT student sorts by the concorded SAT; no score sorts by admit rate alone.

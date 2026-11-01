@@ -1,15 +1,16 @@
 /**
  * Explore's render cost (specs/serving-architecture.md section 5): the filter-panel counts are built once per dataset
  * (`facets()`), and the source note merges per-college arrays worked out once (`sourcesForSchoolsFast`). Runs against
- * the real files in data/. `npm test`.
+ * the mini fixture (tests/helpers/snapshot.mts); the timing check is over its 38 colleges. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import * as nodeModule from "node:module";
 import { dirname, join, resolve as resolvePath } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { Dataset } from "../lib/dataset.ts";
+import { miniAliases, miniMeta, miniReleaseCalendar, miniSchools } from "./helpers/snapshot.mts";
 import type { SearchFilters } from "../lib/types.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -42,8 +43,7 @@ const { createDataset } = await import("../lib/dataset.ts");
 const { buildFacets } = await import("../lib/explore-facets.ts");
 const { METRICS } = await import("../lib/metrics.ts");
 
-const read = (file: string) => JSON.parse(readFileSync(join(ROOT, "data", file), "utf8"));
-const files = { schools: read("schools.json"), meta: read("meta.json"), releaseCalendar: read("release-calendar.json"), aliases: read("aliases.json") };
+const files = { schools: miniSchools(), meta: miniMeta(), releaseCalendar: miniReleaseCalendar(), aliases: miniAliases() };
 
 /** The field list app/explore/page.tsx hands MultiSourceNote (plus the map and home-distance additions). */
 const EXPLORE_FIELDS = [...Object.values(METRICS).map((m) => m.field), "academics.majors_top"] as const;
@@ -52,7 +52,7 @@ const EXPLORE_HOME_FIELDS = [...EXPLORE_FIELDS, "location.lat"] as const;
 
 const FILTERS: [name: string, filters: SearchFilters][] = [
   ["unfiltered", {}],
-  ["search: boston", { q: "boston" }],
+  ["search: alabama", { q: "alabama" }],
   ["California publics", { states: ["CA"], types: ["public"] }],
 ];
 

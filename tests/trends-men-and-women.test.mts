@@ -1,26 +1,20 @@
 /**
  * Study 1, men and women in admissions (specs/national-trends.md#study-1-men-and-women-in-admissions): recomputes the
- * national row and the Northeast's straight from the committed shards, without the shared panel helpers, and checks
+ * national row and the Northeast's straight from the shards, without the shared panel helpers, and checks
  * the panel rule (both rates and 1,000+ applicants at both ends) and the floor.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
-import type { School } from "../lib/types";
-import type { HistoryMeta, SchoolHistory } from "../lib/history.ts";
+import type { SchoolHistory } from "../lib/history.ts";
 import { GROUP_FLOOR } from "../lib/trend-groups.ts";
 import type { MenAndWomenFile, MenAndWomenValues } from "../lib/trends.ts";
+import { miniHistories, miniHistoryFiles, miniSchools, miniTrendFile } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const HISTORY = join(ROOT, "data", "history");
-const file = JSON.parse(readFileSync(join(HISTORY, "trends", "men-and-women.json"), "utf8")) as MenAndWomenFile;
-const hmeta = JSON.parse(readFileSync(join(HISTORY, "meta.json"), "utf8")) as HistoryMeta;
-const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
+const file = await miniTrendFile<MenAndWomenFile>("men-and-women");
+const hmeta = miniHistoryFiles().meta;
+const schools = miniSchools();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
-const shards = readdirSync(join(HISTORY, "schools"))
-  .filter((f) => f.endsWith(".json") && byId.has(f.replace(/\.json$/, "")))
-  .map((f) => JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8")) as SchoolHistory);
+const shards = miniHistories();
 
 const val = (h: SchoolHistory, k: "admit_rate_men" | "admit_rate_women" | "applicants", y: number): number | null => {
   const s = h.series[k];
@@ -68,7 +62,7 @@ test("window: 20 falls ending with history's newest; 3-point bar; 1,000-applican
 
 test("the panel is every college with both rates and 1,000+ applicants in both falls", () => {
   assert.equal(file.n, panel.length);
-  assert.ok(file.n > 500, `panel of ${file.n} is implausibly small`);
+  assert.ok(file.n > 10, `panel of ${file.n} is implausibly small (over 500 in the real data)`);
   for (const h of panel) for (const y of [from, to]) assert.ok(val(h, "applicants", y)! >= 1000);
 });
 
@@ -87,7 +81,10 @@ test("the Northeast recomputed from the shards (today's region)", () => {
   const row = file.groupings.find((g) => g.grouping === "region")!.groups.find((r) => r.key === "Northeast")!;
   const ne = panel.filter((h) => byId.get(h.unit_id)!.location.region === "Northeast");
   assert.equal(row.n, ne.length);
-  assert.deepEqual(pick(row.values!), recompute(ne));
+  // Over the mini fixture this region falls under the 30-college floor and carries no values; over a full panel
+  // its values are recomputed here.
+  if (row.n < GROUP_FLOOR) assert.equal(row.values, undefined);
+  else assert.deepEqual(pick(row.values!), recompute(ne));
 });
 
 test("groups under 30 colleges have no values", () => {

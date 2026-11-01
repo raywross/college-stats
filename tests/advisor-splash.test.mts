@@ -1,12 +1,13 @@
 /**
  * Quad Advisor's splash page (specs/product/advisor.md "3. The page: /advisor, signed out"; the build brief's U3):
- * the sample fixture (`data/reference/sample-plan.json`) validates against the dataset and its words are the
+ * the sample fixture (the `sample-plan` reference document) validates against the dataset and its words are the
  * catalog's own; every section renders for real with `react-dom/server` (the components are transpiled on the fly by a
  * module hook, with the glossary popovers, next/link, next/image, and the offer form stubbed); every frame carries the
  * "Sample: Jordan, class of 2028" badge; college figures are cited; nothing reads as a percentage chance or mentions
  * the trial yet; the two events are registered; the page's signed-out branch renders the splash and the old signed-out
  * plan is gone; the home page links the advisor. The page is dynamic (it reads the session), which Splash.tsx states.
- * `npm test`.
+ * The dataset is the mini fixture's (tests/helpers/snapshot.mts) plus the three sample-plan colleges it lacks
+ * (tests/fixtures/advisor/). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -18,6 +19,8 @@ import ts from "typescript";
 import type { ReactElement } from "react";
 import type { Dataset } from "../lib/dataset.ts";
 import type { SampleFixture, SplashData } from "../components/advisor/sample.ts";
+import type { School } from "../lib/types";
+import { miniAliases, miniMeta, miniReference, miniReleaseCalendar, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (...p: string[]) => readFileSync(join(ROOT, ...p), "utf8");
@@ -98,9 +101,9 @@ const { createDataset } = await import("../lib/dataset.ts");
 const sampleMod = await import("../components/advisor/sample.ts");
 const { buildSplash, validateSample, deadlineOf } = sampleMod;
 
-const json = (file: string) => JSON.parse(read("data", file));
-const ds = createDataset({ schools: json("schools.json"), meta: json("meta.json"), releaseCalendar: json("release-calendar.json"), aliases: existsSync(join(ROOT, "data", "aliases.json")) ? json("aliases.json") : [] }) as Dataset;
-const FIXTURE = JSON.parse(read("data", "reference", "sample-plan.json")) as SampleFixture;
+const extra = JSON.parse(read("tests", "fixtures", "advisor", "sample-plan-colleges.json")) as School[];
+const ds = createDataset({ schools: [...miniSchools(), ...extra], meta: miniMeta(), releaseCalendar: miniReleaseCalendar(), aliases: miniAliases() }) as Dataset;
+const FIXTURE = miniReference<SampleFixture>("sample-plan");
 const DATA: SplashData = buildSplash(FIXTURE, ds);
 
 type Section = (p: Record<string, unknown>) => ReactElement;
@@ -231,7 +234,7 @@ test("college figures on the page are cited, never typed in", () => {
     assert.equal(col.view?.coa.source, "ipeds");
   }
   // No college figure lives in the fixture itself.
-  assert.doesNotMatch(read("data", "reference", "sample-plan.json"), /acceptance_rate|admit_rate|sticker|avg_paid|"city"/);
+  assert.doesNotMatch(JSON.stringify(FIXTURE), /acceptance_rate|admit_rate|sticker|avg_paid|"city"/);
   // Sections take years from lineage, never literals.
   for (const f of listFiles(join(ROOT, "components", "advisor"))) assert.doesNotMatch(readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, ""), /\b(Fall|Spring) 20\d\d\b|\b20\d\d[–-]\d\d\b/, f);
 });

@@ -5,15 +5,13 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { join } from "node:path";
 import type { SchoolHistory } from "../lib/history.ts";
 import { campusExclusionOf, exclusionSets, isCampusBased, type MoverMember } from "../lib/movers.ts";
 import { GROUP_FLOOR } from "../lib/trend-groups.ts";
 import type { ShrinkingCollegesFile, ShrinkingValues } from "../lib/trends.ts";
-import { loadMoverExclusions } from "../scripts/trends/movers.mts";
-import { miniHistories, miniHistoryFiles, miniSchools, miniTrendFile } from "./helpers/snapshot.mts";
+import type { CampusExclusionEntry } from "../lib/movers.ts";
+import { miniHistories, miniHistoryFiles, miniReference, miniSchools, miniTrendFile } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
 const file = await miniTrendFile<ShrinkingCollegesFile>("shrinking-colleges");
 const hmeta = miniHistoryFiles().meta;
 const schools = miniSchools();
@@ -127,7 +125,7 @@ test("the companion panel is a subset of the ten-year panel that shrank 10%+", (
 
 /* ---- Campus-based toggle (specs/trends/shrinking-colleges.md "Data work needed") ---- */
 
-const campuses = exclusionSets(loadMoverExclusions(ROOT).campuses).campuses;
+const campuses = exclusionSets(miniReference<CampusExclusionEntry[]>("excluded-campuses")).campuses;
 const tenMembers: MoverMember[] = panel.map((h) => ({ school: byId.get(h.unit_id)!, h }));
 
 test("the campus-based ten-year panel has no college that fails isCampusBased, and is a subset of the all-colleges panel", () => {

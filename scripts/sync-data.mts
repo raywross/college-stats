@@ -28,9 +28,9 @@
  * without a source, a release without a year, or a later layer's value in the base stops the sync.
  */
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdtempSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } from "../lib/types";
 import { validateLineage } from "../lib/lineage.ts";
 import { COLLEGE_SITE_SOURCE } from "../lib/reported.ts";
@@ -42,7 +42,7 @@ import { OM_COLUMNS, OM_LAG, OM_PIVOT, eightYearFrom, timeToDegreeCoverage } fro
 import { fetchPivotedTable } from "./lib/om.mts";
 import { GR_PELL_BACHELOR_TYPE, GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, bachelorSubcohortFrom, RACE_GROUPS, aidGroupGradFrom, raceGradFrom, scorecardRaceCohortField, scorecardRaceRateField } from "../lib/graduation-groups.ts";
 import { residenceFrom } from "../lib/residence.ts";
-import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence, writeDetails } from "./lib/residence-sync.mts";
+import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence } from "./lib/residence-sync.mts";
 import { addTransferMeta, checkTransfers, fetchTransfers } from "./lib/transfers-sync.mts";
 import { addOnlineShareMeta, checkOnlineShare, fetchOnlineShare } from "./lib/online-share-sync.mts";
 import { addLgbtq, addStateLawMeta, fetchLgbtqInputs, lgbtqSummary } from "./lib/lgbtq-sync.mts";
@@ -61,8 +61,7 @@ import { addIdentityMeta, applyIdentity, emptyIdentityInputs, type IdentityInput
 import type { StateLawTable } from "../lib/lgbtq.ts";
 import { SNAPSHOT_OBJECTS } from "../lib/data-platform/snapshot.ts";
 import { bundledDir, readBundledColleges, readBundledJson, readBundledReference } from "./lib/data-platform/bundled.mts";
-import { formatIndexFile } from "./lib/selectivity.mts";
-import { aliasRowsFrom, formatAliasRows } from "./lib/aliases-sync.mts";
+import { aliasRowsFrom } from "./lib/aliases-sync.mts";
 import type { CuratedAliasEntry } from "../lib/aliases.ts";
 import { fetchOpenAdmissionFile } from "./lib/open-admission.mts";
 import { applyOpenAdmission, openAdmissionMeta } from "../lib/open-admission.ts";
@@ -71,8 +70,7 @@ import { datedSourceFiles } from "./source-files.mts";
 import { COLLECTIONS, SINGLE_KEYS, loadIdentity, readLayer } from "./lib/data-platform/layers.mts";
 import { changeSetFromArgv, openProducerRun, storeFromArgv, writeChanged } from "./lib/data-platform/producer.mts";
 import { flagValue, type DataStore } from "./lib/data-platform/store.mts";
-import { composeSnapshot, loadPublishLayers } from "./lib/data-platform/compose.mts";
-import { baseDocuments, MIRRORED_BASE, overlayStore, type BaseDocuments } from "./lib/sync-data-base.mts";
+import { baseDocuments, MIRRORED_BASE, type BaseDocuments } from "./lib/sync-data-base.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";

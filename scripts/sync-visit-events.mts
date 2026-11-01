@@ -21,8 +21,6 @@
  * project's user agent); hosts in data/reference/blocked-hosts.json are skipped. Writes use the secret key
  * (SUPABASE_URL, SUPABASE_SECRET_KEY in .env.local).
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { School } from "../lib/types";
 import type { BlockedHostsFile } from "../lib/reported.ts";
 import type { SlateHostRow } from "../lib/visit-events/types.ts";
@@ -38,7 +36,6 @@ import { readHosts, supabaseStore, upsertHosts } from "./lib/visit-events/store.
 import { HOST_POOL, pool, runSync, type EventStore } from "./lib/visit-events/sync.mts";
 import { readBundledColleges, readBundledReference } from "./lib/data-platform/bundled.mts";
 
-const ROOT = join(import.meta.dirname, "..");
 const args = process.argv.slice(2);
 const flag = (name: string) => args.includes(name);
 const value = (name: string) => {

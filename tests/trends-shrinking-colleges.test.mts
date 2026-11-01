@@ -128,7 +128,7 @@ test("the companion panel is a subset of the ten-year panel that shrank 10%+", (
 
 /* ---- Campus-based toggle (specs/trends/shrinking-colleges.md "Data work needed") ---- */
 
-const campuses = exclusionSets(loadMoverExclusions(ROOT).campuses).campuses;
+const campuses = exclusionSets(loadMoverExclusions(join(ROOT, "data")).campuses).campuses;
 const tenMembers: MoverMember[] = panel.map((h) => ({ school: byId.get(h.unit_id)!, h }));
 
 test("the campus-based ten-year panel has no college that fails isCampusBased, and is a subset of the all-colleges panel", () => {

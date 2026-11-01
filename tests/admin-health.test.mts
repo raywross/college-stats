@@ -10,7 +10,7 @@ import nodeModule from "node:module";
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 // lib/admin/health.ts starts with `import "server-only"`, which only Next.js resolves; stand in an empty module.
 // (module.registerHooks is in Node 24; the installed @types/node predates it.)

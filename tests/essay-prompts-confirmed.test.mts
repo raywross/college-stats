@@ -57,7 +57,7 @@ const UF = "134130";
 const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
 const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as DatasetMeta;
 const ufSchool = () => structuredClone(schools.find((s) => s.unit_id === UF)!);
-const realRecords = readEssayRecords(essayPaths(ROOT).records);
+const realRecords = readEssayRecords(essayPaths(join(ROOT, "data")).records);
 
 /* ------------------------------------------------------------------ */
 /* Fixtures (placeholder prompts, not a college's or a student's text) */

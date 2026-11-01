@@ -196,7 +196,7 @@ test("study files: the window is the registry's, groupings in registry order, fl
 });
 
 test("committed trend files are exactly what npm run build-trends makes from the committed history", () => {
-  const { outputs, index } = computeTrends(loadTrendContext(ROOT));
+  const { outputs, index } = computeTrends(loadTrendContext(join(ROOT, "data")));
   for (const o of outputs) assert.equal(readFileSync(join(TRENDS, `${o.name}.json`), "utf8"), trendFileText(o.file), `${o.name}.json is stale: run npm run build-trends`);
   assert.equal(readFileSync(join(TRENDS, "index.json"), "utf8"), trendFileText(index), "index.json is stale: run npm run build-trends");
 });

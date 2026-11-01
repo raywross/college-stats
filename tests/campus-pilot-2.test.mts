@@ -9,7 +9,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
-import { DEFAULT_COLLEGES_FILE, PILOT_IDS, formatPagesFile, formatSourcesFile, mergeRun, readCollegeList, type PagesFile, type SourcesFile } from "../scripts/lib/campus-pilot/files.mts";
+import { DEFAULT_COLLEGES_LIST, PILOT_IDS, collegeListIds, formatPagesFile, formatSourcesFile, mergeRun, type CollegeListFile, type PagesFile, type SourcesFile } from "../scripts/lib/campus-pilot/files.mts";
+import { miniReference } from "./helpers/snapshot.mts";
 import type { CampusRecipe, CollegeResult } from "../scripts/lib/campus-pilot/run.mts";
 import { classifyLinks, missingForPaid, probeCollege, textConfirms, typesFor } from "../scripts/lib/campus-pilot/probe.mts";
 import { quoteOnPage, shortQuote, type FetchResult, type Page, type PageFetcher } from "../scripts/lib/campus-pilot/pages.mts";
@@ -35,7 +36,7 @@ const recipeFor = (unit_id: string): CampusRecipe => ({ unit_id, learned: TODAY,
 
 /** Set B: round 2's colleges, one with a fact, one with nothing found, one stopped by the cap. */
 function runOnSetB(): { results: CollegeResult[]; recipes: CampusRecipe[] } {
-  const [b1, b2, b3] = readCollegeList(join(ROOT, DEFAULT_COLLEGES_FILE));
+  const [b1, b2, b3] = collegeListIds(miniReference<CollegeListFile>(DEFAULT_COLLEGES_LIST), DEFAULT_COLLEGES_LIST);
   return {
     results: [
       emptyResult(b1, "B one", { faith: { office: { url: "https://x.edu/chaplain", checked: TODAY, quote: "Office of the Chaplain", name: "Office of the Chaplain" } } }),
@@ -77,7 +78,7 @@ test("a run on college set B leaves set A's published facts and recipes byte-ide
   for (const id of ids(pagesA)) assert.ok(ids(merged.pages).includes(id));
   for (const id of ids(sourcesA)) assert.ok(ids(merged.sources).includes(id));
   // Set B: the college with a fact is added; nothing found or stopped adds no facts; the stopped one keeps no empty recipe.
-  const [b1, b2, b3] = readCollegeList(join(ROOT, DEFAULT_COLLEGES_FILE));
+  const [b1, b2, b3] = collegeListIds(miniReference<CollegeListFile>(DEFAULT_COLLEGES_LIST), DEFAULT_COLLEGES_LIST);
   assert.ok(ids(merged.pages).includes(b1));
   assert.ok(!ids(merged.pages).includes(b2) && !ids(merged.pages).includes(b3));
   assert.ok(ids(merged.sources).includes(b1) && ids(merged.sources).includes(b2) && !ids(merged.sources).includes(b3));
@@ -103,7 +104,7 @@ test("re-running a set-A college replaces only its own entry; a failed re-run ke
 });
 
 test("the round-2 college list: 25 colleges in the dataset, none from round 1", () => {
-  const ids = readCollegeList(join(ROOT, DEFAULT_COLLEGES_FILE));
+  const ids = collegeListIds(miniReference<CollegeListFile>(DEFAULT_COLLEGES_LIST), DEFAULT_COLLEGES_LIST);
   assert.equal(ids.length, 25);
   const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as { unit_id: string }[];
   const known = new Set(schools.map((s) => s.unit_id));

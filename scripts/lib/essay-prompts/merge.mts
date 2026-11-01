@@ -223,14 +223,14 @@ export function summaryLine(s: EssaysSummary): string {
 }
 
 /* ------------------------------------------------------------------ */
-/* data/reference/platform-prompts.json                                */
+/* The reference document platform-prompts                             */
 /* ------------------------------------------------------------------ */
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Problems with the platform prompts file (empty when it is sound): every field present, ids in order, prompts in range. */
 export function platformProblems(file: PlatformPromptsFile | null): string[] {
-  if (!file) return ["data/reference/platform-prompts.json is missing"];
+  if (!file) return ["the reference document platform-prompts is missing"];
   const out: string[] = [];
   for (const key of ["common_app", "coalition"] as const) {
     const p = file[key] as PlatformPrompts | undefined;

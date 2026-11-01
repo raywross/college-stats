@@ -552,7 +552,7 @@ test("platform prompts: the committed file's shape; Common App links only its ho
   assert.ok(problems.some((p) => /common_app: source_url must be the organization's homepage/.test(p)));
   assert.ok(problems.some((p) => /prompt 1 id platform:coalition:9/.test(p)));
   assert.ok(problems.some((p) => /a limit without the sentence/.test(p)));
-  assert.deepEqual(platformProblems(null), ["data/reference/platform-prompts.json is missing"]);
+  assert.deepEqual(platformProblems(null), ["the reference document platform-prompts is missing"]);
 });
 
 test("store: a record and a held record serialize one prompt per line and parse back", async () => {

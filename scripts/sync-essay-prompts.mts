@@ -38,12 +38,11 @@ import { PICKER_MODEL } from "./lib/essay-prompts/discover.mts";
 import { READ_MODEL } from "./lib/essay-prompts/read.mts";
 import { prBody, type RunSummary } from "./lib/essay-prompts/report.mts";
 import { reconcileHeld, runCollege, type Outcome } from "./lib/essay-prompts/run.mts";
-import { essayPaths, essaysBreaker, loadEssayState, readPlatformPrompts, writeEssayRun, type EssayRecord, type HeldRecord, type PageRecipe } from "./lib/essay-prompts/store.mts";
+import { essaysBreaker, loadEssayState, writeEssayRun, type EssayRecord, type HeldRecord, type PageRecipe } from "./lib/essay-prompts/store.mts";
 import { changeSetFromArgv, datasetColleges, EXIT, openProducerRun, storeFromArgv } from "./lib/data-platform/producer.mts";
-import { COLLECTIONS } from "./lib/data-platform/layers.mts";
+import { readReferenceDocument } from "./lib/data-platform/bundled.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const P = essayPaths(ROOT);
 const argv = process.argv.slice(2);
 const flags = parseFlags(argv);
 const today = new Date().toISOString().slice(0, 10);
@@ -113,10 +112,10 @@ if (!discoverOnly) {
   };
 }
 const cap = new SpendCap(num("budget", 40));
-/** The reader's prior state: records, held reads, page recipes (the store, never data/). */
+/** The reader's prior state: records, held reads, page recipes (the store). */
 const state = await loadEssayState(store);
 /** The platforms' own prompt texts: a college prompt equal to one of them is the platform's, not the college's. */
-const platformFile = (await store.readOne<PlatformPromptsFile>(COLLECTIONS.reference.files, "platform-prompts")) ?? readPlatformPrompts(P.platform);
+const platformFile = await readReferenceDocument<PlatformPromptsFile>(store, "platform-prompts").catch(() => null);
 const platformTexts = platformFile ? [...(platformFile.common_app?.prompts ?? []), ...(platformFile.coalition?.prompts ?? [])].map((p) => p.text) : [];
 /** One read per page per run (the UC campuses share one page). */
 const readCache = new Map<string, { answer: import("./lib/essay-prompts/read.mts").ReadAnswer; model: string }>();

@@ -183,7 +183,8 @@ test("coalition: the CLI on the file store writes coalition.members as the impor
     writeFileSync(join(dir, "members.html"), pages.members);
     writeFileSync(join(dir, "scoir.html"), pages.scoir);
     const store = fileStore(join(dir, "store"));
-    await writeImport(store, new Map([[COLLECTIONS.coalition.nameMap, imported(COLLECTIONS.coalition.nameMap)]]) as never, "seed");
+    // The colleges come from the store (base.colleges, base.aliases; the bundled copy is only an empty store's fallback).
+    await writeImport(store, new Map([[COLLECTIONS.coalition.nameMap, imported(COLLECTIONS.coalition.nameMap)], [COLLECTIONS.base.colleges, imported(COLLECTIONS.base.colleges)], [COLLECTIONS.base.aliases, new Map([["aliases", JSON.parse(readFileSync(join(ROOT, "data", "aliases.json"), "utf8"))]])]]) as never, "seed");
     const before = readFileSync(join(ROOT, "data", "coalition", "members.json"), "utf8");
     const r = spawnSync(NODE[0], [...NODE.slice(1), join(ROOT, "scripts", "sync-coalition.mts"), "--store", `file:${join(dir, "store")}`, "--from-files", join(dir, "members.html"), join(dir, "scoir.html")], { encoding: "utf8", env: OFFLINE_ENV });
     assert.equal(r.status, 0, r.stderr);

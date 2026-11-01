@@ -151,6 +151,7 @@ export const JOBS: readonly JobDef[] = [
     schedules: [{ cron: "0 9 * * 0", note: "The weekly audit of one check family ($10)." }],
     gate: "After a college-reported run, runs only when that run read or collected something; every run stops at its budget and the week's $40.",
     spec: "specs/product/data-steward.md",
+    dispatch: "steward",
   },
   {
     id: "sync-data",

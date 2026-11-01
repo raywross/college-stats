@@ -43,8 +43,9 @@ function SetupNotice() {
 /**
  * Workflow runs and approvals of the pull requests still open (specs/product/admin.md "Operations: reruns and
  * approvals"). Everything here reads and writes GitHub as the console's App; each button logs to the admin log before it
- * sends. `?unit=` prefills the college run. The review queue moved to the Data console's Holds
- * (specs/data-platform/change-sets.md "Holds and review"), which this page links.
+ * sends. `?unit=` prefills the college run. The review queue moved to the Data console: grouped by cause on Issues
+ * (specs/product/data-steward.md), one college at a time on its Review page, item by item on Holds; this page links them.
+ * Runs another screen dispatches with its own values (`hidden` in lib/admin/workflows.ts) get no form here.
  */
 export default async function OperationsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireAdmin();
@@ -79,7 +80,7 @@ export default async function OperationsPage({ searchParams }: { searchParams: P
 
       <Section id="start-a-run" title="Start a run" hint="Each form is the workflow's own inputs. A workflow that is already running shows that run instead of a button.">
         <div className="space-y-3">
-          {DISPATCHABLE_RUNS.map((run) => {
+          {DISPATCHABLE_RUNS.filter((run) => !run.hidden).map((run) => {
             const running = blockingRun(run, allRuns);
             const open = run.id === "college" && params.unit !== null;
             return (
@@ -110,15 +111,14 @@ export default async function OperationsPage({ searchParams }: { searchParams: P
         <RunsTable runs={ops.runs} />
       </Section>
 
-      <Section id="pulls" title="Approvals" hint="Open pull requests from data/ and review/ branches, for code changes that still go through one. The ones waiting for a person come first.">
+      <Section id="pulls" title="Approvals" hint="Code changes only: data arrives without a pull request. The ones waiting for a person come first.">
         <PullList pulls={ops.pulls} />
       </Section>
 
       <Section id="review-queue" title="Review queue">
         <p className="rounded-2xl border border-border bg-card p-4 text-sm">
-          Values the automatic checks held back are in the Data console now: Accept the value, Reject, and Re-run discovery act on the data directly.{" "}
-          <Link href={params.unit ? `/admin/data/holds?unit=${params.unit}` : "/admin/data/holds"} className="font-semibold underline decoration-dotted underline-offset-2">
-            Open Holds{params.unit ? ` for college ${params.unit}` : ""}
+          <Link href={params.unit ? `/admin/colleges/${params.unit}/review` : "/admin/data/issues"} className="font-semibold underline decoration-dotted underline-offset-2">
+            {params.unit ? `Review college ${params.unit}` : "Open Issues: the queue grouped by cause"}
           </Link>
         </p>
       </Section>

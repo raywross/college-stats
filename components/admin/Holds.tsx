@@ -83,6 +83,22 @@ function Document({ url }: { url: string | undefined }) {
   );
 }
 
+/** Above this many open items, Holds points at Issues, where the queue is grouped by cause (specs/product/data-steward.md). */
+export const ISSUES_POINTER_AT = 500;
+
+/** One line pointing at Issues when the queue is large; nothing otherwise. */
+export function IssuesPointer({ open }: { open: number }) {
+  if (open <= ISSUES_POINTER_AT) return null;
+  return (
+    <p role="note" className="rounded-2xl border border-border bg-card p-3 text-sm">
+      {open.toLocaleString("en-US")} items are open: Issues groups them by cause, so one decision settles many.{" "}
+      <Link href="/admin/data/issues" className={`font-semibold ${linkCls}`}>
+        Open Issues
+      </Link>
+    </p>
+  );
+}
+
 /**
  * The held review items (specs/data-platform/change-sets.md "Holds and review"): college (with how many families'
  * lists it is on), template code, edition, the value read, each failed check, the document, and the three actions.

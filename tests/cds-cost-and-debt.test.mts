@@ -9,7 +9,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { DatasetMeta, ReportedGraduateDebt, ReportedNextYearPrice, School } from "../lib/types";
 import type { CollegeRecord } from "../lib/cds-sections.ts";
-import type { ReportedFile } from "../lib/reported.ts";
+import type { ReportedEntry, ReportedFile } from "../lib/reported.ts";
 import {
   applyCostAndDebt,
   change,
@@ -30,17 +30,25 @@ import {
 import { mergeReported, stripReported } from "../lib/reported-merge.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { lineageFor, validateSchool } from "../lib/lineage.ts";
+import { miniMeta, miniSchools, miniLayerDocument, miniLayers } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const reportedFile: ReportedFile = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
-const record = (id: string): CollegeRecord => JSON.parse(readFileSync(join(ROOT, "data", "cds-records", `${id}.json`), "utf8"));
-const school = (id: string): School => structuredClone(schools.find((s) => s.unit_id === id)!);
+const meta: DatasetMeta = miniMeta();
+const schools: School[] = miniSchools();
+const reportedFile: ReportedFile = { updated: null, entries: [...(await miniLayers().read<ReportedEntry>("reported.entries")).values()] };
 const VANDERBILT = "221999";
 const CORNELL = "190415";
 const WM = "231624";
 const ILLINOIS = "145637";
+const recordCache = new Map(
+  await Promise.all(
+    [VANDERBILT, CORNELL, WM, ILLINOIS].map(
+      async (id) => [id, (await miniLayerDocument<CollegeRecord>("reported.cds_records", id))!] as const,
+    ),
+  ),
+);
+const record = (id: string): CollegeRecord => structuredClone(recordCache.get(id)!);
+const school = (id: string): School => structuredClone(schools.find((s) => s.unit_id === id)!);
 
 /* ---- Real records ---- */
 

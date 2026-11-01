@@ -12,25 +12,28 @@ import { join } from "node:path";
 import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/store.mts";
 import { COLLECTIONS, SINGLE_KEYS, loadDirectoriesLayer } from "../scripts/lib/data-platform/layers.mts";
 import { withRunSet } from "../scripts/lib/data-platform/change-set.mts";
-import { importLayers, writeImport } from "../scripts/import-data-from-git.mts";
+import { importLayers, writeImport } from "../scripts/import-data-from-files.mts";
 import { Blocked, defineAdapter, type CrawlContext, type RawEntry } from "../scripts/lib/directories/contract.mts";
 import type { BlockedFile, DirectoryFile, UnmatchedFile } from "../scripts/lib/directories/files.mts";
 import { readDirectoryFiles } from "../scripts/lib/directories/files.mts";
 import { matchIndexFromStore, readBlockedDoc, readReviewedDoc, syncDirectories, writeBlockedDoc, writeOrgDocs } from "../scripts/lib/directories/store.mts";
 import { storeColleges } from "../scripts/lib/identity-store.mts";
-import { DEFAULT_COLLEGES_FILE, readCollegeList, readPagesFile, readSourcesFile, type PublishedCollege } from "../scripts/lib/campus-pilot/files.mts";
+import { DEFAULT_COLLEGES_LIST, collegeListIds, readPagesFile, readSourcesFile, type CollegeListFile, type PublishedCollege } from "../scripts/lib/campus-pilot/files.mts";
+import { miniReference } from "./helpers/snapshot.mts";
 import { latestCampusReport, readCollegeListFrom, readPagesDoc, readSourcesDoc, saveCampusRun } from "../scripts/lib/campus-pilot/store.mts";
 import type { CampusRecipe, CollegeResult } from "../scripts/lib/campus-pilot/run.mts";
 
-const ROOT = join(import.meta.dirname, "..");
+const ROOT = join(import.meta.dirname, "fixtures", "directories-store");
 const TODAY = "2026-10-04";
-const VANDERBILT = "221999";
+// Stands in for the original Vanderbilt/Columbia pair (tests/fixtures/directories-store/README.md): a small real
+// college whose name the fake adapter's entry matches, and a second real college that stays unmatched.
+const MATCHED = "490328"; // Mechon L'hoyroa
 
 /** A file store with the import's documents for `only` (and `units` for the per-college ones). */
 async function imported(only: string[], units?: Set<string>): Promise<{ root: string; store: ReturnType<typeof fileStore> }> {
   const root = mkdtempSync(join(tmpdir(), "directories-store-"));
   const store = fileStore(root);
-  await writeImport(store, importLayers(ROOT, { only: new Set(only), units }), "fixture");
+  await writeImport(store, importLayers(join(ROOT, "data"), { only: new Set(only), units }), "fixture");
   return { root, store };
 }
 
@@ -47,7 +50,7 @@ test("directories: the runner's writers key the committed files as the import do
   try {
     const listings = await store.read<DirectoryFile>(COLLECTIONS.directories.listings);
     const unmatched = await store.read<UnmatchedFile>(COLLECTIONS.directories.unmatched);
-    assert.equal(listings.size, readDirectoryFiles(ROOT).length);
+    assert.equal(listings.size, readDirectoryFiles(join(ROOT, "data")).length);
     const handle = await store.open("pipeline", "directories", "resave");
     for (const [org, file] of listings) await writeOrgDocs(store, handle, file, unmatched.get(org) ?? { org, crawled: file.crawled, entries: [] });
     await writeBlockedDoc(handle, await readBlockedDoc(store));
@@ -61,7 +64,7 @@ test("directories: the runner's writers key the committed files as the import do
 });
 
 test("syncDirectories: writes each adapter's documents, records refusals, keeps a failed adapter's, and a dry run writes nothing", async () => {
-  const { root, store } = await imported([COLLECTIONS.base.colleges, COLLECTIONS.directories.matches], new Set([VANDERBILT, "139959"]));
+  const { root, store } = await imported([COLLECTIONS.base.colleges, COLLECTIONS.directories.matches], new Set([MATCHED, "138558"]));
   try {
     // Earlier documents for the two adapters that will fail this run.
     const seed = await store.open("pipeline", "directories", "earlier");
@@ -72,7 +75,7 @@ test("syncDirectories: writes each adapter's documents, records refusals, keeps 
 
     const schools = await storeColleges(store);
     const index = await matchIndexFromStore(store, schools, mkdtempSync(join(tmpdir(), "no-cache-")), () => {});
-    let entries: RawEntry[] = [{ campus: "Vanderbilt University", state: "TN", name: "OCF at Vanderbilt" }, { campus: "Columbia College" }];
+    let entries: RawEntry[] = [{ campus: "Mechon L'hoyroa", state: "NY", name: "OCF at Mechon" }, { campus: "Columbia College" }];
     const adapters = [
       fake("fake", async () => entries),
       fake("fake-refused", async () => {
@@ -91,7 +94,7 @@ test("syncDirectories: writes each adapter's documents, records refusals, keeps 
     const result = await withRunSet(store, { source: "directories", runRef: "1" }, (h) => syncDirectories(store, h, adapters, opts));
     assert.deepEqual([result.written, result.blocked, result.failed], [["fake"], ["fake-refused"], ["fake-broken"]]);
     const listing = (await store.readOne<DirectoryFile>(COLLECTIONS.directories.listings, "fake"))!;
-    assert.deepEqual(listing.entries.map((e) => e.matches.map((m) => m.unit_id)), [[VANDERBILT]]);
+    assert.deepEqual(listing.entries.map((e) => e.matches.map((m) => m.unit_id)), [[MATCHED]]);
     assert.deepEqual((await store.readOne<UnmatchedFile>(COLLECTIONS.directories.unmatched, "fake"))!.entries.map((e) => e.campus), ["Columbia College"]);
     assert.equal((await store.readOne<DirectoryFile>(COLLECTIONS.directories.listings, "fake-broken"))!.crawled, "2026-09-01", "a failed adapter keeps its documents");
     assert.equal((await store.readOne<DirectoryFile>(COLLECTIONS.directories.listings, "fake-refused"))!.crawled, "2026-09-01", "a refused one too");
@@ -101,7 +104,7 @@ test("syncDirectories: writes each adapter's documents, records refusals, keeps 
     assert.deepEqual([set.source, set.status, set.summary.collections], ["directories", "applied", [COLLECTIONS.directories.blocked, COLLECTIONS.directories.listings, COLLECTIONS.directories.unmatched]]);
 
     // Everything matches next time: the unmatched document goes; the publisher's loader reads the listing.
-    entries = [{ campus: "Vanderbilt University", state: "TN", name: "OCF at Vanderbilt" }];
+    entries = [{ campus: "Mechon L'hoyroa", state: "NY", name: "OCF at Mechon" }];
     await withRunSet(store, { source: "directories", runRef: "2" }, (h) => syncDirectories(store, h, [adapters[0]], opts));
     assert.equal(await store.readOne(COLLECTIONS.directories.unmatched, "fake"), null);
     assert.deepEqual((await loadDirectoriesLayer(store)).files.map((f) => f.org), ["fake-broken", "fake-refused", "fake"], "in readDirectoryFiles' order (by file name)");
@@ -130,7 +133,7 @@ test("campus pilot: the store reads give back the committed files, and an empty 
     assert.equal(doc.updated, pages.updated);
     assert.deepEqual(doc.colleges, [...pages.colleges].sort((a, b) => (a.unit_id < b.unit_id ? -1 : 1)));
     assert.deepEqual(await readSourcesDoc(store, TODAY), { updated: sources.updated, recipes: [...sources.recipes].sort((a, b) => (a.unit_id < b.unit_id ? -1 : 1)) });
-    assert.deepEqual(await readCollegeListFrom(store, DEFAULT_COLLEGES_FILE, ROOT), readCollegeList(join(ROOT, DEFAULT_COLLEGES_FILE)), "the default list comes from reference.files");
+    assert.deepEqual(await readCollegeListFrom(store, DEFAULT_COLLEGES_LIST, ROOT), collegeListIds(miniReference<CollegeListFile>(DEFAULT_COLLEGES_LIST), DEFAULT_COLLEGES_LIST), "the default list comes from reference.files");
 
     const handle = await store.open("pipeline", "campus-pilot", "empty");
     await saveCampusRun(store, handle, { results: [], recipes: [], blocked: [], report: null, today: pages.updated! });

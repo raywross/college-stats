@@ -1,6 +1,6 @@
 /**
  * The splash page's sample student (specs/product/advisor.md "3. The page: /advisor, signed out"): the fixture's shape
- * (`data/reference/sample-plan.json`), its validation, and `buildSplash`, which turns it into the plain, serializable
+ * (`the snapshot's reference/sample-plan.json`), its validation, and `buildSplash`, which turns it into the plain, serializable
  * data every frame renders from. The student is made up and labeled; every college fact (name, city, admit rate,
  * cost, deadlines, applicant interest, the offers' context lines) is read here from the dataset and carries its
  * citation (`citeField`), never from the fixture. The levels are the fixture's (declared, not estimated: no estimate

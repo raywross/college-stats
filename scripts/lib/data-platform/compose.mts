@@ -84,6 +84,7 @@ import {
   loadIdentity,
   loadReportedLayer,
   readLayer,
+  SINGLE_KEYS,
 } from "./layers.mts";
 
 /* ------------------------------------------------------------------ */
@@ -104,6 +105,8 @@ export interface PublishLayers {
   highSchools: Map<string, Map<string, unknown>>;
   /** `reference.files`, by name (text files as `{text}`). */
   reference: Map<string, unknown>;
+  /** `base.source_files` (the source files' health, read by the admin console): rendered as `source-files.json`. */
+  sourceFiles?: unknown | null;
   /** The live rows of `data_field_edits` (unreleased; the compose takes the newest per path). */
   edits: FieldEdit[];
   /**
@@ -163,8 +166,10 @@ export async function loadPublishLayers(source: DataStore, extra: { edits?: Fiel
   const highSchools = new Map<string, Map<string, unknown>>();
   for (const c of HIGH_SCHOOL_COLLECTIONS) highSchools.set(c, await readLayer<unknown>(store, c));
   const reference = await readLayer<unknown>(store, COLLECTIONS.reference.files);
+  const sourceFiles = await store.readOne<unknown>(COLLECTIONS.base.sourceFiles, SINGLE_KEYS.sourceFiles);
   return {
     base,
+    sourceFiles,
     identity,
     commonApp,
     coalition,
@@ -201,6 +206,8 @@ export interface ComposedSnapshot {
   searchIndex: SearchIndex;
   highSchools: Map<string, Map<string, unknown>>;
   reference: Map<string, unknown>;
+  /** `base.source_files`, passed through for `source-files.json` (null when the layer has none). */
+  sourceFiles: unknown | null;
   /** The hidden selectivity index (never published; the tier history reads it). */
   selectivity: SelectivityIndexFile;
   /** Lineage failures (and refused edits): any one fails the publish. */
@@ -393,6 +400,7 @@ export function composeSnapshot(input: PublishLayers, opts: ComposeOptions): Com
     releaseCalendar: base.calendar,
     aliases,
     history: layers.history,
+    sourceFiles: layers.sourceFiles ?? null,
     detail,
     trends,
     searchIndex,

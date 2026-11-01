@@ -27,9 +27,12 @@ import { buildScFile, scNativeKey, scSchoolId } from "../scripts/lib/high-school
 import { buildIlFile, ilApPassRate, ilNativeKey, ilRcdts } from "../scripts/lib/high-schools/states/il.mts";
 import { buildCtFile, ctNativeKey, ctSchoolCode, edsightExport, edsightRecords, satMetOrExceeded } from "../scripts/lib/high-schools/states/ct.mts";
 import { buildFlFile, fetpipFromLines, flNativeKey, flSchoolId } from "../scripts/lib/high-schools/states/fl.mts";
+import { miniHighSchoolsDir } from "./helpers/snapshot.mts";
 
 const FIX = join(import.meta.dirname, "fixtures", "high-schools", "states");
-const DATA = join(import.meta.dirname, "..", "data", "high-schools", "state");
+// Only sc and ct exist here (the mini fixture's two states); fl and il are skipped below, as they already were
+// when the real data/high-schools/state/ hadn't generated them yet.
+const DATA = join(miniHighSchoolsDir(), "state");
 const read = (state: string, file: string) => readFileSync(join(FIX, state, file), "latin1");
 const sheet = (state: string, file: string) => csvRows(read(state, file));
 const TODAY = "2026-10-05";

@@ -1,9 +1,11 @@
 # Launch database: a production Supabase project next to Vercel
 
 > Status: **planned** 2026-10-12 (owner). Do it just before the formal release. Extends
-> [supabase.md](supabase.md) "Setup at the formal release". Note (2026-10-31): the public dataset's layers and
-> snapshots live in whichever project `DATA_SUPABASE_URL` names ([data-platform/](data-platform/README.md)); they can
-> stay in the dev project or move with this step, and the app reads snapshots from Storage either way.
+> [supabase.md](supabase.md) "Setup at the formal release". Note (2026-10-31, [data-platform/](data-platform/README.md)
+> built through phase 4, 2026-11-01): the public dataset now has **one store** for both environments, named by
+> `DATA_SUPABASE_URL` (today the dev project). It can stay in the dev project or move with this step; either way the
+> dev site and production read the same layers and snapshots, and only people's data (this doc's subject) is
+> per-environment.
 
 ## Why
 The only Supabase project (`quad-dev`, `gwusgmmionqxabifntgv`) is in **ca-central-1 (Montréal)**, while Vercel runs

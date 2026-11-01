@@ -1,0 +1,814 @@
+{
+  "school": {
+    "unit_id": "193900",
+    "name": "New York University",
+    "location": {
+      "city": "New York",
+      "state": "NY",
+      "zip": "10012",
+      "region": "Northeast",
+      "lat": 40.729452,
+      "lng": -73.997264
+    },
+    "type": "private-nonprofit",
+    "admissions": {
+      "year": 2024,
+      "applicants": 110807,
+      "admitted": 10232,
+      "enrolled": 5666,
+      "acceptance_rate": 0.0923,
+      "sat_reading_25_75": [
+        720,
+        760
+      ],
+      "sat_math_25_75": [
+        760,
+        800
+      ],
+      "act_composite_25_75": [
+        34,
+        35
+      ],
+      "test_submission_rate_sat": 0.28,
+      "test_submission_rate_act": 0.1,
+      "test_policy": "considered",
+      "by_sex": {
+        "men": {
+          "applicants": 45074,
+          "admitted": 4093,
+          "enrolled": 2351
+        },
+        "women": {
+          "applicants": 65681,
+          "admitted": 6131,
+          "enrolled": 3311
+        }
+      },
+      "factors": {
+        "gpa": "required",
+        "class_rank": "not_considered",
+        "hs_record": "required",
+        "college_prep": "considered",
+        "recommendations": "required",
+        "competencies": "required",
+        "english_test": "required",
+        "other_test": "considered",
+        "work_experience": "considered",
+        "essay": "required",
+        "legacy": "not_considered"
+      },
+      "sat_reading_median": 740,
+      "sat_math_median": 780,
+      "act_composite_median": 34,
+      "act_english_25_75": null,
+      "act_math_25_75": null,
+      "application_fee": 80,
+      "accepts_ap_credit": true,
+      "open_admission": false,
+      "federal_tests": {
+        "policy": {
+          "year": null,
+          "test_policy": "considered"
+        }
+      }
+    },
+    "demographics": {
+      "undergrad_enrollment": 28663,
+      "pell_grant_percent": 0.1788,
+      "first_gen_percent": 0.2149,
+      "men_share": 0.4074,
+      "women_share": 0.5926,
+      "part_time_share": 0.0309,
+      "age_25_plus_share": 0.0329,
+      "racial_diversity": {
+        "asian": 0.2224,
+        "black": 0.0685,
+        "hispanic": 0.1437,
+        "white": 0.2196,
+        "two_or_more": 0.0432,
+        "international": 0.2608,
+        "other": 0.0419
+      },
+      "disability_services": {
+        "share": 0.1401
+      },
+      "residence": {
+        "in_state": 0.2559,
+        "out_of_state": 0.4926,
+        "international": 0.2464,
+        "first_years": 5666,
+        "top_state": {
+          "state": "NY",
+          "share": 0.2559
+        }
+      },
+      "transfer_in": {
+        "count": 977,
+        "full_time": 921,
+        "part_time": 56,
+        "share_of_new": 0.1471
+      },
+      "online_share": 0.0137,
+      "online_any_share": 0.1917
+    },
+    "cost": {
+      "avg_net_price": 37050,
+      "net_price_by_income": [
+        16977,
+        14017,
+        16862,
+        32766,
+        66876
+      ],
+      "cost_of_attendance": 84374,
+      "tuition_in_state": 62796,
+      "tuition_out_of_state": 62796,
+      "year": "2023–24",
+      "sticker": {
+        "in_district": 87752,
+        "in_state": 87752,
+        "out_of_state": 87752
+      },
+      "tuition_fees": {
+        "in_district": 60438,
+        "in_state": 60438,
+        "out_of_state": 60438
+      },
+      "residency": {
+        "in_district": 0,
+        "in_state": 1,
+        "out_of_state": 0
+      },
+      "components": {
+        "books": 1494,
+        "room_board": 22786,
+        "other": 3034
+      },
+      "aided_net_price": 30325,
+      "breakdown": {
+        "tuition_fees": 60438,
+        "books": 1494,
+        "room_board": 22786,
+        "other": 3034,
+        "full_price": 87752,
+        "grant_per_student": 19992
+      },
+      "avg_paid_all": 67760,
+      "tuition_plans": [
+        "prepaid",
+        "payment_plan",
+        "other"
+      ],
+      "promise_program": false
+    },
+    "outcomes": {
+      "median_earnings_10yr": 82509,
+      "median_earnings_6yr": 64543,
+      "graduation_rate": 0.8767,
+      "retention_rate": 0.9577,
+      "median_debt": 20500,
+      "monthly_loan_payment": 217,
+      "federal_loan_rate": 0.1908,
+      "median_debt_pell": 19206,
+      "median_debt_no_pell": 17127,
+      "median_debt_by_income": {
+        "low": 18389,
+        "mid": 19500,
+        "high": 17500
+      },
+      "repayment_3yr": {
+        "paid_in_full": {
+          "low": 0.26,
+          "high": 0.26
+        },
+        "making_progress": {
+          "low": 0.3,
+          "high": 0.3
+        },
+        "not_making_progress": {
+          "low": 0.13,
+          "high": 0.13
+        },
+        "deferment": {
+          "low": 0.12,
+          "high": 0.12
+        },
+        "forbearance": {
+          "low": 0.13,
+          "high": 0.13
+        },
+        "delinquent": {
+          "low": 0.02,
+          "high": 0.02
+        },
+        "default": {
+          "low": 0.03,
+          "high": 0.03
+        },
+        "discharged": {
+          "low": 0,
+          "high": 0
+        }
+      },
+      "eight_year": {
+        "entering_year": 2016,
+        "all": {
+          "cohort": 7400,
+          "award": 0.8791,
+          "award_4": 0.7893,
+          "award_6": 0.8664,
+          "still_enrolled": 0.0026,
+          "transferred": 0.0615,
+          "unknown": 0.0569
+        },
+        "first_time": {
+          "cohort": 6136,
+          "award": 0.8815,
+          "award_4": 0.7793,
+          "award_6": 0.867,
+          "still_enrolled": 0.0024,
+          "transferred": 0.0613,
+          "unknown": 0.0548
+        },
+        "transfer_in": {
+          "cohort": 1264,
+          "award": 0.8671,
+          "award_4": 0.8378,
+          "award_6": 0.8631,
+          "still_enrolled": 0.0032,
+          "transferred": 0.0625,
+          "unknown": 0.0672
+        },
+        "pell": {
+          "cohort": 1521,
+          "award": 0.8527,
+          "award_4": 0.7521,
+          "award_6": 0.8442
+        },
+        "non_pell": {
+          "cohort": 5879,
+          "award": 0.8859,
+          "award_4": 0.7989,
+          "award_6": 0.8721
+        }
+      },
+      "grad_rate_pell": 0.8537,
+      "grad_rate_loan_no_pell": 0.847,
+      "grad_rate_no_pell_no_loan": 0.8975,
+      "grad_rate_ftft": 0.8757,
+      "grad_cohorts": {
+        "pell": 1217,
+        "loan_no_pell": 1595,
+        "no_pell_no_loan": 3336,
+        "total": 6148
+      },
+      "grad_bachelor": {
+        "rates": {
+          "pell": 0.8583,
+          "loan_no_pell": 0.8478,
+          "no_pell_no_loan": 0.8993,
+          "total": 0.8778
+        },
+        "cohorts": {
+          "pell": 1200,
+          "loan_no_pell": 1590,
+          "no_pell_no_loan": 3308,
+          "total": 6098
+        }
+      },
+      "grad_rate_by_race": {
+        "white": 0.8593,
+        "asian": 0.8982,
+        "hispanic": 0.8367,
+        "black": 0.85,
+        "two_or_more": 0.8243,
+        "international": 0.926,
+        "aian": null,
+        "nhpi": null
+      },
+      "grad_cohorts_by_race": {
+        "white": 1315,
+        "asian": 1081,
+        "hispanic": 1188,
+        "black": 600,
+        "two_or_more": 239,
+        "international": 1446,
+        "aian": 10,
+        "nhpi": 8
+      }
+    },
+    "aid": {
+      "cohort": 5802,
+      "any_aid_pct": 0.46,
+      "grant_pct": 0.3709,
+      "grant_avg": 53901,
+      "grant_count": 2152,
+      "grant_total": 115995949,
+      "institutional_pct": 0.35,
+      "institutional_avg": 51488,
+      "pell_pct": 0.19,
+      "pell_avg": 6255,
+      "state_pct": 0.09,
+      "loan_pct": 0.18,
+      "loan_avg": 11177,
+      "by_income": {
+        "counts": [
+          480,
+          305,
+          321,
+          189,
+          803
+        ],
+        "avg_grant": [
+          67397,
+          70357,
+          67512,
+          51608,
+          17498
+        ],
+        "granted": [
+          473,
+          299,
+          311,
+          168,
+          425
+        ],
+        "total_grants": [
+          32350321,
+          21458937,
+          21671205,
+          9753835,
+          14050984
+        ]
+      },
+      "cds": {
+        "undergrads": 27778,
+        "applied_need": 9695,
+        "has_need": 8156,
+        "need_fully_met": 3011,
+        "pct_need_met": 0.787,
+        "avg_package": 63035,
+        "avg_need_grant": 56694,
+        "avg_need_loan": 4512,
+        "merit_no_need": 65,
+        "merit_avg": 19728
+      }
+    },
+    "links": {
+      "website": "https://www.nyu.edu/",
+      "price_calculator": "https://www.nyu.edu/admissions/financial-aid-and-scholarships/applying-and-planning-for-undergraduate-aid/estimate-your-cost.html",
+      "admissions": "https://www.nyu.edu/admissions.html",
+      "apply": "https://www.nyu.edu/admissions/undergraduate-admissions/how-to-apply.html",
+      "financial_aid": "https://www.nyu.edu/admissions/financial-aid-and-scholarships.html",
+      "veterans": "https://www.nyu.edu/students/student-information-and-resources/registration-records-and-graduation/veteran-benefits.html",
+      "disability_services": "https://www.nyu.edu/students/communities-and-groups/student-accessibility.html",
+      "visit": null,
+      "virtual_tour": null
+    },
+    "campus": {
+      "housing": {
+        "offered": true,
+        "capacity": 12577,
+        "first_years_required": false,
+        "meal_plan": true,
+        "meals_per_week": null
+      },
+      "setting": {
+        "locale": 11,
+        "label": "City: Large",
+        "group": "city"
+      },
+      "carnegie": {
+        "ic": "Mixed Undergraduate/Graduate-Doctorate Large",
+        "research": "R1",
+        "access_earnings": "Lower Access, Higher Earnings",
+        "size": "Very Large"
+      },
+      "designations": [],
+      "msi": [],
+      "athletics": {
+        "associations": [
+          "ncaa"
+        ],
+        "division": "III",
+        "conference": {
+          "code": 200,
+          "name": "University Athletic Association"
+        },
+        "football_conference": null,
+        "sports": [
+          "basketball",
+          "baseball",
+          "track"
+        ]
+      },
+      "programs": {
+        "rotc": [
+          "army",
+          "air_force"
+        ],
+        "study_abroad": true,
+        "undergrad_research": true,
+        "intellectual_disability_program": false
+      },
+      "services": {
+        "counseling": true,
+        "employment": true,
+        "placement": true,
+        "child_care": false
+      },
+      "calendar": "semester"
+    },
+    "religion": {
+      "affiliation": null
+    },
+    "academics": {
+      "student_faculty_ratio": 8,
+      "faculty": {
+        "avg_salary_9mo": 164871,
+        "full_time_share": 1,
+        "count": null
+      },
+      "bachelors_awarded": 7603,
+      "majors_top": [
+        {
+          "cip": "52.1301",
+          "title": "Management Science",
+          "share": 0.0892
+        },
+        {
+          "cip": "24.0101",
+          "title": "Liberal Arts and Sciences/Liberal Studies",
+          "share": 0.0789
+        },
+        {
+          "cip": "42.2799",
+          "title": "Research and Experimental Psychology, Other",
+          "share": 0.0667
+        },
+        {
+          "cip": "11.0101",
+          "title": "Computer and Information Sciences, General",
+          "share": 0.066
+        },
+        {
+          "cip": "45.0603",
+          "title": "Econometrics and Quantitative Economics",
+          "share": 0.0652
+        }
+      ],
+      "bachelors_by_family": {
+        "10": 16,
+        "11": 775,
+        "13": 86,
+        "14": 261,
+        "15": 71,
+        "16": 22,
+        "23": 78,
+        "24": 616,
+        "26": 338,
+        "27": 300,
+        "30": 266,
+        "38": 39,
+        "40": 111,
+        "42": 507,
+        "44": 37,
+        "45": 944,
+        "50": 1243,
+        "51": 521,
+        "52": 931,
+        "54": 59,
+        "05": 19,
+        "09": 363
+      },
+      "programs_with_earnings": 47
+    },
+    "finances": {
+      "fiscal_year": 2023,
+      "form": "fasb",
+      "endowment_per_student": 117296,
+      "instruction_per_student": 37294,
+      "student_services_per_student": 3445,
+      "academic_support_per_student": 1616,
+      "tuition_share_of_revenue": 0.23
+    },
+    "lgbtq": {
+      "gender": {
+        "status": "withheld",
+        "another": null,
+        "unknown": 4,
+        "undergrads": 29060
+      },
+      "admissions": {
+        "status": "withheld",
+        "applicants": null,
+        "admitted": null,
+        "enrolled": null
+      },
+      "state_law": null
+    },
+    "social": {
+      "youtube": "UCWbOgmmhIvrmcxKiAF8twPA",
+      "x": "nyuniversity",
+      "facebook": "NYU",
+      "linkedin": "new-york-university",
+      "instagram": "nyuniversity"
+    },
+    "brand": {
+      "colors": [
+        "#57068C",
+        "#FFFFFF",
+        "#000000"
+      ],
+      "names": [
+        "purple",
+        "white",
+        null
+      ],
+      "accent": "#57068C",
+      "on_accent": "white",
+      "crest_to": "#300051",
+      "tint_light": "oklch(0.72 0.16 304.5)",
+      "tint_dark": "oklch(0.62 0.16 304.5)",
+      "logo": null
+    },
+    "cds": {
+      "edition": "2024-25",
+      "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx"
+    },
+    "apply": {
+      "common_app": {
+        "member": true,
+        "member_id": "180",
+        "slug": "new-york-university",
+        "cycle": "2026-27",
+        "updated": "2026-09-25",
+        "retrieved": "2026-10-25"
+      },
+      "deadlines": {
+        "ed": "2026-11-01",
+        "ed2": "2027-01-01",
+        "ea": null,
+        "ea2": null,
+        "rea": null,
+        "regular": "2027-01-05"
+      },
+      "fee": {
+        "us": 85,
+        "international": 85
+      },
+      "fee_waiver": "accepted",
+      "essay_required": true,
+      "courses_grades_required": false,
+      "writing_supplement": false,
+      "portfolio": "slideroom",
+      "test_policy": {
+        "code": "N",
+        "tests_used": "See website",
+        "english_tests": []
+      },
+      "recommendations": {
+        "teacher": 0,
+        "other": 0,
+        "counselor": false,
+        "mid_year_report": false
+      },
+      "school_type": "coed",
+      "saves_forms": true
+    },
+    "selectivity": {
+      "tier": "elite",
+      "year": "2024-25"
+    },
+    "directories": {
+      "faith": [
+        "catholic",
+        "christian",
+        "nonreligious"
+      ],
+      "greek": [
+        "nic",
+        "npc"
+      ],
+      "lgbtq": [
+        "center",
+        "health_plan_transition",
+        "inclusive_housing",
+        "inclusive_restrooms",
+        "name_on_records",
+        "nondiscrimination_identity"
+      ]
+    },
+    "lineage": {
+      "directories": {
+        "source": "directory",
+        "method": "derived",
+        "year": "October 2026",
+        "retrieved": "2026-10-04"
+      },
+      "social.instagram": {
+        "source": "college-site",
+        "method": "extracted",
+        "url": "https://www.nyu.edu/",
+        "retrieved": "2026-10-04",
+        "year": "2026",
+        "quote": "https://www.instagram.com/nyuniversity"
+      },
+      "brand.colors": {
+        "source": "wikipedia",
+        "method": "reported",
+        "url": "https://s3.amazonaws.com/gonyuathletics.com/documents/2022/2/17/nyu_athletics_style_guide_2122.pdf",
+        "field": "NYU Violets",
+        "retrieved": "2026-10-04",
+        "quote": "NYU Athletics Style Guide"
+      },
+      "brand.names": {
+        "source": "wikipedia",
+        "method": "reported",
+        "url": "https://s3.amazonaws.com/gonyuathletics.com/documents/2022/2/17/nyu_athletics_style_guide_2122.pdf",
+        "field": "NYU Violets",
+        "retrieved": "2026-10-04",
+        "quote": "NYU Athletics Style Guide"
+      },
+      "admissions.test_policy": {
+        "source": "common-app",
+        "year": "2026-27 cycle, updated September 25, 2026",
+        "url": "https://www.commonapp.org",
+        "retrieved": "2026-10-25"
+      },
+      "admissions.year": {
+        "source": "cds",
+        "year": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      },
+      "admissions.applicants": {
+        "source": "cds",
+        "year": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      },
+      "admissions.admitted": {
+        "source": "cds",
+        "year": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      },
+      "admissions.enrolled": {
+        "source": "cds",
+        "year": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      },
+      "admissions.acceptance_rate": {
+        "source": "cds",
+        "year": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      },
+      "admissions.sat_reading_25_75": {
+        "source": "cds",
+        "year": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      },
+      "admissions.sat_math_25_75": {
+        "source": "cds",
+        "year": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      },
+      "admissions.act_composite_25_75": {
+        "source": "cds",
+        "year": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      },
+      "admissions.test_submission_rate_sat": {
+        "source": "cds",
+        "year": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      },
+      "admissions.test_submission_rate_act": {
+        "source": "cds",
+        "year": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      },
+      "aid.cds": {
+        "source": "cds",
+        "year": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+        "retrieved": "2026-09-27"
+      }
+    },
+    "trends": {
+      "avg_paid_all": {
+        "since": 2013,
+        "from": 65105,
+        "to": 67760,
+        "change": 0.0408
+      },
+      "full_price": {
+        "since": 2013,
+        "from": 83715,
+        "to": 87752,
+        "change": 0.0482
+      },
+      "acceptance_rate": {
+        "since": 2014,
+        "from": 0.3545,
+        "to": 0.0923,
+        "change": -0.2622
+      },
+      "applicants": {
+        "since": 2014,
+        "from": 50804,
+        "to": 110807,
+        "change": 1.1811
+      },
+      "undergrads": {
+        "since": 2014,
+        "from": 24539,
+        "to": 28663,
+        "change": 0.1681
+      },
+      "grant_pct": {
+        "since": 2013,
+        "from": 0.5341,
+        "to": 0.3709,
+        "change": -0.1632
+      },
+      "men_share": {
+        "since": 2014,
+        "from": 0.4341,
+        "to": 0.4074,
+        "change": -0.0267
+      },
+      "federal_loan_rate": {
+        "since": 2013,
+        "from": 0.4051,
+        "to": 0.1908,
+        "change": -0.2143
+      },
+      "diversity": {
+        "since": 2014,
+        "from": 0.7859,
+        "to": 0.8054,
+        "change": 0.0195
+      },
+      "pell_gap": {
+        "since": 2010,
+        "from": 0.0481,
+        "to": 0.0438,
+        "change": -0.0043
+      }
+    }
+  },
+  "overrides": {
+    "193900": {
+      "_source": "New York University Common Data Set 2024-25: https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx",
+      "_imported": "2026-09-27",
+      "cds": {
+        "edition": "2024-25",
+        "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2024-2025/CDS_2024-2025.xlsx"
+      },
+      "admissions": {
+        "year": 2024,
+        "applicants": 110807,
+        "admitted": 10232,
+        "enrolled": 5666,
+        "acceptance_rate": 0.0923,
+        "sat_reading_25_75": [
+          720,
+          760
+        ],
+        "sat_math_25_75": [
+          760,
+          800
+        ],
+        "act_composite_25_75": [
+          34,
+          35
+        ],
+        "test_submission_rate_sat": 0.28,
+        "test_submission_rate_act": 0.1
+      },
+      "aid": {
+        "cds": {
+          "undergrads": 27778,
+          "applied_need": 9695,
+          "has_need": 8156,
+          "need_fully_met": 3011,
+          "pct_need_met": 0.787,
+          "avg_package": 63035,
+          "avg_need_grant": 56694,
+          "avg_need_loan": 4512,
+          "merit_no_need": 65,
+          "merit_avg": 19728
+        }
+      }
+    }
+  }
+}

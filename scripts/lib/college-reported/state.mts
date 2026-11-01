@@ -2,7 +2,7 @@
  * The college-reported pipeline's state on the data store (specs/data-platform/pipelines.md, "Each producer"): what
  * the CLI (scripts/sync-college-reported.mts) used to read from and write to data/college-*.json,
  * data/review-queue.json, data/cds-records/ and data/reports/, now the `reported.*` layers, keyed exactly as
- * scripts/import-data-from-git.mts keys them so an import and a run agree:
+ * scripts/import-data-from-files.mts keys them so an import and a run agree:
  *
  *   reported.entries       unit id      a ReportedEntry (data/college-reported.json)
  *   reported.sources       unit id      a Recipe (data/college-sources.json)
@@ -28,6 +28,8 @@ import { federalYears } from "../../../lib/newest-groups.ts";
 import { prBody } from "../../college-reported-pr-body.mts";
 import { COLLECTIONS, readLayer, type TextDocument } from "../data-platform/layers.mts";
 import type { ChangeSetHandle, DataStore } from "../data-platform/store.mts";
+import { bundledDir, readBundledColleges, readBundledMeta } from "../data-platform/bundled.mts";
+import { BUNDLED_SNAPSHOT_DIR } from "../../../lib/data-platform/snapshot.ts";
 import { serializeRecord } from "./records.mts";
 import { emptySummaryV3, memoryCallLogWriter, roundUsd, summaryCost, type CallLogWriter } from "./models.mts";
 import { writeDerived } from "./derived.mts";
@@ -187,25 +189,21 @@ export class StateWriter {
 /* ------------------------------------------------------------------ */
 
 /**
- * The composed colleges as the site serves them: the bundled snapshot (`.data/snapshot/colleges.json`, written by
- * fetch-snapshot) when present, else the committed data/schools.json (in git until phase 4). Only the publisher
- * composes, so a producer reads the served copy rather than building one.
+ * The composed colleges as the site serves them: `file` when given (`--schools`), else the bundled copy under `root`
+ * (`.data/snapshot/colleges.json`, written by fetch-snapshot; throws the `--ensure` sentence when it is missing). Only
+ * the publisher composes, so a producer reads the served copy rather than building one.
  */
-export function collegesFile(root: string): string {
-  const bundled = join(root, ".data", "snapshot", "colleges.json");
-  return existsSync(bundled) ? bundled : join(root, "data", "schools.json");
+export function readColleges(root: string, file?: string): School[] {
+  if (file) return JSON.parse(readFileSync(file, "utf8")) as School[];
+  return readBundledColleges(join(root, BUNDLED_SNAPSHOT_DIR));
 }
 
-export function readColleges(root: string, file: string = collegesFile(root)): School[] {
-  return JSON.parse(readFileSync(file, "utf8")) as School[];
-}
-
-/** `base.meta` from the store, else data/meta.json, else null (the federal years the checks use). */
-export async function readMeta(store: DataStore, root: string): Promise<Pick<DatasetMeta, "vintages" | "retrieved"> | null> {
+/** `base.meta` from the store, else the bundled copy's meta.json under `root` (default the repo's), else null (the federal years the checks use). */
+export async function readMeta(store: DataStore, root?: string): Promise<Pick<DatasetMeta, "vintages" | "retrieved"> | null> {
   const fromStore = await store.readOne<DatasetMeta>(COLLECTIONS.base.meta, "meta");
   if (fromStore) return fromStore;
-  const file = join(root, "data", "meta.json");
-  return existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as DatasetMeta) : null;
+  const dir = root ? join(root, BUNDLED_SNAPSHOT_DIR) : bundledDir();
+  return existsSync(join(dir, "meta.json")) ? readBundledMeta(dir) : null;
 }
 
 /** The calls log as a `reported.reports` document: the prior text (a collect continues it) plus this process's rows. */

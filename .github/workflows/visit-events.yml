@@ -86,6 +86,18 @@ jobs:
       - run: npm ci
         if: steps.target.outputs.configured == 'true'
 
+      # The bundled copy (.data/snapshot/): the sync reads the colleges from it (scripts/lib/data-platform/bundled.mts).
+      # The snapshot lives in the data project, whichever target holds the visit events; npm ci's postinstall leaves
+      # the mini fixture there when nothing is configured, so this fetch is what makes the run see every college.
+      - name: Fetch the current snapshot
+        if: steps.target.outputs.configured == 'true'
+        env:
+          DATA_SNAPSHOT_URL: ${{ vars.DATA_SNAPSHOT_URL }}
+          DATA_SUPABASE_URL: ${{ secrets.DATA_SUPABASE_URL || secrets.PROD_SUPABASE_URL }}
+        run: |
+          export DATA_SNAPSHOT_URL="${DATA_SNAPSHOT_URL:-${DATA_SUPABASE_URL%/}/storage/v1/object/public/snapshots}"
+          npm run fetch-snapshot
+
       - name: Read the calendars
         if: steps.target.outputs.configured == 'true'
         env:

@@ -376,7 +376,7 @@ function HistoryBlock({ points, every, unit }: { points: SelectivityPoint[] | nu
       }
     >
       {points === null ? (
-        <Empty>Not set up yet: apply supabase/migrations/20261013150000_selectivity_history.sql and 20261020120000_selectivity_history_one_row.sql, then run npm run backfill-selectivity-history.</Empty>
+        <Empty>Not set up yet: apply supabase/migrations/20261013150000_selectivity_history.sql and 20261020120000_selectivity_history_one_row.sql, then publish: the publisher records the tiers at each publish.</Empty>
       ) : points.length === 0 ? (
         <Empty>Nothing recorded for this college yet.</Empty>
       ) : (

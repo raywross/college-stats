@@ -6,7 +6,7 @@
  *
  *   node --env-file-if-exists=.env.local scripts/visit-events-universe.mts --out /path/to/folder
  */
-import { writeFileSync, readFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { supabaseClient } from "../lib/supabase.ts";
 import { kindOf } from "../lib/visit-events/kinds.ts";
@@ -15,12 +15,13 @@ import { readHosts } from "./lib/visit-events/store.mts";
 import { parseStandardSearch, searchUrl } from "./lib/visit-events/slate-search.mts";
 import { pool } from "./lib/visit-events/sync.mts";
 import { USER_AGENT } from "./lib/college-reported/http.mts";
+import { readBundledColleges } from "./lib/data-platform/bundled.mts";
 
 const args = process.argv.slice(2);
 const outDir = args[args.indexOf("--out") + 1] && args.includes("--out") ? args[args.indexOf("--out") + 1] : process.cwd();
 
-const ROOT = join(import.meta.dirname, "..");
-const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as { unit_id: string; name: string; location: { city: string | null } }[];
+// The colleges from the bundled copy (`.data/snapshot/colleges.json`, after `npm run fetch-snapshot`).
+const schools = readBundledColleges();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 
 const client = supabaseClient("publish");

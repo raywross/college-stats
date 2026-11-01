@@ -20,9 +20,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import * as nodeModule from "node:module";
-import type { School } from "../lib/types";
+import { installMiniAsBundledCopy, miniHistory, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
+// The routes read getData(): make the mini fixture the bundled copy (tests/helpers/snapshot.mts) before lib/data.ts loads.
+installMiniAsBundledCopy();
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
 
 /* ------------------------------------------------------------------ */
@@ -81,7 +83,7 @@ const data = await getData();
 const schools = data.getAllSchools();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const HARVARD = "166027";
-const hasShard = (id: string) => existsSync(join(ROOT, "data", "history", "schools", `${id}.json`));
+const hasShard = (id: string) => miniHistory(id) !== null;
 
 /** Every key a request is answered for gets its own per-minute bucket, so a test can make as many calls as it needs. */
 g.__rpc = async (name) =>
@@ -146,7 +148,7 @@ test("/schools: for real Explore URLs the ids equal getSchools(parseFilters(...)
   for (const qs of EXPLORE_URLS) {
     const expected = exploreIds(qs);
     assert.ok(expected.length > 0, `${qs} should match some colleges`);
-    const got = await walkList(qs, 40);
+    const got = await walkList(qs, 4);
     assert.equal(got.total, expected.length, `${qs}: total`);
     assert.deepEqual(got.ids, expected, qs);
   }
@@ -155,10 +157,10 @@ test("/schools: for real Explore URLs the ids equal getSchools(parseFilters(...)
 });
 
 test("guard: the parity check notices a different sort, a dropped filter, and a changed page size", async () => {
-  const got = await walkList("states=CA&types=public&sort=name", 25);
+  const got = await walkList("states=CA&types=public&sort=name", 1);
   assert.notDeepEqual(got.ids, exploreIds("states=CA&types=public"), "name order is not applicants order");
   assert.notDeepEqual(got.ids, exploreIds("states=CA&sort=name"), "private colleges are missing");
-  assert.equal(got.pages, Math.ceil(got.total / 25));
+  assert.equal(got.pages, Math.ceil(got.total / 1));
 });
 
 test("/schools: the sort keys are Explore's, with sortDir, and a ZIP's distance works like Explore's", async () => {
@@ -166,18 +168,19 @@ test("/schools: the sort keys are Explore's, with sortDir, and a ZIP's distance 
     const asc = (await json<ListBody>(await call(listRoute, `/api/v1/schools?sort=${key}&limit=100`))).items.map((i) => i.unit_id);
     assert.deepEqual(asc, exploreIds(`sort=${key}`).slice(0, 100), key);
   }
-  const near = "near=94305&within=50&sort=distance";
+  // A ZIP the mini fixture's sampled centroid table has, near Duke, Elon, and UNC (the real data's example was Stanford's).
+  const near = "near=27613&within=50&sort=distance";
   const expected = exploreIds(near);
-  assert.ok(expected.length > 0, "colleges near Stanford's ZIP");
+  assert.ok(expected.length > 1 && expected.length < schools.length, "some colleges near the Raleigh ZIP, not all");
   assert.deepEqual((await walkList(near)).ids, expected);
 });
 
 test("/schools: the cursor walks the whole dataset, no repeats, and ends with next_cursor null", async () => {
-  const walked = await walkList("", 100);
+  const walked = await walkList("", 10);
   assert.equal(walked.ids.length, schools.length);
   assert.equal(new Set(walked.ids).size, schools.length, "no college twice");
   assert.equal(walked.total, schools.length);
-  assert.equal(walked.pages, Math.ceil(schools.length / 100));
+  assert.equal(walked.pages, Math.ceil(schools.length / 10));
   assert.deepEqual(walked.ids, data.getSchools(parseFilters({})).map((s) => s.unit_id));
   // The last page ends the walk; a cursor past the end is an empty page, not an error.
   const past = await json<ListBody>(await call(listRoute, `/api/v1/schools?cursor=${query.encodeCursor(schools.length + 500)}`));
@@ -185,10 +188,23 @@ test("/schools: the cursor walks the whole dataset, no repeats, and ends with ne
 });
 
 test("/schools: limit defaults to 50, is held to 100, and must be a whole number from 1", async () => {
-  assert.equal((await json<ListBody>(await call(listRoute, "/api/v1/schools"))).items.length, query.DEFAULT_LIMIT);
+  // The mini fixture's 38 colleges fit in one default page, so the parsed query shows the default and the clamp, and
+  // the route shows a short last page with no cursor.
+  const parsed = (qs: string) => {
+    const q = query.parseListQuery(new URLSearchParams(qs));
+    assert.ok(q.ok, qs);
+    return q.query;
+  };
+  assert.equal(parsed("").limit, query.DEFAULT_LIMIT);
+  assert.equal(parsed("limit=500").limit, query.MAX_LIMIT);
+  const first = await json<ListBody>(await call(listRoute, "/api/v1/schools"));
+  assert.equal(first.items.length, Math.min(query.DEFAULT_LIMIT, schools.length));
   const big = await json<ListBody>(await call(listRoute, "/api/v1/schools?limit=500"));
-  assert.equal(big.items.length, query.MAX_LIMIT);
-  assert.equal(query.decodeCursor(big.next_cursor!), query.MAX_LIMIT);
+  assert.equal(big.items.length, Math.min(query.MAX_LIMIT, schools.length));
+  if (schools.length <= query.MAX_LIMIT) assert.equal(big.next_cursor, null);
+  else assert.equal(query.decodeCursor(big.next_cursor!), query.MAX_LIMIT);
+  const two = await json<ListBody>(await call(listRoute, "/api/v1/schools?limit=2"));
+  assert.equal(query.decodeCursor(two.next_cursor!), 2);
   assert.equal((await json<ListBody>(await call(listRoute, "/api/v1/schools?limit=1"))).items.length, 1);
   for (const bad of ["0", "-3", "abc", "2.5"]) {
     const res = await call(listRoute, `/api/v1/schools?limit=${bad}`);
@@ -225,10 +241,10 @@ test("/schools: a bad value is 400 bad_request naming the parameter", async () =
 });
 
 test("/schools: fields= keeps the named keys plus unit_id and name, for every item", async () => {
-  const body = await json<ListBody>(await call(listRoute, "/api/v1/schools?states=CA&limit=20&fields=admissions,location"));
-  assert.equal(body.items.length, 20);
+  const body = await json<ListBody>(await call(listRoute, "/api/v1/schools?states=CA&limit=3&fields=admissions,location"));
+  assert.equal(body.items.length, 3);
   for (const item of body.items) assert.deepEqual(Object.keys(item).sort(), ["admissions", "location", "name", "unit_id"]);
-  const full = await json<ListBody>(await call(listRoute, "/api/v1/schools?states=CA&limit=20"));
+  const full = await json<ListBody>(await call(listRoute, "/api/v1/schools?states=CA&limit=3"));
   assert.deepEqual(full.items.map((i) => i.unit_id), body.items.map((i) => i.unit_id));
   assert.deepEqual(body.items[0].admissions, JSON.parse(JSON.stringify(serialize.publicSchool(byId.get(String(body.items[0].unit_id))!).admissions)));
   assert.ok(Object.keys(full.items[0]).length > 4);
@@ -350,7 +366,7 @@ test("/history: 404 for a college without a shard or an unknown id; the shard pl
     sources: unknown[];
   }>(res);
   assert.equal(body.unit_id, HARVARD);
-  assert.deepEqual(body.history, JSON.parse(read(`data/history/schools/${HARVARD}.json`)));
+  assert.deepEqual(body.history, miniHistory(HARVARD));
   const keys = Object.keys(body.history.series);
   assert.ok(keys.length > 5);
   assert.deepEqual(Object.keys(body.definitions).sort(), keys.sort(), "a definition for every series in the shard");
@@ -368,7 +384,7 @@ test("/history: 404 for a college without a shard or an unknown id; the shard pl
 
 test("/lineage: every key is a public registered field path, and the records are schoolLineage's", async () => {
   const hidden = new Set<string>(HIDDEN_FIELDS);
-  for (const id of [HARVARD, schools[0].unit_id, schools[900].unit_id]) {
+  for (const id of [HARVARD, schools[0].unit_id, schools[30].unit_id]) {
     const res = await call(lineageRoute, `/api/v1/schools/${id}/lineage`, id);
     assert.equal(res.status, 200);
     const body = await json<{ unit_id: string; fields: Record<string, { label: string }> }>(res);
@@ -463,7 +479,7 @@ test("/national: the serializer's medians, counts, and distributions, and the na
   assert.deepEqual(await json(res), expected);
   const body = expected as { metrics: { key: string; median: number | null; reporting: number }[] };
   assert.ok(body.metrics.length > 10);
-  assert.ok(body.metrics.some((m) => m.median !== null && m.reporting > 100));
+  assert.ok(body.metrics.some((m) => m.median !== null && m.reporting > schools.length / 2));
 });
 
 /* ------------------------------------------------------------------ */
@@ -502,7 +518,6 @@ test("the table has a row, with every path parameter described, for each route t
   assert.deepEqual(missing(API_ROUTES.filter((r) => r.id !== "national")), ["national"]);
 });
 
-test("the dataset the routes serve is the one in data/", () => {
-  const files = JSON.parse(read("data/schools.json")) as School[];
-  assert.equal(schools.length, files.length);
+test("the dataset the routes serve is the bundled copy's (here the mini fixture)", () => {
+  assert.deepEqual(schools.map((s) => s.unit_id), miniSchools().map((s) => s.unit_id));
 });

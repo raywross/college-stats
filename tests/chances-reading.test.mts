@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { GpaBands, School } from "../lib/types";
+import { miniSchools } from "./helpers/snapshot.mts";
 import { FIELDS } from "../lib/fields.ts";
 import { TOPIC_FIELDS } from "../lib/profile-topics.ts";
 import { READING_ROW, cardFields, cardRows } from "../lib/compare-cards.ts";
@@ -363,8 +364,7 @@ test("derived.gpa_top_share is registered with its band inputs, and the page's s
 });
 
 test("every college in the dataset reads without holes, and every cite is a registered field", () => {
-  const raw = JSON.parse(readFileSync(join(import.meta.dirname, "..", "data", "schools.json"), "utf8"));
-  const schools: School[] = Array.isArray(raw) ? raw : raw.schools;
+  const schools: School[] = miniSchools();
   let shown = 0;
   for (const s of schools) {
     const block = readingWithMajor(s);

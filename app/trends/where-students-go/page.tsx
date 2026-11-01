@@ -64,7 +64,7 @@ function row(groupings: readonly GroupingResult<WhereStudentsGoValues>[], groupi
 /**
  * Study 7 (specs/trends/where-students-go.md): each kind of college's share of campus-based undergraduates, then and
  * now, and the pandemic as three periods inside the ten years. Every number and year comes from
- * data/history/trends/where-students-go.json; only the sentences are written here.
+ * the snapshot's trends/where-students-go.json; only the sentences are written here.
  */
 export default async function WhereStudentsGoPage() {
   const [file, files] = await Promise.all([getTrendFile("where-students-go"), getHistoryFiles()]);

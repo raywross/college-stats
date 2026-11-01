@@ -272,17 +272,9 @@ export function recordedMap(rows: readonly CollegeState[]): Map<string, CollegeS
 }
 
 /* ------------------------------------------------------------------ */
-/* Reading a commit, and the table (the scripts)                       */
+/* The table (the publisher)                                           */
 /* ------------------------------------------------------------------ */
 
-/** A commit's selectivity from git. `methodFor` names the method when the index file doesn't (files built before it). */
-export function selectivityAt(readAt: (sha: string, path: string) => string, sha: string, methodFor: (sha: string) => string | null = () => null): SelectivityAt {
-  const read = <T,>(path: string): T => JSON.parse(readAt(sha, path)) as T;
-  const index = read<SelectivityIndexFile>("data/selectivity-index.json");
-  const method = index.method ?? methodFor(sha);
-  if (!method) throw new Error(`data/selectivity-index.json at ${sha.slice(0, 12)} has no method, and none is known for that commit`);
-  return { index, schools: read<School[]>("data/schools.json"), meta: read<DatasetMeta>("data/meta.json"), method };
-}
 
 type Result = PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
 interface Ranged extends Result {

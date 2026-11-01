@@ -1,6 +1,6 @@
 /**
  * The two files derived from the college-reported state, on the data store: the failures list (`reported.failures`,
- * one document per college holding its rows, as scripts/import-data-from-git.mts groups data/college-failures.json)
+ * one document per college holding its rows, as scripts/import-data-from-files.mts groups data/college-failures.json)
  * and the compact health file (`health.colleges`, key `health`, data/college-health.json whole). The run derives both
  * before it closes its change set (scripts/sync-college-reported.mts); `npm run college-failures` and
  * `npm run college-health` derive them on their own from the store. The rules are the existing pure functions

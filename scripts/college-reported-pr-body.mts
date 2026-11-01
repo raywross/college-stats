@@ -128,8 +128,8 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
       lines.push("No college's figures passed every check this run.");
     } else {
       lines.push(
-        `${entries.length} college${entries.length === 1 ? "" : "s"}' figures reached \`data/schools.json\` in this ` +
-          `same PR (specs/college-reported-round-2.md, Decision 5) — this PR's Vercel preview already shows them.`,
+        `${entries.length} college${entries.length === 1 ? "" : "s"}' figures are in \`reported.entries\` from this run ` +
+          `(specs/college-reported-round-2.md, Decision 5); the next publish carries them to the site.`,
         "",
         "| College | Term | Kind | Applicants | Admitted | Enrolled | Rate | Source |",
         "|---|---|---|---|---|---|---|---|",
@@ -168,7 +168,7 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
   } else if (checkFailureItems.length > 0) {
     lines.push(
       `${checkFailureItems.length} item${checkFailureItems.length === 1 ? "" : "s"} failed a check and did **not** publish. Resolve one by ` +
-        `fixing its recipe in \`data/college-sources.json\` (or adding a manual override), then re-running ` +
+        `fixing its recipe (\`reported.sources\`, or adding a manual override), then re-running ` +
         `\`npm run sync-college-reported -- --college <unit_id>\`.`,
       "",
       "| College | Term | Failed checks | URL |",
@@ -196,9 +196,9 @@ export function prBody(summary: RunSummary, queue: ReviewQueueFile, reported?: R
   lines.push(
     "---",
     "",
-    "This PR changes `data/college-reported.json` and `data/college-sources.json`. It auto-merges only when the " +
-      "circuit breaker didn't trip and the workflow was run (or scheduled) with auto-merge on; otherwise a comment " +
-      "below explains why it is waiting for a person.",
+    "This run's change set writes `reported.entries`, `reported.sources` and the rest of `reported.*`. It closes " +
+      "applied, and asks the publisher for a snapshot, only when the circuit breaker didn't trip; a held set waits in " +
+      "the admin console's Holds for a person.",
   );
 
   // A last stop so the PR always opens: the run's data is on the branch either way.
@@ -224,8 +224,8 @@ export function round3Sections(summary: RunSummaryV3): string[] {
       "## Blocked colleges (for the owner)",
       "",
       `${blocked.length} college${blocked.length === 1 ? "" : "s"} whose every candidate host refuses our user agent; no money was spent on ` +
-        "them. To add one: find the link in a browser, add it to `data/reference/cds-urls.json`, download the file, and run " +
-        "`npm run archive-doc -- --college <unit_id> --file <path> --url <url>`.",
+        "them. To add one: find the link in a browser, download the file, and run " +
+        "`npm run archive-doc -- --store supabase --college <unit_id> --file <path> --url <url> --add-url` (which also lists the link in the reference document `cds-urls`).",
       "",
       "| College | Hosts |",
       "|---|---|",
@@ -235,7 +235,7 @@ export function round3Sections(summary: RunSummaryV3): string[] {
   }
   if (summary.batches.length || summary.open_batches) {
     out.push("## Batches", "");
-    if (summary.open_batches) out.push(`${summary.open_batches} batch${summary.open_batches === 1 ? " is" : "es are"} still open (\`data/college-batches.json\`); the collect job finishes ${summary.open_batches === 1 ? "it" : "them"}.`, "");
+    if (summary.open_batches) out.push(`${summary.open_batches} batch${summary.open_batches === 1 ? " is" : "es are"} still open (\`reported.batches\`); the collect job finishes ${summary.open_batches === 1 ? "it" : "them"}.`, "");
     out.push("| Batch | Requests | Submitted | Ended | Succeeded | Errored | Expired | Reserved | Cost |", "|---|---|---|---|---|---|---|---|---|");
     for (const b of summary.batches) out.push(`| ${b.id} | ${b.requests} | ${b.submitted} | ${b.ended ?? "open"} | ${b.succeeded} | ${b.errored} | ${b.expired} | ${usd(b.reserved_usd)} | ${usd(b.cost_usd)} |`);
     out.push("");
@@ -276,7 +276,7 @@ export function perItemTable(items: ReviewItem[]): string[] {
     const checks = item.failures.map((f) => `${f.check} (${f.detail})`).join("; ");
     out.push(`| ${escapeCell(item.name)} (${item.unit_id}) | ${item.edition ?? ""} | ${label} | ${escapeCell(value.slice(0, 40))} | ${escapeCell(checks.slice(0, 200))} | ${item.urls[0] ?? ""} |`);
   }
-  if (sorted.length > PER_ITEM_ROWS) out.push("", `…and ${sorted.length - PER_ITEM_ROWS} more; every item is in \`data/review-queue.json\` on this branch.`);
+  if (sorted.length > PER_ITEM_ROWS) out.push("", `…and ${sorted.length - PER_ITEM_ROWS} more; every item is in the review queue (\`reported.review_queue\`, the console's Holds).`);
   return out;
 }
 

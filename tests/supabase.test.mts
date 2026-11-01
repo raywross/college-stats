@@ -1,8 +1,9 @@
 /**
  * Where the app's data comes from (specs/serving-architecture.md#1-the-deploy-carries-the-dataset): the college
- * dataset is loaded from data/ once per instance (lib/dataset-loader.ts, lib/data.ts) and never from Supabase; a
- * leftover DATA_SOURCE is ignored with one warning; high schools have their own switch (lib/high-schools.ts); and the
- * revalidation endpoint's auth (lib/revalidate.ts). `npm test`.
+ * dataset is loaded from the bundled copy once per instance (lib/dataset-loader.ts, lib/data.ts) and never from
+ * Supabase's tables; a leftover DATA_SOURCE is ignored with one warning; high schools have their own switch
+ * (lib/high-schools.ts); and the revalidation endpoint's auth (lib/revalidate.ts). The bundled copy is the mini
+ * fixture (tests/helpers/snapshot.mts `installMiniAsBundledCopy`). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -12,8 +13,10 @@ import { extname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createDatasetLoader } from "../lib/dataset-loader.ts";
 import { isAuthorized } from "../lib/revalidate.ts";
+import { miniDetail, miniHistory, miniSchools, installMiniAsBundledCopy } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
+installMiniAsBundledCopy();
 
 // lib/data.ts and lib/high-schools.ts are written for Next.js: `import "server-only"`, `@/` paths, and relative
 // imports without extensions. Resolve those the way Next.js does so the real modules load here.
@@ -65,8 +68,8 @@ async function withEnvAndConsole<T>(env: Record<string, string | undefined>, fn:
   }
 }
 
-const COLLEGES = (JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as unknown[]).length;
-const LOADED_LINE = /^\[data\] loaded (\d+) colleges from data\/ in \d+ ms$/;
+const COLLEGES = miniSchools().length;
+const LOADED_LINE = /^\[data\] loaded (\d+) colleges \(snapshot \d+\) in \d+ ms$/;
 const IGNORED = "[data] DATA_SOURCE is ignored: the deploy carries the dataset (specs/serving-architecture.md)";
 
 /* ------------------------------------------------------------------ */
@@ -96,10 +99,10 @@ test("the first load failing is loud: the call throws (no empty site), and a lat
 });
 
 /* ------------------------------------------------------------------ */
-/* lib/data.ts reads the files                                         */
+/* lib/data.ts reads the bundled copy                                  */
 /* ------------------------------------------------------------------ */
 
-test("a leftover DATA_SOURCE gets one warning and the dataset still loads from data/, once", async () => {
+test("a leftover DATA_SOURCE gets one warning and the dataset still loads from the bundled copy, once", async () => {
   await withEnvAndConsole({ DATA_SOURCE: "supabase", SUPABASE_URL: undefined, SUPABASE_PUBLISHABLE_KEY: undefined }, async (logs) => {
     const { getData, getHistoryFiles } = await freshDataModule("leftover-setting");
     const data = await getData();
@@ -126,9 +129,9 @@ test("without DATA_SOURCE there is no warning, only the load line", async () => 
 test("per-college files read from disk and are fail-soft; What changed is empty without Supabase", async () => {
   await withEnvAndConsole({ SUPABASE_URL: undefined, CHANGES_FIXTURE: undefined }, async (logs) => {
     const { getHistory, getDetail, getTrendFile, getSchoolChanges } = await freshDataModule("per-item");
-    const withHistory = readdirSync(join(ROOT, "data", "history", "schools"))[0].replace(/\.json$/, "");
+    const withHistory = miniSchools().find((s) => miniHistory(s.unit_id))!.unit_id;
     assert.equal((await getHistory(withHistory))?.unit_id, withHistory);
-    const withDetail = readdirSync(join(ROOT, "data", "detail", "schools"))[0].replace(/\.json$/, "");
+    const withDetail = miniSchools().find((s) => miniDetail(s.unit_id))!.unit_id;
     assert.ok(await getDetail(withDetail));
     assert.equal(await getHistory("999999999"), null, "no file reads as none");
     assert.equal(await getDetail("999999999"), null);

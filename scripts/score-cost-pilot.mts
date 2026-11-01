@@ -1,17 +1,15 @@
 /**
  * Scores the cost curve against the colleges' own net price calculators (specs/product/cost-by-income.md "The accuracy
- * pilot"; how to run it: specs/product/cost-by-income-pilot.md). Reads the prices recorded by hand in
- * data/reference/cost-curve-pilot.json, compares each with the model's estimate at the same income, and prints a
+ * pilot"; how to run it: specs/product/cost-by-income-pilot.md). Reads the prices recorded by hand in the reference
+ * document `cost-curve-pilot` (the bundled copy's, after `npm run fetch-snapshot`), compares each with the model's estimate at the same income, and prints a
  * table and pass/fail against the bar in that file. Not part of `npm run verify`.
  *
  *   node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/score-cost-pilot.mts
  *
  * Exits 0 when the bar is met, 1 when it isn't, 2 when no results are recorded yet.
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { costCurve, costCurveInput, priceAt } from "../lib/cost-curve.ts";
-import type { School } from "../lib/types.ts";
+import { readBundledColleges, readBundledReference } from "./lib/data-platform/bundled.mts";
 
 interface Results {
   checked?: string;
@@ -26,9 +24,8 @@ interface PilotFile {
   colleges: { unit_id: string; name: string; group: string; npc_url: string | null; results: Results }[];
 }
 
-const ROOT = join(import.meta.dirname, "..");
-const pilot: PilotFile = JSON.parse(readFileSync(join(ROOT, "data", "reference", "cost-curve-pilot.json"), "utf8"));
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const pilot = readBundledReference<PilotFile>("cost-curve-pilot");
+const schools = readBundledColleges();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const k = (x: number | null | undefined) => (x == null || Number.isNaN(x) ? "–" : `$${Math.round(x / 1000)}K`);
 
@@ -85,7 +82,7 @@ for (const c of pilot.colleges) {
 }
 
 if (!filled) {
-  console.log("No calculator results recorded yet in data/reference/cost-curve-pilot.json (see specs/product/cost-by-income-pilot.md).");
+  console.log("No calculator results recorded yet in the cost-curve-pilot reference document (see specs/product/cost-by-income-pilot.md).");
   process.exit(2);
 }
 console.table(rows);

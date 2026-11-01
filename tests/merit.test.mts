@@ -4,14 +4,12 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { MERIT_PROXY_MIN, meritFor, meritProxy, offersMerit, proxyMisleads } from "../lib/merit.ts";
 import type { AidPolicy } from "../lib/aid-policies.ts";
 import type { H2Headline, School } from "../lib/types.ts";
+import { miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 
 const NO_H2: H2Headline = { a: null, c: null, d: null, h: null, i: null, j: null, k: null, m: null, n: null, o: null, p: null, q: null };
 
@@ -132,8 +130,9 @@ test("the proxy isn't used where it misleads: full-need colleges (unless need_on
   assert.equal(meritFor(school({ firstYears: { a: 1_000, n: 50, o: 9_000 }, aid: proxyAid(100) }), fullNeed).cls, "merit_reported");
 });
 
-test("real full-need colleges never show merit_proxy: Princeton, Stanford, Yale, Duke (with their curated policies)", () => {
-  for (const id of ["186131", "243744", "130794", "198419"]) {
+test("real full-need colleges never show merit_proxy: Princeton, Stanford, Harvard, Duke (with their curated policies)", () => {
+  // The mini fixture lacks Yale (130794); Harvard has a curated full-need policy too.
+  for (const id of ["186131", "243744", "166027", "198419"]) {
     const s = schools.find((x) => x.unit_id === id)!;
     assert.notEqual(meritFor(s).cls, "merit_proxy", s.name);
     // Without the policy the proxy would say merit, unless the college's own CDS already marks its methodology as

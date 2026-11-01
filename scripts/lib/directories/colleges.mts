@@ -1,15 +1,14 @@
 /**
- * The matcher's inputs from the repo: the colleges in data/schools.json, IPEDS HD aliases (IALIAS) from the newest
+ * The matcher's inputs: the colleges (`collegesFrom`), IPEDS HD aliases (IALIAS) from the newest
  * HD file the sync cached in .cache/ipeds/ (none when there isn't one), and the hand-checked answers in
- * data/directories/matches.json.
+ * `directories.matches` (./store.mts `matchIndexFromStore` builds the index).
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { School } from "../../../lib/types.ts";
 import { forEachCsvRow } from "../ipeds.mts";
-import { readReviewed } from "./files.mts";
-import { buildIndex, splitAliases, type College, type MatchIndex } from "./matcher.mts";
+import { splitAliases, type College } from "./matcher.mts";
 
 export function collegesFrom(schools: readonly School[]): College[] {
   return schools.map((s) => ({ unit_id: s.unit_id, name: s.name, city: s.location.city, state: s.location.state, website: s.links?.website ?? null }));
@@ -39,10 +38,4 @@ export function readHdAliases(root: string, ids: ReadonlySet<string>, log: (m: s
   );
   log(`  aliases: ${out.size} colleges with IPEDS aliases (${zip})`);
   return out;
-}
-
-export function loadMatchIndex(root: string, log: (m: string) => void = console.log): MatchIndex {
-  const schools: School[] = JSON.parse(readFileSync(join(root, "data", "schools.json"), "utf8"));
-  const colleges = collegesFrom(schools);
-  return buildIndex(colleges, readHdAliases(root, new Set(colleges.map((c) => c.unit_id)), log), readReviewed(root));
 }

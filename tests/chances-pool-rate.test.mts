@@ -10,17 +10,21 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { DatasetMeta, ReportedResidencyAdmissions, School } from "../lib/types";
+import type { ReportedResidencyAdmissions, School } from "../lib/types";
 import { poolRateFor, programLabel, programStatus, type PoolSchool, type PoolStudent } from "../lib/chances/pool-rate.ts";
 import { programById, programsFor, validateGuaranteed, type GuaranteedFile } from "../lib/chances/guaranteed.ts";
 import { noteText } from "../lib/chances/notes.ts";
 import { isFieldPath } from "../lib/fields.ts";
 import { guaranteedProgramCitation, lineageFor } from "../lib/lineage.ts";
+import { miniSchools, miniMeta, miniReference } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const readJson = <T,>(...p: string[]): T => JSON.parse(readFileSync(join(ROOT, ...p), "utf8")) as T;
-const schools = readJson<School[]>("data", "schools.json");
-const meta = readJson<DatasetMeta>("data", "meta.json");
+const meta = miniMeta();
+// Five real colleges the curated guaranteed-admission.json keys by exact unit_id (tests/fixtures/chances-pool-rate/,
+// copied 2026-10-31; see its README) plus the mini fixture's own colleges.
+const extraSchools = readJson<School[]>("tests", "fixtures", "chances-pool-rate", "colleges.json");
+const schools = [...miniSchools(), ...extraSchools];
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
@@ -260,8 +264,8 @@ test("each displayed fact cites its own curated entry: the program shown (not ju
 
 /* ---- The guaranteed-admission check's added rules ---- */
 
-test("the guaranteed-admission check refuses an 'any' rule without two thresholds, a system without its name, and a GPA not in the quote", () => {
-  const file = readJson<GuaranteedFile>("data", "guaranteed-admission.json");
+test("the guaranteed-admission check refuses an 'any' rule without two thresholds, a system without its name, and a GPA not in the quote", async () => {
+  const file = miniReference<GuaranteedFile>("guaranteed-admission");
   const today = new Date("2026-10-11T00:00:00Z");
   assert.deepEqual(validateGuaranteed(file, today), []);
   const ua = clone(file.programs.find((p) => p.id === "az-assured-ua-2027")!);

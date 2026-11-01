@@ -5,7 +5,10 @@
  *   npm run fetch-snapshot                  pointer → manifest → every object, checked by sha256
  *   npm run fetch-snapshot -- --if-configured   the prebuild: does nothing unless DATA_SNAPSHOT_URL is set
  *   npm run fetch-snapshot -- --fixture     copies the mini fixture (tests/fixtures/snapshot-mini/snapshot/) instead
+ *   npm run fetch-snapshot -- --ensure      the postinstall: nothing when .data/snapshot/manifest.json exists, else
+ *                                           a download when DATA_SNAPSHOT_URL is set, else the mini fixture
  *   npm run fetch-snapshot -- --check       exits 0 when .data/snapshot/manifest.json exists, 1 otherwise
+ *   --dir <path>                            another folder than .data/snapshot (relative to the working directory)
  *
  * The layout mirrors the object names, with `.gz` objects stored ungzipped (`colleges.json`, `history/shared.json`).
  * An object already on disk with the manifest's hash is skipped, so a fetch after a small publish downloads only what
@@ -76,6 +79,14 @@ export async function fetchSnapshot(options: { base: string; dir: string; fetch?
   }
   const manifest = JSON.parse(manifestBytes.toString("utf8")) as SnapshotManifest;
   if (manifest.id !== pointer.id) throw new Error(`snapshot ${pointer.id}: the manifest says id ${manifest.id}`);
+  // The app imports its reference tables and source-files.json from the bundled copy (specs/data-platform/git-ci-tests.md,
+  // phase 4). A snapshot rendered by an older publisher lacks them, and the build would then fail on a missing import
+  // instead of saying why; so say why here, before downloading anything.
+  if (!(SNAPSHOT_OBJECTS.sourceFiles in manifest.objects)) {
+    throw new Error(
+      `snapshot ${manifest.id} predates the publisher that renders every reference document (no ${SNAPSHOT_OBJECTS.sourceFiles} in its manifest); publish a snapshot first (Actions → Publish snapshot, with force), then build`,
+    );
+  }
 
   mkdirSync(dir, { recursive: true });
   rmSync(join(dir, SNAPSHOT_OBJECTS.manifest), { force: true });
@@ -164,6 +175,26 @@ export async function main(argv: string[], env: Record<string, string | undefine
     const ok = existsSync(join(dir, SNAPSHOT_OBJECTS.manifest));
     console.log(ok ? `[fetch-snapshot] ${relative(cwd, dir)} holds a snapshot` : `[fetch-snapshot] no snapshot in ${relative(cwd, dir)}`);
     return ok ? 0 : 1;
+  }
+  if (flag("--ensure")) {
+    // The postinstall: make sure a bundled copy exists, so a clean clone typechecks, tests and builds. A copy already
+    // there is kept as it is (the prebuild refreshes it when configured).
+    const manifest = join(dir, SNAPSHOT_OBJECTS.manifest);
+    if (existsSync(manifest)) {
+      const id = (JSON.parse(readFileSync(manifest, "utf8")) as SnapshotManifest).id;
+      console.log(`[fetch-snapshot] ${relative(cwd, dir)} already holds snapshot ${id}`);
+      return 0;
+    }
+    if (!base) {
+      try {
+        copyFixture(dir);
+        console.log(`[fetch-snapshot] no DATA_SNAPSHOT_URL: copied the mini fixture into ${relative(cwd, dir)}`);
+        return 0;
+      } catch (err) {
+        console.error(`[fetch-snapshot] ${(err as Error).message}`);
+        return 1;
+      }
+    }
   }
   if (flag("--fixture")) {
     try {

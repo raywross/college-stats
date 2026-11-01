@@ -30,6 +30,7 @@ import {
 } from "../lib/home.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
 import { ACCOUNT_EXPORTERS } from "../lib/account-export.ts";
+import { miniReference } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -177,23 +178,25 @@ test("parseCentroidCsv skips comments and the header and drops malformed rows", 
   assert.deepEqual(table.get("02139"), { lat: 42.365, lng: -71.104 });
 });
 
-test("data/reference/zcta-centroids.csv: every row is a five-digit ZCTA with coordinates in the U.S., and well-known ZIPs land where they should", () => {
-  const text = readFileSync(join(ROOT, "data", "reference", "zcta-centroids.csv"), "utf8");
+test("the zcta-centroids reference document: every row is a five-digit ZCTA with coordinates in the U.S., and known ZIPs land where they should", () => {
+  // The mini fixture keeps the real table's header and a sample of its rows (scripts/build-mini-fixture.mts).
+  const text = miniReference<string>("zcta-centroids");
   assert.match(text.split("\n")[0], /^# ZCTA centers from the U\.S\. Census Bureau/);
   const table = parseCentroidCsv(text);
   const rows = text.split("\n").filter((l) => l && !l.startsWith("#") && !l.startsWith("zcta,"));
   assert.equal(table.size, rows.length, "every data row parses");
-  assert.ok(table.size > 33000, `expected about 33,800 ZCTAs, got ${table.size}`);
+  assert.ok(table.size > 100, `expected the sample's hundred-odd ZCTAs (about 33,800 in the real table), got ${table.size}`);
   for (const [zip, c] of table) {
     assert.match(zip, /^\d{5}$/);
     // The states, Puerto Rico and the Virgin Islands (west of 64°W); American Samoa (south of the equator); Guam and
     // the Northern Marianas (east of 144°E).
     assert.ok(c.lat > -15 && c.lat < 72 && (c.lng < -64 || c.lng > 144), `${zip} is outside the U.S. and its territories: ${c.lat}, ${c.lng}`);
   }
-  const cambridge = table.get("02139")!;
-  assert.ok(Math.abs(cambridge.lat - 42.36) < 0.03 && Math.abs(cambridge.lng + 71.1) < 0.03, "02139 is Cambridge, MA");
-  const athens = table.get("30602")!;
-  assert.ok(Math.abs(athens.lat - 33.95) < 0.05 && Math.abs(athens.lng + 83.37) < 0.05, "30602 is the University of Georgia's ZIP");
+  // ZIPs the sample carries (the real data's examples were 02139, Cambridge, and 30602, the University of Georgia).
+  const seattle = table.get("98105")!;
+  assert.ok(Math.abs(seattle.lat - 47.66) < 0.03 && Math.abs(seattle.lng + 122.29) < 0.05, "98105 is Seattle's University District");
+  const nantucket = table.get("02564")!;
+  assert.ok(Math.abs(nantucket.lat - 41.27) < 0.03 && Math.abs(nantucket.lng + 69.99) < 0.05, "02564 is Siasconset, on Nantucket");
 });
 
 /* ------------------------------------------------------------------ */

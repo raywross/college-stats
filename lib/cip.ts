@@ -11,7 +11,7 @@
  * Server-side only in the app (the table is ~150 KB): client components get titles as props. For family names that
  * client code can use, see lib/majors.ts.
  */
-import table from "../data/reference/cip2020.json" with { type: "json" };
+import table from "../.data/snapshot/reference/cip2020.json" with { type: "json" };
 
 export type CipLevel = 2 | 4 | 6;
 

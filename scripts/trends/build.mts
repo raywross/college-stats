@@ -1,19 +1,15 @@
 /**
- * Builds data/history/trends/ from the committed history (specs/national-trends.md#shared-computation-and-tests):
- * runs every builder in scripts/trends/index.mts, writes one file per unit plus index.json (the /trends cards), and
- * removes files no builder wrote. Deterministic: the same committed inputs always give byte-identical files, so tests
- * recompute them and compare.
- *
- * Called by `npm run build-trends` (scripts/build-trends.mts) and at the end of `npm run sync-history`.
+ * The national trend files (specs/national-trends.md#shared-computation-and-tests): runs every builder in
+ * scripts/trends/index.mts and gives one file per unit plus index.json (the /trends cards). Deterministic: the same
+ * inputs always give byte-identical files. The publisher's compose calls `computeTrends`; `npm run build-trends`
+ * (scripts/build-trends.mts) writes the files to a folder for a local look (`buildTrends`).
  */
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { STUDIES } from "../../lib/trend-studies.ts";
 import type { TrendCard, TrendIndex } from "../../lib/trends.ts";
-import { loadTrendContext, type TrendContext, type TrendOutput } from "./context.mts";
+import type { TrendContext, TrendOutput } from "./context.mts";
 import { BUILDERS } from "./index.mts";
-
-export const TRENDS_DIR = join("data", "history", "trends");
 
 /**
  * JSON with two-space indentation, except arrays of plain values (yearly lines, then-now pairs) stay on one line, so
@@ -52,10 +48,9 @@ export function computeTrends(ctx: TrendContext): { outputs: TrendOutput[]; inde
   return { outputs, index };
 }
 
-/** Writes data/history/trends/ and returns the file names written (index last). */
-export function buildTrends(root: string, log: (line: string) => void = console.log): string[] {
-  const dir = join(root, TRENDS_DIR);
-  const { outputs, index } = computeTrends(loadTrendContext(root));
+/** Writes the trend files of `ctx` to `dir` (removing files no builder wrote) and returns the names written (index last). */
+export function buildTrends(dir: string, ctx: TrendContext, log: (line: string) => void = console.log): string[] {
+  const { outputs, index } = computeTrends(ctx);
   mkdirSync(dir, { recursive: true });
   const written: { name: string; file: unknown }[] = [...outputs.map((o) => ({ name: o.name, file: o.file })), { name: "index", file: index }];
   for (const { name, file } of written) writeFileSync(join(dir, `${name}.json`), trendFileText(file));

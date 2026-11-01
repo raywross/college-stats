@@ -6,17 +6,16 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import type { ReportedResidencyAdmissions, School } from "../lib/types";
+import type { ReportedResidencyAdmissions } from "../lib/types";
 import { comparedWith } from "../lib/chances/compared-with.ts";
 import { GLOSSARY, isTermKey } from "../lib/glossary.ts";
 import { NOTES, isNoteKey, noteText } from "../lib/chances/notes.ts";
 import { poolRateFor, type PoolSchool, type PoolStudent } from "../lib/chances/pool-rate.ts";
+import { miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const readJson = <T,>(...p: string[]): T => JSON.parse(readFileSync(join(ROOT, ...p), "utf8")) as T;
-const schools = readJson<School[]>("data", "schools.json");
+// Purdue (139755) isn't in the mini fixture; Georgia Tech (139755) stands in (rule 1: nearest fixture college,
+// same role as a synthetic PoolSchool below — only unit_id/name/location come from the real record).
+const schools = miniSchools();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
@@ -81,11 +80,11 @@ test("every pool kind the spec's table lists has a sentence, worded without \"po
   assert.match(noteText(guaranteed.notes[0]), /^Guaranteed for you: Texas automatic admission \(top 5%\)\.$/);
 
   // Residency: in-state, out-of-state, international (Purdue-like fixture).
-  const purdue = college("243780", 0.43, grid([12000, 8520], [59000, 25960], [16000, 4800]));
-  const hoosier = poolRateFor(student({ state: "IN" }), purdue);
-  assert.equal(noteText(hoosier.notes[0]), "Applicants like you — from Indiana — were admitted at 71% (Fall 2025).");
-  const buckeye = poolRateFor(student({ state: "OH" }), purdue);
-  assert.equal(noteText(buckeye.notes[0]), "Applicants like you — from outside Indiana — were admitted at 44% (Fall 2025).");
+  const purdue = college("139755", 0.43, grid([12000, 8520], [59000, 25960], [16000, 4800]));
+  const hoosier = poolRateFor(student({ state: "GA" }), purdue);
+  assert.equal(noteText(hoosier.notes[0]), "Applicants like you — from Georgia — were admitted at 71% (Fall 2025).");
+  const buckeye = poolRateFor(student({ state: "FL" }), purdue);
+  assert.equal(noteText(buckeye.notes[0]), "Applicants like you — from outside Georgia — were admitted at 44% (Fall 2025).");
   const abroad = poolRateFor(student({ state: "OUTSIDE_US" }), purdue);
   assert.equal(noteText(abroad.notes[0]), "International applicants were admitted at 30% (Fall 2025).");
 
@@ -96,40 +95,40 @@ test("every pool kind the spec's table lists has a sentence, worded without \"po
   assert.equal(noteText(major.notes[0]), "Applicants to Grainger College of Engineering were admitted at 21% (Fall 2025).");
 
   // Overall, state known: the college doesn't publish one for it.
-  const overallKnown = poolRateFor(student({ state: "IN" }), college("243780", 0.43));
-  assert.match(noteText(overallKnown.notes[0]), /^Applicants were admitted at 43% \(Fall 2025\)\. .+ doesn't publish a rate for applicants from Indiana, so this is everyone\.$/);
+  const overallKnown = poolRateFor(student({ state: "GA" }), college("139755", 0.43));
+  assert.match(noteText(overallKnown.notes[0]), /^Applicants were admitted at 43% \(Fall 2025\)\. .+ doesn't publish a rate for applicants from Georgia, so this is everyone\.$/);
 
   // Overall, no state on the household: invites adding one.
-  const overallNoState = poolRateFor(student(), college("243780", 0.43));
+  const overallNoState = poolRateFor(student(), college("139755", 0.43));
   assert.equal(noteText(overallNoState.notes[0]), "Applicants were admitted at 43% (Fall 2025). Add your state to see the rate for applicants like you.");
 
   // Open admission (no rate at all): no pool line to show.
-  assert.deepEqual(poolRateFor(student(), college("243780", null)).notes, []);
+  assert.deepEqual(poolRateFor(student(), college("139755", null)).notes, []);
 });
 
 test("years come from lineage, never typed: a different lineage year changes the sentence without any code change", () => {
-  const purdue = college("243780", 0.43);
+  const purdue = college("139755", 0.43);
   (purdue.lineage as Record<string, { year: string }>)["admissions.acceptance_rate"] = { year: "Fall 2019" };
   const r = poolRateFor(student(), purdue);
   assert.ok(noteText(r.notes[0]).includes("Fall 2019"), noteText(r.notes[0]));
   assert.ok(!noteText(r.notes[0]).includes("Fall 2025"));
 
   const grid2025 = grid([12000, 8520], [59000, 25960], [16000, 4800]);
-  const r2 = poolRateFor(student({ state: "IN" }), college("243780", 0.43, grid2025));
+  const r2 = poolRateFor(student({ state: "GA" }), college("139755", 0.43, grid2025));
   assert.ok(noteText(r2.notes[0]).includes("Fall 2025"));
 });
 
 /* ---- "Who you're compared with": comparedWith(student, school) ---- */
 
 test("comparedWith: the applying rate is first, every row cites a published fact, and a guarantee and the major both show as rows", () => {
-  const purdue = college("243780", 0.43, grid([12000, 8520], [59000, 25960], [16000, 4800]));
-  const hoosier = comparedWith(student({ state: "IN" }), purdue);
-  assert.equal(hoosier.rows[0].label, "From Indiana (you)");
+  const purdue = college("139755", 0.43, grid([12000, 8520], [59000, 25960], [16000, 4800]));
+  const hoosier = comparedWith(student({ state: "GA" }), purdue);
+  assert.equal(hoosier.rows[0].label, "From Georgia (you)");
   assert.equal(hoosier.rows[0].rate, "71%");
   assert.equal(hoosier.rows[0].applies, true);
   assert.equal(hoosier.rows[0].cite, "derived.admit_rate_in_state");
   assert.ok(hoosier.rows.some((r) => r.label === "Everyone" && r.rate === "43%" && !r.applies));
-  assert.ok(hoosier.rows.some((r) => r.label.startsWith("From outside Indiana") && r.rate === "44%" && !r.applies));
+  assert.ok(hoosier.rows.some((r) => r.label.startsWith("From outside Georgia") && r.rate === "44%" && !r.applies));
   for (const row of hoosier.rows) if (row.rate !== null) assert.ok(row.cite, row.label);
 
   // Everyone, when the student's state is unknown: the overall row applies, and is first.
@@ -153,8 +152,8 @@ test("comparedWith: the applying rate is first, every row cites a published fact
 });
 
 test("comparedWith never writes the hidden odds, the method, or any text outside the catalog", () => {
-  const purdue = college("243780", 0.43, grid([12000, 8520], [59000, 25960], [16000, 4800]));
-  const data = comparedWith(student({ state: "IN" }), purdue);
+  const purdue = college("139755", 0.43, grid([12000, 8520], [59000, 25960], [16000, 4800]));
+  const data = comparedWith(student({ state: "GA" }), purdue);
   const everything = JSON.stringify(data);
   assert.ok(!/odds|multiplier|threshold|cutoff/i.test(everything), everything);
 });

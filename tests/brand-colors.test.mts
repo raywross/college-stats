@@ -36,12 +36,13 @@ import {
 import { validateSchool } from "../lib/lineage.ts";
 import { brandTint, crestBrand } from "../lib/brand.ts";
 import { addIdentityMeta, emptyIdentityInputs } from "../lib/identity.ts";
+import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const FIXTURE = readFileSync(join(ROOT, "tests", "fixtures", "brand", "college-color-data.lua"), "utf8");
 const mod = parseColorModule(FIXTURE);
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 /** A school as the sync builds it before the brand step: no `brand`, no brand lineage (the committed data has both). */
 function withoutBrand(school: School): School {
   const s = structuredClone(school);

@@ -57,7 +57,8 @@ export interface BlockedFile {
   blocked: BlockedRecord[];
 }
 
-export const directoriesDir = (root: string) => join(root, "data", "directories");
+/** `<dataDir>/directories`: the directory files of a folder in the old data/ layout a caller names (an export, a test). */
+export const directoriesDir = (dataDir: string) => join(dataDir, "directories");
 const RESERVED = new Set(["blocked.json", "matches.json", "organizations.json"]);
 
 /** The classification fields of an adapter, alone (what every listing from it is). */
@@ -83,8 +84,8 @@ export function formatEntriesFile(file: { entries: readonly unknown[] } & Record
   return `{\n${[...headLines, `  "entries": ${body}`].join(",\n")}\n}\n`;
 }
 
-export function writeOrgFiles(root: string, file: DirectoryFile, unmatched: UnmatchedFile): void {
-  const dir = directoriesDir(root);
+export function writeOrgFiles(dataDir: string, file: DirectoryFile, unmatched: UnmatchedFile): void {
+  const dir = directoriesDir(dataDir);
   mkdirSync(join(dir, "unmatched"), { recursive: true });
   writeFileSync(join(dir, `${file.org}.json`), formatEntriesFile(file as unknown as { entries: unknown[] }));
   const u = join(dir, "unmatched", `${file.org}.json`);
@@ -92,24 +93,24 @@ export function writeOrgFiles(root: string, file: DirectoryFile, unmatched: Unma
   else if (existsSync(u)) rmSync(u);
 }
 
-/** Every data/directories/<org>.json, sorted by org. */
-export function readDirectoryFiles(root: string): DirectoryFile[] {
-  const dir = directoriesDir(root);
+/** Every `<dataDir>/directories/<org>.json`, sorted by org. */
+export function readDirectoryFiles(dataDir: string): DirectoryFile[] {
+  const dir = directoriesDir(dataDir);
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((f) => f.endsWith(".json") && !RESERVED.has(f))
     .sort()
     .map((f) => {
       const d = JSON.parse(readFileSync(join(dir, f), "utf8")) as DirectoryFile;
-      if (`${d.org}.json` !== f) throw new Error(`data/directories/${f}: org "${d.org}" doesn't match the file name`);
+      if (`${d.org}.json` !== f) throw new Error(`directories/${f}: org "${d.org}" doesn't match the file name`);
       const cls = classificationProblem(d.classification);
-      if (cls) throw new Error(`data/directories/${f}: ${cls}`);
+      if (cls) throw new Error(`directories/${f}: ${cls}`);
       return d;
     });
 }
 
-export function readBlocked(root: string): BlockedFile {
-  const f = join(directoriesDir(root), "blocked.json");
+export function readBlocked(dataDir: string): BlockedFile {
+  const f = join(directoriesDir(dataDir), "blocked.json");
   return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as BlockedFile) : { blocked: [] };
 }
 
@@ -125,13 +126,13 @@ export function clearBlocks(file: BlockedFile, org: string): BlockedFile {
   return { blocked: file.blocked.filter((x) => x.org !== org) };
 }
 
-export function writeBlocked(root: string, file: BlockedFile): void {
-  mkdirSync(directoriesDir(root), { recursive: true });
-  writeFileSync(join(directoriesDir(root), "blocked.json"), `${JSON.stringify(file, null, 2)}\n`);
+export function writeBlocked(dataDir: string, file: BlockedFile): void {
+  mkdirSync(directoriesDir(dataDir), { recursive: true });
+  writeFileSync(join(directoriesDir(dataDir), "blocked.json"), `${JSON.stringify(file, null, 2)}\n`);
 }
 
-export function readReviewed(root: string): Record<string, string[]> {
-  const f = join(directoriesDir(root), "matches.json");
+export function readReviewed(dataDir: string): Record<string, string[]> {
+  const f = join(directoriesDir(dataDir), "matches.json");
   if (!existsSync(f)) return {};
   const raw = JSON.parse(readFileSync(f, "utf8")) as Record<string, unknown>;
   return Object.fromEntries(Object.entries(raw).filter(([k]) => !k.startsWith("_")) as [string, string[]][]);

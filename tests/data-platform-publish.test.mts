@@ -1,7 +1,7 @@
 /**
  * The publisher (scripts/publish-snapshot.mts, scripts/lib/data-platform/{compose,render,upload,changelog,ledger,publish-tables}.mts;
  * specs/data-platform/publish.md). The layers fixture is three real colleges stripped by the import's own code
- * (scripts/import-data-from-git.mts `importLayers`) into a file store in a temp folder: Duke (Common App, Coalition,
+ * (scripts/import-data-from-files.mts `importLayers`) into a file store in a temp folder: Duke (Common App, Coalition,
  * essays, college-reported with a CDS record, directories, the campus pilot's policies), Simpson University (CCCU,
  * Common App's international-aid answer), Hilbert College (Common App's own-site links). The full proof, every
  * college and shard byte for byte, is the phase gate: `npm run publish-snapshot -- --store file:<import> --dry-run
@@ -31,7 +31,7 @@ import { placeSelectivity } from "../scripts/lib/selectivity.mts";
 import { formatHistoryShard } from "../scripts/history/build.mts";
 import { ALL_COLLECTIONS, COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
 import { fileStore } from "../scripts/lib/data-platform/store.mts";
-import { importLayers, writeImport } from "../scripts/import-data-from-git.mts";
+import { importLayers, writeImport } from "../scripts/import-data-from-files.mts";
 import { composeSnapshot, loadPublishLayers, type PublishLayers } from "../scripts/lib/data-platform/compose.mts";
 import { renderSnapshot, sha256 } from "../scripts/lib/data-platform/render.mts";
 import { fileBucket, movePointer, pointerFor, prune, snapshotsToKeep, uploadSnapshot, type BucketClient, type SnapshotRow } from "../scripts/lib/data-platform/upload.mts";
@@ -42,7 +42,11 @@ import { EXIT, publishSnapshot, type PublishOptions } from "../scripts/publish-s
 import { AUTH_STUB_SQL } from "./helpers/pg-auth.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const DATA = join(ROOT, "data");
+// The same three real colleges as tests/data-platform-import.test.mts's fixture, plus two high-school state shards
+// the compose step also reads (tests/fixtures/data-platform-publish/, copied from tests/fixtures/data-platform-import/
+// and data/high-schools/{state/ct,state/sc,meta,medians,review-queue}.json, committed 2026-10-31; not the real data/).
+const FIXTURE_ROOT = join(ROOT, "tests", "fixtures", "data-platform-publish");
+const DATA = join(FIXTURE_ROOT, "data");
 const IDS = ["198419", "123457", "191621"];
 const ids = new Set(IDS);
 const TODAY = "2026-10-31";
@@ -56,7 +60,7 @@ const ONLY = new Set(ALL_COLLECTIONS.filter((c) => !c.startsWith("high_schools."
 /** A file store holding the three colleges' layers, written by the import's own code. */
 async function fixtureStore(): Promise<string> {
   const dir = mkdtempSync(join(tmpdir(), "dp-publish-"));
-  await writeImport(fileStore(dir), importLayers(ROOT, { units: ids, only: ONLY }), "test");
+  await writeImport(fileStore(dir), importLayers(DATA, { units: ids, only: ONLY }), "test");
   return dir;
 }
 
@@ -93,7 +97,11 @@ test("compose gives the colleges' detail and history shards and their alias rows
   }
   const rows = (JSON.parse(readFileSync(join(DATA, "aliases.json"), "utf8")) as { unit_id: string }[]).filter((r) => ids.has(r.unit_id));
   assert.equal(formatAliasRows(first.aliases), formatAliasRows(rows as never));
-  assert.deepEqual(first.meta, committedMeta, "meta.json: every add*Meta is idempotent");
+  // sources.directory.description names every organization with a listing; this git-layout fixture's directories/
+  // files are pre-trimmed to these three colleges (tests/fixtures/data-platform-import/, see its README), so it
+  // names fewer organizations than the real meta.json copied in verbatim — a fixture-coverage mismatch, not real.
+  const stripDirDesc = (m: DatasetMeta) => ({ ...m, sources: { ...m.sources, directory: { ...m.sources.directory, description: "" } } });
+  assert.deepEqual(stripDirDesc(first.meta), stripDirDesc(committedMeta), "meta.json: every add*Meta is idempotent");
 });
 
 test("composing twice gives the same bytes and leaves the layers as they were", () => {
@@ -225,7 +233,17 @@ test("render: deterministic, every object hashed in the manifest, today's format
   assert.deepEqual(Object.keys(shared), ["meta", "national", "facts", "cpi"]);
   assert.equal(r.objects.get(historyObject("198419"))!.bytes.toString("utf8"), readFileSync(join(DATA, "history", "schools", "198419.json"), "utf8"));
   assert.equal(r.objects.get(detailObject("198419"))!.bytes.toString("utf8"), readFileSync(join(DATA, "detail", "schools", "198419.json"), "utf8"));
-  assert.equal(r.objects.get(SNAPSHOT_OBJECTS.meta)!.bytes.toString("utf8"), readFileSync(join(DATA, "meta.json"), "utf8"));
+  // sources.directory and sources["state-law"]'s descriptions name every organization/state with a listing or law;
+  // this fixture's directories/ and state laws are only as wide as these three colleges' own matches and states,
+  // so they name fewer than the real, untrimmed meta.json copied in verbatim (a fixture-coverage mismatch, not
+  // real); checked structurally instead, without those two description fields.
+  const renderedMeta = JSON.parse(r.objects.get(SNAPSHOT_OBJECTS.meta)!.bytes.toString("utf8")) as DatasetMeta;
+  const realMeta = JSON.parse(readFileSync(join(DATA, "meta.json"), "utf8")) as DatasetMeta;
+  const stripDescriptions = (m: DatasetMeta) => ({
+    ...m,
+    sources: { ...m.sources, directory: { ...m.sources.directory, description: "" }, "state-law": { ...m.sources["state-law"], description: "" } },
+  });
+  assert.deepEqual(stripDescriptions(renderedMeta), stripDescriptions(realMeta));
   assert.ok(r.objects.has("high-schools/meta.json") && [...r.objects.keys()].some((k) => k.startsWith("high-schools/state/")));
   assert.ok(r.objects.has("reference/platform-prompts.json") && r.objects.has("reference/essay-guidance.md"));
   const index = JSON.parse(r.objects.get(SNAPSHOT_OBJECTS.searchIndex)!.bytes.toString("utf8"));
@@ -391,13 +409,12 @@ const cliOptions = (dir: string, over: Partial<PublishOptions> = {}): PublishOpt
     dryRun: false,
     force: false,
     skipChangelog: false,
-    previous: "git",
+    previous: "auto",
     today: TODAY,
     revalidateWaitS: 0,
     skipTrends: true,
     env: {},
     log: (l) => lines.push(l),
-    root: ROOT,
     lines,
     deps: { now: () => new Date("2026-10-31T08:00:00.000Z") },
     ...over,
@@ -457,7 +474,7 @@ test("the CLI's process exits 2 on a hold and writes nothing on a dry run", asyn
     const held = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", script, "--store", `file:${dir}`, "--dry-run"], { encoding: "utf8", env });
     assert.equal(held.status, 2, held.stderr);
     const out = join(dir, "out");
-    const forced = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", script, "--store", `file:${dir}`, "--dry-run", "--force", "--previous", "git", "--skip-trends", "--out", out], { encoding: "utf8", env });
+    const forced = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", script, "--store", `file:${dir}`, "--dry-run", "--force", "--previous", "none", "--skip-trends", "--out", out], { encoding: "utf8", env });
     assert.equal(forced.status, 0, forced.stderr);
     assert.ok(existsSync(join(out, SNAPSHOT_OBJECTS.manifest)));
     assert.ok(!existsSync(join(dir, "_bucket")), "a dry run uploads nothing");

@@ -1,6 +1,6 @@
 /**
  * The campus-life pilot's state in the data store (specs/data-platform/pipelines.md, "campus-pilot"), keyed as
- * scripts/import-data-from-git.mts keys the files: `campus.pages` and `campus.sources` one document per college (the
+ * scripts/import-data-from-files.mts keys the files: `campus.pages` and `campus.sources` one document per college (the
  * files' `updated` in `import.headers` under "campus-pages.json" / "campus-sources.json"), refusals in
  * `directories.blocked`, run reports in `reported.reports` by file name ("campus-pilot-<run>.json"), college lists in
  * `reference.files` (data/reference/<name>.json → `<name>`). The publisher composes the pages into the dataset.
@@ -13,6 +13,8 @@ import { recordBlock } from "../directories/files.mts";
 import { readBlockedDoc, writeBlockedDoc } from "../directories/store.mts";
 import { collegeListIds, mergeRun, readCollegeList, type CollegeListFile, type PagesFile, type PublishedCollege, type SourcesFile } from "./files.mts";
 import type { CampusRecipe, CollegeResult } from "./run.mts";
+import { join } from "node:path";
+import { bundledDir, readBundledReference } from "../data-platform/bundled.mts";
 
 export const PAGES_HEADER = "campus-pages.json";
 export const SOURCES_HEADER = "campus-sources.json";
@@ -32,17 +34,19 @@ export async function readSourcesDoc(store: DataStore, today: string): Promise<S
 }
 
 /**
- * A college list: data/reference/<name>.json is read from `reference.files` (the hand-kept reference layer), falling
- * back to the file; any other path is read from disk.
+ * A college list: a reference document by name (`campus-pilot-3-colleges`) is read from `reference.files` (the
+ * hand-kept reference layer), falling back to the bundled copy; a path (`…/x.json`) is read from disk.
  */
-export async function readCollegeListFrom(store: DataStore, path: string, root: string): Promise<string[]> {
-  const m = /^(?:\.\/)?data\/reference\/(.+)\.json$/.exec(path);
-  if (m) {
-    const doc = await store.readOne<CollegeListFile>(COLLECTIONS.reference.files, m[1]);
-    if (doc) return collegeListIds(doc, `reference.files/${m[1]}`);
+export async function readCollegeListFrom(store: DataStore, list: string, root: string): Promise<string[]> {
+  // A reference document by name (`campus-pilot-3-colleges`): the store's reference.files, else the bundled copy's.
+  if (!list.includes("/") && !list.endsWith(".json")) {
+    const doc = (await store.readOne<CollegeListFile>(COLLECTIONS.reference.files, list)) ?? (existsSync(join(bundledDir(), "reference", `${list}.json`)) ? readBundledReference<CollegeListFile>(list) : null);
+    if (!doc) throw new Error(`${list}: no such reference document (neither in reference.files nor in the bundled copy)`);
+    return collegeListIds(doc, `reference.files/${list}`);
   }
-  const file = path.startsWith("/") ? path : `${root}/${path}`;
-  if (!existsSync(file)) throw new Error(`${path}: no such college list (neither in reference.files nor on disk)`);
+  // A local file (`--colleges-file`).
+  const file = list.startsWith("/") ? list : `${root}/${list}`;
+  if (!existsSync(file)) throw new Error(`${list}: no such college list file`);
   return readCollegeList(file);
 }
 

@@ -8,7 +8,7 @@ import type { TrendCard } from "@/lib/trends";
 
 /**
  * A study's card on /trends (specs/national-trends.md#where-it-appears): headline number, a sparkline of its national
- * line, one sentence, and a link. Everything but the title and color comes from data/history/trends/index.json.
+ * line, one sentence, and a link. Everything but the title and color comes from the snapshot's trends/index.json.
  */
 export function StudyCard({ study, card }: { study: StudyDef; card: TrendCard }) {
   // The first series is the headline (the study's color); others are context in neutral ink.

@@ -1,18 +1,16 @@
 /**
- * Checks data/reference/ap-courses.json and ib-courses.json, the course catalogs the course picker and the course plan
- * read (specs/chances/rigor-in-context.md, course-plan.md): unique keys, known subjects and major families, sequences
- * that resolve, https pages. Exits 1 with one line per problem.
+ * Checks the reference documents `ap-courses` and `ib-courses` in the bundled copy, the course catalogs the course
+ * picker and the course plan read (specs/chances/rigor-in-context.md, course-plan.md): unique keys, known subjects and
+ * major families, sequences that resolve, https pages. Exits 1 with one line per problem.
  *
  *   npm run check:course-catalog
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { validateCatalogs } from "../lib/chances/catalog.ts";
+import { readBundledReference } from "./lib/data-platform/bundled.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const read = (f: string) => JSON.parse(readFileSync(join(ROOT, "data", "reference", f), "utf8"));
-const ap = read("ap-courses.json");
-const ib = read("ib-courses.json");
+type Catalog = Parameters<typeof validateCatalogs>[0];
+const ap = readBundledReference<Catalog>("ap-courses");
+const ib = readBundledReference<Catalog>("ib-courses");
 const problems = validateCatalogs(ap, ib);
 if (problems.length > 0) {
   console.error(`course catalogs: ${problems.length} problem(s)`);

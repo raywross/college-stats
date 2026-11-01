@@ -4,16 +4,14 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { MIN_FULL_TIME_FACULTY_OPTIONS, facultySalaryFrom, fullTimeFacultyShareFrom, withinMinFullTimeFaculty } from "../lib/academics.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
 import type { SchoolHistory } from "../lib/history.ts";
+import { miniHistory, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 
 test("SAEQ9AT only reads the ARANK 7 (all ranks combined) row; other ranks, blanks, and zero are unreported", () => {
@@ -63,7 +61,7 @@ test("stored salary and full-time share cover most colleges, and Vanderbilt matc
   assert.equal(vandy.academics?.faculty?.full_time_share, 0.8473, "Vanderbilt Scorecard ft_faculty_rate");
   assert.equal(meta.vintages["ipeds-sal"], "Fall 2024");
 
-  const h: SchoolHistory = JSON.parse(readFileSync(join(ROOT, "data", "history", "schools", "221999.json"), "utf8"));
+  const h: SchoolHistory = miniHistory("221999")!;
   const salary = h.series.faculty_salary!;
   assert.equal(salary.start, 2016, "SAL2016_IS is the first file with the equated 9-month column");
   assert.equal(salary.values.at(-1), 148484);

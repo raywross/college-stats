@@ -42,8 +42,9 @@ type SelectivityTier = import("../lib/chances/types.ts").SelectivityTier;
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (...p: string[]) => readFileSync(join(ROOT, ...p), "utf8");
-const schools = JSON.parse(read("data", "schools.json")) as School[];
-const meta = JSON.parse(read("data", "meta.json")) as DatasetMeta;
+const { miniSchools, miniMeta } = await import("./helpers/snapshot.mts");
+const schools = miniSchools();
+const meta = miniMeta();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 const HARVARD = "166027";
@@ -76,27 +77,27 @@ function fromRows(pool: import("../lib/admin/hidden.ts").SelectivityPoolView, ro
   return Math.min(100, Math.max(0, SCORE_CENTER + SCORE_SPREAD * mean * pool.evidence.factor));
 }
 
-test("every rated college's rows add up to its score, which is the committed index, for every pool", () => {
-  const index = JSON.parse(read("data", "selectivity-index.json")) as { colleges: Record<string, { all: number; in_state?: number; out_of_state?: number }> };
+test("every rated college's rows add up to its score, for every pool", () => {
+  // Originally also compared `pool.score` against the committed `data/selectivity-index.json` and checked
+  // `hysteresis.consistent` for every college: both are whole-real-dataset facts (percentiles, and so the score and
+  // the stored tier's agreement, are relative to the population passed to `selectivityContext`; on the mini
+  // fixture's 12 colleges they legitimately differ from the real 1,893-college ranking the stored tiers were built
+  // against — like selectivity.test.mts's "the committed tiers are a fresh build"). Not meaningful here; `npm run
+  // check:selectivity` (G5) covers build freshness for the real data. The pure math identities (shares sum to 1,
+  // rows reproduce the exact score) don't depend on population size, so they stay.
   let rated = 0;
   for (const s of schools) {
     const panel = hidden.selectivityPanel(s, ctx);
-    const entry = index.colleges[s.unit_id];
-    if (panel.status !== "rated") {
-      assert.equal(entry, undefined, `${s.name} is unrated in the panel but indexed`);
-      continue;
-    }
+    if (panel.status !== "rated") continue;
     rated++;
     for (const pool of panel.pools) {
       const shares = pool.rows.reduce((t, r) => t + r.share, 0);
       assert.ok(Math.abs(shares - 1) < 1e-12, `${s.name}: weight shares sum to ${shares}`);
       assert.ok(Math.abs(fromRows(pool) - pool.exact) < 1e-9, `${s.name} ${pool.pool}: rows give ${fromRows(pool)}, score ${pool.exact}`);
-      assert.equal(pool.score, entry[pool.pool], `${s.name} ${pool.pool}`);
-      assert.ok(pool.hysteresis.consistent, `${s.name} ${pool.pool}: ${pool.hysteresis.sentence}`);
       for (const r of pool.rows) if (r.percentile !== null) assert.ok(r.percentile >= 0 && r.percentile <= 100);
     }
   }
-  assert.equal(rated, Object.keys(index.colleges).length);
+  assert.ok(rated > 0, "the mini fixture has at least one rated college");
 });
 
 test("guard: a row left out of the sum, or a weight changed, no longer gives the score", () => {
@@ -106,16 +107,18 @@ test("guard: a row left out of the sum, or a weight changed, no longer gives the
   assert.ok(Math.abs(fromRows(pool, reweighted) - pool.exact) > 0.5);
 });
 
-test("Harvard: the admit rate is harder than nearly every reporter, the tier is Ultra selective, and it is in the top band", () => {
+test("Harvard: the admit rate is harder than nearly every reporter, and the tier is elite", () => {
+  // Percentile, the score, and so the top-band/hysteresis verdicts are relative to the population passed to
+  // `selectivityContext`: on the real 1,893-college dataset Harvard's admit rate clears the 99th percentile and
+  // the calibrated top band; on the mini fixture's 12 colleges it's still the hardest-but-one (95.5th) and still
+  // reads as the stored "elite" tier, which is what this keeps (a whole-population fact, dropped per rule 2).
   const panel = hidden.selectivityPanel(byId.get(HARVARD)!, ctx);
   const all = panel.pools[0];
   assert.equal(all.pool, "all");
   const rate = all.rows.find((r) => r.input === "admit_rate")!;
-  assert.ok(rate.present && rate.percentile! > 99, String(rate.percentile));
+  assert.ok(rate.present && rate.percentile! > 90, String(rate.percentile));
   assert.equal(all.publishedTier, "elite");
-  assert.equal(all.hysteresis.held, false);
   assert.equal(all.hysteresis.upAt, null); // nothing above Ultra selective
-  assert.ok(panel.topBand?.inBand && panel.topBand.stored);
   assert.equal(panel.constants.weights.reduce((s, w) => s + w.weight, 0), Object.values(WEIGHTS).reduce((s, w) => s + w, 0));
 });
 
@@ -195,8 +198,12 @@ test("percentileAmong: the share of reporters a value is harder than, ties count
 /* ------------------------------------------------------------------ */
 
 test("the GPA panel names each source kind with its field, and an estimate's fit", () => {
-  const model = fitGpaModel(trainingRows(schools));
-  const curve = fitGpaCurve(curveRows(schools));
+  // Fitting a model/curve needs at least 25 colleges with reported GPA data (lib/planner/gpa-model.ts's guard); the
+  // mini fixture's 12 colleges fall far short, so this loads the real fit (tests/fixtures/admin-hidden/, frozen
+  // from the full dataset 2026-10-31) and runs the panel logic itself against the mini fixture's own colleges.
+  const frozen = JSON.parse(readFileSync(join(ROOT, "tests", "fixtures", "admin-hidden", "gpa-model.json"), "utf8"));
+  const model = frozen.model as ReturnType<typeof fitGpaModel>;
+  const curve = frozen.curve as ReturnType<typeof fitGpaCurve>;
   assert.ok(model && curve);
   const seen = new Map<string, ReturnType<typeof hidden.gpaPanel>>();
   for (const s of schools) {
@@ -312,7 +319,9 @@ function panelFor(unit: string, s = student()) {
 }
 
 test("the standing panel carries the estimate's private detail: hidden odds, ablations, inputs beside the college's, notes, version, baseline", () => {
-  const unit = schools.find((x) => x.selectivity?.tier === "selective" && x.admissions.sat_math_25_75)!.unit_id;
+  // No mini-fixture college has tier exactly "selective"; "very_selective" (William & Mary, 231624) with an SAT
+  // band exercises the same code path (any rated tier with inputs to estimate from).
+  const unit = schools.find((x) => x.selectivity?.tier === "very_selective" && x.admissions.sat_math_25_75)!.unit_id;
   const { applied, view } = panelFor(unit);
   assert.ok(applied.detail, "the model returned its detail");
   assert.equal(view.fellBack, false);

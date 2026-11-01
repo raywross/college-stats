@@ -24,7 +24,7 @@ const short = (code: number) => (conferenceName(code) ?? String(code)).replace(/
 
 /**
  * /trends/conferences (specs/trends/conferences.md): the Power 4 side by side, every conference by level (sortable),
- * and this year's realignment. Every number and year comes from data/history/trends/conferences.json.
+ * and this year's realignment. Every number and year comes from the snapshot's trends/conferences.json.
  */
 export default async function ConferencesPage() {
   const [file, files, data] = await Promise.all([getTrendFile("conferences"), getHistoryFiles(), getData()]);

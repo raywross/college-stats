@@ -1,7 +1,7 @@
 # Runs the high school profile pilot (scripts/sync-hs-profiles.mts; specs/product/high-school-data.md "Pilot results")
 # where the Anthropic key lives (the repository secret ANTHROPIC_API_KEY; there is no key in local .env files). It runs
 # the pilot's 100 schools (the profile-pilot document), extracts the answer key's schools, and scores the extraction
-# against data/reference/hs-profile-answer-key.json, writing the high-school layers (specs/data-platform/pipelines.md)
+# against the reference document hs-profile-answer-key (the store's, else the bundled copy's), writing the high-school layers (specs/data-platform/pipelines.md)
 # in one change set that all three steps share (opened and closed with scripts/data-change-set.mts).
 #
 # The pilot's results were reviewed on a branch before; now the change set closes held, so nothing from a pilot is
@@ -69,6 +69,17 @@ jobs:
           cache: npm
       - if: steps.secrets.outputs.ready == 'true'
         run: npm ci
+
+      # The bundled copy (.data/snapshot/): the current snapshot's colleges and reference documents, which the scripts
+      # read (scripts/lib/data-platform/bundled.mts). npm ci's postinstall leaves the mini fixture there when nothing is
+      # configured, so this fetch is what makes the scripts see every college; a failed fetch fails the run.
+      - name: Fetch the current snapshot
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          DATA_SNAPSHOT_URL: ${{ vars.DATA_SNAPSHOT_URL }}
+        run: |
+          export DATA_SNAPSHOT_URL="${DATA_SNAPSHOT_URL:-${DATA_SUPABASE_URL%/}/storage/v1/object/public/snapshots}"
+          npm run fetch-snapshot
 
       - name: Open the change set
         id: set

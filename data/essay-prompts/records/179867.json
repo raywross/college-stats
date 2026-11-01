@@ -1,5 +1,0 @@
-{"unit_id":"179867","name":"Washington University in St Louis","cycle":"2026-27","status":"published","source_url":"https://admissions.washu.edu/how-to-apply/first-year-us-applicants/","retrieved":"2026-10-30","sha256":"c5378288e3628d5ac0c81a4026ddeb319ec71de0cfb61a27eeea85cd049e829b","archive":"local:c5378288e3628d5ac0c81a4026ddeb319ec71de0cfb61a27eeea85cd049e829b.html","cycle_quote":"are applying to become a part of the class entering in fall 2027","via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
-  "prompts": [
-  {"id":"179867:2026-27:1","text":"Please tell us what you are interested in studying at college and why.","kind":"essay","limit":{"kind":"words","max":250},"required":true,"applies_to":"all","quote":"A 250-word response to the question “Please tell us what you are interested in studying at college and why.”"}
-]
-}

@@ -42,7 +42,7 @@ function FactCard({
 
 /**
  * Home "What's changed": national trend facts over fixed panels, precomputed by `npm run sync-history` into
- * data/history/facts.json (specs/trends-design.md#home-whats-changed-3-facts). Renders nothing without history.
+ * the snapshot's shared history (facts) (specs/trends-design.md#home-whats-changed-3-facts). Renders nothing without history.
  */
 export async function WhatsChanged({
   valueColor,

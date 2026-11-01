@@ -32,11 +32,15 @@ import type { TrendBuilder, TrendContext, TrendOutput } from "./context.mts";
 
 const NAME = "movers";
 
-export const EXCLUDED_CAMPUSES_FILE = join("data", "trends", "excluded-campuses.json");
+/** The exclusions' file inside a folder in the old data/ layout (the reference document `excluded-campuses`). */
+export const EXCLUDED_CAMPUSES_FILE = join("trends", "excluded-campuses.json");
 
-/** The reviewed campus exclusions (closed, merged, or split campuses): pass `.campuses` to `exclusionSets`. */
-export function loadMoverExclusions(root: string): { campuses: CampusExclusionEntry[] } {
-  return { campuses: JSON.parse(readFileSync(join(root, EXCLUDED_CAMPUSES_FILE), "utf8")) as CampusExclusionEntry[] };
+/**
+ * The reviewed campus exclusions (closed, merged, or split campuses) of a folder in the old data/ layout (`dataDir`):
+ * pass `.campuses` to `exclusionSets`. A trend build from the bundled copy or the publisher carries them in the context.
+ */
+export function loadMoverExclusions(dataDir: string): { campuses: CampusExclusionEntry[] } {
+  return { campuses: JSON.parse(readFileSync(join(dataDir, EXCLUDED_CAMPUSES_FILE), "utf8")) as CampusExclusionEntry[] };
 }
 
 /** The reviewed campus exclusions a trend build uses: the context's own (the publisher's, from its layer), else the file. */

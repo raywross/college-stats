@@ -14,6 +14,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import * as nodeModule from "node:module";
+import { miniReference } from "./helpers/snapshot.mts";
 
 const { registerHooks } = nodeModule as unknown as {
   registerHooks(hooks: { resolve(specifier: string, context: unknown, next: (s: string, c: unknown) => { url: string; shortCircuit?: boolean }): { url: string; shortCircuit?: boolean } }): void;
@@ -40,7 +41,7 @@ type Params = import("@anthropic-ai/sdk").default.MessageStreamParams;
 type StreamEvent = import("../lib/essays/review.ts").ReviewStreamEvent;
 
 const ROOT = join(import.meta.dirname, "..");
-const GUIDANCE = parseGuidance(readFileSync(join(ROOT, "data/reference/essay-guidance/guidance.md"), "utf8"));
+const GUIDANCE = parseGuidance(miniReference<string>("essay-guidance"));
 
 const ESSAY = "11111111-1111-4111-8111-111111111111";
 const VERSION = "22222222-2222-4222-8222-222222222222";

@@ -6,7 +6,7 @@
  * "GOVM" (Governing Member, the voting membership religious-life.md's admission-factor rule means); the rest are
  * IAFF (international affiliate), AMEM (affiliate), and CPAR (corporate partner), left out.
  *
- * This is a membership fact about the college, not a campus chapter: `npm run merge-directories` reads this
+ * This is a membership fact about the college, not a campus chapter: the publisher's directories step reads this
  * adapter's file for `school.religion.cccu_member` (lib/cds/religion-cccu merge step) instead of the usual
  * chapter-listing table, so a CCCU member's profile never shows "CCCU" as a Christian student group.
  */

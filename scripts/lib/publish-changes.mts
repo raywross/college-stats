@@ -2,11 +2,11 @@
  * The change log (specs/serving-architecture.md section 2; specs/product/follow-colleges.md#detecting-changes;
  * lib/changes.ts). The snapshot publisher records the change log through `computeChanges` and `recordPublish`
  * (scripts/lib/data-platform/changelog.mts), with two snapshots in place of two commits; the git-based CLI
- * (`npm run publish-changes`) and its workflow are retired. `publishChanges` and `gitAccess` stay for the backfill and
- * rebuild scripts and the tests.
+ * (`npm run publish-changes`) and its workflow, and the backfill and rebuild scripts, are retired. `publishChanges` and
+ * `gitAccess` stay for the tests and for reading the change log's history before phase 4.
  *
- * In `publishChanges`, both datasets come from git, never from the network: data/schools.json, data/meta.json and
- * data/release-calendar.json at the base commit (the last one recorded in dataset_publishes) and at the deployed
+ * In `publishChanges`, both datasets come from git history, never from the network or the working tree: the colleges,
+ * meta and release calendar as commits made before phase 4 held them (HISTORICAL_DATA_DIR) at the base commit (the last one recorded in dataset_publishes) and at the deployed
  * commit, read with `git show <sha>:<path>`. The changes between them are staged with stage_dataset_changes(), then
  * publish_changes() records the publish and moves them into dataset_changes in one transaction
  * (supabase/migrations/20261007120000_publish_changes.sql). Re-running for a commit already recorded writes nothing.
@@ -23,9 +23,19 @@ import { TIER_FIELDS, describeChange, diffSchools, type DatasetChange, type Data
 export const PUBLISH_CHANGES_MIGRATION = "supabase/migrations/20261007120000_publish_changes.sql";
 /** Changes per staging call: rows are small (~300 bytes), so a big release (~20,000 rows) takes ten calls. */
 export const CHANGE_BATCH = 2000;
-/** The files a dataset is diffed from, at a commit. */
-export const DATASET_PATHS = { schools: "data/schools.json", meta: "data/meta.json", calendar: "data/release-calendar.json" } as const;
-/** data/schools.json is ~17 MB; execFileSync's default buffer is 1 MB. */
+/**
+ * The folder the dataset's files sat in inside commits made before phase 4 (specs/data-platform/git-ci-tests.md: the
+ * folder has left the repository). Only `git show <sha>:<path>` reads these paths, from history; nothing reads them
+ * from the working tree.
+ */
+export const HISTORICAL_DATA_DIR = "data";
+/** The files a dataset is diffed from, at a commit made before phase 4. */
+export const DATASET_PATHS = {
+  schools: `${HISTORICAL_DATA_DIR}/schools.json`,
+  meta: `${HISTORICAL_DATA_DIR}/meta.json`,
+  calendar: `${HISTORICAL_DATA_DIR}/release-calendar.json`,
+} as const;
+/** A commit's schools.json is ~17 MB; execFileSync's default buffer is 1 MB. */
 const GIT_MAX_BUFFER = 512 * 1024 * 1024;
 /** Publishes listed per request while looking for the newest one whose commit is in this repository. */
 const PUBLISH_PAGE = 100;
@@ -90,7 +100,7 @@ export function readDatasetAt(readAt: ReadAt, sha: string): DatasetAt {
 export function selectivityMethodAt(readAt: ReadAt, sha: string): string | null | "missing" {
   let text: string;
   try {
-    text = readAt(sha, "data/selectivity-index.json");
+    text = readAt(sha, `${HISTORICAL_DATA_DIR}/selectivity-index.json`);
   } catch {
     return "missing";
   }

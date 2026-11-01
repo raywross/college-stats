@@ -1,0 +1,350 @@
+[
+  {
+    "unit_id": "142115",
+    "name": "Boise State University",
+    "location": {
+      "city": "Boise",
+      "state": "ID",
+      "zip": "83725",
+      "region": "West",
+      "lat": 43.604284,
+      "lng": -116.203301
+    },
+    "admissions": {
+      "year": 2024,
+      "applicants": 16082,
+      "admitted": 14025,
+      "enrolled": 3379,
+      "acceptance_rate": 0.8721,
+      "sat_reading_25_75": null,
+      "sat_math_25_75": null,
+      "act_composite_25_75": null,
+      "test_submission_rate_sat": null,
+      "test_submission_rate_act": null,
+      "test_policy": "not-considered",
+      "by_sex": {
+        "men": {
+          "applicants": 6677,
+          "admitted": 5749,
+          "enrolled": 1359
+        },
+        "women": {
+          "applicants": 9405,
+          "admitted": 8276,
+          "enrolled": 2020
+        }
+      },
+      "factors": {
+        "gpa": "required",
+        "class_rank": "not_considered",
+        "hs_record": "required",
+        "college_prep": "not_considered",
+        "recommendations": "not_considered",
+        "competencies": "not_considered",
+        "english_test": "required",
+        "other_test": "not_considered",
+        "work_experience": "not_considered",
+        "essay": "not_considered",
+        "legacy": "not_considered"
+      },
+      "sat_reading_median": null,
+      "sat_math_median": null,
+      "act_composite_median": null,
+      "act_english_25_75": null,
+      "act_math_25_75": null,
+      "application_fee": 50,
+      "accepts_ap_credit": true,
+      "open_admission": false
+    },
+    "reported": {},
+    "lineage": {}
+  },
+  {
+    "unit_id": "142276",
+    "name": "Idaho State University",
+    "location": {
+      "city": "Pocatello",
+      "state": "ID",
+      "zip": "83209",
+      "region": "West",
+      "lat": 42.863832,
+      "lng": -112.432312
+    },
+    "admissions": {
+      "year": null,
+      "applicants": null,
+      "admitted": null,
+      "enrolled": null,
+      "acceptance_rate": null,
+      "sat_reading_25_75": null,
+      "sat_math_25_75": null,
+      "act_composite_25_75": null,
+      "test_submission_rate_sat": null,
+      "test_submission_rate_act": null,
+      "test_policy": null,
+      "by_sex": null,
+      "factors": null,
+      "sat_reading_median": null,
+      "sat_math_median": null,
+      "act_composite_median": null,
+      "act_english_25_75": null,
+      "act_math_25_75": null,
+      "application_fee": 50,
+      "accepts_ap_credit": true,
+      "open_admission": true
+    },
+    "lineage": {}
+  },
+  {
+    "unit_id": "243780",
+    "name": "Purdue University-Main Campus",
+    "location": {
+      "city": "West Lafayette",
+      "state": "IN",
+      "zip": "47907",
+      "region": "Midwest",
+      "lat": 40.428206,
+      "lng": -86.914435
+    },
+    "admissions": {
+      "year": 2025,
+      "applicants": 87220,
+      "admitted": 37881,
+      "enrolled": 9656,
+      "acceptance_rate": 0.4343155239623939,
+      "federal": {
+        "year": 2024,
+        "applicants": 78745,
+        "admitted": 39272,
+        "enrolled": 11467,
+        "acceptance_rate": 0.4987
+      },
+      "sat_reading_25_75": [
+        600,
+        720
+      ],
+      "sat_math_25_75": [
+        600,
+        760
+      ],
+      "act_composite_25_75": [
+        27,
+        34
+      ],
+      "test_submission_rate_sat": 0.79,
+      "test_submission_rate_act": 0.25,
+      "test_policy": "required",
+      "by_sex": {
+        "men": {
+          "applicants": 48473,
+          "admitted": 22551,
+          "enrolled": 6945
+        },
+        "women": {
+          "applicants": 30272,
+          "admitted": 16721,
+          "enrolled": 4522
+        }
+      },
+      "factors": {
+        "gpa": "considered",
+        "class_rank": "considered",
+        "hs_record": "required",
+        "college_prep": "considered",
+        "recommendations": "considered",
+        "competencies": "considered",
+        "english_test": "required",
+        "other_test": "not_considered",
+        "work_experience": "considered",
+        "essay": "required",
+        "legacy": "not_considered"
+      },
+      "federal_factors": {
+        "gpa": "not_considered"
+      },
+      "sat_reading_median": 660,
+      "sat_math_median": 690,
+      "act_composite_median": 31,
+      "act_english_25_75": [
+        26,
+        35
+      ],
+      "act_math_25_75": [
+        26,
+        34
+      ],
+      "application_fee": 60,
+      "accepts_ap_credit": true,
+      "open_admission": false,
+      "federal_tests": {
+        "policy": {
+          "year": null,
+          "test_policy": "required"
+        }
+      }
+    },
+    "reported": {},
+    "lineage": {}
+  },
+  {
+    "unit_id": "228723",
+    "name": "Texas A&M University-College Station",
+    "location": {
+      "city": "College Station",
+      "state": "TX",
+      "zip": "77843",
+      "region": "Southwest",
+      "lat": 30.618726,
+      "lng": -96.336475
+    },
+    "admissions": {
+      "year": 2024,
+      "applicants": 54669,
+      "admitted": 31397,
+      "enrolled": 12530,
+      "acceptance_rate": 0.5743,
+      "sat_reading_25_75": [
+        580,
+        690
+      ],
+      "sat_math_25_75": [
+        570,
+        710
+      ],
+      "act_composite_25_75": [
+        25,
+        31
+      ],
+      "test_submission_rate_sat": 0.79,
+      "test_submission_rate_act": 0.21,
+      "test_policy": "considered",
+      "by_sex": {
+        "men": {
+          "applicants": 27258,
+          "admitted": 15582,
+          "enrolled": 6291
+        },
+        "women": {
+          "applicants": 27411,
+          "admitted": 15815,
+          "enrolled": 6239
+        }
+      },
+      "factors": {
+        "gpa": "required",
+        "class_rank": "required",
+        "hs_record": "required",
+        "college_prep": "considered",
+        "recommendations": "considered",
+        "competencies": "not_considered",
+        "english_test": "required",
+        "other_test": "not_considered",
+        "work_experience": "considered",
+        "essay": "required",
+        "legacy": "not_considered"
+      },
+      "sat_reading_median": 630,
+      "sat_math_median": 640,
+      "act_composite_median": 28,
+      "act_english_25_75": [
+        24,
+        33
+      ],
+      "act_math_25_75": [
+        24,
+        30
+      ],
+      "application_fee": 75,
+      "accepts_ap_credit": true,
+      "open_admission": false,
+      "federal_tests": {
+        "policy": {
+          "year": null,
+          "test_policy": "considered"
+        }
+      }
+    },
+    "lineage": {}
+  },
+  {
+    "unit_id": "104179",
+    "name": "University of Arizona",
+    "location": {
+      "city": "Tucson",
+      "state": "AZ",
+      "zip": "85721",
+      "region": "Southwest",
+      "lat": 32.232672,
+      "lng": -110.950815
+    },
+    "admissions": {
+      "year": 2024,
+      "applicants": 58339,
+      "admitted": 50252,
+      "enrolled": 9240,
+      "acceptance_rate": 0.8614,
+      "sat_reading_25_75": [
+        580,
+        700
+      ],
+      "sat_math_25_75": [
+        570,
+        720
+      ],
+      "act_composite_25_75": [
+        21,
+        29
+      ],
+      "test_submission_rate_sat": 0.11,
+      "test_submission_rate_act": 0.18,
+      "test_policy": "required-some",
+      "by_sex": {
+        "men": {
+          "applicants": 25635,
+          "admitted": 21436,
+          "enrolled": 3714
+        },
+        "women": {
+          "applicants": 32704,
+          "admitted": 28816,
+          "enrolled": 5526
+        }
+      },
+      "factors": {
+        "gpa": "required",
+        "class_rank": "considered",
+        "hs_record": "required",
+        "college_prep": "considered",
+        "recommendations": "not_considered",
+        "competencies": "not_considered",
+        "english_test": "required",
+        "other_test": "considered",
+        "work_experience": "considered",
+        "essay": "considered",
+        "legacy": "not_considered"
+      },
+      "sat_reading_median": 640,
+      "sat_math_median": 650,
+      "act_composite_median": 25,
+      "act_english_25_75": [
+        20,
+        30
+      ],
+      "act_math_25_75": [
+        19,
+        28
+      ],
+      "application_fee": 50,
+      "accepts_ap_credit": true,
+      "open_admission": false,
+      "federal_tests": {
+        "policy": {
+          "year": null,
+          "test_policy": "considered"
+        }
+      }
+    },
+    "reported": {},
+    "lineage": {}
+  }
+]

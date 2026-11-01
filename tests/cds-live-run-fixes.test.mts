@@ -79,10 +79,9 @@ test("an aid year read from the heading its mark sits under is found on the head
 test("next year's tuition is read from the cells of the college's own sector: a public's stray private cell is ignored", async () => {
   // Florida's 2025–26 record had its in-state $6,436 in G.101 (the private cell) as well as G.104, and the page showed it
   // as a private college's tuition.
-  const { readFileSync } = await import("node:fs");
-  const { join } = await import("node:path");
   const { costAndDebtFromRecord, tuitionSector } = await import("../lib/cds/cost-and-debt.ts");
-  const schools = JSON.parse(readFileSync(join(import.meta.dirname, "..", "data", "schools.json"), "utf8")) as { unit_id: string; type: string }[];
+  const { miniSchools } = await import("./helpers/snapshot.mts");
+  const schools = miniSchools() as unknown as { unit_id: string; type: string }[];
   const uf = schools.find((s) => s.unit_id === "134130")!;
   assert.equal(tuitionSector(uf as never), "public");
   const cell = (v: number) => ({ v, status: "passed", quote: `Tuition | $${v}`, cell: "G1" });

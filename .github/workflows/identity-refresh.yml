@@ -68,6 +68,17 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # The bundled copy (.data/snapshot/): the scripts read the colleges from it (scripts/lib/data-platform/bundled.mts).
+      # npm ci's postinstall leaves the mini fixture there when nothing is configured, so this fetch is what makes the
+      # run see every college; a failed fetch fails the run.
+      - name: Fetch the current snapshot
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          DATA_SNAPSHOT_URL: ${{ vars.DATA_SNAPSHOT_URL }}
+        run: |
+          export DATA_SNAPSHOT_URL="${DATA_SNAPSHOT_URL:-${DATA_SUPABASE_URL%/}/storage/v1/object/public/snapshots}"
+          npm run fetch-snapshot
+
       # identity.probe's newest `retrieved` date, compared with today (specs/school-identity/follow-ups.md).
       - name: Check whether a refresh is due
         id: due

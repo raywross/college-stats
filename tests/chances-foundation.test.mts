@@ -35,11 +35,12 @@ import { FIELDS, type FieldPath } from "../lib/fields.ts";
 import { lineageFor, sourcesForFields, validateRegistry } from "../lib/lineage.ts";
 import { GLOSSARY, isTermKey } from "../lib/glossary.ts";
 import { buildCrdcPatch } from "../scripts/lib/high-schools/crdc.mts";
+import { miniMeta, miniSchools, miniReference } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const readJson = <T,>(...p: string[]): T => JSON.parse(readFileSync(join(ROOT, ...p), "utf8")) as T;
-const meta = readJson<DatasetMeta>("data", "meta.json");
-const schools = readJson<School[]>("data", "schools.json");
+const meta = miniMeta();
+const schools = miniSchools();
 const known = new Set(schools.map((s) => s.unit_id));
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
@@ -198,7 +199,9 @@ test("subjectGpa: every row in the subject, advanced, honors, and regular togeth
 
 /* ---- The school's offering ---- */
 
-const DETAIL = readJson<HighSchoolDetail>("data", "high-schools", "detail", "362505003470.json");
+// 362505003470 isn't in the mini fixture's two high-school states (CT, SC); its real detail record is copied
+// separately (tests/fixtures/data-platform-sources/high-schools/detail/, see its README).
+const DETAIL = readJson<HighSchoolDetail>("tests", "fixtures", "data-platform-sources", "high-schools", "detail", "362505003470.json");
 const rigor = (o: Partial<NonNullable<School["admissions"]>> & Record<string, number | null> = {}) => ({
   rigor: { ap_courses: 14, ap_enrolled: 300, ap_exam_takers: null, ap_passed_some: null, ib_enrolled: null, dual_enrolled: 40, enrollment: 1500, ...o },
 });
@@ -290,11 +293,13 @@ test("the catalog check refuses each broken rule", () => {
 
 /* ---- Automatic admission ---- */
 
-const GUARANTEED = readJson<GuaranteedFile>("data", "guaranteed-admission.json");
+const GUARANTEED = miniReference<GuaranteedFile>("guaranteed-admission");
 const TODAY = new Date("2026-10-11T12:00:00Z");
 
 test("the guaranteed-admission file passes its check; UT Austin's top 5% applies for the file's cycle", () => {
-  assert.deepEqual(validateGuaranteed(GUARANTEED, TODAY, known), []);
+  // No `known`: most curated programs' colleges are outside the mini fixture's 38 (the publisher's reference gate,
+  // G5, covers membership against the real dataset at publish time).
+  assert.deepEqual(validateGuaranteed(GUARANTEED, TODAY), []);
   const r = runScript("check-guaranteed-admission.mts");
   assert.equal(r.status, 0, r.stderr);
   const ut = programsFor("228778");
@@ -333,10 +338,11 @@ test("the guaranteed-admission check refuses each broken rule, including a past 
 
 /* ---- Major admission ---- */
 
-const MAJOR = readJson<MajorAdmissionFile>("data", "major-admission.json");
+const MAJOR = miniReference<MajorAdmissionFile>("major-admission");
 
 test("the major-admission file passes its check; Cornell Engineering's required courses are quoted", () => {
-  assert.deepEqual(validateMajorAdmission(MAJOR, known), []);
+  // No `known`: most curated units' colleges are outside the mini fixture's 38 (G5's reference gate covers it).
+  assert.deepEqual(validateMajorAdmission(MAJOR), []);
   const r = runScript("check-major-admission.mts");
   assert.equal(r.status, 0, r.stderr);
   const units = majorUnitsFor("190415");

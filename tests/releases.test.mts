@@ -1,11 +1,9 @@
 /**
- * Release calendar (data/release-calendar.json + lib/releases.ts). `npm test`.
+ * Release calendar (the snapshot's release-calendar.json, here the mini fixture's, + lib/releases.ts). `npm test`.
  * See specs/data-page.md.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import {
   applyProbes,
   expectedLabel,
@@ -18,9 +16,10 @@ import {
   type Release,
   type ReleaseCalendar,
 } from "../lib/releases.ts";
+import { miniReleaseCalendar } from "./helpers/snapshot.mts";
 import { VINTAGE_KEYS } from "../lib/lineage.ts";
 
-const CALENDAR: ReleaseCalendar = JSON.parse(readFileSync(join(import.meta.dirname, "..", "data", "release-calendar.json"), "utf8"));
+const CALENDAR: ReleaseCalendar = miniReleaseCalendar();
 
 const release = (over: Partial<Release> = {}): Release => ({
   id: "r",

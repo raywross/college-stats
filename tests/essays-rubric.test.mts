@@ -13,10 +13,11 @@ import { citedUrls, GUIDANCE_HEADINGS, guidanceText, loadGuidance, missingSectio
 import { ESSAY_KINDS } from "../lib/essays/prompts.ts";
 import { givesInstruction, hasGradeWord, hasPrediction, sentenceCount } from "../lib/essays/review-guard.ts";
 import { CATEGORY_LABEL, CATEGORY_RULES, FIX_MAX_WORDS, MAX_NOTES, NOTE_CATEGORIES, OBSERVATION_WORDS, QUOTE_RUN_MAX, REFUSALS, REVIEW_CAPS, REVIEW_METHOD, REVIEW_MODEL, rubricText, WHY_WORDS } from "../lib/essays/rubric.ts";
+import { miniReference } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
-const GUIDANCE_MD = read("data/reference/essay-guidance/guidance.md");
+const GUIDANCE_MD = miniReference<string>("essay-guidance");
 
 test("REVIEW_METHOD is a dotted date edition and the model is Opus 5", () => {
   assert.match(REVIEW_METHOD, /^\d{4}\.\d{2}\.\d{2}\.\d+$/);
@@ -133,7 +134,7 @@ test("each kind gets its sections: interest only for a why-us or program prompt,
 });
 
 test("every url the reader may cite is one sources.json holds", () => {
-  const file = JSON.parse(read("data/reference/essay-guidance/sources.json")) as { sources: { url: string }[] };
+  const file = miniReference<{ sources: { url: string }[] }>("essay-guidance/sources");
   const norm = (u: string) => u.replace(/\/+$/, "");
   const known = new Set(file.sources.map((s) => norm(s.url)));
   const sections = parseGuidance(GUIDANCE_MD);

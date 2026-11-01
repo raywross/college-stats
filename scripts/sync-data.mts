@@ -9,8 +9,6 @@
  *   npm run sync-data -- --store file:/tmp/dp       # a folder (the file store)
  *   npm run sync-data -- --include-online
  *   npm run sync-data -- --releases-only            # only check NCES for upcoming releases (no API key needed)
- *   npm run sync-data -- --store supabase --out data   # also the old file layout: the publisher's compose of the
- *                                                       # new base and the store's later layers, written to data/
  *   npm run sync-data -- --dry-run                  # build and check; write nothing to the store
  *   --change-set <id> writes into a set the workflow opened.
  *
@@ -22,7 +20,7 @@
  *      race/ethnicity, Pell and first-gen shares, cost & outcomes.
  *   2. IPEDS Admissions survey (ADM, bulk CSV): applicants, admitted, enrolled,
  *      SAT/ACT percentiles, test submission rates, test policy. Newest year wins.
- *   3. The legacy overrides (`overrides.legacy`, imported from data/overrides.json): hand-verified patches
+ *   3. The legacy overrides (`overrides.legacy`): hand-verified patches
  *      applied last, so newer primary-source figures survive every sync.
  *
  * Every value's source is tracked (lib/fields.ts + school.lineage; specs/data-lineage.md).
@@ -30,9 +28,9 @@
  * without a source, a release without a year, or a later layer's value in the base stops the sync.
  */
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdtempSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import type { DatasetMeta, RepaymentStatus, School, SchoolType, TestPolicy } from "../lib/types";
 import { validateLineage } from "../lib/lineage.ts";
 import { COLLEGE_SITE_SOURCE } from "../lib/reported.ts";
@@ -44,7 +42,7 @@ import { OM_COLUMNS, OM_LAG, OM_PIVOT, eightYearFrom, timeToDegreeCoverage } fro
 import { fetchPivotedTable } from "./lib/om.mts";
 import { GR_PELL_BACHELOR_TYPE, GR_PELL_COHORT_TYPE, GR_PELL_COLUMNS, bachelorSubcohortFrom, RACE_GROUPS, aidGroupGradFrom, raceGradFrom, scorecardRaceCohortField, scorecardRaceRateField } from "../lib/graduation-groups.ts";
 import { residenceFrom } from "../lib/residence.ts";
-import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence, writeDetails } from "./lib/residence-sync.mts";
+import { addResidenceMeta, buildDetails, crossCheckDerived, detailProblems, fetchResidence } from "./lib/residence-sync.mts";
 import { addTransferMeta, checkTransfers, fetchTransfers } from "./lib/transfers-sync.mts";
 import { addOnlineShareMeta, checkOnlineShare, fetchOnlineShare } from "./lib/online-share-sync.mts";
 import { addLgbtq, addStateLawMeta, fetchLgbtqInputs, lgbtqSummary } from "./lib/lgbtq-sync.mts";
@@ -59,10 +57,11 @@ import { fetchValueLabels } from "./lib/ipeds-dictionary.mts";
 import { religionFrom } from "../lib/religion.ts";
 import { MIN_APPLICANTS_FOR_RATE, acceptanceRate, applicationFeeFrom, computePrices, factorsFrom, housingFrom, ipedsNum, parseShareBand, priceSuffix, promiseProgramFrom, raceShares, toAid, tuitionPlansFrom } from "../lib/derive.ts";
 import { normalizeUrl, websiteMismatch } from "../lib/links.ts";
-import { addIdentityMeta, applyIdentity, type IdentityInputs } from "../lib/identity.ts";
-import { formatIndexFile } from "./lib/selectivity.mts";
-import { loadIdentityInputs } from "./lib/identity-sync.mts";
-import { aliasRowsFrom, formatAliasRows } from "./lib/aliases-sync.mts";
+import { addIdentityMeta, applyIdentity, emptyIdentityInputs, type IdentityInputs } from "../lib/identity.ts";
+import type { StateLawTable } from "../lib/lgbtq.ts";
+import { SNAPSHOT_OBJECTS } from "../lib/data-platform/snapshot.ts";
+import { bundledDir, readBundledColleges, readBundledJson, readBundledReference } from "./lib/data-platform/bundled.mts";
+import { aliasRowsFrom } from "./lib/aliases-sync.mts";
 import type { CuratedAliasEntry } from "../lib/aliases.ts";
 import { fetchOpenAdmissionFile } from "./lib/open-admission.mts";
 import { applyOpenAdmission, openAdmissionMeta } from "../lib/open-admission.ts";
@@ -71,19 +70,15 @@ import { datedSourceFiles } from "./source-files.mts";
 import { COLLECTIONS, SINGLE_KEYS, loadIdentity, readLayer } from "./lib/data-platform/layers.mts";
 import { changeSetFromArgv, openProducerRun, storeFromArgv, writeChanged } from "./lib/data-platform/producer.mts";
 import { flagValue, type DataStore } from "./lib/data-platform/store.mts";
-import { composeSnapshot, loadPublishLayers } from "./lib/data-platform/compose.mts";
-import { baseDocuments, MIRRORED_BASE, overlayStore, type BaseDocuments } from "./lib/sync-data-base.mts";
+import { baseDocuments, MIRRORED_BASE, type BaseDocuments } from "./lib/sync-data-base.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const CALENDAR = join(ROOT, "data", "release-calendar.json");
-const STATE_LAWS = join(ROOT, "data", "state-laws.json");
 const API = "https://api.data.gov/ed/collegescorecard/v1/schools";
 const ARGV = process.argv.slice(2);
 const INCLUDE_ONLINE = ARGV.includes("--include-online");
 const RELEASES_ONLY = ARGV.includes("--releases-only");
 const DRY_RUN = ARGV.includes("--dry-run");
-/** `--out <dir>`: also write the old file layout (schools.json, meta.json, detail/, …) into this data folder. */
-const OUT_DIR = flagValue(ARGV, "--out");
+if (flagValue(ARGV, "--out") !== undefined) throw new Error("--out is gone: sync-data writes the base layer to the store; the publisher composes and renders the snapshot");
 if (ARGV.includes("--links")) {
   console.error("sync-data: --links is gone; the site probe is the identity-refresh workflow's (npm run probe-sites).");
   process.exit(1);
@@ -647,7 +642,7 @@ function buildMeta(
       // Set with its source by addFieldOfStudyMeta; also no single year (every metric pools a different cohort).
       "scorecard-fos": null,
       // The Common App vintages are set with their source by addCommonAppMeta (scripts/lib/common-app/merge.mts), only
-      // when data/common-app/ holds an edition; until then meta has neither (lib/lineage.ts MERGED_LATER).
+      // when the common_app layer holds an edition; until then meta has neither (lib/lineage.ts MERGED_LATER).
     } satisfies Omit<DatasetMeta["vintages"], "common-app-grid" | "common-app-members" | "coalition-members"> as DatasetMeta["vintages"],
   };
 }
@@ -789,31 +784,10 @@ async function writeBase(store: DataStore, docs: BaseDocuments, changeSet: numbe
   console.log(`Change set ${run.handle.id}${run.attached ? " (the workflow's)" : ""}: applied`);
 }
 
-const jsonText = (v: unknown) => `${JSON.stringify(v, null, 2)}\n`;
-
-/**
- * `--out <dir>`: the old file layout, for a one-off regeneration of data/ (phases 3 and 4). The new base is laid over
- * the store and the publisher composes it with the store's later layers (no merge is repeated here), then the files
- * are written as sync-data wrote them. Trends and tier hysteresis come from `<dir>/schools.json` when it exists.
- */
-async function writeFileLayout(dir: string, store: DataStore, docs: BaseDocuments): Promise<void> {
-  const previousPath = join(dir, "schools.json");
-  const previous = existsSync(previousPath) ? (JSON.parse(readFileSync(previousPath, "utf8")) as School[]) : null;
-  const layers = await loadPublishLayers(overlayStore(store, docs));
-  const composed = composeSnapshot(layers, { previous, today: new Date().toISOString().slice(0, 10) });
-  if (composed.problems.length) throw new Error(`--out: the compose failed its checks; nothing written:\n  ${composed.problems.slice(0, 20).join("\n  ")}`);
-  for (const w of composed.warnings.slice(0, 20)) console.warn(`  ⚠ ${w}`);
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "meta.json"), jsonText(composed.meta));
-  // One school per line keeps diffs readable between syncs.
-  writeFileSync(previousPath, `[\n${composed.schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
-  writeFileSync(join(dir, "selectivity-index.json"), formatIndexFile(composed.selectivity));
-  writeDetails(join(dir, "detail", "schools"), composed.detail);
-  writeFileSync(join(dir, "aliases.json"), formatAliasRows(composed.aliases));
-  writeFileSync(join(dir, "release-calendar.json"), jsonText(composed.releaseCalendar));
-  const sourceFiles = docs.get(COLLECTIONS.base.sourceFiles)?.get(SINGLE_KEYS.sourceFiles);
-  if (sourceFiles) writeFileSync(join(dir, "source-files.json"), jsonText(sourceFiles));
-  console.log(`--out: wrote ${composed.schools.length} colleges, meta, ${composed.detail.length} detail files, aliases, the calendar and the index to ${dir}`);
+/** A document an empty store (a fresh folder) lacks, from the bundled copy, with a line saying so. */
+function fromBundled<T>(what: string, read: () => T): T {
+  console.log(`  ${what} is empty in this store; reading it from the bundled copy (.data/snapshot/)`);
+  return read();
 }
 
 /* ------------------------------------------------------------------ */
@@ -823,8 +797,8 @@ async function writeFileLayout(dir: string, store: DataStore, docs: BaseDocument
 async function main() {
   const store = storeFromArgv(ARGV);
   const changeSet = changeSetFromArgv(ARGV);
-  // The calendar is base.release_calendar (the console may edit it by hand); data/ only for an empty store.
-  const calendarBefore = (await store.readOne<ReleaseCalendar>(COLLECTIONS.base.releaseCalendar, SINGLE_KEYS.calendar)) ?? (JSON.parse(readFileSync(CALENDAR, "utf8")) as ReleaseCalendar);
+  // The calendar is base.release_calendar (the console may edit it by hand); the bundled copy's only for an empty store.
+  const calendarBefore = (await store.readOne<ReleaseCalendar>(COLLECTIONS.base.releaseCalendar, SINGLE_KEYS.calendar)) ?? fromBundled("base.release_calendar", () => readBundledJson<ReleaseCalendar>(SNAPSHOT_OBJECTS.releaseCalendar));
   const calendar = await updateReleaseCalendar(calendarBefore);
   if (RELEASES_ONLY) {
     if (calendar === calendarBefore) {
@@ -832,7 +806,6 @@ async function main() {
       return;
     }
     if (!DRY_RUN) await writeBase(store, new Map([[COLLECTIONS.base.releaseCalendar, new Map([[SINGLE_KEYS.calendar, calendar]])]]), changeSet);
-    if (OUT_DIR) writeFileSync(join(resolve(OUT_DIR), "release-calendar.json"), jsonText(calendar));
     return;
   }
 
@@ -899,12 +872,12 @@ async function main() {
     { name: efa.table.name, url: efa.table.url, year: efa.year, rows: efa.table.rows },
     { name: adm.name, url: adm.url, year: admYear, rows: adm.rows },
     join(ROOT, ".cache", "ipeds"),
-    STATE_LAWS,
+    (await store.readOne<StateLawTable>(COLLECTIONS.reference.files, "state-laws")) ?? fromBundled("reference.files/state-laws", () => readBundledReference<StateLawTable>("state-laws")),
   );
   // Majors (specs/data-expansion/majors.md): the newest C{Y}_A, bachelor's degrees by program.
   const completions = await fetchCompletions(join(ROOT, ".cache", "ipeds"), thisYear);
   const strayCodes = unknownCodes(completions.table);
-  if (strayCodes.length) throw new Error(`C${completions.year}_A uses codes that aren't in CIP 2020 (data/reference/cip2020.json): ${strayCodes.slice(0, 10).join(", ")}`);
+  if (strayCodes.length) throw new Error(`C${completions.year}_A uses codes that aren't in CIP 2020 (the reference document cip2020): ${strayCodes.slice(0, 10).join(", ")}`);
   // Campus services (specs/data-expansion/campus-services.md): the newest IC{Y}, a year ahead of the price files.
   const icChar = await fetchIpeds(IC_CHAR_NAMES);
   if (![...icChar.rows.values()].some((r) => "ATHASSOC" in r && "CONFNO2" in r && "SLO5" in r && "CALSYS" in r))
@@ -919,8 +892,8 @@ async function main() {
 
   const stats = { online: 0, noSize: 0, withAdmissions: 0, withSat: 0, overridden: 0 };
   // School identity (specs/school-identity/): the identity layers (Wikidata, site probe, brand) and the legacy
-  // overrides, applied per school. An empty store (a fresh folder) falls back to the files in data/.
-  const identity: IdentityInputs = (await store.read(COLLECTIONS.identity.wikidata)).size ? await loadIdentity(store) : loadIdentityInputs(ROOT);
+  // overrides, applied per school. An empty store (a fresh folder) has none: the base is built without them.
+  const identity: IdentityInputs = (await store.read(COLLECTIONS.identity.wikidata)).size ? await loadIdentity(store) : (console.log("  identity.* is empty in this store; building the base without the identity layers"), emptyIdentityInputs());
   const overrides = identity.overrides as Record<string, Patch>;
   const priorBase = await readLayer<School>(store, COLLECTIONS.base.colleges);
 
@@ -990,9 +963,9 @@ async function main() {
   if (!openFile) throw new Error("No IPEDS IC file answers OPENADMP");
   const open = applyOpenAdmission(schools, openFile.rows);
   console.log(`  open admission (${openFile.name}): ${open.open} open, ${open.notOpen} not, ${open.unknown} unknown`);
-  // school.trends comes from the history layer; the base keeps the trends its previous version had (data/schools.json
+  // school.trends comes from the history layer; the base keeps the trends its previous version had (the bundled copy
   // only for an empty store), as before, until the publisher derives them.
-  const previousTrends = priorBase.size ? [...priorBase.values()] : existsSync(join(ROOT, "data", "schools.json")) ? (JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[]) : [];
+  const previousTrends = priorBase.size ? [...priorBase.values()] : existsSync(join(bundledDir(), "colleges.json")) ? readBundledColleges() : [];
   carryTrends(schools, new Map(previousTrends.map((s) => [s.unit_id, s.trends])));
   const scorecardYears = await detectScorecardYears(key, String(scorecard[0]?.id ?? "221999"));
   const meta = buildMeta(adm, sfa, ic, sfaYears, scorecardYears, cost2, chars, hd, icChar, efd, om, grPell, sal, drvf, drvfFiscalYear);
@@ -1049,14 +1022,13 @@ async function main() {
   }
   // Short names for search (specs/school-identity/aliases.md), from this HD file's IALIAS column and the identity
   // files; Common App's rows are added at compose.
-  const curated = (await store.readOne<CuratedAliasEntry[]>(COLLECTIONS.reference.files, "aliases-curated")) ?? (JSON.parse(readFileSync(join(ROOT, "data", "aliases-curated.json"), "utf8")) as CuratedAliasEntry[]);
+  const curated = (await store.readOne<CuratedAliasEntry[]>(COLLECTIONS.reference.files, "aliases-curated")) ?? fromBundled("reference.files/aliases-curated", () => readBundledReference<CuratedAliasEntry[]>("aliases-curated"));
   const aliases = aliasRowsFrom({ schools, hdRows: hd.rows, existing: [], wikidata: identity.wikidata, curated, commonApp: null });
   // When each source file was published (the Health page's Files view): a HEAD request per file.
   const sourceFiles = await datedSourceFiles(meta);
   const docs = baseDocuments({ schools, details, meta, aliases, calendar, sourceFiles });
   console.log(DRY_RUN ? "\n--dry-run: the base layer is built and checked; nothing written" : "\nWriting the base layer…");
   if (!DRY_RUN) await writeBase(store, docs, changeSet);
-  if (OUT_DIR) await writeFileLayout(resolve(OUT_DIR), store, docs);
   console.log(`  residence (EF${efc.year}C): ${schools.filter((s) => s.demographics.residence).length} colleges, ${details.length} detail files; DRVEF${efc.year} agrees for ${derived.checked - derived.differ.length} of ${derived.checked}`);
   console.log(`  field of study: ${programs.counts.size} colleges with bachelor's programs, ${schools.filter((s) => (s.academics?.programs_with_earnings ?? 0) > 0).length} with at least one earnings figure (${fos.url})`);
 

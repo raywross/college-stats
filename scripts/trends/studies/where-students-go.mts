@@ -376,8 +376,11 @@ export function buildWhereStudentsGo(ctx: TrendContext): TrendOutput {
     cost: costOf(panel, from, to, fromMoney, toMoney, periods, ctx.cpi),
   };
 
-  const xl = file.groupings.find((g) => g.grouping === "size4")!.groups.find((r) => r.key === "xl")!.values!;
-  const r1 = file.groupings.find((g) => g.grouping === "research")!.groups.find((r) => r.key === "R1")!.values!;
+  const xl = file.groupings.find((g) => g.grouping === "size4")?.groups.find((r) => r.key === "xl")?.values;
+  const r1 = file.groupings.find((g) => g.grouping === "research")?.groups.find((r) => r.key === "R1")?.values;
+  // A row under the group floor carries no values (a small panel, such as the mini fixture's): the file stands, with no
+  // card, rather than the build failing.
+  if (!xl || !r1) return { name: SLUG, file };
   const fall = (y: number) => historyYearLabel(y, "fall").toLowerCase();
   return {
     name: SLUG,

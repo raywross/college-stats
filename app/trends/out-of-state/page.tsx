@@ -34,7 +34,7 @@ const SENDING_LEVELS: TileLevel[] = [
 ];
 
 /**
- * Study 5 (specs/trends/out-of-state.md): every number and year comes from data/history/trends/out-of-state.json;
+ * Study 5 (specs/trends/out-of-state.md): every number and year comes from the snapshot's trends/out-of-state.json;
  * only the sentences are written here.
  */
 export default async function OutOfStatePage() {

@@ -28,7 +28,7 @@ const COLOR = study.color;
 const NEITHER_LONG = "students with neither a Pell Grant nor a subsidized loan";
 
 /**
- * Study 6 (specs/trends/pell-gap.md): every number and year comes from data/history/trends/pell-gap.json; only the
+ * Study 6 (specs/trends/pell-gap.md): every number and year comes from the snapshot's trends/pell-gap.json; only the
  * sentences are written here.
  */
 export default async function PellGapPage() {

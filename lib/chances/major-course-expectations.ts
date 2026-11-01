@@ -5,7 +5,7 @@
  * course plan (lib/chances/course-plan.ts) for its "your intended major" reason and the path a 9th or 10th grader
  * sees; checked by scripts/check-major-course-expectations.mts in `npm run verify`. Pure and client-safe.
  */
-import file from "../../data/reference/major-course-expectations.json" with { type: "json" };
+import file from "../../.data/snapshot/reference/major-course-expectations.json" with { type: "json" };
 import { catalogCourse, COURSE_SUBJECTS } from "./catalog.ts";
 import { isMajorFamily } from "../majors.ts";
 import type { CourseSubject } from "./types.ts";

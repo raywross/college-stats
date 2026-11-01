@@ -1,10 +1,10 @@
 /**
  * The selectivity build step (specs/chances/selectivity-index.md "Data and lineage"): reads every college's published
  * figures, standardizes each input over the colleges that report it, computes the score per pool (lib/selectivity.ts), and
- * writes the tiers to `school.selectivity` with hysteresis against the last published tiers. The index itself goes to
- * data/selectivity-index.json, which only this step and its check read. Run by `npm run build-selectivity` and at the
- * end of `npm run sync-data` (after derived fields and trends); the check runs in `npm run verify`
- * (`npm run check:selectivity`). Pure apart from the file helpers at the bottom.
+ * writes the tiers to `school.selectivity` with hysteresis against the last published tiers. The index itself is the
+ * publisher's (scripts/lib/data-platform/compose.mts step 15) and the tier history's; it never ships in a snapshot.
+ * The check runs in `npm run verify` (`npm run check:selectivity`, over the bundled copy). Pure apart from the file
+ * helpers at the bottom.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -18,7 +18,7 @@ import { ELITE_COUNT_RANGE, ELITE_INDEX, SELECTIVITY_METHOD, TOP_BAND_SCORE, col
 const POOLS = ["all", "in_state", "out_of_state"] as const satisfies readonly SelectivityPool[];
 type Pool = (typeof POOLS)[number];
 
-/** One college's line in data/selectivity-index.json. */
+/** One college's line in the selectivity index. */
 export interface CollegeIndexEntry {
   all: number;
   /** Place among every rated college by the unrounded score for all applicants (1 = hardest to get into). */
@@ -29,7 +29,7 @@ export interface CollegeIndexEntry {
   changed_from?: Partial<Record<Pool, SelectivityTier>>;
 }
 
-/** data/selectivity-index.json: never in public/, the search index, the data API, exports, or client code. */
+/** The selectivity index: never in public/, the search index, the data API, exports, or client code. */
 export interface SelectivityIndexFile {
   /** The day the indexes last changed (a rebuild that changes nothing keeps it). */
   generated: string;
@@ -50,7 +50,7 @@ const LATER_KEYS = ["directories", "lineage", "trends", "reported"];
 
 /**
  * The school with `selectivity` set (or removed), as a new object. Key order is fixed so the pipelines that re-merge
- * data/schools.json and compare bytes keep working in any order: `selectivity` goes right before the first of
+ * the colleges and compare bytes keep working in any order: `selectivity` goes right before the first of
  * `directories`, `lineage`, `trends`, and `reported` (else last). The directories merge re-inserts `directories` and
  * `lineage` before `trends`/`reported` or at the end, merge-reported re-appends `reported`, and identity adds its new
  * keys before the same anchors, so none of them moves `selectivity`, and rebuilding it moves nothing else.
@@ -75,8 +75,8 @@ export interface BuildResult {
 }
 
 /**
- * Builds every college's tiers and the index file. `previous` holds the last published tiers by unit id (the committed
- * data/schools.json); `prior` is the last index file, whose `generated` date is kept when no index moved.
+ * Builds every college's tiers and the index file. `previous` holds the last published tiers by unit id (the previous
+ * snapshot's colleges); `prior` is the last index file, whose `generated` date is kept when no index moved.
  */
 export function buildSelectivity(
   schools: readonly School[],
@@ -154,7 +154,7 @@ function stripChanges(colleges: Record<string, CollegeIndexEntry>): Record<strin
   );
 }
 
-/** One college per line, like data/schools.json, so a rebuild's diff shows the colleges that moved. */
+/** One college per line, like colleges.json, so a rebuild's diff shows the colleges that moved. */
 export function formatIndexFile(file: SelectivityIndexFile): string {
   const head = JSON.stringify({ generated: file.generated, method: file.method, elite_index: file.elite_index, elite_count: file.elite_count, counts: file.counts });
   const lines = Object.entries(file.colleges).map(([id, e]) => `    ${JSON.stringify(id)}: ${JSON.stringify(e)}`);
@@ -168,16 +168,16 @@ export function formatIndexFile(file: SelectivityIndexFile): string {
 /**
  * Problems with the committed tiers and index: the Elite count outside 25–50, an empty tier, a tier that moved without
  * crossing its cutoff by the hysteresis band (or holds an index outside its band), a stored tier without an index or
- * the other way round, and an index file that isn't a fresh build of data/schools.json (run `npm run build-selectivity`).
+ * the other way round, and an index that isn't a fresh build of the colleges.
  */
 export function selectivityProblems(schools: readonly School[], file: SelectivityIndexFile, meta: DatasetMeta): string[] {
   const problems: string[] = [];
   const [lo, hi] = ELITE_COUNT_RANGE;
-  if (file.method !== SELECTIVITY_METHOD) problems.push(`data/selectivity-index.json: method ${file.method ?? "(none)"} isn't SELECTIVITY_METHOD (${SELECTIVITY_METHOD}); run npm run build-selectivity`);
-  if (file.elite_index !== ELITE_INDEX) problems.push(`data/selectivity-index.json: elite_index ${file.elite_index} isn't ELITE_INDEX (${ELITE_INDEX}); run npm run build-selectivity`);
+  if (file.method !== SELECTIVITY_METHOD) problems.push(`the selectivity index: method ${file.method ?? "(none)"} isn't SELECTIVITY_METHOD (${SELECTIVITY_METHOD}); rebuild it (the publisher's compose does)`);
+  if (file.elite_index !== ELITE_INDEX) problems.push(`the selectivity index: elite_index ${file.elite_index} isn't ELITE_INDEX (${ELITE_INDEX}); rebuild it (the publisher's compose does)`);
   const elite = schools.filter((s) => s.selectivity && (s.selectivity.tier === "elite" || s.selectivity.in_state === "elite" || s.selectivity.out_of_state === "elite")).length;
   if (elite < lo || elite > hi) problems.push(`Elite holds ${elite} colleges, outside ${lo}–${hi}: revisit ELITE_INDEX in lib/selectivity.ts deliberately`);
-  if (elite !== file.elite_count) problems.push(`data/selectivity-index.json: elite_count ${file.elite_count}, but ${elite} colleges are Elite`);
+  if (elite !== file.elite_count) problems.push(`the selectivity index: elite_count ${file.elite_count}, but ${elite} colleges are Elite`);
   for (const t of SELECTIVITY_TIERS) if (!schools.some((s) => s.selectivity?.tier === t)) problems.push(`no college is ${t} for all applicants`);
 
   for (const s of schools) {
@@ -210,14 +210,14 @@ export function selectivityProblems(schools: readonly School[], file: Selectivit
     if (band === "top" && s.selectivity.tier !== "elite") problems.push(`${where}: in the top band but not Ultra selective`);
     if (topBand(e.all, s.selectivity.tier, band === "top" ? "top" : null) !== band) problems.push(`${where}: ${band ? "in" : "outside"} the top band, but index ${e.all} says otherwise (TOP_BAND_SCORE ${TOP_BAND_SCORE})`);
   }
-  for (const id of Object.keys(file.colleges)) if (!schools.some((s) => s.unit_id === id)) problems.push(`data/selectivity-index.json: ${id} isn't in data/schools.json`);
+  for (const id of Object.keys(file.colleges)) if (!schools.some((s) => s.unit_id === id)) problems.push(`the selectivity index: ${id} isn't one of the colleges`);
 
   // Fresh: rebuilding from the committed tiers gives the same indexes and tiers.
   const fresh = buildSelectivity(schools, meta, { prior: file });
   const freshIdx = JSON.stringify(stripChanges(fresh.file.colleges));
-  if (freshIdx !== JSON.stringify(stripChanges(file.colleges))) problems.push("data/selectivity-index.json isn't a fresh build of data/schools.json: run npm run build-selectivity");
+  if (freshIdx !== JSON.stringify(stripChanges(file.colleges))) problems.push("the selectivity index isn't a fresh build of the colleges: publish again (the compose rebuilds it)");
   const stale = fresh.schools.filter((s, i) => JSON.stringify(s.selectivity) !== JSON.stringify(schools[i].selectivity)).map((s) => s.name);
-  if (stale.length) problems.push(`${stale.length} colleges' tiers aren't a fresh build (${stale.slice(0, 5).join("; ")}): run npm run build-selectivity`);
+  if (stale.length) problems.push(`${stale.length} colleges' tiers aren't a fresh build (${stale.slice(0, 5).join("; ")}): publish again (the compose rebuilds them)`);
   return problems;
 }
 
@@ -268,8 +268,7 @@ export function leakProblems(root: string): string[] {
   return problems;
 }
 
-/** Reads the committed index file, or null before the first build. */
-export function readIndexFile(root: string): SelectivityIndexFile | null {
-  const p = join(root, "data", "selectivity-index.json");
-  return existsSync(p) ? (JSON.parse(readFileSync(p, "utf8")) as SelectivityIndexFile) : null;
+/** Reads an index file at `path` (an exported copy; a snapshot carries none), or null when there is none. */
+export function readIndexFile(path: string): SelectivityIndexFile | null {
+  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as SelectivityIndexFile) : null;
 }

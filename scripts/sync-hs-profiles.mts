@@ -18,9 +18,9 @@
  * the workflow opened: the pilot workflow runs this script three times in one set).
  * Writes the high-school layers (specs/data-platform/pipelines.md): `high_schools.shared` profile-recipes,
  * profile-pilot and review-queue, and `high_schools.detail/<id>` (passing schools only), in one change set (source
- * `high-schools`); the script runs on a scratch copy of the layers laid out as data/high-schools/
- * (scripts/lib/high-schools/data-store.mts), so nothing under data/ is written. The answer key stays
- * data/reference/hs-profile-answer-key.json. Downloads are cached in .cache/hs-profiles/ (git-ignored). Every request goes through the college-reported
+ * `high-schools`); the script runs on a scratch copy of the layers laid out as the old high-schools folder
+ * (scripts/lib/high-schools/data-store.mts) and writes back only what changed. The answer key is the reference
+ * document `hs-profile-answer-key` (the store's, else the bundled copy's). Downloads are cached in .cache/hs-profiles/ (git-ignored). Every request goes through the college-reported
  * engine's PoliteHttp: robots.txt, per-host crawl delays, conditional GETs, an honest user agent.
  */
 import Anthropic from "@anthropic-ai/sdk";
@@ -41,7 +41,7 @@ import { buildCollegeIndex, matchList } from "./lib/high-schools/profiles/match.
 import { measure, runProfiles, type RunSchool } from "./lib/high-schools/profiles/run.mts";
 import { scoreAgainstKey, type KeyValues } from "./lib/high-schools/profiles/score.mts";
 import { PILOT_METROS, PILOT_SEED, selectPilot, selectionRule } from "./lib/high-schools/profiles/select.mts";
-import { mergeQueue, profilePaths, readAnswerKey, readJson, writeDetail, writeJson, writeRecipes, type HsReviewQueue, type PilotFile } from "./lib/high-schools/profiles/store.mts";
+import { mergeQueue, profilePaths, readAnswerKeyDocument, readJson, writeDetail, writeJson, writeRecipes, type HsReviewQueue, type PilotFile } from "./lib/high-schools/profiles/store.mts";
 import { highSchoolScratch, writeHighSchoolChanges } from "./lib/high-schools/data-store.mts";
 import { changeSetFromArgv, datasetAliases, datasetColleges, openProducerRun, storeFromArgv } from "./lib/data-platform/producer.mts";
 
@@ -54,9 +54,11 @@ const num = (k: string, d: number) => (typeof flags[k] === "string" ? Number(fla
 
 const store = storeFromArgv(argv);
 const changeSet = changeSetFromArgv(argv);
-/** The layers as data/high-schools/ under a scratch root: every path below reads and writes there. */
+/** The layers as a high-school folder under a scratch root: every path below reads and writes there. */
 const scratch = await highSchoolScratch(store);
-const P = { ...profilePaths(scratch.root), answerKey: profilePaths(ROOT).answerKey, cache: profilePaths(ROOT).cache };
+const P = { ...profilePaths(scratch.dir), cache: join(ROOT, ".cache", "hs-profiles") };
+/** The hand-checked answer key: the reference document `hs-profile-answer-key` (the store's, else the bundled copy's). */
+const ANSWER_KEY = await readAnswerKeyDocument(store);
 
 /** Ends the script: what the run changed in the scratch copy goes into the change set (unless --dry-run). */
 async function done(code = 0): Promise<never> {
@@ -127,13 +129,13 @@ if (typeof flags.dump === "string") {
 
 /* --score ------------------------------------------------------------ */
 function score(pilot: PilotFile): PilotFile["accuracy"] {
-  const key = readAnswerKey(P.answerKey);
+  const key = ANSWER_KEY;
   if (!key || !(pilot.latest || pilot.answer_key_run)) return null;
   const extracted = new Map<string, KeyValues>();
   for (const r of [...(pilot.latest?.results ?? []), ...(pilot.answer_key_run?.results ?? [])]) if (r.extracted) extracted.set(r.id, r.extracted);
   if (!extracted.size) return null;
   const rep = scoreAgainstKey(key.schools, extracted);
-  return { ...rep, scored: today, basis: "the model's extraction before checks (after escalation), against data/reference/hs-profile-answer-key.json" };
+  return { ...rep, scored: today, basis: "the model's extraction before checks (after escalation), against the reference document hs-profile-answer-key" };
 }
 
 if (flags.score === true) {
@@ -154,7 +156,7 @@ async function collegeIndex() {
 
 /* --match-key: college-name match rate on the answer key's hand-read lists (no model) */
 if (flags["match-key"] === true) {
-  const key = readAnswerKey(P.answerKey);
+  const key = ANSWER_KEY;
   if (!key) usage("no answer key");
   const index = await collegeIndex();
   const per = key.schools.filter((s) => s.matriculation?.entries.length).map((s) => ({ id: s.id, name: s.name, ...matchList(index, s.matriculation!.entries.map((e) => e.name)) }));
@@ -180,7 +182,7 @@ const byId = new Map(rows.map((r) => [r.id, r]));
 let ids: string[];
 if (typeof flags.only === "string") ids = flags.only.split(",").map((s) => s.trim()).filter(Boolean);
 else if (flags["answer-key"] === true) {
-  const key = readAnswerKey(P.answerKey);
+  const key = ANSWER_KEY;
   if (!key) usage("no answer key");
   ids = key.schools.map((s) => s.id);
 }

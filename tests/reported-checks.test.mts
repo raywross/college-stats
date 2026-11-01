@@ -4,16 +4,14 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { Extraction } from "../lib/reported";
 import { rateTolerancePts, runChecks, toReportedEntry, reportedToPatch } from "../lib/reported-checks.ts";
 import { lineageFor, validateSchool } from "../lib/lineage.ts";
+import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const meta: DatasetMeta = miniMeta();
+const schools: School[] = miniSchools();
 
 // Princeton: real federal baseline (fall 2024), no CDS override, so its lineage stays simple.
 const PRINCETON = "186131";

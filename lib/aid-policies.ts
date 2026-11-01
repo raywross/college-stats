@@ -6,7 +6,7 @@
  * lib/lineage.ts resolves the citation to the entry's `source`, `as_of`, and `checked`).
  * Pure: safe in server and client code and in tests.
  */
-import file from "../data/aid-policies.json" with { type: "json" };
+import file from "../.data/snapshot/reference/aid-policies.json" with { type: "json" };
 
 export type HomeEquityRule = "ignored" | { cap_multiple: number } | "full";
 export type SiblingRule = "split" | "reduce" | "none";

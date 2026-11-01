@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 /**
  * Footnote for year-by-year values: each survey behind the series with the range of editions used ("IPEDS
  * Admissions survey, Fall 2014 to Fall 2024"), plus the inflation index when money is shown. Years come from
- * data/history/meta.json, so they update with each build. See specs/trends-data.md.
+ * the snapshot's shared history (meta), so they update with each build. See specs/trends-data.md.
  */
 export async function HistorySourceNote({
   keys,

@@ -64,7 +64,7 @@ const NET_INFLOW_RANGES: TileRange[] = [
 
 /**
  * /trends/states (specs/trends/states.md): the state tile map (segmented control over 5 measures) and a sortable
- * table of every state and territory, from data/history/trends/states.json.
+ * table of every state and territory, from the snapshot's trends/states.json.
  */
 export default async function StatesIndexPage() {
   const [file, files] = await Promise.all([getTrendFile("states"), getHistoryFiles()]);

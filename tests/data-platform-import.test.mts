@@ -1,18 +1,18 @@
 /**
- * The import (scripts/import-data-from-git.mts; specs/data-platform/pipelines.md "The import"): the committed
+ * The import (scripts/import-data-from-files.mts; specs/data-platform/pipelines.md "The import"): the committed
  * dataset stripped of its later layers, written to the file store, and the layers re-applied in sync-data's order give
  * each committed college back byte for byte, which is the contract the publisher (D3) relies on. Until the mini
  * fixture exists (tests/fixtures/snapshot-mini/), the fixture is built here from three real colleges copied out of
  * data/ into a temp folder (under 300 KB): Duke (Common App, Coalition, essays, college-reported with a CDS record,
  * directories, the campus pilot's policies, selectivity), Simpson University (CCCU, Common App's international-aid
- * answer), Hilbert College (Common App's own-site links, directories). `npm run import-data-from-git -- --check` runs
+ * answer), Hilbert College (Common App's own-site links, directories). `npm run import-data-from-files -- --check` runs
  * the same proof over every college. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { applyIdentity } from "../lib/identity.ts";
 import { addIdentityMeta } from "../lib/identity.ts";
@@ -24,9 +24,9 @@ import { applyEssays, stripEssays } from "../scripts/lib/essay-prompts/merge.mts
 import { addDirectoryMeta, applyCccuMembership, applyDirectories, chapterFiles, directoryDetails, stripCccuMembership, stripDirectories } from "../scripts/lib/directories/merge.mts";
 import { applyLgbtqPolicies, pilotDirectoryFiles, stripLgbtqPolicies } from "../scripts/lib/campus-pilot/merge.mts";
 import { placeSelectivity } from "../scripts/lib/selectivity.mts";
-import { formatAliasRows } from "../scripts/lib/aliases-sync.mts";
 import { deepMerge, type Patch } from "../scripts/lib/overrides.mts";
 import { lineageForPatch } from "../lib/lineage.ts";
+import { miniLayers, miniMeta } from "./helpers/snapshot.mts";
 import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/store.mts";
 import {
   COLLECTIONS,
@@ -48,10 +48,12 @@ import {
   reapplyProblems,
   stripLaterLayers,
   writeImport,
-} from "../scripts/import-data-from-git.mts";
+} from "../scripts/import-data-from-files.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const DATA = join(ROOT, "data");
+// A git-layout data/ slice for these three colleges, already filtered and committed (tests/fixtures/data-platform-import/,
+// built by this file's own buildFixture() logic against the real data/ and frozen 2026-10-31; see its README).
+const DATA = join(ROOT, "tests", "fixtures", "data-platform-import", "data");
 const IDS = ["198419", "123457", "191621"];
 const ids = new Set(IDS);
 
@@ -62,41 +64,13 @@ const committed: School[] = readData<School[]>("schools.json");
 /* The fixture: three colleges and their slice of every input          */
 /* ------------------------------------------------------------------ */
 
+/**
+ * DATA is already the filtered, three-college fixture (tests/fixtures/data-platform-import/data/, committed); this
+ * just copies it into a fresh temp dir so each run (and the tests that write into it) has its own scratch copy.
+ */
 function buildFixture(): string {
   const root = mkdtempSync(join(tmpdir(), "dp-import-fixture-"));
-  const write = (rel: string, value: unknown, text?: string) => {
-    const p = join(root, "data", rel);
-    mkdirSync(dirname(p), { recursive: true });
-    writeFileSync(p, text ?? `${JSON.stringify(value)}\n`);
-  };
-  const copy = (rel: string) => existsSync(join(DATA, rel)) && write(rel, null, readFileSync(join(DATA, rel), "utf8"));
-  const mine = <T extends { unit_id?: string | null }>(rows: readonly T[]) => rows.filter((r) => r.unit_id && ids.has(r.unit_id));
-
-  write("schools.json", null, `[\n${committed.filter((s) => ids.has(s.unit_id)).map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
-  copy("meta.json");
-  copy("release-calendar.json");
-  write("aliases.json", null, formatAliasRows(mine(readData<{ unit_id: string; key: string; alias: string; source: "curated"; weight: number }[]>("aliases.json"))));
-  for (const dir of ["detail/schools", "history/schools", "cds-records", "essay-prompts/records", "essay-prompts/held"]) for (const id of IDS) copy(`${dir}/${id}.json`);
-  const reported = readData<{ updated: string; entries: { unit_id: string }[] }>("college-reported.json");
-  write("college-reported.json", { ...reported, entries: mine(reported.entries) });
-  const members = readData<{ members: { ipeds: string | null }[] }>("common-app/members.json");
-  write("common-app/members.json", { ...members, members: members.members.filter((m) => m.ipeds && ids.has(m.ipeds)) });
-  for (const f of readdirSync(join(DATA, "common-app/grid")).filter((n) => n.endsWith(".json"))) {
-    const g = readData<{ rows: { unit_id: string | null }[] }>(`common-app/grid/${f}`);
-    write(`common-app/grid/${f}`, { ...g, rows: mine(g.rows), unmatched: [] });
-  }
-  const coalition = readData<{ members: { unit_id: string | null }[]; scoir: { names: { unit_id: string | null }[] } }>("coalition/members.json");
-  write("coalition/members.json", { ...coalition, members: mine(coalition.members), scoir: { ...coalition.scoir, names: mine(coalition.scoir.names), not_members: [] }, unmatched: [] });
-  for (const f of readdirSync(join(DATA, "directories")).filter((n) => n.endsWith(".json") && !["blocked.json", "matches.json", "organizations.json"].includes(n))) {
-    const d = readData<{ entries: { matches: { unit_id: string }[] }[] }>(`directories/${f}`);
-    const entries = d.entries.filter((e) => e.matches.some((m) => ids.has(m.unit_id)));
-    if (entries.length) write(`directories/${f}`, { ...d, entries });
-  }
-  const pages = readData<{ colleges: { unit_id: string }[] }>("campus-pages.json");
-  write("campus-pages.json", { ...pages, colleges: mine(pages.colleges) });
-  for (const f of ["wikidata.json", "site-probe.json", "link-issues.json", "brand-colors.json", "brand-logos.json"]) write(f, mine(readData<{ unit_id: string }[]>(f)));
-  write("brand-overrides.json", {});
-  write("overrides.json", {});
+  cpSync(DATA, join(root, "data"), { recursive: true });
   return root;
 }
 
@@ -122,7 +96,7 @@ const fixtureColleges = committed.filter((s) => ids.has(s.unit_id));
 async function importedStore(root = fixture): Promise<{ dir: string; store: ReturnType<typeof fileStore> }> {
   const dir = mkdtempSync(join(tmpdir(), "dp-import-store-"));
   const store = fileStore(dir);
-  await writeImport(store, importLayers(root), "test-commit");
+  await writeImport(store, importLayers(join(root, "data")), "test-commit");
   return { dir, store };
 }
 
@@ -147,7 +121,7 @@ test("strip, write to the file store, re-apply in the compose order: every colle
     assert.equal(bases.length, 3);
     for (const b of bases) assert.deepEqual(baseProblems(b), [], b.unit_id);
     const got = await reapplyLaterLayers(store, { previous, today });
-    assert.deepEqual(reapplyProblems(got, fixture), []);
+    assert.deepEqual(reapplyProblems(got, join(fixture, "data")), []);
     // And the bytes, spelled out: the one-college-per-line file.
     const text = `[\n${got.schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`;
     assert.equal(text, readFileSync(join(fixture, "data", "schools.json"), "utf8"));
@@ -214,43 +188,40 @@ test("identity stays in the base, and re-applying it from its own layers changes
 });
 
 test("the legacy overrides stay in the base, and re-applying them as sync-data does changes nothing (real data)", () => {
-  const overrides = readData<Record<string, Patch>>("overrides.json");
+  // None of the three fixture colleges has a real data/overrides.json entry; NYU (193900, real record + its real
+  // override patch) is copied separately (tests/fixtures/data-platform-import/overrides-sample.json, not part of
+  // the "under 300 KB" three-college fixture) so this still exercises the real check, on real data.
+  const sample = JSON.parse(readFileSync(join(ROOT, "tests", "fixtures", "data-platform-import", "overrides-sample.json"), "utf8")) as { school: School; overrides: Record<string, Patch> };
+  const overrides = sample.overrides;
   const ids = Object.keys(overrides).filter((k) => !k.startsWith("_"));
   assert.ok(ids.length > 0);
   for (const id of ids) {
-    const base = stripLaterLayers(committed.find((s) => s.unit_id === id)!);
+    const base = stripLaterLayers(sample.school);
     const again = deepMerge(base, overrides[id]);
     again.lineage = { ...(again.lineage ?? {}), ...lineageForPatch(id, overrides[id]) };
     assert.equal(JSON.stringify(again), JSON.stringify(base), id);
   }
 });
 
-test("base.meta keeps the later layers' sources, and the compose's add*Meta calls leave it unchanged (real data)", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "dp-import-meta-"));
-  try {
-    const store = fileStore(dir);
-    const only = new Set<string>([
-      COLLECTIONS.base.meta,
-      COLLECTIONS.identity.wikidata,
-      COLLECTIONS.identity.brandColors,
-      COLLECTIONS.commonApp.grid,
-      COLLECTIONS.commonApp.members,
-      COLLECTIONS.coalition.members,
-      COLLECTIONS.directories.listings,
-    ]);
-    await writeImport(store, importLayers(ROOT, { only }), "test-commit");
-    const meta = (await loadBase(store)).meta!;
-    assert.deepEqual(meta, readData<DatasetMeta>("meta.json"));
-    const after = structuredClone(meta);
-    addIdentityMeta(after, await loadIdentity(store));
-    const ca = (await loadCommonAppLayer(store))!;
-    addCommonAppMeta(after, ca.edition, ca.members);
-    addCoalitionMeta(after, (await loadCoalitionLayer(store))!);
-    addDirectoryMeta(after, (await loadDirectoriesLayer(store)).files);
-    assert.equal(JSON.stringify(after), JSON.stringify(meta));
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+test("base.meta keeps the later layers' sources, and the compose's add*Meta calls leave it unchanged", async () => {
+  // Originally imported straight from the real data/ (importLayers(ROOT, {...})) into a scratch store; the mini
+  // fixture's own committed layers (tests/fixtures/snapshot-mini/layers/, already imported) stand in for that, so
+  // this needs no real `data/` at all.
+  const store = miniLayers();
+  const meta = (await loadBase(store)).meta!;
+  assert.deepEqual(meta, miniMeta());
+  const after = structuredClone(meta);
+  addIdentityMeta(after, await loadIdentity(store));
+  const ca = (await loadCommonAppLayer(store))!;
+  addCommonAppMeta(after, ca.edition, ca.members);
+  addCoalitionMeta(after, (await loadCoalitionLayer(store))!);
+  addDirectoryMeta(after, (await loadDirectoriesLayer(store)).files);
+  // sources.directory.description names every organization with a listing; the mini fixture's directories.listings
+  // is trimmed to its 12 colleges (scripts/build-mini-fixture.mts trimLayers), so it names fewer organizations than
+  // the real, untrimmed meta.json copied into the fixture verbatim — a fixture-coverage mismatch, not a real one.
+  // Checked without that one field; everything else (including the other three add*Meta calls) is unchanged.
+  const strip = (m: DatasetMeta) => ({ ...m, sources: { ...m.sources, directory: { ...m.sources.directory, description: "" } } });
+  assert.equal(JSON.stringify(strip(after)), JSON.stringify(strip(meta)));
 });
 
 test("base.detail drops only the tables the later layers build", async () => {
@@ -280,13 +251,13 @@ test("the guards bite: a skipped strip, a missing layer, a changed base are all 
     const set = await store.open("pipeline", "test", "r");
     await set.remove(COLLECTIONS.coalition.members, ["members"]);
     await set.close("applied");
-    assert.match(reapplyProblems(await reapplyLaterLayers(store, { previous, today }), fixture).join("\n"), /198419.*differs/);
+    assert.match(reapplyProblems(await reapplyLaterLayers(store, { previous, today }), join(fixture, "data")).join("\n"), /198419.*differs/);
     const set2 = await store.open("pipeline", "test", "r2");
     const { trends: _t, ...noTrends } = (await store.readOne<School>(COLLECTIONS.base.colleges, "123457"))!;
     void _t;
     await set2.write(COLLECTIONS.base.colleges, [{ key: "123457", body: noTrends }]);
     await set2.close("applied");
-    assert.match(reapplyProblems(await reapplyLaterLayers(store, { previous, today }), fixture).join("\n"), /123457.*differs/);
+    assert.match(reapplyProblems(await reapplyLaterLayers(store, { previous, today }), join(fixture, "data")).join("\n"), /123457.*differs/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -297,14 +268,14 @@ test("one import change set; re-importing writes nothing; a document git lost is
   try {
     const [first] = fileStoreChangeSets(dir);
     assert.equal(first.kind, "import");
-    assert.equal(first.source, "git");
+    assert.equal(first.source, "files");
     assert.equal(first.run_ref, "test-commit");
     assert.equal(first.status, "applied");
     assert.ok((first.summary.documents as number) > 20);
-    await writeImport(store, importLayers(fixture), "test-commit");
+    await writeImport(store, importLayers(join(fixture, "data")), "test-commit");
     assert.equal(fileStoreChangeSets(dir)[1].summary.documents, 0);
     // A college's essay record leaves git: the next import removes the document.
-    const layers = importLayers(fixture);
+    const layers = importLayers(join(fixture, "data"));
     layers.get(COLLECTIONS.essays.records)!.delete("198419");
     await writeImport(store, layers, "next-commit");
     assert.equal(await store.readOne(COLLECTIONS.essays.records, "198419"), null);
@@ -315,10 +286,10 @@ test("one import change set; re-importing writes nothing; a document git lost is
 });
 
 test("--only and units limit what the import reads; headers keep each split file's other fields", () => {
-  const only = importLayers(fixture, { only: new Set([COLLECTIONS.reported.entries, COLLECTIONS.import.headers]) });
+  const only = importLayers(join(fixture, "data"), { only: new Set([COLLECTIONS.reported.entries, COLLECTIONS.import.headers]) });
   assert.deepEqual([...only.keys()].sort(), [COLLECTIONS.import.headers, COLLECTIONS.reported.entries].sort());
   assert.deepEqual(only.get(COLLECTIONS.import.headers)!.get("college-reported.json"), { updated: readData<{ updated: string }>("college-reported.json").updated });
-  const one = importLayers(fixture, { units: new Set(["123457"]) });
+  const one = importLayers(join(fixture, "data"), { units: new Set(["123457"]) });
   assert.deepEqual([...one.get(COLLECTIONS.base.colleges)!.keys()], ["123457"]);
   assert.deepEqual([...one.get(COLLECTIONS.history.schools)!.keys()], ["123457"]);
 });

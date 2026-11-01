@@ -1,0 +1,301 @@
+{
+  "updated": "2026-10-04",
+  "recipes": [
+    {
+      "unit_id": "110635",
+      "learned": "2026-10-04",
+      "model": "claude-sonnet-5",
+      "links": {
+        "greek": {
+          "fsl_office": null,
+          "fsl_reports": [],
+          "recruitment": null,
+          "greek_none": null,
+          "notes": ""
+        },
+        "faith": {
+          "faith_office": null,
+          "faith_groups": null,
+          "religion_report": null,
+          "faith_estimate": [],
+          "notes": ""
+        },
+        "lgbtq": {
+          "lgbtq_center": null,
+          "lgbtq_groups": null,
+          "nondiscrimination": "https://ophd.berkeley.edu/policies-procedures/nondiscrimination-policy-statement",
+          "housing": "https://facilities.berkeley.edu/home/inclusive-restrooms/gender-inclusive-restroom-implementation-guidelines",
+          "name_policy": "https://ophd.berkeley.edu/topics/gender-recognition-and-lived-name",
+          "health_plan": null,
+          "restrooms": "https://facilities.berkeley.edu/home/inclusive-restrooms",
+          "trans_admission": null,
+          "conduct_code": null,
+          "notes": ""
+        }
+      },
+      "sources": [
+        {
+          "domain": "lgbtq",
+          "type": "nondiscrimination",
+          "url": "https://ophd.berkeley.edu/policies-procedures/nondiscrimination-policy-statement",
+          "status": "ok",
+          "sha256": "7b17eb341654cd885cf3ccab26a0cffcfac3bd3aa9a579bc170ece8d049079bf",
+          "etag": "W/\"1791150305-0\"",
+          "last_modified": "Sun, 04 Oct 2026 21:45:05 GMT"
+        },
+        {
+          "domain": "lgbtq",
+          "type": "housing",
+          "url": "https://facilities.berkeley.edu/home/inclusive-restrooms/gender-inclusive-restroom-implementation-guidelines",
+          "status": "ok",
+          "sha256": "938c3a37d2ddd81a86223622341d3987b0c95b440068fc58756dab6c12555253",
+          "etag": "W/\"1790916398\"",
+          "last_modified": "Fri, 02 Oct 2026 04:46:38 GMT"
+        },
+        {
+          "domain": "lgbtq",
+          "type": "name_policy",
+          "url": "https://ophd.berkeley.edu/topics/gender-recognition-and-lived-name",
+          "status": "ok",
+          "sha256": "6f78b18201093e62b82d3a6fe93d1bf0cf23db7ee7c3fb98fa6cc38bb6acb15c",
+          "etag": "W/\"1791152203-0\"",
+          "last_modified": "Sun, 04 Oct 2026 22:16:43 GMT"
+        },
+        {
+          "domain": "lgbtq",
+          "type": "restrooms",
+          "url": "https://facilities.berkeley.edu/home/inclusive-restrooms",
+          "status": "ok",
+          "sha256": "d749e9d372bcf39d133f4cfc47f699263816b74313dd998c27b4bae85bd78211",
+          "etag": "W/\"1790875096\"",
+          "last_modified": "Thu, 01 Oct 2026 17:18:16 GMT"
+        }
+      ],
+      "discovery": {
+        "probed": [
+          "nondiscrimination",
+          "name_policy",
+          "restrooms",
+          "housing"
+        ],
+        "paid": [
+          "fsl_office",
+          "lgbtq_center"
+        ],
+        "searches": 1,
+        "fetches": 80
+      }
+    },
+    {
+      "unit_id": "199120",
+      "learned": "2026-10-04",
+      "model": "claude-sonnet-5",
+      "links": {
+        "greek": {
+          "fsl_office": "https://fsl.unc.edu/",
+          "fsl_reports": [],
+          "recruitment": null,
+          "greek_none": null,
+          "notes": ""
+        },
+        "faith": {
+          "faith_office": "https://campusy.unc.edu/",
+          "faith_groups": null,
+          "religion_report": null,
+          "faith_estimate": [],
+          "notes": ""
+        },
+        "lgbtq": {
+          "lgbtq_center": "https://www.unc.edu/discover/lgbtq-alumni-affinity-group-creates-community/",
+          "lgbtq_groups": null,
+          "nondiscrimination": "https://eoc.unc.edu/policies/nondiscrimination-policy/",
+          "housing": "https://housing.unc.edu/",
+          "name_policy": "https://registrar.unc.edu/",
+          "health_plan": null,
+          "restrooms": null,
+          "trans_admission": null,
+          "conduct_code": null,
+          "notes": ""
+        }
+      },
+      "sources": [
+        {
+          "domain": "greek",
+          "type": "fsl_office",
+          "url": "https://fsl.unc.edu/",
+          "status": "error",
+          "detail": "host didn't answer"
+        },
+        {
+          "domain": "faith",
+          "type": "faith_office",
+          "url": "https://campusy.unc.edu/",
+          "status": "ok",
+          "sha256": "c5527d2f7b8e07b321dbc21d8105fbb8bb0dc88b56657dbae7146c38e5211250"
+        },
+        {
+          "domain": "lgbtq",
+          "type": "lgbtq_center",
+          "url": "https://www.unc.edu/discover/lgbtq-alumni-affinity-group-creates-community/",
+          "status": "ok",
+          "sha256": "3b65fa053d32c1a7b439a70f68e102af9ba2aa85ec018598b684675320ba5d0c"
+        },
+        {
+          "domain": "lgbtq",
+          "type": "nondiscrimination",
+          "url": "https://eoc.unc.edu/policies/nondiscrimination-policy/",
+          "status": "ok",
+          "sha256": "763a6334b96b408df1b78af3ba09b4a30e2f16dedc020a7f583e28e95b062bfe"
+        },
+        {
+          "domain": "lgbtq",
+          "type": "housing",
+          "url": "https://housing.unc.edu/",
+          "status": "error",
+          "detail": "host didn't answer"
+        },
+        {
+          "domain": "lgbtq",
+          "type": "name_policy",
+          "url": "https://registrar.unc.edu/",
+          "status": "error",
+          "detail": "host didn't answer"
+        },
+        {
+          "domain": "lgbtq",
+          "type": "followed",
+          "url": "https://www.unc.edu/coronavirus/coronavirus-resources/",
+          "status": "ok",
+          "sha256": "ebafa3b845910a965f3ae48d95a6f7a7f0de8ac76aaa1d5d6d014450a4f253d4"
+        },
+        {
+          "domain": "lgbtq",
+          "type": "followed",
+          "url": "https://www.unc.edu/tropical-depression-chantal-response-efforts-and-resources/",
+          "status": "ok",
+          "sha256": "29845350b8cbc7a92f31bc250b70850c67487fb99922f954bca8be30c572487c"
+        }
+      ],
+      "discovery": {
+        "probed": [
+          "lgbtq_center"
+        ],
+        "paid": [
+          "fsl_office",
+          "faith_office",
+          "nondiscrimination",
+          "housing",
+          "name_policy"
+        ],
+        "searches": 3,
+        "fetches": 80
+      }
+    },
+    {
+      "unit_id": "204796",
+      "learned": "2026-10-04",
+      "model": "claude-sonnet-5",
+      "links": {
+        "greek": {
+          "fsl_office": "https://sfl.osu.edu/",
+          "fsl_reports": [],
+          "recruitment": null,
+          "greek_none": null,
+          "notes": ""
+        },
+        "faith": {
+          "faith_office": null,
+          "faith_groups": null,
+          "religion_report": null,
+          "faith_estimate": [],
+          "notes": ""
+        },
+        "lgbtq": {
+          "lgbtq_center": null,
+          "lgbtq_groups": null,
+          "nondiscrimination": null,
+          "housing": null,
+          "name_policy": null,
+          "health_plan": null,
+          "restrooms": "https://fod.osu.edu/restrooms-locker-rooms-and-changing",
+          "trans_admission": null,
+          "conduct_code": null,
+          "notes": ""
+        }
+      },
+      "sources": [
+        {
+          "domain": "greek",
+          "type": "fsl_office",
+          "url": "https://sfl.osu.edu/",
+          "status": "ok",
+          "sha256": "c4e4bf2ab606f2bcba697890cb283385f6f68d55e824817621ef7981480f2e10"
+        },
+        {
+          "domain": "greek",
+          "type": "followed",
+          "url": "https://sfl.osu.edu/current-members/membership-statistics",
+          "status": "ok",
+          "sha256": "855836806e8687b3880db29c6020a41a0c6de83768fa909f4e384ccce17a2396"
+        },
+        {
+          "domain": "greek",
+          "type": "followed",
+          "url": "https://sfl.osu.edu/advisors-volunteers-and-hq-partners/membership-statistics",
+          "status": "ok",
+          "sha256": "705390275754d56ebb66bec5ac7827b68eab68c8aa836c78b5c1203373ea55c6"
+        },
+        {
+          "domain": "greek",
+          "type": "followed",
+          "url": "https://sfl.osu.edu/advisors-volunteers-and-hq-partners/grade-reports-and-ranking",
+          "status": "ok",
+          "sha256": "3d6f6e18448be30f9413cd346e568d5b8e8fe216920b9b83039e28eed63cff09"
+        },
+        {
+          "domain": "greek",
+          "type": "followed",
+          "url": "https://sfl.osu.edu/about-us",
+          "status": "ok",
+          "sha256": "511c43845f5da75264849790dd962dd4f315fc47c7c879f27a5ea738ea24c858"
+        },
+        {
+          "domain": "greek",
+          "type": "followed",
+          "url": "https://sfl.osu.edu/about-us/chapters",
+          "status": "ok",
+          "sha256": "c076e0ac39c06141c75b2e4f1a10c70a56fb0187ab6d3c1a2b84072862a80101"
+        },
+        {
+          "domain": "greek",
+          "type": "followed",
+          "url": "https://sfl.osu.edu/about-us/boards-and-councils",
+          "status": "ok",
+          "sha256": "11793c286ed226bf88f39fab4571b21a5265a105cf2491512cb17619cf3e5ebd"
+        },
+        {
+          "domain": "lgbtq",
+          "type": "restrooms",
+          "url": "https://fod.osu.edu/restrooms-locker-rooms-and-changing",
+          "status": "ok",
+          "sha256": "0001d12a8ac095b0f07d8e5fda25fe392a16eb14ad1f5516d819f6b4f52c77fe"
+        }
+      ],
+      "discovery": {
+        "probed": [
+          "fsl_office",
+          "restrooms"
+        ],
+        "paid": [
+          "faith_office",
+          "lgbtq_center",
+          "nondiscrimination",
+          "housing",
+          "name_policy"
+        ],
+        "searches": 3,
+        "fetches": 70
+      }
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 /**
  * CDS admissions by residency (specs/data-expansion/cds-residency-admissions.md): the record → block read, its grid
  * checks and merge window, lineage, rates and the insight, the rate "for you", Explore's chips, Compare's cells, and the
- * partial-coverage guard. Real records: data/cds-records/{221999,190415,231624,145637}.json. `npm test`.
+ * partial-coverage guard. Real records: the mini fixture's reported layer (CDS records of 221999, 190415, 231624,
+ * 145637). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -36,12 +37,14 @@ import {
   sameClassAdmitRate,
   yieldsByResidency,
 } from "../lib/cds/residency-display.ts";
-import { readRecords } from "../scripts/lib/college-reported/records.mts";
+import { loadReportedLayer } from "../scripts/lib/data-platform/layers.mts";
+import { miniLayers, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const records = readRecords(join(ROOT, "data", "cds-records"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
+const reportedLayer = await loadReportedLayer(miniLayers());
+const records = reportedLayer.records;
 const record = (id: string) => structuredClone(records.find((r) => r.unit_id === id)!);
 const school = (id: string) => structuredClone(schools.find((s) => s.unit_id === id)!);
 
@@ -278,16 +281,15 @@ test("merge window: a newer failed grid doesn't hide an older passed one inside 
 /* 10. Lineage and the real merge                                      */
 /* ------------------------------------------------------------------ */
 
-test("data/schools.json carries the grid for Vanderbilt, Cornell, and Illinois, and none for William & Mary", () => {
+test("the dataset carries the grid for Vanderbilt, Cornell, and Illinois, and none for William & Mary", () => {
   const block = (id: string) => schools.find((s) => s.unit_id === id)!.reported?.admissions_by_residency;
   assert.deepEqual(block("221999")?.in_state, { applicants: 2885, admitted: 301, enrolled: 234 });
   assert.deepEqual(block("190415")?.international, { applicants: 18566, admitted: 664, enrolled: 389 });
   assert.deepEqual(block("145637")?.in_state, { applicants: 29419, admitted: 14509, enrolled: 6587 });
   assert.equal(block("231624"), undefined);
-  // The committed file is what a merge of the committed records gives (mergeReported is idempotent).
+  // The stored colleges are what a merge of the reported layer gives (mergeReported is idempotent).
   const ids = ["221999", "190415", "231624", "145637"];
-  const reported = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
-  const again = mergeReported(ids.map(school), reported, { records, meta, table: CDS_TEMPLATE }).schools;
+  const again = mergeReported(ids.map(school), reportedLayer.file, { records, meta, table: CDS_TEMPLATE }).schools;
   for (const s of again) assert.equal(JSON.stringify(s), JSON.stringify(schools.find((x) => x.unit_id === s.unit_id)), s.name);
 });
 

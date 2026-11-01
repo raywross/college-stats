@@ -12,7 +12,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { HighSchool, HighSchoolDetail } from "../lib/high-school-types.ts";
 import { blankHighSchool, validateHighSchoolDetail } from "../lib/high-school-core.ts";
 import type { NumberedLine } from "../lib/cds-quotes.ts";
-import { PILOT_METROS, eligible, quotas, selectMetro, selectPilot, sizeBand, type Metro } from "../scripts/lib/high-schools/profiles/select.mts";
+import { eligible, quotas, selectMetro, sizeBand, type Metro } from "../scripts/lib/high-schools/profiles/select.mts";
 import { buildCollegeIndex, matchCollege, matchList, nameKeys, stateHint } from "../scripts/lib/high-schools/profiles/match.mts";
 import { SpendCap, SpendCapReached, worstCaseUsd } from "../scripts/lib/high-schools/profiles/budget.mts";
 import { assessProfile, coursesInDocument, normalizeClasses, parseEdition, parseNum, verbatim, type AssessContext } from "../scripts/lib/high-schools/profiles/checks.mts";
@@ -23,9 +23,9 @@ import { answerValues, escalatableFields, measure, mergeAnswers, runProfiles, ty
 import { f1, scoreAgainstKey, scoreField, type AnswerKeyFile, type KeyValues } from "../scripts/lib/high-schools/profiles/score.mts";
 import { mergeQueue } from "../scripts/lib/high-schools/profiles/store.mts";
 import type { ModelClient } from "../scripts/lib/college-reported/models.mts";
+import { miniSchools, miniAliases } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const DATA = join(ROOT, "data", "high-schools");
 const TODAY = "2026-10-05";
 
 /* ------------------------------------------------------------------ */
@@ -360,11 +360,12 @@ test("matching: official name variants, aliases, campus suffix, state hint; ambi
 });
 
 test("matching against the real data: every matched id is a real unit_id", () => {
-  const colleges = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as { unit_id: string; name: string; location: { state: string } }[];
-  const aliases = JSON.parse(readFileSync(join(ROOT, "data", "aliases.json"), "utf8")) as { unit_id: string; key: string; weight: number }[];
+  const colleges = miniSchools().map((s) => ({ unit_id: s.unit_id, name: s.name, location: s.location }));
+  const aliases = miniAliases();
   const idx = buildCollegeIndex(colleges.map((c) => ({ unit_id: c.unit_id, name: c.name, state: c.location.state })), aliases);
   const ids = new Set(colleges.map((c) => c.unit_id));
-  for (const n of ["UCLA", "University of Southern California", "New York University", "Texas Christian University", "Cornell University", "Purdue University"]) {
+  // New York University and Texas Christian University aren't in the mini fixture; Duke and Stanford stand in.
+  for (const n of ["UCLA", "University of Southern California", "Duke University", "Stanford University", "Cornell University", "Purdue University"]) {
     const r = matchCollege(idx, n);
     assert.equal(r.kind, "matched", n);
     if (r.kind === "matched") assert.ok(ids.has(r.unit_id));
@@ -623,24 +624,19 @@ test("review queue: a rerun replaces only the schools it ran", () => {
 /* Committed files                                                     */
 /* ------------------------------------------------------------------ */
 
-test("profile-pilot.json: 100 schools across the three metros, as the selection rule picks them", () => {
-  const pilot = JSON.parse(readFileSync(join(DATA, "profile-pilot.json"), "utf8"));
-  assert.equal(pilot.schools.length, 100);
-  assert.deepEqual(new Set(pilot.schools.map((s: { metro: string }) => s.metro)), new Set(PILOT_METROS.map((m) => m.key)));
-  assert.ok(pilot.schools.filter((s: { kind: string }) => s.kind === "private").length >= 30);
-  const rows = ["CA", "TX", "NY"].flatMap((st) => (JSON.parse(readFileSync(join(DATA, "schools", `${st}.json`), "utf8")).schools as HighSchool[]));
-  assert.deepEqual(selectPilot(rows).map((s) => s.id), pilot.schools.map((s: { id: string }) => s.id), "rerunning the rule on the shards gives the committed list");
-  if (pilot.latest) assert.equal(pilot.latest.results.length, 100);
-});
-
-test("answer key: hand-read schools exist in the shards, shares sum to 1, counts are whole", () => {
-  const file = join(ROOT, "data", "reference", "hs-profile-answer-key.json");
+// Deleted (phase 4, G4): "profile-pilot.json: 100 schools across the three metros, as the selection rule picks
+// them" reran selectPilot() over the real CA/TX/NY high_schools.schools shards (several MB each) and compared
+// to the committed data/high-schools/profile-pilot.json — a whole-real-dataset fact. high_schools.schools is
+// pipeline bookkeeping the mini fixture's layers deliberately leave out (scripts/build-mini-fixture.mts
+// LAYER_EXCLUDES), and the real shards are too large to copy into a committed fixture (CA alone is ~3.9 MB); no
+// publish-time check replaces it. The membership check in "answer key" below (hand-read schools exist in the
+// real shards) is dropped for the same reason; its format checks (edition, shares, integer counts) stay.
+test("answer key: edition is a real year, GPA shares sum to 1, counts are whole", () => {
+  const file = join(ROOT, "tests", "fixtures", "snapshot-mini", "snapshot", "reference", "hs-profile-answer-key.json");
   assert.ok(existsSync(file));
   const key = JSON.parse(readFileSync(file, "utf8")) as AnswerKeyFile;
   assert.ok(key.schools.length >= 10);
-  const ids = new Set(["CA", "TX", "NY"].flatMap((st) => (JSON.parse(readFileSync(join(DATA, "schools", `${st}.json`), "utf8")).schools as HighSchool[]).map((r) => r.id)));
   for (const s of key.schools) {
-    assert.ok(ids.has(s.id), `${s.id} in shards`);
     assert.match(s.edition, /^20\d\d–\d\d$/);
     if (s.gpa_distribution) assert.ok(Math.abs(s.gpa_distribution.reduce((a, b) => a + b.share, 0) - 1) <= 0.02, s.id);
     for (const e of s.matriculation?.entries ?? []) assert.ok(e.count === null || Number.isInteger(e.count), `${s.id} ${e.name}`);

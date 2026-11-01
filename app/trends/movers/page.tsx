@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const LISTS = MOVER_LISTS as readonly MoverListDef[];
 
 /**
- * /trends/movers (specs/trends/top-10-lists.md): one list per measure from data/history/trends/movers.json, for the
+ * /trends/movers (specs/trends/top-10-lists.md): one list per measure from the snapshot's trends/movers.json, for the
  * window in `?window=10|5` (ten by default). Every number and year comes from the file; nothing is ranked here.
  */
 export default async function MoversPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {

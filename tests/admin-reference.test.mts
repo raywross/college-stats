@@ -11,6 +11,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import * as nodeModule from "node:module";
 import type { School } from "../lib/types.ts";
+import { miniReference, miniSchools, miniReleaseCalendar } from "./helpers/snapshot.mts";
 
 // lib/admin/reference-reads.ts starts with `import "server-only"`, which only Next.js resolves.
 type ResolveResult = { url: string; shortCircuit?: boolean };
@@ -36,7 +37,7 @@ const { fakeSupabase } = await import("./helpers/fake-supabase.mts");
 const reads = await import("../lib/admin/reference-reads.ts");
 const actions = await import("../lib/admin/reference-actions.ts");
 
-const schools = json("data", "schools.json") as School[];
+const schools = miniSchools();
 const knownUnitIds = new Set(schools.map((s) => s.unit_id));
 
 /* ------------------------------------------------------------------ */
@@ -101,54 +102,60 @@ test("editorToBody refuses invalid JSON and a bare scalar, before any write", ()
 /* validateReference: the document's own validator, over the real files */
 /* ------------------------------------------------------------------ */
 
-test("validateReference: the real aid-policies.json is sound; a missing required key is not", () => {
-  const body = json("data", "aid-policies.json") as { policies: Record<string, unknown>[] };
-  assert.deepEqual(validate("aid-policies", body, knownUnitIds), []);
+test("validateReference: the real aid-policies.json is sound; a missing required key is not", async () => {
+  // No `knownUnitIds` here: the real curated file names ~54 colleges, most outside the mini fixture's 12, so the
+  // membership half of the check isn't meaningful on this fixture (per the doc comment, omitting it skips that
+  // check rather than refusing); the format checks still run over the real file.
+  const body = miniReference("aid-policies") as { policies: Record<string, unknown>[] };
+  assert.deepEqual(validate("aid-policies", body), []);
   const broken = { policies: [{ ...body.policies[0], unit_id: undefined }] };
-  assert.ok(validate("aid-policies", broken, knownUnitIds).length > 0);
+  assert.ok(validate("aid-policies", broken).length > 0);
 });
 
-test("validateReference: the real state-laws.json is sound (no knownUnitIds check for this one); a bad date is not", () => {
-  const body = json("data", "state-laws.json") as { reviewed: string; laws: Record<string, unknown>[] };
+test("validateReference: the real state-laws.json is sound (no knownUnitIds check for this one); a bad date is not", async () => {
+  const body = miniReference("state-laws") as { reviewed: string; laws: Record<string, unknown>[] };
   assert.deepEqual(validate("state-laws", body), []);
   const broken = { ...body, reviewed: "not-a-date" };
   assert.ok(validate("state-laws", broken).length > 0);
 });
 
-test("validateReference: the real application-cycle.json is sound; a non-object is not", () => {
-  const body = json("data", "application-cycle.json");
+test("validateReference: the real application-cycle.json is sound; a non-object is not", async () => {
+  const body = miniReference("application-cycle");
   assert.deepEqual(validate("application-cycle", body), []);
   assert.ok(validate("application-cycle", "nope").length > 0);
 });
 
-test("validateReference: the real guaranteed-admission.json and major-admission.json are sound against the dataset's unit ids", () => {
-  const guaranteed = json("data", "guaranteed-admission.json");
-  assert.deepEqual(validate("guaranteed-admission", guaranteed, knownUnitIds), []);
-  const major = json("data", "major-admission.json");
-  assert.deepEqual(validate("major-admission", major, knownUnitIds), []);
+test("validateReference: the real guaranteed-admission.json and major-admission.json are sound", async () => {
+  // No `knownUnitIds`: most curated colleges in these files are outside the mini fixture's 12 (the publisher's
+  // reference gate, G5, checks membership against the real dataset at publish time).
+  const guaranteed = miniReference("guaranteed-admission");
+  assert.deepEqual(validate("guaranteed-admission", guaranteed), []);
+  const major = miniReference("major-admission");
+  assert.deepEqual(validate("major-admission", major), []);
 });
 
-test("validateReference: the real trends/common-app.json and directories/organizations.json are sound", () => {
-  assert.deepEqual(validate("common-app-trends", json("data", "trends", "common-app.json")), []);
-  assert.deepEqual(validate("organizations", json("data", "directories", "organizations.json")), []);
+test("validateReference: the real trends/common-app.json and directories/organizations.json are sound", async () => {
+  assert.deepEqual(validate("common-app-trends", miniReference("common-app-trends")), []);
+  assert.deepEqual(validate("organizations", miniReference("organizations")), []);
 });
 
-test("validateReference: the curated aliases name every unit_id it lists (toAliasRows + aliasTableProblems); an unknown unit_id is a problem", () => {
-  const body = json("data", "aliases-curated.json") as { unit_id: string; alias: string }[];
-  assert.deepEqual(validate("aliases-curated", body, knownUnitIds), []);
+test("validateReference: the curated aliases name every unit_id it lists (toAliasRows + aliasTableProblems); an unknown unit_id is a problem", async () => {
+  const body = miniReference("aliases-curated") as { unit_id: string; alias: string }[];
+  // No `knownUnitIds` on the "sound" check: most curated aliases are for colleges outside the mini fixture's 12.
+  assert.deepEqual(validate("aliases-curated", body), []);
   assert.ok(validate("aliases-curated", [...body, { unit_id: "0", alias: "Nope U" }], knownUnitIds).length > 0);
   assert.deepEqual(validate("aliases-curated", body), [], "without knownUnitIds the unit-id check is skipped, never refusing a save over it");
 });
 
-test("validateReference: the essay guidance text names every missing section; the real document has none", () => {
-  const markdown = read("data", "reference", "essay-guidance", "guidance.md");
+test("validateReference: the essay guidance text names every missing section; the real document has none", async () => {
+  const markdown = miniReference<string>("essay-guidance");
   assert.deepEqual(validate("essay-guidance/guidance", { text: markdown }), []);
   assert.deepEqual(validate("essay-guidance/guidance", { text: "# Mechanics\nonly one section" }).length > 0, true);
   assert.deepEqual(validate("essay-guidance/guidance", "not a text document"), ["The essay guidance document must be { text }."]);
 });
 
-test("validateReference: an unknown name (the calendar, or anything else) falls back to object-or-array", () => {
-  assert.deepEqual(validate("calendar", json("data", "release-calendar.json")), []);
+test("validateReference: an unknown name (the calendar, or anything else) falls back to object-or-array", async () => {
+  assert.deepEqual(validate("calendar", miniReleaseCalendar()), []);
   assert.deepEqual(validate("calendar", "nope"), ["The document must be a JSON object or array."]);
   assert.deepEqual(validate("some-unknown-name", [1, 2, 3]), []);
   assert.deepEqual(validate("some-unknown-name", 5), ["The document must be a JSON object or array."]);
@@ -208,7 +215,7 @@ function formOf(fields: Record<string, string>) {
   return { get: (name: string) => (name in fields ? fields[name] : null) };
 }
 
-function depsFor(over: Partial<{ rpcResult: { ok: true; data: unknown } | { ok: false; error: string }; versionBody: unknown; calls: string[] }> = {}) {
+function depsFor(over: Partial<{ rpcResult: { ok: true; data: unknown } | { ok: false; error: string }; versionBody: unknown; calls: string[]; knownUnitIds: Set<string> }> = {}) {
   const calls = over.calls ?? [];
   return {
     deps: {
@@ -221,7 +228,9 @@ function depsFor(over: Partial<{ rpcResult: { ok: true; data: unknown } | { ok: 
         return over.versionBody ?? null;
       },
       async knownUnitIds() {
-        return knownUnitIds;
+        // undefined (not the mini fixture's 12-college set): the real curated files these tests save name many
+        // more colleges than the fixture carries, and the unit-id check is explicitly skipped when omitted.
+        return over.knownUnitIds ?? undefined;
       },
     },
     calls,
@@ -245,7 +254,7 @@ test("saveReference: a document that fails its own validator refuses before any 
 
 test("saveReference: a sound document calls admin_data_set_reference with the exact typed text and the trimmed note", async () => {
   const { deps, calls } = depsFor();
-  const policiesBody = json("data", "aid-policies.json") as { policies: unknown[] };
+  const policiesBody = miniReference("aid-policies") as { policies: unknown[] };
   const bodyText = JSON.stringify(policiesBody, null, 2);
   const result = await actions.saveReference(deps, formOf({ name: "aid-policies", kind: "json", body: bodyText, note: "  Per the registrar  " }));
   assert.deepEqual(result, { status: "done", message: "Saved." });
@@ -266,7 +275,7 @@ test("saveReference: a text document is re-wrapped as {text} before admin_data_s
       return undefined;
     },
   };
-  const markdown = read("data", "reference", "essay-guidance", "guidance.md");
+  const markdown = miniReference<string>("essay-guidance");
   const result = await actions.saveReference(deps, formOf({ name: "essay-guidance/guidance", kind: "text", body: markdown }));
   assert.equal(result.status, "done");
   assert.deepEqual(JSON.parse(sent[0].p_body), { text: markdown });
@@ -274,7 +283,7 @@ test("saveReference: a text document is re-wrapped as {text} before admin_data_s
 
 test("saveReference: an rpc refusal is turned into plain words, and an unrecognized name refuses before reading the form further", async () => {
   const { deps } = depsFor({ rpcResult: { ok: false, error: "invalid_body" } });
-  const refused = await actions.saveReference(deps, formOf({ name: "aid-policies", kind: "json", body: JSON.stringify(json("data", "aid-policies.json")) }));
+  const refused = await actions.saveReference(deps, formOf({ name: "aid-policies", kind: "json", body: JSON.stringify(miniReference("aid-policies")) }));
   assert.equal(refused.status, "error");
   assert.match((refused as { message: string }).message, /valid JSON/i);
 

@@ -1,0 +1,475 @@
+[
+  {
+    "unit_id": "177065",
+    "name": "Columbia College",
+    "location": {
+      "city": "Columbia",
+      "state": "MO"
+    },
+    "links": {
+      "website": "https://www.ccis.edu/"
+    }
+  },
+  {
+    "unit_id": "164988",
+    "name": "Boston University",
+    "location": {
+      "city": "Boston",
+      "state": "MA"
+    },
+    "links": {
+      "website": "https://www.bu.edu/"
+    }
+  },
+  {
+    "unit_id": "167358",
+    "name": "Northeastern University",
+    "location": {
+      "city": "Boston",
+      "state": "MA"
+    },
+    "links": {
+      "website": "https://www.northeastern.edu/"
+    }
+  },
+  {
+    "unit_id": "121345",
+    "name": "Pomona College",
+    "location": {
+      "city": "Claremont",
+      "state": "CA"
+    },
+    "links": {
+      "website": "https://www.pomona.edu/"
+    }
+  },
+  {
+    "unit_id": "112260",
+    "name": "Claremont McKenna College",
+    "location": {
+      "city": "Claremont",
+      "state": "CA"
+    },
+    "links": {
+      "website": "https://www.cmc.edu/"
+    }
+  },
+  {
+    "unit_id": "115409",
+    "name": "Harvey Mudd College",
+    "location": {
+      "city": "Claremont",
+      "state": "CA"
+    },
+    "links": {
+      "website": "https://www.hmc.edu/"
+    }
+  },
+  {
+    "unit_id": "123165",
+    "name": "Scripps College",
+    "location": {
+      "city": "Claremont",
+      "state": "CA"
+    },
+    "links": {
+      "website": "https://www.scrippscollege.edu/"
+    }
+  },
+  {
+    "unit_id": "121257",
+    "name": "Pitzer College",
+    "location": {
+      "city": "Claremont",
+      "state": "CA"
+    },
+    "links": {
+      "website": "https://www.pitzer.edu/"
+    }
+  },
+  {
+    "unit_id": "227757",
+    "name": "Rice University",
+    "location": {
+      "city": "Houston",
+      "state": "TX"
+    },
+    "links": {
+      "website": "https://www.rice.edu/"
+    }
+  },
+  {
+    "unit_id": "204006",
+    "name": "Miami University-Hamilton",
+    "location": {
+      "city": "Hamilton",
+      "state": "OH"
+    },
+    "links": {
+      "website": "https://miamioh.edu/regionals/"
+    }
+  },
+  {
+    "unit_id": "214777",
+    "name": "Pennsylvania State University-Main Campus",
+    "location": {
+      "city": "University Park",
+      "state": "PA"
+    },
+    "links": {
+      "website": "https://psu.edu/"
+    }
+  },
+  {
+    "unit_id": "214689",
+    "name": "Pennsylvania State University-Penn State Altoona",
+    "location": {
+      "city": "Altoona",
+      "state": "PA"
+    },
+    "links": {
+      "website": "https://altoona.psu.edu/"
+    }
+  },
+  {
+    "unit_id": "214591",
+    "name": "Pennsylvania State University-Penn State Erie-Behrend College",
+    "location": {
+      "city": "Erie",
+      "state": "PA"
+    },
+    "links": {
+      "website": "https://behrend.psu.edu/"
+    }
+  },
+  {
+    "unit_id": "174792",
+    "name": "Saint Johns University",
+    "location": {
+      "city": "Collegeville",
+      "state": "MN"
+    },
+    "links": {
+      "website": "https://csbsju.edu/"
+    }
+  },
+  {
+    "unit_id": "195809",
+    "name": "St. John's University-New York",
+    "location": {
+      "city": "Queens",
+      "state": "NY"
+    },
+    "links": {
+      "website": "https://www.stjohns.edu/"
+    }
+  },
+  {
+    "unit_id": "179867",
+    "name": "Washington University in St Louis",
+    "location": {
+      "city": "St. Louis",
+      "state": "MO"
+    },
+    "links": {
+      "website": "https://washu.edu/"
+    }
+  },
+  {
+    "unit_id": "151333",
+    "name": "Indiana University-Kokomo",
+    "location": {
+      "city": "Kokomo",
+      "state": "IN"
+    },
+    "links": {
+      "website": "https://kokomo.iu.edu/"
+    }
+  },
+  {
+    "unit_id": "236948",
+    "name": "University of Washington-Seattle Campus",
+    "location": {
+      "city": "Seattle",
+      "state": "WA"
+    },
+    "links": {
+      "website": "https://www.washington.edu/"
+    }
+  },
+  {
+    "unit_id": "377564",
+    "name": "University of Washington-Tacoma Campus",
+    "location": {
+      "city": "Tacoma",
+      "state": "WA"
+    },
+    "links": {
+      "website": "https://www.tacoma.uw.edu/"
+    }
+  },
+  {
+    "unit_id": "131469",
+    "name": "George Washington University",
+    "location": {
+      "city": "Washington",
+      "state": "DC"
+    },
+    "links": {
+      "website": "https://www.gwu.edu/"
+    }
+  },
+  {
+    "unit_id": "144281",
+    "name": "Columbia College Chicago",
+    "location": {
+      "city": "Chicago",
+      "state": "IL"
+    },
+    "links": {
+      "website": "https://www.colum.edu/"
+    }
+  },
+  {
+    "unit_id": "190150",
+    "name": "Columbia University in the City of New York",
+    "location": {
+      "city": "New York",
+      "state": "NY"
+    },
+    "links": {
+      "website": "https://www.columbia.edu/"
+    }
+  },
+  {
+    "unit_id": "217934",
+    "name": "Columbia College",
+    "location": {
+      "city": "Columbia",
+      "state": "SC"
+    },
+    "links": {
+      "website": "https://www.columbiasc.edu/"
+    }
+  },
+  {
+    "unit_id": "196167",
+    "name": "SUNY College at Geneseo",
+    "location": {
+      "city": "Geneseo",
+      "state": "NY"
+    },
+    "links": {
+      "website": "https://www.geneseo.edu/"
+    }
+  },
+  {
+    "unit_id": "196079",
+    "name": "Binghamton University",
+    "location": {
+      "city": "Vestal",
+      "state": "NY"
+    },
+    "links": {
+      "website": "https://www.binghamton.edu/"
+    }
+  },
+  {
+    "unit_id": "190594",
+    "name": "CUNY Hunter College",
+    "location": {
+      "city": "New York",
+      "state": "NY"
+    },
+    "links": {
+      "website": "https://www.hunter.cuny.edu/"
+    }
+  },
+  {
+    "unit_id": "228787",
+    "name": "The University of Texas at Dallas",
+    "location": {
+      "city": "Richardson",
+      "state": "TX"
+    },
+    "links": {
+      "website": "https://www.utdallas.edu/"
+    }
+  },
+  {
+    "unit_id": "174066",
+    "name": "University of Minnesota-Twin Cities",
+    "location": {
+      "city": "Minneapolis",
+      "state": "MN"
+    },
+    "links": {
+      "website": "https://twin-cities.umn.edu/"
+    }
+  },
+  {
+    "unit_id": "178396",
+    "name": "University of Missouri-Columbia",
+    "location": {
+      "city": "Columbia",
+      "state": "MO"
+    },
+    "links": {
+      "website": "https://missouri.edu/"
+    }
+  },
+  {
+    "unit_id": "126614",
+    "name": "University of Colorado Boulder",
+    "location": {
+      "city": "Boulder",
+      "state": "CO"
+    },
+    "links": {
+      "website": "https://www.colorado.edu/"
+    }
+  },
+  {
+    "unit_id": "163286",
+    "name": "University of Maryland-College Park",
+    "location": {
+      "city": "College Park",
+      "state": "MD"
+    },
+    "links": {
+      "website": "https://www.umd.edu/"
+    }
+  },
+  {
+    "unit_id": "166629",
+    "name": "University of Massachusetts-Amherst",
+    "location": {
+      "city": "Amherst",
+      "state": "MA"
+    },
+    "links": {
+      "website": "https://www.umass.edu/"
+    }
+  },
+  {
+    "unit_id": "181464",
+    "name": "University of Nebraska-Lincoln",
+    "location": {
+      "city": "Lincoln",
+      "state": "NE"
+    },
+    "links": {
+      "website": "https://www.unl.edu/"
+    }
+  },
+  {
+    "unit_id": "186380",
+    "name": "Rutgers University-New Brunswick",
+    "location": {
+      "city": "New Brunswick",
+      "state": "NJ"
+    },
+    "links": {
+      "website": "https://newbrunswick.rutgers.edu/"
+    }
+  },
+  {
+    "unit_id": "141574",
+    "name": "University of Hawaii at Manoa",
+    "location": {
+      "city": "Honolulu",
+      "state": "HI"
+    },
+    "links": {
+      "website": "https://manoa.hawaii.edu/"
+    }
+  },
+  {
+    "unit_id": "151351",
+    "name": "Indiana University-Bloomington",
+    "location": {
+      "city": "Bloomington",
+      "state": "IN"
+    },
+    "links": {
+      "website": "https://bloomington.iu.edu/"
+    }
+  },
+  {
+    "unit_id": "225511",
+    "name": "University of Houston",
+    "location": {
+      "city": "Houston",
+      "state": "TX"
+    },
+    "links": {
+      "website": "https://www.uh.edu/"
+    }
+  },
+  {
+    "unit_id": "161253",
+    "name": "University of Maine",
+    "location": {
+      "city": "Orono",
+      "state": "ME"
+    },
+    "links": {
+      "website": "https://www.umaine.edu/"
+    }
+  },
+  {
+    "unit_id": "215293",
+    "name": "University of Pittsburgh-Pittsburgh Campus",
+    "location": {
+      "city": "Pittsburgh",
+      "state": "PA"
+    },
+    "links": {
+      "website": "https://www.pitt.edu/"
+    }
+  },
+  {
+    "unit_id": "126818",
+    "name": "Colorado State University-Fort Collins",
+    "location": {
+      "city": "Fort Collins",
+      "state": "CO"
+    },
+    "links": {
+      "website": "https://colostate.edu/"
+    }
+  },
+  {
+    "unit_id": "221759",
+    "name": "The University of Tennessee-Knoxville",
+    "location": {
+      "city": "Knoxville",
+      "state": "TN"
+    },
+    "links": {
+      "website": "https://www.utk.edu/"
+    }
+  },
+  {
+    "unit_id": "229115",
+    "name": "Texas Tech University",
+    "location": {
+      "city": "Lubbock",
+      "state": "TX"
+    },
+    "links": {
+      "website": "https://www.ttu.edu/"
+    }
+  },
+  {
+    "unit_id": "159391",
+    "name": "Louisiana State University and Agricultural & Mechanical College",
+    "location": {
+      "city": "Baton Rouge",
+      "state": "LA"
+    },
+    "links": {
+      "website": "https://www.lsu.edu/"
+    }
+  }
+]

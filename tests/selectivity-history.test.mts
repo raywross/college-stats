@@ -12,13 +12,14 @@ import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { SELECTIVITY_METHOD } from "../lib/selectivity.ts";
 import { PAGE, advance, historyRows, historyRun, inputsFor, readAllPages, recordedMap, type CollegeState, type HistoryRow, type SelectivityAt } from "../scripts/lib/selectivity-history.mts";
-import { methodProblems, readMethodSample, scoreSample } from "../scripts/lib/selectivity-method.mts";
+import { methodProblems, scoreSample, type MethodSample } from "../scripts/lib/selectivity-method.mts";
 import type { SelectivityIndexFile } from "../scripts/lib/selectivity.mts";
 import { DISPLAY_MOVE_MIN, inputChanges, isDrift, runChangesOf, tierMoves, withPrevious, type Pool, type SelectivityPoint } from "../lib/admin/selectivity-history-view.ts";
+import { miniMeta, miniReference, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const SCHOOLS: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const META: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const SCHOOLS: School[] = miniSchools();
+const META: DatasetMeta = miniMeta();
 const UT = SCHOOLS.find((s) => s.unit_id === "228778")!;
 const HARVARD = SCHOOLS.find((s) => s.unit_id === "166027")!;
 
@@ -132,8 +133,8 @@ test("held is read only under today's method; a missing SAT is marked filled in"
 });
 
 test("the method guard: the committed sample matches today's method, and a changed score under an unchanged method is caught", () => {
-  const sample = readMethodSample(ROOT);
-  assert.ok(sample, "data/reference/selectivity-method.json is committed");
+  const sample: MethodSample | null = miniReference<MethodSample>("selectivity-method");
+  assert.ok(sample, "the selectivity-method reference document exists");
   assert.equal(sample!.method, SELECTIVITY_METHOD);
   assert.deepEqual(methodProblems(sample), []);
   const id = Object.keys(sample!.expected).find((k) => sample!.expected[k].all !== null)!;
@@ -256,7 +257,7 @@ test("a tier moved only by other colleges' figures is announced; a method change
 });
 
 test("the backfill, the rebuild, and the history publish never stage follower changes", () => {
-  for (const f of ["scripts/backfill-selectivity-history.mts", "scripts/rebuild-selectivity-history.mts", "scripts/lib/selectivity-history.mts"]) {
+  for (const f of ["scripts/lib/selectivity-history.mts"]) {
     assert.doesNotMatch(readFileSync(join(ROOT, f), "utf8"), /dataset_changes|publish_changes\(|stageChanges/, f);
   }
 });

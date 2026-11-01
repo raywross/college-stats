@@ -46,30 +46,32 @@ registerHooks({
 const loader = await import("../lib/data-platform/loader.ts");
 const { snapshotPath, POINTER_OBJECT } = await import("../lib/data-platform/snapshot.ts");
 const fetchScript = await import("../scripts/fetch-snapshot.mts");
-type SnapshotContent = import("../lib/data-platform/loader.ts").SnapshotContent;
+const { miniAliases, miniHistoryFiles, miniMeta, miniReleaseCalendar, miniSchools } = await import("./helpers/snapshot.mts");
 
 /* ------------------------------------------------------------------ */
-/* A tiny snapshot from three real colleges                            */
+/* A tiny snapshot from three of the mini fixture's colleges           */
 /* ------------------------------------------------------------------ */
 
-const readJson = (path: string) => JSON.parse(readFileSync(join(ROOT, path), "utf8"));
-const ALL = readJson("data/schools.json") as { unit_id: string; name: string }[];
+const ALL = miniSchools() as { unit_id: string; name: string }[];
 const THREE = ALL.slice(0, 3);
 const IDS = new Set(THREE.map((s) => s.unit_id));
 const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 const collegesText = (schools: unknown[]) => `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`;
 
 /** Snapshot `id`'s objects (bucket-relative path → bytes) plus its pointer, as the publisher would upload them. */
-function buildSnapshot(id: number, options: { rename?: string } = {}): { objects: Map<string, Buffer>; pointer: Buffer } {
+function buildSnapshot(id: number, options: { rename?: string; legacyRenderer?: boolean } = {}): { objects: Map<string, Buffer>; pointer: Buffer } {
   const schools = THREE.map((s, i) => (i === 0 && options.rename ? { ...s, name: options.rename } : s));
   const unit = THREE[0].unit_id;
   const plain: Record<string, Buffer> = {
     "colleges.json.gz": gzipSync(collegesText(schools)),
-    "meta.json": Buffer.from(JSON.stringify(readJson("data/meta.json"))),
-    "release-calendar.json": Buffer.from(JSON.stringify(readJson("data/release-calendar.json"))),
-    "aliases.json": Buffer.from(JSON.stringify((readJson("data/aliases.json") as { unit_id: string }[]).filter((a) => IDS.has(a.unit_id)))),
+    // Every snapshot since phase 4 carries source-files.json (the publisher renders it with every reference document);
+    // `legacyRenderer` builds one from before, which fetch-snapshot must refuse.
+    ...(options.legacyRenderer ? {} : { "source-files.json": Buffer.from(JSON.stringify({ checked: "2026-11-01", files: [] })) }),
+    "meta.json": Buffer.from(JSON.stringify(miniMeta())),
+    "release-calendar.json": Buffer.from(JSON.stringify(miniReleaseCalendar())),
+    "aliases.json": Buffer.from(JSON.stringify((miniAliases() as { unit_id: string }[]).filter((a) => IDS.has(a.unit_id)))),
     "history/shared.json.gz": gzipSync(
-      JSON.stringify({ meta: readJson("data/history/meta.json"), national: readJson("data/history/national.json"), facts: readJson("data/history/facts.json"), cpi: readJson("data/history/cpi.json") }),
+      JSON.stringify(miniHistoryFiles()),
     ),
     [`history/${unit}.json`]: Buffer.from(JSON.stringify({ unit_id: unit, snapshot: id })),
     [`detail/${unit}.json`]: Buffer.from(JSON.stringify({ unit_id: unit, snapshot: id })),
@@ -151,26 +153,28 @@ async function withConsole<T>(fn: (logs: { info: string[]; error: string[] }) =>
   }
 }
 
-const LEGACY: SnapshotContent = { id: "legacy", files: { schools: [], meta: {} as never, releaseCalendar: {} as never, aliases: [] }, history: null };
+/** The sentence getData() throws with neither a bundled copy nor DATA_SNAPSHOT_URL. */
+const NO_SNAPSHOT = /No data snapshot: run `npm run fetch-snapshot -- --ensure`$/;
 
 /* ------------------------------------------------------------------ */
 /* Source selection                                                    */
 /* ------------------------------------------------------------------ */
 
-test("snapshotSource(): storage when DATA_SNAPSHOT_URL is set, else bundled when a copy exists, else legacy", () => {
+test("snapshotSource(): storage when DATA_SNAPSHOT_URL is set, else bundled when a copy exists, else it throws the --ensure sentence", () => {
   const empty = mkdtempSync(join(tmpdir(), "dp-empty-"));
   const bundled = bundledRoot(0);
   const URL_ = "https://ref.supabase.co/storage/v1/object/public/snapshots/";
-  assert.deepEqual(loader.snapshotSource({}, empty), { kind: "legacy" });
+  assert.throws(() => loader.snapshotSource({}, empty), NO_SNAPSHOT);
+  assert.equal(loader.NO_SNAPSHOT_MESSAGE, "No data snapshot: run `npm run fetch-snapshot -- --ensure`");
   assert.deepEqual(loader.snapshotSource({}, bundled), { kind: "bundled" });
   assert.deepEqual(loader.snapshotSource({ DATA_SNAPSHOT_URL: URL_ }, empty), { kind: "storage", base: URL_.replace(/\/$/, "") });
   assert.deepEqual(loader.snapshotSource({ DATA_SNAPSHOT_URL: URL_ }, bundled), { kind: "storage", base: URL_.replace(/\/$/, "") });
   // Empty or blank counts as unset, like a variable created in a dashboard without a value.
-  assert.deepEqual(loader.snapshotSource({ DATA_SNAPSHOT_URL: " " }, empty), { kind: "legacy" });
+  assert.throws(() => loader.snapshotSource({ DATA_SNAPSHOT_URL: " " }, empty), NO_SNAPSHOT);
   assert.deepEqual(loader.snapshotSource({ DATA_SNAPSHOT_URL: "" }, bundled), { kind: "bundled" });
   // A folder without its manifest (a fetch cut short) is not a copy.
   rmSync(join(bundled, ".data", "snapshot", "manifest.json"));
-  assert.deepEqual(loader.snapshotSource({}, bundled), { kind: "legacy" });
+  assert.throws(() => loader.snapshotSource({}, bundled), NO_SNAPSHOT);
 });
 
 test("readBundled() reads the ungzipped copy: id, colleges, meta, calendar, aliases, history's shared object", () => {
@@ -178,9 +182,9 @@ test("readBundled() reads the ungzipped copy: id, colleges, meta, calendar, alia
   const content = loader.readBundled(root);
   assert.equal(content.id, 7);
   assert.deepEqual(content.files.schools.map((s) => s.unit_id), THREE.map((s) => s.unit_id));
-  assert.deepEqual(content.files.meta, readJson("data/meta.json"));
+  assert.deepEqual(content.files.meta, miniMeta());
   assert.ok((content.files.aliases ?? []).every((a) => IDS.has(a.unit_id)));
-  assert.deepEqual(content.history?.cpi, readJson("data/history/cpi.json"));
+  assert.deepEqual(content.history?.cpi, miniHistoryFiles().cpi);
   // Aliases and history are optional, as their files are today.
   rmSync(join(root, ".data", "snapshot", "aliases.json"));
   rmSync(join(root, ".data", "snapshot", "history", "shared.json"));
@@ -206,7 +210,7 @@ test("fetchSnapshotFiles() checks every object against the manifest and the mani
   const pointer = await loader.fetchPointer(bucket.BASE, bucket.get);
   const content = await loader.fetchSnapshotFiles(bucket.BASE, pointer.id, bucket.get, pointer.manifest_sha256);
   assert.equal(content.files.schools.length, 3);
-  assert.deepEqual(content.history?.facts, readJson("data/history/facts.json"));
+  assert.deepEqual(content.history?.facts, miniHistoryFiles().facts);
   await assert.rejects(loader.fetchSnapshotFiles(bucket.BASE, 1, bucket.get, "0".repeat(64)), /manifest doesn't match the pointer/);
   bucket.tamper(snapshotPath(1, "colleges.json.gz"));
   await assert.rejects(loader.fetchSnapshotFiles(bucket.BASE, 1, bucket.get), /colleges\.json\.gz doesn't match its hash/);
@@ -226,7 +230,6 @@ test("a moved pointer swaps in a new dataset object; the old one is untouched; t
     const empty = mkdtempSync(join(tmpdir(), "dp-nobundle-"));
     const holder = loader.createSnapshotHolder({
       source: { kind: "storage", base: bucket.BASE },
-      readLegacy: () => LEGACY,
       build: (content) => ({ names: content.files.schools.map((s) => s.name) }),
       root: empty,
       get: bucket.get,
@@ -302,7 +305,6 @@ test("concurrent checks share one pointer read, and the first load is shared by 
     let builds = 0;
     const holder = loader.createSnapshotHolder({
       source: { kind: "storage", base: bucket.BASE },
-      readLegacy: () => LEGACY,
       build: () => ({ copy: ++builds }),
       root: mkdtempSync(join(tmpdir(), "dp-nobundle-")),
       get: bucket.get,
@@ -327,7 +329,6 @@ test("storage with a bundled copy serves the copy first (no request), then the f
     bucket.point(two);
     const holder = loader.createSnapshotHolder({
       source: { kind: "storage", base: bucket.BASE },
-      readLegacy: () => LEGACY,
       build: (content) => content.id,
       root: bundledRoot(0),
       get: bucket.get,
@@ -341,38 +342,39 @@ test("storage with a bundled copy serves the copy first (no request), then the f
   });
 });
 
-test("storage unreachable with no bundled copy falls back to data/; the bundled and legacy sources never touch the network", async () => {
+test("storage unreachable with no bundled copy fails the load (nothing to fall back on), and the next call tries again; the bundled source never touches the network", async () => {
   await withConsole(async (logs) => {
     const bucket = fakeBucket();
+    const one = buildSnapshot(1);
+    bucket.put(one);
+    bucket.point(one);
     bucket.fail(true);
     const time = clock();
-    const fallback = loader.createSnapshotHolder({
+    const storage = loader.createSnapshotHolder({
       source: { kind: "storage", base: bucket.BASE },
-      readLegacy: () => LEGACY,
       build: (content) => content.id,
       root: mkdtempSync(join(tmpdir(), "dp-nobundle-")),
       get: bucket.get,
       now: time.now,
     });
-    assert.equal((await fallback.load()).id, "legacy");
-    assert.match(logs.error[0], /could not be loaded; falling back to data\//);
-    assert.equal(logs.info[0], "[data] loaded 0 colleges from data/ in 0 ms");
+    await assert.rejects(storage.load(), /storage is down/);
+    assert.equal(storage.current(), null);
+    assert.deepEqual(logs.info, [], "no load line for a load that failed");
+    bucket.fail(false);
+    assert.equal((await storage.load()).id, 1, "a failed first load is not kept");
 
-    for (const source of [{ kind: "bundled" as const }, { kind: "legacy" as const }]) {
-      const requests: string[] = [];
-      const holder = loader.createSnapshotHolder({
-        source,
-        readLegacy: () => LEGACY,
-        build: (content) => content.id,
-        root: bundledRoot(4),
-        get: async (url) => (requests.push(url), { status: 500, body: Buffer.alloc(0) }),
-        now: time.now,
-      });
-      assert.equal((await holder.load()).id, source.kind === "bundled" ? 4 : "legacy");
-      time.advance(120_000);
-      await holder.maybeRefresh();
-      assert.deepEqual(requests, [], `${source.kind}: no request`);
-    }
+    const requests: string[] = [];
+    const holder = loader.createSnapshotHolder({
+      source: { kind: "bundled" },
+      build: (content) => content.id,
+      root: bundledRoot(4),
+      get: async (url) => (requests.push(url), { status: 500, body: Buffer.alloc(0) }),
+      now: time.now,
+    });
+    assert.equal((await holder.load()).id, 4);
+    time.advance(120_000);
+    await holder.maybeRefresh();
+    assert.deepEqual(requests, [], "bundled: no request");
   });
 });
 
@@ -386,7 +388,6 @@ test("next build never swaps: every prerendered page comes from the one copy", a
     bucket.point(two);
     const holder = loader.createSnapshotHolder({
       source: { kind: "storage", base: bucket.BASE },
-      readLegacy: () => LEGACY,
       build: (content) => content.id,
       root: bundledRoot(1),
       get: bucket.get,
@@ -479,7 +480,7 @@ test("lib/data.ts with a bundled copy: the dataset, history, shards and the snap
       assert.deepEqual(await data.getHistory(unit), { unit_id: unit, snapshot: 0 });
       assert.deepEqual(await data.getDetail(unit), { unit_id: unit, snapshot: 0 });
       assert.equal(await data.getHistory("999999999"), null);
-      assert.deepEqual((await data.getHistoryFiles())?.cpi, readJson("data/history/cpi.json"));
+      assert.deepEqual((await data.getHistoryFiles())?.cpi, miniHistoryFiles().cpi);
       assert.equal(await data.getPlatformPrompts(), null, "not in this copy");
       const { snapshot, aliases } = await data.getSearchIndexInputs();
       assert.equal(snapshot, "0");
@@ -491,18 +492,21 @@ test("lib/data.ts with a bundled copy: the dataset, history, shards and the snap
   });
 });
 
-test("lib/data.ts with nothing configured reads data/ and reports `legacy` without loading the dataset", async (t) => {
-  if (existsSync(join(ROOT, ".data", "snapshot", "manifest.json"))) return t.skip("a local fetch-snapshot wrote .data/snapshot/: this checkout is in bundled mode");
+test("lib/data.ts with neither a bundled copy nor DATA_SNAPSHOT_URL throws the --ensure sentence (no data/ to fall back on)", async () => {
+  const empty = mkdtempSync(join(tmpdir(), "dp-none-"));
   await withConsole(async (logs) => {
-    await withDataModule(ROOT, { DATA_SNAPSHOT_URL: undefined }, async (data) => {
-      assert.equal(await data.getSnapshotId(), "legacy");
-      assert.deepEqual(logs.info, [], "the id needs no load");
-      const dataset = await data.getData();
-      assert.equal(dataset.getAllSchools().length, ALL.length);
-      assert.match(logs.info[0], /^\[data\] loaded \d+ colleges from data\/ in \d+ ms$/);
-      assert.equal((await data.getSearchIndexInputs()).snapshot, "legacy");
+    await withDataModule(empty, { DATA_SNAPSHOT_URL: undefined, DATA_SOURCE: undefined }, async (data) => {
+      await assert.rejects(data.getData(), NO_SNAPSHOT);
+      await assert.rejects(data.getSnapshotId(), NO_SNAPSHOT);
+      // The shard readers stay fail-soft: the page renders without them.
+      assert.equal(await data.getHistory("100654"), null);
+      assert.equal(await data.getHistoryFiles(), null);
     });
+    assert.deepEqual(logs.info, [], "nothing loaded");
   });
+  // The page's meta tag degrades to "unknown" (app/layout.tsx catches the throw).
+  const layout = readFileSync(join(ROOT, "app", "layout.tsx"), "utf8");
+  assert.match(layout, /getSnapshotId\(\)\.catch\(\(\) => "unknown"\)/);
 });
 
 /* ------------------------------------------------------------------ */
@@ -539,7 +543,7 @@ test("fetch-snapshot downloads pointer → manifest → objects, checks hashes, 
     const first = await fetchScript.fetchSnapshot({ base, dir });
     assert.equal(first.id, 1);
     assert.equal(first.skipped, 0);
-    assert.equal(first.downloaded, 8);
+    assert.equal(first.downloaded, 9);
     assert.equal(readFileSync(join(dir, "colleges.json"), "utf8"), collegesText(THREE), "ungzipped, one college per line");
     assert.ok(existsSync(join(dir, "history", "shared.json")));
     assert.ok(!existsSync(join(dir, "colleges.json.gz")));
@@ -550,7 +554,7 @@ test("fetch-snapshot downloads pointer → manifest → objects, checks hashes, 
     // Again: everything present with the right hash is skipped.
     hits.length = 0;
     const again = await fetchScript.fetchSnapshot({ base, dir });
-    assert.deepEqual([again.downloaded, again.skipped], [0, 8]);
+    assert.deepEqual([again.downloaded, again.skipped], [0, 9]);
     assert.deepEqual(hits.sort(), [POINTER_OBJECT, snapshotPath(1, "manifest.json")].sort());
 
     // A file changed on disk (plain or ungzipped) is fetched again; a stray file is removed.
@@ -574,7 +578,23 @@ test("fetch-snapshot downloads pointer → manifest → objects, checks hashes, 
     rmSync(join(dir, "detail", `${THREE[0].unit_id}.json`));
     await assert.rejects(fetchScript.fetchSnapshot({ base, dir }), /doesn't match its hash/);
     assert.ok(!existsSync(join(dir, "manifest.json")));
-    assert.equal(loader.snapshotSource({}, dirname(dirname(dir))).kind, "legacy");
+    assert.equal(loader.hasBundled(dirname(dirname(dir))), false);
+  } finally {
+    server.close();
+  }
+});
+
+test("fetch-snapshot refuses a snapshot from the publisher before phase 4 (no source-files.json): the build would otherwise fail on a missing import", async () => {
+  const objects = new Map<string, Buffer>();
+  const old = buildSnapshot(1, { legacyRenderer: true });
+  for (const [k, v] of old.objects) objects.set(k, v);
+  objects.set(POINTER_OBJECT, old.pointer);
+  const { base, server, hits } = await serveBucket(objects);
+  try {
+    const dir = join(mkdtempSync(join(tmpdir(), "dp-fetch-old-")), ".data", "snapshot");
+    await assert.rejects(fetchScript.fetchSnapshot({ base, dir }), /predates the publisher .* publish a snapshot first/);
+    assert.ok(!existsSync(join(dir, "manifest.json")), "nothing written");
+    assert.deepEqual(hits.filter((h) => !h.endsWith("current.json") && !h.endsWith("manifest.json")), [], "nothing downloaded before refusing");
   } finally {
     server.close();
   }
@@ -619,4 +639,48 @@ test("fetch-snapshot's flags: --if-configured is a no-op without DATA_SNAPSHOT_U
   assert.ok(!existsSync(join(cwd, ".data")));
   const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
   assert.match(pkg.scripts.prebuild, /scripts\/fetch-snapshot\.mts --if-configured$/);
+  assert.match(pkg.scripts.postinstall, /scripts\/fetch-snapshot\.mts --ensure$/, "npm install makes sure a bundled copy exists");
+});
+
+test("fetch-snapshot --ensure: a copy already there is kept; without one and without DATA_SNAPSHOT_URL it copies the mini fixture; with the URL it downloads", async () => {
+  const cwd = mkdtempSync(join(tmpdir(), "dp-ensure-"));
+  const lines: string[] = [];
+  const quiet = async (fn: () => Promise<number>) => {
+    const original = { log: console.log, error: console.error };
+    console.log = console.error = (...a: unknown[]) => void lines.push(a.map(String).join(" "));
+    try {
+      return await fn();
+    } finally {
+      Object.assign(console, original);
+    }
+  };
+  const dir = join(cwd, "copy");
+
+  // Nothing there, nothing configured: the mini fixture (snapshot 0), whole.
+  assert.equal(await quiet(() => fetchScript.main(["--ensure", "--dir", "copy"], {}, cwd)), 0);
+  assert.equal(JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8")).id, 0);
+  assert.equal(readFileSync(join(dir, "colleges.json"), "utf8"), readFileSync(join(fetchScript.FIXTURE_DIR, "colleges.json"), "utf8"));
+  assert.ok(existsSync(join(dir, "reference", "aid-policies.json")), "every reference document comes along");
+  assert.match(lines.at(-1)!, /copied the mini fixture into copy/);
+
+  // A copy present: nothing is touched, even with a URL configured (no request is made: the URL goes nowhere).
+  writeFileSync(join(dir, "colleges.json"), "[]");
+  assert.equal(await quiet(() => fetchScript.main(["--ensure", "--dir", "copy"], { DATA_SNAPSHOT_URL: "http://127.0.0.1:9/nowhere" }, cwd)), 0);
+  assert.equal(readFileSync(join(dir, "colleges.json"), "utf8"), "[]", "kept as it is");
+  assert.match(lines.at(-1)!, /already holds snapshot 0/);
+
+  // No manifest (a fetch cut short) and a URL: it downloads.
+  rmSync(join(dir, "manifest.json"));
+  const objects = new Map<string, Buffer>();
+  const one = buildSnapshot(1);
+  for (const [k, v] of one.objects) objects.set(k, v);
+  objects.set(POINTER_OBJECT, one.pointer);
+  const { base, server } = await serveBucket(objects);
+  try {
+    assert.equal(await quiet(() => fetchScript.main(["--ensure", "--dir", "copy"], { DATA_SNAPSHOT_URL: base }, cwd)), 0);
+  } finally {
+    server.close();
+  }
+  assert.equal(JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8")).id, 1);
+  assert.equal(readFileSync(join(dir, "colleges.json"), "utf8"), collegesText(THREE));
 });

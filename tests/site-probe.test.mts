@@ -6,7 +6,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -43,14 +43,14 @@ import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/sto
 import { COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
 import { withRunSet } from "../scripts/lib/data-platform/change-set.mts";
 import { probeStateFromStore, storeColleges } from "../scripts/lib/identity-store.mts";
-import { importLayers, writeImport } from "../scripts/import-data-from-git.mts";
+import { writeImport } from "../scripts/import-data-from-files.mts";
+import { miniMeta, miniSchools, miniLayers } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
 const FIXTURES = join(import.meta.dirname, "fixtures", "site-probe");
 const HOMEPAGE = readFileSync(join(FIXTURES, "homepage.html"), "utf8");
 const ADMISSIONS = readFileSync(join(FIXTURES, "admissions.html"), "utf8");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const meta: DatasetMeta = miniMeta();
+const schools: School[] = miniSchools();
 /** UGA without anything the probe sets (the committed dataset may already hold a previous run's visit page). */
 const UGA = (() => {
   const s = structuredClone(schools.find((x) => x.unit_id === "139959")!);
@@ -796,10 +796,10 @@ test("probeCollege falls back to the homepage's links when the admissions page r
 /* The committed files                                                 */
 /* ------------------------------------------------------------------ */
 
-test("the committed data/site-probe.json and data/link-issues.json are well formed and apply with sound lineage", () => {
-  const probePath = join(ROOT, "data", "site-probe.json");
-  const text = readFileSync(probePath, "utf8");
-  const probed: SiteProbeEntry[] = JSON.parse(text);
+test("the committed data/site-probe.json and data/link-issues.json are well formed and apply with sound lineage", async () => {
+  // The mini fixture's layers (identity.probe, identity.link_issues), unit-filtered, in place of the real files.
+  const probed: SiteProbeEntry[] = [...(await miniLayers().read<SiteProbeEntry>("identity.probe")).values()];
+  const text = formatRows(probed);
   assert.equal(text, formatRows(mergeProbeEntries([], probed)), "sorted by unit id, one entry per line");
   const byId = new Map(schools.map((s) => [s.unit_id, s]));
   const problems: string[] = [];
@@ -824,56 +824,9 @@ test("the committed data/site-probe.json and data/link-issues.json are well form
       problems.push(...validateSchool(applied, meta).filter((p) => p.includes("links.")));
     }
   }
-  const issues: LinkIssue[] = JSON.parse(readFileSync(join(ROOT, "data", "link-issues.json"), "utf8"));
+  const issues: LinkIssue[] = [...(await miniLayers().read<LinkIssue[]>("identity.link_issues")).values()].flat();
   for (const i of issues) if (!byId.has(i.unit_id) || !web(i.url) || i.failures < 1) problems.push(`link-issues ${i.unit_id} ${i.field}`);
   assert.deepEqual(problems.slice(0, 20), []);
-});
-
-/* ------------------------------------------------------------------ */
-/* A run: the files and merge-identity                                 */
-/* ------------------------------------------------------------------ */
-
-test("runSiteProbe writes both files one row per line, keeps other colleges' entries, and applies the visit page", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "site-probe-"));
-  mkdirSync(join(dir, "data"));
-  const a = { ...structuredClone(UGA), links: { website: "https://www.example.edu/", price_calculator: "https://npc.shared-calculators.com/example", admissions: "https://admissions.example.edu/en/" } } as School;
-  const b = { ...structuredClone(schools.find((s) => s.unit_id === "221999")!), links: { website: "https://gone.example.org/", price_calculator: null } } as School;
-  writeFileSync(join(dir, "data", "schools.json"), formatRows([a, b]));
-  writeFileSync(join(dir, "data", "meta.json"), `${JSON.stringify(meta, null, 2)}\n`);
-  const other = entry("100000", {});
-  writeFileSync(join(dir, "data", "site-probe.json"), formatRows([other]));
-  const http = politeHttp(fakeFetch(COLLEGE_ROUTES).fn);
-  const summary = await runSiteProbe(dir, { http, hosts: fakeHosts(COLLEGE_ROUTES), hdRows: null, today: TODAY, log: () => {}, concurrency: 2 });
-  const written: SiteProbeEntry[] = JSON.parse(readFileSync(join(dir, "data", "site-probe.json"), "utf8"));
-  assert.deepEqual(
-    written.map((e) => e.unit_id),
-    [UGA.unit_id, "221999"],
-    "sorted by unit id; an entry for a college not in the dataset is dropped",
-  );
-  assert.equal(readFileSync(join(dir, "data", "site-probe.json"), "utf8").split("\n").length, 5, "one entry per line");
-  const issues: LinkIssue[] = JSON.parse(readFileSync(join(dir, "data", "link-issues.json"), "utf8"));
-  assert.deepEqual(
-    issues.map((i) => [i.unit_id, i.field, i.failures, i.last_error ?? i.last_status]),
-    [["221999", "website", 1, "dns"]],
-  );
-  const merged: School[] = JSON.parse(readFileSync(join(dir, "data", "schools.json"), "utf8"));
-  assert.equal(merged[0].links?.visit, "https://admissions.example.edu/en/visit/");
-  assert.equal(merged[0].lineage?.["links.visit"]?.quote, "Visit Campus");
-  assert.equal(merged[1].links?.visit, null);
-  assert.deepEqual([summary.colleges, summary.visit, summary.homepages, summary.checks.failed.dns], [2, 1, 1, 1]);
-
-  // A partial run (one college) keeps the other's entry, and a second failure the next day nulls the dead homepage.
-  const next = await runSiteProbe(dir, { http: politeHttp(fakeFetch(COLLEGE_ROUTES).fn), hosts: fakeHosts(COLLEGE_ROUTES), hdRows: null, ids: ["221999"], today: "2026-11-04", log: () => {} });
-  assert.equal(next.colleges, 1);
-  const again: SiteProbeEntry[] = JSON.parse(readFileSync(join(dir, "data", "site-probe.json"), "utf8"));
-  assert.deepEqual(again.map((e) => [e.unit_id, e.retrieved]), [
-    [UGA.unit_id, TODAY],
-    ["221999", "2026-11-04"],
-  ]);
-  const final: School[] = JSON.parse(readFileSync(join(dir, "data", "schools.json"), "utf8"));
-  assert.equal(final[1].links?.website, null, "two failed runs: the link is null");
-  assert.equal(final[0].links?.visit, "https://admissions.example.edu/en/visit/", "the other college keeps its visit page");
-  assert.deepEqual(mergeProbeEntries(again, [], new Set([UGA.unit_id])).map((e) => e.unit_id), [UGA.unit_id]);
 });
 
 /* ------------------------------------------------------------------ */
@@ -923,9 +876,14 @@ test("runSiteProbe on the file store: reads and writes identity.probe and identi
 
 test("the probe's store save keys the committed files exactly as the import does (saving them again writes nothing)", async () => {
   const dir = mkdtempSync(join(tmpdir(), "site-probe-import-"));
-  const units = new Set(["139959", "221999", "166027", "100654"]);
+  const units = ["139959", "221999", "166027", "100654"];
   const store = fileStore(dir);
-  await writeImport(store, importLayers(ROOT, { only: new Set([COLLECTIONS.identity.probe, COLLECTIONS.identity.linkIssues]), units }), "fixture");
+  // The mini fixture's own layers for these four colleges, in place of importLayers(ROOT, …) over the real data/.
+  const layers = new Map([
+    [COLLECTIONS.identity.probe, new Map((await Promise.all(units.map(async (id) => [id, await miniLayers().readOne(COLLECTIONS.identity.probe, id)] as const))).filter(([, v]) => v != null))],
+    [COLLECTIONS.identity.linkIssues, new Map((await Promise.all(units.map(async (id) => [id, await miniLayers().readOne(COLLECTIONS.identity.linkIssues, id)] as const))).filter(([, v]) => v != null))],
+  ]);
+  await writeImport(store, layers, "fixture");
   const handle = await store.open("pipeline", "identity-refresh", "resave");
   const state = await probeStateFromStore(store, handle);
   assert.ok(state.previous.length > 0);

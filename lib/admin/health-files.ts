@@ -350,7 +350,7 @@ export function formatCompact(compact: CompactHealth): string {
 export function parseCompact(text: string): CompactHealth {
   const data = JSON.parse(text) as Partial<CompactHealth> | null;
   if (!data || typeof data !== "object" || data.version !== COMPACT_VERSION || typeof data.generated !== "string" || !data.colleges || typeof data.colleges !== "object") {
-    throw new Error(`data/college-health.json is not version ${COMPACT_VERSION} of the compact health file; run npm run college-health`);
+    throw new Error(`the health document is not version ${COMPACT_VERSION} of the compact health file; run npm run college-health`);
   }
   return data as CompactHealth;
 }

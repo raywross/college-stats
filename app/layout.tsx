@@ -33,7 +33,7 @@ const bricolage = Bricolage_Grotesque({
  * Every page also names the data snapshot it was rendered from in a `<meta name="x-quad-snapshot">` tag
  * (specs/data-platform/publish.md "Timing and telemetry"). A tag, not only a header: a page can't set response headers,
  * and proxy.ts runs apart from the render (on Vercel, in its own function), so it can't know which snapshot a render
- * used. next.config.ts adds the header where the id is fixed for the deploy (data/ or a bundled copy), and
+ * used. next.config.ts adds the header where the id is fixed for the deploy (the bundled copy), and
  * /search-index.json carries it always. With no snapshot configured this reads no data.
  */
 export async function generateMetadata(): Promise<Metadata> {

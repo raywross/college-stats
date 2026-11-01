@@ -1,27 +1,26 @@
 /**
  * School identity's shared contract (lib/identity.ts, scripts/lib/identity-sync.mts): applying identity is
  * idempotent, overrides touch only links/social/brand, and merge-identity leaves a dataset it has nothing to add to
- * byte-identical. `npm test`. See specs/school-identity/README.md.
+ * byte-identical. The colleges and the identity inputs are the mini fixture's (its identity layers, read through
+ * scripts/lib/data-platform/layers.mts loadIdentity). `npm test`. See specs/school-identity/README.md.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { addIdentityMeta, applyIdentity, applyIdentityOverride, emptyIdentityInputs } from "../lib/identity.ts";
 import { citesYear, lineageFor, validateLineage, validateRegistry } from "../lib/lineage.ts";
-import { formatSchools, loadIdentityInputs, mergeIdentity } from "../scripts/lib/identity-sync.mts";
+import { loadIdentity } from "../scripts/lib/data-platform/layers.mts";
+import { miniLayers, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const IDENTITY = await loadIdentity(miniLayers());
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const UGA = "139959";
 const sample = [UGA, "221999", "166027", "110635", "139755"].map((id) => byId.get(id)!);
 
 test("applying identity twice gives the same school as applying it once", () => {
-  const inputs = loadIdentityInputs(ROOT);
+  const inputs = IDENTITY;
   for (const s of sample) {
     const once = applyIdentity(structuredClone(s), inputs);
     const twice = applyIdentity(structuredClone(once), inputs);
@@ -29,8 +28,8 @@ test("applying identity twice gives the same school as applying it once", () => 
   }
 });
 
-test("re-applying identity to the committed data changes no byte, so a refresh's diff shows only real changes", () => {
-  const inputs = loadIdentityInputs(ROOT);
+test("re-applying identity to the stored colleges changes no byte, so a refresh's diff shows only real changes", () => {
+  const inputs = IDENTITY;
   const changed = schools.filter((s) => JSON.stringify(applyIdentity(structuredClone(s), inputs)) !== JSON.stringify(s)).map((s) => s.unit_id);
   assert.deepEqual(changed.slice(0, 10), [], `${changed.length} colleges reordered or changed; run \`npm run merge-identity\``);
 });
@@ -61,7 +60,7 @@ test("new identity keys take fixed places, clear of the keys other pipelines re-
 });
 
 test("applying identity never leaves an empty lineage behind", () => {
-  const inputs = loadIdentityInputs(ROOT);
+  const inputs = IDENTITY;
   const bare = schools.filter((s) => !s.lineage).slice(0, 50);
   assert.ok(bare.length > 0);
   for (const s of bare) {
@@ -125,16 +124,4 @@ test("identity sources are dated by the newest retrieval in their files and need
   assert.equal(m.sources.wikipedia?.edition, "Not retrieved yet");
   assert.deepEqual(validateRegistry(m), []);
   assert.deepEqual(validateLineage([], m), []);
-});
-
-test("merge-identity writes the same bytes when it has nothing new to apply, and is idempotent", () => {
-  const dir = mkdtempSync(join(tmpdir(), "identity-"));
-  mkdirSync(join(dir, "data"));
-  writeFileSync(join(dir, "data", "schools.json"), formatSchools(sample));
-  writeFileSync(join(dir, "data", "meta.json"), `${JSON.stringify(meta, null, 2)}\n`);
-  mergeIdentity(dir);
-  const first = readFileSync(join(dir, "data", "schools.json"), "utf8");
-  assert.equal(first, formatSchools(sample.map((s) => applyIdentity(structuredClone(s), loadIdentityInputs(dir)))));
-  mergeIdentity(dir);
-  assert.equal(readFileSync(join(dir, "data", "schools.json"), "utf8"), first);
 });

@@ -2,7 +2,7 @@
  * Builds the history layer (`history.schools` by unit id, `history.shared`: national, facts, cpi, meta): year-by-year
  * history for every college in the base layer (specs/trends-data.md), written through the data store in one change
  * set (source `history`; specs/data-platform/pipelines.md). `school.trends` and the national trend files are derived
- * by the publisher from this layer; nothing under data/ is written.
+ * by the publisher from this layer; nothing is written outside the store.
  *
  *   npm run sync-history -- --store supabase      # everything (what the monthly workflow runs)
  *   npm run sync-history -- --store file:/tmp/dp  # a folder (the file store); --change-set <id> joins an open set
@@ -20,7 +20,6 @@
  * Year-over-year jumps over 3× are listed for review. Downloads ~80 NCES zips and ~100 College Scorecard pages on the
  * first run (needs COLLEGE_SCORECARD_API_KEY from .env.local); both are cached for a week.
  */
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { COLLECTIONS, SINGLE_KEYS } from "./lib/data-platform/layers.mts";
 import { changeSetFromArgv, datasetColleges, openProducerRun, storeFromArgv, writeChanged } from "./lib/data-platform/producer.mts";
@@ -64,9 +63,9 @@ import {
 import { buildCpi } from "./history/cpi.mts";
 import { COHORT_LAG, GRAD_RACE_FROM, fetchScorecardHistory, gradByRaceFields } from "./history/scorecard.mts";
 import { gradByGroupMismatches } from "./history/graduation-groups.mts";
+import { readBundledMeta } from "./lib/data-platform/bundled.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const DATA = join(ROOT, "data");
 const CACHE = join(ROOT, ".cache", "ipeds");
 const SCORECARD_CACHE = join(ROOT, ".cache", "scorecard");
 /** First year Scorecard reports undergrads (fall 1996). */
@@ -298,7 +297,7 @@ async function crossCheck(schools: School[], histories: Map<string, SchoolHistor
 /* Write                                                               */
 /* ------------------------------------------------------------------ */
 
-/** A document as the file's text parses (the import reads data/history/*.json the same way). */
+/** A document as the file's text parses (the import reads history/*.json of an old-layout folder the same way). */
 const historyDocument = (value: unknown) => JSON.parse(historyJson(value)) as unknown;
 
 /* ------------------------------------------------------------------ */
@@ -308,13 +307,13 @@ const historyDocument = (value: unknown) => JSON.parse(historyJson(value)) as un
 async function main() {
   const store = storeFromArgv(args);
   const changeSet = changeSetFromArgv(args);
-  // The base layer (sync-data keeps it current): the colleges and their meta. data/ only for an empty file store.
+  // The base layer (sync-data keeps it current): the colleges and their meta; the bundled copy's only for an empty file store.
   const schools: School[] = await datasetColleges(store, ROOT);
-  const meta: DatasetMeta = (await store.readOne<DatasetMeta>(COLLECTIONS.base.meta, SINGLE_KEYS.meta)) ?? JSON.parse(readFileSync(join(DATA, "meta.json"), "utf8"));
+  const meta: DatasetMeta = (await store.readOne<DatasetMeta>(COLLECTIONS.base.meta, SINGLE_KEYS.meta)) ?? readBundledMeta();
   const universe = new Set(schools.map((s) => s.unit_id));
   if (IDS) {
     const unknown = IDS.filter((id) => !universe.has(id));
-    if (unknown.length) fail(`--ids not in data/schools.json: ${unknown.join(", ")} (check IDs against the dataset).`);
+    if (unknown.length) fail(`--ids not among the colleges: ${unknown.join(", ")} (check IDs against the dataset).`);
   }
 
   console.log(`Building history for ${schools.length} colleges${IDS ? ` (writing shards for ${IDS.length})` : ""}…`);
@@ -385,7 +384,7 @@ async function main() {
   if (drops.length) fail("coverage dropped more than 20% from one year to the next (a moved column or layout change?). Allow-list real drops in EXPECTED_DROPS with a reason.", drops);
 
   const rule1 = ruleOneProblems([...lastPointMismatches(schools, histories, latest), ...gradByGroupMismatches(schools, histories)], schools);
-  if (rule1.hard.length) fail("latest history points differ from data/schools.json (rule 1). Re-run npm run sync-data, or fix lib/derive.ts.", rule1.hard);
+  if (rule1.hard.length) fail("latest history points differ from the colleges (rule 1). Re-run npm run sync-data, or fix lib/derive.ts.", rule1.hard);
   if (rule1.soft.length) console.warn(`  ${rule1.soft.length} soft rule-1 differences (within allowance; review):\n    ${rule1.soft.slice(0, 5).join("\n    ")}`);
 
   const npm = netPriceMismatches(schools, histories, latest.academic);
@@ -488,7 +487,7 @@ async function main() {
   console.log(`  Scorecard: undergrads ${count("scorecard-enrollment")} · graduation (entering class) ${count("scorecard-completion")} · debt ${count("scorecard-debt")}`);
   console.log(`  Latest: fall ${latest.fall}, ${latest.academic}–${String(latest.academic + 1).slice(2)}. Provisional: ${Object.entries(provisional).map(([f, y]) => `${f} ${y}`).join(", ") || "none"}.`);
   // The national trend files are derived by the publisher from the composed colleges and this layer (no build-trends
-  // step any more; `npm run build-trends` stays for a local look at data/history/trends/).
+  // step any more; `npm run build-trends` stays for a local look at the trend files).
 }
 
 main().catch((err) => {

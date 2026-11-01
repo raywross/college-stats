@@ -1,30 +1,34 @@
 /**
- * Places every model-read C7 and C8A mark in the committed records under its column heading from the document's own
+ * Places every model-read C7 and C8A mark in the stored records (`reported.cds_records`) under its column heading from the document's own
  * layout (scripts/lib/college-reported/grid-place.mts; the pipeline does the same right after each read), and records
  * the result on the item (`column`). A differing reading is corrected to the heading. Rows it can't place are left
  * alone, and the grid-column check holds them. No model call.
  *
- *   npm run check-grid-columns [-- --unit <unit_id>] [--dry-run]
+ *   npm run check-grid-columns -- --store supabase [--unit <unit_id>] [--dry-run]
  *
  * Needs `pdftotext` (poppler) on the PATH. Each document comes from the local archive (.cache/college-docs/archive) or
- * is fetched again from its URL and used only when its sha256 is the one the record was read from. Then run
- * `npm run check-cds-records` to re-judge, and the usual rebuilds.
+ * is fetched again from its URL and used only when its sha256 is the one the record was read from. Changed records go
+ * back through the data store in one change set (kind pipeline, source check-grid-columns). Then run
+ * `npm run check-cds-records -- --store …` to re-judge, and publish.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
-import type { DocumentRecord } from "../lib/cds-sections.ts";
-import { readRecords, writeRecord } from "./lib/college-reported/records.mts";
+import type { CollegeRecord, DocumentRecord } from "../lib/cds-sections.ts";
+import { recordBody } from "./lib/college-reported/state.mts";
+import { COLLECTIONS, readLayer } from "./lib/data-platform/layers.mts";
+import { storeFromFlag } from "./lib/data-platform/store.mts";
 import { USER_AGENT, sha256 } from "./lib/college-reported/http.mts";
 import { gridCodes, gridLayout, placeGridMarks } from "./lib/college-reported/grid-place.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const RECORDS = join(ROOT, "data", "cds-records");
 const ARCHIVE = join(ROOT, ".cache", "college-docs", "archive");
 const today = new Date().toISOString().slice(0, 10);
 
-const { values } = parseArgs({ options: { unit: { type: "string" }, "dry-run": { type: "boolean", default: false } } });
+const { values } = parseArgs({ options: { store: { type: "string" }, unit: { type: "string" }, "dry-run": { type: "boolean", default: false } } });
+const store = storeFromFlag(values.store);
+const changedRecords: CollegeRecord[] = [];
 
 /** The document's bytes: the local archive copy, or a fresh fetch that still hashes to the record's sha256. */
 async function docBytes(doc: DocumentRecord): Promise<Uint8Array | string> {
@@ -45,7 +49,8 @@ async function docBytes(doc: DocumentRecord): Promise<Uint8Array | string> {
 }
 
 const tally = { documents: 0, confirmed: 0, corrected: 0, unplaced: 0, skipped: 0 };
-for (const record of readRecords(RECORDS)) {
+const one = values.unit ? await store.readOne<CollegeRecord>(COLLECTIONS.reported.cdsRecords, values.unit) : null;
+for (const record of values.unit ? (one ? [one] : []) : (await readLayer<CollegeRecord>(store, COLLECTIONS.reported.cdsRecords)).values()) {
   if (values.unit && record.unit_id !== values.unit) continue;
   let changed = false;
   for (let i = 0; i < record.documents.length; i++) {
@@ -73,6 +78,12 @@ for (const record of readRecords(RECORDS)) {
     tally.unplaced += p.unplaced;
     console.log(`${label}: ${codes.length} marks, ${p.corrected.length} corrected${p.corrected.length ? `: ${p.corrected.join("; ")}` : ""}`);
   }
-  if (changed && !values["dry-run"]) writeRecord(RECORDS, record);
+  if (changed) changedRecords.push(record);
+}
+if (changedRecords.length && !values["dry-run"]) {
+  const handle = await store.open("pipeline", "check-grid-columns", `check-grid-columns-${new Date().toISOString()}`);
+  await handle.write(COLLECTIONS.reported.cdsRecords, changedRecords.map((r) => ({ key: r.unit_id, body: recordBody(r) })));
+  await handle.close("applied");
+  console.log(`Change set ${handle.id}: ${changedRecords.length} record(s)`);
 }
 console.log(JSON.stringify(tally));

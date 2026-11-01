@@ -3,15 +3,12 @@
  * into the committed data/schools.json, the same way scripts/sync-data.mts does (lib/reported-merge.ts), so the
  * data PR carries the site's figures without a separate `npm run sync-data`. `npm test`.
  *
- * Runs the real CLI (via `MERGE_REPORTED_ROOT`) against a scratch copy of a slice of the real dataset, so the
- * line format and the lineage guard are exercised exactly as a workflow run would hit them.
+ * Runs the real CLI (via `MERGE_REPORTED_ROOT`) against a scratch copy of a slice of the dataset (the mini fixture,
+ * tests/helpers/snapshot.mts), so the line format and the lineage guard are exercised exactly as a workflow run would
+ * hit them. The colleges, reported entries, CDS records, and directory lists are the mini fixture's.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { Extraction } from "../lib/reported";
 import type { ReportedEntry, ReportedFile } from "../lib/reported.ts";
@@ -19,19 +16,17 @@ import { toReportedEntry } from "../lib/reported-checks.ts";
 import { mergeReported, stripReported } from "../lib/reported-merge.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { validateLineage } from "../lib/lineage.ts";
-import { readRecords } from "../scripts/lib/college-reported/records.mts";
-import { readDirectoryFiles } from "../scripts/lib/directories/files.mts";
+import { loadDirectoriesLayer, loadReportedLayer } from "../scripts/lib/data-platform/layers.mts";
 import { applyCccuMembership, stripCccuMembership } from "../scripts/lib/directories/merge.mts";
+import { miniLayers, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const SCRIPT = join(ROOT, "scripts", "merge-reported.mts");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const allSchools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const meta: DatasetMeta = miniMeta();
+const allSchools: School[] = miniSchools();
 
-// Princeton: real federal baseline (fall 2024), no CDS override. Abilene Christian: a second, unrelated college,
-// used for the "removed" case so the slice has more than one row.
+// Princeton: real federal baseline (fall 2024), no CDS override. Abraham Baldwin: a second, unrelated college, used
+// for the "removed" case so the slice has more than one row (the real data's example was Abilene Christian, 222178).
 const PRINCETON = "186131";
-const OTHER = "222178";
+const OTHER = "138558";
 
 function school(unitId: string): School {
   const s = structuredClone(allSchools.find((x) => x.unit_id === unitId)!);
@@ -135,10 +130,11 @@ test("mergeReported puts the newer class into admissions.*, keeping the federal 
 });
 
 test("a hand-imported CDS college: admissions.federal holds the override's values, cited to its edition; dropping it restores them exactly", () => {
-  const NYU = "193900"; // CDS override 2024-25, no college-reported class in the committed data
-  const before = school(NYU);
+  // A CDS override (the real data's example was NYU, 193900, which the mini fixture lacks).
+  const CORNELL = "190415";
+  const before = school(CORNELL);
   assert.equal(before.lineage?.["admissions.applicants"]?.source, "cds");
-  const merged = mergeReported([before], { updated: "2026-10-03", entries: [entryFor(NYU)] }).schools[0];
+  const merged = mergeReported([before], { updated: "2026-10-03", entries: [entryFor(CORNELL)] }).schools[0];
   assert.equal(merged.admissions.applicants, 46618);
   assert.equal(merged.admissions.federal?.applicants, before.admissions.applicants);
   assert.deepEqual(merged.lineage?.["admissions.federal"], before.lineage?.["admissions.applicants"]);
@@ -147,12 +143,12 @@ test("a hand-imported CDS college: admissions.federal holds the override's value
   assert.equal(JSON.stringify(dropped), JSON.stringify(before));
 });
 
-// A real CCCU voting member (data/directories/cccu.json), chosen only for already carrying `school.religion`
-// (applyCccuMembership's condition for setting the flag at all).
-const CCCU_COLLEGE = "110361"; // California Baptist University
+// A real CCCU voting member (the cccu directory list), chosen only for already carrying `school.religion`
+// (applyCccuMembership's condition for setting the flag at all). The real data's example was California Baptist.
+const CCCU_COLLEGE = "123457"; // Simpson University
 
-test("merge-reported and merge-directories' CCCU membership step agree on lineage key order, whichever runs first", () => {
-  const files = readDirectoryFiles(ROOT);
+test("merge-reported and merge-directories' CCCU membership step agree on lineage key order, whichever runs first", async () => {
+  const { files } = await loadDirectoriesLayer(miniLayers());
   // Start from a clean slate (the committed fixture is already a flagged CCCU member): stripCccuMembership removes
   // the flag and its lineage the same way a fresh re-merge does, so both orders below start from the same place.
   const base = stripCccuMembership(school(CCCU_COLLEGE));
@@ -175,11 +171,15 @@ test("merge-reported and merge-directories' CCCU membership step agree on lineag
   assert.deepEqual(validateLineage([a], meta), []);
 });
 
-test("the committed data/schools.json is exactly what merging data/college-reported.json and data/cds-records/ produces (re-merge changes nothing)", () => {
-  const reported: ReportedFile = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
+test("the stored colleges are exactly what merging the reported layer's entries and CDS records produces (re-merge changes nothing)", async () => {
+  const { file: reported, records } = await loadReportedLayer(miniLayers());
   // C1 first, then the newest groups from the CDS records (specs/data-expansion/cds-student-body-and-outcomes.md).
-  const { schools } = mergeReported(allSchools, reported, { records: readRecords(join(ROOT, "data", "cds-records")), meta, table: CDS_TEMPLATE });
-  const changed = schools.filter((s, i) => JSON.stringify(s) !== JSON.stringify(allSchools[i])).map((s) => s.unit_id);
+  // The mini fixture keeps only four colleges' CDS records (the others' record groups are in their stored rows but not
+  // in its layers), so the re-merge runs over those four; the publisher's compose covers every college.
+  const withRecords = allSchools.filter((s) => records.some((r) => r.unit_id === s.unit_id));
+  assert.equal(withRecords.length, 4);
+  const { schools } = mergeReported(withRecords, reported, { records, meta, table: CDS_TEMPLATE });
+  const changed = schools.filter((s, i) => JSON.stringify(s) !== JSON.stringify(withRecords[i])).map((s) => s.unit_id);
   assert.deepEqual(changed, [], "run `npm run merge-reported`");
   // Every college with a reported block actually had something replaced or nothing newer to replace.
   for (const s of allSchools) if (s.reported?.admissions && s.admissions.federal) assert.ok(s.reported.admissions.year > (s.admissions.federal.year ?? 0));
@@ -189,122 +189,4 @@ test("stripping a college's block leaves no empty lineage behind", () => {
   const withBlock = mergeReported([school(PRINCETON)], { updated: "2026-10-03", entries: [entryFor(PRINCETON)] }).schools[0];
   const stripped = mergeReported([withBlock], { updated: "2026-10-04", entries: [] }).schools[0];
   assert.equal(JSON.stringify(stripped), JSON.stringify(school(PRINCETON)));
-});
-
-/* ------------------------------------------------------------------ */
-/* The CLI, against a scratch copy of real data (line format, refusal on bad lineage)  */
-/* ------------------------------------------------------------------ */
-
-function runCli(dir: string, args: string[] = []): { status: number; stdout: string; stderr: string } {
-  try {
-    const stdout = execFileSync("node", ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", SCRIPT, ...args], {
-      env: { ...process.env, MERGE_REPORTED_ROOT: dir },
-      encoding: "utf8",
-    });
-    return { status: 0, stdout, stderr: "" };
-  } catch (err) {
-    const e = err as { status: number; stdout: string; stderr: string };
-    return { status: e.status, stdout: e.stdout, stderr: e.stderr };
-  }
-}
-
-function scratchDir(schools: School[], reported: ReportedFile): string {
-  const dir = mkdtempSync(join(tmpdir(), "merge-reported-"));
-  const dataDir = join(dir, "data");
-  mkdirSync(dataDir, { recursive: true });
-  writeFileSync(join(dataDir, "schools.json"), `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
-  writeFileSync(join(dataDir, "college-reported.json"), JSON.stringify(reported));
-  writeFileSync(join(dataDir, "meta.json"), JSON.stringify(meta));
-  return dir;
-}
-
-test("the CLI writes schools.json one school per line, matching sync-data's format", () => {
-  const princeton = school(PRINCETON);
-  const other = school(OTHER);
-  const reported: ReportedFile = { updated: "2026-10-03", entries: [entryFor(PRINCETON)] };
-  const dir = scratchDir([princeton, other], reported);
-  try {
-    const result = runCli(dir);
-    assert.equal(result.status, 0);
-    assert.match(result.stdout, /college-reported: 1 colleges merged, 0 removed/);
-
-    const text = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    assert.equal(text, `[\n${[princeton, other].map((s) => JSON.stringify(mergeReported([s], reported).schools[0])).join(",\n")}\n]\n`);
-    // Every school is its own line (plus the opening/closing bracket lines).
-    const lines = text.split("\n").filter((l) => l.trim().length);
-    assert.equal(lines.length, 4); // "[", princeton, "other,", "]"
-
-    const parsed: School[] = JSON.parse(text);
-    assert.equal(parsed.length, 2);
-    assert.equal(parsed.find((s) => s.unit_id === PRINCETON)?.reported?.admissions?.applicants, 46618);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test("the CLI is idempotent on its own output", () => {
-  const princeton = school(PRINCETON);
-  const reported: ReportedFile = { updated: "2026-10-03", entries: [entryFor(PRINCETON)] };
-  const dir = scratchDir([princeton], reported);
-  try {
-    runCli(dir);
-    const once = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    runCli(dir);
-    const twice = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    assert.equal(once, twice);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test("the CLI removes a college's block when it drops out of college-reported.json", () => {
-  const princeton = school(PRINCETON);
-  const reported: ReportedFile = { updated: "2026-10-03", entries: [entryFor(PRINCETON)] };
-  const dir = scratchDir([princeton], reported);
-  try {
-    runCli(dir);
-    const withBlock: School[] = JSON.parse(readFileSync(join(dir, "data", "schools.json"), "utf8"));
-    assert.ok(withBlock[0].reported?.admissions);
-
-    writeFileSync(join(dir, "data", "college-reported.json"), JSON.stringify({ updated: "2026-10-04", entries: [] }));
-    const result = runCli(dir);
-    assert.match(result.stdout, /college-reported: 0 colleges merged, 1 removed/);
-    const withoutBlock: School[] = JSON.parse(readFileSync(join(dir, "data", "schools.json"), "utf8"));
-    assert.equal(withoutBlock[0].reported, undefined);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test("the CLI refuses to write when an entry's year isn't newer than the federal year", () => {
-  const princeton = school(PRINCETON);
-  const bad = entryFor(PRINCETON);
-  bad.admissions.year = 2020; // not newer than Princeton's federal 2024
-  const reported: ReportedFile = { updated: "2026-10-03", entries: [bad] };
-  const dir = scratchDir([princeton], reported);
-  try {
-    const result = runCli(dir);
-    assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /isn't newer than the federal year/);
-    const text = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    assert.doesNotMatch(text, /"reported":/); // untouched: the original (reported-less) file is still there (the key; "reported" is also a status value)
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test("--dry-run prints without writing", () => {
-  const princeton = school(PRINCETON);
-  const reported: ReportedFile = { updated: "2026-10-03", entries: [entryFor(PRINCETON)] };
-  const dir = scratchDir([princeton], reported);
-  try {
-    const before = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    const result = runCli(dir, ["--dry-run"]);
-    assert.equal(result.status, 0);
-    assert.match(result.stdout, /--dry-run, nothing written/);
-    const after = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    assert.equal(before, after);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
 });

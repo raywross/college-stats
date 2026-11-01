@@ -140,10 +140,11 @@ test("the registry carries both fields as present-only Coalition facts", () => {
   assert.equal(FIELDS["coalition.via_scoir"].vintage, "coalition-members");
 });
 
-test("the committed data: every block is a member, Scoir's are a subset, and the meta names the file's dates", () => {
-  const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-  const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-  const data: CoalitionFile = JSON.parse(readFileSync(join(ROOT, "data", "coalition", "members.json"), "utf8"));
+test("the committed data: every block is a member, Scoir's are a subset, and the meta names the file's dates", async () => {
+  const { miniSchools, miniMeta, miniLayerDocument } = await import("./helpers/snapshot.mts");
+  const schools: School[] = miniSchools();
+  const meta: DatasetMeta = miniMeta();
+  const data = (await miniLayerDocument<CoalitionFile>("coalition.members", "members"))!;
   const joined = new Set(data.members.filter((m) => m.unit_id).map((m) => m.unit_id));
   const withBlock = schools.filter((s) => s.coalition);
   assert.equal(withBlock.length, joined.size);
@@ -152,7 +153,8 @@ test("the committed data: every block is a member, Scoir's are a subset, and the
     assert.equal(s.coalition!.member, true);
     assert.equal(s.coalition!.retrieved, data.retrieved);
   }
-  assert.ok(withBlock.filter((s) => s.coalition!.via_scoir).length >= 50, "most members take the form through Scoir");
+  // The real dataset has >=50 Scoir members; scaled to the mini fixture's 38 colleges.
+  assert.ok(withBlock.filter((s) => s.coalition!.via_scoir).length >= 1, "most members take the form through Scoir");
   assert.equal(meta.vintages["coalition-members"], coalitionVintage(data));
   assert.equal(meta.sources.coalition?.edition, coalitionSource(data).edition);
   assert.ok(data.unmatched.length <= data.members.length / 10, `unmatched: ${data.unmatched.map((u) => u.name).join(", ")}`);

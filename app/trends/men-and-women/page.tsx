@@ -24,7 +24,7 @@ const COLOR = study.color;
 
 /**
  * Study 1 (specs/national-trends.md#study-1-men-and-women-in-admissions), the worked example of a study page: every
- * number and year comes from data/history/trends/men-and-women.json; only the sentences are written here.
+ * number and year comes from the snapshot's trends/men-and-women.json; only the sentences are written here.
  */
 export default async function MenAndWomenPage() {
   const [file, files] = await Promise.all([getTrendFile("men-and-women"), getHistoryFiles()]);

@@ -1,12 +1,10 @@
 /**
  * Campus services and athletics (specs/data-expansion/campus-services.md): the IC2025 code rules, divisions from the
  * conference table, the table's own checks against colleges' NCAA/NAIA answers, the Explore filters, events, and the
- * stored values in data/schools.json. `npm test`.
+ * stored values in the mini fixture (tests/helpers/snapshot.mts). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { School } from "../lib/types";
 import {
   apCreditFrom,
@@ -23,9 +21,9 @@ import { CONFERENCES, FBS_INDEPENDENTS, RETIRED_CONFERENCES, conferenceName } fr
 import { historyEvents } from "../lib/events.ts";
 import { validateShard, type SchoolHistory } from "../lib/history.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
+import { miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 
 /** An IC row for an NCAA member playing all four sports, with `conf` for football and `other` for the rest. */
 const ncaa = (football: number | null, other: number, extra: Record<string, string> = {}) => ({
@@ -106,7 +104,7 @@ test("every stored conference is in the table, and NCAA vs NAIA levels agree wit
 test("the table's member check fails when a level is wrong", () => {
   // Proof the guard above bites: the Big Ten's members are all NCAA-only, so calling it NAIA would fail.
   const bigTen = schools.filter((s) => s.campus?.athletics?.conference?.code === 107);
-  assert.ok(bigTen.length >= 15);
+  assert.ok(bigTen.length >= 5, "the mini fixture's Big Ten members (Ohio State, Purdue, Michigan, Illinois, UCLA, USC)");
   assert.ok(bigTen.every((s) => s.campus!.athletics!.associations.includes("ncaa") && !s.campus!.athletics!.associations.includes("naia")));
 });
 
@@ -122,8 +120,10 @@ test("services filters parse from the URL and match", () => {
   const vu = schools.find((s) => s.unit_id === "221999")!;
   assert.ok(matchesServices(vu, { division: ["I-FBS"], conference: 130, football: true, rotc: ["navy"], ugResearch: true, studyAbroad: true }));
   assert.ok(!matchesServices(vu, { division: ["III"] }));
-  const gt = schools.find((s) => s.unit_id === "131496")!;
-  assert.ok(matchesServices(gt, { conference: 128 }), "football's conference counts too");
+  // Hilbert plays football in another conference than its home one (the real data's example was Georgetown, 131496).
+  const hilbert = schools.find((s) => s.unit_id === "191621")!;
+  assert.notEqual(hilbert.campus!.athletics!.conference?.code, 170);
+  assert.ok(matchesServices(hilbert, { conference: 170 }), "football's conference counts too");
   assert.ok(!matchesServices({ campus: undefined }, { football: true }), "unreported never matches");
 });
 
@@ -148,11 +148,12 @@ test("history accepts known conference codes only", () => {
 
 test("stored athletics and programs are plausible", () => {
   const fbs = schools.filter((s) => s.campus?.athletics?.division === "I-FBS").length;
-  assert.ok(fbs >= 125 && fbs <= 140, `about 136 FBS programs, got ${fbs}`);
+  // About 136 nationally; the mini fixture leans to big research universities, most of them FBS.
+  assert.ok(fbs > 0 && fbs < schools.length, `some but not all colleges play FBS football, got ${fbs}`);
   const vu = schools.find((s) => s.unit_id === "221999")!;
   assert.equal(vu.campus!.athletics!.conference!.name, "Southeastern Conference");
   assert.equal(divisionFilterOf(vu), "I-FBS");
-  assert.equal(schools.find((s) => s.unit_id === "129020")!.campus!.athletics!.division, "I-FBS", "UConn");
+  assert.equal(schools.find((s) => s.unit_id === "100663")!.campus!.athletics!.division, "I-FBS", "UAB (the real data's example was UConn)");
   assert.equal(schools.find((s) => s.unit_id === "166027")!.campus!.athletics!.division, "I-FCS", "Harvard (Ivy League)");
   const withAthletics = schools.filter((s) => s.campus?.athletics).length;
   assert.ok(withAthletics > 0.95 * schools.length);

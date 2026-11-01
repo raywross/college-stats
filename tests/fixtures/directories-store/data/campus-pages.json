@@ -1,0 +1,76 @@
+{
+  "updated": "2026-10-04",
+  "colleges": [
+    {
+      "unit_id": "204796",
+      "name": "Ohio State University-Main Campus",
+      "checked": "2026-10-04",
+      "lgbtq": {
+        "policies": [
+          {
+            "key": "inclusive_restrooms",
+            "value": "no",
+            "url": "https://fod.osu.edu/restrooms-locker-rooms-and-changing",
+            "checked": "2026-10-04",
+            "quote": "The law prohibits the university from knowingly allowing individuals to use multi-use student restrooms, locker rooms, shower rooms and changing rooms…",
+            "verified_by": "claude-sonnet-5"
+          }
+        ]
+      }
+    },
+    {
+      "unit_id": "199120",
+      "name": "University of North Carolina at Chapel Hill",
+      "checked": "2026-10-04",
+      "faith": {
+        "office": {
+          "url": "https://campusy.unc.edu/",
+          "checked": "2026-10-04",
+          "quote": "The Campus Y department has been renamed UNC Y.",
+          "name": "UNC Y"
+        }
+      },
+      "listings": [
+        {
+          "domain": "lgbtq",
+          "kind": "group",
+          "name": "Carolina Pride Alum Network",
+          "url": "https://www.unc.edu/discover/lgbtq-alumni-affinity-group-creates-community/",
+          "publisher": "University of North Carolina at Chapel Hill",
+          "quote": "the Carolina Pride Alum Network has been connecting and supporting LGBTQ Tar Heels",
+          "checked": "2026-10-04"
+        }
+      ]
+    },
+    {
+      "unit_id": "110635",
+      "name": "University of California-Berkeley",
+      "checked": "2026-10-04",
+      "lgbtq": {
+        "policies": [
+          {
+            "key": "nondiscrimination_identity",
+            "value": "yes",
+            "url": "https://ophd.berkeley.edu/policies-procedures/nondiscrimination-policy-statement",
+            "checked": "2026-10-04",
+            "quote": "gender, gender identity, gender expression, gender transition, sexual orientation, physical or mental disability"
+          },
+          {
+            "key": "name_on_records",
+            "value": "yes",
+            "url": "https://ophd.berkeley.edu/topics/gender-recognition-and-lived-name",
+            "checked": "2026-10-04",
+            "quote": "May request that their lived name be used in the UC system in all settings and situations that do not require their legal name."
+          },
+          {
+            "key": "inclusive_restrooms",
+            "value": "yes",
+            "url": "https://facilities.berkeley.edu/home/inclusive-restrooms",
+            "checked": "2026-10-04",
+            "quote": "A link to a map of existing gender inclusive single-stall and multi-stall restrooms, accessible restrooms, menstrual product dispensers, and changing tables…"
+          }
+        ]
+      }
+    }
+  ]
+}

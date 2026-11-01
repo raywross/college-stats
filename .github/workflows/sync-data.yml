@@ -4,7 +4,8 @@
 # - Weekly (Mondays, 09:00 UTC): the release-calendar check only (releases-only), which marks a release published
 #   once NCES has its files; the full sync is then run by hand.
 # - By hand, or from the console: the full sync, or releases-only.
-# The last step asks the publisher for a snapshot when the run succeeded. No commit, no PR.
+# The last step asks the publisher for a snapshot when the run succeeded. No commit, no PR. It reads and writes only
+# the data store (the old --out file layout is gone; the publisher composes and renders the snapshot).
 name: Sync data
 
 run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.workflow }}"

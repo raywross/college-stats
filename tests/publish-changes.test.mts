@@ -21,11 +21,12 @@ import {
   type GitAccess,
   type PublishResult,
 } from "../scripts/lib/publish-changes.mts";
+import { miniMeta, miniReleaseCalendar, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const SCHOOLS = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
-const META = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as DatasetMeta;
-const CALENDAR = JSON.parse(readFileSync(join(ROOT, "data", "release-calendar.json"), "utf8")) as ReleaseCalendar;
+const SCHOOLS = miniSchools();
+const META = miniMeta();
+const CALENDAR = miniReleaseCalendar();
 
 const BASE = "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111";
 const HEAD = "bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222";
@@ -249,8 +250,10 @@ test("the real git access reads this repository's files at HEAD", () => {
   assert.equal(git.exists(head), true);
   assert.equal(git.exists("0".repeat(40)), false);
   assert.throws(() => git.resolve("no-such-ref-here"), /not a commit in this repository/);
-  const meta = JSON.parse(git.readAt(head, DATASET_PATHS.meta)) as DatasetMeta;
-  assert.equal(typeof meta.retrieved, "string");
+  // A file every commit has (the dataset left the repository in phase 4; readAt still serves the historical commits
+  // publish-changes diffs, which carry data/ under HISTORICAL_DATA_DIR).
+  const pkg = JSON.parse(git.readAt(head, "package.json")) as { name: string };
+  assert.equal(typeof pkg.name, "string");
 });
 
 /* ------------------------------------------------------------------ */
@@ -280,7 +283,7 @@ function walk(dir: string): string[] {
 const headRequests = (source: string) => source.split("\n").filter((line) => line.includes("head: true") && !/^\s*(\*|\/\/)/.test(line));
 
 test("guard: the publish scripts check tables with a one-row select, never head: true (a missing table looks fine to HEAD)", () => {
-  for (const file of ["scripts/lib/publish-changes.mts", "scripts/publish-high-schools.mts", "scripts/lib/publish-high-schools.mts", "scripts/lib/publish-college-failures.mts", "scripts/lib/data-platform/publish-tables.mts"]) {
+  for (const file of ["scripts/lib/publish-changes.mts", "scripts/lib/publish-high-schools.mts", "scripts/lib/publish-college-failures.mts", "scripts/lib/data-platform/publish-tables.mts"]) {
     assert.deepEqual(headRequests(readFileSync(join(ROOT, file), "utf8")), [], `${file}: table checks must not use head: true`);
   }
   assert.deepEqual(headRequests(`  const { error } = await client.from("dataset_change_staging").select("unit_id", { head: true });`).length, 1, "the check itself");

@@ -1,6 +1,7 @@
 # Part 7, Editors: Suggested Changes a Student Accepts, and Marks in the Draft
 
-> Status: **planned** 2026-11-01 (owner: "I'd like for parents and counselors to be able to make edits to a student's
+> Status: **built** 2026-11-01 on `feature/essay-editors`, the day it was planned (see [As built](#as-built-2026-11-01)).
+> Planned 2026-11-01 (owner: "I'd like for parents and counselors to be able to make edits to a student's
 > essays that the student can review and accept. Think of them as editors… something like the way Microsoft Word allows
 > for markup changes and comments with a view to see with and without markup. Similar for when we do the AI review, it
 > would be good to highlight the text that relates to the feedback… some kind of color underline that will give you a
@@ -243,3 +244,106 @@ migration; the marks; Suggest changes and Review changes; the tab and the move; 
    changes with Accept. Say if the reader should stay notes-only.
 3. **Telling the student** a suggestion arrived: the banner and the tab count in this part; an email or digest line
    later with the follow-colleges digest, not here. Say if a notification belongs in this part.
+
+## As built (2026-11-01)
+Units U1 (the migration, the diff and suggestions model, the Server Actions, the reads) and U2 (the marks: the pure
+model, the context, the backdrop/overlay/popover/legend) merged into `feature/essay-editors`. All three owner
+decisions above were built as recommended (suggesting needs only read access; the reader's fixes are one-tap
+changes; telling the student is the banner and the tab count, no email). What follows is read from the code on the
+integration branch, not from the plan above; where they disagree, the code is what shipped.
+
+**The table and its rules** (`supabase/migrations/20261101120000_essay_suggestions.sql`): `essay_suggestions` as
+planned, with one change from the spec's model. The spec's `base_version_id` pointed at "a version of the current
+body", made on demand by saving one labelled "As {first} read it" if the newest version didn't already match. That
+version can't be made this way: the author proposing a suggestion is a guardian or counselor, and only the student's
+own `update` on `essays`/`essay_versions` can insert a version. **Deviation**: the table instead carries a
+`base_body text` column (≤100,000 chars) holding the exact text the editor started from; `base_version_id` is
+nullable and is filled in only when the *newest existing* version's body happens to already equal the current body
+at the moment of suggesting. Every change is computed from `base_body`, so "As {first} read it" is never written and
+never shown in the version list.
+
+Row rules, enforced by two triggers (not just policies, because "who changed what column" can't be expressed in a
+`using`/`with check` alone): before insert, the author is always the caller (`auth.uid()`, whatever the row claims),
+always `role: 'guardian'` (the counselor portal's own grant sets `counselor` later), always `status: 'open'` with
+empty `decisions`; the student can never insert on their own draft (the trigger raises `essay_suggestion_own`).
+Before update: **the open suggestion's author may change `proposed_body`, `note`, or withdraw it (`status →
+'withdrawn'`), but only while `status = 'open'` and `decisions = '{}'` — once the student has decided even one
+change, the author's own row is frozen** (`essay_suggestion_decided`); the student (`is_own_essay`) may change only
+`decisions`, `status` (→ `decided`), and `decided_at`; anyone else, or any other column, is refused. No delete
+policy exists: a withdrawn suggestion is kept forever, not purged. **Deviation**: the spec says a withdrawn
+suggestion "is kept for thirty days then purged with the planner's other removals"; there is no existing purge
+function for a thirty-day job to join (the planner's removals run through a different mechanism this part doesn't
+touch), so the purge was not built and withdrawn rows are never deleted. Building it is future work, not done here.
+
+**The diff and the locate rule** (`lib/essays/diff.ts`, `lib/essays/suggestions.ts`): a hand-written Myers word diff
+over tokens (a word, a run of whitespace, or a paragraph break), adjacent edits within three unchanged words merged
+into one `Change`, exactly as specified. Two details the spec left implicit, as built:
+- **Locating a change in the current text matches only at word edges**: `removed`/`inserted` text is searched for as
+  a substring, but a hit only counts when the character before it (if any) and the character after it (if any) are
+  whitespace or the string's edge — a change whose `removed` text is "act" can never match inside "react" or
+  "reaction". This is `occurrences()`'s `edge()` check in `suggestions.ts`.
+- **The change's key carries no literal ordinal field the code can read back**; when two changes with the same four
+  strings (`removed`, `inserted`, `before`, `after`) exist, `locateChange` needs to know which occurrence in the
+  current text is "this" change's. Rather than storing the ordinal anywhere, `ordinalOf()` recomputes the key for
+  ordinals `0..63` against the change's own four strings until one matches the stored key, and uses that number.
+  It is a few dozen hash computations, not a lookup, and it is why `changeKey`'s inputs must stay exactly as
+  specified (any change to the hash's recipe would silently break ordinal recovery for old keys).
+
+**Versioning on accept**: the spec says a decided suggestion's acceptances get "one version ... the first time a
+change is accepted and then under the ten-minute rule, like typing", with the label "Accepted 3 of 4 changes from
+Jane" appearing once the suggestion is fully decided. As built, `decideSuggestion` forces a version on the *first*
+accepted change of a suggestion (`forceVersion`, checked by "does `decisions` already contain an `accepted` before
+this call") and separately forces one — through `saveEssay`'s existing "a version on every `mark`" rule — on the
+call that completes the suggestion (`status` turning `decided`), carrying the `suggestionLabel` text. A suggestion
+decided in one call where the first accept is also the last decision makes one version with the label, not two;
+one decided over several calls makes one unlabelled version at the first accept and one labelled version at the
+last decision, with ordinary ten-minute versions possible in between if the student kept typing.
+
+**`acceptFix` refuses when the words moved**: the reader's `fix` replaces the text at the note's span, but only
+when the words at that span in the *current* draft still read exactly as they did in the version the reader
+reviewed (`spanOffsets` resolved against both the current body and the reviewed version's body, compared
+character-for-character). If the student rewrote that sentence since the review ran, `acceptFix` returns "The
+draft changed here" and changes nothing; the note stays open for the student to deal with by hand. This matches
+the spec's general stale-change behavior, applied to the reader's one-tap fix as well as a guardian's suggestion.
+
+**The reads** (`lib/essays/load.ts`, `lib/essays/tab-data.ts`): `readEssay` returns `suggestions` (every
+non-withdrawn row, newest first, with `author_name`); `readEssays` and the tab's own read return `openSuggestions`
+(open count per draft) and, for a guardian viewer, `mySuggestions` (their own newest non-withdrawn suggestion's
+`open`/`decided` state per draft) — a failed or missing-table read returns no counts rather than failing the page,
+as the rest of the tab's reads do.
+
+**The marks** (`lib/essays/marks.ts`, `components/essays/{marks-context,Marks}.tsx`): built to the contract — the
+backdrop/overlay pair measured off the field's mirror, colors assigned in order of first appearance (reader amber,
+the student's own comments gray, everyone else blue/violet/green/rose/teal repeating), the popover and the legend.
+No deviation from the plan found in this read of the code.
+
+### Suggest changes and Review changes (U3)
+- **The editor's box** (`components/essays/SuggestBox.tsx`, shown only when the viewer can't write): **Suggest changes**
+  opens the editor's own copy of the draft in a second field with the count bar, a note (up to 2,000 characters), the
+  live line "{n} changes", a preview of the changes, and **Send suggestions**. Unsent text is kept in this browser
+  (`quad.essay.<id>.suggest.<userId>`) and cleared on send; Cancel asks "Discard what you've changed here?" when the
+  text differs. With their own open suggestion the box reads "Waiting for {first}" with the changes marked, plus
+  **Edit your suggestions** and **Withdraw** (asks first); both disappear once the student has decided anything.
+- **The student's page** (`Editor.tsx`): when any suggestion is open, or the newest read has an open mechanics note with
+  a fix, two tabs sit above the field, **Write** and **Review changes** (with a count), and a banner reads "{Name}
+  suggested 3 changes" per editor ("A parent" / "A counselor" when the name is unknown); the count is the suggestion's
+  total, and Review changes shows what is left. The field stays mounted while reviewing. A decision flushes the pending
+  autosave, calls `decideSuggestion`, swaps in the returned body and `updated` with no conflict prompt, and refreshes
+  when a change was applied or the status turned decided.
+- **Review changes** (`components/essays/ReviewChanges.tsx`, helpers in `lib/essays/review-view.ts`): a chip per editor,
+  oldest suggestion first, the reader's fixes last as "Reader's notes"; **With changes** / **As suggested** / **Original**;
+  each change one element (`id="change-<key>"`) with **Accept** and **Reject** inline on a pointer device and under its
+  paragraph after a tap on a phone; **Accept all** / **Reject all** confirm inline ("Accept all 3 changes from Jane?"):
+  Accept all takes only the changes that still fit, Reject all every undecided one, stale included. Stale changes are
+  cards under the text: "The draft changed here", the suggested words, **Copy**, Reject. Taps are optimistic.
+- **The reader's fixes**: the newest read's open mechanics notes with a `fix` are the reader's changes; Accept calls
+  `acceptFix` (from the end of the text to the start), Reject marks the note ignored through the review route. The
+  "As suggested" view for fixes applies them at the notes' spans (a fix has no context words, so the general locator
+  is not used). A small context (`components/essays/fixes-context.tsx`) hands the fixes from the notes panel to the
+  Editor and a note's new state back.
+- **Marks for changes**: the student sees every open suggestion's changes underlined in Write; an editor sees only
+  their own ("You"), since only those have a card for Open to reach. Open on a change mark switches to Review changes
+  and scrolls to the change.
+- **Not verified in a signed-in browser** before the PR (no test account in the build): the real Server Action round
+  trips, the version list refreshing after a decision, Copy, and the phone tap-to-select flow on a touch device; the
+  owner's first pass on the dev site covers these.

@@ -5,18 +5,38 @@
  * a paragraph or a span, which the student resolves"). The box is live for the student and a guardian alike; a
  * comment on a selection quotes the words it points at. Only the student resolves; the author removes their own.
  */
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/analytics";
 import { addComment, deleteComment, resolveComment } from "@/lib/essays/store";
 import { anchoredText } from "@/lib/essays/normalize";
+import { commentAuthorKey, firstLineOf, type MarkItem } from "@/lib/essays/marks";
 import type { CommentAnchor, CommentRow } from "@/lib/essays/rows";
 import { cn } from "@/lib/utils";
+import { usePublishMarks } from "./marks-context";
 
 export type CommentView = CommentRow & { author_name: string | null };
 
 const when = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const ROLE: Record<CommentRow["author_role"], string> = { student: "Student", guardian: "Parent", counselor: "Counselor" };
+
+/**
+ * The open anchored comments as marks: the student's own under "student" (gray for everyone), anyone else's under
+ * their id; labelled "You" for the viewer's own, else the author's first name, else the role word.
+ */
+export function commentMarks(comments: readonly CommentView[], userId: string): MarkItem[] {
+  return comments
+    .filter((c) => !c.resolved_at && c.anchor)
+    .map((c) => ({
+      id: `comment-${c.id}`,
+      kind: "comment" as const,
+      authorKey: commentAuthorKey(c),
+      label: c.author_id === userId ? "You" : (c.author_name?.trim().split(/\s+/)[0] ?? ROLE[c.author_role]) || ROLE[c.author_role],
+      firstLine: firstLineOf(c.body),
+      targetId: `comment-${c.id}`,
+      span: c.anchor!,
+    }));
+}
 
 export function Comments({
   essayId,
@@ -45,6 +65,10 @@ export function Comments({
   const open = comments.filter((c) => !c.resolved_at);
   const resolved = comments.filter((c) => c.resolved_at);
   const shown = showResolved ? comments : open;
+
+  // Open comments on words are marked in the draft (Marks.tsx).
+  const marks = useMemo(() => commentMarks(comments, userId), [comments, userId]);
+  usePublishMarks("comments", marks);
 
   const send = () =>
     start(async () => {
@@ -85,7 +109,7 @@ export function Comments({
           {shown.map((c) => {
             const quoted = c.anchor ? anchoredText(text, c.anchor) : null;
             return (
-              <li key={c.id} className={cn("rounded-2xl border p-3 text-sm", c.resolved_at && "opacity-60")}>
+              <li key={c.id} id={`comment-${c.id}`} className={cn("rounded-2xl border p-3 text-sm", c.resolved_at && "opacity-60")}>
                 <p className="text-xs text-muted-foreground">
                   <span className="font-semibold text-foreground">{c.author_name ?? ROLE[c.author_role]}</span> · {when(c.created)}
                   {c.anchor && !quoted ? " · on an earlier wording" : ""}

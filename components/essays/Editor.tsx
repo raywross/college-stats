@@ -7,23 +7,50 @@
  * ("You edited this on another device; keep which?"); the version list with restore; the comment thread; status.
  * A guardian gets the same page with the field read-only and the comment box live.
  *
+ * Suggestions (specs/product/essays/editors.md "1. Suggestions"): a guardian gets Suggest changes (SuggestBox.tsx) under
+ * the field; the student, while a suggestion or a reader's fix is open, the banner and two tabs, Write and Review
+ * changes (ReviewChanges.tsx). A decision saves what is waiting first, then the server's new text and `updated` swap
+ * in without the conflict prompt. The open changes are underlined in the field in their author's color.
+ *
  * The local copy (`localStorage`, key `quad.essay.<id>`) is a per-device safety net: what was typed, and the server
  * copy's `updated` it was typed over. It is cleared once the server has the text.
  */
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/analytics";
 import { countText, type CountKind, type EssayLimit } from "@/lib/essays/count";
 import { anchorFor } from "@/lib/essays/normalize";
-import { deleteEssay, renameEssay, restoreVersion, saveEssay, setEssayStatus } from "@/lib/essays/store";
+import { acceptFix, decideSuggestion, deleteEssay, renameEssay, restoreVersion, saveEssay, setEssayStatus } from "@/lib/essays/store";
+import { locateChange, type Decision } from "@/lib/essays/suggestions";
+import { spanOffsets } from "@/lib/essays/notes-view";
+import {
+  bannerLine,
+  changeMarks,
+  editorLabel,
+  openSuggestions,
+  reviewCount,
+  reviewEditors,
+  showsReviewTabs,
+  type ReviewEditor,
+  type SuggestionChanges,
+  type SuggestionView,
+  type ReaderFix,
+} from "@/lib/essays/review-view";
 import { ESSAY_STATUSES, essaysHref, STATUS_LABEL, type CommentAnchor, type EssayStatus, type VersionRow } from "@/lib/essays/rows";
 import { nameWarning, otherCollegesNamed } from "@/lib/essays/variants";
 import { CountBar } from "./CountBar";
+import { Marks, MarksLegend } from "./Marks";
+import { useColors, useMarkOpener, usePublishMarks, usePublishMarksText } from "./marks-context";
+import { useReaderFixes } from "./fixes-context";
+import { DRAFT_CHANGED, ReviewChanges, type DecideResult } from "./ReviewChanges";
+import { SuggestBox } from "./SuggestBox";
 import { Comments, type CommentView } from "./Comments";
 import { VersionList } from "./VersionList";
 import { cn } from "@/lib/utils";
 
 const SAVE_AFTER_MS = 1000;
+const NO_SUGGESTIONS: SuggestionView[] = [];
+const NO_FIXES: readonly ReaderFix[] = [];
 const localKey = (id: string) => `quad.essay.${id}`;
 
 type Local = { body: string; base: string; at: number };
@@ -70,6 +97,8 @@ export function Editor({
   forCollege,
   planColleges,
   label,
+  suggestions = NO_SUGGESTIONS,
+  studentFirst = null,
 }: {
   essay: EditorEssay;
   canWrite: boolean;
@@ -81,6 +110,10 @@ export function Editor({
   planColleges: { unit_id: string; name: string }[];
   /** The field's accessible label (the prompt's title). */
   label: string;
+  /** The draft's suggestions, withdrawn ones left out, newest first (lib/essays/load.ts readEssay). */
+  suggestions?: SuggestionView[];
+  /** The student's first name ("Waiting for Alice"). */
+  studentFirst?: string | null;
 }) {
   const router = useRouter();
   const [text, setTextState] = useState(essay.body);
@@ -108,7 +141,10 @@ export function Editor({
     el.style.height = "auto";
     el.style.height = `${Math.max(el.scrollHeight, 320)}px`;
   }, []);
-  useEffect(grow, [text, grow]);
+  const [tab, setTab] = useState<"write" | "review">("write");
+  useEffect(grow, [text, tab, grow]);
+  // The marks in the draft (Marks.tsx) draw under the field's live text.
+  usePublishMarksText(text);
 
   const save = useCallback(
     async (body: string, opts: { force?: boolean; mark?: string } = {}) => {
@@ -201,22 +237,30 @@ export function Editor({
     setSaveState("saved");
   };
 
+  // What is waiting goes to the server first, so a restore or a decision starts from the text on screen.
+  const flush = async () => {
+    if (!timer.current) return;
+    clearTimeout(timer.current);
+    timer.current = null;
+    await save(latest.current.text);
+  };
+  // The server's new text after a restore or a decision: in the field, no conflict prompt.
+  const swapIn = (body: string, updated: string) => {
+    setText(body);
+    setServerUpdated(updated);
+    writeLocal(essay.id, null);
+    setSaveState("saved");
+  };
+
   const restore = (versionId: string) =>
     start(async () => {
-      if (timer.current) {
-        clearTimeout(timer.current);
-        timer.current = null;
-        await save(latest.current.text);
-      }
+      await flush();
       const r = await restoreVersion(essay.id, versionId);
       if (!r.ok) {
         setMessage(r.message);
         return;
       }
-      setText(r.body);
-      setServerUpdated(r.updated);
-      writeLocal(essay.id, null);
-      setSaveState("saved");
+      swapIn(r.body, r.updated);
       track("essay_saved_version", { source: "restored" });
       router.refresh();
     });
@@ -238,6 +282,97 @@ export function Editor({
   const getAnchor = (): CommentAnchor | null => {
     const el = field.current;
     return el ? anchorFor(el.value, el.selectionStart, el.selectionEnd) : null;
+  };
+
+  /* Suggestions (specs/product/essays/editors.md "1. Suggestions"). The student reviews every open one and the
+     reader's fixes; an editor sees their own. Each suggestion's changes are computed once from its base (never per
+     keystroke); where they sit in the live text is found when drawn. */
+  const [localDecisions, setLocalDecisions] = useState<Record<string, Record<string, Decision>>>({});
+  const [focus, setFocus] = useState<{ editorId: string; key: string; n: number } | null>(null);
+  const { fixes, setNoteState } = useReaderFixes();
+  const colors = useColors();
+  const open = useMemo<SuggestionChanges[]>(() => (canWrite ? openSuggestions(suggestions, localDecisions) : []), [canWrite, suggestions, localDecisions]);
+  const reviewFixes = canWrite ? fixes : NO_FIXES;
+  const reviewing = showsReviewTabs(open, reviewFixes);
+  const shownTab = reviewing ? tab : "write";
+  const mine = useMemo(() => (canWrite ? null : (suggestions.find((s) => s.status === "open" && s.author_id === userId) ?? null)), [canWrite, suggestions, userId]);
+  const mineOpen = useMemo(() => (mine ? openSuggestions([mine]) : []), [mine]);
+  // The open changes, underlined in the field in their author's color (an editor sees their own).
+  const changeItems = useMemo(() => (canWrite ? open.flatMap((x) => changeMarks(x, editorLabel(x.suggestion))) : mineOpen.flatMap((x) => changeMarks(x, "You"))), [canWrite, open, mineOpen]);
+  usePublishMarks("changes", changeItems);
+  const editors = useMemo<ReviewEditor[]>(() => (shownTab === "review" ? reviewEditors(text, open, reviewFixes, locateChange) : []), [shownTab, text, open, reviewFixes]);
+
+  // Open on a change's mark: to Review changes, that editor, that change.
+  useMarkOpener(
+    "change",
+    canWrite
+      ? (item) => {
+          const key = item.change?.key;
+          const x = key ? open.find((o) => o.changes.some((c) => c.key === key)) : undefined;
+          if (!key || !x) return false;
+          setTab("review");
+          setFocus((f) => ({ editorId: x.suggestion.id, key, n: (f?.n ?? 0) + 1 }));
+          return true;
+        }
+      : null,
+  );
+  const review = (editorId: string | null) => {
+    setTab("review");
+    if (editorId) setFocus((f) => ({ editorId, key: "", n: (f?.n ?? 0) + 1 }));
+  };
+
+  const decideFixes = async (decisions: Record<string, Decision>): Promise<DecideResult> => {
+    // From the end of the text to the start, so an earlier fix's offsets in the same paragraph still hold.
+    const at = (id: string) => {
+      const f = fixes.find((x) => x.noteId === id);
+      return f ? (spanOffsets(latest.current.text, f.span)?.start ?? -1) : -1;
+    };
+    const ids = Object.keys(decisions).sort((a, b) => at(b) - at(a));
+    const stale: string[] = [];
+    let accepted = false;
+    for (const id of ids) {
+      if (decisions[id] === "accepted") {
+        const r = await acceptFix(id);
+        if (!r.ok) {
+          if (r.message.startsWith(DRAFT_CHANGED)) {
+            stale.push(id);
+            continue;
+          }
+          return { message: r.message };
+        }
+        swapIn(r.body, r.updated);
+        setNoteState(id, "done");
+        accepted = true;
+      } else {
+        // Ignored through the notes' own route, as the notes list's Ignore does.
+        const r = await fetch("/api/essays/review", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ noteId: id, state: "ignored" }) });
+        if (!r.ok) {
+          const body = (await r.json().catch(() => ({}))) as { error?: string };
+          return { message: body.error ?? "That didn't work. Try again in a moment." };
+        }
+        setNoteState(id, "ignored");
+      }
+    }
+    if (accepted) router.refresh();
+    return { stale };
+  };
+
+  const decide = async (editor: ReviewEditor, decisions: Record<string, Decision>): Promise<DecideResult> => {
+    await flush();
+    if (editor.kind === "reader") return decideFixes(decisions);
+    const r = await decideSuggestion(editor.id, decisions);
+    if (!r.ok) return { message: r.message };
+    if (r.body !== latest.current.text) swapIn(r.body, r.updated);
+    else setServerUpdated(r.updated);
+    const applied = new Set(r.applied);
+    setLocalDecisions((l) => {
+      const mineNow = { ...(l[editor.id] ?? {}) };
+      for (const [k, d] of Object.entries(decisions)) if (d === "rejected" || applied.has(k)) mineNow[k] = d;
+      return { ...l, [editor.id]: mineNow };
+    });
+    // The version list gains its line (and the suggestion leaves the open list) from the server.
+    if (r.applied.length > 0 || r.status === "decided") router.refresh();
+    return { stale: r.stale };
   };
 
   const count = countText(text, essay.countKind);
@@ -266,25 +401,69 @@ export function Editor({
         </div>
       )}
 
+      {/* The banner: one line per editor with an open suggestion (editors.md "What the student sees"). */}
+      {shownTab === "write" && open.length > 0 && (
+        <div className="rounded-2xl border px-4 py-1">
+          {open.map((x) => (
+            <p key={x.suggestion.id} className="flex flex-wrap items-center gap-x-2 text-sm">
+              <span className="font-semibold">{bannerLine(x.suggestion, x.changes.length)}</span>
+              <span aria-hidden>·</span>
+              <button type="button" onClick={() => review(x.suggestion.id)} className="-ml-1 inline-flex min-h-11 items-center rounded-full px-2 font-semibold text-primary hover:underline">
+                Review
+              </button>
+            </p>
+          ))}
+        </div>
+      )}
+      {reviewing && (
+        <div role="tablist" aria-label="The draft" className="flex gap-2 border-b">
+          {(["write", "review"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="tab"
+              id={`essay-tab-${t}`}
+              aria-selected={shownTab === t}
+              aria-controls={`essay-panel-${t}`}
+              onClick={() => setTab(t)}
+              className={cn("-mb-px inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-semibold", shownTab === t ? "border-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}
+            >
+              {t === "write" ? "Write" : "Review changes"}
+              {t === "review" && <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums">{reviewCount(open, reviewFixes)}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start lg:gap-6">
         <div className="min-w-0">
-          <label htmlFor="essay-field" className="sr-only">
-            {label}
-          </label>
-          <textarea
-            id="essay-field"
-            ref={field}
-            value={text}
-            readOnly={!canWrite}
-            onChange={(e) => onChange(e.target.value)}
-            spellCheck
-            autoCapitalize="sentences"
-            placeholder={canWrite ? "Start writing" : "Nothing written yet"}
-            className={cn(
-              "block min-h-80 w-full resize-none overflow-hidden rounded-3xl border bg-background px-4 py-4 text-[18px] leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-6 sm:text-lg",
-              !canWrite && "bg-muted/30",
-            )}
-          />
+          {shownTab === "review" && (
+            <div role="tabpanel" id="essay-panel-review" aria-labelledby="essay-tab-review">
+              <ReviewChanges text={text} editors={editors} colors={colors} canDecide={canWrite} onDecide={decide} focus={focus} />
+            </div>
+          )}
+          {/* Write: the field stays mounted under Review changes (hidden), so its text, autosave and marks carry on. */}
+          <div className={cn(shownTab === "review" && "hidden")} {...(reviewing ? { role: "tabpanel", id: "essay-panel-write", "aria-labelledby": "essay-tab-write" } : {})}>
+            <label htmlFor="essay-field" className="sr-only">
+              {label}
+            </label>
+            <MarksLegend locate={locateChange} className="mb-2" />
+            {/* The field over its marks (Marks.tsx): the wrapper carries the background and border; the field is transparent. */}
+            <div className={cn("relative rounded-3xl border bg-background", !canWrite && "bg-muted/30")}>
+              <Marks locate={locateChange} />
+              <textarea
+                id="essay-field"
+                ref={field}
+                value={text}
+                readOnly={!canWrite}
+                onChange={(e) => onChange(e.target.value)}
+                spellCheck
+                autoCapitalize="sentences"
+                placeholder={canWrite ? "Start writing" : "Nothing written yet"}
+                className="relative z-10 block min-h-80 w-full resize-none overflow-hidden rounded-3xl bg-transparent px-4 py-4 text-[18px] leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-6 sm:text-lg"
+              />
+            </div>
+          </div>
         </div>
         <div className="sticky bottom-[calc(var(--tabbar-h,0px)+0.5rem)] z-10 mt-3 lg:top-[calc(var(--header-h)+1rem)] lg:bottom-auto lg:mt-0">
           <CountBar count={count} limit={essay.limit} kind={essay.countKind} saveLine={canWrite ? SAVE_LINE[saveState] : "Read only"} />
@@ -308,6 +487,8 @@ export function Editor({
         </div>
       )}
       {!canWrite && <p className="text-sm text-muted-foreground">{STATUS_LABEL[status]}</p>}
+      {/* An editor's own copy (specs/product/essays/editors.md "How an editor suggests"); never the student's. */}
+      {!canWrite && <SuggestBox essayId={essay.id} userId={userId} text={text} countKind={essay.countKind} limit={essay.limit} mine={mine} studentFirst={studentFirst} color={colors[userId] ?? "blue"} />}
       {message && (
         <p className="text-sm text-destructive" role="status">
           {message}

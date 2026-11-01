@@ -4,23 +4,26 @@
  * A reader's notes (specs/product/essays/reviewer.md "When it runs", "Honesty"): the "Read this draft" button (the
  * student's, never automatic), the notes of the newest read with the one-line disclaimer, each note opening to its spot
  * in the field, done / ignored for the student, and the earlier reads folded below. A guardian sees the same notes,
- * read-only. Notes list under the field on a phone; on a wide screen each open note also gets a numbered mark in the
- * margin beside its line of the field (measured against the field, `#essay-field`, so the editor stays untouched).
- * `mechanics` first, then the rest in draft order (the server stores them in that order).
+ * read-only. The newest read's open notes on words are also marked in the field itself, an amber underline under
+ * their words (components/essays/Marks.tsx, through the marks context; specs/product/essays/editors.md "2. Marks in
+ * the draft"), which replaced the numbered margin marks. `mechanics` first, then the rest in draft order (the server stores them in that order).
  *
  * The data comes from /api/essays/review (GET for the reads, POST for a new one, PATCH for a note's state). POST
  * streams (reviewer.md "the notes stream in"): each note shows as the reader finds it, with Done and Ignore disabled
  * until the `done` event swaps in the stored review (which has ids); a refusal before the read is JSON, as before.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 // Types only from the server module (erased): the reader's code and rubric never reach this bundle.
 import type { ReviewStreamEvent, StoredNote, StoredReview } from "@/lib/essays/review";
 import { CATEGORY_LABEL, spanOffsets } from "@/lib/essays/notes-view";
 import { lineSplitter } from "@/lib/essays/review-response";
 import { InfoTip } from "@/components/ui/info-tip";
+import { READER_KEY, READER_LABEL, type MarkItem } from "@/lib/essays/marks";
 import { cn } from "@/lib/utils";
+import { usePublishMarks } from "./marks-context";
+import { readerFixes } from "@/lib/essays/review-view";
+import { usePublishReaderFixes } from "./fixes-context";
 
 const FIELD_ID = "essay-field";
 const DISCLAIMER = "Questions and things a careful reader noticed. Nothing here is a grade, and the words stay yours.";
@@ -183,6 +186,12 @@ export function Notes({ essayId, canRequest }: { essayId: string; canRequest: bo
 
   const reviews = load.kind === "ready" ? load.reviews : NO_REVIEWS;
   const [latest, ...earlier] = reviews;
+  const latestNotes = latest?.notes ?? NO_NOTES;
+  const marks = useMemo(() => noteMarks(latestNotes), [latestNotes]);
+  usePublishMarks("notes", marks);
+  // The newest read's corrected words, for Review changes (the Editor accepts or rejects them there).
+  const fixes = useMemo(() => readerFixes(latestNotes), [latestNotes]);
+  usePublishReaderFixes(fixes, (id, state) => setLoad((l) => (l.kind === "ready" ? { kind: "ready", reviews: l.reviews.map((rv) => ({ ...rv, notes: rv.notes.map((n) => (n.id === id ? { ...n, state } : n)) })) } : l)));
 
   return (
     <section aria-labelledby="notes-title" className="space-y-3">
@@ -243,8 +252,6 @@ export function Notes({ essayId, canRequest }: { essayId: string; canRequest: bo
           </div>
         </details>
       )}
-
-      <MarginMarks notes={latest?.notes ?? NO_NOTES} onShow={show} />
     </section>
   );
 }
@@ -315,73 +322,11 @@ function NoteList({ notes, canMark, pending = false, onMark, onShow, moved }: { 
   );
 }
 
-/**
- * On a wide screen, a numbered mark in the margin to the left of the field beside each open note's line; tapping one
- * opens the note's spot and scrolls its card into view. Nothing on a phone (no margin there) or when the field sits
- * against the window's edge.
- */
-function MarginMarks({ notes, onShow }: { notes: StoredNote[]; onShow: (n: StoredNote) => void }) {
-  const [marks, setMarks] = useState<{ note: StoredNote; n: number; top: number; left: number }[]>([]);
-  const frame = useRef<number | null>(null);
-
-  const measure = useCallback(() => {
-    const el = field();
-    if (!el || !window.matchMedia("(min-width: 1024px)").matches) return setMarks([]);
-    const rect = el.getBoundingClientRect();
-    if (rect.left < 48) return setMarks([]);
-    const left = rect.left + window.scrollX - 40;
-    const out: { note: StoredNote; n: number; top: number; left: number }[] = [];
-    notes.forEach((note, i) => {
-      if (!note.span || note.state !== "open") return;
-      const at = spanOffsets(el.value, note.span);
-      if (!at) return;
-      out.push({ note, n: i + 1, top: rect.top + window.scrollY + offsetTop(el, at.start), left });
-    });
-    setMarks(out);
-  }, [notes]);
-
-  useEffect(() => {
-    const later = () => {
-      if (frame.current !== null) cancelAnimationFrame(frame.current);
-      frame.current = requestAnimationFrame(measure);
-    };
-    later();
-    window.addEventListener("resize", later);
-    const el = field();
-    el?.addEventListener("input", later);
-    const observer = typeof ResizeObserver !== "undefined" && el ? new ResizeObserver(later) : null;
-    if (observer && el) observer.observe(el);
-    return () => {
-      window.removeEventListener("resize", later);
-      el?.removeEventListener("input", later);
-      observer?.disconnect();
-      if (frame.current !== null) cancelAnimationFrame(frame.current);
-    };
-  }, [measure]);
-
-  if (marks.length === 0 || typeof document === "undefined") return null;
-  // The numbers match the list's (each note's position among the newest read's notes).
-  return createPortal(
-    <div aria-hidden className="pointer-events-none absolute top-0 left-0">
-      {marks.map((m) => (
-        <button
-          key={m.note.id}
-          type="button"
-          tabIndex={-1}
-          title={CATEGORY_LABEL[m.note.category]}
-          onClick={() => {
-            onShow(m.note);
-            document.getElementById(`note-${m.note.id}`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-          }}
-          className="pointer-events-auto absolute inline-flex size-7 items-center justify-center rounded-full bg-amber-500/90 text-xs font-bold text-white shadow"
-          style={{ top: m.top, left: m.left }}
-        >
-          {m.n}
-        </button>
-      ))}
-    </div>,
-    document.body,
-  );
+/** The newest read's open notes on words, as marks (the reader's, amber). */
+export function noteMarks(notes: readonly StoredNote[]): MarkItem[] {
+  return notes
+    .filter((n) => n.state === "open" && n.span)
+    .map((n) => ({ id: `note-${n.id}`, kind: "note" as const, authorKey: READER_KEY, label: READER_LABEL, firstLine: n.observation, targetId: `note-${n.id}`, span: n.span! }));
 }
 
 export default Notes;

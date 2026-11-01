@@ -19,6 +19,10 @@ export interface EssaysTabData {
   links: EssayLinkRow[];
   /** Open comments per draft id. */
   openComments: Record<string, number>;
+  /** Open suggestions per draft id (editors.md "Where it shows": "2 suggestions", for the student). */
+  openSuggestions?: Record<string, number>;
+  /** A guardian's own newest suggestion's state per draft id ("Waiting for {first}" while open). */
+  mySuggestions?: Record<string, "open" | "decided">;
   /** The prompt picker's groups (lib/essays/prompts.ts pickerGroups over the plan's colleges). */
   picker: PickerGroup[];
   /** Every college a draft is written for, on the plan or not, by unit id. */
@@ -104,6 +108,17 @@ export function collegesByEssay(rows: readonly EssayRow[], links: readonly Essay
     out[e.id] = units.map((u) => ({ unit_id: u, name: names[u] ?? "A college" }));
   }
   return out;
+}
+
+/**
+ * Beside the open-comment count (tab.md "Where it shows": "a row with open suggestions shows '2 suggestions' beside
+ * its open-comment count, for the student; for an editor, 'Waiting for {first}' on rows with their own open
+ * suggestion"): "2 suggestions"/"1 suggestion" for the student when the draft has any open; "Waiting for {first}"
+ * for a guardian whose own newest suggestion on that draft is still open. Null when neither applies.
+ */
+export function suggestionNote(viewer: "student" | "guardian", open: number, mine: "open" | "decided" | undefined, studentFirst: string | null): string | null {
+  if (viewer === "guardian") return mine === "open" ? `Waiting for ${studentFirst ?? "the student"}` : null;
+  return open > 0 ? `${open} ${open === 1 ? "suggestion" : "suggestions"}` : null;
 }
 
 /** "also used for Michigan and Rice", or null when the draft serves this college alone. */

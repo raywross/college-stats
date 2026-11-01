@@ -175,6 +175,10 @@ export default function PrivacyPage() {
           . You must be 13 or older to make one. See the <Link href="/glossary#household" className={link}>household</Link> and{" "}
           <Link href="/glossary#access-log" className={link}>access log</Link> entries in the glossary for how families share information.
         </p>
+        <p>
+          <b>Essays.</b> A draft lives in your household: a guardian or counselor can read it, comment, and propose changes as a
+          suggestion, but only the student decides what is accepted, and the text in the draft stays the student&apos;s.
+        </p>
       </Section>
 
       <Section id="performance" eyebrow="Speed" title="Performance and errors" icon={<Gauge className="size-4" aria-hidden />}>

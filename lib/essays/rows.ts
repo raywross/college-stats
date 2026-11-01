@@ -11,8 +11,8 @@ export type EssayStatus = "draft" | "ready" | "submitted";
 export const ESSAY_STATUSES: readonly EssayStatus[] = ["draft", "ready", "submitted"];
 export const STATUS_LABEL: Record<EssayStatus, string> = { draft: "Draft", ready: "Ready", submitted: "Submitted" };
 
-export type VersionSource = "typed" | "pasted" | "uploaded" | "docs" | "restored";
-export const VERSION_SOURCES: readonly VersionSource[] = ["typed", "pasted", "uploaded", "docs", "restored"];
+export type VersionSource = "typed" | "pasted" | "uploaded" | "docs" | "restored" | "suggested";
+export const VERSION_SOURCES: readonly VersionSource[] = ["typed", "pasted", "uploaded", "docs", "restored", "suggested"];
 
 export interface EssayRow {
   id: string;
@@ -42,6 +42,8 @@ export interface VersionRow {
   label: string | null;
   created: string;
 }
+export type { SuggestionRow } from "./suggestions.ts";
+
 export interface CommentAnchor {
   paragraph: number;
   start: number;
@@ -179,11 +181,15 @@ export function rowLimit(e: Pick<EssayRow, "count_kind" | "limit_max" | "limit_m
   return e.limit_max ? { kind: e.count_kind, max: e.limit_max, ...(e.limit_min ? { min: e.limit_min } : {}) } : null;
 }
 
-/** Whether a new save should also make a version (workspace.md "Versions": after a pause of ten minutes, an import, a mark). */
+/**
+ * Whether a new save should also make a version (workspace.md "Versions": after a pause of ten minutes, an import, a
+ * mark). Accepted changes (`suggested`, editors.md "What accepting does") follow the ten-minute rule like typing; the
+ * Server Action marks the first accept and the last decision itself.
+ */
 export const VERSION_PAUSE_MS = 10 * 60 * 1000;
 export function shouldVersion(opts: { lastVersionAt: string | null; now: number; source: VersionSource; mark: boolean; changed: boolean }): boolean {
   if (opts.mark) return true;
-  if (opts.source !== "typed") return true;
+  if (opts.source !== "typed" && opts.source !== "suggested") return true;
   if (!opts.changed) return false;
   if (opts.lastVersionAt === null) return true;
   return opts.now - Date.parse(opts.lastVersionAt) >= VERSION_PAUSE_MS;

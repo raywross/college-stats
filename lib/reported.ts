@@ -3,11 +3,12 @@
  * (scripts/sync-college-reported.mts), the sync (which merges the published values into `school.reported`), the
  * app, and the tests. Pure module: type-only imports, no runtime dependencies. See specs/college-reported-data.md.
  *
- * Files (all in data/, committed, one entry per line where they're large):
- *   college-sources.json   recipes: where each college publishes, with document hashes so unchanged files are skipped
- *   college-reported.json  values that passed every check (what the sync merges into school.reported)
- *   review-queue.json      values that failed a check, with the reason, for a person to look at
- *   reports/               per-run summaries and accuracy reports
+ * Documents (collections on the data store, scripts/lib/data-platform/layers.mts):
+ *   reported.sources       recipes: where each college publishes, with document hashes so unchanged files are skipped
+ *   reported.entries       values that passed every check (what the publisher composes into school.reported)
+ *   reported.review_queue  values that failed a check, with the reason, for a person to look at
+ *   reported.reports       per-run summaries and accuracy reports
+ * Every shape here is the parsed document: callers read it from the store (or a test fixture) and pass it in.
  */
 import type { LineageRecord, ReportedAdmissions, ReportedSourceKind, SourceInfo } from "./types";
 import type { CallKey, DocumentType } from "./cds-sections";
@@ -43,7 +44,7 @@ export const REPORTED_MODELS = {
 export const DEFAULT_ANCHORS: Record<ReportedSourceKind, string> = { cds: "C1", "class-profile": "appl" };
 
 /* ------------------------------------------------------------------ */
-/* Recipes: data/college-sources.json                                  */
+/* Recipes: reported.sources                                           */
 /* ------------------------------------------------------------------ */
 
 export type DocumentFormat = "pdf" | "html" | "xlsx";
@@ -103,7 +104,7 @@ export interface Recipe {
 
 /**
  * How a recipe was found (specs/college-reported-round-3.md Decision 6): `known` an index page re-scan, `guessed` the
- * next edition's file name, `manual` the owner's list (data/reference/cds-urls.json), `probe-*` the free probes
+ * next edition's file name, `manual` the owner's list (the reference document `cds-urls`), `probe-*` the free probes
  * (sitemap, IR host pattern, two-hop crawl), `picker`/`search`/`full` the paid steps 2–4, `blocked` every candidate
  * host refuses us (listed for the owner, no money spent), `none` nothing found.
  */
@@ -199,7 +200,7 @@ export const EXTRACTION_SCHEMA = {
 } as const;
 
 /* ------------------------------------------------------------------ */
-/* Published values: data/college-reported.json                        */
+/* Published values: reported.entries                                  */
 /* ------------------------------------------------------------------ */
 
 /**
@@ -233,7 +234,7 @@ export interface ReportedFile {
 }
 
 /* ------------------------------------------------------------------ */
-/* Checks and the review queue: data/review-queue.json                 */
+/* Checks and the review queue: reported.review_queue                  */
 /* ------------------------------------------------------------------ */
 
 /** The automated checks, numbered as in the spec. All must pass for a value to publish. */
@@ -452,7 +453,7 @@ export interface BatchEntry {
   model?: string;
 }
 
-/** data/college-batches.json: the open batches. Empty between runs. */
+/** reported.batches: the open batches. Empty between runs. */
 export interface BatchesFile {
   /** ISO date of the last change; null before the first batch. */
   updated: string | null;
@@ -476,7 +477,7 @@ export interface BlockedHost {
   unit_ids?: string[];
 }
 
-/** data/reference/blocked-hosts.json, written by the pipeline. */
+/** The reference document `blocked-hosts` (`reference.files`), written by the pipeline. */
 export interface BlockedHostsFile {
   hosts: BlockedHost[];
 }
@@ -494,7 +495,7 @@ export interface CdsUrlEntry {
   added: string;
 }
 
-/** data/reference/cds-urls.json, the owner's manual list. */
+/** The reference document `cds-urls` (`reference.files`), the owner's manual list. */
 export interface CdsUrlsFile {
   entries: CdsUrlEntry[];
 }
@@ -521,7 +522,7 @@ export const ROUND3_MODELS: Record<CallJob, string> = {
 };
 
 /**
- * One model call: a line of data/reports/college-reported-calls-<run>.jsonl. Lets the reservation estimate be checked
+ * One model call: a line of a run's calls report (`reported.reports`, college-reported-calls-<run>.jsonl). Lets the reservation estimate be checked
  * against actual tokens and the console's bill be matched (batch ids make batched calls reconcilable).
  */
 export interface CallLog {
@@ -644,10 +645,10 @@ export interface RunSummaryV3 extends RunSummary {
   projection: CostProjection | null;
   /**
    * Colleges whose every candidate host refuses us (Decision 8): no money was spent on them; the PR body lists them so
-   * the owner can add a link to data/reference/cds-urls.json and drop the file with `npm run archive-doc`.
+   * the owner can add a link to the reference document `cds-urls` and drop the file with `npm run archive-doc`.
    */
   blocked_colleges?: { unit_id: string; name: string; hosts: string[] }[];
-  /** Batches still open when the summary was written (the draft-PR signal; data/college-batches.json holds them). */
+  /** Batches still open when the summary was written (the hold signal; reported.batches holds them). */
   open_batches?: number;
 }
 

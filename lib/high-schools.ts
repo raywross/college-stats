@@ -9,7 +9,7 @@ import { fetchHighSchool, fetchHighSchoolDetail, fetchHighSchoolFile, searchHigh
 /**
  * High school data access (specs/product/high-school-data.md), server only. High schools have their own switch,
  * HIGH_SCHOOLS_SOURCE (highSchoolsSource() below; specs/serving-architecture.md#1-the-deploy-carries-the-dataset):
- *   - `json`: data/high-schools/ (or HIGH_SCHOOLS_DIR, e.g. tests/fixtures/high-schools for UI work and QA), read
+ *   - `json`: the bundled copy's .data/snapshot/high-schools/ (or HIGH_SCHOOLS_DIR, e.g. tests/fixtures/high-schools for UI work and QA), read
  *     lazily a shard at a time and kept in memory per server instance (lib/high-school-store.ts);
  *   - `supabase`: one row per lookup and the search_high_schools function; never every row (~24K).
  * Fail-soft like getDetail(): a missing table, file, or error is logged and reads as null / [].

@@ -5,7 +5,7 @@ import { essayCardLine } from "@/lib/essays/summary";
 import type { FieldPath } from "@/lib/fields";
 import type { Cited } from "@/lib/lineage";
 import type { EssayPrompt, PlatformPromptsFile, School, SchoolEssays } from "@/lib/types";
-import platformPromptsFile from "@/data/reference/platform-prompts.json" with { type: "json" };
+import platformPromptsFile from "../../.data/snapshot/reference/platform-prompts.json" with { type: "json" };
 
 const PLATFORM_PROMPTS = platformPromptsFile as PlatformPromptsFile;
 

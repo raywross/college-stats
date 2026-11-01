@@ -2,10 +2,10 @@ import "server-only";
 /**
  * What the Health page's two views read (specs/product/admin-health-views.md): every college's estimate inputs,
  * worked out once per server instance from the dataset (it never changes while an instance runs), and the published
- * files with their health. `data/source-files.json` is a few KB and imported, so nothing extra is traced for /admin.
+ * files with their health. The bundled copy's `source-files.json` is a few KB and imported, so nothing extra is traced for /admin.
  * Callers check requireAdmin() first.
  */
-import sourceFilesJson from "../../data/source-files.json" with { type: "json" };
+import sourceFilesJson from "../../.data/snapshot/source-files.json" with { type: "json" };
 import { getData } from "@/lib/data";
 import { gpaCurve, gpaModel } from "@/lib/planner/gpa-model-server";
 import { collegeGpa } from "@/lib/planner/gpa-model";

@@ -28,6 +28,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # The bundled copy is the mini fixture whatever the environment holds (specs/data-platform/git-ci-tests.md):
+      # verify needs no network and no keys, and `npm run build` builds from the fixture (prebuild is a no-op here).
+      - run: npm run fetch-snapshot -- --fixture
       - run: npm run verify
       - run: npm run build
 

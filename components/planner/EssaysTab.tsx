@@ -15,7 +15,7 @@ import { EssayList } from "@/components/essays/EssayList";
 import { PromptPicker } from "@/components/essays/PromptPicker";
 import { cycleLabel, essayProgress, nextOwnRef, progressLine, type PromptProgress } from "@/lib/essays/progress";
 import { groupEssays, isMainEssay, refsOf } from "@/lib/essays/rows";
-import { collegesByEssay, type EssaysTabData } from "@/lib/essays/tab-view";
+import { collegesByEssay, suggestionNote, type EssaysTabData } from "@/lib/essays/tab-view";
 import { roundsPicked } from "@/lib/planner/list-row";
 import { planHref } from "@/lib/planner/plan-tabs";
 import type { PlanContext } from "@/lib/planner/types";
@@ -61,6 +61,10 @@ export function EssaysTab({ ctx, essays, person, canWrite }: { ctx: PlanContext;
   const rows = essays?.rows ?? ctx.essays?.rows ?? [];
   const links = essays?.links ?? ctx.essays?.links ?? [];
   const openComments = essays?.openComments ?? {};
+  // Only the student writes a draft, so canWrite doubles as the viewer's role for `suggestionNote`'s two readings.
+  const viewer: "student" | "guardian" = canWrite ? "student" : "guardian";
+  const openSuggestions = essays?.openSuggestions ?? {};
+  const mySuggestions = essays?.mySuggestions ?? {};
   const picker = essays?.picker ?? [];
   const progress = essayProgress({ items: ctx.items, schools: ctx.schools, essays: { rows, links } });
   const names: Record<string, string> = { ...(essays?.collegeNames ?? {}) };
@@ -107,7 +111,16 @@ export function EssaysTab({ ctx, essays, person, canWrite }: { ctx: PlanContext;
     <section aria-labelledby="essays-title" className="space-y-5" data-essays-tab>
       {header(progressLine(progress))}
 
-      {main && <MainEssayCard main={main} usedBy={usedBy} person={person} canWrite={canWrite} comments={main.essayId ? (openComments[main.essayId] ?? 0) : 0} />}
+      {main && (
+        <MainEssayCard
+          main={main}
+          usedBy={usedBy}
+          person={person}
+          canWrite={canWrite}
+          comments={main.essayId ? (openComments[main.essayId] ?? 0) : 0}
+          suggestion={main.essayId ? suggestionNote(viewer, openSuggestions[main.essayId] ?? 0, mySuggestions[main.essayId], first) : null}
+        />
+      )}
 
       {progress.colleges.length === 0 ? (
         <p className={CARD} data-empty>
@@ -119,7 +132,22 @@ export function EssaysTab({ ctx, essays, person, canWrite }: { ctx: PlanContext;
       ) : (
         <div className="space-y-3">
           {progress.colleges.map((c) => (
-            <CollegeEssayCard key={c.unit_id} college={c} texts={texts} byEssay={byEssay} openComments={openComments} person={person} canWrite={canWrite} picker={picker} dated={dated} ownRef={ownRefs[c.unit_id]} />
+            <CollegeEssayCard
+              key={c.unit_id}
+              college={c}
+              texts={texts}
+              byEssay={byEssay}
+              openComments={openComments}
+              openSuggestions={openSuggestions}
+              mySuggestions={mySuggestions}
+              viewer={viewer}
+              studentFirst={first}
+              person={person}
+              canWrite={canWrite}
+              picker={picker}
+              dated={dated}
+              ownRef={ownRefs[c.unit_id]}
+            />
           ))}
         </div>
       )}
@@ -129,7 +157,16 @@ export function EssaysTab({ ctx, essays, person, canWrite }: { ctx: PlanContext;
           <summary className="flex min-h-11 cursor-pointer items-center px-4 font-semibold sm:px-5">Coalition prompts</summary>
           <ul className="divide-y border-t">
             {coalitionRows.map((p) => (
-              <PromptRow key={p.ref} p={p} text={null} also={null} comments={p.essayId ? (openComments[p.essayId] ?? 0) : 0} person={person} canWrite={canWrite} />
+              <PromptRow
+                key={p.ref}
+                p={p}
+                text={null}
+                also={null}
+                comments={p.essayId ? (openComments[p.essayId] ?? 0) : 0}
+                suggestion={p.essayId ? suggestionNote(viewer, openSuggestions[p.essayId] ?? 0, mySuggestions[p.essayId], first) : null}
+                person={person}
+                canWrite={canWrite}
+              />
             ))}
           </ul>
         </details>
@@ -138,7 +175,7 @@ export function EssaysTab({ ctx, essays, person, canWrite }: { ctx: PlanContext;
         <details className="group rounded-3xl border bg-card" data-fold="loose">
           <summary className="flex min-h-11 cursor-pointer items-center px-4 font-semibold sm:px-5">Not for a college yet ({looseCount})</summary>
           <div className="p-3 sm:p-4">
-            <EssayList groups={loose} openComments={openComments} person={person} emptyLine="" />
+            <EssayList groups={loose} openComments={openComments} openSuggestions={openSuggestions} mySuggestions={mySuggestions} viewer={viewer} studentFirst={first} person={person} emptyLine="" />
           </div>
         </details>
       )}
@@ -146,7 +183,7 @@ export function EssaysTab({ ctx, essays, person, canWrite }: { ctx: PlanContext;
         <details className="group rounded-3xl border bg-card" data-fold="off-plan">
           <summary className="flex min-h-11 cursor-pointer items-center px-4 font-semibold sm:px-5">Colleges no longer on your list</summary>
           <div className="p-3 sm:p-4">
-            <EssayList groups={offPlan} openComments={openComments} person={person} emptyLine="" />
+            <EssayList groups={offPlan} openComments={openComments} openSuggestions={openSuggestions} mySuggestions={mySuggestions} viewer={viewer} studentFirst={first} person={person} emptyLine="" />
           </div>
         </details>
       )}

@@ -408,6 +408,85 @@ export async function failedStep(runId: number, deps: GithubDeps = {}): Promise<
   }
 }
 
+/** One run by id (the Jobs console's run page), or null when GitHub has none or can't be read. */
+export async function getRun(runId: number, deps: GithubDeps = {}): Promise<WorkflowRun | null> {
+  if (!githubConfigured(deps.env ?? process.env) || !Number.isInteger(runId) || runId <= 0) return null;
+  try {
+    const r = await api<RawRun | null>(deps, "GET", `/actions/runs/${runId}`);
+    if (r.status !== 200 || !r.data) return null;
+    return toRun(r.data);
+  } catch (e) {
+    logger(deps)(`github-app: getRun: ${describe(e)}`);
+    return null;
+  }
+}
+
+export interface RunStep {
+  number: number;
+  name: string;
+  status: string;
+  conclusion: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+/** One job of a run, with its steps (the Jobs console's run page). */
+export interface RunJob {
+  id: number;
+  name: string;
+  status: string;
+  conclusion: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  url: string;
+  steps: RunStep[];
+}
+
+interface RawJob {
+  id: number;
+  name?: string;
+  status?: string;
+  conclusion?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  html_url?: string;
+  steps?: { number?: number; name?: string; status?: string; conclusion?: string | null; started_at?: string | null; completed_at?: string | null }[];
+}
+
+/** GitHub's job object as a `RunJob`. Exported for tests. */
+export function toJob(j: RawJob): RunJob {
+  return {
+    id: j.id,
+    name: j.name ?? "",
+    status: j.status ?? "",
+    conclusion: j.conclusion ?? null,
+    startedAt: j.started_at ?? null,
+    completedAt: j.completed_at ?? null,
+    url: j.html_url ?? "",
+    steps: (j.steps ?? []).map((s) => ({
+      number: s.number ?? 0,
+      name: s.name ?? "",
+      status: s.status ?? "",
+      conclusion: s.conclusion ?? null,
+      startedAt: s.started_at ?? null,
+      completedAt: s.completed_at ?? null,
+    })),
+  };
+}
+
+/** A run's jobs and their steps (the latest attempt), in GitHub's order; empty when it can't be read. */
+export async function runJobs(runId: number, deps: GithubDeps = {}): Promise<RunJob[]> {
+  if (!githubConfigured(deps.env ?? process.env) || !Number.isInteger(runId) || runId <= 0) return [];
+  try {
+    const r = await api<{ jobs?: RawJob[] }>(deps, "GET", `/actions/runs/${runId}/jobs?filter=latest&per_page=100`);
+    if (r.status !== 200) return [];
+    return (r.data?.jobs ?? []).map(toJob);
+  } catch (e) {
+    logger(deps)(`github-app: runJobs: ${describe(e)}`);
+    return [];
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Pull requests                                                       */
 /* ------------------------------------------------------------------ */

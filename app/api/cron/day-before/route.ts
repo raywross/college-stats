@@ -1,5 +1,6 @@
 import { planHref } from "@/lib/planner/plan-tabs";
 import type { NextRequest } from "next/server";
+import { withJobRun } from "@/lib/jobs/record";
 import { isAuthorized } from "@/lib/revalidate";
 import { supabaseClient } from "@/lib/supabase";
 import { composeDayBeforeText, smsConfigured } from "@/lib/sms";
@@ -58,5 +59,7 @@ async function run(request: NextRequest) {
   return Response.json({ configured: true, ...summary });
 }
 
-export const GET = run;
-export const POST = run;
+// Every run leaves a row in job_runs for the admin console's Jobs pages (lib/jobs/record.ts).
+const recorded = withJobRun("day-before", run);
+export const GET = recorded;
+export const POST = recorded;

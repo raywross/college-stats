@@ -40,6 +40,7 @@ import {
   promptTitle,
   STATE_WORD,
   stateLine,
+  suggestionNote,
 } from "@/lib/essays/tab-view";
 import { collegeAnchor } from "@/lib/planner/plan-tabs";
 import { cn } from "@/lib/utils";
@@ -97,6 +98,7 @@ export function PromptRow({
   text,
   also,
   comments,
+  suggestion = null,
   person,
   canWrite,
 }: {
@@ -105,6 +107,8 @@ export function PromptRow({
   text: string | null;
   also: string | null;
   comments: number;
+  /** "2 suggestions" or "Waiting for {first}" beside the comment count (tab-view.ts `suggestionNote`); null to show nothing. */
+  suggestion?: string | null;
   person: string | null;
   canWrite: boolean;
 }) {
@@ -114,9 +118,9 @@ export function PromptRow({
     <span className="min-w-0 flex-1">
       <span className="sr-only">{STATE_WORD[p.state]}: </span>
       <span className="block font-semibold break-words">{title}</span>
-      {(also || comments > 0) && (
+      {(also || comments > 0 || suggestion) && (
         <span className="block text-xs text-muted-foreground">
-          {[also, comments > 0 ? `${comments} ${comments === 1 ? "comment" : "comments"}` : null].filter(Boolean).join(" · ")}
+          {[also, comments > 0 ? `${comments} ${comments === 1 ? "comment" : "comments"}` : null, suggestion].filter(Boolean).join(" · ")}
         </span>
       )}
     </span>
@@ -167,9 +171,30 @@ export function PromptRow({
 }
 
 /** The personal essay's card (tab.md): status, count against 650, how many colleges use it; opens (or starts) the one main draft. */
-export function MainEssayCard({ main, usedBy, person, canWrite, comments }: { main: NonNullable<EssayProgress["main"]>; usedBy: number; person: string | null; canWrite: boolean; comments: number }) {
+export function MainEssayCard({
+  main,
+  usedBy,
+  person,
+  canWrite,
+  comments,
+  suggestion = null,
+}: {
+  main: NonNullable<EssayProgress["main"]>;
+  usedBy: number;
+  person: string | null;
+  canWrite: boolean;
+  comments: number;
+  /** "2 suggestions" or "Waiting for {first}" beside the comment count (tab-view.ts `suggestionNote`); null to show nothing. */
+  suggestion?: string | null;
+}) {
   const count = countLabel(main.count, { kind: "words", max: main.limit }, "words");
-  const bits = [STATE_WORD[main.state], main.state === "not_started" ? null : count, usedBy > 0 ? `used by ${usedBy} ${usedBy === 1 ? "college" : "colleges"}` : null, comments > 0 ? `${comments} ${comments === 1 ? "comment" : "comments"}` : null].filter(Boolean);
+  const bits = [
+    STATE_WORD[main.state],
+    main.state === "not_started" ? null : count,
+    usedBy > 0 ? `used by ${usedBy} ${usedBy === 1 ? "college" : "colleges"}` : null,
+    comments > 0 ? `${comments} ${comments === 1 ? "comment" : "comments"}` : null,
+    suggestion,
+  ].filter(Boolean);
   const body = (
     <>
       <span className="min-w-0">
@@ -203,6 +228,10 @@ export function CollegeEssayCard({
   texts,
   byEssay,
   openComments,
+  openSuggestions = {},
+  mySuggestions = {},
+  viewer = "student",
+  studentFirst = null,
   person,
   canWrite,
   picker,
@@ -213,6 +242,14 @@ export function CollegeEssayCard({
   texts: Record<string, string>;
   byEssay: Record<string, { unit_id: string; name: string }[]>;
   openComments: Record<string, number>;
+  /** Open suggestions per draft id (tab-view.ts `suggestionNote`); empty when the read didn't carry any. */
+  openSuggestions?: Record<string, number>;
+  /** A guardian's own newest suggestion's state per draft id. */
+  mySuggestions?: Record<string, "open" | "decided">;
+  /** Whose screen this is, for `suggestionNote`'s two readings. */
+  viewer?: "student" | "guardian";
+  /** The student's first name, for a guardian's "Waiting for {first}". */
+  studentFirst?: string | null;
   person: string | null;
   canWrite: boolean;
   picker: PickerGroup[];
@@ -233,6 +270,7 @@ export function CollegeEssayCard({
       text={texts[p.ref] ?? null}
       also={alsoUsedFor(byEssay, p.essayId, c.unit_id)}
       comments={p.essayId ? (openComments[p.essayId] ?? 0) : 0}
+      suggestion={p.essayId ? suggestionNote(viewer, openSuggestions[p.essayId] ?? 0, mySuggestions[p.essayId], studentFirst) : null}
       person={person}
       canWrite={canWrite}
     />

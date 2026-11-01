@@ -844,8 +844,9 @@ test("sign-in activity in words: devices from the browser, the authenticator not
   assert.equal(consoleLib.describeAuthActivity({ at: "x", kind: "auth.recovery", detail: null, source: "support" }).label, "Quad support: made a password-reset link");
 });
 
-test("the rail has its six sections, highlights the right one, and every console page sits under one", () => {
-  assert.deepEqual(consoleLib.ADMIN_SECTIONS.map((s) => s.label), ["People", "Households", "Colleges", "Health", "Operations", "Essays", "Log"]);
+test("the rail has its sections, highlights the right one, and every console page sits under one", () => {
+  assert.deepEqual(consoleLib.ADMIN_SECTIONS.map((s) => s.label), ["People", "Households", "Colleges", "Health", "Operations", "Essays", "Jobs", "Log"]);
+  assert.equal(consoleLib.activeSection("/admin/jobs/digests/runs/12"), "jobs");
   assert.equal(consoleLib.activeSection("/admin"), null);
   assert.equal(consoleLib.activeSection("/admin/households"), "households");
   assert.equal(consoleLib.activeSection(`/admin/households/${HH}`), "households");
@@ -994,5 +995,5 @@ test("isNextControlFlow recognizes redirect() and notFound(), and nothing a data
 test("the console files are all under the paths this unit owns", () => {
   const owned = ["app/admin/layout.tsx", "app/admin/page.tsx"];
   const dirs = ["people", "households", "students", "log", "admins", "mfa", "settings"].map((d) => `app/admin/${d}/`);
-  for (const f of adminFiles) assert.ok(owned.includes(f) || dirs.some((d) => f.startsWith(d)) || /^app\/admin\/(colleges|health|operations|essays|high-schools|selectivity|data)\//.test(f), relative(ROOT, join(ROOT, f)));
+  for (const f of adminFiles) assert.ok(owned.includes(f) || dirs.some((d) => f.startsWith(d)) || /^app\/admin\/(colleges|health|operations|jobs|essays|high-schools|selectivity|data)\//.test(f), relative(ROOT, join(ROOT, f)));
 });

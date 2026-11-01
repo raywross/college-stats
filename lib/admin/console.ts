@@ -16,7 +16,7 @@ import type { AdminState } from "./auth.ts";
 /* The rail                                                            */
 /* ------------------------------------------------------------------ */
 
-export type AdminSectionKey = "people" | "households" | "colleges" | "health" | "operations" | "essays" | "log";
+export type AdminSectionKey = "people" | "households" | "colleges" | "health" | "operations" | "jobs" | "essays" | "log";
 
 export interface AdminSection {
   key: AdminSectionKey;
@@ -40,6 +40,8 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { key: "operations", label: "Operations", href: "/admin/operations", under: ["/admin/operations"], hint: "Runs and approvals" },
   // Essays (specs/product/essays/sources.md "The hand read"): the prompts a person reads from the application form.
   { key: "essays", label: "Essays", href: "/admin/essays", under: ["/admin/essays"], hint: "Prompts read from the form" },
+  // Jobs (specs/product/admin-jobs.md): every scheduled job, its next run, and its history.
+  { key: "jobs", label: "Jobs", href: "/admin/jobs", under: ["/admin/jobs"], hint: "Schedules and past runs" },
   { key: "log", label: "Log", href: "/admin/log", under: ["/admin/log", "/admin/admins"], hint: "Every admin action" },
 ];
 

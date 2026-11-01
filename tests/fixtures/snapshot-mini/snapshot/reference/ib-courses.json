@@ -1,0 +1,1299 @@
+{
+  "cycle": "2026-27",
+  "source": {
+    "publisher": "International Baccalaureate Organization",
+    "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+    "retrieved": "2026-10-11",
+    "note": "The Diploma Programme subjects most U.S. IB schools offer, at higher level (HL) and standard level (SL). The IB site couldn't be opened from the build environment; `confirmed: true` marks a subject whose page appeared in web search results from ibo.org on 2026-10-11, and every other entry links to the DP curriculum page until its own page is checked. Theory of Knowledge and the Extended Essay are part of the diploma's core, not courses, and aren't listed."
+  },
+  "editorial": "Editorial, not the IB's: `subject`, `core`, `grades` (the two diploma years), `prereqs` and `next` (empty: the diploma fixes the two-year schedule), `majors` (two-digit CIP families from lib/majors.ts), and `aliases`. Reviewed in data PRs.",
+  "courses": [
+    {
+      "key": "ib_english_a_literature_hl",
+      "name": "IB English A: Literature HL",
+      "subject": "english",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "23",
+        "38"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "English Literature",
+        "English A Literature"
+      ]
+    },
+    {
+      "key": "ib_english_a_literature_sl",
+      "name": "IB English A: Literature SL",
+      "subject": "english",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "23",
+        "38"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "English Literature",
+        "English A Literature"
+      ]
+    },
+    {
+      "key": "ib_english_a_lang_lit_hl",
+      "name": "IB English A: Language and Literature HL",
+      "subject": "english",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "23",
+        "09"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "English Language and Literature",
+        "English A Language and Literature",
+        "English A Lang Lit"
+      ]
+    },
+    {
+      "key": "ib_english_a_lang_lit_sl",
+      "name": "IB English A: Language and Literature SL",
+      "subject": "english",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "23",
+        "09"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "English Language and Literature",
+        "English A Language and Literature",
+        "English A Lang Lit"
+      ]
+    },
+    {
+      "key": "ib_spanish_b_hl",
+      "name": "IB Spanish B HL",
+      "subject": "language",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Spanish"
+      ]
+    },
+    {
+      "key": "ib_spanish_b_sl",
+      "name": "IB Spanish B SL",
+      "subject": "language",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Spanish"
+      ]
+    },
+    {
+      "key": "ib_french_b_hl",
+      "name": "IB French B HL",
+      "subject": "language",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "French"
+      ]
+    },
+    {
+      "key": "ib_french_b_sl",
+      "name": "IB French B SL",
+      "subject": "language",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "French"
+      ]
+    },
+    {
+      "key": "ib_mandarin_b_hl",
+      "name": "IB Mandarin B HL",
+      "subject": "language",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Mandarin",
+        "Chinese B",
+        "Chinese"
+      ]
+    },
+    {
+      "key": "ib_mandarin_b_sl",
+      "name": "IB Mandarin B SL",
+      "subject": "language",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Mandarin",
+        "Chinese B",
+        "Chinese"
+      ]
+    },
+    {
+      "key": "ib_german_b_hl",
+      "name": "IB German B HL",
+      "subject": "language",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "German"
+      ]
+    },
+    {
+      "key": "ib_german_b_sl",
+      "name": "IB German B SL",
+      "subject": "language",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "German"
+      ]
+    },
+    {
+      "key": "ib_japanese_b_hl",
+      "name": "IB Japanese B HL",
+      "subject": "language",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Japanese"
+      ]
+    },
+    {
+      "key": "ib_japanese_b_sl",
+      "name": "IB Japanese B SL",
+      "subject": "language",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Japanese"
+      ]
+    },
+    {
+      "key": "ib_language_ab_initio_sl",
+      "name": "IB Language ab initio SL",
+      "subject": "language",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "ab initio"
+      ]
+    },
+    {
+      "key": "ib_latin_hl",
+      "name": "IB Latin HL",
+      "subject": "language",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16",
+        "38"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Classical Languages: Latin"
+      ]
+    },
+    {
+      "key": "ib_latin_sl",
+      "name": "IB Latin SL",
+      "subject": "language",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "16",
+        "38"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Classical Languages: Latin"
+      ]
+    },
+    {
+      "key": "ib_history_hl",
+      "name": "IB History HL",
+      "subject": "history",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "54",
+        "45"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "History of the Americas",
+        "History: Americas"
+      ]
+    },
+    {
+      "key": "ib_history_sl",
+      "name": "IB History SL",
+      "subject": "history",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "54",
+        "45"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "History of the Americas",
+        "History: Americas"
+      ]
+    },
+    {
+      "key": "ib_economics_hl",
+      "name": "IB Economics HL",
+      "subject": "history",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "45",
+        "52"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_economics_sl",
+      "name": "IB Economics SL",
+      "subject": "history",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "45",
+        "52"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_psychology_hl",
+      "name": "IB Psychology HL",
+      "subject": "history",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "42",
+        "51"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_psychology_sl",
+      "name": "IB Psychology SL",
+      "subject": "history",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "42",
+        "51"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_geography_hl",
+      "name": "IB Geography HL",
+      "subject": "history",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "45",
+        "03"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_geography_sl",
+      "name": "IB Geography SL",
+      "subject": "history",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "45",
+        "03"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_global_politics_hl",
+      "name": "IB Global Politics HL",
+      "subject": "history",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "45",
+        "22"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_global_politics_sl",
+      "name": "IB Global Politics SL",
+      "subject": "history",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "45",
+        "22"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_business_management_hl",
+      "name": "IB Business Management HL",
+      "subject": "other",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "52"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Business and Management"
+      ]
+    },
+    {
+      "key": "ib_business_management_sl",
+      "name": "IB Business Management SL",
+      "subject": "other",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "52"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Business and Management"
+      ]
+    },
+    {
+      "key": "ib_philosophy_hl",
+      "name": "IB Philosophy HL",
+      "subject": "history",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "38"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_philosophy_sl",
+      "name": "IB Philosophy SL",
+      "subject": "history",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "38"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_digital_society_hl",
+      "name": "IB Digital Society HL",
+      "subject": "history",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "11",
+        "09"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_digital_society_sl",
+      "name": "IB Digital Society SL",
+      "subject": "history",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "11",
+        "09"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_biology_hl",
+      "name": "IB Biology HL",
+      "subject": "science",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "26",
+        "51",
+        "03"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/sciences/biology/",
+      "confirmed": true
+    },
+    {
+      "key": "ib_biology_sl",
+      "name": "IB Biology SL",
+      "subject": "science",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "26",
+        "51",
+        "03"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/sciences/biology/",
+      "confirmed": true
+    },
+    {
+      "key": "ib_chemistry_hl",
+      "name": "IB Chemistry HL",
+      "subject": "science",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "26",
+        "40",
+        "51",
+        "14"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_chemistry_sl",
+      "name": "IB Chemistry SL",
+      "subject": "science",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "26",
+        "40",
+        "51",
+        "14"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_physics_hl",
+      "name": "IB Physics HL",
+      "subject": "science",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "14",
+        "15",
+        "40"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_physics_sl",
+      "name": "IB Physics SL",
+      "subject": "science",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "14",
+        "15",
+        "40"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_computer_science_hl",
+      "name": "IB Computer Science HL",
+      "subject": "cs",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "11",
+        "14"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_computer_science_sl",
+      "name": "IB Computer Science SL",
+      "subject": "cs",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "11",
+        "14"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_ess_hl",
+      "name": "IB Environmental Systems and Societies HL",
+      "subject": "science",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "03",
+        "26"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "ESS",
+        "Environmental Systems & Societies"
+      ]
+    },
+    {
+      "key": "ib_ess_sl",
+      "name": "IB Environmental Systems and Societies SL",
+      "subject": "science",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "03",
+        "26"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "ESS",
+        "Environmental Systems & Societies"
+      ]
+    },
+    {
+      "key": "ib_sehs_hl",
+      "name": "IB Sports, Exercise and Health Science HL",
+      "subject": "science",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "31",
+        "51"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "SEHS",
+        "Sports Exercise and Health Science"
+      ]
+    },
+    {
+      "key": "ib_sehs_sl",
+      "name": "IB Sports, Exercise and Health Science SL",
+      "subject": "science",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "31",
+        "51"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "SEHS",
+        "Sports Exercise and Health Science"
+      ]
+    },
+    {
+      "key": "ib_design_technology_hl",
+      "name": "IB Design Technology HL",
+      "subject": "science",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "14",
+        "15",
+        "04"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_design_technology_sl",
+      "name": "IB Design Technology SL",
+      "subject": "science",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "14",
+        "15",
+        "04"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_math_aa_hl",
+      "name": "IB Mathematics: Analysis and Approaches HL",
+      "subject": "math",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "11",
+        "14",
+        "15",
+        "27",
+        "40",
+        "52"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Math AA",
+        "Mathematics AA",
+        "Math: Analysis and Approaches",
+        "Analysis and Approaches"
+      ]
+    },
+    {
+      "key": "ib_math_aa_sl",
+      "name": "IB Mathematics: Analysis and Approaches SL",
+      "subject": "math",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "11",
+        "14",
+        "15",
+        "27",
+        "40",
+        "52"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Math AA",
+        "Mathematics AA",
+        "Math: Analysis and Approaches",
+        "Analysis and Approaches"
+      ]
+    },
+    {
+      "key": "ib_math_ai_hl",
+      "name": "IB Mathematics: Applications and Interpretation HL",
+      "subject": "math",
+      "level": "hl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "27",
+        "42",
+        "45",
+        "52",
+        "26"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Math AI",
+        "Mathematics AI",
+        "Math: Applications and Interpretation",
+        "Applications and Interpretation"
+      ]
+    },
+    {
+      "key": "ib_math_ai_sl",
+      "name": "IB Mathematics: Applications and Interpretation SL",
+      "subject": "math",
+      "level": "sl",
+      "core": true,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "27",
+        "42",
+        "45",
+        "52",
+        "26"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Math AI",
+        "Mathematics AI",
+        "Math: Applications and Interpretation",
+        "Applications and Interpretation"
+      ]
+    },
+    {
+      "key": "ib_visual_arts_hl",
+      "name": "IB Visual Arts HL",
+      "subject": "arts",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Visual Art"
+      ]
+    },
+    {
+      "key": "ib_visual_arts_sl",
+      "name": "IB Visual Arts SL",
+      "subject": "arts",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Visual Art"
+      ]
+    },
+    {
+      "key": "ib_music_hl",
+      "name": "IB Music HL",
+      "subject": "arts",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_music_sl",
+      "name": "IB Music SL",
+      "subject": "arts",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_theatre_hl",
+      "name": "IB Theatre HL",
+      "subject": "arts",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Theater"
+      ]
+    },
+    {
+      "key": "ib_theatre_sl",
+      "name": "IB Theatre SL",
+      "subject": "arts",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false,
+      "aliases": [
+        "Theater"
+      ]
+    },
+    {
+      "key": "ib_film_hl",
+      "name": "IB Film HL",
+      "subject": "arts",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50",
+        "09"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_film_sl",
+      "name": "IB Film SL",
+      "subject": "arts",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50",
+        "09"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_dance_hl",
+      "name": "IB Dance HL",
+      "subject": "arts",
+      "level": "hl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    },
+    {
+      "key": "ib_dance_sl",
+      "name": "IB Dance SL",
+      "subject": "arts",
+      "level": "sl",
+      "core": false,
+      "grades": [
+        11,
+        12
+      ],
+      "prereqs": [],
+      "next": [],
+      "majors": [
+        "50"
+      ],
+      "url": "https://www.ibo.org/programmes/diploma-programme/curriculum/",
+      "confirmed": false
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "description": "Campus-life pilot, round 2: 25 colleges, none in round 1 (scripts/lib/campus-pilot/files.mts PILOT_IDS). Ids verified against data/schools.json 2026-10-04. The default list for npm run campus-pilot and the Campus-life pilot workflow.",
+  "colleges": [
+    {
+      "unit_id": "204796",
+      "name": "Ohio State University-Main Campus",
+      "why": "Large public; Ohio SB 1"
+    },
+    {
+      "unit_id": "228723",
+      "name": "Texas A&M University-College Station",
+      "why": "Large public; Texas SB 17; big Greek and faith life"
+    },
+    {
+      "unit_id": "139959",
+      "name": "University of Georgia",
+      "why": "Greek-heavy public, South"
+    },
+    {
+      "unit_id": "214777",
+      "name": "Pennsylvania State University-Main Campus",
+      "why": "Large public, Northeast"
+    },
+    {
+      "unit_id": "240444",
+      "name": "University of Wisconsin-Madison",
+      "why": "Large public, no such law"
+    },
+    {
+      "unit_id": "199120",
+      "name": "University of North Carolina at Chapel Hill",
+      "why": "NC law; CDS record"
+    },
+    {
+      "unit_id": "221759",
+      "name": "The University of Tennessee-Knoxville",
+      "why": "Tennessee law"
+    },
+    {
+      "unit_id": "151351",
+      "name": "Indiana University-Bloomington",
+      "why": "Indiana (statute unread)"
+    },
+    {
+      "unit_id": "198419",
+      "name": "Duke University",
+      "why": "Private, chaplaincy"
+    },
+    {
+      "unit_id": "147767",
+      "name": "Northwestern University",
+      "why": "Private, Midwest"
+    },
+    {
+      "unit_id": "164924",
+      "name": "Boston College",
+      "why": "Jesuit"
+    },
+    {
+      "unit_id": "228246",
+      "name": "Southern Methodist University",
+      "why": "Methodist; Greek-heavy"
+    },
+    {
+      "unit_id": "160755",
+      "name": "Tulane University of Louisiana",
+      "why": "Large Jewish community"
+    },
+    {
+      "unit_id": "139658",
+      "name": "Emory University",
+      "why": "Methodist; private South"
+    },
+    {
+      "unit_id": "199847",
+      "name": "Wake Forest University",
+      "why": "Private; NC"
+    },
+    {
+      "unit_id": "121150",
+      "name": "Pepperdine University",
+      "why": "Churches of Christ; conduct policy"
+    },
+    {
+      "unit_id": "165015",
+      "name": "Brandeis University",
+      "why": "Jewish-founded, nonsectarian"
+    },
+    {
+      "unit_id": "204501",
+      "name": "Oberlin College",
+      "why": "Liberal arts; no Greek life"
+    },
+    {
+      "unit_id": "141060",
+      "name": "Spelman College",
+      "why": "HBCU; historically women's; trans admission policy"
+    },
+    {
+      "unit_id": "140553",
+      "name": "Morehouse College",
+      "why": "HBCU; historically men's; trans admission policy"
+    },
+    {
+      "unit_id": "211273",
+      "name": "Bryn Mawr College",
+      "why": "Historically women's"
+    },
+    {
+      "unit_id": "169080",
+      "name": "Calvin University",
+      "why": "CCCU; community standards"
+    },
+    {
+      "unit_id": "104179",
+      "name": "University of Arizona",
+      "why": "Large public, Southwest"
+    },
+    {
+      "unit_id": "209551",
+      "name": "University of Oregon",
+      "why": "Large public, Northwest"
+    },
+    {
+      "unit_id": "157085",
+      "name": "University of Kentucky",
+      "why": "Kentucky (law excluded: allows open centers)"
+    }
+  ]
+}

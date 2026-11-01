@@ -1,0 +1,51 @@
+{
+  "reviewed": "2026-10-11",
+  "bans": [
+    {
+      "state": "CA",
+      "sectors": [
+        "private"
+      ],
+      "effective": "2025-09-01",
+      "law": "AB 1780 (Ch. 1006, Stats. 2024)",
+      "source_url": "https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB1780"
+    },
+    {
+      "state": "CO",
+      "sectors": [
+        "public"
+      ],
+      "effective": "2021-09-07",
+      "law": "HB21-1173",
+      "source_url": "https://leg.colorado.gov/bills/HB21-1173"
+    },
+    {
+      "state": "IL",
+      "sectors": [
+        "public"
+      ],
+      "effective": "2024-08-09",
+      "law": "SB 462 (P.A. 103-0877)",
+      "source_url": "https://ilga.gov/ftp/Public%20Acts/103/103-0877.htm"
+    },
+    {
+      "state": "MD",
+      "sectors": [
+        "public",
+        "private"
+      ],
+      "effective": "2024-07-01",
+      "law": "HB 4 (Ch. 363)",
+      "source_url": "https://mgaleg.maryland.gov/mgawebsite/Legislation/Details/HB0004?ys=2024RS"
+    },
+    {
+      "state": "VA",
+      "sectors": [
+        "public"
+      ],
+      "effective": "2024-07-01",
+      "law": "HB 48 / SB 46",
+      "source_url": "https://law.lis.virginia.gov/vacode/23.1-407.2/"
+    }
+  ]
+}

@@ -11,7 +11,8 @@
  * Guards ("Keeping it running"): a search that is Slate's page but parses to nothing it says it has (or no longer says
  * "returned N event(s)" at all) is a collapsed host, an error that counts no misses; and when more than 20% of the hosts
  * tried tonight failed or collapsed, no host's misses are written (`misses_withheld`), so a markup change can never
- * empty the table.
+ * empty the table. Hosts already `unreachable` before tonight (their weekly retry) are counted apart (`hosts_retried`,
+ * `retries_failed`) and left out of that 20%: their failing again is expected and says nothing about the markup.
  * Every request goes through `PoliteHttp` (robots.txt, at least a second between requests to one host, the project's
  * user agent); hosts are read in parallel, a few at a time. Nothing is ever submitted to a college.
  */
@@ -469,6 +470,11 @@ export interface SyncRecord {
   hosts_collapsed: number;
   /** Whether the run-level guard withheld every host's misses tonight. */
   misses_withheld: boolean;
+  /** Hosts that were `unreachable` before tonight and were tried again (their weekly retry); counted in `hosts_failed`
+   * when they fail, but left out of the guard, since a host already known to be down says nothing about the markup. */
+  hosts_retried: number;
+  /** How many of the retried hosts failed or collapsed again. */
+  retries_failed: number;
 }
 
 export interface HostResult {
@@ -575,13 +581,22 @@ export async function runSync(hosts: readonly SlateHostRow[], deps: SyncDeps): P
     if (byHost.has(h.host)) deps.log?.(`  ${h.host} is listed for ${byHost.get(h.host)!.unit_id} and ${h.unit_id}; read once, for ${byHost.get(h.host)!.unit_id}`);
     else byHost.set(h.host, h);
   }
+  // Hosts already `unreachable` before tonight are weekly retries: when they fail again that is the expected outcome,
+  // not a sign the markup changed, so the guard measures the other hosts only (2026-11-01: the retries cluster on
+  // one night, 640 of 830 hosts, and had withheld every healthy host's misses each Sunday).
+  const retried = new Set([...byHost.values()].filter((h) => h.status === "unreachable").map((h) => h.host));
   const results = await pool([...byHost.values()], HOST_POOL, (h) => syncHost(h, deps));
   const collapsed = results.filter((r) => r.collapsed).length;
   const failed = results.filter((r) => !r.ok && !r.collapsed).length;
-  const withheld = withholdMisses(results.length, failed, collapsed);
+  const fresh = results.filter((r) => !retried.has(r.host));
+  const freshCollapsed = fresh.filter((r) => r.collapsed).length;
+  const freshFailed = fresh.filter((r) => !r.ok && !r.collapsed).length;
+  const retriesFailed = results.filter((r) => retried.has(r.host) && !r.ok).length;
+  const withheld = withholdMisses(fresh.length, freshFailed, freshCollapsed);
   const runErrors: { host: string; error: string }[] = [];
+  if (retried.size) deps.log?.(`  ${retried.size} unreachable host${retried.size === 1 ? "" : "s"} retried tonight; ${retriesFailed} still down (not counted by the guard).`);
   if (withheld) {
-    deps.log?.(`  Misses withheld: ${failed} failed and ${collapsed} collapsed of ${results.length} hosts (more than ${MAX_FAILED_SHARE * 100}%)`);
+    deps.log?.(`  Misses withheld: ${freshFailed} failed and ${freshCollapsed} collapsed of ${fresh.length} hosts (more than ${MAX_FAILED_SHARE * 100}%)`);
   } else if (!deps.dryRun) {
     const missed = results.flatMap((r) => r.diff?.missed ?? []);
     try {
@@ -605,6 +620,8 @@ export async function runSync(hosts: readonly SlateHostRow[], deps: SyncDeps): P
     hosts_failed: failed,
     hosts_collapsed: collapsed,
     misses_withheld: withheld,
+    hosts_retried: retried.size,
+    retries_failed: retriesFailed,
   };
   if (!deps.dryRun) await deps.store.recordSync(record);
   return { results, record };

@@ -141,6 +141,8 @@ function run(over: Partial<VisitRunRow> = {}): VisitRunRow {
     hostsRead: 820,
     hostsFailed: 0,
     hostsCollapsed: 0,
+    hostsRetried: 0,
+    retriesFailed: 0,
     eventsNew: 12,
     eventsChanged: 30,
     eventsRemoved: 2,
@@ -220,6 +222,8 @@ const FULL_SYNC_ROW: RawSyncRow = {
   hosts_read: 820,
   hosts_failed: 1,
   hosts_collapsed: 2,
+  hosts_retried: 630,
+  retries_failed: 1,
   events_new: 12,
   events_changed: 30,
   events_removed: 2,
@@ -273,6 +277,8 @@ test("shapeVisitEventsHealth: a full row shapes to camelCase with the check summ
   assert.equal(r.hostsRead, 820);
   assert.equal(r.hostsFailed, 1);
   assert.equal(r.hostsCollapsed, 2);
+  assert.equal(r.hostsRetried, 630);
+  assert.equal(r.retriesFailed, 1);
   assert.equal(r.missesWithheld, true);
   assert.equal(r.checkFailures, 1);
   assert.equal(r.checkWarnings, 4);

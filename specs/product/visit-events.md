@@ -154,6 +154,12 @@ are recomputed from titles each night). Four things would still let it rot, each
    host: an error, no misses counted (`slate_hosts.failures` moves, `hosts_collapsed` on the run). A **run-level
    guard** withholds all miss-marking when more than 20% of the hosts read tonight failed or collapsed
    (`visit_event_sync.misses_withheld`); new and changed rows still write.
+   **Retries counted apart (2026-11-01, PR #213).** The unreachable hosts' weekly retries (point 4) all fell due on
+   the same night, so every Sunday about 640 of 830 hosts "failed" (their search still 404s), the guard tripped, no
+   healthy host's misses were marked, and the admin card went red. A host already `unreachable` before tonight is
+   now recorded apart (`hosts_retried`, `retries_failed`; migration `20261101130000`) and left out of the 20%: it
+   failing again is the expected outcome and says nothing about the markup. The card's note reads "637 failed (630
+   weekly retries of unreachable hosts), 0 collapsed".
 2. **New Slate adopters are never found.** A **weekly discovery** (Sundays, the same workflow) tries every college with
    a visit or apply link that isn't in `slate_hosts` yet. Discovery widens its candidates: any admissions-style
    subdomain linked from the visit page or apply page (`apply.`, `admission(s).`, `connect.`, `engage.`, `go.`,

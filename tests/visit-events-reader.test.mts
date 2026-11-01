@@ -721,6 +721,34 @@ test("runSync: 3 of 10 hosts collapsed withholds every miss (no removed rows) bu
   assert.ok(m.state.rows.filter((r) => r.host === "h0.example.edu" || r.host === "h1.example.edu").every((r) => !r.removed_at && r.misses === (r.slate_id.endsWith("2") ? 1 : 0)));
 });
 
+test("runSync: unreachable hosts retried tonight are counted apart and left out of the guard (2026-11-01: 640 of 830 one Sunday)", async () => {
+  // Ten healthy hosts, plus six hosts already unreachable whose search still 404s: 6 of 16 failed, but 0 of the 10 the guard measures.
+  const { hosts, pages, rows } = tenHosts(0);
+  const down = Array.from({ length: 6 }, (_, i) => ({ ...UF_HOST, unit_id: String(2000 + i), host: `down${i}.example.edu`, portal_parts: [], status: "unreachable" as const, failures: 3 }));
+  const { state, store } = memoryStore(rows);
+  const { record } = await runSync([...hosts, ...down], { ...campusDeps, store, http: fakeHttp(pages), now: OCT_13, maxPages: 0 });
+  assert.equal(record.hosts_read, 10);
+  assert.equal(record.hosts_failed, 6);
+  assert.equal(record.hosts_retried, 6);
+  assert.equal(record.retries_failed, 6);
+  assert.equal(record.misses_withheld, false, "the retries don't trip the guard");
+  assert.equal(record.events_removed, 10, "the healthy hosts' gone rows are removed");
+  assert.equal(state.rows.filter((r) => r.removed_at).length, 10);
+  // A retried host that answers counts as read and not as a retry failure.
+  const back = { ...UF_HOST, unit_id: "3000", host: "h0.example.edu", portal_parts: [], status: "unreachable" as const, failures: 3 };
+  const again = await runSync([back, ...hosts.slice(1)], { ...campusDeps, store: memoryStore(rows).store, http: fakeHttp(pages), now: OCT_13, maxPages: 0 });
+  assert.equal(again.record.hosts_retried, 1);
+  assert.equal(again.record.retries_failed, 0);
+  assert.equal(again.record.hosts_failed, 0);
+  // Fresh failures still count: 3 of 10 healthy hosts collapsing withholds misses whatever the retries did.
+  const bad = tenHosts(3);
+  const b = memoryStore(bad.rows);
+  const tripped = await runSync([...bad.hosts, ...down], { ...campusDeps, store: b.store, http: fakeHttp(bad.pages), now: OCT_13, maxPages: 0 });
+  assert.equal(tripped.record.misses_withheld, true);
+  assert.equal(tripped.record.hosts_collapsed, 3);
+  assert.equal(tripped.record.retries_failed, 6);
+});
+
 test("withholdMisses: failed and collapsed both count, above 20% of the hosts tried", () => {
   assert.equal(withholdMisses(10, 2, 0), false);
   assert.equal(withholdMisses(10, 1, 1), false);

@@ -50,6 +50,9 @@ export interface VisitRunRow {
   hostsRead: number;
   hostsFailed: number;
   hostsCollapsed: number;
+  /** Unreachable hosts retried tonight (their weekly try), and how many of those failed again (within `hostsFailed`). */
+  hostsRetried: number;
+  retriesFailed: number;
   eventsNew: number;
   eventsChanged: number;
   eventsRemoved: number;
@@ -79,6 +82,9 @@ export interface RawSyncRow {
   hosts_read: number | null;
   hosts_failed: number | null;
   hosts_collapsed: number | null;
+  /** Rows before 2026-11-01 (migration 20261101130000) lack these two. */
+  hosts_retried?: number | null;
+  retries_failed?: number | null;
   events_new: number | null;
   events_changed: number | null;
   events_removed: number | null;
@@ -132,6 +138,8 @@ function shapeRun(r: RawSyncRow): VisitRunRow {
     hostsRead: r.hosts_read ?? 0,
     hostsFailed: r.hosts_failed ?? 0,
     hostsCollapsed: r.hosts_collapsed ?? 0,
+    hostsRetried: r.hosts_retried ?? 0,
+    retriesFailed: r.retries_failed ?? 0,
     eventsNew: r.events_new ?? 0,
     eventsChanged: r.events_changed ?? 0,
     eventsRemoved: r.events_removed ?? 0,
@@ -166,7 +174,7 @@ export async function loadVisitEventsHealth(): Promise<VisitEventsHealth> {
     s
       .from("visit_event_sync")
       .select(
-        "id, ran_at, finished_at, hosts_read, hosts_failed, hosts_collapsed, events_new, events_changed, events_removed, pages_fetched, errors, misses_withheld, check_failures, check_warnings, check_summary",
+        "id, ran_at, finished_at, hosts_read, hosts_failed, hosts_collapsed, hosts_retried, retries_failed, events_new, events_changed, events_removed, pages_fetched, errors, misses_withheld, check_failures, check_warnings, check_summary",
       )
       .order("ran_at", { ascending: false })
       .limit(7),

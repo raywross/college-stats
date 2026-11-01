@@ -24,6 +24,16 @@ const HOST_STATUS_ORDER: readonly SlateHostStatus[] = ["active", "unreachable", 
 const num = (n: number) => n.toLocaleString("en-US");
 
 /**
+ * "637 failed (630 weekly retries of unreachable hosts), 0 collapsed": the retries are expected failures the guard
+ * leaves out (specs/product/visit-events.md "Keeping it running", 2026-11-01), so the note says how many of the
+ * failures they were.
+ */
+export function failedNote(run: Pick<VisitRunRow, "hostsFailed" | "hostsCollapsed" | "retriesFailed">): string {
+  const retries = run.retriesFailed > 0 ? ` (${num(run.retriesFailed)} weekly retr${run.retriesFailed === 1 ? "y" : "ies"} of unreachable hosts)` : "";
+  return `${num(run.hostsFailed)} failed${retries}, ${num(run.hostsCollapsed)} collapsed`;
+}
+
+/**
  * The Visit events card on `/admin/health` (specs/product/visit-events.md "Keeping it running", "Nobody sees it
  * break"): the last 7 nights, hosts by status, and the newest run's data-check summary. `now` is passed in (rather
  * than read with `new Date()` here) so the page and its tests agree on one clock.
@@ -61,7 +71,7 @@ function NewestRunSummary({ run, now }: { run: VisitRunRow; now: Date }) {
   return (
     <dl className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-sm sm:grid-cols-4">
       <Stat label="Last run" value={timeLabel(run.ranAt)} note={staleHours >= 36 ? `${num(staleHours)} h ago` : undefined} />
-      <Stat label="Hosts read" value={num(run.hostsRead)} note={run.hostsFailed || run.hostsCollapsed ? `${num(run.hostsFailed)} failed, ${num(run.hostsCollapsed)} collapsed` : undefined} />
+      <Stat label="Hosts read" value={num(run.hostsRead)} note={run.hostsFailed || run.hostsCollapsed ? failedNote(run) : undefined} />
       <Stat label="Events" value={`+${num(run.eventsNew)} / ~${num(run.eventsChanged)} / -${num(run.eventsRemoved)}`} note="new / changed / removed" />
       <Stat
         label="Data check"
@@ -124,12 +134,7 @@ function RunsTable({ runs }: { runs: readonly VisitRunRow[] }) {
               <td className="px-3 py-2">{timeLabel(run.ranAt)}</td>
               <td className="px-3 py-2 tabular-nums">
                 {num(run.hostsRead)}
-                {(run.hostsFailed > 0 || run.hostsCollapsed > 0) && (
-                  <span className="text-muted-foreground">
-                    {" "}
-                    ({num(run.hostsFailed)} failed, {num(run.hostsCollapsed)} collapsed)
-                  </span>
-                )}
+                {(run.hostsFailed > 0 || run.hostsCollapsed > 0) && <span className="text-muted-foreground"> ({failedNote(run)})</span>}
               </td>
               <td className="px-3 py-2 tabular-nums">
                 +{num(run.eventsNew)} / ~{num(run.eventsChanged)} / -{num(run.eventsRemoved)}

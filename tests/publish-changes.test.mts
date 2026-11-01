@@ -250,8 +250,10 @@ test("the real git access reads this repository's files at HEAD", () => {
   assert.equal(git.exists(head), true);
   assert.equal(git.exists("0".repeat(40)), false);
   assert.throws(() => git.resolve("no-such-ref-here"), /not a commit in this repository/);
-  const meta = JSON.parse(git.readAt(head, DATASET_PATHS.meta)) as DatasetMeta;
-  assert.equal(typeof meta.retrieved, "string");
+  // A file every commit has (the dataset left the repository in phase 4; readAt still serves the historical commits
+  // publish-changes diffs, which carry data/ under HISTORICAL_DATA_DIR).
+  const pkg = JSON.parse(git.readAt(head, "package.json")) as { name: string };
+  assert.equal(typeof pkg.name, "string");
 });
 
 /* ------------------------------------------------------------------ */

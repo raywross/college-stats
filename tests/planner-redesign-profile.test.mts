@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { emptyProfile, isTestDateKey, PLANNED_DATES_MAX, planStudent, planTest, sanitizeProfile, type StudentProfileData } from "../lib/student-profile.ts";
-import file from "../data/application-cycle.json" with { type: "json" };
+import file from "./fixtures/snapshot-mini/snapshot/reference/application-cycle.json" with { type: "json" };
 
 const withTests = (t: Partial<StudentProfileData["tests"]>, gpa: number | null = null): StudentProfileData => {
   const p = emptyProfile();

@@ -26,16 +26,16 @@ export function posthogRewrites(host: string) {
 
 /**
  * The `x-quad-snapshot` response header (specs/data-platform/publish.md "Timing and telemetry") where the snapshot is
- * fixed for the life of the deploy: `legacy` when the dataset comes from data/, the bundled copy's id when
- * `.data/snapshot/` exists and no DATA_SNAPSHOT_URL is set. With DATA_SNAPSHOT_URL the served snapshot changes at run
- * time, so a header written here would go stale: none is set, and pages carry the id in their
- * `<meta name="x-quad-snapshot">` (app/layout.tsx) and /search-index.json in its own header. Read when the config
- * loads (`next build`, `next dev`), after the prebuild's fetch-snapshot.
+ * fixed for the life of the deploy: the bundled copy's id when `.data/snapshot/` exists and no DATA_SNAPSHOT_URL is
+ * set (0 for the mini fixture). With DATA_SNAPSHOT_URL the served snapshot changes at run time, so a header written
+ * here would go stale: none is set, and pages carry the id in their `<meta name="x-quad-snapshot">` (app/layout.tsx)
+ * and /search-index.json in its own header. With neither there is no dataset to name: no header. Read when the
+ * config loads (`next build`, `next dev`), after the prebuild's fetch-snapshot.
  */
 export function deploySnapshotHeader(env: Record<string, string | undefined> = process.env, root = process.cwd()): string | null {
   if (env.DATA_SNAPSHOT_URL?.trim()) return null;
   const manifest = join(root, ".data", "snapshot", "manifest.json");
-  if (!existsSync(manifest)) return "legacy";
+  if (!existsSync(manifest)) return null;
   return String((JSON.parse(readFileSync(manifest, "utf8")) as { id: number }).id);
 }
 
@@ -48,40 +48,17 @@ const nextConfig: NextConfig = {
     // Vercel's 4.5 MB request cap.
     serverActions: { bodySizeLimit: "4.4mb" },
   },
-  // The deploy carries the dataset (specs/serving-architecture.md): lib/ reads these files with fs at runtime, so they
-  // ship with every server route when deployed (e.g. to Vercel). List exactly what the runtime reads and nothing else
-  // (working files such as data/site-probe.json stay out); tests/tracing.test.mts checks this list against lib/.
+  // The deploy carries the dataset (specs/serving-architecture.md): lib/ reads the bundled copy with fs at runtime, so it
+  // ships with every server route when deployed (e.g. to Vercel). tests/tracing.test.mts checks this list against lib/.
   outputFileTracingIncludes: {
     "/*": [
-      // The college dataset, its source metadata, release calendar, and short names (lib/data.ts getData()).
-      "./data/schools.json",
-      "./data/meta.json",
-      "./data/release-calendar.json",
-      "./data/aliases.json",
-      // History, national trend files, and per-college detail tables, read per page (lib/data.ts).
-      "./data/history/**/*.json",
-      "./data/detail/**/*.json",
-      // "This season on the Common App" (lib/data.ts getCommonAppTrends()), the hand-reviewed national figures.
-      "./data/trends/common-app.json",
-      // The application platforms' essay prompts (lib/data.ts getPlatformPrompts(), the essays workspace).
-      "./data/reference/platform-prompts.json",
-      // The reader's guidance corpus (lib/essays/guidance.ts loadGuidance(), POST /api/essays/review).
-      "./data/reference/essay-guidance/guidance.md",
-      // High school shards, read when HIGH_SCHOOLS_SOURCE is json (CI, a keyless Preview; lib/high-schools.ts).
-      "./data/high-schools/**/*.json",
-      // Names, sites, and logos of the campus directories' organizations (lib/organizations.ts).
-      "./data/directories/organizations.json",
-      // ZIP code centers for the distance-from-home filter (lib/zip-centroids.ts).
-      "./data/reference/zcta-centroids.csv",
-      // The bundled snapshot (specs/data-platform/publish.md "The loader"): what `npm run fetch-snapshot` writes at
-      // build time and lib/data-platform/loader.ts reads. Ignored by version control, so absent from a checkout; the
-      // data/ entries above stay until phase 2 (specs/data-platform/rollout.md).
+      // The bundled copy (specs/data-platform/publish.md "The loader"): what `npm run fetch-snapshot` writes at build
+      // time (the mini fixture when nothing is configured) and lib/ reads: the dataset, history, detail and trend
+      // shards (lib/data-platform/loader.ts), the reference documents read at run time (lib/organizations.ts,
+      // lib/zip-centroids.ts, lib/essays/guidance.ts), and the high-school fallback (lib/high-school-store.ts).
+      // Ignored by version control, so absent from a checkout until `fetch-snapshot` runs.
       "./.data/snapshot/**",
     ],
-    // The admin console's data health (lib/admin/health.ts; specs/product/admin.md "Files the deploy must carry") reads
-    // one compact file, which `npm run college-health` builds in each data PR from the college-reported documents,
-    // records, failures, review queue, and link findings (42 MB together, so they are not traced). Only /admin routes.
-    "/admin/**": ["./data/college-health.json"],
     // /roadmap pages are prerendered from specs/*.md; ship the specs too in case a page is ever rendered on demand.
     "/roadmap/*": ["./specs/**/*.md"],
     // Same for /release-notes, prerendered from release-notes/*.md.

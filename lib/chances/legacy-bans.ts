@@ -8,7 +8,7 @@
  * used (`M_legacy = 1`) regardless of the college's own factor rating. Pure, client-safe.
  */
 import type { School, SchoolType } from "../types.ts";
-import bansFile from "../../data/reference/legacy-bans.json" with { type: "json" };
+import bansFile from "../../.data/snapshot/reference/legacy-bans.json" with { type: "json" };
 
 export type LegacySector = "public" | "private";
 

@@ -744,9 +744,10 @@ test("the compact file needs every source, and refuses a shape it does not know"
   assert.throws(() => parseCompact("{}"), /npm run college-health/);
 });
 
-test("the overview needs the compact file: a deploy without it fails loudly, not as empty health", async () => {
-  const dir = join(ROOT, "lib", "admin", "health.ts");
-  assert.match(readFileSync(dir, "utf8"), /data\/college-health\.json is not in this deploy/);
+test("the overview needs the health document: without one it fails loudly, not as empty health", async () => {
+  assert.match(health.NO_HEALTH_DOCUMENT, /^No health document yet/);
+  const overview = health.createHealthOverview({ compact: () => health.readCompact({ client: async () => null }), changes: async () => null, now: () => 0 });
+  await assert.rejects(overview(), /No health document yet/);
 });
 
 /**
@@ -824,7 +825,7 @@ test("check:college-health over the mini fixture: the layers' document covers ev
   assert.match(run.stdout, /the mini fixture's layers\): ok \(38 colleges/);
 });
 
-test("the compact health is read from the data store in one query, falling back to the file when the store has none", async () => {
+test("the compact health is read from the data store in one query; with none there is no health document yet", async () => {
   const { readCompact, readCompactFromStore, HEALTH_DOCUMENT } = health;
   const compact = await overviewDeps().deps.compact();
   const queries: string[] = [];
@@ -843,19 +844,12 @@ test("the compact health is read from the data store in one query, falling back 
       return q as never;
     },
   });
-  const disk = () => ({ ...compact, generated: "from-disk" });
-
-  const fromStore = await readCompact({ client: async () => client([{ body: compact }]), disk });
+  const fromStore = await readCompact({ client: async () => client([{ body: compact }]) });
   assert.equal(fromStore.generated, compact.generated, "the store's document");
   assert.deepEqual(queries, [`data_documents.collection=${HEALTH_DOCUMENT.collection}`, `data_documents.key=${HEALTH_DOCUMENT.key}`], "one query, by collection and key");
-  assert.equal((await readCompact({ client: async () => client([]), disk })).generated, "from-disk", "an empty table falls back to the file");
-  assert.equal((await readCompact({ client: async () => null, disk })).generated, "from-disk", "no session falls back to the file");
-  const quiet = console.error;
-  console.error = () => {};
-  try {
-    assert.equal((await readCompact({ client: async () => client(null, "paused project"), disk })).generated, "from-disk", "a failed read falls back too");
-  } finally {
-    console.error = quiet;
-  }
+  // Phase 4: no file in the deploy to fall back on (specs/data-platform/git-ci-tests.md).
+  await assert.rejects(readCompact({ client: async () => client([]) }), /No health document yet/, "an empty table: no health document yet");
+  await assert.rejects(readCompact({ client: async () => null }), /No health document yet/, "no session: no health document yet");
+  await assert.rejects(readCompact({ client: async () => client(null, "paused project") }), /paused project/, "a failed read throws its error");
   await assert.rejects(readCompactFromStore(client([{ body: { version: 0 } }]) as never), /npm run college-health/, "a malformed document is refused, not shown as empty");
 });

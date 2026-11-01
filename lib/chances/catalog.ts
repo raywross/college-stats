@@ -4,8 +4,8 @@
  * `core`, `grades`, `prereqs`, `next`, `majors`, and `aliases` are editorial (each file says so). Checked by
  * scripts/check-course-catalog.mts in `npm run verify`. Pure and client-safe: the course picker imports it.
  */
-import apFile from "../../data/reference/ap-courses.json" with { type: "json" };
-import ibFile from "../../data/reference/ib-courses.json" with { type: "json" };
+import apFile from "../../.data/snapshot/reference/ap-courses.json" with { type: "json" };
+import ibFile from "../../.data/snapshot/reference/ib-courses.json" with { type: "json" };
 import { isMajorFamily } from "../majors.ts";
 import type { CourseKind, CourseSubject } from "./types.ts";
 

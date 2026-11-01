@@ -9,7 +9,7 @@
  * calls `connection()` and `getUser()`), and this is its signed-out branch. Until the trial ships (build order step
  * 3), the buttons start a plain account and the price line says Quad is free in preview.
  */
-import sampleFile from "@/data/reference/sample-plan.json";
+import sampleFile from "../../.data/snapshot/reference/sample-plan.json";
 import { getData } from "@/lib/data";
 import { offerFacts } from "@/lib/planner/offers-server";
 import { emptyProfile } from "@/lib/student-profile";

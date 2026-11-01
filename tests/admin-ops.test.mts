@@ -44,8 +44,9 @@ const STUBS: Record<string, string> = {
   // The Health page's Visit events card (lib/admin/visit-events.ts): a loader like the others above, driven by `world`.
   "@/lib/admin/visit-events":
     "export async function loadVisitEventsHealth(){globalThis.__world.calls.push('loadVisitEventsHealth'); return globalThis.__world.visitEvents()} export function cardTone(){return 'green'}",
-  // lib/admin/health.ts reaches Supabase through a relative dynamic import; with no auth env the family lists are unavailable.
-  "../supabase-server": "export function supabaseAuthEnv(){return false} export async function createServerSupabase(){throw new Error('no request')}",
+  // lib/admin/health.ts reaches Supabase through a relative dynamic import: the stand-in answers the health document
+  // (the mini fixture's health.colleges) and fails every other read, so the family lists are unavailable.
+  "../supabase-server": "export function supabaseAuthEnv(){return true} export async function createServerSupabase(){return globalThis.__healthClient}",
   "@/lib/data": "export async function getData(){return {getSchoolById:(id)=>globalThis.__world.schools[id]??null}}",
   // The Files view's published files and the estimate inputs (specs/product/admin-health-views.md), tested in
   // tests/admin-health-views.test.mts; here only their shape matters.
@@ -78,6 +79,17 @@ interface World {
 const NO_VISIT_EVENTS = async () => ({ runs: [], newest: null, hostsByStatus: { active: 0, unreachable: 0, no_events: 0, off: 0 } });
 const world: World = { admin: true, calls: [], refreshed: 0, schools: {}, supabase: () => ({}), deps: () => ({}), operations: async () => ({}), visitEvents: NO_VISIT_EVENTS };
 (globalThis as unknown as { __world: World }).__world = world;
+
+// The health document the overview reads from the data store (phase 4: no file in the deploy), from the mini fixture.
+const { miniLayerDocument } = await import("./helpers/snapshot.mts");
+const HEALTH_DOC = await miniLayerDocument("health.colleges", "health");
+(globalThis as unknown as { __healthClient: unknown }).__healthClient = {
+  from(table: string) {
+    const answer = table === "data_documents" ? { data: [{ body: HEALTH_DOC }], error: null } : { data: null, error: { message: "no request" } };
+    const q = { select: () => q, eq: () => q, order: () => q, range: () => q, limit: () => q, then: (ok: (r: unknown) => unknown) => Promise.resolve(answer).then(ok) };
+    return q;
+  },
+};
 function reset(over: Partial<World> = {}) {
   Object.assign(world, { admin: true, calls: [], refreshed: 0, schools: {}, supabase: () => ({}), deps: () => ({}), operations: async () => ({}), visitEvents: NO_VISIT_EVENTS }, over);
 }

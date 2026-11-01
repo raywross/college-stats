@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { withJobRun } from "@/lib/jobs/record";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isAuthorized } from "@/lib/revalidate";
 import { supabaseClient } from "@/lib/supabase";
@@ -179,8 +180,10 @@ async function run(request: NextRequest) {
   }
 }
 
-export const GET = run;
-export const POST = run;
+// Every run leaves a row in job_runs for the admin console's Jobs pages (lib/jobs/record.ts).
+const recorded = withJobRun("visit-alerts", run);
+export const GET = recorded;
+export const POST = recorded;
 
 async function alert(client: Client, siteUrl: string, dry: boolean) {
   const now = new Date();

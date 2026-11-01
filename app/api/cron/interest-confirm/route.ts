@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { withJobRun } from "@/lib/jobs/record";
 import { isAuthorized } from "@/lib/revalidate";
 import { supabaseClient } from "@/lib/supabase";
 import { emailConfigured, sendEmail } from "@/lib/email";
@@ -63,5 +64,7 @@ async function run(request: NextRequest) {
   }
 }
 
-export const GET = run;
-export const POST = run;
+// Every run leaves a row in job_runs for the admin console's Jobs pages (lib/jobs/record.ts).
+const recorded = withJobRun("interest-confirm", run);
+export const GET = recorded;
+export const POST = recorded;

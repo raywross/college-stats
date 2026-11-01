@@ -19,6 +19,10 @@ export interface EssaysTabData {
   links: EssayLinkRow[];
   /** Open comments per draft id. */
   openComments: Record<string, number>;
+  /** Open suggestions per draft id (editors.md "Where it shows": "2 suggestions", for the student). */
+  openSuggestions?: Record<string, number>;
+  /** A guardian's own newest suggestion's state per draft id ("Waiting for {first}" while open). */
+  mySuggestions?: Record<string, "open" | "decided">;
   /** The prompt picker's groups (lib/essays/prompts.ts pickerGroups over the plan's colleges). */
   picker: PickerGroup[];
   /** Every college a draft is written for, on the plan or not, by unit id. */

@@ -21,6 +21,7 @@ import type { School } from "@/lib/types";
 import { readEssayOverrides, withOverride } from "./overrides";
 import { asPlatformPrompts, type PlatformPrompts, type PromptLookup } from "./prompts";
 import type { CommentRow, EssayLinkRow, EssayRow, VersionRow } from "./rows";
+import type { SuggestionRow } from "./suggestions";
 
 /** Set by PlanPeople.tsx on every pick (app/advisor/page.tsx reads it the same way). */
 const PLAN_CHILD_COOKIE = "plan_child";
@@ -99,18 +100,46 @@ export async function planColleges(studentId: string): Promise<{ unit_id: string
 
 const ESSAY_LIST_COLUMNS = "id, student_id, prompt_ref, title, count_kind, count, limit_max, limit_min, status, kind, base_id, created, updated";
 const ESSAY_COLUMNS = `${ESSAY_LIST_COLUMNS}, body`;
+const SUGGESTION_COLUMNS = "id, essay_id, base_version_id, base_body, author_id, author_role, proposed_body, note, status, decisions, created, updated, decided_at";
 
 /** The table isn't there yet (the migration not applied). */
 export function isMissingTable(error: { code?: string; message?: string } | null | undefined): boolean {
   return !!error && (error.code === "42P01" || error.code === "PGRST205" || /does not exist|schema cache/i.test(error.message ?? ""));
 }
 
+/** Open suggestions per draft, and a guardian's own newest suggestion's state per draft (editors.md "Where it shows"). */
+export interface SuggestionCounts {
+  openSuggestions: Record<string, number>;
+  mySuggestions: Record<string, "open" | "decided">;
+}
+
+/**
+ * The suggestion counts for the drafts `ids` (the Essays tab's rows): how many are open on each, and for a guardian
+ * (`userId` given) the state of their own newest suggestion on each, withdrawn ones skipped. No table yet (the
+ * migration not applied) or a failed read: no counts, never a failed page.
+ */
+export async function suggestionCounts(ids: readonly string[], viewer: { role: "student" | "guardian"; userId?: string | null }): Promise<SuggestionCounts> {
+  const out: SuggestionCounts = { openSuggestions: {}, mySuggestions: {} };
+  if (ids.length === 0) return out;
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.from("essay_suggestions").select("essay_id, author_id, status, created").in("essay_id", [...ids]).neq("status", "withdrawn").order("created", { ascending: false });
+  if (error) {
+    if (!isMissingTable(error)) console.error(`essays: reading suggestion counts failed: ${error.message}`);
+    return out;
+  }
+  for (const s of (data ?? []) as { essay_id: string; author_id: string | null; status: "open" | "decided"; created: string }[]) {
+    if (s.status === "open") out.openSuggestions[s.essay_id] = (out.openSuggestions[s.essay_id] ?? 0) + 1;
+    if (viewer.role === "guardian" && viewer.userId && s.author_id === viewer.userId && !out.mySuggestions[s.essay_id]) out.mySuggestions[s.essay_id] = s.status;
+  }
+  return out;
+}
+
 export type EssaysRead =
-  | { kind: "ready"; essays: EssayRow[]; links: EssayLinkRow[]; openComments: Record<string, number> }
+  | ({ kind: "ready"; essays: EssayRow[]; links: EssayLinkRow[]; openComments: Record<string, number> } & SuggestionCounts)
   | { kind: "setup-missing" };
 
-/** Every draft of the student's (no bodies), its links, and how many comments each has open. */
-export async function readEssays(studentId: string, viewer: { role: "student" | "guardian" }): Promise<EssaysRead> {
+/** Every draft of the student's (no bodies), its links, how many comments and suggestions each has open, and a guardian's own. */
+export async function readEssays(studentId: string, viewer: { role: "student" | "guardian"; userId?: string | null }): Promise<EssaysRead> {
   const supabase = await createServerSupabase();
   const essays = await supabase.from("essays").select(ESSAY_LIST_COLUMNS).eq("student_id", studentId).order("updated", { ascending: false });
   if (essays.error) {
@@ -120,18 +149,29 @@ export async function readEssays(studentId: string, viewer: { role: "student" | 
   const rows = (essays.data ?? []) as EssayRow[];
   const ids = rows.map((e) => e.id);
   if (viewer.role === "guardian") void scheduleStudentReadLog(studentId, "essays");
-  if (ids.length === 0) return { kind: "ready", essays: [], links: [], openComments: {} };
-  const [links, comments] = await Promise.all([
+  if (ids.length === 0) return { kind: "ready", essays: [], links: [], openComments: {}, openSuggestions: {}, mySuggestions: {} };
+  const [links, comments, counts] = await Promise.all([
     supabase.from("essay_links").select("essay_id, prompt_ref, created").in("essay_id", ids),
     supabase.from("essay_comments").select("essay_id").in("essay_id", ids).is("resolved_at", null),
+    suggestionCounts(ids, viewer),
   ]);
   const openComments: Record<string, number> = {};
   for (const c of (comments.data ?? []) as { essay_id: string }[]) openComments[c.essay_id] = (openComments[c.essay_id] ?? 0) + 1;
-  return { kind: "ready", essays: rows, links: (links.data ?? []) as EssayLinkRow[], openComments };
+  return { kind: "ready", essays: rows, links: (links.data ?? []) as EssayLinkRow[], openComments, ...counts };
 }
 
 export type EssayRead =
-  | { kind: "ready"; essay: EssayRow & { body: string }; versions: VersionRow[]; links: EssayLinkRow[]; comments: (CommentRow & { author_name: string | null })[]; base: { id: string; title: string; updated: string } | null; variants: number }
+  | {
+      kind: "ready";
+      essay: EssayRow & { body: string };
+      versions: VersionRow[];
+      links: EssayLinkRow[];
+      comments: (CommentRow & { author_name: string | null })[];
+      /** Every suggestion not withdrawn, newest first (editors.md "The model"). */
+      suggestions: (SuggestionRow & { author_name: string | null })[];
+      base: { id: string; title: string; updated: string } | null;
+      variants: number;
+    }
   | { kind: "not-found" }
   | { kind: "setup-missing" };
 
@@ -147,21 +187,26 @@ export async function readEssay(id: string, viewer: { role: "student" | "guardia
   if (!essay.data) return { kind: "not-found" };
   const row = essay.data as EssayRow & { body: string };
   if (viewer.role === "guardian") void scheduleStudentReadLog(row.student_id, "essays");
-  const [versions, links, comments, base, variants] = await Promise.all([
+  const [versions, links, comments, suggestions, base, variants] = await Promise.all([
     supabase.from("essay_versions").select("id, essay_id, count, source, label, created").eq("essay_id", id).order("created", { ascending: false }).limit(100),
     supabase.from("essay_links").select("essay_id, prompt_ref, created").eq("essay_id", id),
     supabase.from("essay_comments").select("id, essay_id, version_id, author_id, author_role, anchor, body, created, resolved_at").eq("essay_id", id).order("created"),
+    supabase.from("essay_suggestions").select(SUGGESTION_COLUMNS).eq("essay_id", id).neq("status", "withdrawn").order("created", { ascending: false }),
     row.base_id ? supabase.from("essays").select("id, title, updated").eq("id", row.base_id).maybeSingle() : Promise.resolve({ data: null, error: null }),
     supabase.from("essays").select("id", { count: "exact", head: true }).eq("base_id", id),
   ]);
   const commentRows = (comments.data ?? []) as CommentRow[];
-  const names = await namesFor(commentRows.map((c) => c.author_id).filter((v): v is string => !!v));
+  // No suggestions table yet (the migration not applied): none, never a failed page.
+  if (suggestions.error && !isMissingTable(suggestions.error)) console.error(`essays: reading suggestions failed: ${suggestions.error.message}`);
+  const suggestionRows = (suggestions.error ? [] : (suggestions.data ?? [])) as SuggestionRow[];
+  const names = await namesFor([...commentRows, ...suggestionRows].map((c) => c.author_id).filter((v): v is string => !!v));
   return {
     kind: "ready",
     essay: row,
     versions: (versions.data ?? []) as VersionRow[],
     links: (links.data ?? []) as EssayLinkRow[],
     comments: commentRows.map((c) => ({ ...c, author_name: c.author_id ? (names[c.author_id] ?? null) : null })),
+    suggestions: suggestionRows.map((s) => ({ ...s, decisions: s.decisions ?? {}, author_name: s.author_id ? (names[s.author_id] ?? null) : null })),
     base: (base.data as { id: string; title: string; updated: string } | null) ?? null,
     variants: variants.count ?? 0,
   };

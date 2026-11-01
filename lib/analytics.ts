@@ -177,6 +177,17 @@ export interface AnalyticsEvents {
   essay_review_notes: { count: number; categories: string };
   /** A note the guard dropped, or a whole answer with no notes (refusal, max_tokens, malformed), by why. */
   essay_review_dropped: { reason: string };
+  /* Editors (specs/product/essays/editors.md "Telemetry"): sent by the Server Actions in lib/essays/store.ts; counts and roles only, never text. */
+  /** Suggestions sent on a draft, by the editor's role, with how many changes they hold. */
+  essay_suggestion_sent: { role: "guardian" | "counselor"; changes: number };
+  /** An open suggestion edited by its author. */
+  essay_suggestion_updated: { role: "guardian" | "counselor" };
+  /** An open suggestion withdrawn by its author. */
+  essay_suggestion_withdrawn: { role: "guardian" | "counselor" };
+  /** The student decided changes: how many accepted, rejected, and stale in this decision, and whether it was Accept all or Reject all. */
+  essay_suggestion_decided: { accepted: number; rejected: number; stale: number; all: boolean };
+  /** The reader's corrected word accepted into the draft (always a mechanics note). */
+  essay_fix_accepted: { category: "mechanics" };
   /** The essays move (specs/product/essays/moves.md "Telemetry") done: ticked by the store when nothing is left, or by hand. Never a college or a count of words. */
   essays_move_done: { by: "store" | "hand" };
   /** The data platform (specs/data-platform/publish.md "Timing and telemetry"): an instance swapped to another snapshot, from which id (`legacy` for data/) to which, and how long the download and build took. */
@@ -186,7 +197,7 @@ export interface AnalyticsEvents {
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done" | "data_snapshot_swap" | "data_publish";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done" | "essay_suggestion_sent" | "essay_suggestion_updated" | "essay_suggestion_withdrawn" | "essay_suggestion_decided" | "essay_fix_accepted" | "data_snapshot_swap" | "data_publish";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -320,6 +331,11 @@ export const EVENTS = {
   essay_review_requested: { properties: ["prompt_kind"], side: "server", why: "Essays: reader's notes asked for, by the prompt's kind (each is a model call)" },
   essay_review_notes: { properties: ["count", "categories"], side: "server", why: "Essays: how many notes a review keeps, and of which kinds" },
   essay_review_dropped: { properties: ["reason"], side: "server", why: "Essays: what the guard drops, and answers with no notes, by why" },
+  essay_suggestion_sent: { properties: ["role", "changes"], side: "server", why: "Editors: suggestions sent on drafts, by role and how many changes" },
+  essay_suggestion_updated: { properties: ["role"], side: "server", why: "Editors: open suggestions edited by their author" },
+  essay_suggestion_withdrawn: { properties: ["role"], side: "server", why: "Editors: open suggestions withdrawn by their author" },
+  essay_suggestion_decided: { properties: ["accepted", "rejected", "stale", "all"], side: "server", why: "Editors: how students decide suggested changes, and how often a change no longer fits the draft" },
+  essay_fix_accepted: { properties: ["category"], side: "server", why: "Editors: the reader's corrected words accepted with one tap" },
   essays_move_done: { properties: ["by"], side: "both", why: "Essays: the essays move finished, ticked by the store when every essay is ready or by hand" },
   data_snapshot_swap: { properties: ["from", "to", "ms"], side: "server", why: "Data platform: how often instances pick up a new snapshot, and how long the swap takes" },
   data_publish: { properties: ["snapshot", "change_sets", "ms"], side: "server", why: "Data platform: each published snapshot, how many change sets it carried, and how long the publish took" },

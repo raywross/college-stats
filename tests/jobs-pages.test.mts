@@ -83,7 +83,8 @@ registerHooks({
 });
 
 const { JOBS, jobById } = await import("../lib/jobs/registry.ts");
-const list = (await import("../app/admin/jobs/page.tsx")).default as (p: Record<string, never>) => Promise<React.ReactElement>;
+const listPage = (await import("../app/admin/jobs/page.tsx")).default as (p: { searchParams: Promise<Record<string, string>> }) => Promise<React.ReactElement>;
+const list = (query: Record<string, string> = {}) => listPage({ searchParams: Promise.resolve(query) });
 const jobPage = (await import("../app/admin/jobs/[job]/page.tsx")).default as (p: { params: Promise<{ job: string }>; searchParams: Promise<Record<string, string>> }) => Promise<React.ReactElement>;
 const runPage = (await import("../app/admin/jobs/[job]/runs/[run]/page.tsx")).default as (p: { params: Promise<{ job: string; run: string }> }) => Promise<React.ReactElement>;
 
@@ -189,11 +190,64 @@ test("the list: scheduled jobs with their schedule in words, next run, and last 
   assert.match(html, /By hand only/);
   assert.match(html, /Run by hand/);
   assert.doesNotMatch(html, /GitHub credentials aren/);
+  // The status line: nothing failed in this world; the tabs offer the all-jobs view.
+  assert.match(html, /No job failed its last run\./);
+  assert.match(html, /href="\/admin\/jobs\?view=all"/);
+  assert.doesNotMatch(html, /bg-destructive\/5/);
+});
+
+const failedWorld = () =>
+  world({
+    overview: () => ({
+      githubConfigured: true,
+      rows: JOBS.map((job) => ({
+        job,
+        next: job.schedules.length ? new Date(NOW + 3_600_000) : null,
+        last:
+          job.id === "weekly"
+            ? { kind: "stored", run: storedRow(30, { job: "weekly", status: "failed", error: "Reading students failed", httpStatus: 500 }) }
+            : job.id === "identity-refresh"
+              ? { kind: "github", run: ghRun(700, { workflow: "identity-refresh.yml", name: "Identity refresh", conclusion: "failure" }) }
+              : job.id === "digests"
+                ? { kind: "stored", run: storedRow(12) }
+                : job.id === "visit-events"
+                  ? { kind: "github", run: ghRun(701, { workflow: "visit-events.yml", name: "Visit events", status: "in_progress", conclusion: null, durationMs: null }) }
+                  : null,
+      })),
+    }),
+  });
+
+test("the status line names each job whose last run failed, linking it, with the counts by state; failed rows are tinted in the schedule view", async () => {
+  failedWorld();
+  const html = await render(list());
+  assert.match(html, /2 jobs failed their last run: /);
+  assert.match(html, /<a href="\/admin\/jobs\/identity-refresh"[^>]*>Identity refresh<\/a><\/span><span>, <a href="\/admin\/jobs\/weekly"[^>]*>Weekly emails and texts<\/a><\/span>\./);
+  assert.match(html, /text-destructive/);
+  // Counts: 2 failed, 1 running, 1 ok, the rest never recorded.
+  const counts = [...html.matchAll(/<span class="font-semibold tabular-nums">(\d+)<\/span>/g)].map((m) => Number(m[1]));
+  assert.deepEqual(counts, [2, 1, JOBS.length - 4, 0, 1]);
+  assert.equal((html.match(/bg-destructive\/5/g) ?? []).length, 3); // the strip and the two failed rows
+  assert.match(html, /data-outcome="failed"/);
+});
+
+test("the all-jobs view: one table of every job, failed first, then running, never run, nothing to do, succeeded", async () => {
+  failedWorld();
+  const html = await render(list({ view: "all" }));
+  assert.match(html, /aria-current="page"[^>]*>All jobs</);
+  assert.doesNotMatch(html, /Run by hand<\/h2>/);
+  assert.match(html, /Every job, failures first/);
+  const order = [...html.matchAll(/<tr data-outcome="(\w+)"/g)].map((m) => m[1]);
+  assert.equal(order.length, JOBS.length);
+  assert.deepEqual(order.slice(0, 3), ["failed", "failed", "running"]);
+  assert.equal(order.at(-1), "ok");
+  const names = [...html.matchAll(/<th scope="row"[^>]*><a href="\/admin\/jobs\/([a-z-]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(names.slice(0, 3), ["identity-refresh", "weekly", "visit-events"]); // failed by name, then running
+  assert.equal(names.at(-1), "digests");
 });
 
 test("the list without GitHub credentials says so and still shows every schedule", async () => {
   world({ overview: () => ({ githubConfigured: false, rows: JOBS.map((job) => ({ job, next: job.schedules.length ? new Date(NOW + 60_000) : null, last: null })) }) });
-  const html = await render(list({}));
+  const html = await render(list());
   assert.match(html, /GitHub credentials aren/);
   assert.match(html, /Every day at 06:00 UTC/);
 });
@@ -287,7 +341,7 @@ test("a GitHub run's page: the schedule that fired it, each job's steps with out
 
 test("404s: a non-admin before anything is read; an unknown job; a malformed or foreign run id; a run the loader doesn't know", async () => {
   const w = world({ admin: false });
-  await notFound(list({}));
+  await notFound(list());
   await notFound(jobPage({ params: Promise.resolve({ job: "digests" }), searchParams: Promise.resolve({}) }));
   await notFound(runPage({ params: Promise.resolve({ job: "digests", run: "12" }) }));
   assert.deepEqual(w.calls, ["requireAdmin", "requireAdmin", "requireAdmin"]);

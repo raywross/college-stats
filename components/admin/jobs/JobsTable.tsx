@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { RunChip } from "@/components/admin/ops/OpsStatusChip";
-import { formatDuration, runOutcome, timeLabel } from "@/lib/admin/ops-view";
+import { formatDuration, timeLabel } from "@/lib/admin/ops-view";
 import { describeCron } from "@/lib/jobs/cron";
 import type { JobOverviewRow } from "@/lib/jobs/runs";
-import { RUNNER_LABEL, jobHref, relativeLabel, storedOutcome } from "@/lib/jobs/view";
+import { RUNNER_LABEL, jobHref, lastOutcome, relativeLabel } from "@/lib/jobs/view";
+import { cn } from "@/lib/utils";
 
 const linkCls = "underline decoration-dotted underline-offset-2";
 
 /** A job's last run as a chip and a time, whichever runner recorded it. */
 export function LastRunCell({ last, now }: { last: JobOverviewRow["last"]; now: Date }) {
-  if (!last) return <span className="text-muted-foreground">No run recorded</span>;
-  const outcome = last.kind === "stored" ? storedOutcome(last.run.status) : runOutcome(last.run);
+  const outcome = lastOutcome(last);
+  if (!last) return <RunChip label={outcome.label} tone={outcome.tone} className="text-muted-foreground" />;
   const at = last.kind === "stored" ? last.run.startedAt : (last.run.startedAt ?? last.run.createdAt);
   return (
     <>
@@ -24,9 +25,9 @@ export function LastRunCell({ last, now }: { last: JobOverviewRow["last"]; now: 
 }
 
 /**
- * `/admin/jobs` (specs/product/admin-jobs.md "The list"): every job with where it runs, its schedule in words, its
- * next run, and its last run. The scheduled jobs come first, soonest next run on top; the jobs run by hand only
- * follow. Each name opens the job's page.
+ * `/admin/jobs` (specs/product/admin-jobs.md "The list"): jobs with where each runs, its schedule in words, its next
+ * run, and its last run. A job whose last run failed is tinted so it stands out at a glance, in either view. Each
+ * name opens the job's page.
  */
 export function JobsTable({ rows, now, caption }: { rows: JobOverviewRow[]; now: Date; caption: string }) {
   if (!rows.length) return <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No jobs here.</p>;
@@ -53,8 +54,9 @@ export function JobsTable({ rows, now, caption }: { rows: JobOverviewRow[]; now:
         <tbody>
           {rows.map(({ job, next, last }) => {
             const headline = job.schedules.filter((s) => s.headline !== false);
+            const failed = lastOutcome(last).key === "failed";
             return (
-              <tr key={job.id} className="border-t border-border align-top">
+              <tr key={job.id} data-outcome={lastOutcome(last).key} className={cn("border-t border-border align-top", failed && "bg-destructive/5")}>
                 <th scope="row" className="px-3 py-2 text-left font-medium">
                   <Link href={jobHref(job)} className={linkCls}>
                     {job.name}

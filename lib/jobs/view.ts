@@ -3,9 +3,58 @@
  * one-line summary, the trigger's label, and the page URLs. Pure, so tests/jobs.test.mts pins it and the pages hold
  * only layout. Dates are UTC labels from lib/admin/ops-view.ts, the way Operations writes them.
  */
-import type { RunTone } from "../admin/ops-view.ts";
+import { runOutcome, type RunTone } from "../admin/ops-view.ts";
 import type { JobDef } from "./registry.ts";
 import type { RunTrigger, StoredRunStatus } from "./record.ts";
+
+/** A job's last run as the view needs it: a stored row's status, or a GitHub run's status and conclusion. */
+export type LastRunLike = { kind: "stored"; run: { status: StoredRunStatus } } | { kind: "github"; run: { status: string; conclusion: string | null } } | null;
+
+/** The five states a job's last run can be in, worst first. */
+export const OUTCOME_KEYS = ["failed", "running", "none", "other", "ok"] as const;
+export type OutcomeKey = (typeof OUTCOME_KEYS)[number];
+
+export const OUTCOME_LABEL: Readonly<Record<OutcomeKey, string>> = {
+  failed: "Failed",
+  running: "Running",
+  none: "No run recorded",
+  other: "Nothing to do",
+  ok: "Succeeded",
+};
+
+/** A job's last run in one word, its tone, and its place in the worst-first order (0 is worst). */
+export function lastOutcome(last: LastRunLike): { key: OutcomeKey; label: string; tone: RunTone } {
+  if (!last) return { key: "none", label: OUTCOME_LABEL.none, tone: "other" };
+  const o = last.kind === "stored" ? storedOutcome(last.run.status) : runOutcome(last.run);
+  const key: OutcomeKey = o.tone === "failed" ? "failed" : o.tone === "running" ? "running" : o.tone === "ok" ? "ok" : "other";
+  return { key, label: o.label, tone: o.tone };
+}
+
+/** How many jobs' last runs are in each state (every key present, zero when none). */
+export function outcomeCounts(rows: readonly { last: LastRunLike }[]): Record<OutcomeKey, number> {
+  const counts = Object.fromEntries(OUTCOME_KEYS.map((k) => [k, 0])) as Record<OutcomeKey, number>;
+  for (const r of rows) counts[lastOutcome(r.last).key]++;
+  return counts;
+}
+
+/** The all-jobs view's order: failed last runs first, then running, never run, nothing to do, succeeded; then by name. */
+export function sortJobsByOutcome<T extends { job: JobDef; last: LastRunLike }>(rows: readonly T[]): T[] {
+  const rank = (r: T) => OUTCOME_KEYS.indexOf(lastOutcome(r.last).key);
+  return [...rows].sort((a, b) => rank(a) - rank(b) || a.job.name.localeCompare(b.job.name));
+}
+
+export const JOBS_VIEWS = ["schedule", "all"] as const;
+export type JobsView = (typeof JOBS_VIEWS)[number];
+
+/** `?view=` on the list: `all` for one table of every job, anything else the schedule view. */
+export function parseJobsView(raw: string | string[] | undefined): JobsView {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  return v === "all" ? "all" : "schedule";
+}
+
+export function jobsViewHref(view: JobsView): string {
+  return view === "all" ? `${JOBS_HREF}?view=all` : JOBS_HREF;
+}
 
 export const JOBS_HREF = "/admin/jobs";
 

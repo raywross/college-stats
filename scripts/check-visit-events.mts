@@ -1,8 +1,9 @@
 /**
  * Checks the stored visit events after a sync (specs/product/visit-events.md, "Checks"; scripts/lib/visit-events/
  * check.mts): per host, the event count by kind, the staff share, the ZIP share, duplicates, starts more than 18 months
- * out, and starts long before first seen. Exits 1 when a host's staff share is above 40% or its ZIP share below 80%,
- * naming the titles.
+ * out, and starts long before first seen. Exits 1 when a host's logistics share (staff rows that are a college's own
+ * housekeeping) is above 40%, naming the titles; a host that is mostly graduate or other non-admissions events, or
+ * whose placed rows lack coordinates, is a warning.
  *
  *   npm run check:visit-events
  *   npm run check:visit-events -- --record   # also writes check_failures, check_warnings, check_summary onto the

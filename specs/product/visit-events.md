@@ -453,8 +453,17 @@ with a measuring point who open a visit alert, sign-up clicks per alert, and a m
   removed-after-two-misses rule; the radius and measuring-point rules; one email per user per night; the mute and
   unsubscribe tokens; and the rendered email's text body.
 - `npm run check:visit-events` after each sync: hosts read, the share of new events with a ZIP (target 95%), staff
-  share per host (a host above 40% is listed for a new title pattern), duplicate titles at one time and place, dates
-  more than 18 months out, and any row with `starts_at` before `first_seen` by more than a day.
+  share per host, duplicate titles at one time and place, dates more than 18 months out, and any row with `starts_at`
+  before `first_seen` by more than a day.
+  - **The staff share, split (2026-11-01).** The nightly job had failed every night since October 28 because
+    graduate-admissions hosts discovered on October 14 (Clarkson's `gradapp.clarkson.edu`, Lehman's graduate office
+    hours, then Detroit Mercy and UNCG's `gradapply`) passed 40% staff: the rows were graduate events the
+    `NOT_ADMISSIONS` rule hides on purpose, not a classifier bug. `staffReason(title)` (`lib/visit-events/kinds.ts`)
+    now says why a row is staff, and the check **fails** only when the *logistics* share (shipping, pickups, filled
+    slots, placeholders: a college's own housekeeping, which a new wording could slip past the rules) passes 40%;
+    a host that passes 40% on graduate or other non-admissions rows **warns**, naming them, and says a graduate-only
+    host can be set `off`. Clarkson's and UNCG's graduate hosts were set `off` on dev that day and their stored events
+    removed; Lehman's and Detroit Mercy's hosts stay on, since they also carry undergraduate events.
 
 ## Pilot
 Two weeks on UF, Duke, and the 20 other Slate colleges from the research sample, dev Supabase, alerts to the owner's

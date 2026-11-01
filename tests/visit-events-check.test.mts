@@ -16,6 +16,7 @@ function host(name: string, over: Partial<HostCheck> = {}): HostCheck {
     events: 10,
     kinds: { travel: 10 },
     staffShare: 0,
+    logisticsShare: 0,
     hiddenShare: 0,
     zipShare: 1,
     locatedShare: 1,

@@ -751,13 +751,38 @@ test("checkHosts: a clean host passes", () => {
   assert.match(hostReport(c)[0], /^h \(134130\): 10 events \(travel 10\); hidden 0% \(staff 0%\); ZIP of detailed (100%|n\/a); located 100%/);
 });
 
-test("checkHosts: fails above 40% staff, naming the titles; 40% exactly passes", () => {
+test("checkHosts: fails above 40% logistics staff, naming the titles; 40% exactly passes", () => {
   const four = [...Array.from({ length: 6 }, (_, i) => stored(i)), ...Array.from({ length: 4 }, (_, i) => stored(10 + i, { kind: "staff", title: `Hotel Shipping ${i}` }))];
   assert.deepEqual(checkHosts(four, OCT_13)[0].failures, []);
   const five = [...Array.from({ length: 5 }, (_, i) => stored(i)), ...Array.from({ length: 5 }, (_, i) => stored(10 + i, { kind: "staff", title: `Hotel Shipping ${i}` }))];
   const [c] = checkHosts(five, OCT_13);
+  assert.equal(c.staffShare, 0.5);
+  assert.equal(c.logisticsShare, 0.5);
   assert.equal(c.failures.length, 1);
-  assert.match(c.failures[0], /staff share 50% is above 40%; staff titles: Hotel Shipping 0/);
+  assert.match(c.failures[0], /logistics share 50% is above 40%; staff titles: Hotel Shipping 0/);
+  assert.deepEqual(c.warnings, []);
+});
+
+test("checkHosts: a host that is mostly graduate or non-admissions events warns instead of failing (2026-11-01: Clarkson's graduate Slate)", () => {
+  const grad = [
+    ...Array.from({ length: 3 }, (_, i) => stored(i)),
+    ...Array.from({ length: 6 }, (_, i) => stored(10 + i, { kind: "staff", title: `Graduate Programs Information Session ${i}` })),
+    stored(20, { kind: "staff", title: "Hotel Shipping" }),
+  ];
+  const [c] = checkHosts(grad, OCT_13);
+  assert.equal(c.staffShare, 0.7);
+  assert.equal(c.logisticsShare, 0.1);
+  assert.deepEqual(c.failures, []);
+  assert.equal(c.warnings.length, 1);
+  assert.match(c.warnings[0], /staff share 70% is above 40%, mostly graduate or other non-admissions events \(hidden on purpose\): Graduate Programs Information Session 0/);
+  assert.doesNotMatch(c.warnings[0], /Hotel Shipping/);
+  assert.match(hostReport(c).join("\n"), /WARN: staff share 70%/);
+  // Both kinds together: the failure rule still measures only the logistics part.
+  const mixed = [...Array.from({ length: 5 }, (_, i) => stored(i)), ...Array.from({ length: 3 }, (_, i) => stored(10 + i, { kind: "staff", title: `Graduate Admissions Phone Appointment ${i}` })), ...Array.from({ length: 2 }, (_, i) => stored(20 + i, { kind: "staff", title: `Materials Pick-Up ${i}` }))];
+  const [m] = checkHosts(mixed, OCT_13);
+  assert.equal(m.logisticsShare, 0.2);
+  assert.deepEqual(m.failures, []);
+  assert.equal(m.warnings.length, 1);
 });
 
 test("checkHosts: fails below 80% located among placed rows (online and hidden rows don't count); lists duplicates, far-out and late-seen rows", () => {

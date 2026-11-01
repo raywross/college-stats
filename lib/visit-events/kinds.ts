@@ -38,6 +38,19 @@ export interface KindInput {
   campusCity?: string | null;
 }
 
+/**
+ * Why a title is `staff`: `logistics` (shipping, pickups, filled slots, placeholders: a college's own housekeeping,
+ * which a new wording could slip past the rules) or `not_admissions` (graduate, alumni, advancement, student-success
+ * events a shared Slate database exposes: hidden on purpose, and a whole host can be mostly these). Null for a title
+ * that isn't staff. The data check (scripts/lib/visit-events/check.mts) fails a host only on the first kind.
+ */
+export function staffReason(title: string): "logistics" | "not_admissions" | null {
+  const t = title.trim();
+  if (STAFF.test(t)) return "logistics";
+  if (NOT_ADMISSIONS.test(t)) return "not_admissions";
+  return null;
+}
+
 export function kindOf({ title, online = false, place = "", campusCity = null }: KindInput): VisitEventKind {
   const t = title.trim();
   const p = (place ?? "").trim();

@@ -463,7 +463,7 @@ function fieldRule(src: string): string[] {
   if (!/\bbg-transparent\b/.test(tag)) broken.push("the field isn't bg-transparent");
   if (/\bbg-(background|muted|card)/.test(tag)) broken.push("the field paints a background over its marks");
   if (/contentEditable|contenteditable/i.test(src)) broken.push("contenteditable in the editor");
-  const wrapper = /<div className=\{cn\("relative rounded-3xl border bg-background", !canWrite && "bg-muted\/30"\)\}>\s*<Marks \/>\s*<textarea\s+id="essay-field"/;
+  const wrapper = /<div className=\{cn\("relative rounded-3xl border bg-background", !canWrite && "bg-muted\/30"\)\}>\s*<Marks(?: locate=\{locateChange\})? \/>\s*<textarea\s+id="essay-field"/;
   if (!wrapper.test(src)) broken.push("the marks don't sit before the field in a relative wrapper");
   return broken;
 }
@@ -476,7 +476,7 @@ test("guard: the field keeps id=essay-field, a transparent background, and sits 
   // The guard catches each way of breaking the rule.
   assert.ok(fieldRule(src.replace("rounded-3xl bg-transparent px-4", "rounded-3xl bg-background px-4")).length > 0, "a field with a background");
   assert.ok(fieldRule(src.replace(/<textarea(\s+id="essay-field")/, "<div contentEditable$1")).length > 0, "a contenteditable field");
-  assert.ok(fieldRule(src.replace("<Marks />", "")).length > 0, "marks taken out");
+  assert.ok(fieldRule(src.replace(/<Marks [^>]*\/>/, "")).length > 0, "marks taken out");
 });
 
 test("guard: the margin marks are gone; the notes still open to their spot; cards carry the ids Open scrolls to", () => {

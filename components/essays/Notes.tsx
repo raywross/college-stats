@@ -22,6 +22,8 @@ import { InfoTip } from "@/components/ui/info-tip";
 import { READER_KEY, READER_LABEL, type MarkItem } from "@/lib/essays/marks";
 import { cn } from "@/lib/utils";
 import { usePublishMarks } from "./marks-context";
+import { readerFixes } from "@/lib/essays/review-view";
+import { usePublishReaderFixes } from "./fixes-context";
 
 const FIELD_ID = "essay-field";
 const DISCLAIMER = "Questions and things a careful reader noticed. Nothing here is a grade, and the words stay yours.";
@@ -187,6 +189,9 @@ export function Notes({ essayId, canRequest }: { essayId: string; canRequest: bo
   const latestNotes = latest?.notes ?? NO_NOTES;
   const marks = useMemo(() => noteMarks(latestNotes), [latestNotes]);
   usePublishMarks("notes", marks);
+  // The newest read's corrected words, for Review changes (the Editor accepts or rejects them there).
+  const fixes = useMemo(() => readerFixes(latestNotes), [latestNotes]);
+  usePublishReaderFixes(fixes, (id, state) => setLoad((l) => (l.kind === "ready" ? { kind: "ready", reviews: l.reviews.map((rv) => ({ ...rv, notes: rv.notes.map((n) => (n.id === id ? { ...n, state } : n)) })) } : l)));
 
   return (
     <section aria-labelledby="notes-title" className="space-y-3">

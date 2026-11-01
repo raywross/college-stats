@@ -1,0 +1,25 @@
+{
+  "key": "b49e40dd90f4b1b7",
+  "model": "claude-opus-5-5",
+  "note": "answer, main turn 3",
+  "response": {
+    "id": "msg_dry_b49e40dd90f4b1b7",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-opus-5-5",
+    "content": [
+      {
+        "type": "text",
+        "text": "Answered the question and added a hold for B.125."
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 3000,
+      "cache_creation_input_tokens": 5000,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 900
+    }
+  }
+}

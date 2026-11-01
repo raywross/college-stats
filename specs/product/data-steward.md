@@ -305,3 +305,221 @@ and after, so the Steward's documents and the admin's decisions share one histor
   fix is a recipe proposal; one it can't is a To do row.
 - Should a To do upload go straight to the archive and a re-read, or through a proposal? Recommended: straight to the
   archive, then the Steward reads it and its values arrive as a value proposal like any other.
+
+## As built (2026-11-01)
+Build units S1 (clusters, kinds, To do sources, `admin_steward_write`) and S3 (the run, the workflow, the registry row)
+on `feature/data-steward`; S2 (the console screens) is being built in parallel and isn't merged here — see "Still to
+document" below.
+
+### Clustering (`lib/steward/cluster.ts`)
+`maskDetail` replaces a CDS template code (`C.116`, `B.2202`, `H.2A01`) with `CODE`, an edition or academic year
+(`2025-26`, `2024-2025`) and a standalone four-digit year with `Y`, and every other number (with its separators and
+decimals) with `#`, then collapses whitespace. The cluster key is `${check}|${maskedDetail}`.
+
+A check clusters by the check alone (`detail: ""`) when it's in `FREE_DETAIL_CHECKS` (`previous-cohort-disagrees`,
+`aid-year`: each names a varying field or a quoted value that isn't the cause) **or** when, among the items given, its
+masked details leave more than `FREE_DETAIL_LIMIT` (30) distinct values — `freeDetailChecks` finds both kinds
+together so the Issues screen and the Steward agree on which checks are "free". Two checks never share a key: the
+check is always the key's first segment.
+
+A cluster key over `CLUSTER_KEY_MAX` (200 characters, the store's document-key limit) is cut to fit and given an
+8-hex FNV-1a tag of the full masked detail, so two different long details that happen to share a 200-character prefix
+still get different keys. An item with several failures is counted in every one of its failures' clusters — resolving
+one cause doesn't clear the item from the others. Only items with no `resolved` are clustered; `clusterItems` (the
+Steward's `read_cluster`, the Issues screen's unfolded examples) applies the same filter.
+
+### Kind rules (`lib/steward/kinds.ts`), checked in this order
+1. **acquisition**: the check is `unreachable` or `not-a-url`; or it's `line-in-document` and the cluster names no
+   document at all; or the cluster's documents are all **unfetched** (none has a `reported.docs` manifest entry —
+   when the manifest can't be read, nothing counts as unfetched and this rule never fires).
+2. **policy**: the check is in `POLICY_CHECKS` (`previous-cohort-disagrees`, `plausible-change`, `newer-than-federal`).
+3. **systemic**: one masked detail holds more than `SYSTEMIC_SHARE` (60%) of its check's open items **and** spans more
+   than `SYSTEMIC_COLLEGES` (10) colleges. For a cluster that already has a detail (not a free-detail check), its own
+   items/colleges are that share; for a free-detail check, the check's single most common masked detail (by items,
+   then colleges) stands in for it.
+4. **value**: everything else.
+
+### To do sources (`lib/steward/todo-sources.ts`)
+Three sources, merged by key (`<kind>:<unit_id or name-slug>:<edition or "->`, de-duplicated, most-specific `why` and
+every attempt kept): `reported.failures` rows whose `reason_code` is in `ACQUISITION_REASONS` (`no_document_found`,
+`class_profile_only`, `robots_disallowed`, `host_blocked`, `unreachable`, `malformed_url` — a read, fetch, or checks
+failure never becomes a To do row, only a discovery/fetch one does); the review queue's open items whose failures
+include `unreachable` or `not-a-url` (`ACQUISITION_QUEUE_CHECKS`); and `directories.blocked` records. `whyFromWords`
+and the two `whyOf*` functions turn a reason code or free text into one of `terms`, `login`, `challenge`,
+`robots-host`, `robots-path`, `viewer`, `js-only`, `bot-check`, `no-document`, `not-found`, or `unknown`, ranked most-
+specific first so merging two sources keeps the sharper reason. `routeOf` starts a row at `ask` (terms, login),
+`render` (js-only), or `null` (every other why, including the ones that still need `person`/`archive-doc` picked by a
+person) — matching "Routes, in order" above only partly: the code picks the easy half, a person decides the rest.
+
+### Review rows (`lib/steward/review-rows.ts`)
+"On the site now" is read live, not from any stored proposal text: for a row with a registered field, `nowAtField`
+calls the same `citeField` the profile uses; for a CDS code with no registered field, `nowAtCode` reads the newest
+`passed` item in the college's own `reported.cds_records` document (there is no other place a value like that is
+published). `PENDING_PROPOSAL_STATUSES` is `open`, `asked`, `approved` — a proposal row that's `declined` or `applied`
+never reaches the Review page, so once the owner has settled a row (either way) it drops out on its own.
+
+### `admin_steward_write` (`supabase/migrations/20261101140000_steward.sql`)
+Refuses: a non-admin (`admin only`, 42501); a collection that doesn't match `^steward\.[a-z][a-z0-9_]*$`
+(`not_steward_collection` — a `reported.*` or any other key is refused, not just disallowed); a key outside 1–200
+characters (`invalid_key`); a body that isn't valid JSON or isn't a JSON object (`invalid_body`); a note over 500
+characters (`invalid_note`). It opens one `edit`/`console` change set, writes the document, closes it `applied`, and
+logs one `steward.write` row with the **changed top-level keys only** (added, removed, or altered) and, for just
+those keys, the before and after values. Writing the identical body back still opens, writes, and closes a change set
+— the `changed` array is simply empty (proved in `tests/steward-policies.test.mts`); there is no short-circuit that
+skips the write.
+
+### The run (`scripts/steward.mts`, `scripts/lib/steward/*.mts`)
+**CLI**: `npm run steward -- --store <supabase|file:dir> --mode run|audit|apply|answer [--budget N] [--cause <key>]
+[--unit <6-digit id>] [--proposal <key>] [--run-ref <id>] [--request-id <id>] [--dry-run <answers dir>]`. With no
+`--budget`, the default is mode-specific — **run 20, audit 10, answer 5** (`DEFAULT_BUDGETS.dispatch/audit/answer`;
+`afterPipeline` at 5 is used only by the workflow's own `--budget 5` after a pipeline run, not as a CLI default) — and
+every budget, asked or default, is then cut to whatever the trailing-seven-days `$40` cap (`WEEKLY_CAP_USD`, summed
+from `steward.runs.spent_usd`) has left (`runBudget`).
+
+**Exit codes**: `0` done; `2` the budget stopped a call before it was made (what was already written stays; the run
+record's `stopped` says where); `1` a failure (an uncaught error, a `--dry-run` request with no recorded answer, or
+`apply` refusing before any write, e.g. a proposal that's already applied).
+
+**One change set per run, always closed `applied`** — even a budget stop or a failure. The code's own reasoning
+(steward.mts): a Steward set holds only `steward.*` documents, which are never composed into a snapshot, so closing
+it `held` would gain nothing and would needlessly block the publisher's own "any held set to review" checks.
+**`apply`'s own change set** (source `steward-apply`) is the one exception with real teeth: a refusal *before* any
+write (e.g. "already applied") closes an **empty** set `applied`; a failure *partway through* applying (after some
+holds/refiles/recipe writes/rejections already landed) closes the set **`held`** with the error, so a person judges
+what's there — a hold or refile job is never silently abandoned mid-way.
+
+**Tools, as built** (`scripts/lib/steward/tools.mts`): reads `list_clusters`, `read_cluster`, `read_record`,
+`read_document_lines`, `read_site_value`, `read_failures`; base writes `write_issue`, `write_proposal`, `write_todo`,
+`write_decision`; `write_audit` is added only in audit mode and `write_answer` only in answer mode (`toolNames`) —
+`write_answer` is a tool this build added beyond the shared contract's list, needed because the contract gives
+answer mode no way to post its answer. `read_document_lines` with a `question` fans out to Sonnet 5, and with a
+`line` and no `question` returns the window of text itself; with a `line` *and* a `question` it fans out to Haiku 4.5
+instead of Sonnet.
+
+**Models**: Opus 5.5 (`claude-opus-5-5`) runs the main loop with `thinking: { type: "adaptive" }` and
+`output_config.effort: "high"`. A sub-read on Sonnet 5 (`claude-sonnet-5`) also thinks adaptively but at `effort:
+"low"`; a sub-read on Haiku 4.5 (`claude-haiku-4-5-20251001`) gets no `thinking` field and no `effort` at all — it
+only answers a structured JSON schema (`subRead`, tools.mts).
+
+**Dry run** (`scripts/lib/steward/dry-run.mts`): `requestKey(body)` is the first 16 hex characters of the sha256 of
+the request body's stably-ordered JSON with `stream` and `max_tokens` stripped (so two requests the model would see
+identically share an answer, and tests pin them). A missing answer throws `MissingAnswer` with the key and a path
+under the OS temp dir where the unanswered request was saved for whoever records it; recording a fresh answer from
+the live API is allowed only with `STEWARD_RECORD=1`, a real `ANTHROPIC_API_KEY`, and no `CI` env var.
+
+**Budget reservation**: between two main-loop calls, the script estimates the next call's cost (treating the
+cached conversation history as costing about a fifth as much, since a cache read is a tenth of input price),
+`ensure()`s it's affordable, then `reserve()`s that estimate — so any sub-read tool calls made *before* the next main
+call (a `read_document_lines` question, say) can only spend what's left above that reservation, and the already-
+checked next main call stays affordable.
+
+**Parallel tool calls, queued by the writer**: the SDK's tool runner can call several tools from one turn
+concurrently; every `write_*` tool is routed through `StewardWriter.serial()`, which chains them onto one promise so
+they run one at a time in call order. This matters concretely: a proposal write reads back the issue its `cause`
+names to list itself there, and that issue is sometimes written in the very same turn.
+
+**Document line text**: `documents.mts` reuses the college-reported pipeline's own line builders — `layoutDocument`
+for model-read types (flattened/scanned PDFs, older workbooks, HTML, class profiles), the workbook's sheet-plus-cell
+reader for a template workbook, and `pdftotext -layout` (`gridLayout`, split into pages at form feeds) for a form
+PDF — so a line number the Steward cites is the **same line id a record's own `line` field already cites**, not a
+re-derived one. When the archive lacks a document, it's fetched again by its manifest `final_url`/`url` (or the bare
+URL given) through a polite GET, and the fetched bytes' own sha256 is checked against the manifest entry before the
+text is trusted (a mismatch answers `{unavailable, reason: "the file at its URL has changed..."}`, exactly
+`check-grid-columns.mts`'s approach); a fetched document is written back into the archive so one run reads it once.
+
+**Writer refusals** (`scripts/lib/steward/writer.mts`), beyond the contract's three: every row needs a non-empty
+`now` and `proposed` (and a `unit_id`); `correct`/`publish` also needs a `value`, a registered field an admin edit
+could actually set (`editProblem`), and either `source.page` or — only when the row's `sha256` names a workbook
+document (its manifest `type` starts with `xlsx`) — a `source.quote` with the cell instead; `hold`/`reject` need a
+`code` or a queue `item`; `hold` additionally needs the `edition`; `refile` needs `sha256` and `edition`; `recipe`'s
+`field` must be `sources.add`, `sources.drop`, or `rediscover`, and add/drop need an `http(s)` URL as `value`. **Rows
+the owner declined before** are dropped silently from a new proposal — `rowIdentity` (`unit_id|field or code|sha256`)
+matches a row against every `declined` row ever written to any proposal — and if every row of a non-systemic proposal
+is dropped this way, the whole write is refused ("nothing to propose"). A `write_decision` whose question the owner
+already answered is refused outright, by its slugged key.
+
+**Proposal keys**: `<kind>-<cause or the first row's unit_id>-<run>`, each segment slugged and the whole thing capped
+well under the store's 200-character key limit, unless the model supplies its own `key`.
+
+**Recipe rows** (`scripts/lib/steward/apply.mts` `recipeAfter`): `sources.add` puts the URL at the front of
+`reported.sources`' list (dropping any existing entry for that URL) and clears `none_found`; `sources.drop` removes a
+URL; `rediscover` clears `none_found` and any `discovery.next_attempt` back-off so the next run looks again. A row
+that would change nothing returns `null`, and `apply` logs "recipe already says so" instead of writing.
+
+**Answer mode reopening a proposal**: `writeAnswer` requires a non-empty answer, validates any rows the model adds by
+the *proposal's own kind*'s row rules, appends them to the existing rows, and — only when the proposal's status was
+`asked` — flips it back to `open`, so Ask → Answer puts the proposal back in front of the owner's next pass.
+
+**Audit families**: `AUDIT_FAMILIES = ["grids", "bands", "aid-grids", "h2"]` (C7/C8 grids, C9 bands, B4–B11 grids, H2
+aid), picked by `weekOf(date) % 4` (`weekOf` is UTC whole weeks since January 1). `auditSample` ranks candidate
+values by a sha256 of a weekly seed so the same week always samples the same up-to-25 values (one per college before
+a second from any) and later weeks sample others. After `write_audit`, `issueForAudit` reads back what was just
+written and, above `AUDIT_ISSUE_RATE` (5%) wrong, writes or updates an issue keyed **`audit|<family>`**, kind
+`systemic`.
+
+### The workflow (`.github/workflows/steward.yml`)
+**Triggers**: `workflow_run` on "College-reported data" `completed`; `schedule` `0 9 * * 0` (Sunday 09:00 UTC);
+`workflow_dispatch` (`mode`, `budget`, `cause`, `unit`, `proposal`, `request_id`). The "Resolve the mode and budget"
+step hardcodes `budget=5` for `workflow_run` and `budget=10` for `schedule`, and otherwise uses the dispatch input
+(default `"20"`) — the same numbers as `DEFAULT_BUDGETS` by trigger.
+
+**The gate** ("Check that the college-reported run changed the queue"): for `workflow_run`, it reads the triggering
+run's own jobs (`GET …/actions/runs/{id}/jobs`) and only proceeds when that run **succeeded** *and* at least one of
+its steps named "Run the ingestion pipeline" or "Collect the open batches" **also succeeded** — the half-hourly
+"collect" firing that finds no open batch, and an off-season firing, complete the workflow with nothing to show for
+it and are skipped with a notice, same as a failed run. Every other trigger always proceeds.
+
+**Permissions**: the top level is `contents: read` only. The `steward` job adds `actions: read` (for the gate's own
+API read of the triggering run); the `apply` job — the only one that can run for `workflow_dispatch` with
+`mode: apply` — gets `actions: write` *instead*, used for exactly one thing: `gh workflow run publish-snapshot.yml`
+when applying actually changed a record. No job can push, commit, or edit a workflow.
+
+**Secrets**: `ANTHROPIC_API_KEY`; `DATA_SUPABASE_URL`/`DATA_SUPABASE_SECRET_KEY` with the `PROD_SUPABASE_*` fallback
+at the workflow's `env:` level; `COLLEGE_REPORTED_TOKEN` (the archive, when `COLLEGE_DOCS_REPO` is set). **Missing-
+secret skip**: a step sets `ready=false` with a `::notice::` (no later step runs) when `ANTHROPIC_API_KEY` or either
+Supabase variable is unset, in the same style as the other data workflows; the `apply` job has its own, narrower
+check (it needs no model key, since `apply` makes no model call).
+
+**Document cache**: a single `actions/cache/restore@v4` step restores `.cache/college-docs` (keyed to this run, with
+a `college-docs-` prefix fallback to reuse what `college-reported.yml` saved) — **there is no matching `cache/save`
+step**, so anything the Steward fetches fresh during a run is not written back to the shared Actions cache for the
+next workflow; it only lives in that one job's local archive directory until the runner is torn down.
+
+### The publisher and steward-only change sets
+`scripts/lib/data-platform/ledger.mts`'s `changesSnapshot(set)` says a closed set can change what the next snapshot
+composes unless *every* collection its summary lists starts with `steward.` (or it wrote nothing) — so a Steward run's
+set, `steward-apply`'s own set, and the console's future `admin_steward_write` edits never by themselves make
+`publish-snapshot.mts` think there's something new to publish. `apply` doesn't rely on that check noticing anyway: it
+explicitly dispatches `publish-snapshot.yml` itself, and only when its own result says a hold or refile changed a
+`reported.cds_records` document (`publish: true`) — recipe and reject rows never trigger it, because they change
+nothing a snapshot composes until the *next* college-reported run reads the new recipe.
+
+### Prices
+`scripts/lib/steward/models.mts` hardcodes Opus 5.5 at $5/$25 per million input/output tokens, Sonnet 5 at $3/$15,
+Haiku 4.5 at $1/$5, a cache read at a tenth of input, a cache write at 1.25× input, and thinking counted as output
+(it's inside `output_tokens`). The file says plainly that if a model's real list price is ever *lower* than what's
+hardcoded here, "the budget only stops early" — the prices are written to over-count against real billing, never
+under-count, so a run would stop a little short of its nominal budget rather than risk spending past it.
+
+### Owner assumptions, as the code holds them
+1. Confirmed: `scripts/steward.mts` is a plain CLI script over the SDK's tool runner with a fixed, named tool set; it
+   never touches the repository's files or git, unlike a general coding agent.
+2. Confirmed: $5 after a pipeline run, $20 on dispatch, $10 for the weekly audit, $40 a week in all — both in
+   `budget.mts`'s `DEFAULT_BUDGETS`/`WEEKLY_CAP_USD` and in `steward.yml`'s own hardcoded per-trigger budgets.
+3. Lives in the system prompt only ("two of the items' own years must agree"), not enforced by the writer, which
+   checks only that a refile row names a `sha256` and an `edition`. The owner's "approves each" half is enforced
+   structurally: `apply.mts` only ever applies rows whose `decision` is already `"approved"`.
+4. Confirmed: nothing here marks a proposal `approved` on its own; `applyProposal` refuses any proposal that isn't
+   already `approved`, and `admin_steward_write` only ever writes the body its caller (a Server Action, built in S2)
+   passes it.
+5. Confirmed: `documents.mts` falls back to fetching a document again by URL and checking its sha256 against the
+   manifest, exactly as `check-grid-columns.mts` does; an unfetchable or sha-mismatched document becomes
+   `{unavailable, reason}`, which the system prompt turns into a To do row, never a value.
+6. Confirmed: `write_proposal` requires `change: {what, how, revert}` for a systemic proposal, and `apply.mts`'s
+   `APPLIED_KINDS` excludes `systemic` (and `correct`/`publish`/`reread`) — none of those kinds is ever applied by
+   the job; a systemic proposal only records the owner's approval for a person to act on later.
+
+### Still to document
+S2's pieces — the five Data screens (Issues, Proposals, To do, Decisions, Audits), the college Review page, Approve /
+Decline / Ask / Decide, and the dispatch rows (`steward`, `steward-apply`, `steward-answer`) — aren't merged yet; the
+lead completes this section's console half once S2 lands.

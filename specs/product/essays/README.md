@@ -31,6 +31,7 @@ their own ([../../data-expansion/coalition-app.md](../../data-expansion/coalitio
 | 4 | [moves.md](moves.md) | One essays move on Next steps from the summer before senior year: always pointed at the earliest-deadline college with essays left, counting what's ready from the workspace, rising in urgency into the fall; replaces the three overlapping essay tasks | Medium |
 | 5 | [tab.md](tab.md) | Essays as its own tab beside Next steps, Colleges, and Calendar, on one row on phones and desktop; the screen by college in deadline order with a row per prompt and its status | Medium |
 | 6 | [sources.md](sources.md) | Prompts the college never publishes: a likely tier from College Essay Guy under permission, confirmed prompts from a person's read of the form or from families reporting the same question with the owner's approval; each marked for what it is | Medium |
+| 7 | [editors.md](editors.md) | Parents and counselors as editors: they propose changes in their own copy of the draft and the student accepts or rejects each one, or all, with Word's three views (with changes, as suggested, original); every note, comment and open change marked in the field with a colored underline per author, hover or tap for a popover, and a jump to the details; the reader's corrected words as one-tap changes | Large |
 
 ## Design principles
 In addition to the planner's ([../../planner/README.md](../../planner/README.md)) and Plan v3's
@@ -44,9 +45,11 @@ In addition to the planner's ([../../planner/README.md](../../planner/README.md)
    date, and the card says the application may ask a few short questions beyond the published ones.
 4. **A phone is the first screen.** Students write on phones and in Notes; the editor is a big plain text field with a
    count, no toolbar, and the draft is never lost.
-5. **The student writes; parents and advisors read and comment.** Only the student edits a draft (owner, 2026-10-28:
-   "student drafts only"); a guardian in the household, and a counselor with a grant once the portal exists, can open
-   every draft and leave comments, never change the text. The reviewer runs when the student asks, never on its own.
+5. **The student writes; parents and advisors read, comment, and suggest.** Only the student changes a draft (owner,
+   2026-10-28: "student drafts only"); a guardian in the household, and a counselor with a grant once the portal
+   exists, can open every draft, leave comments, and (owner, 2026-11-01, [editors.md](editors.md)) propose changes
+   the student accepts or rejects one by one; nothing reaches the text without the student's Accept. The reviewer runs
+   when the student asks, never on its own.
 6. **Nothing is graded.** No score for an essay, no "strong" or "weak", no prediction. A note names a thing a reader
    noticed and why it matters.
 

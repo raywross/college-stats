@@ -8,7 +8,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { isAwayFromCampus, kindOf, planVisitKind } from "../lib/visit-events/kinds.ts";
+import { isAwayFromCampus, kindOf, planVisitKind, staffReason } from "../lib/visit-events/kinds.ts";
 import type { VisitEventKind } from "../lib/visit-events/types.ts";
 
 interface Harvest {
@@ -83,6 +83,23 @@ test("kindOf: online, open house, tour before travel, travel, session, other, an
     [{ title: "Homewood-Flossmoor", place: "Gainesville, FL", campusCity: "gainesville" }, "other"],
   ];
   for (const [input, want] of cases) assert.equal(kindOf(input), want, input.title);
+});
+
+test("staffReason: logistics, non-admissions, or null; every staff title has a reason", () => {
+  assert.equal(staffReason("CO (Denver) - Hotel Shipping"), "logistics");
+  assert.equal(staffReason("Requested Group / Filled"), "logistics");
+  assert.equal(staffReason("Visit Materials Pick-Up"), "logistics");
+  assert.equal(staffReason("Graduate Admissions Virtual Office Hours"), "not_admissions");
+  assert.equal(staffReason("Clarkson Graduate Programs: Partner Drop-In Hours"), "not_admissions");
+  assert.equal(staffReason("Alumni Council Meeting"), "not_admissions");
+  assert.equal(staffReason("Campus Tour"), null);
+  assert.equal(staffReason("Covenant Classical School"), null);
+  // A title that is both is logistics first (the failure rule's side), as kindOf checks STAFF first.
+  assert.equal(staffReason("Graduate School Fair Materials Pick-Up"), "logistics");
+  for (const title of ["Hotel Shipping", "Graduate Student Welcome", "Reunion Weekend", "placeholder", "Homecoming Tailgate"]) {
+    assert.equal(kindOf({ title }), "staff", title);
+    assert.notEqual(staffReason(title), null, title);
+  }
 });
 
 test("isAwayFromCampus and planVisitKind", () => {

@@ -17,7 +17,7 @@ import type { ReactElement } from "react";
 import type { PlanContext } from "../lib/planner/types.ts";
 import type { EssayLinkRow, EssayRow } from "../lib/essays/rows.ts";
 import type { EssaysTabData } from "../lib/essays/tab-view.ts";
-import { alsoUsedFor, collegeHeading, collegeNote, collegeStatus, collegesByEssay, firstWords, promptTitle, stateLine } from "../lib/essays/tab-view.ts";
+import { alsoUsedFor, collegeHeading, collegeNote, collegeStatus, collegesByEssay, firstWords, promptTitle, stateLine, suggestionNote } from "../lib/essays/tab-view.ts";
 import { MAIN_REF } from "../lib/essays/prompts.ts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -284,6 +284,19 @@ test("a row's title unfolds the whole prompt (owner, 2026-10-30); the status is 
   assert.match(bare, /data-open-draft/);
 });
 
+test("the row words: '2 suggestions' beside the comment count for the student; 'Waiting for {first}' for a guardian with their own open suggestion", () => {
+  const withSuggestions: EssaysTabData = { ...DATA, openSuggestions: { "e-duke-2": 2 }, mySuggestions: { "e-duke-2": "open" } };
+  const student = render(ctxWith(), { essays: withSuggestions });
+  assert.match(card(student, DUKE), /2 comments · 2 suggestions/);
+
+  const guardian = render(ctxWith({ guardian: true }), { canWrite: false, person: "s1", essays: withSuggestions });
+  assert.match(card(guardian, DUKE), /2 comments · Waiting for Maya/);
+
+  // Decided: the guardian's own suggestion is no longer open, so nothing shows beside the comment count.
+  const decided = render(ctxWith({ guardian: true }), { canWrite: false, person: "s1", essays: { ...withSuggestions, mySuggestions: { "e-duke-2": "decided" } } });
+  assert.doesNotMatch(card(decided, DUKE), /Waiting for/);
+});
+
 test("the three lines: not on file (with Add what {College} asks), none, and refers to the form", () => {
   const html = render(ctxWith());
   const yale = card(html, YALE);
@@ -363,6 +376,21 @@ test("tab-view: headings, statuses, notes, titles, states, and also used for", (
   assert.equal(alsoUsedFor(by, "e-duke-why", DUKE), "also used for Georgia Tech");
   assert.equal(alsoUsedFor(by, "e-duke-2", DUKE), null);
   assert.equal(alsoUsedFor(by, null, DUKE), null);
+});
+
+test("tab-view: suggestionNote (editors.md 'Where it shows': '2 suggestions'/'1 suggestion' for the student, 'Waiting for {first}' for a guardian)", () => {
+  assert.equal(suggestionNote("student", 2, undefined, null), "2 suggestions");
+  assert.equal(suggestionNote("student", 1, undefined, null), "1 suggestion");
+  assert.equal(suggestionNote("student", 0, undefined, null), null, "nothing open: no note");
+  assert.equal(suggestionNote("guardian", 2, "open", "Maya"), "Waiting for Maya");
+  assert.equal(suggestionNote("guardian", 2, "decided", "Maya"), null, "the guardian's own suggestion is already decided");
+  assert.equal(suggestionNote("guardian", 2, undefined, "Maya"), null, "no suggestion of this guardian's own on the row");
+  assert.equal(suggestionNote("guardian", 0, "open", null), "Waiting for the student", "no student name on hand");
+});
+
+test("the privacy page's essays paragraph: guardians and counselors can propose changes, the student decides, the text stays theirs", () => {
+  const page = readFileSync(join(ROOT, "app/privacy/page.tsx"), "utf8");
+  assert.match(page, /propose changes as a\s*\n?\s*suggestion, but only the student decides what is accepted, and the text in the draft stays the student&apos;s\./);
 });
 
 test("the wiring: the page reads the tab's data only on the Essays tab, PlanTabs renders EssaysTab with the student-only write rule", () => {

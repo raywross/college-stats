@@ -243,3 +243,85 @@ migration; the marks; Suggest changes and Review changes; the tab and the move; 
    changes with Accept. Say if the reader should stay notes-only.
 3. **Telling the student** a suggestion arrived: the banner and the tab count in this part; an email or digest line
    later with the follow-colleges digest, not here. Say if a notification belongs in this part.
+
+## As built (2026-11-01)
+Units U1 (the migration, the diff and suggestions model, the Server Actions, the reads) and U2 (the marks: the pure
+model, the context, the backdrop/overlay/popover/legend) merged into `feature/essay-editors`. All three owner
+decisions above were built as recommended (suggesting needs only read access; the reader's fixes are one-tap
+changes; telling the student is the banner and the tab count, no email). What follows is read from the code on the
+integration branch, not from the plan above; where they disagree, the code is what shipped.
+
+**The table and its rules** (`supabase/migrations/20261101120000_essay_suggestions.sql`): `essay_suggestions` as
+planned, with one change from the spec's model. The spec's `base_version_id` pointed at "a version of the current
+body", made on demand by saving one labelled "As {first} read it" if the newest version didn't already match. That
+version can't be made this way: the author proposing a suggestion is a guardian or counselor, and only the student's
+own `update` on `essays`/`essay_versions` can insert a version. **Deviation**: the table instead carries a
+`base_body text` column (≤100,000 chars) holding the exact text the editor started from; `base_version_id` is
+nullable and is filled in only when the *newest existing* version's body happens to already equal the current body
+at the moment of suggesting. Every change is computed from `base_body`, so "As {first} read it" is never written and
+never shown in the version list.
+
+Row rules, enforced by two triggers (not just policies, because "who changed what column" can't be expressed in a
+`using`/`with check` alone): before insert, the author is always the caller (`auth.uid()`, whatever the row claims),
+always `role: 'guardian'` (the counselor portal's own grant sets `counselor` later), always `status: 'open'` with
+empty `decisions`; the student can never insert on their own draft (the trigger raises `essay_suggestion_own`).
+Before update: **the open suggestion's author may change `proposed_body`, `note`, or withdraw it (`status →
+'withdrawn'`), but only while `status = 'open'` and `decisions = '{}'` — once the student has decided even one
+change, the author's own row is frozen** (`essay_suggestion_decided`); the student (`is_own_essay`) may change only
+`decisions`, `status` (→ `decided`), and `decided_at`; anyone else, or any other column, is refused. No delete
+policy exists: a withdrawn suggestion is kept forever, not purged. **Deviation**: the spec says a withdrawn
+suggestion "is kept for thirty days then purged with the planner's other removals"; there is no existing purge
+function for a thirty-day job to join (the planner's removals run through a different mechanism this part doesn't
+touch), so the purge was not built and withdrawn rows are never deleted. Building it is future work, not done here.
+
+**The diff and the locate rule** (`lib/essays/diff.ts`, `lib/essays/suggestions.ts`): a hand-written Myers word diff
+over tokens (a word, a run of whitespace, or a paragraph break), adjacent edits within three unchanged words merged
+into one `Change`, exactly as specified. Two details the spec left implicit, as built:
+- **Locating a change in the current text matches only at word edges**: `removed`/`inserted` text is searched for as
+  a substring, but a hit only counts when the character before it (if any) and the character after it (if any) are
+  whitespace or the string's edge — a change whose `removed` text is "act" can never match inside "react" or
+  "reaction". This is `occurrences()`'s `edge()` check in `suggestions.ts`.
+- **The change's key carries no literal ordinal field the code can read back**; when two changes with the same four
+  strings (`removed`, `inserted`, `before`, `after`) exist, `locateChange` needs to know which occurrence in the
+  current text is "this" change's. Rather than storing the ordinal anywhere, `ordinalOf()` recomputes the key for
+  ordinals `0..63` against the change's own four strings until one matches the stored key, and uses that number.
+  It is a few dozen hash computations, not a lookup, and it is why `changeKey`'s inputs must stay exactly as
+  specified (any change to the hash's recipe would silently break ordinal recovery for old keys).
+
+**Versioning on accept**: the spec says a decided suggestion's acceptances get "one version ... the first time a
+change is accepted and then under the ten-minute rule, like typing", with the label "Accepted 3 of 4 changes from
+Jane" appearing once the suggestion is fully decided. As built, `decideSuggestion` forces a version on the *first*
+accepted change of a suggestion (`forceVersion`, checked by "does `decisions` already contain an `accepted` before
+this call") and separately forces one — through `saveEssay`'s existing "a version on every `mark`" rule — on the
+call that completes the suggestion (`status` turning `decided`), carrying the `suggestionLabel` text. A suggestion
+decided in one call where the first accept is also the last decision makes one version with the label, not two;
+one decided over several calls makes one unlabelled version at the first accept and one labelled version at the
+last decision, with ordinary ten-minute versions possible in between if the student kept typing.
+
+**`acceptFix` refuses when the words moved**: the reader's `fix` replaces the text at the note's span, but only
+when the words at that span in the *current* draft still read exactly as they did in the version the reader
+reviewed (`spanOffsets` resolved against both the current body and the reviewed version's body, compared
+character-for-character). If the student rewrote that sentence since the review ran, `acceptFix` returns "The
+draft changed here" and changes nothing; the note stays open for the student to deal with by hand. This matches
+the spec's general stale-change behavior, applied to the reader's one-tap fix as well as a guardian's suggestion.
+
+**The reads** (`lib/essays/load.ts`, `lib/essays/tab-data.ts`): `readEssay` returns `suggestions` (every
+non-withdrawn row, newest first, with `author_name`); `readEssays` and the tab's own read return `openSuggestions`
+(open count per draft) and, for a guardian viewer, `mySuggestions` (their own newest non-withdrawn suggestion's
+`open`/`decided` state per draft) — a failed or missing-table read returns no counts rather than failing the page,
+as the rest of the tab's reads do.
+
+**The marks** (`lib/essays/marks.ts`, `components/essays/{marks-context,Marks}.tsx`): built to the contract — the
+backdrop/overlay pair measured off the field's mirror, colors assigned in order of first appearance (reader amber,
+the student's own comments gray, everyone else blue/violet/green/rose/teal repeating), the popover and the legend.
+No deviation from the plan found in this read of the code.
+
+### Still to document
+U3 (Suggest changes and Review changes) had not merged into the integration branch when this was written. Once it
+does, this section's lead should add: **Suggest box** (`components/essays/SuggestBox.tsx`) — the editor's own copy
+of the field, the live change count, the preview, autosave to `localStorage`; **Review changes**
+(`components/essays/ReviewChanges.tsx`) — the three toggles, Accept/Reject per change and for all, the stale list;
+the **Write / Review changes tabs** and the **banner** in `Editor.tsx`; the **reader's fixes shown as changes** in
+Review changes (Accept → `acceptFix`, Reject → the note marked `ignored`). Note there any signature or rule that
+differs from the contract in `essay-editors-build/brief.md` "Shared contracts", the way this section does for U1 and
+U2.

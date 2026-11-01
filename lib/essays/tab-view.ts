@@ -110,6 +110,17 @@ export function collegesByEssay(rows: readonly EssayRow[], links: readonly Essay
   return out;
 }
 
+/**
+ * Beside the open-comment count (tab.md "Where it shows": "a row with open suggestions shows '2 suggestions' beside
+ * its open-comment count, for the student; for an editor, 'Waiting for {first}' on rows with their own open
+ * suggestion"): "2 suggestions"/"1 suggestion" for the student when the draft has any open; "Waiting for {first}"
+ * for a guardian whose own newest suggestion on that draft is still open. Null when neither applies.
+ */
+export function suggestionNote(viewer: "student" | "guardian", open: number, mine: "open" | "decided" | undefined, studentFirst: string | null): string | null {
+  if (viewer === "guardian") return mine === "open" ? `Waiting for ${studentFirst ?? "the student"}` : null;
+  return open > 0 ? `${open} ${open === 1 ? "suggestion" : "suggestions"}` : null;
+}
+
 /** "also used for Michigan and Rice", or null when the draft serves this college alone. */
 export function alsoUsedFor(byEssay: Record<string, { unit_id: string; name: string }[]>, essayId: string | null, unitId: string): string | null {
   if (!essayId) return null;

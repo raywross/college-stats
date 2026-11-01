@@ -397,7 +397,7 @@ test("lineage: checkDirectoryRows refuses each kind of uncredited or malformed l
 });
 
 test("lineage: the committed data fails the checks when a real listing loses its source (proved on a copy)", () => {
-  const details = readDetails(ROOT) ?? [];
+  const details = readDetails(join(ROOT, "data", "detail", "schools")) ?? [];
   const withTable = details.find((d) => d.tables.directories);
   assert.ok(withTable, "the example adapter's listings are in the detail files");
   const school = allSchools.find((s) => s.unit_id === withTable.unit_id)!;
@@ -437,7 +437,7 @@ test("merge: idempotent (deepEqual), and the committed data is exactly a fresh m
   assert.deepEqual(twice, once);
   assert.equal(JSON.stringify(twice), JSON.stringify(once), "byte-identical, key order included");
   assert.equal(JSON.stringify(once), JSON.stringify(allSchools), "run `npm run merge-directories`");
-  const committed = new Map((readDetails(ROOT) ?? []).map((d) => [d.unit_id, d.tables.directories]));
+  const committed = new Map((readDetails(join(ROOT, "data", "detail", "schools")) ?? []).map((d) => [d.unit_id, d.tables.directories]));
   for (const d of built) assert.deepEqual(committed.get(d.unit_id), d.tables.directories, d.unit_id);
   assert.equal([...committed.values()].filter(Boolean).length, built.length);
   assert.deepEqual(validateLineage(once, meta), []);

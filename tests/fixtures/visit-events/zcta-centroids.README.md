@@ -1,0 +1,1 @@
+`zcta-centroids.csv`: the rows of the real ZCTA table (`data/reference/zcta-centroids.csv`, copied 2026-10-31) for every ZIP the visit-events tests and their pages name, with its header comments; the mini fixture's table is a sample that lacks them.

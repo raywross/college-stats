@@ -18,7 +18,7 @@ import { validateLineage } from "../lib/lineage.ts";
 import { fileStore, fileStoreChangeSets, type DataStore } from "../scripts/lib/data-platform/store.mts";
 import { COLLECTIONS, SINGLE_KEYS, readLayer } from "../scripts/lib/data-platform/layers.mts";
 import { changeSetFromArgv, EXIT, openProducerRun, runRef, writeChanged } from "../scripts/lib/data-platform/producer.mts";
-import { importLayers, stripLaterLayers, writeImport } from "../scripts/import-data-from-git.mts";
+import { importLayers, stripLaterLayers, writeImport } from "../scripts/import-data-from-files.mts";
 import { ESSAY_COLLECTIONS, essaysBreaker, heldDocument, loadEssayState, recordDocument, writeEssayRun, type EssayRecord, type HeldRecord, type PageRecipe } from "../scripts/lib/essay-prompts/store.mts";
 import { coalitionDocument } from "../scripts/lib/coalition/sync.mts";
 import { editionFileText } from "../scripts/lib/common-app/edition-file.mts";
@@ -39,7 +39,7 @@ const OFFLINE_ENV = Object.fromEntries(Object.entries(process.env).filter(([k]) 
 
 /** One collection of the import, for the colleges given (or every document). */
 function imported(collection: string, units?: string[]): Map<string, unknown> {
-  return importLayers(ROOT, { only: new Set([collection]), ...(units ? { units: new Set(units) } : {}) }).get(collection as never) ?? new Map();
+  return importLayers(join(ROOT, "data"), { only: new Set([collection]), ...(units ? { units: new Set(units) } : {}) }).get(collection as never) ?? new Map();
 }
 
 /* ------------------------------------------------------------------ */
@@ -183,7 +183,8 @@ test("coalition: the CLI on the file store writes coalition.members as the impor
     writeFileSync(join(dir, "members.html"), pages.members);
     writeFileSync(join(dir, "scoir.html"), pages.scoir);
     const store = fileStore(join(dir, "store"));
-    await writeImport(store, new Map([[COLLECTIONS.coalition.nameMap, imported(COLLECTIONS.coalition.nameMap)]]) as never, "seed");
+    // The colleges come from the store (base.colleges, base.aliases; the bundled copy is only an empty store's fallback).
+    await writeImport(store, new Map([[COLLECTIONS.coalition.nameMap, imported(COLLECTIONS.coalition.nameMap)], [COLLECTIONS.base.colleges, imported(COLLECTIONS.base.colleges)], [COLLECTIONS.base.aliases, new Map([["aliases", JSON.parse(readFileSync(join(ROOT, "data", "aliases.json"), "utf8"))]])]]) as never, "seed");
     const before = readFileSync(join(ROOT, "data", "coalition", "members.json"), "utf8");
     const r = spawnSync(NODE[0], [...NODE.slice(1), join(ROOT, "scripts", "sync-coalition.mts"), "--store", `file:${join(dir, "store")}`, "--from-files", join(dir, "members.html"), join(dir, "scoir.html")], { encoding: "utf8", env: OFFLINE_ENV });
     assert.equal(r.status, 0, r.stderr);
@@ -301,7 +302,7 @@ test("high schools: the folder reads back keyed as the import keys data/high-sch
   try {
     smallHighSchools(join(dir, "data", "high-schools"));
     const got = readHighSchoolFolder(join(dir, "data", "high-schools"));
-    const want = importLayers(dir, { only: new Set(Object.values(COLLECTIONS.highSchools)) });
+    const want = importLayers(join(dir, "data"), { only: new Set(Object.values(COLLECTIONS.highSchools)) });
     for (const c of Object.values(COLLECTIONS.highSchools)) {
       const g = got.get(c)!;
       const w = (want.get(c as never) ?? new Map()) as Map<string, unknown>;
@@ -318,7 +319,7 @@ test("high schools: a sync on the scratch folder writes back only what it change
   try {
     smallHighSchools(join(dir, "data", "high-schools"));
     const store: DataStore = fileStore(join(dir, "store"));
-    await writeImport(store, importLayers(dir, { only: new Set(Object.values(COLLECTIONS.highSchools)) }), "seed");
+    await writeImport(store, importLayers(join(dir, "data"), { only: new Set(Object.values(COLLECTIONS.highSchools)) }), "seed");
     const ran = await onHighSchoolFolder(store, async (hs) => {
       const meta = JSON.parse(readFileSync(join(hs, "meta.json"), "utf8"));
       writeFileSync(join(hs, "meta.json"), `${JSON.stringify({ ...meta, built: "2099-01-01" }, null, 2)}\n`);
@@ -339,7 +340,7 @@ test("high schools: a sync on the scratch folder writes back only what it change
     assert.deepEqual(set.versions.map((v) => `${v.collection}/${v.key}${v.deleted ? " (removed)" : ""}`).sort(), ["high_schools.detail/999999999999", "high_schools.schools/DE (removed)", "high_schools.shared/meta"]);
     assert.equal(((await store.readOne<{ built: string }>(COLLECTIONS.highSchools.shared, "meta"))!).built, "2099-01-01");
     const s = await highSchoolScratch(store);
-    assert.ok(existsSync(join(s.root, "data", "high-schools", "schools", "DC.json")), "the scratch root stands in for the repository root");
+    assert.ok(existsSync(join(s.dir, "schools", "DC.json")), "the scratch root stands in for the repository root");
     s.remove();
     assert.equal(existsSync(s.root), false);
   } finally {

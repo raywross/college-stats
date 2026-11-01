@@ -6,16 +6,15 @@
  *   - the campus visit page from the admissions page's links (`pickVisit`), and a virtual tour when it is the only one
  *   - the homepage's links to the college's social accounts (`socialLinks`; read by lib/social.ts)
  *   - the homepage's icon candidates (`iconCandidates`; downloaded and processed by the brand step)
- *   - the liveness of every stored link (`checkLink`: HEAD, then GET), for data/link-issues.json
- * and writing data/site-probe.json (`SiteProbeEntry`, lib/identity-files.ts) and data/link-issues.json, then re-applying
- * identity to data/schools.json (`mergeIdentity`; lib/site-probe.ts sets the links). HTTP only; the Haiku picker for
- * colleges the scorer misses runs only when a `VisitPicker` is passed (`--picker`, off by default, capped in USD).
+ *   - the liveness of every stored link (`checkLink`: HEAD, then GET), for the link issues
+ * and saving the entries (`SiteProbeEntry`, lib/identity-files.ts) and the link issues to the data store's
+ * `identity.probe` and `identity.link_issues` (./identity-store.mts); the publisher applies them to the colleges
+ * (lib/site-probe.ts sets the links). HTTP only; the Haiku picker for colleges the scorer misses runs only when a
+ * `VisitPicker` is passed (`--picker`, off by default, capped in USD).
  *
  *   npm run probe-sites              scripts/probe-sites.mts
- *   npm run sync-data -- --links     the same probe, after the sync writes data/schools.json
  */
 import { lookup } from "node:dns/promises";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { School, SocialNetwork } from "../../lib/types";
@@ -29,7 +28,6 @@ import { collegeDomain } from "./college-reported/probe.mts";
 import { PICKER_MAX_CHARS, estimateTokens } from "./college-reported/llm.mts";
 import { ROUND3_MODELS, costOf, priceOf, type ModelClient } from "./college-reported/models.mts";
 import { fetchIpedsTable } from "./ipeds.mts";
-import { mergeIdentity } from "./identity-sync.mts";
 
 /* ------------------------------------------------------------------ */
 /* HTML: every link with its landmark, and the head's <link> tags      */
@@ -932,7 +930,7 @@ export async function probeCollege(ctx: ProbeContext, target: ProbeTarget): Prom
 /* Files                                                               */
 /* ------------------------------------------------------------------ */
 
-/** One row per line, the format of data/schools.json, so diffs stay readable. */
+/** One row per line, the format of colleges.json, so diffs stay readable. */
 export function formatRows(rows: readonly unknown[]): string {
   return rows.length ? `[\n${rows.map((r) => JSON.stringify(r)).join(",\n")}\n]\n` : "[]\n";
 }
@@ -942,10 +940,6 @@ export function mergeProbeEntries(previous: readonly SiteProbeEntry[], fresh: re
   const byId = new Map(previous.map((e) => [e.unit_id, e]));
   for (const e of fresh) byId.set(e.unit_id, e);
   return [...byId.values()].filter((e) => !keep || keep.has(e.unit_id)).sort((a, b) => (a.unit_id < b.unit_id ? -1 : a.unit_id > b.unit_id ? 1 : 0));
-}
-
-function readJson<T>(path: string, fallback: T): T {
-  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as T) : fallback;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1043,9 +1037,8 @@ export async function cachedDirectory(root: string, ids: ReadonlySet<string>): P
 }
 
 /**
- * Where a run's state lives when it isn't the files under data/ (the data store: scripts/lib/identity-store.mts
- * `probeStateFromStore`): the previous entries and link issues, and where the new ones go. With a state the run
- * neither reads nor writes data/ and doesn't re-apply identity (the publisher composes).
+ * Where a run's state lives (the data store: scripts/lib/identity-store.mts `probeStateFromStore`): the previous
+ * entries and link issues, and where the new ones go. The run doesn't re-apply identity (the publisher composes).
  */
 export interface ProbeState {
   previous: readonly SiteProbeEntry[];
@@ -1054,7 +1047,7 @@ export interface ProbeState {
 }
 
 export interface RunSiteProbeOptions {
-  /** The run's state (the data store); default the files under `root`/data. Needs `schools`. */
+  /** The run's state (the data store); required, with `schools`. */
   state?: ProbeState;
   /** Only these colleges (unit ids); the file keeps everyone else's entries. */
   ids?: readonly string[];
@@ -1065,7 +1058,7 @@ export interface RunSiteProbeOptions {
   /** Colleges probed at a time (default 32). Requests to one host stay one a second whatever this is. */
   concurrency?: number;
   picker?: VisitPicker | null;
-  /** The schools to probe: sync-data passes the ones it just wrote; default `root`/data/schools.json. */
+  /** The colleges to probe (required): probe-sites passes the store's composed colleges. */
   schools?: readonly School[];
   /** IPEDS directory rows by unit id: sync-data passes its own; default the cached HD file, else none. */
   hdRows?: ReadonlyMap<string, Record<string, string>> | null;
@@ -1074,25 +1067,21 @@ export interface RunSiteProbeOptions {
   hosts?: HostLookup;
   today?: string;
   log?: (msg: string) => void;
-  /** Re-apply identity to data/schools.json afterwards (default true). */
-  merge?: boolean;
 }
 
 /**
- * Probes the colleges, writes data/site-probe.json (this run's entries over the file's) and data/link-issues.json
- * (`nextLinkIssues`), then runs `mergeIdentity`, so the visit pages and nulled links reach data/schools.json in the same
- * change. With `state` (the data store, as `npm run probe-sites` runs it), the same entries and issues go there instead
- * and nothing under data/ is read or written. Returns the run's summary.
+ * Probes the colleges and saves this run's entries over the previous ones and the next link issues (`nextLinkIssues`)
+ * through `state` (the data store's identity.probe and identity.link_issues, as `npm run probe-sites` runs it); the
+ * publisher applies them. `root` is the repository (the cached IPEDS HD file under .cache/). Returns the run's summary.
  */
 export async function runSiteProbe(root: string, opts: RunSiteProbeOptions = {}): Promise<ProbeSummary> {
   const log = opts.log ?? ((m: string) => console.log(m));
   const today = opts.today ?? new Date().toISOString().slice(0, 10);
-  const probePath = join(root, "data", "site-probe.json");
-  const issuesPath = join(root, "data", "link-issues.json");
-  if (opts.state && !opts.schools) throw new Error("runSiteProbe: a store-backed run needs the colleges (schools)");
-  const schools: readonly School[] = opts.schools ?? JSON.parse(readFileSync(join(root, "data", "schools.json"), "utf8"));
+  if (!opts.state || !opts.schools) throw new Error("runSiteProbe: a run needs the store's state and the colleges (schools)");
+  const state = opts.state;
+  const schools: readonly School[] = opts.schools;
   const datasetIds = new Set(schools.map((s) => s.unit_id));
-  const previous: readonly SiteProbeEntry[] = opts.state ? opts.state.previous : readJson<SiteProbeEntry[]>(probePath, []);
+  const previous: readonly SiteProbeEntry[] = state.previous;
 
   let chosen = [...schools];
   if (opts.ids?.length) {
@@ -1108,8 +1097,8 @@ export async function runSiteProbe(root: string, opts: RunSiteProbeOptions = {})
   let hdRows = opts.hdRows ?? null;
   if (opts.hdRows === undefined) {
     const hd = await cachedDirectory(root, datasetIds);
-    if (hd) log(`  links from ${hd.name} (cached) and data/schools.json`);
-    else log("  no cached IPEDS HD file: probing the links in data/schools.json only (npm run sync-data -- --links reads HD itself)");
+    if (hd) log(`  links from ${hd.name} (cached) and the colleges`);
+    else log("  no cached IPEDS HD file: probing the colleges' links only");
     hdRows = hd?.rows ?? null;
   }
   const targets = chosen.map((s) => probeTarget(s, hdRows?.get(s.unit_id)));
@@ -1153,20 +1142,11 @@ export async function runSiteProbe(root: string, opts: RunSiteProbeOptions = {})
   const entries = results.filter((e): e is SiteProbeEntry => !!e);
 
   const probe = mergeProbeEntries(previous, entries, datasetIds);
-  const priorIssues = opts.state ? [...opts.state.issues] : readJson<LinkIssue[]>(issuesPath, []);
+  const priorIssues = [...state.issues];
   const issues = nextLinkIssues(priorIssues.filter((i) => datasetIds.has(i.unit_id)), entries, today);
-  if (opts.state) await opts.state.save(probe, issues);
-  else {
-    writeFileSync(probePath, formatRows(probe));
-    writeFileSync(issuesPath, formatRows(issues));
-  }
+  await state.save(probe, issues);
   const blockedHosts = new Set((http.blockedSeen?.() ?? []).map((b) => b.host)).size;
   const summary = summarize(entries, { seconds: Math.round((Date.now() - started) / 1000), blockedHosts, issues, picker: opts.picker ?? null });
-  const [probeAt, issuesAt] = opts.state ? ["identity.probe", "identity.link_issues"] : ["data/site-probe.json", "data/link-issues.json"];
-  log(`  wrote ${probeAt} (${entries.length} probed) and ${issuesAt} (${issues.length} issues, ${summary.issues.dead} links null after ${FAILURES_TO_NULL} failed runs)`);
-  if (!opts.state && opts.merge !== false) {
-    const merged = mergeIdentity(root);
-    log(`  identity re-applied: ${merged.withVisit} colleges with a visit page`);
-  }
+  log(`  wrote identity.probe (${entries.length} probed) and identity.link_issues (${issues.length} issues, ${summary.issues.dead} links null after ${FAILURES_TO_NULL} failed runs)`);
   return summary;
 }

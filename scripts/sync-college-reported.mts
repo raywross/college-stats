@@ -49,7 +49,7 @@ import type { CallKey } from "../lib/cds-sections.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { restoreFederal } from "../lib/newest.ts";
 import { UnpricedModelError, assertPriced, summaryCost, type ModelClient } from "./lib/college-reported/models.mts";
-import { readJsonFile } from "./lib/college-reported/pipeline.mts";
+import { bundledDir, readBundledReference } from "./lib/data-platform/bundled.mts";
 import { createRound3, PHASES, type Phase } from "./lib/college-reported/phases.mts";
 import { createArchive } from "./lib/college-reported/archive.mts";
 import { parseTiers, pickPilot, sampleByTier, tierOf, type PilotFile } from "./lib/college-reported/pilot.mts";
@@ -58,7 +58,6 @@ import { COLLECTIONS } from "./lib/data-platform/layers.mts";
 import { flagValue, storeFromFlag, type DataStore } from "./lib/data-platform/store.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const PILOT = join(ROOT, "data", "reference", "college-reported-pilot.json");
 const argv = process.argv.slice(2);
 const flag = (name: string) => argv.includes(`--${name}`);
 const values = (name: string) => argv.flatMap((a, i) => (a === `--${name}` && argv[i + 1] ? [argv[i + 1]] : []));
@@ -96,13 +95,13 @@ function output(key: string, value: string | number) {
   if (file) appendFileSync(file, `${key}=${value}\n`);
 }
 
-/** The pilot set: the store's reference document, else the committed file, else picked from the colleges. */
+/** The pilot set: the store's reference document, else the bundled copy's, else picked from the colleges. */
 async function readPilot(store: DataStore, schools: School[]): Promise<PilotFile> {
   const fromStore = await store.readOne<PilotFile>(COLLECTIONS.reference.files, REFERENCE_KEYS.pilot);
   if (fromStore) return fromStore;
-  if (existsSync(PILOT)) return readJsonFile<PilotFile>(PILOT);
+  if (existsSync(join(bundledDir(), "reference", `${REFERENCE_KEYS.pilot}.json`))) return readBundledReference<PilotFile>(REFERENCE_KEYS.pilot);
   const pilot = pickPilot(schools);
-  console.log(`No pilot list on the store or in ${PILOT}; picked ${pilot.colleges.length} colleges deterministically across admit-rate tiers and sectors.`);
+  console.log(`No pilot list on the store or in the bundled copy; picked ${pilot.colleges.length} colleges deterministically across admit-rate tiers and sectors.`);
   return pilot;
 }
 

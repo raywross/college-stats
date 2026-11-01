@@ -1,8 +1,13 @@
 /**
- * Builds data/reference/cds-template-2025-26.json, the table of every 2025–26 Common Data Set template item
- * (specs/college-reported-round-3.md, Decision 3 and "Extraction scope").
+ * Builds the reference document `cds-template-2025-26`, the table of every 2025–26 Common Data Set template item
+ * (specs/college-reported-round-3.md, Decision 3 and "Extraction scope"), and writes it to the data store in one change
+ * set (source reference-build; scripts/lib/data-platform/reference-build.mts). The publisher renders it into the next
+ * snapshot (`reference/cds-template-2025-26.json`, which lib/cds-template.ts compiles in).
  *
- *   npm run build-cds-template -- --workbook <template.xlsx> [--workbook <another.xlsx> …]
+ *   npm run build-cds-template -- --store supabase --workbook <template.xlsx> [--workbook <another.xlsx> …]
+ *
+ *   … --store supabase|file:<dir>   where the document goes (default supabase when DATA_SUPABASE_URL is set)
+ *   … --change-set <id>              into a set a workflow opened;  --dry-run  build and compare, write nothing
  *
  * Reads each workbook's ANSWER SHEET (code, US News PDF tag, question, the template's descriptors, value type) and the
  * code tables embedded in its CDS-A … CDS-J sheets, and takes the union of codes across the workbooks given (a college
@@ -14,10 +19,8 @@
  *
  * Any 2025–26 template workbook serves (the inventory used Vanderbilt's, Cornell's, William & Mary's and Illinois's);
  * the codes and questions are the template's, not the college's. A new template edition (2026–27) gets its own output
- * file and a map from old codes to new; rename OUT and EDITION and re-check SCOPE against the new spec.
+ * document and a map from old codes to new; change EDITION and re-check SCOPE against the new spec.
  */
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { readWorkbook, type Workbook } from "./lib/cds-xlsx.mts";
 import {
@@ -33,10 +36,10 @@ import {
   type ValueType,
   type YearRule,
 } from "../lib/cds-sections.ts";
+import { writeReferenceDocument } from "./lib/data-platform/reference-build.mts";
 
-const ROOT = join(import.meta.dirname, "..");
 const EDITION = "2025-26";
-const OUT = join(ROOT, "data", "reference", `cds-template-${EDITION}.json`);
+const NAME = `cds-template-${EDITION}`;
 
 /** The spec's totals (Extraction scope): the build reports any difference. */
 const SPEC_TOTALS = { total: 1105, model: 766, C: 263, rest: 503, store: 339 };
@@ -303,7 +306,7 @@ function serialize(file: TemplateFile): string {
   return `${top},"items":[\n${items.map((it) => JSON.stringify(it)).join(",\n")}\n]}\n`;
 }
 
-const { values } = parseArgs({ options: { workbook: { type: "string", multiple: true } } });
+const { values } = parseArgs({ options: { workbook: { type: "string", multiple: true }, store: { type: "string" }, "change-set": { type: "string" }, "run-ref": { type: "string" }, "dry-run": { type: "boolean" } } });
 const paths = values.workbook ?? [];
 if (!paths.length) {
   console.error("usage: npm run build-cds-template -- --workbook <2025-26 template workbook.xlsx> [--workbook …]");
@@ -311,9 +314,9 @@ if (!paths.length) {
 }
 const file = build(paths);
 loadTemplate(file); // the same validation every reader applies
-writeFileSync(OUT, serialize(file));
-console.log(`Wrote ${OUT}`);
+console.log(`Built ${NAME}`);
 console.log(`  codes ${file.counts.total} (spec ${SPEC_TOTALS.total}); model ${file.counts.model} (spec ${SPEC_TOTALS.model}): C ${file.counts.C} (spec ${SPEC_TOTALS.C}), rest ${file.counts.rest} (spec ${SPEC_TOTALS.rest}); store-only ${file.counts.store} (spec ${SPEC_TOTALS.store})`);
 for (const k of Object.keys(SPEC_TOTALS) as (keyof typeof SPEC_TOTALS)[]) {
   if (file.counts[k] !== SPEC_TOTALS[k]) console.warn(`  ${k}: ${file.counts[k]} differs from the spec's ${SPEC_TOTALS[k]} (see the spec's As built)`);
 }
+await writeReferenceDocument(NAME, JSON.parse(serialize(file)));

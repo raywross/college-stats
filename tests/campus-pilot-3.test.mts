@@ -10,7 +10,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
-import { DEFAULT_COLLEGES_FILE, PILOT_IDS, readCollegeList, type PagesFile } from "../scripts/lib/campus-pilot/files.mts";
+import { DEFAULT_COLLEGES_LIST, PILOT_IDS, collegeListIds, type CollegeListFile, type PagesFile } from "../scripts/lib/campus-pilot/files.mts";
+import { miniReference } from "./helpers/snapshot.mts";
 import { PAID_TYPES, fslReports, missingForPaid, probeCollege, reportConfirms } from "../scripts/lib/campus-pilot/probe.mts";
 import { fslHubLinks, fslLinks, fslReportLinks, type FetchResult, type Page, type PageFetcher } from "../scripts/lib/campus-pilot/pages.mts";
 import { Budget, DISCOVERY_MAX_TOKENS, SEARCHES_PER_COLLEGE, discoverCollege, searchCap, type CollegeRef } from "../scripts/lib/campus-pilot/llm.mts";
@@ -23,16 +24,16 @@ const ROOT = join(import.meta.dirname, "..");
 const TODAY = "2026-10-04";
 
 test("the round-3 college list is the default: 25 colleges in the dataset, none from rounds 1 or 2", () => {
-  assert.equal(DEFAULT_COLLEGES_FILE, "data/reference/campus-pilot-3-colleges.json");
-  const ids = readCollegeList(join(ROOT, DEFAULT_COLLEGES_FILE));
+  assert.equal(DEFAULT_COLLEGES_LIST, "campus-pilot-3-colleges");
+  const ids = collegeListIds(miniReference<CollegeListFile>(DEFAULT_COLLEGES_LIST), DEFAULT_COLLEGES_LIST);
   assert.equal(ids.length, 25);
   const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as { unit_id: string }[];
   const known = new Set(schools.map((s) => s.unit_id));
   for (const id of ids) assert.ok(known.has(id), id);
-  const round2 = readCollegeList(join(ROOT, "data/reference/campus-pilot-2-colleges.json"));
+  const round2 = collegeListIds(miniReference<CollegeListFile>("campus-pilot-2-colleges"), "campus-pilot-2-colleges");
   assert.deepEqual(ids.filter((id) => PILOT_IDS.includes(id) || round2.includes(id)), []);
   const workflow = readFileSync(join(ROOT, ".github/workflows/campus-pilot.yml"), "utf8");
-  assert.match(workflow, /default: data\/reference\/campus-pilot-3-colleges\.json/);
+  assert.match(workflow, /default: campus-pilot-3-colleges$/m);
 });
 
 test("HELD_BACK only grows: every type held after round 2 is still held (only a scored run can lift one)", () => {

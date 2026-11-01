@@ -3,8 +3,9 @@
  * discovery (free probes, then one paid call), extraction, quote and support checks, and the second-model check, then
  * the facts to publish. Round 2 (specs/college-reported-data.md "Round 2 plan").
  *
- *   npm run campus-pilot                       # the colleges in data/reference/campus-pilot-3-colleges.json
- *   npm run campus-pilot -- --colleges-file data/reference/x.json   # another list ({ colleges: [{ unit_id }] })
+ *   npm run campus-pilot                       # the colleges in the reference document campus-pilot-3-colleges
+ *   npm run campus-pilot -- --colleges campus-pilot-2-colleges   # another reference document ({ colleges: [{ unit_id }] })
+ *   npm run campus-pilot -- --colleges-file ./x.json             # a list on disk
  *   npm run campus-pilot -- --college 228778   # one college (repeatable; overrides the list)
  *   npm run campus-pilot -- --rediscover       # ignore saved links and run discovery again
  *   npm run campus-pilot -- --cap 15           # spend cap in dollars across every pilot run (default 15)
@@ -30,7 +31,7 @@ import { directoryHttp } from "./lib/directories/context.mts";
 import { Budget, PILOT_MODELS, type CollegeRef, type Ctx } from "./lib/campus-pilot/llm.mts";
 import { PageFetcher, httpLogHook } from "./lib/campus-pilot/pages.mts";
 import { runCollege, type CampusRecipe, type CollegeResult } from "./lib/campus-pilot/run.mts";
-import { DEFAULT_COLLEGES_FILE } from "./lib/campus-pilot/files.mts";
+import { DEFAULT_COLLEGES_LIST } from "./lib/campus-pilot/files.mts";
 import { readCollegeListFrom, readSourcesDoc, reportKey, saveCampusRun } from "./lib/campus-pilot/store.mts";
 import { BatchCaller, directCaller, type PilotBatchApi } from "./lib/campus-pilot/batch.mts";
 import { storeFromFlag } from "./lib/data-platform/store.mts";
@@ -55,7 +56,7 @@ async function main() {
   const run = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const store = storeFromFlag(values("store")[0]);
   const schools = await storeColleges(store);
-  const listFile = values("colleges-file")[0] ?? DEFAULT_COLLEGES_FILE;
+  const listFile = values("colleges-file")[0] ?? values("colleges")[0] ?? DEFAULT_COLLEGES_LIST;
   const ids = values("college").length ? values("college") : await readCollegeListFrom(store, listFile, ROOT);
   const colleges = ids.map((id) => {
     const s = schools.find((x) => x.unit_id === id);

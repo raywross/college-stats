@@ -10,7 +10,7 @@ import nodeModule from "node:module";
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 // lib/admin/health.ts starts with `import "server-only"`, which only Next.js resolves; stand in an empty module.
 // (module.registerHooks is in Node 24; the installed @types/node predates it.)
@@ -30,7 +30,6 @@ const rules = await import("../lib/admin/health-rules.ts");
 const { collegeHealth, healthCsv, familyListUnits, createHealthOverview, latestChanges } = health;
 const filesModule = await import("../lib/admin/health-files.ts");
 const { healthInputsFor, indexHealthFiles, summarizeRecord, missingCoreFields, newestLineageDate, compactHealth, inputsFromCompact, formatCompact, parseCompact, reduceReportedDocs } = filesModule;
-const collegeHealthScripts = await import("../scripts/lib/college-health.mts");
 const { HEALTH_RULES, CURRENT_CDS_EDITION, CORE_FEDERAL_FIELDS } = rules;
 const { editionCurrentOn } = await import("../lib/cds-reads.ts");
 const { isFieldPath } = await import("../lib/fields.ts");
@@ -751,88 +750,79 @@ test("the overview needs the health document: without one it fails loudly, not a
   await assert.rejects(overview(), /No health document yet/);
 });
 
-/** A tiny data/ folder with every source `npm run college-health` reads, in a temp root. */
-function fixtureRoot(): string {
-  const root = mkdtempSync(join(tmpdir(), "college-health-"));
-  const write = (rel: string, data: unknown) => {
-    mkdirSync(dirname(join(root, rel)), { recursive: true });
-    writeFileSync(join(root, rel), JSON.stringify(data));
-  };
-  write("data/college-docs.json", { updated: "2026-10-11", documents: [manifest({ edition: "2025-26", sections: { C: [1, 2] } })] });
-  write("data/cds-records/1.json", { unit_id: "1", documents: [{ sha256: "s1", edition: "2025-26", reads: { C: { extracted: "2026-10-11" } } }] });
-  write("data/college-failures.json", { generated: "2026-10-11", rows: [] });
-  write("data/review-queue.json", { updated: "2026-10-11", items: [{ unit_id: "1" }] });
-  write("data/link-issues.json", []);
-  write("data/schools.json", [school("1", { "links.visit": { retrieved: "2026-10-04" } })]);
-  write("data/meta.json", { retrieved: "2026-10-04" });
-  return root;
+/**
+ * A tiny file store with every source `npm run college-health` reads (reported.docs, cds_records, failures,
+ * review_queue, identity.link_issues, base.meta), and a bundled copy holding its one college (QUAD_SNAPSHOT_DIR), in a
+ * temp folder.
+ */
+async function fixtureStore(): Promise<{ dir: string; store: string; snapshot: string }> {
+  const { fileStore } = await import("../scripts/lib/data-platform/store.mts");
+  const dir = mkdtempSync(join(tmpdir(), "college-health-"));
+  const store = join(dir, "layers");
+  const snapshot = join(dir, "snapshot");
+  mkdirSync(snapshot, { recursive: true });
+  writeFileSync(join(snapshot, "colleges.json"), JSON.stringify([school("1", { "links.visit": { retrieved: "2026-10-04" } })]));
+  writeFileSync(join(snapshot, "meta.json"), JSON.stringify({ retrieved: "2026-10-04" }));
+  writeFileSync(join(snapshot, "manifest.json"), JSON.stringify({ id: 1 }));
+  const h = await fileStore(store).open("import", "files", "fixture");
+  await h.write("import.headers", [{ key: "college-docs.json", body: { updated: "2026-10-11" } }, { key: "review-queue.json", body: { updated: "2026-10-11" } }]);
+  await h.write("reported.docs", [{ key: "s1", body: manifest({ edition: "2025-26", sections: { C: [1, 2] } }) }]);
+  await h.write("reported.cds_records", [{ key: "1", body: { unit_id: "1", documents: [{ sha256: "s1", edition: "2025-26", reads: { C: { extracted: "2026-10-11" } } }] } }]);
+  await h.write("reported.review_queue", [{ key: "1|a", body: { unit_id: "1" } }]);
+  await h.write("base.meta", [{ key: "meta", body: { retrieved: "2026-10-04" } }]);
+  await h.close("applied");
+  return { dir, store, snapshot };
 }
 
-function runScript(script: string, root: string, ...args: string[]) {
-  return spawnSync("node", ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", script), ...args], { env: { ...process.env, COLLEGE_HEALTH_ROOT: root }, encoding: "utf8" });
+function runScript(script: string, snapshot: string, ...args: string[]) {
+  return spawnSync("node", ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", script), ...args], { env: { ...process.env, QUAD_SNAPSHOT_DIR: snapshot }, encoding: "utf8" });
 }
 
-test("npm run college-health writes the file; check:college-health passes, then fails when a source changes", () => {
-  const root = fixtureRoot();
+test("npm run college-health writes the document; check:college-health passes, then fails when a source changes", async () => {
+  const { dir, store, snapshot } = await fixtureStore();
+  const { fileStore } = await import("../scripts/lib/data-platform/store.mts");
   try {
-    const missing = runScript("check-college-health.mts", root);
+    const missing = runScript("check-college-health.mts", snapshot, "--store", `file:${store}`);
     assert.equal(missing.status, 1);
-    assert.match(missing.stderr, /does not exist.*npm run college-health/);
+    assert.match(missing.stderr, /no health document.*npm run college-health/);
 
-    const wrote = runScript("college-health.mts", root, "--out", "data");
+    const wrote = runScript("college-health.mts", snapshot, "--store", `file:${store}`);
     assert.equal(wrote.status, 0, wrote.stderr);
-    const file = parseCompact(readFileSync(join(root, "data", "college-health.json"), "utf8"));
-    assert.equal(file.generated, "2026-10-11", "the newest date among the sources, not today");
-    assert.equal(file.colleges["1"].queue, 1);
-    assert.equal(runScript("check-college-health.mts", root).status, 0);
+    const doc = parseCompact(JSON.stringify(await fileStore(store).readOne("health.colleges", "health")));
+    assert.equal(doc.generated, "2026-10-11", "the newest date among the sources, not today");
+    assert.equal(doc.colleges["1"].queue, 1);
+    const ok = runScript("check-college-health.mts", snapshot, "--store", `file:${store}`);
+    assert.equal(ok.status, 0, ok.stderr);
+    assert.match(ok.stdout, /a fresh build of its sources/);
 
-    // A new queue item, a new failure, a dead link, and a later retrieval each make the committed file stale.
-    const queue = join(root, "data", "review-queue.json");
-    const original = readFileSync(queue, "utf8");
-    writeFileSync(queue, JSON.stringify({ updated: "2026-10-11", items: [{ unit_id: "1" }, { unit_id: "1" }] }));
-    const stale = runScript("check-college-health.mts", root);
+    // A new queue item and a dead link each make the stored document stale.
+    const h = await fileStore(store).open("pipeline", "college-reported", "run-2");
+    await h.write("reported.review_queue", [{ key: "1|b", body: { unit_id: "1" } }]);
+    await h.close("applied");
+    const stale = runScript("check-college-health.mts", snapshot, "--store", `file:${store}`);
     assert.equal(stale.status, 1);
     assert.match(stale.stderr, /stale/);
     assert.match(stale.stderr, /1 college\(s\) differ, e\.g\. 1/);
     assert.match(stale.stderr, /npm run college-health/);
-    writeFileSync(queue, original);
-    assert.equal(runScript("check-college-health.mts", root).status, 0);
-    writeFileSync(join(root, "data", "link-issues.json"), JSON.stringify([{ unit_id: "1", field: "apply", url: "https://c.example/a", last_status: 404 }]));
-    assert.equal(runScript("check-college-health.mts", root).status, 1);
-    rmSync(join(root, "data", "link-issues.json"));
-    const gone = runScript("check-college-health.mts", root);
-    assert.equal(gone.status, 1);
-    assert.match(gone.stderr, /missing data\/link-issues\.json/);
+    const fixed = runScript("college-health.mts", snapshot, "--store", `file:${store}`);
+    assert.equal(fixed.status, 0, fixed.stderr);
+    assert.equal(runScript("check-college-health.mts", snapshot, "--store", `file:${store}`).status, 0);
+    const l = await fileStore(store).open("pipeline", "identity-refresh", "run-3");
+    await l.write("identity.link_issues", [{ key: "1", body: [{ unit_id: "1", field: "apply", url: "https://c.example/a", last_status: 404 }] }]);
+    await l.close("applied");
+    assert.equal(runScript("check-college-health.mts", snapshot, "--store", `file:${store}`).status, 1);
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    rmSync(dir, { recursive: true, force: true });
   }
 });
 
-test("the real data: the committed compact file is current, small, and judges every college as the five sources do", () => {
-  const built = collegeHealthScripts.buildCollegeHealth(ROOT);
-  assert.deepEqual(built.missing, []);
-  const committed = readFileSync(join(ROOT, "data", "college-health.json"), "utf8");
-  assert.equal(committed, built.text, "data/college-health.json is stale: run npm run college-health");
-  assert.ok(Buffer.byteLength(committed) < 1_500_000, "the compact file is well under the 16 MB-per-function guidance");
-
-  const onDisk = collegeHealthScripts.readHealthFilesFromDisk(ROOT);
-  assert.ok(onDisk.manifest && onDisk.records && onDisk.failures && onDisk.queue && onDisk.linkIssues, "all five files are present");
-  const queue = JSON.parse(readFileSync(join(ROOT, "data", "review-queue.json"), "utf8")) as { items: unknown[] };
-  assert.equal([...onDisk.queue!.values()].reduce((a, b) => a + b, 0), queue.items.length);
-  const shas = new Set(onDisk.manifest!.map((m) => m.sha256));
-  for (const docs of onDisk.records!.values()) for (const d of docs) assert.ok(shas.has(d.sha256), "a record document is in the manifest");
-
-  const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as HealthSchool[];
-  const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as { retrieved: string };
-  const compact = parseCompact(committed);
-  assert.deepEqual(Object.keys(compact.colleges).sort(), schools.map((s) => s.unit_id).sort(), "every college, and only those");
-  const index = indexHealthFiles(onDisk);
-  const ctx = { today: "2026-10-12", metaRetrieved: meta.retrieved, changes: null };
-  for (const s of schools) {
-    const direct = collegeHealth(s.unit_id, healthInputsFor(s, index, ctx));
-    assert.ok(direct.rows.every((r) => r.status !== null), `${s.unit_id} has an unjudged group`);
-    assert.deepEqual(collegeHealth(s.unit_id, inputsFromCompact(compact, s.unit_id, ctx)!), direct, `${s.unit_id}: the compact file judges differently`);
-  }
+test("check:college-health over the mini fixture: the layers' document covers every college of the fixture's snapshot", () => {
+  const run = spawnSync("node", ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", "check-college-health.mts")], {
+    env: { ...process.env, QUAD_SNAPSHOT_DIR: join(ROOT, "tests", "fixtures", "snapshot-mini", "snapshot") },
+    encoding: "utf8",
+  });
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /the mini fixture's layers\): ok \(38 colleges/);
 });
 
 test("the compact health is read from the data store in one query; with none there is no health document yet", async () => {

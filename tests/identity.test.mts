@@ -6,13 +6,9 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { addIdentityMeta, applyIdentity, applyIdentityOverride, emptyIdentityInputs } from "../lib/identity.ts";
 import { citesYear, lineageFor, validateLineage, validateRegistry } from "../lib/lineage.ts";
-import { formatSchools, loadIdentityInputs, mergeIdentity } from "../scripts/lib/identity-sync.mts";
 import { loadIdentity } from "../scripts/lib/data-platform/layers.mts";
 import { miniLayers, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
@@ -128,16 +124,4 @@ test("identity sources are dated by the newest retrieval in their files and need
   assert.equal(m.sources.wikipedia?.edition, "Not retrieved yet");
   assert.deepEqual(validateRegistry(m), []);
   assert.deepEqual(validateLineage([], m), []);
-});
-
-test("merge-identity writes the same bytes when it has nothing new to apply, and is idempotent", () => {
-  const dir = mkdtempSync(join(tmpdir(), "identity-"));
-  mkdirSync(join(dir, "data"));
-  writeFileSync(join(dir, "data", "schools.json"), formatSchools(sample));
-  writeFileSync(join(dir, "data", "meta.json"), `${JSON.stringify(meta, null, 2)}\n`);
-  mergeIdentity(dir);
-  const first = readFileSync(join(dir, "data", "schools.json"), "utf8");
-  assert.equal(first, formatSchools(sample.map((s) => applyIdentity(structuredClone(s), loadIdentityInputs(dir)))));
-  mergeIdentity(dir);
-  assert.equal(readFileSync(join(dir, "data", "schools.json"), "utf8"), first);
 });

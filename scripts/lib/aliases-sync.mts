@@ -1,11 +1,9 @@
 /**
- * Writes data/aliases.json (specs/school-identity/aliases.md; lib/aliases.ts): the IPEDS directory's IALIAS column
- * when a fresh HD file is at hand (sync-data), else the IPEDS rows already in the file (merge-identity), plus
- * Wikidata's other names, the homepage domain, data/aliases-curated.json, and Common App members' other names
- * (data/common-app/members.json; specs/data-expansion/common-app.md).
+ * The alias table (specs/school-identity/aliases.md; lib/aliases.ts): the IPEDS directory's IALIAS column when a fresh
+ * HD file is at hand (sync-data), else the IPEDS rows the table already had (the publisher's compose), plus
+ * Wikidata's other names, the homepage domain, the reference document `aliases-curated`, and Common App members'
+ * other names (`common_app.members`; specs/data-expansion/common-app.md). Pure.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import type { School } from "../../lib/types";
 import type { WikidataEntry } from "../../lib/identity-files";
 import type { MembersFile } from "../../lib/common-app/types";
@@ -22,24 +20,20 @@ import {
 
 export interface AliasTableInputs {
   schools: School[];
-  /** Fresh HD rows by unit id (sync-data); null keeps the IPEDS rows already in data/aliases.json (merge-identity). */
+  /** Fresh HD rows by unit id (sync-data); null keeps the IPEDS rows the table already had (`existing`). */
   hdRows: Map<string, Record<string, string>> | null;
   wikidata: Map<string, WikidataEntry>;
-  /** Common App members (merge-common-app); undefined reads data/common-app/members.json when it exists. */
+  /** Common App members (`common_app.members`), or null. */
   commonApp?: MembersFile | null;
 }
 
-function readJson<T>(path: string, fallback: T): T {
-  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as T) : fallback;
-}
-
-/** One alias object per line inside a JSON array, sorted by (unit_id, key) — the same style as data/schools.json. */
+/** One alias object per line inside a JSON array, sorted by (unit_id, key) — the same style as colleges.json. */
 export function formatAliasRows(rows: readonly AliasRow[]): string {
   return `[\n${rows.map((r) => JSON.stringify(r)).join(",\n")}\n]\n`;
 }
 
 /**
- * Common App members' other names (data/common-app/members.json `alternate_names`, already split on commas; specs/
+ * Common App members' other names (`common_app.members` `alternate_names`, already split on commas; specs/
  * data-expansion/common-app.md "Store"), joined by IPEDS id, weight 2 like Wikidata's.
  */
 export function commonAppAliasRows(schools: readonly School[], members: MembersFile | null): AliasRow[] {
@@ -58,31 +52,9 @@ export function commonAppAliasRows(schools: readonly School[], members: MembersF
 }
 
 /**
- * Rebuilds data/aliases.json from every source and writes it. Throws, writing nothing, if the result would fail
- * its own invariant (a duplicate (unit_id, key), or a row for a college not in `inputs.schools`). Returns the row
- * counts (all rows, and Common App's after the dedupe).
- */
-export function writeAliasTable(root: string, inputs: AliasTableInputs): { rows: number; commonApp: number } {
-  const final = buildAliasTable(root, inputs);
-  writeFileSync(join(root, "data", "aliases.json"), formatAliasRows(final));
-  return { rows: final.length, commonApp: final.filter((r) => r.source === "common-app").length };
-}
-
-/** The table `writeAliasTable` writes, checked; throws on a broken invariant. Reads data/ but writes nothing. */
-export function buildAliasTable(root: string, inputs: AliasTableInputs): AliasRow[] {
-  const dataDir = join(root, "data");
-  return aliasRowsFrom({
-    ...inputs,
-    existing: inputs.hdRows ? [] : readJson<AliasRow[]>(join(dataDir, "aliases.json"), []),
-    curated: readJson<CuratedAliasEntry[]>(join(dataDir, "aliases-curated.json"), []),
-    commonApp: inputs.commonApp !== undefined ? inputs.commonApp : readJson<MembersFile | null>(join(dataDir, "common-app", "members.json"), null),
-  });
-}
-
-/**
- * The alias table from its inputs, pure (what `buildAliasTable` builds from data/, and the publisher,
- * scripts/lib/data-platform/compose.mts, from the layers): `existing` stands in for the IPEDS rows when `hdRows` is
- * null (the rows of the table as it was), `curated` is data/aliases-curated.json, `commonApp` the members file.
+ * The alias table from its inputs, pure (what sync-data builds and the publisher, scripts/lib/data-platform/compose.mts,
+ * builds from the layers): `existing` stands in for the IPEDS rows when `hdRows` is null (the rows of the table as it
+ * was), `curated` is the reference document `aliases-curated`, `commonApp` the members document.
  * Throws on a broken invariant.
  */
 export function aliasRowsFrom(
@@ -92,7 +64,7 @@ export function aliasRowsFrom(
   const schoolIds = new Set(nameById.keys());
   const rows: AliasRow[] = [];
 
-  // IPEDS HD's IALIAS column. Without a fresh HD file (merge-identity), keep the ipeds-sourced rows already on
+  // IPEDS HD's IALIAS column. Without a fresh HD file (the publisher's compose), keep the ipeds-sourced rows already on
   // disk, dropping any whose college is no longer in the dataset.
   if (inputs.hdRows) {
     for (const school of inputs.schools) {
@@ -124,11 +96,11 @@ export function aliasRowsFrom(
     if (label && !shouldDropAlias(label, school.name)) rows.push(buildAliasRow(school.unit_id, label, "domain"));
   }
 
-  // Curated, hand-picked short names (data/aliases-curated.json), for the owner to review.
+  // Curated, hand-picked short names (the reference document aliases-curated), for the owner to review.
   for (const c of inputs.curated) {
     const name = nameById.get(c.unit_id);
     if (!name) {
-      console.warn(`  aliases-curated.json: unit_id ${c.unit_id} ("${c.alias}") is not in data/schools.json; skipped`);
+      console.warn(`  aliases-curated.json: unit_id ${c.unit_id} ("${c.alias}") is not one of the colleges; skipped`);
       continue;
     }
     if (shouldDropAlias(c.alias, name, { curated: true })) continue;

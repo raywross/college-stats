@@ -7,15 +7,14 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { FieldPath } from "../lib/fields";
 import type { GridEdition, GridRow, Member, MembersFile } from "../lib/common-app/types";
 import { GRID_POLICY, cdsPolicyAsOf, gridCycleFall, gridPolicyVerdict } from "../lib/common-app/test-policy.ts";
 import { lineageFor, shortSource, sourcesForFields, validateLineage, validateRegistry, validateSchool } from "../lib/lineage.ts";
-import { COMMON_APP_HOME, addCommonAppMeta, applyBlock, applyCommonApp, gridVintage, membersVintage, mergeCommonApp, ownSiteLink } from "../scripts/lib/common-app/merge.mts";
+import { COMMON_APP_HOME, addCommonAppMeta, applyBlock, applyCommonApp, gridVintage, membersVintage, ownSiteLink } from "../scripts/lib/common-app/merge.mts";
 import { commonAppAliasRows } from "../scripts/lib/aliases-sync.mts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -367,59 +366,6 @@ test("aliases: alternate names become common-app rows at weight 2; the official 
     ],
   );
   assert.deepEqual(commonAppAliasRows(SCHOOLS, null), []);
-});
-
-/* ---- mergeCommonApp on a scratch directory ---- */
-
-function scratch(schools: School[]): string {
-  const root = mkdtempSync(join(tmpdir(), "common-app-"));
-  mkdirSync(join(root, "data", "common-app", "grid"), { recursive: true });
-  writeFileSync(join(root, "data", "schools.json"), `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
-  writeFileSync(join(root, "data", "meta.json"), `${JSON.stringify(BASE_META, null, 2)}\n`);
-  writeFileSync(join(root, "data", "common-app", "grid", "2025-26_2025-09-20.json"), JSON.stringify(edition({ cycle: "2025-26", updated: "2025-09-20", rows: [] })));
-  writeFileSync(join(root, "data", "common-app", "grid", "2026-27_2026-09-25.json"), JSON.stringify(edition()));
-  writeFileSync(join(root, "data", "common-app", "members.json"), JSON.stringify(membersFile()));
-  return root;
-}
-
-test("mergeCommonApp: reads the newest edition, writes schools, meta, and aliases; dry run writes nothing", () => {
-  const root = scratch(SCHOOLS);
-  try {
-    const before = readFileSync(join(root, "data", "schools.json"), "utf8");
-    const dry = mergeCommonApp(root, { dryRun: true, today: TODAY });
-    assert.equal(dry.withGridRow, 2, "the 2026-27 edition, not the older one");
-    assert.equal(readFileSync(join(root, "data", "schools.json"), "utf8"), before);
-    assert.equal(existsSync(join(root, "data", "aliases.json")), false);
-
-    const r = mergeCommonApp(root, { today: TODAY });
-    assert.equal(r.edition, "2026-27 cycle, updated September 25, 2026");
-    assert.equal(r.aliasRows, 2);
-    const written: School[] = JSON.parse(readFileSync(join(root, "data", "schools.json"), "utf8"));
-    const m: DatasetMeta = JSON.parse(readFileSync(join(root, "data", "meta.json"), "utf8"));
-    assert.equal(get(written, ACU).apply!.common_app.cycle, "2026-27");
-    assert.equal(m.vintages["common-app-grid"], "2026-27 cycle, updated September 25, 2026");
-    assert.deepEqual(validateLineage(written, m), []);
-    const aliases = JSON.parse(readFileSync(join(root, "data", "aliases.json"), "utf8")) as { source: string }[];
-    assert.equal(aliases.filter((a) => a.source === "common-app").length, 2);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
-
-test("mergeCommonApp writes nothing when the lineage check fails", () => {
-  const bad = structuredClone(SCHOOLS);
-  (bad[1] as unknown as Record<string, unknown>).not_a_field = 1;
-  const root = scratch(bad);
-  try {
-    const before = readFileSync(join(root, "data", "schools.json"), "utf8");
-    const metaBefore = readFileSync(join(root, "data", "meta.json"), "utf8");
-    assert.throws(() => mergeCommonApp(root, { today: TODAY }), /lineage check failed/);
-    assert.equal(readFileSync(join(root, "data", "schools.json"), "utf8"), before);
-    assert.equal(readFileSync(join(root, "data", "meta.json"), "utf8"), metaBefore);
-    assert.equal(existsSync(join(root, "data", "aliases.json")), false);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
 });
 
 test("a grid stamp after today is refused", () => {

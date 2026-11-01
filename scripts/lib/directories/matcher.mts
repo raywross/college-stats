@@ -5,7 +5,7 @@
  *
  * Rules, strongest first. A match below MATCH_THRESHOLD is never taken: the entry goes to
  * data/directories/unmatched/<org>.json for review, with the closest candidates.
- *   hand-checked (data/directories/matches.json)  1.00
+ *   hand-checked (directories.matches)            1.00
  *   exact name after normalization                 1.00 (0.95 without a state)
  *   the college's own web domain in the entry's url 0.95
  *   IPEDS alias (HD IALIAS) or known abbreviation  0.95 (0.90 without a state)
@@ -387,13 +387,13 @@ export function matchEntry(index: MatchIndex, input: MatchInput): MatchResult {
     if (!reviewed.length) return { status: "unmatched", reason: "reviewed: not a college on the site", candidates: [] };
     const matches = reviewed.map((id) => {
       const c = index.byId.get(id);
-      if (!c) throw new Error(`data/directories/matches.json: ${reviewKey(input.campus, input.state)} names unknown unit id ${id}`);
+      if (!c) throw new Error(`directories.matches: ${reviewKey(input.campus, input.state)} names unknown unit id ${id}`);
       return one(c, 1, "reviewed");
     });
     return { status: "matched", matches, multi: matches.length > 1 };
   }
   const { parts, area } = campusParts(input);
-  if (area && parts.length === 1) return unmatched("an area chapter that names no college (add it to data/directories/matches.json after review)");
+  if (area && parts.length === 1) return unmatched("an area chapter that names no college (add it to directories.matches after review)");
   const consortiumState = CONSORTIA[normKey(input.campus).replace(/^the /, "")]?.state;
   if (parts.length === 1) return matchName(index, parts[0], input.city, input.state, input.url);
   const results = parts.map((p) => matchName(index, p, undefined, input.state ?? consortiumState, undefined));

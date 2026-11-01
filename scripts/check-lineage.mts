@@ -1,68 +1,59 @@
 /**
- * Checks that every value in data/schools.json and data/history/ can be traced to a source.
+ * Checks that every value in the bundled copy (`.data/snapshot/`: the mini fixture in CI, the real snapshot locally
+ * after `npm run fetch-snapshot`) can be traced to a source.
  *
  *   npm run check:lineage
  *
- * Same validation the syncs run before writing: every stored field is registered in lib/fields.ts, every lineage
- * record is complete, every release has a year, and the registry's derivations are sound (lib/lineage.ts). For
- * history (lib/history.ts): every series is registered in SERIES, every shard belongs to a college in the dataset,
- * values are possible, and every file family cites a known source. For CDS records (data/cds-records/, lib/cds-records.ts):
- * every passed value is located and quoted and every document is in data/college-docs.json. For high schools
- * (data/high-schools/, when built; lib/high-school-core.ts): every shard row, state report file, and profile detail
- * file is valid and cited, meta matches the shards, and medians.json equals a fresh computation.
+ * The colleges (`colleges.json` with its `meta.json`): every stored field is registered in lib/fields.ts, every
+ * lineage record is complete, every release has a year, and the registry's derivations are sound (lib/lineage.ts).
+ * History (`history/`, lib/history.ts): every series is registered in SERIES, every shard belongs to a college in the
+ * snapshot, values are possible, and every file family cites a known source. Detail files (`detail/`): valid tables,
+ * cited like the registry says, consistent with the colleges. High schools (`high-schools/`, when the snapshot carries
+ * them; lib/high-school-core.ts): every shard row, state report file and profile detail file is valid and cited, meta
+ * matches the shards, and medians.json equals a fresh computation.
+ *
+ * Not here: the CDS records (every passed value located and quoted, every document in the docs manifest) and the
+ * legacy overrides' sources. Those are layers, not snapshot objects; the publisher's compose
+ * (scripts/lib/data-platform/compose.mts) checks them and validateLineage fails the publish before anything is uploaded.
  */
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { DatasetMeta, School } from "../lib/types";
-import { validateLineage, validateOverrides } from "../lib/lineage.ts";
+import { validateLineage } from "../lib/lineage.ts";
 import { validateHistoryMeta, validateShard, type HistoryMeta, type SchoolHistory } from "../lib/history.ts";
 import { detailFileProblems, readDetails } from "./lib/publish-details.mts";
-import { validateCdsRecords } from "../lib/cds-records.ts";
-import { CDS_TEMPLATE } from "../lib/cds-template.ts";
-import { readManifest, readRecords } from "./lib/college-reported/records.mts";
 import { orphanSummaries } from "./lib/directories/merge.mts";
 import { highSchoolFileProblems, readHighSchoolData } from "./lib/publish-high-schools.mts";
+import { bundledHistoryUnits, bundledIsFixture, readBundledColleges, readBundledJson, readBundledMeta, requireBundled } from "./lib/data-platform/bundled.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const SNAPSHOT = requireBundled();
+const schools = readBundledColleges();
+const meta = readBundledMeta();
+const fixture = bundledIsFixture();
 
 const problems = validateLineage(schools, meta);
 
-const HISTORY = join(ROOT, "data", "history");
-let shards = 0;
-if (existsSync(join(HISTORY, "meta.json"))) {
-  const hmeta: HistoryMeta = JSON.parse(readFileSync(join(HISTORY, "meta.json"), "utf8"));
-  problems.push(...validateHistoryMeta(hmeta, meta));
-  const ids = new Set(schools.map((s) => s.unit_id));
-  for (const f of readdirSync(join(HISTORY, "schools")).filter((f) => f.endsWith(".json"))) {
-    const h: SchoolHistory = JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8"));
-    if (`${h.unit_id}.json` !== f) problems.push(`history ${f}: file name doesn't match unit_id ${h.unit_id}`);
-    problems.push(...validateShard(h, ids));
-    shards++;
-  }
-  if (shards !== hmeta.schools) problems.push(`history meta says ${hmeta.schools} shards; the folder has ${shards}`);
+// History: the shared meta (history/shared.json) and one shard per college.
+const hmeta = readBundledJson<{ meta: HistoryMeta }>(join("history", "shared.json")).meta;
+problems.push(...validateHistoryMeta(hmeta, meta));
+const ids = new Set(schools.map((s) => s.unit_id));
+const units = bundledHistoryUnits();
+for (const unit of units) {
+  const h: SchoolHistory = JSON.parse(readFileSync(join(SNAPSHOT, "history", `${unit}.json`), "utf8"));
+  if (h.unit_id !== unit) problems.push(`history ${unit}.json: file name doesn't match unit_id ${h.unit_id}`);
+  problems.push(...validateShard(h, ids));
 }
+// The mini fixture carries 38 shards under the real history meta (1,893); a real snapshot carries them all.
+if (!fixture && units.length !== hmeta.schools) problems.push(`history meta says ${hmeta.schools} shards; the snapshot has ${units.length}`);
 
-// Per-college detail files (lib/detail.ts): valid tables, cited like the registry says, consistent with the snapshot.
-const details = readDetails(ROOT);
+// Per-college detail files (lib/detail.ts): valid tables, cited like the registry says, consistent with the colleges.
+const details = readDetails(join(SNAPSHOT, "detail"));
 if (details) problems.push(...detailFileProblems(details, schools, meta));
 // National directories (specs/campus-directories.md): a summary with no credited listings behind it.
 problems.push(...orphanSummaries(schools, details ?? []));
 
-// CDS records (specs/college-reported-round-3.md, Decision 2): every passed value located and quoted, every document
-// in the manifest, a year for every item group, a known schema or reader version.
-const records = readRecords(join(ROOT, "data", "cds-records"));
-problems.push(...validateCdsRecords(records, readManifest(join(ROOT, "data", "college-docs.json")), CDS_TEMPLATE));
-
-// Overrides (data/overrides.json): each says where its values came from, and none sets a path a newest group owns
-// (specs/data-expansion/cds-student-body-and-outcomes.md, rule 9): those come from the CDS records.
-const OVERRIDES = join(ROOT, "data", "overrides.json");
-if (existsSync(OVERRIDES)) problems.push(...validateOverrides(JSON.parse(readFileSync(OVERRIDES, "utf8"))));
-
-// High schools (specs/product/high-school-data.md), when built.
-const highSchools = readHighSchoolData(join(ROOT, "data", "high-schools"));
-if (highSchools) problems.push(...highSchoolFileProblems(highSchools, { collegeIds: new Set(schools.map((s) => s.unit_id)) }));
+// High schools (specs/product/high-school-data.md), when the snapshot carries them.
+const highSchools = readHighSchoolData(join(SNAPSHOT, "high-schools"));
+if (highSchools) problems.push(...highSchoolFileProblems(highSchools, { collegeIds: fixture ? undefined : ids }));
 
 if (problems.length) {
   console.error(`Lineage check failed: ${problems.length} problem${problems.length === 1 ? "" : "s"}`);
@@ -72,10 +63,9 @@ if (problems.length) {
 }
 const overridden = schools.filter((s) => s.lineage && Object.keys(s.lineage).length).length;
 console.log(
-  `Lineage OK: ${schools.length} colleges, ${overridden} with values from a non-default source` +
-    (shards ? `; ${shards} college histories` : "") +
+  `Lineage OK${fixture ? " (the mini fixture)" : ""}: ${schools.length} colleges, ${overridden} with values from a non-default source` +
+    `; ${units.length} college histories` +
     (details ? `; ${details.length} detail files` : "") +
-    `; ${records.length} CDS records` +
     (highSchools ? `; ${highSchools.rows.length} high schools, ${highSchools.stateFiles.length} state report files, ${highSchools.details.length} profile details` : "") +
     "."
 );

@@ -26,7 +26,7 @@ import type { SlateHostRow } from "../lib/visit-events/types.ts";
 const ROOT = join(import.meta.dirname, "..");
 const FIX = join(import.meta.dirname, "fixtures", "visit-events", "element451");
 const read = (f: string) => readFileSync(join(FIX, f), "utf8");
-const zips = loadZipTable(ROOT);
+const zips = loadZipTable(join(ROOT, "tests", "fixtures", "visit-events", "zcta-centroids.csv"));
 
 /** A fetch stand-in serving fixtures by URL; anything else 404s. */
 function fakeHttp(pages: Record<string, string>) {

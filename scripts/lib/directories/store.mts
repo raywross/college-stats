@@ -1,6 +1,6 @@
 /**
  * The directory runner's state in the data store (specs/data-platform/pipelines.md, "campus-pilot, sync-directories"),
- * keyed as scripts/import-data-from-git.mts keys data/directories/: `directories.listings` and
+ * keyed as scripts/import-data-from-files.mts keys data/directories/: `directories.listings` and
  * `directories.unmatched` by organization (an org with no unmatched entries has no document), `directories.blocked`
  * one document (`blocked`), `directories.matches` one document (`matches`, the hand-checked answers; read only). The
  * publisher applies the listings (scripts/lib/campus-pilot/merge.mts `applyDirectoryLayers`).

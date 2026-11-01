@@ -8,7 +8,6 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -531,13 +530,6 @@ test("registry: the block and its five paths are college-site, admissions, no vi
   }
 });
 
-test("merge-essay-prompts --dry-run runs on the committed data", () => {
-  const r = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", "merge-essay-prompts.mts"), "--dry-run"], { encoding: "utf8" });
-  assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, /^essays: \d+ colleges/);
-  assert.match(r.stdout, /--dry-run, nothing written/);
-});
-
 /* ------------------------------------------------------------------ */
 /* Files                                                               */
 /* ------------------------------------------------------------------ */
@@ -560,7 +552,7 @@ test("platform prompts: the committed file's shape; Common App links only its ho
   assert.ok(problems.some((p) => /common_app: source_url must be the organization's homepage/.test(p)));
   assert.ok(problems.some((p) => /prompt 1 id platform:coalition:9/.test(p)));
   assert.ok(problems.some((p) => /a limit without the sentence/.test(p)));
-  assert.deepEqual(platformProblems(null), ["data/reference/platform-prompts.json is missing"]);
+  assert.deepEqual(platformProblems(null), ["the reference document platform-prompts is missing"]);
 });
 
 test("store: a record and a held record serialize one prompt per line and parse back", async () => {

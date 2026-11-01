@@ -12,13 +12,14 @@ import { join } from "node:path";
 import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/store.mts";
 import { COLLECTIONS, SINGLE_KEYS, loadDirectoriesLayer } from "../scripts/lib/data-platform/layers.mts";
 import { withRunSet } from "../scripts/lib/data-platform/change-set.mts";
-import { importLayers, writeImport } from "../scripts/import-data-from-git.mts";
+import { importLayers, writeImport } from "../scripts/import-data-from-files.mts";
 import { Blocked, defineAdapter, type CrawlContext, type RawEntry } from "../scripts/lib/directories/contract.mts";
 import type { BlockedFile, DirectoryFile, UnmatchedFile } from "../scripts/lib/directories/files.mts";
 import { readDirectoryFiles } from "../scripts/lib/directories/files.mts";
 import { matchIndexFromStore, readBlockedDoc, readReviewedDoc, syncDirectories, writeBlockedDoc, writeOrgDocs } from "../scripts/lib/directories/store.mts";
 import { storeColleges } from "../scripts/lib/identity-store.mts";
-import { DEFAULT_COLLEGES_FILE, readCollegeList, readPagesFile, readSourcesFile, type PublishedCollege } from "../scripts/lib/campus-pilot/files.mts";
+import { DEFAULT_COLLEGES_LIST, collegeListIds, readPagesFile, readSourcesFile, type CollegeListFile, type PublishedCollege } from "../scripts/lib/campus-pilot/files.mts";
+import { miniReference } from "./helpers/snapshot.mts";
 import { latestCampusReport, readCollegeListFrom, readPagesDoc, readSourcesDoc, saveCampusRun } from "../scripts/lib/campus-pilot/store.mts";
 import type { CampusRecipe, CollegeResult } from "../scripts/lib/campus-pilot/run.mts";
 
@@ -30,7 +31,7 @@ const VANDERBILT = "221999";
 async function imported(only: string[], units?: Set<string>): Promise<{ root: string; store: ReturnType<typeof fileStore> }> {
   const root = mkdtempSync(join(tmpdir(), "directories-store-"));
   const store = fileStore(root);
-  await writeImport(store, importLayers(ROOT, { only: new Set(only), units }), "fixture");
+  await writeImport(store, importLayers(join(ROOT, "data"), { only: new Set(only), units }), "fixture");
   return { root, store };
 }
 
@@ -47,7 +48,7 @@ test("directories: the runner's writers key the committed files as the import do
   try {
     const listings = await store.read<DirectoryFile>(COLLECTIONS.directories.listings);
     const unmatched = await store.read<UnmatchedFile>(COLLECTIONS.directories.unmatched);
-    assert.equal(listings.size, readDirectoryFiles(ROOT).length);
+    assert.equal(listings.size, readDirectoryFiles(join(ROOT, "data")).length);
     const handle = await store.open("pipeline", "directories", "resave");
     for (const [org, file] of listings) await writeOrgDocs(store, handle, file, unmatched.get(org) ?? { org, crawled: file.crawled, entries: [] });
     await writeBlockedDoc(handle, await readBlockedDoc(store));
@@ -130,7 +131,7 @@ test("campus pilot: the store reads give back the committed files, and an empty 
     assert.equal(doc.updated, pages.updated);
     assert.deepEqual(doc.colleges, [...pages.colleges].sort((a, b) => (a.unit_id < b.unit_id ? -1 : 1)));
     assert.deepEqual(await readSourcesDoc(store, TODAY), { updated: sources.updated, recipes: [...sources.recipes].sort((a, b) => (a.unit_id < b.unit_id ? -1 : 1)) });
-    assert.deepEqual(await readCollegeListFrom(store, DEFAULT_COLLEGES_FILE, ROOT), readCollegeList(join(ROOT, DEFAULT_COLLEGES_FILE)), "the default list comes from reference.files");
+    assert.deepEqual(await readCollegeListFrom(store, DEFAULT_COLLEGES_LIST, ROOT), collegeListIds(miniReference<CollegeListFile>(DEFAULT_COLLEGES_LIST), DEFAULT_COLLEGES_LIST), "the default list comes from reference.files");
 
     const handle = await store.open("pipeline", "campus-pilot", "empty");
     await saveCampusRun(store, handle, { results: [], recipes: [], blocked: [], report: null, today: pages.updated! });

@@ -1,9 +1,10 @@
 /**
- * The mini fixture (scripts/build-mini-fixture.mts; specs/data-platform/git-ci-tests.md "The mini fixture"): rebuilt
- * to a temp dir and compared file for file with the committed `tests/fixtures/snapshot-mini/`, so a change to the
- * real data under `data/` or to the builder itself can't silently drift the fixture out from under the rest of the
- * suite — `npm run build-mini-fixture` has to be run (and the result committed) instead. Also: the fixture is real
- * (every chosen college appears, with the right shape), under budget in colleges, and the helpers
+ * The mini fixture (scripts/build-mini-fixture.mts; specs/data-platform/git-ci-tests.md "The mini fixture"): the
+ * builder run over the fixture's own snapshot folder and layers store reproduces `tests/fixtures/snapshot-mini/` file
+ * for file and byte for byte (self-consistency, offline: no real data, no database), so a change to the builder or a
+ * hand edit to the fixture can't drift one from the other; a rebuild from the real snapshot and store is
+ * `npm run build-mini-fixture -- --store supabase` after `npm run fetch-snapshot`. Also: building is deterministic,
+ * the fixture is real (every chosen college appears, with the right shape), under budget in colleges, and the helpers
  * (tests/helpers/snapshot.mts) read it correctly. `npm test`.
  */
 import { test } from "node:test";
@@ -11,11 +12,14 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
-import { build, DEFAULT_UNITS } from "../scripts/build-mini-fixture.mts";
+import { build as buildFrom, DEFAULT_UNITS, sampleCsv, type BuildOptions } from "../scripts/build-mini-fixture.mts";
 import { readLayer, COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
 import { miniLayers, miniMeta, miniSchool, miniSchools, miniSnapshotDir } from "./helpers/snapshot.mts";
 
 const FIXTURE_DIR = join(import.meta.dirname, "fixtures", "snapshot-mini");
+
+/** The builder over the fixture's own two folders (`--snapshot …/snapshot --store file:…/layers`). */
+const build = (opts: BuildOptions = {}) => buildFrom({ snapshot: join(FIXTURE_DIR, "snapshot"), store: `file:${join(FIXTURE_DIR, "layers")}`, ...opts });
 
 function filesUnder(dir: string): string[] {
   return readdirSync(dir, { recursive: true, encoding: "utf8" })
@@ -23,7 +27,7 @@ function filesUnder(dir: string): string[] {
     .sort();
 }
 
-test("the committed mini fixture is exactly what the builder produces", async () => {
+test("the builder over the fixture's own snapshot folder and layers store reproduces the fixture", async () => {
   const tmp = mkdtempSync(join(tmpdir(), "dp-mini-fixture-"));
   try {
     await build({ out: tmp });
@@ -34,7 +38,7 @@ test("the committed mini fixture is exactly what the builder produces", async ()
       for (const f of want) {
         const a = readFileSync(join(FIXTURE_DIR, sub, f));
         const b = readFileSync(join(tmp, sub, f));
-        assert.ok(a.equals(b), `${sub}/${f} differs from a fresh build; run npm run build-mini-fixture and commit the result`);
+        assert.ok(a.equals(b), `${sub}/${f} differs from the builder's output over the fixture's own folders: fix the builder (scripts/build-mini-fixture.mts), never the fixture`);
       }
     }
   } finally {
@@ -101,6 +105,13 @@ test("the snapshot folder has a manifest with id 0 and this many colleges", () =
   const manifest = JSON.parse(readFileSync(join(miniSnapshotDir(), "manifest.json"), "utf8")) as { id: number; colleges: number };
   assert.equal(manifest.id, 0);
   assert.equal(manifest.colleges, DEFAULT_UNITS.length);
+});
+
+test("the ZIP sample is idempotent: a national table is sampled, an already-sampled one is kept", () => {
+  const rows = (n: number) => ["# note", "zcta,lat,lon", ...Array.from({ length: n }, (_, i) => `${String(i).padStart(5, "0")},1,2`)].join("\n") + "\n";
+  const once = sampleCsv(rows(3000));
+  assert.equal(once.split("\n").filter((l) => /^\d/.test(l)).length, 10);
+  assert.equal(sampleCsv(once), once);
 });
 
 test("--add includes an extra college", async () => {

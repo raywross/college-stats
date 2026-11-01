@@ -11,8 +11,7 @@
  *
  * Writes `directories.listings` and `directories.unmatched` per adapter and `directories.blocked` for lists that
  * refuse us (never bypassed; owner decision 1), in one change set (source `directories`). A failed or blocked adapter
- * keeps its previous documents. The publisher puts the listings into the dataset (`npm run merge-directories` still
- * does it for the files under data/).
+ * keeps its previous documents. The publisher puts the listings into the dataset.
  */
 import { join } from "node:path";
 import { DIRECTORY_DOMAINS, type DirectoryDomain } from "../lib/directories.ts";

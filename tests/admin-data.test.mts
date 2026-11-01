@@ -781,7 +781,7 @@ test("the collections Holds reads are the store's own names (scripts/lib/data-pl
   const { COLLECTIONS } = await import("../scripts/lib/data-platform/layers.mts");
   assert.equal(reviewQueue.REVIEW_QUEUE_COLLECTION, COLLECTIONS.reported.reviewQueue);
   assert.equal(reviewQueue.ESSAYS_HELD_COLLECTION, COLLECTIONS.essays.held);
-  assert.match(read("scripts/import-data-from-git.mts"), /put\(COLLECTIONS\.reported\.reviewQueue, reviewKey\(i\), i\)/, "the import keys review items by reviewKey, as Holds reads and resolves them");
+  assert.match(read("scripts/import-data-from-files.mts"), /put\(COLLECTIONS\.reported\.reviewQueue, reviewKey\(i\), i\)/, "the import keys review items by reviewKey, as Holds reads and resolves them");
 });
 
 test("readCollection pages through a whole collection by key (keyset), and readDocuments reads a few by key", async () => {

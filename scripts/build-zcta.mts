@@ -1,9 +1,14 @@
 /**
- * Builds data/reference/zcta-centroids.csv, the checked-in table of ZIP Code Tabulation Area centers
- * (specs/product/home-and-distance.md): what Explore's "Distance from home" filter measures from, and the fallback
- * when a home address can't be matched but has a ZIP code.
+ * Builds the reference document `zcta-centroids` (a `{text}` document: the CSV), the table of ZIP Code Tabulation
+ * Area centers (specs/product/home-and-distance.md): what Explore's "Distance from home" filter measures from, and the
+ * fallback when a home address can't be matched but has a ZIP code. Written to the data store in one change set
+ * (source reference-build; scripts/lib/data-platform/reference-build.mts); the publisher renders it as
+ * `reference/zcta-centroids.csv`.
  *
- *   npm run build-zcta
+ *   npm run build-zcta -- --store supabase
+ *
+ *   … --store supabase|file:<dir>   where the document goes (default supabase when DATA_SUPABASE_URL is set)
+ *   … --change-set <id>              into a set a workflow opened;  --dry-run  build and compare, write nothing
  *
  * Reads the Census Bureau's Gazetteer ZCTA file (public domain; one row per ZCTA with its internal point) and keeps
  * three columns: the five-digit code and its latitude and longitude to three decimals (about 100 m). ZCTAs are the
@@ -11,12 +16,12 @@
  * ZCTA). The Gazetteer is refreshed yearly; point VINTAGE at the new one and re-run. Needs `unzip` on the PATH.
  */
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { writeReferenceDocument } from "./lib/data-platform/reference-build.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const OUT = join(ROOT, "data", "reference", "zcta-centroids.csv");
+const NAME = "zcta-centroids";
 const VINTAGE = "2024";
 const URL = `https://www2.census.gov/geo/docs/maps-data/data/gazetteer/${VINTAGE}_Gazetteer/${VINTAGE}_Gaz_zcta_national.zip`;
 
@@ -57,9 +62,8 @@ async function main() {
     "zcta,lat,lng",
     ...rows,
   ].join("\n");
-  mkdirSync(join(ROOT, "data", "reference"), { recursive: true });
-  writeFileSync(OUT, `${out}\n`);
-  console.log(`Wrote ${rows.length} ZCTA centers to ${OUT}`);
+  console.log(`Built ${rows.length} ZCTA centers`);
+  await writeReferenceDocument(NAME, { text: `${out}\n` });
 }
 
 main().catch((err) => {

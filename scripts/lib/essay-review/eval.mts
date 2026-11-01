@@ -17,9 +17,9 @@ import { resolveSpan, type GuardedNote, type NoteSpan } from "../../../lib/essay
 import { NOTE_CATEGORIES, type NoteCategory } from "../../../lib/essays/rubric.ts";
 import { sanitizeProfile, type StudentProfileData } from "../../../lib/student-profile.ts";
 import type { School } from "../../../lib/types.ts";
+import { readBundledReference } from "../data-platform/bundled.mts";
 
 export const FIXTURES_DIR = join(import.meta.dirname, "..", "..", "..", "tests", "fixtures", "essays");
-const ROOT = join(import.meta.dirname, "..", "..", "..");
 
 /* ------------------------------------------------------------------ */
 /* The fixtures                                                        */
@@ -136,7 +136,7 @@ let platformOptions: string[] | null = null;
 function commonAppPrompts(): string[] {
   if (platformOptions) return platformOptions;
   try {
-    const file = JSON.parse(readFileSync(join(ROOT, "data", "reference", "platform-prompts.json"), "utf8")) as { common_app?: { prompts?: { text: string }[] } };
+    const file = readBundledReference<{ common_app?: { prompts?: { text: string }[] } }>("platform-prompts");
     platformOptions = (file.common_app?.prompts ?? []).map((p) => p.text);
   } catch {
     platformOptions = [];

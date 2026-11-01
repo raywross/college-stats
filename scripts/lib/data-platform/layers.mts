@@ -3,7 +3,7 @@
  * write helpers over a `DataStore` (./store.mts), and loaders that turn a store's layers back into the exact inputs
  * today's merge functions take from files (`loadIdentityInputs`, `loadCommonApp`, `readCoalition`, `readEssayRecords`,
  * `readRecords`, `readDirectoryFiles`, `readPagesFile`), so the publisher (./compose.mts) calls those functions
- * unchanged. The import (scripts/import-data-from-git.mts) writes what these read.
+ * unchanged. The import (scripts/import-data-from-files.mts) writes what these read.
  *
  * Collections the storage table doesn't name, added for files it doesn't list (each marked "not in the table"):
  * `base.source_files`, `identity.wikidata_issues`, `directories.matches`, `campus.sources`, `common_app.name_map`,

@@ -5,26 +5,27 @@
  *   npm run cds-records-from-workbooks -- --workbook <file.xlsx> --unit <unit_id> --url <where the college publishes it>
  *     [--retrieved YYYY-MM-DD] [--edition 2025-26]
  *
- * Writes data/cds-records/<unit_id>.json (the document replaces one with the same sha256) and adds or replaces its
- * entry in data/college-docs.json (sha256 of the bytes, type xlsx-template, `archive: null` until the archive exists).
- * The unit id must be a college in data/schools.json. Re-running on the same file gives the same record, so a reader
- * change is applied by re-running over the kept workbooks.
+ * Writes the college's record (`reported.cds_records`; the document replaces one with the same sha256) and adds or
+ * replaces its entry in the docs manifest (`reported.docs`: sha256 of the bytes, type xlsx-template, `archive: null`
+ * until the archive exists), through the data store in one change set (kind pipeline, source
+ * cds-records-from-workbooks; `--store supabase|file:<dir>`, `--dry-run`). The unit id must be a college in the bundled
+ * copy. Re-running on the same file gives the same record, so a reader change is applied by re-running over the kept
+ * workbooks.
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import type { School } from "../lib/types";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { applyChecks } from "../lib/cds-checks.ts";
 import { restoreFederal } from "../lib/newest.ts";
 import { isTemplateWorkbook, readWorkbook, recordFromTemplate, workbookEdition } from "./lib/cds-xlsx.mts";
 import { upsertDocument, upsertManifest } from "./lib/college-reported/records.mts";
 import { federalGradYear } from "./lib/college-reported/files.mts";
-
-const ROOT = join(import.meta.dirname, "..");
-const RECORDS = join(ROOT, "data", "cds-records");
-const MANIFEST = join(ROOT, "data", "college-docs.json");
+import { readMeta } from "./lib/college-reported/state.mts";
+import { cdsScratch } from "./lib/college-reported/scratch.mts";
+import { storeFromFlag } from "./lib/data-platform/store.mts";
+import { readBundledColleges } from "./lib/data-platform/bundled.mts";
 
 const { values } = parseArgs({
   options: {
@@ -33,15 +34,20 @@ const { values } = parseArgs({
     url: { type: "string" },
     retrieved: { type: "string", default: new Date().toISOString().slice(0, 10) },
     edition: { type: "string" },
+    store: { type: "string" },
+    "dry-run": { type: "boolean", default: false },
   },
 });
 if (!values.workbook || !values.unit || !values.url) {
-  console.error("usage: npm run cds-records-from-workbooks -- --workbook <file.xlsx> --unit <unit_id> --url <url> [--retrieved YYYY-MM-DD] [--edition 2025-26]");
+  console.error("usage: npm run cds-records-from-workbooks -- --store supabase|file:<dir> --workbook <file.xlsx> --unit <unit_id> --url <url> [--retrieved YYYY-MM-DD] [--edition 2025-26] [--dry-run]");
   process.exit(2);
 }
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const school = schools.find((s) => s.unit_id === values.unit);
-if (!school) throw new Error(`unit ${values.unit} isn't in data/schools.json`);
+const school = readBundledColleges().find((s) => s.unit_id === values.unit);
+if (!school) throw new Error(`unit ${values.unit} isn't in the bundled copy (.data/snapshot/colleges.json)`);
+const store = storeFromFlag(values.store);
+const scratch = await cdsScratch(store, values.unit);
+const RECORDS = join(scratch.dir, "cds-records");
+const MANIFEST = join(scratch.dir, "college-docs.json");
 
 const bytes = readFileSync(values.workbook);
 const sha256 = createHash("sha256").update(bytes).digest("hex");
@@ -49,7 +55,7 @@ const book = readWorkbook(values.workbook);
 if (!isTemplateWorkbook(book)) throw new Error(`${values.workbook} isn't a 2025–26 template workbook; it needs the model path`);
 const read = recordFromTemplate(book, { unit_id: values.unit, url: values.url, sha256, retrieved: values.retrieved, table: CDS_TEMPLATE, edition: values.edition });
 // Every round-3 check, on this deterministic read too (lib/cds-checks.ts), against the federal baseline.
-const doc = applyChecks(read, { table: CDS_TEMPLATE, school: restoreFederal(school), gradYear: federalGradYear(ROOT) });
+const doc = applyChecks(read, { table: CDS_TEMPLATE, school: restoreFederal(school), gradYear: federalGradYear(await readMeta(store)) });
 
 upsertDocument(RECORDS, values.unit, doc);
 upsertManifest(
@@ -75,3 +81,5 @@ console.log(`${school.name} (${values.unit}) ${doc.edition}: ${Object.entries(co
 for (const [code, it] of Object.entries(doc.items)) {
   if (it.status === "failed") console.log(`  ${code} failed: ${it.failures!.map((f) => `${f.check}: ${f.detail}`).join("; ")}`);
 }
+const id = await scratch.commit("cds-records-from-workbooks", { dryRun: values["dry-run"], note: `${values.unit}: ${sha256.slice(0, 12)}` });
+console.log(id === null ? "Dry run; nothing written to the store." : `Change set ${id}: applied`);

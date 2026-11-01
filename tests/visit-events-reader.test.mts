@@ -156,7 +156,7 @@ test("parseEventPage: the closed open house, with its venue, street, ZIP, and ma
 /* ------------------------------------------------------------------ */
 
 test("locate: the ZIP's ZCTA centre, else the page's map, never an online event", () => {
-  const zips = loadZipTable(ROOT);
+  const zips = loadZipTable(join(ROOT, "tests", "fixtures", "visit-events", "zcta-centroids.csv"));
   const gnv = locate(zips, { zip: "32601", online: false });
   assert.equal(gnv.by, "zip");
   assert.ok(gnv.lat! > 29.5 && gnv.lat! < 29.8 && gnv.lng! < -82.2 && gnv.lng! > -82.5);
@@ -515,7 +515,7 @@ test("readHost: UF's search and widgets make 527 rows (4 staff stored, never det
   const r = await readHost(UF_HOST, {
     http,
     now: OCT_13,
-    zips: loadZipTable(ROOT),
+    zips: loadZipTable(join(ROOT, "tests", "fixtures", "visit-events", "zcta-centroids.csv")),
     campusCity: "gainesville",
     campusState: "FL",
     campusLat: 29.64629,
@@ -575,7 +575,7 @@ test("runSync: twice over the same pages is idempotent; a search failure leaves 
     updateHost: async (_u, patch) => void hostPatches.push(patch),
     recordSync: async (r) => void records.push(r),
   };
-  const deps = { store, zips: loadZipTable(ROOT), campus: () => ({ city: "Gainesville", state: "FL", lat: 29.64629, lng: -82.347911 }), maxPages: 3 };
+  const deps = { store, zips: loadZipTable(join(ROOT, "tests", "fixtures", "visit-events", "zcta-centroids.csv")), campus: () => ({ city: "Gainesville", state: "FL", lat: 29.64629, lng: -82.347911 }), maxPages: 3 };
   const first = await runSync([UF_HOST], { ...deps, http: ufSite(), now: OCT_13 });
   assert.equal(first.record.events_new, 527);
   assert.equal(rows.length, 527);
@@ -627,7 +627,7 @@ function memoryStore(initial: StoredEvent[] = []) {
   return { state, store };
 }
 
-const campusDeps = { zips: loadZipTable(ROOT), campus: () => ({ city: "Gainesville", state: "FL", lat: 29.64629, lng: -82.347911 }) };
+const campusDeps = { zips: loadZipTable(join(ROOT, "tests", "fixtures", "visit-events", "zcta-centroids.csv")), campus: () => ({ city: "Gainesville", state: "FL", lat: 29.64629, lng: -82.347911 }) };
 
 test('readHost: a search that still says "returned 519 event(s)" but has no rows is a collapse; so is a page without the phrase; "returned 0" is not', async () => {
   const deps = { now: OCT_13, zips: campusDeps.zips, campusCity: "gainesville", campusState: "FL", campusLat: null, campusLng: null, stored: new Map() };

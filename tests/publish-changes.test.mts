@@ -281,7 +281,7 @@ function walk(dir: string): string[] {
 const headRequests = (source: string) => source.split("\n").filter((line) => line.includes("head: true") && !/^\s*(\*|\/\/)/.test(line));
 
 test("guard: the publish scripts check tables with a one-row select, never head: true (a missing table looks fine to HEAD)", () => {
-  for (const file of ["scripts/lib/publish-changes.mts", "scripts/publish-high-schools.mts", "scripts/lib/publish-high-schools.mts", "scripts/lib/publish-college-failures.mts", "scripts/lib/data-platform/publish-tables.mts"]) {
+  for (const file of ["scripts/lib/publish-changes.mts", "scripts/lib/publish-high-schools.mts", "scripts/lib/publish-college-failures.mts", "scripts/lib/data-platform/publish-tables.mts"]) {
     assert.deepEqual(headRequests(readFileSync(join(ROOT, file), "utf8")), [], `${file}: table checks must not use head: true`);
   }
   assert.deepEqual(headRequests(`  const { error } = await client.from("dataset_change_staging").select("unit_id", { head: true });`).length, 1, "the check itself");

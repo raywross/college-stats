@@ -5,12 +5,14 @@
  * workflows read: 0 applied, 2 closed `held` (the breaker tripped), 3 stopped early. The workflow's tail sends the
  * `publish-snapshot` dispatch only on 0.
  */
-import { readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { School } from "../../../lib/types";
 import type { AliasRow } from "../../../lib/identity-files";
 import { flagValue, storeFromFlag, type ChangeSetHandle, type DataStore, type Env } from "./store.mts";
 import { COLLECTIONS, SINGLE_KEYS, datasetOrder, readLayer } from "./layers.mts";
+import { readBundledColleges, readBundledJson } from "./bundled.mts";
+import { BUNDLED_SNAPSHOT_DIR, SNAPSHOT_OBJECTS } from "../../../lib/data-platform/snapshot.ts";
 
 /** Exit codes a producer ends with (the workflows skip the publish dispatch on HELD and STOPPED). */
 export const EXIT = { applied: 0, failed: 1, held: 2, stopped: 3 } as const;
@@ -81,18 +83,20 @@ export async function writeChanged(
 
 /**
  * The colleges a producer works over: the store's base layer (`base.colleges`, kept current by sync-data), in the
- * dataset's order. The committed data/schools.json stops changing in phase 2, so it is read only when the layer is
- * empty (a fresh file store on a laptop), with a line saying so.
+ * dataset's order. Only when the layer is empty (a fresh file store on a laptop) are the colleges read from the
+ * bundled copy under `root` (`.data/snapshot/colleges.json`, what `npm run fetch-snapshot` wrote), with a line saying so.
  */
 export async function datasetColleges(store: DataStore, root: string, log: (line: string) => void = (l) => console.log(l)): Promise<School[]> {
   const base = await readLayer<School>(store, COLLECTIONS.base.colleges);
   if (base.size) return datasetOrder([...base.values()]);
-  log("  base.colleges is empty in this store; reading the colleges from data/schools.json");
-  return JSON.parse(readFileSync(join(root, "data", "schools.json"), "utf8")) as School[];
+  log("  base.colleges is empty in this store; reading the colleges from the bundled copy (.data/snapshot/colleges.json)");
+  return readBundledColleges(join(root, BUNDLED_SNAPSHOT_DIR));
 }
 
-/** The base layer's alias rows (`base.aliases`), or data/aliases.json when the store has none. */
+/** The base layer's alias rows (`base.aliases`), or the bundled copy's aliases.json when the store has none (empty when neither has them). */
 export async function datasetAliases(store: DataStore, root: string): Promise<AliasRow[]> {
   const rows = await store.readOne<AliasRow[]>(COLLECTIONS.base.aliases, SINGLE_KEYS.aliases);
-  return rows ?? (JSON.parse(readFileSync(join(root, "data", "aliases.json"), "utf8")) as AliasRow[]);
+  if (rows) return rows;
+  const dir = join(root, BUNDLED_SNAPSHOT_DIR);
+  return existsSync(join(dir, SNAPSHOT_OBJECTS.aliases)) ? readBundledJson<AliasRow[]>(SNAPSHOT_OBJECTS.aliases, dir) : [];
 }

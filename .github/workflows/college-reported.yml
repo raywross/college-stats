@@ -1,9 +1,10 @@
 # Runs the college-reported ingestion agent (specs/college-reported-data.md). Since the data platform's phase 2
-# (specs/data-platform/pipelines.md) the run writes its state to the data store, not to data/: one change set per
-# run (source college-reported, run_ref the run id), closed `applied`, or `held` when the circuit breaker tripped or
+# (specs/data-platform/pipelines.md) the run writes its state to the data store: one change set per run (source college-reported, run_ref the run id), closed `applied`, or `held` when the circuit breaker tripped or
 # the run stopped early, and kept open while Message Batches are open. The job ends by asking the publisher for a
 # snapshot (repository_dispatch publish-snapshot) unless the set is held or still open; a held set waits in the
-# admin console (Holds, Change sets). No commit, no pull request, no release note.
+# admin console (Holds, Change sets). No commit, no pull request, no release note. The served colleges, the blocked
+# hosts, the owner's CDS links and the pilot list come from the store and the bundled copy (fetched after npm ci);
+# nothing is read from or written to the repository's files.
 #
 # Round 3 (specs/college-reported-round-3.md, Decision 5): extraction runs as Message Batches. The `run` job prepares,
 # discovers, submits, and polls until its deadline; batches still open stay in `reported.batches` with the change set
@@ -181,6 +182,17 @@ jobs:
       - run: npm ci
         if: steps.secret.outputs.ready == 'true'
 
+      # The bundled copy (.data/snapshot/): the current snapshot's colleges and reference documents, which the scripts
+      # read (scripts/lib/data-platform/bundled.mts). npm ci's postinstall leaves the mini fixture there when nothing is
+      # configured, so this fetch is what makes the scripts see every college; a failed fetch fails the run.
+      - name: Fetch the current snapshot
+        if: steps.secret.outputs.ready == 'true'
+        env:
+          DATA_SNAPSHOT_URL: ${{ vars.DATA_SNAPSHOT_URL }}
+        run: |
+          export DATA_SNAPSHOT_URL="${DATA_SNAPSHOT_URL:-${DATA_SUPABASE_URL%/}/storage/v1/object/public/snapshots}"
+          npm run fetch-snapshot
+
       # pdftotext (poppler) lays out each PDF so C7/C8A marks are placed under their column headings after a model
       # read (scripts/lib/college-reported/grid-place.mts). Without it the marks stay held by the grid-column check.
       - name: Install pdftotext
@@ -277,6 +289,17 @@ jobs:
 
       - run: npm ci
         if: steps.secret.outputs.ready == 'true'
+
+      # The bundled copy (.data/snapshot/): the current snapshot's colleges and reference documents, which the scripts
+      # read (scripts/lib/data-platform/bundled.mts). npm ci's postinstall leaves the mini fixture there when nothing is
+      # configured, so this fetch is what makes the scripts see every college; a failed fetch fails the run.
+      - name: Fetch the current snapshot
+        if: steps.secret.outputs.ready == 'true'
+        env:
+          DATA_SNAPSHOT_URL: ${{ vars.DATA_SNAPSHOT_URL }}
+        run: |
+          export DATA_SNAPSHOT_URL="${DATA_SNAPSHOT_URL:-${DATA_SUPABASE_URL%/}/storage/v1/object/public/snapshots}"
+          npm run fetch-snapshot
 
       # The run of the oldest open batch on the store (`reported.batches`). None → every later step is skipped.
       - name: Find a run with open batches

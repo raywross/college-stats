@@ -1,8 +1,7 @@
 /**
  * Directory listings into the dataset (specs/campus-directories.md#merge): data/directories/<org>.json → one
  * `directories` table per college in data/detail/schools/{id}.json (each listing credited), the `school.directories`
- * summary with its lineage record, and the three source kinds in meta.json. Shared by `npm run merge-directories` and
- * `npm run sync-data`, so the two can't disagree. Pure: no I/O.
+ * summary with its lineage record, and the three source kinds in meta. Applied by the publisher's compose. Pure: no I/O.
  */
 import type { DatasetMeta, LineageRecord, School } from "../../../lib/types.ts";
 /** CCCU's adapter key (scripts/lib/directories/adapters/cccu.mts): a membership fact, kept out of the chapter table. */

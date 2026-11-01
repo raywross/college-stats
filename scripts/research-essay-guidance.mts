@@ -1,12 +1,13 @@
 /**
  * The essay reviewer's guidance corpus (specs/product/essays/reviewer.md "The guidance corpus"): reads a fixed list of
  * public, institutional pages on writing college essays and keeps short excerpts from each, with the page and the date,
- * in data/reference/essay-guidance/sources.json. The synthesis (guidance.md beside it) is written by hand from these
- * excerpts and reviewed by the owner; this script never writes it.
+ * in the reference document `essay-guidance/sources`, written to the data store in one change set (source
+ * reference-build). The synthesis (`essay-guidance/guidance`) is written by hand from these excerpts and reviewed by
+ * the owner (the console's reference editor); this script never writes it.
  *
- *   npm run research-essay-guidance              # fetch every source, write sources.json
- *   npm run research-essay-guidance -- --dry-run # fetch and report, write nothing
- *   npm run research-essay-guidance -- --only unc-run-ons,mit-essays   # refresh some sources, keep the rest
+ *   npm run research-essay-guidance -- --store supabase   # fetch every source, write the sources document
+ *   npm run research-essay-guidance -- --dry-run           # fetch and report, write nothing
+ *   npm run research-essay-guidance -- --store … --only unc-run-ons,mit-essays   # refresh some sources, keep the rest
  *
  * Every page goes through PoliteHttp (robots.txt honored, the honest user agent, one request a second per host, never
  * retried past a refusal). A page that robots.txt disallows, that refuses us, or that no longer says what we kept is
@@ -17,11 +18,14 @@
  * page) in page order, at most MAX_WORDS_PER_SOURCE words per source. Fair use: short excerpts, cited by organization
  * and URL, from public guidance pages only; no commercial coaching sites and no student essays.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { decodeEntities, detectFormat, htmlToText, pdfPages } from "./lib/college-reported/documents.mts";
 import { cacheDocument, isBlocked, PoliteHttp, sha256, USER_AGENT } from "./lib/college-reported/http.mts";
+import { readReferenceDocument } from "./lib/data-platform/bundled.mts";
+import { storeFromArgv } from "./lib/data-platform/producer.mts";
+import { writeReferenceDocument } from "./lib/data-platform/reference-build.mts";
 
 /* ------------------------------------------------------------------ */
 /* The contract                                                        */
@@ -583,8 +587,8 @@ export const SOURCES: SourceSpec[] = [
 /* ------------------------------------------------------------------ */
 
 const ROOT = join(import.meta.dirname, "..");
-export const OUT_DIR = join(ROOT, "data", "reference", "essay-guidance");
-export const SOURCES_PATH = join(OUT_DIR, "sources.json");
+/** The excerpts' reference document. */
+export const SOURCES_DOCUMENT = "essay-guidance/sources";
 const CACHE = join(ROOT, ".cache", "essay-guidance");
 
 async function main() {
@@ -603,7 +607,7 @@ async function main() {
     maxBytes: 20 * 1024 * 1024,
   });
 
-  const previous: GuidanceFile | null = existsSync(SOURCES_PATH) ? JSON.parse(readFileSync(SOURCES_PATH, "utf8")) : null;
+  const previous: GuidanceFile | null = await readReferenceDocument<GuidanceFile>(DRY_RUN && !args.includes("--store") ? null : storeFromArgv(args), SOURCES_DOCUMENT).catch(() => null);
   const prevById = new Map((previous?.sources ?? []).map((s) => [s.id, s]));
   const ids = new Set<string>();
   for (const s of SOURCES) {
@@ -677,9 +681,7 @@ async function main() {
   };
   if (DRY_RUN) console.log("--dry-run: nothing written");
   else {
-    mkdirSync(OUT_DIR, { recursive: true });
-    writeFileSync(SOURCES_PATH, `${JSON.stringify(file, null, 2)}\n`);
-    console.log(`wrote ${SOURCES_PATH}`);
+    await writeReferenceDocument(SOURCES_DOCUMENT, file, { argv: args });
   }
 }
 

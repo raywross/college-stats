@@ -4,7 +4,7 @@
  * layer (Common App, Coalition, essays, college-reported, directories, selectivity), which the publisher composes.
  *
  * The base is defined twice, and the two must agree: sync-data builds it forward from the federal files, and the import
- * (scripts/import-data-from-git.mts) recovers it backward by stripping the committed dataset. Both go through
+ * (scripts/import-data-from-files.mts) recovers it backward by stripping the committed dataset. Both go through
  * `baseDocuments`, which holds every college to the import's `baseProblems` and every detail document to its
  * `baseDetail`, so a later layer can't leak into the base from either side (tests/data-platform-sources.test.mts).
  */
@@ -13,7 +13,7 @@ import type { SchoolDetail } from "../../lib/detail.ts";
 import type { ReleaseCalendar } from "../../lib/releases.ts";
 import type { AliasRow } from "../../lib/identity-files";
 import type { SourceFilesRecord } from "../../lib/admin/source-files.ts";
-import { baseDetail, baseProblems } from "../import-data-from-git.mts";
+import { baseDetail, baseProblems } from "../import-data-from-files.mts";
 import { COLLECTIONS, SINGLE_KEYS } from "./data-platform/layers.mts";
 import type { DataStore } from "./data-platform/store.mts";
 

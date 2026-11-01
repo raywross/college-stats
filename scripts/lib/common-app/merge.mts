@@ -1,32 +1,19 @@
 /**
- * The Common App block on data/schools.json (specs/data-expansion/common-app.md "Store"; common-app-build/brief.md
+ * The Common App block on a college (specs/data-expansion/common-app.md "Store"; common-app-build/brief.md
  * "Shared contracts"): `applyCommonApp` is pure and puts each member's Requirements Grid row and Explore facts on its
- * school; `mergeCommonApp` reads the committed files (the newest data/common-app/grid/*.json and
- * data/common-app/members.json), applies them to the committed data/schools.json, re-runs the reported merge so the
- * test policy settles exactly as `npm run merge-reported` would leave it, refreshes the source and its two vintages
- * in meta.json, rebuilds data/aliases.json, and writes nothing unless the lineage check passes, like `mergeIdentity`
- * (scripts/lib/identity-sync.mts). `npm run merge-common-app`; `npm run sync-data` applies the block from the same
- * files (`loadCommonApp`) before its reported merge.
+ * school; the publisher's compose (scripts/lib/data-platform/compose.mts) applies it from the `common_app.*` layers
+ * before the reported merge, and sets the source and its two vintages in meta (`addCommonAppMeta`).
  *
  * Newest wins for the test policy (brief "Store"): the grid's policy is part of the newest test values themselves
  * (lib/common-app/test-policy.ts `applyGridPolicy`, run by lib/cds/test-blocks.ts `applyNewestTests` after the CDS
- * blocks, from `school.apply`), so every merge that restores and re-applies them (merge-reported, sync-data) keeps it.
+ * blocks, from `school.apply`), so every merge that restores and re-applies them (the compose's reported merge) keeps it.
  * Deadlines and fees are never written outside `apply.*`.
  */
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, LineageRecord, School, SourceInfo } from "../../../lib/types";
 import type { FieldPath } from "../../../lib/fields";
 import type { GridEdition, GridRow, Member, MembersFile, SchoolApply } from "../../../lib/common-app/types";
 import { COMMON_APP_HOME, gridCycleFall, gridPolicyVerdict, gridVintage, longDate, placeLineageRecords } from "../../../lib/common-app/test-policy.ts";
 import { applyNewestTests, restoreFederalTests } from "../../../lib/cds/test-blocks.ts";
-import { validateLineage } from "../../../lib/lineage.ts";
-import { mergeReported } from "../../../lib/reported-merge.ts";
-import type { ReportedFile } from "../../../lib/reported.ts";
-import { CDS_TEMPLATE } from "../../../lib/cds-template.ts";
-import { readRecords } from "../college-reported/records.mts";
-import { formatSchools, loadIdentityInputs } from "../identity-sync.mts";
-import { buildAliasTable, formatAliasRows } from "../aliases-sync.mts";
 
 export { COMMON_APP_HOME, gridVintage, longDate };
 
@@ -329,47 +316,6 @@ export function stripCommonApp(school: School): School {
 
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-/* ------------------------------------------------------------------ */
-/* Files                                                               */
-/* ------------------------------------------------------------------ */
-
-/** The newest grid edition under `root`/data/common-app/grid (latest `updated`, then cycle), or null. */
-export function readNewestEdition(root: string): GridEdition | null {
-  const dir = join(root, "data", "common-app", "grid");
-  if (!existsSync(dir)) return null;
-  const editions = readdirSync(dir)
-    .filter((f) => f.endsWith(".json"))
-    .map((f) => JSON.parse(readFileSync(join(dir, f), "utf8")) as GridEdition);
-  editions.sort((a, b) => (a.updated === b.updated ? a.cycle.localeCompare(b.cycle) : a.updated.localeCompare(b.updated)));
-  return editions.at(-1) ?? null;
-}
-
-/** data/common-app/members.json under `root`, or null. */
-export function readMembers(root: string): MembersFile | null {
-  const path = join(root, "data", "common-app", "members.json");
-  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as MembersFile) : null;
-}
-
-/** Both committed inputs, or null when either is missing (sync-data then skips the block). */
-export function loadCommonApp(root: string): { edition: GridEdition; members: MembersFile } | null {
-  const edition = readNewestEdition(root);
-  const members = readMembers(root);
-  return edition && members ? { edition, members } : null;
-}
-
-/**
- * The reported merge over `schools` from the committed inputs under `root` (data/college-reported.json and
- * data/cds-records/), exactly as scripts/merge-reported.mts runs it, so the result is what a later merge-reported
- * reproduces byte for byte. Null when root has no data/college-reported.json (a scratch directory).
- */
-export function remergeReported(root: string, schools: School[], meta: DatasetMeta): School[] | null {
-  const path = join(root, "data", "college-reported.json");
-  if (!existsSync(path)) return null;
-  const reported: ReportedFile = JSON.parse(readFileSync(path, "utf8"));
-  const records = readRecords(join(root, "data", "cds-records"));
-  return mergeReported(schools, reported, { records, meta, table: CDS_TEMPLATE }).schools;
-}
-
 /** One line for the sync logs. */
 export function summaryLine(s: CommonAppSummary): string {
   return (
@@ -378,41 +324,4 @@ export function summaryLine(s: CommonAppSummary): string {
     `international aid ${s.internationalAid.yes} yes / ${s.internationalAid.no} no; links: transfer ${s.links.transfer_guarantee}, DACA ${s.links.daca_aid}, ${s.links.offSite} off-site skipped; ` +
     `members without IPEDS id ${s.membersWithoutIpeds}, not in the dataset ${s.membersNotInDataset}`
   );
-}
-
-export interface MergeCommonAppSummary extends CommonAppSummary {
-  edition: string;
-  aliasRows: number;
-}
-
-/**
- * Re-applies the Common App block to `root`/data/schools.json from the newest edition file and members.json, re-runs
- * the reported merge (`remergeReported`), sets the source and its vintages in meta.json, and rebuilds data/aliases.json.
- * Throws, writing nothing, when an input is missing or the result fails the lineage check (with the first 30 problems).
- */
-export function mergeCommonApp(root: string, opts: { dryRun?: boolean; today?: string } = {}): MergeCommonAppSummary {
-  const inputs = loadCommonApp(root);
-  if (!inputs) throw new Error("merge-common-app: needs data/common-app/grid/<cycle>_<updated>.json and data/common-app/members.json (npm run sync-common-app)");
-  const schoolsPath = join(root, "data", "schools.json");
-  const metaPath = join(root, "data", "meta.json");
-  const schools: School[] = JSON.parse(readFileSync(schoolsPath, "utf8"));
-  const meta: DatasetMeta = JSON.parse(readFileSync(metaPath, "utf8"));
-  const today = opts.today ?? new Date().toISOString().slice(0, 10);
-  const applied = applyCommonApp(schools, inputs.edition, inputs.members, today);
-  const merged = remergeReported(root, applied.schools, meta) ?? applied.schools;
-  const summary = { ...applied.summary, testPolicy: policyCounts(merged) };
-  addCommonAppMeta(meta, inputs.edition, inputs.members);
-  const problems = validateLineage(merged, meta);
-  if (problems.length) {
-    const more = problems.length > 30 ? `\n  …and ${problems.length - 30} more` : "";
-    throw new Error(`merge-common-app: lineage check failed (${problems.length}); nothing written:\n  ${problems.slice(0, 30).join("\n  ")}${more}`);
-  }
-  // Built (and checked) before anything is written, so a bad alias table also writes nothing.
-  const aliases = buildAliasTable(root, { schools: merged, hdRows: null, wikidata: loadIdentityInputs(root).wikidata, commonApp: inputs.members });
-  if (!opts.dryRun) {
-    writeFileSync(metaPath, `${JSON.stringify(meta, null, 2)}\n`);
-    writeFileSync(schoolsPath, formatSchools(merged));
-    writeFileSync(join(root, "data", "aliases.json"), formatAliasRows(aliases));
-  }
-  return { ...summary, edition: gridVintage(inputs.edition), aliasRows: aliases.filter((r) => r.source === "common-app").length };
 }

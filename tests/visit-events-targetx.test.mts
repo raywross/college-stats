@@ -35,7 +35,7 @@ const ROOT = join(import.meta.dirname, "..");
 const FIX = join(import.meta.dirname, "fixtures", "visit-events", "targetx");
 const read = (f: string) => readFileSync(join(FIX, f), "utf8");
 const json = (f: string) => JSON.parse(read(f));
-const ZIPS = loadZipTable(ROOT);
+const ZIPS = loadZipTable(join(ROOT, "tests", "fixtures", "visit-events", "zcta-centroids.csv"));
 
 const BELMONT = "belmontabbey.my.salesforce-sites.com";
 const BELMONT_ORIGIN = `https://${BELMONT}`;

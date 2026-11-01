@@ -10,8 +10,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
@@ -58,7 +57,7 @@ const UF = "134130";
 const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
 const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as DatasetMeta;
 const ufSchool = () => structuredClone(schools.find((s) => s.unit_id === UF)!);
-const realRecords = readEssayRecords(essayPaths(ROOT).records);
+const realRecords = readEssayRecords(essayPaths(join(ROOT, "data")).records);
 
 /* ------------------------------------------------------------------ */
 /* Fixtures (placeholder prompts, not a college's or a student's text) */
@@ -466,45 +465,6 @@ test("registry: essays.confidence, form, read_on, and reader are college-site, a
 /* ------------------------------------------------------------------ */
 /* The merge CLI and the store                                         */
 /* ------------------------------------------------------------------ */
-
-function scratch(confirmed: Record<string, string>): string {
-  const dir = mkdtempSync(join(tmpdir(), "essay-confirmed-"));
-  mkdirSync(join(dir, "data", "essay-prompts", "records"), { recursive: true });
-  mkdirSync(join(dir, "data", "essay-prompts", "confirmed"), { recursive: true });
-  mkdirSync(join(dir, "data", "reference"), { recursive: true });
-  writeFileSync(join(dir, "data", "schools.json"), formatSchools([ufSchool()]));
-  writeFileSync(join(dir, "data", "meta.json"), readFileSync(join(ROOT, "data", "meta.json")));
-  writeFileSync(join(dir, "data", "reference", "platform-prompts.json"), readFileSync(join(ROOT, "data", "reference", "platform-prompts.json")));
-  writeFileSync(join(dir, "data", "essay-prompts", "records", `${UF}.json`), readFileSync(join(ROOT, "data", "essay-prompts", "records", `${UF}.json`)));
-  for (const [name, text] of Object.entries(confirmed)) writeFileSync(join(dir, "data", "essay-prompts", "confirmed", name), text);
-  return dir;
-}
-
-const runMerge = (dir: string) =>
-  spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts", "merge-essay-prompts.mts")], {
-    encoding: "utf8",
-    env: { ...process.env, MERGE_ESSAY_PROMPTS_ROOT: dir, MERGE_ESSAY_PROMPTS_TODAY: TODAY },
-  });
-
-test("merge-essay-prompts applies data/essay-prompts/confirmed/, is idempotent, and refuses a bad hand-read file", () => {
-  const dir = scratch({ [`${UF}.json`]: recordJson(record()) });
-  try {
-    const first = runMerge(dir);
-    assert.equal(first.status, 0, first.stderr);
-    assert.match(first.stdout, /1 read from the form by hand/);
-    const written = readFileSync(join(dir, "data", "schools.json"), "utf8");
-    assert.equal((JSON.parse(written) as School[])[0].essays!.confidence, "confirmed");
-    assert.equal(runMerge(dir).status, 0);
-    assert.equal(readFileSync(join(dir, "data", "schools.json"), "utf8"), written, "the CLI is idempotent on its own output");
-    writeFileSync(join(dir, "data", "essay-prompts", "confirmed", `${UF}.json`), recordJson(record({ reader: "R2D2" })));
-    const bad = runMerge(dir);
-    assert.equal(bad.status, 1);
-    assert.match(bad.stderr, /hand-read records check failed; nothing written:\n {2}confirmed\/134130\.json: reader "R2D2" isn't 1 to 4 letters/);
-    assert.equal(readFileSync(join(dir, "data", "schools.json"), "utf8"), written, "nothing written");
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
 
 test("store: readConfirmedRecords reads the directory by unit id and refuses a file named for another college", () => {
   const dir = mkdtempSync(join(tmpdir(), "essay-confirmed-store-"));

@@ -193,15 +193,10 @@ test("nothing under lib/, app/ or components/ imports or reads a path under data
 
 const scriptSources = () => sourcesUnder(["scripts"], /\.(mts|ts|mjs|js)$/).filter((f) => !SCRIPT_EXCEPTIONS.has(f));
 
-test(
-  "nothing under scripts/ (but the two that take a data folder by name) imports or reads a path under data/",
-  // Pending until the scripts unit (G5) lands on the integration branch; drop the todo then (phase 4 brief).
-  { todo: dataPathLines(scriptSources()).length > 0 ? "scripts/ still reads data/ until G5 merges" : false },
-  () => {
-    const lines = dataPathLines(scriptSources());
-    assert.equal(lines.length, 0, `${lines.length} lines under scripts/ name a path under data/, e.g.\n${lines.slice(0, 10).join("\n")}`);
-  },
-);
+test("nothing under scripts/ (but the two that take a data folder by name) imports or reads a path under data/", () => {
+  const lines = dataPathLines(scriptSources());
+  assert.equal(lines.length, 0, `${lines.length} lines under scripts/ name a path under data/, e.g.\n${lines.slice(0, 10).join("\n")}`);
+});
 
 test("the guard bites: a planted read under data/ is found, the bundled copy and comments are not", () => {
   const planted: Record<string, string> = {

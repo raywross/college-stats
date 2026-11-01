@@ -11,18 +11,20 @@
  *   … --skip-tables             no college_data_failures upsert and no high-school tables (a re-publish, a test)
  *   … --republish-high-schools  write the high-school tables even when this snapshot's high schools match theirs
  *   … --skip-deploy             don't call the deploy hook (VERCEL_DEPLOY_HOOK_URL)
- *   … --previous auto|git|none  what the tiers' hysteresis, the carried trends and the change log compare with:
- *                               the last published snapshot (auto), falling back to data/schools.json while git still
- *                               holds it (phase 1); `none` for a first publish from nothing
+ *   … --previous auto|none      what the tiers' hysteresis, the carried trends and the change log compare with:
+ *                               the last published snapshot (auto; none when nothing was published yet), or nothing
  *   … --today YYYY-MM-DD        the day the compose uses (the open essay cycle); default today
  *   … --revalidate-wait <s>     seconds between moving the pointer and revalidating (default 75)
- *   … --skip-trends             leave out the national trend files (a fixture of a few colleges, whose builders need
- *                               every college; never for the real data)
+ *   … --skip-trends             leave out the national trend files and the reference gate's college-membership
+ *                               checks (a fixture of a few colleges, whose builders and reference documents need every
+ *                               college; never for the real data)
  *
  * Steps: (1) the change sets since the last published snapshot: any held one stops the run (exit 2) unless --force;
  * none stops it ("nothing to publish") unless --force. (2) Load the layers, the live field edits and the console's
- * hand-read prompts. (3) Compose (scripts/lib/data-platform/compose.mts); a lineage failure records the snapshot as
- * failed, prints the first ten problems and exits 1, uploading nothing. (4) Render (render.mts). (5) Upload the
+ * hand-read prompts. (3) Compose (scripts/lib/data-platform/compose.mts), then the gates (gates.mts): lineage, every
+ * reference document through its own validator (lib/reference-validators.ts, membership against the composed
+ * colleges), the CDS records against the docs manifest, the legacy overrides' sources. Any problem records the
+ * snapshot as failed, prints the first ten problems and exits 1, uploading nothing. (4) Render (render.mts). (5) Upload the
  * objects, then the manifest, then the pointer (upload.mts). (6) Record: the tables the app reads beside the snapshot
  * (publish-tables.mts: the college_data_failures upsert, and the high-school tables when the snapshot's high schools
  * changed), data_finish_snapshot with the tables' log in the row's manifest, the change log and tier history
@@ -38,7 +40,7 @@
  * SITE_URL) for the revalidate call, VERCEL_DEPLOY_HOOK_URL (optional) for the deploy hook, NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
  * for the `data_publish` event.
  */
-import { mkdirSync, readFileSync, existsSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { userInfo } from "node:os";
 import { gunzipSync } from "node:zlib";
@@ -54,12 +56,13 @@ import { recordChanges, recordTiers, tierSuppression } from "./lib/data-platform
 import { publishTables, skippedTables, type RecordedManifest, type TablesDeps, type TablesLog } from "./lib/data-platform/publish-tables.mts";
 import { COLLECTIONS, readLayer } from "./lib/data-platform/layers.mts";
 import type { FailureRow } from "./lib/college-failures.mts";
+import type { ManifestEntry } from "../lib/cds-sections.ts";
+import { cdsRecordsGate, overridesGate, referenceGate } from "./lib/data-platform/gates.mts";
 import { readRecorded, type HistoryClient } from "./lib/selectivity-history.mts";
 import { SELECTIVITY_METHOD } from "../lib/selectivity.ts";
 
-const ROOT = join(import.meta.dirname, "..");
 
-/** Exit codes: 0 published (or nothing to do), 1 a lineage failure or an error, 2 held change sets block the run. */
+/** Exit codes: 0 published (or nothing to do), 1 a failed gate (lineage, reference, CDS records) or an error, 2 held change sets block the run. */
 export const EXIT = { ok: 0, failed: 1, held: 2 } as const;
 
 /** Seconds between moving the pointer and revalidating (publish.md step 5). */
@@ -78,14 +81,12 @@ export interface PublishOptions {
   /** Don't call the deploy hook. */
   skipDeploy?: boolean;
   point?: number;
-  previous: "auto" | "git" | "none";
+  previous: "auto" | "none";
   today: string;
   skipTrends?: boolean;
   revalidateWaitS: number;
   env: Env;
   log: (line: string) => void;
-  /** Where data/ lives for `--previous git` (the repository). */
-  root: string;
   /** Overrides for tests: the bucket, the ledger, the secret-key client (change log, tables), the tables' library calls, fetch. */
   deps?: Partial<{ bucket: BucketClient; ledger: PublishLedger; changelogClient: unknown; tables: Partial<TablesDeps>; fetch: typeof fetch; now: () => Date }>;
 }
@@ -94,7 +95,7 @@ export interface PublishOptions {
 export function parseArgs(argv: readonly string[], env: Env = process.env): PublishOptions {
   const point = flagValue(argv, "--point");
   const previous = (flagValue(argv, "--previous") ?? "auto") as PublishOptions["previous"];
-  if (!["auto", "git", "none"].includes(previous)) throw new Error(`--previous ${previous}: expected auto, git or none`);
+  if (!["auto", "none"].includes(previous)) throw new Error(`--previous ${previous}: expected auto or none`);
   const wait = flagValue(argv, "--revalidate-wait");
   return {
     store: flagValue(argv, "--store"),
@@ -112,7 +113,6 @@ export function parseArgs(argv: readonly string[], env: Env = process.env): Publ
     revalidateWaitS: wait === undefined ? REVALIDATE_WAIT_S : Number(wait),
     env,
     log: (line) => console.log(line),
-    root: ROOT,
   };
 }
 
@@ -150,12 +150,19 @@ export async function readSnapshot(bucket: BucketClient, id: number): Promise<{ 
   return { schools: JSON.parse(gunzipSync(colleges).toString("utf8")) as School[], meta: JSON.parse(meta.toString("utf8")) as DatasetMeta };
 }
 
-/** data/schools.json and data/meta.json while git still holds them (phase 1's stand-in for a first snapshot's previous). */
-function readGitDataset(root: string): { schools: School[]; meta: DatasetMeta } | null {
-  const schools = join(root, "data", "schools.json");
-  const meta = join(root, "data", "meta.json");
-  if (!existsSync(schools) || !existsSync(meta)) return null;
-  return { schools: JSON.parse(readFileSync(schools, "utf8")) as School[], meta: JSON.parse(readFileSync(meta, "utf8")) as DatasetMeta };
+/**
+ * The gates after compose (gates.mts): the compose's own problems (lineage, refused edits, a failed trend builder),
+ * then the reference documents, the CDS records and the legacy overrides. `membership` false skips the reference
+ * documents' college-membership checks (a fixture of a few colleges).
+ */
+export async function gateProblems(composed: ComposedSnapshot, layers: Awaited<ReturnType<typeof loadPublishLayers>>, store: ReturnType<typeof storeFromFlag>, opts: { today: string; membership: boolean }): Promise<string[]> {
+  const docs = await readLayer<ManifestEntry>(store, COLLECTIONS.reported.docs);
+  return [
+    ...composed.problems,
+    ...referenceGate(composed.reference, { knownUnitIds: opts.membership ? new Set(composed.schools.map((s) => s.unit_id)) : undefined, today: opts.today }),
+    ...cdsRecordsGate(layers.reported.records, docs.size ? [...docs.values()] : null),
+    ...overridesGate(layers.identity.overrides),
+  ];
 }
 
 /** Writes the rendered objects and the manifest under `dir` (a dry run's `--out`). */
@@ -297,19 +304,19 @@ export async function publishSnapshot(opts: PublishOptions): Promise<number> {
   const last = await lastPublished(b.ledger);
   let previous: { schools: School[]; meta: DatasetMeta } | null = null;
   if (opts.previous === "auto" && last) previous = await readSnapshot(b.bucket, last.id);
-  else if (opts.previous !== "none") previous = readGitDataset(opts.root);
-  opts.log(`publish-snapshot: ${changeSetIds.length} change set(s); previous: ${last && opts.previous === "auto" ? `snapshot ${last.id}` : previous ? "data/schools.json (git)" : "none"}`);
+  opts.log(`publish-snapshot: ${changeSetIds.length} change set(s); previous: ${previous && last ? `snapshot ${last.id}` : "none"}`);
 
   // 3. Compose.
   const composed: ComposedSnapshot = composeSnapshot(layers, { previous: previous?.schools ?? null, today: opts.today, trends: !opts.skipTrends });
   for (const w of composed.warnings.slice(0, 20)) opts.log(`  warning: ${w}`);
   if (composed.warnings.length > 20) opts.log(`  …and ${composed.warnings.length - 20} more warnings`);
-  if (composed.problems.length) {
-    opts.log(`publish-snapshot: lineage check failed (${composed.problems.length}); nothing uploaded:`);
-    for (const p of composed.problems.slice(0, 10)) opts.log(`  ${p}`);
+  const problems = await gateProblems(composed, layers, store, { today: opts.today, membership: !opts.skipTrends });
+  if (problems.length) {
+    opts.log(`publish-snapshot: the checks failed (${problems.length}: lineage, reference documents, CDS records, overrides); nothing uploaded:`);
+    for (const p of problems.slice(0, 10)) opts.log(`  ${p}`);
     if (!opts.dryRun) {
       const id = await b.ledger.begin(changeSetIds, last?.id ?? null);
-      await b.ledger.finish(id, "failed", null, composed.problems.slice(0, 10).join("\n"));
+      await b.ledger.finish(id, "failed", null, problems.slice(0, 10).join("\n"));
       opts.log(`snapshot ${id} recorded as failed`);
     }
     return EXIT.failed;

@@ -2,13 +2,13 @@
  * Dates every published file the dataset is built from (specs/product/admin-health-views.md "When a file was
  * published"): a HEAD request per file, its `Last-Modified` date recorded for the Health page's Files view.
  * `npm run sync-data -- --store …` runs `datedSourceFiles` itself and writes the record as `base.source_files`
- * (specs/data-platform/pipelines.md); this CLI rewrites data/source-files.json from data/meta.json, for the files
- * still in the repository. `npm run check:source-files` fails while a file is undated.
+ * (specs/data-platform/pipelines.md); this CLI dates the files `base.meta` names again and writes `base.source_files`
+ * on its own, in one change set (source source-files; scripts/lib/data-platform/reference-build.mts), so a new file's
+ * date can be recorded without a full sync. `npm run check:source-files` (over the bundled copy's `source-files.json`)
+ * fails while a file is undated.
  *
- *   npm run source-files
+ *   npm run source-files -- --store supabase           (--dry-run: date and compare, write nothing)
  */
-import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { lastModifiedDate, sourceFileRefs, type SourceFilesRecord } from "../lib/admin/source-files.ts";
 import type { DatasetMeta } from "../lib/types.ts";
 
@@ -35,9 +35,12 @@ export async function datedSourceFiles(meta: DatasetMeta, opts: { fetch?: typeof
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const ROOT = join(import.meta.dirname, "..");
-  const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as DatasetMeta;
+  const { storeFromArgv } = await import("./lib/data-platform/producer.mts");
+  const { COLLECTIONS, SINGLE_KEYS } = await import("./lib/data-platform/layers.mts");
+  const { writeDocumentRun } = await import("./lib/data-platform/reference-build.mts");
+  const meta = await storeFromArgv(process.argv.slice(2)).readOne<DatasetMeta>(COLLECTIONS.base.meta, SINGLE_KEYS.meta);
+  if (!meta) throw new Error("source-files: the store has no base.meta (run npm run sync-data first)");
   const out = await datedSourceFiles(meta, { log: (l) => console.log(l) });
-  writeFileSync(join(ROOT, "data", "source-files.json"), `${JSON.stringify(out, null, 2)}\n`);
-  console.log(`Wrote data/source-files.json (${Object.keys(out.files).length} files).`);
+  console.log(`Dated ${Object.keys(out.files).length} files.`);
+  await writeDocumentRun({ collection: COLLECTIONS.base.sourceFiles, key: SINGLE_KEYS.sourceFiles, body: out, source: "source-files" });
 }

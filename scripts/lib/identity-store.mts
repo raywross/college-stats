@@ -1,7 +1,7 @@
 /**
  * The identity producers on the data store (specs/data-platform/pipelines.md, "identity-refresh"): sync-wikidata,
  * probe-sites and sync-brand read their own prior state from the `identity.*` layers and write them back per college,
- * keyed as scripts/import-data-from-git.mts keys them (one document per unit id; `identity.link_issues` and
+ * keyed as scripts/import-data-from-files.mts keys them (one document per unit id; `identity.link_issues` and
  * `identity.wikidata_issues` hold a college's rows as a list, in file order). No producer writes a composed college:
  * the publisher applies identity (scripts/lib/data-platform/compose.mts step 2).
  *

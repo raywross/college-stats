@@ -1,5 +1,6 @@
 # Runs the campus-life pilot (scripts/campus-pilot.mts; specs/religious-life.md phase 2, greek-life.md phase 2,
-# lgbtq-life.md phase 4) on a list of pilot colleges (default: round 3's 25, data/reference/campus-pilot-3-colleges.json),
+# lgbtq-life.md phase 4) on a list of pilot colleges (a reference document by name; default round 3's 25,
+# campus-pilot-3-colleges),
 # where the Anthropic key lives (the repository secret ANTHROPIC_API_KEY; there is no key in local .env files). It runs
 # the pilot and scores it against the hand-checked answer key when one exists, writing campus.pages, campus.sources,
 # the reports and refusals to the data store in one change set (source campus-pilot), which this workflow opens first
@@ -13,10 +14,10 @@ name: Campus-life pilot
 on:
   workflow_dispatch:
     inputs:
-      colleges_file:
-        description: "College list file to run: a colleges array of unit_id objects"
+      colleges:
+        description: "The college list to run: a reference document by name (a colleges array of unit_id objects)"
         type: string
-        default: data/reference/campus-pilot-3-colleges.json
+        default: campus-pilot-3-colleges
       college:
         description: Unit ids to run, space-separated (overrides the list when set)
         type: string
@@ -76,6 +77,17 @@ jobs:
       - if: steps.secrets.outputs.ready == 'true'
         run: npm ci
 
+      # The bundled copy (.data/snapshot/): the current snapshot's colleges and reference documents, which the scripts
+      # read (scripts/lib/data-platform/bundled.mts). npm ci's postinstall leaves the mini fixture there when nothing is
+      # configured, so this fetch is what makes the scripts see every college; a failed fetch fails the run.
+      - name: Fetch the current snapshot
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          DATA_SNAPSHOT_URL: ${{ vars.DATA_SNAPSHOT_URL }}
+        run: |
+          export DATA_SNAPSHOT_URL="${DATA_SNAPSHOT_URL:-${DATA_SUPABASE_URL%/}/storage/v1/object/public/snapshots}"
+          npm run fetch-snapshot
+
       - name: Open the change set
         id: change_set
         if: steps.secrets.outputs.ready == 'true'
@@ -89,25 +101,26 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           COLLEGES: ${{ inputs.college }}
-          COLLEGES_FILE: ${{ inputs.colleges_file }}
+          COLLEGES_LIST: ${{ inputs.colleges }}
           CAP: ${{ inputs.cap }}
           REDISCOVER: ${{ inputs.rediscover }}
           BATCH: ${{ inputs.batch }}
           CHANGE_SET: ${{ steps.change_set.outputs.id }}
         run: |
-          args="--store supabase --change-set $CHANGE_SET --cap ${CAP:-15} --colleges-file ${COLLEGES_FILE:-data/reference/campus-pilot-3-colleges.json}"
+          args="--store supabase --change-set $CHANGE_SET --cap ${CAP:-15} --colleges ${COLLEGES_LIST:-campus-pilot-3-colleges}"
           for id in $COLLEGES; do args="$args --college $id"; done
           if [ "$REDISCOVER" = "true" ]; then args="$args --rediscover"; fi
           if [ "$BATCH" = "false" ]; then args="$args --no-batch"; fi
           npm run campus-pilot -- $args
 
+      # The answer key is a reported.reports document, named by name (score-campus-pilot reads it from the store).
       - name: Score against the answer key
         id: score
         if: steps.secrets.outputs.ready == 'true'
         env:
           CHANGE_SET: ${{ steps.change_set.outputs.id }}
         run: |
-          if npm run --silent score-campus-pilot -- --key data/reports/campus-pilot-answer-key.json --store supabase --change-set "$CHANGE_SET"; then
+          if npm run --silent score-campus-pilot -- --key campus-pilot-answer-key.json --store supabase --change-set "$CHANGE_SET"; then
             echo "Scored."
           else
             echo "::notice::No answer key (or no report) to score against; skipping the score."

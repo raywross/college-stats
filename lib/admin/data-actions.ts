@@ -41,7 +41,7 @@ export interface PointSnapshotRpc {
 }
 
 /** The console's `admin_data_*` functions this module calls, by name. */
-export type DataFunction = "admin_data_hold" | "admin_data_unhold" | "admin_data_revert" | "admin_data_edit" | "admin_data_resolve_review";
+export type DataFunction = "admin_data_hold" | "admin_data_unhold" | "admin_data_revert" | "admin_data_edit" | "admin_data_release_edit" | "admin_data_resolve_review";
 
 /** One `admin_data_*` call with the admin's session: the result, or the database's raw error text (mapped here). */
 export interface DataRpc {
@@ -70,6 +70,8 @@ const DATA_ERRORS: Record<string, string> = {
   invalid_note: "Keep the note under 500 characters.",
   invalid_unit: "That isn't a college's unit id.",
   invalid_path: "That isn't a field the console can edit.",
+  edit_not_found: "That edit doesn't exist any more. Reload the page.",
+  edit_released: "That edit was already released. Reload the page.",
   invalid_resolution: "Pick accepted or rejected.",
   review_item_not_found: "That item is no longer held. Reload the page.",
   "version conflict": "Someone changed that item a moment ago. Reload the page and try again.",

@@ -269,3 +269,42 @@ test("validator: a value that differs from admissions.federal must be cited to t
   delete s.lineage!["admissions.admitted"];
   assert.match(validateSchool(s, meta).join("\n"), /admissions\.admitted differs from admissions\.federal\.admitted/);
 });
+
+/* ---- Admin edits (source quad-edit, method edited; specs/data-platform/change-sets.md "Admin edits") ---- */
+
+test("an edited value cites Quad's editors and the day, with no year, even before meta has the quad-edit source", async () => {
+  const { withEdits } = await import("../lib/data-platform/edits.ts");
+  const { citationText, citesYear, editedOn, isEditedSource, shortSource } = await import("../lib/lineage.ts");
+  const base = fixture();
+  const edited = withEdits(base, [{ id: 1, unit_id: base.unit_id, path: "admissions.applicants", value: 12345, note: "Per the registrar's email", created_at: "2026-10-31T15:04:05Z" }]);
+  const noSource: DatasetMeta = { ...meta, sources: { ...meta.sources, "quad-edit": undefined } as DatasetMeta["sources"] };
+  for (const m of [meta, noSource]) {
+    const c = lineageFor("admissions.applicants", edited, m);
+    assert.equal(c.key, "quad-edit");
+    assert.equal(c.method, "edited");
+    assert.equal(c.label, "Quad's editors");
+    assert.equal(c.publisher, "Quad");
+    assert.equal(c.year, null);
+    assert.equal(c.retrieved, "2026-10-31");
+    assert.equal(c.note, "Per the registrar's email");
+    assert.equal(isEditedSource(c), true);
+    assert.equal(citesYear(c), false, "no 'most recent release' for an edit");
+    assert.equal(editedOn(c), "Edited by Quad on October 31, 2026");
+    assert.equal(citationText(c), "Edited by Quad on October 31, 2026");
+    assert.equal(shortSource(c), "Edited by Quad");
+  }
+  // The section footnote lists the edit as its own source, with no year.
+  const sources = sourcesForFields(["admissions.applicants", "admissions.admitted"], edited, meta);
+  assert.ok(sources.some((s) => s.key === "quad-edit" && s.year === null));
+});
+
+test("an unedited value's citation wording is unchanged by the edit helpers", async () => {
+  const { citationText, citesYear, isEditedSource, yearLabel } = await import("../lib/lineage.ts");
+  const base = fixture();
+  const c = lineageFor("admissions.applicants", base, meta);
+  assert.notEqual(c.key, "quad-edit");
+  assert.equal(c.note, undefined);
+  assert.equal(isEditedSource(c), false);
+  assert.equal(citesYear(c), true);
+  assert.equal(citationText(c), `${c.label}, ${yearLabel(c)}`);
+});

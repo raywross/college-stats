@@ -519,6 +519,11 @@ export default async function DataPage() {
           </Link>
           .
         </p>
+        <p id="edits" className="max-w-3xl scroll-mt-24 text-sm text-muted-foreground">
+          <b className="font-semibold text-foreground">Edited by Quad:</b> where a source&apos;s value is missing or wrong, Quad&apos;s
+          editors can set it by hand. The value&apos;s ⓘ says so, with the day of the edit, and a newer release replaces it only
+          once an editor lets it.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
           {order.map((key) => {
             const s = meta.sources[key];

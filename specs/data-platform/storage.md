@@ -151,11 +151,17 @@ publisher as part of the essays layer and keeps its console.
 | `high_schools.*` | state / id | The shards, ledger, recipes, pilot, review queue (the tables stay the serving copy) | high-school syncs |
 | `reference.files` | file name | As built, phase 3: the eleven names in `REFERENCE_FILES` (`scripts/lib/data-platform/layers.mts`) — `aid-policies`, `aliases-curated`, `application-cycle`, `guaranteed-admission`, `major-admission`, `state-laws`, `organizations`, `common-app-trends`, `excluded-campuses`, `essay-guidance/guidance` (text in `body.text`), `zcta-centroids` (CSV text in `body.text`) | import, the console (`/admin/data/reference/[name]`) |
 | `overrides.legacy` | unit id | Today's `data/overrides.json` entries, imported once and applied where `sync-data` applied them; new corrections are field edits | import only |
+| `steward.issues`, `steward.proposals`, `steward.todo`, `steward.decisions`, `steward.audits`, `steward.runs` | a cluster key, a proposal key, a To do key, a decision slug, an audit key, a run id | The Data Steward's own documents ([data-steward.md](../product/data-steward.md) "What it writes"): its reading of a cause, a proposed resolution with evidence, a document only a person can fetch, a policy question, a check family's sample, a run summary | `scripts/steward.mts` (source `steward`, `steward-apply`), the console's `admin_steward_write` |
 | `health.colleges` | `health` | `college-health.json` | college-health (derived) |
 
 Derived at publish and not stored as layers: the composed `School`, `selectivity` (built with hysteresis against the
 previous snapshot), `trends/*`, the search index, `aliases` (base plus Common App's), `college-failures` (rebuilt by
 the publisher from `reported.*` and loaded into `college_data_failures` as today).
+
+`steward.*` is never composed into a college and never served by the Data API; it isn't in the mini fixture's layers
+either. A closed change set whose summary lists only `steward.*` collections (a Steward run, `steward-apply`, or a
+console `admin_steward_write` edit) never by itself gives the publisher a reason to compose a new snapshot
+([ledger.mts](../../scripts/lib/data-platform/ledger.mts) `changesSnapshot`).
 
 ## Row-level security
 - `data_documents` and `data_document_versions`: **select for everyone** (`anon`, `authenticated`), because every

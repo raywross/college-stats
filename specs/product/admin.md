@@ -293,6 +293,10 @@ review queue and the run reports from GitHub at `main`, never from the deploy.
 > The Review queue and Approvals parts are replaced by [data-steward.md](data-steward.md) (planned 2026-10-13): an
 > agent groups the queue into causes and proposes fixes with evidence; Operations shows Issues, Proposals, and Audits.
 > Runs and Start a run stay as built.
+> **2026-11-01**: the Steward's own screens (Issues, Proposals, To do, Decisions, Audits) live under **Data**, not
+> Operations — see "Data" below. Operations keeps **Start a run** (which gains **Run the Data Steward**) and
+> **Runs**; its "Review queue" section becomes a link to Issues and "Approvals" lists code PRs only, since a data
+> change no longer arrives as one.
 
 The owner wants to trigger reruns and approve data changes from the console, in the first build if the GitHub side
 is right. It is: every pipeline is already a workflow with `workflow_dispatch` inputs, every data change is already a
@@ -406,6 +410,12 @@ curated aliases, and the rest) — and `/admin/data/reference/[name]` edits one,
 versions with a typed-confirmation revert. Full detail, including which documents have their own validator, is in
 [data-platform/change-sets.md](../data-platform/change-sets.md) "As built, phase 3" and
 [storage.md](../data-platform/storage.md).
+
+The section also carries the Data Steward's five screens — **Issues**, **Proposals**, **To do**, **Decisions**, and
+**Audits** — beside Change sets, Holds, Snapshots, and Reference, because that's where the review queue and its
+holds already live; a college's own pending rows show on its page as a **Review** tab beside Edit. What each screen
+shows, what it writes, and the kinds of resolution behind its actions (Approve, Decline, Ask, Decide) are in
+[data-steward.md](data-steward.md) "The console: where it all shows".
 
 ## Settings
 `/admin/settings` (built 2026-10-21; linked under "Who is an admin" in the rail): switches for the whole site. Each is a

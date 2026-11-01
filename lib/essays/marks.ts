@@ -7,17 +7,9 @@
  */
 import { spanOffsets, type NoteSpan } from "./notes-view.ts";
 
-/**
- * A suggested change, as lib/essays/suggestions.ts defines it (the same shape; declared here because that module is
- * built alongside this one: once both are on one branch this becomes `import type { Change } from "./suggestions"`).
- */
-export interface Change {
-  key: string;
-  removed: string;
-  inserted: string;
-  before: string;
-  after: string;
-}
+import type { Change } from "./suggestions.ts";
+
+export type { Change };
 /** Where a change sits in the current text (start === end for a pure insertion), or null when the draft changed there. */
 export type ChangeLocator = (current: string, change: Change) => { start: number; end: number } | null;
 

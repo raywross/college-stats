@@ -1,6 +1,6 @@
 /**
  * The guidance corpus as the reader receives it (specs/product/essays/reviewer.md "The guidance corpus"):
- * data/reference/essay-guidance/guidance.md, split by its `## ` headings, and the sections for a prompt's kind picked
+ * the reference document `essay-guidance/guidance` (the bundled copy's .data/snapshot/reference/essay-guidance.md), split by its `## ` headings, and the sections for a prompt's kind picked
  * for the system block. The thirteen headings below are the contract with the corpus (tests/essay-guidance.test.mts
  * checks the file has them); retrieval is by heading, not by embeddings (reviewer.md "A small language model, or a RAG").
  *
@@ -110,7 +110,7 @@ let cached: GuidanceSections | null = null;
  */
 export function loadGuidance(): GuidanceSections {
   if (cached) return cached;
-  const markdown = readFileSync(join(process.cwd(), "data", "reference", "essay-guidance", "guidance.md"), "utf8");
+  const markdown = readFileSync(join(process.cwd(), ".data", "snapshot", "reference", "essay-guidance.md"), "utf8");
   const sections = parseGuidance(markdown);
   const missing = missingSections(sections);
   if (missing.length) throw new Error(`essay guidance lacks sections: ${missing.join(", ")}`);

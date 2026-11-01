@@ -439,7 +439,7 @@ test("Your week: lines and one link, nothing when nothing is due; the default by
 });
 
 test("the cycle file: three cycles, every entry valid, sources on every one, test dates from the publishers", async () => {
-  const raw = await miniReference("application-cycle");
+  const raw = miniReference("application-cycle");
   assert.deepEqual(validateCycleFile(raw), []);
   assert.deepEqual(cycleKeys(), ["2026-27", "2027-28", "2028-29"]);
   for (const key of cycleKeys()) {

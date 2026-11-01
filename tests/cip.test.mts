@@ -21,9 +21,7 @@ import {
   normalizeCip,
 } from "../lib/cip.ts";
 
-const TABLE = (await miniReference<{ titles: Record<string, string>; moved_from_2010: Record<string, string>; url: string; retrieved: string }>(
-  "cip2020",
-))!;
+const TABLE = miniReference<{ titles: Record<string, string>; moved_from_2010: Record<string, string>; url: string; retrieved: string }>("cip2020");
 
 test("normalizeCip reads every spelling IPEDS and Scorecard use", () => {
   const cases: [string | number, string | null][] = [

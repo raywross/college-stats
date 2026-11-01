@@ -14,7 +14,7 @@ import { aidPolicyFor, aidYearLabel, allAidPolicies, validateAidPolicies, type A
 import { lineageFor, sourcesForFields, validateRegistry, validateSchool } from "../lib/lineage.ts";
 
 const ROOT = join(import.meta.dirname, "..");
-const FILE = (await miniReference<AidPolicyFile>("aid-policies"))!;
+const FILE = miniReference<AidPolicyFile>("aid-policies");
 const meta = miniMeta();
 const schools = miniSchools();
 // Only the mini fixture's own ids; `known` is used below only for format/membership checks, never to validate

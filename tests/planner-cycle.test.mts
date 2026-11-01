@@ -27,7 +27,7 @@ import {
 import { emptyProfile } from "../lib/student-profile.ts";
 
 const ROOT = join(import.meta.dirname, "..");
-const FILE = (await miniReference<CycleFile>("application-cycle"))!;
+const FILE = miniReference<CycleFile>("application-cycle");
 
 test("cycle names: the class of G applies in the cycle that starts in G - 1", () => {
   assert.equal(cycleFor(2028), "2027-28");

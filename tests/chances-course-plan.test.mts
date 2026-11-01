@@ -39,7 +39,7 @@ const { emptyCoreAtTopLevel, emptyProfile, sanitizeCoursePlan, sanitizeProfile, 
 const { applies, loadCycle, validateCycleFile } = await import("../lib/planner/cycle.ts");
 const { generate: offersGen } = await import("../lib/planner/generators/offers.ts");
 const { schoolOffering } = await import("../lib/chances/offering.ts");
-const cycleFile = await miniReference("application-cycle");
+const cycleFile = miniReference("application-cycle");
 
 import type { CourseEntry, EstimateResult } from "../lib/chances/types.ts";
 import type { PlanCollege, PlanInput } from "../lib/chances/course-plan.ts";

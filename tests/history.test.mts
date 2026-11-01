@@ -4,9 +4,8 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
+import { miniMeta, miniSchools, miniHistoryFiles, miniHistory } from "./helpers/snapshot.mts";
 import { FIELDS } from "../lib/fields.ts";
 import { computePrices, priceSuffix, yieldOf } from "../lib/derive.ts";
 import {
@@ -40,11 +39,8 @@ import {
 } from "../scripts/history/build.mts";
 import { schoolYearAverages, type CpiMonth } from "../scripts/history/cpi.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const HISTORY = join(ROOT, "data", "history");
-const hasHistory = existsSync(join(HISTORY, "meta.json"));
+const meta: DatasetMeta = miniMeta();
+const schools: School[] = miniSchools();
 
 const V = "221999";
 const rows = (row: Record<string, string>) => new Map([[V, { UNITID: V, ...row }]]);
@@ -166,7 +162,9 @@ test("coverageDrops catches a drop over 20% and a missing year; the allow-list n
 });
 
 test("lastPointMismatches: history must end on the snapshot's value (rule 1)", () => {
-  const s = structuredClone(schools.find((x) => !x.lineage && x.admissions.year && x.admissions.applicants)!);
+  // Rule 1 cares only that "admissions.applicants" itself isn't already overridden (the mini fixture's colleges
+  // mostly carry some lineage; none has none at all, unlike the real dataset's open-admission/minimal colleges).
+  const s = structuredClone(schools.find((x) => !x.lineage?.["admissions.applicants"] && x.admissions.year && x.admissions.applicants)!);
   const latest = { fall: s.admissions.year!, academic: 2023 };
   const h: SchoolHistory = { unit_id: s.unit_id, series: { applicants: { start: latest.fall, values: [s.admissions.applicants] } } };
   const map = new Map([[s.unit_id, h]]);
@@ -269,19 +267,21 @@ test("facts use fixed panels: colleges missing an endpoint are left out", () => 
 
 /* ---- The committed files ---- */
 
-test("committed history: every shard is valid and ends on the snapshot's values", { skip: !hasHistory }, () => {
-  const hmeta: HistoryMeta = JSON.parse(readFileSync(join(HISTORY, "meta.json"), "utf8"));
+test("committed history: every shard is valid and ends on the snapshot's values", () => {
+  const hmeta: HistoryMeta = miniHistoryFiles().meta as HistoryMeta;
   assert.deepEqual(validateHistoryMeta(hmeta, meta), []);
   const ids = new Set(schools.map((s) => s.unit_id));
-  const shards = readdirSync(join(HISTORY, "schools")).map((f) => JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8")) as SchoolHistory);
-  assert.equal(shards.length, hmeta.schools);
+  const shards = [...ids].map((id) => miniHistory(id)).filter((h): h is SchoolHistory => h != null);
+  // hmeta.schools is the real dataset's shard count (1,893); the mini fixture carries far fewer, so checked
+  // against its own college list instead (every college with a shard, and only those).
+  assert.equal(shards.length, schools.filter((s) => miniHistory(s.unit_id) != null).length);
   for (const h of shards) assert.deepEqual(validateShard(h, ids), []);
   // Same rule as the build: exact, except within median debt's soft allowance (SOFT_LAST_POINT).
   assert.deepEqual(ruleOneProblems(lastPointMismatches(schools, new Map(shards.map((h) => [h.unit_id, h])), hmeta.latest), schools).hard, []);
 });
 
-test("committed history: citations name each survey with the years used", { skip: !hasHistory }, () => {
-  const hmeta: HistoryMeta = JSON.parse(readFileSync(join(HISTORY, "meta.json"), "utf8"));
+test("committed history: citations name each survey with the years used", () => {
+  const hmeta: HistoryMeta = miniHistoryFiles().meta as HistoryMeta;
   const adm = historySources(["applicants"], hmeta, meta);
   assert.deepEqual(adm.map((s) => s.key), ["ipeds-ic", "ipeds-adm"]);
   assert.match(adm[1].years, /^Fall 2014 to Fall \d{4}$/);
@@ -356,7 +356,7 @@ test("fact 3 uses a fixed panel of colleges reporting a policy in both years", (
 });
 
 test("rule 1: a derived field counts as overridden when its inputs are; median debt has a soft allowance", () => {
-  const s = structuredClone(schools.find((x) => !x.lineage && x.admissions.year && x.admissions.sat_reading_25_75 && x.admissions.sat_math_25_75)!);
+  const s = structuredClone(schools.find((x) => !x.lineage?.["admissions.sat_reading_25_75"] && x.admissions.year && x.admissions.sat_reading_25_75 && x.admissions.sat_math_25_75)!);
   const latest = { fall: s.admissions.year!, academic: 2023 };
   const h: SchoolHistory = { unit_id: s.unit_id, series: { sat_25: { start: latest.fall, values: [1] } } };
   const only = (l: string[]) => l.filter((m) => m.includes(" sat_25:"));
@@ -371,14 +371,14 @@ test("rule 1: a derived field counts as overridden when its inputs are; median d
   assert.equal(ruleOneProblems(["1 applicants: history 1, snapshot 2"], schools).hard.length, 1);
 });
 
-test("committed schools.json trends match the committed shards", { skip: !hasHistory }, () => {
-  const hmeta: HistoryMeta = JSON.parse(readFileSync(join(HISTORY, "meta.json"), "utf8"));
-  const cpi: CpiTable = JSON.parse(readFileSync(join(HISTORY, "cpi.json"), "utf8"));
+test("committed schools.json trends match the committed shards", () => {
+  const files = miniHistoryFiles();
+  const hmeta = files.meta as HistoryMeta;
+  const cpi = files.cpi as CpiTable;
   let checked = 0;
-  for (const f of readdirSync(join(HISTORY, "schools"))) {
-    const h: SchoolHistory = JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8"));
-    const s = schools.find((x) => x.unit_id === h.unit_id);
-    if (!s) continue;
+  for (const s of schools) {
+    const h = miniHistory(s.unit_id);
+    if (!h) continue;
     assert.deepEqual(s.trends ?? {}, trendSummary(h, cpi, hmeta), `${h.unit_id}: run npm run sync-history`);
     checked++;
   }

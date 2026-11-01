@@ -106,21 +106,21 @@ test("validateReference: the real aid-policies.json is sound; a missing required
   // No `knownUnitIds` here: the real curated file names ~54 colleges, most outside the mini fixture's 12, so the
   // membership half of the check isn't meaningful on this fixture (per the doc comment, omitting it skips that
   // check rather than refusing); the format checks still run over the real file.
-  const body = (await miniReference("aid-policies")) as { policies: Record<string, unknown>[] };
+  const body = miniReference("aid-policies") as { policies: Record<string, unknown>[] };
   assert.deepEqual(validate("aid-policies", body), []);
   const broken = { policies: [{ ...body.policies[0], unit_id: undefined }] };
   assert.ok(validate("aid-policies", broken).length > 0);
 });
 
 test("validateReference: the real state-laws.json is sound (no knownUnitIds check for this one); a bad date is not", async () => {
-  const body = (await miniReference("state-laws")) as { reviewed: string; laws: Record<string, unknown>[] };
+  const body = miniReference("state-laws") as { reviewed: string; laws: Record<string, unknown>[] };
   assert.deepEqual(validate("state-laws", body), []);
   const broken = { ...body, reviewed: "not-a-date" };
   assert.ok(validate("state-laws", broken).length > 0);
 });
 
 test("validateReference: the real application-cycle.json is sound; a non-object is not", async () => {
-  const body = (await miniReference("application-cycle"));
+  const body = miniReference("application-cycle");
   assert.deepEqual(validate("application-cycle", body), []);
   assert.ok(validate("application-cycle", "nope").length > 0);
 });
@@ -128,19 +128,19 @@ test("validateReference: the real application-cycle.json is sound; a non-object 
 test("validateReference: the real guaranteed-admission.json and major-admission.json are sound", async () => {
   // No `knownUnitIds`: most curated colleges in these files are outside the mini fixture's 12 (the publisher's
   // reference gate, G5, checks membership against the real dataset at publish time).
-  const guaranteed = (await miniReference("guaranteed-admission"));
+  const guaranteed = miniReference("guaranteed-admission");
   assert.deepEqual(validate("guaranteed-admission", guaranteed), []);
-  const major = (await miniReference("major-admission"));
+  const major = miniReference("major-admission");
   assert.deepEqual(validate("major-admission", major), []);
 });
 
 test("validateReference: the real trends/common-app.json and directories/organizations.json are sound", async () => {
-  assert.deepEqual(validate("common-app-trends", (await miniReference("common-app-trends"))), []);
-  assert.deepEqual(validate("organizations", (await miniReference("organizations"))), []);
+  assert.deepEqual(validate("common-app-trends", miniReference("common-app-trends")), []);
+  assert.deepEqual(validate("organizations", miniReference("organizations")), []);
 });
 
 test("validateReference: the curated aliases name every unit_id it lists (toAliasRows + aliasTableProblems); an unknown unit_id is a problem", async () => {
-  const body = (await miniReference("aliases-curated")) as { unit_id: string; alias: string }[];
+  const body = miniReference("aliases-curated") as { unit_id: string; alias: string }[];
   // No `knownUnitIds` on the "sound" check: most curated aliases are for colleges outside the mini fixture's 12.
   assert.deepEqual(validate("aliases-curated", body), []);
   assert.ok(validate("aliases-curated", [...body, { unit_id: "0", alias: "Nope U" }], knownUnitIds).length > 0);
@@ -148,7 +148,7 @@ test("validateReference: the curated aliases name every unit_id it lists (toAlia
 });
 
 test("validateReference: the essay guidance text names every missing section; the real document has none", async () => {
-  const markdown = (await miniReference<{ text: string }>("essay-guidance/guidance"))!.text;
+  const markdown = miniReference<string>("essay-guidance");
   assert.deepEqual(validate("essay-guidance/guidance", { text: markdown }), []);
   assert.deepEqual(validate("essay-guidance/guidance", { text: "# Mechanics\nonly one section" }).length > 0, true);
   assert.deepEqual(validate("essay-guidance/guidance", "not a text document"), ["The essay guidance document must be { text }."]);
@@ -254,7 +254,7 @@ test("saveReference: a document that fails its own validator refuses before any 
 
 test("saveReference: a sound document calls admin_data_set_reference with the exact typed text and the trimmed note", async () => {
   const { deps, calls } = depsFor();
-  const policiesBody = (await miniReference("aid-policies")) as { policies: unknown[] };
+  const policiesBody = miniReference("aid-policies") as { policies: unknown[] };
   const bodyText = JSON.stringify(policiesBody, null, 2);
   const result = await actions.saveReference(deps, formOf({ name: "aid-policies", kind: "json", body: bodyText, note: "  Per the registrar  " }));
   assert.deepEqual(result, { status: "done", message: "Saved." });
@@ -275,7 +275,7 @@ test("saveReference: a text document is re-wrapped as {text} before admin_data_s
       return undefined;
     },
   };
-  const markdown = (await miniReference<{ text: string }>("essay-guidance/guidance"))!.text;
+  const markdown = miniReference<string>("essay-guidance");
   const result = await actions.saveReference(deps, formOf({ name: "essay-guidance/guidance", kind: "text", body: markdown }));
   assert.equal(result.status, "done");
   assert.deepEqual(JSON.parse(sent[0].p_body), { text: markdown });
@@ -283,7 +283,7 @@ test("saveReference: a text document is re-wrapped as {text} before admin_data_s
 
 test("saveReference: an rpc refusal is turned into plain words, and an unrecognized name refuses before reading the form further", async () => {
   const { deps } = depsFor({ rpcResult: { ok: false, error: "invalid_body" } });
-  const refused = await actions.saveReference(deps, formOf({ name: "aid-policies", kind: "json", body: JSON.stringify((await miniReference("aid-policies"))) }));
+  const refused = await actions.saveReference(deps, formOf({ name: "aid-policies", kind: "json", body: JSON.stringify(miniReference("aid-policies")) }));
   assert.equal(refused.status, "error");
   assert.match((refused as { message: string }).message, /valid JSON/i);
 

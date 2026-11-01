@@ -1,6 +1,6 @@
 import "server-only";
 /**
- * ZIP code centers (specs/product/home-and-distance.md): data/reference/zcta-centroids.csv, built by
+ * ZIP code centers (specs/product/home-and-distance.md): the reference document `zcta-centroids` (the bundled copy's .data/snapshot/reference/zcta-centroids.csv), built by
  * `npm run build-zcta` from the Census Bureau's Gazetteer file, read once per server instance. Explore's
  * "Distance from home" filter measures from a ZIP's center (so a shared link carries a ZIP code, never an
  * address), and a home address that can't be matched falls back to its ZIP's center (lib/geocode.ts).
@@ -14,7 +14,7 @@ let table: Map<string, LatLng> | null = null;
 
 function load(): Map<string, LatLng> {
   if (table) return table;
-  const path = join(process.cwd(), "data", "reference", "zcta-centroids.csv");
+  const path = join(process.cwd(), ".data", "snapshot", "reference", "zcta-centroids.csv");
   table = existsSync(path) ? parseCentroidCsv(readFileSync(path, "utf8")) : new Map();
   return table;
 }

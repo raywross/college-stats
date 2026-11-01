@@ -182,7 +182,7 @@ test("open admission: OPENADMP 1 and 2, anything else unknown; its release names
 
 test("the committed data cites open admission to its own release", () => {
   const meta = miniMeta();
-  assert.match(meta.sources["ipeds-ic-open"].edition, /^\d{4}–\d{2} \(IC\d{4}\)$/);
+  assert.match(meta.sources["ipeds-ic-open"]!.edition, /^\d{4}–\d{2} \(IC\d{4}\)$/);
   const schools = miniSchools();
   const open = schools.filter((s) => s.admissions.open_admission === true);
   assert.ok(open.length > 0);

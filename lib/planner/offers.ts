@@ -17,7 +17,7 @@
  *
  * Award years are named by the July they start (2027 = 2027–28); labels come from `awardYearLabel`, never typed.
  */
-import loansFile from "../../data/reference/federal-loans.json" with { type: "json" };
+import loansFile from "../../.data/snapshot/reference/federal-loans.json" with { type: "json" };
 import type { OfferCoa, OfferGift, OfferLoan, PlanOffer } from "./types.ts";
 
 /* ------------------------------------------------------------------ */

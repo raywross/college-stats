@@ -4,7 +4,7 @@
  * and `AwardEntry.key`'s lookup; checked by `scripts/check-awards-catalog.mts` in `npm run verify`. Pure and
  * client-safe (no server or browser APIs), like `lib/chances/major-course-expectations.ts`.
  */
-import file from "../../data/reference/awards.json" with { type: "json" };
+import file from "../../.data/snapshot/reference/awards.json" with { type: "json" };
 import type { RecognitionTier } from "./types.ts";
 
 export interface AwardCatalogEntry {

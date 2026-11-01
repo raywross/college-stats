@@ -194,7 +194,7 @@ test("STEM families get the regular math and science rows", () => {
 /* ---- The major-admission check's published_rate rules ---- */
 
 test("the major-admission check: the real file passes; a printed rate needs its percentage in the quote, a share, and no counts beside it", async () => {
-  const file = (await miniReference<MajorAdmissionFile>("major-admission"))!;
+  const file = miniReference<MajorAdmissionFile>("major-admission");
   // "The real file passes against the real dataset's known colleges" is a fact about the whole real dataset
   // (most curated units aren't in the 12-college mini fixture); the publisher's reference gate (specs/data-platform,
   // G5) covers that at publish time. Kept here: each broken-on-purpose case validates against the mini fixture's

@@ -34,11 +34,11 @@ import {
 import { allAidPolicies, type AidPolicy } from "../lib/aid-policies.ts";
 import type { School } from "../lib/types.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
-import { miniReference, miniSchools, miniMeta, miniReleaseCalendar } from "./helpers/snapshot.mts";
+import { miniSchools, miniMeta, miniReleaseCalendar } from "./helpers/snapshot.mts";
+import pilot from "./fixtures/snapshot-mini/snapshot/reference/cost-curve-pilot.json" with { type: "json" };
+import reference from "./fixtures/snapshot-mini/snapshot/reference/income-above-110k.json" with { type: "json" };
 
 const ROOT = join(import.meta.dirname, "..");
-const pilot = (await miniReference<{ passed: boolean; colleges: { name: string; group: string }[]; incomes: number[] }>("cost-curve-pilot"))!;
-const reference = (await miniReference<{ source: string; table: string; year: string; notes: string[]; brackets: { share: number }[]; cap: number }>("income-above-110k"))!;
 const schools: School[] = miniSchools();
 
 /** A rich private college: published steps, a $110K+ band well under the full price, need met unknown. */

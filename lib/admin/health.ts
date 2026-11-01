@@ -4,24 +4,22 @@ import "server-only";
  * each status. Nothing new is collected; health is read from what is already on hand:
  *
  *   - the dataset's lineage (`retrieved` on links, social, brand, directories, religion, LGBTQ records),
- *   - the college-reported documents (`data/college-docs.json`, `data/cds-records/<unit>.json`),
- *   - the pipeline's open failures (`data/college-failures.json`) and review queue (`data/review-queue.json`),
- *   - the link prober's findings (`data/link-issues.json`),
+ *   - the college-reported documents (the store's `reported.docs` and `reported.cds_records`),
+ *   - the pipeline's open failures (`reported.failures`) and review queue (`reported.review_queue`),
+ *   - the link prober's findings (`identity.link_issues`),
  *   - each publish's changed fields (`dataset_changes` in Supabase; informational).
  *
  * The first five are 42 MB, so each college-reported run (and `npm run college-health`) reduces them to the compact
  * health document (lib/admin/health-files.ts), `health.colleges` on the data store, which the page reads with the
- * viewer's session (one query, cached per instance), falling back to `data/college-health.json` in the deploy when the
- * store holds none. `collegeHealth()` is pure and takes
- * its thresholds from lib/admin/health-rules.ts, so the tests pin both. `healthOverview()` builds the overview once
+ * viewer's session (one query, cached per instance); with none, the page says there is no health document yet.
+ * `collegeHealth()` is pure and takes its thresholds from lib/admin/health-rules.ts, so the tests pin both. `healthOverview()` builds the overview once
  * per server instance and caches it; the changes read is kept for a few minutes only, since "Publish changes" writes
  * it after the deploy that started the instance.
  *
- * Server only (reads the file and, for `familyListUnits`, the admin's own Supabase session): never import this from a
+ * Server only (reads the health document and, for `familyListUnits`, the admin's own Supabase session): never import this from a
  * client component. The types and rules a client may need are in health-rules.ts.
  */
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import {
   CHANGES_PUBLISHES_READ,
   CHANGES_TTL_MS,
@@ -120,7 +118,7 @@ export function unreadParts(doc: Pick<ReportedDoc, "archivedSections" | "reads">
 function reportedRow(inputs: HealthInputs, rules: HealthRules["reported"]): HealthRow {
   const r = inputs.reported;
   if (!r) {
-    return { group: "reported", status: null, judgedBy: null, reason: "Not judged: the college-reported files (data/college-docs.json and the rest) are not in this deploy." };
+    return { group: "reported", status: null, judgedBy: null, reason: "Not judged: the college-reported inputs are not in this deploy." };
   }
   const { edition, profile, cds } = pickReportedDocs(r.docs);
 
@@ -169,7 +167,7 @@ function reportedRow(inputs: HealthInputs, rules: HealthRules["reported"]): Heal
 function identityRow(inputs: HealthInputs, rules: HealthRules["identity"]): HealthRow {
   const { newest, linkIssues } = inputs.identity;
   if (linkIssues === null) {
-    return { group: "identity", status: null, judgedBy: newest, reason: "Not judged: data/link-issues.json is not in this deploy." };
+    return { group: "identity", status: null, judgedBy: newest, reason: "Not judged: the link findings are not in this deploy." };
   }
   const issue = linkIssues[0];
   const dead = linkIssues.length ? ` ${plural(linkIssues.length, "dead link")}: ${linkIssues.map((i) => `${i.field}${i.status ? ` ${i.status}` : ""}`).join(", ")}.` : "";
@@ -340,7 +338,7 @@ export interface HealthOverview {
   counts: HealthCounts;
   /** ISO date the overview was measured on. */
   today: string;
-  /** The date of the compact file's sources (`generated` in data/college-health.json): how fresh the health inputs are. */
+  /** The date of the compact file's sources (`generated` in the health document): how fresh the health inputs are. */
   generated: string;
   /** False when `dataset_changes` could not be read (no Supabase configured, or the read failed): `changed` is null for every college. */
   changesAvailable: boolean;
@@ -365,7 +363,7 @@ export function sortWorstFirst(colleges: CollegeHealth[]): CollegeHealth[] {
 
 /** Everything the overview needs from outside, so tests can stand in for the file, the clock, and Supabase. */
 export interface HealthDeps {
-  /** The compact health file (data/college-health.json). */
+  /** The compact health document (`health.colleges` on the data store). */
   compact(): Promise<CompactHealth>;
   /** The newest change per college; null when `dataset_changes` is unavailable. */
   changes(): Promise<Map<string, { at: string; fields: number }> | null>;
@@ -404,21 +402,15 @@ export function createHealthOverview(deps: HealthDeps): () => Promise<HealthOver
   };
 }
 
-// The compact file is a health-only input (specs/product/admin.md "Files the deploy must carry"), so it is read here and
-// not through getData(). The path spells out its folder and file with literals so the tracer ships exactly this file
-// (next.config.ts "/admin/**"; tests/tracing.test.mts).
-function readCompactFromDisk(): CompactHealth {
-  const path = join(process.cwd(), "data", "college-health.json");
-  if (!existsSync(path)) throw new Error("data/college-health.json is not in this deploy; run npm run college-health and commit it");
-  return parseCompact(readFileSync(path, "utf8"));
-}
+/** What the overview throws when the store holds no health document (the page's error says so). */
+export const NO_HEALTH_DOCUMENT = "No health document yet: `npm run college-health` (or a college-reported run) writes health.colleges to the data store";
 
 /** The data store's collection and key of the compact health document (scripts/lib/data-platform/layers.mts). */
 export const HEALTH_DOCUMENT = { collection: "health.colleges", key: "health" } as const;
 
 /**
  * The compact health document from the data store (`data_documents`, select open to every role), in one query; null
- * when the table holds none, so the caller falls back to the file. A failed read throws.
+ * when the table holds none. A failed read throws.
  */
 export async function readCompactFromStore(client: TableClient | null): Promise<CompactHealth | null> {
   if (!client) return null;
@@ -429,20 +421,19 @@ export async function readCompactFromStore(client: TableClient | null): Promise<
   return parseCompact(typeof body === "string" ? body : JSON.stringify(body));
 }
 
-/** The store's document (read with the viewer's session), else the file in the deploy; a failed store read falls back too. */
-export async function readCompact(deps: { client: () => Promise<TableClient | null>; disk: () => CompactHealth }): Promise<CompactHealth> {
-  try {
-    const fromStore = await readCompactFromStore(await deps.client());
-    if (fromStore) return fromStore;
-  } catch (err) {
-    console.error("[admin health] reading health.colleges from the data store failed; using data/college-health.json.", err);
-  }
-  return deps.disk();
+/**
+ * The store's document (read with the viewer's session). No session or no document throws NO_HEALTH_DOCUMENT; a failed
+ * read throws its error. The overview keeps no failed read, so the next request tries again.
+ */
+export async function readCompact(deps: { client: () => Promise<TableClient | null> }): Promise<CompactHealth> {
+  const fromStore = await readCompactFromStore(await deps.client());
+  if (!fromStore) throw new Error(NO_HEALTH_DOCUMENT);
+  return fromStore;
 }
 
 const realDeps: HealthDeps = {
   async compact() {
-    return readCompact({ client: defaultAdminClient, disk: readCompactFromDisk });
+    return readCompact({ client: defaultAdminClient });
   },
   async changes() {
     // Changes live only in Supabase, written after each deploy (lib/data.ts getSchoolChanges): without SUPABASE_URL there are none.

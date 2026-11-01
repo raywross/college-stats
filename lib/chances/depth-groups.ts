@@ -7,7 +7,7 @@
  * major (rule 6: computed, never asked). Pure and client-safe; checked by scripts/check-depth-groups.mts in
  * `npm run verify`.
  */
-import file from "../../data/reference/depth-groups.json" with { type: "json" };
+import file from "../../.data/snapshot/reference/depth-groups.json" with { type: "json" };
 import { catalogCourse, COURSE_SUBJECTS } from "./catalog.ts";
 import { expectationsFor } from "./major-course-expectations.ts";
 import type { ActivityFamily, CourseEntry, CourseSubject } from "./types.ts";

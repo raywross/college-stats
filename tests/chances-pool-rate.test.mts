@@ -265,7 +265,7 @@ test("each displayed fact cites its own curated entry: the program shown (not ju
 /* ---- The guaranteed-admission check's added rules ---- */
 
 test("the guaranteed-admission check refuses an 'any' rule without two thresholds, a system without its name, and a GPA not in the quote", async () => {
-  const file = (await miniReference<GuaranteedFile>("guaranteed-admission"))!;
+  const file = miniReference<GuaranteedFile>("guaranteed-admission");
   const today = new Date("2026-10-11T00:00:00Z");
   assert.deepEqual(validateGuaranteed(file, today), []);
   const ua = clone(file.programs.find((p) => p.id === "az-assured-ua-2027")!);

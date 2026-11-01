@@ -1,22 +1,43 @@
 /**
  * The mini fixture (tests/fixtures/snapshot-mini/, built by scripts/build-mini-fixture.mts;
  * specs/data-platform/git-ci-tests.md "The mini fixture"): the small, real slice of the data platform tests use in
- * place of the real snapshot or the database. Not a test file.
- *
- * NOTE (G4, 2026-10-31): as found, this file carried only miniSnapshotDir/miniLayers/miniSchools/miniSchool/miniMeta,
- * and the fixture itself was still the earlier 12-college build (no `feature/data-platform-4` integration branch
- * existed yet to merge the lead's planned pre-step: 38 colleges, every reference document, these extra helpers). The
- * functions below were added here by G4 because G2/G3/G4 all need them and nothing else had supplied them; see this
- * unit's report for the conflict this may cause when the lead's real pre-step lands.
+ * place of the real snapshot or the database. 38 colleges (DEFAULT_UNITS in the builder), their history and detail
+ * shards, the shared history files, every reference document, two high-school states, and the layers they composed
+ * from. Not a test file. No test reads `data/`, the live snapshot, or the database: it reads this.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { register } from "node:module";
 import type { DatasetMeta, School } from "../../lib/types";
-import type { ReleaseCalendar } from "../../lib/releases";
+import type { SchoolDetail } from "../../lib/detail";
 import type { SchoolHistory } from "../../lib/history";
+import type { ReleaseCalendar } from "../../lib/releases";
 import type { AliasRow } from "../../lib/identity-files";
+import type { HistoryFiles } from "../../lib/supabase";
+import { register } from "node:module";
+import type { Dataset } from "../../lib/dataset.ts";
 import { fileStore, type DataStore } from "../../scripts/lib/data-platform/store.mts";
+
+let resolverInstalled = false;
+
+/**
+ * lib/dataset.ts is written for the bundler (extensionless relative imports), which plain Node can't resolve. Before
+ * importing it, register a resolve hook that retries a failed relative import with `.ts` (the pattern of
+ * tests/search-index.test.mts). Idempotent; harmless for a test that registered its own.
+ */
+export function installTsResolver(): void {
+  if (resolverInstalled) return;
+  resolverInstalled = true;
+  register(
+    "data:text/javascript," +
+      encodeURIComponent(`export async function resolve(specifier, context, next) {
+        try { return await next(specifier, context); }
+        catch (error) {
+          if (!specifier.startsWith(".") || error?.code !== "ERR_MODULE_NOT_FOUND") throw error;
+          try { return await next(specifier + ".ts", context); } catch { return next(specifier + "/index.ts", context); }
+        }
+      }`),
+  );
+}
 
 const ROOT = join(import.meta.dirname, "..", "..");
 const FIXTURE_DIR = join(ROOT, "tests", "fixtures", "snapshot-mini");
@@ -31,12 +52,18 @@ export function miniLayers(): DataStore {
   return fileStore(join(FIXTURE_DIR, "layers"));
 }
 
-let cachedSchools: School[] | null = null;
+const jsonCache = new Map<string, unknown>();
+
+/** A JSON file of the snapshot folder, parsed once; null when the fixture has no such file. */
+function snapshotJson<T>(rel: string): T | null {
+  const path = join(miniSnapshotDir(), rel);
+  if (!jsonCache.has(path)) jsonCache.set(path, existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as T) : null);
+  return jsonCache.get(path) as T | null;
+}
 
 /** The mini fixture's colleges, in dataset order, from `snapshot/colleges.json` (the composed, rendered form). */
 export function miniSchools(): School[] {
-  if (!cachedSchools) cachedSchools = JSON.parse(readFileSync(join(miniSnapshotDir(), "colleges.json"), "utf8")) as School[];
-  return cachedSchools;
+  return snapshotJson<School[]>("colleges.json")!;
 }
 
 /** One college of the mini fixture by unit id, or undefined (`scripts/build-mini-fixture.mts` DEFAULT_UNITS lists them). */
@@ -44,112 +71,88 @@ export function miniSchool(unitId: string): School | undefined {
   return miniSchools().find((s) => s.unit_id === unitId);
 }
 
-/** Like `miniSchool`, but throws (with the unit id) when the fixture lacks it, for tests that need one unconditionally. */
+/** One college of the mini fixture by unit id; throws naming the id when the fixture lacks it (pick one it has). */
 export function requireMiniSchool(unitId: string): School {
   const s = miniSchool(unitId);
-  if (!s) throw new Error(`mini fixture lacks unit ${unitId} (see scripts/build-mini-fixture.mts DEFAULT_UNITS)`);
+  if (!s) throw new Error(`the mini fixture has no college ${unitId}; pick one of DEFAULT_UNITS in scripts/build-mini-fixture.mts`);
   return s;
 }
 
-let cachedMeta: DatasetMeta | null = null;
-
 /** The mini fixture's `meta.json`. */
 export function miniMeta(): DatasetMeta {
-  if (!cachedMeta) cachedMeta = JSON.parse(readFileSync(join(miniSnapshotDir(), "meta.json"), "utf8")) as DatasetMeta;
-  return cachedMeta;
+  return snapshotJson<DatasetMeta>("meta.json")!;
 }
-
-let cachedCalendar: ReleaseCalendar | null = null;
 
 /** The mini fixture's `release-calendar.json`. */
 export function miniReleaseCalendar(): ReleaseCalendar {
-  if (!cachedCalendar) cachedCalendar = JSON.parse(readFileSync(join(miniSnapshotDir(), "release-calendar.json"), "utf8")) as ReleaseCalendar;
-  return cachedCalendar;
+  return snapshotJson<ReleaseCalendar>("release-calendar.json")!;
 }
 
-let cachedAliases: AliasRow[] | null = null;
-
-/** The mini fixture's `aliases.json`. */
+/** The mini fixture's `aliases.json` rows. */
 export function miniAliases(): AliasRow[] {
-  if (!cachedAliases) cachedAliases = JSON.parse(readFileSync(join(miniSnapshotDir(), "aliases.json"), "utf8")) as AliasRow[];
-  return cachedAliases;
+  return snapshotJson<AliasRow[]>("aliases.json") ?? [];
 }
 
-/** One college's history shard (`snapshot/history/<unitId>.json`), or undefined when the fixture carries none for it. */
-export function miniHistory(unitId: string): SchoolHistory | undefined {
-  const p = join(miniSnapshotDir(), "history", `${unitId}.json`);
-  return existsSync(p) ? (JSON.parse(readFileSync(p, "utf8")) as SchoolHistory) : undefined;
+let cachedDataset: Promise<Dataset> | null = null;
+
+/**
+ * The dataset the app would build from the mini fixture (`createDataset` over its colleges, meta, calendar and
+ * aliases), built once: what `getData()` gives a page, for tests of queries, citations and rankings. Ranks and
+ * medians are over the 38 colleges, not the nation. Async because lib/dataset.ts is imported lazily behind the
+ * resolver above: `const data = await miniDataset()`.
+ */
+export function miniDataset(): Promise<Dataset> {
+  if (!cachedDataset) {
+    installTsResolver();
+    cachedDataset = import("../../lib/dataset.ts").then(({ createDataset }) =>
+      createDataset({ schools: miniSchools(), meta: miniMeta(), releaseCalendar: miniReleaseCalendar(), aliases: miniAliases() }),
+    );
+  }
+  return cachedDataset;
 }
 
-/** The shared history files (`snapshot/history/shared.json`): `{meta, national, facts, cpi}`, real but for all colleges. */
-export function miniHistoryFiles(): { meta: unknown; national: unknown; facts: unknown; cpi: unknown } {
-  return JSON.parse(readFileSync(join(miniSnapshotDir(), "history", "shared.json"), "utf8"));
+/** A college's history shard (`snapshot/history/<unit>.json`), or null when the fixture has none for it. */
+export function miniHistory(unitId: string): SchoolHistory | null {
+  return snapshotJson<SchoolHistory>(join("history", `${unitId}.json`));
 }
 
-/** One college's detail shard (`snapshot/detail/<unitId>.json`), or undefined when the fixture carries none for it. */
-export function miniDetail(unitId: string): unknown | undefined {
-  const p = join(miniSnapshotDir(), "detail", `${unitId}.json`);
-  return existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : undefined;
+/** The shared history files (`snapshot/history/shared.json`: meta, national, facts, cpi). */
+export function miniHistoryFiles(): HistoryFiles {
+  return snapshotJson<HistoryFiles>(join("history", "shared.json"))!;
 }
 
-/** One national trend file (`snapshot/trends/<name>.json`); the fixture only ships `index` today. */
-export function miniTrend(name: string): unknown | undefined {
-  const p = join(miniSnapshotDir(), "trends", `${name}.json`);
-  return existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : undefined;
+/** A college's detail tables (`snapshot/detail/<unit>.json`), or null. */
+export function miniDetail(unitId: string): SchoolDetail | null {
+  return snapshotJson<SchoolDetail>(join("detail", `${unitId}.json`));
+}
+
+/** A national trend file (`snapshot/trends/<name>.json`), or null when the fixture doesn't carry it (only `index`). */
+export function miniTrend<T = unknown>(name: string): T | null {
+  return snapshotJson<T>(join("trends", `${name}.json`));
 }
 
 /**
- * One reference document, by its `reference.files` key (e.g. "cip2020", "federal-loans", "aid-policies",
- * "application-cycle", "major-admission", "guaranteed-admission", "zcta-centroids", "essay-guidance/guidance"): the
- * body as the real store holds it (a parsed object, or `{text}` for a text file). Reads the mini fixture's layers
- * (`tests/fixtures/snapshot-mini/layers/reference.files/`), which as built here (G4, 2026-10-31) carries the five
- * names a snapshot renders plus the extra documents this unit's tests need, copied by hand from `data/` because the
- * lead's planned pre-step (the publisher rendering every reference document into the fixture) hadn't landed yet; see
- * this unit's report. Returns null when the fixture doesn't carry that name.
+ * A reference document as the snapshot renders it: `reference/<name>.json` parsed, or the text of
+ * `essay-guidance.md` / `zcta-centroids.csv` / a `<name>.txt`. Names are the `reference.files` keys
+ * (`aid-policies`, `cip2020`, `platform-prompts`, `organizations`, `common-app-trends`, …). Throws when missing.
  */
-export async function miniReference<T = unknown>(name: string): Promise<T | null> {
-  return miniLayerDocument<T>("reference.files", name);
+export function miniReference<T = unknown>(name: string): T {
+  const dir = join(miniSnapshotDir(), "reference");
+  for (const file of [`${name}.json`, `${name}.md`, `${name}.csv`, `${name}.txt`, name]) {
+    const path = join(dir, file);
+    if (!existsSync(path)) continue;
+    const text = readFileSync(path, "utf8");
+    return (file.endsWith(".json") ? JSON.parse(text) : text) as T;
+  }
+  throw new Error(`the mini fixture has no reference document ${name} (tests/fixtures/snapshot-mini/snapshot/reference/)`);
 }
 
-/** `tests/fixtures/snapshot-mini/snapshot/high-schools`: the bundled high-school fallback folder (two states). */
+/** `snapshot/high-schools/`: the JSON fallback's folder (HIGH_SCHOOLS_DIR) with two states, ct and sc. */
 export function miniHighSchoolsDir(): string {
   return join(miniSnapshotDir(), "high-schools");
 }
 
-/** One document from the mini fixture's layers (the file store), by collection and key, or null when absent. */
+/** One layer document from the mini fixture's file store (`collection`, `key`), or null. */
 export async function miniLayerDocument<T = unknown>(collection: string, key: string): Promise<T | null> {
   return miniLayers().readOne<T>(collection, key);
-}
-
-let tsResolverInstalled = false;
-
-/**
- * Registers a resolve hook that retries a failed relative import with `.ts` (then `/index.ts`), so plain Node can
- * load a module written for the bundler (extensionless relative imports: lib/dataset.ts, lib/data.ts). Idempotent;
- * call before importing any such module. (Same approach as tests/search-index.test.mts.)
- */
-export function installTsResolver(): void {
-  if (tsResolverInstalled) return;
-  tsResolverInstalled = true;
-  register(
-    "data:text/javascript," +
-      encodeURIComponent(`export async function resolve(specifier, context, next) {
-        try { return await next(specifier, context); }
-        catch (error) {
-          if (!specifier.startsWith(".") || error?.code !== "ERR_MODULE_NOT_FOUND") throw error;
-          try { return await next(specifier + ".ts", context); } catch { return next(specifier + "/index.ts", context); }
-        }
-      }`),
-  );
-}
-
-/**
- * `createDataset` (lib/dataset.ts) over the mini fixture: what `getData()` gives a page. Async: it installs the ts
- * resolver, then dynamically imports lib/dataset.ts, before any other `lib/` module written for the bundler is
- * imported in the same process.
- */
-export async function miniDataset(): Promise<ReturnType<typeof import("../../lib/dataset.ts").createDataset>> {
-  installTsResolver();
-  const { createDataset } = await import("../../lib/dataset.ts");
-  return createDataset({ schools: miniSchools(), meta: miniMeta(), releaseCalendar: miniReleaseCalendar(), aliases: miniAliases() });
 }

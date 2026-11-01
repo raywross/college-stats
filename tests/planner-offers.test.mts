@@ -8,6 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { miniReference } from "./helpers/snapshot.mts";
 import {
   LOANS,
   appealSummary,
@@ -31,6 +32,7 @@ import {
   waitListOdds,
   type OfferDraft,
   type OfferTrend,
+  type LoanReference,
 } from "../lib/planner/offers.ts";
 import { generate as offersGen, isEdChoice, replyDate } from "../lib/planner/generators/offers.ts";
 import { generateTasks, taskKey } from "../lib/planner/tasks.ts";
@@ -111,14 +113,14 @@ const TREND: OfferTrend = { tuition: 0.04, housing: 0.03, fullPrice: 0.035, from
 /* The reference file                                                  */
 /* ------------------------------------------------------------------ */
 
-test("data/reference/federal-loans.json validates, and every figure has an https source", () => {
-  const raw = JSON.parse(readFileSync(join(ROOT, "data", "reference", "federal-loans.json"), "utf8"));
+test("the federal-loans reference document validates, and every figure has an https source", async () => {
+  const raw = miniReference<LoanReference>("federal-loans");
   assert.deepEqual(validateLoanReference(raw), []);
   assert.deepEqual(validateLoanReference(LOANS), []);
 });
 
-test("guard: the reference check rejects a bad rate, a missing source, a step-down limit, and an open-ended tier list", () => {
-  const raw = JSON.parse(readFileSync(join(ROOT, "data", "reference", "federal-loans.json"), "utf8"));
+test("guard: the reference check rejects a bad rate, a missing source, a step-down limit, and an open-ended tier list", async () => {
+  const raw = miniReference<LoanReference>("federal-loans");
   const broken = structuredClone(raw);
   broken.rates[0].undergraduate = 6.52;
   broken.rates[1].source = "http://example.com";

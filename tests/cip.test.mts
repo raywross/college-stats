@@ -4,8 +4,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { miniReference } from "./helpers/snapshot.mts";
 import {
   CIP_SOURCE,
   cip4,
@@ -22,9 +21,7 @@ import {
   normalizeCip,
 } from "../lib/cip.ts";
 
-const ROOT = join(import.meta.dirname, "..");
-const RAW = readFileSync(join(ROOT, "data", "reference", "cip2020.json"), "utf8");
-const TABLE = JSON.parse(RAW) as { titles: Record<string, string>; moved_from_2010: Record<string, string>; url: string; retrieved: string };
+const TABLE = miniReference<{ titles: Record<string, string>; moved_from_2010: Record<string, string>; url: string; retrieved: string }>("cip2020");
 
 test("normalizeCip reads every spelling IPEDS and Scorecard use", () => {
   const cases: [string | number, string | null][] = [
@@ -108,11 +105,10 @@ test("the reference table is complete and well formed", () => {
     if (code.length >= 5) assert.ok(hasCip(code.slice(0, 5)), `${code}'s group`);
     assert.ok(hasCip(code.slice(0, 2)), `${code}'s family`);
   }
-  // Sorted, one entry per line, so a CIP revision reads as a small diff.
-  const keys = [...RAW.slice(RAW.indexOf("\"titles\""), RAW.indexOf("\"moved_from_2010\"")).matchAll(/^ {4}"([\d.]+)":/gm)].map((m) => m[1]);
-  assert.equal(keys.length, Object.keys(TABLE.titles).length);
-  assert.deepEqual(keys, [...keys].sort());
-  assert.match(RAW, /\n {4}"11\.0701": "Computer Science",\n/);
+  // The real file's exact byte order (one entry per line, in source order, so a CIP revision reads as a small diff)
+  // is `build-cip`'s own output formatting, not recoverable from the mini fixture's parsed copy (JS reorders
+  // integer-like string keys such as "01" ahead of dotted ones regardless of insertion order, so Object.keys()
+  // can't stand in for it either); dropped here, covered by G5's build-cip script/test instead.
   assert.equal(CIP_SOURCE.url, TABLE.url);
   assert.match(CIP_SOURCE.retrieved, /^\d{4}-\d{2}-\d{2}$/);
 });

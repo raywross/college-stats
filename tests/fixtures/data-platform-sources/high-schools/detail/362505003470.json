@@ -1,0 +1,678 @@
+{
+  "id": "362505003470",
+  "profile": {
+    "url": "https://hs.roslynschools.org/fs/resource-manager/view/4712a38a-10ef-4bf4-a75c-10d6c14cc8c5",
+    "retrieved": "2026-10-06",
+    "edition": "2026–27"
+  },
+  "class_size": {
+    "v": 292,
+    "quote": "Grade 12: 292",
+    "page": 2
+  },
+  "gpa_scale": {
+    "kind": "100-point",
+    "max": 100,
+    "weighted": true,
+    "conversion": "Regents courses ×1.0; honors or accelerated ×1.08; research honors ×1.09; Advanced Placement ×1.10. Calculated at the end of junior year. The school does not rank.",
+    "quote": "Grade Point Averages: Calculated by averaging the final numerical grade in all academic credit-bearing courses at the end of junior year.",
+    "page": 2
+  },
+  "gpa_distribution": null,
+  "ap_courses": [
+    "2D Art and Design",
+    "2D Art and Design (Photo)",
+    "3D Art and Design",
+    "Art History",
+    "Biology",
+    "Calculus AB",
+    "Calculus BC",
+    "Chemistry",
+    "Chinese",
+    "Computer Science",
+    "Computer Science Principles",
+    "Macroeconomics",
+    "English Language",
+    "English Literature",
+    "Environmental Science",
+    "European History",
+    "French Language & Culture",
+    "Government & Politics",
+    "Human Geography",
+    "Music Theory",
+    "Pre-Calculus",
+    "Physics 1 & 2",
+    "Physics C E & M",
+    "Psychology",
+    "Spanish Language & Culture",
+    "Statistics",
+    "United States History"
+  ],
+  "ib_courses": null,
+  "scores": {
+    "sat_mid50": null,
+    "act_mid50": null,
+    "sat_mean": {
+      "erw": 641,
+      "math": 657
+    },
+    "act_mean": 31,
+    "year": "2025–26",
+    "quote": "MEAN COMPOSITE ACT SCORES: 2025-2026 Roslyn 31 … MEAN SAT REASONING SCORES: 2025-2026 Roslyn ERW: 641 Math: 657",
+    "page": 3
+  },
+  "matriculation": null,
+  "admitted": {
+    "classes": "Class of 2026",
+    "entries": [
+      {
+        "name": "Adelphi University",
+        "unit_id": "188429"
+      },
+      {
+        "name": "American University",
+        "unit_id": "131159"
+      },
+      {
+        "name": "Amherst College",
+        "unit_id": "164465"
+      },
+      {
+        "name": "Arizona State University",
+        "unit_id": "104151"
+      },
+      {
+        "name": "Bentley University",
+        "unit_id": "164739"
+      },
+      {
+        "name": "Binghamton University",
+        "unit_id": "196079"
+      },
+      {
+        "name": "Boston University",
+        "unit_id": "164988"
+      },
+      {
+        "name": "Brandeis University",
+        "unit_id": "165015"
+      },
+      {
+        "name": "Brown University",
+        "unit_id": "217156"
+      },
+      {
+        "name": "Bucknell University",
+        "unit_id": "211291"
+      },
+      {
+        "name": "Carnegie Mellon University",
+        "unit_id": "211440"
+      },
+      {
+        "name": "Case Western Reserve",
+        "unit_id": "201645"
+      },
+      {
+        "name": "Chapman University",
+        "unit_id": "111948"
+      },
+      {
+        "name": "Clark Atlanta University",
+        "unit_id": "138947"
+      },
+      {
+        "name": "Clemson University",
+        "unit_id": "217882"
+      },
+      {
+        "name": "Colgate University",
+        "unit_id": "190099"
+      },
+      {
+        "name": "Columbia University",
+        "unit_id": "190150"
+      },
+      {
+        "name": "Cornell University",
+        "unit_id": "190415"
+      },
+      {
+        "name": "CUNY Baruch College",
+        "unit_id": "190512"
+      },
+      {
+        "name": "CUNY Brooklyn College",
+        "unit_id": "190549"
+      },
+      {
+        "name": "CUNY Hunter College",
+        "unit_id": "190594"
+      },
+      {
+        "name": "CUNY Macaulay Honors",
+        "unit_id": null
+      },
+      {
+        "name": "Dartmouth College",
+        "unit_id": "182670"
+      },
+      {
+        "name": "Drexel University",
+        "unit_id": "212054"
+      },
+      {
+        "name": "Duke University",
+        "unit_id": "198419"
+      },
+      {
+        "name": "Elon University",
+        "unit_id": "198516"
+      },
+      {
+        "name": "Emerson College",
+        "unit_id": "165662"
+      },
+      {
+        "name": "Emory University",
+        "unit_id": "139658"
+      },
+      {
+        "name": "Fairfield University",
+        "unit_id": "129242"
+      },
+      {
+        "name": "Farmingdale State College",
+        "unit_id": "196042"
+      },
+      {
+        "name": "Florida State University",
+        "unit_id": "134097"
+      },
+      {
+        "name": "Fordham University",
+        "unit_id": "191241"
+      },
+      {
+        "name": "Franklin & Marshall College",
+        "unit_id": "212577"
+      },
+      {
+        "name": "George Mason University",
+        "unit_id": "232186"
+      },
+      {
+        "name": "Georgetown University",
+        "unit_id": "131496"
+      },
+      {
+        "name": "George Washinton University",
+        "unit_id": "131469"
+      },
+      {
+        "name": "Georgia Institute of Tech",
+        "unit_id": "139755"
+      },
+      {
+        "name": "Georgia State University",
+        "unit_id": "139940"
+      },
+      {
+        "name": "Hampton University",
+        "unit_id": "232265"
+      },
+      {
+        "name": "Harvard University",
+        "unit_id": "166027"
+      },
+      {
+        "name": "High Point University",
+        "unit_id": "198695"
+      },
+      {
+        "name": "Hofstra University",
+        "unit_id": "191649"
+      },
+      {
+        "name": "Howard University",
+        "unit_id": "131520"
+      },
+      {
+        "name": "Indiana University",
+        "unit_id": "151351"
+      },
+      {
+        "name": "Ithaca College",
+        "unit_id": "191968"
+      },
+      {
+        "name": "James Madison University",
+        "unit_id": "232423"
+      },
+      {
+        "name": "Johns Hopkins University",
+        "unit_id": "162928"
+      },
+      {
+        "name": "Lehigh University",
+        "unit_id": "213543"
+      },
+      {
+        "name": "Long Island University",
+        "unit_id": "192448"
+      },
+      {
+        "name": "Lynn University",
+        "unit_id": "132657"
+      },
+      {
+        "name": "Marist University",
+        "unit_id": "192819"
+      },
+      {
+        "name": "MIT",
+        "unit_id": "166683"
+      },
+      {
+        "name": "McGill University",
+        "unit_id": null
+      },
+      {
+        "name": "Miami University",
+        "unit_id": "204024"
+      },
+      {
+        "name": "Michigan State University",
+        "unit_id": "171100"
+      },
+      {
+        "name": "Molloy University",
+        "unit_id": "193292"
+      },
+      {
+        "name": "Muhlenberg College",
+        "unit_id": "214175"
+      },
+      {
+        "name": "NYIT",
+        "unit_id": "194091"
+      },
+      {
+        "name": "New York University",
+        "unit_id": "193900"
+      },
+      {
+        "name": "Northeastern University",
+        "unit_id": "167358"
+      },
+      {
+        "name": "Northwestern University",
+        "unit_id": "147767"
+      },
+      {
+        "name": "Nova Southern University",
+        "unit_id": "136215"
+      },
+      {
+        "name": "Oberlin College",
+        "unit_id": "204501"
+      },
+      {
+        "name": "Ohio State University",
+        "unit_id": "204796"
+      },
+      {
+        "name": "Pace University",
+        "unit_id": "194310"
+      },
+      {
+        "name": "Pennsylvania State University",
+        "unit_id": "214777"
+      },
+      {
+        "name": "Pomona College",
+        "unit_id": "121345"
+      },
+      {
+        "name": "Princeton University",
+        "unit_id": "186131"
+      },
+      {
+        "name": "Providence College",
+        "unit_id": "217402"
+      },
+      {
+        "name": "Purchase College",
+        "unit_id": "196219"
+      },
+      {
+        "name": "Purdue University",
+        "unit_id": "243780"
+      },
+      {
+        "name": "Queens College",
+        "unit_id": "199412"
+      },
+      {
+        "name": "Quinnipiac University",
+        "unit_id": "130226"
+      },
+      {
+        "name": "RPI",
+        "unit_id": "194824"
+      },
+      {
+        "name": "RISD",
+        "unit_id": "217493"
+      },
+      {
+        "name": "Rice University",
+        "unit_id": "227757"
+      },
+      {
+        "name": "Rider University",
+        "unit_id": "186283"
+      },
+      {
+        "name": "Rochester Institute of Tech",
+        "unit_id": "195003"
+      },
+      {
+        "name": "Rutgers University",
+        "unit_id": "186380"
+      },
+      {
+        "name": "Sacred Heart University",
+        "unit_id": "130253"
+      },
+      {
+        "name": "Seton Hall University",
+        "unit_id": "186584"
+      },
+      {
+        "name": "Skidmore College",
+        "unit_id": "195526"
+      },
+      {
+        "name": "St. John's University",
+        "unit_id": "174792"
+      },
+      {
+        "name": "Stony Brook University",
+        "unit_id": "196097"
+      },
+      {
+        "name": "SUNY University at Albany",
+        "unit_id": "196060"
+      },
+      {
+        "name": "SUNY Brockport",
+        "unit_id": "196121"
+      },
+      {
+        "name": "SUNY University at Buffalo",
+        "unit_id": "196088"
+      },
+      {
+        "name": "SUNY Cortland",
+        "unit_id": "196149"
+      },
+      {
+        "name": "SUNY Geneseo",
+        "unit_id": "196167"
+      },
+      {
+        "name": "SUNY Maritime College",
+        "unit_id": "196291"
+      },
+      {
+        "name": "SUNY New Paltz",
+        "unit_id": "196176"
+      },
+      {
+        "name": "SUNY Old Westbury",
+        "unit_id": "196237"
+      },
+      {
+        "name": "SUNY Oneonta",
+        "unit_id": "196185"
+      },
+      {
+        "name": "Stevens Institute of Technology",
+        "unit_id": "186867"
+      },
+      {
+        "name": "Swarthmore College",
+        "unit_id": "216287"
+      },
+      {
+        "name": "Syracuse University",
+        "unit_id": "196413"
+      },
+      {
+        "name": "Temple University",
+        "unit_id": "216339"
+      },
+      {
+        "name": "The New School",
+        "unit_id": "193654"
+      },
+      {
+        "name": "The University of Alabama",
+        "unit_id": "100751"
+      },
+      {
+        "name": "The University of Kansas",
+        "unit_id": "155317"
+      },
+      {
+        "name": "The University of Tampa",
+        "unit_id": "137847"
+      },
+      {
+        "name": "The University of Tennessee",
+        "unit_id": "221759"
+      },
+      {
+        "name": "The University of Texas- Austin",
+        "unit_id": "228778"
+      },
+      {
+        "name": "Touro University",
+        "unit_id": "196592"
+      },
+      {
+        "name": "Towson University",
+        "unit_id": "164076"
+      },
+      {
+        "name": "Tufts University",
+        "unit_id": "168148"
+      },
+      {
+        "name": "Tulane University",
+        "unit_id": "160755"
+      },
+      {
+        "name": "Union College",
+        "unit_id": "196866"
+      },
+      {
+        "name": "Universiteit van Amsterdam",
+        "unit_id": null
+      },
+      {
+        "name": "University of Arizona",
+        "unit_id": "104179"
+      },
+      {
+        "name": "UCLA",
+        "unit_id": "110662"
+      },
+      {
+        "name": "UC - Berkeley",
+        "unit_id": "110635"
+      },
+      {
+        "name": "UC - Davis",
+        "unit_id": "110644"
+      },
+      {
+        "name": "UC- Irvine",
+        "unit_id": "110653"
+      },
+      {
+        "name": "UC- San Diego",
+        "unit_id": "110680"
+      },
+      {
+        "name": "UC- Santa Barbara",
+        "unit_id": "110705"
+      },
+      {
+        "name": "University of Colorado- Boulder",
+        "unit_id": "126614"
+      },
+      {
+        "name": "University of Connecticut",
+        "unit_id": "129020"
+      },
+      {
+        "name": "University of Delaware",
+        "unit_id": "130943"
+      },
+      {
+        "name": "University of Florida",
+        "unit_id": "134130"
+      },
+      {
+        "name": "University of Georgia",
+        "unit_id": "139959"
+      },
+      {
+        "name": "University of Illinois",
+        "unit_id": "145637"
+      },
+      {
+        "name": "University of Maryland",
+        "unit_id": "163286"
+      },
+      {
+        "name": "University of Massachusetts-Amherst",
+        "unit_id": "166629"
+      },
+      {
+        "name": "University of Miami",
+        "unit_id": "135726"
+      },
+      {
+        "name": "University of Michigan- Ann Arbor",
+        "unit_id": "170976"
+      },
+      {
+        "name": "University of Minnesota",
+        "unit_id": "174066"
+      },
+      {
+        "name": "UNC- Chapel Hill",
+        "unit_id": "199120"
+      },
+      {
+        "name": "University of Pennsylvania",
+        "unit_id": "215062"
+      },
+      {
+        "name": "University of Pittsburgh",
+        "unit_id": "215293"
+      },
+      {
+        "name": "University of Richmond",
+        "unit_id": "233374"
+      },
+      {
+        "name": "University of Rochester",
+        "unit_id": "195030"
+      },
+      {
+        "name": "University of South Carolina",
+        "unit_id": "218663"
+      },
+      {
+        "name": "USC",
+        "unit_id": "123961"
+      },
+      {
+        "name": "University of Vermont",
+        "unit_id": "231174"
+      },
+      {
+        "name": "University of Virginia",
+        "unit_id": "234076"
+      },
+      {
+        "name": "University of Wisconsin- Madison",
+        "unit_id": "240444"
+      },
+      {
+        "name": "Vanderbilt University",
+        "unit_id": "221999"
+      },
+      {
+        "name": "Villanova University",
+        "unit_id": "216597"
+      },
+      {
+        "name": "Virginia State University",
+        "unit_id": "234155"
+      },
+      {
+        "name": "Wake Forest University",
+        "unit_id": "199847"
+      },
+      {
+        "name": "WashU",
+        "unit_id": "179867"
+      },
+      {
+        "name": "William & Mary",
+        "unit_id": "231624"
+      },
+      {
+        "name": "Yale University",
+        "unit_id": "130794"
+      }
+    ],
+    "quote": "Members of Class of 2026 Were Admitted to the Following Colleges & Universities",
+    "page": 4
+  },
+  "school_outcomes": {
+    "class": "Class of 2026",
+    "class_size": 259,
+    "grad_rate": 0.96,
+    "college_going": 0.98,
+    "four_year": 0.95,
+    "two_year": 0.03,
+    "quote": "The Class of 2026 consisted of 259 students, with a 96% graduation rate. … 98% of the graduating Class of 2026 attend college, with 95% attending four-year colleges and 3% attending two-year colleges.",
+    "page": 2
+  },
+  "ap_stats": {
+    "year": "2025–26",
+    "students": 613,
+    "exams": 1901,
+    "pass_share": 0.87,
+    "quote": "ADVANCED PLACEMENT STATISTICS: 2025-2026 … 613 students, 1,901 exams, 87% scoring 3 or higher",
+    "page": 3
+  },
+  "enrollment": {
+    "year": "2026–27",
+    "total": 1115,
+    "by_grade": {
+      "9": 294,
+      "10": 266,
+      "11": 263,
+      "12": 292
+    },
+    "quote": "STUDENT ENROLLMENT Grade 9 294 Grade 10 266 Grade 11 263 Grade 12 292 Total 1,115",
+    "page": 2
+  }
+}

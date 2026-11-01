@@ -15,6 +15,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import * as nodeModule from "node:module";
 import type { ReportedResidencyAdmissions, School } from "../lib/types";
+import { miniSchools } from "./helpers/snapshot.mts";
 
 // model.ts, hooks.ts, and rigor.ts start with `import "server-only"`, which only Next.js resolves; stand in an empty module.
 type ResolveResult = { url: string; shortCircuit?: boolean };
@@ -49,7 +50,9 @@ type CollegeGpa = import("../lib/planner/gpa-model.ts").CollegeGpa;
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (...p: string[]) => readFileSync(join(ROOT, ...p), "utf8");
-const schools = JSON.parse(read("data", "schools.json")) as School[];
+// Several of the real colleges below aren't in the mini fixture (rule 1); swapped to a fixture college of the same
+// rough shape, keeping the test's intent: 100654→490328, 168148→166683, 198516→138558, 162928→110662, 243780→231624.
+const schools = miniSchools();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 const RANK = (l: StandingLevel | null) => (l === null ? null : STANDING_LEVELS.indexOf(l));
@@ -206,7 +209,7 @@ const C7_ALL = { gpa: "very_important", rigor: "very_important", class_rank: "co
 const HARVARD = () =>
   college("166027", { rate: 0.035, sat: [1500, 1580], gpa: middleGpa(3.9, 4.0), c7: { gpa: "very_important", rigor: "very_important", test_scores: "very_important" }, topShare: [0.48, 0.3], tier: "elite" });
 const PURDUE = () =>
-  college("243780", {
+  college("231624", {
     rate: 0.43,
     sat: [1220, 1470],
     gpa: middleGpa(3.6, 4.0),
@@ -224,9 +227,9 @@ const GEORGIA_TECH = () =>
     residency: grid([10000, 2900], [10000, 1000]),
     tier: { tier: "highly_selective", in_state: "highly_selective", out_of_state: "elite" },
   });
-const FIFTEEN = () => college("168148", { rate: 0.15, sat: [1400, 1520], gpa: middleGpa(3.76, 3.96), c7: null, tier: "highly_selective" });
+const FIFTEEN = () => college("166683", { rate: 0.15, sat: [1400, 1520], gpa: middleGpa(3.76, 3.96), c7: null, tier: "highly_selective" });
 const ELON = (rate = 0.63) =>
-  college("198516", {
+  college("138558", {
     rate,
     sat: [1170, 1350],
     policy: "considered",
@@ -238,9 +241,15 @@ const ELON = (rate = 0.63) =>
   });
 const UT_AUSTIN = () => college("228778", { rate: 0.27, sat: [1230, 1500], policy: "considered", gpa: null, c7: null, federal: { gpa: "considered", hs_record: "required" }, tier: "highly_selective" });
 /** A 12% college rating alumni relation `considered`, in Massachusetts (no ban) or Maryland (a ban at every college). */
-const LEGACY_MA = () => college("168148", { rate: 0.12, sat: [1360, 1460], gpa: null, c7: { alumni_relation: "considered", test_scores: "important" }, tier: "highly_selective" });
-const LEGACY_MD = () => college("162928", { rate: 0.12, sat: [1360, 1460], gpa: null, c7: { alumni_relation: "considered", test_scores: "important" }, tier: "highly_selective" });
-const ELITE_6 = () => college("162928", { rate: 0.06, sat: [1270, 1370], gpa: null, c7: null, tier: "elite" });
+const LEGACY_MA = () => college("166683", { rate: 0.12, sat: [1360, 1460], gpa: null, c7: { alumni_relation: "considered", test_scores: "important" }, tier: "highly_selective" });
+// No mini-fixture college is in Maryland (a real "bars legacy at all colleges" state, data/reference/legacy-bans.json);
+// the fixture college's location is overridden to exercise that ban without changing the fixture's college list.
+const LEGACY_MD = () => {
+  const c = college("110662", { rate: 0.12, sat: [1360, 1460], gpa: null, c7: { alumni_relation: "considered", test_scores: "important" }, tier: "highly_selective" });
+  c.school = { ...c.school, location: { ...c.school.location, state: "MD" } };
+  return c;
+};
+const ELITE_6 = () => college("110662", { rate: 0.06, sat: [1270, 1370], gpa: null, c7: null, tier: "elite" });
 
 /* ------------------------------------------------------------------ */
 /* method/standing.md's pinned examples                                */
@@ -324,38 +333,38 @@ test("pinned: SAT 1100, GPA 2.6 at the 15% college: High reach", () => {
   near(detail.hiddenOdds, 0.012, 0.001);
 });
 
-test("pinned: Indiana, SAT 1300, GPA 3.85 at Purdue (71% in-state): Likely", () => {
-  const r = run(PURDUE(), student({ state: "IN", test: sat(1300), gpa: 3.85 }));
+test("pinned: Virginia, SAT 1300, GPA 3.85 at Purdue (71% in-state): Likely", () => {
+  const r = run(PURDUE(), student({ state: "VA", test: sat(1300), gpa: 3.85 }));
   assert.equal(r.group, "likely");
   assert.equal(r.label, null);
   assert.ok(r.used.includes("state") && r.used.includes("test") && r.used.includes("gpa"));
   const t = texts(r);
   assert.equal(t[0], "Your academics: in the middle of admitted students.");
-  assert.equal(t[1], "Applicants like you — from Indiana — were admitted at 71% (Fall 2025).");
+  assert.equal(t[1], "Applicants like you — from Virginia — were admitted at 71% (Fall 2025).");
 });
 
-test("pinned: the same numbers from Ohio (44% out-of-state): Target", () => {
-  const r = run(PURDUE(), student({ state: "OH", test: sat(1300), gpa: 3.85 }));
+test("pinned: the same numbers from Maryland (44% out-of-state): Target", () => {
+  const r = run(PURDUE(), student({ state: "MD", test: sat(1300), gpa: 3.85 }));
   assert.equal(r.group, "target");
-  assert.equal(texts(r)[1], "Applicants like you — from outside Indiana — were admitted at 44% (Fall 2025).");
+  assert.equal(texts(r)[1], "Applicants like you — from outside Virginia — were admitted at 44% (Fall 2025).");
 });
 
 test("pinned: only an SAT 1450 at a 45% college (SAT 1280–1450): Target (no GPA; with one it can be Likely)", () => {
-  const c = () => college("100654", { rate: 0.45, sat: [1280, 1450], c7: null, tier: "selective" });
+  const c = () => college("490328", { rate: 0.45, sat: [1280, 1450], c7: null, tier: "selective" });
   const r = run(c(), student({ test: sat(1450) }));
   assert.equal(r.group, "target", "Revision 1: the GPA the college weighs is missing");
   assert.equal(run(c(), student({ test: sat(1450), gpa: UNPLACED_GPA })).group, "likely", "the same score with a GPA entered");
 });
 
 test("pinned: ACT 24 at a 40% college (ACT 28–33, test required): Reach", () => {
-  const { result: r, detail } = detailed(college("100654", { rate: 0.4, act: [28, 33], c7: null }), student({ test: { kind: "act", score: 24 } }));
+  const { result: r, detail } = detailed(college("490328", { rate: 0.4, act: [28, 33], c7: null }), student({ test: { kind: "act", score: 24 } }));
   assert.equal(r.group, "reach");
   // A score below the range and nothing else: the gaps don't lift it (a gap never raises a record below the prior).
   near(detail.hiddenOdds, 0.1);
 });
 
 test("pinned: only an SAT 1450 at a 78% Accessible college (SAT 1100–1300): Likely (Safe with a GPA entered)", () => {
-  const c = () => college("100654", { rate: 0.78, sat: [1100, 1300], c7: null, tier: "accessible" });
+  const c = () => college("490328", { rate: 0.78, sat: [1100, 1300], c7: null, tier: "accessible" });
   const { result: r, detail } = detailed(c(), student({ test: sat(1450) }));
   assert.equal(r.group, "likely", "Revision 1: a score alone is mostly gap");
   near(detail.hiddenOdds, 0.619);
@@ -363,12 +372,12 @@ test("pinned: only an SAT 1450 at a 78% Accessible college (SAT 1100–1300): Li
 });
 
 test("pinned: no test, GPA 3.9 at a 35% college averaging 3.7: Likely", () => {
-  const r = run(college("100654", { rate: 0.35, gpa: reportedGpa(3.7), c7: null, policy: "considered" }), student({ gpa: 3.9 }));
+  const r = run(college("490328", { rate: 0.35, gpa: reportedGpa(3.7), c7: null, policy: "considered" }), student({ gpa: 3.9 }));
   assert.equal(r.group, "likely");
 });
 
 test("pinned: SAT 1200, GPA 3.8 at a test-optional 45% college (SAT 1280–1450, average 3.75), score withheld: Target", () => {
-  const r = run(college("100654", { rate: 0.45, sat: [1280, 1450], gpa: reportedGpa(3.75), c7: null, policy: "considered" }), student({ test: sat(1200), gpa: 3.8 }));
+  const r = run(college("490328", { rate: 0.45, sat: [1280, 1450], gpa: reportedGpa(3.75), c7: null, policy: "considered" }), student({ test: sat(1200), gpa: 3.8 }));
   assert.equal(r.group, "target");
   assert.equal(r.send, "consider-not-sending");
 });
@@ -414,7 +423,7 @@ test("pinned: SAT 1450, GPA 3.9, legacy at a 12% college rating alumni relation 
   assert.equal(r.group, "target");
   near(detail.hiddenOdds, 0.27);
   assert.ok(r.used.includes("legacy"));
-  assert.equal(texts(r).find((t) => t.startsWith("Legacy helps")), "Legacy helps here: Tufts University rates alumni relation considered.");
+  assert.equal(texts(r).find((t) => t.startsWith("Legacy helps")), "Legacy helps here: Massachusetts Institute of Technology rates alumni relation considered.");
   assert.equal(detail.without?.hooks, "reach", "without the toggle it's a Reach");
   assert.equal(run(LEGACY_MA(), s).group, "reach");
 });
@@ -471,8 +480,8 @@ const V2_ROWS: { name: string; s: EstimateStudent; c: () => { school: School; st
   { name: "a move up within reach", s: student({ test: sat(1390) }), c: () => plain({ rate: 0.22, sat: [1400, 1510] }), v2: "reach" },
   { name: "a weighted GPA as a range", s: student({ gpa: 3.5, gpaScale: "5.0", gpaRange: [3.4, 4.0] }), c: () => plain({ rate: 0.45, gpaAverage: 3.7 }), v2: null },
   // The second version's pinned examples (tests at MODEL_VERSION 20261011.1).
-  { name: "Purdue, Indiana", s: student({ state: "IN", test: sat(1300), gpa: 3.85 }), c: PURDUE, v2: "likely" },
-  { name: "Purdue, Ohio", s: student({ state: "OH", test: sat(1300), gpa: 3.85 }), c: PURDUE, v2: "target" },
+  { name: "Purdue, Virginia", s: student({ state: "VA", test: sat(1300), gpa: 3.85 }), c: PURDUE, v2: "likely" },
+  { name: "Purdue, Maryland", s: student({ state: "MD", test: sat(1300), gpa: 3.85 }), c: PURDUE, v2: "target" },
   { name: "Georgia Tech, Georgia", s: student({ state: "GA", test: sat(1500), gpa: 3.95 }), c: GEORGIA_TECH, v2: "target" },
   { name: "Georgia Tech, Florida", s: student({ state: "FL", test: sat(1500), gpa: 3.95 }), c: GEORGIA_TECH, v2: "reach" },
   { name: "Elon, 8 of 9 APs", s: student({ gpa: 3.9, courses: EIGHT_APS }), c: ELON, v2: "likely", extra: { offering: OFFERING(9), linked: true } },
@@ -550,7 +559,7 @@ test("guard: the within-one-level check refuses a two-step jump and a wrong-way 
 /* ------------------------------------------------------------------ */
 
 /** A strong student at a college with this tier and rate: SAT at the top of the range. */
-const strong = (rate: number, tier: SelectivityTier | null) => run(college("100654", { rate, sat: [1200, 1350], c7: null, tier }), student({ gpa: UNPLACED_GPA, test: sat(1600) }));
+const strong = (rate: number, tier: SelectivityTier | null) => run(college("490328", { rate, sat: [1200, 1350], c7: null, tier }), student({ gpa: UNPLACED_GPA, test: sat(1600) }));
 
 test("caps: Highly selective stops at Target; Very selective at Likely; Selective at Likely below 50% and Safe from 50%; Accessible and Open allow Safe", () => {
   assert.equal(strong(0.45, "highly_selective").group, "target");
@@ -671,7 +680,7 @@ test("guard: the rule-2 check fails if the old rule (nothing below range) comes 
 });
 
 test("floors: a guarantee and open admission are Safe; a likely letter Likely anywhere; a positive pre-read Target at Elite, Likely elsewhere, from d ≥ −0.5", () => {
-  const open = run(college("100654", { rate: null, c7: null, tier: "open" }), student({ gpa: 2.0 }));
+  const open = run(college("490328", { rate: null, c7: null, tier: "open" }), student({ gpa: 2.0 }));
   assert.deepEqual([open.group, open.label, keys(open)[0]], ["safe", null, "estimate.open_admission"]);
   const elite = ELITE_6();
   const pre = (score: number, c = elite) => run(c, student({ gpa: UNPLACED_GPA, test: sat(score) }), { hooks: hooks({ recruited: "pre_read" }) });
@@ -679,7 +688,7 @@ test("floors: a guarantee and open admission are Safe; a likely letter Likely an
   assert.deepEqual([pre(1230).group, pre(1230).label], ["target", "recruited"], "d = −0.4 still floors");
   assert.equal(pre(1200).label, "elite", "d = −0.7: no floor");
   assert.equal(pre(1200).group, "high_reach");
-  const hs = college("100654", { rate: 0.1, sat: [1270, 1370], c7: null, tier: "highly_selective" });
+  const hs = college("490328", { rate: 0.1, sat: [1270, 1370], c7: null, tier: "highly_selective" });
   assert.equal(pre(1300, hs).group, "likely", "Likely beats the Highly selective cap");
   const letter = run(hs, student({ gpa: UNPLACED_GPA, test: sat(1000) }), { hooks: hooks({ recruited: "likely_letter" }) });
   assert.deepEqual([letter.group, letter.label], ["likely", "recruited"], "a likely letter at any distance");
@@ -694,7 +703,7 @@ test("the guarantee floor beats every cap, and open admission needs no numbers",
   const r = run(UT_AUSTIN(), student({ state: "TX", classRankPercentile: 3, test: sat(900), gpa: 2.5 }));
   assert.deepEqual([r.group, r.label], ["safe", "guaranteed"]);
   assert.notEqual(run(UT_AUSTIN(), student({ state: "OK", classRankPercentile: 3, test: sat(900), gpa: 2.5 })).label, "guaranteed", "another state's student isn't guaranteed");
-  assert.equal(run(college("100654", { rate: null, c7: null }), student()).group, "safe");
+  assert.equal(run(college("490328", { rate: null, c7: null }), student()).group, "safe");
 });
 
 /* ------------------------------------------------------------------ */
@@ -703,7 +712,7 @@ test("the guarantee floor beats every cap, and open admission needs no numbers",
 
 /** A college that weighs everything (C7), with a C10 rank profile, at a given tier and rate. */
 const WEIGHS_ALL = (tier: SelectivityTier | null, rate: number) =>
-  college("100654", {
+  college("490328", {
     rate,
     sat: [1300, 1450],
     gpa: middleGpa(3.5, 3.9),
@@ -748,7 +757,7 @@ test("rule 1: a top student with a weaker test is never placed below a middling 
 });
 
 test("rule 3: a score alone reads below a GPA alone, which reads below the full record, for the same strong student", () => {
-  const c = () => college("100654", {
+  const c = () => college("490328", {
     rate: 0.3,
     sat: [1200, 1400],
     gpa: middleGpa(3.4, 3.9),
@@ -770,16 +779,16 @@ test("rule 3: a score alone reads below a GPA alone, which reads below the full 
 
 test("rule 3: completeness is 1 when the college expects nothing the student lacks; a missing test at a test-optional college costs nothing", () => {
   // Expects nothing: C7 says GPA and tests aren't considered, nothing else rated.
-  const nothing = college("100654", { rate: 0.3, sat: [1200, 1400], policy: "considered", c7: { gpa: "not_considered", test_scores: "not_considered" } });
+  const nothing = college("490328", { rate: 0.3, sat: [1200, 1400], policy: "considered", c7: { gpa: "not_considered", test_scores: "not_considered" } });
   near(readings(nothing, student()).completeness, 1, 1e-9);
   near(readings(nothing, student({ gpa: 3.2 })).completeness, 1, 1e-9);
   // Test-optional: no test is no gap; a test the student has is expected (and present).
-  const optional = () => college("100654", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), policy: "considered", c7: { gpa: "very_important", test_scores: "considered" } });
+  const optional = () => college("490328", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), policy: "considered", c7: { gpa: "very_important", test_scores: "considered" } });
   near(readings(optional(), student({ gpa: 3.8 })).completeness, 1, 1e-9);
   assert.ok(!keys(run(optional(), student({ gpa: 3.8 }))).includes("estimate.incomplete"));
   near(readings(optional(), student({ gpa: 3.8, test: sat(1300) })).completeness, 1, 1e-9);
   // Required: no test is a gap.
-  const required = college("100654", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), policy: "required", c7: { gpa: "very_important", test_scores: "important" } });
+  const required = college("490328", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), policy: "required", c7: { gpa: "very_important", test_scores: "important" } });
   near(readings(required, student({ gpa: 3.8 })).completeness, 3 / 4, 1e-9);
   assert.ok(texts(run(required, student({ gpa: 3.8 }))).includes("Not in this estimate yet: your test score. Adding what you have gives a fuller picture and could change where this college stands for you."));
   // A class-standing pick is an answer; Sampling activities are entered. Revision 3, rule 5: "My school doesn't rank"
@@ -843,7 +852,7 @@ test("the incomplete sentence names the missing kinds in words, and nothing abou
   assert.equal(two.notes.find((x) => x.key === "estimate.incomplete")!.values.inputs, "class standing and activities");
   assert.ok(!keys(run(WEIGHS_ALL(null, 0.3), student({ gpa: 3.8, test: sat(1400), courses: EIGHT_APS, classStanding: "top25", classRankPercentile: 25, activities: SAMPLING }), LINKED)).includes("estimate.incomplete"));
   assert.ok(!keys(run(UT_AUSTIN(), student({ state: "TX", classRankPercentile: 4 }))).includes("estimate.incomplete"));
-  assert.ok(!keys(run(college("100654", { rate: null, c7: null }), student({ gpa: 3 }))).includes("estimate.incomplete"));
+  assert.ok(!keys(run(college("490328", { rate: null, c7: null }), student({ gpa: 3 }))).includes("estimate.incomplete"));
 });
 
 /* ------------------------------------------------------------------ */
@@ -880,7 +889,7 @@ test("closeness: which quarter of its level's band the odds fall in; null when a
 
 test("ED: helps where the college's early-decision rate lifts the level; improves where it's higher but the level holds; not advised at a High reach", () => {
   // ED admits 60% against 20% overall: M_ed = 1 + ½ × (3 − 1) = 2, the most it can be.
-  const c = (rate = 0.2, tier: SelectivityTier | null = null) => college("100654", { rate, sat: [1200, 1300], c7: null, tier, ed: { applicants: 1000, admitted: 600 } });
+  const c = (rate = 0.2, tier: SelectivityTier | null = null) => college("490328", { rate, sat: [1200, 1300], c7: null, tier, ed: { applicants: 1000, admitted: 600 } });
   const target = run(c(), student({ gpa: UNPLACED_GPA, test: sat(1300), round: "ed" }));
   assert.equal(target.group, "target");
   assert.equal(target.ed, "helps");
@@ -899,9 +908,9 @@ test("ED: helps where the college's early-decision rate lifts the level; improve
   assert.equal(rd.ed, "helps");
   assert.ok(!keys(rd).some((k) => k.startsWith("ed.")));
   // No ED counts on record: no verdict (except the High reach guard).
-  assert.equal(run(college("100654", { rate: 0.2, sat: [1200, 1300], c7: null }), student({ gpa: UNPLACED_GPA, test: sat(1300) })).ed, null);
-  assert.equal(run(college("100654", { rate: 0.2, sat: [1200, 1300], c7: null }), student({ gpa: UNPLACED_GPA, test: sat(1000) })).ed, "not_advised");
-  assert.equal(run(college("100654", { rate: 0.2, sat: [1200, 1300], c7: null }), student()).ed, null, "no level, no verdict");
+  assert.equal(run(college("490328", { rate: 0.2, sat: [1200, 1300], c7: null }), student({ gpa: UNPLACED_GPA, test: sat(1300) })).ed, null);
+  assert.equal(run(college("490328", { rate: 0.2, sat: [1200, 1300], c7: null }), student({ gpa: UNPLACED_GPA, test: sat(1000) })).ed, "not_advised");
+  assert.equal(run(college("490328", { rate: 0.2, sat: [1200, 1300], c7: null }), student()).ed, null, "no level, no verdict");
 });
 
 test("ED as a currency (owner, 2026-10-15): improves at an Ultra selective Reach; same where the ED rate isn't above overall", () => {
@@ -917,7 +926,7 @@ test("ED as a currency (owner, 2026-10-15): improves at an Ultra selective Reach
   assert.equal(flat.group, "reach");
   assert.equal(flat.ed, "same");
   assert.ok(keys(flat).includes("ed.same"));
-  const below = college("100654", { rate: 0.3, sat: [1200, 1300], c7: null, ed: { applicants: 1000, admitted: 200 } });
+  const below = college("490328", { rate: 0.3, sat: [1200, 1300], c7: null, ed: { applicants: 1000, admitted: 200 } });
   assert.equal(run(below, student({ gpa: UNPLACED_GPA, test: sat(1250) })).ed, "same");
   // The planner reads it through the public result: the new value survives.
   assert.equal(publicResult(reach).ed, "improves");
@@ -928,7 +937,7 @@ test("ED as a currency (owner, 2026-10-15): improves at an Ultra selective Reach
 /* ------------------------------------------------------------------ */
 
 const depthCollege = (extracurriculars: string | null, extra: Record<string, string> = {}) =>
-  college("100654", { rate: 0.3, sat: [1200, 1400], c7: extracurriculars ? { extracurriculars, ...extra } : Object.keys(extra).length ? extra : null });
+  college("490328", { rate: 0.3, sat: [1200, 1400], c7: extracurriculars ? { extracurriculars, ...extra } : Object.keys(extra).length ? extra : null });
 
 test("depth: Focused ×1.3 where the college rates activities important, half at considered, nothing (with a sentence) otherwise", () => {
   // Against a Sampling record (entered, ×1), so the activities aren't a gap on either side.
@@ -988,7 +997,7 @@ test("depth: the major's deep course track fills the major-subjects slot as abov
 
 test("work: 10+ hours ×1.1, 20+ ×1.2 where the college weighs work experience; not when the job already counts as a top activity", () => {
   const job = (hours: number) => [activity("Grocery store", "work", [11, 12], { hoursPerWeek: hours })];
-  const c = (ec: string | null) => college("100654", { rate: 0.3, sat: [1200, 1400], c7: ec ? { work_experience: "considered", extracurriculars: ec } : { work_experience: "considered" } });
+  const c = (ec: string | null) => college("490328", { rate: 0.3, sat: [1200, 1400], c7: ec ? { work_experience: "considered", extracurriculars: ec } : { work_experience: "considered" } });
   const base = detailed(c(null), student({ test: sat(1300) })).detail.hiddenOdds!;
   const twenty = detailed(c(null), student({ test: sat(1300), activities: job(22) }));
   near(twenty.detail.hiddenOdds! / base, 1.2, 1e-9);
@@ -1000,12 +1009,12 @@ test("work: 10+ hours ×1.1, 20+ ×1.2 where the college weighs work experience;
   const both = detailed(c("important"), student({ test: sat(1300), activities: job(22) }));
   near(both.detail.hiddenOdds! / detailed(c("important"), student({ test: sat(1300), activities: job(6) })).detail.hiddenOdds!, 1, 1e-9);
   // Not weighed: "not used here".
-  const notWeighed = run(college("100654", { rate: 0.3, sat: [1200, 1400], c7: { work_experience: "not_considered" } }), student({ test: sat(1300), activities: job(22) }));
+  const notWeighed = run(college("490328", { rate: 0.3, sat: [1200, 1400], c7: { work_experience: "not_considered" } }), student({ test: sat(1300), activities: job(22) }));
   assert.ok(texts(notWeighed).some((t) => /^Not used here: work hours/.test(t)));
 });
 
 test("legacy: 2.5 at important, 1.5 at considered, 1 (with a sentence) where not considered or not rated", () => {
-  const c = (rating: string | null) => college("168148", { rate: 0.12, sat: [1360, 1460], gpa: null, c7: rating ? { alumni_relation: rating } : null, tier: "highly_selective" });
+  const c = (rating: string | null) => college("166683", { rate: 0.12, sat: [1360, 1460], gpa: null, c7: rating ? { alumni_relation: rating } : null, tier: "highly_selective" });
   const s = student({ test: sat(1450) });
   const ratio = (rating: string | null) => detailed(c(rating), s, { hooks: hooks({ legacy: true }) }).detail.hiddenOdds! / detailed(c(rating), s).detail.hiddenOdds!;
   near(ratio("very_important"), 2.5, 1e-9);
@@ -1019,7 +1028,7 @@ test("legacy: 2.5 at important, 1.5 at considered, 1 (with a sentence) where not
 });
 
 test("sibling (owner, 2026-10-12): 1.15 wherever alumni relation is at least considered, never stacked on legacy", () => {
-  const c = (rating: string | null) => college("168148", { rate: 0.12, sat: [1360, 1460], gpa: null, c7: rating ? { alumni_relation: rating } : null, tier: "highly_selective" });
+  const c = (rating: string | null) => college("166683", { rate: 0.12, sat: [1360, 1460], gpa: null, c7: rating ? { alumni_relation: rating } : null, tier: "highly_selective" });
   const s = student({ test: sat(1450) });
   const ratio = (rating: string | null, h: Partial<CollegeHooks>) => detailed(c(rating), s, { hooks: hooks(h) }).detail.hiddenOdds! / detailed(c(rating), s).detail.hiddenOdds!;
   near(ratio("very_important", { sibling: true }), 1.15, 1e-9);
@@ -1056,7 +1065,7 @@ test("legacy in a state that bars it is ignored, and the ban is cited by state a
 });
 
 test("interest: 1.15 where the college rates it important, 1.05 at considered, nothing (said) where not", () => {
-  const c = (rating: string | null) => college("100654", { rate: 0.3, sat: [1200, 1400], c7: rating ? { interest: rating } : null });
+  const c = (rating: string | null) => college("490328", { rate: 0.3, sat: [1200, 1400], c7: rating ? { interest: rating } : null });
   const s = student({ test: sat(1300) });
   const ratio = (rating: string | null) => detailed(c(rating), s, { hooks: hooks({ interest: true }) }).detail.hiddenOdds! / detailed(c(rating), s).detail.hiddenOdds!;
   near(ratio("important"), 1.15, 1e-9);
@@ -1069,7 +1078,7 @@ test("interest: 1.15 where the college rates it important, 1.05 at considered, n
 });
 
 test("first generation is noted where the college rates it, never estimated", () => {
-  const c = () => college("100654", { rate: 0.3, sat: [1200, 1400], c7: { first_generation: "considered" } });
+  const c = () => college("490328", { rate: 0.3, sat: [1200, 1400], c7: { first_generation: "considered" } });
   const yes = detailed(c(), student({ test: sat(1300), firstGeneration: true }));
   const no = detailed(c(), student({ test: sat(1300), firstGeneration: false }));
   assert.equal(yes.detail.hiddenOdds, no.detail.hiddenOdds);
@@ -1093,22 +1102,22 @@ test("score: unused at a test-optional college whose C7 says tests aren't consid
   assert.equal(off.send, "not-used");
   assert.ok(keys(off).includes("estimate.not_used"));
   assert.equal(off.moveUp, null);
-  const on = run(college("198516", { rate: 0.63, sat: [1170, 1350], policy: "considered", c7: { test_scores: "considered" } }), student({ test: sat(1500) }));
+  const on = run(college("138558", { rate: 0.63, sat: [1170, 1350], policy: "considered", c7: { test_scores: "considered" } }), student({ test: sat(1500) }));
   assert.equal(on.send, "send");
   assert.ok(on.used.includes("test"));
 });
 
 test("GPA: unused where C7 says it isn't considered, used where it is or where nothing is said", () => {
   const base = { rate: 0.45, gpa: reportedGpa(3.5) };
-  const off = run(college("198516", { ...base, c7: { gpa: "not_considered" } }), student({ gpa: 3.9 }));
+  const off = run(college("138558", { ...base, c7: { gpa: "not_considered" } }), student({ gpa: 3.9 }));
   assert.equal(off.group, null);
   assert.ok(texts(off).some((t) => /^Not used here: GPA/.test(t)));
-  assert.equal(run(college("198516", { ...base, c7: { gpa: "considered" } }), student({ gpa: 3.9 })).group, "likely");
-  assert.equal(run(college("198516", { ...base, c7: null, federal: { gpa: "not_considered" } }), student({ gpa: 3.9 })).group, null);
+  assert.equal(run(college("138558", { ...base, c7: { gpa: "considered" } }), student({ gpa: 3.9 })).group, "likely");
+  assert.equal(run(college("138558", { ...base, c7: null, federal: { gpa: "not_considered" } }), student({ gpa: 3.9 })).group, null);
 });
 
 test("crowding: at or above the 25th only meets the bar at a crowded college; below keeps its measured distance", () => {
-  const mk = (top: [number, number] | null) => college("198516", { rate: 0.55, gpa: middleGpa(3.3, 3.7), c7: { gpa: "very_important" }, topShare: top, policy: "considered" });
+  const mk = (top: [number, number] | null) => college("138558", { rate: 0.55, gpa: middleGpa(3.3, 3.7), c7: { gpa: "very_important" }, topShare: top, policy: "considered" });
   assert.equal(run(mk([0.2, 0.2]), student({ gpa: 3.95 })).group, "safe", "40% at 3.75+: not crowded, measured from the bands");
   const crowded = detailed(mk([0.4, 0.2]), student({ gpa: 3.95 }));
   assert.equal(crowded.result.group, "likely", "60% at 3.75+: meets the bar");
@@ -1119,7 +1128,7 @@ test("crowding: at or above the 25th only meets the bar at a crowded college; be
 });
 
 test("rigor: raises a crowded slot only where the college weighs rigor", () => {
-  const mk = (rigor: string, top: [number, number] | null) => college("198516", { rate: 0.4, gpa: middleGpa(3.6, 4.0), c7: { gpa: "very_important", rigor }, topShare: top });
+  const mk = (rigor: string, top: [number, number] | null) => college("138558", { rate: 0.4, gpa: middleGpa(3.6, 4.0), c7: { gpa: "very_important", rigor }, topShare: top });
   const most = { offering: OFFERING(9), linked: true };
   const s = student({ gpa: 3.9, courses: EIGHT_APS });
   const raised = detailed(mk("very_important", [0.5, 0.2]), s, most);
@@ -1132,7 +1141,7 @@ test("rigor: raises a crowded slot only where the college weighs rigor", () => {
 });
 
 test("class rank: counts only where C7 weighs it and enough first-years reported one; the tiers place it", () => {
-  const mk = (o: Partial<CollegeOpts>) => college("198516", { rate: 0.4, gpa: middleGpa(3.62, 4.0), c7: { gpa: "very_important", class_rank: "considered" }, classRank: { top_tenth: 0.2, top_quarter: 0.48, top_half: 0.81, submitted_share: 0.35 }, ...o });
+  const mk = (o: Partial<CollegeOpts>) => college("138558", { rate: 0.4, gpa: middleGpa(3.62, 4.0), c7: { gpa: "very_important", class_rank: "considered" }, classRank: { top_tenth: 0.2, top_quarter: 0.48, top_half: 0.81, submitted_share: 0.35 }, ...o });
   const withRank = detailed(mk({}), student({ gpa: 3.8, classRankPercentile: 10 }));
   const without = detailed(mk({}), student({ gpa: 3.8 }));
   assert.ok(withRank.detail.hiddenOdds! > without.detail.hiddenOdds!, "top 10% where 20% of ranked first-years were: above");
@@ -1167,9 +1176,9 @@ test("major subjects: a required course missing is below; grades well under the 
 /* ------------------------------------------------------------------ */
 
 /** A college weighing GPA (C7) and tests, with no GPA figures (a GPA counts as entered but can't be placed). */
-const NUDGE_ON = () => college("100654", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "very_important", test_scores: "important" } });
+const NUDGE_ON = () => college("490328", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "very_important", test_scores: "important" } });
 /** The same college saying GPA isn't considered and rating neither rank nor rigor: no nudge applies. */
-const NUDGE_OFF = () => college("100654", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "not_considered", test_scores: "important" } });
+const NUDGE_OFF = () => college("490328", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "not_considered", test_scores: "important" } });
 const oddsOf = (c: { school: School; standing: StandingSchool }, s: EstimateStudent, extra: Partial<ModelInput> = {}) => detailed(c, s, extra).detail.hiddenOdds!;
 const NUDGE_BASE = (o: Partial<EstimateStudent> = {}) => student({ gpa: UNPLACED_GPA, test: sat(1350), ...o });
 
@@ -1203,7 +1212,7 @@ test("Revision 2, rank nudges: off where the college weighs neither class rank n
   assert.ok(!r.used.includes("class_standing"));
   assert.ok(keys(r).includes("estimate.not_used") && texts(r).some((x) => x.startsWith("Not used here: class standing")));
   // Rank alone (C7 class rank considered, GPA not): on. Both records answer the rank question, so completeness matches.
-  const rankOnly = () => college("100654", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "not_considered", class_rank: "considered", test_scores: "important" } });
+  const rankOnly = () => college("490328", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "not_considered", class_rank: "considered", test_scores: "important" } });
   near(oddsOf(rankOnly(), NUDGE_BASE({ classRankPercentile: 5, classStanding: "top5" })) / oddsOf(rankOnly(), NUDGE_BASE({ classRankPercentile: 10, classStanding: "top10" })), 1.05, 1e-9);
 });
 
@@ -1231,14 +1240,14 @@ test("Revision 2, weighted over unweighted: ×1.04 from a 0.3 lead, ×1.08 from 
   // Off where the college weighs neither rigor nor GPA.
   near(ratio({ weightedGpa: 4.5 }, NUDGE_OFF), 1, 1e-9);
   // On where it weighs rigor alone (C7 rigor important), and said in a sentence without the multiplier.
-  const rigorOnly = () => college("100654", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "not_considered", rigor: "important", test_scores: "important" } });
+  const rigorOnly = () => college("490328", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "not_considered", rigor: "important", test_scores: "important" } });
   near(oddsOf(rigorOnly(), NUDGE_BASE({ weightedGpa: 4.5, courses: TWO_APS })) / oddsOf(rigorOnly(), NUDGE_BASE({ courses: TWO_APS })), 1.08, 1e-9);
   const r = run(NUDGE_ON(), NUDGE_BASE({ weightedGpa: 4.5 }));
   assert.ok(texts(r).some((x) => x.startsWith("Your weighted GPA (4.5) sits well above your unweighted one")));
 });
 
 /** A college rating extracurriculars important (the theme's gate), GPA and tests, no GPA figures. */
-const THEME_COLLEGE = (extracurriculars = "important") => college("100654", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "very_important", test_scores: "important", extracurriculars } });
+const THEME_COLLEGE = (extracurriculars = "important") => college("490328", { rate: 0.2, sat: [1300, 1400], c7: { gpa: "very_important", test_scores: "important", extracurriculars } });
 /** Science deep (10th–12th, rising, senior year), math steady (11th, 12th). */
 const TRACKS = [
   ap("ap_biology", "science", "A", 10),
@@ -1355,7 +1364,7 @@ test("pinned, Revision 3: at Elon admitting 25%, a complete record moves from Ta
 });
 
 test("Revision 2: activities of every kind count toward completeness (sports, clubs, work, other)", () => {
-  const c = () => college("100654", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), c7: { gpa: "very_important", test_scores: "important", extracurriculars: "important" } });
+  const c = () => college("490328", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), c7: { gpa: "very_important", test_scores: "important", extracurriculars: "important" } });
   const none = readings(c(), student({ gpa: 3.8, test: sat(1300) })).completeness;
   for (const kind of ["sport", "club", "work", "other", "family", "service", "arts", "research"] as const) {
     near(readings(c(), student({ gpa: 3.8, test: sat(1300), activities: [activity("X", kind, [11])] })).completeness, 1, 1e-9);
@@ -1365,7 +1374,7 @@ test("Revision 2: activities of every kind count toward completeness (sports, cl
 
 test("owner 2026-10-12: 'None' on every activity step reads as answered for completeness, with no depth credit", async () => {
   const { activitiesReading } = await import("../lib/chances/depth.ts");
-  const c = () => college("100654", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), c7: { gpa: "very_important", test_scores: "important", extracurriculars: "important" } });
+  const c = () => college("490328", { rate: 0.3, sat: [1200, 1400], gpa: middleGpa(3.4, 3.9), c7: { gpa: "very_important", test_scores: "important", extracurriculars: "important" } });
   const base = { gpa: 3.8, test: sat(1300) };
   const gap = readings(c(), student(base));
   const answered = readings(c(), student({ ...base, activitiesAnswered: true }));
@@ -1383,7 +1392,7 @@ test("owner 2026-10-12: 'None' on every activity step reads as answered for comp
 
 test("the snapshot detail: position, pool, crowding, reading, hidden odds, tier, depth, and the level with each input off", () => {
   const purdue = PURDUE();
-  const { result, detail } = detailed(purdue, student({ state: "IN", test: sat(1300), gpa: 3.85 }));
+  const { result, detail } = detailed(purdue, student({ state: "VA", test: sat(1300), gpa: 3.85 }));
   assert.equal(result.group, "likely");
   assert.equal(detail.position, "in");
   assert.equal(detail.baseRateKind, "residency");
@@ -1401,7 +1410,7 @@ test("the snapshot detail: position, pool, crowding, reading, hidden odds, tier,
 
 test("every note is a catalog key with a sentence, and every fact is a registered field", () => {
   const cases = [
-    run(PURDUE(), student({ state: "IN", test: sat(1300), gpa: 3.85, classRankPercentile: 12 })),
+    run(PURDUE(), student({ state: "VA", test: sat(1300), gpa: 3.85, classRankPercentile: 12 })),
     run(ELON(), student({ gpa: 3.9, courses: EIGHT_APS, classRankPercentile: 10, test: sat(1250), activities: FOCUSED }), { offering: OFFERING(9) }),
     run(UT_AUSTIN(), student({ state: "TX", classRankPercentile: 4, test: sat(1350), majors: ["14"], round: "ed" })),
     run(GEORGIA_TECH(), student({ state: "FL", test: sat(1500), gpa: 3.95, majors: ["undecided"] })),
@@ -1423,18 +1432,18 @@ test("every note is a catalog key with a sentence, and every fact is a registere
 /* ------------------------------------------------------------------ */
 
 test("pool: the published rate's kind, rate, and who-phrase; Compare's line reads it, never a sentence", () => {
-  const inState = run(PURDUE(), student({ state: "IN", test: sat(1300), gpa: 3.85 }));
-  assert.deepEqual(inState.pool, { kind: "residency", rate: 0.71, whoKey: "pool.who.residency_in", whoValues: { state: "Indiana" } });
-  assert.equal(compareShortLine(inState), "from Indiana: 71%");
-  const out = run(PURDUE(), student({ state: "OH", test: sat(1300), gpa: 3.85 }));
-  assert.equal(compareShortLine(out), "from outside Indiana: 44%");
+  const inState = run(PURDUE(), student({ state: "VA", test: sat(1300), gpa: 3.85 }));
+  assert.deepEqual(inState.pool, { kind: "residency", rate: 0.71, whoKey: "pool.who.residency_in", whoValues: { state: "Virginia" } });
+  assert.equal(compareShortLine(inState), "from Virginia: 71%");
+  const out = run(PURDUE(), student({ state: "MD", test: sat(1300), gpa: 3.85 }));
+  assert.equal(compareShortLine(out), "from outside Virginia: 44%");
   const overall = run(FIFTEEN(), student({ test: sat(1500) }));
   assert.equal(compareShortLine(overall), "everyone: 15%");
   assert.equal(compareShortLine(run(UT_AUSTIN(), student({ state: "TX", classRankPercentile: 4 }))), "guaranteed");
-  assert.equal(run(college("100654", { rate: null, c7: null }), student({ gpa: 3 })).pool, null, "open admission: no rate");
+  assert.equal(run(college("490328", { rate: null, c7: null }), student({ gpa: 3 })).pool, null, "open admission: no rate");
   // The line comes from the structured field: a result whose pool sentence is gone still shows the rate.
   const noSentence: EstimateResult = { ...inState, notes: [] };
-  assert.equal(compareShortLine(noSentence), "from Indiana: 71%");
+  assert.equal(compareShortLine(noSentence), "from Virginia: 71%");
   assert.equal(compareShortLine({ ...inState, pool: null }), null);
 });
 
@@ -1639,7 +1648,7 @@ function sweep() {
     const { result, detail } = detailed(c, s, extra);
     out.push({ result, odds: detail.hiddenOdds ?? null });
   };
-  add(PURDUE(), student({ state: "IN", test: sat(1300), gpa: 3.85 }));
+  add(PURDUE(), student({ state: "VA", test: sat(1300), gpa: 3.85 }));
   add(GEORGIA_TECH(), student({ state: "GA", test: sat(1500) }));
   add(FIFTEEN(), student({ test: sat(1500), gpa: 3.7 }));
   add(ELON(), student({ gpa: 3.9, courses: EIGHT_APS, activities: FOCUSED }), { offering: OFFERING(9), linked: true });

@@ -5,8 +5,8 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { miniReference } from "./helpers/snapshot.mts";
 import { generate as college, applyDate, feeDetail, resolveDay } from "../lib/planner/generators/college.ts";
 import { generate as cycleGen, STALE_DAYS } from "../lib/planner/generators/cycle.ts";
 import { applyMerge, dateNoteLabel, generateTasks, mergeTasks, taskKey } from "../lib/planner/tasks.ts";
@@ -438,8 +438,8 @@ test("Your week: lines and one link, nothing when nothing is due; the default by
   assert.equal(yourWeekOn(null, "earlier"), false);
 });
 
-test("the cycle file: three cycles, every entry valid, sources on every one, test dates from the publishers", () => {
-  const raw = JSON.parse(readFileSync(join(ROOT, "data", "application-cycle.json"), "utf8"));
+test("the cycle file: three cycles, every entry valid, sources on every one, test dates from the publishers", async () => {
+  const raw = miniReference("application-cycle");
   assert.deepEqual(validateCycleFile(raw), []);
   assert.deepEqual(cycleKeys(), ["2026-27", "2027-28", "2028-29"]);
   for (const key of cycleKeys()) {

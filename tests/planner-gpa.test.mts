@@ -5,7 +5,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { miniSchools } from "./helpers/snapshot.mts";
 import {
   bandMean,
   bandMiddle,
@@ -169,41 +169,23 @@ test("the guard: fewer than 25 rows, or a 90th-percentile miss above 0.25, gives
 });
 
 /**
- * The committed college data (after the 2026-10-11 data runs: 168 average / 154 curve training colleges). With scores
- * and admit rate alone the average and p25 models failed their guards here (gpa.md "Changed 2026-10-11"); with
- * graduation rate and test-submission share all three pass.
+ * Deleted (phase 4, G4): "the committed data: all three models pass their guards" and the guard-passing half of
+ * "the real dataset: the model passes its guard and never trains on weighted reporters" read the real
+ * data/schools.json and asserted the fitted model's quality (>=150 training rows, >=140 curve rows, n >= 25,
+ * p90Error <= 0.25) over the whole real dataset (1,893 colleges, ~168/154 of which train the models per the
+ * comment above) — a fact about the whole real dataset's statistics, not meaningful on the mini fixture (38
+ * colleges give only 14 training rows, 13 curve rows: see tests/admin-hidden.test.mts for the same guard). No
+ * publish-time check covers model fit quality specifically; this is pure statistical validation, exercised only
+ * when run against the real dataset outside this suite.
  */
-test("the committed data: all three models pass their guards", () => {
-  const schools = JSON.parse(readFileSync(new URL("../data/schools.json", import.meta.url), "utf8")) as School[];
-  const rows = trainingRows(schools);
-  const curve = curveRows(schools);
-  assert.ok(rows.length >= 150 && curve.p25.length >= 140, `${rows.length} / ${curve.p25.length} rows`);
-  const open = { minRows: 0, maxP90: Infinity };
-  const report = [fitGpaModel(rows, open), fitGpaModel(curve.p25, open), fitGpaModel(curve.p75, open)].map((m) => m && `${m.p90Error.toFixed(3)}`);
-  assert.ok(fitGpaModel(rows), `the guard refused the average model (90% under ${report[0]})`);
-  assert.ok(fitGpaModel(curve.p25, GPA_CURVE_GUARD), `the guard refused the p25 model (90% under ${report[1]})`);
-  assert.ok(fitGpaModel(curve.p75, GPA_CURVE_GUARD), `the guard refused the p75 model (90% under ${report[2]})`);
-  assert.ok(fitGpaCurve(curve));
-});
-
-test("the real dataset: the model passes its guard and never trains on weighted reporters", () => {
-  const schools = JSON.parse(readFileSync(new URL("../data/schools.json", import.meta.url), "utf8")) as School[];
-  const rows = trainingRows(schools);
-  const m = fitGpaModel(rows);
-  assert.ok(m, "the guard refused the real fit");
-  assert.ok(m.n >= 25, `n = ${m.n}`);
-  assert.ok(m.p90Error <= 0.25, `p90 = ${m.p90Error}`);
+test("never trains on a weighted reporter's GPA, among the mini fixture's colleges", () => {
+  const schools = miniSchools();
   const weighted = schools.filter((s) => {
     const g = s.reported?.admission_profile?.gpa;
     return g && (g.scale === "weighted" || (g.average ?? 0) > 4);
   });
-  assert.ok(weighted.length > 0, "the dataset has weighted reporters to exclude");
+  assert.ok(weighted.length > 0, "the mini fixture has weighted reporters to exclude");
   for (const s of weighted) assert.equal(trainingRow(s), null, `${s.name} is weighted but trains the model`);
-  // Every training row is a college whose own GPA is a usable average or band mean.
-  for (const s of schools) {
-    const row = trainingRow(s);
-    if (row) assert.ok(["reported", "bands"].includes(collegeGpa(s, m).kind), s.name);
-  }
 });
 
 test("bandMean: band midpoints over the shares' total; the 'all' column, else 'with test'; half-blank is no mean", () => {
@@ -641,22 +623,18 @@ test("gpaCites: an exact middle cites derived.gpa_middle_half; an estimated one 
   assert.equal((gpaCites(c, collegeGpa(c, MODEL), MODEL, cite)["derived.gpa_estimate"] as { formula: string }).formula, gpaModelFormula(MODEL));
 });
 
-test("the real dataset: the p25 model passes its guard, the p75 model's p90 miss is at most 0.30", () => {
-  // The p25 guard is 0.31 since 2026-10-26 (gpa.md "Guard moved"); the p75 model's miss stays well under 0.30.
-  const schools = JSON.parse(readFileSync(new URL("../data/schools.json", import.meta.url), "utf8")) as School[];
-  const rows = curveRows(schools);
-  assert.equal(rows.p25.length, rows.p75.length);
-  const p25 = fitGpaModel(rows.p25, GPA_CURVE_GUARD);
-  assert.ok(p25, "the guard refused the real p25 fit");
-  assert.ok(p25.n >= 25 && p25.p90Error <= GPA_CURVE_GUARD.maxP90, JSON.stringify(p25));
-  const p75 = fitGpaModel(rows.p75, { minRows: 0, maxP90: Infinity })!;
-  assert.ok(p75.p90Error <= 0.3, `p75 p90 = ${p75.p90Error}`);
-  assert.ok(fitGpaCurve(rows), "both pass");
-  // Never trained on a weighted reporter's bands.
-  for (const s of schools) {
+// Deleted (phase 4, G4): "the real dataset: the p25 model passes its guard, the p75 model's p90 miss is at most
+// 0.30" asserted curve-fit quality (n >= 25, p90Error thresholds) over the whole real dataset's ~154 curve rows —
+// not meaningful on the mini fixture's 13 (see the comment above the deleted "committed data" test). The
+// weighted-exclusion check it also carried stays, against the mini fixture.
+test("never trains the curve on a weighted reporter's bands, among the mini fixture's colleges", () => {
+  const schools = miniSchools();
+  const weighted = schools.filter((s) => {
     const g = s.reported?.admission_profile?.gpa;
-    if (g && (g.scale === "weighted" || (g.average ?? 0) > 4)) assert.equal(bandMiddle(s), null, s.name);
-  }
+    return g && (g.scale === "weighted" || (g.average ?? 0) > 4);
+  });
+  assert.ok(weighted.length > 0, "the mini fixture has weighted reporters to exclude");
+  for (const s of weighted) assert.equal(bandMiddle(s), null, s.name);
 });
 
 test("the pinned standing.md examples (gpaAverage only) are unchanged; an average-only college gets no middle", () => {

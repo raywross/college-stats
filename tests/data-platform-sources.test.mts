@@ -30,16 +30,23 @@ import { highSchoolScratch, onHighSchoolFolder, readHighSchoolFolder, writeHighS
 import { baseDocuments, overlayStore } from "../scripts/lib/sync-data-base.mts";
 import { composeSnapshot, loadPublishLayers } from "../scripts/lib/data-platform/compose.mts";
 import { miniLayers, miniMeta, miniSchools } from "./helpers/snapshot.mts";
+import { buildAliasRow, type AliasRow } from "../lib/aliases.ts";
 
 const ROOT = join(import.meta.dirname, "..");
+const FIXTURE_ROOT = join(ROOT, "tests", "fixtures", "data-platform-sources");
 const scratch = (name: string) => mkdtempSync(join(tmpdir(), `dp-sources-${name}-`));
 const NODE = [process.execPath, "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON"];
 /** The environment a script runs in here: no data project, so `--store` must be given. */
 const OFFLINE_ENV = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(DATA_)?SUPABASE_/.test(k) && k !== "GITHUB_RUN_ID")) as NodeJS.ProcessEnv;
 
-/** One collection of the import, for the colleges given (or every document). */
-function imported(collection: string, units?: string[]): Map<string, unknown> {
-  return importLayers(join(ROOT, "data"), { only: new Set([collection]), ...(units ? { units: new Set(units) } : {}) }).get(collection as never) ?? new Map();
+/**
+ * One collection of the mini fixture's own committed layers (tests/fixtures/snapshot-mini/layers/, already
+ * imported), for the colleges given (or every document). Originally re-ran the import against the real `data/`
+ * (`importLayers(ROOT, ...)`); the fixture's layers stand in for that.
+ */
+async function imported(collection: string, units?: string[]): Promise<Map<string, unknown>> {
+  const all = await miniLayers().read<unknown>(collection);
+  return units ? new Map([...all].filter(([k]) => units.includes(k))) : all;
 }
 
 /* ------------------------------------------------------------------ */
@@ -95,16 +102,16 @@ test("producer: writeChanged sends only what changed and, mirroring, removes wha
 /* Essays                                                               */
 /* ------------------------------------------------------------------ */
 
-const firstRecord = (): EssayRecord => {
-  const records = imported(ESSAY_COLLECTIONS.records, ["221999"]);
+const firstRecord = async (): Promise<EssayRecord> => {
+  const records = await imported(ESSAY_COLLECTIONS.records, ["221999"]);
   return records.get("221999") as EssayRecord;
 };
 
-test("essays: a record's document is the committed file's parsed text, so a run and the import write the same body", () => {
-  const rec = firstRecord();
+test("essays: a record's document is the committed file's parsed text, so a run and the import write the same body", async () => {
+  const rec = await firstRecord();
   const doc = recordDocument(rec);
   assert.equal(JSON.stringify(doc), JSON.stringify(rec), "same keys, same order");
-  const held = imported(ESSAY_COLLECTIONS.held, ["145637"]).get("145637") as HeldRecord;
+  const held = (await imported(ESSAY_COLLECTIONS.held, ["145637"])).get("145637") as HeldRecord;
   assert.equal(JSON.stringify(heldDocument(held)), JSON.stringify(held));
 });
 
@@ -112,7 +119,7 @@ test("essays: a run writes records, held reads, changed pages and its summary in
   const dir = scratch("essays");
   try {
     const store = fileStore(dir);
-    const rec = firstRecord();
+    const rec = await firstRecord();
     const heldBefore: HeldRecord = { unit_id: rec.unit_id, name: rec.name, held: "2026-10-01", problems: ["the page names no cycle"], record: rec };
     const page: PageRecipe = { url: "https://example.edu/essays", via: "known-link", checked: "2026-10-01" };
     const seed = await store.open("import", "git", "seed");
@@ -175,17 +182,42 @@ function coalitionPages(file: CoalitionFile): { members: string; scoir: string }
   return { members, scoir };
 }
 
-test("coalition: the CLI on the file store writes coalition.members as the import has it, in a coalition change set, and nothing under data/", async () => {
+test("coalition: the CLI on the file store writes coalition.members as the import has it, in a coalition change set", async () => {
   const dir = scratch("coalition");
   try {
-    const committed = imported(COLLECTIONS.coalition.members).get(SINGLE_KEYS.members) as CoalitionFile;
+    // The mini fixture's own coalition.members (trimmed to its 38 colleges) has too few names for
+    // sync-coalition.mts's own sanity guard (100-300 on a real page); the real, untrimmed document stands in
+    // (tests/fixtures/data-platform-sources/coalition/members.json, see its README).
+    const committed = JSON.parse(readFileSync(join(FIXTURE_ROOT, "coalition", "members.json"), "utf8")) as CoalitionFile;
     const pages = coalitionPages(committed);
     writeFileSync(join(dir, "members.html"), pages.members);
     writeFileSync(join(dir, "scoir.html"), pages.scoir);
     const store = fileStore(join(dir, "store"));
-    // The colleges come from the store (base.colleges, base.aliases; the bundled copy is only an empty store's fallback).
-    await writeImport(store, new Map([[COLLECTIONS.coalition.nameMap, imported(COLLECTIONS.coalition.nameMap)], [COLLECTIONS.base.colleges, imported(COLLECTIONS.base.colleges)], [COLLECTIONS.base.aliases, new Map([["aliases", JSON.parse(readFileSync(join(ROOT, "data", "aliases.json"), "utf8"))]])]]) as never, "seed");
-    const before = readFileSync(join(ROOT, "data", "coalition", "members.json"), "utf8");
+    // The colleges come from the store (base.colleges, base.aliases; the bundled copy is only an empty store's
+    // fallback). The real list names about 150 colleges and the mini fixture has 38, so the colleges are synthetic,
+    // built from the committed document itself so every join comes out as recorded (scripts/lib/coalition/join.mts
+    // tries the admissions link's domain first, then the name, an alias, the hand map): a domain-joined member's
+    // college lives at its link's domain, a name-joined name is the college's name, an alias-joined name is an alias
+    // row, and a hand-map name joins through coalition.name_map (the fixture's real document).
+    const seeded = new Map<string, { unit_id: string; name: string; links: { website: string } }>();
+    const seedAliases: AliasRow[] = [];
+    const placeholder = (id: string, website: string) => ({ unit_id: id, name: `Seed ${id}`, links: { website } });
+    for (const m of committed.members) if (m.unit_id) seeded.set(m.unit_id, placeholder(m.unit_id, m.join === "domain" ? m.admissions_url : `https://seed-${m.unit_id}.example`));
+    for (const s of committed.scoir.names) if (s.unit_id && !seeded.has(s.unit_id)) seeded.set(s.unit_id, placeholder(s.unit_id, `https://seed-${s.unit_id}.example`));
+    for (const x of [...committed.members, ...committed.scoir.names]) {
+      if (!x.unit_id) continue;
+      if (x.join === "name") seeded.get(x.unit_id)!.name = x.name;
+      if (x.join === "alias") seedAliases.push(buildAliasRow(x.unit_id, x.name, "curated"));
+    }
+    await writeImport(
+      store,
+      new Map([
+        [COLLECTIONS.coalition.nameMap, await imported(COLLECTIONS.coalition.nameMap)],
+        [COLLECTIONS.base.colleges, new Map([...seeded].map(([id, c]) => [id, c]))],
+        [COLLECTIONS.base.aliases, new Map([["aliases", seedAliases]])],
+      ]) as never,
+      "seed",
+    );
     const r = spawnSync(NODE[0], [...NODE.slice(1), join(ROOT, "scripts", "sync-coalition.mts"), "--store", `file:${join(dir, "store")}`, "--from-files", join(dir, "members.html"), join(dir, "scoir.html")], { encoding: "utf8", env: OFFLINE_ENV });
     assert.equal(r.status, 0, r.stderr);
     const doc = (await store.readOne<CoalitionFile>(COLLECTIONS.coalition.members, SINGLE_KEYS.members))!;
@@ -193,7 +225,6 @@ test("coalition: the CLI on the file store writes coalition.members as the impor
     assert.equal(JSON.stringify(coalitionDocument(committed)), JSON.stringify(committed));
     const sets = fileStoreChangeSets(join(dir, "store"));
     assert.deepEqual([sets[1].source, sets[1].status, sets[1].summary.collections], ["coalition", "applied", ["coalition.members"]]);
-    assert.equal(readFileSync(join(ROOT, "data", "coalition", "members.json"), "utf8"), before, "data/ untouched");
     const bare = spawnSync(NODE[0], [...NODE.slice(1), join(ROOT, "scripts", "sync-coalition.mts"), "--from-files", join(dir, "members.html"), join(dir, "scoir.html")], { encoding: "utf8", env: OFFLINE_ENV });
     assert.equal(bare.status, 1);
     assert.match(bare.stderr, /--store is required/);
@@ -202,15 +233,15 @@ test("coalition: the CLI on the file store writes coalition.members as the impor
   }
 });
 
-test("common app: the edition and members documents are the files' parsed text, as the import keys them; the sync reads its prior state from the store", () => {
-  const grid = imported(COLLECTIONS.commonApp.grid);
+test("common app: the edition and members documents are the files' parsed text, as the import keys them; the sync reads its prior state from the store", async () => {
+  const grid = await imported(COLLECTIONS.commonApp.grid);
   assert.ok(grid.size >= 1);
   for (const [key, edition] of grid) {
     const e = edition as GridEdition;
     assert.equal(key, `${e.cycle}_${e.updated}`);
     assert.equal(JSON.stringify(JSON.parse(editionFileText(e))), JSON.stringify(e));
   }
-  const members = imported(COLLECTIONS.commonApp.members).get(SINGLE_KEYS.members) as MembersFile;
+  const members = (await imported(COLLECTIONS.commonApp.members)).get(SINGLE_KEYS.members) as MembersFile;
   assert.equal(JSON.stringify(JSON.parse(membersFileText(members))), JSON.stringify(members));
   const script = readFileSync(join(ROOT, "scripts", "sync-common-app.mts"), "utf8");
   for (const c of ["COLLECTIONS.commonApp.grid", "COLLECTIONS.commonApp.members", "COLLECTIONS.commonApp.nameMap"]) assert.ok(script.includes(c), c);
@@ -283,18 +314,14 @@ test("history: school.trends derive from the history layer exactly as the commit
 /* High schools                                                         */
 /* ------------------------------------------------------------------ */
 
-/** A small data/high-schools/: the two smallest state shards and their ledgers, one state file, the shared files. */
+/**
+ * A small data/high-schools/: DC and DE's school/ledger shards, one state file, the detail folder, the shared
+ * files. Copied from tests/fixtures/data-platform-sources/high-schools/ (committed 2026-10-31 from the real
+ * data/high-schools/; see its README) rather than the real data/, which the mini fixture's layers don't carry
+ * (schools/, ledger/, detail/ are pipeline bookkeeping left out on purpose).
+ */
 function smallHighSchools(dir: string): void {
-  const src = join(ROOT, "data", "high-schools");
-  for (const f of readdirSync(src)) if (f.endsWith(".json")) cpSync(join(src, f), join(dir, f));
-  for (const sub of ["schools", "ledger"]) {
-    mkdirSync(join(dir, sub), { recursive: true });
-    for (const f of ["DC.json", "DE.json"]) if (existsSync(join(src, sub, f))) cpSync(join(src, sub, f), join(dir, sub, f));
-  }
-  const states = readdirSync(join(src, "state")).sort();
-  mkdirSync(join(dir, "state"), { recursive: true });
-  cpSync(join(src, "state", states[0]), join(dir, "state", states[0]));
-  if (existsSync(join(src, "detail"))) cpSync(join(src, "detail"), join(dir, "detail"), { recursive: true });
+  cpSync(join(FIXTURE_ROOT, "high-schools"), dir, { recursive: true });
 }
 
 test("high schools: the folder reads back keyed as the import keys data/high-schools/", () => {

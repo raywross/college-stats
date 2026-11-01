@@ -5,9 +5,9 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { miniReference } from "./helpers/snapshot.mts";
 import {
   APPLIES,
   applies,
@@ -27,7 +27,7 @@ import {
 import { emptyProfile } from "../lib/student-profile.ts";
 
 const ROOT = join(import.meta.dirname, "..");
-const FILE = JSON.parse(readFileSync(join(ROOT, "data", "application-cycle.json"), "utf8")) as CycleFile;
+const FILE = miniReference<CycleFile>("application-cycle");
 
 test("cycle names: the class of G applies in the cycle that starts in G - 1", () => {
   assert.equal(cycleFor(2028), "2027-28");

@@ -825,6 +825,15 @@ test("check:college-health over the mini fixture: the layers' document covers ev
   assert.match(run.stdout, /the mini fixture's layers\): ok \(38 colleges/);
 });
 
+// Deleted (phase 4, G4): "the real data: the committed compact file is current, small, and judges every college as
+// the five sources do" read data/college-health.json, data/review-queue.json, data/schools.json, data/meta.json,
+// and collegeHealthScripts.buildCollegeHealth/readHealthFilesFromDisk(ROOT), which in turn read the five raw health
+// source files (manifest, records, failures, queue, link-issues) under data/. Those are pipeline bookkeeping the
+// mini fixture's layers deliberately leave out (scripts/build-mini-fixture.mts LAYER_EXCLUDES: reported.reports,
+// .docs, .sources, .failures, .review_queue), so this whole-real-dataset build-freshness fact ("is the committed
+// file a fresh build of the real five sources") can't be exercised on the fixture at all (rule 2). `npm run
+// check:college-health` (G5) covers it for the real data; the test above runs that check over the fixture.
+
 test("the compact health is read from the data store in one query; with none there is no health document yet", async () => {
   const { readCompact, readCompactFromStore, HEALTH_DOCUMENT } = health;
   const compact = await overviewDeps().deps.compact();

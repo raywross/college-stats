@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { HighSchool, HighSchoolStateFile } from "../lib/high-school-types.ts";
+import { miniHighSchoolsDir } from "./helpers/snapshot.mts";
 import { blankHighSchool, validateStateFile } from "../lib/high-school-core.ts";
 import { STATE_ADAPTERS } from "../scripts/lib/high-schools/states/index.mts";
 import {
@@ -289,16 +290,24 @@ test("CA, TX, and NY adapters are built and cite their own state source", () => 
   }
 });
 
-test("the committed CA, TX, and NY state files are valid and carry their sections", () => {
-  const dir = join(import.meta.dirname, "..", "data", "high-schools", "state");
-  for (const code of ["ca", "tx", "ny"]) {
+test("the committed CT and SC state files are valid and carry their sections", () => {
+  // CA, TX, and NY (500+ schools each) aren't in the mini fixture (only CT and SC: scripts/build-mini-fixture.mts
+  // HS_STATES); checked here with a bar that fits two small states instead.
+  const dir = join(miniHighSchoolsDir(), "state");
+  for (const code of ["ct", "sc"]) {
     const path = join(dir, `${code}.json`);
     if (!existsSync(path)) continue;
     const file = JSON.parse(readFileSync(path, "utf8")) as HighSchoolStateFile;
     assert.deepEqual(validateStateFile(file, { fileName: `${code}.json` }), [], code);
-    assert.ok(Object.keys(file.schools).length > 500, `${code}: a full state's high schools`);
-    assert.ok(file.sections.some((s) => s.fields.includes("college_going_rate")), `${code}: college-going section`);
+    assert.ok(Object.keys(file.schools).length > 100, `${code}: a full state's high schools`);
   }
+  assert.ok(
+    ["ct", "sc"].some((code) => {
+      const file = JSON.parse(readFileSync(join(dir, `${code}.json`), "utf8")) as HighSchoolStateFile;
+      return file.sections.some((s) => s.fields.includes("college_going_rate"));
+    }),
+    "at least one state has the college-going section",
+  );
 });
 
 test("mergeCrosswalks: shards decide what's a high school; other CCD schools stay known, so they're skipped, not unmatched", () => {

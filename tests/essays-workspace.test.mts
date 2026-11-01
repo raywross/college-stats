@@ -293,8 +293,10 @@ test("the capability is listed and the store asks for it on every action", () =>
   assert.deepEqual(
     exported.sort(),
     [
+      "acceptFix",
       "addComment",
       "createEssay",
+      "decideSuggestion",
       "deleteComment",
       "deleteEssay",
       "importPastedText",
@@ -307,7 +309,10 @@ test("the capability is listed and the store asks for it on every action", () =>
       "restoreVersion",
       "saveEssay",
       "setEssayStatus",
+      "suggestChanges",
       "unlinkEssay",
+      "updateSuggestion",
+      "withdrawSuggestion",
     ].sort(),
   );
   for (const name of exported) {
@@ -380,7 +385,7 @@ test("the editor's, the package's, and the delete's way back is the Essays tab, 
 
 test("the public Data API (app/api/v1, lib/api) reads none of the essay tables", () => {
   const files = [...readdirSync(join(ROOT, "lib", "api")).map((f) => join("lib", "api", f)), ...readdirSync(join(ROOT, "app", "api", "v1"), { recursive: true, encoding: "utf8" }).map((f) => join("app", "api", "v1", f))].filter((f) => /\.(ts|tsx|json)$/.test(f) && statSync(join(ROOT, f)).isFile());
-  const hits = files.filter((f) => /\bessay(s|_versions|_links|_comments)\b/.test(read(f)));
+  const hits = files.filter((f) => /\bessay(s|_versions|_links|_comments|_suggestions)\b/.test(read(f)));
   assert.deepEqual(hits, []);
   assert.equal(/\bessay_comments\b/.test("from('essay_comments')"), true, "the scan would see a read");
 });

@@ -34,8 +34,8 @@ import {
 import { allAidPolicies, type AidPolicy } from "../lib/aid-policies.ts";
 import type { School } from "../lib/types.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
-import pilot from "../data/reference/cost-curve-pilot.json" with { type: "json" };
-import reference from "../data/reference/income-above-110k.json" with { type: "json" };
+import pilot from "./fixtures/snapshot-mini/snapshot/reference/cost-curve-pilot.json" with { type: "json" };
+import reference from "./fixtures/snapshot-mini/snapshot/reference/income-above-110k.json" with { type: "json" };
 
 const ROOT = join(import.meta.dirname, "..");
 const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));

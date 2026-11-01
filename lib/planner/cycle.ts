@@ -7,7 +7,7 @@
  * Naming: a cycle is named by its academic year, "YYYY-YY", the year in which students apply. The class of G applies
  * in the cycle that starts in G - 1 (applications in the fall of G - 1, decisions in the spring of G).
  */
-import file from "../../data/application-cycle.json" with { type: "json" };
+import file from "../../.data/snapshot/reference/application-cycle.json" with { type: "json" };
 import type { Assignee, PlanItem, PlanSchool } from "./types.ts";
 import type { StudentProfileData } from "../student-profile.ts";
 

@@ -25,8 +25,8 @@
  */
 import type { School } from "./types";
 import { aidPolicyFor, type AidPolicy } from "./aid-policies.ts";
-import reference from "../data/reference/income-above-110k.json" with { type: "json" };
-import pilot from "../data/reference/cost-curve-pilot.json" with { type: "json" };
+import reference from "../.data/snapshot/reference/income-above-110k.json" with { type: "json" };
+import pilot from "../.data/snapshot/reference/cost-curve-pilot.json" with { type: "json" };
 
 /** The federal bands stop here. */
 export const FEDERAL_TOP = 110_000;

@@ -273,8 +273,8 @@ test("registry: sound, and a stored leaf resolves to its registered ancestor", (
 /* Store (json mode) and HIGH_SCHOOLS_DIR                              */
 /* ------------------------------------------------------------------ */
 
-test("HIGH_SCHOOLS_DIR: default data/high-schools; absolute or relative override", () => {
-  assert.equal(highSchoolsDir({}, "/repo"), join("/repo", "data", "high-schools"));
+test("HIGH_SCHOOLS_DIR: default .data/snapshot/high-schools (the bundled copy); absolute or relative override", () => {
+  assert.equal(highSchoolsDir({}, "/repo"), join("/repo", ".data", "snapshot", "high-schools"), "the bundled copy's high-school folder");
   assert.equal(highSchoolsDir({ HIGH_SCHOOLS_DIR: "tests/fixtures/high-schools" }, "/repo"), join("/repo", "tests", "fixtures", "high-schools"));
   assert.equal(highSchoolsDir({ HIGH_SCHOOLS_DIR: FIXTURE }, "/elsewhere"), FIXTURE);
 });

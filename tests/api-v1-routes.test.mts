@@ -15,23 +15,16 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import * as nodeModule from "node:module";
-import { miniHistory, miniSchools, miniSnapshotDir, installMiniAsBundledCopy } from "./helpers/snapshot.mts";
+import { installMiniAsBundledCopy, miniHistory, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 // The routes read getData(): make the mini fixture the bundled copy (tests/helpers/snapshot.mts) before lib/data.ts loads.
-const MINI_ROOT = installMiniAsBundledCopy();
-// Transitional, until lib/zip-centroids.ts reads the bundled copy (unit G1): it still reads
-// data/reference/zcta-centroids.csv under the working directory, so give it the fixture's table there too. Delete this
-// once G1 is merged (the table then comes from .data/snapshot/reference/).
-if (!readFileSync(join(ROOT, "lib", "zip-centroids.ts"), "utf8").includes(".data")) {
-  mkdirSync(join(MINI_ROOT, "data", "reference"), { recursive: true });
-  symlinkSync(join(miniSnapshotDir(), "reference", "zcta-centroids.csv"), join(MINI_ROOT, "data", "reference", "zcta-centroids.csv"));
-}
+installMiniAsBundledCopy();
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
 
 /* ------------------------------------------------------------------ */

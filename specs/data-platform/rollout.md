@@ -60,7 +60,7 @@ Very large: new tables and functions with policies, a publisher that must reprod
 that swaps safely, every producer touched, the console's biggest new section, and a test suite re-pointed at a
 fixture. Built in four phases with the byte-equality proof as the gate between them.
 
-## As built, phase 4 (2026-11-01, PR #TBD)
+## As built, phase 4 (2026-11-01, PR #205)
 Built as planned: `data/` is gone from the repository (the lead removed it last, after every unit's code and tests
 stopped reading it); the loader has no `legacy` source; tracing carries only `.data/snapshot/**`; the mini fixture
 grew to 38 colleges with every reference document; the check scripts, the publisher's gates, and six workflows read

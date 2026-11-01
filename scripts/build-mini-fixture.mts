@@ -245,6 +245,11 @@ async function buildSnapshot(units: ReadonlySet<string>, dir: string, log: (line
   const aliases = keepUnits(readJson<AliasRow[]>("aliases.json"), units, (r) => r.unit_id);
   writeFile(dir, SNAPSHOT_OBJECTS.aliases, formatAliasRows(aliases), objects, SNAPSHOT_OBJECTS.aliases);
 
+  // edits.json: no admin edits in the mini fixture (the publisher's compose writes the real object; this fixture is
+  // assembled from the already-composed data/, which carries none), but every real snapshot writes one, empty or
+  // not, so the fixture does too.
+  writeFile(dir, SNAPSHOT_OBJECTS.edits, `${JSON.stringify({ snapshot: 0, edits: [] }, null, 2)}\n`, objects, SNAPSHOT_OBJECTS.edits);
+
   const meta = JSON.parse(readFileSync(join(DATA, "meta.json"), "utf8")) as DatasetMeta;
   const searchIndex = buildSearchIndex({ getAllSchools: () => schools, getMeta: () => meta }, aliases);
   writeFile(dir, SNAPSHOT_OBJECTS.searchIndex, `${JSON.stringify(searchIndex)}\n`, objects, SNAPSHOT_OBJECTS.searchIndex);

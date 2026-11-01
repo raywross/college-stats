@@ -97,3 +97,133 @@ The console's Change sets, Holds and Snapshots screens exist (`app/admin/data/**
 - The queue is read from the store, paged by key, cached per instance and re-read after a write or five minutes.
 - Not built: the `data_revert` and other telemetry events in this part (the console logs every action to `admin_log`
   instead); the admin field editor and the live edits overlay are phase 3.
+
+## As built, phase 3 (2026-10-31)
+
+### The Edit page
+`/admin/colleges/[unit]/edit` (behind `requireAdmin()`; 404 for an unknown unit): a page titled "Edit {college}", with
+a back link to the admin college page and a link to the public profile. The admin college page's header carries an
+**Edit** link beside "Public profile". The page lists every editable registry path — every `lib/fields.ts` path except
+`unit_id` and anything `editProblem` refuses (unregistered, `computed`, or `hidden`); `name` *is* editable, since a
+rename is a real correction — grouped by topic in the registry's order, each group a disclosure open by default on
+desktop and closed on phones (a search box filters rows by label or path, client-side, and opens every group a match
+is in). Each row shows the value as it's shown on the site, its citation exactly as the ⓘ popover would word it, a
+chip when the value shown is a live edit, the "newer pipeline value" marker when one applies, and a typed input with
+an optional note (500 characters) and **Save**; an edited row also gets **Release** and a **History** disclosure with
+**Revert to this**.
+
+### The input's kind
+The registry carries no value type, so the editor infers one from the college's current value at the path: a number,
+a three-way boolean (true / false / none), a date (a string matching `YYYY-MM-DD`), text, or JSON for an array or
+object. A string becomes a **select** instead of free text when every college together has at most 12 distinct
+values at that path and some repeat (a category, not prose). When this college has no value, the kind comes from the
+type most colleges have at the path (one pass over every college, computed once per request and reused across rows).
+A `notify.unit === "percent"` field shows the number as a share, with the hint "a share, 0 to 1: 0.42 is 42%", and
+accepts a typed percent sign ("42%" saves 0.42) as well as a bare share.
+
+A submitted value is parsed by its row's kind and refused in plain words when it doesn't fit ("Enter a number", "Not
+valid JSON", "Pick true, false or none", "Enter a share from 0 to 1: 0.42 is 42%"). An empty box is refused unless the
+"Clear this value" box is ticked, which saves `null` whatever the box holds. The boolean select's "none" choice
+already means null, so it needs no separate Clear box.
+
+### Stored derived fields
+A registry entry with a stored `derived` formula (e.g. `admissions.acceptance_rate`, computed from counts at sync
+time and stored like any other field) is not recomputed by either the publisher or the live overlay when one of its
+inputs is edited — editing `admissions.admitted` does not move the stored rate. Such a row shows "Derived:
+{formula}. Editing an input does not recompute it; set this value too if it should change" under it, and the input's
+own row names the stored derived fields that read it ("Stored derived field reading this: Acceptance rate. Editing
+this does not recompute it"), so an admin remembers to set the dependent value too.
+
+### The "a newer pipeline value exists" marker
+For an edited path, the editor fetches the snapshot the instance currently serves `edits.json` (built by the
+publisher, F4) and looks for this college and path's entry. If that entry's `pipeline` is non-null, its value differs
+(deep equality) from the edit's, and its lineage's `retrieved` day is after the edit's day, the row shows "A newer
+pipeline value exists: {value} from {source}, {date}" beside **Release**. The marker is simply absent when
+`edits.json` doesn't exist yet for the served snapshot (a 404, or a dataset built before F4 shipped), when the fetch
+fails, when the path had no pipeline value (`pipeline: null`), when the values agree, or when the pipeline's lineage
+has no date at all (nothing proves it's newer).
+
+### Release
+**Release** calls `admin_data_release_edit`, which releases **every** unreleased edit of that unit and path, not just
+the one shown (there is at most one live edit per path in practice, but the function doesn't assume it). The page's
+copy: "Lets the pipelines' value show again." The pipelines' value returns on the page immediately (the live overlay
+has nothing left to apply at that path) and is baked into the next published snapshot.
+
+### History and Revert to this
+The field's **History** disclosure lists every edit of the path, newest first, each with who made it (the editor's
+`profiles.display_name`, or "an admin" when that lookup fails or the name is unset), when, the value, the note, and a
+status: **Live** (the edit the overlay currently serves), **Released** (superseded by a release), or **Replaced**
+(superseded by a later edit of the same path). **Revert to this** on any row calls `admin_data_edit` again with that
+row's value and the fixed note "Reverted to the edit of {date}" — a revert is a new edit, never a rewrite of history.
+
+### Showing it at once
+After a successful Save, Release, or Revert to this, the action forgets this instance's live-edits memo
+(`forgetLiveEdits`) and revalidates `/schools/{unit}` and `/admin/colleges/{unit}` (both `"layout"`, so every topic
+page under each path picks it up), then calls `refresh()` so the editor's own rows catch up. Nothing else is
+revalidated.
+
+### The reference editor
+`/admin/data/reference` lists every whole-document reference: the eleven names in `REFERENCE_FILES`
+(`scripts/lib/data-platform/layers.mts`: `aid-policies`, `aliases-curated`, `application-cycle`,
+`guaranteed-admission`, `major-admission`, `state-laws`, `organizations`, `common-app-trends`,
+`excluded-campuses`, `essay-guidance/guidance`, `zcta-centroids`) plus the release calendar (`base.release_calendar`,
+key `calendar`) — each with a one-line description, its collection, current version, when it last changed, and a link
+to the change set that wrote it. `/admin/data/reference/[name]` edits one: a `{text}` document (the essay guidance
+markdown, the ZCTA centroids CSV) is unwrapped into a plain textarea and re-wrapped as `{text}` on save; every other
+document is a two-space JSON textarea, exactly as stored. Before **Save document** reaches the database, the body is
+checked by the document's own validator when `lib/` has one:
+
+| Document | Validator |
+|---|---|
+| `aid-policies` | `validateAidPolicies` |
+| `state-laws` | `validateStateLaws` |
+| `guaranteed-admission` | `validateGuaranteed` |
+| `major-admission` | `validateMajorAdmission` |
+| `application-cycle` | `validateCycleFile` |
+| `common-app-trends` | `validateCommonAppTrends` |
+| `organizations` | `organizationsProblems` |
+| `aliases-curated` | `aliasTableProblems`, after `buildAliasRow` turns each row into the shape it checks |
+| `essay-guidance/guidance` | `missingSections(parseGuidance(text))` |
+| the release calendar, and every other document | none yet — only the generic rule that the body parses to a JSON object or array |
+
+A problem refuses the save in plain words before any call reaches `admin_data_set_reference`. The **Versions** panel
+lists every version from `data_document_versions` (version, when, change set, deleted flag); **Revert to version
+{n}** requires typing "revert" and resends that version's body through the same function with the note "Reverted to
+version {n}" — it does not run the body back through the validator (an older version was presumably valid when it
+was current, and a validator can tighten over time). The essay guidance document's name has a "/" in it, which the
+list and edit links percent-encode into one route segment (`/admin/data/reference/essay-guidance%2Fguidance`); the
+page decodes it back before reading.
+
+### The live overlay
+`lib/data-platform/live-edits.ts` applies where the contract named: `lib/profile-data.ts` (the college page and every
+topic page under it), `lib/compare-data.ts` (Compare), `app/api/v1/schools/[id]/route.ts` and
+`.../lineage/route.ts` (the Data API's single-college and lineage endpoints), and the MCP server's one-college tools
+(`get_college`, `get_lineage`, `fetch`) through `McpToolContext.liveSchool`. **It does not reach the advisor**: a
+check of `lib/planner/context.ts` and `lib/chances/snapshot-deps.ts` found no single choke point where every planner
+college read passes through one function, so the advisor still reads the published snapshot, as the contract allowed
+when no such point exists. Explore, the search index, the home page, trends, and the `/api/v1/schools` list wait for
+the snapshot, by design.
+
+The overlay reads every unreleased row of `data_field_edits` from PostgREST
+(`${SUPABASE_URL}/rest/v1/data_field_edits?select=id,unit_id,path,value,note,created_at&released_at=is.null&order=id`)
+with the publishable key, over `node:http(s)` — never `fetch`, since Next patches `fetch` and an uncacheable fetch
+during the college page's static render would make that page dynamic. A 3-second timeout; one read per request
+(React `cache()`) and at most one every 30 seconds per server instance (a module-level memo), so a burst of API calls
+or a cold instance's static regeneration costs at most one database read. It fails open: an HTTP error, a timeout, a
+network error, or a body that isn't a list of rows all serve no edits (the snapshot's own values), logged at most
+once a minute per failure kind. Without `SUPABASE_URL` or `SUPABASE_PUBLISHABLE_KEY` set, nothing is read and every
+school passes through unchanged — the overlay never throws.
+
+### Citations
+Because `meta.sources` doesn't carry `quad-edit` until the next publish adds it, `sourceInfo()` falls back to
+`quadEditSource()` ("Quad's editors", publisher "Quad") so an edit cites correctly before that publish. An edited
+value's ⓘ popover reads "Edited by Quad on {Month D, YYYY}." followed by the editor's note, if there is one, with no
+year (`citesYear` returns false for the `quad-edit` source: an edit is dated by the day it was made, not a release).
+A section's source line reads "Edited by Quad" (linked to `/data#edits`, no year) in place of a dataset name. A
+profile's bottom "Sources for this profile" list adds one line, "Some values edited by Quad," with a short
+explanation and a link to `/data#edits`, whenever any field shown on the profile is an edit; the edited sources
+themselves are left out of the numbered dataset list (an edit isn't a dataset with a year to group by). `/data#edits`
+is one paragraph on `/data`, under "The datasets": "Edited by Quad: where a source's value is missing or wrong, Quad's
+editors can set it by hand. The value's ⓘ says so, with the day of the edit, and a newer release replaces it only
+once an editor lets it." The Data API's `GET /schools/{id}/lineage` serves the overlaid school, so an edited field's
+lineage reads `{ source: "quad-edit", method: "edited", ... }` with no year, and a note when the edit had one.

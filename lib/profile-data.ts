@@ -14,6 +14,7 @@ import { INSTRUCTION_METRIC, endowmentMetricFor } from "./finances";
 import { PROFILE_TOPICS, type TopicKey } from "./profile-topics";
 import { religionView } from "./religion";
 import { greekCard } from "./cds/greek-display";
+import { withLiveEdits } from "./data-platform/live-edits";
 
 /** A college's history shard and the shared history files, when both exist (specs/trends-data.md). */
 export interface ProfileHistory {
@@ -77,12 +78,15 @@ export interface Profile {
 
 /**
  * Loads one college's profile once per request (React `cache`), so the overview, a topic page, and their metadata
- * share a single data load. Null for an unknown id.
+ * share a single data load. The college carries its live edits (lib/data-platform/live-edits.ts). Null for an
+ * unknown id.
  */
 export const loadProfile = cache(async (id: string): Promise<Profile | null> => {
   const data = await getData();
-  const school = data.getSchoolById(id);
-  if (!school) return null;
+  const stored = data.getSchoolById(id);
+  if (!stored) return null;
+  // An admin's live edits show at once (lib/data-platform/live-edits.ts); every block under the page gets this school.
+  const school = await withLiveEdits(stored);
   const [history, files, detail] = await Promise.all([getHistory(school.unit_id), getHistoryFiles(), getDetail(school.unit_id)]);
   const { rankOf } = data;
   const { admissions: a } = school;

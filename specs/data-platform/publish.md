@@ -125,3 +125,34 @@ project's values and at launch may stay there or move to a dedicated data projec
 - **First real publish**: snapshot 1 from the dev project's layers, 3,809 objects, 52 MB, in 201 s; the change log
   recorded "no changes" against the committed files; a local server with `DATA_SNAPSHOT_URL` set loaded 1,893
   colleges from it. `DATA_SNAPSHOT_URL` is `<project url>/storage/v1/object/public/snapshots`.
+
+## As built, phase 3 (2026-10-31)
+
+### `edits.json`
+A new object in every snapshot (`SNAPSHOT_OBJECTS.edits`, `edits.json`; listed in the manifest and hashed like every
+other object, written on every publish whether or not any edit applied):
+```ts
+{ snapshot: number; edits: { id, unit_id, path, value, note, created_at,
+  pipeline: { value, lineage } | null }[] }
+```
+`compose.mts` builds the array as its last step (after every pipeline layer, before the edits themselves are applied):
+for each live edit it captures the composed college's value and lineage record at that path **as the pipelines left
+it**, before the edit overwrites either. `pipeline` is `null` only when the path held no value at all — a stored
+`null` is a real value and is kept as `{ value: null, lineage: ... }`, distinct from "nothing there." The lineage half
+may be `null` even when the pipeline value isn't (a field cited to its registry default, with no per-school record).
+The array is sorted by `unit_id` then `path`, so the rendered bytes are deterministic given the same edits. The
+console's "a newer pipeline value exists" marker (F2) reads this object from the snapshot the instance currently
+serves; the loader and `fetch-snapshot` ignore it entirely — nothing in the app reads `edits.json` except that one
+admin check, and it is never required for a page to render. The mini fixture's copy
+(`tests/fixtures/snapshot-mini/snapshot/edits.json`) is `{ "snapshot": 0, "edits": [] }`.
+
+### The production switch's one observed fact (2026-10-31)
+After a publish, dynamic request handling (the loader's `maybeRefresh()`, read fresh on every request up to once a
+minute per instance) shows the new snapshot within a minute everywhere. Prerendered pages are slower: they keep
+showing the snapshot id that was **bundled into the deploy** (`.data/snapshot/`, written by `fetch-snapshot` at build
+time) until the deploy hook's own deploy finishes and lands, which took two to five minutes in the switch. The reason
+is the cold-start path in "The loader" above: a fresh instance always serves the bundled copy first and only swaps
+off the request path, so a prerendered page that regenerates on a cold instance before that instance's first
+background refresh bakes the *bundled* snapshot id back in, not the one the warm instances are already serving. A
+publish's revalidation and the deploy hook together are what eventually make every instance's bundled copy current
+again.

@@ -320,7 +320,12 @@ export async function publishSnapshot(opts: PublishOptions): Promise<number> {
   const createdAt = (opts.deps?.now?.() ?? new Date()).toISOString();
   const rendered = renderSnapshot(composed, id, last?.id ?? null, changeSetIds, { createdAt });
   const mb = (renderedBytes(rendered) / 1e6).toFixed(1);
-  opts.log(`publish-snapshot: ${composed.schools.length} colleges, ${rendered.objects.size} objects, ${mb} MB${composed.edits.applied ? `, ${composed.edits.applied} edit(s) at ${composed.edits.colleges} college(s)` : ""}`);
+  const coveringPipeline = composed.editsObject.filter((e) => e.pipeline !== null).length;
+  opts.log(
+    `publish-snapshot: ${composed.schools.length} colleges, ${rendered.objects.size} objects, ${mb} MB${
+      composed.edits.applied ? `, ${composed.edits.applied} edit(s) at ${composed.edits.colleges} college(s), ${coveringPipeline} covering a pipeline value` : ""
+    }`,
+  );
   if (opts.dryRun) {
     if (opts.out) {
       writeRendered(opts.out, rendered);

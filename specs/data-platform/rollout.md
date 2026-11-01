@@ -60,6 +60,14 @@ Very large: new tables and functions with policies, a publisher that must reprod
 that swaps safely, every producer touched, the console's biggest new section, and a test suite re-pointed at a
 fixture. Built in four phases with the byte-equality proof as the gate between them.
 
+## As built, phase 3 (2026-10-31, PR #204)
+Built as planned: `data_field_edits`, `admin_data_edit`/`admin_data_release_edit`, the live overlay
+(`lib/data-platform/live-edits.ts`), `quad-edit`/`edited` lineage, the field editor at `/admin/colleges/[unit]/edit`
+with History and Release, and the reference editor at `/admin/data/reference`. See
+[change-sets.md](change-sets.md) "As built, phase 3" for the details and [publish.md](publish.md) "As built, phase 3"
+for `edits.json` and the production switch's prerendered-page delay. The live overlay does not reach the advisor (no
+single choke point over its college reads exists yet; it still reads the published snapshot).
+
 ## As built, phases 1 and 2 (2026-10-31)
 Phase 1 merged as PR #201 (gate: byte-for-byte). Phase 2 is one PR; its production switch is the owner's three
 steps in the PR body (GitHub secrets, `DATA_SNAPSHOT_URL`, one publish). The owner chose to stay on the free plan for

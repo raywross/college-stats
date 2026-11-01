@@ -24,6 +24,7 @@ import "server-only";
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import type { AuthInfo } from "@modelcontextprotocol/server";
 import { getData, getHistory, getHistoryFiles } from "@/lib/data";
+import { withLiveEdits } from "@/lib/data-platform/live-edits";
 import { recordApiRequest, verifyApiKeyToken, type ApiAuthDeps, type ApiAuthResult } from "@/lib/api/auth";
 import { apiError, authFailure } from "@/lib/api/respond";
 import { MCP_INSTRUCTIONS, registerQuadTools, type McpToolContext, type RecordToolCall } from "@/lib/api/mcp";
@@ -56,6 +57,7 @@ async function defaultContext(): Promise<McpToolContext> {
     data: await getData(),
     getHistory,
     getHistoryMeta: async () => (await getHistoryFiles())?.meta ?? null,
+    liveSchool: withLiveEdits,
   };
 }
 

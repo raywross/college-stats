@@ -173,6 +173,30 @@ test("an edit the registry refuses fails the publish", () => {
   assert.ok(bad.problems.some((p) => p.includes("no such college")));
 });
 
+test("compose records editsObject (edits.json's body): the pre-edit pipeline value and lineage, one row per live edit", () => {
+  // 123457 carries no coalition layer at all, so coalition.member has no pipeline value to record.
+  const noPipeline = edit({ id: 4, unit_id: "123457", path: "coalition.member", value: true, note: null, created_at: "2026-10-30T12:00:00Z" });
+  const edited = composeFixture({ ...layers, edits: [edit(), edit({ id: 2, value: 0.65, created_at: "2026-10-29T10:00:00Z" }), edit({ id: 3, value: 0.1, released_at: "2026-10-30T18:00:00Z" }), noPipeline] });
+  assert.deepEqual(edited.problems, []);
+  // One row per path actually applied (the newest unreleased), not one per stored edit row: id 2 is superseded, id 3 is released.
+  assert.equal(edited.editsObject.length, 2);
+  const grad = edited.editsObject.find((e) => e.path === "outcomes.graduation_rate")!;
+  assert.equal(grad.id, 1, "the newest unreleased edit wins, as liveEdits picks it");
+  assert.equal(grad.unit_id, "123457");
+  assert.equal(grad.value, 0.7);
+  assert.equal(grad.note, "Per the registrar");
+  assert.equal(grad.created_at, "2026-10-30T17:00:00Z");
+  assert.ok(grad.pipeline, "the pipeline had a value at this path before the edit");
+  assert.equal(grad.pipeline!.value, committed.find((s) => s.unit_id === "123457")!.outcomes!.graduation_rate);
+  const coal = edited.editsObject.find((e) => e.path === "coalition.member")!;
+  assert.equal(coal.note, null);
+  assert.equal(coal.pipeline, null, "no coalition layer for 123457: the path had no pipeline value");
+  // Sorted (unit_id, then path): deterministic regardless of the edits' arrival order.
+  assert.deepEqual(edited.editsObject.map((e) => e.path), ["coalition.member", "outcomes.graduation_rate"].sort());
+  // No edits at all: an empty editsObject, not an absent one.
+  assert.deepEqual(first.editsObject, []);
+});
+
 test("the console's hand-read prompts replace the layer's as the nightly export would", () => {
   const rows = [{ unit_id: "191621", cycle: "2026-27", record: { unit_id: "191621", cycle: "1999-00" } as never }];
   const c = composeFixture({ ...layers, promptOverrides: rows });
@@ -209,6 +233,22 @@ test("render: deterministic, every object hashed in the manifest, today's format
   const again = renderSnapshot(first, 7, 6, [11, 12], { createdAt: "2026-10-31T08:00:00.000Z" });
   assert.ok(again.manifestBytes.equals(r.manifestBytes));
   for (const [name, o] of r.objects) assert.ok(again.objects.get(name)!.bytes.equals(o.bytes), name);
+});
+
+test("render: edits.json carries the snapshot id and every applied edit, empty or not, hashed in the manifest", () => {
+  const empty = renderSnapshot(first, 7, 6, [11, 12], { createdAt: "2026-10-31T08:00:00.000Z" });
+  assert.deepEqual(JSON.parse(empty.objects.get(SNAPSHOT_OBJECTS.edits)!.bytes.toString("utf8")), { snapshot: 7, edits: [] });
+  assert.ok(SNAPSHOT_OBJECTS.edits in empty.manifest.objects, "listed in the manifest like every object");
+  const edited = composeFixture({ ...layers, edits: [edit()] });
+  const withEdit = renderSnapshot(edited, 9, 7, [20], { createdAt: "2026-10-31T08:00:00.000Z" });
+  assert.deepEqual(JSON.parse(withEdit.objects.get(SNAPSHOT_OBJECTS.edits)!.bytes.toString("utf8")), { snapshot: 9, edits: edited.editsObject });
+  // Adding the edit changes edits.json, colleges.json (the edited value) and meta.json (the quad-edit source), but
+  // no other object's bytes.
+  const touched = new Set<string>([SNAPSHOT_OBJECTS.edits, SNAPSHOT_OBJECTS.colleges, SNAPSHOT_OBJECTS.meta]);
+  for (const [name, o] of empty.objects) {
+    if (touched.has(name)) continue;
+    assert.ok(withEdit.objects.get(name)!.bytes.equals(o.bytes), `${name} unaffected by the edit`);
+  }
 });
 
 /* ------------------------------------------------------------------ */

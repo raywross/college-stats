@@ -9,6 +9,7 @@ import type { SchoolHistory } from "./history";
 import type { HistoryFiles } from "./supabase";
 import { shortName } from "./brand";
 import { compareHref, compareTopicOf, type ComparePage } from "./compare-topics";
+import { withLiveEditsAll } from "./data-platform/live-edits";
 
 /** At most this many colleges side by side: MAX_COMPARE in lib/compare.ts, a client module, so not importable here. */
 const MAX_IDS = 4;
@@ -30,7 +31,8 @@ export interface Comparison {
 export const loadComparison = cache(async (idsParam: string): Promise<Comparison> => {
   const data = await getData();
   const wanted = [...new Set(idsParam.split(",").map((id) => id.trim()).filter(Boolean))];
-  const schools = data.getSchoolsByIds(wanted).slice(0, MAX_IDS);
+  // With their live edits (lib/data-platform/live-edits.ts), like the profile.
+  const schools = await withLiveEditsAll(data.getSchoolsByIds(wanted).slice(0, MAX_IDS));
   const historyFiles = schools.length > 0 ? await getHistoryFiles() : null;
   return { data, ids: schools.map((s) => s.unit_id), schools, historyFiles };
 });

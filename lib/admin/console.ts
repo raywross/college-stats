@@ -156,6 +156,9 @@ export const CONFIRM_REMOVE = "remove";
 /** The word typed to delete a student record. */
 export const CONFIRM_DELETE_RECORD = "delete";
 
+/** The word typed to revert a change set or a reference document to an older version (client-safe: no server imports here). */
+export const CONFIRM_REVERT = "revert";
+
 /* ------------------------------------------------------------------ */
 /* Reading forms                                                       */
 /* ------------------------------------------------------------------ */

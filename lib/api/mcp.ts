@@ -24,7 +24,7 @@ import type { Cited } from "../lineage.ts";
 import { SERIES, SERIES_KEYS, historySources, type HistoryMeta, type SchoolHistory, type SeriesKey } from "../history.ts";
 import { aliasKey } from "../aliases.ts";
 import { parseFilters } from "../params.ts";
-import { yearLabel } from "../lineage.ts";
+import { citationText } from "../lineage.ts";
 import { GLOSSARY, GLOSSARY_CATEGORIES, isTermKey, type GlossaryCategory, type GlossaryEntry } from "../glossary.ts";
 import { DOCS_ORIGIN } from "../api-snippets.ts";
 import type { MetricKey } from "../metrics.ts";
@@ -60,7 +60,15 @@ export interface McpToolContext {
   getHistoryMeta?: () => Promise<HistoryMeta | null>;
   /** The site's origin for the links `search` and `fetch` return (the request's own; the production address when unknown). */
   origin?: string;
+  /**
+   * The college with its live admin edits (lib/data-platform/live-edits.ts `withLiveEdits`), for the one-college tools
+   * (get_college, get_lineage, fetch), so they serve what the profile shows. Absent: the dataset's record as is.
+   */
+  liveSchool?: (school: School) => Promise<School>;
 }
+
+/** The college as the one-college tools serve it: with its live edits when the context can apply them. */
+const live = (school: School, ctx: McpToolContext): Promise<School> => (ctx.liveSchool ? ctx.liveSchool(school) : Promise.resolve(school));
 
 /** A tool's answer plus the HTTP-like status recorded as `api_request.status` (200, 400 bad input, 404 not found, 500). */
 export interface ToolOutcome {
@@ -249,10 +257,11 @@ export function resolveCollegeName(name: string, data: Pick<Dataset, "searchScho
 }
 
 /** get_college: the PublicSchool record, by unit_id or by name. */
-function getCollege(args: z.infer<typeof getCollegeInput>, { data }: McpToolContext): ToolOutcome {
+async function getCollege(args: z.infer<typeof getCollegeInput>, ctx: McpToolContext): Promise<ToolOutcome> {
+  const { data } = ctx;
   if (args.unit_id) {
     const school = data.getSchoolById(args.unit_id);
-    return school ? ok(publicSchool(school, args.fields) as Record<string, unknown>, false) : notFound(args.unit_id);
+    return school ? ok(publicSchool(await live(school, ctx), args.fields) as Record<string, unknown>, false) : notFound(args.unit_id);
   }
   if (!args.name) return toolError(400, "Give unit_id or name.");
   const found = resolveCollegeName(args.name, data);
@@ -268,7 +277,7 @@ function getCollege(args: z.infer<typeof getCollegeInput>, { data }: McpToolCont
       true,
     );
   }
-  return ok(publicSchool(found.school, args.fields) as Record<string, unknown>, false);
+  return ok(publicSchool(await live(found.school, ctx), args.fields) as Record<string, unknown>, false);
 }
 
 /** compare_colleges: lib/metrics.ts values with each college's percentile rank and the national median, plus lineage. */
@@ -304,9 +313,11 @@ async function getHistoryTool(args: z.infer<typeof historyInput>, ctx: McpToolCo
 }
 
 /** get_lineage: the resolved Cited record of every value the college has (schoolLineage), as /lineage serves it. */
-function getLineage(args: z.infer<typeof lineageInput>, { data }: McpToolContext): ToolOutcome {
-  const school = data.getSchoolById(args.unit_id);
-  if (!school) return notFound(args.unit_id);
+async function getLineage(args: z.infer<typeof lineageInput>, ctx: McpToolContext): Promise<ToolOutcome> {
+  const { data } = ctx;
+  const stored = data.getSchoolById(args.unit_id);
+  if (!stored) return notFound(args.unit_id);
+  const school = await live(stored, ctx);
   return ok({ unit_id: school.unit_id, fields: schoolLineage(school, data.getMeta(), args.fields) }, false);
 }
 
@@ -375,7 +386,7 @@ export function collegeDocument(school: School, ctx: McpToolContext): { id: stri
       topic = row.topic;
       lines.push("", `## ${topic}`);
     }
-    lines.push(`${row.label}: ${textValue(value)} (${cited.label}, ${yearLabel(cited)})`);
+    lines.push(`${row.label}: ${textValue(value)} (${citationText(cited)})`);
   }
   lines.push("", `${MCP_ATTRIBUTION}, retrieved ${meta.retrieved}.`);
   return {
@@ -388,10 +399,10 @@ export function collegeDocument(school: School, ctx: McpToolContext): { id: stri
 }
 
 /** fetch: the document for one id (deep research's `{ id, title, text, url, metadata }`). */
-function fetchDocument(args: z.infer<typeof fetchInput>, ctx: McpToolContext): ToolOutcome {
+async function fetchDocument(args: z.infer<typeof fetchInput>, ctx: McpToolContext): Promise<ToolOutcome> {
   const school = ctx.data.getSchoolById(args.id);
   if (!school) return toolError(404, `No college with id ${args.id} in Quad's dataset. Use search first.`);
-  return ok(collegeDocument(school, ctx) as unknown as Record<string, unknown>, false);
+  return ok(collegeDocument(await live(school, ctx), ctx) as unknown as Record<string, unknown>, false);
 }
 
 /** One glossary entry as the API gives it (lib/glossary.ts's record, with its key and only valid related keys). */

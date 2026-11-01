@@ -20,6 +20,10 @@
       "bytes": 8516,
       "sha256": "b7ef721affa2a13bb93def732762e57cbc43f28a00e85a8e61fed3e4d5df8e79"
     },
+    "edits.json": {
+      "bytes": 35,
+      "sha256": "68550324239bd37e6ad541dbe10e081de9e28cee99e30ccdeed2d07aef74e405"
+    },
     "search-index.json": {
       "bytes": 4904,
       "sha256": "b3924f97c88ca9c4523eb6ca4c9d971cfb51d98696bc1304f25b0dea80ceb9c6"

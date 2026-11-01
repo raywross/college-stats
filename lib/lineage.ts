@@ -14,6 +14,7 @@ import { financialAidProblems } from "./cds/financial-aid.ts";
 import { aidPolicyFor, aidYearLabel } from "./aid-policies.ts";
 import { programsFor, type GuaranteedProgram } from "./chances/guaranteed.ts";
 import { majorUnitsFor, universityStatement, type CuratedMajorUnit } from "./chances/major-admission.ts";
+import { quadEditSource } from "./data-platform/edits.ts";
 
 /** Any source key a citation can carry: a college source (lib/fields.ts) or a high school source (lib/hs-fields.ts). */
 export type AnySourceKey = SourceKey | HsSourceKey;
@@ -72,6 +73,8 @@ export interface Cited<K extends AnySourceKey = SourceKey, P extends string = Fi
   directory?: { organization: string; tier: "B" | "C" | "D"; phrase: string };
   /** A freely licensed image shown beside the value (an organization's logo from Wikimedia Commons), credited as its license asks. */
   image?: { what: string; attribution: string; license: string; source: string };
+  /** An admin's edit (source `quad-edit`, method `edited`): the editor's note, shown under "Edited by Quad on …". */
+  note?: string;
 }
 
 /** A citation of either kind (college or high school), for display components that render both. */
@@ -171,7 +174,9 @@ function notMergedYet(meta: DatasetMeta, key: SourceKey): boolean {
  */
 export function sourceInfo(meta: DatasetMeta, key: SourceKey): SourceInfo {
   return (
-    meta.sources[key] ?? {
+    meta.sources[key] ??
+    // Quad's editors: a live edit (lib/data-platform/live-edits.ts) shows before the publish that adds the source.
+    (key === "quad-edit" ? quadEditSource() : null) ?? {
       label: "Source being published",
       publisher: "Updating now",
       edition: "Publishing",
@@ -319,7 +324,33 @@ export function yearLabel(s: Pick<AnyCitedSource, "year">): string {
  * to name; the retrieval date shown with them dates them, so "Wikidata, most recent release" would only mislead.
  */
 export function citesYear(s: Pick<AnyCitedSource, "key" | "year">): boolean {
+  // An admin's edit is dated by its day ("Edited by Quad on …"), never by a release year.
+  if (isEditedSource(s)) return false;
   return s.year !== null || !(UNDATED_SOURCES as ReadonlySet<string>).has(s.key);
+}
+
+/** Whether a citation is an admin's edit (source `quad-edit`): cited as "Edited by Quad on {date}", with no year. */
+export function isEditedSource(s: Pick<AnyCitedSource, "key">): boolean {
+  return s.key === "quad-edit";
+}
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** "October 31, 2026" from an ISO day ("2026-10-31", or a timestamp starting with one); the input as is otherwise. */
+export function editDay(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m || +m[2] < 1 || +m[2] > 12) return iso;
+  return `${MONTHS[+m[2] - 1]} ${+m[3]}, ${m[1]}`;
+}
+
+/** "Edited by Quad on October 31, 2026": the citation of an edited value (its `retrieved` is the day of the edit). */
+export function editedOn(s: Pick<AnyCitedSource, "retrieved">): string {
+  return `Edited by Quad on ${editDay(s.retrieved)}`;
+}
+
+/** A citation as one line of text: "IPEDS Admissions, Fall 2024", or "Edited by Quad on October 31, 2026" for an edit. */
+export function citationText(s: AnyCitedSource): string {
+  return isEditedSource(s) ? editedOn(s) : `${s.label}, ${yearLabel(s)}`;
 }
 
 /** Compact name for a chip: "CDS 2024-25", "IPEDS Fall 2024", "Scorecard". */
@@ -343,6 +374,8 @@ export function shortSource(s: CitedSource): string {
                     ? "Common App"
                     : s.key === "coalition"
                       ? "Coalition for College"
+                      : s.key === "quad-edit"
+                        ? "Edited by Quad"
                       : s.key === "scorecard" || s.key === "scorecard-fos"
                         ? "Scorecard"
                         : "IPEDS";
@@ -438,6 +471,7 @@ export function lineageFor(path: FieldPath, school: School | undefined, meta: Da
     ...(derived ? { formula: derived.formula, inputs } : {}),
     ...(rec?.quote ? { quote: rec.quote } : curatedQuote(path, school)),
     ...(rec?.page !== undefined ? { page: rec.page } : {}),
+    ...(rec?.method === "edited" && rec.note ? { note: rec.note } : {}),
     ...replacedBy(path, school, meta),
     // A round-3 record value names its CDS edition (its year is the item's own, e.g. next year's price); the
     // admissions block's document kind applies only to values without one.

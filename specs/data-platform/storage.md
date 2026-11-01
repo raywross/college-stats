@@ -149,7 +149,7 @@ publisher as part of the essays layer and keeps its console.
 | `history.schools` | unit id | `SchoolHistory` | sync-history |
 | `history.shared` | `meta`, `national`, `facts`, `cpi` | | sync-history |
 | `high_schools.*` | state / id | The shards, ledger, recipes, pilot, review queue (the tables stay the serving copy) | high-school syncs |
-| `reference.*` | file name | `platform-prompts`, `state-laws`, `aid-policies`, `guaranteed-admission`, `major-admission`, `aliases-curated`, `cip2020`, `organizations`, `essay-guidance/sources`, `essay-guidance/guidance` (text in `body.text`), `application-cycle`, `zcta-centroids` (CSV text) | import, the console |
+| `reference.files` | file name | As built, phase 3: the eleven names in `REFERENCE_FILES` (`scripts/lib/data-platform/layers.mts`) — `aid-policies`, `aliases-curated`, `application-cycle`, `guaranteed-admission`, `major-admission`, `state-laws`, `organizations`, `common-app-trends`, `excluded-campuses`, `essay-guidance/guidance` (text in `body.text`), `zcta-centroids` (CSV text in `body.text`) | import, the console (`/admin/data/reference/[name]`) |
 | `overrides.legacy` | unit id | Today's `data/overrides.json` entries, imported once and applied where `sync-data` applied them; new corrections are field edits | import only |
 | `health.colleges` | `health` | `college-health.json` | college-health (derived) |
 
@@ -219,3 +219,10 @@ instance for writes from one pipeline at a time; reads of a whole collection (th
 20 MB, which is why the publisher runs in GitHub Actions and not in a Vercel function. Versions are kept forever in
 this plan; a pruning function for versions older than a year, keeping the first of each month, is listed in
 [rollout.md](rollout.md) as a later step.
+
+## As built, phase 3 (2026-10-31)
+The release calendar (`base.release_calendar`, key `calendar`) is edited from the same console screen as every other
+reference document, `/admin/data/reference/[name]`, not a screen of its own: the console's reference list
+(`/admin/data/reference`) shows it beside the eleven `reference.files` documents, named `calendar`, with no dedicated
+validator — like most of those documents, a save only needs to parse to a JSON object or array (see
+[change-sets.md](change-sets.md) "As built, phase 3" for the validator table).

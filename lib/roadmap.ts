@@ -57,7 +57,6 @@ export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
   | "planning"
-  | "platform"
   | "business"
   | "apps"
   | "ideas"
@@ -76,12 +75,7 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     description:
       "What your family would pay at each college, from your own numbers, on the cost curve the site already shows.",
   },
-  {
-    key: "platform",
-    title: "The data platform",
-    description:
-      "Where the college data lives and how a change becomes live: the database as the source of truth with history and revert, a published snapshot the site reads, and an admin console that edits values directly.",
-  },
+  // "platform" (the data platform) was built 2026-10-31 to 2026-11-01 and left the roadmap; its overview stays below.
   {
     key: "business",
     title: "Platform, measurement, and business",

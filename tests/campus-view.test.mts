@@ -12,6 +12,7 @@ import { listingsFor, type Council, type DirectoryRows } from "../lib/directorie
 import { greekCouncils, type CampusPagesRows } from "../lib/campus-pages.ts";
 import { faithView, greekView, listingView } from "../lib/campus-view.ts";
 import { chapterLabel, inkOn, lettersFromName, loadOrganizations, orgBadge, organizationsProblems, orgWebsite, type OrganizationsFile } from "../lib/organizations.ts";
+import { miniReference } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const FIXTURE_ROOT = join(ROOT, "tests", "fixtures", "organizations");
@@ -176,11 +177,12 @@ test("loadOrganizations: reads the file under a root, tolerant of a bad entry, e
   assert.deepEqual(loadOrganizations(join(FIXTURE_ROOT, "missing")).organizations, {});
 });
 
-test("the real organizations.json, once committed, meets the contract and every logo file exists", { skip: !existsSync(join(ROOT, "data", "directories", "organizations.json")) }, () => {
-  const real = loadOrganizations(ROOT);
-  const raw = JSON.parse(readFileSync(join(ROOT, "data", "directories", "organizations.json"), "utf8"));
+test("the organizations reference document meets the contract and every logo file exists", () => {
+  // The mini fixture carries every reference document whole, so this is the real document.
+  const raw = miniReference<OrganizationsFile>("organizations");
+  assert.ok(Object.keys(raw.organizations).length > 0);
   assert.deepEqual(organizationsProblems(raw), []);
-  for (const [key, o] of Object.entries(real.organizations)) {
+  for (const [key, o] of Object.entries(raw.organizations)) {
     if (o.logo) assert.ok(existsSync(join(ROOT, o.logo.file)), `${key}: ${o.logo.file} is missing`);
   }
 });

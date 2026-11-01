@@ -1,16 +1,14 @@
 /**
  * Admissions detail (specs/data-expansion/admissions-detail.md): acceptance rates by sex, the gap rule, true medians,
- * and the stored values in data/schools.json. `npm test`.
+ * and the stored values in the mini fixture (tests/helpers/snapshot.mts). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { School, SexCounts } from "../lib/types";
 import { admitRatesBySex, satMedian } from "../lib/derive.ts";
+import { miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 const counts = (applicants: number | null, admitted: number | null): SexCounts => ({ applicants, admitted, enrolled: null });
 const withBySex = (men: SexCounts, women: SexCounts) => ({ admissions: { by_sex: { men, women } } }) as unknown as School;
 
@@ -74,6 +72,6 @@ test("stored admissions detail is internally consistent", () => {
     }
   }
   assert.deepEqual(bad, []);
-  assert.ok(schools.filter((s) => s.admissions.by_sex).length > 1400, "by-sex counts for most colleges with admissions data");
-  assert.ok(schools.filter((s) => s.admissions.sat_reading_median != null).length > 700, "true SAT medians for hundreds of colleges");
+  assert.ok(schools.filter((s) => s.admissions.by_sex).length > schools.length / 2, "by-sex counts for most colleges with admissions data");
+  assert.ok(schools.filter((s) => s.admissions.sat_reading_median != null).length > 10, "true SAT medians for many colleges");
 });

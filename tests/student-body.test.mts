@@ -1,16 +1,14 @@
 /**
  * Student body (specs/data-expansion/student-body.md): the gender-balance buckets, the "mostly full-time" rule, the
- * Explore URL parameters, and the stored shares in data/schools.json. `npm test`.
+ * Explore URL parameters, and the stored shares in the mini fixture (tests/helpers/snapshot.mts). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { School } from "../lib/types";
 import { FULL_TIME_MAX_PART_TIME, GENDER_BALANCE, genderBalanceOf, isMostlyFullTime } from "../lib/student-body.ts";
 import { FILTER_KEYS, countActiveFilters, parseFilters } from "../lib/params.ts";
+import { miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
 const withShares = (men: number | null, partTime: number | null = null) =>
   ({ demographics: { men_share: men, part_time_share: partTime } }) as unknown as School;
 
@@ -44,7 +42,7 @@ test("Explore parses the student-body filters and counts them as active", () => 
 });
 
 test("stored shares are fractions, and men and women add to 100%", () => {
-  const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+  const schools: School[] = miniSchools();
   const bad: string[] = [];
   for (const s of schools) {
     const d = s.demographics;

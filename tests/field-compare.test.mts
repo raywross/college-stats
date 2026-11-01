@@ -5,10 +5,10 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
 import type { School } from "../lib/types";
 import type { ProgramEarnings } from "../lib/field-of-study";
 import { familiesOffered, fieldStat } from "../lib/field-compare.ts";
+import { miniDetail, requireMiniSchool } from "./helpers/snapshot.mts";
 
 const academics = (by: Record<string, number> | null, total: number | null) => ({ academics: { bachelors_awarded: total, bachelors_by_family: by } }) as unknown as Pick<School, "academics">;
 
@@ -68,12 +68,12 @@ test("a field a college doesn't offer is 0, and unreported majors stay null (nev
   assert.equal(unreported.programCount, null);
 });
 
-test("committed data: Vanderbilt's computer science field has graduates and earnings", { skip: !existsSync("data/detail/schools/221999.json") }, () => {
-  const schools = JSON.parse(readFileSync("data/schools.json", "utf8")) as { schools: School[] } | School[];
-  const list = Array.isArray(schools) ? schools : schools.schools;
-  const vu = list.find((s) => s.unit_id === "221999")!;
-  const detail = JSON.parse(readFileSync("data/detail/schools/221999.json", "utf8"));
-  const s = fieldStat("11", vu, detail.tables.majors?.rows, detail.tables.programs?.rows, null, null, () => null);
+test("stored data: Vanderbilt's computer science field has graduates and earnings", () => {
+  const vu = requireMiniSchool("221999");
+  const detail = miniDetail("221999") as unknown as { tables: Record<string, { rows: unknown } | undefined> };
+  assert.ok(detail, "the mini fixture has Vanderbilt's detail tables");
+  type Rows = Parameters<typeof fieldStat>;
+  const s = fieldStat("11", vu, detail.tables.majors?.rows as Rows[2], detail.tables.programs?.rows as Rows[3], null, null, () => null);
   assert.ok(s.graduates && s.graduates > 0);
   assert.ok(s.earnings.y4 && s.earnings.y4 > 100_000);
   assert.ok(familiesOffered([vu]).includes("11"));

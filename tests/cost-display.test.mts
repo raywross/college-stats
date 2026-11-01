@@ -38,9 +38,10 @@ import {
 import { DATA_END_MESSAGE, LITTLE_AID_MESSAGE } from "../lib/cost-at-income.ts";
 import type { AidPolicy } from "../lib/aid-policies.ts";
 import type { School } from "../lib/types.ts";
+import { miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 const read = (rel: string) => readFileSync(join(ROOT, rel), "utf8");
 
 /* ------------------------------------------------------------------ */
@@ -248,7 +249,7 @@ const withCurves = schools.flatMap((s) => {
 });
 
 test("guard: every college's curve phrases say 'estimate' beside every modeled figure, with the gate open or closed", () => {
-  assert.ok(withCurves.length > 1_000, "the guard runs over the real dataset");
+  assert.ok(withCurves.length > 10, "the guard runs over the mini fixture's colleges with curves");
   assert.ok(withCurves.some(({ c }) => c.status === "break_point"), "…including colleges with a break point");
   const problems: string[] = [];
   for (const { s, c, merit } of withCurves)

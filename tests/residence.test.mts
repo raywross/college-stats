@@ -5,8 +5,6 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import {
   DRAWS_NATIONALLY,
@@ -21,14 +19,13 @@ import {
 import { DETAIL_TABLES, detailMismatches, formatDetail, topHomeStates, validateDetail, type SchoolDetail } from "../lib/detail.ts";
 import { FIELDS } from "../lib/fields.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
-import { HISTORY_FAMILIES, validateHistoryMeta, type HistoryMeta, type SchoolHistory } from "../lib/history.ts";
+import { HISTORY_FAMILIES, validateHistoryMeta, type SchoolHistory } from "../lib/history.ts";
 import { ERAS } from "../scripts/history/registry.mts";
 import { buildCollege, coverageDrops } from "../scripts/history/build.mts";
-import { detailFileProblems, readDetails } from "../scripts/lib/publish-details.mts";
+import { miniDetail, miniHistory, miniHistoryFiles, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 
 /** A wide EF{Y}C row: EFCSTATE code → EFRES01. */
@@ -80,8 +77,9 @@ test("'Most students are from {state}' needs a majority from another state and a
   assert.equal(mostFromOtherState(s("ND", "ND", 0.9)), null, "home state isn't a standout");
   assert.equal(mostFromOtherState(s("ND", "MN", 0.49)), null, "a plurality isn't 'most'");
   assert.equal(mostFromOtherState(s("ND", "MN", 0.9, 12)), null, "tiny class");
-  // In the data: North Dakota State draws most of its first-years from Minnesota.
-  assert.equal(mostFromOtherState(byId("200332")), "MN");
+  // In the real data North Dakota State (200332) draws most of its first-years from Minnesota; the mini fixture has
+  // no such college, and Vanderbilt, drawing from many states, has no standout.
+  assert.equal(mostFromOtherState(byId("221999")), null);
 });
 
 /* ---- Detail file guards (each must fail when broken) ---- */
@@ -159,7 +157,7 @@ test("residence history reads even-numbered falls only, and the checks expect th
 
 test("history metadata: residence files every two years pass; a skipped even year fails", () => {
   const files = (years: number[]) => years.map((year) => ({ year, file: `EF${year}C`, url: "", revised: true }));
-  const base = JSON.parse(readFileSync(join(ROOT, "data", "history", "meta.json"), "utf8")) as HistoryMeta;
+  const base = miniHistoryFiles().meta;
   assert.deepEqual(validateHistoryMeta({ ...base, files: { ...base.files, "ef-c": files([2020, 2022, 2024]) } }, meta), []);
   assert.ok(validateHistoryMeta({ ...base, files: { ...base.files, "ef-c": files([2020, 2024]) } }, meta).length > 0);
   assert.ok(validateHistoryMeta({ ...base, files: { ...base.files, "ef-c": files([2022, 2023, 2024]) } }, meta).length > 0);
@@ -182,17 +180,17 @@ test("stored residence covers nearly every college, with Vanderbilt matching NCE
   assert.equal(Number(meta.vintages["ipeds-ef-c"]!.slice(5)) % 2, 0, "an even-numbered fall");
 });
 
-test("committed detail files pass the same checks as check:lineage, one per college with home states", () => {
-  const details = readDetails(ROOT)!;
+test("stored detail shards pass the same checks as check:lineage, one per college with home states", () => {
+  const details = schools.map((s) => miniDetail(s.unit_id)).filter((d): d is SchoolDetail => d !== null);
   assert.ok(details.length > 0.9 * schools.length);
-  assert.deepEqual(detailFileProblems(details, schools, meta), []);
-  const dir = join(ROOT, "data", "detail", "schools");
-  for (const f of readdirSync(dir)) assert.match(f, /^\d+\.json$/);
-  assert.equal(JSON.parse(readFileSync(join(dir, "221999.json"), "utf8")).tables.home_states.rows.TN, 208);
+  const ids = new Set(schools.map((s) => s.unit_id));
+  assert.deepEqual(details.flatMap((d) => [...validateDetail(d, meta, ids), ...detailMismatches(byId(d.unit_id), d)]), []);
+  for (const d of details) assert.match(d.unit_id, /^\d+$/);
+  assert.equal((miniDetail("221999")!.tables.home_states!.rows as Record<string, number>).TN, 208);
 });
 
-test("committed history: residence series are even years ending on the snapshot", { skip: !existsSync(join(ROOT, "data", "history", "schools", "221999.json")) }, () => {
-  const h: SchoolHistory = JSON.parse(readFileSync(join(ROOT, "data", "history", "schools", "221999.json"), "utf8"));
+test("stored history: residence series are even years ending on the snapshot", { skip: !miniHistory("221999") }, () => {
+  const h: SchoolHistory = miniHistory("221999")!;
   const s = h.series.out_of_state_share!;
   assert.equal(s.start, 2004);
   s.values.forEach((v, i) => assert.equal(v === null, i % 2 === 1, `${s.start + i}`));

@@ -5,8 +5,6 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import {
   MIN_GROUP_COHORT,
@@ -28,11 +26,11 @@ import { countActiveFilters, parseFilters } from "../lib/params.ts";
 import { lastYear, pellGapChange, valueAt, type HistoryMeta, type SchoolHistory } from "../lib/history.ts";
 import { gradByGroupMismatches } from "../scripts/history/graduation-groups.mts";
 import { restoreFederal } from "../lib/newest.ts";
+import { miniHistory, miniHistoryFiles, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const hmeta: HistoryMeta = JSON.parse(readFileSync(join(ROOT, "data", "history", "meta.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
+const hmeta: HistoryMeta = miniHistoryFiles().meta;
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 /**
  * A college as federal data has it. Vanderbilt's fall 2019 CDS class replaces its IPEDS GR values in the snapshot
@@ -40,7 +38,7 @@ const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
  * so the federal checks here read the restored values.
  */
 const federalOf = (id: string) => restoreFederal(structuredClone(byId(id)));
-const shard = (id: string): SchoolHistory => JSON.parse(readFileSync(join(ROOT, "data", "history", "schools", `${id}.json`), "utf8"));
+const shard = (id: string): SchoolHistory => miniHistory(id)!;
 
 /** Vanderbilt's GR2024_PELL_SSL total-cohort row (PSGRTYPE 1), as published. */
 const VANDERBILT_ROW = {
@@ -84,7 +82,7 @@ test("the gap, the Explore filter, and the Known-for rule", () => {
   assert.equal(pellGap(s(0.99, 0)), null, "99% vs 0%: groups sorted inconsistently, not ranked");
   assert.equal(rawPellGap(s(0.99, 0)), -0.99, "but still known, for the profile's caution");
   assert.ok(!hasSmallPellGap(s(0.99, 0)));
-  assert.equal(pellGap(byId("149505")), null, "Trinity Christian (GR2024: Pell 99%, neither 0 of 49)");
+  // (The real data's Trinity Christian, 149505, is such a case: Pell 99%, neither 0 of 49; the mini fixture lacks it.)
   assert.ok(hasSmallPellGap(s(0.9, 0.94)));
   assert.ok(!hasSmallPellGap(s(0.85, 0.9)), "5 points is not under 5");
   assert.ok(hasSmallPellGap(s(0.95, 0.9)), "Pell recipients ahead counts");
@@ -126,7 +124,7 @@ test("stored values: Vanderbilt, the 30-student rule, the vintage, and the cohor
   assert.ok(meta.sources["ipeds-gr"]?.edition.includes("GR2024_PELL_SSL"));
 
   const withPell = schools.filter((s) => s.outcomes?.grad_rate_pell != null);
-  assert.ok(withPell.length > 1300, `${withPell.length} colleges with a Pell rate`);
+  assert.ok(withPell.length > schools.length / 2, `${withPell.length} of ${schools.length} colleges with a Pell rate`);
   for (const s of schools) {
     const out = s.outcomes;
     if (!out) continue;
@@ -149,7 +147,7 @@ test("stored values: Vanderbilt, the 30-student rule, the vintage, and the cohor
     compared++;
     if (Math.abs(v - ftft) < 1e-4) same++;
   }
-  assert.ok(compared > 1000 && same / compared > 0.99, `${same} of ${compared} match`);
+  assert.ok(compared > 10 && same / compared > 0.99, `${same} of ${compared} match`);
 });
 
 test("history: Pell series from the class of 2010, race from 2005, and the latest class equals the snapshot", () => {
@@ -159,7 +157,7 @@ test("history: Pell series from the class of 2010, race from 2005, and the lates
   assert.equal(lastYear(h.series.grad_rate_pell!), hmeta.latest.cohort);
   assert.equal(h.series.grad_rate_black!.start, 2005, "Scorecard key 2011, the first with 2010 race categories");
   assert.equal(h.series.grad_cohort_black!.values.at(-1), 189);
-  const files = readdirSync(join(ROOT, "data", "history", "schools")).map((f) => f.replace(/\.json$/, ""));
+  const files = schools.map((s) => s.unit_id).filter((id) => miniHistory(id));
   const histories = new Map(files.map((id) => [id, shard(id)]));
   assert.deepEqual(gradByGroupMismatches(schools, histories), []);
   // Broken on purpose: a changed snapshot value is caught.

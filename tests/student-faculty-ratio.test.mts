@@ -4,16 +4,14 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { MAX_RATIO_OPTIONS, studentFacultyRatioFrom, withinMaxRatio } from "../lib/academics.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
 import type { SchoolHistory } from "../lib/history.ts";
+import { miniHistory, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 
 test("STUFACR is a whole number of students per faculty member; 0, negatives, and blanks are unreported", () => {
@@ -45,7 +43,7 @@ test("stored ratios cover nearly every college and match history's last point", 
   for (const s of reported) assert.ok(Number.isInteger(s.academics!.student_faculty_ratio) && s.academics!.student_faculty_ratio! > 0, s.name);
   assert.equal(byId("221999").academics!.student_faculty_ratio, 8, "Vanderbilt fall 2024 (its CDS I-2 agrees)");
   assert.equal(meta.vintages["ipeds-ef"], "Fall 2024");
-  const h: SchoolHistory = JSON.parse(readFileSync(join(ROOT, "data", "history", "schools", "221999.json"), "utf8"));
+  const h: SchoolHistory = miniHistory("221999")!;
   const s = h.series.student_faculty_ratio!;
   assert.equal(s.start, 2009, "EF2009D is the first file with STUFACR");
   assert.equal(s.values.at(-1), 8);

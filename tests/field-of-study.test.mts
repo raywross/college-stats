@@ -5,19 +5,16 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+
 import type { DatasetMeta, School } from "../lib/types";
 import { hasEarnings, isPlausibleCip4, programsWithEarnings, toCip4, topEarningPrograms, type ProgramEarnings } from "../lib/field-of-study.ts";
 import { programEarningsFrom } from "../scripts/lib/field-of-study-sync.mts";
 import { DETAIL_TABLES, detailMismatches, validateDetail, type SchoolDetail } from "../lib/detail.ts";
 import { FIELDS } from "../lib/fields.ts";
 import { hasCip4 } from "../lib/cip.ts";
-import { readDetails } from "../scripts/lib/publish-details.mts";
-
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+import { miniDetail, miniMeta, miniSchools } from "./helpers/snapshot.mts";
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 
 /* ---- CIP code formatting and shape check ---- */
@@ -161,7 +158,7 @@ test("detailMismatches catches academics.programs_with_earnings disagreeing with
 
 test("stored field-of-study data: Vanderbilt matches the probed Computer Science figures, and nulls never leak as 0", () => {
   const vu = byId("221999");
-  const details = readDetails(ROOT)!;
+  const details = miniSchools().map((s) => miniDetail(s.unit_id)).filter((d): d is SchoolDetail => d !== null);
   const vuDetail = details.find((d) => d.unit_id === "221999")!;
   const cs = vuDetail.tables.programs!.rows["11.07"];
   assert.equal(cs.title, "Computer Science");
@@ -185,5 +182,5 @@ test("stored field-of-study data: Vanderbilt matches the probed Computer Science
       if (p.graduates !== null) assert.ok(Number.isInteger(p.graduates) && p.graduates >= 0);
     }
   }
-  assert.ok(checked > 1000, `expected well over 1,000 colleges with a programs table, got ${checked}`);
+  assert.ok(checked > 20, `expected most of the mini fixture's colleges to have a programs table (over 1,000 in the real data), got ${checked}`);
 });

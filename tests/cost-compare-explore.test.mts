@@ -38,9 +38,10 @@ import { COMPARE_TOPIC_FIELDS, TABLE_GROUPS } from "../lib/compare-topics.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
 import type { MeritInfo } from "../lib/merit.ts";
 import type { School } from "../lib/types.ts";
+import { miniMeta, miniReleaseCalendar, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 const HARVARD = "166027";
 const VANDERBILT = "221999";
@@ -299,8 +300,7 @@ registerHooks({
   },
 });
 const { createDataset } = await import("../lib/dataset.ts");
-const read = (file: string) => JSON.parse(readFileSync(join(ROOT, "data", file), "utf8"));
-const data = createDataset({ schools, meta: read("meta.json"), releaseCalendar: read("release-calendar.json") });
+const data = createDataset({ schools, meta: miniMeta(), releaseCalendar: miniReleaseCalendar() });
 
 test("the filter panel's merit count is the number of colleges the filter keeps", () => {
   assert.equal(data.facets().merit, data.getSchools({ merit: true }).length);

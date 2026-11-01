@@ -43,10 +43,9 @@ import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/sto
 import { COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
 import { withRunSet } from "../scripts/lib/data-platform/change-set.mts";
 import { probeStateFromStore, storeColleges } from "../scripts/lib/identity-store.mts";
-import { importLayers, writeImport } from "../scripts/import-data-from-git.mts";
+import { writeImport } from "../scripts/import-data-from-git.mts";
 import { miniMeta, miniSchools, miniLayers } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
 const FIXTURES = join(import.meta.dirname, "fixtures", "site-probe");
 const HOMEPAGE = readFileSync(join(FIXTURES, "homepage.html"), "utf8");
 const ADMISSIONS = readFileSync(join(FIXTURES, "admissions.html"), "utf8");

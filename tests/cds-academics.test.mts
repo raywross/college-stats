@@ -13,6 +13,7 @@ import { FIELDS } from "../lib/fields.ts";
 import { validateSchool } from "../lib/lineage.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
 import { mergeReported } from "../lib/reported-merge.ts";
+import type { ReportedEntry } from "../lib/reported.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import {
   CORE_CODES,
@@ -44,7 +45,7 @@ const ROOT = join(import.meta.dirname, "..");
 const schools: School[] = miniSchools();
 const meta: DatasetMeta = miniMeta();
 const IDS = ["221999", "190415", "231624", "145637"];
-const records = await Promise.all(IDS.map((id) => miniLayerDocument<CollegeRecord>("reported.cds_records", id)));
+const records: CollegeRecord[] = (await Promise.all(IDS.map((id) => miniLayerDocument<CollegeRecord>("reported.cds_records", id)))).filter((r): r is CollegeRecord => r != null);
 const record = (id: string): CollegeRecord => structuredClone(records.find((r) => r!.unit_id === id)!);
 const school = (id: string): School => structuredClone(schools.find((s) => s.unit_id === id)!);
 const vuDoc = (): DocumentRecord => record("221999").documents[0];
@@ -253,7 +254,7 @@ test("data/schools.json carries the real values for the four colleges, and a mer
   // "only colleges with records" held over the whole real dataset; the mini fixture's layers carry CDS records for
   // only the four IDS (see build-mini-fixture.mts), so this is checked for them instead.
   assert.ok(IDS.every((id) => schools.find((s) => s.unit_id === id)?.reported?.academics && records.some((r) => r!.unit_id === id)));
-  const entries = [...(await miniLayers().read("reported.entries")).values()];
+  const entries = [...(await miniLayers().read<ReportedEntry>("reported.entries")).values()];
   const reported = { updated: null, entries };
   const again = mergeReported(IDS.map(school), reported, { records, meta, table: CDS_TEMPLATE }).schools;
   for (const s of again) assert.equal(JSON.stringify(s), JSON.stringify(schools.find((x) => x.unit_id === s.unit_id)), s.name);

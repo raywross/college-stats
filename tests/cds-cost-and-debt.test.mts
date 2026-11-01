@@ -9,7 +9,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { DatasetMeta, ReportedGraduateDebt, ReportedNextYearPrice, School } from "../lib/types";
 import type { CollegeRecord } from "../lib/cds-sections.ts";
-import type { ReportedFile } from "../lib/reported.ts";
+import type { ReportedEntry, ReportedFile } from "../lib/reported.ts";
 import {
   applyCostAndDebt,
   change,
@@ -35,7 +35,7 @@ import { miniMeta, miniSchools, miniLayerDocument, miniLayers } from "./helpers/
 const ROOT = join(import.meta.dirname, "..");
 const meta: DatasetMeta = miniMeta();
 const schools: School[] = miniSchools();
-const reportedFile: ReportedFile = { updated: null, entries: [...(await miniLayers().read("reported.entries")).values()] };
+const reportedFile: ReportedFile = { updated: null, entries: [...(await miniLayers().read<ReportedEntry>("reported.entries")).values()] };
 const VANDERBILT = "221999";
 const CORNELL = "190415";
 const WM = "231624";

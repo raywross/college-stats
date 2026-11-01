@@ -5,7 +5,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { CollegeRecord, DocumentRecord } from "../lib/cds-sections.ts";
@@ -245,9 +245,9 @@ test("9. lineage: the committed four validate; a reported.aid value without its 
 
   const detail = structuredClone(miniDetail(CU)!);
   assert.deepEqual(validateDetail(detail, meta), []);
-  assert.equal(checkCdsAidDetail(detail.tables.cds_aid.rows), null);
-  delete detail.tables.cds_aid.rows.cite["H.209"];
-  assert.match(checkCdsAidDetail(detail.tables.cds_aid.rows) ?? "", /H\.209 has a value but no quote/);
+  assert.equal(checkCdsAidDetail(detail.tables.cds_aid!.rows), null);
+  delete detail.tables.cds_aid!.rows.cite["H.209"];
+  assert.match(checkCdsAidDetail(detail.tables.cds_aid!.rows) ?? "", /H\.209 has a value but no quote/);
   assert.ok(validateDetail(detail, meta).length > 0);
 });
 

@@ -26,12 +26,12 @@ import { restoreFederal } from "../lib/newest.ts";
 import { ADMISSION_PROFILE_ROWS } from "../lib/cds/compare-rows.ts";
 import { GLOSSARY } from "../lib/glossary.ts";
 import { mergeReported } from "../lib/reported-merge.ts";
-import type { ReportedFile } from "../lib/reported.ts";
+import type { ReportedEntry, ReportedFile } from "../lib/reported.ts";
 import { FACTOR_FILTERS } from "../lib/factors.ts";
 import { validateLineage } from "../lib/lineage.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { normalizeValue, type CollegeRecord, type DocumentRecord, type ItemResult } from "../lib/cds-sections.ts";
-import type { DatasetMeta, GpaBands, School } from "../lib/types.ts";
+import type { GpaBands } from "../lib/types.ts";
 import { miniMeta, miniSchools, miniLayerDocument, miniLayers } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -251,7 +251,7 @@ test("12. a newer C7 'not considered' flips legacy; restore is byte for byte; fe
   // Break: skip the year comparison, and this older-or-same C7 overrides IPEDS.
   assert.equal(applyNewestFactors(clean, 2025), clean);
   // The committed data went through the same rule: the full merge (which also re-applies the other CDS blocks) reproduces it.
-  const reportedFile: ReportedFile = { updated: null, entries: [...(await miniLayers().read("reported.entries")).values()] };
+  const reportedFile: ReportedFile = { updated: null, entries: [...(await miniLayers().read<ReportedEntry>("reported.entries")).values()] };
   assert.equal(JSON.stringify(mergeReported([before], reportedFile, { records: [real(WM)], meta, table: CDS_TEMPLATE }).schools[0]), JSON.stringify(before));
 });
 

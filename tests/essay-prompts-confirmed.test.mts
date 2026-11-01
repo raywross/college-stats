@@ -18,7 +18,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import { FIELDS } from "../lib/fields.ts";
 import { lineageFor, validateLineage, validateSchool } from "../lib/lineage.ts";
-import type { DatasetMeta, EssayPrompt, School } from "../lib/types.ts";
+import type { EssayPrompt, School } from "../lib/types.ts";
 import {
   FORM_KINDS,
   LIMIT_RANGE,
@@ -41,16 +41,15 @@ import { essayProgress } from "../lib/essays/progress.ts";
 import { LIMIT_RANGE as CHECK_LIMITS, PROMPT_CHARS as CHECK_CHARS, promptProblems } from "../scripts/lib/essay-prompts/checks.mts";
 import { openCycle } from "../scripts/lib/essay-prompts/cycle.mts";
 import { applyEssays, blockOf, confirmedProblems, lineageOf, summaryLine } from "../scripts/lib/essay-prompts/merge.mts";
-import { essayPaths, readConfirmedRecords, readEssayRecords, type EssayRecord } from "../scripts/lib/essay-prompts/store.mts";
+import { readConfirmedRecords, type EssayRecord } from "../scripts/lib/essay-prompts/store.mts";
 import { applyExport, planExport, readConfirmedFiles, type OverrideRow } from "../scripts/lib/essay-prompts/export-confirmed.mts";
 import { formatSchools } from "../scripts/lib/identity-sync.mts";
 import { placeSelectivity } from "../scripts/lib/selectivity.mts";
 import { mergeReported } from "../lib/reported-merge.ts";
-import type { ReportedFile } from "../lib/reported.ts";
+import type { ReportedEntry, ReportedFile } from "../lib/reported.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
-import { readRecords } from "../scripts/lib/college-reported/records.mts";
 import { AUTH_STUB_SQL, asUser, createUser, type AuthDb } from "./helpers/pg-auth.mts";
-import { miniSchools, miniMeta, miniLayers, miniLayerDocument, miniReference } from "./helpers/snapshot.mts";
+import { miniSchools, miniMeta, miniLayers, miniLayerDocument } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const TODAY = "2026-10-30";
@@ -427,7 +426,7 @@ test("real data: Florida with a hand read passes validateLineage with the real m
 test("real data: the college-reported and selectivity merges leave a hand-read block where it is (the re-merge rule)", async () => {
   const merged = applyEssays([ufSchool()], realRecords, TODAY, [record()]).schools[0];
   const all = schools.map((s) => (s.unit_id === UF ? merged : s));
-  const reported: ReportedFile = { updated: null, entries: [...(await miniLayers().read("reported.entries")).values()] };
+  const reported: ReportedFile = { updated: null, entries: [...(await miniLayers().read<ReportedEntry>("reported.entries")).values()] };
   const cdsRecords = await Promise.all(["221999", "190415", "231624", "145637"].map((id) => miniLayerDocument("reported.cds_records", id)));
   // Florida's own real CDS record (tests/fixtures/essay-prompts-confirmed/README.md): not one of the four CDS
   // academics colleges the mini fixture's layers keep, but its reported.admission_profile/tests blocks need it.

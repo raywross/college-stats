@@ -6,9 +6,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { miniSchools, miniMeta, miniReleaseCalendar } from "./helpers/snapshot.mts";
-import { join } from "node:path";
 import { register } from "node:module";
 import type { School, SearchFilters } from "../lib/types";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
@@ -33,7 +31,6 @@ register(
 );
 const { createDataset } = await import("../lib/dataset.ts");
 
-const ROOT = join(import.meta.dirname, "..");
 const schools: School[] = miniSchools();
 
 /** A minimal fixture: just the `apply` and `admissions` fields the predicates read. */

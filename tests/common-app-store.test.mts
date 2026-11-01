@@ -20,7 +20,6 @@ import { commonAppAliasRows } from "../scripts/lib/aliases-sync.mts";
 
 import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
 const META: DatasetMeta = miniMeta();
 const ALL: School[] = miniSchools();
 

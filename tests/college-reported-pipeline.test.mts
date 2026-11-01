@@ -21,7 +21,6 @@ import { pickPilot } from "../scripts/lib/college-reported/pilot.mts";
 import type { ModelClient } from "../scripts/lib/college-reported/models.mts";
 import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
 const META: DatasetMeta = miniMeta();
 const FIXTURES = join(import.meta.dirname, "fixtures");
 const XLSX = readFileSync(join(FIXTURES, "cds-c1.xlsx"));

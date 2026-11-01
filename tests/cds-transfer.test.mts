@@ -32,7 +32,7 @@ const meta: DatasetMeta = miniMeta();
 const records = await Promise.all(
   ["221999", "190415", "231624", "145637"].map((id) => miniLayerDocument<CollegeRecord>("reported.cds_records", id)),
 );
-const record = (id: string) => structuredClone(records.find((r) => r.unit_id === id)!);
+const record = (id: string) => structuredClone(records.find((r) => r!.unit_id === id)!);
 const school = (id: string) => structuredClone(schools.find((s) => s.unit_id === id)!);
 
 /** A one-document record whose items are the given passed values (workbook cells with quotes). */

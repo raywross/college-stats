@@ -4,15 +4,12 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { Extraction } from "../lib/reported";
 import { rateTolerancePts, runChecks, toReportedEntry, reportedToPatch } from "../lib/reported-checks.ts";
 import { lineageFor, validateSchool } from "../lib/lineage.ts";
 import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
 const meta: DatasetMeta = miniMeta();
 const schools: School[] = miniSchools();
 

@@ -8,7 +8,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { School } from "../lib/types";
 import type { CdsCode, DocumentRecord, ItemResult } from "../lib/cds-sections.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { indexRecords, newestPassed } from "../lib/cds-records.ts";

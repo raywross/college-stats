@@ -19,6 +19,7 @@ import { Budget, BudgetSpent, type CollegeRef, type Ctx } from "../scripts/lib/c
 import { runCollege } from "../scripts/lib/campus-pilot/run.mts";
 import { publishable } from "../scripts/lib/campus-pilot/files.mts";
 import { NONE_HELD, applyLgbtqPolicies, campusPagesDetails, pilotDirectoryFiles } from "../scripts/lib/campus-pilot/merge.mts";
+import type { PagesFile, PublishedCollege } from "../scripts/lib/campus-pilot/files.mts";
 import { directoryDetails } from "../scripts/lib/directories/merge.mts";
 import type { ModelClient } from "../scripts/lib/college-reported/models.mts";
 
@@ -373,9 +374,9 @@ test("a robots.txt refusal is a block for the owner's list; a dead host is not",
 test("held-back fact types never reach the dataset, on the committed pilot results; dropping the filter fails", async () => {
   const { HELD_BACK, withoutHeld } = await import("../scripts/lib/campus-pilot/merge.mts");
   const { miniLayers } = await import("./helpers/snapshot.mts");
-  const colleges = [...(await miniLayers().read("campus.pages")).values()];
-  const pages = { colleges };
-  const ids = new Set<string>(pages.colleges.map((c: { unit_id: string }) => c.unit_id));
+  const colleges = [...(await miniLayers().read<PublishedCollege>("campus.pages")).values()];
+  const pages: PagesFile = { updated: "2026-10-04", colleges };
+  const ids = new Set<string>(pages.colleges.map((c) => c.unit_id));
   const leaks = (json: string) => [
     ...HELD_BACK.greek.filter((k) => json.includes(`"${k}"`)),
     ...HELD_BACK.policies.filter((k) => json.includes(`"${k}"`)),
@@ -400,11 +401,11 @@ test("applyLgbtqPolicies merges UCLA's real pilot facts into school.lgbtq.polici
   const { miniSchools, miniMeta, miniLayers } = await import("./helpers/snapshot.mts");
   const schools: School[] = miniSchools();
   const meta: DatasetMeta = miniMeta();
-  const colleges = [...(await miniLayers().read("campus.pages")).values()];
-  const pages = { colleges };
+  const colleges = [...(await miniLayers().read<PublishedCollege>("campus.pages")).values()];
+  const pages: PagesFile = { updated: "2026-10-04", colleges };
   const ucla = schools.find((s) => s.unit_id === "110662")!;
-  const uclaPage = pages.colleges.find((c: { unit_id: string }) => c.unit_id === "110662");
-  assert.ok(uclaPage?.lgbtq?.policies?.some((p: { key: string }) => p.key === "name_on_records"), "fixture needs UCLA's real pilot policies");
+  const uclaPage = pages.colleges.find((c) => c.unit_id === "110662");
+  assert.ok(uclaPage?.lgbtq?.policies?.some((p) => p.key === "name_on_records"), "fixture needs UCLA's real pilot policies");
 
   const [merged] = applyLgbtqPolicies([structuredClone(ucla)], pages);
   // health_plan_transition is held back (specs/college-reported-data.md "Campus-life pilot, as built", HELD_BACK);

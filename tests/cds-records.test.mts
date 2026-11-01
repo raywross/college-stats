@@ -27,7 +27,7 @@ import {
   validateCdsRecords,
 } from "../lib/cds-records.ts";
 import { validateSchool } from "../lib/lineage.ts";
-import { readManifest, serializeRecord } from "../scripts/lib/college-reported/records.mts";
+import { readManifest } from "../scripts/lib/college-reported/records.mts";
 import { miniMeta, miniSchools, miniLayerDocument, miniReference } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");

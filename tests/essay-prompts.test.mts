@@ -14,7 +14,7 @@ import { join } from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
 import { FIELDS, registeredPathFor } from "../lib/fields.ts";
 import { lineageFor, validateSchool } from "../lib/lineage.ts";
-import type { DatasetMeta, EssayPrompt, PlatformPromptsFile, School } from "../lib/types.ts";
+import type { EssayPrompt, PlatformPromptsFile, School } from "../lib/types.ts";
 import { findLinks } from "../scripts/lib/college-reported/documents.mts";
 import type { ModelClient } from "../scripts/lib/college-reported/models.mts";
 import { SpendCap, SpendCapReached } from "../scripts/lib/high-schools/profiles/budget.mts";

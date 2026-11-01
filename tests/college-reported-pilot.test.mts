@@ -35,15 +35,6 @@ interface AnswerKeyEntry {
 const pilot: PilotFile = miniReference("college-reported-pilot");
 const answerKey: AnswerKeyEntry[] = miniReference("college-reported-answer-key");
 
-/** Tier bands by federal acceptance rate, as described in the task that built this pilot. */
-function expectedTier(rate: number | null): PilotCollege["tier"] {
-  if (rate === null) return "open-admission";
-  if (rate < 0.15) return "very-selective";
-  if (rate <= 0.5) return "selective";
-  if (rate <= 0.85) return "less-selective";
-  return "open-admission";
-}
-
 /** Tolerant number match: strips thousands separators and whitespace differences before comparing. */
 function quoteContainsNumber(quote: string, n: number): boolean {
   const plain = String(n);

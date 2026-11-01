@@ -86,9 +86,18 @@ secret key is the only writer. Nothing personal goes in: the routes answer with 
 All three call `requireAdmin()` first, then read; a non-admin is a 404 before anything is read.
 
 ### The list: `/admin/jobs`
-Every job, soonest next run first, then the hand-run ones by name. Columns: the job (name; runner under it), its
-headline schedules in words with the gate sentence, the next run (UTC, and "in 3 h"), and the last run (outcome chip,
-when, how long). Without GitHub credentials the GitHub jobs show no runs and the page says why; the schedules still
+First a **status line** (owner, 2026-11-01: "see quickly if anything has failed"): the jobs whose last run failed,
+by name and linked, in red ("2 jobs failed their last run: Identity refresh, Weekly emails and texts."), or "No job
+failed its last run."; under it the counts of last runs by state (Failed, Running, No run recorded, Nothing to do,
+Succeeded). Then two views as tabs, each its own URL:
+- **By schedule** (the default): the scheduled jobs soonest next run first, then the hand-run ones by name, in two
+  tables.
+- **All jobs** (`?view=all`): every job in one table, worst first: failed last runs, then running, never recorded,
+  nothing to do, succeeded; ties by name.
+
+Columns in both: the job (name; runner under it), its headline schedules in words with the gate sentence, the next
+run (UTC, and "in 3 h"), and the last run (outcome chip, when, how long). A row whose last run failed is tinted red
+in either view. Without GitHub credentials the GitHub jobs show no runs and the page says why; the schedules still
 show. The last runs come from one `job_runs` query (the newest 60 rows, first per job) and one GitHub call per
 workflow (its newest run), in parallel.
 
@@ -119,7 +128,8 @@ Then **History**, the last 30 runs newest first:
 | `lib/jobs/registry.ts` | `JOBS`, `jobById`, `nextJobRun`, `nextScheduleRun`, `scheduleOfRun` (pure) |
 | `lib/jobs/record.ts` | `withJobRun`, `supabaseRecorder`, `outcomeOf`, `triggerOf` (plain module, recorder injectable) |
 | `lib/jobs/runs.ts` | server reads: `job_runs` through `adminSupabase()`, GitHub through `lib/github-app.ts`, change sets by `run_ref` |
-| `lib/jobs/view.ts` | `relativeLabel`, `summaryLine`, `storedOutcome`, `sortJobs`, URLs (pure) |
+| `lib/jobs/view.ts` | `relativeLabel`, `summaryLine`, `storedOutcome`, `lastOutcome`, `outcomeCounts`, `sortJobs`, `sortJobsByOutcome`, `parseJobsView`, URLs (pure) |
+| `components/admin/jobs/JobsViews.tsx` | the list's tabs (`JobsTabs`) and status line (`JobsStatusStrip`) |
 | `lib/github-app.ts` | adds `getRun(runId)` and `runJobs(runId)` (jobs and steps) |
 | `app/api/cron/*/route.ts` | each handler wrapped: `const recorded = withJobRun("<id>", run); export const GET = recorded; export const POST = recorded;` |
 | `app/admin/jobs/page.tsx`, `[job]/page.tsx`, `[job]/runs/[run]/page.tsx` | the three pages |
@@ -137,6 +147,7 @@ Then **History**, the last 30 runs newest first:
 ## Open questions
 - A **Run now** button for the Vercel jobs (a Server Action that `POST`s the route with `CRON_SECRET`, logged like a
   dispatch) would round this out; left for the owner to ask for, since the request was visibility.
-- The console landing page could carry a "Jobs" tile (the newest failed run, if any). Not built.
+- The console landing page could carry a "Jobs" tile (the status line's failed count). Not built; the status line
+  on `/admin/jobs` is the answer today.
 - Vercel's own cron logs (the function logs) aren't read here; a run that never reached the route (a Vercel outage)
   leaves no row and shows only as a gap in the history.

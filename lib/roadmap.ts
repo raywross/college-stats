@@ -57,7 +57,6 @@ export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
   | "planning"
-  | "platform"
   | "business"
   | "apps"
   | "ideas"
@@ -76,12 +75,7 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     description:
       "What your family would pay at each college, from your own numbers, on the cost curve the site already shows.",
   },
-  {
-    key: "platform",
-    title: "The data platform",
-    description:
-      "Where the college data lives and how a change becomes live: the database as the source of truth with history and revert, a published snapshot the site reads, and an admin console that edits values directly.",
-  },
+  // "platform" (the data platform) was built 2026-10-31 to 2026-11-01 and left the roadmap; its overview stays below.
   {
     key: "business",
     title: "Platform, measurement, and business",
@@ -167,17 +161,10 @@ export const ROADMAP: RoadmapSpec[] = [
   // day on feature/essays; see each spec's "As built" section. The Google Drive connection waits for Google sign-in.
   // Essays parts 4 and 5 (the move and the tab, group "essays") were built 2026-10-30 on feature/essays-next (PR
   // #194); see each spec's "As built" section.
-  {
-    slug: "data-platform",
-    file: "specs/data-platform/rollout.md",
-    group: "platform",
-    summary:
-      "Every data pipeline writes to the database instead of committing files; a published snapshot is what the site reads; every change is a change set with history and a revert; admins edit any value in the console and see it at once. The repository goes back to being code and specs.",
-    complexity: 3,
-    complexityNote:
-      "New tables and functions with policies, a publisher that must reproduce today's data byte for byte, a loader that swaps snapshots safely, every producer touched, the console's largest new section, and a test suite re-pointed at a fixture; four phases, each leaving the site no worse.",
-    status: "planned",
-  },
+  // The data platform (specs/data-platform/rollout.md, group "platform") was built 2026-10-31 to 2026-11-01 in four
+  // phases (PRs #201, #203, #204, #205): pipelines write layers to the database, a published snapshot is what the site
+  // reads, change sets carry history and revert, admins edit any value in the console, and data/ left the repository.
+  // See each part's "As built" sections; the overview stays in ROADMAP_OVERVIEWS.
   {
     slug: "launch-database",
     file: "specs/launch-database.md",

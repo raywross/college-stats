@@ -15,10 +15,12 @@ This spec answers in two parts: what is actually happening (measured and cited),
 version: **the in-memory query layer is the right design for this dataset and stays; the way the data reaches it,
 and the way search reaches the data, are wrong for a serverless host and change.**
 
-> **Revisited 2026-10-31** ([data-platform/](data-platform/README.md)): the verdict on serving stands (the whole dataset
-> in memory, queried there, never row by row from Postgres), and the data's source moves from git to Supabase layers
-> rendered into snapshots in Storage. "The deploy carries the dataset" becomes "the instance loads the newest snapshot
-> and carries a bundled fallback". The measurements and reasons below are why the serving half isn't changing.
+> **Revisited 2026-10-31, done 2026-11-01** ([data-platform/](data-platform/README.md)): the verdict on serving
+> stands (the whole dataset in memory, queried there, never row by row from Postgres), and the data's source moved
+> from git to Supabase layers rendered into snapshots in Storage. "The deploy carries the dataset" became "the
+> instance loads the newest snapshot (or the build-time bundled copy fetched into `.data/snapshot/`) and hot-swaps to
+> a newer one"; `data/` no longer exists in the repository. The measurements and reasons below are why the serving
+> half isn't changing.
 
 ## Verdict in short
 | Owner's point | Finding | Verdict |

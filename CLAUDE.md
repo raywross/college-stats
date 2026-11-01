@@ -18,7 +18,8 @@ Higher Education Data Explorer - an interactive web app for visualizing U.S. col
   displayed values with `citeField(path, school)` (`MetricLabel cited=…`) and list them in the section's `fields`
 - Never hard-code data years ("Fall 2024", "2023–24") or read `meta.sources`/`vintages` directly in UI code; years
   come from lineage so they update with each release
-- Overrides in `data/overrides.json` must declare their source (`cds` or `_lineage`)
+- Overrides (the `overrides.legacy` layer, applied last by the publisher's compose) must declare their source (`cds`
+  or `_lineage`)
 - Run `npm run verify` (typecheck, lint, tests incl. lineage guards, dataset lineage check) before committing; CI runs
   it plus `next build`
 
@@ -71,13 +72,21 @@ Several Claude chats work on this repo at once, so each works in its own git wor
 - Next.js 14 (App Router) with TypeScript
 - Tailwind CSS + shadcn/ui
 - Custom SVG/CSS chart components in `components/charts/` (see `specs/charts.md`)
-- Data: `data/schools.json` (~1,900 4-year colleges) built by `npm run sync-data` from College Scorecard + IPEDS; see `specs/data-sync.md`. API key lives in `.env.local` (git-ignored). Add a college's Common Data Set with `npm run import-cds` (see `specs/sources-and-citations.md`); cite any new data with `<SourceNote>`
+- Data: the college dataset (~1,900 4-year colleges) is a published snapshot in Supabase Storage, not a file in this
+  repository. `npm run fetch-snapshot -- --ensure` (run by `postinstall`) puts the bundled copy under
+  `.data/snapshot/`; with nothing configured it copies the mini test fixture instead. The pipelines (`npm run
+  sync-data` and the rest) write layers to the data store, and a publisher composes and uploads the snapshot; see
+  `specs/data-platform/README.md`. Add a college's Common Data Set with `npm run import-cds`, which writes through
+  the store (see `specs/sources-and-citations.md`); cite any new data with `<SourceNote>`
 
 ### Supabase and deployment
-- The college dataset ships with every deploy: `lib/data.ts` reads `data/*.json` from disk once per server instance,
-  and the search boxes match in the browser over `/search-index.json`. Supabase holds only people's data, the
-  high-school table (`HIGH_SCHOOLS_SOURCE=supabase|json`), and the change log that `npm run publish-changes` records
-  after each production deploy. See `specs/serving-architecture.md` and `specs/supabase.md`. Two Supabase projects
+- The dataset no longer ships in git: Supabase is the source of truth (versioned layers written by the pipelines), a
+  publisher composes and uploads a snapshot to Storage, and the deploy carries a bundled copy fetched at build time
+  (`.data/snapshot/`, written by `npm run fetch-snapshot`). `lib/data.ts` reads that bundled copy, or the live
+  snapshot once `DATA_SNAPSHOT_URL` is set, and hot-swaps to a newer snapshot without a redeploy; the search boxes
+  still match in the browser over `/search-index.json`. Supabase also holds people's data, the high-school table
+  (`HIGH_SCHOOLS_SOURCE=supabase|json`), and the change log that's recorded after each publish. See
+  `specs/data-platform/README.md`, `specs/serving-architecture.md`, and `specs/supabase.md`. Two Supabase projects
   are planned: dev (now, for everything) and prod (at the formal release)
 - Schema changes are new files in `supabase/migrations/`, applied to dev before prod
 - Will deploy to Vercel; see `specs/migration-plan.md`
@@ -86,4 +95,4 @@ Several Claude chats work on this repo at once, so each works in its own git wor
 - TypeScript strict mode
 - Functional React components
 - Data access: `const data = await getData()` from `lib/data.ts`, then destructure queries (`lib/dataset.ts`); never
-  read `data/*.json` directly in app code
+  read `data/` or `.data/` directly in app code

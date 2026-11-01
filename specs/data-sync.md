@@ -1,7 +1,11 @@
 # Data Sync
 
-`npm run sync-data` rebuilds `data/schools.json`: every operating, predominantly bachelor's-granting U.S. college
-(~1,900). Run it whenever you want fresher data; it takes ~20 seconds.
+`npm run sync-data` rebuilds the **base layer** — every operating, predominantly bachelor's-granting U.S. college
+(~1,900) — and writes it to the data store (`--store supabase` or `--store file:<dir>`; `--out` is gone: a committed
+`data/schools.json` hasn't existed since [data-platform/](data-platform/README.md) phase 4, 2026-11-01). The
+publisher composes the base layer with every other pipeline's layer and the legacy overrides, and renders the
+result into the published snapshot; nothing downstream reads `sync-data`'s output directly. Run it whenever you want
+fresher data; it takes ~20 seconds.
 
 ## Setup
 1. Get a key at https://api.data.gov/signup/ (1,000 requests/hour).
@@ -97,13 +101,14 @@ Every stored value is traceable to its source; see [data-lineage.md](data-lineag
   registering it in `lib/fields.ts`.
 
 ## Output
-One school per line in `data/schools.json` (~1.5 MB) so diffs between syncs stay readable. Commit it: the app reads it
-at runtime (`lib/data.ts`), and `next.config.ts` traces it into server deployments.
+A `base.colleges` document per college, written to the store in one change set (kind `pipeline`, source `sync-data`).
+The publisher composes it with every other layer and renders `colleges.json` into the published snapshot; the app
+reads that snapshot, never this script's output directly ([data-platform/README.md](data-platform/README.md)).
 
 ## Files
 - `lib/derive.ts`: acceptance rate, yield, aid, and price calculations, shared with `npm run sync-history` so history's
   latest year always equals the snapshot ([trends-data.md](trends-data.md)). `scripts/lib/ipeds.mts`: NCES download and CSV parsing, shared too.
 - `scripts/sync-data.mts`: the whole pipeline (Node 24 runs TypeScript directly; no extra dependencies). Uses the
   system `unzip`.
-- `data/overrides.json`: manual patches.
-- `data/schools.json`: generated output.
+- The legacy overrides (`overrides.legacy` in the store, imported from the old `data/overrides.json`): manual patches,
+  applied last by the publisher's compose.

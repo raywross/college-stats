@@ -282,6 +282,12 @@ the only file traced for `/admin/**`; `npm run verify` (`check:college-health`) 
 college-reported, identity-refresh, and campus-pilot workflows rebuild it in their data PRs. Operations reads the
 review queue and the run reports from GitHub at `main`, never from the deploy.
 
+> **Changed (phase 4, [data-platform/](../data-platform/README.md), 2026-11-01):** the Data section below (already
+> built in phase 3) replaced this file-and-PR path; the health page now reads the `health.colleges` document straight
+> from the data store (`lib/admin/health.ts`), with no bundled-file fallback — a store with no health document yet
+> says so, rather than falling back to a stale `data/college-health.json`. There is no `/admin/**` tracing entry in
+> `next.config.ts` any more, and `npm run college-health` writes through the store (a change set), not a data PR.
+
 ## Operations: reruns and approvals
 > The Review queue and Approvals parts are replaced by [data-steward.md](data-steward.md) (planned 2026-10-13): an
 > agent groups the queue into causes and proposes fixes with evidence; Operations shows Issues, Proposals, and Audits.

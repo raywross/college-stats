@@ -6,12 +6,15 @@ the high-school table, and the record of what changed**; the college dataset its
 read from the function's own files. For the rules that decide what belongs in a table, see
 [database-architecture.md](database-architecture.md).
 
-> **Changing (planned 2026-10-31):** [data-platform/](data-platform/README.md) makes Supabase the source of truth for
-> the college dataset, with pipelines writing versioned layers, a publisher rendering snapshots to Storage, and the app
-> loading a snapshot per instance. The sections below describe the design in force until that build's phase 2 switches
-> production; the people's-data rules, keys, Edge Functions and environments sections stay in force throughout.
+> **Changed ([data-platform/](data-platform/README.md), phase 2 2026-10-31, phase 4 2026-11-01):** Supabase is now the
+> source of truth for the college dataset: pipelines write versioned layers, a publisher composes and renders
+> snapshots to Storage, and the app loads a snapshot per instance and hot-swaps to a newer one. "Design: git is the
+> source" and "Publishing" below describe the design retired by that build (kept for the record); the people's-data
+> rules, keys, Edge Functions and environments sections stay in force, with the one change to environments noted there.
 
 ## Design: git is the source, the deploy serves it
+> **Retired** ([data-platform/](data-platform/README.md)): kept for the record. The college dataset no longer ships
+> in git; see [data-platform/publish.md](data-platform/publish.md) "The loader" for the design that replaced it.
 
 ```
 npm run sync-data ──► data/*.json ──► PR (CI: lineage, tests, build) ──► main ──► Vercel build ──► the site
@@ -39,12 +42,17 @@ The serving design this replaced (the dataset in Supabase tables, a per-request 
 racing the Vercel build) is summarized in [History](#history) for the record.
 
 ## Where the app reads
+> **Changed ([data-platform/](data-platform/README.md), phase 4, 2026-11-01):** the first two rows are retired —
+> there is no `data/*.json` on disk any more. Colleges, meta, the release calendar, aliases, per-college history and
+> detail, and trend files all come from the bundled snapshot copy (`.data/snapshot/`, written by `npm run
+> fetch-snapshot`) or the live snapshot once `DATA_SNAPSHOT_URL` is set (`lib/data.ts`, `lib/data-platform/
+> loader.ts`). The rest of this table is unchanged.
 
 | Data | Read from | Switch |
 |---|---|---|
 | Colleges, meta, release calendar, aliases | `data/*.json` on disk, once per server instance (`lib/data.ts`) | none |
 | Per-college history and detail, trend files, history's shared files | `data/history/**`, `data/detail/**` on disk, per request | none |
-| High schools | the `high_schools*` tables (`lib/supabase-high-schools.ts`) or `data/high-schools/**` (`lib/high-school-store.ts`) | `HIGH_SCHOOLS_SOURCE=supabase\|json`; default `supabase` when `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are set, else `json` |
+| High schools | the `high_schools*` tables (`lib/supabase-high-schools.ts`) or `.data/snapshot/high-schools/**`, the bundled copy (`lib/high-school-store.ts`) | `HIGH_SCHOOLS_SOURCE=supabase\|json`; default `supabase` when `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are set, else `json` |
 | What changed (profile panel, digest) | `dataset_changes` when `SUPABASE_URL` is set; otherwise nothing | none |
 | Accounts, households, lists, planner | their tables, through row-level security | none |
 | Search index (`/search-index.json`) | built from the files at deploy time; matched in the browser | none |
@@ -86,6 +94,11 @@ migration in order, so the end state is what the tests prove).
   the database deploy separately.
 
 ## Publishing
+> **Retired** ([data-platform/](data-platform/README.md), phase 2, 2026-10-31): `publish-changes.mts`,
+> `publish-high-schools.mts`, `publish-college-failures.mts`, and `.github/workflows/publish-changes.yml` are gone.
+> The change log (`dataset_changes`) is now written by the publisher's own compose, diffing two composed snapshots
+> rather than two git commits; high schools and college-data-failures are written by their own pipelines through the
+> store. Kept below for the record.
 
 ### The change log: `npm run publish-changes`
 `scripts/publish-changes.mts`. Runs after each successful production deploy
@@ -365,6 +378,11 @@ put the tree back). To switch it off: `npx supabase functions delete admin-auth 
 Auth actions then answer with an error and everything else in `/admin` keeps working.
 
 ## Environments: two projects
+> **Changed ([data-platform/](data-platform/README.md)):** this section is about **people's data**, which still
+> stays per environment. The college dataset's layers and published snapshots are different: there is **one public
+> data store**, named by `DATA_SUPABASE_URL`/`DATA_SUPABASE_SECRET_KEY` (today the dev project), read by the dev site
+> and production alike — not split by this table ([data-platform/README.md](data-platform/README.md) "Environments";
+> [launch-database.md](launch-database.md)).
 
 | Project | Used by | Data changes when |
 |---|---|---|
@@ -392,9 +410,10 @@ project and the dev/prod split come with the formal release ([backlog.md](backlo
 - Vercel Production has `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` for the dev project (accounts and high
   schools); Preview may have them or not (without them, high schools come from the files). A `DATA_SOURCE` variable
   left over from before 2026-10-07 is ignored and can be deleted.
-- A merge to `main` deploys; the build reads only the files in the repo.
-- Once the `PROD_SUPABASE_*` GitHub secrets exist, each production deploy is followed by a `publish-changes` run that
-  records what changed for the digest.
+- A merge to `main` deploys; the build fetches the published snapshot ([data-platform/](data-platform/README.md)),
+  not files from the repo.
+- The change log is now written by the publisher's own compose, not a post-deploy `publish-changes` run
+  ([Publishing](#publishing) above).
 
 Found while setting it up (2026-09-28):
 - The Vercel–Supabase integration adds its own variables (`SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_*`,

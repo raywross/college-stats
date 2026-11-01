@@ -60,6 +60,14 @@ Very large: new tables and functions with policies, a publisher that must reprod
 that swaps safely, every producer touched, the console's biggest new section, and a test suite re-pointed at a
 fixture. Built in four phases with the byte-equality proof as the gate between them.
 
+## As built, phase 4 (2026-11-01, PR #205)
+Built as planned: `data/` is gone from the repository (the lead removed it last, after every unit's code and tests
+stopped reading it); the loader has no `legacy` source; tracing carries only `.data/snapshot/**`; the mini fixture
+grew to 38 colleges with every reference document; the check scripts, the publisher's gates, and six workflows read
+the bundled copy instead of `data/`. See [git-ci-tests.md](git-ci-tests.md) "As built, phase 4" for the details.
+`mv data /tmp && npm run verify && npx next build` passes on the merged branch. The owner's step 4 above (shrink the
+repository with a history rewrite) is optional and not planned; git history still holds the old data.
+
 ## As built, phase 3 (2026-10-31, PR #204)
 Built as planned: `data_field_edits`, `admin_data_edit`/`admin_data_release_edit`, the live overlay
 (`lib/data-platform/live-edits.ts`), `quad-edit`/`edited` lineage, the field editor at `/admin/colleges/[unit]/edit`

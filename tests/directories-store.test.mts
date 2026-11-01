@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/store.mts";
 import { COLLECTIONS, SINGLE_KEYS, loadDirectoriesLayer } from "../scripts/lib/data-platform/layers.mts";
 import { withRunSet } from "../scripts/lib/data-platform/change-set.mts";
-import { importLayers, writeImport } from "../scripts/import-data-from-git.mts";
+import { importLayers, writeImport } from "../scripts/import-data-from-files.mts";
 import { Blocked, defineAdapter, type CrawlContext, type RawEntry } from "../scripts/lib/directories/contract.mts";
 import type { BlockedFile, DirectoryFile, UnmatchedFile } from "../scripts/lib/directories/files.mts";
 import { readDirectoryFiles } from "../scripts/lib/directories/files.mts";
@@ -30,7 +30,7 @@ const VANDERBILT = "221999";
 async function imported(only: string[], units?: Set<string>): Promise<{ root: string; store: ReturnType<typeof fileStore> }> {
   const root = mkdtempSync(join(tmpdir(), "directories-store-"));
   const store = fileStore(root);
-  await writeImport(store, importLayers(ROOT, { only: new Set(only), units }), "fixture");
+  await writeImport(store, importLayers(join(ROOT, "data"), { only: new Set(only), units }), "fixture");
   return { root, store };
 }
 

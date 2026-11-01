@@ -2,19 +2,12 @@
  * The reference editor's pure parts (specs/data-platform/change-sets.md "Admin edits" → "Reference documents";
  * specs/data-platform/storage.md `reference.*`, `base.release_calendar`): the known documents' descriptions, the
  * route for one, unwrapping a `{text}` document for a plain textarea, and the validator each document already has
- * (grepped from `lib/`), falling back to "must be an object or array" for a document with none.
+ * (lib/reference-validators.ts, re-exported here; the publisher's reference gate runs the same dispatch).
  *
  * No server or browser APIs, so tests/admin-reference.test.mts exercises every rule with no network and no database.
  */
-import { validateAidPolicies, type AidPolicyFile } from "../aid-policies.ts";
-import { validateStateLaws, type StateLawTable } from "../lgbtq.ts";
-import { validateGuaranteed, type GuaranteedFile } from "../chances/guaranteed.ts";
-import { validateMajorAdmission, type MajorAdmissionFile } from "../chances/major-admission.ts";
-import { validateCycleFile } from "../planner/cycle.ts";
-import { validateCommonAppTrends, type CommonAppTrendsFile } from "../common-app/trends.ts";
-import { organizationsProblems } from "../organizations.ts";
-import { aliasTableProblems, buildAliasRow, type AliasRow } from "../aliases.ts";
-import { missingSections, parseGuidance } from "../essays/guidance.ts";
+import { isTextDocument } from "../reference-validators.ts";
+export { isTextDocument, validateReference, VALIDATED_REFERENCES } from "../reference-validators.ts";
 
 /* ------------------------------------------------------------------ */
 /* The list                                                            */
@@ -64,11 +57,6 @@ export function referenceDocumentKey(name: string): { collection: string; key: s
 /* Text vs. JSON documents                                             */
 /* ------------------------------------------------------------------ */
 
-/** A `{text}` document (zcta-centroids' CSV, the essay guidance markdown): exactly one key, `text`, a string. */
-export function isTextDocument(body: unknown): body is { text: string } {
-  return !!body && typeof body === "object" && !Array.isArray(body) && Object.keys(body as Record<string, unknown>).length === 1 && typeof (body as Record<string, unknown>).text === "string";
-}
-
 export type EditorKind = "text" | "json";
 
 /** What the editor's textarea shows: the bare text for a `{text}` document, two-space JSON otherwise. */
@@ -97,50 +85,4 @@ export function editorToBody(kind: EditorKind, input: string): EditorResult {
   }
   if (body === null || typeof body !== "object") return { ok: false, problem: "The document must be a JSON object or array." };
   return { ok: true, body, bodyText: input };
-}
-
-/* ------------------------------------------------------------------ */
-/* Validation: the document's own validator when one exists            */
-/* ------------------------------------------------------------------ */
-
-function toAliasRows(body: unknown): AliasRow[] {
-  if (!Array.isArray(body)) return [];
-  return body
-    .filter((r): r is { unit_id: string; alias: string } => !!r && typeof r === "object" && typeof (r as Record<string, unknown>).unit_id === "string" && typeof (r as Record<string, unknown>).alias === "string")
-    .map((r) => buildAliasRow(r.unit_id, r.alias, "curated"));
-}
-
-/**
- * The problems with a saved body, empty when it's sound: the document's own validator when `lib/` has one (aid
- * policies, state laws, guaranteed admission, major admission, the application cycle, Common App trends,
- * organizations, the curated aliases, the essay guidance text's sections), else the generic rule every other
- * document follows — an object or array. `knownUnitIds` is the dataset's college ids; omitted, the unit-id checks
- * are skipped rather than refusing a save over it.
- */
-export function validateReference(name: string, body: unknown, knownUnitIds: Set<string> | undefined, today: Date): string[] {
-  switch (name) {
-    case "aid-policies":
-      return validateAidPolicies(body as AidPolicyFile, knownUnitIds);
-    case "state-laws":
-      return validateStateLaws(body as StateLawTable);
-    case "guaranteed-admission":
-      return validateGuaranteed(body as GuaranteedFile, today, knownUnitIds);
-    case "major-admission":
-      return validateMajorAdmission(body as MajorAdmissionFile, knownUnitIds);
-    case "application-cycle":
-      return validateCycleFile(body);
-    case "common-app-trends":
-      return validateCommonAppTrends(body as CommonAppTrendsFile);
-    case "organizations":
-      return organizationsProblems(body);
-    case "aliases-curated":
-      return knownUnitIds ? aliasTableProblems(toAliasRows(body), knownUnitIds) : [];
-    case "essay-guidance/guidance": {
-      if (!isTextDocument(body)) return ["The essay guidance document must be { text }."];
-      return missingSections(parseGuidance(body.text)).map((h) => `Missing the "${h}" section.`);
-    }
-    default:
-      if (body === null || typeof body !== "object") return ["The document must be a JSON object or array."];
-      return [];
-  }
 }

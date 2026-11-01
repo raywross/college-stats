@@ -1,11 +1,11 @@
 /**
- * The import (scripts/import-data-from-git.mts; specs/data-platform/pipelines.md "The import"): the committed
+ * The import (scripts/import-data-from-files.mts; specs/data-platform/pipelines.md "The import"): the committed
  * dataset stripped of its later layers, written to the file store, and the layers re-applied in sync-data's order give
  * each committed college back byte for byte, which is the contract the publisher (D3) relies on. Until the mini
  * fixture exists (tests/fixtures/snapshot-mini/), the fixture is built here from three real colleges copied out of
  * data/ into a temp folder (under 300 KB): Duke (Common App, Coalition, essays, college-reported with a CDS record,
  * directories, the campus pilot's policies, selectivity), Simpson University (CCCU, Common App's international-aid
- * answer), Hilbert College (Common App's own-site links, directories). `npm run import-data-from-git -- --check` runs
+ * answer), Hilbert College (Common App's own-site links, directories). `npm run import-data-from-files -- --check` runs
  * the same proof over every college. `npm test`.
  */
 import { test } from "node:test";
@@ -48,7 +48,7 @@ import {
   reapplyProblems,
   stripLaterLayers,
   writeImport,
-} from "../scripts/import-data-from-git.mts";
+} from "../scripts/import-data-from-files.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const DATA = join(ROOT, "data");
@@ -122,7 +122,7 @@ const fixtureColleges = committed.filter((s) => ids.has(s.unit_id));
 async function importedStore(root = fixture): Promise<{ dir: string; store: ReturnType<typeof fileStore> }> {
   const dir = mkdtempSync(join(tmpdir(), "dp-import-store-"));
   const store = fileStore(dir);
-  await writeImport(store, importLayers(root), "test-commit");
+  await writeImport(store, importLayers(join(root, "data")), "test-commit");
   return { dir, store };
 }
 
@@ -147,7 +147,7 @@ test("strip, write to the file store, re-apply in the compose order: every colle
     assert.equal(bases.length, 3);
     for (const b of bases) assert.deepEqual(baseProblems(b), [], b.unit_id);
     const got = await reapplyLaterLayers(store, { previous, today });
-    assert.deepEqual(reapplyProblems(got, fixture), []);
+    assert.deepEqual(reapplyProblems(got, join(fixture, "data")), []);
     // And the bytes, spelled out: the one-college-per-line file.
     const text = `[\n${got.schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`;
     assert.equal(text, readFileSync(join(fixture, "data", "schools.json"), "utf8"));
@@ -238,7 +238,7 @@ test("base.meta keeps the later layers' sources, and the compose's add*Meta call
       COLLECTIONS.coalition.members,
       COLLECTIONS.directories.listings,
     ]);
-    await writeImport(store, importLayers(ROOT, { only }), "test-commit");
+    await writeImport(store, importLayers(join(ROOT, "data"), { only }), "test-commit");
     const meta = (await loadBase(store)).meta!;
     assert.deepEqual(meta, readData<DatasetMeta>("meta.json"));
     const after = structuredClone(meta);
@@ -280,13 +280,13 @@ test("the guards bite: a skipped strip, a missing layer, a changed base are all 
     const set = await store.open("pipeline", "test", "r");
     await set.remove(COLLECTIONS.coalition.members, ["members"]);
     await set.close("applied");
-    assert.match(reapplyProblems(await reapplyLaterLayers(store, { previous, today }), fixture).join("\n"), /198419.*differs/);
+    assert.match(reapplyProblems(await reapplyLaterLayers(store, { previous, today }), join(fixture, "data")).join("\n"), /198419.*differs/);
     const set2 = await store.open("pipeline", "test", "r2");
     const { trends: _t, ...noTrends } = (await store.readOne<School>(COLLECTIONS.base.colleges, "123457"))!;
     void _t;
     await set2.write(COLLECTIONS.base.colleges, [{ key: "123457", body: noTrends }]);
     await set2.close("applied");
-    assert.match(reapplyProblems(await reapplyLaterLayers(store, { previous, today }), fixture).join("\n"), /123457.*differs/);
+    assert.match(reapplyProblems(await reapplyLaterLayers(store, { previous, today }), join(fixture, "data")).join("\n"), /123457.*differs/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -297,14 +297,14 @@ test("one import change set; re-importing writes nothing; a document git lost is
   try {
     const [first] = fileStoreChangeSets(dir);
     assert.equal(first.kind, "import");
-    assert.equal(first.source, "git");
+    assert.equal(first.source, "files");
     assert.equal(first.run_ref, "test-commit");
     assert.equal(first.status, "applied");
     assert.ok((first.summary.documents as number) > 20);
-    await writeImport(store, importLayers(fixture), "test-commit");
+    await writeImport(store, importLayers(join(fixture, "data")), "test-commit");
     assert.equal(fileStoreChangeSets(dir)[1].summary.documents, 0);
     // A college's essay record leaves git: the next import removes the document.
-    const layers = importLayers(fixture);
+    const layers = importLayers(join(fixture, "data"));
     layers.get(COLLECTIONS.essays.records)!.delete("198419");
     await writeImport(store, layers, "next-commit");
     assert.equal(await store.readOne(COLLECTIONS.essays.records, "198419"), null);
@@ -315,10 +315,10 @@ test("one import change set; re-importing writes nothing; a document git lost is
 });
 
 test("--only and units limit what the import reads; headers keep each split file's other fields", () => {
-  const only = importLayers(fixture, { only: new Set([COLLECTIONS.reported.entries, COLLECTIONS.import.headers]) });
+  const only = importLayers(join(fixture, "data"), { only: new Set([COLLECTIONS.reported.entries, COLLECTIONS.import.headers]) });
   assert.deepEqual([...only.keys()].sort(), [COLLECTIONS.import.headers, COLLECTIONS.reported.entries].sort());
   assert.deepEqual(only.get(COLLECTIONS.import.headers)!.get("college-reported.json"), { updated: readData<{ updated: string }>("college-reported.json").updated });
-  const one = importLayers(fixture, { units: new Set(["123457"]) });
+  const one = importLayers(join(fixture, "data"), { units: new Set(["123457"]) });
   assert.deepEqual([...one.get(COLLECTIONS.base.colleges)!.keys()], ["123457"]);
   assert.deepEqual([...one.get(COLLECTIONS.history.schools)!.keys()], ["123457"]);
 });

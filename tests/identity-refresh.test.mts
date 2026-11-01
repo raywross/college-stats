@@ -17,7 +17,7 @@ import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/sto
 import { COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
 import { readBrandColors, readWikidata, writeBrandColors, writeBrandLogos, writeWikidata, readBrandLogos } from "../scripts/lib/identity-store.mts";
 import type { WikidataIssue } from "../scripts/lib/wikidata.mts";
-import { importLayers, writeImport } from "../scripts/import-data-from-git.mts";
+import { importLayers, writeImport } from "../scripts/import-data-from-files.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const UNITS = new Set(["139959", "221999", "166027", "100654", "228778"]);
@@ -35,7 +35,7 @@ const IDENTITY = [
 async function importedIdentity(): Promise<{ root: string; store: ReturnType<typeof fileStore> }> {
   const root = mkdtempSync(join(tmpdir(), "identity-store-"));
   const store = fileStore(root);
-  await writeImport(store, importLayers(ROOT, { only: new Set(IDENTITY), units: UNITS }), "fixture");
+  await writeImport(store, importLayers(join(ROOT, "data"), { only: new Set(IDENTITY), units: UNITS }), "fixture");
   return { root, store };
 }
 

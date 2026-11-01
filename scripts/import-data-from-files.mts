@@ -1,14 +1,19 @@
 /**
- * The import (specs/data-platform/pipelines.md "The import"): reads today's data/ files once and writes every layer
+ * The import (specs/data-platform/pipelines.md "The import"): reads a folder in the old file layout (what the
+ * repository's `data/` held until phase 4, or an export of the store in that layout) once and writes every layer
  * (specs/data-platform/storage.md "Collections"; names in scripts/lib/data-platform/layers.mts) in one change set of
- * kind `import`, source `git`, run_ref the HEAD commit.
+ * kind `import`, source `files`. This is how a store is re-seeded from an export; the key rules are phase 1's,
+ * unchanged, so an import and a producer's run agree.
  *
- *   npm run import-data-from-git -- --store file:/tmp/dp-import            # a folder (the file store)
- *   npm run import-data-from-git -- --store supabase                        # the data project (DATA_SUPABASE_*)
- *   npm run import-data-from-git -- --store file:/tmp/dp-import --dry-run   # counts per collection, writes nothing
- *   npm run import-data-from-git -- --store … --only base.colleges,base.meta
+ *   npm run import-data-from-files -- --from <dir> --store file:/tmp/dp-import            # a folder (the file store)
+ *   npm run import-data-from-files -- --from <dir> --store supabase                        # the data project
+ *   npm run import-data-from-files -- --from <dir> --store file:/tmp/dp-import --dry-run   # counts, writes nothing
+ *   npm run import-data-from-files -- --from <dir> --store … --only base.colleges,base.meta
+ *   … --run-ref <ref>   the change set's run_ref (default `files:<dir>`)
+ *   … --check           re-applies the layers and compares every college with the folder's (below)
  *
- * The base layer: the IPEDS downloads aren't in git, so the committed data/schools.json is stripped of the later
+ * `--from` is required: the folder holding `schools.json`, `meta.json`, `detail/schools/`, `reference/`, … (the old
+ * `data/` layout). The base layer: the IPEDS downloads aren't in that folder, so its schools.json is stripped of the later
  * layers with each layer's own strip, in reverse order of application (`stripLaterLayers`): the selectivity block
  * (`placeSelectivity(school, undefined)`), the directories' three steps (`stripLgbtqPolicies`, `stripCccuMembership`,
  * `stripDirectories`), the college-reported merge (`stripReported`), essays (`stripEssays`), Coalition
@@ -18,13 +23,12 @@
  * that the import is faithful: re-applying the layers in the compose order gives each committed college back byte for
  * byte (the same test, and on every college with `--check`).
  *
- * A collection the import writes is mirrored: a document in the store that git no longer has is removed in the same
+ * A collection the import writes is mirrored: a document in the store that the folder no longer has is removed in the same
  * change set. With `--only`, only the named collections are read, written and mirrored.
  */
-import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { DETAIL_TABLES, formatDetail, mergeDetails, type DetailTableKey, type SchoolDetail } from "../lib/detail.ts";
 import { reviewKey, type ReviewItem } from "../lib/reported.ts";
@@ -128,7 +132,7 @@ export interface ImportOptions {
   units?: ReadonlySet<string>;
 }
 
-/** Files under data/ the import deliberately leaves out, with why (printed by --dry-run). */
+/** Files of the folder the import deliberately leaves out, with why (printed by --dry-run). */
 export const NOT_IMPORTED: Readonly<Record<string, string>> = {
   "selectivity-index.json": "the hidden index: every layer is public-read, and the index never ships (specs/chances); the publisher rebuilds tiers from the previous snapshot's",
   "history/trends/": "derived at publish (build-trends), storage.md",
@@ -137,11 +141,12 @@ export const NOT_IMPORTED: Readonly<Record<string, string>> = {
 };
 
 /**
- * Every layer from the files under `root`/data. Pure apart from the reads; `units` limits the per-college collections.
- * Throws on a file the import can't place (an unregistered text file in data/reference/, a duplicate key).
+ * Every layer from the files under `from` (a folder in the old `data/` layout). Pure apart from the reads; `units`
+ * limits the per-college collections. Throws on a file the import can't place (an unregistered text file in
+ * reference/, a duplicate key).
  */
-export function importLayers(root: string, opts: ImportOptions = {}): ImportedLayers {
-  const data = join(root, "data");
+export function importLayers(from: string, opts: ImportOptions = {}): ImportedLayers {
+  const data = from;
   const out: ImportedLayers = new Map();
   const want = (c: CollectionName) => !opts.only || opts.only.has(c);
   const unitOk = (id: string) => !opts.units || opts.units.has(id);
@@ -264,7 +269,7 @@ export function importLayers(root: string, opts: ImportOptions = {}): ImportedLa
     touch(COLLECTIONS.directories.listings);
     for (const f of files("directories").filter((n) => !["blocked.json", "matches.json", "organizations.json"].includes(n))) {
       const d = json<{ org: string }>(join("directories", f));
-      if (`${d.org}.json` !== f) throw new Error(`import: data/directories/${f} names org ${d.org}`);
+      if (`${d.org}.json` !== f) throw new Error(`import: directories/${f} names org ${d.org}`);
       put(COLLECTIONS.directories.listings, d.org, d);
     }
   }
@@ -337,7 +342,7 @@ export function importLayers(root: string, opts: ImportOptions = {}): ImportedLa
     for (const [name, rel] of Object.entries(REFERENCE_FILES)) if (has(rel)) add(name, rel);
     for (const rel of walk(path("reference")).map((p) => relative(data, p))) {
       if (placed.has(rel) || rel.endsWith("README.md")) continue;
-      if (!rel.endsWith(".json")) throw new Error(`import: data/${rel} is a text reference file not in REFERENCE_FILES (scripts/lib/data-platform/layers.mts); register it first`);
+      if (!rel.endsWith(".json")) throw new Error(`import: ${rel} is a text reference file not in REFERENCE_FILES (scripts/lib/data-platform/layers.mts); register it first`);
       add(relative("reference", rel).slice(0, -".json".length), rel);
     }
   }
@@ -371,6 +376,9 @@ export const DETAIL_TABLE_KEYS = Object.keys(DETAIL_TABLES) as DetailTableKey[];
 /* ------------------------------------------------------------------ */
 /* Layers → a store                                                    */
 /* ------------------------------------------------------------------ */
+
+/** The import's change-set source. */
+export const IMPORT_SOURCE = "files";
 
 export interface CollectionCount {
   documents: number;
@@ -407,11 +415,11 @@ export async function countImport(layers: ImportedLayers, store: DataStore | nul
 }
 
 /**
- * Writes `layers` into one change set (kind import, source git) and closes it applied; documents the store has in an
- * imported collection that `layers` lacks are removed. Returns the change set's id.
+ * Writes `layers` into one change set (kind import, source `files`) and closes it applied; documents the store has in
+ * an imported collection that `layers` lacks are removed. Returns the change set's id.
  */
 export async function writeImport(store: DataStore, layers: ImportedLayers, runRef: string, log: (line: string) => void = () => {}): Promise<number> {
-  const handle = await store.open("import", "git", runRef, { note: `imported from git at ${runRef}` });
+  const handle = await store.open("import", IMPORT_SOURCE, runRef, { note: `imported from files (${runRef})` });
   for (const [c, docs] of layers) {
     await handle.write(c, [...docs].map(([key, body]) => ({ key, body })));
     const stale = [...(await store.read(c)).keys()].filter((k) => !docs.has(k));
@@ -435,7 +443,7 @@ export interface Reapplied {
 /**
  * The later layers re-applied to the stored base in sync-data's order (identity and the legacy overrides are already
  * in the base; trends carried): Common App, Coalition, essays, the college-reported merge, the directories' three
- * steps, then selectivity. Selectivity is taken from `previous` (the committed tiers, placed with `placeSelectivity`)
+ * steps, then selectivity. Selectivity is taken from `previous` (the folder's tiers, placed with `placeSelectivity`)
  * unless `rebuildSelectivity` is set, which runs `buildSelectivity` with hysteresis against them (only meaningful over
  * the whole dataset: its scales are computed over the colleges given). This is the import's check, not the publisher:
  * scripts/lib/data-platform/compose.mts composes for real and must give the same bytes.
@@ -466,13 +474,13 @@ export async function reapplyLaterLayers(
   return { schools, details, aliases };
 }
 
-/** Colleges, detail files and the alias table that don't come back byte for byte (empty when the import is faithful). */
-export function reapplyProblems(got: Reapplied, root: string, units?: ReadonlySet<string>): string[] {
-  const data = join(root, "data");
+/** Colleges, detail files and the alias table that don't come back byte for byte against the folder `from` (empty when the import is faithful). */
+export function reapplyProblems(got: Reapplied, from: string, units?: ReadonlySet<string>): string[] {
+  const data = from;
   const problems: string[] = [];
   const committed = (JSON.parse(readFileSync(join(data, "schools.json"), "utf8")) as School[]).filter((s) => !units || units.has(s.unit_id));
   const byId = new Map(got.schools.map((s) => [s.unit_id, s]));
-  if (got.schools.length !== committed.length) problems.push(`${got.schools.length} colleges re-applied, ${committed.length} committed`);
+  if (got.schools.length !== committed.length) problems.push(`${got.schools.length} colleges re-applied, ${committed.length} in the folder`);
   committed.forEach((s, i) => {
     const want = JSON.stringify(s);
     const have = byId.get(s.unit_id);
@@ -483,7 +491,7 @@ export function reapplyProblems(got: Reapplied, root: string, units?: ReadonlySe
   const dir = join(data, "detail", "schools");
   const wantDetails = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".json") && (!units || units.has(f.slice(0, -5)))) : [];
   const gotDetails = new Map(got.details.map((d) => [d.unit_id, formatDetail(d)]));
-  if (gotDetails.size !== wantDetails.length) problems.push(`${gotDetails.size} detail files re-applied, ${wantDetails.length} committed`);
+  if (gotDetails.size !== wantDetails.length) problems.push(`${gotDetails.size} detail files re-applied, ${wantDetails.length} in the folder`);
   for (const f of wantDetails) if (gotDetails.get(f.slice(0, -5)) !== readFileSync(join(dir, f), "utf8")) problems.push(`detail ${f}: differs`);
   if (!units && formatAliasRows(got.aliases) !== readFileSync(join(data, "aliases.json"), "utf8")) problems.push("aliases.json: differs");
   return problems;
@@ -507,18 +515,21 @@ async function main() {
   const onlyFlag = flagValue(argv, "--only");
   const only = onlyFlag ? new Set(onlyFlag.split(",").map((s) => s.trim()).filter(Boolean)) : undefined;
   for (const c of only ?? []) if (!(ALL_COLLECTIONS as readonly string[]).includes(c)) throw new Error(`--only: ${c} isn't a collection (scripts/lib/data-platform/layers.mts)`);
+  const fromFlag = flagValue(argv, "--from");
+  if (!fromFlag) throw new Error("--from <dir> is required: a folder in the old data/ layout (schools.json, meta.json, reference/, …)");
+  const from = resolve(fromFlag);
+  if (!existsSync(join(from, "schools.json")) && !existsSync(join(from, "reference"))) throw new Error(`--from ${fromFlag}: no schools.json or reference/ there; name a folder in the old data/ layout`);
+  const runRefValue = flagValue(argv, "--run-ref") ?? `files:${fromFlag}`;
   const storeFlag = flagValue(argv, "--store");
   const spec = parseStoreFlag(storeFlag);
-  const root = join(import.meta.dirname, "..");
-  const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
   const started = Date.now();
-  const layers = importLayers(root, { only });
+  const layers = importLayers(from, { only });
   // A dry run reads the store (to say what would change) only when it is a folder that exists; it never opens a set.
   const store = storeFromFlag(storeFlag, process.env, { log: (l) => console.log(l) });
   const readable = spec.kind === "supabase" || existsSync(spec.root) ? store : null;
   const counts = await countImport(layers, readable);
   const where = spec.kind === "file" ? `file:${spec.root}` : "supabase (the data project)";
-  console.log(`import-data-from-git: ${layers.size} collections from git at ${head.slice(0, 12)} → ${where}${dryRun ? " (--dry-run, nothing written)" : ""}`);
+  console.log(`import-data-from-files: ${layers.size} collections from ${from} → ${where}${dryRun ? " (--dry-run, nothing written)" : ""}`);
   let docs = 0;
   let bytes = 0;
   for (const [c, n] of counts) {
@@ -530,18 +541,18 @@ async function main() {
   console.log(`  ${"total".padEnd(28)} ${String(docs).padStart(6)} documents ${kb(bytes).padStart(9)}`);
   console.log(`  left out: ${Object.entries(NOT_IMPORTED).map(([f, why]) => `${f} (${why})`).join("; ")}`);
   if (!dryRun) {
-    const id = await writeImport(store, layers, head, (l) => console.log(l));
-    console.log(`import-data-from-git: change set ${id} applied in ${((Date.now() - started) / 1000).toFixed(1)} s`);
+    const id = await writeImport(store, layers, runRefValue, (l) => console.log(l));
+    console.log(`import-data-from-files: change set ${id} applied in ${((Date.now() - started) / 1000).toFixed(1)} s`);
   }
-  if (argv.includes("--check")) await check(root, layers, dryRun ? null : store, Boolean(only));
+  if (argv.includes("--check")) await check(from, layers, dryRun ? null : store, Boolean(only));
 }
 
 /**
  * `--check`: re-applies the later layers to the stored base (a scratch folder on a dry run) and compares every
- * college, detail file and the alias table with the committed files, rebuilding selectivity with hysteresis against
- * the committed tiers. Exits 1 on any difference.
+ * college, detail file and the alias table with the folder's files, rebuilding selectivity with hysteresis against
+ * the folder's tiers. Exits 1 on any difference.
  */
-async function check(root: string, layers: ImportedLayers, store: DataStore | null, partial: boolean): Promise<void> {
+async function check(from: string, layers: ImportedLayers, store: DataStore | null, partial: boolean): Promise<void> {
   if (partial) throw new Error("--check needs every collection (drop --only)");
   let target = store;
   let scratch: string | null = null;
@@ -551,10 +562,10 @@ async function check(root: string, layers: ImportedLayers, store: DataStore | nu
     await writeImport(target, layers, "check");
   }
   try {
-    const committed = JSON.parse(readFileSync(join(root, "data", "schools.json"), "utf8")) as School[];
-    const meta = JSON.parse(readFileSync(join(root, "data", "meta.json"), "utf8")) as DatasetMeta;
+    const committed = JSON.parse(readFileSync(join(from, "schools.json"), "utf8")) as School[];
+    const meta = JSON.parse(readFileSync(join(from, "meta.json"), "utf8")) as DatasetMeta;
     const got = await reapplyLaterLayers(target, { previous: new Map(committed.map((s) => [s.unit_id, s.selectivity])), today: new Date().toISOString().slice(0, 10), rebuildSelectivity: { meta } });
-    const problems = reapplyProblems(got, root);
+    const problems = reapplyProblems(got, from);
     if (problems.length) {
       console.error(`--check: ${problems.length} differences:\n  ${problems.slice(0, 20).join("\n  ")}`);
       process.exitCode = 1;

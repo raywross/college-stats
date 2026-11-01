@@ -1,27 +1,21 @@
 /**
- * Fails when a file named in data/meta.json has no entry in data/source-files.json, so a sync that brings in a new
- * file can't merge without its published date. No network. Part of `npm run verify`. Fix: `npm run source-files`,
- * then commit the file.
+ * Fails when a file named in the bundled copy's `meta.json` has no entry in its `source-files.json`
+ * (`base.source_files`, rendered at the snapshot root), so a sync that brings in a new file can't publish without its
+ * published date. No network. Part of `npm run verify` (over the mini fixture in CI, over the real snapshot locally
+ * after `npm run fetch-snapshot`). Fix: `npm run source-files -- --store …`, which writes `base.source_files`.
  *
  *   npm run check:source-files
  */
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { sourceFileRefs, undatedFiles, type SourceFilesRecord } from "../lib/admin/source-files.ts";
-import type { DatasetMeta } from "../lib/types.ts";
+import { SNAPSHOT_OBJECTS } from "../lib/data-platform/snapshot.ts";
+import { readBundledJson, readBundledMeta } from "./lib/data-platform/bundled.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const path = join(ROOT, "data", "source-files.json");
-if (!existsSync(path)) {
-  console.error("data/source-files.json does not exist. Run `npm run source-files` and commit the file.");
-  process.exit(1);
-}
-const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as DatasetMeta;
-const record = JSON.parse(readFileSync(path, "utf8")) as SourceFilesRecord;
+const meta = readBundledMeta();
+const record = readBundledJson<SourceFilesRecord>(SNAPSHOT_OBJECTS.sourceFiles);
 const missing = undatedFiles(sourceFileRefs(meta), record);
 if (missing.length) {
-  console.error(`data/source-files.json has no entry for ${missing.map((m) => m.file).join(", ")}.`);
-  console.error("Run `npm run source-files` and commit data/source-files.json.");
+  console.error(`source-files.json has no entry for ${missing.map((m) => m.file).join(", ")}.`);
+  console.error("Run `npm run source-files -- --store …` to date them in base.source_files, then publish.");
   process.exit(1);
 }
-console.log("data/source-files.json: ok");
+console.log("source-files.json: ok");

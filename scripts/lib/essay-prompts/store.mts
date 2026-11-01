@@ -183,7 +183,7 @@ export function readPlatformPrompts(file: string): PlatformPromptsFile | null {
 
 /**
  * The reader's state as layers: `essays.records` and `essays.held` by unit id (each document the file's parsed text,
- * so its key order is the file's, as scripts/import-data-from-git.mts imports it), `essays.pages` by unit id (a
+ * so its key order is the file's, as scripts/import-data-from-files.mts imports it), `essays.pages` by unit id (a
  * `PageRecipe`), `essays.runs` by the run stamp (the `RunSummary`). The files above stay for the merge CLI and the
  * import; a run reads and writes only these.
  */

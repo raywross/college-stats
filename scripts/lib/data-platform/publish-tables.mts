@@ -3,7 +3,7 @@
  * tables the app reads that aren't in the snapshot are brought in line with it.
  *
  * - `college_data_failures`: upserted from the `reported.failures` layer (one document per college, each a list of
- *   rows, as scripts/import-data-from-git.mts keys it) with `loadCollegeFailures` (scripts/lib/publish-college-failures.mts):
+ *   rows, as scripts/import-data-from-files.mts keys it) with `loadCollegeFailures` (scripts/lib/publish-college-failures.mts):
  *   rows in the layer are upserted, open rows no longer in it are resolved. Every publish (a whole-file load is
  *   idempotent). An empty layer loads nothing, so a missing layer never resolves every open row.
  * - The high-school tables (`high_schools`, `high_school_details`, `high_school_files`): written with

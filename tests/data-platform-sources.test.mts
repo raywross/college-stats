@@ -18,7 +18,7 @@ import { validateLineage } from "../lib/lineage.ts";
 import { fileStore, fileStoreChangeSets, type DataStore } from "../scripts/lib/data-platform/store.mts";
 import { COLLECTIONS, SINGLE_KEYS, readLayer } from "../scripts/lib/data-platform/layers.mts";
 import { changeSetFromArgv, EXIT, openProducerRun, runRef, writeChanged } from "../scripts/lib/data-platform/producer.mts";
-import { importLayers, stripLaterLayers, writeImport } from "../scripts/import-data-from-git.mts";
+import { importLayers, stripLaterLayers, writeImport } from "../scripts/import-data-from-files.mts";
 import { ESSAY_COLLECTIONS, essaysBreaker, heldDocument, loadEssayState, recordDocument, writeEssayRun, type EssayRecord, type HeldRecord, type PageRecipe } from "../scripts/lib/essay-prompts/store.mts";
 import { coalitionDocument } from "../scripts/lib/coalition/sync.mts";
 import { editionFileText } from "../scripts/lib/common-app/edition-file.mts";
@@ -39,7 +39,7 @@ const OFFLINE_ENV = Object.fromEntries(Object.entries(process.env).filter(([k]) 
 
 /** One collection of the import, for the colleges given (or every document). */
 function imported(collection: string, units?: string[]): Map<string, unknown> {
-  return importLayers(ROOT, { only: new Set([collection]), ...(units ? { units: new Set(units) } : {}) }).get(collection as never) ?? new Map();
+  return importLayers(join(ROOT, "data"), { only: new Set([collection]), ...(units ? { units: new Set(units) } : {}) }).get(collection as never) ?? new Map();
 }
 
 /* ------------------------------------------------------------------ */
@@ -301,7 +301,7 @@ test("high schools: the folder reads back keyed as the import keys data/high-sch
   try {
     smallHighSchools(join(dir, "data", "high-schools"));
     const got = readHighSchoolFolder(join(dir, "data", "high-schools"));
-    const want = importLayers(dir, { only: new Set(Object.values(COLLECTIONS.highSchools)) });
+    const want = importLayers(join(dir, "data"), { only: new Set(Object.values(COLLECTIONS.highSchools)) });
     for (const c of Object.values(COLLECTIONS.highSchools)) {
       const g = got.get(c)!;
       const w = (want.get(c as never) ?? new Map()) as Map<string, unknown>;
@@ -318,7 +318,7 @@ test("high schools: a sync on the scratch folder writes back only what it change
   try {
     smallHighSchools(join(dir, "data", "high-schools"));
     const store: DataStore = fileStore(join(dir, "store"));
-    await writeImport(store, importLayers(dir, { only: new Set(Object.values(COLLECTIONS.highSchools)) }), "seed");
+    await writeImport(store, importLayers(join(dir, "data"), { only: new Set(Object.values(COLLECTIONS.highSchools)) }), "seed");
     const ran = await onHighSchoolFolder(store, async (hs) => {
       const meta = JSON.parse(readFileSync(join(hs, "meta.json"), "utf8"));
       writeFileSync(join(hs, "meta.json"), `${JSON.stringify({ ...meta, built: "2099-01-01" }, null, 2)}\n`);

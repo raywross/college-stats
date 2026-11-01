@@ -1,6 +1,6 @@
 /**
  * The college-reported pipeline on the data store (specs/data-platform/pipelines.md; scripts/lib/college-reported/
- * state.mts): the run's documents are keyed and shaped exactly as scripts/import-data-from-git.mts imports the files,
+ * state.mts): the run's documents are keyed and shaped exactly as scripts/import-data-from-files.mts imports the files,
  * the writer sends only what changed, hold-misread and college-failures write through the store, and the workflow
  * neither commits nor opens a PR and asks the publisher only when its change set closed applied. The runs themselves
  * (one change set, held on the breaker, collect into the same set) are in tests/cds-pipeline.test.mts.
@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { BatchEntry, ReportedFile, ReviewItem, ReviewQueueFile, SourcesFile } from "../lib/reported.ts";
 import type { CollegeDocsFile, CollegeRecord } from "../lib/cds-sections.ts";
-import { importLayers } from "../scripts/import-data-from-git.mts";
+import { importLayers } from "../scripts/import-data-from-files.mts";
 import { COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
 import { fileStore, fileStoreChangeSets, orderedJson } from "../scripts/lib/data-platform/store.mts";
 import { writeQueue, writeReported, writeSources } from "../scripts/lib/college-reported/files.mts";
@@ -71,7 +71,7 @@ test("the run's documents are the import's: same collections, same keys, same bo
     const state = realState();
     writeFiles(dir, state);
     const ours = stateDocuments(state, state.records.keys());
-    const imported = importLayers(dir, { only: new Set(ours.keys()) });
+    const imported = importLayers(join(dir, "data"), { only: new Set(ours.keys()) });
     for (const [c, docs] of ours) {
       const theirs = imported.get(c as never) ?? new Map();
       assert.deepEqual([...docs.keys()].sort(), [...theirs.keys()].sort(), `${c}: keys`);
@@ -92,7 +92,7 @@ test("loadReportedState reads back what an import of the files wrote", async () 
     writeFiles(dir, state);
     const store = fileStore(join(dir, "layers"));
     const h = await store.open("import", "git", "fixture");
-    for (const [c, docs] of importLayers(dir, { only: new Set([...Object.values(COLLECTIONS.reported), COLLECTIONS.reference.files, COLLECTIONS.import.headers]) })) await h.write(c, [...docs].map(([key, body]) => ({ key, body })));
+    for (const [c, docs] of importLayers(join(dir, "data"), { only: new Set([...Object.values(COLLECTIONS.reported), COLLECTIONS.reference.files, COLLECTIONS.import.headers]) })) await h.write(c, [...docs].map(([key, body]) => ({ key, body })));
     await h.close("applied");
     const back = await loadReportedState(store, state.summary);
     assert.equal(back.sources.updated, state.sources.updated, "updated from import.headers");
@@ -187,11 +187,11 @@ test("npm run college-failures -- --store file:… writes reported.failures and 
     writeFileSync(schools, JSON.stringify([{ unit_id: UNIT, name: "A College", admissions: { year: 2024 }, lineage: {} }]));
     // Seed the store from the files, as the import would.
     const seed = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", "-e", `
-      const { importLayers } = await import(${JSON.stringify(join(ROOT, "scripts", "import-data-from-git.mts"))});
+      const { importLayers } = await import(${JSON.stringify(join(ROOT, "scripts", "import-data-from-files.mts"))});
       const { fileStore } = await import(${JSON.stringify(join(ROOT, "scripts", "lib", "data-platform", "store.mts"))});
       const store = fileStore(${JSON.stringify(layers)});
       const h = await store.open("import", "git", "fixture");
-      for (const [c, docs] of importLayers(${JSON.stringify(dir)}, { only: new Set(["reported.sources", "reported.entries", "reported.review_queue", "reported.docs", "reported.cds_records", "reported.batches", "reference.files", "import.headers"]) })) await h.write(c, [...docs].map(([key, body]) => ({ key, body })));
+      for (const [c, docs] of importLayers(${JSON.stringify(join(dir, "data"))}, { only: new Set(["reported.sources", "reported.entries", "reported.review_queue", "reported.docs", "reported.cds_records", "reported.batches", "reference.files", "import.headers"]) })) await h.write(c, [...docs].map(([key, body]) => ({ key, body })));
       await h.close("applied");
     `], { encoding: "utf8", input: "" });
     assert.equal(seed.status, 0, seed.stderr);

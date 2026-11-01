@@ -1,7 +1,7 @@
 /**
  * Held items in the Data console's Holds (specs/data-platform/change-sets.md "Holds and review"): the review queue's
  * items, which are `reported.review_queue` documents keyed `unit|edition|code` (lib/reported.ts `reviewKey`, as
- * scripts/import-data-from-git.mts keys them), and the essay reader's held records (`essays.held`, by unit id). Read
+ * scripts/import-data-from-files.mts keys them), and the essay reader's held records (`essays.held`, by unit id). Read
  * from the store with the admin's session, never from GitHub.
  *
  * - **Accept the value** writes field edits (`admin_data_edit`, source `quad-edit`, note "Accepted from the review

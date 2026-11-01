@@ -43,7 +43,7 @@ import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/sto
 import { COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
 import { withRunSet } from "../scripts/lib/data-platform/change-set.mts";
 import { probeStateFromStore, storeColleges } from "../scripts/lib/identity-store.mts";
-import { importLayers, writeImport } from "../scripts/import-data-from-git.mts";
+import { importLayers, writeImport } from "../scripts/import-data-from-files.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const FIXTURES = join(import.meta.dirname, "fixtures", "site-probe");
@@ -925,7 +925,7 @@ test("the probe's store save keys the committed files exactly as the import does
   const dir = mkdtempSync(join(tmpdir(), "site-probe-import-"));
   const units = new Set(["139959", "221999", "166027", "100654"]);
   const store = fileStore(dir);
-  await writeImport(store, importLayers(ROOT, { only: new Set([COLLECTIONS.identity.probe, COLLECTIONS.identity.linkIssues]), units }), "fixture");
+  await writeImport(store, importLayers(join(ROOT, "data"), { only: new Set([COLLECTIONS.identity.probe, COLLECTIONS.identity.linkIssues]), units }), "fixture");
   const handle = await store.open("pipeline", "identity-refresh", "resave");
   const state = await probeStateFromStore(store, handle);
   assert.ok(state.previous.length > 0);

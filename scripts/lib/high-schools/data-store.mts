@@ -1,6 +1,6 @@
 /**
  * The high-school syncs on the data store (specs/data-platform/pipelines.md "high schools"): the `high_schools.*`
- * layers, keyed exactly as scripts/import-data-from-git.mts keys data/high-schools/ (one document per state shard,
+ * layers, keyed exactly as scripts/import-data-from-files.mts keys data/high-schools/ (one document per state shard,
  * ledger, state file and detail file by its file name without `.json`, and one per shared top-level file), are laid
  * out as that folder in a scratch directory, the existing file-based sync runs on it unchanged, and whatever it
  * changed, added or removed is written back in the run's change set. So the adapters, merges and checks keep their

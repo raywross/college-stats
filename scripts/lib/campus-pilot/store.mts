@@ -1,6 +1,6 @@
 /**
  * The campus-life pilot's state in the data store (specs/data-platform/pipelines.md, "campus-pilot"), keyed as
- * scripts/import-data-from-git.mts keys the files: `campus.pages` and `campus.sources` one document per college (the
+ * scripts/import-data-from-files.mts keys the files: `campus.pages` and `campus.sources` one document per college (the
  * files' `updated` in `import.headers` under "campus-pages.json" / "campus-sources.json"), refusals in
  * `directories.blocked`, run reports in `reported.reports` by file name ("campus-pilot-<run>.json"), college lists in
  * `reference.files` (data/reference/<name>.json → `<name>`). The publisher composes the pages into the dataset.

@@ -1,15 +1,19 @@
 /**
  * The method guard (specs/chances/selectivity-history.md, Decision 4): a frozen sample of colleges' raw figures and the
- * scores and tiers SELECTIVITY_METHOD gives them, in data/reference/selectivity-method.json. The figures never change
+ * scores and tiers SELECTIVITY_METHOD gives them, in the reference document `selectivity-method` (read from the bundled
+ * copy). The figures never change
  * with data runs, so the only thing that can move the sample's scores is the method itself: when they move and the
- * method string doesn't, `npm run check:selectivity` fails. Pure apart from the file read.
+ * method string doesn't, `npm run check:selectivity` fails. Pure apart from the bundled read.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { bundledDir, readBundledReference } from "./data-platform/bundled.mts";
 import type { School } from "../../lib/types";
 import { SELECTIVITY_METHOD, collegeIndex, rawInputs, scales, selectivityTier, topBand, type RawInputs } from "../../lib/selectivity.ts";
 
-export const METHOD_SAMPLE_FILE = "data/reference/selectivity-method.json";
+/** The sample's name in `reference.files` (rendered as `reference/selectivity-method.json`). */
+export const METHOD_SAMPLE_NAME = "selectivity-method";
+export const METHOD_SAMPLE_FILE = `the reference document ${METHOD_SAMPLE_NAME}`;
 
 /** Colleges always in the sample: UT Austin (three pools), Harvard (the top band), MIT, a college with no SAT. */
 const ALWAYS = ["228778", "166027", "166683"];
@@ -43,9 +47,9 @@ export function buildMethodSample(schools: readonly School[]): MethodSample {
   return { method: SELECTIVITY_METHOD, inputs, expected: scoreSample(inputs) };
 }
 
-export function readMethodSample(root: string): MethodSample | null {
-  const p = join(root, METHOD_SAMPLE_FILE);
-  return existsSync(p) ? (JSON.parse(readFileSync(p, "utf8")) as MethodSample) : null;
+/** The sample from a snapshot folder (default the bundled copy), or null when it carries none. */
+export function readMethodSample(dir?: string): MethodSample | null {
+  return existsSync(join(bundledDir(dir), "reference", `${METHOD_SAMPLE_NAME}.json`)) ? readBundledReference<MethodSample>(METHOD_SAMPLE_NAME, dir) : null;
 }
 
 /** Problems: the sample is missing, its method isn't the current one, or the current method scores it differently. */
@@ -58,7 +62,7 @@ export function methodProblems(sample: MethodSample | null): string[] {
   }
   if (moved.length) {
     return [
-      `The selectivity method scores ${moved.length} sample colleges differently (${moved.slice(0, 3).join(", ")}) while SELECTIVITY_METHOD is still ${SELECTIVITY_METHOD}: bump SELECTIVITY_METHOD in lib/selectivity.ts, then run npm run selectivity-method-sample and npm run build-selectivity`,
+      `The selectivity method scores ${moved.length} sample colleges differently (${moved.slice(0, 3).join(", ")}) while SELECTIVITY_METHOD is still ${SELECTIVITY_METHOD}: bump SELECTIVITY_METHOD in lib/selectivity.ts, then run npm run selectivity-method-sample -- --store … and publish`,
     ];
   }
   return [];

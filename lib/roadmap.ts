@@ -228,12 +228,23 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/product/counselor-portal.md",
     group: "business",
     summary:
-      "Free organization accounts for counselors and consultants: a caseload dashboard over students' plans, co-branded reports, and, as its last phase, scattergrams uploaded from the school's own records.",
-    complexity: 4,
+      "Counselors and consultants run their caseload on Quad free: students join by a link or a code and grant access the way they grant it to a parent; the caseload shows each student's record, list shape, deadlines, and signals, with asks, notes, and an export.",
+    complexity: 3,
     complexityNote:
-      "A second kind of account with its own grants, dashboards, PDF reports, data agreements for schools, and the scattergram upload with its scrubbing and thresholds.",
+      "A third kind of viewer through the existing row-level security, organizations with members and grants, two ways to join, the caseload's reads and rows, asks with their limits, and the student's own controls.",
     status: "planned",
-    after: ["commercialization"],
+  },
+  {
+    slug: "scattergrams",
+    file: "specs/product/scattergrams.md",
+    group: "business",
+    summary:
+      "The counselor portal's last phase: a school's past applicants to each college, uploaded by its counseling office from a Scoir or Naviance export, scrubbed in the browser and binned on the server, drawn beside Quad's estimate for that school's students.",
+    complexity: 3,
+    complexityNote:
+      "The upload with its client-side scrubbing, college-name matching with a review list, bins and thresholds, the chart beside the estimate, and the data processing agreement for school organizations.",
+    status: "planned",
+    after: ["counselor-portal"],
   },
   // The serving architecture (specs/serving-architecture.md) was planned and built on 2026-10-07 (#98), so it is
   // no longer listed.

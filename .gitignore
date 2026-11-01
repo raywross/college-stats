@@ -50,5 +50,9 @@ next-env.d.ts
 # The bundled data snapshot, downloaded at build time (npm run fetch-snapshot; specs/data-platform/publish.md)
 /.data/
 
+# The college data left the repository in phase 4 of the data platform (specs/data-platform/git-ci-tests.md): it lives
+# in Supabase as layers and is served as snapshots. A stray data/ folder from an old checkout or a script is never committed.
+/data/
+
 # Supabase CLI state (written by `supabase link`)
 supabase/.temp/

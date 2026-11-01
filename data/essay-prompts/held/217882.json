@@ -1,8 +1,0 @@
-{ "unit_id": "217882", "name": "Clemson University", "held": "2026-10-30",
-  "problems": [
-    "status none, but the quoted sentence doesn't say there are no essays"
-  ],
-  "record": {"unit_id":"217882","name":"Clemson University","cycle":"2026-27","status":"none","source_url":"https://www.clemson.edu/admissions/undergraduate-admissions/apply/first-year.html","retrieved":"2026-10-30","sha256":"46b57ccecd9b89491e921a6fdd4efcbc3b9fc2397574602ccc338bf6dbeefba1","archive":"local:46b57ccecd9b89491e921a6fdd4efcbc3b9fc2397574602ccc338bf6dbeefba1.html","cycle_quote":"","cycle_assumed":true,"status_quote":"Clemson does not require any of these additional materials for admission.","via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
-    "prompts": []
-  }
-}

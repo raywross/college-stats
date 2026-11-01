@@ -1,8 +1,0 @@
-{ "unit_id": "433660", "name": "Florida Gulf Coast University", "held": "2026-10-30",
-  "problems": [
-    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
-  ],
-  "record": {"unit_id":"433660","name":"Florida Gulf Coast University","cycle":"2026-27","status":"refers_to_form","source_url":"https://www.fgcu.edu/admissionsandaid/undergraduateadmissions/freshmanadmissions","retrieved":"2026-10-30","sha256":"b0dcb01173bea2235ea7b10db5158d4ae8c17b9794a25c4e65aca8d01b61d04c","archive":"local:b0dcb01173bea2235ea7b10db5158d4ae8c17b9794a25c4e65aca8d01b61d04c.html","cycle_quote":"","cycle_assumed":true,"status_quote":"You may use the Common Application or the FGCU online application .","via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
-    "prompts": []
-  }
-}

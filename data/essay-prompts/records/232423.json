@@ -1,5 +1,0 @@
-{"unit_id":"232423","name":"James Madison University","cycle":"2026-27","status":"published","source_url":"https://www.jmu.edu/admissions/apply/first-year/index.shtml","retrieved":"2026-10-30","sha256":"c6e11dc59b584784355c28b793266110e3404ae7fa57c502187584ab67d20aba","archive":"local:c6e11dc59b584784355c28b793266110e3404ae7fa57c502187584ab67d20aba.html","cycle_quote":"","cycle_assumed":true,"via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
-  "prompts": [
-  {"id":"232423:2026-27:1","text":"Personal Essay : If there is something important we should know about you, this is the place to talk about it. You have up to 650 words to share anything you would like to tell us.","kind":"optional","limit":{"kind":"words","max":650},"required":false,"applies_to":"all","quote":"The following items are not required for completion of the application:"}
-]
-}

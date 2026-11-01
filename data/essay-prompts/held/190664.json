@@ -1,9 +1,0 @@
-{ "unit_id": "190664", "name": "CUNY Queens College", "held": "2026-10-30",
-  "problems": [
-    "cycle 2025-26 is older than the open cycle 2026-27",
-    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
-  ],
-  "record": {"unit_id":"190664","name":"CUNY Queens College","cycle":"2025-26","status":"refers_to_form","source_url":"https://www.qc.cuny.edu/academics/ohs/freshman-honors-program/","retrieved":"2026-10-30","sha256":"005389109f9f0a5e1aa5206c95cd77822a3a59adfa5163519a33dc96681a6315","archive":"local:005389109f9f0a5e1aa5206c95cd77822a3a59adfa5163519a33dc96681a6315.html","cycle_quote":"We are now accepting applicants for Fall 2026 admission","status_quote":"Apply Now for Fall 2027 Consideration","via":"apply-page-link","model":"claude-opus-5","reader":"2026.10.29.4",
-    "prompts": []
-  }
-}

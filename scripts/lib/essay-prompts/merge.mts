@@ -4,8 +4,7 @@
  * `school.essays` on every college with a current record, placed before the later keys the way the Coalition block is
  * (scripts/lib/coalition/merge.mts), with one lineage record at `lineage.essays`; removed from a college whose record is
  * gone or whose cycle has closed. Both cite the college's own words (source `college-site`), which needs no meta
- * source, so meta is untouched. `npm run merge-essay-prompts` and `sync-data` both call `applyEssays`, so the two can't
- * disagree. Pure.
+ * source, so meta is untouched. The publisher's compose calls `applyEssays`. Pure.
  *
  * Precedence per college (the hand-read brief): a reader record with `status: "published"` wins (the college's own
  * page); otherwise a hand-read record applies, beating the reader's `refers_to_form`, `none`, a held read, and no read

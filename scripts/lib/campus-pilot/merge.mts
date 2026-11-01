@@ -1,6 +1,6 @@
 /**
- * The pilot's published facts (data/campus-pages.json) into the dataset, shared by `npm run merge-directories` and
- * `npm run sync-data` (like ../directories/merge.mts, which it feeds):
+ * The pilot's published facts (`campus.pages`) into the dataset, applied by the publisher's compose (like
+ * ../directories/merge.mts, which it feeds):
  * - tier A facts → a `campus_pages` table in each college's detail file (source `policy-page`, the newest date checked);
  * - tier B lists (groups the college's own pages name) and tier C estimates (a group's own claim) → in-memory
  *   directory files, one per college and list page, matched to that one college, so the `directories` table credits
@@ -222,7 +222,7 @@ export function withTable(existing: readonly SchoolDetail[], built: readonly Sch
 }
 
 /**
- * The directories step as sync-data, `npm run merge-directories` and the publisher (scripts/lib/data-platform/
+ * The directories step as the publisher (scripts/lib/data-platform/
  * compose.mts) run it, in one place so they can't drift: the chapter lists and the pilot's lists become `directories`
  * tables (`directoryDetails`), then `applyDirectories`, `applyCccuMembership` (membership lists) and
  * `applyLgbtqPolicies` (the pilot's tier A facts), and the pilot's own `campus_pages` tables. `meta` gets

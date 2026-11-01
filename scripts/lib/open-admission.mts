@@ -1,6 +1,5 @@
 /**
- * The newest IPEDS IC file that answers OPENADMP (lib/open-admission.ts), for `npm run sync-data` and
- * `npm run backfill-open-admission`. A just-released IC{Y} leaves the column blank, so older files are tried in turn.
+ * The newest IPEDS IC file that answers OPENADMP (lib/open-admission.ts), for `npm run sync-data`. A just-released IC{Y} leaves the column blank, so older files are tried in turn.
  */
 import { fetchIpedsTable } from "./ipeds.mts";
 import { hasOpenAdmissionAnswers } from "../../lib/open-admission.ts";

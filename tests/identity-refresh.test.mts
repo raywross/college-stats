@@ -17,7 +17,8 @@ import { fileStore, fileStoreChangeSets } from "../scripts/lib/data-platform/sto
 import { COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
 import { readBrandColors, readWikidata, writeBrandColors, writeBrandLogos, writeWikidata, readBrandLogos } from "../scripts/lib/identity-store.mts";
 import type { WikidataIssue } from "../scripts/lib/wikidata.mts";
-import { importLayers, writeImport } from "../scripts/import-data-from-files.mts";
+import { writeImport } from "../scripts/import-data-from-files.mts";
+import { miniLayers } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const UNITS = new Set(["139959", "221999", "166027", "100654", "228778"]);
@@ -31,11 +32,14 @@ const IDENTITY = [
   COLLECTIONS.identity.brandOverrides,
 ];
 
-/** A file store holding the committed identity files for a few colleges, keyed by the import. */
+/** A file store holding the mini fixture's identity layers for a few colleges (tests/fixtures/snapshot-mini/layers). */
 async function importedIdentity(): Promise<{ root: string; store: ReturnType<typeof fileStore> }> {
   const root = mkdtempSync(join(tmpdir(), "identity-store-"));
   const store = fileStore(root);
-  await writeImport(store, importLayers(join(ROOT, "data"), { only: new Set(IDENTITY), units: UNITS }), "fixture");
+  const mini = miniLayers();
+  const layers = new Map<string, Map<string, unknown>>();
+  for (const c of IDENTITY) layers.set(c, new Map([...(await mini.read<unknown>(c))].filter(([unit]) => UNITS.has(unit))));
+  await writeImport(store, layers as Parameters<typeof writeImport>[1], "fixture");
   return { root, store };
 }
 

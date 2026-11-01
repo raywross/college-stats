@@ -49,7 +49,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
     return (
       <>
         <PageHeader title="Selectivity history" />
-        <Empty>Not set up yet: apply supabase/migrations/20261013150000_selectivity_history.sql and 20261020120000_selectivity_history_one_row.sql, then run npm run backfill-selectivity-history.</Empty>
+        <Empty>Not set up yet: apply supabase/migrations/20261013150000_selectivity_history.sql and 20261020120000_selectivity_history_one_row.sql, then publish: the publisher records the tiers at each publish.</Empty>
       </>
     );
   }
@@ -119,7 +119,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
       <div className="space-y-5">
         <Panel title="Latest publish" id="latest">
           {!latest ? (
-            <Empty>Nothing recorded yet. Run npm run backfill-selectivity-history.</Empty>
+            <Empty>Nothing recorded yet: the publisher records the tiers at each publish.</Empty>
           ) : (
             <div className="space-y-4 text-sm">
               <p className="text-muted-foreground">

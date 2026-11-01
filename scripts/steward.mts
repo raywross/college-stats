@@ -39,7 +39,7 @@ import { PoliteHttp } from "./lib/college-reported/http.mts";
 import { COLLECTIONS, readLayer } from "./lib/data-platform/layers.mts";
 import { runRef as defaultRunRef } from "./lib/data-platform/producer.mts";
 import { storeFromFlag, type ChangeSetHandle, type DataStore, type Env } from "./lib/data-platform/store.mts";
-import { applyProposal, APPLY_SOURCE } from "./lib/steward/apply.mts";
+import { applyProposal, ApplyRefused, APPLY_SOURCE } from "./lib/steward/apply.mts";
 import { Budget, BudgetStop, DEFAULT_BUDGETS, runBudget, tokensOf, weeklySpent, WEEKLY_CAP_USD } from "./lib/steward/budget.mts";
 import { MissingAnswer, recordedFetch, mayRecord } from "./lib/steward/dry-run.mts";
 import type { DocumentDeps } from "./lib/steward/documents.mts";
@@ -343,8 +343,10 @@ async function runApply(o: StewardOptions, key: string, started: Date, requestId
   } catch (err) {
     message = err instanceof Error ? err.message : String(err);
     exit = EXIT.failed;
-    // Nothing of a refused or failed apply may publish: the set closes held with the reason.
-    await handle.close("held", `steward apply ${o.proposal} failed: ${message}`.slice(0, 500)).catch(() => {});
+    // A refusal comes before any write: the empty set closes applied (an empty set never blocks or starts a publish).
+    // A failure part way may have written records: the set closes held with the reason, for the console to judge.
+    const refused = err instanceof ApplyRefused;
+    await handle.close(refused ? "applied" : "held", refused ? undefined : `steward apply ${o.proposal} failed: ${message}`.slice(0, 500), { proposal: o.proposal, refused: message }).catch(() => {});
     log(`apply ${o.proposal} failed: ${message}`);
     return { exit, run: { ...run, stopped: message }, changeSet: handle.id, publish: false, message };
   }

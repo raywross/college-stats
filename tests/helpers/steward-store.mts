@@ -2,7 +2,7 @@
  * A file store seeded for the Data Steward's tests (tests/steward-run.test.mts): the three fixture files of
  * tests/fixtures/steward/ (review queue, failures, docs manifest) and the mini fixture's CDS records, in one import
  * change set; and a local archive holding the authored line text of one fixture document (the University of Alabama's
- * 2025-26 CDS, sha 7c1f…), whose lines 97–99 are the ones the queue's details quote. No network, no database.
+ * 2025-26 CDS, `uaSha()`), whose lines 97–99 are the ones the queue's details quote. No network, no database.
  */
 import { mkdtempSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";

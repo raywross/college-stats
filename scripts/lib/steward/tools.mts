@@ -21,8 +21,8 @@ import type { Cluster, IssueDoc, ProposalRow, TodoDoc } from "../../../lib/stewa
 import { COLLECTIONS } from "../data-platform/layers.mts";
 import type { DataStore } from "../data-platform/store.mts";
 import { readBundledColleges, readBundledMeta } from "../data-platform/bundled.mts";
-// S1 builds lib/steward/cluster.ts in parallel; until it lands this branch uses the stand-in (same name and signature).
-import { clusterQueue, maskDetail } from "./cluster.mts";
+import { clusterItems, clusterQueue } from "../../../lib/steward/cluster.ts";
+import { kindsOf } from "../../../lib/steward/kinds.ts";
 import { Budget, tokensOf } from "./budget.mts";
 import { documentLines, lineWindow, numberedText, type DocumentDeps } from "./documents.mts";
 import { LINE_MAX_TOKENS, READ_MAX_TOKENS, STEWARD_MODELS, type StewardModel } from "./models.mts";
@@ -121,12 +121,15 @@ export async function listClusters(ctx: StewardContext, input: { limit?: number;
   const all = await clusters(ctx);
   const issues = await ctx.store.read<IssueDoc>(COLLECTIONS.steward.issues);
   const shown = all.filter((c) => !input.check || c.check === input.check).slice(0, input.limit ?? 25);
+  // The kind lib/steward/kinds.ts gives each cluster by rule (the Issues screen shows the same): a starting point.
+  const docs = await manifest(ctx);
+  const kinds = kindsOf(shown, [...(await openQueue(ctx)).values()], { fetched: (sha) => docs.has(sha) });
   return {
     open_items: (await openQueue(ctx)).size,
     clusters: all.length,
     shown: shown.map((c) => {
       const issue = issues.get(c.key);
-      return { ...c, documents: c.documents.length, ...(issue ? { issue: { kind: issue.kind, status: issue.status, run: issue.run, reason: issue.reason } } : {}) };
+      return { ...c, documents: c.documents.length, kind_by_rule: kinds.get(c.key), ...(issue ? { issue: { kind: issue.kind, status: issue.status, run: issue.run, reason: issue.reason } } : {}) };
     }),
   };
 }
@@ -135,9 +138,8 @@ export async function readCluster(ctx: StewardContext, input: { key: string; lim
   const c = (await clusters(ctx)).find((x) => x.key === input.key);
   if (!c) throw new Error(`no cluster "${input.key}"; list_clusters gives the keys`);
   ctx.progress.cluster = c.key;
-  const queue = await openQueue(ctx);
-  const [check, detail] = [c.check, c.detail];
-  const members = [...queue].filter(([, i]) => i.failures.some((f) => f.check === check && (detail === "" || maskDetail(f.detail) === detail)));
+  const check = c.check;
+  const members = clusterItems([...(await openQueue(ctx)).values()], c.key).map((i) => [reviewKey(i), i] as const);
   // A spread across colleges: one item per college first, then the rest, in key order.
   const seen = new Set<string>();
   const first = members.filter(([, i]) => !seen.has(i.unit_id) && seen.add(i.unit_id));

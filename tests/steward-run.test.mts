@@ -18,7 +18,6 @@ import { COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
 import { fileStoreChangeSets } from "../scripts/lib/data-platform/store.mts";
 import { auditFamily, auditSample, main, runSteward, weekOf } from "../scripts/steward.mts";
 import { Budget, BudgetStop, costOf, runBudget, weeklySpent } from "../scripts/lib/steward/budget.mts";
-import { clusterKey, clusterQueue, maskDetail } from "../scripts/lib/steward/cluster.mts";
 import { MissingAnswer, recordedFetch, requestKey } from "../scripts/lib/steward/dry-run.mts";
 import { inFamily } from "../scripts/lib/steward/prompts.mts";
 import { recipeAfter } from "../scripts/lib/steward/apply.mts";
@@ -57,25 +56,15 @@ const row = (over: Partial<ProposalRow> = {}): ProposalRow => ({
 const finding = { unit_id: "166027", edition: "2025-26", sha256: null, url: null, page: 4, line: 120, shows: "1,970 admitted" };
 
 /* ------------------------------------------------------------------ */
-/* The cluster stand-in and the tools                                  */
+/* The tools                                                           */
 /* ------------------------------------------------------------------ */
-
-test("clusters: the key masks numbers, years and codes; free details cluster by check; two checks never share a key", () => {
-  assert.equal(maskDetail("C.116 is 1,234 vs 2025-26  in Fall 2024"), "CODE is #,# vs Y in Fall Y");
-  const clusters = clusterQueue(Object.values(queueFixture));
-  assert.equal(new Set(clusters.map((c) => c.key)).size, clusters.length);
-  for (const c of clusters) assert.ok(c.key.startsWith(`${c.check}|`));
-  assert.ok(clusters.some((c) => c.key === clusterKey("number-on-line", "")), "number-on-line's details vary freely");
-  for (let i = 1; i < clusters.length; i++) assert.ok(clusters[i - 1].items >= clusters[i].items);
-  const shuffled = clusterQueue(Object.values(queueFixture).reverse());
-  assert.deepEqual(shuffled.map((c) => [c.key, c.items, c.examples]), clusters.map((c) => [c.key, c.items, c.examples]));
-});
 
 test("tools: list_clusters, read_cluster and read_record read the store; read_failures the failures and recipe", async () => {
   const { ctx } = await context();
-  const list = (await callTool(ctx, "list_clusters", { limit: 3 })) as { open_items: number; clusters: number; shown: { key: string; items: number }[] };
+  const list = (await callTool(ctx, "list_clusters", { limit: 3 })) as { open_items: number; clusters: number; shown: { key: string; items: number; kind_by_rule: string }[] };
   assert.equal(list.open_items, Object.keys(queueFixture).length);
   assert.equal(list.shown.length, 3);
+  assert.ok(list.shown.every((c) => ["value", "systemic", "acquisition", "policy"].includes(c.kind_by_rule)));
   const cluster = (await callTool(ctx, "read_cluster", { key: "number-on-line|", limit: 4 })) as { items: { unit_id: string; failures: { check: string }[] }[]; documents: { sha256: string }[] };
   assert.equal(cluster.items.length, 4);
   assert.ok(cluster.items.every((i) => i.failures.every((f) => f.check === "number-on-line")));
@@ -252,8 +241,9 @@ test("a dry run with no recorded answer fails (exit 1) naming the request's key;
   await assert.rejects(f("https://example.com/", {}), /no request may leave the process/);
   await assert.rejects(f("https://api.anthropic.com/v1/messages", { body: "{}" }), (e: unknown) => e instanceof MissingAnswer);
   assert.equal(requestKey({ model: "m", max_tokens: 1, messages: [] }), requestKey({ messages: [], model: "m", max_tokens: 9, stream: false }));
-  // Every recorded answer is used by a test scenario (no stale files).
-  assert.ok(readdirSync(ANSWERS).length >= 9);
+  // The recorded answers are exactly the scenarios' (run: 6 main + 1 sub-read; budget: 1; answer: 3), so a prompt or
+  // tool change that leaves stale files behind shows here.
+  assert.equal(readdirSync(ANSWERS).filter((f) => f.endsWith(".json")).length, 11);
 });
 
 test("answer mode: the owner's question answered on the proposal, rows added, the proposal open again", async () => {
@@ -316,11 +306,13 @@ test("apply: an approved hold proposal holds the approved rows only, in a stewar
   const set = fileStoreChangeSets(join(s.dir, "layers")).find((c) => c.id === res.changeSet)!;
   assert.deepEqual([set.kind, set.source, set.status], ["pipeline", "steward-apply", "applied"]);
   assert.deepEqual(set.summary.collections, ["reported.cds_records", "reported.review_queue", "steward.proposals", "steward.runs"]);
-  // Applied once: a second apply is refused and its set closes held.
+  // Applied once: a second apply is refused before writing anything; its empty set closes applied (never held, which
+  // would block the publisher).
   const again = await runSteward({ mode: "apply", store: s.store, proposal: "hold-grids-1", runRef: "apply-2", now: NOW, env: {}, log: () => {} });
   assert.equal(again.exit, 1);
   assert.match(again.message ?? "", /is applied; only an approved proposal/);
-  assert.equal(fileStoreChangeSets(join(s.dir, "layers")).find((c) => c.id === again.changeSet)!.status, "held");
+  const refusedSet = fileStoreChangeSets(join(s.dir, "layers")).find((c) => c.id === again.changeSet)!;
+  assert.deepEqual([refusedSet.status, refusedSet.versions.length], ["applied", 0]);
 });
 
 test("apply: a reject proposal resolves its items rejected and asks for no publish; correct rows are the console's", async () => {

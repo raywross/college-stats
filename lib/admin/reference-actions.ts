@@ -8,11 +8,11 @@
  * ones.
  */
 import { ADMIN_ERRORS } from "./constants.ts";
-import { ADMIN_FAILED, typedMatches, type AdminActionState } from "./console.ts";
+import { ADMIN_FAILED, CONFIRM_REVERT, typedMatches, type AdminActionState } from "./console.ts";
 import { editorToBody, referenceDocumentKey, validateReference, type EditorKind } from "./reference-view.ts";
 
-/** The word typed to revert a document to an older version. */
-export const CONFIRM_REVERT = "revert";
+/** The word typed to revert a document to an older version (console.ts, so the client editor imports no server code). */
+export { CONFIRM_REVERT };
 
 const REFERENCE_ERRORS: Record<string, string> = {
   reference_not_found: "That document doesn't exist. Reload the page.",
@@ -74,7 +74,7 @@ export async function saveReference(deps: ReferenceActionDeps, form: ReferenceFo
   if (!parsed.ok) return { status: "error", message: parsed.problem };
 
   const knownUnitIds = await deps.knownUnitIds();
-  const problems = validateReference(name, parsed.body, knownUnitIds);
+  const problems = validateReference(name, parsed.body, knownUnitIds, new Date());
   if (problems.length > 0) return { status: "error", message: problems.join(" ") };
 
   const note = str(form, "note").trim().slice(0, 500) || null;

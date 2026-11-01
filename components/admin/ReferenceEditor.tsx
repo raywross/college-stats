@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useActionState, useId } from "react";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Empty } from "@/components/admin/Panel";
-import { IDLE, fmtDateTime, type AdminActionState } from "@/lib/admin/console";
-import { CONFIRM_REVERT } from "@/lib/admin/reference-actions";
+import { CONFIRM_REVERT, IDLE, fmtDateTime, type AdminActionState } from "@/lib/admin/console";
 import type { EditorKind } from "@/lib/admin/reference-view";
 import { saveReferenceAction, revertReferenceAction } from "@/app/admin/data/reference/actions";
 

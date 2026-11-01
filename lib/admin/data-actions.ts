@@ -20,14 +20,14 @@
  */
 import type { OpsDeps, OpsState, ReviewDeps } from "./ops-actions.ts";
 import { acceptReviewItem, dispatchRun, noteFromForm, rediscoverReviewItem, rejectReviewItem, reviewKeyFromForm } from "./ops-actions.ts";
-import { ADMIN_FAILED, typedMatches, type AdminActionState } from "./console.ts";
+import { ADMIN_FAILED, CONFIRM_REVERT, typedMatches, type AdminActionState } from "./console.ts";
 import { ADMIN_ERRORS } from "./constants.ts";
 import type { ReviewItem } from "../reported.ts";
 
 /** The word typed to move the live pointer to an older snapshot. */
 export const CONFIRM_POINT_BACK = "point back";
-/** The word typed to revert a change set. */
-export const CONFIRM_REVERT = "revert";
+/** The word typed to revert a change set (defined in console.ts so client components can import it without this module). */
+export { CONFIRM_REVERT } from "./console.ts";
 
 function fromOpsState(state: OpsState): AdminActionState {
   if (state.status === "idle") return state;

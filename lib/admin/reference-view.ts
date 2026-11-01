@@ -117,14 +117,14 @@ function toAliasRows(body: unknown): AliasRow[] {
  * document follows — an object or array. `knownUnitIds` is the dataset's college ids; omitted, the unit-id checks
  * are skipped rather than refusing a save over it.
  */
-export function validateReference(name: string, body: unknown, knownUnitIds?: Set<string>): string[] {
+export function validateReference(name: string, body: unknown, knownUnitIds: Set<string> | undefined, today: Date): string[] {
   switch (name) {
     case "aid-policies":
       return validateAidPolicies(body as AidPolicyFile, knownUnitIds);
     case "state-laws":
       return validateStateLaws(body as StateLawTable);
     case "guaranteed-admission":
-      return validateGuaranteed(body as GuaranteedFile, new Date(), knownUnitIds);
+      return validateGuaranteed(body as GuaranteedFile, today, knownUnitIds);
     case "major-admission":
       return validateMajorAdmission(body as MajorAdmissionFile, knownUnitIds);
     case "application-cycle":

@@ -60,7 +60,7 @@ Very large: new tables and functions with policies, a publisher that must reprod
 that swaps safely, every producer touched, the console's biggest new section, and a test suite re-pointed at a
 fixture. Built in four phases with the byte-equality proof as the gate between them.
 
-## As built, phase 3 (2026-10-31, PR #TBD)
+## As built, phase 3 (2026-10-31, PR #204)
 Built as planned: `data_field_edits`, `admin_data_edit`/`admin_data_release_edit`, the live overlay
 (`lib/data-platform/live-edits.ts`), `quad-edit`/`edited` lineage, the field editor at `/admin/colleges/[unit]/edit`
 with History and Release, and the reference editor at `/admin/data/reference`. See

@@ -29,6 +29,9 @@ const read = (...p: string[]) => readFileSync(join(ROOT, ...p), "utf8");
 const json = (...p: string[]) => JSON.parse(read(...p)) as unknown;
 
 const view = await import("../lib/admin/reference-view.ts");
+/** The validator with a fixed day injected: the module is pure, so the caller supplies "today" (the guaranteed-admission rules read it). */
+const TODAY = new Date("2026-10-31T12:00:00Z");
+const validate = (name: string, body: unknown, knownUnitIds?: Set<string>) => view.validateReference(name, body, knownUnitIds, TODAY);
 const { fakeSupabase } = await import("./helpers/fake-supabase.mts");
 const reads = await import("../lib/admin/reference-reads.ts");
 const actions = await import("../lib/admin/reference-actions.ts");
@@ -100,55 +103,55 @@ test("editorToBody refuses invalid JSON and a bare scalar, before any write", ()
 
 test("validateReference: the real aid-policies.json is sound; a missing required key is not", () => {
   const body = json("data", "aid-policies.json") as { policies: Record<string, unknown>[] };
-  assert.deepEqual(view.validateReference("aid-policies", body, knownUnitIds), []);
+  assert.deepEqual(validate("aid-policies", body, knownUnitIds), []);
   const broken = { policies: [{ ...body.policies[0], unit_id: undefined }] };
-  assert.ok(view.validateReference("aid-policies", broken, knownUnitIds).length > 0);
+  assert.ok(validate("aid-policies", broken, knownUnitIds).length > 0);
 });
 
 test("validateReference: the real state-laws.json is sound (no knownUnitIds check for this one); a bad date is not", () => {
   const body = json("data", "state-laws.json") as { reviewed: string; laws: Record<string, unknown>[] };
-  assert.deepEqual(view.validateReference("state-laws", body), []);
+  assert.deepEqual(validate("state-laws", body), []);
   const broken = { ...body, reviewed: "not-a-date" };
-  assert.ok(view.validateReference("state-laws", broken).length > 0);
+  assert.ok(validate("state-laws", broken).length > 0);
 });
 
 test("validateReference: the real application-cycle.json is sound; a non-object is not", () => {
   const body = json("data", "application-cycle.json");
-  assert.deepEqual(view.validateReference("application-cycle", body), []);
-  assert.ok(view.validateReference("application-cycle", "nope").length > 0);
+  assert.deepEqual(validate("application-cycle", body), []);
+  assert.ok(validate("application-cycle", "nope").length > 0);
 });
 
 test("validateReference: the real guaranteed-admission.json and major-admission.json are sound against the dataset's unit ids", () => {
   const guaranteed = json("data", "guaranteed-admission.json");
-  assert.deepEqual(view.validateReference("guaranteed-admission", guaranteed, knownUnitIds), []);
+  assert.deepEqual(validate("guaranteed-admission", guaranteed, knownUnitIds), []);
   const major = json("data", "major-admission.json");
-  assert.deepEqual(view.validateReference("major-admission", major, knownUnitIds), []);
+  assert.deepEqual(validate("major-admission", major, knownUnitIds), []);
 });
 
 test("validateReference: the real trends/common-app.json and directories/organizations.json are sound", () => {
-  assert.deepEqual(view.validateReference("common-app-trends", json("data", "trends", "common-app.json")), []);
-  assert.deepEqual(view.validateReference("organizations", json("data", "directories", "organizations.json")), []);
+  assert.deepEqual(validate("common-app-trends", json("data", "trends", "common-app.json")), []);
+  assert.deepEqual(validate("organizations", json("data", "directories", "organizations.json")), []);
 });
 
 test("validateReference: the curated aliases name every unit_id it lists (toAliasRows + aliasTableProblems); an unknown unit_id is a problem", () => {
   const body = json("data", "aliases-curated.json") as { unit_id: string; alias: string }[];
-  assert.deepEqual(view.validateReference("aliases-curated", body, knownUnitIds), []);
-  assert.ok(view.validateReference("aliases-curated", [...body, { unit_id: "0", alias: "Nope U" }], knownUnitIds).length > 0);
-  assert.deepEqual(view.validateReference("aliases-curated", body), [], "without knownUnitIds the unit-id check is skipped, never refusing a save over it");
+  assert.deepEqual(validate("aliases-curated", body, knownUnitIds), []);
+  assert.ok(validate("aliases-curated", [...body, { unit_id: "0", alias: "Nope U" }], knownUnitIds).length > 0);
+  assert.deepEqual(validate("aliases-curated", body), [], "without knownUnitIds the unit-id check is skipped, never refusing a save over it");
 });
 
 test("validateReference: the essay guidance text names every missing section; the real document has none", () => {
   const markdown = read("data", "reference", "essay-guidance", "guidance.md");
-  assert.deepEqual(view.validateReference("essay-guidance/guidance", { text: markdown }), []);
-  assert.deepEqual(view.validateReference("essay-guidance/guidance", { text: "# Mechanics\nonly one section" }).length > 0, true);
-  assert.deepEqual(view.validateReference("essay-guidance/guidance", "not a text document"), ["The essay guidance document must be { text }."]);
+  assert.deepEqual(validate("essay-guidance/guidance", { text: markdown }), []);
+  assert.deepEqual(validate("essay-guidance/guidance", { text: "# Mechanics\nonly one section" }).length > 0, true);
+  assert.deepEqual(validate("essay-guidance/guidance", "not a text document"), ["The essay guidance document must be { text }."]);
 });
 
 test("validateReference: an unknown name (the calendar, or anything else) falls back to object-or-array", () => {
-  assert.deepEqual(view.validateReference("calendar", json("data", "release-calendar.json")), []);
-  assert.deepEqual(view.validateReference("calendar", "nope"), ["The document must be a JSON object or array."]);
-  assert.deepEqual(view.validateReference("some-unknown-name", [1, 2, 3]), []);
-  assert.deepEqual(view.validateReference("some-unknown-name", 5), ["The document must be a JSON object or array."]);
+  assert.deepEqual(validate("calendar", json("data", "release-calendar.json")), []);
+  assert.deepEqual(validate("calendar", "nope"), ["The document must be a JSON object or array."]);
+  assert.deepEqual(validate("some-unknown-name", [1, 2, 3]), []);
+  assert.deepEqual(validate("some-unknown-name", 5), ["The document must be a JSON object or array."]);
 });
 
 /* ------------------------------------------------------------------ */

@@ -29,7 +29,7 @@ export default async function ReferenceDocumentPage({ params }: { params: Promis
 
   const [{ getAllSchools }, versions] = await Promise.all([getData(), loadReferenceVersions(supabase, name)]);
   const knownUnitIds = new Set(getAllSchools().map((s) => s.unit_id));
-  const problems = validateReference(name, doc.body, knownUnitIds);
+  const problems = validateReference(name, doc.body, knownUnitIds, new Date());
   const editor = bodyToEditor(doc.body);
 
   return (

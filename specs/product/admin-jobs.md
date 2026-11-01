@@ -1,7 +1,7 @@
 # Admin console: Jobs
 
-> Status: **built 2026-11-01** on `feature/admin-jobs`. Part of the [admin console](admin.md); the rail's **Jobs**
-> section. Code: `lib/jobs/` (the table, the cron parser, the recorder, the reads, the view), `app/admin/jobs/**`,
+> Status: **built 2026-11-01** on `feature/admin-jobs` (PR #209). Part of the [admin console](admin.md); the rail's
+> **Jobs** section, after Essays. Code: `lib/jobs/` (the table, the cron parser, the recorder, the reads, the view), `app/admin/jobs/**`,
 > `components/admin/jobs/`, migration `20261101120000_job_runs.sql`. Tests: `tests/jobs.test.mts`,
 > `tests/jobs-pages.test.mts`.
 

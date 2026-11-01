@@ -38,10 +38,10 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { key: "colleges", label: "Colleges", href: "/admin/colleges", under: ["/admin/colleges", "/admin/high-schools", "/admin/selectivity"], hint: "Hidden values, selectivity" },
   { key: "health", label: "Health", href: "/admin/health", under: ["/admin/health"], hint: "Which data is fresh" },
   { key: "operations", label: "Operations", href: "/admin/operations", under: ["/admin/operations"], hint: "Runs and approvals" },
-  // Jobs (specs/product/admin-jobs.md): every scheduled job, its next run, and its history.
-  { key: "jobs", label: "Jobs", href: "/admin/jobs", under: ["/admin/jobs"], hint: "Schedules and past runs" },
   // Essays (specs/product/essays/sources.md "The hand read"): the prompts a person reads from the application form.
   { key: "essays", label: "Essays", href: "/admin/essays", under: ["/admin/essays"], hint: "Prompts read from the form" },
+  // Jobs (specs/product/admin-jobs.md): every scheduled job, its next run, and its history.
+  { key: "jobs", label: "Jobs", href: "/admin/jobs", under: ["/admin/jobs"], hint: "Schedules and past runs" },
   { key: "log", label: "Log", href: "/admin/log", under: ["/admin/log", "/admin/admins"], hint: "Every admin action" },
 ];
 

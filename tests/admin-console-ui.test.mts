@@ -845,7 +845,7 @@ test("sign-in activity in words: devices from the browser, the authenticator not
 });
 
 test("the rail has its sections, highlights the right one, and every console page sits under one", () => {
-  assert.deepEqual(consoleLib.ADMIN_SECTIONS.map((s) => s.label), ["People", "Households", "Colleges", "Health", "Operations", "Jobs", "Essays", "Log"]);
+  assert.deepEqual(consoleLib.ADMIN_SECTIONS.map((s) => s.label), ["People", "Households", "Colleges", "Health", "Operations", "Essays", "Jobs", "Log"]);
   assert.equal(consoleLib.activeSection("/admin/jobs/digests/runs/12"), "jobs");
   assert.equal(consoleLib.activeSection("/admin"), null);
   assert.equal(consoleLib.activeSection("/admin/households"), "households");

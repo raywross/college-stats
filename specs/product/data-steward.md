@@ -1,6 +1,6 @@
 # Data Steward: An Agent That Clears the Review Queue, and Operations Built Around It
 
-> Status: **planned** 2026-10-13; **revised** 2026-10-26 after the roadmap review (the acquisition work of
+> Status: **built** 2026-11-01 (phases A and B; phase C, the automated code PR for a systemic proposal, is open; see [As built](#as-built-2026-11-01)). Planned 2026-10-13; **revised** 2026-10-26 after the roadmap review (the acquisition work of
 > [manual-collection.md](../manual-collection.md) and [campus-sources-later.md](../campus-sources-later.md) folded in as
 > [Documents a person has to fetch](#documents-a-person-has-to-fetch)); **revised again 2026-11-01** against the system as
 > it stands after the [data platform](../data-platform/README.md) (phases 1–4, 2026-10-31 to 2026-11-01): the review
@@ -519,7 +519,50 @@ under-count, so a run would stop a little short of its nominal budget rather tha
    `APPLIED_KINDS` excludes `systemic` (and `correct`/`publish`/`reread`) — none of those kinds is ever applied by
    the job; a systemic proposal only records the owner's approval for a person to act on later.
 
-### Still to document
-S2's pieces — the five Data screens (Issues, Proposals, To do, Decisions, Audits), the college Review page, Approve /
-Decline / Ask / Decide, and the dispatch rows (`steward`, `steward-apply`, `steward-answer`) — aren't merged yet; the
-lead completes this section's console half once S2 lands.
+### The console (S2)
+- **Screens under Data** (`app/admin/data/{issues,proposals,proposals/[key],todo,decisions,audits}`; the nav gains the
+  five): **Issues** lists the live clusters (50 a page, a kind filter; each cause's key shown so it can be pasted into
+  Run the Data Steward), joined with the issue documents, the last run's summary, **Run the Data Steward** (budget,
+  cause, college, mode: run or audit) through the dispatch path, **Leave** per cause (the issue goes `left`, created
+  with the cluster's live kind and `run: "console"` when none exists), and **Colleges to review**. **Proposals**: the
+  list by status, systemic first, and a page per proposal with the summary, the evidence table (document links at the
+  page), the rows with ticks pre-set from the recommendation, the sample and the change block, the question and answer.
+  **To do**: open and found rows (closed ones behind `?closed=1`), 100 a page, highest reach first; Found requires an
+  http(s) address and records an attempt with route `person`; No document published; Done. **Decisions**: each
+  question with the recommendation and the options; Decide with a note. **Audits**: per family, the latest sample's
+  rate and the wrong values with links to the Review page.
+- **The college Review page** (`/admin/colleges/[unit]/review`, linked beside Edit in the header and from the Health
+  card, which also sends its queue link there): the acquisition rows on top, then the rows grouped by code with "On the
+  site now" read live, the document, the issue, the recommendation and the proposal; Accept the value and Reject as
+  Holds has them; **Leave** adds a finding ("Left by the owner") to the cause's issue; a tick per proposal row records
+  the decision on the proposal only, and the proposal page pre-ticks from it. Systemic rows have no tick.
+- **Approve** (`lib/admin/steward-actions.ts`, over injected dependencies; `app/admin/data/steward-actions.ts` calls
+  `requireAdmin()` first): the typed word "approve" for correct, publish and hold; the citation checks first (a ticked
+  correct or publish row with no registered field, no value, no page or quote, or no document refuses the whole
+  Approve before anything is written; nothing ticked is refused); then the edits (`admin_data_edit`, the note
+  "{kind} from {document}, page {n}, line {m}: {quote}", a publish row's reason in brackets, trimmed to 500) and
+  resolutions (a row whose item was already accepted is skipped, so Approve can be pressed again after a failure; one
+  already rejected refuses); then one write of the proposal (correct and publish → `applied` at once; hold, refile,
+  recipe and reject → `approved` and one dispatch of the apply job, which marks it applied; systemic → `approved` with
+  no ticks and no dispatch); then any dispatch, logged `ops.dispatch` first. **Re-reads**: the pipeline runs one at a
+  time, so Approve starts the first ticked college, the rows note "Re-read started {date}", **Start the next re-read**
+  starts the rest, and the proposal is applied when all have started; each college's cost is the proposal's cost
+  split evenly. **Start the apply job** retries a blocked dispatch. **Decline** declines every undecided row with the
+  reason, so the writer never proposes them again. **Ask** sets `asked` with the question and dispatches the answer
+  mode at $5; an asked proposal can still be approved or declined.
+- **Logging**: `admin_note_ops` accepts only `ops.*` and `review.*`, so the spec's `steward.approve` rows are instead
+  the `steward.write` rows `admin_steward_write` logs, with a note starting `steward.approve:`, `steward.decline:`,
+  `steward.ask:`, `steward.decide:`, `steward.leave:`, `steward.todo:` or `steward.row:`; dispatches are `ops.dispatch`
+  with `{steward: "approve" | "ask" | "reread", proposal}`. `decided_by` is the admin's public display name.
+- **Operations and Holds**: Start a run gains Run the Data Steward (the college field may be left empty; `RunInput`'s
+  `unit` kind gained `required: boolean`); `steward-apply`, `steward-answer` and Point back here are hidden from the
+  form (`DispatchableRun.hidden`); the Review queue section is one line linking Issues (or the college's Review page
+  with `?unit=`); the Approvals hint says code changes only; Holds shows a pointer to Issues when the queue is large.
+- **Not checked with a signed-in admin before the PR**: the real `admin_steward_write`, `admin_data_edit` and
+  `admin_data_resolve_review` calls, the GitHub dispatches, and the Issues screen's speed on the 20,990-item queue
+  (QA measured the clustering itself).
+
+### Still open (phase C)
+The weekly audit's screen is built and the run writes audits; the code PR for an approved systemic proposal is still
+written in a session from the proposal's analysis. Automating it (Claude Code in Actions or Managed Agents) is the one
+piece of the plan left, with the owner merging.

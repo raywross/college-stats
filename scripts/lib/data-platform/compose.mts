@@ -35,7 +35,7 @@
  * Pure apart from reading the store (`loadPublishLayers`); `composeSnapshot` never mutates its input, so composing the
  * same layers twice gives the same bytes (tests/data-platform-publish.test.mts).
  */
-import type { DatasetMeta, School, SchoolSelectivity } from "../../../lib/types";
+import type { DatasetMeta, LineageRecord, School, SchoolSelectivity } from "../../../lib/types";
 import type { SchoolDetail } from "../../../lib/detail.ts";
 import { mergeDetails } from "../../../lib/detail.ts";
 import type { ReleaseCalendar } from "../../../lib/releases.ts";
@@ -56,7 +56,8 @@ import type { SchoolHistory } from "../../../lib/history.ts";
 import type { CampusExclusionEntry } from "../../../lib/movers.ts";
 import type { SearchIndex } from "../../../lib/search-index.ts";
 import { buildSearchIndex } from "../../../lib/search-index.ts";
-import { editProblem, quadEditSource, withEdits, type FieldEdit } from "../../../lib/data-platform/edits.ts";
+import { editProblem, liveEdits, quadEditSource, withEdits, type FieldEdit } from "../../../lib/data-platform/edits.ts";
+import type { SnapshotEditsObject } from "../../../lib/data-platform/snapshot.ts";
 import { applyOverride, carryTrends, deriveTrends } from "../overrides.mts";
 import { addCommonAppMeta, applyCommonApp } from "../common-app/merge.mts";
 import { addCoalitionMeta, applyCoalition } from "../coalition/merge.mts";
@@ -208,6 +209,9 @@ export interface ComposedSnapshot {
   warnings: string[];
   /** Live edits applied, and colleges they touched. */
   edits: { applied: number; colleges: number };
+  /** `edits.json`'s body (specs/data-platform/change-sets.md "Admin edits", precedence): every applied edit with the
+   * pipelines' value and lineage at that path before step 14. Empty when no edit applied. */
+  editsObject: SnapshotEditsObject["edits"];
   versions: Record<string, number>;
 }
 
@@ -231,6 +235,11 @@ export function confirmedRecords(layers: Pick<PublishLayers, "essays" | "promptO
   const kept = layers.essays.confirmed.filter((r) => picked.held.has(r.unit_id));
   const records = [...picked.records, ...kept].sort((a, b) => (a.unit_id < b.unit_id ? -1 : a.unit_id > b.unit_id ? 1 : 0));
   return { records, skipped: picked.skipped };
+}
+
+/** The value at a school's dotted path, or undefined when nothing is there (edits.json's pre-edit capture). */
+function valueAt(school: School, path: string): unknown {
+  return path.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined), school as unknown);
 }
 
 /** The layers composed into a snapshot's documents. Never mutates `layers`. */
@@ -305,13 +314,29 @@ export function composeSnapshot(input: PublishLayers, opts: ComposeOptions): Com
     editsByUnit.set(e.unit_id, [...(editsByUnit.get(e.unit_id) ?? []), e]);
   }
   let applied = 0;
+  const editsObject: SnapshotEditsObject["edits"] = [];
   if (editsByUnit.size) {
     schools = schools.map((s) => {
       const mine = editsByUnit.get(s.unit_id);
       if (!mine) return s;
-      applied += new Set(mine.map((e) => e.path)).size;
+      const live = liveEdits(mine);
+      applied += live.length;
+      for (const e of live) {
+        const pre = valueAt(s, e.path);
+        const preLineage = ((s.lineage as Record<string, LineageRecord> | undefined) ?? {})[e.path] ?? null;
+        editsObject.push({
+          id: e.id,
+          unit_id: e.unit_id,
+          path: e.path,
+          value: e.value,
+          note: e.note ?? null,
+          created_at: e.created_at,
+          pipeline: pre === undefined ? null : { value: pre, lineage: preLineage },
+        });
+      }
       return withEdits(s, mine);
     });
+    editsObject.sort((a, b) => (a.unit_id < b.unit_id ? -1 : a.unit_id > b.unit_id ? 1 : a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
     meta.sources["quad-edit"] = quadEditSource();
   }
 
@@ -377,6 +402,7 @@ export function composeSnapshot(input: PublishLayers, opts: ComposeOptions): Com
     problems,
     warnings,
     edits: { applied, colleges: editsByUnit.size },
+    editsObject,
     versions: layers.versions,
   };
 }

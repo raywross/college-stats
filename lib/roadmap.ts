@@ -161,6 +161,17 @@ export const ROADMAP: RoadmapSpec[] = [
   // day on feature/essays; see each spec's "As built" section. The Google Drive connection waits for Google sign-in.
   // Essays parts 4 and 5 (the move and the tab, group "essays") were built 2026-10-30 on feature/essays-next (PR
   // #194); see each spec's "As built" section.
+  {
+    slug: "scale-to-100k",
+    file: "specs/product/scale-to-100k.md",
+    group: "business",
+    summary:
+      "Make sure Quad serves 100,000 students: an audit of every query, policy, index and write path a signed-in page uses, a load test against a seeded copy at the expected peak, and the small fixes it surfaces (indexes, batched profile views, digest batching, the production compute tier), with a weekly smoke load so it stays true.",
+    complexity: 2,
+    complexityNote:
+      "The audit and the load test are a few days with no product change; the fixes are small and measured. The main cost is the seeded copy and keeping the load script honest to the real traffic mix.",
+    status: "planned",
+  },
   // The data platform (specs/data-platform/rollout.md, group "platform") was built 2026-10-31 to 2026-11-01 in four
   // phases (PRs #201, #203, #204, #205): pipelines write layers to the database, a published snapshot is what the site
   // reads, change sets carry history and revert, admins edit any value in the console, and data/ left the repository.

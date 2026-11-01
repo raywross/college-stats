@@ -1,6 +1,7 @@
 # Part 7, Editors: Suggested Changes a Student Accepts, and Marks in the Draft
 
-> Status: **planned** 2026-11-01 (owner: "I'd like for parents and counselors to be able to make edits to a student's
+> Status: **built** 2026-11-01 on `feature/essay-editors`, the day it was planned (see [As built](#as-built-2026-11-01)).
+> Planned 2026-11-01 (owner: "I'd like for parents and counselors to be able to make edits to a student's
 > essays that the student can review and accept. Think of them as editors… something like the way Microsoft Word allows
 > for markup changes and comments with a view to see with and without markup. Similar for when we do the AI review, it
 > would be good to highlight the text that relates to the feedback… some kind of color underline that will give you a
@@ -316,12 +317,33 @@ backdrop/overlay pair measured off the field's mirror, colors assigned in order 
 the student's own comments gray, everyone else blue/violet/green/rose/teal repeating), the popover and the legend.
 No deviation from the plan found in this read of the code.
 
-### Still to document
-U3 (Suggest changes and Review changes) had not merged into the integration branch when this was written. Once it
-does, this section's lead should add: **Suggest box** (`components/essays/SuggestBox.tsx`) — the editor's own copy
-of the field, the live change count, the preview, autosave to `localStorage`; **Review changes**
-(`components/essays/ReviewChanges.tsx`) — the three toggles, Accept/Reject per change and for all, the stale list;
-the **Write / Review changes tabs** and the **banner** in `Editor.tsx`; the **reader's fixes shown as changes** in
-Review changes (Accept → `acceptFix`, Reject → the note marked `ignored`). Note there any signature or rule that
-differs from the contract in `essay-editors-build/brief.md` "Shared contracts", the way this section does for U1 and
-U2.
+### Suggest changes and Review changes (U3)
+- **The editor's box** (`components/essays/SuggestBox.tsx`, shown only when the viewer can't write): **Suggest changes**
+  opens the editor's own copy of the draft in a second field with the count bar, a note (up to 2,000 characters), the
+  live line "{n} changes", a preview of the changes, and **Send suggestions**. Unsent text is kept in this browser
+  (`quad.essay.<id>.suggest.<userId>`) and cleared on send; Cancel asks "Discard what you've changed here?" when the
+  text differs. With their own open suggestion the box reads "Waiting for {first}" with the changes marked, plus
+  **Edit your suggestions** and **Withdraw** (asks first); both disappear once the student has decided anything.
+- **The student's page** (`Editor.tsx`): when any suggestion is open, or the newest read has an open mechanics note with
+  a fix, two tabs sit above the field, **Write** and **Review changes** (with a count), and a banner reads "{Name}
+  suggested 3 changes" per editor ("A parent" / "A counselor" when the name is unknown); the count is the suggestion's
+  total, and Review changes shows what is left. The field stays mounted while reviewing. A decision flushes the pending
+  autosave, calls `decideSuggestion`, swaps in the returned body and `updated` with no conflict prompt, and refreshes
+  when a change was applied or the status turned decided.
+- **Review changes** (`components/essays/ReviewChanges.tsx`, helpers in `lib/essays/review-view.ts`): a chip per editor,
+  oldest suggestion first, the reader's fixes last as "Reader's notes"; **With changes** / **As suggested** / **Original**;
+  each change one element (`id="change-<key>"`) with **Accept** and **Reject** inline on a pointer device and under its
+  paragraph after a tap on a phone; **Accept all** / **Reject all** confirm inline ("Accept all 3 changes from Jane?"):
+  Accept all takes only the changes that still fit, Reject all every undecided one, stale included. Stale changes are
+  cards under the text: "The draft changed here", the suggested words, **Copy**, Reject. Taps are optimistic.
+- **The reader's fixes**: the newest read's open mechanics notes with a `fix` are the reader's changes; Accept calls
+  `acceptFix` (from the end of the text to the start), Reject marks the note ignored through the review route. The
+  "As suggested" view for fixes applies them at the notes' spans (a fix has no context words, so the general locator
+  is not used). A small context (`components/essays/fixes-context.tsx`) hands the fixes from the notes panel to the
+  Editor and a note's new state back.
+- **Marks for changes**: the student sees every open suggestion's changes underlined in Write; an editor sees only
+  their own ("You"), since only those have a card for Open to reach. Open on a change mark switches to Review changes
+  and scrolls to the change.
+- **Not verified in a signed-in browser** before the PR (no test account in the build): the real Server Action round
+  trips, the version list refreshing after a decision, Copy, and the phone tap-to-select flow on a touch device; the
+  owner's first pass on the dev site covers these.

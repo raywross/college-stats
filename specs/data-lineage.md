@@ -3,6 +3,12 @@
 > Status: **built** 2026-09-28 (registry, field-level lineage, validation, profile/compare citations, guards).
 > Remaining: Explore/Compare baseline banner (see *Not built yet*). Replaces the topic-level attribution described in
 > earlier versions of [sources-and-citations.md](sources-and-citations.md).
+>
+> **Where things live, updated** ([data-platform/](data-platform/README.md), phase 4, 2026-11-01): `data/schools.json`,
+> `data/meta.json`, `data/cds-records/`, and `data/college-docs.json`, named below, no longer exist; the same
+> documents are now `colleges.json`, `meta.json`, and the `reported.cdsRecords`/`reported.docs` layers, composed by
+> the publisher into the bundled snapshot the app reads. The rules, records, and guards described below are
+> unchanged — only the file paths are.
 
 ## Why
 A single profile mixes federal releases of different years (admissions fall 2024, aid 2023–24), a college's own Common
@@ -139,6 +145,11 @@ Each guard below was verified by breaking the rule on purpose and confirming the
 - **New release year:** nothing in UI code; the sync updates `vintages`.
 
 ### Code ahead of data
+> **Retired** ([data-platform/](data-platform/README.md), phase 4, 2026-11-01): this race was specific to the git +
+> publish-data design. There is no `data/**` to merge and no separate "Publish data" run any more; a build fetches
+> the already-composed snapshot, so a new source is in `meta.sources` whenever the snapshot that carries its values
+> is. Kept for the record.
+
 On a merge that changes both code and `data/**`, Vercel builds production while "Publish data" is still writing
 Supabase, so the new code can prerender against the previous publish. A new source then isn't in `meta.sources` yet:
 PR #36's production build crashed on `/data` that way (2026-09-30). So the app treats a missing source as

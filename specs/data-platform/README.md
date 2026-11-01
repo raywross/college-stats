@@ -86,7 +86,8 @@ admin console ──► edits ──────┘         ▲
 - `/admin/data`: the change sets since the last snapshot, what each touched, holds to look at, Publish and Revert;
   the list of snapshots with Point back here; a college page where any value can be edited, with the field's history.
 - `/release-notes` and the digest still say what changed and when, computed from snapshots.
-- The repository is code and specs again: a clone is a few megabytes; CI needs no 34 MB file.
+- The repository is code and specs again: a clone is a few megabytes; CI needs no 34 MB file (done 2026-11-01, phase 4;
+  [rollout.md](rollout.md) "As built, phase 4").
 
 ## Out of scope
 Supabase Storage as the document archive for fetched pages (today a private GitHub release; `archive.mts` is written

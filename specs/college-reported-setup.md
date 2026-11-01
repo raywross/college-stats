@@ -5,6 +5,14 @@
 > pipeline ([scripts/sync-college-reported.mts](../scripts/sync-college-reported.mts)) locally. See
 > [college-reported-data.md](college-reported-data.md) for what the agent does and why, and
 > [supabase.md](supabase.md) for how data reaches the deployed site.
+>
+> **Superseded by [data-platform/](data-platform/README.md) (phase 2, 2026-10-31; phase 4, 2026-11-01):** the
+> workflow no longer commits to `data/`, opens a PR, or auto-merges. It writes a change set to the store (behind its
+> own circuit breaker) and dispatches the publisher; the console reviews holds and approvals at `/admin/data`
+> ([data-platform/change-sets.md](data-platform/change-sets.md)) instead of on a GitHub PR, and there is no
+> `data/college-reported-<run-id>` branch, no `COLLEGE_REPORTED_TOKEN`-driven auto-merge, and no `merge-reported`
+> commit to read. The API key setup (step 1) and the cost/circuit-breaker reasoning below are unchanged; the GitHub
+> token, auto-merge, and PR-review steps below describe the retired design and are kept for the record.
 
 ## 1. Create an Anthropic API key
 1. [console.anthropic.com](https://console.anthropic.com) → **API keys** → **Create key**. Name it something like

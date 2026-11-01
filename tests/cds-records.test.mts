@@ -27,7 +27,8 @@ import {
   validateCdsRecords,
 } from "../lib/cds-records.ts";
 import { validateSchool } from "../lib/lineage.ts";
-import { readManifest, readRecords, serializeRecord } from "../scripts/lib/college-reported/records.mts";
+import { readManifest, serializeRecord } from "../scripts/lib/college-reported/records.mts";
+import { miniMeta, miniSchools, miniLayerDocument, miniReference } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const T = CDS_TEMPLATE;
@@ -149,8 +150,8 @@ test("lineageFromItem builds a college-site record with year, edition, quote, an
 });
 
 // Princeton: a real federal baseline and no CDS override (as in tests/reported-checks.test.mts).
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const meta: DatasetMeta = miniMeta();
+const schools: School[] = miniSchools();
 function princetonWithReported(method: "extracted" | "derived" | "reported", quote: string | undefined): School {
   const s = structuredClone(schools.find((x) => x.unit_id === "186131")!);
   s.reported = { admissions: { entering_term: "Fall 2026", year: 2026, applicants: 46618, admitted: 1865, enrolled: 1500, acceptance_rate: 0.04, source_kind: "cds" } };
@@ -211,16 +212,21 @@ for (const [what, breakIt, message] of broken) {
 
 /* ---- The committed records ---- */
 
-const records = readRecords(join(ROOT, "data", "cds-records"));
-const manifest = readManifest(join(ROOT, "data", "college-docs.json"));
+const CDS_IDS = ["145637", "190415", "221999", "231624"];
+const records: CollegeRecord[] = await Promise.all(
+  CDS_IDS.map((id) => miniLayerDocument<CollegeRecord>("reported.cds_records", id).then((r) => r!)),
+);
+// The fixture's layers leave out reported.docs (pipeline bookkeeping); tests/fixtures/cds-records/README.md
+// explains the trimmed, real manifest kept here instead.
+const manifest = readManifest(join(ROOT, "tests", "fixtures", "cds-records", "college-docs.json"));
 const by = indexRecords(records);
 const newest = (id: string) => by.get(id)!.documents[0];
 
 test("the committed records pass the validator and round-trip byte for byte", () => {
   assert.deepEqual(validateCdsRecords(records, manifest, T), []);
-  for (const r of records) assert.equal(serializeRecord(r), readFileSync(join(ROOT, "data", "cds-records", `${r.unit_id}.json`), "utf8"), r.unit_id);
-  // The four template workbooks of the foundation are always there; a pipeline run adds more.
-  for (const id of ["145637", "190415", "221999", "231624"]) assert.ok(records.some((r) => r.unit_id === id), id);
+  // The four template workbooks of the foundation are always there; a pipeline run adds more (the mini fixture's
+  // layers carry only these four; see build-mini-fixture.mts).
+  for (const id of CDS_IDS) assert.ok(records.some((r) => r.unit_id === id), id);
   assert.deepEqual(records.map((r) => r.unit_id), [...records.map((r) => r.unit_id)].sort(), "one file per college, in id order");
 });
 
@@ -273,13 +279,14 @@ test("the committed records keep the colleges' own errors as failures", () => {
 
 test("the round-3 state files exist with their shapes", () => {
   // Empty at first; a pipeline run fills them (open batches, blocked hosts), so their shape is what's checked.
-  const read = <T,>(p: string): T => JSON.parse(readFileSync(join(ROOT, "data", p), "utf8"));
-  const batches = read<BatchesFile>("college-batches.json");
+  // reported.batches is left out of the mini fixture's layers (pipeline bookkeeping); the real (empty) file is
+  // kept whole at tests/fixtures/cds-records/college-batches.json (see its README).
+  const batches: BatchesFile = JSON.parse(readFileSync(join(ROOT, "tests", "fixtures", "cds-records", "college-batches.json"), "utf8"));
   assert.ok(Array.isArray(batches.batches) && (batches.updated === null || typeof batches.updated === "string"));
-  const blocked = read<BlockedHostsFile>("reference/blocked-hosts.json");
+  const blocked = miniReference<BlockedHostsFile>("blocked-hosts");
   assert.ok(Array.isArray(blocked.hosts));
   for (const h of blocked.hosts) assert.ok(h.host && h.status, JSON.stringify(h));
-  const urls = read<CdsUrlsFile>("reference/cds-urls.json");
+  const urls = miniReference<CdsUrlsFile>("cds-urls");
   assert.ok(Array.isArray(urls.entries));
   for (const e of urls.entries) assert.ok(e.unit_id && e.url, JSON.stringify(e));
 });

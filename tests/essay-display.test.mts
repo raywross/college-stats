@@ -16,6 +16,7 @@ import type { ReactElement } from "react";
 import type { EssayPrompt, School, SchoolEssays } from "../lib/types.ts";
 import { ALL_OR_NOTHING_ROW_LABELS } from "../lib/compare-topics.ts";
 import { essayCardLine, planEssayCount } from "../lib/essays/summary.ts";
+import { miniReference } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (...p: string[]) => readFileSync(join(ROOT, ...p), "utf8");
@@ -276,7 +277,7 @@ test("EssayPrompts: a hand-read block reads 'From the application form, read by 
 /* ------------------------------------------------------------------ */
 
 test("the display never types the Common App's 650-word figure: the Common App's prompts carry limit: null and the sentence shows a limit only when the data has one", () => {
-  const file = JSON.parse(read("data", "reference", "platform-prompts.json")) as { common_app: { limit: unknown } };
+  const file = miniReference<{ common_app: { limit: unknown } }>("platform-prompts");
   assert.equal(file.common_app.limit, null);
   assert.doesNotMatch(read("components", "school", "EssayPrompts.tsx"), /650/);
   assert.doesNotMatch(read("lib", "essays", "summary.ts"), /650/);

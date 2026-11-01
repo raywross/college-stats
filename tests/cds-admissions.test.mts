@@ -32,14 +32,20 @@ import { validateLineage } from "../lib/lineage.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { normalizeValue, type CollegeRecord, type DocumentRecord, type ItemResult } from "../lib/cds-sections.ts";
 import type { DatasetMeta, GpaBands, School } from "../lib/types.ts";
+import { miniMeta, miniSchools, miniLayerDocument, miniLayers } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const read = <T,>(p: string): T => JSON.parse(readFileSync(join(ROOT, p), "utf8")) as T;
-const meta = read<DatasetMeta>("data/meta.json");
-const schools = read<School[]>("data/schools.json");
-const real = (id: string) => read<CollegeRecord>(`data/cds-records/${id}.json`);
+const meta = miniMeta();
+const schools = miniSchools();
+const recordCache = new Map<string, CollegeRecord>();
+const real = (id: string): CollegeRecord => {
+  if (!recordCache.has(id)) throw new Error(`CDS record ${id} not preloaded; add it to REAL_IDS`);
+  return recordCache.get(id)!;
+};
 const WM = "231624";
 const CORNELL = "190415";
+const REAL_IDS = [WM, CORNELL, "221999", "145637"];
+for (const id of REAL_IDS) recordCache.set(id, (await miniLayerDocument<CollegeRecord>("reported.cds_records", id))!);
 
 let cell = 0;
 const passed = (v: number | string | boolean, quote = `q ${String(v)}`): ItemResult => ({ v, status: "passed", cell: `CDS-C!A${++cell}`, quote });
@@ -228,7 +234,7 @@ test("11. C7 sanity: every mark in one column, or fewer than 9 marked rows, is a
 
 /* ---- 12. Six shared factors ---- */
 
-test("12. a newer C7 'not considered' flips legacy; restore is byte for byte; federal required stays; an older C7 changes nothing", () => {
+test("12. a newer C7 'not considered' flips legacy; restore is byte for byte; federal required stays; an older C7 changes nothing", async () => {
   const before = structuredClone(schools.find((s) => s.unit_id === WM)!);
   const clean = restoreFederal(before);
   assert.equal(clean.admissions.factors?.legacy, "considered", "IPEDS fall 2024 says legacy is considered");
@@ -245,7 +251,7 @@ test("12. a newer C7 'not considered' flips legacy; restore is byte for byte; fe
   // Break: skip the year comparison, and this older-or-same C7 overrides IPEDS.
   assert.equal(applyNewestFactors(clean, 2025), clean);
   // The committed data went through the same rule: the full merge (which also re-applies the other CDS blocks) reproduces it.
-  const reportedFile = read<ReportedFile>("data/college-reported.json");
+  const reportedFile: ReportedFile = { updated: null, entries: [...(await miniLayers().read("reported.entries")).values()] };
   assert.equal(JSON.stringify(mergeReported([before], reportedFile, { records: [real(WM)], meta, table: CDS_TEMPLATE }).schools[0]), JSON.stringify(before));
 });
 

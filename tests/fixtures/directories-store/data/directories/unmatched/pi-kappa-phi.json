@@ -1,0 +1,8 @@
+{
+  "org": "pi-kappa-phi",
+  "crawled": "2026-10-04",
+  "entries": [
+    {"campus":"Arkansas-Fort Smith","city":"Fort Smith","state":"AR","name":"Iota Mu (Pi Kappa Phi)","reason":"no college in AR matches","candidates":[{"unit_id":"106306","name":"Arkansas Baptist College","score":0.33},{"unit_id":"106458","name":"Arkansas State University","score":0.33},{"unit_id":"107600","name":"Philander Smith University","score":0.33}]},
+    {"campus":"Durham","city":"Durham","state":"NC","name":"Mu (Pi Kappa Phi)","reason":"no college in NC matches","candidates":[{"unit_id":"197869","name":"Appalachian State University","score":0},{"unit_id":"197911","name":"Barton College","score":0},{"unit_id":"197984","name":"Belmont Abbey College","score":0}]}
+  ]
+}

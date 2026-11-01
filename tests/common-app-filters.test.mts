@@ -7,6 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { miniSchools, miniMeta, miniReleaseCalendar } from "./helpers/snapshot.mts";
 import { join } from "node:path";
 import { register } from "node:module";
 import type { School, SearchFilters } from "../lib/types";
@@ -33,7 +34,7 @@ register(
 const { createDataset } = await import("../lib/dataset.ts");
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 
 /** A minimal fixture: just the `apply` and `admissions` fields the predicates read. */
 function school(apply: School["apply"], applicationFee: number | null = null): School {
@@ -118,13 +119,14 @@ test("facets: APPLYING_FILTERS counts match a direct filter of the real dataset"
     assert.ok(count >= 0 && count <= schools.length);
   }
   const ed = schools.filter((s) => APPLYING_FILTERS.find((f) => f.param === "ed")!.predicate(s));
-  assert.ok(ed.length > 50, `expected hundreds of ED members, got ${ed.length}`);
+  // The real dataset has hundreds of ED members (>50 of 1,893); scaled to the mini fixture's 38 colleges.
+  assert.ok(ed.length > 5, `expected several ED members, got ${ed.length}`);
   for (const s of ed) assert.ok(s.apply?.deadlines?.ed, s.unit_id);
 });
 
 test("the dataset applies each Applying filter: narrows to exactly the matching colleges", () => {
-  const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-  const releaseCalendar = JSON.parse(readFileSync(join(ROOT, "data", "release-calendar.json"), "utf8"));
+  const meta = miniMeta();
+  const releaseCalendar = miniReleaseCalendar();
   const dataset = createDataset({ schools, meta, releaseCalendar });
   for (const f of APPLYING_FILTERS) {
     const got = dataset.getSchools({ [f.param]: true } as SearchFilters).map((s: School) => s.unit_id);

@@ -25,13 +25,15 @@ import {
   meetsGreekThreshold,
   sorMedian,
 } from "../lib/cds/greek-display.ts";
-import { readRecords } from "../scripts/lib/college-reported/records.mts";
+import { miniSchools, miniMeta, miniLayerDocument } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const records = readRecords(join(ROOT, "data", "cds-records"));
-const record = (id: string) => structuredClone(records.find((r) => r.unit_id === id)!);
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
+const records = await Promise.all(
+  ["221999", "190415", "231624"].map((id) => miniLayerDocument<CollegeRecord>("reported.cds_records", id)),
+);
+const record = (id: string) => structuredClone(records.find((r) => r!.unit_id === id)!);
 const school = (id: string) => structuredClone(schools.find((s) => s.unit_id === id)!);
 
 /** A one-document synthetic record whose items are the given passed values (workbook cells with quotes). */

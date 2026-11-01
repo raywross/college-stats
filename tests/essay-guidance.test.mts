@@ -8,6 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { miniReference } from "./helpers/snapshot.mts";
 import {
   MAX_WORDS_PER_SOURCE,
   pageTitle,
@@ -21,9 +22,8 @@ import {
   type GuidanceSource,
 } from "../scripts/research-essay-guidance.mts";
 
-const DIR = join(import.meta.dirname, "..", "data", "reference", "essay-guidance");
-const file: GuidanceFile = JSON.parse(readFileSync(join(DIR, "sources.json"), "utf8"));
-const guidance = readFileSync(join(DIR, "guidance.md"), "utf8");
+const file: GuidanceFile = miniReference("essay-guidance/sources");
+const guidance = miniReference<string>("essay-guidance");
 
 /** The sections the reviewer loads by heading (brief: "the heading list is the contract with U5b"). */
 const REQUIRED_HEADINGS = [

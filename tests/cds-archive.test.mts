@@ -9,7 +9,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
-import type { CallRead, CollegeDocsFile, DocumentRecord, ManifestEntry } from "../lib/cds-sections.ts";
+import type { CallRead, CollegeDocsFile, CollegeRecord, DocumentRecord, ManifestEntry } from "../lib/cds-sections.ts";
 import { addMonth, awaitingFirstRead, callsNeedingRead, documentsOf, fetchOutcome, findBySha, manifestEntryFor, needsFetch } from "../lib/cds-reads.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { validateCdsRecords } from "../lib/cds-records.ts";
@@ -18,8 +18,9 @@ import { addOwnerUrl, archiveDoc } from "../scripts/lib/college-reported/archive
 import { sha256 } from "../scripts/lib/college-reported/http.mts";
 import { readManifest, readRecords } from "../scripts/lib/college-reported/records.mts";
 import type { School } from "../lib/types.ts";
+import { miniSchools, miniLayers, miniLayerDocument } from "./helpers/snapshot.mts";
 
-const ROOT_SCHOOLS: School[] = JSON.parse(readFileSync(join(import.meta.dirname, "..", "data", "schools.json"), "utf8"));
+const ROOT_SCHOOLS: School[] = miniSchools();
 const schoolOf = (id: string) => ROOT_SCHOOLS.find((s) => s.unit_id === id) ?? null;
 
 const tmp = () => mkdtempSync(join(tmpdir(), "cds-archive-"));
@@ -296,8 +297,8 @@ test("callsNeedingRead: template workbooks and form PDFs never go to a model; a 
   assert.deepEqual(callsNeedingRead(doc("class-profile", {})), []);
 });
 
-test("callsNeedingRead on the committed records: no call read at today's version is due again; a C bump touches no template workbook", () => {
-  const recs = readRecords(join(import.meta.dirname, "..", "data", "cds-records"));
+test("callsNeedingRead on the committed records: no call read at today's version is due again; a C bump touches no template workbook", async () => {
+  const recs = [...(await miniLayers().read<CollegeRecord>("reported.cds_records")).values()];
   assert.ok(recs.length >= 4);
   for (const r of recs) {
     for (const d of r.documents) {
@@ -360,7 +361,7 @@ test("archive-doc: a template workbook is archived, listed, and read with no mod
     const records = readRecords(join(data, "cds-records"));
     assert.deepEqual(validateCdsRecords(records, manifest, CDS_TEMPLATE), []);
     // Same bytes and items as the committed record built by cds-records-from-workbooks.
-    const committed = readRecords(join(import.meta.dirname, "..", "data", "cds-records")).find((r) => r.unit_id === "231624")!;
+    const committed = (await miniLayerDocument<CollegeRecord>("reported.cds_records", "231624"))!;
     assert.equal(committed.documents[0].sha256, sha);
     assert.deepEqual(records[0].documents[0].items, committed.documents[0].items);
     const urls = JSON.parse(readFileSync(join(data, "reference", "cds-urls.json"), "utf8"));

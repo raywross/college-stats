@@ -18,14 +18,19 @@ import { lineageFor, shortSource, sourcesForFields, validateLineage, validateReg
 import { COMMON_APP_HOME, addCommonAppMeta, applyBlock, applyCommonApp, gridVintage, membersVintage, mergeCommonApp, ownSiteLink } from "../scripts/lib/common-app/merge.mts";
 import { commonAppAliasRows } from "../scripts/lib/aliases-sync.mts";
 
+import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
+
 const ROOT = join(import.meta.dirname, "..");
-const META: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const ALL: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const META: DatasetMeta = miniMeta();
+const ALL: School[] = miniSchools();
 
 const VU = "221999"; // a CDS policy (2025–26 C8, read 2026-10-03) already replaced the federal one
-const ACU = "222178"; // federal policy only: a member with a grid row
+// ACU and ADELPHI stand for a real baseline school with federal-only test policy, and a real baseline school, used
+// only as a foundation for this file's own hand-built grid/members fixtures (the mini fixture lacks the real
+// Common App IDs this test originally picked: Abilene Christian 222178, Adelphi 188429).
+const ACU = "186131"; // Princeton: federal policy only, no CDS override (a member with a grid row)
 const ABAC = "138558"; // a member with no grid row
-const ADELPHI = "188429"; // not a member
+const ADELPHI = "100654"; // not a member (Alabama A&M)
 const TODAY = "2026-10-25";
 
 /**
@@ -133,7 +138,7 @@ function membersFile(extra: Member[] = []): MembersFile {
       }),
       member("abilene-christian-university", ACU, {
         aid: { need: true, merit: true, international: false },
-        links: { daca_aid: "https://www.commonapp.org/explore/abilene", transfer_guarantee: "https://www.acu.edu/transfer-guarantee", first_year_admissions: null, financial_aid: null },
+        links: { daca_aid: "https://www.commonapp.org/explore/abilene", transfer_guarantee: "https://www.princeton.edu/transfer-guarantee", first_year_admissions: null, financial_aid: null },
       }),
       member("abraham-baldwin", ABAC),
       member("nowhere-college", null),
@@ -171,7 +176,7 @@ test("a member with a grid row gets every apply.* key; Explore facts land on aid
   assert.equal(acu.apply!.writing_supplement, true);
   assert.equal(acu.apply!.courses_grades_required, false);
   assert.equal(acu.aid!.international_offered, false);
-  assert.equal(acu.links!.transfer_guarantee, "https://www.acu.edu/transfer-guarantee");
+  assert.equal(acu.links!.transfer_guarantee, "https://www.princeton.edu/transfer-guarantee");
   // A commonapp.org link is never stored.
   assert.equal(acu.links!.daca_aid, undefined);
   assert.equal(summary.links.offSite, 1);

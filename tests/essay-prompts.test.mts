@@ -27,6 +27,7 @@ import { READ_MAX_TOKENS, READ_MODEL, READ_SCHEMA, READ_SYSTEM, ReadFailed, buil
 import { prBody, releaseNote, type RunSummary } from "../scripts/lib/essay-prompts/report.mts";
 import { reconcileHeld, runCollege, type Outcome } from "../scripts/lib/essay-prompts/run.mts";
 import { READER_VERSION, serializeHeld, serializeRecord, type EssayRecord } from "../scripts/lib/essay-prompts/store.mts";
+import { miniSchools, miniMeta, miniReference } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const FIX = join(ROOT, "tests", "fixtures", "essay-prompts");
@@ -440,8 +441,8 @@ test("runCollege: found, read, checked, passed; the same bytes again are unchang
 /* The merge and the lineage check                                     */
 /* ------------------------------------------------------------------ */
 
-const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
-const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as DatasetMeta;
+const schools = miniSchools();
+const meta = miniMeta();
 const withLineage = schools.find((s) => s.lineage && !s.essays && validateSchool(s, meta).length === 0)!;
 const withoutLineage = schools.find((s) => !s.lineage && !s.essays && validateSchool(s, meta).length === 0)!;
 
@@ -542,7 +543,7 @@ test("merge-essay-prompts --dry-run runs on the committed data", () => {
 /* Files                                                               */
 /* ------------------------------------------------------------------ */
 
-const platform = JSON.parse(readFileSync(join(ROOT, "data", "reference", "platform-prompts.json"), "utf8")) as PlatformPromptsFile;
+const platform = miniReference<PlatformPromptsFile>("platform-prompts");
 
 test("platform prompts: the committed file's shape; Common App links only its homepage", () => {
   assert.deepEqual(platformProblems(platform), []);
@@ -704,7 +705,7 @@ test("checks: a none quote must say there are no essays; a refers_to_form quote 
 });
 
 test("checks: a prompt that is the Common App's own is held, with the platform texts from the reference file", () => {
-  const platform = JSON.parse(readFileSync(join(ROOT, "data", "reference", "platform-prompts.json"), "utf8")) as { common_app: { prompts: { text: string }[] } };
+  const platform = miniReference<{ common_app: { prompts: { text: string }[] } }>("platform-prompts");
   const copied = platform.common_app.prompts[0].text;
   const r = { ...good(), prompts: [{ ...good().prompts[1], text: copied }] };
   const problems = checkRecord(r, { today: TODAY, platformTexts: platform.common_app.prompts.map((p) => p.text) });

@@ -24,12 +24,14 @@ import {
   type TransferFunnel,
 } from "../lib/cds/transfer.ts";
 import { admitsTransfers, compareTransferAdmitRate, datesSentence, transferCard } from "../lib/cds/transfer-display.ts";
-import { readRecords } from "../scripts/lib/college-reported/records.mts";
+import { miniSchools, miniMeta, miniLayerDocument } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const records = readRecords(join(ROOT, "data", "cds-records"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
+const records = await Promise.all(
+  ["221999", "190415", "231624", "145637"].map((id) => miniLayerDocument<CollegeRecord>("reported.cds_records", id)),
+);
 const record = (id: string) => structuredClone(records.find((r) => r.unit_id === id)!);
 const school = (id: string) => structuredClone(schools.find((s) => s.unit_id === id)!);
 
@@ -286,8 +288,9 @@ test("Explore \"Admits transfers\": the CDS answer first, else the federal trans
   assert.equal(parseFilters({ transfers: "1" }).transfers, true);
   assert.equal(parseFilters({}).transfers, undefined);
   assert.equal(countActiveFilters({ transfers: "1" }), 1);
-  // Most colleges match through the federal count.
-  assert.ok(schools.filter(admitsTransfers).length > 1500);
+  // Most colleges match through the federal count (over the real dataset, >1500 of 1,893; scaled to the mini
+  // fixture's 38 colleges).
+  assert.ok(schools.filter(admitsTransfers).length > 30);
 });
 
 /* ------------------------------------------------------------------ */

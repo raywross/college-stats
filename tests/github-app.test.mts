@@ -599,12 +599,15 @@ test("blockingRun: a queued or running run of the same workflow blocks a one-at-
 
 test("fetchRunCost: data/reports/ on main, newest summary first until a full run, then cached by sha", async () => {
   gh.resetTokenCache();
-  const names = readdirSync(join(ROOT, "data", "reports"));
+  // The real file names, under tests/fixtures/github-app/reports/ (its README names the source and why only the
+  // newest carries real content).
+  const REPORTS = join(import.meta.dirname, "fixtures", "github-app", "reports");
+  const names = readdirSync(REPORTS);
   const listing = names.map((name) => ({ name, path: `data/reports/${name}`, sha: `sha-${name}`, type: "file" }));
   const f = fakeGithub((c) => {
     if (c.url === `${REPO}/contents/data/reports?ref=main`) return { status: 200, body: listing };
     const m = c.url.match(/\/contents\/data\/reports\/([^?]+)\?ref=main$/);
-    if (m) return { status: 200, body: { sha: `sha-${m[1]}`, encoding: "base64", content: readFileSync(join(ROOT, "data", "reports", m[1])).toString("base64") } };
+    if (m) return { status: 200, body: { sha: `sha-${m[1]}`, encoding: "base64", content: readFileSync(join(REPORTS, m[1])).toString("base64") } };
     return undefined;
   });
   const cost = await gh.fetchRunCost(deps(f, PAT_ENV));
@@ -613,7 +616,7 @@ test("fetchRunCost: data/reports/ on main, newest summary first until a full run
   // The newest summary whose scope was every college (`total` at or above the full-run floor), read from the folder
   // rather than pinned, since every scheduled run over the whole dataset adds one (2026-10-28).
   const runOf = (n: string) => n.replace(/^college-reported-run-|\.json$/g, "");
-  const fullRun = runs.find((n) => ((JSON.parse(readFileSync(join(ROOT, "data", "reports", n), "utf8")) as { total?: number }).total ?? 0) >= FULL_RUN_MIN_COLLEGES)!;
+  const fullRun = runs.find((n) => ((JSON.parse(readFileSync(join(REPORTS, n), "utf8")) as { total?: number }).total ?? 0) >= FULL_RUN_MIN_COLLEGES)!;
   assert.ok(fullRun, "a run over every college exists in data/reports");
   assert.equal(cost.last.run, runOf(fullRun), "the newest run over every college");
   assert.ok(cost.last.colleges >= FULL_RUN_MIN_COLLEGES && cost.last.costUsd >= 0);

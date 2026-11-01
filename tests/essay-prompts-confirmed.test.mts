@@ -50,15 +50,16 @@ import type { ReportedFile } from "../lib/reported.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { readRecords } from "../scripts/lib/college-reported/records.mts";
 import { AUTH_STUB_SQL, asUser, createUser, type AuthDb } from "./helpers/pg-auth.mts";
+import { miniSchools, miniMeta, miniLayers, miniLayerDocument, miniReference } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const TODAY = "2026-10-30";
 const CYCLE = openCycle(TODAY);
 const UF = "134130";
-const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
-const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as DatasetMeta;
+const schools = miniSchools();
+const meta = miniMeta();
 const ufSchool = () => structuredClone(schools.find((s) => s.unit_id === UF)!);
-const realRecords = readEssayRecords(essayPaths(ROOT).records);
+const realRecords = [...(await miniLayers().read<EssayRecord>("essays.records")).values()];
 
 /* ------------------------------------------------------------------ */
 /* Fixtures (placeholder prompts, not a college's or a student's text) */
@@ -423,11 +424,15 @@ test("real data: Florida with a hand read passes validateLineage with the real m
   assert.equal(JSON.stringify(back[0]), JSON.stringify(before), "byte for byte");
 });
 
-test("real data: the college-reported and selectivity merges leave a hand-read block where it is (the re-merge rule)", () => {
+test("real data: the college-reported and selectivity merges leave a hand-read block where it is (the re-merge rule)", async () => {
   const merged = applyEssays([ufSchool()], realRecords, TODAY, [record()]).schools[0];
   const all = schools.map((s) => (s.unit_id === UF ? merged : s));
-  const reported: ReportedFile = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
-  const after = mergeReported(all, reported, { records: readRecords(join(ROOT, "data", "cds-records")), meta, table: CDS_TEMPLATE }).schools;
+  const reported: ReportedFile = { updated: null, entries: [...(await miniLayers().read("reported.entries")).values()] };
+  const cdsRecords = await Promise.all(["221999", "190415", "231624", "145637"].map((id) => miniLayerDocument("reported.cds_records", id)));
+  // Florida's own real CDS record (tests/fixtures/essay-prompts-confirmed/README.md): not one of the four CDS
+  // academics colleges the mini fixture's layers keep, but its reported.admission_profile/tests blocks need it.
+  const floridaRecord = JSON.parse(readFileSync(join(import.meta.dirname, "fixtures", "essay-prompts-confirmed", "134130.json"), "utf8"));
+  const after = mergeReported(all, reported, { records: [...cdsRecords, floridaRecord], meta, table: CDS_TEMPLATE }).schools;
   const ufAfter = after.find((s) => s.unit_id === UF)!;
   assert.equal(JSON.stringify(ufAfter), JSON.stringify(merged), "merge-reported moves nothing");
   const reSelected = placeSelectivity(ufAfter, ufAfter.selectivity);
@@ -518,8 +523,15 @@ test("store: readConfirmedRecords reads the directory by unit id and refuses a f
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
-  assert.deepEqual(readConfirmedRecords(join(ROOT, "data", "essay-prompts", "confirmed")).length >= 0, true);
-  assert.deepEqual(confirmedProblems(readConfirmedRecords(join(ROOT, "data", "essay-prompts", "confirmed")), new Date().toISOString().slice(0, 10)), [], "every committed hand-read file passes");
+  // The real data/essay-prompts/confirmed/ is empty today (the console's hand reads live in essay_prompt_overrides;
+  // specs/data-platform/layers.mts); an empty directory exercises the same "nothing committed fails" path.
+  const empty = mkdtempSync(join(tmpdir(), "essay-confirmed-empty-"));
+  try {
+    assert.deepEqual(readConfirmedRecords(empty).length >= 0, true);
+    assert.deepEqual(confirmedProblems(readConfirmedRecords(empty), new Date().toISOString().slice(0, 10)), [], "every committed hand-read file passes");
+  } finally {
+    rmSync(empty, { recursive: true, force: true });
+  }
 });
 
 /* ------------------------------------------------------------------ */

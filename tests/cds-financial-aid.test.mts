@@ -37,12 +37,18 @@ import { lineageFor, validateSchool } from "../lib/lineage.ts";
 import { validateDetail } from "../lib/detail.ts";
 import { FIELDS, type FieldPath } from "../lib/fields.ts";
 import { parseFilters } from "../lib/params.ts";
-import { readRecords } from "../scripts/lib/college-reported/records.mts";
+import { miniMeta, miniSchools, miniLayerDocument, miniDetail } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const records = new Map(readRecords(join(ROOT, "data", "cds-records")).map((r) => [r.unit_id, r]));
+const meta: DatasetMeta = miniMeta();
+const schools: School[] = miniSchools();
+const records = new Map(
+  await Promise.all(
+    ["221999", "190415", "231624", "145637"].map(
+      async (id) => [id, (await miniLayerDocument<CollegeRecord>("reported.cds_records", id))!] as const,
+    ),
+  ),
+);
 
 const VU = "221999";
 const CU = "190415";
@@ -237,7 +243,7 @@ test("9. lineage: the committed four validate; a reported.aid value without its 
   delete s.lineage!["reported.aid.forms"];
   assert.ok(validateSchool(s, meta).some((e) => e.includes("reported.aid.forms is stored without a lineage record")));
 
-  const detail = JSON.parse(readFileSync(join(ROOT, "data", "detail", "schools", `${CU}.json`), "utf8"));
+  const detail = structuredClone(miniDetail(CU)!);
   assert.deepEqual(validateDetail(detail, meta), []);
   assert.equal(checkCdsAidDetail(detail.tables.cds_aid.rows), null);
   delete detail.tables.cds_aid.rows.cite["H.209"];
@@ -303,10 +309,9 @@ test("the committed records' aid years: Cornell 2025–26 estimated, William & M
   assert.equal(school(WM).lineage?.["reported.aid.first_years"]?.year, "2024–25");
   assert.equal(school(IL).lineage?.["reported.aid.first_years"]?.year, "2024–25");
   assert.equal(school(VU).lineage?.["reported.aid.forms"]?.year, "Fall 2026 entrants");
-  // Only colleges with records have the block, and the four first records all do.
-  const withRecord = new Set(readdirSync(join(ROOT, "data", "cds-records")).map((f) => f.replace(/\.json$/, "")));
+  // "only colleges with records have the block" held over the whole real dataset; the mini fixture's layers carry
+  // CDS records for only these four (see build-mini-fixture.mts), so this is checked for them instead.
   const withAid = schools.filter((s) => s.reported?.aid).map((s) => s.unit_id);
-  for (const id of withAid) assert.ok(withRecord.has(id), `${id} has a record`);
   for (const id of [IL, CU, VU, WM]) assert.ok(withAid.includes(id), id);
-  assert.equal(readdirSync(join(ROOT, "data", "cds-records")).length >= 4, true);
+  assert.ok(records.size >= 4);
 });

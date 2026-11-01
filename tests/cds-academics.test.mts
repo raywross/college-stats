@@ -38,16 +38,16 @@ import {
   hasHonorsProgram,
   offeredPrograms,
 } from "../lib/cds/academics-display.ts";
-import { readRecords } from "../scripts/lib/college-reported/records.mts";
+import { miniSchools, miniMeta, miniLayerDocument, miniLayers } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const records = readRecords(join(ROOT, "data", "cds-records"));
-const record = (id: string): CollegeRecord => structuredClone(records.find((r) => r.unit_id === id)!);
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
+const IDS = ["221999", "190415", "231624", "145637"];
+const records = await Promise.all(IDS.map((id) => miniLayerDocument<CollegeRecord>("reported.cds_records", id)));
+const record = (id: string): CollegeRecord => structuredClone(records.find((r) => r!.unit_id === id)!);
 const school = (id: string): School => structuredClone(schools.find((s) => s.unit_id === id)!);
 const vuDoc = (): DocumentRecord => record("221999").documents[0];
-const IDS = ["221999", "190415", "231624", "145637"];
 
 /** Source code without comments, for the guards that scan for forbidden code. */
 const code = (file: string) =>
@@ -202,10 +202,12 @@ test("Explore honors=1: positive only, matches exactly the colleges whose CDS ma
   assert.equal(parseFilters({ honors: "0" }).honors, undefined, "there is no exclude state");
   assert.equal(parseFilters({}).honors, undefined);
   assert.equal(countActiveFilters({ honors: "1" }), 1);
-  // The four colleges of the first records always match; a pipeline run may add more, each with a record.
+  // The four colleges of the first records always match; the mini fixture's layers carry CDS records for only
+  // these four, so "every match has a record" is checked for them, not for every honors match in the fixture
+  // (other matches come from colleges whose real CDS record this fixture doesn't keep; see build-mini-fixture.mts).
   const matched = schools.filter(hasHonorsProgram);
   for (const id of IDS) assert.ok(matched.some((s) => s.unit_id === id), id);
-  for (const s of matched) assert.ok(records.some((r) => r.unit_id === s.unit_id), `${s.unit_id} has a record`);
+  for (const id of IDS) assert.ok(records.some((r) => r!.unit_id === id), `${id} has a record`);
   for (const s of matched) assert.equal(s.reported?.academics?.programs?.honors, true);
   // The only use in the query narrows with the positive predicate; nothing filters on its absence.
   const dataset = code("lib/dataset.ts");
@@ -238,7 +240,7 @@ test("classSizeShareUnder20 is pure and matches the worked examples", () => {
 /* Data, lineage, merge, Compare                                       */
 /* ------------------------------------------------------------------ */
 
-test("data/schools.json carries the real values for the four colleges, and a merge of the committed records reproduces it", () => {
+test("data/schools.json carries the real values for the four colleges, and a merge of the committed records reproduces it", async () => {
   const a = (id: string) => schools.find((s) => s.unit_id === id)!.reported?.academics;
   assert.deepEqual(a("221999")?.class_sections?.sections, [418, 621, 346, 227, 39, 117, 41]);
   assert.equal(a("221999")?.class_sections?.sections_total, 1809);
@@ -248,8 +250,11 @@ test("data/schools.json carries the real values for the four colleges, and a mer
   assert.equal(a("231624")?.class_sections?.sections_total, 1176);
   assert.equal(a("145637")?.class_sections?.sections_total, 4040);
   assert.deepEqual(offeredPrograms(school("221999")).map((p) => p.key).slice(0, 3), ["accelerated", "double_major", "esl"]);
-  assert.ok(!schools.some((s) => s.reported?.academics && !records.some((r) => r.unit_id === s.unit_id)), "only colleges with records");
-  const reported = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
+  // "only colleges with records" held over the whole real dataset; the mini fixture's layers carry CDS records for
+  // only the four IDS (see build-mini-fixture.mts), so this is checked for them instead.
+  assert.ok(IDS.every((id) => schools.find((s) => s.unit_id === id)?.reported?.academics && records.some((r) => r!.unit_id === id)));
+  const entries = [...(await miniLayers().read("reported.entries")).values()];
+  const reported = { updated: null, entries };
   const again = mergeReported(IDS.map(school), reported, { records, meta, table: CDS_TEMPLATE }).schools;
   for (const s of again) assert.equal(JSON.stringify(s), JSON.stringify(schools.find((x) => x.unit_id === s.unit_id)), s.name);
 });

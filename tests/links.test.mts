@@ -10,9 +10,10 @@ import { join } from "node:path";
 import type { School } from "../lib/types";
 import { applyLinks, linkHost, normalizeUrl, urlsDiffer, websiteMismatch } from "../lib/links.ts";
 import { parseCsv } from "../scripts/lib/ipeds.mts";
+import { miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const UGA = structuredClone(byId.get("139959")!);
 

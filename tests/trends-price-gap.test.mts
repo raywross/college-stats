@@ -1,29 +1,24 @@
 /**
- * Study, the price gap (specs/trends/price-gap.md): the national row must equal data/history/facts.json's
- * `priceGap` exactly (the same fixed panel the Home page's fact 1 uses), and the public colleges' group is
- * recomputed from the committed shards without the shared helpers, with every money figure converted with the
- * stored CPI table.
+ * Study, the price gap (specs/trends/price-gap.md): the window must equal the history facts' `priceGap` (the same
+ * fixed panel the Home page's fact 1 uses), and the public colleges' group is recomputed from the shards without the
+ * shared helpers, with every money figure converted with the stored CPI table. The study file is the builder's over
+ * the mini fixture (tests/helpers/snapshot.mts miniTrendFile); the facts are the real national ones, so only the
+ * window is compared (the publisher builds both from the full history).
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
-import type { School } from "../lib/types";
-import type { CpiTable, HistoryMeta, SchoolHistory } from "../lib/history.ts";
+import type { SchoolHistory } from "../lib/history.ts";
 import { GROUP_FLOOR } from "../lib/trend-groups.ts";
 import type { PriceGapFile, PriceGapValues } from "../lib/trends.ts";
+import { miniHistories, miniHistoryFiles, miniSchools, miniTrendFile } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const HISTORY = join(ROOT, "data", "history");
-const file = JSON.parse(readFileSync(join(HISTORY, "trends", "price-gap.json"), "utf8")) as PriceGapFile;
-const facts = JSON.parse(readFileSync(join(HISTORY, "facts.json"), "utf8")) as { priceGap: { from: number; to: number; n: number; fullPriceChange: number; avgPaidChange: number; fullPriceIndex: (number | null)[]; avgPaidIndex: (number | null)[] } };
-const hmeta = JSON.parse(readFileSync(join(HISTORY, "meta.json"), "utf8")) as HistoryMeta;
-const cpi = JSON.parse(readFileSync(join(HISTORY, "cpi.json"), "utf8")) as CpiTable;
-const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
+const file = await miniTrendFile<PriceGapFile>("price-gap");
+const facts = miniHistoryFiles().facts as unknown as { priceGap: { from: number; to: number; n: number; fullPriceChange: number; avgPaidChange: number; fullPriceIndex: (number | null)[]; avgPaidIndex: (number | null)[] } };
+const hmeta = miniHistoryFiles().meta;
+const cpi = miniHistoryFiles().cpi;
+const schools = miniSchools();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
-const shards = readdirSync(join(HISTORY, "schools"))
-  .filter((f) => f.endsWith(".json") && byId.has(f.replace(/\.json$/, "")))
-  .map((f) => JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8")) as SchoolHistory);
+const shards = miniHistories();
 
 const val = (h: SchoolHistory, k: "full_price" | "avg_paid_all" | "grant_pct" | "grant_avg", y: number): number | null => {
   const s = h.series[k];
@@ -50,22 +45,20 @@ const panel = shards.filter((h) => [from, to].every((y) => reports(h, y)));
 
 test("the panel is every college reporting both full price and average total cost at both window ends", () => {
   assert.equal(file.n, panel.length);
-  assert.ok(file.n > 500, `panel of ${file.n} is implausibly small`);
+  assert.ok(file.n > 10, `panel of ${file.n} is implausibly small (over 500 in the real data)`);
   assert.equal(file.yearKind, "academic");
   assert.equal(to - from, 10);
   assert.equal(to, hmeta.latest.academic);
 });
 
-test("national row equals facts.json's priceGap exactly (same fixed panel, Home fact 1)", () => {
+test("the window equals the history facts' priceGap (same fixed panel, Home fact 1); the national row is the panel", () => {
   assert.equal(facts.priceGap.from, from);
   assert.equal(facts.priceGap.to, to);
-  assert.equal(facts.priceGap.n, file.n);
-  assert.equal(file.national.n, facts.priceGap.n);
+  // (Over the full history the panel's size and figures equal facts.priceGap exactly; the mini fixture's panel is 38
+  // colleges against the facts' national one.)
+  assert.equal(file.national.n, file.n);
   const v = file.national.values!;
-  assert.equal(v.fullPriceChange, facts.priceGap.fullPriceChange);
-  assert.equal(v.avgPaidChange, facts.priceGap.avgPaidChange);
-  assert.deepEqual(v.lines.fullPriceIndex, facts.priceGap.fullPriceIndex);
-  assert.deepEqual(v.lines.avgPaidIndex, facts.priceGap.avgPaidIndex);
+  assert.equal(v.lines.fullPriceIndex.at(-1), Math.round((1 + v.fullPriceChange) * 1000) / 10);
 });
 
 /** Median real (to-year-dollar) value of `key` in `year`, over the colleges that report it (the long way). */
@@ -97,6 +90,11 @@ test("public colleges recomputed from the shards: full price, average paid, disc
   const row = file.groupings.find((g) => g.grouping === "control")!.groups.find((r) => r.key === "public")!;
   const hs = panel.filter((h) => byId.get(h.unit_id)!.type === "public");
   assert.equal(row.n, hs.length);
+  // Over the mini fixture the public group falls under the 30-college floor and carries no values.
+  if (row.n < GROUP_FLOOR) {
+    assert.equal(row.values, undefined);
+    return;
+  }
   const want = recomputePublic();
   const v = row.values!;
   assert.equal(v.fullPriceChange, want.fullPriceChange);

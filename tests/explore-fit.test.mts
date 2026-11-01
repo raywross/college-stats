@@ -24,7 +24,7 @@ import { emptyProfile, fitsScoreRange } from "../lib/student-profile.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 
-/** A college shaped like data/schools.json, with only what the SAT/ACT and fit filters read. */
+/** A college record shaped like the dataset's, with only what the SAT/ACT and fit filters read. */
 function school(id: string, o: { sat?: [number, number] | null; act?: [number, number] | null; testPolicy?: School["admissions"]["test_policy"] } = {}): School {
   return {
     unit_id: id,

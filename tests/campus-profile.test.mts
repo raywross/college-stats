@@ -1,18 +1,16 @@
 /**
  * Campus profile (specs/data-expansion/campus-profile.md): the HD2025 code rules, Scorecard designation flags, the
- * Explore filters, and the stored values in data/schools.json. `npm test`.
+ * Explore filters, and the stored values in the mini fixture (tests/helpers/snapshot.mts). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { School } from "../lib/types";
 import { CARNEGIE_SAEC, campusProfileFrom, designationsOf, directoryIssues, isOpportunityCollege, matchesCampus, msiFrom } from "../lib/campus-profile.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
 import { parseCsv } from "../scripts/lib/ipeds.mts";
+import { miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 
 test("parseCsv strips a byte-order mark so the first column keeps its name", () => {
   // HD2025 starts with one; left in, UNITID became "﻿UNITID" and no row matched.
@@ -71,7 +69,8 @@ test("the Opportunity colleges filter keeps only Carnegie's class 6", () => {
   assert.ok(!isOpportunityCollege(withClass(CARNEGIE_SAEC[5])));
   assert.ok(!matchesCampus({ campus: undefined }, { opportunity: true }));
   const n = schools.filter(isOpportunityCollege).length;
-  assert.ok(n > 150 && n < 400, `a few hundred Opportunity colleges, got ${n}`);
+  // The real data has a few hundred; the mini fixture's 38 colleges include at least one, and not all are.
+  assert.ok(n >= 1 && n < schools.length, `some but not all colleges are Opportunity colleges, got ${n}`);
 });
 
 test("the directory cross-check flags a different college behind the same id", () => {
@@ -92,7 +91,8 @@ test("stored campus profiles are consistent", () => {
   assert.ok(withSetting.length > 0.95 * schools.length, "nearly every college has a setting");
   for (const s of withSetting) assert.equal(s.campus!.setting!.group, ["city", "suburb", "town", "rural"][Math.floor(s.campus!.setting!.locale / 10) - 1]);
   const r1 = schools.filter((s) => s.campus?.carnegie?.research === "R1").length;
-  assert.ok(r1 > 150 && r1 < 220, `about 187 R1 universities under Carnegie 2025, got ${r1}`);
+  // About 187 nationally under Carnegie 2025; the mini fixture leans to research universities but not only.
+  assert.ok(r1 > 0 && r1 < schools.length, `some but not all colleges are R1, got ${r1}`);
   for (const s of schools) assert.equal(new Set(designationsOf(s)).size, designationsOf(s).length, `${s.name}: no repeated designation`);
 
   const vu = schools.find((s) => s.unit_id === "221999")!;

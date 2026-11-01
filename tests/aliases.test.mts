@@ -1,13 +1,12 @@
 /**
  * Short names and nicknames (lib/aliases.ts; specs/school-identity/aliases.md): splitting, normalizing, dropping,
- * weighting and deduping, the scorer search and Explore share, and the invariant data/aliases.json must hold.
- * `npm test`.
+ * weighting and deduping, the scorer search and Explore share, and the invariant the alias table must hold. Real
+ * colleges, aliases and the curated list come from the mini fixture (tests/helpers/snapshot.mts). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { School } from "../lib/types";
+import { miniAliases, miniReference, miniSchools } from "./helpers/snapshot.mts";
 import {
   aliasKey,
   aliasTableProblems,
@@ -22,8 +21,7 @@ import {
   type CuratedAliasEntry,
 } from "../lib/aliases.ts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 const byName = (name: string) => {
   const s = schools.find((x) => x.name === name);
@@ -140,12 +138,12 @@ test("a curated alias may repeat a word of the college's name; every other drop 
 });
 
 test('"miami" ranks the University of Miami first: both Miamis are curated, so applicants break the tie', () => {
-  const curated: CuratedAliasEntry[] = JSON.parse(readFileSync(join(ROOT, "data", "aliases-curated.json"), "utf8"));
+  const curated = miniReference<CuratedAliasEntry[]>("aliases-curated");
   const florida = byName("University of Miami");
   const ohio = byName("Miami University-Oxford");
   const rowsFor = (s: School) =>
     curated.filter((c) => c.unit_id === s.unit_id && aliasKey(c.alias) === "miami").map((c) => buildAliasRow(c.unit_id, c.alias, "curated", c.weight));
-  assert.equal(rowsFor(florida).length, 1, 'data/aliases-curated.json must give the University of Miami "Miami"');
+  assert.equal(rowsFor(florida).length, 1, 'the curated aliases must give the University of Miami "Miami"');
   const ranked = [ohio, florida]
     .map((s) => ({ school: s, match: scoreSchool(s, "miami", rowsFor(s))! }))
     .sort(compareMatches);
@@ -213,7 +211,7 @@ test("domainLabel strips a leading www/web subdomain and the TLD", () => {
 /* ------------------------------------------------------------------ */
 
 test('"UGA" finds the University of Georgia (the question the spec answers)', () => {
-  const uga = byId.get("139959")!; // University of Georgia (verified by name against data/schools.json)
+  const uga = byId.get("139959")!; // University of Georgia (verified by name against the dataset)
   assert.equal(uga.name, "University of Georgia");
   assert.equal(scoreSchool(uga, "UGA", []), null, "without an alias, the official name doesn't contain \"UGA\" at all");
   const m = scoreSchool(uga, "UGA", [buildAliasRow(uga.unit_id, "UGA", "wikidata")]);
@@ -222,21 +220,21 @@ test('"UGA" finds the University of Georgia (the question the spec answers)', ()
   assert.equal(m!.score, 5 + 2);
 });
 
-test('"ASU" lists Arizona State first among five colleges that share the alias, ties broken by applicants', () => {
+test('"UA" lists Alabama A&M first among four colleges that share the alias, ties broken by applicants', () => {
+  // The mini fixture's four Alabama colleges, each given the same alias (the real data's five "ASU"s aren't in it).
   const names = [
-    "Arizona State University Campus Immersion",
-    "Appalachian State University",
+    "University of Alabama at Birmingham",
     "Alabama State University",
-    "Angelo State University",
-    "Arkansas State University",
+    "University of Alabama in Huntsville",
+    "Alabama A & M University",
   ];
   const candidates = names.map(byName);
   const results = candidates
-    .map((s) => ({ s, m: scoreSchool(s, "ASU", [buildAliasRow(s.unit_id, "ASU", "wikidata")]) }))
+    .map((s) => ({ s, m: scoreSchool(s, "UA", [buildAliasRow(s.unit_id, "UA", "wikidata")]) }))
     .filter((x): x is { s: School; m: NonNullable<typeof x.m> } => x.m !== null)
     .sort((a, b) => compareMatches({ match: a.m, school: a.s }, { match: b.m, school: b.s }));
-  assert.equal(results.length, 5, "all five colleges match");
-  assert.equal(results[0].s.name, "Arizona State University Campus Immersion", "Arizona State has by far the most applicants of the five");
+  assert.equal(results.length, 4, "all four colleges match");
+  assert.equal(results[0].s.name, "Alabama A & M University", "Alabama A&M has the most applicants of the four");
   assert.deepEqual(
     results.map((r) => r.m.score),
     results.map(() => results[0].m.score),
@@ -268,21 +266,20 @@ test('"Georgia Tech" matches only once its alias exists — the official name do
   assert.equal(m!.score, 5 + 4);
 });
 
-test('"penn" ranks the University of Pennsylvania ahead of Penn State, because the curated file says so', () => {
-  const curated: CuratedAliasEntry[] = JSON.parse(readFileSync(join(ROOT, "data", "aliases-curated.json"), "utf8"));
-  const penn = byName("University of Pennsylvania");
-  const pennState = byName("Pennsylvania State University-Main Campus");
-  const pennEntry = curated.find((c) => c.unit_id === penn.unit_id && c.alias.toLowerCase() === "penn");
-  assert.ok(pennEntry, 'data/aliases-curated.json must map "Penn" to the University of Pennsylvania');
-  const pennStateClaimsPenn = curated.some((c) => c.unit_id === pennState.unit_id && c.alias.toLowerCase() === "penn");
-  assert.equal(pennStateClaimsPenn, false, 'Penn State must not also claim "Penn" in the curated file');
-
-  const pennMatch = scoreSchool(penn, "penn", [buildAliasRow(penn.unit_id, pennEntry!.alias, "curated", pennEntry!.weight)]);
-  // Penn State still matches "penn" on its own, via the plain name-prefix tier ("Pennsylvania State..." starts with
-  // "penn") — no alias needed or present for it here, which is exactly why the curated alias is what decides this.
-  const pennStateMatch = scoreSchool(pennState, "penn", []);
-  assert.ok(pennMatch && pennStateMatch);
-  assert.ok(pennMatch!.score > pennStateMatch!.score, "Pennsylvania's alias-exact match must outrank Penn State's name-prefix match");
+test('"usc" ranks Southern California ahead of South Carolina, because the curated file weighs it higher', () => {
+  // The mini fixture lacks Penn and Penn State (the real data's example); USC is the curated file's other shared
+  // alias that decides a ranking, and both colleges are in it.
+  const curated = miniReference<CuratedAliasEntry[]>("aliases-curated");
+  const socal = byName("University of Southern California");
+  const carolina = byName("University of South Carolina-Columbia");
+  const entryFor = (s: School) => curated.find((c) => c.unit_id === s.unit_id && c.alias.toLowerCase() === "usc");
+  assert.ok(entryFor(socal), 'the curated aliases must map "USC" to the University of Southern California');
+  assert.ok(entryFor(carolina), 'the curated aliases also give South Carolina "USC"');
+  const match = (s: School) => scoreSchool(s, "usc", [buildAliasRow(s.unit_id, entryFor(s)!.alias, "curated", entryFor(s)!.weight)]);
+  const socalMatch = match(socal);
+  const carolinaMatch = match(carolina);
+  assert.ok(socalMatch && carolinaMatch);
+  assert.ok(socalMatch!.score > carolinaMatch!.score, "the curated weight, not applicants, puts Southern California first");
 });
 
 test("the matched label is the alias' display form, not the normalized key, for both the exact and prefix tiers", () => {
@@ -316,14 +313,14 @@ test("guard: an alias-prefix match requires at least 2 query characters", () => 
 });
 
 /* ------------------------------------------------------------------ */
-/* 6. File invariant: data/aliases.json                                */
+/* 6. File invariant: the alias table (aliases.json)                   */
 /* ------------------------------------------------------------------ */
 
-test("data/aliases.json has one row per (unit_id, key), and every unit_id exists in data/schools.json", () => {
-  const aliases: AliasRow[] = JSON.parse(readFileSync(join(ROOT, "data", "aliases.json"), "utf8"));
+test("the alias table has one row per (unit_id, key), and every unit_id exists in the dataset", () => {
+  const aliases: AliasRow[] = miniAliases();
   const schoolIds = new Set(schools.map((s) => s.unit_id));
   assert.deepEqual(aliasTableProblems(aliases, schoolIds), []);
-  assert.ok(aliases.length > 1000, "expected thousands of rows from IPEDS, Wikidata, domain, and curated sources");
+  assert.ok(aliases.length > schools.length, "expected several rows per college from IPEDS, Wikidata, domain, and curated sources");
 });
 
 test("guard: aliasTableProblems catches a duplicate (unit_id, key)", () => {

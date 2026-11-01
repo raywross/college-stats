@@ -4,18 +4,16 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { EFA_COLUMNS, EFA_FIRST_YEAR, checkTransferLevels, transferInFrom, transferShare } from "../lib/transfers.ts";
 import { ERAS, requiredColumns } from "../scripts/history/registry.mts";
 import { lastPointMismatches } from "../scripts/history/build.mts";
 import { parseFilters } from "../lib/params.ts";
 import type { SchoolHistory } from "../lib/history.ts";
+import { miniHistory, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 
 /** A pivoted EF{Y}A row: first-time (4) and transfer-ins (19 all, 39 full-time, 59 part-time). Omitted = no row. */
@@ -79,7 +77,7 @@ test("Explore sorts by transfer share", () => {
 });
 
 test("history: every fall from 2008, ending on the snapshot (rule 1)", () => {
-  const h: SchoolHistory = JSON.parse(readFileSync(join(ROOT, "data", "history", "schools", "221999.json"), "utf8"));
+  const h: SchoolHistory = miniHistory("221999")!;
   const s = byId("221999");
   assert.equal(h.series.transfer_in_count!.start, EFA_FIRST_YEAR);
   assert.equal(h.series.transfer_in_count!.values[0], 172, "fall 2008, from EF2008A");

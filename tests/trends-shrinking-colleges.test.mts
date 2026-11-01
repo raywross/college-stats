@@ -1,28 +1,22 @@
 /**
  * Study 3, shrinking colleges (specs/trends/shrinking-colleges.md): recomputes the national row and the Midwest's
- * straight from the committed shards, without the shared panel helpers, and checks the 300-undergrad floor and that
+ * straight from the shards, without the shared panel helpers, and checks the 300-undergrad floor and that
  * the "students" total-change view uses the same panel as the "colleges" shares.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
-import type { School } from "../lib/types";
-import type { HistoryMeta, SchoolHistory } from "../lib/history.ts";
+import type { SchoolHistory } from "../lib/history.ts";
 import { campusExclusionOf, exclusionSets, isCampusBased, type MoverMember } from "../lib/movers.ts";
 import { GROUP_FLOOR } from "../lib/trend-groups.ts";
 import type { ShrinkingCollegesFile, ShrinkingValues } from "../lib/trends.ts";
-import { loadMoverExclusions } from "../scripts/trends/movers.mts";
+import type { CampusExclusionEntry } from "../lib/movers.ts";
+import { miniHistories, miniHistoryFiles, miniReference, miniSchools, miniTrendFile } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const HISTORY = join(ROOT, "data", "history");
-const file = JSON.parse(readFileSync(join(HISTORY, "trends", "shrinking-colleges.json"), "utf8")) as ShrinkingCollegesFile;
-const hmeta = JSON.parse(readFileSync(join(HISTORY, "meta.json"), "utf8")) as HistoryMeta;
-const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
+const file = await miniTrendFile<ShrinkingCollegesFile>("shrinking-colleges");
+const hmeta = miniHistoryFiles().meta;
+const schools = miniSchools();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
-const shards = readdirSync(join(HISTORY, "schools"))
-  .filter((f) => f.endsWith(".json") && byId.has(f.replace(/\.json$/, "")))
-  .map((f) => JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8")) as SchoolHistory);
+const shards = miniHistories();
 
 const val = (h: SchoolHistory, k: "undergrads" | "applicants" | "enrolled", y: number): number | null => {
   const s = h.series[k];
@@ -68,7 +62,7 @@ test("ten-year window ends with history's newest fall; 10-point bar; 300-undergr
 
 test("the panel excludes colleges with under 300 undergraduates at either end of the window", () => {
   assert.equal(file.n, panel.length);
-  assert.ok(file.n > 1000, `panel of ${file.n} is implausibly small`);
+  assert.ok(file.n > 10, `panel of ${file.n} is implausibly small (over 1000 in the real data)`);
   for (const h of panel) for (const y of [from, to]) assert.ok(val(h, "undergrads", y)! >= MIN, `${h.unit_id} under the floor in ${y}`);
   // A college under the floor at either end (even if over it at the other) is excluded.
   const marginal = shards.find((h) => (val(h, "undergrads", from) ?? 0) >= MIN && (val(h, "undergrads", to) ?? Infinity) < MIN);
@@ -83,7 +77,10 @@ test("the Midwest recomputed from the shards (today's region)", () => {
   const row = file.groupings.find((g) => g.grouping === "region")!.groups.find((r) => r.key === "Midwest")!;
   const mw = panel.filter((h) => byId.get(h.unit_id)!.location.region === "Midwest");
   assert.equal(row.n, mw.length);
-  assert.deepEqual(row.values, recompute(mw));
+  // Over the mini fixture this region falls under the 30-college floor and carries no values; over a full panel
+  // its values are recomputed here.
+  if (row.n < GROUP_FLOOR) assert.equal(row.values, undefined);
+  else assert.deepEqual(row.values, recompute(mw));
 });
 
 test("the total-students change ('students' view) uses the same fixed panel as the 'colleges' shares (control grouping)", () => {
@@ -128,7 +125,7 @@ test("the companion panel is a subset of the ten-year panel that shrank 10%+", (
 
 /* ---- Campus-based toggle (specs/trends/shrinking-colleges.md "Data work needed") ---- */
 
-const campuses = exclusionSets(loadMoverExclusions(join(ROOT, "data")).campuses).campuses;
+const campuses = exclusionSets(miniReference<CampusExclusionEntry[]>("excluded-campuses")).campuses;
 const tenMembers: MoverMember[] = panel.map((h) => ({ school: byId.get(h.unit_id)!, h }));
 
 test("the campus-based ten-year panel has no college that fails isCampusBased, and is a subset of the all-colleges panel", () => {

@@ -27,11 +27,12 @@ import {
 } from "../lib/lgbtq.ts";
 import { addLgbtq, type LgbtqInputs } from "../scripts/lib/lgbtq-sync.mts";
 import { validateSchool } from "../lib/lineage.ts";
+import { miniMeta, miniReference, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const LAWS: StateLawTable = JSON.parse(readFileSync(join(ROOT, "data", "state-laws.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
+const LAWS: StateLawTable = miniReference<StateLawTable>("state-laws");
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 
 /** A pivoted EF{Y}A row's undergraduate (level 2) cells. */
@@ -217,9 +218,11 @@ test("stored values: every college has a status, blank is never 0, no count unde
   assert.equal(byId("110662").lgbtq?.gender?.status, "reported");
   assert.ok((byId("110662").lgbtq?.gender?.another ?? 0) > 100);
   assert.equal(byId("228778").lgbtq?.gender?.status, "not_collected");
-  // Texas SB 17: UT Austin (public) has the line; Rice (private) doesn't.
+  // Texas SB 17: UT Austin (public) has the line. North Carolina's law: UNC (public) has it; Duke (private) doesn't
+  // (the real data's private example was Rice, 227757, which the mini fixture lacks).
   assert.equal(byId("228778").lgbtq?.state_law?.statute, "Texas Education Code §51.3525");
-  assert.equal(byId("227757").lgbtq?.state_law ?? null, null);
+  assert.ok(byId("199120").lgbtq?.state_law);
+  assert.equal(byId("198419").lgbtq?.state_law ?? null, null);
   for (const s of schools.filter((x) => x.lgbtq?.state_law)) assert.equal(s.type, "public", s.name);
   assert.ok(meta.sources["state-law"], "the sync adds the state-law source");
   for (const s of schools.filter((x) => x.lgbtq)) assert.deepEqual(validateSchool(s, meta), [], s.name);

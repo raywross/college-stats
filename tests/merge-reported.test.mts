@@ -3,13 +3,12 @@
  * into the committed data/schools.json, the same way scripts/sync-data.mts does (lib/reported-merge.ts), so the
  * data PR carries the site's figures without a separate `npm run sync-data`. `npm test`.
  *
- * Runs the real CLI (via `MERGE_REPORTED_ROOT`) against a scratch copy of a slice of the real dataset, so the
- * line format and the lineage guard are exercised exactly as a workflow run would hit them.
+ * Runs the real CLI (via `MERGE_REPORTED_ROOT`) against a scratch copy of a slice of the dataset (the mini fixture,
+ * tests/helpers/snapshot.mts), so the line format and the lineage guard are exercised exactly as a workflow run would
+ * hit them. The colleges, reported entries, CDS records, and directory lists are the mini fixture's.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import type { Extraction } from "../lib/reported";
 import type { ReportedEntry, ReportedFile } from "../lib/reported.ts";
@@ -17,18 +16,17 @@ import { toReportedEntry } from "../lib/reported-checks.ts";
 import { mergeReported, stripReported } from "../lib/reported-merge.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
 import { validateLineage } from "../lib/lineage.ts";
-import { readRecords } from "../scripts/lib/college-reported/records.mts";
-import { readDirectoryFiles } from "../scripts/lib/directories/files.mts";
+import { loadDirectoriesLayer, loadReportedLayer } from "../scripts/lib/data-platform/layers.mts";
 import { applyCccuMembership, stripCccuMembership } from "../scripts/lib/directories/merge.mts";
+import { miniLayers, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const allSchools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const meta: DatasetMeta = miniMeta();
+const allSchools: School[] = miniSchools();
 
-// Princeton: real federal baseline (fall 2024), no CDS override. Abilene Christian: a second, unrelated college,
-// used for the "removed" case so the slice has more than one row.
+// Princeton: real federal baseline (fall 2024), no CDS override. Abraham Baldwin: a second, unrelated college, used
+// for the "removed" case so the slice has more than one row (the real data's example was Abilene Christian, 222178).
 const PRINCETON = "186131";
-const OTHER = "222178";
+const OTHER = "138558";
 
 function school(unitId: string): School {
   const s = structuredClone(allSchools.find((x) => x.unit_id === unitId)!);
@@ -132,10 +130,11 @@ test("mergeReported puts the newer class into admissions.*, keeping the federal 
 });
 
 test("a hand-imported CDS college: admissions.federal holds the override's values, cited to its edition; dropping it restores them exactly", () => {
-  const NYU = "193900"; // CDS override 2024-25, no college-reported class in the committed data
-  const before = school(NYU);
+  // A CDS override (the real data's example was NYU, 193900, which the mini fixture lacks).
+  const CORNELL = "190415";
+  const before = school(CORNELL);
   assert.equal(before.lineage?.["admissions.applicants"]?.source, "cds");
-  const merged = mergeReported([before], { updated: "2026-10-03", entries: [entryFor(NYU)] }).schools[0];
+  const merged = mergeReported([before], { updated: "2026-10-03", entries: [entryFor(CORNELL)] }).schools[0];
   assert.equal(merged.admissions.applicants, 46618);
   assert.equal(merged.admissions.federal?.applicants, before.admissions.applicants);
   assert.deepEqual(merged.lineage?.["admissions.federal"], before.lineage?.["admissions.applicants"]);
@@ -144,12 +143,12 @@ test("a hand-imported CDS college: admissions.federal holds the override's value
   assert.equal(JSON.stringify(dropped), JSON.stringify(before));
 });
 
-// A real CCCU voting member (data/directories/cccu.json), chosen only for already carrying `school.religion`
-// (applyCccuMembership's condition for setting the flag at all).
-const CCCU_COLLEGE = "110361"; // California Baptist University
+// A real CCCU voting member (the cccu directory list), chosen only for already carrying `school.religion`
+// (applyCccuMembership's condition for setting the flag at all). The real data's example was California Baptist.
+const CCCU_COLLEGE = "123457"; // Simpson University
 
-test("merge-reported and merge-directories' CCCU membership step agree on lineage key order, whichever runs first", () => {
-  const files = readDirectoryFiles(join(ROOT, "data"));
+test("merge-reported and merge-directories' CCCU membership step agree on lineage key order, whichever runs first", async () => {
+  const { files } = await loadDirectoriesLayer(miniLayers());
   // Start from a clean slate (the committed fixture is already a flagged CCCU member): stripCccuMembership removes
   // the flag and its lineage the same way a fresh re-merge does, so both orders below start from the same place.
   const base = stripCccuMembership(school(CCCU_COLLEGE));
@@ -172,11 +171,15 @@ test("merge-reported and merge-directories' CCCU membership step agree on lineag
   assert.deepEqual(validateLineage([a], meta), []);
 });
 
-test("the committed data/schools.json is exactly what merging data/college-reported.json and data/cds-records/ produces (re-merge changes nothing)", () => {
-  const reported: ReportedFile = JSON.parse(readFileSync(join(ROOT, "data", "college-reported.json"), "utf8"));
+test("the stored colleges are exactly what merging the reported layer's entries and CDS records produces (re-merge changes nothing)", async () => {
+  const { file: reported, records } = await loadReportedLayer(miniLayers());
   // C1 first, then the newest groups from the CDS records (specs/data-expansion/cds-student-body-and-outcomes.md).
-  const { schools } = mergeReported(allSchools, reported, { records: readRecords(join(ROOT, "data", "cds-records")), meta, table: CDS_TEMPLATE });
-  const changed = schools.filter((s, i) => JSON.stringify(s) !== JSON.stringify(allSchools[i])).map((s) => s.unit_id);
+  // The mini fixture keeps only four colleges' CDS records (the others' record groups are in their stored rows but not
+  // in its layers), so the re-merge runs over those four; the publisher's compose covers every college.
+  const withRecords = allSchools.filter((s) => records.some((r) => r.unit_id === s.unit_id));
+  assert.equal(withRecords.length, 4);
+  const { schools } = mergeReported(withRecords, reported, { records, meta, table: CDS_TEMPLATE });
+  const changed = schools.filter((s, i) => JSON.stringify(s) !== JSON.stringify(withRecords[i])).map((s) => s.unit_id);
   assert.deepEqual(changed, [], "run `npm run merge-reported`");
   // Every college with a reported block actually had something replaced or nothing newer to replace.
   for (const s of allSchools) if (s.reported?.admissions && s.admissions.federal) assert.ok(s.reported.admissions.year > (s.admissions.federal.year ?? 0));

@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { EFA_DIST_COLUMNS, EFA_DIST_FIRST_YEAR, checkOnlineRows, isMostlyOnline, matchesOnline, onlineLine, onlineSharesFrom } from "../lib/online-share.ts";
@@ -17,10 +17,11 @@ import { FIELDS } from "../lib/fields.ts";
 import { TOPIC_FIELDS } from "../lib/profile-topics.ts";
 import { parseCsv } from "../scripts/lib/ipeds.mts";
 import { checkOnlineShare } from "../scripts/lib/online-share-sync.mts";
+import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 
 /** A pivoted EF{Y}A_DIST row: each level's [every course online, some, none, total]. */
@@ -183,10 +184,10 @@ test("stored values: nearly every college, shares within 0–1, at least one cou
   assert.ok(byId("221999").demographics.online_share! < 0.05);
 });
 
-test("the field rule reproduces the retired reviewed list for fall 2024 (110 public and nonprofit colleges)", { skip: meta.vintages["ipeds-ef-a-dist"] !== "Fall 2024" }, () => {
+test("the field rule reproduces the retired reviewed list for fall 2024, over the mini fixture: Southern New Hampshire only", { skip: meta.vintages["ipeds-ef-a-dist"] !== "Fall 2024" }, () => {
+  // The real data's list has 110 public and nonprofit colleges; of the mini fixture's 38, only SNHU is on it.
   const online = schools.filter((s) => s.type !== "private-forprofit" && isMostlyOnline(s));
-  assert.equal(online.length, 110);
-  for (const id of ["100812", "101453", "101587", "183026"]) assert.ok(online.some((s) => s.unit_id === id), id);
+  assert.deepEqual(online.map((s) => s.unit_id), ["183026"]);
 });
 
 /* ---- Recomputed from NCES's file ---- */

@@ -1,6 +1,7 @@
 # Part 6, Rollout: phases, owner steps, the free plan, egress, risks
 
-> Status: **planned** 2026-10-31 (owner's brief and answers in [README.md](README.md)); phase 1 started the same day.
+> Status: **built** 2026-11-01. Planned 2026-10-31 (owner's brief and answers in [README.md](README.md)); the four phases
+> shipped as PRs #201, #203, #204 and #205 between 2026-10-31 and 2026-11-01 (the "As built" sections below and in each part).
 > This is the roadmap's work item for the whole [data platform](README.md). Each phase leaves the site no worse than before it; each is one PR into
 > `main` (or two where noted), built in units by agents from a brief, verified, QA'd.
 

@@ -141,6 +141,18 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote: "One more recipe in the college-reported engine, two small tables with a consent box and a consensus rule, and a review row in the Data Steward's queue.",
     status: "planned",
   },
+  // Essays part 7 (2026-11-01): the owner's ask for parents and counselors as editors, and marks in the draft.
+  {
+    slug: "essays-editors",
+    file: "specs/product/essays/editors.md",
+    group: "essays",
+    summary:
+      "Parents and counselors propose changes in their own copy of a draft and the student accepts or rejects each one, or all, with three views of the text (with changes, as suggested, original); every note, comment and open change is underlined in the field in its author's color, with a hover or tap popover and a jump to the details; the reader's corrected words become one-tap changes.",
+    complexity: 3,
+    complexityNote:
+      "A new table with its own writing rules, an in-house word diff that must locate and apply changes under concurrent editing, two new views on the draft page, and a backdrop-and-overlay drawing technique that has to line up with the field on every phone.",
+    status: "planned",
+  },
   {
     slug: "net-price-estimator",
     file: "specs/product/net-price-estimator.md",

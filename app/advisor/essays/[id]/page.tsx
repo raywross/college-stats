@@ -8,12 +8,14 @@ import { SignInPrompt } from "@/components/account/SignInPrompt";
 import { Editor } from "@/components/essays/Editor";
 import { ExportMenu } from "@/components/essays/ExportMenu";
 import { ImportSheet } from "@/components/essays/ImportSheet";
+import { MarksProvider } from "@/components/essays/marks-context";
 import { Notes } from "@/components/essays/Notes";
 import { ReusePicker } from "@/components/essays/PromptPicker";
 import { WhyFold } from "@/components/ui/why-fold";
 import { authConfigured } from "@/lib/auth";
 import { countLabel } from "@/lib/essays/count";
 import { essaysViewer, planColleges, promptLookup, readEssay } from "@/lib/essays/load";
+import { authorOrder, commentAuthorKey } from "@/lib/essays/marks";
 import { KIND_LABEL, pickerGroups, refUnitId, resolvePrompt, type ResolvedPrompt } from "@/lib/essays/prompts";
 import { essaysHref, refsOf, rowLimit } from "@/lib/essays/rows";
 import { baseChangedSince, reuseChoices } from "@/lib/essays/variants";
@@ -84,6 +86,8 @@ async function render(id: string, searchParams: Search) {
   const canWrite = viewer.canWrite && essay.student_id === viewer.student.id;
   const person = viewer.role === "guardian" ? essay.student_id : null;
   const q = person ? `?for=${person}` : "";
+  // Each author's color on this draft: by their first comment (suggestions' authors join this list too).
+  const markOrder = authorOrder(comments.map((c) => ({ key: commentAuthorKey(c), created: c.created })));
 
   const [colleges, lookup] = await Promise.all([planColleges(essay.student_id), promptLookup()]);
   const prompt = resolvePrompt(essay.prompt_ref, lookup);
@@ -153,20 +157,24 @@ async function render(id: string, searchParams: Search) {
         </div>
       </header>
 
-      <Editor
-        essay={{ id: essay.id, title: essay.title, body: essay.body, updated: essay.updated, status: essay.status, countKind: essay.count_kind, limit }}
-        canWrite={canWrite}
-        userId={viewer.userId}
-        person={person}
-        versions={versions}
-        comments={comments}
-        forCollege={prompt.college}
-        planColleges={colleges}
-        label={essay.title || prompt.title}
-      />
+      {/* Marks in the draft (specs/product/essays/editors.md "2. Marks in the draft"): the Editor and the notes share
+          the field's text and their marks; colors go to authors in order of first appearance on this draft. */}
+      <MarksProvider order={markOrder} initialText={essay.body}>
+        <Editor
+          essay={{ id: essay.id, title: essay.title, body: essay.body, updated: essay.updated, status: essay.status, countKind: essay.count_kind, limit }}
+          canWrite={canWrite}
+          userId={viewer.userId}
+          person={person}
+          versions={versions}
+          comments={comments}
+          forCollege={prompt.college}
+          planColleges={colleges}
+          label={essay.title || prompt.title}
+        />
 
-      {/* A reader's notes (specs/product/essays/reviewer.md): the student asks; a guardian reads them. */}
-      <Notes essayId={essay.id} canRequest={canWrite} />
+        {/* A reader's notes (specs/product/essays/reviewer.md): the student asks; a guardian reads them. */}
+        <Notes essayId={essay.id} canRequest={canWrite} />
+      </MarksProvider>
     </article>
   );
 }

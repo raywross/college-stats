@@ -21,8 +21,11 @@ import { isUuid } from "@/lib/planner/plan-writes";
 import { countText, type CountKind, type EssayLimit } from "./count";
 import { normalizeText } from "./normalize";
 import { KIND_LABEL, MAIN_REF, parsePromptRef, resolvePrompt, type EssayKind, type ResolvedPrompt } from "./prompts";
-import { promptLookup } from "./load";
-import { shouldVersion, ESSAY_STATUSES, type CommentAnchor, type EssayStatus, type VersionSource } from "./rows";
+import { isMissingTable, promptLookup } from "./load";
+import { shouldVersion, ESSAY_STATUSES, VERSION_SOURCES, type CommentAnchor, type EssayStatus, type VersionSource } from "./rows";
+import { changesBetween, planDecision, suggestionLabel, type Decision } from "./suggestions";
+import { spanOffsets, type NoteSpan } from "./notes-view";
+import { namesFor } from "@/lib/lists";
 import { textFromUpload, uploadKindOf } from "./docx";
 import { tickEssaysMove } from "./move-tick";
 import { trackServer } from "@/lib/analytics-server";
@@ -162,6 +165,38 @@ export type SaveResult =
   | { ok: false; conflict: { body: string; updated: string } }
   | Fail;
 
+type BodyRow = { id: string; student_id: string; body: string; count_kind: CountKind; updated: string };
+
+/**
+ * Writes a new body over `row` (the draft as just read) with the student's session, and a version when one is due
+ * (rows.ts shouldVersion; `forceVersion` for the first accepted change of a suggestion). Not exported: the actions
+ * below call it after their own checks.
+ */
+async function storeBody(
+  r: Ready,
+  row: BodyRow,
+  text: string,
+  opts: { source: VersionSource; label: string | null; forceVersion?: boolean },
+): Promise<{ ok: true; updated: string; count: number; versioned: boolean } | Fail> {
+  const count = countText(text, row.count_kind);
+  const changed = row.body !== text;
+  let updated = row.updated;
+  if (changed) {
+    const { data, error } = await r.supabase.from("essays").update({ body: text, count }).eq("id", row.id).select("updated");
+    if (error) return fail(error, "saveEssay");
+    if (!data?.length) return { ok: false, message: STUDENT_ONLY };
+    updated = (data[0] as { updated: string }).updated;
+  }
+  const last = await r.supabase.from("essay_versions").select("created").eq("essay_id", row.id).order("created", { ascending: false }).limit(1);
+  const lastVersionAt = (last.data as { created: string }[] | null)?.[0]?.created ?? null;
+  const versioned = (opts.forceVersion === true && changed) || shouldVersion({ lastVersionAt, now: Date.now(), source: opts.source, mark: opts.label !== null, changed });
+  if (versioned) {
+    const { error } = await r.supabase.from("essay_versions").insert({ essay_id: row.id, body: text, count, source: opts.source, label: opts.label });
+    if (error) return fail(error, "saveEssay version");
+  }
+  return { ok: true, updated, count, versioned };
+}
+
 /**
  * Saves the body. `expectedUpdated` is the server copy's `updated` the editor last saw: when the server's is newer
  * (another device saved since), nothing is written and the server copy comes back, for the student to choose
@@ -176,36 +211,22 @@ export async function saveEssay(
   if (!isUuid(id) || typeof body !== "string") return { ok: false, message: FAILED };
   const text = normalizeText(body);
   if (text.length > MAX_BODY) return { ok: false, message: "That's longer than a draft can be here." };
-  const source: VersionSource = opts.source && ["typed", "pasted", "uploaded", "docs", "restored"].includes(opts.source) ? opts.source : "typed";
+  const source: VersionSource = opts.source && VERSION_SOURCES.includes(opts.source) ? opts.source : "typed";
   const label = typeof opts.mark === "string" ? opts.mark.trim().slice(0, 80) || "Marked" : null;
   const r = await ready();
   if (!("supabase" in r)) return r;
 
   const current = await r.supabase.from("essays").select("id, student_id, body, count_kind, updated").eq("id", id).maybeSingle();
   if (current.error) return fail(current.error, "saveEssay");
-  const row = current.data as { id: string; student_id: string; body: string; count_kind: CountKind; updated: string } | null;
+  const row = current.data as BodyRow | null;
   if (!row) return { ok: false, message: FAILED };
   if (!opts.force && opts.expectedUpdated && Date.parse(row.updated) > Date.parse(opts.expectedUpdated) && row.body !== text) {
     return { ok: false, conflict: { body: row.body, updated: row.updated } };
   }
 
-  const count = countText(text, row.count_kind);
-  const changed = row.body !== text;
-  let updated = row.updated;
-  if (changed) {
-    const { data, error } = await r.supabase.from("essays").update({ body: text, count }).eq("id", id).select("updated");
-    if (error) return fail(error, "saveEssay");
-    if (!data?.length) return { ok: false, message: STUDENT_ONLY };
-    updated = (data[0] as { updated: string }).updated;
-  }
-
-  const last = await r.supabase.from("essay_versions").select("created").eq("essay_id", id).order("created", { ascending: false }).limit(1);
-  const lastVersionAt = (last.data as { created: string }[] | null)?.[0]?.created ?? null;
-  const versioned = shouldVersion({ lastVersionAt, now: Date.now(), source, mark: label !== null, changed });
-  if (versioned) {
-    const { error } = await r.supabase.from("essay_versions").insert({ essay_id: id, body: text, count, source, label });
-    if (error) return fail(error, "saveEssay version");
-  }
+  const stored = await storeBody(r, row, text, { source, label });
+  if (!stored.ok) return stored;
+  const { updated, count, versioned } = stored;
   if (label !== null || source !== "typed") refresh();
   return { ok: true, updated, count, versioned };
 }
@@ -467,4 +488,226 @@ export async function importUploadedFile(form: FormData): Promise<ImportResult> 
   const result = await insertImportedVersion(r.supabase, id, text, "uploaded");
   if (result.ok) refresh();
   return result;
+}
+
+/* ------------------------------------------------------------------ */
+/* Part 7: editors (specs/product/essays/editors.md)                   */
+/* ------------------------------------------------------------------ */
+
+const MAX_NOTE = 2000;
+const NOTHING_CHANGED = "Nothing changed.";
+const DRAFT_CHANGED = "The draft changed here.";
+const SUGGESTIONS_MISSING = "Suggestions aren't set up yet.";
+
+type SuggestionRead = {
+  id: string;
+  essay_id: string;
+  base_body: string;
+  proposed_body: string;
+  status: "open" | "decided" | "withdrawn";
+  decisions: Record<string, Decision>;
+  author_id: string | null;
+  author_role: "guardian" | "counselor";
+};
+const SUGGESTION_READ = "id, essay_id, base_body, proposed_body, status, decisions, author_id, author_role";
+
+/** The database's refusals as words (supabase/migrations/20261101120000_essay_suggestions.sql). */
+function suggestionFail(error: { code?: string; message?: string } | null | undefined, what: string): Fail {
+  const m = error?.message ?? "";
+  if (isMissingTable(error)) return { ok: false, message: SUGGESTIONS_MISSING };
+  if (/essay_suggestions_one_open|duplicate key/i.test(m)) return { ok: false, message: "You already have suggestions waiting on this draft. Edit those instead." };
+  if (/essay_suggestion_own/.test(m)) return { ok: false, message: "This is your own draft: write in it directly." };
+  if (/essay_suggestion_decided/.test(m)) return { ok: false, message: "These can't be changed now: the student has started deciding on them." };
+  if (/essay_suggestion_(not_yours|author|fixed)/.test(m)) return { ok: false, message: "Only the person who sent these suggestions can change them." };
+  if (/essay_suggestion_(student|status)/.test(m)) return { ok: false, message: "Only the student decides on suggested changes." };
+  if (/row-level security/i.test(m)) return { ok: false, message: "Only the student's family can suggest changes to this draft." };
+  return fail(error, what);
+}
+
+/** The editor's proposed text as stored, or a refusal. */
+function proposedText(body: unknown): { text: string } | Fail {
+  if (typeof body !== "string") return { ok: false, message: FAILED };
+  const text = normalizeText(body);
+  if (text.length > MAX_BODY) return { ok: false, message: "That's longer than a draft can be here." };
+  return { text };
+}
+
+const noteText = (note: unknown): string | null => (typeof note === "string" && note.trim() ? note.trim().slice(0, MAX_NOTE) : null);
+
+/**
+ * An editor's suggestions for the whole draft (editors.md "How an editor suggests"): any reader of the draft who isn't
+ * the student. The changes are computed against the draft's text now, which is stored with the suggestion
+ * (`base_body`); the newest version is named too when its text is that one. Refused when nothing changed.
+ */
+export async function suggestChanges(essayId: string, proposedBody: string, note: string | null): Promise<{ ok: true; id: string; changes: number } | Fail> {
+  if (!isUuid(essayId)) return { ok: false, message: FAILED };
+  const p = proposedText(proposedBody);
+  if ("ok" in p) return p;
+  const r = await ready();
+  if (!("supabase" in r)) return r;
+  const [essay, last] = await Promise.all([
+    r.supabase.from("essays").select("id, body").eq("id", essayId).maybeSingle(),
+    r.supabase.from("essay_versions").select("id, body").eq("essay_id", essayId).order("created", { ascending: false }).limit(1),
+  ]);
+  if (essay.error) return fail(essay.error, "suggestChanges");
+  const e = essay.data as { id: string; body: string } | null;
+  if (!e) return { ok: false, message: FAILED };
+  const changes = changesBetween(e.body, p.text).length;
+  if (changes === 0) return { ok: false, message: NOTHING_CHANGED };
+  const newest = (last.data as { id: string; body: string }[] | null)?.[0] ?? null;
+  const { data, error } = await r.supabase
+    .from("essay_suggestions")
+    .insert({ essay_id: essayId, base_version_id: newest && newest.body === e.body ? newest.id : null, base_body: e.body, proposed_body: p.text, note: noteText(note) })
+    .select("id, author_role")
+    .single();
+  if (error || !data) return suggestionFail(error, "suggestChanges");
+  const row = data as { id: string; author_role: "guardian" | "counselor" };
+  await trackServer("essay_suggestion_sent", { role: row.author_role, changes }, r.userId);
+  refresh();
+  return { ok: true, id: row.id, changes };
+}
+
+/** The author edits their open suggestion (its proposed text and note) while the student hasn't decided anything. */
+export async function updateSuggestion(id: string, proposedBody: string, note: string | null): Promise<{ ok: true; changes: number } | Fail> {
+  if (!isUuid(id)) return { ok: false, message: FAILED };
+  const p = proposedText(proposedBody);
+  if ("ok" in p) return p;
+  const r = await ready();
+  if (!("supabase" in r)) return r;
+  const read = await r.supabase.from("essay_suggestions").select(SUGGESTION_READ).eq("id", id).maybeSingle();
+  if (read.error) return suggestionFail(read.error, "updateSuggestion");
+  const s = read.data as SuggestionRead | null;
+  if (!s) return { ok: false, message: FAILED };
+  if (s.status !== "open") return { ok: false, message: "These suggestions are closed." };
+  const changes = changesBetween(s.base_body, p.text).length;
+  if (changes === 0) return { ok: false, message: NOTHING_CHANGED };
+  const { data, error } = await r.supabase.from("essay_suggestions").update({ proposed_body: p.text, note: noteText(note) }).eq("id", id).select("id");
+  if (error) return suggestionFail(error, "updateSuggestion");
+  if (!data?.length) return { ok: false, message: "Only the person who sent these suggestions can change them." };
+  await trackServer("essay_suggestion_updated", { role: s.author_role }, r.userId);
+  refresh();
+  return { ok: true, changes };
+}
+
+/** The author withdraws their open suggestion before the student has decided anything. It is kept, not deleted. */
+export async function withdrawSuggestion(id: string): Promise<EssayActionResult> {
+  if (!isUuid(id)) return { ok: false, message: FAILED };
+  const r = await ready();
+  if (!("supabase" in r)) return r;
+  const { data, error } = await r.supabase.from("essay_suggestions").update({ status: "withdrawn" }).eq("id", id).eq("status", "open").select("id, author_role");
+  if (error) return suggestionFail(error, "withdrawSuggestion");
+  if (!data?.length) return { ok: false, message: "These suggestions are closed." };
+  await trackServer("essay_suggestion_withdrawn", { role: (data[0] as { author_role: "guardian" | "counselor" }).author_role }, r.userId);
+  refresh();
+  return { ok: true };
+}
+
+const CHANGE_KEY = /^[0-9a-f]{16}$/;
+
+/** First name for the version list's line ("from Jane"), or the role's word. */
+async function editorName(authorId: string | null, role: "guardian" | "counselor"): Promise<string> {
+  const names: Record<string, string | null> = authorId ? await namesFor([authorId]).catch(() => ({})) : {};
+  const first = (authorId ? names[authorId] : null)?.trim().split(/\s+/)[0];
+  return first || (role === "counselor" ? "a counselor" : "a parent");
+}
+
+/**
+ * The student accepts or rejects changes (editors.md "What accepting does"). The decisions are merged over the stored
+ * ones (a change already decided stays decided); the newly accepted changes are applied to the draft's text as it is
+ * now (not the text the editor saw), each found again by its words; one that no longer fits stays undecided and comes
+ * back in `stale`. The body is saved as source `suggested`: a version on the first accepted change and, when the last
+ * change is decided, one marked "Accepted 3 of 4 changes from Jane"; the ten-minute rule otherwise. Returns the new
+ * body and `updated` so the editor swaps its text without a conflict.
+ */
+export async function decideSuggestion(
+  id: string,
+  decisions: Record<string, Decision>,
+): Promise<{ ok: true; body: string; updated: string; applied: string[]; stale: string[]; status: "open" | "decided" } | Fail> {
+  if (!isUuid(id) || typeof decisions !== "object" || decisions === null) return { ok: false, message: FAILED };
+  const incoming: Record<string, Decision> = {};
+  for (const [k, v] of Object.entries(decisions).slice(0, 1000)) if (CHANGE_KEY.test(k) && (v === "accepted" || v === "rejected")) incoming[k] = v;
+  if (Object.keys(incoming).length === 0) return { ok: false, message: "Choose a change first." };
+  const r = await ready();
+  if (!("supabase" in r)) return r;
+
+  const read = await r.supabase.from("essay_suggestions").select(SUGGESTION_READ).eq("id", id).maybeSingle();
+  if (read.error) return suggestionFail(read.error, "decideSuggestion");
+  const s = read.data as SuggestionRead | null;
+  if (!s) return { ok: false, message: FAILED };
+  if (s.status !== "open") return { ok: false, message: s.status === "withdrawn" ? "These suggestions were withdrawn." : "These suggestions are already decided." };
+  const essay = await r.supabase.from("essays").select("id, student_id, body, count_kind, updated").eq("id", s.essay_id).maybeSingle();
+  if (essay.error) return fail(essay.error, "decideSuggestion");
+  const e = essay.data as BodyRow | null;
+  if (!e) return { ok: false, message: FAILED };
+
+  const stored = s.decisions ?? {};
+  const plan = planDecision(e.body, s.base_body, s.proposed_body, stored, incoming);
+  const track = () => trackServer("essay_suggestion_decided", { accepted: plan.applied.length, rejected: plan.rejected.length, stale: plan.stale.length, all: plan.all }, r.userId);
+  if (plan.applied.length === 0 && plan.rejected.length === 0) {
+    await track();
+    return { ok: true, body: e.body, updated: e.updated, applied: [], stale: plan.stale, status: "open" };
+  }
+
+  // The decisions first (the trigger lets only the student write them), then the body.
+  const decidedAt = plan.status === "decided" ? new Date().toISOString() : null;
+  const wrote = await r.supabase.from("essay_suggestions").update({ decisions: plan.decisions, status: plan.status, decided_at: decidedAt }).eq("id", id).eq("status", "open").select("id");
+  if (wrote.error) return suggestionFail(wrote.error, "decideSuggestion");
+  if (!wrote.data?.length) return { ok: false, message: "Only the student decides on suggested changes." };
+
+  let body = e.body;
+  let updated = e.updated;
+  const label = plan.status === "decided" && plan.accepted > 0 ? suggestionLabel(await editorName(s.author_id, s.author_role), plan.accepted, plan.total) : null;
+  if (plan.applied.length > 0 || label !== null) {
+    const firstAccept = plan.applied.length > 0 && !Object.values(stored).includes("accepted");
+    const saved = await storeBody(r, e, plan.text, { source: "suggested", label, forceVersion: firstAccept });
+    if (!saved.ok) {
+      // Put the decisions back so no change is recorded as accepted without being in the draft.
+      await r.supabase.from("essay_suggestions").update({ decisions: stored, status: "open", decided_at: null }).eq("id", id);
+      return saved;
+    }
+    body = plan.text;
+    updated = saved.updated;
+  }
+  await track();
+  refresh();
+  return { ok: true, body, updated, applied: plan.applied, stale: plan.stale, status: plan.status };
+}
+
+/**
+ * The reader's corrected word, accepted (editors.md "The reader's fixes"): a mechanics note's `fix` replaces the words
+ * at its span, when those words are still the ones the reader read (the reviewed version's text at the span); the
+ * draft is saved as source `suggested` and the note marked done, as the notes route marks it.
+ */
+export async function acceptFix(noteId: string): Promise<{ ok: true; body: string; updated: string } | Fail> {
+  if (!isUuid(noteId)) return { ok: false, message: FAILED };
+  const r = await ready();
+  if (!("supabase" in r)) return r;
+  const noteRead = await r.supabase.from("essay_notes").select("id, review_id, category, span, fix, state").eq("id", noteId).maybeSingle();
+  if (noteRead.error) return fail(noteRead.error, "acceptFix");
+  const note = noteRead.data as { id: string; review_id: string; category: string; span: NoteSpan | null; fix: string | null; state: string } | null;
+  if (!note) return { ok: false, message: FAILED };
+  if (note.category !== "mechanics" || !note.fix || !note.span || note.state !== "open") return { ok: false, message: "This note has no fix to accept." };
+  const review = await r.supabase.from("essay_reviews").select("essay_id, version_id").eq("id", note.review_id).maybeSingle();
+  const rv = review.data as { essay_id: string; version_id: string } | null;
+  if (review.error || !rv) return fail(review.error, "acceptFix review");
+  const [essay, version] = await Promise.all([
+    r.supabase.from("essays").select("id, student_id, body, count_kind, updated").eq("id", rv.essay_id).maybeSingle(),
+    r.supabase.from("essay_versions").select("body").eq("id", rv.version_id).maybeSingle(),
+  ]);
+  const e = essay.data as BodyRow | null;
+  if (essay.error || !e) return fail(essay.error, "acceptFix");
+  const at = spanOffsets(e.body, note.span);
+  if (!at) return { ok: false, message: DRAFT_CHANGED };
+  const read = (version.data as { body: string } | null)?.body ?? null;
+  const was = read !== null ? spanOffsets(read, note.span) : null;
+  if (read !== null && (!was || read.slice(was.start, was.end) !== e.body.slice(at.start, at.end))) return { ok: false, message: DRAFT_CHANGED };
+
+  const text = normalizeText(e.body.slice(0, at.start) + note.fix + e.body.slice(at.end));
+  const saved = await storeBody(r, e, text, { source: "suggested", label: null });
+  if (!saved.ok) return saved;
+  const marked = await r.supabase.from("essay_notes").update({ state: "done" }).eq("id", noteId).select("id");
+  if (marked.error) console.error(`essays: marking a fixed note done failed: ${marked.error.message}`);
+  await trackServer("essay_fix_accepted", { category: "mechanics" }, r.userId);
+  refresh();
+  return { ok: true, body: text, updated: saved.updated };
 }

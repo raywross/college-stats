@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { withJobRun } from "@/lib/jobs/record";
 import { isAuthorized } from "@/lib/revalidate";
 import { supabaseClient, CHANGE_COLUMNS } from "@/lib/supabase";
 import { buildDigest, eligiblePublishes, type DigestCollegeInput, type PublishRow } from "@/lib/digest";
@@ -54,8 +55,10 @@ async function run(request: NextRequest) {
   return Response.json({ configured, publishes: summary });
 }
 
-export const GET = run;
-export const POST = run;
+// Every run leaves a row in job_runs for the admin console's Jobs pages (lib/jobs/record.ts).
+const recorded = withJobRun("digests", run);
+export const GET = recorded;
+export const POST = recorded;
 
 async function processPublish(
   client: ReturnType<typeof supabaseClient>,

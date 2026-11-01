@@ -101,6 +101,7 @@ supports but does not favor):
 | **Colleges** | `/admin/colleges`, `/admin/colleges/[unit]` | A college's hidden values and its health; a student's standing from the student page |
 | **Health** | `/admin/health` | Every college by data health, with filters |
 | **Operations** | `/admin/operations` | Workflow runs, open data PRs, the review queue |
+| **Jobs** | `/admin/jobs`, `/admin/jobs/[job]`, `/admin/jobs/[job]/runs/[run]` | Every batch job (Vercel Cron and GitHub Actions): schedule, next run, run history, one run's details ([admin-jobs.md](admin-jobs.md)) |
 | **Data** | `/admin/data`, `/admin/data/reference`, `/admin/data/reference/[name]` | The data platform: change sets, holds, snapshots, and the reference-document editor ([data-platform/change-sets.md](../data-platform/change-sets.md), [storage.md](../data-platform/storage.md)) |
 | **Log** | `/admin/log`, `/admin/admins` | Every admin action; who is an admin |
 

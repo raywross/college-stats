@@ -1,5 +1,6 @@
 import { planHref } from "@/lib/planner/plan-tabs";
 import type { NextRequest } from "next/server";
+import { withJobRun } from "@/lib/jobs/record";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isAuthorized } from "@/lib/revalidate";
 import { supabaseClient } from "@/lib/supabase";
@@ -137,8 +138,10 @@ async function run(request: NextRequest) {
   return Response.json({ configured: true, emailConfigured: email, textsConfigured: texts, ...summary, snapshotsDeleted });
 }
 
-export const GET = run;
-export const POST = run;
+// Every run leaves a row in job_runs for the admin console's Jobs pages (lib/jobs/record.ts).
+const recorded = withJobRun("weekly", run);
+export const GET = recorded;
+export const POST = recorded;
 
 interface StudentRow {
   id: string;

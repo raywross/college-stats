@@ -101,6 +101,7 @@ supports but does not favor):
 | **Colleges** | `/admin/colleges`, `/admin/colleges/[unit]` | A college's hidden values and its health; a student's standing from the student page |
 | **Health** | `/admin/health` | Every college by data health, with filters |
 | **Operations** | `/admin/operations` | Workflow runs, open data PRs, the review queue |
+| **Data** | `/admin/data`, `/admin/data/reference`, `/admin/data/reference/[name]` | The data platform: change sets, holds, snapshots, and the reference-document editor ([data-platform/change-sets.md](../data-platform/change-sets.md), [storage.md](../data-platform/storage.md)) |
 | **Log** | `/admin/log`, `/admin/admins` | Every admin action; who is an admin |
 
 A global search box in the rail's header takes anything: a name, an email, a household name, a college name or unit
@@ -201,6 +202,11 @@ Three panels over the public profile's header (name, tier chip, admit rate as ci
 
 Below them, the college's [health card](#health), the open failures and review-queue items, and a **Rerun** button
 that opens Operations with this college filled in.
+
+An **Edit** link beside "Public profile" opens `/admin/colleges/[unit]/edit`: any registered value for this college,
+set by hand with no source or quote required, cited "Edited by Quad on {date}" and shown on the site at once. See
+[data-platform/change-sets.md](../data-platform/change-sets.md) "As built, phase 3" for the editor, its typed inputs,
+History, Release, and the "newer pipeline value" marker.
 
 ### A high school: on `/admin/high-schools/[id]`
 The pooled course counts in full (`school_course_counts`: course, count), with the three-student line drawn, so the
@@ -383,6 +389,16 @@ so every path is tested with fakes) and wired in `lib/admin/ops.ts`.
 Reading a diff, editing anything other than the two files above, changing a workflow, and the archive repository's
 token ([setup section 9](../college-reported-setup.md#9-archive-repo-and-token)) stay where they are. The console
 links to GitHub everywhere a thing has a page there.
+
+## Data
+`/admin/data` is the data platform's own console section (change sets, holds, snapshots; see
+[data-platform/change-sets.md](../data-platform/change-sets.md) "The console" and "As built" sections for what each
+screen shows and does). Its **Reference** screen, added in phase 3, lists every whole-document reference — the
+release calendar and the eleven `reference.files` documents (aid policies, guaranteed admission, state laws, the
+curated aliases, and the rest) — and `/admin/data/reference/[name]` edits one, validated before it saves and kept in
+versions with a typed-confirmation revert. Full detail, including which documents have their own validator, is in
+[data-platform/change-sets.md](../data-platform/change-sets.md) "As built, phase 3" and
+[storage.md](../data-platform/storage.md).
 
 ## Settings
 `/admin/settings` (built 2026-10-21; linked under "Who is an admin" in the rail): switches for the whole site. Each is a

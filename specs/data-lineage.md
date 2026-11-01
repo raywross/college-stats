@@ -149,6 +149,29 @@ later merge adds (`MERGED_LATER` in `lib/lineage.ts`: `common-app`, written by `
 absent together with all its vintages; once meta has any of them, or any school holds a value from it, the source and
 every vintage are required.
 
+## Admin edits: the `quad-edit` source and the `edited` method (2026-10-31)
+An admin's edit, saved from the console's field editor (`specs/data-platform/change-sets.md` "As built, phase 3"),
+is a lineage record like any other, with two reserved values: source `quad-edit`, method `"edited"`. The record
+carries:
+- `source: "quad-edit"`, `method: "edited"`;
+- `retrieved`: the day the edit was saved (not a release date; an edit has no year — `citesYear` returns false for
+  this source, so the citation never prints "most recent release" either);
+- `note?`: the editor's optional note, shown under the citation.
+
+There is no `year` on an edited record: `yearLabel`/`citesYear` are only ever asked about other sources' records.
+`validateSchool` (`lib/lineage.ts`) requires `retrieved` on every `edited` record (there is nothing else to date it
+by) and requires that method `edited` and source `quad-edit` always go together — one without the other fails the
+guard.
+
+The record is cited "Edited by Quad on {Month D, YYYY}." plus the note, via `editedOn()`/`citationText()`
+(`lib/lineage.ts`) and the ⓘ popover's `SourceBlock` (`components/ui/info-tip.tsx`), which special-cases
+`isEditedSource()` before any of the usual "Reported in …"/"Calculated: …" wording. A section's source line
+(`SourceLine`/`SourceItem`, `components/sources/SourceNote.tsx`) reads "Edited by Quad" with no year, linked to
+`/data#edits`; the profile's bottom source list adds "Some values edited by Quad" once, rather than listing the edit
+among the numbered datasets (an edit has no publisher or year to group other citations under). Until the next
+publish writes `meta.sources["quad-edit"]`, `sourceInfo()` falls back to `quadEditSource()` (`lib/data-platform/
+edits.ts`) so a brand-new edit still cites correctly.
+
 ## Not built yet
 - Superscript numbers linking values to the numbered source list (the popover links straight to the source instead).
 - Lineage in the `/api/schools` payload (client components currently show only search results, which aren't cited).

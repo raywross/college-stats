@@ -19,6 +19,7 @@ import {
   referenceObject,
   trendObject,
   type HistorySharedObject,
+  type SnapshotEditsObject,
   type SnapshotManifest,
 } from "../../../lib/data-platform/snapshot.ts";
 import { formatSchools } from "../identity-sync.mts";
@@ -107,6 +108,8 @@ export function renderSnapshot(composed: ComposedSnapshot, id: number, previousI
     texts.push([referenceObject(object), isText(doc) ? doc.text : prettyJson(doc)]);
   }
   texts.push([SNAPSHOT_OBJECTS.searchIndex, JSON.stringify(composed.searchIndex)]);
+  const editsObject: SnapshotEditsObject = { snapshot: id, edits: composed.editsObject };
+  texts.push([SNAPSHOT_OBJECTS.edits, prettyJson(editsObject)]);
   texts.push(...highSchoolObjects(composed));
 
   const objects = new Map<string, RenderedObject>();

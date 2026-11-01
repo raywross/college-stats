@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { Popover } from "@base-ui/react/popover";
 import { Info, ArrowRight, BookMarked, ExternalLink } from "lucide-react";
 import { GLOSSARY, type TermKey } from "@/lib/glossary";
-import { citesYear, yearLabel, type AnyCited, type AnyCitedSource } from "@/lib/lineage";
+import { citesYear, editedOn, isEditedSource, yearLabel, type AnyCited, type AnyCitedSource } from "@/lib/lineage";
 import { num, pctSmart } from "@/lib/format";
 import { DEMOGRAPHIC_CATEGORIES } from "@/lib/metrics";
 import { track } from "@/lib/analytics";
@@ -76,6 +76,25 @@ function imageHost(url: string): string {
 function SourceBlock({ cited, heading = true }: { cited: AnyCited; heading?: boolean }) {
   const inputs = cited.inputs ?? [];
   const isCollegeSite = cited.key === "college-site";
+  // An admin's edit (specs/data-platform/change-sets.md "Admin edits"): the day and the editor's note, nothing more.
+  if (isEditedSource(cited)) {
+    return (
+      <div className="space-y-1.5 text-[12px] leading-relaxed text-muted-foreground">
+        {heading && (
+          <p className="flex items-center gap-1 text-[10px] font-bold tracking-[0.14em] text-foreground/70 uppercase">
+            <BookMarked className="size-3" aria-hidden /> Source
+          </p>
+        )}
+        <p>
+          <Link href="/data#edits" className="font-semibold text-foreground hover:text-primary hover:underline">
+            {editedOn(cited)}
+          </Link>
+          .
+        </p>
+        {cited.note && <p>{cited.note}</p>}
+      </div>
+    );
+  }
   return (
     <div className="space-y-1.5 text-[12px] leading-relaxed text-muted-foreground">
       {heading && (

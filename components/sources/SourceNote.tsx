@@ -3,12 +3,22 @@ import Link from "next/link";
 import { BookMarked, ExternalLink } from "lucide-react";
 import type { School } from "@/lib/types";
 import type { FieldPath } from "@/lib/fields";
-import { citesYear, yearLabel, type AnyCitedSource, type CitedSource } from "@/lib/lineage";
+import { citesYear, isEditedSource, yearLabel, type AnyCitedSource, type CitedSource } from "@/lib/lineage";
 import { getData } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
-/** One linked source: "IPEDS Admissions survey, Fall 2024". */
+/** One linked source: "IPEDS Admissions survey, Fall 2024"; an admin's edit reads "Edited by Quad" (no year). */
 export function SourceItem({ s, last }: { s: AnyCitedSource; last: boolean }) {
+  if (isEditedSource(s)) {
+    return (
+      <span>
+        <Link href="/data#edits" className="font-medium text-foreground/80 underline decoration-dotted underline-offset-2 hover:text-primary">
+          Edited by Quad
+        </Link>
+        {last ? "" : ";"}
+      </span>
+    );
+  }
   return (
     <span>
       <a
@@ -71,7 +81,10 @@ export async function SourceList({ school, fields }: { school: School; fields: r
   const { getMeta, sourcesForFields } = await getData();
   // One entry per dataset or document, listing every year used from it.
   const grouped = new Map<string, CitedSource & { years: string[] }>();
-  for (const s of sourcesForFields(fields, school)) {
+  const cited = sourcesForFields(fields, school);
+  // Admin edits aren't a dataset with years: one line below the list says some values were edited.
+  const edited = cited.some(isEditedSource);
+  for (const s of cited.filter((c) => !isEditedSource(c))) {
     const g = grouped.get(`${s.key}|${s.url}`);
     if (g) g.years.push(yearLabel(s));
     else grouped.set(`${s.key}|${s.url}`, { ...s, years: [yearLabel(s)] });
@@ -98,6 +111,18 @@ export async function SourceList({ school, fields }: { school: School; fields: r
           </li>
         ))}
       </ol>
+      {edited && (
+        <p className="mt-4 rounded-2xl border bg-card p-4 text-sm">
+          <span className="font-semibold">Some values edited by Quad</span>
+          <span className="text-muted-foreground">
+            {" "}
+            · where a source&apos;s value was missing or wrong, Quad&apos;s editors set it by hand. Each one&apos;s ⓘ says when.{" "}
+            <Link href="/data#edits" className="font-semibold text-primary hover:underline">
+              About edits
+            </Link>
+          </span>
+        </p>
+      )}
       <p className="mt-4 text-xs text-muted-foreground">
         IPEDS unit ID {school.unit_id} · Data retrieved {meta.retrieved}. Tap any <span className="font-semibold">ⓘ</span> to see
         where that number came from and what year it describes. National ranks and medians include every 4-year college that

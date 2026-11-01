@@ -26,7 +26,8 @@ type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const school = (await getData()).getSchoolById(id);
+  // The profile's own load (cached per request), so an edited name shows in the title too.
+  const school = (await loadProfile(id))?.school;
   return { title: school ? school.name : "School not found" };
 }
 

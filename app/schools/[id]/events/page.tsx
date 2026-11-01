@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getData } from "@/lib/data";
 import { loadProfile } from "@/lib/profile-data";
 import { ProfileHero } from "@/components/profile/ProfileHero";
 import { VisitCalendar } from "@/components/visits/VisitCalendar";
@@ -9,7 +8,7 @@ type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const school = (await getData()).getSchoolById(id);
+  const school = (await loadProfile(id))?.school;
   return { title: school ? `${school.name}: event calendar` : "School not found", robots: { index: false } };
 }
 

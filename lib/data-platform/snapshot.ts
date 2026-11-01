@@ -34,6 +34,8 @@ export const SNAPSHOT_OBJECTS = {
   manifest: "manifest.json",
   /** The admin edits this snapshot baked in, each with the pipelines' value it covers (SnapshotEditsObject). */
   edits: "edits.json",
+  /** The source files' health (`base.source_files`), read by the admin console's estimate-inputs panel. */
+  sourceFiles: "source-files.json",
 } as const;
 
 /**

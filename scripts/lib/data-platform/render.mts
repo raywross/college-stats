@@ -107,6 +107,15 @@ export function renderSnapshot(composed: ComposedSnapshot, id: number, previousI
     if (doc === undefined) continue;
     texts.push([referenceObject(object), isText(doc) ? doc.text : prettyJson(doc)]);
   }
+  // Every other `reference.files` document, so the app's reference tables come from the snapshot and not from git
+  // (specs/data-platform/git-ci-tests.md, phase 4): `reference/<name>.json`, or `reference/<name>.txt` for a text
+  // document that has no named object above. Sorted by name for deterministic bytes.
+  const named = new Set(Object.values(REFERENCE_SOURCES));
+  for (const [name, doc] of [...composed.reference].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+    if (named.has(name)) continue;
+    texts.push([referenceObject(isText(doc) ? `${name}.txt` : `${name}.json`), isText(doc) ? doc.text : prettyJson(doc)]);
+  }
+  if (composed.sourceFiles != null) texts.push([SNAPSHOT_OBJECTS.sourceFiles, prettyJson(composed.sourceFiles)]);
   texts.push([SNAPSHOT_OBJECTS.searchIndex, JSON.stringify(composed.searchIndex)]);
   const editsObject: SnapshotEditsObject = { snapshot: id, edits: composed.editsObject };
   texts.push([SNAPSHOT_OBJECTS.edits, prettyJson(editsObject)]);

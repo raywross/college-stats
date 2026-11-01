@@ -1,0 +1,1274 @@
+{
+  "retrieved": "2026-10-12",
+  "editorial": "National and common school organizations students list as clubs (specs/chances/inputs-beyond-academics.md, U12), classified by `family` so an activity can line up with its matching course track (depth.md). Each national organization's name and official URL was checked on its own site on the retrieved date; a club type that's common at schools but has no single national umbrella (newspaper, yearbook, chess club, culture clubs, …) carries `org: null, source_url: null` rather than a guessed citation. The Junior State of America closed and dissolved 2024-08-31 and is left out; its programs continue informally as Youth and Government and Model UN chapters, already listed below.",
+  "clubs": [
+    {
+      "key": "deca",
+      "name": "DECA",
+      "aliases": [],
+      "kind": "club",
+      "family": "business",
+      "org": "DECA Inc.",
+      "source_url": "https://www.deca.org"
+    },
+    {
+      "key": "fbla",
+      "name": "FBLA (Future Business Leaders of America)",
+      "aliases": [
+        "FBLA"
+      ],
+      "kind": "club",
+      "family": "business",
+      "org": "FBLA-PBL, Inc.",
+      "source_url": "https://www.fbla-pbl.org"
+    },
+    {
+      "key": "junior_achievement",
+      "name": "Junior Achievement",
+      "aliases": [
+        "JA"
+      ],
+      "kind": "club",
+      "family": "business",
+      "org": "Junior Achievement USA",
+      "source_url": "https://www.ja.org"
+    },
+    {
+      "key": "bpa",
+      "name": "Business Professionals of America",
+      "aliases": [
+        "BPA"
+      ],
+      "kind": "club",
+      "family": "business",
+      "org": "Business Professionals of America",
+      "source_url": "https://www.bpa.org"
+    },
+    {
+      "key": "economics_club",
+      "name": "Economics Club",
+      "aliases": [
+        "Econ Club",
+        "National Economics Challenge"
+      ],
+      "kind": "club",
+      "family": "business",
+      "org": "Council for Economic Education",
+      "source_url": "https://www.councilforeconed.org"
+    },
+    {
+      "key": "investment_club",
+      "name": "Investment Club / Stock Market Club",
+      "aliases": [
+        "Stock Market Game"
+      ],
+      "kind": "club",
+      "family": "business",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "entrepreneurship_club",
+      "name": "Entrepreneurship Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "business",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "hosa",
+      "name": "HOSA (Future Health Professionals)",
+      "aliases": [
+        "HOSA"
+      ],
+      "kind": "club",
+      "family": "health",
+      "org": "HOSA-Future Health Professionals",
+      "source_url": "https://www.hosa.org"
+    },
+    {
+      "key": "medical_careers_club",
+      "name": "Medical Careers Club / Health Occupations Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "health",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "future_nurses_club",
+      "name": "Future Nurses Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "health",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "sports_medicine_club",
+      "name": "Sports Medicine Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "health",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "first_robotics_competition",
+      "name": "FIRST Robotics Competition",
+      "aliases": [
+        "FRC",
+        "FIRST Robotics"
+      ],
+      "kind": "club",
+      "family": "engineering",
+      "org": "FIRST",
+      "source_url": "https://www.firstinspires.org"
+    },
+    {
+      "key": "first_tech_challenge",
+      "name": "FIRST Tech Challenge",
+      "aliases": [
+        "FTC"
+      ],
+      "kind": "club",
+      "family": "engineering",
+      "org": "FIRST",
+      "source_url": "https://www.firstinspires.org"
+    },
+    {
+      "key": "first_lego_league",
+      "name": "FIRST LEGO League",
+      "aliases": [
+        "FLL"
+      ],
+      "kind": "club",
+      "family": "engineering",
+      "org": "FIRST",
+      "source_url": "https://www.firstinspires.org"
+    },
+    {
+      "key": "vex_robotics",
+      "name": "VEX Robotics",
+      "aliases": [
+        "VEX",
+        "VRC"
+      ],
+      "kind": "club",
+      "family": "engineering",
+      "org": "Robotics Education & Competition Foundation (REC Foundation)",
+      "source_url": "https://www.recf.org"
+    },
+    {
+      "key": "tsa",
+      "name": "Technology Student Association",
+      "aliases": [
+        "TSA"
+      ],
+      "kind": "club",
+      "family": "engineering",
+      "org": "Technology Student Association",
+      "source_url": "https://tsaweb.org"
+    },
+    {
+      "key": "skillsusa",
+      "name": "SkillsUSA",
+      "aliases": [],
+      "kind": "club",
+      "family": "engineering",
+      "org": "SkillsUSA",
+      "source_url": "https://www.skillsusa.org"
+    },
+    {
+      "key": "pltw",
+      "name": "Project Lead The Way Club",
+      "aliases": [
+        "PLTW"
+      ],
+      "kind": "club",
+      "family": "engineering",
+      "org": "Project Lead The Way",
+      "source_url": "https://www.pltw.org"
+    },
+    {
+      "key": "engineering_club",
+      "name": "Engineering Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "engineering",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "drone_club",
+      "name": "Drone Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "engineering",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "science_olympiad",
+      "name": "Science Olympiad",
+      "aliases": [
+        "SciOly"
+      ],
+      "kind": "club",
+      "family": "science",
+      "org": "Science Olympiad, Inc.",
+      "source_url": "https://www.soinc.org"
+    },
+    {
+      "key": "science_bowl",
+      "name": "Science Bowl",
+      "aliases": [
+        "National Science Bowl"
+      ],
+      "kind": "club",
+      "family": "science",
+      "org": "U.S. Department of Energy, Office of Science",
+      "source_url": "https://science.osti.gov/wdts/nsb"
+    },
+    {
+      "key": "envirothon",
+      "name": "Envirothon",
+      "aliases": [],
+      "kind": "club",
+      "family": "science",
+      "org": "National Conservation Foundation (NCF-Envirothon)",
+      "source_url": "https://www.envirothon.org"
+    },
+    {
+      "key": "ffa",
+      "name": "FFA (National FFA Organization)",
+      "aliases": [
+        "FFA",
+        "Future Farmers of America"
+      ],
+      "kind": "club",
+      "family": "science",
+      "org": "National FFA Organization",
+      "source_url": "https://www.ffa.org"
+    },
+    {
+      "key": "science_research_program",
+      "name": "Science Research Program / Independent Research",
+      "aliases": [
+        "Research Program"
+      ],
+      "kind": "research",
+      "family": "science",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "science_national_honor_society",
+      "name": "Science National Honor Society",
+      "aliases": [
+        "SNHS"
+      ],
+      "kind": "club",
+      "family": "science",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "biology_club",
+      "name": "Biology Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "science",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "chemistry_club",
+      "name": "Chemistry Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "science",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "physics_club",
+      "name": "Physics Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "science",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "astronomy_club",
+      "name": "Astronomy Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "science",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "science_club",
+      "name": "Science Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "science",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "garden_club",
+      "name": "Garden Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "science",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "math_team",
+      "name": "Math Team / Math Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "math",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "mu_alpha_theta",
+      "name": "Mu Alpha Theta",
+      "aliases": [
+        "Mu Alpha Theta Honor Society"
+      ],
+      "kind": "club",
+      "family": "math",
+      "org": "Mu Alpha Theta",
+      "source_url": "https://www.mualphatheta.org"
+    },
+    {
+      "key": "math_competition_club",
+      "name": "Math Competition Club (AMC/AIME prep)",
+      "aliases": [
+        "AMC Club"
+      ],
+      "kind": "club",
+      "family": "math",
+      "org": "Mathematical Association of America",
+      "source_url": "https://maa.org/math-competitions"
+    },
+    {
+      "key": "actuarial_club",
+      "name": "Actuarial Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "math",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "statistics_club",
+      "name": "Statistics Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "math",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "girls_who_code",
+      "name": "Girls Who Code Club",
+      "aliases": [
+        "GWC"
+      ],
+      "kind": "club",
+      "family": "cs",
+      "org": "Girls Who Code",
+      "source_url": "https://girlswhocode.com"
+    },
+    {
+      "key": "cyberpatriot",
+      "name": "CyberPatriot",
+      "aliases": [],
+      "kind": "club",
+      "family": "cs",
+      "org": "Air Force Association",
+      "source_url": "https://www.uscyberpatriot.org"
+    },
+    {
+      "key": "coding_club",
+      "name": "Coding Club / Computer Science Club",
+      "aliases": [
+        "CS Club"
+      ],
+      "kind": "club",
+      "family": "cs",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "hackathon_club",
+      "name": "Hackathon Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "cs",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "technovation",
+      "name": "Technovation",
+      "aliases": [],
+      "kind": "club",
+      "family": "cs",
+      "org": "Technovation",
+      "source_url": "https://www.technovation.org"
+    },
+    {
+      "key": "video_game_club",
+      "name": "Video Game Club",
+      "aliases": [
+        "Gaming Club"
+      ],
+      "kind": "club",
+      "family": "cs",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "literary_magazine",
+      "name": "Literary Magazine",
+      "aliases": [
+        "Lit Mag"
+      ],
+      "kind": "club",
+      "family": "english",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "creative_writing_club",
+      "name": "Creative Writing Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "english",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "book_club",
+      "name": "Book Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "english",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "poetry_club",
+      "name": "Poetry Club / Spoken Word Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "english",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "spelling_bee_club",
+      "name": "Spelling Bee Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "english",
+      "org": "Scripps National Spelling Bee",
+      "source_url": "https://www.spellingbee.com"
+    },
+    {
+      "key": "newspaper",
+      "name": "Newspaper / Journalism",
+      "aliases": [
+        "School Newspaper"
+      ],
+      "kind": "club",
+      "family": "media",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "yearbook",
+      "name": "Yearbook",
+      "aliases": [],
+      "kind": "club",
+      "family": "media",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "quill_and_scroll",
+      "name": "Quill and Scroll",
+      "aliases": [],
+      "kind": "club",
+      "family": "media",
+      "org": "Quill and Scroll Society",
+      "source_url": "https://quillandscroll.org"
+    },
+    {
+      "key": "broadcast_journalism",
+      "name": "Broadcast / TV Production Club",
+      "aliases": [
+        "Broadcast Journalism",
+        "Video Production"
+      ],
+      "kind": "club",
+      "family": "media",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "podcast_club",
+      "name": "Podcast Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "media",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "model_un",
+      "name": "Model United Nations",
+      "aliases": [
+        "Model UN",
+        "MUN"
+      ],
+      "kind": "club",
+      "family": "history",
+      "org": "International Model United Nations Association (IMUNA)",
+      "source_url": "https://imuna.org"
+    },
+    {
+      "key": "mock_trial",
+      "name": "Mock Trial",
+      "aliases": [],
+      "kind": "club",
+      "family": "history",
+      "org": "National High School Mock Trial Championship",
+      "source_url": "https://www.nhsmtc.org"
+    },
+    {
+      "key": "speech_and_debate",
+      "name": "Speech & Debate",
+      "aliases": [
+        "NSDA",
+        "Forensics",
+        "Debate"
+      ],
+      "kind": "club",
+      "family": "history",
+      "org": "National Speech & Debate Association",
+      "source_url": "https://www.speechanddebate.org"
+    },
+    {
+      "key": "youth_and_government",
+      "name": "Youth and Government",
+      "aliases": [
+        "Y&G",
+        "YAG"
+      ],
+      "kind": "club",
+      "family": "history",
+      "org": "YMCA Youth and Government",
+      "source_url": "https://www.ymcayag.org"
+    },
+    {
+      "key": "national_history_day_club",
+      "name": "National History Day",
+      "aliases": [
+        "NHD"
+      ],
+      "kind": "club",
+      "family": "history",
+      "org": "National History Day",
+      "source_url": "https://www.nhd.org"
+    },
+    {
+      "key": "history_club",
+      "name": "History Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "history",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "civics_club",
+      "name": "Civics Club / Politics Club",
+      "aliases": [
+        "Political Science Club"
+      ],
+      "kind": "club",
+      "family": "history",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "law_club",
+      "name": "Law Club / Pre-Law Society",
+      "aliases": [],
+      "kind": "club",
+      "family": "history",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "genealogy_club",
+      "name": "Genealogy Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "history",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "spanish_club",
+      "name": "Spanish Club / Spanish Honor Society",
+      "aliases": [
+        "Sociedad Honoraria Hispánica"
+      ],
+      "kind": "club",
+      "family": "language",
+      "org": "American Association of Teachers of Spanish and Portuguese",
+      "source_url": "https://www.aatsp.org"
+    },
+    {
+      "key": "french_club",
+      "name": "French Club / French Honor Society",
+      "aliases": [
+        "Société Honoraire de Français"
+      ],
+      "kind": "club",
+      "family": "language",
+      "org": "American Association of Teachers of French",
+      "source_url": "https://www.frenchteachers.org"
+    },
+    {
+      "key": "german_club",
+      "name": "German Club / German Honor Society",
+      "aliases": [
+        "Delta Epsilon Phi"
+      ],
+      "kind": "club",
+      "family": "language",
+      "org": "American Association of Teachers of German",
+      "source_url": "https://www.aatg.org"
+    },
+    {
+      "key": "latin_club",
+      "name": "Latin Club / Junior Classical League",
+      "aliases": [
+        "JCL"
+      ],
+      "kind": "club",
+      "family": "language",
+      "org": "National Junior Classical League",
+      "source_url": "https://www.njcl.org"
+    },
+    {
+      "key": "chinese_club",
+      "name": "Chinese Culture Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "language",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "japanese_club",
+      "name": "Japanese Culture Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "language",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "world_languages_club",
+      "name": "World Languages Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "language",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "asl_club",
+      "name": "American Sign Language Club",
+      "aliases": [
+        "ASL Club"
+      ],
+      "kind": "club",
+      "family": "language",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "marching_band",
+      "name": "Marching Band",
+      "aliases": [
+        "Band"
+      ],
+      "kind": "arts",
+      "family": "arts",
+      "org": "National Association for Music Education",
+      "source_url": "https://nafme.org"
+    },
+    {
+      "key": "concert_band",
+      "name": "Concert Band / Wind Ensemble",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": "National Association for Music Education",
+      "source_url": "https://nafme.org"
+    },
+    {
+      "key": "orchestra",
+      "name": "Orchestra",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": "National Association for Music Education",
+      "source_url": "https://nafme.org"
+    },
+    {
+      "key": "choir",
+      "name": "Choir / Chorus",
+      "aliases": [
+        "Chorus"
+      ],
+      "kind": "arts",
+      "family": "arts",
+      "org": "National Association for Music Education",
+      "source_url": "https://nafme.org"
+    },
+    {
+      "key": "jazz_band",
+      "name": "Jazz Band",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": "National Association for Music Education",
+      "source_url": "https://nafme.org"
+    },
+    {
+      "key": "theater",
+      "name": "Theater / Drama Club",
+      "aliases": [
+        "Drama Club"
+      ],
+      "kind": "arts",
+      "family": "arts",
+      "org": "Educational Theatre Association",
+      "source_url": "https://schooltheatre.org"
+    },
+    {
+      "key": "international_thespian_society",
+      "name": "International Thespian Society",
+      "aliases": [
+        "Thespian Society",
+        "Troupe"
+      ],
+      "kind": "arts",
+      "family": "arts",
+      "org": "Educational Theatre Association",
+      "source_url": "https://schooltheatre.org/international-thespian-society/"
+    },
+    {
+      "key": "art_club",
+      "name": "Art Club",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "national_art_honor_society",
+      "name": "National Art Honor Society",
+      "aliases": [
+        "NAHS"
+      ],
+      "kind": "arts",
+      "family": "arts",
+      "org": "National Art Education Association",
+      "source_url": "https://www.arteducators.org/national-art-honor-societies"
+    },
+    {
+      "key": "dance_club",
+      "name": "Dance Club",
+      "aliases": [
+        "Dance Team"
+      ],
+      "kind": "arts",
+      "family": "arts",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "color_guard",
+      "name": "Color Guard",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "step_team",
+      "name": "Step Team",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "film_club",
+      "name": "Film Club",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "photography_club",
+      "name": "Photography Club",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "a_cappella",
+      "name": "A Cappella Group",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "show_choir",
+      "name": "Show Choir",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "improv_club",
+      "name": "Improv Club",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "stage_crew",
+      "name": "Stage Crew / Technical Theater",
+      "aliases": [
+        "Tech Theater"
+      ],
+      "kind": "arts",
+      "family": "arts",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "fashion_club",
+      "name": "Fashion Club",
+      "aliases": [],
+      "kind": "arts",
+      "family": "arts",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "tri_m_music_honor_society",
+      "name": "Tri-M Music Honor Society",
+      "aliases": [
+        "Tri-M"
+      ],
+      "kind": "arts",
+      "family": "arts",
+      "org": "National Association for Music Education",
+      "source_url": "https://nafme.org/students/tri-m/"
+    },
+    {
+      "key": "key_club",
+      "name": "Key Club",
+      "aliases": [],
+      "kind": "service",
+      "family": "service",
+      "org": "Kiwanis International",
+      "source_url": "https://www.keyclub.org"
+    },
+    {
+      "key": "interact_club",
+      "name": "Interact Club",
+      "aliases": [],
+      "kind": "service",
+      "family": "service",
+      "org": "Rotary International",
+      "source_url": "https://www.rotary.org/en/our-programs/interact"
+    },
+    {
+      "key": "red_cross_club",
+      "name": "Red Cross Club",
+      "aliases": [],
+      "kind": "service",
+      "family": "service",
+      "org": "American Red Cross",
+      "source_url": "https://www.redcross.org"
+    },
+    {
+      "key": "habitat_for_humanity_campus_chapter",
+      "name": "Habitat for Humanity Campus Chapter",
+      "aliases": [
+        "Campus Chapter"
+      ],
+      "kind": "service",
+      "family": "service",
+      "org": "Habitat for Humanity International",
+      "source_url": "https://www.habitat.org"
+    },
+    {
+      "key": "leo_club",
+      "name": "Leo Club",
+      "aliases": [],
+      "kind": "service",
+      "family": "service",
+      "org": "Lions Clubs International",
+      "source_url": "https://www.lionsclubs.org/en/discover-our-clubs/leo-club-program"
+    },
+    {
+      "key": "national_charity_league",
+      "name": "National Charity League",
+      "aliases": [
+        "NCL"
+      ],
+      "kind": "service",
+      "family": "service",
+      "org": "National Charity League, Inc.",
+      "source_url": "https://www.nationalcharityleague.org"
+    },
+    {
+      "key": "best_buddies",
+      "name": "Best Buddies Chapter",
+      "aliases": [],
+      "kind": "service",
+      "family": "service",
+      "org": "Best Buddies International",
+      "source_url": "https://www.bestbuddies.org"
+    },
+    {
+      "key": "community_service_club",
+      "name": "Community Service Club",
+      "aliases": [],
+      "kind": "service",
+      "family": "service",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "environmental_club",
+      "name": "Environmental Club",
+      "aliases": [
+        "Eco Club"
+      ],
+      "kind": "service",
+      "family": "service",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "volunteer_club",
+      "name": "Volunteer Club",
+      "aliases": [],
+      "kind": "service",
+      "family": "service",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "student_government",
+      "name": "Student Government",
+      "aliases": [
+        "Student Council"
+      ],
+      "kind": "club",
+      "family": "leadership",
+      "org": "National Association of Student Councils",
+      "source_url": "https://www.nasc.us"
+    },
+    {
+      "key": "class_officers",
+      "name": "Class Officers",
+      "aliases": [],
+      "kind": "club",
+      "family": "leadership",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "link_crew",
+      "name": "Link Crew / Peer Mentoring",
+      "aliases": [],
+      "kind": "club",
+      "family": "leadership",
+      "org": "Boomerang Project",
+      "source_url": "https://www.boomerangproject.com"
+    },
+    {
+      "key": "hoby",
+      "name": "HOBY (Hugh O'Brian Youth Leadership)",
+      "aliases": [
+        "HOBY"
+      ],
+      "kind": "club",
+      "family": "leadership",
+      "org": "Hugh O'Brian Youth Leadership",
+      "source_url": "https://www.hoby.org"
+    },
+    {
+      "key": "peer_mediation_club",
+      "name": "Peer Mediation Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "leadership",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "fca",
+      "name": "Fellowship of Christian Athletes",
+      "aliases": [
+        "FCA"
+      ],
+      "kind": "club",
+      "family": "faith",
+      "org": "Fellowship of Christian Athletes",
+      "source_url": "https://www.fca.org"
+    },
+    {
+      "key": "young_life",
+      "name": "Young Life",
+      "aliases": [],
+      "kind": "club",
+      "family": "faith",
+      "org": "Young Life",
+      "source_url": "https://www.younglife.org"
+    },
+    {
+      "key": "campus_life",
+      "name": "Campus Life",
+      "aliases": [],
+      "kind": "club",
+      "family": "faith",
+      "org": "Youth for Christ",
+      "source_url": "https://www.yfc.net"
+    },
+    {
+      "key": "youth_group",
+      "name": "Youth Group",
+      "aliases": [],
+      "kind": "club",
+      "family": "faith",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "newman_club",
+      "name": "Newman Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "faith",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "national_honor_society",
+      "name": "National Honor Society",
+      "aliases": [
+        "NHS"
+      ],
+      "kind": "club",
+      "family": "other",
+      "org": "National Honor Society (NASSP)",
+      "source_url": "https://www.nhs.us"
+    },
+    {
+      "key": "national_junior_honor_society",
+      "name": "National Junior Honor Society",
+      "aliases": [
+        "NJHS"
+      ],
+      "kind": "club",
+      "family": "other",
+      "org": "National Junior Honor Society (National Principals Association)",
+      "source_url": "https://www.njhs.us"
+    },
+    {
+      "key": "beta_club",
+      "name": "National Beta Club",
+      "aliases": [
+        "Beta Club"
+      ],
+      "kind": "club",
+      "family": "other",
+      "org": "National Beta Club",
+      "source_url": "https://www.betaclub.org"
+    },
+    {
+      "key": "chess_club",
+      "name": "Chess Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "other",
+      "org": "US Chess Federation",
+      "source_url": "https://new.uschess.org"
+    },
+    {
+      "key": "culture_club",
+      "name": "Culture Club (e.g. Black Student Union, Asian Student Union, Latino Student Union)",
+      "aliases": [
+        "BSU",
+        "ASU",
+        "LSU"
+      ],
+      "kind": "club",
+      "family": "other",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "gsa_club",
+      "name": "Gender-Sexuality Alliance",
+      "aliases": [
+        "GSA"
+      ],
+      "kind": "club",
+      "family": "other",
+      "org": "GSA Network",
+      "source_url": "https://gsanetwork.org"
+    },
+    {
+      "key": "future_educators_club",
+      "name": "Educators Rising (Future Educators Club)",
+      "aliases": [
+        "FEA",
+        "Future Teachers of America"
+      ],
+      "kind": "club",
+      "family": "other",
+      "org": "Educators Rising",
+      "source_url": "https://www.educatorsrising.org"
+    },
+    {
+      "key": "fccla",
+      "name": "FCCLA (Family, Career and Community Leaders of America)",
+      "aliases": [
+        "FCCLA"
+      ],
+      "kind": "club",
+      "family": "other",
+      "org": "Family, Career and Community Leaders of America, Inc.",
+      "source_url": "https://fcclainc.org"
+    },
+    {
+      "key": "sadd",
+      "name": "SADD (Students Against Destructive Decisions)",
+      "aliases": [
+        "SADD"
+      ],
+      "kind": "service",
+      "family": "other",
+      "org": "SADD, Inc.",
+      "source_url": "https://www.sadd.org"
+    },
+    {
+      "key": "anime_club",
+      "name": "Anime Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "other",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "board_games_club",
+      "name": "Board Games Club",
+      "aliases": [
+        "Tabletop Gaming Club"
+      ],
+      "kind": "club",
+      "family": "other",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "quiz_bowl",
+      "name": "Quiz Bowl / Academic Team",
+      "aliases": [
+        "Scholastic Bowl",
+        "Academic Team"
+      ],
+      "kind": "club",
+      "family": "other",
+      "org": "National Academic Quiz Tournaments (NAQT)",
+      "source_url": "https://www.naqt.com"
+    },
+    {
+      "key": "ethics_bowl",
+      "name": "Ethics Bowl",
+      "aliases": [],
+      "kind": "club",
+      "family": "other",
+      "org": "National High School Ethics Bowl",
+      "source_url": "https://nhseb.unc.edu"
+    },
+    {
+      "key": "philosophy_club",
+      "name": "Philosophy Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "other",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "outdoors_club",
+      "name": "Outdoors Club / Hiking Club",
+      "aliases": [],
+      "kind": "club",
+      "family": "other",
+      "org": null,
+      "source_url": null
+    },
+    {
+      "key": "prostart_culinary_club",
+      "name": "ProStart / Culinary Club",
+      "aliases": [
+        "ProStart"
+      ],
+      "kind": "club",
+      "family": "other",
+      "org": "National Restaurant Association Educational Foundation",
+      "source_url": "https://www.chooserestaurants.org/prostart"
+    }
+  ]
+}

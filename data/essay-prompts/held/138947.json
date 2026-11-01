@@ -1,8 +1,0 @@
-{ "unit_id": "138947", "name": "Clark Atlanta University", "held": "2026-10-30",
-  "problems": [
-    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
-  ],
-  "record": {"unit_id":"138947","name":"Clark Atlanta University","cycle":"2026-27","status":"refers_to_form","source_url":"https://www.cau.edu/admissions/undergraduate-admissions","retrieved":"2026-10-30","sha256":"2cf0938937b52cb77587901bbf05773ad70afa345828eff4cdf569480c468d10","archive":"local:2cf0938937b52cb77587901bbf05773ad70afa345828eff4cdf569480c468d10.html","cycle_quote":"For the current application cycle (Spring 2027 and Fall 2027), Clark Atlanta University will continue its test-optional policy .","status_quote":"The Clark Atlanta University Application is the preferred way to apply.","via":"picker","model":"claude-opus-5","reader":"2026.10.29.4",
-    "prompts": []
-  }
-}

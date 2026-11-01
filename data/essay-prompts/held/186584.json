@@ -1,8 +1,0 @@
-{ "unit_id": "186584", "name": "Seton Hall University", "held": "2026-10-30",
-  "problems": [
-    "status none, but the quoted sentence doesn't say there are no essays"
-  ],
-  "record": {"unit_id":"186584","name":"Seton Hall University","cycle":"2026-27","status":"none","source_url":"https://www.shu.edu/apply/essays","final_url":"https://www.shu.edu/graduate-affairs/apply.html?utm_source=short_url&utm_medium=short_url&utm_campaign=grad_apply/essays","retrieved":"2026-10-30","sha256":"b1787cb54ee594271a2896945e07e00b2b59dc5a6d5dae58dd7741de52c2cd50","archive":"local:b1787cb54ee594271a2896945e07e00b2b59dc5a6d5dae58dd7741de52c2cd50.html","cycle_quote":"","cycle_assumed":true,"status_quote":"Before you apply, make sure you know which supporting documents you will need, such\nas your\npersonal statement, resume, writing sample, and letters of recommendation.","via":"well-known-path","model":"claude-opus-5","reader":"2026.10.29.4",
-    "prompts": []
-  }
-}

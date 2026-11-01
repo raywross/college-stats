@@ -1,8 +1,0 @@
-{ "unit_id": "212054", "name": "Drexel University", "held": "2026-10-30",
-  "problems": [
-    "status refers_to_form, but the quoted sentence doesn't name the essay and the application it is part of"
-  ],
-  "record": {"unit_id":"212054","name":"Drexel University","cycle":"2026-27","status":"refers_to_form","source_url":"https://drexel.edu/law/admissions/how-to-apply","final_url":"https://drexel.edu/law/admissions/how-to-apply/","retrieved":"2026-10-30","sha256":"f7baceba08ec76819b01bedac76ff9b3a66418ba64332ecd381a46fb2aed1542","archive":"local:f7baceba08ec76819b01bedac76ff9b3a66418ba64332ecd381a46fb2aed1542.html","cycle_quote":"","cycle_assumed":true,"status_quote":"Prospective undergraduate law majors should visit drexel.edu/admissions/apply/undergrad-instructions for application deadlines and instructions.","via":"apply-page-link","model":"claude-opus-5","reader":"2026.10.29.4",
-    "prompts": []
-  }
-}

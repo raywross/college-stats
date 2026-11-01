@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import * as nodeModule from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
+import { miniReference } from "./helpers/snapshot.mts";
 
 // course-plan-rules.ts, course-plan.ts, and rigor-rules.ts start with `import "server-only"`, which only Next.js
 // resolves; stand in an empty module (as tests/chances-rigor.test.mts does).
@@ -38,7 +39,7 @@ const { emptyCoreAtTopLevel, emptyProfile, sanitizeCoursePlan, sanitizeProfile, 
 const { applies, loadCycle, validateCycleFile } = await import("../lib/planner/cycle.ts");
 const { generate: offersGen } = await import("../lib/planner/generators/offers.ts");
 const { schoolOffering } = await import("../lib/chances/offering.ts");
-const cycleFile = JSON.parse(readFileSync(join(import.meta.dirname, "..", "data", "application-cycle.json"), "utf8"));
+const cycleFile = await miniReference("application-cycle");
 
 import type { CourseEntry, EstimateResult } from "../lib/chances/types.ts";
 import type { PlanCollege, PlanInput } from "../lib/chances/course-plan.ts";

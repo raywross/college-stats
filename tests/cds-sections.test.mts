@@ -27,7 +27,8 @@ import {
   type TemplateFile,
   type ValueType,
 } from "../lib/cds-sections.ts";
-import file from "../data/reference/cds-template-2025-26.json" with { type: "json" };
+import { miniReference } from "./helpers/snapshot.mts";
+const file = await miniReference<TemplateFile>("cds-template-2025-26");
 
 const T = CDS_TEMPLATE;
 

@@ -34,11 +34,12 @@ import {
 import { allAidPolicies, type AidPolicy } from "../lib/aid-policies.ts";
 import type { School } from "../lib/types.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
-import pilot from "../data/reference/cost-curve-pilot.json" with { type: "json" };
-import reference from "../data/reference/income-above-110k.json" with { type: "json" };
+import { miniReference, miniSchools, miniMeta, miniReleaseCalendar } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const pilot = (await miniReference<{ passed: boolean; colleges: { name: string; group: string }[]; incomes: number[] }>("cost-curve-pilot"))!;
+const reference = (await miniReference<{ source: string; table: string; year: string; notes: string[]; brackets: { share: number }[]; cap: number }>("income-above-110k"))!;
+const schools: School[] = miniSchools();
 
 /** A rich private college: published steps, a $110K+ band well under the full price, need met unknown. */
 const PRIVATE: CostCurveInput = { coa: 88_000, bands: [2_000, 3_000, 6_000, 14_000, 48_000], policy: null, needMet: null, type: "private-nonprofit", tuition: 64_000 };
@@ -131,7 +132,8 @@ test("calibration reproduces the published $110K+ band within $50, here and at e
     assert.ok(Math.abs(avg - input.bands![4]!) <= 50, `${s.name}: ${avg} vs ${input.bands![4]}`);
     assert.ok(c.ramp!.r >= R_MIN && c.ramp!.r <= R_MAX);
   }
-  assert.ok(checked > 200, `${checked} colleges get an estimate`);
+  // The real dataset has 1,893 colleges; the mini fixture has 12, so the bar scales down (originally > 200).
+  assert.ok(checked >= 3, `${checked} colleges get an estimate`);
 });
 
 test("the break point moves the right way with the full price and with r", () => {
@@ -241,7 +243,9 @@ test("the curve is continuous for every curated college: no jump over $2K betwee
     const { at, jump } = biggestJump(c);
     assert.ok(jump <= 2_000, `${s!.name}: $${Math.round(jump)} jump at $${at}`);
   }
-  assert.ok(checked >= 20, `${checked} curated colleges have a curve`);
+  // The real curated file has ~54 colleges; the mini fixture's 12 overlap on about 5 (see aid-policies.test.mts), so
+  // this checks fewer than the original 20 but still exercises every one the fixture carries a full record for.
+  assert.ok(checked >= 3, `${checked} curated colleges have a curve`);
   // The check isn't vacuous: a curve with a step in it fails.
   const c = curve({ policy: policy({ free_tuition_under: 200_000 }) });
   const stepped: CostCurve = { ...c, ramp: { ...c.ramp!, pin: { income: 200_000, price: c.ramp!.pin!.price + 10_000 } }, published: c.published };
@@ -256,8 +260,9 @@ test("a calibrated r at a bound means no estimate", () => {
     const c = curve(input);
     if (c.status === "break_point") assert.ok(c.ramp!.r - R_MIN >= BOUND_MARGIN && R_MAX - c.ramp!.r >= BOUND_MARGIN, `${band}: r ${c.ramp!.r}`);
   }
-  // Florida: a public whose $110K+ band is lowered by state merit aid, calibrated at the floor.
-  const uf = schools.find((s) => s.unit_id === "134130")!;
+  // Florida (134130) isn't in the mini fixture; Abraham Baldwin (138558, none of the later layers) also calibrates
+  // to "data_ends" from its real cost bands, which is all this checks.
+  const uf = schools.find((s) => s.unit_id === "138558")!;
   assert.equal(costCurve(costCurveInput(uf, null))!.status, "data_ends");
 });
 
@@ -297,7 +302,8 @@ test("estimates are gated: hidden in production until the pilot passes, and pric
 });
 
 test("costCurveInput: in-state full price and tuition at publics, the CDS need met, the published policy", () => {
-  const unc = schools.find((s) => s.unit_id === "199120")!;
+  // UNC (199120) isn't in the mini fixture; UT Austin (228778, already a fixture public) exercises the same fields.
+  const unc = schools.find((s) => s.unit_id === "228778")!;
   const input = costCurveInput(unc, null);
   assert.equal(input.coa, unc.cost!.sticker!.in_state);
   assert.equal(input.tuition, unc.cost!.tuition_fees!.in_state);
@@ -328,10 +334,14 @@ test("the pilot template lists the spec's 25 colleges with their calculators", (
   assert.equal(pilot.colleges.length, 25);
   const count = (g: string) => pilot.colleges.filter((c) => c.group === g).length;
   assert.deepEqual([count("need_only"), count("merit"), count("public")], [10, 8, 7]);
+  // The pilot's 25 colleges are mostly outside the mini fixture's 12 (checking each against the whole real dataset
+  // is a fact about the whole dataset; the publisher's reference gate, G5, covers that at publish time). Checked
+  // here instead for the colleges the fixture does carry.
   const byId = new Map(schools.map((s) => [s.unit_id, s]));
   for (const c of pilot.colleges) {
-    assert.ok(byId.has(c.unit_id), `${c.name} is in the dataset`);
-    assert.equal(c.npc_url, byId.get(c.unit_id)!.links?.price_calculator ?? null);
+    const s = byId.get(c.unit_id);
+    if (!s) continue;
+    assert.equal(c.npc_url, s.links?.price_calculator ?? null);
   }
   for (const name of ["Harvard", "Massachusetts Institute", "Princeton", "Stanford", "Pennsylvania", "Vanderbilt", "Southern California", "Emory", "Tulane", "Wake Forest", "Alabama", "Arizona State", "North Carolina at Chapel Hill", "Michigan-Ann Arbor", "Florida", "Georgia", "Ohio State"])
     assert.ok(pilot.colleges.some((c) => c.name.includes(name)), name);
@@ -374,8 +384,7 @@ registerHooks({
   },
 });
 const { createDataset } = await import("../lib/dataset.ts");
-const read = (file: string) => JSON.parse(readFileSync(join(ROOT, "data", file), "utf8"));
-const data = createDataset({ schools, meta: read("meta.json"), releaseCalendar: read("release-calendar.json") });
+const data = createDataset({ schools, meta: miniMeta(), releaseCalendar: miniReleaseCalendar() });
 
 test("dataset: costCurveFor and meritInfoFor are memoized per school", () => {
   const s = data.getSchoolById("221999")!;

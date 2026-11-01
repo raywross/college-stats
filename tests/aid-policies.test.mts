@@ -8,15 +8,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import type { DatasetMeta, School } from "../lib/types";
+import { miniMeta, miniSchools, miniReference } from "./helpers/snapshot.mts";
 import { FIELDS, type FieldPath } from "../lib/fields.ts";
 import { aidPolicyFor, aidYearLabel, allAidPolicies, validateAidPolicies, type AidPolicy, type AidPolicyFile } from "../lib/aid-policies.ts";
 import { lineageFor, sourcesForFields, validateRegistry, validateSchool } from "../lib/lineage.ts";
 
 const ROOT = join(import.meta.dirname, "..");
-const FILE = JSON.parse(readFileSync(join(ROOT, "data", "aid-policies.json"), "utf8")) as AidPolicyFile;
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const FILE = (await miniReference<AidPolicyFile>("aid-policies"))!;
+const meta = miniMeta();
+const schools = miniSchools();
+// Only the mini fixture's own ids; `known` is used below only for format/membership checks, never to validate
+// the real curated file's full ~54-college membership against the whole dataset (the publisher's reference gate,
+// G5, covers that at publish time).
 const known = new Set(schools.map((s) => s.unit_id));
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
 
@@ -56,13 +59,15 @@ const problems = (...policies: AidPolicy[]) => validateAidPolicies(file(...polic
 /* ---- The real file ---- */
 
 test("the real aid-policies file passes the check, with at least 40 colleges", () => {
-  assert.deepEqual(validateAidPolicies(FILE, known), []);
+  // No `known` set here: most of the real file's colleges aren't in the mini fixture's 12, so the membership half
+  // of the check isn't meaningful here (the publisher's reference gate, G5, covers it at publish time); the format
+  // checks (required keys, shapes, duplicates) still run over the real file.
+  assert.deepEqual(validateAidPolicies(FILE), []);
   assert.ok(allAidPolicies().length >= 40, `${allAidPolicies().length} colleges curated`);
 });
 
-test("every curated college is in the dataset and cites a page checked through search", () => {
+test("every curated college cites a page checked through search", () => {
   for (const p of allAidPolicies()) {
-    assert.ok(byId.has(p.unit_id), p.unit_id);
     assert.equal(p.verified_via, "search", `${p.unit_id}: curated from search results, not yet opened`);
     assert.equal(p.checked, "2026-10-10");
     assert.ok(new URL(p.source).hostname.length > 0);
@@ -224,7 +229,11 @@ test("citing an aid_policy field resolves to the entry's page, award year, and c
 });
 
 test("each curated college's citation follows its own entry", () => {
-  for (const policy of allAidPolicies()) {
+  // The real curated file has ~54 colleges, most outside the mini fixture's 12; this checks it for every curated
+  // college the fixture does carry a full record for (at least 5: Harvard, Cornell, MIT, Vanderbilt, UT Austin).
+  const inFixture = allAidPolicies().filter((p) => byId.has(p.unit_id));
+  assert.ok(inFixture.length >= 5, `only ${inFixture.length} curated colleges in the mini fixture`);
+  for (const policy of inFixture) {
     const school = byId.get(policy.unit_id)!;
     const cited = lineageFor("aid_policy.meets_full_need", school, meta);
     assert.equal(cited.url, policy.source, policy.unit_id);

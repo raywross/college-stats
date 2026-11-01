@@ -24,6 +24,7 @@ import { ESTIMATE_INPUT_RULES, CURRENT_CDS_EDITION_START } from "../lib/admin/he
 import { filesInEdition, lastModifiedDate, sourceFileRefs, sourceFileRows, undatedFiles, type SourceFilesRecord } from "../lib/admin/source-files.ts";
 import { filterInputRows, inputsQuery, isFilesQuery, parseInputFilters } from "../lib/admin/inputs-view.ts";
 import { lineageFor, type Cited } from "../lib/lineage.ts";
+import { miniSchools, miniMeta, miniLayerDocument } from "./helpers/snapshot.mts";
 import { FIELDS } from "../lib/fields.ts";
 import type { CollegeGpa } from "../lib/planner/gpa-model.ts";
 import type { School } from "../lib/types.ts";
@@ -180,9 +181,9 @@ test("open admission: OPENADMP 1 and 2, anything else unknown; its release names
 });
 
 test("the committed data cites open admission to its own release", () => {
-  const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+  const meta = miniMeta();
   assert.match(meta.sources["ipeds-ic-open"].edition, /^\d{4}–\d{2} \(IC\d{4}\)$/);
-  const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
+  const schools = miniSchools();
   const open = schools.filter((s) => s.admissions.open_admission === true);
   assert.ok(open.length > 0);
   for (const s of open) assert.equal(s.admissions.acceptance_rate, null, `${s.name}: an open-admission college has no admit rate`);
@@ -267,8 +268,8 @@ test("a derived field's primary input is one of its inputs", () => {
 });
 
 test("every rated college's tier cites the year of the admit rate it read, not the field's default vintage", () => {
-  const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
-  const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+  const schools = miniSchools();
+  const meta = miniMeta();
   let fromCollege = 0;
   for (const s of schools) {
     if (!s.selectivity?.tier) continue;
@@ -351,9 +352,9 @@ test("the dating check names files with no entry", () => {
   );
 });
 
-test("the committed source-files.json dates every file meta.json names", () => {
-  const realMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
-  const real = JSON.parse(readFileSync(join(ROOT, "data", "source-files.json"), "utf8")) as SourceFilesRecord;
+test("the committed source-files.json dates every file meta.json names", async () => {
+  const realMeta = miniMeta();
+  const real = (await miniLayerDocument<SourceFilesRecord>("base.source_files", "source-files"))!;
   assert.deepEqual(undatedFiles(sourceFileRefs(realMeta), real), []);
 });
 

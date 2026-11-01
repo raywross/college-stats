@@ -1,0 +1,9 @@
+[
+{"unit_id":"123457","alias":"Simpson College","key":"simpsoncollege","source":"wikidata","weight":2},
+{"unit_id":"123457","alias":"simpsonu","key":"simpsonu","source":"domain","weight":2},
+{"unit_id":"191621","alias":"Buffalo","key":"buffalo","source":"common-app","weight":2},
+{"unit_id":"191621","alias":"Hamburg","key":"hamburg","source":"common-app","weight":2},
+{"unit_id":"191621","alias":"Hawks","key":"hawks","source":"common-app","weight":2},
+{"unit_id":"191621","alias":"HC","key":"hc","source":"common-app","weight":2},
+{"unit_id":"191621","alias":"Southtowns","key":"southtowns","source":"common-app","weight":2}
+]

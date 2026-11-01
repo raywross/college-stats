@@ -807,32 +807,14 @@ test("npm run college-health writes the file; check:college-health passes, then 
   }
 });
 
-test("the real data: the committed compact file is current, small, and judges every college as the five sources do", () => {
-  const built = collegeHealthScripts.buildCollegeHealth(ROOT);
-  assert.deepEqual(built.missing, []);
-  const committed = readFileSync(join(ROOT, "data", "college-health.json"), "utf8");
-  assert.equal(committed, built.text, "data/college-health.json is stale: run npm run college-health");
-  assert.ok(Buffer.byteLength(committed) < 1_500_000, "the compact file is well under the 16 MB-per-function guidance");
-
-  const onDisk = collegeHealthScripts.readHealthFilesFromDisk(ROOT);
-  assert.ok(onDisk.manifest && onDisk.records && onDisk.failures && onDisk.queue && onDisk.linkIssues, "all five files are present");
-  const queue = JSON.parse(readFileSync(join(ROOT, "data", "review-queue.json"), "utf8")) as { items: unknown[] };
-  assert.equal([...onDisk.queue!.values()].reduce((a, b) => a + b, 0), queue.items.length);
-  const shas = new Set(onDisk.manifest!.map((m) => m.sha256));
-  for (const docs of onDisk.records!.values()) for (const d of docs) assert.ok(shas.has(d.sha256), "a record document is in the manifest");
-
-  const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as HealthSchool[];
-  const meta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8")) as { retrieved: string };
-  const compact = parseCompact(committed);
-  assert.deepEqual(Object.keys(compact.colleges).sort(), schools.map((s) => s.unit_id).sort(), "every college, and only those");
-  const index = indexHealthFiles(onDisk);
-  const ctx = { today: "2026-10-12", metaRetrieved: meta.retrieved, changes: null };
-  for (const s of schools) {
-    const direct = collegeHealth(s.unit_id, healthInputsFor(s, index, ctx));
-    assert.ok(direct.rows.every((r) => r.status !== null), `${s.unit_id} has an unjudged group`);
-    assert.deepEqual(collegeHealth(s.unit_id, inputsFromCompact(compact, s.unit_id, ctx)!), direct, `${s.unit_id}: the compact file judges differently`);
-  }
-});
+// Deleted (phase 4, G4): "the real data: the committed compact file is current, small, and judges every college as
+// the five sources do" read data/college-health.json, data/review-queue.json, data/schools.json, data/meta.json,
+// and collegeHealthScripts.buildCollegeHealth/readHealthFilesFromDisk(ROOT), which in turn read the five raw health
+// source files (manifest, records, failures, queue, link-issues) under data/. Those are pipeline bookkeeping the
+// mini fixture's layers deliberately leave out (scripts/build-mini-fixture.mts LAYER_EXCLUDES: reported.reports,
+// .docs, .sources, .failures, .review_queue), so this whole-real-dataset build-freshness fact ("is the committed
+// file a fresh build of the real five sources") can't be exercised on the fixture at all (rule 2). `npm run
+// check:college-health` (G5) covers it for the real data.
 
 test("the compact health is read from the data store in one query, falling back to the file when the store has none", async () => {
   const { readCompact, readCompactFromStore, HEALTH_DOCUMENT } = health;

@@ -1,0 +1,80 @@
+{
+  "generated": "2026-10-26",
+  "counts": {
+    "no_document_found": 916,
+    "class_profile_only": 36,
+    "class_profile_no_figures": 264,
+    "robots_disallowed": 13,
+    "host_blocked": 166,
+    "unreachable": 48,
+    "edition_too_old": 14,
+    "not_newer": 9,
+    "edition_unknown": 10,
+    "never_read": 57,
+    "failed_checks": 547,
+    "read_no_values": 11,
+    "discovery_error": 12
+  },
+  "rows": [
+    {
+      "unit_id": "123457",
+      "name": "Simpson University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "123457",
+      "name": "Simpson University",
+      "reason_code": "host_blocked",
+      "stage": "fetch",
+      "detail": "refused by www.simpsonu.edu (HTTP 403)",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "191621",
+      "name": "Hilbert College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "198419",
+      "name": "Duke University",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "31 value(s) held; failed checks: parts-sum ×24, ratio-matches ×4, federal-disagrees ×3",
+      "url": "https://ir.provost.duke.edu/sites/default/files/CDS_PDF_2025-2026-20260622-website-published-version.pdf",
+      "edition": "2025-26",
+      "checks": [
+        "parts-sum",
+        "ratio-matches",
+        "federal-disagrees"
+      ],
+      "last_run": "2026-10-10",
+      "run": "20261010-180040-39",
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ]
+}

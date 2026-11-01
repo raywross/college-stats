@@ -1,0 +1,1 @@
+`sample-plan-colleges.json`: the three sample-plan colleges the mini fixture lacks (Clemson 217882, Kennesaw State 486840, Georgia Southern 139931), copied from `data/schools.json` on 2026-10-31 with their `reported.*` lineage entries dropped (all but the interest factor the splash cites); read by `tests/advisor-splash.test.mts`.

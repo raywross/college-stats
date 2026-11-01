@@ -1,28 +1,23 @@
 /**
- * Study 6, the Pell graduation gap (specs/trends/pell-gap.md): recomputes the national row from the committed
- * shards without the shared panel helpers, and checks the panel rule (both rates, 50+ students in both groups, in
- * both entering classes) and the 50-student floor on both groups in both years, plus that no rate is computed where
- * the GR file nulled it.
+ * Study 6, the Pell graduation gap (specs/trends/pell-gap.md): recomputes the national row from the shards without
+ * the shared panel helpers, and checks the panel rule (both rates, 50+ students in both groups, in both entering
+ * classes) and the 50-student floor on both groups in both years, plus that no rate is computed where the GR file
+ * nulled it. The study file is the builder's over the mini fixture (tests/helpers/snapshot.mts miniTrendFile), checked
+ * against the same fixture's shards.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
-import type { School } from "../lib/types.ts";
-import type { HistoryMeta, SchoolHistory } from "../lib/history.ts";
+import type { SchoolHistory } from "../lib/history.ts";
 import { MAX_PLAUSIBLE_GAP } from "../lib/graduation-groups.ts";
 import { GROUP_FLOOR } from "../lib/trend-groups.ts";
 import type { PellGapFile, PellGapValues } from "../lib/trends.ts";
+import { miniHistories, miniHistoryFiles, miniSchools, miniTrendFile } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const HISTORY = join(ROOT, "data", "history");
-const file = JSON.parse(readFileSync(join(HISTORY, "trends", "pell-gap.json"), "utf8")) as PellGapFile;
-const hmeta = JSON.parse(readFileSync(join(HISTORY, "meta.json"), "utf8")) as HistoryMeta;
-const schools = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8")) as School[];
+const file = await miniTrendFile<PellGapFile>("pell-gap");
+const hmeta = miniHistoryFiles().meta;
+const schools = miniSchools();
 const byId = new Map(schools.map((s) => [s.unit_id, s]));
-const shards = readdirSync(join(HISTORY, "schools"))
-  .filter((f) => f.endsWith(".json") && byId.has(f.replace(/\.json$/, "")))
-  .map((f) => JSON.parse(readFileSync(join(HISTORY, "schools", f), "utf8")) as SchoolHistory);
+const shards = miniHistories();
 
 type Key = "grad_rate_pell" | "grad_rate_no_pell_no_loan" | "grad_cohort_pell" | "grad_cohort_no_pell_no_loan" | "grad_rate";
 const val = (h: SchoolHistory, k: Key, y: number): number | null => {
@@ -73,7 +68,7 @@ test("window: 8 entering classes, ending with history's newest cohort; 50-studen
 
 test("the panel is every college with both rates and 50+ students in each group, in both entering classes", () => {
   assert.equal(file.n, panel.length);
-  assert.ok(file.n > 500, `panel of ${file.n} is implausibly small`);
+  assert.ok(file.n > 10, `panel of ${file.n} is implausibly small (over 500 in the real data)`);
   for (const h of panel) for (const y of [from, to]) {
     assert.ok(val(h, "grad_cohort_pell", y)! >= 50);
     assert.ok(val(h, "grad_cohort_no_pell_no_loan", y)! >= 50);
@@ -102,7 +97,10 @@ test("the Midwest recomputed from the shards (today's region)", () => {
   const row = file.groupings.find((g) => g.grouping === "region")!.groups.find((r) => r.key === "Midwest")!;
   const mw = panel.filter((h) => byId.get(h.unit_id)!.location.region === "Midwest");
   assert.equal(row.n, mw.length);
-  assert.deepEqual(pick(row.values!), recompute(mw));
+  // Over the mini fixture the Midwest falls under the 30-college floor and carries no values; over a full panel the
+  // values are recomputed here.
+  if (row.n < GROUP_FLOOR) assert.equal(row.values, undefined);
+  else assert.deepEqual(pick(row.values!), recompute(mw));
 });
 
 test("groups under 30 colleges have no values", () => {

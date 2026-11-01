@@ -1,15 +1,17 @@
 /**
  * National trends, shared pieces (specs/national-trends.md#shared-computation-and-tests): groupings and floors, the
- * study registry against the builders and the committed files in data/history/trends/, the shared envelope, and that
- * the committed files are exactly what `npm run build-trends` produces from the committed history.
+ * study registry against the builders and the trends index (the mini fixture's `trends/index.json`, copied from the
+ * real snapshot), the shared envelope and the study-file rules over each builder's output from the mini fixture
+ * (tests/helpers/snapshot.mts miniTrendFile), and that a build is deterministic. The real files are built from the
+ * full history by the publisher.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { School } from "../lib/types";
 import { isFieldPath } from "../lib/fields.ts";
-import { SERIES, isSeriesKey, type HistoryMeta, type SchoolHistory } from "../lib/history.ts";
+import { SERIES, isSeriesKey, type SchoolHistory } from "../lib/history.ts";
 import {
   CONFERENCE_FLOOR,
   GROUPINGS,
@@ -31,15 +33,24 @@ import {
 import { byGroup, byGroupThen, fixedPanel, medianBy, shareBy, splitByThen, totalBy, weightedBy, yearly, type Member } from "../lib/trend-panel.ts";
 import { STUDIES, studyWindow, type StudyDef } from "../lib/trend-studies.ts";
 import type { GroupingResult, StudyFile, TrendEnvelope, TrendIndex } from "../lib/trends.ts";
-import { loadTrendContext } from "../scripts/trends/context.mts";
-import { computeTrends, trendFileText } from "../scripts/trends/build.mts";
+import { trendFileText } from "../scripts/trends/build.mts";
 import { BUILDERS } from "../scripts/trends/index.mts";
+import { miniHistoryFiles, miniTrend, miniTrendContext, miniTrendFile } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
-const TRENDS = join(ROOT, "data", "history", "trends");
-const hmeta = JSON.parse(readFileSync(join(ROOT, "data", "history", "meta.json"), "utf8")) as HistoryMeta;
-const read = <T,>(name: string): T => JSON.parse(readFileSync(join(TRENDS, `${name}.json`), "utf8")) as T;
-const committed = readdirSync(TRENDS).filter((f) => f.endsWith(".json")).map((f) => f.replace(/\.json$/, "")).sort();
+const hmeta = miniHistoryFiles().meta;
+/** The trends index the fixture carries (the real snapshot's). */
+const INDEX = miniTrend<TrendIndex>("index")!;
+/** Each builder's file over the mini fixture; a builder that can't run on 38 colleges is left out. */
+const BUILT = new Map<string, TrendEnvelope>();
+for (const b of BUILDERS) {
+  try {
+    BUILT.set(b.name, await miniTrendFile<TrendEnvelope>(b.name));
+  } catch {
+    // where-students-go's card needs groups over the floor (scripts/trends/studies/where-students-go.mts).
+  }
+}
+const read = <T,>(name: string): T => BUILT.get(name) as T;
 const studies = STUDIES as readonly StudyDef[];
 
 /** A minimal School for grouping tests. */
@@ -133,17 +144,17 @@ test("byGroup: groups under the floor carry n and tooFew, no values", () => {
 
 /* ---- Registry ↔ builders ↔ committed files ---- */
 
-test("every registered study has a builder, a committed file, a page, and an index card", () => {
+test("every registered study has a builder, a file in the index, a page, and an index card", () => {
   const builders = new Set(BUILDERS.map((b) => b.name));
-  const index = read<TrendIndex>("index");
+  const index = INDEX;
   for (const s of studies) {
     assert.ok(builders.has(s.slug), `${s.slug}: register its builder in scripts/trends/index.mts`);
-    assert.ok(committed.includes(s.slug), `${s.slug}: run npm run build-trends and commit data/history/trends/${s.slug}.json`);
+    assert.ok(index.files.includes(s.slug), `${s.slug}: the trends index lists no ${s.slug}.json`);
     assert.ok(existsSync(join(ROOT, "app", "trends", s.slug, "page.tsx")), `${s.slug}: add app/trends/${s.slug}/page.tsx`);
     assert.ok(index.cards.some((c) => c.slug === s.slug), `${s.slug}: no card in index.json`);
   }
-  assert.deepEqual(index.files, [...builders].sort(), "index.json lists every file the build wrote");
-  assert.deepEqual(committed, [...builders, "index"].sort(), "data/history/trends/ holds exactly the builders' files and index.json");
+  assert.deepEqual(index.files, [...builders].sort(), "index.json lists exactly the builders' files");
+  assert.ok(BUILT.size >= BUILDERS.length - 1, `only ${BUILT.size} of ${BUILDERS.length} builders run on the mini fixture`);
   assert.equal(new Set(studies.map((s) => s.slug)).size, studies.length, "study slugs are unique");
   assert.deepEqual(studies.map((s) => s.number), studies.map((_, i) => i + 1), "studies are numbered 1, 2, … in order");
 });
@@ -162,19 +173,18 @@ test("registry: series exist, fields cover each series' registered field, window
 });
 
 test("every trend file carries the envelope: name, built, year kind, from < to, panel size", () => {
-  for (const name of committed.filter((n) => n !== "index")) {
-    const f = read<TrendEnvelope>(name);
+  for (const [name, f] of BUILT) {
     assert.equal(f.name, name);
     assert.equal(f.built, hmeta.built, `${name}: stale; run npm run build-trends`);
     assert.ok(["fall", "academic", "cohort"].includes(f.yearKind), name);
     assert.ok(Number.isInteger(f.from) && Number.isInteger(f.to) && f.from < f.to && f.to <= hmeta.latest[f.yearKind], `${name}: ${f.from}–${f.to}`);
     assert.ok(Number.isInteger(f.n) && f.n > 0, `${name}: n`);
   }
-  assert.equal(read<TrendIndex>("index").built, hmeta.built);
+  assert.equal(INDEX.built, hmeta.built);
 });
 
 test("study files: the window is the registry's, groupings in registry order, floors applied, groups within the panel", () => {
-  for (const s of studies) {
+  for (const s of studies.filter((x) => BUILT.has(x.slug))) {
     const f = read<StudyFile<unknown>>(s.slug);
     assert.deepEqual([f.from, f.to], studyWindow(s, hmeta.latest), s.slug);
     assert.equal(f.yearKind, s.yearKind);
@@ -195,10 +205,14 @@ test("study files: the window is the registry's, groupings in registry order, fl
   }
 });
 
-test("committed trend files are exactly what npm run build-trends makes from the committed history", () => {
-  const { outputs, index } = computeTrends(loadTrendContext(ROOT));
-  for (const o of outputs) assert.equal(readFileSync(join(TRENDS, `${o.name}.json`), "utf8"), trendFileText(o.file), `${o.name}.json is stale: run npm run build-trends`);
-  assert.equal(readFileSync(join(TRENDS, "index.json"), "utf8"), trendFileText(index), "index.json is stale: run npm run build-trends");
+test("a trend build is deterministic: building each file again from the same history gives the same text", async () => {
+  // (The real data's check, the committed files equal a fresh build of the committed history, is the publisher's:
+  // it renders the trend files from the history layer at every publish.)
+  const ctx = await miniTrendContext();
+  for (const b of BUILDERS) {
+    if (!BUILT.has(b.name)) continue;
+    assert.equal(trendFileText(b.build(ctx).file), trendFileText(BUILT.get(b.name)!), `${b.name}: two builds differ`);
+  }
 });
 
 /* ---- Classified then (Study 7) ---- */

@@ -4,8 +4,6 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { MIN_COHORT, OM_COLUMNS, OM_PIVOT, completion8, eightYearFrom, isShown, leaversElsewhere, outcomeHeadline } from "../lib/outcome-measures.ts";
 import { pivotRows } from "../scripts/lib/om.mts";
@@ -13,10 +11,10 @@ import { ERAS, requiredColumns } from "../scripts/history/registry.mts";
 import { lastPointMismatches } from "../scripts/history/build.mts";
 import { parseFilters } from "../lib/params.ts";
 import type { SchoolHistory } from "../lib/history.ts";
+import { miniHistory, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 
 /** One OM file row: cohort code plus adjusted cohort, awards, still here, elsewhere, unknown. */
@@ -120,7 +118,7 @@ test("stored 8-year outcomes: wide coverage, shares sum to 1, small cohorts supp
 });
 
 test("history: Vanderbilt's series start with the fall 2009 class and end on the snapshot (rule 1)", () => {
-  const h: SchoolHistory = JSON.parse(readFileSync(join(ROOT, "data", "history", "schools", "221999.json"), "utf8"));
+  const h: SchoolHistory = miniHistory("221999")!;
   const s = byId("221999");
   const o = s.outcomes!.eight_year!;
   assert.equal(h.series.om_award!.start, 2009);

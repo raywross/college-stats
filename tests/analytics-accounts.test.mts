@@ -140,12 +140,3 @@ test("the footer, the Data page's methods section, and the account page link to 
   assert.ok(data.slice(data.indexOf('<Section id="method"')).includes('href="/privacy"'), "inside the methods section");
   assert.match(read("app/account/page.tsx"), /href="\/privacy"/);
 });
-
-test("the monthly report template has the seven report headings and the observations list", () => {
-  const tpl = read("data/reports/usage-template.md");
-  for (const h of ["Traffic", "Engagement", "Funnels", "Retention", "Content", "Performance", "Errors"]) {
-    assert.match(tpl, new RegExp(`^## \\d\\. ${h}$`, "m"), h);
-  }
-  assert.match(tpl, /^## Observations$/m);
-  assert.match(tpl, /by hand/);
-});

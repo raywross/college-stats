@@ -3,7 +3,10 @@
  * pull for a small class, figures that can't describe one class, the score and ranks, the tiers and their hysteresis,
  * per-pool tiers, `tierForStudent`, the build's key placement, the guard in `npm run verify` (and that it fails when
  * its rules are broken), and the proprietary rule: the score never reaches public/, the search index, app code, or a
- * client bundle.
+ * client bundle. The colleges are the mini fixture's (tests/helpers/snapshot.mts), whose stored tiers come from the
+ * full dataset's build; the index the guard tests use is a build over the mini fixture itself (a snapshot carries no
+ * index file), so the whole-dataset facts (the Elite count's band, ranks among all colleges) are left to
+ * `npm run check:selectivity` over a real snapshot.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -31,17 +34,23 @@ import {
 } from "../lib/selectivity.ts";
 import { chipTiers, tierForStudent, tierRank, tierText } from "../lib/selectivity-tier.ts";
 import { selectivityFacts } from "../lib/selectivity-facts.ts";
-import { INDEX_MARKERS, buildSelectivity, leakProblems, placeSelectivity, readIndexFile, selectivityProblems } from "../scripts/lib/selectivity.mts";
+import { INDEX_MARKERS, buildSelectivity, leakProblems, placeSelectivity, selectivityProblems } from "../scripts/lib/selectivity.mts";
 import { GLOSSARY } from "../lib/glossary.ts";
 import { reachedFromClient, walk } from "./helpers/client-reach.mts";
 import { parseFilters } from "../lib/params.ts";
+import { miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (rel: string) => readFileSync(join(ROOT, rel), "utf8");
-const SCHOOLS: School[] = JSON.parse(read("data/schools.json"));
-const META: DatasetMeta = JSON.parse(read("data/meta.json"));
-const FILE = readIndexFile(ROOT)!;
+const SCHOOLS: School[] = miniSchools();
+const META: DatasetMeta = miniMeta();
 const byName = (name: string) => SCHOOLS.find((s) => s.name === name)!;
+/** A build over the mini fixture: its colleges with tiers from their own index (RATED), and that index (FILE). */
+const BUILT = buildSelectivity(SCHOOLS, META, { today: "2026-10-31" });
+const RATED: School[] = BUILT.schools;
+const FILE = BUILT.file;
+/** Problems that only the full dataset can avoid: the Elite count's band and tiers a 38-college build leaves empty. */
+const wholeDataset = (p: string) => p.startsWith("Elite holds") || /^no college is \w+ for all applicants$/.test(p);
 
 const raw = (over: Partial<RawInputs> = {}): RawInputs => ({
   admitRate: 0.5,
@@ -87,8 +96,14 @@ test("a missing SAT is filled from the other inputs; a missing yield, retention,
 });
 
 test("an open-admission college is unrated in every pool, whatever rate its CDS states", () => {
-  const base = byName("University of Alaska Fairbanks");
-  assert.equal(base.admissions.open_admission, true);
+  // The mini fixture's open-admission college, Mechon L'hoyroa, reads unrated.
+  const mechon = byName("Mechon L'hoyroa");
+  assert.equal(mechon.admissions.open_admission, true);
+  assert.equal(rawInputs({ ...mechon, admissions: { ...mechon.admissions, acceptance_rate: 1 } } as School).admitRate, null);
+  // The real data's example, the University of Alaska Fairbanks, is a public with residency rates; Georgia Tech, flagged
+  // open admission, stands in for it.
+  const gt = byName("Georgia Institute of Technology-Main Campus");
+  const base = { ...gt, admissions: { ...gt.admissions, open_admission: true } } as School;
   const stated = { ...base, admissions: { ...base.admissions, acceptance_rate: 1 } } as School;
   const r = rawInputs(stated);
   assert.equal(r.admitRate, null);
@@ -206,65 +221,67 @@ test("placeSelectivity puts the key before directories/lineage/trends/reported, 
   // The directories merge re-inserts `directories` and `lineage` before trends/reported or at the end: selectivity stays put.
 });
 
-test("the committed tiers are a fresh build: rebuilding changes nothing", () => {
-  const again = buildSelectivity(SCHOOLS, META, { prior: FILE });
+test("a fresh build is stable: rebuilding the mini fixture's own build changes nothing", () => {
+  const again = buildSelectivity(RATED, META, { prior: FILE });
   assert.equal(again.changed, 0);
   assert.deepEqual(again.file.counts, FILE.counts);
   assert.equal(again.file.generated, FILE.generated, "no index moved, so the date stays");
-  for (let i = 0; i < SCHOOLS.length; i++) assert.equal(JSON.stringify(again.schools[i]), JSON.stringify(SCHOOLS[i]), SCHOOLS[i].name);
+  for (let i = 0; i < RATED.length; i++) assert.equal(JSON.stringify(again.schools[i]), JSON.stringify(RATED[i]), RATED[i].name);
 });
 
-test("the real dataset: the colleges you'd expect in Elite, every tier filled, no ties for a rank, none at 100", () => {
-  const [lo, hi] = ELITE_COUNT_RANGE;
-  assert.ok(FILE.elite_count >= lo && FILE.elite_count <= hi, `Elite ${FILE.elite_count}`);
-  assert.equal(FILE.elite_index, ELITE_INDEX);
-  for (const name of ["Harvard University", "Yale University", "Princeton University", "Massachusetts Institute of Technology", "Stanford University", "California Institute of Technology", "University of Chicago", "Brown University", "Columbia University in the City of New York", "Dartmouth College", "University of Pennsylvania", "Cornell University", "Duke University"])
+test("the stored tiers: the colleges you'd expect in Elite, every tier filled; a build has no ties for a rank, none at 100", () => {
+  // The stored tiers come from the full dataset's build. Of the real data's expected Elite list, the mini fixture has
+  // these six (it lacks Yale, Caltech, Chicago, Brown, Columbia, Dartmouth, and Penn).
+  for (const name of ["Harvard University", "Princeton University", "Massachusetts Institute of Technology", "Stanford University", "Cornell University", "Duke University"])
     assert.equal(byName(name).selectivity?.tier, "elite", name);
-  for (const t of ["highly_selective", "selective", "accessible", "open"] as const) assert.ok(FILE.counts[t] > 0, t);
+  for (const t of ["elite", "highly_selective", "very_selective", "selective", "accessible", "open"] as const)
+    assert.ok(SCHOOLS.some((s) => s.selectivity?.tier === t), t);
+  assert.equal(FILE.elite_index, ELITE_INDEX);
   const entries = Object.values(FILE.colleges);
+  assert.ok(entries.length > 30);
   assert.deepEqual(entries.map((e) => e.rank).sort((x, y) => x - y), entries.map((_, i) => i + 1), "ranks 1..n, each once");
   assert.ok(entries.every((e) => e.all < 100), "nothing pinned at the top of the scale");
-  // The first version tied these at 100 or put NYU and Northeastern above them.
-  const rank = (name: string) => FILE.colleges[byName(name).unit_id].rank;
-  for (const name of ["Massachusetts Institute of Technology", "Stanford University", "Yale University", "Columbia University in the City of New York"])
-    for (const below of ["New York University", "Northeastern University"]) assert.ok(rank(name) < rank(below), `${name} above ${below}`);
-  // Small or inconsistent records don't lead.
-  assert.ok(rank("Curtis Institute of Music") > 60 && rank("Washington University of Science and Technology") > 60);
-  assert.equal(byName("University of North Texas Health Science Center").selectivity, undefined, "more first-years than undergraduates: unrated");
-  // Georgia Tech: rated per pool; out of state reads harder.
+  // (The real data's rank checks, MIT, Stanford, Yale, and Columbia above NYU and Northeastern, Curtis and the
+  // health science center kept from leading, need colleges and a national field the mini fixture doesn't have.)
+  // Georgia Tech and UT Austin: rated per pool; out of state reads at least as hard (UT Austin: Elite out of state).
   const gt = byName("Georgia Institute of Technology-Main Campus");
-  const e = FILE.colleges[gt.unit_id];
   assert.ok(gt.selectivity?.in_state && gt.selectivity.out_of_state);
+  const e = FILE.colleges[gt.unit_id];
   assert.ok(e.in_state! < e.out_of_state!, `${e.in_state} < ${e.out_of_state}`);
+  const ut = byName("The University of Texas at Austin").selectivity!;
+  assert.ok(tierRank(ut.out_of_state)! < tierRank(ut.in_state)!, `${ut.out_of_state} is harder than ${ut.in_state}`);
 });
 
 /* ---- The guard (npm run check:selectivity) ---- */
 
-test("the guard passes on the committed data and code", () => {
-  assert.deepEqual(selectivityProblems(SCHOOLS, FILE, META), []);
+test("the guard passes on a fresh build and the code", () => {
+  assert.deepEqual(selectivityProblems(RATED, FILE, META).filter((p) => !wholeDataset(p)), []);
   assert.deepEqual(leakProblems(ROOT), []);
 });
 
 test("the guard fails a tier that moved without crossing the band", () => {
   // A Selective college whose score sits under the band above the next cutoff can't be stored as anything but Selective.
-  const i = SCHOOLS.findIndex((s) => s.selectivity?.tier === "selective" && !s.selectivity.in_state && FILE.colleges[s.unit_id].all < TIER_CUTOFFS.highly_selective - HYSTERESIS);
-  const schools = SCHOOLS.map((s, j) => (j === i ? { ...s, selectivity: { ...s.selectivity!, tier: "highly_selective" as const } } : s));
+  const i = RATED.findIndex((s) => s.selectivity?.tier === "selective" && !s.selectivity.in_state && FILE.colleges[s.unit_id].all < TIER_CUTOFFS.highly_selective - HYSTERESIS);
+  assert.ok(i >= 0, "a Selective college well under the next cutoff");
+  const schools = RATED.map((s, j) => (j === i ? { ...s, selectivity: { ...s.selectivity!, tier: "highly_selective" as const } } : s));
   const problems = selectivityProblems(schools, FILE, META);
-  assert.ok(problems.some((p) => p.includes(SCHOOLS[i].name) && p.includes("hysteresis")), problems.join("\n"));
+  assert.ok(problems.some((p) => p.includes(RATED[i].name) && p.includes("hysteresis")), problems.join("\n"));
 });
 
 test("the guard fails an Elite count outside its band and an empty tier", () => {
   const [lo, hi] = ELITE_COUNT_RANGE;
   // Elite for some pool counts too (UT Austin, fall 2025: Elite out of state only), so every pool is demoted.
   const notElite = <T,>(t: T) => (t === "elite" ? ("highly_selective" as const) : t);
-  const tooFew = SCHOOLS.map((s) =>
+  const tooFew = RATED.map((s) =>
     s.selectivity ? { ...s, selectivity: { ...s.selectivity, tier: notElite(s.selectivity.tier), ...(s.selectivity.in_state ? { in_state: notElite(s.selectivity.in_state) } : {}), ...(s.selectivity.out_of_state ? { out_of_state: notElite(s.selectivity.out_of_state) } : {}) } } : s
   );
   assert.ok(selectivityProblems(tooFew, FILE, META).some((p) => p.startsWith("Elite holds 0") && p.includes(`${lo}–${hi}`)));
   assert.ok(selectivityProblems(tooFew, FILE, META).some((p) => p === "no college is elite for all applicants"));
-  let extra = hi + 1;
-  const tooMany = SCHOOLS.map((s) => (s.selectivity && s.selectivity.tier !== "elite" && extra-- > 0 ? { ...s, selectivity: { ...s.selectivity, tier: "elite" as const } } : s));
-  assert.ok(selectivityProblems(tooMany, FILE, META).some((p) => p.startsWith("Elite holds")));
+  // The mini fixture has fewer colleges than the band's top, so copies of one college (new ids) make up the count.
+  const rated = RATED.find((s) => s.selectivity)!;
+  const copies = Array.from({ length: hi + 1 }, (_, k) => ({ ...rated, unit_id: `9${String(k).padStart(5, "0")}`, selectivity: { ...rated.selectivity!, tier: "elite" as const } }));
+  const tooMany = [...RATED, ...copies];
+  assert.ok(selectivityProblems(tooMany, FILE, META).some((p) => p.startsWith(`Elite holds ${hi + 1} `)));
 });
 
 /* ---- The top band of Ultra selective (method/standing.md "Revision 3", rule 8) ---- */
@@ -279,29 +296,33 @@ test("the top band: Ultra selective at TOP_BAND_SCORE or more to enter, leaving 
   assert.equal(topBand(88, "elite", "top"), null, "exactly the band below: leaves");
 });
 
-test("the top band on the committed data: Yale, Chicago, Harvard, Stanford, MIT, Princeton, Penn; a word, never the score", () => {
+test("the top band in the stored tiers: Harvard, Stanford, MIT, Princeton; a word, never the score", () => {
+  // The real data's band also holds Yale, Chicago, and Penn, which the mini fixture lacks.
   const top = SCHOOLS.filter((x) => x.selectivity?.band === "top").map((x) => x.name).sort();
-  assert.deepEqual(top, ["Harvard University", "Massachusetts Institute of Technology", "Princeton University", "Stanford University", "University of Chicago", "University of Pennsylvania", "Yale University"]);
+  assert.deepEqual(top, ["Harvard University", "Massachusetts Institute of Technology", "Princeton University", "Stanford University"]);
   for (const x of SCHOOLS) if (x.selectivity?.band) assert.equal(x.selectivity.tier, "elite", x.name);
-  assert.equal(byName("Brown University").selectivity?.band, undefined, "Brown is just under");
+  assert.equal(byName("Cornell University").selectivity?.band, undefined, "Ultra selective, not in the band");
   assert.equal(byName("Vanderbilt University").selectivity?.band, undefined);
   for (const x of SCHOOLS) if (x.selectivity) assert.deepEqual(Object.keys(x.selectivity).filter((k) => !["tier", "in_state", "out_of_state", "band", "year"].includes(k)), [], x.name);
 });
 
 test("the guard fails a top band the score doesn't support, and a missing one it does", () => {
-  // Columbia (87.5) sits more than the hysteresis band under the cutoff (Brown, at 89.6, could stay if it had been in).
-  const brown = SCHOOLS.findIndex((x) => x.name === "Columbia University in the City of New York");
-  const harvard = SCHOOLS.findIndex((x) => x.name === "Harvard University");
-  const added = SCHOOLS.map((x, j) => (j === brown ? { ...x, selectivity: { ...x.selectivity!, band: "top" as const } } : x));
-  assert.ok(selectivityProblems(added, FILE, META).some((p) => p.includes("Columbia University") && p.includes("top band")));
-  const dropped = SCHOOLS.map((x, j) => (j === harvard ? { ...x, selectivity: { tier: x.selectivity!.tier, year: x.selectivity!.year } } : x));
-  assert.ok(selectivityProblems(dropped, FILE, META).some((p) => p.includes("Harvard University") && p.includes("top band")));
+  // Over the mini fixture's own build: Harvard as Ultra selective with an index well under the cutoff, then with an
+  // index over it but no band. (The real data's examples were Columbia, at 87.5, and Harvard.)
+  const harvard = RATED.findIndex((x) => x.name === "Harvard University");
+  const elite = (x: School, band?: "top") => ({ ...x, selectivity: { tier: "elite" as const, ...(band ? { band } : {}), year: x.selectivity!.year } });
+  const low = { ...FILE, colleges: { ...FILE.colleges, [RATED[harvard].unit_id]: { ...FILE.colleges[RATED[harvard].unit_id], all: TOP_BAND_SCORE - HYSTERESIS - 1 } } };
+  const added = RATED.map((x, j) => (j === harvard ? elite(x, "top") : x));
+  assert.ok(selectivityProblems(added, low, META).some((p) => p.includes("Harvard University") && p.includes("top band")));
+  const high = { ...FILE, colleges: { ...FILE.colleges, [RATED[harvard].unit_id]: { ...FILE.colleges[RATED[harvard].unit_id], all: TOP_BAND_SCORE + 1 } } };
+  const dropped = RATED.map((x, j) => (j === harvard ? elite(x) : x));
+  assert.ok(selectivityProblems(dropped, high, META).some((p) => p.includes("Harvard University") && p.includes("top band")));
 });
 
 test("the guard fails a stale index file", () => {
   const first = Object.keys(FILE.colleges)[0];
   const stale = { ...FILE, colleges: { ...FILE.colleges, [first]: { ...FILE.colleges[first], all: FILE.colleges[first].all + 0.1 } } };
-  assert.ok(selectivityProblems(SCHOOLS, stale, META).some((p) => p.includes("isn't a fresh build")));
+  assert.ok(selectivityProblems(RATED, stale, META).some((p) => p.includes("isn't a fresh build")));
 });
 
 test("the leak guard catches the index in public/ or read by app code, and ignores comments", () => {

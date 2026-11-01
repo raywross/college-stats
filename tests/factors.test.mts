@@ -4,17 +4,15 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { School } from "../lib/types";
 import type { SchoolHistory, TrendFacts } from "../lib/history.ts";
 import { FACTOR_CODE, factorCode, factorUse, factorsFrom } from "../lib/derive.ts";
 import { historyEvents } from "../lib/events.ts";
 import { FACTOR_FILTERS } from "../lib/factors.ts";
 import { countActiveFilters, parseFilters } from "../lib/params.ts";
+import { miniHistoryFiles, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
+const schools: School[] = miniSchools();
 
 test("factor codes: 1 required, 5 considered, 3 not considered; 2 kept only as a code; 4, 9, negatives dropped", () => {
   assert.deepEqual(["1", "2", "3", "5", "4", "9", "-1", "", undefined].map(factorCode), [1, 2, 3, 5, null, null, null, null, null]);
@@ -64,11 +62,12 @@ test("Explore factor filters parse and count", () => {
   assert.equal(countActiveFilters({ noLegacy: "1", noEssay: "1", gpaRequired: "1" }), 3);
   const counts = Object.fromEntries(FACTOR_FILTERS.map((x) => [x.param, schools.filter(x.test).length]));
   assert.equal(counts.noLegacy, schools.filter((s) => s.admissions.factors?.legacy === "not_considered").length);
-  assert.ok(counts.gpaRequired > 1000 && counts.noLegacy > 1000 && counts.noEssay > 500, JSON.stringify(counts));
+  // Over the real data each is in the hundreds or thousands; the mini fixture's 38 colleges have some of each.
+  assert.ok(counts.gpaRequired > 0 && counts.noLegacy > 0 && counts.noEssay > 0, JSON.stringify(counts));
 });
 
 test("the legacy Home fact adds up", () => {
-  const facts: TrendFacts = JSON.parse(readFileSync(join(ROOT, "data", "history", "facts.json"), "utf8"));
+  const facts: TrendFacts = miniHistoryFiles().facts;
   const lg = facts.legacy!;
   assert.ok(lg, "facts.json has the legacy fact");
   assert.equal(lg.consideredTo, lg.consideredFrom - lg.stopped + lg.started, "stopped and started explain the change");

@@ -1,6 +1,7 @@
 /**
  * Fixture colleges for the compare overview's cards and takeaways (tests/compare-cards.test.mts,
- * tests/compare-insights.test.mts): the pilot colleges' figures from data/schools.json, and colleges that report little.
+ * tests/compare-insights.test.mts): the pilot colleges' figures, copied by hand from the real dataset, and colleges that
+ * report little.
  * Only the fields the cards and sentences read are filled. Not a test file itself (no `.test.`).
  */
 import type { School, TrendSummary } from "../../lib/types";

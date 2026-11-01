@@ -4,16 +4,14 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { DatasetMeta, School } from "../lib/types";
 import { INSTRUCTION_METRIC, endowmentMetricFor, endowmentOnForm, financesFrom, instructionOnForm, instructionSpending } from "../lib/finances.ts";
 import type { SchoolHistory } from "../lib/history.ts";
 import { FINANCE_BREAK } from "../lib/history.ts";
+import { miniHistory, miniMeta, miniSchools } from "./helpers/snapshot.mts";
 
-const ROOT = join(import.meta.dirname, "..");
-const schools: School[] = JSON.parse(readFileSync(join(ROOT, "data", "schools.json"), "utf8"));
-const meta: DatasetMeta = JSON.parse(readFileSync(join(ROOT, "data", "meta.json"), "utf8"));
+const schools: School[] = miniSchools();
+const meta: DatasetMeta = miniMeta();
 const byId = (id: string) => schools.find((s) => s.unit_id === id)!;
 
 test("instruction spending of 0 is unreported, since a college that teaches can't spend nothing on it", () => {
@@ -91,7 +89,9 @@ test("benchmarking never mixes accounting forms: each sector-scoped value exists
   const of = (form: string) => schools.find((s) => s.finances?.form === form)!;
   assert.equal(endowmentMetricFor(of("gasb")), "endowmentGasb");
   assert.equal(endowmentMetricFor(of("fasb")), "endowmentFasb");
-  assert.equal(endowmentMetricFor(of("forprofit")), null, "for-profits report no endowment");
+  // The mini fixture has no for-profit college: a private one's finances relabeled as the for-profit form stands in.
+  const forProfit = { ...of("fasb"), finances: { ...of("fasb").finances!, form: "forprofit" } } as School;
+  assert.equal(endowmentMetricFor(forProfit), null, "for-profits report no endowment");
   assert.deepEqual(INSTRUCTION_METRIC, { gasb: "instructionGasb", fasb: "instructionFasb", forprofit: "instructionForprofit" });
 });
 
@@ -101,7 +101,7 @@ test("the big-endowment standout ranks within the sector, and every endowment be
   const sector = (form: "gasb" | "fasb") => schools.map((s) => endowmentOnForm(s, form)).filter((v): v is number => v !== null);
   const publics = sector("gasb");
   const privates = sector("fasb");
-  assert.ok(publics.length > 300 && privates.length > 800, `${publics.length} publics, ${privates.length} private nonprofits`);
+  assert.ok(publics.length > 5 && privates.length > 5, `${publics.length} publics, ${privates.length} private nonprofits`);
   const richestPublic = Math.max(...publics);
   assert.ok(shareAtOrBelow(publics, richestPublic) >= 0.95);
   // Neither sector's ranking includes the other's colleges.
@@ -110,7 +110,7 @@ test("the big-endowment standout ranks within the sector, and every endowment be
 
 test("history: instruction spending per student has a break where NCES redefined the measure, and ends on the snapshot's value", () => {
   assert.equal(FINANCE_BREAK[0].year, 2015);
-  const h: SchoolHistory = JSON.parse(readFileSync(join(ROOT, "data", "history", "schools", "221999.json"), "utf8"));
+  const h: SchoolHistory = miniHistory("221999")!;
   const s = h.series.instruction_per_student;
   assert.ok(s, "Vanderbilt has an instruction-spending history");
   assert.ok(s!.start <= 2004, "starts by fiscal 2004-05 (Scorecard key 2005)");

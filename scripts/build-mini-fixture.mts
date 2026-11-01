@@ -18,7 +18,11 @@
  *   npm run build-mini-fixture -- --add 123456  also includes unit id 123456
  *   npm run build-mini-fixture -- --out <dir>   writes elsewhere (the drift test uses this on a temp dir)
  *
- * Under 40 colleges; aimed at 2 MB combined but, as built, lands around 2.5 MB even after the trims below, because
+ * Under 40 colleges. Phase 4 (specs/data-platform/git-ci-tests.md) widened it to 38 colleges (the ones the tests pinned
+ * from the real data most often) and every reference document, since the tests and the app's compiled-in reference
+ * tables read nothing else; it lands near 9 MB against a 10 MB target. The paragraph below describes the earlier,
+ * smaller build and the trims that still apply.
+ * Originally aimed at 2 MB combined but, as built, landed around 2.5 MB even after the trims below, because
  * the named colleges (flagship universities with full CDS records and deep per-field lineage) run well above the
  * dataset's typical per-college size — `colleges.json` alone is about 47 KB per college here, against roughly 15 KB
  * across the whole 1,893-college dataset. Getting under 2 MB outright would mean dropping one of the named colleges
@@ -71,6 +75,34 @@ export const DEFAULT_UNITS: readonly string[] = [
   "228778", // UT Austin
   "490328", // Mechon L'hoyroa: open admission, minimal data
   "138558", // Abraham Baldwin Agricultural College: none of the later layers
+  // Phase 4 (specs/data-platform/git-ci-tests.md): the colleges the test suite pinned from the real data most often,
+  // so the tests point here instead of data/. Keep the whole list under 40.
+  "100654", // Alabama A&M
+  "198419", // Duke
+  "243780", // Purdue
+  "243744", // Stanford
+  "199847", // Wake Forest
+  "134130", // Florida
+  "100724", // Alabama State
+  "139959", // Georgia
+  "199120", // UNC Chapel Hill
+  "123457", // Simpson University
+  "100706", // Alabama in Huntsville
+  "204796", // Ohio State
+  "198516", // Elon
+  "170976", // Michigan
+  "191621", // Hilbert College
+  "123961", // Southern California
+  "204024", // Miami (Ohio)
+  "100663", // Alabama at Birmingham
+  "200004", // Western Carolina
+  "186131", // Princeton
+  "176910", // Central Christian College of the Bible
+  "131520", // Howard
+  "228723", // Texas A&M
+  "218663", // South Carolina
+  "183026", // Southern New Hampshire
+  "135726", // Miami (Florida)
 ];
 
 /** Of DEFAULT_UNITS (plus --add), the ones whose real CDS record is kept (specs/cds-sections "CDS academics tests"). */
@@ -87,8 +119,8 @@ const HS_STATES = ["sc", "ct"];
  */
 const HS_SHARED_FILES = ["meta.json", "medians.json", "review-queue.json"];
 
-/** reference.files keys a snapshot actually renders (lib/data-platform/snapshot.ts REFERENCE_OBJECTS), by name. */
-const REFERENCE_KEYS = ["platform-prompts", "organizations", "common-app-trends", "essay-guidance/guidance", "zcta-centroids"];
+// Every reference.files document is kept (phase 4: the publisher renders each one and the app imports them from the
+// bundled copy, so the fixture must carry them all); only the ZIP centroid table is sampled below.
 
 /**
  * National trend files that ship whole. All nine small ones (everything but states.json and conferences.json, left
@@ -144,11 +176,13 @@ function trimLayers(layers: ImportedLayers, units: ReadonlySet<string>): void {
   // reference.files: only the five names a snapshot renders; zcta-centroids keeps its header and a sample of rows.
   const reference = layers.get(COLLECTIONS.reference.files);
   if (reference) {
-    for (const key of [...reference.keys()]) if (!REFERENCE_KEYS.includes(key)) reference.delete(key);
     const zcta = reference.get("zcta-centroids") as { text: string } | undefined;
     if (zcta) zcta.text = sampleCsv(zcta.text);
   }
 }
+
+/** A `{text}` document (a Markdown or CSV reference file), as the import stores one. */
+const isTextDoc = (doc: unknown): doc is { text: string } => !!doc && typeof doc === "object" && typeof (doc as { text?: unknown }).text === "string" && Object.keys(doc as object).length === 1;
 
 /** Keeps a CSV's leading `#` comments, its header row, and every Nth data row (a real, smaller sample). */
 function sampleCsv(text: string, every = 300): string {
@@ -280,8 +314,23 @@ async function buildSnapshot(units: ReadonlySet<string>, dir: string, log: (line
   for (const [object, rel] of Object.entries(refFiles)) writeFile(dir, `reference/${object}`, readFileSync(join(DATA, rel)), objects, `reference/${object}`);
   const zcta = sampleCsv(readFileSync(join(DATA, "reference", "zcta-centroids.csv"), "utf8"));
   writeFile(dir, `reference/${REFERENCE_OBJECTS.zctaCentroids}`, zcta, objects, `reference/${REFERENCE_OBJECTS.zctaCentroids}`);
+  // Every other reference.files document, as the publisher renders it (scripts/lib/data-platform/render.mts, phase 4):
+  // `reference/<name>.json`, or `.txt` for a text document without a named object above. The app imports these from
+  // the bundled copy, so the fixture carries them all.
+  const named = new Set(["platform-prompts", "organizations", "common-app-trends", "essay-guidance/guidance", "zcta-centroids"]);
+  const referenceDocs = importLayers(ROOT, { units, only: new Set<CollectionName>([COLLECTIONS.reference.files]) }).get(COLLECTIONS.reference.files) ?? new Map<string, unknown>();
+  for (const [name, doc] of [...referenceDocs].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+    if (named.has(name)) continue;
+    const text = isTextDoc(doc);
+    const object = `reference/${name}.${text ? "txt" : "json"}`;
+    writeFile(dir, object, text ? (doc as { text: string }).text : `${JSON.stringify(doc, null, 2)}\n`, objects, object);
+  }
 
-  for (const st of HS_STATES) writeFile(dir, `high-schools/${st}.json`, readFileSync(join(DATA, "high-schools", "state", `${st}.json`)), objects, `high-schools/${st}.json`);
+  // The source files' health, as the publisher renders it (SNAPSHOT_OBJECTS.sourceFiles).
+  writeFile(dir, SNAPSHOT_OBJECTS.sourceFiles, `${JSON.stringify(readJson("source-files.json"), null, 2)}\n`, objects, SNAPSHOT_OBJECTS.sourceFiles);
+
+  // The state shards under `state/`, the layout lib/high-school-store.ts reads and the publisher renders.
+  for (const st of HS_STATES) writeFile(dir, `high-schools/state/${st}.json`, readFileSync(join(DATA, "high-schools", "state", `${st}.json`)), objects, `high-schools/state/${st}.json`);
   for (const f of HS_SHARED_FILES) writeFile(dir, `high-schools/${f}`, readFileSync(join(DATA, "high-schools", f)), objects, `high-schools/${f}`);
 
   const manifest: SnapshotManifest = {
@@ -332,7 +381,8 @@ async function main(): Promise<void> {
   const { bytes } = await build({ units, out: outFlag ? join(process.cwd(), outFlag) : undefined, log: (l) => console.log(l) });
   // A soft budget, not enforced: these particular colleges (flagships with full CDS records and deep lineage) run
   // well above the dataset's typical per-college size; see the build report for the arithmetic. Warn, don't fail.
-  if (bytes > 2 * 1024 * 1024) console.warn(`build-mini-fixture: ${kb(bytes)} is over the fixture's 2 MB target (see the module comment and the build report)`);
+  // Phase 4 raised the target: 38 colleges and every reference document (specs/data-platform/git-ci-tests.md).
+  if (bytes > 10 * 1024 * 1024) console.warn(`build-mini-fixture: ${kb(bytes)} is over the fixture's 10 MB target (see the module comment and the build report)`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -1,0 +1,1621 @@
+{
+  "entries": [
+    {
+      "unit_id": "100663",
+      "url": "https://drive.google.com/uc?export=download&id=1nB2mlDG1ZeLTIp_pQpu8moQJEvIaBm1F",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-alabama-at-birmingham/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "100830",
+      "url": "https://www.aum.edu/wp-content/uploads/2025/05/CDS-2024-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: host_blocked; archive https://www.collegedata.fyi/schools/auburn-university-at-montgomery/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "102049",
+      "url": "https://www.samford.edu/departments/files/Institutional_Effectiveness/2024-2025/CDS_Section_A.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: edition_unknown; archive https://www.collegedata.fyi/schools/samford-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "102614",
+      "url": "https://www.uaf.edu/pair/pair_reports/common-data-set/UAF_Common_data_Set_2025_2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: never_read; archive https://www.collegedata.fyi/schools/university-of-alaska-fairbanks/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "104151",
+      "url": "https://uoia.asu.edu/sites/g/files/litvpz1436/files/2026-04/CDS%202025-26%20-%20ASU%20Campus%20Immersion.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/arizona-state-university-campus-immersion/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "104179",
+      "url": "https://uair.arizona.edu/sites/default/files/2026-06/CDS_PDF_2025-26_v02_RE-PRINT.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-arizona/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "105330",
+      "url": "https://in.nau.edu/wp-content/uploads/sites/129/2026/04/CDS-2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/northern-arizona-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "106458",
+      "url": "https://kb.astate.edu/books/common-data-set/page/latest-cds/export/pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: unreachable; archive https://www.collegedata.fyi/schools/arkansas-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "109651",
+      "url": "https://cms.artcenter.edu/assets/24848/src/CDS%202025-2026_18June26.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/art-center-college-of-design/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110404",
+      "url": "https://finance.caltech.edu/documents/35127/cds_2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/california-institute-of-technology/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110422",
+      "url": "https://content-calpoly-edu.s3.amazonaws.com/ir/1/images/CDS-PDF-2025-2026_final_web_0.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/california-polytechnic-state-university-san-luis-obispo/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110510",
+      "url": "https://www.csusb.edu/sites/default/files/upload/file/2026/CDS_2025-2026_NEW.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/california-state-university-san-bernardino/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110529",
+      "url": "https://drive.google.com/uc?export=download&id=1lwH_X-KfROFlSNBf0fxZoTtnJuMd5F7H",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/california-state-polytechnic-university-pomona/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110583",
+      "url": "https://drive.google.com/uc?export=download&id=1Jmfc1Ed7ucf7wTBjEphzcAJReyYPu8jJ",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_scanned); ours: no_document_found; archive https://www.collegedata.fyi/schools/california-state-university-long-beach/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110592",
+      "url": "https://drive.google.com/uc?export=download&id=19xk9izL3dPFoI27yihvy13fym5RmCxns",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/california-state-university-los-angeles/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110608",
+      "url": "https://live-csu-northridge.pantheonsite.io/sites/default/files/2026-04/CDS%202025%20v2.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/california-state-university-northridge/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110617",
+      "url": "https://www.csus.edu/information-resources-technology/institutional-research/common-data-set/cds_2025-2026-final.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/california-state-university-sacramento/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110644",
+      "url": "https://drive.google.com/uc?export=download&id=1xd_2g4L1SqR_csHIwhIpBMTyhY_2E71l",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found, host_blocked; archive https://www.collegedata.fyi/schools/uc-davis/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110653",
+      "url": "https://drive.google.com/uc?export=download&id=1E6CPsg5A5FC83Kl5AzRfhXifxSd5O2j9",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/uc-irvine/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110705",
+      "url": "https://drive.google.com/uc?export=download&id=1FIkvY5dANho45ioG7-JHgO3IPH6-ui1W",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/uc-santa-barbara/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "110714",
+      "url": "https://drive.google.com/uc?export=download&id=14YjGYXfskam0VrxaeYKGQqjlHmVpxKLA",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found, host_blocked; archive https://www.collegedata.fyi/schools/university-of-california-santa-cruz/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "120537",
+      "url": "https://www.hiu.edu/pdf/CDS20252026_HIU.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/hope-international-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "120883",
+      "url": "https://www.pacific.edu/sites/default/files/users/user777/2024_25_CDS_Full_Form_.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures, host_blocked; archive https://www.collegedata.fyi/schools/university-of-the-pacific/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "122436",
+      "url": "https://www.sandiego.edu/facts/documents/cds/cds_2024-25.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-san-diego/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "122612",
+      "url": "https://drive.google.com/uc?export=download&id=1zKU2_jGW_cQgxxQ74oHLkKlebIgyrjq3",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_only, failed_checks; archive https://www.collegedata.fyi/schools/university-of-san-francisco/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "122755",
+      "url": "https://drive.google.com/uc?export=download&id=1OgrHSD1Z3sYa7aAcQeRa2_kc6bfjXdOb",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/san-jose-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "123554",
+      "url": "https://drive.google.com/uc?export=download&id=1W7GgBPTshUk_CJUnwInhpoQ0Ko2RdrZ0",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/saint-marys-college-of-california/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "125727",
+      "url": "https://www.westmont.edu/sites/default/files/2025-11/CDS%202024-25%20Westmont%20College.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (xlsx); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/westmont-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "126580",
+      "url": "https://data.uccs.edu/sites/default/files/2026-09/CDS_2025_2026_v2.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-colorado-colorado-springs/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "127565",
+      "url": "https://www.msudenver.edu/wp-content/uploads/2026/06/CDS_2024-2025_Updated_06-29-26_jjb3.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/metropolitan-state-university-of-denver/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "127741",
+      "url": "https://www.unco.edu/app/uploads/UNC-Common-Data-Set-2024-25.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_scanned); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-northern-colorado/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "128106",
+      "url": "https://www.csupueblo.edu/institutional-research/_doc/2024-2025-data-set/cds_2025-2026_section-a_general-information.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: never_read; archive https://www.collegedata.fyi/schools/colorado-state-university-pueblo/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "128498",
+      "url": "https://drive.google.com/uc?export=download&id=1cb-7QPm2EL_CSJP4lw1RN1qLEKfHiQiF",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: robots_disallowed; archive https://www.collegedata.fyi/schools/albertus-magnus-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "128902",
+      "url": "https://www.conncoll.edu/media/Common-Data-Set-2025-26.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_only, failed_checks; archive https://www.collegedata.fyi/schools/connecticut-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "129020",
+      "url": "https://drive.google.com/uc?export=download&id=1BBILZKCO-i59J0oRpd2d3FK2NOzlMbIz",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: never_read; archive https://www.collegedata.fyi/schools/university-of-connecticut/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "130314",
+      "url": "https://www.usj.edu/wp-content/uploads/2025/05/USJ-CDS-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-saint-joseph/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "130493",
+      "url": "https://go.southernct.edu/docs/drupal/CDS_2025-2026.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (xlsx); ours: no_document_found; archive https://www.collegedata.fyi/schools/southern-connecticut-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "130590",
+      "url": "https://drive.google.com/uc?export=download&id=1FWsepbbZ43xGI2pdckioWvT1wwBBgr9G",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found, discovery_error; archive https://www.collegedata.fyi/schools/trinity-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "130934",
+      "url": "https://www.desu.edu/sites/flagship/files/common-data-set.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/delaware-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "131159",
+      "url": "https://www.american.edu/provost/oira/upload/cds_2024-2025_american-university_final.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/american-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "132602",
+      "url": "https://bcutemp.omniweb.cloud/ie/_files/cds-2024-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: never_read, failed_checks; archive https://www.collegedata.fyi/schools/bethune-cookman-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "133492",
+      "url": "https://drive.google.com/uc?export=download&id=0B1YlcpfxYuReWkE4NzlQUnFiamM",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: class_profile_no_figures, robots_disallowed; archive https://www.collegedata.fyi/schools/eckerd-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "133881",
+      "url": "https://drive.google.com/uc?export=download&id=1_XxPcyrnq6Z6X7IjQD3jAL5kcDH3wn8l",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/florida-institute-of-technology/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "136950",
+      "url": "https://drive.google.com/uc?export=download&id=1kuzTrfMGGpU6FncJ1kqxT6hav0ir20L5",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures, not_newer, failed_checks; archive https://www.collegedata.fyi/schools/rollins-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "137546",
+      "url": "https://drive.google.com/uc?export=download&id=1VcJ_hPkcy9edY2EXFcVrf_SzJyUOE-dY",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: host_blocked; archive https://www.collegedata.fyi/schools/stetson-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "138354",
+      "url": "https://uwf.edu/media/university-of-west-florida/academic-affairs/departments/institutional-research/docs/cds/CDS_2025_2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-west-florida/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "138600",
+      "url": "https://www.agnesscott.edu/assets/documents/institutional-research/cds_2025_2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/agnes-scott-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "140252",
+      "url": "https://data.life.edu/wp-content/uploads/2025/01/Legacy-CDS_2024-2025.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (xlsx); ours: not_newer, never_read; archive https://www.collegedata.fyi/schools/life-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "143358",
+      "url": "https://drive.google.com/uc?export=download&id=1jV0iWll0uRYQr5alcn6WbbAot8IlLx1p",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/bradley-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "144281",
+      "url": "https://about.colum.edu/effectiveness/columbia-college-chicago-cds_2024_2025-final-2-12-2025-publish-ready.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/columbia-college-chicago/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "144740",
+      "url": "https://drive.google.com/uc?export=download&id=1IdI_x1wH_nknqoRgU9P49Wvq7XZBO1Rb",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: never_read, failed_checks; archive https://www.collegedata.fyi/schools/depaul-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "145619",
+      "url": "https://ben.edu/wp-content/uploads/2025/04/Benedictine-University-Common-Data-Set-2024-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/benedictine-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "145813",
+      "url": "https://prpa.illinoisstate.edu/downloads/CDS-2024-2025_ISU_FINAL.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/illinois-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "146481",
+      "url": "https://drive.google.com/uc?export=download&id=1_OrsgCRpIIkeTvaw2QfQPvJpiU6DkP32",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: unreachable; archive https://www.collegedata.fyi/schools/lake-forest-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "147660",
+      "url": "https://www.northcentralcollege.edu/sites/default/files/Common%20Data%20Set_2024-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/north-central-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "147767",
+      "url": "https://drive.google.com/uc?export=download&id=1w2QtvSXBK8cuV3r10E4g3-beRqP0lilk",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: unreachable; archive https://www.collegedata.fyi/schools/northwestern/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "148131",
+      "url": "https://www.quincy.edu/wp-content/uploads/2026/03/CDS-PDF-2025-2026_PDF_Template-quincy-university-working-final.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/quincy-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "148496",
+      "url": "https://www.dom.edu/sites/default/files/2026-01/OIE_CDS_2025-2026_Final_12_11_25.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/dominican-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "150163",
+      "url": "https://drive.google.com/uc?export=download&id=1EwcVaexL3MUER9jj_mWnF4l2AF-JWB2Z",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/butler-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "152080",
+      "url": "https://drive.google.com/uc?export=download&id=1yWm48DwrNsGJJmw8ZEcx4T1pj2xunXQq",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: edition_unknown, failed_checks; archive https://www.collegedata.fyi/schools/university-of-notre-dame/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "152318",
+      "url": "https://drive.google.com/uc?export=download&id=1da72P1KPJhrKAU-fTEfM6zK4YMovnhhM",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/rose-hulman-institute-of-technology/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "152390",
+      "url": "https://www.saintmarys.edu/files/2025/09/2024-2025-CDSv3.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures, edition_too_old, failed_checks; archive https://www.collegedata.fyi/schools/saint-marys-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "153108",
+      "url": "https://departments.central.edu/wp-content/uploads/sites/17/files/2025/05/2024-25-CDS-FINAL-Central-College-IA.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/central-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "153384",
+      "url": "https://drive.google.com/uc?export=download&id=1VYF-nDPRFsRgSqcCKysq67uwp_LXeliM",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: never_read; archive https://www.collegedata.fyi/schools/grinnell-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "153658",
+      "url": "https://provost.uiowa.edu/sites/provost.uiowa.edu/files/2025-09/cds_2425_0.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures, not_newer, failed_checks; archive https://www.collegedata.fyi/schools/university-of-iowa/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "154095",
+      "url": "https://ie.uni.edu/sites/default/files/inline-uploads/CDS-2025-2026%20Updated%208.18.26.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-northern-iowa/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "155317",
+      "url": "https://aire.ku.edu/sites/aire/files/files/CDS/2026-2027/A1.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2026-27 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-kansas/2026-27",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "155511",
+      "url": "https://www.mcpherson.edu/wp-content/uploads/2025/06/CDS-2024-2025-MC.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_scanned); ours: no_document_found; archive https://www.collegedata.fyi/schools/mcpherson-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "156125",
+      "url": "https://www.wichita.edu/services/planning_and_analysis/documents/WSU_2025_2026_CDS_OPAweb.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (xlsx); ours: host_blocked; archive https://www.collegedata.fyi/schools/wichita-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "156408",
+      "url": "https://www.centre.edu/documents/2025-2026-common-data",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/centre-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "157058",
+      "url": "https://www.kysu.edu/documents/institutional-research/CDS%202025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: never_read, failed_checks; archive https://www.collegedata.fyi/schools/kentucky-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "157289",
+      "url": "https://drive.google.com/uc?export=download&id=14lbBcIAcvM1hj6bU4hGVQ1FikU9K_jBe",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-louisville/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "157386",
+      "url": "https://www.moreheadstate.edu/_files/files/about-msu/leadership/ppe-institutional-research/cds-2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found, host_blocked; archive https://www.collegedata.fyi/schools/morehead-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "157447",
+      "url": "https://inside.nku.edu/content/dam/IR/docs/CDS/CDS_Northern%20Kentucky%20University.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/northern-kentucky-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "159647",
+      "url": "https://oierp.latech.edu/documents/2026/06/common-data-set-2025-2026.xlsx/",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (xlsx); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/louisiana-tech-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "161253",
+      "url": "https://drive.google.com/uc?export=download&id=1iIm6kbdpySc_APcfykY1gICTMkNIQHN0",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-maine/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "161554",
+      "url": "https://drive.google.com/uc?export=download&id=1_q0LwmDy1lLASQRbCKmC1fv15sYYqmb-",
+      "kind": "cds",
+      "note": "collegedata.fyi 2026-27 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-southern-maine/2026-27",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "162584",
+      "url": "https://www.frostburg.edu/archive/_files/pdf/air/ipeds/2025-2026/cds-2025-26.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/frostburg-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "162928",
+      "url": "https://oira.jhu.edu/wp-content/uploads/2025-2026-CDS-Johns-Hopkins-University.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/johns-hopkins/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "163268",
+      "url": "https://drive.google.com/uc?export=download&id=1O2Z4koVh6i8E1YxLhCvAy61RIpeL0-6m",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-maryland-baltimore-county/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "164465",
+      "url": "https://drive.google.com/uc?export=download&id=1nyc6IMyEA2YcnGR-0O0PXFTQufJsn-bp",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/amherst/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "164580",
+      "url": "https://www.babson.edu/media/babson/assets/rankings/babson-college-common-data-set.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: class_profile_only; archive https://www.collegedata.fyi/schools/babson-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "164739",
+      "url": "https://drive.google.com/uc?export=download&id=10et1a0IuSwyI57Me-zG7gMPoKAPc26k-",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_only, unreachable; archive https://www.collegedata.fyi/schools/bentley-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "165015",
+      "url": "https://www.brandeis.edu/institutional-research/docs/cds-2025-26.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/brandeis/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "165820",
+      "url": "https://www.fitchburgstate.edu/sites/default/files/documents/2026-05/IRP-CDS20252026-A.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/fitchburg-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "166692",
+      "url": "https://drive.google.com/uc?export=download&id=1XQOmQ5A4oAmSpKIFz25yGE44dXSArLFk",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: robots_disallowed; archive https://www.collegedata.fyi/schools/massachusetts-maritime-academy/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "168227",
+      "url": "https://wit.edu/sites/default/files/2026-07/Wentworth_CDS_25_26_final6.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: never_read; archive https://www.collegedata.fyi/schools/wentworth-institute-of-technology/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "168342",
+      "url": "https://www.williams.edu/institutional-research/files/2026/04/Williams-CDS-2025-2026-V2.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/williams-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "168786",
+      "url": "https://www.aquinas.edu/_files/Aquinas%20College%20cds-2024-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/aquinas-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "168847",
+      "url": "https://my.baker.edu/icsfileserver/docs/docs/about_us/institutional_effectiveness/common_data_set/Common%20Data%20Set%202025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/baker-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "169716",
+      "url": "https://www.udmercy.edu/academics/academic-affairs/research/files/cds/2526_UDM_CDS.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-detroit-mercy/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "169798",
+      "url": "https://www.emich.edu/irim/documents/common-data-sets/cds2025v3.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/eastern-michigan-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "169910",
+      "url": "https://www.ferris.edu/admissions/testing/resources/common/CDS2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_only, host_blocked, failed_checks; archive https://www.collegedata.fyi/schools/ferris-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "170082",
+      "url": "https://www.gvsu.edu/cms4/asset/EFAB4AD2-A926-8D16-A5685AB71E0C7DC3/cds_2025-2026.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (xlsx); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/grand-valley-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "170675",
+      "url": "https://ltu.edu/wp-content/uploads/2026/04/2025_2026_CDS_EXTERNAL.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/lawrence-technological-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "171128",
+      "url": "https://www.mtu.edu/institutional-research/cds/files/cds-2025-2026.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (xlsx); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/michigan-technological-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "171137",
+      "url": "https://umdearborn.edu/sites/default/files/unmanaged/pdf/ire/cds-2024-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: host_blocked; archive https://www.collegedata.fyi/schools/university-of-michigan-dearborn/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "171146",
+      "url": "https://drive.google.com/uc?export=download&id=15mJs4jKML-Z_FF649KWTzgbnLlQpaHR2",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_only, unreachable; archive https://www.collegedata.fyi/schools/university-of-michigan-flint/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "171456",
+      "url": "https://nmu.edu/institutionaleffectiveness/sites/institutionaleffectiveness/files/2025-03/Northern%20Michigan%20University%20-%20CDS%20-%202024-2025.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/northern-michigan-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "172699",
+      "url": "https://files.wmich.edu/s3fs-public/2026-02/wmu_cds_2025-26.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/western-michigan-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "173160",
+      "url": "https://www.bethel.edu/institutional-data-research/institutional-data/common-data-set/history/cds-2526.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (xlsx); ours: edition_too_old, never_read; archive https://www.collegedata.fyi/schools/bethel-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "175272",
+      "url": "https://drive.google.com/uc?export=download&id=1FYwQEjtQSn3RhBfPJGzJM_rIF8Jp1KlU",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/winona-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "176017",
+      "url": "https://drive.google.com/uc?export=download&id=1zkKqpes6AHDRsUFPDK37u39NIIgfMwdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found, host_blocked; archive https://www.collegedata.fyi/schools/university-of-mississippi/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "176080",
+      "url": "https://drive.google.com/uc?export=download&id=10lH0gTtVe7I2lBcNzg6iQMd96E45Lfnw",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_only, robots_disallowed; archive https://www.collegedata.fyi/schools/mississippi-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "178341",
+      "url": "https://www.mssu.edu/academics/institutional-effectiveness/files/CDS-2025-2026-Missouri-Southern-State-University-Final.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: unreachable; archive https://www.collegedata.fyi/schools/missouri-southern-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "178387",
+      "url": "https://www.missouriwestern.edu/ir/wp-content/uploads/sites/169/2026/05/CDS-PDF-2025-2026_MWSU_Final.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/missouri-western-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "178396",
+      "url": "https://drive.google.com/uc?export=download&id=1NbaWvHf-4bYOTiKZcqYC01uraioI4u5q",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-missouri-columbia/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "178402",
+      "url": "https://www.umkc.edu/data/docs/cds_2025_2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-missouri-kansas-city/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "180179",
+      "url": "https://www.msubillings.edu/ir/institutionalfacts/cds/CDS_2025-26_A.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: unreachable; archive https://www.collegedata.fyi/schools/montana-state-university-billings/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "180461",
+      "url": "https://www.montana.edu/data/common-data-set/cds25.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/montana-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "182281",
+      "url": "https://drive.google.com/uc?export=download&id=1sjBRzIdfn0hrt99hjdNgyiTessBWtP9X",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: edition_unknown; archive https://www.collegedata.fyi/schools/university-of-nevada-las-vegas/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "183044",
+      "url": "https://www.unh.edu/institutional-research/sites/default/files/media/2026-09/CDS%202025-2026%20UNH%20Published%209.2.26.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-new-hampshire-main-campus/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "183062",
+      "url": "https://keene.edu/office/ir/assets/document/cds/download/",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/keene-state-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "183080",
+      "url": "https://www.plymouth.edu/sites/default/files/media/2025-07/FINAL%20CDS-2024-2025-Plymouth.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/plymouth-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "184603",
+      "url": "https://www.fdu.edu/wp-content/uploads/2025/04/2024-25-Common-Data-Set-University.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/fairleigh-dickinson-university-metropolitan-campus/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "184694",
+      "url": "https://www.fdu.edu/wp-content/uploads/2025/04/2024-25-Common-Data-Set-University.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/fairleigh-dickinson-university-florham-campus/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "185590",
+      "url": "https://irdata.montclair.edu/institutionalresearch/CDS/CDS%202025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/montclair-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "185828",
+      "url": "https://www.njit.edu/oie/sites/njit.edu.oie/files/CDS_2024-2025_v12.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (xlsx); ours: class_profile_no_figures, failed_checks; archive https://www.collegedata.fyi/schools/new-jersey-institute-of-technology/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "186131",
+      "url": "https://ir.princeton.edu/sites/g/files/toruqf2041/files/documents/CDS_2526_Princeton_v1.3.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: unreachable; archive https://www.collegedata.fyi/schools/princeton/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "186201",
+      "url": "https://www.ramapo.edu/ir/wp-content/uploads/sites/52/2025/04/2024-2025-Common-Data-Set.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_only, edition_unknown, failed_checks; archive https://www.collegedata.fyi/schools/ramapo-college-of-new-jersey/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "187134",
+      "url": "https://ira.tcnj.edu/wp-content/uploads/sites/322/2026/04/CDS-2025-26-03262026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/the-college-of-new-jersey/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "187897",
+      "url": "http://its.nmhu.edu/IntranetUploads/009182-CommonData-8182026115318.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found, host_blocked; archive https://www.collegedata.fyi/schools/new-mexico-highlands-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "187985",
+      "url": "https://oia.unm.edu/resources/cds_25_26_updated.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-new-mexico-main-campus/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "189088",
+      "url": "https://drive.google.com/uc?export=download&id=18JnWkO0gn0m8SJCQkUBCwbwj3ASI8avH",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/bard-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "190512",
+      "url": "https://drive.google.com/uc?export=download&id=12Y-yqkMAUDhkjU3tuhYWJ6wTNPUvhlZl",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/cuny-bernard-m-baruch-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "190567",
+      "url": "https://www.ccny.cuny.edu/sites/default/files/2025-03/20250324_FINAL%20CDS-2024-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: host_blocked; archive https://www.collegedata.fyi/schools/cuny-city-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "191533",
+      "url": "https://www.hartwick.edu/wp-content/uploads/2026/07/IR_HartwickCollegeCommonDataSet2025-2026_070826.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/hartwick-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "191649",
+      "url": "https://drive.google.com/uc?export=download&id=1y74-oLPPqrwWUmEBaB0Yv5nasWNENRo0",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/hofstra-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "191968",
+      "url": "https://drive.google.com/uc?export=download&id=120jXX2ti-cerOxGj1kTvom9yik5kA-Ip",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/ithaca-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "193900",
+      "url": "https://www.nyu.edu/content/dam/nyu/institutionalResearch/documents/cds-2025-2026/CDS%202025-2026%20FINAL(including%20G%20July_2026).xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (xlsx); ours: unreachable; archive https://www.collegedata.fyi/schools/nyu/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "196015",
+      "url": "https://www.canton.edu/media/ir/CDS2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: never_read; archive https://www.collegedata.fyi/schools/suny-college-of-technology-at-canton/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "196167",
+      "url": "https://drive.google.com/uc?export=download&id=1LdTI380difIIPSGArsGEFxl1pYJKulzh",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: unreachable; archive https://www.collegedata.fyi/schools/suny-college-at-geneseo/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "196200",
+      "url": "https://www.potsdam.edu/sites/default/files/CDS_2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/suny-college-at-potsdam/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "196219",
+      "url": "https://drive.google.com/uc?export=download&id=10GKLizwEpsBZPyzyFr-kOLQIHKT1VFn6",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/suny-at-purchase-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "197036",
+      "url": "https://s3.amazonaws.com/usma-media/inline-images/about/g5/G5OIR_CDS_2024-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: host_blocked; archive https://www.collegedata.fyi/schools/united-states-military-academy/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "197869",
+      "url": "https://drive.google.com/uc?export=download&id=1BSu4wJPfG2j8SpHEA3vUk1GBN3jGYg1n",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: no_document_found, host_blocked; archive https://www.collegedata.fyi/schools/appalachian-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "198215",
+      "url": "https://www.catawba.edu/media/catawba-college/site-assets/pdf/CDS_2025-2026-PDF.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/catawba-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "198385",
+      "url": "https://www.davidson.edu/media/9718/download?attachment",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/davidson-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "198464",
+      "url": "https://drive.google.com/uc?export=download&id=1de7FH5I8a0USlrRfFV2PKBJkznEwifZV",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/east-carolina-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "198835",
+      "url": "https://www.lr.edu/sites/default/files/2026-05/common-data-set-2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/lenoir-rhyne-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "199111",
+      "url": "https://drive.google.com/uc?export=download&id=1BIr6_uomfl7Wr32enLCSJdDj2-ax2Nje",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/university-of-north-carolina-asheville/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "199157",
+      "url": "https://myeol.nccu.edu/sites/default/files/2025-02/Common-Data-set-2024-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/north-carolina-central-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "199281",
+      "url": "https://www.uncp.edu/_files/2025-2026-common-data-set.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-north-carolina-at-pembroke/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "201645",
+      "url": "https://case.edu/ir/sites/default/files/2026-02/CDS%202025-26%20Adjusted%20Final.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/case-western-reserve-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "203368",
+      "url": "https://drive.google.com/uc?export=download&id=19A4F69gxe520JXxubBCEQH0m422gYRWn",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/john-carroll-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "204006",
+      "url": "https://miamioh.edu/analytics-institutional-research/_documents/cds/cds2024-25.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (xlsx); ours: no_document_found; archive https://www.collegedata.fyi/schools/miami-university-hamilton/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "204015",
+      "url": "https://miamioh.edu/analytics-institutional-research/_documents/cds/cds2024-25.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (xlsx); ours: no_document_found; archive https://www.collegedata.fyi/schools/miami-university-middletown/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "204796",
+      "url": "https://irp.osu.edu/sites/default/files/documents/2026/03/CDS-2025-2026-OSU-Columbus-Campus.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/osu/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "206084",
+      "url": "https://www.utoledo.edu/offices/institutional-research/report-library/common-data-set/docs/cds-2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-toledo/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "206589",
+      "url": "https://drive.google.com/uc?export=download&id=1s15mPw4CPv-jsjrepmzMpykl8hS5Ftnt",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/the-college-of-wooster/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "206604",
+      "url": "https://www.wright.edu/sites/www.wright.edu/files/page/attachments/CDS_2024-2025_Lake.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found, host_blocked; archive https://www.collegedata.fyi/schools/wright-state-university-main-campus/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "206914",
+      "url": "https://www.cameron.edu/storage/departments/institutional-research-assessment-and-accountability/common-data-set/CDS-2025-2026-accessible.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: never_read; archive https://www.collegedata.fyi/schools/cameron-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "207263",
+      "url": "https://offices.nsuok.edu/_resources/documents/Legacy-CDS_2024-2025.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (xlsx); ours: no_document_found; archive https://www.collegedata.fyi/schools/northeastern-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "207388",
+      "url": "https://ira.okstate.edu/site-files/documents/cds/CDS-2025-2026-PDF.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/oklahoma-state-university-main-campus/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "207500",
+      "url": "https://www.ou.edu/content/dam/irr/docs/common-data-sets/norman-campus-only/2025-26-nc/IRR%20CDS-A.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_only, robots_disallowed; archive https://www.collegedata.fyi/schools/university-of-oklahoma-norman-campus/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "207661",
+      "url": "https://rogersstateuniversity.b-cdn.net/app/uploads/2026/06/CDS-2025-26.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: never_read; archive https://www.collegedata.fyi/schools/rogers-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "209056",
+      "url": "https://www.lclark.edu/live/files/37831-lc-cds2025-26pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/lewis-and-clark-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "209065",
+      "url": "https://www.linfield.edu/assets/files/institutional-research/2025-2026-Common-Data-Set-6-2-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: never_read; archive https://www.collegedata.fyi/schools/linfield-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "209551",
+      "url": "https://uoregon.sharepoint.com/sites/UOInstitutionalResearchPublicMaterials/_layouts/15/download.aspx?UniqueId=edd36f8b-0c34-4065-90ac-3c4e916fcbdc&Translate=false",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-oregon/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "209825",
+      "url": "https://drive.google.com/uc?export=download&id=1prgfAP2B4e2ocRosGec0dk_9Q0xu_u6q",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-portland/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "210429",
+      "url": "https://cdn.wou.edu/institutionalresearch/files/2025/09/CDS-2024-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/western-oregon-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "210669",
+      "url": "https://sites.allegheny.edu/institutional-effectiveness/files/2026/04/CDS-2025-26_AlleghenyCollege_Final.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (xlsx); ours: host_blocked; archive https://www.collegedata.fyi/schools/allegheny-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "210739",
+      "url": "https://www.desales.edu/_files/pdfs/ier/Common-Data-Set-2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/desales-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "211273",
+      "url": "https://drive.google.com/uc?export=download&id=1GHHBZasqXHUBlr7elAB4Sigve5-tCoNg",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/bryn-mawr-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "211556",
+      "url": "https://www.chatham.edu/_documents/_about/cds-2024-2025.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: never_read, failed_checks; archive https://www.collegedata.fyi/schools/chatham-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "212054",
+      "url": "https://drexel.edu/institutionalresearch/~/media/Drexel/Provost-Group/InstitutionalResearch/Documents/Factbook/CDS_2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/drexel/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "212832",
+      "url": "https://www.gmercyu.edu/pdfs/legacy-cds_2024-2025_updated_4_11_2025_compressed.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/gwynedd-mercy-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "213020",
+      "url": "https://www.iup.edu/planningandassessment/files/university_data/common_data_set/common-data-set-2024-25.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/indiana-university-of-pennsylvania-main-campus/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "214041",
+      "url": "https://www.millersville.edu/iea/ir/cds_2024-25_final.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/millersville-university-of-pennsylvania/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "215442",
+      "url": "https://www.pointpark.edu/about/admindepts/institutionalresearch/2025-2026-cds-final-4-15.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: never_read, failed_checks; archive https://www.collegedata.fyi/schools/point-park-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "215929",
+      "url": "https://www.scranton.edu/pir/institutional-research/institutional-research-reports/2025-2026-cds.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: unreachable, never_read; archive https://www.collegedata.fyi/schools/university-of-scranton/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "216278",
+      "url": "https://www.susqu.edu/wp-content/uploads/2025/05/Common-Data-Set.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/susquehanna-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "216287",
+      "url": "https://www.swarthmore.edu/sites/default/files/assets/documents/institutional-effectiveness-research-assessment/Swarthmore-CDS-2025-26.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: class_profile_no_figures, failed_checks; archive https://www.collegedata.fyi/schools/swarthmore/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "216931",
+      "url": "https://www.wilkes.edu/about-wilkes/offices-and-administration/institutional-research/_assets/Wilkes%20University%20CDS_2025-26.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: edition_too_old, never_read; archive https://www.collegedata.fyi/schools/wilkes-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "217156",
+      "url": "https://oir.brown.edu/sites/default/files/2020-04/CDS-PDF-2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: class_profile_only, unreachable; archive https://www.collegedata.fyi/schools/brown/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "217402",
+      "url": "https://drive.google.com/uc?export=download&id=1eoVemsrMuPO0W0u6_xOsnSBa0y9ITAbp",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/providence-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "217819",
+      "url": "https://drive.google.com/uc?export=download&id=1Fn6DeJuD-KBiKm0rw6EC5oHwDGWdGtz3",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_only, robots_disallowed; archive https://www.collegedata.fyi/schools/college-of-charleston/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "218645",
+      "url": "https://drive.google.com/uc?export=download&id=1NL9FMDkvcWRsIrwu26wWK1w2cLsdr-C1",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found, host_blocked; archive https://www.collegedata.fyi/schools/university-of-south-carolina-aiken/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "218724",
+      "url": "https://drive.google.com/uc?export=download&id=1hyAZ9FlsdI_z6JAY8ZiuulcTtLEwEWbe",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/coastal-carolina-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "219082",
+      "url": "https://blogs.dsu.edu/wp-content/uploads/sites/19/2026/04/CDS_2025-2026-Dakota-State-University_for-Publication.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_only, edition_unknown, failed_checks; archive https://www.collegedata.fyi/schools/dakota-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "219718",
+      "url": "https://www.bethel.edu/institutional-data-research/institutional-data/common-data-set/history/cds-2425-protected.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (xlsx); ours: no_document_found; archive https://www.collegedata.fyi/schools/bethel-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "219976",
+      "url": "https://lipscomb.edu/sites/default/files/2025-10/CDS%202024%202025%20Lipscomb%20University%20Complete.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: never_read, failed_checks; archive https://www.collegedata.fyi/schools/lipscomb-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "220978",
+      "url": "https://iepr.mtsu.edu/wp-content/uploads/sites/23/2026/07/CDS_2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/middle-tennessee-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "221759",
+      "url": "https://irsa.utk.edu/wp-content/uploads/sites/5/2026/07/CDS_2025-26_All__-1.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: edition_unknown; archive https://www.collegedata.fyi/schools/the-university-of-tennessee-knoxville/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "221838",
+      "url": "https://www.tnstate.edu/ir/General%20Information204-25.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/tennessee-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "222983",
+      "url": "https://resources.finalsite.net/images/v1791496993/austincollegeedu/austincollegeedu/qfseyvgfiugcabtgawum/CDS_2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/austin-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "224147",
+      "url": "https://www.tamucc.edu/president/pir/cds_files/cds_2025-2026-final3.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/texas-a-and-m-university-corpus-christi/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "224554",
+      "url": "https://www.etamu.edu/wp-content/uploads/2026/07/CDS_2025-2026-2.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: unreachable; archive https://www.collegedata.fyi/schools/texas-a-and-m-university-commerce/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "225399",
+      "url": "https://hc.edu/publications/IRE/ire2526/HCU-CDS-2025-2026_PDF_Publish_07-17-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/houston-christian-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "225627",
+      "url": "https://my.uiw.edu/ir/_docs/cds-24-25.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-the-incarnate-word/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "227881",
+      "url": "https://www.shsu.edu/offices-departments/data-analytics-decision-support/documents/commondataset/cds_2024-2025_final_v5.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/sam-houston-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "228343",
+      "url": "https://drive.google.com/uc?export=download&id=13fdsNdsBjbfUJzEXnrpI2zON74oeilHv",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/southwestern-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "228459",
+      "url": "https://docs.gato.txst.edu/743980/CDS-2024-2025%20from%20richard.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/texas-state-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "228705",
+      "url": "https://www.tamuk.edu/pes/_files_oir/CDS_reports/2024-2025_TAMUK_CDS.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: not_newer, never_read; archive https://www.collegedata.fyi/schools/texas-a-and-m-university-kingsville/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "228723",
+      "url": "https://abpa.tamu.edu/getattachment/3ef3380e-0c01-4ac3-bad5-185eb51fa208/CDS-PDF-2025-2026_TAMU_FINAL.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: unreachable; archive https://www.collegedata.fyi/schools/texas-am/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "228787",
+      "url": "https://drive.google.com/uc?export=download&id=1cigaguVyYb-5dDGoizNviBdvfunLmx4n",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/the-university-of-texas-at-dallas/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "228796",
+      "url": "https://www.utep.edu/planning/cierp/_files/docs/common-data-set/cds%202025-26%20-masked%20-%20v2.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/the-university-of-texas-at-el-paso/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "228802",
+      "url": "https://www.uttyler.edu/offices/information-analysis/files/cds-2025-26-20260418.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/the-university-of-texas-at-tyler/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "229027",
+      "url": "https://www.utsa.edu/ir/docs/resources/commonDataSet/CDS_2024-2025.xlsx",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (xlsx); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/the-university-of-texas-at-san-antonio/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "229115",
+      "url": "https://drive.google.com/uc?export=download&id=1pXFSa14XaZ8VVRBIhSgEtp-PpzMds2YF",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: class_profile_only, unreachable; archive https://www.collegedata.fyi/schools/texas-tech-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "229179",
+      "url": "https://twu.edu/media/documents/irdm/CDS_2025-2026-(1).pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found, malformed_url; archive https://www.collegedata.fyi/schools/texas-womans-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "229814",
+      "url": "https://www.wtamu.edu/_files/docs/academics/Institutional%20Research/CDS.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/west-texas-a-and-m-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "230038",
+      "url": "https://data.byu.edu/0000019d-e4b4-df27-a1df-eef579b00001/cds-2025-2026-pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/brigham-young-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "230728",
+      "url": "https://www.usu.edu/oda/files/common-data-sets/CDS2025-26.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/utah-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "230764",
+      "url": "https://drive.google.com/uc?export=download&id=1UwytoPwwp6jPanBxAuvQ6K_CxrvsaLS3",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-utah/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "231059",
+      "url": "https://www.smcvt.edu/wp-content/uploads/2026/06/CDS_2025-2026-Highlights-20260601-smcvtedu.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/saint-michaels-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "232186",
+      "url": "https://oiep.gmu.edu/wp-content/uploads/2026/01/2024-2025-CDS-Final_Updated-after-Summer.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/george-mason-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "232308",
+      "url": "https://www.hollins.edu/wp-content/uploads/2026/07/CDS-2025-2026-Hollins-University.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/hollins-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "232681",
+      "url": "https://drive.google.com/uc?export=download&id=13VDoiHo8fuSDOt0iVvncycamqQ4dJ7CC",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-mary-washington/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "232982",
+      "url": "https://www.odu.edu/sites/default/files/2026/documents/cds-2025-2026.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/old-dominion-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "233295",
+      "url": "https://www.rmc.edu/wp-content/uploads/2024/05/CDS_2023_2024_F.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/randolph-macon-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "233374",
+      "url": "https://drive.google.com/uc?export=download&id=1H7OYRSCi-ZdQoFbAGqs-mG5_SORO5DRH",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found, discovery_error; archive https://www.collegedata.fyi/schools/university-of-richmond/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "233541",
+      "url": "https://www.su.edu/wp-content/uploads/2014/11/CDS-2425-Final.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: never_read, failed_checks; archive https://www.collegedata.fyi/schools/shenandoah-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "234030",
+      "url": "https://irds.vcu.edu/media/decision-support/pdf/commondatasets/CommonDataSet2024-25.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/virginia-commonwealth-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "234076",
+      "url": "https://ira.virginia.edu/sites/ira/files/2025-03/CDS_2024-2025_508.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: unreachable; archive https://www.collegedata.fyi/schools/uva/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "235097",
+      "url": "https://inside.ewu.edu/institutional-research/wp-content/uploads/sites/65/2026/05/CDS-EWU-2025-2026-FINAL.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/eastern-washington-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "235167",
+      "url": "https://www.evergreen.edu/sites/default/files/2026-04/2025-2026_Common_Data_Set_Evergreen.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/the-evergreen-state-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "235316",
+      "url": "https://drive.google.com/uc?export=download&id=190xggcmt8TabAu-esMgX8_A5asG1Yf4p",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/gonzaga-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "236328",
+      "url": "https://drive.google.com/uc?export=download&id=1OaFaCV_d54yJCHVUmPKSu6C7Rermnahs",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/university-of-puget-sound/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "236939",
+      "url": "https://wpcdn.web.wsu.edu/wp-provost/uploads/sites/3285/2026/05/CDS_2025-2026-PDF_For-Website.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/washington-state-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "237057",
+      "url": "https://drive.google.com/uc?export=download&id=1IPdvZGD-gzDYjb8QUWKuj8UgZk-wgpFr",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: unreachable; archive https://www.collegedata.fyi/schools/whitman-college/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "237330",
+      "url": "https://www.concord.edu/wp-content/uploads/CDS_2024-2025_ConcordUniversity.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/concord-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "238032",
+      "url": "https://drive.google.com/uc?export=download&id=1HJqpIcCSMUMx4s6xX1AgegpamvtCkLm5",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: host_blocked; archive https://www.collegedata.fyi/schools/west-virginia-university/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "238333",
+      "url": "https://www.beloit.edu/live/files/1104-common-data-set-cds-2025-26",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: class_profile_no_figures; archive https://www.collegedata.fyi/schools/beloit-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "239318",
+      "url": "https://msoe.s3.amazonaws.com/files/resources/cds-final-pdf-25-26-1.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/milwaukee-school-of-engineering/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "240107",
+      "url": "https://www.viterbo.edu/sites/default/files/2026-04/vu_fa25_cds_final_20260416-a.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found, host_blocked; archive https://www.collegedata.fyi/schools/viterbo-university/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "377555",
+      "url": "https://cdn.uw.edu/wp-content/uploads/sites/162/2026/02/27111247/CDS_2025-2026_Seattle.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-washington-bothell-campus/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "377564",
+      "url": "https://cdn.uw.edu/wp-content/uploads/sites/162/2026/02/27111247/CDS_2025-2026_Seattle.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/university-of-washington-tacoma-campus/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "447689",
+      "url": "https://www.ggc.edu/sites/default/files/2026-07/CDS_2025-2026_GGC%20Data.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2025-26 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/georgia-gwinnett-college/2025-26",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "475273",
+      "url": "https://springfield.edu/sites/default/files/springfield-college-2024-25-common-data-set-usnews-v4.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_fillable); ours: no_document_found; archive https://www.collegedata.fyi/schools/springfield-college-regional-online-and-continuing-education/2024-25",
+      "added": "2026-10-13"
+    },
+    {
+      "unit_id": "482705",
+      "url": "http://uds.northeastern.edu/wp-content/uploads/2026/03/CDS-2024-25.pdf",
+      "kind": "cds",
+      "note": "collegedata.fyi 2024-25 (pdf_flat); ours: no_document_found; archive https://www.collegedata.fyi/schools/northeastern-university-professional-programs/2024-25",
+      "added": "2026-10-13"
+    }
+  ]
+}

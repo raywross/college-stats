@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { describeCron, matches, nextRun, nextRuns, parseCron } from "../lib/jobs/cron.ts";
 import { JOBS, githubWorkflows, jobById, jobByWorkflow, nextJobRun, nextScheduleRun, scheduleOfRun } from "../lib/jobs/registry.ts";
 import { KEEP_DAYS, outcomeOf, supabaseRecorder, triggerOf, withJobRun, type RunFinish, type RunRecorder } from "../lib/jobs/record.ts";
-import { jobHref, parseRunId, relativeLabel, runHref, sortJobs, storedOutcome, summaryLine } from "../lib/jobs/view.ts";
+import { jobHref, jobsViewHref, lastOutcome, outcomeCounts, parseJobsView, parseRunId, relativeLabel, runHref, sortJobs, sortJobsByOutcome, storedOutcome, summaryLine } from "../lib/jobs/view.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
@@ -355,6 +355,40 @@ test("sortJobs: scheduled first by next run, then the hand-run ones by name; URL
   assert.equal(parseRunId("0"), null);
   assert.equal(parseRunId("12a"), null);
   assert.equal(parseRunId("1234567890123456"), null);
+});
+
+test("lastOutcome: one word per last run across both runners; counts and the failures-first order for the all-jobs view", () => {
+  const stored = (status: "running" | "ok" | "failed" | "skipped") => ({ kind: "stored" as const, run: { status } });
+  const github = (status: string, conclusion: string | null) => ({ kind: "github" as const, run: { status, conclusion } });
+  assert.deepEqual(lastOutcome(null), { key: "none", label: "No run recorded", tone: "other" });
+  assert.equal(lastOutcome(stored("failed")).key, "failed");
+  assert.equal(lastOutcome(stored("skipped")).key, "other");
+  assert.equal(lastOutcome(stored("running")).key, "running");
+  assert.equal(lastOutcome(github("completed", "failure")).key, "failed");
+  assert.equal(lastOutcome(github("completed", "timed_out")).key, "failed");
+  assert.equal(lastOutcome(github("completed", "cancelled")).key, "other");
+  assert.equal(lastOutcome(github("in_progress", null)).key, "running");
+  assert.deepEqual(lastOutcome(github("completed", "success")), { key: "ok", label: "Succeeded", tone: "ok" });
+
+  const job = (id: string, name: string) => ({ id, name }) as (typeof JOBS)[number];
+  const rows = [
+    { job: job("a", "Alpha"), last: stored("ok") },
+    { job: job("b", "Beta"), last: github("completed", "failure") },
+    { job: job("c", "Gamma"), last: null },
+    { job: job("d", "Delta"), last: stored("failed") },
+    { job: job("e", "Epsilon"), last: github("queued", null) },
+    { job: job("f", "Zeta"), last: stored("skipped") },
+  ];
+  assert.deepEqual(outcomeCounts(rows), { failed: 2, running: 1, none: 1, other: 1, ok: 1 });
+  assert.deepEqual(sortJobsByOutcome(rows).map((r) => r.job.id), ["b", "d", "e", "c", "f", "a"]);
+  assert.deepEqual(outcomeCounts([]), { failed: 0, running: 0, none: 0, other: 0, ok: 0 });
+
+  assert.equal(parseJobsView("all"), "all");
+  assert.equal(parseJobsView(["all"]), "all");
+  assert.equal(parseJobsView(undefined), "schedule");
+  assert.equal(parseJobsView("nope"), "schedule");
+  assert.equal(jobsViewHref("all"), "/admin/jobs?view=all");
+  assert.equal(jobsViewHref("schedule"), "/admin/jobs");
 });
 
 /* ------------------------------------------------------------------ */

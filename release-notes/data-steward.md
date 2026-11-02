@@ -3,7 +3,7 @@ title: "Behind the scenes: the Data Steward"
 pr: 214
 date: 2026-11-01
 kind: infra
-summary: An assistant now reads the figures our checks hold back, groups them by cause, checks each cause against the college's own document, and proposes fixes that a person approves in the console before anything changes on the site.
+summary: The Data Steward, a new helper behind the console, reads the figures our checks hold back, groups them by cause, checks each cause against the college's own document, and proposes fixes that a person approves before anything changes on the site.
 ---
 
 ## What's new

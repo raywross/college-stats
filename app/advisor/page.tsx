@@ -5,11 +5,12 @@ import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
+import { JoinedNotice } from "@/components/account/JoinedNotice";
 import { ViewerBanner } from "@/components/account/ViewerBanner";
 import { PlanFrame } from "@/components/planner/PlanFrame";
 import { PlanPeople, type PlanPerson, type PlanPersonDetail } from "@/components/planner/PlanPeople";
 import { Splash } from "@/components/advisor/Splash";
-import { authConfigured, getUser } from "@/lib/auth";
+import { authConfigured, currentStudent, getUser } from "@/lib/auth";
 import { counselorAccessFor, type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/planner/load";
 import type { StudentAccess } from "@/lib/accounts";
 import { orgStudentHref } from "@/lib/org-hrefs";
@@ -205,11 +206,22 @@ async function counselorPlan(
  * `?tab=` opens a tab (links, so back and forward work); an unrecognized or unavailable one falls back to the
  * viewer's default (PlanFrame reconciles that). `?setup=1` opens the intake guide in edit mode; `?record=1` means the
  * same thing (record/steps.md "Edit mode"), and `?step=n` (read by PlanIntake itself) opens it at a step; `?back=
- * plan|record` says where saving or closing it returns to (default the plan).
+ * plan|record` says where saving or closing it returns to (default the plan). `?joined=<grant id>` adds the one line
+ * after joining a counselor (components/account/JoinedNotice.tsx).
  */
-export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string }> }) {
+export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string; joined?: string }> }) {
   await connection();
-  return withTiming("/advisor", () => renderPlan(props));
+  const page = await withTiming("/advisor", () => renderPlan(props));
+  // `?joined=<grant id>`: the one line after joining a counselor (app/join/[code]/actions.ts).
+  const { joined } = await props.searchParams;
+  if (!isUuid(joined) || !(await getUser())) return page;
+  const own = await currentStudent().catch(() => null);
+  return (
+    <div className="space-y-4">
+      <JoinedNotice grantId={joined} ownStudentId={own?.id ?? null} />
+      {page}
+    </div>
+  );
 }
 
 async function renderPlan({

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Eye, EyeOff, MailCheck } from "lucide-react";
 import { Term } from "@/components/ui/info-tip";
-import { ROLE_HINTS } from "@/lib/accounts";
+import { ROLE_HINTS, type RoleHint } from "@/lib/accounts";
 import { SITE_NAME } from "@/lib/brand";
 import { PASSWORD_MIN, passwordProblems, passwordStrength } from "@/lib/password";
 import { cn } from "@/lib/utils";
@@ -35,19 +35,22 @@ export function LoginForm({
   refused,
   initialError,
   initialMode = "signin",
+  initialRole = "student",
 }: {
   next: string;
   refused: boolean;
   initialError?: string;
   /** `?mode=signup` opens on "Create an account" (a sign-in-only feature's button for a visitor, e.g. the event calendar). */
   initialMode?: "signin" | "signup";
+  /** `?role=` picks "I'm" for a new account (a counselor's invitation link sends `counselor`); a student by default. */
+  initialRole?: RoleHint;
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
 
   if (refused) return <Refused />;
   const switchTo = (m: Mode) => () => setMode(m);
-  const props = { next, email, setEmail, switchTo };
+  const props = { next, email, setEmail, switchTo, role: initialRole };
   return (
     <div className="rounded-3xl border bg-card p-5 sm:p-8">
       {/* Other sign-in methods (Google) go here, above the forms, when they're turned on. */}
@@ -59,7 +62,7 @@ export function LoginForm({
   );
 }
 
-type ModeProps = { next: string; email: string; setEmail: (e: string) => void; switchTo: (m: Mode) => () => void };
+type ModeProps = { next: string; email: string; setEmail: (e: string) => void; switchTo: (m: Mode) => () => void; role?: RoleHint };
 
 function EmailField({ email, setEmail, autoFocus }: { email: string; setEmail: (e: string) => void; autoFocus?: boolean }) {
   return (
@@ -224,7 +227,7 @@ function StrengthMeter({ password, email }: { password: string; email: string })
   );
 }
 
-function SignUp({ next, email, setEmail, switchTo }: ModeProps) {
+function SignUp({ next, email, setEmail, switchTo, role = "student" }: ModeProps) {
   const [state, action, pending] = useActionState<PasswordState, FormData>(signUpWithPassword, { status: "idle" });
   const [password, setPassword] = useState("");
   if (state.status === "refused") return <Refused />;
@@ -267,7 +270,7 @@ function SignUp({ next, email, setEmail, switchTo }: ModeProps) {
           <label className="block text-sm font-semibold" htmlFor="signup-role">
             I&apos;m
           </label>
-          <select id="signup-role" name="role_hint" defaultValue="student" className={`${inputCls} mt-1.5`}>
+          <select id="signup-role" name="role_hint" defaultValue={role} className={`${inputCls} mt-1.5`}>
             {ROLE_HINTS.map((r) => (
               <option key={r.value} value={r.value}>
                 {r.label}
@@ -318,7 +321,7 @@ function Forgot({ email, setEmail, switchTo }: ModeProps) {
 }
 
 /** The emailed magic link: an email alone signs in; a new address is asked for a birth year to create an account. */
-function Magic({ next, email, setEmail, switchTo }: ModeProps) {
+function Magic({ next, email, setEmail, switchTo, role = "student" }: ModeProps) {
   const [state, action, pending] = useActionState<LoginState, FormData>(requestMagicLink, { status: "idle" });
   if (state.status === "refused") return <Refused />;
   if (state.status === "sent")
@@ -351,7 +354,7 @@ function Magic({ next, email, setEmail, switchTo }: ModeProps) {
               <label className="block text-sm font-semibold" htmlFor="magic-role">
                 I&apos;m
               </label>
-              <select id="magic-role" name="role_hint" defaultValue="student" className={`${inputCls} mt-1.5`}>
+              <select id="magic-role" name="role_hint" defaultValue={role} className={`${inputCls} mt-1.5`}>
                 {ROLE_HINTS.map((r) => (
                   <option key={r.value} value={r.value}>
                     {r.label}

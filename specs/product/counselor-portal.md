@@ -274,6 +274,25 @@ without a household no family frame, and `app/household/[person]/layout.tsx` put
 (`components/account/CaseloadStrip.tsx`: "Caseload" and the one student) above a caseload student's pages.
 `tests/viewer-relation.test.mts` sweeps for `relation === "guardian"` with an allowlist of the parent-only sites.
 
+### Built: joining, the account, and the way in (2026-11-01)
+`/join` is a plain GET form (`?code=` takes "QUAD-RIVERA", "rivera", or a pasted link and opens `/join/<CODE>`).
+`/join/[code]` tells a 64-hex invitation token from a code and decides its state in `lib/join-rules.ts` (`joinState`):
+not found, closed (used, expired, cancelled), signed out (Create an account with `?mode=signup&role=student`, or
+`role=counselor` for a counselor's invitation, and Sign in, both with `next` back to the page), a student (Join for
+their own record, made first by `currentStudent()`), a guardian (choose one of the students they see as a parent),
+a counselor's invitation (Join as a counselor, landing on `/org`), and anyone else (the plain message). `JoinView`
+renders it; `app/join/[code]/actions.ts` calls `join_organization` / `accept_org_invitation`, sends
+`org_student_joined {source, new_account}` (new: email confirmed, or profile made, in the last two minutes), and lands
+on the student's advisor with `?joined=<grant id>`, which shows one line (`components/account/JoinedNotice.tsx`).
+**Your counselors** (`components/account/CounselorsSection.tsx`, from `my_counselor_grants()`) is on `/account` for
+the student's own record and on a child's household page for a parent: name, counselors, since when, Can edit / View
+only, End access (with a confirm); nothing when there are no grants. The access log reads "Ms. Rivera (counselor)
+viewed your list". `/api/me` carries `org` (from `my_organization()`), so the avatar menu and the phone's More sheet
+show **Caseload** for members. A new account whose role hint is counselor and that has no `next` of its own lands on
+`/org` after confirming (`firstLanding` in `lib/accounts.ts`). The splash page's Counselors section links to `/org`
+with the free line. Tests: `tests/join-page.test.mts` (states, rendering, codes, the `next` round trip, the section,
+the menu, the landing) and `tests/join-db.test.mts` (the joins, the refusals, and the grant controls on PGlite).
+
 ## Open questions
 1. ~~Seat pricing~~ Closed 2026-10-26: free. ~~A block of advisor plans bought by an office~~ Not in this model: the
    family pays, the office never does ([commercialization.md](commercialization.md#open-questions)).

@@ -92,11 +92,21 @@ export interface Invitation {
   revoked_at: string | null;
 }
 
-/** A student the signed-in user can see, and how. */
+/**
+ * A student the signed-in user can see, and how: their own record, as a guardian (a household or a managed record),
+ * or as a counselor through an organization's grant (specs/product/counselor-portal.md).
+ */
 export interface StudentAccess {
   student: StudentRecord;
   relation: "self" | "guardian" | "counselor";
   canEdit: boolean;
+}
+
+/** A live grant to an organization the signed-in user is a member of (viewer_bundle().grants). */
+export interface CounselorGrant {
+  org_id: string;
+  student_id: string;
+  can_edit: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -183,30 +193,39 @@ export function loginHref(next?: string): string {
 
 /**
  * Who-can-see-what from rows the user's session already read (RLS has filtered them), mirroring
- * public.can_edit_student: the user's own record is "self" and editable; anything else they can read is "guardian",
- * editable when they manage it or hold an active can_edit guardian membership in a household where the student is
- * an active member. Soft-deleted records are dropped.
+ * public.can_edit_student: the user's own record is "self" and editable; a record they manage or reach through an
+ * active guardian membership is "guardian", editable when they manage it or that membership has can_edit; a record
+ * reached only through a live grant to their organization (`grants`) is "counselor", editable when the grant has
+ * can_edit. A student reached both ways is "guardian": the family's relation wins. Anything else readable with no
+ * membership row in view stays "guardian", as before counselors existed. Soft-deleted records are dropped. Order:
+ * self, then guardian, then counselor, each by name.
  */
-export function resolveStudentAccess(userId: string, students: StudentRecord[], memberships: HouseholdMember[]): StudentAccess[] {
-  const editHouseholds = new Set(
-    memberships.filter((m) => m.role === "guardian" && m.status === "active" && m.user_id === userId && m.can_edit).map((m) => m.household_id),
-  );
-  const editable = new Set(
-    memberships
-      .filter((m) => m.role === "student" && m.status === "active" && m.student_id && editHouseholds.has(m.household_id))
-      .map((m) => m.student_id as string),
-  );
+export function resolveStudentAccess(
+  userId: string,
+  students: StudentRecord[],
+  memberships: HouseholdMember[],
+  grants: CounselorGrant[] = [],
+): StudentAccess[] {
+  const myGuardian = memberships.filter((m) => m.role === "guardian" && m.status === "active" && m.user_id === userId);
+  const guardianHouseholds = new Set(myGuardian.map((m) => m.household_id));
+  const editHouseholds = new Set(myGuardian.filter((m) => m.can_edit).map((m) => m.household_id));
+  const studentRows = memberships.filter((m) => m.role === "student" && m.status === "active" && m.student_id);
+  const viaHousehold = new Set(studentRows.filter((m) => guardianHouseholds.has(m.household_id)).map((m) => m.student_id as string));
+  const editable = new Set(studentRows.filter((m) => editHouseholds.has(m.household_id)).map((m) => m.student_id as string));
+  const granted = new Map<string, boolean>();
+  for (const g of grants) granted.set(g.student_id, (granted.get(g.student_id) ?? false) || g.can_edit);
+  const rank = { self: 0, guardian: 1, counselor: 2 } as const;
   return students
     .filter((s) => !s.deleted_at)
-    .map((student) => {
-      const self = student.user_id === userId;
-      return {
-        student,
-        relation: self ? ("self" as const) : ("guardian" as const),
-        canEdit: self || student.managed_by === userId || editable.has(student.id),
-      };
+    .map((student): StudentAccess => {
+      if (student.user_id === userId) return { student, relation: "self", canEdit: true };
+      const family = student.managed_by === userId || viaHousehold.has(student.id);
+      if (!family && granted.has(student.id)) return { student, relation: "counselor", canEdit: granted.get(student.id) === true };
+      return { student, relation: "guardian", canEdit: student.managed_by === userId || editable.has(student.id) };
     })
-    .sort((a, b) => (a.relation === b.relation ? (a.student.display_name ?? "").localeCompare(b.student.display_name ?? "") : a.relation === "self" ? -1 : 1));
+    .sort((a, b) =>
+      a.relation === b.relation ? (a.student.display_name ?? "").localeCompare(b.student.display_name ?? "") : rank[a.relation] - rank[b.relation],
+    );
 }
 
 /** Whether a signed-in user with this role hint gets a student record of their own (created lazily). */

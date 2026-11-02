@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { SignOutButton } from "@/components/account/SignOutButton";
 import { accountPaused, authConfigured, getUser } from "@/lib/auth";
-import { AGE_GATE_COOKIE, safeNextPath } from "@/lib/accounts";
+import { AGE_GATE_COOKIE, isRoleHint, safeNextPath } from "@/lib/accounts";
 import { pausedNotice } from "@/lib/admin/constants";
 import { SITE_NAME } from "@/lib/brand";
 import { LoginForm } from "./LoginForm";
@@ -18,11 +18,11 @@ const ERRORS: Record<string, string> = {
 
 /**
  * Email magic-link sign-in (specs/product/accounts.md). `?next=` (a same-origin path) is where to return after.
- * `?paused=1` is where requireUser() sends a paused account (specs/product/admin.md "What deactivate means"): the
+ * `?mode=signup` opens on Create an account and `?role=` picks its "I'm" (the join page's links). `?paused=1` is where requireUser() sends a paused account (specs/product/admin.md "What deactivate means"): the
  * notice says so. A paused person whose last token still lives stays here (sending them on would loop back) with a
  * Sign out button instead of the form.
  */
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; paused?: string; mode?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; paused?: string; mode?: string; role?: string }> }) {
   await connection();
   if (!authConfigured()) return <AuthUnavailable />;
   const params = await searchParams;
@@ -53,6 +53,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             refused={refused}
             initialError={params.error ? ERRORS[params.error] ?? ERRORS.link : undefined}
             initialMode={params.mode === "signup" ? "signup" : "signin"}
+            initialRole={isRoleHint(params.role) ? params.role : "student"}
           />
         )}
       </div>

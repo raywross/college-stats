@@ -5,6 +5,7 @@ import { Code2, Download, KeyRound, ShieldCheck, Trash2 } from "lucide-react";
 import { AccessLogList } from "@/components/account/AccessLogList";
 import { AccountSection } from "@/components/account/AccountSection";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
+import { CounselorsSection } from "@/components/account/CounselorsSection";
 import { HouseholdSummary } from "@/components/account/HouseholdSummary";
 import { ParentsCanEdit } from "@/components/account/ParentsCanEdit";
 import { SignOutButton } from "@/components/account/SignOutButton";
@@ -16,6 +17,7 @@ import { VisitAlertSettings } from "@/components/visits/VisitAlertSettings";
 import { AccountsSetupError, authConfigured, currentStudent, getAccount, requireUser } from "@/lib/auth";
 import { adminState } from "@/lib/admin/auth";
 import { myAccessLog, myHouseholds } from "@/lib/households";
+import { myCounselorGrants } from "@/lib/orgs";
 import { DELETE_GRACE_DAYS, shortDate } from "@/lib/household-rules";
 import { getData } from "@/lib/data";
 import { myMeasuringPoint, myVisitMutes, myVisitPrefs } from "@/lib/visit-events/read";
@@ -25,8 +27,8 @@ import { ProfileForm } from "./ProfileForm";
 export const metadata: Metadata = { title: "Your account", robots: { index: false } };
 
 /**
- * /account (specs/product/accounts.md): profile, households, who viewed your information, data export, and
- * deletion. An account scheduled for deletion sees only the way back.
+ * /account (specs/product/accounts.md): profile, households, your counselors (specs/product/counselor-portal.md "The
+ * student's side"), who viewed your information, data export, and deletion. An account scheduled for deletion sees only the way back.
  */
 export default async function AccountPage() {
   await connection();
@@ -47,7 +49,9 @@ export default async function AccountPage() {
 
   const [households, student, admin] = await Promise.all([myHouseholds(), currentStudent(), adminState()]);
   const isAdmin = admin.kind === "admin" || admin.kind === "needs-mfa";
-  const accessLog = student ? await myAccessLog() : [];
+  const [accessLog, allGrants] = student ? await Promise.all([myAccessLog(), myCounselorGrants().catch(() => [])]) : [[], []];
+  // "Your counselors": the student's own record's grants (a parent sees a child's on the child's household page).
+  const grants = student ? allGrants.filter((g) => g.student_id === student.id) : [];
   // The student's own switch over their parents' edit access (household-hub.md "Parents can edit: the student's
   // switch"), moved here from the Numbers page: the same guardians lookup it used, through myHouseholds().
   const guardians = student ? households.flatMap((h) => h.members.filter((m) => m.role === "guardian" && m.member_id !== null)) : [];
@@ -122,11 +126,13 @@ export default async function AccountPage() {
 
       <AccountSwitches isGuardian={households.some((h) => h.me.guardian !== null)} hasStudent={student !== null} />
 
+      <CounselorsSection grants={grants} />
+
       {student && (
         <AccountSection
           id="access"
           title={<Term term="access-log">Who viewed your information</Term>}
-          description="Guardians in your households use their own sign-in, so each time one looks at your list or profile, it shows up here."
+          description="Guardians in your households and your counselors use their own sign-in, so each time one looks at your list or profile, it shows up here."
         >
           <AccessLogList rows={accessLog} />
         </AccountSection>

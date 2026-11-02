@@ -223,7 +223,7 @@ function ctx(over: Partial<PlanContext> = {}): PlanContext {
     profile: null,
     schools,
     home: null,
-    viewer: { userId: "user-1", firstName: "Pat", canEdit: true, relation: "guardian", isGuardian: true },
+    viewer: { userId: "user-1", firstName: "Pat", canEdit: true, relation: "guardian", isGuardian: true, isCounselor: false },
     today: TODAY,
     cycle: cycleFor(CYCLE_START),
     grade: "senior_fall",
@@ -371,14 +371,14 @@ test("money lane: includes a cost_check task and labels it 'your part' or 'with 
   const guardianCtx = ctx({
     items: [planItem("1", { unit_id: "1" })],
     tasks: [task({ kind: "cost_check", item_id: "item-1-1", due_on: "2026-10-11", title: "Check the cost of A together before applying ED", source_field: "reported.admission_profile.early_decision.first.closing" })],
-    viewer: { userId: "user-1", firstName: "Pat", canEdit: true, relation: "guardian", isGuardian: true },
+    viewer: { userId: "user-1", firstName: "Pat", canEdit: true, relation: "guardian", isGuardian: true, isCounselor: false },
   });
   const lanes = calendarFor(guardianCtx, view([]), schoolYearOf(TODAY));
   const money = lanes.find((l) => l.key === "money")!;
   assert.equal(money.sub, "your part");
   assert.ok(money.marks.some((m) => m.kind === "money" && m.tip.includes("Check the cost of A together")));
 
-  const studentCtx = ctx({ viewer: { userId: "student-1", firstName: "Maya", canEdit: true, relation: "self", isGuardian: false } });
+  const studentCtx = ctx({ viewer: { userId: "student-1", firstName: "Maya", canEdit: true, relation: "self", isGuardian: false, isCounselor: false } });
   const lanesStudent = calendarFor(studentCtx, view([]), schoolYearOf(TODAY));
   assert.equal(lanesStudent.find((l) => l.key === "money")!.sub, "with a parent");
 });
@@ -433,8 +433,8 @@ test("eventsFor: a visit today shows on Coming up; yesterday's doesn't", () => {
 test("eventsFor: a guardian's view shows the same logged visit as the student's own", () => {
   const r1 = row("1", "Elon");
   const visits = [visit(r1.item.id, { kind: "open_house", on_date: TODAY })];
-  const guardianCtx = ctx({ visits, viewer: { userId: "user-1", firstName: "Pat", canEdit: true, relation: "guardian", isGuardian: true } });
-  const studentCtx = ctx({ visits, viewer: { userId: "student-1", firstName: "Maya", canEdit: true, relation: "self", isGuardian: false } });
+  const guardianCtx = ctx({ visits, viewer: { userId: "user-1", firstName: "Pat", canEdit: true, relation: "guardian", isGuardian: true, isCounselor: false } });
+  const studentCtx = ctx({ visits, viewer: { userId: "student-1", firstName: "Maya", canEdit: true, relation: "self", isGuardian: false, isCounselor: false } });
   const v = view([r1]);
   assert.ok(eventsFor(guardianCtx, v, TODAY, "student-1").some((e) => e.shape === "visit" && e.text === "Elon: Open house"));
   assert.ok(eventsFor(studentCtx, v, TODAY, "student-1").some((e) => e.shape === "visit" && e.text === "Elon: Open house"));

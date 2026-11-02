@@ -16,6 +16,7 @@ import { promptLookup, readEssays, suggestionCounts, type SuggestionCounts } fro
 import { parsePromptRef, pickerGroups } from "./prompts";
 import type { EssayLinkRow, EssayRow } from "./rows";
 import type { EssaysTabData } from "./tab-view";
+import type { ViewerRole } from "@/lib/viewer-relation";
 
 /** Open (unresolved) comments per draft. A failed read is no counts, never a failed tab. */
 async function openCommentCounts(ids: readonly string[]): Promise<Record<string, number>> {
@@ -31,7 +32,7 @@ async function openCommentCounts(ids: readonly string[]): Promise<Record<string,
   return out;
 }
 
-export async function essaysTabData(ctx: PlanContext, viewer: "student" | "guardian"): Promise<EssaysTabData | null> {
+export async function essaysTabData(ctx: PlanContext, viewer: ViewerRole): Promise<EssaysTabData | null> {
   const studentId = ctx.student?.id;
   if (!studentId) return null;
   const colleges = ctx.items.flatMap((i) => {
@@ -45,12 +46,12 @@ export async function essaysTabData(ctx: PlanContext, viewer: "student" | "guard
   let counts: SuggestionCounts;
   let lookup: Awaited<ReturnType<typeof promptLookup>>;
   // A guardian's own suggestions are found by their user id (the "Waiting for {first}" rows).
-  const userId = viewer === "guardian" ? ((await getUser())?.id ?? null) : null;
+  const userId = viewer !== "student" ? ((await getUser())?.id ?? null) : null;
   if (ctx.essays) {
     rows = ctx.essays.rows;
     links = ctx.essays.links;
     // The household's read log, as readEssays keeps it (a guardian opening the student's drafts).
-    if (viewer === "guardian") void scheduleStudentReadLog(studentId, "essays");
+    if (viewer !== "student") void scheduleStudentReadLog(studentId, "essays");
     const ids = rows.map((r) => r.id);
     [lookup, openComments, counts] = await Promise.all([promptLookup(), openCommentCounts(ids), suggestionCounts(ids, { role: viewer, userId })]);
   } else {

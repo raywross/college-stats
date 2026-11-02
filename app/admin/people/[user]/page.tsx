@@ -9,6 +9,7 @@ import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
 import { CONFIRM_DELETE, CONFIRM_REMOVE, deletingLabel, describeAuthActivity, fmtDate, fmtDateTime } from "@/lib/admin/console";
 import { adminPerson, authActivity, logStudentView, type AdminMember, type AdminPerson } from "@/lib/admin/people";
+import { personOrganization } from "@/lib/admin/organizations";
 import { personCollegeViews, VIEW_CHART_DAYS } from "@/lib/admin/college-views";
 import { DailyViews, TopBars } from "@/components/admin/ViewCharts";
 import { emailConfigured } from "@/lib/email";
@@ -49,7 +50,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
   const self = profile.id === me.userId;
   const deleted = profile.deleted_at !== null;
   const now = new Date();
-  const [views, activity] = await Promise.all([personCollegeViews(profile.id), authActivity(profile.id)]);
+  const [views, activity, organization] = await Promise.all([personCollegeViews(profile.id), authActivity(profile.id), personOrganization(profile.id)]);
   // Which colleges a student opens is their information: showing it is a view the student is told about, as on the
   // student page (specs/product/college-views.md).
   if (person.ownStudent && views.colleges.length > 0) await logStudentView(person.ownStudent.id, "college views");
@@ -104,6 +105,19 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
                 { label: "Birth year", value: profile.birth_year ?? <Muted>Not given</Muted> },
                 { label: "Role hint", value: profile.role_hint ?? <Muted>None</Muted> },
                 { label: "Phone", value: profile.phone ?? <Muted>None</Muted> },
+                {
+                  label: "Counselor organization",
+                  value: organization ? (
+                    <>
+                      <Link href={`/admin/organizations/${organization.org_id}`} className="underline-offset-4 hover:underline">
+                        {organization.org_name}
+                      </Link>{" "}
+                      ({organization.role === "owner" ? "owner" : "counselor"})
+                    </>
+                  ) : (
+                    <Muted>Not in one</Muted>
+                  ),
+                },
                 {
                   label: "Paused",
                   value: profile.suspended_at ? (

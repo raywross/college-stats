@@ -104,7 +104,9 @@ function WhatYourRecordSays({
 
 export function StoryGuide({ ctx, move, person, data }: GuideProps) {
   const { tracks } = (data as StoryGuideData | undefined) ?? { tracks: null };
-  const isGuardian = ctx.viewer.isGuardian;
+  // Only the student writes their story (lib/student-profile-store.ts saveStory); a parent or a counselor sees only
+  // whether it's written, never its text (lib/student-profile.ts profileForViewer).
+  const isGuardian = ctx.viewer.relation !== "self";
   const studentId = ctx.student?.id ?? null;
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
   const story = ctx.profile?.story ?? null;

@@ -50,7 +50,8 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // chances-and-fit (the estimate, Explore-by-level, the fit chips), early-decision-strategy (lib/early.ts, the profile's
 // "Applying early", the Common App filters, ED opportunities); retired as unneeded: metro-area. Folded into other
 // entries: manual-collection and campus-sources-later into data-steward's To do list, scattergrams into the counselor
-// portal (so the "high-school" group is gone). Rewritten against what exists: net-price-estimator, commercialization,
+// portal (so the "high-school" group is gone); the portal's caseload was built on 2026-11-01 and scattergrams, its last
+// phase, is an entry of its own again. Rewritten against what exists: net-price-estimator, commercialization,
 // near-and-far, worst-plausible-spring, cycle-watch, getting-into-the-major, and the three iPhone specs.
 export type RoadmapGroupKey =
   | "essays"
@@ -224,16 +225,15 @@ export const ROADMAP: RoadmapSpec[] = [
     after: ["advisor"],
   },
   {
-    slug: "counselor-portal",
-    file: "specs/product/counselor-portal.md",
+    slug: "scattergrams",
+    file: "specs/product/scattergrams.md",
     group: "business",
     summary:
-      "Free organization accounts for counselors and consultants: a caseload dashboard over students' plans, co-branded reports, and, as its last phase, scattergrams uploaded from the school's own records.",
-    complexity: 4,
+      "The counselor portal's last phase: a school's past applicants to each college, uploaded by its counseling office from a Scoir or Naviance export, scrubbed in the browser and binned on the server, drawn beside Quad's estimate for that school's students.",
+    complexity: 3,
     complexityNote:
-      "A second kind of account with its own grants, dashboards, PDF reports, data agreements for schools, and the scattergram upload with its scrubbing and thresholds.",
+      "The upload with its client-side scrubbing, college-name matching with a review list, bins and thresholds, the chart beside the estimate, and the data processing agreement for school organizations.",
     status: "planned",
-    after: ["commercialization"],
   },
   // The serving architecture (specs/serving-architecture.md) was planned and built on 2026-10-07 (#98), so it is
   // no longer listed.

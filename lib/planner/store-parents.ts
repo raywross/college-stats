@@ -277,7 +277,8 @@ export interface YourPartRead {
 export async function myYourPart(): Promise<YourPartRead[]> {
   const r = await ready("planner.tab");
   if (!("supabase" in r)) return [];
-  const students = await studentsICanSee();
+  // Your part is a parent's (specs/planner/parents.md): a counselor's caseload has none, even on their own page.
+  const students = (await studentsICanSee()).filter((s) => s.relation !== "counselor");
   const out: YourPartRead[] = [];
   for (const s of students) {
     const list = await r.supabase.from("lists").select("id").eq("student_id", s.student.id).eq("is_default", true).maybeSingle();

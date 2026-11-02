@@ -162,17 +162,18 @@ export async function scheduleStudentReadLog(studentId: string, table: string): 
 }
 
 /**
- * The guardian read helper for pages that show one student's data (a student's profile or list, opened by a
- * guardian): resolves the signed-in user's access to the student and, when they're reading as a guardian, logs it
- * against `table` so the student sees it in /account. Returns null when the user can't see the student. Render
- * `<GuardianBanner>` when `relation === "guardian"`.
+ * The viewer read helper for pages that show one student's data (a student's profile or list, opened by a guardian
+ * or a counselor): resolves the signed-in user's access to the student and, when they're reading someone else's (any
+ * relation but "self"), logs it against `table` so the student sees it in /account. Returns null when the user can't
+ * see the student. Render the viewer banner when `relation !== "self"`.
  *
  *   const access = await openStudentAs(studentId, "lists");
  *   if (!access) notFound();
  */
 export async function openStudentAs(studentId: string, table: string): Promise<StudentAccess | null> {
   const access = (await studentsICanSee()).find((a) => a.student.id === studentId) ?? null;
-  // A guardian's read is logged for the student (their access log), after the response: the page doesn't wait on it.
-  if (access?.relation === "guardian") await scheduleStudentReadLog(studentId, table);
+  // A guardian's or counselor's read is logged for the student (their access log), after the response: the page
+  // doesn't wait on it.
+  if (access && access.relation !== "self") await scheduleStudentReadLog(studentId, table);
   return access;
 }

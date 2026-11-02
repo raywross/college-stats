@@ -4,6 +4,7 @@ import FamilyCalendar from "@/components/planner/FamilyCalendar";
 import { EssaysTab } from "@/components/planner/EssaysTab";
 import { NextSteps } from "@/components/planner/NextSteps";
 import { PlanOpened } from "@/components/planner/PlanOpened";
+import { AskNotice } from "@/components/org/AskNotice";
 import PlanList from "@/components/planner/PlanList";
 import OffersStage from "@/components/planner/stages/OffersStage";
 import type { CalendarChild } from "@/components/planner/tabs/types";
@@ -12,6 +13,7 @@ import { planHref, TAB_LABELS, type PlanTab } from "@/lib/planner/plan-tabs";
 import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { cn } from "@/lib/utils";
+import type { ViewerRole } from "@/lib/viewer-relation";
 
 const ICONS: Record<PlanTab, typeof ListChecks> = { next: Footprints, colleges: ListChecks, essays: PenLine, calendar: CalendarDays, offers: FileCheck2 };
 
@@ -66,7 +68,7 @@ export function PlanTabs({
   view: PlanView;
   tab: PlanTab;
   calendarChild: CalendarChild;
-  viewer: "student" | "guardian";
+  viewer: ViewerRole;
   /** The Essays tab's read (lib/essays/tab-data.ts), present only when that tab is open. */
   essays?: EssaysTabData | null;
   /** The `?for=` links keep (null for a student's own plan). */
@@ -75,6 +77,8 @@ export function PlanTabs({
   return (
     <div className="space-y-4">
       <PlanOpened tab={tab} viewer={viewer} everyone={false} studentId={ctx.student?.id ?? null} />
+      {/* A counselor's asks (specs/product/counselor-portal.md "Asking a student for something"), above the cards. */}
+      {tab === "next" && <AskNotice ctx={ctx} />}
       {tab === "next" && <NextSteps ctx={ctx} view={view} />}
       {tab === "colleges" && <PlanList ctx={ctx} view={view} />}
       {/* Only the student writes a draft (workspace.md "The model": "student drafts only"); a guardian reads. */}

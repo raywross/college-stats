@@ -138,5 +138,5 @@ test("groupAccessLog: a counselor without a name reads as a counselor, not a for
     { at: "2026-10-02T15:00:00Z", table_name: "lists", viewer_id: "g", viewer_name: null, viewer_role: "guardian" },
     { at: "2026-10-02T15:00:00Z", table_name: "lists", viewer_id: "r", viewer_name: "Ms. Rivera", viewer_role: "counselor" },
   ]);
-  assert.deepEqual(lines.map((l) => l.viewer).sort(), ["A counselor", "A former guardian", "Ms. Rivera"]);
+  assert.deepEqual(lines.map((l) => l.viewer).sort(), ["A counselor", "A former guardian", "Ms. Rivera (counselor)"]);
 });

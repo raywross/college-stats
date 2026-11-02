@@ -34,8 +34,8 @@ export function ConfirmSignIn() {
     };
     if (!fragment) return fail("failed");
     if (!fragment.ok) return fail(/expired|otp/i.test(fragment.code) ? "expired" : "failed");
-    completeSignIn(fragment.accessToken, fragment.refreshToken)
-      .then((r) => (r.ok ? window.location.replace(target) : fail("failed")))
+    completeSignIn(fragment.accessToken, fragment.refreshToken, target)
+      .then((r) => (r.ok ? window.location.replace(safeNextPath(r.to, target)) : fail("failed")))
       .catch(() => fail("failed"));
   }, []);
 

@@ -217,7 +217,15 @@ export function groupAccessLog(rows: AccessLogRow[], timeZone = "America/New_Yor
   for (const r of rows) {
     // An admin's view is "Quad support", whoever at Quad looked (admin.md: the admin's name is never shown).
     const support = r.table_name === "admin";
-    const viewer = support ? SUPPORT_VIEWER_NAME : r.viewer_name?.trim() || (r.viewer_role === "counselor" ? "A counselor" : "A former guardian");
+    // A counselor reads with their role ("Ms. Rivera (counselor)"), so a student never mistakes one for family.
+    const named = r.viewer_name?.trim();
+    const viewer = support
+      ? SUPPORT_VIEWER_NAME
+      : r.viewer_role === "counselor"
+        ? named
+          ? `${named} (counselor)`
+          : "A counselor"
+        : named || "A former guardian";
     const what = describeAccessTable(r.table_name);
     const day = fmt.format(new Date(r.at));
     const key = `${support ? "support" : r.viewer_id}|${what}|${day}`;

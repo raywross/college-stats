@@ -187,6 +187,16 @@ export function loginHref(next?: string): string {
   return path ? `/login?next=${encodeURIComponent(path)}` : "/login";
 }
 
+/**
+ * Where a new account lands after confirming its email (specs/product/counselor-portal.md "The channel"): a counselor
+ * who signed up with no page to come back to (`next` is the default, /account) goes to the portal, `/org`, to start
+ * their organization; everyone else, and every explicit `next`, goes where `next` says. `fresh` is whether this is the
+ * confirmation of a new account (lib/signup-events-rules.ts isFreshConfirmation); an ordinary sign-in never moves.
+ */
+export function firstLanding(next: string, roleHint: unknown, fresh: boolean): string {
+  return fresh && roleHint === "counselor" && next === "/account" ? "/org" : next;
+}
+
 /* ------------------------------------------------------------------ */
 /* Access                                                              */
 /* ------------------------------------------------------------------ */
@@ -275,6 +285,8 @@ export interface MeState {
   id: string | null;
   name: string | null;
   email: string | null;
+  /** A member of a counselor organization (my_organization()): the menu shows Caseload. False when signed out. */
+  org: boolean;
 }
 
 /**

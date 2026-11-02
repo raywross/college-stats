@@ -194,10 +194,12 @@ export interface AnalyticsEvents {
   data_snapshot_swap: { from: number | string; to: number; ms: number };
   /** The data platform's publisher (scripts/publish-snapshot.mts) published a snapshot: its id, how many change sets it carried, and how long the run took. */
   data_publish: { snapshot: number; change_sets: number; ms: number };
+  /** The counselor portal (specs/product/counselor-portal.md "The channel"): a student joined a caseload, by which door, and whether the account was new. Never the organization or the student. */
+  org_student_joined: { source: "invite" | "code"; new_account: boolean };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done" | "essay_suggestion_sent" | "essay_suggestion_updated" | "essay_suggestion_withdrawn" | "essay_suggestion_decided" | "essay_fix_accepted" | "data_snapshot_swap" | "data_publish";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done" | "essay_suggestion_sent" | "essay_suggestion_updated" | "essay_suggestion_withdrawn" | "essay_suggestion_decided" | "essay_fix_accepted" | "data_snapshot_swap" | "data_publish" | "org_student_joined";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -339,6 +341,7 @@ export const EVENTS = {
   essays_move_done: { properties: ["by"], side: "both", why: "Essays: the essays move finished, ticked by the store when every essay is ready or by hand" },
   data_snapshot_swap: { properties: ["from", "to", "ms"], side: "server", why: "Data platform: how often instances pick up a new snapshot, and how long the swap takes" },
   data_publish: { properties: ["snapshot", "change_sets", "ms"], side: "server", why: "Data platform: each published snapshot, how many change sets it carried, and how long the publish took" },
+  org_student_joined: { properties: ["source", "new_account"], side: "server", why: "Counselor portal: students joining a caseload, by invitation or code, and how many came with a new account" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

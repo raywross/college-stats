@@ -218,7 +218,8 @@ test("dispatchWorkflow: every run in the table sends request_id, Re-run CI on th
   gh.resetTokenCache();
   const f = fakeGithub((c) => (c.url.endsWith("/dispatches") ? { status: 204 } : undefined));
   for (const run of DISPATCHABLE_RUNS) {
-    const values = run.inputs.some((i) => i.kind === "unit") ? { college: "166027" } : {};
+    const unit = run.inputs.find((i) => i.kind === "unit");
+    const values = unit ? { [unit.name]: "166027" } : {};
     const built = buildDispatch(run.id, values, { confirm: run.guards.confirmWord, branch: "data/college-reported-20261011-102854-53" });
     assert.ok(built.ok, `${run.id}: ${built.ok ? "" : built.errors.join("; ")}`);
     if (!built.ok) continue;
@@ -531,6 +532,7 @@ test("every dispatchable workflow declares request_id (optional, default '') and
     "common-app.yml",
     "identity-refresh.yml",
     "publish-snapshot.yml",
+    "steward.yml",
     "sync-data.yml",
     "sync-history.yml",
     "verify.yml",

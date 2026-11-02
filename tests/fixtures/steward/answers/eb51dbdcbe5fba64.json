@@ -1,0 +1,34 @@
+{
+  "key": "eb51dbdcbe5fba64",
+  "model": "claude-opus-5-5",
+  "note": "run, main turn 1",
+  "response": {
+    "id": "msg_dry_eb51dbdcbe5fba64",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-opus-5-5",
+    "content": [
+      {
+        "type": "thinking",
+        "thinking": "",
+        "signature": "dry-run"
+      },
+      {
+        "type": "tool_use",
+        "id": "toolu_dry_r1",
+        "name": "list_clusters",
+        "input": {
+          "limit": 5
+        }
+      }
+    ],
+    "stop_reason": "tool_use",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 3000,
+      "cache_creation_input_tokens": 5000,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 900
+    }
+  }
+}

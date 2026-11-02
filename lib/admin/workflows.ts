@@ -26,10 +26,11 @@ export type WorkflowFile =
   | "sync-data.yml"
   | "publish-snapshot.yml"
   | "verify.yml"
-  | "visit-events.yml";
+  | "visit-events.yml"
+  | "steward.yml";
 
 export type RunInput =
-  | { name: string; label: string; kind: "unit"; required: true }
+  | { name: string; label: string; kind: "unit"; required: boolean }
   | { name: string; label: string; kind: "boolean"; default: boolean }
   | { name: string; label: string; kind: "choice"; options: readonly string[]; default: string }
   | { name: string; label: string; kind: "money"; default: string }
@@ -48,7 +49,10 @@ export type RunId =
   | "verify"
   | "visit-events"
   | "publish-snapshot"
-  | "point-snapshot";
+  | "point-snapshot"
+  | "steward"
+  | "steward-apply"
+  | "steward-answer";
 
 export interface DispatchableRun {
   id: RunId;
@@ -67,11 +71,17 @@ export interface DispatchableRun {
   };
   /** `main` for every run but Re-run CI, which runs on the pull request's branch. */
   ref: "main" | "pull-branch";
+  /**
+   * Dispatched by another console screen with values it builds itself (Point back here on Snapshots; the Data
+   * Steward's Approve and Ask on a proposal), so Start a run on Operations doesn't offer it.
+   */
+  hidden?: boolean;
 }
 
 // Data runs open no pull requests any more (data platform phase 2: they write the store and ask the publisher), so no
 // run sends `auto_merge`; a workflow that still declares the input ignores it.
 const COLLEGE_REPORTED_GROUP = { concurrencyGroup: "college-reported" };
+const STEWARD_GROUP = { concurrencyGroup: "steward" };
 
 /** The spec's Reruns table, with each workflow's own input defaults (.github/workflows/*.yml). */
 export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
@@ -221,6 +231,48 @@ export const DISPATCHABLE_RUNS: readonly DispatchableRun[] = [
     inputs: [{ name: "point", label: "Snapshot id", kind: "text", default: "" }],
     guards: { oneAtATime: { concurrencyGroup: "publish-snapshot" } },
     ref: "main",
+    hidden: true,
+  },
+  // The Data Steward (specs/product/data-steward.md "Where it runs"): steward.yml runs scripts/steward.mts, which
+  // writes only the steward.* collections. Run the Data Steward is on Operations and the Issues screen; apply and
+  // answer are dispatched by a proposal's Approve and Ask (lib/admin/steward-actions.ts). The workflow's concurrency
+  // group is "steward": one Steward run at a time.
+  {
+    id: "steward",
+    label: "Run the Data Steward",
+    description: "Groups the review queue by cause, checks the causes against the colleges' documents, and writes proposals to review.",
+    workflow: "steward.yml",
+    fixed: {},
+    inputs: [
+      { name: "budget", label: "Stop at this many US dollars of model calls", kind: "money", default: "20" },
+      { name: "cause", label: "One cause's key from Issues (empty for the largest causes)", kind: "text", default: "" },
+      { name: "unit", label: "One college's unit id (empty for the whole queue)", kind: "unit", required: false },
+      { name: "mode", label: "What to do", kind: "choice", options: ["run", "audit"], default: "run" },
+    ],
+    guards: { oneAtATime: STEWARD_GROUP },
+    ref: "main",
+  },
+  {
+    id: "steward-apply",
+    label: "Apply an approved proposal",
+    description: "Applies a proposal's approved holds, refiles, recipe changes and rejections, with no model.",
+    workflow: "steward.yml",
+    fixed: { mode: "apply" },
+    inputs: [{ name: "proposal", label: "Proposal key", kind: "text", default: "" }],
+    guards: { oneAtATime: STEWARD_GROUP },
+    ref: "main",
+    hidden: true,
+  },
+  {
+    id: "steward-answer",
+    label: "Answer a question on a proposal",
+    description: "The Steward reads a proposal again with the question asked on it, up to $5.",
+    workflow: "steward.yml",
+    fixed: { mode: "answer", budget: "5" },
+    inputs: [{ name: "proposal", label: "Proposal key", kind: "text", default: "" }],
+    guards: { oneAtATime: STEWARD_GROUP },
+    ref: "main",
+    hidden: true,
   },
 ];
 
@@ -259,7 +311,7 @@ export function buildDispatch(
     switch (input.kind) {
       case "unit": {
         const v = typeof raw === "string" ? raw.trim() : "";
-        if (!UNIT_ID.test(v)) errors.push(`${input.label}: a six-digit unit id`);
+        if (!UNIT_ID.test(v) && (input.required || v !== "")) errors.push(`${input.label}: a six-digit unit id`);
         inputs[input.name] = v;
         break;
       }

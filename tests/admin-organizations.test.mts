@@ -368,7 +368,7 @@ test("the access log's entry now relates to counselor access too (a counselor's 
 
 test("the five counselor-portal events are registered with the brief's exact property shapes", () => {
   assert.deepEqual(EVENTS.org_created.properties, ["kind"]);
-  assert.equal(EVENTS.org_created.side, "client");
+  assert.equal(EVENTS.org_created.side, "server");
   assert.deepEqual(EVENTS.org_student_invited.properties, ["method"]);
   assert.deepEqual(EVENTS.org_student_joined.properties, ["source", "new_account"]);
   assert.equal(EVENTS.org_student_joined.side, "server");

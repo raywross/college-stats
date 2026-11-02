@@ -4,6 +4,7 @@ import FamilyCalendar from "@/components/planner/FamilyCalendar";
 import { EssaysTab } from "@/components/planner/EssaysTab";
 import { NextSteps } from "@/components/planner/NextSteps";
 import { PlanOpened } from "@/components/planner/PlanOpened";
+import { AskNotice } from "@/components/org/AskNotice";
 import PlanList from "@/components/planner/PlanList";
 import OffersStage from "@/components/planner/stages/OffersStage";
 import type { CalendarChild } from "@/components/planner/tabs/types";
@@ -76,6 +77,8 @@ export function PlanTabs({
   return (
     <div className="space-y-4">
       <PlanOpened tab={tab} viewer={viewer} everyone={false} studentId={ctx.student?.id ?? null} />
+      {/* A counselor's asks (specs/product/counselor-portal.md "Asking a student for something"), above the cards. */}
+      {tab === "next" && <AskNotice ctx={ctx} />}
       {tab === "next" && <NextSteps ctx={ctx} view={view} />}
       {tab === "colleges" && <PlanList ctx={ctx} view={view} />}
       {/* Only the student writes a draft (workspace.md "The model": "student drafts only"); a guardian reads. */}

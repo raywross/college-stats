@@ -12,6 +12,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { isMissingFunction } from "@/lib/bundle-read";
 import {
+  assembleCaseloadStudents,
+  CASELOAD_ESSAY_COLUMNS,
+  CASELOAD_LIST_SELECT,
+  type CaseloadEssayRow,
+  type CaseloadListRow,
+  type CaseloadProfileRow,
+  type CaseloadStudent,
+} from "@/lib/org-caseload";
+import {
   orgErrorMessage,
   type CounselorGrantView,
   type OpenOrgAsk,
@@ -141,4 +150,71 @@ export async function invitationPreview(token: string): Promise<InvitationPrevie
     fail("org_invitation_preview", error);
   }
   return (data as InvitationPreview | null) ?? null;
+}
+
+/* ------------------------------------------------------------------ */
+/* The caseload's reads (U3)                                           */
+/* ------------------------------------------------------------------ */
+
+/** Students per query: keeps each `.in()` URL short and each embedded read small. */
+const CASELOAD_CHUNK = 50;
+/** PostgREST's default page; a read that returns this many asks for the next page. */
+const PAGE = 1000;
+
+type Page = PromiseLike<{ data: unknown; error: PgError | null }>;
+
+/** Every row of a read, a thousand at a time (`page(from, to)` applies `.range(from, to)`). */
+async function readAll<T>(what: string, page: (from: number, to: number) => Page): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await page(from, from + PAGE - 1);
+    if (error) {
+      // A table that isn't there yet (essays before its migration) reads as none; anything else is a real failure.
+      if (isMissing(error)) return out;
+      fail(what, error);
+    }
+    const rows = (data as T[] | null) ?? [];
+    out.push(...rows);
+    if (rows.length < PAGE) return out;
+  }
+}
+
+function chunks<T>(xs: readonly T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < xs.length; i += size) out.push(xs.slice(i, i + size));
+  return out;
+}
+
+/**
+ * Everything the caseload shows about the roster's live students, read with the counselor's own session (row-level
+ * security decides; a student whose grant ended reads as nothing): profiles, each default list with its items, their
+ * visits, and the list's steps, and essays (when each was last changed). Three queries per fifty students, run
+ * together. No estimate, no finances, no nudges: nothing here could read them.
+ */
+export async function caseloadStudents(roster: readonly OrgRosterRow[]): Promise<CaseloadStudent[]> {
+  const live = roster.filter((r) => r.status === "active" && r.student_id);
+  if (live.length === 0) return [];
+  const supabase = await client();
+  const ids = live.map((r) => r.student_id!);
+  const parts = await Promise.all(
+    chunks(ids, CASELOAD_CHUNK).map(async (part) => {
+      const [profiles, lists, essays] = await Promise.all([
+        readAll<CaseloadProfileRow>("student_profiles", (from, to) => supabase.from("student_profiles").select("student_id, data").in("student_id", part).order("student_id").range(from, to)),
+        readAll<CaseloadListRow>("lists", (from, to) => supabase.from("lists").select(CASELOAD_LIST_SELECT).in("student_id", part).eq("is_default", true).order("id").range(from, to)),
+        readAll<CaseloadEssayRow>("essays", (from, to) => supabase.from("essays").select(CASELOAD_ESSAY_COLUMNS).in("student_id", part).order("id").range(from, to)),
+      ]);
+      return { profiles, lists, essays };
+    }),
+  );
+  return assembleCaseloadStudents(live, {
+    profiles: parts.flatMap((p) => p.profiles),
+    lists: parts.flatMap((p) => p.lists),
+    essays: parts.flatMap((p) => p.essays),
+  });
+}
+
+/** The roster's live row for one student, or null when they aren't on this organization's caseload. */
+export async function caseloadEntry(orgId: string, studentId: string): Promise<OrgRosterRow | null> {
+  const roster = await orgRoster(orgId);
+  return roster.find((r) => r.status === "active" && r.student_id === studentId) ?? null;
 }

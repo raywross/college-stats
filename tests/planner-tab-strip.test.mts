@@ -88,6 +88,7 @@ export default function Link({ href, children, ...rest }) { return React.createE
   "@/components/planner/PlanList": NOTHING,
   "@/components/planner/stages/OffersStage": NOTHING,
   "@/components/planner/EssaysTab": `export function EssaysTab() { return null; }`,
+  "@/components/org/AskNotice": `export function AskNotice() { return null; }`,
 };
 const stubUrl = (name: string) => pathToFileURL(join(STUB_DIR, `${name.replace(/[^a-z]/gi, "_")}.mjs`)).href;
 const STUB_SOURCES = new Map(Object.entries(STUBS).map(([name, src]) => [stubUrl(name), src]));

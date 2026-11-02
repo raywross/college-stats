@@ -11,6 +11,7 @@ import { crestBrand } from "@/lib/brand";
 import { getUser } from "@/lib/auth";
 import { openStudentAs, personPage } from "@/lib/households";
 import { getListWithItems, myLists, namesFor, notesForItems } from "@/lib/lists";
+import { myOrganization } from "@/lib/orgs";
 import { getData } from "@/lib/data";
 import { deadlineFor, listOwner, upcomingDeadlines, type ListRecord, type ListRound } from "@/lib/list-rules";
 import { myHome } from "@/lib/home-store";
@@ -164,7 +165,14 @@ export async function ListPage({
   // existed, and that read is memoized: put this list back in the switcher.
   const lists = ownerLists.some((l) => l.id === list.id) ? ownerLists : [list, ...ownerLists];
   const addedByIds = [...new Set(items.map((i) => i.added_by).filter((x): x is string => !!x))];
-  const [names, plan] = await Promise.all([namesFor(addedByIds), planner ? plannerExtras(list, items as PlanItem[], home) : Promise.resolve(null)]);
+  const [ownNames, plan, office] = await Promise.all([
+    namesFor(addedByIds),
+    planner ? plannerExtras(list, items as PlanItem[], home) : Promise.resolve(null),
+    // A counselor reads their office's names ("Added by Ms. Rivera"; specs/product/counselor-portal.md "Model"):
+    // profiles are own-row only, so they come through my_organization().
+    access.guardianOf?.relation === "counselor" ? myOrganization().catch(() => null) : Promise.resolve(null),
+  ]);
+  const names: Record<string, string | null> = { ...Object.fromEntries((office?.members ?? []).map((m) => [m.user_id, m.display_name])), ...ownNames };
   const today = todayIso();
   const nextByItem = plan ? nextTaskByItem(items, plan.tasks, today) : {};
 

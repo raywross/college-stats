@@ -1,6 +1,6 @@
 # Counselor Portal: Quad for Counselors, Free, as the Way Families Find the Advisor
 
-> Status: **planned**; **rewritten 2026-11-01** from the owner's review of the business model ("counselors get the system
+> Status: **built** 2026-11-01 (phase 1, the caseload; see [As built](#as-built-2026-11-01)); **rewritten 2026-11-01** from the owner's review of the business model ("counselors get the system
 > for free as a way of organizing and collecting information from their students; the idea is to use them to get us
 > clients; the students will then pay; the advisor can then have a useful set of tools to help manage their student
 > load and work with their students"). The 2026-10-02 plan was written when counselors were going to pay a premium;
@@ -255,6 +255,75 @@ What the site does to turn a caseload into families who buy the advisor, and wha
   blocks writes; a code joins; an invitation's lifecycle; the access log records the read; guard tests that break each
   rule), `tests/org-rules.test.mts` (the rows, the shape line, the CSV, the code format), `tests/org-pages.test.mts`
   (the join page's states render; the banner's words).
+
+## As built (2026-11-01)
+Phase 1 was built in six units on sub-branches from the brief in `~/Projects/college-stats/counselor-portal-build/`
+(U1 model and U2 viewer relation, then U3 pages, U4 joining, U5 admin and glossary, then a terms pass and QA), merged
+on `feature/counselor-portal`. Where this section and the plan above disagree, this section is what runs. The two
+subsections after it are the viewer and joining units' own notes.
+
+**The model** (`supabase/migrations/20261102120000_organizations.sql`; `lib/org-rules.ts`, `lib/orgs.ts`). The six
+tables of the plan (`organizations`, `org_members`, `org_invitations`, `org_students`, `org_notes`, `org_requests`),
+all under row-level security. `can_read_student()` and `can_edit_student()` were replaced with the same signatures and
+one more clause, `is_counselor_of(student, need_edit)`, so every policy that already asked them (the record, lists and
+items, the plan's tables, offers and letters, application snapshots, the essays) opened to a counselor with a live
+grant without a change of its own. `log_access()` accepts a counselor's read through the same path; `my_access_log()`
+gained `viewer_role`; `viewer_bundle()` carries the caller's grants so `studentsICanSee()` stays one round trip; the
+essay comment and suggestion triggers write `author_role = 'counselor'`; `merge_managed_student()` carries grants,
+notes, and asks to a claimed record. The family (`is_family_of`: the student, a managing or household guardian) alone
+grants, changes, and ends a grant; `can_read_student` can't be the gate there, since it now includes counselors. Join
+codes are six random letters (consonant and vowel), stored without the `QUAD-` prefix the pages show; invitation tokens
+are readable by no API role (the Copy link comes through `org_roster()`); repeats return the existing row rather than
+failing; deleting an organization keeps its memberships as a record. `tests/orgs-policies.test.mts` (39 tests, 14
+guards) proves a counselor reads the granted student's record, profile, lists, plan, and essays and zero rows of
+finances (a stand-in table until that spec is built), households and homes, private notes, a parent's nudges, or
+another organization's students, and that an ended grant reads nothing at once.
+
+What a counselor with edit access can do that the plan didn't spell out, because an editing guardian can: turn on a
+list's public share link, see award offers, see the student's phone. Owner questions, not changed in this build.
+
+**The pages** (`app/org/**`, `components/org/**`, `lib/org-caseload.ts`). `/org` is the start form (name, consultant or
+school, the high school picker, website) with the free line, or the caseload. The caseload's rows come from
+`caseloadRows()` in `lib/org-caseload.ts` (its own module so the join page's client code doesn't carry the planner):
+the name and class, the advisor-status chip (`advisorStatusFor()` in `lib/entitlements.ts`, "Preview" for everyone
+today), the record's filled count with the missing sections on hover, the list's count and shape line, applications
+in, the next deadline, last activity, and the parent's stuck signals as short chips with the sentence on hover (the
+student page shows the sentences), minus the ED-estimate signal, which is about money a counselor never sees. Reads
+are a handful of `.in()` queries with the counselor's session over the roster's ids; levels come from the items'
+stored category; no estimate runs; the caseload view doesn't write the access log (the student page does, through
+`openStudentAs()`). `/org/students/new` takes one or several students (pasted lines) and shows each link to copy,
+emailing it when email is configured (`lib/emails/org-invitation.ts`). `/org/students/[id]` has the banner, the summary
+line, the signals, and the four panels; asks go through `org_ask` with the limits in SQL, email the student once
+(`lib/emails/org-ask.ts`; the address is the portal's one service-role read, pinned by a test, as nudges already do),
+and show at the top of the student's Next steps (`components/org/AskNotice.tsx`, rendered by `PlanTabs` for the student
+and parents, not for a counselor), where a filled section or a non-empty list closes its own ask after the response.
+`/org/members` holds the settings, the join code with Copy and Regenerate, members, roles, Invite a counselor (whose
+link is also a `/join/<token>` page), Leave, and Delete with a typed confirmation. `/org/export` writes the CSV with no
+GPA or score. Every `/org` page is `noindex`. Server Actions live in `app/org/actions.ts`. `tests/org-caseload-db.test.mts`
+runs the caseload's reads on PGlite in the shape the pages ask for; `tests/org-pages.test.mts` renders every page and
+guards noindex, no service-role or estimate reads, the notice's position, and the CSV's columns.
+
+**Admin, telemetry, glossary.** `/admin/organizations` and `/admin/organizations/[id]` (`lib/admin/organizations.ts`,
+reading the tables directly through the "Admins read" policies, since `my_organization()` and `org_roster()` are scoped to
+members; never a token), the rail entry after Households, one line on a person's and a student's admin pages. The five
+events are registered (`org_created` and `org_ask_sent` from the server, `org_student_joined` from the join action,
+`org_student_invited` from both sides, `org_caseload_viewed` from the page) and in [telemetry.md](telemetry.md#event-registry).
+Glossary: `counselor-organization`, `join-code`, `counselor-access`, `ask`, linked from the banner, the join page, the
+account section, and the portal's pages.
+
+**Owner steps.**
+1. Apply `supabase/migrations/20261102120000_organizations.sql` to the dev project (SQL Editor, or
+   `psql "$SUPABASE_DB_URL" -1 -f …`); it was not applied during the build. Until then `/org` shows the start form and
+   creating an organization fails with a plain message; `/join/<code>` says the code doesn't exist.
+2. Nothing in Vercel: no new environment variables. Emails go out only where `RESEND_API_KEY` and `EMAIL_FROM` are set.
+
+**Left for later, knowingly.** `viewer_bundle()` sends a counselor every caseload student and profile on every request
+(fine at tens of students; a paged read at hundreds). "Added by Ms. Rivera" shows to the counselor's office; the family
+still sees "Added by a guardian" for a counselor's edit until `my_counselor_grants()` returns the counselors' ids. Ask
+buttons appear on every missing record section, including Story and Recommenders, which aren't due until the summer
+before senior year. The award-letter storage bucket's policies weren't reviewed for the counselor relation. Per-counselor
+caseloads inside an office, rep visits at the school (phase 2), and the scattergram upload (phase 3, its own roadmap
+entry) are not built.
 
 ### Built: the counselor as a viewer (2026-11-01)
 `lib/viewer-relation.ts` keeps two questions apart: **is this someone other than the student** (`isViewer`,

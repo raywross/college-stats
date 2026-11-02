@@ -50,7 +50,8 @@ export const COMPLEXITY: Record<Complexity, { label: string; description: string
 // chances-and-fit (the estimate, Explore-by-level, the fit chips), early-decision-strategy (lib/early.ts, the profile's
 // "Applying early", the Common App filters, ED opportunities); retired as unneeded: metro-area. Folded into other
 // entries: manual-collection and campus-sources-later into data-steward's To do list, scattergrams into the counselor
-// portal (so the "high-school" group is gone). Rewritten against what exists: net-price-estimator, commercialization,
+// portal (so the "high-school" group is gone); the portal's caseload was built on 2026-11-01 and scattergrams, its last
+// phase, is an entry of its own again. Rewritten against what exists: net-price-estimator, commercialization,
 // near-and-far, worst-plausible-spring, cycle-watch, getting-into-the-major, and the three iPhone specs.
 export type RoadmapGroupKey =
   | "essays"
@@ -224,17 +225,6 @@ export const ROADMAP: RoadmapSpec[] = [
     after: ["advisor"],
   },
   {
-    slug: "counselor-portal",
-    file: "specs/product/counselor-portal.md",
-    group: "business",
-    summary:
-      "Counselors and consultants run their caseload on Quad free: students join by a link or a code and grant access the way they grant it to a parent; the caseload shows each student's record, list shape, deadlines, and signals, with asks, notes, and an export.",
-    complexity: 3,
-    complexityNote:
-      "A third kind of viewer through the existing row-level security, organizations with members and grants, two ways to join, the caseload's reads and rows, asks with their limits, and the student's own controls.",
-    status: "planned",
-  },
-  {
     slug: "scattergrams",
     file: "specs/product/scattergrams.md",
     group: "business",
@@ -244,7 +234,6 @@ export const ROADMAP: RoadmapSpec[] = [
     complexityNote:
       "The upload with its client-side scrubbing, college-name matching with a review list, bins and thresholds, the chart beside the estimate, and the data processing agreement for school organizations.",
     status: "planned",
-    after: ["counselor-portal"],
   },
   // The serving architecture (specs/serving-architecture.md) was planned and built on 2026-10-07 (#98), so it is
   // no longer listed.

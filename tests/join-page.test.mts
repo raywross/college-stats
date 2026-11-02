@@ -250,7 +250,6 @@ const React = (await import("react")).default;
 const { renderToStaticMarkup } = await import("react-dom/server");
 const view = (await import("../app/join/[code]/JoinView.tsx")) as {
   JoinView: (p: { state: JoinState; signedIn: boolean }) => ReactElement;
-  truthLine: (org: string, whose: "you" | "student") => string;
   notForYouLine: (org: string) => string;
 };
 const { CounselorsSection } = (await import("../components/account/CounselorsSection.tsx")) as { CounselorsSection: (p: { grants: CounselorGrantView[]; first?: string | null }) => ReactElement | null };
@@ -266,7 +265,7 @@ test("render: signed out shows who is asking, the truth, and Sign in / Create an
   const html = render(byCode(null), false);
   assert.match(html, /<h1[^>]*>Join Rivera Advising<\/h1>/);
   assert.match(text(html), /With Ms\. Rivera and Mr\. Lee\./);
-  assert.ok(html.includes(view.truthLine("Rivera Advising", "you")));
+  assert.match(text(html), /Rivera Advising will have access to your record, your college list and advisor, and your essays\./);
   assert.match(html, /never see your parents' finances/);
   assert.match(html, /can see each time they look, and end it any time/);
   assert.match(html, /href="\/login\?mode=signup&role=student&next=%2Fjoin%2FRIVERA"[^>]*>Create an account</);
@@ -293,7 +292,7 @@ test("render: a guardian picks one of the students they can see, then Join", () 
   assert.match(html, /<input type="radio"[^>]*value="s-cara"/);
   assert.match(text(html), /Ben Smith .*Cara Smith/);
   assert.match(html, />Join<\/button>/);
-  assert.ok(html.includes(view.truthLine("Rivera Advising", "student")));
+  assert.match(text(html), /Rivera Advising will have access to your student's record, college list and advisor, and essays\./);
   assert.match(html, /never see your finances or your household/);
 });
 
@@ -357,14 +356,14 @@ test("Your counselors: nothing without grants; each grant's name, counselors, da
     renderToStaticMarkup(React.createElement(CounselorsSection, { grants: [grant(), grant({ grant_id: "g2", org_name: "Northside High", counselor_names: [], can_edit: false })] })),
   );
   assert.match(html, /id="counselors"/);
-  assert.match(html, />Your counselors</);
+  assert.match(text(html), /Your counselors/);
   assert.match(text(html), /Northside High Since Oct 2, 2026 .*Rivera Advising Ms\. Rivera and Mr\. Lee · Since Oct 2, 2026/, "sorted by name; names when there are some");
   assert.equal((html.match(/aria-pressed="true"[^>]*>Can edit</g) ?? []).length, 1, "Rivera: Can edit");
   assert.equal((html.match(/aria-pressed="true"[^>]*>View only</g) ?? []).length, 1, "Northside: View only");
   assert.equal((html.match(/>End access</g) ?? []).length, 2);
   // A parent's view on the child's page.
   const child = decode(renderToStaticMarkup(React.createElement(CounselorsSection, { grants: [grant()], first: "Ben" })));
-  assert.match(child, />Ben's counselors</);
+  assert.match(text(child), /Ben's counselors/);
   assert.match(child, /never your finances or your household/);
 });
 

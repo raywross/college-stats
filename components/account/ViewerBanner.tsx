@@ -35,9 +35,7 @@ export function ViewerBanner({ relation, studentName, canEdit, className }: { re
       <Icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
       <p className="min-w-0">
         <span className="font-semibold">
-          {/* The counselor's glossary entry (`counselor-access`) lands with the portal's glossary unit; until then the
-              word is plain. */}
-          Viewing as a {relation === "guardian" ? <Term term="guardian">guardian</Term> : "counselor"}
+          Viewing as a {relation === "guardian" ? <Term term="guardian">guardian</Term> : <Term term="counselor-access">counselor</Term>}
         </span>
         <span className="text-muted-foreground"> · {viewerBannerLine(studentName, canEdit)}</span>
       </p>

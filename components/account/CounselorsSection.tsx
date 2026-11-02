@@ -1,4 +1,5 @@
 import { AccountSection } from "@/components/account/AccountSection";
+import { Term } from "@/components/ui/info-tip";
 import { shortDate } from "@/lib/household-rules";
 import { namesLine } from "@/lib/join-rules";
 import type { CounselorGrantView } from "@/lib/org-rules";
@@ -17,7 +18,17 @@ export function CounselorsSection({ grants, first = null }: { grants: CounselorG
   return (
     <AccountSection
       id="counselors"
-      title={forChild ? `${first}'s counselors` : "Your counselors"}
+      title={
+        forChild ? (
+          <>
+            {first}&apos;s <Term term="counselor-access">counselors</Term>
+          </>
+        ) : (
+          <>
+            Your <Term term="counselor-access">counselors</Term>
+          </>
+        )
+      }
       description={
         forChild
           ? `They see ${first}'s record, list, advisor, and essays, never your finances or your household.`

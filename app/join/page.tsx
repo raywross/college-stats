@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { KeyRound } from "lucide-react";
+import { Term } from "@/components/ui/info-tip";
 import { typedJoinPath } from "@/lib/join-rules";
 
 export const metadata: Metadata = { title: "Join a counselor", robots: { index: false } };
@@ -25,7 +26,9 @@ export default async function JoinCodePage({ searchParams }: { searchParams: Pro
         <KeyRound className="size-7" />
       </span>
       <h1 className="mt-6 font-display text-3xl font-extrabold tracking-tight">Join your counselor</h1>
-      <p className="mt-3 text-muted-foreground">Type the code your counselor gave you, like QUAD-RIVERA. Next you see who it is before anything is shared.</p>
+      <p className="mt-3 text-muted-foreground">
+        Type the <Term term="join-code">code</Term> your counselor gave you, like QUAD-RIVERA. Next you see who it is before anything is shared.
+      </p>
       <form action="/join" method="get" className="mt-6 space-y-3">
         <label htmlFor="join-code" className="block text-sm font-semibold">
           Code

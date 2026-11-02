@@ -1,5 +1,7 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { GraduationCap } from "lucide-react";
+import { Term } from "@/components/ui/info-tip";
 import type { JoinAsker, JoinState } from "@/lib/join-rules";
 import { JoinForm } from "./JoinForm";
 
@@ -10,11 +12,20 @@ const primaryLink =
 /**
  * The one-paragraph truth (specs/product/counselor-portal.md "How a student joins"): what the organization will see,
  * what it never sees, the log, and ending it. `whose` is "you" for the student and "student" for a parent choosing.
+ * The word "access" carries the glossary's `counselor-access` entry (specs/glossary-and-tooltips.md).
  */
-export function truthLine(orgName: string, whose: "you" | "student"): string {
-  return whose === "you"
-    ? `${orgName} will see your record, your college list and advisor, and your essays. They never see your parents' finances. You can see each time they look, and end it any time from your account.`
-    : `${orgName} will see your student's record, college list and advisor, and essays. They never see your finances or your household. You and your student can see each time they look, and end it any time.`;
+export function truthLine(orgName: string, whose: "you" | "student"): ReactNode {
+  return whose === "you" ? (
+    <>
+      {orgName} will have <Term term="counselor-access">access</Term> to your record, your college list and advisor, and your essays. They never see your parents&apos; finances. You
+      can see each time they look, and end it any time from your account.
+    </>
+  ) : (
+    <>
+      {orgName} will have <Term term="counselor-access">access</Term> to your student&apos;s record, college list and advisor, and essays. They never see your finances or your
+      household. You and your student can see each time they look, and end it any time.
+    </>
+  );
 }
 
 /** What a counselor-side invitation means. */

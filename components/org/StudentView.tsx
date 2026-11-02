@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Circle } from "lucide-react";
 import { ViewerBanner } from "@/components/account/ViewerBanner";
 import { HouseholdActionButton } from "@/components/account/HouseholdActionButton";
 import { CustomAskForm, NoteForm } from "@/components/org/StudentForms";
+import { Term } from "@/components/ui/info-tip";
 import { askStudent, deleteOrgNote } from "@/app/org/actions";
 import { ORG_ASKS_PER_WEEK, type OrgAsk, type OrgNote } from "@/lib/org-rules";
 import {
@@ -189,7 +190,7 @@ export function StudentView({
 
         <section className={panel} aria-labelledby="asks-heading">
           <h2 id="asks-heading" className="font-display text-lg font-bold">
-            Asks
+            <Term term="ask">Asks</Term>
           </h2>
           {!atLimit && <CustomAskForm orgId={orgId} studentId={row.studentId} firstName={first} />}
           {asks.length === 0 ? (

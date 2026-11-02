@@ -100,6 +100,7 @@ const views = {
   student: await load("components/org/StudentView.tsx"),
   notice: await load("components/org/AskNoticeList.tsx"),
   members: await load("components/org/MembersView.tsx"),
+  banner: await load("components/account/ViewerBanner.tsx"),
 };
 
 /* ------------------------------------------------------------------ */
@@ -113,6 +114,13 @@ test("the start form: name, the two kinds, website, and the free line", () => {
   assert.match(t, /I’m an independent consultant/);
   assert.match(t, /I work at a school/);
   assert.match(t, /Website \(optional\)/);
+});
+
+test("the start form and the counselor banner carry the glossary's organization and access terms", () => {
+  const start = render(views.start.StartOrgForm, {});
+  assert.match(start, /<span data-term="counselor-organization">organization<\/span>/);
+  const banner = render(views.banner.ViewerBanner, { relation: "counselor", studentName: "Jordan", canEdit: true });
+  assert.match(banner, /<span data-term="counselor-access">counselor<\/span>/);
 });
 
 test("an empty caseload: the join code to share and Add students", () => {
@@ -159,7 +167,8 @@ test("the student page: the counselor's banner, the summary, signals, and the fo
   assert.match(t, /Viewing as a counselor · You can edit Jordan’s information\. Jordan can see when you view it\./);
   assert.match(t, /Building the list · Add 1 more · next: Ohio State, Oct 20 \(EA\)/);
   assert.match(t, /Ohio State's "Send test scores" was due Oct 20/);
-  for (const h of ["Record", "Advisor", "Notes", "Asks"]) assert.match(html, new RegExp(`<h2[^>]*>${h}</h2>`));
+  for (const h of ["Record", "Advisor", "Notes"]) assert.match(html, new RegExp(`<h2[^>]*>${h}</h2>`));
+  assert.match(html, /<h2[^>]*><span data-term="ask">Asks<\/span><\/h2>/, "the Asks panel title carries the glossary term");
   assert.match(t, /Ask Jordan/);
   assert.match(t, /Asked Tuesday/, "an open ask on Grades shows when it was asked, not a second button");
   assert.match(html, /href="\/household\/6f1e2d3c-0000-4000-8000-000000000001\/record"/);

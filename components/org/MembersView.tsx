@@ -1,6 +1,7 @@
 import { HouseholdActionButton } from "@/components/account/HouseholdActionButton";
 import { JoinCode } from "@/components/org/JoinCode";
 import { DeleteOrgForm, InviteCounselorForm, OrgSettingsForm } from "@/components/org/MembersForms";
+import { Term } from "@/components/ui/info-tip";
 import { leaveOrganization, regenerateJoinCode, removeMember, setMemberRole } from "@/app/org/actions";
 import { ORG_KIND_LABEL, type Organization } from "@/lib/org-rules";
 
@@ -48,7 +49,7 @@ export function MembersView({ org, joinLink, highSchoolName }: { org: Organizati
       <section className={card} aria-labelledby="code-heading">
         <div>
           <h2 id="code-heading" className="font-display text-lg font-bold">
-            Join code
+            <Term term="join-code">Join code</Term>
           </h2>
           <p className="text-sm text-muted-foreground">Students open the link or type the code at /join to share their account with you.</p>
         </div>

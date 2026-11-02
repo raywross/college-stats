@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { Building2 } from "lucide-react";
 import { HighSchoolPicker } from "@/components/high-schools/HighSchoolPicker";
+import { Term } from "@/components/ui/info-tip";
 import { createOrganization, type OrgActionState } from "@/app/org/actions";
 import { ORG_NAME_MAX } from "@/lib/org-rules";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,9 @@ export function StartOrgForm({ defaultName = "" }: { defaultName?: string }) {
       <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-pop text-pop-foreground">
         <Building2 className="size-6" aria-hidden />
       </span>
-      <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Start your organization</h1>
+      <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">
+        Start your <Term term="counselor-organization">organization</Term>
+      </h1>
       <p className="mt-1.5 max-w-prose text-sm text-muted-foreground sm:text-base">{ORG_FREE_LINE}</p>
       <form action={run} className="mt-6 max-w-xl space-y-5">
         <div className="space-y-1.5">

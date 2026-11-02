@@ -254,7 +254,11 @@ test("the household hub for a counselor: no family frame, the caseload strip on 
  */
 const ALLOWED: { file: string; code: string; why: string }[] = [
   { file: "lib/viewer-relation.ts", code: 'return relation === "guardian";', why: "isParent itself" },
-  { file: "components/account/ViewerBanner.tsx", code: 'Viewing as a {relation === "guardian" ? <Term term="guardian">guardian</Term> : "counselor"}', why: "the banner's role word" },
+  {
+    file: "components/account/ViewerBanner.tsx",
+    code: 'Viewing as a {relation === "guardian" ? <Term term="guardian">guardian</Term> : <Term term="counselor-access">counselor</Term>}',
+    why: "the banner's role word",
+  },
   {
     file: "lib/households.ts",
     code: 'return a.relation === "guardian" && at !== undefined ? [{ access: a, joined: at }] : [];',

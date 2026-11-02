@@ -798,8 +798,9 @@ export function residencyState(p: Pick<StudentProfileData, "basics" | "homeState
   return { state: null, source: null };
 }
 
-export function profileForViewer(data: StudentProfileData, relation: "self" | "guardian"): StudentProfileData {
-  if (relation !== "guardian") return data;
+/** The story's text goes to the student alone: a guardian or a counselor gets it redacted. */
+export function profileForViewer(data: StudentProfileData, relation: "self" | "guardian" | "counselor"): StudentProfileData {
+  if (relation === "self") return data;
   return { ...data, story: redactStoryForGuardian(data.story) };
 }
 

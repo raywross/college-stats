@@ -29,6 +29,7 @@ function isMissingTable(error: { code?: string; message?: string }): boolean {
 
 export interface ProfileAccess {
   student: StudentRecord;
+  /** "guardian" for anyone but the student (a counselor too, until the viewer-relation unit widens this). */
   relation: "self" | "guardian";
   canEdit: boolean;
   data: StudentProfileData;
@@ -62,9 +63,10 @@ export async function profilesICanSee(): Promise<ProfileAccess[]> {
   const homeState = stateOfHome(home);
   return access.map((a: StudentAccess) => {
     const raw = rows.get(a.student.id);
-    // Your story (next-steps/your-story.md): a guardian never receives the text, only that it's written.
+    // Your story (next-steps/your-story.md): a guardian never receives the text, only that it's written; nor does a
+    // counselor (anyone but the student reads it redacted).
     const data = withHomeState(profileForViewer(sanitizeProfile(raw), a.relation), homeState);
-    return { student: a.student, relation: a.relation, canEdit: a.canEdit, data, saved: raw !== undefined };
+    return { student: a.student, relation: a.relation === "self" ? "self" : "guardian", canEdit: a.canEdit, data, saved: raw !== undefined };
   });
 }
 

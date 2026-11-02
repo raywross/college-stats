@@ -1,6 +1,6 @@
 # Scattergrams: Outcomes From Your High School
 
-> Status: **folded** into [counselor-portal.md](counselor-portal.md#scattergrams) 2026-10-26 (roadmap review of
+> Status: **folded** into [counselor-portal.md](counselor-portal.md#phases) 2026-10-26 (roadmap review of
 > 2026-10-25); not a roadmap item of its own any more. Planned 2026-10-02 after [high-school-data.md](high-school-data.md)
 > (built), [accounts.md](accounts.md) (built), and saved lists (built, now the planner's list). What changed:
 >

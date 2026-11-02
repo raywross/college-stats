@@ -53,7 +53,7 @@ the roadmap, with the award-letter analyzer as the last stage.
 | Spec | Adds | Complexity |
 |---|---|---|
 | [high-school-data.md](high-school-data.md) | A high school dataset (NCES, EDFacts, Civil Rights Data Collection, state report cards, school profiles) and high school pages | Extra large |
-| [scattergrams.md](scattergrams.md) | *Folded 2026-10-26 into the [counselor portal](counselor-portal.md#scattergrams)*: counselor-uploaded outcomes from one high school, scrubbed and thresholded, drawn beside Quad's estimate; the self-reported half is built as [calibration](../chances/calibration.md) | Large |
+| [scattergrams.md](scattergrams.md) | *Folded 2026-10-26 into the [counselor portal](counselor-portal.md#phases)*: counselor-uploaded outcomes from one high school, scrubbed and thresholded, drawn beside Quad's estimate; the self-reported half is built as [calibration](../chances/calibration.md) | Large |
 
 ### Platform, measurement, and business
 | Spec | Adds | Complexity |

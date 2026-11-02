@@ -194,10 +194,21 @@ export interface AnalyticsEvents {
   data_snapshot_swap: { from: number | string; to: number; ms: number };
   /** The data platform's publisher (scripts/publish-snapshot.mts) published a snapshot: its id, how many change sets it carried, and how long the run took. */
   data_publish: { snapshot: number; change_sets: number; ms: number };
+  /* The counselor portal (specs/product/counselor-portal.md "The channel"): counts and kinds only, never who. */
+  /** An organization started, by kind. */
+  org_created: { kind: "iec" | "school" };
+  /** Students invited: by email (server, per invitation), or the join code's link copied (client). */
+  org_student_invited: { method: "email" | "code_shown" };
+  /** A student joined a caseload, by door, and whether the account was new. */
+  org_student_joined: { source: "invite" | "code"; new_account: boolean };
+  /** An ask sent to a student, by kind. */
+  org_ask_sent: { kind: "record_section" | "list" | "custom" };
+  /** The caseload opened, with its size as a bucket. */
+  org_caseload_viewed: { size: "1-5" | "6-25" | "26-100" | "100+" };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 /** Events sent from Server Actions and Route Handlers with `trackServer()` (lib/analytics-server.ts). */
-export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done" | "essay_suggestion_sent" | "essay_suggestion_updated" | "essay_suggestion_withdrawn" | "essay_suggestion_decided" | "essay_fix_accepted" | "data_snapshot_swap" | "data_publish";
+export type ServerAnalyticsEvent = "signup_started" | "signup_completed" | "plan_text_consented" | "plan_text_opted_out" | "brief_sent" | "visit_alert_sent" | "interest_confirm_sent" | "plan_interest_confirmed" | "plan_interest_expired" | "api_request" | "essay_review_requested" | "essay_review_notes" | "essay_review_dropped" | "essays_move_done" | "essay_suggestion_sent" | "essay_suggestion_updated" | "essay_suggestion_withdrawn" | "essay_suggestion_decided" | "essay_fix_accepted" | "data_snapshot_swap" | "data_publish" | "org_created" | "org_student_invited" | "org_student_joined" | "org_ask_sent";
 
 type EventSpec<K extends AnalyticsEvent> = {
   properties: readonly (keyof AnalyticsEvents[K] & string)[];
@@ -339,6 +350,11 @@ export const EVENTS = {
   essays_move_done: { properties: ["by"], side: "both", why: "Essays: the essays move finished, ticked by the store when every essay is ready or by hand" },
   data_snapshot_swap: { properties: ["from", "to", "ms"], side: "server", why: "Data platform: how often instances pick up a new snapshot, and how long the swap takes" },
   data_publish: { properties: ["snapshot", "change_sets", "ms"], side: "server", why: "Data platform: each published snapshot, how many change sets it carried, and how long the publish took" },
+  org_created: { properties: ["kind"], side: "server", why: "Counselor portal: organizations started, by kind" },
+  org_student_invited: { properties: ["method"], side: "both", why: "Counselor portal: students invited by email or by the join code" },
+  org_student_joined: { properties: ["source", "new_account"], side: "server", why: "Counselor portal: students joining a caseload, by door" },
+  org_ask_sent: { properties: ["kind"], side: "server", why: "Counselor portal: asks sent to students, by kind" },
+  org_caseload_viewed: { properties: ["size"], side: "client", why: "Counselor portal: caseloads opened, by size" },
 } as const satisfies { readonly [K in AnalyticsEvent]: EventSpec<K> };
 
 type AssertTrue<T extends true> = T;

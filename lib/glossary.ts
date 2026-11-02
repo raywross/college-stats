@@ -1681,7 +1681,39 @@ const entries = {
     short: "The list, on your account page, of when a guardian looked at your information (\"Mom viewed your list on Oct 2\").",
     long: "Guardians use their own sign-in, never yours, so every look is recorded under their name. It's yours to see; guardians don't see each other's.",
     category: "Your account",
-    related: ["guardian", "household"],
+    related: ["guardian", "household", "counselor-access"],
+  },
+  // The counselor portal (specs/product/counselor-portal.md): a counselor's own organization, how a student joins
+  // it, what access to a student's account it gives, and the office's way of collecting what's missing.
+  "counselor-organization": {
+    term: "Counselor organization",
+    short: "A counselor's or school's practice on Quad: an independent consultant's caseload, or a school counseling office's. It's free, and it never sees a family's finances.",
+    long: "An organization has one or more members (an owner and, at a school, other counselors), who all see the same caseload: every student who has granted that organization access. A person is in at most one organization. Starting one costs nothing and never will: Quad is free for counselors and consultants, because the families they bring on are the ones who may eventually pay for the advisor.",
+    why: "It's how a counselor or consultant runs a caseload of students on Quad without any of them paying, so the office can recommend Quad freely.",
+    category: "Your account",
+    related: ["join-code", "counselor-access"],
+  },
+  "join-code": {
+    term: "Join code",
+    short: "A short code (shown as \"QUAD-RIVERA\") a counselor can put on a slide or a handout so a whole class can join their caseload at once, instead of waiting for an emailed invitation.",
+    long: "Typing the code, or opening its link, grants that organization access to your own record (or, for a guardian, a student you can see) the same way accepting an invitation does. The counselor can make a new code at any time, which stops the old one working.",
+    category: "Your account",
+    related: ["counselor-organization", "counselor-access"],
+  },
+  "counselor-access": {
+    term: "Counselor access",
+    short: "What a counselor's organization can see once you (or your guardian) grant it: the same record, list, advisor, and essays a guardian sees. Never your guardian's finances.",
+    long: "Granting access works like adding a guardian: the student or a guardian who can see them grants it, it can be edit or view-only, and it shows in your account with the access log, naming the counselor who looked. Ending it removes everything the office could see from then on; the office's own notes about you stay with them, since they wrote those, not you.",
+    why: "A counselor needs enough access to help with a caseload, without anything about a family's money or another student ever reaching them.",
+    category: "Your account",
+    related: ["counselor-organization", "guardian", "access-log", "ask"],
+  },
+  ask: {
+    term: "Ask",
+    short: "A counselor's one-line request for something missing from your record or list (\"Ms. Rivera asked you to add your SAT score\"), shown as a notice in your advisor.",
+    long: "An ask never carries a number or a grade — just what's missing. It closes itself once you add the thing (a record section) or you mark it done (a custom ask); a counselor can ask for a given thing only once until it's done, and at most three times a week per student.",
+    category: "Your account",
+    related: ["counselor-access", "counselor-organization"],
   },
   // Student profile (specs/product/student-profile.md).
   superscore: {

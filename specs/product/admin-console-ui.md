@@ -72,6 +72,22 @@ People and Households are separate rail sections (owner, 2026-10-13).
   household on Oct 12", from `admin_household_notice`. Never the admin's name; a member name that is an email address
   reads "someone".
 
+## Organizations (built 2026-11-02, counselor portal U5)
+`/admin/organizations`, in the rail after Households: every counselor organization, newest first, 50 a page
+(`listOrganizations`, no search yet, the count stays small while the portal is new): name, kind, the high school when
+one is set, members by name, counts of live students and invitations waiting, created. `/admin/organizations/[id]`
+(`adminOrganization`): the join code, website, asks sent; members with roles, each linking to their person page;
+students with a live grant by name, class year, Can edit / View only, when granted, linking to the student page when
+they have an account; invited students (never a token: the console holds none, the same rule as a household's
+invitations); a count of asks sent. Reads go through `adminSupabase()` and the "Admins read" policies U1 wrote
+(`20261102120000_organizations.sql`), reading `organizations`, `org_members`, `org_students`, `org_invitations`, and
+`org_requests` directly rather than through `my_organization()` or `org_roster()`, which check the caller's own
+membership and would answer nothing for an admin. `/admin/people/[user]` adds one line, "Counselor organization",
+naming the person's organization and role (owner or counselor), linking to the organization's page.
+`/admin/students/[id]` adds one line, "Counselor access", naming each organization with a live grant and when it was
+granted, linking to the organization's page. Neither page shows anything about the organization's notes or asks: those
+belong to the organization's own page.
+
 ## Colleges and high schools (built 2026-10-13, `feature/admin-hidden`)
 What each panel holds is in [admin.md](admin.md#as-built-colleges-high-schools-hidden-values-the-standing-panel-2026-10-13);
 the screens:

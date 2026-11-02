@@ -417,5 +417,5 @@ test("wiring: the splash's Counselors links to /org with the free line; routes, 
   assert.match(read("app", "join", "page.tsx"), /robots: \{ index: false \}/);
   assert.match(read("app", "account", "page.tsx"), /<CounselorsSection grants=\{grants\} \/>/);
   assert.match(read("app", "household", "[person]", "page.tsx"), /<CounselorsSection grants=\{childGrants\} first=/);
-  assert.match(read("specs", "product", "telemetry.md"), /\| `org_student_joined` \(server\) \| `source`: invite \/ code; `new_account`: bool/);
+  assert.match(read("specs", "product", "telemetry.md"), /`org_student_joined` \(server, `source`: invite \/ code, `new_account`: bool\)/);
 });

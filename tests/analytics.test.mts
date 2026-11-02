@@ -53,7 +53,7 @@ test("server events are exactly the ones trackServer accepts", () => {
     .filter(([, spec]) => spec.side !== "client")
     .map(([name]) => name)
     .sort();
-  const expected: ServerAnalyticsEvent[] = ["api_request", "brief_sent", "data_publish", "data_snapshot_swap", "essay_fix_accepted", "essay_review_dropped", "essay_review_notes", "essay_review_requested", "essay_suggestion_decided", "essay_suggestion_sent", "essay_suggestion_updated", "essay_suggestion_withdrawn", "essays_move_done", "interest_confirm_sent", "plan_interest_confirmed", "plan_interest_expired", "plan_text_consented", "plan_text_opted_out", "signup_completed", "signup_started", "visit_alert_sent"];
+  const expected: ServerAnalyticsEvent[] = ["api_request", "brief_sent", "data_publish", "data_snapshot_swap", "essay_fix_accepted", "essay_review_dropped", "essay_review_notes", "essay_review_requested", "essay_suggestion_decided", "essay_suggestion_sent", "essay_suggestion_updated", "essay_suggestion_withdrawn", "essays_move_done", "interest_confirm_sent", "org_ask_sent", "org_student_joined", "plan_interest_confirmed", "plan_interest_expired", "plan_text_consented", "plan_text_opted_out", "signup_completed", "signup_started", "visit_alert_sent"];
   assert.deepEqual(server, expected);
 });
 

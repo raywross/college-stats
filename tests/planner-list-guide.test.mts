@@ -610,7 +610,7 @@ test("listGuideFor: a junior-spring list of three Reaches opens the Likely secti
     today: "2027-03-01",
     list: { id: "list-1" },
     student: { id: "s1", display_name: "Sam", grad_year: 2028, user_id: "u1" },
-    viewer: { userId: "u1", firstName: "Sam", canEdit: true, relation: "self", isGuardian: false },
+    viewer: { userId: "u1", firstName: "Sam", canEdit: true, relation: "self", isGuardian: false, isCounselor: false },
   } as unknown as Parameters<typeof server.listGuideFor>[0];
   const levels = ids.map((id) => estimates[id]?.group);
   assert.ok(levels.every((l) => l === "reach" || l === "high_reach"), `three Reaches for this record: ${levels.join(", ")}`);
@@ -628,7 +628,7 @@ test("listGuideFor: a junior-spring list of three Reaches opens the Likely secti
     assert.ok(target && target.cards.length === 0, "a folded section waits to be opened");
   }
   // A guardian's link is the student's (owner, 2026-10-16: a parent sees the student's view, scores included).
-  const guardian = await server.listGuideFor({ ...ctx, viewer: { ...ctx.viewer, relation: "guardian", isGuardian: true } }, {} as never, { level: "target" });
+  const guardian = await server.listGuideFor({ ...ctx, viewer: { ...ctx.viewer, relation: "guardian", isGuardian: true, isCounselor: false } }, {} as never, { level: "target" });
   assert.equal(guardian.exploreHref, "/explore?mySAT=1330");
   // A freshman: no shape, no levels, the chips from the profile.
   const fresh = await server.listGuideFor({ ...ctx, season: "freshman" }, {} as never, { level: null });

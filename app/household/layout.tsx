@@ -5,7 +5,7 @@ import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { HouseholdSettings } from "@/components/account/HouseholdSettings";
 import { PeopleStrip } from "@/components/account/PeopleStrip";
 import { Term } from "@/components/ui/info-tip";
-import { AccountsSetupError, authConfigured, currentStudent, getAccount, getUser } from "@/lib/auth";
+import { AccountsSetupError, authConfigured, currentStudent, getAccount, getUser, studentsICanSee } from "@/lib/auth";
 import { myHouseholds } from "@/lib/households";
 import { myHome } from "@/lib/home-store";
 import { householdNoticeLines } from "@/lib/admin/console";
@@ -29,6 +29,10 @@ import type { Account, MemberRole } from "@/lib/accounts";
  * back link. Someone with no household yet sees a strip of just themselves and the "+" (the solo view); /household
  * itself redirects to a person (app/household/page.tsx). Signed out, it renders only `children`, whose own
  * requireUser() sends them to sign in with the exact page to come back to.
+ *
+ * A counselor with no household of their own (specs/product/counselor-portal.md "A student") opens a caseload
+ * student's pages here: they get the page container and nothing of a family's (no name, seats, strip, "+ Add", or
+ * settings); app/household/[person]/layout.tsx puts the student's own strip with "Caseload" above the page.
  */
 export default async function HouseholdLayout({ children }: { children: React.ReactNode }) {
   await connection();
@@ -41,6 +45,7 @@ export default async function HouseholdLayout({ children }: { children: React.Re
   let ownStudentId: string | null;
   let captions: Record<string, string> = {};
   let summaries: Record<string, string> = {};
+  let counselorOnly = false;
   try {
     account = await getAccount();
     if (!account) return children;
@@ -49,15 +54,17 @@ export default async function HouseholdLayout({ children }: { children: React.Re
     households = hs;
     home = h;
     ownStudentId = own?.id ?? null;
+    counselorOnly = hs.length === 0 && !own && (await studentsICanSee()).some((a) => a.relation === "counselor");
     // The plan's stage under each student in season (one query for all of them; empty on any error).
     const students = hs.flatMap((x) => x.members).filter((m) => m.role === "student" && m.student_id && m.member_id !== null);
     const forCaptions = students.map((m) => ({ id: m.student_id!, gradYear: m.grad_year }));
     if (hs.length === 0 && own) forCaptions.push({ id: own.id, gradYear: own.grad_year });
-    [captions, summaries] = await Promise.all([stageCaptions(forCaptions), summaryLines(forCaptions)]);
+    if (!counselorOnly) [captions, summaries] = await Promise.all([stageCaptions(forCaptions), summaryLines(forCaptions)]);
   } catch (err) {
     if (err instanceof AccountsSetupError) return <AuthUnavailable title="Accounts aren't set up yet" />;
     throw err;
   }
+  if (counselorOnly) return <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12 print:px-0 print:py-0">{children}</div>;
 
   // Address suggestions as you type exist only once the site has its Google key (home-and-distance.md "Autocomplete").
   const suggestions = Boolean(process.env.GOOGLE_MAPS_API_KEY);

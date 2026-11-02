@@ -14,16 +14,18 @@ import { planHref } from "@/lib/planner/plan-tabs";
 import type { Season } from "@/lib/planner/seasons";
 import { dismiss, tick } from "@/lib/planner/store";
 import type { TaskKind } from "@/lib/planner/types";
+import type { ViewerRole } from "@/lib/viewer-relation";
 
 export interface GuideFooterProps {
   /** The open move, when one led here and it's still open; null otherwise. */
   move: { id: string; kind: TaskKind; season: Season } | null;
   canEdit: boolean;
-  isGuardian: boolean;
+  /** Who is ticking it (lib/viewer-relation.ts planViewerRole), for `plan_move_done`'s `by`. */
+  by: ViewerRole;
   person: string | null;
 }
 
-export function GuideFooter({ move, canEdit, isGuardian, person }: GuideFooterProps) {
+export function GuideFooter({ move, canEdit, by, person }: GuideFooterProps) {
   const router = useRouter();
   const [busy, setBusy] = useState<"done" | "skip" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export function GuideFooter({ move, canEdit, isGuardian, person }: GuideFooterPr
         setError(result.message);
         return;
       }
-      if (which === "done") track("plan_move_done", { kind: move.kind, season: move.season, by: isGuardian ? "guardian" : "student" });
+      if (which === "done") track("plan_move_done", { kind: move.kind, season: move.season, by });
       else track("plan_move_skipped", { kind: move.kind, season: move.season });
       router.push(back);
     });

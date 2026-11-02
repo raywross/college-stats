@@ -14,7 +14,8 @@ import { getData, getPlatformPrompts } from "@/lib/data";
 import { scheduleStudentReadLog } from "@/lib/households";
 import { getListWithItems, myLists, namesFor } from "@/lib/lists";
 import { createServerSupabase } from "@/lib/supabase-server";
-import { planViewer, type PlanChild } from "@/lib/planner/load";
+import { counselorAccessFor, planViewer, type PlanChild } from "@/lib/planner/load";
+import type { ViewerRole } from "@/lib/viewer-relation";
 import { resolveSelectedChild } from "@/lib/planner/plan-frame";
 import { isUuid } from "@/lib/planner/plan-writes";
 import type { School } from "@/lib/types";
@@ -35,20 +36,31 @@ export type EssaysViewer =
       student: { id: string; name: string | null };
       /** Only the student writes (owner, 2026-10-28: "student drafts only"). */
       canWrite: boolean;
-      role: "student" | "guardian";
+      /** The student, a parent, or a counselor (lib/viewer-relation.ts): a parent and a counselor read and comment. */
+      role: ViewerRole;
+      /** The viewer's edit access to the student, for the counselor's banner (a parent's pages carry none here). */
+      canEdit: boolean;
       /** The `?for=` a link keeps (null for a student's own drafts). */
       person: string | null;
       children: PlanChild[];
     };
 
-/** Who the workspace is for, resolved the way /advisor resolves it. */
+/**
+ * Who the workspace is for, resolved the way /advisor resolves it: a counselor's `?for=` first (counselorAccessFor:
+ * a student on their caseload, who is never one of a household's children), then the household's.
+ */
 export async function essaysViewer(forParam: string | undefined): Promise<EssaysViewer> {
   const user = await getUser();
   if (!user) return { kind: "signed-out" };
+  const counselor = await counselorAccessFor(forParam);
+  if (counselor) {
+    const student = { id: counselor.student.id, name: counselor.student.display_name };
+    return { kind: "ready", userId: user.id, student, canWrite: false, role: "counselor", canEdit: counselor.canEdit, person: counselor.student.id, children: [] };
+  }
   const viewer = await planViewer();
   if (viewer.kind === "none") return { kind: "none" };
   if (viewer.kind === "self") {
-    return { kind: "ready", userId: user.id, student: { id: viewer.student.id, name: viewer.student.display_name }, canWrite: true, role: "student", person: null, children: [] };
+    return { kind: "ready", userId: user.id, student: { id: viewer.student.id, name: viewer.student.display_name }, canWrite: true, role: "student", canEdit: true, person: null, children: [] };
   }
   const lastViewed = (await cookies()).get(PLAN_CHILD_COOKIE)?.value ?? null;
   const selected = resolveSelectedChild({
@@ -58,7 +70,7 @@ export async function essaysViewer(forParam: string | undefined): Promise<Essays
   });
   const child = viewer.children.find((c) => c.studentId === selected);
   if (!child) return { kind: "none" };
-  return { kind: "ready", userId: user.id, student: { id: child.studentId, name: child.name }, canWrite: false, role: "guardian", person: child.studentId, children: viewer.children };
+  return { kind: "ready", userId: user.id, student: { id: child.studentId, name: child.name }, canWrite: false, role: "guardian", canEdit: child.canEdit, person: child.studentId, children: viewer.children };
 }
 
 /** The platforms' prompts (data/reference/platform-prompts.json, traced in next.config.ts); null when the file is missing. */
@@ -118,7 +130,7 @@ export interface SuggestionCounts {
  * (`userId` given) the state of their own newest suggestion on each, withdrawn ones skipped. No table yet (the
  * migration not applied) or a failed read: no counts, never a failed page.
  */
-export async function suggestionCounts(ids: readonly string[], viewer: { role: "student" | "guardian"; userId?: string | null }): Promise<SuggestionCounts> {
+export async function suggestionCounts(ids: readonly string[], viewer: { role: ViewerRole; userId?: string | null }): Promise<SuggestionCounts> {
   const out: SuggestionCounts = { openSuggestions: {}, mySuggestions: {} };
   if (ids.length === 0) return out;
   const supabase = await createServerSupabase();
@@ -129,7 +141,7 @@ export async function suggestionCounts(ids: readonly string[], viewer: { role: "
   }
   for (const s of (data ?? []) as { essay_id: string; author_id: string | null; status: "open" | "decided"; created: string }[]) {
     if (s.status === "open") out.openSuggestions[s.essay_id] = (out.openSuggestions[s.essay_id] ?? 0) + 1;
-    if (viewer.role === "guardian" && viewer.userId && s.author_id === viewer.userId && !out.mySuggestions[s.essay_id]) out.mySuggestions[s.essay_id] = s.status;
+    if (viewer.role !== "student" && viewer.userId && s.author_id === viewer.userId && !out.mySuggestions[s.essay_id]) out.mySuggestions[s.essay_id] = s.status;
   }
   return out;
 }
@@ -139,7 +151,7 @@ export type EssaysRead =
   | { kind: "setup-missing" };
 
 /** Every draft of the student's (no bodies), its links, how many comments and suggestions each has open, and a guardian's own. */
-export async function readEssays(studentId: string, viewer: { role: "student" | "guardian"; userId?: string | null }): Promise<EssaysRead> {
+export async function readEssays(studentId: string, viewer: { role: ViewerRole; userId?: string | null }): Promise<EssaysRead> {
   const supabase = await createServerSupabase();
   const essays = await supabase.from("essays").select(ESSAY_LIST_COLUMNS).eq("student_id", studentId).order("updated", { ascending: false });
   if (essays.error) {
@@ -148,7 +160,8 @@ export async function readEssays(studentId: string, viewer: { role: "student" | 
   }
   const rows = (essays.data ?? []) as EssayRow[];
   const ids = rows.map((e) => e.id);
-  if (viewer.role === "guardian") void scheduleStudentReadLog(studentId, "essays");
+  // A parent's or a counselor's read goes in the student's access log.
+  if (viewer.role !== "student") void scheduleStudentReadLog(studentId, "essays");
   if (ids.length === 0) return { kind: "ready", essays: [], links: [], openComments: {}, openSuggestions: {}, mySuggestions: {} };
   const [links, comments, counts] = await Promise.all([
     supabase.from("essay_links").select("essay_id, prompt_ref, created").in("essay_id", ids),
@@ -176,7 +189,7 @@ export type EssayRead =
   | { kind: "setup-missing" };
 
 /** One draft, if the viewer may read it, with its versions (newest first), links, comments, base, and variant count. */
-export async function readEssay(id: string, viewer: { role: "student" | "guardian" }): Promise<EssayRead> {
+export async function readEssay(id: string, viewer: { role: ViewerRole }): Promise<EssayRead> {
   if (!isUuid(id)) return { kind: "not-found" };
   const supabase = await createServerSupabase();
   const essay = await supabase.from("essays").select(ESSAY_COLUMNS).eq("id", id).maybeSingle();
@@ -186,7 +199,7 @@ export async function readEssay(id: string, viewer: { role: "student" | "guardia
   }
   if (!essay.data) return { kind: "not-found" };
   const row = essay.data as EssayRow & { body: string };
-  if (viewer.role === "guardian") void scheduleStudentReadLog(row.student_id, "essays");
+  if (viewer.role !== "student") void scheduleStudentReadLog(row.student_id, "essays");
   const [versions, links, comments, suggestions, base, variants] = await Promise.all([
     supabase.from("essay_versions").select("id, essay_id, count, source, label, created").eq("essay_id", id).order("created", { ascending: false }).limit(100),
     supabase.from("essay_links").select("essay_id, prompt_ref, created").eq("essay_id", id),

@@ -12,6 +12,7 @@ import { planHref, TAB_LABELS, type PlanTab } from "@/lib/planner/plan-tabs";
 import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { cn } from "@/lib/utils";
+import type { ViewerRole } from "@/lib/viewer-relation";
 
 const ICONS: Record<PlanTab, typeof ListChecks> = { next: Footprints, colleges: ListChecks, essays: PenLine, calendar: CalendarDays, offers: FileCheck2 };
 
@@ -66,7 +67,7 @@ export function PlanTabs({
   view: PlanView;
   tab: PlanTab;
   calendarChild: CalendarChild;
-  viewer: "student" | "guardian";
+  viewer: ViewerRole;
   /** The Essays tab's read (lib/essays/tab-data.ts), present only when that tab is open. */
   essays?: EssaysTabData | null;
   /** The `?for=` links keep (null for a student's own plan). */

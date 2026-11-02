@@ -26,7 +26,8 @@ export interface CalendarChild {
 
 export interface CalendarTabProps {
   children: CalendarChild[];
-  viewer: "student" | "guardian";
+  /** Who is looking: the money lane says "your part" and the feed is the family's only for a parent. */
+  viewer: import("@/lib/viewer-relation").ViewerRole;
   everyone: boolean;
 }
 

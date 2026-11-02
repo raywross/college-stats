@@ -8,6 +8,7 @@ import type { PlanLoad } from "@/lib/planner/load";
 import { guideHref } from "@/lib/planner/guides";
 import { RECORD_STEPS, recordHref, recordNeeded, recordProgress, recordTitle } from "@/lib/planner/record";
 import type { ProfileAccess } from "@/lib/student-profile-store";
+import { viewerRole } from "@/lib/viewer-relation";
 
 /** A step's rail label, by step (RECORD_STEPS, lib/planner/record.ts). */
 const RAIL_BY_STEP = new Map(RECORD_STEPS.map((s) => [s.step, s.rail]));
@@ -29,7 +30,7 @@ export function RecordOverview({ profile, plan, back = "record" }: { profile: Pr
 
   return (
     <div className="space-y-6">
-      <RecordOverviewOpened viewer={profile.relation === "guardian" ? "guardian" : "student"} />
+      <RecordOverviewOpened viewer={viewerRole(profile.relation)} />
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">

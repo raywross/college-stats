@@ -121,7 +121,10 @@ export interface PlanContext {
   profile: import("../student-profile").StudentProfileData | null;
   schools: Record<string, PlanSchool>;          // by unit_id; the slice of School a stage needs, with citations resolved
   home: import("../home").HomeLocation | null;
-  viewer: { userId: string; firstName: string | null; canEdit: boolean; relation: "self" | "guardian" | "household"; isGuardian: boolean };
+  /** Who is looking (lib/viewer-relation.ts): `isGuardian` is a parent in the household (nudges, Your part, the money
+   *  lane's "your part"); `isCounselor` a counselor the student granted access (specs/product/counselor-portal.md).
+   *  Someone other than the student is `relation !== "self"`: either of them. */
+  viewer: { userId: string; firstName: string | null; canEdit: boolean; relation: "self" | "guardian" | "household" | "counselor"; isGuardian: boolean; isCounselor: boolean };
   today: string;                                // ISO date
   cycle: import("./cycle").Cycle;               // the student's cycle entries (or the current one for a guardian's list)
   grade: import("./cycle").Grade;

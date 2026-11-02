@@ -34,7 +34,8 @@ export function EdDecideCard({ task, ctx, view, onSkip, pending }: MoveCardProps
   const itemSchool = task.item_id ? ctx.schools[ctx.items.find((i) => i.id === task.item_id)?.unit_id ?? ""] : undefined;
   const cited = task.source_field ? ((itemSchool ?? firstSchool())?.cites[task.source_field] as AnyCited | undefined) : undefined;
   const person = ctx.student?.id ?? null;
-  const isStudent = !ctx.viewer.isGuardian && ctx.viewer.canEdit;
+  // The ED decision is the student's alone: never a parent's or a counselor's, whatever their edit access.
+  const isStudent = ctx.viewer.relation === "self" && ctx.viewer.canEdit;
   const first = ctx.student?.display_name?.trim().split(/\s+/)[0] || "Your student";
 
   function firstSchool() {

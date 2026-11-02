@@ -48,7 +48,7 @@ export interface AnalyticsEvents {
   /* The planner (specs/planner/model.md "Telemetry"): that a stage was used and which college, never a title, a
    * date, a phone number, a count, or a note. */
   /** The redesign (specs/planner/redesign/*.md "Telemetry"): which tab, whose view, and whether it's Everyone. */
-  plan_opened: { tab: "next" | "colleges" | "essays" | "calendar" | "offers"; viewer: "student" | "guardian"; everyone: boolean };
+  plan_opened: { tab: "next" | "colleges" | "essays" | "calendar" | "offers"; viewer: "student" | "guardian" | "counselor"; everyone: boolean };
   plan_task_ticked: { kind: string; source: "college" | "cycle" | "stage" | "own" | "season"; assignee: "student" | "guardian" | "either" };
   plan_stage_done: { stage: number };
   plan_nudge_sent: { channel: "email" | "sms" | "app" };
@@ -89,7 +89,7 @@ export interface AnalyticsEvents {
   /* R1b (specs/planner/record/ranking.md "Rules"): rank is the card's 1-based position in Now (null outside the
      ranked set); importance itself is never sent. */
   plan_move_shown: { kind: string; season: Season; rank: number | null };
-  plan_move_done: { kind: string; season: Season; by: "student" | "guardian" };
+  plan_move_done: { kind: string; season: Season; by: "student" | "guardian" | "counselor" };
   plan_move_skipped: { kind: string; season: Season };
   plan_season_explainer_opened: { season: Season };
   plan_ed_pill_shown: { round: "ed" | "ed2" | "ed_alt"; level: StandingLevel; rank: number };
@@ -110,7 +110,7 @@ export interface AnalyticsEvents {
      college on a pill, a teacher's name, a score, a target, or the text of anything typed. "act" is a denied token
      (the ACT), so the act-tracking events carry `action`, as plan_interest_act does. */
   plan_guide_opened: { slug: GuideSlug; from: GuideFrom };
-  plan_move_restored: { kind: string; season: Season; by: "student" | "guardian" };
+  plan_move_restored: { kind: string; season: Season; by: "student" | "guardian" | "counselor" };
   /** The list guide's Add: the level added at and how alike the college is (points of likeness, never an estimate number). */
   plan_guide_added: { level: StandingLevel; likeness: number };
   plan_guide_shape_explained: { season: Season };
@@ -126,7 +126,7 @@ export interface AnalyticsEvents {
   plan_connection_added: { kind: "family" | "recruited" };
   /* Your record (specs/planner/record/build-plan.md "Telemetry"): counts and the viewer, never a major or a value. */
   record_major_picked: { count: number };
-  record_overview_opened: { viewer: "student" | "guardian" };
+  record_overview_opened: { viewer: "student" | "guardian" | "counselor" };
   /** Less text (specs/planner/record/less-text.md): a `WhyFold` opened, by screen and which fold on it. */
   plan_why_opened: { screen: string; section: string };
   /** R6 (specs/planner/record/reading.md "Rules"): the "How Quad reads your record" section shown, once per mount —

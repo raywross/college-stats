@@ -95,7 +95,7 @@ export interface Invitation {
 /** A student the signed-in user can see, and how. */
 export interface StudentAccess {
   student: StudentRecord;
-  relation: "self" | "guardian";
+  relation: "self" | "guardian" | "counselor";
   canEdit: boolean;
 }
 

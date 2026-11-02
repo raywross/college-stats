@@ -4,12 +4,13 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
+import { ViewerBanner } from "@/components/account/ViewerBanner";
 import { GuideFrame } from "@/components/planner/guides/GuideFrame";
 import { authConfigured, getUser } from "@/lib/auth";
 import { GUIDES, parseGuideFrom, parseGuideQuery, parseGuideSlug, type GuideSlug } from "@/lib/planner/guides";
 import { GUIDE_PAGES } from "@/lib/planner/guides-server";
 import { planBundle } from "@/lib/bundles";
-import { loadPlanFor, planViewer, type PlanLoad } from "@/lib/planner/load";
+import { counselorAccessFor, loadPlanFor, planViewer, type PlanLoad } from "@/lib/planner/load";
 import { resolveSelectedChild } from "@/lib/planner/plan-frame";
 import { isUuid } from "@/lib/planner/plan-writes";
 import { span } from "@/lib/timing";
@@ -73,6 +74,20 @@ async function renderRoute(slug: GuideSlug, searchParams: Search) {
   const lastViewed = (await cookies()).get(PLAN_CHILD_COOKIE)?.value ?? null;
   const candidate = [sp.for, lastViewed].find((id) => isUuid(id)) ?? null;
   const early = planBundle(candidate);
+
+  // A counselor's `?for=` (specs/product/counselor-portal.md "A student"): the guide for a student on their caseload,
+  // under the "Viewing as a counselor" banner, as a parent reads it.
+  const counselor = await counselorAccessFor(sp.for);
+  if (counselor) {
+    const loaded = await loadPlanFor(counselor.student.id, counselor, { early });
+    const banner = <ViewerBanner relation="counselor" studentName={counselor.student.display_name} canEdit={counselor.canEdit} />;
+    return (
+      <div className="space-y-4">
+        {banner}
+        {loaded.kind !== "ready" ? <Fallback loaded={loaded} /> : await renderGuide(slug, loaded, counselor.student.id, sp)}
+      </div>
+    );
+  }
 
   const viewer = await planViewer();
   if (viewer.kind === "none") {

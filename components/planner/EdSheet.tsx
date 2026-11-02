@@ -73,7 +73,8 @@ export function EdSheet({
   const router = useRouter();
   const school = row.school ?? undefined;
   const facts = edSheetFacts({ ...row.item, round: row.round }, school, row.estimate ?? undefined, candidate.round);
-  const isStudent = !ctx.viewer.isGuardian && ctx.viewer.canEdit;
+  // The ED decision is the student's alone: never a parent's or a counselor's, whatever their edit access.
+  const isStudent = ctx.viewer.relation === "self" && ctx.viewer.canEdit;
   const canEdit = ctx.viewer.canEdit;
   const first = ctx.student?.display_name?.trim().split(/\s+/)[0] || "Your student";
   // MoveCard.tsx's personFor, inlined here to avoid importing a client card component: null for a signed-in

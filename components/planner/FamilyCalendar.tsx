@@ -162,11 +162,12 @@ export default function FamilyCalendar({ children, viewer, everyone }: CalendarT
         </div>
         <div className="flex gap-2">
           <PrintLink everyone={everyone} studentId={children.length === 1 ? children[0].studentId : null} />
-          {/* A guardian subscribes once to every child they can see (the per-viewer feed); a student keeps their list's. */}
+          {/* A guardian subscribes once to every child they can see (the per-viewer feed); a student keeps their list's. A
+              counselor gets neither: the per-viewer feed is the family's, and a caseload's calendar is the portal's. */}
           {viewer === "guardian" ? (
             <AddToCalendar feed={{ kind: "viewer" }} everyone={everyone} />
           ) : (
-            children.length === 1 && <AddToCalendar feed={{ kind: "list", listId: children[0].ctx.list.id }} everyone={everyone} />
+            viewer === "student" && children.length === 1 && <AddToCalendar feed={{ kind: "list", listId: children[0].ctx.list.id }} everyone={everyone} />
           )}
         </div>
       </div>

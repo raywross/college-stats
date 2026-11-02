@@ -29,7 +29,7 @@ function isMissingTable(error: { code?: string; message?: string }): boolean {
 
 export interface ProfileAccess {
   student: StudentRecord;
-  relation: "self" | "guardian";
+  relation: StudentAccess["relation"];
   canEdit: boolean;
   data: StudentProfileData;
   /** Whether a row exists yet (false = the empty default shape, never saved). */

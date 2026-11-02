@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { ArrowLeft, CalendarClock, Eye } from "lucide-react";
-import { GuardianBanner } from "@/components/account/GuardianBanner";
+import { ViewerBanner, type ViewerBannerRelation } from "@/components/account/ViewerBanner";
 import { ListBoard, type BoardItem } from "@/components/lists/ListBoard";
 import { ListActionsMenu, ListMeta, ListSwitcher } from "@/components/lists/ListControls";
 import { UpdatesSection } from "@/components/me/UpdatesSection";
@@ -83,8 +83,8 @@ interface ListAccess {
   canEdit: boolean;
   /** The viewer owns the list: their own student record's, or their own as a user. Shows the Updates section. */
   isOwner: boolean;
-  /** A guardian viewing a student's list: the banner's name and edit line. */
-  guardianOf: { name: string | null; canEdit: boolean } | null;
+  /** A guardian or a counselor viewing a student's list: the banner's role word, name, and edit line. */
+  guardianOf: { relation: ViewerBannerRelation; name: string | null; canEdit: boolean } | null;
   /** Someone else's own list (another guardian's, read by the household): whose. */
   othersList: { name: string | null } | null;
 }
@@ -102,7 +102,7 @@ async function resolveAccess(list: ListRecord, viewerId: string): Promise<ListAc
     return {
       canEdit: access.canEdit,
       isOwner: access.relation === "self",
-      guardianOf: access.relation === "guardian" ? { name: access.student.display_name, canEdit: access.canEdit } : null,
+      guardianOf: access.relation !== "self" ? { relation: access.relation, name: access.student.display_name, canEdit: access.canEdit } : null,
       othersList: null,
     };
   }
@@ -242,7 +242,7 @@ export async function ListPage({
       )}
 
       {showGuardianBanner && access.guardianOf && (
-        <GuardianBanner studentName={access.guardianOf.name} canEdit={access.guardianOf.canEdit} className="print:hidden" />
+        <ViewerBanner relation={access.guardianOf.relation} studentName={access.guardianOf.name} canEdit={access.guardianOf.canEdit} className="print:hidden" />
       )}
       {access.othersList && (
         <p role="note" className="flex items-center gap-2 rounded-2xl border bg-muted/40 px-4 py-3 text-sm text-muted-foreground print:hidden">

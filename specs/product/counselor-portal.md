@@ -256,6 +256,24 @@ What the site does to turn a caseload into families who buy the advisor, and wha
   rule), `tests/org-rules.test.mts` (the rows, the shape line, the CSV, the code format), `tests/org-pages.test.mts`
   (the join page's states render; the banner's words).
 
+### Built: the counselor as a viewer (2026-11-01)
+`lib/viewer-relation.ts` keeps two questions apart: **is this someone other than the student** (`isViewer`,
+`relation !== "self"`: a parent or a counselor) and **is this a parent** (`isParent`). Covered for a counselor like a
+parent: the banner (`components/account/ViewerBanner.tsx`; `GuardianBanner` wraps it), read-only or editing by
+`canEdit`, logging the read (record, plan, essays), redacting the story (`profileForViewer`, the intake's draft, the
+profile save), the AP privacy switch staying the student's, the list page's banner, the person header, the record
+page. Parent-only, so never a counselor: Your part, nudges, the money lane's "your part", outcome-sharing consent for
+a managed student, "hasn't joined your household yet", the family's calendar feed, the header's new-move dot, the
+child switcher. Student-only stays so: the ED decision, the story's field, drafting essays. A counselor never lands in
+the first-run intake (the record's Edit still opens it with edit access). `PlanContext.viewer` carries `isCounselor`;
+`plan_opened.viewer`, `record_overview_opened.viewer`, and `plan_move_done.by` / `plan_move_restored.by` gain
+`counselor`. `/advisor`, its guides, its print page, and the essays pages resolve a counselor's `?for=` first
+(`counselorAccessFor` in `lib/planner/load.ts`) and show the banner; the advisor adds "Back to caseload"
+(`orgStudentHref`, `lib/org-hrefs.ts`) and a people line of just that student. The household hub shows a counselor
+without a household no family frame, and `app/household/[person]/layout.tsx` puts the caseload strip
+(`components/account/CaseloadStrip.tsx`: "Caseload" and the one student) above a caseload student's pages.
+`tests/viewer-relation.test.mts` sweeps for `relation === "guardian"` with an allowlist of the parent-only sites.
+
 ## Open questions
 1. ~~Seat pricing~~ Closed 2026-10-26: free. ~~A block of advisor plans bought by an office~~ Not in this model: the
    family pays, the office never does ([commercialization.md](commercialization.md#open-questions)).

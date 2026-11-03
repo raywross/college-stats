@@ -131,6 +131,13 @@ const LAYER_EXCLUDES: readonly CollectionName[] = [
   "high_schools.schools",
   "high_schools.ledger",
   "high_schools.detail",
+  // The Data Steward's own documents: never composed into a college, never in a snapshot (specs/product/data-steward.md).
+  "steward.issues",
+  "steward.proposals",
+  "steward.todo",
+  "steward.decisions",
+  "steward.audits",
+  "steward.runs",
 ];
 
 /**

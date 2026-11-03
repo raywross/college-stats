@@ -210,6 +210,8 @@ function functionCalls(w: World): [name: string, sql: string, params: unknown[]]
     ["admin_data_resolve_review", "select public.admin_data_resolve_review('100654||', 'rejected', null)", []],
     ["admin_data_point_snapshot", "select public.admin_data_point_snapshot(1)", []],
     ["admin_data_set_reference", "select public.admin_data_set_reference('calendar', '{}', null)", []],
+    // The Data Steward's console write (20261101140000_steward.sql; tests/steward-policies.test.mts).
+    ["admin_steward_write", "select public.admin_steward_write('steward.issues', 'k', '{}', null)", []],
   ];
 }
 

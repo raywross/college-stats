@@ -20,7 +20,8 @@
  *                               college; never for the real data)
  *
  * Steps: (1) the change sets since the last published snapshot: any held one stops the run (exit 2) unless --force;
- * none stops it ("nothing to publish") unless --force. (2) Load the layers, the live field edits and the console's
+ * none, or only sets that wrote nothing or only `steward.*` (ledger.mts `changesSnapshot`), stops it ("nothing to
+ * publish") unless --force. (2) Load the layers, the live field edits and the console's
  * hand-read prompts. (3) Compose (scripts/lib/data-platform/compose.mts), then the gates (gates.mts): lineage, every
  * reference document through its own validator (lib/reference-validators.ts, membership against the composed
  * colleges), the CDS records against the docs manifest, the legacy overrides' sources. Any problem records the
@@ -51,7 +52,7 @@ import { flagValue, parseStoreFlag, storeFromFlag, type Env } from "./lib/data-p
 import { composeSnapshot, loadPublishLayers, type ComposedSnapshot } from "./lib/data-platform/compose.mts";
 import { renderSnapshot, renderedBytes, sha256, type RenderedSnapshot } from "./lib/data-platform/render.mts";
 import { fileBucket, movePointer, pointerFor, prune, snapshotsToKeep, supabaseBucket, uploadSnapshot, type BucketClient } from "./lib/data-platform/upload.mts";
-import { fileLedger, lastPublished, supabaseLedger, type PublishLedger } from "./lib/data-platform/ledger.mts";
+import { changesSnapshot, fileLedger, lastPublished, supabaseLedger, type PublishLedger } from "./lib/data-platform/ledger.mts";
 import { recordChanges, recordTiers, tierSuppression } from "./lib/data-platform/changelog.mts";
 import { publishTables, skippedTables, type RecordedManifest, type TablesDeps, type TablesLog } from "./lib/data-platform/publish-tables.mts";
 import { COLLECTIONS, readLayer } from "./lib/data-platform/layers.mts";
@@ -291,8 +292,10 @@ export async function publishSnapshot(opts: PublishOptions): Promise<number> {
     return EXIT.held;
   }
   if (held.length) opts.log(`publish-snapshot: --force: publishing past ${held.length} held change set(s) (${held.map((s) => s.id).join(", ")}); their documents are in the layers`);
-  if (!pending.length && !opts.force) {
-    opts.log("publish-snapshot: nothing to publish (no change set since the last snapshot)");
+  // A set that wrote only steward.* (the Data Steward's documents, never composed) or nothing gives no reason to
+  // publish: the nightly run would only produce an identical snapshot. It is still carried by the next real one.
+  if (!pending.some(changesSnapshot) && !opts.force) {
+    opts.log(pending.length ? `publish-snapshot: nothing to publish (${pending.length} change set(s) since the last snapshot, none changing what it composes)` : "publish-snapshot: nothing to publish (no change set since the last snapshot)");
     return EXIT.ok;
   }
   const changeSetIds = pending.map((s) => s.id);

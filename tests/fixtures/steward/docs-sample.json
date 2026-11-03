@@ -1,0 +1,1677 @@
+{
+  "001db226cbc444cefb836996ea4f2cf11e57d128f155c11006f98ad9a4979e7b": {
+    "sha256": "001db226cbc444cefb836996ea4f2cf11e57d128f155c11006f98ad9a4979e7b",
+    "unit_id": "218645",
+    "url": "https://drive.google.com/uc?export=download&id=1NL9FMDkvcWRsIrwu26wWK1w2cLsdr-C1",
+    "final_url": "https://drive.usercontent.google.com/download?id=1NL9FMDkvcWRsIrwu26wWK1w2cLsdr-C1&export=download",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2024-25",
+    "edition_from": "items",
+    "retrieved": "2026-10-19",
+    "bytes": 686444,
+    "pages": 46,
+    "body_chars": 75724,
+    "definitions_from_page": 28,
+    "sections": {
+      "A": [
+        1,
+        2
+      ],
+      "B": [
+        2,
+        6
+      ],
+      "C": [
+        6,
+        12
+      ],
+      "D": [
+        12,
+        14
+      ],
+      "E": [
+        14,
+        15
+      ],
+      "F": [
+        15,
+        17
+      ],
+      "G": [
+        17,
+        19
+      ],
+      "H": [
+        19,
+        27
+      ],
+      "J": [
+        27,
+        27
+      ]
+    },
+    "archive": "local:001db226cbc444cefb836996ea4f2cf11e57d128f155c11006f98ad9a4979e7b.pdf"
+  },
+  "020cead3b9170b470ae43525b385164e9f892c8d8917fbd8e9f994b91b7ccefb": {
+    "sha256": "020cead3b9170b470ae43525b385164e9f892c8d8917fbd8e9f994b91b7ccefb",
+    "unit_id": "226383",
+    "url": "https://documents.lcu.edu/righttoknow/CDS.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2020-21",
+    "edition_from": "items",
+    "retrieved": "2026-10-26",
+    "bytes": 315997,
+    "pages": 40,
+    "body_chars": 69983,
+    "definitions_from_page": 35,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        8
+      ],
+      "C": [
+        8,
+        16
+      ],
+      "D": [
+        16,
+        19
+      ],
+      "E": [
+        19,
+        20
+      ],
+      "F": [
+        20,
+        22
+      ],
+      "G": [
+        22,
+        25
+      ],
+      "H": [
+        25,
+        34
+      ],
+      "J": [
+        34,
+        35
+      ]
+    },
+    "archive": "local:020cead3b9170b470ae43525b385164e9f892c8d8917fbd8e9f994b91b7ccefb.pdf"
+  },
+  "02daca842ea0250f7f0b85179c6b7c54e5af80af3a6aad72758499b1060ea8d3": {
+    "sha256": "02daca842ea0250f7f0b85179c6b7c54e5af80af3a6aad72758499b1060ea8d3",
+    "unit_id": "177940",
+    "url": "https://www.lincolnu.edu/about-lincoln/oira/common-data-set-2023-2024.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2023-24",
+    "edition_from": "items",
+    "retrieved": "2026-10-05",
+    "bytes": 1911102,
+    "pages": 137,
+    "body_chars": 78562,
+    "definitions_from_page": 119,
+    "sections": {
+      "A": [
+        2,
+        6
+      ],
+      "B": [
+        6,
+        18
+      ],
+      "C": [
+        18,
+        52
+      ],
+      "D": [
+        52,
+        66
+      ],
+      "E": [
+        66,
+        69
+      ],
+      "F": [
+        69,
+        73
+      ],
+      "G": [
+        73,
+        82
+      ],
+      "H": [
+        82,
+        109
+      ],
+      "I": [
+        109,
+        117
+      ]
+    },
+    "archive": "local:02daca842ea0250f7f0b85179c6b7c54e5af80af3a6aad72758499b1060ea8d3.pdf"
+  },
+  "02fc6a09aa66f5441d32928418261a74cadd685a40cf8c45a40ee4d191225e96": {
+    "sha256": "02fc6a09aa66f5441d32928418261a74cadd685a40cf8c45a40ee4d191225e96",
+    "unit_id": "167358",
+    "url": "http://uds.northeastern.edu/wp-content/uploads/2026/03/CDS-2023-24.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2023-24",
+    "edition_from": "items",
+    "retrieved": "2026-10-10",
+    "bytes": 691978,
+    "pages": 28,
+    "body_chars": 76416,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        7
+      ],
+      "C": [
+        7,
+        13
+      ],
+      "D": [
+        13,
+        16
+      ],
+      "E": [
+        16,
+        17
+      ],
+      "F": [
+        17,
+        19
+      ],
+      "G": [
+        19,
+        21
+      ],
+      "H": [
+        21,
+        26
+      ],
+      "I": [
+        26,
+        28
+      ]
+    },
+    "archive": "local:02fc6a09aa66f5441d32928418261a74cadd685a40cf8c45a40ee4d191225e96.pdf"
+  },
+  "030b6a05dbeefdf34db274a4b53a55227ff293261010e35e70f0a9d3154e666b": {
+    "sha256": "030b6a05dbeefdf34db274a4b53a55227ff293261010e35e70f0a9d3154e666b",
+    "unit_id": "196079",
+    "url": "https://drive.google.com/file/d/1Dcby2MF3MGue7PRpH2nOCbSCtwmgPPUG/view?usp=sharing",
+    "final_url": "https://drive.usercontent.google.com/download?id=1Dcby2MF3MGue7PRpH2nOCbSCtwmgPPUG&export=download",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2025-26",
+    "edition_from": "items",
+    "retrieved": "2026-10-13",
+    "bytes": 408940,
+    "pages": 26,
+    "body_chars": 72306,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        7
+      ],
+      "C": [
+        7,
+        12
+      ],
+      "D": [
+        12,
+        15
+      ],
+      "E": [
+        15,
+        16
+      ],
+      "F": [
+        16,
+        17
+      ],
+      "G": [
+        17,
+        19
+      ],
+      "H": [
+        19,
+        26
+      ],
+      "J": [
+        26,
+        26
+      ]
+    },
+    "archive": "local:030b6a05dbeefdf34db274a4b53a55227ff293261010e35e70f0a9d3154e666b.pdf"
+  },
+  "034b59f6396d527a141a5b83f483eae758295a0db62b088cca50612eb0213f9d": {
+    "sha256": "034b59f6396d527a141a5b83f483eae758295a0db62b088cca50612eb0213f9d",
+    "unit_id": "160755",
+    "url": "https://tulane.box.com/s/1dgaxpa2x2ie24zgglrg0puwm1h7xrt5",
+    "final_url": "https://public.boxcloud.com/d/1/b1!lmwr5iEZ8Zd1MxAJM5FUUeBv5moC_ylvcof967_DJ4SKJ2j3uLRhY_CVhJCLdYKE9GtjMjFB0A3J0gCHvzVYiInEC5WJ64Q25b_uLAts7E9xkUsMZzSdgqpd6T3JU6UZvJn4W5t-QOTbq01JyqTADWJv5_Nh9bgGfzNfyZRwUkHLzMtV_G8Y4-9pBfQizJM2emV3B5pS5P-pB5dnHMGH9amhq3UjRcAi7HoS1rF1kYk_K-rB1r_z4EoaFMqcgiBWhHHc7je9h6wz8X67t-BklioBeJN3-ssqPWemcDF6pLaABOKTqajJTGM1aZMV7eFqEyH5NQRWIzEFr5aBrhwwhkZbFmX1HHSXyGmVr_yvZzU5UEOpfwwWatJfZ0xgxh7bus5ub8AaVIs0CTXB3YrzobmQaHFCVpCpTui71cYUVS3NdcosSg4fN57jQorW7ejr34OeiPn_t1XSlxWhBr6DTTsVQYGwzz9XH7fyEUbu0Q8kEg3xb71LSE7CeIDkwRgv09jF0I29gqxKyJgA4Yxz1uSwuwU5MHMTGY9H2XEZYrCJxKe5tqZ4yBFJ40QAy85q9gfBJ50E4iZ3eymirU4e7Bc-uO67eAPgnRoWmxqoKS4cFczAFll6WQpT4S1toJ-C5fprermmmsggQPrIJgKNs_8FZe4NW-C2jKuai5ddtmLnT70M7xSYktWCKTKQPmLrz99dEdb_liup4heOnO7hAarEPYXTO7-6aPBMdh-SBSzJdtIUliqn2Xt-3BeWKXQXmzhLjqxWGm5f0tmr9mNXsQ0ON5xgfXFeGSwgIcJmda_7wIDxS9joPlVqB2M1CAXBzkTfvS1YtPhea3-UB2FU0BCbSPwosS0Bwn4m0170kcQGS5u95DXmopCRjWks2P8h_z3rvz6Ia43C32ycil4Z62DEX7kqXAAS8vMUZiVBzF3CVnFUtfTS72hNGzpEGDR9MnfNNH2LPA6Zm18upmioyJ_Qd_aq9Yrnes_z2H17AeBnbOj7kwqJNjmkD3k2nKKXg5XkFPAeUTni9BQlJJE1KRPbyW-BokIKzYM7-_jeE4_6kT3EyMH7pIYxZ4LpWlrMcXG36wifpGtuxI4d1h7Usq9j1BY7coCdT8xTZvxQeCY4dYyCAWjabLH_oxu-XUXIt-dvf-idpdS7VqUXh5HT4kzrQgmJYU6aqdrmfMb9vxabBypkiujGodKX6PTYptJM92VgVUS8g8xjJu-F15Bmxm7CVgifN7NcW3BZQRKiNumLhoHERnE_rYxJEg5GTxahyDDbgyy9_q9D6rfge2WxKmPpJG7s_9FyFy3AASUXBp9EHsLVSF20eHA2g46p1-E_5aWwoqYXGPqTSWE-ebSoLB65hqQYX5H7Lq5Bgxh1dPXg3rC_oEaV8nRQ8K70MChL9K0k-eNQ3dbVNN_kiBD2CONHwgsUcPbhJ-OT7uz729Apt_gNZs9ufJnpK_PAY1A6y4USfaKsiYr2614WoyUuMKrEW6OGAfgebA54rYBWFP6QPFKGVzr3NimuFeS68crmclyoDqqZ9dkGTcZBWZStZV0iaKHNnJfFS4gwlyk4fQql65kfM0wy5XxsDRShFiY9Cpw./download",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2025-26",
+    "edition_from": "items",
+    "retrieved": "2026-10-19",
+    "bytes": 1113728,
+    "pages": 36,
+    "body_chars": 77064,
+    "definitions_from_page": 32,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        8
+      ],
+      "C": [
+        8,
+        15
+      ],
+      "D": [
+        15,
+        18
+      ],
+      "E": [
+        18,
+        19
+      ],
+      "F": [
+        19,
+        21
+      ],
+      "G": [
+        21,
+        23
+      ],
+      "H": [
+        23,
+        31
+      ],
+      "J": [
+        31,
+        32
+      ]
+    },
+    "archive": "local:034b59f6396d527a141a5b83f483eae758295a0db62b088cca50612eb0213f9d.pdf"
+  },
+  "045e2290e44f2093390bbed85539bba6adb38715c9a6d93fd6c831e66fd2fd29": {
+    "sha256": "045e2290e44f2093390bbed85539bba6adb38715c9a6d93fd6c831e66fd2fd29",
+    "unit_id": "218663",
+    "url": "http://oiraa.dw.sc.edu/cds/cds2025/cds_2025-2026.pdf",
+    "kind": "cds",
+    "type": "pdf-form",
+    "edition": "2025-26",
+    "edition_from": "cover",
+    "retrieved": "2026-10-10",
+    "bytes": 2231040,
+    "pages": 48,
+    "archive": "local:045e2290e44f2093390bbed85539bba6adb38715c9a6d93fd6c831e66fd2fd29.pdf"
+  },
+  "048e24c24c08bcaecfef97e3a3a23e810ef4364348d9ebc83106fe0edf4bf048": {
+    "sha256": "048e24c24c08bcaecfef97e3a3a23e810ef4364348d9ebc83106fe0edf4bf048",
+    "unit_id": "126678",
+    "url": "https://www.coloradocollege.edu/offices/ipe/documents/CDS-2025-2026_PDF_Final.pdf",
+    "kind": "cds",
+    "type": "pdf-form",
+    "edition": "2025-26",
+    "edition_from": "cover",
+    "retrieved": "2026-10-05",
+    "bytes": 1972556,
+    "pages": 50,
+    "archive": "local:048e24c24c08bcaecfef97e3a3a23e810ef4364348d9ebc83106fe0edf4bf048.pdf"
+  },
+  "050b28b06af45733dffd066e4f8ee21e73e5063392249f2364a05535f2b5677d": {
+    "sha256": "050b28b06af45733dffd066e4f8ee21e73e5063392249f2364a05535f2b5677d",
+    "unit_id": "152318",
+    "url": "https://drive.google.com/uc?export=download&id=1da72P1KPJhrKAU-fTEfM6zK4YMovnhhM",
+    "final_url": "https://drive.usercontent.google.com/download?id=1da72P1KPJhrKAU-fTEfM6zK4YMovnhhM&export=download",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2024-25",
+    "edition_from": "manual",
+    "retrieved": "2026-10-19",
+    "bytes": 388236,
+    "pages": 35,
+    "body_chars": 67187,
+    "definitions_from_page": 28,
+    "sections": {
+      "A": [
+        1,
+        2
+      ],
+      "B": [
+        2,
+        6
+      ],
+      "C": [
+        6,
+        12
+      ],
+      "D": [
+        12,
+        14
+      ],
+      "E": [
+        14,
+        14
+      ],
+      "F": [
+        14,
+        16
+      ],
+      "G": [
+        16,
+        19
+      ],
+      "H": [
+        19,
+        28
+      ]
+    },
+    "archive": "local:050b28b06af45733dffd066e4f8ee21e73e5063392249f2364a05535f2b5677d.pdf"
+  },
+  "051643c4c04d28af5a0890182316e35e70b1482023e02f8fe6ac5b7a5051c8f7": {
+    "sha256": "051643c4c04d28af5a0890182316e35e70b1482023e02f8fe6ac5b7a5051c8f7",
+    "unit_id": "163851",
+    "url": "https://www.salisbury.edu/administration/university-analysis-reporting-and-assessment/_files/CDS-2025-2026.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2025-26",
+    "edition_from": "cover",
+    "retrieved": "2026-10-05",
+    "bytes": 416536,
+    "pages": 27,
+    "body_chars": 77995,
+    "sections": {
+      "A": [
+        2,
+        4
+      ],
+      "B": [
+        4,
+        8
+      ],
+      "C": [
+        8,
+        13
+      ],
+      "D": [
+        13,
+        15
+      ],
+      "E": [
+        15,
+        16
+      ],
+      "F": [
+        16,
+        17
+      ],
+      "G": [
+        17,
+        19
+      ],
+      "H": [
+        19,
+        27
+      ],
+      "J": [
+        27,
+        27
+      ]
+    },
+    "archive": "local:051643c4c04d28af5a0890182316e35e70b1482023e02f8fe6ac5b7a5051c8f7.pdf"
+  },
+  "05a45dc4b333fb6495e4ec71d1eae78139a4242e8ca847410e0bda7e5274d44c": {
+    "sha256": "05a45dc4b333fb6495e4ec71d1eae78139a4242e8ca847410e0bda7e5274d44c",
+    "unit_id": "231174",
+    "url": "https://www.uvm.edu/d10-files/documents/2026-06/CDS_2025-2026_C.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2025-26",
+    "edition_from": "cover",
+    "retrieved": "2026-10-05",
+    "bytes": 1177346,
+    "pages": 33,
+    "body_chars": 111745,
+    "sections": {
+      "A": [
+        2,
+        4
+      ],
+      "B": [
+        4,
+        9
+      ],
+      "C": [
+        9,
+        15
+      ],
+      "D": [
+        15,
+        18
+      ],
+      "E": [
+        18,
+        19
+      ],
+      "F": [
+        19,
+        21
+      ],
+      "G": [
+        21,
+        24
+      ],
+      "H": [
+        24,
+        32
+      ],
+      "J": [
+        32,
+        33
+      ]
+    },
+    "archive": "local:05a45dc4b333fb6495e4ec71d1eae78139a4242e8ca847410e0bda7e5274d44c.pdf"
+  },
+  "086560bb0ca19a4ba573572a3833ed86a516a3716bb2ea22779942454a99cda5": {
+    "sha256": "086560bb0ca19a4ba573572a3833ed86a516a3716bb2ea22779942454a99cda5",
+    "unit_id": "176017",
+    "url": "https://drive.google.com/uc?export=download&id=1zkKqpes6AHDRsUFPDK37u39NIIgfMwdf",
+    "final_url": "https://drive.usercontent.google.com/download?id=1zkKqpes6AHDRsUFPDK37u39NIIgfMwdf&export=download",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2024-25",
+    "edition_from": "items",
+    "retrieved": "2026-10-19",
+    "bytes": 403622,
+    "pages": 37,
+    "body_chars": 78786,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        9
+      ],
+      "C": [
+        9,
+        18
+      ],
+      "D": [
+        18,
+        21
+      ],
+      "E": [
+        21,
+        22
+      ],
+      "F": [
+        22,
+        24
+      ],
+      "G": [
+        24,
+        27
+      ],
+      "H": [
+        27,
+        37
+      ],
+      "J": [
+        37,
+        37
+      ]
+    },
+    "archive": "local:086560bb0ca19a4ba573572a3833ed86a516a3716bb2ea22779942454a99cda5.pdf"
+  },
+  "088c31a7478fef9d62d600158234422fdfebfba4fa74d86589977c3b4b96b63d": {
+    "sha256": "088c31a7478fef9d62d600158234422fdfebfba4fa74d86589977c3b4b96b63d",
+    "unit_id": "233277",
+    "url": "https://www.radford.edu/institutional-research/_documents/cds-2025.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2025-26",
+    "edition_from": "items",
+    "retrieved": "2026-10-05",
+    "bytes": 1295405,
+    "pages": 67,
+    "body_chars": 87478,
+    "definitions_from_page": 54,
+    "sections": {
+      "A": [
+        3,
+        5
+      ],
+      "B": [
+        5,
+        14
+      ],
+      "C": [
+        14,
+        27
+      ],
+      "D": [
+        27,
+        31
+      ],
+      "E": [
+        31,
+        32
+      ],
+      "F": [
+        32,
+        35
+      ],
+      "G": [
+        35,
+        39
+      ],
+      "H": [
+        39,
+        48
+      ],
+      "I": [
+        48,
+        54
+      ]
+    },
+    "archive": "local:088c31a7478fef9d62d600158234422fdfebfba4fa74d86589977c3b4b96b63d.pdf"
+  },
+  "0922c5d571016af76f42e6b80b62258145b72d8e97912275f418ea755237c6b0": {
+    "sha256": "0922c5d571016af76f42e6b80b62258145b72d8e97912275f418ea755237c6b0",
+    "unit_id": "228431",
+    "url": "https://www.sfasu.edu/docs/institutional-research/common-data-set-complete-21-22.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2021-22",
+    "edition_from": "items",
+    "retrieved": "2026-10-10",
+    "bytes": 340667,
+    "pages": 33,
+    "body_chars": 64251,
+    "definitions_from_page": 29,
+    "sections": {
+      "A": [
+        1,
+        2
+      ],
+      "B": [
+        2,
+        6
+      ],
+      "C": [
+        6,
+        14
+      ],
+      "D": [
+        14,
+        16
+      ],
+      "E": [
+        16,
+        17
+      ],
+      "F": [
+        17,
+        18
+      ],
+      "G": [
+        18,
+        20
+      ],
+      "H": [
+        20,
+        28
+      ],
+      "J": [
+        28,
+        29
+      ]
+    },
+    "archive": "local:0922c5d571016af76f42e6b80b62258145b72d8e97912275f418ea755237c6b0.pdf"
+  },
+  "09ee207734d8da70741312502a33eef5bad48cd45f5f58c741dee8955a2d2a49": {
+    "sha256": "09ee207734d8da70741312502a33eef5bad48cd45f5f58c741dee8955a2d2a49",
+    "unit_id": "217420",
+    "url": "https://www.ric.edu/documents/common-data-set-2025-2026",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2025-26",
+    "edition_from": "url",
+    "retrieved": "2026-10-05",
+    "bytes": 923116,
+    "pages": 50,
+    "body_chars": 80408,
+    "definitions_from_page": 43,
+    "sections": {
+      "B": [
+        33,
+        43
+      ]
+    },
+    "archive": "local:09ee207734d8da70741312502a33eef5bad48cd45f5f58c741dee8955a2d2a49.pdf"
+  },
+  "0a712b9002790c6c794fc72ffb59c52faafac006aacbadec67d762e5f13394ee": {
+    "sha256": "0a712b9002790c6c794fc72ffb59c52faafac006aacbadec67d762e5f13394ee",
+    "unit_id": "158802",
+    "url": "https://www.dillard.edu/wp-content/uploads/dillard-university-common-data-set-2021-22.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2021-22",
+    "edition_from": "items",
+    "retrieved": "2026-10-11",
+    "bytes": 460242,
+    "pages": 48,
+    "body_chars": 75338,
+    "definitions_from_page": 41,
+    "sections": {
+      "B": [
+        5,
+        12
+      ],
+      "C": [
+        12,
+        22
+      ],
+      "D": [
+        22,
+        25
+      ],
+      "E": [
+        25,
+        26
+      ],
+      "F": [
+        26,
+        27
+      ],
+      "G": [
+        27,
+        30
+      ],
+      "H": [
+        30,
+        41
+      ]
+    },
+    "archive": "local:0a712b9002790c6c794fc72ffb59c52faafac006aacbadec67d762e5f13394ee.pdf"
+  },
+  "0ca0f2564356ddcb662d4bd7bec047d3efb99c04bb32e9f88c767d5b6db12d04": {
+    "sha256": "0ca0f2564356ddcb662d4bd7bec047d3efb99c04bb32e9f88c767d5b6db12d04",
+    "unit_id": "150400",
+    "url": "https://www.depauw.edu/files/resources/depauw-cds-all-sections-2526.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2025-26",
+    "edition_from": "items",
+    "retrieved": "2026-10-26",
+    "bytes": 1057470,
+    "pages": 33,
+    "body_chars": 71223,
+    "definitions_from_page": 29,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        6
+      ],
+      "C": [
+        6,
+        13
+      ],
+      "D": [
+        13,
+        15
+      ],
+      "E": [
+        15,
+        16
+      ],
+      "F": [
+        16,
+        18
+      ],
+      "G": [
+        18,
+        20
+      ],
+      "H": [
+        20,
+        28
+      ],
+      "J": [
+        28,
+        29
+      ]
+    },
+    "archive": "local:0ca0f2564356ddcb662d4bd7bec047d3efb99c04bb32e9f88c767d5b6db12d04.pdf"
+  },
+  "0ce503de1e2dd6f38ed8afd1144f5d08109f2027025fa768d2f6c7e8980eb9ff": {
+    "sha256": "0ce503de1e2dd6f38ed8afd1144f5d08109f2027025fa768d2f6c7e8980eb9ff",
+    "unit_id": "177968",
+    "url": "https://www.lindenwood.edu/wp-content/uploads/2026/04/cds_2025-2026.xlsx",
+    "kind": "cds",
+    "type": "xlsx-template",
+    "edition": "2025-26",
+    "edition_from": "workbook",
+    "retrieved": "2026-10-05",
+    "bytes": 1011977,
+    "archive": "local:0ce503de1e2dd6f38ed8afd1144f5d08109f2027025fa768d2f6c7e8980eb9ff.xlsx"
+  },
+  "0d4de1dc0a2e8c479afdb1173deee7f9e3886f39c6bf7d7b9c5c1a8f151e3d35": {
+    "sha256": "0d4de1dc0a2e8c479afdb1173deee7f9e3886f39c6bf7d7b9c5c1a8f151e3d35",
+    "unit_id": "164447",
+    "url": "https://aic.cdn.neptuneweb.com/wp-content/uploads/2026/04/cds_22-23_enrollment_and_persistence-1.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2022-23",
+    "edition_from": "url",
+    "retrieved": "2026-10-05",
+    "bytes": 212351,
+    "pages": 7,
+    "body_chars": 11394,
+    "sections": {
+      "B": [
+        1,
+        7
+      ]
+    },
+    "archive": "local:0d4de1dc0a2e8c479afdb1173deee7f9e3886f39c6bf7d7b9c5c1a8f151e3d35.pdf"
+  },
+  "0d53acb3a7c7eed0bc403e8db85427c1c0b7032c9f3b0bb0b9f5ffa6bb3ee81e": {
+    "sha256": "0d53acb3a7c7eed0bc403e8db85427c1c0b7032c9f3b0bb0b9f5ffa6bb3ee81e",
+    "unit_id": "131520",
+    "url": "https://ira.howard.edu/sites/ira.howard.edu/files/2026-06/CDS%20PDF%202526_06.25.26.pdf",
+    "kind": "cds",
+    "type": "pdf-form",
+    "edition": "2025-26",
+    "edition_from": "cover",
+    "retrieved": "2026-10-05",
+    "bytes": 2941574,
+    "pages": 50,
+    "archive": "local:0d53acb3a7c7eed0bc403e8db85427c1c0b7032c9f3b0bb0b9f5ffa6bb3ee81e.pdf"
+  },
+  "0d6a75a92affe15707d3a70b8fa9006261f88ce1a354ab9617c60dc77e2fe537": {
+    "sha256": "0d6a75a92affe15707d3a70b8fa9006261f88ce1a354ab9617c60dc77e2fe537",
+    "unit_id": "243665",
+    "url": "https://www.uvi.edu/files/documents/Institutional_Research_and_Planning/CDS/CDS-Import_2022-2023.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2022-23",
+    "edition_from": "manual",
+    "retrieved": "2026-10-05",
+    "bytes": 26024956,
+    "pages": 9892,
+    "body_chars": 630093,
+    "definitions_from_page": 9888,
+    "sections": {
+      "A": [
+        1,
+        4
+      ],
+      "B": [
+        4,
+        9
+      ],
+      "C": [
+        9,
+        49
+      ],
+      "D": [
+        49,
+        52
+      ],
+      "E": [
+        52,
+        53
+      ],
+      "F": [
+        53,
+        55
+      ],
+      "G": [
+        55,
+        57
+      ],
+      "H": [
+        57,
+        9887
+      ],
+      "J": [
+        9887,
+        9888
+      ]
+    },
+    "archive": "local:0d6a75a92affe15707d3a70b8fa9006261f88ce1a354ab9617c60dc77e2fe537.pdf"
+  },
+  "0da4db1bd29f799610648c49f9a5ddd6a66dcaa1cb833047dec3f8539e177e34": {
+    "sha256": "0da4db1bd29f799610648c49f9a5ddd6a66dcaa1cb833047dec3f8539e177e34",
+    "unit_id": "198215",
+    "url": "https://www.catawba.edu/media/catawba-college/site-assets/pdf/CDS_2025-2026-PDF.pdf",
+    "kind": "cds",
+    "type": "pdf-form",
+    "edition": "2025-26",
+    "edition_from": "cover",
+    "retrieved": "2026-10-19",
+    "bytes": 20138424,
+    "pages": 50,
+    "archive": "local:0da4db1bd29f799610648c49f9a5ddd6a66dcaa1cb833047dec3f8539e177e34.pdf"
+  },
+  "0dae7ee4f486a0d8bdfdbf27a667c255b094f3db4e2083dde1740e14c57ca814": {
+    "sha256": "0dae7ee4f486a0d8bdfdbf27a667c255b094f3db4e2083dde1740e14c57ca814",
+    "unit_id": "232308",
+    "url": "https://www.hollins.edu/wp-content/uploads/2026/07/CDS-2025-2026-Hollins-University.pdf",
+    "kind": "cds",
+    "type": "pdf-form",
+    "edition": "2025-26",
+    "edition_from": "cover",
+    "retrieved": "2026-10-19",
+    "bytes": 3866320,
+    "pages": 50,
+    "archive": "local:0dae7ee4f486a0d8bdfdbf27a667c255b094f3db4e2083dde1740e14c57ca814.pdf"
+  },
+  "0db6d43dfd50b68aef9fdfcc45ab712136f9d23f21e6d3137b03d29867f60e56": {
+    "sha256": "0db6d43dfd50b68aef9fdfcc45ab712136f9d23f21e6d3137b03d29867f60e56",
+    "unit_id": "120883",
+    "url": "https://www.pacific.edu/sites/default/files/users/user777/2024_25_CDS_Full_Form_.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2024-25",
+    "edition_from": "url",
+    "retrieved": "2026-10-19",
+    "bytes": 2251390,
+    "pages": 49,
+    "body_chars": 65897,
+    "definitions_from_page": 43,
+    "sections": {
+      "A": [
+        3,
+        5
+      ],
+      "B": [
+        5,
+        13
+      ],
+      "C": [
+        13,
+        24
+      ],
+      "D": [
+        24,
+        27
+      ],
+      "E": [
+        27,
+        28
+      ],
+      "F": [
+        28,
+        29
+      ],
+      "G": [
+        29,
+        32
+      ],
+      "H": [
+        32,
+        42
+      ]
+    },
+    "archive": "local:0db6d43dfd50b68aef9fdfcc45ab712136f9d23f21e6d3137b03d29867f60e56.pdf"
+  },
+  "0dd19bb8c2c5555f04a3061c4ebed1f6203a97fc5cb05e494d455098da1754ca": {
+    "sha256": "0dd19bb8c2c5555f04a3061c4ebed1f6203a97fc5cb05e494d455098da1754ca",
+    "unit_id": "148016",
+    "url": "https://files.us-siteglide.com/instances/116/assets/theme/principia/docs/CommonDataSet2022PrincipiaCollege.pdf?updated=1778724837943",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2022-23",
+    "edition_from": "cover",
+    "retrieved": "2026-10-05",
+    "bytes": 400221,
+    "pages": 26,
+    "body_chars": 66393,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        6
+      ],
+      "C": [
+        6,
+        12
+      ],
+      "D": [
+        12,
+        14
+      ],
+      "E": [
+        14,
+        15
+      ],
+      "F": [
+        15,
+        16
+      ],
+      "G": [
+        16,
+        18
+      ],
+      "H": [
+        18,
+        26
+      ],
+      "J": [
+        26,
+        26
+      ]
+    },
+    "archive": "local:0dd19bb8c2c5555f04a3061c4ebed1f6203a97fc5cb05e494d455098da1754ca.pdf"
+  },
+  "0dfcb979a2a864afea55fdbca41b4734a6b1ed84e82ed8a54f2f9db2c25ebb89": {
+    "sha256": "0dfcb979a2a864afea55fdbca41b4734a6b1ed84e82ed8a54f2f9db2c25ebb89",
+    "unit_id": "130943",
+    "url": "https://ire.udel.edu/files/2024/06/CDS2223_UDelaware.pdf",
+    "kind": "cds",
+    "type": "pdf-form",
+    "edition": "2022-23",
+    "edition_from": "cover",
+    "retrieved": "2026-10-10",
+    "bytes": 1884501,
+    "pages": 50,
+    "archive": "local:0dfcb979a2a864afea55fdbca41b4734a6b1ed84e82ed8a54f2f9db2c25ebb89.pdf"
+  },
+  "0ec0308863796e6cee71f3abde12ba8cb4d2b9f7a9ca81331d62cadbd3713f9e": {
+    "sha256": "0ec0308863796e6cee71f3abde12ba8cb4d2b9f7a9ca81331d62cadbd3713f9e",
+    "unit_id": "100751",
+    "url": "https://oira.ua.edu/d/sites/all/files/reports26/CDS%202025-26%20FINAL%209Dec2025.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2025-26",
+    "edition_from": "items",
+    "retrieved": "2026-10-10",
+    "bytes": 312951,
+    "pages": 42,
+    "body_chars": 85218,
+    "definitions_from_page": 34,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        6
+      ],
+      "C": [
+        6,
+        13
+      ],
+      "D": [
+        13,
+        17
+      ],
+      "E": [
+        17,
+        18
+      ],
+      "F": [
+        18,
+        20
+      ],
+      "G": [
+        20,
+        23
+      ],
+      "H": [
+        23,
+        33
+      ],
+      "J": [
+        33,
+        33
+      ]
+    },
+    "archive": "local:0ec0308863796e6cee71f3abde12ba8cb4d2b9f7a9ca81331d62cadbd3713f9e.pdf"
+  },
+  "0f3276e784e7b1f84b4884ac1400856b0bd748fb9964ea292af0edff3de0751a": {
+    "sha256": "0f3276e784e7b1f84b4884ac1400856b0bd748fb9964ea292af0edff3de0751a",
+    "unit_id": "135726",
+    "url": "https://irsa.miami.edu/_assets/pdf/cds2021.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2020-21",
+    "edition_from": "cover",
+    "retrieved": "2026-10-11",
+    "bytes": 868573,
+    "pages": 43,
+    "body_chars": 75992,
+    "definitions_from_page": 37,
+    "sections": {
+      "A": [
+        3,
+        5
+      ],
+      "B": [
+        5,
+        10
+      ],
+      "C": [
+        10,
+        18
+      ],
+      "D": [
+        18,
+        21
+      ],
+      "E": [
+        21,
+        22
+      ],
+      "F": [
+        22,
+        24
+      ],
+      "G": [
+        24,
+        27
+      ],
+      "H": [
+        27,
+        35
+      ],
+      "J": [
+        35,
+        37
+      ]
+    },
+    "archive": "local:0f3276e784e7b1f84b4884ac1400856b0bd748fb9964ea292af0edff3de0751a.pdf"
+  },
+  "0f58fe56d02447922339231bdefc7ba321296eca5486550af33ab71d24f2520d": {
+    "sha256": "0f58fe56d02447922339231bdefc7ba321296eca5486550af33ab71d24f2520d",
+    "unit_id": "110529",
+    "url": "https://drive.google.com/uc?export=download&id=1lwH_X-KfROFlSNBf0fxZoTtnJuMd5F7H",
+    "final_url": "https://drive.usercontent.google.com/download?id=1lwH_X-KfROFlSNBf0fxZoTtnJuMd5F7H&export=download",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2024-25",
+    "edition_from": "items",
+    "retrieved": "2026-10-19",
+    "bytes": 679054,
+    "pages": 39,
+    "body_chars": 76258,
+    "definitions_from_page": 29,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        7
+      ],
+      "C": [
+        7,
+        14
+      ],
+      "D": [
+        14,
+        16
+      ],
+      "E": [
+        16,
+        17
+      ],
+      "F": [
+        17,
+        18
+      ],
+      "G": [
+        18,
+        20
+      ],
+      "H": [
+        20,
+        28
+      ],
+      "J": [
+        28,
+        29
+      ]
+    },
+    "archive": "local:0f58fe56d02447922339231bdefc7ba321296eca5486550af33ab71d24f2520d.pdf"
+  },
+  "0fa571b3d5f310260043fe28ca64d14d128b008b50ef8852d97b2cf0c39207fd": {
+    "sha256": "0fa571b3d5f310260043fe28ca64d14d128b008b50ef8852d97b2cf0c39207fd",
+    "unit_id": "139366",
+    "url": "https://www.columbusstate.edu/institutional-research/_docs/common-data-set/cds-2024-2025.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2024-25",
+    "edition_from": "items",
+    "retrieved": "2026-10-05",
+    "bytes": 833646,
+    "pages": 32,
+    "body_chars": 76835,
+    "definitions_from_page": 22,
+    "sections": {
+      "A": [
+        1,
+        2
+      ],
+      "B": [
+        2,
+        4
+      ],
+      "C": [
+        4,
+        7
+      ],
+      "D": [
+        7,
+        8
+      ],
+      "E": [
+        8,
+        9
+      ],
+      "F": [
+        9,
+        10
+      ],
+      "G": [
+        10,
+        11
+      ],
+      "H": [
+        11,
+        21
+      ],
+      "J": [
+        21,
+        22
+      ]
+    },
+    "archive": "local:0fa571b3d5f310260043fe28ca64d14d128b008b50ef8852d97b2cf0c39207fd.pdf"
+  },
+  "0fc28549f080a0f358afc4f6b244790b24fd62adc92b2d8dd930f3df23758f2d": {
+    "sha256": "0fc28549f080a0f358afc4f6b244790b24fd62adc92b2d8dd930f3df23758f2d",
+    "unit_id": "175272",
+    "url": "https://drive.google.com/uc?export=download&id=1FYwQEjtQSn3RhBfPJGzJM_rIF8Jp1KlU",
+    "final_url": "https://drive.usercontent.google.com/download?id=1FYwQEjtQSn3RhBfPJGzJM_rIF8Jp1KlU&export=download",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2024-25",
+    "edition_from": "items",
+    "retrieved": "2026-10-19",
+    "bytes": 383100,
+    "pages": 33,
+    "body_chars": 79311,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        8
+      ],
+      "C": [
+        8,
+        14
+      ],
+      "D": [
+        14,
+        17
+      ],
+      "E": [
+        17,
+        18
+      ],
+      "F": [
+        18,
+        20
+      ],
+      "G": [
+        20,
+        23
+      ],
+      "H": [
+        23,
+        33
+      ],
+      "J": [
+        33,
+        33
+      ]
+    },
+    "archive": "local:0fc28549f080a0f358afc4f6b244790b24fd62adc92b2d8dd930f3df23758f2d.pdf"
+  },
+  "0fdf5a0ea1434ca2290dcf9b0ba18468206db3d2238efb8e878d17d1b3a3df89": {
+    "sha256": "0fdf5a0ea1434ca2290dcf9b0ba18468206db3d2238efb8e878d17d1b3a3df89",
+    "unit_id": "198464",
+    "url": "https://drive.google.com/uc?export=download&id=1de7FH5I8a0USlrRfFV2PKBJkznEwifZV",
+    "final_url": "https://drive.usercontent.google.com/download?id=1de7FH5I8a0USlrRfFV2PKBJkznEwifZV&export=download",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2024-25",
+    "edition_from": "items",
+    "retrieved": "2026-10-19",
+    "bytes": 758573,
+    "pages": 38,
+    "body_chars": 76257,
+    "definitions_from_page": 33,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        9
+      ],
+      "C": [
+        9,
+        18
+      ],
+      "D": [
+        18,
+        20
+      ],
+      "E": [
+        20,
+        21
+      ],
+      "F": [
+        21,
+        22
+      ],
+      "G": [
+        22,
+        24
+      ],
+      "H": [
+        24,
+        32
+      ],
+      "J": [
+        32,
+        33
+      ]
+    },
+    "archive": "local:0fdf5a0ea1434ca2290dcf9b0ba18468206db3d2238efb8e878d17d1b3a3df89.pdf"
+  },
+  "101792374d90e1a1a345c8e05537db2a49aea90733e8c1cd343655c3758fcf7f": {
+    "sha256": "101792374d90e1a1a345c8e05537db2a49aea90733e8c1cd343655c3758fcf7f",
+    "unit_id": "196103",
+    "url": "https://www.esf.edu/institutional-research/documents/CDS_2025_2026_ESF.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2025-26",
+    "edition_from": "items",
+    "retrieved": "2026-10-05",
+    "bytes": 803129,
+    "pages": 69,
+    "body_chars": 82410,
+    "definitions_from_page": 56,
+    "sections": {
+      "A": [
+        2,
+        5
+      ],
+      "B": [
+        5,
+        15
+      ],
+      "C": [
+        15,
+        29
+      ],
+      "D": [
+        29,
+        33
+      ],
+      "E": [
+        33,
+        34
+      ],
+      "F": [
+        34,
+        36
+      ],
+      "G": [
+        36,
+        41
+      ],
+      "H": [
+        41,
+        50
+      ],
+      "I": [
+        50,
+        56
+      ]
+    },
+    "archive": "local:101792374d90e1a1a345c8e05537db2a49aea90733e8c1cd343655c3758fcf7f.pdf"
+  },
+  "114a757214e249d046c64fd9920e19dfb5a1f541f7da733e6aa2532f1b659523": {
+    "sha256": "114a757214e249d046c64fd9920e19dfb5a1f541f7da733e6aa2532f1b659523",
+    "unit_id": "178420",
+    "url": "https://www.umsl.edu/~ir/common-data-set/pdf-archive/cds_2025_rv.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2025-26",
+    "edition_from": "items",
+    "retrieved": "2026-10-11",
+    "bytes": 1420770,
+    "pages": 56,
+    "body_chars": 91871,
+    "sections": {
+      "A": [
+        2,
+        5
+      ],
+      "B": [
+        5,
+        16
+      ],
+      "C": [
+        16,
+        30
+      ],
+      "D": [
+        30,
+        34
+      ],
+      "E": [
+        34,
+        35
+      ],
+      "F": [
+        35,
+        37
+      ],
+      "G": [
+        37,
+        42
+      ],
+      "H": [
+        42,
+        51
+      ],
+      "I": [
+        51,
+        56
+      ]
+    },
+    "archive": "local:114a757214e249d046c64fd9920e19dfb5a1f541f7da733e6aa2532f1b659523.pdf"
+  },
+  "12876c0e6481e128e41421774275137e1327499136443a06bbdae4478736585d": {
+    "sha256": "12876c0e6481e128e41421774275137e1327499136443a06bbdae4478736585d",
+    "unit_id": "134945",
+    "url": "https://www.ju.edu/institutionalresearch/CDS-PDF-2025-2026_PDF_Template.pdf",
+    "kind": "cds",
+    "type": "pdf-form",
+    "edition": "2025-26",
+    "edition_from": "cover",
+    "retrieved": "2026-10-11",
+    "bytes": 1975797,
+    "pages": 50,
+    "archive": "local:12876c0e6481e128e41421774275137e1327499136443a06bbdae4478736585d.pdf"
+  },
+  "12a7f14a0648e74fbc98ee19307790e6abbbeb34175a0998ad9edd5f88caed0e": {
+    "sha256": "12a7f14a0648e74fbc98ee19307790e6abbbeb34175a0998ad9edd5f88caed0e",
+    "unit_id": "173258",
+    "url": "https://carleton-wp-production.s3.amazonaws.com/uploads/sites/292/2026/06/CDS-PDF-2025-2026_PDF_Carleton_06242026.pdf",
+    "kind": "cds",
+    "type": "pdf-form",
+    "edition": "2025-26",
+    "edition_from": "cover",
+    "retrieved": "2026-10-11",
+    "bytes": 3128881,
+    "pages": 50,
+    "archive": "local:12a7f14a0648e74fbc98ee19307790e6abbbeb34175a0998ad9edd5f88caed0e.pdf"
+  },
+  "12a9847f632436d3a00a9baa493a3deae1a5ed0252c9ed59047759e7abf1e80a": {
+    "sha256": "12a9847f632436d3a00a9baa493a3deae1a5ed0252c9ed59047759e7abf1e80a",
+    "unit_id": "192703",
+    "url": "https://content.manhattan.edu/institutional-research/CDS_2018-2019.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2018-19",
+    "edition_from": "items",
+    "retrieved": "2026-10-10",
+    "bytes": 573562,
+    "pages": 39,
+    "body_chars": 68891,
+    "definitions_from_page": 32,
+    "sections": {
+      "A": [
+        1,
+        2
+      ],
+      "B": [
+        2,
+        7
+      ],
+      "C": [
+        7,
+        13
+      ],
+      "D": [
+        13,
+        16
+      ],
+      "E": [
+        16,
+        16
+      ],
+      "F": [
+        16,
+        18
+      ],
+      "G": [
+        18,
+        21
+      ],
+      "H": [
+        21,
+        32
+      ]
+    },
+    "archive": "local:12a9847f632436d3a00a9baa493a3deae1a5ed0252c9ed59047759e7abf1e80a.pdf"
+  },
+  "13934dc8e2666a52fd38aa87065dba4caf230b4e959359f7a6892a987054de92": {
+    "sha256": "13934dc8e2666a52fd38aa87065dba4caf230b4e959359f7a6892a987054de92",
+    "unit_id": "166939",
+    "url": "https://drive.google.com/file/d/1YBj1g21DRKEMSV0WHaiIT6paJg1qruX9/view",
+    "final_url": "https://drive.usercontent.google.com/download?id=1YBj1g21DRKEMSV0WHaiIT6paJg1qruX9&export=download",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2025-26",
+    "edition_from": "items",
+    "retrieved": "2026-10-13",
+    "bytes": 405012,
+    "pages": 37,
+    "body_chars": 74480,
+    "definitions_from_page": 31,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        8
+      ],
+      "C": [
+        8,
+        15
+      ],
+      "D": [
+        15,
+        17
+      ],
+      "E": [
+        17,
+        18
+      ],
+      "F": [
+        18,
+        19
+      ],
+      "G": [
+        19,
+        22
+      ],
+      "H": [
+        22,
+        30
+      ],
+      "J": [
+        30,
+        31
+      ]
+    },
+    "archive": "local:13934dc8e2666a52fd38aa87065dba4caf230b4e959359f7a6892a987054de92.pdf"
+  },
+  "14aa45e108c4959f68f5043510c2800baae002377df93157c857f98810ceb01f": {
+    "sha256": "14aa45e108c4959f68f5043510c2800baae002377df93157c857f98810ceb01f",
+    "unit_id": "173647",
+    "url": "https://gustavus.edu/instresearch/concertFiles/media/CDS_2022-2023.pdf",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2022-23",
+    "edition_from": "items",
+    "retrieved": "2026-10-11",
+    "bytes": 521024,
+    "pages": 25,
+    "body_chars": 68421,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        7
+      ],
+      "C": [
+        7,
+        13
+      ],
+      "D": [
+        13,
+        15
+      ],
+      "E": [
+        15,
+        16
+      ],
+      "F": [
+        16,
+        17
+      ],
+      "G": [
+        17,
+        18
+      ],
+      "H": [
+        18,
+        25
+      ],
+      "J": [
+        25,
+        25
+      ]
+    },
+    "archive": "local:14aa45e108c4959f68f5043510c2800baae002377df93157c857f98810ceb01f.pdf"
+  },
+  "14aa79313daa31ae2f5c2b26ec262cd5199e536e61db7216edb34f7749629b3d": {
+    "sha256": "14aa79313daa31ae2f5c2b26ec262cd5199e536e61db7216edb34f7749629b3d",
+    "unit_id": "178396",
+    "url": "https://drive.google.com/uc?export=download&id=1NbaWvHf-4bYOTiKZcqYC01uraioI4u5q",
+    "final_url": "https://drive.usercontent.google.com/download?id=1NbaWvHf-4bYOTiKZcqYC01uraioI4u5q&export=download",
+    "kind": "cds",
+    "type": "pdf-flat",
+    "edition": "2024-25",
+    "edition_from": "items",
+    "retrieved": "2026-10-19",
+    "bytes": 837863,
+    "pages": 66,
+    "body_chars": 108423,
+    "definitions_from_page": 58,
+    "sections": {
+      "A": [
+        1,
+        3
+      ],
+      "B": [
+        3,
+        14
+      ],
+      "C": [
+        14,
+        26
+      ],
+      "D": [
+        26,
+        31
+      ],
+      "E": [
+        31,
+        33
+      ],
+      "F": [
+        33,
+        36
+      ],
+      "G": [
+        36,
+        39
+      ],
+      "H": [
+        39,
+        55
+      ],
+      "J": [
+        55,
+        57
+      ]
+    },
+    "archive": "local:14aa79313daa31ae2f5c2b26ec262cd5199e536e61db7216edb34f7749629b3d.pdf"
+  }
+}

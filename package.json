@@ -57,6 +57,7 @@
     "check-grid-columns": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/check-grid-columns.mts",
     "refile-document": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/refile-document.mts",
     "hold-misread": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/hold-misread.mts",
+    "steward": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/steward.mts",
     "check:college-health": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-college-health.mts",
     "check:source-files": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-source-files.mts",
     "check:selectivity": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-selectivity.mts",

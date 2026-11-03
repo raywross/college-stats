@@ -1,0 +1,25 @@
+{
+  "key": "ca9a9ade2caf60b8",
+  "model": "claude-haiku-4-5-20251001",
+  "note": "run, sub-read 1 (claude-haiku-4-5-20251001)",
+  "response": {
+    "id": "msg_dry_ca9a9ade2caf60b8",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-haiku-4-5-20251001",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"answer\":\"Line 99 gives total all undergraduates as 35,621; 20,228 is not on lines 96 to 99.\",\"page\":4,\"line\":99,\"quote\":\"@94 Total all undergraduates | @261 35,621\",\"confident\":true}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 1500,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 120
+    }
+  }
+}

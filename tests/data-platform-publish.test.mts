@@ -36,7 +36,7 @@ import { composeSnapshot, loadPublishLayers, type PublishLayers } from "../scrip
 import { renderSnapshot, sha256 } from "../scripts/lib/data-platform/render.mts";
 import { fileBucket, movePointer, pointerFor, prune, snapshotsToKeep, uploadSnapshot, type BucketClient, type SnapshotRow } from "../scripts/lib/data-platform/upload.mts";
 import { recordChanges, recordTiers, snapshotCommit, tierSuppression } from "../scripts/lib/data-platform/changelog.mts";
-import { fileLedger, FIELD_EDITS_FILE } from "../scripts/lib/data-platform/ledger.mts";
+import { changesSnapshot, fileLedger, FIELD_EDITS_FILE } from "../scripts/lib/data-platform/ledger.mts";
 import { failureRowsFrom, highSchoolDataFrom, highSchoolDigest, publishTables, tablesDigestAfter, type RecordedManifest, type TablesDeps } from "../scripts/lib/data-platform/publish-tables.mts";
 import { EXIT, publishSnapshot, type PublishOptions } from "../scripts/publish-snapshot.mts";
 import { AUTH_STUB_SQL } from "./helpers/pg-auth.mts";
@@ -458,6 +458,35 @@ test("the CLI publishes, says nothing to publish the second time, blocks on a ho
     rmSync(join(dir, FIELD_EDITS_FILE));
     assert.equal(await publishSnapshot(cliOptions(dir, { point: 1 })), EXIT.ok);
     assert.equal((JSON.parse(readFileSync(join(dir, "_bucket", POINTER_OBJECT), "utf8")) as SnapshotPointer).id, 1);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a change set of steward.* documents alone (or of nothing) is nothing to publish; beside a reported set it is carried along", async () => {
+  assert.equal(changesSnapshot({ collections: ["steward.issues", "steward.runs"] }), false);
+  assert.equal(changesSnapshot({ collections: [] }), false);
+  assert.equal(changesSnapshot({ collections: ["steward.proposals", "reported.cds_records"] }), true);
+  assert.equal(changesSnapshot({ collections: null }), true, "a set whose summary doesn't say counts");
+  const dir = await fixtureStore();
+  try {
+    assert.equal(await publishSnapshot(cliOptions(dir)), EXIT.ok);
+    const steward = await fileStore(dir).open("pipeline", "steward", "steward-1");
+    await steward.write(COLLECTIONS.steward.runs, [{ key: "steward-1", body: { key: "steward-1", spent_usd: 0.5 } }]);
+    await steward.close("applied");
+    const quiet = cliOptions(dir, { previous: "auto" });
+    assert.equal(await publishSnapshot(quiet), EXIT.ok);
+    assert.ok(quiet.lines.some((l) => l.includes("nothing to publish (1 change set(s) since the last snapshot, none changing what it composes)")));
+    assert.equal((await fileLedger(dir).snapshots()).length, 1, "no second snapshot");
+    const reported = await fileStore(dir).open("pipeline", "college-reported", "run-9");
+    await reported.write(COLLECTIONS.reported.reports, [{ key: "run-9.md", body: { text: "a run's report" } }]);
+    await reported.close("applied");
+    const real = cliOptions(dir, { previous: "auto" });
+    assert.equal(await publishSnapshot(real), EXIT.ok);
+    const rows = await fileLedger(dir).snapshots();
+    assert.equal(rows.length, 2);
+    assert.equal(rows[0].status, "published");
+    assert.deepEqual((JSON.parse(readFileSync(join(dir, "_snapshots.json"), "utf8")) as { id: number; change_set_ids: number[] }[]).find((r) => r.id === rows[0].id)!.change_set_ids, [steward.id, reported.id]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

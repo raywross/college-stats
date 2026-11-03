@@ -109,6 +109,19 @@ export const COLLECTIONS = {
   health: { colleges: "health.colleges" },
   /** Each split file's header (its top-level fields other than the entries), by the file's path under data/ (not in the table). */
   import: { headers: "import.headers" },
+  /**
+   * The Data Steward's own documents (specs/product/data-steward.md "What it writes"): issues by cause key, proposals,
+   * acquisition To do rows, policy decisions, audits, and run summaries. Written by `scripts/steward.mts` (source
+   * `steward`) and by the console (`admin_steward_write`); never composed into a college, never in a snapshot.
+   */
+  steward: {
+    issues: "steward.issues",
+    proposals: "steward.proposals",
+    todo: "steward.todo",
+    decisions: "steward.decisions",
+    audits: "steward.audits",
+    runs: "steward.runs",
+  },
 } as const;
 
 type Leaves<T> = T extends string ? T : { [K in keyof T]: Leaves<T[K]> }[keyof T];

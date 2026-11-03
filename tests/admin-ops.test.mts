@@ -823,12 +823,13 @@ test("Operations with credentials: a form per dispatchable run, the running one 
   const stubs = stubsIn(markup);
   const formCount = stubs.filter((s) => s.name === "RunForm").length;
   const guarded = DISPATCHABLE_RUNS.filter((r) => r.guards.oneAtATime && r.workflow === "college-reported.yml");
-  assert.equal(formCount, DISPATCHABLE_RUNS.length - guarded.length, "the four college-reported runs show the running run instead of a form");
+  const hidden = DISPATCHABLE_RUNS.filter((r) => r.hidden);
+  assert.equal(formCount, DISPATCHABLE_RUNS.length - guarded.length - hidden.length, "the four college-reported runs show the running run instead of a form, and the runs other screens dispatch have none");
   assert.equal((markup.match(/is already in progress/g) ?? []).length, guarded.length);
   assert.match(markup, /Run #51 on GitHub/);
   assert.ok(stubs.filter((s) => s.name === "RunForm").every((s) => s.props.prefillUnit === "999001"), "?unit= prefills the college run");
   assert.match(markup, /<details open=""[^>]*>[\s\S]*?Re-read one college/, "and opens the college run");
-  assert.match(markup, /href="\/admin\/data\/holds\?unit=999001"/, "the review queue is a link to Holds, narrowed to the college");
+  assert.match(markup, /href="\/admin\/colleges\/999001\/review"/, "the review queue is a link to the college's Review page");
 });
 
 test("Operations no longer shows the review queue: it links Holds, reads nothing from the store or GitHub for it, and keeps Approvals", async () => {

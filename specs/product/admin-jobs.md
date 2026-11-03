@@ -28,6 +28,7 @@ Two runners, one table (`lib/jobs/registry.ts` `JOBS`):
 | Weekly emails and texts | Vercel | Sundays 23:00 | |
 | Day-before texts | Vercel | Monday to Saturday 23:00 | Sunday belongs to the weekly job |
 | College-reported data | GitHub | Mondays 13:00 (Aug–Nov); the 1st 13:00 (Dec–Jul); every 30 min (collect) | the collect firing is housekeeping |
+| Data Steward | GitHub | Sundays 09:00 (the weekly audit) | also runs after every college-reported run that read or collected something (`workflow_run`, not a schedule of its own); by hand or from the console |
 | Identity refresh | GitHub | every day 06:00 | does the refresh only when the last probe is 28+ days old |
 | Visit events | GitHub | every day 07:00 | |
 | Publish snapshot | GitHub | every day 08:00 | pipelines also start it (`repository_dispatch`) |

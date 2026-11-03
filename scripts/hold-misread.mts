@@ -20,7 +20,7 @@ import { reviewItemsFor } from "../lib/cds-checks.ts";
 import { enqueueItems, reviewKey, type ReviewItem } from "../lib/reported.ts";
 import { readColleges, recordBody } from "./lib/college-reported/state.mts";
 import { COLLECTIONS } from "./lib/data-platform/layers.mts";
-import { storeFromFlag, type DataStore } from "./lib/data-platform/store.mts";
+import { storeFromFlag, type ChangeSetHandle, type DataStore } from "./lib/data-platform/store.mts";
 
 export interface Hold {
   unit: string;
@@ -34,9 +34,11 @@ export const HOLD_SOURCE = "hold-misread";
 
 /**
  * Applies the holds on the store: per college, the record with the held items failed `misread` and the queue items
- * for that college (read by key prefix `<unit>|`) with the new ones enqueued; returns what was held per college.
+ * for that college (read by key prefix `<unit>|`) with the new ones enqueued; returns what was held per college. With
+ * `handle` the writes go into that change set and it is left open for its owner (the Data Steward's apply job, source
+ * `steward-apply`); without one the function opens and closes its own.
  */
-export async function holdMisread(store: DataStore, holds: readonly Hold[], opts: { today: string; names: ReadonlyMap<string, string>; dry?: boolean; log?: (line: string) => void }): Promise<{ unit: string; held: string[] }[]> {
+export async function holdMisread(store: DataStore, holds: readonly Hold[], opts: { today: string; names: ReadonlyMap<string, string>; dry?: boolean; log?: (line: string) => void; handle?: ChangeSetHandle }): Promise<{ unit: string; held: string[] }[]> {
   const log = opts.log ?? (() => {});
   for (const h of holds) if (!h.unit || !h.edition || !h.codes.length || !h.detail) throw new Error(`a hold needs unit, edition, codes, and detail: ${JSON.stringify(h)}`);
   const records = new Map<string, CollegeRecord>();
@@ -63,10 +65,11 @@ export async function holdMisread(store: DataStore, holds: readonly Hold[], opts
     log(`${name} (${h.unit}) ${h.edition}: held ${held.join(", ") || "nothing (no values)"}`);
   }
   if (opts.dry) return out;
-  const handle = await store.open("pipeline", HOLD_SOURCE, `hold-misread-${new Date().toISOString()}`);
+  const handle = opts.handle ?? (await store.open("pipeline", HOLD_SOURCE, `hold-misread-${new Date().toISOString()}`));
   await handle.write(COLLECTIONS.reported.cdsRecords, [...records].map(([key, rec]) => ({ key, body: recordBody(rec) })));
   // Unchanged items write nothing (the store compares bodies); an item enqueueItems replaced keeps its key.
   await handle.write(COLLECTIONS.reported.reviewQueue, [...queues.values()].flatMap((q) => [...q].map(([key, body]) => ({ key, body }))));
+  if (opts.handle) return out;
   await handle.close("applied", undefined, { note: `held ${out.reduce((n, o) => n + o.held.length, 0)} misread item(s)`, colleges: out.map((o) => o.unit) });
   log(`Wrote change set ${handle.id}.`);
   return out;

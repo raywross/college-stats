@@ -33,7 +33,8 @@ export const metadata: Metadata = { title: "College", robots: { index: false, fo
  * then what the site computes but never shows: the selectivity breakdown (the one place the weights are visible), the
  * GPA the standing model reads, and every hidden registry field with its lineage, all below the facts the estimate reads with
  * their sources and dates (specs/product/admin-health-views.md); then the college's data health card
- * with its open failures and review-queue items, and a Rerun link that opens Operations with this college filled in.
+ * with its open failures and review-queue items, a Rerun link that opens Operations with this college filled in, and
+ * Review (the college's pending rows, /admin/colleges/[unit]/review), also beside Edit in the header.
  * Server-rendered behind requireAdmin(); nothing here reaches a client bundle.
  */
 export default async function CollegePage({ params, searchParams }: PageProps<"/admin/colleges/[unit]">) {
@@ -74,6 +75,9 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
             <Link href={`/admin/colleges/${unit}/edit`} className="ml-1 inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
               Edit
             </Link>
+            <Link href={`/admin/colleges/${unit}/review`} className="ml-1 inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+              Review
+            </Link>
           </>
         }
       />
@@ -88,7 +92,7 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
           <HiddenBlock rows={hidden} school={school} />
         </div>
         <aside className="min-w-0 space-y-5">
-          <HealthBlock health={health} generated={healthGenerated} opsHref={opsHref} />
+          <HealthBlock health={health} generated={healthGenerated} opsHref={opsHref} reviewHref={`/admin/colleges/${unit}/review`} />
           <ViewersBlock unit={unit} looking={looking} />
         </aside>
       </div>
@@ -250,7 +254,7 @@ async function HiddenBlock({ rows, school }: { rows: HiddenFieldRow[]; school: S
 /* Health                                                              */
 /* ------------------------------------------------------------------ */
 
-function HealthBlock({ health, generated, opsHref }: { health: CollegeHealth | null; generated: string | null; opsHref: string }) {
+function HealthBlock({ health, generated, opsHref, reviewHref }: { health: CollegeHealth | null; generated: string | null; opsHref: string; reviewHref: string }) {
   return (
     <Panel title="Files and collection" id="health" aside={health ? <HealthChip status={health.overall} /> : undefined}>
       {!health ? (
@@ -296,7 +300,7 @@ function HealthBlock({ health, generated, opsHref }: { health: CollegeHealth | n
             <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Review queue</h3>
             <p className="mt-0.5">
               {health.queueItems ? (
-                <Link href={`${opsHref}#review-queue`} className="underline decoration-dotted underline-offset-2">
+                <Link href={reviewHref} className="underline decoration-dotted underline-offset-2">
                   {health.queueItems.toLocaleString("en-US")} item{health.queueItems === 1 ? "" : "s"}
                 </Link>
               ) : (
@@ -306,9 +310,14 @@ function HealthBlock({ health, generated, opsHref }: { health: CollegeHealth | n
           </div>
         </div>
       )}
-      <Link href={opsHref} className="mt-4 inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
-        Rerun in Operations
-      </Link>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href={opsHref} className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
+          Rerun in Operations
+        </Link>
+        <Link href={reviewHref} className="inline-flex h-10 items-center rounded-lg border px-4 text-sm font-semibold hover:bg-muted">
+          Review
+        </Link>
+      </div>
     </Panel>
   );
 }

@@ -1,0 +1,35 @@
+{
+  "key": "f915473ea58fc289",
+  "model": "claude-opus-5-5",
+  "note": "answer, main turn 1",
+  "response": {
+    "id": "msg_dry_f915473ea58fc289",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-opus-5-5",
+    "content": [
+      {
+        "type": "thinking",
+        "thinking": "",
+        "signature": "dry-run"
+      },
+      {
+        "type": "tool_use",
+        "id": "toolu_dry_a1",
+        "name": "read_document_lines",
+        "input": {
+          "sha256": "0ec0308863796e6cee71f3abde12ba8cb4d2b9f7a9ca81331d62cadbd3713f9e",
+          "line": 98
+        }
+      }
+    ],
+    "stop_reason": "tool_use",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 3000,
+      "cache_creation_input_tokens": 5000,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 900
+    }
+  }
+}

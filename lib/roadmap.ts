@@ -189,17 +189,10 @@ export const ROADMAP: RoadmapSpec[] = [
       "A new Supabase project, every migration in one tested script, an account dump and restore, auth settings, and swapping the keys in Vercel; mostly careful steps, little new code.",
     status: "planned",
   },
-  {
-    slug: "data-steward",
-    file: "specs/product/data-steward.md",
-    group: "business",
-    summary:
-      "Behind the scenes: an assistant that works through the figures our checks hold back, proves each fix against the college's own document, asks before anything changes on the site, and keeps the list of documents only a person can fetch.",
-    complexity: 3,
-    complexityNote:
-      "An agent run in GitHub Actions with a budget and no power to merge, clustering of the review queue, a document archive it can read, a To do list for documents a person must fetch, and a redesigned Operations page.",
-    status: "planned",
-  },
+  // The Data Steward (specs/product/data-steward.md, group "business") was built 2026-11-01 on feature/data-steward
+  // after a revision against the data platform: clusters by cause, the Steward's run with fixed tools and a budget,
+  // the Issues / Proposals / To do / Decisions / Audits screens and the college Review page. Phase C (the automated
+  // code PR for a systemic proposal) is open; see the spec's "As built".
   {
     slug: "advisor",
     file: "specs/product/advisor.md",

@@ -23,6 +23,17 @@ export interface PendingChangeSet {
   source: string;
   status: "applied" | "held";
   held_reason: string | null;
+  /** The collections the set wrote (its summary's `collections`), or null when the summary doesn't say. */
+  collections?: string[] | null;
+}
+
+/**
+ * Whether a set can change what a snapshot composes: not when every collection it wrote is the Data Steward's
+ * (`steward.*`, never composed), or when it wrote nothing. A set whose summary doesn't list its collections counts.
+ */
+export function changesSnapshot(s: Pick<PendingChangeSet, "collections">): boolean {
+  if (!Array.isArray(s.collections)) return true;
+  return s.collections.some((c) => !c.startsWith("steward."));
 }
 
 export interface PublishLedger {
@@ -69,7 +80,7 @@ export function supabaseLedger(client: Pick<SupabaseClient, "from" | "rpc">): Pu
   return {
     async pendingChangeSets() {
       const rows = await allRows<PendingChangeSet>("data_change_sets", (from, to) =>
-        client.from("data_change_sets").select("id, source, status, held_reason").is("snapshot_id", null).in("status", ["applied", "held"]).not("closed_at", "is", null).order("id", { ascending: true }).range(from, to)
+        client.from("data_change_sets").select("id, source, status, held_reason, collections:summary->collections").is("snapshot_id", null).in("status", ["applied", "held"]).not("closed_at", "is", null).order("id", { ascending: true }).range(from, to)
       );
       return rows.map((r) => ({ ...r, id: Number(r.id) }));
     },
@@ -135,7 +146,7 @@ export function fileLedger(root: string, opts: { now?: () => Date } = {}): Publi
       const carried = new Set(read().filter((r) => r.status === "published").flatMap((r) => r.change_set_ids));
       return fileStoreChangeSets(root)
         .filter((s) => (s.status === "applied" || s.status === "held") && s.closed_at && !carried.has(s.id))
-        .map((s) => ({ id: s.id, source: s.source, status: s.status as "applied" | "held", held_reason: s.held_reason }));
+        .map((s) => ({ id: s.id, source: s.source, status: s.status as "applied" | "held", held_reason: s.held_reason, collections: Array.isArray(s.summary.collections) ? (s.summary.collections as string[]) : null }));
     },
     async snapshots() {
       return read()

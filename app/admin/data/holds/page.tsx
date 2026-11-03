@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
-import { HeldEssaysList, HeldItemsTable } from "@/components/admin/Holds";
+import { HeldEssaysList, HeldItemsTable, IssuesPointer } from "@/components/admin/Holds";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminSupabase } from "@/lib/admin/people";
 import { listsByUnit } from "@/lib/admin/essays";
@@ -51,6 +51,7 @@ export default async function HoldsPage({ searchParams }: { searchParams: Promis
         subtitle="Values the automatic checks held back for a person. Nothing here reaches a college's page until it is accepted."
       />
       <div className="space-y-5">
+        {queue.ok && <IssuesPointer open={queue.rows.filter((r) => r.status === "open").length} />}
         {heldSets.length > 0 && (
           <div role="note" className="rounded-2xl border border-warning bg-warning/10 p-4 text-sm">
             {heldSets.length} change set{heldSets.length === 1 ? " is" : "s are"} held as a whole, which stops every publish.{" "}

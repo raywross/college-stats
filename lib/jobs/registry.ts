@@ -142,6 +142,18 @@ export const JOBS: readonly JobDef[] = [
     dispatch: "publish-snapshot",
   },
   {
+    id: "data-steward",
+    name: "Data Steward",
+    description:
+      "Groups the review queue by cause, checks the causes against the colleges' documents, and writes issues and proposals for the console. Runs after each college-reported run that read something ($5), by hand ($20), and weekly for an audit.",
+    runner: "github",
+    workflow: "steward.yml",
+    schedules: [{ cron: "0 9 * * 0", note: "The weekly audit of one check family ($10)." }],
+    gate: "After a college-reported run, runs only when that run read or collected something; every run stops at its budget and the week's $40.",
+    spec: "specs/product/data-steward.md",
+    dispatch: "steward",
+  },
+  {
     id: "sync-data",
     name: "Sync data",
     description: "Rebuilds the base dataset from College Scorecard and the IPEDS files.",

@@ -1,0 +1,1180 @@
+{
+  "100654": [
+    {
+      "unit_id": "100654",
+      "name": "Alabama A & M University",
+      "reason_code": "edition_unknown",
+      "stage": "read",
+      "detail": "archived as html; no edition year detected",
+      "url": "https://www.aamu.edu/campus-life/student-support/career-development/_documents/cds-2024-spring-career-guide-jrd.pdf",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "100663": [
+    {
+      "unit_id": "100663",
+      "name": "University of Alabama at Birmingham",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "28 value(s) held; failed checks: parts-sum ×17, number-on-line ×11, one-mark ×3, inconsistent ×2",
+      "url": "https://drive.google.com/uc?export=download&id=1nB2mlDG1ZeLTIp_pQpu8moQJEvIaBm1F",
+      "edition": "2024-25",
+      "checks": [
+        "parts-sum",
+        "number-on-line",
+        "one-mark",
+        "inconsistent"
+      ],
+      "last_run": "2026-10-19",
+      "run": "20261019-191037-103",
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "100706": [
+    {
+      "unit_id": "100706",
+      "name": "University of Alabama in Huntsville",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "37 value(s) held; failed checks: residency-sum ×18, residency-vs-federal ×18, parts-sum ×14, order ×12, ratio-matches ×6, type-range ×3, number-on-line ×1",
+      "url": "https://www.uah.edu/images/administrative/provost/oir/university_of_alabama_in_huntsville_cds_2025-2026.pdf",
+      "edition": "2025-26",
+      "checks": [
+        "residency-sum",
+        "residency-vs-federal",
+        "parts-sum",
+        "order",
+        "ratio-matches",
+        "type-range",
+        "number-on-line"
+      ],
+      "last_run": "2026-10-11",
+      "run": "20261011-024817-48",
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "100724": [
+    {
+      "unit_id": "100724",
+      "name": "Alabama State University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl, picker; nothing found; next try 2027-10-11",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "100751": [
+    {
+      "unit_id": "100751",
+      "name": "The University of Alabama",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "72 value(s) held; failed checks: parts-sum ×40, number-on-line ×25, grid-column ×14, enrollment-disagrees ×11, order ×4, inconsistent ×1",
+      "url": "https://oira.ua.edu/d/sites/all/files/reports26/CDS%202025-26%20FINAL%209Dec2025.pdf",
+      "edition": "2025-26",
+      "checks": [
+        "parts-sum",
+        "number-on-line",
+        "grid-column",
+        "enrollment-disagrees",
+        "order",
+        "inconsistent"
+      ],
+      "last_run": "2026-10-10",
+      "run": "20261010-155034-38",
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "100812": [
+    {
+      "unit_id": "100812",
+      "name": "Athens State University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "100830": [
+    {
+      "unit_id": "100830",
+      "name": "Auburn University at Montgomery",
+      "reason_code": "host_blocked",
+      "stage": "fetch",
+      "detail": "every candidate host refuses us: www.aum.edu",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "100830",
+      "name": "Auburn University at Montgomery",
+      "reason_code": "never_read",
+      "stage": "read",
+      "detail": "fetched, not in the archive manifest",
+      "url": "https://www.aum.edu/wp-content/uploads/2025/05/CDS-2024-2025.pdf",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "100830",
+      "name": "Auburn University at Montgomery",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "1 value(s) held; failed checks: quote-present ×1",
+      "url": "https://www.aum.edu/wp-content/uploads/2025/05/CDS-2024-2025.pdf",
+      "edition": null,
+      "checks": [
+        "quote-present"
+      ],
+      "last_run": "2026-10-26",
+      "run": "20261026-190530-145",
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "100858": [
+    {
+      "unit_id": "100858",
+      "name": "Auburn University",
+      "reason_code": "class_profile_no_figures",
+      "stage": "read",
+      "detail": "only class profile(s) found (1); read, no admissions figures",
+      "url": "https://ir.auburn.edu/factbook/enrollment/new-students/incoming-students.php?utm_source=institutional-research&utm_medium=web",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-10",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "101116": [
+    {
+      "unit_id": "101116",
+      "name": "South University-Montgomery",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "101189": [
+    {
+      "unit_id": "101189",
+      "name": "Faulkner University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl, picker, search; nothing found; next try 2027-02-01",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "101189",
+      "name": "Faulkner University",
+      "reason_code": "discovery_error",
+      "stage": "discovery",
+      "detail": "discovery: https://www.faulkner.edu/page-sitemap.xml: https://www.faulkner.edu/page-sitemap.xml: no complete answer in 60 s; aborted",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "101435": [
+    {
+      "unit_id": "101435",
+      "name": "Huntingdon College",
+      "reason_code": "class_profile_no_figures",
+      "stage": "read",
+      "detail": "only class profile(s) found (1); read, no admissions figures",
+      "url": "https://www.huntingdon.edu/admission-aid/learn-more/",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "101453": [
+    {
+      "unit_id": "101453",
+      "name": "Heritage Christian University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "101480": [
+    {
+      "unit_id": "101480",
+      "name": "Jacksonville State University",
+      "reason_code": "never_read",
+      "stage": "read",
+      "detail": "fetched, not in the archive manifest",
+      "url": "https://www.jsu.edu/ire/research/CDS/cds_2023-2024.pdf",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "101480",
+      "name": "Jacksonville State University",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "1 value(s) held; failed checks: cohort-and-scope ×1",
+      "url": "https://www.jsu.edu/discover/at-a-glance.html",
+      "edition": "Fall 2025",
+      "checks": [
+        "cohort-and-scope"
+      ],
+      "last_run": "2026-10-26",
+      "run": "20261026-190530-145",
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "101587": [
+    {
+      "unit_id": "101587",
+      "name": "University of West Alabama",
+      "reason_code": "class_profile_no_figures",
+      "stage": "read",
+      "detail": "only class profile(s) found (1); read, no admissions figures",
+      "url": "https://www.uwa.edu/fast-facts/",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "101587",
+      "name": "University of West Alabama",
+      "reason_code": "host_blocked",
+      "stage": "fetch",
+      "detail": "refused by uwahd.uwa.edu (bot challenge)",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "101675": [
+    {
+      "unit_id": "101675",
+      "name": "Miles College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "101693": [
+    {
+      "unit_id": "101693",
+      "name": "University of Mobile",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl, picker, search; nothing found; next try 2027-02-01",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "101709": [
+    {
+      "unit_id": "101709",
+      "name": "University of Montevallo",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "1 value(s) held; failed checks: number-on-line ×1",
+      "url": "https://www.montevallo.edu/wp-content/uploads/2025/11/IPEDS-Fall-2024-Enrollment-Report-2.pdf",
+      "edition": "2024-25",
+      "checks": [
+        "number-on-line"
+      ],
+      "last_run": "2026-10-19",
+      "run": "20261019-191037-103",
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "101879": [
+    {
+      "unit_id": "101879",
+      "name": "University of North Alabama",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "86 value(s) held; failed checks: parts-sum ×41, previous-cohort-disagrees ×32, number-on-line ×10, ratio-matches ×9, sums-to-100 ×7, date-order ×4, federal-disagrees ×4, order ×3, plausible-change ×2",
+      "url": "https://www.una.edu/research/Institutional%20Data/una-common-data-set-2025-2026.pdf",
+      "edition": "2025-26",
+      "checks": [
+        "parts-sum",
+        "previous-cohort-disagrees",
+        "number-on-line",
+        "ratio-matches",
+        "sums-to-100",
+        "date-order",
+        "federal-disagrees",
+        "order",
+        "plausible-change"
+      ],
+      "last_run": "2026-10-10",
+      "run": "20261010-180040-39",
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "101912": [
+    {
+      "unit_id": "101912",
+      "name": "Oakwood University",
+      "reason_code": "class_profile_no_figures",
+      "stage": "read",
+      "detail": "only class profile(s) found (1); read, no admissions figures",
+      "url": "https://oakwood.edu/life-at-oakwood/",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-19",
+      "run": null,
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102049": [
+    {
+      "unit_id": "102049",
+      "name": "Samford University",
+      "reason_code": "edition_unknown",
+      "stage": "read",
+      "detail": "archived as pdf-flat; no edition year detected",
+      "url": "https://www.samford.edu/departments/files/Institutional_Effectiveness/2024-2025/CDS_Section_A.pdf",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102058": [
+    {
+      "unit_id": "102058",
+      "name": "Selma University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102094": [
+    {
+      "unit_id": "102094",
+      "name": "University of South Alabama",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "24 value(s) held; failed checks: number-on-line ×17, parts-sum ×5, date-order ×2",
+      "url": "https://www.southalabama.edu/departments/institutionalresearch/resources/commondataset2020-2021.pdf",
+      "edition": "2020-21",
+      "checks": [
+        "number-on-line",
+        "parts-sum",
+        "date-order"
+      ],
+      "last_run": "2026-10-10",
+      "run": "20261010-180040-39",
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102234": [
+    {
+      "unit_id": "102234",
+      "name": "Spring Hill College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl, picker, search; nothing found; next try 2027-02-01",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102270": [
+    {
+      "unit_id": "102270",
+      "name": "Stillman College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "102270",
+      "name": "Stillman College",
+      "reason_code": "host_blocked",
+      "stage": "fetch",
+      "detail": "refused by stillman.edu (HTTP 403)",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102298": [
+    {
+      "unit_id": "102298",
+      "name": "Talladega College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102368": [
+    {
+      "unit_id": "102368",
+      "name": "Troy University",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "12 value(s) held; failed checks: parts-sum ×7, number-on-line ×3, ratio-matches ×2",
+      "url": "https://www.troy.edu/_assets/irpe/_documents/cds-2025-2026.pdf",
+      "edition": "2025-26",
+      "checks": [
+        "parts-sum",
+        "number-on-line",
+        "ratio-matches"
+      ],
+      "last_run": "2026-10-10",
+      "run": "20261010-180040-39",
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102377": [
+    {
+      "unit_id": "102377",
+      "name": "Tuskegee University",
+      "reason_code": "class_profile_no_figures",
+      "stage": "read",
+      "detail": "only class profile(s) found (1); read, no admissions figures",
+      "url": "https://tuskegee.campusesp.com/users/sign_up",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-10",
+      "run": null,
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102395": [
+    {
+      "unit_id": "102395",
+      "name": "United States Sports University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "102395",
+      "name": "United States Sports University",
+      "reason_code": "host_blocked",
+      "stage": "fetch",
+      "detail": "refused by ussa.edu (bot challenge), www.ussu.edu (bot challenge)",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102553": [
+    {
+      "unit_id": "102553",
+      "name": "University of Alaska Anchorage",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102580": [
+    {
+      "unit_id": "102580",
+      "name": "Alaska Bible College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "102614": [
+    {
+      "unit_id": "102614",
+      "name": "University of Alaska Fairbanks",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "3 value(s) held; failed checks: order ×3",
+      "url": "https://www.uaf.edu/pair/pair_reports/common-data-set/UAF_Common_data_Set_2025_2026.pdf",
+      "edition": "2025-26",
+      "checks": [
+        "order"
+      ],
+      "last_run": "2026-10-19",
+      "run": "20261019-191037-103",
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "104151": [
+    {
+      "unit_id": "104151",
+      "name": "Arizona State University Campus Immersion",
+      "reason_code": "unreachable",
+      "stage": "fetch",
+      "detail": "HTTP 404",
+      "url": "https://uoia.asu.edu/sites/g/files/litvpz1436/files/2026-04/CDS%202025-26%20-%20ASU%20Campus%20Immersion.pdf",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": "20261026-190530-145",
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "104179": [
+    {
+      "unit_id": "104179",
+      "name": "University of Arizona",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "37 value(s) held; failed checks: number-on-line ×37, grid-column ×19",
+      "url": "https://uair.arizona.edu/sites/default/files/2026-06/CDS_PDF_2025-26_v02_RE-PRINT.pdf",
+      "edition": "2025-26",
+      "checks": [
+        "number-on-line",
+        "grid-column"
+      ],
+      "last_run": "2026-10-19",
+      "run": "20261019-191037-103",
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "104586": [
+    {
+      "unit_id": "104586",
+      "name": "Embry-Riddle Aeronautical University-Prescott",
+      "reason_code": "never_read",
+      "stage": "fetch",
+      "detail": "found by discovery, never fetched",
+      "url": "https://erau.edu/-/media/files/university/institutional-research/common-data-set/cds-2025-26-db.pdf",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-05",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "104586",
+      "name": "Embry-Riddle Aeronautical University-Prescott",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "1 value(s) held; failed checks: quote-present ×1",
+      "url": "https://erau.edu/-/media/files/university/institutional-research/common-data-set/cds-2023-2024-db.pdf",
+      "edition": null,
+      "checks": [
+        "quote-present"
+      ],
+      "last_run": "2026-10-11",
+      "run": "20261011-080007-50",
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "104717": [
+    {
+      "unit_id": "104717",
+      "name": "Grand Canyon University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl, picker, search; nothing found; next try 2027-02-01",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-10",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "105330": [
+    {
+      "unit_id": "105330",
+      "name": "Northern Arizona University",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "18 value(s) held; failed checks: parts-sum ×17, number-on-line ×1",
+      "url": "https://in.nau.edu/wp-content/uploads/sites/129/2026/04/CDS-2025-2026.pdf",
+      "edition": "2025-26",
+      "checks": [
+        "parts-sum",
+        "number-on-line"
+      ],
+      "last_run": "2026-10-19",
+      "run": "20261019-191037-103",
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "105589": [
+    {
+      "unit_id": "105589",
+      "name": "Prescott College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "105899": [
+    {
+      "unit_id": "105899",
+      "name": "Arizona Christian University",
+      "reason_code": "host_blocked",
+      "stage": "fetch",
+      "detail": "every candidate host refuses us: arizonachristian.edu, azcu.edu",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "106245": [
+    {
+      "unit_id": "106245",
+      "name": "University of Arkansas at Little Rock",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "17 value(s) held; failed checks: parts-sum ×11, federal-disagrees ×5, ratio-matches ×2, type-range ×1",
+      "url": "https://ualr.edu/institutionalresearch/wp-content/uploads/sites/185/2024/05/CDS_2022-2023.pdf",
+      "edition": "2022-23",
+      "checks": [
+        "parts-sum",
+        "federal-disagrees",
+        "ratio-matches",
+        "type-range"
+      ],
+      "last_run": "2026-10-11",
+      "run": "20261011-080007-50",
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "106263": [
+    {
+      "unit_id": "106263",
+      "name": "University of Arkansas for Medical Sciences",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "106306": [
+    {
+      "unit_id": "106306",
+      "name": "Arkansas Baptist College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "106342": [
+    {
+      "unit_id": "106342",
+      "name": "Lyon College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "106397": [
+    {
+      "unit_id": "106397",
+      "name": "University of Arkansas",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "50 value(s) held; failed checks: previous-cohort-disagrees ×128, number-on-line ×10, date-order ×2, one-mark ×2, order ×2, sums-to-100 ×2, type-range ×1",
+      "url": "https://osai.uark.edu/datasets/cds/cds25-26v2.pdf",
+      "edition": "2025-26",
+      "checks": [
+        "previous-cohort-disagrees",
+        "number-on-line",
+        "date-order",
+        "one-mark",
+        "order",
+        "sums-to-100",
+        "type-range"
+      ],
+      "last_run": "2026-10-11",
+      "run": "20261011-012103-45",
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "106412": [
+    {
+      "unit_id": "106412",
+      "name": "University of Arkansas at Pine Bluff",
+      "reason_code": "class_profile_no_figures",
+      "stage": "read",
+      "detail": "only class profile(s) found (1); read, no admissions figures",
+      "url": "https://uapb.edu/about/uapb-at-a-glance/",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "106458": [
+    {
+      "unit_id": "106458",
+      "name": "Arkansas State University",
+      "reason_code": "unreachable",
+      "stage": "fetch",
+      "detail": "HTTP 404",
+      "url": "https://www.astate.edu/about/institutional-research/common_data_set/cds-2025-2026.pdf",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": "20261026-190530-145",
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "106458",
+      "name": "Arkansas State University",
+      "reason_code": "never_read",
+      "stage": "read",
+      "detail": "scanned PDF (no text layer; nothing reads it yet)",
+      "url": "https://kb.astate.edu/books/common-data-set/page/latest-cds/export/pdf",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-19",
+      "run": null,
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "106704": [
+    {
+      "unit_id": "106704",
+      "name": "University of Central Arkansas",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl, picker; nothing found; next try 2027-10-11",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "106713": [
+    {
+      "unit_id": "106713",
+      "name": "Central Baptist College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "106810": [
+    {
+      "unit_id": "106810",
+      "name": "Crowley's Ridge College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "107044": [
+    {
+      "unit_id": "107044",
+      "name": "Harding University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl, picker, search; nothing found; next try 2027-02-01",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "107071": [
+    {
+      "unit_id": "107071",
+      "name": "Henderson State University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "107080": [
+    {
+      "unit_id": "107080",
+      "name": "Hendrix College",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl, picker, search; nothing found; next try 2027-02-01",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "107141": [
+    {
+      "unit_id": "107141",
+      "name": "John Brown University",
+      "reason_code": "class_profile_no_figures",
+      "stage": "read",
+      "detail": "only class profile(s) found (1); read, no admissions figures",
+      "url": "https://www.jbu.edu/news/press-releases/john-brown-university-continues-enrollment-growth-with-record-incoming-class?hsLang=en",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-26",
+      "last_seen": "2026-10-26"
+    },
+    {
+      "unit_id": "107141",
+      "name": "John Brown University",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "1 value(s) held; failed checks: cohort-and-scope ×1",
+      "url": "https://www.jbu.edu/news/press-releases/john-brown-university-continues-enrollment-growth-with-record-incoming-class?hsLang=en",
+      "edition": "Fall 2026",
+      "checks": [
+        "cohort-and-scope"
+      ],
+      "last_run": "2026-10-26",
+      "run": "20261026-190530-145",
+      "first_seen": "2026-10-26",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "107512": [
+    {
+      "unit_id": "107512",
+      "name": "Ouachita Baptist University",
+      "reason_code": "host_blocked",
+      "stage": "fetch",
+      "detail": "every candidate host refuses us: obu.edu",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "107558": [
+    {
+      "unit_id": "107558",
+      "name": "University of the Ozarks",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "28 value(s) held; failed checks: enrollment-disagrees ×10, parts-sum ×8, order ×7, federal-disagrees ×4",
+      "url": "https://ozarks.edu/wp-content/uploads/CDS_2025-2026.pdf",
+      "edition": "2025-26",
+      "checks": [
+        "enrollment-disagrees",
+        "parts-sum",
+        "order",
+        "federal-disagrees"
+      ],
+      "last_run": "2026-10-11",
+      "run": "20261011-102854-53",
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "107600": [
+    {
+      "unit_id": "107600",
+      "name": "Philander Smith University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "107877": [
+    {
+      "unit_id": "107877",
+      "name": "Williams Baptist University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "107983": [
+    {
+      "unit_id": "107983",
+      "name": "Southern Arkansas University Main Campus",
+      "reason_code": "class_profile_no_figures",
+      "stage": "read",
+      "detail": "only class profile(s) found (1); read, no admissions figures",
+      "url": "https://my.saumag.edu/",
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-11",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "108232": [
+    {
+      "unit_id": "108232",
+      "name": "Academy of Art University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl; nothing found",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-26",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "109651": [
+    {
+      "unit_id": "109651",
+      "name": "Art Center College of Design",
+      "reason_code": "failed_checks",
+      "stage": "checks",
+      "detail": "36 value(s) held; failed checks: number-on-line ×36, grid-column ×18, one-mark ×18",
+      "url": "https://cms.artcenter.edu/assets/24848/src/CDS%202025-2026_18June26.pdf",
+      "edition": "2025-26",
+      "checks": [
+        "number-on-line",
+        "grid-column",
+        "one-mark"
+      ],
+      "last_run": "2026-10-19",
+      "run": "20261019-191037-103",
+      "first_seen": "2026-10-19",
+      "last_seen": "2026-10-26"
+    }
+  ],
+  "109785": [
+    {
+      "unit_id": "109785",
+      "name": "Azusa Pacific University",
+      "reason_code": "no_document_found",
+      "stage": "discovery",
+      "detail": "tried probe-sitemap, probe-host, probe-crawl, picker; nothing found; next try 2027-10-11",
+      "url": null,
+      "edition": null,
+      "checks": [],
+      "last_run": "2026-10-11",
+      "run": null,
+      "first_seen": "2026-10-10",
+      "last_seen": "2026-10-26"
+    }
+  ]
+}

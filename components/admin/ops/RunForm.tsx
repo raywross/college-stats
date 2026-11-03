@@ -19,7 +19,7 @@ function Field({ input, prefillUnit }: { input: RunInput; prefillUnit: string | 
           <label htmlFor={id} className="block text-sm font-semibold">
             {input.label}
           </label>
-          <input id={id} name={input.name} defaultValue={prefillUnit ?? ""} inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required placeholder="six digits" className={`${inputCls} mt-1.5 sm:max-w-[12rem]`} />
+          <input id={id} name={input.name} defaultValue={prefillUnit ?? ""} inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required={input.required} placeholder="six digits" className={`${inputCls} mt-1.5 sm:max-w-[12rem]`} />
         </div>
       );
     case "boolean":

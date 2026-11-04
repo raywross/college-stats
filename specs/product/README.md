@@ -53,7 +53,7 @@ the roadmap, with the award-letter analyzer as the last stage.
 | Spec | Adds | Complexity |
 |---|---|---|
 | [high-school-data.md](high-school-data.md) | A high school dataset (NCES, EDFacts, Civil Rights Data Collection, state report cards, school profiles) and high school pages | Extra large |
-| [scattergrams.md](scattergrams.md) | *Folded 2026-10-26 into the [counselor portal](counselor-portal.md#scattergrams)*: counselor-uploaded outcomes from one high school, scrubbed and thresholded, drawn beside Quad's estimate; the self-reported half is built as [calibration](../chances/calibration.md) | Large |
+| [scattergrams.md](scattergrams.md) | *The counselor portal's last phase, its own roadmap item again since 2026-11-01*: counselor-uploaded outcomes from one high school, scrubbed and thresholded, drawn beside Quad's estimate, with the data processing agreement for schools; the self-reported half is built as [calibration](../chances/calibration.md) | Large |
 
 ### Platform, measurement, and business
 | Spec | Adds | Complexity |
@@ -61,7 +61,7 @@ the roadmap, with the award-letter analyzer as the last stage.
 | [telemetry.md](telemetry.md) | Product analytics with a typed event registry, privacy rules for minors, and usage reports (built 2026-10-07) | Medium |
 | [commercialization.md](commercialization.md) | *Redrawn 2026-10-26 (owner):* the advisor, the plan as the one paid product at $20 a year per student or $30 a family; everything else free, counselors included; the entitlement map behind the planner's capability hook; Stripe billing; the pricing page | Large |
 | [advisor.md](advisor.md) | *Parts 1 and 2 built 2026-10-27; the trial planned:* the plan renamed Quad Advisor (the tab Advisor, `/advisor`), the 14-day trial with the card up front and the yearly charge after, and the signed-out splash page that shows the real thing over a sample student | Medium |
-| [counselor-portal.md](counselor-portal.md) | *Revised 2026-10-26, free by the owner's decision:* organization accounts for counselors and consultants: caseloads over students' plans, reports, and scattergram uploads as the last phase; the families buy the advisor | Extra large |
+| [counselor-portal.md](counselor-portal.md) | *Rewritten 2026-11-01 around the channel (owner):* counselors and consultants run their caseload on Quad free, students join by a link or a code and grant access like a parent's, the caseload shows the record, the list's shape, deadlines, and signals, with asks, notes, and an export; the families buy the advisor; no agreement, seats, or reports; scattergrams as the last phase | Large |
 | [data-api.md](data-api.md) | *Built 2026-10-20:* a keyed API and an MCP server over the dataset, history, and lineage, for people with an account (keys on `/account/api-keys`, docs on `/developers`); bulk downloads and the paid tier wait for billing | Medium |
 | [assistants.md](assistants.md) | *Built 2026-10-20:* Quad in ChatGPT, Claude, and Gemini: the same MCP server without a key at `/mcp` for the assistants' connector menus, a downloadable skill file, and the `/connect` page with the steps for each | Medium |
 | [data-steward.md](data-steward.md) | *Planned 2026-10-13, revised 2026-10-26*: an agent that turns the review queue into a few causes, proves each against the colleges' documents, and opens fixes for the owner to approve; Operations becomes Issues, Proposals, To do (the documents a person has to fetch), Decisions, and Audits | Large |
@@ -92,7 +92,8 @@ minors' data that run through all of it.
 ## Build order
 What is left, after the roadmap review of 2026-10-26 (everything else in this file is built):
 ```
-advisor (the name and the page first) ─► launch-database ─► commercialization (the trial's billing) ─► counselor-portal (scattergrams as its last phase)
+advisor (the name and the page first) ─► launch-database ─► commercialization (the trial's billing)
+counselor-portal (the caseload; needs no billing) ─► scattergrams (the school's own data, with its agreement)
 cost-by-income's pilot ─► net-price-estimator
 data-steward (after the archive repo; independent of the rest)
 ```

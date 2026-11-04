@@ -42,6 +42,7 @@ import { saveIntake } from "@/lib/planner/store-plan";
 import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { cn } from "@/lib/utils";
+import type { ViewerRelation } from "@/lib/viewer-relation";
 
 /** The rail's thirteen entry labels plus Review (steps.md "The steps"). */
 const RAIL_LABELS: readonly string[] = [...RECORD_STEPS.map((s) => s.rail), "Review"];
@@ -96,7 +97,7 @@ export default function PlanIntake({
   view: PlanView;
   /** "first": no numbers yet, ends on Done. "edit": opened from a ✎, starts at Review or a linked step. */
   mode: "first" | "edit";
-  relation: "self" | "guardian";
+  relation: ViewerRelation;
   /** The student's first name, for a guardian's copy. */
   firstName: string | null;
   /** `?back=plan|record|inline` (steps.md "Edit mode"): where saving in edit mode returns to. */
@@ -117,7 +118,7 @@ export default function PlanIntake({
   const today = ctx.today;
   const studentId = ctx.student?.id ?? null;
   const storedGradYear = ctx.student?.grad_year ?? null;
-  const person = relation === "guardian" ? studentId : null;
+  const person = relation !== "self" ? studentId : null;
   // The Connections step's first suggestions (connections.md "Adding one"): the list's own colleges, since a
   // connection there is the common case. `ctx` already carries `items`/`schools`, so this is computed here rather
   // than threaded in from PlanFrame.

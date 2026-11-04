@@ -9,7 +9,7 @@
  * Pure (no server-only imports) so tests run it against a fake client (tests/bundles.test.mts).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { HouseholdMember, Profile, StudentRecord } from "./accounts.ts";
+import type { CounselorGrant, HouseholdMember, Profile, StudentRecord } from "./accounts.ts";
 import type { RosterMember } from "./household-rules.ts";
 import type { PlanData, PlanList } from "./planner/read-plan.ts";
 import type { PlanItem, PlanNudge, PlanOffer, PlanTask, PlanVisit } from "./planner/types.ts";
@@ -58,6 +58,11 @@ export interface ViewerBundle {
   households: { id: string; name: string; created: string; members: RosterMember[] }[];
   student_profiles: { student_id: string; data: unknown }[];
   home: Record<string, unknown> | null;
+  /**
+   * The caller's live grants as a member of a counselor organization (20261102120000_organizations.sql). Absent from a
+   * viewer_bundle() defined before that migration, when no organization exists yet: read it as [].
+   */
+  grants?: CounselorGrant[];
 }
 
 /** plan_bundle(): one student's row and their (default or named) list's plan. */

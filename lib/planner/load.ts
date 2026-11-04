@@ -27,6 +27,8 @@ import { span } from "@/lib/timing";
 import { planBundle, type PlanBundle } from "@/lib/bundles";
 import { bundleKnownMissing, planDataFromBundle } from "@/lib/bundle-read";
 import { readPlanEssays, type PlanData } from "./read-plan";
+import { isParent } from "@/lib/viewer-relation";
+import { isUuid } from "./plan-writes";
 
 export type PlanLoad =
   /** The plan, ready for the tabs. */
@@ -96,7 +98,8 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
   }
   if (!listId) return { kind: "empty", access };
 
-  if (relation === "guardian") await scheduleStudentReadLog(student.id, "plan_tasks");
+  // A parent's or a counselor's read is logged for the student (lib/viewer-relation.ts isViewer).
+  if (relation !== "self") await scheduleStudentReadLog(student.id, "plan_tasks");
   const gradYear = profile ? effectiveGradYear(profile.data.basics, student.grad_year) : student.grad_year;
   const today = todayIso();
   const profileData = profile?.data ?? null;
@@ -140,8 +143,9 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
       userId: account?.user.id ?? "",
       firstName: firstName(account?.profile.display_name),
       canEdit,
-      relation: relation === "self" ? "self" : "guardian",
-      isGuardian: relation === "guardian",
+      relation,
+      isGuardian: isParent(relation),
+      isCounselor: relation === "counselor",
     },
   });
   const view = planView({ items: ctx.items, schools: ctx.schools, profile: ctx.profile, estimates, today });
@@ -221,6 +225,19 @@ export type PlanViewer =
  * in browser QA 2026-10-10). Only someone who is nobody's guardian gets their own plan, and only then is
  * `currentStudent()` called.
  */
+/**
+ * A counselor's `?for=` (specs/product/counselor-portal.md "A student": `/advisor?for=<id>` opens for a counselor as
+ * it does for a parent): the student it names when the viewer reaches them through a counselor grant, else null. A
+ * student reached both ways resolves to "guardian" (lib/accounts.ts resolveStudentAccess: the family's grant wins), so
+ * a parent's own child never takes this path. The advisor, its guides, its print page, and the essays pages check this
+ * before planViewer(), which only knows the household.
+ */
+export async function counselorAccessFor(forParam: string | null | undefined): Promise<StudentAccess | null> {
+  if (!isUuid(forParam)) return null;
+  const access = (await studentsICanSee()).find((a) => a.student.id === forParam);
+  return access?.relation === "counselor" ? access : null;
+}
+
 export async function planViewer(): Promise<PlanViewer> {
   const children = await myPlanChildren();
   if (children.length > 0) return { kind: "guardian", children };

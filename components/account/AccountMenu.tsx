@@ -2,22 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, type ComponentType } from "react";
+import { useRef } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { LogOut, UserRound, Users } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { initialsFor, loginHref } from "@/lib/accounts";
 import { cn } from "@/lib/utils";
+import { accountMenuLinks } from "./account-menu-links";
 import { useMe } from "./useMe";
-
-/**
- * Links in the avatar menu, in order, then Sign out: Household · Your account (specs/product/household-hub.md). Each
- * person's list and numbers are on their page, reached from the household; account features link from there or from
- * /account, never from the main navigation (specs/product/accounts.md).
- */
-const ACCOUNT_MENU_LINKS: { href: string; label: string; icon: ComponentType<{ className?: string }> }[] = [
-  { href: "/household", label: "Household", icon: Users },
-  { href: "/account", label: "Your account", icon: UserRound },
-];
 
 /** Paths where "Sign in" shouldn't send people back (they'd land on the login page again). */
 function returnPath(pathname: string): string | undefined {
@@ -66,8 +57,8 @@ export function AccountMenu() {
                 {me.email && <p className="truncate text-xs text-muted-foreground">{me.email}</p>}
               </div>
               <div className="my-1 h-px bg-border" />
-              {ACCOUNT_MENU_LINKS.map(({ href, label, icon: Icon }) => (
-                <Menu.LinkItem key={href} closeOnClick render={<Link href={href} />} className={cn(itemCls, pathname === href && "text-primary")}>
+              {accountMenuLinks(me).map(({ href, label, icon: Icon }) => (
+                <Menu.LinkItem key={href} closeOnClick render={<Link href={href} />} className={cn(itemCls, (pathname === href || pathname.startsWith(`${href}/`)) && "text-primary")}>
                   <Icon className="size-4" />
                   {label}
                 </Menu.LinkItem>

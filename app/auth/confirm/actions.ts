@@ -3,12 +3,16 @@
 import { authConfigured } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { trackSignupIfNew } from "@/lib/signup-events";
+import { isFreshConfirmation } from "@/lib/signup-events-rules";
+import { firstLanding, safeNextPath } from "@/lib/accounts";
 
 /**
  * Finishes a magic-link sign-in (app/auth/confirm): stores the session the link brought back as the site's httpOnly
  * cookies, then checks the token with Supabase (getUser) so a forged or expired token never counts as signed in.
+ * `next` is the link's own next path; `to` is where to go now, which is `next` except for a new counselor's default
+ * (lib/accounts.ts firstLanding: /org).
  */
-export async function completeSignIn(accessToken: string, refreshToken: string): Promise<{ ok: boolean }> {
+export async function completeSignIn(accessToken: string, refreshToken: string, next?: string): Promise<{ ok: boolean; to?: string }> {
   if (!authConfigured() || typeof accessToken !== "string" || typeof refreshToken !== "string") return { ok: false };
   const supabase = await createServerSupabase();
   const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
@@ -24,5 +28,6 @@ export async function completeSignIn(accessToken: string, refreshToken: string):
   }
   // A first confirmation counts as a sign-up. The link's own next path isn't known here, so has_invite is false.
   await trackSignupIfNew(data.user, "magic_link", "");
-  return { ok: true };
+  const target = safeNextPath(next, "/account");
+  return { ok: true, to: firstLanding(target, data.user.user_metadata?.role_hint, isFreshConfirmation(data.user)) };
 }

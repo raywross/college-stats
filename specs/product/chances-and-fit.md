@@ -11,7 +11,7 @@
 > | Fit against the student's preferences | Explore's "Fits my scores" and "Fits my preferences" chips ([student-profile.md](student-profile.md#display), `lib/explore-fit.ts`); the Build your list guide's candidates ([planner/v3/guides/list-size.md](../planner/v3/guides/list-size.md)) read the same preferences. The "best fit" sort and a matches-and-mismatches list were not built and are not planned |
 > | The caveats shown every time | Catalog sentences `estimate.caveat.*` under every card |
 > | The pilot against real outcomes | [chances/calibration.md](../chances/calibration.md) (snapshots with consent, the published accuracy summary) |
-> | Local outcomes from the student's high school | Waits for the counselor portal ([counselor-portal.md](counselor-portal.md#scattergrams)); the estimate does not use the high school and says so |
+> | Local outcomes from the student's high school | Waits for the counselor portal ([counselor-portal.md](counselor-portal.md#phases)); the estimate does not use the high school and says so |
 >
 > The open questions are answered: weighted GPA is an input of the method since 2026-10-12
 > ([chances/inputs-beyond-academics.md](../chances/inputs-beyond-academics.md)), and tiers are

@@ -12,6 +12,7 @@ import { satTotal } from "./score-bands.ts";
 import { isMajorFamily, type MajorFamily } from "./majors.ts";
 import { isHighSchoolId } from "./high-school-core.ts";
 import type { StandingStudent } from "./planner/standing.ts";
+import type { ViewerRelation } from "./viewer-relation.ts";
 import type { ActivityEntry, ActivityFamily, ActivityKind, ActivityRole, AwardEntry, ClassStanding, CourseEntry, CourseKind, CourseStatus, CourseSubject, CourseTerm, HsYear, Mark, RankExpectation, RecognitionTier, RecruitedPick } from "./chances/types.ts";
 import { ACTIVITIES_MAX, AWARDS_MAX, CLASS_STANDING_PERCENTILE, RECRUITED_PICKS } from "./chances/levels.ts";
 import { catalogCourse, COURSE_SUBJECTS, isCatalogKeyFor } from "./chances/catalog.ts";
@@ -798,8 +799,9 @@ export function residencyState(p: Pick<StudentProfileData, "basics" | "homeState
   return { state: null, source: null };
 }
 
-export function profileForViewer(data: StudentProfileData, relation: "self" | "guardian"): StudentProfileData {
-  if (relation !== "guardian") return data;
+/** What a viewer receives of a profile: the student everything; a parent or a counselor never the story's text. */
+export function profileForViewer(data: StudentProfileData, relation: ViewerRelation): StudentProfileData {
+  if (relation === "self") return data;
   return { ...data, story: redactStoryForGuardian(data.story) };
 }
 

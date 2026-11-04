@@ -43,6 +43,7 @@ import type { SchoolType, SettingGroup, SizeBucket } from "../types.ts";
 import { SETTING_CHIPS, SIZE_CHIPS } from "./list-guide.ts";
 import { isUnitId } from "../follow-state.ts";
 import type { PlanContext } from "./types.ts";
+import type { ViewerRelation } from "../viewer-relation.ts";
 import { reconcileStepNone, stepReviewValue, type ActivityStep } from "./activity-steps.ts";
 
 /* ------------------------------------------------------------------ */
@@ -675,10 +676,10 @@ function trimNumber(n: number): string {
 /**
  * The draft the guide opens on: the saved numbers and AP courses (edit mode), or an empty draft. A GPA above 4.0 saved
  * on the 4.0 scale is weighted by definition (isWeightedGpa) and opens on the detected 5.0 weighted scale. Steps 8–12
- * read back as stored. A guardian's draft (`relation: "guardian"`, or a redacted profile, whose story text is "")
+ * read back as stored. A guardian's or a counselor's draft (`relation` other than "self", or a redacted profile, whose story text is "")
  * carries `story: null`, so the save keeps the stored story.
  */
-export function draftFromProfile(profile: StudentProfileData | null, gradYear: number | null, today: string, opts: { relation?: "self" | "guardian" } = {}): IntakeDraft {
+export function draftFromProfile(profile: StudentProfileData | null, gradYear: number | null, today: string, opts: { relation?: ViewerRelation } = {}): IntakeDraft {
   void today;
   const empty: IntakeDraft = {
     classYear: gradYear,
@@ -709,7 +710,7 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     types: [],
     maxAverageCost: "",
     earlyRoundInterest: null,
-    story: opts.relation === "guardian" ? null : "",
+    story: opts.relation !== undefined && opts.relation !== "self" ? null : "",
     storyWritten: false,
     recommenders: [],
   };
@@ -755,7 +756,7 @@ export function draftFromProfile(profile: StudentProfileData | null, gradYear: n
     types: [...profile.preferences.types],
     maxAverageCost: profile.preferences.maxAverageCost === null ? "" : String(profile.preferences.maxAverageCost),
     earlyRoundInterest: profile.plans.earlyRoundInterest,
-    story: opts.relation === "guardian" || redacted ? null : (profile.story?.narrative ?? ""),
+    story: (opts.relation !== undefined && opts.relation !== "self") || redacted ? null : (profile.story?.narrative ?? ""),
     storyWritten: storyWritten(profile),
     recommenders: profile.recommenders,
   };

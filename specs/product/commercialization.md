@@ -74,7 +74,7 @@ are new names the same hook takes.
 | Nightly visit alert emails within a radius of home | `visits.alerts` | | ✓ |
 | The family's price per college on plan rows, the "can pay" line, the four-year total | `cost.family` | | ✓ |
 | Family PDF dossier (the plan, levels, prices, offers, deadlines) | `plan.dossier` | | ✓ |
-| Counselor organization: caseload, reports, scattergram uploads ([counselor-portal.md](counselor-portal.md)) | `org.*` | ✓ (free) | — |
+| Counselor organization: the caseload, asks, notes, the export, and later the scattergram uploads ([counselor-portal.md](counselor-portal.md)) | none: the portal never asks `allowed()` | ✓ (free) | — |
 
 **The trial, not a taste** (owner, 2026-10-26). There is no free slice of the plan: a visitor who opens the Advisor tab
 without an account sees the splash page ([advisor.md](advisor.md#3-the-page-advisor-signed-out)), and the way in is a
@@ -86,9 +86,10 @@ Rules the map follows:
 - **Nothing public moves behind a price**, and neither does the estimate: Quad's answer to "where do I stand" stays on
   every college page for everyone with an account, because hiding it would push a family to a site that prints a
   percentage. What is paid is the plan built on it.
-- **The counselor pays nothing and buys nothing for students.** Counselors see and help; families buy the advisor for
-  their own student. A counselor's caseload page shows which students have the advisor, so the office knows who can
-  see the guides it is talking about. (Whether an organization may buy a block of student plans is an open question.)
+- **The counselor pays nothing, buys nothing for students, and sells nothing.** Counselors see and help; families buy
+  the advisor for their own student. A counselor's caseload page shows each student's advisor status as a quiet chip
+  ("Preview" until billing ships), so the office knows who can open the guides it is talking about, and nothing more:
+  no referral links, no "remind them to subscribe", no commission ([counselor-portal.md](counselor-portal.md#the-channel)).
 - Gating UX: a gated block renders its frame with a blurred sample and an "Advisor" chip and a one-line reason;
   nothing is hidden, nothing nags. One upgrade sheet, from any chip, with the two prices. `allowed()` keeps returning a
   boolean; a second function returns the limit (`limitFor(user, capability)`) for the capped rows.
@@ -133,10 +134,12 @@ listings, no leads sold to colleges, no advisor commissions. Linked from the foo
 counselor portal's sign-up; not in the main nav.
 
 ## Counselors
-[counselor-portal.md](counselor-portal.md) is a free product under this model: the organization account, the caseload
-dashboard over students' plans, the reports, and the scattergram uploads cost nothing, for independent consultants and
-school offices alike (school offices still sign the data processing agreement). The office is the acquisition
-channel: a counselor who runs their caseload on Quad has families who buy the advisor. The 2026-10-03 proposals that
+[counselor-portal.md](counselor-portal.md) is a free product under this model (rewritten 2026-11-01 around the
+channel): the organization, the caseload over students' advisors, asks, notes, the export, and later the scattergram
+uploads cost nothing, for independent consultants and school offices alike, with no agreement to sign before the
+caseload works (the data processing agreement belongs to the scattergram phase, where a school's own records arrive).
+The office is the acquisition channel: a counselor who runs their caseload on Quad has families who buy the advisor,
+and the student's path is the ordinary one (the same account, splash page, and trial). The 2026-10-03 proposals that
 counselors pay per seat and that counselor-invited students are free ([ideas/README.md](../ideas/README.md),
 proposals 8 and 9) are superseded by the owner's decision. The Data API's paid tier is dropped from this spec: a
 personal key stays free with its limits, and bulk downloads wait for a reason to exist.

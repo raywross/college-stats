@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { ArrowLeft } from "lucide-react";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { SignInPrompt } from "@/components/account/SignInPrompt";
+import { ViewerBanner } from "@/components/account/ViewerBanner";
 import { Package, type PackageItemView } from "@/components/essays/Package";
 import { authConfigured } from "@/lib/auth";
 import { getData } from "@/lib/data";
@@ -99,6 +100,8 @@ async function render(unitId: string, searchParams: Search) {
     <article className="mx-auto min-w-0 max-w-3xl space-y-6" aria-labelledby="package-title">
       <header className="space-y-2">
         {back}
+        {/* A counselor sees the banner on every page of the student's they open (specs/product/counselor-portal.md). */}
+        {viewer.role === "counselor" && <ViewerBanner relation="counselor" studentName={viewer.student.name} canEdit={viewer.canEdit} />}
         <h1 id="package-title" className="font-display text-2xl font-bold sm:text-3xl">
           {school.name}: essay package
         </h1>

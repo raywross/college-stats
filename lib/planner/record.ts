@@ -28,6 +28,7 @@ import { stepRailSummary } from "./activity-steps.ts";
 import { sectionDone } from "./profile-progress.ts";
 import type { PlanContext } from "./types.ts";
 import type { StudentProfileData } from "../student-profile.ts";
+import type { ViewerRelation } from "../viewer-relation.ts";
 
 export { RECORD_DONE, RECORD_REVIEW, type RecordEntryStep, type RecordStep };
 
@@ -262,7 +263,7 @@ export interface RecordProgress {
  * answer counts), with its summary and unlock line. Pass `relation: "guardian"` for a parent's view (the story reads
  * Written / Not yet without its text either way).
  */
-export function recordProgress(p: StudentProfileData | null, opts: { relation?: "self" | "guardian" } = {}): RecordProgress {
+export function recordProgress(p: StudentProfileData | null, opts: { relation?: ViewerRelation } = {}): RecordProgress {
   const draft = draftFromProfile(p, p?.basics.gradYear ?? null, "", { relation: opts.relation });
   const rows = RECORD_STEPS.map(({ section, step }): RecordRow => ({
     section,

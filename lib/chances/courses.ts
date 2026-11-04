@@ -6,6 +6,7 @@
  */
 import { catalogCourse } from "./catalog.ts";
 import type { CourseEntry, CourseKind, CourseStatus, CourseSubject } from "./types.ts";
+import type { ViewerRelation } from "../viewer-relation.ts";
 import {
   CORE_SUBJECT_KEYS,
   CORE_YEARS,
@@ -220,7 +221,7 @@ export function withoutExams(courses: readonly CourseEntry[]): CourseEntry[] {
 export function mergeCoursesForSave(
   saved: { courses: readonly CourseEntry[]; apExamsPrivate: boolean },
   incoming: { courses: readonly CourseEntry[]; apExamsPrivate: boolean },
-  relation: "self" | "guardian",
+  relation: ViewerRelation,
 ): { courses: CourseEntry[]; apExamsPrivate: boolean } {
   return { courses: [...incoming.courses], apExamsPrivate: relation === "self" ? incoming.apExamsPrivate : saved.apExamsPrivate };
 }

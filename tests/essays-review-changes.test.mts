@@ -242,6 +242,7 @@ export async function promptLookup() { return { school: () => null, schoolRecord
   "@/components/ui/why-fold": nothing(["WhyFold"]),
   "@/components/account/AuthUnavailable": nothing(["AuthUnavailable"]),
   "@/components/account/SignInPrompt": nothing(["SignInPrompt"]),
+  "@/components/account/ViewerBanner": nothing(["ViewerBanner"]),
   "@/components/essays/ExportMenu": nothing(["ExportMenu"]),
   "@/components/essays/ImportSheet": nothing(["ImportSheet"]),
   "@/components/essays/PromptPicker": nothing(["ReusePicker"]),

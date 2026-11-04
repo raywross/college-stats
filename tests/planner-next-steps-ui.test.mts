@@ -87,7 +87,7 @@ function ctxOf(o: Partial<PlanContext> = {}): PlanContext {
     profile: null,
     schools: {},
     home: null,
-    viewer: { userId: "u1", firstName: "Jo", canEdit: true, relation: "self", isGuardian: false },
+    viewer: { userId: "u1", firstName: "Jo", canEdit: true, relation: "self", isGuardian: false, isCounselor: false },
     today: TODAY,
     cycle: {} as never,
     grade: {} as never,
@@ -159,7 +159,7 @@ test("MoveCard: a past dated move is Overdue, in the warning color; the same dat
 
 test("MoveCard: the assignee chip shows only when the move isn't the student's, 'Either' always, the same for a guardian", () => {
   const card = (assignee: PlanTask["assignee"], isGuardian: boolean) =>
-    render(moveCardMod.MoveCard as never, { task: taskOf({ assignee }), ctx: ctxOf({ viewer: { userId: "u1", firstName: "Jo", canEdit: true, relation: isGuardian ? "guardian" : "self", isGuardian } }), onDone: noop, onSkip: noop, pending: false });
+    render(moveCardMod.MoveCard as never, { task: taskOf({ assignee }), ctx: ctxOf({ viewer: { userId: "u1", firstName: "Jo", canEdit: true, relation: isGuardian ? "guardian" : "self", isGuardian, isCounselor: false } }), onDone: noop, onSkip: noop, pending: false });
   // A guardian sees the student's card exactly (owner, 2026-10-16: "using the student view").
   for (const isGuardian of [false, true]) {
     assert.doesNotMatch(card("student", isGuardian), /data-term="task-assignee"/, "no chip on the student's own move");
@@ -241,7 +241,7 @@ test("MoveCard: a move with a guide has one button, the guide's, linking the gui
   // A guardian's link carries the child.
   const guardian = render(moveCardMod.MoveCard as never, {
     task: taskOf({ id: "t7", key: "l1:playbook:build_list", action: { kind: "open_tab", tab: "colleges" } }),
-    ctx: ctxOf({ viewer: { userId: "u2", firstName: "Jo", canEdit: false, relation: "guardian", isGuardian: true }, student: { id: "kid-1", display_name: "Maya", grad_year: 2028, user_id: null } }),
+    ctx: ctxOf({ viewer: { userId: "u2", firstName: "Jo", canEdit: false, relation: "guardian", isGuardian: true, isCounselor: false }, student: { id: "kid-1", display_name: "Maya", grad_year: 2028, user_id: null } }),
     onDone: noop,
     onSkip: noop,
     pending: false,
@@ -250,16 +250,16 @@ test("MoveCard: a move with a guide has one button, the guide's, linking the gui
 });
 
 test("MoveCard: Done and Skip for now live in the corner menu, with edit access only; a guardian's menu has no Skip", () => {
-  const editable = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf({ viewer: { userId: "u1", firstName: "Jo", canEdit: true, relation: "self", isGuardian: false } }), onDone: noop, onSkip: noop, pending: false });
+  const editable = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf({ viewer: { userId: "u1", firstName: "Jo", canEdit: true, relation: "self", isGuardian: false, isCounselor: false } }), onDone: noop, onSkip: noop, pending: false });
   assert.match(editable, /<details[^>]*>\s*<summary[^>]*aria-label="More for Apply to a summer program by its deadline"/);
   assert.match(editable, /size-11/, "the ⋯ button is 44px");
   assert.match(editable, /<button[^>]*>Done<\/button>/);
   assert.match(editable, /<button[^>]*>Skip for now<\/button>/);
   assert.doesNotMatch(editable, /Not now/);
-  const guardian = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf({ viewer: { userId: "u2", firstName: "Jo", canEdit: true, relation: "guardian", isGuardian: true } }), onDone: noop, onSkip: noop, pending: false });
+  const guardian = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf({ viewer: { userId: "u2", firstName: "Jo", canEdit: true, relation: "guardian", isGuardian: true, isCounselor: false } }), onDone: noop, onSkip: noop, pending: false });
   assert.match(guardian, /<button[^>]*>Done<\/button>/);
   assert.match(guardian, /Skip for now/, "a parent with edit access can skip too (owner, 2026-10-16: 'there's no way to dismiss them')");
-  const readOnly = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf({ viewer: { userId: "u1", firstName: "Jo", canEdit: false, relation: "self", isGuardian: false } }), onDone: noop, onSkip: noop, pending: false });
+  const readOnly = render(moveCardMod.MoveCard as never, { task: taskOf(), ctx: ctxOf({ viewer: { userId: "u1", firstName: "Jo", canEdit: false, relation: "self", isGuardian: false, isCounselor: false } }), onDone: noop, onSkip: noop, pending: false });
   assert.doesNotMatch(readOnly, /<button|<details/, "no menu at all without edit access");
   assert.doesNotMatch(readOnly, />Done<|Skip for now/);
 });
@@ -273,8 +273,8 @@ test("the Done and skipped fold's labels: 'Skipped Oct 12' (or 'Skipped' before 
 });
 
 test("personFor: null for a signed-in student's own plan, the child's id for a guardian", () => {
-  assert.equal(moveCardMod.personFor(ctxOf({ viewer: { userId: "u1", firstName: null, canEdit: true, relation: "self", isGuardian: false } })), null);
-  assert.equal(moveCardMod.personFor(ctxOf({ viewer: { userId: "u1", firstName: null, canEdit: true, relation: "guardian", isGuardian: true }, student: { id: "kid-1", display_name: "Maya", grad_year: 2028, user_id: null } })), "kid-1");
+  assert.equal(moveCardMod.personFor(ctxOf({ viewer: { userId: "u1", firstName: null, canEdit: true, relation: "self", isGuardian: false, isCounselor: false } })), null);
+  assert.equal(moveCardMod.personFor(ctxOf({ viewer: { userId: "u1", firstName: null, canEdit: true, relation: "guardian", isGuardian: true, isCounselor: false }, student: { id: "kid-1", display_name: "Maya", grad_year: 2028, user_id: null } })), "kid-1");
 });
 
 /* ------------------------------------------------------------------ */
@@ -323,7 +323,7 @@ test("a guardian's reach_score_* card reads exactly as the student's (owner, 202
     detail: "Your target is your own. The dates below are the ones whose scores would arrive in time.",
     action: null,
   });
-  const guardianCtx = ctxOf({ viewer: { userId: "u2", firstName: "Jo", canEdit: true, relation: "guardian", isGuardian: true } });
+  const guardianCtx = ctxOf({ viewer: { userId: "u2", firstName: "Jo", canEdit: true, relation: "guardian", isGuardian: true, isCounselor: false } });
   const html = render(moveCardMod.MoveCard as never, { task: reachScore, ctx: guardianCtx, onDone: noop, onSkip: noop, pending: false });
   assert.match(html, /Work toward your 1400/);
   assert.doesNotMatch(html, /the target score/);

@@ -12,6 +12,7 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { CONFIRM_DELETE_RECORD, STUDENT_PAGE_VIEW, fmtDate, fmtDateTime } from "@/lib/admin/console";
 import { findPeople } from "@/lib/admin/console-reads";
 import { adminStudent, logStudentView, type AdminList, type AdminListItem, type AdminStudent, type SearchRow } from "@/lib/admin/people";
+import { studentOrganizationGrants } from "@/lib/admin/organizations";
 import { getData } from "@/lib/data";
 import { isUuid } from "@/lib/household-hub";
 import { attachStudent, deleteStudent, editStudent } from "./actions";
@@ -51,6 +52,7 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
   const { getSchoolsByIds } = await getData();
   const unitIds = [...new Set(student.lists.flatMap((l) => l.items.map((i) => i.unit_id)))];
   const names = new Map(getSchoolsByIds(unitIds).map((s) => [s.unit_id, s.name]));
+  const orgGrants = await studentOrganizationGrants(id);
 
   return (
     <>
@@ -104,6 +106,24 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
                   ) : (
                     <Muted>Not in one</Muted>
                   ),
+                },
+                {
+                  label: "Counselor access",
+                  value:
+                    orgGrants.length === 0 ? (
+                      <Muted>No live grants</Muted>
+                    ) : (
+                      <span className="space-y-0.5">
+                        {orgGrants.map((g) => (
+                          <span key={g.org_id} className="block">
+                            <Link href={`/admin/organizations/${g.org_id}`} className="underline-offset-4 hover:underline">
+                              {g.org_name}
+                            </Link>{" "}
+                            <Muted>since {fmtDate(g.granted_at)}</Muted>
+                          </span>
+                        ))}
+                      </span>
+                    ),
                 },
               ]}
             />

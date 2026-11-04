@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerSupabase, supabaseAuthEnv } from "@/lib/supabase-server";
 import { passwordProblems } from "@/lib/password";
 import { trackServer } from "@/lib/analytics-server";
-import { AGE_GATE_COOKIE, birthYearAllowed, isRoleHint, parseBirthYear, safeNextPath } from "@/lib/accounts";
+import { AGE_GATE_COOKIE, birthYearAllowed, firstLanding, isRoleHint, parseBirthYear, safeNextPath } from "@/lib/accounts";
 
 export type LoginState =
   | { status: "idle" }
@@ -194,7 +194,7 @@ export async function signUpWithPassword(_prev: PasswordState, form: FormData): 
     // Email confirmation is off on this project: sign straight in.
     const supabase = await createServerSupabase();
     await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
-    redirect(next);
+    redirect(firstLanding(next, role, true));
   }
   return { status: "confirm-email", email };
 }

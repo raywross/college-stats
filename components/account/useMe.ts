@@ -16,7 +16,7 @@ import { SIGNED_IN_COOKIE, type MeState } from "@/lib/accounts";
  * the first answer (a signed-in person's first page in a new tab, while /api/me answers).
  */
 
-const SIGNED_OUT: MeState = { configured: true, signedIn: false, id: null, name: null, email: null };
+const SIGNED_OUT: MeState = { configured: true, signedIn: false, id: null, name: null, email: null, org: false };
 const STORAGE_KEY = "me";
 const MEMO_TTL_MS = 5 * 60_000;
 

@@ -16,6 +16,7 @@ import { nextUpInfo } from "@/lib/planner/plan-frame";
 import { defaultTab, planHref, tabsFor, type PlanTab } from "@/lib/planner/plan-tabs";
 import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
+import { viewerRole, type ViewerRelation } from "@/lib/viewer-relation";
 
 /**
  * One student's plan frame (specs/planner/redesign/page.md "The page", specs/planner/redesign/intake.md): the
@@ -43,7 +44,8 @@ export function PlanFrame({
 }: {
   ctx: PlanContext;
   view: PlanView;
-  relation: "self" | "guardian";
+  /** Who is looking (lib/viewer-relation.ts): the student, a parent, or a counselor. */
+  relation: ViewerRelation;
   firstName: string | null;
   /** The household color slot for the calendar lane (lib/planner/colors.ts KID_VARS); 0 for a student's own view. */
   colorSlot: 0 | 1 | 2;
@@ -69,18 +71,20 @@ export function PlanFrame({
 
   const hasDecision = ctx.items.some((i) => i.status === "decided" || i.decision_date !== null);
   const tabs = tabsFor({ everyone: false, hasDecision });
-  const viewer = relation === "self" ? "student" : "guardian";
+  const viewer = viewerRole(relation);
   const openTab = tabs.includes(tab) ? tab : defaultTab(viewer, false);
 
   const calendarChild: CalendarChild = { studentId, name: firstName ?? "Student", colorSlot, ring: true, gradYear, ctx, view };
 
-  const needsIntake = intakeNeeded(ctx);
+  // A counselor never lands in the first-run guide (specs/product/counselor-portal.md: the record is the student's to
+  // fill; the counselor asks): they see the plan, and the record's Edit (`?setup=1`) still opens it when they may edit.
+  const needsIntake = intakeNeeded(ctx) && relation !== "counselor";
   // The intake guide shows instead of the whole frame (decision 1): no header, no Next up, no tabs underneath it.
   // Never for a read-only viewer — a guardian without edit rights who opens a child with no numbers just sees the
-  // plan, with "No numbers yet" on the people line. A guardian keeps the people line above it to switch children.
+  // plan, with "No numbers yet" on the people line. A parent or a counselor keeps the people line above it.
   if (ctx.viewer.canEdit && (setup || needsIntake)) {
     const intake = <PlanIntake ctx={ctx} view={view} mode={needsIntake ? "first" : "edit"} relation={relation} firstName={firstName} back={back} />;
-    return relation === "guardian" && people ? (
+    return relation !== "self" && people ? (
       <div className="space-y-6">
         {people}
         {intake}

@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { ArrowLeft } from "lucide-react";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { SignInPrompt } from "@/components/account/SignInPrompt";
+import { ViewerBanner } from "@/components/account/ViewerBanner";
 import { Editor } from "@/components/essays/Editor";
 import { ExportMenu } from "@/components/essays/ExportMenu";
 import { ImportSheet } from "@/components/essays/ImportSheet";
@@ -86,7 +87,7 @@ async function render(id: string, searchParams: Search) {
 
   const { essay, versions, links, comments, suggestions, base } = read;
   const canWrite = viewer.canWrite && essay.student_id === viewer.student.id;
-  const person = viewer.role === "guardian" ? essay.student_id : null;
+  const person = viewer.role !== "student" ? essay.student_id : null;
   const q = person ? `?for=${person}` : "";
   // Each author's color on this draft: by their first comment or suggestion, whichever came first.
   const markOrder = authorOrder([...comments.map((c) => ({ key: commentAuthorKey(c), created: c.created })), ...suggestions.map((s) => ({ key: suggestionAuthorKey(s), created: s.created }))]);
@@ -115,6 +116,8 @@ async function render(id: string, searchParams: Search) {
           <ArrowLeft className="size-4" aria-hidden />
           All essays
         </Link>
+        {/* A counselor sees the banner on every page of the student's they open (specs/product/counselor-portal.md). */}
+        {viewer.role === "counselor" && <ViewerBanner relation="counselor" studentName={viewer.student.name} canEdit={viewer.canEdit} />}
         <p className="text-sm text-muted-foreground">
           {prompt.college ? `${prompt.college.name} · ` : ""}
           {prompt.found ? KIND_LABEL[prompt.kind] : prompt.title}

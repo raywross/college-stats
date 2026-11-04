@@ -1,8 +1,11 @@
 # Scattergrams: Outcomes From Your High School
 
-> Status: **folded** into [counselor-portal.md](counselor-portal.md#scattergrams) 2026-10-26 (roadmap review of
-> 2026-10-25); not a roadmap item of its own any more. Planned 2026-10-02 after [high-school-data.md](high-school-data.md)
-> (built), [accounts.md](accounts.md) (built), and saved lists (built, now the planner's list). What changed:
+> Status: **planned**; the last phase of the [counselor portal](counselor-portal.md#phases), and since 2026-11-01 a
+> roadmap item of its own again, after the portal's caseload (folded into the portal on 2026-10-26 in the roadmap review
+> of 2026-10-25, when the caseload and the uploads were one work item). This is the phase where a school's own records
+> arrive, so it is the phase with the data processing agreement for school organizations; the caseload needs none.
+> Planned 2026-10-02 after [high-school-data.md](high-school-data.md) (built), [accounts.md](accounts.md) (built), and
+> saved lists (built, now the planner's list). What changed:
 >
 > - **The self-reported half is built** as [chances/calibration.md](../chances/calibration.md) (2026-10-11): outcome
 >   snapshots with the student's consent, the pooled set, "students like you" counts with the 50-outcome floor, and
@@ -70,7 +73,7 @@ scattergram_points (org_id, ncessch, unit_id, class_year, gpa_bin, sat_bin, act_
 
 ## Who sees it
 - Students of that high school: those who set it in their profile **and** are verified as the school's students by
-  the organization (invite code or roster email match; [counselor-portal.md](counselor-portal.md#students)). Their
+  the organization (invite code or roster email match; [counselor-portal.md](counselor-portal.md#how-a-student-joins)). Their
   guardians see what the student sees.
 - The organization's members.
 - Nobody else, unless the organization turns on **public aggregate** for a college: counts and admit share only,

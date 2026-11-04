@@ -2,8 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { authConfigured } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
-import { safeNextPath } from "@/lib/accounts";
+import { firstLanding, safeNextPath } from "@/lib/accounts";
 import { trackSignupIfNew } from "@/lib/signup-events";
+import { isFreshConfirmation } from "@/lib/signup-events-rules";
 
 const OTP_TYPES: EmailOtpType[] = ["email", "magiclink", "signup", "invite", "email_change"];
 
@@ -13,7 +14,7 @@ const OTP_TYPES: EmailOtpType[] = ["email", "magiclink", "signup", "invite", "em
  *   login action set, so it works in the browser that asked for the link.
  * - `?token_hash=…&type=email` (the custom template in the spec's Setup section): verified directly, so it also
  *   works when the email opens in a different browser or device.
- * Then on to `?next=` (a same-origin path only). Any failure goes back to /login with a friendly message.
+ * Then on to `?next=` (a same-origin path only; a new counselor's default goes to /org). Any failure goes back to /login with a friendly message.
  */
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -44,11 +45,16 @@ export async function GET(request: NextRequest) {
     return failed();
   }
   // A first confirmation counts as a sign-up (specs/product/telemetry.md); a failure here never reaches the visitor.
+  // A new counselor with nowhere particular to go lands on the portal (lib/accounts.ts firstLanding).
+  let landing = next;
   try {
     const { data } = await supabase.auth.getUser();
-    if (data.user) await trackSignupIfNew(data.user, type === "signup" ? "password" : "magic_link", next);
+    if (data.user) {
+      await trackSignupIfNew(data.user, type === "signup" ? "password" : "magic_link", next);
+      landing = firstLanding(next, data.user.user_metadata?.role_hint, isFreshConfirmation(data.user));
+    }
   } catch (error) {
     console.error("auth/callback: sign-up event failed", error);
   }
-  return to(next);
+  return to(landing);
 }

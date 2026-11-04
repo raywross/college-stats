@@ -16,6 +16,7 @@ import { taskSeason } from "@/lib/planner/moves";
 import { GuideFooter } from "./GuideFooter";
 import { GuideOpened } from "./GuideOpened";
 import type { GuideProps } from "./types";
+import { planViewerRole } from "@/lib/viewer-relation";
 
 export interface GuideFrameProps extends GuideProps {
   slug: GuideSlug;
@@ -53,7 +54,7 @@ export function GuideFrame({ slug, from, Component, ctx, view, move, query, data
       <GuideFooter
         move={openMove ? { id: openMove.id, kind: openMove.kind, season: taskSeason(openMove, ctx.gradYear, ctx.season) } : null}
         canEdit={ctx.viewer.canEdit}
-        isGuardian={ctx.viewer.isGuardian}
+        by={planViewerRole(ctx.viewer)}
         person={person}
       />
     </article>

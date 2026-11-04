@@ -25,7 +25,7 @@ export function parseTab(v: unknown): PlanTab | null {
  * family view to default to. `everyone` is kept for the family plan this defers to (`FamilyCalendar`'s `everyone`
  * mode): that view is still only the calendar.
  */
-export function defaultTab(viewer: "student" | "guardian", everyone: boolean): PlanTab {
+export function defaultTab(viewer: "student" | "guardian" | "counselor", everyone: boolean): PlanTab {
   if (everyone) return "calendar";
   return "next";
 }

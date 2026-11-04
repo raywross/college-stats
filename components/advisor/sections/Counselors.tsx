@@ -1,8 +1,8 @@
+import Link from "next/link";
 import { SplashSection } from "@/components/advisor/Frame";
-import { COUNSELOR_CONTACT } from "@/components/advisor/links";
-import { HELLO_EMAIL } from "@/lib/contacts";
+import { CASELOAD_HREF } from "@/lib/org-hrefs";
 
-/** Counselors: one line and a contact until the portal (specs/product/counselor-portal.md) is built. */
+/** Counselors: the free line and the way into the portal, `/org` (specs/product/counselor-portal.md "The channel"). */
 export function Counselors() {
   return (
     <SplashSection
@@ -10,10 +10,10 @@ export function Counselors() {
       title="Counselors"
       line={
         <>
-          Counselors and consultants will use Quad free, to see their students&apos; advisors and bring their school&apos;s data.{" "}
-          <a href={COUNSELOR_CONTACT} className="font-semibold text-primary hover:underline">
-            Write to {HELLO_EMAIL}
-          </a>
+          Counselors and consultants use Quad free: see your students&apos; advisors, ask for what&apos;s missing, keep your notes.{" "}
+          <Link href={CASELOAD_HREF} className="font-semibold text-primary hover:underline">
+            Start your caseload
+          </Link>
         </>
       }
     />

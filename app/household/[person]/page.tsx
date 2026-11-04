@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
+import { CounselorsSection } from "@/components/account/CounselorsSection";
 import { OpenPlanCard } from "@/components/account/OpenPlanCard";
 import { PersonHeader, personOwner } from "@/components/account/PersonHeader";
 import { ListPage } from "@/components/lists/ListPage";
@@ -9,6 +10,8 @@ import { YourPart } from "@/components/planner/parents/YourPart";
 import { AccountsSetupError, authConfigured, requireUser } from "@/lib/auth";
 import { personListHref } from "@/lib/household-hub";
 import { personPage } from "@/lib/households";
+import { myCounselorGrants } from "@/lib/orgs";
+import { isParent } from "@/lib/viewer-relation";
 import { getOrCreateDefaultList, myLists } from "@/lib/lists";
 import { myYourPart } from "@/lib/planner/store-parents";
 import { yourPart } from "@/lib/planner/summary";
@@ -60,6 +63,9 @@ export default async function PersonListPage({ params }: { params: Promise<{ per
   const yourPartGroups = person.kind === "guardian" && person.is_me ? yourPart(await myYourPart(), today) : [];
 
   const planLink = personListHref(person.kind, id);
+  // A parent's view of the child's counselors (counselor-portal.md "The student's side"), with the child's settings.
+  const childId = person.kind === "student" && isParent(person.access.relation) ? person.access.student.id : null;
+  const childGrants = childId ? (await myCounselorGrants().catch(() => [])).filter((g) => g.student_id === childId) : [];
 
   return (
     <div className="space-y-6">
@@ -79,6 +85,7 @@ export default async function PersonListPage({ params }: { params: Promise<{ per
           </p>
         </section>
       )}
+      <CounselorsSection grants={childGrants} first={first ?? "Your student"} />
     </div>
   );
 }

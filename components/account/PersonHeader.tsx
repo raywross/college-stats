@@ -1,5 +1,5 @@
 import { Phone } from "lucide-react";
-import { GuardianBanner } from "@/components/account/GuardianBanner";
+import { ViewerBanner } from "@/components/account/ViewerBanner";
 import { Term } from "@/components/ui/info-tip";
 import { SegmentedLinks } from "@/components/ui/segmented-control";
 import { myHouseholds, type PersonPage } from "@/lib/households";
@@ -105,8 +105,9 @@ export async function PersonHeader({ id, person, active }: { id: string; person:
         <PersonMenu actions={actions} row={row} householdId={h?.id ?? ""} householdName={h?.name ?? ""} viewerIsStudent={h?.me.student != null} />
       </div>
 
-      {person.kind === "student" && person.access.relation === "guardian" && (
-        <GuardianBanner studentName={person.access.student.display_name} canEdit={person.access.canEdit} />
+      {/* A parent or a counselor looking at the student (lib/viewer-relation.ts isViewer): the same banner, its role word. */}
+      {person.kind === "student" && person.access.relation !== "self" && (
+        <ViewerBanner relation={person.access.relation} studentName={person.access.student.display_name} canEdit={person.access.canEdit} />
       )}
 
       {person.kind === "student" && (

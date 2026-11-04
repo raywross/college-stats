@@ -8,6 +8,7 @@ import "server-only";
  */
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabase, supabaseAuthEnv } from "@/lib/supabase-server";
 import { PAUSED_LOGIN_PATH } from "@/lib/admin/constants";
 import { viewerBundle } from "@/lib/bundles";
@@ -17,6 +18,7 @@ import {
   resolveStudentAccess,
   wantsOwnStudent,
   type Account,
+  type CounselorGrant,
   type HouseholdMember,
   type Profile,
   type StudentAccess,
@@ -196,10 +198,32 @@ export const currentStudent = cache(
 const MEMBER_COLUMNS = "id, household_id, user_id, student_id, role, status, invited_email, can_edit, created, accepted_at";
 
 /**
- * Every student the signed-in user can see: their own first, then those they reach as a guardian. From the viewer
- * bundle when it's installed (one round trip for everything); otherwise the account, the user's own record (created
- * on first use), and the two reads run together (one round trip instead of three in a row). An own record this very
- * request created isn't in either read yet, so it's added.
+ * The signed-in user's live grants as a member of a counselor organization, without the viewer bundle: their own
+ * org_members rows and the org_students rows row-level security shows them, read together (one round trip) and
+ * joined here. org_students also shows a family its own grants, so only rows of the user's organizations count; the
+ * policies already hide a deleted organization's rows from its members. [] before the portal's migration is applied.
+ */
+async function readGrants(supabase: SupabaseClient, userId: string): Promise<CounselorGrant[]> {
+  const [members, grants] = await Promise.all([
+    supabase.from("org_members").select("org_id").eq("user_id", userId),
+    supabase.from("org_students").select("org_id, student_id, can_edit").is("ended_at", null),
+  ]);
+  for (const r of [members, grants]) {
+    if (r.error) {
+      if (isMissingTable(r.error)) return [];
+      throw new Error(`Reading your counselor organization failed: ${r.error.message}`);
+    }
+  }
+  const orgs = new Set((members.data as { org_id: string }[]).map((m) => m.org_id));
+  return (grants.data as CounselorGrant[]).filter((g) => orgs.has(g.org_id));
+}
+
+/**
+ * Every student the signed-in user can see: their own first, then those they reach as a guardian, then those on
+ * their organization's caseload (a counselor). From the viewer bundle when it's installed (one round trip for
+ * everything, grants included); otherwise the account, the user's own record (created on first use), and the reads
+ * run together (one round trip instead of three in a row). An own record this very request created isn't in either
+ * read yet, so it's added.
  */
 export const studentsICanSee = cache(
   async (): Promise<StudentAccess[]> =>
@@ -208,17 +232,18 @@ export const studentsICanSee = cache(
       if (!user) return [];
       const bundle = await viewerBundle();
       const supabase = await createServerSupabase();
-      const [account, own, students, members] = await Promise.all([
+      const [account, own, students, members, grants] = await Promise.all([
         getAccount(),
         currentStudent(),
         bundle ? Promise.resolve({ data: bundle.students, error: null }) : supabase.from("students").select(STUDENT_COLUMNS).is("deleted_at", null),
         bundle ? Promise.resolve({ data: bundle.members, error: null }) : supabase.from("household_members").select(MEMBER_COLUMNS),
+        bundle ? Promise.resolve(bundle.grants ?? []) : readGrants(supabase, user.id),
       ]);
       if (!account) return [];
       if (students.error) throw new Error(`Reading students failed: ${students.error.message}`);
       if (members.error) throw new Error(`Reading households failed: ${members.error.message}`);
       const rows = students.data as StudentRecord[];
       const all = own && !rows.some((s) => s.id === own.id) ? [...rows, own] : rows;
-      return resolveStudentAccess(account.user.id, all, members.data as HouseholdMember[]);
+      return resolveStudentAccess(account.user.id, all, members.data as HouseholdMember[], grants);
     }),
 );

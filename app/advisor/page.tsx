@@ -3,12 +3,19 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
+import { ArrowLeft } from "lucide-react";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
+import { JoinedNotice } from "@/components/account/JoinedNotice";
+import { ViewerBanner } from "@/components/account/ViewerBanner";
 import { PlanFrame } from "@/components/planner/PlanFrame";
 import { PlanPeople, type PlanPerson, type PlanPersonDetail } from "@/components/planner/PlanPeople";
 import { Splash } from "@/components/advisor/Splash";
-import { authConfigured, getUser } from "@/lib/auth";
-import { type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/planner/load";
+import { authConfigured, currentStudent, getUser } from "@/lib/auth";
+import { counselorAccessFor, type PlanLoad, loadPlanFor, planViewer, type PlanChild } from "@/lib/planner/load";
+import type { StudentAccess } from "@/lib/accounts";
+import { orgStudentHref } from "@/lib/org-hrefs";
+import type { ViewerRole } from "@/lib/viewer-relation";
+import type { PlanBundle } from "@/lib/bundles";
 import { resolveSelectedChild, type SwitchableChild } from "@/lib/planner/plan-frame";
 import { profileProgress, SECTION_STEP } from "@/lib/planner/profile-progress";
 import { recordHref, recordProgress, type RecordBack } from "@/lib/planner/record";
@@ -104,7 +111,7 @@ function detailFrom(profile: StudentProfileData | null, canEdit: boolean, studen
  * student, the picker's groups, and the prompt lookup, only when that tab is the one opening (the other tabs never pay
  * for it). A failed read leaves the tab on the plan's own `ctx.essays` (U1), logged, rather than failing the page.
  */
-async function essaysFor(load: PlanLoad, tab: PlanTab | null, viewer: "student" | "guardian"): Promise<EssaysTabData | null> {
+async function essaysFor(load: PlanLoad, tab: PlanTab | null, viewer: ViewerRole): Promise<EssaysTabData | null> {
   if (tab !== "essays" || load.kind !== "ready") return null;
   try {
     return await essaysTabData(load.ctx, viewer);
@@ -125,6 +132,73 @@ function nextDeadlineOf(load: PlanLoad | undefined): string | null {
 }
 
 /**
+ * The advisor as a counselor opens it (specs/product/counselor-portal.md "A student"; specs/planner/parents.md "What a
+ * parent sees": the same plan, read-only or editing by the grant's `canEdit`): "Back to caseload" to the student's
+ * page in the portal, the "Viewing as a counselor" banner, the people line of just this student (no child switcher:
+ * the caseload is the counselor's way between students), then the plan frame. The read is logged for the student
+ * (loadPlanFor), and nothing of a household's (Your part, nudges, the family's calendar feed) shows.
+ */
+async function counselorPlan(
+  access: StudentAccess,
+  opts: { early: Promise<PlanBundle | null> | null; tab: PlanTab | null; setup: boolean; back: RecordBack; recordInline: boolean },
+): Promise<ReactNode> {
+  const id = access.student.id;
+  const first = firstNameOf(access.student.display_name);
+  const loaded = await loadPlanFor(id, access, opts.early ? { early: opts.early } : {});
+  const top = (
+    <div className="space-y-3">
+      <Link href={orgStudentHref(id)} className="-ml-2 inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-sm font-semibold text-primary hover:underline print:hidden">
+        <ArrowLeft className="size-4" aria-hidden />
+        Back to caseload
+      </Link>
+      <ViewerBanner relation="counselor" studentName={access.student.display_name} canEdit={access.canEdit} className="print:hidden" />
+    </div>
+  );
+  const person: PlanPerson = { studentId: id, name: access.student.display_name, gradYear: access.student.grad_year, colorSlot: 0, href: planHref({ person: id }) };
+  const line = <PlanPeople people={[person]} selected={id} detail={detailFor(loaded, id)} />;
+  const fallback = planFallback(loaded, first);
+  if (fallback || loaded.kind !== "ready") {
+    return (
+      <div className="space-y-6">
+        {top}
+        {fallback}
+      </div>
+    );
+  }
+  if (opts.recordInline) {
+    const profile = await profileFor(id);
+    if (profile) {
+      return (
+        <div className="space-y-6">
+          {top}
+          {line}
+          <RecordInline profile={profile} plan={loaded} person={id} />
+        </div>
+      );
+    }
+  }
+  const essays = await essaysFor(loaded, opts.tab, "counselor");
+  return (
+    <div className="space-y-6">
+      {top}
+      <PlanFrame
+        people={line}
+        ctx={loaded.ctx}
+        view={loaded.view}
+        relation="counselor"
+        firstName={first}
+        colorSlot={0}
+        personId={id}
+        tab={opts.tab ?? defaultTab("counselor", false)}
+        setup={opts.setup}
+        back={opts.back}
+        essays={essays}
+      />
+    </div>
+  );
+}
+
+/**
  * /advisor, formerly /plan (specs/product/advisor.md; specs/planner/redesign/page.md): one address for a student's own plan and for a parent's family. Signed
  * out: Quad Advisor's splash page (components/advisor/Splash.tsx; advisor.md "3. The page"). A student: their own plan, Colleges by default. A guardian
  * always lands on one child now (decision 2026-10-11, no Everyone): `?for=` when it names a real child, else the
@@ -132,11 +206,22 @@ function nextDeadlineOf(load: PlanLoad | undefined): string | null {
  * `?tab=` opens a tab (links, so back and forward work); an unrecognized or unavailable one falls back to the
  * viewer's default (PlanFrame reconciles that). `?setup=1` opens the intake guide in edit mode; `?record=1` means the
  * same thing (record/steps.md "Edit mode"), and `?step=n` (read by PlanIntake itself) opens it at a step; `?back=
- * plan|record` says where saving or closing it returns to (default the plan).
+ * plan|record` says where saving or closing it returns to (default the plan). `?joined=<grant id>` adds the one line
+ * after joining a counselor (components/account/JoinedNotice.tsx).
  */
-export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string }> }) {
+export default async function PlanPage(props: { searchParams: Promise<{ for?: string; tab?: string; setup?: string; record?: string; step?: string; back?: string; joined?: string }> }) {
   await connection();
-  return withTiming("/advisor", () => renderPlan(props));
+  const page = await withTiming("/advisor", () => renderPlan(props));
+  // `?joined=<grant id>`: the one line after joining a counselor (app/join/[code]/actions.ts).
+  const { joined } = await props.searchParams;
+  if (!isUuid(joined) || !(await getUser())) return page;
+  const own = await currentStudent().catch(() => null);
+  return (
+    <div className="space-y-4">
+      <JoinedNotice grantId={joined} ownStudentId={own?.id ?? null} />
+      {page}
+    </div>
+  );
 }
 
 async function renderPlan({
@@ -170,6 +255,11 @@ async function renderPlan({
   if (bundleKnownMissing("viewer_bundle")) {
     for (const warm of [profilesICanSee(), myHome(), candidate ? myLists({ kind: "student", id: candidate }) : null]) warm?.catch(() => {});
   }
+
+  // A counselor's `?for=` (specs/product/counselor-portal.md "A student"): a student on their caseload opens here as a
+  // parent's child does, with the banner and "Back to caseload" in place of the child switcher.
+  const counselor = await counselorAccessFor(forParam);
+  if (counselor) return counselorPlan(counselor, { early: candidate === counselor.student.id ? early : null, tab, setup, back, recordInline });
 
   const viewer = await planViewer();
   if (viewer.kind === "self") {

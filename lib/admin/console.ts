@@ -16,7 +16,7 @@ import type { AdminState } from "./auth.ts";
 /* The rail                                                            */
 /* ------------------------------------------------------------------ */
 
-export type AdminSectionKey = "people" | "households" | "colleges" | "health" | "operations" | "jobs" | "essays" | "log";
+export type AdminSectionKey = "people" | "households" | "organizations" | "colleges" | "health" | "operations" | "jobs" | "essays" | "log";
 
 export interface AdminSection {
   key: AdminSectionKey;
@@ -35,6 +35,8 @@ export interface AdminSection {
 export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { key: "people", label: "People", href: "/admin/people", under: ["/admin/people", "/admin/students"], hint: "Accounts and students" },
   { key: "households", label: "Households", href: "/admin/households", under: ["/admin/households"], hint: "Families and invitations" },
+  // Organizations (specs/product/counselor-portal.md "The channel"): counselors and schools running a caseload.
+  { key: "organizations", label: "Organizations", href: "/admin/organizations", under: ["/admin/organizations"], hint: "Counselors and their caseloads" },
   { key: "colleges", label: "Colleges", href: "/admin/colleges", under: ["/admin/colleges", "/admin/high-schools", "/admin/selectivity"], hint: "Hidden values, selectivity" },
   { key: "health", label: "Health", href: "/admin/health", under: ["/admin/health"], hint: "Which data is fresh" },
   { key: "operations", label: "Operations", href: "/admin/operations", under: ["/admin/operations"], hint: "Runs and approvals" },

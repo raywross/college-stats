@@ -1,10 +1,10 @@
 import { groupAccessLog, type AccessLogRow } from "@/lib/household-rules";
 
-/** "Mom viewed your list on Oct 2": the student's view of guardian reads (my_access_log), one line per viewer, thing, and day. */
+/** "Mom viewed your list on Oct 2", "Ms. Rivera (counselor) viewed your list": the student's view of guardian and counselor reads (my_access_log), one line per viewer, thing, and day. */
 export function AccessLogList({ rows, limit = 20 }: { rows: AccessLogRow[]; limit?: number }) {
   const lines = groupAccessLog(rows);
   if (lines.length === 0) {
-    return <p className="rounded-xl bg-muted/60 px-3.5 py-3 text-sm text-muted-foreground">No guardian has viewed your information yet.</p>;
+    return <p className="rounded-xl bg-muted/60 px-3.5 py-3 text-sm text-muted-foreground">No one has viewed your information yet.</p>;
   }
   return (
     <ul className="divide-y text-sm">

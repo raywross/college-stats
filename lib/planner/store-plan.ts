@@ -254,11 +254,11 @@ async function saveTheirProfileNow(
   if (!profile.canEdit) return { ok: false, message: NOT_EDITOR };
   const next = change(profile);
   if (!next.ok) return next;
-  // A guardian's copy never carries the story's text (profileForViewer redacts it), so a profile built from it holds
+  // A guardian's or a counselor's copy never carries the story's text (profileForViewer redacts it), so a profile built from it holds
   // a blanked story: the stored one goes back on before the write (only the student writes it: saveStory). Your
   // record's tour saves through here with the story step (record build-plan review note 3).
   let data = next.data;
-  if (profile.relation === "guardian") {
+  if (profile.relation !== "self") {
     const stored = await span("story read", () => storedStory(r.supabase, studentId));
     if (!stored.ok) return { ok: false, message: FAILED };
     data = { ...sanitizeProfile(next.data), story: stored.story };

@@ -173,7 +173,7 @@ function ctxWith(over: { items?: unknown[]; schools?: Record<string, unknown>; s
     schools: over.schools ?? SCHOOLS,
     season: over.season ?? "senior_fall",
     student: { id: "s1", display_name: "Maya Lopez", grad_year: 2027, user_id: "u1" },
-    viewer: { userId: over.guardian ? "g1" : "u1", firstName: null, canEdit: true, relation: over.guardian ? "guardian" : "self", isGuardian: !!over.guardian },
+    viewer: { userId: over.guardian ? "g1" : "u1", firstName: null, canEdit: true, relation: over.guardian ? "guardian" : "self", isGuardian: !!over.guardian, isCounselor: false },
     today: "2026-10-20",
     tasks: [],
   } as unknown as PlanContext;

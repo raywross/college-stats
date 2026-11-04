@@ -246,7 +246,9 @@ test("guard: a security definer bundle would leak another household's plan, and 
   // The next-steps migration re-creates plan_bundle() too (20261014120000_next_steps.sql): it runs after the definer
   // copy, made definer the same way, so the bundle under test is the current one. So does plan v3's
   // (20261016120000_plan_v3.sql), after it.
-  const files = ALL.filter((f) => f !== BUNDLE && f !== PAUSE && f !== NEXT_STEPS && f !== PLAN_V3);
+  // The counselor portal's migration (20261102120000_organizations.sql) re-creates viewer_bundle() as well; nothing
+  // here needs its tables, so it's left out with the others.
+  const files = ALL.filter((f) => f !== BUNDLE && f !== PAUSE && f !== NEXT_STEPS && f !== PLAN_V3 && f !== "20261102120000_organizations.sql");
   const w = await world(files);
   const sql = readFileSync(join(DIR, BUNDLE), "utf8").replaceAll("security invoker", "security definer");
   await w.db.exec(sql);

@@ -39,6 +39,7 @@ import { allMovesBySeason, conditionalMoves, hiddenNote } from "@/lib/planner/al
 import { SEASON_LABELS } from "@/lib/planner/seasons";
 import { dismiss, tick, undismiss, untick } from "@/lib/planner/store";
 import type { PlanTask } from "@/lib/planner/types";
+import { planViewerRole } from "@/lib/viewer-relation";
 
 /** Undo stays live for a minute after Done (seasons.md "The Next steps tab"). */
 const UNDO_MS = 60_000;
@@ -73,7 +74,7 @@ function StudentNextSteps({ ctx, view }: PlanTabProps) {
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const scrolled = useRef(false);
 
-  const by = ctx.viewer.isGuardian ? "guardian" : "student";
+  const by = planViewerRole(ctx.viewer);
   const facts = importanceFactsFrom(ctx, view);
   const groups = nowMoves(ctx.tasks, { season: ctx.season, gradYear: ctx.gradYear, today: ctx.today, viewer: "student", facts });
   const classOf = ctx.gradYear !== null ? ` · Class of ${ctx.gradYear}` : "";

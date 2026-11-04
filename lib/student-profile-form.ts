@@ -15,6 +15,7 @@
  */
 import { sanitizeCourses, type StudentProfileData } from "./student-profile.ts";
 import { mergeCoursesForSave } from "./chances/courses.ts";
+import type { ViewerRelation } from "./viewer-relation.ts";
 
 export function numField(form: FormData, name: string): number | null {
   const v = form.get(name);
@@ -89,7 +90,7 @@ export type CourseFields = { courses?: unknown; apExamsPrivate?: unknown; coreAt
  * erases it. A guardian's post carries no exam scores while they're private, so the saved ones are put back
  * (mergeCoursesForSave) and the privacy switch stays as saved.
  */
-export function coursesFor(form: FormData, kept: StudentProfileData | null, relation: "self" | "guardian" | null): CourseFields {
+export function coursesFor(form: FormData, kept: StudentProfileData | null, relation: ViewerRelation | null): CourseFields {
   const keptAc = kept?.academics ?? null;
   // The course plan's dismissals and the student's school marks live in the same group; the form never carries them.
   const plan = keptAc ? { coursePlan: keptAc.coursePlan, schoolOffers: keptAc.schoolOffers } : {};

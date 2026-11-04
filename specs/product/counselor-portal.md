@@ -299,7 +299,9 @@ and show at the top of the student's Next steps (`components/org/AskNotice.tsx`,
 and parents, not for a counselor), where a filled section or a non-empty list closes its own ask after the response.
 `/org/members` holds the settings, the join code with Copy and Regenerate, members, roles, Invite a counselor (whose
 link is also a `/join/<token>` page), Leave, and Delete with a typed confirmation. `/org/export` writes the CSV with no
-GPA or score. Every `/org` page is `noindex`. Server Actions live in `app/org/actions.ts`. `tests/org-caseload-db.test.mts`
+GPA or score. Every `/org` page is `noindex`. `/org` renders `RefreshHeader` (`components/org/RefreshHeader.tsx`) in both
+branches: the header remembers its last `/api/me` answer for five minutes, and every change of membership lands here, so
+Caseload enters and leaves the account menu at once (found by the signed-in QA, 2026-11-04). Server Actions live in `app/org/actions.ts`. `tests/org-caseload-db.test.mts`
 runs the caseload's reads on PGlite in the shape the pages ask for; `tests/org-pages.test.mts` renders every page and
 guards noindex, no service-role or estimate reads, the notice's position, and the CSV's columns.
 
@@ -321,7 +323,8 @@ account section, and the portal's pages.
 (fine at tens of students; a paged read at hundreds). "Added by Ms. Rivera" shows to the counselor's office; the family
 still sees "Added by a guardian" for a counselor's edit until `my_counselor_grants()` returns the counselors' ids. Ask
 buttons appear on every missing record section, including Story and Recommenders, which aren't due until the summer
-before senior year. The award-letter storage bucket's policies weren't reviewed for the counselor relation. Per-counselor
+before senior year. A student who joins with an empty record lands in the first-run intake, where no ask notice shows (the
+notice lives on Next steps); the ask reaches them by email where email is configured, and shows once the intake is done. The award-letter storage bucket's policies weren't reviewed for the counselor relation. Per-counselor
 caseloads inside an office, rep visits at the school (phase 2), and the scattergram upload (phase 3, its own roadmap
 entry) are not built.
 

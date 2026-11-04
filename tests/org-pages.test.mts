@@ -236,6 +236,13 @@ function pagesWithoutNoindex(sources: Record<string, string>): string[] {
     .map(([f]) => f);
 }
 
+test("/org asks the header for its state again, in both branches, so Caseload appears and goes at once", () => {
+  // The header memoizes /api/me for five minutes (components/account/useMe.ts); every membership change lands here.
+  const page = read("app/org/page.tsx");
+  assert.equal((page.match(/<RefreshHeader \/>/g) ?? []).length, 2, "the start form and the caseload both render it");
+  assert.match(read("components/org/RefreshHeader.tsx"), /refreshMe\(\)/);
+});
+
 test("noindex on every /org page", () => {
   const pages = Object.fromEntries(files("app/org", /^page\.tsx$/).map((f) => [f, read(f)]));
   assert.ok(Object.keys(pages).length >= 4);

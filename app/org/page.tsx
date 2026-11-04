@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { CaseloadView } from "@/components/org/CaseloadView";
 import { OrgHeader } from "@/components/org/OrgHeader";
+import { RefreshHeader } from "@/components/org/RefreshHeader";
 import { StartOrgForm } from "@/components/org/StartOrgForm";
 import { AccountsSetupError, authConfigured, getAccount, requireUser } from "@/lib/auth";
 import { getData } from "@/lib/data";
@@ -41,6 +42,7 @@ export default async function OrgPage() {
   if (!org) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+        <RefreshHeader />
         <StartOrgForm />
       </div>
     );
@@ -57,6 +59,7 @@ export default async function OrgPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 sm:py-12">
+      <RefreshHeader />
       <OrgHeader name={org.name} kind={org.kind} active="caseload" />
       <CaseloadView rows={rows} counts={caseloadCounts(rows, invited.length)} invited={invited} joinCode={org.join_code} joinLink={`${origin}${joinHref(org.join_code)}`} />
     </div>

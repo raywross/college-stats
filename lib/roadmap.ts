@@ -58,6 +58,7 @@ export type RoadmapGroupKey =
   | "college-reported"
   | "campus-life"
   | "planning"
+  | "data"
   | "business"
   | "apps"
   | "ideas"
@@ -75,6 +76,13 @@ export const ROADMAP_GROUPS: { key: RoadmapGroupKey; title: string; description:
     title: "Planning tools",
     description:
       "What your family would pay at each college, from your own numbers, on the cost curve the site already shows.",
+  },
+  // "data" (2026-11-05): public sources beyond the federal college files, from the owner's question about niche.com.
+  {
+    key: "data",
+    title: "Additional data",
+    description:
+      "Public sources the site doesn't read yet, each cited with a year like everything else: campus crime, climate and walkability and local rent, athletics programs, graduates' earnings by field, research spending, and the colleges' own first-destination reports.",
   },
   // "platform" (the data platform) was built 2026-10-31 to 2026-11-01 and left the roadmap; its overview stays below.
   {
@@ -231,6 +239,19 @@ export const ROADMAP: RoadmapSpec[] = [
   // The serving architecture (specs/serving-architecture.md) was planned and built on 2026-10-07 (#98), so it is
   // no longer listed.
   // Ideas (specs/ideas/README.md): not planned; in the order they could be built.
+  // Additional data (2026-11-05): one page for six sources, from the comparison with niche.com; each becomes its own
+  // spec in the page's order when built (specs/data-expansion/README.md, wave 7).
+  {
+    slug: "sources-beyond-federal",
+    file: "specs/data-expansion/sources-beyond-federal.md",
+    group: "data",
+    summary:
+      "Six things families ask that the site can't answer yet, each from a public source with a year: campus crime counts and rates (never a grade), the place (climate, walkability, off-campus rent), athletics programs and aid, graduates' earnings at 1, 5, and 10 years by field for all graduates where coverage exists, research spending, and what graduates do six months out.",
+    complexity: 2,
+    complexityNote:
+      "Each source is a fetcher, registry fields, and a profile block or filter; two need a per-college detail table; the first-destination round reuses the college-reported agent with a new template.",
+    status: "planned",
+  },
   {
     slug: "guides",
     file: "specs/ideas/guides.md",

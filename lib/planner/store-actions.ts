@@ -16,9 +16,9 @@ import { isoDateOrNull } from "@/lib/list-rules";
 import { SOCIAL_NETWORKS } from "@/lib/social";
 import type { SocialNetwork } from "@/lib/types";
 import { firstPastVisitOn, isVisitKind } from "./actions";
-import { todayIso } from "./context";
 import { regenerate } from "./store";
 import type { VisitKind, VisitNotes } from "./types";
+import { plannerToday } from "./today-server";
 
 export type PlanActionResult = { ok: true } | { ok: false; message: string };
 
@@ -91,7 +91,7 @@ export async function recordFollow(itemId: string, network: SocialNetwork, follo
  */
 export async function markInfoRequested(itemId: string, requested: boolean, onDate?: string | null): Promise<PlanActionResult> {
   if (!isUuid(itemId) || typeof requested !== "boolean") return { ok: false, message: FAILED };
-  const today = todayIso();
+  const today = await plannerToday();
   const day = onDate == null ? today : isoDateOrNull(onDate);
   if (requested && (day === null || day > today)) return { ok: false, message: "That isn't a date." };
   const r = await ready("planner.tab");
@@ -150,7 +150,7 @@ function validRating(rating: number | null | undefined): rating is number | null
 async function syncVisitedOn(supabase: Supa, itemId: string): Promise<void> {
   const { data } = await supabase.from("plan_visits").select("on_date").eq("item_id", itemId);
   const dates = ((data ?? []) as { on_date: string }[]).map((v) => v.on_date);
-  const visitedOn = firstPastVisitOn(dates, todayIso());
+  const visitedOn = firstPastVisitOn(dates, await plannerToday());
   await supabase.from("list_items").update({ visited_on: visitedOn }).eq("id", itemId);
 }
 

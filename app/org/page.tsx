@@ -14,7 +14,8 @@ import { requestOrigin } from "@/lib/household-hub";
 import { caseloadCounts, caseloadRows, invitedStudents } from "@/lib/org-caseload";
 import { joinHref } from "@/lib/org-rules";
 import { caseloadStudents, myOrganization, orgRoster } from "@/lib/orgs";
-import { todayIso } from "@/lib/planner/context";
+import { plannerToday } from "@/lib/planner/today-server";
+import { PretendTodayBanner } from "@/components/planner/PretendTodayBanner";
 
 export const metadata: Metadata = { title: "Caseload", robots: { index: false, follow: false } };
 
@@ -43,12 +44,13 @@ export default async function OrgPage() {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
         <RefreshHeader />
+        <PretendTodayBanner />
         <StartOrgForm />
       </div>
     );
   }
 
-  const today = todayIso();
+  const today = await plannerToday();
   const roster = await orgRoster(org.id);
   const [students, { getSchoolById }, origin] = await Promise.all([caseloadStudents(roster), getData(), headers().then(requestOrigin)]);
   const status = await advisorStatusFor(students.map((s) => s.studentId));
@@ -60,6 +62,7 @@ export default async function OrgPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 sm:py-12">
       <RefreshHeader />
+      <PretendTodayBanner />
       <OrgHeader name={org.name} kind={org.kind} active="caseload" />
       <CaseloadView rows={rows} counts={caseloadCounts(rows, invited.length)} invited={invited} joinCode={org.join_code} joinLink={`${origin}${joinHref(org.join_code)}`} />
     </div>

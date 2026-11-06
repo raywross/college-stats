@@ -427,6 +427,7 @@ refuses a key it doesn't know (`unknown_setting`) or a value of the wrong type (
 | Key | Value | What it does |
 |---|---|---|
 | `planner.all_moves` | boolean, default off | The planner's all-moves preview ([all-moves-preview.md](../planner/v3/all-moves-preview.md)) |
+| `planner.today` | `YYYY-MM-DD` or null, default null | Pretend today, for walking a plan through its seasons ([pretend-today.md](../planner/v3/pretend-today.md)); ignored in production |
 
 A new setting adds its key to `admin_set_setting`'s list in a migration, and a panel to the page.
 

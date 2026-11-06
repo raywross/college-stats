@@ -20,7 +20,7 @@ import { normalizeDraft } from "./offers";
 import { regenerate } from "./store";
 import { taskKey } from "./tasks";
 import type { PlanLetter, TaskKind } from "./types";
-import { todayIso } from "./context";
+import { plannerToday } from "./today-server";
 
 export type OfferResult = { ok: true } | { ok: false; message: string };
 
@@ -90,7 +90,7 @@ async function untickKey(supabase: Ready["supabase"], listId: string, scope: str
  */
 export async function recordDecision(itemId: string, outcome: ListOutcome, date?: string | null): Promise<OfferResult> {
   if (!isUuid(itemId) || !isListOutcome(outcome)) return { ok: false, message: FAILED };
-  const day = date ? isoDateOrNull(date) : todayIso();
+  const day = date ? isoDateOrNull(date) : await plannerToday();
   if (!day) return { ok: false, message: "That isn't a date." };
   const r = await ready("planner.offers");
   if (!("supabase" in r)) return r;
@@ -183,7 +183,7 @@ export async function setProsCons(itemId: string, pros: string, cons: string): P
     if (!data?.length) return { ok: false, message: NO_EDIT };
   } else {
     if (!patch.pros && !patch.cons) return { ok: true };
-    const year = Number(todayIso().slice(0, 4));
+    const year = Number((await plannerToday()).slice(0, 4));
     const { error } = await r.supabase.from("plan_offers").insert({ item_id: itemId, award_year: year, ...patch });
     if (error) return error.code === "42501" ? { ok: false, message: NO_EDIT } : fail(error, "setProsCons");
   }
@@ -261,7 +261,7 @@ export async function choose(itemId: string): Promise<OfferResult> {
   const row = current.data as { list_id: string; outcome: string | null } | null;
   if (!row) return { ok: false, message: NO_EDIT };
   if (row.outcome !== "admitted") return { ok: false, message: "Only a college that said yes can be the choice." };
-  const { data, error } = await r.supabase.from("list_items").update({ enrolling: true, committed_on: todayIso() }).eq("id", itemId).select("id");
+  const { data, error } = await r.supabase.from("list_items").update({ enrolling: true, committed_on: await plannerToday() }).eq("id", itemId).select("id");
   if (error) return fail(error, "choose");
   if (!data?.length) return { ok: false, message: NO_EDIT };
   await tickKey(r.supabase, row.list_id, itemId, "reply_by");
@@ -291,7 +291,7 @@ export async function withdrawCollege(itemId: string): Promise<OfferResult> {
   if (!isUuid(itemId)) return { ok: false, message: FAILED };
   const r = await ready("planner.offers");
   if (!("supabase" in r)) return r;
-  const { data, error } = await r.supabase.from("list_items").update({ withdrawn_on: todayIso() }).eq("id", itemId).select("list_id");
+  const { data, error } = await r.supabase.from("list_items").update({ withdrawn_on: await plannerToday() }).eq("id", itemId).select("list_id");
   if (error) return fail(error, "withdrawCollege");
   if (!data?.length) return { ok: false, message: NO_EDIT };
   const listId = (data[0] as { list_id: string }).list_id;

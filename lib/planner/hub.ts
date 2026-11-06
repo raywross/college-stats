@@ -13,8 +13,8 @@ import { getData } from "@/lib/data";
 import { gradeOf, inSeason } from "./cycle";
 import { stageCaption, stageOf } from "./stage";
 import { summaryLine } from "./summary";
-import { todayIso } from "./context";
 import type { PlanItem, PlanTask, PlanVisit } from "./types";
+import { plannerToday } from "./today-server";
 
 type Row = {
   student_id: string;
@@ -24,7 +24,7 @@ type Row = {
 
 /** Captions by student id, for the students given (id → grad year, from the roster). */
 export async function stageCaptions(students: { id: string; gradYear: number | null }[]): Promise<Record<string, string>> {
-  const today = todayIso();
+  const today = await plannerToday();
   const wanted = students.filter((s) => s.gradYear === null || inSeason(gradeOf(s.gradYear, today)));
   if (wanted.length === 0) return {};
   try {
@@ -78,7 +78,7 @@ type SummaryRow = {
  * any error means no summary lines, never a broken hub.
  */
 export async function summaryLines(students: { id: string; gradYear: number | null }[]): Promise<Record<string, string>> {
-  const today = todayIso();
+  const today = await plannerToday();
   if (students.length === 0) return {};
   try {
     const supabase = await createServerSupabase();

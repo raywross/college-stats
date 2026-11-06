@@ -10,7 +10,7 @@ import { isUuid } from "@/lib/household-hub";
 import { openStudentAs } from "@/lib/households";
 import { caseloadRow } from "@/lib/org-caseload";
 import { caseloadEntry, caseloadStudents, myOrganization, orgAsks, orgNotes } from "@/lib/orgs";
-import { todayIso } from "@/lib/planner/context";
+import { plannerToday } from "@/lib/planner/today-server";
 
 export const metadata: Metadata = { title: "Student", robots: { index: false, follow: false } };
 
@@ -30,7 +30,7 @@ export default async function OrgStudentPage({ params }: PageProps<"/org/student
 
   const [entry, access] = await Promise.all([caseloadEntry(org.id, id), openStudentAs(id, "student_profiles")]);
   if (!entry || !access) notFound();
-  const today = todayIso();
+  const today = await plannerToday();
   const [[student], notes, asks, status, { getSchoolById }] = await Promise.all([
     caseloadStudents([entry]),
     orgNotes(org.id, id),

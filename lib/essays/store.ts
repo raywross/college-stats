@@ -32,7 +32,8 @@ import { trackServer } from "@/lib/analytics-server";
 import { profileFor } from "@/lib/student-profile-store";
 import { effectiveGradYear } from "@/lib/student-profile";
 import { loadCycle } from "@/lib/planner/cycle";
-import { planCycleKey, planSchools, todayIso } from "@/lib/planner/context";
+import { planCycleKey, planSchools } from "@/lib/planner/context";
+import { plannerToday } from "@/lib/planner/today-server";
 
 export type EssayActionResult = { ok: true } | { ok: false; message: string };
 
@@ -97,7 +98,7 @@ async function studentSchools(supabase: Supabase, studentId: string, unitIds: st
   const [profile, student] = await Promise.all([profileFor(studentId), supabase.from("students").select("grad_year").eq("id", studentId).maybeSingle()]);
   const stored = (student.data as { grad_year: number | null } | null)?.grad_year ?? null;
   const gradYear = profile ? effectiveGradYear(profile.data.basics, stored) : stored;
-  const cycle = loadCycle(planCycleKey(gradYear, todayIso()));
+  const cycle = loadCycle(planCycleKey(gradYear, await plannerToday()));
   return planSchools(unitIds, cycle.startYear, null);
 }
 

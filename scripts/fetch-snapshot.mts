@@ -11,6 +11,9 @@
  *   --dir <path>                            another folder than .data/snapshot (relative to the working directory)
  *
  * The layout mirrors the object names, with `.gz` objects stored ungzipped (`colleges.json`, `history/shared.json`).
+ * `lineage.json.gz` is also exploded into `lineage/<unit_id>.json`, one file per college, which the loader reads on
+ * a college's first `school.lineage` (lib/data-platform/lineage-split.ts); those files are rewritten only when their
+ * bytes change and removed with the rest when the new snapshot doesn't name them.
  * An object already on disk with the manifest's hash is skipped, so a fetch after a small publish downloads only what
  * changed; files the new manifest doesn't list are removed. The manifest is removed first and written last, so the
  * loader never takes a half-written folder for a copy. `.objects.json` remembers the hashes of the gzipped objects,
@@ -23,6 +26,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statS
 import { dirname, join, relative } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { BUNDLED_SNAPSHOT_DIR, POINTER_OBJECT, SNAPSHOT_OBJECTS, snapshotPath, type SnapshotManifest, type SnapshotPointer } from "../lib/data-platform/snapshot.ts";
+import { formatSchoolLineage, lineageFile, type LineageObject } from "../lib/data-platform/lineage-split.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 export const FIXTURE_DIR = join(ROOT, "tests", "fixtures", "snapshot-mini", "snapshot");
@@ -137,18 +141,40 @@ export async function fetchSnapshot(options: { base: string; dir: string; fetch?
   });
   await Promise.all(workers);
 
+  const exploded = names.includes(SNAPSHOT_OBJECTS.lineage) ? explodeLineage(dir) : [];
+
   // Anything the manifest doesn't list (an older snapshot's shards) goes, so the folder is exactly this snapshot.
-  const keep = new Set([...names.map(localName), OBJECTS_FILE, SNAPSHOT_OBJECTS.manifest]);
+  const keep = new Set([...names.map(localName), ...exploded, OBJECTS_FILE, SNAPSHOT_OBJECTS.manifest]);
   let removed = 0;
   for (const file of filesUnder(dir)) {
     if (keep.has(file)) continue;
     rmSync(join(dir, file));
     removed++;
   }
+  // The loader takes a `lineage/` folder to mean a split snapshot: an older one's copy must not keep an empty one.
+  if (!exploded.length) rmSync(join(dir, "lineage"), { recursive: true, force: true });
   writeFileSync(join(dir, OBJECTS_FILE), `${JSON.stringify(gzipped, null, 2)}\n`);
   writeFileSync(join(dir, SNAPSHOT_OBJECTS.manifest), manifestBytes);
   log(`[fetch-snapshot] snapshot ${manifest.id}: ${downloaded} downloaded (${(bytes / 1e6).toFixed(1)} MB), ${skipped} already present, ${removed} removed`);
   return { id: manifest.id, downloaded, skipped, removed, bytes };
+}
+
+/**
+ * `lineage.json` (already on disk, ungzipped) as `lineage/<unit_id>.json`, one file per college; a file whose bytes
+ * are already right is left as it is. Returns the files' names relative to `dir`, so the sweep after keeps them.
+ */
+export function explodeLineage(dir: string): string[] {
+  const all = JSON.parse(readFileSync(join(dir, localName(SNAPSHOT_OBJECTS.lineage))).toString("utf8")) as LineageObject;
+  mkdirSync(join(dir, "lineage"), { recursive: true });
+  const written: string[] = [];
+  for (const [unit, records] of Object.entries(all)) {
+    const name = lineageFile(unit);
+    const path = join(dir, name);
+    const bytes = Buffer.from(formatSchoolLineage(records), "utf8");
+    if (!existsSync(path) || !readFileSync(path).equals(bytes)) writeFileSync(path, bytes);
+    written.push(name);
+  }
+  return written;
 }
 
 /** The mini fixture copied in place of a download (D5 builds the fixture; specs/data-platform/git-ci-tests.md). */

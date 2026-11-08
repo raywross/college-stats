@@ -39,6 +39,8 @@ const { registerHooks } = nodeModule as unknown as {
 const stub = (code: string): ResolveResult => ({ url: `data:text/javascript,${encodeURIComponent(code)}`, shortCircuit: true });
 const STUBS: Record<string, string> = {
   "server-only": "export {}",
+  // lib/data.ts schedules its pointer check with after(), which throws outside a request, as here.
+  "next/server": "export function after() { throw new Error('after() outside a request') }",
   "@/lib/supabase":
     "export function supabaseClient(role){ if(!globalThis.__rpc) throw new Error('Supabase is not configured: set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY'); return { rpc: async (name, args) => globalThis.__rpc(name, args, role) }; }",
   "@/lib/analytics-server": "export async function trackServer(event, properties){ (globalThis.__events ??= []).push({ event, properties }); }",

@@ -1,8 +1,8 @@
 /**
  * The publisher's render (specs/data-platform/publish.md "Objects in a snapshot", step 4): a composed snapshot
  * (./compose.mts) as the objects the bucket holds, each in today's file format (so `colleges.json` is
- * data/schools.json byte for byte, a history or detail shard its file), gzipped where the name ends in `.gz`, with a
- * sha256 per object in the manifest. Object names come from the shared contract (lib/data-platform/snapshot.ts).
+ * data/schools.json byte for byte less each college's `lineage`, which goes to `lineage.json` keyed by unit id; a
+ * history or detail shard its file), gzipped where the name ends in `.gz`, with a sha256 per object in the manifest. Object names come from the shared contract (lib/data-platform/snapshot.ts).
  * Pure and deterministic: the same composed snapshot, id and options give the same bytes.
  */
 import { createHash } from "node:crypto";
@@ -22,6 +22,7 @@ import {
   type SnapshotEditsObject,
   type SnapshotManifest,
 } from "../../../lib/data-platform/snapshot.ts";
+import { formatLineageObject, splitLineage } from "../../../lib/data-platform/lineage-split.ts";
 import { formatSchools } from "../identity-sync.mts";
 import { formatAliasRows } from "../aliases-sync.mts";
 import { formatHistoryShard } from "../../history/build.mts";
@@ -90,7 +91,11 @@ export interface RenderOptions {
 /** Every object of the snapshot, its manifest, and the manifest's hash. */
 export function renderSnapshot(composed: ComposedSnapshot, id: number, previousId: number | null, changeSetIds: readonly number[], opts: RenderOptions = {}): RenderedSnapshot {
   const texts: [string, string | Buffer][] = [];
-  texts.push([SNAPSHOT_OBJECTS.colleges, formatSchools(composed.schools)]);
+  // The citation records leave the colleges object, so a cold start parses half the bytes; the loader brings each
+  // college's back on first access (lib/data-platform/lineage-split.ts; specs/serving-architecture.md "6. Cold starts").
+  const { colleges, lineage } = splitLineage(composed.schools);
+  texts.push([SNAPSHOT_OBJECTS.colleges, formatSchools(colleges)]);
+  texts.push([SNAPSHOT_OBJECTS.lineage, formatLineageObject(lineage)]);
   texts.push([SNAPSHOT_OBJECTS.meta, prettyJson(composed.meta)]);
   texts.push([SNAPSHOT_OBJECTS.releaseCalendar, prettyJson(composed.releaseCalendar)]);
   texts.push([SNAPSHOT_OBJECTS.aliases, formatAliasRows(composed.aliases)]);

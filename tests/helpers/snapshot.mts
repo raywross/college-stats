@@ -17,6 +17,7 @@ import type { HistoryFiles } from "../../lib/supabase";
 import { register } from "node:module";
 import type { Dataset } from "../../lib/dataset.ts";
 import { fileStore, type DataStore } from "../../scripts/lib/data-platform/store.mts";
+import { readSnapshotSchools } from "../../scripts/lib/data-platform/bundled.mts";
 import type { TrendContext } from "../../scripts/trends/context.mts";
 
 let resolverInstalled = false;
@@ -80,9 +81,16 @@ function snapshotJson<T>(rel: string): T | null {
   return jsonCache.get(path) as T | null;
 }
 
-/** The mini fixture's colleges, in dataset order, from `snapshot/colleges.json` (the composed, rendered form). */
+let cachedSchools: School[] | null = null;
+
+/**
+ * The mini fixture's colleges, in dataset order, from `snapshot/colleges.json` (the composed, rendered form), each with
+ * its `lineage` as the app's loader gives it: a lazy property reading `snapshot/lineage/<unit>.json` on first access
+ * (scripts/lib/data-platform/bundled.mts readSnapshotSchools; lib/data-platform/lineage-split.ts). Read once.
+ */
 export function miniSchools(): School[] {
-  return snapshotJson<School[]>("colleges.json")!;
+  cachedSchools ??= readSnapshotSchools(miniSnapshotDir());
+  return cachedSchools;
 }
 
 /** One college of the mini fixture by unit id, or undefined (`scripts/build-mini-fixture.mts` DEFAULT_UNITS lists them). */

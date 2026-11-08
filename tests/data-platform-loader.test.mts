@@ -9,7 +9,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import * as nodeModule from "node:module";
@@ -30,6 +30,8 @@ const { registerHooks } = nodeModule as unknown as {
 registerHooks({
   resolve(specifier, context, next) {
     if (specifier === "server-only") return { url: "data:text/javascript,export {}", shortCircuit: true };
+    // lib/data.ts schedules its pointer check with after(), which throws outside a request, as here.
+    if (specifier === "next/server") return { url: "data:text/javascript,export function after() { throw new Error(\"after() outside a request\") }", shortCircuit: true };
     const fromRoot = specifier.startsWith("@/");
     if (fromRoot || ((specifier.startsWith("./") || specifier.startsWith("../")) && context.parentURL?.startsWith("file:"))) {
       const path = fromRoot ? join(ROOT, specifier.slice(2)) : fileURLToPath(new URL(specifier, context.parentURL));
@@ -733,4 +735,246 @@ test("fetch-snapshot --ensure: a copy already there is kept; without one and wit
   }
   assert.equal(JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8")).id, 1);
   assert.equal(readFileSync(join(dir, "colleges.json"), "utf8"), collegesText(THREE));
+});
+
+/* ------------------------------------------------------------------ */
+/* Lineage out of colleges.json (specs/data-platform/publish.md)        */
+/* ------------------------------------------------------------------ */
+
+const split = await import("../lib/data-platform/lineage-split.ts");
+type Lineage = Record<string, unknown>;
+
+/**
+ * Three colleges as plain objects with their lineage (the first two keep theirs; the third has none, like the fixture's
+ * open-admission college), and the same split as the publisher renders them.
+ */
+function splitColleges() {
+  const full = THREE.map((s, i) => {
+    const plain = JSON.parse(JSON.stringify(s)) as { unit_id: string; lineage?: Lineage };
+    if (i === 2) delete plain.lineage;
+    return plain;
+  });
+  assert.ok(full[0].lineage && full[1].lineage, "the mini fixture's colleges have lineage");
+  const { colleges, lineage } = split.splitLineage(full as never);
+  return { full, colleges: colleges as unknown as { unit_id: string; lineage?: Lineage }[], lineage: lineage as Record<string, Lineage> };
+}
+
+/** A bundled root in the split layout: colleges.json without lineage, and lineage/<unit>.json (and/or lineage.json). */
+function splitBundledRoot(options: { folder?: boolean; whole?: boolean } = {}): { root: string; full: ReturnType<typeof splitColleges>["full"] } {
+  const { folder = true, whole = true } = options;
+  const root = bundledRoot(3);
+  const dir = join(root, ".data", "snapshot");
+  const { full, colleges, lineage } = splitColleges();
+  writeFileSync(join(dir, "colleges.json"), collegesText(colleges));
+  if (whole) writeFileSync(join(dir, "lineage.json"), split.formatLineageObject(lineage as never));
+  if (folder) {
+    mkdirSync(join(dir, "lineage"), { recursive: true });
+    for (const [unit, records] of Object.entries(lineage)) writeFileSync(join(dir, "lineage", `${unit}.json`), split.formatSchoolLineage(records as never));
+  }
+  return { root, full };
+}
+
+const descriptor = (o: object) => Object.getOwnPropertyDescriptor(o, "lineage");
+
+test("a split bundled copy: each college's lineage loads lazily from lineage/<unit>.json, deep-equal to the file; one without a file has none", () => {
+  const { root, full } = splitBundledRoot();
+  const content = loader.readBundled(root);
+  assert.equal(content.lazyLineage, true);
+  const schools = content.files.schools as unknown as { unit_id: string; lineage?: Lineage }[];
+  assert.equal(typeof descriptor(schools[0])?.get, "function", "an accessor until read");
+  assert.equal(descriptor(schools[2]), undefined, "no records: no key at all, as before");
+  assert.ok(!("lineage" in schools[2]));
+  assert.equal(schools[2].lineage, undefined);
+  for (const [i, s] of schools.entries()) {
+    if (i === 2) continue;
+    assert.deepEqual(s.lineage, JSON.parse(readFileSync(join(root, ".data", "snapshot", "lineage", `${s.unit_id}.json`), "utf8")));
+    assert.deepEqual(s.lineage, full[i].lineage);
+  }
+  // The whole set deep-equals the colleges as they were before the split (strict: no stray `lineage: undefined`).
+  assert.deepStrictEqual(schools, full);
+  assert.equal(JSON.stringify(schools), JSON.stringify(full), "and byte for byte: `lineage` back in its composed place, before `trends` and `reported`");
+});
+
+test("the accessor runs once: the first read replaces it with a plain property (the file is not read again)", () => {
+  const { root } = splitBundledRoot();
+  const schools = loader.readBundled(root).files.schools as unknown as { unit_id: string; lineage?: Lineage }[];
+  const first = schools[0].lineage;
+  assert.deepEqual(Object.keys(descriptor(schools[0])!).sort(), ["configurable", "enumerable", "value", "writable"], "a data property now");
+  rmSync(join(root, ".data", "snapshot", "lineage", `${schools[0].unit_id}.json`));
+  assert.equal(schools[0].lineage, first, "the same object, with the file gone");
+
+  // Counted at the source: installLazyLineage's reader runs once per college, however often the property is read.
+  const reads: string[] = [];
+  const objects = [{ unit_id: "1" }, { unit_id: "2" }] as { unit_id: string; lineage?: Lineage }[];
+  const installed = split.installLazyLineage(objects as never, { units: null, read: (unit) => (reads.push(unit), unit === "1" ? ({ "a.b": { source: "x" } } as never) : undefined) });
+  assert.equal(installed, 2);
+  for (let i = 0; i < 3; i++) {
+    void objects[0].lineage;
+    void objects[1].lineage;
+  }
+  assert.deepEqual(reads, ["1", "2"]);
+  assert.deepEqual(objects[0].lineage, { "a.b": { source: "x" } });
+  assert.ok(!("lineage" in objects[1]), "a college with no records loses the key on first read");
+});
+
+test("setting school.lineage replaces the accessor and sticks; spread, Object.keys and JSON.stringify include lineage", () => {
+  const { root, full } = splitBundledRoot();
+  const schools = loader.readBundled(root).files.schools as unknown as { unit_id: string; lineage?: Lineage }[];
+  const replacement = { "name.short": { source: "quad-edit" } };
+  schools[0].lineage = replacement;
+  assert.equal(schools[0].lineage, replacement);
+  assert.equal(descriptor(schools[0])?.value, replacement);
+  assert.ok(descriptor(schools[0])?.enumerable && descriptor(schools[0])?.configurable);
+  schools[0].lineage = undefined;
+  assert.ok("lineage" in schools[0] && schools[0].lineage === undefined, "an assigned undefined stays, as on a plain object");
+
+  assert.ok(Object.keys(schools[1]).includes("lineage"));
+  const spread = { ...schools[1] };
+  assert.deepEqual(spread.lineage, full[1].lineage);
+  assert.deepEqual(JSON.parse(JSON.stringify(schools[1])).lineage, full[1].lineage);
+  assert.deepEqual(structuredClone(schools[1]).lineage, full[1].lineage);
+});
+
+test("an old-style bundled copy (lineage inline, no lineage/ folder or lineage.json) is read as it is", () => {
+  const root = bundledRoot(2);
+  const content = loader.readBundled(root);
+  assert.equal(content.lazyLineage, false);
+  const first = content.files.schools[0] as unknown as object;
+  assert.ok("value" in descriptor(first)!, "a plain property from JSON.parse");
+  assert.deepEqual(content.files.schools[0].lineage, (THREE[0] as { lineage?: unknown }).lineage);
+});
+
+test("a copy with lineage.json but no lineage/ folder (an older fetch-snapshot) serves every college from the one object", () => {
+  const { root, full } = splitBundledRoot({ folder: false });
+  const content = loader.readBundled(root);
+  assert.equal(content.lazyLineage, true);
+  const schools = content.files.schools as unknown as { lineage?: Lineage }[];
+  assert.deepEqual(schools[0].lineage, full[0].lineage);
+  assert.deepEqual(schools[1].lineage, full[1].lineage);
+  assert.equal(schools[2].lineage, undefined);
+  assert.ok(!("lineage" in schools[2]), "no records: the key goes on first read");
+});
+
+test("readBundledSchools() is the colleges half of readBundled(), for scripts that need the same School[]", () => {
+  const { root, full } = splitBundledRoot();
+  const { schools, lazyLineage } = loader.readBundledSchools(root);
+  assert.equal(lazyLineage, true);
+  assert.deepStrictEqual(schools, full);
+  assert.equal(JSON.stringify(schools), JSON.stringify(full), "and byte for byte: `lineage` back in its composed place, before `trends` and `reported`");
+});
+
+test("the load line says `lineage lazy` when the accessors were installed, and not for an old-style copy", async () => {
+  await withConsole(async (logs) => {
+    const time = clock();
+    const lazy = loader.createSnapshotHolder({ source: { kind: "bundled" }, build: (content) => content.id, root: splitBundledRoot().root, now: time.now });
+    await lazy.load();
+    assert.equal(logs.info[0], "[data] loaded 3 colleges (snapshot 3) in 0 ms, lineage lazy");
+    const inline = loader.createSnapshotHolder({ source: { kind: "bundled" }, build: (content) => content.id, root: bundledRoot(1), now: time.now });
+    await inline.load();
+    assert.equal(logs.info[1], "[data] loaded 3 colleges (snapshot 1) in 0 ms");
+  });
+});
+
+/** Snapshot `id` as the publisher renders it since the split: colleges.json.gz without lineage, plus lineage.json.gz. */
+function buildSplitSnapshot(id: number): { objects: Map<string, Buffer>; pointer: Buffer } {
+  const base = buildSnapshot(id);
+  const { colleges, lineage } = splitColleges();
+  const plain = new Map<string, Buffer>();
+  for (const [path, bytes] of base.objects) {
+    const name = path.slice(snapshotPath(id, "").length);
+    if (name !== "manifest.json") plain.set(name, bytes);
+  }
+  plain.set("colleges.json.gz", gzipSync(collegesText(colleges)));
+  plain.set("lineage.json.gz", gzipSync(split.formatLineageObject(lineage as never)));
+  const manifest = { ...JSON.parse(base.objects.get(snapshotPath(id, "manifest.json"))!.toString("utf8")), objects: Object.fromEntries([...plain].map(([name, bytes]) => [name, { bytes: bytes.length, sha256: sha256(bytes) }])) };
+  const manifestBytes = Buffer.from(JSON.stringify(manifest));
+  const objects = new Map<string, Buffer>();
+  for (const [name, bytes] of plain) objects.set(snapshotPath(id, name), bytes);
+  objects.set(snapshotPath(id, "manifest.json"), manifestBytes);
+  return { objects, pointer: Buffer.from(JSON.stringify({ id, at: new Date(0).toISOString(), manifest_sha256: sha256(manifestBytes) })) };
+}
+
+test("the storage path attaches each college's lineage from lineage.json.gz before the swap, and tolerates its absence", async () => {
+  const bucket = fakeBucket();
+  const splitSnap = buildSplitSnapshot(4);
+  bucket.put(splitSnap);
+  const content = await loader.fetchSnapshotFiles(bucket.BASE, 4, bucket.get);
+  const { full } = splitColleges();
+  assert.equal(content.lazyLineage, undefined, "attached, not lazy");
+  assert.deepStrictEqual(content.files.schools, full);
+  assert.ok("value" in descriptor(content.files.schools[0] as unknown as object)!, "plain properties");
+  assert.ok(bucket.requests.some((u) => u.endsWith("/4/lineage.json.gz")));
+
+  // An older snapshot (no lineage.json.gz in its manifest): the colleges carry lineage inline, as before.
+  const old = buildSnapshot(5);
+  bucket.put(old);
+  const before = bucket.requests.length;
+  const oldContent = await loader.fetchSnapshotFiles(bucket.BASE, 5, bucket.get);
+  assert.deepEqual(oldContent.files.schools[0].lineage, (THREE[0] as { lineage?: unknown }).lineage);
+  assert.ok(!bucket.requests.slice(before).some((u) => u.includes("lineage")), "not requested when the manifest doesn't list it");
+
+  // A tampered lineage object fails the swap like any other.
+  bucket.tamper(snapshotPath(4, "lineage.json.gz"));
+  await assert.rejects(loader.fetchSnapshotFiles(bucket.BASE, 4, bucket.get), /lineage\.json\.gz doesn't match its hash/);
+});
+
+test("fetch-snapshot explodes lineage.json.gz into lineage/<unit>.json, keeps them across fetches, and removes them for an older snapshot", async () => {
+  const objects = new Map<string, Buffer>();
+  const one = buildSplitSnapshot(1);
+  for (const [k, v] of one.objects) objects.set(k, v);
+  objects.set(POINTER_OBJECT, one.pointer);
+  const { base, server } = await serveBucket(objects);
+  try {
+    const dir = join(mkdtempSync(join(tmpdir(), "dp-fetch-lineage-")), ".data", "snapshot");
+    await fetchScript.fetchSnapshot({ base, dir });
+    const { lineage } = splitColleges();
+    const units = Object.keys(lineage).sort();
+    assert.equal(units.length, 2);
+    for (const unit of units) assert.equal(readFileSync(join(dir, "lineage", `${unit}.json`), "utf8"), split.formatSchoolLineage(lineage[unit] as never));
+    assert.ok(existsSync(join(dir, "lineage.json")), "the ungzipped object too");
+    assert.ok(JSON.parse(readFileSync(join(dir, ".objects.json"), "utf8"))["lineage.json.gz"], ".objects.json covers the new object");
+    // The loader reads it lazily.
+    const { full } = splitColleges();
+    const content = loader.readBundled(dirname(dirname(dir)));
+    assert.equal(content.lazyLineage, true);
+    assert.deepStrictEqual(content.files.schools, full);
+
+    // Fetched again: the files stay; a stray lineage file goes; a changed one is rewritten.
+    writeFileSync(join(dir, "lineage", "999999.json"), "{}\n");
+    writeFileSync(join(dir, "lineage", `${units[0]}.json`), "{}\n");
+    const again = await fetchScript.fetchSnapshot({ base, dir });
+    assert.equal(again.downloaded, 0);
+    assert.equal(again.removed, 1);
+    assert.ok(!existsSync(join(dir, "lineage", "999999.json")));
+    assert.equal(readFileSync(join(dir, "lineage", `${units[0]}.json`), "utf8"), split.formatSchoolLineage(lineage[units[0]] as never));
+
+    // The pointer moves to an older-style snapshot (lineage inline): the folder and lineage.json go with it.
+    const two = buildSnapshot(2);
+    for (const [k, v] of two.objects) objects.set(k, v);
+    objects.set(POINTER_OBJECT, two.pointer);
+    await fetchScript.fetchSnapshot({ base, dir });
+    assert.ok(!existsSync(join(dir, "lineage.json")));
+    for (const unit of units) assert.ok(!existsSync(join(dir, "lineage", `${unit}.json`)));
+    assert.equal(loader.readBundled(dirname(dirname(dir))).lazyLineage, false);
+  } finally {
+    server.close();
+  }
+});
+
+test("fetch-snapshot --ensure copies the mini fixture's lineage/ folder with it, and the loader reads the fixture lazily", async () => {
+  const cwd = mkdtempSync(join(tmpdir(), "dp-ensure-lineage-"));
+  const original = console.log;
+  console.log = () => {};
+  try {
+    assert.equal(await fetchScript.main(["--ensure"], {}, cwd), 0);
+  } finally {
+    console.log = original;
+  }
+  const dir = join(cwd, ".data", "snapshot");
+  const fixtureFiles = readdirSync(join(fetchScript.FIXTURE_DIR, "lineage")).sort();
+  assert.ok(fixtureFiles.length > 30, "the fixture carries one file per college with records");
+  assert.deepEqual(readdirSync(join(dir, "lineage")).sort(), fixtureFiles);
+  const content = loader.readBundled(cwd);
+  assert.equal(content.lazyLineage, true);
+  assert.deepStrictEqual(content.files.schools, ALL, "the same colleges, lineage and all, as the fixture's helper reads");
 });

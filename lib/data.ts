@@ -1,5 +1,6 @@
 import "server-only";
 import { existsSync, readFileSync } from "node:fs";
+import { after } from "next/server";
 import { cache } from "react";
 import { createDataset, type Dataset } from "./dataset";
 import {
@@ -83,13 +84,20 @@ function snapshotHolder(): SnapshotHolder<Dataset> {
 /**
  * The snapshot this request serves, the same one for every reader in the request (React's per-request cache), so a
  * swap mid-render never mixes two snapshots. With DATA_SNAPSHOT_URL set, each call also starts the pointer check
- * (at most once a minute per instance; never awaited, never throws).
+ * (at most once a minute per instance; never awaited, never throws). It runs under Next's `after()` when there is a
+ * request to attach to, so the platform keeps the instance alive until the pointer has been read (a check left
+ * running past the response died with it: `checking for a newer snapshot failed … timed out` / `write EPIPE`,
+ * specs/serving-architecture.md "6. Cold starts"); outside a request (`after()` throws) it runs as before.
  */
 const getServed = cache(async (): Promise<Served<Dataset>> => {
   warnAboutRetiredSettings();
   const h = snapshotHolder();
   const served = await h.load();
-  void h.maybeRefresh();
+  try {
+    after(() => h.maybeRefresh());
+  } catch {
+    void h.maybeRefresh();
+  }
   return served;
 });
 

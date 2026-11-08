@@ -38,7 +38,8 @@ registerHooks({
       return dataModule("export function cookies(){throw new Error('no request')} export function headers(){throw new Error('no request')}");
     }
     if (specifier === "next/server") {
-      return dataModule(`export class NextResponse extends Response {
+      return dataModule(`export function after() { throw new Error('after() outside a request') }
+      export class NextResponse extends Response {
         static json(body, init) { return new NextResponse(JSON.stringify(body), { ...init, headers: { ...(init?.headers ?? {}), "Content-Type": "application/json" } }); }
       }`);
     }

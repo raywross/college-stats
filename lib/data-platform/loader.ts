@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { join } from "node:path";
@@ -8,6 +8,8 @@ import { gunzipSync } from "node:zlib";
 import { createDatasetLoader } from "../dataset-loader.ts";
 import type { DatasetFiles } from "../dataset.ts";
 import type { HistoryFiles } from "../supabase.ts";
+import type { School } from "../types.ts";
+import { attachLineage, installLazyLineage, type LineageObject, type SchoolLineage } from "./lineage-split.ts";
 import {
   POINTER_OBJECT,
   REFERENCE_OBJECTS,
@@ -34,6 +36,11 @@ import {
  *   or `--ensure` at install: the current snapshot when configured, else the mini fixture, id 0).
  * - Neither: there is no dataset, and `snapshotSource()` throws NO_SNAPSHOT_MESSAGE.
  *
+ * Each college's citation records (`school.lineage`) are not in `colleges.json` since 2026-11-08: the bundled source
+ * gives every college a lazy, synchronous `lineage` property that reads `.data/snapshot/lineage/<unit_id>.json` on
+ * first access; the storage source attaches them from `lineage.json.gz` before a swap (lib/data-platform/lineage-split.ts).
+ * An older snapshot, with the records inline, loads as before.
+ *
  * The big objects (pointer, manifest, colleges) are read with node:http(s), not `fetch`: Next.js patches `fetch`, and
  * an uncacheable fetch made while a static page renders would turn that page dynamic. Shards use `fetch` with
  * `cache: "force-cache"` on purpose: the snapshot id is in the URL, so each snapshot is its own cache key.
@@ -53,6 +60,8 @@ export interface SnapshotContent {
   files: DatasetFiles;
   /** history/shared.json(.gz): null when the snapshot carries no history. */
   history: HistoryFiles | null;
+  /** True when the colleges' `lineage` are lazy accessors (the bundled copy of a split snapshot): the load line says so. */
+  lazyLineage?: boolean;
 }
 
 /** A plain GET: status and body. Injected in tests; the default is node:http(s). */
@@ -92,13 +101,43 @@ function readOptionalJsonFile<T>(path: string): T | null {
   return existsSync(path) ? readJsonFile<T>(path) : null;
 }
 
+/**
+ * The bundled copy's colleges, each with its `lineage` (specs/data-platform/publish.md "The loader"): `colleges.json`
+ * parsed, then, for a split snapshot, a lazy `lineage` accessor on every college that has records
+ * (lineage-split.ts `installLazyLineage`): its getter reads `.data/snapshot/lineage/<unit_id>.json` the first time it
+ * runs. A copy written by an older fetch-snapshot (a `lineage.json` but no `lineage/` folder) serves every college
+ * from that one object, read whole on the first access. Colleges that carry `lineage` inline (an older snapshot) are
+ * left alone, and `lazyLineage` is false.
+ */
+export function readBundledSchools(root = process.cwd()): { schools: School[]; lazyLineage: boolean } {
+  const schools = readJsonFile<School[]>(join(root, ".data", "snapshot", "colleges.json"));
+  const folder = join(root, ".data", "snapshot", "lineage");
+  if (existsSync(folder)) {
+    const units = new Set(readdirSync(folder).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length)));
+    installLazyLineage(schools, {
+      units,
+      read: (unitId) => readOptionalJsonFile<SchoolLineage>(join(root, ".data", "snapshot", "lineage", `${unitId}.json`)) ?? undefined,
+    });
+    return { schools, lazyLineage: true };
+  }
+  const whole = join(root, ".data", "snapshot", "lineage.json");
+  if (existsSync(whole)) {
+    let all: LineageObject | null = null;
+    installLazyLineage(schools, { units: null, read: (unitId) => (all ??= readJsonFile<LineageObject>(whole))[unitId] });
+    return { schools, lazyLineage: true };
+  }
+  return { schools, lazyLineage: false };
+}
+
 /** The bundled copy (`.data/snapshot/`, ungzipped on disk): its id, the dataset files, and history's shared object. */
 export function readBundled(root = process.cwd()): SnapshotContent {
   const manifest = readJsonFile<SnapshotManifest>(join(root, ".data", "snapshot", "manifest.json"));
+  const { schools, lazyLineage } = readBundledSchools(root);
   return {
     id: manifest.id,
+    lazyLineage,
     files: {
-      schools: readJsonFile(join(root, ".data", "snapshot", "colleges.json")),
+      schools,
       meta: readJsonFile(join(root, ".data", "snapshot", "meta.json")),
       releaseCalendar: readJsonFile(join(root, ".data", "snapshot", "release-calendar.json")),
       aliases: readOptionalJsonFile<DatasetFiles["aliases"]>(join(root, ".data", "snapshot", "aliases.json")) ?? [],
@@ -140,10 +179,12 @@ export async function fetchPointer(base: string, get: HttpGet = httpGet, now = D
 
 /**
  * The objects a dataset load needs from snapshot `id`: the manifest (checked against the pointer's hash when given),
- * then colleges, meta, release calendar, aliases and history's shared object, each checked against the manifest's
- * sha256 and gunzipped where the name ends in `.gz`. Aliases and history may be absent from a snapshot (none and
- * null, as today when their files are missing); anything else missing or mismatched throws, so a swap never starts
- * from a partial or stale copy.
+ * then colleges, lineage, meta, release calendar, aliases and history's shared object, each checked against the
+ * manifest's sha256 and gunzipped where the name ends in `.gz`. Each college's records are attached from
+ * `lineage.json.gz` here, before the swap (which runs in the background, so the cost never lands on a request).
+ * Lineage, aliases and history may be absent from a snapshot (an older snapshot carries lineage inline; no aliases
+ * and null history, as today when their files are missing); anything else missing or mismatched throws, so a swap
+ * never starts from a partial or stale copy.
  */
 export async function fetchSnapshotFiles(base: string, id: number, get: HttpGet = httpGet, manifestSha256?: string): Promise<SnapshotContent> {
   const url = (object: string) => `${trimBase(base)}/${snapshotPath(id, object)}`;
@@ -164,13 +205,15 @@ export async function fetchSnapshotFiles(base: string, id: number, get: HttpGet 
     return JSON.parse(plain.toString("utf8"));
   };
 
-  const [schools, meta, releaseCalendar, aliases, history] = await Promise.all([
+  const [schools, lineage, meta, releaseCalendar, aliases, history] = await Promise.all([
     object(SNAPSHOT_OBJECTS.colleges, false),
+    object(SNAPSHOT_OBJECTS.lineage, true),
     object(SNAPSHOT_OBJECTS.meta, false),
     object(SNAPSHOT_OBJECTS.releaseCalendar, false),
     object(SNAPSHOT_OBJECTS.aliases, true),
     object(SNAPSHOT_OBJECTS.historyShared, true),
   ]);
+  if (lineage) attachLineage(schools as School[], lineage as LineageObject);
   return {
     id,
     files: {
@@ -214,7 +257,9 @@ export interface HolderOptions<T> {
   onSwap?: (swap: { from: SnapshotId; to: number; ms: number }) => void;
 }
 
-const loadedLine = (colleges: number, id: SnapshotId, ms: number) => `[data] loaded ${colleges} colleges (snapshot ${id}) in ${Math.round(ms)} ms`;
+/** `[data] loaded N colleges (snapshot <id>) in M ms`, plus `, lineage lazy` when the colleges' lineage loads on access. */
+const loadedLine = (content: SnapshotContent, ms: number) =>
+  `[data] loaded ${content.files.schools.length} colleges (snapshot ${content.id}) in ${Math.round(ms)} ms${content.lazyLineage ? ", lineage lazy" : ""}`;
 
 /**
  * The once-per-instance holder. The served snapshot lives in one variable that a swap replaces in a single assignment
@@ -244,7 +289,7 @@ export function createSnapshotHolder<T>(options: HolderOptions<T>): SnapshotHold
     const start = now();
     const content = await readFirst();
     current = serve(content);
-    console.info(loadedLine(content.files.schools.length, content.id, now() - start));
+    console.info(loadedLine(content, now() - start));
     return current;
   });
 
@@ -258,7 +303,7 @@ export function createSnapshotHolder<T>(options: HolderOptions<T>): SnapshotHold
       const next = serve(content);
       current = next;
       const ms = Math.round(now() - start);
-      console.info(loadedLine(content.files.schools.length, content.id, ms));
+      console.info(loadedLine(content, ms));
       options.onSwap?.({ from, to: pointer.id, ms });
     } catch (err) {
       // Fail soft: the served snapshot stays; one line per interval at most.

@@ -25,7 +25,13 @@ import type { LineageRecord } from "../types.ts";
 
 /** Objects every snapshot carries, relative to `snapshots/<id>/`. Per-college and per-name objects use the helpers. */
 export const SNAPSHOT_OBJECTS = {
+  /** Every composed college without its `lineage` key (since 2026-11-08; an older snapshot carries it inline). */
   colleges: "colleges.json.gz",
+  /**
+   * `{ "<unit_id>": <that college's lineage>, … }` for every college that has records (lib/data-platform/lineage-split.ts).
+   * Absent from a snapshot rendered before 2026-11-08, whose colleges carry their lineage inline.
+   */
+  lineage: "lineage.json.gz",
   meta: "meta.json",
   releaseCalendar: "release-calendar.json",
   aliases: "aliases.json",

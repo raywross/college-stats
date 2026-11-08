@@ -158,6 +158,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
                   tone="primary"
                   pendingLabel="Approving…"
                   fields={[{ name: "note", label: "Note for the session that writes the change (optional)", type: "textarea", maxLength: 500 }]}
+                  typed={{ expected: CONFIRM_APPROVE, instruction: <>Type &ldquo;{CONFIRM_APPROVE}&rdquo; to confirm</> }}
                   description="Records the analysis as approved. The change itself is written and reviewed as code."
                 />
               )}

@@ -464,6 +464,85 @@ export const HELP = {
     short: "One high school's record as the site holds it, with the courses the plan lists and the ones below the line.",
     door: "data",
   },
+  /* Added by Unit 4 (Data): the words the Data screens still used without an explanation. */
+  "selectivity-tier": {
+    title: "Selectivity tier",
+    short: "How hard a college is to get into, from Ultra selective to Open, worked out from its admit rate, test scores, yield, retention, and graduation rate. Visitors see the tier; the score and its parts stay here.",
+    long: "The panel leads with the tier and the reported figures that weigh most in it. Details holds the score for each pool, every input's percentile and reading, the weights, and the cutoffs.",
+    do: "Read why a college sits in its tier; open Details for the arithmetic.",
+    see: "specs/chances/selectivity-index.md",
+    door: "data",
+  },
+  hysteresis: {
+    title: "Hysteresis",
+    short: "A stored tier moves only when the score crosses the cutoff by a few points, so a college sitting on a line doesn't flip between tiers with every publish.",
+    long: "When the score alone reads another tier but hasn't crossed by the margin, the panel says the tier was kept from the last publish.",
+    door: "data",
+  },
+  "top-band": {
+    title: "Top band",
+    short: "The highest scorers within Ultra selective, kept apart so the tier isn't one undifferentiated group. A college enters at a fixed score and leaves only a few points below it.",
+    door: "data",
+  },
+  "selectivity-movers": {
+    title: "Movers",
+    short: "The colleges whose score moved most in the latest publish, and whether their tier changed with it.",
+    do: "Open a college to see why it moved.",
+    door: "data",
+  },
+  "tier-counts": {
+    title: "Tier counts",
+    short: "How many colleges sit in each tier after each publish, for every pool. A jump in one tier usually means new figures or a method change.",
+    door: "data",
+  },
+  "method-log": {
+    title: "Method log",
+    short: "Each change to how selectivity is worked out, with the day it took effect. A method change moves tiers without sending follower emails.",
+    door: "data",
+  },
+  "change-report": {
+    title: "A change's report",
+    short: "What the run wrote about itself: its counts (colleges attempted, documents read, cost) and its checks (passed or failed), listed in words. The run's own text is under Details.",
+    do: "Read the counts and the checks before you release or undo the change.",
+    door: "data",
+  },
+  "change-actions": {
+    title: "A change's actions",
+    short: "Hold keeps the change and every later one from publishing. Publish anyway releases a held change and publishes. Undo this change writes a new change that puts back what this one changed.",
+    long: "To undo a whole publish at once rather than one change, make an earlier published version live on Published versions.",
+    door: "data",
+  },
+  "documents-touched": {
+    title: "Documents touched",
+    short: "Every document this change wrote, by what it holds. Open one to see its before and after, line by line.",
+    door: "data",
+  },
+  "reference-versions": {
+    title: "A document's versions",
+    short: "Every saved version of this reference document, newest first, each with the change that wrote it. Restore version N saves that version again as the newest.",
+    door: "data",
+  },
+  "reference-form": {
+    title: "The document as a form",
+    short: "One field per part of the document, with the checker's problems beside the part they name. Edit as text shows the whole document as JSON instead.",
+    do: "Edit a field, then Save document; the checker runs before anything is saved.",
+    door: "data",
+  },
+  "course-counts": {
+    title: "Courses students list",
+    short: "How many different students at a school list each AP or IB course. The plan suggests a course once enough students list it; below that line a course is never shown, and no count names a student.",
+    door: "data",
+  },
+  "course-offering": {
+    title: "What the course plan reads",
+    short: "The school's own course list when it publishes one, or else the courses its students list, with where each came from.",
+    door: "data",
+  },
+  "health-sources": {
+    title: "Published files",
+    short: "Each file the dataset is built from, with the year it describes, when it was published, and whether a newer one is out.",
+    door: "data",
+  },
 
   /* ---------------------------------------------------------------- */
   /* More                                                             */

@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { callAdminRpc, withAdmin } from "@/lib/admin/console-actions";
 import {
   BAD_FORM_MESSAGE,
+  CONFIRM_CLOSE_HOUSEHOLD,
   CONFIRM_REMOVE,
   formId,
   parseHouseholdName,
@@ -77,11 +78,12 @@ export async function cancelInvitation(_prev: AdminActionState, form: FormData):
   });
 }
 
-/** Close an empty household (a soft delete). */
+/** Close an empty household (a soft delete). Typed "close" (specs/product/admin-redesign.md "People"). */
 export async function closeHousehold(_prev: AdminActionState, form: FormData): Promise<AdminActionState> {
   return withAdmin("household close", async (ctx) => {
     const household = formId(form, "household");
     if (!household) return badForm;
+    if (!typedMatches(form.get("confirm"), CONFIRM_CLOSE_HOUSEHOLD)) return { status: "error", message: `Type "${CONFIRM_CLOSE_HOUSEHOLD}" to confirm.` };
     const failed = await callAdminRpc(ctx, "household close", "admin_close_household", { p_household: household });
     if (failed) return failed;
     refresh();

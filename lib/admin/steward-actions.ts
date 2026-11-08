@@ -24,7 +24,7 @@
  */
 import { dispatchRun, reviewKeyFromForm, type OpsState } from "./ops-actions.ts";
 import { reviewDeps, type DataActionDeps } from "./data-actions.ts";
-import { ADMIN_FAILED, typedMatches, type AdminActionState } from "./console.ts";
+import { ADMIN_FAILED, CONFIRM_APPROVE, typedMatches, type AdminActionState } from "./console.ts";
 import { ADMIN_ERRORS } from "./constants.ts";
 import { NOTE_MAX } from "./review-queue.ts";
 import { STEWARD_COLLECTIONS } from "./steward-reads.ts";
@@ -33,10 +33,10 @@ import type { ReviewItem } from "../reported.ts";
 import { checkOfKey } from "../steward/cluster.ts";
 import { PROPOSAL_KIND_LABEL, type DecisionDoc, type IssueDoc, type IssueKind, type ProposalDoc, type ProposalKind, type ProposalRow, type TodoDoc } from "../steward/types.ts";
 
-/** The word typed to approve a proposal that changes what a visitor sees (a correction, a publish, a hold). */
-export const CONFIRM_APPROVE = "approve";
-/** Proposal kinds whose Approve needs the typed word. */
-export const TYPED_KINDS: ReadonlySet<ProposalKind> = new Set(["correct", "publish", "hold"]);
+/** The word typed to approve a proposal that changes what a visitor sees or the code (defined in console.ts beside the other typed words). */
+export { CONFIRM_APPROVE };
+/** Proposal kinds whose Approve needs the typed word: the ones that change what a visitor sees, and a systemic one. */
+export const TYPED_KINDS: ReadonlySet<ProposalKind> = new Set(["correct", "publish", "hold", "systemic"]);
 /** Kinds the console applies itself: field edits and resolutions. */
 export const VALUE_KINDS: ReadonlySet<ProposalKind> = new Set(["correct", "publish"]);
 /** Kinds the `apply` job applies (scripts/lib/steward/apply.mts `APPLIED_KINDS`; a test checks they agree). */
@@ -244,6 +244,7 @@ export async function approveProposal(deps: StewardDeps, form: StewardFormLike):
   const who = await decider(deps);
 
   if (p.kind === "systemic") {
+    if (!typedMatches(form.get("confirm"), CONFIRM_APPROVE)) return err(`Type "${CONFIRM_APPROVE}" to confirm.`);
     const next: ProposalDoc = { ...p, status: "approved", ...who, decision_note: note };
     const failed = await save(deps, STEWARD_COLLECTIONS.proposals, p.key, next, logNote("steward.approve", note ?? "the analysis, for the code change"));
     return failed ?? done("Approved: the analysis is recorded for the session that writes the change.");

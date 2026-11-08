@@ -724,9 +724,9 @@ test("static: each exported action starts with requireAdmin(); the pages and rou
   const health = read("app/admin/data/health/page.tsx");
   assert.match(health.slice(health.indexOf("export default async function")), /\{\n\s+await requireAdmin\(\);/, "the Health page calls requireAdmin() first");
   assert.match(health, /robots: \{ index: false, follow: false \}/, "the Health page is noindex");
-  // The Sources tab is a component the page renders (specs/product/admin-redesign.md "Data"); it checks too.
-  const sources = read("app/admin/data/health/sources.tsx");
-  assert.match(sources.slice(sources.indexOf("export async function SourcesView")), /\{\n\s+await requireAdmin\(\);/, "the Sources tab calls requireAdmin() first");
+  // One page, two tabs, one code path (specs/product/admin-redesign.md "Data"): no second file renders a tab.
+  assert.equal(existsSync(join(ROOT, "app/admin/data/health/sources.tsx")), false, "the Sources tab is the page's own loader, not a second view");
+  assert.match(health, /const tab = healthTab\(params\);/, "the page reads the tab after requireAdmin()");
   for (const file of ["app/admin/data/health/csv/route.ts", "app/admin/data/health/inputs-csv/route.ts"]) {
     const route = read(file);
     assert.match(route.slice(route.indexOf("export async function GET")), /\{\n\s+await requireAdmin\(\);/, `${file} calls requireAdmin() first`);
@@ -791,10 +791,9 @@ test("loadOperations makes no GitHub call without credentials", async () => {
 });
 
 test("the Health page's Sources tab shows the inputs' date, hides the family filter when the lists can't be read, and links the CSV with the filters", async () => {
-  const view = (await loadTsx("app/admin/data/health/sources.tsx")).SourcesView as (p: { params: Record<string, string> }) => Promise<import("react").ReactElement>;
-  const page = (p: { searchParams: Promise<Record<string, string>> }) => p.searchParams.then((params) => view({ params }));
+  const page = (await loadTsx("app/admin/data/health/page.tsx")).default as (p: { searchParams: Promise<Record<string, string>> }) => Promise<import("react").ReactElement>;
   reset({ admin: true });
-  const markup = html(await page({ searchParams: Promise.resolve({ status: "failing", state: "oh" }) }));
+  const markup = html(await page({ searchParams: Promise.resolve({ tab: "sources", status: "failing", state: "oh", input: "gpa" }) }));
   const stubs = stubsIn(markup);
   assert.equal(world.calls[0], "requireAdmin");
   assert.match(markup, /Health inputs are from [A-Z][a-z]{2} \d{1,2}, \d{4}; measured [A-Z][a-z]{2} \d{1,2}, \d{4}\./);
@@ -803,6 +802,8 @@ test("the Health page's Sources tab shows the inputs' date, hides the family fil
   assert.equal(filterForm?.props.csvHref, "/admin/data/health/csv?status=failing&state=OH");
   assert.deepEqual(stubs.map((s) => s.name).filter((n) => n.startsWith("Health")), ["HealthTabs", "HealthStats", "HealthFilterForm", "HealthTable"]);
   assert.ok(stubs.some((s) => s.name === "SourceFilesTable"), "the published files come first");
+  assert.ok(!stubs.some((s) => s.name.startsWith("EstimateInputs")), "the Colleges tab's parts stay off the Sources tab");
+  assert.equal(stubs.find((s) => s.name === "HealthTabs")?.props.current, "sources");
   reset({ admin: false });
   await assert.rejects(page({ searchParams: Promise.resolve({}) }), is404);
 });

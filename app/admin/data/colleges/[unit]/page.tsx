@@ -8,6 +8,8 @@ import { EstimateInputsPanel } from "@/components/admin/EstimateInputsPanel";
 import { collegeInputsFor } from "@/lib/admin/estimate-inputs-load";
 import { DailyViews, TopBars } from "@/components/admin/ViewCharts";
 import { SelectivityHistory } from "@/components/admin/SelectivityHistory";
+import { HelpTip } from "@/components/admin/HelpTip";
+import { tierSentence } from "@/lib/admin/selectivity-words";
 import { collegeHistory, historyInstalled, type SelectivityPoint } from "@/lib/admin/selectivity-history";
 import { githubRepo } from "@/lib/github-app";
 import { collegeViewers, VIEW_CHART_DAYS, type ViewerRow } from "@/lib/admin/college-views";
@@ -110,29 +112,37 @@ function SelectivityBlock({ panel, school }: { panel: SelectivityPanel; school: 
   const { constants } = panel;
   const fields = [...new Set(panel.pools.flatMap((p) => p.rows.map((r) => r.field)))] as FieldPath[];
   return (
-    <Panel help="selectivity-pool" title="Selectivity" id="selectivity" aside={<Muted>Hidden: never on a public page</Muted>}>
-      {panel.status === "inconsistent" ? (
-        <Empty>Not rated: the college reports more first-years enrolled than undergraduates in all, so its figures can&apos;t describe one class.</Empty>
-      ) : panel.status === "no_admit_rate" ? (
-        <Empty>Not rated: the college publishes no admit rate.</Empty>
-      ) : (
-        <div className="space-y-6">
-          {panel.pools.map((p) => (
-            <PoolBlock key={p.pool} pool={p} />
-          ))}
-          {panel.topBand && <p className="text-sm">{panel.topBand.sentence}</p>}
-          <SourceNote fields={fields} school={school} />
-        </div>
+    <Panel help="selectivity-tier" title="Selectivity" id="selectivity" aside={<Muted>Hidden: never on a public page</Muted>}>
+      {/* The tier and its reason in words first (specs/product/admin-redesign.md "Data"); the scoring under Details. */}
+      <p className="text-base font-semibold">{tierSentence(panel)}</p>
+      {panel.status === "rated" && (
+        <>
+          <SourceNote fields={fields} school={school} className="mt-2" />
+          <details className="group mt-4 rounded-xl border border-border">
+            <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm font-semibold">Details</summary>
+            <div className="space-y-6 border-t border-border p-3">
+              {panel.pools.map((p) => (
+                <PoolBlock key={p.pool} pool={p} />
+              ))}
+              {panel.topBand && (
+                <p className="flex items-start gap-1.5 text-sm">
+                  <span>{panel.topBand.sentence}</span>
+                  <HelpTip help="top-band" />
+                </p>
+              )}
+              <div className="space-y-1 border-t pt-3 text-xs text-muted-foreground">
+                <p>
+                  Weights: {constants.weights.map((w) => `${w.label} ${w.weight}`).join(" · ")}. Score = {constants.center} + {constants.spread} × weighted mean × admitted ÷ (admitted + {constants.evidenceAdmits}), held to 0–100.
+                </p>
+                <p>
+                  Cutoffs: {constants.cutoffs.filter((c) => c.at !== null).map((c) => `${c.label} ${c.at}`).join(" · ")}; a stored tier moves only when the score crosses by {constants.hysteresis} points. Top band of Ultra selective at {constants.topBandScore}.
+                </p>
+                <p>{panel.trend}</p>
+              </div>
+            </div>
+          </details>
+        </>
       )}
-      <div className="mt-5 space-y-1 border-t pt-3 text-xs text-muted-foreground">
-        <p>
-          Weights: {constants.weights.map((w) => `${w.label} ${w.weight}`).join(" · ")}. Score = {constants.center} + {constants.spread} × weighted mean × admitted ÷ (admitted + {constants.evidenceAdmits}), held to 0–100.
-        </p>
-        <p>
-          Cutoffs: {constants.cutoffs.filter((c) => c.at !== null).map((c) => `${c.label} ${c.at}`).join(" · ")}; a stored tier moves only when the score crosses by {constants.hysteresis} points. Top band of Ultra selective at {constants.topBandScore}.
-        </p>
-        <p>{panel.trend}</p>
-      </div>
     </Panel>
   );
 }
@@ -140,8 +150,11 @@ function SelectivityBlock({ panel, school }: { panel: SelectivityPanel; school: 
 function PoolBlock({ pool }: { pool: SelectivityPoolView }) {
   return (
     <section aria-label={pool.label} className="space-y-2">
-      <h3 className="flex flex-wrap items-baseline gap-x-3 text-base font-bold">
-        {pool.label}
+      <h3 className="flex flex-wrap items-center gap-x-3 text-base font-bold">
+        <span className="inline-flex items-center gap-1.5">
+          {pool.label}
+          <HelpTip help="selectivity-pool" />
+        </span>
         <span className="text-sm font-normal text-muted-foreground">
           score <span className="font-mono text-foreground tabular-nums">{fmt(pool.score)}</span> · plain cutoffs: {SELECTIVITY_TIER_LABELS[pool.plainTier]} · stored: {pool.publishedTier ? SELECTIVITY_TIER_LABELS[pool.publishedTier] : "none"}
         </span>
@@ -152,8 +165,16 @@ function PoolBlock({ pool }: { pool: SelectivityPoolView }) {
             <tr>
               <th className="py-1.5 pr-3 font-semibold">Input</th>
               <th className="py-1.5 pr-3 font-semibold">Value</th>
-              <th className="py-1.5 pr-3 font-semibold">Percentile</th>
-              <th className="py-1.5 pr-3 font-semibold">Reading</th>
+              <th className="py-1.5 pr-3 font-semibold">
+                <span className="inline-flex items-center gap-1">
+                  Percentile <HelpTip help="percentile" />
+                </span>
+              </th>
+              <th className="py-1.5 pr-3 font-semibold">
+                <span className="inline-flex items-center gap-1">
+                  Reading <HelpTip help="reading" />
+                </span>
+              </th>
               <th className="py-1.5 pr-3 font-semibold">Weight</th>
               <th className="py-1.5 font-semibold">Contribution</th>
             </tr>
@@ -176,10 +197,14 @@ function PoolBlock({ pool }: { pool: SelectivityPoolView }) {
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Weighted mean {readingText(pool.weightedMean)} × evidence {fmt(pool.evidence.factor, 3)} ({pool.evidence.admitted === null ? "no admitted count" : `${pool.evidence.admitted.toLocaleString("en-US")} admitted`}) → {fmt(pool.unclamped)}
+        Weighted mean {readingText(pool.weightedMean)} × evidence <HelpTip help="evidence" className="size-4" /> {fmt(pool.evidence.factor, 3)} (
+        {pool.evidence.admitted === null ? "no admitted count" : `${pool.evidence.admitted.toLocaleString("en-US")} admitted`}) → {fmt(pool.unclamped)}
         {pool.unclamped !== pool.exact ? `, held to ${fmt(pool.exact)}` : ""}. Percentile: harder than that share of reporting colleges. Reading: standard deviations from the reporters&apos; mean.
       </p>
-      <p className="text-sm">{pool.hysteresis.sentence}</p>
+      <p className="flex items-start gap-1.5 text-sm">
+        <span>{pool.hysteresis.sentence}</span>
+        <HelpTip help="hysteresis" />
+      </p>
     </section>
   );
 }

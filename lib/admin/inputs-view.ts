@@ -1,7 +1,7 @@
 /**
  * The Estimate inputs view's URL filters (specs/product/admin-health-views.md "The page"): parsed and validated, the
  * filter and sort over the rows, and the links the stat row and the CSV button build. Pure, so the tests pin it and
- * `app/admin/health/page.tsx` and its CSV route share one definition of "which colleges".
+ * `app/admin/data/health/page.tsx` and its CSV route share one definition of "which colleges".
  *
  * `?status=watch&input=gpa&state=GA&tier=1&family=1&sort=name&page=2`:
  * - `status` alone judges the overall status; with `input`, that input's status. `input` alone lists colleges where that

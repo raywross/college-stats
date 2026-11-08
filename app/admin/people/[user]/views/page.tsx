@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
+import { PageHeader, Panel } from "@/components/admin/Panel";
+import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
 import { requireAdmin } from "@/lib/admin/auth";
 import { fmtDateTime } from "@/lib/admin/console";
 import { adminPerson, logStudentView } from "@/lib/admin/people";
@@ -38,7 +39,7 @@ export default async function PersonViewsPage({ params, searchParams }: PageProp
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="views-log"
         back={
           <Link href={`/admin/people/${user}#views`} className="text-muted-foreground underline-offset-4 hover:underline">
             {name}
@@ -49,7 +50,7 @@ export default async function PersonViewsPage({ params, searchParams }: PageProp
           unit ? (
             <>
               {name}&rsquo;s views, newest first ·{" "}
-              <Link href={`/admin/colleges/${unit}#views`} className="underline-offset-4 hover:underline">
+              <Link href={`/admin/data/colleges/${unit}#views`} className="underline-offset-4 hover:underline">
                 Who else is looking
               </Link>{" "}
               ·{" "}
@@ -63,62 +64,43 @@ export default async function PersonViewsPage({ params, searchParams }: PageProp
         }
       />
       {unit ? (
-        <Panel title={`${times.length} ${times.length === 1 ? "view" : "views"}`}>
-          {times.length === 0 ? (
-            <Empty>They haven&rsquo;t opened this college while signed in.</Empty>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-xs text-muted-foreground">
-                  <tr>
-                    <th className="py-1.5 pr-4 font-medium">When</th>
-                    <th className="py-1.5 font-medium">Page</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {times.map((t, i) => (
-                    <tr key={`${t.viewedAt}-${i}`}>
-                      <td className="py-1.5 pr-4 tabular-nums whitespace-nowrap">{fmtDateTime(t.viewedAt)}</td>
-                      <td className="py-1.5">{pageLabel(t.page)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <Panel help="views-log" title={`${times.length} ${times.length === 1 ? "view" : "views"}`}>
+          <ResponsiveTable
+            rows={times.map((t, i) => ({ ...t, key: `${t.viewedAt}-${i}` }))}
+            columns={
+              [
+                { key: "when", header: "When", role: "title", cell: (t) => fmtDateTime(t.viewedAt) },
+                { key: "page", header: "Page", cell: (t) => pageLabel(t.page) },
+              ] as readonly Column<(typeof times)[number] & { key: string }>[]
+            }
+            rowKey={(t) => t.key}
+            caption="This college's views, newest first"
+            empty="They haven't opened this college while signed in."
+          />
         </Panel>
       ) : (
-        <Panel title="Every college">
-          {views.colleges.length === 0 ? (
-            <Empty>No college pages opened while signed in.</Empty>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-xs text-muted-foreground">
-                  <tr>
-                    <th className="py-1.5 pr-4 font-medium">College</th>
-                    <th className="py-1.5 pr-4 text-right font-medium">Views</th>
-                    <th className="py-1.5 pr-4 font-medium">First</th>
-                    <th className="py-1.5 font-medium">Last</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {views.colleges.map((c) => (
-                    <tr key={c.unitId}>
-                      <td className="py-1.5 pr-4">
-                        <Link href={`/admin/people/${user}/views?unit=${c.unitId}`} className="font-medium underline-offset-4 hover:underline">
-                          {c.name}
-                        </Link>
-                      </td>
-                      <td className="py-1.5 pr-4 text-right tabular-nums">{c.views.toLocaleString("en-US")}</td>
-                      <td className="py-1.5 pr-4 tabular-nums whitespace-nowrap">{fmtDateTime(c.firstViewed)}</td>
-                      <td className="py-1.5 tabular-nums whitespace-nowrap">{fmtDateTime(c.lastViewed)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <Panel help="views-log" title="Every college">
+          <ResponsiveTable
+            rows={views.colleges}
+            columns={[
+              {
+                key: "college",
+                header: "College",
+                role: "title",
+                cell: (c) => (
+                  <Link href={`/admin/people/${user}/views?unit=${c.unitId}`} className="font-medium underline-offset-4 hover:underline">
+                    {c.name}
+                  </Link>
+                ),
+              },
+              { key: "views", header: "Views", align: "right", cell: (c) => c.views.toLocaleString("en-US") },
+              { key: "first", header: "First", role: "detail", cell: (c) => fmtDateTime(c.firstViewed) },
+              { key: "last", header: "Last", cell: (c) => fmtDateTime(c.lastViewed) },
+            ]}
+            rowKey={(c) => c.unitId}
+            caption="Every college viewed, most viewed first"
+            empty="No college pages opened while signed in."
+          />
         </Panel>
       )}
     </>

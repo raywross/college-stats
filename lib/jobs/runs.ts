@@ -9,6 +9,9 @@ import * as gh from "@/lib/github-app";
 import { adminSupabase } from "@/lib/admin/people";
 import { JOBS, githubWorkflows, nextJobRun, type JobDef } from "@/lib/jobs/registry";
 import type { RunTrigger, StoredRunStatus } from "@/lib/jobs/record";
+import { latestReviews, reviewForLastRun, reviewsOf, type ReviewsClient } from "@/lib/jobs/reviews";
+import { reviewKey } from "@/lib/steward/job-review";
+import type { ReviewDoc } from "@/lib/steward/types";
 
 export interface StoredRun {
   id: number;
@@ -123,6 +126,13 @@ export interface JobOverviewRow {
   job: JobDef;
   next: Date | null;
   last: LastRun;
+  /** The Steward's review of the last run, or of the job's newest reviewed run (`ofLastRun: false`); absent when none. */
+  review?: { review: ReviewDoc; ofLastRun: boolean } | null;
+}
+
+/** The ref of a last run (its `job_runs` id or workflow run id), the key the Steward's review uses. */
+export function lastRunRef(last: LastRun): string | null {
+  return last ? String(last.run.id) : null;
 }
 
 export interface JobsOverview {
@@ -140,20 +150,45 @@ export async function loadJobsOverview(now: Date): Promise<JobsOverview> {
     configured ? Promise.all(githubWorkflows().map(async (file) => [file, (await gh.listRuns({ workflows: [file], perPage: 1 }))[0] ?? null] as const)) : Promise.resolve([]),
   ]);
   const byWorkflow = new Map<string, gh.WorkflowRun | null>(githubLatest);
-  return {
-    githubConfigured: configured,
-    rows: JOBS.map((job) => {
-      const last: LastRun =
-        job.runner === "vercel"
-          ? stored.has(job.id)
-            ? { kind: "stored", run: stored.get(job.id)! }
-            : null
-          : byWorkflow.get(job.workflow ?? "")
-            ? { kind: "github", run: byWorkflow.get(job.workflow ?? "")! }
-            : null;
-      return { job, next: nextJobRun(job, now), last };
-    }),
-  };
+  const rows: JobOverviewRow[] = JOBS.map((job) => {
+    const last: LastRun =
+      job.runner === "vercel"
+        ? stored.has(job.id)
+          ? { kind: "stored", run: stored.get(job.id)! }
+          : null
+        : byWorkflow.get(job.workflow ?? "")
+          ? { kind: "github", run: byWorkflow.get(job.workflow ?? "")! }
+          : null;
+    return { job, next: nextJobRun(job, now), last };
+  });
+  await attachReviews(rows);
+  return { githubConfigured: configured, rows };
+}
+
+/** The Steward's reviews beside each job's last run: the run's own, else the job's newest. Never throws. */
+async function attachReviews(rows: JobOverviewRow[]): Promise<void> {
+  try {
+    const client = (await adminSupabase()) as unknown as ReviewsClient;
+    const own = await reviewsOf(
+      client,
+      rows.flatMap((r) => (r.last ? [{ job: r.job.id, ref: lastRunRef(r.last)! }] : [])),
+    );
+    const missing = rows.filter((r) => !r.last || !own.has(reviewKey(r.job.id, lastRunRef(r.last)!))).map((r) => r.job.id);
+    const latest = await latestReviews(client, missing);
+    for (const r of rows) r.review = reviewForLastRun(r.job.id, lastRunRef(r.last), own, latest);
+  } catch {
+    // The Steward column reads "Not reviewed".
+  }
+}
+
+/** The Steward's reviews of the runs a job's page lists, by `<job>:<ref>`. */
+export async function reviewsOfRuns(job: JobDef, refs: readonly string[]): Promise<Map<string, ReviewDoc>> {
+  try {
+    const client = (await adminSupabase()) as unknown as ReviewsClient;
+    return await reviewsOf(client, refs.map((ref) => ({ job: job.id, ref })));
+  } catch {
+    return new Map();
+  }
 }
 
 /** A GitHub job's newest runs (empty without credentials or when GitHub can't be read). */

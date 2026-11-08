@@ -1,0 +1,23 @@
+{
+  "key": "d59eedac3e1a6b65",
+  "model": "claude-haiku-4-5-20251001",
+  "note": "review note, 2-slow (written for the fixture, not recorded)",
+  "response": {
+    "id": "msg_dry_d59eedac3e1a6b65",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-haiku-4-5-20251001",
+    "content": [
+      {
+        "type": "text",
+        "text": "Visit events finished but took over six hours, an hour past its usual longest; check whether one college's calendar host is answering slowly."
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 420,
+      "output_tokens": 38
+    }
+  }
+}

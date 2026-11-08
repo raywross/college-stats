@@ -8,6 +8,7 @@ import { ThemeSegmented } from "@/components/ThemeToggle";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useMe } from "@/components/account/useMe";
 import { loginHref } from "@/lib/accounts";
+import { isAdminPath } from "@/lib/analytics";
 import { useCompareIds } from "@/lib/compare";
 import { cn } from "@/lib/utils";
 import { roleNav } from "./role-nav";
@@ -50,6 +51,10 @@ export function BottomNav() {
   const compareHref = compareIds.length ? `/compare?ids=${compareIds.join(",")}` : "/compare";
   const roleActive = role.activePaths.some(isActive);
   const moreActive = isActive("/trends") || isActive("/high-schools") || isActive("/glossary") || isActive("/data") || isActive("/sources") || isActive("/roadmap") || isActive("/release-notes") || isActive("/account") || isActive("/login");
+
+  // The admin console has its own tab bar (components/admin/AdminTabBar.tsx; specs/product/admin-redesign.md
+  // "Phones"): the site's five tabs are for visitors. After the hooks, so their order never changes.
+  if (isAdminPath(pathname)) return null;
 
   return (
     <>

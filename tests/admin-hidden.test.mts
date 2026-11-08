@@ -1,7 +1,7 @@
 /**
  * The admin console's hidden values (specs/product/admin.md "Colleges and hidden values", "A student's standing";
  * lib/admin/hidden.ts, lib/admin/college.ts, lib/admin/high-school.ts, lib/admin/standing.ts, the pages under
- * app/admin/colleges and app/admin/high-schools, components/admin/StandingPanelSlot.tsx): the selectivity breakdown
+ * app/admin/data/colleges and app/admin/data/high-schools, components/admin/StandingPanelSlot.tsx): the selectivity breakdown
  * adds up to the committed index for every college; hysteresis is explained; the GPA panel names its source; the
  * registry's `hidden: true` fields each have a value and never appear on a public page; the three-student line matches
  * the migration; the standing panel carries the estimate's private detail while the public endpoint never does, and
@@ -268,7 +268,7 @@ test("a hidden field is never named on a public page, component, or library outs
 });
 
 test("guard: a profile section citing a hidden field is caught", () => {
-  const files = new Map([["components/school/Bad.tsx", 'export const F = ["derived.selectivity_score"];'], ["app/admin/colleges/Fine.tsx", 'const f = "derived.selectivity_score";']]);
+  const files = new Map([["components/school/Bad.tsx", 'export const F = ["derived.selectivity_score"];'], ["app/admin/data/colleges/Fine.tsx", 'const f = "derived.selectivity_score";']]);
   assert.deepEqual(publicNamers(files, HIDDEN_FIELDS), ["components/school/Bad.tsx: derived.selectivity_score"]);
 });
 
@@ -407,7 +407,7 @@ test("guard: a route or a client component importing the detail is caught", () =
 /* Pages and loaders                                                   */
 /* ------------------------------------------------------------------ */
 
-const NEW_PAGES = ["app/admin/colleges/page.tsx", "app/admin/colleges/[unit]/page.tsx", "app/admin/high-schools/[id]/page.tsx"];
+const NEW_PAGES = ["app/admin/data/colleges/page.tsx", "app/admin/data/colleges/[unit]/page.tsx", "app/admin/data/high-schools/[id]/page.tsx"];
 
 /** Pages that read something before requireAdmin(), or never call it, or lack noindex. */
 function unguardedPages(files: Record<string, string>): string[] {
@@ -455,10 +455,10 @@ test("app code never reads data files directly: the loaders go through getData()
   }
 });
 
-/* The admin rail already routes /admin/colleges and /admin/high-schools to Colleges (tests/admin-console-ui.test.mts). */
-test("every new page lives under the Colleges section of the console", () => {
+/* The admin rail already routes /admin/data/colleges and /admin/data/high-schools to Colleges (tests/admin-console-ui.test.mts). */
+test("every new page lives under the Data door's Colleges screen", () => {
   for (const f of NEW_PAGES) assert.ok(statSync(join(ROOT, f)).isFile(), f);
-  const dirs = readdirSync(join(ROOT, "app", "admin"));
+  const dirs = readdirSync(join(ROOT, "app", "admin", "data"));
   assert.ok(dirs.includes("colleges") && dirs.includes("high-schools"));
   // Every SnapshotDetail key the panel reads is one the type declares (a rename in the method would surface here).
   for (const k of ["hiddenOdds", "without", "position", "baseRateKind", "baseRate", "crowded", "rigorReading", "selectivityTier", "completeness", "stateUsed", "depth"]) assert.ok(DETAIL_KEYS.includes(k), k);

@@ -50,7 +50,7 @@ const STUBS: Record<string, string> = {
     "export function formatBytes(n){return n + ' B'} export function manifestBytes(m){return (m && m.colleges) || 0} " +
     "export function manifestDownloadUrl(id){return 'https://example.test/snapshots/'+id+'/manifest.json'}",
   // Families' lists (lib/admin/essays.ts listsByUnit reads list_items with the admin's session): driven by `world`.
-  "@/lib/admin/essays": "export async function listsByUnit(){globalThis.__world.calls.push('listsByUnit'); return globalThis.__world.lists}",
+  "@/lib/admin/essays": "export async function listsByUnit(){globalThis.__world.calls.push('listsByUnit'); return globalThis.__world.lists}; export const ESSAY_STATUS_LABELS = { refers_to_form: 'Refers to the form', not_read: 'Not read' };",
 };
 registerHooks({
   resolve(specifier, context, next) {
@@ -365,7 +365,7 @@ const form = (fields: Record<string, string>): { get(name: string): unknown } =>
 
 test("publishNow dispatches publish-snapshot.yml with force, logged before it sends (ops.dispatch, via dispatchRun)", async () => {
   const { deps, log, dispatches } = fakeDeps();
-  const result = await actions.publishNow(deps);
+  const result = await actions.publishNow(deps, form({ confirm: "publish" }));
   assert.equal(result.status, "done");
   assert.deepEqual(log, ["note ops.dispatch", "dispatch publish-snapshot.yml"], "logged before it was sent");
   // The request id is a third, separate argument to dispatchWorkflow (lib/github-app.ts merges it in for real); the
@@ -375,16 +375,28 @@ test("publishNow dispatches publish-snapshot.yml with force, logged before it se
 
 test("publishNow refuses, and never dispatches, when the log write fails", async () => {
   const { deps, log, dispatches } = fakeDeps({ noteOk: false });
-  const result = await actions.publishNow(deps);
+  const result = await actions.publishNow(deps, form({ confirm: "publish" }));
   assert.equal(result.status, "error");
   assert.match((result as { message: string }).message, /could not be logged/);
   assert.deepEqual(dispatches, []);
   assert.deepEqual(log, ["note ops.dispatch"]);
 });
 
+test("publishNow asks for the typed word \"publish\": without it, or with another word, nothing is logged or sent", async () => {
+  assert.equal(actions.CONFIRM_PUBLISH, "publish");
+  for (const fields of [{}, { confirm: "" }, { confirm: "yes" }, { confirm: "publish now" }, { confirm: "revert" }] as Record<string, string>[]) {
+    const { deps, log, dispatches } = fakeDeps();
+    const result = await actions.publishNow(deps, form(fields));
+    assert.deepEqual(result, { status: "error", message: 'Type "publish" to confirm.' }, JSON.stringify(fields));
+    assert.deepEqual([log, dispatches], [[], []], `nothing ran for ${JSON.stringify(fields)}`);
+  }
+  const { deps } = fakeDeps();
+  assert.equal((await actions.publishNow(deps, form({ confirm: "  Publish " }))).status, "done", "case and spaces don't matter");
+});
+
 test("publishNow surfaces GitHub's refusal without hiding it", async () => {
   const { deps } = fakeDeps({ dispatch: { ok: false, reason: "workflow not found" } });
-  const result = await actions.publishNow(deps);
+  const result = await actions.publishNow(deps, form({ confirm: "publish" }));
   assert.equal(result.status, "error");
   assert.match((result as { message: string }).message, /workflow not found/);
 });
@@ -392,27 +404,29 @@ test("publishNow surfaces GitHub's refusal without hiding it", async () => {
 test("pointBackHere: a bad or missing snapshot id is refused before anything runs", async () => {
   const { deps, log } = fakeDeps();
   for (const fields of [{}, { snapshot: "0" }, { snapshot: "-3" }, { snapshot: "abc" }, { snapshot: "1.5" }] as Record<string, string>[]) {
-    const result = await actions.pointBackHere(deps, form({ confirm: actions.CONFIRM_POINT_BACK, ...fields }));
+    const result = await actions.pointBackHere(deps, form({ confirm: actions.CONFIRM_MAKE_LIVE, ...fields }));
     assert.equal(result.status, "error", JSON.stringify(fields));
   }
   assert.deepEqual(log, [], "nothing ran: the id never reached the RPC or the dispatch");
 });
 
-test("pointBackHere needs the typed confirmation ('point back'), case- and space-insensitively; a forged form without it changes nothing", async () => {
+test("pointBackHere needs the typed confirmation ('live'), case- and space-insensitively; a forged form without it changes nothing", async () => {
+  assert.equal(actions.CONFIRM_MAKE_LIVE, "live");
   const { deps, log } = fakeDeps();
   const bad = await actions.pointBackHere(deps, form({ snapshot: "7", confirm: "yes" }));
   assert.equal(bad.status, "error");
-  assert.match((bad as { message: string }).message, /point back/);
+  assert.match((bad as { message: string }).message, /Type "live"/);
+  assert.equal((await actions.pointBackHere(deps, form({ snapshot: "7", confirm: "point back" }))).status, "error", "the old word no longer works");
   assert.deepEqual(log, [], "the RPC was never called");
   const noConfirm = await actions.pointBackHere(deps, form({ snapshot: "7" }));
   assert.equal(noConfirm.status, "error");
-  const ok = await actions.pointBackHere(deps, form({ snapshot: "7", confirm: "  POINT Back  " }));
+  const ok = await actions.pointBackHere(deps, form({ snapshot: "7", confirm: "  LIVE  " }));
   assert.equal(ok.status, "done");
 });
 
 test("pointBackHere: the RPC (admin_data_point_snapshot) runs first; dispatching the workflow's point job happens only if it succeeds", async () => {
   const { deps, log, dispatches } = fakeDeps();
-  const result = await actions.pointBackHere(deps, form({ snapshot: "9", confirm: actions.CONFIRM_POINT_BACK }));
+  const result = await actions.pointBackHere(deps, form({ snapshot: "9", confirm: actions.CONFIRM_MAKE_LIVE }));
   assert.equal(result.status, "done");
   assert.deepEqual(log, ["point 9", "note ops.dispatch", "dispatch publish-snapshot.yml"], "the database call, then the log, then the dispatch, in that order");
   assert.deepEqual(dispatches[0].inputs.point, "9");
@@ -420,7 +434,7 @@ test("pointBackHere: the RPC (admin_data_point_snapshot) runs first; dispatching
 
 test("pointBackHere: a refused RPC (a later change set touched the document) stops before any dispatch", async () => {
   const { deps, log, dispatches } = fakeDeps({ pointOk: false, pointMessage: "That snapshot can't be reverted to: a later change set touched one of its documents." });
-  const result = await actions.pointBackHere(deps, form({ snapshot: "4", confirm: actions.CONFIRM_POINT_BACK }));
+  const result = await actions.pointBackHere(deps, form({ snapshot: "4", confirm: actions.CONFIRM_MAKE_LIVE }));
   assert.equal(result.status, "error");
   assert.match((result as { message: string }).message, /later change set/);
   assert.deepEqual(dispatches, []);
@@ -429,7 +443,7 @@ test("pointBackHere: a refused RPC (a later change set touched the document) sto
 
 test("pointBackHere also logs before it sends, and refuses without dispatching, when the log write fails (after a successful RPC)", async () => {
   const { deps, log, dispatches } = fakeDeps({ noteOk: false });
-  const result = await actions.pointBackHere(deps, form({ snapshot: "2", confirm: actions.CONFIRM_POINT_BACK }));
+  const result = await actions.pointBackHere(deps, form({ snapshot: "2", confirm: actions.CONFIRM_MAKE_LIVE }));
   assert.equal(result.status, "error");
   assert.deepEqual(dispatches, []);
   assert.deepEqual(log, ["point 2", "note ops.dispatch"]);
@@ -437,8 +451,8 @@ test("pointBackHere also logs before it sends, and refuses without dispatching, 
 
 test("neither action ever puts anything but a positive integer snapshot id, or the fixed 'force' input, into a dispatch: no email (or any form field) reaches it", async () => {
   const { deps, dispatches } = fakeDeps();
-  await actions.publishNow(deps);
-  await actions.pointBackHere(deps, form({ snapshot: "3", confirm: actions.CONFIRM_POINT_BACK, email: "someone@example.com", note: "unrelated text" }));
+  await actions.publishNow(deps, form({ confirm: "publish" }));
+  await actions.pointBackHere(deps, form({ snapshot: "3", confirm: actions.CONFIRM_MAKE_LIVE, email: "someone@example.com", note: "unrelated text" }));
   for (const d of dispatches) {
     for (const [key, value] of Object.entries(d.inputs)) {
       assert.ok(key === "point" || key === "force" || key === "request_id", `unexpected input "${key}"`);
@@ -457,7 +471,7 @@ test("snapshotIdFromForm: a positive integer only", () => {
 /* ------------------------------------------------------------------ */
 
 test("static: both pages call requireAdmin() before reading anything, and are noindex", () => {
-  for (const file of ["app/admin/data/page.tsx", "app/admin/data/snapshots/page.tsx"]) {
+  for (const file of ["app/admin/data/page.tsx", "app/admin/data/versions/page.tsx"]) {
     const src = read(file);
     const body = src.slice(src.indexOf("export default async function"));
     assert.match(body, /\{\n\s+await connection\(\);\n\s+await requireAdmin\(\);/, `${file} calls requireAdmin() first`);
@@ -479,21 +493,28 @@ test("guard: an action that skips requireAdmin() is caught by the check above", 
   assert.ok(bodies.some(([, , firstLine]) => !/await requireAdmin\(\)/.test(firstLine)), "the guard would have failed to catch this");
 });
 
-test("the rail has a Data entry, under /admin/data, outside the swipeable ADMIN_SECTIONS row (like Settings and Who is an admin)", () => {
-  const rail = read("components/admin/AdminRail.tsx");
-  assert.match(rail, /href="\/admin\/data"/);
-  assert.match(rail, /pathname\.startsWith\("\/admin\/data"\)/);
-  assert.match(rail, />\s*Data\s*</);
+test("Data is one of the four doors, its landing at /admin/data, with Changes and Published versions among its screens", async () => {
+  const consoleLib = await import("../lib/admin/console.ts");
+  const data = consoleLib.ADMIN_DOORS.find((d) => d.key === "data")!;
+  assert.equal(data.href, "/admin/data");
+  assert.equal(data.label, "Data");
+  assert.deepEqual(
+    data.screens.filter((s) => s.key === "changes" || s.key === "versions").map((s) => [s.label, s.href]),
+    [
+      ["Changes", "/admin/data/changes"],
+      ["Published versions", "/admin/data/versions"],
+    ],
+  );
+  assert.equal(consoleLib.activeDoor("/admin/data/changes/12"), "data");
 });
 
 test("every file this unit touches is under the paths it owns", () => {
   const owned = [
     "app/admin/data/page.tsx",
     "app/admin/data/actions.ts",
-    "app/admin/data/snapshots/page.tsx",
-    "app/admin/data/change-sets/page.tsx",
-    "app/admin/data/change-sets/[id]/page.tsx",
-    "app/admin/data/holds/page.tsx",
+    "app/admin/data/versions/page.tsx",
+    "app/admin/data/changes/page.tsx",
+    "app/admin/data/changes/[id]/page.tsx",
     "lib/admin/data-reads.ts",
     "lib/admin/data-actions.ts",
     "lib/admin/change-set-view.ts",
@@ -534,6 +555,7 @@ async function loadTsx(rel: string): Promise<Record<string, unknown>> {
   const code = outputText
     .replace(/from "next\/link"/g, `from ${JSON.stringify(pathToFileURL(join(tmp, "link.mjs")).href)}`)
     .replace(/import \{([^}]*)\} from "(@\/(?:components|app)\/[^"]+)";/g, (_m, names: string, spec: string) => {
+      if (spec.endsWith("/ResponsiveTable")) return `import { ResponsiveTable } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, "fixtures/responsive-table-fake.mjs")).href)};`;
       const list = names.split(",").map((s) => s.trim().split(" as ").pop()!.trim()).filter(Boolean);
       return `import {${names}} from ${JSON.stringify(stubModule(`${rel.replace(/[^a-z]/gi, "_")}${n++}-${spec.split("/").pop()}`, list))};`;
     });
@@ -583,13 +605,14 @@ test("the Overview page says 'Nothing has published yet' and 'Nothing is held' w
   assert.match(markup, /Nothing is held/);
 });
 
-test("static: the Overview page's Publish now is an AdminForm calling publishNowAction", () => {
+test("static: the Overview page's Publish now is an AdminForm calling publishNowAction, asking for the typed word; the action passes the form on", () => {
   const src = read("app/admin/data/page.tsx");
-  assert.match(src, /<AdminForm action=\{publishNowAction\}/);
+  assert.match(src, /<AdminForm\s+action=\{publishNowAction\}[^/]*typed=\{\{ expected: CONFIRM_PUBLISH/);
+  assert.match(read("app/admin/data/actions.ts"), /export async function publishNowAction\(_previous: AdminActionState, form: FormData\)[^{]*\{\n\s+const admin = await requireAdmin\(\);\n\s+return finish\(await publishNow\(await realDeps\(admin\), form\)\);/);
 });
 
 test("the Snapshots page calls requireAdmin() then the snapshot reads, and hands SnapshotsTable the current id; a non-admin gets a 404", async () => {
-  const page = (await loadTsx("app/admin/data/snapshots/page.tsx")).default as Page;
+  const page = (await loadTsx("app/admin/data/versions/page.tsx")).default as Page;
   reset({ admin: true, snapshots: [snapshot(1) as unknown as SnapshotRow, snapshot(2) as unknown as SnapshotRow], currentId: 2 });
   const markup = html(await page());
   assert.deepEqual(world.calls, ["requireAdmin", "adminSupabase", "loadSnapshots"]);
@@ -603,22 +626,22 @@ test("the Snapshots page calls requireAdmin() then the snapshot reads, and hands
 /* components/admin/Snapshots.tsx, rendered directly with real rows    */
 /* ------------------------------------------------------------------ */
 
-test("SnapshotsTable: each row, the current one marked Live with no Point back here on it, and Download manifest", async () => {
+test("SnapshotsTable: each published version, the current one marked Live with no Make this the live version on it, and Download manifest", async () => {
   const mod = (await loadTsx("components/admin/Snapshots.tsx")) as { SnapshotsTable: (p: { snapshots: SnapshotRow[]; currentId: number | null }) => import("react").ReactElement };
   const rows = [
     snapshot(2, { manifest: { colleges: 1900, objects: { "colleges.json.gz": { bytes: 6_000_000, sha256: "a" } } }, change_set_ids: [1, 2] }) as unknown as SnapshotRow,
     snapshot(1, { status: "failed", manifest: { colleges: 1899, objects: {} }, change_set_ids: [1] }) as unknown as SnapshotRow,
   ];
   const markup = html(mod.SnapshotsTable({ snapshots: rows, currentId: 2 }));
-  assert.match(markup, /Snapshot 2/);
-  assert.match(markup, /Snapshot 1/);
+  assert.match(markup, /Version 2/);
+  assert.match(markup, /Version 1/);
   assert.match(markup, /label&quot;:&quot;Live&quot;/, "the current snapshot is marked (an attribute's JSON, HTML-escaped)");
   assert.match(markup, /label&quot;:&quot;Failed&quot;/);
   // Point back here is an AdminForm (stubbed here too); its hidden snapshot id and typed confirmation are primitive
   // props, so they reach data-props even though the stand-in can't run the real confirmation UI.
   const forms = [...markup.matchAll(/data-stub="AdminForm" data-props="([^"]*)"/g)].map((m) => JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&#x27;/g, "'")) as Record<string, unknown>);
-  assert.equal(forms.length, 1, "Point back here appears once: not on the current snapshot");
-  assert.equal(forms[0].trigger, "Point back here");
+  assert.equal(forms.length, 1, "Make this the live version appears once: not on the current version");
+  assert.equal(forms[0].trigger, "Make this the live version");
   assert.match(markup, /Download manifest/);
   assert.match(markup, /https:\/\/example\.test\/snapshots\/1\/manifest\.json/, "Download manifest links the snapshot's own manifest object");
 });
@@ -626,7 +649,7 @@ test("SnapshotsTable: each row, the current one marked Live with no Point back h
 test("SnapshotsTable says there is nothing to show before the first publish", async () => {
   const mod = (await loadTsx("components/admin/Snapshots.tsx")) as { SnapshotsTable: (p: { snapshots: SnapshotRow[]; currentId: number | null }) => import("react").ReactElement };
   const markup = html(mod.SnapshotsTable({ snapshots: [], currentId: null }));
-  assert.match(markup, /No snapshot has been published yet/);
+  assert.match(markup, /No version has been published yet/);
 });
 
 /* ------------------------------------------------------------------ */
@@ -848,7 +871,7 @@ test("Hold needs a reason and calls admin_data_hold with it; a refusal comes bac
   assert.deepEqual(f.dispatches, [], "holding sends nothing to GitHub");
   f = fakeDeps({ refuse: { fn: "admin_data_hold", error: "change_set_published" } });
   const refused = await actions.holdChangeSet(f.deps, form({ change_set: "12", reason: "x" }));
-  assert.match(refused.status === "error" ? refused.message : "", /already carries this change set/);
+  assert.match(refused.status === "error" ? refused.message : "", /A published version already carries this change/);
 });
 
 test("Publish anyway: admin_data_unhold, then the publish logged before it is dispatched with force; a refused unhold sends nothing", async () => {
@@ -870,16 +893,18 @@ test("Publish anyway: admin_data_unhold, then the publish logged before it is di
 
 test("Revert needs the typed word; a later change set's refusal names it so the admin reverts that one first", async () => {
   let f = fakeDeps();
+  assert.equal(actions.CONFIRM_UNDO, "undo");
   assert.equal((await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: "yes" }))).status, "error");
+  assert.equal((await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: "revert" }))).status, "error", "the old word no longer works");
   assert.deepEqual(f.calls, [], "the function was never called");
-  const r = await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: " REVERT ", note: "bad batch" }));
+  const r = await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: " UNDO ", note: "bad batch" }));
   assert.equal(r.status, "done");
-  assert.match(r.status === "done" ? (r.message ?? "") : "", /change set #77 puts back what #45 changed/);
+  assert.match(r.status === "done" ? (r.message ?? "") : "", /Undone: change #77 puts back what #45 changed/);
   assert.deepEqual(f.calls, [{ fn: "admin_data_revert", args: { p_change_set: 45, p_note: "bad batch" } }]);
   f = fakeDeps({ refuse: { fn: "admin_data_revert", error: "later change set touched reported.entries/166027 (change set 51)" } });
-  const refused = await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: "revert" }));
+  const refused = await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: "undo" }));
   assert.equal(refused.status, "error");
-  assert.equal(refused.status === "error" ? refused.message : "", "Change set #51 changed reported.entries/166027 after this one. Revert #51 first, then this one.");
+  assert.equal(refused.status === "error" ? refused.message : "", "Change #51 changed reported.entries/166027 after this one. Undo #51 first, then this one.");
   assert.deepEqual(f.dispatches, [], "a revert dispatches nothing: the next publish carries it");
   assert.equal(actions.dataErrorMessage("admin only"), "Only an admin signed in with their second factor can do that.");
   assert.equal(actions.dataErrorMessage("something new"), "That didn't work. Try again in a moment.");
@@ -938,8 +963,8 @@ test("no email (or any form field) reaches a dispatch input from Publish anyway 
 type QueryPage = (props: { params?: Promise<Record<string, string>>; searchParams: Promise<Record<string, string | undefined>> }) => Promise<import("react").ReactElement>;
 const stubsIn = (markup: string) => [...markup.matchAll(/data-stub="(\w+)" data-props="([^"]*)"/g)].map((m) => ({ name: m[1], props: JSON.parse(m[2].replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&#x27;/g, "'")) as Record<string, unknown> }));
 
-test("static: the three new pages call requireAdmin() before reading anything, and are noindex", () => {
-  for (const file of ["app/admin/data/change-sets/page.tsx", "app/admin/data/change-sets/[id]/page.tsx", "app/admin/data/holds/page.tsx"]) {
+test("static: the two pages call requireAdmin() before reading anything, and are noindex", () => {
+  for (const file of ["app/admin/data/changes/page.tsx", "app/admin/data/changes/[id]/page.tsx"]) {
     const src = read(file);
     const body = src.slice(src.indexOf("export default async function"));
     assert.match(body, /\{\n\s+await connection\(\);\n\s+await requireAdmin\(\);/, `${file} calls requireAdmin() first`);
@@ -948,12 +973,12 @@ test("static: the three new pages call requireAdmin() before reading anything, a
 });
 
 test("the Change sets page lists the store's change sets for an admin, filters by status, and is a 404 for anyone else", async () => {
-  const page = (await loadTsx("app/admin/data/change-sets/page.tsx")).default as QueryPage;
+  const page = (await loadTsx("app/admin/data/changes/page.tsx")).default as QueryPage;
   reset({ admin: true, supabase: () => fakeSupabase({ data_change_sets: [changeSet(1), changeSet(2, { status: "held", held_reason: "breaker" })] }) });
   let markup = html(await page({ searchParams: Promise.resolve({}) }));
   assert.deepEqual(world.calls, ["requireAdmin", "adminSupabase"]);
   assert.match(markup, /data-stub="ChangeSetsTable"/);
-  assert.match(markup, /href="\/admin\/data\/change-sets\?status=held"/);
+  assert.match(markup, /href="\/admin\/data\/changes\?status=held"/);
   reset({ admin: true, supabase: () => fakeSupabase({ data_change_sets: [changeSet(1), changeSet(2, { status: "held" })] }) });
   markup = html(await page({ searchParams: Promise.resolve({ status: "held" }) }));
   assert.match(markup, /aria-current="page"[^>]*>Held</);
@@ -970,7 +995,7 @@ test("ChangeSetsTable: each set links its page, with status chips, counts, cost 
       repo: "raywross/college-stats",
     }),
   );
-  assert.match(markup, /href="\/admin\/data\/change-sets\/2"/);
+  assert.match(markup, /href="\/admin\/data\/changes\/2"/);
   assert.match(markup, /the breaker tripped/);
   assert.match(markup, /12 documents: 12 changed/);
   assert.match(markup, /\$3\.50/);
@@ -980,7 +1005,7 @@ test("ChangeSetsTable: each set links its page, with status chips, counts, cost 
 });
 
 test("the change set page: summary, documents touched, one document's diff, and the actions its status allows; 404 for a missing set or a non-admin", async () => {
-  const page = (await loadTsx("app/admin/data/change-sets/[id]/page.tsx")).default as QueryPage;
+  const page = (await loadTsx("app/admin/data/changes/[id]/page.tsx")).default as QueryPage;
   const tables = () =>
     fakeSupabase({
       data_change_sets: [changeSet(1, { status: "applied" }), changeSet(2, { status: "held", held_reason: "more than half held", summary: { documents: 1, changed: 1, collections: ["reported.entries"] }, closed_at: "2026-10-31T00:00:00Z" })],
@@ -988,7 +1013,7 @@ test("the change set page: summary, documents touched, one document's diff, and 
     });
   reset({ admin: true, supabase: tables });
   const markup = html(await page({ params: Promise.resolve({ id: "2" }), searchParams: Promise.resolve({ c: "reported.entries", k: "166027" }) }));
-  assert.match(markup, /Change set #2/);
+  assert.match(markup, /Change #2/);
   assert.match(markup, /more than half held/);
   const stubs = stubsIn(markup);
   assert.ok(stubs.some((s) => s.name === "ChangeSetActions"), "the actions");
@@ -1005,68 +1030,29 @@ test("the change set page: summary, documents touched, one document's diff, and 
   assert.deepEqual(world.calls, ["requireAdmin"]);
 });
 
-test("ChangeSetActions offers Publish anyway and Revert on a held set, Hold and Revert on an applied one, nothing on an open one; Revert asks for the typed word", async () => {
+test("ChangeSetActions offers Publish anyway and Undo this change on a held set, Hold and Undo on an applied one, nothing on an open one; Undo asks for the typed word", async () => {
   const mod = (await loadTsx("components/admin/ChangeSets.tsx")) as unknown as { ChangeSetActions: (p: { row: ChangeSetRow }) => import("react").ReactElement; ReleaseNoteDraft: (p: { note: { path: string; content: string } }) => import("react").ReactElement };
   const triggers = (row: ChangeSetRow) => stubsIn(html(mod.ChangeSetActions({ row }))).filter((s) => s.name === "AdminForm").map((s) => s.props.trigger);
-  assert.deepEqual(triggers(setRow(1, { status: "held" })), ["Publish anyway", "Revert"]);
-  assert.deepEqual(triggers(setRow(1, { status: "applied" })), ["Hold", "Revert"]);
-  assert.deepEqual(triggers(setRow(1, { status: "applied", snapshot_id: 3 })), ["Revert"]);
+  assert.deepEqual(triggers(setRow(1, { status: "held" })), ["Publish anyway", "Undo this change"]);
+  assert.deepEqual(triggers(setRow(1, { status: "applied" })), ["Hold", "Undo this change"]);
+  assert.deepEqual(triggers(setRow(1, { status: "applied", snapshot_id: 3 })), ["Undo this change"]);
   assert.deepEqual(triggers(setRow(1, { status: "open" })), []);
   assert.deepEqual(triggers(setRow(1, { status: "reverted" })), []);
-  assert.match(read("components/admin/ChangeSets.tsx"), /typed=\{\{ expected: CONFIRM_REVERT/);
+  assert.match(read("components/admin/ChangeSets.tsx"), /typed=\{\{ expected: CONFIRM_UNDO/);
   const note = html(mod.ReleaseNoteDraft({ note: view.releaseNoteText(setRow(4, { closed_at: "2026-10-31T00:00:00Z" })) }));
   assert.match(note, /Write a release note/);
   assert.match(note, /release-notes\/data-college-reported-2026-10-31-4\.md/);
   assert.match(note, /data-stub="CopyButton"/, "the note text, to copy");
 });
 
-test("the Holds page shows the open review items (most-listed first) and the held essay records for an admin; a 404 for anyone else", async () => {
-  reviewQueue.resetQueueCache();
-  const page = (await loadTsx("app/admin/data/holds/page.tsx")).default as QueryPage;
-  const rejected = { ...c1Item("C.901", 0.3, { unit_id: "999003", name: "Third College" }), resolved: "rejected" as const };
-  reset({
-    admin: true,
-    lists: new Map([["999002", 4]]),
-    supabase: () =>
-      fakeSupabase({
-        data_documents: [
-          ...[...TRIO, HELD, rejected].map((i) => doc("reported.review_queue", reviewKey(i), i)),
-          doc("essays.held", "100654", { unit_id: "100654", name: "Alabama A & M University", held: "2026-10-29", problems: ["no prompts"], record: {} }),
-        ],
-        data_change_sets: [changeSet(5, { status: "held" })],
-      }),
-  });
-  const markup = html(await page({ searchParams: Promise.resolve({}) }));
-  assert.equal(world.calls[0], "requireAdmin");
-  assert.ok(world.calls.includes("listsByUnit"));
-  assert.match(markup, /showing 1 to 4</, "four open items: the rejected one isn't held any more");
-  assert.match(markup, /1 change set is held as a whole/);
-  assert.match(markup, /href="\/admin\/data\/change-sets\?status=held"/);
-  assert.ok(stubsIn(markup).some((s) => s.name === "HeldItemsTable"));
-  assert.ok(stubsIn(markup).some((s) => s.name === "HeldEssaysList"));
-  assert.match(markup, /Most-listed college first/);
-  reset({ admin: false });
-  await assert.rejects(page({ searchParams: Promise.resolve({}) }), is404);
-  assert.deepEqual(world.calls, ["requireAdmin"]);
-  reviewQueue.resetQueueCache();
-});
-
-test("HeldItemsTable: Accept the value where the mapping allows it (naming the fields), its refusal otherwise, and Reject and Re-run discovery on every row", async () => {
+test("HeldEssaysList (Holds folded into the Essays page): each held college links its hand-read form, with its problems and its page", async () => {
   const mod = (await loadTsx("components/admin/Holds.tsx")) as unknown as {
-    HeldItemsTable: (p: { rows: unknown[]; lists: Map<string, number> | null }) => import("react").ReactElement;
     HeldEssaysList: (p: { records: unknown[]; lists: Map<string, number> | null }) => import("react").ReactElement;
   };
-  const rows = reviewQueue.byLists(reviewQueue.queueRows([...TRIO, HELD]), (r) => r.item.unit_id, (r) => r.item.name, new Map([["999002", 4]]));
-  const markup = html(mod.HeldItemsTable({ rows, lists: new Map([["999002", 4]]) }));
-  const forms = stubsIn(markup).filter((s) => s.name === "AdminForm");
-  assert.equal(forms.filter((s) => s.props.trigger === "Accept the value").length, 3, "the three C1 totals");
-  assert.equal(forms.filter((s) => s.props.trigger === "Reject").length, 4);
-  assert.equal(forms.filter((s) => s.props.trigger === "Re-run discovery").length, 4);
-  assert.match(markup, /Can&#x27;t accept: H\.210 is published from the college&#x27;s CDS record/);
-  assert.match(markup, /999002 · on 4 lists/);
-  assert.ok(markup.indexOf("Other College") < markup.indexOf("Example College"), "most-listed college first");
-  const essays = html(mod.HeldEssaysList({ records: [{ unit_id: "100654", name: "Alabama A & M University", held: "2026-10-29", problems: ["no prompts"], record: { url: "https://www.aamu.edu/admissions" } }], lists: null }));
-  assert.match(essays, /href="\/admin\/essays\/100654"/);
+  const essays = html(mod.HeldEssaysList({ records: [{ unit_id: "100654", name: "Alabama A & M University", held: "2026-10-29", problems: ["no prompts", "status refers_to_form, but the quoted sentence counts the questions"], record: { url: "https://www.aamu.edu/admissions" } }], lists: null }));
+  assert.match(essays, /status “Refers to the form”, but the quoted sentence/, "the status code reads as words");
+  assert.match(essays, /title="[^"]*status refers_to_form/, "the raw sentence stays in the title");
+  assert.match(essays, /href="\/admin\/data\/essays\/100654"/);
   assert.match(essays, /no prompts/);
   assert.match(essays, /aamu\.edu/);
 });

@@ -1,6 +1,6 @@
 # Admin Console Redesign: The Steward in Charge, Three Doors, Plain Words, a Phone That Works
 
-> Status: **planned**. Written 2026-11-08 from the owner's review of the console ("hard to use and see what I'm looking
+> Status: **built** 2026-11-08 (#226; see [As built](#as-built)). Written 2026-11-08 from the owner's review of the console ("hard to use and see what I'm looking
 > at") and a read of every admin screen. The console as built is in [admin.md](admin.md), [admin-console-ui.md](admin-console-ui.md),
 > [admin-jobs.md](admin-jobs.md), [admin-health-views.md](admin-health-views.md), and the Data section's specs
 > ([data-steward.md](data-steward.md), [data-platform/change-sets.md](../data-platform/change-sets.md)). This spec
@@ -327,3 +327,298 @@ Recommended defaults; the build proceeds on them unless the owner says otherwise
   (Only the row for now; the row carries the handler's error.)
 - Which reference documents deserve a form first? (Those with validators; the release calendar is the one the owner
   edits most.)
+
+## As built
+
+### Unit 1: shell and words (2026-11-08, `feature/admin-redesign-shell`)
+
+- **Doors.** `lib/admin/console.ts` exports `ADMIN_DOORS` (Steward, People, Data, More), `activeDoor()`,
+  `activeScreen()`, and `doorByKey()`; `ADMIN_SECTIONS` is gone. A screen's `under` lists extra prefixes only
+  (`/admin/students` under People, `/admin/data/high-schools` under Colleges); the Inbox (`/admin`) matches its own path
+  only, and the longest matching href wins. An unknown `/admin/...` path falls to the Steward door with no screen.
+  Each screen carries a `help` key.
+- **Rail and tab bar.** `components/admin/AdminRail.tsx` shows from `md`: from `lg` every door with every screen and its
+  hint, the search on top; from `md` to `lg` the doors with icons and the current door's screens. Below `md` it is
+  hidden and `components/admin/AdminTabBar.tsx` (fixed, `h-(--tabbar-h)`, lucide ShieldCheck, Users, Database,
+  Ellipsis) takes over; `components/layout/BottomNav.tsx` returns null under `/admin` after its hooks. The icons live
+  in `components/admin/doorIcons.ts`. The count on the Steward tab and the Inbox entry is `needsYouCount()`
+  (`lib/admin/inbox-reads.ts`), read by the layout on every console page, so it reads only the cheap sources
+  (decisions, proposals, held changes, deletions, invitations); the jobs (a GitHub call per workflow) and To do are
+  on the Inbox itself, so the badge can be lower than the Inbox's count.
+- **Landings.** The Steward's is the Inbox. Data's (`/admin/data`) lists its screens as cards (`DoorScreens`) above
+  the panels it had (Live on, The last publish with Publish now, Changes since the last publish, Held changes). More's
+  is `/admin/more`. People's landing is the People list itself, with the door's screens as cards below `lg` (the rail
+  lists them from `lg`); no separate `/admin/people` landing was added.
+- **Moves and redirects.** Pages moved with `git mv`; Server Action files moved beside the screens that use them
+  (`app/admin/steward/actions.ts`, `app/admin/steward/jobs/actions.ts`, `app/admin/admins/mfa-actions.ts`).
+  `lib/admin/redirects.ts` `ADMIN_REDIRECTS: { from, to, query? }[]` (the optional `query` is the brief's shape plus a
+  key a row must carry: `/admin/operations?unit=` and `/admin/data/holds?unit=` go to that college's Review page, the
+  plain rows to Jobs and Findings), `nextAdminRedirects()` for `next.config.ts` (`permanent: false`), and
+  `resolveAdminRedirect()` for the tests. `/admin/steward` redirects to `/admin`. The Health page's Sources tab is
+  `app/admin/data/health/sources.tsx` (`SourcesView`), rendered by the page for `?tab=sources`; an old `?group=` or
+  `?reason=` link to the Colleges tab goes to Sources, as it went to Files.
+- **Operations** folded into each job's page: a **Run now** panel (`#run-now`) lists every `DISPATCHABLE_RUNS` row
+  for the job's workflow that isn't `hidden` (college-reported shows its four), each with today's `RunForm` and the
+  same dispatch guard (`blockingRun` over the workflow's last 30 runs, read by `loadRunNow()` in `lib/admin/ops.ts`);
+  `?unit=` opens and fills the college run. The college page's Rerun link opens it. Operations' all-workflows Runs
+  table went: each job's History has its runs. Approvals went: the Jobs list ends with "Open pull requests on
+  GitHub"; the pull-request Server Actions stay in `app/admin/steward/jobs/actions.ts` (tested, unused by any screen).
+  `verify` (which re-runs a pull request's CI) has no job, so no Run now.
+- **Holds** folded in: the college Review page has a College filter (a name or id; it opens that college's Review
+  page with the same field) and a Field filter (`?code=`, the options named with `codeLabel`); its item rows gained
+  Holds' **Re-run discovery**. The essay reader's held records moved to the Essays page ("Held questions"). Held
+  changes show on the Data landing, on Changes (the Held chip with its help icon), and first on the Inbox. Holds' flat
+  cross-college list of review items went (one decision, one place); Findings groups them by cause.
+- **Second factor** is the `#second-factor` panel on Admins with the Supabase steps written out; replacing the
+  authenticator from the console itself was not built (it would be a new action).
+- **Inbox.** `lib/admin/inbox.ts` (pure): `needsYou()`, `tiles()`, `nothingNeedsYou()`, `lastRunsByMode()`,
+  `runWrote()`, `weeklySpend()`, `decisionAnchor()`. Severity 1: held changes, failed jobs; 2: decisions, systemic
+  proposals, flagged jobs (for U5's review), deletions inside the 30 days; 3: value proposals, invitations waiting 7
+  days or more, the 5 highest-reach open To do rows. Within a severity the oldest first; To do rows after the rest in
+  reach order. Six tiles: Live version, Review queue (open and new in 7 days), Data health (fresh, watch, stale,
+  failing), Jobs in the last 7 days (ok, failed), People (accounts, households, organizations), Steward spend in 7 days
+  against $40. A read that fails is null: its rows are left out and its tile says "Couldn't read". The old home's
+  Recent actions and counts (paused, managed students, admins, visit-events hosts) went; the log is under More.
+- **Steward runs** (`/admin/steward/runs`) is a first version: the week's spend and every run's mode, spend, and what
+  it wrote. Unit 5 extends it.
+- **Help.** `lib/admin/help.ts` `HELP` (as const, satisfies `Record<string, HelpEntry>`), `HelpKey`, `isHelpKey()`,
+  `helpEntry()`, `helpByDoor()`, `seeHref()`. `HelpEntry` gained an optional `door` for /admin/help's grouping (entries
+  without one list under "Everywhere"). `components/admin/HelpTip.tsx`; `Panel`, `PageHeader`, and `StatusChip` take
+  `help?: HelpKey`; every Panel and PageHeader under `app/admin` passes one. `/admin/help` lists every entry by door,
+  searchable (`components/admin/HelpList.tsx`).
+- **Words.** `lib/admin/words.ts`: `WORDS`, `codeLabel()`, `codeName()`, `cdsItem()`, `itemKeyLabel()`,
+  `editionLabel()`, `collectionLabel()` (`COLLECTION_WORDS`), `changeKindLabel()`, `targetKindLabel()`. The item names
+  are `CDS_ITEM_NAMES` and `CDS_SECTION_NAMES` in `lib/cds-sections.ts`, the template's headings shortened: C7 is
+  "admission factors" and C10 "class rank" (the spec's "C7, class rank" example names the C7 row, not the item).
+  Applied: Changes, Change #N, In published version N, Undone by, Undo this change, Published versions, Version N,
+  Make this the live version, Restore version N, Findings, Admins, Test date, a change's collections in words, log
+  target kinds in words with the raw action under Details, the Review page's field headings, a proposal's field
+  codes, a rejection's message. A proposal's key and cause moved under Details. The typed words did not change
+  (`revert` still undoes a change), since this unit changes no action.
+
+#### Left for the next units
+
+- Health keeps two code paths in one route: the Colleges tab (`page.tsx`) and the Sources tab (`sources.tsx`); Unit 4
+  merges them properly.
+- Tables keep their sideways scroll until Unit 2's `ResponsiveTable`; record pages keep their action layout for Unit 2
+  and Unit 3; the typed-word rule's new words are Units 3 and 4's.
+
+### Unit 4: Data (2026-11-08, `feature/admin-redesign-data`)
+
+- **Health, one code path.** `app/admin/data/health/page.tsx` checks the admin, reads the tab, and renders the one
+  header and tab bar; `collegesTab()` and `sourcesTab()` in the same file fill the body (`sources.tsx` is gone), with
+  one `Showing` line and one `Pager` between them. `lib/admin/health-tabs.ts` (pure): `healthTab()`, `healthTabHref()`,
+  `HEALTH_TABS`, `HEALTH_BASE`, `SHARED_HEALTH_FILTERS`. A tab's link keeps the filters both tabs read (status, state,
+  tier, family, sort, each only when the other tab understands its value) and drops the ones only one tab has (the
+  Colleges tab's `input`; the Sources tab's `group`, `reason`, `unjudged`, and the queue sort) and the page.
+  `HealthTabs` takes the two links. The old addresses keep their query strings through the redirects (tested). The
+  visit-events card stays on the Sources tab: moving it to Jobs is Unit 5's ground (`app/admin/steward/**`).
+- **Selectivity in words.** `lib/admin/selectivity-words.ts` (pure): `tierSentence()`, `reasonInputs()`,
+  `inputWords()`, `poolTier()`, `REASON_INPUTS`, `THIN_EVIDENCE`. The sentence is the stored tier (or the plain
+  cutoffs' when none is stored), then the admit rate and the two other reported inputs that weigh most in the score,
+  in the method's order ("Ultra selective: admit rate 4%, SAT, 75th percentile 1570, yield 83%."); a filled input is
+  never a reason. Clauses follow when they apply: a tier the band kept ("kept from the last publish; the score alone
+  reads …"), an evidence factor under 0.9 ("pulled toward the middle by a small admitted class"), and a pool in
+  another tier ("in-state applicants: Highly selective"). The admit rate is always named: the first fixture run showed
+  a college whose rate weighed least, and the sentence read wrong without it. The pools' tables, the top band, and the
+  formula are under one `<details>Details</details>`; the citations stay outside it. Help icons on pool, percentile,
+  reading, evidence, hysteresis, and top band; the panel's own key is `selectivity-tier`.
+- **Reference forms.** `lib/admin/reference-form.ts` (pure, client-safe): `FORM_REFERENCES` (aid-policies, state-laws,
+  guaranteed-admission, calendar), `hasForm()`, `referenceFields()`, `fieldList()`, `parseFieldList()`,
+  `formToBody()`, `problemsByField()`, `keyLabel()`, `fieldName()`. One field per top-level key: a line for a short
+  string, a box for a long one, a number, yes/no, and the key's JSON in a smaller box for a list or object. The form
+  posts `kind=form` with the field list; `saveReference` puts the body together with `formToBody` and then runs the
+  same validator and the same `admin_data_set_reference` call as the textarea; a refusal now also carries the
+  messages one by one (`ReferenceActionState.problems`), and the editor places each beside the key it names (a quoted
+  key, the key after the document's name, an entry of the document's one list, or the key named as a word; anything
+  else above the form). "Edit as text" switches to today's textarea (unsaved form edits don't carry over). The
+  release calendar has no validator in `lib/reference-validators.ts`; it gets the form (the owner edits it most) with
+  only the generic check. Writing a calendar validator was left out: the publisher's reference gate runs the same
+  dispatch, so a new validator would also gate publishes.
+- **Changes and Versions.** `lib/admin/report-words.ts` (pure): `reportLines()`, `reportTally()`, `plainText()`,
+  `REPORT_MAX_ROWS`, `ReportLine`. A change's report reads as headings, counts (two-column tables with no header
+  words, labelled bullets), checks (a blockquote, "Tripped"/"Not tripped", ticked boxes, the lines under a heading
+  that names checks; ok, failed, or noted), rows of the wider tables (20 per table, then one "more" line), and notes.
+  A check's detail is its first sentence, so the breaker's constant and file names stay in the raw text.
+  `components/admin/ChangeReport.tsx` renders the list (each check's outcome as a word and an icon) with the raw text
+  under Details, in its own **Report** panel. Undo this change carries "To undo a whole publish rather than this one
+  change, make an earlier published version live" (a link to Published versions); the Versions page carries "To undo
+  one change rather than a whole publish, open it on Changes and use Undo this change". The actions' messages say
+  change, published version, and undo (no "change set", "snapshot", "revert" on screen).
+- **A high school.** "Courses students list" holds two lists, **Courses the plan lists** and **Below the line**, each a
+  course's name and its students, with the threshold in one sentence; the course keys and the function and table
+  names left the screen.
+- **Typed words.** `CONFIRM_PUBLISH` ("publish") and `CONFIRM_APPROVE` ("approve") in `lib/admin/console.ts`;
+  `lib/admin/steward-actions.ts` re-exports the latter and `TYPED_KINDS` gains `systemic`. `publishNow(deps, form)`
+  refuses without the word before anything is logged or sent; `approveProposal` refuses a systemic Approve without it
+  before anything is written. The Data landing's Publish now and the systemic proposal's Approve open the typed sheet.
+- **Help.** New Data entries: `selectivity-tier`, `hysteresis`, `top-band`, `selectivity-movers`, `tier-counts`,
+  `method-log`, `change-report`, `change-actions`, `documents-touched`, `reference-versions`, `reference-form`,
+  `course-counts`, `course-offering`, `health-sources`; the panels that shared a generic key now use them.
+- **Tables touched** (for Unit 2): the Selectivity pool table on a college page (moved under Details, help icons in two
+  headers; markup otherwise as it was); the high school's course table (replaced by two lists, so there is no table
+  left to convert). The Health tables, Changes, Versions (`SnapshotsTable`), and the Selectivity screen's tables are
+  unchanged.
+- Tests: `tests/admin-redesign-data.test.mts` (the four pure modules, the form's save, Health's one path and tabs, the
+  old addresses, the pages' words); the typed words' refusals in `tests/admin-data.test.mts` and
+  `tests/admin-steward.test.mts`; the Sources tab's render test in `tests/admin-ops.test.mts` now renders the page.
+
+### Unit 3: People (2026-11-08, `feature/admin-redesign-people`)
+
+- **Plain fields.** `lib/admin/record-words.ts` (pure, tested): `studentNumbers()`, `offers()`, `snapshot()`, and
+  `notificationPrefs()`, each returning `{ fields: {label, value}[]; details: Record<string, unknown> }` — the labels
+  come from the site's own words (`/me`'s groups for a profile, `lib/planner/offers.ts`'s `COA_LABELS`/`GIFT_LABELS`/
+  `LOAN_LABELS`/`usd()` for an offer, `lib/chances/levels.ts`'s `STANDING_LEVEL_LABELS` for a snapshot's estimate, and
+  the names `/account` and the unsubscribe pages use for a notification switch). Long lists (courses, activities,
+  awards, connections, recommenders) show as a count, not a dump. `components/admin/RecordFields.tsx` renders the
+  result: `<Fields>` for what it knows, `<details>Details</details>` (still `KeyValues`) for what's left over. Wired
+  into the student record's Numbers and Snapshots, the plan's Offers, and a person's Notifications; `KeyValues` on
+  these pages now appears only inside a `<details>`.
+- **The typed-word rule.** `lib/admin/console.ts` gained `CONFIRM_GRANT` ("grant"), `CONFIRM_REVOKE` ("revoke"),
+  `CONFIRM_CLOSE_HOUSEHOLD` ("close"), and `CONFIRM_DEACTIVATE` ("pause"), beside `CONFIRM_DELETE`. Grant admin and
+  Revoke admin (`app/admin/admins/page.tsx`) and Close household (`app/admin/households/[id]/page.tsx`) now use
+  `ConfirmTyped`; Deactivate (`app/admin/people/[user]/page.tsx`) keeps its required typed reason and gains the typed
+  word on top. Each Server Action (`app/admin/admins/actions.ts`, `app/admin/households/[id]/actions.ts`,
+  `app/admin/people/actions.ts`) checks `typedMatches(form.get("confirm"), ...)` again before calling its database
+  function, exactly as the delete actions do; `tests/admin-console-ui.test.mts` shows each one refused with no
+  database call when the word is missing or wrong.
+- **Organizations search.** `lib/admin/organizations.ts`'s `listOrganizations(q, page)` takes a search term (the
+  organization's name, its join code, its high school id, or a member's name), matched in code since there's still no
+  `admin_list_organizations()` and the count stays small; `app/admin/organizations/page.tsx` gained the same
+  `AdminSearch` box Households uses, and one match redirects straight to the organization's page.
+- **The duplicate anchor.** A person's page had two `id="views"` panels (Colleges viewed, and Who viewed their data).
+  Colleges viewed keeps `#views` (every existing link points there); Who viewed their data is now `#viewed`.
+- **Help.** Every People word the brief listed (seat, managed record, role hint, join code, ask, second factor,
+  paused, deleting) already had an entry in `lib/admin/help.ts` from Unit 1's shell pass, each already wired to the
+  panel that uses it (Households' "Who is in it" carries `help="seat"`, "Add a student" carries `help="managed-
+  record"`, Admins' second-factor panel carries `help="second-factor"`, and so on); no new People entries were
+  needed. `StatusChip`'s own rule (its help icon is for a word that isn't plain English, like Held or Stale) is why
+  Paused and Deleting, whose chips read as plain English, don't carry an inline tip even though their glossary
+  entries exist for `/admin/help` and anything that links to them.
+
+#### Left for the next units
+
+- Panel and table markup on the People pages is unchanged (U2's `ResponsiveTable` and `RecordActions` land on top of
+  this); the new `RecordFieldsView` sits inside the existing panel shape so U2 can fold it into the phone layout
+  without re-deriving the fields.
+- Offers, snapshots, and notification preferences are formatted from whatever shape the row actually has (defensive
+  `typeof` checks, not the strict `StudentProfileData`/`PlanOffer` types), since the admin console reads these tables
+  directly rather than through the sanitizers the family-facing forms use; a key the formatter doesn't recognize is
+  never hidden, only pushed into Details.
+
+### Unit 5: Steward job review (2026-11-08, `feature/admin-redesign-jobs2`)
+
+- **Expectations.** Every job in `lib/jobs/registry.ts` has `expects: JobExpectations` (tested, with each GitHub
+  job's `nonzero` names checked against its workflow's step names). Restartable: the four Vercel jobs that can't send
+  twice (digests, visit alerts, interest confirmations, day-before texts), identity refresh, visit events, and the
+  publisher. Not restartable: Weekly emails and texts (no sent-this-week record, so a rerun emails every student again),
+  college-reported (spends money), the Steward, and every hand-run workflow. The job's page shows them in sentences
+  under "What the Steward expects" (`expectationLines`).
+- **The review** (`lib/steward/job-review.ts`, pure). Rules in order: failed → `failed`; cancelled or still running →
+  flagged; past the longest usual duration → flagged; a scheduled run with no `nonzero` work → flagged unless nothing
+  is right for that firing (a housekeeping firing, a firing out of its season, or the job's `nothingOkWhen` when it has
+  no shaped firings); a run that worked and should have written a change but wrote none → flagged; a held change →
+  flagged. A run started by hand or by another workflow isn't held to `nonzero`. Repairs, the first that applies:
+  `hold-finding`, then `restart` (restartable and no carried-out restart of the job in 24 hours, read from the job's
+  reviews), then `publish` (an applied change with a failed "Ask for a snapshot" step, or two hours with no publish;
+  never for the publisher itself; a publish that can't be read isn't assumed missing).
+- **The script.** `scripts/steward.mts --mode review --job <id> --run <ref>` (plus `--run-file` for a recorded run, the
+  dry runs' way in). It skips a run already reviewed before opening anything; a housekeeping firing that looked fine is
+  not written (the half-hourly collect would fill the collection); a fine review writes only `steward.reviews` and
+  leaves no `steward.runs` row (it spent nothing), so the Runs page lists flagged and failed reviews only. The note is one
+  Haiku 4.5 call with a $0.10 budget cut by the week's $3 for reviews and the week's $40 (`reviewBudget`); without the
+  API key or past the cap the review is written with no note. The finding is one `steward.issues` document per job
+  (`job|<job id>`, kind `job`, `family` the job id) whose findings keep the last 20 flagged or failed runs' lines; a held
+  change gets its own (`change|<id>`). The repair tools are `dispatch_workflow` (an allowlist: the restartable GitHub
+  jobs' own workflows and `publish-snapshot.yml`; `dispatchRefusal` refuses anything else) and a POST to a restartable
+  Vercel job's own route with `CRON_SECRET` and `SITE_URL` (both optional in the workflow; without them the restart is
+  recorded as wanted and not done). Each repair is a `steward.repair: …` line in the writer's notes, kept on the review's
+  change set summary. The Sunday audit run also writes `jobs-<run>` (`AuditDoc.family: "jobs"`, `jobs: JobsWeek`), shown
+  on Audits as its own panel.
+- **The workflow.** `steward.yml`'s `workflow_run` lists the six scheduled workflows by name (the Steward's own is left
+  out so it never triggers itself); a new `review` job maps the completed workflow's file to its job id and runs
+  `--mode review`; college-reported keeps the `steward` job's run path too, and its idle half-hourly collect is skipped
+  before checkout. `workflow_dispatch` gained `review` and the `job` and `run` inputs. The `steward` concurrency group
+  moved from the workflow onto the `steward` job, so a review never waits behind a 90-minute run. The review job has
+  `actions: write` (for its two dispatches) and reads `CRON_SECRET`; tests/steward-workflow.test.mts keeps the list and
+  the case map in step with the registry.
+- **The after hook.** `withJobRun` takes `deps.afterFinish`; the default (only with the real recorder) is
+  `lib/jobs/review-dispatch.ts` `requestReview`: a `workflow_dispatch` of `steward.yml` through `lib/github-app.ts`,
+  nothing without credentials, collapsed when another run of the same job finished in the last 10 minutes, never
+  throwing into the job's answer.
+- **Console.** The Jobs list's Steward column (`StewardCell`: the verdict chip with its help, the note or first reason,
+  the repair, and a line when the review is of an earlier run); a run's page opens with "The Steward's reading";
+  `/admin/steward/runs` lists every Steward run with its kind, spend against budget, repairs, and the week's total by
+  kind, with the reviews' own $3; Findings lists job findings in their own panel (kind Job); the Inbox's job rows read
+  the review's verdict when the last run has one (`inboxJob`, now in the pure `lib/admin/inbox.ts`): flagged stays
+  flagged, a fine review never hides a failed run, a review of an earlier run doesn't decide. Help entries: `review`,
+  `verdict`, `repair`, `expectation`.
+- **Tests.** `tests/steward-job-review.test.mts` runs the six recorded cases in `tests/fixtures/steward/review/` (plus
+  the second half of the repairable failure), the review mode as dry runs over a file store with the notes in
+  `tests/fixtures/steward/answers/` (written for the fixtures, marked so in each answer's `note`), the repairs, the
+  budget, the weekly summary, the dispatch, the after hook, and the Inbox mapping; `tests/jobs-pages.test.mts` renders
+  the Steward column and a run's review.
+
+#### Left for later
+
+- No migration: `steward.reviews` is a new collection of `data_documents`. The workflow change needs no new secret;
+  `CRON_SECRET` (already a secret) and a `SITE_URL` repository variable are optional for restarting a Vercel job.
+- Reviews of the Steward's own runs: by hand only (`--job data-steward`), never from `workflow_run`.
+### Phone pass (U2)
+
+- **`ResponsiveTable`** (`components/admin/ResponsiveTable.tsx`, a Server Component): a `<table>` from `md`, one card per
+  row below it (`title` column as the heading, `fact` columns as one wrapped "Header: value" line, `actions` as a row of
+  44 px buttons, `detail` columns inside `<details>Details</details>`). A column's `help` puts the (i) icon beside its
+  header. Every table in `app/admin/**` and `components/admin/**` goes through it, including the ones U3 and U4 added
+  (both Health tabs, Selectivity movers and counts, Changes, Versions, history, the high school course lists, the views
+  pages, Jobs and runs, Review, Proposals, To do, Findings clusters); the ops tables' hand-rolled table-plus-card pairs
+  are gone. The one `<table>` left outside it is the visually hidden copy of a chart's numbers in `ViewCharts.tsx`
+  (`sr-only`), which a screen reader needs and a sighted phone user never sees.
+- **`RecordActions`** (`components/admin/RecordActions.tsx`): a wrapping row of 44 px buttons at the top of a person,
+  household, student record, organization and college page. Each child is an `AdminForm` or `ConfirmTyped` passed `sheet`,
+  so below `md` its form opens in a `SheetDialog`. The side "Actions" columns are gone. An organization has no write
+  action yet, so its row holds two links (the owner's account, All organizations).
+- **`Collapsible`** and `Panel`'s `collapse` prop: `collapse="First line"` folds the panel's body to that line with
+  Show/Hide below `md` and leaves it open from `md` (matchMedia, as `FieldEditor`'s `usePhone`). Used on the secondary
+  panels of the person, student, organization and college pages; the primary panels stay open.
+- **One column below `md`**: form grids (log filters, Review filters, person picker, essay prompts form) open at `md`,
+  not `sm`.
+- **No minimum widths**: no `min-w-<size>` class under `app/admin/**` or `components/admin/**` (the count badges and
+  health counts that carried one now size by padding). `min-w-0`, which lets a flex child shrink and sets no width, is
+  allowed. `tests/admin-phone.test.mts` guards this, the `<table>` rule, the five RecordActions pages and the form
+  breakpoints; the render tests use `tests/fixtures/responsive-table-fake.mjs` for the table.
+- The high school page shows a course by name only; the course key no longer appears on screen.
+
+### Polish (QA follow-ups) (2026-11-08, `feature/admin-redesign-polish`)
+
+- **Typed words follow the renames.** Make this the live version now asks for `live` (`CONFIRM_MAKE_LIVE`), Undo
+  this change for `undo` (`CONFIRM_UNDO`), and a reference document's Restore version N for `restore`
+  (`CONFIRM_RESTORE`), all in `lib/admin/console.ts`; `CONFIRM_POINT_BACK` and `CONFIRM_REVERT` are gone. The
+  Server Actions re-check the new words and refuse the old ones (`tests/admin-data.test.mts`,
+  `tests/admin-reference.test.mts`). This replaces Unit 1's "the typed words did not change".
+- **Code words off the screen.** `lib/admin/words.ts` gains `REASON_WORDS`, `reasonLabel()` and
+  `attemptResultWords()`: a To do row's last attempt shows its explanation ("Only class profile(s) found (2), no
+  Common Data Set"), with the reason in words, its code and any review key in the `title`. `codeWordsInText()` turns
+  the snake_case codes in a stored sentence into words, so a held essay's problem reads "status “Refers to the form”,
+  but…" (the raw sentence in the `title`). The college Edit page and the "Derived, not shown" panel name each field
+  by its registry label (`lib/fields.ts`) with the path in the `title`; the form still posts the path. A job's page
+  says "Vercel Cron, at its own web route" / "GitHub Actions, as its own workflow" and "Its own web route, called with
+  the cron secret", with the route or workflow file under Details; the missing-table alert names the migration in
+  words. `tests/admin-console.test.mts` adds a grep rule (no `/api/` path, snake_case key or dotted field path as a
+  JSX text node under `app/admin/**` and `components/admin/**`), shown failing on samples.
+- **Every heading explains itself.** The hand-written `<h2>`s (Jobs: Status of the last runs, All jobs, Scheduled,
+  Run by hand; a job's History; Health: Colleges by data health, Colleges by the health of the estimate's inputs,
+  Each college's documents; the Colleges search's two result headings) carry a `HelpTip`. The three that were
+  `sr-only` (the jobs status strip and the two Health stat rows) are now visible so the icon can sit beside them.
+  The Estimate inputs and Visit events panels pass `help=`. New keys: `jobs-status`, `all-jobs`, `jobs-scheduled`,
+  `jobs-by-hand`, `job-history`, `estimate-inputs`, `estimate-inputs-counts`, `data-health-counts`,
+  `college-documents`, `visit-events`. Tests: every `<h2` under `app/admin/**` and `components/admin/**` (except
+  Panel.tsx, the rail, and /admin/help's door groups) holds a `HelpTip` with a known key, and every `<Panel` in
+  `components/admin/**` passes `help=`.
+- **44 px row links.** The text links inside list rows (Findings' colleges and clusters, Proposals' keys and
+  colleges, To do's colleges, a household's members, an organization's members and students, Admins' people) are
+  `inline-flex min-h-11 items-center`. The college page's source notes get 44 px links through the `className` the
+  console passes (`[&_a]:min-h-11`), leaving the shared `SourceNote` as the public pages have it.
+  `tests/admin-phone.test.mts` checks each.
+- **Left:** a Findings cluster still shows its check id (`cluster.check`) in monospace; Steward-written text (QA
+  finding 2) and Decide without a typed word (finding 6) are unchanged.

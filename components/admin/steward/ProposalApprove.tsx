@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { cn } from "@/lib/utils";
 import { IDLE, typedMatches, type AdminActionState } from "@/lib/admin/console";
+import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
 
 /** One proposal row as the Approve form shows it (plain data from the page). */
 export interface ApproveRowView {
@@ -23,7 +24,7 @@ export interface ApproveRowView {
   ticked: boolean;
 }
 
-const buttonCls = "inline-flex h-10 shrink-0 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+const buttonCls = "inline-flex h-11 shrink-0 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 const inputCls =
   "h-11 w-full min-w-0 rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 const linkCls = "underline decoration-dotted underline-offset-2";
@@ -62,85 +63,71 @@ export function ProposalApprove({
       return next;
     });
 
+  const columns: readonly Column<ApproveRowView>[] = [
+    {
+      key: "approve",
+      header: "Approve",
+      role: "actions",
+      cell: (r) => (
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <input type="checkbox" name={`row-${r.index}`} aria-label={`Approve row ${r.index + 1}: ${r.college}, ${r.label}`} checked={ticks.has(r.index)} onChange={() => toggle(r.index)} className="size-5 accent-primary" />
+          Approve this row
+        </label>
+      ),
+    },
+    {
+      key: "college",
+      header: "College",
+      role: "title",
+      cell: (r) => (
+        <>
+          <a href={r.reviewHref} className={linkCls}>
+            {r.college}
+          </a>
+          <span className="block text-xs font-normal text-muted-foreground">{r.unit}</span>
+        </>
+      ),
+    },
+    { key: "field", header: "Field", cell: (r) => r.label },
+    { key: "now", header: "On the site now", cell: (r) => r.now },
+    { key: "proposed", header: "Proposed", cell: (r) => r.proposed },
+    {
+      key: "from",
+      header: "From",
+      role: "detail",
+      cell: (r) => (
+        <>
+          {r.fromHref ? (
+            <a href={r.fromHref} target="_blank" rel="noopener noreferrer" className={`break-all ${linkCls}`}>
+              {r.fromLabel}
+            </a>
+          ) : (
+            <span className="text-muted-foreground">{r.fromLabel}</span>
+          )}
+          {r.quote && <span className="mt-0.5 block break-words">&ldquo;{r.quote}&rdquo;</span>}
+        </>
+      ),
+    },
+    {
+      key: "recommends",
+      header: "Recommends",
+      cell: (r) =>
+        r.recommends === "approve" ? (
+          <span className="font-semibold">Approve (the Steward checked the document)</span>
+        ) : (
+          <span>
+            <span className="font-semibold">Your call</span>
+            {r.why && <span className="block text-muted-foreground">{r.why}</span>}
+          </span>
+        ),
+    },
+  ];
+
   return (
     <form action={run} className="space-y-3">
       <input type="hidden" name="proposal" value={proposal} />
       <input type="hidden" name="rows" value={String(rows.length)} />
-      <div className="overflow-x-auto rounded-2xl border border-border">
-        <table className="w-full min-w-[56rem] text-sm">
-          <caption className="sr-only">The proposal&apos;s rows; ticked rows are applied on Approve</caption>
-          <thead className="bg-muted/50 text-left text-muted-foreground">
-            <tr>
-              <th scope="col" className="px-3 py-2 font-medium">
-                Approve
-              </th>
-              <th scope="col" className="px-3 py-2 font-medium">
-                College
-              </th>
-              <th scope="col" className="px-3 py-2 font-medium">
-                Field
-              </th>
-              <th scope="col" className="px-3 py-2 font-medium">
-                On the site now
-              </th>
-              <th scope="col" className="px-3 py-2 font-medium">
-                Proposed
-              </th>
-              <th scope="col" className="px-3 py-2 font-medium">
-                From
-              </th>
-              <th scope="col" className="px-3 py-2 font-medium">
-                Recommends
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.index} className="border-t border-border align-top">
-                <td className="px-3 py-2">
-                  <input
-                    type="checkbox"
-                    name={`row-${r.index}`}
-                    aria-label={`Approve row ${r.index + 1}: ${r.college}, ${r.label}`}
-                    checked={ticks.has(r.index)}
-                    onChange={() => toggle(r.index)}
-                    className="size-5 accent-primary"
-                  />
-                </td>
-                <th scope="row" className="px-3 py-2 text-left font-medium">
-                  <a href={r.reviewHref} className={linkCls}>
-                    {r.college}
-                  </a>
-                  <span className="block text-xs font-normal text-muted-foreground">{r.unit}</span>
-                </th>
-                <td className="px-3 py-2">{r.label}</td>
-                <td className="px-3 py-2">{r.now}</td>
-                <td className="px-3 py-2 font-medium">{r.proposed}</td>
-                <td className="max-w-64 px-3 py-2 text-xs">
-                  {r.fromHref ? (
-                    <a href={r.fromHref} target="_blank" rel="noopener noreferrer" className={`break-all ${linkCls}`}>
-                      {r.fromLabel}
-                    </a>
-                  ) : (
-                    <span className="text-muted-foreground">{r.fromLabel}</span>
-                  )}
-                  {r.quote && <span className="mt-0.5 block break-words">&ldquo;{r.quote}&rdquo;</span>}
-                </td>
-                <td className="px-3 py-2 text-xs">
-                  {r.recommends === "approve" ? (
-                    <span className="font-semibold">Approve (the Steward checked the document)</span>
-                  ) : (
-                    <span>
-                      <span className="font-semibold">Your call</span>
-                      {r.why && <span className="block text-muted-foreground">{r.why}</span>}
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ResponsiveTable rows={rows} columns={columns} rowKey={(r) => String(r.index)} caption="The proposal's rows; ticked rows are applied on Approve" empty="No rows." />
       <p className="text-sm text-muted-foreground" role="status">
         {ticks.size} of {rows.length} ticked
         {costEach !== null ? ` · projected cost of the ticked re-reads: $${(costEach * colleges).toFixed(2)} for ${colleges} college${colleges === 1 ? "" : "s"}` : ""}

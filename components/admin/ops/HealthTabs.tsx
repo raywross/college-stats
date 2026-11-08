@@ -1,23 +1,23 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { HEALTH_TABS, type HealthTab } from "@/lib/admin/health-tabs";
 
-const TABS = [
-  { key: "inputs", label: "Estimate inputs", href: "/admin/health", hint: "The facts the admission estimate reads" },
-  { key: "files", label: "Files", href: "/admin/health/files", hint: "Every file we read, and each college's documents" },
-] as const;
-
-/** The Health page's two views (specs/product/admin-health-views.md), as links so each is its own URL. */
-export function HealthTabs({ current }: { current: (typeof TABS)[number]["key"] }) {
+/**
+ * The Health page's two tabs, Colleges and Sources (specs/product/admin-redesign.md "Data"), as links so each is its
+ * own URL. `hrefs` carries the filters both tabs share (lib/admin/health-tabs.ts `healthTabHref`), so switching tabs
+ * keeps them. Each tab is 44 px tall.
+ */
+export function HealthTabs({ current, hrefs }: { current: HealthTab; hrefs: Readonly<Record<HealthTab, string>> }) {
   return (
     <nav aria-label="Health views" className="flex flex-wrap gap-2 border-b border-border">
-      {TABS.map((t) => (
+      {HEALTH_TABS.map((t) => (
         <Link
           key={t.key}
-          href={t.href}
+          href={hrefs[t.key]}
           title={t.hint}
           aria-current={t.key === current ? "page" : undefined}
           className={cn(
-            "-mb-px inline-flex min-h-10 items-center border-b-2 px-3 text-sm font-semibold",
+            "-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold",
             t.key === current ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >

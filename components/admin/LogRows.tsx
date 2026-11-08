@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { actionLabel, fmtDateTime, logHref, targetHref } from "@/lib/admin/console";
+import { targetKindLabel } from "@/lib/admin/words";
 import type { AdminLogRow } from "@/lib/admin/people";
 
 /**
@@ -32,22 +33,23 @@ export function LogRows({ rows }: { rows: AdminLogRow[] }) {
                   {" · "}
                   {target ? (
                     <Link href={target} className="underline underline-offset-4 hover:text-foreground">
-                      {r.target_kind}
+                      {targetKindLabel(r.target_kind)}
                     </Link>
                   ) : (
-                    r.target_kind
+                    targetKindLabel(r.target_kind)
                   )}
                   {r.target_id && <span className="font-mono text-xs"> {r.target_id.slice(0, 8)}</span>}
                 </>
               )}
-              <span className="font-mono text-xs"> · {r.action}</span>
             </p>
-            {hasDetails && (
-              <details className="text-xs">
-                <summary className="inline-flex min-h-8 cursor-pointer items-center text-muted-foreground hover:text-foreground">Details</summary>
+            {/* The raw action code and the recorded details stay under Details (specs/product/admin-redesign.md "Settings (More)"). */}
+            <details className="text-xs">
+              <summary className="inline-flex min-h-11 cursor-pointer items-center text-muted-foreground hover:text-foreground">Details</summary>
+              <p className="mt-1 font-mono text-[12px] text-muted-foreground">{r.action}</p>
+              {hasDetails && (
                 <pre className="mt-1 overflow-x-auto rounded-lg bg-muted p-2.5 font-mono text-[12px] leading-relaxed whitespace-pre-wrap break-words">{JSON.stringify(r.details, null, 2)}</pre>
-              </details>
-            )}
+              )}
+            </details>
           </li>
         );
       })}

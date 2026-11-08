@@ -1,6 +1,6 @@
 import "server-only";
 /**
- * What /admin/high-schools/[id] reads (specs/product/admin.md "A high school"): the school's record, its pooled course
+ * What /admin/data/high-schools/[id] reads (specs/product/admin.md "A high school"): the school's record, its pooled course
  * counts in full (`school_course_counts`, through the console client and the table's "Admins read" policy, the only
  * read of it besides school_course_list()), the offering the course plan uses for it, its profile extraction status,
  * and its graduation rate with the year it describes (from lineage, never a hard-coded year). Callers check

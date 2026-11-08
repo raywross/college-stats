@@ -8,11 +8,12 @@
  * ones.
  */
 import { ADMIN_ERRORS } from "./constants.ts";
-import { ADMIN_FAILED, CONFIRM_REVERT, typedMatches, type AdminActionState } from "./console.ts";
+import { ADMIN_FAILED, CONFIRM_RESTORE, typedMatches, type AdminActionState } from "./console.ts";
 import { editorToBody, referenceDocumentKey, validateReference, type EditorKind } from "./reference-view.ts";
+import { formToBody } from "./reference-form.ts";
 
-/** The word typed to revert a document to an older version (console.ts, so the client editor imports no server code). */
-export { CONFIRM_REVERT };
+/** The word typed to restore a document to an older version ("restore") (console.ts, so the client editor imports no server code). */
+export { CONFIRM_RESTORE };
 
 const REFERENCE_ERRORS: Record<string, string> = {
   reference_not_found: "That document doesn't exist. Reload the page.",
@@ -60,22 +61,30 @@ export function nameFromForm(form: ReferenceFormLike): string | null {
   return NAME_RE.test(name) ? name : null;
 }
 
+/**
+ * Save document's result: an AdminActionState whose refusal may also carry the validator's messages one by one, so the
+ * form can put each beside the field it names (lib/admin/reference-form.ts `problemsByField`).
+ */
+export type ReferenceActionState = { status: "idle" } | { status: "done"; message?: string; link?: string } | { status: "error"; message: string; problems?: string[] };
+
 const BAD_NAME: AdminActionState = { status: "error", message: "That document wasn't recognized. Reload the page and try again." };
 
 /**
- * Save document: the textarea's text (JSON, or the bare text of a `{text}` document) is parsed, then checked by the
- * document's own validator when `lib/` has one. A problem refuses the save before any call reaches the database.
+ * Save document: the textarea's text (JSON, or the bare text of a `{text}` document), or the form's fields (`kind`
+ * "form", one per top-level key, put together by `formToBody`), is parsed, then checked by the document's own
+ * validator when `lib/` has one. A problem refuses the save before any call reaches the database; the refusal lists
+ * the validator's messages one by one as well.
  */
-export async function saveReference(deps: ReferenceActionDeps, form: ReferenceFormLike): Promise<AdminActionState> {
+export async function saveReference(deps: ReferenceActionDeps, form: ReferenceFormLike): Promise<ReferenceActionState> {
   const name = nameFromForm(form);
   if (!name) return BAD_NAME;
-  const kind: EditorKind = str(form, "kind") === "text" ? "text" : "json";
-  const parsed = editorToBody(kind, str(form, "body"));
+  const rawKind = str(form, "kind");
+  const parsed = rawKind === "form" ? formToBody(form) : editorToBody((rawKind === "text" ? "text" : "json") satisfies EditorKind, str(form, "body"));
   if (!parsed.ok) return { status: "error", message: parsed.problem };
 
   const knownUnitIds = await deps.knownUnitIds();
   const problems = validateReference(name, parsed.body, knownUnitIds, new Date());
-  if (problems.length > 0) return { status: "error", message: problems.join(" ") };
+  if (problems.length > 0) return { status: "error", message: problems.join(" "), problems };
 
   const note = str(form, "note").trim().slice(0, 500) || null;
   const r = await deps.rpc({ p_name: name, p_body: parsed.bodyText, p_note: note });
@@ -87,7 +96,7 @@ export async function saveReference(deps: ReferenceActionDeps, form: ReferenceFo
 export async function revertReference(deps: ReferenceActionDeps, form: ReferenceFormLike): Promise<AdminActionState> {
   const name = nameFromForm(form);
   if (!name) return BAD_NAME;
-  if (!typedMatches(form.get("confirm"), CONFIRM_REVERT)) return { status: "error", message: `Type "${CONFIRM_REVERT}" to confirm.` };
+  if (!typedMatches(form.get("confirm"), CONFIRM_RESTORE)) return { status: "error", message: `Type "${CONFIRM_RESTORE}" to confirm.` };
 
   const versionRaw = str(form, "version");
   const version = /^\d+$/.test(versionRaw) ? Number(versionRaw) : null;

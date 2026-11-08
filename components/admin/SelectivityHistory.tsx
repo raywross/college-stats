@@ -2,6 +2,9 @@ import { ELITE_INDEX, TIER_CUTOFFS } from "@/lib/selectivity";
 import { SELECTIVITY_TIER_LABELS } from "@/lib/chances/levels";
 import type { SelectivityTier } from "@/lib/chances/types";
 import { CAUSE_LABELS, DISPLAY_MOVE_MIN, POOLS, POOL_LABELS, inputChanges, isDrift, withPrevious, type Pool, type PoolValue, type SelectivityPoint } from "@/lib/admin/selectivity-history-view";
+import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
+
+type HistoryRow = ReturnType<typeof withPrevious>[number];
 
 /**
  * One college's selectivity history on its console page (specs/chances/selectivity-history.md "The admin screens"):
@@ -138,53 +141,55 @@ export function SelectivityHistory({ points, repoUrl, every, toggleHref }: { poi
           </a>
         )}
       </p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs text-muted-foreground">
-            <tr>
-              <th className="py-1.5 pr-3 font-medium">Date</th>
-              {pools.map((pool) => (
-                <th key={pool} className="py-1.5 pr-3 font-medium">
-                  {POOL_LABELS[pool]}
-                </th>
-              ))}
-              <th className="py-1.5 pr-3 text-right font-medium">Rank</th>
-              <th className="py-1.5 pr-3 font-medium">Cause</th>
-              <th className="py-1.5 font-medium">What changed</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y align-top">
-            {rows.map(({ point: p, prev }) => {
-              const changed = inputChanges(prev?.inputs ?? null, p.inputs);
-              return (
-                <tr key={`${p.publishedAt}-${p.gitCommit}`}>
-                  <td className="py-1.5 pr-3 whitespace-nowrap tabular-nums">
-                    {p.gitCommit ? (
-                      <a href={`${repoUrl}/commit/${p.gitCommit}`} className="underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
-                        {day(p.publishedAt)}
-                      </a>
-                    ) : (
-                      day(p.publishedAt)
-                    )}
-                    {p.tierYear && <span className="block text-xs text-muted-foreground">{p.tierYear}</span>}
-                  </td>
-                  {pools.map((pool) => (
-                    <td key={pool} className="py-1.5 pr-3 whitespace-nowrap">
-                      <PoolCell value={p.pools[pool]} prev={prev?.pools[pool] ?? null} />
-                    </td>
-                  ))}
-                  <td className="py-1.5 pr-3 text-right tabular-nums">{p.rank ?? "—"}</td>
-                  <td className="py-1.5 pr-3 whitespace-nowrap">
-                    {CAUSE_LABELS[p.cause]}
-                    <span className="block text-xs text-muted-foreground">method {p.method}</span>
-                  </td>
-                  <td className="py-1.5 text-xs">{changed.length ? changed.join("; ") : <span className="text-muted-foreground">{prev ? "No input changed" : "First record"}</span>}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <HistoryTable rows={rows} pools={pools} repoUrl={repoUrl} />
     </div>
   );
+}
+
+function HistoryTable({ rows, pools, repoUrl }: { rows: HistoryRow[]; pools: Pool[]; repoUrl: string }) {
+  const columns: readonly Column<HistoryRow>[] = [
+    {
+      key: "date",
+      header: "Date",
+      role: "title",
+      cell: ({ point: p }) => (
+        <>
+          {p.gitCommit ? (
+            <a href={`${repoUrl}/commit/${p.gitCommit}`} className="underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
+              {day(p.publishedAt)}
+            </a>
+          ) : (
+            day(p.publishedAt)
+          )}
+          {p.tierYear && <span className="block text-xs font-normal text-muted-foreground">{p.tierYear}</span>}
+        </>
+      ),
+    },
+    ...pools.map((pool): Column<HistoryRow> => ({
+      key: pool,
+      header: POOL_LABELS[pool],
+      cell: ({ point: p, prev }) => <PoolCell value={p.pools[pool]} prev={prev?.pools[pool] ?? null} />,
+    })),
+    { key: "rank", header: "Rank", align: "right", role: "detail", cell: ({ point: p }) => p.rank ?? "—" },
+    {
+      key: "cause",
+      header: "Cause",
+      cell: ({ point: p }) => (
+        <>
+          {CAUSE_LABELS[p.cause]}
+          <span className="block text-xs text-muted-foreground">method {p.method}</span>
+        </>
+      ),
+    },
+    {
+      key: "changed",
+      header: "What changed",
+      role: "detail",
+      cell: ({ point: p, prev }) => {
+        const changed = inputChanges(prev?.inputs ?? null, p.inputs);
+        return changed.length ? changed.join("; ") : <span className="text-muted-foreground">{prev ? "No input changed" : "First record"}</span>;
+      },
+    },
+  ];
+  return <ResponsiveTable rows={rows} columns={columns} rowKey={({ point: p }) => `${p.publishedAt}-${p.gitCommit}`} caption="Selectivity history, newest first" empty="No recorded change." />;
 }

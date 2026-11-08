@@ -1,11 +1,21 @@
 "use client";
 
-import { useActionState, useId, useState, type ReactNode } from "react";
+import { useActionState, useId, useState, useSyncExternalStore, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { IDLE, typedMatches, type AdminActionState } from "@/lib/admin/console";
+import { SheetDialog } from "@/components/ui/sheet-dialog";
 
 const inputCls =
   "h-11 w-full min-w-0 rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
+
+/** Below `md`: a `RecordActions` form (`sheet`) opens its panel in a `SheetDialog` instead of inline (specs/mobile.md). */
+const BELOW_MD = "(max-width: 767px)";
+function subscribeBelowMd(onChange: () => void) {
+  const mq = window.matchMedia(BELOW_MD);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+const useBelowMd = () => useSyncExternalStore(subscribeBelowMd, () => window.matchMedia(BELOW_MD).matches, () => false);
 
 export interface FieldSpec {
   name: string;
@@ -40,6 +50,8 @@ export interface AdminFormProps {
   /** A typed confirmation: the button stays disabled until the box holds `expected` (the action checks again). */
   typed?: { expected: string; instruction?: ReactNode };
   className?: string;
+  /** Inside a `RecordActions` row: below `md`, the panel opens in a `SheetDialog` instead of expanding inline. */
+  sheet?: boolean;
 }
 
 const toneCls = {
@@ -48,7 +60,7 @@ const toneCls = {
   primary: "bg-primary text-primary-foreground hover:bg-primary/90",
 } as const;
 
-const buttonCls = "inline-flex h-10 shrink-0 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+const buttonCls = "inline-flex h-11 shrink-0 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
 /**
  * One console action: a button, a panel of fields behind it when it needs any, an optional typed confirmation, and
@@ -57,9 +69,10 @@ const buttonCls = "inline-flex h-10 shrink-0 items-center justify-center rounded
  * box with Copy: it lives in this component's memory only (not in the URL, storage, or any log) and goes when the
  * page is left or Hide is pressed.
  */
-export function AdminForm({ action, hidden = {}, trigger, submit, pendingLabel, tone = "default", fields = [], description, typed, className }: AdminFormProps) {
+export function AdminForm({ action, hidden = {}, trigger, submit, pendingLabel, tone = "default", fields = [], description, typed, className, sheet }: AdminFormProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
+  const belowMd = useBelowMd();
   const [typedValue, setTypedValue] = useState("");
   const [hiddenLink, setHiddenLink] = useState(false);
   const [state, run, pending] = useActionState<AdminActionState, FormData>(async (prev, form) => {
@@ -104,49 +117,65 @@ export function AdminForm({ action, hidden = {}, trigger, submit, pendingLabel, 
     );
   }
 
+  const panel = (
+    <form id={`${id}-panel`} action={run} className="w-full space-y-3 rounded-xl border bg-background p-3 sm:p-4 sm:max-w-none">
+      {hiddenInputs}
+      {description && <div className="text-sm text-muted-foreground">{description}</div>}
+      {fields.map((f) => (
+        <Field key={f.name} spec={f} id={`${id}-${f.name}`} />
+      ))}
+      {typed && (
+        <div>
+          <label className="block text-sm font-semibold" htmlFor={`${id}-confirm`}>
+            {typed.instruction ?? (
+              <>
+                Type <span className="font-mono">{typed.expected}</span> to confirm
+              </>
+            )}
+          </label>
+          <input
+            id={`${id}-confirm`}
+            name="confirm"
+            autoComplete="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            value={typedValue}
+            onChange={(e) => setTypedValue(e.target.value)}
+            className={`${inputCls} mt-1.5 sm:max-w-sm`}
+          />
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="submit" disabled={pending || !ready} className={cn(buttonCls, tone === "danger" ? "bg-destructive text-white" : toneCls.primary)}>
+          {pending ? (pendingLabel ?? "Working…") : (submit ?? trigger)}
+        </button>
+        <button type="button" onClick={() => setOpen(false)} className={cn(buttonCls, "text-muted-foreground hover:bg-muted")}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+
+  if (sheet && belowMd) {
+    return (
+      <div className={cn("contents", className)}>
+        <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className={cn(buttonCls, toneCls[tone])}>
+          {trigger}
+        </button>
+        <SheetDialog open={open} onOpenChange={setOpen} title={submit ?? trigger}>
+          {panel}
+        </SheetDialog>
+        {outcome}
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex flex-col items-start gap-1.5", className)}>
       <button type="button" aria-expanded={open} aria-controls={`${id}-panel`} onClick={() => setOpen((v) => !v)} className={cn(buttonCls, toneCls[tone])}>
         {trigger}
       </button>
-      {open && (
-        <form id={`${id}-panel`} action={run} className="w-full space-y-3 rounded-xl border bg-background p-3 sm:p-4">
-          {hiddenInputs}
-          {description && <div className="text-sm text-muted-foreground">{description}</div>}
-          {fields.map((f) => (
-            <Field key={f.name} spec={f} id={`${id}-${f.name}`} />
-          ))}
-          {typed && (
-            <div>
-              <label className="block text-sm font-semibold" htmlFor={`${id}-confirm`}>
-                {typed.instruction ?? (
-                  <>
-                    Type <span className="font-mono">{typed.expected}</span> to confirm
-                  </>
-                )}
-              </label>
-              <input
-                id={`${id}-confirm`}
-                name="confirm"
-                autoComplete="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                value={typedValue}
-                onChange={(e) => setTypedValue(e.target.value)}
-                className={`${inputCls} mt-1.5 sm:max-w-sm`}
-              />
-            </div>
-          )}
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="submit" disabled={pending || !ready} className={cn(buttonCls, tone === "danger" ? "bg-destructive text-white" : toneCls.primary)}>
-              {pending ? (pendingLabel ?? "Working…") : (submit ?? trigger)}
-            </button>
-            <button type="button" onClick={() => setOpen(false)} className={cn(buttonCls, "text-muted-foreground hover:bg-muted")}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
+      {open && panel}
       {outcome}
     </div>
   );

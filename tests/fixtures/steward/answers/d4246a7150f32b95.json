@@ -1,0 +1,23 @@
+{
+  "key": "d4246a7150f32b95",
+  "model": "claude-haiku-4-5-20251001",
+  "note": "review note, 5-repairable (written for the fixture, not recorded)",
+  "response": {
+    "id": "msg_dry_d4246a7150f32b95",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-haiku-4-5-20251001",
+    "content": [
+      {
+        "type": "text",
+        "text": "The digest run failed because the email service answered 503; the Steward is starting it again, so check the next run before anything else."
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 420,
+      "output_tokens": 38
+    }
+  }
+}

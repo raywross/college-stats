@@ -29,7 +29,7 @@ export type FoundVia = "known-link" | "well-known-path" | "apply-page-link" | "s
 
 /**
  * One college's prompts as a person read them in the application form (sources.md "The hand read"; the console's
- * /admin/essays/[unit] form writes it). Declared in lib/essay-prompts/confirmed.ts (pure, so the console loads it too)
+ * /admin/data/essays/[unit] form writes it). Declared in lib/essay-prompts/confirmed.ts (pure, so the console loads it too)
  * and re-exported here, so the two can never differ.
  */
 export type { ConfirmedRecord, FormKind } from "../../../lib/essay-prompts/confirmed.ts";

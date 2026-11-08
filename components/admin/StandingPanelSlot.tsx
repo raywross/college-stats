@@ -1,6 +1,14 @@
 import type { ReactNode } from "react";
 import { standingForStudent } from "@/lib/admin/standing";
 import { standingSummary, type StandingPanelView } from "@/lib/admin/hidden";
+import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
+
+type SideBySideRow = StandingPanelView["sideBySide"][number];
+const sideBySideColumns: readonly Column<SideBySideRow>[] = [
+  { key: "input", header: "Input", role: "title", cell: (r) => r.input },
+  { key: "student", header: "Student", cell: (r) => r.student },
+  { key: "college", header: "College", cell: (r) => r.college },
+];
 
 export interface StandingPanelSlotProps {
   /** The student record the page is about. */
@@ -62,25 +70,8 @@ function StandingBody({ view }: { view: StandingPanelView }) {
           Used: {view.used.length ? view.used.join(", ") : "none"}
           {view.missing.length > 0 && <span className="text-muted-foreground"> · missing: {view.missing.join(", ")}</span>}
         </p>
-        <div className="mt-2 overflow-x-auto">
-          <table className="w-full min-w-[28rem] text-left text-xs">
-            <thead className="text-muted-foreground">
-              <tr>
-                <th className="py-1 pr-3 font-semibold">Input</th>
-                <th className="py-1 pr-3 font-semibold">Student</th>
-                <th className="py-1 font-semibold">College</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {view.sideBySide.map((r) => (
-                <tr key={r.input}>
-                  <td className="py-1 pr-3 font-medium">{r.input}</td>
-                  <td className="py-1 pr-3">{r.student}</td>
-                  <td className="py-1">{r.college}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mt-2 text-xs">
+          <ResponsiveTable rows={view.sideBySide} columns={sideBySideColumns} rowKey={(r) => r.input} caption="Each input, side by side for the student and the college" empty="No inputs." />
         </div>
       </div>
 

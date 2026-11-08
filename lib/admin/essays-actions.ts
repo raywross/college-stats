@@ -1,6 +1,6 @@
 "use server";
 /**
- * The hand-read form's Server Actions (specs/product/essays/sources.md "The hand read"; app/admin/essays/[unit]).
+ * The hand-read form's Server Actions (specs/product/essays/sources.md "The hand read"; app/admin/data/essays/[unit]).
  * Owner, 2026-10-30: the database is the source of truth, so a save takes effect at once. Save rebuilds the record from
  * the posted draft with the college's id and name from the dataset (never from the form), validates it
  * (`validateConfirmed`, through `draftProblems`), and writes the row with `admin_set_essay_prompts` on the admin's own
@@ -24,8 +24,8 @@ const CYCLE = /^\d{4}-\d{2}$/;
 
 function revalidate(unit: string) {
   revalidatePath("/advisor", "layout");
-  revalidatePath("/admin/essays");
-  revalidatePath(`/admin/essays/${unit}`);
+  revalidatePath("/admin/data/essays");
+  revalidatePath(`/admin/data/essays/${unit}`);
 }
 
 /** Save one college's hand-read questions for the open cycle. Form: `unit`, `draft` (the form's state as JSON). */

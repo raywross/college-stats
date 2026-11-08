@@ -8,7 +8,7 @@ import { AdminForm, type AdminAction } from "@/components/admin/AdminForm";
 
 const inputCls =
   "h-11 w-full min-w-0 rounded-xl border border-input bg-background px-3.5 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
-const buttonCls = "inline-flex h-10 shrink-0 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+const buttonCls = "inline-flex h-11 shrink-0 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
 export interface FieldEditorActions {
   save: AdminAction;
@@ -109,13 +109,12 @@ export function FieldRow({ unit, row, actions }: { unit: string; row: EditRow; a
   return (
     <li className="space-y-2 px-4 py-3 sm:px-5" data-path={row.path}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <span className="flex flex-wrap items-center gap-2 font-medium">
+        <span className="flex flex-wrap items-center gap-2 font-medium" title={row.path}>
           {row.label}
           {row.edited && <Chip tone="edit">Edited</Chip>}
         </span>
         <span className="min-w-0 font-mono text-[13px] break-words tabular-nums">{row.display}</span>
       </div>
-      <p className="font-mono text-xs break-all text-muted-foreground">{row.path}</p>
       <p className="text-xs text-muted-foreground">{row.cited}</p>
       {row.derivedNote && <p className="text-xs text-muted-foreground">{row.derivedNote}.</p>}
       {row.readersNote && <p className="text-xs text-muted-foreground">{row.readersNote}.</p>}

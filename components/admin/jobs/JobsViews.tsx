@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RunChip } from "@/components/admin/ops/OpsStatusChip";
+import { HelpTip } from "@/components/admin/HelpTip";
 import type { JobOverviewRow } from "@/lib/jobs/runs";
 import { JOBS_VIEWS, OUTCOME_KEYS, OUTCOME_LABEL, jobHref, jobsViewHref, lastOutcome, outcomeCounts, type JobsView } from "@/lib/jobs/view";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,7 @@ export function JobsTabs({ current }: { current: JobsView }) {
           title={VIEW_LABEL[v].hint}
           aria-current={v === current ? "page" : undefined}
           className={cn(
-            "-mb-px inline-flex min-h-10 items-center border-b-2 px-3 text-sm font-semibold",
+            "-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold",
             v === current ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >
@@ -42,8 +43,8 @@ export function JobsStatusStrip({ rows }: { rows: JobOverviewRow[] }) {
   const failed = rows.filter((r) => lastOutcome(r.last).key === "failed").sort((a, b) => a.job.name.localeCompare(b.job.name));
   return (
     <section aria-labelledby="jobs-status-title" className={cn("rounded-2xl border p-4", failed.length ? "border-destructive bg-destructive/5" : "border-border bg-card")}>
-      <h2 id="jobs-status-title" className="sr-only">
-        Status of the last runs
+      <h2 id="jobs-status-title" className="mb-1 inline-flex items-center gap-1.5 font-display text-base font-bold tracking-tight">
+        Status of the last runs <HelpTip help="jobs-status" />
       </h2>
       <p role="status" className={cn("text-sm font-semibold", failed.length && "text-destructive")}>
         {failed.length === 0 ? (

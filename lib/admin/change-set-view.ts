@@ -5,6 +5,7 @@
  * and tests/admin-data.test.mts share it.
  */
 import type { ChipTone } from "./console.ts";
+import { changeKindLabel } from "./words.ts";
 
 export type ChangeSetStatus = "open" | "applied" | "held" | "reverted";
 export type ChangeSetKind = "pipeline" | "import" | "edit" | "revert" | "publish-fix";
@@ -41,7 +42,7 @@ export interface ChangeSetSummary {
   [key: string]: unknown;
 }
 
-export const STATUS_LABEL: Record<ChangeSetStatus, string> = { open: "Writing", applied: "Applied", held: "Held", reverted: "Reverted" };
+export const STATUS_LABEL: Record<ChangeSetStatus, string> = { open: "Writing", applied: "Applied", held: "Held", reverted: "Undone" };
 export const STATUS_TONE: Record<ChangeSetStatus, ChipTone> = { open: "info", applied: "good", held: "warn", reverted: "neutral" };
 
 export function statusLabel(status: string): string {
@@ -51,9 +52,9 @@ export function statusTone(status: string): ChipTone {
   return STATUS_TONE[status as ChangeSetStatus] ?? "neutral";
 }
 
-const KIND_LABEL: Record<string, string> = { pipeline: "Pipeline run", import: "Import", edit: "Console edit", revert: "Revert", "publish-fix": "Publish fix" };
+/** A change's kind in words (lib/admin/words.ts holds the words). */
 export function kindLabel(kind: string): string {
-  return KIND_LABEL[kind] ?? kind;
+  return changeKindLabel(kind);
 }
 
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);

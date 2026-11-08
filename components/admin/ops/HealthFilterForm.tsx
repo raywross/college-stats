@@ -3,7 +3,7 @@ import { GROUP_LABELS, HEALTH_GROUPS, HEALTH_STATUSES, STATUS_LABELS } from "@/l
 import { selectivityTier } from "@/lib/metrics";
 import { HEALTH_SORTS, SORT_LABELS, reasonLabel, type HealthFilters } from "@/lib/admin/health-view";
 
-const selectCls = "mt-1 h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
+const selectCls = "mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
 /** The site's own tier labels (lib/metrics.ts selectivityTier), most selective first, by a rate inside each band. */
 const TIERS = ([0.05, 0.15, 0.4, 0.7, null] as const).map((rate) => selectivityTier(rate));
@@ -26,7 +26,8 @@ export function HealthFilterForm({
   csvHref: string;
 }) {
   return (
-    <form method="get" action="/admin/health/files" className="rounded-2xl border border-border bg-card p-4">
+    <form method="get" action="/admin/data/health" className="rounded-2xl border border-border bg-card p-4">
+      <input type="hidden" name="tab" value="sources" />
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <label className="block text-sm font-semibold">
           Status
@@ -99,18 +100,18 @@ export function HealthFilterForm({
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
         {familyAvailable && (
-          <label className="flex min-h-10 items-center gap-2.5 text-sm">
+          <label className="flex min-h-11 items-center gap-2.5 text-sm">
             <input type="checkbox" name="family" value="1" defaultChecked={filters.family} className="size-5 accent-primary" />
             On a family&apos;s list
           </label>
         )}
-        <button type="submit" className="inline-flex h-10 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground">
+        <button type="submit" className="inline-flex h-11 items-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground">
           Apply
         </button>
-        <Link href="/admin/health/files" className="inline-flex min-h-10 items-center text-sm underline decoration-dotted underline-offset-2">
+        <Link href="/admin/data/health?tab=sources" className="inline-flex min-h-11 items-center text-sm underline decoration-dotted underline-offset-2">
           Clear
         </Link>
-        <a href={csvHref} className="inline-flex min-h-10 items-center text-sm underline decoration-dotted underline-offset-2 sm:ml-auto">
+        <a href={csvHref} className="inline-flex min-h-11 items-center text-sm underline decoration-dotted underline-offset-2 sm:ml-auto">
           Download CSV of this view
         </a>
       </div>

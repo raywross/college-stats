@@ -84,7 +84,7 @@ export function EssayPromptsForm({ action, unitId, name, initial, openCycle, tod
       <input type="hidden" name="unit" value={unitId} />
       <input type="hidden" name="draft" value={JSON.stringify(draft)} />
 
-      <fieldset className="grid gap-3 sm:grid-cols-2">
+      <fieldset className="grid gap-3 md:grid-cols-2">
         <legend className="sr-only">The read</legend>
         <div>
           <label className={labelCls} htmlFor={`${id}-cycle`}>
@@ -176,7 +176,7 @@ export function EssayPromptsForm({ action, unitId, name, initial, openCycle, tod
                   Question {i + 1} text
                 </label>
                 <textarea id={`${id}-text-${i}`} value={row.text} onChange={(e) => setRow(i, { text: e.target.value })} rows={3} className={cn(inputCls, "mt-2 h-auto py-2.5")} />
-                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="mt-2 grid gap-2 md:grid-cols-4">
                   <div className="col-span-2 sm:col-span-1">
                     <label className="block text-xs font-semibold" htmlFor={`${id}-kind-${i}`}>
                       Kind
@@ -218,7 +218,7 @@ export function EssayPromptsForm({ action, unitId, name, initial, openCycle, tod
                     </>
                   )}
                 </div>
-                <div className="mt-2 grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] sm:items-end">
+                <div className="mt-2 grid gap-2 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] md:items-end">
                   <label className="flex min-h-11 items-center gap-2.5 text-sm font-medium">
                     <input type="checkbox" checked={row.required} onChange={(e) => setRow(i, { required: e.target.checked })} className="size-5 accent-primary" />
                     Required

@@ -291,7 +291,7 @@ test("saveReference: an rpc refusal is turned into plain words, and an unrecogni
   assert.equal(noName.status, "error");
 });
 
-test("revertReference: requires the typed word 'revert' before reading a version", async () => {
+test("revertReference: requires the typed word 'restore' before reading a version", async () => {
   const { deps, calls } = depsFor();
   const result = await actions.revertReference(deps, formOf({ name: "aid-policies", version: "1", confirm: "nope" }));
   assert.equal(result.status, "error");
@@ -316,7 +316,7 @@ test("revertReference: sends the older version's body as the new one, with the f
       return knownUnitIds;
     },
   };
-  const result = await actions.revertReference(deps, formOf({ name: "aid-policies", version: "1", confirm: "Revert" }));
+  const result = await actions.revertReference(deps, formOf({ name: "aid-policies", version: "1", confirm: "Restore" }));
   assert.deepEqual(result, { status: "done", message: "Reverted to version 1." });
   assert.equal(sent.length, 1);
   assert.deepEqual(JSON.parse(sent[0].p_body), oldBody);
@@ -325,7 +325,7 @@ test("revertReference: sends the older version's body as the new one, with the f
 
 test("revertReference: a version that no longer exists refuses without calling the rpc", async () => {
   const { deps, calls } = depsFor({ versionBody: null });
-  const result = await actions.revertReference(deps, formOf({ name: "aid-policies", version: "99", confirm: "revert" }));
+  const result = await actions.revertReference(deps, formOf({ name: "aid-policies", version: "99", confirm: "restore" }));
   assert.equal(result.status, "error");
   assert.deepEqual(calls, ["readVersion"]);
 });
@@ -334,10 +334,13 @@ test("revertReference: a version that no longer exists refuses without calling t
 /* The pages: the guard and the nav link (static, no Next.js needed)   */
 /* ------------------------------------------------------------------ */
 
-test("static: both reference pages call requireAdmin(), and the list page is linked from the Data screens' nav", () => {
+test("static: both reference pages call requireAdmin(), and the list page is a screen of the Data door", async () => {
   assert.match(read("app/admin/data/reference/page.tsx"), /await requireAdmin\(\)/);
   assert.match(read("app", "admin", "data", "reference", "[name]", "page.tsx"), /await requireAdmin\(\)/);
-  assert.match(read("app/admin/data/page.tsx"), /\/admin\/data\/reference[\s\S]*label: "Reference"/);
+  const { ADMIN_DOORS } = await import("../lib/admin/console.ts");
+  const screen = ADMIN_DOORS.find((d) => d.key === "data")!.screens.find((s) => s.key === "reference");
+  assert.deepEqual([screen?.label, screen?.href], ["Reference", "/admin/data/reference"]);
+  assert.match(read("app/admin/data/page.tsx"), /<DoorScreens door="data"/, "the Data landing lists its screens");
 });
 
 test("static: the document page decodes the route segment (the essay guidance name has a slash, encoded into it)", () => {

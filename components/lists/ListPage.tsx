@@ -27,7 +27,7 @@ import { profileFor } from "@/lib/student-profile-store";
 import type { StudentProfileData } from "@/lib/student-profile";
 import { suggestCategory } from "@/lib/planner/suggest";
 import { SortMenu } from "@/components/lists/SortMenu";
-import type { Cited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { cfpView, isEnteredOffer } from "@/lib/planner/offers";
 import type { PlanOffer } from "@/lib/planner/types";
 
@@ -376,6 +376,6 @@ export async function ListPage({
 function nextLine(task: PlanTask | null, school: PlanSchool | null, today: string) {
   const date = task?.due_on ?? task?.window_end ?? null;
   if (!task || !date) return null;
-  const cited = task.source_field && school ? ((school.cites[task.source_field] as Cited | undefined) ?? null) : null;
+  const cited = task.source_field && school ? ((school.cites[task.source_field] as CiteLike | undefined) ?? null) : null;
   return { title: task.title, date: dayLabel(date, today), cited, overdue: isOverdue(task, today) };
 }

@@ -166,8 +166,10 @@ export interface PlanEssays {
   links: import("../essays/rows").EssayLinkRow[];
 }
 /** The college facts stages read, cut from School on the server with citations already resolved
- *  (`citeField` → the serializable Citation the InfoTip takes). U1 defines and fills it; add fields additively. */
-export interface PlanSchool { unit_id: string; name: string; city: string | null; state: string | null; brand?: unknown; admitRate: number | null; admitRateCite: unknown; avgCost: number | null; avgCostCite: unknown; sticker: unknown; distanceMiles: number | null; links: import("../types").SchoolLinks | null; social: unknown; profile: import("../types").ReportedAdmissionProfile | null; logistics: import("../types").ReportedLogistics | null; aid: import("../types").ReportedAid | null; testPolicy: unknown; cycleStartYear: number; editionIsLastCycle: boolean; cites: Record<string, unknown>;
+ *  (`citeField` → the serializable Citation the InfoTip takes). U1 defines and fills it; add fields additively. `cites`
+ *  (and `admitRateCite`, `avgCostCite`) hold references (lib/lineage.ts `CiteRef`) the ⓘ resolves on open, unless the
+ *  plan was built with `cites: "full"` (the print page). */
+export interface PlanSchool { unit_id: string; name: string; city: string | null; state: string | null; brand?: unknown; admitRate: number | null; admitRateCite: import("../lineage").CiteLike | null; avgCost: number | null; avgCostCite: import("../lineage").CiteLike | null; sticker: unknown; distanceMiles: number | null; links: import("../types").SchoolLinks | null; social: unknown; profile: import("../types").ReportedAdmissionProfile | null; logistics: import("../types").ReportedLogistics | null; aid: import("../types").ReportedAid | null; testPolicy: unknown; cycleStartYear: number; editionIsLastCycle: boolean; cites: Record<string, import("../lineage").CiteLike>;
   /** U3 (additive): public or private (a public university's EA stays beside a restrictive EA plan). */
   type?: import("../types").SchoolType | null;
   /** U3 (additive): C1 totals from the same CDS document as the ED counts (lib/early.ts sameDocumentTotals), for the ED advantage. */

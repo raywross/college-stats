@@ -18,6 +18,7 @@ import { effectiveGradYear } from "@/lib/student-profile";
 import { generatorInputFor, planContextFrom, PlannerSetupError, readItems, readPlan, readTasks, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView, type PlanView } from "./plan-view";
 import { planEstimates } from "./plan-estimates";
+import type { CiteMode } from "./plan-cites";
 import { generateTasks, mergeTasks } from "./tasks";
 import type { PlanContext } from "./types";
 import type { Season } from "./seasons";
@@ -63,9 +64,14 @@ function inCoursePlanWindow(season: Season, today: string): boolean {
  * (supabase/migrations/20261012140000_plan_bundle.sql) that is two calls side by side, the viewer bundle (access,
  * account, profile, home) and the plan bundle (the student's default list and its whole plan); `early` is a plan
  * bundle the page already started for this student. Without them, the per-table reads, in two waves instead of
- * five.
+ * five. `cites`: the colleges' citations are references the ⓘ fetches on open unless `"full"` (the print page only;
+ * lib/planner/context.ts planSchoolFor).
  */
-export async function loadPlanFor(studentId: string, viewer?: StudentAccess | null, opts: { early?: Promise<PlanBundle | null> } = {}): Promise<PlanLoad> {
+export async function loadPlanFor(
+  studentId: string,
+  viewer?: StudentAccess | null,
+  opts: { early?: Promise<PlanBundle | null>; cites?: CiteMode } = {},
+): Promise<PlanLoad> {
   const owner = { kind: "student" as const, id: studentId };
   const bundleP = (async () => {
     const early = opts.early ? await opts.early : null;
@@ -123,7 +129,7 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
   // slices (performance pass, 2026-10-16): the estimate's high-school reads (four small queries) then overlap the
   // dataset's first load on a cold instance instead of waiting behind it.
   const [schoolsInput, estimates] = await Promise.all([
-    span("planSchools", () => generatorInputFor(read, { gradYear, profile: profileData, home, today })),
+    span("planSchools", () => generatorInputFor(read, { gradYear, profile: profileData, home, today, cites: opts.cites })),
     span("estimates", () => planEstimates(profileData, read.items, { gradYear, today, visits: read.visits })),
   ]);
   let input = schoolsInput;

@@ -7,7 +7,7 @@ import { ViewerBanner } from "@/components/account/ViewerBanner";
 import { PrintButton } from "@/components/planner/PrintButton";
 import { authConfigured, requireUser } from "@/lib/auth";
 import { ROUND_LABELS, type ListRound } from "@/lib/list-rules";
-import type { AnyCited } from "@/lib/lineage";
+import { citeFieldLabel, isCiteRef } from "@/lib/lineage";
 import { dayLabel, schoolYearOf, type CalendarCite, type CalendarEvent } from "@/lib/planner/calendar";
 import { KID_VARS, MONEY_VAR, ROUND_VAR, STRIPED, TEST_VAR, VISIT_VAR } from "@/lib/planner/colors";
 import { counselorAccessFor, loadPlanFor, planViewer, type PlanLoad } from "@/lib/planner/load";
@@ -43,9 +43,12 @@ function sourceText(cite: CalendarCite, ctx: PlanContext | undefined): string | 
       return null;
     }
   }
-  const c = ctx?.schools[cite.unitId]?.cites[cite.field] as AnyCited | undefined;
+  // The print page loads its plans with `cites: "full"` (loadPlanFor below), so this is the whole citation; a
+  // reference (never expected here) prints the field's label instead of the source's.
+  const c = ctx?.schools[cite.unitId]?.cites[cite.field];
   if (!c) return null;
-  return `${c.label}${c.year ? ` ${c.year}` : ""}`;
+  const label = isCiteRef(c) ? citeFieldLabel(c) : c.label;
+  return `${label}${c.year ? ` ${c.year}` : ""}`;
 }
 
 /**
@@ -92,7 +95,7 @@ export default async function PlanPrintPage({ searchParams }: { searchParams: Pr
   const chosen = forId ? candidates.filter((c) => c.studentId === forId) : candidates;
   if (chosen.length === 0) return message("No student yet, so there's nothing to print.");
 
-  const loads: PlanLoad[] = await Promise.all(chosen.map((c) => loadPlanFor(c.studentId, counselor)));
+  const loads: PlanLoad[] = await Promise.all(chosen.map((c) => loadPlanFor(c.studentId, counselor, { cites: "full" })));
   const children: PrintChild[] = chosen.flatMap((c, i) => {
     const load = loads[i];
     if (load.kind !== "ready") return [];

@@ -9,7 +9,7 @@
  * `.cites["derived.sat_total"]`, `.cites["admissions.act_composite_25_75"]`) — never a literal year in this file
  * (tests/citation-guards.test.mts scans for that).
  */
-import type { Cited } from "../lineage";
+import type { CiteLike } from "../lineage";
 import type { StudentProfileData } from "../student-profile";
 import type { ListCategory } from "../list-rules";
 import type { ListSort, PlanSchool } from "./types";
@@ -21,7 +21,7 @@ export interface SuggestResult {
   /** One line, e.g. "Admits fewer than 1 in 5 applicants (fall 2024)."; null for "none". */
   reason: string | null;
   /** The citation behind the reason (an InfoTip's `cited`), when the reason names a college value. */
-  cite: Cited | null;
+  cite: CiteLike | null;
 }
 
 /** Below this admit rate, the rule suggests Reach regardless of the student's own numbers (list-building.md table row 2). */
@@ -50,14 +50,14 @@ interface ScoreCheck {
   which: "SAT" | "ACT";
   score: number;
   range: [number, number];
-  cite: Cited | null;
+  cite: CiteLike | null;
 }
 
 /** The student's score(s) the college also reports a range for — SAT first when both apply (score-bands.ts shows SAT first too). */
 function scoreChecks(school: PlanSchool, profile: StudentProfileData): ScoreCheck[] {
   const out: ScoreCheck[] = [];
-  if (profile.tests.satTotal !== null && school.satRange) out.push({ which: "SAT", score: profile.tests.satTotal, range: school.satRange, cite: (school.cites["derived.sat_total"] as Cited | undefined) ?? null });
-  if (profile.tests.actComposite !== null && school.actRange) out.push({ which: "ACT", score: profile.tests.actComposite, range: school.actRange, cite: (school.cites["admissions.act_composite_25_75"] as Cited | undefined) ?? null });
+  if (profile.tests.satTotal !== null && school.satRange) out.push({ which: "SAT", score: profile.tests.satTotal, range: school.satRange, cite: (school.cites["derived.sat_total"] as CiteLike | undefined) ?? null });
+  if (profile.tests.actComposite !== null && school.actRange) out.push({ which: "ACT", score: profile.tests.actComposite, range: school.actRange, cite: (school.cites["admissions.act_composite_25_75"] as CiteLike | undefined) ?? null });
   return out;
 }
 
@@ -77,7 +77,7 @@ function positionOf(score: number, range: [number, number]): Position {
  */
 export function suggestCategory(school: PlanSchool, profile: StudentProfileData | null): SuggestResult {
   if (school.admitRate !== null && school.admitRate < REACH_ADMIT_RATE_MAX) {
-    return { category: "reach", reason: `Admits fewer than 1 in 5 applicants${fallYear(school.admitRateCite)}.`, cite: (school.admitRateCite as Cited | null) ?? null };
+    return { category: "reach", reason: `Admits fewer than 1 in 5 applicants${fallYear(school.admitRateCite)}.`, cite: (school.admitRateCite as CiteLike | null) ?? null };
   }
   if (school.admitRate === null) {
     return { category: "likely", reason: "Admits everyone who applies.", cite: null };

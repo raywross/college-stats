@@ -76,7 +76,7 @@ where the role or the children change refresh the answer on arrival (`RefreshHea
 | File | Role |
 |---|---|
 | `lib/accounts.ts` | `MeRole`, `MeChild`, `meRoleOf()`, `MeState.role` and `.children` |
-| `app/api/me/route.ts` | Answers `role` and `children` (one `householdChildren()` read more) |
+| `app/api/me/route.ts` | Answers `role` and `children` from `me_bundle()` in one call (else `householdChildren()` beside the profile read) |
 | `components/layout/role-nav.ts` | `roleNav(me)`: label, href, icon, menu entries (`kind: "child" \| "page"`, icon, caption), active paths |
 | `components/layout/RoleNavItem.tsx` | The desktop pill: link + chevron menu (base-ui `Menu`, as the avatar menu) |
 | `components/layout/Header.tsx`, `BottomNav.tsx` | Render the item in the Advisor slot / the middle tab; the More sheet's role pages |

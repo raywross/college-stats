@@ -8,7 +8,8 @@
  * their words (components/essays/Marks.tsx, through the marks context; specs/product/essays/editors.md "2. Marks in
  * the draft"), which replaced the numbered margin marks. `mechanics` first, then the rest in draft order (the server stores them in that order).
  *
- * The data comes from /api/essays/review (GET for the reads, POST for a new one, PATCH for a note's state). POST
+ * The data comes from the page (`initial`, read in essay_bundle()) or else /api/essays/review (GET for the reads), and
+ * from the route for the rest (POST for a new one, PATCH for a note's state). POST
  * streams (reviewer.md "the notes stream in"): each note shows as the reader finds it, with Done and Ignore disabled
  * until the `done` event swaps in the stored review (which has ids); a refusal before the read is JSON, as before.
  */
@@ -81,9 +82,15 @@ function openSpan(note: StoredNote): boolean {
   return true;
 }
 
-export function Notes({ essayId, canRequest }: { essayId: string; canRequest: boolean }) {
+/**
+ * `initial`: the draft's reviews as the page read them (essay_bundle(), shaped by lib/essays/review-rows.ts the way the
+ * route's GET shapes them). With them the panel starts ready and makes no fetch on mount; without them (the bundle not
+ * installed) it fetches as before.
+ */
+export function Notes({ essayId, canRequest, initial }: { essayId: string; canRequest: boolean; initial?: StoredReview[] }) {
   const router = useRouter();
-  const [load, setLoad] = useState<Load>({ kind: "loading" });
+  const [load, setLoad] = useState<Load>(initial ? { kind: "ready", reviews: initial } : { kind: "loading" });
+  const hasInitial = initial !== undefined;
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [moved, setMoved] = useState<string | null>(null);
@@ -93,6 +100,7 @@ export function Notes({ essayId, canRequest }: { essayId: string; canRequest: bo
   const [lost, setLost] = useState(false);
 
   useEffect(() => {
+    if (hasInitial) return;
     let live = true;
     fetch(`/api/essays/review?essayId=${encodeURIComponent(essayId)}`, { cache: "no-store" })
       .then(async (r) => {
@@ -104,7 +112,7 @@ export function Notes({ essayId, canRequest }: { essayId: string; canRequest: bo
     return () => {
       live = false;
     };
-  }, [essayId]);
+  }, [essayId, hasInitial]);
 
   const read = async () => {
     setBusy(true);

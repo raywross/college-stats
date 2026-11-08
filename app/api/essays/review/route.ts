@@ -10,8 +10,8 @@ import { isMissingTable, promptLookup } from "@/lib/essays/load";
 import { resolvePrompt, type EssayKind } from "@/lib/essays/prompts";
 import { handleReview, type Allowance, type LoadedDraft, type RecordInput, type ReviewDeps, type StoredReview } from "@/lib/essays/review";
 import { reviewResponse } from "@/lib/essays/review-response";
+import { assemble, NOTE_COLUMNS, REVIEW_COLUMNS, type NoteRow, type ReviewRow } from "@/lib/essays/review-rows";
 import type { ContextDraft, ContextInput } from "@/lib/essays/review-context";
-import type { NoteCategory } from "@/lib/essays/rubric";
 import { myLists } from "@/lib/lists";
 import { isUuid } from "@/lib/planner/plan-writes";
 import { profileFor } from "@/lib/student-profile-store";
@@ -49,22 +49,8 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
 const REVIEW_VERSION_LABEL = "Notes asked for";
 
 type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
-type NoteRow = { id: string; review_id: string; position: number; category: NoteCategory; span: StoredReview["notes"][number]["span"]; observation: string; why: string; source: string | null; ask: string; fix: string | null; state: "open" | "done" | "ignored" };
-type ReviewRow = { id: string; version_id: string; created: string; outcome: StoredReview["outcome"]; method: string };
 
-const NOTE_COLUMNS = "id, review_id, position, category, span, observation, why, source, ask, fix, state";
-const REVIEW_COLUMNS = "id, version_id, created, outcome, method";
-
-function assemble(reviews: ReviewRow[], notes: NoteRow[]): StoredReview[] {
-  return reviews.map((r) => ({
-    ...r,
-    notes: notes
-      .filter((n) => n.review_id === r.id)
-      .sort((a, b) => a.position - b.position)
-      .map(({ id, category, span, observation, why, source, ask, fix, state }) => ({ id, category, span, observation, why, source, ask, fix, state })),
-  }));
-}
-
+/** The draft's reviews, newest first, shaped by lib/essays/review-rows.ts (the essay page shapes essay_bundle()'s the same way). */
 async function readReviews(supabase: Supabase, essayId: string, limit = 10): Promise<StoredReview[] | "setup-missing"> {
   const reviews = await supabase.from("essay_reviews").select(REVIEW_COLUMNS).eq("essay_id", essayId).order("created", { ascending: false }).limit(limit);
   if (reviews.error) {

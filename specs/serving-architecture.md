@@ -828,9 +828,9 @@ What the logs point at next, in the order of gain:
   plan's colleges and the Essays tab); the second is the estimate's high-school reads, started as soon as the profile
   resolves. The Essays tab counts the plan's rows and reads nothing more. Measured locally over the mini fixture (warm):
   `estimates.compute` about 9 ms for ten colleges and 11 to 30 ms for 38; the first call about 76 ms for 38.
-- `/api/me` still loads the viewer bundle through `householdChildren()` (same wave as the profile read; a
-  profile-only children count would remove it).
-- The essay page still makes a second request for its reviews (`/api/essays/review`, 0.7 s).
+- Closed in round 2: `/api/me` answers from `me_bundle()` in one call (no viewer bundle), and the essay page reads
+  `essay_bundle(id)` in one database wave beside the viewer check and the overrides, with the reviews in it, so the
+  notes panel no longer makes a second request (`specs/product/essays/workspace.md` "Where it lives").
 - The list page's own row citations (`admitRateCited`, `avgCostCited`, `distanceCited`), the offers facts' citations
   (`offers-server`), and the chances page's are still full; `components/advisor/sample.ts` builds its own `{url}`.
 - A plan tab switch is still a server render; with the payload down, prefetching the other tabs or a client-side

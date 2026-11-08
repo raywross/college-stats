@@ -16,7 +16,7 @@ import { ReusePicker } from "@/components/essays/PromptPicker";
 import { WhyFold } from "@/components/ui/why-fold";
 import { authConfigured } from "@/lib/auth";
 import { countLabel } from "@/lib/essays/count";
-import { essaysViewer, planColleges, promptLookup, readEssay } from "@/lib/essays/load";
+import { essayBundleFor, essaysViewer, planColleges, promptLookup, readEssay } from "@/lib/essays/load";
 import { authorOrder, commentAuthorKey } from "@/lib/essays/marks";
 import { suggestionAuthorKey } from "@/lib/essays/review-view";
 import { KIND_LABEL, pickerGroups, refUnitId, resolvePrompt, type ResolvedPrompt } from "@/lib/essays/prompts";
@@ -77,6 +77,12 @@ export default async function EssayPage({ params, searchParams }: { params: Para
 
 async function render(id: string, searchParams: Search) {
   if (!authConfigured()) return <AuthUnavailable />;
+  // One database wave (specs/serving-architecture.md; specs/product/essays/workspace.md "Where it lives"): the essay
+  // bundle needs only the id and the prompts' overrides nothing at all, so both start beside the viewer check, which
+  // still decides what renders (signed out or no student drops them). readEssay finds the bundle call in flight.
+  void essayBundleFor(id); // never throws; readEssay awaits the same call (React `cache`)
+  const lookupP = promptLookup();
+  lookupP.catch(() => {}); // awaited below; a page that returns early never sees it fail
   const sp = await searchParams;
   const viewer = await span("essay viewer", () => essaysViewer(sp.for));
   if (viewer.kind === "signed-out") return <SignInPrompt reason="write your essays" next={`/advisor/essays/${encodeURIComponent(id)}`} className="mx-auto max-w-xl" />;
@@ -93,7 +99,8 @@ async function render(id: string, searchParams: Search) {
   // Each author's color on this draft: by their first comment or suggestion, whichever came first.
   const markOrder = authorOrder([...comments.map((c) => ({ key: commentAuthorKey(c), created: c.created })), ...suggestions.map((s) => ({ key: suggestionAuthorKey(s), created: s.created }))]);
 
-  const [colleges, lookup] = await span("essay colleges", () => Promise.all([planColleges(essay.student_id), promptLookup()]));
+  // With the bundle the list's ids came with the read: no table is read here.
+  const [colleges, lookup] = await span("essay colleges", () => Promise.all([planColleges(essay.student_id, read.list_unit_ids), lookupP]));
   const prompt = resolvePrompt(essay.prompt_ref, lookup);
   const limit = rowLimit(essay);
   const refs = refsOf(essay, links);
@@ -183,7 +190,8 @@ async function render(id: string, searchParams: Search) {
           />
 
           {/* A reader's notes (specs/product/essays/reviewer.md): the student asks; a guardian reads them. */}
-          <Notes essayId={essay.id} canRequest={canWrite} />
+          {/* The bundle's reviews (the route's shaping, lib/essays/review-rows.ts) spare the panel its first fetch. */}
+          <Notes key={essay.id} essayId={essay.id} canRequest={canWrite} initial={read.reviews} />
         </ReaderFixesProvider>
       </MarksProvider>
     </article>

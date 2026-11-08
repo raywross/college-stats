@@ -109,11 +109,14 @@ function detailFrom(profile: StudentProfileData | null, canEdit: boolean, studen
 
 /**
  * The Essays tab's read (specs/product/essays/tab.md "Files"): the drafts, links, and open-comment counts by the plan's
- * student, the picker's groups, and the prompt lookup, only when that tab is the one opening (the other tabs never pay
- * for it). A failed read leaves the tab on the plan's own `ctx.essays` (U1), logged, rather than failing the page.
+ * student, the picker's groups, and the prompt lookup. Made whenever the plan renders, whatever tab opens (round 4: the
+ * tabs switch in the browser over panels the page already has, specs/planner/redesign/page.md "Tabs switch in place"):
+ * the drafts come with the plan's first wave and the prompt lookup's one read is shared with the plan's colleges, so it
+ * adds no database wave. A failed read leaves the tab on the plan's own `ctx.essays` (U1), logged, rather than failing
+ * the page.
  */
-async function essaysFor(load: PlanLoad, tab: PlanTab | null, viewer: ViewerRole): Promise<EssaysTabData | null> {
-  if (tab !== "essays" || load.kind !== "ready") return null;
+async function essaysFor(load: PlanLoad, viewer: ViewerRole): Promise<EssaysTabData | null> {
+  if (load.kind !== "ready") return null;
   try {
     return await essaysTabData(load.ctx, viewer);
   } catch (err) {
@@ -178,7 +181,7 @@ async function counselorPlan(
       );
     }
   }
-  const essays = await essaysFor(loaded, opts.tab, "counselor");
+  const essays = await essaysFor(loaded, "counselor");
   return (
     <div className="space-y-6">
       {top}
@@ -204,7 +207,8 @@ async function counselorPlan(
  * out: Quad Advisor's splash page (components/advisor/Splash.tsx; advisor.md "3. The page"). A student: their own plan, Colleges by default. A guardian
  * always lands on one child now (decision 2026-10-11, no Everyone): `?for=` when it names a real child, else the
  * last child viewed (the `plan_child` cookie), else the child with the soonest open deadline, else the first.
- * `?tab=` opens a tab (links, so back and forward work); an unrecognized or unavailable one falls back to the
+ * `?tab=` opens a tab (links, so back and forward work; a switch to a tab whose panel is on the page happens in the
+ * browser, components/planner/PlanTabSwitch.tsx); an unrecognized or unavailable one falls back to the
  * viewer's default (PlanFrame reconciles that). `?setup=1` opens the intake guide in edit mode; `?record=1` means the
  * same thing (record/steps.md "Edit mode"), and `?step=n` (read by PlanIntake itself) opens it at a step; `?back=
  * plan|record` says where saving or closing it returns to (default the plan). `?joined=<grant id>` adds the one line
@@ -281,7 +285,7 @@ async function renderPlan({
         );
       }
     }
-    const essays = await essaysFor(loaded, tab, "student");
+    const essays = await essaysFor(loaded, "student");
     return (
       <PlanFrame
         people={<PlanPeople people={[self]} selected={null} detail={detailFor(loaded, null)} />}
@@ -359,7 +363,7 @@ async function renderPlan({
       );
     }
   }
-  const essays = await essaysFor(load, tab, "guardian");
+  const essays = await essaysFor(load, "guardian");
   return (
     <PlanFrame
       people={line}

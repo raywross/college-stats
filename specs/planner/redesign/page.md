@@ -28,7 +28,7 @@ A student opens Plan and sees their colleges; a parent opens Plan and sees the f
 | `/plan` | signed-in student | Their plan, Colleges tab |
 | `/plan` | signed-in guardian | One child's plan (**changed 2026-10-11**: no more Everyone — see below), Colleges tab |
 | `/plan?for=[person]` | guardian | One child's plan; a legacy `?for=everyone` falls through to the default below |
-| `/plan?tab=calendar` / `offers` | either | Opens a tab; tabs are links so back and forward work (`?tab=scores`, dropped 2026-10-12, opens the default) |
+| `/plan?tab=calendar` / `offers` | either | Opens a tab; tabs are links so back and forward work, and switch in place where the panel is on the page ("Tabs switch in place" below; `?tab=scores`, dropped 2026-10-12, opens the default) |
 | `/plan?setup=1` | the plan's own editor | The intake guide ([intake.md](intake.md)) in edit mode, prefilled, starting at Review — the header's Edit button |
 | `/plan` | signed out | The pitch and the numbers step ([below](#signed-out)) |
 | `/plan/print` | either | The calendar's printable list (moves from `/household/[person]/plan/print`) |
@@ -125,6 +125,32 @@ Phone                                   Desktop (lg:)
   recorded), Essays added third ([../../product/essays/tab.md](../../product/essays/tab.md)). The phone strip stays
   a one-row segmented control at four or five cells, 44 px tall, never scrolling sideways, as that spec's "The tab
   strip" rule.
+- **Tabs switch in place** (round 4, 2026-11-08; `components/planner/PlanTabSwitch.tsx`). A switch used to be a
+  server render of the whole page (0.45–0.65 s). Now the server renders, once, the panel of every tab that needs
+  nothing beyond the plan it already loaded (`lib/planner/plan-tabs.ts` `switchableTabs`), plus the one the page
+  opens on, and the browser shows the one the URL's `?tab=` names:
+  - Colleges, Essays, and Calendar always switch in place. The Essays tab's data (`essaysTabData`) is made with every
+    plan, whatever tab opens: its drafts come in the plan's first wave and its prompt lookup's read is shared.
+  - Next steps switches in place unless its asks notice needs its own read: for a student or a parent,
+    `AskNotice` reads `org_open_asks` and marks the asks seen, so it runs only when the page opens on Next steps;
+    landing on another tab, the Next steps pill stays a navigation. A counselor's Next steps (no notice) always
+    switches in place.
+  - Offers always navigates: its stage reads the letters, the cost history, and the outcome flag itself.
+  - A pill is still a link to `?tab=…`, so a full load, a new window, the back button, and a browser without
+    JavaScript work as before; a plain click on a tab whose panel is on the page calls `window.history.pushState`
+    with that href instead (no prefetch for those), and `useSearchParams`, which Next keeps in step with `pushState`
+    and the back button, moves both pill strips and the panels. `openTabFor` reads the URL the way the server does.
+    The aside's and the list's "Your list asks for …" lines (`PlanTabLink`) switch the same way.
+  - Hidden panels cost no first paint: a panel mounts the first time it shows and then stays, `hidden`, never
+    unmounted and mounted again by a switch, so a hidden list or calendar runs no effects (the calendar's
+    `plan_calendar_opened` fires when it is first shown). A navigation that brings parameters a panel reads once on
+    mount (`move`, `row`/`panel`, `range`: `panelOnceKey`) mounts the panels again so they act on them.
+  - `plan_opened {tab}` fires for each tab shown, switched or loaded.
+  - Payload, measured offline over the mini fixture (15 colleges, 85 moves, 5 drafts; `scripts/measure-plan-payload.mts`,
+    React's Flight serializer): before, a Next steps page was 323 KB (43.5 KB gzipped) and each switch shipped
+    another (the Essays tab 364 KB with its data); after, a page carrying the Next steps, Colleges, Essays, and
+    Calendar panels with the essays data is 370 KB (48.2 KB gzipped), and a switch ships nothing. The plan's
+    `ctx` and `view` are shared by every panel and serialized once.
 - **Layout**: two columns on desktop (`lg:`) — left, the header with the tabs beside it, then the open tab's body;
   right (~380px, sticky), Next up/NothingDue, then the 8-week "Coming up" list (`UpcomingList` `variant="aside"`,
   [calendar.md](calendar.md)), then the one notice (`PlanNotice`, [list.md](list.md) `view.notices[0]`). On a phone
@@ -178,11 +204,12 @@ sentence, `ThisWeek` as its own section (its content is Next up plus the Calenda
 ## Files
 `app/plan/page.tsx`, `app/plan/print/page.tsx`, redirects in `app/household/[person]/plan/page.tsx` and
 `app/me/plan/route.ts`; `components/planner/PlanFrame.tsx` (header, Next up/NothingDue, tab pills + body),
-`PlanHeaderCard.tsx`, `NextUp.tsx`, `PlanTabs.tsx` (`PlanTabPills` + `PlanTabs`), `ChildSwitcher.tsx`,
+`PlanHeaderCard.tsx`, `NextUp.tsx`, `PlanTabs.tsx` (the panels), `PlanTabSwitch.tsx` (`PlanTabPills`, `PlanTabLink`, `PlanTabPanels`: the switch in place), `ChildSwitcher.tsx`,
 `parents/YourPartLine.tsx`, `parents/NothingDue.tsx`, `SignedOutPlan.tsx`; `lib/planner/plan-frame.ts`
 (`resolveSelectedChild`, `nextUpGroup`, `joinNames`, `weekdayLabel`); `Header.tsx` and `BottomNav.tsx`;
 `tests/planner-page.test.mts` (route choice per viewer including the cookie and the soonest-deadline tie-break,
-Next up's grouping, `?stage=` redirects), `tests/planner-plan-tabs.test.mts` (the guardian default tab).
+Next up's grouping, `?stage=` redirects), `tests/planner-plan-tabs.test.mts` (the guardian default tab),
+`tests/planner-tab-switch.test.mts` (the switch in place: which tabs, the URL, the rendered panels, the click).
 
 ## Open questions
 1. ~~The phone tab bar~~: decided 2026-10-10 ([above](#navigation)).

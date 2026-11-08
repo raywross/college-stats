@@ -122,6 +122,12 @@ The shared contracts every later unit builds on; the federal, private, state, UI
 - **Supabase** `supabase/migrations/20261005180000_high_schools.sql`: `high_schools` (trigram index on `search`),
   `high_school_details`, `high_school_files` (meta, medians), staging tables and functions, and
   `search_high_schools(p_q, p_state, p_limit)`. Tested on PGlite (`tests/high-schools-policies.test.mts`).
+  A lookup by id is one call since round 4 (2026-11-09): `high_school_bundle(p_id)`
+  (`20261109120000_high_school_bundle.sql`, security invoker, `json` so documents stay verbatim) returns
+  `{ school, detail, courses }`, the course list being `school_course_list(p_id)` or null when the detail has an AP
+  list (`lib/supabase-high-schools.ts fetchHighSchoolRows`, which falls back to the three reads while the function is
+  missing; `tests/high-school-bundle.test.mts`). `high_school_files` (`meta`, `medians`) is read once per server
+  instance per served snapshot id (`lib/snapshot-memo.ts`), since a publish writes these tables with a new snapshot.
   `npm run publish-high-schools` (its own script since 2026-10-07) writes the live tables in batches and reads them
   back (~25 MB is too big for one swap), and stops with a message until the migration is applied.
 - **Syncs** `npm run sync-high-schools [-- --only ccd,pss --dry-run --offline --allow-shrink]` and

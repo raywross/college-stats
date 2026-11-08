@@ -4,14 +4,17 @@ import { supabaseClient } from "@/lib/supabase";
 import type { HighSchool, HighSchoolHit, HighSchoolMeta, HighSchoolView, StateMedians } from "@/lib/high-school-types";
 import { buildHighSchoolView, clampLimit, fromPublishedRow, isHighSchoolId } from "@/lib/high-school-core";
 import { createJsonHighSchoolStore, highSchoolsDir, type HighSchoolStore } from "@/lib/high-school-store";
-import { fetchHighSchool, fetchHighSchoolDetail, fetchHighSchoolFile, searchHighSchoolsRpc } from "@/lib/supabase-high-schools";
+import { currentSnapshotId } from "@/lib/data-platform/loader";
+import { snapshotMemo } from "@/lib/snapshot-memo";
+import { fetchHighSchoolFile, fetchHighSchoolRows, searchHighSchoolsRpc } from "@/lib/supabase-high-schools";
 
 /**
  * High school data access (specs/product/high-school-data.md), server only. High schools have their own switch,
  * HIGH_SCHOOLS_SOURCE (highSchoolsSource() below; specs/serving-architecture.md#1-the-deploy-carries-the-dataset):
  *   - `json`: the bundled copy's .data/snapshot/high-schools/ (or HIGH_SCHOOLS_DIR, e.g. tests/fixtures/high-schools for UI work and QA), read
  *     lazily a shard at a time and kept in memory per server instance (lib/high-school-store.ts);
- *   - `supabase`: one row per lookup and the search_high_schools function; never every row (~24K).
+ *   - `supabase`: one call per lookup (high_school_bundle(): the row, its detail, the pooled course list), the shared
+ *     meta and medians once per instance per snapshot, and the search_high_schools function; never every row (~24K).
  * Fail-soft like getDetail(): a missing table, file, or error is logged and reads as null / [].
  *
  *   const view = await getHighSchool("060000000001");
@@ -45,11 +48,21 @@ function warn(what: string, err: unknown) {
   console.error(`High schools: ${what} failed; rendering without it.`, err);
 }
 
+/**
+ * The two shared files from the table, held once per server instance per served snapshot (lib/snapshot-memo.ts): a
+ * publish writes the high-school tables with a new snapshot, so a warm instance never re-reads them until the id it
+ * serves changes. Keyed by the loader's id (no dataset load just for a key); "none" before this instance's first load,
+ * which reads them once more when the id arrives.
+ */
+const sharedMeta = snapshotMemo(() => fetchHighSchoolFile(supabaseClient("read"), "meta"));
+const sharedMedians = snapshotMemo(() => fetchHighSchoolFile(supabaseClient("read"), "medians"));
+const snapshotKey = () => String(currentSnapshotId() ?? "none");
+
 /** meta.json, or null when high school data hasn't been built or published. */
 export const getHighSchoolMeta = cache(async (): Promise<HighSchoolMeta | null> => {
   try {
     if (highSchoolsSource() === "json") return jsonStore().getHighSchoolMeta();
-    return await fetchHighSchoolFile(supabaseClient("read"), "meta");
+    return await sharedMeta(snapshotKey());
   } catch (err) {
     warn("loading meta", err);
     return null;
@@ -59,7 +72,7 @@ export const getHighSchoolMeta = cache(async (): Promise<HighSchoolMeta | null> 
 const getAllMedians = cache(async (): Promise<StateMedians | null> => {
   if (highSchoolsSource() === "json") return null;
   try {
-    return await fetchHighSchoolFile(supabaseClient("read"), "medians");
+    return await sharedMedians(snapshotKey());
   } catch (err) {
     warn("loading medians", err);
     return null;
@@ -78,26 +91,44 @@ export const getStateMedians = cache(async (state: string): Promise<StateMedians
   }
 });
 
-/** Everything a high school page needs, or null for an unknown id. */
-export const getHighSchool = cache(async (id: string): Promise<HighSchoolView | null> => {
+/**
+ * A high school's view and its pooled course list: `courses` is school_course_list()'s raw keys (null when the
+ * school's profile has an AP list, or the list couldn't be read), or "unread" from the `json` source, whose callers
+ * read the list themselves (lib/chances/school-courses.ts pooledCourseKeys) as they always did.
+ */
+export interface HighSchoolRecord {
+  view: HighSchoolView;
+  courses: string[] | null | "unread";
+}
+
+/**
+ * The school with its course list, or null for an unknown id. From Supabase that's one call (high_school_bundle(),
+ * else the three reads it replaces; lib/supabase-high-schools.ts fetchHighSchoolRows) beside the shared files, which
+ * a warm instance already holds. getHighSchool() and the rigor reading share it per request.
+ */
+export const getHighSchoolRecord = cache(async (id: string): Promise<HighSchoolRecord | null> => {
   if (!isHighSchoolId(id)) return null;
   try {
-    if (highSchoolsSource() === "json") return jsonStore().getHighSchool(id);
-    const client = supabaseClient("read");
-    const [published, detail, meta, medians] = await Promise.all([
-      fetchHighSchool(client, id),
-      fetchHighSchoolDetail(client, id).catch((err) => (warn(`loading the profile detail for ${id}`, err), null)),
+    if (highSchoolsSource() === "json") {
+      const view = jsonStore().getHighSchool(id);
+      return view ? { view, courses: "unread" } : null;
+    }
+    const [rows, meta, medians] = await Promise.all([
+      fetchHighSchoolRows(supabaseClient("read"), id, (err) => warn(`loading the profile detail for ${id}`, err)),
       getHighSchoolMeta(),
       getAllMedians(),
     ]);
-    if (!published || !meta) return null;
-    const { school, state_report } = fromPublishedRow(published);
-    return buildHighSchoolView(school, { stateReport: state_report, detail, medians, meta });
+    if (!rows.school || !meta) return null;
+    const { school, state_report } = fromPublishedRow(rows.school);
+    return { view: buildHighSchoolView(school, { stateReport: state_report, detail: rows.detail, medians, meta }), courses: rows.courses };
   } catch (err) {
     warn(`loading high school ${id}`, err);
     return null;
   }
 });
+
+/** Everything a high school page needs, or null for an unknown id. */
+export const getHighSchool = cache(async (id: string): Promise<HighSchoolView | null> => (await getHighSchoolRecord(id))?.view ?? null);
 
 /** Name/city search, optionally within a state or kind. Empty `q` lists a state's schools by name (needs `state`). */
 export const searchHighSchools = cache(

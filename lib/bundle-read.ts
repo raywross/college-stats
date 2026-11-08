@@ -19,7 +19,7 @@ import type { PlanItem, PlanNudge, PlanOffer, PlanTask, PlanVisit } from "./plan
 import type { CaseloadEssayRow, CaseloadListRow, CaseloadProfileRow } from "./org-caseload.ts";
 import type { Organization, OrgAsk, OrgNote, OrgRosterRow } from "./org-rules.ts";
 
-export type BundleFunction = "viewer_bundle" | "plan_bundle" | "save_student_profile" | "org_caseload_bundle" | "org_student_bundle" | "essay_bundle" | "me_bundle";
+export type BundleFunction = "viewer_bundle" | "plan_bundle" | "save_student_profile" | "org_caseload_bundle" | "org_student_bundle" | "essay_bundle" | "me_bundle" | "high_school_bundle";
 
 type PgError = { code?: string; message?: string };
 

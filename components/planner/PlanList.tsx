@@ -10,7 +10,7 @@ import { InterestPill } from "@/components/planner/InterestPill";
 import { personFor } from "@/components/planner/moves/MoveCard";
 import { edOpportunities, type EdCandidate } from "@/lib/planner/ed-opportunities";
 import { isOpen } from "@/lib/planner/tasks";
-import { planHref } from "@/lib/planner/plan-tabs";
+import { PlanTabLink } from "@/components/planner/PlanTabSwitch";
 import { GUIDES, guideHref } from "@/lib/planner/guides";
 import { ListExplainer } from "@/components/planner/ListExplainer";
 import { PlanNotice } from "@/components/planner/PlanNotice";
@@ -123,9 +123,9 @@ export default function PlanList({ ctx, view }: PlanTabProps) {
       <PlanNotice ctx={ctx} view={view} className="lg:hidden" />
       {/* The count line opens the Essays tab (specs/product/essays/tab.md "Where it is reached from"). */}
       {essayCount && (
-        <Link href={planHref({ person, tab: "essays" })} className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground hover:underline lg:hidden">
+        <PlanTabLink tab="essays" person={person} className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground hover:underline lg:hidden">
           Your list asks for {essayCount}.
-        </Link>
+        </PlanTabLink>
       )}
 
       {rows.length === 0 ? (

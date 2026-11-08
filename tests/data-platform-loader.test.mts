@@ -690,8 +690,8 @@ test("fetch-snapshot's flags: --if-configured is a no-op without DATA_SNAPSHOT_U
   assert.equal(run.stdout + run.stderr, "");
   assert.ok(!existsSync(join(cwd, ".data")));
   const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
-  assert.match(pkg.scripts.prebuild, /scripts\/fetch-snapshot\.mts --if-configured$/);
-  assert.match(pkg.scripts.postinstall, /scripts\/fetch-snapshot\.mts --ensure$/, "npm install makes sure a bundled copy exists");
+  assert.match(pkg.scripts.prebuild, /scripts\/fetch-snapshot\.mts --if-configured( && |$)/);
+  assert.match(pkg.scripts.postinstall, /scripts\/fetch-snapshot\.mts --ensure( && |$)/, "npm install makes sure a bundled copy exists");
 });
 
 test("fetch-snapshot --ensure: a copy already there is kept; without one and without DATA_SNAPSHOT_URL it copies the mini fixture; with the URL it downloads", async () => {

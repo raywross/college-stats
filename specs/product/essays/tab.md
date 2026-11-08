@@ -112,10 +112,12 @@ Coalition prompts (if any college takes it) ▸        Not for a college yet (2)
 ## Files (planned)
 - `lib/planner/plan-tabs.ts`: `PlanTab`, `PLAN_TABS` order, `TAB_LABELS`, `planHref` `college` anchor; tests
   `tests/planner-plan-tabs.test.mts`.
-- `components/planner/PlanTabs.tsx`: the phone segmented strip and the desktop pills; the `essays` branch renders
+- `components/planner/PlanTabs.tsx` (the panels) and `PlanTabSwitch.tsx` (the phone segmented strip and the desktop
+  pills, switching in place since round 4: specs/planner/redesign/page.md "Tabs switch in place"); the `essays` panel renders
   `EssaysTab`; `app/advisor/loading.tsx` skeleton.
 - `components/planner/EssaysTab.tsx` (new, server component wrapped like the other tabs' data needs: the tab's data
-  is read in `app/advisor/page.tsx` next to the plan read, `readEssays` by the plan's student) and
+  is read in `app/advisor/page.tsx` next to the plan read, with every plan since round 4, `readEssays` by the plan's
+  student) and
   `components/essays/CollegeEssayCard.tsx` (new): the card and its rows; `EssayList.tsx` keeps the folds.
 - `app/advisor/essays/page.tsx` → redirect; `app/advisor/essays/[id]/page.tsx` and `package/[unit]/page.tsx`: the
   back link.

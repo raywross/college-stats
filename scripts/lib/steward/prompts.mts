@@ -27,7 +27,7 @@ Proposal kinds (one kind per proposal; one proposal per cause, or per college wh
 - correct: the document shows a different value than was read. Each row: field (a registered field path such as admissions.acceptance_rate) and value (what to publish).
 - publish: the held value is right as read (for example a real disagreement with federal data because the cohorts differ). Row: field and value, and the reason in proposed.
 - hold: the value was misread; hold it with what the document shows. Row: code (the CDS code such as C.802), edition, sha256, and proposed = what the document shows.
-- refile: the document belongs to another edition. Row: code null, sha256, edition = the edition it belongs under, proposed = why (two of the items' own years must agree).
+- refile: the document belongs to another edition. Row: code null, sha256, edition = the edition it belongs under, proposed = why (two of the items' own years must agree). When that edition already has a document on the record, the refile is refused and the writer leaves a finding for the owner to compare the two files and choose one: leave it at that finding, never propose the refile again or a drop.
 - reject: the checks were right and nothing is publishable. Row: the item it settles.
 - recipe: the college's discovery recipe needs a change. Row: field "sources.add" (value = the new document URL), "sources.drop" (value = the URL to drop), or "rediscover" (value null).
 - reread: the college's documents should be read again. Row: the college.

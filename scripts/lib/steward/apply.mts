@@ -4,7 +4,9 @@
  * the kinds that need the scripts. It applies the rows with `decision: "approved"`, by the proposal's kind:
  * - hold: hold-misread's library (`holdMisread`), one hold per college and edition, the row's `proposed` as what the
  *   document shows;
- * - refile: refile-document's library (`refileDocument`), the row's `sha256` to its `edition`, `proposed` as why;
+ * - refile: refile-document's library (`refileDocument`), the row's `sha256` to its `edition`, `proposed` as why; every
+ *   row is checked first, and one whose edition already has another document is an `ApplyRefused` carrying the college
+ *   page's comparison link (specs/product/document-collisions.md), so nothing is written and nothing is held;
  * - recipe: the college's `reported.sources` document (`sources.add` a URL at the front, `sources.drop` a URL, or
  *   `rediscover`: the not-found mark and the back-off cleared so the next run looks again);
  * - reject: the queue item (`row.item`) resolved `rejected` with the proposal as its note;
@@ -15,6 +17,8 @@
  */
 import type { ProposalDoc, ProposalRow } from "../../../lib/steward/types.ts";
 import type { Recipe, RecipeSource, ReviewItem } from "../../../lib/reported.ts";
+import { parseEdition, type CollegeRecord } from "../../../lib/cds-sections.ts";
+import { compareHref, LINK_SHA, refileCollision } from "../../../lib/admin/document-compare.ts";
 import { holdMisread, type Hold } from "../../hold-misread.mts";
 import { refileDocument } from "../../refile-document.mts";
 import { COLLECTIONS } from "../data-platform/layers.mts";
@@ -93,9 +97,19 @@ export async function applyProposal(store: DataStore, handle: ChangeSetHandle, k
     const held = await holdMisread(store, [...holds.values()], { today: opts.today, names: opts.names ?? new Map(), handle, log: say });
     publish = held.some((h) => h.held.length > 0);
   } else if (p.kind === "refile") {
+    // Every row is checked before any is written: a refile into an edition that already has a document is a collision
+    // a person settles on the college page (specs/product/document-collisions.md), refused with the comparison's link.
     for (const r of rows) {
       if (!r.sha256 || !r.edition) throw new ApplyRefused(`a refile row needs the document and the edition (${r.unit_id})`);
-      const res = await refileDocument(store, { unit: r.unit_id, sha: r.sha256, edition: r.edition, why: r.proposed }, { handle, log: say });
+      const record = await store.readOne<CollegeRecord>(COLLECTIONS.reported.cdsRecords, r.unit_id);
+      const other = refileCollision(record, r.sha256, r.edition);
+      if (other) {
+        const to = parseEdition(r.edition)?.key ?? r.edition;
+        throw new ApplyRefused(`${r.unit_id} already has a ${to} document (${other.slice(0, LINK_SHA)}), so ${r.sha256.slice(0, LINK_SHA)} can't be refiled there; choose the file: ${compareHref(r.unit_id, r.sha256, other)}`);
+      }
+    }
+    for (const r of rows) {
+      const res = await refileDocument(store, { unit: r.unit_id, sha: r.sha256!, edition: r.edition!, why: r.proposed }, { handle, log: say });
       if (res.from !== res.to || res.moved) publish = true;
     }
   } else if (p.kind === "recipe") {

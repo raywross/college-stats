@@ -78,7 +78,7 @@ export default async function InboxPage() {
           id="steward-did"
           help="steward-did"
           aside={
-            <Link href="/admin/steward/runs" className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+            <Link href="/admin/steward/runs" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline">
               Every run
             </Link>
           }

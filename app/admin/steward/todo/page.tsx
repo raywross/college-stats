@@ -52,11 +52,11 @@ export default async function TodoPage({ searchParams }: { searchParams: Promise
       <Panel help="to-do" title={kind ? TODO_KIND_LABEL[kind] : "Every kind"} aside={<span className="text-sm text-muted-foreground">{rows.length.toLocaleString("en-US")} rows</span>}>
         <nav aria-label="Kinds" className="mb-3 flex flex-wrap gap-2 text-sm">
           {[null, ...KINDS].map((k) => (
-            <Link key={k ?? "all"} href={href({ kind: k, page: 1 })} aria-current={k === kind ? "page" : undefined} className={`inline-flex min-h-10 items-center rounded-full border px-4 ${k === kind ? "border-primary font-semibold" : "border-border"}`}>
+            <Link key={k ?? "all"} href={href({ kind: k, page: 1 })} aria-current={k === kind ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 ${k === kind ? "border-primary font-semibold" : "border-border"}`}>
               {k ? TODO_KIND_LABEL[k] : "All"}
             </Link>
           ))}
-          <Link href={href({ closed: !closed, page: 1 })} className={`inline-flex min-h-10 items-center px-2 ${linkCls}`}>
+          <Link href={href({ closed: !closed, page: 1 })} className={`inline-flex min-h-11 items-center px-2 ${linkCls}`}>
             {closed ? "Hide closed rows" : "Show closed rows"}
           </Link>
         </nav>
@@ -68,7 +68,7 @@ export default async function TodoPage({ searchParams }: { searchParams: Promise
         {page.pages > 1 && (
           <nav aria-label="To do pages" className="mt-3 flex items-center justify-between gap-3 text-sm">
             {page.page > 1 ? (
-              <Link href={href({ page: page.page - 1 })} rel="prev" className={`inline-flex min-h-10 items-center ${linkCls}`}>
+              <Link href={href({ page: page.page - 1 })} rel="prev" className={`inline-flex min-h-11 items-center ${linkCls}`}>
                 Previous
               </Link>
             ) : (
@@ -78,7 +78,7 @@ export default async function TodoPage({ searchParams }: { searchParams: Promise
               Page {page.page} of {page.pages}
             </span>
             {page.page < page.pages ? (
-              <Link href={href({ page: page.page + 1 })} rel="next" className={`inline-flex min-h-10 items-center ${linkCls}`}>
+              <Link href={href({ page: page.page + 1 })} rel="next" className={`inline-flex min-h-11 items-center ${linkCls}`}>
                 Next
               </Link>
             ) : (

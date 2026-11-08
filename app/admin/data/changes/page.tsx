@@ -26,7 +26,7 @@ export default async function ChangeSetsPage({ searchParams }: { searchParams: P
       key={label}
       href={s ? `/admin/data/changes?status=${s}` : "/admin/data/changes"}
       aria-current={status === s ? "page" : undefined}
-      className={`inline-flex min-h-9 items-center rounded-full border px-3 text-sm ${status === s ? "border-primary bg-primary/10 font-semibold" : "border-border hover:bg-muted"}`}
+      className={`inline-flex min-h-11 items-center rounded-full border px-3 text-sm ${status === s ? "border-primary bg-primary/10 font-semibold" : "border-border hover:bg-muted"}`}
     >
       {label}
     </Link>

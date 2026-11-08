@@ -67,9 +67,9 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/d
           type="search"
           defaultValue={q}
           placeholder="College or high school name, or an id"
-          className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"
+          className="h-11 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"
         />
-        <button type="submit" className="h-10 shrink-0 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
+        <button type="submit" className="h-11 shrink-0 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
           Search
         </button>
       </form>
@@ -85,7 +85,7 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/d
                     key={w.key}
                     href={w.key === "30" ? "/admin/data/colleges" : `/admin/data/colleges?views=${w.key}`}
                     aria-current={w === viewWindow ? "true" : undefined}
-                    className={`inline-flex h-7 items-center rounded-full border px-2.5 text-xs ${w === viewWindow ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    className={`inline-flex min-h-11 items-center rounded-full border px-2.5 text-xs ${w === viewWindow ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                   >
                     {w.label}
                   </Link>

@@ -98,7 +98,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
     <Link
       key={label}
       href={to}
-      className={`inline-flex h-8 items-center rounded-full border px-3 text-sm ${active ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+      className={`inline-flex min-h-11 items-center rounded-full border px-3 text-sm ${active ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
       aria-current={active ? "true" : undefined}
     >
       {label}

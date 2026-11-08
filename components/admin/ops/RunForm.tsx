@@ -24,7 +24,7 @@ function Field({ input, prefillUnit }: { input: RunInput; prefillUnit: string | 
       );
     case "boolean":
       return (
-        <label className="flex min-h-10 items-center gap-2.5 text-sm">
+        <label className="flex min-h-11 items-center gap-2.5 text-sm">
           <input type="checkbox" name={input.name} defaultChecked={input.default} className="size-5 accent-primary" />
           {input.label}
         </label>

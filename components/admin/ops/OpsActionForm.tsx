@@ -12,7 +12,7 @@ const TONES = {
 } as const;
 
 export const buttonClass = (tone: keyof typeof TONES) =>
-  `inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${TONES[tone]}`;
+  `inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${TONES[tone]}`;
 
 /**
  * One Operations button: a form with hidden fields, the Server Action it calls, and the result under it. With

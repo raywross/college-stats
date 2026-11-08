@@ -56,7 +56,7 @@ export function HelpTip({ help, className }: { help: HelpKey; className?: string
                 {entry.do}
               </p>
             )}
-            <Link href={`/admin/help#${help}`} className="mt-2.5 inline-flex min-h-8 items-center gap-1 text-xs font-semibold text-primary hover:underline">
+            <Link href={`/admin/help#${help}`} className="mt-2.5 inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-primary hover:underline">
               More <ArrowRight className="size-3" aria-hidden />
             </Link>
           </Popover.Popup>

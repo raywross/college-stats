@@ -4,6 +4,7 @@ import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { StewardBack } from "@/components/admin/steward/Bits";
 import { ProposalRowsTable } from "@/components/admin/steward/ProposalParts";
+import { JobsWeekPanel } from "@/components/admin/jobs/JobsWeek";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminSupabase } from "@/lib/admin/people";
 import type { StoreClient } from "@/lib/admin/review-queue";
@@ -29,7 +30,9 @@ export default async function AuditsPage() {
   const supabase = await adminSupabase();
   const audits = await readAudits(supabase as unknown as StoreClient);
   const byFamily = new Map<string, AuditDoc[]>();
-  for (const a of audits) byFamily.set(a.family, [...(byFamily.get(a.family) ?? []), a]);
+  // The weekly jobs summary (family "jobs", newest first) has its own panel; the rest are check families.
+  const jobsWeek = audits.find((a) => a.family === "jobs") ?? null;
+  for (const a of audits) if (a.family !== "jobs") byFamily.set(a.family, [...(byFamily.get(a.family) ?? []), a]);
   const data = await getData();
   const names: Record<string, string> = {};
   for (const a of audits) for (const r of a.wrong) names[r.unit_id] ??= data.getSchoolById(r.unit_id)?.name ?? r.unit_id;
@@ -37,6 +40,9 @@ export default async function AuditsPage() {
   return (
     <>
       <PageHeader help="audit" title="Audits" back={<StewardBack />} subtitle="Values that passed every check, sampled against their documents. Passing is not the same as right." />
+      <div className="mb-5">
+        <JobsWeekPanel audit={jobsWeek} />
+      </div>
       {byFamily.size === 0 ? (
         <Panel help="audit" title="Check families">
           <Empty>No audit has run yet. The weekly run samples one family at a time.</Empty>

@@ -31,7 +31,7 @@ export function DocLink({ url, page, line, children }: { url: string | null | un
   );
 }
 
-const KIND_TONE: Record<IssueKind, ChipTone> = { value: "info", systemic: "warn", acquisition: "neutral", policy: "good" };
+const KIND_TONE: Record<IssueKind, ChipTone> = { value: "info", systemic: "warn", acquisition: "neutral", policy: "good", job: "danger" };
 export function KindChip({ kind }: { kind: IssueKind }) {
   return <StatusChip label={ISSUE_KIND_LABEL[kind]} tone={KIND_TONE[kind]} />;
 }

@@ -116,6 +116,7 @@ export const COLLECTION_WORDS: Readonly<Record<string, string>> = {
   "steward.decisions": "the Steward's decisions",
   "steward.audits": "the Steward's audits",
   "steward.runs": "the Steward's runs",
+  "steward.reviews": "the Steward's job reviews",
   "essays.prompts": "essay questions",
   "essays.held": "held essay questions",
   "essays.overrides": "hand-read essay questions",

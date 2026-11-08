@@ -11,7 +11,7 @@ import "server-only";
 import { adminCounts } from "@/lib/admin/console-reads";
 import { heldChangeSets, lastPublishedSnapshot } from "@/lib/admin/data-reads";
 import { healthOverview } from "@/lib/admin/health";
-import { INVITATION_WAIT_DAYS, needsYou, type InboxDeletion, type InboxInput, type InboxInvitation, type InboxJob } from "@/lib/admin/inbox";
+import { INVITATION_WAIT_DAYS, needsYou, withReview, type InboxDeletion, type InboxInput, type InboxInvitation, type InboxJob } from "@/lib/admin/inbox";
 import { adminSupabase } from "@/lib/admin/people";
 import { readQueue, type StoreClient } from "@/lib/admin/review-queue";
 import { readDecisions, readProposals, readRuns, readTodo } from "@/lib/admin/steward-reads";
@@ -56,10 +56,20 @@ async function organizationCount(s: Db): Promise<number> {
   return count ?? 0;
 }
 
-/** A job overview row as the Inbox reads it. */
+/**
+ * A job overview row as the Inbox reads it. When the Steward reviewed the last run, its verdict decides (a run that
+ * ended well but was flagged is `flagged`; failed stays failed) and its note is the row's sentence; otherwise the run's
+ * own outcome, as before any review.
+ */
 export function inboxJob(row: JobOverviewRow): InboxJob {
   const outcome = lastOutcome(row.last).key;
   const at = row.last === null ? null : row.last.kind === "stored" ? row.last.run.startedAt : (row.last.run.startedAt ?? row.last.run.createdAt);
+  const reviewed = row.review?.ofLastRun ? row.review.review : null;
+  if (reviewed) {
+    const verdict = reviewed.verdict === "failed" ? "failed" : reviewed.verdict === "flagged" ? "flagged" : outcome === "failed" ? "failed" : outcome;
+    const note = verdict === "ok" || verdict === "other" || verdict === "running" || verdict === "none" ? null : (reviewed.note ?? reviewed.reasons[0] ?? null);
+    return { id: row.job.id, name: row.job.name, outcome: verdict, at, note };
+  }
   const note = row.last?.kind === "stored" && outcome === "failed" ? row.last.run.error : null;
   return { id: row.job.id, name: row.job.name, outcome, at, note };
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { RunChip } from "@/components/admin/ops/OpsStatusChip";
+import { StewardCell } from "@/components/admin/jobs/StewardReview";
+import { HelpTip } from "@/components/admin/HelpTip";
 import { formatDuration, timeLabel } from "@/lib/admin/ops-view";
 import { describeCron } from "@/lib/jobs/cron";
 import type { JobOverviewRow } from "@/lib/jobs/runs";
@@ -49,10 +51,16 @@ export function JobsTable({ rows, now, caption }: { rows: JobOverviewRow[]; now:
             <th scope="col" className="px-3 py-2 font-medium">
               Last run
             </th>
+            <th scope="col" className="px-3 py-2 font-medium">
+              <span className="inline-flex items-center gap-1">
+                Steward
+                <HelpTip help="review" />
+              </span>
+            </th>
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ job, next, last }) => {
+          {rows.map(({ job, next, last, review }) => {
             const headline = job.schedules.filter((s) => s.headline !== false);
             const failed = lastOutcome(last).key === "failed";
             return (
@@ -87,6 +95,9 @@ export function JobsTable({ rows, now, caption }: { rows: JobOverviewRow[]; now:
                 </td>
                 <td className="px-3 py-2">
                   <LastRunCell last={last} now={now} />
+                </td>
+                <td className="max-w-xs px-3 py-2">
+                  <StewardCell entry={review} />
                 </td>
               </tr>
             );

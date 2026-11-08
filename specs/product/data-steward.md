@@ -73,7 +73,7 @@ Lessons that shape the design:
 | **Publish** | a held value that is right as read (a real disagreement with federal data, with the reason) | the same as Correct, with the reason in the note | $0 |
 | **Hold** (`misread`) | a record's items marked misread, with what the document shows (`hold-misread`) | the Steward's `apply` job, in a change set | $0 |
 | **Refile** | a document's `edition` and its items' years (`refile-document`) | the `apply` job | $0 |
-| **Drop** | a duplicate or worse document removed: out of the record, its manifest entry and queue items gone, its URL moved from the recipe's `sources` to `dropped` so discovery never adds it back (`npm run drop-document`, library `dropDocument`) | by hand today (the owner's call when a refile collides with an edition already on file) | $0 |
+| **Drop** | a duplicate or worse document removed: out of the record, its manifest entry and queue items gone, its URL moved from the recipe's `sources` to `dropped` so discovery never adds it back (`npm run drop-document`, library `dropDocument`) | the owner, with **Keep this file** on the college page's comparison when two files collide ([document-collisions.md](document-collisions.md)); the Steward never proposes it, and a refile into a taken edition becomes a collision finding instead | $0 |
 | **Reject** | the checks were right and nothing is publishable: the item resolved `rejected` | `admin_data_resolve_review` | $0 |
 | **Recipe** | the college's `reported.sources` document (a new link, clear for rediscovery, drop a bad one) | the `apply` job | $ next run |
 | **Re-read** | `college-reported.yml` `mode: college` for named colleges, or a schema bump | dispatched from the proposal, with the projected cost | $ |

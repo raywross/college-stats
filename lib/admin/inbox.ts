@@ -11,6 +11,8 @@ import type { HelpKey } from "./help.ts";
 import { TODO_WHY_LABEL, proposalHref, reviewHref } from "./steward-view.ts";
 import { DELETE_GRACE_DAYS } from "../household-rules.ts";
 import type { DecisionDoc, ProposalDoc, ReviewDoc, RunDoc, TodoDoc } from "../steward/types.ts";
+import type { JobOverviewRow } from "../jobs/runs.ts";
+import { lastOutcome } from "../jobs/view.ts";
 
 export interface InboxItem {
   kind: "decision" | "proposal" | "todo" | "job" | "deletion" | "invitation" | "held-change";
@@ -88,6 +90,24 @@ export interface InboxInput {
   queue: { open: number; newThisWeek: number } | null;
   /** Colleges by overall data health. */
   health: { fresh: number; watch: number; stale: number; failing: number } | null;
+}
+
+/**
+ * A job overview row as the Inbox reads it. When the Steward reviewed the last run, its verdict decides (a run that
+ * ended well but was flagged is `flagged`; failed stays failed) and its note is the row's sentence; otherwise the run's
+ * own outcome, as before any review.
+ */
+export function inboxJob(row: JobOverviewRow): InboxJob {
+  const outcome = lastOutcome(row.last).key;
+  const at = row.last === null ? null : row.last.kind === "stored" ? row.last.run.startedAt : (row.last.run.startedAt ?? row.last.run.createdAt);
+  const reviewed = row.review?.ofLastRun ? row.review.review : null;
+  if (reviewed) {
+    const verdict = reviewed.verdict === "failed" ? "failed" : reviewed.verdict === "flagged" ? "flagged" : outcome === "failed" ? "failed" : outcome;
+    const note = verdict === "ok" || verdict === "other" || verdict === "running" || verdict === "none" ? null : (reviewed.note ?? reviewed.reasons[0] ?? null);
+    return { id: row.job.id, name: row.job.name, outcome: verdict, at, note };
+  }
+  const note = row.last?.kind === "stored" && outcome === "failed" ? row.last.run.error : null;
+  return { id: row.job.id, name: row.job.name, outcome, at, note };
 }
 
 /** How many To do rows Needs you lists (the highest reach); the rest are one click away on To do. */

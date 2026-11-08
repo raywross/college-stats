@@ -1,0 +1,36 @@
+{
+  "case": "A slow run: visit events read every calendar but took over six hours, past its usual five at most.",
+  "job": "visit-events",
+  "run": {
+    "ref": "19061127734",
+    "trigger": "schedule",
+    "status": "ok",
+    "startedAt": "2026-11-03T07:00:05Z",
+    "finishedAt": "2026-11-03T13:10:05Z",
+    "steps": [
+      {
+        "job": "read",
+        "name": "Read the calendars",
+        "conclusion": "success"
+      },
+      {
+        "job": "read",
+        "name": "Check what was read",
+        "conclusion": "success"
+      }
+    ],
+    "changeSets": [],
+    "url": "https://github.com/raywross/college-stats/actions/runs/19061127734"
+  },
+  "context": {
+    "now": "2026-11-03T13:15:00Z",
+    "lastRestartAt": null
+  },
+  "expect": {
+    "verdict": "flagged",
+    "repair": null,
+    "reasons": [
+      "^It took 6 h 10 min, longer than its usual 5 h at most\\.$"
+    ]
+  }
+}

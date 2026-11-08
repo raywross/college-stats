@@ -1,0 +1,23 @@
+{
+  "key": "2d88ec9d1c8017f7",
+  "model": "claude-haiku-4-5-20251001",
+  "note": "review note, 6-not-repairable (written for the fixture, not recorded)",
+  "response": {
+    "id": "msg_dry_2d88ec9d1c8017f7",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-haiku-4-5-20251001",
+    "content": [
+      {
+        "type": "text",
+        "text": "Sunday's weekly emails failed because the text service refused the credentials; fix the texting credentials, then decide whether to send the week by hand."
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 420,
+      "output_tokens": 38
+    }
+  }
+}

@@ -50,7 +50,7 @@ import { runRef as defaultRunRef } from "./lib/data-platform/producer.mts";
 import { dataProjectEnv, storeFromFlag, type ChangeSetHandle, type DataStore, type Env } from "./lib/data-platform/store.mts";
 import { applyProposal, ApplyRefused, APPLY_SOURCE } from "./lib/steward/apply.mts";
 import { Budget, BudgetStop, DEFAULT_BUDGETS, reviewBudget, runBudget, tokensOf, weeklySpent, WEEKLY_CAP_USD } from "./lib/steward/budget.mts";
-import { DRY_TOOLS, liveSources, liveTools, performRepair, reviewContext, writeJobIssue, writeNote, type RepairTools, type ReviewDb, type ReviewSources, type RunFile } from "./lib/steward/review.mts";
+import { DRY_TOOLS, lastRestart, liveSources, liveTools, performRepair, reviewContext, writeJobIssue, writeNote, type RepairTools, type ReviewDb, type ReviewSources, type RunFile } from "./lib/steward/review.mts";
 import { slug } from "./lib/steward/writer.mts";
 import { MissingAnswer, recordedFetch, mayRecord } from "./lib/steward/dry-run.mts";
 import type { DocumentDeps } from "./lib/steward/documents.mts";
@@ -403,7 +403,7 @@ async function runReview(o: StewardOptions, key: string, started: Date, requestI
   if (!view) return fail(`${job.name} has no run ${ref}`);
   const at = o.runFile?.context?.now ? new Date(o.runFile.context.now) : now();
   const ctx = o.runFile
-    ? { now: at, lastRestartAt: o.runFile.context?.lastRestartAt ?? null, publishAfter: o.runFile.context?.publishAfter }
+    ? { now: at, lastRestartAt: o.runFile.context?.lastRestartAt !== undefined ? o.runFile.context.lastRestartAt : await lastRestart(o.store, job.id), publishAfter: o.runFile.context?.publishAfter }
     : await reviewContext(o.store, sources, job, view, at);
   const review = reviewRun(job, view, ctx);
   if (review.verdict === "fine" && firingOf(job, view) === "housekeeping") {

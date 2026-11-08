@@ -1,0 +1,25 @@
+{
+  "case": "A non-repairable failure: Sunday's weekly emails failed; a second run would email every student again, so a finding only.",
+  "job": "weekly",
+  "run": {
+    "ref": "4140",
+    "trigger": "schedule",
+    "status": "failed",
+    "startedAt": "2026-11-08T23:00:02Z",
+    "finishedAt": "2026-11-08T23:01:44Z",
+    "summary": {},
+    "error": "Twilio answered 401 Unauthorized"
+  },
+  "context": {
+    "now": "2026-11-08T23:05:00Z",
+    "lastRestartAt": null
+  },
+  "expect": {
+    "verdict": "failed",
+    "repair": null,
+    "reasons": [
+      "^It failed: Twilio answered 401 Unauthorized$",
+      "isn't safe to start again on its own"
+    ]
+  }
+}

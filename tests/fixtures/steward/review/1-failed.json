@@ -1,0 +1,48 @@
+{
+  "case": "A failed run: the Monday college-reported run failed at its ingestion step; never restarted (it spends money).",
+  "job": "college-reported",
+  "run": {
+    "ref": "19034418201",
+    "trigger": "schedule",
+    "status": "failed",
+    "startedAt": "2026-11-02T13:00:41Z",
+    "finishedAt": "2026-11-02T13:52:10Z",
+    "steps": [
+      {
+        "job": "run",
+        "name": "Set up job",
+        "conclusion": "success"
+      },
+      {
+        "job": "run",
+        "name": "Run the ingestion pipeline",
+        "conclusion": "failure"
+      },
+      {
+        "job": "run",
+        "name": "Ask the publisher for a snapshot",
+        "conclusion": "skipped"
+      },
+      {
+        "job": "collect",
+        "name": "Collect the open batches",
+        "conclusion": "skipped"
+      }
+    ],
+    "changeSets": [],
+    "error": null,
+    "url": "https://github.com/raywross/college-stats/actions/runs/19034418201"
+  },
+  "context": {
+    "now": "2026-11-02T13:55:00Z",
+    "lastRestartAt": null
+  },
+  "expect": {
+    "verdict": "failed",
+    "repair": null,
+    "reasons": [
+      "^It failed at run › Run the ingestion pipeline\\.$",
+      "isn't safe to start again on its own"
+    ]
+  }
+}

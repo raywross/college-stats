@@ -1,0 +1,23 @@
+{
+  "case": "A repairable failure: the digest run failed on the email service and the job is safe to start again, once a day. With no restart in the last day the repair is a restart; a second failure the same day gets a finding only (the test runs both through the script).",
+  "job": "digests",
+  "run": {
+    "ref": "4131",
+    "trigger": "schedule",
+    "status": "failed",
+    "startedAt": "2026-11-03T13:00:03Z",
+    "finishedAt": "2026-11-03T13:00:19Z",
+    "summary": {},
+    "error": "Resend answered 503 Service Unavailable"
+  },
+  "context": {
+    "now": "2026-11-03T13:05:00Z"
+  },
+  "expect": {
+    "verdict": "failed",
+    "repair": "restart",
+    "reasons": [
+      "^It failed: Resend answered 503 Service Unavailable$"
+    ]
+  }
+}

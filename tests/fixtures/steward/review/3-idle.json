@@ -1,0 +1,29 @@
+{
+  "case": "A run that wrote nothing on a day it should have: Sunday's weekly emails counted no students.",
+  "job": "weekly",
+  "run": {
+    "ref": "4127",
+    "trigger": "schedule",
+    "status": "ok",
+    "startedAt": "2026-11-01T23:00:02Z",
+    "finishedAt": "2026-11-01T23:00:09Z",
+    "summary": {
+      "configured": true,
+      "students": 0,
+      "parents": 0,
+      "briefs": 0
+    },
+    "error": null
+  },
+  "context": {
+    "now": "2026-11-01T23:05:00Z",
+    "lastRestartAt": null
+  },
+  "expect": {
+    "verdict": "flagged",
+    "repair": null,
+    "reasons": [
+      "^It did nothing on a scheduled run: its counts \\(students\\) were all zero\\.$"
+    ]
+  }
+}

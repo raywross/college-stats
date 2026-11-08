@@ -111,7 +111,14 @@ Phase 2, after Google sign-in ships ([../../backlog.md](../../backlog.md) "Platf
   tab, read-only, with unread comments marked.
 - **`/advisor/essays/<id>`**: the editor, the version list, the comment thread, download, upload, "use for another
   college", and the reviewer's notes ([reviewer.md](reviewer.md)); for a parent or counselor the same page with the
-  field read-only and the comment box live.
+  field read-only and the comment box live. Its reads are one call, `essay_bundle(id)`
+  (`supabase/migrations/20261108130000_essay_and_me_bundles.sql`; `lib/essays/load.ts` readEssay, shaped by
+  `lib/essays/essay-read.ts`): the draft, its versions, links, comments and suggestions with their authors' names, the
+  base and variant count, the reviewer's notes, and the plan list's colleges, started beside the viewer check and the
+  prompts' overrides so the page waits on one database wave. The notes panel gets those reviews from the page
+  (`Notes initial`, shaped by `lib/essays/review-rows.ts` exactly as `GET /api/essays/review` shapes them) and makes no
+  request of its own on load. Until the function is installed the page reads table by table as before and the panel
+  fetches its notes.
 - **`/advisor/essays/package/<unit_id>`**: the package page: everything for one college, with copy buttons per
   field and the download; a checklist beside it ("paste the main essay", "answer the short questions in the form",
   "re-read the limit in the form").

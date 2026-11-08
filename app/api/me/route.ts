@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { authConfigured, getUser, readProfileRow } from "@/lib/auth";
+import { meBundle, type MeBundle } from "@/lib/bundles";
 import { householdChildren } from "@/lib/households";
 import { myOrganization } from "@/lib/orgs";
 import { createServerSupabase } from "@/lib/supabase-server";
@@ -7,12 +8,24 @@ import { meRoleOf, type MeChild, type MeState, type RoleHint } from "@/lib/accou
 
 const signedOut = (configured: boolean): MeState => ({ configured, signedIn: false, id: null, name: null, email: null, org: false, admin: false, role: null, children: [] });
 
+/** The household menu's order (lib/planner/load.ts myPlanChildren): by the day each joined the roster, then by id. */
+const byJoined = (a: { joined: string; id: string }, b: { joined: string; id: string }) => a.joined.localeCompare(b.joined) || a.id.localeCompare(b.id);
+
+/** me_bundle()'s answer as the header's state; a paused profile is signed out, as on the fallback path. */
+function fromBundle(b: MeBundle, user: { id: string; email?: string | null }): MeState {
+  if ((b.profile?.suspended_at ?? null) !== null) return signedOut(true);
+  const children: MeChild[] = [...(b.children ?? [])].sort(byJoined).map((c) => ({ id: c.id, name: c.name }));
+  const roleHint = (b.profile?.role_hint ?? null) as RoleHint | null;
+  const role = meRoleOf({ org: b.org === true, roleHint, children: children.length });
+  return { configured: true, signedIn: true, id: user.id, name: b.profile?.display_name ?? null, email: user.email ?? null, org: b.org === true, admin: b.admin === true, role, children };
+}
+
 /**
  * The header's account state (components/account/AccountMenu.tsx and the role item fetch it in the browser), so
  * public pages never read cookies and stay static. Signed-out visitors (no Supabase auth cookie) get an answer without
  * a call to Supabase. Never cached: it's per person. The name and role hint come from the profile row alone
  * (lib/auth.ts readProfileRow), not the account read that loads the viewer bundle; the profile, the organization, the
- * admin check, and the household's children are one database wave.
+ * admin check, and the household's children are one database wave; with me_bundle() installed they are one call.
  */
 export async function GET() {
   const headers = { "Cache-Control": "private, no-store" };
@@ -23,6 +36,10 @@ export async function GET() {
 
   const user = await getUser();
   if (!user) return Response.json(signedOut(true), { headers });
+  // me_bundle() (supabase/migrations/20261108130000_essay_and_me_bundles.sql) answers the whole state in one call;
+  // null while it isn't installed (or on an error), and then the four reads below, as before.
+  const bundle = await meBundle().catch(() => null);
+  if (bundle) return Response.json(fromBundle(bundle, user), { headers });
   const [profile, org, admin, children] = await Promise.all([
     readProfileRow()
       .then((p) => ({ name: p?.display_name ?? null, roleHint: (p?.role_hint ?? null) as RoleHint | null, paused: (p?.suspended_at ?? null) !== null }))
@@ -45,8 +62,9 @@ export async function GET() {
     householdChildren()
       .then((cs): MeChild[] =>
         cs
-          .sort((a, b) => a.joined.localeCompare(b.joined) || a.access.student.id.localeCompare(b.access.student.id))
-          .map((c) => ({ id: c.access.student.id, name: c.access.student.display_name })),
+          .map((c) => ({ id: c.access.student.id, name: c.access.student.display_name, joined: c.joined }))
+          .sort(byJoined)
+          .map(({ id, name }) => ({ id, name })),
       )
       .catch((): MeChild[] => []),
   ]);

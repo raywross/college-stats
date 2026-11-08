@@ -350,7 +350,7 @@ test("the workspace isn't set up: one line, no cards", () => {
 test("no essay text on the tab: a draft's body never reaches it (the read carries none), titles and counts only", () => {
   const src = readFileSync(join(ROOT, "components/planner/EssaysTab.tsx"), "utf8") + readFileSync(join(ROOT, "components/essays/CollegeEssayCard.tsx"), "utf8");
   assert.doesNotMatch(src, /\.body\b/);
-  assert.doesNotMatch(readFileSync(join(ROOT, "lib/essays/load.ts"), "utf8").match(/ESSAY_LIST_COLUMNS = "[^"]*"/)?.[0] ?? "body", /\bbody\b/);
+  assert.doesNotMatch(readFileSync(join(ROOT, "lib/essays/essay-read.ts"), "utf8").match(/ESSAY_LIST_COLUMNS = "[^"]*"/)?.[0] ?? "body", /\bbody\b/);
 });
 
 /* ------------------------------------------------------------------ */

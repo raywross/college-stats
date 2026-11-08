@@ -229,6 +229,9 @@ whose terms forbid automated access is `ask`; every fetch recorded; removal hono
 confirmation**: a person in their own browser may open a document the page links even where robots.txt disallows
 crawlers (the crawlers never do).
 
+> **2026-11-08**: an agent in the owner's browser (Claude in Chrome) working this list, and the fact that a Found row is not
+> yet read by the next run, are taken up in [todo-browser-agent.md](todo-browser-agent.md).
+
 ## The console: where it all shows
 The Steward's screens join the **Data** section (`/admin/data`), beside Change sets, Holds, Snapshots and Reference,
 because that is where the queue and the holds already live:

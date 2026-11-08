@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Empty, Fields, PageHeader, Panel } from "@/components/admin/Panel";
 import { ChangeSetActions, ChangeSetChips, DocumentDiff, DocumentsTouched, ReleaseNoteDraft } from "@/components/admin/ChangeSets";
+import { ChangeReport } from "@/components/admin/ChangeReport";
 import { requireAdmin } from "@/lib/admin/auth";
 import { fmtDateTime } from "@/lib/admin/console";
 import { collectionLabel } from "@/lib/admin/words";
@@ -15,9 +16,10 @@ export const metadata: Metadata = { title: "Change", robots: { index: false, fol
 
 /**
  * `/admin/data/changes/[id]` (specs/data-platform/change-sets.md "The console", Change sets row; "Holds and
- * review"; "Revert"): the set's summary and reason, the documents it touched grouped by collection, the before and
- * after of one of them (`?c=<collection>&k=<key>`) as a line diff, and its actions: Hold, Publish anyway, Revert, and
- * Write a release note.
+ * review"; "Revert"; specs/product/admin-redesign.md "Data"): the change's summary and reason, its report as a list of
+ * counts and checks with the raw text under Details, the documents it touched grouped by collection, the before and
+ * after of one of them (`?c=<collection>&k=<key>`) as a line diff, and its actions: Hold, Publish anyway, Undo this
+ * change (with one sentence linking Published versions, the other undo), and Write a release note.
  */
 export default async function ChangeSetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await connection();
@@ -80,7 +82,7 @@ export default async function ChangeSetPage({ params, searchParams }: { params: 
               ...(row.reverted_by !== null
                 ? [
                     {
-                      label: "Reverted by",
+                      label: "Undone by",
                       value: (
                         <Link href={`/admin/data/changes/${row.reverted_by}`} className="underline decoration-dotted underline-offset-2">
                           Change #{row.reverted_by}
@@ -91,11 +93,25 @@ export default async function ChangeSetPage({ params, searchParams }: { params: 
                 : []),
             ]}
           />
-          {report && <pre className="mt-4 max-h-96 overflow-auto rounded-xl bg-muted/30 p-3 font-mono text-xs leading-5 whitespace-pre-wrap">{report}</pre>}
         </Panel>
 
-        <Panel help="undo-change" title="Actions">
+        {report && (
+          <Panel help="change-report" title="Report">
+            <ChangeReport text={report} />
+          </Panel>
+        )}
+
+        <Panel help="change-actions" title="Actions">
           <ChangeSetActions row={row} />
+          {can.revert && (
+            <p className="mt-3 max-w-prose text-sm text-muted-foreground">
+              To undo a whole publish rather than this one change,{" "}
+              <Link href="/admin/data/versions" className="font-semibold text-primary underline-offset-4 hover:underline">
+                make an earlier published version live
+              </Link>
+              .
+            </p>
+          )}
           {can.releaseNote && (
             <div className="mt-4">
               <ReleaseNoteDraft note={releaseNoteText(row)} />
@@ -103,12 +119,12 @@ export default async function ChangeSetPage({ params, searchParams }: { params: 
           )}
         </Panel>
 
-        <Panel help="change" title="Documents touched">
+        <Panel help="documents-touched" title="Documents touched">
           <DocumentsTouched id={row.id} groups={groups} selected={selected} truncated={touched.truncated} />
         </Panel>
 
         {selected && (
-          <Panel help="change" title={`${collectionLabel(selected.collection)} · ${selected.key}`} id="document">
+          <Panel help="documents-touched" title={`${collectionLabel(selected.collection)} · ${selected.key}`} id="document">
             {!chosen ? (
               <Empty>This change didn&apos;t touch that document.</Empty>
             ) : (

@@ -155,7 +155,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
           )}
         </Panel>
 
-        <Panel help="selectivity" title="Movers" id="movers">
+        <Panel help="selectivity-movers" title="Movers" id="movers">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {DAYS.map((d) => chip(`${d} days`, d === days, href({ days: String(d) })))}
             <span className="mx-1 h-5 w-px bg-border" aria-hidden />
@@ -231,7 +231,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
           )}
         </Panel>
 
-        <Panel help="selectivity-pool" title="Tier counts after each publish" id="counts">
+        <Panel help="tier-counts" title="Tier counts after each publish" id="counts">
           <div className="mb-3 flex flex-wrap gap-2">{POOLS.map((p) => chip(POOL_LABELS[p], countsPool === p, href({ counts: p === "all" ? undefined : p })))}</div>
           {counts.length === 0 ? (
             <Empty>Nothing recorded yet.</Empty>
@@ -274,7 +274,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
           )}
         </Panel>
 
-        <Panel help="selectivity" title="Method log" id="methods">
+        <Panel help="method-log" title="Method log" id="methods">
           {methods.length === 0 ? (
             <Empty>Nothing recorded yet.</Empty>
           ) : (

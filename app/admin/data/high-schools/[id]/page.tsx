@@ -12,8 +12,9 @@ import { gradeSpan, isHighSchoolId } from "@/lib/high-school-core";
 export const metadata: Metadata = { title: "High school", robots: { index: false, follow: false } };
 
 /**
- * /admin/data/high-schools/[id] (specs/product/admin.md "A high school"): the school, then its pooled course counts in full
- * (course, students) with the three-student line drawn, so the owner can see why a course is or isn't suggested; the
+ * /admin/data/high-schools/[id] (specs/product/admin.md "A high school"; specs/product/admin-redesign.md "Data"): the
+ * school, then its pooled course counts in full as two lists, "Courses the plan lists" and "Below the line", with the
+ * three-student line stated in a sentence, so the owner can see why a course is or isn't suggested; the
  * offering the course plan reads; the school's profile extraction status; and its graduation rate with its year. The
  * counts name no student. Server-rendered behind requireAdmin().
  */
@@ -48,37 +49,21 @@ export default async function HighSchoolPage({ params }: PageProps<"/admin/data/
       />
 
       <div className="space-y-5">
-        <Panel help="high-school" title="Pooled course counts" id="course-counts" aside={<Muted>school_course_counts, in full</Muted>}>
-          <p className="mb-3 text-sm text-muted-foreground">
-            How many distinct students at this school list each AP or IB course. The course plan suggests a course only at {COURSE_LIST_MIN_STUDENTS} or more students
-            (school_course_list()), and only when the school has no profile list of its own. Counts below the line are never shown on the site.
-          </p>
+        <Panel help="course-counts" title="Courses students list" id="course-counts">
+          <p className="mb-4 max-w-prose text-sm text-muted-foreground">{courseLineSentence(COURSE_LIST_MIN_STUDENTS)}</p>
           {hs.counts === null ? (
             <Empty>The counts couldn&apos;t be read: {hs.countsError}</Empty>
           ) : hs.counts.length === 0 ? (
             <Empty>No student at this school has listed an AP or IB course.</Empty>
           ) : (
-            <table className="w-full max-w-2xl text-left text-sm">
-              <thead className="text-xs text-muted-foreground">
-                <tr>
-                  <th className="py-1.5 pr-3 font-semibold">Course</th>
-                  <th className="py-1.5 pr-3 text-right font-semibold">Students</th>
-                </tr>
-              </thead>
-              <tbody className="tabular-nums">
-                <CountRows rows={listed} />
-                <tr aria-label={`The ${COURSE_LIST_MIN_STUDENTS}-student line`}>
-                  <td colSpan={2} className="border-t-2 border-dashed border-foreground/40 py-1 text-xs text-muted-foreground">
-                    {COURSE_LIST_MIN_STUDENTS}-student line: above it, suggested ({listed.length}); below it, never shown ({below.length})
-                  </td>
-                </tr>
-                <CountRows rows={below} muted />
-              </tbody>
-            </table>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <CourseList id="listed" title="Courses the plan lists" rows={listed} empty={`No course has ${COURSE_LIST_MIN_STUDENTS} or more students yet.`} />
+              <CourseList id="below" title="Below the line" rows={below} empty="Every course students list is above the line." muted />
+            </div>
           )}
         </Panel>
 
-        <Panel help="high-school" title="What the course plan reads" id="offering">
+        <Panel help="course-offering" title="What the course plan reads" id="offering">
           {hs.offering ? (
             <div className="space-y-2 text-sm">
               <Fields
@@ -140,17 +125,35 @@ export default async function HighSchoolPage({ params }: PageProps<"/admin/data/
   );
 }
 
-function CountRows({ rows, muted = false }: { rows: CourseCountRow[]; muted?: boolean }) {
+/**
+ * The threshold in a sentence, with no function or table names (specs/product/admin-redesign.md "Data"): the line is
+ * the database's `c.students >= 3`, mirrored by COURSE_LIST_MIN_STUDENTS.
+ */
+function courseLineSentence(min: number): string {
+  return `How many different students at this school list each AP or IB course. The course plan suggests a course once ${min} or more students list it, and only when the school has no course list of its own; a course below that line is never shown on the site, and no count names a student.`;
+}
+
+/** One of the two lists: each course's name and how many students list it, most first. */
+function CourseList({ id, title, rows, empty, muted = false }: { id: string; title: string; rows: CourseCountRow[]; empty: string; muted?: boolean }) {
   return (
-    <>
-      {rows.map((r) => (
-        <tr key={r.key} className={muted ? "text-muted-foreground" : undefined}>
-          <td className="py-1 pr-3">
-            {r.name} <span className="font-mono text-xs text-muted-foreground">{r.key}</span>
-          </td>
-          <td className="py-1 pr-3 text-right">{r.students}</td>
-        </tr>
-      ))}
-    </>
+    <section aria-labelledby={`courses-${id}`} className="min-w-0">
+      <h3 id={`courses-${id}`} className="text-sm font-semibold">
+        {title} <span className="font-normal text-muted-foreground">({rows.length})</span>
+      </h3>
+      {rows.length === 0 ? (
+        <p className="mt-1.5 text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        <ul className={`mt-1.5 divide-y divide-border text-sm tabular-nums ${muted ? "text-muted-foreground" : ""}`}>
+          {rows.map((r) => (
+            <li key={r.key} className="flex items-baseline justify-between gap-3 py-1.5">
+              <span className="min-w-0 break-words">{r.name}</span>
+              <span className="shrink-0">
+                {r.students} {r.students === 1 ? "student" : "students"}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

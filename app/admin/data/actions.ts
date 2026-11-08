@@ -55,9 +55,9 @@ function finish(result: AdminActionState): AdminActionState {
   return result;
 }
 
-export async function publishNowAction(_previous: AdminActionState, _form: FormData): Promise<AdminActionState> {
+export async function publishNowAction(_previous: AdminActionState, form: FormData): Promise<AdminActionState> {
   const admin = await requireAdmin();
-  return finish(await publishNow(await realDeps(admin)));
+  return finish(await publishNow(await realDeps(admin), form));
 }
 
 export async function pointBackAction(_previous: AdminActionState, form: FormData): Promise<AdminActionState> {

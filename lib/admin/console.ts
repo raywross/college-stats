@@ -252,6 +252,12 @@ export const CONFIRM_DELETE_RECORD = "delete";
 /** The word typed to revert a change set or a reference document to an older version (client-safe: no server imports here). */
 export const CONFIRM_REVERT = "revert";
 
+/** The word typed to Publish now on the Data landing (specs/product/admin-redesign.md "Owner decisions" 6). */
+export const CONFIRM_PUBLISH = "publish";
+
+/** The word typed to approve a Steward proposal that changes data or code: the value kinds and the systemic kind. */
+export const CONFIRM_APPROVE = "approve";
+
 /* ------------------------------------------------------------------ */
 /* Reading forms                                                       */
 /* ------------------------------------------------------------------ */

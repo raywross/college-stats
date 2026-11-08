@@ -25,6 +25,8 @@ const stub = (code: string): ResolveResult => ({ url: `data:text/javascript,${en
 // The API routes' key check runs over a stand-in Supabase client that accepts any key (as tests/api-v1-routes.test.mts).
 const STUBS: Record<string, string> = {
   "server-only": "export {}",
+  // lib/data.ts schedules its pointer check with after(), which throws outside a request, as here.
+  "next/server": "export function after() { throw new Error('after() outside a request') }",
   "@/lib/supabase":
     "export function supabaseClient(){ return { rpc: async (name) => name === 'api_key_use' ? { data: [{ key_id: 'key-1', user_id: 'user-1', tier: 'account', allowed: true, used_today: 1, limit_per_day: 5000 }], error: null } : { data: null, error: { message: 'unknown function ' + name } } }; }",
   "@/lib/analytics-server": "export async function trackServer(){}",
@@ -161,7 +163,9 @@ process.env.SUPABASE_URL = `http://127.0.0.1:${(server.address() as AddressInfo)
 process.env.SUPABASE_PUBLISHABLE_KEY = ENV.SUPABASE_PUBLISHABLE_KEY;
 test.after(() => server.close());
 
-const MINI = JSON.parse(readFileSync(join(ROOT, "tests/fixtures/snapshot-mini/snapshot/colleges.json"), "utf8")) as School[];
+// Each college with its lineage, as the loader gives it (the fixture keeps lineage in lineage/<unit>.json).
+const { readSnapshotSchools } = await import("../scripts/lib/data-platform/bundled.mts");
+const MINI: School[] = readSnapshotSchools(join(ROOT, "tests/fixtures/snapshot-mini/snapshot"));
 
 test("withLiveEdits sets the value and its lineage on a mini-fixture college; others pass through as is", async () => {
   live.forgetLiveEdits();

@@ -11,10 +11,12 @@
  * Two inputs, both read-only:
  *
  *   --snapshot <dir>   a snapshot folder in the bundled layout (default `.data/snapshot`, what `npm run fetch-snapshot`
- *                      wrote): the composed objects. The chosen colleges' rows of colleges.json, aliases.json and the
- *                      search index are re-rendered; every other object (meta, the calendar, detail and history
- *                      shards, the shared history, trends/index.json, the reference objects, source-files.json, the
- *                      high-school files) is copied byte for byte.
+ *                      wrote): the composed objects. The chosen colleges' rows of colleges.json, lineage.json and its
+ *                      exploded lineage/<unit>.json files, aliases.json and the search index are re-rendered (a
+ *                      snapshot from before the lineage split, with lineage inline, is split the same way); every
+ *                      other object (meta, the calendar, detail and history shards, the shared history,
+ *                      trends/index.json, the reference objects, source-files.json, the high-school files) is copied
+ *                      byte for byte.
  *   --store supabase|file:<dir>   the layers (default: supabase when DATA_SUPABASE_URL is set). Each collection the
  *                      fixture keeps is read and filtered to the chosen colleges by the import's rules
  *                      (scripts/import-data-from-files.mts: a per-college collection keeps its colleges' documents, a
@@ -45,13 +47,15 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join } from "node:path";
 import type { AliasRow } from "../lib/identity-files";
-import type { DatasetMeta, School } from "../lib/types";
+import type { DatasetMeta } from "../lib/types";
 import { buildSearchIndex } from "../lib/search-index.ts";
 import { formatAliasRows } from "./lib/aliases-sync.mts";
 import { compareKeys, fileStore, fileStoreChangeSets, flagValue, parseStoreFlag, storeFromFlag, type DataStore } from "./lib/data-platform/store.mts";
 import { ALL_COLLECTIONS, COLLECTIONS, type CollectionName } from "./lib/data-platform/layers.mts";
 import { BUNDLED_SNAPSHOT_DIR, REFERENCE_OBJECTS, SNAPSHOT_OBJECTS, type SnapshotManifest } from "../lib/data-platform/snapshot.ts";
 import { REFERENCE_SOURCES } from "./lib/data-platform/render.mts";
+import { readSnapshotSchools } from "./lib/data-platform/bundled.mts";
+import { formatLineageObject, formatSchoolLineage, lineageFile, splitLineage } from "../lib/data-platform/lineage-split.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const FIXTURE_ROOT = join(ROOT, "tests", "fixtures", "snapshot-mini");
@@ -315,18 +319,29 @@ async function writeLayers(layers: Map<CollectionName, Map<string, unknown>>, di
 /** The snapshot's objects to write, in manifest order: name → bytes. */
 type Objects = [string, Buffer][];
 
-function readSnapshot(snapshotDir: string, units: ReadonlySet<string>, referenceNames: readonly string[]): Objects {
+/**
+ * Files of the bundled layout that are not objects (not in the manifest): `lineage/<unit>.json`, which fetch-snapshot
+ * explodes from `lineage.json.gz` and the loader reads per college.
+ */
+type LocalFiles = [string, Buffer][];
+
+function readSnapshot(snapshotDir: string, units: ReadonlySet<string>, referenceNames: readonly string[]): { objects: Objects; local: LocalFiles } {
   const read = (rel: string) => readFileSync(join(snapshotDir, rel));
   const has = (rel: string) => existsSync(join(snapshotDir, rel));
   if (!has(SNAPSHOT_OBJECTS.manifest)) throw new Error(`build-mini-fixture: ${snapshotDir} has no manifest.json; run \`npm run fetch-snapshot\` or pass --snapshot`);
   const objects: Objects = [];
   const add = (name: string, bytes: Buffer | string) => objects.push([name, typeof bytes === "string" ? Buffer.from(bytes) : bytes]);
 
-  const all = JSON.parse(read("colleges.json").toString("utf8")) as School[];
+  // Each college with its lineage, from a split snapshot's lineage/ folder or an older one's inline records; then split
+  // as the publisher renders them.
+  const all = readSnapshotSchools(snapshotDir);
   const schools = all.filter((s) => units.has(s.unit_id));
   const missing = [...units].filter((id) => !schools.some((s) => s.unit_id === id));
   if (missing.length) throw new Error(`build-mini-fixture: not in ${join(snapshotDir, "colleges.json")}: ${missing.join(", ")}`);
-  add(SNAPSHOT_OBJECTS.colleges, `[\n${schools.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
+  const { colleges, lineage } = splitLineage(schools);
+  add(SNAPSHOT_OBJECTS.colleges, `[\n${colleges.map((s) => JSON.stringify(s)).join(",\n")}\n]\n`);
+  add(SNAPSHOT_OBJECTS.lineage, formatLineageObject(lineage));
+  const local: LocalFiles = Object.entries(lineage).map(([unit, records]) => [lineageFile(unit), Buffer.from(formatSchoolLineage(records))]);
   add(SNAPSHOT_OBJECTS.meta, read(SNAPSHOT_OBJECTS.meta));
   add(SNAPSHOT_OBJECTS.releaseCalendar, read(SNAPSHOT_OBJECTS.releaseCalendar));
   const aliases = keepUnits(JSON.parse(read(SNAPSHOT_OBJECTS.aliases).toString("utf8")) as AliasRow[], units, (r) => r.unit_id);
@@ -356,7 +371,7 @@ function readSnapshot(snapshotDir: string, units: ReadonlySet<string>, reference
   add(SNAPSHOT_OBJECTS.sourceFiles, read(SNAPSHOT_OBJECTS.sourceFiles));
   for (const st of HS_STATES) if (has(`high-schools/state/${st}.json`)) add(`high-schools/state/${st}.json`, read(`high-schools/state/${st}.json`));
   for (const f of HS_SHARED_FILES) if (has(`high-schools/${f}`)) add(`high-schools/${f}`, read(`high-schools/${f}`));
-  return objects;
+  return { objects, local };
 }
 
 /**
@@ -376,7 +391,7 @@ async function highSchoolsFromLayers(objects: Objects, layers: Map<CollectionNam
   }
 }
 
-function writeSnapshot(objects: Objects, dir: string, colleges: number, log: (line: string) => void): void {
+function writeSnapshot(objects: Objects, local: LocalFiles, dir: string, colleges: number, log: (line: string) => void): void {
   const manifestObjects: SnapshotManifest["objects"] = {};
   const write = (rel: string, bytes: Buffer) => {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
@@ -386,9 +401,10 @@ function writeSnapshot(objects: Objects, dir: string, colleges: number, log: (li
     write(name.replace(/\.gz$/, ""), bytes);
     manifestObjects[name] = { bytes: bytes.length, sha256: sha256(bytes) };
   }
+  for (const [name, bytes] of local) write(name, bytes);
   const manifest: SnapshotManifest = { id: 0, created_at: new Date(0).toISOString(), previous_id: null, colleges, objects: manifestObjects, layers: {}, change_set_ids: [] };
   write(SNAPSHOT_OBJECTS.manifest, Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`));
-  log(`snapshot: ${colleges} colleges, ${objects.length + 1} objects`);
+  log(`snapshot: ${colleges} colleges, ${objects.length + 1} objects, ${local.length} lineage files`);
 }
 
 /* ------------------------------------------------------------------ */
@@ -436,14 +452,14 @@ export async function build(options: BuildOptions = {}): Promise<{ units: Set<st
   const order = writeOrder(storeRoot);
   const layers = await readLayers(store, units, order);
   const referenceNames = [...(layers.get(COLLECTIONS.reference.files)?.keys() ?? [])];
-  const objects = readSnapshot(snapshotDir, units, referenceNames);
+  const { objects, local } = readSnapshot(snapshotDir, units, referenceNames);
   await highSchoolsFromLayers(objects, layers);
   const colleges = (JSON.parse(objects[0][1].toString("utf8")) as unknown[]).length;
 
   rmSync(join(out, "layers"), { recursive: true, force: true });
   rmSync(join(out, "snapshot"), { recursive: true, force: true });
   await writeLayers(layers, join(out, "layers"), order.set, log);
-  writeSnapshot(objects, join(out, "snapshot"), colleges, log);
+  writeSnapshot(objects, local, join(out, "snapshot"), colleges, log);
   const bytes = dirBytes(out);
   log(`total: ${units.size} colleges, ${kb(bytes)} (layers ${kb(dirBytes(join(out, "layers")))}, snapshot ${kb(dirBytes(join(out, "snapshot")))})`);
   return { units, bytes };

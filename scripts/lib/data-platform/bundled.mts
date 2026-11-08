@@ -9,9 +9,10 @@
  * points a reader at another snapshot folder, such as `tests/fixtures/snapshot-mini/snapshot`.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { isAbsolute, join } from "node:path";
+import { basename, dirname, isAbsolute, join } from "node:path";
 import type { DatasetMeta, School } from "../../../lib/types";
 import { BUNDLED_SNAPSHOT_DIR, FIXTURE_SNAPSHOT_ID, type SnapshotManifest } from "../../../lib/data-platform/snapshot.ts";
+import { installLazyLineage, type LineageObject, type SchoolLineage } from "../../../lib/data-platform/lineage-split.ts";
 import type { DataStore } from "./store.mts";
 import { COLLECTIONS } from "./layers.mts";
 
@@ -40,9 +41,37 @@ export function readBundledJson<T>(object: string, dir?: string): T {
   return JSON.parse(readFileSync(path, "utf8")) as T;
 }
 
-/** The composed colleges (`colleges.json`, the `School[]` the app serves). */
+/**
+ * The composed colleges (`colleges.json`, the `School[]` the app serves), each with its `lineage` as the loader gives
+ * it (lib/data-platform/loader.ts `readBundledSchools`): a split snapshot's colleges get a lazy `lineage` that reads
+ * `lineage/<unit_id>.json` (or the one `lineage.json` when there is no folder) on first access; an older snapshot's
+ * inline records are left alone. So a script sees the same `School[]` it saw before the split.
+ */
 export function readBundledColleges(dir?: string): School[] {
-  return readBundledJson<School[]>("colleges.json", dir);
+  return readSnapshotSchools(requireBundled(dir));
+}
+
+/**
+ * A colleges file a script was handed (`--schools <file>`): a snapshot folder's `colleges.json` comes with its lineage
+ * (readSnapshotSchools); any other file is read as it is.
+ */
+export function readCollegesFile(file: string): School[] {
+  if (basename(file) === "colleges.json") return readSnapshotSchools(dirname(file));
+  return JSON.parse(readFileSync(file, "utf8")) as School[];
+}
+
+/** `colleges.json` of the snapshot folder `root` (any folder in the bundled layout) with each college's lineage, lazily. */
+export function readSnapshotSchools(root: string): School[] {
+  const schools = JSON.parse(readFileSync(join(root, "colleges.json"), "utf8")) as School[];
+  const folder = join(root, "lineage");
+  if (existsSync(folder)) {
+    const units = new Set(readdirSync(folder).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length)));
+    installLazyLineage(schools, { units, read: (unitId) => JSON.parse(readFileSync(join(folder, `${unitId}.json`), "utf8")) as SchoolLineage });
+  } else if (existsSync(join(root, "lineage.json"))) {
+    let all: LineageObject | null = null;
+    installLazyLineage(schools, { units: null, read: (unitId) => (all ??= JSON.parse(readFileSync(join(root, "lineage.json"), "utf8")) as LineageObject)[unitId] });
+  }
+  return schools;
 }
 
 /** The bundled copy's manifest. */

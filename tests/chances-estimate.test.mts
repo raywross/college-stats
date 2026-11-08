@@ -25,6 +25,8 @@ const { registerHooks } = nodeModule as unknown as {
 registerHooks({
   resolve(specifier, context, next) {
     if (specifier === "server-only") return { url: "data:text/javascript,export {}", shortCircuit: true };
+    // lib/data.ts schedules its pointer check with after(), which throws outside a request, as here.
+    if (specifier === "next/server") return { url: `data:text/javascript,${encodeURIComponent("export function after() { throw new Error('after() outside a request') }")}`, shortCircuit: true };
     // No request in a test: the school's pooled course list (lib/chances/school-courses.ts, via supabase-server)
     // reads as nothing when cookies can't be read, as it does when the table is absent.
     if (specifier === "next/headers")

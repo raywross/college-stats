@@ -47,6 +47,8 @@ const stub = (code: string): ResolveResult => ({ url: `data:text/javascript,${en
 registerHooks({
   resolve(specifier, context, next) {
     if (specifier === "server-only") return stub("export {}");
+    // lib/data.ts schedules its pointer check with after(), which throws outside a request, as here.
+    if (specifier === "next/server") return stub("export function after() { throw new Error('after() outside a request') }");
     if (specifier === "next/cache") return stub(NEXT_CACHE);
     if (specifier === "@/lib/auth") return stub(AUTH);
     if (specifier === "@/lib/entitlements") return stub(ENTITLEMENTS);

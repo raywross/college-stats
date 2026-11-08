@@ -46,7 +46,8 @@ import { dirname, join } from "node:path";
 import { userInfo } from "node:os";
 import { gunzipSync } from "node:zlib";
 import type { DatasetMeta, School } from "../lib/types";
-import { SNAPSHOT_OBJECTS, snapshotPath } from "../lib/data-platform/snapshot.ts";
+import { SNAPSHOT_OBJECTS, snapshotPath, type SnapshotManifest } from "../lib/data-platform/snapshot.ts";
+import { attachLineage, type LineageObject } from "../lib/data-platform/lineage-split.ts";
 import { sanitizeProperties } from "../lib/analytics.ts";
 import { flagValue, parseStoreFlag, storeFromFlag, type Env } from "./lib/data-platform/store.mts";
 import { composeSnapshot, loadPublishLayers, type ComposedSnapshot } from "./lib/data-platform/compose.mts";
@@ -144,11 +145,20 @@ async function download(bucket: BucketClient, path: string): Promise<Buffer> {
   return Buffer.from(await data.arrayBuffer());
 }
 
-/** A published snapshot's colleges and meta, from the bucket. */
+/**
+ * A published snapshot's colleges and meta, from the bucket, each college with its lineage: a snapshot whose manifest
+ * lists `lineage.json.gz` has them there (attached here), an older one inline.
+ */
 export async function readSnapshot(bucket: BucketClient, id: number): Promise<{ schools: School[]; meta: DatasetMeta }> {
+  const manifest = JSON.parse((await download(bucket, snapshotPath(id, SNAPSHOT_OBJECTS.manifest))).toString("utf8")) as SnapshotManifest;
   const colleges = await download(bucket, snapshotPath(id, SNAPSHOT_OBJECTS.colleges));
   const meta = await download(bucket, snapshotPath(id, SNAPSHOT_OBJECTS.meta));
-  return { schools: JSON.parse(gunzipSync(colleges).toString("utf8")) as School[], meta: JSON.parse(meta.toString("utf8")) as DatasetMeta };
+  const schools = JSON.parse(gunzipSync(colleges).toString("utf8")) as School[];
+  if (manifest.objects?.[SNAPSHOT_OBJECTS.lineage]) {
+    const lineage = await download(bucket, snapshotPath(id, SNAPSHOT_OBJECTS.lineage));
+    attachLineage(schools, JSON.parse(gunzipSync(lineage).toString("utf8")) as LineageObject);
+  }
+  return { schools, meta: JSON.parse(meta.toString("utf8")) as DatasetMeta };
 }
 
 /**

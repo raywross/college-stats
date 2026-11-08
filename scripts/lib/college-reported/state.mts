@@ -19,7 +19,7 @@
  * sends only the changed ones (removing the documents that left the state) into the run's one change set. The CDS
  * records are compared only for the colleges the pipeline marked dirty, as the CLI wrote only those files.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { reviewKey, type BatchEntry, type BlockedHostsFile, type CallLog, type CdsUrlEntry, type CdsUrlsFile, type Recipe, type ReportedEntry, type ReviewItem, type RunSummary, type RunSummaryV3 } from "../../../lib/reported.ts";
 import type { CollegeRecord, ManifestEntry } from "../../../lib/cds-sections.ts";
@@ -28,7 +28,7 @@ import { federalYears } from "../../../lib/newest-groups.ts";
 import { prBody } from "../../college-reported-pr-body.mts";
 import { COLLECTIONS, readLayer, type TextDocument } from "../data-platform/layers.mts";
 import type { ChangeSetHandle, DataStore } from "../data-platform/store.mts";
-import { bundledDir, readBundledColleges, readBundledMeta } from "../data-platform/bundled.mts";
+import { bundledDir, readBundledColleges, readBundledMeta, readCollegesFile } from "../data-platform/bundled.mts";
 import { BUNDLED_SNAPSHOT_DIR } from "../../../lib/data-platform/snapshot.ts";
 import { serializeRecord } from "./records.mts";
 import { emptySummaryV3, memoryCallLogWriter, roundUsd, summaryCost, type CallLogWriter } from "./models.mts";
@@ -194,7 +194,7 @@ export class StateWriter {
  * the publisher composes, so a producer reads the served copy rather than building one.
  */
 export function readColleges(root: string, file?: string): School[] {
-  if (file) return JSON.parse(readFileSync(file, "utf8")) as School[];
+  if (file) return readCollegesFile(file);
   return readBundledColleges(join(root, BUNDLED_SNAPSHOT_DIR));
 }
 

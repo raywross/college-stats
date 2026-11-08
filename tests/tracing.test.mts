@@ -137,6 +137,7 @@ test("the list and the paths app code reads haven't drifted apart", () => {
   const reads = dataPathsRead().filter((r) => !DATA_ROOTS.includes(r.path));
   assert.ok(reads.some((r) => r.path === ".data/snapshot/colleges.json"), "the scan finds the loader's bundled-copy reads (sanity check)");
   assert.ok(reads.some((r) => r.path === ".data/snapshot/reference/organizations.json"), "and the reference readers'");
+  assert.ok(reads.some((r) => r.path === ".data/snapshot/lineage"), "and the lazy lineage reader's per-college files (lineage/<unit>.json)");
   const untraced = reads.filter((r) => !includes.some((i) => covers(i, r.path)));
   assert.deepEqual(untraced, [], "read at runtime but not traced into the deploy: add it to next.config.ts");
   const unread = includes.filter((i) => !reads.some((r) => covers(i, r.path)));

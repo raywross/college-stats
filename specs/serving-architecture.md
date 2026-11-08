@@ -585,3 +585,119 @@ seconds. The dataset itself never entered this path.
 should answer with `x-vercel-cache: HIT` like its topic tabs. The header's state should appear with the page's first
 paint for signed-out visitors and with the cached answer for signed-in ones; `/api/me` should appear in the network
 panel once per tab when signed out and about once per five minutes when signed in.
+
+## Follow-up (2026-11-08): counselor performance review
+The owner's report: signed in as a counselor, the caseload is slow to open, moving between students is slow, and
+opening essays is slow. Measured on the live site (`usequad.app`, Vercel `iad1`, the dev Supabase project in
+`ca-central-1`) as the user-testing counselor Maria Rivera (6 students), with the owner signed in; every number
+below was repeated four to six times and is a warm instance (no cold start in the run).
+
+### What was measured
+**Server time per request** (the RSC fetch a client-side navigation makes, or the time to the end of the streamed
+body on a full load; headers arrive in about 20 ms either way, so time to first byte says nothing here):
+
+| Request | Server time | Payload |
+|---|---|---|
+| `/org` (the caseload) | 0.92–1.0 s warm; 1.4–2.1 s as a full page load | 13 KB |
+| `/org/students/[id]` | 0.62–0.98 s; a student with no list, profile, or essays still 0.68 s | 23 KB |
+| `/advisor?for=…` (the student's plan) | 0.9–1.6 s | **904–931 KB** |
+| `/advisor?for=…&tab=essays` or `&tab=calendar` | 0.73–1.3 s | **914–918 KB** |
+| `/advisor/essays/[id]?for=…` (one essay) | 0.74–1.06 s, then `/api/essays/review` 0.73 s | 27–44 KB |
+| `/household/[id]/record` | 1.1 s | 76 KB |
+| `/advisor/print?for=…` | 0.87 s | 52 KB |
+| `/org/export` (the CSV) | 2.3 s | 4 KB |
+| `/org/members` | 0.26 s | 27 KB |
+| `/api/me` (the header's state; one database wave) | 0.47–0.69 s, and up to 1.5 s right after a page render | — |
+| `/explore?q=…` (dynamic, no sign-in: the function's own cost) | 0.12–0.35 s | — |
+| one Supabase RPC from a laptop in Ohio (`curl`) | 0.11 s | — |
+
+The browser's share is small: hydration adds 50–300 ms after the body ends, and the client-side transitions
+themselves are the server time above. The caseload page also fires `/api/me` on every visit (`RefreshHeader`),
+which is why the avatar lags behind the content.
+
+**Database time**, from `pg_stat_statements` and from `EXPLAIN ANALYZE` run as Maria (`set local role
+authenticated` plus her claims), on tables of 8 lists, 161 list items, 1,196 plan tasks, 11 essays:
+
+| Read | Postgres time | Called by |
+|---|---|---|
+| `viewer_bundle()` | 50 ms mean over 3,514 calls (max 2.1 s); 74 ms as Maria | every signed-in request (`getAccount`, `studentsICanSee`, `/api/me`) |
+| the caseload's `lists` read (items, visits, tasks embedded, 6 students) | 193 ms mean over 60 calls; 481 ms as Maria in a plain-SQL equivalent | `/org`, `/org/students/[id]`, `/org/export` |
+| `plan_bundle(student, null)` | 171 ms mean over 152 calls (max 1.3 s); 268 ms as Maria | `/advisor`, every tab |
+| `plan_tasks` for one student's list (96 rows) | 113 ms as Maria | inside both of the above |
+| `org_roster(org)` | 26 ms mean; 20 ms as Maria for 7 rows | `/org`, `/org/students/[id]` |
+| `student_profiles`, `essays`, `my_organization()`, `app_settings` | 1–14 ms each | |
+| `visit_event_count(unit_id)` | 55 ms mean over **18,019 calls**, 985 s in total | the college pages' Event calendar button; not a counselor path, but the database's single largest consumer |
+
+### Where the time goes
+1. **Row-level security runs a function per row, and each call costs milliseconds.** The read policies on
+   `list_items`, `plan_tasks`, `plan_visits`, `essays`, `student_profiles`, and `students` call `can_read_list(list_id)`,
+   `can_read_item(item_id)`, or `can_read_student(student_id)` for every row. Those are SQL-language security-definer
+   functions with `set search_path = ''`, so Postgres can't inline them and plans each call afresh; one
+   `can_read_student` costs 4.4 ms and 800 buffer reads, one `is_counselor_of` 2.2 ms, and `can_read_list` goes
+   through `can_read_list_owner` → `can_read_student` → `is_guardian_of` + `is_counselor_of`, five nested calls. On
+   Jordan's 96 plan tasks that is 108 ms of a 113 ms read; on the caseload's five lists, 83 ms per list in tasks
+   alone. `plan_bundle` pays the same per row, which is its 268 ms. This is the biggest single cost on every
+   counselor page and on the plan itself, and it grows with the size of each student's plan, not the number of
+   students.
+2. **`viewer_bundle()` reads every student, member, and full profile the viewer can see, on every request.** It is
+   security invoker, so its `select … from students` evaluates `can_read_student(id)` for all 35 student rows (29
+   rejected) and all 21 profile rows (16 rejected) each time; with the per-call cost above that is 50–74 ms before a
+   page knows who is signed in. For a counselor every visible student's whole `student_profiles.data` comes back
+   with it, used only for a display name. A caseload of 100 would make this read 100 profiles per request.
+3. **Five sequential database waves per counselor page.** `/org` runs viewer bundle → `my_organization` →
+   `app_settings` (pretend today) → `org_roster` → {profiles ‖ lists ‖ essays}; `/org/students/[id]` runs viewer
+   bundle → `my_organization` → `org_roster` (the whole roster, to find one row) → `app_settings` → {profiles ‖ lists ‖
+   essays ‖ notes ‖ asks}. Each wave is a round trip `iad1` → `ca-central-1` through PostgREST, about 100 ms
+   including the slow reads above, so a student with no data still costs 0.68 s. `/org/export` runs the same waves
+   plus the CSV. Neither page is wrapped in `withTiming`, and `QUAD_TIMING` is set for Preview only, so production
+   logs show nothing for them.
+4. **The plan's payload is about 900 KB, 874 KB of it citations.** `planSchoolFor` (lib/planner/context.ts) builds a
+   `cites` object per field per college with `citeField`, and the RSC payload carries every one: in Jordan's plan,
+   1,720 `year` keys, 1,631 `retrieved`, 1,608 `url`, 1,528 `method`, 1,245 `quote`, 1,006 `edition`. Every tab
+   switch (Colleges → Essays → Calendar) is a new server render that ships it again, so the Essays tab costs 1.3 s
+   and 918 KB to show two essays. On a phone connection this alone is seconds.
+5. **Smaller things.** Opening an essay is two requests in a row (the page, then `/api/essays/review`, 0.7 s);
+   `/api/me` runs `viewer_bundle`, `my_organization`, and `is_admin_any_aal` for a name and two booleans, and the
+   caseload page refreshes it on every visit; `/org/export` takes 2.3 s for six students; `visit_event_count` is
+   called once per college page view at 55 ms.
+
+### Left, in the order of expected gain
+1. **Make the policy checks cheap.** Rewrite the read policies so Postgres evaluates the membership once per
+   query instead of once per row: `list_id in (select id from lists)` on `list_items` and `plan_tasks` (the `lists`
+   policy then decides, hashed once), `item_id in (select id from list_items)` on `plan_visits`, and
+   `student_id in (select id from students)` on `essays` and `student_profiles`; or keep the functions but drop
+   `set search_path` from the pure-SQL ones so they inline, and wrap `auth.uid()` in `(select auth.uid())`.
+   Expected: `plan_bundle` and the caseload read from 200–480 ms to under 30 ms. Measure each with the `EXPLAIN
+   ANALYZE` recipe above before and after; tests/plan-bundle-policies.test.mts already compares what each role sees.
+2. **A narrower account read.** `viewer_bundle()` should return the viewer's own profile, their students and
+   memberships, and names, not every visible `student_profiles.data`; counselors' students should come from the
+   grants, not from scanning `students` under RLS. Or split it: `/api/me` and `requireUser` need only the profile
+   row (one indexed read).
+3. **Collapse the counselor pages' waves.** One `org_caseload_bundle()` (organization, roster, today, profiles,
+   lists, essays for the caller's organization) and one `org_student_bundle(student)` (membership check, the student's
+   reads, notes, asks) would make each page two waves: the session check, then the bundle. Cheaper first step:
+   start `myOrganization()`, `plannerToday()`, and the roster together, and on the student page read the one roster
+   row instead of all of them.
+4. **Keep citations out of the plan's payload.** Ship a citation only where a ⓘ renders, fetch it on open
+   (`/api/cite?field=…&school=…`, or a compact table of source ids with the long strings deduplicated), and make the
+   tab switch a client-side change over data the page already has. Target: the plan under 150 KB, a tab switch
+   under 100 ms.
+5. **Measure what is slow.** Wrap `/org`, `/org/students/[id]`, `/org/export`, and `/advisor/essays/[id]` in
+   `withTiming`, set `QUAD_TIMING=1` on Production while in beta, and read the `[timing]` lines after each change.
+6. **The header and the essay page.** Drop `RefreshHeader`'s `/api/me` on the caseload (or run it only after a
+   join), let `/api/me` read the profile row alone, and fold the essay page's review fetch into its render or defer
+   it until the review panel opens.
+7. **`visit_event_count`.** Cache the count per college in the snapshot or in the page's daily revalidation instead
+   of an RPC per view.
+
+### Open questions for the owner
+- Policies or bundles first? The policy rewrite (1) helps students and parents as much as counselors and needs
+  no page changes; the bundles (3) need a migration and new reads. Both together is one PR per layer.
+- How much of the plan's citation detail does a counselor or a parent need on the page itself? If the ⓘ popover may
+  load on open, (4) is straightforward; if the print view must carry every citation, print keeps the full set and
+  the screen view drops it.
+- Is `QUAD_TIMING=1` on Production acceptable during beta? The log lines carry route labels, table names, counts,
+  and milliseconds only.
+- The Supabase region: `ca-central-1` today, `iad1` for the functions. The prod project at the formal release is
+  already planned for `us-east-1`; until then every wave costs the extra hop, which is the argument for fewer waves
+  rather than faster ones.

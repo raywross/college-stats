@@ -362,6 +362,29 @@ moves into a section above.
   `lib/derive.ts` and are covered by `tests/history.test.mts` plus the latest-point check on every college.)
 
 ## Platform
+- [ ] **Counselor-path speed** (measured on the live site 2026-11-08 as a user-testing counselor; numbers, the
+  `EXPLAIN ANALYZE` recipe, and the owner's open questions in
+  [serving-architecture.md](serving-architecture.md#follow-up-2026-11-08-counselor-performance-review)): the caseload
+  takes about 1 s warm, a student page 0.7 s even with no data, the plan 0.9–1.6 s with a 900 KB payload, an essay
+  1 s plus a 0.7 s review fetch, the CSV export 2.3 s. In the order of expected gain:
+  - [ ] **Policy checks once per query, not per row.** The read policies on `list_items`, `plan_tasks`, `plan_visits`,
+    `essays`, `student_profiles`, and `students` call `can_read_list` / `can_read_item` / `can_read_student` per row; each
+    call is a non-inlinable SQL function (`set search_path`) costing 1–4 ms, so one student's 96 tasks read in
+    113 ms and `plan_bundle` in 268 ms. Rewrite as `list_id in (select id from lists)` and the like (or make the
+    functions inlinable), then re-measure with the recipe.
+  - [ ] **A narrower `viewer_bundle()`** (50–74 ms on every signed-in request, every visible student's full profile
+    included), or a profile-only read for `requireUser` and `/api/me`.
+  - [ ] **One bundle per counselor page**: `org_caseload_bundle()` and `org_student_bundle(student)` so `/org` and
+    `/org/students/[id]` go from five sequential database waves to two; meanwhile start `myOrganization()`,
+    `plannerToday()`, and the roster together, and read one roster row on the student page.
+  - [ ] **Citations out of the plan's payload** (874 KB of 912 KB; every tab switch ships them again): load a
+    citation when its ⓘ opens, and switch tabs client-side.
+  - [ ] **Time the counselor pages**: wrap `/org`, `/org/students/[id]`, `/org/export`, and `/advisor/essays/[id]` in
+    `withTiming`; `QUAD_TIMING=1` on Production during beta (owner's call).
+  - [ ] **Header and essay page**: no `/api/me` refresh on every caseload visit; `/api/me` reads the profile row alone;
+    the essay page's review fetch folded into the render or deferred to the panel.
+  - [ ] **`visit_event_count`** per college page view (18,019 calls at 55 ms): cache the count in the snapshot or the
+    daily revalidation.
 - [x] Deploy to Vercel: pre-release dev site at https://college-stats-nine.vercel.app, reading the Supabase dev
   project (2026-09-28; [supabase.md](supabase.md#current-state-pre-release-dev-only)).
 - [ ] **Formal release** (after the planned feature set is in, before circulating the site more widely): create the

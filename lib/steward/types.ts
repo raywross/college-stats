@@ -81,7 +81,8 @@ export const PROPOSAL_KIND_LABEL: Record<ProposalKind, string> = {
   reread: "Re-read",
   systemic: "Fix a rule",
 };
-export type ProposalStatus = "open" | "approved" | "declined" | "applied" | "asked";
+/** `failed`: approved, but the apply job refused or broke part way (`failed_reason` says why); a person decides what next. */
+export type ProposalStatus = "open" | "approved" | "declined" | "applied" | "asked" | "failed";
 export type Recommendation = "approve" | "your-call";
 export type RowDecision = "approved" | "declined";
 
@@ -132,6 +133,8 @@ export interface ProposalDoc {
   decided_by?: string | null;
   decided_at?: string | null;
   decision_note?: string | null;
+  /** Status `failed`: the apply job's refusal or error, word for word (scripts/lib/steward/proposals.mts). */
+  failed_reason?: string | null;
 }
 
 export type TodoWhy = "robots-path" | "robots-host" | "challenge" | "bot-check" | "viewer" | "js-only" | "terms" | "login" | "not-found" | "no-document" | "unknown";
@@ -269,4 +272,5 @@ export const PROPOSAL_STATUS_LABEL: Record<ProposalStatus, string> = {
   declined: "Declined",
   applied: "Applied",
   asked: "Asked",
+  failed: "Apply failed",
 };

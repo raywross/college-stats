@@ -332,6 +332,31 @@ test("apply: a reject proposal resolves its items rejected and asks for no publi
   assert.match(refused.message ?? "", /applied by the console/);
 });
 
+test("apply: an apply that breaks part way closes its set held and marks the proposal failed with the message", async () => {
+  const s = await seededStore();
+  const rec = (await s.store.readOne<CollegeRecord>(COLLECTIONS.reported.cdsRecords, "145637"))!;
+  const [first] = rec.documents;
+  const copy = { ...structuredClone(first), sha256: "f".repeat(64), edition: first.edition === "2025-26" ? "2024-25" : "2025-26" };
+  const seed = await s.store.open("pipeline", "test", "two-docs");
+  await seed.write(COLLECTIONS.reported.cdsRecords, [{ key: "145637", body: { ...rec, documents: [first, copy] } }]);
+  await seed.close("applied");
+  const refile: ProposalRow = { unit_id: "145637", field: null, code: null, edition: first.edition, sha256: copy.sha256, now: copy.edition, proposed: "the cover says otherwise", source: { page: null, line: null, quote: "cover", url: null }, recommends: "approve", item: null, decision: "approved" };
+  await seedProposal(s, { key: "refile-1", kind: "refile", cause: null, status: "approved", summary: "s", evidence: [finding], rows: [refile], run: "r", created: "2026-11-01T00:00:00Z" });
+  const res = await runSteward({ mode: "apply", store: s.store, proposal: "refile-1", runRef: "apply-f", now: NOW, env: {}, log: () => {} });
+  assert.equal(res.exit, 1);
+  assert.match(res.message ?? "", new RegExp(`already has a ${first.edition} document`));
+  const sets = fileStoreChangeSets(join(s.dir, "layers"));
+  assert.equal(sets.find((c) => c.id === res.changeSet)!.status, "held");
+  const p = (await s.store.readOne<ProposalDoc>(COLLECTIONS.steward.proposals, "refile-1"))!;
+  assert.equal(p.status, "failed");
+  assert.equal(p.failed_reason, res.message);
+  assert.deepEqual([sets.at(-1)!.source, sets.at(-1)!.status], ["steward-status", "applied"]);
+  // A refusal of a proposal that isn't approved leaves its status alone.
+  const again = await runSteward({ mode: "apply", store: s.store, proposal: "refile-1", runRef: "apply-f2", now: NOW, env: {}, log: () => {} });
+  assert.match(again.message ?? "", /is failed; only an approved proposal/);
+  assert.equal((await s.store.readOne<ProposalDoc>(COLLECTIONS.steward.proposals, "refile-1"))!.status, "failed");
+});
+
 test("apply: a recipe row adds or drops a link, or clears the not-found mark for rediscovery", () => {
   const before = { unit_id: "100751", sources: [{ kind: "cds" as const, url: "https://a.edu/old.pdf", format: "pdf" as const }], index_urls: [], learned: "2026-10-01", model: "m", none_found: true as const, discovery: { path: "none" as const, tried: [], next_attempt: "2026-12-01" } };
   const added = recipeAfter(before, "100751", { field: "sources.add", value: "https://a.edu/cds-2025-26.xlsx" }, "2026-11-01")!;

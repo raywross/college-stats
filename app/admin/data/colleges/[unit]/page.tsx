@@ -259,10 +259,11 @@ async function HiddenBlock({ rows, school }: { rows: HiddenFieldRow[]; school: S
             return (
               <li key={r.path} className="space-y-0.5 py-2">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-                  <span className="font-medium">{r.label}</span>
+                  <span className="font-medium" title={r.path}>
+                    {r.label}
+                  </span>
                   <span className="font-mono text-[13px] tabular-nums">{r.value ?? <Muted>None for this college</Muted>}</span>
                 </div>
-                <p className="font-mono text-xs text-muted-foreground">{r.path}</p>
                 <p className="text-xs text-muted-foreground">
                   {c.method === "derived" ? "Derived" : "Stored"} · {c.label}
                   {c.year ? `, ${c.year}` : ""}

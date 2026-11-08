@@ -13,7 +13,9 @@ import { join, relative } from "node:path";
 import { ADMIN_DOORS, activeDoor, activeScreen } from "../lib/admin/console.ts";
 import { ADMIN_REDIRECTS, nextAdminRedirects, resolveAdminRedirect } from "../lib/admin/redirects.ts";
 import { HELP, helpByDoor, isHelpKey } from "../lib/admin/help.ts";
-import { codeLabel, codeName, collectionLabel, itemKeyLabel, targetKindLabel, changeKindLabel } from "../lib/admin/words.ts";
+import { attemptResultWords, codeLabel, codeName, codeWordsInText, collectionLabel, itemKeyLabel, reasonLabel, REASON_WORDS, targetKindLabel, changeKindLabel } from "../lib/admin/words.ts";
+import { REASON_CODES } from "../scripts/lib/college-failures.mts";
+import { ESSAY_STATUS_LABELS } from "../lib/admin/essays.ts";
 import { CDS_ITEM_NAMES } from "../lib/cds-sections.ts";
 import nextConfig from "../next.config.ts";
 
@@ -373,6 +375,73 @@ test("guard: a bare code in a page's text is caught; codeLabel and class names a
   assert.deepEqual(bareCodes('<span title="C.701">x</span>'), ["C.701"]);
   assert.deepEqual(bareCodes("<p>{codeLabel(\"C7\")}</p>"), []);
   assert.deepEqual(bareCodes('<div className="h-5 w-12 C7">'), []);
+});
+
+test("reasonLabel names every college-reported reason code; an unknown code reads as its words", () => {
+  for (const code of REASON_CODES) assert.ok(REASON_WORDS[code], `${code} has words`);
+  assert.equal(reasonLabel("class_profile_only"), "Only a class profile found");
+  assert.equal(reasonLabel("not-a-url"), "The address isn't valid");
+  assert.equal(reasonLabel("some_new_reason"), "Some new reason");
+});
+
+test("attemptResultWords: the explanation is the text, the code and the review key go to the title", () => {
+  assert.deepEqual(attemptResultWords("class_profile_only: only class profile(s) found (2), no Common Data Set"), {
+    text: "Only class profile(s) found (2), no Common Data Set",
+    label: "Only a class profile found",
+    code: "class_profile_only",
+    key: null,
+  });
+  assert.deepEqual(attemptResultWords("unreachable: HTTP 404 (100654|2025-26|C.101)"), { text: "HTTP 404", label: "Couldn't reach it", code: "unreachable", key: "100654|2025-26|C.101" });
+  assert.deepEqual(attemptResultWords("challenge"), { text: "A bot check", label: "A bot check", code: "challenge", key: null });
+  assert.equal(attemptResultWords("Fetched by hand").text, "Fetched by hand", "not a code: as written");
+  assert.equal(attemptResultWords("Fetched by hand").code, null);
+});
+
+test("codeWordsInText: snake_case codes in a stored sentence read as words", () => {
+  assert.equal(
+    codeWordsInText("status refers_to_form, but the quoted sentence counts the questions", ESSAY_STATUS_LABELS),
+    "status “Refers to the form”, but the quoted sentence counts the questions",
+  );
+  assert.equal(codeWordsInText("a not_read page", {}), "a “not read” page");
+  assert.equal(codeWordsInText("nothing to change here", {}), "nothing to change here");
+});
+
+/**
+ * Code words written as a page's visible text (a JSX text node): a route path (`/api/...`), a snake_case key
+ * (`class_profile_only`, `job_runs`), or a dotted field path (`links.price_calculator`). Attribute values (a `title`,
+ * an `href`) and expressions are not text, so the raw key may sit in a title.
+ */
+function rawCodeWords(src: string): string[] {
+  const texts = [...stripComments(src).matchAll(/>([^<>{}]+)</g)].map((m) => m[1].replace(/\s+/g, " ").trim()).filter((t) => t && !/=>|[;=]/.test(t));
+  return texts.filter((t) => /\/api\//.test(t) || /(?<![\w./-])[a-z][a-z0-9]*(?:_[a-z0-9]+)+(?![\w-])/.test(t) || /(?<![\w/])(?:[a-z]+\.)+[a-z]+_[a-z0-9_]+/.test(t));
+}
+
+test("no route path, snake_case key or field path is a console screen's visible text", () => {
+  for (const f of [...walk("app/admin"), ...walk("components/admin")].filter((f) => f.endsWith(".tsx"))) assert.deepEqual(rawCodeWords(read(f)), [], f);
+});
+
+test("guard: a route path, a reason code or a field path in a page's text is caught; the same in a title is not", () => {
+  assert.deepEqual(rawCodeWords("<p>POST /api/cron/weekly with the cron secret</p>"), ["POST /api/cron/weekly with the cron secret"]);
+  assert.deepEqual(rawCodeWords("<span>class_profile_only: only class profile(s) found</span>"), ["class_profile_only: only class profile(s) found"]);
+  assert.deepEqual(rawCodeWords("<p>\n  The <code>job_runs</code> migration\n</p>"), ["job_runs"]);
+  assert.deepEqual(rawCodeWords("<p>links.price_calculator</p>"), ["links.price_calculator"]);
+  assert.deepEqual(rawCodeWords('<span title="links.price_calculator">Net price calculator</span>'), []);
+  assert.deepEqual(rawCodeWords("<a href=\"/api/cron/weekly\">Its own web route</a>"), []);
+});
+
+test("the screens QA found showing code words use the words: To do's attempts, the field editor, the hidden fields, a job's route", () => {
+  assert.match(read("components/admin/steward/TodoTable.tsx"), /attemptResultWords\(result\)/);
+  assert.doesNotMatch(read("components/admin/steward/TodoTable.tsx"), />\{last\.result\}</, "the raw result is never the text");
+  const editor = read("components/admin/FieldEditor.tsx");
+  assert.match(editor, /title=\{row\.path\}/);
+  assert.doesNotMatch(editor, />\{row\.path\}</, "the field's path is a title, not text");
+  const college = read("app/admin/data/colleges/[unit]/page.tsx");
+  assert.match(college, /title=\{r\.path\}/);
+  assert.doesNotMatch(college, />\{r\.path\}</);
+  const job = read("app/admin/steward/jobs/[job]/page.tsx");
+  assert.match(job, /Its own web route, called with the cron secret/);
+  assert.doesNotMatch(job, /\$\{job\.path\}`\s*:|POST \{job\.path\}/, "the route is under Details");
+  assert.match(read("components/admin/Holds.tsx"), /codeWordsInText\(p, ESSAY_STATUS_LABELS\)/);
 });
 
 test("the words table: no old word left on the console's screens", () => {

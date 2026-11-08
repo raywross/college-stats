@@ -50,7 +50,7 @@ const STUBS: Record<string, string> = {
     "export function formatBytes(n){return n + ' B'} export function manifestBytes(m){return (m && m.colleges) || 0} " +
     "export function manifestDownloadUrl(id){return 'https://example.test/snapshots/'+id+'/manifest.json'}",
   // Families' lists (lib/admin/essays.ts listsByUnit reads list_items with the admin's session): driven by `world`.
-  "@/lib/admin/essays": "export async function listsByUnit(){globalThis.__world.calls.push('listsByUnit'); return globalThis.__world.lists}",
+  "@/lib/admin/essays": "export async function listsByUnit(){globalThis.__world.calls.push('listsByUnit'); return globalThis.__world.lists}; export const ESSAY_STATUS_LABELS = { refers_to_form: 'Refers to the form', not_read: 'Not read' };",
 };
 registerHooks({
   resolve(specifier, context, next) {
@@ -1049,7 +1049,9 @@ test("HeldEssaysList (Holds folded into the Essays page): each held college link
   const mod = (await loadTsx("components/admin/Holds.tsx")) as unknown as {
     HeldEssaysList: (p: { records: unknown[]; lists: Map<string, number> | null }) => import("react").ReactElement;
   };
-  const essays = html(mod.HeldEssaysList({ records: [{ unit_id: "100654", name: "Alabama A & M University", held: "2026-10-29", problems: ["no prompts"], record: { url: "https://www.aamu.edu/admissions" } }], lists: null }));
+  const essays = html(mod.HeldEssaysList({ records: [{ unit_id: "100654", name: "Alabama A & M University", held: "2026-10-29", problems: ["no prompts", "status refers_to_form, but the quoted sentence counts the questions"], record: { url: "https://www.aamu.edu/admissions" } }], lists: null }));
+  assert.match(essays, /status “Refers to the form”, but the quoted sentence/, "the status code reads as words");
+  assert.match(essays, /title="[^"]*status refers_to_form/, "the raw sentence stays in the title");
   assert.match(essays, /href="\/admin\/data\/essays\/100654"/);
   assert.match(essays, /no prompts/);
   assert.match(essays, /aamu\.edu/);

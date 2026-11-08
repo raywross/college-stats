@@ -138,7 +138,9 @@ Built 2026-11-08 on `feature/document-collisions-view`, on top of the drop tool 
   `KEEP_SOURCE`, `KEEP_COLLECTIONS`, `LIVE_REFILE`) and `keepDocumentAction` in `app/admin/data/colleges/[unit]/actions.ts`.
   **It writes the data store directly**: `supabaseStore()` with `dataProjectEnv(process.env)` (the server's
   `SUPABASE_URL`/`SUPABASE_SECRET_KEY`, or `DATA_SUPABASE_*`), importing `dropDocument`, `setProposalStatus` and the
-  store from `scripts/` (the first console code to do so; no `admin_data_*` function covers a drop). Without those
+  store from `scripts/` (the first console code to do so; no `admin_data_*` function covers a drop). For `next build`
+  the import graph must not read files when it loads: `recordBody` moved from `college-reported/state.mts` (which pulls
+  in `bundled.mts` and its `import.meta.dirname`) to `college-reported/records.mts`, re-exported from `state.mts`. Without those
   variables the action refuses with nothing changed. The log row is `review.keep_file` (`admin_note_ops`, the only
   log function that takes a free action name; its pattern allows `review.*`), and a failure logs `review.failed`. The
   declined proposals' `decided_by` is the admin's user id.

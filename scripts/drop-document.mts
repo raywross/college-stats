@@ -23,7 +23,7 @@
 import { parseArgs } from "node:util";
 import type { CollegeRecord, ManifestEntry } from "../lib/cds-sections.ts";
 import type { Recipe, RecipeDrop, ReviewItem } from "../lib/reported.ts";
-import { recordBody } from "./lib/college-reported/state.mts";
+import { recordBody } from "./lib/college-reported/records.mts";
 import { COLLECTIONS } from "./lib/data-platform/layers.mts";
 import { storeFromFlag, type ChangeSetHandle, type DataStore } from "./lib/data-platform/store.mts";
 

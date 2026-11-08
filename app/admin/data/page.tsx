@@ -6,7 +6,7 @@ import { DoorScreens } from "@/components/admin/DoorScreens";
 import { Empty, Fields, PageHeader, Panel } from "@/components/admin/Panel";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
-import { fmtDateTime } from "@/lib/admin/console";
+import { CONFIRM_PUBLISH, fmtDateTime } from "@/lib/admin/console";
 import { changeKindLabel } from "@/lib/admin/words";
 import { statusLabel } from "@/lib/admin/change-set-view";
 import { adminSupabase } from "@/lib/admin/people";
@@ -54,7 +54,14 @@ export default async function DataOverviewPage() {
           )}
         </Panel>
 
-        <Panel title="The last publish" help="publish-now" aside={<AdminForm action={publishNowAction} trigger="Publish now" tone="primary" pendingLabel="Publishing…" />}>
+        <Panel title="The last publish" help="publish-now" aside={<AdminForm
+              action={publishNowAction}
+              trigger="Publish now"
+              tone="primary"
+              pendingLabel="Publishing…"
+              typed={{ expected: CONFIRM_PUBLISH, instruction: <>Type &ldquo;{CONFIRM_PUBLISH}&rdquo; to confirm</> }}
+              description="Composes a new published version from every change applied so far and makes it live for every visitor. A held change stops it."
+            />}>
           {!lastPublished ? (
             <Empty>Nothing has published yet.</Empty>
           ) : (

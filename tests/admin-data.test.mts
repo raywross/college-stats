@@ -365,7 +365,7 @@ const form = (fields: Record<string, string>): { get(name: string): unknown } =>
 
 test("publishNow dispatches publish-snapshot.yml with force, logged before it sends (ops.dispatch, via dispatchRun)", async () => {
   const { deps, log, dispatches } = fakeDeps();
-  const result = await actions.publishNow(deps);
+  const result = await actions.publishNow(deps, form({ confirm: "publish" }));
   assert.equal(result.status, "done");
   assert.deepEqual(log, ["note ops.dispatch", "dispatch publish-snapshot.yml"], "logged before it was sent");
   // The request id is a third, separate argument to dispatchWorkflow (lib/github-app.ts merges it in for real); the
@@ -375,16 +375,28 @@ test("publishNow dispatches publish-snapshot.yml with force, logged before it se
 
 test("publishNow refuses, and never dispatches, when the log write fails", async () => {
   const { deps, log, dispatches } = fakeDeps({ noteOk: false });
-  const result = await actions.publishNow(deps);
+  const result = await actions.publishNow(deps, form({ confirm: "publish" }));
   assert.equal(result.status, "error");
   assert.match((result as { message: string }).message, /could not be logged/);
   assert.deepEqual(dispatches, []);
   assert.deepEqual(log, ["note ops.dispatch"]);
 });
 
+test("publishNow asks for the typed word \"publish\": without it, or with another word, nothing is logged or sent", async () => {
+  assert.equal(actions.CONFIRM_PUBLISH, "publish");
+  for (const fields of [{}, { confirm: "" }, { confirm: "yes" }, { confirm: "publish now" }, { confirm: "revert" }] as Record<string, string>[]) {
+    const { deps, log, dispatches } = fakeDeps();
+    const result = await actions.publishNow(deps, form(fields));
+    assert.deepEqual(result, { status: "error", message: 'Type "publish" to confirm.' }, JSON.stringify(fields));
+    assert.deepEqual([log, dispatches], [[], []], `nothing ran for ${JSON.stringify(fields)}`);
+  }
+  const { deps } = fakeDeps();
+  assert.equal((await actions.publishNow(deps, form({ confirm: "  Publish " }))).status, "done", "case and spaces don't matter");
+});
+
 test("publishNow surfaces GitHub's refusal without hiding it", async () => {
   const { deps } = fakeDeps({ dispatch: { ok: false, reason: "workflow not found" } });
-  const result = await actions.publishNow(deps);
+  const result = await actions.publishNow(deps, form({ confirm: "publish" }));
   assert.equal(result.status, "error");
   assert.match((result as { message: string }).message, /workflow not found/);
 });
@@ -437,7 +449,7 @@ test("pointBackHere also logs before it sends, and refuses without dispatching, 
 
 test("neither action ever puts anything but a positive integer snapshot id, or the fixed 'force' input, into a dispatch: no email (or any form field) reaches it", async () => {
   const { deps, dispatches } = fakeDeps();
-  await actions.publishNow(deps);
+  await actions.publishNow(deps, form({ confirm: "publish" }));
   await actions.pointBackHere(deps, form({ snapshot: "3", confirm: actions.CONFIRM_POINT_BACK, email: "someone@example.com", note: "unrelated text" }));
   for (const d of dispatches) {
     for (const [key, value] of Object.entries(d.inputs)) {
@@ -590,9 +602,10 @@ test("the Overview page says 'Nothing has published yet' and 'Nothing is held' w
   assert.match(markup, /Nothing is held/);
 });
 
-test("static: the Overview page's Publish now is an AdminForm calling publishNowAction", () => {
+test("static: the Overview page's Publish now is an AdminForm calling publishNowAction, asking for the typed word; the action passes the form on", () => {
   const src = read("app/admin/data/page.tsx");
-  assert.match(src, /<AdminForm action=\{publishNowAction\}/);
+  assert.match(src, /<AdminForm\s+action=\{publishNowAction\}[^/]*typed=\{\{ expected: CONFIRM_PUBLISH/);
+  assert.match(read("app/admin/data/actions.ts"), /export async function publishNowAction\(_previous: AdminActionState, form: FormData\)[^{]*\{\n\s+const admin = await requireAdmin\(\);\n\s+return finish\(await publishNow\(await realDeps\(admin\), form\)\);/);
 });
 
 test("the Snapshots page calls requireAdmin() then the snapshot reads, and hands SnapshotsTable the current id; a non-admin gets a 404", async () => {
@@ -855,7 +868,7 @@ test("Hold needs a reason and calls admin_data_hold with it; a refusal comes bac
   assert.deepEqual(f.dispatches, [], "holding sends nothing to GitHub");
   f = fakeDeps({ refuse: { fn: "admin_data_hold", error: "change_set_published" } });
   const refused = await actions.holdChangeSet(f.deps, form({ change_set: "12", reason: "x" }));
-  assert.match(refused.status === "error" ? refused.message : "", /already carries this change set/);
+  assert.match(refused.status === "error" ? refused.message : "", /A published version already carries this change/);
 });
 
 test("Publish anyway: admin_data_unhold, then the publish logged before it is dispatched with force; a refused unhold sends nothing", async () => {
@@ -881,12 +894,12 @@ test("Revert needs the typed word; a later change set's refusal names it so the 
   assert.deepEqual(f.calls, [], "the function was never called");
   const r = await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: " REVERT ", note: "bad batch" }));
   assert.equal(r.status, "done");
-  assert.match(r.status === "done" ? (r.message ?? "") : "", /change set #77 puts back what #45 changed/);
+  assert.match(r.status === "done" ? (r.message ?? "") : "", /Undone: change #77 puts back what #45 changed/);
   assert.deepEqual(f.calls, [{ fn: "admin_data_revert", args: { p_change_set: 45, p_note: "bad batch" } }]);
   f = fakeDeps({ refuse: { fn: "admin_data_revert", error: "later change set touched reported.entries/166027 (change set 51)" } });
   const refused = await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: "revert" }));
   assert.equal(refused.status, "error");
-  assert.equal(refused.status === "error" ? refused.message : "", "Change set #51 changed reported.entries/166027 after this one. Revert #51 first, then this one.");
+  assert.equal(refused.status === "error" ? refused.message : "", "Change #51 changed reported.entries/166027 after this one. Undo #51 first, then this one.");
   assert.deepEqual(f.dispatches, [], "a revert dispatches nothing: the next publish carries it");
   assert.equal(actions.dataErrorMessage("admin only"), "Only an admin signed in with their second factor can do that.");
   assert.equal(actions.dataErrorMessage("something new"), "That didn't work. Try again in a moment.");

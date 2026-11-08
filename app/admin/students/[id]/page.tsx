@@ -4,15 +4,17 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { ConfirmTyped } from "@/components/admin/ConfirmTyped";
-import { Empty, Fields, KeyValues, Muted, PageHeader, Panel } from "@/components/admin/Panel";
+import { Empty, Fields, Muted, PageHeader, Panel } from "@/components/admin/Panel";
 import { PersonPicker } from "@/components/admin/PersonPicker";
 import { RecordActions } from "@/components/admin/RecordActions";
+import { RecordFieldsView } from "@/components/admin/RecordFields";
 import { StandingPanelSlot } from "@/components/admin/StandingPanelSlot";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
 import { CONFIRM_DELETE_RECORD, STUDENT_PAGE_VIEW, fmtDate, fmtDateTime } from "@/lib/admin/console";
 import { findPeople } from "@/lib/admin/console-reads";
 import { adminStudent, logStudentView, type AdminList, type AdminListItem, type AdminStudent, type SearchRow } from "@/lib/admin/people";
+import { offers as offerFields, snapshot as snapshotFields, studentNumbers } from "@/lib/admin/record-words";
 import { studentOrganizationGrants } from "@/lib/admin/organizations";
 import { getData } from "@/lib/data";
 import { isUuid } from "@/lib/household-hub";
@@ -164,7 +166,7 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
           </Panel>
 
           <Panel help="student-record" title="Numbers" id="numbers" aside={student.profile ? <Muted>Updated {fmtDate(student.profile.updated_at)}</Muted> : undefined}>
-            {student.profile ? <KeyValues data={student.profile.data} /> : <Empty>Nothing entered yet.</Empty>}
+            {student.profile ? <RecordFieldsView {...studentNumbers(student.profile.data)} empty="Nothing entered yet." /> : <Empty>Nothing entered yet.</Empty>}
           </Panel>
 
           <Panel help="student-record" title="Lists" id="lists">
@@ -196,7 +198,7 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
                         {s.applied_on ? <span className="font-normal text-muted-foreground"> · applied {fmtDate(String(s.applied_on))}</span> : null}
                       </summary>
                       <div className="mt-2">
-                        <KeyValues data={s} />
+                        <RecordFieldsView {...snapshotFields(s)} empty="Nothing recorded." />
                       </div>
                     </details>
                   </li>
@@ -366,7 +368,7 @@ function PlanBlock({ plan }: { plan: AdminStudent["plan"] }) {
               <details key={String(o.id ?? i)} className="rounded-xl border p-3">
                 <summary className="cursor-pointer font-medium">Award year {String(o.award_year ?? "")}</summary>
                 <div className="mt-2">
-                  <KeyValues data={o} />
+                  <RecordFieldsView {...offerFields(o)} empty="Nothing recorded." />
                 </div>
               </details>
             ))}

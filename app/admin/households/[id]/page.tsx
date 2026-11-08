@@ -9,7 +9,7 @@ import { PersonPicker } from "@/components/admin/PersonPicker";
 import { RecordActions } from "@/components/admin/RecordActions";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
-import { CONFIRM_REMOVE, fmtDate, moveWarning } from "@/lib/admin/console";
+import { CONFIRM_CLOSE_HOUSEHOLD, CONFIRM_REMOVE, fmtDate, moveWarning } from "@/lib/admin/console";
 import { findPeople } from "@/lib/admin/console-reads";
 import { adminHousehold, type AdminHousehold, type AdminInvitation, type AdminMember, type SearchRow } from "@/lib/admin/people";
 import { isUuid } from "@/lib/household-hub";
@@ -72,13 +72,13 @@ export default async function HouseholdPage({ params, searchParams }: PageProps<
             fields={[{ name: "name", label: "Household name", defaultValue: household.name, required: true, maxLength: 80 }]}
           />
           {empty ? (
-            <AdminForm
+            <ConfirmTyped
               key="close"
               action={closeHousehold}
               hidden={{ household: id }}
               trigger="Close household"
               submit="Close household"
-              tone="danger"
+              expected={CONFIRM_CLOSE_HOUSEHOLD}
               sheet
               description="Closes this empty household and cancels its waiting invitations."
             />

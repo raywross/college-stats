@@ -317,15 +317,24 @@ test("Approve a hold proposal: the decisions written (logged), then one dispatch
   assert.deepEqual(retry.dispatches.map((d) => d.inputs), [{ proposal: "hold-grid-r1", mode: "apply" }]);
 });
 
-test("a reject proposal needs no typed word; a systemic one records the analysis without ticks or a dispatch", async () => {
+test("a reject proposal needs no typed word; a systemic one asks for \"approve\", then records the analysis without ticks or a dispatch", async () => {
   const reject = proposal({ key: "reject-x-r1", kind: "reject", rows: [row({ field: null, value: undefined, item: "231624|2025-26|C.116" })] });
   const f = fakeDeps({ docs: [at(reject)] });
   assert.equal((await actions.approveProposal(f.deps, form({ proposal: reject.key, rows: "1", "row-0": "on" }))).status, "done");
   assert.equal(f.dispatches[0].inputs.mode, "apply");
 
   const systemic = proposal({ key: "systemic-header-r1", kind: "systemic", rows: [], change: { what: "w", how: "h", revert: "r" } });
+  // The typed-word rule (specs/product/admin-redesign.md "Owner decisions" 6): no word, or the wrong one, writes nothing.
+  for (const confirm of [undefined, "", "yes", "approved"]) {
+    const refused = fakeDeps({ docs: [at(systemic)] });
+    const r = await actions.approveProposal(refused.deps, form({ proposal: systemic.key, rows: "0", ...(confirm === undefined ? {} : { confirm }) }));
+    assert.deepEqual(r, { status: "error", message: 'Type "approve" to confirm.' }, String(confirm));
+    assert.equal(refused.writes.length + refused.dispatches.length + refused.calls.length, 0, `nothing written for ${String(confirm)}`);
+  }
+  assert.ok(actions.TYPED_KINDS.has("systemic"), "the page asks for the word on a systemic proposal");
+  assert.match(read("app/admin/steward/proposals/[key]/page.tsx"), /trigger="Approve"[\s\S]{0,400}typed=\{\{ expected: CONFIRM_APPROVE/, "the systemic Approve's sheet asks for the word");
   const s = fakeDeps({ docs: [at(systemic)] });
-  const r = await actions.approveProposal(s.deps, form({ proposal: systemic.key, rows: "0", note: "do it in the check" }));
+  const r = await actions.approveProposal(s.deps, form({ proposal: systemic.key, rows: "0", note: "do it in the check", confirm: " Approve " }));
   assert.equal(r.status, "done");
   assert.deepEqual([lastWrite(s.writes).status, lastWrite(s.writes).decision_note], ["approved", "do it in the check"]);
   assert.equal(s.dispatches.length + s.calls.length, 0);

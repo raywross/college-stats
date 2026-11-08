@@ -20,14 +20,14 @@
  */
 import type { OpsDeps, OpsState, ReviewDeps } from "./ops-actions.ts";
 import { acceptReviewItem, dispatchRun, noteFromForm, rediscoverReviewItem, rejectReviewItem, reviewKeyFromForm } from "./ops-actions.ts";
-import { ADMIN_FAILED, CONFIRM_REVERT, typedMatches, type AdminActionState } from "./console.ts";
+import { ADMIN_FAILED, CONFIRM_PUBLISH, CONFIRM_REVERT, typedMatches, type AdminActionState } from "./console.ts";
 import { ADMIN_ERRORS } from "./constants.ts";
 import type { ReviewItem } from "../reported.ts";
 
 /** The word typed to move the live pointer to an older snapshot. */
 export const CONFIRM_POINT_BACK = "point back";
-/** The word typed to revert a change set (defined in console.ts so client components can import it without this module). */
-export { CONFIRM_REVERT } from "./console.ts";
+/** The words typed to undo a change set and to Publish now (defined in console.ts so client components can import them without this module). */
+export { CONFIRM_PUBLISH, CONFIRM_REVERT } from "./console.ts";
 
 function fromOpsState(state: OpsState): AdminActionState {
   if (state.status === "idle") return state;
@@ -61,11 +61,11 @@ export interface DataActionDeps {
 /* ------------------------------------------------------------------ */
 
 const DATA_ERRORS: Record<string, string> = {
-  change_set_not_found: "That change set doesn't exist. Reload the page.",
-  change_set_not_applied: "Only an applied change set can be held.",
-  change_set_published: "A snapshot already carries this change set, so holding it changes nothing. Revert it instead.",
-  change_set_not_held: "That change set isn't held any more. Reload the page.",
-  change_set_not_revertible: "Only an applied or held change set can be reverted.",
+  change_set_not_found: "That change doesn't exist. Reload the page.",
+  change_set_not_applied: "Only an applied change can be held.",
+  change_set_published: "A published version already carries this change, so holding it changes nothing. Undo it instead.",
+  change_set_not_held: "That change isn't held any more. Reload the page.",
+  change_set_not_revertible: "Only an applied or held change can be undone.",
   reason_required: "Say why it's held (up to 500 characters).",
   invalid_note: "Keep the note under 500 characters.",
   invalid_unit: "That isn't a college's unit id.",
@@ -86,7 +86,7 @@ const DATA_ERRORS: Record<string, string> = {
 export function dataErrorMessage(raw: string | null | undefined): string {
   const text = raw ?? "";
   const later = /later change set touched (.+) \(change set (\d+)\)/.exec(text);
-  if (later) return `Change set #${later[2]} changed ${later[1]} after this one. Revert #${later[2]} first, then this one.`;
+  if (later) return `Change #${later[2]} changed ${later[1]} after this one. Undo #${later[2]} first, then this one.`;
   if (/\badmin only\b/.test(text)) return ADMIN_ERRORS["admin only"];
   const key = Object.keys(DATA_ERRORS).find((k) => text.includes(k));
   return key ? DATA_ERRORS[key] : ADMIN_FAILED;
@@ -124,16 +124,20 @@ function lineFromForm(form: DataFormLike, name: string): string | null {
   return text || null;
 }
 
-const BAD_SNAPSHOT: AdminActionState = { status: "error", message: "That snapshot wasn't recognized. Reload the page and try again." };
-const BAD_CHANGE_SET: AdminActionState = { status: "error", message: "That change set wasn't recognized. Reload the page and try again." };
+const BAD_SNAPSHOT: AdminActionState = { status: "error", message: "That published version wasn't recognized. Reload the page and try again." };
+const BAD_CHANGE_SET: AdminActionState = { status: "error", message: "That change wasn't recognized. Reload the page and try again." };
 const BAD_ITEM: AdminActionState = { status: "error", message: "That item wasn't recognized. Reload the page and try again." };
 
 /* ------------------------------------------------------------------ */
 /* Overview and Snapshots                                              */
 /* ------------------------------------------------------------------ */
 
-/** Publish now: specs/data-platform/publish.md "The admin's publish controls". */
-export async function publishNow(deps: DataActionDeps): Promise<AdminActionState> {
+/**
+ * Publish now: specs/data-platform/publish.md "The admin's publish controls". The admin types "publish" first
+ * (specs/product/admin-redesign.md "Owner decisions" 6); the word is checked here, before anything is logged or sent.
+ */
+export async function publishNow(deps: DataActionDeps, form: DataFormLike): Promise<AdminActionState> {
+  if (!typedMatches(form.get("confirm"), CONFIRM_PUBLISH)) return { status: "error", message: `Type "${CONFIRM_PUBLISH}" to confirm.` };
   return fromOpsState(await dispatchRun(deps.ops, { run: "publish-snapshot", values: {} }));
 }
 
@@ -160,7 +164,7 @@ export async function holdChangeSet(deps: DataActionDeps, form: DataFormLike): P
   if (!reason) return { status: "error", message: DATA_ERRORS.reason_required };
   const r = await deps.rpc("admin_data_hold", { p_change_set: id, p_reason: reason });
   if (!r.ok) return { status: "error", message: dataErrorMessage(r.error) };
-  return { status: "done", message: `Change set #${id} is held. Nothing from it or later publishes until it is published anyway or reverted.` };
+  return { status: "done", message: `Change #${id} is held. Nothing from it or later publishes until it is published anyway or undone.` };
 }
 
 /**
@@ -174,8 +178,8 @@ export async function publishAnyway(deps: DataActionDeps, form: DataFormLike): P
   const r = await deps.rpc("admin_data_unhold", { p_change_set: id });
   if (!r.ok) return { status: "error", message: dataErrorMessage(r.error) };
   const sent = await dispatchRun(deps.ops, { run: "publish-snapshot", values: {} });
-  if (sent.status === "error") return { status: "error", message: `Change set #${id} is no longer held, but the publish didn't start: ${sent.message} Publish now on the Overview carries it.` };
-  return fromOpsState(sent.status === "done" ? { ...sent, message: `Change set #${id} is no longer held. ${sent.message}` } : sent);
+  if (sent.status === "error") return { status: "error", message: `Change #${id} is no longer held, but the publish didn't start: ${sent.message} Publish now on the Data page carries it.` };
+  return fromOpsState(sent.status === "done" ? { ...sent, message: `Change #${id} is no longer held. ${sent.message}` } : sent);
 }
 
 /**
@@ -190,7 +194,7 @@ export async function revertChangeSet(deps: DataActionDeps, form: DataFormLike):
   const r = await deps.rpc("admin_data_revert", { p_change_set: id, p_note: lineFromForm(form, "note") });
   if (!r.ok) return { status: "error", message: dataErrorMessage(r.error) };
   const revert = typeof r.data === "number" ? r.data : Number(r.data);
-  return { status: "done", message: `Reverted: change set #${Number.isFinite(revert) && revert > 0 ? revert : "?"} puts back what #${id} changed. The next publish carries it.` };
+  return { status: "done", message: `Undone: change #${Number.isFinite(revert) && revert > 0 ? revert : "?"} puts back what #${id} changed. The next publish carries it.` };
 }
 
 /* ------------------------------------------------------------------ */

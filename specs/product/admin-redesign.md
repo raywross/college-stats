@@ -402,3 +402,106 @@ Recommended defaults; the build proceeds on them unless the owner says otherwise
   merges them properly.
 - Tables keep their sideways scroll until Unit 2's `ResponsiveTable`; record pages keep their action layout for Unit 2
   and Unit 3; the typed-word rule's new words are Units 3 and 4's.
+
+### Unit 4: Data (2026-11-08, `feature/admin-redesign-data`)
+
+- **Health, one code path.** `app/admin/data/health/page.tsx` checks the admin, reads the tab, and renders the one
+  header and tab bar; `collegesTab()` and `sourcesTab()` in the same file fill the body (`sources.tsx` is gone), with
+  one `Showing` line and one `Pager` between them. `lib/admin/health-tabs.ts` (pure): `healthTab()`, `healthTabHref()`,
+  `HEALTH_TABS`, `HEALTH_BASE`, `SHARED_HEALTH_FILTERS`. A tab's link keeps the filters both tabs read (status, state,
+  tier, family, sort, each only when the other tab understands its value) and drops the ones only one tab has (the
+  Colleges tab's `input`; the Sources tab's `group`, `reason`, `unjudged`, and the queue sort) and the page.
+  `HealthTabs` takes the two links. The old addresses keep their query strings through the redirects (tested). The
+  visit-events card stays on the Sources tab: moving it to Jobs is Unit 5's ground (`app/admin/steward/**`).
+- **Selectivity in words.** `lib/admin/selectivity-words.ts` (pure): `tierSentence()`, `reasonInputs()`,
+  `inputWords()`, `poolTier()`, `REASON_INPUTS`, `THIN_EVIDENCE`. The sentence is the stored tier (or the plain
+  cutoffs' when none is stored), then the admit rate and the two other reported inputs that weigh most in the score,
+  in the method's order ("Ultra selective: admit rate 4%, SAT, 75th percentile 1570, yield 83%."); a filled input is
+  never a reason. Clauses follow when they apply: a tier the band kept ("kept from the last publish; the score alone
+  reads …"), an evidence factor under 0.9 ("pulled toward the middle by a small admitted class"), and a pool in
+  another tier ("in-state applicants: Highly selective"). The admit rate is always named: the first fixture run showed
+  a college whose rate weighed least, and the sentence read wrong without it. The pools' tables, the top band, and the
+  formula are under one `<details>Details</details>`; the citations stay outside it. Help icons on pool, percentile,
+  reading, evidence, hysteresis, and top band; the panel's own key is `selectivity-tier`.
+- **Reference forms.** `lib/admin/reference-form.ts` (pure, client-safe): `FORM_REFERENCES` (aid-policies, state-laws,
+  guaranteed-admission, calendar), `hasForm()`, `referenceFields()`, `fieldList()`, `parseFieldList()`,
+  `formToBody()`, `problemsByField()`, `keyLabel()`, `fieldName()`. One field per top-level key: a line for a short
+  string, a box for a long one, a number, yes/no, and the key's JSON in a smaller box for a list or object. The form
+  posts `kind=form` with the field list; `saveReference` puts the body together with `formToBody` and then runs the
+  same validator and the same `admin_data_set_reference` call as the textarea; a refusal now also carries the
+  messages one by one (`ReferenceActionState.problems`), and the editor places each beside the key it names (a quoted
+  key, the key after the document's name, an entry of the document's one list, or the key named as a word; anything
+  else above the form). "Edit as text" switches to today's textarea (unsaved form edits don't carry over). The
+  release calendar has no validator in `lib/reference-validators.ts`; it gets the form (the owner edits it most) with
+  only the generic check. Writing a calendar validator was left out: the publisher's reference gate runs the same
+  dispatch, so a new validator would also gate publishes.
+- **Changes and Versions.** `lib/admin/report-words.ts` (pure): `reportLines()`, `reportTally()`, `plainText()`,
+  `REPORT_MAX_ROWS`, `ReportLine`. A change's report reads as headings, counts (two-column tables with no header
+  words, labelled bullets), checks (a blockquote, "Tripped"/"Not tripped", ticked boxes, the lines under a heading
+  that names checks; ok, failed, or noted), rows of the wider tables (20 per table, then one "more" line), and notes.
+  A check's detail is its first sentence, so the breaker's constant and file names stay in the raw text.
+  `components/admin/ChangeReport.tsx` renders the list (each check's outcome as a word and an icon) with the raw text
+  under Details, in its own **Report** panel. Undo this change carries "To undo a whole publish rather than this one
+  change, make an earlier published version live" (a link to Published versions); the Versions page carries "To undo
+  one change rather than a whole publish, open it on Changes and use Undo this change". The actions' messages say
+  change, published version, and undo (no "change set", "snapshot", "revert" on screen).
+- **A high school.** "Courses students list" holds two lists, **Courses the plan lists** and **Below the line**, each a
+  course's name and its students, with the threshold in one sentence; the course keys and the function and table
+  names left the screen.
+- **Typed words.** `CONFIRM_PUBLISH` ("publish") and `CONFIRM_APPROVE` ("approve") in `lib/admin/console.ts`;
+  `lib/admin/steward-actions.ts` re-exports the latter and `TYPED_KINDS` gains `systemic`. `publishNow(deps, form)`
+  refuses without the word before anything is logged or sent; `approveProposal` refuses a systemic Approve without it
+  before anything is written. The Data landing's Publish now and the systemic proposal's Approve open the typed sheet.
+- **Help.** New Data entries: `selectivity-tier`, `hysteresis`, `top-band`, `selectivity-movers`, `tier-counts`,
+  `method-log`, `change-report`, `change-actions`, `documents-touched`, `reference-versions`, `reference-form`,
+  `course-counts`, `course-offering`, `health-sources`; the panels that shared a generic key now use them.
+- **Tables touched** (for Unit 2): the Selectivity pool table on a college page (moved under Details, help icons in two
+  headers; markup otherwise as it was); the high school's course table (replaced by two lists, so there is no table
+  left to convert). The Health tables, Changes, Versions (`SnapshotsTable`), and the Selectivity screen's tables are
+  unchanged.
+- Tests: `tests/admin-redesign-data.test.mts` (the four pure modules, the form's save, Health's one path and tabs, the
+  old addresses, the pages' words); the typed words' refusals in `tests/admin-data.test.mts` and
+  `tests/admin-steward.test.mts`; the Sources tab's render test in `tests/admin-ops.test.mts` now renders the page.
+
+### Unit 3: People (2026-11-08, `feature/admin-redesign-people`)
+
+- **Plain fields.** `lib/admin/record-words.ts` (pure, tested): `studentNumbers()`, `offers()`, `snapshot()`, and
+  `notificationPrefs()`, each returning `{ fields: {label, value}[]; details: Record<string, unknown> }` — the labels
+  come from the site's own words (`/me`'s groups for a profile, `lib/planner/offers.ts`'s `COA_LABELS`/`GIFT_LABELS`/
+  `LOAN_LABELS`/`usd()` for an offer, `lib/chances/levels.ts`'s `STANDING_LEVEL_LABELS` for a snapshot's estimate, and
+  the names `/account` and the unsubscribe pages use for a notification switch). Long lists (courses, activities,
+  awards, connections, recommenders) show as a count, not a dump. `components/admin/RecordFields.tsx` renders the
+  result: `<Fields>` for what it knows, `<details>Details</details>` (still `KeyValues`) for what's left over. Wired
+  into the student record's Numbers and Snapshots, the plan's Offers, and a person's Notifications; `KeyValues` on
+  these pages now appears only inside a `<details>`.
+- **The typed-word rule.** `lib/admin/console.ts` gained `CONFIRM_GRANT` ("grant"), `CONFIRM_REVOKE` ("revoke"),
+  `CONFIRM_CLOSE_HOUSEHOLD` ("close"), and `CONFIRM_DEACTIVATE` ("pause"), beside `CONFIRM_DELETE`. Grant admin and
+  Revoke admin (`app/admin/admins/page.tsx`) and Close household (`app/admin/households/[id]/page.tsx`) now use
+  `ConfirmTyped`; Deactivate (`app/admin/people/[user]/page.tsx`) keeps its required typed reason and gains the typed
+  word on top. Each Server Action (`app/admin/admins/actions.ts`, `app/admin/households/[id]/actions.ts`,
+  `app/admin/people/actions.ts`) checks `typedMatches(form.get("confirm"), ...)` again before calling its database
+  function, exactly as the delete actions do; `tests/admin-console-ui.test.mts` shows each one refused with no
+  database call when the word is missing or wrong.
+- **Organizations search.** `lib/admin/organizations.ts`'s `listOrganizations(q, page)` takes a search term (the
+  organization's name, its join code, its high school id, or a member's name), matched in code since there's still no
+  `admin_list_organizations()` and the count stays small; `app/admin/organizations/page.tsx` gained the same
+  `AdminSearch` box Households uses, and one match redirects straight to the organization's page.
+- **The duplicate anchor.** A person's page had two `id="views"` panels (Colleges viewed, and Who viewed their data).
+  Colleges viewed keeps `#views` (every existing link points there); Who viewed their data is now `#viewed`.
+- **Help.** Every People word the brief listed (seat, managed record, role hint, join code, ask, second factor,
+  paused, deleting) already had an entry in `lib/admin/help.ts` from Unit 1's shell pass, each already wired to the
+  panel that uses it (Households' "Who is in it" carries `help="seat"`, "Add a student" carries `help="managed-
+  record"`, Admins' second-factor panel carries `help="second-factor"`, and so on); no new People entries were
+  needed. `StatusChip`'s own rule (its help icon is for a word that isn't plain English, like Held or Stale) is why
+  Paused and Deleting, whose chips read as plain English, don't carry an inline tip even though their glossary
+  entries exist for `/admin/help` and anything that links to them.
+
+#### Left for the next units
+
+- Panel and table markup on the People pages is unchanged (U2's `ResponsiveTable` and `RecordActions` land on top of
+  this); the new `RecordFieldsView` sits inside the existing panel shape so U2 can fold it into the phone layout
+  without re-deriving the fields.
+- Offers, snapshots, and notification preferences are formatted from whatever shape the row actually has (defensive
+  `typeof` checks, not the strict `StudentProfileData`/`PlanOffer` types), since the admin console reads these tables
+  directly rather than through the sanitizers the family-facing forms use; a key the formatter doesn't recognize is
+  never hidden, only pushed into Details.

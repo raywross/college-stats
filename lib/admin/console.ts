@@ -252,6 +252,22 @@ export const CONFIRM_DELETE_RECORD = "delete";
 /** The word typed to revert a change set or a reference document to an older version (client-safe: no server imports here). */
 export const CONFIRM_REVERT = "revert";
 
+/** The word typed to Publish now on the Data landing (specs/product/admin-redesign.md "Owner decisions" 6). */
+export const CONFIRM_PUBLISH = "publish";
+
+/** The word typed to approve a Steward proposal that changes data or code: the value kinds and the systemic kind. */
+export const CONFIRM_APPROVE = "approve";
+
+/**
+ * The typed-word rule (specs/product/admin-redesign.md "Owner decisions" 6): Grant and Revoke admin, Close household,
+ * and Deactivate join the typed-word list beside Delete. Deactivate keeps its typed reason (parseReason) and adds
+ * this word; the Server Actions re-check each one, as the delete actions do.
+ */
+export const CONFIRM_GRANT = "grant";
+export const CONFIRM_REVOKE = "revoke";
+export const CONFIRM_CLOSE_HOUSEHOLD = "close";
+export const CONFIRM_DEACTIVATE = "pause";
+
 /* ------------------------------------------------------------------ */
 /* Reading forms                                                       */
 /* ------------------------------------------------------------------ */

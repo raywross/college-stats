@@ -2,9 +2,13 @@
 
 import { refresh } from "next/cache";
 import { callAdminRpc, withAdmin } from "@/lib/admin/console-actions";
-import { BAD_FORM_MESSAGE, formId, parseGrantNote, type AdminActionState } from "@/lib/admin/console";
+import { BAD_FORM_MESSAGE, CONFIRM_GRANT, CONFIRM_REVOKE, formId, parseGrantNote, typedMatches, type AdminActionState } from "@/lib/admin/console";
 
-/** Who is an admin (specs/product/admin.md "Who is an admin"): grant and revoke. The database keeps the rules. */
+/**
+ * Who is an admin (specs/product/admin.md "Who is an admin"): grant and revoke. The database keeps the rules; the
+ * typed-word rule (specs/product/admin-redesign.md "People") is checked again here, since the disabled button in
+ * the browser isn't the rule.
+ */
 
 const badForm: AdminActionState = { status: "error", message: BAD_FORM_MESSAGE };
 
@@ -13,6 +17,7 @@ export async function grantAdmin(_prev: AdminActionState, form: FormData): Promi
   return withAdmin("admin grant", async (ctx) => {
     const user = formId(form, "user");
     if (!user) return badForm;
+    if (!typedMatches(form.get("confirm"), CONFIRM_GRANT)) return { status: "error", message: `Type "${CONFIRM_GRANT}" to confirm.` };
     const failed = await callAdminRpc(ctx, "admin grant", "admin_grant", { p_user: user, p_note: parseGrantNote(form) });
     if (failed) return failed;
     refresh();
@@ -25,6 +30,7 @@ export async function revokeAdmin(_prev: AdminActionState, form: FormData): Prom
   return withAdmin("admin revoke", async (ctx) => {
     const user = formId(form, "user");
     if (!user) return badForm;
+    if (!typedMatches(form.get("confirm"), CONFIRM_REVOKE)) return { status: "error", message: `Type "${CONFIRM_REVOKE}" to confirm.` };
     const failed = await callAdminRpc(ctx, "admin revoke", "admin_revoke", { p_user: user });
     if (failed) return failed;
     refresh();

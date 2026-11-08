@@ -895,11 +895,30 @@ new code falls back to today's reads while a function is missing):
 - Closed in round 2: `/api/me` answers from `me_bundle()` in one call (no viewer bundle), and the essay page reads
   `essay_bundle(id)` in one database wave beside the viewer check and the overrides, with the reviews in it, so the
   notes panel no longer makes a second request (`specs/product/essays/workspace.md` "Where it lives").
-- The list page's own row citations (`admitRateCited`, `avgCostCited`, `distanceCited`), the offers facts' citations
-  (`offers-server`), and the chances page's are still full; `components/advisor/sample.ts` builds its own `{url}`.
-- A plan tab switch is still a server render; with the payload down, prefetching the other tabs or a client-side
-  switch is the next step if it still reads slow.
-- Measure after the deploy and the migration: the EXPLAIN recipe above as Maria, then the same browser paths.
+- Closed in round 4: the list page's row citations (`admitRateCited`, `avgCostCited`, `distanceCited`: 33 KB → 4 KB
+  of JSON for 15 rows), the offers facts' (`offers-server`, the signed-out splash included), the chances section's
+  (`StandingSection`, `StandingCard`, `WhatWentIn`, `ComparedWith`), and the reading lines shared by the college and
+  compare pages (`lib/chances/reading-cites.ts`) are references through the same ⓘ and `/api/cite`
+  (`lib/planner/plan-cites.ts citeRefWhereSame`). Still full on purpose: the GPA fields (the API answers them with the
+  fitted model's formula, not the college page's), major-unit citations (a unit page and quote the API can't produce),
+  hidden or unregistered paths, `components/advisor/sample.ts`, and `GpaPanel` on the admissions page (outside this
+  round's scope).
+- Closed in round 4: a plan tab switch happens in the browser (`components/planner/PlanTabSwitch.tsx`;
+  [page.md](planner/redesign/page.md) "Tabs switch in place"). Every panel the page can build is rendered once; the
+  pills stay real links and `pushState` keeps `?tab=` and the back button right; a panel mounts the first time it is
+  shown and stays mounted hidden after, so first paint and hydration cover the open tab only. Colleges, Essays, and
+  Calendar always switch in place; Next steps switches in place when the page opened on it or for a counselor (its
+  `AskNotice` marks a student's asks seen, so it runs only when that tab is opened); Offers still navigates (its own
+  reads). First load grows 5–7 KB gzipped (the essays data now rides with every plan render, so a guardian's or
+  counselor's essays access log is written on every plan view); a switch ships nothing where it shipped a whole page.
+  `scripts/measure-plan-payload.mts` reproduces the numbers offline.
+- Measured after the deploy and the migration: see "Measured after the deploy and the migration (2026-11-08)" above
+  and round 3's production line.
+- Answered in round 4: the `/explore` request that ran in `sfo1` was the platform's regional failover (Vercel's docs:
+  Fluid compute falls over to the next closest region when a zone or region is unavailable; for `iad1` the order is
+  `cle1`, `yul1`, `sfo1`). The project is pinned to `iad1`, nothing in it allows another region, and the explicit
+  failover controls are Enterprise-only; a request served from `sfo1` pays about 70 ms a database wave. No change; a
+  Vercel support ticket with request ids if it recurs.
 - Closed in round 3 (2026-11-08): the cold start's `JSON.parse` of the whole 35.7 MB `colleges.json`. `lineage` is
   its own object (`lineage.json.gz`, exploded into `.data/snapshot/lineage/<unit_id>.json` in the bundled copy) and
   loads per college on first access; the first load measured 136 → 87 ms wall (134 → 85 ms CPU) on the real snapshot

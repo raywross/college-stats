@@ -622,3 +622,27 @@ Recommended defaults; the build proceeds on them unless the owner says otherwise
   `tests/admin-phone.test.mts` checks each.
 - **Left:** a Findings cluster still shows its check id (`cluster.check`) in monospace; Steward-written text (QA
   finding 2) and Decide without a typed word (finding 6) are unchanged.
+
+### Follow-ups (2026-11-08, `feature/admin-redesign-followups`)
+
+The four items the QA report and the polish pass left (qa.md "Smaller findings" 2, 6, 8, and the polish pass's "Left").
+
+- **Steward-written text reads in words.** What the Steward writes (finding hypotheses and reasons, what a document
+  shows, proposal summaries, rationales and answers, decision questions, recommendations and effects, To do notes, a
+  job review's note) is stored as written, so the console runs it through `stewardText(text)` (`lib/admin/words.ts`,
+  pure) where it renders: a bare CDS code ("C7", "H2A", "C.1001") gains its name on its first appearance in the string
+  ("C7, admission factors"), a range ("B4–B5") both names, a registered field path its registry label, and a
+  snake_case key its words (`codeWordsInText` with `REASON_WORDS`). A code whose name the sentence already says, a
+  code inside a link, and later mentions stay as written. The raw sentence goes in a `title` where the component
+  already keeps one. At the source, the Steward's system prompt (`scripts/lib/steward/prompts.mts` `SYSTEM_PROMPT`)
+  gains one line: name fields in words with the code after, and no bare keys in text for a person.
+- **Decide gets the typed word.** `CONFIRM_DECIDE` ("decide") in `lib/admin/console.ts`; Decide on
+  /admin/steward/decisions opens `ConfirmTyped` with the answer and note fields; `decidePolicy` refuses without the
+  word before reading or writing anything. The Inbox's decision rows already open the question's panel
+  (`decisionAnchor`). The `decision` help entry says so.
+- **A Findings cluster names its check.** `checkLabel(id)` in `lib/admin/words.ts` with `CHECK_WORDS`, typed
+  `Record<CheckId, string>` so every check the pipeline can queue has words (a test reads the `CheckId` union too); an
+  unknown id reads as its words. ClustersTable shows the label with the id in the `title`.
+- **Long phone lists fold.** `ResponsiveTable` takes `foldAfter` (default 25): below `md` the first `foldAfter` cards
+  show, then one `<details>` whose 44 px `<summary>` says "Show the other N" holds the rest. Still a Server Component;
+  the table from `md` is unchanged.

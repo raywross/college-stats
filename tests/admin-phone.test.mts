@@ -1,13 +1,19 @@
 /**
  * The console on a phone (specs/product/admin-redesign.md "Phones"; components/admin/ResponsiveTable.tsx,
  * RecordActions.tsx, Collapsible.tsx): every table goes through ResponsiveTable, no minimum widths, records put their
- * actions at the top, forms are one column below `md`. Pages and components can't render under node:test, so these
- * read source; each rule is shown failing on a sample that breaks it. `npm test`.
+ * actions at the top, forms are one column below `md`. Most rules read source (a page needs Next to render), each shown
+ * failing on a sample that breaks it; ResponsiveTable itself is rendered to check how a long phone list folds. `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
+import ts from "typescript";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (path: string) => readFileSync(join(ROOT, path), "utf8");
@@ -51,6 +57,60 @@ test("ResponsiveTable is a Server Component: a table from md, one card per row b
   for (const role of ["title", "fact", "actions", "detail"]) assert.match(src, new RegExp(`"${role}"`));
   assert.match(src, /<details/);
   assert.match(src, /<li\b/);
+});
+
+/**
+ * The real ResponsiveTable, rendered: transpiled, with HelpTip and `cn` stood in for (the (i) icon is a client component
+ * that needs Next's Link and base-ui; neither changes what this checks).
+ */
+async function loadResponsiveTable() {
+  const tmp = mkdtempSync(join(tmpdir(), "responsive-table-"));
+  const reactUrl = pathToFileURL(createRequire(import.meta.url).resolve("react")).href;
+  writeFileSync(join(tmp, "helptip.mjs"), `export function HelpTip() { return null; }`);
+  writeFileSync(join(tmp, "utils.mjs"), `export const cn = (...a) => a.filter(Boolean).join(" ");`);
+  const { outputText } = ts.transpileModule(read("components/admin/ResponsiveTable.tsx"), {
+    compilerOptions: { jsx: ts.JsxEmit.React, module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+  });
+  const code = outputText
+    .replace(/from "@\/components\/admin\/HelpTip"/, `from ${JSON.stringify(pathToFileURL(join(tmp, "helptip.mjs")).href)}`)
+    .replace(/from "@\/lib\/utils"/, `from ${JSON.stringify(pathToFileURL(join(tmp, "utils.mjs")).href)}`);
+  writeFileSync(join(tmp, "ResponsiveTable.mjs"), `import React from ${JSON.stringify(reactUrl)};\n${code}`);
+  return (await import(pathToFileURL(join(tmp, "ResponsiveTable.mjs")).href)) as typeof import("../components/admin/ResponsiveTable.tsx");
+}
+
+test("a long phone list folds: the first foldAfter cards, then one 44 px 'Show the other N'; the table keeps every row", async () => {
+  const { ResponsiveTable, FOLD_AFTER } = await loadResponsiveTable();
+  assert.equal(FOLD_AFTER, 25);
+  type Row = { id: string; name: string };
+  const rows = (n: number): Row[] => Array.from({ length: n }, (_, i) => ({ id: `r${i + 1}`, name: `College ${i + 1}` }));
+  const columns = [
+    { key: "name", header: "College", role: "title" as const, cell: (r: Row) => r.name },
+    { key: "id", header: "Id", cell: (r: Row) => r.id },
+  ];
+  const render = (n: number, foldAfter?: number) =>
+    renderToStaticMarkup(createElement(ResponsiveTable<Row>, { rows: rows(n), columns, rowKey: (r: Row) => r.id, empty: "None", foldAfter }));
+  const phone = (html: string) => html.slice(html.indexOf('<div class="md:hidden">'));
+  const cards = (html: string) => (html.match(/<li /g) ?? []).length;
+  const rowsInTable = (html: string) => (html.match(/<tr /g) ?? []).length;
+
+  const long = render(1000);
+  assert.equal(rowsInTable(long), 1000, "the table from md shows every row");
+  const [shown, folded] = phone(long).split("<details");
+  assert.equal(cards(shown), 25, "the first 25 cards show");
+  assert.equal(cards(folded), 975, "the rest wait inside the fold");
+  assert.match(folded, /^ class="mt-3" data-fold="true"><summary class="[^"]*\bmin-h-11\b[^"]*">Show the other 975<\/summary>/, "one 44 px summary naming how many");
+  assert.equal((phone(long).match(/<details/g) ?? []).length, 1, "one fold, not one per page of rows");
+
+  assert.doesNotMatch(phone(render(25)), /Show the other/, "exactly foldAfter rows: nothing folds");
+  assert.equal(cards(phone(render(25))), 25);
+  assert.match(phone(render(26)), /Show the other 1</);
+  assert.match(phone(render(12, 10)), /Show the other 2</, "a page can pass its own foldAfter");
+  assert.equal(cards(phone(render(12, 10)).split("<details")[0]), 10);
+  assert.match(phone(render(1300)), /Show the other 1,275</);
+  assert.equal(cards(phone(render(100, Number.POSITIVE_INFINITY))), 100, "foldAfter Infinity never folds");
+  assert.doesNotMatch(phone(render(100, Number.POSITIVE_INFINITY)), /<details/);
+  assert.match(read("components/admin/steward/ProposalApprove.tsx"), /<ResponsiveTable rows=\{rows\}[^\n]*foldAfter=\{Number\.POSITIVE_INFINITY\}/, "Approve's rows never fold: every ticked row stays in sight");
+  assert.equal(render(0), '<p class="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">None</p>');
 });
 
 test("every table-bearing component builds its rows with ResponsiveTable", () => {

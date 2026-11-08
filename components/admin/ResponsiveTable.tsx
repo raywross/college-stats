@@ -34,12 +34,15 @@ export function ResponsiveTable<Row>({
   rowKey,
   empty,
   caption,
+  rowAttrs,
 }: {
   rows: readonly Row[];
   columns: readonly Column<Row>[];
   rowKey: (row: Row) => string;
   empty: ReactNode;
   caption?: string;
+  /** Optional per-row extras on the `<tr>` and the card: a `data-outcome` marker and a tint class. */
+  rowAttrs?: (row: Row) => { outcome?: string; className?: string } | undefined;
 }) {
   if (rows.length === 0) {
     return typeof empty === "string" ? <p className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">{empty}</p> : <>{empty}</>;
@@ -69,7 +72,7 @@ export function ResponsiveTable<Row>({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={rowKey(row)} className="border-t border-border align-top">
+              <tr key={rowKey(row)} data-outcome={rowAttrs?.(row)?.outcome} className={cn("border-t border-border align-top", rowAttrs?.(row)?.className)}>
                 {columns.map((c) =>
                   c === titleCol ? (
                     <th key={c.key} scope="row" className="px-3 py-2 text-left font-medium">
@@ -89,7 +92,7 @@ export function ResponsiveTable<Row>({
 
       <ul className="space-y-3 md:hidden">
         {rows.map((row) => (
-          <li key={rowKey(row)} className="rounded-2xl border border-border bg-card p-4" aria-label={rowKey(row)}>
+          <li key={rowKey(row)} data-outcome={rowAttrs?.(row)?.outcome} className={cn("rounded-2xl border border-border bg-card p-4", rowAttrs?.(row)?.className)} aria-label={rowKey(row)}>
             <div className="min-w-0 font-semibold break-words">{titleCol.cell(row)}</div>
             {factCols.length > 0 && (
               <dl className="mt-2 space-y-1 text-sm">

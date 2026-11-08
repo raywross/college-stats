@@ -76,5 +76,17 @@ const columns = (now: Date): readonly Column<JobOverviewRow>[] => [
  * runs, its schedule in words, its next run, and its last run. Each name opens the job's page.
  */
 export function JobsTable({ rows, now, caption }: { rows: JobOverviewRow[]; now: Date; caption: string }) {
-  return <ResponsiveTable rows={rows} columns={columns(now)} rowKey={(row) => row.job.id} caption={caption} empty="No jobs here." />;
+  return (
+    <ResponsiveTable
+      rows={rows}
+      columns={columns(now)}
+      rowKey={(row) => row.job.id}
+      caption={caption}
+      empty="No jobs here."
+      rowAttrs={(row) => {
+        const o = lastOutcome(row.last);
+        return { outcome: o.key, className: o.key === "failed" ? "bg-destructive/5" : undefined };
+      }}
+    />
+  );
 }

@@ -301,7 +301,7 @@ and parents, not for a counselor), where a filled section or a non-empty list cl
 link is also a `/join/<token>` page), Leave, and Delete with a typed confirmation. `/org/export` writes the CSV with no
 GPA or score. Every `/org` page is `noindex`. `/org` renders `RefreshHeader` (`components/org/RefreshHeader.tsx`) in both
 branches: the header remembers its last `/api/me` answer for five minutes, and every change of membership lands here, so
-Caseload enters and leaves the account menu at once (found by the signed-in QA, 2026-11-04). Server Actions live in `app/org/actions.ts`. `tests/org-caseload-db.test.mts`
+Caseload enters and leaves the header at once (found by the signed-in QA, 2026-11-04; since 2026-11-08 Caseload is the header's role item with Add students and Members and settings in its menu, not an avatar-menu entry: [role-nav.md](role-nav.md)). Server Actions live in `app/org/actions.ts`. `tests/org-caseload-db.test.mts`
 runs the caseload's reads on PGlite in the shape the pages ask for; `tests/org-pages.test.mts` renders every page and
 guards noindex, no service-role or estimate reads, the notice's position, and the CSV's columns.
 

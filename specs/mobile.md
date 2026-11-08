@@ -27,11 +27,11 @@ overflowing content, so root causes must be fixed. `clip` (unlike `hidden`) keep
 - **Filters in a bottom sheet** with a "Show N results" button (Airbnb): already in place (`MobileFilterSheet`).
 
 ## Shell
-- **`BottomNav`** (`components/layout/BottomNav.tsx`, below `md`): Home · Explore · Search · Compare · More.
+- **`BottomNav`** (`components/layout/BottomNav.tsx`, below `md`): Explore · Search · the role item · Compare · More. The middle tab is Advisor to a student, Household to a parent, Caseload to a counselor ([product/role-nav.md](product/role-nav.md)), with the advisor's dot.
   - Search opens a full-screen sheet with `SchoolSearch` autofocused.
   - Compare shows a lime count badge of picked schools. It replaces the floating `CompareTray` on phones (the
     tray still shows from `md`).
-  - More is a sheet with Glossary, Data, Roadmap, Release notes, and the Light/Dark/System control.
+  - More is a sheet with Account (or Sign in), the role item's pages (Manage household; Add students, Members and settings), Admin for an admin, National trends, High schools, Glossary, Data, Roadmap, Release notes, and the Light/Dark/System control.
 - **Header** on phones is the logo with the account control opposite it ("Sign in", or the avatar menu when signed in), 56px tall (`--header-h: 3.5rem`, 4rem from `md`). Navigation, search,
   and theme moved to the tab bar.
 - **Footer** drops its link column on phones and pads for the tab bar (`--tabbar-h`).

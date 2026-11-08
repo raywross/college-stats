@@ -16,7 +16,7 @@ import { SIGNED_IN_COOKIE, type MeState } from "@/lib/accounts";
  * the first answer (a signed-in person's first page in a new tab, while /api/me answers).
  */
 
-const SIGNED_OUT: MeState = { configured: true, signedIn: false, id: null, name: null, email: null, org: false, admin: false };
+const SIGNED_OUT: MeState = { configured: true, signedIn: false, id: null, name: null, email: null, org: false, admin: false, role: null, children: [] };
 const STORAGE_KEY = "me";
 const MEMO_TTL_MS = 5 * 60_000;
 
@@ -29,7 +29,8 @@ function readStored(): { at: number; data: MeState } | null {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { at: number; data: MeState };
-    return typeof parsed.at === "number" && parsed.data && typeof parsed.data.signedIn === "boolean" ? parsed : null;
+    // An answer from before the role item (no `role`) is stale: ask again rather than show a parent "Advisor".
+    return typeof parsed.at === "number" && parsed.data && typeof parsed.data.signedIn === "boolean" && "role" in parsed.data ? parsed : null;
   } catch {
     return null;
   }

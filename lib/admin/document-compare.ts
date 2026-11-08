@@ -199,8 +199,23 @@ export interface Comparison {
 const byCode = (x: { code: CdsCode }, y: { code: CdsCode }) => compareCodes(x.code, y.code);
 
 /** The two files' items compared: what agrees, what differs, what only one read. */
+/**
+ * An item's name for the comparison: `codeLabel` (the code and its CDS item's name), then the template's own question
+ * for the row, so two rows of one item ("C.705, admission factors: Application Essay" and "C.706, admission factors:
+ * Recommendation(s)") read apart. The sub-heading follows in parentheses when it adds a word the name doesn't have.
+ */
+export function itemLabel(code: CdsCode, template?: Pick<TemplateTable, "byCode"> | null): string {
+  const base = codeLabel(code);
+  const t = template?.byCode.get(code);
+  if (!t?.question) return base;
+  const q = t.question.length > 90 ? `${t.question.slice(0, 89).trimEnd()}…` : t.question;
+  const sub = t.sub && !base.toLowerCase().includes(t.sub.toLowerCase()) && !q.toLowerCase().includes(t.sub.toLowerCase()) ? ` (${t.sub})` : "";
+  return `${base}: ${q}${sub}`;
+}
+
 export function compareDocuments(a: DocumentRecord, b: DocumentRecord, template?: Pick<TemplateTable, "byCode"> | null): Comparison {
   const type = (code: CdsCode) => template?.byCode.get(code)?.value_type ?? null;
+  const label = (code: CdsCode) => itemLabel(code, template);
   const codes = new Set<CdsCode>([...Object.keys(a.items ?? {}), ...Object.keys(b.items ?? {})]);
   let agree = 0;
   const differ: DifferRow[] = [];
@@ -211,9 +226,9 @@ export function compareDocuments(a: DocumentRecord, b: DocumentRecord, template?
     const [hx, hy] = [hasValue(x), hasValue(y)];
     if (hx && hy) {
       if (sameValue(x.v, y.v)) agree++;
-      else differ.push({ code, label: codeLabel(code), a: cdsValueWords(x.v, type(code)), b: cdsValueWords(y.v, type(code)) });
-    } else if (hx) onlyA.push({ code, label: codeLabel(code), value: cdsValueWords(x.v, type(code)) });
-    else if (hy) onlyB.push({ code, label: codeLabel(code), value: cdsValueWords(y.v, type(code)) });
+      else differ.push({ code, label: label(code), a: cdsValueWords(x.v, type(code)), b: cdsValueWords(y.v, type(code)) });
+    } else if (hx) onlyA.push({ code, label: label(code), value: cdsValueWords(x.v, type(code)) });
+    else if (hy) onlyB.push({ code, label: label(code), value: cdsValueWords(y.v, type(code)) });
   }
   const failures = (d: DocumentRecord) => Object.values(d.items ?? {}).filter((it) => (it.failures?.length ?? 0) > 0).length;
   return { agree, differ: differ.sort(byCode), onlyA: onlyA.sort(byCode), onlyB: onlyB.sort(byCode), failuresA: failures(a), failuresB: failures(b) };

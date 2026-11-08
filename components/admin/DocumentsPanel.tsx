@@ -125,8 +125,7 @@ function Fact({ label, help, children }: { label: string; help?: "pulled-from" |
   return (
     <div className="flex min-w-0 flex-wrap gap-x-1.5">
       <dt className="inline-flex shrink-0 items-center gap-1 text-muted-foreground">
-        {label}
-        {help && <HelpTip help={help} />}:
+        {label}:{help && <HelpTip help={help} />}
       </dt>
       <dd className="min-w-0 break-words">{children}</dd>
     </div>

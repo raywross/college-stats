@@ -16,6 +16,9 @@ import ts from "typescript";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { CollegeRecord, DocumentRecord, ManifestEntry } from "../lib/cds-sections.ts";
 import { CDS_TEMPLATE } from "../lib/cds-template.ts";
+
+/** True when any differing row's label carries no question after the item's name. */
+const plainLabel = (c: { differ: { label: string }[] }) => c.differ.some((d) => !d.label.includes(": "));
 import type { Recipe, ReviewItem } from "../lib/reported.ts";
 import type { IssueDoc, ProposalDoc, ProposalRow } from "../lib/steward/types.ts";
 import {
@@ -103,11 +106,14 @@ test("compareDocuments: agree, differ (sorted by section then code, named, forma
     { code: "G.101", label: c.differ[2].label, a: "$14,100", b: "$14,523" },
   ]);
   assert.match(c.differ[0].label, /^C\.101, /, "codeLabel names the item");
+  assert.match(c.differ[0].label, /: Total first-time, first-year males who applied$/, "the template's question tells rows of one item apart; its sub-heading is left out when the item's name already says it");
+  assert.equal(plainLabel(c), false, "with the template no differing row is a bare codeLabel");
   assert.deepEqual(c.onlyA.map((r) => [r.code, r.value]), [["B.101", "4,512"], ["C.1001", "95%"]]);
   assert.deepEqual(c.onlyB.map((r) => r.code), ["B.2201"]);
   assert.equal(c.failuresA, 1);
   assert.equal(c.failuresB, 8);
   const plain = compareDocuments(OFFICIAL_DOC, DRIVE_DOC);
+  assert.equal(plain.differ[0].label, c.differ[0].label.split(": ")[0], "without the template the label is codeLabel alone");
   assert.equal(plain.differ[1].a, "0.05", "without the template a share stays a number");
 });
 

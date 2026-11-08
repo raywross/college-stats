@@ -622,3 +622,57 @@ Recommended defaults; the build proceeds on them unless the owner says otherwise
   `tests/admin-phone.test.mts` checks each.
 - **Left:** a Findings cluster still shows its check id (`cluster.check`) in monospace; Steward-written text (QA
   finding 2) and Decide without a typed word (finding 6) are unchanged.
+
+### Follow-ups (2026-11-08, `feature/admin-redesign-followups`)
+
+The four items the QA report and the polish pass left (qa.md "Smaller findings" 2, 6, 8, and the polish pass's "Left":
+a cluster's check id). All four are built; the polish section's "Left" line is settled by this one.
+
+- **Steward-written text reads in words.** What the Steward writes is stored as written, so the console puts it in
+  words where it renders. `stewardText(text)` (`lib/admin/words.ts`, pure, tested on samples like the ones QA saw): a
+  bare CDS item or template code gains its item's name on its first appearance in the string, in parentheses ("The C7
+  grid" → "The C7 (admission factors) grid"; inside parentheses already, a comma: "(C10)" → "(C10, class rank)"); a
+  range ("B4–B5", "C.1001 to C.1008") gets both names, or one when they share it ("B4–B5 (graduation rates; graduation
+  rates, Pell recipients)"); a registered field path reads as its registry label in quotes ("admissions.acceptance_rate"
+  → "“acceptance rate”"); a snake_case key reads as its words through `codeWordsInText` with `REASON_WORDS`
+  ("loan_no_pell" → "“loan no pell”", "class_profile_only" → "“Only a class profile found”"). Left as written: a code
+  whose item name the sentence already says ("class rank (C10)"), later mentions of an item, a section-only code with
+  no item name, links, paths, emails, file names, and review keys (`unit|edition|code`). The brief's codeLabel form
+  ("C7, admission factors") reads wrong mid-sentence when the name has its own comma ("the B5, graduation rates, Pell
+  recipients grid"), so a code inside a sentence takes parentheses instead.
+  `StewardWords` (`components/admin/steward/Bits.tsx`) renders it with the sentence as written in the `title` when they
+  differ. Applied: a cluster's hypothesis and left reason (Findings), a job finding's hypothesis and last shows; a
+  proposal's summary (list and page title), the evidence's shows, the rows' proposed and why (the Approve rows get it
+  from the page, since `ProposalApprove` is a client component), the systemic change's what, how and revert, and the
+  Steward's answer; a decision's question, recommendation, options and effects (the select's labels too; its values stay
+  raw for the action); a To do row's note; the Review page's "your call" reasons (through `Recommends`). The Inbox runs
+  its job, decision and proposal rows through it in `needsYou` (`stewardLines`), keeping the sentences as written in
+  `InboxItem.raw`, which the page puts in the row's `title`. A job review's note is left as written (it describes a
+  run, not a field). At the source, `SYSTEM_PROMPT` (`scripts/lib/steward/prompts.mts`) ends with: "In text a person
+  reads (a hypothesis, a finding's shows, a summary, a why, a question, an answer, a decision's options, a note), name
+  each field in words with its code after it, as in "class rank (C10)" or "graduation rates (B4–B5)", and never write a
+  bare key such as loan_no_pell or admissions.acceptance_rate; codes and keys belong only in the fields that ask for
+  them (field, code, item)." The dry runs key their recorded answers by the request, system prompt included, so the ten
+  main-turn answers in `tests/fixtures/steward/answers/` (run, answer, budget) were re-keyed to the new requests (same
+  responses, new file names and `key`); `tests/steward-run.test.mts` checks the line is there.
+- **Decide gets the typed word.** `CONFIRM_DECIDE` ("decide") in `lib/admin/console.ts`. Decide and Decide again on
+  /admin/steward/decisions are `ConfirmTyped` with the answer and note fields, the button's tone as before, and a line
+  saying the Steward follows the answer for every college the question covers. `decidePolicy`
+  (`lib/admin/steward-actions.ts`) refuses without the word right after reading the form's key: nothing is read,
+  logged or written (`tests/admin-steward.test.mts`, with the fake's reads counted). The Inbox's decision rows open the
+  question's panel (`decisionAnchor`), where the same sheet is. The `decision` help entry is unchanged: no other help
+  entry names its typed word.
+- **A Findings cluster names its check.** `CHECK_WORDS` (typed `Record<CheckId, string>`, so a new check in
+  `lib/reported.ts` without words fails the typecheck) and `checkLabel(id)` in `lib/admin/words.ts`; a check's words
+  say what its failing values have in common ("parts-sum" → "Parts don't add up to the total"), and an unknown id reads
+  as its words. ClustersTable shows the words with the id in the `title`; so does the Review page's Finding column. A
+  test reads the `CheckId` union and checks every id has words and no words are left for a removed id.
+- **Long phone lists fold.** `ResponsiveTable` takes `foldAfter` (default `FOLD_AFTER`, 25): below `md` the first
+  `foldAfter` cards show, then one `<details>` whose 44 px `<summary>` reads "Show the other N" (N with thousands
+  separators) holds the rest. The table from `md` still shows every row; the component is still a Server Component.
+  `ProposalApprove` passes `foldAfter={Number.POSITIVE_INFINITY}`: Approve applies the ticked rows, so none may be out
+  of sight. The long lists QA measured are paged at 100 (Health's two tabs, To do), so a phone page now shows 25 cards,
+  the fold, then the pager; the Sources tab's published files (not paged), Findings' clusters and each of a
+  college's Review groups fold the same way. The Colleges list is
+  not a `ResponsiveTable` and is unchanged. `tests/admin-phone.test.mts` renders the real component (HelpTip and `cn`
+  stood in for) with 0, 25, 26, 1,000 and 1,300 rows and a page's own `foldAfter`.

@@ -2,9 +2,10 @@ import Link from "next/link";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Empty } from "@/components/admin/Panel";
 import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
-import { IssueStatusChip, KindChip } from "@/components/admin/steward/Bits";
+import { IssueStatusChip, KindChip, StewardWords } from "@/components/admin/steward/Bits";
 import { leaveIssueAction } from "@/app/admin/steward/actions";
 import { linkCls, proposalHref, reviewHref } from "@/lib/admin/steward-view";
+import { checkLabel } from "@/lib/admin/words";
 import type { Cluster, IssueDoc, IssueKind } from "@/lib/steward/types";
 
 export interface ClusterRowView {
@@ -22,9 +23,11 @@ function exampleParts(key: string): { unit: string; label: string } {
 function Cause({ row: { cluster, issue } }: { row: ClusterRowView }) {
   return (
     <>
-      <span className="font-mono text-xs font-semibold">{cluster.check}</span>
+      <span className="font-semibold" title={cluster.check}>
+        {checkLabel(cluster.check)}
+      </span>
       {cluster.detail && <span className="block text-xs text-muted-foreground break-words">{cluster.detail}</span>}
-      {issue?.hypothesis && <span className="mt-1 block text-xs">{issue.hypothesis}</span>}
+      {issue?.hypothesis && <StewardWords text={issue.hypothesis} className="mt-1 block text-xs" />}
       {issue && issue.proposals.length > 0 && (
         <span className="mt-1 block text-xs">
           {issue.proposals.map((p, i) => (
@@ -78,7 +81,7 @@ function Leave({ row: { cluster, issue } }: { row: ClusterRowView }) {
 
 const columns: readonly Column<ClusterRowView>[] = [
   { key: "cause", header: "Cause", role: "title", cell: (row) => <Cause row={row} /> },
-  { key: "kind", header: "Kind", cell: ({ cluster, kind, issue }) => <KindChip kind={issue?.kind ?? kind} /> },
+  { key: "kind", header: "Kind", cell: ({ kind, issue }) => <KindChip kind={issue?.kind ?? kind} /> },
   { key: "items", header: "Items", align: "right", role: "detail", cell: ({ cluster }) => cluster.items.toLocaleString("en-US") },
   { key: "colleges", header: "Colleges", align: "right", cell: ({ cluster }) => cluster.colleges.toLocaleString("en-US") },
   { key: "published", header: "Published", align: "right", role: "detail", cell: ({ cluster }) => cluster.published.toLocaleString("en-US") },
@@ -88,7 +91,7 @@ const columns: readonly Column<ClusterRowView>[] = [
     cell: ({ issue }) => (
       <>
         <IssueStatusChip status={issue?.status ?? "new"} />
-        {issue?.status === "left" && issue.reason && <span className="mt-1 block text-xs text-muted-foreground">{issue.reason}</span>}
+        {issue?.status === "left" && issue.reason && <StewardWords text={issue.reason} className="mt-1 block text-xs text-muted-foreground" />}
       </>
     ),
   },

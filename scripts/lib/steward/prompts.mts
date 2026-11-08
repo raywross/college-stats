@@ -40,7 +40,9 @@ Evidence rules, which the writer enforces:
 - A change you don't believe is not proposed. recommends is "approve" when you checked the document and are confident, "your-call" when the evidence is mixed; then say why.
 - Most CDS codes have no registered field: a misread one is a hold, not a correction.
 
-How to work: list the clusters, take the largest first (by items, then colleges whose published value would change), read a few of each cluster's items and their records, form a hypothesis, read the documents behind a sample until the hypothesis holds or fails, then write. Prefer read_document_lines with a question (a cheaper model reads the lines and answers with page and line) over reading whole documents yourself. Stop when the clusters you can afford are done; the budget is enforced, and what you have written stays. Keep tool inputs and documents short and exact: they are read by the owner.`;
+How to work: list the clusters, take the largest first (by items, then colleges whose published value would change), read a few of each cluster's items and their records, form a hypothesis, read the documents behind a sample until the hypothesis holds or fails, then write. Prefer read_document_lines with a question (a cheaper model reads the lines and answers with page and line) over reading whole documents yourself. Stop when the clusters you can afford are done; the budget is enforced, and what you have written stays. Keep tool inputs and documents short and exact: they are read by the owner.
+
+In text a person reads (a hypothesis, a finding's shows, a summary, a why, a question, an answer, a decision's options, a note), name each field in words with its code after it, as in "class rank (C10)" or "graduation rates (B4–B5)", and never write a bare key such as loan_no_pell or admissions.acceptance_rate; codes and keys belong only in the fields that ask for them (field, code, item).`;
 
 export interface RunTaskInput {
   budgetUsd: number;

@@ -19,7 +19,7 @@ import { fileStoreChangeSets } from "../scripts/lib/data-platform/store.mts";
 import { auditFamily, auditSample, main, runSteward, weekOf } from "../scripts/steward.mts";
 import { Budget, BudgetStop, costOf, runBudget, weeklySpent } from "../scripts/lib/steward/budget.mts";
 import { MissingAnswer, recordedFetch, requestKey } from "../scripts/lib/steward/dry-run.mts";
-import { inFamily } from "../scripts/lib/steward/prompts.mts";
+import { inFamily, SYSTEM_PROMPT } from "../scripts/lib/steward/prompts.mts";
 import { recipeAfter } from "../scripts/lib/steward/apply.mts";
 import { bundledSite, callTool, documentDeps, readSiteValue, toolNames, type StewardContext } from "../scripts/lib/steward/tools.mts";
 import { StewardWriter, WriteRefused } from "../scripts/lib/steward/writer.mts";
@@ -360,6 +360,12 @@ test("audit: one family a week in rotation; the sample is passed values of the f
   assert.deepEqual(auditSample(records, "grids", "2026-w43"), sample);
   assert.notDeepEqual(auditSample(records, "grids", "2026-w44"), sample);
   assert.ok(inFamily("aid-grids", "B.1101") && inFamily("h2", "H.210") && !inFamily("h2", "H.2202") && inFamily("bands", "C.905"));
+});
+
+test("the system prompt asks for fields in words with the code after, and no bare keys in text a person reads", () => {
+  // The recorded answers are keyed by the request, system prompt included; changing it means re-keying them.
+  assert.match(SYSTEM_PROMPT, /name each field in words with its code after it, as in "class rank \(C10\)"/);
+  assert.match(SYSTEM_PROMPT, /never write a bare key such as loan_no_pell/);
 });
 
 test("the tools a mode gets are the contract's names; answer and audit add their own writer", () => {

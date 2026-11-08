@@ -49,7 +49,7 @@ export default async function InboxPage() {
             <ul className="divide-y divide-border">
               {items.map((item) => (
                 <li key={`${item.kind}-${item.href}-${item.title}`} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                  <div className="min-w-0">
+                  <div className="min-w-0" title={item.raw}>
                     <p className="flex flex-wrap items-center gap-2 font-semibold">
                       <StatusChip label={KIND_LABEL[item.kind]} tone={SEVERITY_TONE[item.severity]} />
                       <span className="break-words">{item.title}</span>

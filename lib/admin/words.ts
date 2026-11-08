@@ -6,6 +6,8 @@
  * pages, client components, and tests share it.
  */
 import { CDS_CODE, CDS_ITEM_NAMES, CDS_SECTION_NAMES, itemOfCode, type CdsSection } from "../cds-sections.ts";
+import { fieldDef, registeredPathFor } from "../fields.ts";
+import type { CheckId } from "../reported.ts";
 
 /** The words that replace the code's names, in one place so every screen says the same thing. */
 export const WORDS = {
@@ -226,4 +228,124 @@ export function attemptResultWords(result: string): { text: string; label: strin
  */
 export function codeWordsInText(text: string, words: Readonly<Record<string, string>>): string {
   return text.replace(/\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g, (code) => `“${words[code] ?? code.replace(/_/g, " ")}”`);
+}
+
+/* ------------------------------------------------------------------ */
+/* Text the Steward wrote                                              */
+/* ------------------------------------------------------------------ */
+
+/** A CDS code as the Steward writes it: an item ("C7", "H2A", "B22") or a template code ("C.1001", "H.2A01"). */
+const CODE_PART = String.raw`[A-J](?:\.(?:\d{3,4}|\d[A-Z](?:\d{2})?)|\d{1,2}[A-Z]?)`;
+/** A code, or a range of two ("B4–B5", "B4-B5", "B4 to B5"), standing alone (not inside a word, a number, or a key). */
+const STEWARD_CODE = new RegExp(String.raw`(?<![\w.\/#|-])(${CODE_PART})(?:(\s*[–—-]\s*|\s+to\s+)(${CODE_PART}))?(?![\w]|\.\d)`, "g");
+/** What is left exactly as written: a link, a path, an email, a file name, a review key. */
+const PROTECTED = /(\S*(?:[/@|]|:\/\/)\S*|\S+\.(?:pdf|xlsx?|csv|html?|json|docx?)\b)/i;
+/** A dotted key ("admissions.acceptance_rate"). */
+const DOTTED = /\b[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+\b/g;
+
+/** The item's own name, or null (a section's name alone is too vague to add to a sentence). */
+function itemName(code: string): string | null {
+  const item = cdsItem(code);
+  return item ? (CDS_ITEM_NAMES[item] ?? null) : null;
+}
+
+const lowerFirst = (s: string) => (s.length > 1 && s[1] === s[1].toLowerCase() ? s[0].toLowerCase() + s.slice(1) : s);
+
+/** Field paths the registry knows read as their label ("admissions.acceptance_rate" → “acceptance rate”). */
+function fieldWords(text: string): string {
+  return text.replace(DOTTED, (path) => {
+    const registered = registeredPathFor(path);
+    return registered === path ? `“${lowerFirst(fieldDef(registered).label)}”` : path;
+  });
+}
+
+/** CDS codes gain their names on first appearance; see `stewardText`. */
+function codeWords(text: string, whole: string, seen: Set<string>): string {
+  const lower = whole.toLowerCase();
+  // A name the sentence already says ("class rank (C10)") needs no repeating.
+  const said = (name: string) => lower.includes(name.toLowerCase());
+  return text.replace(STEWARD_CODE, (match: string, a: string, _dash: string | undefined, b: string | undefined, offset: number, src: string) => {
+    const items = [a, b].filter((c): c is string => !!c).map((c) => cdsItem(c)!);
+    if (items.every((i) => seen.has(i))) return match;
+    const names = [a, b].filter((c): c is string => !!c).map(itemName);
+    items.forEach((i) => seen.add(i));
+    if (names.every((n) => !n) || names.every((n) => !n || said(n))) return match;
+    const words = b ? (names[0] === names[1] || !names[1] ? names[0] : !names[0] ? names[1] : `${names[0]}; ${names[1]}`) : names[0];
+    if (!words) return match;
+    // Inside parentheses already ("(C10)"), the name joins them with a comma; elsewhere it follows in its own.
+    const wrapped = src[offset - 1] === "(" && src[offset + match.length] === ")";
+    return wrapped ? `${match}, ${words}` : `${match} (${words})`;
+  });
+}
+
+/**
+ * A sentence the Steward wrote (a finding, a proposal's summary, a decision's question, a To do note), read in words:
+ * a bare CDS code gains its name the first time it appears ("C7" → "C7 (admission factors)", "(C10)" → "(C10, class
+ * rank)"), a range both names ("B4–B5 (graduation rates; graduation rates, Pell recipients)"), a registered field
+ * path its label in quotes, and a snake_case key its words (`codeWordsInText` with `REASON_WORDS`). A code whose name
+ * the sentence already says is left alone, as are later mentions, links, file names, emails and review keys. Pure; the
+ * raw sentence belongs in a `title` or under Details.
+ */
+export function stewardText(text: string | null | undefined): string {
+  if (!text) return "";
+  const seen = new Set<string>();
+  return text
+    .split(PROTECTED)
+    .map((part, i) => (i % 2 === 1 ? part : codeWordsInText(fieldWords(codeWords(part, text, seen)), REASON_WORDS)))
+    .join("");
+}
+
+/* ------------------------------------------------------------------ */
+/* The checks a Findings cluster is grouped by                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Every check the college-reported pipeline can hold a value with (`CheckId` in lib/reported.ts, the `check` of a
+ * Findings cluster), named for what it found: a cluster is a group of values that failed it. Typed against `CheckId`,
+ * so a new check without words fails the typecheck; the id stays in a `title`.
+ */
+export const CHECK_WORDS: Readonly<Record<CheckId, string>> = {
+  "cohort-and-scope": "Not first-year students, all rounds",
+  "quote-present": "A number with no quote",
+  "funnel-order": "More admits than applicants, or more enrolled than admits",
+  "rate-matches": "The stated admit rate doesn't match the counts",
+  "newer-than-federal": "Not newer than the federal figures",
+  "plausible-change": "An unlikely change from the federal figure",
+  "sources-agree": "Two documents disagree",
+  unreachable: "Couldn't fetch the college's documents",
+  "type-range": "A value its type can't hold",
+  "number-on-line": "The value isn't on the line it cites",
+  "line-in-document": "A cited line isn't in the document",
+  "edition-mismatch": "The year doesn't match the edition",
+  "form-vs-code": "The form and the code table differ",
+  "overflow-total": "A total printed as ## that its parts can't fill in",
+  "aid-year": "No aid year stated",
+  "parts-sum": "Parts don't add up to the total",
+  "sums-to-100": "Percentages don't add up to 100%",
+  order: "Values out of order",
+  "ratio-matches": "A rate or average doesn't match its counts",
+  "one-mark": "Not exactly one mark in a row",
+  "grid-column": "A grid read by a model, held until its columns are checked",
+  misread: "Misread, by a person's check",
+  inconsistent: "Two answers in one document contradict",
+  "valid-date": "Not a real date",
+  "date-order": "Dates out of the cycle's order",
+  "enrollment-disagrees": "Disagrees with the document's enrollment",
+  "federal-disagrees": "Disagrees with the federal figure",
+  "residency-funnel": "A residency row out of funnel order",
+  "residency-sum": "Residency rows don't add up to the total",
+  "residency-vs-federal": "Residency shares far from the federal ones",
+  "column-3-not-all-undergrads": "The degree-seeking column isn't every undergraduate",
+  "previous-cohort-disagrees": "The previous class disagrees with federal graduation rates",
+  "not-a-url": "The address isn't a link",
+  "out-of-range": "A value outside its usual range",
+  "batch-failed": "The document's read failed twice",
+};
+
+/** A check id in words; an id the table doesn't know reads as its words ("some-new-check" → "Some new check"). */
+export function checkLabel(id: string): string {
+  const known = (CHECK_WORDS as Readonly<Record<string, string>>)[id];
+  if (known) return known;
+  const words = id.replace(/[-_]+/g, " ").trim();
+  return words ? words[0].toUpperCase() + words.slice(1) : id;
 }

@@ -24,7 +24,7 @@
  */
 import { dispatchRun, reviewKeyFromForm, type OpsState } from "./ops-actions.ts";
 import { reviewDeps, type DataActionDeps } from "./data-actions.ts";
-import { ADMIN_FAILED, CONFIRM_APPROVE, typedMatches, type AdminActionState } from "./console.ts";
+import { ADMIN_FAILED, CONFIRM_APPROVE, CONFIRM_DECIDE, typedMatches, type AdminActionState } from "./console.ts";
 import { ADMIN_ERRORS } from "./constants.ts";
 import { NOTE_MAX } from "./review-queue.ts";
 import { STEWARD_COLLECTIONS } from "./steward-reads.ts";
@@ -502,10 +502,14 @@ export async function todoDone(deps: StewardDeps, form: StewardFormLike): Promis
 /* Decisions: Decide                                                   */
 /* ------------------------------------------------------------------ */
 
-/** Decide: one of the question's options, with an optional note; deciding again records the new answer. */
+/**
+ * Decide: one of the question's options, with an optional note; deciding again records the new answer. The typed word
+ * (`CONFIRM_DECIDE`) is checked before anything is read or written: one answer can move many colleges' values.
+ */
 export async function decidePolicy(deps: StewardDeps, form: StewardFormLike): Promise<AdminActionState> {
   const key = keyFromForm(form, "decision");
   if (!key) return BAD_FORM;
+  if (!typedMatches(form.get("confirm"), CONFIRM_DECIDE)) return err(`Type "${CONFIRM_DECIDE}" to confirm.`);
   const read = await readDoc<DecisionDoc>(deps, STEWARD_COLLECTIONS.decisions, key);
   if (!read.ok) return read.state;
   if (!read.doc) return err("That question doesn't exist any more. Reload the page.");

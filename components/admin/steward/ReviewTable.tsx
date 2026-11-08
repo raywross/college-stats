@@ -8,7 +8,7 @@ import { decideRowAction, leaveItemAction } from "@/app/admin/steward/actions";
 import { editionOf, linkCls, proposalHref } from "@/lib/admin/steward-view";
 import { PROPOSAL_KIND_LABEL } from "@/lib/steward/types";
 import type { ReviewGroup, ReviewRow } from "@/lib/steward/review-rows";
-import { codeLabel, codeName } from "@/lib/admin/words";
+import { checkLabel, codeLabel, codeName } from "@/lib/admin/words";
 
 const UNDECIDED = new Set(["open", "asked"]);
 
@@ -119,7 +119,7 @@ const columns: readonly Column<ReviewRow>[] = [
         <ul className="space-y-0.5">
           {r.issues.slice(0, 3).map((i, n) => (
             <li key={n}>
-              <span className="font-semibold">{i.check}</span>
+              <span className="font-semibold" title={i.check}>{checkLabel(i.check)}</span>
               {i.detail && <span className="text-muted-foreground">: {i.detail}</span>}
             </li>
           ))}

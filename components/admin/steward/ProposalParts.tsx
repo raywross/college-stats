@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Empty } from "@/components/admin/Panel";
 import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
-import { DocLink, ProposalKindChip, ProposalStatusChip, Recommends } from "@/components/admin/steward/Bits";
+import { DocLink, ProposalKindChip, ProposalStatusChip, Recommends, StewardWords } from "@/components/admin/steward/Bits";
 import { dayLabel } from "@/lib/admin/ops-view";
 import { editionOf, linkCls, proposalHref, reviewHref } from "@/lib/admin/steward-view";
 import type { Finding, ProposalDoc, ProposalRow } from "@/lib/steward/types";
@@ -20,7 +20,7 @@ const evidenceColumns: readonly Column<Finding>[] = [
   },
   { key: "edition", header: "Edition", cell: (f) => editionOf(f) ?? "—" },
   { key: "from", header: "From", cell: (f) => <DocLink url={f.url} page={f.page} line={f.line} /> },
-  { key: "shows", header: "Shows", cell: (f) => f.shows },
+  { key: "shows", header: "Shows", cell: (f) => <StewardWords text={f.shows} /> },
 ];
 
 /** The evidence: one line per document the Steward read, with the document opened at the page. */
@@ -41,7 +41,7 @@ const proposalRowColumns = (names: Record<string, string>): readonly Column<Prop
   },
   { key: "field", header: "Field", cell: (r) => r.field ?? (r.code ? codeLabel(r.code) : "—") },
   { key: "now", header: "On the site now", cell: (r) => r.now },
-  { key: "proposed", header: "Proposed", cell: (r) => r.proposed },
+  { key: "proposed", header: "Proposed", cell: (r) => <StewardWords text={r.proposed} /> },
   {
     key: "from",
     header: "From",
@@ -85,7 +85,9 @@ export function ProposalsList({ proposals }: { proposals: ProposalDoc[] }) {
               {p.key}
             </Link>
           </div>
-          <p className="break-words">{p.summary}</p>
+          <p className="break-words">
+            <StewardWords text={p.summary} />
+          </p>
           <p className="text-xs text-muted-foreground">
             {p.rows.length} row{p.rows.length === 1 ? "" : "s"} · {p.evidence.length} document{p.evidence.length === 1 ? "" : "s"} read · {dayLabel(p.created)}
             {p.question && p.status === "asked" ? " · question waiting for the Steward" : ""}

@@ -127,7 +127,8 @@ export function ProposalApprove({
     <form action={run} className="space-y-3">
       <input type="hidden" name="proposal" value={proposal} />
       <input type="hidden" name="rows" value={String(rows.length)} />
-      <ResponsiveTable rows={rows} columns={columns} rowKey={(r) => String(r.index)} caption="The proposal's rows; ticked rows are applied on Approve" empty="No rows." />
+      {/* Every row shows, never folded: Approve applies the ticked ones, so none may be out of sight. */}
+      <ResponsiveTable rows={rows} columns={columns} rowKey={(r) => String(r.index)} caption="The proposal's rows; ticked rows are applied on Approve" empty="No rows." foldAfter={Number.POSITIVE_INFINITY} />
       <p className="text-sm text-muted-foreground" role="status">
         {ticks.size} of {rows.length} ticked
         {costEach !== null ? ` · projected cost of the ticked re-reads: $${(costEach * colleges).toFixed(2)} for ${colleges} college${colleges === 1 ? "" : "s"}` : ""}

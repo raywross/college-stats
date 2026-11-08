@@ -13,7 +13,7 @@ import { join, relative } from "node:path";
 import { ADMIN_DOORS, activeDoor, activeScreen } from "../lib/admin/console.ts";
 import { ADMIN_REDIRECTS, nextAdminRedirects, resolveAdminRedirect } from "../lib/admin/redirects.ts";
 import { HELP, helpByDoor, isHelpKey } from "../lib/admin/help.ts";
-import { attemptResultWords, codeLabel, codeName, codeWordsInText, collectionLabel, itemKeyLabel, reasonLabel, REASON_WORDS, targetKindLabel, changeKindLabel } from "../lib/admin/words.ts";
+import { attemptResultWords, CHECK_WORDS, checkLabel, codeLabel, codeName, codeWordsInText, collectionLabel, itemKeyLabel, reasonLabel, REASON_WORDS, stewardText, targetKindLabel, changeKindLabel } from "../lib/admin/words.ts";
 import { REASON_CODES } from "../scripts/lib/college-failures.mts";
 import { ESSAY_STATUS_LABELS } from "../lib/admin/essays.ts";
 import { CDS_ITEM_NAMES } from "../lib/cds-sections.ts";
@@ -441,6 +441,62 @@ test("codeWordsInText: snake_case codes in a stored sentence read as words", () 
   );
   assert.equal(codeWordsInText("a not_read page", {}), "a “not read” page");
   assert.equal(codeWordsInText("nothing to change here", {}), "nothing to change here");
+});
+
+test("stewardText: the Steward's codes and keys read in words, the first time each appears", () => {
+  // A sample of what the Steward wrote on dev (QA finding 2): bare items, a range, a template code, a key.
+  assert.equal(
+    stewardText("The C7 grid was read from flattened text, so C7 marks sit a column off."),
+    "The C7 (admission factors) grid was read from flattened text, so C7 marks sit a column off.",
+  );
+  assert.equal(stewardText("B4–B5 disagree with IPEDS"), "B4–B5 (graduation rates; graduation rates, Pell recipients) disagree with IPEDS");
+  assert.equal(stewardText("H2A totals exceed H1 (H.2A01)"), "H2A (non-need aid) totals exceed H1 (aid awarded) (H.2A01)", "H.2A01 is H2A, named already");
+  assert.equal(stewardText("Use C.1001 to C.1008"), "Use C.1001 to C.1008 (class rank)", "two template codes of one item: one name");
+  assert.equal(stewardText("a blank row (C10)"), "a blank row (C10, class rank)", "inside parentheses, the name joins them");
+  assert.equal(stewardText("loan_no_pell is set on 12 rows"), "“loan no pell” is set on 12 rows");
+  assert.equal(stewardText("class_profile_only for 3 colleges"), "“Only a class profile found” for 3 colleges", "a reason code reads as REASON_WORDS says");
+  assert.equal(stewardText("admissions.acceptance_rate reads 4.5"), "“acceptance rate” reads 4.5", "a registered field path reads as its label");
+  // Left as written: a name the sentence already says, links and file names, review keys, words that only look like codes.
+  for (const same of [
+    "class rank (C10) is blank",
+    "See https://x.edu/cds_2025-26.pdf#page=4 and cds_2025.pdf",
+    "key 231624|2025-26|C.116 is held",
+    "C2C, H2O and the 2025-26 edition",
+    "admissions.not_registered and e.g. wm.edu",
+    "",
+  ]) assert.equal(stewardText(same), same.replace(/admissions\.not_registered/, "admissions.“not registered”"), same);
+  assert.equal(stewardText(null), "");
+});
+
+test("checkLabel names every check the pipeline can hold a value with (CheckId); an unknown id reads as its words", () => {
+  // The ids a Findings cluster can carry: the `check` of a queue item's failures, the CheckId union in lib/reported.ts.
+  const union = read("lib/reported.ts").match(/export type CheckId =([\s\S]*?);?\n\n/)![1];
+  const ids = [...union.matchAll(/\|\s*"([a-z0-9-]+)"/g)].map((m) => m[1]);
+  assert.ok(ids.length >= 30, `read ${ids.length} ids from the union`);
+  for (const id of ids) {
+    assert.ok(CHECK_WORDS[id as keyof typeof CHECK_WORDS], `${id} has words`);
+    assert.notEqual(checkLabel(id), id, id);
+    assert.doesNotMatch(checkLabel(id), /^[a-z0-9-]+$/, `${id} reads as words`);
+  }
+  assert.deepEqual(Object.keys(CHECK_WORDS).sort(), [...ids].sort(), "no words for a check that no longer exists");
+  assert.equal(checkLabel("parts-sum"), "Parts don't add up to the total");
+  assert.equal(checkLabel("some-new_check"), "Some new check");
+  assert.equal(checkLabel(""), "");
+});
+
+test("Steward-written sentences go through stewardText where the console shows them", () => {
+  assert.match(read("components/admin/steward/Bits.tsx"), /export function StewardWords[\s\S]*title=\{words !== text \? text : undefined\}/, "the raw sentence in the title");
+  const uses: [string, RegExp[]][] = [
+    ["components/admin/steward/ClustersTable.tsx", [/<StewardWords text=\{issue\.hypothesis\}/, /<StewardWords text=\{issue\.reason\}/]],
+    ["components/admin/steward/ProposalParts.tsx", [/<StewardWords text=\{f\.shows\}/, /<StewardWords text=\{r\.proposed\}/, /<StewardWords text=\{p\.summary\}/]],
+    ["components/admin/steward/Bits.tsx", [/<StewardWords text=\{why\}/]],
+    ["components/admin/steward/TodoTable.tsx", [/<StewardWords text=\{r\.note\}/]],
+    ["components/admin/jobs/JobFindings.tsx", [/<StewardWords text=\{i\.hypothesis\}/, /<StewardWords text=\{last\.shows\}/]],
+    ["app/admin/steward/decisions/page.tsx", [/title=\{stewardText\(d\.question\)\}/, /<StewardWords text=\{d\.recommends\}/, /<StewardWords text=\{o\.effect\}/]],
+    ["app/admin/steward/proposals/[key]/page.tsx", [/title=\{stewardText\(p\.summary\)\}/, /<StewardWords text=\{p\.change\.what\}/, /<StewardWords text=\{p\.answer\}/, /why: r\.why \? stewardText\(r\.why\)/]],
+    ["app/admin/page.tsx", [/title=\{item\.raw\}/]],
+  ];
+  for (const [file, patterns] of uses) for (const re of patterns) assert.match(read(file), re, `${file}: ${re}`);
 });
 
 /**

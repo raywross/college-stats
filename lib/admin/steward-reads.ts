@@ -151,7 +151,7 @@ export async function readIssues(client: StoreClient): Promise<Map<string, Issue
   return readSoft<IssueDoc>(client, STEWARD_COLLECTIONS.issues);
 }
 
-const PROPOSAL_ORDER: Record<ProposalStatus, number> = { open: 0, asked: 1, approved: 2, applied: 3, declined: 4 };
+const PROPOSAL_ORDER: Record<ProposalStatus, number> = { open: 0, asked: 1, approved: 2, applied: 3, failed: 4, declined: 5 };
 
 /** Systemic first, then by status (open, asked, approved, applied, declined), newest first. */
 export function compareProposals(a: ProposalDoc, b: ProposalDoc): number {

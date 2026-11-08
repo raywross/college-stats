@@ -73,6 +73,7 @@ Lessons that shape the design:
 | **Publish** | a held value that is right as read (a real disagreement with federal data, with the reason) | the same as Correct, with the reason in the note | $0 |
 | **Hold** (`misread`) | a record's items marked misread, with what the document shows (`hold-misread`) | the Steward's `apply` job, in a change set | $0 |
 | **Refile** | a document's `edition` and its items' years (`refile-document`) | the `apply` job | $0 |
+| **Drop** | a duplicate or worse document removed: out of the record, its manifest entry and queue items gone, its URL moved from the recipe's `sources` to `dropped` so discovery never adds it back (`npm run drop-document`, library `dropDocument`) | by hand today (the owner's call when a refile collides with an edition already on file) | $0 |
 | **Reject** | the checks were right and nothing is publishable: the item resolved `rejected` | `admin_data_resolve_review` | $0 |
 | **Recipe** | the college's `reported.sources` document (a new link, clear for rediscovery, drop a bad one) | the `apply` job | $ next run |
 | **Re-read** | `college-reported.yml` `mode: college` for named colleges, or a schema bump | dispatched from the proposal, with the projected cost | $ |
@@ -181,10 +182,13 @@ its Health card, and from every proposal that touches it). One row per field or 
 ### Proposals
 A proposal is a document in `steward.proposals`:
 ```
-{ key, kind: correct | publish | hold | refile | reject | recipe | reread | systemic, cause, status: open | approved | declined | applied | asked,
+{ key, kind: correct | publish | hold | refile | reject | recipe | reread | systemic, cause, status: open | approved | declined | applied | asked | failed,
   summary, evidence: [{ unit_id, edition, sha256, page, line, shows }], rows: [{ unit_id, code | field, now, proposed, source, recommends, decision? }],
-  sample?: { checked, wrong: [...] }, change?: { what, how, revert }, question?, answer?, run, created, decided_by?, decided_at? }
+  sample?: { checked, wrong: [...] }, change?: { what, how, revert }, question?, answer?, run, created, decided_by?, decided_at?, failed_reason? }
 ```
+- **failed**: approved, but the `apply` job refused or broke part way; `runApply` (scripts/steward.mts) closes its change
+  set and writes the proposal `failed` with the message as `failed_reason` (scripts/lib/steward/proposals.mts
+  `setProposalStatus`, which also writes `declined` the way the console's Decline does).
 - A **value** proposal's rows are pre-ticked to match the recommendation; **Approve** applies the ticked rows (edits
   and resolutions directly; holds, refiles, recipes through the `apply` job; re-reads by dispatching the pipeline with
   the cost shown) and records the unticked ones as declined with the owner's reason, so the next run doesn't propose

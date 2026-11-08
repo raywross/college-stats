@@ -41,7 +41,7 @@ export function IssueStatusChip({ status }: { status: IssueStatus }) {
   return <StatusChip label={ISSUE_STATUS_LABEL[status]} tone={ISSUE_TONE[status]} />;
 }
 
-const PROPOSAL_TONE: Record<ProposalStatus, ChipTone> = { open: "warn", asked: "info", approved: "info", applied: "good", declined: "neutral" };
+const PROPOSAL_TONE: Record<ProposalStatus, ChipTone> = { open: "warn", asked: "info", approved: "info", applied: "good", declined: "neutral", failed: "danger" };
 export function ProposalStatusChip({ status }: { status: ProposalStatus }) {
   return <StatusChip label={PROPOSAL_STATUS_LABEL[status]} tone={PROPOSAL_TONE[status]} />;
 }

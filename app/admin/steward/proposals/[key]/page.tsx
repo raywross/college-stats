@@ -101,6 +101,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
               ...(typeof p.cost === "number" ? [{ label: "Projected cost", value: usd(p.cost) }] : []),
               ...(p.decided_at ? [{ label: "Decided", value: `${dayLabel(p.decided_at)}${p.decided_by ? ` by ${p.decided_by}` : ""}` }] : []),
               ...(p.decision_note ? [{ label: "Note", value: p.decision_note }] : []),
+              ...(p.status === "failed" && p.failed_reason ? [{ label: "Apply failed", value: p.failed_reason }] : []),
             ]}
           />
         </Panel>

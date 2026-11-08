@@ -20,7 +20,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { essayProgress } from "@/lib/essays/progress";
 import { essaysButton } from "@/lib/planner/generators/essays";
 import { guideFor, guideHref } from "@/lib/planner/guides";
@@ -175,7 +175,7 @@ export function MoveCard({ task, ctx, onDone, onSkip, pending, rank }: MoveCardP
   const date = taskDateLabel(task, ctx.today);
   const overdue = isOverdue(task, ctx.today);
   const school = schoolFor(task, ctx);
-  const cited = task.source_field && school ? (school.cites[task.source_field] as AnyCited | undefined) : undefined;
+  const cited = task.source_field && school ? (school.cites[task.source_field] as CiteLike | undefined) : undefined;
   const showAssignee = task.assignee !== "student";
   const firstName = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
   const title = task.title;

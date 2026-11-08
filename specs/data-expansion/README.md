@@ -78,6 +78,15 @@ because template workbooks and fillable PDFs read for free.
 |---|---|---|
 | [common-app.md](common-app.md) | **Planned** 2026-10-06, **waits on Common App's permission** (its terms of use forbid scraping and commercial reuse; the spec's first unit is the letter). Deadlines and early rounds, fees and fee waivers, essay, supplement, transcript and recommendation requirements, and this cycle's test policy for about 1,000 member colleges; aliases and an international-aid flag; national and state application trends from its reports, months before IPEDS | Common App Requirements Grid (PDF), Explore pages, research reports, Tableau state workbook |
 
+### Wave 7: beyond the federal college files (2026-11-05)
+From the owner's question about niche.com: on the numbers that decide whether a college is reachable and affordable,
+Quad already has more than Niche, with years and sources Niche lacks; Niche's edge is *place* and *lived experience*.
+The place half is public data. One page for six sources; each becomes its own spec when built.
+
+| Spec | Adds | Source |
+|---|---|---|
+| [sources-beyond-federal.md](sources-beyond-federal.md) | **Planned** 2026-11-05. (1) Campus crime and fire counts and rates by location, never a grade; (2) a Place section: climate normals, walkability, off-campus rent, with filters; (3) athletics programs: sports, rosters, athletic aid, spending; (4) graduates' earnings at 1, 5, and 10 years by field for all graduates, and where they work, where coverage exists; (5) research spending as a "Known for" chip; (6) the colleges' own first-destination reports, as a college-reported round | Clery Act data (OPE), NOAA normals + EPA walkability + HUD fair market rents, Equity in Athletics (OPE), Census PSEO, NSF HERD, each college's career-outcomes report |
+
 ## Deciding on history
 Every spec answers **"Keep history?"** with one of three answers:
 

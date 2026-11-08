@@ -1,11 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Popover } from "@base-ui/react/popover";
 import { Info, ArrowRight, BookMarked, ExternalLink } from "lucide-react";
 import { GLOSSARY, type TermKey } from "@/lib/glossary";
-import { citesYear, editedOn, isEditedSource, yearLabel, type AnyCited, type AnyCitedSource } from "@/lib/lineage";
+import {
+  citeApiHref,
+  citeFieldLabel,
+  citesYear,
+  editedOn,
+  isCiteRef,
+  isEditedSource,
+  yearLabel,
+  type AnyCited,
+  type AnyCitedSource,
+  type CiteLike,
+  type CiteRef,
+} from "@/lib/lineage";
 import { num, pctSmart } from "@/lib/format";
 import { DEMOGRAPHIC_CATEGORIES } from "@/lib/metrics";
 import { track } from "@/lib/analytics";
@@ -154,6 +166,94 @@ function SourceBlock({ cited, heading = true }: { cited: AnyCited; heading?: boo
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Citations by reference (specs/data-lineage.md "Citations on the plan") */
+/* ------------------------------------------------------------------ */
+
+/** Loaded citations, keyed `unit|path`, for the life of the page: each is fetched at most once. */
+const citeCache = new Map<string, AnyCited>();
+/** Fetches under way, shared by every ⓘ that asks for the same citation meanwhile. */
+const citeInflight = new Map<string, Promise<AnyCited>>();
+const citeKey = (ref: Pick<CiteRef, "unit" | "path">) => `${ref.unit}|${ref.path}`;
+
+/** The full citation behind a reference, from `GET /api/cite` (cached, in-flight shared). Rejects on a failed fetch. */
+export function loadCite(ref: Pick<CiteRef, "unit" | "path">): Promise<AnyCited> {
+  const key = citeKey(ref);
+  const hit = citeCache.get(key);
+  if (hit) return Promise.resolve(hit);
+  let pending = citeInflight.get(key);
+  if (!pending) {
+    pending = fetch(citeApiHref(ref))
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`citation ${key}: ${res.status}`);
+        const cited = (await res.json()) as AnyCited;
+        citeCache.set(key, cited);
+        return cited;
+      })
+      .finally(() => citeInflight.delete(key));
+    citeInflight.set(key, pending);
+  }
+  return pending;
+}
+
+export type CiteState = { status: "none" } | { status: "loading" } | { status: "error" } | { status: "ready"; cited: AnyCited };
+
+/**
+ * A citation ready to show: a full one at once, a reference once `GET /api/cite` answers (loadCite). The one loader
+ * for anything on the client that needs a cite's url, quote, or method; mount it where the citation is shown (an
+ * open popover), not where the reference is merely passed along.
+ */
+export function useCite(cite: CiteLike | null | undefined): CiteState {
+  const ref = isCiteRef(cite) ? cite : null;
+  const unit = ref?.unit ?? null;
+  const path = ref?.path ?? null;
+  const key = unit !== null && path !== null ? `${unit}|${path}` : null;
+  const [result, setResult] = useState<{ key: string; cited: AnyCited | null } | null>(null);
+  useEffect(() => {
+    if (unit === null || path === null) return;
+    let live = true;
+    loadCite({ unit, path }).then(
+      (cited) => live && setResult({ key: `${unit}|${path}`, cited }),
+      () => live && setResult({ key: `${unit}|${path}`, cited: null }),
+    );
+    return () => {
+      live = false;
+    };
+  }, [unit, path]);
+  if (!cite) return { status: "none" };
+  if (!ref) return { status: "ready", cited: cite as AnyCited };
+  const cached = citeCache.get(key!);
+  if (cached) return { status: "ready", cited: cached };
+  if (result?.key === key) return result.cited ? { status: "ready", cited: result.cited } : { status: "error" };
+  return { status: "loading" };
+}
+
+/**
+ * SourceBlock for a full citation or a reference: a reference is fetched when this mounts (inside an open popover),
+ * shows "Loading the source…" meanwhile, and on failure the field and year it already carries.
+ */
+function CiteSourceBlock({ cited, heading = true }: { cited: CiteLike; heading?: boolean }) {
+  const state = useCite(cited);
+  if (state.status === "ready") return <SourceBlock cited={state.cited} heading={heading} />;
+  return (
+    <div className="space-y-1.5 text-[12px] leading-relaxed text-muted-foreground" aria-busy={state.status === "loading"}>
+      {heading && (
+        <p className="flex items-center gap-1 text-[10px] font-bold tracking-[0.14em] text-foreground/70 uppercase">
+          <BookMarked className="size-3" aria-hidden /> Source
+        </p>
+      )}
+      {state.status === "loading" ? (
+        <p>Loading the source…</p>
+      ) : (
+        <p>
+          {citeFieldLabel(cited)}
+          {citesYear(cited) && `, ${yearLabel(cited)}`}.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Popup({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
     <Popover.Portal>
@@ -180,7 +280,7 @@ function Popup({ title, children }: { title: ReactNode; children: ReactNode }) {
   );
 }
 
-function TermPopup({ term, cited }: { term: TermKey; cited?: AnyCited }) {
+function TermPopup({ term, cited }: { term: TermKey; cited?: CiteLike }) {
   const entry = GLOSSARY[term];
   return (
     <Popup title={entry.term}>
@@ -190,7 +290,7 @@ function TermPopup({ term, cited }: { term: TermKey; cited?: AnyCited }) {
       </Link>
       {cited && (
         <div className="mt-3 border-t pt-3">
-          <SourceBlock cited={cited} />
+          <CiteSourceBlock cited={cited} />
         </div>
       )}
     </Popup>
@@ -209,7 +309,7 @@ function onOpen(cb: () => void): (open: boolean) => void {
 }
 
 /** What opening a term popover reports: the term, and the cited field when the popover carries a source. */
-function trackTermOpened(term: TermKey, cited?: AnyCited): void {
+function trackTermOpened(term: TermKey, cited?: CiteLike): void {
   track("term_opened", { term });
   if (cited) track("citation_opened", { field: cited.path });
 }
@@ -224,7 +324,7 @@ const triggerClass = cn(
  * Small (i) icon that explains a term on hover, focus, or tap. With `cited`, the
  * same popover also says where this value came from (see specs/data-lineage.md).
  */
-export function InfoTip({ term, cited, className }: { term: TermKey; cited?: AnyCited; className?: string }) {
+export function InfoTip({ term, cited, className }: { term: TermKey; cited?: CiteLike; className?: string }) {
   return (
     <Popover.Root onOpenChange={onOpen(() => trackTermOpened(term, cited))}>
       <Popover.Trigger
@@ -242,14 +342,14 @@ export function InfoTip({ term, cited, className }: { term: TermKey; cited?: Any
 }
 
 /** Source-only (i) icon, for values without a glossary term. */
-export function SourceTip({ cited, className }: { cited: AnyCited; className?: string }) {
+export function SourceTip({ cited, className }: { cited: CiteLike; className?: string }) {
   return (
     <Popover.Root onOpenChange={onOpen(() => track("citation_opened", { field: cited.path }))}>
-      <Popover.Trigger openOnHover delay={120} closeDelay={120} aria-label={`Source for ${cited.field}`} className={cn(triggerClass, className)}>
+      <Popover.Trigger openOnHover delay={120} closeDelay={120} aria-label={`Source for ${citeFieldLabel(cited)}`} className={cn(triggerClass, className)}>
         <BookMarked className="size-3" />
       </Popover.Trigger>
-      <Popup title={cited.field}>
-        <SourceBlock cited={cited} />
+      <Popup title={citeFieldLabel(cited)}>
+        <CiteSourceBlock cited={cited} />
       </Popup>
     </Popover.Root>
   );
@@ -286,7 +386,7 @@ export function SourcesTip({ title, groups, className }: { title: string; groups
 }
 
 /** Inline word with a dotted underline that opens the same explanation. */
-export function Term({ term, children, className, cited }: { term: TermKey; children?: ReactNode; className?: string; cited?: AnyCited }) {
+export function Term({ term, children, className, cited }: { term: TermKey; children?: ReactNode; className?: string; cited?: CiteLike }) {
   return (
     <Popover.Root onOpenChange={onOpen(() => trackTermOpened(term, cited))}>
       <Popover.Trigger
@@ -309,7 +409,7 @@ export function Term({ term, children, className, cited }: { term: TermKey; chil
 
 /**
  * Label + info icon, the standard way to title any metric. Pass `cited` (from
- * `citeField`) so the popover shows the value's source and year.
+ * `citeField`, or a `CiteRef` the popover fetches when it opens) so the popover shows the value's source and year.
  */
 export function MetricLabel({
   term,
@@ -318,7 +418,7 @@ export function MetricLabel({
   className,
 }: {
   term?: TermKey;
-  cited?: AnyCited;
+  cited?: CiteLike;
   children: ReactNode;
   className?: string;
 }) {

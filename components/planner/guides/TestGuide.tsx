@@ -15,7 +15,7 @@ import { MetricLabel } from "@/components/ui/info-tip";
 import { SheetDialog } from "@/components/ui/sheet-dialog";
 import { track } from "@/lib/analytics";
 import { WhyFold } from "@/components/ui/why-fold";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { DOMAINS } from "@/lib/metrics";
 import { SECTION_STEP } from "@/lib/planner/profile-progress";
 import { planHref } from "@/lib/planner/plan-tabs";
@@ -192,7 +192,7 @@ function StandingRows({ rows, standing, test }: { rows: readonly { school: { nam
         const school = rows[i]?.school;
         const name = school?.name ?? "A college";
         const field = test === "sat" ? "derived.sat_total" : "admissions.act_composite_25_75";
-        const cite = school?.cites?.[field] as AnyCited | undefined;
+        const cite = school?.cites?.[field] as CiteLike | undefined;
         return (
           <li key={i} className="space-y-1">
             <p className="text-sm font-semibold">{name}</p>

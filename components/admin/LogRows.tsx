@@ -44,7 +44,7 @@ export function LogRows({ rows }: { rows: AdminLogRow[] }) {
             </p>
             {/* The raw action code and the recorded details stay under Details (specs/product/admin-redesign.md "Settings (More)"). */}
             <details className="text-xs">
-              <summary className="inline-flex min-h-8 cursor-pointer items-center text-muted-foreground hover:text-foreground">Details</summary>
+              <summary className="inline-flex min-h-11 cursor-pointer items-center text-muted-foreground hover:text-foreground">Details</summary>
               <p className="mt-1 font-mono text-[12px] text-muted-foreground">{r.action}</p>
               {hasDetails && (
                 <pre className="mt-1 overflow-x-auto rounded-lg bg-muted p-2.5 font-mono text-[12px] leading-relaxed whitespace-pre-wrap break-words">{JSON.stringify(r.details, null, 2)}</pre>

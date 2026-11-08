@@ -13,7 +13,7 @@ import { dismissEd, setEdChecks, startEd } from "@/lib/planner/store-ed";
 import { SheetDialog } from "@/components/ui/sheet-dialog";
 import type { PlanRowView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { cn } from "@/lib/utils";
 
 /**
@@ -92,7 +92,7 @@ export function EdSheet({
 
   if (!facts || !school) return null;
   const setRound = round === "ed2" ? "ed2" : "ed";
-  const cite = (field: string) => school.cites[field] as AnyCited | undefined;
+  const cite = (field: string) => school.cites[field] as CiteLike | undefined;
 
   const toggle = (key: EdCheckKey) => {
     if (!canEdit) return;
@@ -172,7 +172,7 @@ export function EdSheet({
                 {` (CDS C21/C1${facts.lineage ? `, ${facts.lineage}` : ""})`}
               </span>
             </MetricLabel>
-            {facts.overallFromAdmitRate && school.admitRateCite ? <MetricLabel cited={school.admitRateCite as AnyCited}><span className="sr-only">Overall rate source</span></MetricLabel> : null}
+            {facts.overallFromAdmitRate && school.admitRateCite ? <MetricLabel cited={school.admitRateCite as CiteLike}><span className="sr-only">Overall rate source</span></MetricLabel> : null}
           </p>
         ) : (
           facts.noCounts && <p>{facts.noCounts}</p>

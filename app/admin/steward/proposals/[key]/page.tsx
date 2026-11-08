@@ -92,7 +92,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
                 label: "Keys",
                 value: (
                   <details>
-                    <summary className="min-h-8 cursor-pointer text-muted-foreground">Details</summary>
+                    <summary className="min-h-11 cursor-pointer text-muted-foreground">Details</summary>
                     <span className="block font-mono text-xs break-all">{p.key}</span>
                     {p.cause && <span className="block font-mono text-xs break-all">Cause: {p.cause}</span>}
                   </details>

@@ -5,7 +5,7 @@ import { ApplyStatusControl } from "@/components/planner/ApplyStatusControl";
 import { CollegeChip } from "@/components/planner/CollegeChip";
 import { TaskRow } from "@/components/planner/TaskRow";
 import { MetricLabel } from "@/components/ui/info-tip";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { requirementsFor } from "@/lib/planner/requirements";
 import type { PlanItem, PlanSchool, PlanTask, TaskKind } from "@/lib/planner/types";
 import type { StudentProfileData } from "@/lib/student-profile";
@@ -67,7 +67,7 @@ export function CollegeApplyCard({
           <ul className="mt-3 space-y-1.5 text-sm">
             {requirements.map((req) => (
               <li key={req.key} className={cn(!req.published && "text-muted-foreground italic")}>
-                <MetricLabel cited={(req.cite ? school.cites[req.cite] : undefined) as AnyCited | undefined}>
+                <MetricLabel cited={(req.cite ? school.cites[req.cite] : undefined) as CiteLike | undefined}>
                   <span className="font-semibold text-foreground">{req.label}:</span> {req.text}
                 </MetricLabel>
               </li>

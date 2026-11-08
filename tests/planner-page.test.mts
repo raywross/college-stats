@@ -238,14 +238,16 @@ test("the desktop header lists Explore, Advisor, Compare, High schools, Glossary
   assert.deepEqual(labels, ["Explore", "Advisor", "Compare", "High schools", "Glossary", "Data"]);
 });
 
-test("the phone tab bar is Explore, Search, Advisor, Compare, More, with Advisor's icon ListChecks and no Home tab", () => {
+test("the phone tab bar is Explore, Search, the role item (Advisor to a student, icon ListChecks), Compare, More, and no Home tab", () => {
   const src = read("components/layout/BottomNav.tsx");
-  const tabLabels = [...src.matchAll(/<Tab\b[^>]*?\blabel=(?:"([^"]+)"|\{([A-Z_]+)\})/g)].map(labelOf);
-  assert.deepEqual(tabLabels, ["Explore", "Search", "Advisor", "Compare", "More"]);
+  // The middle tab reads `roleNav(me)` (specs/product/role-nav.md): Advisor, Household, or Caseload.
+  const tabLabels = [...src.matchAll(/<Tab\b[^>]*?\blabel=(?:"([^"]+)"|\{([A-Za-z_.]+)\})/g)].map((m) => m[1] ?? m[2]);
+  assert.deepEqual(tabLabels, ["Explore", "Search", "role.label", "Compare", "More"]);
   assert.doesNotMatch(src, /label="Home"/);
-  assert.match(src, /href=\{ADVISOR_PATH\}[^]*?icon=\{<ListChecks/);
+  assert.match(src, /<Tab href=\{role\.href\} label=\{role\.label\} icon=\{<RoleIcon \/>\}/);
+  const roleNav = read("components/layout/role-nav.ts");
+  assert.match(roleNav, /const ADVISOR: RoleNav = \{ label: ADVISOR_SHORT, href: ADVISOR_PATH, icon: ListChecks,/);
   assert.match(src, /from "lucide-react"/);
-  assert.match(src, /\bListChecks\b/);
 });
 
 test("the plan opens on Next steps (owner, 2026-10-14): the page and the frame fall back to defaultTab, which is next; PlanTabs renders it with Footprints", async () => {

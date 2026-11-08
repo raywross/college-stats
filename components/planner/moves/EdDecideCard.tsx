@@ -18,7 +18,7 @@ import { edOpportunities, edPillText } from "@/lib/planner/ed-opportunities";
 import { planHref } from "@/lib/planner/plan-tabs";
 import { startEd } from "@/lib/planner/store-ed";
 import { taskDateLabel } from "@/lib/planner/tasks";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import type { MoveCardProps } from "./types";
 
 /** The Colleges tab with a row's drawer open on its ED sheet. */
@@ -32,7 +32,7 @@ export function EdDecideCard({ task, ctx, view, onSkip, pending }: MoveCardProps
   const [error, setError] = useState<string | null>(null);
   const date = taskDateLabel(task, ctx.today);
   const itemSchool = task.item_id ? ctx.schools[ctx.items.find((i) => i.id === task.item_id)?.unit_id ?? ""] : undefined;
-  const cited = task.source_field ? ((itemSchool ?? firstSchool())?.cites[task.source_field] as AnyCited | undefined) : undefined;
+  const cited = task.source_field ? ((itemSchool ?? firstSchool())?.cites[task.source_field] as CiteLike | undefined) : undefined;
   const person = ctx.student?.id ?? null;
   // The ED decision is the student's alone: never a parent's or a counselor's, whatever their edit access.
   const isStudent = ctx.viewer.relation === "self" && ctx.viewer.canEdit;

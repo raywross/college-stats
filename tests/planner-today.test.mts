@@ -53,16 +53,25 @@ test("every planner page and Server Action asks today-server for the day, not th
   const sites = [
     "lib/planner/load.ts", "lib/planner/hub.ts", "lib/planner/store-plan.ts", "lib/planner/store.ts", "lib/planner/store-actions.ts",
     "lib/planner/store-apply.ts", "lib/planner/store-offers.ts", "lib/essays/store.ts", "app/api/plan/next/route.ts",
-    "app/advisor/print/page.tsx", "app/household/[person]/page.tsx", "app/org/page.tsx", "app/org/students/[id]/page.tsx", "app/org/export/route.ts",
+    "app/advisor/print/page.tsx", "app/household/[person]/page.tsx",
   ];
   for (const f of sites) {
     const src = read(f);
     assert.ok(!/\btodayIso\(\)/.test(src), `${f} reads the real clock; use plannerToday()`);
     assert.match(src, /plannerToday\(\)/, `${f} should read plannerToday()`);
   }
+  // The counselor pages take the day from their data (lib/orgs.ts caseloadData/studentData): the bundle carries the
+  // setting, parsed as plannerTodayOverride parses it, and the fallback reads plannerToday(). No page reads the clock.
+  for (const f of ["app/org/page.tsx", "app/org/students/[id]/page.tsx", "app/org/export/route.ts"]) {
+    const src = read(f);
+    assert.ok(!/\btodayIso\(\)/.test(src), `${f} reads the real clock`);
+    assert.match(src, /\b(caseloadData|studentData)\(/, `${f} takes today from its data`);
+  }
+  assert.match(read("lib/orgs.ts"), /plannerToday\(\)/);
+  assert.match(read("lib/org-caseload.ts"), /parseTodaySetting\(b\.today/);
   assert.match(read("lib/planner/today-server.ts"), new RegExp(`"${TODAY_SETTING.replace(".", "\\\\.")}"|TODAY_SETTING`));
   // The banner sits above every plan a signed-in person opens, the household's person page, and the caseload.
-  for (const f of ["app/advisor/page.tsx", "app/household/[person]/page.tsx", "app/org/page.tsx"]) assert.match(read(f), /<PretendTodayBanner \/>/, f);
+  for (const f of ["app/advisor/page.tsx", "app/household/[person]/page.tsx", "app/org/page.tsx"]) assert.match(read(f), /<PretendTodayBanner( day=\{pretendDay\})? \/>/, f);
   // The migration teaches admin_set_setting the key.
   assert.match(read("supabase/migrations/20261105120000_planner_today.sql"), /'planner\.today'/);
 });

@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { OutcomePicker } from "@/components/planner/OutcomePicker";
 import { MetricLabel } from "@/components/ui/info-tip";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { planHref } from "@/lib/planner/plan-tabs";
 import { taskDateLabel } from "@/lib/planner/tasks";
 import type { MoveCardProps } from "./types";
@@ -19,7 +19,7 @@ export function DecisionCard({ task, ctx }: MoveCardProps) {
   if (!item || !school) return null;
 
   const date = taskDateLabel(task, ctx.today);
-  const cited = (task.source_field ? school.cites[task.source_field] : undefined) as AnyCited | undefined;
+  const cited = (task.source_field ? school.cites[task.source_field] : undefined) as CiteLike | undefined;
 
   return (
     <div className="rounded-xl bg-card p-4 ring-1 ring-border">

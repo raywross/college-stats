@@ -21,9 +21,9 @@ import type { PlanSchool } from "../lib/planner/types.ts";
 /* Fixtures                                                            */
 /* ------------------------------------------------------------------ */
 
-function cite(year: string | null): PlanSchool["admitRateCite"] {
+function cite(year: string | null): PlanSchool["cites"][string] {
   // Only `year` is read by suggest.ts; the rest of a real Cited object is irrelevant to these rules.
-  return { year } as PlanSchool["admitRateCite"];
+  return { year } as PlanSchool["cites"][string];
 }
 
 let n = 0;

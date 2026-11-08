@@ -21,7 +21,7 @@ night before a deadline. The owner's phrase is **virtual advisor**.
 | Where | Today | Decided |
 |---|---|---|
 | The product's name (pricing page, emails, the App Store) | the plan | **Quad Advisor** |
-| The tab bar's middle tab, the header, the account menu | Plan | **Advisor** |
+| The tab bar's middle tab, the header, the account menu | Plan | **Advisor** (to a student; since 2026-11-08 the same slot says Household to a parent and Caseload to a counselor, [role-nav.md](role-nav.md)) |
 | In a sentence to the student | your plan | **your advisor** ("Your advisor has three things for this season") |
 | In a sentence to a parent | Jordan's plan | **Jordan's advisor** |
 | The route | `/plan`, `/plan/guide/<slug>`, `/plan/print` | **`/advisor`**, `/advisor/guide/<slug>`, `/advisor/print`; `/plan/*` redirects for good (emails, texts, and calendar feeds already carry `/plan` links) |
@@ -154,7 +154,7 @@ plan above disagree, this section is what runs.
 `next.config.ts` redirects `/plan` and `/plan/:path*` to `/advisor` for good, with the query string carried (`/plan?for=…
 &tab=calendar` lands on the same tab); `/me/plan` and the household redirects go straight to `planHref`, no longer through
 two hops. `proxy.ts` matches `/advisor/:path*` (and still `/plan/:path*`). The tab bar, header, and the household's pill
-read `ADVISOR_SHORT`; the tab bar's sign-in line reads "Your colleges, your record, your advisor". Internal names kept
+read `ADVISOR_SHORT` (the tab bar and header through the role item since 2026-11-08, [role-nav.md](role-nav.md)); the tab bar's sign-in line reads "Your colleges, your record, your advisor". Internal names kept
 "plan": the `plan_child` cookie, `/api/plan/*`, telemetry event names, `PlanTab`, `PlanContext`, file names.
 `tests/advisor-routes.test.mts` checks the names, the hrefs, both redirects (by importing the config), the matcher, that
 `app/plan` is gone, and sweeps `app components lib proxy.ts` for any literal `/plan` route outside `/api/plan` (its first

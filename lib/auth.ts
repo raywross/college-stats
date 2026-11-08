@@ -136,6 +136,28 @@ const readAccount = cache(
 );
 
 /**
+ * The signed-in user's profile row alone, with the pause, for the header's state (app/api/me/route.ts): one indexed
+ * read of `profiles` by id, without the viewer bundle (which also reads every student and membership the person can
+ * see). Null when signed out or when the row doesn't exist yet (it is created on the first page that reads the
+ * account; this read never writes). `suspended_at` reads as null before 20261012200000_admin.sql (the same fallback
+ * readAccount has). Throws when the read fails; the caller decides what that means.
+ */
+export async function readProfileRow(): Promise<(Profile & { suspended_at: string | null }) | null> {
+  const user = await getUser();
+  if (!user) return null;
+  const supabase = await createServerSupabase();
+  const byId = (columns: string) => supabase.from("profiles").select(columns).eq("id", user.id).maybeSingle();
+  let { data, error } = await byId(`${PROFILE_COLUMNS}, suspended_at`);
+  if (error && isMissingSuspension(error)) ({ data, error } = await byId(PROFILE_COLUMNS));
+  if (error) {
+    if (isMissingTable(error)) throw new AccountsSetupError(error.message);
+    throw new Error(`Reading your profile failed: ${error.message}`);
+  }
+  const row = data as (Profile & { suspended_at?: string | null }) | null;
+  return row ? { ...row, suspended_at: row.suspended_at ?? null } : null;
+}
+
+/**
  * The signed-in user and their profile row. A user created before the migration (or whose sign-up trigger didn't
  * run) gets an empty profile on first read. Null when signed out, and when the account is paused (profiles.
  * suspended_at, set by the admin console: specs/product/admin.md "What deactivate means"), so every page and query

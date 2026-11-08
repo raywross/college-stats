@@ -79,7 +79,9 @@ into the deploy for that reason.
 | `job_runs` | One row per run of a Vercel cron route (`app/api/cron/*`): job, trigger, status, timing, the route's JSON answer as `summary`, the error ([admin-jobs.md](product/admin-jobs.md#run-records)) | Admins read; written only by the routes with the secret key (`lib/jobs/record.ts`), which also deletes rows older than 180 days |
 | `profiles.suspended_at`, `profiles.suspended_reason` | A deactivated account ([admin.md](product/admin.md#what-deactivate-means)): set and cleared only by `admin-auth` `suspend` / `unsuspend`; `getAccount()` treats a set `suspended_at` as signed out | As `profiles`, plus "Admins read" |
 | `auth_end_sessions(user)` | Deletes a user's `auth.sessions` rows (their refresh tokens cascade), for `admin-auth` `sign_out` and `suspend` | Secret key only |
-| `viewer_bundle()`, `plan_bundle()`, `save_student_profile()` | Batched reads and the profile write for the plan (one call instead of a chain of round trips; [serving-architecture.md](serving-architecture.md#follow-up-2026-10-12-real-speed-timing-and-batched-reads)). Security invoker: they return and write exactly what the per-table calls would. The app falls back to the per-table calls until they are applied | Signed-in users (as their own policies allow) |
+| `viewer_bundle()`, `plan_bundle()`, `save_student_profile()` | Batched reads and the profile write for the plan (one call instead of a chain of round trips; [serving-architecture.md](serving-architecture.md#follow-up-2026-10-12-real-speed-timing-and-batched-reads)). Security invoker: they return and write exactly what the per-table calls would. The app falls back to the per-table calls until they are applied. From `20261108120000_fast_policies.sql` on, `viewer_bundle()` reads its students through `visible_student_ids()` and no longer returns `student_profiles` (the profile store reads the table) | Signed-in users (as their own policies allow) |
+| `org_caseload_bundle()`, `org_student_bundle(student)` | The counselor's caseload and student pages in one call each: the organization, roster, pretend today, and the students' profiles, default lists (items, visits, steps), and essays; the student page adds its roster row, the office's notes and asks (`20261108120000_fast_policies.sql`; [serving-architecture.md](serving-architecture.md#follow-up-2026-11-08-counselor-performance-review)). Security invoker, so row-level security decides; null without an organization | Signed-in users (as their own policies allow) |
+| `visible_student_ids()`, `household_user_ids()` | The read policies' sets: the students the caller may read (exactly where `can_read_student()` is true) and the users whose own lists the caller may read through a shared household. Security definer, evaluated once per query | Signed-in users (their own sets) |
 | Accounts, households, invitations, student profiles, lists, follows, notification prefs, digests, and the rest | [accounts.md](product/accounts.md), [household-hub.md](product/household-hub.md), [saved-lists.md](product/saved-lists.md), [follow-colleges.md](product/follow-colleges.md) | Per policy |
 
 **Retired on 2026-10-07** by `supabase/migrations/20261007130000_retire_dataset_tables.sql`: `schools`,
@@ -90,6 +92,12 @@ into the deploy for that reason.
 migration in order, so the end state is what the tests prove).
 
 - Row-level security is on for every table. Nothing public is writable through the API.
+- Read policies are set-based: membership once per query. A read policy asks for a set
+  (`student_id in (select public.visible_student_ids())`) or for its parent table's readable rows
+  (`list_id in (select id from public.lists)`), never a function per row, and writes `auth.uid()` as
+  `(select auth.uid())`. Write policies may call `can_edit_*()`: they check one row
+  (`20261108120000_fast_policies.sql`; tested in `tests/fast-policies.test.mts`, which compares every person's
+  readable rows before and after).
 - Migrations follow the Supabase CLI layout (`<timestamp>_<name>.sql`); each is pasted into the SQL Editor, dev
   first, then prod. They must stay backward-compatible with the running app (add, don't rename), because the app and
   the database deploy separately.

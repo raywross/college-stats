@@ -22,6 +22,12 @@ own except the Plan tab's empty frame and the stage strip.
   and text, never duplicates, and never touches `done_at`.
 - **Dates carry lineage.** A generated task stores the field path and edition its date came from, so the ⓘ on the
   plan is the same citation popover as on the profile ([data-lineage.md](../data-lineage.md)).
+- **Citations ship as references (2026-11-08).** `PlanSchool.cites` (and `admitRateCite`, `avgCostCite`) hold a
+  `CiteRef` per field (`lib/lineage.ts`: unit, path, source key, year, CDS edition, document kind), enough for every
+  rule that reads a year or an edition; the ⓘ fetches the rest from `GET /api/cite` when it opens. `planSchoolFor`
+  and `planSchools` take `cites: "full" | "ref"` (default `"ref"`); only the print page asks for `"full"`.
+  `PlanSchool.poolSchool` carries only the lineage records the pool reads (`slimPoolSchool`), not the college's whole
+  lineage, which was most of the plan's payload.
 - **Access is the list's access.** Whoever can read a list reads its plan; whoever can edit it edits the plan
   (`can_read_list` / `can_edit_list` from the hub migration); `done_by` and `created_by` record who.
 

@@ -37,17 +37,17 @@ export interface ProfileAccess {
 }
 
 /**
- * The profile rows the signed-in user can read, once per request: from the viewer bundle when it's installed
- * (lib/bundles.ts), else one read of `student_profiles` that row-level security narrows (U20 "real speed": no longer
- * filtered by the access list, so it runs alongside that read instead of after it; profilesICanSee keeps only the
- * students the user can see, exactly as before).
+ * The profile rows the signed-in user can read, once per request: from the viewer bundle when it still carries them
+ * (a viewer_bundle() from before 20261108120000_fast_policies.sql), else one read of `student_profiles` that row-level
+ * security narrows (U20 "real speed": no longer filtered by the access list, so it runs alongside that read instead of
+ * after it; profilesICanSee keeps only the students the user can see, exactly as before).
  */
 const readableProfiles = cache(
   (): Promise<Map<string, unknown>> =>
     requestMemo("student_profiles", async () => {
       if (!(await getUser())) return new Map<string, unknown>();
       const bundle = await viewerBundle();
-      if (bundle) return new Map(bundle.student_profiles.map((r) => [r.student_id, r.data]));
+      if (bundle?.student_profiles) return new Map(bundle.student_profiles.map((r) => [r.student_id, r.data]));
       const supabase = await createServerSupabase();
       const { data, error } = await supabase.from("student_profiles").select("student_id, data");
       if (error && !isMissingTable(error)) throw new Error(`Reading student profiles failed: ${error.message}`);

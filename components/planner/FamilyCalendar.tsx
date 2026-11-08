@@ -27,6 +27,7 @@ import { KID_VARS, MONEY_VAR, ROUND_VAR, STRIPED, TEST_VAR, VISIT_VAR } from "@/
 import { ROUND_LABELS, type ListRound } from "@/lib/list-rules";
 import { createCalendarToken, createViewerCalendarToken } from "@/lib/planner/store-timeline";
 import { track } from "@/lib/analytics";
+import { citeLinkHref } from "@/lib/lineage";
 import type { PlanContext } from "@/lib/planner/types";
 
 type ColorBy = "child" | "round";
@@ -81,8 +82,9 @@ export default function FamilyCalendar({ children, viewer, everyone }: CalendarT
     if (cite.kind === "link") return { url: cite.url };
     const ctx: PlanContext | undefined = ctxById[studentId];
     const school = ctx?.schools[cite.unitId];
-    const cited = school?.cites[cite.field] as { url?: string } | undefined;
-    return cited?.url ? { url: cited.url } : null;
+    // A reference (the plan's default) links through /api/cite's redirect, fetched only when followed.
+    const cited = school?.cites[cite.field];
+    return cited ? { url: citeLinkHref(cited) } : null;
   };
 
   const kidColor = (slot: 0 | 1 | 2) => KID_VARS[slot];

@@ -56,7 +56,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/admin/peo
               {pages > 1 && (
                 <nav aria-label="Pages" className="mt-3 flex items-center justify-between gap-3 text-sm">
                   {page > 1 ? (
-                    <Link href={page === 2 ? "/admin/people" : `/admin/people?page=${page - 1}`} rel="prev" className="inline-flex min-h-10 items-center underline decoration-dotted underline-offset-2">
+                    <Link href={page === 2 ? "/admin/people" : `/admin/people?page=${page - 1}`} rel="prev" className="inline-flex min-h-11 items-center underline decoration-dotted underline-offset-2">
                       Previous {PEOPLE_PAGE_SIZE}
                     </Link>
                   ) : (
@@ -66,7 +66,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/admin/peo
                     Page {page} of {pages}
                   </span>
                   {page < pages ? (
-                    <Link href={`/admin/people?page=${page + 1}`} rel="next" className="inline-flex min-h-10 items-center underline decoration-dotted underline-offset-2">
+                    <Link href={`/admin/people?page=${page + 1}`} rel="next" className="inline-flex min-h-11 items-center underline decoration-dotted underline-offset-2">
                       Next {PEOPLE_PAGE_SIZE}
                     </Link>
                   ) : (

@@ -166,7 +166,7 @@ export function DocumentsTouched({
               const href = `/admin/data/changes/${id}?c=${encodeURIComponent(g.collection)}&k=${encodeURIComponent(d.key)}#document`;
               return (
                 <li key={d.key}>
-                  <Link href={href} aria-current={on ? "true" : undefined} className={`inline-flex min-h-8 items-center rounded-full border px-2.5 font-mono ${on ? "border-primary bg-primary/10" : "border-border hover:bg-muted"}`}>
+                  <Link href={href} aria-current={on ? "true" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-2.5 font-mono ${on ? "border-primary bg-primary/10" : "border-border hover:bg-muted"}`}>
                     {d.key}
                     {d.deleted && <span className="ml-1 text-destructive">(removed)</span>}
                   </Link>

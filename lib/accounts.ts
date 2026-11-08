@@ -275,7 +275,31 @@ export function signedInCookieFor<O extends { maxAge?: number; httpOnly?: boolea
   return { name: SIGNED_IN_COOKIE, value: writing ? "1" : "", options };
 }
 
-/** What /api/me tells the header's AccountMenu. Nothing more than the menu shows. */
+/**
+ * Which hat the signed-in person wears in the navigation (specs/product/role-nav.md): the header's second item and
+ * the phone's middle tab say Advisor to a student, Household to a parent, Caseload to a counselor.
+ */
+export type MeRole = "student" | "guardian" | "counselor";
+
+/** A student the person sees as a guardian, for the Household menu ("Jordan's advisor"): the id and name only. */
+export interface MeChild {
+  id: string;
+  name: string | null;
+}
+
+/**
+ * The navigation's role rule (specs/product/role-nav.md "Who is who"), one place for `/api/me` and the tests: a member
+ * of a counselor organization is a counselor, whatever else they are; otherwise anyone with a student on their
+ * household's roster, or who said "a parent or guardian" at sign-up, is a guardian; everyone else is a student. A
+ * counselor who is also a parent keeps their children in the Caseload menu.
+ */
+export function meRoleOf(facts: { org: boolean; roleHint: RoleHint | null; children: number }): MeRole {
+  if (facts.org) return "counselor";
+  if (facts.children > 0 || facts.roleHint === "guardian") return "guardian";
+  return "student";
+}
+
+/** What /api/me tells the header's AccountMenu and the role item. Nothing more than they show. */
 export interface MeState {
   /** Sign-in is available on this deployment. */
   configured: boolean;
@@ -285,11 +309,15 @@ export interface MeState {
   id: string | null;
   name: string | null;
   email: string | null;
-  /** A member of a counselor organization (my_organization()): the menu shows Caseload. False when signed out. */
+  /** A member of a counselor organization (my_organization()): the role item is Caseload. False when signed out. */
   org: boolean;
   /** An admin at any assurance level (is_admin_any_aal()): the menu shows Admin, the way into the console
    * (specs/product/admin.md "The console"). The console itself asks for the second factor. False when signed out. */
   admin: boolean;
+  /** The navigation's role (meRoleOf); null when signed out. */
+  role: MeRole | null;
+  /** The students the person sees as a guardian, in roster order (householdChildren); empty when signed out. */
+  children: MeChild[];
 }
 
 /**

@@ -254,7 +254,7 @@ const view = (await import("../app/join/[code]/JoinView.tsx")) as {
 };
 const { CounselorsSection } = (await import("../components/account/CounselorsSection.tsx")) as { CounselorsSection: (p: { grants: CounselorGrantView[]; first?: string | null }) => ReactElement | null };
 const { JoinedLine } = (await import("../components/account/JoinedNotice.tsx")) as { JoinedLine: (p: { orgName: string; settings: string }) => ReactElement };
-const { accountMenuLinks } = (await import("../components/account/account-menu-links.ts")) as { accountMenuLinks: (me: { org?: boolean; admin?: boolean }) => { href: string; label: string }[] };
+const { accountMenuLinks } = (await import("../components/account/account-menu-links.ts")) as { accountMenuLinks: (me: { admin?: boolean; role?: "student" | "guardian" | "counselor" | null }) => { href: string; label: string }[] };
 const CodePage = (await import("../app/join/page.tsx")) as { default: (p: { searchParams: Promise<{ code?: string }> }) => Promise<ReactElement> };
 
 const decode = (html: string) => html.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
@@ -380,17 +380,19 @@ test("the joined notice names the organization and links to where it's changed",
   assert.match(html, /href="\/account#counselors"[^>]*>Change or end it</);
 });
 
-test("the menu shows Caseload only for members of an organization", () => {
-  assert.deepEqual(accountMenuLinks({ org: false }).map((l) => l.label), ["Household", "Your account"]);
-  assert.deepEqual(accountMenuLinks({}).map((l) => l.label), ["Household", "Your account"], "an older stored answer without org");
-  assert.deepEqual(accountMenuLinks({ org: true }).map((l) => [l.label, l.href]), [["Caseload", "/org"], ["Household", "/household"], ["Your account", "/account"]]);
+test("a counselor's Caseload moved from the avatar menu to the header's role item (specs/product/role-nav.md)", () => {
+  // The avatar menu keeps the personal things; a counselor's Caseload and a guardian's Household are the role item's.
+  assert.deepEqual(accountMenuLinks({ role: "student" }).map((l) => l.label), ["Household", "Your account"]);
+  assert.deepEqual(accountMenuLinks({}).map((l) => l.label), ["Household", "Your account"], "an older stored answer without a role reads as a student");
+  assert.deepEqual(accountMenuLinks({ role: "counselor" }).map((l) => [l.label, l.href]), [["Your account", "/account"]]);
+  assert.deepEqual(accountMenuLinks({ role: "guardian" }).map((l) => [l.label, l.href]), [["Your account", "/account"]]);
   assert.match(read("app", "api", "me", "route.ts"), /myOrganization\(\)\s*\.then\(\(o\) => o !== null\)/);
-  assert.match(read("components", "layout", "BottomNav.tsx"), /me\?\.signedIn && me\.org && \(/, "and the phone's More sheet");
+  assert.match(read("components", "layout", "BottomNav.tsx"), /role\.menu\.filter\(\(e\) => e\.kind === "page"\)/, "the phone's More sheet lists the role's pages");
 });
 
 test("the avatar menu and the More sheet show Admin, last, to an admin only (specs/product/admin.md 'The console')", () => {
   assert.deepEqual(accountMenuLinks({ admin: true }).map((l) => [l.label, l.href]), [["Household", "/household"], ["Your account", "/account"], ["Admin", "/admin"]]);
-  assert.deepEqual(accountMenuLinks({ org: true, admin: true }).map((l) => l.label), ["Caseload", "Household", "Your account", "Admin"]);
+  assert.deepEqual(accountMenuLinks({ role: "counselor", admin: true }).map((l) => l.label), ["Your account", "Admin"]);
   assert.deepEqual(accountMenuLinks({ admin: false }).map((l) => l.label), ["Household", "Your account"]);
   assert.deepEqual(accountMenuLinks({}).map((l) => l.label), ["Household", "Your account"], "an older stored answer without admin");
   // The same question the console's layout asks (lib/admin/auth.ts adminState), never a second rule.

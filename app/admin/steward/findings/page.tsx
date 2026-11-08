@@ -97,7 +97,7 @@ export default async function IssuesPage({ searchParams }: { searchParams: Promi
             <div className="space-y-3">
               <nav aria-label="Kinds" className="flex flex-wrap gap-2 text-sm">
                 {[null, ...ISSUE_KINDS].map((k) => (
-                  <Link key={k ?? "all"} href={href({ kind: k, page: 1 })} aria-current={k === kind ? "page" : undefined} className={`inline-flex min-h-10 items-center rounded-full border px-4 ${k === kind ? "border-primary font-semibold" : "border-border"}`}>
+                  <Link key={k ?? "all"} href={href({ kind: k, page: 1 })} aria-current={k === kind ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 ${k === kind ? "border-primary font-semibold" : "border-border"}`}>
                     {k ? ISSUE_KIND_LABEL[k] : "All"}
                   </Link>
                 ))}
@@ -110,7 +110,7 @@ export default async function IssuesPage({ searchParams }: { searchParams: Promi
               {page.pages > 1 && (
                 <nav aria-label="Cause pages" className="flex items-center justify-between gap-3 text-sm">
                   {page.page > 1 ? (
-                    <Link href={href({ page: page.page - 1 })} rel="prev" className={`inline-flex min-h-10 items-center ${linkCls}`}>
+                    <Link href={href({ page: page.page - 1 })} rel="prev" className={`inline-flex min-h-11 items-center ${linkCls}`}>
                       Previous
                     </Link>
                   ) : (
@@ -120,7 +120,7 @@ export default async function IssuesPage({ searchParams }: { searchParams: Promi
                     Page {page.page} of {page.pages}
                   </span>
                   {page.page < page.pages ? (
-                    <Link href={href({ page: page.page + 1 })} rel="next" className={`inline-flex min-h-10 items-center ${linkCls}`}>
+                    <Link href={href({ page: page.page + 1 })} rel="next" className={`inline-flex min-h-11 items-center ${linkCls}`}>
                       Next
                     </Link>
                   ) : (

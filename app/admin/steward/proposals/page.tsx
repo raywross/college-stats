@@ -38,7 +38,7 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pr
               key={s ?? "all"}
               href={s ? `/admin/steward/proposals?status=${s}` : "/admin/steward/proposals"}
               aria-current={s === status ? "page" : undefined}
-              className={`inline-flex min-h-10 items-center rounded-full border px-4 ${s === status ? "border-primary font-semibold" : "border-border"}`}
+              className={`inline-flex min-h-11 items-center rounded-full border px-4 ${s === status ? "border-primary font-semibold" : "border-border"}`}
             >
               {s ? PROPOSAL_STATUS_LABEL[s] : "All"}
             </Link>

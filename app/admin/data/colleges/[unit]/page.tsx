@@ -338,10 +338,10 @@ function HealthBlock({ health, generated, opsHref, reviewHref }: { health: Colle
         </div>
       )}
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link href={opsHref} className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
+        <Link href={opsHref} className="inline-flex h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
           Run now for this college
         </Link>
-        <Link href={reviewHref} className="inline-flex h-10 items-center rounded-lg border px-4 text-sm font-semibold hover:bg-muted">
+        <Link href={reviewHref} className="inline-flex h-11 items-center rounded-lg border px-4 text-sm font-semibold hover:bg-muted">
           Review
         </Link>
       </div>

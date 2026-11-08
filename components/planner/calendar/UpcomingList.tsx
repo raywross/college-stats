@@ -16,6 +16,7 @@ import { roundsPicked } from "@/lib/planner/list-row";
 import { daysBetween, eventsFor, laterSummary, monthLabel, upcomingDays, type CalendarCite, type CalendarEvent, type UpcomingDay } from "@/lib/planner/calendar";
 import { MONEY_VAR, ROUND_VAR, TEST_VAR, VISIT_VAR } from "@/lib/planner/colors";
 import { ROUND_SHORT } from "@/lib/planner/rounds";
+import { citeLinkHref } from "@/lib/lineage";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -25,8 +26,9 @@ const SHOW_ALL_WEEKS = 520;
 function resolveCite(ctx: PlanContext, cite: CalendarCite): { url: string } | null {
   if (!cite) return null;
   if (cite.kind === "link") return { url: cite.url };
-  const cited = ctx.schools[cite.unitId]?.cites[cite.field] as { url?: string } | undefined;
-  return cited?.url ? { url: cited.url } : null;
+  // A reference (the plan's default) links through /api/cite's redirect, fetched only when followed.
+  const cited = ctx.schools[cite.unitId]?.cites[cite.field];
+  return cited ? { url: citeLinkHref(cited) } : null;
 }
 
 export function UpcomingList({

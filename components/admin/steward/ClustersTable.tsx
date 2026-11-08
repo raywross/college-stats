@@ -39,7 +39,7 @@ function Cause({ row: { cluster, issue } }: { row: ClusterRowView }) {
       )}
       {cluster.examples.length > 0 && (
         <details className="mt-1 text-xs">
-          <summary className="min-h-8 cursor-pointer text-muted-foreground">Examples</summary>
+          <summary className="min-h-11 cursor-pointer text-muted-foreground">Examples</summary>
           <p className="mt-1 text-muted-foreground">
             Key for one cause: <code className="rounded bg-muted px-1 break-all">{cluster.key}</code>
           </p>

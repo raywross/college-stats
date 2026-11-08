@@ -201,6 +201,19 @@ test("snapshotMemo: one load per snapshot id, shared by concurrent callers; a ne
   assert.deepEqual(await memo("9"), { loads: 4 }, "the failed load wasn't held");
 });
 
+test("snapshotMemo: a hold expires after ttlMs even under the same snapshot id (the publisher moves the pointer before it writes the tables)", async () => {
+  let clock = 0;
+  let loads = 0;
+  const memo = snapshotMemo(async () => ++loads, { ttlMs: 1000, now: () => clock });
+  assert.equal(await memo("7"), 1);
+  clock = 999;
+  assert.equal(await memo("7"), 1, "within the window the hold stands");
+  clock = 1000;
+  assert.equal(await memo("7"), 2, "at the window's end it reloads under the same id");
+  clock = 1500;
+  assert.equal(await memo("7"), 2, "and holds again");
+});
+
 test("guard: a memo that ignored the key would serve the old snapshot's files", async () => {
   // The broken rule, written out: hold the first value whatever the key.
   const broken = <T,>(load: () => Promise<T>): ((key: string) => Promise<T>) => {

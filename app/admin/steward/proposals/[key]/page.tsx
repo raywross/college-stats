@@ -20,6 +20,9 @@ import { getData } from "@/lib/data";
 import { isFieldPath } from "@/lib/fields";
 import { nowAtField } from "@/lib/steward/review-rows";
 import type { ProposalDoc } from "@/lib/steward/types";
+import { HelpTip } from "@/components/admin/HelpTip";
+import { CHOOSE_THE_FILE, collisionHref } from "@/lib/admin/document-compare";
+import { readRecord, type DocumentsClient } from "@/lib/admin/document-reads";
 
 export const metadata: Metadata = { title: "Proposal", robots: { index: false, follow: false } };
 
@@ -66,6 +69,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
     ticked: r.decision ? r.decision === "approved" : r.recommends === "approve",
   }));
   const waitingRereads = p.kind === "reread" && p.status === "approved" ? rereadsWaiting(p) : [];
+  const chooseHref = await collisionHref(p, (unit) => readRecord(client as unknown as DocumentsClient, unit));
 
   return (
     <>
@@ -84,6 +88,25 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
         }
       />
       <div className="space-y-5">
+        {(p.status === "failed" || chooseHref) && (
+          <div role="alert" className="space-y-3 rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm">
+            <p className="flex flex-wrap items-center gap-1.5">
+              {p.status === "failed" ? (
+                <>
+                  <span className="font-semibold">Apply failed:</span> {stewardText(p.failed_reason?.trim() || "no reason was recorded.")}
+                </>
+              ) : (
+                <span>This refile would move a file into an edition that already has one. Compare the two files and keep one.</span>
+              )}
+              {chooseHref && <HelpTip help="document-collision" />}
+            </p>
+            {chooseHref && (
+              <Link href={chooseHref} className="inline-flex h-11 items-center rounded-full bg-primary px-4 font-semibold text-primary-foreground">
+                {CHOOSE_THE_FILE}
+              </Link>
+            )}
+          </div>
+        )}
         <Panel help="proposal" title="Summary">
           <Fields
             items={[
@@ -101,7 +124,6 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
               ...(typeof p.cost === "number" ? [{ label: "Projected cost", value: usd(p.cost) }] : []),
               ...(p.decided_at ? [{ label: "Decided", value: `${dayLabel(p.decided_at)}${p.decided_by ? ` by ${p.decided_by}` : ""}` }] : []),
               ...(p.decision_note ? [{ label: "Note", value: p.decision_note }] : []),
-              ...(p.status === "failed" && p.failed_reason ? [{ label: "Apply failed", value: p.failed_reason }] : []),
             ]}
           />
         </Panel>

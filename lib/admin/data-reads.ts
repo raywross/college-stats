@@ -112,6 +112,8 @@ export interface HeldChangeSet {
   source: string;
   held_reason: string | null;
   created_at: string;
+  /** What the run wrote about itself (an apply's `proposal` and `refused`); the Inbox reads it for a collision's link. */
+  summary?: Record<string, unknown> | null;
 }
 
 async function rows<T>(what: string, query: PromiseLike<{ data: T[] | null; error: { message: string } | null }>): Promise<T[]> {
@@ -147,7 +149,7 @@ export async function changeSetCounts(supabase: SupabaseClient, after: string | 
 
 /** Held change sets, newest first: the run as a whole looked wrong and nothing from it publishes until an admin acts. */
 export async function heldChangeSets(supabase: SupabaseClient): Promise<HeldChangeSet[]> {
-  return rows<HeldChangeSet>("data_change_sets", supabase.from("data_change_sets").select("id, kind, source, held_reason, created_at").eq("status", "held").order("created_at", { ascending: false }));
+  return rows<HeldChangeSet>("data_change_sets", supabase.from("data_change_sets").select("id, kind, source, held_reason, created_at, summary").eq("status", "held").order("created_at", { ascending: false }));
 }
 
 export interface DataOverview {

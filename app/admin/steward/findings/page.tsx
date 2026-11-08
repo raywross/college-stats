@@ -5,6 +5,7 @@ import { Empty, Fields, PageHeader, Panel } from "@/components/admin/Panel";
 import { RunForm } from "@/components/admin/ops/RunForm";
 import { ClustersTable } from "@/components/admin/steward/ClustersTable";
 import { JobFindings } from "@/components/admin/jobs/JobFindings";
+import { CollisionFindings } from "@/components/admin/steward/CollisionFindings";
 import { StewardBack } from "@/components/admin/steward/Bits";
 import { dispatchAction } from "@/app/admin/steward/jobs/actions";
 import { requireAdmin } from "@/lib/admin/auth";
@@ -133,6 +134,8 @@ export default async function IssuesPage({ searchParams }: { searchParams: Promi
         </Panel>
 
         {(!kind || kind === "job") && <JobFindings issues={[...issues.values()].filter((i) => i.kind === "job")} />}
+
+        {(!kind || kind === "collision") && <CollisionFindings issues={[...issues.values()].filter((i) => i.kind === "collision")} />}
 
         <Panel help="review-page" title="Colleges to review" id="colleges" aside={<span className="text-sm text-muted-foreground">Most visible changes first</span>}>
           {named.length === 0 ? (

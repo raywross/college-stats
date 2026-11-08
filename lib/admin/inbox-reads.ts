@@ -13,6 +13,7 @@ import { heldChangeSets, lastPublishedSnapshot } from "@/lib/admin/data-reads";
 import { healthOverview } from "@/lib/admin/health";
 import { INVITATION_WAIT_DAYS, inboxJob, needsYou, type InboxDeletion, type InboxInput, type InboxInvitation } from "@/lib/admin/inbox";
 import { adminSupabase } from "@/lib/admin/people";
+import { readCollisionIssues, type DocumentsClient } from "@/lib/admin/document-reads";
 import { readQueue, type StoreClient } from "@/lib/admin/review-queue";
 import { readDecisions, readProposals, readRuns, readTodo } from "@/lib/admin/steward-reads";
 import { loadJobsOverview } from "@/lib/jobs/runs";
@@ -59,7 +60,7 @@ async function organizationCount(s: Db): Promise<number> {
 export async function loadInboxInput(now: Date = new Date()): Promise<InboxInput> {
   const s = await adminSupabase();
   const client = s as unknown as StoreClient;
-  const [decisions, proposals, todo, runs, jobs, dels, invites, held, counts, orgs, published, queue, health] = await Promise.all([
+  const [decisions, proposals, todo, runs, jobs, dels, invites, held, counts, orgs, published, queue, health, collisions] = await Promise.all([
     soft("decisions", () => readDecisions(client)),
     soft("proposals", () => readProposals(client)),
     soft("to do", () => readTodo(client)),
@@ -82,6 +83,7 @@ export async function loadInboxInput(now: Date = new Date()): Promise<InboxInput
       const o = (await healthOverview()).counts.overall;
       return { fresh: o.fresh, watch: o.watch, stale: o.stale, failing: o.failing };
     }),
+    soft("collision findings", () => readCollisionIssues(client as unknown as DocumentsClient)),
   ]);
   return {
     now,
@@ -97,6 +99,7 @@ export async function loadInboxInput(now: Date = new Date()): Promise<InboxInput
     lastPublished: published === null ? undefined : published ? { id: published.id, created_at: published.created_at, colleges: published.manifest?.colleges ?? null } : null,
     queue,
     health,
+    collisions,
   };
 }
 
@@ -105,12 +108,13 @@ export async function needsYouCount(now: Date = new Date()): Promise<number | nu
   try {
     const s = await adminSupabase();
     const client = s as unknown as StoreClient;
-    const [decisions, proposals, dels, invites, held] = await Promise.all([
+    const [decisions, proposals, dels, invites, held, collisions] = await Promise.all([
       soft("decisions", () => readDecisions(client)),
       soft("proposals", () => readProposals(client)),
       soft("deletions", () => deletions(s)),
       soft("invitations", () => waitingInvitations(s, now)),
       soft("held changes", () => heldChangeSets(s)),
+      soft("collision findings", () => readCollisionIssues(client as unknown as DocumentsClient)),
     ]);
     if ([decisions, proposals, dels, invites, held].every((r) => r === null)) return null;
     return needsYou({
@@ -127,6 +131,7 @@ export async function needsYouCount(now: Date = new Date()): Promise<number | nu
       lastPublished: null,
       queue: null,
       health: null,
+      collisions,
     }).length;
   } catch {
     return null;

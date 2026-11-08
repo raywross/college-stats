@@ -10,7 +10,7 @@ import { deletingLabel, fmtDate, fmtDateTime } from "./console.ts";
 import type { HelpKey } from "./help.ts";
 import { TODO_WHY_LABEL, proposalHref, reviewHref } from "./steward-view.ts";
 import { DELETE_GRACE_DAYS } from "../household-rules.ts";
-import type { DecisionDoc, ProposalDoc, ReviewDoc, RunDoc, TodoDoc } from "../steward/types.ts";
+import type { DecisionDoc, ProposalDoc, RunDoc, TodoDoc } from "../steward/types.ts";
 import type { JobOverviewRow } from "../jobs/runs.ts";
 import { lastOutcome } from "../jobs/view.ts";
 

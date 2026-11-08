@@ -11,10 +11,10 @@ import { mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { JOBS, jobById, type JobDef } from "../lib/jobs/registry.ts";
-import { withJobRun, type RunFinish, type RunRecorder } from "../lib/jobs/record.ts";
+import { withJobRun, type RunRecorder } from "../lib/jobs/record.ts";
 import { requestReview, reviewInputs, REVIEW_COLLAPSE_MS, STEWARD_WORKFLOW } from "../lib/jobs/review-dispatch.ts";
 import { reviewForLastRun } from "../lib/jobs/reviews.ts";
-import { inboxJob } from "../lib/admin/inbox.ts";
+import { inboxJob, REVIEW_WEEKLY_CAP_USD } from "../lib/admin/inbox.ts";
 import { STEWARD_COLLECTIONS } from "../lib/admin/steward-reads.ts";
 import {
   countOf,
@@ -265,6 +265,7 @@ test("the review budget: $0.10 a run, cut by the week's $3 for reviews and the w
   assert.equal(reviewBudget(WEEKLY_CAP_USD - 0.02, 0), 0.02);
   assert.equal(reviewBudget(0, 3), 0);
   assert.equal(reviewBudget(45, 0), 0);
+  assert.equal(REVIEW_WEEKLY_CAP_USD, REVIEW_BUDGETS.week, "the console's $3 is the budget's");
 });
 
 test("review mode, dry run: an idle weekly run is flagged with the Haiku note, a finding (kind job), the review, and a run record inside $0.10", async () => {
@@ -296,6 +297,18 @@ test("review mode, dry run: an idle weekly run is flagged with the Haiku note, a
   assert.equal(again.exit, 0);
   assert.equal(again.changeSet, null);
   assert.equal(again.run.stopped, "already reviewed");
+});
+
+test("review mode, dry run: every flagged or failed recorded case gets its recorded note (no answer file is stale)", async () => {
+  for (const name of readdirSync(FIXTURES).filter((f) => f.endsWith(".json")).map((f) => f.replace(/\.json$/, ""))) {
+    const r = fixture(name);
+    if (r.expect.verdict === "fine") continue;
+    const { store } = await freshStore();
+    const res = await runSteward({ mode: "review", store, job: r.job, runFile: r, tools: recordingTools(), runRef: `all-${name}`, dryRun: ANSWERS, now: at(r.context!.now!), env: {}, log: () => {} });
+    assert.equal(res.exit, 0, `${name}: ${res.message}`);
+    const doc = await store.readOne<ReviewDoc>(COLLECTIONS.steward.reviews, reviewKey(r.job, r.run.ref));
+    assert.ok(doc?.note, `${name} has its note`);
+  }
 });
 
 test("review mode: the repairable failure is restarted once; the second failure that day gets a finding only", async () => {
@@ -487,7 +500,7 @@ function fakeRecorder(): RunRecorder & { finishes: number[] } {
     async start() {
       return 41;
     },
-    async finish(id: number, _r: RunFinish) {
+    async finish(id: number) {
       finishes.push(id);
     },
   };

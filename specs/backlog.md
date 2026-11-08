@@ -119,6 +119,10 @@ published at `/roadmap` ([roadmap.md](roadmap.md)): add each new one to `lib/roa
 - [ ] Show which colleges have CDS detail in Explore (e.g. a filter or badge), so users know where richer aid data exists.
 - [ ] Off-campus / commuter cost variant for the all-student average (IPEDS has off-campus room & board), for
   colleges where most students live at home.
+- [ ] **Sources beyond the federal college files** ([data-expansion/sources-beyond-federal.md](data-expansion/sources-beyond-federal.md),
+  planned 2026-11-05 from the niche.com comparison; roadmap group "Additional data"): Clery campus crime, a Place
+  section (NOAA normals, EPA walkability, HUD rents), Equity in Athletics, Census PSEO earnings by field, NSF HERD, and
+  the colleges' first-destination reports as a college-reported round. In that order; the first two are small.
 
 ## National trends
 How college is changing across the country, not at one college: nationally, and by region, public or private, size,

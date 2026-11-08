@@ -143,6 +143,7 @@ const LAYER_EXCLUDES: readonly CollectionName[] = [
   "steward.audits",
   "steward.runs",
   "steward.reviews",
+  "steward.logins",
 ];
 
 /**

@@ -39,7 +39,7 @@ export default async function InboxPage() {
 
   return (
     <>
-      <AdminSearch id="inbox-search" className="mb-4 md:hidden" />
+      <AdminSearch id="inbox-search" className="mb-4 lg:hidden" />
       <PageHeader title="Inbox" help="inbox" subtitle="What needs you, what the Steward did, and how things are. Everything here is logged." />
       <div className="space-y-6">
         <Panel title="Needs you" id="needs-you" help="needs-you" aside={items.length > 0 ? <span className="text-sm text-muted-foreground">{items.length} waiting</span> : undefined}>

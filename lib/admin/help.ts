@@ -321,7 +321,7 @@ export const HELP = {
   },
   edition: {
     title: "Edition",
-    short: "The year of a Common Data Set, like 2025–26. A value is read from one edition of one college's document.",
+    short: "The year a Common Data Set describes, written as its two academic years. A value is read from one edition of one college's document.",
     door: "data",
   },
   "field-code": {
@@ -424,7 +424,7 @@ export const HELP = {
   },
   cycle: {
     title: "Cycle",
-    short: "The application year the questions or dates belong to, like 2026–27. A new cycle opens each August.",
+    short: "The application year the questions or dates belong to, written as its two academic years. A new cycle opens each August.",
     door: "data",
   },
   "reference-document": {

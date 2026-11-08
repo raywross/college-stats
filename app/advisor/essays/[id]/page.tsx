@@ -22,6 +22,7 @@ import { suggestionAuthorKey } from "@/lib/essays/review-view";
 import { KIND_LABEL, pickerGroups, refUnitId, resolvePrompt, type ResolvedPrompt } from "@/lib/essays/prompts";
 import { essaysHref, refsOf, rowLimit } from "@/lib/essays/rows";
 import { baseChangedSince, reuseChoices } from "@/lib/essays/variants";
+import { span } from "@/lib/timing";
 import { withTiming } from "@/lib/timing-server";
 
 export const metadata: Metadata = { title: "Your essays" };
@@ -77,11 +78,11 @@ export default async function EssayPage({ params, searchParams }: { params: Para
 async function render(id: string, searchParams: Search) {
   if (!authConfigured()) return <AuthUnavailable />;
   const sp = await searchParams;
-  const viewer = await essaysViewer(sp.for);
+  const viewer = await span("essay viewer", () => essaysViewer(sp.for));
   if (viewer.kind === "signed-out") return <SignInPrompt reason="write your essays" next={`/advisor/essays/${encodeURIComponent(id)}`} className="mx-auto max-w-xl" />;
   if (viewer.kind === "none") return <section className={CARD}>No student yet.</section>;
 
-  const read = await readEssay(id, viewer);
+  const read = await span("essay read", () => readEssay(id, viewer));
   if (read.kind === "setup-missing") return <section className={CARD}>The essay workspace isn&apos;t set up in the database yet.</section>;
   if (read.kind === "not-found") notFound();
 
@@ -92,7 +93,7 @@ async function render(id: string, searchParams: Search) {
   // Each author's color on this draft: by their first comment or suggestion, whichever came first.
   const markOrder = authorOrder([...comments.map((c) => ({ key: commentAuthorKey(c), created: c.created })), ...suggestions.map((s) => ({ key: suggestionAuthorKey(s), created: s.created }))]);
 
-  const [colleges, lookup] = await Promise.all([planColleges(essay.student_id), promptLookup()]);
+  const [colleges, lookup] = await span("essay colleges", () => Promise.all([planColleges(essay.student_id), promptLookup()]));
   const prompt = resolvePrompt(essay.prompt_ref, lookup);
   const limit = rowLimit(essay);
   const refs = refsOf(essay, links);

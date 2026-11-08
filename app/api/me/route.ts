@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { authConfigured, getAccount, getUser } from "@/lib/auth";
+import { authConfigured, getUser, readProfileRow } from "@/lib/auth";
 import { householdChildren } from "@/lib/households";
 import { myOrganization } from "@/lib/orgs";
 import { createServerSupabase } from "@/lib/supabase-server";
@@ -10,7 +10,9 @@ const signedOut = (configured: boolean): MeState => ({ configured, signedIn: fal
 /**
  * The header's account state (components/account/AccountMenu.tsx and the role item fetch it in the browser), so
  * public pages never read cookies and stay static. Signed-out visitors (no Supabase auth cookie) get an answer without
- * a call to Supabase. Never cached: it's per person.
+ * a call to Supabase. Never cached: it's per person. The name and role hint come from the profile row alone
+ * (lib/auth.ts readProfileRow), not the account read that loads the viewer bundle; the profile, the organization, the
+ * admin check, and the household's children are one database wave.
  */
 export async function GET() {
   const headers = { "Cache-Control": "private, no-store" };
@@ -22,10 +24,10 @@ export async function GET() {
   const user = await getUser();
   if (!user) return Response.json(signedOut(true), { headers });
   const [profile, org, admin, children] = await Promise.all([
-    getAccount()
-      .then((a) => ({ name: a?.profile.display_name ?? null, roleHint: (a?.profile.role_hint ?? null) as RoleHint | null }))
+    readProfileRow()
+      .then((p) => ({ name: p?.display_name ?? null, roleHint: (p?.role_hint ?? null) as RoleHint | null, paused: (p?.suspended_at ?? null) !== null }))
       // The accounts tables may not be set up yet; the menu still works with the email.
-      .catch(() => ({ name: null, roleHint: null as RoleHint | null })),
+      .catch(() => ({ name: null, roleHint: null as RoleHint | null, paused: false })),
     // A member of a counselor organization is a counselor: the role item says Caseload (specs/product/role-nav.md);
     // before the portal's tables exist, nobody is.
     myOrganization()
@@ -48,6 +50,8 @@ export async function GET() {
       )
       .catch((): MeChild[] => []),
   ]);
+  // A paused account (profiles.suspended_at, set by the admin console) is signed out everywhere, here too.
+  if (profile.paused) return Response.json(signedOut(true), { headers });
   const role = meRoleOf({ org, roleHint: profile.roleHint, children: children.length });
   return Response.json({ configured: true, signedIn: true, id: user.id, name: profile.name, email: user.email ?? null, org, admin, role, children } satisfies MeState, { headers });
 }

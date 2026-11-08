@@ -10,11 +10,19 @@ import "server-only";
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabase } from "@/lib/supabase-server";
-import { isMissingFunction } from "@/lib/bundle-read";
+import { getUser } from "@/lib/auth";
+import { callBundle, isMissingFunction, type BundleCall, type OrgCaseloadBundle, type OrgStudentBundle } from "@/lib/bundle-read";
+import { todayIso } from "@/lib/planner/context";
+import { plannerToday, plannerTodayOverride } from "@/lib/planner/today-server";
 import {
   assembleCaseloadStudents,
+  caseloadFromBundle,
   CASELOAD_ESSAY_COLUMNS,
   CASELOAD_LIST_SELECT,
+  namedNotes,
+  studentFromBundle,
+  type CaseloadData,
+  type StudentData,
   type CaseloadEssayRow,
   type CaseloadListRow,
   type CaseloadProfileRow,
@@ -89,8 +97,7 @@ export async function orgNotes(orgId: string, studentId: string): Promise<OrgNot
     myOrganization(),
   ]);
   if (error) fail("org_notes", error);
-  const names = new Map((org?.id === orgId ? org.members : []).map((m) => [m.user_id, m.display_name]));
-  return ((data ?? []) as Omit<OrgNote, "author_name">[]).map((n) => ({ ...n, author_name: (n.author_id && names.get(n.author_id)) || null }));
+  return namedNotes(org, orgId, (data ?? []) as Omit<OrgNote, "author_name">[]);
 }
 
 /** What the office has asked one student for, newest first, open and done. */
@@ -218,3 +225,72 @@ export async function caseloadEntry(orgId: string, studentId: string): Promise<O
   const roster = await orgRoster(orgId);
   return roster.find((r) => r.status === "active" && r.student_id === studentId) ?? null;
 }
+
+/* ------------------------------------------------------------------ */
+/* One bundle per page (20261108120000_fast_policies.sql)              */
+/* ------------------------------------------------------------------ */
+
+export type { CaseloadData, StudentData } from "@/lib/org-caseload";
+
+/**
+ * A page bundle as called: "ok" with the RPC's answer (null data: the caller has no organization), "missing" (not
+ * installed; remembered a minute by callBundle), or "error" (logged). Null without a call when nobody is signed in
+ * (the functions are closed to anon), so a page can start this before its sign-in check: the token check is local,
+ * and a signed-out visitor costs no failed round trip.
+ */
+async function loadBundle<T>(fn: "org_caseload_bundle" | "org_student_bundle", args: Record<string, unknown> = {}): Promise<BundleCall<T | null> | null> {
+  if (!(await getUser())) return null;
+  const r = await callBundle<T | null>(await client(), fn, args);
+  if (r.kind === "error") console.error(`orgs: ${fn} failed, using the per-table reads: ${r.error.message ?? "unknown error"}`);
+  return r;
+}
+
+const caseloadCall = cache(() => loadBundle<OrgCaseloadBundle>("org_caseload_bundle"));
+const studentCall = cache((studentId: string) => loadBundle<OrgStudentBundle>("org_student_bundle", { p_student: studentId }));
+
+/** org_caseload_bundle() once per request: the caseload page in one call, or null (no organization, not installed, failed). */
+export const caseloadBundle = cache(async (): Promise<OrgCaseloadBundle | null> => {
+  const r = await caseloadCall();
+  return r?.kind === "ok" ? r.data : null;
+});
+
+/** org_student_bundle(id) once per request and student, or null (no organization, not installed, failed). */
+export const studentBundle = cache(async (studentId: string): Promise<OrgStudentBundle | null> => {
+  const r = await studentCall(studentId);
+  return r?.kind === "ok" ? r.data : null;
+});
+
+/**
+ * The caseload page's and the export's data (specs/product/counselor-portal.md "The counselor's pages: /org"): one
+ * org_caseload_bundle() call. When the bundle isn't installed or failed, the reads it replaced: the organization, then
+ * the pretend day and the roster together, then the students. A bundle that answers "no organization" is believed (no
+ * second ask). Null when nobody is signed in or the caller has no organization. Once per request.
+ */
+export const caseloadData = cache(async (): Promise<CaseloadData | null> => {
+  const r = await caseloadCall();
+  if (!r) return null;
+  if (r.kind === "ok") return r.data ? caseloadFromBundle(r.data, todayIso()) : null;
+  const org = await myOrganization();
+  if (!org) return null;
+  const [pretendDay, today, roster] = await Promise.all([plannerTodayOverride(), plannerToday(), orgRoster(org.id)]);
+  const students = await caseloadStudents(roster);
+  return { org, roster, students, today, pretendDay };
+});
+
+/**
+ * One student's page (specs/product/counselor-portal.md "A student"): one org_student_bundle(id) call; when it isn't
+ * installed or failed, the reads it replaced (the organization, then the roster row with the pretend day, then the
+ * student's rows, notes, and asks). Null when nobody is signed in or the caller has no organization; `entry` null when
+ * the student isn't on the caseload. Once per request and student.
+ */
+export const studentData = cache(async (studentId: string): Promise<StudentData | null> => {
+  const r = await studentCall(studentId);
+  if (!r) return null;
+  if (r.kind === "ok") return r.data ? studentFromBundle(r.data, todayIso()) : null;
+  const org = await myOrganization();
+  if (!org) return null;
+  const [entry, today] = await Promise.all([caseloadEntry(org.id, studentId), plannerToday()]);
+  if (!entry) return { org, entry: null, student: null, notes: [], asks: [], today };
+  const [[student = null], notes, asks] = await Promise.all([caseloadStudents([entry]), orgNotes(org.id, studentId), orgAsks(org.id, studentId)]);
+  return { org, entry, student, notes, asks, today };
+});

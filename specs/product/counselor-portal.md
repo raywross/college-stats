@@ -141,9 +141,28 @@ Above the rows: the counts that matter for the office ("24 students · 6 juniors
 week"), filters (class year, "needs something": any signal or an empty record), a name search, **Add students**, and
 **Export CSV**. Phones: the row collapses to name, class, next deadline, and one chip; details open on the student's page.
 
-The page reads with the counselor's own session (row-level security decides), in a handful of queries for the whole
-caseload (students, profiles, default lists and their items, open tasks, applications), then computes every row with
-the planner's pure functions. No estimate runs here.
+The page reads with the counselor's own session (row-level security decides), then computes every row with the
+planner's pure functions. No estimate runs here.
+
+**The reads: one bundle per page, two database waves** (since 2026-11-08, `20261108120000_fast_policies.sql`). Each
+counselor page makes one call for its data: `/org` and `/org/export` call `org_caseload_bundle()` (the organization,
+the roster with every status, the pretend-today setting, and the live students' profiles, default lists with items,
+visits, and steps, and essays' last changes); `/org/students/[id]` calls `org_student_bundle(id)` (the same for one
+student, plus the roster row that proves they're on the caseload, and the office's notes and asks). Both are security
+invoker, so row-level security decides exactly as the table reads did. `lib/orgs.ts` `caseloadData()` and
+`studentData(id)` turn the bundle into the page's data, assembling students with `assembleCaseloadStudents`
+(`lib/org-caseload.ts` `caseloadFromBundle`, `studentFromBundle`) and naming each note's author from the
+organization's members. The page starts that call before its sign-in check, so it runs beside the session's viewer
+bundle: two waves, where the pages used to make five in a row. A signed-out visitor makes no call (the bundle waits on
+the local token check and asks nothing without one). The pretend day comes from the bundle (`parseTodaySetting`, so
+production ignores it) and the caseload's pretend-today line takes it as `day` instead of reading the setting again.
+**Fallback**: when the function isn't installed (remembered a minute per server, `lib/bundle-read.ts`) or the call
+fails (logged), the same functions make the reads the bundle replaced (`myOrganization`, then `plannerToday` with
+`orgRoster`, then `caseloadStudents`; on a student's page `caseloadEntry`, then the student's rows with `orgNotes` and
+`orgAsks`) and return the same shape, so each page has one code path. A bundle that answers "no organization" is
+believed: the start form costs no second ask. All three routes and the essay page are timed (`withTiming`, labels
+`/org`, `/org/students/[id]`, `/org/export`, `/advisor/essays/[id]`; see
+[../serving-architecture.md](../serving-architecture.md) "Timing a request").
 
 ### A student (`/org/students/[id]`)
 The counselor's view of one student: the banner (**Viewing as a counselor** · you can (edit | look but not change) ·
@@ -255,6 +274,12 @@ What the site does to turn a caseload into families who buy the advisor, and wha
   blocks writes; a code joins; an invitation's lifecycle; the access log records the read; guard tests that break each
   rule), `tests/org-rules.test.mts` (the rows, the shape line, the CSV, the code format), `tests/org-pages.test.mts`
   (the join page's states render; the banner's words).
+- The pages' bundles (2026-11-08): `org_caseload_bundle()` and `org_student_bundle()` in
+  `supabase/migrations/20261108120000_fast_policies.sql` (tested in `tests/fast-policies.test.mts`), their types in
+  `lib/bundle-read.ts`, `caseloadData()` / `studentData()` with the fallback in `lib/orgs.ts`, the assembly in
+  `lib/org-caseload.ts`; `tests/counselor-perf-pages.test.mts` (both paths assemble the same students; the pretend
+  day; the pages start the bundle before the sign-in check and are timed; the header rule; `/api/me` reads the profile
+  row).
 
 ## As built (2026-11-01)
 Phase 1 was built in six units on sub-branches from the brief in `~/Projects/college-stats/counselor-portal-build/`
@@ -301,7 +326,7 @@ and parents, not for a counselor), where a filled section or a non-empty list cl
 link is also a `/join/<token>` page), Leave, and Delete with a typed confirmation. `/org/export` writes the CSV with no
 GPA or score. Every `/org` page is `noindex`. `/org` renders `RefreshHeader` (`components/org/RefreshHeader.tsx`) in both
 branches: the header remembers its last `/api/me` answer for five minutes, and every change of membership lands here, so
-Caseload enters and leaves the header at once (found by the signed-in QA, 2026-11-04; since 2026-11-08 Caseload is the header's role item with Add students and Members and settings in its menu, not an avatar-menu entry: [role-nav.md](role-nav.md)). Server Actions live in `app/org/actions.ts`. `tests/org-caseload-db.test.mts`
+Caseload enters and leaves the header at once (found by the signed-in QA, 2026-11-04; since 2026-11-08 Caseload is the header's role item with Add students and Members and settings in its menu, not an avatar-menu entry: [role-nav.md](role-nav.md)). Since the counselor performance build (2026-11-08) each branch says what it knows (`org` on the caseload, `org={false}` on the start form) and the header asks `/api/me` again only once its remembered answer disagrees, so a plain caseload visit makes no `/api/me` call; `/household` still asks on every arrival. Server Actions live in `app/org/actions.ts`. `tests/org-caseload-db.test.mts`
 runs the caseload's reads on PGlite in the shape the pages ask for; `tests/org-pages.test.mts` renders every page and
 guards noindex, no service-role or estimate reads, the notice's position, and the CSV's columns.
 

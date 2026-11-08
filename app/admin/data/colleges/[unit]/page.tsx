@@ -79,7 +79,7 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
           </>
         }
       />
-      <SourceNote fields={["admissions.acceptance_rate", "selectivity.tier"]} school={school} className="-mt-3 mb-3" />
+      <SourceNote fields={["admissions.acceptance_rate", "selectivity.tier"]} school={school} className="-mt-3 mb-3 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center" />
       <RecordActions>
         <Link key="edit" href={`/admin/data/colleges/${unit}/edit`} className="inline-flex h-11 items-center justify-center rounded-full border px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
           Edit
@@ -121,7 +121,7 @@ function SelectivityBlock({ panel, school }: { panel: SelectivityPanel; school: 
       <p className="text-base font-semibold">{tierSentence(panel)}</p>
       {panel.status === "rated" && (
         <>
-          <SourceNote fields={fields} school={school} className="mt-2" />
+          <SourceNote fields={fields} school={school} className="mt-2 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center" />
           <details className="group mt-4 rounded-xl border border-border">
             <summary className="flex min-h-11 cursor-pointer items-center px-3 text-sm font-semibold">Details</summary>
             <div className="space-y-6 border-t border-border p-3">
@@ -237,7 +237,7 @@ function GpaBlock({ panel, school }: { panel: GpaPanel; school: School }) {
   return (
     <Panel collapse="GPA" help="college-gpa" title="GPA" id="gpa" aside={<Muted>What the standing model reads</Muted>}>
       <Fields items={items} />
-      {panel.field && <SourceNote fields={[panel.field]} school={school} className="mt-3" />}
+      {panel.field && <SourceNote fields={[panel.field]} school={school} className="mt-3 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center" />}
     </Panel>
   );
 }

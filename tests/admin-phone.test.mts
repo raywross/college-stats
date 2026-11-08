@@ -115,3 +115,35 @@ test("forms are one column below md: no form grid opens at sm", () => {
     assert.doesNotMatch(read(f), /\bsm:(grid-cols|flex-row)/, f);
   }
 });
+
+/** Links whose class has no 44 px minimum: `<Link ... className=...>` openings in a source without `min-h-11`/`h-11`/`min-h-12`/`min-h-14`. */
+function shortLinks(src: string, hrefPart: string): string[] {
+  return [...src.matchAll(/<Link\b[^>]*>/g)].map((m) => m[0]).filter((tag) => tag.includes(hrefPart) && !/\b(?:min-h-1[124]|h-11)\b/.test(tag));
+}
+
+test("text links inside list rows are 44 px tall (QA's phone findings: colleges, proposals, members, organizations, admins)", () => {
+  const cases: [string, string][] = [
+    ["app/admin/steward/findings/page.tsx", "reviewHref(c.unit_id)"],
+    ["components/admin/steward/ClustersTable.tsx", "Href("],
+    ["components/admin/steward/ProposalParts.tsx", "Href("],
+    ["components/admin/steward/TodoTable.tsx", "reviewHref("],
+    ["app/admin/households/[id]/page.tsx", "href="],
+    ["app/admin/organizations/[id]/page.tsx", "${m.user_id}"],
+    ["app/admin/organizations/[id]/page.tsx", "${s.student_id}"],
+    ["app/admin/admins/page.tsx", "/admin/people/"],
+  ];
+  for (const [file, hrefPart] of cases) {
+    const src = read(file);
+    assert.ok(src.includes(hrefPart), `${file} has its links`);
+    assert.deepEqual(shortLinks(src, hrefPart).filter((t) => !/text-muted-foreground underline-offset-4/.test(t)), [], file);
+  }
+  const college = read("app/admin/data/colleges/[unit]/page.tsx");
+  const notes = [...college.matchAll(/<SourceNote\b[^>]*\/>/g)].map((m) => m[0]);
+  assert.ok(notes.length >= 3);
+  for (const n of notes) assert.match(n, /\[&_a\]:min-h-11/, "the source note's links are 44 px tall on the console only");
+});
+
+test("guard: a row link without a 44 px class is caught", () => {
+  assert.equal(shortLinks('<Link href={reviewHref(u)} className={linkCls}>', "reviewHref(").length, 1);
+  assert.equal(shortLinks('<Link href={reviewHref(u)} className={`inline-flex min-h-11 items-center ${linkCls}`}>', "reviewHref(").length, 0);
+});

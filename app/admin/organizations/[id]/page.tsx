@@ -75,7 +75,7 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
               {org.members.map((m) => (
                 <li key={m.member_id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
                   <span className="flex flex-wrap items-center gap-2">
-                    <Link href={`/admin/people/${m.user_id}`} className="font-semibold underline-offset-4 hover:underline">
+                    <Link href={`/admin/people/${m.user_id}`} className="inline-flex min-h-11 items-center font-semibold underline-offset-4 hover:underline">
                       {m.name ?? "Unnamed"}
                     </Link>
                     {m.role === "owner" && <StatusChip label="Owner" tone="info" />}
@@ -96,7 +96,7 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
                 <li key={s.grant_id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
                   <span className="flex flex-wrap items-center gap-2">
                     {s.has_account ? (
-                      <Link href={`/admin/students/${s.student_id}`} className="font-semibold underline-offset-4 hover:underline">
+                      <Link href={`/admin/students/${s.student_id}`} className="inline-flex min-h-11 items-center font-semibold underline-offset-4 hover:underline">
                         {s.name ?? "Unnamed"}
                       </Link>
                     ) : (

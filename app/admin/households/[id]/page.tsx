@@ -156,7 +156,7 @@ export default async function HouseholdPage({ params, searchParams }: PageProps<
 
 function PersonLink({ id, name }: { id: string; name: string | null }) {
   return (
-    <Link href={`/admin/people/${id}`} className="underline-offset-4 hover:underline">
+    <Link href={`/admin/people/${id}`} className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">
       {name ?? "Unnamed"}
     </Link>
   );
@@ -175,7 +175,7 @@ function Roster({ title, members, disabled }: { title: string; members: AdminMem
               <div className="min-w-0 space-y-0.5">
                 <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                   {href ? (
-                    <Link href={href} className="break-words underline-offset-4 hover:underline">
+                    <Link href={href} className="inline-flex min-h-11 items-center break-words underline-offset-4 hover:underline">
                       {name}
                     </Link>
                   ) : (

@@ -47,7 +47,7 @@ function Subject({ r }: { r: TodoDoc }) {
   return (
     <>
       {r.unit_id ? (
-        <Link href={reviewHref(r.unit_id)} className={linkCls}>
+        <Link href={reviewHref(r.unit_id)} className={`inline-flex min-h-11 items-center ${linkCls}`}>
           {r.subject}
         </Link>
       ) : (

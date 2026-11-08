@@ -79,8 +79,13 @@ export function hasBundled(root = process.cwd()): boolean {
   return existsSync(join(root, ".data", "snapshot", "manifest.json"));
 }
 
+/**
+ * Reads the bytes, then decodes them: on Node 24, `readFileSync(path, "utf8")` spends about 75 ms of CPU on the
+ * 36 MB colleges.json where a Buffer and `toString("utf8")` spend about 30 (scripts/measure-cold-start.mts;
+ * specs/serving-architecture.md "6. Cold starts"). Same string either way.
+ */
 function readJsonFile<T>(path: string): T {
-  return JSON.parse(readFileSync(path, "utf8")) as T;
+  return JSON.parse(readFileSync(path).toString("utf8")) as T;
 }
 
 function readOptionalJsonFile<T>(path: string): T | null {

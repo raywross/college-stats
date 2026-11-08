@@ -86,7 +86,6 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
       ) : (
         <RecordActions>
           <AdminForm
-            key="edit"
             action={editStudent}
             hidden={{ student: id }}
             trigger="Edit record"
@@ -100,7 +99,6 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
           />
           {managed ? (
             <ConfirmTyped
-              key="delete"
               action={deleteStudent}
               hidden={{ student: id }}
               trigger="Delete the record"
@@ -165,11 +163,11 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
             />
           </Panel>
 
-          <Panel help="student-record" title="Numbers" id="numbers" aside={student.profile ? <Muted>Updated {fmtDate(student.profile.updated_at)}</Muted> : undefined}>
+          <Panel collapse="Numbers" help="student-record" title="Numbers" id="numbers" aside={student.profile ? <Muted>Updated {fmtDate(student.profile.updated_at)}</Muted> : undefined}>
             {student.profile ? <RecordFieldsView {...studentNumbers(student.profile.data)} empty="Nothing entered yet." /> : <Empty>Nothing entered yet.</Empty>}
           </Panel>
 
-          <Panel help="student-record" title="Lists" id="lists">
+          <Panel collapse="Lists" help="student-record" title="Lists" id="lists">
             {student.lists.length === 0 ? (
               <Empty>No lists.</Empty>
             ) : (
@@ -181,11 +179,11 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
             )}
           </Panel>
 
-          <Panel help="student-record" title="Advisor" id="plan">
+          <Panel collapse="Advisor plan" help="student-record" title="Advisor" id="plan">
             <PlanBlock plan={student.plan} />
           </Panel>
 
-          <Panel help="student-record" title="Snapshots" id="snapshots">
+          <Panel collapse="Saved snapshots" help="student-record" title="Snapshots" id="snapshots">
             {student.snapshots.length === 0 ? (
               <Empty>No application snapshots.</Empty>
             ) : (
@@ -232,7 +230,7 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
             </Panel>
           )}
 
-          <Panel help="access-log" title="Who viewed this record" id="views">
+          <Panel collapse="Who viewed this record" help="access-log" title="Who viewed this record" id="views">
             {student.accessLog.length === 0 ? (
               <Empty>No views recorded.</Empty>
             ) : (

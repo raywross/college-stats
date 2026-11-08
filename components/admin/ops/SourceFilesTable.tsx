@@ -49,7 +49,7 @@ const columns: readonly Column<SourceFileRow>[] = [
   { key: "describes", header: "Describes", cell: (row) => row.describes ?? <span className="text-muted-foreground">Not stated</span> },
   { key: "published", header: "Published (file dated)", cell: (row) => published(row) },
   { key: "collected", header: "Collected", cell: (row) => dateLabel(row.collected) },
-  { key: "feeds", header: "Feeds the estimate" },
+  { key: "feeds", header: "Feeds the estimate", cell: () => null },
   { key: "next", header: "Next release", cell: (row) => next(row) },
   { key: "health", header: "Health", cell: (row) => <Health row={row} /> },
 ];

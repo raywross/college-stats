@@ -21,7 +21,7 @@ export interface Column<Row> {
 
 /**
  * The console's one table component (specs/product/admin-redesign.md "Phones"): a real `<table>` from `md`, a card
- * list below it. No column ever carries `min-w-*`; a table that needs more room than `md` gets fewer columns, not a
+ * list below it. No column ever carries a minimum width; a table that needs more room than `md` gets fewer columns, not a
  * sideways scroll. Server Component (no state): the two variants render once from the same `columns`/`rows`, so they
  * can never drift apart as a page's data changes.
  *

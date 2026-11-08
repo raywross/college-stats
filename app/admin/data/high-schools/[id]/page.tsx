@@ -155,4 +155,3 @@ function CourseList({ id, title, rows, empty, muted = false }: { id: string; tit
     </section>
   );
 }
-}

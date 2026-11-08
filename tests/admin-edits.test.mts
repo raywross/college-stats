@@ -493,6 +493,7 @@ async function loadTsx(rel: string, real: string[] = []): Promise<Record<string,
     .replace(/from "next\/link"/g,`from ${JSON.stringify(pathToFileURL(join(tmp, "link.mjs")).href)}`)
     .replace(/from "\.\/actions"/g, `from ${JSON.stringify(pathToFileURL(join(tmp, "actions.mjs")).href)}`)
     .replace(/import \{([^}]*)\} from "(@\/(?:components|app)\/[^"]+)";/g, (_m, names: string, spec: string) => {
+      if (spec.endsWith("/ResponsiveTable")) return `import { ResponsiveTable } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, "fixtures/responsive-table-fake.mjs")).href)};`;
       if (reals[spec]) return `import {${names}} from ${JSON.stringify(reals[spec])};`;
       const list = names.split(",").map((s) => s.trim().replace(/^type\s+/, "").split(" as ").pop()!.trim()).filter(Boolean);
       return `import {${names}} from ${JSON.stringify(stubModule(`${rel.replace(/[^a-z]/gi, "_")}${n++}-${spec.split("/").pop()}`, list))};`;

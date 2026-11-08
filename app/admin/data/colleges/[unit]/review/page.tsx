@@ -69,7 +69,7 @@ export default async function ReviewPage({ params, searchParams }: { params: Pro
         }
       />
       <div className="space-y-5">
-        <form method="get" action={`/admin/data/colleges/${unit}/review`} className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-[1fr_1fr_auto]">
+        <form method="get" action={`/admin/data/colleges/${unit}/review`} className="grid gap-3 rounded-2xl border bg-card p-4 md:grid-cols-[1fr_1fr_auto]">
           <label className="block text-sm font-semibold">
             College
             <input name="college" defaultValue={college ?? ""} placeholder="Another college's name or id" className={inputCls} />

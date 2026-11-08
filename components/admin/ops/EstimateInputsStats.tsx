@@ -65,7 +65,7 @@ function InputTable({ counts, filters }: { counts: InputCounts; filters: InputFi
           <Link
             href={on ? inputsHref(BASE, filters, { input: null, status: null }) : inputsHref(BASE, filters, { input: k, status: s })}
             aria-current={on ? "true" : undefined}
-            className={cn("inline-block min-w-8 rounded-md px-1.5 py-0.5 underline decoration-dotted underline-offset-2", on && "bg-foreground text-background no-underline")}
+            className={cn("inline-block rounded-md px-1.5 py-0.5 underline decoration-dotted underline-offset-2", on && "bg-foreground text-background no-underline")}
           >
             {num(n)}
           </Link>

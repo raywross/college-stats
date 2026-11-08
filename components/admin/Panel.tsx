@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
+import { Collapsible } from "@/components/admin/Collapsible";
 import { HelpTip } from "@/components/admin/HelpTip";
 import type { HelpKey } from "@/lib/admin/help";
 import { cn } from "@/lib/utils";
 
 /**
  * A titled card on a console page. `help` puts the console's (i) icon after the title (components/admin/HelpTip.tsx);
- * every Panel under app/admin passes one (tests/admin-console.test.mts).
+ * every Panel under app/admin passes one (tests/admin-console.test.mts). `collapse` is the panel's first line: below `md`
+ * the body folds to that line with "Show" (components/admin/Collapsible.tsx); from `md` it is always open.
  */
-export function Panel({ title, id, aside, children, className, help }: { title: string; id?: string; aside?: ReactNode; children: ReactNode; className?: string; help?: HelpKey }) {
+export function Panel({ title, id, aside, children, className, help, collapse }: { title: string; id?: string; aside?: ReactNode; children: ReactNode; className?: string; help?: HelpKey; collapse?: ReactNode }) {
   return (
     <section id={id} className={cn("scroll-mt-24 rounded-2xl border bg-card p-4 sm:p-5", className)} aria-labelledby={id ? `${id}-title` : undefined}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -17,7 +19,7 @@ export function Panel({ title, id, aside, children, className, help }: { title: 
         </h2>
         {aside}
       </div>
-      <div className="mt-3">{children}</div>
+      <div className="mt-3">{collapse ? <Collapsible firstLine={collapse}>{children}</Collapsible> : children}</div>
     </section>
   );
 }

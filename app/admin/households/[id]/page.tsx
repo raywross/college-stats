@@ -63,7 +63,6 @@ export default async function HouseholdPage({ params, searchParams }: PageProps<
       ) : (
         <RecordActions>
           <AdminForm
-            key="rename"
             action={renameHousehold}
             hidden={{ household: id }}
             trigger="Rename"
@@ -73,7 +72,6 @@ export default async function HouseholdPage({ params, searchParams }: PageProps<
           />
           {empty ? (
             <ConfirmTyped
-              key="close"
               action={closeHousehold}
               hidden={{ household: id }}
               trigger="Close household"

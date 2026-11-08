@@ -79,7 +79,7 @@ function GroupCell({ n, on, href, clear }: { n: number; on: boolean; href: strin
   return n === 0 ? (
     <span className="text-muted-foreground">0</span>
   ) : (
-    <Link href={on ? clear : href} aria-current={on ? "true" : undefined} className={cn("inline-block min-w-8 rounded-md px-1.5 py-0.5 underline decoration-dotted underline-offset-2", on && "bg-foreground text-background no-underline")}>
+    <Link href={on ? clear : href} aria-current={on ? "true" : undefined} className={cn("inline-block rounded-md px-1.5 py-0.5 underline decoration-dotted underline-offset-2", on && "bg-foreground text-background no-underline")}>
       {num(n)}
     </Link>
   );

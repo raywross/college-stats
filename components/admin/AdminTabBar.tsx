@@ -35,7 +35,7 @@ export function AdminTabBar({ needsYou }: { needsYou?: number | null }) {
                 <span className={cn("relative inline-flex h-7 w-12 items-center justify-center rounded-full transition-colors", on && "bg-foreground text-background")}>
                   <Icon className="size-5" aria-hidden />
                   {badge !== null && (
-                    <span className="absolute -top-1 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-pop px-1 text-[10px] font-bold text-pop-foreground ring-2 ring-background">
+                    <span className="absolute -top-1 -right-0.5 inline-flex h-4 items-center justify-center rounded-full bg-pop px-1 text-[10px] font-bold text-pop-foreground ring-2 ring-background">
                       <span className="sr-only">, needs you: </span>
                       {badge > 99 ? "99+" : badge}
                     </span>

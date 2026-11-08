@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Empty, Fields, Muted, PageHeader, Panel } from "@/components/admin/Panel";
+import { RecordActions } from "@/components/admin/RecordActions";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
 import { fmtDate } from "@/lib/admin/console";
@@ -39,6 +40,21 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
         subtitle={`${ORG_KIND_LABEL[org.kind]}${org.highSchoolName ? ` · ${org.highSchoolName}` : ""}`}
       />
 
+      {/* No write action exists for an organization yet; the row still opens the page the way the other records do. */}
+      <RecordActions>
+        {org.members.find((m) => m.role === "owner") && (
+          <Link
+            href={`/admin/people/${org.members.find((m) => m.role === "owner")!.user_id}`}
+            className="inline-flex h-11 items-center rounded-full border px-4 text-sm font-semibold hover:bg-muted"
+          >
+            Open the owner&apos;s account
+          </Link>
+        )}
+        <Link href="/admin/organizations" className="inline-flex h-11 items-center rounded-full border px-4 text-sm font-semibold hover:bg-muted">
+          All organizations
+        </Link>
+      </RecordActions>
+
       <div className="space-y-5">
         <Panel help="organization" title="Organization" id="organization">
           <Fields
@@ -71,7 +87,7 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
           )}
         </Panel>
 
-        <Panel help="organization" title="Students" id="students">
+        <Panel collapse="Students" help="organization" title="Students" id="students">
           {org.students.length === 0 ? (
             <Empty>No students have granted this organization access yet.</Empty>
           ) : (
@@ -98,7 +114,7 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
           )}
         </Panel>
 
-        <Panel help="join-code" title="Invited students" id="invited">
+        <Panel collapse="Invited students" help="join-code" title="Invited students" id="invited">
           {org.invitedStudents.length === 0 ? (
             <Empty>No invitations waiting.</Empty>
           ) : (

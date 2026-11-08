@@ -132,7 +132,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             />
           </Panel>
 
-          <Panel help="person" title="Sign-in activity" id="sign-in">
+          <Panel collapse="Recent sign-ins" help="person" title="Sign-in activity" id="sign-in">
             {activity.length === 0 ? (
               <Empty>No sign-in activity recorded.</Empty>
             ) : (
@@ -157,7 +157,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             </p>
           </Panel>
 
-          <Panel help="household" title="Households" id="households">
+          <Panel collapse="Households they belong to" help="household" title="Households" id="households">
             {person.memberships.length === 0 ? (
               <Empty>Not in a household.</Empty>
             ) : (
@@ -205,7 +205,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             )}
           </Panel>
 
-          <Panel help="student-record" title="Student records" id="students">
+          <Panel collapse="Student records" help="student-record" title="Student records" id="students">
             {!person.ownStudent && person.managedStudents.length === 0 ? (
               <Empty>No student records: not their own, and none they manage.</Empty>
             ) : (
@@ -253,7 +253,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             )}
           </Panel>
 
-          <Panel help="student-record" title="Lists and plan" id="lists">
+          <Panel collapse="Lists and plan" help="student-record" title="Lists and plan" id="lists">
             {person.lists.length === 0 ? (
               <Empty>No lists.</Empty>
             ) : (
@@ -275,11 +275,11 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             <p className="mt-3 text-xs text-muted-foreground">Lists open on the student page, which records that Quad support looked.</p>
           </Panel>
 
-          <Panel help="person" title="Notifications" id="notifications">
+          <Panel collapse="Notification settings" help="person" title="Notifications" id="notifications">
             <Notifications n={person.notifications} />
           </Panel>
 
-          <Panel help="access-log" title="Who viewed their data" id="viewed">
+          <Panel collapse="Who viewed their data" help="access-log" title="Who viewed their data" id="viewed">
             {person.accessLog.length === 0 ? (
               <Empty>{person.ownStudent ? "No one has opened their student record." : "They have no student record of their own."}</Empty>
             ) : (

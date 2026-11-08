@@ -572,6 +572,7 @@ async function loadTsx(rel: string): Promise<Record<string, unknown>> {
     .replace(/from "next\/link"/g, `from ${JSON.stringify(pathToFileURL(join(tmp, "link.mjs")).href)}`)
     .replace(/from "react"/g, `from ${JSON.stringify(reactUrl)}`)
     .replace(/import \{([^}]*)\} from "(@\/(?:components|app)\/[^"]+)";/g, (_m, names: string, spec: string) => {
+      if (spec.endsWith("/ResponsiveTable")) return `import { ResponsiveTable } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, "fixtures/responsive-table-fake.mjs")).href)};`;
       const list = names.split(",").map((s) => s.trim().replace(/^type /, "").split(" as ").pop()!.trim()).filter(Boolean);
       return `import {${names.replace(/\btype \w+,?/g, "")}} from ${JSON.stringify(stubModule(`${rel.replace(/[^a-z]/gi, "_")}${n++}-${spec.split("/").pop()}`, list))};`;
     });
@@ -723,7 +724,7 @@ test("the Review page: the college's rows from readReviewRows, and 'On the site 
   const table = html(mod.ReviewTable({ groups: review.groups }));
   const school = data.getSchoolById("231624")!;
   const expected = nowAtField("admissions.applicants", school, data.citeField);
-  const cell = new RegExp(`data-row="231624\\|2025-26\\|C\\.116"[\\s\\S]*?<td[^>]*data-now="[^"]*">([^<]*)</td>`).exec(table);
+  const cell = new RegExp(`data-row="231624\\|2025-26\\|C\\.116"[\\s\\S]*?<div data-col="now">([^<]*)</div>`).exec(table);
   assert.equal(cell?.[1].replace(/&#x27;/g, "'").replace(/&amp;/g, "&"), expected);
   const forms = stubsIn(table).filter((s) => s.name === "AdminForm").map((s) => s.props.trigger);
   for (const t of ["Approve", "Decline", "Accept the value", "Reject", "Leave"]) assert.ok(forms.includes(t), t);

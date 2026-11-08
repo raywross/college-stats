@@ -178,8 +178,18 @@ function PoolBlock({ pool }: { pool: SelectivityPoolView }) {
                 </>
               ),
             },
-            { key: "percentile", header: "Percentile", help: "percentile", role: "detail", cell: (r) => (r.percentile === null ? <Muted>—</Muted> : `${fmt(r.percentile, 1)}`) },
-            { key: "reading", header: "Reading", help: "reading", role: "detail", cell: (r) => readingText(r.reading) },
+            { key: "percentile", header: (
+                <span className="inline-flex items-center gap-1">
+                  Percentile <HelpTip help="percentile" />
+                </span>
+              ),
+              role: "detail", cell: (r) => (r.percentile === null ? <Muted>—</Muted> : `${fmt(r.percentile, 1)}`) },
+            { key: "reading", header: (
+                <span className="inline-flex items-center gap-1">
+                  Reading <HelpTip help="reading" />
+                </span>
+              ),
+              role: "detail", cell: (r) => readingText(r.reading) },
             { key: "weight", header: "Weight", role: "detail", cell: (r) => r.weight },
             { key: "contribution", header: "Contribution", cell: (r) => readingText(r.contribution) },
           ] as readonly Column<(typeof pool.rows)[number]>[]
@@ -225,7 +235,7 @@ function GpaBlock({ panel, school }: { panel: GpaPanel; school: School }) {
     ...panel.inputs.map((i) => ({ label: `Model input: ${i.label}`, value: i.value })),
   ];
   return (
-    <Panel help="college-gpa" title="GPA" id="gpa" aside={<Muted>What the standing model reads</Muted>}>
+    <Panel collapse="GPA" help="college-gpa" title="GPA" id="gpa" aside={<Muted>What the standing model reads</Muted>}>
       <Fields items={items} />
       {panel.field && <SourceNote fields={[panel.field]} school={school} className="mt-3" />}
     </Panel>
@@ -239,7 +249,7 @@ function GpaBlock({ panel, school }: { panel: GpaPanel; school: School }) {
 async function HiddenBlock({ rows, school }: { rows: HiddenFieldRow[]; school: School }) {
   const { citeField } = await getData();
   return (
-    <Panel help="hidden-value" title="Derived, not shown" id="hidden" aside={<Muted>Registry fields marked hidden</Muted>}>
+    <Panel collapse="Derived values, not shown" help="hidden-value" title="Derived, not shown" id="hidden" aside={<Muted>Registry fields marked hidden</Muted>}>
       {rows.length === 0 ? (
         <Empty>No registry field is marked hidden.</Empty>
       ) : (
@@ -273,7 +283,7 @@ async function HiddenBlock({ rows, school }: { rows: HiddenFieldRow[]; school: S
 
 function HealthBlock({ health, generated, opsHref, reviewHref }: { health: CollegeHealth | null; generated: string | null; opsHref: string; reviewHref: string }) {
   return (
-    <Panel help="data-health" title="Files and collection" id="health" aside={health ? <HealthChip status={health.overall} /> : undefined}>
+    <Panel collapse="Files and collection" help="data-health" title="Files and collection" id="health" aside={health ? <HealthChip status={health.overall} /> : undefined}>
       {!health ? (
         <Empty>No health card: this college isn&apos;t in the health file, or the file couldn&apos;t be read.</Empty>
       ) : (

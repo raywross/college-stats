@@ -4,11 +4,13 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { ConfirmTyped } from "@/components/admin/ConfirmTyped";
-import { Empty, Fields, KeyValues, Muted, PageHeader, Panel } from "@/components/admin/Panel";
+import { Empty, Fields, Muted, PageHeader, Panel } from "@/components/admin/Panel";
+import { RecordFieldsView } from "@/components/admin/RecordFields";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
-import { CONFIRM_DELETE, CONFIRM_REMOVE, deletingLabel, describeAuthActivity, fmtDate, fmtDateTime } from "@/lib/admin/console";
+import { CONFIRM_DEACTIVATE, CONFIRM_DELETE, CONFIRM_REMOVE, deletingLabel, describeAuthActivity, fmtDate, fmtDateTime } from "@/lib/admin/console";
 import { adminPerson, authActivity, logStudentView, type AdminMember, type AdminPerson } from "@/lib/admin/people";
+import { notificationPrefs } from "@/lib/admin/record-words";
 import { personOrganization } from "@/lib/admin/organizations";
 import { personCollegeViews, VIEW_CHART_DAYS } from "@/lib/admin/college-views";
 import { DailyViews, TopBars } from "@/components/admin/ViewCharts";
@@ -281,7 +283,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             <Notifications n={person.notifications} />
           </Panel>
 
-          <Panel help="access-log" title="Who viewed their data" id="views">
+          <Panel help="access-log" title="Who viewed their data" id="viewed">
             {person.accessLog.length === 0 ? (
               <Empty>{person.ownStudent ? "No one has opened their student record." : "They have no student record of their own."}</Empty>
             ) : (
@@ -347,7 +349,7 @@ function StudentLine({ s, note }: { s: AdminPerson["managedStudents"][number]; n
 function Notifications({ n }: { n: AdminPerson["notifications"] }) {
   return (
     <div className="space-y-4">
-      {n.prefs ? <KeyValues data={n.prefs} /> : <Empty>No notification settings saved: the defaults apply.</Empty>}
+      {n.prefs ? <RecordFieldsView {...notificationPrefs(n.prefs)} /> : <Empty>No notification settings saved: the defaults apply.</Empty>}
       <div>
         <h3 className="text-sm font-semibold">Digests sent</h3>
         {n.digests.length === 0 ? (
@@ -495,12 +497,12 @@ function LiveActions({ person, self }: { person: AdminPerson; self: boolean }) {
       ) : paused ? (
         <AdminForm action={reactivate} hidden={hidden} trigger="Reactivate" tone="primary" />
       ) : (
-        <AdminForm
+        <ConfirmTyped
           action={deactivate}
           hidden={hidden}
           trigger="Deactivate"
           submit="Deactivate account"
-          tone="danger"
+          expected={CONFIRM_DEACTIVATE}
           description="Stops them signing in and ends their sessions. Their data stays, and their parents still see it. Reversible with Reactivate."
           fields={[{ name: "reason", label: "Why (goes in the log)", type: "textarea", required: true, maxLength: 500 }]}
         />

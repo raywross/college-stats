@@ -105,6 +105,11 @@ supports but does not favor):
 | **Data** | `/admin/data`, `/admin/data/reference`, `/admin/data/reference/[name]` | The data platform: change sets, holds, snapshots, and the reference-document editor ([data-platform/change-sets.md](../data-platform/change-sets.md), [storage.md](../data-platform/storage.md)) |
 | **Log** | `/admin/log`, `/admin/admins` | Every admin action; who is an admin |
 
+**The way in** (2026-11-08): an admin's avatar menu, and the phone's More sheet, show **Admin**, last, linking to
+`/admin`. `GET /api/me` answers `admin` from the same `is_admin_any_aal()` the layout asks, so the link shows to an
+admin at either assurance level and the console then asks for the second factor; to everyone else the console stays
+a 404 and the menu shows nothing. Before this an admin typed the address after signing in.
+
 A global search box in the rail's header takes anything: a name, an email, a household name, a college name or unit
 id, a high school name, a user or student id (UUID). It routes to the matching page when there is one hit and to a
 results list otherwise.

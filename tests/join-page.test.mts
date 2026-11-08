@@ -254,7 +254,7 @@ const view = (await import("../app/join/[code]/JoinView.tsx")) as {
 };
 const { CounselorsSection } = (await import("../components/account/CounselorsSection.tsx")) as { CounselorsSection: (p: { grants: CounselorGrantView[]; first?: string | null }) => ReactElement | null };
 const { JoinedLine } = (await import("../components/account/JoinedNotice.tsx")) as { JoinedLine: (p: { orgName: string; settings: string }) => ReactElement };
-const { accountMenuLinks } = (await import("../components/account/account-menu-links.ts")) as { accountMenuLinks: (me: { org?: boolean }) => { href: string; label: string }[] };
+const { accountMenuLinks } = (await import("../components/account/account-menu-links.ts")) as { accountMenuLinks: (me: { org?: boolean; admin?: boolean }) => { href: string; label: string }[] };
 const CodePage = (await import("../app/join/page.tsx")) as { default: (p: { searchParams: Promise<{ code?: string }> }) => Promise<ReactElement> };
 
 const decode = (html: string) => html.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
@@ -386,6 +386,17 @@ test("the menu shows Caseload only for members of an organization", () => {
   assert.deepEqual(accountMenuLinks({ org: true }).map((l) => [l.label, l.href]), [["Caseload", "/org"], ["Household", "/household"], ["Your account", "/account"]]);
   assert.match(read("app", "api", "me", "route.ts"), /myOrganization\(\)\s*\.then\(\(o\) => o !== null\)/);
   assert.match(read("components", "layout", "BottomNav.tsx"), /me\?\.signedIn && me\.org && \(/, "and the phone's More sheet");
+});
+
+test("the avatar menu and the More sheet show Admin, last, to an admin only (specs/product/admin.md 'The console')", () => {
+  assert.deepEqual(accountMenuLinks({ admin: true }).map((l) => [l.label, l.href]), [["Household", "/household"], ["Your account", "/account"], ["Admin", "/admin"]]);
+  assert.deepEqual(accountMenuLinks({ org: true, admin: true }).map((l) => l.label), ["Caseload", "Household", "Your account", "Admin"]);
+  assert.deepEqual(accountMenuLinks({ admin: false }).map((l) => l.label), ["Household", "Your account"]);
+  assert.deepEqual(accountMenuLinks({}).map((l) => l.label), ["Household", "Your account"], "an older stored answer without admin");
+  // The same question the console's layout asks (lib/admin/auth.ts adminState), never a second rule.
+  assert.match(read("app", "api", "me", "route.ts"), /rpc\("is_admin_any_aal"\)/);
+  assert.match(read("app", "api", "me", "route.ts"), /\.catch\(\(\) => false\)/, "before the admin migration exists, nobody is");
+  assert.match(read("components", "layout", "BottomNav.tsx"), /me\?\.signedIn && me\.admin && \(/, "and the phone's More sheet");
 });
 
 /* ------------------------------------------------------------------ */

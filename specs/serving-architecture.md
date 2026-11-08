@@ -916,3 +916,10 @@ new code falls back to today's reads while a function is missing):
   rigor reading (`offeringFor`) and `highSchoolState`. `meta` and `medians` are held once per instance per served
   snapshot id (`lib/snapshot-memo.ts`, keyed by `currentSnapshotId()`), so a warm instance reads neither. Until the
   migration is applied the three reads run as before (`isMissingFunction`, one wasted call a minute).
+- Closed in round 4: the session check's cold `auth` call (`/advisor 2109ms: … (auth 1175; …)`, `auth 1623` on the
+  preview). It was the signing-key fetch: auth-js caches the JWKS module-wide per instance (ten minutes), so warm
+  instances showed no `auth` call and fresh ones paid the fetch first. The keys are bundled at build time
+  (`scripts/fetch-jwks.mts` → `.data/auth/jwks.json`, imported by `lib/auth-jwks.ts`) and passed to `getClaims` as
+  `{ jwks }` in `lib/auth.ts` and `proxy.ts`; a rotated-in `kid` falls through to the library's fetch
+  ([accounts.md](product/accounts.md) "Checking the session without fetching the keys"). An `auth` span left after
+  the deploy is a token refresh (within 90 s of expiry), not the keys.

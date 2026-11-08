@@ -10,6 +10,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabase, supabaseAuthEnv } from "@/lib/supabase-server";
+import { getClaimsWithKeys } from "@/lib/auth-jwks";
 import { PAUSED_LOGIN_PATH } from "@/lib/admin/constants";
 import { viewerBundle } from "@/lib/bundles";
 import { requestMemo } from "@/lib/request-memo";
@@ -56,12 +57,16 @@ export type SessionUser = { id: string; email: string | null };
  * WebCrypto, it asks the Auth server exactly as auth.getUser() did. Postgres row-level security checks the same
  * signature, so a token this accepts is one every query would accept too. The claims are read once per request
  * (sessionClaims) and shared by getUser() and sessionAal().
+ *
+ * The keys come bundled with the deploy (lib/auth-jwks.ts, written by scripts/fetch-jwks.mts at build time), so even a
+ * fresh instance, whose in-memory cache is empty, verifies without fetching them; a key rotated in since the build
+ * falls through to the library's cache and fetch.
  */
 const sessionClaims = cache(async (): Promise<{ sub: string; email: string | null; aal: string | null } | null> => {
   if (!authConfigured()) return null;
   const supabase = await createServerSupabase();
   // A malformed token (an unknown alg, a key that won't import) can throw instead of returning an error: signed out.
-  const { data, error } = await supabase.auth.getClaims().catch(() => ({ data: null, error: true }));
+  const { data, error } = await getClaimsWithKeys(supabase.auth).catch(() => ({ data: null, error: true }));
   if (error || !data) return null;
   const { sub, email, aal } = data.claims;
   if (typeof sub !== "string" || sub === "") return null;

@@ -76,6 +76,21 @@ federal number ([commercialization.md](commercialization.md#what-stays-free)).
   elsewhere (sign-out on another device) still reads as signed in until its access token expires (an hour at most),
   as Supabase's own RLS already allowed, and the email comes from the token, so a changed address shows after the
   next refresh. `getUser()` returns `SessionUser` (`{ id, email }`, from `sub` and `email`); nothing reads more.
+- **Checking the session without fetching the keys (2026-11-08).** The library caches the key set per instance
+  (module-wide, keyed by the cookie's storage key, ten minutes), so a fresh instance fetched it before anything else:
+  `auth 1175`/`auth 1623` ms on cold requests. The keys now ship with the deploy: `scripts/fetch-jwks.mts` (run by
+  `prebuild`, and by `postinstall --ensure` so a fresh clone has one) writes `.data/auth/jwks.json` from
+  `<SUPABASE_URL>/auth/v1/.well-known/jwks.json` (public keys only), or `{ "keys": [] }` without `SUPABASE_URL` or when
+  the download fails (never a failed build). `lib/auth-jwks.ts` imports the file statically, so the bundler inlines it
+  into the proxy and every route without file tracing, and `getClaimsWithKeys(supabase.auth)` passes it as
+  `getClaims(undefined, { jwks })`; `lib/auth.ts` and `proxy.ts` call it, and a guard test keeps any bare
+  `.getClaims(` out of the deploy's code. getClaims looks the token's `kid` up in the given set first, then in its own
+  cache, then fetches, so a key rotated in since the build costs one fetch, as before, and never signs anyone out.
+  What still goes to the network: a token within 90 seconds of expiry is refreshed first (`POST /auth/v1/token`; the
+  proxy does it, so the page's check sees the new token), and a project signing with a symmetric secret asks the Auth
+  server. One trade: a key *revoked* in the dashboard is still accepted by this check until the next deploy (the
+  library's cache would have dropped it within ten minutes); row-level security checks the same token against the
+  project's live keys, so no read succeeds with it. Redeploy after revoking a key.
 - **Anonymous first.** Tools work signed out with state in `localStorage` (the compare list already does).
   On sign-in, local state is offered for import once ("Save these 4 colleges to your list?"), then cleared.
 - The header gains an avatar menu (desktop) and the phone More sheet gains "Account" ([mobile.md](../mobile.md)). Since 2026-11-08 the header's second item is the role item, Advisor / Household / Caseload by who is signed in ([role-nav.md](role-nav.md)).
@@ -179,7 +194,7 @@ access-log view build on it.
 | File | Exports |
 |---|---|
 | `lib/supabase-server.ts` (server only) | `createServerSupabase(): Promise<SupabaseClient>` (new `@supabase/ssr` client per request, bound to `cookies()`; throws when unconfigured), `supabaseAuthEnv()` |
-| `lib/auth.ts` (server only) | `authConfigured(): boolean`, `getUser(): Promise<SessionUser \| null>` (`auth.getClaims()`, per-request `cache`; `SessionUser` is `{ id, email }`), `requireUser(next?): Promise<SessionUser>` (redirects to `/login?next=`), `getAccount(): Promise<Account \| null>`, `currentStudent(): Promise<StudentRecord \| null>`, `studentsICanSee(): Promise<StudentAccess[]>`, `AccountsSetupError` |
+| `lib/auth.ts` (server only) | `authConfigured(): boolean`, `getUser(): Promise<SessionUser \| null>` (`auth.getClaims()` with the bundled keys, `lib/auth-jwks.ts`, per-request `cache`; `SessionUser` is `{ id, email }`), `requireUser(next?): Promise<SessionUser>` (redirects to `/login?next=`), `getAccount(): Promise<Account \| null>`, `currentStudent(): Promise<StudentRecord \| null>`, `studentsICanSee(): Promise<StudentAccess[]>`, `AccountsSetupError` |
 | `lib/accounts.ts` (pure) | Types `Account` (`{ user: { id, email }, profile }`), `Profile`, `StudentRecord`, `Household`, `HouseholdMember`, `Invitation`, `StudentAccess` (`{ student, relation: "self" \| "guardian", canEdit }`), `RoleHint`, `MeState`; `birthYearAllowed(year, today?)`, `parseBirthYear`, `safeNextPath(next, fallback?)`, `loginHref(next?)`, `resolveStudentAccess`, `wantsOwnStudent`, `initialsFor`, `INVITATION_ERRORS`, `ROLE_HINTS`, `AGE_GATE_COOKIE` |
 | `lib/email.ts` | `sendEmail({ to, subject, html, text, headers }): Promise<SendResult>` (`{ sent: true, id }`, `{ sent: false, reason: "not-configured" }`, or `{ sent: false, reason: "error", error }`; never throws), `emailConfigured()` |
 | `components/account/` | `SignInPrompt` (`reason`, `next`, `variant: "card" \| "inline"`), `AccountMenu` (avatar menu; its links come from `accountMenuLinks(me)` in `account-menu-links.ts`, by role), `useMe()` (client hook over `/api/me`), `AccountSection` + `ComingSoon`, `SignOutButton`, `AuthUnavailable` |

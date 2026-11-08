@@ -2,8 +2,8 @@
  * Keeps the Supabase session fresh on account routes (specs/product/accounts.md). Server Components can't write
  * cookies, so a token that is about to expire is refreshed here, before the page renders, and the new cookies go to
  * both the page (request) and the browser (response). It uses auth.getClaims(), which refreshes an expiring token and
- * verifies the signature locally against the project's JWKS (cached in memory), so the common case makes no round
- * trip to Supabase Auth; a project still signing with a symmetric secret falls back to a server check.
+ * verifies the signature locally against the project's JWKS (bundled at build time: lib/auth-jwks.ts), so the common
+ * case makes no round trip to Supabase Auth, even on a fresh instance; a project still signing with a symmetric secret falls back to a server check.
  *
  * Scoped by `matcher` to the routes that read the session: running on the public pages would be wasted work and
  * those pages must stay static. Server Actions called from a public page (Follow, Add to list) refresh the session
@@ -14,6 +14,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { signedInCookieFor } from "@/lib/accounts";
 import { AUTH_COOKIE_OPTIONS } from "@/lib/supabase-server";
+import { getClaimsWithKeys } from "@/lib/auth-jwks";
 import { timingEnabled } from "@/lib/timing";
 
 export async function proxy(request: NextRequest) {
@@ -41,10 +42,11 @@ export async function proxy(request: NextRequest) {
     },
   });
   // Refreshes a token that expires within 90 seconds (setAll above saves the new cookies), then verifies its signature
-  // locally against the project's cached JWKS; the result itself isn't needed here. A malformed token can throw:
-  // treat it as signed out and let the page decide.
+  // locally against the keys bundled at build time (lib/auth-jwks.ts; a rotated-in key falls through to the library's
+  // cache and fetch); the result itself isn't needed here. A malformed token can throw: treat it as signed out and let
+  // the page decide.
   const started = performance.now();
-  await supabase.auth.getClaims().catch(() => null);
+  await getClaimsWithKeys(supabase.auth).catch(() => null);
   // QUAD_TIMING=1 (specs/serving-architecture.md "Timing a request"): the session check's time as a Server-Timing
   // header, the one part of the request known before the page starts streaming. Off by default; a duration only.
   if (timingEnabled()) response.headers.set("Server-Timing", `proxy;dur=${Math.round(performance.now() - started)};desc="session check"`);

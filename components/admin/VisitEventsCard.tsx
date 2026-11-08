@@ -2,6 +2,7 @@ import type { CardTone, CheckSummaryHost, SlateHostStatus, VisitEventsHealth, Vi
 import { cardTone } from "@/lib/admin/visit-events";
 import { timeLabel } from "@/lib/admin/ops-view";
 import { Panel, Empty } from "@/components/admin/Panel";
+import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
 import { cn } from "@/lib/utils";
 
 /** Exported so the console landing page's tile can show the same word (specs/product/visit-events.md "Nobody sees
@@ -104,49 +105,29 @@ function HostsByStatus({ hostsByStatus }: { hostsByStatus: Record<SlateHostStatu
   );
 }
 
+const runsColumns: readonly Column<VisitRunRow>[] = [
+  { key: "ran", header: "Ran", role: "title", cell: (run) => timeLabel(run.ranAt) },
+  {
+    key: "hosts",
+    header: "Hosts",
+    cell: (run) => (
+      <>
+        {num(run.hostsRead)}
+        {(run.hostsFailed > 0 || run.hostsCollapsed > 0) && <span className="text-muted-foreground"> ({failedNote(run)})</span>}
+      </>
+    ),
+  },
+  { key: "events", header: "Events", cell: (run) => `+${num(run.eventsNew)} / ~${num(run.eventsChanged)} / -${num(run.eventsRemoved)}` },
+  { key: "withheld", header: "Withheld", role: "detail", cell: (run) => (run.missesWithheld ? "Yes" : "No") },
+  {
+    key: "check",
+    header: "Check",
+    cell: (run) => (run.checkFailures === null && run.checkWarnings === null ? <span className="text-muted-foreground">—</span> : `${num(run.checkFailures ?? 0)} / ${num(run.checkWarnings ?? 0)}`),
+  },
+];
+
 function RunsTable({ runs }: { runs: readonly VisitRunRow[] }) {
-  return (
-    <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full min-w-[34rem] text-sm">
-        <caption className="sr-only">The last {runs.length} visit-events runs, newest first</caption>
-        <thead className="bg-muted/50 text-left text-muted-foreground">
-          <tr>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Ran
-            </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Hosts
-            </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Events
-            </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Withheld
-            </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Check
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {runs.map((run) => (
-            <tr key={run.id} className="border-t border-border">
-              <td className="px-3 py-2">{timeLabel(run.ranAt)}</td>
-              <td className="px-3 py-2 tabular-nums">
-                {num(run.hostsRead)}
-                {(run.hostsFailed > 0 || run.hostsCollapsed > 0) && <span className="text-muted-foreground"> ({failedNote(run)})</span>}
-              </td>
-              <td className="px-3 py-2 tabular-nums">
-                +{num(run.eventsNew)} / ~{num(run.eventsChanged)} / -{num(run.eventsRemoved)}
-              </td>
-              <td className="px-3 py-2">{run.missesWithheld ? "Yes" : <span className="text-muted-foreground">No</span>}</td>
-              <td className="px-3 py-2 tabular-nums">{run.checkFailures === null && run.checkWarnings === null ? <span className="text-muted-foreground">—</span> : `${num(run.checkFailures ?? 0)} / ${num(run.checkWarnings ?? 0)}`}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  return <ResponsiveTable rows={runs} columns={runsColumns} rowKey={(run) => String(run.id)} caption={`The last ${runs.length} visit-events runs, newest first`} empty="No run has been recorded yet." />;
 }
 
 function CheckSummary({ run }: { run: VisitRunRow }) {

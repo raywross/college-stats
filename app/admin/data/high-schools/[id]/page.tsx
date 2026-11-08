@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Empty, Fields, Muted, PageHeader, Panel } from "@/components/admin/Panel";
+import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminHighSchool } from "@/lib/admin/high-school";
 import { COURSE_LIST_MIN_STUDENTS, type CourseCountRow } from "@/lib/admin/hidden";
@@ -58,23 +59,19 @@ export default async function HighSchoolPage({ params }: PageProps<"/admin/data/
           ) : hs.counts.length === 0 ? (
             <Empty>No student at this school has listed an AP or IB course.</Empty>
           ) : (
-            <table className="w-full max-w-2xl text-left text-sm">
-              <thead className="text-xs text-muted-foreground">
-                <tr>
-                  <th className="py-1.5 pr-3 font-semibold">Course</th>
-                  <th className="py-1.5 pr-3 text-right font-semibold">Students</th>
-                </tr>
-              </thead>
-              <tbody className="tabular-nums">
-                <CountRows rows={listed} />
-                <tr aria-label={`The ${COURSE_LIST_MIN_STUDENTS}-student line`}>
-                  <td colSpan={2} className="border-t-2 border-dashed border-foreground/40 py-1 text-xs text-muted-foreground">
-                    {COURSE_LIST_MIN_STUDENTS}-student line: above it, suggested ({listed.length}); below it, never shown ({below.length})
-                  </td>
-                </tr>
-                <CountRows rows={below} muted />
-              </tbody>
-            </table>
+            <div className="space-y-5">
+              <p className="text-sm text-muted-foreground">
+                The {COURSE_LIST_MIN_STUDENTS}-student line: above it, suggested ({listed.length}); below it, never shown ({below.length}).
+              </p>
+              <div>
+                <h3 className="mb-2 text-sm font-semibold">Courses the plan lists ({listed.length})</h3>
+                <CourseCountTable rows={listed} />
+              </div>
+              <div>
+                <h3 className="mb-2 text-sm font-semibold">Below the line ({below.length})</h3>
+                <CourseCountTable rows={below} />
+              </div>
+            </div>
           )}
         </Panel>
 
@@ -140,17 +137,20 @@ export default async function HighSchoolPage({ params }: PageProps<"/admin/data/
   );
 }
 
-function CountRows({ rows, muted = false }: { rows: CourseCountRow[]; muted?: boolean }) {
-  return (
-    <>
-      {rows.map((r) => (
-        <tr key={r.key} className={muted ? "text-muted-foreground" : undefined}>
-          <td className="py-1 pr-3">
-            {r.name} <span className="font-mono text-xs text-muted-foreground">{r.key}</span>
-          </td>
-          <td className="py-1 pr-3 text-right">{r.students}</td>
-        </tr>
-      ))}
-    </>
-  );
+const courseCountColumns: readonly Column<CourseCountRow>[] = [
+  {
+    key: "course",
+    header: "Course",
+    role: "title",
+    cell: (r) => (
+      <>
+        {r.name} <span className="font-mono text-xs font-normal text-muted-foreground">{r.key}</span>
+      </>
+    ),
+  },
+  { key: "students", header: "Students", align: "right", cell: (r) => r.students },
+];
+
+function CourseCountTable({ rows }: { rows: CourseCountRow[] }) {
+  return <ResponsiveTable rows={rows} columns={courseCountColumns} rowKey={(r) => r.key} caption="Pooled course counts" empty="None." />;
 }

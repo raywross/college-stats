@@ -3,6 +3,7 @@ import type { HealthCounts } from "@/lib/admin/health";
 import { GROUP_LABELS, HEALTH_GROUPS, HEALTH_STATUSES, STATUS_LABELS } from "@/lib/admin/health-rules";
 import { healthHref, type HealthFilters } from "@/lib/admin/health-view";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
+import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
 import { cn } from "@/lib/utils";
 
 const BASE = "/admin/data/health?tab=sources";
@@ -46,59 +47,40 @@ export function HealthStats({ counts, filters }: { counts: HealthCounts; filters
           ))}
       </ul>
 
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-        <table className="w-full min-w-[30rem] text-sm">
-          <caption className="px-4 pt-3 text-left text-sm font-semibold">By data group</caption>
-          <thead>
-            <tr className="text-left text-muted-foreground">
-              <th scope="col" className="px-4 py-2 font-medium">
-                Group
-              </th>
-              {HEALTH_STATUSES.slice()
-                .reverse()
-                .map((s) => (
-                  <th key={s} scope="col" className="px-3 py-2 text-right font-medium">
-                    {STATUS_LABELS[s]}
-                  </th>
-                ))}
-              {hasUnjudged && (
-                <th scope="col" className="px-3 py-2 text-right font-medium">
-                  Not judged
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {HEALTH_GROUPS.map((g) => (
-              <tr key={g} className="border-t border-border">
-                <th scope="row" className="px-4 py-2 text-left font-medium">
-                  {GROUP_LABELS[g]}
-                </th>
-                {HEALTH_STATUSES.slice()
-                  .reverse()
-                  .map((s) => (
-                    <GroupCell key={s} n={counts.groups[g][s]} on={filters.group === g && filters.status === s} href={healthHref(BASE, filters, { group: g, status: s })} clear={healthHref(BASE, filters, { group: null, status: null })} />
-                  ))}
-                {hasUnjudged && <GroupCell n={counts.groups[g].unjudged} on={filters.group === g && filters.status === "unjudged"} href={healthHref(BASE, filters, { group: g, status: "unjudged" })} clear={healthHref(BASE, filters, { group: null, status: null })} />}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <GroupTable counts={counts} filters={filters} hasUnjudged={hasUnjudged} />
     </section>
   );
 }
 
+function GroupTable({ counts, filters, hasUnjudged }: { counts: HealthCounts; filters: HealthFilters; hasUnjudged: boolean }) {
+  const statuses = [...HEALTH_STATUSES].reverse();
+  const clear = healthHref(BASE, filters, { group: null, status: null });
+  const columns: Column<(typeof HEALTH_GROUPS)[number]>[] = [
+    { key: "group", header: "Group", role: "title", cell: (g) => GROUP_LABELS[g] },
+    ...statuses.map((s): Column<(typeof HEALTH_GROUPS)[number]> => ({
+      key: s,
+      header: STATUS_LABELS[s],
+      align: "right",
+      cell: (g) => <GroupCell n={counts.groups[g][s]} on={filters.group === g && filters.status === s} href={healthHref(BASE, filters, { group: g, status: s })} clear={clear} />,
+    })),
+  ];
+  if (hasUnjudged) {
+    columns.push({
+      key: "unjudged",
+      header: "Not judged",
+      align: "right",
+      cell: (g) => <GroupCell n={counts.groups[g].unjudged} on={filters.group === g && filters.status === "unjudged"} href={healthHref(BASE, filters, { group: g, status: "unjudged" })} clear={clear} />,
+    });
+  }
+  return <ResponsiveTable rows={HEALTH_GROUPS} columns={columns} rowKey={(g) => g} caption="By data group" empty="No data group." />;
+}
+
 function GroupCell({ n, on, href, clear }: { n: number; on: boolean; href: string; clear: string }) {
-  return (
-    <td className="px-3 py-2 text-right tabular-nums">
-      {n === 0 ? (
-        <span className="text-muted-foreground">0</span>
-      ) : (
-        <Link href={on ? clear : href} aria-current={on ? "true" : undefined} className={cn("inline-block min-w-8 rounded-md px-1.5 py-0.5 underline decoration-dotted underline-offset-2", on && "bg-foreground text-background no-underline")}>
-          {num(n)}
-        </Link>
-      )}
-    </td>
+  return n === 0 ? (
+    <span className="text-muted-foreground">0</span>
+  ) : (
+    <Link href={on ? clear : href} aria-current={on ? "true" : undefined} className={cn("inline-block min-w-8 rounded-md px-1.5 py-0.5 underline decoration-dotted underline-offset-2", on && "bg-foreground text-background no-underline")}>
+      {num(n)}
+    </Link>
   );
 }

@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { ConfirmTyped } from "@/components/admin/ConfirmTyped";
 import { Empty, Fields, KeyValues, Muted, PageHeader, Panel } from "@/components/admin/Panel";
+import { RecordActions } from "@/components/admin/RecordActions";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
 import { CONFIRM_DELETE, CONFIRM_REMOVE, deletingLabel, describeAuthActivity, fmtDate, fmtDateTime } from "@/lib/admin/console";
@@ -74,12 +75,6 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
         }
         subtitle={auth?.email ?? undefined}
       />
-      <p className="mb-4 text-sm lg:hidden">
-        <a href="#actions" className="font-semibold text-primary underline-offset-4 hover:underline">
-          Jump to actions
-        </a>
-      </p>
-
       {deleted && person.purgeAt && (
         <div className="mb-5 rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm" role="status">
           <p className="font-semibold">This account is scheduled for deletion.</p>
@@ -90,8 +85,9 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]">
-        <div className="min-w-0 space-y-5">
+      <RecordActions>{deleted ? <DeletedActions userId={profile.id} email={auth?.email ?? null} /> : <LiveActions person={person} self={self} />}</RecordActions>
+
+      <div className="space-y-5">
           <Panel help="person" title="Account" id="account">
             <Fields
               items={[
@@ -298,18 +294,6 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
               </ul>
             )}
           </Panel>
-        </div>
-
-        <aside id="actions" className="min-w-0 scroll-mt-24">
-          <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-5 lg:sticky lg:top-(--header-h)">
-            <h2 className="font-display text-lg font-bold tracking-tight">Actions</h2>
-            {deleted ? (
-              <DeletedActions userId={profile.id} email={auth?.email ?? null} />
-            ) : (
-              <LiveActions person={person} self={self} />
-            )}
-          </div>
-        </aside>
       </div>
     </>
   );
@@ -390,13 +374,14 @@ function Notifications({ n }: { n: AdminPerson["notifications"] }) {
 
 function DeletedActions({ userId, email }: { userId: string; email: string | null }) {
   return (
-    <div className="space-y-3">
+    <>
       <AdminForm action={restoreAccount} hidden={{ user: userId }} trigger="Restore account" tone="primary" />
       <ConfirmTyped
         action={deleteNow}
         hidden={{ user: userId }}
         trigger="Delete now"
         submit="Delete for good"
+        sheet
         expected={email ?? CONFIRM_DELETE}
         instruction={
           email ? (
@@ -407,7 +392,7 @@ function DeletedActions({ userId, email }: { userId: string; email: string | nul
         }
         description="Removes the account, their student record, and any household left empty, now instead of at the end of the 30 days. This can't be undone."
       />
-    </div>
+    </>
   );
 }
 
@@ -417,12 +402,13 @@ function LiveActions({ person, self }: { person: AdminPerson; self: boolean }) {
   const paused = profile.suspended_at !== null;
   const canEmail = emailConfigured();
   return (
-    <div className="space-y-3">
+    <>
       <AdminForm
         action={editProfile}
         hidden={hidden}
         trigger="Edit details"
         submit="Save"
+        sheet
         fields={[
           { name: "display_name", label: "Name", defaultValue: profile.display_name ?? "", maxLength: 80, autoComplete: "off" },
           { name: "birth_year", label: "Birth year", type: "number", defaultValue: profile.birth_year?.toString() ?? "", hint: "Once given, it can be corrected but not cleared." },
@@ -446,6 +432,7 @@ function LiveActions({ person, self }: { person: AdminPerson; self: boolean }) {
         hidden={hidden}
         trigger="Change email"
         submit="Change email"
+        sheet
         description={
           <>
             Vouches for the new address: no confirmation email is sent, and they sign in with it from now on.
@@ -471,6 +458,7 @@ function LiveActions({ person, self }: { person: AdminPerson; self: boolean }) {
               hidden={{ ...hidden, confirmed: "false" }}
               trigger="Mark email unconfirmed"
               submit="Mark unconfirmed"
+              sheet
               description="Signs them out everywhere. Their next sign-in asks them to confirm their email, and the sign-in page offers to send it again."
             />
           )
@@ -480,6 +468,7 @@ function LiveActions({ person, self }: { person: AdminPerson; self: boolean }) {
             hidden={{ ...hidden, confirmed: "true" }}
             trigger="Confirm email"
             tone="primary"
+            sheet
             description="Vouches for this address so they can sign in without the confirmation email."
           />
         ))}
@@ -501,6 +490,7 @@ function LiveActions({ person, self }: { person: AdminPerson; self: boolean }) {
           trigger="Deactivate"
           submit="Deactivate account"
           tone="danger"
+          sheet
           description="Stops them signing in and ends their sessions. Their data stays, and their parents still see it. Reversible with Reactivate."
           fields={[{ name: "reason", label: "Why (goes in the log)", type: "textarea", required: true, maxLength: 500 }]}
         />
@@ -510,14 +500,15 @@ function LiveActions({ person, self }: { person: AdminPerson; self: boolean }) {
         hidden={hidden}
         trigger="Delete account"
         submit="Delete account"
+        sheet
         expected={CONFIRM_DELETE}
         description="The same 30-day delete they get from their own account page: managed students, households, and memberships follow the built rules, and they are signed out. Restorable for 30 days."
       />
       <form method="post" action={`/admin/people/${profile.id}/export`}>
-        <button type="submit" className="inline-flex h-10 items-center rounded-full border px-4 text-sm font-semibold hover:bg-muted">
+        <button type="submit" className="inline-flex h-11 items-center rounded-full border px-4 text-sm font-semibold hover:bg-muted">
           Export their data
         </button>
       </form>
-    </div>
+    </>
   );
 }

@@ -108,3 +108,22 @@ export async function loadOperations(): Promise<OperationsData> {
     cost,
   };
 }
+
+/** What a job page's Run now needs (specs/product/admin-redesign.md "The screens", Jobs): the runs the console can start
+ * for this workflow, its recent runs (for the dispatch guard: a workflow already queued or running shows that run
+ * instead of a form), and the last full run's cost for the college-reported workflow. Empty without credentials. */
+export interface RunNowData {
+  configured: { mode: "app" | "pat" } | null;
+  runs: (typeof DISPATCHABLE_RUNS)[number][];
+  recent: gh.WorkflowRun[];
+  cost: Awaited<ReturnType<typeof gh.fetchRunCost>>;
+}
+
+export async function loadRunNow(workflow: string | undefined): Promise<RunNowData> {
+  const runs = DISPATCHABLE_RUNS.filter((r) => !r.hidden && r.workflow === workflow);
+  const configured = gh.githubConfigured();
+  if (!configured || !workflow || runs.length === 0) return { configured, runs, recent: [], cost: null };
+  const needsCost = runs.some((r) => r.id === "all");
+  const [recent, cost] = await Promise.all([gh.listRuns({ workflows: [workflow], perPage: 30 }), needsCost ? gh.fetchRunCost() : Promise.resolve(null)]);
+  return { configured, runs, recent, cost };
+}

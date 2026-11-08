@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Wrench } from "lucide-react";
 import { AdminRail } from "@/components/admin/AdminRail";
+import { AdminTabBar } from "@/components/admin/AdminTabBar";
 import { MfaStep } from "@/components/admin/MfaStep";
 import { adminState } from "@/lib/admin/auth";
 import { shellFor } from "@/lib/admin/console";
+import { needsYouCount } from "@/lib/admin/inbox-reads";
 
 // Never indexed, never followed; the site-wide title template still appends the site name.
 export const metadata: Metadata = { title: { default: "Admin", template: "%s · Admin" }, robots: { index: false, follow: false } };
@@ -17,7 +19,7 @@ export const metadata: Metadata = { title: { default: "Admin", template: "%s · 
  *   not an admin (or signed out, or unconfigured)  → a 404: the console's existence isn't advertised
  *   signed in, but the admin migration isn't there → a setup notice
  *   an admin at aal1                               → the second-factor step in place of every page
- *   an admin at aal2                               → the rail and the page
+ *   an admin at aal2                               → the rail (from md), the tab bar (below md), and the page
  *
  * A layout does not guard its pages (they render in parallel and a page can be reached by its own request, a Server
  * Action, or a route handler), so every page and action calls requireAdmin()/withAdmin() too, and the database checks
@@ -29,10 +31,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (shell.shell === "not-found") notFound();
   if (shell.shell === "setup") return <SetupNotice />;
   if (shell.shell === "mfa") return <MfaStep enrolled={shell.enrolled} />;
+  // The Steward's count on the rail and the tab bar (specs/product/admin-redesign.md "Phones"): the cheap reads only.
+  const needsYou = await needsYouCount();
   return (
-    <div className="mx-auto flex w-full max-w-[90rem] flex-col lg:flex-row">
-      <AdminRail />
+    <div className="mx-auto flex w-full max-w-[90rem] flex-col md:flex-row">
+      <AdminRail needsYou={needsYou} />
       <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
+      <AdminTabBar needsYou={needsYou} />
     </div>
   );
 }

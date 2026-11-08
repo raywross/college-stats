@@ -1,5 +1,5 @@
 /**
- * The hand-read form's state (specs/product/essays/sources.md "The hand read"; app/admin/essays/[unit]): what the
+ * The hand-read form's state (specs/product/essays/sources.md "The hand read"; app/admin/data/essays/[unit]): what the
  * admin types, as plain strings and booleans, and the one function that turns it into a `ConfirmedRecord`. Pure and
  * client-safe: the form (components/admin/EssayPromptsForm.tsx) builds the record to show `validateConfirmed`'s
  * problems before any call, and the Server Action (lib/admin/essays-actions.ts) builds it again from the posted draft,

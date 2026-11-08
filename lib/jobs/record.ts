@@ -138,11 +138,29 @@ export function supabaseRecorder(deps: { client?: () => ClientLike; log?: (msg: 
 
 type Handler = (request: NextRequest) => Promise<Response> | Response;
 
+/**
+ * The production after hook: ask the Steward to review the run (a `workflow_dispatch` of steward.yml, mode review),
+ * loaded on first use so this module stays free of the GitHub client (server only) for its tests.
+ */
+async function defaultAfterFinish(job: JobId, finish: FinishedRun): Promise<void> {
+  const { requestReview } = await import("./review-dispatch.ts");
+  await requestReview(job, finish);
+}
+
+/** A finished run as the after hook sees it: the row's id with its outcome. */
+export type FinishedRun = RunFinish & { id: number };
+
 export interface WithJobRunDeps {
   recorder?: RunRecorder;
   /** The bearer secret; `process.env.CRON_SECRET` by default. */
   secret?: () => string | undefined;
   now?: () => Date;
+  /**
+   * Called once a recorded run's row is finished, before the response goes back; it must not throw (a throw is caught
+   * and logged). With the real recorder and no hook given, the default asks the Steward to review the run
+   * (lib/jobs/review-dispatch.ts); with an injected recorder (tests) there is no default.
+   */
+  afterFinish?: (job: JobId, finish: FinishedRun) => Promise<void>;
 }
 
 /**
@@ -153,6 +171,7 @@ export function withJobRun(job: JobId, handler: Handler, deps: WithJobRunDeps = 
   const now = deps.now ?? (() => new Date());
   const secret = deps.secret ?? (() => process.env.CRON_SECRET);
   let recorder = deps.recorder;
+  const afterFinish = deps.afterFinish ?? (deps.recorder ? null : defaultAfterFinish);
   return async (request) => {
     if (!isAuthorized(request.headers.get("authorization"), secret())) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -164,7 +183,15 @@ export function withJobRun(job: JobId, handler: Handler, deps: WithJobRunDeps = 
       if (id === null) return;
       const finishedAt = now();
       const outcome = outcomeOf(httpStatus, body);
-      await recorder!.finish(id, { ...outcome, error: thrown ?? outcome.error, httpStatus, durationMs: Math.max(0, finishedAt.getTime() - startedAt.getTime()), finishedAt });
+      const result: RunFinish = { ...outcome, error: thrown ?? outcome.error, httpStatus, durationMs: Math.max(0, finishedAt.getTime() - startedAt.getTime()), finishedAt };
+      await recorder!.finish(id, result);
+      if (afterFinish) {
+        try {
+          await afterFinish(job, { ...result, id });
+        } catch (e) {
+          console.warn(`job_runs: the after hook for ${job} run ${id} failed: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
     };
     try {
       const response = await handler(request);

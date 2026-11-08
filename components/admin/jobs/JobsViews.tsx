@@ -20,7 +20,7 @@ export function JobsTabs({ current }: { current: JobsView }) {
           title={VIEW_LABEL[v].hint}
           aria-current={v === current ? "page" : undefined}
           className={cn(
-            "-mb-px inline-flex min-h-10 items-center border-b-2 px-3 text-sm font-semibold",
+            "-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold",
             v === current ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >

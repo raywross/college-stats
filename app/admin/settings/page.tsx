@@ -29,9 +29,9 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" subtitle="Switches for the whole site. Each change is logged." />
+      <PageHeader help="settings" title="Settings" subtitle="Switches for the whole site. Each change is logged." />
       <div className="space-y-5">
-        <Panel title="Every next step, by season" id="all-moves" aside={<StatusChip label={on ? "On" : "Off"} tone={on ? "info" : "neutral"} />}>
+        <Panel help="all-moves" title="Every next step, by season" id="all-moves" aside={<StatusChip label={on ? "On" : "Off"} tone={on ? "info" : "neutral"} />}>
           <div className="space-y-3 text-sm">
             <p className="max-w-3xl text-muted-foreground">
               For testing. On, every student&apos;s Next steps tab lists every move they could get, under the season it belongs to, and each one works
@@ -50,8 +50,8 @@ export default async function SettingsPage() {
             )}
           </div>
         </Panel>
-        <Panel
-          title="Pretend today is"
+        <Panel help="test-date"
+          title="Test date"
           id="pretend-today"
           aside={<StatusChip label={pretend ? (honored ? pretend : "Set, ignored here") : "Off"} tone={pretend && honored ? "info" : "neutral"} />}
         >

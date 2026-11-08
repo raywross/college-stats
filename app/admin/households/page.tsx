@@ -45,7 +45,7 @@ export default async function HouseholdsPage({ searchParams }: PageProps<"/admin
 
   return (
     <>
-      <PageHeader title="Households" subtitle="Every family, who is in it, and invitations still waiting. Closed households are included." />
+      <PageHeader help="household" title="Households" subtitle="Every family, who is in it, and invitations still waiting. Closed households are included." />
       <AdminSearch
         defaultValue={q}
         id="households-search"
@@ -89,7 +89,7 @@ export default async function HouseholdsPage({ searchParams }: PageProps<"/admin
             {pages > 1 && (
               <nav aria-label="Pages" className="mt-3 flex items-center justify-between gap-3 text-sm">
                 {page > 1 ? (
-                  <Link href={householdsHref(q, page - 1)} rel="prev" className="inline-flex min-h-10 items-center underline decoration-dotted underline-offset-2">
+                  <Link href={householdsHref(q, page - 1)} rel="prev" className="inline-flex min-h-11 items-center underline decoration-dotted underline-offset-2">
                     Previous {PEOPLE_PAGE_SIZE}
                   </Link>
                 ) : (
@@ -99,7 +99,7 @@ export default async function HouseholdsPage({ searchParams }: PageProps<"/admin
                   Page {page} of {pages}
                 </span>
                 {page < pages ? (
-                  <Link href={householdsHref(q, page + 1)} rel="next" className="inline-flex min-h-10 items-center underline decoration-dotted underline-offset-2">
+                  <Link href={householdsHref(q, page + 1)} rel="next" className="inline-flex min-h-11 items-center underline decoration-dotted underline-offset-2">
                     Next {PEOPLE_PAGE_SIZE}
                   </Link>
                 ) : (

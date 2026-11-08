@@ -241,9 +241,9 @@ test("a dry run with no recorded answer fails (exit 1) naming the request's key;
   await assert.rejects(f("https://example.com/", {}), /no request may leave the process/);
   await assert.rejects(f("https://api.anthropic.com/v1/messages", { body: "{}" }), (e: unknown) => e instanceof MissingAnswer);
   assert.equal(requestKey({ model: "m", max_tokens: 1, messages: [] }), requestKey({ messages: [], model: "m", max_tokens: 9, stream: false }));
-  // The recorded answers are exactly the scenarios' (run: 6 main + 1 sub-read; budget: 1; answer: 3), so a prompt or
-  // tool change that leaves stale files behind shows here.
-  assert.equal(readdirSync(ANSWERS).filter((f) => f.endsWith(".json")).length, 11);
+  // The recorded answers are exactly the scenarios' (run: 6 main + 1 sub-read; budget: 1; answer: 3; the job review's
+  // notes: 6, tests/steward-job-review.test.mts), so a prompt or tool change that leaves stale files behind shows here.
+  assert.equal(readdirSync(ANSWERS).filter((f) => f.endsWith(".json")).length, 17);
 });
 
 test("answer mode: the owner's question answered on the proposal, rows added, the proposal open again", async () => {
@@ -375,7 +375,7 @@ test("the CLI: flags, exit 2 when the budget stops it, the step outputs, and ref
   const run = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts/steward.mts"), "--store", `file:${join(s.dir, "layers")}`, "--mode", "run", "--budget", "0.15", "--run-ref", "dry-run", "--dry-run", ANSWERS], { env, encoding: "utf8", cwd: ROOT });
   assert.equal(run.status, 2, run.stderr + run.stdout);
   assert.match(readFileSync(out, "utf8"), /exit_code=2\nchange_set=\d+\npublish=false\n/);
-  assert.equal(await main(["--store", `file:${join(s.dir, "layers")}`, "--mode", "nonsense"]).catch((e: Error) => e.message), "--mode nonsense: expected run, audit, apply, answer");
+  assert.equal(await main(["--store", `file:${join(s.dir, "layers")}`, "--mode", "nonsense"]).catch((e: Error) => e.message), "--mode nonsense: expected run, audit, apply, answer, review");
   assert.equal(await main(["--store", `file:${join(s.dir, "layers")}`, "--unit", "12"]).catch((e: Error) => e.message), "--unit 12: a six-digit unit id");
   const noKey = await runSteward({ mode: "run", store: s.store, budget: 5, runRef: "live", now: NOW, env: {}, log: () => {} });
   assert.equal(noKey.exit, 1);

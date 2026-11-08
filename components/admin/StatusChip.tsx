@@ -1,5 +1,7 @@
+import { HelpTip } from "@/components/admin/HelpTip";
 import { cn } from "@/lib/utils";
 import { statusChips, type ChipTone } from "@/lib/admin/console";
+import type { HelpKey } from "@/lib/admin/help";
 
 const TONES: Record<ChipTone, string> = {
   neutral: "bg-muted text-muted-foreground",
@@ -9,9 +11,19 @@ const TONES: Record<ChipTone, string> = {
   danger: "bg-destructive/10 text-destructive",
 };
 
-/** A small status pill: Paused, Deleting in 12 days, Invited, No account yet, Admin. The label says it; tone is never the only signal. */
-export function StatusChip({ label, tone = "neutral", className }: { label: string; tone?: ChipTone; className?: string }) {
-  return <span className={cn("inline-flex h-5 shrink-0 items-center rounded-full px-2 text-xs font-semibold whitespace-nowrap", TONES[tone], className)}>{label}</span>;
+/**
+ * A small status pill: Paused, Deleting in 12 days, Invited, No account yet, Admin. The label says it; tone is never the
+ * only signal. `help` puts the console's (i) icon beside a chip whose word isn't plain English (Held, Stale, Failing).
+ */
+export function StatusChip({ label, tone = "neutral", className, help }: { label: string; tone?: ChipTone; className?: string; help?: HelpKey }) {
+  const chip = <span className={cn("inline-flex h-5 shrink-0 items-center rounded-full px-2 text-xs font-semibold whitespace-nowrap", TONES[tone], className)}>{label}</span>;
+  if (!help) return chip;
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1">
+      {chip}
+      <HelpTip help={help} />
+    </span>
+  );
 }
 
 /** The chips for a search result's status ("active" has none). */

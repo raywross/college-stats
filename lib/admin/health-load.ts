@@ -1,6 +1,6 @@
 import "server-only";
 /**
- * What /admin/health and its CSV share: the health overview joined to the dataset's college facts (name, state, admit
+ * What /admin/data/health and its CSV share: the health overview joined to the dataset's college facts (name, state, admit
  * rate, the site's selectivity tier), and the filtered, sorted list of rows for a URL's filters. One definition, so the
  * page and the CSV can never disagree about which colleges a filter keeps. Server only.
  */

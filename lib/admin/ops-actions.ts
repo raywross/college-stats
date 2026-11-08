@@ -1,7 +1,7 @@
 /**
  * What each Operations button does (specs/product/admin.md "Operations: reruns and approvals"), over injected
  * dependencies so `tests/admin-ops.test.mts` runs every path with no network and no database. The Server Actions in
- * app/admin/operations/actions.ts call `requireAdmin()` first, build the real dependencies (lib/admin/ops.ts), and hand
+ * app/admin/steward/jobs/actions.ts call `requireAdmin()` first, build the real dependencies (lib/admin/ops.ts), and hand
  * the form to one of these.
  *
  * Rules every action here keeps:
@@ -22,6 +22,7 @@ import type { DispatchResult, MergeResult, PullActionResult, WorkflowRun } from 
 import { reviewKey, type ReviewItem } from "../reported.ts";
 import { acceptNote, acceptPlan, siblingKeys } from "./review-queue.ts";
 import { blockingRun, buildDispatch, runById, type DispatchableRun } from "./workflows.ts";
+import { codeLabel } from "./words.ts";
 
 export type OpsState = { status: "idle" } | { status: "done"; message: string; link?: { href: string; label: string } } | { status: "error"; message: string };
 
@@ -273,7 +274,7 @@ export async function rejectReviewItem(deps: ReviewDeps, key: string, note: stri
   if (!found.ok) return found.state;
   const r = await deps.resolve(key, "rejected", note);
   if (!r.ok) return err(`Not rejected: ${r.message}`);
-  return { status: "done", message: `Rejected: ${found.item.code ?? "C1"} for ${found.item.name} stays off the site.` };
+  return { status: "done", message: `Rejected: ${codeLabel(found.item.code ?? "C1")} for ${found.item.name} stays off the site.` };
 }
 
 /**

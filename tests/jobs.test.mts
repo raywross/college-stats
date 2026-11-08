@@ -349,8 +349,8 @@ test("sortJobs: scheduled first by next run, then the hand-run ones by name; URL
     { job: job("d", "Delta"), next: at("2026-11-01T00:00:00Z") },
   ];
   assert.deepEqual(sortJobs(rows).map((r) => r.job.id), ["d", "c", "a", "b"]);
-  assert.equal(jobHref({ id: "digests" }), "/admin/jobs/digests");
-  assert.equal(runHref({ id: "digests" }, 12), "/admin/jobs/digests/runs/12");
+  assert.equal(jobHref({ id: "digests" }), "/admin/steward/jobs/digests");
+  assert.equal(runHref({ id: "digests" }, 12), "/admin/steward/jobs/digests/runs/12");
   assert.equal(parseRunId("12"), 12);
   assert.equal(parseRunId("0"), null);
   assert.equal(parseRunId("12a"), null);
@@ -387,8 +387,8 @@ test("lastOutcome: one word per last run across both runners; counts and the fai
   assert.equal(parseJobsView(["all"]), "all");
   assert.equal(parseJobsView(undefined), "schedule");
   assert.equal(parseJobsView("nope"), "schedule");
-  assert.equal(jobsViewHref("all"), "/admin/jobs?view=all");
-  assert.equal(jobsViewHref("schedule"), "/admin/jobs");
+  assert.equal(jobsViewHref("all"), "/admin/steward/jobs?view=all");
+  assert.equal(jobsViewHref("schedule"), "/admin/steward/jobs");
 });
 
 /* ------------------------------------------------------------------ */
@@ -396,7 +396,7 @@ test("lastOutcome: one word per last run across both runners; counts and the fai
 /* ------------------------------------------------------------------ */
 
 test("static: the Jobs pages call requireAdmin() before reading; the run page checks the run belongs to the job's workflow", () => {
-  for (const p of ["app/admin/jobs/page.tsx", "app/admin/jobs/[job]/page.tsx", "app/admin/jobs/[job]/runs/[run]/page.tsx"]) {
+  for (const p of ["app/admin/steward/jobs/page.tsx", "app/admin/steward/jobs/[job]/page.tsx", "app/admin/steward/jobs/[job]/runs/[run]/page.tsx"]) {
     const src = read(p);
     const guard = src.indexOf("await requireAdmin()");
     assert.ok(guard > 0, `${p} calls requireAdmin()`);

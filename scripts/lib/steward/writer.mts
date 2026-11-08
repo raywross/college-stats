@@ -93,6 +93,16 @@ export class StewardWriter {
     return this.opts.now().toISOString();
   }
 
+  /**
+   * The run's notes: one line per action beyond a document write (a job review's repair, `steward.repair: …`), kept on
+   * the change set's summary when the run closes it, so the Changes page and the log show what the Steward did.
+   */
+  readonly notes: string[] = [];
+
+  note(line: string): void {
+    this.notes.push(line.slice(0, 500));
+  }
+
   /** Writes one document to a `steward.*` collection (refuses any other). */
   async put(collection: string, key: string, body: unknown): Promise<void> {
     if (!STEWARD.has(collection)) throw new WriteRefused(`the Steward writes only steward.* collections, not ${collection}`);
@@ -116,6 +126,7 @@ export class StewardWriter {
       reason: left ? before!.reason : (input.reason ?? null),
       run: this.opts.run,
       updated: this.stamp(),
+      ...(input.family ? { family: input.family } : {}),
     };
     await this.put(COLLECTIONS.steward.issues, doc.key, doc);
     this.counts.issues++;

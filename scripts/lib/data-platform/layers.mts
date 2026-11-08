@@ -111,8 +111,9 @@ export const COLLECTIONS = {
   import: { headers: "import.headers" },
   /**
    * The Data Steward's own documents (specs/product/data-steward.md "What it writes"): issues by cause key, proposals,
-   * acquisition To do rows, policy decisions, audits, and run summaries. Written by `scripts/steward.mts` (source
-   * `steward`) and by the console (`admin_steward_write`); never composed into a college, never in a snapshot.
+   * acquisition To do rows, policy decisions, audits, run summaries, and job reviews (one per job run reviewed,
+   * `<job>:<run ref>`; specs/product/admin-redesign.md "What the Steward reviews"). Written by `scripts/steward.mts`
+   * (source `steward`) and by the console (`admin_steward_write`); never composed into a college, never in a snapshot.
    */
   steward: {
     issues: "steward.issues",
@@ -121,6 +122,7 @@ export const COLLECTIONS = {
     decisions: "steward.decisions",
     audits: "steward.audits",
     runs: "steward.runs",
+    reviews: "steward.reviews",
   },
 } as const;
 

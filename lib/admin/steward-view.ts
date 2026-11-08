@@ -8,9 +8,9 @@ import type { TodoDoc, TodoStatus } from "../steward/types.ts";
 export const linkCls = "underline decoration-dotted underline-offset-2";
 
 /** The college's Review page. */
-export const reviewHref = (unit: string) => `/admin/colleges/${unit}/review`;
+export const reviewHref = (unit: string) => `/admin/data/colleges/${unit}/review`;
 /** A proposal's page. */
-export const proposalHref = (key: string) => `/admin/data/proposals/${encodeURIComponent(key)}`;
+export const proposalHref = (key: string) => `/admin/steward/proposals/${encodeURIComponent(key)}`;
 
 /** A document's address opened at a page (PDF viewers read `#page=`), or null for anything but http(s). */
 export function documentHref(url: string | null | undefined, page?: number | null): string | null {

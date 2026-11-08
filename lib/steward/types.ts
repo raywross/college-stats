@@ -4,10 +4,14 @@
  * Pure types and the few words every screen and the script share. The clustering itself is lib/steward/cluster.ts.
  */
 
-/** The four kinds of issue, each resolved its own way. */
-export type IssueKind = "value" | "systemic" | "acquisition" | "policy";
-export const ISSUE_KINDS: readonly IssueKind[] = ["value", "systemic", "acquisition", "policy"];
-export const ISSUE_KIND_LABEL: Record<IssueKind, string> = { value: "Value", systemic: "Systemic", acquisition: "Acquisition", policy: "Policy" };
+/**
+ * The four kinds of issue, each resolved its own way, plus `job`: a finding from the Steward's job review
+ * (specs/product/admin-redesign.md "What the Steward reviews"), keyed `job|<job id>` or `change|<id>`, with `family`
+ * naming the job.
+ */
+export type IssueKind = "value" | "systemic" | "acquisition" | "policy" | "job";
+export const ISSUE_KINDS: readonly IssueKind[] = ["value", "systemic", "acquisition", "policy", "job"];
+export const ISSUE_KIND_LABEL: Record<IssueKind, string> = { value: "Value", systemic: "Systemic", acquisition: "Acquisition", policy: "Policy", job: "Job" };
 
 export type IssueStatus = "new" | "investigating" | "proposed" | "waiting" | "left";
 export const ISSUE_STATUS_LABEL: Record<IssueStatus, string> = {
@@ -51,6 +55,8 @@ export interface IssueDoc {
   reason: string | null;
   run: string;
   updated: string;
+  /** A job finding's job id (lib/jobs/registry.ts); absent on the review queue's kinds. */
+  family?: string;
 }
 
 /** One document read: college, edition, the document, where, and what it shows. */
@@ -171,18 +177,69 @@ export interface DecisionDoc {
 /** An audit (`steward.audits`): a check family's sample of passed values against their documents. */
 export interface AuditDoc {
   key: string;
-  family: "grids" | "bands" | "aid-grids" | "h2" | string;
+  /** A check family, or `jobs` for the weekly jobs summary (`jobs` below; `checked` is the runs reviewed). */
+  family: "grids" | "bands" | "aid-grids" | "h2" | "jobs" | string;
   checked: number;
   wrong: ProposalRow[];
   rate: number;
   run: string;
   created: string;
+  /** The weekly jobs summary, on a `jobs` audit only. */
+  jobs?: JobsWeek;
 }
+
+/** The Sunday audit's week of jobs (lib/steward/job-review.ts `jobsWeek`). */
+export interface JobsWeek {
+  /** The seven days summed, ISO. */
+  from: string;
+  to: string;
+  /** Runs reviewed, and of them failed, flagged, and repaired. */
+  reviewed: number;
+  failed: number;
+  flagged: number;
+  repaired: number;
+  /** Per job: its reviewed runs by verdict, and its repairs. */
+  byJob: { job: string; fine: number; flagged: number; failed: number; repaired: number }[];
+  /** Dollars the Steward spent in the seven days, by mode. */
+  spendByMode: Record<string, number>;
+  /** The review queue's open items now, and at the last jobs summary (null when unknown, or the first week). */
+  queueOpen: number | null;
+  queueOpenBefore: number | null;
+}
+
+/** The Steward's job review: what it made of one run (specs/product/admin-redesign.md "What the Steward reviews"). */
+export type ReviewVerdict = "fine" | "flagged" | "failed";
+/** The three repairs its fixed tools allow. */
+export type ReviewRepair = "restart" | "publish" | "hold-finding";
+
+/** A review document (`steward.reviews`), keyed `<job>:<run ref>`: one per run reviewed. */
+export interface ReviewDoc {
+  key: string;
+  job: string;
+  /** The run: a `job_runs` id for a Vercel job, the workflow run id for a GitHub job. */
+  run_ref: string;
+  verdict: ReviewVerdict;
+  /** What the review found, a sentence each, quoted from the run's record. */
+  reasons: string[];
+  repair: ReviewRepair | null;
+  /** The repair was carried out (a restart or publish dispatched, a finding left). */
+  repaired: boolean;
+  /** One sentence for a person (Haiku), on a flagged or failed run only; null when fine or when the budget refused. */
+  note: string | null;
+  created: string;
+  /** When the run started (the weekly summary's window). */
+  run_started?: string | null;
+  /** The Steward run that wrote it. */
+  run?: string;
+}
+
+/** `steward.reviews` (scripts/lib/data-platform/layers.mts `COLLECTIONS.steward.reviews`; a test checks they agree). */
+export const REVIEWS_COLLECTION = "steward.reviews";
 
 /** A run summary (`steward.runs`). */
 export interface RunDoc {
   key: string;
-  mode: "run" | "audit" | "apply" | "answer";
+  mode: "run" | "audit" | "apply" | "answer" | "review";
   started: string;
   finished: string | null;
   budget_usd: number;
@@ -196,6 +253,13 @@ export interface RunDoc {
   /** Where it stopped early, if it did. */
   stopped: string | null;
   request_id: string | null;
+  /** Job reviews written (mode review: one when it wrote). */
+  reviews?: number;
+  /** Repairs carried out (a restart, a publish, a finding on a held change). */
+  repairs?: number;
+  /** Mode review: the job and the run reviewed. */
+  job?: string | null;
+  run_ref?: string | null;
 }
 
 /** The words on the Issues screen for a status. */

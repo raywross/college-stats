@@ -321,7 +321,8 @@ test("guard: the matcher check flags a catch-all or a public route", () => {
 function sessionCheckProblems(file: string, src: string): string[] {
   const code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
   const problems: string[] = [];
-  if (!/\.auth\.getClaims\(/.test(code)) problems.push(`${file}: doesn't call auth.getClaims()`);
+  // getClaimsWithKeys(supabase.auth) is auth.getClaims() with the bundled signing keys (lib/auth-jwks.ts).
+  if (!/\.auth\.getClaims\(|\bgetClaimsWithKeys\(\w+\.auth\)/.test(code)) problems.push(`${file}: doesn't call auth.getClaims()`);
   if (/\bauth\.getUser\(/.test(code)) problems.push(`${file}: calls auth.getUser()`);
   if (/\bgetSession\(/.test(code)) problems.push(`${file}: calls getSession()`);
   return problems;
@@ -334,6 +335,7 @@ test("lib/auth.ts and proxy.ts verify the session with getClaims(), never auth.g
 
 test("guard: the session check flags auth.getUser(), getSession(), and a missing getClaims()", () => {
   assert.deepEqual(sessionCheckProblems("a.ts", "await supabase.auth.getClaims();"), []);
+  assert.deepEqual(sessionCheckProblems("a.ts", "await getClaimsWithKeys(supabase.auth);"), []);
   assert.deepEqual(sessionCheckProblems("a.ts", "/** never getSession() or auth.getUser() */\n// auth.getUser() was slow\nawait supabase.auth.getClaims();"), []);
   assert.deepEqual(sessionCheckProblems("a.ts", "await supabase.auth.getUser();"), ["a.ts: doesn't call auth.getClaims()", "a.ts: calls auth.getUser()"]);
   assert.deepEqual(sessionCheckProblems("a.ts", "await supabase.auth.getClaims();\nconst { data } = await supabase.auth.getSession();"), ["a.ts: calls getSession()"]);

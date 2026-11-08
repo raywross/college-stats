@@ -908,3 +908,10 @@ new code falls back to today's reads while a function is missing):
   `, lineage lazy`.
 - Closed in round 3: the pointer check runs under `after()` (`lib/data.ts getServed`), so it no longer dies with the
   response (`checking for a newer snapshot failed … timed out` / `write EPIPE`).
+- Closed in round 4: the session check's cold `auth` call (`/advisor 2109ms: … (auth 1175; …)`, `auth 1623` on the
+  preview). It was the signing-key fetch: auth-js caches the JWKS module-wide per instance (ten minutes), so warm
+  instances showed no `auth` call and fresh ones paid the fetch first. The keys are bundled at build time
+  (`scripts/fetch-jwks.mts` → `.data/auth/jwks.json`, imported by `lib/auth-jwks.ts`) and passed to `getClaims` as
+  `{ jwks }` in `lib/auth.ts` and `proxy.ts`; a rotated-in `kid` falls through to the library's fetch
+  ([accounts.md](product/accounts.md) "Checking the session without fetching the keys"). An `auth` span left after
+  the deploy is a token refresh (within 90 s of expiry), not the keys.

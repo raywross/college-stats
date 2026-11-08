@@ -564,3 +564,27 @@ Recommended defaults; the build proceeds on them unless the owner says otherwise
 - No migration: `steward.reviews` is a new collection of `data_documents`. The workflow change needs no new secret;
   `CRON_SECRET` (already a secret) and a `SITE_URL` repository variable are optional for restarting a Vercel job.
 - Reviews of the Steward's own runs: by hand only (`--job data-steward`), never from `workflow_run`.
+### Phone pass (U2)
+
+- **`ResponsiveTable`** (`components/admin/ResponsiveTable.tsx`, a Server Component): a `<table>` from `md`, one card per
+  row below it (`title` column as the heading, `fact` columns as one wrapped "Header: value" line, `actions` as a row of
+  44 px buttons, `detail` columns inside `<details>Details</details>`). A column's `help` puts the (i) icon beside its
+  header. Every table in `app/admin/**` and `components/admin/**` goes through it, including the ones U3 and U4 added
+  (both Health tabs, Selectivity movers and counts, Changes, Versions, history, the high school course lists, the views
+  pages, Jobs and runs, Review, Proposals, To do, Findings clusters); the ops tables' hand-rolled table-plus-card pairs
+  are gone. The one `<table>` left outside it is the visually hidden copy of a chart's numbers in `ViewCharts.tsx`
+  (`sr-only`), which a screen reader needs and a sighted phone user never sees.
+- **`RecordActions`** (`components/admin/RecordActions.tsx`): a wrapping row of 44 px buttons at the top of a person,
+  household, student record, organization and college page. Each child is an `AdminForm` or `ConfirmTyped` passed `sheet`,
+  so below `md` its form opens in a `SheetDialog`. The side "Actions" columns are gone. An organization has no write
+  action yet, so its row holds two links (the owner's account, All organizations).
+- **`Collapsible`** and `Panel`'s `collapse` prop: `collapse="First line"` folds the panel's body to that line with
+  Show/Hide below `md` and leaves it open from `md` (matchMedia, as `FieldEditor`'s `usePhone`). Used on the secondary
+  panels of the person, student, organization and college pages; the primary panels stay open.
+- **One column below `md`**: form grids (log filters, Review filters, person picker, essay prompts form) open at `md`,
+  not `sm`.
+- **No minimum widths**: no `min-w-<size>` class under `app/admin/**` or `components/admin/**` (the count badges and
+  health counts that carried one now size by padding). `min-w-0`, which lets a flex child shrink and sets no width, is
+  allowed. `tests/admin-phone.test.mts` guards this, the `<table>` rule, the five RecordActions pages and the form
+  breakpoints; the render tests use `tests/fixtures/responsive-table-fake.mjs` for the table.
+- The high school page shows a course by name only; the course key no longer appears on screen.

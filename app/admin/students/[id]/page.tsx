@@ -6,6 +6,7 @@ import { AdminForm } from "@/components/admin/AdminForm";
 import { ConfirmTyped } from "@/components/admin/ConfirmTyped";
 import { Empty, Fields, Muted, PageHeader, Panel } from "@/components/admin/Panel";
 import { PersonPicker } from "@/components/admin/PersonPicker";
+import { RecordActions } from "@/components/admin/RecordActions";
 import { RecordFieldsView } from "@/components/admin/RecordFields";
 import { StandingPanelSlot } from "@/components/admin/StandingPanelSlot";
 import { StatusChip } from "@/components/admin/StatusChip";
@@ -80,8 +81,39 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
         subtitle="This is what the family sees. Your visit was recorded: the student sees “Quad support viewed your information”."
       />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]">
-        <div className="min-w-0 space-y-5">
+      {deleted ? (
+        <p className="mb-5 text-sm text-muted-foreground">This record is deleted. The purge removes it 30 days after it was deleted.</p>
+      ) : (
+        <RecordActions>
+          <AdminForm
+            action={editStudent}
+            hidden={{ student: id }}
+            trigger="Edit record"
+            submit="Save"
+            sheet
+            fields={[
+              { name: "display_name", label: "Name", defaultValue: record.display_name ?? "", maxLength: 80 },
+              { name: "grad_year", label: "Graduation year", type: "number", defaultValue: record.grad_year?.toString() ?? "" },
+              { name: "phone", label: "Phone", type: "tel", defaultValue: record.phone ?? "" },
+            ]}
+          />
+          {managed ? (
+            <ConfirmTyped
+              action={deleteStudent}
+              hidden={{ student: id }}
+              trigger="Delete the record"
+              submit="Delete record"
+              sheet
+              expected={CONFIRM_DELETE_RECORD}
+              description="For a child a family added by mistake. Removes the record from its household and cancels its hand-over invitations; the purge removes it for good after 30 days."
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">This record belongs to an account. Use that person&apos;s page to delete or restore the account.</p>
+          )}
+        </RecordActions>
+      )}
+
+      <div className="space-y-5">
           <Panel help="student-record" title="Record" id="record">
             <Fields
               items={[
@@ -131,11 +163,11 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
             />
           </Panel>
 
-          <Panel help="student-record" title="Numbers" id="numbers" aside={student.profile ? <Muted>Updated {fmtDate(student.profile.updated_at)}</Muted> : undefined}>
+          <Panel collapse="Numbers" help="student-record" title="Numbers" id="numbers" aside={student.profile ? <Muted>Updated {fmtDate(student.profile.updated_at)}</Muted> : undefined}>
             {student.profile ? <RecordFieldsView {...studentNumbers(student.profile.data)} empty="Nothing entered yet." /> : <Empty>Nothing entered yet.</Empty>}
           </Panel>
 
-          <Panel help="student-record" title="Lists" id="lists">
+          <Panel collapse="Lists" help="student-record" title="Lists" id="lists">
             {student.lists.length === 0 ? (
               <Empty>No lists.</Empty>
             ) : (
@@ -147,11 +179,11 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
             )}
           </Panel>
 
-          <Panel help="student-record" title="Advisor" id="plan">
+          <Panel collapse="Advisor plan" help="student-record" title="Advisor" id="plan">
             <PlanBlock plan={student.plan} />
           </Panel>
 
-          <Panel help="student-record" title="Snapshots" id="snapshots">
+          <Panel collapse="Saved snapshots" help="student-record" title="Snapshots" id="snapshots">
             {student.snapshots.length === 0 ? (
               <Empty>No application snapshots.</Empty>
             ) : (
@@ -198,7 +230,7 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
             </Panel>
           )}
 
-          <Panel help="access-log" title="Who viewed this record" id="views">
+          <Panel collapse="Who viewed this record" help="access-log" title="Who viewed this record" id="views">
             {student.accessLog.length === 0 ? (
               <Empty>No views recorded.</Empty>
             ) : (
@@ -212,42 +244,6 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
               </ul>
             )}
           </Panel>
-        </div>
-
-        <aside className="min-w-0">
-          <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-5 lg:sticky lg:top-(--header-h)">
-            <h2 className="font-display text-lg font-bold tracking-tight">Actions</h2>
-            {deleted ? (
-              <p className="text-sm text-muted-foreground">This record is deleted. The purge removes it 30 days after it was deleted.</p>
-            ) : (
-              <div className="space-y-3">
-                <AdminForm
-                  action={editStudent}
-                  hidden={{ student: id }}
-                  trigger="Edit record"
-                  submit="Save"
-                  fields={[
-                    { name: "display_name", label: "Name", defaultValue: record.display_name ?? "", maxLength: 80 },
-                    { name: "grad_year", label: "Graduation year", type: "number", defaultValue: record.grad_year?.toString() ?? "" },
-                    { name: "phone", label: "Phone", type: "tel", defaultValue: record.phone ?? "" },
-                  ]}
-                />
-                {managed ? (
-                  <ConfirmTyped
-                    action={deleteStudent}
-                    hidden={{ student: id }}
-                    trigger="Delete the record"
-                    submit="Delete record"
-                    expected={CONFIRM_DELETE_RECORD}
-                    description="For a child a family added by mistake. Removes the record from its household and cancels its hand-over invitations; the purge removes it for good after 30 days."
-                  />
-                ) : (
-                  <p className="text-xs text-muted-foreground">This record belongs to an account. Use that person&apos;s page to delete or restore the account.</p>
-                )}
-              </div>
-            )}
-          </div>
-        </aside>
       </div>
     </>
   );

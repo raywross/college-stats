@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Empty, Fields, Muted, PageHeader, Panel } from "@/components/admin/Panel";
+import { RecordActions } from "@/components/admin/RecordActions";
+import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
 import { EstimateInputsPanel } from "@/components/admin/EstimateInputsPanel";
 import { collegeInputsFor } from "@/lib/admin/estimate-inputs-load";
@@ -73,17 +75,19 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
             {school.location.city}, {school.location.state} · {rate === null ? "No admit rate" : `${pctSmart(rate)} admitted`} · unit {unit} ·{" "}
             <Link href={`/schools/${unit}`} className="underline-offset-4 hover:underline">
               Public profile
-            </Link>{" "}
-            <Link href={`/admin/data/colleges/${unit}/edit`} className="ml-1 inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
-              Edit
-            </Link>
-            <Link href={`/admin/data/colleges/${unit}/review`} className="ml-1 inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
-              Review
             </Link>
           </>
         }
       />
-      <SourceNote fields={["admissions.acceptance_rate", "selectivity.tier"]} school={school} className="-mt-3 mb-5" />
+      <SourceNote fields={["admissions.acceptance_rate", "selectivity.tier"]} school={school} className="-mt-3 mb-3" />
+      <RecordActions>
+        <Link key="edit" href={`/admin/data/colleges/${unit}/edit`} className="inline-flex h-11 items-center justify-center rounded-full border px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+          Edit
+        </Link>
+        <Link key="review" href={`/admin/data/colleges/${unit}/review`} className="inline-flex h-11 items-center justify-center rounded-full border px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+          Review
+        </Link>
+      </RecordActions>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="min-w-0 space-y-5">
@@ -159,43 +163,41 @@ function PoolBlock({ pool }: { pool: SelectivityPoolView }) {
           score <span className="font-mono text-foreground tabular-nums">{fmt(pool.score)}</span> · plain cutoffs: {SELECTIVITY_TIER_LABELS[pool.plainTier]} · stored: {pool.publishedTier ? SELECTIVITY_TIER_LABELS[pool.publishedTier] : "none"}
         </span>
       </h3>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[36rem] text-left text-sm">
-          <thead className="text-xs text-muted-foreground">
-            <tr>
-              <th className="py-1.5 pr-3 font-semibold">Input</th>
-              <th className="py-1.5 pr-3 font-semibold">Value</th>
-              <th className="py-1.5 pr-3 font-semibold">
+      <ResponsiveTable
+        rows={pool.rows}
+        columns={
+          [
+            { key: "input", header: "Input", role: "title", cell: (r) => r.label },
+            {
+              key: "value",
+              header: "Value",
+              cell: (r) => (
+                <>
+                  {r.display}
+                  {!r.present && <span className="block text-xs font-normal text-muted-foreground">{r.filled === "fit" ? "filled from the fit on the other four" : "read as the middle"}</span>}
+                </>
+              ),
+            },
+            { key: "percentile", header: (
                 <span className="inline-flex items-center gap-1">
                   Percentile <HelpTip help="percentile" />
                 </span>
-              </th>
-              <th className="py-1.5 pr-3 font-semibold">
+              ),
+              role: "detail", cell: (r) => (r.percentile === null ? <Muted>—</Muted> : `${fmt(r.percentile, 1)}`) },
+            { key: "reading", header: (
                 <span className="inline-flex items-center gap-1">
                   Reading <HelpTip help="reading" />
                 </span>
-              </th>
-              <th className="py-1.5 pr-3 font-semibold">Weight</th>
-              <th className="py-1.5 font-semibold">Contribution</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y tabular-nums">
-            {pool.rows.map((r) => (
-              <tr key={r.input}>
-                <td className="py-1.5 pr-3 font-medium">{r.label}</td>
-                <td className="py-1.5 pr-3">
-                  {r.display}
-                  {!r.present && <span className="block text-xs text-muted-foreground">{r.filled === "fit" ? "filled from the fit on the other four" : "read as the middle"}</span>}
-                </td>
-                <td className="py-1.5 pr-3">{r.percentile === null ? <Muted>—</Muted> : `${fmt(r.percentile, 1)}`}</td>
-                <td className="py-1.5 pr-3 font-mono text-[13px]">{readingText(r.reading)}</td>
-                <td className="py-1.5 pr-3">{r.weight}</td>
-                <td className="py-1.5 font-mono text-[13px]">{readingText(r.contribution)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              ),
+              role: "detail", cell: (r) => readingText(r.reading) },
+            { key: "weight", header: "Weight", role: "detail", cell: (r) => r.weight },
+            { key: "contribution", header: "Contribution", cell: (r) => readingText(r.contribution) },
+          ] as readonly Column<(typeof pool.rows)[number]>[]
+        }
+        rowKey={(r) => r.input}
+        caption={`${pool.label} selectivity inputs`}
+        empty="No input recorded."
+      />
       <p className="text-xs text-muted-foreground">
         Weighted mean {readingText(pool.weightedMean)} × evidence <HelpTip help="evidence" className="size-4" /> {fmt(pool.evidence.factor, 3)} (
         {pool.evidence.admitted === null ? "no admitted count" : `${pool.evidence.admitted.toLocaleString("en-US")} admitted`}) → {fmt(pool.unclamped)}
@@ -233,7 +235,7 @@ function GpaBlock({ panel, school }: { panel: GpaPanel; school: School }) {
     ...panel.inputs.map((i) => ({ label: `Model input: ${i.label}`, value: i.value })),
   ];
   return (
-    <Panel help="college-gpa" title="GPA" id="gpa" aside={<Muted>What the standing model reads</Muted>}>
+    <Panel collapse="GPA" help="college-gpa" title="GPA" id="gpa" aside={<Muted>What the standing model reads</Muted>}>
       <Fields items={items} />
       {panel.field && <SourceNote fields={[panel.field]} school={school} className="mt-3" />}
     </Panel>
@@ -247,7 +249,7 @@ function GpaBlock({ panel, school }: { panel: GpaPanel; school: School }) {
 async function HiddenBlock({ rows, school }: { rows: HiddenFieldRow[]; school: School }) {
   const { citeField } = await getData();
   return (
-    <Panel help="hidden-value" title="Derived, not shown" id="hidden" aside={<Muted>Registry fields marked hidden</Muted>}>
+    <Panel collapse="Derived values, not shown" help="hidden-value" title="Derived, not shown" id="hidden" aside={<Muted>Registry fields marked hidden</Muted>}>
       {rows.length === 0 ? (
         <Empty>No registry field is marked hidden.</Empty>
       ) : (
@@ -281,7 +283,7 @@ async function HiddenBlock({ rows, school }: { rows: HiddenFieldRow[]; school: S
 
 function HealthBlock({ health, generated, opsHref, reviewHref }: { health: CollegeHealth | null; generated: string | null; opsHref: string; reviewHref: string }) {
   return (
-    <Panel help="data-health" title="Files and collection" id="health" aside={health ? <HealthChip status={health.overall} /> : undefined}>
+    <Panel collapse="Files and collection" help="data-health" title="Files and collection" id="health" aside={health ? <HealthChip status={health.overall} /> : undefined}>
       {!health ? (
         <Empty>No health card: this college isn&apos;t in the health file, or the file couldn&apos;t be read.</Empty>
       ) : (

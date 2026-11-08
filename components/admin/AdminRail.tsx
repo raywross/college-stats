@@ -107,7 +107,7 @@ export function AdminRail({ needsYou }: { needsYou?: number | null }) {
 
 function Badge({ n, on }: { n: number; on: boolean }) {
   return (
-    <span className={cn("inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold tabular-nums", on ? "bg-primary-foreground text-primary" : "bg-pop text-pop-foreground")}>
+    <span className={cn("inline-flex h-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold tabular-nums", on ? "bg-primary-foreground text-primary" : "bg-pop text-pop-foreground")}>
       <span className="sr-only">Needs you: </span>
       {n > 99 ? "99+" : n}
     </span>

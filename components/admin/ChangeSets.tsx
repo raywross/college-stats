@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { Empty } from "@/components/admin/Panel";
+import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
 import { CopyButton } from "@/components/api/CopyButton";
 import { fmtDateTime } from "@/lib/admin/console";
 import { collectionLabel } from "@/lib/admin/words";
@@ -33,74 +34,63 @@ export function ChangeSetChips({ row }: { row: ChangeSetRow }) {
 }
 
 /**
- * `/admin/data/changes` (specs/data-platform/change-sets.md "The console", Change sets row): newest first, each
- * with its status, source, counts, cost, and run link. Wide: it scrolls inside its own box on a phone.
+ * `/admin/data/changes` (specs/data-platform/change-sets.md "The console", Changes row), through `ResponsiveTable`:
+ * newest first, each with its status, source, counts, cost, and run link.
  */
 export function ChangeSetsTable({ rows, repo }: { rows: ChangeSetRow[]; repo: string }) {
-  if (!rows.length) return <Empty>No changes match.</Empty>;
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-border">
-      <table className="w-full min-w-[48rem] text-sm">
-        <caption className="sr-only">Changes, newest first</caption>
-        <thead className="bg-muted/50 text-left text-muted-foreground">
-          <tr>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Change
-            </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Status
-            </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Source
-            </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Documents
-            </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Cost
-            </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Run
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const run = runHref(row.run_ref, repo);
-            return (
-              <tr key={row.id} className="border-t border-border align-top">
-                <th scope="row" className="px-3 py-2 text-left font-medium">
-                  <Link href={`/admin/data/changes/${row.id}`} className={linkCls}>
-                    #{row.id}
-                  </Link>
-                  <div className="text-xs font-normal text-muted-foreground">{fmtDateTime(row.created_at)}</div>
-                </th>
-                <td className="px-3 py-2">
-                  <ChangeSetChips row={row} />
-                  {row.held_reason && <div className="mt-1 max-w-64 text-xs text-muted-foreground">{row.held_reason}</div>}
-                </td>
-                <td className="px-3 py-2">
-                  {row.source}
-                  <div className="text-xs text-muted-foreground">{kindLabel(row.kind)}</div>
-                </td>
-                <td className="px-3 py-2 tabular-nums">{countsLabel(row.summary)}</td>
-                <td className="px-3 py-2 tabular-nums">{costLabel(row.summary) ?? "—"}</td>
-                <td className="px-3 py-2">
-                  {run ? (
-                    <a href={run} target="_blank" rel="noopener noreferrer" className={linkCls}>
-                      Run {row.run_ref}
-                    </a>
-                  ) : (
-                    <span className="text-muted-foreground">{row.run_ref ?? "—"}</span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+  const columns: readonly Column<ChangeSetRow>[] = [
+    {
+      key: "change",
+      header: "Change",
+      role: "title",
+      cell: (row) => (
+        <>
+          <Link href={`/admin/data/changes/${row.id}`} className={linkCls}>
+            #{row.id}
+          </Link>
+          <div className="text-xs font-normal text-muted-foreground">{fmtDateTime(row.created_at)}</div>
+        </>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row) => (
+        <>
+          <ChangeSetChips row={row} />
+          {row.held_reason && <div className="mt-1 text-xs text-muted-foreground">{row.held_reason}</div>}
+        </>
+      ),
+    },
+    {
+      key: "source",
+      header: "Source",
+      cell: (row) => (
+        <>
+          {row.source}
+          <div className="text-xs text-muted-foreground">{kindLabel(row.kind)}</div>
+        </>
+      ),
+    },
+    { key: "documents", header: "Documents", cell: (row) => countsLabel(row.summary) },
+    { key: "cost", header: "Cost", role: "detail", cell: (row) => costLabel(row.summary) ?? "—" },
+    {
+      key: "run",
+      header: "Run",
+      role: "detail",
+      cell: (row) => {
+        const run = runHref(row.run_ref, repo);
+        return run ? (
+          <a href={run} target="_blank" rel="noopener noreferrer" className={linkCls}>
+            Run {row.run_ref}
+          </a>
+        ) : (
+          <span className="text-muted-foreground">{row.run_ref ?? "—"}</span>
+        );
+      },
+    },
+  ];
+  return <ResponsiveTable rows={rows} columns={columns} rowKey={(row) => String(row.id)} caption="Changes, newest first" empty="No changes match." />;
 }
 
 /**

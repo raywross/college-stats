@@ -234,7 +234,7 @@ test("the status line names each job whose last run failed, linking it, with the
   // Counts: 2 failed, 1 running, 1 ok, the rest never recorded.
   const counts = [...html.matchAll(/<span class="font-semibold tabular-nums">(\d+)<\/span>/g)].map((m) => Number(m[1]));
   assert.deepEqual(counts, [2, 1, JOBS.length - 4, 0, 1]);
-  assert.equal((html.match(/bg-destructive\/5/g) ?? []).length, 3); // the strip and the two failed rows
+  assert.equal((html.match(/bg-destructive\/5/g) ?? []).length, 5); // the strip, and the two failed rows in the table and in the phone cards
   assert.match(html, /data-outcome="failed"/);
 });
 

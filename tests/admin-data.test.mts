@@ -553,6 +553,7 @@ async function loadTsx(rel: string): Promise<Record<string, unknown>> {
   const code = outputText
     .replace(/from "next\/link"/g, `from ${JSON.stringify(pathToFileURL(join(tmp, "link.mjs")).href)}`)
     .replace(/import \{([^}]*)\} from "(@\/(?:components|app)\/[^"]+)";/g, (_m, names: string, spec: string) => {
+      if (spec.endsWith("/ResponsiveTable")) return `import { ResponsiveTable } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, "fixtures/responsive-table-fake.mjs")).href)};`;
       const list = names.split(",").map((s) => s.trim().split(" as ").pop()!.trim()).filter(Boolean);
       return `import {${names}} from ${JSON.stringify(stubModule(`${rel.replace(/[^a-z]/gi, "_")}${n++}-${spec.split("/").pop()}`, list))};`;
     });

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
+import { ResponsiveTable } from "@/components/admin/ResponsiveTable";
 import { requireAdmin } from "@/lib/admin/auth";
 import { getData } from "@/lib/data";
 import { ELITE_COUNT_RANGE } from "@/lib/selectivity";
@@ -176,40 +177,21 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
               Hiding method changes and moves under {DISPLAY_MOVE_MIN} points. Every change is recorded; &ldquo;Show every change&rdquo; lists them.
             </p>
           )}
-          {moved.length === 0 ? (
-            <Empty>No moves in the last {days} days{every ? "" : ` of ${DISPLAY_MOVE_MIN} points or more, or across a tier`}.</Empty>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-xs text-muted-foreground">
-                  <tr>
-                    <th className="py-1.5 pr-3 font-medium">College</th>
-                    <th className="py-1.5 pr-3 font-medium">Pool</th>
-                    <th className="py-1.5 pr-3 text-right font-medium">Score</th>
-                    <th className="py-1.5 pr-3 text-right font-medium">Change</th>
-                    <th className="py-1.5 pr-3 font-medium">Tier</th>
-                    <th className="py-1.5 pr-3 font-medium">Cause</th>
-                    <th className="py-1.5 font-medium">When</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {moved.map((m) => (
-                    <tr key={`${m.unitId}-${m.pool}`}>
-                      <td className="py-1.5 pr-3">{collegeLink(m.unitId)}</td>
-                      <td className="py-1.5 pr-3 whitespace-nowrap">{POOL_LABELS[m.pool]}</td>
-                      <td className="py-1.5 pr-3 text-right whitespace-nowrap tabular-nums">
-                        {m.scoreFrom === null ? "—" : m.scoreFrom.toFixed(2)} → {m.scoreTo === null ? "—" : m.scoreTo.toFixed(2)}
-                      </td>
-                      <td className="py-1.5 pr-3 text-right tabular-nums">{m.delta === null ? "new" : `${m.delta > 0 ? "+" : "−"}${Math.abs(m.delta).toFixed(2)}`}</td>
-                      <td className="py-1.5 pr-3 whitespace-nowrap">{m.tierFrom === m.tierTo ? tierWord(m.tierTo) : `${tierWord(m.tierFrom)} → ${tierWord(m.tierTo)}`}</td>
-                      <td className="py-1.5 pr-3 whitespace-nowrap">{CAUSE_LABELS[m.cause]}</td>
-                      <td className="py-1.5 whitespace-nowrap tabular-nums">{day(m.movedAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <ResponsiveTable
+            rows={moved}
+            columns={[
+              { key: "college", header: "College", role: "title", cell: (m) => collegeLink(m.unitId) },
+              { key: "pool", header: "Pool", cell: (m) => POOL_LABELS[m.pool] },
+              { key: "score", header: "Score", align: "right", cell: (m) => `${m.scoreFrom === null ? "—" : m.scoreFrom.toFixed(2)} → ${m.scoreTo === null ? "—" : m.scoreTo.toFixed(2)}` },
+              { key: "change", header: "Change", align: "right", cell: (m) => (m.delta === null ? "new" : `${m.delta > 0 ? "+" : "−"}${Math.abs(m.delta).toFixed(2)}`) },
+              { key: "tier", header: "Tier", cell: (m) => (m.tierFrom === m.tierTo ? tierWord(m.tierTo) : `${tierWord(m.tierFrom)} → ${tierWord(m.tierTo)}`) },
+              { key: "cause", header: "Cause", role: "detail", cell: (m) => CAUSE_LABELS[m.cause] },
+              { key: "when", header: "When", cell: (m) => day(m.movedAt) },
+            ]}
+            rowKey={(m) => `${m.unitId}-${m.pool}`}
+            caption="Movers, newest first"
+            empty={`No moves in the last ${days} days${every ? "" : ` of ${DISPLAY_MOVE_MIN} points or more, or across a tier`}.`}
+          />
         </Panel>
 
         <Panel help="follower-emails" title="Follower emails" id="followers">
@@ -236,37 +218,39 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
           {counts.length === 0 ? (
             <Empty>Nothing recorded yet.</Empty>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-xs text-muted-foreground">
-                  <tr>
-                    <th className="py-1.5 pr-3 font-medium">Publish</th>
-                    {SELECTIVITY_TIERS.map((t) => (
-                      <th key={t} className="py-1.5 pr-3 text-right font-medium">
-                        {SELECTIVITY_TIER_LABELS[t]}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {counts.map((c, i) => {
-                    const elite = c.counts.elite ?? 0;
-                    const outside = countsPool === "all" && (elite < lo || elite > hi);
-                    return (
-                      <tr key={`${c.publishedAt}-${i}`}>
-                        <td className="py-1.5 pr-3 whitespace-nowrap">
-                          {day(c.publishedAt)} <span className="text-xs text-muted-foreground">· {c.method}{c.cause === "method" ? " (new method)" : ""}</span>
-                        </td>
-                        {SELECTIVITY_TIERS.map((t) => (
-                          <td key={t} className={`py-1.5 pr-3 text-right tabular-nums ${t === "elite" && outside ? "font-semibold text-destructive" : ""}`}>
-                            {c.counts[t] ?? 0}
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div>
+              <ResponsiveTable
+                rows={counts.map((c, i) => ({ ...c, key: `${c.publishedAt}-${i}` }))}
+                columns={[
+                  {
+                    key: "publish",
+                    header: "Publish",
+                    role: "title",
+                    cell: (c) => (
+                      <>
+                        {day(c.publishedAt)}{" "}
+                        <span className="text-xs font-normal text-muted-foreground">
+                          · {c.method}
+                          {c.cause === "method" ? " (new method)" : ""}
+                        </span>
+                      </>
+                    ),
+                  },
+                  ...SELECTIVITY_TIERS.map((t) => ({
+                    key: t,
+                    header: SELECTIVITY_TIER_LABELS[t],
+                    align: "right" as const,
+                    cell: (c: (typeof counts)[number]) => {
+                      const elite = c.counts.elite ?? 0;
+                      const outside = countsPool === "all" && (elite < lo || elite > hi);
+                      return <span className={t === "elite" && outside ? "font-semibold text-destructive" : ""}>{c.counts[t] ?? 0}</span>;
+                    },
+                  })),
+                ]}
+                rowKey={(c) => c.key}
+                caption="Tier counts after each publish, newest first"
+                empty="Nothing recorded yet."
+              />
               <p className="mt-2 text-xs text-muted-foreground">
                 Ultra selective is held to {lo}–{hi} colleges for all applicants (ELITE_COUNT_RANGE); a count outside it is in red.
               </p>

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
+import { PageHeader, Panel } from "@/components/admin/Panel";
+import { ResponsiveTable } from "@/components/admin/ResponsiveTable";
 import { requireAdmin } from "@/lib/admin/auth";
 import { fmtDateTime } from "@/lib/admin/console";
 import { collegeViewers, viewTimes } from "@/lib/admin/college-views";
@@ -42,65 +43,43 @@ export default async function CollegeViewsPage({ params, searchParams }: PagePro
       />
       {signedOut ? (
         <Panel help="views-log" title={`${times.length} ${times.length === 1 ? "visit" : "visits"}`}>
-          {times.length === 0 ? (
-            <Empty>No signed-out visits.</Empty>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-xs text-muted-foreground">
-                  <tr>
-                    <th className="py-1.5 pr-4 font-medium">When</th>
-                    <th className="py-1.5 font-medium">Page</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {times.map((t, i) => (
-                    <tr key={`${t.viewedAt}-${i}`}>
-                      <td className="py-1.5 pr-4 tabular-nums whitespace-nowrap">{fmtDateTime(t.viewedAt)}</td>
-                      <td className="py-1.5">{pageLabel(t.page)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <ResponsiveTable
+            rows={times.map((t, i) => ({ ...t, key: `${t.viewedAt}-${i}` }))}
+            columns={[
+              { key: "when", header: "When", role: "title", cell: (t) => fmtDateTime(t.viewedAt) },
+              { key: "page", header: "Page", cell: (t) => pageLabel(t.page) },
+            ]}
+            rowKey={(t) => t.key}
+            caption="Signed-out visits, newest first"
+            empty="No signed-out visits."
+          />
         </Panel>
       ) : (
         <Panel help="views-log" title="Everyone">
-          {looking.viewers.length === 0 ? (
-            <Empty>No views recorded yet.</Empty>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-xs text-muted-foreground">
-                  <tr>
-                    <th className="py-1.5 pr-4 font-medium">Who</th>
-                    <th className="py-1.5 pr-4 text-right font-medium">Views</th>
-                    <th className="py-1.5 pr-4 font-medium">First</th>
-                    <th className="py-1.5 font-medium">Last</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {looking.viewers.map((v) => (
-                    <tr key={v.userId ?? "signed-out"}>
-                      <td className="py-1.5 pr-4">
-                        <Link
-                          href={v.userId ? `/admin/people/${v.userId}/views?unit=${unit}` : `/admin/data/colleges/${unit}/views?signed_out=1`}
-                          className="font-medium underline-offset-4 hover:underline"
-                        >
-                          {v.userId ? (v.name ?? v.email ?? "No name") : "Signed-out visitors"}
-                        </Link>
-                        {v.userId && v.name && v.email && <span className="block text-xs break-all text-muted-foreground">{v.email}</span>}
-                      </td>
-                      <td className="py-1.5 pr-4 text-right tabular-nums">{v.views.toLocaleString("en-US")}</td>
-                      <td className="py-1.5 pr-4 tabular-nums whitespace-nowrap">{fmtDateTime(v.firstViewed)}</td>
-                      <td className="py-1.5 tabular-nums whitespace-nowrap">{fmtDateTime(v.lastViewed)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <ResponsiveTable
+            rows={looking.viewers}
+            columns={[
+              {
+                key: "who",
+                header: "Who",
+                role: "title",
+                cell: (v) => (
+                  <>
+                    <Link href={v.userId ? `/admin/people/${v.userId}/views?unit=${unit}` : `/admin/data/colleges/${unit}/views?signed_out=1`} className="font-medium underline-offset-4 hover:underline">
+                      {v.userId ? (v.name ?? v.email ?? "No name") : "Signed-out visitors"}
+                    </Link>
+                    {v.userId && v.name && v.email && <span className="block text-xs break-all font-normal text-muted-foreground">{v.email}</span>}
+                  </>
+                ),
+              },
+              { key: "views", header: "Views", align: "right", cell: (v) => v.views.toLocaleString("en-US") },
+              { key: "first", header: "First", role: "detail", cell: (v) => fmtDateTime(v.firstViewed) },
+              { key: "last", header: "Last", cell: (v) => fmtDateTime(v.lastViewed) },
+            ]}
+            rowKey={(v) => v.userId ?? "signed-out"}
+            caption="Everyone who has opened this college, most views first"
+            empty="No views recorded yet."
+          />
         </Panel>
       )}
     </>

@@ -27,7 +27,7 @@ export default async function LogPage({ searchParams }: PageProps<"/admin/log">)
   return (
     <>
       <PageHeader help="log" title="Log" subtitle="Every admin action, newest first." />
-      <form action="/admin/log" method="get" className="mb-5 grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-2 xl:grid-cols-4">
+      <form action="/admin/log" method="get" className="mb-5 grid gap-3 rounded-2xl border bg-card p-4 md:grid-cols-2 xl:grid-cols-4">
         <label className="space-y-1 text-sm font-semibold">
           Action
           <select name="action" defaultValue={query.action ?? ""} className={selectCls}>

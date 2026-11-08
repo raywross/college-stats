@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Empty, Fields, Muted, PageHeader, Panel } from "@/components/admin/Panel";
+import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminHighSchool } from "@/lib/admin/high-school";
 import { COURSE_LIST_MIN_STUDENTS, type CourseCountRow } from "@/lib/admin/hidden";
@@ -125,6 +126,16 @@ export default async function HighSchoolPage({ params }: PageProps<"/admin/data/
   );
 }
 
+const courseCountColumns: readonly Column<CourseCountRow>[] = [
+  {
+    key: "course",
+    header: "Course",
+    role: "title",
+    cell: (r) => r.name,
+  },
+  { key: "students", header: "Students", align: "right", cell: (r) => r.students },
+];
+
 /**
  * The threshold in a sentence, with no function or table names (specs/product/admin-redesign.md "Data"): the line is
  * the database's `c.students >= 3`, mirrored by COURSE_LIST_MIN_STUDENTS.
@@ -136,24 +147,11 @@ function courseLineSentence(min: number): string {
 /** One of the two lists: each course's name and how many students list it, most first. */
 function CourseList({ id, title, rows, empty, muted = false }: { id: string; title: string; rows: CourseCountRow[]; empty: string; muted?: boolean }) {
   return (
-    <section aria-labelledby={`courses-${id}`} className="min-w-0">
-      <h3 id={`courses-${id}`} className="text-sm font-semibold">
+    <section aria-labelledby={`courses-${id}`} className={muted ? "text-muted-foreground" : ""}>
+      <h3 id={`courses-${id}`} className="mb-1.5 text-sm font-semibold">
         {title} <span className="font-normal text-muted-foreground">({rows.length})</span>
       </h3>
-      {rows.length === 0 ? (
-        <p className="mt-1.5 text-sm text-muted-foreground">{empty}</p>
-      ) : (
-        <ul className={`mt-1.5 divide-y divide-border text-sm tabular-nums ${muted ? "text-muted-foreground" : ""}`}>
-          {rows.map((r) => (
-            <li key={r.key} className="flex items-baseline justify-between gap-3 py-1.5">
-              <span className="min-w-0 break-words">{r.name}</span>
-              <span className="shrink-0">
-                {r.students} {r.students === 1 ? "student" : "students"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ResponsiveTable rows={rows} columns={courseCountColumns} rowKey={(r) => r.key} caption={title} empty={empty} />
     </section>
   );
 }

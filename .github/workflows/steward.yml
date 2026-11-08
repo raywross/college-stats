@@ -10,6 +10,12 @@
 # - mode apply with a proposal: no model; the console's Approve dispatches it for hold, refile, recipe and reject rows.
 #   Its change set has source steward-apply, and only when a hold or refile changed a record does it start the
 #   publisher (a workflow_dispatch of publish-snapshot.yml, which is why that job alone has actions: write).
+# - Job review (the review job; specs/product/admin-redesign.md "What the Steward reviews"): after every scheduled
+#   workflow completes (workflow_run), and when a Vercel job's run is recorded (lib/jobs/record.ts dispatches mode
+#   review with job and run), mode review reads that one run, writes steward.reviews, and for a flagged or failed run
+#   one Haiku note ($0.10 a run, $3 a week), a finding, and the one repair its fixed tools allow: start a restartable
+#   job's workflow again (once a day) or the publisher, or leave a finding on a held change. College-reported keeps
+#   its run path above and is reviewed too. A run already reviewed is skipped by the script.
 # The script enforces the budget and the week's $40 cap. Skips with a notice while a secret is missing.
 name: Data Steward
 
@@ -17,8 +23,9 @@ name: Data Steward
 run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs.request_id) || github.workflow }}"
 
 on:
+  # Every scheduled workflow but this one (lib/jobs/registry.ts; tests/steward-workflow.test.mts keeps them in step).
   workflow_run:
-    workflows: ["College-reported data"]
+    workflows: ["College-reported data", "Identity refresh", "Visit events", "Publish snapshot", "Sync data", "Sync history"]
     types: [completed]
   schedule:
     - cron: "0 9 * * 0"
@@ -27,7 +34,7 @@ on:
       mode:
         description: What the Steward does
         type: choice
-        options: [run, audit, apply, answer]
+        options: [run, audit, apply, answer, review]
         default: run
       budget:
         description: Stop at this many US dollars of model calls (the week's $40 cap still applies)
@@ -49,14 +56,17 @@ on:
         description: Set by the admin console to find its run; leave empty
         type: string
         default: ""
+      job:
+        description: The job whose run to review (mode review), an id from the console's Jobs
+        type: string
+        default: ""
+      run:
+        description: The run to review (mode review), a job_runs id or a workflow run id
+        type: string
+        default: ""
 
 permissions:
   contents: read
-
-# One Steward run at a time; a queued one waits (each reads the queue as it then stands).
-concurrency:
-  group: steward
-  cancel-in-progress: false
 
 env:
   # The data project, with the publisher's fallback (.github/workflows/publish-snapshot.yml).
@@ -65,9 +75,13 @@ env:
 
 jobs:
   steward:
-    if: github.event_name != 'workflow_dispatch' || inputs.mode != 'apply'
+    if: (github.event_name == 'workflow_run' && github.event.workflow_run.name == 'College-reported data') || github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.mode != 'apply' && inputs.mode != 'review')
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    # One Steward run at a time; a queued one waits (each reads the queue as it then stands). Reviews don't wait on it.
+    concurrency:
+      group: steward
+      cancel-in-progress: false
     # actions: read lets the gate look at the college-reported run's steps; nothing here writes to the repository.
     permissions:
       contents: read
@@ -251,3 +265,95 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run publish-snapshot.yml --repo "${{ github.repository }}"
+
+  # The job review: one run of one job, read and compared with its expectations (scripts/lib/steward/review.mts).
+  review:
+    if: github.event_name == 'workflow_run' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # actions: write is for the review's two dispatches only: starting a restartable job's own workflow again, or the
+    # publisher (the script refuses any other workflow). Nothing is pushed.
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      # Which job and run: the completed workflow's file (workflow_run), or the dispatch's job and run inputs.
+      - name: Resolve the job and the run
+        id: target
+        env:
+          EVENT: ${{ github.event_name }}
+          WF_PATH: ${{ github.event.workflow_run.path }}
+          WF_RUN: ${{ github.event.workflow_run.id }}
+          WF_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          IN_JOB: ${{ inputs.job }}
+          IN_RUN: ${{ inputs.run }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$EVENT" = "workflow_run" ]; then
+            case "${WF_PATH##*/}" in
+              college-reported.yml) job=college-reported ;;
+              identity-refresh.yml) job=identity-refresh ;;
+              visit-events.yml) job=visit-events ;;
+              publish-snapshot.yml) job=publish-snapshot ;;
+              sync-data.yml) job=sync-data ;;
+              sync-history.yml) job=sync-history ;;
+              *) echo "::notice::No job for ${WF_PATH}; nothing to review."; echo "go=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
+            esac
+            run="$WF_RUN"
+            # The half-hourly collect that found no open batch (its run job skipped, no work step succeeded) has nothing
+            # to review; skipping it here saves a checkout every 30 minutes.
+            if [ "$job" = "college-reported" ] && [ "$WF_CONCLUSION" = "success" ]; then
+              busy=$(gh api "repos/$REPO/actions/runs/$run/jobs" --jq '[.jobs[] | select(.name == "run" and .conclusion != "skipped")] + [.jobs[].steps[] | select((.name == "Run the ingestion pipeline" or .name == "Collect the open batches") and .conclusion == "success")] | length')
+              if [ "${busy:-0}" -eq 0 ]; then
+                echo "college-reported run $run was a collect firing with nothing to collect; no review."
+                echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+              fi
+            fi
+          else
+            job="$IN_JOB"; run="$IN_RUN"
+          fi
+          if ! [[ "$job" =~ ^[a-z][a-z0-9-]{0,40}$ ]]; then echo "::error::job must be a job id"; exit 1; fi
+          if ! [[ "$run" =~ ^[0-9]{1,20}$ ]]; then echo "::error::run must be a run id"; exit 1; fi
+          {
+            echo "go=true"
+            echo "job=$job"
+            echo "run=$run"
+          } >> "$GITHUB_OUTPUT"
+
+      # The data store is needed; the API key isn't (without it the review has no note).
+      - name: Check the data store
+        id: secrets
+        if: steps.target.outputs.go == 'true'
+        run: |
+          if [ -z "$DATA_SUPABASE_URL" ] || [ -z "$DATA_SUPABASE_SECRET_KEY" ]; then
+            echo "::notice::DATA_SUPABASE_URL or DATA_SUPABASE_SECRET_KEY is not set; no review."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+        if: steps.secrets.outputs.ready == 'true'
+
+      # CRON_SECRET and SITE_URL are optional: with both, a failed restartable Vercel job can be started again.
+      - name: Review the run
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          JOB: ${{ steps.target.outputs.job }}
+          RUN: ${{ steps.target.outputs.run }}
+          REQUEST_ID: ${{ inputs.request_id }}
+        run: npm run steward -- --store supabase --mode review --job "$JOB" --run "$RUN" --run-ref "steward-review-${{ github.run_id }}" ${REQUEST_ID:+--request-id "$REQUEST_ID"}

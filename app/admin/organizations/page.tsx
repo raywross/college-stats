@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { AdminSearch } from "@/components/admin/AdminSearch";
 import { PageHeader, Empty } from "@/components/admin/Panel";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
@@ -13,37 +14,57 @@ export const metadata: Metadata = { title: "Organizations", robots: { index: fal
 
 const BASE = "/admin/organizations";
 
-function orgsHref(page: number): string {
-  return page > 1 ? `${BASE}?page=${page}` : BASE;
+/** "/admin/organizations?q=…&page=N", leaving out what's empty or the first page. */
+function orgsHref(q: string, page: number): string {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `${BASE}?${query}` : BASE;
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /**
  * /admin/organizations (specs/product/counselor-portal.md "The channel"; specs/product/admin.md "the admin console
- * lists organizations"): every counselor organization, newest first, so the owner can watch the channel. No search
- * yet: the count stays small while the portal is new.
+ * lists organizations"): every counselor organization, newest first, or the ones matching `?q=` (the organization's
+ * name, its join code, its high school, or a member's name), as Households searches
+ * (specs/product/admin-redesign.md "People": "Organizations get a search like the other two lists"). One match on a
+ * search opens the organization.
  */
 export default async function OrganizationsPage({ searchParams }: PageProps<"/admin/organizations">) {
   await connection();
   await requireAdmin();
   const params = await searchParams;
+  const raw = params.q;
+  const q = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
   const rawPage = Number(Array.isArray(params.page) ? params.page[0] : params.page);
   const page = Number.isInteger(rawPage) && rawPage >= 1 ? rawPage : 1;
-  const list = await listOrganizations(page);
-  if (list.rows.length === 0 && page > 1) redirect(orgsHref(1));
+  const list = await listOrganizations(q, page);
+  if (q && list.total === 1 && page === 1) redirect(`${BASE}/${list.rows[0].id}`);
+  if (list.rows.length === 0 && page > 1) redirect(orgsHref(q, 1));
   const pages = Math.max(1, Math.ceil(list.total / ORG_PAGE_SIZE));
   const from = (page - 1) * ORG_PAGE_SIZE + 1;
 
   return (
     <>
-      <PageHeader title="Organizations" subtitle="Every counselor's or school's caseload: who is in it, how many students, and how many are still waiting to join." />
+      <PageHeader help="organization" title="Organizations" subtitle="Every counselor's or school's caseload: who is in it, how many students, and how many are still waiting to join." />
+      <AdminSearch
+        defaultValue={q}
+        id="organizations-search"
+        className="max-w-xl"
+        action={BASE}
+        label="Search organizations"
+        placeholder="Organization, member name, join code"
+      />
       {list.total === 0 ? (
-        <Empty>No organizations yet.</Empty>
+        <div className="mt-6">
+          <Empty>{q ? <>No organization matches &ldquo;{q}&rdquo;. Try part of its name, a member&rsquo;s name, or its join code.</> : "No organizations yet."}</Empty>
+        </div>
       ) : (
-        <>
+        <div className="mt-6">
           <p className="mb-2 text-sm text-muted-foreground" role="status">
-            {list.total.toLocaleString("en-US")} organizations, newest first
+            {q ? `${list.total.toLocaleString("en-US")} ${list.total === 1 ? "match" : "matches"} for “${q}”` : `${list.total.toLocaleString("en-US")} organizations, newest first`}
             {pages > 1 && ` · showing ${from.toLocaleString("en-US")} to ${(from + list.rows.length - 1).toLocaleString("en-US")}`}
           </p>
           <ul className="divide-y rounded-2xl border bg-card">
@@ -77,7 +98,7 @@ export default async function OrganizationsPage({ searchParams }: PageProps<"/ad
           {pages > 1 && (
             <nav aria-label="Pages" className="mt-3 flex items-center justify-between gap-3 text-sm">
               {page > 1 ? (
-                <Link href={orgsHref(page - 1)} rel="prev" className="inline-flex min-h-10 items-center underline decoration-dotted underline-offset-2">
+                <Link href={orgsHref(q, page - 1)} rel="prev" className="inline-flex min-h-10 items-center underline decoration-dotted underline-offset-2">
                   Previous {ORG_PAGE_SIZE}
                 </Link>
               ) : (
@@ -87,7 +108,7 @@ export default async function OrganizationsPage({ searchParams }: PageProps<"/ad
                 Page {page} of {pages}
               </span>
               {page < pages ? (
-                <Link href={orgsHref(page + 1)} rel="next" className="inline-flex min-h-10 items-center underline decoration-dotted underline-offset-2">
+                <Link href={orgsHref(q, page + 1)} rel="next" className="inline-flex min-h-10 items-center underline decoration-dotted underline-offset-2">
                   Next {ORG_PAGE_SIZE}
                 </Link>
               ) : (
@@ -95,7 +116,7 @@ export default async function OrganizationsPage({ searchParams }: PageProps<"/ad
               )}
             </nav>
           )}
-        </>
+        </div>
       )}
     </>
   );

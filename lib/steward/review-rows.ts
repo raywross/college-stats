@@ -1,5 +1,5 @@
 /**
- * The college Review page's rows (`/admin/colleges/[unit]/review`; specs/product/data-steward.md "The college's Review
+ * The college Review page's rows (`/admin/data/colleges/[unit]/review`; specs/product/data-steward.md "The college's Review
  * page"): everything pending for one school, one row per field or code, grouped by code. Each open review item is a
  * row with what the site shows now (from the same `citeField` the profile uses, or the college's own CDS record for a
  * code no registered field reaches), the document it came from at the page and line, its issues (each with the

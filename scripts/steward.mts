@@ -18,6 +18,13 @@
  * - answer: the owner's question on a proposal (`--proposal`), answered on the proposal with any rows added.
  * - apply: no model. An approved proposal's hold, refile, recipe or reject rows applied in one change set (source
  *   `steward-apply`), the proposal marked applied (./lib/steward/apply.mts). The one mode that changes `reported.*`.
+ * - review (`--job <id> --run <ref>`): one job run read and compared with its job's expectations
+ *   (lib/steward/job-review.ts), written to `steward.reviews`; a flagged or failed run gets one Haiku note ($0.10 a run,
+ *   $3 a week), a finding (kind job), and the repair its fixed tools allow (./lib/steward/review.mts). Skips a run
+ *   already reviewed. The Sunday audit also writes the week's jobs summary (an audit, family `jobs`).
+ *
+ *   npm run steward -- --store supabase --mode review --job visit-events --run 123456789
+ *   npm run steward -- --store file:/tmp/layers --mode review --job visit-events --run 1 --run-file tests/fixtures/steward/review/visit-events-failed.json --dry-run tests/fixtures/steward/answers
  *
  * The budget (./lib/steward/budget.mts) is the smaller of `--budget` and what the week's $40 has left (summed from
  * `steward.runs`), checked before every model call. `--dry-run <dir>` answers every model call from recorded answers
@@ -28,19 +35,23 @@
  * Actions the script writes `publish` (true when an apply changed a record), `change_set` and `exit_code` to
  * $GITHUB_OUTPUT.
  */
-import { appendFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { parseArgs } from "node:util";
 import Anthropic from "@anthropic-ai/sdk";
 import type { CollegeRecord } from "../lib/cds-sections.ts";
-import type { AuditDoc, ProposalDoc, RunDoc } from "../lib/steward/types.ts";
+import { jobById } from "../lib/jobs/registry.ts";
+import { firingOf, jobsWeek, reviewKey, reviewRun } from "../lib/steward/job-review.ts";
+import type { AuditDoc, ProposalDoc, ReviewDoc, RunDoc } from "../lib/steward/types.ts";
 import { createArchive, type Archive } from "./lib/college-reported/archive.mts";
 import { PoliteHttp } from "./lib/college-reported/http.mts";
 import { COLLECTIONS, readLayer } from "./lib/data-platform/layers.mts";
 import { runRef as defaultRunRef } from "./lib/data-platform/producer.mts";
-import { storeFromFlag, type ChangeSetHandle, type DataStore, type Env } from "./lib/data-platform/store.mts";
+import { dataProjectEnv, storeFromFlag, type ChangeSetHandle, type DataStore, type Env } from "./lib/data-platform/store.mts";
 import { applyProposal, ApplyRefused, APPLY_SOURCE } from "./lib/steward/apply.mts";
-import { Budget, BudgetStop, DEFAULT_BUDGETS, runBudget, tokensOf, weeklySpent, WEEKLY_CAP_USD } from "./lib/steward/budget.mts";
+import { Budget, BudgetStop, DEFAULT_BUDGETS, reviewBudget, runBudget, tokensOf, weeklySpent, WEEKLY_CAP_USD } from "./lib/steward/budget.mts";
+import { DRY_TOOLS, lastRestart, liveSources, liveTools, performRepair, reviewContext, writeJobIssue, writeNote, type RepairTools, type ReviewDb, type ReviewSources, type RunFile } from "./lib/steward/review.mts";
+import { slug } from "./lib/steward/writer.mts";
 import { MissingAnswer, recordedFetch, mayRecord } from "./lib/steward/dry-run.mts";
 import type { DocumentDeps } from "./lib/steward/documents.mts";
 import { MAIN_EFFORT, MAIN_MAX_ITERATIONS, MAIN_MAX_TOKENS, STEWARD_MODELS } from "./lib/steward/models.mts";
@@ -51,7 +62,7 @@ import { StewardWriter } from "./lib/steward/writer.mts";
 export const STEWARD_SOURCE = "steward";
 export const EXIT = { done: 0, failed: 1, budget: 2 } as const;
 export type StewardMode = RunDoc["mode"];
-export const MODES: readonly StewardMode[] = ["run", "audit", "apply", "answer"];
+export const MODES: readonly StewardMode[] = ["run", "audit", "apply", "answer", "review"];
 
 export interface StewardOptions {
   mode: StewardMode;
@@ -61,6 +72,14 @@ export interface StewardOptions {
   cause?: string | null;
   unit?: string | null;
   proposal?: string | null;
+  /** review: the job's id and its run's ref (a job_runs id, or a workflow run id). */
+  job?: string | null;
+  jobRun?: string | null;
+  /** review: a recorded run instead of reading one (dry runs and tests). */
+  runFile?: RunFile | null;
+  /** review: injected for tests: where runs are read, and the repair tools (else the live ones, or a dry run's). */
+  sources?: ReviewSources;
+  tools?: RepairTools;
   runRef?: string;
   requestId?: string | null;
   /** A folder of recorded answers: no request reaches the API. */
@@ -221,6 +240,7 @@ export async function runSteward(o: StewardOptions): Promise<StewardResult> {
   const requestId = o.requestId || null;
 
   if (o.mode === "apply") return runApply(o, key, started, requestId, now, log);
+  if (o.mode === "review") return runReview(o, key, started, requestId, now, log, env);
 
   const asked = o.budget ?? (o.mode === "audit" ? DEFAULT_BUDGETS.audit : o.mode === "answer" ? DEFAULT_BUDGETS.answer : DEFAULT_BUDGETS.dispatch);
   const spentWeek = await weeklySpent(o.store, started);
@@ -287,6 +307,16 @@ export async function runSteward(o: StewardOptions): Promise<StewardResult> {
     exit = EXIT.failed;
   }
 
+  // The Sunday audit also sums the week of jobs (no model call, so whatever the budget did).
+  if (o.mode === "audit") {
+    try {
+      const queueOpen = ctx.cache.queue ? ctx.cache.queue.size : (await openQueue(ctx).catch(() => null))?.size ?? null;
+      await writeJobsAudit(o.store, writer, key, started, queueOpen);
+    } catch (err) {
+      log(`audit: the week's jobs summary failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   Object.assign(run, writer.counts, { spent_usd: ctx.budget.spent(), finished: now().toISOString() });
   try {
     await writer.put(COLLECTIONS.steward.runs, key, run);
@@ -314,6 +344,139 @@ async function issueForAudit(store: DataStore, writer: StewardWriter, family: st
       status: "new",
     });
   }
+}
+
+/**
+ * The week of jobs (specs/product/admin-redesign.md "What the Steward reviews": "It summarizes the week"): the runs
+ * reviewed, failed, flagged and repaired, by job; the Steward's spend by mode; the review queue now and at the last
+ * summary. Written as an audit with family `jobs` (not counted among the run's audits, which are check families).
+ */
+export async function writeJobsAudit(store: DataStore, writer: StewardWriter, runKey: string, now: Date, queueOpen: number | null): Promise<AuditDoc> {
+  const [reviews, runs, audits] = await Promise.all([
+    store.read<ReviewDoc>(COLLECTIONS.steward.reviews),
+    store.read<RunDoc>(COLLECTIONS.steward.runs),
+    store.read<AuditDoc>(COLLECTIONS.steward.audits, "jobs-"),
+  ]);
+  const before = [...audits.values()].filter((a) => a.family === "jobs").sort((a, b) => (a.created < b.created ? 1 : -1))[0];
+  const week = jobsWeek([...reviews.values()], [...runs.values()], now, { open: queueOpen, before: before?.jobs?.queueOpen ?? null });
+  const doc: AuditDoc = {
+    key: `jobs-${slug(runKey, 60)}`,
+    family: "jobs",
+    checked: week.reviewed,
+    wrong: [],
+    rate: week.reviewed ? Math.round(((week.failed + week.flagged) / week.reviewed) * 10_000) / 10_000 : 0,
+    run: runKey,
+    created: now.toISOString(),
+    jobs: week,
+  };
+  await writer.put(COLLECTIONS.steward.audits, doc.key, doc);
+  return doc;
+}
+
+/**
+ * Mode review: one job run reviewed (lib/steward/job-review.ts), its review written, and for a flagged or failed run
+ * the note, the finding, and the repair. A run already reviewed is skipped before anything is opened; a fine
+ * housekeeping firing is not written (the half-hourly collect would fill the collection).
+ */
+async function runReview(o: StewardOptions, key: string, started: Date, requestId: string | null, now: () => Date, log: (l: string) => void, env: Env): Promise<StewardResult> {
+  const run = emptyRun({ key, mode: "review", started: started.toISOString(), budget: 0, requestId });
+  const fail = (message: string): StewardResult => ({ exit: EXIT.failed, run: { ...run, stopped: message }, changeSet: null, publish: false, message });
+  const job = o.job ? jobById(o.job) : null;
+  if (!job) return fail(`--mode review needs --job <id> of a job in lib/jobs/registry.ts${o.job ? ` (not "${o.job}")` : ""}`);
+  const ref = o.runFile?.run.ref ?? o.jobRun ?? null;
+  if (!ref) return fail("--mode review needs --run <ref> (a job_runs id or a workflow run id)");
+  run.job = job.id;
+  run.run_ref = ref;
+  const reviewDocKey = reviewKey(job.id, ref);
+  if (await o.store.readOne<ReviewDoc>(COLLECTIONS.steward.reviews, reviewDocKey)) {
+    log(`review ${reviewDocKey}: already reviewed; nothing to do`);
+    return { exit: EXIT.done, run: { ...run, stopped: "already reviewed" }, changeSet: null, publish: false };
+  }
+
+  const sources = o.sources ?? (o.runFile ? null : liveSources({ db: reviewDb(env), env }));
+  let view;
+  try {
+    view = o.runFile?.run ?? (await sources!.run(job, ref));
+  } catch (err) {
+    return fail(`reading ${job.id} run ${ref} failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  if (!view) return fail(`${job.name} has no run ${ref}`);
+  const at = o.runFile?.context?.now ? new Date(o.runFile.context.now) : now();
+  const ctx = o.runFile
+    ? { now: at, lastRestartAt: o.runFile.context?.lastRestartAt !== undefined ? o.runFile.context.lastRestartAt : await lastRestart(o.store, job.id), publishAfter: o.runFile.context?.publishAfter }
+    : await reviewContext(o.store, sources, job, view, at);
+  const review = reviewRun(job, view, ctx);
+  if (review.verdict === "fine" && firingOf(job, view) === "housekeeping") {
+    log(`review ${reviewDocKey}: a housekeeping firing that looked fine; not written`);
+    return { exit: EXIT.done, run: { ...run, stopped: "housekeeping firing, fine" }, changeSet: null, publish: false };
+  }
+
+  const handle = await o.store.open("pipeline", STEWARD_SOURCE, key, { mode: "review", job: job.id, run_ref: ref, ...(requestId ? { request_id: requestId } : {}) });
+  const writer = new StewardWriter(o.store, handle, { run: key, now });
+  let exit: StewardResult["exit"] = EXIT.done;
+  let message: string | undefined;
+  let budget = new Budget(0);
+  let note: string | null = null;
+  let repaired = false;
+  try {
+    if (review.verdict !== "fine") {
+      const [week, reviewsWeek] = await Promise.all([weeklySpent(o.store, started), weeklySpent(o.store, started, "review")]);
+      budget = new Budget(reviewBudget(week, reviewsWeek));
+      run.budget_usd = budget.limitUsd;
+      const client = o.client ?? (o.dryRun || env.ANTHROPIC_API_KEY ? makeClient(o.dryRun ?? null, env) : null);
+      note = await writeNote(client, budget, job, view, review, log);
+    }
+    const tools = o.tools ?? (o.dryRun || o.runFile ? DRY_TOOLS : liveTools({ env }));
+    const done = await performRepair({ job, run: view, review, tools, writer, store: o.store });
+    repaired = done.repaired;
+    if (done.line) log(done.line);
+    if (review.verdict !== "fine") await writeJobIssue(o.store, writer, job, view, review, note);
+    const doc: ReviewDoc = {
+      key: reviewDocKey,
+      job: job.id,
+      run_ref: ref,
+      verdict: review.verdict,
+      reasons: review.reasons,
+      repair: review.repair,
+      repaired,
+      note,
+      created: now().toISOString(),
+      run_started: view.startedAt || null,
+      run: key,
+    };
+    await writer.put(COLLECTIONS.steward.reviews, doc.key, doc);
+  } catch (err) {
+    const cause = err instanceof Error && err.cause instanceof MissingAnswer ? err.cause : err;
+    message = cause instanceof Error ? cause.message : String(cause);
+    run.stopped = `review failed: ${message}`.slice(0, 500);
+    exit = EXIT.failed;
+  }
+
+  Object.assign(run, writer.counts, { reviews: exit === EXIT.done ? 1 : 0, repairs: repaired ? 1 : 0, spent_usd: budget.spent(), finished: now().toISOString() });
+  try {
+    // A fine review spends nothing and repairs nothing: its review document is the record. A flagged or failed one
+    // also leaves a run record, for the week's spend and the Runs page.
+    if (review.verdict !== "fine" || exit !== EXIT.done) await writer.put(COLLECTIONS.steward.runs, key, run);
+    await handle.close("applied", undefined, { mode: "review", job: job.id, run_ref: ref, verdict: review.verdict, repair: review.repair, repaired, spent_usd: run.spent_usd, ...(writer.notes.length ? { notes: writer.notes } : {}) });
+  } catch (err) {
+    message = `${message ? `${message}; ` : ""}writing the review failed: ${err instanceof Error ? err.message : String(err)}`;
+    exit = EXIT.failed;
+  }
+  log(`steward review ${reviewDocKey}: ${review.verdict}${review.repair ? `, repair ${review.repair} ${repaired ? "done" : "not done"}` : ""}; $${run.spent_usd.toFixed(2)}${note ? `; note: ${note}` : ""}`);
+  return { exit, run, changeSet: handle.id, publish: false, ...(message ? { message } : {}) };
+}
+
+/** The data project's client for the review's reads (job_runs, data_change_sets, data_snapshots), made on first use. */
+function reviewDb(env: Env): () => Promise<ReviewDb> {
+  let db: ReviewDb | null = null;
+  return async () => {
+    if (db) return db;
+    const { url, key } = dataProjectEnv(env);
+    if (!url || !key) throw new Error("reading a run needs DATA_SUPABASE_URL and DATA_SUPABASE_SECRET_KEY");
+    const { createClient } = await import("@supabase/supabase-js");
+    db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } }) as unknown as ReviewDb;
+    return db;
+  };
 }
 
 function makeClient(dryRun: string | null, env: Env): Anthropic {
@@ -371,6 +534,9 @@ export async function main(argv: string[] = process.argv.slice(2), env: Env = pr
       "run-ref": { type: "string" },
       "request-id": { type: "string" },
       "dry-run": { type: "string" },
+      job: { type: "string" },
+      run: { type: "string" },
+      "run-file": { type: "string" },
     },
   });
   const mode = values.mode as StewardMode;
@@ -378,6 +544,9 @@ export async function main(argv: string[] = process.argv.slice(2), env: Env = pr
   const budget = values.budget === undefined || values.budget === "" ? undefined : Number(values.budget);
   if (budget !== undefined && (!Number.isFinite(budget) || budget < 0)) throw new Error(`--budget ${values.budget}: a dollar amount`);
   if (values.unit && !/^\d{6}$/.test(values.unit)) throw new Error(`--unit ${values.unit}: a six-digit unit id`);
+  if (values.job && !/^[a-z][a-z0-9-]{0,40}$/.test(values.job)) throw new Error(`--job ${values.job}: a job id from lib/jobs/registry.ts`);
+  if (values.run && !/^\d{1,20}$/.test(values.run)) throw new Error(`--run ${values.run}: a run id is digits`);
+  const runFile = values["run-file"] ? (JSON.parse(readFileSync(values["run-file"], "utf8")) as RunFile) : null;
   const store = storeFromFlag(values.store, env, { log: (l) => console.log(l) });
   const res = await runSteward({
     mode,
@@ -386,6 +555,9 @@ export async function main(argv: string[] = process.argv.slice(2), env: Env = pr
     cause: values.cause || null,
     unit: values.unit || null,
     proposal: values.proposal || null,
+    job: values.job || null,
+    jobRun: values.run || null,
+    runFile,
     runRef: values["run-ref"] || undefined,
     requestId: values["request-id"] || null,
     dryRun: values["dry-run"] || null,

@@ -1,0 +1,25 @@
+{
+  "case": "The repairable failure's second half: the restarted digest run failed again two hours later. The Steward already restarted the job inside the last day, so this one is a finding only. (In the script test the restart comes from the store's reviews, not from this context.)",
+  "job": "digests",
+  "run": {
+    "ref": "4135",
+    "trigger": "manual",
+    "status": "failed",
+    "startedAt": "2026-11-03T15:00:04Z",
+    "finishedAt": "2026-11-03T15:00:21Z",
+    "summary": {},
+    "error": "Resend answered 503 Service Unavailable"
+  },
+  "context": {
+    "now": "2026-11-03T15:05:00Z",
+    "lastRestartAt": "2026-11-03T13:05:00.000Z"
+  },
+  "expect": {
+    "verdict": "failed",
+    "repair": null,
+    "reasons": [
+      "^It failed: Resend answered 503 Service Unavailable$",
+      "already started it again once in the last 24 hours"
+    ]
+  }
+}

@@ -687,7 +687,7 @@ test("client components never import the server-only health module (health-rules
     for (const f of readdirSync(join(ROOT, dir), { recursive: true, encoding: "utf8" })) {
       if (!/\.(ts|tsx)$/.test(f) || !statSync(join(ROOT, dir, f)).isFile()) continue;
       const text = readFileSync(join(ROOT, dir, f), "utf8");
-      if (/^\s*["']use client["']/m.test(text) && /from\s+["'][^"']*admin\/health["']/.test(text)) offenders.push(join(dir, f));
+      if (/^\s*["']use client["']/m.test(text) && /from\s+["'][^"']*admin\/data\/health["']/.test(text)) offenders.push(join(dir, f));
     }
   }
   assert.deepEqual(offenders, []);

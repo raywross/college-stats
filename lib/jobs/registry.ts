@@ -37,9 +37,39 @@ export interface JobDef {
   gate?: string;
   /** The spec that describes the job, repository-relative. */
   spec: string;
-  /** The row of lib/admin/workflows.ts `DISPATCHABLE_RUNS` that starts this job from Operations, when there is one. */
+  /** The row of lib/admin/workflows.ts `DISPATCHABLE_RUNS` that marks this job as one Run now can start (its page lists every row for its workflow). */
   dispatch?: string;
+  /** What a good run looks like, for the Steward's job review (lib/steward/job-review.ts). Every job in `JOBS` has one (tested). */
+  expects?: JobExpectations;
 }
+
+/**
+ * What the Steward expects of a job's run (specs/product/admin-redesign.md "What the Steward reviews"). Compared with
+ * each run's record by lib/steward/job-review.ts `reviewRun`; shown in words on the job's page.
+ */
+export interface JobExpectations {
+  /** The usual duration, milliseconds [shortest, longest]; a run past the longest is flagged. */
+  durationMs?: readonly [number, number];
+  /**
+   * What should show work on a scheduled run: summary keys above zero (a Vercel job's answer; an array counts its
+   * length) or step names that succeeded (a GitHub job). Any one is enough.
+   */
+  nonzero?: readonly string[];
+  /** A run that did its work should have written a change (a data_change_sets row with its run id). */
+  writesChange?: boolean;
+  /**
+   * When a run that did nothing is right, in a sentence for the console. Without it a scheduled run that did nothing
+   * is flagged; a housekeeping or out-of-season firing is always allowed to do nothing.
+   */
+  nothingOkWhen?: string;
+  /**
+   * Safe to start again once after a failure (the job is idempotent). Never the college-reported pipeline, which
+   * spends money, and never the Steward itself.
+   */
+  restartable?: boolean;
+}
+
+const MIN = 60_000;
 
 const FALL = [8, 9, 10, 11] as const;
 const CDS_SEASON = [12, 1, 2, 3, 4, 5, 6, 7] as const;
@@ -55,6 +85,8 @@ export const JOBS: readonly JobDef[] = [
     schedules: [{ cron: "0 13 * * *" }],
     gate: "Does nothing until email sending is configured.",
     spec: "specs/product/follow-colleges.md",
+    // One `digests` row per person and publish, written only after a send: a second run sends nothing twice.
+    expects: { durationMs: [0, 5 * MIN], nonzero: ["publishes"], nothingOkWhen: "No publish in the last two weeks changed a college anyone follows.", restartable: true },
   },
   {
     id: "visit-alerts",
@@ -65,6 +97,8 @@ export const JOBS: readonly JobDef[] = [
     schedules: [{ cron: "0 13 * * *", note: "After the night's visit-events read." }],
     gate: "Does nothing until email sending is configured.",
     spec: "specs/product/visit-events.md",
+    // Nobody gets a second alert within 20 hours (visit_alerts), so a rerun never doubles up.
+    expects: { durationMs: [0, 5 * MIN], nonzero: ["events"], nothingOkWhen: "No visit event was new or changed in the last day.", restartable: true },
   },
   {
     id: "interest-confirm",
@@ -75,6 +109,8 @@ export const JOBS: readonly JobDef[] = [
     schedules: [{ cron: "30 13 * * *" }],
     gate: "Does nothing until email sending is configured.",
     spec: "specs/planner/v3/guides/show-interest.md",
+    // `emailed_at` is set only after a send and the expiry is a state change, so a rerun repeats nothing.
+    expects: { durationMs: [0, 5 * MIN], nothingOkWhen: "No interest act is waiting on anyone.", restartable: true },
   },
   {
     id: "weekly",
@@ -85,6 +121,8 @@ export const JOBS: readonly JobDef[] = [
     schedules: [{ cron: "0 23 * * 0" }],
     gate: "Does nothing until email or texts are configured.",
     spec: "specs/planner/timeline.md",
+    // Not restartable: Your week has no sent-this-week record, so a second run would email every student again.
+    expects: { durationMs: [0, 10 * MIN], nonzero: ["students"], restartable: false },
   },
   {
     id: "day-before",
@@ -95,6 +133,8 @@ export const JOBS: readonly JobDef[] = [
     schedules: [{ cron: "0 23 * * 1-6", note: "Sunday's evening belongs to the weekly job." }],
     gate: "Does nothing until texts are configured.",
     spec: "specs/planner/timeline.md",
+    // At most one text a day per person (lib/planner/reminders-server.ts deliverText), so a rerun sends nothing twice.
+    expects: { durationMs: [0, 5 * MIN], nonzero: ["sent"], nothingOkWhen: "No student with texts on has a hard deadline tomorrow.", restartable: true },
   },
   {
     id: "college-reported",
@@ -109,6 +149,14 @@ export const JOBS: readonly JobDef[] = [
     ],
     spec: "specs/college-reported-data.md",
     dispatch: "college",
+    // Never restarted by the Steward: a run spends money (up to $150 on the schedule).
+    expects: {
+      durationMs: [MIN, 330 * MIN],
+      nonzero: ["Run the ingestion pipeline", "Collect the open batches"],
+      writesChange: true,
+      nothingOkWhen: "No open batch: the half-hourly collect does nothing. A firing out of season stops at once.",
+      restartable: false,
+    },
   },
   {
     id: "identity-refresh",
@@ -120,6 +168,13 @@ export const JOBS: readonly JobDef[] = [
     gate: "Fires daily; does the refresh only when the last site probe is 28 or more days old.",
     spec: "specs/school-identity/follow-ups.md",
     dispatch: "identity",
+    expects: {
+      durationMs: [MIN, 90 * MIN],
+      nonzero: ["Sync Wikidata", "Probe every college's site", "Sync brand colors"],
+      writesChange: true,
+      nothingOkWhen: "The last site probe is under 28 days old: the daily firing checks and stops.",
+      restartable: true,
+    },
   },
   {
     id: "visit-events",
@@ -130,6 +185,8 @@ export const JOBS: readonly JobDef[] = [
     schedules: [{ cron: "0 7 * * *" }],
     spec: "specs/product/visit-events.md",
     dispatch: "visit-events",
+    // Writes the visit-event tables, not the data store, so no change; a reread is idempotent.
+    expects: { durationMs: [2 * MIN, 300 * MIN], nonzero: ["Read the calendars", "Check what was read"], writesChange: false, restartable: true },
   },
   {
     id: "publish-snapshot",
@@ -140,6 +197,13 @@ export const JOBS: readonly JobDef[] = [
     schedules: [{ cron: "0 8 * * *", note: "The nightly catch-up; a held change set stops an automatic run." }],
     spec: "specs/data-platform/publish.md",
     dispatch: "publish-snapshot",
+    // Its publish step has no name, and "nothing new" is a normal night: it is judged on failure and time only.
+    expects: {
+      durationMs: [MIN, 60 * MIN],
+      writesChange: false,
+      nothingOkWhen: "Nothing changed since the last published version, or a held change stops the nightly run.",
+      restartable: true,
+    },
   },
   {
     id: "data-steward",
@@ -152,6 +216,14 @@ export const JOBS: readonly JobDef[] = [
     gate: "After a college-reported run, runs only when that run read or collected something; every run stops at its budget and the week's $40.",
     spec: "specs/product/data-steward.md",
     dispatch: "steward",
+    // The Steward doesn't review its own runs (its record and spend are on Steward runs); this is for a review by hand.
+    expects: {
+      durationMs: [MIN, 90 * MIN],
+      nonzero: ["Run the Steward"],
+      writesChange: true,
+      nothingOkWhen: "After a college-reported run that read and collected nothing, the gate skips the run.",
+      restartable: false,
+    },
   },
   {
     id: "sync-data",
@@ -162,6 +234,8 @@ export const JOBS: readonly JobDef[] = [
     schedules: [{ cron: "0 9 * * 1", note: "On the schedule, only the NCES release-calendar check; the full sync is run by hand." }],
     spec: "specs/data-platform/pipelines.md",
     dispatch: "sync-data",
+    // The scheduled firing checks the release calendar and writes only when it changed.
+    expects: { durationMs: [MIN / 2, 120 * MIN], nonzero: ["Build the base layer"], writesChange: false, restartable: false },
   },
   {
     id: "sync-history",
@@ -172,6 +246,7 @@ export const JOBS: readonly JobDef[] = [
     schedules: [{ cron: "0 9 3 * *" }],
     spec: "specs/trends-data.md",
     dispatch: "history",
+    expects: { durationMs: [5 * MIN, 120 * MIN], nonzero: ["Build the history"], writesChange: true, restartable: false },
   },
   {
     id: "common-app",
@@ -182,6 +257,7 @@ export const JOBS: readonly JobDef[] = [
     schedules: [],
     spec: "specs/data-expansion/common-app.md",
     dispatch: "common-app",
+    expects: { durationMs: [MIN, 60 * MIN], writesChange: true, restartable: false },
   },
   {
     id: "coalition",
@@ -192,6 +268,7 @@ export const JOBS: readonly JobDef[] = [
     schedules: [],
     spec: "specs/data-expansion/coalition-app.md",
     dispatch: "coalition",
+    expects: { durationMs: [MIN / 2, 20 * MIN], writesChange: true, restartable: false },
   },
   {
     id: "essay-prompts",
@@ -201,6 +278,8 @@ export const JOBS: readonly JobDef[] = [
     workflow: "essay-prompts.yml",
     schedules: [],
     spec: "specs/product/essays/prompts.md",
+    // Spends money (a model read per page, up to its budget).
+    expects: { durationMs: [MIN, 240 * MIN], writesChange: true, restartable: false },
   },
   {
     id: "eval-reviewer",
@@ -210,6 +289,8 @@ export const JOBS: readonly JobDef[] = [
     workflow: "eval-reviewer.yml",
     schedules: [],
     spec: "specs/product/essays/reviewer.md",
+    // Spends money; keeps its summary as an artifact, not a change.
+    expects: { durationMs: [MIN, 60 * MIN], writesChange: false, restartable: false },
   },
   {
     id: "campus-pilot",
@@ -219,6 +300,8 @@ export const JOBS: readonly JobDef[] = [
     workflow: "campus-pilot.yml",
     schedules: [],
     spec: "specs/campus-pilot-accuracy.md",
+    // Spends money; its change is held for a person by design.
+    expects: { durationMs: [MIN, 150 * MIN], writesChange: true, restartable: false },
   },
   {
     id: "hs-profile-pilot",
@@ -228,6 +311,8 @@ export const JOBS: readonly JobDef[] = [
     workflow: "hs-profile-pilot.yml",
     schedules: [],
     spec: "specs/product/high-school-data.md",
+    // Spends money (a model read per profile, up to its cap).
+    expects: { durationMs: [MIN, 150 * MIN], writesChange: true, restartable: false },
   },
 ];
 

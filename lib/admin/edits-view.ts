@@ -1,5 +1,5 @@
 /**
- * The field editor at /admin/colleges/[unit]/edit (specs/data-platform/change-sets.md "Admin edits"), pure: which
+ * The field editor at /admin/data/colleges/[unit]/edit (specs/data-platform/change-sets.md "Admin edits"), pure: which
  * registry paths an admin can edit, the input each one gets (inferred from the college's value, or from the value most
  * colleges have, since the registry carries no value type), how a submitted value is parsed and refused in plain words,
  * how a value and its citation read, the stored derived fields an input feeds, and the marker "a newer pipeline value

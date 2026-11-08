@@ -6,7 +6,7 @@ import { adminSupabase } from "@/lib/admin/people";
 import { getData } from "@/lib/data";
 import type { AdminActionState } from "@/lib/admin/console";
 import { referenceVersionBody } from "@/lib/admin/reference-reads";
-import { revertReference, saveReference, type ReferenceActionDeps } from "@/lib/admin/reference-actions";
+import { revertReference, saveReference, type ReferenceActionDeps, type ReferenceActionState } from "@/lib/admin/reference-actions";
 
 /**
  * The reference editor's Server Actions (specs/data-platform/change-sets.md "Admin edits" → "Reference documents").
@@ -32,12 +32,12 @@ async function realDeps(): Promise<ReferenceActionDeps> {
   };
 }
 
-function finish(result: AdminActionState): AdminActionState {
+function finish<S extends ReferenceActionState>(result: S): S {
   if (result.status === "done") refresh();
   return result;
 }
 
-export async function saveReferenceAction(_previous: AdminActionState, form: FormData): Promise<AdminActionState> {
+export async function saveReferenceAction(_previous: ReferenceActionState, form: FormData): Promise<ReferenceActionState> {
   await requireAdmin();
   return finish(await saveReference(await realDeps(), form));
 }

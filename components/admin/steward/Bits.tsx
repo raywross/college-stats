@@ -31,7 +31,7 @@ export function DocLink({ url, page, line, children }: { url: string | null | un
   );
 }
 
-const KIND_TONE: Record<IssueKind, ChipTone> = { value: "info", systemic: "warn", acquisition: "neutral", policy: "good" };
+const KIND_TONE: Record<IssueKind, ChipTone> = { value: "info", systemic: "warn", acquisition: "neutral", policy: "good", job: "danger" };
 export function KindChip({ kind }: { kind: IssueKind }) {
   return <StatusChip label={ISSUE_KIND_LABEL[kind]} tone={KIND_TONE[kind]} />;
 }
@@ -67,11 +67,11 @@ export function TodoStatusChip({ status }: { status: TodoStatus }) {
   return <StatusChip label={TODO_STATUS_LABEL[status]} tone={TODO_TONE[status]} />;
 }
 
-/** The Data section's back link. */
-export function DataBack() {
+/** The Steward door's back link: its Inbox. */
+export function StewardBack() {
   return (
-    <Link href="/admin/data" className={linkCls}>
-      Data
+    <Link href="/admin" className={linkCls}>
+      Steward
     </Link>
   );
 }

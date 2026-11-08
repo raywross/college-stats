@@ -422,7 +422,7 @@ test("Save writes the row with admin_set_essay_prompts on the admin's session: t
   assert.equal(call.args.p_unit, "100005");
   assert.equal(call.args.p_cycle, CYCLE);
   assert.deepEqual(call.args.p_record, savedRecord(), "the record the function stores is the hand read, with ids and quotes rebuilt");
-  assert.deepEqual(world.revalidated, ["/advisor layout", "/admin/essays", "/admin/essays/100005"]);
+  assert.deepEqual(world.revalidated, ["/advisor layout", "/admin/data/essays", "/admin/data/essays/100005"]);
 });
 
 test("Save never trusts the form for the college: the name comes from the dataset, an unknown unit is refused", async () => {
@@ -486,7 +486,7 @@ test("Delete needs the typed word, then calls admin_delete_essay_prompts and rev
   const done = await actions.deleteEssayPrompts(IDLE, fd({ unit: "100005", cycle: CYCLE, confirm: " Delete " }));
   assert.equal(done.status, "done");
   assert.deepEqual(world.rpcCalls, [{ fn: "admin_delete_essay_prompts", args: { p_unit: "100005", p_cycle: CYCLE } }]);
-  assert.deepEqual(world.revalidated, ["/advisor layout", "/admin/essays", "/admin/essays/100005"]);
+  assert.deepEqual(world.revalidated, ["/advisor layout", "/admin/data/essays", "/admin/data/essays/100005"]);
   reset({ rpcError: { message: "admin only" } });
   assert.deepEqual(await actions.deleteEssayPrompts(IDLE, fd({ unit: "100005", cycle: CYCLE, confirm: "delete" })), { status: "error", message: essays.ESSAY_SAVE_ERRORS["admin only"] });
 });
@@ -562,8 +562,8 @@ const stubsIn = (markup: string) =>
 
 type ListPage = (p: { searchParams: Promise<Record<string, string | undefined>> }) => Promise<ReactElement>;
 type UnitPage = (p: { params: Promise<{ unit: string }> }) => Promise<ReactElement>;
-const listPage = (await loadTsx("app/admin/essays/page.tsx")).default as ListPage;
-const unitPage = (await loadTsx("app/admin/essays/[unit]/page.tsx")).default as UnitPage;
+const listPage = (await loadTsx("app/admin/data/essays/page.tsx")).default as ListPage;
+const unitPage = (await loadTsx("app/admin/data/essays/[unit]/page.tsx")).default as UnitPage;
 
 test("the Essays page: counts by status, the checklist with 'Enter the questions' links, a search box, and requireAdmin first", async () => {
   reset({ tables: { list_items: LIST_ITEMS, essay_prompt_overrides: [overrideRow(savedRecord())] } });
@@ -573,9 +573,9 @@ test("the Essays page: counts by status, the checklist with 'Enter the questions
   assert.match(markup, /data-status="confirmed"><span[^>]*>1<\/span>/, "the saved row counts as confirmed at once");
   const checklist = markup.match(/aria-label="Colleges to read by hand">([\s\S]*?)<\/ul>/)![1];
   assert.deepEqual([...checklist.matchAll(/data-unit="(\d+)"/g)].map((m) => m[1]), ["100002", "100003", "100004"], "Echo has a saved row, so it's off the list");
-  assert.match(checklist, /Bravo College[\s\S]*?Refers to the form · on 2 lists[\s\S]*?<a href="\/admin\/essays\/100002"[^>]*>Enter the questions<\/a>/);
+  assert.match(checklist, /Bravo College[\s\S]*?Refers to the form · on 2 lists[\s\S]*?<a href="\/admin\/data\/essays\/100002"[^>]*>Enter the questions<\/a>/);
   const search = stubsIn(markup).find((s) => s.name === "AdminSearch");
-  assert.equal(search?.props.action, "/admin/essays");
+  assert.equal(search?.props.action, "/admin/data/essays");
   assert.match(markup, /aria-label="Colleges read by hand"[\s\S]*Echo University/);
   assert.doesNotMatch(markup, /scrape|\bAI\b/i);
   reset({ admin: false });
@@ -585,8 +585,8 @@ test("the Essays page: counts by status, the checklist with 'Enter the questions
 test("the Essays page: search results link to the form, an exact unit id opens it, and no lists means no checklist", async () => {
   reset();
   const markup = html(await listPage({ searchParams: Promise.resolve({ q: "echo" }) }));
-  assert.match(markup, /aria-label="Search results"[\s\S]*?<a href="\/admin\/essays\/100005"[\s\S]*?Echo University/);
-  await assert.rejects(listPage({ searchParams: Promise.resolve({ q: "100003" }) }), (e: unknown) => String((e as { digest?: string }).digest).includes("/admin/essays/100003"));
+  assert.match(markup, /aria-label="Search results"[\s\S]*?<a href="\/admin\/data\/essays\/100005"[\s\S]*?Echo University/);
+  await assert.rejects(listPage({ searchParams: Promise.resolve({ q: "100003" }) }), (e: unknown) => String((e as { digest?: string }).digest).includes("/admin/data/essays/100003"));
   reset({ tableError: "permission denied" });
   const none = html(await listPage({ searchParams: Promise.resolve({}) }));
   assert.match(none, /Families&#x27; lists can&#x27;t be read on this deployment/);
@@ -709,15 +709,13 @@ test("the client form imports no server code", () => {
 /* The rail                                                            */
 /* ------------------------------------------------------------------ */
 
-test("the rail shows Essays after Operations, highlights it under /admin/essays, and its phone strip scrolls instead of the page", () => {
-  const labels = consoleLib.ADMIN_SECTIONS.map((s) => s.label);
-  assert.equal(labels.indexOf("Essays"), labels.indexOf("Operations") + 1);
-  const section = consoleLib.ADMIN_SECTIONS.find((s) => s.key === "essays")!;
-  assert.deepEqual([section.href, section.hint], ["/admin/essays", "Prompts read from the form"]);
-  assert.equal(consoleLib.activeSection("/admin/essays"), "essays");
-  assert.equal(consoleLib.activeSection("/admin/essays/100005"), "essays");
-  const rail = read("components/admin/AdminRail.tsx");
-  const stripScrolls = (src: string) => /<ul className="[^"]*\boverflow-x-auto\b/.test(src) && /<li key=\{s\.key\} className="[^"]*max-lg:shrink-0/.test(src) && /min-h-11/.test(src);
-  assert.ok(stripScrolls(rail), "seven sections at 390px: the strip scrolls sideways inside itself, each link 44px tall");
-  assert.equal(stripScrolls(rail.replace("overflow-x-auto", "flex-wrap")), false, "the check fails when the strip stops scrolling");
+test("the Data door lists Essays after Selectivity and highlights it under /admin/data/essays", () => {
+  const data = consoleLib.ADMIN_DOORS.find((d) => d.key === "data")!;
+  const keys = data.screens.map((s) => s.key);
+  assert.equal(keys.indexOf("essays"), keys.indexOf("selectivity") + 1);
+  const screen = data.screens.find((s) => s.key === "essays")!;
+  assert.equal(screen.href, "/admin/data/essays");
+  assert.equal(consoleLib.activeScreen("/admin/data/essays")?.key, "essays");
+  assert.equal(consoleLib.activeScreen("/admin/data/essays/100005")?.key, "essays");
+  assert.equal(consoleLib.activeDoor("/admin/data/essays/100005"), "data");
 });

@@ -23,7 +23,7 @@ export default async function ReferenceListPage() {
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="reference-document"
         title="Reference"
         subtitle="Whole documents the pipelines and admins keep by hand, not one college's field."
         back={
@@ -32,7 +32,7 @@ export default async function ReferenceListPage() {
           </Link>
         }
       />
-      <Panel title="Documents">
+      <Panel help="reference-document" title="Documents">
         {docs.length === 0 ? (
           <Empty>No reference documents yet.</Empty>
         ) : (
@@ -48,8 +48,8 @@ export default async function ReferenceListPage() {
                 <div className="text-right text-sm text-muted-foreground">
                   <div>Version {d.version}</div>
                   <div>{fmtDateTime(d.updated_at)}</div>
-                  <Link href={`/admin/data/change-sets/${d.change_set_id}`} className="underline decoration-dotted underline-offset-2">
-                    Change set #{d.change_set_id}
+                  <Link href={`/admin/data/changes/${d.change_set_id}`} className="underline decoration-dotted underline-offset-2">
+                    Change #{d.change_set_id}
                   </Link>
                 </div>
               </li>

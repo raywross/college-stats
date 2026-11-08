@@ -1,6 +1,6 @@
 import "server-only";
 /**
- * What /admin/colleges/[unit]/edit reads (specs/data-platform/change-sets.md "Admin edits"): the college from the
+ * What /admin/data/colleges/[unit]/edit reads (specs/data-platform/change-sets.md "Admin edits"): the college from the
  * served dataset, its rows of `data_field_edits` (every one, newest first, with who made it), the names of those
  * admins, and the served snapshot's `edits.json` for the marker "a newer pipeline value exists". The rows are built by
  * lib/admin/edits-view.ts (pure). Callers check requireAdmin() first (the page and the actions do).

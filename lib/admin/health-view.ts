@@ -2,7 +2,7 @@
  * The Health overview's view logic (specs/product/admin.md "The overview"): the URL's filters parsed and validated,
  * the filter and sort over the table's rows, the filter option lists, a page of rows, and the links the stat row and
  * the CSV button build. Pure (no fs, no server-only imports), so `tests/admin-ops.test.mts` pins it and
- * `app/admin/health/page.tsx` and `app/admin/health/csv/route.ts` share one definition of "which colleges".
+ * `app/admin/data/health/page.tsx` and `app/admin/data/health/csv/route.ts` share one definition of "which colleges".
  *
  * The filters live in the URL so a view can be bookmarked or sent: `?status=stale&group=reported&reason=fetch_failed`.
  * - `status` alone judges the overall status. With `group`, it judges that group's status (`unjudged` is the group's
@@ -100,11 +100,12 @@ export function healthQuery(filters: Partial<HealthFilters>): string {
   return q.toString();
 }
 
-/** `base` plus the filters' query: "/admin/health?status=stale". Changing a filter resets the page. */
+/** `base` plus the filters' query: "/admin/data/health?status=stale". Changing a filter resets the page. */
 export function healthHref(base: string, filters: Partial<HealthFilters>, change: Partial<HealthFilters> = {}): string {
   const next: Partial<HealthFilters> = { ...filters, page: 1, ...change };
   const q = healthQuery(next);
-  return q ? `${base}?${q}` : base;
+  // The Sources tab's base carries its own `?tab=sources`.
+  return q ? `${base}${base.includes("?") ? "&" : "?"}${q}` : base;
 }
 
 /** Whether any narrowing filter is on (sort and page don't narrow). */

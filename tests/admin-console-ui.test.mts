@@ -175,7 +175,7 @@ const peopleActions = await import("../app/admin/people/actions.ts");
 const householdActions = await import("../app/admin/households/[id]/actions.ts");
 const studentActions = await import("../app/admin/students/[id]/actions.ts");
 const adminsActions = await import("../app/admin/admins/actions.ts");
-const mfaActions = await import("../app/admin/mfa/actions.ts");
+const mfaActions = await import("../app/admin/admins/mfa-actions.ts");
 const { HOUSEHOLD_ERRORS } = await import("../lib/household-rules.ts");
 
 const { IDLE } = consoleLib;
@@ -285,14 +285,15 @@ function unguardedActions(src: string, guard: RegExp): string[] {
 }
 
 test("every Server Action goes through withAdmin() (an admin at aal2), and the MFA actions through adminState()", () => {
-  for (const f of adminFiles.filter((f) => /\/actions\.ts$/.test(f))) {
+  for (const f of adminFiles.filter((f) => /\/(mfa-)?actions\.ts$/.test(f))) {
     const src = read(f);
     assert.match(src, /^"use server";/);
     // Operations' actions call requireAdmin() first (an admin at aal2, else a 404; tests/admin-ops.test.mts proves it
     // runs before the form is read), the same gate as withAdmin() with a 404 for a stale tab instead of a message.
     // Data's actions do the same (tests/admin-data.test.mts): they also dispatch a workflow, which needs
     // lib/admin/ops.ts's dependencies rather than the People family's AdminContext.
-    const guard = f.includes("/mfa/") ? /adminState\(\)/ : /\/(operations|data)\//.test(f) ? /await requireAdmin\(\)/ : /return withAdmin\(/;
+    // The Steward's and the Jobs pages' actions (app/admin/steward/**) are Data's and Operations' moved there.
+    const guard = f.endsWith("mfa-actions.ts") ? /adminState\(\)/ : /\/(steward|data)\//.test(f) ? /await requireAdmin\(\)/ : /return withAdmin\(/;
     assert.deepEqual(unguardedActions(src, guard), [], f);
   }
 });
@@ -308,7 +309,7 @@ const ACTIONS: [name: string, run: (f: FormData) => Promise<State>, fields: Reco
   ["copyResetLink", (f) => peopleActions.copyResetLink(IDLE, f), { user: BOB }],
   ["sendResetEmail", (f) => peopleActions.sendResetEmail(IDLE, f), { user: BOB }],
   ["signOutEverywhere", (f) => peopleActions.signOutEverywhere(IDLE, f), { user: BOB }],
-  ["deactivate", (f) => peopleActions.deactivate(IDLE, f), { user: BOB, reason: "asked to" }],
+  ["deactivate", (f) => peopleActions.deactivate(IDLE, f), { user: BOB, reason: "asked to", confirm: "pause" }],
   ["reactivate", (f) => peopleActions.reactivate(IDLE, f), { user: BOB }],
   ["deleteAccount", (f) => peopleActions.deleteAccount(IDLE, f), { user: BOB, confirm: "delete" }],
   ["restoreAccount", (f) => peopleActions.restoreAccount(IDLE, f), { user: BOB }],
@@ -317,12 +318,12 @@ const ACTIONS: [name: string, run: (f: FormData) => Promise<State>, fields: Reco
   ["addToHousehold", (f) => householdActions.addToHousehold(IDLE, f), { household: HH, user: BOB }],
   ["removeMember", (f) => householdActions.removeMember(IDLE, f), { member: MEMBER, confirm: "remove" }],
   ["cancelInvitation", (f) => householdActions.cancelInvitation(IDLE, f), { invitation: MEMBER }],
-  ["closeHousehold", (f) => householdActions.closeHousehold(IDLE, f), { household: HH }],
+  ["closeHousehold", (f) => householdActions.closeHousehold(IDLE, f), { household: HH, confirm: "close" }],
   ["editStudent", (f) => studentActions.editStudent(IDLE, f), { student: STUDENT, display_name: "Alex" }],
   ["attachStudent", (f) => studentActions.attachStudent(IDLE, f), { student: STUDENT, user: BOB }],
   ["deleteStudent", (f) => studentActions.deleteStudent(IDLE, f), { student: STUDENT, confirm: "delete" }],
-  ["grantAdmin", (f) => adminsActions.grantAdmin(IDLE, f), { user: BOB }],
-  ["revokeAdmin", (f) => adminsActions.revokeAdmin(IDLE, f), { user: BOB }],
+  ["grantAdmin", (f) => adminsActions.grantAdmin(IDLE, f), { user: BOB, confirm: "grant" }],
+  ["revokeAdmin", (f) => adminsActions.revokeAdmin(IDLE, f), { user: BOB, confirm: "revoke" }],
 ];
 
 test("a signed-out person, a non-admin, and an admin at aal1 are turned away by every action: no database call, no admin-auth call", async () => {
@@ -410,13 +411,13 @@ test("actions turn the database's refusals into the plain words, naming the way 
     [(f) => householdActions.removeMember(IDLE, f), { member: MEMBER, confirm: "remove" }, "admin_unlink", "last_guardian_of_managed", /Add another guardian.*delete the student's record/],
     [(f) => householdActions.addToHousehold(IDLE, f), { household: HH, user: BOB, can_edit: "on" }, "admin_link", "household_full", /full/],
     [(f) => householdActions.addToHousehold(IDLE, f), { household: HH, student: STUDENT }, "admin_link", "already_member", /already in this household/],
-    [(f) => householdActions.closeHousehold(IDLE, f), { household: HH }, "admin_close_household", "household_not_empty", /empty household/],
+    [(f) => householdActions.closeHousehold(IDLE, f), { household: HH, confirm: "close" }, "admin_close_household", "household_not_empty", /empty household/],
     [(f) => peopleActions.deleteAccount(IDLE, f), { user: BOB, confirm: "delete" }, "admin_delete_account", "revoke_admin_first", /Revoke their admin access first/],
     [(f) => studentActions.attachStudent(IDLE, f), { student: STUDENT, user: BOB }, "admin_claim_student", "user_has_student", /already has their own student record/],
     [(f) => studentActions.deleteStudent(IDLE, f), { student: STUDENT, confirm: "delete" }, "admin_delete_student", "student_has_account", /belongs to an account/],
-    [(f) => adminsActions.revokeAdmin(IDLE, f), { user: ALICE }, "admin_revoke", "cannot_revoke_self", /own admin access/],
-    [(f) => adminsActions.revokeAdmin(IDLE, f), { user: BOB }, "admin_revoke", "last_admin", /last admin/],
-    [(f) => adminsActions.grantAdmin(IDLE, f), { user: BOB }, "admin_grant", "already_admin", /already an admin/],
+    [(f) => adminsActions.revokeAdmin(IDLE, f), { user: ALICE, confirm: "revoke" }, "admin_revoke", "cannot_revoke_self", /own admin access/],
+    [(f) => adminsActions.revokeAdmin(IDLE, f), { user: BOB, confirm: "revoke" }, "admin_revoke", "last_admin", /last admin/],
+    [(f) => adminsActions.grantAdmin(IDLE, f), { user: BOB, confirm: "grant" }, "admin_grant", "already_admin", /already an admin/],
     [(f) => peopleActions.restoreAccount(IDLE, f), { user: BOB }, "admin_restore_account", "not_deleted", /isn't scheduled for deletion/],
   ];
   for (const [run, fields, rpc, code, says] of cases) {
@@ -528,18 +529,50 @@ test("guard: a Delete account that skips the sign-out is caught by the check on 
   assert.ok(!step(src.replace('op: "sign_out", user }, ""', 'op: "unsuspend", user }, ""')));
 });
 
-test("Remove a person, Delete account, Delete now, and Delete the record use ConfirmTyped; no other action does", () => {
+test("Remove a person, Delete account, Delete now, Delete the record, and Deactivate use ConfirmTyped; no other action on these three pages does", () => {
   const person = read("app/admin/people/[user]/page.tsx");
   const hh = read("app/admin/households/[id]/page.tsx");
   const student = read("app/admin/students/[id]/page.tsx");
   assert.match(person, /<ConfirmTyped\s+action=\{deleteAccount\}[\s\S]*?expected=\{CONFIRM_DELETE\}/);
   assert.match(person, /<ConfirmTyped\s+action=\{deleteNow\}[\s\S]*?expected=\{email \?\? CONFIRM_DELETE\}/);
   assert.match(person, /<ConfirmTyped\s+action=\{removeMember\}[\s\S]*?expected=\{CONFIRM_REMOVE\}/);
+  assert.match(person, /<ConfirmTyped\s+action=\{deactivate\}[\s\S]*?expected=\{CONFIRM_DEACTIVATE\}/);
   assert.match(hh, /<ConfirmTyped\s+action=\{removeMember\}[\s\S]*?expected=\{CONFIRM_REMOVE\}/);
   assert.match(student, /<ConfirmTyped\s+action=\{deleteStudent\}[\s\S]*?expected=\{CONFIRM_DELETE_RECORD\}/);
   for (const [name, src] of [["person", person], ["household", hh], ["student", student]]) {
     const used = [...src.matchAll(/<ConfirmTyped\s+action=\{(\w+)\}/g)].map((m) => m[1]);
-    assert.deepEqual(used.filter((a) => !["deleteAccount", "deleteNow", "removeMember", "deleteStudent"].includes(a)), [], name);
+    assert.deepEqual(used.filter((a) => !["deleteAccount", "deleteNow", "removeMember", "deleteStudent", "deactivate", "closeHousehold"].includes(a)), [], name);
+  }
+});
+
+/**
+ * The typed-word rule's extension (specs/product/admin-redesign.md "People": "One rule for danger"; brief's
+ * "Typed-word rule" contract): Grant admin, Revoke admin, and Close household also use ConfirmTyped, each checked
+ * again by its Server Action.
+ */
+test("Grant admin, Revoke admin, and Close household use ConfirmTyped with their own typed word", () => {
+  const admins = read("app/admin/admins/page.tsx");
+  const hh = read("app/admin/households/[id]/page.tsx");
+  assert.match(admins, /<ConfirmTyped\s+action=\{grantAdmin\}[\s\S]*?expected=\{CONFIRM_GRANT\}/);
+  assert.match(admins, /<ConfirmTyped\s+action=\{revokeAdmin\}[\s\S]*?expected=\{CONFIRM_REVOKE\}/);
+  assert.match(hh, /<ConfirmTyped\s+action=\{closeHousehold\}[\s\S]*?expected=\{CONFIRM_CLOSE_HOUSEHOLD\}/);
+});
+
+test("the typed-word rule's new words are checked again in the Server Action, not just disabled in the browser", async () => {
+  const gated: [string, (f: FormData) => Promise<State>, Record<string, string>][] = [
+    ["grantAdmin", (f) => adminsActions.grantAdmin(IDLE, f), { user: BOB }],
+    ["grantAdmin (wrong word)", (f) => adminsActions.grantAdmin(IDLE, f), { user: BOB, confirm: "yes" }],
+    ["revokeAdmin", (f) => adminsActions.revokeAdmin(IDLE, f), { user: BOB }],
+    ["closeHousehold", (f) => householdActions.closeHousehold(IDLE, f), { household: HH }],
+    ["deactivate", (f) => peopleActions.deactivate(IDLE, f), { user: BOB, reason: "asked for it" }],
+  ];
+  for (const [label, run, fields] of gated) {
+    asAdmin();
+    const got = await run(form(fields));
+    assert.equal(got.status, "error", label);
+    assert.match(errorText(got), /to confirm/, label);
+    assert.equal(ui.current.rpcCalls.length, 0, label);
+    assert.equal(ui.current.fetchCalls.length, 0, label);
   }
 });
 
@@ -612,12 +645,15 @@ test("Change email sends the typed-twice address and the re-point choice; a mism
   assert.match(errorText(await peopleActions.changeEmail(IDLE, form({ user: BOB, email: "a@example.com", email_again: "a@example.com" }))), /already uses/);
 });
 
-test("Deactivate needs a reason and sends it to admin-auth (which logs it); Reactivate needs none", async () => {
+test("Deactivate needs the typed word 'pause' and a reason, and sends the reason to admin-auth (which logs it); Reactivate needs neither", async () => {
   asAdmin();
-  assert.match(errorText(await peopleActions.deactivate(IDLE, form({ user: BOB, reason: " " }))), /Say why/);
+  assert.match(errorText(await peopleActions.deactivate(IDLE, form({ user: BOB, reason: "Asked by a parent" }))), /Type "pause"/);
   assert.equal(ui.current.fetchCalls.length, 0);
   asAdmin();
-  assert.equal((await peopleActions.deactivate(IDLE, form({ user: BOB, reason: "Asked by a parent" }))).status, "done");
+  assert.match(errorText(await peopleActions.deactivate(IDLE, form({ user: BOB, reason: " ", confirm: "pause" }))), /Say why/);
+  assert.equal(ui.current.fetchCalls.length, 0);
+  asAdmin();
+  assert.equal((await peopleActions.deactivate(IDLE, form({ user: BOB, reason: "Asked by a parent", confirm: "pause" }))).status, "done");
   assert.deepEqual(ui.current.fetchCalls[0].body.reason, "Asked by a parent");
   assert.deepEqual(ui.current.logs, []);
 });
@@ -844,20 +880,24 @@ test("sign-in activity in words: devices from the browser, the authenticator not
   assert.equal(consoleLib.describeAuthActivity({ at: "x", kind: "auth.recovery", detail: null, source: "support" }).label, "Quad support: made a password-reset link");
 });
 
-test("the rail has its sections, highlights the right one, and every console page sits under one", () => {
-  assert.deepEqual(consoleLib.ADMIN_SECTIONS.map((s) => s.label), ["People", "Households", "Organizations", "Colleges", "Health", "Operations", "Essays", "Jobs", "Log"]);
-  assert.equal(consoleLib.activeSection("/admin/jobs/digests/runs/12"), "jobs");
-  assert.equal(consoleLib.activeSection("/admin"), null);
-  assert.equal(consoleLib.activeSection("/admin/households"), "households");
-  assert.equal(consoleLib.activeSection(`/admin/households/${HH}`), "households");
-  assert.equal(consoleLib.activeSection(`/admin/students/${STUDENT}`), "people");
-  assert.equal(consoleLib.activeSection("/admin/high-schools/abc"), "colleges");
-  assert.equal(consoleLib.activeSection("/admin/admins"), "log");
-  assert.equal(consoleLib.activeSection("/admin/peoplex"), null);
+test("the rail has the four doors, highlights the right screen, and every console page sits under a door", () => {
+  assert.deepEqual(consoleLib.ADMIN_DOORS.map((d) => d.label), ["Steward", "People", "Data", "More"]);
+  const screen = (p: string) => consoleLib.activeScreen(p)?.key ?? null;
+  assert.equal(screen("/admin/steward/jobs/digests/runs/12"), "jobs");
+  assert.equal(screen("/admin"), "inbox");
+  assert.equal(screen("/admin/households"), "households");
+  assert.equal(screen(`/admin/households/${HH}`), "households");
+  assert.equal(screen(`/admin/students/${STUDENT}`), "people");
+  assert.equal(screen("/admin/data/high-schools/abc"), "colleges");
+  assert.equal(screen("/admin/admins"), "admins");
+  assert.equal(screen("/admin/peoplex"), null);
+  assert.equal(consoleLib.activeDoor(`/admin/students/${STUDENT}`), "people");
+  assert.equal(consoleLib.activeDoor("/admin/data"), "data");
+  assert.equal(consoleLib.activeDoor("/admin/more"), "more");
   const rail = read("components/admin/AdminRail.tsx");
-  assert.match(rail, /<AdminSearch \/>/);
+  assert.match(rail, /<AdminSearch /);
   assert.match(rail, /aria-current=/);
-  assert.match(rail, /overflow-x-auto/); // the phone strip
+  assert.match(rail, /md:block/, "the rail shows from md; the tab bar takes over below it");
 });
 
 test("dates: a moment is shown in the site's zone; a bare date (a deadline) is shown as written, not shifted a day", () => {
@@ -922,7 +962,7 @@ test("console reads go through the console header: the pickers and counts use ad
   assert.match(reads, /adminSupabase\(\)/);
   assert.doesNotMatch(reads, /createServerSupabase\(/);
   // The MFA actions use the admin's own session (they are about the session itself), not the console's reads.
-  for (const f of adminFiles.filter((f) => (f.endsWith(".ts") || f.endsWith(".tsx")) && !f.includes("/mfa/"))) assert.doesNotMatch(read(f), /createServerSupabase\(/, f);
+  for (const f of adminFiles.filter((f) => (f.endsWith(".ts") || f.endsWith(".tsx")) && !f.endsWith("mfa-actions.ts"))) assert.doesNotMatch(read(f), /createServerSupabase\(/, f);
 });
 
 /* ------------------------------------------------------------------ */
@@ -994,6 +1034,6 @@ test("isNextControlFlow recognizes redirect() and notFound(), and nothing a data
 
 test("the console files are all under the paths this unit owns", () => {
   const owned = ["app/admin/layout.tsx", "app/admin/page.tsx"];
-  const dirs = ["people", "households", "organizations", "students", "log", "admins", "mfa", "settings"].map((d) => `app/admin/${d}/`);
-  for (const f of adminFiles) assert.ok(owned.includes(f) || dirs.some((d) => f.startsWith(d)) || /^app\/admin\/(colleges|health|operations|jobs|essays|high-schools|selectivity|data)\//.test(f), relative(ROOT, join(ROOT, f)));
+  const dirs = ["people", "households", "organizations", "students", "log", "admins", "settings", "more", "help"].map((d) => `app/admin/${d}/`);
+  for (const f of adminFiles) assert.ok(owned.includes(f) || dirs.some((d) => f.startsWith(d)) || /^app\/admin\/(steward|data)\//.test(f), relative(ROOT, join(ROOT, f)));
 });

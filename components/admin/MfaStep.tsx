@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
-import { startEnrollment, verifyCode, type MfaState } from "@/app/admin/mfa/actions";
+import { startEnrollment, verifyCode, type MfaState } from "@/app/admin/admins/mfa-actions";
 
 const inputCls =
   "h-12 w-full min-w-0 rounded-xl border border-input bg-background px-3.5 text-center font-mono text-xl tracking-[0.4em] outline-none transition-colors placeholder:tracking-normal placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
@@ -11,7 +11,7 @@ const inputCls =
 /**
  * The console's second factor (specs/product/admin.md "Who is an admin"): an admin whose session is aal1 sees this
  * instead of the console. First time: start setup, scan the QR code (or type the key) into an authenticator app, enter
- * the 6-digit code. After that: just the code. The work is in Server Actions (app/admin/mfa/actions.ts), because the
+ * the 6-digit code. After that: just the code. The work is in Server Actions (app/admin/admins/mfa-actions.ts), because the
  * browser never talks to Supabase on this site; when the code checks out the session is aal2 and router.refresh()
  * re-renders the layout, which then shows the console.
  */

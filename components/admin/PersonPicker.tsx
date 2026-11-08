@@ -33,7 +33,7 @@ export function PersonPicker({
 }) {
   return (
     <div className="space-y-3">
-      <form action={action} method="get" className="flex flex-col gap-2 sm:flex-row">
+      <form action={action} method="get" className="flex flex-col gap-2 md:flex-row">
         <input type="hidden" name={param} value={mode} />
         {Object.entries(keep).map(([k, v]) => (
           <input key={k} type="hidden" name={k} value={v} />
@@ -60,7 +60,7 @@ export function PersonPicker({
         ) : (
           <ul className="divide-y rounded-xl border">
             {rows.map((r) => (
-              <li key={`${r.kind}-${r.id}`} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-start sm:justify-between">
+              <li key={`${r.kind}-${r.id}`} className="flex flex-col gap-2 p-3 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0 space-y-0.5">
                   <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                     <span className="break-words">{r.name ?? r.email ?? "No name"}</span>

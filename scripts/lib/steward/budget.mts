@@ -104,16 +104,28 @@ export class Budget {
   }
 }
 
-/** Dollars the Steward spent in the seven days before `now` (every run started in the window). */
-export async function weeklySpent(store: Pick<DataStore, "read">, now: Date): Promise<number> {
+/**
+ * The job review's own limits (specs/product/admin-redesign.md "What the Steward reviews"): one Haiku call per flagged
+ * or failed run, at most $0.10 a run and $3 a week in all review runs, inside the week's $40.
+ */
+export const REVIEW_BUDGETS = { run: 0.1, week: 3 } as const;
+
+/** Dollars the Steward spent in the seven days before `now` (every run started in the window; one mode when given). */
+export async function weeklySpent(store: Pick<DataStore, "read">, now: Date, mode?: RunDoc["mode"]): Promise<number> {
   const runs = await store.read<RunDoc>(COLLECTIONS.steward.runs);
   const since = now.getTime() - 7 * 24 * 60 * 60 * 1000;
   let usd = 0;
   for (const r of runs.values()) {
+    if (mode && r.mode !== mode) continue;
     const t = Date.parse(r.started);
     if (Number.isFinite(t) && t >= since && t <= now.getTime()) usd += Number(r.spent_usd) || 0;
   }
   return round(usd);
+}
+
+/** A review run's budget: $0.10, cut to what the week's $3 for reviews and the week's $40 have left. */
+export function reviewBudget(spentThisWeek: number, reviewSpentThisWeek: number): number {
+  return round(Math.max(0, Math.min(REVIEW_BUDGETS.run, REVIEW_BUDGETS.week - reviewSpentThisWeek, WEEKLY_CAP_USD - spentThisWeek)));
 }
 
 /** The budget a run gets: what it asked for, cut to what the week has left. */

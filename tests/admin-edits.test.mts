@@ -1,5 +1,5 @@
 /**
- * The field editor at /admin/colleges/[unit]/edit (specs/data-platform/change-sets.md "Admin edits"; brief F2): the
+ * The field editor at /admin/data/colleges/[unit]/edit (specs/data-platform/change-sets.md "Admin edits"; brief F2): the
  * input each path gets (lib/admin/edits-view.ts inferKind), how a submitted value is parsed and refused, the stored
  * derived fields an input feeds, which paths are offered and how they group, the marker "a newer pipeline value exists",
  * the reads (over a fake Supabase client and a fake fetch), the actions (over fake dependencies: the registry check
@@ -367,7 +367,7 @@ test("saveEdit: parses by kind, calls admin_data_edit, then revalidates the prof
   const r = await actions.saveEdit(f.deps, form({ unit: HARVARD, path: "admissions.admitted", kind: "number", value: "2,100", note: "  from the  class profile " }));
   assert.equal(r.status, "done");
   assert.deepEqual(f.rpcs, [{ fn: "admin_data_edit", args: { p_unit: HARVARD, p_path: "admissions.admitted", p_value: 2100, p_note: "from the class profile" } }]);
-  assert.deepEqual(f.revalidated, [[`/schools/${HARVARD}`, `/admin/colleges/${HARVARD}`]]);
+  assert.deepEqual(f.revalidated, [[`/schools/${HARVARD}`, `/admin/data/colleges/${HARVARD}`]]);
   assert.deepEqual(f.order, ["forget", "revalidate"], "the overlay's memo is forgotten before the pages regenerate");
 });
 
@@ -406,7 +406,7 @@ test("releaseEdit releases the live row and revalidates its college; an unknown 
   const r = await actions.releaseEdit(f.deps, form({ edit: "4" }));
   assert.equal(r.status, "done");
   assert.deepEqual(f.rpcs, [{ fn: "admin_data_release_edit", args: { p_edit: 4 } }]);
-  assert.deepEqual(f.revalidated, [["/schools/190415", "/admin/colleges/190415"]]);
+  assert.deepEqual(f.revalidated, [["/schools/190415", "/admin/data/colleges/190415"]]);
   assert.deepEqual(f.order, ["forget", "revalidate"]);
   const g = fakeDeps();
   assert.equal((await actions.releaseEdit(g.deps, form({ edit: "5" }))).status, "error");
@@ -439,7 +439,7 @@ const fd = (values: Record<string, string>) => {
 };
 
 test("the Server Actions call requireAdmin() before anything: a non-admin gets a 404 with no read and no rpc", async () => {
-  const mod = await import("../app/admin/colleges/[unit]/edit/actions.ts");
+  const mod = await import("../app/admin/data/colleges/[unit]/edit/actions.ts");
   const rpcs: string[] = [];
   const supabase = () => ({ rpc: async (fn: string) => (rpcs.push(fn), { data: 1, error: null }), from: () => assert.fail("no read") });
   for (const [name, values] of [
@@ -458,7 +458,7 @@ test("the Server Actions call requireAdmin() before anything: a non-admin gets a
   assert.equal(done.status, "done");
   assert.deepEqual(world.calls, ["requireAdmin", "withAdmin", "refresh"]);
   assert.deepEqual(rpcs, ["admin_data_edit"]);
-  assert.deepEqual(world.revalidated, [`/schools/${HARVARD} layout`, `/admin/colleges/${HARVARD} layout`]);
+  assert.deepEqual(world.revalidated, [`/schools/${HARVARD} layout`, `/admin/data/colleges/${HARVARD} layout`]);
 });
 
 const reactUrl = pathToFileURL(createRequire(import.meta.url).resolve("react")).href;
@@ -493,6 +493,7 @@ async function loadTsx(rel: string, real: string[] = []): Promise<Record<string,
     .replace(/from "next\/link"/g,`from ${JSON.stringify(pathToFileURL(join(tmp, "link.mjs")).href)}`)
     .replace(/from "\.\/actions"/g, `from ${JSON.stringify(pathToFileURL(join(tmp, "actions.mjs")).href)}`)
     .replace(/import \{([^}]*)\} from "(@\/(?:components|app)\/[^"]+)";/g, (_m, names: string, spec: string) => {
+      if (spec.endsWith("/ResponsiveTable")) return `import { ResponsiveTable } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, "fixtures/responsive-table-fake.mjs")).href)};`;
       if (reals[spec]) return `import {${names}} from ${JSON.stringify(reals[spec])};`;
       const list = names.split(",").map((s) => s.trim().replace(/^type\s+/, "").split(" as ").pop()!.trim()).filter(Boolean);
       return `import {${names}} from ${JSON.stringify(stubModule(`${rel.replace(/[^a-z]/gi, "_")}${n++}-${spec.split("/").pop()}`, list))};`;
@@ -506,7 +507,7 @@ type EditPage = (props: { params: Promise<{ unit: string }> }) => Promise<import
 const dataset = createDataset({ schools, meta, releaseCalendar: JSON.parse(read(`${FIXTURE}/release-calendar.json`)) });
 
 test("the edit page: a 404 signed out before any read; for an admin, a row per field with its input, Save, the Edited chip, Release and History", async () => {
-  const page = (await loadTsx("app/admin/colleges/[unit]/edit/page.tsx", ["@/components/admin/FieldEditor", "@/components/admin/Panel"])).default as EditPage;
+  const page = (await loadTsx("app/admin/data/colleges/[unit]/edit/page.tsx", ["@/components/admin/FieldEditor", "@/components/admin/Panel"])).default as EditPage;
   reset({ admin: false, data: dataset });
   await assert.rejects(page({ params: Promise.resolve({ unit: HARVARD }) }), is404);
   assert.deepEqual(world.calls, ["requireAdmin"]);
@@ -516,7 +517,7 @@ test("the edit page: a 404 signed out before any read; for an admin, a row per f
   assert.deepEqual(world.calls.slice(0, 3), ["requireAdmin", "getData", "adminSupabase"]);
   assert.match(markup, /Edit Harvard University/);
   assert.match(markup, /href="\/schools\/166027"/, "the public profile link");
-  assert.match(markup, /href="\/admin\/colleges\/166027"/, "the back link");
+  assert.match(markup, /href="\/admin\/data\/colleges\/166027"/, "the back link");
   assert.match(markup, /data-path="admissions\.admitted"/);
   assert.match(markup, /data-path="name"/);
   assert.doesNotMatch(markup, /data-path="unit_id"/);
@@ -535,15 +536,15 @@ test("the edit page: a 404 signed out before any read; for an admin, a row per f
 });
 
 test("static: the page calls connection() then requireAdmin() first and is noindex; the college page links Edit; the editor imports only types from the view", () => {
-  const src = read("app/admin/colleges/[unit]/edit/page.tsx");
+  const src = read("app/admin/data/colleges/[unit]/edit/page.tsx");
   assert.match(src.slice(src.indexOf("export default async function")), /\{\n\s+await connection\(\);\n\s+await requireAdmin\(\);/);
   assert.match(src, /robots: \{ index: false, follow: false \}/);
-  assert.match(read("app/admin/colleges/[unit]/page.tsx"), /href=\{`\/admin\/colleges\/\$\{unit\}\/edit`\}[^>]*>\s*Edit\s*</);
+  assert.match(read("app/admin/data/colleges/[unit]/page.tsx"), /href=\{`\/admin\/data\/colleges\/\$\{unit\}\/edit`\}[^>]*>\s*Edit\s*</);
   const editor = read("components/admin/FieldEditor.tsx");
   assert.match(editor, /^"use client";/);
   assert.match(editor, /import type \{[^}]*\} from "@\/lib\/admin\/edits-view";/);
   assert.doesNotMatch(editor, /import \{[^}]*\} from "@\/lib\/admin\/edits-(view|reads|actions)"/, "nothing but types from the server-side modules");
-  for (const f of ["components/admin/FieldEditor.tsx", "app/admin/colleges/[unit]/edit/page.tsx", "lib/admin/edits-actions.ts", "lib/admin/edits-view.ts"]) {
+  for (const f of ["components/admin/FieldEditor.tsx", "app/admin/data/colleges/[unit]/edit/page.tsx", "lib/admin/edits-actions.ts", "lib/admin/edits-view.ts"]) {
     assert.doesNotMatch(read(f), /SUPABASE_SECRET|service_role/i, f);
     assert.doesNotMatch(read(f).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, ""), /\boverride|\bdeploy/i, f);
   }

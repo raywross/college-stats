@@ -56,7 +56,7 @@ export function jobsViewHref(view: JobsView): string {
   return view === "all" ? `${JOBS_HREF}?view=all` : JOBS_HREF;
 }
 
-export const JOBS_HREF = "/admin/jobs";
+export const JOBS_HREF = "/admin/steward/jobs";
 
 export function jobHref(job: Pick<JobDef, "id">): string {
   return `${JOBS_HREF}/${job.id}`;

@@ -6,9 +6,10 @@ import { AdminForm } from "@/components/admin/AdminForm";
 import { ConfirmTyped } from "@/components/admin/ConfirmTyped";
 import { Empty, Fields, Muted, PageHeader, Panel } from "@/components/admin/Panel";
 import { PersonPicker } from "@/components/admin/PersonPicker";
+import { RecordActions } from "@/components/admin/RecordActions";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
-import { CONFIRM_REMOVE, fmtDate, moveWarning } from "@/lib/admin/console";
+import { CONFIRM_CLOSE_HOUSEHOLD, CONFIRM_REMOVE, fmtDate, moveWarning } from "@/lib/admin/console";
 import { findPeople } from "@/lib/admin/console-reads";
 import { adminHousehold, type AdminHousehold, type AdminInvitation, type AdminMember, type SearchRow } from "@/lib/admin/people";
 import { isUuid } from "@/lib/household-hub";
@@ -46,7 +47,7 @@ export default async function HouseholdPage({ params, searchParams }: PageProps<
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="household"
         back={
           <Link href="/admin/people" className="text-muted-foreground underline-offset-4 hover:underline">
             People
@@ -57,9 +58,36 @@ export default async function HouseholdPage({ params, searchParams }: PageProps<
         subtitle={`${household.seats} of ${HOUSEHOLD_MAX_MEMBERS} seats${household.invitations.some((i) => i.state === "pending") ? ", counting invitations waiting for an answer" : ""}`}
       />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]">
-        <div className="min-w-0 space-y-5">
-          <Panel title="Household" id="household">
+      {closed ? (
+        <p className="mb-5 text-sm text-muted-foreground">This household is closed. There is nothing to change.</p>
+      ) : (
+        <RecordActions>
+          <AdminForm
+            action={renameHousehold}
+            hidden={{ household: id }}
+            trigger="Rename"
+            submit="Save name"
+            sheet
+            fields={[{ name: "name", label: "Household name", defaultValue: household.name, required: true, maxLength: 80 }]}
+          />
+          {empty ? (
+            <ConfirmTyped
+              action={closeHousehold}
+              hidden={{ household: id }}
+              trigger="Close household"
+              submit="Close household"
+              expected={CONFIRM_CLOSE_HOUSEHOLD}
+              sheet
+              description="Closes this empty household and cancels its waiting invitations."
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">A household can be closed once everyone has been removed.</p>
+          )}
+        </RecordActions>
+      )}
+
+      <div className="space-y-5">
+          <Panel help="household" title="Household" id="household">
             <Fields
               items={[
                 { label: "Created", value: fmtDate(household.created) },
@@ -71,7 +99,7 @@ export default async function HouseholdPage({ params, searchParams }: PageProps<
             <p className="mt-2 text-xs text-muted-foreground">City and state only: the street address is the family&apos;s.</p>
           </Panel>
 
-          <Panel title="Who is in it" id="roster">
+          <Panel help="seat" title="Who is in it" id="roster">
             {empty ? (
               <Empty>No one is in this household.</Empty>
             ) : (
@@ -82,7 +110,7 @@ export default async function HouseholdPage({ params, searchParams }: PageProps<
             )}
           </Panel>
 
-          <Panel title="Invitations" id="invitations">
+          <Panel help="invitation" title="Invitations" id="invitations">
             {household.invitations.length === 0 ? (
               <Empty>No invitations.</Empty>
             ) : (
@@ -97,7 +125,7 @@ export default async function HouseholdPage({ params, searchParams }: PageProps<
 
           {!closed && (
             <>
-              <Panel title="Add a student" id="add-student">
+              <Panel help="managed-record" title="Add a student" id="add-student">
                 <PersonPicker
                   action={`/admin/households/${id}`}
                   param="add"
@@ -108,7 +136,7 @@ export default async function HouseholdPage({ params, searchParams }: PageProps<
                   renderAction={(r) => <AddButton household={household} row={r} parent={false} />}
                 />
               </Panel>
-              <Panel title="Add a parent" id="add-parent">
+              <Panel help="household" title="Add a parent" id="add-parent">
                 <PersonPicker
                   action={`/admin/households/${id}`}
                   param="add"
@@ -121,38 +149,6 @@ export default async function HouseholdPage({ params, searchParams }: PageProps<
               </Panel>
             </>
           )}
-        </div>
-
-        <aside className="min-w-0">
-          <div className="space-y-4 rounded-2xl border bg-card p-4 sm:p-5 lg:sticky lg:top-(--header-h)">
-            <h2 className="font-display text-lg font-bold tracking-tight">Actions</h2>
-            {closed ? (
-              <p className="text-sm text-muted-foreground">This household is closed. There is nothing to change.</p>
-            ) : (
-              <div className="space-y-3">
-                <AdminForm
-                  action={renameHousehold}
-                  hidden={{ household: id }}
-                  trigger="Rename"
-                  submit="Save name"
-                  fields={[{ name: "name", label: "Household name", defaultValue: household.name, required: true, maxLength: 80 }]}
-                />
-                {empty ? (
-                  <AdminForm
-                    action={closeHousehold}
-                    hidden={{ household: id }}
-                    trigger="Close household"
-                    submit="Close household"
-                    tone="danger"
-                    description="Closes this empty household and cancels its waiting invitations."
-                  />
-                ) : (
-                  <p className="text-xs text-muted-foreground">A household can be closed once everyone has been removed.</p>
-                )}
-              </div>
-            )}
-          </div>
-        </aside>
       </div>
     </>
   );

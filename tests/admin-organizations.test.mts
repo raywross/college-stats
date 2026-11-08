@@ -126,7 +126,7 @@ function baseTables() {
 
 test("requireAdmin() gates every read: a non-admin gets a 404 before any Supabase call", async () => {
   reset({ admin: false, supabase: () => fakeSupabase(baseTables()) });
-  await assert.rejects(orgs.listOrganizations(1), is404);
+  await assert.rejects(orgs.listOrganizations("", 1), is404);
   await assert.rejects(orgs.adminOrganization(ORG_A), is404);
   await assert.rejects(orgs.personOrganization(OWNER), is404);
   await assert.rejects(orgs.studentOrganizationGrants(STUDENT_WITH_ACCOUNT), is404);
@@ -135,7 +135,7 @@ test("requireAdmin() gates every read: a non-admin gets a 404 before any Supabas
 
 test("listOrganizations: every organization, newest first, with kind, high school, members, and counts", async () => {
   reset({ supabase: () => fakeSupabase(baseTables()) });
-  const { rows, total } = await orgs.listOrganizations(1);
+  const { rows, total } = await orgs.listOrganizations("", 1);
   assert.equal(total, 2);
   assert.deepEqual(rows.map((r) => r.id), [ORG_B, ORG_A], "newest first");
   const a = rows.find((r) => r.id === ORG_A)!;
@@ -154,11 +154,29 @@ test("listOrganizations pages in code (there is no admin_list_organizations())",
   // A third organization so paging at size 2 has something on page 2 (ORG_PAGE_SIZE is 50, so page a smaller size by hand).
   tables.organizations.push({ id: "77777777-7777-4777-8777-777777777777", name: "Third", kind: "iec", ncessch: null, website: null, join_code: "THIRD1", created: "2026-10-30T12:00:00Z", created_by: OWNER, deleted_at: null });
   reset({ supabase: () => fakeSupabase(tables) });
-  const page1 = await orgs.listOrganizations(1);
+  const page1 = await orgs.listOrganizations("", 1);
   assert.equal(page1.total, 3);
   assert.equal(page1.rows.length, 3, "all fit on page 1 at ORG_PAGE_SIZE 50");
-  const page2 = await orgs.listOrganizations(2);
+  const page2 = await orgs.listOrganizations("", 2);
   assert.equal(page2.rows.length, 0);
+});
+
+test("listOrganizations: q matches the organization's name, its join code, or a member's name (specs/product/admin-redesign.md \"People\")", async () => {
+  reset({ supabase: () => fakeSupabase(baseTables()) });
+  const byName = await orgs.listOrganizations("college consulting", 1);
+  assert.equal(byName.total, 1);
+  assert.equal(byName.rows[0].id, ORG_A);
+
+  const byMember = await orgs.listOrganizations("pat rivera", 1);
+  assert.equal(byMember.total, 1);
+  assert.equal(byMember.rows[0].id, ORG_A);
+
+  const byJoinCode = await orgs.listOrganizations("rivera", 1);
+  assert.equal(byJoinCode.total, 1, "matches a join code case-insensitively");
+
+  const none = await orgs.listOrganizations("no such organization", 1);
+  assert.equal(none.total, 0);
+  assert.deepEqual(none.rows, []);
 });
 
 test("adminOrganization: members, live students with grant dates, invited students (never a token), and ask counts", async () => {
@@ -217,14 +235,15 @@ test("studentOrganizationGrants: a student's live grants, organization name and 
 /* The rail                                                            */
 /* ------------------------------------------------------------------ */
 
-test("the rail lists Organizations right after Households, linking to /admin/organizations", () => {
-  const keys = consoleLib.ADMIN_SECTIONS.map((s) => s.key);
+test("the People door lists Organizations right after Households, linking to /admin/organizations", () => {
+  const people = consoleLib.ADMIN_DOORS.find((d) => d.key === "people")!;
+  const keys = people.screens.map((s) => s.key);
   const hIdx = keys.indexOf("households");
   assert.equal(keys[hIdx + 1], "organizations");
-  const section = consoleLib.ADMIN_SECTIONS.find((s) => s.key === "organizations")!;
-  assert.equal(section.href, "/admin/organizations");
-  assert.equal(consoleLib.activeSection("/admin/organizations"), "organizations");
-  assert.equal(consoleLib.activeSection(`/admin/organizations/${ORG_A}`), "organizations");
+  const screen = people.screens.find((s) => s.key === "organizations")!;
+  assert.equal(screen.href, "/admin/organizations");
+  assert.equal(consoleLib.activeScreen("/admin/organizations")?.key, "organizations");
+  assert.equal(consoleLib.activeScreen(`/admin/organizations/${ORG_A}`)?.key, "organizations");
 });
 
 /* ------------------------------------------------------------------ */

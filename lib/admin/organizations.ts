@@ -116,13 +116,31 @@ async function highSchoolNames(supabase: SupabaseClient, ncesschIds: (string | n
   return out;
 }
 
-/** One page of every organization, newest first (admins read every row; there is no admin_list_organizations()). */
-export async function listOrganizations(page: number): Promise<{ rows: OrgListRow[]; total: number }> {
+/**
+ * One page of every organization, newest first, optionally narrowed by `q` (its name, join code, high school id, or
+ * a member's name; specs/product/admin-redesign.md "People": "Organizations get a search like the other two
+ * lists"). Admins read every row; there is no `admin_list_organizations()`, so the match and the paging both happen
+ * in code (there are few organizations while the portal is new).
+ */
+export async function listOrganizations(q: string, page: number): Promise<{ rows: OrgListRow[]; total: number }> {
   const supabase = await db();
-  // No admin_list_organizations() (there are few organizations while the portal is new, per the spec's "not a per-
-  // counselor caseload yet"): every row is read, sorted newest first, and paged in code, as a plain `.range()` would
-  // otherwise do.
-  const all = await rows<OrgRow>("organizations", supabase.from("organizations").select(ORG_COLUMNS).order("created", { ascending: false }));
+  const everything = await rows<OrgRow>("organizations", supabase.from("organizations").select(ORG_COLUMNS).order("created", { ascending: false }));
+  const needle = q.trim().toLowerCase();
+  let all = everything;
+  if (needle) {
+    const allIds = inList(everything.map((o) => o.id));
+    const members = await rows<MemberRow>("members", supabase.from("org_members").select("id, org_id, user_id, role, created").in("org_id", allIds));
+    const names = await namesFor(supabase, members.map((m) => m.user_id));
+    const memberNamesByOrg = new Map<string, string[]>();
+    for (const m of members) {
+      const name = names.get(m.user_id);
+      if (name) memberNamesByOrg.set(m.org_id, [...(memberNamesByOrg.get(m.org_id) ?? []), name]);
+    }
+    all = everything.filter((o) => {
+      const haystack = [o.name, o.join_code, o.ncessch, ...(memberNamesByOrg.get(o.id) ?? [])].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(needle);
+    });
+  }
   const from = (page - 1) * ORG_PAGE_SIZE;
   const orgs = all.slice(from, from + ORG_PAGE_SIZE);
   if (orgs.length === 0) return { rows: [], total: all.length };

@@ -247,6 +247,43 @@ which bytecode caching already shortens. That is acceptable. Two cheap things ma
 - If cold starts turn out frequent on a Hobby plan, Pro's Scale to One is the switch; if the 300 ms itself matters,
   the later options below apply.
 
+**Measured 2026-11-08** (snapshot 6: 1,893 colleges, `colleges.json` 35.7 MB ungzipped on disk; production logged
+`[data] loaded 1893 colleges (snapshot 6) in 953 ms`). `scripts/measure-cold-start.mts` times a cold load in fresh
+processes and prints the wall time and the main thread's CPU time per step (the laptop was shared with other builds,
+so the wall times swing by 2×; the CPU times hold within about 10%). Median of seven runs, on an M-series laptop:
+
+| Step | CPU before | CPU after |
+|---|---|---|
+| Whole first load (what the `[data] loaded` line measures) | 367 ms | 313 ms |
+| Read `colleges.json` | about 75 ms (`readFileSync(path, "utf8")`) | 28 ms (a Buffer, then `toString("utf8")`) |
+| `JSON.parse` of `colleges.json` | 240–280 ms | same |
+| Everything else (manifest, meta, calendar, aliases, history's shared object, `createDataset`) | about 12 ms | same |
+
+The mini fixture loads in 16 ms of CPU. So the cold load is one thing: parsing 35.7 MB of JSON. `createDataset`
+already builds every index on first use (2–6 ms at load), gunzip happens at build time (`fetch-snapshot` stores the
+bundled copy ungzipped), and no per-college detail or history is read at load. The one cheap cut was the read path
+(`lib/data-platform/loader.ts readJsonFile`, about 55 ms of CPU). Things tried and dropped, each measured: deferring
+each college's `lineage` (17.2 MB, half the file) behind a lazy getter, found by a scan of the text, saves its parse
+but the scan costs as much (CPU the same, 315–380 ms either way); decoding as Latin-1 with `\u` escapes so V8 parses a
+one-byte string (the file has 119 lines with non-ASCII text) costs more to decode than it saves; larger young-generation
+GC settings (`--max-semi-space-size=64`, `--single-threaded-gc`) change nothing.
+
+What remains is the parse, and its lever is a smaller file at first load: publish `lineage` (and perhaps `reported`,
+2.8 MB) as its own object, read on demand, the way `detail/` and `history/` already are. A file without `lineage`
+parses in about half the time (measured: 230 ms against 494 ms wall in the same run). That is a publisher and
+fetch-snapshot change (several scripts read `.data/snapshot/colleges.json` whole), so it belongs with the
+precomputed derived files in [section 7](#7-later-options-with-their-triggers), not in a loader patch. Until then,
+the cold parse is synchronous CPU, so a page that starts its database reads before its first `getData()` overlaps
+the two.
+
+The pointer check's `checking for a newer snapshot failed … timed out: …/current.json` is not a slow bucket: the
+timeout is 30 s of socket inactivity (`httpGet`), and the check runs unawaited (`void h.maybeRefresh()` in
+`lib/data.ts`). The likely cause (not yet confirmed in the logs): when the response is sent before `current.json`
+arrives, the platform pauses the instance, and on the next request the overdue timer fires. A longer timeout or a retry would fail the same way, so neither was changed.
+The fix is to keep the check alive past the response (Next's `after()` or Vercel's `waitUntil`), guarded for the
+callers outside a request (the build, `generateStaticParams`); a missed check costs nothing but a minute's delay
+before the next one.
+
 ### 7. Later options, with their triggers
 Not built now; listed so the next step is a decision, not a search.
 | Option | When |
@@ -584,6 +621,8 @@ seconds. The dataset itself never entered this path.
 6. **Cold starts.** `data/schools.json` has grown from 16.7 MB to 27 MB since the serving change; the first request
    on a new instance pays the parse. Read the `[data] loaded … ms` line in production logs over a week; the
    precomputed derived files in [section 7](#7-later-options-with-their-triggers) remain the lever if it shows.
+   (2026-11-08: the file is now 35.7 MB and production logs 953 ms; the measured split, the read-path cut and what
+   remains are under [section 6](#6-cold-starts-measure-then-decide).)
 
 ### Measurement after this PR
 `next build` lists `/schools/[id]` as ● (prerendered) and `/schools/[id]/events` as ƒ; on the live site the overview

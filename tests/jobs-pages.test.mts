@@ -42,6 +42,8 @@ interface World {
   githubRunDetail: (job: { id: string }, id: number) => unknown;
   /** What lib/admin/ops.ts loadRunNow returns (no credentials unless a test says otherwise). */
   runNow?: (workflow: string | undefined) => unknown;
+  /** The Steward's reviews of a job's runs, by ref (lib/jobs/runs.ts reviewsOfRuns); none unless a test says so. */
+  reviews?: (job: { id: string }, refs: readonly string[]) => Map<string, unknown>;
 }
 declare global {
   var __world: World;
@@ -58,7 +60,8 @@ const STUBS: Record<string, string> = {
     "export async function storedRuns(job){w().calls.push('storedRuns'); return w().storedRuns(job)}" +
     "export async function storedRun(job,id){w().calls.push('storedRun'); return w().storedRun(job,id)}" +
     "export async function githubRuns(job,limit){w().calls.push('githubRuns'); return w().githubRuns(job,limit)}" +
-    "export async function githubRunDetail(job,id){w().calls.push('githubRunDetail'); return w().githubRunDetail(job,id)}",
+    "export async function githubRunDetail(job,id){w().calls.push('githubRunDetail'); return w().githubRunDetail(job,id)}" +
+    "export async function reviewsOfRuns(job,refs){return w().reviews ? w().reviews(job,refs) : new Map()}",
   // Run now (specs/product/admin-redesign.md: Operations folded into each job's page): no credentials here.
   "@/lib/admin/ops": "export async function loadRunNow(wf){const w=globalThis.__world; w.calls.push('loadRunNow'); return w.runNow ? w.runNow(wf) : {configured:null,runs:[],recent:[],cost:null}}",
   "@/app/admin/steward/jobs/actions": "export async function dispatchAction(){return {status:'idle'}}",

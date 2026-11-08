@@ -29,6 +29,7 @@ export const STEWARD_COLLECTIONS = {
   decisions: "steward.decisions",
   audits: "steward.audits",
   runs: "steward.runs",
+  reviews: "steward.reviews",
 } as const;
 /** The engines' records the To do rows and the clusters' kinds come from. */
 export const SOURCE_COLLECTIONS = {

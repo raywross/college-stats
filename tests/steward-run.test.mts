@@ -375,7 +375,7 @@ test("the CLI: flags, exit 2 when the budget stops it, the step outputs, and ref
   const run = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", join(ROOT, "scripts/steward.mts"), "--store", `file:${join(s.dir, "layers")}`, "--mode", "run", "--budget", "0.15", "--run-ref", "dry-run", "--dry-run", ANSWERS], { env, encoding: "utf8", cwd: ROOT });
   assert.equal(run.status, 2, run.stderr + run.stdout);
   assert.match(readFileSync(out, "utf8"), /exit_code=2\nchange_set=\d+\npublish=false\n/);
-  assert.equal(await main(["--store", `file:${join(s.dir, "layers")}`, "--mode", "nonsense"]).catch((e: Error) => e.message), "--mode nonsense: expected run, audit, apply, answer");
+  assert.equal(await main(["--store", `file:${join(s.dir, "layers")}`, "--mode", "nonsense"]).catch((e: Error) => e.message), "--mode nonsense: expected run, audit, apply, answer, review");
   assert.equal(await main(["--store", `file:${join(s.dir, "layers")}`, "--unit", "12"]).catch((e: Error) => e.message), "--unit 12: a six-digit unit id");
   const noKey = await runSteward({ mode: "run", store: s.store, budget: 5, runRef: "live", now: NOW, env: {}, log: () => {} });
   assert.equal(noKey.exit, 1);

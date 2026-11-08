@@ -64,6 +64,13 @@ the snapshot has no `lineage.json.gz`). These files are not objects (not in the 
 copy's index for the lazy loader, and `.data/snapshot/**` already traces them into every function. The mini fixture
 (`tests/fixtures/snapshot-mini/snapshot/`) has the same layout, and `--ensure`/`--fixture` copy it whole.
 
+**Order of operations for the first split publish (2026-11-08).** Deploy the loader that knows both layouts first,
+then publish. Code from before the split reads a split snapshot's `colleges.json.gz` and never looks for
+`lineage.json.gz`, so a running instance that swapped to one would lose every citation; the new loader reads an
+inline snapshot as before, so deploying first costs nothing. After the publish, running instances swap in the
+background and attach the records from `lineage.json.gz`; the next deploy bundles the split copy and cold starts run
+in lazy mode (`[data] loaded … , lineage lazy`).
+
 About 3,900 objects per snapshot; Storage's object listing isn't used, so the count is harmless. The bucket is
 **public-read** (`snapshots`), created once by the migration (`insert into storage.buckets … public = true`) with a
 write policy for the service role only.

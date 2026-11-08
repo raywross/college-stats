@@ -4,7 +4,8 @@
 > it's only things that a person can do … couldn't we have something that would leverage the Claude extension to
 > agentically go through the items and fix them?" Extends [data-steward.md](data-steward.md)
 > "[Documents a person has to fetch](data-steward.md#documents-a-person-has-to-fetch)". Nothing here is built; the
-> [decisions](#decisions-for-the-owner) at the end are the owner's. Part of [product](README.md).
+> [decisions](#decisions-for-the-owner) at the end were taken by the owner the same day; the [Logins](#logins) section
+> answers their follow-up question. Part of [product](README.md).
 
 ## The short answer
 Yes, and most of it needs no new plumbing. Claude in Chrome acts in the owner's own Chrome, signed in to the console
@@ -57,9 +58,10 @@ and no fit at all for logins. The list is sorted highest reach first, so the fir
 |---|---|---|
 | `js-only`, `not-found`, `viewer` (a file, not a folder) | Finds the address on the rendered page or in the folder | Found; the next run fetches it (after step 2 wires Found in; Drive share links already rewrite to direct downloads in `probe.mts`) |
 | `no-document` | Browses the site (institutional research, admissions, "data" and "facts" pages, a site search for "Common Data Set") | No document published, with where it looked in the note; or Found when it was there after all |
-| `robots-path`, `robots-host` | Opens the document the page links, as a person would | **Decision 1.** Found is enough for `robots-path` once the run may fetch a person-confirmed address; `robots-host` needs the file route |
+| `robots-path`, `robots-host` | Opens the document the page links, as a person would (Decision 1: robots.txt does not bind the agent) | Found is enough for `robots-path` once the run may fetch a person-confirmed address; `robots-host` still needs the file route, because the crawlers keep obeying it |
 | `challenge`, `bot-check` | A real Chrome usually passes Cloudflare's interstitial by itself; the agent proceeds only when no CAPTCHA appears (**Decision 2**) | The address helps a person; the file route closes it |
-| `login`, `terms` | Nothing. The row is `ask`: a partnership or a data request | A person |
+| `login` | Nothing unless the host is on the owner's [Logins](#logins) list and Chrome is already signed in; then it works the row like any other | Found, or the file route; a person signs in |
+| `terms` | Nothing. The row is `ask`: a partnership or a data request | A person |
 
 ## Step 1: the playbook (no code)
 A skill the owner adds to Claude, the way `/connect` already ships a skill for the public API
@@ -124,14 +126,55 @@ how little they ask of the owner:
   to the robots question.
 
 ## Decisions for the owner
-1. **May an agent acting in the owner's own browser open a document that robots.txt disallows to crawlers?**
-   [data-steward.md](data-steward.md) already says a person may and marks it "still needs the owner's confirmation";
-   an agent in that browser is the same action with a different hand. Recommend **yes for `robots-path`** (the page
-   links the document; the rule is about crawlers) and **ask for `robots-host`** (the host refuses machines as a
-   policy; prefer the archive copy or a request to the college).
-2. **Challenge pages.** Recommend: proceed when Chrome passes an interstitial on its own; stop at anything that asks
-   the agent to prove it is a person, and say so in the note.
-3. **Who presses Found.** Recommend the agent presses it directly on open hosts, because step 2's verify-on-Found
-   checks the bytes; for blocked hosts it records the address and the row waits for the file.
-4. **Build order.** Recommend step 1 now (a skill file and a help link), step 2 next (items 1 and 2 first, since they
-   fix a gap a person feels too), step 3 after `COLLEGE_DOCS_REPO`.
+Taken 2026-11-08, the day the question was asked.
+
+1. **robots.txt and the agent.** The owner: "ignore robots.txt." An agent acting in the owner's own browser opens
+   whatever the page links, `robots-path` and `robots-host` alike, as the owner would by hand. The crawlers' rule is
+   unchanged: no machine run fetches a disallowed path or a blocked host, so a `robots-host` document still reaches the
+   archive only through the file route. The spec's "still needs the owner's confirmation" sentence in
+   [data-steward.md](data-steward.md) is now confirmed for the person-in-browser case too.
+2. **Challenge pages.** As recommended: proceed when Chrome passes an interstitial on its own; stop at anything that
+   asks the agent to prove it is a person, and say so in the note.
+3. **Who presses Found.** The agent presses it, on every host. Step 2's verify-on-Found checks the bytes where the
+   server may fetch; where it may not, the row keeps the address and waits for the file.
+4. **Build order.** As recommended: step 1 now, step 2 next (its items 1 and 2 first), step 3 after
+   `COLLEGE_DOCS_REPO`.
+
+## Logins
+The owner's follow-up: "is there a way we can have the user add logins over time so the agent can login on its own?"
+
+**Yes, by keeping the logins in Chrome and the list of them in Quad.** Claude in Chrome works in the owner's real
+Chrome profile "with their existing sign-ins" (its own description). A site the owner is signed in to is open to the
+agent already; a site they are not is a login form the agent must not fill. So Quad never stores a password, and the
+agent never types one. What grows over time is a reference list of hosts the owner has an account on.
+
+- **`steward-logins`**, a reference document on the console's Reference page (beside `cds-urls`): host, what the
+  account is (a counselor account, an alumni login, a Google Workspace the college shares with), whose it is, the
+  day it was added, and **whether documents from behind it may be used** (see the terms question below). No
+  credentials, ever: those live in Chrome's password manager or the owner's own, and the console's audit log shows
+  only that a host was listed.
+- **A `login` row on a listed host is agent work.** The agent view (step 2, item 4) stops hiding it. The agent opens
+  the page; when the session is live it proceeds like any other row. When a login form appears instead, it stops and
+  asks the owner to sign in in that tab (Chrome's password manager makes that one click), then continues. The note
+  says which.
+- **A `login` row on an unlisted host stays `ask`.** The agent's report lists the hosts it met, so the owner adds the
+  ones they have accounts for and signs in once. That is how the list grows: a host per report, not a form filled in
+  advance.
+- **Sessions expire.** A row the agent could not work because the session had lapsed is left open with a note, not
+  marked No document.
+
+**The terms question, which the list has to carry.** A login usually means the document is not public: a counselor
+portal, a members' area, a shared Drive. Two things follow, and the list's per-host "may be used" flag records the
+owner's answer for each:
+1. **The site's terms.** Many portals forbid republishing or automated access. The Steward's rule, a page that says
+   the document is for counselors, members or staff is `ask`, is about this, and listing the host is the owner
+   answering the ask for that host.
+2. **Citation.** Every value on the site traces to a source ([data-lineage.md](../data-lineage.md)), and the public
+   pages link the document. A document from behind a login can be cited by name and edition but not linked, so the
+   source note for its values needs a form for that ("Common Data Set 2025–26, provided to counselors"), and the
+   `citeField` lineage a `public: false` on the document. That is a small change in the readers and the source note,
+   and belongs with step 2.
+
+What this does **not** mean: no credential vault in Quad, no automated sign-in by the crawlers, no sharing of the
+owner's sessions with a headless run. The agent uses the owner's browser as the owner would; the list only tells it
+where that is allowed.

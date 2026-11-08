@@ -230,7 +230,8 @@ confirmation**: a person in their own browser may open a document the page links
 crawlers (the crawlers never do).
 
 > **2026-11-08**: an agent in the owner's browser (Claude in Chrome) working this list, and the fact that a Found row is not
-> yet read by the next run, are taken up in [todo-browser-agent.md](todo-browser-agent.md).
+> yet read by the next run, are taken up in [todo-browser-agent.md](todo-browser-agent.md). The confirmation above was given
+> there the same day: a person, or an agent in that person's browser, is not bound by robots.txt; the crawlers still are.
 
 ## The console: where it all shows
 The Steward's screens join the **Data** section (`/admin/data`), beside Change sets, Holds, Snapshots and Reference,

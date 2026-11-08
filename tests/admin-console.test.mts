@@ -290,6 +290,43 @@ test("every help key written in the console is one the glossary has", () => {
   }
 });
 
+/**
+ * The `<h2>` headings written by hand (not through Panel or PageHeader) that carry no `<HelpTip help="…">` inside them.
+ * Panel.tsx draws Panel's and PageHeader's own heading (the icon from their `help`); the rail's door labels and
+ * /admin/help's door groups are navigation, not panels.
+ */
+const H2_EXEMPT = new Set(["components/admin/Panel.tsx", "components/admin/AdminRail.tsx", "components/admin/HelpList.tsx"]);
+function headingsWithoutHelp(src: string): string[] {
+  return [...stripComments(src).matchAll(/<h2\b[\s\S]*?<\/h2>/g)]
+    .map((m) => m[0])
+    .filter((h) => {
+      const tip = /<HelpTip help="([^"]+)"/.exec(h);
+      return !tip || !isHelpKey(tip[1]);
+    })
+    .map((h) => h.replace(/\s+/g, " "));
+}
+
+test("every hand-written <h2> in the console has the (i) icon beside its words", () => {
+  const files = [...walk("app/admin"), ...walk("components/admin")].filter((f) => f.endsWith(".tsx") && !H2_EXEMPT.has(f));
+  let headings = 0;
+  for (const f of files) {
+    headings += (read(f).match(/<h2\b/g) ?? []).length;
+    assert.deepEqual(headingsWithoutHelp(read(f)), [], f);
+  }
+  assert.ok(headings >= 10, `the walk found the headings (${headings})`);
+});
+
+test("guard: an <h2> with no HelpTip, or one whose key the glossary lacks, is caught", () => {
+  assert.equal(headingsWithoutHelp('<h2 id="x" className="text-lg">\n  History\n</h2>').length, 1);
+  assert.equal(headingsWithoutHelp('<h2 className="sr-only">Hidden</h2>').length, 1);
+  assert.equal(headingsWithoutHelp('<h2>History <HelpTip help="no-such-word" /></h2>').length, 1);
+  assert.equal(headingsWithoutHelp('<h2 className="inline-flex">\n  History <HelpTip help="job-history" />\n</h2>').length, 0);
+});
+
+test("every Panel in a console component passes help= too", () => {
+  for (const f of walk("components/admin").filter((f) => f.endsWith(".tsx") && f !== "components/admin/Panel.tsx")) assert.deepEqual(unexplained(read(f)), [], f);
+});
+
 test("guard: a Panel with no help, or a help key the glossary lacks, is caught", () => {
   assert.equal(unexplained('<Panel title="Summary">').length, 1);
   assert.equal(unexplained('<Panel title="Summary" help="no-such-word">').length, 1);

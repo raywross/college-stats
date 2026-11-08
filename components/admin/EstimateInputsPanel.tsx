@@ -66,7 +66,7 @@ function Input({ input }: { input: InputHealth }) {
  */
 export function EstimateInputsPanel({ inputs }: { inputs: CollegeInputs | null }) {
   return (
-    <Panel title="Estimate inputs" id="estimate-inputs" aside={inputs ? <HealthChip status={inputs.overall} /> : undefined}>
+    <Panel help="estimate-inputs" title="Estimate inputs" id="estimate-inputs" aside={inputs ? <HealthChip status={inputs.overall} /> : undefined}>
       {!inputs ? (
         <Empty>The estimate inputs couldn&apos;t be worked out for this college.</Empty>
       ) : (

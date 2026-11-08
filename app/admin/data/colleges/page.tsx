@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpTip } from "@/components/admin/HelpTip";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
@@ -120,8 +121,8 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/d
         ) : (
           <>
             <section aria-labelledby="college-results">
-              <h2 id="college-results" className="mb-2 text-sm font-semibold text-muted-foreground">
-                Colleges
+              <h2 id="college-results" className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                Colleges <HelpTip help="colleges" />
               </h2>
               {colleges.length === 0 ? (
                 <Empty>No college matches &ldquo;{q}&rdquo;.</Empty>
@@ -141,8 +142,8 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/d
               )}
             </section>
             <section aria-labelledby="hs-results">
-              <h2 id="hs-results" className="mb-2 text-sm font-semibold text-muted-foreground">
-                High schools
+              <h2 id="hs-results" className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                High schools <HelpTip help="high-school" />
               </h2>
               {q.length < 3 ? (
                 <Empty>Type at least three letters to search high schools.</Empty>

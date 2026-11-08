@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { HelpTip } from "@/components/admin/HelpTip";
 import { PageHeader } from "@/components/admin/Panel";
 import { StewardBack } from "@/components/admin/steward/Bits";
 import { githubRepo } from "@/lib/github-app";
@@ -42,8 +43,8 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
         {view === "all" ? (
           <section aria-labelledby="all-jobs-title" className="space-y-3">
             <div>
-              <h2 id="all-jobs-title" className="font-display text-xl font-bold tracking-tight">
-                All jobs
+              <h2 id="all-jobs-title" className="inline-flex items-center gap-1.5 font-display text-xl font-bold tracking-tight">
+                All jobs <HelpTip help="all-jobs" />
               </h2>
               <p className="mt-0.5 max-w-3xl text-sm text-muted-foreground">Every job in one table: failed last runs first, then running, never run, nothing to do, succeeded.</p>
             </div>
@@ -52,15 +53,15 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
         ) : (
           <>
             <section aria-labelledby="scheduled-title" className="space-y-3">
-              <h2 id="scheduled-title" className="font-display text-xl font-bold tracking-tight">
-                Scheduled
+              <h2 id="scheduled-title" className="inline-flex items-center gap-1.5 font-display text-xl font-bold tracking-tight">
+                Scheduled <HelpTip help="jobs-scheduled" />
               </h2>
               <JobsTable rows={scheduled} now={now} caption="Scheduled jobs, soonest next run first" />
             </section>
             <section aria-labelledby="by-hand-title" className="space-y-3">
               <div>
-                <h2 id="by-hand-title" className="font-display text-xl font-bold tracking-tight">
-                  Run by hand
+                <h2 id="by-hand-title" className="inline-flex items-center gap-1.5 font-display text-xl font-bold tracking-tight">
+                  Run by hand <HelpTip help="jobs-by-hand" />
                 </h2>
                 <p className="mt-0.5 max-w-3xl text-sm text-muted-foreground">Workflows with no schedule: a person starts them with Run now on the job&apos;s page, or on GitHub.</p>
               </div>

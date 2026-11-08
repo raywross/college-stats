@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpTip } from "@/components/admin/HelpTip";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Fields, PageHeader, Panel } from "@/components/admin/Panel";
@@ -150,8 +151,8 @@ export default async function JobPage({ params, searchParams }: { params: Promis
 
         <section aria-labelledby="history-title" className="space-y-3">
           <div>
-            <h2 id="history-title" className="font-display text-xl font-bold tracking-tight">
-              History
+            <h2 id="history-title" className="inline-flex items-center gap-1.5 font-display text-xl font-bold tracking-tight">
+              History <HelpTip help="job-history" />
             </h2>
             <p className="mt-0.5 text-sm text-muted-foreground">The last {RUNS_PAGE} runs, newest first. Open a run for what it did.</p>
           </div>

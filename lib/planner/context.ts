@@ -258,8 +258,10 @@ export async function planSchools(unitIds: string[], studentCycleStart: number, 
   const { getSchoolById, citeField } = await span("dataset", () => getData());
   const gpaModel = await fittedGpaModel();
   const gpaCurve = await fittedGpaCurve();
-  // The console's saved hand-read prompts, laid over each college's essays block (lib/essays/overrides.ts): one query.
-  const overrides = await readEssayOverrides(unitIds);
+  // The console's saved hand-read prompts, laid over each college's essays block (lib/essays/overrides.ts): the open
+  // cycle's rows, one query per request shared with the essays' prompt lookup (lib/essays/load.ts promptLookup) and
+  // started in the plan loader's first wave (specs/serving-architecture.md: /advisor in two database waves).
+  const overrides = await readEssayOverrides(null);
   const out: Record<string, PlanSchool> = {};
   for (const id of unitIds) {
     const school = getSchoolById(id);

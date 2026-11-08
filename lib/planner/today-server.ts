@@ -8,20 +8,17 @@ import "server-only";
  * site keep the real clock.
  */
 import { cache } from "react";
-import { createServerSupabase } from "@/lib/supabase-server";
 import { todayIso } from "./context";
+import { appSettings } from "./settings-server";
 import { parseTodaySetting, TODAY_SETTING } from "./today";
 
-/** The pretend day, or null when the setting is unset, unreadable, or this is production. */
+/**
+ * The pretend day, or null when the setting is unset, unreadable, or this is production. Read from the planner's one
+ * settings read (settings-server.ts appSettings), shared with the all-moves preview.
+ */
 export const plannerTodayOverride = cache(async (): Promise<string | null> => {
-  try {
-    const supabase = await createServerSupabase();
-    const { data, error } = await supabase.from("app_settings").select("value").eq("key", TODAY_SETTING).maybeSingle();
-    if (error) return null;
-    return parseTodaySetting(data?.value);
-  } catch {
-    return null;
-  }
+  const settings = await appSettings();
+  return settings ? parseTodaySetting(settings.get(TODAY_SETTING)) : null;
 });
 
 /** Today for the planner: the pretend day when one is set, else the real one (todayIso). */

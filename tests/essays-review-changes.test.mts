@@ -237,6 +237,7 @@ const STUBS: Record<string, string> = {
   "@/lib/essays/load": `export async function essaysViewer() { return globalThis.__essayPage.viewer; }
 export async function readEssay() { return globalThis.__essayPage.read; }
 export async function planColleges() { return []; }
+export async function essayBundleFor() { return null; }
 export async function promptLookup() { return { school: () => null, schoolRecord: () => null, platform: null }; }`,
   "@/components/ui/info-tip": nothing(["InfoTip"]),
   "@/components/ui/why-fold": nothing(["WhyFold"]),

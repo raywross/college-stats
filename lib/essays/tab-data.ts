@@ -1,36 +1,24 @@
 import "server-only";
 /**
  * The Essays tab's reads (specs/product/essays/tab.md "Files": "the tab's data is read in app/advisor/page.tsx next
- * to the plan read"). The drafts and their links come with the plan (`ctx.essays`, read by loadPlanFor), so beside
- * the plan this reads only what the plan doesn't carry: the prompt lookup (the picker's groups, the names of colleges
- * a draft is for that are off the list), the open-comment counts, and the suggestion counts (open per draft; a
- * guardian's own newest per draft). When the plan carries no drafts (`ctx.essays`
- * null: the tables aren't there, or the read failed) it falls back to `readEssays`, which says whether the workspace is
- * set up. Read only when the open tab is Essays. Runs with the viewer's session, so row-level security decides.
+ * to the plan read"). The drafts, their links, their open comments, and their suggestions come with the plan
+ * (`ctx.essays`, read by loadPlanFor in its first wave; lib/planner/read-plan.ts readPlanEssays), so the tab only counts
+ * them (lib/essays/counts.ts) and adds the prompt lookup (the picker's groups, the names of colleges a draft is for that
+ * are off the list), whose one read, the open cycle's hand-read prompts, the loader also started in its first wave
+ * (specs/serving-architecture.md: /advisor in two database waves). When the plan carries no drafts (`ctx.essays` null:
+ * the tables aren't there, or the read failed) or no counts' rows, it falls back to `readEssays`, which says whether the
+ * workspace is set up. Read only when the open tab is Essays. Runs with the viewer's session, so row-level security
+ * decides.
  */
 import type { PlanContext } from "@/lib/planner/types";
 import { scheduleStudentReadLog } from "@/lib/households";
-import { createServerSupabase } from "@/lib/supabase-server";
 import { getUser } from "@/lib/auth";
-import { promptLookup, readEssays, suggestionCounts, type SuggestionCounts } from "./load";
+import { promptLookup, readEssays } from "./load";
+import { openCommentCounts, suggestionCounts, type SuggestionCounts } from "./counts";
 import { parsePromptRef, pickerGroups } from "./prompts";
 import type { EssayLinkRow, EssayRow } from "./rows";
 import type { EssaysTabData } from "./tab-view";
 import type { ViewerRole } from "@/lib/viewer-relation";
-
-/** Open (unresolved) comments per draft. A failed read is no counts, never a failed tab. */
-async function openCommentCounts(ids: readonly string[]): Promise<Record<string, number>> {
-  if (ids.length === 0) return {};
-  const supabase = await createServerSupabase();
-  const { data, error } = await supabase.from("essay_comments").select("essay_id").in("essay_id", ids).is("resolved_at", null);
-  if (error) {
-    console.error(`essays tab: reading open comments failed: ${error.message}`);
-    return {};
-  }
-  const out: Record<string, number> = {};
-  for (const c of (data ?? []) as { essay_id: string }[]) out[c.essay_id] = (out[c.essay_id] ?? 0) + 1;
-  return out;
-}
 
 export async function essaysTabData(ctx: PlanContext, viewer: ViewerRole): Promise<EssaysTabData | null> {
   const studentId = ctx.student?.id;
@@ -47,13 +35,15 @@ export async function essaysTabData(ctx: PlanContext, viewer: ViewerRole): Promi
   let lookup: Awaited<ReturnType<typeof promptLookup>>;
   // A guardian's own suggestions are found by their user id (the "Waiting for {first}" rows).
   const userId = viewer !== "student" ? ((await getUser())?.id ?? null) : null;
-  if (ctx.essays) {
-    rows = ctx.essays.rows;
-    links = ctx.essays.links;
+  const essays = ctx.essays;
+  if (essays?.comments && essays.suggestions) {
+    rows = essays.rows;
+    links = essays.links;
     // The household's read log, as readEssays keeps it (a guardian opening the student's drafts).
     if (viewer !== "student") void scheduleStudentReadLog(studentId, "essays");
-    const ids = rows.map((r) => r.id);
-    [lookup, openComments, counts] = await Promise.all([promptLookup(), openCommentCounts(ids), suggestionCounts(ids, { role: viewer, userId })]);
+    lookup = await promptLookup();
+    openComments = openCommentCounts(essays.comments);
+    counts = suggestionCounts(essays.suggestions, { role: viewer, userId });
   } else {
     const [read, l] = await Promise.all([readEssays(studentId, { role: viewer, userId }), promptLookup()]);
     lookup = l;

@@ -41,6 +41,8 @@ function fakeClient(handler: Handler) {
           return builder;
         },
         eq: () => builder,
+        neq: () => builder,
+        is: () => builder,
         in: () => builder,
         order: () => builder,
         maybeSingle: () => {

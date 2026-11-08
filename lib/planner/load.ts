@@ -17,7 +17,10 @@ import { profileFor } from "@/lib/student-profile-store";
 import { effectiveGradYear } from "@/lib/student-profile";
 import { generatorInputFor, planContextFrom, PlannerSetupError, readItems, readPlan, readTasks, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView, type PlanView } from "./plan-view";
-import { planEstimates } from "./plan-estimates";
+import { planEstimates, startEstimateContext } from "./plan-estimates";
+import { afterOne } from "./load-waves";
+import { appSettings } from "./settings-server";
+import { readEssayOverrides } from "@/lib/essays/overrides";
 import type { CiteMode } from "./plan-cites";
 import { generateTasks, mergeTasks } from "./tasks";
 import type { PlanContext } from "./types";
@@ -66,6 +69,15 @@ function inCoursePlanWindow(season: Season, today: string): boolean {
  * bundle the page already started for this student. Without them, the per-table reads, in two waves instead of
  * five. `cites`: the colleges' citations are references the ⓘ fetches on open unless `"full"` (the print page only;
  * lib/planner/context.ts planSchoolFor).
+ *
+ * Two database waves for a reader (specs/serving-architecture.md "Left, after this PR"; build-plan.md "Multi-child
+ * loading"). Wave 1 starts everything that needs only the ids: the plan bundle, the viewer bundle (studentsICanSee,
+ * getAccount), the student's profile, home, the planner's settings (settings-server.ts appSettings: pretend today and
+ * the all-moves preview in one read), the student's essays with their links, open comments, and suggestions
+ * (read-plan.ts readPlanEssays), and the open cycle's hand-read prompts (lib/essays/overrides.ts, the one read planSchools
+ * and the Essays tab's prompt lookup share). Wave 2 is the estimate's high-school reads, chained on the profile alone
+ * (load-waves.ts afterOne), so they start the moment it resolves. Nothing else reads after that; an editor's open still
+ * writes the suggested groups, rounds, and tasks when they changed (syncOnOpen).
  */
 export async function loadPlanFor(
   studentId: string,
@@ -80,11 +92,15 @@ export async function loadPlanFor(
   // Without the bundle (known missing a moment ago), the lists read starts in the first wave too.
   const listsP = bundleKnownMissing("plan_bundle") ? myLists(owner) : null;
   // Essays, part 4 (specs/product/essays/moves.md): the student's drafts and links ride in the first wave beside the
-  // plan bundle (row-level security decides who reads them); null without the tables.
+  // plan bundle, with their open comments and suggestions for the Essays tab's counts (row-level security decides who
+  // reads them); null without the tables.
   const supabaseP = createServerSupabase();
   const essaysP = supabaseP.then((s) => readPlanEssays(s, studentId)).catch(() => null);
+  const profileP = profileFor(studentId);
+  // Wave 2, started as soon as the profile resolves (not the whole first wave): the estimate's high-school reads.
+  const estimateContextP = afterOne(profileP, (p) => startEstimateContext(p?.data ?? null));
   const [accessList, account, profile, home, bundle] = await span("access+plan", () =>
-    Promise.all([viewer ? Promise.resolve(null) : studentsICanSee(), getAccount(), profileFor(studentId), myHome(), bundleP]),
+    Promise.all([viewer ? Promise.resolve(null) : studentsICanSee(), getAccount(), profileP, myHome(), bundleP, essaysP, appSettings(), readEssayOverrides(null)]),
   );
   const access = viewer ?? accessList?.find((a) => a.student.id === studentId) ?? null;
   if (!access || access.student.id !== studentId) return { kind: "not-found" };
@@ -125,12 +141,11 @@ export async function loadPlanFor(
 
   const read = plan;
   // Quad's estimate for every college, on the server (specs/chances/estimate.md "In the planner"): the same for the
-  // student and a guardian, who sees the student's AP exam scores too (owner, 2026-10-11). Started beside the school
-  // slices (performance pass, 2026-10-16): the estimate's high-school reads (four small queries) then overlap the
-  // dataset's first load on a cold instance instead of waiting behind it.
+  // student and a guardian, who sees the student's AP exam scores too (owner, 2026-10-11). Beside the school slices; its
+  // high-school reads started with the profile (estimateContextP), so here it only waits for what's left of them.
   const [schoolsInput, estimates] = await Promise.all([
     span("planSchools", () => generatorInputFor(read, { gradYear, profile: profileData, home, today, cites: opts.cites })),
-    span("estimates", () => planEstimates(profileData, read.items, { gradYear, today, visits: read.visits })),
+    span("estimates", () => planEstimates(profileData, read.items, { gradYear, today, visits: read.visits, context: estimateContextP })),
   ]);
   let input = schoolsInput;
   // Next steps (build-plan.md review note 3): the generators read each college's level, closeness, and ED verdict.

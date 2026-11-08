@@ -9,14 +9,17 @@
  * Pure (no server-only imports) so tests run it against a fake client (tests/bundles.test.mts).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CounselorGrant, HouseholdMember, Profile, StudentRecord } from "./accounts.ts";
+import type { CounselorGrant, HouseholdMember, Profile, RoleHint, StudentRecord } from "./accounts.ts";
+import type { CommentRow, EssayLinkRow, EssayRow, VersionRow } from "./essays/rows.ts";
+import type { StoredNote, StoredReview } from "./essays/review.ts";
+import type { SuggestionRow } from "./essays/suggestions.ts";
 import type { RosterMember } from "./household-rules.ts";
 import type { PlanData, PlanList } from "./planner/read-plan.ts";
 import type { PlanItem, PlanNudge, PlanOffer, PlanTask, PlanVisit } from "./planner/types.ts";
 import type { CaseloadEssayRow, CaseloadListRow, CaseloadProfileRow } from "./org-caseload.ts";
 import type { Organization, OrgAsk, OrgNote, OrgRosterRow } from "./org-rules.ts";
 
-export type BundleFunction = "viewer_bundle" | "plan_bundle" | "save_student_profile" | "org_caseload_bundle" | "org_student_bundle";
+export type BundleFunction = "viewer_bundle" | "plan_bundle" | "save_student_profile" | "org_caseload_bundle" | "org_student_bundle" | "essay_bundle" | "me_bundle";
 
 type PgError = { code?: string; message?: string };
 
@@ -102,6 +105,40 @@ export interface OrgStudentBundle {
   essays: CaseloadEssayRow[];
   notes: Omit<OrgNote, "author_name">[];
   asks: OrgAsk[];
+}
+
+/**
+ * essay_bundle(p_essay) (20261108130000_essay_and_me_bundles.sql): one draft as lib/essays/load.ts readEssay(), the
+ * review route's readReviews(), and planColleges() read it, in one call. Null (the RPC's answer) when the caller can't
+ * read the essay or it isn't there. Row-level security decides every part. `author_name` is the author's profile
+ * display name as namesFor() reads it (null when unreadable or no author). Orders: versions, suggestions, and reviews
+ * newest first (versions at most 100, reviews at most 10); comments and links oldest first; notes by position.
+ */
+export interface EssayBundle {
+  essay: EssayRow & { body: string };
+  versions: VersionRow[];
+  links: EssayLinkRow[];
+  comments: (CommentRow & { author_name: string | null })[];
+  /** Every suggestion not withdrawn. */
+  suggestions: (SuggestionRow & { author_name: string | null })[];
+  base: { id: string; title: string; updated: string } | null;
+  variants: number;
+  /** StoredReview with each note's review id and position (the route's assemble() drops both). */
+  reviews: (Omit<StoredReview, "notes"> & { notes: (StoredNote & { review_id: string; position: number })[] })[];
+  /** The unit ids on the student's default list (else their first by created), by position; map them through getData(). */
+  list_unit_ids: string[];
+}
+
+/**
+ * me_bundle() (20261108130000_essay_and_me_bundles.sql): /api/me in one call. `children` is lib/households.ts
+ * householdChildren()'s set (the students the caller reaches as a guardian, on a roster of a household they're in),
+ * each with the date they joined that roster, ordered by it, then id.
+ */
+export interface MeBundle {
+  profile: { display_name: string | null; role_hint: RoleHint | null; suspended_at: string | null } | null;
+  org: boolean;
+  admin: boolean;
+  children: { id: string; name: string | null; joined: string }[];
 }
 
 /** plan_bundle(): one student's row and their (default or named) list's plan. */

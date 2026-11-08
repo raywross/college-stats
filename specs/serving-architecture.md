@@ -247,6 +247,43 @@ which bytecode caching already shortens. That is acceptable. Two cheap things ma
 - If cold starts turn out frequent on a Hobby plan, Pro's Scale to One is the switch; if the 300 ms itself matters,
   the later options below apply.
 
+**Measured 2026-11-08** (snapshot 6: 1,893 colleges, `colleges.json` 35.7 MB ungzipped on disk; production logged
+`[data] loaded 1893 colleges (snapshot 6) in 953 ms`). `scripts/measure-cold-start.mts` times a cold load in fresh
+processes and prints the wall time and the main thread's CPU time per step (the laptop was shared with other builds,
+so the wall times swing by 2×; the CPU times hold within about 10%). Median of seven runs, on an M-series laptop:
+
+| Step | CPU before | CPU after |
+|---|---|---|
+| Whole first load (what the `[data] loaded` line measures) | 367 ms | 313 ms |
+| Read `colleges.json` | about 75 ms (`readFileSync(path, "utf8")`) | 28 ms (a Buffer, then `toString("utf8")`) |
+| `JSON.parse` of `colleges.json` | 240–280 ms | same |
+| Everything else (manifest, meta, calendar, aliases, history's shared object, `createDataset`) | about 12 ms | same |
+
+The mini fixture loads in 16 ms of CPU. So the cold load is one thing: parsing 35.7 MB of JSON. `createDataset`
+already builds every index on first use (2–6 ms at load), gunzip happens at build time (`fetch-snapshot` stores the
+bundled copy ungzipped), and no per-college detail or history is read at load. The one cheap cut was the read path
+(`lib/data-platform/loader.ts readJsonFile`, about 55 ms of CPU). Things tried and dropped, each measured: deferring
+each college's `lineage` (17.2 MB, half the file) behind a lazy getter, found by a scan of the text, saves its parse
+but the scan costs as much (CPU the same, 315–380 ms either way); decoding as Latin-1 with `\u` escapes so V8 parses a
+one-byte string (the file has 119 lines with non-ASCII text) costs more to decode than it saves; larger young-generation
+GC settings (`--max-semi-space-size=64`, `--single-threaded-gc`) change nothing.
+
+What remains is the parse, and its lever is a smaller file at first load: publish `lineage` (and perhaps `reported`,
+2.8 MB) as its own object, read on demand, the way `detail/` and `history/` already are. A file without `lineage`
+parses in about half the time (measured: 230 ms against 494 ms wall in the same run). That is a publisher and
+fetch-snapshot change (several scripts read `.data/snapshot/colleges.json` whole), so it belongs with the
+precomputed derived files in [section 7](#7-later-options-with-their-triggers), not in a loader patch. Until then,
+the cold parse is synchronous CPU, so a page that starts its database reads before its first `getData()` overlaps
+the two.
+
+The pointer check's `checking for a newer snapshot failed … timed out: …/current.json` is not a slow bucket: the
+timeout is 30 s of socket inactivity (`httpGet`), and the check runs unawaited (`void h.maybeRefresh()` in
+`lib/data.ts`). The likely cause (not yet confirmed in the logs): when the response is sent before `current.json`
+arrives, the platform pauses the instance, and on the next request the overdue timer fires. A longer timeout or a retry would fail the same way, so neither was changed.
+The fix is to keep the check alive past the response (Next's `after()` or Vercel's `waitUntil`), guarded for the
+callers outside a request (the build, `generateStaticParams`); a missed check costs nothing but a minute's delay
+before the next one.
+
 ### 7. Later options, with their triggers
 Not built now; listed so the next step is a decision, not a search.
 | Option | When |
@@ -488,7 +525,9 @@ Preview or Production, then redeploy; locally `QUAD_TIMING=1 npx next start`). T
   is what the person waited for; `+N ms after` is work that ran after the response. `db N× in W waves` counts the
   Supabase round trips by table or function name; `‖` joins calls that ran in parallel and `;` separates waves (calls
   that waited for the one before), so waves × the region's round trip is the database's share. Then each span:
-  `access+plan`, `readPlan`, `dataset`, `planSchools`, `estimates`, `sync`, `revalidate`, `followUp`.
+  `access+plan`, `readPlan`, `dataset`, `planSchools`, `estimates`, `sync`, `revalidate`, `followUp`. Inside
+  `estimates` (since round 2 of the plan and essay speed build), `estimates.context` is the wait for the estimate's
+  reads (the high school's, started with the profile) and `estimates.compute` the per-college math.
 - the counselor pages log under `/org`, `/org/students/[id]`, and `/org/export` (since 2026-11-08; each is the
   session's viewer bundle beside one org bundle, so two waves, `specs/product/counselor-portal.md` "The reads"), and one
   essay under `/advisor/essays/[id]` with the spans `essay viewer`, `essay read`, and `essay colleges`.
@@ -582,6 +621,8 @@ seconds. The dataset itself never entered this path.
 6. **Cold starts.** `data/schools.json` has grown from 16.7 MB to 27 MB since the serving change; the first request
    on a new instance pays the parse. Read the `[data] loaded … ms` line in production logs over a week; the
    precomputed derived files in [section 7](#7-later-options-with-their-triggers) remain the lever if it shows.
+   (2026-11-08: the file is now 35.7 MB and production logs 953 ms; the measured split, the read-path cut and what
+   remains are under [section 6](#6-cold-starts-measure-then-decide).)
 
 ### Measurement after this PR
 `next build` lists `/schools/[id]` as ● (prerendered) and `/schools/[id]/events` as ƒ; on the live site the overview
@@ -779,10 +820,53 @@ What the logs point at next, in the order of gain:
    worth a longer timeout or a retry.
 4. One `/explore` request ran in `sfo1`, not `iad1`: check the project's function regions on the Pro plan.
 
+### Built (round 2, the same day)
+Items 1 to 3 above, in one PR, with the same deploy order as round 1 (deploy first, then apply the migration; the
+new code falls back to today's reads while a function is missing):
+- **The plan in two waves** (`lib/planner/load.ts`, `lib/planner/settings-server.ts`, `lib/planner/read-plan.ts`,
+  `lib/essays/counts.ts`). Wave 1 starts, before any `await`, the plan bundle, the viewer bundle, the profile, home,
+  one `app_settings` read for both planner settings (`appSettings()`; `plannerTodayOverride()` and `allMovesEnabled()`
+  read from it), the student's essays with their links, open comments, and suggestions (four reads filtered by
+  student through `essays!inner(student_id)`), and the open cycle's `essay_prompt_overrides` once per request (shared
+  by `planSchools` and `promptLookup`). Wave 2 is the estimate's high-school reads, chained on the profile's promise
+  (`afterOne`) so they start the moment it resolves and overlap the rest of wave 1; `planEstimates` takes the started
+  `EstimateContext`. The Essays tab counts the plan's rows (`openCommentCounts`, `suggestionCounts`, pure) and reads
+  nothing more. New spans `estimates.context` and `estimates.compute`: compute is about 9 ms for ten colleges locally,
+  so the production `estimates 171–309ms` was the high-school reads, now overlapped. `tests/plan-waves.test.mts`
+  guards the wave shape by reading the source.
+- **The essay page in one wave** (`supabase/migrations/20261108130000_essay_and_me_bundles.sql`, `lib/essays/essay-read.ts`,
+  `lib/essays/review-rows.ts`). `essay_bundle(id)` (security invoker) returns the draft, its versions, links,
+  comments and suggestions with author names (per reader, as `namesFor` read them), base, variant count, the last ten
+  reviews with their notes, and the student's default list's unit ids. The page starts it beside the viewer check and
+  the overrides; `Notes` takes the reviews as `initial` and makes no mount fetch. Null (not installed, failed, or
+  unreadable) falls back to the table reads. `tests/essay-me-bundles.test.mts` (PGlite) and
+  `tests/essay-page-waves.test.mts` compare both paths.
+- **`/api/me` in one call**: `me_bundle()` returns the profile, the organization and admin flags, and the household's
+  children in `householdChildren()`'s order and rule (a managed child on the roster counts; a managed record on no
+  roster, and a counselor-only student, don't); the route answers from it alone, or makes today's four calls when it
+  is null.
+- **Cold start, measured** (`scripts/measure-cold-start.mts`; section [6](#6-cold-starts-measure-then-decide) has the
+  table). The real snapshot's `colleges.json` is 35.7 MB, not gzipped; the first load is 1,042 ms wall / 367 ms CPU on
+  the laptop, of which `JSON.parse` is 520–670 ms wall / 240–280 ms CPU, the file read 70–165 ms, and `createDataset`
+  under 10 ms (its indexes are already lazy). Reading the file as bytes and decoding saves about 50 ms CPU (the one
+  change made). Lazy `lineage` behind a getter, Latin-1 decoding, and GC flags were measured and dropped. **The lever
+  is the publisher**: `lineage` is 17.2 MB of the 35.7; a copy without it parses in 230 ms against 494 ms. Publishing
+  `lineage` (and perhaps `reported`, 2.8 MB) as separate objects read on demand, as `detail/` and `history/` already
+  are, would halve the cold start; it is a publisher and `fetch-snapshot` change with several scripts reading the
+  file whole. The pointer check's timeout is not the problem: the check runs unawaited after the response, and the
+  platform likely pauses the instance before `current.json` arrives; keeping it alive with `after()` is the fix.
+
 ### Left, after this PR
-- `/api/me` still loads the viewer bundle through `householdChildren()` (same wave as the profile read; a
-  profile-only children count would remove it).
-- The essay page still makes a second request for its reviews (`/api/essays/review`, 0.7 s).
+- Closed in round 2 (plan and essay speed): `/advisor` read 16 times in 4 waves. It now reads in two
+  (`lib/planner/load.ts` loadPlanFor): the first holds every read that needs only the ids (the plan and viewer
+  bundles, the profile, home, the planner's two settings in one `app_settings` read, the student's essays with their
+  links, open comments, and suggestions, and the open cycle's `essay_prompt_overrides` once per request, shared by the
+  plan's colleges and the Essays tab); the second is the estimate's high-school reads, started as soon as the profile
+  resolves. The Essays tab counts the plan's rows and reads nothing more. Measured locally over the mini fixture (warm):
+  `estimates.compute` about 9 ms for ten colleges and 11 to 30 ms for 38; the first call about 76 ms for 38.
+- Closed in round 2: `/api/me` answers from `me_bundle()` in one call (no viewer bundle), and the essay page reads
+  `essay_bundle(id)` in one database wave beside the viewer check and the overrides, with the reviews in it, so the
+  notes panel no longer makes a second request (`specs/product/essays/workspace.md` "Where it lives").
 - The list page's own row citations (`admitRateCited`, `avgCostCited`, `distanceCited`), the offers facts' citations
   (`offers-server`), and the chances page's are still full; `components/advisor/sample.ts` builds its own `{url}`.
 - A plan tab switch is still a server render; with the payload down, prefetching the other tabs or a client-side

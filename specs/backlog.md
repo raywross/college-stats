@@ -383,10 +383,14 @@ moves into a section above.
   - [x] **Header**: the caseload refreshes the header only when it lacks the organization; `/api/me` reads the profile
     row directly.
   - [x] **`visit_event_count`**: a covering partial index makes it an index-only scan.
-  - [ ] **Left** (serving-architecture.md "Left, after this PR"): `/api/me` still loads the viewer bundle through the
-    household children list; the essay page's review fetch is still a second request; the list page's own row
-    citations and the offers and chances citations are still full; a plan tab switch is still a server render;
-    measure after the deploy and the migration.
+  - [x] **Round 2** (same day; serving-architecture.md "Built (round 2, the same day)"): `/advisor` in two database
+    waves (one settings read, essays with their counts by student, overrides once per request, the high-school reads
+    chained on the profile); `/advisor/essays/[id]` on `essay_bundle(id)` in one wave with the notes in it; `/api/me`
+    on `me_bundle()`; the cold start measured (36 MB `colleges.json`, `JSON.parse` is the cost) and the read path trimmed.
+  - [ ] **Left** (serving-architecture.md "Left, after this PR"): publish `lineage` as its own snapshot object so the
+    cold start halves (a publisher and `fetch-snapshot` change); keep the snapshot pointer check alive with `after()`;
+    the list page's own row citations and the offers and chances citations are still full; a plan tab switch is still
+    a server render; one `/explore` request ran in `sfo1`.
 - [x] Deploy to Vercel: pre-release dev site at https://college-stats-nine.vercel.app, reading the Supabase dev
   project (2026-09-28; [supabase.md](supabase.md#current-state-pre-release-dev-only)).
 - [ ] **Formal release** (after the planned feature set is in, before circulating the site more widely): create the

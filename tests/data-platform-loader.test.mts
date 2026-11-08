@@ -342,6 +342,56 @@ test("storage with a bundled copy serves the copy first (no request), then the f
   });
 });
 
+test("the `[data] loaded … in N ms` line covers the whole first load: reading the objects and building the dataset (specs/serving-architecture.md \"6. Cold starts\")", async () => {
+  await withConsole(async (logs) => {
+    // Storage with no bundled copy: each request costs 100 ms on the clock, the build 250 ms.
+    const bucket = fakeBucket();
+    const one = buildSnapshot(1);
+    bucket.put(one);
+    bucket.point(one);
+    const time = clock();
+    const holder = loader.createSnapshotHolder({
+      source: { kind: "storage", base: bucket.BASE },
+      build: (content) => (time.advance(250), content.id),
+      root: mkdtempSync(join(tmpdir(), "dp-nobundle-")),
+      get: async (url) => (time.advance(100), bucket.get(url)),
+      now: time.now,
+    });
+    await holder.load();
+    const requests = bucket.requests.length;
+    assert.ok(requests >= 3, "the pointer, the manifest and the objects");
+    assert.equal(logs.info[0], `[data] loaded 3 colleges (snapshot 1) in ${requests * 100 + 250} ms`);
+
+    // The bundled copy: the build's time is in the line too.
+    const bundledTime = clock();
+    const bundled = loader.createSnapshotHolder({
+      source: { kind: "bundled" },
+      build: (content) => (bundledTime.advance(400), content.id),
+      root: bundledRoot(0),
+      now: bundledTime.now,
+    });
+    await bundled.load();
+    assert.equal(logs.info[1], "[data] loaded 3 colleges (snapshot 0) in 400 ms");
+  });
+});
+
+test("readBundled() decodes UTF-8 as readFileSync(path, \"utf8\") does: accents, CJK, emoji and escapes", () => {
+  const root = bundledRoot(5);
+  const path = join(root, ".data", "snapshot", "colleges.json");
+  const schools = JSON.parse(readFileSync(path, "utf8")) as { name: string }[];
+  schools[0].name = "Université de Montréal 大学 🎓 \"quoted\" \\ back";
+  schools[1].name = "École Polytechnique — Zürich ✓";
+  writeFileSync(path, collegesText(schools));
+  const content = loader.readBundled(root);
+  assert.deepEqual(content.files.schools, JSON.parse(readFileSync(path, "utf8")));
+  assert.equal(content.files.schools[1].name, "École Polytechnique — Zürich ✓");
+  // The bundled copy is read as bytes and decoded after: `readFileSync(path, "utf8")` costs about 45 ms more CPU on
+  // the real 36 MB colleges.json (scripts/measure-cold-start.mts).
+  const source = readFileSync(join(ROOT, "lib", "data-platform", "loader.ts"), "utf8");
+  const readJson = source.slice(source.indexOf("function readJsonFile"), source.indexOf("function readOptionalJsonFile"));
+  assert.match(readJson, /readFileSync\(path\)\.toString\("utf8"\)/);
+});
+
 test("storage unreachable with no bundled copy fails the load (nothing to fall back on), and the next call tries again; the bundled source never touches the network", async () => {
   await withConsole(async (logs) => {
     const bucket = fakeBucket();

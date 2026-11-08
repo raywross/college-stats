@@ -552,7 +552,8 @@ test("overlayEssays: the saved row beats refers_to_form, none, no block, and an 
 
 test("the wiring: planSchools and promptLookup lay the saved rows over the dataset; the public college page doesn't read the table", () => {
   const context = readFileSync(join(ROOT, "lib", "planner", "context.ts"), "utf8");
-  assert.match(context, /const overrides = await readEssayOverrides\(unitIds\);/);
+  // The open cycle's rows, one read per request shared with promptLookup (specs/serving-architecture.md: /advisor in two waves).
+  assert.match(context, /const overrides = await readEssayOverrides\(null\);/);
   assert.match(context, /planSchoolFor\(withOverride\(school, overrides\)/);
   const load = readFileSync(join(ROOT, "lib", "essays", "load.ts"), "utf8");
   assert.match(load, /readEssayOverrides\(null\)/);

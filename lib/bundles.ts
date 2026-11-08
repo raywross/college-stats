@@ -9,6 +9,8 @@ import "server-only";
  *                           (households and rosters), lib/student-profile-store.ts (profiles), lib/home-store.ts (home)
  *   planBundle(student)     lib/planner/load.ts (the list and its plan, the student's grad year)
  *   freshPlanBundle(…)      store-plan.ts's follow-up pass (after the response), never memoized
+ *   essayBundle(essay)      lib/essays/load.ts (readEssay, planColleges) and the notes panel's reviews, for the essay page
+ *   meBundle()              app/api/me/route.ts (profile, organization, admin, household children)
  *
  * Callers check that someone is signed in first (the functions are closed to anon). The viewer bundle is a read from
  * the start of the request: a caller that writes a profile and then needs it uses what it wrote (store-plan.ts does),
@@ -18,9 +20,9 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { requestMemo } from "@/lib/request-memo";
-import { callBundle, type PlanBundle, type ViewerBundle } from "./bundle-read";
+import { callBundle, type EssayBundle, type MeBundle, type PlanBundle, type ViewerBundle } from "./bundle-read";
 
-export type { PlanBundle, ViewerBundle } from "./bundle-read";
+export type { EssayBundle, MeBundle, PlanBundle, ViewerBundle } from "./bundle-read";
 
 /**
  * Concurrent identical reads within one request share one call. A Server Action runs outside React's render, where
@@ -85,4 +87,26 @@ export const planBundle = cache(
 /** plan_bundle() fresh, never memoized: for the follow-up pass after a write, which must see the write. */
 export function freshPlanBundle(studentId: string | null, listId: string): Promise<PlanBundle | null> {
   return loadPlanBundle(studentId, listId);
+}
+
+/**
+ * essay_bundle(essay) once per request and essay, or null: not installed, failed, or the RPC's own null (the draft
+ * isn't there or the caller can't read it). On null the caller reads table by table, which answers not-found itself.
+ */
+export const essayBundle = cache((essayId: string): Promise<EssayBundle | null> => {
+  const key = `essay_bundle:${essayId}`;
+  return requestMemo(key, () =>
+    shared(key, async () => {
+      const r = await callBundle<EssayBundle | null>(await createServerSupabase(), "essay_bundle", { p_essay: essayId });
+      if (r.kind === "error") logError("essay_bundle", r.error);
+      return r.kind === "ok" ? r.data : null;
+    }),
+  );
+});
+
+/** me_bundle() for /api/me (a route handler: one call per request), or null (not installed, or failed). */
+export async function meBundle(): Promise<MeBundle | null> {
+  const r = await callBundle<MeBundle | null>(await createServerSupabase(), "me_bundle");
+  if (r.kind === "error") logError("me_bundle", r.error);
+  return r.kind === "ok" ? r.data : null;
 }

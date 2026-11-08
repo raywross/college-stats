@@ -210,7 +210,10 @@ allowed; name, inviter, side, expiry, state; never the email), `log_access(stude
   identity and the server never reads it. The name and id come from **`GET /api/me`** (`private, no-store`), kept in
   `sessionStorage` for five minutes and asked again when stale, after a name change (`refreshMe()`), or when the cookie
   and the last answer disagree; a signed-out visitor asks once per tab (to learn whether sign-in is configured here).
-  A visitor without an `sb-` auth cookie gets that answer without a call to Supabase. Public pages never read cookies,
+  A visitor without an `sb-` auth cookie gets that answer without a call to Supabase. A signed-in one gets it from one
+  call, `me_bundle()` (`supabase/migrations/20261108130000_essay_and_me_bundles.sql`: the profile's name, role hint, and
+  pause, the organization and admin checks, and the household's children in roster order); until that function is
+  installed the route makes its four reads as before, and a paused profile answers signed out on either path. Public pages never read cookies,
   so they keep their static/ISR rendering (checked with `next build`; a test fails if a page outside the account
   routes imports `next/headers`, `lib/auth`, or `lib/supabase-server`).
 - **`proxy.ts` runs only on** `/login`, `/auth/*`, `/account/*`, `/me/*`, `/invite/*`, `/api/me`, and only when an

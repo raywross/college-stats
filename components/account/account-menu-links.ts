@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { Briefcase, UserRound, Users } from "lucide-react";
+import { Briefcase, ShieldCheck, UserRound, Users } from "lucide-react";
 import { CASELOAD_HREF } from "@/lib/org-hrefs";
 
 export interface AccountMenuLink {
@@ -21,7 +21,13 @@ export const ACCOUNT_MENU_LINKS: AccountMenuLink[] = [
 /** Caseload, first, for a member of a counselor organization (specs/product/counselor-portal.md "The counselor's pages"). */
 export const CASELOAD_LINK: AccountMenuLink = { href: CASELOAD_HREF, label: "Caseload", icon: Briefcase };
 
-/** The menu's links for this person: Caseload only for members of an organization (`/api/me`'s `org`). */
-export function accountMenuLinks(me: { org?: boolean }): AccountMenuLink[] {
-  return me.org ? [CASELOAD_LINK, ...ACCOUNT_MENU_LINKS] : ACCOUNT_MENU_LINKS;
+/**
+ * Admin, last, for an admin (specs/product/admin.md "The console"): the way into the console, so an admin never types
+ * the address. The console is still a 404 to anyone else, and asks an admin for the second factor itself.
+ */
+export const ADMIN_LINK: AccountMenuLink = { href: "/admin", label: "Admin", icon: ShieldCheck };
+
+/** The menu's links for this person: Caseload only for members of an organization, Admin only for admins (`/api/me`). */
+export function accountMenuLinks(me: { org?: boolean; admin?: boolean }): AccountMenuLink[] {
+  return [...(me.org ? [CASELOAD_LINK] : []), ...ACCOUNT_MENU_LINKS, ...(me.admin ? [ADMIN_LINK] : [])];
 }

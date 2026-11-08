@@ -287,6 +287,9 @@ export interface MeState {
   email: string | null;
   /** A member of a counselor organization (my_organization()): the menu shows Caseload. False when signed out. */
   org: boolean;
+  /** An admin at any assurance level (is_admin_any_aal()): the menu shows Admin, the way into the console
+   * (specs/product/admin.md "The console"). The console itself asks for the second factor. False when signed out. */
+  admin: boolean;
 }
 
 /**

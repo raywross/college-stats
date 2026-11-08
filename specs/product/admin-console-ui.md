@@ -12,6 +12,9 @@
   read and write.
 - **Rail** (`components/admin/AdminRail.tsx`): People, Colleges, Health, Operations, Log, plus "Who is an admin"; the global
   search at the top. From `lg` a left column; on phones a strip (search, then the sections in one swipeable row).
+- **The way in** (2026-11-08): `accountMenuLinks()` (`components/account/account-menu-links.ts`) adds **Admin**, last, when
+  `/api/me` says `admin`, and `BottomNav`'s More sheet shows the same entry; `MeState.admin` comes from `is_admin_any_aal()`
+  with a `catch(() => false)` for a project without the admin migration.
 - **Global search** (`AdminSearch`) is a GET form to `/admin/people?q=`. One hit opens its page; several list; none says so
   and points to Colleges. Colleges and high schools are searched on `/admin/colleges` (below).
 - `robots: noindex, nofollow` on the layout and every page. **No analytics under `/admin`**: `AnalyticsProvider` renders

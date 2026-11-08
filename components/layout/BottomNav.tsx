@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, Briefcase, Compass, Database, Ellipsis, GitCompareArrows, GraduationCap, LineChart, ListChecks, LogIn, Map as MapIcon, Search, Sparkles, UserRound, X } from "lucide-react";
+import { BookOpen, Briefcase, Compass, Database, Ellipsis, GitCompareArrows, GraduationCap, LineChart, ListChecks, LogIn, Map as MapIcon, Search, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
 import { ThemeSegmented } from "@/components/ThemeToggle";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useMe } from "@/components/account/useMe";
@@ -108,6 +108,9 @@ export function BottomNav() {
               ))}
               {me?.signedIn && me.org && (
                 <MoreLink href={CASELOAD_HREF} icon={<Briefcase className="size-5" />} title="Caseload" sub="Your students and their advisors" active={isActive(CASELOAD_HREF)} />
+              )}
+              {me?.signedIn && me.admin && (
+                <MoreLink href="/admin" icon={<ShieldCheck className="size-5" />} title="Admin" sub="The console" active={isActive("/admin")} />
               )}
               <MoreLink href="/trends" icon={<LineChart className="size-5" />} title="National trends" sub="How college is changing" active={isActive("/trends")} />
               <MoreLink href="/high-schools" icon={<GraduationCap className="size-5" />} title="High schools" sub="Rigor, outcomes & where graduates go" active={isActive("/high-schools")} />

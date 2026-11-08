@@ -91,6 +91,9 @@ Every stored value already carries a lineage record with its source, year, and r
 nothing new is collected. The thresholds live in one file so they can be tuned.
 
 ## The console
+> A redesign is planned (2026-11-08): [admin-redesign.md](admin-redesign.md) rearranges these sections around the
+> Data Steward, renames the Data section's words, and gives the console a phone layout. The sections below are as built.
+
 `/admin`, signed in, admin only, `robots: noindex`, and no PostHog events: the provider is not mounted under
 `/admin` ([telemetry.md](telemetry.md)). Five sections in a left rail (a top strip on phones, which the console
 supports but does not favor):

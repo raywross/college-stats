@@ -249,8 +249,14 @@ export const CONFIRM_REMOVE = "remove";
 /** The word typed to delete a student record. */
 export const CONFIRM_DELETE_RECORD = "delete";
 
-/** The word typed to revert a change set or a reference document to an older version (client-safe: no server imports here). */
-export const CONFIRM_REVERT = "revert";
+/** The word typed to Undo this change (a change set) (client-safe: no server imports here). */
+export const CONFIRM_UNDO = "undo";
+
+/** The word typed to Restore version N of a reference document. */
+export const CONFIRM_RESTORE = "restore";
+
+/** The word typed to Make this the live version (move the live pointer to an older published version). */
+export const CONFIRM_MAKE_LIVE = "live";
 
 /** The word typed to Publish now on the Data landing (specs/product/admin-redesign.md "Owner decisions" 6). */
 export const CONFIRM_PUBLISH = "publish";

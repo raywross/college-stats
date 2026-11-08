@@ -17,7 +17,7 @@ import {
   type ChangeSetRow,
   type DiffHunk,
 } from "@/lib/admin/change-set-view";
-import { CONFIRM_REVERT } from "@/lib/admin/data-actions";
+import { CONFIRM_UNDO } from "@/lib/admin/data-actions";
 import { holdChangeSetAction, publishAnywayAction, revertChangeSetAction } from "@/app/admin/data/actions";
 
 const linkCls = "underline decoration-dotted underline-offset-2";
@@ -129,7 +129,7 @@ export function ChangeSetActions({ row }: { row: ChangeSetRow }) {
           trigger="Undo this change"
           tone="danger"
           fields={[{ name: "note", label: "Note (optional)", type: "textarea", maxLength: 500 }]}
-          typed={{ expected: CONFIRM_REVERT, instruction: <>Type &ldquo;{CONFIRM_REVERT}&rdquo; to confirm</> }}
+          typed={{ expected: CONFIRM_UNDO, instruction: <>Type &ldquo;{CONFIRM_UNDO}&rdquo; to confirm</> }}
           description="Writes a new change that puts back every document this one changed. The next publish carries it; to undo a whole publish at once, make an earlier published version live instead. Refused when a later change changed the same documents: undo that one first."
         />
       )}

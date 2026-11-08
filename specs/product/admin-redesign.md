@@ -588,3 +588,11 @@ Recommended defaults; the build proceeds on them unless the owner says otherwise
   allowed. `tests/admin-phone.test.mts` guards this, the `<table>` rule, the five RecordActions pages and the form
   breakpoints; the render tests use `tests/fixtures/responsive-table-fake.mjs` for the table.
 - The high school page shows a course by name only; the course key no longer appears on screen.
+
+### Polish (QA follow-ups) (2026-11-08, `feature/admin-redesign-polish`)
+
+- **Typed words follow the renames.** Make this the live version now asks for `live` (`CONFIRM_MAKE_LIVE`), Undo
+  this change for `undo` (`CONFIRM_UNDO`), and a reference document's Restore version N for `restore`
+  (`CONFIRM_RESTORE`), all in `lib/admin/console.ts`; `CONFIRM_POINT_BACK` and `CONFIRM_REVERT` are gone. The
+  Server Actions re-check the new words and refuse the old ones (`tests/admin-data.test.mts`,
+  `tests/admin-reference.test.mts`). This replaces Unit 1's "the typed words did not change".

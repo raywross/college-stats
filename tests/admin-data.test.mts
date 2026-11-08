@@ -404,27 +404,29 @@ test("publishNow surfaces GitHub's refusal without hiding it", async () => {
 test("pointBackHere: a bad or missing snapshot id is refused before anything runs", async () => {
   const { deps, log } = fakeDeps();
   for (const fields of [{}, { snapshot: "0" }, { snapshot: "-3" }, { snapshot: "abc" }, { snapshot: "1.5" }] as Record<string, string>[]) {
-    const result = await actions.pointBackHere(deps, form({ confirm: actions.CONFIRM_POINT_BACK, ...fields }));
+    const result = await actions.pointBackHere(deps, form({ confirm: actions.CONFIRM_MAKE_LIVE, ...fields }));
     assert.equal(result.status, "error", JSON.stringify(fields));
   }
   assert.deepEqual(log, [], "nothing ran: the id never reached the RPC or the dispatch");
 });
 
-test("pointBackHere needs the typed confirmation ('point back'), case- and space-insensitively; a forged form without it changes nothing", async () => {
+test("pointBackHere needs the typed confirmation ('live'), case- and space-insensitively; a forged form without it changes nothing", async () => {
+  assert.equal(actions.CONFIRM_MAKE_LIVE, "live");
   const { deps, log } = fakeDeps();
   const bad = await actions.pointBackHere(deps, form({ snapshot: "7", confirm: "yes" }));
   assert.equal(bad.status, "error");
-  assert.match((bad as { message: string }).message, /point back/);
+  assert.match((bad as { message: string }).message, /Type "live"/);
+  assert.equal((await actions.pointBackHere(deps, form({ snapshot: "7", confirm: "point back" }))).status, "error", "the old word no longer works");
   assert.deepEqual(log, [], "the RPC was never called");
   const noConfirm = await actions.pointBackHere(deps, form({ snapshot: "7" }));
   assert.equal(noConfirm.status, "error");
-  const ok = await actions.pointBackHere(deps, form({ snapshot: "7", confirm: "  POINT Back  " }));
+  const ok = await actions.pointBackHere(deps, form({ snapshot: "7", confirm: "  LIVE  " }));
   assert.equal(ok.status, "done");
 });
 
 test("pointBackHere: the RPC (admin_data_point_snapshot) runs first; dispatching the workflow's point job happens only if it succeeds", async () => {
   const { deps, log, dispatches } = fakeDeps();
-  const result = await actions.pointBackHere(deps, form({ snapshot: "9", confirm: actions.CONFIRM_POINT_BACK }));
+  const result = await actions.pointBackHere(deps, form({ snapshot: "9", confirm: actions.CONFIRM_MAKE_LIVE }));
   assert.equal(result.status, "done");
   assert.deepEqual(log, ["point 9", "note ops.dispatch", "dispatch publish-snapshot.yml"], "the database call, then the log, then the dispatch, in that order");
   assert.deepEqual(dispatches[0].inputs.point, "9");
@@ -432,7 +434,7 @@ test("pointBackHere: the RPC (admin_data_point_snapshot) runs first; dispatching
 
 test("pointBackHere: a refused RPC (a later change set touched the document) stops before any dispatch", async () => {
   const { deps, log, dispatches } = fakeDeps({ pointOk: false, pointMessage: "That snapshot can't be reverted to: a later change set touched one of its documents." });
-  const result = await actions.pointBackHere(deps, form({ snapshot: "4", confirm: actions.CONFIRM_POINT_BACK }));
+  const result = await actions.pointBackHere(deps, form({ snapshot: "4", confirm: actions.CONFIRM_MAKE_LIVE }));
   assert.equal(result.status, "error");
   assert.match((result as { message: string }).message, /later change set/);
   assert.deepEqual(dispatches, []);
@@ -441,7 +443,7 @@ test("pointBackHere: a refused RPC (a later change set touched the document) sto
 
 test("pointBackHere also logs before it sends, and refuses without dispatching, when the log write fails (after a successful RPC)", async () => {
   const { deps, log, dispatches } = fakeDeps({ noteOk: false });
-  const result = await actions.pointBackHere(deps, form({ snapshot: "2", confirm: actions.CONFIRM_POINT_BACK }));
+  const result = await actions.pointBackHere(deps, form({ snapshot: "2", confirm: actions.CONFIRM_MAKE_LIVE }));
   assert.equal(result.status, "error");
   assert.deepEqual(dispatches, []);
   assert.deepEqual(log, ["point 2", "note ops.dispatch"]);
@@ -450,7 +452,7 @@ test("pointBackHere also logs before it sends, and refuses without dispatching, 
 test("neither action ever puts anything but a positive integer snapshot id, or the fixed 'force' input, into a dispatch: no email (or any form field) reaches it", async () => {
   const { deps, dispatches } = fakeDeps();
   await actions.publishNow(deps, form({ confirm: "publish" }));
-  await actions.pointBackHere(deps, form({ snapshot: "3", confirm: actions.CONFIRM_POINT_BACK, email: "someone@example.com", note: "unrelated text" }));
+  await actions.pointBackHere(deps, form({ snapshot: "3", confirm: actions.CONFIRM_MAKE_LIVE, email: "someone@example.com", note: "unrelated text" }));
   for (const d of dispatches) {
     for (const [key, value] of Object.entries(d.inputs)) {
       assert.ok(key === "point" || key === "force" || key === "request_id", `unexpected input "${key}"`);
@@ -891,14 +893,16 @@ test("Publish anyway: admin_data_unhold, then the publish logged before it is di
 
 test("Revert needs the typed word; a later change set's refusal names it so the admin reverts that one first", async () => {
   let f = fakeDeps();
+  assert.equal(actions.CONFIRM_UNDO, "undo");
   assert.equal((await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: "yes" }))).status, "error");
+  assert.equal((await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: "revert" }))).status, "error", "the old word no longer works");
   assert.deepEqual(f.calls, [], "the function was never called");
-  const r = await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: " REVERT ", note: "bad batch" }));
+  const r = await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: " UNDO ", note: "bad batch" }));
   assert.equal(r.status, "done");
   assert.match(r.status === "done" ? (r.message ?? "") : "", /Undone: change #77 puts back what #45 changed/);
   assert.deepEqual(f.calls, [{ fn: "admin_data_revert", args: { p_change_set: 45, p_note: "bad batch" } }]);
   f = fakeDeps({ refuse: { fn: "admin_data_revert", error: "later change set touched reported.entries/166027 (change set 51)" } });
-  const refused = await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: "revert" }));
+  const refused = await actions.revertChangeSet(f.deps, form({ change_set: "45", confirm: "undo" }));
   assert.equal(refused.status, "error");
   assert.equal(refused.status === "error" ? refused.message : "", "Change #51 changed reported.entries/166027 after this one. Undo #51 first, then this one.");
   assert.deepEqual(f.dispatches, [], "a revert dispatches nothing: the next publish carries it");
@@ -1034,7 +1038,7 @@ test("ChangeSetActions offers Publish anyway and Undo this change on a held set,
   assert.deepEqual(triggers(setRow(1, { status: "applied", snapshot_id: 3 })), ["Undo this change"]);
   assert.deepEqual(triggers(setRow(1, { status: "open" })), []);
   assert.deepEqual(triggers(setRow(1, { status: "reverted" })), []);
-  assert.match(read("components/admin/ChangeSets.tsx"), /typed=\{\{ expected: CONFIRM_REVERT/);
+  assert.match(read("components/admin/ChangeSets.tsx"), /typed=\{\{ expected: CONFIRM_UNDO/);
   const note = html(mod.ReleaseNoteDraft({ note: view.releaseNoteText(setRow(4, { closed_at: "2026-10-31T00:00:00Z" })) }));
   assert.match(note, /Write a release note/);
   assert.match(note, /release-notes\/data-college-reported-2026-10-31-4\.md/);

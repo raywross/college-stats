@@ -187,8 +187,8 @@ checked by the document's own validator when `lib/` has one:
 | the release calendar, and every other document | none yet — only the generic rule that the body parses to a JSON object or array |
 
 A problem refuses the save in plain words before any call reaches `admin_data_set_reference`. The **Versions** panel
-lists every version from `data_document_versions` (version, when, change set, deleted flag); **Revert to version
-{n}** requires typing "revert" and resends that version's body through the same function with the note "Reverted to
+lists every version from `data_document_versions` (version, when, change set, deleted flag); **Restore version
+{n}** requires typing "restore" and resends that version's body through the same function with the note "Reverted to
 version {n}" — it does not run the body back through the validator (an older version was presumably valid when it
 was current, and a validator can tighten over time). The essay guidance document's name has a "/" in it, which the
 list and edit links percent-encode into one route segment (`/admin/data/reference/essay-guidance%2Fguidance`); the

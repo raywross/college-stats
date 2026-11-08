@@ -147,7 +147,7 @@ page stale (`revalidatePath("/", "layout")`) for use by hand; nothing calls it a
 |---|---|---|
 | `SUPABASE_URL` | `.env.local`, Vercel, GitHub secret `PROD_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
 | `SUPABASE_PUBLISHABLE_KEY` | `.env.local`, Vercel | `sb_publishable_…`. Read-only through RLS. Replaces the legacy `anon` key |
-| `SUPABASE_SECRET_KEY` | `.env.local`, GitHub secret `PROD_SUPABASE_SECRET_KEY`; Vercel only once the digest emails are set up (the cron route needs it) | `sb_secret_…`. Bypasses RLS. Used by `publish-changes`, `publish-high-schools`, and `/api/cron/digests`. Never `NEXT_PUBLIC_` |
+| `SUPABASE_SECRET_KEY` | `.env.local`, GitHub secret `PROD_SUPABASE_SECRET_KEY`, Vercel (Production and Preview, Sensitive; set 2026-11-08 with `npm run vercel-env`) | `sb_secret_…`. Bypasses RLS. Used by `publish-changes`, `publish-high-schools`, every `/api/cron/*` route, and the `job_runs` recorder. Never `NEXT_PUBLIC_`. Empty on Vercel = every cron job fails with "Supabase is not configured" and the Jobs page shows them as never run |
 | `HIGH_SCHOOLS_SOURCE` | `.env.local` (optional), Vercel (optional) | `supabase` or `json`; unset = `supabase` when the two keys above are set, else `json` |
 | `REVALIDATE_SECRET` | Vercel (Production), optional | Random string; guards `/api/revalidate`. Unset = endpoint refuses everything |
 | `CRON_SECRET` | Vercel | Bearer token for Vercel Cron's daily `/api/cron/digests` ([follow-colleges.md](product/follow-colleges.md#setup-owner)) |
@@ -477,7 +477,10 @@ can make most of them through the Management API with `SUPABASE_ACCESS_TOKEN` an
   it. `usequad.app` was bought through Vercel (renews 2027-10-12) and uses Vercel DNS.
 - Deployment Protection (Vercel Authentication) is on: preview and team URLs ask for a Vercel login; the production
   domains are public. A link meant for someone else must be a production address.
-- Environment variables beyond the ones above: `RESEND_API_KEY`, `EMAIL_FROM` (Production and Preview).
+- Environment variables beyond the ones above: `RESEND_API_KEY`, `EMAIL_FROM`, `SUPABASE_SECRET_KEY`, `CRON_SECRET`
+  (Production and Preview). To copy a value from `.env.local` to Vercel without pasting it anywhere:
+  `npm run vercel-env -- NAME [--plain] [--target production,preview] [--redeploy]` (`scripts/vercel-env.mts`; uses the
+  Vercel CLI's saved login, reads the result back, and `--redeploy` rebuilds production, which a new value needs).
 - Production logs: `npx --yes vercel@latest logs -p college-stats --scope raywross-projects --environment production
   --since 3h -x` (the site logs the real error behind messages like "We couldn't save it").
 

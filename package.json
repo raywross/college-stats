@@ -16,6 +16,7 @@
     "sync-data": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-data.mts",
     "sync-history": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/sync-history.mts",
     "auth-emails": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/auth-emails.mts",
+    "vercel-env": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/vercel-env.mts",
     "selectivity-method-sample": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/selectivity-method-sample.mts",
     "build-trends": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/build-trends.mts",
     "sync-all": "npm run sync-data && npm run sync-history",

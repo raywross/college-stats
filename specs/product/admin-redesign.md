@@ -1,6 +1,6 @@
 # Admin Console Redesign: The Steward in Charge, Three Doors, Plain Words, a Phone That Works
 
-> Status: **planned**. Written 2026-11-08 from the owner's review of the console ("hard to use and see what I'm looking
+> Status: **built** 2026-11-08 (#226; see [As built](#as-built)). Written 2026-11-08 from the owner's review of the console ("hard to use and see what I'm looking
 > at") and a read of every admin screen. The console as built is in [admin.md](admin.md), [admin-console-ui.md](admin-console-ui.md),
 > [admin-jobs.md](admin-jobs.md), [admin-health-views.md](admin-health-views.md), and the Data section's specs
 > ([data-steward.md](data-steward.md), [data-platform/change-sets.md](../data-platform/change-sets.md)). This spec

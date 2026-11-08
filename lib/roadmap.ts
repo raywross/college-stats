@@ -228,17 +228,8 @@ export const ROADMAP: RoadmapSpec[] = [
       "The upload with its client-side scrubbing, college-name matching with a review list, bins and thresholds, the chart beside the estimate, and the data processing agreement for school organizations.",
     status: "planned",
   },
-  {
-    slug: "admin-redesign",
-    file: "specs/product/admin-redesign.md",
-    group: "business",
-    summary:
-      "The admin console rearranged around the Data Steward: an Inbox of what needs a person as the home, four doors (Steward, People, Data, Settings), the Steward reading every job's outcome and repairing what its fixed tools allow, plain words with an info icon on every panel and a console Help page, and a phone layout with a tab bar and card lists instead of sideways tables.",
-    complexity: 3,
-    complexityNote:
-      "A new shell with redirects from every old route, a help glossary wired into every panel, one responsive table for the whole console, the Steward's job-review mode with per-job expectations and a small repair allowlist, and a phone check on every screen.",
-    status: "planned",
-  },
+  // The admin console redesign (specs/product/admin-redesign.md) was planned and built the same day, 2026-11-08 (#226),
+  // so it is no longer listed.
   // The serving architecture (specs/serving-architecture.md) was planned and built on 2026-10-07 (#98), so it is
   // no longer listed.
   // Ideas (specs/ideas/README.md): not planned; in the order they could be built.

@@ -3,7 +3,7 @@ import { InfoTip, SourceTip } from "@/components/ui/info-tip";
 import { noteText } from "@/lib/chances/notes";
 import { panelParts, uncoveredFacts, yourNumbersList, type YourNumbers } from "@/lib/chances/what-went-in";
 import type { EstimateResult } from "@/lib/chances/types";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { cn } from "@/lib/utils";
 
 /**
@@ -29,7 +29,7 @@ export function WhatWentIn({
   /** The student's entries as words; null when the viewer's numbers aren't at hand (a guardian's copy shows none). */
   yours: YourNumbers | null;
   college: string;
-  cite: (path: string) => AnyCited | undefined;
+  cite: (path: string) => CiteLike | undefined;
   /** Where "Adding your … could change this estimate" can be acted on (the profile), when the viewer can. */
   promptHref?: string;
   className?: string;

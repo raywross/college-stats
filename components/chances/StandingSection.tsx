@@ -4,6 +4,7 @@ import { InfoTip } from "@/components/ui/info-tip";
 import { shortName } from "@/lib/brand";
 import { getData } from "@/lib/data";
 import { estimateFactCites, majorUnitCites } from "@/lib/chances/fact-cites";
+import { citeRefWhereSame } from "@/lib/planner/plan-cites";
 import { majorUnitsFor } from "@/lib/chances/major-admission";
 import { noteText } from "@/lib/chances/notes";
 import { majorFamilyName } from "@/lib/majors";
@@ -23,6 +24,10 @@ export async function StandingSection({ school, id, className }: { school: Schoo
   // The "Who you're compared with" panel (pool-explainer.md) is built client-side from the student's own numbers,
   // so it needs the college's own published rates: a serializable slice of School, nothing the method computes.
   const poolSchool = { unit_id: school.unit_id, name: school.name, location: school.location, admissions: school.admissions, reported: school.reported, lineage: school.lineage };
+  // Every fact's citation as a reference the ⓘ fetches on open (round 4; specs/data-lineage.md "Citations on the plan"),
+  // except where /api/cite would answer differently (the GPA fields). The major units' citations stay whole: each
+  // carries its own unit's page and quote, which the API (one citation per college and path) doesn't know.
+  const factCites = Object.fromEntries(Object.entries(estimateFactCites(school, citeField)).map(([path, cited]) => [path, citeRefWhereSame(cited, school.unit_id)]));
   return (
     <Block
       id={id}
@@ -36,7 +41,7 @@ export async function StandingSection({ school, id, className }: { school: Schoo
       <StandingCard
         unitId={school.unit_id}
         college={shortName(school)}
-        cites={estimateFactCites(school, citeField)}
+        cites={factCites}
         majorCites={majorUnitCites(school, citeField)}
         families={families}
         poolSchool={poolSchool}

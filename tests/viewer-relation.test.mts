@@ -181,7 +181,7 @@ test("/advisor?for= opens for a counselor: banner, Back to caseload, one student
   assert.match(fn, /href=\{orgStudentHref\(id\)\}[\s\S]*?Back to caseload/);
   assert.match(fn, /<PlanPeople people=\{\[person\]\}/, "the people line of just this student: no child switcher");
   assert.match(fn, /relation="counselor"/);
-  assert.match(fn, /essaysFor\(loaded, opts\.tab, "counselor"\)/);
+  assert.match(fn, /essaysFor\(loaded, "counselor"\)/);
   // Checked before the household's viewer, so a caseload student never falls through to "No student yet".
   assert.ok(src.indexOf("await counselorAccessFor(forParam)") < src.indexOf("const viewer = await planViewer()"));
 });

@@ -270,7 +270,9 @@ test("the portal reads with the counselor's own session and never runs an estima
 
 test("the ask notice sits at the top of Next steps, for the family and not a counselor", () => {
   const tabs = read("components/planner/PlanTabs.tsx");
-  assert.match(tabs, /tab === "next" && <AskNotice ctx=\{ctx\} \/>\}\s*\{tab === "next" && <NextSteps/);
+  assert.match(tabs, /next: \(\) => \(\s*<>[\s\S]*?<AskNotice ctx=\{ctx\} \/>\s*<NextSteps ctx=\{ctx\} view=\{view\} \/>\s*<\/>/);
+  // Its read runs only when the page opens on Next steps for the family: that tab then navigates instead of switching.
+  assert.match(read("components/planner/PlanFrame.tsx"), /asksRead: !!ctx\.student && !ctx\.viewer\.isCounselor/);
   assert.match(read("components/org/AskNotice.tsx"), /ctx\.viewer\.isCounselor\) return null/);
 });
 

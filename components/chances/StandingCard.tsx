@@ -18,7 +18,7 @@ import { noteText } from "@/lib/chances/notes";
 import type { PoolSchool } from "@/lib/chances/pool-rate";
 import { panelParts } from "@/lib/chances/what-went-in";
 import type { EstimateResult } from "@/lib/chances/types";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { recordPageHref } from "@/lib/planner/record";
 import { connectionSentence, type ConnectionEntry } from "@/lib/student-profile";
 import { stateName } from "@/lib/states";
@@ -27,8 +27,8 @@ export interface StandingCardProps {
   unitId: string;
   /** The college's short name, for sentences. */
   college: string;
-  /** Citations for every field an estimate can cite (lib/chances/fact-cites.ts), resolved on the server. */
-  cites: Record<string, AnyCited>;
+  /** Citations for every field an estimate can cite (lib/chances/fact-cites.ts), as references the ⓘ fetches on open. */
+  cites: Record<string, CiteLike>;
   majorCites: MajorCites;
   /** Families of majors the college admits by (its schools or majors), with their names. */
   families: { family: string; name: string }[];

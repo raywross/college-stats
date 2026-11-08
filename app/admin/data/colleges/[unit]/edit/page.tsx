@@ -27,7 +27,7 @@ export default async function EditCollegePage({ params }: PageProps<"/admin/data
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="edit-field"
         back={
           <Link href={`/admin/data/colleges/${unit}`} className="text-muted-foreground underline-offset-4 hover:underline">
             {school.name}

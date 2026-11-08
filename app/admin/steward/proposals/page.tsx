@@ -30,8 +30,8 @@ export default async function ProposalsPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <PageHeader title="Proposals" back={<StewardBack />} subtitle="Each one is a cause the Steward checked against the documents. Nothing reaches the site until you approve it." />
-      <Panel title={status ? PROPOSAL_STATUS_LABEL[status] : "All proposals"} aside={<span className="text-sm text-muted-foreground">{status ? `${proposals.length} ${PROPOSAL_STATUS_LABEL[status].toLowerCase()}` : `${waiting} open`}</span>}>
+      <PageHeader help="proposal" title="Proposals" back={<StewardBack />} subtitle="Each one is a cause the Steward checked against the documents. Nothing reaches the site until you approve it." />
+      <Panel help="proposal" title={status ? PROPOSAL_STATUS_LABEL[status] : "All proposals"} aside={<span className="text-sm text-muted-foreground">{status ? `${proposals.length} ${PROPOSAL_STATUS_LABEL[status].toLowerCase()}` : `${waiting} open`}</span>}>
         <nav aria-label="Statuses" className="mb-3 flex flex-wrap gap-2 text-sm">
           {[null, ...STATUSES].map((s) => (
             <Link

@@ -610,22 +610,22 @@ test("the Snapshots page calls requireAdmin() then the snapshot reads, and hands
 /* components/admin/Snapshots.tsx, rendered directly with real rows    */
 /* ------------------------------------------------------------------ */
 
-test("SnapshotsTable: each row, the current one marked Live with no Point back here on it, and Download manifest", async () => {
+test("SnapshotsTable: each published version, the current one marked Live with no Make this the live version on it, and Download manifest", async () => {
   const mod = (await loadTsx("components/admin/Snapshots.tsx")) as { SnapshotsTable: (p: { snapshots: SnapshotRow[]; currentId: number | null }) => import("react").ReactElement };
   const rows = [
     snapshot(2, { manifest: { colleges: 1900, objects: { "colleges.json.gz": { bytes: 6_000_000, sha256: "a" } } }, change_set_ids: [1, 2] }) as unknown as SnapshotRow,
     snapshot(1, { status: "failed", manifest: { colleges: 1899, objects: {} }, change_set_ids: [1] }) as unknown as SnapshotRow,
   ];
   const markup = html(mod.SnapshotsTable({ snapshots: rows, currentId: 2 }));
-  assert.match(markup, /Snapshot 2/);
-  assert.match(markup, /Snapshot 1/);
+  assert.match(markup, /Version 2/);
+  assert.match(markup, /Version 1/);
   assert.match(markup, /label&quot;:&quot;Live&quot;/, "the current snapshot is marked (an attribute's JSON, HTML-escaped)");
   assert.match(markup, /label&quot;:&quot;Failed&quot;/);
   // Point back here is an AdminForm (stubbed here too); its hidden snapshot id and typed confirmation are primitive
   // props, so they reach data-props even though the stand-in can't run the real confirmation UI.
   const forms = [...markup.matchAll(/data-stub="AdminForm" data-props="([^"]*)"/g)].map((m) => JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&#x27;/g, "'")) as Record<string, unknown>);
-  assert.equal(forms.length, 1, "Point back here appears once: not on the current snapshot");
-  assert.equal(forms[0].trigger, "Point back here");
+  assert.equal(forms.length, 1, "Make this the live version appears once: not on the current version");
+  assert.equal(forms[0].trigger, "Make this the live version");
   assert.match(markup, /Download manifest/);
   assert.match(markup, /https:\/\/example\.test\/snapshots\/1\/manifest\.json/, "Download manifest links the snapshot's own manifest object");
 });
@@ -633,7 +633,7 @@ test("SnapshotsTable: each row, the current one marked Live with no Point back h
 test("SnapshotsTable says there is nothing to show before the first publish", async () => {
   const mod = (await loadTsx("components/admin/Snapshots.tsx")) as { SnapshotsTable: (p: { snapshots: SnapshotRow[]; currentId: number | null }) => import("react").ReactElement };
   const markup = html(mod.SnapshotsTable({ snapshots: [], currentId: null }));
-  assert.match(markup, /No snapshot has been published yet/);
+  assert.match(markup, /No version has been published yet/);
 });
 
 /* ------------------------------------------------------------------ */
@@ -995,7 +995,7 @@ test("the change set page: summary, documents touched, one document's diff, and 
     });
   reset({ admin: true, supabase: tables });
   const markup = html(await page({ params: Promise.resolve({ id: "2" }), searchParams: Promise.resolve({ c: "reported.entries", k: "166027" }) }));
-  assert.match(markup, /Change set #2/);
+  assert.match(markup, /Change #2/);
   assert.match(markup, /more than half held/);
   const stubs = stubsIn(markup);
   assert.ok(stubs.some((s) => s.name === "ChangeSetActions"), "the actions");
@@ -1012,12 +1012,12 @@ test("the change set page: summary, documents touched, one document's diff, and 
   assert.deepEqual(world.calls, ["requireAdmin"]);
 });
 
-test("ChangeSetActions offers Publish anyway and Revert on a held set, Hold and Revert on an applied one, nothing on an open one; Revert asks for the typed word", async () => {
+test("ChangeSetActions offers Publish anyway and Undo this change on a held set, Hold and Undo on an applied one, nothing on an open one; Undo asks for the typed word", async () => {
   const mod = (await loadTsx("components/admin/ChangeSets.tsx")) as unknown as { ChangeSetActions: (p: { row: ChangeSetRow }) => import("react").ReactElement; ReleaseNoteDraft: (p: { note: { path: string; content: string } }) => import("react").ReactElement };
   const triggers = (row: ChangeSetRow) => stubsIn(html(mod.ChangeSetActions({ row }))).filter((s) => s.name === "AdminForm").map((s) => s.props.trigger);
-  assert.deepEqual(triggers(setRow(1, { status: "held" })), ["Publish anyway", "Revert"]);
-  assert.deepEqual(triggers(setRow(1, { status: "applied" })), ["Hold", "Revert"]);
-  assert.deepEqual(triggers(setRow(1, { status: "applied", snapshot_id: 3 })), ["Revert"]);
+  assert.deepEqual(triggers(setRow(1, { status: "held" })), ["Publish anyway", "Undo this change"]);
+  assert.deepEqual(triggers(setRow(1, { status: "applied" })), ["Hold", "Undo this change"]);
+  assert.deepEqual(triggers(setRow(1, { status: "applied", snapshot_id: 3 })), ["Undo this change"]);
   assert.deepEqual(triggers(setRow(1, { status: "open" })), []);
   assert.deepEqual(triggers(setRow(1, { status: "reverted" })), []);
   assert.match(read("components/admin/ChangeSets.tsx"), /typed=\{\{ expected: CONFIRM_REVERT/);

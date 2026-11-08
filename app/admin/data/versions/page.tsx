@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { adminSupabase } from "@/lib/admin/people";
 import { currentSnapshotId, loadSnapshots } from "@/lib/admin/data-reads";
 
-export const metadata: Metadata = { title: "Snapshots", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Published versions", robots: { index: false, follow: false } };
 
 /**
  * `/admin/data/versions` (specs/data-platform/change-sets.md "The console", Snapshots row): every snapshot,
@@ -21,7 +21,7 @@ export default async function SnapshotsPage() {
 
   return (
     <>
-      <PageHeader title="Snapshots" subtitle="Every snapshot the publisher has written, newest first. Pointing back moves the live pointer at once, with no rebuild." />
+      <PageHeader help="published-version" title="Published versions" subtitle="Every version the publisher has written, newest first. Making an earlier one live takes effect at once, with no rebuild." />
       <SnapshotsTable snapshots={snapshots} currentId={currentId} />
     </>
   );

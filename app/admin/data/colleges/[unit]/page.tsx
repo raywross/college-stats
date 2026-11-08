@@ -58,7 +58,7 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="college"
         back={
           <Link href="/admin/data/colleges" className="text-muted-foreground underline-offset-4 hover:underline">
             Colleges
@@ -110,7 +110,7 @@ function SelectivityBlock({ panel, school }: { panel: SelectivityPanel; school: 
   const { constants } = panel;
   const fields = [...new Set(panel.pools.flatMap((p) => p.rows.map((r) => r.field)))] as FieldPath[];
   return (
-    <Panel title="Selectivity" id="selectivity" aside={<Muted>Hidden: never on a public page</Muted>}>
+    <Panel help="selectivity-pool" title="Selectivity" id="selectivity" aside={<Muted>Hidden: never on a public page</Muted>}>
       {panel.status === "inconsistent" ? (
         <Empty>Not rated: the college reports more first-years enrolled than undergraduates in all, so its figures can&apos;t describe one class.</Empty>
       ) : panel.status === "no_admit_rate" ? (
@@ -208,7 +208,7 @@ function GpaBlock({ panel, school }: { panel: GpaPanel; school: School }) {
     ...panel.inputs.map((i) => ({ label: `Model input: ${i.label}`, value: i.value })),
   ];
   return (
-    <Panel title="GPA" id="gpa" aside={<Muted>What the standing model reads</Muted>}>
+    <Panel help="college-gpa" title="GPA" id="gpa" aside={<Muted>What the standing model reads</Muted>}>
       <Fields items={items} />
       {panel.field && <SourceNote fields={[panel.field]} school={school} className="mt-3" />}
     </Panel>
@@ -222,7 +222,7 @@ function GpaBlock({ panel, school }: { panel: GpaPanel; school: School }) {
 async function HiddenBlock({ rows, school }: { rows: HiddenFieldRow[]; school: School }) {
   const { citeField } = await getData();
   return (
-    <Panel title="Derived, not shown" id="hidden" aside={<Muted>Registry fields marked hidden</Muted>}>
+    <Panel help="hidden-value" title="Derived, not shown" id="hidden" aside={<Muted>Registry fields marked hidden</Muted>}>
       {rows.length === 0 ? (
         <Empty>No registry field is marked hidden.</Empty>
       ) : (
@@ -256,7 +256,7 @@ async function HiddenBlock({ rows, school }: { rows: HiddenFieldRow[]; school: S
 
 function HealthBlock({ health, generated, opsHref, reviewHref }: { health: CollegeHealth | null; generated: string | null; opsHref: string; reviewHref: string }) {
   return (
-    <Panel title="Files and collection" id="health" aside={health ? <HealthChip status={health.overall} /> : undefined}>
+    <Panel help="data-health" title="Files and collection" id="health" aside={health ? <HealthChip status={health.overall} /> : undefined}>
       {!health ? (
         <Empty>No health card: this college isn&apos;t in the health file, or the file couldn&apos;t be read.</Empty>
       ) : (
@@ -333,7 +333,7 @@ function viewerHref(unit: string, v: ViewerRow): string {
 
 function ViewersBlock({ unit, looking }: { unit: string; looking: Awaited<ReturnType<typeof collegeViewers>> }) {
   return (
-    <Panel
+    <Panel help="views-log"
       title="Who's looking"
       id="views"
       aside={
@@ -375,7 +375,7 @@ function ViewersBlock({ unit, looking }: { unit: string; looking: Awaited<Return
 
 function HistoryBlock({ points, every, unit }: { points: SelectivityPoint[] | null; every: boolean; unit: string }) {
   return (
-    <Panel
+    <Panel help="selectivity"
       title="Selectivity history"
       id="selectivity-history"
       aside={

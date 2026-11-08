@@ -118,7 +118,7 @@ export function ReviewTable({ groups }: { groups: ReviewGroup[] }) {
                     From
                   </th>
                   <th scope="col" className={th}>
-                    Issue
+                    Finding
                   </th>
                   <th scope="col" className={th}>
                     Recommends

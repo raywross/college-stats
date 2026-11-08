@@ -99,12 +99,12 @@ export function ReferenceVersions({ name, rows }: { name: string; rows: Referenc
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Link href={`/admin/data/changes/${r.change_set_id}`} className="underline decoration-dotted underline-offset-2">
-              Change set #{r.change_set_id}
+              Change #{r.change_set_id}
             </Link>
             <AdminForm
               action={revertReferenceAction}
               hidden={{ name, version: String(r.version) }}
-              trigger={`Revert to version ${r.version}`}
+              trigger={`Restore version ${r.version}`}
               typed={{ expected: CONFIRM_REVERT }}
             />
           </div>

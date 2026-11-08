@@ -8,7 +8,7 @@ import { adminSupabase } from "@/lib/admin/people";
 import { CHANGE_SET_STATUSES, loadChangeSets, parseStatusFilter, runRepo } from "@/lib/admin/data-reads";
 import { statusLabel } from "@/lib/admin/change-set-view";
 
-export const metadata: Metadata = { title: "Change sets", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Changes", robots: { index: false, follow: false } };
 
 /**
  * `/admin/data/changes` (specs/data-platform/change-sets.md "The console", Change sets row): every pipeline run,
@@ -34,8 +34,8 @@ export default async function ChangeSetsPage({ searchParams }: { searchParams: P
 
   return (
     <>
-      <PageHeader
-        title="Change sets"
+      <PageHeader help="change"
+        title="Changes"
         back={
           <Link href="/admin/data" className="underline decoration-dotted underline-offset-2">
             Data

@@ -46,7 +46,7 @@ export default async function EssayFormPage({ params }: PageProps<"/admin/data/e
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="hand-read"
         back={
           <Link href="/admin/data/essays" className="text-muted-foreground underline-offset-4 hover:underline">
             Essays
@@ -63,7 +63,7 @@ export default async function EssayFormPage({ params }: PageProps<"/admin/data/e
         }
       />
       <div className="max-w-3xl space-y-5">
-        <Panel title="What the reader found" id="found">
+        <Panel help="essays" title="What the reader found" id="found">
           <Fields
             items={[
               { label: "Status", value: ESSAY_STATUS_LABELS[found] },
@@ -91,7 +91,7 @@ export default async function EssayFormPage({ params }: PageProps<"/admin/data/e
           )}
         </Panel>
 
-        <Panel title="Enter the questions" id="form">
+        <Panel help="hand-read" title="Enter the questions" id="form">
           {!saved.ok ? (
             <Empty>Saved hand reads can&apos;t be read on this deployment (the essay_prompt_overrides table, or sign-in, isn&apos;t set up), so the form isn&apos;t shown.</Empty>
           ) : (
@@ -114,7 +114,7 @@ export default async function EssayFormPage({ params }: PageProps<"/admin/data/e
         </Panel>
 
         {saved.ok && saved.row && (
-          <Panel title="Delete the hand read" id="delete">
+          <Panel help="hand-read" title="Delete the hand read" id="delete">
             <AdminForm
               action={deleteEssayPrompts}
               hidden={{ unit, cycle }}

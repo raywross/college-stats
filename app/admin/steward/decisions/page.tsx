@@ -10,6 +10,7 @@ import { adminSupabase } from "@/lib/admin/people";
 import type { StoreClient } from "@/lib/admin/review-queue";
 import { readDecisions } from "@/lib/admin/steward-reads";
 import { dayLabel } from "@/lib/admin/ops-view";
+import { decisionAnchor } from "@/lib/admin/inbox";
 
 export const metadata: Metadata = { title: "Decisions", robots: { index: false, follow: false } };
 
@@ -27,9 +28,9 @@ export default async function DecisionsPage() {
 
   return (
     <>
-      <PageHeader title="Decisions" back={<StewardBack />} subtitle="Choices only you make, often for many colleges at once. The Steward follows the answer." />
+      <PageHeader help="decision" title="Decisions" back={<StewardBack />} subtitle="Choices only you make, often for many colleges at once. The Steward follows the answer." />
       {decisions.length === 0 ? (
-        <Panel title="Questions">
+        <Panel help="decision" title="Questions">
           <Empty>No questions yet.</Empty>
         </Panel>
       ) : (
@@ -38,7 +39,7 @@ export default async function DecisionsPage() {
             {open} waiting for an answer
           </p>
           {decisions.map((d) => (
-            <Panel key={d.key} title={d.question} aside={d.answer ? <StatusChip label="Decided" tone="good" /> : <StatusChip label="Your call" tone="warn" />}>
+            <Panel help="decision" key={d.key} id={decisionAnchor(d.key)} title={d.question} aside={d.answer ? <StatusChip label="Decided" tone="good" /> : <StatusChip label="Your call" tone="warn" />}>
               <div className="space-y-3 text-sm">
                 <p>
                   <span className="font-semibold">Recommends:</span> {d.recommends}

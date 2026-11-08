@@ -4,6 +4,7 @@ import { DocLink, ProposalKindChip, ProposalStatusChip, Recommends } from "@/com
 import { dayLabel } from "@/lib/admin/ops-view";
 import { editionOf, linkCls, proposalHref, reviewHref } from "@/lib/admin/steward-view";
 import type { Finding, ProposalDoc, ProposalRow } from "@/lib/steward/types";
+import { codeLabel } from "@/lib/admin/words";
 
 const th = "px-3 py-2 font-medium";
 
@@ -91,7 +92,7 @@ export function ProposalRowsTable({ rows, names, caption }: { rows: ProposalRow[
                   {names[r.unit_id] ?? r.unit_id}
                 </Link>
               </th>
-              <td className="px-3 py-2">{r.field ?? r.code ?? "—"}</td>
+              <td className="px-3 py-2">{r.field ?? (r.code ? codeLabel(r.code) : "—")}</td>
               <td className="px-3 py-2">{r.now}</td>
               <td className="px-3 py-2 font-medium">{r.proposed}</td>
               <td className="max-w-56 px-3 py-2 text-xs">

@@ -4,6 +4,7 @@ import { StatusChip } from "@/components/admin/StatusChip";
 import { Empty } from "@/components/admin/Panel";
 import { CopyButton } from "@/components/api/CopyButton";
 import { fmtDateTime } from "@/lib/admin/console";
+import { collectionLabel } from "@/lib/admin/words";
 import {
   changeSetActions,
   costLabel,
@@ -24,9 +25,9 @@ const linkCls = "underline decoration-dotted underline-offset-2";
 export function ChangeSetChips({ row }: { row: ChangeSetRow }) {
   return (
     <span className="flex flex-wrap items-center gap-1.5">
-      <StatusChip label={statusLabel(row.status)} tone={statusTone(row.status)} />
-      {row.snapshot_id !== null && <StatusChip label={`In snapshot ${row.snapshot_id}`} tone="info" />}
-      {row.reverted_by !== null && <StatusChip label={`Reverted by #${row.reverted_by}`} tone="neutral" />}
+      <StatusChip label={statusLabel(row.status)} tone={statusTone(row.status)} help={row.status === "held" ? "held" : undefined} />
+      {row.snapshot_id !== null && <StatusChip label={`In published version ${row.snapshot_id}`} tone="info" />}
+      {row.reverted_by !== null && <StatusChip label={`Undone by #${row.reverted_by}`} tone="neutral" />}
     </span>
   );
 }
@@ -36,15 +37,15 @@ export function ChangeSetChips({ row }: { row: ChangeSetRow }) {
  * with its status, source, counts, cost, and run link. Wide: it scrolls inside its own box on a phone.
  */
 export function ChangeSetsTable({ rows, repo }: { rows: ChangeSetRow[]; repo: string }) {
-  if (!rows.length) return <Empty>No change sets match.</Empty>;
+  if (!rows.length) return <Empty>No changes match.</Empty>;
   return (
     <div className="overflow-x-auto rounded-2xl border border-border">
       <table className="w-full min-w-[48rem] text-sm">
-        <caption className="sr-only">Change sets, newest first</caption>
+        <caption className="sr-only">Changes, newest first</caption>
         <thead className="bg-muted/50 text-left text-muted-foreground">
           <tr>
             <th scope="col" className="px-3 py-2 font-medium">
-              Change set
+              Change
             </th>
             <th scope="col" className="px-3 py-2 font-medium">
               Status
@@ -109,7 +110,7 @@ export function ChangeSetsTable({ rows, repo }: { rows: ChangeSetRow[]; repo: st
 export function ChangeSetActions({ row }: { row: ChangeSetRow }) {
   const can = changeSetActions(row);
   const id = String(row.id);
-  if (!can.hold && !can.publishAnyway && !can.revert) return <Empty>No actions: {row.status === "open" ? "the run is still writing." : "this change set is settled."}</Empty>;
+  if (!can.hold && !can.publishAnyway && !can.revert) return <Empty>No actions: {row.status === "open" ? "the run is still writing." : "this change is settled."}</Empty>;
   return (
     <div className="flex flex-wrap items-start gap-3">
       {can.publishAnyway && (
@@ -119,7 +120,7 @@ export function ChangeSetActions({ row }: { row: ChangeSetRow }) {
           trigger="Publish anyway"
           tone="primary"
           pendingLabel="Publishing…"
-          description="Releases the hold and starts the publish, so this change set and everything after it go live."
+          description="Releases the hold and starts the publish, so this change and everything after it go live."
         />
       )}
       {can.hold && (
@@ -128,18 +129,18 @@ export function ChangeSetActions({ row }: { row: ChangeSetRow }) {
           hidden={{ change_set: id }}
           trigger="Hold"
           fields={[{ name: "reason", label: "Why hold it", type: "textarea", required: true, maxLength: 500 }]}
-          description="The automatic publish stops at this change set, and every later one, until it is published anyway or reverted."
+          description="The automatic publish stops at this change, and every later one, until it is published anyway or undone."
         />
       )}
       {can.revert && (
         <AdminForm
           action={revertChangeSetAction}
           hidden={{ change_set: id }}
-          trigger="Revert"
+          trigger="Undo this change"
           tone="danger"
           fields={[{ name: "note", label: "Note (optional)", type: "textarea", maxLength: 500 }]}
           typed={{ expected: CONFIRM_REVERT, instruction: <>Type &ldquo;{CONFIRM_REVERT}&rdquo; to confirm</> }}
-          description="Writes a new change set that puts back every document this one changed. The next publish carries it; to undo what is live at once, use Point back here on Snapshots. Refused when a later change set changed the same documents: revert that one first."
+          description="Writes a new change that puts back every document this one changed. The next publish carries it; to undo a whole publish at once, make an earlier published version live instead. Refused when a later change changed the same documents: undo that one first."
         />
       )}
     </div>
@@ -158,13 +159,13 @@ export function DocumentsTouched({
   selected: { collection: string; key: string } | null;
   truncated: boolean;
 }) {
-  if (!groups.length) return <Empty>This change set wrote no documents.</Empty>;
+  if (!groups.length) return <Empty>This change wrote no documents.</Empty>;
   return (
     <div className="space-y-3">
       {groups.map((g) => (
         <details key={g.collection} open={groups.length === 1 || selected?.collection === g.collection} className="rounded-xl border border-border">
           <summary className="min-h-11 cursor-pointer px-3 py-2.5 text-sm">
-            <span className="font-mono font-semibold">{g.collection}</span>{" "}
+            <span className="font-semibold">{collectionLabel(g.collection)}</span>{" "}
             <span className="text-muted-foreground">
               · {g.documents.length.toLocaleString("en-US")} document{g.documents.length === 1 ? "" : "s"}
             </span>
@@ -185,7 +186,7 @@ export function DocumentsTouched({
           </ul>
         </details>
       ))}
-      {truncated && <p className="text-xs text-muted-foreground">Only the first documents are listed; the counts above are the whole change set&apos;s.</p>}
+      {truncated && <p className="text-xs text-muted-foreground">Only the first documents are listed; the counts above are the whole change&apos;s.</p>}
     </div>
   );
 }
@@ -195,7 +196,7 @@ export function DocumentDiff({ hunks, beforeVersion, afterVersion, deleted }: { 
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground">
-        {beforeVersion === null ? "Created by this change set" : `Version ${beforeVersion}`} → version {afterVersion}
+        {beforeVersion === null ? "Created by this change" : `Version ${beforeVersion}`} → version {afterVersion}
         {deleted ? " (removed)" : ""}
       </p>
       {!hunks.some((h) => "lines" in h && h.lines.some((l) => l.op !== "same")) ? (

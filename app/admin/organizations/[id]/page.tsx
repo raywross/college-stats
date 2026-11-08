@@ -28,7 +28,7 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="organization"
         back={
           <Link href="/admin/organizations" className="text-muted-foreground underline-offset-4 hover:underline">
             Organizations
@@ -40,7 +40,7 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
       />
 
       <div className="space-y-5">
-        <Panel title="Organization" id="organization">
+        <Panel help="organization" title="Organization" id="organization">
           <Fields
             items={[
               { label: "Created", value: fmtDate(org.created) },
@@ -51,7 +51,7 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
           />
         </Panel>
 
-        <Panel title="Members" id="members">
+        <Panel help="organization" title="Members" id="members">
           {org.members.length === 0 ? (
             <Empty>No members.</Empty>
           ) : (
@@ -71,7 +71,7 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
           )}
         </Panel>
 
-        <Panel title="Students" id="students">
+        <Panel help="organization" title="Students" id="students">
           {org.students.length === 0 ? (
             <Empty>No students have granted this organization access yet.</Empty>
           ) : (
@@ -98,7 +98,7 @@ export default async function OrganizationPage({ params }: PageProps<"/admin/org
           )}
         </Panel>
 
-        <Panel title="Invited students" id="invited">
+        <Panel help="join-code" title="Invited students" id="invited">
           {org.invitedStudents.length === 0 ? (
             <Empty>No invitations waiting.</Empty>
           ) : (

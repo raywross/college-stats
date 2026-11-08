@@ -327,3 +327,78 @@ Recommended defaults; the build proceeds on them unless the owner says otherwise
   (Only the row for now; the row carries the handler's error.)
 - Which reference documents deserve a form first? (Those with validators; the release calendar is the one the owner
   edits most.)
+
+## As built
+
+### Unit 1: shell and words (2026-11-08, `feature/admin-redesign-shell`)
+
+- **Doors.** `lib/admin/console.ts` exports `ADMIN_DOORS` (Steward, People, Data, More), `activeDoor()`,
+  `activeScreen()`, and `doorByKey()`; `ADMIN_SECTIONS` is gone. A screen's `under` lists extra prefixes only
+  (`/admin/students` under People, `/admin/data/high-schools` under Colleges); the Inbox (`/admin`) matches its own path
+  only, and the longest matching href wins. An unknown `/admin/...` path falls to the Steward door with no screen.
+  Each screen carries a `help` key.
+- **Rail and tab bar.** `components/admin/AdminRail.tsx` shows from `md`: from `lg` every door with every screen and its
+  hint, the search on top; from `md` to `lg` the doors with icons and the current door's screens. Below `md` it is
+  hidden and `components/admin/AdminTabBar.tsx` (fixed, `h-(--tabbar-h)`, lucide ShieldCheck, Users, Database,
+  Ellipsis) takes over; `components/layout/BottomNav.tsx` returns null under `/admin` after its hooks. The icons live
+  in `components/admin/doorIcons.ts`. The count on the Steward tab and the Inbox entry is `needsYouCount()`
+  (`lib/admin/inbox-reads.ts`), read by the layout on every console page, so it reads only the cheap sources
+  (decisions, proposals, held changes, deletions, invitations); the jobs (a GitHub call per workflow) and To do are
+  on the Inbox itself, so the badge can be lower than the Inbox's count.
+- **Landings.** The Steward's is the Inbox. Data's (`/admin/data`) lists its screens as cards (`DoorScreens`) above
+  the panels it had (Live on, The last publish with Publish now, Changes since the last publish, Held changes). More's
+  is `/admin/more`. People's landing is the People list itself, with the door's screens as cards below `lg` (the rail
+  lists them from `lg`); no separate `/admin/people` landing was added.
+- **Moves and redirects.** Pages moved with `git mv`; Server Action files moved beside the screens that use them
+  (`app/admin/steward/actions.ts`, `app/admin/steward/jobs/actions.ts`, `app/admin/admins/mfa-actions.ts`).
+  `lib/admin/redirects.ts` `ADMIN_REDIRECTS: { from, to, query? }[]` (the optional `query` is the brief's shape plus a
+  key a row must carry: `/admin/operations?unit=` and `/admin/data/holds?unit=` go to that college's Review page, the
+  plain rows to Jobs and Findings), `nextAdminRedirects()` for `next.config.ts` (`permanent: false`), and
+  `resolveAdminRedirect()` for the tests. `/admin/steward` redirects to `/admin`. The Health page's Sources tab is
+  `app/admin/data/health/sources.tsx` (`SourcesView`), rendered by the page for `?tab=sources`; an old `?group=` or
+  `?reason=` link to the Colleges tab goes to Sources, as it went to Files.
+- **Operations** folded into each job's page: a **Run now** panel (`#run-now`) lists every `DISPATCHABLE_RUNS` row
+  for the job's workflow that isn't `hidden` (college-reported shows its four), each with today's `RunForm` and the
+  same dispatch guard (`blockingRun` over the workflow's last 30 runs, read by `loadRunNow()` in `lib/admin/ops.ts`);
+  `?unit=` opens and fills the college run. The college page's Rerun link opens it. Operations' all-workflows Runs
+  table went: each job's History has its runs. Approvals went: the Jobs list ends with "Open pull requests on
+  GitHub"; the pull-request Server Actions stay in `app/admin/steward/jobs/actions.ts` (tested, unused by any screen).
+  `verify` (which re-runs a pull request's CI) has no job, so no Run now.
+- **Holds** folded in: the college Review page has a College filter (a name or id; it opens that college's Review
+  page with the same field) and a Field filter (`?code=`, the options named with `codeLabel`); its item rows gained
+  Holds' **Re-run discovery**. The essay reader's held records moved to the Essays page ("Held questions"). Held
+  changes show on the Data landing, on Changes (the Held chip with its help icon), and first on the Inbox. Holds' flat
+  cross-college list of review items went (one decision, one place); Findings groups them by cause.
+- **Second factor** is the `#second-factor` panel on Admins with the Supabase steps written out; replacing the
+  authenticator from the console itself was not built (it would be a new action).
+- **Inbox.** `lib/admin/inbox.ts` (pure): `needsYou()`, `tiles()`, `nothingNeedsYou()`, `lastRunsByMode()`,
+  `runWrote()`, `weeklySpend()`, `decisionAnchor()`. Severity 1: held changes, failed jobs; 2: decisions, systemic
+  proposals, flagged jobs (for U5's review), deletions inside the 30 days; 3: value proposals, invitations waiting 7
+  days or more, the 5 highest-reach open To do rows. Within a severity the oldest first; To do rows after the rest in
+  reach order. Six tiles: Live version, Review queue (open and new in 7 days), Data health (fresh, watch, stale,
+  failing), Jobs in the last 7 days (ok, failed), People (accounts, households, organizations), Steward spend in 7 days
+  against $40. A read that fails is null: its rows are left out and its tile says "Couldn't read". The old home's
+  Recent actions and counts (paused, managed students, admins, visit-events hosts) went; the log is under More.
+- **Steward runs** (`/admin/steward/runs`) is a first version: the week's spend and every run's mode, spend, and what
+  it wrote. Unit 5 extends it.
+- **Help.** `lib/admin/help.ts` `HELP` (as const, satisfies `Record<string, HelpEntry>`), `HelpKey`, `isHelpKey()`,
+  `helpEntry()`, `helpByDoor()`, `seeHref()`. `HelpEntry` gained an optional `door` for /admin/help's grouping (entries
+  without one list under "Everywhere"). `components/admin/HelpTip.tsx`; `Panel`, `PageHeader`, and `StatusChip` take
+  `help?: HelpKey`; every Panel and PageHeader under `app/admin` passes one. `/admin/help` lists every entry by door,
+  searchable (`components/admin/HelpList.tsx`).
+- **Words.** `lib/admin/words.ts`: `WORDS`, `codeLabel()`, `codeName()`, `cdsItem()`, `itemKeyLabel()`,
+  `editionLabel()`, `collectionLabel()` (`COLLECTION_WORDS`), `changeKindLabel()`, `targetKindLabel()`. The item names
+  are `CDS_ITEM_NAMES` and `CDS_SECTION_NAMES` in `lib/cds-sections.ts`, the template's headings shortened: C7 is
+  "admission factors" and C10 "class rank" (the spec's "C7, class rank" example names the C7 row, not the item).
+  Applied: Changes, Change #N, In published version N, Undone by, Undo this change, Published versions, Version N,
+  Make this the live version, Restore version N, Findings, Admins, Test date, a change's collections in words, log
+  target kinds in words with the raw action under Details, the Review page's field headings, a proposal's field
+  codes, a rejection's message. A proposal's key and cause moved under Details. The typed words did not change
+  (`revert` still undoes a change), since this unit changes no action.
+
+#### Left for the next units
+
+- Health keeps two code paths in one route: the Colleges tab (`page.tsx`) and the Sources tab (`sources.tsx`); Unit 4
+  merges them properly.
+- Tables keep their sideways scroll until Unit 2's `ResponsiveTable`; record pages keep their action layout for Unit 2
+  and Unit 3; the typed-word rule's new words are Units 3 and 4's.

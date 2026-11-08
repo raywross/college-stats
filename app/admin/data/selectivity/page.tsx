@@ -48,7 +48,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
   if (!(await historyInstalled())) {
     return (
       <>
-        <PageHeader title="Selectivity history" />
+        <PageHeader help="selectivity" title="Selectivity history" />
         <Empty>Not set up yet: apply supabase/migrations/20261013150000_selectivity_history.sql and 20261020120000_selectivity_history_one_row.sql, then publish: the publisher records the tiers at each publish.</Empty>
       </>
     );
@@ -107,7 +107,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="selectivity"
         back={
           <Link href="/admin/data/colleges" className="text-muted-foreground underline-offset-4 hover:underline">
             Colleges
@@ -117,7 +117,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
         subtitle={`${all.length} recorded ${all.length === 1 ? "publish" : "publishes"} · hidden values, never on the public site`}
       />
       <div className="space-y-5">
-        <Panel title="Latest publish" id="latest">
+        <Panel help="published-version" title="Latest publish" id="latest">
           {!latest ? (
             <Empty>Nothing recorded yet: the publisher records the tiers at each publish.</Empty>
           ) : (
@@ -155,7 +155,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
           )}
         </Panel>
 
-        <Panel title="Movers" id="movers">
+        <Panel help="selectivity" title="Movers" id="movers">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {DAYS.map((d) => chip(`${d} days`, d === days, href({ days: String(d) })))}
             <span className="mx-1 h-5 w-px bg-border" aria-hidden />
@@ -212,7 +212,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
           )}
         </Panel>
 
-        <Panel title="Follower emails" id="followers">
+        <Panel help="follower-emails" title="Follower emails" id="followers">
           {emails.length === 0 ? (
             <Empty>No tier change has gone to followers yet. They go out with the update email after a publish that changes a college&apos;s public tier (never for a method change).</Empty>
           ) : (
@@ -231,7 +231,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
           )}
         </Panel>
 
-        <Panel title="Tier counts after each publish" id="counts">
+        <Panel help="selectivity-pool" title="Tier counts after each publish" id="counts">
           <div className="mb-3 flex flex-wrap gap-2">{POOLS.map((p) => chip(POOL_LABELS[p], countsPool === p, href({ counts: p === "all" ? undefined : p })))}</div>
           {counts.length === 0 ? (
             <Empty>Nothing recorded yet.</Empty>
@@ -274,7 +274,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
           )}
         </Panel>
 
-        <Panel title="Method log" id="methods">
+        <Panel help="selectivity" title="Method log" id="methods">
           {methods.length === 0 ? (
             <Empty>Nothing recorded yet.</Empty>
           ) : (

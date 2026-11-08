@@ -30,7 +30,7 @@ export default async function HighSchoolPage({ params }: PageProps<"/admin/data/
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="high-school"
         back={
           <Link href="/admin/data/colleges" className="text-muted-foreground underline-offset-4 hover:underline">
             Colleges and high schools
@@ -48,7 +48,7 @@ export default async function HighSchoolPage({ params }: PageProps<"/admin/data/
       />
 
       <div className="space-y-5">
-        <Panel title="Pooled course counts" id="course-counts" aside={<Muted>school_course_counts, in full</Muted>}>
+        <Panel help="high-school" title="Pooled course counts" id="course-counts" aside={<Muted>school_course_counts, in full</Muted>}>
           <p className="mb-3 text-sm text-muted-foreground">
             How many distinct students at this school list each AP or IB course. The course plan suggests a course only at {COURSE_LIST_MIN_STUDENTS} or more students
             (school_course_list()), and only when the school has no profile list of its own. Counts below the line are never shown on the site.
@@ -78,7 +78,7 @@ export default async function HighSchoolPage({ params }: PageProps<"/admin/data/
           )}
         </Panel>
 
-        <Panel title="What the course plan reads" id="offering">
+        <Panel help="high-school" title="What the course plan reads" id="offering">
           {hs.offering ? (
             <div className="space-y-2 text-sm">
               <Fields
@@ -102,7 +102,7 @@ export default async function HighSchoolPage({ params }: PageProps<"/admin/data/
           )}
         </Panel>
 
-        <Panel title="Profile and graduation rate" id="profile">
+        <Panel help="high-school" title="Profile and graduation rate" id="profile">
           <Fields
             items={[
               {

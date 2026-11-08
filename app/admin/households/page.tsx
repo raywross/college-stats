@@ -45,7 +45,7 @@ export default async function HouseholdsPage({ searchParams }: PageProps<"/admin
 
   return (
     <>
-      <PageHeader title="Households" subtitle="Every family, who is in it, and invitations still waiting. Closed households are included." />
+      <PageHeader help="household" title="Households" subtitle="Every family, who is in it, and invitations still waiting. Closed households are included." />
       <AdminSearch
         defaultValue={q}
         id="households-search"

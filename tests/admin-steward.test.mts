@@ -617,7 +617,7 @@ test("Issues: the causes from the live queue joined with the issue documents, th
   const stubs = stubsIn(markup);
   assert.ok(stubs.some((s) => s.name === "ClustersTable"));
   assert.ok(stubs.some((s) => s.name === "RunForm" && s.props.prefillUnit === null), "Run the Data Steward");
-  assert.match(markup, /data-stub="Panel" data-props="\{&quot;title&quot;:&quot;The last run&quot;\}"><div data-stub="Fields"/, "the last run's summary (its fields are the Fields stand-in's props)");
+  assert.match(markup, /data-stub="Panel" data-props="\{&quot;help&quot;:&quot;steward-runs&quot;,&quot;title&quot;:&quot;The last run&quot;\}"><div data-stub="Fields"/, "the last run's summary (its fields are the Fields stand-in's props)");
   assert.doesNotMatch(markup, /hasn&#x27;t run yet/);
   assert.match(markup, /href="\/admin\/data\/colleges\/100751\/review"[^>]*>The University of Alabama<\/a><span[^>]*>49 open items</, "Colleges to review: most items first, each linking its Review page");
   const kinds = html(await page({ searchParams: Promise.resolve({ kind: "policy" }) }));

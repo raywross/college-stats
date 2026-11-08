@@ -76,7 +76,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="job"
         title={job.name}
         chips={<StatusChip label={RUNNER_LABEL[job.runner]} tone="info" />}
         back={
@@ -87,11 +87,11 @@ export default async function JobPage({ params, searchParams }: { params: Promis
         subtitle={job.description}
       />
       <div className="space-y-5">
-        <Panel title="About">
+        <Panel help="job" title="About">
           <Fields items={facts} />
         </Panel>
 
-        <Panel title="Schedule">
+        <Panel help="trigger" title="Schedule">
           {job.schedules.length === 0 ? (
             <p className="text-sm text-muted-foreground">No schedule: this job runs only when a person starts it.</p>
           ) : (

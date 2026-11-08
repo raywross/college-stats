@@ -26,11 +26,11 @@ const STATUS_LABEL: Record<SnapshotRow["status"], string> = {
  * job) and **Download manifest** (a plain link to the public object; nothing to log, nothing to confirm).
  */
 export function SnapshotsTable({ snapshots, currentId }: { snapshots: SnapshotRow[]; currentId: number | null }) {
-  if (!snapshots.length) return <Empty>No snapshot has been published yet.</Empty>;
+  if (!snapshots.length) return <Empty>No version has been published yet.</Empty>;
   return (
     <div className="overflow-x-auto rounded-2xl border border-border">
       <table className="w-full min-w-[48rem] text-sm">
-        <caption className="sr-only">The newest {snapshots.length} snapshots, newest first</caption>
+        <caption className="sr-only">The newest {snapshots.length} published versions, newest first</caption>
         <thead className="bg-muted/50 text-left text-muted-foreground">
           <tr>
             <th scope="col" className="px-3 py-2 font-medium">
@@ -46,7 +46,7 @@ export function SnapshotsTable({ snapshots, currentId }: { snapshots: SnapshotRo
               Size
             </th>
             <th scope="col" className="px-3 py-2 font-medium">
-              Change sets
+              Changes
             </th>
             <th scope="col" className="px-3 py-2 font-medium">
               Actions
@@ -60,13 +60,13 @@ export function SnapshotsTable({ snapshots, currentId }: { snapshots: SnapshotRo
             return (
               <tr key={s.id} className="border-t border-border align-top">
                 <th scope="row" className="px-3 py-2 text-left font-medium">
-                  Snapshot {s.id}
+                  Version {s.id}
                   <div className="text-xs font-normal text-muted-foreground">{fmtDateTime(s.created_at)}</div>
                 </th>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <StatusChip label={STATUS_LABEL[s.status]} tone={STATUS_TONE[s.status]} />
-                    {isCurrent && <StatusChip label="Live" tone="good" />}
+                    {isCurrent && <StatusChip label="Live" tone="good" help="live-version" />}
                   </div>
                 </td>
                 <td className="px-3 py-2 tabular-nums">{s.manifest.colleges?.toLocaleString("en-US") ?? "—"}</td>
@@ -78,9 +78,9 @@ export function SnapshotsTable({ snapshots, currentId }: { snapshots: SnapshotRo
                       <AdminForm
                         action={pointBackAction}
                         hidden={{ snapshot: String(s.id) }}
-                        trigger="Point back here"
+                        trigger="Make this the live version"
                         typed={{ expected: CONFIRM_POINT_BACK, instruction: <>Type &ldquo;{CONFIRM_POINT_BACK}&rdquo; to confirm</> }}
-                        description="Moves the live pointer to this snapshot at once, with no rebuild. The next publish from current layers supersedes it unless the offending change set is also reverted."
+                        description="Visitors see this version at once, with no rebuild. The next publish supersedes it unless the change at fault is also undone; to undo one change rather than a whole publish, use Undo this change on the change's page."
                       />
                     )}
                     {manifestUrl && (

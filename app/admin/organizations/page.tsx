@@ -37,7 +37,7 @@ export default async function OrganizationsPage({ searchParams }: PageProps<"/ad
 
   return (
     <>
-      <PageHeader title="Organizations" subtitle="Every counselor's or school's caseload: who is in it, how many students, and how many are still waiting to join." />
+      <PageHeader help="organization" title="Organizations" subtitle="Every counselor's or school's caseload: who is in it, how many students, and how many are still waiting to join." />
       {list.total === 0 ? (
         <Empty>No organizations yet.</Empty>
       ) : (

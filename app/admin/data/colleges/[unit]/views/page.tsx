@@ -31,7 +31,7 @@ export default async function CollegeViewsPage({ params, searchParams }: PagePro
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="views-log"
         back={
           <Link href={`/admin/data/colleges/${unit}#views`} className="text-muted-foreground underline-offset-4 hover:underline">
             {school.name}
@@ -41,7 +41,7 @@ export default async function CollegeViewsPage({ params, searchParams }: PagePro
         subtitle={`${looking.total.toLocaleString("en-US")} views · ${looking.people.toLocaleString("en-US")} signed-in people · ${looking.signedOut.toLocaleString("en-US")} signed out`}
       />
       {signedOut ? (
-        <Panel title={`${times.length} ${times.length === 1 ? "visit" : "visits"}`}>
+        <Panel help="views-log" title={`${times.length} ${times.length === 1 ? "visit" : "visits"}`}>
           {times.length === 0 ? (
             <Empty>No signed-out visits.</Empty>
           ) : (
@@ -66,7 +66,7 @@ export default async function CollegeViewsPage({ params, searchParams }: PagePro
           )}
         </Panel>
       ) : (
-        <Panel title="Everyone">
+        <Panel help="views-log" title="Everyone">
           {looking.viewers.length === 0 ? (
             <Empty>No views recorded yet.</Empty>
           ) : (

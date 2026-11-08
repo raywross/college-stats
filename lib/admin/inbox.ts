@@ -106,8 +106,16 @@ export function decisionAnchor(key: string): string {
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString("en-US")} ${n === 1 ? one : many}`;
 
-function ageOrder(a: InboxItem, b: InboxItem): number {
+/**
+ * Severity first, then the oldest; To do rows come after the rest of their severity in the order given (highest
+ * reach first, as readTodo returns them), so a long-ignored small row never jumps a document many colleges need.
+ */
+function inboxOrder(x: { item: InboxItem; order: number }, y: { item: InboxItem; order: number }): number {
+  const [a, b] = [x.item, y.item];
   if (a.severity !== b.severity) return a.severity - b.severity;
+  const todo = Number(a.kind === "todo") - Number(b.kind === "todo");
+  if (todo !== 0) return todo;
+  if (a.kind === "todo") return x.order - y.order;
   if (a.at === b.at) return a.title.localeCompare(b.title);
   if (a.at === null) return 1;
   if (b.at === null) return -1;
@@ -116,8 +124,8 @@ function ageOrder(a: InboxItem, b: InboxItem): number {
 
 /**
  * What needs a person, the most consequential first (severity), then the oldest. Held changes and failed jobs stop
- * the site's data from moving (severity 1); decisions, open proposals, and accounts being deleted wait on an answer
- * (2; a systemic proposal before a value one by age); To do rows and invitations are chores (3).
+ * the site's data from moving (severity 1); decisions, systemic proposals, flagged jobs, and accounts being deleted
+ * wait on an answer (2); value proposals, invitations, and To do rows are chores (3).
  */
 export function needsYou(input: InboxInput): InboxItem[] {
   const items: InboxItem[] = [];
@@ -218,7 +226,10 @@ export function needsYou(input: InboxInput): InboxItem[] {
     });
   }
 
-  return items.sort(ageOrder);
+  return items
+    .map((item, order) => ({ item, order }))
+    .sort(inboxOrder)
+    .map(({ item }) => item);
 }
 
 const usd = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

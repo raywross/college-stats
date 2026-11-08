@@ -34,7 +34,7 @@ export default async function ReferenceDocumentPage({ params }: { params: Promis
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="reference-document"
         title={name}
         subtitle={referenceDescription(name, doc.collection)}
         back={
@@ -44,10 +44,10 @@ export default async function ReferenceDocumentPage({ params }: { params: Promis
         }
       />
       <div className="space-y-5">
-        <Panel title="Document" aside={<span className="text-sm text-muted-foreground">Version {doc.version} · {fmtDateTime(doc.updated_at)}</span>}>
+        <Panel help="reference-document" title="Document" aside={<span className="text-sm text-muted-foreground">Version {doc.version} · {fmtDateTime(doc.updated_at)}</span>}>
           <ReferenceEditor name={name} kind={editor.kind} value={editor.value} problems={problems} />
         </Panel>
-        <Panel title="Versions">
+        <Panel help="reference-document" title="Versions">
           <ReferenceVersions name={name} rows={versions} />
         </Panel>
       </div>

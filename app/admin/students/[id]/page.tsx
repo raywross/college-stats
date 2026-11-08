@@ -56,7 +56,7 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="student-record"
         back={
           student.household ? (
             <Link href={`/admin/households/${student.household.id}`} className="text-muted-foreground underline-offset-4 hover:underline">
@@ -80,7 +80,7 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]">
         <div className="min-w-0 space-y-5">
-          <Panel title="Record" id="record">
+          <Panel help="student-record" title="Record" id="record">
             <Fields
               items={[
                 { label: "Name", value: record.display_name ?? <Muted>None</Muted> },
@@ -129,11 +129,11 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
             />
           </Panel>
 
-          <Panel title="Numbers" id="numbers" aside={student.profile ? <Muted>Updated {fmtDate(student.profile.updated_at)}</Muted> : undefined}>
+          <Panel help="student-record" title="Numbers" id="numbers" aside={student.profile ? <Muted>Updated {fmtDate(student.profile.updated_at)}</Muted> : undefined}>
             {student.profile ? <KeyValues data={student.profile.data} /> : <Empty>Nothing entered yet.</Empty>}
           </Panel>
 
-          <Panel title="Lists" id="lists">
+          <Panel help="student-record" title="Lists" id="lists">
             {student.lists.length === 0 ? (
               <Empty>No lists.</Empty>
             ) : (
@@ -145,11 +145,11 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
             )}
           </Panel>
 
-          <Panel title="Advisor" id="plan">
+          <Panel help="student-record" title="Advisor" id="plan">
             <PlanBlock plan={student.plan} />
           </Panel>
 
-          <Panel title="Snapshots" id="snapshots">
+          <Panel help="student-record" title="Snapshots" id="snapshots">
             {student.snapshots.length === 0 ? (
               <Empty>No application snapshots.</Empty>
             ) : (
@@ -172,7 +172,7 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
           </Panel>
 
           {managed && !deleted && (
-            <Panel title="Attach to an account" id="attach">
+            <Panel help="managed-record" title="Attach to an account" id="attach">
               <p className="mb-3 text-sm text-muted-foreground">
                 Gives this record to an account that has no student record of its own (the same merge a hand-over invitation does). Refused, with the reason, when they already have one.
               </p>
@@ -196,7 +196,7 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
             </Panel>
           )}
 
-          <Panel title="Who viewed this record" id="views">
+          <Panel help="access-log" title="Who viewed this record" id="views">
             {student.accessLog.length === 0 ? (
               <Empty>No views recorded.</Empty>
             ) : (

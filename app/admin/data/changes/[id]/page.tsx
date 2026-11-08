@@ -6,11 +6,12 @@ import { Empty, Fields, PageHeader, Panel } from "@/components/admin/Panel";
 import { ChangeSetActions, ChangeSetChips, DocumentDiff, DocumentsTouched, ReleaseNoteDraft } from "@/components/admin/ChangeSets";
 import { requireAdmin } from "@/lib/admin/auth";
 import { fmtDateTime } from "@/lib/admin/console";
+import { collectionLabel } from "@/lib/admin/words";
 import { adminSupabase } from "@/lib/admin/people";
 import { documentBeforeAfter, loadChangeSet, parseDocumentParam, runRepo, touchedDocuments } from "@/lib/admin/data-reads";
 import { changeSetActions, costLabel, countsLabel, diffHunks, documentLines, groupTouched, kindLabel, lineDiff, releaseNoteText, runHref, summaryText } from "@/lib/admin/change-set-view";
 
-export const metadata: Metadata = { title: "Change set", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Change", robots: { index: false, follow: false } };
 
 /**
  * `/admin/data/changes/[id]` (specs/data-platform/change-sets.md "The console", Change sets row; "Holds and
@@ -39,12 +40,12 @@ export default async function ChangeSetPage({ params, searchParams }: { params: 
 
   return (
     <>
-      <PageHeader
-        title={`Change set #${row.id}`}
+      <PageHeader help="change"
+        title={`Change #${row.id}`}
         chips={<ChangeSetChips row={row} />}
         back={
           <Link href="/admin/data/changes" className="underline decoration-dotted underline-offset-2">
-            Change sets
+            Changes
           </Link>
         }
         subtitle={`${kindLabel(row.kind)} · ${row.source}`}
@@ -52,16 +53,16 @@ export default async function ChangeSetPage({ params, searchParams }: { params: 
       <div className="space-y-5">
         {row.status === "held" && (
           <div role="note" className="rounded-2xl border border-warning bg-warning/10 p-4 text-sm">
-            <p className="font-semibold">Held: nothing from this change set or any later one publishes until it is published anyway or reverted.</p>
+            <p className="font-semibold">Held: nothing from this change or any later one publishes until it is published anyway or undone.</p>
             <p className="mt-1">{row.held_reason ?? "No reason recorded."}</p>
           </div>
         )}
 
-        <Panel title="Summary">
+        <Panel help="change" title="Summary">
           <Fields
             items={[
               { label: "Documents", value: countsLabel(row.summary) },
-              { label: "Collections", value: Array.isArray(row.summary?.collections) && row.summary.collections.length ? row.summary.collections.join(", ") : "—" },
+              { label: "What it touched", value: Array.isArray(row.summary?.collections) && row.summary.collections.length ? row.summary.collections.map(collectionLabel).join(", ") : "—" },
               { label: "Started", value: fmtDateTime(row.created_at) },
               { label: "Closed", value: row.closed_at ? fmtDateTime(row.closed_at) : "Still writing" },
               ...(cost ? [{ label: "Cost", value: cost }] : []),
@@ -75,14 +76,14 @@ export default async function ChangeSetPage({ params, searchParams }: { params: 
                   (row.run_ref ?? "—")
                 ),
               },
-              ...(row.snapshot_id !== null ? [{ label: "Published in", value: `Snapshot ${row.snapshot_id}` }] : []),
+              ...(row.snapshot_id !== null ? [{ label: "Published in", value: `Version ${row.snapshot_id}` }] : []),
               ...(row.reverted_by !== null
                 ? [
                     {
                       label: "Reverted by",
                       value: (
                         <Link href={`/admin/data/changes/${row.reverted_by}`} className="underline decoration-dotted underline-offset-2">
-                          Change set #{row.reverted_by}
+                          Change #{row.reverted_by}
                         </Link>
                       ),
                     },
@@ -93,7 +94,7 @@ export default async function ChangeSetPage({ params, searchParams }: { params: 
           {report && <pre className="mt-4 max-h-96 overflow-auto rounded-xl bg-muted/30 p-3 font-mono text-xs leading-5 whitespace-pre-wrap">{report}</pre>}
         </Panel>
 
-        <Panel title="Actions">
+        <Panel help="undo-change" title="Actions">
           <ChangeSetActions row={row} />
           {can.releaseNote && (
             <div className="mt-4">
@@ -102,14 +103,14 @@ export default async function ChangeSetPage({ params, searchParams }: { params: 
           )}
         </Panel>
 
-        <Panel title="Documents touched">
+        <Panel help="change" title="Documents touched">
           <DocumentsTouched id={row.id} groups={groups} selected={selected} truncated={touched.truncated} />
         </Panel>
 
         {selected && (
-          <Panel title={`${selected.collection} · ${selected.key}`} id="document">
+          <Panel help="change" title={`${collectionLabel(selected.collection)} · ${selected.key}`} id="document">
             {!chosen ? (
-              <Empty>This change set didn&apos;t touch that document.</Empty>
+              <Empty>This change didn&apos;t touch that document.</Empty>
             ) : (
               <DocumentDiff
                 hunks={diffHunks(lineDiff(documentLines(chosen.before && !chosen.before.deleted ? chosen.before.body : null), documentLines(chosen.after.deleted ? null : chosen.after.body)))}

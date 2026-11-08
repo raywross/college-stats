@@ -45,7 +45,7 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/d
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="colleges"
         title="Colleges"
         subtitle={
           <>
@@ -75,7 +75,7 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/d
       </form>
       <div className="mt-6 space-y-6">
         {!q && (
-          <Panel
+          <Panel help="views-log"
             title="Most viewed"
             id="most-viewed"
             aside={

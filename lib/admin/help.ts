@@ -244,6 +244,11 @@ export const HELP = {
     short: "An email asking someone to join a household. It holds a seat until it is accepted, cancelled, or expires.",
     door: "people",
   },
+  "access-log": {
+    title: "Who viewed their data",
+    short: "Every time an admin opened this person's or this student's data. The family sees a line saying “Quad support viewed your information”.",
+    door: "people",
+  },
   "views-log": {
     title: "Views",
     short: "Which colleges' pages this person or college was viewed on, counted from the site's own events.",
@@ -343,6 +348,16 @@ export const HELP = {
   "edit-field": {
     title: "Edit",
     short: "An admin's edit to one field of a college, with a note saying why. It is a change like any other, and the next publish carries it.",
+    door: "data",
+  },
+  "college-gpa": {
+    title: "GPA",
+    short: "The GPA figures the site holds for this college and what the admission estimate reads from them. Hidden from visitors, who see only the reported average.",
+    door: "data",
+  },
+  "follower-emails": {
+    title: "Follower emails",
+    short: "When a publish changes a college's public selectivity tier, the families following it hear about it in the update email. A method change never sends one.",
     door: "data",
   },
   "selectivity-pool": {

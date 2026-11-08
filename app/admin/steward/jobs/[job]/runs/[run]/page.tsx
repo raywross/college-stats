@@ -51,9 +51,9 @@ function StoredRunView({ job, run }: { job: JobDef; run: StoredRun }) {
   const outcome = storedOutcome(run.status);
   return (
     <>
-      <PageHeader title={`${job.name}: run ${run.id}`} chips={<RunChip label={outcome.label} tone={outcome.tone} />} back={<Back job={job} />} subtitle={`${TRIGGER_LABEL[run.trigger]} · ${timeLabel(run.startedAt)}`} />
+      <PageHeader help="run" title={`${job.name}: run ${run.id}`} chips={<RunChip label={outcome.label} tone={outcome.tone} />} back={<Back job={job} />} subtitle={`${TRIGGER_LABEL[run.trigger]} · ${timeLabel(run.startedAt)}`} />
       <div className="space-y-5">
-        <Panel title="Run">
+        <Panel help="run" title="Run">
           <Fields
             items={[
               { label: "Outcome", value: outcome.label },
@@ -66,11 +66,11 @@ function StoredRunView({ job, run }: { job: JobDef; run: StoredRun }) {
           />
         </Panel>
         {run.error && (
-          <Panel title="Error">
+          <Panel help="run" title="Error">
             <pre className="overflow-x-auto rounded-xl bg-muted p-3 text-xs whitespace-pre-wrap">{run.error}</pre>
           </Panel>
         )}
-        <Panel title="What it did">
+        <Panel help="run" title="What it did">
           {Object.keys(run.summary).length ? <KeyValues data={run.summary} /> : <Empty>{run.status === "running" ? "Nothing recorded yet: the run is still going." : "The run answered with nothing to show."}</Empty>}
         </Panel>
       </div>
@@ -125,9 +125,9 @@ function GithubRunView({ job, run, jobs, changeSets }: { job: JobDef; run: Workf
   const outcome = runOutcome(run);
   return (
     <>
-      <PageHeader title={`${job.name}: run #${run.runNumber}`} chips={<RunChip label={outcome.label} tone={outcome.tone} />} back={<Back job={job} />} subtitle={run.title && run.title !== run.name ? run.title : undefined} />
+      <PageHeader help="run" title={`${job.name}: run #${run.runNumber}`} chips={<RunChip label={outcome.label} tone={outcome.tone} />} back={<Back job={job} />} subtitle={run.title && run.title !== run.name ? run.title : undefined} />
       <div className="space-y-5">
-        <Panel
+        <Panel help="run"
           title="Run"
           aside={
             <a href={run.url} target="_blank" rel="noopener noreferrer" className={`text-sm ${linkCls}`}>
@@ -146,14 +146,14 @@ function GithubRunView({ job, run, jobs, changeSets }: { job: JobDef; run: Workf
             ]}
           />
         </Panel>
-        <Panel title="Steps">{jobs.length ? <ul className="divide-y divide-border">{jobs.map((j) => <JobSteps key={j.id} job={j} />)}</ul> : <Empty>GitHub lists no jobs for this run yet, or they couldn&apos;t be read.</Empty>}</Panel>
-        <Panel title="Change sets written">
+        <Panel help="run" title="Steps">{jobs.length ? <ul className="divide-y divide-border">{jobs.map((j) => <JobSteps key={j.id} job={j} />)}</ul> : <Empty>GitHub lists no jobs for this run yet, or they couldn&apos;t be read.</Empty>}</Panel>
+        <Panel help="change" title="Changes written">
           {changeSets.length ? (
             <ul className="space-y-1 text-sm">
               {changeSets.map((c) => (
                 <li key={c.id}>
                   <Link href={`/admin/data/changes/${c.id}`} className={linkCls}>
-                    Change set #{c.id}
+                    Change #{c.id}
                   </Link>{" "}
                   <span className="text-muted-foreground">
                     · {c.source} · {c.status}

@@ -36,15 +36,15 @@ export default async function AuditsPage() {
 
   return (
     <>
-      <PageHeader title="Audits" back={<StewardBack />} subtitle="Values that passed every check, sampled against their documents. Passing is not the same as right." />
+      <PageHeader help="audit" title="Audits" back={<StewardBack />} subtitle="Values that passed every check, sampled against their documents. Passing is not the same as right." />
       {byFamily.size === 0 ? (
-        <Panel title="Check families">
+        <Panel help="audit" title="Check families">
           <Empty>No audit has run yet. The weekly run samples one family at a time.</Empty>
         </Panel>
       ) : (
         <div className="space-y-5">
           {[...byFamily.entries()].map(([family, [latest, ...earlier]]) => (
-            <Panel key={family} title={family} aside={<StatusChip label={`${pct(latest.rate)} wrong`} tone={latest.rate > ISSUE_RATE ? "danger" : "good"} />}>
+            <Panel help="audit" key={family} title={family} aside={<StatusChip label={`${pct(latest.rate)} wrong`} tone={latest.rate > ISSUE_RATE ? "danger" : "good"} />}>
               <p className="mb-3 text-sm text-muted-foreground">
                 {latest.wrong.length} wrong of {latest.checked} checked · {dayLabel(latest.created)} · run {latest.run}
                 {earlier.length ? ` · before: ${earlier.map((a) => `${pct(a.rate)} (${dayLabel(a.created)})`).join(", ")}` : ""}

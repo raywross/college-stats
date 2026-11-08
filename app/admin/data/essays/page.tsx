@@ -48,12 +48,12 @@ export default async function EssaysPage({ searchParams }: PageProps<"/admin/dat
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="essays"
         title="Essays"
         subtitle={<>Prompts read from the form: enter a college&apos;s questions from its application, live on the advisor as soon as they&apos;re saved. Cycle {cycle}.</>}
       />
       <div className="space-y-5">
-        <Panel title="Every college" id="counts">
+        <Panel help="essays" title="Every college" id="counts">
           <ul className="grid grid-cols-2 gap-2 sm:grid-cols-5" aria-label="Colleges by essay status">
             {ESSAY_STATUSES.map((s) => (
               <li key={s} className="rounded-xl border bg-background p-3" data-status={s}>
@@ -65,7 +65,7 @@ export default async function EssaysPage({ searchParams }: PageProps<"/admin/dat
           {!overrides && <p className="mt-2 text-xs text-muted-foreground">Saved hand reads couldn&apos;t be read here, so these counts are the dataset&apos;s alone.</p>}
         </Panel>
 
-        <Panel title="To read by hand" id="checklist" aside={checklist ? <span className="text-sm text-muted-foreground">{checklist.length} on families&apos; lists</span> : undefined}>
+        <Panel help="hand-read" title="To read by hand" id="checklist" aside={checklist ? <span className="text-sm text-muted-foreground">{checklist.length} on families&apos; lists</span> : undefined}>
           {!checklist ? (
             <Empty>Families&apos; lists can&apos;t be read on this deployment, so the checklist isn&apos;t available. Search for a college below instead.</Empty>
           ) : checklist.length === 0 ? (
@@ -93,7 +93,7 @@ export default async function EssaysPage({ searchParams }: PageProps<"/admin/dat
           {!held.ok ? <Empty>Couldn&apos;t read the held essay questions: {held.reason}.</Empty> : <HeldEssaysList records={heldEssays} lists={lists} />}
         </Panel>
 
-        <Panel title="Find a college" id="search">
+        <Panel help="essays" title="Find a college" id="search">
           <AdminSearch action="/admin/data/essays" id="essays-search" defaultValue={q} label="Search colleges" placeholder="College name or unit id" />
           {q && (
             <div className="mt-3">
@@ -120,7 +120,7 @@ export default async function EssaysPage({ searchParams }: PageProps<"/admin/dat
           )}
         </Panel>
 
-        <Panel title="Read by hand" id="done">
+        <Panel help="hand-read" title="Read by hand" id="done">
           {done.length === 0 ? (
             <Empty>No college has been read by hand yet.</Empty>
           ) : (

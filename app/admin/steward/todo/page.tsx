@@ -48,8 +48,8 @@ export default async function TodoPage({ searchParams }: { searchParams: Promise
 
   return (
     <>
-      <PageHeader title="To do" back={<StewardBack />} subtitle="Documents a machine couldn't fetch. Open the page in your own browser and say what you found." />
-      <Panel title={kind ? TODO_KIND_LABEL[kind] : "Every kind"} aside={<span className="text-sm text-muted-foreground">{rows.length.toLocaleString("en-US")} rows</span>}>
+      <PageHeader help="to-do" title="To do" back={<StewardBack />} subtitle="Documents a machine couldn't fetch. Open the page in your own browser and say what you found." />
+      <Panel help="to-do" title={kind ? TODO_KIND_LABEL[kind] : "Every kind"} aside={<span className="text-sm text-muted-foreground">{rows.length.toLocaleString("en-US")} rows</span>}>
         <nav aria-label="Kinds" className="mb-3 flex flex-wrap gap-2 text-sm">
           {[null, ...KINDS].map((k) => (
             <Link key={k ?? "all"} href={href({ kind: k, page: 1 })} aria-current={k === kind ? "page" : undefined} className={`inline-flex min-h-10 items-center rounded-full border px-4 ${k === kind ? "border-primary font-semibold" : "border-border"}`}>

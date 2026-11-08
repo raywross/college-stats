@@ -38,7 +38,7 @@ export default async function PersonViewsPage({ params, searchParams }: PageProp
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="views-log"
         back={
           <Link href={`/admin/people/${user}#views`} className="text-muted-foreground underline-offset-4 hover:underline">
             {name}
@@ -63,7 +63,7 @@ export default async function PersonViewsPage({ params, searchParams }: PageProp
         }
       />
       {unit ? (
-        <Panel title={`${times.length} ${times.length === 1 ? "view" : "views"}`}>
+        <Panel help="views-log" title={`${times.length} ${times.length === 1 ? "view" : "views"}`}>
           {times.length === 0 ? (
             <Empty>They haven&rsquo;t opened this college while signed in.</Empty>
           ) : (
@@ -88,7 +88,7 @@ export default async function PersonViewsPage({ params, searchParams }: PageProp
           )}
         </Panel>
       ) : (
-        <Panel title="Every college">
+        <Panel help="views-log" title="Every college">
           {views.colleges.length === 0 ? (
             <Empty>No college pages opened while signed in.</Empty>
           ) : (

@@ -57,7 +57,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="person"
         back={
           <Link href="/admin/people" className="text-muted-foreground underline-offset-4 hover:underline">
             People
@@ -92,7 +92,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]">
         <div className="min-w-0 space-y-5">
-          <Panel title="Account" id="account">
+          <Panel help="person" title="Account" id="account">
             <Fields
               items={[
                 { label: "Name", value: profile.display_name ?? <Muted>None</Muted> },
@@ -134,7 +134,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             />
           </Panel>
 
-          <Panel title="Sign-in activity" id="sign-in">
+          <Panel help="person" title="Sign-in activity" id="sign-in">
             {activity.length === 0 ? (
               <Empty>No sign-in activity recorded.</Empty>
             ) : (
@@ -159,7 +159,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             </p>
           </Panel>
 
-          <Panel title="Households" id="households">
+          <Panel help="household" title="Households" id="households">
             {person.memberships.length === 0 ? (
               <Empty>Not in a household.</Empty>
             ) : (
@@ -207,7 +207,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             )}
           </Panel>
 
-          <Panel title="Student records" id="students">
+          <Panel help="student-record" title="Student records" id="students">
             {!person.ownStudent && person.managedStudents.length === 0 ? (
               <Empty>No student records: not their own, and none they manage.</Empty>
             ) : (
@@ -220,7 +220,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             )}
           </Panel>
 
-          <Panel
+          <Panel help="views-log"
             title="Colleges viewed"
             id="views"
             aside={
@@ -255,7 +255,7 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             )}
           </Panel>
 
-          <Panel title="Lists and plan" id="lists">
+          <Panel help="student-record" title="Lists and plan" id="lists">
             {person.lists.length === 0 ? (
               <Empty>No lists.</Empty>
             ) : (
@@ -277,11 +277,11 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
             <p className="mt-3 text-xs text-muted-foreground">Lists open on the student page, which records that Quad support looked.</p>
           </Panel>
 
-          <Panel title="Notifications" id="notifications">
+          <Panel help="person" title="Notifications" id="notifications">
             <Notifications n={person.notifications} />
           </Panel>
 
-          <Panel title="Who viewed their data" id="views">
+          <Panel help="access-log" title="Who viewed their data" id="views">
             {person.accessLog.length === 0 ? (
               <Empty>{person.ownStudent ? "No one has opened their student record." : "They have no student record of their own."}</Empty>
             ) : (

@@ -17,7 +17,7 @@ import { pageOf } from "@/lib/admin/health-view";
 import { getData } from "@/lib/data";
 import { ISSUE_KINDS, ISSUE_KIND_LABEL, type IssueKind } from "@/lib/steward/types";
 
-export const metadata: Metadata = { title: "Issues", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Findings", robots: { index: false, follow: false } };
 
 const CLUSTERS_PER_PAGE = 50;
 const COLLEGES_SHOWN = 25;
@@ -55,9 +55,9 @@ export default async function IssuesPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <PageHeader title="Issues" back={<StewardBack />} subtitle="The review queue grouped by cause. The Steward checks each cause against the colleges' documents and writes proposals." />
+      <PageHeader help="finding" title="Findings" back={<StewardBack />} subtitle="The review queue grouped by cause. The Steward checks each cause against the colleges' documents and writes proposals." />
       <div className="space-y-5">
-        <Panel title="The last run">
+        <Panel help="steward-runs" title="The last run">
           {!last ? (
             <Empty>The Steward hasn&apos;t run yet. The causes below come straight from the queue.</Empty>
           ) : (
@@ -74,7 +74,7 @@ export default async function IssuesPage({ searchParams }: { searchParams: Promi
         </Panel>
 
         {run && (
-          <Panel title="Run the Data Steward">
+          <Panel help="steward" title="Run the Data Steward">
             <details className="rounded-2xl border border-border bg-card">
               <summary className="min-h-12 cursor-pointer px-4 py-3 text-sm">
                 <span className="font-semibold">{run.label}</span>
@@ -87,7 +87,7 @@ export default async function IssuesPage({ searchParams }: { searchParams: Promi
           </Panel>
         )}
 
-        <Panel title="Causes" id="causes" aside={clusters.ok ? <span className="text-sm text-muted-foreground">{items.toLocaleString("en-US")} items in {rows.length.toLocaleString("en-US")} causes</span> : undefined}>
+        <Panel help="cause" title="Causes" id="causes" aside={clusters.ok ? <span className="text-sm text-muted-foreground">{items.toLocaleString("en-US")} items in {rows.length.toLocaleString("en-US")} causes</span> : undefined}>
           {!clusters.ok ? (
             <p role="alert" className="text-sm text-destructive">
               Couldn&apos;t read the review queue: {clusters.reason}.
@@ -131,7 +131,7 @@ export default async function IssuesPage({ searchParams }: { searchParams: Promi
           )}
         </Panel>
 
-        <Panel title="Colleges to review" id="colleges" aside={<span className="text-sm text-muted-foreground">Most visible changes first</span>}>
+        <Panel help="review-page" title="Colleges to review" id="colleges" aside={<span className="text-sm text-muted-foreground">Most visible changes first</span>}>
           {named.length === 0 ? (
             <Empty>Nothing is pending for any college.</Empty>
           ) : (

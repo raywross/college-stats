@@ -5,6 +5,7 @@ import { Empty, PageHeader } from "@/components/admin/Panel";
 import { LogRows } from "@/components/admin/LogRows";
 import { requireAdmin } from "@/lib/admin/auth";
 import { LOG_ACTIONS, TARGET_KINDS, logHref, parseLogQuery } from "@/lib/admin/console";
+import { targetKindLabel } from "@/lib/admin/words";
 import { adminLog, adminsList } from "@/lib/admin/people";
 
 export const metadata: Metadata = { title: "Log", robots: { index: false, follow: false } };
@@ -25,7 +26,7 @@ export default async function LogPage({ searchParams }: PageProps<"/admin/log">)
 
   return (
     <>
-      <PageHeader title="Log" subtitle="Every admin action, newest first." />
+      <PageHeader help="log" title="Log" subtitle="Every admin action, newest first." />
       <form action="/admin/log" method="get" className="mb-5 grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-2 xl:grid-cols-4">
         <label className="space-y-1 text-sm font-semibold">
           Action
@@ -55,7 +56,7 @@ export default async function LogPage({ searchParams }: PageProps<"/admin/log">)
             <option value="">Any target</option>
             {TARGET_KINDS.map((k) => (
               <option key={k} value={k}>
-                {k}
+                {targetKindLabel(k)}
               </option>
             ))}
           </select>

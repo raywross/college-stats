@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { codeLabel } from "@/lib/admin/words";
 import { connection } from "next/server";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Empty, Fields, PageHeader, Panel } from "@/components/admin/Panel";
@@ -54,7 +55,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
     unit: r.unit_id,
     college: names[r.unit_id] ?? r.unit_id,
     reviewHref: reviewHref(r.unit_id),
-    label: r.field ?? r.code ?? "—",
+    label: r.field ?? (r.code ? codeLabel(r.code) : "—"),
     now: r.now,
     proposed: r.proposed,
     fromHref: documentHref(r.source.url, r.source.page),
@@ -68,7 +69,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="proposal"
         title={p.summary}
         back={
           <Link href="/admin/steward/proposals" className={linkCls}>
@@ -83,12 +84,20 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
         }
       />
       <div className="space-y-5">
-        <Panel title="Summary">
+        <Panel help="proposal" title="Summary">
           <Fields
             items={[
-              { label: "Key", value: <span className="font-mono text-xs break-all">{p.key}</span> },
-              { label: "Cause", value: p.cause ? <span className="font-mono text-xs break-all">{p.cause}</span> : "—" },
               { label: "Proposed", value: `${dayLabel(p.created)} · run ${p.run}` },
+              {
+                label: "Keys",
+                value: (
+                  <details>
+                    <summary className="min-h-8 cursor-pointer text-muted-foreground">Details</summary>
+                    <span className="block font-mono text-xs break-all">{p.key}</span>
+                    {p.cause && <span className="block font-mono text-xs break-all">Cause: {p.cause}</span>}
+                  </details>
+                ),
+              },
               ...(typeof p.cost === "number" ? [{ label: "Projected cost", value: usd(p.cost) }] : []),
               ...(p.decided_at ? [{ label: "Decided", value: `${dayLabel(p.decided_at)}${p.decided_by ? ` by ${p.decided_by}` : ""}` }] : []),
               ...(p.decision_note ? [{ label: "Note", value: p.decision_note }] : []),
@@ -97,7 +106,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
         </Panel>
 
         {p.change && (
-          <Panel title="The change">
+          <Panel help="proposal-systemic" title="The change">
             <Fields
               items={[
                 { label: "What", value: p.change.what },
@@ -109,18 +118,18 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
           </Panel>
         )}
 
-        <Panel title="Evidence" aside={<span className="text-sm text-muted-foreground">{p.evidence.length} document{p.evidence.length === 1 ? "" : "s"} read</span>}>
+        <Panel help="proposal" title="Evidence" aside={<span className="text-sm text-muted-foreground">{p.evidence.length} document{p.evidence.length === 1 ? "" : "s"} read</span>}>
           <EvidenceTable evidence={p.evidence} />
         </Panel>
 
         {p.sample && (
-          <Panel title="Sample of what it publishes" aside={<span className="text-sm text-muted-foreground">{p.sample.wrong.length} wrong of {p.sample.checked} checked</span>}>
+          <Panel help="proposal-systemic" title="Sample of what it publishes" aside={<span className="text-sm text-muted-foreground">{p.sample.wrong.length} wrong of {p.sample.checked} checked</span>}>
             {p.sample.wrong.length ? <ProposalRowsTable rows={p.sample.wrong} names={names} caption="Values in the sample the documents disagree with" /> : <Empty>Every sampled value matched its document.</Empty>}
           </Panel>
         )}
 
         {(p.question || p.answer) && (
-          <Panel title="Question">
+          <Panel help="proposal" title="Question">
             <Fields
               items={[
                 { label: "Asked", value: p.question ?? "—" },
@@ -130,7 +139,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
           </Panel>
         )}
 
-        <Panel title="Rows" aside={<span className="text-sm text-muted-foreground">{p.rows.length}</span>}>
+        <Panel help="proposal-value" title="Rows" aside={<span className="text-sm text-muted-foreground">{p.rows.length}</span>}>
           {undecided && p.kind !== "systemic" && p.rows.length > 0 ? (
             <ProposalApprove action={approveProposalAction} proposal={p.key} rows={approveRows} confirmWord={TYPED_KINDS.has(p.kind) ? CONFIRM_APPROVE : null} costEach={costEach} />
           ) : (
@@ -139,7 +148,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
         </Panel>
 
         {undecided && (
-          <Panel title="Decide">
+          <Panel help="proposal" title="Decide">
             <div className="flex flex-wrap items-start gap-3">
               {p.kind === "systemic" && (
                 <AdminForm
@@ -173,14 +182,14 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
         )}
 
         {p.status === "approved" && JOB_KINDS.has(p.kind) && (
-          <Panel title="The apply job">
+          <Panel help="run" title="The apply job">
             <p className="mb-3 text-sm text-muted-foreground">The job applies the approved rows and marks the proposal applied. Start it again if it didn&apos;t start or failed.</p>
             <AdminForm action={startProposalJobAction} hidden={{ proposal: p.key }} trigger="Start the apply job" pendingLabel="Starting…" />
           </Panel>
         )}
 
         {waitingRereads.length > 0 && (
-          <Panel title="Re-reads">
+          <Panel help="proposal-value" title="Re-reads">
             <p className="mb-3 text-sm text-muted-foreground">
               {waitingRereads.length} college{waitingRereads.length === 1 ? "" : "s"} still to re-read, one run at a time: {waitingRereads.join(", ")}.
             </p>

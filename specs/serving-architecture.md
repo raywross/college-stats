@@ -693,14 +693,62 @@ authenticated` plus her claims), on tables of 8 lists, 161 list items, 1,196 pla
 7. **`visit_event_count`.** Cache the count per college in the snapshot or in the page's daily revalidation instead
    of an RPC per view.
 
-### Open questions for the owner
-- Policies or bundles first? The policy rewrite (1) helps students and parents as much as counselors and needs
-  no page changes; the bundles (3) need a migration and new reads. Both together is one PR per layer.
-- How much of the plan's citation detail does a counselor or a parent need on the page itself? If the ⓘ popover may
-  load on open, (4) is straightforward; if the print view must carry every citation, print keeps the full set and
-  the screen view drops it.
-- Is `QUAD_TIMING=1` on Production acceptable during beta? The log lines carry route labels, table names, counts,
-  and milliseconds only.
-- The Supabase region: `ca-central-1` today, `iad1` for the functions. The prod project at the formal release is
-  already planned for `us-east-1`; until then every wave costs the extra hop, which is the argument for fewer waves
-  rather than faster ones.
+### Owner decisions (2026-11-08)
+Everything in one PR; a citation loads when its ⓘ opens, and print keeps the full set; `QUAD_TIMING=1` on
+Production during beta (set the same day, live with the next deploy); the regions stay as they are until the prod
+project, so fewer waves is the fix; the visit-event count and `/api/me` are in scope.
+
+### Built (the same PR)
+- **Set-based read policies** (`supabase/migrations/20261108120000_fast_policies.sql`). `visible_student_ids()` is
+  the set where `can_read_student()` was true (own or managed students, students of a live household where the caller
+  is an active guardian, students with a live grant to a live organization the caller belongs to; never a deleted
+  record) and `household_user_ids()` the set where `is_household_member(household_of(u))` was true; both security
+  definer, evaluated once per query and hashed. The 18 read policies that called a function per row now use those
+  sets or the parent table's own policy (`list_id in (select id from public.lists)`, `item_id in (select id from
+  public.list_items)`, `essay_id in (select id from public.essays)`), with every `auth.uid()` as `(select auth.uid())`.
+  `Students: read` keeps its direct `user_id`/`managed_by` checks so an owner still reads a soft-deleted record (to
+  restore it) and `insert … returning` works. Write policies and the `can_read_*` functions are unchanged.
+  `tests/fast-policies.test.mts` seeds one world, clones it, applies the migration to the clone, and shows 13 people
+  (student, managed student and parent, editing and view-only guardians, a never-accepted invitee, a guardian of a
+  deleted household, a two-household guardian, a counselor with a live grant, one with an ended grant, one in a deleted
+  organization, a member of another organization, an outsider, an admin with and without the console header) read
+  identical rows across 18 tables, 283 rows compared; three guard tests break a rule on purpose and the comparison
+  catches each.
+- **`viewer_bundle()`** reads its students through `visible_student_ids()` and no longer returns `student_profiles`;
+  `lib/student-profile-store.ts` reads the table when the key is absent. An admin in the console gets their own
+  students from the bundle, not every student (the table reads are unchanged).
+- **One bundle per counselor page**: `org_caseload_bundle()` (organization, roster, pretend today, profiles, default
+  lists with items, visits and steps, essays) and `org_student_bundle(student)` (the same for one student, plus notes
+  and asks), both security invoker, with `org_list_json(lists)` shared. `lib/orgs.ts caseloadData()` / `studentData()`
+  use them or fall back to today's reads when a function is missing; `/org`, `/org/students/[id]`, and `/org/export`
+  start the bundle and the dataset before awaiting the session check, so each is two database waves (the viewer bundle
+  and the org bundle, started together). `PretendTodayBanner` takes the day from the bundle.
+- **Citations on demand** (`lib/lineage.ts CiteRef`, `lib/planner/plan-cites.ts`, `app/api/cite/route.ts`,
+  `components/ui/info-tip.tsx useCite`). The plan ships a reference per cited field (unit, path, key, year, CDS
+  edition, source kind, about 150 bytes); the ⓘ fetches `GET /api/cite?unit=…&path=…` when it opens (public,
+  `max-age=86400, stale-while-revalidate=604800`, ETag by snapshot, 304 on match); a calendar row's always-visible
+  "Source" link goes to `/api/cite?…&go=1`, a redirect to the source. Only `/advisor/print` asks for `cites: "full"`
+  (a test reads the source). The larger saving was elsewhere: `PlanSchool.poolSchool` carried each college's whole
+  `lineage` (about 52 KB a college), which is what the review's `retrieved`/`quote`/`edition` counts were; it now keeps
+  only the four records the pool reads (`POOL_LINEAGE_PATHS`), with a test that `comparedWith` and `poolRateFor`
+  give identical answers from the slim copy. JSON of `planSchools` for ten colleges: 831,961 → 205,754 bytes.
+- **Timing**: `withTiming` on `/org`, `/org/students/[id]`, `/org/export`, and spans `essay viewer`, `essay read`,
+  `essay colleges` on `/advisor/essays/[id]`; `QUAD_TIMING=1` on Production.
+- **Smaller**: the caseload's `RefreshHeader` refreshes the header only when it still lacks the organization (the
+  start form after leaving one passes `org={false}`; `/household` keeps refreshing on arrival); `/api/me` reads the
+  profile row directly (`readProfileRow()`) and answers a paused profile as signed out; `visit_events_count_idx`
+  (`(unit_id, starts_at) include (kind) where removed_at is null`) makes `visit_event_count()` an index-only scan.
+
+**Deploy order**: merge and deploy first, then apply the migration to the dev project. The new code falls back while
+the functions are missing and tolerates a bundle without profiles; the code deployed before it reads
+`bundle.student_profiles` and would break on the new bundle.
+
+### Left, after this PR
+- `/api/me` still loads the viewer bundle through `householdChildren()` (same wave as the profile read; a
+  profile-only children count would remove it).
+- The essay page still makes a second request for its reviews (`/api/essays/review`, 0.7 s).
+- The list page's own row citations (`admitRateCited`, `avgCostCited`, `distanceCited`), the offers facts' citations
+  (`offers-server`), and the chances page's are still full; `components/advisor/sample.ts` builds its own `{url}`.
+- A plan tab switch is still a server render; with the payload down, prefetching the other tabs or a client-side
+  switch is the next step if it still reads slow.
+- Measure after the deploy and the migration: the EXPLAIN recipe above as Maria, then the same browser paths.

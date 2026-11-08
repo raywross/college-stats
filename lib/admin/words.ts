@@ -7,6 +7,7 @@
  */
 import { CDS_CODE, CDS_ITEM_NAMES, CDS_SECTION_NAMES, itemOfCode, type CdsSection } from "../cds-sections.ts";
 import { fieldDef, registeredPathFor } from "../fields.ts";
+import type { CheckId } from "../reported.ts";
 
 /** The words that replace the code's names, in one place so every screen says the same thing. */
 export const WORDS = {
@@ -292,4 +293,59 @@ export function stewardText(text: string | null | undefined): string {
     .split(PROTECTED)
     .map((part, i) => (i % 2 === 1 ? part : codeWordsInText(fieldWords(codeWords(part, text, seen)), REASON_WORDS)))
     .join("");
+}
+
+/* ------------------------------------------------------------------ */
+/* The checks a Findings cluster is grouped by                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Every check the college-reported pipeline can hold a value with (`CheckId` in lib/reported.ts, the `check` of a
+ * Findings cluster), named for what it found: a cluster is a group of values that failed it. Typed against `CheckId`,
+ * so a new check without words fails the typecheck; the id stays in a `title`.
+ */
+export const CHECK_WORDS: Readonly<Record<CheckId, string>> = {
+  "cohort-and-scope": "Not first-year students, all rounds",
+  "quote-present": "A number with no quote",
+  "funnel-order": "More admits than applicants, or more enrolled than admits",
+  "rate-matches": "The stated admit rate doesn't match the counts",
+  "newer-than-federal": "Not newer than the federal figures",
+  "plausible-change": "An unlikely change from the federal figure",
+  "sources-agree": "Two documents disagree",
+  unreachable: "Couldn't fetch the college's documents",
+  "type-range": "A value its type can't hold",
+  "number-on-line": "The value isn't on the line it cites",
+  "line-in-document": "A cited line isn't in the document",
+  "edition-mismatch": "The year doesn't match the edition",
+  "form-vs-code": "The form and the code table differ",
+  "overflow-total": "A total printed as ## that its parts can't fill in",
+  "aid-year": "No aid year stated",
+  "parts-sum": "Parts don't add up to the total",
+  "sums-to-100": "Percentages don't add up to 100%",
+  order: "Values out of order",
+  "ratio-matches": "A rate or average doesn't match its counts",
+  "one-mark": "Not exactly one mark in a row",
+  "grid-column": "A grid read by a model, held until its columns are checked",
+  misread: "Misread, by a person's check",
+  inconsistent: "Two answers in one document contradict",
+  "valid-date": "Not a real date",
+  "date-order": "Dates out of the cycle's order",
+  "enrollment-disagrees": "Disagrees with the document's enrollment",
+  "federal-disagrees": "Disagrees with the federal figure",
+  "residency-funnel": "A residency row out of funnel order",
+  "residency-sum": "Residency rows don't add up to the total",
+  "residency-vs-federal": "Residency shares far from the federal ones",
+  "column-3-not-all-undergrads": "The degree-seeking column isn't every undergraduate",
+  "previous-cohort-disagrees": "The previous class disagrees with federal graduation rates",
+  "not-a-url": "The address isn't a link",
+  "out-of-range": "A value outside its usual range",
+  "batch-failed": "The document's read failed twice",
+};
+
+/** A check id in words; an id the table doesn't know reads as its words ("some-new-check" → "Some new check"). */
+export function checkLabel(id: string): string {
+  const known = (CHECK_WORDS as Readonly<Record<string, string>>)[id];
+  if (known) return known;
+  const words = id.replace(/[-_]+/g, " ").trim();
+  return words ? words[0].toUpperCase() + words.slice(1) : id;
 }

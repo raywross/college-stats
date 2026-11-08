@@ -653,6 +653,9 @@ test("ClustersTable: kind, counts and status per cause; Leave unless left; the e
   assert.match(markup, /waiting on the check fix/);
   assert.match(markup, /href="\/admin\/steward\/proposals\/correct-x-r1"/);
   assert.match(markup, /Key for one cause: <code[^>]*>order\|<\/code>/);
+  assert.match(markup, /<span class="font-semibold" title="order">Values out of order<\/span>/, "the check in words, its id in the title");
+  assert.match(markup, /title="parts-sum">Parts don&#x27;t add up to the total</);
+  assert.doesNotMatch(markup, /font-mono[^>]*>order</, "no bare check id");
 });
 
 test("Proposals and a proposal's page: the list by status, Approve with the typed word for a correction, Decline and Ask; a decided one shows its decisions", async () => {

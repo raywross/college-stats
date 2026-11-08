@@ -13,7 +13,7 @@ import { join, relative } from "node:path";
 import { ADMIN_DOORS, activeDoor, activeScreen } from "../lib/admin/console.ts";
 import { ADMIN_REDIRECTS, nextAdminRedirects, resolveAdminRedirect } from "../lib/admin/redirects.ts";
 import { HELP, helpByDoor, isHelpKey } from "../lib/admin/help.ts";
-import { attemptResultWords, codeLabel, codeName, codeWordsInText, collectionLabel, itemKeyLabel, reasonLabel, REASON_WORDS, stewardText, targetKindLabel, changeKindLabel } from "../lib/admin/words.ts";
+import { attemptResultWords, CHECK_WORDS, checkLabel, codeLabel, codeName, codeWordsInText, collectionLabel, itemKeyLabel, reasonLabel, REASON_WORDS, stewardText, targetKindLabel, changeKindLabel } from "../lib/admin/words.ts";
 import { REASON_CODES } from "../scripts/lib/college-failures.mts";
 import { ESSAY_STATUS_LABELS } from "../lib/admin/essays.ts";
 import { CDS_ITEM_NAMES } from "../lib/cds-sections.ts";
@@ -466,6 +466,22 @@ test("stewardText: the Steward's codes and keys read in words, the first time ea
     "",
   ]) assert.equal(stewardText(same), same.replace(/admissions\.not_registered/, "admissions.“not registered”"), same);
   assert.equal(stewardText(null), "");
+});
+
+test("checkLabel names every check the pipeline can hold a value with (CheckId); an unknown id reads as its words", () => {
+  // The ids a Findings cluster can carry: the `check` of a queue item's failures, the CheckId union in lib/reported.ts.
+  const union = read("lib/reported.ts").match(/export type CheckId =([\s\S]*?);?\n\n/)![1];
+  const ids = [...union.matchAll(/\|\s*"([a-z0-9-]+)"/g)].map((m) => m[1]);
+  assert.ok(ids.length >= 30, `read ${ids.length} ids from the union`);
+  for (const id of ids) {
+    assert.ok(CHECK_WORDS[id as keyof typeof CHECK_WORDS], `${id} has words`);
+    assert.notEqual(checkLabel(id), id, id);
+    assert.doesNotMatch(checkLabel(id), /^[a-z0-9-]+$/, `${id} reads as words`);
+  }
+  assert.deepEqual(Object.keys(CHECK_WORDS).sort(), [...ids].sort(), "no words for a check that no longer exists");
+  assert.equal(checkLabel("parts-sum"), "Parts don't add up to the total");
+  assert.equal(checkLabel("some-new_check"), "Some new check");
+  assert.equal(checkLabel(""), "");
 });
 
 test("Steward-written sentences go through stewardText where the console shows them", () => {

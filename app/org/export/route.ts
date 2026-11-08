@@ -4,25 +4,35 @@ import { loginHref } from "@/lib/accounts";
 import { SITE_NAME } from "@/lib/brand";
 import { getData } from "@/lib/data";
 import { caseloadCsv, caseloadCsvFilename } from "@/lib/org-caseload";
-import { caseloadStudents, myOrganization, orgRoster } from "@/lib/orgs";
-import { plannerToday } from "@/lib/planner/today-server";
+import { caseloadData } from "@/lib/orgs";
+import { withTiming } from "@/lib/timing-server";
 
 /**
  * /org/export (specs/product/counselor-portal.md "Export"): the caseload as a CSV for Naviance, Scoir, or a
  * spreadsheet, one row per college per student (a student with an empty list is one row). Read with the counselor's
- * own session, like the caseload page. Never a GPA or a score. A GET so a plain `download` link works; it only reads.
+ * own session, like the caseload page, from the same data (lib/orgs.ts caseloadData: one bundle beside the account
+ * check, two database waves). Never a GPA or a score. A GET so a plain `download` link works; it only reads.
  */
 export async function GET(request: NextRequest) {
   if (!authConfigured()) return new Response("Sign-in isn't available here.", { status: 404 });
+  return withTiming("/org/export", () => exportCsv(request));
+}
+
+async function exportCsv(request: NextRequest): Promise<Response> {
+  // Started beside the account check; nothing is answered before it passes, and the bundle asks nothing signed out.
+  const dataP = caseloadData();
+  const datasetP = getData();
+  dataP.catch(() => {});
+  datasetP.catch(() => {});
   const account = await getAccount();
   if (!account) return NextResponse.redirect(new URL(loginHref("/org"), request.nextUrl.origin));
   try {
-    const org = await myOrganization();
-    if (!org) return NextResponse.redirect(new URL("/org", request.nextUrl.origin));
-    const [students, { getSchoolById }] = await Promise.all([orgRoster(org.id).then(caseloadStudents), getData()]);
+    const data = await dataP;
+    if (!data) return NextResponse.redirect(new URL("/org", request.nextUrl.origin));
+    const { students, today } = data;
+    const { getSchoolById } = await datasetP;
     const schools: Record<string, { name: string }> = {};
     for (const s of students) for (const i of s.items) schools[i.unit_id] ??= { name: getSchoolById(i.unit_id)?.name ?? i.unit_id };
-    const today = await plannerToday();
     return new Response(caseloadCsv(students, schools, today), {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",

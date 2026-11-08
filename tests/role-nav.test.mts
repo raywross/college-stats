@@ -140,5 +140,7 @@ test("/api/me answers role and children, and the pages where they change refresh
   assert.match(route, /role: null, children: \[\]/, "signed out: no role");
   assert.match(read("components", "account", "useMe.ts"), /"role" in parsed\.data/, "a stored answer from before the role item is stale");
   assert.match(read("app", "household", "layout.tsx"), /<RefreshHeader \/>/, "adding a child or becoming a guardian shows at once");
-  assert.match(read("app", "org", "page.tsx"), /<RefreshHeader \/>/);
+  // /org says what it knows, so the header is asked again only when its answer disagrees (tests/counselor-perf-pages).
+  assert.match(read("app", "org", "page.tsx"), /<RefreshHeader org=\{false\} \/>/);
+  assert.match(read("app", "org", "page.tsx"), /<RefreshHeader org \/>/);
 });

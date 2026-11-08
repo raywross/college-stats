@@ -489,6 +489,9 @@ Preview or Production, then redeploy; locally `QUAD_TIMING=1 npx next start`). T
   Supabase round trips by table or function name; `‖` joins calls that ran in parallel and `;` separates waves (calls
   that waited for the one before), so waves × the region's round trip is the database's share. Then each span:
   `access+plan`, `readPlan`, `dataset`, `planSchools`, `estimates`, `sync`, `revalidate`, `followUp`.
+- the counselor pages log under `/org`, `/org/students/[id]`, and `/org/export` (since 2026-11-08; each is the
+  session's viewer bundle beside one org bundle, so two waves, `specs/product/counselor-portal.md` "The reads"), and one
+  essay under `/advisor/essays/[id]` with the spans `essay viewer`, `essay read`, and `essay colleges`.
 - signed-in routes that go through `proxy.ts` carry a `Server-Timing: proxy;dur=…` response header (the session
   check), visible in the browser's network panel. The page's own timings can't ride in a header: the page streams
   (its headers leave before the render finishes), so they go to the log line.

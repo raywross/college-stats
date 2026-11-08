@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin/auth";
 import { getData } from "@/lib/data";
@@ -14,23 +13,23 @@ import { VisitEventsCard } from "@/components/admin/VisitEventsCard";
 import { loadVisitEventsHealth } from "@/lib/admin/visit-events";
 import type { School } from "@/lib/types";
 import { HealthTabs } from "@/components/admin/ops/HealthTabs";
+import { PageHeader } from "@/components/admin/Panel";
 import { SourceFilesTable } from "@/components/admin/ops/SourceFilesTable";
 import { inputsOverview, loadSourceFiles } from "@/lib/admin/estimate-inputs-load";
 
-export const metadata: Metadata = { title: "Data health: files", robots: { index: false } };
-
-const BASE = "/admin/health/files";
+const BASE = "/admin/data/health?tab=sources";
 
 /**
- * The Health page's Files view (specs/product/admin-health-views.md "View 2"): first every published file the dataset
+ * The Health page's Sources tab, `/admin/data/health?tab=sources` (specs/product/admin-health-views.md "View 2", once
+ * its own page at /admin/health/files; rendered by ./page.tsx): first every published file the dataset
  * is built from, with the year it describes, its publish date, and its health; then each college's own documents and
  * collection dates (specs/product/admin.md "The overview"): the stat row of counts by overall and group status, then
  * the table, worst first, filtered by the URL. The health model is computed once per server instance from
  * the deployed file (lib/admin/health.ts); the family-list filter reads the database through the admin's session.
  */
-export default async function HealthPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export async function SourcesView({ params }: { params: Record<string, string | string[] | undefined> }) {
   await requireAdmin();
-  const filters = parseHealthFilters(await searchParams);
+  const filters = parseHealthFilters(params);
   const view = await loadHealthView();
   const selected = selectHealthRows(view, filters);
   const page = pageOf(selected, filters.page);
@@ -47,13 +46,12 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
   return (
     <div className="space-y-6">
       <header className="space-y-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Data health</h1>
-          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Every file we read: the published files the dataset is built from, then each college&apos;s own documents. Publish dates checked {dayLabel(files.checked)}.
-          </p>
-        </div>
-        <HealthTabs current="files" />
+        <PageHeader
+          title="Data health"
+          help="sources"
+          subtitle={<>Every file we read: the published files the dataset is built from, then each college&apos;s own documents. Publish dates checked {dayLabel(files.checked)}.</>}
+        />
+        <HealthTabs current="sources" />
       </header>
 
       <section aria-labelledby="published-files" className="space-y-3">
@@ -77,7 +75,7 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
       {selectivity && (
         <p className="text-sm text-muted-foreground">
           Selectivity:{" "}
-          <Link href="/admin/selectivity" className="font-semibold text-primary underline-offset-4 hover:underline">
+          <Link href="/admin/data/selectivity" className="font-semibold text-primary underline-offset-4 hover:underline">
             {selectivity.tierChanges} tier {selectivity.tierChanges === 1 ? "change" : "changes"} in the last publish
           </Link>{" "}
           ({selectivity.run.cause === "method" ? "a method change" : selectivity.run.cause === "backfill" ? "backfilled" : "new figures"}).
@@ -89,7 +87,7 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
         reasons={reasonOptions(view.all)}
         states={stateOptions(view.all)}
         familyAvailable={view.family !== null}
-        csvHref={`/admin/health/csv${query ? `?${query}` : ""}`}
+        csvHref={`/admin/data/health/csv${query ? `?${query}` : ""}`}
       />
 
       <p className="text-sm text-muted-foreground" role="status">

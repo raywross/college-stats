@@ -37,7 +37,7 @@ export interface JobDef {
   gate?: string;
   /** The spec that describes the job, repository-relative. */
   spec: string;
-  /** The row of lib/admin/workflows.ts `DISPATCHABLE_RUNS` that starts this job from Operations, when there is one. */
+  /** The row of lib/admin/workflows.ts `DISPATCHABLE_RUNS` that marks this job as one Run now can start (its page lists every row for its workflow). */
   dispatch?: string;
 }
 

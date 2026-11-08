@@ -1,7 +1,7 @@
 /**
  * What each Operations button does (specs/product/admin.md "Operations: reruns and approvals"), over injected
  * dependencies so `tests/admin-ops.test.mts` runs every path with no network and no database. The Server Actions in
- * app/admin/operations/actions.ts call `requireAdmin()` first, build the real dependencies (lib/admin/ops.ts), and hand
+ * app/admin/steward/jobs/actions.ts call `requireAdmin()` first, build the real dependencies (lib/admin/ops.ts), and hand
  * the form to one of these.
  *
  * Rules every action here keeps:

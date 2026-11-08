@@ -49,7 +49,7 @@ export default async function PersonViewsPage({ params, searchParams }: PageProp
           unit ? (
             <>
               {name}&rsquo;s views, newest first ·{" "}
-              <Link href={`/admin/colleges/${unit}#views`} className="underline-offset-4 hover:underline">
+              <Link href={`/admin/data/colleges/${unit}#views`} className="underline-offset-4 hover:underline">
                 Who else is looking
               </Link>{" "}
               ·{" "}

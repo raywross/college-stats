@@ -15,10 +15,10 @@ export const metadata: Metadata = { title: "Who's looking", robots: { index: fal
 const pageLabel = (page: string) => viewPageLabel(page, (k) => topicOf(k)?.label);
 
 /**
- * /admin/colleges/[unit]/views (specs/product/college-views.md): everyone who has opened the college, most views first,
+ * /admin/data/colleges/[unit]/views (specs/product/college-views.md): everyone who has opened the college, most views first,
  * each linking to that person's times; with ?signed_out=1, each signed-out visit's time and page.
  */
-export default async function CollegeViewsPage({ params, searchParams }: PageProps<"/admin/colleges/[unit]/views">) {
+export default async function CollegeViewsPage({ params, searchParams }: PageProps<"/admin/data/colleges/[unit]/views">) {
   await connection();
   await requireAdmin();
   const { unit } = await params;
@@ -33,7 +33,7 @@ export default async function CollegeViewsPage({ params, searchParams }: PagePro
     <>
       <PageHeader
         back={
-          <Link href={`/admin/colleges/${unit}#views`} className="text-muted-foreground underline-offset-4 hover:underline">
+          <Link href={`/admin/data/colleges/${unit}#views`} className="text-muted-foreground underline-offset-4 hover:underline">
             {school.name}
           </Link>
         }
@@ -85,7 +85,7 @@ export default async function CollegeViewsPage({ params, searchParams }: PagePro
                     <tr key={v.userId ?? "signed-out"}>
                       <td className="py-1.5 pr-4">
                         <Link
-                          href={v.userId ? `/admin/people/${v.userId}/views?unit=${unit}` : `/admin/colleges/${unit}/views?signed_out=1`}
+                          href={v.userId ? `/admin/people/${v.userId}/views?unit=${unit}` : `/admin/data/colleges/${unit}/views?signed_out=1`}
                           className="font-medium underline-offset-4 hover:underline"
                         >
                           {v.userId ? (v.name ?? v.email ?? "No name") : "Signed-out visitors"}

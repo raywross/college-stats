@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Empty } from "@/components/admin/Panel";
 import { DocLink, TodoStatusChip } from "@/components/admin/steward/Bits";
-import { todoDoneAction, todoFoundAction, todoNoDocumentAction } from "@/app/admin/data/steward-actions";
+import { todoDoneAction, todoFoundAction, todoNoDocumentAction } from "@/app/admin/steward/actions";
 import { dayLabel } from "@/lib/admin/ops-view";
 import { TODO_KIND_LABEL, TODO_WHY_LABEL, editionOf, linkCls, reviewHref } from "@/lib/admin/steward-view";
 import type { TodoDoc } from "@/lib/steward/types";

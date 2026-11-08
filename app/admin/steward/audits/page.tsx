@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
 import { StatusChip } from "@/components/admin/StatusChip";
-import { DataBack } from "@/components/admin/steward/Bits";
+import { StewardBack } from "@/components/admin/steward/Bits";
 import { ProposalRowsTable } from "@/components/admin/steward/ProposalParts";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminSupabase } from "@/lib/admin/people";
@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Audits", robots: { index: false, fol
 const ISSUE_RATE = 0.05;
 
 /**
- * `/admin/data/audits` (specs/product/data-steward.md "What a run does", Audit): per check family, the latest sample
+ * `/admin/steward/audits` (specs/product/data-steward.md "What a run does", Audit): per check family, the latest sample
  * of passed values compared with their documents, its error rate, and the values found wrong, each linking the
  * college's Review page; the family's earlier samples as a line.
  */
@@ -36,7 +36,7 @@ export default async function AuditsPage() {
 
   return (
     <>
-      <PageHeader title="Audits" back={<DataBack />} subtitle="Values that passed every check, sampled against their documents. Passing is not the same as right." />
+      <PageHeader title="Audits" back={<StewardBack />} subtitle="Values that passed every check, sampled against their documents. Passing is not the same as right." />
       {byFamily.size === 0 ? (
         <Panel title="Check families">
           <Empty>No audit has run yet. The weekly run samples one family at a time.</Empty>

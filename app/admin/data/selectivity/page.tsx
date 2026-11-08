@@ -14,7 +14,7 @@ import type { FieldPath } from "@/lib/fields";
 
 export const metadata: Metadata = { title: "Selectivity history", robots: { index: false, follow: false } };
 
-const BASE = "/admin/selectivity";
+const BASE = "/admin/data/selectivity";
 const DAYS = [7, 30, 90] as const;
 const POOLS: Pool[] = ["all", "in_state", "out_of_state"];
 
@@ -24,12 +24,12 @@ const tierWord = (t: SelectivityTier | null) => (t ? SELECTIVITY_TIER_LABELS[t] 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 /**
- * /admin/selectivity (specs/chances/selectivity-history.md "Across colleges"): the latest publish's tier moves and
+ * /admin/data/selectivity (specs/chances/selectivity-history.md "Across colleges"): the latest publish's tier moves and
  * Ultra selective count, the biggest movers over 7, 30, or 90 days, tier counts after each publish per pool, and the
  * method log, and the tier changes that went to followers. Filters are GET parameters: days, pool, tier, cause, every=1
  * ("show every change": method changes and moves under DISPLAY_MOVE_MIN), counts (the pool the counts table shows).
  */
-export default async function SelectivityPage({ searchParams }: PageProps<"/admin/selectivity">) {
+export default async function SelectivityPage({ searchParams }: PageProps<"/admin/data/selectivity">) {
   await connection();
   await requireAdmin();
   const params = await searchParams;
@@ -79,7 +79,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
     return s ? `${BASE}?${s}` : BASE;
   };
   const collegeLink = (unit: string) => (
-    <Link href={`/admin/colleges/${unit}#selectivity-history`} className="font-medium underline-offset-4 hover:underline">
+    <Link href={`/admin/data/colleges/${unit}#selectivity-history`} className="font-medium underline-offset-4 hover:underline">
       {name(unit)}
     </Link>
   );
@@ -109,7 +109,7 @@ export default async function SelectivityPage({ searchParams }: PageProps<"/admi
     <>
       <PageHeader
         back={
-          <Link href="/admin/colleges" className="text-muted-foreground underline-offset-4 hover:underline">
+          <Link href="/admin/data/colleges" className="text-muted-foreground underline-offset-4 hover:underline">
             Colleges
           </Link>
         }

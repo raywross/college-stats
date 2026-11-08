@@ -25,7 +25,7 @@ export function LastRunCell({ last, now }: { last: JobOverviewRow["last"]; now: 
 }
 
 /**
- * `/admin/jobs` (specs/product/admin-jobs.md "The list"): jobs with where each runs, its schedule in words, its next
+ * `/admin/steward/jobs` (specs/product/admin-jobs.md "The list"): jobs with where each runs, its schedule in words, its next
  * run, and its last run. A job whose last run failed is tinted so it stands out at a glance, in either view. Each
  * name opens the job's page.
  */

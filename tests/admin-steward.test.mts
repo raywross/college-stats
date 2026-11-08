@@ -485,8 +485,8 @@ test("the three Steward runs dispatch steward.yml; apply and answer are hidden f
   assert.match(steward, /group: steward\b/, "one Steward run at a time, as the table's guard says");
 });
 
-test("static: every exported Server Action in app/admin/data/steward-actions.ts starts with requireAdmin()", () => {
-  const src = read("app/admin/data/steward-actions.ts");
+test("static: every exported Server Action in app/admin/steward/actions.ts starts with requireAdmin()", () => {
+  const src = read("app/admin/steward/actions.ts");
   assert.ok(src.startsWith('"use server";'));
   const bodies = [...src.matchAll(/export async function (\w+)\([^)]*\)[^{]*\{\n(.*)\n/g)];
   assert.equal(bodies.length, 11);
@@ -497,13 +497,13 @@ test("static: every exported Server Action in app/admin/data/steward-actions.ts 
 });
 
 const PAGES = [
-  "app/admin/data/issues/page.tsx",
-  "app/admin/data/proposals/page.tsx",
-  "app/admin/data/proposals/[key]/page.tsx",
-  "app/admin/data/todo/page.tsx",
-  "app/admin/data/decisions/page.tsx",
-  "app/admin/data/audits/page.tsx",
-  "app/admin/colleges/[unit]/review/page.tsx",
+  "app/admin/steward/findings/page.tsx",
+  "app/admin/steward/proposals/page.tsx",
+  "app/admin/steward/proposals/[key]/page.tsx",
+  "app/admin/steward/todo/page.tsx",
+  "app/admin/steward/decisions/page.tsx",
+  "app/admin/steward/audits/page.tsx",
+  "app/admin/data/colleges/[unit]/review/page.tsx",
 ];
 
 test("static: the six screens call requireAdmin() before reading anything, are noindex, and never say AI or agent", () => {
@@ -519,17 +519,19 @@ test("static: the six screens call requireAdmin() before reading anything, are n
   }
 });
 
-test("the Data nav, Operations, Holds and the college page link the new screens", () => {
-  const nav = read("app/admin/data/page.tsx");
-  for (const [href, label] of [["issues", "Issues"], ["proposals", "Proposals"], ["todo", "To do"], ["decisions", "Decisions"], ["audits", "Audits"]]) assert.match(nav, new RegExp(`href: "/admin/data/${href}", label: "${label}"`));
-  const ops = read("app/admin/operations/page.tsx");
-  assert.match(ops, /"\/admin\/data\/issues"/);
-  assert.match(ops, /Code changes only/);
-  assert.match(ops, /filter\(\(run\) => !run\.hidden\)/);
-  assert.match(read("app/admin/data/holds/page.tsx"), /<IssuesPointer open=/);
-  const college = read("app/admin/colleges/[unit]/page.tsx");
-  assert.match(college, /href=\{`\/admin\/colleges\/\$\{unit\}\/review`\}/);
-  assert.match(college, /reviewHref=\{`\/admin\/colleges\/\$\{unit\}\/review`\}/, "and the Health card");
+test("the Steward door lists the Steward's screens, the job page's Run now skips hidden runs, and the college page links its Review page", async () => {
+  const { ADMIN_DOORS } = await import("../lib/admin/console.ts");
+  const steward = ADMIN_DOORS.find((d) => d.key === "steward")!;
+  for (const [key, label] of [["findings", "Findings"], ["proposals", "Proposals"], ["todo", "To do"], ["decisions", "Decisions"], ["audits", "Audits"]]) {
+    assert.deepEqual(
+      steward.screens.filter((x) => x.key === key).map((x) => [x.label, x.href]),
+      [[label, `/admin/steward/${key}`]],
+    );
+  }
+  assert.match(read("lib/admin/ops.ts"), /DISPATCHABLE_RUNS\.filter\(\(r\) => !r\.hidden && r\.workflow === workflow\)/);
+  const college = read("app/admin/data/colleges/[unit]/page.tsx");
+  assert.match(college, /href=\{`\/admin\/data\/colleges\/\$\{unit\}\/review`\}/);
+  assert.match(college, /reviewHref=\{`\/admin\/data\/colleges\/\$\{unit\}\/review`\}/, "and the Health card");
 });
 
 /* ------------------------------------------------------------------ */
@@ -607,7 +609,7 @@ test("every screen is a 404 for anyone but an admin, before anything is read", a
 
 test("Issues: the causes from the live queue joined with the issue documents, the last run, Run the Data Steward, and Colleges to review", async () => {
   fresh();
-  const page = (await loadTsx("app/admin/data/issues/page.tsx")).default as Page;
+  const page = (await loadTsx("app/admin/steward/findings/page.tsx")).default as Page;
   const run = { key: "r9", mode: "run", started: "2026-11-01T09:00:00Z", finished: "2026-11-01T09:20:00Z", budget_usd: 5, spent_usd: 1.25, clusters: 14, issues: 3, proposals: 2, todo: 1, decisions: 1, audits: 0, stopped: null, request_id: null };
   reset({ supabase: store([doc("steward.runs", "r9", run)]) });
   const markup = html(await page({ searchParams: Promise.resolve({}) }));
@@ -617,7 +619,7 @@ test("Issues: the causes from the live queue joined with the issue documents, th
   assert.ok(stubs.some((s) => s.name === "RunForm" && s.props.prefillUnit === null), "Run the Data Steward");
   assert.match(markup, /data-stub="Panel" data-props="\{&quot;title&quot;:&quot;The last run&quot;\}"><div data-stub="Fields"/, "the last run's summary (its fields are the Fields stand-in's props)");
   assert.doesNotMatch(markup, /hasn&#x27;t run yet/);
-  assert.match(markup, /href="\/admin\/colleges\/100751\/review"[^>]*>The University of Alabama<\/a><span[^>]*>49 open items</, "Colleges to review: most items first, each linking its Review page");
+  assert.match(markup, /href="\/admin\/data\/colleges\/100751\/review"[^>]*>The University of Alabama<\/a><span[^>]*>49 open items</, "Colleges to review: most items first, each linking its Review page");
   const kinds = html(await page({ searchParams: Promise.resolve({ kind: "policy" }) }));
   assert.match(kinds, /aria-current="page"[^>]*>Policy</);
 });
@@ -629,9 +631,9 @@ test("ClustersTable: kind, counts and status per cause; Leave unless left; the e
   const markup = html(mod.ClustersTable({ rows: [{ cluster, kind: "value", issue: null }, { cluster: { ...cluster, key: "parts-sum|x", check: "parts-sum", detail: "x" }, kind: "value", issue: left }] }));
   const forms = stubsIn(markup).filter((s) => s.name === "AdminForm");
   assert.deepEqual(forms.map((s) => s.props.trigger), ["Leave"], "Leave on the cause that isn't left");
-  assert.match(markup, /href="\/admin\/colleges\/231624\/review"/);
+  assert.match(markup, /href="\/admin\/data\/colleges\/231624\/review"/);
   assert.match(markup, /waiting on the check fix/);
-  assert.match(markup, /href="\/admin\/data\/proposals\/correct-x-r1"/);
+  assert.match(markup, /href="\/admin\/steward\/proposals\/correct-x-r1"/);
   assert.match(markup, /Key for one cause: <code[^>]*>order\|<\/code>/);
 });
 
@@ -640,11 +642,11 @@ test("Proposals and a proposal's page: the list by status, Approve with the type
   const open = proposal();
   const declined = proposal({ key: "hold-y-r1", kind: "hold", status: "declined", rows: [row({ decision: "declined", decisionNote: "no" })] });
   reset({ supabase: store([doc(P, open.key, open), doc(P, declined.key, declined)]) });
-  const list = html(await ((await loadTsx("app/admin/data/proposals/page.tsx")).default as Page)({ searchParams: Promise.resolve({}) }));
+  const list = html(await ((await loadTsx("app/admin/steward/proposals/page.tsx")).default as Page)({ searchParams: Promise.resolve({}) }));
   assert.ok(stubsIn(list).some((s) => s.name === "ProposalsList"));
-  assert.match(list, /href="\/admin\/data\/proposals\?status=asked"/);
+  assert.match(list, /href="\/admin\/steward\/proposals\?status=asked"/);
 
-  const page = (await loadTsx("app/admin/data/proposals/[key]/page.tsx")).default as Page;
+  const page = (await loadTsx("app/admin/steward/proposals/[key]/page.tsx")).default as Page;
   const markup = html(await page({ params: Promise.resolve({ key: encodeURIComponent(open.key) }) }));
   const approve = stubsIn(markup).find((s) => s.name === "ProposalApprove");
   assert.deepEqual([approve?.props.proposal, approve?.props.confirmWord, approve?.props.costEach], ["correct-c1-r1", "approve", null]);
@@ -659,7 +661,7 @@ test("Proposals and a proposal's page: the list by status, Approve with the type
 
 test("ProposalApprove: ticks pre-set from the decision or the recommendation, the running re-read cost, and the typed word", async () => {
   const mod = (await loadTsx("components/admin/steward/ProposalApprove.tsx")) as { ProposalApprove: (p: unknown) => import("react").ReactElement };
-  const base = { index: 0, unit: "231624", college: "William & Mary", reviewHref: "/admin/colleges/231624/review", label: "admissions.applicants", now: "17,798 · IPEDS", proposed: "17,440", fromHref: "https://x.edu/c.pdf#page=4", fromLabel: "p. 4, line 12", quote: "17,440", why: null };
+  const base = { index: 0, unit: "231624", college: "William & Mary", reviewHref: "/admin/data/colleges/231624/review", label: "admissions.applicants", now: "17,798 · IPEDS", proposed: "17,440", fromHref: "https://x.edu/c.pdf#page=4", fromLabel: "p. 4, line 12", quote: "17,440", why: null };
   const rows = [{ ...base, recommends: "approve", ticked: true }, { ...base, index: 1, unit: "190415", recommends: "your-call", why: "two readings", ticked: false }];
   // Rendered on the server, a client component shows its first state: hooks run with their initial values.
   const { createElement } = await import("react");
@@ -679,25 +681,25 @@ test("To do, Decisions and Audits render their documents for an admin", async ()
   const decision: DecisionDoc = { key: "hold-model-grids", question: "Hold every model-read grid?", recommends: "Hold them", options: [{ answer: "Hold them", effect: "values leave the site" }, { answer: "Keep them", effect: "nothing changes" }], answer: null, note: null, decided_by: null, decided_at: null, run: "r1", created: "2026-11-01" };
   const audit = { key: "grids-r1", family: "grids", checked: 24, wrong: [row()], rate: 0.125, run: "r1", created: "2026-11-01" };
   reset({ supabase: store([doc("steward.todo", todo.key, todo), doc("steward.decisions", decision.key, decision), doc("steward.audits", audit.key, audit)]) });
-  const t = html(await ((await loadTsx("app/admin/data/todo/page.tsx")).default as Page)({ searchParams: Promise.resolve({ kind: "cds" }) }));
+  const t = html(await ((await loadTsx("app/admin/steward/todo/page.tsx")).default as Page)({ searchParams: Promise.resolve({ kind: "cds" }) }));
   assert.ok(stubsIn(t).some((s) => s.name === "TodoTable"));
   assert.match(t, /aria-current="page"[^>]*>Common Data Set</);
-  const d = html(await ((await loadTsx("app/admin/data/decisions/page.tsx")).default as Page)({}));
+  const d = html(await ((await loadTsx("app/admin/steward/decisions/page.tsx")).default as Page)({}));
   assert.ok(stubsIn(d).some((s) => s.name === "AdminForm" && s.props.trigger === "Decide"));
   assert.match(d, /1 waiting for an answer/);
-  const a = html(await ((await loadTsx("app/admin/data/audits/page.tsx")).default as Page)({}));
+  const a = html(await ((await loadTsx("app/admin/steward/audits/page.tsx")).default as Page)({}));
   assert.match(a, /1 wrong of 24 checked/);
 
   const tt = (await loadTsx("components/admin/steward/TodoTable.tsx")) as { TodoTable: (p: unknown) => import("react").ReactElement };
   const rowsHtml = html(tt.TodoTable({ rows: [todo, { ...todo, key: "k2", status: "no-document" }] }));
   assert.deepEqual(stubsIn(rowsHtml).filter((s) => s.name === "AdminForm").map((s) => s.props.trigger), ["Found", "No document published", "Done", "Found", "Done"]);
-  assert.match(rowsHtml, /href="\/admin\/colleges\/190415\/review"/);
+  assert.match(rowsHtml, /href="\/admin\/data\/colleges\/190415\/review"/);
   assert.match(rowsHtml, /a bot challenge/);
 });
 
 test("the Review page: the college's rows from readReviewRows, and 'On the site now' from the profile's own citeField", async () => {
   fresh();
-  const page = (await loadTsx("app/admin/colleges/[unit]/review/page.tsx")).default as Page;
+  const page = (await loadTsx("app/admin/data/colleges/[unit]/review/page.tsx")).default as Page;
   const p = proposal({ rows: [row({ item: reviewKey(WM_ITEMS[0]), proposed: "17,440 (corrected)" })] });
   reset({ supabase: store([doc(P, p.key, p)]) });
   const markup = html(await page({ params: Promise.resolve({ unit: "231624" }) }));
@@ -716,19 +718,13 @@ test("the Review page: the college's rows from readReviewRows, and 'On the site 
   assert.equal(cell?.[1].replace(/&#x27;/g, "'").replace(/&amp;/g, "&"), expected);
   const forms = stubsIn(table).filter((s) => s.name === "AdminForm").map((s) => s.props.trigger);
   for (const t of ["Approve", "Decline", "Accept the value", "Reject", "Leave"]) assert.ok(forms.includes(t), t);
-  assert.match(table, /href="\/admin\/data\/proposals\/correct-c1-r1"/);
+  assert.match(table, /href="\/admin\/steward\/proposals\/correct-c1-r1"/);
   assert.ok(stubsIn(table).some((s) => s.name === "Recommends" && s.props.recommends === "approve"));
 });
 
-test("Holds points at Issues only when the queue is over 500 items", async () => {
-  const mod = (await loadTsx("components/admin/Holds.tsx")) as { IssuesPointer: (p: { open: number }) => import("react").ReactElement | null; ISSUES_POINTER_AT: number };
-  assert.equal(mod.ISSUES_POINTER_AT, 500);
-  assert.equal(mod.IssuesPointer({ open: 500 }), null);
-  assert.match(html(mod.IssuesPointer({ open: 20990 })!), /20,990 items are open[\s\S]*href="\/admin\/data\/issues"/);
-});
 
 test("steward-view: links, a document at its page, and the URL parameters", () => {
-  assert.equal(view.proposalHref("correct-a b-r1"), "/admin/data/proposals/correct-a%20b-r1");
+  assert.equal(view.proposalHref("correct-a b-r1"), "/admin/steward/proposals/correct-a%20b-r1");
   assert.equal(view.keyFromSegment("correct-a%20b-r1"), "correct-a b-r1");
   assert.equal(view.keyFromSegment("%E0%A4%A"), "%E0%A4%A");
   assert.equal(view.documentHref("https://x.edu/c.pdf#old", 4), "https://x.edu/c.pdf#page=4");

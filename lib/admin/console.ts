@@ -1,5 +1,6 @@
 /**
- * The admin console's pure parts (specs/product/admin.md "The console", "People"): the sections of the rail, reading
+ * The admin console's pure parts (specs/product/admin.md "The console", "People"; specs/product/admin-redesign.md
+ * "The shell"): the four doors and their screens, reading
  * the forms the Server Actions receive, the plain words for every refusal, status chips, the search's routing, the
  * log's labels, and the one line /household shows after Quad support links someone. No server or browser APIs and no
  * `server-only`, so the pages, the client components, and the tests share it. Server Actions re-check everything here:
@@ -11,45 +12,133 @@ import { isUuid } from "../household-hub.ts";
 import { isRoleHint } from "../accounts.ts";
 import type { AdminAuthResult } from "./auth-function.ts";
 import type { AdminState } from "./auth.ts";
+import type { HelpKey } from "./help.ts";
 
 /* ------------------------------------------------------------------ */
-/* The rail                                                            */
+/* The doors                                                           */
 /* ------------------------------------------------------------------ */
 
-export type AdminSectionKey = "people" | "households" | "organizations" | "colleges" | "health" | "operations" | "jobs" | "essays" | "log";
+export type AdminDoorKey = "steward" | "people" | "data" | "more";
 
-export interface AdminSection {
-  key: AdminSectionKey;
+export interface AdminScreen {
+  key: string;
   label: string;
   href: string;
-  /** Route prefixes that belong to this section (the rail highlights it under any of them). */
-  under: string[];
-  /** One line under the label in the rail. */
+  /** Route prefixes that belong to this screen besides its own href (the rail highlights it under any of them). */
+  under: readonly string[];
+  /** One line under the label in the rail and on the door's landing page. */
   hint: string;
+  help: HelpKey;
+}
+
+export interface AdminDoor {
+  key: AdminDoorKey;
+  label: string;
+  /** The door's landing page: the Inbox for the Steward, the screens as cards for the others. */
+  href: string;
+  hint: string;
+  screens: readonly AdminScreen[];
 }
 
 /**
- * The sections of the spec's console table, with People and Households apart (owner, 2026-10-13). Colleges, Health,
- * and Operations link to pages other units build; the rail doesn't need them to exist.
+ * The console's four doors and their screens (specs/product/admin-redesign.md "The shell"): the rail from `lg` lists
+ * every screen under its door, the compact rail from `md` and the tab bar below it have one entry per door, and each
+ * door's landing page lists its screens as cards. tests/admin-console.test.mts holds this table to the pages under
+ * app/admin: every page belongs to a door, and every screen's href is a page.
  */
-export const ADMIN_SECTIONS: readonly AdminSection[] = [
-  { key: "people", label: "People", href: "/admin/people", under: ["/admin/people", "/admin/students"], hint: "Accounts and students" },
-  { key: "households", label: "Households", href: "/admin/households", under: ["/admin/households"], hint: "Families and invitations" },
-  // Organizations (specs/product/counselor-portal.md "The channel"): counselors and schools running a caseload.
-  { key: "organizations", label: "Organizations", href: "/admin/organizations", under: ["/admin/organizations"], hint: "Counselors and their caseloads" },
-  { key: "colleges", label: "Colleges", href: "/admin/colleges", under: ["/admin/colleges", "/admin/high-schools", "/admin/selectivity"], hint: "Hidden values, selectivity" },
-  { key: "health", label: "Health", href: "/admin/health", under: ["/admin/health"], hint: "Which data is fresh" },
-  { key: "operations", label: "Operations", href: "/admin/operations", under: ["/admin/operations"], hint: "Runs and approvals" },
-  // Essays (specs/product/essays/sources.md "The hand read"): the prompts a person reads from the application form.
-  { key: "essays", label: "Essays", href: "/admin/essays", under: ["/admin/essays"], hint: "Prompts read from the form" },
-  // Jobs (specs/product/admin-jobs.md): every scheduled job, its next run, and its history.
-  { key: "jobs", label: "Jobs", href: "/admin/jobs", under: ["/admin/jobs"], hint: "Schedules and past runs" },
-  { key: "log", label: "Log", href: "/admin/log", under: ["/admin/log", "/admin/admins"], hint: "Every admin action" },
+export const ADMIN_DOORS: readonly AdminDoor[] = [
+  {
+    key: "steward",
+    label: "Steward",
+    href: "/admin",
+    hint: "What needs you, and what the Steward did",
+    screens: [
+      { key: "inbox", label: "Inbox", href: "/admin", under: [], hint: "What needs you today", help: "inbox" },
+      { key: "findings", label: "Findings", href: "/admin/steward/findings", under: [], hint: "What the Steward found", help: "finding" },
+      { key: "proposals", label: "Proposals", href: "/admin/steward/proposals", under: [], hint: "Changes it wants to make", help: "proposal" },
+      { key: "todo", label: "To do", href: "/admin/steward/todo", under: [], hint: "What only a person can do", help: "to-do" },
+      { key: "decisions", label: "Decisions", href: "/admin/steward/decisions", under: [], hint: "Policy waiting on you", help: "decision" },
+      { key: "audits", label: "Audits", href: "/admin/steward/audits", under: [], hint: "Is what we publish right?", help: "audit" },
+      { key: "jobs", label: "Jobs", href: "/admin/steward/jobs", under: [], hint: "Did everything run?", help: "job" },
+      { key: "runs", label: "Runs", href: "/admin/steward/runs", under: [], hint: "What the Steward did and spent", help: "steward-runs" },
+    ],
+  },
+  {
+    key: "people",
+    label: "People",
+    href: "/admin/people",
+    hint: "Accounts, families, counselors",
+    screens: [
+      { key: "people", label: "People", href: "/admin/people", under: ["/admin/students"], hint: "Accounts and students", help: "people" },
+      { key: "households", label: "Households", href: "/admin/households", under: [], hint: "Families and invitations", help: "household" },
+      { key: "organizations", label: "Organizations", href: "/admin/organizations", under: [], hint: "Counselors and their caseloads", help: "organization" },
+    ],
+  },
+  {
+    key: "data",
+    label: "Data",
+    href: "/admin/data",
+    hint: "What the site holds, and what it hides",
+    screens: [
+      { key: "colleges", label: "Colleges", href: "/admin/data/colleges", under: ["/admin/data/high-schools"], hint: "Hidden values, edits, review", help: "colleges" },
+      { key: "health", label: "Health", href: "/admin/data/health", under: [], hint: "Which data is fresh", help: "data-health" },
+      { key: "selectivity", label: "Selectivity", href: "/admin/data/selectivity", under: [], hint: "Tiers and how they moved", help: "selectivity" },
+      { key: "essays", label: "Essays", href: "/admin/data/essays", under: [], hint: "Questions read from the form", help: "essays" },
+      { key: "reference", label: "Reference", href: "/admin/data/reference", under: [], hint: "Tables the site reads", help: "reference-document" },
+      { key: "changes", label: "Changes", href: "/admin/data/changes", under: [], hint: "Every change to the data", help: "change" },
+      { key: "versions", label: "Published versions", href: "/admin/data/versions", under: [], hint: "What visitors see", help: "published-version" },
+    ],
+  },
+  {
+    key: "more",
+    label: "More",
+    href: "/admin/more",
+    hint: "Admins, settings, the log, help",
+    screens: [
+      { key: "admins", label: "Admins", href: "/admin/admins", under: [], hint: "Who can open the console", help: "admins" },
+      { key: "settings", label: "Settings", href: "/admin/settings", under: [], hint: "Site-wide switches", help: "settings" },
+      { key: "log", label: "Log", href: "/admin/log", under: [], hint: "Every admin action", help: "log" },
+      { key: "help", label: "Help", href: "/admin/help", under: [], hint: "Every word the console uses", help: "help" },
+    ],
+  },
 ];
 
-/** The section a path belongs to, or null for the landing page and the MFA page. */
-export function activeSection(pathname: string): AdminSectionKey | null {
-  return ADMIN_SECTIONS.find((s) => s.under.some((p) => pathname === p || pathname.startsWith(`${p}/`)))?.key ?? null;
+const within = (pathname: string, prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);
+const trimmed = (pathname: string) => pathname.replace(/\/+$/, "") || "/";
+
+/** Whether a path is this screen's page or under it. The Inbox (`/admin`) is its own path only. */
+function onScreen(pathname: string, screen: AdminScreen): boolean {
+  if (screen.href === "/admin") return pathname === "/admin";
+  return within(pathname, screen.href) || screen.under.some((p) => within(pathname, p));
+}
+
+/** The screen a path belongs to (the longest href wins); null for a door's landing page and for unknown paths. */
+export function activeScreen(pathname: string): AdminScreen | null {
+  const path = trimmed(pathname);
+  let best: AdminScreen | null = null;
+  for (const door of ADMIN_DOORS) {
+    for (const screen of door.screens) {
+      if (onScreen(path, screen) && (!best || screen.href.length > best.href.length)) best = screen;
+    }
+  }
+  return best;
+}
+
+/** The door a path belongs to: its screen's door, or the door whose landing page or prefix it is; null outside /admin. */
+export function activeDoor(pathname: string): AdminDoorKey | null {
+  const path = trimmed(pathname);
+  const screen = activeScreen(path);
+  if (screen) return ADMIN_DOORS.find((d) => d.screens.includes(screen))?.key ?? null;
+  if (within(path, "/admin/steward")) return "steward";
+  for (const door of ADMIN_DOORS) if (door.href !== "/admin" && within(path, door.href)) return door.key;
+  return within(path, "/admin") ? "steward" : null;
+}
+
+/** A door by its key. */
+export function doorByKey(key: AdminDoorKey): AdminDoor {
+  const door = ADMIN_DOORS.find((d) => d.key === key);
+  if (!door) throw new Error(`admin: no door ${key}`);
+  return door;
 }
 
 export type ConsoleShell = { shell: "not-found" } | { shell: "setup" } | { shell: "mfa"; enrolled: boolean } | { shell: "console" };

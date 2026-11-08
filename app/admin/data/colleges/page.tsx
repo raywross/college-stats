@@ -22,12 +22,12 @@ const VIEW_WINDOWS = [
 export const metadata: Metadata = { title: "Colleges", robots: { index: false, follow: false } };
 
 /**
- * /admin/colleges?q=… (specs/product/admin.md "The console"): find a college by name, alias, or unit id, or a high
+ * /admin/data/colleges?q=… (specs/product/admin.md "The console"): find a college by name, alias, or unit id, or a high
  * school by name or NCES/PSS id, and open its console page with the hidden values. An exact unit id or high-school id
  * opens its page directly. With no search, the ten most viewed colleges (college_views) over 7 days, 30 days, or all
  * time (?views=).
  */
-export default async function CollegesPage({ searchParams }: PageProps<"/admin/colleges">) {
+export default async function CollegesPage({ searchParams }: PageProps<"/admin/data/colleges">) {
   await connection();
   await requireAdmin();
   const params = await searchParams;
@@ -36,8 +36,8 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/c
   const viewWindow = VIEW_WINDOWS.find((w) => w.key === windowKey) ?? VIEW_WINDOWS[1];
   const q = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
   const { getSchoolById, getSchoolsByIds, searchSchools } = await getData();
-  if (q && getSchoolById(q)) redirect(`/admin/colleges/${q}`);
-  if (q && isHighSchoolId(q) && (await getHighSchool(q))) redirect(`/admin/high-schools/${q}`);
+  if (q && getSchoolById(q)) redirect(`/admin/data/colleges/${q}`);
+  if (q && isHighSchoolId(q) && (await getHighSchool(q))) redirect(`/admin/data/high-schools/${q}`);
   const colleges = q ? searchSchools(q, 25) : [];
   const cited = getSchoolsByIds(colleges.map((c) => c.id));
   const highSchools = q.length >= 3 ? await searchHighSchools({ q, limit: 15 }) : [];
@@ -50,14 +50,14 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/c
         subtitle={
           <>
             A college&apos;s hidden values (selectivity, GPA, derived fields) and its data health; a high school&apos;s pooled course counts. Every college&apos;s{" "}
-            <Link href="/admin/selectivity" className="font-semibold text-primary underline-offset-4 hover:underline">
+            <Link href="/admin/data/selectivity" className="font-semibold text-primary underline-offset-4 hover:underline">
               selectivity history
             </Link>
             .
           </>
         }
       />
-      <form action="/admin/colleges" method="get" role="search" className="flex max-w-xl gap-2">
+      <form action="/admin/data/colleges" method="get" role="search" className="flex max-w-xl gap-2">
         <label htmlFor="college-search" className="sr-only">
           Search colleges and high schools
         </label>
@@ -83,7 +83,7 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/c
                 {VIEW_WINDOWS.map((w) => (
                   <Link
                     key={w.key}
-                    href={w.key === "30" ? "/admin/colleges" : `/admin/colleges?views=${w.key}`}
+                    href={w.key === "30" ? "/admin/data/colleges" : `/admin/data/colleges?views=${w.key}`}
                     aria-current={w === viewWindow ? "true" : undefined}
                     className={`inline-flex h-7 items-center rounded-full border px-2.5 text-xs ${w === viewWindow ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                   >
@@ -103,7 +103,7 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/c
                   label: c.name,
                   sub: `${c.people} signed-in ${c.people === 1 ? "person" : "people"} · ${c.signedOut} signed-out ${c.signedOut === 1 ? "view" : "views"}`,
                   value: c.views,
-                  href: `/admin/colleges/${c.unitId}#views`,
+                  href: `/admin/data/colleges/${c.unitId}#views`,
                 }))}
               />
             )}
@@ -112,7 +112,7 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/c
         {!q ? (
           <Empty>
             Search a college by name or IPEDS unit id, or a high school by name or id. Every college&apos;s data health is on{" "}
-            <Link href="/admin/health" className="font-semibold text-primary underline-offset-4 hover:underline">
+            <Link href="/admin/data/health" className="font-semibold text-primary underline-offset-4 hover:underline">
               Health
             </Link>
             .
@@ -129,7 +129,7 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/c
                 <ul className="divide-y rounded-2xl border bg-card">
                   {colleges.map((c) => (
                     <li key={c.id}>
-                      <Link href={`/admin/colleges/${c.id}`} className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3.5 hover:bg-muted/50">
+                      <Link href={`/admin/data/colleges/${c.id}`} className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3.5 hover:bg-muted/50">
                         <span className="font-semibold break-words">{c.name}</span>
                         <span className="text-xs text-muted-foreground">
                           {c.city}, {c.state} · {c.acceptance === null ? "no admit rate" : `${pctSmart(c.acceptance)} admitted`} · {c.id}
@@ -152,7 +152,7 @@ export default async function CollegesPage({ searchParams }: PageProps<"/admin/c
                 <ul className="divide-y rounded-2xl border bg-card">
                   {highSchools.map((h) => (
                     <li key={h.id}>
-                      <Link href={`/admin/high-schools/${h.id}`} className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3.5 hover:bg-muted/50">
+                      <Link href={`/admin/data/high-schools/${h.id}`} className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3.5 hover:bg-muted/50">
                         <span className="font-semibold break-words">{h.name}</span>
                         <span className="text-xs text-muted-foreground">
                           {[h.city, h.state].filter(Boolean).join(", ")} · {h.kind} · grades {h.grades}

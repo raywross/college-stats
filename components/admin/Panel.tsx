@@ -1,13 +1,19 @@
 import type { ReactNode } from "react";
+import { HelpTip } from "@/components/admin/HelpTip";
+import type { HelpKey } from "@/lib/admin/help";
 import { cn } from "@/lib/utils";
 
-/** A titled card on a console page. */
-export function Panel({ title, id, aside, children, className }: { title: string; id?: string; aside?: ReactNode; children: ReactNode; className?: string }) {
+/**
+ * A titled card on a console page. `help` puts the console's (i) icon after the title (components/admin/HelpTip.tsx);
+ * every Panel under app/admin passes one (tests/admin-console.test.mts).
+ */
+export function Panel({ title, id, aside, children, className, help }: { title: string; id?: string; aside?: ReactNode; children: ReactNode; className?: string; help?: HelpKey }) {
   return (
     <section id={id} className={cn("scroll-mt-24 rounded-2xl border bg-card p-4 sm:p-5", className)} aria-labelledby={id ? `${id}-title` : undefined}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id={id ? `${id}-title` : undefined} className="font-display text-lg font-bold tracking-tight">
+        <h2 id={id ? `${id}-title` : undefined} className="inline-flex items-center gap-1.5 font-display text-lg font-bold tracking-tight">
           {title}
+          {help && <HelpTip help={help} />}
         </h2>
         {aside}
       </div>
@@ -39,13 +45,14 @@ export function Empty({ children }: { children: ReactNode }) {
   return <p className="text-sm text-muted-foreground">{children}</p>;
 }
 
-/** A page's title row. */
-export function PageHeader({ title, subtitle, chips, back }: { title: string; subtitle?: ReactNode; chips?: ReactNode; back?: ReactNode }) {
+/** A page's title row; `help` puts the (i) icon after the title, as on Panel. */
+export function PageHeader({ title, subtitle, chips, back, help }: { title: string; subtitle?: ReactNode; chips?: ReactNode; back?: ReactNode; help?: HelpKey }) {
   return (
     <header className="mb-5 space-y-1">
       {back && <div className="text-sm">{back}</div>}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <h1 className="font-display text-2xl font-extrabold tracking-tight break-words sm:text-3xl">{title}</h1>
+        {help && <HelpTip help={help} />}
         {chips}
       </div>
       {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}

@@ -11,7 +11,7 @@ import { statusLabel } from "@/lib/admin/change-set-view";
 export const metadata: Metadata = { title: "Change sets", robots: { index: false, follow: false } };
 
 /**
- * `/admin/data/change-sets` (specs/data-platform/change-sets.md "The console", Change sets row): every pipeline run,
+ * `/admin/data/changes` (specs/data-platform/change-sets.md "The console", Change sets row): every pipeline run,
  * import, edit and revert as a change set, newest first, with a status filter. Each links to its own page, where it
  * can be held, published anyway, or reverted.
  */
@@ -24,7 +24,7 @@ export default async function ChangeSetsPage({ searchParams }: { searchParams: P
   const chip = (s: string | null, label: string) => (
     <Link
       key={label}
-      href={s ? `/admin/data/change-sets?status=${s}` : "/admin/data/change-sets"}
+      href={s ? `/admin/data/changes?status=${s}` : "/admin/data/changes"}
       aria-current={status === s ? "page" : undefined}
       className={`inline-flex min-h-9 items-center rounded-full border px-3 text-sm ${status === s ? "border-primary bg-primary/10 font-semibold" : "border-border hover:bg-muted"}`}
     >

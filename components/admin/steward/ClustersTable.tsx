@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Empty } from "@/components/admin/Panel";
 import { IssueStatusChip, KindChip } from "@/components/admin/steward/Bits";
-import { leaveIssueAction } from "@/app/admin/data/steward-actions";
+import { leaveIssueAction } from "@/app/admin/steward/actions";
 import { linkCls, proposalHref, reviewHref } from "@/lib/admin/steward-view";
 import type { Cluster, IssueDoc, IssueKind } from "@/lib/steward/types";
 

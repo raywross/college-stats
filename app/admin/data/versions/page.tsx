@@ -9,7 +9,7 @@ import { currentSnapshotId, loadSnapshots } from "@/lib/admin/data-reads";
 export const metadata: Metadata = { title: "Snapshots", robots: { index: false, follow: false } };
 
 /**
- * `/admin/data/snapshots` (specs/data-platform/change-sets.md "The console", Snapshots row): every snapshot,
+ * `/admin/data/versions` (specs/data-platform/change-sets.md "The console", Snapshots row): every snapshot,
  * newest first, with the current one marked, **Point back here**, and **Download manifest**.
  */
 export default async function SnapshotsPage() {

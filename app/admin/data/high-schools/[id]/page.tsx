@@ -12,12 +12,12 @@ import { gradeSpan, isHighSchoolId } from "@/lib/high-school-core";
 export const metadata: Metadata = { title: "High school", robots: { index: false, follow: false } };
 
 /**
- * /admin/high-schools/[id] (specs/product/admin.md "A high school"): the school, then its pooled course counts in full
+ * /admin/data/high-schools/[id] (specs/product/admin.md "A high school"): the school, then its pooled course counts in full
  * (course, students) with the three-student line drawn, so the owner can see why a course is or isn't suggested; the
  * offering the course plan reads; the school's profile extraction status; and its graduation rate with its year. The
  * counts name no student. Server-rendered behind requireAdmin().
  */
-export default async function HighSchoolPage({ params }: PageProps<"/admin/high-schools/[id]">) {
+export default async function HighSchoolPage({ params }: PageProps<"/admin/data/high-schools/[id]">) {
   await connection();
   await requireAdmin();
   const { id } = await params;
@@ -32,7 +32,7 @@ export default async function HighSchoolPage({ params }: PageProps<"/admin/high-
     <>
       <PageHeader
         back={
-          <Link href="/admin/colleges" className="text-muted-foreground underline-offset-4 hover:underline">
+          <Link href="/admin/data/colleges" className="text-muted-foreground underline-offset-4 hover:underline">
             Colleges and high schools
           </Link>
         }

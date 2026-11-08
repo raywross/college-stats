@@ -67,11 +67,11 @@ export function TodoStatusChip({ status }: { status: TodoStatus }) {
   return <StatusChip label={TODO_STATUS_LABEL[status]} tone={TODO_TONE[status]} />;
 }
 
-/** The Data section's back link. */
-export function DataBack() {
+/** The Steward door's back link: its Inbox. */
+export function StewardBack() {
   return (
-    <Link href="/admin/data" className={linkCls}>
-      Data
+    <Link href="/admin" className={linkCls}>
+      Steward
     </Link>
   );
 }

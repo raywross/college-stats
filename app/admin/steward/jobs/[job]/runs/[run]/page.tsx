@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Run", robots: { index: false, follow
 const linkCls = "underline decoration-dotted underline-offset-2";
 
 /**
- * `/admin/jobs/[job]/runs/[run]` (specs/product/admin-jobs.md "A run"): one run in full. A Vercel job's run is its
+ * `/admin/steward/jobs/[job]/runs/[run]` (specs/product/admin-jobs.md "A run"): one run in full. A Vercel job's run is its
  * `job_runs` row: outcome, trigger, timing, and the counts it answered with. A GitHub run is read from GitHub: its
  * jobs and steps with each one's outcome and time, the change sets it wrote (linked to the Data console), and the
  * link to GitHub's own log. A run id that isn't this job's is a 404.
@@ -152,7 +152,7 @@ function GithubRunView({ job, run, jobs, changeSets }: { job: JobDef; run: Workf
             <ul className="space-y-1 text-sm">
               {changeSets.map((c) => (
                 <li key={c.id}>
-                  <Link href={`/admin/data/change-sets/${c.id}`} className={linkCls}>
+                  <Link href={`/admin/data/changes/${c.id}`} className={linkCls}>
                     Change set #{c.id}
                   </Link>{" "}
                   <span className="text-muted-foreground">

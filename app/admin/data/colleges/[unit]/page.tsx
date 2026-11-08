@@ -29,15 +29,15 @@ import type { School } from "@/lib/types";
 export const metadata: Metadata = { title: "College", robots: { index: false, follow: false } };
 
 /**
- * /admin/colleges/[unit] (specs/product/admin.md "A college"): the public header (name, tier, admit rate as cited),
+ * /admin/data/colleges/[unit] (specs/product/admin.md "A college"): the public header (name, tier, admit rate as cited),
  * then what the site computes but never shows: the selectivity breakdown (the one place the weights are visible), the
  * GPA the standing model reads, and every hidden registry field with its lineage, all below the facts the estimate reads with
  * their sources and dates (specs/product/admin-health-views.md); then the college's data health card
- * with its open failures and review-queue items, a Rerun link that opens Operations with this college filled in, and
- * Review (the college's pending rows, /admin/colleges/[unit]/review), also beside Edit in the header.
+ * with its open failures and review-queue items, a Rerun link that opens the college-reported job's Run now with this college filled in, and
+ * Review (the college's pending rows, /admin/data/colleges/[unit]/review), also beside Edit in the header.
  * Server-rendered behind requireAdmin(); nothing here reaches a client bundle.
  */
-export default async function CollegePage({ params, searchParams }: PageProps<"/admin/colleges/[unit]">) {
+export default async function CollegePage({ params, searchParams }: PageProps<"/admin/data/colleges/[unit]">) {
   await connection();
   await requireAdmin();
   const { unit } = await params;
@@ -47,7 +47,7 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
   const { school, selectivity, gpa, hidden, health, healthGenerated } = college;
   const rate = school.admissions.acceptance_rate;
   const tier = tierText(school);
-  const opsHref = `/admin/operations?unit=${unit}`;
+  const opsHref = `/admin/steward/jobs/college-reported?unit=${unit}#run-now`;
   const looking = await collegeViewers(unit);
   const history = (await historyInstalled()) ? await collegeHistory(unit) : null;
   const every = (await searchParams).every === "1";
@@ -60,7 +60,7 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
     <>
       <PageHeader
         back={
-          <Link href="/admin/colleges" className="text-muted-foreground underline-offset-4 hover:underline">
+          <Link href="/admin/data/colleges" className="text-muted-foreground underline-offset-4 hover:underline">
             Colleges
           </Link>
         }
@@ -72,10 +72,10 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
             <Link href={`/schools/${unit}`} className="underline-offset-4 hover:underline">
               Public profile
             </Link>{" "}
-            <Link href={`/admin/colleges/${unit}/edit`} className="ml-1 inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+            <Link href={`/admin/data/colleges/${unit}/edit`} className="ml-1 inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
               Edit
             </Link>
-            <Link href={`/admin/colleges/${unit}/review`} className="ml-1 inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+            <Link href={`/admin/data/colleges/${unit}/review`} className="ml-1 inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
               Review
             </Link>
           </>
@@ -92,7 +92,7 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
           <HiddenBlock rows={hidden} school={school} />
         </div>
         <aside className="min-w-0 space-y-5">
-          <HealthBlock health={health} generated={healthGenerated} opsHref={opsHref} reviewHref={`/admin/colleges/${unit}/review`} />
+          <HealthBlock health={health} generated={healthGenerated} opsHref={opsHref} reviewHref={`/admin/data/colleges/${unit}/review`} />
           <ViewersBlock unit={unit} looking={looking} />
         </aside>
       </div>
@@ -312,7 +312,7 @@ function HealthBlock({ health, generated, opsHref, reviewHref }: { health: Colle
       )}
       <div className="mt-4 flex flex-wrap gap-2">
         <Link href={opsHref} className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
-          Rerun in Operations
+          Run now for this college
         </Link>
         <Link href={reviewHref} className="inline-flex h-10 items-center rounded-lg border px-4 text-sm font-semibold hover:bg-muted">
           Review
@@ -328,7 +328,7 @@ function HealthBlock({ health, generated, opsHref, reviewHref }: { health: Colle
 
 /** Where a viewer row drills in: the person's views of this college, or the signed-out visits. */
 function viewerHref(unit: string, v: ViewerRow): string {
-  return v.userId ? `/admin/people/${v.userId}/views?unit=${unit}` : `/admin/colleges/${unit}/views?signed_out=1`;
+  return v.userId ? `/admin/people/${v.userId}/views?unit=${unit}` : `/admin/data/colleges/${unit}/views?signed_out=1`;
 }
 
 function ViewersBlock({ unit, looking }: { unit: string; looking: Awaited<ReturnType<typeof collegeViewers>> }) {
@@ -338,7 +338,7 @@ function ViewersBlock({ unit, looking }: { unit: string; looking: Awaited<Return
       id="views"
       aside={
         looking.total > 0 ? (
-          <Link href={`/admin/colleges/${unit}/views`} className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+          <Link href={`/admin/data/colleges/${unit}/views`} className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
             All
           </Link>
         ) : undefined
@@ -379,7 +379,7 @@ function HistoryBlock({ points, every, unit }: { points: SelectivityPoint[] | nu
       title="Selectivity history"
       id="selectivity-history"
       aside={
-        <Link href="/admin/selectivity" className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+        <Link href="/admin/data/selectivity" className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
           Every college
         </Link>
       }
@@ -393,7 +393,7 @@ function HistoryBlock({ points, every, unit }: { points: SelectivityPoint[] | nu
           points={points}
           repoUrl={`https://github.com/${githubRepo()}`}
           every={every}
-          toggleHref={`/admin/colleges/${unit}${every ? "" : "?every=1"}#selectivity-history`}
+          toggleHref={`/admin/data/colleges/${unit}${every ? "" : "?every=1"}#selectivity-history`}
         />
       )}
     </Panel>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { PageHeader, Panel } from "@/components/admin/Panel";
-import { DataBack } from "@/components/admin/steward/Bits";
+import { StewardBack } from "@/components/admin/steward/Bits";
 import { TodoTable } from "@/components/admin/steward/TodoTable";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminSupabase } from "@/lib/admin/people";
@@ -19,7 +19,7 @@ const KINDS = Object.keys(TODO_KIND_LABEL) as TodoDoc["kind"][];
 const PER_PAGE = 100;
 
 /**
- * `/admin/data/todo` (specs/product/data-steward.md "Documents a person has to fetch"): documents a machine couldn't
+ * `/admin/steward/todo` (specs/product/data-steward.md "Documents a person has to fetch"): documents a machine couldn't
  * get, from the Steward's rows and the engines' own records (`reported.failures`, the queue's unreachable and
  * not-a-url items, `directories.blocked`), highest reach first, each with the page to open and why. Found (with the
  * address), No document published, Done. `?kind=` narrows; `?closed=1` shows the closed rows too; `?page=` pages.
@@ -43,12 +43,12 @@ export default async function TodoPage({ searchParams }: { searchParams: Promise
     if (change.closed ?? closed) q.set("closed", "1");
     if (change.page && change.page > 1) q.set("page", String(change.page));
     const s = q.toString();
-    return s ? `/admin/data/todo?${s}` : "/admin/data/todo";
+    return s ? `/admin/steward/todo?${s}` : "/admin/steward/todo";
   };
 
   return (
     <>
-      <PageHeader title="To do" back={<DataBack />} subtitle="Documents a machine couldn't fetch. Open the page in your own browser and say what you found." />
+      <PageHeader title="To do" back={<StewardBack />} subtitle="Documents a machine couldn't fetch. Open the page in your own browser and say what you found." />
       <Panel title={kind ? TODO_KIND_LABEL[kind] : "Every kind"} aside={<span className="text-sm text-muted-foreground">{rows.length.toLocaleString("en-US")} rows</span>}>
         <nav aria-label="Kinds" className="mb-3 flex flex-wrap gap-2 text-sm">
           {[null, ...KINDS].map((k) => (

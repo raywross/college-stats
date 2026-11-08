@@ -32,7 +32,7 @@ export function ChangeSetChips({ row }: { row: ChangeSetRow }) {
 }
 
 /**
- * `/admin/data/change-sets` (specs/data-platform/change-sets.md "The console", Change sets row): newest first, each
+ * `/admin/data/changes` (specs/data-platform/change-sets.md "The console", Change sets row): newest first, each
  * with its status, source, counts, cost, and run link. Wide: it scrolls inside its own box on a phone.
  */
 export function ChangeSetsTable({ rows, repo }: { rows: ChangeSetRow[]; repo: string }) {
@@ -69,7 +69,7 @@ export function ChangeSetsTable({ rows, repo }: { rows: ChangeSetRow[]; repo: st
             return (
               <tr key={row.id} className="border-t border-border align-top">
                 <th scope="row" className="px-3 py-2 text-left font-medium">
-                  <Link href={`/admin/data/change-sets/${row.id}`} className={linkCls}>
+                  <Link href={`/admin/data/changes/${row.id}`} className={linkCls}>
                     #{row.id}
                   </Link>
                   <div className="text-xs font-normal text-muted-foreground">{fmtDateTime(row.created_at)}</div>
@@ -172,7 +172,7 @@ export function DocumentsTouched({
           <ul className="flex flex-wrap gap-1.5 border-t border-border p-3 text-xs">
             {g.documents.map((d) => {
               const on = selected?.collection === g.collection && selected.key === d.key;
-              const href = `/admin/data/change-sets/${id}?c=${encodeURIComponent(g.collection)}&k=${encodeURIComponent(d.key)}#document`;
+              const href = `/admin/data/changes/${id}?c=${encodeURIComponent(g.collection)}&k=${encodeURIComponent(d.key)}#document`;
               return (
                 <li key={d.key}>
                   <Link href={href} aria-current={on ? "true" : undefined} className={`inline-flex min-h-8 items-center rounded-full border px-2.5 font-mono ${on ? "border-primary bg-primary/10" : "border-border hover:bg-muted"}`}>

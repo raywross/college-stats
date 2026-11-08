@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { NextConfig } from "next";
+import { nextAdminRedirects } from "./lib/admin/redirects.ts";
 
 /**
  * PostHog behind a same-origin path (specs/product/telemetry.md "Privacy"): the browser sends events to /ingest/*,
@@ -85,6 +86,9 @@ const nextConfig: NextConfig = {
       // the page's own redirect (app/advisor/essays/page.tsx) stays for a `?college=` link, which needs the card anchor
       // the config can't write. The query string passes through (`?for=`).
       { source: "/advisor/essays", missing: [{ type: "query", key: "college" }], destination: "/advisor?tab=essays", permanent: true },
+      // The admin console's four doors (specs/product/admin-redesign.md "Model and files"): every screen that moved
+      // keeps its old address, not permanently (lib/admin/redirects.ts).
+      ...nextAdminRedirects(),
     ];
   },
   async headers() {

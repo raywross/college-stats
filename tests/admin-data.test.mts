@@ -457,7 +457,7 @@ test("snapshotIdFromForm: a positive integer only", () => {
 /* ------------------------------------------------------------------ */
 
 test("static: both pages call requireAdmin() before reading anything, and are noindex", () => {
-  for (const file of ["app/admin/data/page.tsx", "app/admin/data/snapshots/page.tsx"]) {
+  for (const file of ["app/admin/data/page.tsx", "app/admin/data/versions/page.tsx"]) {
     const src = read(file);
     const body = src.slice(src.indexOf("export default async function"));
     assert.match(body, /\{\n\s+await connection\(\);\n\s+await requireAdmin\(\);/, `${file} calls requireAdmin() first`);
@@ -479,21 +479,28 @@ test("guard: an action that skips requireAdmin() is caught by the check above", 
   assert.ok(bodies.some(([, , firstLine]) => !/await requireAdmin\(\)/.test(firstLine)), "the guard would have failed to catch this");
 });
 
-test("the rail has a Data entry, under /admin/data, outside the swipeable ADMIN_SECTIONS row (like Settings and Who is an admin)", () => {
-  const rail = read("components/admin/AdminRail.tsx");
-  assert.match(rail, /href="\/admin\/data"/);
-  assert.match(rail, /pathname\.startsWith\("\/admin\/data"\)/);
-  assert.match(rail, />\s*Data\s*</);
+test("Data is one of the four doors, its landing at /admin/data, with Changes and Published versions among its screens", async () => {
+  const consoleLib = await import("../lib/admin/console.ts");
+  const data = consoleLib.ADMIN_DOORS.find((d) => d.key === "data")!;
+  assert.equal(data.href, "/admin/data");
+  assert.equal(data.label, "Data");
+  assert.deepEqual(
+    data.screens.filter((s) => s.key === "changes" || s.key === "versions").map((s) => [s.label, s.href]),
+    [
+      ["Changes", "/admin/data/changes"],
+      ["Published versions", "/admin/data/versions"],
+    ],
+  );
+  assert.equal(consoleLib.activeDoor("/admin/data/changes/12"), "data");
 });
 
 test("every file this unit touches is under the paths it owns", () => {
   const owned = [
     "app/admin/data/page.tsx",
     "app/admin/data/actions.ts",
-    "app/admin/data/snapshots/page.tsx",
-    "app/admin/data/change-sets/page.tsx",
-    "app/admin/data/change-sets/[id]/page.tsx",
-    "app/admin/data/holds/page.tsx",
+    "app/admin/data/versions/page.tsx",
+    "app/admin/data/changes/page.tsx",
+    "app/admin/data/changes/[id]/page.tsx",
     "lib/admin/data-reads.ts",
     "lib/admin/data-actions.ts",
     "lib/admin/change-set-view.ts",
@@ -589,7 +596,7 @@ test("static: the Overview page's Publish now is an AdminForm calling publishNow
 });
 
 test("the Snapshots page calls requireAdmin() then the snapshot reads, and hands SnapshotsTable the current id; a non-admin gets a 404", async () => {
-  const page = (await loadTsx("app/admin/data/snapshots/page.tsx")).default as Page;
+  const page = (await loadTsx("app/admin/data/versions/page.tsx")).default as Page;
   reset({ admin: true, snapshots: [snapshot(1) as unknown as SnapshotRow, snapshot(2) as unknown as SnapshotRow], currentId: 2 });
   const markup = html(await page());
   assert.deepEqual(world.calls, ["requireAdmin", "adminSupabase", "loadSnapshots"]);
@@ -938,8 +945,8 @@ test("no email (or any form field) reaches a dispatch input from Publish anyway 
 type QueryPage = (props: { params?: Promise<Record<string, string>>; searchParams: Promise<Record<string, string | undefined>> }) => Promise<import("react").ReactElement>;
 const stubsIn = (markup: string) => [...markup.matchAll(/data-stub="(\w+)" data-props="([^"]*)"/g)].map((m) => ({ name: m[1], props: JSON.parse(m[2].replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&#x27;/g, "'")) as Record<string, unknown> }));
 
-test("static: the three new pages call requireAdmin() before reading anything, and are noindex", () => {
-  for (const file of ["app/admin/data/change-sets/page.tsx", "app/admin/data/change-sets/[id]/page.tsx", "app/admin/data/holds/page.tsx"]) {
+test("static: the two pages call requireAdmin() before reading anything, and are noindex", () => {
+  for (const file of ["app/admin/data/changes/page.tsx", "app/admin/data/changes/[id]/page.tsx"]) {
     const src = read(file);
     const body = src.slice(src.indexOf("export default async function"));
     assert.match(body, /\{\n\s+await connection\(\);\n\s+await requireAdmin\(\);/, `${file} calls requireAdmin() first`);
@@ -948,12 +955,12 @@ test("static: the three new pages call requireAdmin() before reading anything, a
 });
 
 test("the Change sets page lists the store's change sets for an admin, filters by status, and is a 404 for anyone else", async () => {
-  const page = (await loadTsx("app/admin/data/change-sets/page.tsx")).default as QueryPage;
+  const page = (await loadTsx("app/admin/data/changes/page.tsx")).default as QueryPage;
   reset({ admin: true, supabase: () => fakeSupabase({ data_change_sets: [changeSet(1), changeSet(2, { status: "held", held_reason: "breaker" })] }) });
   let markup = html(await page({ searchParams: Promise.resolve({}) }));
   assert.deepEqual(world.calls, ["requireAdmin", "adminSupabase"]);
   assert.match(markup, /data-stub="ChangeSetsTable"/);
-  assert.match(markup, /href="\/admin\/data\/change-sets\?status=held"/);
+  assert.match(markup, /href="\/admin\/data\/changes\?status=held"/);
   reset({ admin: true, supabase: () => fakeSupabase({ data_change_sets: [changeSet(1), changeSet(2, { status: "held" })] }) });
   markup = html(await page({ searchParams: Promise.resolve({ status: "held" }) }));
   assert.match(markup, /aria-current="page"[^>]*>Held</);
@@ -970,7 +977,7 @@ test("ChangeSetsTable: each set links its page, with status chips, counts, cost 
       repo: "raywross/college-stats",
     }),
   );
-  assert.match(markup, /href="\/admin\/data\/change-sets\/2"/);
+  assert.match(markup, /href="\/admin\/data\/changes\/2"/);
   assert.match(markup, /the breaker tripped/);
   assert.match(markup, /12 documents: 12 changed/);
   assert.match(markup, /\$3\.50/);
@@ -980,7 +987,7 @@ test("ChangeSetsTable: each set links its page, with status chips, counts, cost 
 });
 
 test("the change set page: summary, documents touched, one document's diff, and the actions its status allows; 404 for a missing set or a non-admin", async () => {
-  const page = (await loadTsx("app/admin/data/change-sets/[id]/page.tsx")).default as QueryPage;
+  const page = (await loadTsx("app/admin/data/changes/[id]/page.tsx")).default as QueryPage;
   const tables = () =>
     fakeSupabase({
       data_change_sets: [changeSet(1, { status: "applied" }), changeSet(2, { status: "held", held_reason: "more than half held", summary: { documents: 1, changed: 1, collections: ["reported.entries"] }, closed_at: "2026-10-31T00:00:00Z" })],
@@ -1020,53 +1027,12 @@ test("ChangeSetActions offers Publish anyway and Revert on a held set, Hold and 
   assert.match(note, /data-stub="CopyButton"/, "the note text, to copy");
 });
 
-test("the Holds page shows the open review items (most-listed first) and the held essay records for an admin; a 404 for anyone else", async () => {
-  reviewQueue.resetQueueCache();
-  const page = (await loadTsx("app/admin/data/holds/page.tsx")).default as QueryPage;
-  const rejected = { ...c1Item("C.901", 0.3, { unit_id: "999003", name: "Third College" }), resolved: "rejected" as const };
-  reset({
-    admin: true,
-    lists: new Map([["999002", 4]]),
-    supabase: () =>
-      fakeSupabase({
-        data_documents: [
-          ...[...TRIO, HELD, rejected].map((i) => doc("reported.review_queue", reviewKey(i), i)),
-          doc("essays.held", "100654", { unit_id: "100654", name: "Alabama A & M University", held: "2026-10-29", problems: ["no prompts"], record: {} }),
-        ],
-        data_change_sets: [changeSet(5, { status: "held" })],
-      }),
-  });
-  const markup = html(await page({ searchParams: Promise.resolve({}) }));
-  assert.equal(world.calls[0], "requireAdmin");
-  assert.ok(world.calls.includes("listsByUnit"));
-  assert.match(markup, /showing 1 to 4</, "four open items: the rejected one isn't held any more");
-  assert.match(markup, /1 change set is held as a whole/);
-  assert.match(markup, /href="\/admin\/data\/change-sets\?status=held"/);
-  assert.ok(stubsIn(markup).some((s) => s.name === "HeldItemsTable"));
-  assert.ok(stubsIn(markup).some((s) => s.name === "HeldEssaysList"));
-  assert.match(markup, /Most-listed college first/);
-  reset({ admin: false });
-  await assert.rejects(page({ searchParams: Promise.resolve({}) }), is404);
-  assert.deepEqual(world.calls, ["requireAdmin"]);
-  reviewQueue.resetQueueCache();
-});
-
-test("HeldItemsTable: Accept the value where the mapping allows it (naming the fields), its refusal otherwise, and Reject and Re-run discovery on every row", async () => {
+test("HeldEssaysList (Holds folded into the Essays page): each held college links its hand-read form, with its problems and its page", async () => {
   const mod = (await loadTsx("components/admin/Holds.tsx")) as unknown as {
-    HeldItemsTable: (p: { rows: unknown[]; lists: Map<string, number> | null }) => import("react").ReactElement;
     HeldEssaysList: (p: { records: unknown[]; lists: Map<string, number> | null }) => import("react").ReactElement;
   };
-  const rows = reviewQueue.byLists(reviewQueue.queueRows([...TRIO, HELD]), (r) => r.item.unit_id, (r) => r.item.name, new Map([["999002", 4]]));
-  const markup = html(mod.HeldItemsTable({ rows, lists: new Map([["999002", 4]]) }));
-  const forms = stubsIn(markup).filter((s) => s.name === "AdminForm");
-  assert.equal(forms.filter((s) => s.props.trigger === "Accept the value").length, 3, "the three C1 totals");
-  assert.equal(forms.filter((s) => s.props.trigger === "Reject").length, 4);
-  assert.equal(forms.filter((s) => s.props.trigger === "Re-run discovery").length, 4);
-  assert.match(markup, /Can&#x27;t accept: H\.210 is published from the college&#x27;s CDS record/);
-  assert.match(markup, /999002 · on 4 lists/);
-  assert.ok(markup.indexOf("Other College") < markup.indexOf("Example College"), "most-listed college first");
   const essays = html(mod.HeldEssaysList({ records: [{ unit_id: "100654", name: "Alabama A & M University", held: "2026-10-29", problems: ["no prompts"], record: { url: "https://www.aamu.edu/admissions" } }], lists: null }));
-  assert.match(essays, /href="\/admin\/essays\/100654"/);
+  assert.match(essays, /href="\/admin\/data\/essays\/100654"/);
   assert.match(essays, /no prompts/);
   assert.match(essays, /aamu\.edu/);
 });

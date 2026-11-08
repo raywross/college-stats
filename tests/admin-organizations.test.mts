@@ -217,14 +217,15 @@ test("studentOrganizationGrants: a student's live grants, organization name and 
 /* The rail                                                            */
 /* ------------------------------------------------------------------ */
 
-test("the rail lists Organizations right after Households, linking to /admin/organizations", () => {
-  const keys = consoleLib.ADMIN_SECTIONS.map((s) => s.key);
+test("the People door lists Organizations right after Households, linking to /admin/organizations", () => {
+  const people = consoleLib.ADMIN_DOORS.find((d) => d.key === "people")!;
+  const keys = people.screens.map((s) => s.key);
   const hIdx = keys.indexOf("households");
   assert.equal(keys[hIdx + 1], "organizations");
-  const section = consoleLib.ADMIN_SECTIONS.find((s) => s.key === "organizations")!;
-  assert.equal(section.href, "/admin/organizations");
-  assert.equal(consoleLib.activeSection("/admin/organizations"), "organizations");
-  assert.equal(consoleLib.activeSection(`/admin/organizations/${ORG_A}`), "organizations");
+  const screen = people.screens.find((s) => s.key === "organizations")!;
+  assert.equal(screen.href, "/admin/organizations");
+  assert.equal(consoleLib.activeScreen("/admin/organizations")?.key, "organizations");
+  assert.equal(consoleLib.activeScreen(`/admin/organizations/${ORG_A}`)?.key, "organizations");
 });
 
 /* ------------------------------------------------------------------ */

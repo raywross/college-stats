@@ -180,9 +180,9 @@ test("healthQuery and healthHref round-trip the filters and reset the page when 
   const f = filtersOf("status=stale&group=reported&state=OH&sort=queue&page=3");
   assert.equal(view.healthQuery(f), "status=stale&group=reported&state=OH&sort=queue&page=3");
   assert.deepEqual(view.parseHealthFilters(new URLSearchParams(view.healthQuery(f))), f);
-  assert.equal(view.healthHref("/admin/health", f, { status: "failing" }), "/admin/health?status=failing&group=reported&state=OH&sort=queue");
-  assert.equal(view.healthHref("/admin/health", f, { page: 2 }), "/admin/health?status=stale&group=reported&state=OH&sort=queue&page=2");
-  assert.equal(view.healthHref("/admin/health", filtersOf(""), {}), "/admin/health");
+  assert.equal(view.healthHref("/admin/data/health", f, { status: "failing" }), "/admin/data/health?status=failing&group=reported&state=OH&sort=queue");
+  assert.equal(view.healthHref("/admin/data/health", f, { page: 2 }), "/admin/data/health?status=stale&group=reported&state=OH&sort=queue&page=2");
+  assert.equal(view.healthHref("/admin/data/health", filtersOf(""), {}), "/admin/data/health");
   assert.equal(view.isFiltered(filtersOf("sort=name&page=2")), false);
   assert.equal(view.isFiltered(filtersOf("family=1")), true);
 });
@@ -262,7 +262,7 @@ test("buildHealthRows joins the dataset's facts; a unit the dataset lacks keeps 
 /* Health: the CSV route's admin guard                                 */
 /* ------------------------------------------------------------------ */
 
-const routePath = join(ROOT, "app/admin/health/csv/route.ts");
+const routePath = join(ROOT, "app/admin/data/health/csv/route.ts");
 const request = (query = "") => ({ nextUrl: new URL(`https://example.test/admin/health/csv${query}`) }) as never;
 
 test("the CSV route is a 404 for a signed-out visitor or a non-admin, before anything is read", async () => {
@@ -673,7 +673,7 @@ test("readDispatchForm reads each shown input: a ticked box is true, an unticked
 /* Server Actions check the admin first                                */
 /* ------------------------------------------------------------------ */
 
-const actionsPath = join(ROOT, "app/admin/operations/actions.ts");
+const actionsPath = join(ROOT, "app/admin/steward/jobs/actions.ts");
 const formData = (fields: Record<string, string>) => {
   const f = new FormData();
   for (const [k, v] of Object.entries(fields)) f.set(k, v);
@@ -717,18 +717,18 @@ test("the Server Action guard test fails when an action skips requireAdmin()", a
 });
 
 test("static: each exported action starts with requireAdmin(); the pages and route call it before reading anything", () => {
-  const actions = read("app/admin/operations/actions.ts");
+  const actions = read("app/admin/steward/jobs/actions.ts");
   assert.ok(actions.startsWith('"use server";'));
   const bodies = [...actions.matchAll(/export async function (\w+)\([^)]*\)[^{]*\{\n(.*)\n/g)];
   assert.equal(bodies.length, Object.keys(ACTION_FORMS).length);
   for (const [, name, firstLine] of bodies) assert.match(firstLine, /await requireAdmin\(\)/, `${name} starts with requireAdmin()`);
-  for (const file of ["app/admin/health/page.tsx", "app/admin/health/files/page.tsx", "app/admin/operations/page.tsx"]) {
-    const src = read(file);
-    const body = src.slice(src.indexOf("export default async function"));
-    assert.match(body, /\{\n\s+await requireAdmin\(\);/, `${file} calls requireAdmin() first`);
-    assert.match(src, /robots: \{ index: false \}/, `${file} is noindex`);
-  }
-  for (const file of ["app/admin/health/csv/route.ts", "app/admin/health/inputs-csv/route.ts"]) {
+  const health = read("app/admin/data/health/page.tsx");
+  assert.match(health.slice(health.indexOf("export default async function")), /\{\n\s+await requireAdmin\(\);/, "the Health page calls requireAdmin() first");
+  assert.match(health, /robots: \{ index: false, follow: false \}/, "the Health page is noindex");
+  // The Sources tab is a component the page renders (specs/product/admin-redesign.md "Data"); it checks too.
+  const sources = read("app/admin/data/health/sources.tsx");
+  assert.match(sources.slice(sources.indexOf("export async function SourcesView")), /\{\n\s+await requireAdmin\(\);/, "the Sources tab calls requireAdmin() first");
+  for (const file of ["app/admin/data/health/csv/route.ts", "app/admin/data/health/inputs-csv/route.ts"]) {
     const route = read(file);
     assert.match(route.slice(route.indexOf("export async function GET")), /\{\n\s+await requireAdmin\(\);/, `${file} calls requireAdmin() first`);
   }
@@ -786,20 +786,6 @@ const loadPage = async (rel: string) => ((await loadTsx(rel)).default as Page);
 const html = (element: import("react").ReactElement) => renderToStaticMarkup(element);
 const stubsIn = (markup: string) => [...markup.matchAll(/data-stub="(\w+)" data-props="([^"]*)"/g)].map((m) => ({ name: m[1], props: JSON.parse(m[2].replace(/&quot;/g, '"').replace(/&amp;/g, "&")) as Record<string, unknown> }));
 
-test("Operations without GitHub credentials shows the setup notice and no buttons or forms", async () => {
-  const page = await loadPage("app/admin/operations/page.tsx");
-  reset({ admin: true, operations: async () => ({ configured: null, runs: [], pulls: [], cost: null }) });
-  const markup = html(await page({ searchParams: Promise.resolve({}) }));
-  assert.match(markup, /Operations isn&#x27;t set up yet/);
-  assert.match(markup, /GITHUB_APP_ID/);
-  assert.match(markup, /GITHUB_TOKEN/);
-  assert.equal(stubsIn(markup).length, 0, "no run form, no pull request list, no queue");
-  assert.doesNotMatch(markup, /<button|<form|<input/);
-  assert.equal(world.calls[0], "requireAdmin");
-  reset({ admin: false });
-  await assert.rejects(page({ searchParams: Promise.resolve({}) }), is404, "and a 404 for anyone but an admin");
-});
-
 test("loadOperations makes no GitHub call without credentials", async () => {
   const real = (await import("../lib/admin/ops.ts")) as typeof import("../lib/admin/ops.ts");
   const before = networkCalls;
@@ -807,45 +793,9 @@ test("loadOperations makes no GitHub call without credentials", async () => {
   assert.equal(networkCalls, before);
 });
 
-test("Operations with credentials: a form per dispatchable run, the running one shown instead of its button, ?unit= prefilled", async () => {
-  const page = await loadPage("app/admin/operations/page.tsx");
-  const running = run({ status: "in_progress", runNumber: 51 });
-  reset({
-    admin: true,
-    operations: async () => ({
-      configured: { mode: "app" },
-      runs: [{ run: running, consoleAdmin: null, failedStep: null, pull: null }],
-      pulls: [],
-      cost: { last: { run: "r", finished: null, colleges: 1900, costUsd: 15.56 }, projection: null },
-    }),
-  });
-  const markup = html(await page({ searchParams: Promise.resolve({ unit: "999001" }) }));
-  const stubs = stubsIn(markup);
-  const formCount = stubs.filter((s) => s.name === "RunForm").length;
-  const guarded = DISPATCHABLE_RUNS.filter((r) => r.guards.oneAtATime && r.workflow === "college-reported.yml");
-  const hidden = DISPATCHABLE_RUNS.filter((r) => r.hidden);
-  assert.equal(formCount, DISPATCHABLE_RUNS.length - guarded.length - hidden.length, "the four college-reported runs show the running run instead of a form, and the runs other screens dispatch have none");
-  assert.equal((markup.match(/is already in progress/g) ?? []).length, guarded.length);
-  assert.match(markup, /Run #51 on GitHub/);
-  assert.ok(stubs.filter((s) => s.name === "RunForm").every((s) => s.props.prefillUnit === "999001"), "?unit= prefills the college run");
-  assert.match(markup, /<details open=""[^>]*>[\s\S]*?Re-read one college/, "and opens the college run");
-  assert.match(markup, /href="\/admin\/colleges\/999001\/review"/, "the review queue is a link to the college's Review page");
-});
-
-test("Operations no longer shows the review queue: it links Holds, reads nothing from the store or GitHub for it, and keeps Approvals", async () => {
-  const page = await loadPage("app/admin/operations/page.tsx");
-  reset({ admin: true, operations: async () => ({ configured: { mode: "pat" }, runs: [], pulls: [], cost: null }) });
-  const markup = html(await page({ searchParams: Promise.resolve({}) }));
-  assert.match(markup, /href="\/admin\/data\/holds"/);
-  assert.match(markup, /Approvals/);
-  assert.doesNotMatch(markup, /ReviewQueueTable|OpsActionForm|<form/, "no review actions (or any form outside the run forms) on Operations");
-  assert.doesNotMatch(read("app/admin/operations/actions.ts"), /acceptAction|rejectAction|rediscoverAction/);
-  assert.ok(!existsSync(join(ROOT, "components/admin/ops/ReviewQueueTable.tsx")), "the old GitHub-backed table is gone");
-  assert.doesNotMatch(read("lib/admin/ops.ts"), /review-queue|readQueue/, "Operations doesn't read the queue");
-});
-
-test("the Health page's Files view shows the inputs' date, hides the family filter when the lists can't be read, and links the CSV with the filters", async () => {
-  const page = await loadPage("app/admin/health/files/page.tsx");
+test("the Health page's Sources tab shows the inputs' date, hides the family filter when the lists can't be read, and links the CSV with the filters", async () => {
+  const view = (await loadTsx("app/admin/data/health/sources.tsx")).SourcesView as (p: { params: Record<string, string> }) => Promise<import("react").ReactElement>;
+  const page = (p: { searchParams: Promise<Record<string, string>> }) => p.searchParams.then((params) => view({ params }));
   reset({ admin: true });
   const markup = html(await page({ searchParams: Promise.resolve({ status: "failing", state: "oh" }) }));
   const stubs = stubsIn(markup);
@@ -853,7 +803,7 @@ test("the Health page's Files view shows the inputs' date, hides the family filt
   assert.match(markup, /Health inputs are from [A-Z][a-z]{2} \d{1,2}, \d{4}; measured [A-Z][a-z]{2} \d{1,2}, \d{4}\./);
   const filterForm = stubs.find((s) => s.name === "HealthFilterForm");
   assert.equal(filterForm?.props.familyAvailable, false, "no family lists in this environment, so the filter is hidden");
-  assert.equal(filterForm?.props.csvHref, "/admin/health/csv?status=failing&state=OH");
+  assert.equal(filterForm?.props.csvHref, "/admin/data/health/csv?status=failing&state=OH");
   assert.deepEqual(stubs.map((s) => s.name).filter((n) => n.startsWith("Health")), ["HealthTabs", "HealthStats", "HealthFilterForm", "HealthTable"]);
   assert.ok(stubs.some((s) => s.name === "SourceFilesTable"), "the published files come first");
   reset({ admin: false });
@@ -862,12 +812,12 @@ test("the Health page's Files view shows the inputs' date, hides the family filt
 
 test("HealthFilterForm renders the family-list checkbox only when the lists were read", async () => {
   const mod = (await loadTsx("components/admin/ops/HealthFilterForm.tsx")) as { HealthFilterForm: (p: Record<string, unknown>) => import("react").ReactElement };
-  const props = { filters: filtersOf("status=stale&group=reported&reason=fetch_failed&state=OH&sort=queue"), reasons: [{ code: "fetch_failed", colleges: 3 }], states: ["CA", "OH"], csvHref: "/admin/health/csv" };
+  const props = { filters: filtersOf("status=stale&group=reported&reason=fetch_failed&state=OH&sort=queue"), reasons: [{ code: "fetch_failed", colleges: 3 }], states: ["CA", "OH"], csvHref: "/admin/data/health/csv" };
   const without = html(mod.HealthFilterForm({ ...props, familyAvailable: false }));
   const withIt = html(mod.HealthFilterForm({ ...props, familyAvailable: true }));
   assert.doesNotMatch(without, /name="family"/);
   assert.match(withIt, /name="family"/);
-  assert.match(without, /<form [^>]*action="\/admin\/health\/files" method="get"/);
+  assert.match(without, /<form [^>]*action="\/admin\/data\/health" method="get"><input type="hidden" name="tab" value="sources"\/>/, "the Sources tab's filters stay on the Sources tab");
   assert.match(without, /<option value="stale" selected/, "the URL's filters are the form's values");
   assert.match(without, /<option value="fetch_failed" selected/);
   assert.match(without, /fetch failed \(3\)/);
@@ -879,9 +829,9 @@ test("HealthTable lists each college with its tier, admit rate, groups, failures
   const mod = (await loadTsx("components/admin/ops/HealthTable.tsx")) as { HealthTable: (p: Record<string, unknown>) => import("react").ReactElement };
   const markup = html(mod.HealthTable({ rows: [ROWS[3], ROWS[0]] }));
   assert.ok(markup.indexOf("Delta") < markup.indexOf("Alpha"), "rows keep the order they are given (worst first from the page)");
-  assert.match(markup, /href="\/admin\/colleges\/100004"/);
+  assert.match(markup, /href="\/admin\/data\/colleges\/100004"/);
   assert.match(markup, /fetch failed ×2, read failed/);
-  assert.match(markup, /href="\/admin\/operations\?unit=100004#review-queue"/, "queue items link to that college's queue");
+  assert.match(markup, /href="\/admin\/data\/colleges\/100004\/review"/, "queue items link to that college's Review page");
   assert.match(markup, /tier 4/);
   assert.match(markup, /40% admitted/);
   assert.match(markup, /Oct 1, 2026/, "each group cell shows the date it is judged by");
@@ -898,9 +848,9 @@ test("HealthStats links every count to the table filtered to it and marks the fi
     groups: Object.fromEntries(rules.HEALTH_GROUPS.map((g) => [g, { ...zero, fresh: 5, stale: g === "reported" ? 4 : 0, unjudged: 0 }])),
   };
   const markup = html(mod.HealthStats({ counts, filters: filtersOf("status=stale&group=reported") }));
-  assert.match(markup, /href="\/admin\/health\/files\?status=failing"/);
-  assert.match(markup, /<a href="\/admin\/health\/files"[^>]*aria-current="true"[^>]*>4<\/a>/, "the filter that is on is marked, and clicking it clears it");
-  assert.match(markup, /href="\/admin\/health\/files\?status=fresh&amp;group=federal"/);
+  assert.match(markup, /href="\/admin\/data\/health\?tab=sources&amp;status=failing"/);
+  assert.match(markup, /<a href="\/admin\/data\/health\?tab=sources"[^>]*aria-current="true"[^>]*>4<\/a>/, "the filter that is on is marked, and clicking it clears it");
+  assert.match(markup, /href="\/admin\/data\/health\?tab=sources&amp;status=fresh&amp;group=federal"/);
   assert.doesNotMatch(markup, /Not judged/, "the column appears only when some group could not be judged");
   assert.match(html(mod.HealthStats({ counts: { ...counts, groups: { ...counts.groups, campus: { ...zero, unjudged: 2 } } }, filters: filtersOf("") })), /Not judged/);
 });
@@ -981,7 +931,7 @@ test("the leak check fails when a raw email is used as the admin's name", async 
 });
 
 test("the action and library sources never read an auth email", () => {
-  for (const file of ["app/admin/operations/actions.ts", "lib/admin/ops-actions.ts", "lib/admin/ops.ts"]) {
+  for (const file of ["app/admin/steward/jobs/actions.ts", "lib/admin/ops-actions.ts", "lib/admin/ops.ts"]) {
     const code = read(file).replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
     assert.doesNotMatch(code, /\bemail\b|admin_user_auth|auth\.getUser|\.user\.email/i, `${file} doesn't touch an email`);
   }
@@ -1061,7 +1011,7 @@ test("review queue view: parameters, filters, and item labels", () => {
 test("the files stay inside their folders and name no data year", () => {
   const mine = ["lib/admin/health-view.ts", "lib/admin/ops-view.ts", "lib/admin/ops-actions.ts", "lib/admin/ops.ts", "lib/admin/pr-markdown.ts", "lib/admin/health-load.ts"];
   const files = (dir: string): string[] => readdirSync(join(ROOT, dir)).flatMap((n) => (statSync(join(ROOT, dir, n)).isDirectory() ? files(join(dir, n)) : [join(dir, n)]));
-  for (const f of [...mine, ...files("app/admin/health"), ...files("app/admin/operations"), ...files("components/admin/ops")]) {
+  for (const f of [...mine, ...files("app/admin/data/health"), ...files("components/admin/ops")]) {
     const code = read(f).replace(/\/\*[\s\S]*?\*\//g, "");
     assert.doesNotMatch(code, /\b[Ff]all 20\d\d\b|\b20\d\d[–-]\d\d\b/, `${relative(ROOT, join(ROOT, f))} hard-codes a data year`);
   }

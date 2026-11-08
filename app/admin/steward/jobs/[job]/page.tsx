@@ -5,6 +5,10 @@ import { connection } from "next/server";
 import { Fields, PageHeader, Panel } from "@/components/admin/Panel";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { GithubRunsTable, StoredRunsTable } from "@/components/admin/jobs/JobRunsTable";
+import { RunForm } from "@/components/admin/ops/RunForm";
+import { dispatchAction } from "@/app/admin/steward/jobs/actions";
+import { loadRunNow, type RunNowData } from "@/lib/admin/ops";
+import { blockingRun } from "@/lib/admin/workflows";
 import { requireAdmin } from "@/lib/admin/auth";
 import { timeLabel } from "@/lib/admin/ops-view";
 import type { WorkflowRun } from "@/lib/github-app";
@@ -22,7 +26,7 @@ const linkCls = "underline decoration-dotted underline-offset-2";
 const WITH_HOUSEKEEPING = 100;
 
 /**
- * `/admin/jobs/[job]` (specs/product/admin-jobs.md "A job"): what the job does, where it runs, each schedule in words
+ * `/admin/steward/jobs/[job]` (specs/product/admin-jobs.md "A job"): what the job does, where it runs, each schedule in words
  * with its cron and its next firing, how to start it by hand, and its run history (the last 30), each run opening its
  * own page. A workflow with a housekeeping firing (the half-hourly collect) hides those runs unless `?all=1`.
  */
@@ -33,9 +37,12 @@ export default async function JobPage({ params, searchParams }: { params: Promis
   if (!job) notFound();
   const query = await searchParams;
   const showAll = (Array.isArray(query.all) ? query.all[0] : query.all) === "1";
+  const unitParam = Array.isArray(query.unit) ? query.unit[0] : query.unit;
+  const prefillUnit = unitParam && /^\d{6}$/.test(unitParam) ? unitParam : null;
   const now = new Date();
   const next = nextJobRun(job, now);
   const hasHousekeeping = job.schedules.some((s) => s.headline === false);
+  const runNow = job.dispatch ? await loadRunNow(job.workflow) : null;
   const history = job.runner === "vercel" ? { kind: "stored" as const, runs: await storedRuns(job.id) } : { kind: "github" as const, runs: await githubRuns(job, hasHousekeeping && !showAll ? WITH_HOUSEKEEPING : RUNS_PAGE) };
 
   const facts: { label: string; value: React.ReactNode }[] = [
@@ -44,9 +51,9 @@ export default async function JobPage({ params, searchParams }: { params: Promis
     {
       label: "Start it by hand",
       value: job.dispatch ? (
-        <Link href="/admin/operations#start-a-run" className={linkCls}>
-          Operations, Start a run
-        </Link>
+        <a href="#run-now" className={linkCls}>
+          Run now, below
+        </a>
       ) : job.runner === "github" ? (
         <a href={`https://github.com/${githubRepo()}/actions/workflows/${job.workflow}`} target="_blank" rel="noopener noreferrer" className={linkCls}>
           Run workflow on GitHub
@@ -109,6 +116,8 @@ export default async function JobPage({ params, searchParams }: { params: Promis
           {job.gate && <p className="mt-3 text-sm text-muted-foreground">{job.gate}</p>}
         </Panel>
 
+        {runNow && <RunNow data={runNow} prefillUnit={prefillUnit} />}
+
         <section aria-labelledby="history-title" className="space-y-3">
           <div>
             <h2 id="history-title" className="font-display text-xl font-bold tracking-tight">
@@ -120,6 +129,58 @@ export default async function JobPage({ params, searchParams }: { params: Promis
         </section>
       </div>
     </>
+  );
+}
+
+/**
+ * Run now (specs/product/admin-redesign.md "The screens", Jobs; formerly Operations' Start a run): each run the console
+ * can start for this workflow, as its own form with the workflow's inputs. The dispatch guard is the same as before: a
+ * workflow already queued or running shows that run instead of a button. `?unit=` opens the college run prefilled.
+ */
+function RunNow({ data, prefillUnit }: { data: RunNowData; prefillUnit: string | null }) {
+  return (
+    <Panel title="Run now" id="run-now" help="run-now">
+      {!data.configured ? (
+        <p role="note" className="text-sm">
+          GitHub credentials aren&apos;t set on this deployment, so the console can&apos;t start runs. Set <code className="rounded bg-muted px-1">GITHUB_APP_ID</code>,{" "}
+          <code className="rounded bg-muted px-1">GITHUB_APP_INSTALLATION_ID</code>, and <code className="rounded bg-muted px-1">GITHUB_APP_PRIVATE_KEY</code> (or a fine-grained token in{" "}
+          <code className="rounded bg-muted px-1">GITHUB_TOKEN</code>), and <code className="rounded bg-muted px-1">GITHUB_REPO</code> if it isn&apos;t the default, then redeploy. The steps are in the
+          admin console spec under &ldquo;The GitHub App&rdquo;.
+        </p>
+      ) : data.runs.length === 0 ? (
+        <p className="text-sm text-muted-foreground">This workflow is started by another screen with its own values, not from here.</p>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Connected as {data.configured.mode === "app" ? "the Quad console GitHub App" : "a personal access token"}. Each form is the workflow&apos;s own inputs; each start is logged before it is sent.
+          </p>
+          {data.runs.map((run) => {
+            const running = blockingRun(run, data.recent);
+            const open = data.runs.length === 1 || (run.id === "college" && prefillUnit !== null);
+            return (
+              <details key={run.id} open={open} className="rounded-2xl border border-border bg-background">
+                <summary className="min-h-12 cursor-pointer px-4 py-3">
+                  <span className="font-semibold">{run.label}</span>
+                  <span className="mt-0.5 block text-sm font-normal text-muted-foreground">{run.description}</span>
+                </summary>
+                <div className="border-t border-border px-4 py-4">
+                  {running ? (
+                    <p className="text-sm">
+                      A run of {run.workflow} is already {running.status === "queued" ? "queued" : "in progress"}: started {timeLabel(running.startedAt ?? running.createdAt)}.{" "}
+                      <a href={running.url} target="_blank" rel="noopener noreferrer" className={linkCls}>
+                        Run #{running.runNumber} on GitHub
+                      </a>
+                    </p>
+                  ) : (
+                    <RunForm run={run} prefillUnit={prefillUnit} cost={data.cost} action={dispatchAction} />
+                  )}
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      )}
+    </Panel>
   );
 }
 

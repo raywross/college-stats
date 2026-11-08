@@ -48,7 +48,7 @@ export default async function ReferenceListPage() {
                 <div className="text-right text-sm text-muted-foreground">
                   <div>Version {d.version}</div>
                   <div>{fmtDateTime(d.updated_at)}</div>
-                  <Link href={`/admin/data/change-sets/${d.change_set_id}`} className="underline decoration-dotted underline-offset-2">
+                  <Link href={`/admin/data/changes/${d.change_set_id}`} className="underline decoration-dotted underline-offset-2">
                     Change set #{d.change_set_id}
                   </Link>
                 </div>

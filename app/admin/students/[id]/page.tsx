@@ -279,7 +279,7 @@ function ItemRow({ item, name, studentId }: { item: AdminListItem; name: string;
   return (
     <li className="space-y-1.5 p-3">
       <p className="text-sm font-semibold">
-        <Link href={`/admin/colleges/${item.unit_id}`} className="underline-offset-4 hover:underline">
+        <Link href={`/admin/data/colleges/${item.unit_id}`} className="underline-offset-4 hover:underline">
           {name}
         </Link>
       </p>

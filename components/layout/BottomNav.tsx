@@ -8,6 +8,7 @@ import { ThemeSegmented } from "@/components/ThemeToggle";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useMe } from "@/components/account/useMe";
 import { loginHref } from "@/lib/accounts";
+import { isAdminPath } from "@/lib/analytics";
 import { CASELOAD_HREF } from "@/lib/org-hrefs";
 import { ADVISOR_PATH, ADVISOR_SHORT } from "@/lib/planner/advisor";
 import { useCompareIds } from "@/lib/compare";
@@ -47,6 +48,10 @@ export function BottomNav() {
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
   const compareHref = compareIds.length ? `/compare?ids=${compareIds.join(",")}` : "/compare";
   const moreActive = isActive("/trends") || isActive("/high-schools") || isActive("/glossary") || isActive("/data") || isActive("/sources") || isActive("/roadmap") || isActive("/release-notes") || isActive("/account") || isActive("/login");
+
+  // The admin console has its own tab bar (components/admin/AdminTabBar.tsx; specs/product/admin-redesign.md
+  // "Phones"): the site's five tabs are for visitors. After the hooks, so their order never changes.
+  if (isAdminPath(pathname)) return null;
 
   return (
     <>

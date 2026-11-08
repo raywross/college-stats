@@ -5,7 +5,7 @@
  * value saved again through `admin_data_edit`, noted "Reverted to the edit of {date}"). The path is checked against the
  * registry (`editProblem`) and the value against its kind before any call, so a refused form never reaches the
  * database. After a success, the college's public pages and its admin pages are revalidated so the edit shows at once.
- * app/admin/colleges/[unit]/edit/actions.ts calls requireAdmin() first and builds the real dependencies.
+ * app/admin/data/colleges/[unit]/edit/actions.ts calls requireAdmin() first and builds the real dependencies.
  */
 import { editProblem } from "../data-platform/edits.ts";
 import type { AdminActionState } from "./console.ts";
@@ -29,7 +29,7 @@ function showNow(deps: EditActionDeps, unit: string): void {
 }
 
 /** The pages an edit changes: the public profile with every topic page under it, and the admin college pages. */
-export const editPaths = (unit: string) => [`/schools/${unit}`, `/admin/colleges/${unit}`];
+export const editPaths = (unit: string) => [`/schools/${unit}`, `/admin/data/colleges/${unit}`];
 
 /** The note a revert saves with. */
 export const revertNote = (createdAt: string) => `Reverted to the edit of ${longDate(createdAt)}`;

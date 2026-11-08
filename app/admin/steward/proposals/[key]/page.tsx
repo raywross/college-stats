@@ -7,7 +7,7 @@ import { Empty, Fields, PageHeader, Panel } from "@/components/admin/Panel";
 import { ProposalKindChip, ProposalStatusChip } from "@/components/admin/steward/Bits";
 import { EvidenceTable, ProposalRowsTable } from "@/components/admin/steward/ProposalParts";
 import { ProposalApprove, type ApproveRowView } from "@/components/admin/steward/ProposalApprove";
-import { approveProposalAction, askProposalAction, declineProposalAction, startProposalJobAction } from "@/app/admin/data/steward-actions";
+import { approveProposalAction, askProposalAction, declineProposalAction, startProposalJobAction } from "@/app/admin/steward/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminSupabase } from "@/lib/admin/people";
 import type { StoreClient } from "@/lib/admin/review-queue";
@@ -23,7 +23,7 @@ import type { ProposalDoc } from "@/lib/steward/types";
 export const metadata: Metadata = { title: "Proposal", robots: { index: false, follow: false } };
 
 /**
- * `/admin/data/proposals/[key]` (specs/product/data-steward.md "Proposals"): one proposal's summary, the evidence
+ * `/admin/steward/proposals/[key]` (specs/product/data-steward.md "Proposals"): one proposal's summary, the evidence
  * (each document opened at its page), the rows with their ticks pre-set from the recommendation, a systemic
  * proposal's change and sample, the question and answer; Approve (the ticked rows), Decline (a reason), Ask (a
  * question the Steward answers on the proposal). "On the site now" is read again from the same `citeField` the
@@ -71,7 +71,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
       <PageHeader
         title={p.summary}
         back={
-          <Link href="/admin/data/proposals" className={linkCls}>
+          <Link href="/admin/steward/proposals" className={linkCls}>
             Proposals
           </Link>
         }

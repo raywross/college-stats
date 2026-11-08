@@ -13,7 +13,7 @@ import { changeSetActions, costLabel, countsLabel, diffHunks, documentLines, gro
 export const metadata: Metadata = { title: "Change set", robots: { index: false, follow: false } };
 
 /**
- * `/admin/data/change-sets/[id]` (specs/data-platform/change-sets.md "The console", Change sets row; "Holds and
+ * `/admin/data/changes/[id]` (specs/data-platform/change-sets.md "The console", Change sets row; "Holds and
  * review"; "Revert"): the set's summary and reason, the documents it touched grouped by collection, the before and
  * after of one of them (`?c=<collection>&k=<key>`) as a line diff, and its actions: Hold, Publish anyway, Revert, and
  * Write a release note.
@@ -43,7 +43,7 @@ export default async function ChangeSetPage({ params, searchParams }: { params: 
         title={`Change set #${row.id}`}
         chips={<ChangeSetChips row={row} />}
         back={
-          <Link href="/admin/data/change-sets" className="underline decoration-dotted underline-offset-2">
+          <Link href="/admin/data/changes" className="underline decoration-dotted underline-offset-2">
             Change sets
           </Link>
         }
@@ -81,7 +81,7 @@ export default async function ChangeSetPage({ params, searchParams }: { params: 
                     {
                       label: "Reverted by",
                       value: (
-                        <Link href={`/admin/data/change-sets/${row.reverted_by}`} className="underline decoration-dotted underline-offset-2">
+                        <Link href={`/admin/data/changes/${row.reverted_by}`} className="underline decoration-dotted underline-offset-2">
                           Change set #{row.reverted_by}
                         </Link>
                       ),

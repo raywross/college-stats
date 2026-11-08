@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { PageHeader } from "@/components/admin/Panel";
+import { StewardBack } from "@/components/admin/steward/Bits";
+import { githubRepo } from "@/lib/github-app";
 import { JobsTable } from "@/components/admin/jobs/JobsTable";
 import { JobsStatusStrip, JobsTabs } from "@/components/admin/jobs/JobsViews";
 import { requireAdmin } from "@/lib/admin/auth";
@@ -10,7 +12,7 @@ import { parseJobsView, sortJobs, sortJobsByOutcome } from "@/lib/jobs/view";
 export const metadata: Metadata = { title: "Jobs", robots: { index: false, follow: false } };
 
 /**
- * `/admin/jobs` (specs/product/admin-jobs.md "The list"): every batch job the site runs, where it runs, its schedule
+ * `/admin/steward/jobs` (specs/product/admin-jobs.md "The list"): every batch job the site runs, where it runs, its schedule
  * in words, when it runs next, and how its last run went. First a status line: which jobs failed their last run, and
  * the counts by state. Then one of two views: **By schedule** (the default) lists the scheduled jobs soonest first
  * and the hand-run ones apart; **All jobs** (`?view=all`) is one table of every job, failures first. A job's name
@@ -28,10 +30,10 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
 
   return (
     <>
-      <PageHeader title="Jobs" subtitle="Every scheduled job, when it runs next, and how its last run went. Times are UTC." />
+      <PageHeader title="Jobs" help="job" back={<StewardBack />} subtitle="Every scheduled job, when it runs next, and how its last run went. Times are UTC." />
       {!overview.githubConfigured && (
         <p role="note" className="mb-5 rounded-2xl border border-warning bg-warning/10 p-4 text-sm">
-          GitHub credentials aren&apos;t set on this deployment, so the workflows&apos; runs can&apos;t be read here. The schedules still show; the Operations page says what to set.
+          GitHub credentials aren&apos;t set on this deployment, so the workflows&apos; runs can&apos;t be read here. The schedules still show; a job&apos;s Run now panel says what to set.
         </p>
       )}
       <div className="space-y-6">
@@ -60,12 +62,19 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                 <h2 id="by-hand-title" className="font-display text-xl font-bold tracking-tight">
                   Run by hand
                 </h2>
-                <p className="mt-0.5 max-w-3xl text-sm text-muted-foreground">Workflows with no schedule: a person starts them from Operations or on GitHub.</p>
+                <p className="mt-0.5 max-w-3xl text-sm text-muted-foreground">Workflows with no schedule: a person starts them with Run now on the job&apos;s page, or on GitHub.</p>
               </div>
               <JobsTable rows={byHand} now={now} caption="Jobs run by hand only" />
             </section>
           </>
         )}
+        {/* Approvals left the console (specs/product/admin-redesign.md "Owner decisions" 3): code is reviewed on GitHub. */}
+        <p className="border-t border-border pt-4 text-sm">
+          <a href={`https://github.com/${githubRepo()}/pulls`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center font-semibold underline decoration-dotted underline-offset-2">
+            Open pull requests on GitHub
+          </a>
+          <span className="block text-muted-foreground">Code changes are reviewed there; data arrives without a pull request.</span>
+        </p>
       </div>
     </>
   );

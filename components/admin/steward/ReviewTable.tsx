@@ -2,11 +2,12 @@ import Link from "next/link";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Empty } from "@/components/admin/Panel";
 import { DocLink, ProposalStatusChip, Recommends } from "@/components/admin/steward/Bits";
-import { acceptHeldAction, rejectHeldAction } from "@/app/admin/data/actions";
-import { decideRowAction, leaveItemAction } from "@/app/admin/data/steward-actions";
+import { acceptHeldAction, rediscoverHeldAction, rejectHeldAction } from "@/app/admin/data/actions";
+import { decideRowAction, leaveItemAction } from "@/app/admin/steward/actions";
 import { editionOf, linkCls, proposalHref } from "@/lib/admin/steward-view";
 import { PROPOSAL_KIND_LABEL } from "@/lib/steward/types";
 import type { ReviewGroup, ReviewRow } from "@/lib/steward/review-rows";
+import { codeLabel, codeName } from "@/lib/admin/words";
 
 const th = "px-3 py-2 font-medium";
 const UNDECIDED = new Set(["open", "asked"]);
@@ -49,6 +50,14 @@ function ItemActions({ row }: { row: ReviewRow }) {
           description="The item stays queued; your reason goes on its cause for the Steward."
         />
       )}
+      {/* From Holds, which folded into this page (specs/product/admin-redesign.md "Owner decisions" 2). */}
+      <AdminForm
+        action={rediscoverHeldAction}
+        hidden={{ item: row.id }}
+        trigger="Re-run discovery"
+        pendingLabel="Starting…"
+        description="Starts a run that finds this college's documents from scratch."
+      />
     </>
   );
 }
@@ -89,7 +98,7 @@ export function ReviewTable({ groups }: { groups: ReviewGroup[] }) {
       {groups.map((g) => (
         <section key={g.code} aria-label={g.label} className="space-y-2">
           <h3 className="font-display text-base font-bold">
-            {g.label} <span className="font-mono text-xs font-normal text-muted-foreground">{g.code}</span>
+            {codeName(g.label) ? codeLabel(g.label) : g.label} <span className="font-mono text-xs font-normal text-muted-foreground">{g.code}</span>
           </h3>
           <div className="overflow-x-auto rounded-2xl border border-border">
             <table className="w-full min-w-[64rem] text-sm">

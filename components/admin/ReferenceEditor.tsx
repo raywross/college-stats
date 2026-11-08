@@ -98,7 +98,7 @@ export function ReferenceVersions({ name, rows }: { name: string; rows: Referenc
             {r.deleted && <span className="ml-1 text-muted-foreground">(deleted)</span>}
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Link href={`/admin/data/change-sets/${r.change_set_id}`} className="underline decoration-dotted underline-offset-2">
+            <Link href={`/admin/data/changes/${r.change_set_id}`} className="underline decoration-dotted underline-offset-2">
               Change set #{r.change_set_id}
             </Link>
             <AdminForm

@@ -4,8 +4,8 @@ import { connection } from "next/server";
 import { Empty, Fields, PageHeader, Panel } from "@/components/admin/Panel";
 import { RunForm } from "@/components/admin/ops/RunForm";
 import { ClustersTable } from "@/components/admin/steward/ClustersTable";
-import { DataBack } from "@/components/admin/steward/Bits";
-import { dispatchAction } from "@/app/admin/operations/actions";
+import { StewardBack } from "@/components/admin/steward/Bits";
+import { dispatchAction } from "@/app/admin/steward/jobs/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminSupabase } from "@/lib/admin/people";
 import type { StoreClient } from "@/lib/admin/review-queue";
@@ -23,7 +23,7 @@ const CLUSTERS_PER_PAGE = 50;
 const COLLEGES_SHOWN = 25;
 
 /**
- * `/admin/data/issues` (specs/product/data-steward.md "The console: where it all shows", Issues row): the review
+ * `/admin/steward/findings` (specs/product/data-steward.md "The console: where it all shows", Issues row): the review
  * queue's open items grouped by cause, live (lib/steward/cluster.ts through `readClusters`, cached with the queue),
  * joined with the Steward's issue documents; the last run's summary; Run the Data Steward (steward.yml through the
  * console's dispatch, logged first); and Colleges to review. `?kind=` narrows the causes; `?page=` pages them.
@@ -49,13 +49,13 @@ export default async function IssuesPage({ searchParams }: { searchParams: Promi
     if (k) q.set("kind", k);
     if (change.page && change.page > 1) q.set("page", String(change.page));
     const s = q.toString();
-    return s ? `/admin/data/issues?${s}` : "/admin/data/issues";
+    return s ? `/admin/steward/findings?${s}` : "/admin/steward/findings";
   };
   const named = colleges.slice(0, COLLEGES_SHOWN).map((c) => ({ ...c, name: c.name === c.unit_id ? (data.getSchoolById(c.unit_id)?.name ?? c.unit_id) : c.name }));
 
   return (
     <>
-      <PageHeader title="Issues" back={<DataBack />} subtitle="The review queue grouped by cause. The Steward checks each cause against the colleges' documents and writes proposals." />
+      <PageHeader title="Issues" back={<StewardBack />} subtitle="The review queue grouped by cause. The Steward checks each cause against the colleges' documents and writes proposals." />
       <div className="space-y-5">
         <Panel title="The last run">
           {!last ? (

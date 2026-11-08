@@ -5,7 +5,7 @@ import { inputsHref, type InputFilters } from "@/lib/admin/inputs-view";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
 import { cn } from "@/lib/utils";
 
-const BASE = "/admin/health";
+const BASE = "/admin/data/health";
 const num = (n: number) => n.toLocaleString("en-US");
 /** Worst first. Only the admit rate can be Failing (specs/product/admin-health-views.md "Status per input"). */
 const STATUSES: HealthStatus[] = ["failing", "stale", "watch", "fresh"];

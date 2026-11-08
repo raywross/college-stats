@@ -1,6 +1,6 @@
 import "server-only";
 /**
- * What /admin/colleges/[unit] reads (specs/product/admin.md "A college"): the college from the dataset, its
+ * What /admin/data/colleges/[unit] reads (specs/product/admin.md "A college"): the college from the dataset, its
  * selectivity breakdown, the GPA the standing model reads, its hidden derived fields (lib/admin/hidden.ts, pure), and
  * its data health card (lib/admin/health.ts). Every read is a deployed file or the fitted models; nothing here touches
  * family data. Callers check requireAdmin() first (the page does).

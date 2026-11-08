@@ -3,7 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { AdminSearch } from "@/components/admin/AdminSearch";
+import { HeldEssaysList } from "@/components/admin/Holds";
 import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
+import { adminSupabase } from "@/lib/admin/people";
+import { byLists, readHeldEssays, type StoreClient } from "@/lib/admin/review-queue";
 import { requireAdmin } from "@/lib/admin/auth";
 import { fmtDate } from "@/lib/admin/console";
 import { ESSAY_STATUSES, ESSAY_STATUS_LABELS, essayStatus, handReadChecklist, handReadDone, listsByUnit, overridesForCycle, statusCounts } from "@/lib/admin/essays";
@@ -17,23 +20,27 @@ const linkButton =
   "inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90";
 
 /**
- * /admin/essays (specs/product/essays/sources.md "The hand read", "The admin side"): how every college's essay
+ * /admin/data/essays (specs/product/essays/sources.md "The hand read", "The admin side"): how every college's essay
  * questions stand (published on its own page, confirmed from the form, pointing to the form, none, not read), the
  * hand-read checklist (colleges on a family's list whose questions only the application shows, with no saved read),
  * the colleges already read by hand, and a search for any college. Each row links to its form,
- * /admin/essays/[unit]. A save is a row of `essay_prompt_overrides`, so it counts here at once. Phone-first.
+ * /admin/data/essays/[unit]. A save is a row of `essay_prompt_overrides`, so it counts here at once. The essay reader's
+ * held records (`essays.held`), listed on Holds before it folded in (specs/product/admin-redesign.md), are here too,
+ * most-listed college first. Phone-first.
  */
-export default async function EssaysPage({ searchParams }: PageProps<"/admin/essays">) {
+export default async function EssaysPage({ searchParams }: PageProps<"/admin/data/essays">) {
   await connection();
   await requireAdmin();
   const raw = (await searchParams).q;
   const q = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
   const { getAllSchools, getSchoolById, searchSchools } = await getData();
-  if (/^\d{6,8}$/.test(q) && getSchoolById(q)) redirect(`/admin/essays/${q}`);
+  if (/^\d{6,8}$/.test(q) && getSchoolById(q)) redirect(`/admin/data/essays/${q}`);
 
   const cycle = currentCycle(new Date().toISOString().slice(0, 10));
   const schools = getAllSchools();
-  const [lists, overrides] = await Promise.all([listsByUnit(), overridesForCycle(cycle)]);
+  const supabase = await adminSupabase();
+  const [lists, overrides, held] = await Promise.all([listsByUnit(), overridesForCycle(cycle), readHeldEssays(supabase as unknown as StoreClient)]);
+  const heldEssays = held.ok ? byLists(held.records, (r) => r.unit_id, (r) => r.name, lists) : [];
   const counts = statusCounts(schools, overrides);
   const checklist = lists ? handReadChecklist(schools, lists, overrides) : null;
   const done = handReadDone(schools, lists, overrides);
@@ -73,7 +80,7 @@ export default async function EssaysPage({ searchParams }: PageProps<"/admin/ess
                       {ESSAY_STATUS_LABELS[row.status]} · on {row.lists} {row.lists === 1 ? "list" : "lists"}
                     </span>
                   </span>
-                  <Link href={`/admin/essays/${row.unitId}`} className={linkButton}>
+                  <Link href={`/admin/data/essays/${row.unitId}`} className={linkButton}>
                     Enter the questions
                   </Link>
                 </li>
@@ -82,8 +89,12 @@ export default async function EssaysPage({ searchParams }: PageProps<"/admin/ess
           )}
         </Panel>
 
+        <Panel title="Held questions" id="held" help="held" aside={held.ok ? <span className="text-sm text-muted-foreground">{heldEssays.length} held</span> : undefined}>
+          {!held.ok ? <Empty>Couldn&apos;t read the held essay questions: {held.reason}.</Empty> : <HeldEssaysList records={heldEssays} lists={lists} />}
+        </Panel>
+
         <Panel title="Find a college" id="search">
-          <AdminSearch action="/admin/essays" id="essays-search" defaultValue={q} label="Search colleges" placeholder="College name or unit id" />
+          <AdminSearch action="/admin/data/essays" id="essays-search" defaultValue={q} label="Search colleges" placeholder="College name or unit id" />
           {q && (
             <div className="mt-3">
               {results.length === 0 ? (
@@ -94,7 +105,7 @@ export default async function EssaysPage({ searchParams }: PageProps<"/admin/ess
                     const school = getSchoolById(c.id);
                     return (
                       <li key={c.id}>
-                        <Link href={`/admin/essays/${c.id}`} className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3 hover:bg-muted/50">
+                        <Link href={`/admin/data/essays/${c.id}`} className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3 hover:bg-muted/50">
                           <span className="font-semibold break-words">{c.name}</span>
                           <span className="text-xs text-muted-foreground">
                             {school ? ESSAY_STATUS_LABELS[essayStatus(school, overrides)] : ""} · {c.city}, {c.state}
@@ -116,7 +127,7 @@ export default async function EssaysPage({ searchParams }: PageProps<"/admin/ess
             <ul className="divide-y rounded-2xl border bg-background" aria-label="Colleges read by hand">
               {done.map((row) => (
                 <li key={row.unitId}>
-                  <Link href={`/admin/essays/${row.unitId}`} className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3 hover:bg-muted/50">
+                  <Link href={`/admin/data/essays/${row.unitId}`} className="flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3 hover:bg-muted/50">
                     <span className="font-semibold break-words">{row.name}</span>
                     <span className="text-xs text-muted-foreground">
                       {row.form ? formLabel(row.form) : "Form"} · read {fmtDate(row.readOn)}

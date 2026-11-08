@@ -12,23 +12,28 @@ import { HealthTabs } from "@/components/admin/ops/HealthTabs";
 import { EstimateInputsStats } from "@/components/admin/ops/EstimateInputsStats";
 import { EstimateInputsFilterForm } from "@/components/admin/ops/EstimateInputsFilterForm";
 import { EstimateInputsTable } from "@/components/admin/ops/EstimateInputsTable";
+import { PageHeader } from "@/components/admin/Panel";
+import { SourcesView } from "./sources";
 
-export const metadata: Metadata = { title: "Data health", robots: { index: false } };
+export const metadata: Metadata = { title: "Data health", robots: { index: false, follow: false } };
 
-const BASE = "/admin/health";
+const BASE = "/admin/data/health";
 
 /**
- * The Health page's first view (specs/product/admin-health-views.md "View 1"): every college by the health of the
- * facts the admission estimate reads. The stat row, the filters (in the URL), the table worst first; each college's
- * page lists every input's source and dates. Old bookmarks that filtered the per-college groups (`?group=`,
- * `?reason=`) go to the Files view, where that table now lives.
+ * `/admin/data/health` (specs/product/admin-health-views.md; specs/product/admin-redesign.md "Data"): two tabs on one
+ * address. Colleges, the default: every college by the health of the facts the admission estimate reads ("View 1"):
+ * the stat row, the filters (in the URL), the table worst first; each college's page lists every input's source and
+ * dates. Sources (`?tab=sources`, ./sources.tsx, once /admin/health/files): every file we read. Old bookmarks that
+ * filtered the per-college groups (`?group=`, `?reason=`) go to the Sources tab, where that table now lives.
  */
 export default async function HealthPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireAdmin();
   const params = await searchParams;
+  const tab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
+  if (tab === "sources") return <SourcesView params={params} />;
   if (isFilesQuery(params)) {
     const q = new URLSearchParams(Object.entries(params).flatMap(([k, v]) => (Array.isArray(v) ? v.map((x) => [k, x]) : v ? [[k, v]] : [])));
-    redirect(`${BASE}/files?${q.toString()}`);
+    redirect(`${BASE}?tab=sources&${q.toString()}`);
   }
   const filters = parseInputFilters(params);
   const [overview, family] = await Promise.all([inputsOverview(), familyListUnits()]);
@@ -42,15 +47,15 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
     <div className="space-y-6">
       <header className="space-y-4">
         <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Data health</h1>
-          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+          <PageHeader title="Data health" help="data-health" />
+          <p className="-mt-3 max-w-3xl text-sm text-muted-foreground">
             How current the facts the admission estimate reads are, college by college. A core input is Fresh when it describes the current cycle (fall{" "}
             {ESTIMATE_INPUT_RULES.currentFall}), Watch when it is a cycle behind or missing, and Stale when it is {ESTIMATE_INPUT_RULES.staleCyclesBehind} or more behind. A
             college with no admit rate that says it isn&apos;t open admission is Failing.
             Measured {dayLabel(overview.today)}.
           </p>
         </div>
-        <HealthTabs current="inputs" />
+        <HealthTabs current="colleges" />
       </header>
 
       <EstimateInputsStats counts={overview.counts} filters={filters} />

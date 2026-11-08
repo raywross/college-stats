@@ -1,7 +1,7 @@
 /**
  * What the Data Steward's console buttons do (specs/product/data-steward.md "The console: where it all shows",
  * "Proposals", "The college's Review page"), over injected dependencies so tests/admin-steward.test.mts runs every path
- * with no network and no database. app/admin/data/steward-actions.ts calls requireAdmin() first, builds the real
+ * with no network and no database. app/admin/steward/actions.ts calls requireAdmin() first, builds the real
  * dependencies, and hands the form here.
  *
  * - Every change to a `steward.*` document goes through `admin_steward_write` (S1's function): the action reads the

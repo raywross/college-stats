@@ -24,12 +24,12 @@ function defaultForm(school: School): EssayFormKind {
 }
 
 /**
- * /admin/essays/[unit] (specs/product/essays/sources.md "The hand read"): what the reader found on the college's own
+ * /admin/data/essays/[unit] (specs/product/essays/sources.md "The hand read"): what the reader found on the college's own
  * page (so the person knows what they're overriding), then the form for the open cycle, prefilled from the saved row of
  * `essay_prompt_overrides` when there is one, and Delete for a saved row (typed). Save is live on the advisor at once.
  * With the table unreadable the form isn't shown: a save could replace a row the page couldn't see.
  */
-export default async function EssayFormPage({ params }: PageProps<"/admin/essays/[unit]">) {
+export default async function EssayFormPage({ params }: PageProps<"/admin/data/essays/[unit]">) {
   await connection();
   await requireAdmin();
   const { unit } = await params;
@@ -48,7 +48,7 @@ export default async function EssayFormPage({ params }: PageProps<"/admin/essays
     <>
       <PageHeader
         back={
-          <Link href="/admin/essays" className="text-muted-foreground underline-offset-4 hover:underline">
+          <Link href="/admin/data/essays" className="text-muted-foreground underline-offset-4 hover:underline">
             Essays
           </Link>
         }

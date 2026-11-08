@@ -2,11 +2,11 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { key: "inputs", label: "Estimate inputs", href: "/admin/health", hint: "The facts the admission estimate reads" },
-  { key: "files", label: "Files", href: "/admin/health/files", hint: "Every file we read, and each college's documents" },
+  { key: "colleges", label: "Colleges", href: "/admin/data/health", hint: "The facts the admission estimate reads, college by college" },
+  { key: "sources", label: "Sources", href: "/admin/data/health?tab=sources", hint: "Every file we read, and each college's documents" },
 ] as const;
 
-/** The Health page's two views (specs/product/admin-health-views.md), as links so each is its own URL. */
+/** The Health page's two tabs, Colleges and Sources (specs/product/admin-redesign.md "Data"), as links so each is its own URL. */
 export function HealthTabs({ current }: { current: (typeof TABS)[number]["key"] }) {
   return (
     <nav aria-label="Health views" className="flex flex-wrap gap-2 border-b border-border">

@@ -6,7 +6,9 @@ import { realOpsDeps } from "@/lib/admin/ops";
 import { closeDataPull, dispatchRun, holdDataPull, mergeDataPull, pullNumber, readDispatchForm, type OpsState } from "@/lib/admin/ops-actions";
 
 /**
- * Operations Server Actions (specs/product/admin.md "Operations: reruns and approvals"). Each one calls `requireAdmin()`
+ * The Jobs pages' Server Actions (specs/product/admin.md "Operations: reruns and approvals"; since
+ * specs/product/admin-redesign.md, Operations is gone and `dispatchAction` is each job's Run now). The pull-request
+ * actions stay for the console's GitHub client but no screen offers them: code is reviewed on GitHub. Each one calls `requireAdmin()`
  * before it reads the form, so a signed-out visitor or a non-admin gets a 404 and nothing runs. The work, including
  * logging each action before it is sent, is in lib/admin/ops-actions.ts, which tests/admin-ops.test.mts exercises
  * with fake dependencies. The held review items' actions moved to the Data console's Holds (app/admin/data/actions.ts).

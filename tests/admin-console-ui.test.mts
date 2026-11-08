@@ -175,7 +175,7 @@ const peopleActions = await import("../app/admin/people/actions.ts");
 const householdActions = await import("../app/admin/households/[id]/actions.ts");
 const studentActions = await import("../app/admin/students/[id]/actions.ts");
 const adminsActions = await import("../app/admin/admins/actions.ts");
-const mfaActions = await import("../app/admin/mfa/actions.ts");
+const mfaActions = await import("../app/admin/admins/mfa-actions.ts");
 const { HOUSEHOLD_ERRORS } = await import("../lib/household-rules.ts");
 
 const { IDLE } = consoleLib;
@@ -285,14 +285,15 @@ function unguardedActions(src: string, guard: RegExp): string[] {
 }
 
 test("every Server Action goes through withAdmin() (an admin at aal2), and the MFA actions through adminState()", () => {
-  for (const f of adminFiles.filter((f) => /\/actions\.ts$/.test(f))) {
+  for (const f of adminFiles.filter((f) => /\/(mfa-)?actions\.ts$/.test(f))) {
     const src = read(f);
     assert.match(src, /^"use server";/);
     // Operations' actions call requireAdmin() first (an admin at aal2, else a 404; tests/admin-ops.test.mts proves it
     // runs before the form is read), the same gate as withAdmin() with a 404 for a stale tab instead of a message.
     // Data's actions do the same (tests/admin-data.test.mts): they also dispatch a workflow, which needs
     // lib/admin/ops.ts's dependencies rather than the People family's AdminContext.
-    const guard = f.includes("/mfa/") ? /adminState\(\)/ : /\/(operations|data)\//.test(f) ? /await requireAdmin\(\)/ : /return withAdmin\(/;
+    // The Steward's and the Jobs pages' actions (app/admin/steward/**) are Data's and Operations' moved there.
+    const guard = f.endsWith("mfa-actions.ts") ? /adminState\(\)/ : /\/(steward|data)\//.test(f) ? /await requireAdmin\(\)/ : /return withAdmin\(/;
     assert.deepEqual(unguardedActions(src, guard), [], f);
   }
 });
@@ -844,20 +845,24 @@ test("sign-in activity in words: devices from the browser, the authenticator not
   assert.equal(consoleLib.describeAuthActivity({ at: "x", kind: "auth.recovery", detail: null, source: "support" }).label, "Quad support: made a password-reset link");
 });
 
-test("the rail has its sections, highlights the right one, and every console page sits under one", () => {
-  assert.deepEqual(consoleLib.ADMIN_SECTIONS.map((s) => s.label), ["People", "Households", "Organizations", "Colleges", "Health", "Operations", "Essays", "Jobs", "Log"]);
-  assert.equal(consoleLib.activeSection("/admin/jobs/digests/runs/12"), "jobs");
-  assert.equal(consoleLib.activeSection("/admin"), null);
-  assert.equal(consoleLib.activeSection("/admin/households"), "households");
-  assert.equal(consoleLib.activeSection(`/admin/households/${HH}`), "households");
-  assert.equal(consoleLib.activeSection(`/admin/students/${STUDENT}`), "people");
-  assert.equal(consoleLib.activeSection("/admin/high-schools/abc"), "colleges");
-  assert.equal(consoleLib.activeSection("/admin/admins"), "log");
-  assert.equal(consoleLib.activeSection("/admin/peoplex"), null);
+test("the rail has the four doors, highlights the right screen, and every console page sits under a door", () => {
+  assert.deepEqual(consoleLib.ADMIN_DOORS.map((d) => d.label), ["Steward", "People", "Data", "More"]);
+  const screen = (p: string) => consoleLib.activeScreen(p)?.key ?? null;
+  assert.equal(screen("/admin/steward/jobs/digests/runs/12"), "jobs");
+  assert.equal(screen("/admin"), "inbox");
+  assert.equal(screen("/admin/households"), "households");
+  assert.equal(screen(`/admin/households/${HH}`), "households");
+  assert.equal(screen(`/admin/students/${STUDENT}`), "people");
+  assert.equal(screen("/admin/data/high-schools/abc"), "colleges");
+  assert.equal(screen("/admin/admins"), "admins");
+  assert.equal(screen("/admin/peoplex"), null);
+  assert.equal(consoleLib.activeDoor(`/admin/students/${STUDENT}`), "people");
+  assert.equal(consoleLib.activeDoor("/admin/data"), "data");
+  assert.equal(consoleLib.activeDoor("/admin/more"), "more");
   const rail = read("components/admin/AdminRail.tsx");
-  assert.match(rail, /<AdminSearch \/>/);
+  assert.match(rail, /<AdminSearch /);
   assert.match(rail, /aria-current=/);
-  assert.match(rail, /overflow-x-auto/); // the phone strip
+  assert.match(rail, /md:block/, "the rail shows from md; the tab bar takes over below it");
 });
 
 test("dates: a moment is shown in the site's zone; a bare date (a deadline) is shown as written, not shifted a day", () => {
@@ -922,7 +927,7 @@ test("console reads go through the console header: the pickers and counts use ad
   assert.match(reads, /adminSupabase\(\)/);
   assert.doesNotMatch(reads, /createServerSupabase\(/);
   // The MFA actions use the admin's own session (they are about the session itself), not the console's reads.
-  for (const f of adminFiles.filter((f) => (f.endsWith(".ts") || f.endsWith(".tsx")) && !f.includes("/mfa/"))) assert.doesNotMatch(read(f), /createServerSupabase\(/, f);
+  for (const f of adminFiles.filter((f) => (f.endsWith(".ts") || f.endsWith(".tsx")) && !f.endsWith("mfa-actions.ts"))) assert.doesNotMatch(read(f), /createServerSupabase\(/, f);
 });
 
 /* ------------------------------------------------------------------ */
@@ -994,6 +999,6 @@ test("isNextControlFlow recognizes redirect() and notFound(), and nothing a data
 
 test("the console files are all under the paths this unit owns", () => {
   const owned = ["app/admin/layout.tsx", "app/admin/page.tsx"];
-  const dirs = ["people", "households", "organizations", "students", "log", "admins", "mfa", "settings"].map((d) => `app/admin/${d}/`);
-  for (const f of adminFiles) assert.ok(owned.includes(f) || dirs.some((d) => f.startsWith(d)) || /^app\/admin\/(colleges|health|operations|jobs|essays|high-schools|selectivity|data)\//.test(f), relative(ROOT, join(ROOT, f)));
+  const dirs = ["people", "households", "organizations", "students", "log", "admins", "settings", "more", "help"].map((d) => `app/admin/${d}/`);
+  for (const f of adminFiles) assert.ok(owned.includes(f) || dirs.some((d) => f.startsWith(d)) || /^app\/admin\/(steward|data)\//.test(f), relative(ROOT, join(ROOT, f)));
 });

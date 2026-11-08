@@ -3,8 +3,8 @@ import { connection } from "next/server";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
 import { StatusChip } from "@/components/admin/StatusChip";
-import { DataBack } from "@/components/admin/steward/Bits";
-import { decideAction } from "@/app/admin/data/steward-actions";
+import { StewardBack } from "@/components/admin/steward/Bits";
+import { decideAction } from "@/app/admin/steward/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminSupabase } from "@/lib/admin/people";
 import type { StoreClient } from "@/lib/admin/review-queue";
@@ -14,7 +14,7 @@ import { dayLabel } from "@/lib/admin/ops-view";
 export const metadata: Metadata = { title: "Decisions", robots: { index: false, follow: false } };
 
 /**
- * `/admin/data/decisions` (specs/product/data-steward.md "Four kinds of issue", Policy): the questions only the owner
+ * `/admin/steward/decisions` (specs/product/data-steward.md "Four kinds of issue", Policy): the questions only the owner
  * answers, unanswered first, each with the Steward's recommendation and what each answer changes; Decide records one
  * answer with a note (deciding again records the new one).
  */
@@ -27,7 +27,7 @@ export default async function DecisionsPage() {
 
   return (
     <>
-      <PageHeader title="Decisions" back={<DataBack />} subtitle="Choices only you make, often for many colleges at once. The Steward follows the answer." />
+      <PageHeader title="Decisions" back={<StewardBack />} subtitle="Choices only you make, often for many colleges at once. The Steward follows the answer." />
       {decisions.length === 0 ? (
         <Panel title="Questions">
           <Empty>No questions yet.</Empty>

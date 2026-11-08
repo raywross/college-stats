@@ -86,7 +86,7 @@ export default async function PeoplePage({ searchParams }: PageProps<"/admin/peo
               </>
             )}
             Try part of a name or email. To look up a college, use{" "}
-            <Link href={`/admin/colleges?q=${encodeURIComponent(q)}`} className="font-semibold text-primary underline-offset-4 hover:underline">
+            <Link href={`/admin/data/colleges?q=${encodeURIComponent(q)}`} className="font-semibold text-primary underline-offset-4 hover:underline">
               Colleges
             </Link>
             .

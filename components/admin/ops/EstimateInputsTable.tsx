@@ -4,7 +4,7 @@ import type { InputRowView } from "@/lib/admin/estimate-inputs-load";
 import { pctSmart } from "@/lib/format";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
 
-const collegeHref = (unit: string) => `/admin/colleges/${unit}#estimate-inputs`;
+const collegeHref = (unit: string) => `/admin/data/colleges/${unit}#estimate-inputs`;
 
 function InputCell({ row, input }: { row: InputRowView; input: EstimateInputKey }) {
   const i = coreInput(row.inputs, input);

@@ -5,8 +5,8 @@ import { dayLabel } from "@/lib/admin/ops-view";
 import { pctSmart } from "@/lib/format";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
 
-const collegeHref = (unit: string) => `/admin/colleges/${unit}`;
-const queueHref = (unit: string) => `/admin/operations?unit=${unit}#review-queue`;
+const collegeHref = (unit: string) => `/admin/data/colleges/${unit}`;
+const queueHref = (unit: string) => `/admin/data/colleges/${unit}/review`;
 
 function GroupCell({ row, group }: { row: HealthRowView; group: (typeof HEALTH_GROUPS)[number] }) {
   const r = row.health.rows.find((x) => x.group === group);
@@ -55,7 +55,7 @@ function Changed({ row }: { row: HealthRowView }) {
 
 /**
  * Every college in the page's slice: a table from `md`, cards below it (the console supports phones but doesn't favor
- * them). The name links to the college's page in the console (`/admin/colleges/[unit]`, built with the hidden-values
+ * them). The name links to the college's page in the console (`/admin/data/colleges/[unit]`, built with the hidden-values
  * unit). Each group cell shows its status, the date it is judged by, and the deciding reason as its tooltip. The admit
  * rate is cited once for the table by its source note, since every row shows the same field.
  */

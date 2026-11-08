@@ -5,7 +5,7 @@ import { Panel, Empty } from "@/components/admin/Panel";
 import { cn } from "@/lib/utils";
 
 /** Exported so the console landing page's tile can show the same word (specs/product/visit-events.md "Nobody sees
- * it break": the tile links to `/admin/health#visit-events`). */
+ * it break": the tile links to `/admin/data/health#visit-events`). */
 export const VISIT_EVENTS_TONE_LABEL: Record<CardTone, string> = { red: "Check this", amber: "Worth a look", green: "All clear" };
 const TONE_RING: Record<CardTone, string> = {
   red: "border-destructive ring-1 ring-destructive/50",
@@ -34,7 +34,7 @@ export function failedNote(run: Pick<VisitRunRow, "hostsFailed" | "hostsCollapse
 }
 
 /**
- * The Visit events card on `/admin/health` (specs/product/visit-events.md "Keeping it running", "Nobody sees it
+ * The Visit events card on `/admin/data/health` (specs/product/visit-events.md "Keeping it running", "Nobody sees it
  * break"): the last 7 nights, hosts by status, and the newest run's data-check summary. `now` is passed in (rather
  * than read with `new Date()` here) so the page and its tests agree on one clock.
  */

@@ -14,7 +14,8 @@ import { grantAdmin, revokeAdmin } from "./actions";
 export const metadata: Metadata = { title: "Admins", robots: { index: false, follow: false } };
 
 /**
- * /admin/admins (specs/product/admin.md "Who is an admin"): who is an admin, grant by searching a person, revoke with
+ * /admin/admins (specs/product/admin.md "Who is an admin"; specs/product/admin-redesign.md "Settings (More)"): who is
+ * an admin, your own second factor (#second-factor, formerly /admin/mfa), grant by searching a person, revoke with
  * the rules. The first admin is added in the SQL Editor; every later one comes from here. You can't revoke yourself,
  * and the last admin can't be revoked: the buttons say so, and the database refuses either way.
  */
@@ -33,9 +34,9 @@ export default async function AdminsPage({ searchParams }: PageProps<"/admin/adm
 
   return (
     <>
-      <PageHeader title="Who is an admin" subtitle="Admins sign in with a second factor and can do everything in the console. Every action is logged." />
+      <PageHeader title="Admins" help="admins" subtitle="Admins sign in with a second factor and can do everything in the console. Every action is logged." />
       <div className="space-y-5">
-        <Panel title={`Admins (${current.length})`} id="admins">
+        <Panel title={`Admins (${current.length})`} id="admins" help="admins">
           <ul className="divide-y">
             {current.map((a) => {
               const isMe = a.user_id === me.userId;
@@ -76,7 +77,20 @@ export default async function AdminsPage({ searchParams }: PageProps<"/admin/adm
           </ul>
         </Panel>
 
-        <Panel title="Make someone an admin" id="grant">
+        {/* Was /admin/mfa (specs/product/admin-redesign.md "People"): the step itself is the layout's, at sign-in. */}
+        <Panel title="Your second factor" id="second-factor" help="second-factor">
+          <div className="max-w-prose space-y-2 text-sm text-muted-foreground">
+            <p>Your session has passed the second factor. The console asks for the 6-digit code from your authenticator app each time you sign in.</p>
+            <p>To replace the authenticator app:</p>
+            <ol className="list-decimal space-y-1 pl-5">
+              <li>In the Supabase dashboard, open Authentication, then Users, and find your account.</li>
+              <li>Remove its authenticator (Multi-factor) factor.</li>
+              <li>Open the console again: it asks you to set up a new authenticator before anything else.</li>
+            </ol>
+          </div>
+        </Panel>
+
+        <Panel title="Make someone an admin" id="grant" help="admins">
           <PersonPicker
             action="/admin/admins"
             param="grant"
@@ -99,7 +113,7 @@ export default async function AdminsPage({ searchParams }: PageProps<"/admin/adm
         </Panel>
 
         {revoked.length > 0 && (
-          <Panel title="Revoked" id="revoked">
+          <Panel title="Revoked" id="revoked" help="admins">
             <ul className="divide-y text-sm">
               {revoked.map((a) => (
                 <li key={a.user_id} className="flex flex-wrap items-center justify-between gap-x-4 py-2">

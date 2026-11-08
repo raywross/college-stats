@@ -21,7 +21,7 @@ const STATUS_LABEL: Record<SnapshotRow["status"], string> = {
 };
 
 /**
- * `/admin/data/snapshots` (specs/data-platform/change-sets.md "The console", "Snapshots" row): the list, newest
+ * `/admin/data/versions` (specs/data-platform/change-sets.md "The console", "Snapshots" row): the list, newest
  * first, with **Point back here** (a typed confirmation, then `admin_data_point_snapshot` and the workflow's `point`
  * job) and **Download manifest** (a plain link to the public object; nothing to log, nothing to confirm).
  */

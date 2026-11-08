@@ -162,6 +162,7 @@ function fakeDeps(over: FakeOver = {}) {
   const calls: { fn: string; args: Record<string, unknown> }[] = [];
   const dispatches: { file: string; inputs: Record<string, string>; requestId: string }[] = [];
   const writes: { collection: string; key: string; body: unknown; note: string | null }[] = [];
+  const reads: string[] = [];
   const store = new Map<string, unknown>((over.docs ?? []).map(([k, v]) => [k, structuredClone(v)]));
   const items = new Map((over.items ?? []).map((i) => [reviewKey(i), i] as const));
   const ops: OpsDeps = {
@@ -209,11 +210,11 @@ function fakeDeps(over: FakeOver = {}) {
       store.set(`${collection}/${key}`, structuredClone(body));
       return { ok: true, changeSet: 42 };
     },
-    read: async <D,>(collection: string, key: string) => (store.has(`${collection}/${key}`) ? (structuredClone(store.get(`${collection}/${key}`)) as D) : null),
+    read: async <D,>(collection: string, key: string) => (reads.push(`${collection}/${key}`), store.has(`${collection}/${key}`) ? (structuredClone(store.get(`${collection}/${key}`)) as D) : null),
     todoRow: async (key) => (over.todo ?? []).find((t) => t.key === key) ?? null,
     clusterKind: async (key) => over.kinds?.get(key) ?? null,
   };
-  return { deps, log, calls, dispatches, writes, store };
+  return { deps, log, calls, dispatches, writes, reads, store };
 }
 
 const P = "steward.proposals";
@@ -449,14 +450,21 @@ test("To do: Found needs an https address and records the attempt; No document p
   assert.equal(done.writes.length, 0);
 });
 
-test("Decide: one of the question's answers with a note; anything else is refused", async () => {
+test("Decide: one of the question's answers with a note and the typed word; anything else is refused", async () => {
   const d: DecisionDoc = { key: "hold-model-grids", question: "Hold every model-read grid?", recommends: "Hold them", options: [{ answer: "Hold them", effect: "3,550 values leave the site" }, { answer: "Keep them", effect: "nothing changes" }], answer: null, note: null, decided_by: null, decided_at: null, run: "r1", created: "2026-11-01" };
   const f = fakeDeps({ docs: [["steward.decisions/hold-model-grids", d]] });
-  assert.equal((await actions.decidePolicy(f.deps, form({ decision: d.key, answer: "Maybe" }))).status, "error");
-  assert.equal((await actions.decidePolicy(f.deps, form({ decision: d.key, answer: "Keep them", note: "until the check ships" }))).status, "done");
+  for (const confirm of [undefined, "", "decid", "approve"]) {
+    const r = await actions.decidePolicy(f.deps, form({ decision: d.key, answer: "Keep them", ...(confirm === undefined ? {} : { confirm }) }));
+    assert.deepEqual(r, { status: "error", message: 'Type "decide" to confirm.' }, `refused with confirm=${confirm}`);
+  }
+  assert.deepEqual([f.reads.length, f.writes.length, f.log.length], [0, 0, 0], "refused before anything is read, logged or written");
+  assert.equal((await actions.decidePolicy(f.deps, form({ decision: d.key, answer: "Maybe", confirm: "decide" }))).status, "error");
+  assert.equal((await actions.decidePolicy(f.deps, form({ decision: d.key, answer: "Keep them", note: "until the check ships", confirm: " Decide " }))).status, "done");
   const after = f.writes[0].body as DecisionDoc;
   assert.deepEqual([after.answer, after.note, after.decided_by], ["Keep them", "until the check ships", "Ray"]);
   assert.match(f.writes[0].note!, /^steward\.decide: Keep them/);
+  assert.match(read("app/admin/steward/decisions/page.tsx"), /<ConfirmTyped\s+action=\{decideAction\}[\s\S]*?expected=\{CONFIRM_DECIDE\}/, "the page asks for the word too");
+  assert.match(read("lib/admin/inbox.ts"), /href: `\/admin\/steward\/decisions#\$\{decisionAnchor\(d\.key\)\}`/, "the Inbox's row opens the same panel");
 });
 
 test("a refused admin_steward_write comes back in words, and nothing is dispatched after it", async () => {
@@ -695,7 +703,7 @@ test("To do, Decisions and Audits render their documents for an admin", async ()
   assert.ok(stubsIn(t).some((s) => s.name === "TodoTable"));
   assert.match(t, /aria-current="page"[^>]*>Common Data Set</);
   const d = html(await ((await loadTsx("app/admin/steward/decisions/page.tsx")).default as Page)({}));
-  assert.ok(stubsIn(d).some((s) => s.name === "AdminForm" && s.props.trigger === "Decide"));
+  assert.ok(stubsIn(d).some((s) => s.name === "ConfirmTyped" && s.props.trigger === "Decide" && s.props.expected === "decide"), "Decide asks for the typed word");
   assert.match(d, /1 waiting for an answer/);
   const a = html(await ((await loadTsx("app/admin/steward/audits/page.tsx")).default as Page)({}));
   assert.match(a, /1 wrong of 24 checked/);

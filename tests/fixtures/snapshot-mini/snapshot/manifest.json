@@ -5,8 +5,12 @@
   "colleges": 38,
   "objects": {
     "colleges.json.gz": {
-      "bytes": 1606069,
-      "sha256": "4ea3535a1ecd6be63d7aa3c52aa6801f5c2fc2ad2affd76f17d0982bc46ff299"
+      "bytes": 551255,
+      "sha256": "4cef7940e051150ae77e33d0a2cefa16a5bd75be92cab1e9cd869b643d06b050"
+    },
+    "lineage.json.gz": {
+      "bytes": 1054817,
+      "sha256": "91d7c3203be84992ecdd8764d086aa7b7c41fa998529a17112f9c1fde8190fce"
     },
     "meta.json": {
       "bytes": 17154,

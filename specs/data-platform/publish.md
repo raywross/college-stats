@@ -41,7 +41,8 @@ four minutes. Steps:
 ### Objects in a snapshot
 | Object | Content | Who reads it |
 |---|---|---|
-| `colleges.json.gz` | The `School[]` array, one college per line (today's `schools.json` format), about 6 MB gzipped | `getData()`, once per instance |
+| `colleges.json.gz` | The `School[]` array, one college per line (today's `schools.json` format), **without each college's `lineage`** (since 2026-11-08; 18.3 MB ungzipped instead of 35.7) | `getData()`, once per instance |
+| `lineage.json.gz` | `{ "<unit_id>": <that college's lineage>, … }` for every college that has records (1,784 of 1,893), one college per line; 17.4 MB ungzipped. Absent from a snapshot rendered before the split, whose colleges carry `lineage` inline | The loader: per college on first access (bundled), whole before a swap (storage) |
 | `meta.json`, `release-calendar.json`, `aliases.json` | As today | `getData()` |
 | `history/shared.json.gz` | `{meta, national, facts, cpi}` in one object | `getHistoryFiles()` |
 | `history/<unit>.json` | `SchoolHistory`, 1,893 objects, about 12 KB each | `getHistory(unit)` per request |
@@ -51,6 +52,17 @@ four minutes. Steps:
 | `search-index.json` | The browser's search index, built from the composed colleges | `app/search-index.json` serves it as is |
 | `high-schools/<ST>.json` and the shared files | The JSON fallback for keyless environments | `lib/high-school-store.ts` |
 | `manifest.json` | `{id, created_at, previous_id, colleges, objects: {name: {bytes, sha256}}, layers}` | The loader, the console |
+
+`colleges.json.gz` plus `lineage.json.gz` is exactly the composed `School[]`: `lib/data-platform/lineage-split.ts`
+`splitLineage` (the publisher's render, `scripts/lib/data-platform/render.mts`) takes the `lineage` key out of each
+college and keeps every other key in its order; `attachLineage` puts it back.
+
+**The bundled copy's `lineage/` folder.** `fetch-snapshot` stores `lineage.json.gz` ungzipped as `lineage.json` like
+every `.gz` object, and also explodes it into `.data/snapshot/lineage/<unit_id>.json`, one file per college (rewritten
+only when its bytes change, removed with the rest when a newer snapshot doesn't name it, and the folder removed when
+the snapshot has no `lineage.json.gz`). These files are not objects (not in the manifest); they are the bundled
+copy's index for the lazy loader, and `.data/snapshot/**` already traces them into every function. The mini fixture
+(`tests/fixtures/snapshot-mini/snapshot/`) has the same layout, and `--ensure`/`--fixture` copy it whole.
 
 About 3,900 objects per snapshot; Storage's object listing isn't used, so the count is harmless. The bucket is
 **public-read** (`snapshots`), created once by the migration (`insert into storage.buckets … public = true`) with a
@@ -85,6 +97,25 @@ write policy for the service role only.
   by reading the `<meta name="x-quad-snapshot">` tag every page carries (as built: a response header can't follow a
   swap because `proxy.ts` and `headers()` can't see the loader's state; the header exists only where the id is fixed
   for the deploy, and on `/search-index.json`).
+- **Lineage loads lazily** (2026-11-08; `lib/data-platform/loader.ts readBundledSchools`, `lib/data-platform/lineage-split.ts`).
+  The bundled source parses `colleges.json` (no `lineage`), then gives every college that has a
+  `lineage/<unit_id>.json` a `lineage` accessor: the first read loads that file synchronously (`readFileSync`, the
+  folder spelled literally for the file tracer), replaces the accessor with a plain data property, and returns it; an
+  assignment replaces it with a plain property too. The property is enumerable and configurable, so `{ ...school }`,
+  `Object.keys`, `structuredClone` and `JSON.stringify` see it (and load it), in its composed place before `trends` and `reported` (a college holding
+  either is rebuilt in that key order at load, so `JSON.stringify` of a loaded college is byte for byte the old one). A college with no file has no
+  `lineage` key, as before. Every reader of `school.lineage` and `citeField()` is unchanged. A copy with
+  `lineage.json` but no folder (written by an older `fetch-snapshot`) serves every college from that object, read
+  whole on the first access; a copy whose colleges carry `lineage` inline (an older snapshot) is read as before. The
+  load line then reads `[data] loaded 1893 colleges (snapshot <id>) in M ms, lineage lazy`. The storage source's
+  swap downloads `lineage.json.gz` as an optional object beside `colleges.json.gz` (hash-checked like the rest) and
+  attaches each college's records before the swap, so the cost stays off a request; without it (an older snapshot)
+  the colleges carry their own. Scripts get the same `School[]` through `scripts/lib/data-platform/bundled.mts`
+  (`readBundledColleges`, `readSnapshotSchools`, `readCollegesFile`), and the publisher's previous snapshot is
+  re-attached in `publish-snapshot.mts readSnapshot`.
+- **The pointer check runs under `after()`** (2026-11-08, `lib/data.ts getServed`): inside a request it is scheduled
+  with Next's `after()`, so the platform keeps the instance alive until `current.json` has been read; outside one
+  (the build, a script, a test) `after()` throws and the check runs unawaited as before.
 - **Big objects are fetched with `node:http(s)`, not `fetch`** (as built): Next patches `fetch`, and an uncached fetch
   during a static render would make the page dynamic. Shards use `fetch` with `force-cache`. No swap happens during
   `next build`, so every prerendered page comes from one snapshot. A swap follows any pointer change, newer or older,

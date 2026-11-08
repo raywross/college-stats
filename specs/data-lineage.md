@@ -73,6 +73,15 @@ group, e.g. "Fall 2025" or "2024–25 final"), and where the value sits when it 
 Missing parts fall back to the source's defaults in `meta.json`. The sync writes them for Scorecard admission-rate
 fallbacks and for every value an override sets ([data-sync.md](data-sync.md#overrides)).
 
+**Where the records live at rest (2026-11-08).** A published snapshot keeps them apart from the colleges: the
+publisher renders `colleges.json.gz` without any `lineage` key and `lineage.json.gz` as `{ "<unit_id>": <lineage> }`,
+and the bundled copy also holds them as `.data/snapshot/lineage/<unit_id>.json`, one file per college
+([publish.md "Objects in a snapshot"](data-platform/publish.md#objects-in-a-snapshot)). This is half the bytes of
+the old `colleges.json` (17.2 of 35.7 MB) and nothing on a cold start needs them. The loader gives each `School` a lazy
+`lineage` property that reads its own file on first access, synchronously, so nothing changes for readers:
+`school.lineage`, `citeField()`, `lineageFor`, the ⓘ, `/api/cite` and the Data API's `/lineage` see the same records.
+Scripts that read the bundled copy get them the same way (`scripts/lib/data-platform/bundled.mts`).
+
 Newest figures (`applyNewest`) write records too:
 - each replaced `admissions.{applicants,admitted,enrolled,acceptance_rate}`: a copy of its `reported.admissions.*`
   record (`source: "college-site"`, `method: "extracted"`, year, URL, retrieved date, quote); a rate calculated from

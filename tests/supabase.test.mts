@@ -29,6 +29,8 @@ const { registerHooks } = nodeModule as unknown as {
 registerHooks({
   resolve(specifier, context, next) {
     if (specifier === "server-only") return { url: "data:text/javascript,export {}", shortCircuit: true };
+    // lib/data.ts schedules its pointer check with after(), which throws outside a request, as here.
+    if (specifier === "next/server") return { url: `data:text/javascript,${encodeURIComponent("export function after() { throw new Error('after() outside a request') }")}`, shortCircuit: true };
     const fromRoot = specifier.startsWith("@/");
     if (fromRoot || ((specifier.startsWith("./") || specifier.startsWith("../")) && context.parentURL?.startsWith("file:"))) {
       const path = fromRoot ? join(ROOT, specifier.slice(2)) : fileURLToPath(new URL(specifier, context.parentURL));
@@ -69,7 +71,7 @@ async function withEnvAndConsole<T>(env: Record<string, string | undefined>, fn:
 }
 
 const COLLEGES = miniSchools().length;
-const LOADED_LINE = /^\[data\] loaded (\d+) colleges \(snapshot \d+\) in \d+ ms$/;
+const LOADED_LINE = /^\[data\] loaded (\d+) colleges \(snapshot \d+\) in \d+ ms, lineage lazy$/;
 const IGNORED = "[data] DATA_SOURCE is ignored: the deploy carries the dataset (specs/serving-architecture.md)";
 
 /* ------------------------------------------------------------------ */

@@ -91,7 +91,9 @@ type SnapshotEditsObject = import("../lib/data-platform/snapshot.ts").SnapshotEd
 type FieldDef = import("../lib/fields.ts").FieldDef;
 
 const FIXTURE = "tests/fixtures/snapshot-mini/snapshot";
-const schools = JSON.parse(read(`${FIXTURE}/colleges.json`)) as School[];
+// Each college with its lineage, as the loader gives it (the fixture keeps lineage in lineage/<unit>.json).
+const { readSnapshotSchools } = await import("../scripts/lib/data-platform/bundled.mts");
+const schools = readSnapshotSchools(join(ROOT, FIXTURE));
 const meta = JSON.parse(read(`${FIXTURE}/meta.json`)) as DatasetMeta;
 const HARVARD = "166027";
 const harvard = schools.find((s) => s.unit_id === HARVARD)!;

@@ -30,6 +30,8 @@ const { registerHooks } = nodeModule as unknown as {
 registerHooks({
   resolve(specifier, context, next) {
     if (specifier === "server-only") return { url: "data:text/javascript,export {}", shortCircuit: true };
+    // lib/data.ts schedules its pointer check with after(), which throws outside a request, as here.
+    if (specifier === "next/server") return { url: `data:text/javascript,${encodeURIComponent("export function after() { throw new Error('after() outside a request') }")}`, shortCircuit: true };
     if (specifier === "next/headers")
       return { url: "data:text/javascript,export function cookies(){throw new Error('no request')} export function headers(){throw new Error('no request')}", shortCircuit: true };
     let spec = specifier;

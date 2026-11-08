@@ -90,6 +90,8 @@ registerHooks({
   resolve(specifier, context, next) {
     const parent = context.parentURL ?? "";
     if (specifier === "server-only") return data("export {}");
+    // lib/data.ts schedules its pointer check with after(), which throws outside a request, as here.
+    if (specifier === "next/server") return data("export function after() { throw new Error('after() outside a request') }");
     if (specifier === "next/headers") return data("export function cookies(){throw new Error('no request')} export function headers(){throw new Error('no request')}");
     if (specifier === "@/lib/supabase-server" && !parent.startsWith("data:")) return data(SUPABASE_STUB);
     if (specifier === "react" && SETTINGS_FILES.test(parent)) return data(REACT_STUB);

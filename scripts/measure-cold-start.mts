@@ -2,8 +2,10 @@
  * Times the parts of a cold dataset load (specs/serving-architecture.md "6. Cold starts"). Each run is a fresh
  * process, so nothing in the process is warm. Prints, per step, the median of N runs of the wall time and of the main
  * thread's CPU time (the CPU time barely moves when other work shares the machine, the wall time does): the whole
- * first load through lib/data-platform/loader.ts (what the `[data] loaded … in N ms` line measures), then its parts:
- * reading each file, JSON.parse of each, createDataset, and the first lookup.
+ * first load through lib/data-platform/loader.ts (what the `[data] loaded … in N ms` line measures), the first lookup,
+ * the first `school.lineage` access (one college's lineage/<unit>.json, read lazily since the lineage split) and every
+ * college's (a page that cites them all, Explore), then the parts: reading each file, JSON.parse of each (lineage.json
+ * too, the object the split took out of colleges.json), and createDataset.
  *
  *   node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/measure-cold-start.mts [--dir .data/snapshot] [--runs 5]
  *   node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/measure-cold-start.mts --dir tests/fixtures/snapshot-mini/snapshot
@@ -107,10 +109,12 @@ const start = performance.now();
 const served = await holder.load();
 record("whole first load (holder.load)", performance.now() - start, cpuMs(cpu));
 console.info = info;
-time("first getSchoolById after the load", () => served.value.getSchoolById("166027"));
+const harvard = time("first getSchoolById after the load", () => served.value.getSchoolById("166027"));
+time("first school.lineage access (one college)", () => harvard?.lineage);
+time("every college's school.lineage after that", () => served.value.getAllSchools().reduce((n, s) => n + (s.lineage ? 1 : 0), 0));
 
 // Then the parts, from disk again.
-const files = ["manifest.json", "colleges.json", "meta.json", "release-calendar.json", "aliases.json", "history/shared.json"];
+const files = ["manifest.json", "colleges.json", "lineage.json", "meta.json", "release-calendar.json", "aliases.json", "history/shared.json"];
 const parsed: Record<string, unknown> = {};
 for (const f of files) {
   const path = join(dir, f);

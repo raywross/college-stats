@@ -276,13 +276,40 @@ precomputed derived files in [section 7](#7-later-options-with-their-triggers), 
 the cold parse is synchronous CPU, so a page that starts its database reads before its first `getData()` overlaps
 the two.
 
+**Built (round 3, 2026-11-08): `lineage` left `colleges.json`.** The publisher renders `colleges.json.gz` without each
+college's `lineage` (18.3 MB ungzipped) and a new `lineage.json.gz` (17.4 MB) keyed by unit id; `fetch-snapshot` also
+explodes it into `.data/snapshot/lineage/<unit_id>.json`, and the loader gives every college a lazy, synchronous
+`lineage` property that reads its own file on first access (specs/data-platform/publish.md "The loader"). Unlike the
+dropped getter above, nothing scans the text: the split happens at publish time. `scripts/measure-cold-start.mts` on
+the real snapshot 6, before (lineage inline) and after (the same snapshot split), median of seven cold runs on an
+M-series laptop with nothing else running (so these are faster than the shared-laptop numbers above; compare the
+columns, not the tables):
+
+| Step | Before | After |
+|---|---|---|
+| Whole first load (what the `[data] loaded` line measures) | 136 ms wall / 134 ms CPU (117–151 over three seven-run medians) | 87 ms wall / 85 ms CPU (87 both times) |
+| Read `colleges.json` | 12.6 ms (35.7 MB) | 3.9 ms (18.3 MB) |
+| `JSON.parse` of `colleges.json` | 114 ms | 56 ms |
+| First `school.lineage` access (one college's file) | 0 (inline) | 0.2 ms |
+| Every college's `school.lineage` after that (a page citing all 1,893, once per instance) | 0.2 ms | 99 ms |
+| `lineage.json` whole, read and parsed (the storage swap's extra work, off the request path) | | 56 ms |
+
+The first load is about a third shorter; the rest of it is the parse of the smaller file, the `lineage/` listing
+and the accessors. A page that cites a few colleges (a profile, the plan, compare) pays well under a millisecond
+for their records; one that cites every college (Explore's sources) pays about 100 ms the first time on an instance,
+which used to be in every cold start. The load line says which mode an instance is in: `[data] loaded 1893 colleges
+(snapshot <id>) in M ms, lineage lazy`. A storage swap attaches every college's records from `lineage.json.gz`
+before it swaps, in the background. `reported` (2.8 MB) stays inline; it is the next candidate if the cold parse
+still matters.
+
 The pointer check's `checking for a newer snapshot failed … timed out: …/current.json` is not a slow bucket: the
 timeout is 30 s of socket inactivity (`httpGet`), and the check runs unawaited (`void h.maybeRefresh()` in
 `lib/data.ts`). The likely cause (not yet confirmed in the logs): when the response is sent before `current.json`
 arrives, the platform pauses the instance, and on the next request the overdue timer fires. A longer timeout or a retry would fail the same way, so neither was changed.
 The fix is to keep the check alive past the response (Next's `after()` or Vercel's `waitUntil`), guarded for the
 callers outside a request (the build, `generateStaticParams`); a missed check costs nothing but a minute's delay
-before the next one.
+before the next one. **Built in round 3:** `lib/data.ts getServed` schedules it with `after(() => h.maybeRefresh())`
+and falls back to the unawaited call when `after()` throws (no request to attach to).
 
 ### 7. Later options, with their triggers
 Not built now; listed so the next step is a decision, not a search.
@@ -817,7 +844,8 @@ What the logs point at next, in the order of gain:
    another). It showed on `/org/export` and on the first `/advisor` after the deploy. The precomputed derived files in
    [section 7](#7-later-options-with-their-triggers) remain the lever; also seen once: `[data] checking for a newer
    snapshot failed … timed out` against Storage's `current.json`, harmless (the current snapshot kept serving) but
-   worth a longer timeout or a retry.
+   worth a longer timeout or a retry. (Round 3: `lineage` left `colleges.json`, a third off the first load, and the
+   check runs under `after()`; [section 6](#6-cold-starts-measure-then-decide).)
 4. One `/explore` request ran in `sfo1`, not `iad1`: check the project's function regions on the Pro plan.
 
 ### Built (round 2, the same day)
@@ -872,3 +900,11 @@ new code falls back to today's reads while a function is missing):
 - A plan tab switch is still a server render; with the payload down, prefetching the other tabs or a client-side
   switch is the next step if it still reads slow.
 - Measure after the deploy and the migration: the EXPLAIN recipe above as Maria, then the same browser paths.
+- Closed in round 3 (2026-11-08): the cold start's `JSON.parse` of the whole 35.7 MB `colleges.json`. `lineage` is
+  its own object (`lineage.json.gz`, exploded into `.data/snapshot/lineage/<unit_id>.json` in the bundled copy) and
+  loads per college on first access; the first load measured 136 → 87 ms wall (134 → 85 ms CPU) on the real snapshot
+  locally ([section 6](#6-cold-starts-measure-then-decide) has the table). Production's line, after the first publish
+  with the new renderer and the deploy that bundles it, should read about a third under today's 953 ms and end in
+  `, lineage lazy`.
+- Closed in round 3: the pointer check runs under `after()` (`lib/data.ts getServed`), so it no longer dies with the
+  response (`checking for a newer snapshot failed … timed out` / `write EPIPE`).

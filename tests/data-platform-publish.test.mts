@@ -27,6 +27,7 @@ import type { HighSchoolData } from "../scripts/lib/publish-high-schools.mts";
 import { withEdits, type FieldEdit } from "../lib/data-platform/edits.ts";
 import { formatAliasRows } from "../scripts/lib/aliases-sync.mts";
 import { formatSchools } from "../scripts/lib/identity-sync.mts";
+import { attachLineage, type LineageObject } from "../lib/data-platform/lineage-split.ts";
 import { placeSelectivity } from "../scripts/lib/selectivity.mts";
 import { formatHistoryShard } from "../scripts/history/build.mts";
 import { ALL_COLLECTIONS, COLLECTIONS } from "../scripts/lib/data-platform/layers.mts";
@@ -228,7 +229,9 @@ test("render: deterministic, every object hashed in the manifest, today's format
     assert.equal(r.manifest.objects[name].bytes, o.bytes.length, name);
   }
   assert.ok(!(SNAPSHOT_OBJECTS.manifest in r.manifest.objects));
-  assert.equal(gunzipSync(r.objects.get(SNAPSHOT_OBJECTS.colleges)!.bytes).toString("utf8"), formatSchools(first.schools));
+  // The colleges without their lineage (one per line, every other key in its order); the lineage beside them.
+  assert.equal(gunzipSync(r.objects.get(SNAPSHOT_OBJECTS.colleges)!.bytes).toString("utf8"), formatSchools(first.schools.map((s) => Object.fromEntries(Object.entries(s).filter(([k]) => k !== "lineage")) as School)));
+  assert.ok(SNAPSHOT_OBJECTS.lineage in r.manifest.objects, "lineage.json.gz is in the manifest like every object");
   const shared = JSON.parse(gunzipSync(r.objects.get(SNAPSHOT_OBJECTS.historyShared)!.bytes).toString("utf8"));
   assert.deepEqual(Object.keys(shared), ["meta", "national", "facts", "cpi"]);
   assert.equal(r.objects.get(historyObject("198419"))!.bytes.toString("utf8"), readFileSync(join(DATA, "history", "schools", "198419.json"), "utf8"));
@@ -253,6 +256,22 @@ test("render: deterministic, every object hashed in the manifest, today's format
   for (const [name, o] of r.objects) assert.ok(again.objects.get(name)!.bytes.equals(o.bytes), name);
 });
 
+test("render: colleges.json.gz has no lineage keys; lineage.json.gz has every college's; re-attached, they give back the composed colleges", () => {
+  const r = renderSnapshot(first, 7, 6, [11, 12], { createdAt: "2026-10-31T08:00:00.000Z" });
+  const colleges = JSON.parse(gunzipSync(r.objects.get(SNAPSHOT_OBJECTS.colleges)!.bytes).toString("utf8")) as School[];
+  assert.ok(colleges.every((s) => !("lineage" in s)), "no college carries lineage");
+  const lineage = JSON.parse(gunzipSync(r.objects.get(SNAPSHOT_OBJECTS.lineage)!.bytes).toString("utf8")) as Record<string, unknown>;
+  const withLineage = first.schools.filter((s) => s.lineage);
+  assert.ok(withLineage.length > 0, "the fixture's colleges have lineage records");
+  assert.deepEqual(Object.keys(lineage).sort(), withLineage.map((s) => s.unit_id).sort(), "every college that has records");
+  for (const s of withLineage) assert.deepEqual(lineage[s.unit_id], s.lineage, s.unit_id);
+  attachLineage(colleges, lineage as LineageObject);
+  assert.deepEqual(colleges, first.schools, "gunzip + re-attach gives back the composed colleges");
+  // The text: one college per line, like colleges.json.
+  const text = gunzipSync(r.objects.get(SNAPSHOT_OBJECTS.lineage)!.bytes).toString("utf8");
+  assert.equal(text.split("\n").length, withLineage.length + 3);
+});
+
 test("render: edits.json carries the snapshot id and every applied edit, empty or not, hashed in the manifest", () => {
   const empty = renderSnapshot(first, 7, 6, [11, 12], { createdAt: "2026-10-31T08:00:00.000Z" });
   assert.deepEqual(JSON.parse(empty.objects.get(SNAPSHOT_OBJECTS.edits)!.bytes.toString("utf8")), { snapshot: 7, edits: [] });
@@ -260,9 +279,9 @@ test("render: edits.json carries the snapshot id and every applied edit, empty o
   const edited = composeFixture({ ...layers, edits: [edit()] });
   const withEdit = renderSnapshot(edited, 9, 7, [20], { createdAt: "2026-10-31T08:00:00.000Z" });
   assert.deepEqual(JSON.parse(withEdit.objects.get(SNAPSHOT_OBJECTS.edits)!.bytes.toString("utf8")), { snapshot: 9, edits: edited.editsObject });
-  // Adding the edit changes edits.json, colleges.json (the edited value) and meta.json (the quad-edit source), but
-  // no other object's bytes.
-  const touched = new Set<string>([SNAPSHOT_OBJECTS.edits, SNAPSHOT_OBJECTS.colleges, SNAPSHOT_OBJECTS.meta]);
+  // Adding the edit changes edits.json, colleges.json (the edited value), lineage.json (the edit's lineage record) and
+  // meta.json (the quad-edit source), but no other object's bytes.
+  const touched = new Set<string>([SNAPSHOT_OBJECTS.edits, SNAPSHOT_OBJECTS.colleges, SNAPSHOT_OBJECTS.lineage, SNAPSHOT_OBJECTS.meta]);
   for (const [name, o] of empty.objects) {
     if (touched.has(name)) continue;
     assert.ok(withEdit.objects.get(name)!.bytes.equals(o.bytes), `${name} unaffected by the edit`);

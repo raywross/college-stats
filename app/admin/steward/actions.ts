@@ -7,6 +7,7 @@ import { adminSupabase } from "@/lib/admin/people";
 import { adminErrorMessage, type AdminActionState } from "@/lib/admin/console";
 import { REVIEW_QUEUE_COLLECTION, readDocuments, resetQueueCache, type StoreClient } from "@/lib/admin/review-queue";
 import { readClusters, readTodo } from "@/lib/admin/steward-reads";
+import { probeDocument } from "@/lib/admin/todo-probe";
 import type { DataActionDeps } from "@/lib/admin/data-actions";
 import type { ReviewItem } from "@/lib/reported";
 import {
@@ -20,6 +21,8 @@ import {
   startProposalJob,
   todoDone,
   todoFound,
+  todoLogin,
+  todoLoginRemove,
   todoNoDocument,
   type StewardDeps,
 } from "@/lib/admin/steward-actions";
@@ -59,6 +62,7 @@ async function realDeps(admin: { userId: string }): Promise<StewardDeps> {
     async todoRow(key) {
       return (await readTodo(client)).find((t) => t.key === key) ?? null;
     },
+    probe: (url) => probeDocument(url),
     async clusterKind(key) {
       const read = await readClusters(client);
       return read.ok ? (read.clusters.find((c) => c.cluster.key === key)?.kind ?? null) : null;
@@ -123,6 +127,16 @@ export async function todoNoDocumentAction(_previous: AdminActionState, form: Fo
 export async function todoDoneAction(_previous: AdminActionState, form: FormData): Promise<AdminActionState> {
   const admin = await requireAdmin();
   return finish(await todoDone(await realDeps(admin), form));
+}
+
+export async function todoLoginAction(_previous: AdminActionState, form: FormData): Promise<AdminActionState> {
+  const admin = await requireAdmin();
+  return finish(await todoLogin(await realDeps(admin), form));
+}
+
+export async function todoLoginRemoveAction(_previous: AdminActionState, form: FormData): Promise<AdminActionState> {
+  const admin = await requireAdmin();
+  return finish(await todoLoginRemove(await realDeps(admin), form));
 }
 
 export async function decideAction(_previous: AdminActionState, form: FormData): Promise<AdminActionState> {

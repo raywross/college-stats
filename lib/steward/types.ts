@@ -159,6 +159,27 @@ export interface TodoDoc {
   updated: string;
 }
 
+/**
+ * A host the owner has an account on (`steward.logins`, one document per host, keyed by the host): a To do row behind
+ * a login on a listed host can be worked from the owner's own browser, where the session already exists. No credential
+ * is ever stored; `may_use` is the owner's answer to the terms question (whether documents from behind this login may
+ * be used and cited). See specs/product/todo-browser-agent.md "Logins".
+ */
+export interface LoginDoc {
+  /** The host, lowercase, as a URL names it (`irp.example.edu`). */
+  host: string;
+  /** What the account is, in words ("a counselor account", "alumni login"). */
+  account: string;
+  /** Whether documents from behind this login may be used on the site. */
+  may_use: boolean;
+  note: string | null;
+  added: string;
+  /** Who added it (the admin's name). */
+  added_by: string | null;
+  /** When the owner removed it (the document stays for the history); null while listed. */
+  removed?: string | null;
+}
+
 /** A policy question (`steward.decisions`) with the Steward's recommendation and the owner's answer. */
 export interface DecisionDoc {
   key: string;

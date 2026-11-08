@@ -18,7 +18,7 @@ import { clusterQueue, freeDetailChecks } from "../steward/cluster.ts";
 import { kindContext, kindOf } from "../steward/kinds.ts";
 import { reviewColleges, reviewRows, type CollegeToReview, type ReviewGroup } from "../steward/review-rows.ts";
 import { mergeTodo, todoRows, type BlockedDirectoryLike, type FailureRowLike } from "../steward/todo-sources.ts";
-import type { AuditDoc, Cluster, DecisionDoc, IssueDoc, IssueKind, ProposalDoc, ProposalStatus, RunDoc, TodoDoc } from "../steward/types.ts";
+import type { AuditDoc, Cluster, DecisionDoc, IssueDoc, IssueKind, LoginDoc, ProposalDoc, ProposalStatus, RunDoc, TodoDoc } from "../steward/types.ts";
 import { readCollection, readDocuments, readQueue, type StoreClient } from "./review-queue.ts";
 
 /** The collections these reads use (scripts/lib/data-platform/layers.mts `COLLECTIONS.steward`; a test checks they agree). */
@@ -30,6 +30,7 @@ export const STEWARD_COLLECTIONS = {
   audits: "steward.audits",
   runs: "steward.runs",
   reviews: "steward.reviews",
+  logins: "steward.logins",
 } as const;
 /** The engines' records the To do rows and the clusters' kinds come from. */
 export const SOURCE_COLLECTIONS = {
@@ -221,6 +222,12 @@ export async function readTodo(client: StoreClient, opts: { demand?: ReadonlyMap
     blockedDirectories: blocked.get("blocked")?.blocked ?? [],
   });
   return mergeTodo(generated, stored.values(), opts.demand);
+}
+
+/** The hosts the owner has an account on (`steward.logins`, specs/product/todo-browser-agent.md "Logins"), by host; removed ones left out. */
+export async function readLogins(client: StoreClient): Promise<Map<string, LoginDoc>> {
+  const docs = await readSoft<LoginDoc>(client, STEWARD_COLLECTIONS.logins);
+  return new Map([...docs.values()].filter((d) => !d.removed).map((d) => [d.host, d]));
 }
 
 /* ------------------------------------------------------------------ */

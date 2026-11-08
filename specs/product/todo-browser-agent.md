@@ -1,11 +1,16 @@
 # Working the To do List with Claude in Chrome
 
-> Status: **proposed** 2026-11-08 from the owner's question after the admin redesign (#226, #229): the To do tab "says
-> it's only things that a person can do … couldn't we have something that would leverage the Claude extension to
-> agentically go through the items and fix them?" Extends [data-steward.md](data-steward.md)
-> "[Documents a person has to fetch](data-steward.md#documents-a-person-has-to-fetch)". Nothing here is built; the
-> [decisions](#decisions-for-the-owner) at the end were taken by the owner the same day; the [Logins](#logins) section
-> answers their follow-up question. Part of [product](README.md).
+> Status: **built** 2026-11-08, steps 1 and 2 and the Logins list (see [As built](#as-built-2026-11-08)); step 3, the
+> file route, waits on the document archive. Proposed the same day from the owner's question after the admin redesign
+> (#226, #229): the To do tab "says it's only things that a person can do … couldn't we have something that would
+> leverage the Claude extension to agentically go through the items and fix them?" Extends
+> [data-steward.md](data-steward.md) "[Documents a person has to fetch](data-steward.md#documents-a-person-has-to-fetch)".
+> The [decisions](#decisions-for-the-owner) were taken by the owner the same day; the [Logins](#logins) section answers
+> their follow-up question. Part of [product](README.md).
+>
+> **Words.** The console never says "AI" or "agent" to an admin (a rule tests/admin-steward.test.mts enforces on the
+> Steward's screens). On the screens, Claude in Chrome is **the assistant**: the assistant view, the assistant pressed
+> Found. This spec uses "agent" freely; the code and the help text don't.
 
 ## The short answer
 Yes, and most of it needs no new plumbing. Claude in Chrome acts in the owner's own Chrome, signed in to the console
@@ -139,6 +144,62 @@ Taken 2026-11-08, the day the question was asked.
    server may fetch; where it may not, the row keeps the address and waits for the file.
 4. **Build order.** As recommended: step 1 now, step 2 next (its items 1 and 2 first), step 3 after
    `COLLEGE_DOCS_REPO`.
+
+## As built (2026-11-08)
+Steps 1 and 2 and the Logins list, in one change. Nothing in the crawlers' rules moved: no machine fetches a blocked
+host or changes its user agent.
+
+**Step 1, the playbook.** `.claude/skills/work-todo/SKILL.md`: where to start (the assistant view), the order per
+row, the rules (no sign-in, no CAPTCHA, robots.txt doesn't bind the assistant, never press Done, never list a login),
+the report. The help entry `to-do-assistant` on the view names it.
+
+**Step 2, item 1: Found is wired into the run.** `lib/steward/todo-run.ts` (pure): a `steward.todo` row with
+`status: found`, a college, a kind the run fetches (CDS, class profile) and an http(s) address becomes an entry of the
+owner's list, so discovery step 0 (`knownStep`) starts from it exactly as from a link in `cds-urls`; `shouldRetry`
+already re-runs a college whose owner's list holds a link its recipe doesn't. `loadReportedState` reads the rows
+(`state.todoFound`) and merges the entries into `state.manual`. When `acquireSource` has the document's bytes (new or
+already archived) from the row's address, its direct-download form, or where it redirected, `settleFound` marks the
+row done with a `run` attempt naming the archive hash, and `stateDocuments` carries `steward.todo` so the
+`StateWriter` writes exactly the rows that changed, in the run's own change set. A found address on a host that refuses
+machines fails as any fetch there fails; the row stays found and the next run tries again, which is the file route's
+cue.
+
+**Item 2: Found is checked on save.** `lib/admin/todo-probe.ts` fetches the address once as the run would (the
+pipeline's user agent, redirects followed, an 8-second deadline, the first 4 KB only, the body then cancelled; a test
+holds the user agent equal to the pipeline's) and `lib/steward/todo-verify.ts` (pure) says what answered from the
+bytes and the status, never the URL: a PDF or a workbook (`document`), a web page (`page`: a viewer or a sign-in
+page), HTTP 401/403/405/429 or a bot challenge (`blocked`), 404/410 (`not-found`), anything else (`error`). The verdict
+is a `verify` attempt on the row and the sentence Found answers with ("Found. A PDF answers at that address; the next
+run of this college fetches it." / "…the host refuses machines (HTTP 403), so the run can't fetch it. The file has to
+come by hand…"). The spec's earlier "archived at once" outcome is not built: a Server Action is too short-lived to
+download and archive a document; the next run does that, and the verdict says so. A probe that throws or a console
+without one still saves the row; `StewardDeps.probe` is optional.
+
+**Item 3: one row, one page.** `/admin/steward/todo/[key]`: the row's facts (`Fields`), the landing page and the
+document, the owner's login where one is listed, the actions, and every attempt newest first with its route. The
+table's Subject links it (the college's Review page moved beside it); `?assistant=1` keeps the view.
+
+**Item 4: the assistant view.** `/admin/steward/todo?assistant=1`: `assistantRows` (`lib/steward/todo-assistant.ts`)
+keeps open rows only, drops `terms` rows and `login` rows whose host isn't listed, and caps the batch at 30. The page
+says what was left out, hides the Logins panel and the closed-rows toggle, and every form carries `by=assistant`.
+
+**Item 5: say who.** `actorRoute(form)`: an attempt by a form that says `by=assistant` is recorded with route
+`assistant`, else `person`; Done now records an attempt too. The weekly jobs audit doesn't count them yet.
+
+**Logins.** Not a reference document after all: `admin_data_set_reference` only updates a document that exists, while
+`admin_steward_write` accepts any `steward.<name>` collection, so the list is **`steward.logins`, one document per
+host** (`LoginDoc`: host, account in words, `may_use`, note, added, added_by, `removed`), written through the console's
+audited path with the note `steward.login: <host>: <account>`. The Logins panel on the To do page lists the hosts with
+Add a host and Remove (the document stays, marked removed); a `login` row whose host isn't listed offers **I have a
+login here** to a person (never in the assistant view, and the action refuses `by=assistant`). The row and table show
+"You have a login: …" on listed hosts. **Not built:** the citation form for a document from behind a login (the
+`public: false` lineage and the source note); nothing reads a document from behind a login yet, so nothing cites one.
+
+**Tests.** `tests/steward-todo-run.test.mts` (the run wiring, the classifier, the probe over a fake fetch, the
+assistant filter, the login documents), `tests/admin-steward.test.mts` (Found with a probe, attribution, the Logins
+actions, the assistant view and the row page rendered, the static rules extended to the new page),
+`tests/college-reported-store.test.mts` (a found row read into the owner's list; the writer sends a settled row and
+nothing else).
 
 ## Logins
 The owner's follow-up: "is there a way we can have the user add logins over time so the agent can login on its own?"

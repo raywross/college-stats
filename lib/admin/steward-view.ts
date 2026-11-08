@@ -11,6 +11,8 @@ export const linkCls = "underline decoration-dotted underline-offset-2";
 export const reviewHref = (unit: string) => `/admin/data/colleges/${unit}/review`;
 /** A proposal's page. */
 export const proposalHref = (key: string) => `/admin/steward/proposals/${encodeURIComponent(key)}`;
+/** A To do row's own page; `assistant` keeps the assistant view's forms saying who pressed. */
+export const todoHref = (key: string, assistant = false) => `/admin/steward/todo/${encodeURIComponent(key)}${assistant ? "?assistant=1" : ""}`;
 
 /** A document's address opened at a page (PDF viewers read `#page=`), or null for anything but http(s). */
 export function documentHref(url: string | null | undefined, page?: number | null): string | null {

@@ -21,6 +21,7 @@ import { writeManifest, writeRecord } from "../scripts/lib/college-reported/reco
 import { writeBatches } from "../scripts/lib/college-reported/batch.mts";
 import { emptySummaryV3 } from "../scripts/lib/college-reported/models.mts";
 import type { Round3State } from "../scripts/lib/college-reported/phases.mts";
+import type { TodoDoc } from "../lib/steward/types.ts";
 import { REFERENCE_KEYS, StateWriter, loadReportedState, recordBody, stateDocuments } from "../scripts/lib/college-reported/state.mts";
 import { holdMisread } from "../scripts/hold-misread.mts";
 
@@ -98,8 +99,16 @@ test("loadReportedState reads back what an import of the files wrote", async () 
     const store = fileStore(join(dir, "layers"));
     const h = await store.open("import", "git", "fixture");
     for (const [c, docs] of importLayers(join(dir, "data"), { only: new Set([...Object.values(COLLECTIONS.reported), COLLECTIONS.reference.files, COLLECTIONS.import.headers]) })) await h.write(c, [...docs].map(([key, body]) => ({ key, body })));
+    // A To do row a person marked Found, and one still open (specs/product/todo-browser-agent.md "Step 2", item 1).
+    const found = { key: `cds:${UNIT}:2025-26`, kind: "cds", unit_id: UNIT, subject: "A College", edition: "2025-26", landing: null, document_url: "https://ir.example.edu/cds-2025-26.pdf", host: "ir.example.edu", why: "challenge", reach: 1, demand: 0, status: "found", route: "person", attempts: [], note: null, updated: "2026-11-08T10:00:00Z" };
+    await h.write(COLLECTIONS.steward.todo, [
+      { key: found.key, body: found },
+      { key: "cds:1:-", body: { ...found, key: "cds:1:-", unit_id: "1", status: "open", document_url: null } },
+    ]);
     await h.close("applied");
     const back = await loadReportedState(store, state.summary);
+    assert.deepEqual(back.manual, [{ unit_id: UNIT, url: "https://ir.example.edu/cds-2025-26.pdf", kind: "cds", note: `To do cds:${UNIT}:2025-26: found in a browser`, added: "2026-11-08" }], "the found row joins the owner's list for step 0");
+    assert.deepEqual(back.todoFound?.map((r) => r.key), [found.key], "and is kept so the run can mark it done");
     assert.equal(back.sources.updated, state.sources.updated, "updated from import.headers");
     assert.equal(back.reported.updated, state.reported.updated);
     assert.deepEqual(back.reported.entries, state.reported.entries);
@@ -147,6 +156,20 @@ test("StateWriter sends only what changed, removes what left the state, and comp
     await writer.flush();
     assert.ok(versions().some((v) => v.collection === COLLECTIONS.reported.cdsRecords && v.key === UNIT), "a dirty record is written");
     assert.equal(state.dirty.size, 0, "save clears the dirty set");
+
+    // A found To do row loaded with the state is written only once the run marks it done.
+    const found: TodoDoc = { key: `cds:${UNIT}:2025-26`, kind: "cds", unit_id: UNIT, subject: "A College", edition: "2025-26", landing: null, document_url: "https://ir.example.edu/cds.pdf", host: "ir.example.edu", why: "challenge", reach: 1, demand: 0, status: "found", route: "person", attempts: [], note: null, updated: "2026-11-08T10:00:00Z" };
+    const withTodo: Round3State = { ...state, todoFound: [found] };
+    const w2 = new StateWriter(handle, withTodo);
+    w2.save(withTodo);
+    await w2.flush();
+    assert.ok(!versions().some((v) => v.collection === COLLECTIONS.steward.todo), "unchanged: not written");
+    withTodo.todoFound = [{ ...found, status: "done", attempts: [{ at: "2026-11-09T00:00:00Z", route: "run", result: "archived abc" }] }];
+    w2.save(withTodo);
+    await w2.flush();
+    const v = versions().find((x) => x.collection === COLLECTIONS.steward.todo)!;
+    assert.equal(v.key, found.key);
+    assert.equal((await store.readOne<TodoDoc>(COLLECTIONS.steward.todo, found.key))?.status, "done");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

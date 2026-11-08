@@ -229,9 +229,12 @@ whose terms forbid automated access is `ask`; every fetch recorded; removal hono
 confirmation**: a person in their own browser may open a document the page links even where robots.txt disallows
 crawlers (the crawlers never do).
 
-> **2026-11-08**: an agent in the owner's browser (Claude in Chrome) working this list, and the fact that a Found row is not
-> yet read by the next run, are taken up in [todo-browser-agent.md](todo-browser-agent.md). The confirmation above was given
-> there the same day: a person, or an agent in that person's browser, is not bound by robots.txt; the crawlers still are.
+> **2026-11-08**: an agent in the owner's browser (Claude in Chrome, "the assistant" on the screens) working this list is
+> built in [todo-browser-agent.md](todo-browser-agent.md): a row marked Found now joins the owner's list for the next run
+> (it didn't before) and is checked once on save, each row has its own page, an assistant view batches the rows the
+> assistant may work, and a Logins list (`steward.logins`) names the hosts the owner has an account on. The confirmation
+> above was given there the same day: a person, or an agent in that person's browser, is not bound by robots.txt; the
+> crawlers still are.
 
 ## The console: where it all shows
 The Steward's screens join the **Data** section (`/admin/data`), beside Change sets, Holds, Snapshots and Reference,

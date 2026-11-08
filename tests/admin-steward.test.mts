@@ -437,7 +437,9 @@ test("To do: Found needs an https address and records the attempt; No document p
   const todo: TodoDoc = { key: "cds:190415:2025-26", kind: "cds", unit_id: "190415", subject: "Cornell University", edition: "2025-26", landing: "https://irp.cornell.edu/cds", document_url: null, host: "irp.cornell.edu", why: "challenge", reach: 1, demand: 0, status: "open", route: null, attempts: [], note: null, updated: "2026-10-30" };
   const f = fakeDeps({ todo: [todo] });
   assert.match((await actions.todoFound(f.deps, form({ todo: todo.key, url: "javascript:alert(1)" })) as { message: string }).message, /https/);
-  assert.equal((await actions.todoFound(f.deps, form({ todo: todo.key, url: "https://irp.cornell.edu/cds-2025-26.pdf" }))).status, "done");
+  const r = await actions.todoFound(f.deps, form({ todo: todo.key, url: "https://irp.cornell.edu/cds-2025-26.pdf" }));
+  assert.equal(r.status, "done");
+  assert.equal((r as { message: string }).message, "Found. The next run of this college fetches it.", "no probe: the address alone");
   const found = f.writes[0].body as TodoDoc;
   assert.deepEqual([found.status, found.document_url, found.attempts.length, found.attempts[0].route], ["found", "https://irp.cornell.edu/cds-2025-26.pdf", 1, "person"]);
   assert.equal((await actions.todoNoDocument(f.deps, form({ todo: todo.key }))).status, "done");
@@ -448,6 +450,71 @@ test("To do: Found needs an https address and records the attempt; No document p
   const done = fakeDeps({ todo: [{ ...todo, status: "done" }] });
   assert.equal((await actions.todoDone(done.deps, form({ todo: todo.key })) as { message: string }).message, "This row is done already.");
   assert.equal(done.writes.length, 0);
+});
+
+test("Found with the probe: the address is checked once, the verdict is a verify attempt and the message; a failing probe never blocks the save", async () => {
+  const todo: TodoDoc = { key: "cds:190415:2025-26", kind: "cds", unit_id: "190415", subject: "Cornell University", edition: "2025-26", landing: "https://irp.cornell.edu/cds", document_url: null, host: "irp.cornell.edu", why: "challenge", reach: 1, demand: 0, status: "open", route: null, attempts: [], note: null, updated: "2026-10-30" };
+  const probed: string[] = [];
+  const f = fakeDeps({ todo: [todo] });
+  f.deps.probe = async (url) => {
+    probed.push(url);
+    return { outcome: "document", format: "pdf", detail: "a PDF" };
+  };
+  const r = await actions.todoFound(f.deps, form({ todo: todo.key, url: "https://irp.cornell.edu/cds-2025-26.pdf", note: "Assistant: cover says 2025-2026", by: "assistant" }));
+  assert.equal(r.status, "done", JSON.stringify(r));
+  assert.equal((r as { message: string }).message, "Found. A PDF answers at that address; the next run of this college fetches it.");
+  assert.deepEqual(probed, ["https://irp.cornell.edu/cds-2025-26.pdf"]);
+  const body = f.writes[0].body as TodoDoc;
+  assert.deepEqual(body.attempts.map((a) => [a.route, a.result]), [
+    ["assistant", "found https://irp.cornell.edu/cds-2025-26.pdf"],
+    ["verify", "a PDF answers"],
+  ]);
+  assert.equal(body.note, "Assistant: cover says 2025-2026");
+  assert.equal(f.writes[0].note, "steward.todo: found https://irp.cornell.edu/cds-2025-26.pdf (a PDF answers)");
+
+  const blocked = fakeDeps({ todo: [todo] });
+  blocked.deps.probe = async () => ({ outcome: "blocked", detail: "HTTP 403" });
+  const b = await actions.todoFound(blocked.deps, form({ todo: todo.key, url: "https://irp.cornell.edu/cds-2025-26.pdf" }));
+  assert.match((b as { message: string }).message, /refuses machines \(HTTP 403\)/);
+  assert.equal((blocked.writes[0].body as TodoDoc).attempts[0].route, "person", "no by: a person pressed it");
+
+  const broken = fakeDeps({ todo: [todo] });
+  broken.deps.probe = async () => {
+    throw new Error("socket hang up");
+  };
+  const k = await actions.todoFound(broken.deps, form({ todo: todo.key, url: "https://irp.cornell.edu/cds-2025-26.pdf" }));
+  assert.equal(k.status, "done");
+  assert.match((k as { message: string }).message, /couldn't be checked from here \(no answer\)/);
+  assert.equal((broken.writes[0].body as TodoDoc).attempts[1].result, "couldn't check: no answer");
+
+  const nd = fakeDeps({ todo: [todo] });
+  await actions.todoNoDocument(nd.deps, form({ todo: todo.key, by: "assistant", note: "Assistant: searched the IR site" }));
+  assert.deepEqual((nd.writes[0].body as TodoDoc).attempts.map((a) => a.route), ["assistant"]);
+});
+
+test("Logins: I have a login here lists the host (no credential, the terms answer, who and when); the assistant may not; Remove keeps the document marked removed", async () => {
+  const f = fakeDeps();
+  const r = await actions.todoLogin(f.deps, form({ host: "WWW.Portal.Example.edu", account: " a counselor account ", may_use: "on", note: "NACAC member portal" }));
+  assert.equal(r.status, "done", JSON.stringify(r));
+  assert.match((r as { message: string }).message, /^Listed portal\.example\.edu\./);
+  assert.deepEqual(f.writes[0], {
+    collection: "steward.logins",
+    key: "portal.example.edu",
+    body: { host: "portal.example.edu", account: "a counselor account", may_use: true, note: "NACAC member portal", added: "2026-11-01T15:00:00.000Z", added_by: "Ray" },
+    note: "steward.login: portal.example.edu: a counselor account, documents may be used",
+  });
+  assert.equal(f.calls.length, 0, "no admin_data_* call: the login is a steward document");
+  assert.match((await actions.todoLogin(f.deps, form({ host: "portal.example.edu", account: "x", by: "assistant" })) as { message: string }).message, /Only a person/);
+  assert.match((await actions.todoLogin(f.deps, form({ host: "not a host", account: "x" })) as { message: string }).message, /wasn't recognized/);
+  assert.match((await actions.todoLogin(f.deps, form({ host: "portal.example.edu" })) as { message: string }).message, /Say what the account is/);
+  assert.equal(f.writes.length, 1, "refusals write nothing");
+
+  const rm = await actions.todoLoginRemove(f.deps, form({ host: "portal.example.edu" }));
+  assert.equal(rm.status, "done", JSON.stringify(rm));
+  const removed = f.writes[1].body as { removed: string | null; account: string };
+  assert.deepEqual([removed.removed, removed.account], ["2026-11-01T15:00:00.000Z", "a counselor account"]);
+  assert.match((await actions.todoLoginRemove(f.deps, form({ host: "portal.example.edu" })) as { message: string }).message, /isn't listed any more/);
+  assert.match((await actions.todoLoginRemove(f.deps, form({ host: "never.example.edu" })) as { message: string }).message, /isn't listed any more/);
 });
 
 test("Decide: one of the question's answers with a note and the typed word; anything else is refused", async () => {
@@ -506,7 +573,7 @@ test("static: every exported Server Action in app/admin/steward/actions.ts start
   const src = read("app/admin/steward/actions.ts");
   assert.ok(src.startsWith('"use server";'));
   const bodies = [...src.matchAll(/export async function (\w+)\([^)]*\)[^{]*\{\n(.*)\n/g)];
-  assert.equal(bodies.length, 11);
+  assert.equal(bodies.length, 13);
   for (const [, name, firstLine] of bodies) assert.match(firstLine, /await requireAdmin\(\)/, `${name} starts with requireAdmin()`);
   assert.equal([...src.matchAll(/^export /gm)].length, bodies.length, "nothing else is exported from the actions file");
   const broken = src.replace("const admin = await requireAdmin();", "const admin = { userId: 'x' };");
@@ -518,6 +585,7 @@ const PAGES = [
   "app/admin/steward/proposals/page.tsx",
   "app/admin/steward/proposals/[key]/page.tsx",
   "app/admin/steward/todo/page.tsx",
+  "app/admin/steward/todo/[key]/page.tsx",
   "app/admin/steward/decisions/page.tsx",
   "app/admin/steward/audits/page.tsx",
   "app/admin/data/colleges/[unit]/review/page.tsx",
@@ -715,7 +783,63 @@ test("To do, Decisions and Audits render their documents for an admin", async ()
   const rowsHtml = html(tt.TodoTable({ rows: [todo, { ...todo, key: "k2", status: "no-document" }] }));
   assert.deepEqual(stubsIn(rowsHtml).filter((s) => s.name === "AdminForm").map((s) => s.props.trigger), ["Found", "No document published", "Done", "Found", "Done"]);
   assert.match(rowsHtml, /href="\/admin\/data\/colleges\/190415\/review"/);
+  assert.match(rowsHtml, /href="\/admin\/steward\/todo\/cds%3A190415%3A2025-26"/, "the subject links the row's own page");
   assert.match(rowsHtml, /a bot challenge/);
+  assert.doesNotMatch(rowsHtml, /I have a login here/);
+});
+
+test("the assistant view: one batch of rows it may work, every form saying so, no Logins panel; a login row offers I have a login here to a person only", async () => {
+  fresh();
+  const base: TodoDoc = { key: "cds:190415:2025-26", kind: "cds", unit_id: "190415", subject: "Cornell University", edition: "2025-26", landing: "https://irp.cornell.edu/cds", document_url: null, host: "irp.cornell.edu", why: "challenge", reach: 1, demand: 0, status: "open", route: null, attempts: [], note: null, updated: "2026-10-30" };
+  const terms: TodoDoc = { ...base, key: "cds:1:-", unit_id: "1", subject: "Terms College", why: "terms", route: "ask" };
+  const unlisted: TodoDoc = { ...base, key: "cds:2:-", unit_id: "2", subject: "Members College", why: "login", host: "members.example.org", route: "ask" };
+  const listed: TodoDoc = { ...base, key: "cds:3:-", unit_id: "3", subject: "Portal College", why: "login", host: "portal.example.edu", route: "ask" };
+  const login = { host: "portal.example.edu", account: "a counselor account", may_use: true, note: null, added: "2026-11-08T10:00:00Z", added_by: "Ray" };
+  reset({ supabase: store([doc("steward.todo", base.key, base), doc("steward.todo", terms.key, terms), doc("steward.todo", unlisted.key, unlisted), doc("steward.todo", listed.key, listed), doc("steward.logins", login.host, login)]) });
+  const page = (await loadTsx("app/admin/steward/todo/page.tsx")).default as Page;
+
+  const a = html(await page({ searchParams: Promise.resolve({ assistant: "1" }) }));
+  assert.match(a, /To do · assistant view/);
+  assert.match(a, /terms rows and logins on unlisted hosts left out/);
+  assert.doesNotMatch(a, /&quot;help&quot;:&quot;steward-logins&quot;/, "no Logins panel in the assistant view");
+  assert.match(a, /href="\/admin\/steward\/todo"[^>]*>The whole list</);
+
+  const tt = (await loadTsx("components/admin/steward/TodoTable.tsx")) as { TodoTable: (p: unknown) => import("react").ReactElement };
+  const logins = new Map([[login.host, login]]);
+  const assistantHtml = html(tt.TodoTable({ rows: [base, listed], ctx: { assistant: true, logins } }));
+  const forms = stubsIn(assistantHtml).filter((s) => s.name === "AdminForm");
+  assert.ok(forms.length >= 6 && forms.every((f) => /No document published|Found|Done/.test(String(f.props.trigger))), "the three actions only");
+  assert.match(assistantHtml, /href="\/admin\/steward\/todo\/cds%3A3%3A-\?assistant=1"/, "the row page keeps the view");
+  assert.match(assistantHtml, /You have a login: a counselor account/);
+  assert.doesNotMatch(assistantHtml, /I have a login here/);
+
+  const personHtml = html(tt.TodoTable({ rows: [unlisted, listed], ctx: { logins } }));
+  assert.equal(stubsIn(personHtml).filter((s) => s.name === "AdminForm" && s.props.trigger === "I have a login here").length, 1, "only the unlisted host's row offers it");
+
+  const whole = html(await page({ searchParams: Promise.resolve({}) }));
+  assert.match(whole, /&quot;help&quot;:&quot;steward-logins&quot;/);
+  assert.match(whole, /portal\.example\.edu/);
+  assert.match(whole, /documents may be used/);
+  assert.ok(stubsIn(whole).some((s) => s.name === "AdminForm" && s.props.trigger === "Add a host"));
+  assert.ok(stubsIn(whole).some((s) => s.name === "AdminForm" && s.props.trigger === "Remove"));
+});
+
+test("a To do row's page: the row on one screen with its attempts in words and the three actions; an unknown key is a 404", async () => {
+  fresh();
+  const todo: TodoDoc = { key: "cds:190415:2025-26", kind: "cds", unit_id: "190415", subject: "Cornell University", edition: "2025-26", landing: "https://irp.cornell.edu/cds", document_url: "https://irp.cornell.edu/cds-2025-26.pdf", host: "irp.cornell.edu", why: "challenge", reach: 1, demand: 0, status: "found", route: "person", attempts: [{ at: "2026-11-08T10:00:00Z", route: "assistant", result: "found https://irp.cornell.edu/cds-2025-26.pdf" }, { at: "2026-11-08T10:00:01Z", route: "verify", result: "HTTP 403: the host refuses machines" }], note: "Assistant: the cover says 2025-2026", updated: "2026-11-08T10:00:01Z" };
+  reset({ supabase: store([doc("steward.todo", todo.key, todo)]) });
+  const page = (await loadTsx("app/admin/steward/todo/[key]/page.tsx")).default as Page;
+  const markup = html(await page({ params: Promise.resolve({ key: encodeURIComponent(todo.key) }), searchParams: Promise.resolve({ assistant: "1" }) }));
+  assert.equal(world.calls[0], "requireAdmin");
+  const stubs = stubsIn(markup);
+  assert.ok(stubs.some((s) => s.name === "PageHeader" && s.props.title === "Cornell University" && s.props.subtitle === "Common Data Set · 2025-26 · 190415" && s.props.help === "to-do-row"));
+  assert.deepEqual(stubs.filter((s) => s.name === "Panel").map((s) => s.props.title), ["What to find", "Actions", "Attempts"]);
+  assert.ok(stubs.some((s) => s.name === "Fields"), "the row's facts (the Fields stand-in drops its items)");
+  assert.ok(stubs.some((s) => s.name === "TodoActions"), "the three actions, through TodoActions");
+  assert.match(markup, /HTTP 403: the host refuses machines/);
+  assert.match(markup, /· verify<\/span>[\s\S]*· assistant<\/span>/, "newest attempt first, each with its route");
+  assert.match(markup, /the cover says 2025-2026/);
+  await assert.rejects(page({ params: Promise.resolve({ key: "cds:0:-" }), searchParams: Promise.resolve({}) }), is404);
 });
 
 test("the Review page: the college's rows from readReviewRows, and 'On the site now' from the profile's own citeField", async () => {

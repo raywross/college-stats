@@ -31,7 +31,9 @@ import { STEWARD_COLLECTIONS } from "./steward-reads.ts";
 import { isFieldPath } from "../fields.ts";
 import type { ReviewItem } from "../reported.ts";
 import { checkOfKey } from "../steward/cluster.ts";
-import { PROPOSAL_KIND_LABEL, type DecisionDoc, type IssueDoc, type IssueKind, type ProposalDoc, type ProposalKind, type ProposalRow, type TodoDoc } from "../steward/types.ts";
+import { ASSISTANT_ROUTE, BY_ASSISTANT, loginFromFields, loginKey } from "../steward/todo-assistant.ts";
+import { VERIFY_ROUTE, errorVerdict, verdictMessage, verdictRecord, type Verdict } from "../steward/todo-verify.ts";
+import { PROPOSAL_KIND_LABEL, type DecisionDoc, type IssueDoc, type IssueKind, type LoginDoc, type ProposalDoc, type ProposalKind, type ProposalRow, type TodoDoc } from "../steward/types.ts";
 
 /** The word typed to approve a proposal that changes what a visitor sees or the code (defined in console.ts beside the other typed words). */
 export { CONFIRM_APPROVE };
@@ -63,6 +65,11 @@ export interface StewardDeps {
   todoRow(key: string): Promise<TodoDoc | null>;
   /** The kind of a cluster in the live queue, or null when the queue has no such cause. */
   clusterKind(key: string): Promise<IssueKind | null>;
+  /**
+   * What an address answers, fetched once as the run would (lib/admin/todo-probe.ts), for Found's verdict; absent
+   * (tests, a console without network) Found records the address alone.
+   */
+  probe?(url: string): Promise<Verdict>;
 }
 
 /** The slice of a form these actions read (FormData in production). */
@@ -460,27 +467,55 @@ const httpUrl = (raw: unknown): string | null => {
   }
 };
 
-/** Found: the document's URL, so the next run fetches it. */
+/** Who pressed the button, as the attempt's route: the assistant in the owner's browser (the assistant view's forms say so), else a person. */
+export function actorRoute(form: StewardFormLike): string {
+  return form.get("by") === BY_ASSISTANT ? ASSISTANT_ROUTE : "person";
+}
+
+/**
+ * Found: the document's URL, so the next run fetches it (the run reads found rows into the owner's list,
+ * lib/steward/todo-run.ts). The address is fetched once here, when the console can, and what it answered is recorded
+ * as a `verify` attempt and said back: a PDF, a web page, a host that refuses machines, nothing there.
+ */
 export async function todoFound(deps: StewardDeps, form: StewardFormLike): Promise<AdminActionState> {
   const url = httpUrl(form.get("url"));
   if (!url) return err("Paste the document's address, starting https://.");
   const note = lineFromForm(form, "note");
+  const route = actorRoute(form);
+  let verdict: Verdict | null = null;
+  if (deps.probe) {
+    try {
+      verdict = await deps.probe(url);
+    } catch (e) {
+      verdict = errorVerdict(e);
+    }
+  }
+  const checked = verdict ? [{ route: VERIFY_ROUTE, result: verdictRecord(verdict) }] : [];
   return updateTodo(
     deps,
     form,
-    (row, at) => ({ ...row, status: "found", document_url: url, route: "person", note: note ?? row.note, attempts: [...row.attempts, { at, route: "person", result: `found ${url}` }], updated: at }),
-    `found ${url}`,
-    "Found. The next run of this college fetches it.",
+    (row, at) => ({
+      ...row,
+      status: "found",
+      document_url: url,
+      route: "person",
+      note: note ?? row.note,
+      attempts: [...row.attempts, { at, route, result: `found ${url}` }, ...checked.map((c) => ({ at, ...c }))],
+      updated: at,
+    }),
+    `found ${url}${verdict ? ` (${verdictRecord(verdict)})` : ""}`,
+    verdictMessage(verdict),
   );
 }
 
 /** No document published: the college publishes none, so the row closes and nothing asks for it again. */
 export async function todoNoDocument(deps: StewardDeps, form: StewardFormLike): Promise<AdminActionState> {
   const note = lineFromForm(form, "note");
+  const route = actorRoute(form);
   return updateTodo(
     deps,
     form,
-    (row, at) => (row.status === "no-document" ? { refused: "This row says so already." } : { ...row, status: "no-document", note: note ?? row.note, attempts: [...row.attempts, { at, route: "person", result: "no document published" }], updated: at }),
+    (row, at) => (row.status === "no-document" ? { refused: "This row says so already." } : { ...row, status: "no-document", note: note ?? row.note, attempts: [...row.attempts, { at, route, result: "no document published" }], updated: at }),
     "no document published",
     "Recorded: no document published.",
   );
@@ -489,13 +524,48 @@ export async function todoNoDocument(deps: StewardDeps, form: StewardFormLike): 
 /** Done: the document arrived (or the row no longer matters). */
 export async function todoDone(deps: StewardDeps, form: StewardFormLike): Promise<AdminActionState> {
   const note = lineFromForm(form, "note");
+  const route = actorRoute(form);
   return updateTodo(
     deps,
     form,
-    (row, at) => (row.status === "done" ? { refused: "This row is done already." } : { ...row, status: "done", note: note ?? row.note, updated: at }),
+    (row, at) => (row.status === "done" ? { refused: "This row is done already." } : { ...row, status: "done", note: note ?? row.note, attempts: [...row.attempts, { at, route, result: "done" }], updated: at }),
     "done",
     "Done.",
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Logins: hosts the owner has an account on                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * I have a login here: lists a host the owner has an account on (`steward.logins`, keyed by the host), with what the
+ * account is and whether documents from behind it may be used. No credential is taken or stored: the login itself
+ * lives in the owner's browser. A To do row behind a login on a listed host becomes work the assistant may take.
+ */
+export async function todoLogin(deps: StewardDeps, form: StewardFormLike): Promise<AdminActionState> {
+  const host = lineFromForm(form, "host", 253);
+  const account = lineFromForm(form, "account", 200);
+  if (!host) return BAD_FORM;
+  if (!account) return err("Say what the account is, in a few words (a counselor account, an alumni login).");
+  if (form.get("by") === BY_ASSISTANT) return err("Only a person lists a login.");
+  const doc = loginFromFields({ host, account, may_use: form.get("may_use") === "on", note: lineFromForm(form, "note"), at: deps.data.ops.now().toISOString(), by: await deps.data.ops.adminName() });
+  if (!doc) return err("That host wasn't recognized. Use the site's host name, like irp.example.edu.");
+  const failed = await save(deps, STEWARD_COLLECTIONS.logins, doc.host, doc, logNote("steward.login", `${doc.host}: ${doc.account}${doc.may_use ? ", documents may be used" : ""}`));
+  return failed ?? done(`Listed ${doc.host}. Rows behind its login can be worked from your browser now.`);
+}
+
+/** Remove a login host: the document stays, marked removed, so the history shows it was once listed. */
+export async function todoLoginRemove(deps: StewardDeps, form: StewardFormLike): Promise<AdminActionState> {
+  const host = loginKey(lineFromForm(form, "host", 253) ?? "");
+  if (!host) return BAD_FORM;
+  if (form.get("by") === BY_ASSISTANT) return err("Only a person changes the logins.");
+  const read = await readDoc<LoginDoc>(deps, STEWARD_COLLECTIONS.logins, host);
+  if (!read.ok) return read.state;
+  if (!read.doc || read.doc.removed) return err("That host isn't listed any more. Reload the page.");
+  const at = deps.data.ops.now().toISOString();
+  const failed = await save(deps, STEWARD_COLLECTIONS.logins, host, { ...read.doc, removed: at }, logNote("steward.login", `${host}: removed`));
+  return failed ?? done(`${host} is no longer listed.`);
 }
 
 /* ------------------------------------------------------------------ */

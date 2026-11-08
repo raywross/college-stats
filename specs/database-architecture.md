@@ -112,6 +112,14 @@ These apply to every table in the product specs ([product/README.md](product/REA
 - **One access helper.** A `security definer` function such as `can_view_student(student_id)` encodes household and
   organization membership ([accounts.md](product/accounts.md#privacy-model)); every policy calls it, so a rule is
   written once. Tables a student must never read (household finances) have no policy a student session can satisfy.
+- **Read policies are set-based: membership once per query.** A read policy never calls a per-row function. It asks
+  for a set, `student_id in (select public.visible_student_ids())`, or leans on its parent table's policy,
+  `list_id in (select id from public.lists)`, and writes `auth.uid()` as `(select auth.uid())`; the helpers
+  (`visible_student_ids()`, `household_user_ids()`) are `security definer` set functions that encode the same rules as
+  `can_read_student()` and its kin, which stay for write checks and other functions
+  (`supabase/migrations/20261108120000_fast_policies.sql`). The reason is measured: a per-row security-definer check
+  can't be inlined and cost 1–4 ms a row on dev, so 96 plan steps spent 108 ms of a 113 ms read on the check
+  ([serving-architecture.md](serving-architecture.md#follow-up-2026-11-08-counselor-performance-review)).
 - **Thresholds in views.** Aggregates with a minimum count (scattergrams, pooled offers) are SQL views that apply
   the threshold and binning; clients are granted the view, never the point tables
   ([scattergrams.md](product/scattergrams.md#display-rules)).

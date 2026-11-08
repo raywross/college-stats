@@ -81,12 +81,16 @@ test("the proxy refreshes the session on /advisor (and still on /plan, harmless)
 });
 
 test("the tab bar, the header, and the person pill say Advisor and link /advisor; the internal cookie keeps its name", () => {
+  // The tab bar and the header render the role item (specs/product/role-nav.md), whose student and signed-out form
+  // is Advisor → /advisor (components/layout/role-nav.ts); the header's slot is still named by ADVISOR_SHORT.
   const bottom = read("components", "layout", "BottomNav.tsx");
-  assert.match(bottom, /<Tab href=\{ADVISOR_PATH\} label=\{ADVISOR_SHORT\} icon=\{<ListChecks \/>\} active=\{isActive\(ADVISOR_PATH\)/);
+  assert.match(bottom, /<Tab href=\{role\.href\} label=\{role\.label\} icon=\{<RoleIcon \/>\} active=\{roleActive && !sheet\}/);
   assert.doesNotMatch(bottom, /label="Plan"/);
+  const roleNav = read("components", "layout", "role-nav.ts");
+  assert.match(roleNav, /const ADVISOR: RoleNav = \{ label: ADVISOR_SHORT, href: ADVISOR_PATH, icon: ListChecks,/);
   const header = read("components", "layout", "Header.tsx");
   assert.match(header, /\{ label: ADVISOR_SHORT, href: ADVISOR_PATH \}/);
-  assert.match(header, /item\.href === ADVISOR_PATH && planDot\.lit/);
+  assert.match(header, /if \(item\.href === ADVISOR_PATH\) return <RoleNavItem key=\{item\.href\} nav=\{role\} dot=\{planDot\} \/>;/);
   assert.doesNotMatch(header, /label: "Plan"/);
   const pill = read("components", "account", "PersonHeader.tsx");
   assert.match(pill, /\{ value: "list", label: ADVISOR_SHORT, href: `\/household\/\$\{id\}` \}/);

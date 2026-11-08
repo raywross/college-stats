@@ -108,6 +108,9 @@ roster by `household_roster()` returning pending invitations as rows with `statu
 Jordan (invited)").
 
 ## The household page as the hub
+> **2026-11-08:** a guardian reaches this page from the header's **Household** item (its menu: each child's advisor,
+> then Manage household), not the avatar menu, which keeps Household for a student only ([role-nav.md](role-nav.md)).
+
 `/account/household` becomes **`/household`** (the old path redirects), and it is where the avatar menu's first entry
 goes. It holds, top to bottom: the roster, the home address (as built), and **Add someone**. The menu loses "My
 numbers", "My list", and "Following"; it reads **Household · Your account · Sign out**. Someone with no household yet
@@ -286,7 +289,8 @@ Built the same day it was planned, with the build-roadmap-section method: four u
   household by adding the first person),
   `/household/[person]` (List tab, `components/lists/ListPage.tsx` embedded), `/household/[person]/lists/[id]`,
   `/household/[person]/numbers`. Redirects: `/account/household` → `/household`; `/me` → own Numbers tab;
-  `/me/list` and `/me/following` → own person page. Avatar menu: Household · Your account · Sign out.
+  `/me/list` and `/me/following` → own person page. Avatar menu: Household · Your account · Sign out (since
+  2026-11-08 Household is there for a student only; a guardian has the header's Household item, [role-nav.md](role-nav.md)).
   `components/account/Roster.tsx`, `AddPersonForm.tsx`, `InvitationControls.tsx`, `PersonHeader.tsx`;
   `app/household/actions.ts` (`addPerson`, `inviteManagedStudent`, `copyInvitationLink`, `resendInvitation`);
   `/account/password?welcome=1` accepts the invitation on save.

@@ -4,6 +4,7 @@ import { AddPersonDialog, HouseholdFullChip } from "@/components/account/AddPers
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { HouseholdSettings } from "@/components/account/HouseholdSettings";
 import { PeopleStrip } from "@/components/account/PeopleStrip";
+import { RefreshHeader } from "@/components/org/RefreshHeader";
 import { Term } from "@/components/ui/info-tip";
 import { AccountsSetupError, authConfigured, currentStudent, getAccount, getUser, studentsICanSee } from "@/lib/auth";
 import { myHouseholds } from "@/lib/households";
@@ -82,6 +83,7 @@ export default async function HouseholdLayout({ children }: { children: React.Re
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12 print:px-0 print:py-0">
+      <RefreshHeader />
       <header className="space-y-4 print:hidden">
         <div>
           <h1 className="font-display text-2xl font-extrabold tracking-tight break-words sm:text-3xl">

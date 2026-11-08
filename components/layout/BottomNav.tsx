@@ -3,15 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, Briefcase, Compass, Database, Ellipsis, GitCompareArrows, GraduationCap, LineChart, ListChecks, LogIn, Map as MapIcon, Search, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
+import { BookOpen, Compass, Database, Ellipsis, GitCompareArrows, GraduationCap, LineChart, LogIn, Map as MapIcon, Search, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
 import { ThemeSegmented } from "@/components/ThemeToggle";
 import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useMe } from "@/components/account/useMe";
 import { loginHref } from "@/lib/accounts";
-import { CASELOAD_HREF } from "@/lib/org-hrefs";
-import { ADVISOR_PATH, ADVISOR_SHORT } from "@/lib/planner/advisor";
 import { useCompareIds } from "@/lib/compare";
 import { cn } from "@/lib/utils";
+import { roleNav } from "./role-nav";
 import { usePlanDot } from "./usePlanDot";
 
 // The Plan dot's hook lives in ./usePlanDot.ts (shared with Header.tsx; one fetch per page at most).
@@ -20,14 +19,17 @@ type Sheet = "search" | "more" | null;
 
 /**
  * Phone navigation (below md): a thumb-reach tab bar with the four main jobs always visible, replacing the
- * hamburger menu and the floating compare pill. Search opens a full-screen sheet; secondary pages live under More.
- * See specs/mobile.md.
+ * hamburger menu and the floating compare pill. The middle tab is the role item (specs/product/role-nav.md): Advisor
+ * to a student, Household to a parent, Caseload to a counselor; the role's other pages sit at the top of More.
+ * Search opens a full-screen sheet; secondary pages live under More. See specs/mobile.md.
  */
 export function BottomNav() {
   const pathname = usePathname();
   const compareIds = useCompareIds();
   const me = useMe();
   const planDot = usePlanDot(me?.signedIn);
+  const role = roleNav(me);
+  const RoleIcon = role.icon;
   const [sheet, setSheet] = useState<Sheet>(null);
 
   // Close sheets on navigation.
@@ -46,6 +48,7 @@ export function BottomNav() {
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
   const compareHref = compareIds.length ? `/compare?ids=${compareIds.join(",")}` : "/compare";
+  const roleActive = role.activePaths.some(isActive);
   const moreActive = isActive("/trends") || isActive("/high-schools") || isActive("/glossary") || isActive("/data") || isActive("/sources") || isActive("/roadmap") || isActive("/release-notes") || isActive("/account") || isActive("/login");
 
   return (
@@ -58,7 +61,7 @@ export function BottomNav() {
         <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
           <Tab href="/explore" label="Explore" icon={<Compass />} active={isActive("/explore") && !sheet} />
           <Tab label="Search" icon={<Search />} active={sheet === "search"} onClick={() => setSheet(sheet === "search" ? null : "search")} />
-          <Tab href={ADVISOR_PATH} label={ADVISOR_SHORT} icon={<ListChecks />} active={isActive(ADVISOR_PATH) && !sheet} dot={planDot.lit && planDot.label} />
+          <Tab href={role.href} label={role.label} icon={<RoleIcon />} active={roleActive && !sheet} dot={planDot.lit && planDot.label} />
           <Tab
             href={compareHref}
             label="Compare"
@@ -106,9 +109,10 @@ export function BottomNav() {
               ) : (
                 <MoreLink href={loginHref(pathname === "/login" ? undefined : pathname)} icon={<LogIn className="size-5" />} title="Sign in" sub="Your colleges, your record, your advisor" active={isActive("/login")} />
               ))}
-              {me?.signedIn && me.org && (
-                <MoreLink href={CASELOAD_HREF} icon={<Briefcase className="size-5" />} title="Caseload" sub="Your students and their advisors" active={isActive(CASELOAD_HREF)} />
-              )}
+              {/* The role item's pages (a child's advisor is reached from the people line, not here). */}
+              {me?.signedIn && role.menu.filter((e) => e.kind === "page").map(({ href, label, icon: Icon, sub }) => (
+                <MoreLink key={href} href={href} icon={<Icon className="size-5" />} title={label} sub={sub} active={isActive(href)} />
+              ))}
               {me?.signedIn && me.admin && (
                 <MoreLink href="/admin" icon={<ShieldCheck className="size-5" />} title="Admin" sub="The console" active={isActive("/admin")} />
               )}
@@ -144,7 +148,7 @@ function Tab({
   icon: ReactNode;
   active: boolean;
   badge?: number;
-  /** A plain dot (no count), for the Plan tab (page.md "Navigation"); a string is the lit dot's accessible name. */
+  /** A plain dot (no count), for the role tab (page.md "Navigation"); a string is the lit dot's accessible name. */
   dot?: boolean | string;
   onClick?: () => void;
 }) {

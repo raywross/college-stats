@@ -12,10 +12,13 @@ import { SchoolSearch } from "@/components/search/SchoolSearch";
 import { useCompareIds } from "@/lib/compare";
 import { ADVISOR_PATH, ADVISOR_SHORT } from "@/lib/planner/advisor";
 import { cn } from "@/lib/utils";
+import { roleNav } from "./role-nav";
+import { RoleNavItem } from "./RoleNavItem";
 import { usePlanDot } from "./usePlanDot";
 
 // The Plan dot's hook lives in ./usePlanDot.ts (shared with BottomNav.tsx; one fetch per page at most).
 
+/** The second item is the role item (specs/product/role-nav.md): Advisor here names its slot; `roleNav(me)` fills it. */
 const NAV_ITEMS = [
   { label: "Explore", href: "/explore" },
   { label: ADVISOR_SHORT, href: ADVISOR_PATH },
@@ -32,6 +35,9 @@ export function Header() {
   const compareIds = useCompareIds();
   const me = useMe();
   const planDot = usePlanDot(me?.signedIn);
+  // Advisor until /api/me answers (the server render, and a signed-in person's first page in a new tab), so the
+  // static HTML carries the signed-out item and only a parent or counselor sees it become theirs.
+  const role = roleNav(me);
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Close the search row on navigation.
@@ -63,6 +69,7 @@ export function Header() {
 
         <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label="Main">
           {NAV_ITEMS.map((item) => {
+            if (item.href === ADVISOR_PATH) return <RoleNavItem key={item.href} nav={role} dot={planDot} />;
             const active = isActive(item.href);
             return (
               <Link
@@ -79,9 +86,6 @@ export function Header() {
                   <span className="inline-flex size-5 animate-pop-in items-center justify-center rounded-full bg-pop text-[11px] font-bold text-pop-foreground">
                     {compareIds.length}
                   </span>
-                )}
-                {item.href === ADVISOR_PATH && planDot.lit && (
-                  <span className="inline-flex size-2 animate-pop-in rounded-full bg-pop" aria-label={planDot.label} />
                 )}
               </Link>
             );

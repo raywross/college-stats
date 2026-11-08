@@ -78,7 +78,7 @@ federal number ([commercialization.md](commercialization.md#what-stays-free)).
   next refresh. `getUser()` returns `SessionUser` (`{ id, email }`, from `sub` and `email`); nothing reads more.
 - **Anonymous first.** Tools work signed out with state in `localStorage` (the compare list already does).
   On sign-in, local state is offered for import once ("Save these 4 colleges to your list?"), then cleared.
-- The header gains an avatar menu (desktop) and the phone More sheet gains "Account" ([mobile.md](../mobile.md)).
+- The header gains an avatar menu (desktop) and the phone More sheet gains "Account" ([mobile.md](../mobile.md)). Since 2026-11-08 the header's second item is the role item, Advisor / Household / Caseload by who is signed in ([role-nav.md](role-nav.md)).
 
 ## Roles and households
 ```
@@ -182,7 +182,7 @@ access-log view build on it.
 | `lib/auth.ts` (server only) | `authConfigured(): boolean`, `getUser(): Promise<SessionUser \| null>` (`auth.getClaims()`, per-request `cache`; `SessionUser` is `{ id, email }`), `requireUser(next?): Promise<SessionUser>` (redirects to `/login?next=`), `getAccount(): Promise<Account \| null>`, `currentStudent(): Promise<StudentRecord \| null>`, `studentsICanSee(): Promise<StudentAccess[]>`, `AccountsSetupError` |
 | `lib/accounts.ts` (pure) | Types `Account` (`{ user: { id, email }, profile }`), `Profile`, `StudentRecord`, `Household`, `HouseholdMember`, `Invitation`, `StudentAccess` (`{ student, relation: "self" \| "guardian", canEdit }`), `RoleHint`, `MeState`; `birthYearAllowed(year, today?)`, `parseBirthYear`, `safeNextPath(next, fallback?)`, `loginHref(next?)`, `resolveStudentAccess`, `wantsOwnStudent`, `initialsFor`, `INVITATION_ERRORS`, `ROLE_HINTS`, `AGE_GATE_COOKIE` |
 | `lib/email.ts` | `sendEmail({ to, subject, html, text, headers }): Promise<SendResult>` (`{ sent: true, id }`, `{ sent: false, reason: "not-configured" }`, or `{ sent: false, reason: "error", error }`; never throws), `emailConfigured()` |
-| `components/account/` | `SignInPrompt` (`reason`, `next`, `variant: "card" \| "inline"`), `AccountMenu` (avatar menu; add links to its `ACCOUNT_MENU_LINKS`), `useMe()` (client hook over `/api/me`), `AccountSection` + `ComingSoon`, `SignOutButton`, `AuthUnavailable` |
+| `components/account/` | `SignInPrompt` (`reason`, `next`, `variant: "card" \| "inline"`), `AccountMenu` (avatar menu; its links come from `accountMenuLinks(me)` in `account-menu-links.ts`, by role), `useMe()` (client hook over `/api/me`), `AccountSection` + `ComingSoon`, `SignOutButton`, `AuthUnavailable` |
 | `tests/helpers/pg-auth.mts` | `createAuthDb(migrations)`, `asUser(db, userId \| null, sql, params)`, `affectedAsUser(...)`, `createUser(db, { email, birthYear?, roleHint?, displayName? })` |
 
 SQL (`supabase/migrations/20261005120000_accounts.sql`): tables `profiles`, `households`, `household_members`,
@@ -280,7 +280,7 @@ guard tests that break the roster function and the remove policy), `tests/househ
   then a typed "delete" confirmation. The action calls `delete_my_account()`, signs out everywhere (`scope: global`),
   and lands on `/account/deleted`.
 - **`/account/export`** (GET route; a link with `download`): one JSON file, `quad-data-YYYY-MM-DD.json`.
-- Avatar menu gains **Household**. Glossary: `household-invitation`, `edit-access`, `access-log`.
+- Avatar menu gains **Household** (for a student; a guardian's is the header's role item since 2026-11-08, [role-nav.md](role-nav.md)). Glossary: `household-invitation`, `edit-access`, `access-log`.
 
 ### Contracts for later units
 | What | Use |

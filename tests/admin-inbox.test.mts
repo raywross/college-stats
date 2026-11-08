@@ -123,6 +123,11 @@ test("a decision waiting is listed with the Steward's recommendation and opens o
     { kind: "decision", action: "Decide", href: `/admin/steward/decisions#${decisionAnchor("policy:aid-year")}`, severity: 2 },
   );
   assert.match(items[0].why, /^The Steward recommends: The newest year/);
+  assert.equal(items[0].raw, undefined, "nothing to put in words: no raw copy");
+  const coded = needsYou(empty({ decisions: [decision({ question: "Hold every C7 grid until loan_no_pell is fixed?", recommends: "Hold B4–B5" })] }))[0];
+  assert.equal(coded.title, "Hold every C7 (admission factors) grid until “loan no pell” is fixed?");
+  assert.equal(coded.why, "The Steward recommends: Hold B4–B5 (graduation rates; graduation rates, Pell recipients)");
+  assert.equal(coded.raw, "Hold every C7 grid until loan_no_pell is fixed? — The Steward recommends: Hold B4–B5");
   assert.equal(decisionAnchor("policy:aid-year"), "decision-policy-aid-year");
   assert.match(read("app/admin/steward/decisions/page.tsx"), /id=\{decisionAnchor\(d\.key\)\}/, "the Decisions page carries the anchor");
 });
@@ -197,7 +202,7 @@ test("proposals: systemic before value; only open ones; To do capped at the high
   );
   const kinds = items.map((i) => i.kind);
   assert.equal(kinds.filter((k) => k === "proposal").length, 2, "the applied one is not listed");
-  assert.equal(items[0].title, "Read C7 grids by row", "the systemic proposal comes first (severity 2)");
+  assert.equal(items[0].title, "Read C7 (admission factors) grids by row", "the systemic proposal comes first (severity 2), its code named");
   assert.equal(kinds.filter((k) => k === "todo").length, INBOX_TODO_LIMIT);
   assert.equal(kinds.filter((k) => k === "invitation").length, 1);
   const inv = items.find((i) => i.kind === "invitation")!;

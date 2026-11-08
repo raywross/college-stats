@@ -9,6 +9,7 @@
 import { deletingLabel, fmtDate, fmtDateTime } from "./console.ts";
 import type { HelpKey } from "./help.ts";
 import { TODO_WHY_LABEL, proposalHref, reviewHref } from "./steward-view.ts";
+import { stewardText } from "./words.ts";
 import { DELETE_GRACE_DAYS } from "../household-rules.ts";
 import type { DecisionDoc, ProposalDoc, RunDoc, TodoDoc } from "../steward/types.ts";
 import type { JobOverviewRow } from "../jobs/runs.ts";
@@ -24,6 +25,14 @@ export interface InboxItem {
   severity: 1 | 2 | 3;
   /** When it started waiting (ISO), for the age order; null sorts last. */
   at: string | null;
+  /** The Steward's sentences as it wrote them, when `stewardText` changed them (the page's `title`). */
+  raw?: string;
+}
+
+/** A row's title and why in words (`stewardText`), keeping the sentences as written in `raw` when they differ. */
+function stewardLines(title: string, why: string): Pick<InboxItem, "title" | "why" | "raw"> {
+  const [t, w] = [stewardText(title), stewardText(why)];
+  return t === title && w === why ? { title, why } : { title: t, why: w, raw: `${title} — ${why}` };
 }
 
 export interface InboxTile {
@@ -168,8 +177,10 @@ export function needsYou(input: InboxInput): InboxItem[] {
     const when = j.at ? ` (${fmtDateTime(j.at)})` : "";
     items.push({
       kind: "job",
-      title: j.outcome === "failed" ? `${j.name}: the last run failed` : `${j.name}: the Steward flagged the last run`,
-      why: j.note?.trim() || (j.outcome === "failed" ? `Its last run${when} ended in failure.` : `Its last run${when} looked wrong to the Steward.`),
+      ...stewardLines(
+        j.outcome === "failed" ? `${j.name}: the last run failed` : `${j.name}: the Steward flagged the last run`,
+        j.note?.trim() || (j.outcome === "failed" ? `Its last run${when} ended in failure.` : `Its last run${when} looked wrong to the Steward.`),
+      ),
       href: `/admin/steward/jobs/${j.id}`,
       action: "Open",
       severity: j.outcome === "failed" ? 1 : 2,
@@ -181,8 +192,7 @@ export function needsYou(input: InboxInput): InboxItem[] {
     if (d.answer !== null) continue;
     items.push({
       kind: "decision",
-      title: d.question,
-      why: `The Steward recommends: ${d.recommends}`,
+      ...stewardLines(d.question, `The Steward recommends: ${d.recommends}`),
       href: `/admin/steward/decisions#${decisionAnchor(d.key)}`,
       action: "Decide",
       severity: 2,
@@ -196,8 +206,7 @@ export function needsYou(input: InboxInput): InboxItem[] {
     const rows = p.rows.length;
     items.push({
       kind: "proposal",
-      title: p.summary,
-      why: p.kind === "systemic" ? "Changes how every college is read; the Steward sampled what it would publish." : `${plural(rows, "row")} the Steward wants to change, each with its document.`,
+      ...stewardLines(p.summary, p.kind === "systemic" ? "Changes how every college is read; the Steward sampled what it would publish." : `${plural(rows, "row")} the Steward wants to change, each with its document.`),
       href: proposalHref(p.key),
       action: "Review",
       severity: p.kind === "systemic" ? 2 : 3,

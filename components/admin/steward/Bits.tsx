@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { StatusChip } from "@/components/admin/StatusChip";
 import type { ChipTone } from "@/lib/admin/console";
 import { TODO_STATUS_LABEL, documentHref, linkCls } from "@/lib/admin/steward-view";
+import { stewardText } from "@/lib/admin/words";
 import { ISSUE_KIND_LABEL, ISSUE_STATUS_LABEL, PROPOSAL_KIND_LABEL, PROPOSAL_STATUS_LABEL, type IssueKind, type IssueStatus, type ProposalKind, type ProposalStatus, type Recommendation, type TodoStatus } from "@/lib/steward/types";
 
 /**
@@ -57,7 +58,21 @@ export function Recommends({ recommends, why }: { recommends: Recommendation | n
   return (
     <span>
       <span className="font-semibold">Your call</span>
-      {why ? <span className="block text-xs text-muted-foreground">{why}</span> : null}
+      {why ? <StewardWords text={why} className="block text-xs text-muted-foreground" /> : null}
+    </span>
+  );
+}
+
+/**
+ * Text the Steward wrote (a hypothesis, a summary, a question), read in words (`stewardText`: field codes named, keys
+ * as words), with the sentence as written in the `title` when the two differ.
+ */
+export function StewardWords({ text, className }: { text: string | null | undefined; className?: string }) {
+  if (!text) return null;
+  const words = stewardText(text);
+  return (
+    <span className={className} title={words !== text ? text : undefined}>
+      {words}
     </span>
   );
 }

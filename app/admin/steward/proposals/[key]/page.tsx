@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { codeLabel } from "@/lib/admin/words";
+import { codeLabel, stewardText } from "@/lib/admin/words";
 import { connection } from "next/server";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Empty, Fields, PageHeader, Panel } from "@/components/admin/Panel";
-import { ProposalKindChip, ProposalStatusChip } from "@/components/admin/steward/Bits";
+import { ProposalKindChip, ProposalStatusChip, StewardWords } from "@/components/admin/steward/Bits";
 import { EvidenceTable, ProposalRowsTable } from "@/components/admin/steward/ProposalParts";
 import { ProposalApprove, type ApproveRowView } from "@/components/admin/steward/ProposalApprove";
 import { approveProposalAction, askProposalAction, declineProposalAction, startProposalJobAction } from "@/app/admin/steward/actions";
@@ -57,12 +57,12 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
     reviewHref: reviewHref(r.unit_id),
     label: r.field ?? (r.code ? codeLabel(r.code) : "—"),
     now: r.now,
-    proposed: r.proposed,
+    proposed: stewardText(r.proposed),
     fromHref: documentHref(r.source.url, r.source.page),
     fromLabel: [r.source.page ? `p. ${r.source.page}` : null, r.source.line ? `line ${r.source.line}` : null].filter(Boolean).join(", ") || (r.source.url ? "The document" : "No document"),
     quote: r.source.quote,
     recommends: r.recommends,
-    why: r.why ?? null,
+    why: r.why ? stewardText(r.why) : null,
     ticked: r.decision ? r.decision === "approved" : r.recommends === "approve",
   }));
   const waitingRereads = p.kind === "reread" && p.status === "approved" ? rereadsWaiting(p) : [];
@@ -70,7 +70,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
   return (
     <>
       <PageHeader help="proposal"
-        title={p.summary}
+        title={stewardText(p.summary)}
         back={
           <Link href="/admin/steward/proposals" className={linkCls}>
             Proposals
@@ -109,9 +109,9 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
           <Panel help="proposal-systemic" title="The change">
             <Fields
               items={[
-                { label: "What", value: p.change.what },
-                { label: "How", value: p.change.how },
-                { label: "Reverting", value: p.change.revert },
+                { label: "What", value: <StewardWords text={p.change.what} /> },
+                { label: "How", value: <StewardWords text={p.change.how} /> },
+                { label: "Reverting", value: <StewardWords text={p.change.revert} /> },
               ]}
             />
             <p className="mt-3 text-xs text-muted-foreground">Approving records the analysis for the session that writes the change; nothing changes on the site until that change ships.</p>
@@ -133,7 +133,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ key: 
             <Fields
               items={[
                 { label: "Asked", value: p.question ?? "—" },
-                { label: "The Steward's answer", value: p.answer ?? (p.status === "asked" ? "Waiting for the Steward." : "—") },
+                { label: "The Steward's answer", value: p.answer ? <StewardWords text={p.answer} /> : p.status === "asked" ? "Waiting for the Steward." : "—" },
               ]}
             />
           </Panel>

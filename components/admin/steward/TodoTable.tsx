@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
-import { DocLink, TodoStatusChip } from "@/components/admin/steward/Bits";
+import { DocLink, StewardWords, TodoStatusChip } from "@/components/admin/steward/Bits";
 import { todoDoneAction, todoFoundAction, todoNoDocumentAction } from "@/app/admin/steward/actions";
 import { dayLabel } from "@/lib/admin/ops-view";
 import { attemptResultWords } from "@/lib/admin/words";
@@ -102,7 +102,7 @@ function Status({ r }: { r: TodoDoc }) {
   return (
     <>
       <TodoStatusChip status={r.status} />
-      {r.note && <span className="mt-1 block text-xs text-muted-foreground">{r.note}</span>}
+      {r.note && <StewardWords text={r.note} className="mt-1 block text-xs text-muted-foreground" />}
     </>
   );
 }

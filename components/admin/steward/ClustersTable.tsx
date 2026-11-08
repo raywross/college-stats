@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Empty } from "@/components/admin/Panel";
 import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
-import { IssueStatusChip, KindChip } from "@/components/admin/steward/Bits";
+import { IssueStatusChip, KindChip, StewardWords } from "@/components/admin/steward/Bits";
 import { leaveIssueAction } from "@/app/admin/steward/actions";
 import { linkCls, proposalHref, reviewHref } from "@/lib/admin/steward-view";
 import type { Cluster, IssueDoc, IssueKind } from "@/lib/steward/types";
@@ -24,7 +24,7 @@ function Cause({ row: { cluster, issue } }: { row: ClusterRowView }) {
     <>
       <span className="font-mono text-xs font-semibold">{cluster.check}</span>
       {cluster.detail && <span className="block text-xs text-muted-foreground break-words">{cluster.detail}</span>}
-      {issue?.hypothesis && <span className="mt-1 block text-xs">{issue.hypothesis}</span>}
+      {issue?.hypothesis && <StewardWords text={issue.hypothesis} className="mt-1 block text-xs" />}
       {issue && issue.proposals.length > 0 && (
         <span className="mt-1 block text-xs">
           {issue.proposals.map((p, i) => (
@@ -88,7 +88,7 @@ const columns: readonly Column<ClusterRowView>[] = [
     cell: ({ issue }) => (
       <>
         <IssueStatusChip status={issue?.status ?? "new"} />
-        {issue?.status === "left" && issue.reason && <span className="mt-1 block text-xs text-muted-foreground">{issue.reason}</span>}
+        {issue?.status === "left" && issue.reason && <StewardWords text={issue.reason} className="mt-1 block text-xs text-muted-foreground" />}
       </>
     ),
   },

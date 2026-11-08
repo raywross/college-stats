@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Empty, Panel } from "@/components/admin/Panel";
 import { StatusChip } from "@/components/admin/StatusChip";
+import { StewardWords } from "@/components/admin/steward/Bits";
 import { fmtDateTime } from "@/lib/admin/console";
 import { jobById } from "@/lib/jobs/registry";
 import { JOBS_HREF } from "@/lib/jobs/view";
@@ -49,8 +50,14 @@ export function JobFindings({ issues }: { issues: readonly IssueDoc[] }) {
                   <StatusChip label={ISSUE_STATUS_LABEL[i.status] ?? i.status} tone={i.status === "left" ? "neutral" : "warn"} />
                   <span className="font-normal text-muted-foreground">{fmtDateTime(i.updated)}</span>
                 </p>
-                <p>{i.hypothesis}</p>
-                {last && <p className="text-muted-foreground">{last.shows}</p>}
+                <p>
+                  <StewardWords text={i.hypothesis} />
+                </p>
+                {last && (
+                  <p className="text-muted-foreground">
+                    <StewardWords text={last.shows} />
+                  </p>
+                )}
                 {i.findings.length > 1 && <p className="text-xs text-muted-foreground">{i.findings.length} runs read.</p>}
               </li>
             );

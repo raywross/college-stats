@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
 import { StatusChip } from "@/components/admin/StatusChip";
-import { StewardBack } from "@/components/admin/steward/Bits";
+import { StewardBack, StewardWords } from "@/components/admin/steward/Bits";
 import { decideAction } from "@/app/admin/steward/actions";
 import { requireAdmin } from "@/lib/admin/auth";
 import { adminSupabase } from "@/lib/admin/people";
@@ -11,6 +11,7 @@ import type { StoreClient } from "@/lib/admin/review-queue";
 import { readDecisions } from "@/lib/admin/steward-reads";
 import { dayLabel } from "@/lib/admin/ops-view";
 import { decisionAnchor } from "@/lib/admin/inbox";
+import { stewardText } from "@/lib/admin/words";
 
 export const metadata: Metadata = { title: "Decisions", robots: { index: false, follow: false } };
 
@@ -39,17 +40,17 @@ export default async function DecisionsPage() {
             {open} waiting for an answer
           </p>
           {decisions.map((d) => (
-            <Panel help="decision" key={d.key} id={decisionAnchor(d.key)} title={d.question} aside={d.answer ? <StatusChip label="Decided" tone="good" /> : <StatusChip label="Your call" tone="warn" />}>
+            <Panel help="decision" key={d.key} id={decisionAnchor(d.key)} title={stewardText(d.question)} aside={d.answer ? <StatusChip label="Decided" tone="good" /> : <StatusChip label="Your call" tone="warn" />}>
               <div className="space-y-3 text-sm">
                 <p>
-                  <span className="font-semibold">Recommends:</span> {d.recommends}
+                  <span className="font-semibold">Recommends:</span> <StewardWords text={d.recommends} />
                 </p>
                 <ul className="space-y-1.5">
                   {d.options.map((o) => (
                     <li key={o.answer} className={`rounded-xl border p-2.5 ${d.answer === o.answer ? "border-primary" : "border-border"}`}>
-                      <span className="font-semibold">{o.answer}</span>
+                      <StewardWords text={o.answer} className="font-semibold" />
                       {d.answer === o.answer ? <span className="text-muted-foreground"> · your answer</span> : null}
-                      <span className="block text-muted-foreground">{o.effect}</span>
+                      <StewardWords text={o.effect} className="block text-muted-foreground" />
                     </li>
                   ))}
                 </ul>
@@ -67,7 +68,7 @@ export default async function DecisionsPage() {
                   tone={d.answer ? "default" : "primary"}
                   pendingLabel="Saving…"
                   fields={[
-                    { name: "answer", label: "Answer", type: "select", options: d.options.map((o) => ({ value: o.answer, label: o.answer })), defaultValue: d.answer ?? d.options[0]?.answer },
+                    { name: "answer", label: "Answer", type: "select", options: d.options.map((o) => ({ value: o.answer, label: stewardText(o.answer) })), defaultValue: d.answer ?? d.options[0]?.answer },
                     { name: "note", label: "Note (optional)", type: "textarea", maxLength: 500 },
                   ]}
                 />

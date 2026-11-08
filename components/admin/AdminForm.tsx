@@ -10,7 +10,7 @@ const inputCls =
 export interface FieldSpec {
   name: string;
   label: string;
-  type?: "text" | "email" | "tel" | "number" | "textarea" | "select" | "checkbox";
+  type?: "text" | "email" | "tel" | "number" | "date" | "textarea" | "select" | "checkbox";
   defaultValue?: string;
   /** Checkboxes: ticked to begin with. Unticked sends nothing, so the action reads the box's absence. */
   checked?: boolean;

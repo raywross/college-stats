@@ -15,7 +15,8 @@ import { isParent } from "@/lib/viewer-relation";
 import { getOrCreateDefaultList, myLists } from "@/lib/lists";
 import { myYourPart } from "@/lib/planner/store-parents";
 import { yourPart } from "@/lib/planner/summary";
-import { todayIso } from "@/lib/planner/context";
+import { plannerToday } from "@/lib/planner/today-server";
+import { PretendTodayBanner } from "@/components/planner/PretendTodayBanner";
 
 export const metadata: Metadata = { title: "Their list", robots: { index: false } };
 
@@ -59,7 +60,7 @@ export default async function PersonListPage({ params }: { params: Promise<{ per
   const own = person.kind === "student" ? person.access.relation === "self" : person.is_me;
 
   // "Your part" above a guardian's own list (specs/planner/parents.md "The parent's tasks").
-  const today = todayIso();
+  const today = await plannerToday();
   const yourPartGroups = person.kind === "guardian" && person.is_me ? yourPart(await myYourPart(), today) : [];
 
   const planLink = personListHref(person.kind, id);
@@ -69,6 +70,7 @@ export default async function PersonListPage({ params }: { params: Promise<{ per
 
   return (
     <div className="space-y-6">
+      <PretendTodayBanner />
       <div className="print:hidden">
         <PersonHeader id={id} person={person} active="list" />
       </div>

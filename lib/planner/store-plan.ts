@@ -21,7 +21,7 @@ import { myHome } from "@/lib/home-store";
 import { profileFor, profilesICanSee, saveProfile } from "@/lib/student-profile-store";
 import { effectiveGradYear, sanitizeProfile, type StudentProfileData, type StudentStory } from "@/lib/student-profile";
 import type { ListRound } from "@/lib/list-rules";
-import { generatorInputFor, readPlan, todayIso, writeAutoWrites, writeMerge } from "./context";
+import { generatorInputFor, readPlan, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView } from "./plan-view";
 import { planEstimates } from "./plan-estimates";
 import { generateTasks, mergeTasks } from "./tasks";
@@ -34,6 +34,7 @@ import { inRequestScope } from "@/lib/request-memo";
 import { freshPlanBundle } from "@/lib/bundles";
 import { planDataFromBundle } from "@/lib/bundle-read";
 import type { PlanData } from "./read-plan";
+import { plannerToday } from "./today-server";
 
 export type PlanWriteResult = { ok: true } | { ok: false; message: string };
 
@@ -109,7 +110,7 @@ async function syncAndRegenerate(supabase: Supabase, listId: string, known?: Kno
       profile = p?.data ?? null;
     }
   }
-  const today = todayIso();
+  const today = await plannerToday();
   // The estimates feed both the suggestion sync and (next steps, review note 3) the generators, so they're computed
   // once, beside the dataset read (planEstimates returns {} at once for an empty list).
   const [input, estimates] = await Promise.all([
@@ -301,7 +302,7 @@ export async function setNumbers(studentId: string, numbers: PlanNumbers): Promi
 export async function saveIntake(studentId: string, input: IntakeSave): Promise<PlanWriteResult> {
   const parsed = parseIntakeSave(input);
   if (!parsed) return { ok: false, message: "Check your answers: one of them is out of range." };
-  const today = todayIso();
+  const today = await plannerToday();
   return withTiming(
     "/advisor save",
     () =>

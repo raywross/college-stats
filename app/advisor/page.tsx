@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { JoinedNotice } from "@/components/account/JoinedNotice";
+import { PretendTodayBanner } from "@/components/planner/PretendTodayBanner";
 import { ViewerBanner } from "@/components/account/ViewerBanner";
 import { PlanFrame } from "@/components/planner/PlanFrame";
 import { PlanPeople, type PlanPerson, type PlanPersonDetail } from "@/components/planner/PlanPeople";
@@ -214,10 +215,12 @@ export default async function PlanPage(props: { searchParams: Promise<{ for?: st
   const page = await withTiming("/advisor", () => renderPlan(props));
   // `?joined=<grant id>`: the one line after joining a counselor (app/join/[code]/actions.ts).
   const { joined } = await props.searchParams;
-  if (!isUuid(joined) || !(await getUser())) return page;
+  const banner = (await getUser()) ? <PretendTodayBanner /> : null;
+  if (!isUuid(joined) || !(await getUser())) return banner ? <div className="space-y-4">{banner}{page}</div> : page;
   const own = await currentStudent().catch(() => null);
   return (
     <div className="space-y-4">
+      {banner}
       <JoinedNotice grantId={joined} ownStudentId={own?.id ?? null} />
       {page}
     </div>

@@ -15,7 +15,7 @@ import { getOrCreateDefaultList, myLists } from "@/lib/lists";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { profileFor } from "@/lib/student-profile-store";
 import { effectiveGradYear } from "@/lib/student-profile";
-import { generatorInputFor, planContextFrom, PlannerSetupError, readItems, readPlan, readTasks, todayIso, writeAutoWrites, writeMerge } from "./context";
+import { generatorInputFor, planContextFrom, PlannerSetupError, readItems, readPlan, readTasks, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView, type PlanView } from "./plan-view";
 import { planEstimates } from "./plan-estimates";
 import { generateTasks, mergeTasks } from "./tasks";
@@ -29,6 +29,7 @@ import { bundleKnownMissing, planDataFromBundle } from "@/lib/bundle-read";
 import { readPlanEssays, type PlanData } from "./read-plan";
 import { isParent } from "@/lib/viewer-relation";
 import { isUuid } from "./plan-writes";
+import { plannerToday } from "./today-server";
 
 export type PlanLoad =
   /** The plan, ready for the tabs. */
@@ -101,7 +102,7 @@ export async function loadPlanFor(studentId: string, viewer?: StudentAccess | nu
   // A parent's or a counselor's read is logged for the student (lib/viewer-relation.ts isViewer).
   if (relation !== "self") await scheduleStudentReadLog(student.id, "plan_tasks");
   const gradYear = profile ? effectiveGradYear(profile.data.basics, student.grad_year) : student.grad_year;
-  const today = todayIso();
+  const today = await plannerToday();
   const profileData = profile?.data ?? null;
 
   if (!plan) {

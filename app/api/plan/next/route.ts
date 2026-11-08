@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { planBundle } from "@/lib/bundles";
 import { planViewer } from "@/lib/planner/load";
-import { todayIso } from "@/lib/planner/context";
 import { hasNewMove, tasksDueSoon } from "@/lib/planner/plan-frame";
 import type { PlanTask } from "@/lib/planner/types";
 import { createServerSupabase } from "@/lib/supabase-server";
+import { plannerToday } from "@/lib/planner/today-server";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +43,7 @@ export async function GET() {
     const viewer = await planViewer();
     const studentIds = viewer.kind === "self" ? [viewer.student.id] : viewer.kind === "guardian" ? viewer.children.map((c) => c.studentId) : [];
     if (studentIds.length === 0) return json(false);
-    const today = todayIso();
+    const today = await plannerToday();
     const [bundles, opens] = await Promise.all([Promise.all(studentIds.map((id) => planBundle(id))), lastOpens(user.id, studentIds)]);
     const tasksOf = (i: number): PlanTask[] => (bundles[i]?.tasks ?? []) as PlanTask[];
     const deadline = studentIds.some((_, i) => tasksDueSoon(tasksOf(i), today));

@@ -5,7 +5,7 @@ import { SITE_NAME } from "@/lib/brand";
 import { getData } from "@/lib/data";
 import { caseloadCsv, caseloadCsvFilename } from "@/lib/org-caseload";
 import { caseloadStudents, myOrganization, orgRoster } from "@/lib/orgs";
-import { todayIso } from "@/lib/planner/context";
+import { plannerToday } from "@/lib/planner/today-server";
 
 /**
  * /org/export (specs/product/counselor-portal.md "Export"): the caseload as a CSV for Naviance, Scoir, or a
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const [students, { getSchoolById }] = await Promise.all([orgRoster(org.id).then(caseloadStudents), getData()]);
     const schools: Record<string, { name: string }> = {};
     for (const s of students) for (const i of s.items) schools[i.unit_id] ??= { name: getSchoolById(i.unit_id)?.name ?? i.unit_id };
-    const today = todayIso();
+    const today = await plannerToday();
     return new Response(caseloadCsv(students, schools, today), {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",

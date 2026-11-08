@@ -14,11 +14,11 @@ import { authConfigured, getUser } from "@/lib/auth";
 import { allowed, NOT_ALLOWED_MESSAGE, type Capability } from "@/lib/entitlements";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { isoDateOrNull } from "@/lib/list-rules";
-import { todayIso } from "./context";
 import { regenerate } from "./store";
 import { snapshotOnApplied } from "@/lib/chances/snapshot-write";
 import { snapshotDeps } from "@/lib/chances/snapshot-deps";
 import type { PlanItem } from "./types";
+import { plannerToday } from "./today-server";
 
 export type PlanActionResult = { ok: true } | { ok: false; message: string };
 
@@ -76,7 +76,7 @@ function sanitizePortalUrl(url: string | null): string | null | "invalid" {
 /** Marks a college applied: `applied_on` (today, or a given date) and status `applied` — one fact, the same tick as the timeline's Apply task. */
 export async function markApplied(itemId: string, appliedOn?: string | null): Promise<PlanActionResult> {
   if (!isUuid(itemId)) return { ok: false, message: FAILED };
-  const date = appliedOn ? isoDateOrNull(appliedOn) : todayIso();
+  const date = appliedOn ? isoDateOrNull(appliedOn) : await plannerToday();
   if (appliedOn && !date) return { ok: false, message: "That isn't a date." };
   const r = await ready("planner.tab");
   if (!("supabase" in r)) return r;
@@ -109,8 +109,9 @@ export async function unmarkApplied(itemId: string): Promise<PlanActionResult> {
 }
 
 /** Marks (or clears) "the portal shows everything received": stops the weekly portal check. */
-export async function markComplete(itemId: string, completeOn: string | null = todayIso()): Promise<PlanActionResult> {
+export async function markComplete(itemId: string, completeOn: string | null | undefined = undefined): Promise<PlanActionResult> {
   if (!isUuid(itemId)) return { ok: false, message: FAILED };
+  if (completeOn === undefined) completeOn = await plannerToday();
   const date = completeOn === null ? null : isoDateOrNull(completeOn);
   if (completeOn !== null && !date) return { ok: false, message: "That isn't a date." };
   const r = await ready("planner.tab");
@@ -192,9 +193,9 @@ export async function setTranscriptShared(itemId: string, shared: boolean): Prom
 }
 
 /** Withdraws (or restores) an application: the card greys out; its tasks stop being generated (applications.md "Status per college"). */
-export async function markWithdrawn(itemId: string, withdrawn: boolean, on: string | null = todayIso()): Promise<PlanActionResult> {
+export async function markWithdrawn(itemId: string, withdrawn: boolean, on: string | null = null): Promise<PlanActionResult> {
   if (!isUuid(itemId) || typeof withdrawn !== "boolean") return { ok: false, message: FAILED };
-  const date = withdrawn ? (on ? isoDateOrNull(on) : todayIso()) : null;
+  const date = withdrawn ? (on ? isoDateOrNull(on) : await plannerToday()) : null;
   if (withdrawn && on && !date) return { ok: false, message: "That isn't a date." };
   const r = await ready("planner.tab");
   if (!("supabase" in r)) return r;

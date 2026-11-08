@@ -4,7 +4,7 @@ import { ROUND_VAR } from "@/lib/planner/colors";
 import { joinNames, nextUpGroup, nextUpInfo, weekdayLabel } from "@/lib/planner/plan-frame";
 import type { PlanView } from "@/lib/planner/plan-view";
 import { ROUND_LABELS, type ListRound } from "@/lib/list-rules";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 
 const ROUND_TERM: Record<ListRound, TermKey> = {
   ed: "early-decision",
@@ -15,7 +15,7 @@ const ROUND_TERM: Record<ListRound, TermKey> = {
   rolling: "rolling-admission",
 };
 
-const cited = (c: unknown) => (c ?? undefined) as AnyCited | undefined;
+const cited = (c: unknown) => (c ?? undefined) as CiteLike | undefined;
 
 /**
  * Next up (specs/planner/redesign/page.md "The page"): the single nearest deadline on the list, in the round

@@ -118,7 +118,7 @@ test("dates resolve against the student's cycle: fall in the start year, winter 
   assert.equal(resolveMonthDay(md(1, 15), START), "2027-01-15");
   assert.equal(resolveMonthDay({ month: null, day: 1 }, START), null);
   const s = school("1", "A", { early_decision: ED({ other: { closing: md(1, 2), notification: md(2, 15) } }) }, {
-    cites: { "reported.admission_profile.early_decision.first.closing": { cdsEdition: "2025–26" } },
+    cites: { "reported.admission_profile.early_decision.first.closing": { ref: true, unit: "1", path: "reported.admission_profile.early_decision.first.closing", key: "college-site", year: null, cdsEdition: "2025–26" } },
   });
   const d = roundDates(s, "ed");
   assert.deepEqual(d.closing, { iso: "2026-11-01", field: "reported.admission_profile.early_decision.first.closing" });

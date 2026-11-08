@@ -30,6 +30,9 @@ import { readTaskRows, upsertTaskRows, type PlanData } from "./read-plan";
 import { seasonOf } from "./seasons";
 import { readEssayOverrides, withOverride } from "@/lib/essays/overrides";
 import type { EstimateResult } from "@/lib/chances/types";
+import { citeRefOf, type AnyCited, type CiteLike } from "@/lib/lineage";
+import type { CiteMode } from "./plan-cites";
+import { POOL_FIELDS, type PoolSchool } from "@/lib/chances/pool-rate";
 
 export {
   isMissing,
@@ -126,6 +129,29 @@ export const PLAN_CITE_PATHS = [
 /** Cited by hand in planSchoolFor: not real dot paths on School. */
 const HAND_CITED: ReadonlySet<string> = new Set(["derived.sat_total", "derived.gpa_band_mean", "derived.gpa_middle_half", "derived.gpa_estimate"]);
 
+/**
+ * The lineage records the pool reads (lib/chances/pool-rate.ts and compared-with.ts, through lib/cds/admissions.ts
+ * `sameDocumentRate`): the overall rate's year, the ED counts' year and document, and the funnel's documents. A
+ * college's whole lineage is tens of kilobytes (every value's quote and url), most of the plan's payload when it rode
+ * along in `poolSchool`; tests/plan-cites.test.mts shows the pool reads the same with only these.
+ */
+export const POOL_LINEAGE_PATHS = [
+  POOL_FIELDS.overall,
+  "reported.admission_profile.early_decision.applicants",
+  "admissions.applicants",
+  "admissions.admitted",
+] as const satisfies readonly FieldPath[];
+
+/** The college as the pool reads it, with only the lineage records it reads (POOL_LINEAGE_PATHS). */
+export function slimPoolSchool(school: School): PoolSchool {
+  const lineage: NonNullable<School["lineage"]> = {};
+  for (const path of POOL_LINEAGE_PATHS) {
+    const rec = school.lineage?.[path];
+    if (rec) lineage[path] = rec;
+  }
+  return { unit_id: school.unit_id, name: school.name, location: school.location, admissions: school.admissions, reported: school.reported, lineage };
+}
+
 function valueAt(obj: unknown, path: string): unknown {
   let cur: unknown = obj;
   for (const part of path.split(".")) {
@@ -139,30 +165,37 @@ function valueAt(obj: unknown, path: string): unknown {
  * The slice of a School the stages read, with citations resolved. `studentCycleStart` is the start year of the
  * cycle the student applies in: college month/day dates resolve against it (lib/list-rules.ts deadlineFor's rule),
  * and `editionIsLastCycle` says the college's logistics describe an earlier cycle than the student's.
+ *
+ * `opts.cites` (counselor performance review, cause 4): by default each citation is a reference (lib/lineage.ts
+ * `CiteRef`: unit, path, key, year, and the CDS edition and document kind when it has them) that its ⓘ resolves
+ * through `GET /api/cite` when it opens, so the plan's payload carries no urls, quotes, or methods. `"full"` keeps
+ * the whole citation, for the print page, which has no ⓘ to open.
  */
 export function planSchoolFor(
   school: School,
   citeField: (path: FieldPath, school?: School) => unknown,
-  opts: { studentCycleStart: number; home: HomeLocation | null; gpaModel?: GpaModel | null; gpaCurve?: GpaCurve | null },
+  opts: { studentCycleStart: number; home: HomeLocation | null; gpaModel?: GpaModel | null; gpaCurve?: GpaCurve | null; cites?: CiteMode },
 ): PlanSchool {
   const logistics = school.reported?.admissions_logistics ?? null;
   const dataStart = cycleStartFromEntering(logistics?.cycle);
-  const cites: Record<string, unknown> = {};
+  const cites: Record<string, CiteLike> = {};
   for (const path of PLAN_CITE_PATHS) {
     if (HAND_CITED.has(path)) continue; // not real dot paths; resolved below
     const v = valueAt(school, path);
-    if (v !== undefined && v !== null) cites[path] = citeField(path, school);
+    if (v !== undefined && v !== null) cites[path] = citeField(path, school) as AnyCited;
   }
   // U2: the SAT total shown (satTotal, lib/score-bands.ts), cited only when the college reports one.
   const satRange = satTotal(school);
-  if (satRange) cites["derived.sat_total"] = citeField("derived.sat_total", school);
+  if (satRange) cites["derived.sat_total"] = citeField("derived.sat_total", school) as AnyCited;
   const actRange = school.admissions.act_composite_25_75 ?? null;
   const gpaAverage = standingGpaAverage(school);
   // The college's GPA, best source first (gpa.md "The design" 1), cited by the field its sentence names.
   const gpaModel = opts.gpaModel ?? null;
   const gpaCurve = opts.gpaCurve ?? null;
   const gpa = collegeGpa(school, gpaModel, gpaCurve);
-  Object.assign(cites, gpaCites(school, gpa, gpaModel, citeField as (path: FieldPath, school?: School) => object, gpaCurve));
+  Object.assign(cites, gpaCites(school, gpa, gpaModel, citeField as (path: FieldPath, school?: School) => AnyCited, gpaCurve));
+  // Built whole as before, then cut to references unless the caller asked for the full set (the print page).
+  if (opts.cites !== "full") for (const [path, cited] of Object.entries(cites)) cites[path] = citeRefOf(cited as AnyCited, school.unit_id);
   const standing: StandingSchool = {
     admitRate: school.admissions?.acceptance_rate ?? null,
     sat: satRange,
@@ -200,7 +233,8 @@ export function planSchoolFor(
     actRange,
     gpaAverage,
     standing,
-    poolSchool: school,
+    // With references, only the lineage the pool reads (slimPoolSchool); "full" (print) keeps the college as it was.
+    poolSchool: opts.cites === "full" ? school : slimPoolSchool(school),
     apply: school.apply ?? null,
     coalition: school.coalition ?? null,
     essays: school.essays ?? null,
@@ -216,8 +250,11 @@ export function standingGpaAverage(school: Pick<School, "reported">): number | n
   return gpa?.average != null && gpa.average <= 4 && gpa.scale !== "weighted" ? gpa.average : null;
 }
 
-/** PlanSchool for every college on the list, by unit id (a college no longer in the dataset is left out). */
-export async function planSchools(unitIds: string[], studentCycleStart: number, home: HomeLocation | null): Promise<Record<string, PlanSchool>> {
+/**
+ * PlanSchool for every college on the list, by unit id (a college no longer in the dataset is left out). Citations are
+ * references unless `opts.cites` is `"full"` (planSchoolFor; only the print page asks).
+ */
+export async function planSchools(unitIds: string[], studentCycleStart: number, home: HomeLocation | null, opts: { cites?: CiteMode } = {}): Promise<Record<string, PlanSchool>> {
   const { getSchoolById, citeField } = await span("dataset", () => getData());
   const gpaModel = await fittedGpaModel();
   const gpaCurve = await fittedGpaCurve();
@@ -226,7 +263,7 @@ export async function planSchools(unitIds: string[], studentCycleStart: number, 
   const out: Record<string, PlanSchool> = {};
   for (const id of unitIds) {
     const school = getSchoolById(id);
-    if (school) out[id] = planSchoolFor(withOverride(school, overrides), citeField, { studentCycleStart, home, gpaModel, gpaCurve });
+    if (school) out[id] = planSchoolFor(withOverride(school, overrides), citeField, { studentCycleStart, home, gpaModel, gpaCurve, cites: opts.cites });
   }
   return out;
 }
@@ -313,11 +350,11 @@ export function planCycleKey(gradYear: number | null, today: string): string {
  */
 export async function generatorInputFor(
   plan: PlanData,
-  opts: { gradYear: number | null; profile: StudentProfileData | null; home: HomeLocation | null; today: string; estimates?: Record<string, EstimateResult> },
+  opts: { gradYear: number | null; profile: StudentProfileData | null; home: HomeLocation | null; today: string; estimates?: Record<string, EstimateResult>; cites?: CiteMode },
 ): Promise<GeneratorInput> {
   const cycle = loadCycle(planCycleKey(opts.gradYear, opts.today));
   // The setting's read overlaps the dataset slice (it's one small row).
-  const [schools, allMoves] = await Promise.all([planSchools(plan.items.map((i) => i.unit_id), cycle.startYear, opts.home), allMovesEnabled()]);
+  const [schools, allMoves] = await Promise.all([planSchools(plan.items.map((i) => i.unit_id), cycle.startYear, opts.home, { cites: opts.cites }), allMovesEnabled()]);
   return {
     list: plan.list,
     items: plan.items,

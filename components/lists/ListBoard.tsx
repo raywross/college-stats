@@ -6,7 +6,7 @@ import { ArrowDown, ArrowUp, ChevronDown, GripVertical, Lock, Trash2 } from "luc
 import { Crest } from "@/components/school/Crest";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { pctSmart, moneyCompact } from "@/lib/format";
-import type { Cited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import type { TermKey } from "@/lib/glossary";
 import {
   CATEGORY_LABELS,
@@ -57,19 +57,19 @@ export interface BoardSchoolInfo {
   state: string | null;
   brand?: Parameters<typeof Crest>[0]["brand"];
   admitRate: number | null;
-  admitRateCited: Cited | null;
+  admitRateCited: CiteLike | null;
   avgCost: number | null;
-  avgCostCited: Cited | null;
+  avgCostCited: CiteLike | null;
   /** Straight-line miles from the viewer's own home (specs/product/home-and-distance.md); null without one or without campus coordinates. */
   distance: number | null;
-  distanceCited: Cited | null;
+  distanceCited: CiteLike | null;
   /** `"common-app"`: the Requirements Grid's own date (common-app-build/brief.md U4), shown like a reported date. */
   deadline: { date: string | null; text: string | null; source: "common-app" | "reported" | "student" | null };
   /**
    * The plan's next dated step for this college (specs/planner/model.md "Where it lives": "Apply by Jan 5 · ED II"),
    * shown at the end of the facts line; its citation when the date came from the college's data. Absent off the hub.
    */
-  next?: { title: string; date: string; cited: Cited | null; overdue: boolean } | null;
+  next?: { title: string; date: string; cited: CiteLike | null; overdue: boolean } | null;
 }
 
 export interface BoardItem extends ListItem {

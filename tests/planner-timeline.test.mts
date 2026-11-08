@@ -60,7 +60,8 @@ const item = (over: Partial<PlanItem> = {}): PlanItem =>
     ...over,
   }) as PlanItem;
 
-const cite = (edition: string) => ({ cdsEdition: edition });
+// A reference, as the plan ships it (lib/lineage.ts CiteRef): the generators read only its edition.
+const cite = (edition: string) => ({ ref: true as const, unit: "100", path: "reported.admissions_logistics.regular_closing", key: "college-site" as const, year: null, cdsEdition: edition });
 
 /** A college with every date the generators read, from a CDS for the student's own cycle. */
 function fullSchool(over: Partial<PlanSchool> = {}): PlanSchool {

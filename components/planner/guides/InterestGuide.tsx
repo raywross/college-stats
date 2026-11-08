@@ -25,7 +25,7 @@ import { VisitForm } from "@/components/planner/VisitForm";
 import { venueLine } from "@/components/visits/next-events-logic";
 import { track } from "@/lib/analytics";
 import { formatMiles } from "@/lib/home";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { followTargets, visitPageLink } from "@/lib/planner/capture";
 import { INTEREST_FIELD } from "@/lib/planner/interest";
 import { actForEvent, isVisitAct, type InterestAct, type InterestActRow } from "@/lib/planner/interest-acts";
@@ -70,7 +70,7 @@ function CollegeGuide({ ctx, item, school, data }: CollegeProps) {
   const factor = school.profile?.factors?.interest ?? null;
   const variant = interestVariant(factor);
   const muted = variant === "not_considered";
-  const cited = school.cites[INTEREST_FIELD] as AnyCited | undefined;
+  const cited = school.cites[INTEREST_FIELD] as CiteLike | undefined;
   const edition = (school.cites[INTEREST_FIELD] as { cdsEdition?: string } | undefined)?.cdsEdition ?? null;
   const canEdit = ctx.viewer.canEdit;
   const canFollow = canEdit;

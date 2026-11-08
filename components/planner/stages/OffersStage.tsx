@@ -10,7 +10,7 @@ import { OutcomeChip, OutcomePicker, shortDate } from "@/components/planner/Outc
 import { CopyText, OutcomeShareConsent, ProsCons, WithdrawButton } from "@/components/planner/OfferControls";
 import { LetterList, type SharedLetter } from "@/components/planner/ShareLetter";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { CATEGORY_LABELS } from "@/lib/list-rules";
 import { compareHref } from "@/lib/compare-routes";
 import { createServerSupabase } from "@/lib/supabase-server";
@@ -19,7 +19,7 @@ import { appealSummary, questionsToAsk, usd, waitListLine, waitListOdds } from "
 import { offerColumns, offerFacts, waitListFacts } from "@/lib/planner/offers-server";
 import type { PlanContext, PlanTask, TaskKind } from "@/lib/planner/types";
 
-const cited = (c: unknown) => (c ?? undefined) as AnyCited | undefined;
+const cited = (c: unknown) => (c ?? undefined) as CiteLike | undefined;
 
 /** After-the-choice steps, in the order the panel lists them. */
 const CHOICE_KINDS: readonly TaskKind[] = ["reply_by", "deposit", "housing_deposit", "withdraw", "waitlist_decide"];

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import type { RowControlProps } from "@/components/planner/row/props";
 import { MetricLabel } from "@/components/ui/info-tip";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import type { ListRound } from "@/lib/list-rules";
 import { setRound } from "@/lib/planner/store";
 import { ROUND_SHORT, isOffered, roundDates, roundsOffered } from "@/lib/planner/rounds";
@@ -60,7 +60,7 @@ export default function RoundsRowControls({ item, school, canEdit }: RowControlP
         {round && !offered.pickable.includes(round) && <option value={round}>{ROUND_SHORT[round]} (not offered)</option>}
       </select>
       {dates?.closing && (
-        <MetricLabel cited={school.cites[dates.closing.field] as AnyCited | undefined} className="text-muted-foreground">
+        <MetricLabel cited={school.cites[dates.closing.field] as CiteLike | undefined} className="text-muted-foreground">
           <span>Apply by {day(dates.closing.iso)}</span>
         </MetricLabel>
       )}

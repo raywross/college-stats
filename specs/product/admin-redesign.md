@@ -462,3 +462,46 @@ Recommended defaults; the build proceeds on them unless the owner says otherwise
 - Tests: `tests/admin-redesign-data.test.mts` (the four pure modules, the form's save, Health's one path and tabs, the
   old addresses, the pages' words); the typed words' refusals in `tests/admin-data.test.mts` and
   `tests/admin-steward.test.mts`; the Sources tab's render test in `tests/admin-ops.test.mts` now renders the page.
+
+### Unit 3: People (2026-11-08, `feature/admin-redesign-people`)
+
+- **Plain fields.** `lib/admin/record-words.ts` (pure, tested): `studentNumbers()`, `offers()`, `snapshot()`, and
+  `notificationPrefs()`, each returning `{ fields: {label, value}[]; details: Record<string, unknown> }` — the labels
+  come from the site's own words (`/me`'s groups for a profile, `lib/planner/offers.ts`'s `COA_LABELS`/`GIFT_LABELS`/
+  `LOAN_LABELS`/`usd()` for an offer, `lib/chances/levels.ts`'s `STANDING_LEVEL_LABELS` for a snapshot's estimate, and
+  the names `/account` and the unsubscribe pages use for a notification switch). Long lists (courses, activities,
+  awards, connections, recommenders) show as a count, not a dump. `components/admin/RecordFields.tsx` renders the
+  result: `<Fields>` for what it knows, `<details>Details</details>` (still `KeyValues`) for what's left over. Wired
+  into the student record's Numbers and Snapshots, the plan's Offers, and a person's Notifications; `KeyValues` on
+  these pages now appears only inside a `<details>`.
+- **The typed-word rule.** `lib/admin/console.ts` gained `CONFIRM_GRANT` ("grant"), `CONFIRM_REVOKE` ("revoke"),
+  `CONFIRM_CLOSE_HOUSEHOLD` ("close"), and `CONFIRM_DEACTIVATE` ("pause"), beside `CONFIRM_DELETE`. Grant admin and
+  Revoke admin (`app/admin/admins/page.tsx`) and Close household (`app/admin/households/[id]/page.tsx`) now use
+  `ConfirmTyped`; Deactivate (`app/admin/people/[user]/page.tsx`) keeps its required typed reason and gains the typed
+  word on top. Each Server Action (`app/admin/admins/actions.ts`, `app/admin/households/[id]/actions.ts`,
+  `app/admin/people/actions.ts`) checks `typedMatches(form.get("confirm"), ...)` again before calling its database
+  function, exactly as the delete actions do; `tests/admin-console-ui.test.mts` shows each one refused with no
+  database call when the word is missing or wrong.
+- **Organizations search.** `lib/admin/organizations.ts`'s `listOrganizations(q, page)` takes a search term (the
+  organization's name, its join code, its high school id, or a member's name), matched in code since there's still no
+  `admin_list_organizations()` and the count stays small; `app/admin/organizations/page.tsx` gained the same
+  `AdminSearch` box Households uses, and one match redirects straight to the organization's page.
+- **The duplicate anchor.** A person's page had two `id="views"` panels (Colleges viewed, and Who viewed their data).
+  Colleges viewed keeps `#views` (every existing link points there); Who viewed their data is now `#viewed`.
+- **Help.** Every People word the brief listed (seat, managed record, role hint, join code, ask, second factor,
+  paused, deleting) already had an entry in `lib/admin/help.ts` from Unit 1's shell pass, each already wired to the
+  panel that uses it (Households' "Who is in it" carries `help="seat"`, "Add a student" carries `help="managed-
+  record"`, Admins' second-factor panel carries `help="second-factor"`, and so on); no new People entries were
+  needed. `StatusChip`'s own rule (its help icon is for a word that isn't plain English, like Held or Stale) is why
+  Paused and Deleting, whose chips read as plain English, don't carry an inline tip even though their glossary
+  entries exist for `/admin/help` and anything that links to them.
+
+#### Left for the next units
+
+- Panel and table markup on the People pages is unchanged (U2's `ResponsiveTable` and `RecordActions` land on top of
+  this); the new `RecordFieldsView` sits inside the existing panel shape so U2 can fold it into the phone layout
+  without re-deriving the fields.
+- Offers, snapshots, and notification preferences are formatted from whatever shape the row actually has (defensive
+  `typeof` checks, not the strict `StudentProfileData`/`PlanOffer` types), since the admin console reads these tables
+  directly rather than through the sanitizers the family-facing forms use; a key the formatter doesn't recognize is
+  never hidden, only pushed into Details.

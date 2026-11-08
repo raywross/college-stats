@@ -820,6 +820,42 @@ What the logs point at next, in the order of gain:
    worth a longer timeout or a retry.
 4. One `/explore` request ran in `sfo1`, not `iad1`: check the project's function regions on the Pro plan.
 
+### Built (round 2, the same day)
+Items 1 to 3 above, in one PR, with the same deploy order as round 1 (deploy first, then apply the migration; the
+new code falls back to today's reads while a function is missing):
+- **The plan in two waves** (`lib/planner/load.ts`, `lib/planner/settings-server.ts`, `lib/planner/read-plan.ts`,
+  `lib/essays/counts.ts`). Wave 1 starts, before any `await`, the plan bundle, the viewer bundle, the profile, home,
+  one `app_settings` read for both planner settings (`appSettings()`; `plannerTodayOverride()` and `allMovesEnabled()`
+  read from it), the student's essays with their links, open comments, and suggestions (four reads filtered by
+  student through `essays!inner(student_id)`), and the open cycle's `essay_prompt_overrides` once per request (shared
+  by `planSchools` and `promptLookup`). Wave 2 is the estimate's high-school reads, chained on the profile's promise
+  (`afterOne`) so they start the moment it resolves and overlap the rest of wave 1; `planEstimates` takes the started
+  `EstimateContext`. The Essays tab counts the plan's rows (`openCommentCounts`, `suggestionCounts`, pure) and reads
+  nothing more. New spans `estimates.context` and `estimates.compute`: compute is about 9 ms for ten colleges locally,
+  so the production `estimates 171–309ms` was the high-school reads, now overlapped. `tests/plan-waves.test.mts`
+  guards the wave shape by reading the source.
+- **The essay page in one wave** (`supabase/migrations/20261108130000_essay_and_me_bundles.sql`, `lib/essays/essay-read.ts`,
+  `lib/essays/review-rows.ts`). `essay_bundle(id)` (security invoker) returns the draft, its versions, links,
+  comments and suggestions with author names (per reader, as `namesFor` read them), base, variant count, the last ten
+  reviews with their notes, and the student's default list's unit ids. The page starts it beside the viewer check and
+  the overrides; `Notes` takes the reviews as `initial` and makes no mount fetch. Null (not installed, failed, or
+  unreadable) falls back to the table reads. `tests/essay-me-bundles.test.mts` (PGlite) and
+  `tests/essay-page-waves.test.mts` compare both paths.
+- **`/api/me` in one call**: `me_bundle()` returns the profile, the organization and admin flags, and the household's
+  children in `householdChildren()`'s order and rule (a managed child on the roster counts; a managed record on no
+  roster, and a counselor-only student, don't); the route answers from it alone, or makes today's four calls when it
+  is null.
+- **Cold start, measured** (`scripts/measure-cold-start.mts`; section [6](#6-cold-starts-measure-then-decide) has the
+  table). The real snapshot's `colleges.json` is 35.7 MB, not gzipped; the first load is 1,042 ms wall / 367 ms CPU on
+  the laptop, of which `JSON.parse` is 520–670 ms wall / 240–280 ms CPU, the file read 70–165 ms, and `createDataset`
+  under 10 ms (its indexes are already lazy). Reading the file as bytes and decoding saves about 50 ms CPU (the one
+  change made). Lazy `lineage` behind a getter, Latin-1 decoding, and GC flags were measured and dropped. **The lever
+  is the publisher**: `lineage` is 17.2 MB of the 35.7; a copy without it parses in 230 ms against 494 ms. Publishing
+  `lineage` (and perhaps `reported`, 2.8 MB) as separate objects read on demand, as `detail/` and `history/` already
+  are, would halve the cold start; it is a publisher and `fetch-snapshot` change with several scripts reading the
+  file whole. The pointer check's timeout is not the problem: the check runs unawaited after the response, and the
+  platform likely pauses the instance before `current.json` arrives; keeping it alive with `after()` is the fix.
+
 ### Left, after this PR
 - Closed in round 2 (plan and essay speed): `/advisor` read 16 times in 4 waves. It now reads in two
   (`lib/planner/load.ts` loadPlanFor): the first holds every read that needs only the ids (the plan and viewer

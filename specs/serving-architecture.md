@@ -743,6 +743,42 @@ project, so fewer waves is the fix; the visit-event count and `/api/me` are in s
 the functions are missing and tolerates a bundle without profiles; the code deployed before it reads
 `bundle.student_profiles` and would break on the new bundle.
 
+### Measured after the deploy and the migration (2026-11-08)
+PR #224 deployed to production at 14:03, the migration applied to the dev project right after, then the same paths
+as Maria Rivera again. Production's own `[timing]` lines (now on, `QUAD_TIMING=1`):
+
+| Request | Before | After | The log line |
+|---|---|---|---|
+| `/org` | 0.92–1.0 s, 5 waves | **0.24–0.38 s** | `/org 359ms: db 2× in 1 wave 249ms (rpc org_caseload_bundle 249 ‖ rpc viewer_bundle 112)` |
+| `/org/students/[id]` | 0.62–0.98 s, 5 waves | **0.15–0.23 s** | `/org/students/[id] 209ms: db 2× in 1 wave 160ms (rpc org_student_bundle 160 ‖ rpc viewer_bundle 146)` |
+| `/org/export` | 2.3 s | 1.2–1.3 s | `db 2× in 1 wave 217ms`; the rest was a cold instance: `[data] loaded 1893 colleges (snapshot 6) in 953 ms` just before |
+| `/advisor?for=…` | 0.9–1.6 s, 904 KB | 0.48–0.9 s warm, **343 KB** | `/advisor 473ms: db 16× in 4 waves 414ms (rpc plan_bundle 115 ‖ rpc viewer_bundle 64 ‖ essays 40 ‖ …; app_settings 34; high_schools 51 ‖ … ‖ rpc school_course_list 58; essay_prompt_overrides 41 ‖ essay_comments 49 ‖ essay_suggestions 46) … planSchools 130ms estimates 171ms` |
+| `/advisor?…&tab=essays` | 1.3 s, 918 KB | 0.57–0.98 s, **346–363 KB** | the same render |
+| `/advisor/essays/[id]` | 0.74–1.06 s | 0.49–0.65 s | `/advisor/essays/[id] 417ms: db 12× in 7 waves 392ms (rpc viewer_bundle 62; essays 69; essay_versions 46 ‖ … ‖ essays 58; profiles 36; essay_prompt_overrides 42 ‖ lists 43; lists 64; list_items 54)` |
+| `/api/me` | 0.47–0.69 s | 0.36–0.40 s | |
+
+Postgres as Maria (the recipe above): `plan_tasks` for one list 113 → **8.6 ms**; the caseload's lists read 481 →
+**32 ms**; `plan_bundle` 268 → 121 ms on the first call after the migration, **44 ms** warm; `viewer_bundle` 74 →
+**21 ms** warm; `org_caseload_bundle` 58 ms; `org_student_bundle` 36 ms; `org_roster` 20 → 13 ms. The ⓘ on the
+plan fetches its source once on open (`/api/cite`, 389 ms the first time, then from the browser's cache) and shows
+the same popover as before.
+
+What the logs point at next, in the order of gain:
+1. **`/advisor` runs 13–16 reads in 4–5 waves** (414–630 ms of database time) and then `estimates` for 170–310 ms:
+   the plan bundle and viewer bundle start together, then essays and profiles, then `app_settings`, then the high
+   school tables and `school_course_list`, then the essay overrides and comments. Folding the pretend-today setting
+   and the high-school reads into the first wave, and the essay reads into one, would make it two waves. This is
+   every signed-in person's page, not only the counselor's.
+2. **`/advisor/essays/[id]` runs 12 reads in 7 waves** (392 ms): viewer, then the essay, then its versions and
+   comments, then the profile, then the overrides and lists, then lists again, then items. One essay bundle, or the
+   reads started together, would make it two.
+3. **A cold instance loads the snapshot in about 1 s** (`[data] loaded 1893 colleges … in 953 ms`, 1,101 ms on
+   another). It showed on `/org/export` and on the first `/advisor` after the deploy. The precomputed derived files in
+   [section 7](#7-later-options-with-their-triggers) remain the lever; also seen once: `[data] checking for a newer
+   snapshot failed … timed out` against Storage's `current.json`, harmless (the current snapshot kept serving) but
+   worth a longer timeout or a retry.
+4. One `/explore` request ran in `sfo1`, not `iad1`: check the project's function regions on the Pro plan.
+
 ### Left, after this PR
 - `/api/me` still loads the viewer bundle through `householdChildren()` (same wave as the profile read; a
   profile-only children count would remove it).

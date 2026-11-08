@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpTip } from "@/components/admin/HelpTip";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Fields, PageHeader, Panel } from "@/components/admin/Panel";
@@ -31,6 +32,17 @@ const WITH_HOUSEKEEPING = 100;
  * with its cron and its next firing, how to start it by hand, and its run history (the last 30), each run opening its
  * own page. A workflow with a housekeeping firing (the half-hourly collect) hides those runs unless `?all=1`.
  */
+/** The raw route or workflow file, folded under Details (specs/product/admin-redesign.md "Words that change"). */
+function RawDetails({ raw }: { raw: string | null | undefined }) {
+  if (!raw) return null;
+  return (
+    <details className="text-xs text-muted-foreground">
+      <summary className="inline-flex min-h-11 cursor-pointer items-center hover:text-foreground">Details</summary>
+      <code className="rounded bg-muted px-1 break-all">{raw}</code>
+    </details>
+  );
+}
+
 export default async function JobPage({ params, searchParams }: { params: Promise<{ job: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await connection();
   await requireAdmin();
@@ -47,7 +59,15 @@ export default async function JobPage({ params, searchParams }: { params: Promis
   const history = job.runner === "vercel" ? { kind: "stored" as const, runs: await storedRuns(job.id) } : { kind: "github" as const, runs: await githubRuns(job, hasHousekeeping && !showAll ? WITH_HOUSEKEEPING : RUNS_PAGE) };
 
   const facts: { label: string; value: React.ReactNode }[] = [
-    { label: "Runs on", value: job.runner === "vercel" ? `${RUNNER_LABEL.vercel} · ${job.path}` : `${RUNNER_LABEL.github} · ${job.workflow}` },
+    {
+      label: "Runs on",
+      value: (
+        <>
+          {job.runner === "vercel" ? `${RUNNER_LABEL.vercel}, at its own web route` : `${RUNNER_LABEL.github}, as its own workflow`}
+          <RawDetails raw={job.runner === "vercel" ? job.path : job.workflow} />
+        </>
+      ),
+    },
     { label: "Next run", value: next ? `${timeLabel(next.toISOString())} (${relativeLabel(next, now)})` : "By hand only" },
     {
       label: "Start it by hand",
@@ -61,7 +81,8 @@ export default async function JobPage({ params, searchParams }: { params: Promis
         </a>
       ) : (
         <>
-          <code className="rounded bg-muted px-1">POST {job.path}</code> with the cron secret
+          Its own web route, called with the cron secret
+          <RawDetails raw={`POST ${job.path}`} />
         </>
       ),
     },
@@ -130,8 +151,8 @@ export default async function JobPage({ params, searchParams }: { params: Promis
 
         <section aria-labelledby="history-title" className="space-y-3">
           <div>
-            <h2 id="history-title" className="font-display text-xl font-bold tracking-tight">
-              History
+            <h2 id="history-title" className="inline-flex items-center gap-1.5 font-display text-xl font-bold tracking-tight">
+              History <HelpTip help="job-history" />
             </h2>
             <p className="mt-0.5 text-sm text-muted-foreground">The last {RUNS_PAGE} runs, newest first. Open a run for what it did.</p>
           </div>
@@ -198,7 +219,7 @@ function StoredHistory({ job, runs }: { job: JobDef; runs: StoredRuns }) {
   if (!runs.ok) {
     return (
       <p role="alert" className="rounded-2xl border border-destructive/50 p-4 text-sm text-destructive">
-        Couldn&apos;t read this job&apos;s runs: {runs.reason}. The <code className="rounded bg-muted px-1">job_runs</code> migration may not be applied to this project.
+        Couldn&apos;t read this job&apos;s runs: {runs.reason}. <span title="public.job_runs">The migration that adds the jobs&apos; run history may not be applied to this project.</span>
       </p>
     );
   }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CORE_INPUT_KEYS, INPUT_LABELS, type InputCounts } from "@/lib/admin/estimate-inputs";
+import { HelpTip } from "@/components/admin/HelpTip";
 import { STATUS_LABELS, type HealthStatus } from "@/lib/admin/health-rules";
 import { inputsHref, type InputFilters } from "@/lib/admin/inputs-view";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
@@ -19,8 +20,8 @@ export function EstimateInputsStats({ counts, filters }: { counts: InputCounts; 
   const overallOn = (s: HealthStatus) => filters.status === s && !filters.input;
   return (
     <section aria-labelledby="inputs-stats" className="space-y-4">
-      <h2 id="inputs-stats" className="sr-only">
-        Colleges by the health of the estimate&apos;s inputs
+      <h2 id="inputs-stats" className="inline-flex items-center gap-1.5 text-lg font-bold">
+        Colleges by the health of the estimate&apos;s inputs <HelpTip help="estimate-inputs-counts" />
       </h2>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <li className="rounded-2xl border border-border bg-card p-4">

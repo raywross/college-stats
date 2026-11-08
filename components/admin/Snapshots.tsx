@@ -3,7 +3,7 @@ import { StatusChip } from "@/components/admin/StatusChip";
 import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
 import { fmtDateTime, type ChipTone } from "@/lib/admin/console";
 import { formatBytes, manifestBytes, manifestDownloadUrl, type SnapshotRow } from "@/lib/admin/data-reads";
-import { CONFIRM_POINT_BACK } from "@/lib/admin/data-actions";
+import { CONFIRM_MAKE_LIVE } from "@/lib/admin/data-actions";
 import { pointBackAction } from "@/app/admin/data/actions";
 
 const STATUS_TONE: Record<SnapshotRow["status"], ChipTone> = {
@@ -66,7 +66,7 @@ export function SnapshotsTable({ snapshots, currentId }: { snapshots: SnapshotRo
                 hidden={{ snapshot: String(s.id) }}
                 trigger="Make this the live version"
                 sheet
-                typed={{ expected: CONFIRM_POINT_BACK, instruction: <>Type &ldquo;{CONFIRM_POINT_BACK}&rdquo; to confirm</> }}
+                typed={{ expected: CONFIRM_MAKE_LIVE, instruction: <>Type &ldquo;{CONFIRM_MAKE_LIVE}&rdquo; to confirm</> }}
                 description="Visitors see this version at once, with no rebuild. The next publish supersedes it unless the change at fault is also undone; to undo one change rather than a whole publish, use Undo this change on the change's page."
               />
             )}

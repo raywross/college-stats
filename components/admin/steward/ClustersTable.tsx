@@ -30,7 +30,7 @@ function Cause({ row: { cluster, issue } }: { row: ClusterRowView }) {
           {issue.proposals.map((p, i) => (
             <span key={p}>
               {i > 0 ? ", " : "Proposals: "}
-              <Link href={proposalHref(p)} className={linkCls}>
+              <Link href={proposalHref(p)} className={`inline-flex min-h-11 items-center ${linkCls}`}>
                 {p}
               </Link>
             </span>
@@ -48,7 +48,7 @@ function Cause({ row: { cluster, issue } }: { row: ClusterRowView }) {
               const { unit, label } = exampleParts(key);
               return (
                 <li key={key}>
-                  <Link href={reviewHref(unit)} className={linkCls}>
+                  <Link href={reviewHref(unit)} className={`inline-flex min-h-11 items-center ${linkCls}`}>
                     {label}
                   </Link>
                 </li>

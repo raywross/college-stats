@@ -291,7 +291,7 @@ test("saveReference: an rpc refusal is turned into plain words, and an unrecogni
   assert.equal(noName.status, "error");
 });
 
-test("revertReference: requires the typed word 'revert' before reading a version", async () => {
+test("revertReference: requires the typed word 'restore' before reading a version", async () => {
   const { deps, calls } = depsFor();
   const result = await actions.revertReference(deps, formOf({ name: "aid-policies", version: "1", confirm: "nope" }));
   assert.equal(result.status, "error");
@@ -316,7 +316,7 @@ test("revertReference: sends the older version's body as the new one, with the f
       return knownUnitIds;
     },
   };
-  const result = await actions.revertReference(deps, formOf({ name: "aid-policies", version: "1", confirm: "Revert" }));
+  const result = await actions.revertReference(deps, formOf({ name: "aid-policies", version: "1", confirm: "Restore" }));
   assert.deepEqual(result, { status: "done", message: "Reverted to version 1." });
   assert.equal(sent.length, 1);
   assert.deepEqual(JSON.parse(sent[0].p_body), oldBody);
@@ -325,7 +325,7 @@ test("revertReference: sends the older version's body as the new one, with the f
 
 test("revertReference: a version that no longer exists refuses without calling the rpc", async () => {
   const { deps, calls } = depsFor({ versionBody: null });
-  const result = await actions.revertReference(deps, formOf({ name: "aid-policies", version: "99", confirm: "revert" }));
+  const result = await actions.revertReference(deps, formOf({ name: "aid-policies", version: "99", confirm: "restore" }));
   assert.equal(result.status, "error");
   assert.deepEqual(calls, ["readVersion"]);
 });

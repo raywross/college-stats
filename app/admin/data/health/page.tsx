@@ -137,8 +137,8 @@ async function sourcesTab(params: Params): Promise<TabView> {
         </section>
 
         <section aria-labelledby="college-documents" className="space-y-1 border-t border-border pt-6">
-          <h2 id="college-documents" className="text-lg font-bold">
-            Each college&apos;s documents
+          <h2 id="college-documents" className="inline-flex items-center gap-1.5 text-lg font-bold">
+            Each college&apos;s documents <HelpTip help="college-documents" />
           </h2>
           <p className="max-w-3xl text-sm text-muted-foreground">
             When we received data for each college, group by group, and what decided each status. Health inputs are from {dayLabel(overview.generated)}; measured {dayLabel(overview.today)}.

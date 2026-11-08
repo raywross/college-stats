@@ -109,13 +109,12 @@ export function FieldRow({ unit, row, actions }: { unit: string; row: EditRow; a
   return (
     <li className="space-y-2 px-4 py-3 sm:px-5" data-path={row.path}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <span className="flex flex-wrap items-center gap-2 font-medium">
+        <span className="flex flex-wrap items-center gap-2 font-medium" title={row.path}>
           {row.label}
           {row.edited && <Chip tone="edit">Edited</Chip>}
         </span>
         <span className="min-w-0 font-mono text-[13px] break-words tabular-nums">{row.display}</span>
       </div>
-      <p className="font-mono text-xs break-all text-muted-foreground">{row.path}</p>
       <p className="text-xs text-muted-foreground">{row.cited}</p>
       {row.derivedNote && <p className="text-xs text-muted-foreground">{row.derivedNote}.</p>}
       {row.readersNote && <p className="text-xs text-muted-foreground">{row.readersNote}.</p>}

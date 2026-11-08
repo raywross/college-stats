@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState, useId, useState } from "react";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { Empty } from "@/components/admin/Panel";
-import { CONFIRM_REVERT, IDLE, fmtDateTime } from "@/lib/admin/console";
+import { CONFIRM_RESTORE, IDLE, fmtDateTime } from "@/lib/admin/console";
 import type { EditorKind } from "@/lib/admin/reference-view";
 import type { ReferenceActionState } from "@/lib/admin/reference-actions";
 import { fieldList, fieldName, problemsByField, type ReferenceField } from "@/lib/admin/reference-form";
@@ -184,7 +184,7 @@ export function ReferenceVersions({ name, rows }: { name: string; rows: Referenc
               action={revertReferenceAction}
               hidden={{ name, version: String(r.version) }}
               trigger={`Restore version ${r.version}`}
-              typed={{ expected: CONFIRM_REVERT }}
+              typed={{ expected: CONFIRM_RESTORE }}
             />
           </div>
         </li>

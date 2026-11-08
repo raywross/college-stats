@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { HealthCounts } from "@/lib/admin/health";
+import { HelpTip } from "@/components/admin/HelpTip";
 import { GROUP_LABELS, HEALTH_GROUPS, HEALTH_STATUSES, STATUS_LABELS } from "@/lib/admin/health-rules";
 import { healthHref, type HealthFilters } from "@/lib/admin/health-view";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
@@ -20,8 +21,8 @@ export function HealthStats({ counts, filters }: { counts: HealthCounts; filters
   const hasUnjudged = HEALTH_GROUPS.some((g) => counts.groups[g].unjudged > 0);
   return (
     <section aria-labelledby="health-stats" className="space-y-4">
-      <h2 id="health-stats" className="sr-only">
-        Colleges by data health
+      <h2 id="health-stats" className="inline-flex items-center gap-1.5 text-lg font-bold">
+        Colleges by data health <HelpTip help="data-health-counts" />
       </h2>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <li className="rounded-2xl border border-border bg-card p-4">

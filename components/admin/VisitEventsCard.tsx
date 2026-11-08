@@ -44,6 +44,7 @@ export function VisitEventsCard({ health, now }: { health: VisitEventsHealth; no
   return (
     <Panel
       id="visit-events"
+      help="visit-events"
       title="Visit events"
       aside={
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium">

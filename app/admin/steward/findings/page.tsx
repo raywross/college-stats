@@ -141,7 +141,7 @@ export default async function IssuesPage({ searchParams }: { searchParams: Promi
             <ul className="divide-y rounded-2xl border bg-background text-sm">
               {named.map((c) => (
                 <li key={c.unit_id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 p-3">
-                  <Link href={reviewHref(c.unit_id)} className={`font-semibold ${linkCls}`}>
+                  <Link href={reviewHref(c.unit_id)} className={`inline-flex min-h-11 items-center font-semibold ${linkCls}`}>
                     {c.name}
                   </Link>
                   <span className="text-xs text-muted-foreground">

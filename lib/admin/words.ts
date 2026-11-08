@@ -158,3 +158,72 @@ export function targetKindLabel(kind: string | null | undefined): string {
   if (!kind) return "—";
   return TARGET_KIND_WORDS[kind] ?? kind.replace(/[-_]/g, " ");
 }
+
+/**
+ * Why a machine couldn't get a document, in words: the college-reported failure reasons
+ * (specs/college-data-failures.md#reason-codes), the review queue's acquisition checks, and a blocked directory
+ * host's reasons. The code itself stays in a `title` or under Details.
+ */
+export const REASON_WORDS: Readonly<Record<string, string>> = {
+  no_document_found: "No document found",
+  class_profile_only: "Only a class profile found",
+  class_profile_no_figures: "Class profile without figures",
+  robots_disallowed: "The site's robots rules forbid it",
+  host_blocked: "The site blocks us",
+  unreachable: "Couldn't reach it",
+  edition_too_old: "Only an old edition",
+  not_newer: "Nothing newer than we have",
+  edition_unknown: "Edition year unknown",
+  never_read: "Never read",
+  failed_checks: "Failed the checks",
+  read_no_values: "Read, but no values",
+  malformed_url: "The address isn't valid",
+  discovery_error: "Discovery failed",
+  "not-a-url": "The address isn't valid",
+  robots: "The site's robots rules forbid it",
+  challenge: "A bot check",
+  login: "Needs a login",
+  forbidden: "Access refused",
+  "rate-limited": "Too many requests",
+  unauthorized: "Needs a login",
+  terms: "The site's terms forbid it",
+};
+
+/** A reason code in words; an unknown one reads as its words ("some_new_reason" → "Some new reason"). */
+export function reasonLabel(code: string): string {
+  const known = REASON_WORDS[code];
+  if (known) return known;
+  const words = code.replace(/[_-]+/g, " ").trim();
+  return words ? words[0].toUpperCase() + words.slice(1) : code;
+}
+
+/**
+ * An attempt's stored result ("class_profile_only: only class profile(s) found (2), no Common Data Set", a review
+ * queue's "unreachable: HTTP 404 (100654|2025-26|C.101)") split for the screen: `text` is the explanation sentence
+ * (the label when there is none), `label` the reason in words, `code` and `key` the raw parts for a title or Details.
+ * A result that doesn't start with a code shows as written.
+ */
+export function attemptResultWords(result: string): { text: string; label: string | null; code: string | null; key: string | null } {
+  const m = /^([a-z][a-z0-9]*(?:[_-][a-z0-9]+)*)(?::\s*([\s\S]*))?$/.exec(result.trim());
+  if (!m || (!m[2] && !REASON_WORDS[m[1]] && !/[_-]/.test(m[1]))) return { text: result.trim(), label: null, code: null, key: null };
+  const code = m[1];
+  let detail = (m[2] ?? "").trim();
+  let key: string | null = null;
+  const k = /\s*\(([^()|\s]*\|[^()|\s]*\|[^()\s]*)\)$/.exec(detail);
+  if (k) {
+    key = k[1];
+    detail = detail.slice(0, k.index).trim();
+  }
+  const label = reasonLabel(code);
+  const text = detail ? detail[0].toUpperCase() + detail.slice(1) : label;
+  return { text, label, code, key };
+}
+
+/**
+ * A stored sentence with snake_case codes in it ("status refers_to_form, but the quoted sentence…"), the codes the
+ * map names replaced by their words in quotes ("status “Refers to the form”, but…"). Codes the map doesn't name read
+ * as their words with the underscores replaced. The raw sentence belongs in a `title`.
+ */
+export function codeWordsInText(text: string, words: Readonly<Record<string, string>>): string {
+  return text.replace(/\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g, (code) => `“${words[code] ?? code.replace(/_/g, " ")}”`);
+}

@@ -13,7 +13,7 @@ const evidenceColumns: readonly Column<Finding>[] = [
     header: "College",
     role: "title",
     cell: (f) => (
-      <Link href={reviewHref(f.unit_id)} className={linkCls}>
+      <Link href={reviewHref(f.unit_id)} className={`inline-flex min-h-11 items-center ${linkCls}`}>
         {f.unit_id}
       </Link>
     ),
@@ -34,7 +34,7 @@ const proposalRowColumns = (names: Record<string, string>): readonly Column<Prop
     header: "College",
     role: "title",
     cell: (r) => (
-      <Link href={reviewHref(r.unit_id)} className={linkCls}>
+      <Link href={reviewHref(r.unit_id)} className={`inline-flex min-h-11 items-center ${linkCls}`}>
         {names[r.unit_id] ?? r.unit_id}
       </Link>
     ),
@@ -81,7 +81,7 @@ export function ProposalsList({ proposals }: { proposals: ProposalDoc[] }) {
           <div className="flex flex-wrap items-center gap-2">
             <ProposalKindChip kind={p.kind} />
             <ProposalStatusChip status={p.status} />
-            <Link href={proposalHref(p.key)} className={`font-semibold break-all ${linkCls}`}>
+            <Link href={proposalHref(p.key)} className={`inline-flex min-h-11 items-center font-semibold break-all ${linkCls}`}>
               {p.key}
             </Link>
           </div>

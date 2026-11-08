@@ -4,6 +4,7 @@ import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable
 import { DocLink, TodoStatusChip } from "@/components/admin/steward/Bits";
 import { todoDoneAction, todoFoundAction, todoNoDocumentAction } from "@/app/admin/steward/actions";
 import { dayLabel } from "@/lib/admin/ops-view";
+import { attemptResultWords } from "@/lib/admin/words";
 import { TODO_KIND_LABEL, TODO_WHY_LABEL, editionOf, linkCls, reviewHref } from "@/lib/admin/steward-view";
 import type { TodoDoc } from "@/lib/steward/types";
 
@@ -46,7 +47,7 @@ function Subject({ r }: { r: TodoDoc }) {
   return (
     <>
       {r.unit_id ? (
-        <Link href={reviewHref(r.unit_id)} className={linkCls}>
+        <Link href={reviewHref(r.unit_id)} className={`inline-flex min-h-11 items-center ${linkCls}`}>
           {r.subject}
         </Link>
       ) : (
@@ -74,12 +75,23 @@ function Open({ r }: { r: TodoDoc }) {
   );
 }
 
+/** The last attempt's result in words: the explanation as the text, the reason in words and its code in the title. */
+function AttemptResult({ result }: { result: string }) {
+  const w = attemptResultWords(result);
+  const title = w.code ? [`${w.label} (${w.code})`, w.key].filter(Boolean).join(" · ") : undefined;
+  return (
+    <span className="block text-muted-foreground" title={title}>
+      {w.text}
+    </span>
+  );
+}
+
 function Attempts({ r }: { r: TodoDoc }) {
   const last = r.attempts.at(-1);
   return r.attempts.length ? (
     <>
       {r.attempts.length} · last {dayLabel(last?.at)}
-      {last?.result ? <span className="block text-muted-foreground">{last.result}</span> : null}
+      {last?.result ? <AttemptResult result={last.result} /> : null}
     </>
   ) : (
     <span className="text-muted-foreground">None</span>

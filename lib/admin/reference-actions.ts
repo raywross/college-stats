@@ -8,12 +8,12 @@
  * ones.
  */
 import { ADMIN_ERRORS } from "./constants.ts";
-import { ADMIN_FAILED, CONFIRM_REVERT, typedMatches, type AdminActionState } from "./console.ts";
+import { ADMIN_FAILED, CONFIRM_RESTORE, typedMatches, type AdminActionState } from "./console.ts";
 import { editorToBody, referenceDocumentKey, validateReference, type EditorKind } from "./reference-view.ts";
 import { formToBody } from "./reference-form.ts";
 
-/** The word typed to revert a document to an older version (console.ts, so the client editor imports no server code). */
-export { CONFIRM_REVERT };
+/** The word typed to restore a document to an older version ("restore") (console.ts, so the client editor imports no server code). */
+export { CONFIRM_RESTORE };
 
 const REFERENCE_ERRORS: Record<string, string> = {
   reference_not_found: "That document doesn't exist. Reload the page.",
@@ -96,7 +96,7 @@ export async function saveReference(deps: ReferenceActionDeps, form: ReferenceFo
 export async function revertReference(deps: ReferenceActionDeps, form: ReferenceFormLike): Promise<AdminActionState> {
   const name = nameFromForm(form);
   if (!name) return BAD_NAME;
-  if (!typedMatches(form.get("confirm"), CONFIRM_REVERT)) return { status: "error", message: `Type "${CONFIRM_REVERT}" to confirm.` };
+  if (!typedMatches(form.get("confirm"), CONFIRM_RESTORE)) return { status: "error", message: `Type "${CONFIRM_RESTORE}" to confirm.` };
 
   const versionRaw = str(form, "version");
   const version = /^\d+$/.test(versionRaw) ? Number(versionRaw) : null;

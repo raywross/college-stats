@@ -588,3 +588,37 @@ Recommended defaults; the build proceeds on them unless the owner says otherwise
   allowed. `tests/admin-phone.test.mts` guards this, the `<table>` rule, the five RecordActions pages and the form
   breakpoints; the render tests use `tests/fixtures/responsive-table-fake.mjs` for the table.
 - The high school page shows a course by name only; the course key no longer appears on screen.
+
+### Polish (QA follow-ups) (2026-11-08, `feature/admin-redesign-polish`)
+
+- **Typed words follow the renames.** Make this the live version now asks for `live` (`CONFIRM_MAKE_LIVE`), Undo
+  this change for `undo` (`CONFIRM_UNDO`), and a reference document's Restore version N for `restore`
+  (`CONFIRM_RESTORE`), all in `lib/admin/console.ts`; `CONFIRM_POINT_BACK` and `CONFIRM_REVERT` are gone. The
+  Server Actions re-check the new words and refuse the old ones (`tests/admin-data.test.mts`,
+  `tests/admin-reference.test.mts`). This replaces Unit 1's "the typed words did not change".
+- **Code words off the screen.** `lib/admin/words.ts` gains `REASON_WORDS`, `reasonLabel()` and
+  `attemptResultWords()`: a To do row's last attempt shows its explanation ("Only class profile(s) found (2), no
+  Common Data Set"), with the reason in words, its code and any review key in the `title`. `codeWordsInText()` turns
+  the snake_case codes in a stored sentence into words, so a held essay's problem reads "status “Refers to the form”,
+  but…" (the raw sentence in the `title`). The college Edit page and the "Derived, not shown" panel name each field
+  by its registry label (`lib/fields.ts`) with the path in the `title`; the form still posts the path. A job's page
+  says "Vercel Cron, at its own web route" / "GitHub Actions, as its own workflow" and "Its own web route, called with
+  the cron secret", with the route or workflow file under Details; the missing-table alert names the migration in
+  words. `tests/admin-console.test.mts` adds a grep rule (no `/api/` path, snake_case key or dotted field path as a
+  JSX text node under `app/admin/**` and `components/admin/**`), shown failing on samples.
+- **Every heading explains itself.** The hand-written `<h2>`s (Jobs: Status of the last runs, All jobs, Scheduled,
+  Run by hand; a job's History; Health: Colleges by data health, Colleges by the health of the estimate's inputs,
+  Each college's documents; the Colleges search's two result headings) carry a `HelpTip`. The three that were
+  `sr-only` (the jobs status strip and the two Health stat rows) are now visible so the icon can sit beside them.
+  The Estimate inputs and Visit events panels pass `help=`. New keys: `jobs-status`, `all-jobs`, `jobs-scheduled`,
+  `jobs-by-hand`, `job-history`, `estimate-inputs`, `estimate-inputs-counts`, `data-health-counts`,
+  `college-documents`, `visit-events`. Tests: every `<h2` under `app/admin/**` and `components/admin/**` (except
+  Panel.tsx, the rail, and /admin/help's door groups) holds a `HelpTip` with a known key, and every `<Panel` in
+  `components/admin/**` passes `help=`.
+- **44 px row links.** The text links inside list rows (Findings' colleges and clusters, Proposals' keys and
+  colleges, To do's colleges, a household's members, an organization's members and students, Admins' people) are
+  `inline-flex min-h-11 items-center`. The college page's source notes get 44 px links through the `className` the
+  console passes (`[&_a]:min-h-11`), leaving the shared `SourceNote` as the public pages have it.
+  `tests/admin-phone.test.mts` checks each.
+- **Left:** a Findings cluster still shows its check id (`cluster.check`) in monospace; Steward-written text (QA
+  finding 2) and Decide without a typed word (finding 6) are unchanged.

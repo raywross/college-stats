@@ -264,8 +264,10 @@ test("a Vercel job's page: the route, next run, how to start it, each schedule w
   const w = world();
   const html = await render(jobPage({ params: Promise.resolve({ job: "digests" }), searchParams: Promise.resolve({}) }));
   assert.deepEqual(w.calls, ["requireAdmin", "storedRuns"]);
-  assert.match(html, /Vercel Cron · \/api\/cron\/digests/);
-  assert.match(html, /POST \/api\/cron\/digests/);
+  assert.match(html, /Vercel Cron, at its own web route/);
+  assert.match(html, /Its own web route, called with the cron secret/);
+  assert.match(html, /<summary[^>]*>Details<\/summary><code[^>]*>\/api\/cron\/digests<\/code>/, "the route sits under Details");
+  assert.match(html, /<summary[^>]*>Details<\/summary><code[^>]*>POST \/api\/cron\/digests<\/code>/);
   assert.match(html, /0 13 \* \* \*/);
   assert.match(html, /Does nothing until email sending is configured/);
   assert.match(html, /href="\/admin\/steward\/jobs\/digests\/runs\/12"/);
@@ -280,14 +282,15 @@ test("a Vercel job's page when the table can't be read says why instead of crash
   const html = await render(jobPage({ params: Promise.resolve({ job: "weekly" }), searchParams: Promise.resolve({}) }));
   assert.match(html, /role="alert"/);
   assert.match(html, /does not exist/);
-  assert.match(html, /migration may not be applied/);
+  assert.match(html, /migration that adds the jobs(?:&#x27;|')? run history may not be applied/);
 });
 
 test("a GitHub job's page: the workflow, Run now as the way to start it, every schedule with its note, housekeeping firings hidden unless ?all=1", async () => {
   const w = world();
   const html = await render(jobPage({ params: Promise.resolve({ job: "college-reported" }), searchParams: Promise.resolve({}) }));
   assert.deepEqual(w.calls, ["requireAdmin", "loadRunNow", "githubRuns"]);
-  assert.match(html, /GitHub Actions · college-reported.yml/);
+  assert.match(html, /GitHub Actions, as its own workflow/);
+  assert.match(html, /<summary[^>]*>Details<\/summary><code[^>]*>college-reported\.yml<\/code>/);
   assert.match(html, /href="#run-now"/);
   assert.match(html, /id="run-now"/);
   assert.match(html, /GitHub credentials aren&#x27;t set on this deployment/, "no credentials: Run now says what to set, and offers no form");

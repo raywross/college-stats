@@ -8,9 +8,9 @@
  * - **Publish now** dispatches `publish-snapshot.yml` with `force` through the existing dispatch path (`dispatchRun`,
  *   `lib/admin/workflows.ts`'s `publish-snapshot` row), logged `ops.dispatch` before it is sent, like every run.
  * - **Point back here**: `admin_data_point_snapshot` (which logs `data.point` in the same transaction), then the
- *   workflow's `point` job, dispatched the same way. A refused RPC dispatches nothing. Typed confirmation "point back".
+ *   workflow's `point` job, dispatched the same way. A refused RPC dispatches nothing. Typed confirmation "live".
  * - **Hold** (`admin_data_hold`, a reason required), **Publish anyway** (`admin_data_unhold`, then the publish
- *   dispatched with `force`, logged first), **Revert** (`admin_data_revert`, typed confirmation "revert"; a refusal
+ *   dispatched with `force`, logged first), **Revert** (`admin_data_revert`, typed confirmation "undo"; a refusal
  *   because a later change set touched a document comes back naming it, so the admin reverts that one first).
  * - The held review items' **Accept the value**, **Reject** and **Re-run discovery** run lib/admin/ops-actions.ts
  *   with the store reads and these functions.
@@ -20,14 +20,12 @@
  */
 import type { OpsDeps, OpsState, ReviewDeps } from "./ops-actions.ts";
 import { acceptReviewItem, dispatchRun, noteFromForm, rediscoverReviewItem, rejectReviewItem, reviewKeyFromForm } from "./ops-actions.ts";
-import { ADMIN_FAILED, CONFIRM_PUBLISH, CONFIRM_REVERT, typedMatches, type AdminActionState } from "./console.ts";
+import { ADMIN_FAILED, CONFIRM_MAKE_LIVE, CONFIRM_PUBLISH, CONFIRM_UNDO, typedMatches, type AdminActionState } from "./console.ts";
 import { ADMIN_ERRORS } from "./constants.ts";
 import type { ReviewItem } from "../reported.ts";
 
-/** The word typed to move the live pointer to an older snapshot. */
-export const CONFIRM_POINT_BACK = "point back";
-/** The words typed to undo a change set and to Publish now (defined in console.ts so client components can import them without this module). */
-export { CONFIRM_PUBLISH, CONFIRM_REVERT } from "./console.ts";
+/** The words typed to Make this the live version, Undo this change and Publish now (defined in console.ts so client components can import them without this module). */
+export { CONFIRM_MAKE_LIVE, CONFIRM_PUBLISH, CONFIRM_UNDO } from "./console.ts";
 
 function fromOpsState(state: OpsState): AdminActionState {
   if (state.status === "idle") return state;
@@ -144,7 +142,7 @@ export async function publishNow(deps: DataActionDeps, form: DataFormLike): Prom
 export async function pointBackHere(deps: DataActionDeps, form: DataFormLike): Promise<AdminActionState> {
   const id = snapshotIdFromForm(form);
   if (id === null) return BAD_SNAPSHOT;
-  if (!typedMatches(form.get("confirm"), CONFIRM_POINT_BACK)) return { status: "error", message: `Type "${CONFIRM_POINT_BACK}" to confirm.` };
+  if (!typedMatches(form.get("confirm"), CONFIRM_MAKE_LIVE)) return { status: "error", message: `Type "${CONFIRM_MAKE_LIVE}" to confirm.` };
 
   const pointed = await deps.pointSnapshot(id);
   if (!pointed.ok) return { status: "error", message: pointed.message };
@@ -190,7 +188,7 @@ export async function publishAnyway(deps: DataActionDeps, form: DataFormLike): P
 export async function revertChangeSet(deps: DataActionDeps, form: DataFormLike): Promise<AdminActionState> {
   const id = changeSetIdFromForm(form);
   if (id === null) return BAD_CHANGE_SET;
-  if (!typedMatches(form.get("confirm"), CONFIRM_REVERT)) return { status: "error", message: `Type "${CONFIRM_REVERT}" to confirm.` };
+  if (!typedMatches(form.get("confirm"), CONFIRM_UNDO)) return { status: "error", message: `Type "${CONFIRM_UNDO}" to confirm.` };
   const r = await deps.rpc("admin_data_revert", { p_change_set: id, p_note: lineFromForm(form, "note") });
   if (!r.ok) return { status: "error", message: dataErrorMessage(r.error) };
   const revert = typeof r.data === "number" ? r.data : Number(r.data);

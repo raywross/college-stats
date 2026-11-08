@@ -81,7 +81,7 @@ function Leave({ row: { cluster, issue } }: { row: ClusterRowView }) {
 
 const columns: readonly Column<ClusterRowView>[] = [
   { key: "cause", header: "Cause", role: "title", cell: (row) => <Cause row={row} /> },
-  { key: "kind", header: "Kind", cell: ({ cluster, kind, issue }) => <KindChip kind={issue?.kind ?? kind} /> },
+  { key: "kind", header: "Kind", cell: ({ kind, issue }) => <KindChip kind={issue?.kind ?? kind} /> },
   { key: "items", header: "Items", align: "right", role: "detail", cell: ({ cluster }) => cluster.items.toLocaleString("en-US") },
   { key: "colleges", header: "Colleges", align: "right", cell: ({ cluster }) => cluster.colleges.toLocaleString("en-US") },
   { key: "published", header: "Published", align: "right", role: "detail", cell: ({ cluster }) => cluster.published.toLocaleString("en-US") },

@@ -239,7 +239,9 @@ function pagesWithoutNoindex(sources: Record<string, string>): string[] {
 test("/org asks the header for its state again, in both branches, so Caseload appears and goes at once", () => {
   // The header memoizes /api/me for five minutes (components/account/useMe.ts); every membership change lands here.
   const page = read("app/org/page.tsx");
-  assert.equal((page.match(/<RefreshHeader \/>/g) ?? []).length, 2, "the start form and the caseload both render it");
+  // Each branch says what it knows: the header is asked again when its answer disagrees (a caseload visit whose header
+  // already says Caseload asks nothing).
+  assert.equal((page.match(/<RefreshHeader org(=\{false\})? \/>/g) ?? []).length, 2, "the start form and the caseload both render it");
   assert.match(read("components/org/RefreshHeader.tsx"), /refreshMe\(\)/);
 });
 

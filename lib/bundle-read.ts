@@ -13,8 +13,10 @@ import type { CounselorGrant, HouseholdMember, Profile, StudentRecord } from "./
 import type { RosterMember } from "./household-rules.ts";
 import type { PlanData, PlanList } from "./planner/read-plan.ts";
 import type { PlanItem, PlanNudge, PlanOffer, PlanTask, PlanVisit } from "./planner/types.ts";
+import type { CaseloadEssayRow, CaseloadListRow, CaseloadProfileRow } from "./org-caseload.ts";
+import type { Organization, OrgAsk, OrgNote, OrgRosterRow } from "./org-rules.ts";
 
-export type BundleFunction = "viewer_bundle" | "plan_bundle" | "save_student_profile";
+export type BundleFunction = "viewer_bundle" | "plan_bundle" | "save_student_profile" | "org_caseload_bundle" | "org_student_bundle";
 
 type PgError = { code?: string; message?: string };
 
@@ -56,13 +58,50 @@ export interface ViewerBundle {
   students: StudentRecord[];
   members: HouseholdMember[];
   households: { id: string; name: string; created: string; members: RosterMember[] }[];
-  student_profiles: { student_id: string; data: unknown }[];
+  /**
+   * Every readable student's profile. Absent from 20261108120000_fast_policies.sql on (the bundle stopped shipping
+   * every profile on every request); lib/student-profile-store.ts reads the table when it's missing.
+   */
+  student_profiles?: { student_id: string; data: unknown }[];
   home: Record<string, unknown> | null;
   /**
    * The caller's live grants as a member of a counselor organization (20261102120000_organizations.sql). Absent from a
    * viewer_bundle() defined before that migration, when no organization exists yet: read it as [].
    */
   grants?: CounselorGrant[];
+}
+
+/**
+ * org_caseload_bundle() (20261108120000_fast_policies.sql): the caseload page in one call. Null (the RPC's answer) when
+ * the caller has no organization. Row-level security decides the profiles, lists, and essays, as the table reads in
+ * lib/orgs.ts caseloadStudents did; `lists` are the live roster students' default lists in CASELOAD_LIST_SELECT's
+ * shape (items by position with visits by date, steps by due date with undated last, then position).
+ */
+export interface OrgCaseloadBundle {
+  org: Organization;
+  /** org_roster() rows, every status, in its order. */
+  roster: OrgRosterRow[];
+  /** The `planner.today` setting's raw value (parse with lib/planner/today.ts parseTodaySetting), or null. */
+  today: unknown;
+  profiles: CaseloadProfileRow[];
+  lists: CaseloadListRow[];
+  essays: CaseloadEssayRow[];
+}
+
+/**
+ * org_student_bundle(p_student) (20261108120000_fast_policies.sql): one student's page in one call. Null when the
+ * caller has no organization; `entry` null (and every other student key null or empty) when the student isn't on the
+ * caseload. Notes and asks newest first; notes carry no author name (the page fills it from the organization's members).
+ */
+export interface OrgStudentBundle {
+  org: Organization;
+  today: unknown;
+  entry: OrgRosterRow | null;
+  profile: CaseloadProfileRow | null;
+  list: CaseloadListRow | null;
+  essays: CaseloadEssayRow[];
+  notes: Omit<OrgNote, "author_name">[];
+  asks: OrgAsk[];
 }
 
 /** plan_bundle(): one student's row and their (default or named) list's plan. */

@@ -82,6 +82,66 @@ export type AnyCitedSource = CitedSource<AnySourceKey>;
 export type AnyCited = Cited<AnySourceKey, string>;
 
 /**
+ * A citation by reference (specs/data-lineage.md "Citations on the plan"): which college and field, plus the few
+ * fields plan logic reads without opening the ⓘ (`year`, `cdsEdition`, `sourceKind`). The rest of the citation (url,
+ * quote, method, inputs, what it replaced) is fetched from `GET /api/cite` when its ⓘ opens
+ * (components/ui/info-tip.tsx `useCite`). The plan ships these instead of full citations; only the print page asks
+ * for the full set (lib/planner/context.ts `planSchoolFor`, `cites: "full"`).
+ */
+export interface CiteRef {
+  ref: true;
+  /** The college's IPEDS unit id. */
+  unit: string;
+  /** The field path the citation answers (`GET /api/cite?unit=…&path=…`). */
+  path: string;
+  key: AnySourceKey;
+  year: string | null;
+  sourceKind?: ReportedSourceKind;
+  cdsEdition?: string;
+}
+
+/** A full citation or a reference to one: what display components and plan logic accept. */
+export type CiteLike = AnyCited | CiteRef;
+
+export function isCiteRef(c: unknown): c is CiteRef {
+  if (typeof c !== "object" || c === null) return false;
+  const r = c as { ref?: unknown; unit?: unknown; path?: unknown };
+  return r.ref === true && typeof r.unit === "string" && typeof r.path === "string";
+}
+
+/** The reference for one college's citation: the fields a ref keeps, nothing else. */
+export function citeRefOf(cited: AnyCited, unit: string): CiteRef {
+  return {
+    ref: true,
+    unit,
+    path: cited.path,
+    key: cited.key,
+    year: cited.year,
+    ...(cited.sourceKind !== undefined ? { sourceKind: cited.sourceKind } : {}),
+    ...(cited.cdsEdition !== undefined ? { cdsEdition: cited.cdsEdition } : {}),
+  };
+}
+
+/** `GET /api/cite` for a reference; with `go`, the address that redirects to the source's own page. */
+export function citeApiHref(ref: Pick<CiteRef, "unit" | "path">, go = false): string {
+  return `/api/cite?unit=${encodeURIComponent(ref.unit)}&path=${encodeURIComponent(ref.path)}${go ? "&go=1" : ""}`;
+}
+
+/**
+ * Where a citation's "Source" link goes: the source's page for a full citation, else the API's redirect to it, so a
+ * link that is always on screen (a calendar row's) costs nothing until it is followed.
+ */
+export function citeLinkHref(c: CiteLike): string {
+  return isCiteRef(c) ? citeApiHref(c, true) : c.url;
+}
+
+/** The field's label ("Acceptance rate"): the citation's own, or the registry's for a reference. */
+export function citeFieldLabel(c: CiteLike): string {
+  if (!isCiteRef(c)) return c.field;
+  return isFieldPath(c.path) ? FIELDS[c.path].label : c.path;
+}
+
+/**
  * Identity values found on the college's own site (a visit link, a footer account, its icon; specs/school-identity/):
  * they come from its homepage or admissions page, never from the admissions document `reported.admissions` names. The
  * essay prompts (`essays`, `essays.*`) come from the college's essay page, likewise never from that document.

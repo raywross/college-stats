@@ -1,7 +1,7 @@
 /**
  * The batched reads and the profile write against real Postgres (PGlite with the auth stub, every migration in order;
  * 20261012140000_plan_bundle.sql). viewer_bundle() and plan_bundle() return exactly what the per-table reads they
- * replace return, for each caller (row-level security still decides: they are security invoker); an outsider gets
+ * replace return, for each caller (viewer_bundle() without `student_profiles` from 20261108120000_fast_policies.sql on) (row-level security still decides: they are security invoker); an outsider gets
  * nothing of the household; save_student_profile() writes only where the table write could (a view-only guardian
  * and an outsider are refused), stamps the caller, and keeps the grad-year sync best-effort. Guard tests break a rule
  * on purpose and show the check fail. `npm test`.
@@ -106,15 +106,16 @@ async function viewerByTables(w: World, who: string) {
   const households = (await rowsAs(db, who, "select id, name, created from public.households where deleted_at is null order by created")) as { id: string }[];
   const withRoster = [];
   for (const h of households) withRoster.push({ ...h, members: await rowsAs(db, who, "select * from public.household_roster($1)", [h.id]) });
-  const studentProfiles = await rowsAs(db, who, "select student_id, data from public.student_profiles order by student_id");
   const household = await rpc<string | null>(db, who, "public.my_household()");
   const home = household ? ((await rowsAs(db, who, `select ${HOME_COLS} from public.household_homes where household_id = $1`, [household]))[0] ?? null) : null;
-  return { profile, students: byId(students), members: byId(members), households: withRoster, student_profiles: studentProfiles, home };
+  return { profile, students: byId(students), members: byId(members), households: withRoster, home };
 }
 
 async function viewerByBundle(w: World, who: string) {
   const b = await rpc<Record<string, unknown[]> & { profile: unknown; home: unknown }>(w.db, who, "public.viewer_bundle()");
-  return { profile: b.profile, students: byId(b.students), members: byId(b.members), households: b.households, student_profiles: b.student_profiles, home: b.home };
+  // 20261108120000_fast_policies.sql drops `student_profiles` from the bundle (lib/student-profile-store.ts reads the table).
+  assert.ok(!("student_profiles" in b), "viewer_bundle() no longer returns student_profiles");
+  return { profile: b.profile, students: byId(b.students), members: byId(b.members), households: b.households, home: b.home };
 }
 
 /** lib/planner/read-plan.ts readPlan, table by table, for the list load.ts would pick. */
@@ -247,8 +248,9 @@ test("guard: a security definer bundle would leak another household's plan, and 
   // copy, made definer the same way, so the bundle under test is the current one. So does plan v3's
   // (20261016120000_plan_v3.sql), after it.
   // The counselor portal's migration (20261102120000_organizations.sql) re-creates viewer_bundle() as well; nothing
-  // here needs its tables, so it's left out with the others.
-  const files = ALL.filter((f) => f !== BUNDLE && f !== PAUSE && f !== NEXT_STEPS && f !== PLAN_V3 && f !== "20261102120000_organizations.sql");
+  // here needs its tables, so it's left out with the others, and so is 20261108120000_fast_policies.sql, which
+  // re-creates viewer_bundle() once more and reads the organization tables.
+  const files = ALL.filter((f) => f !== BUNDLE && f !== PAUSE && f !== NEXT_STEPS && f !== PLAN_V3 && f !== "20261102120000_organizations.sql" && f !== "20261108120000_fast_policies.sql");
   const w = await world(files);
   const sql = readFileSync(join(DIR, BUNDLE), "utf8").replaceAll("security invoker", "security definer");
   await w.db.exec(sql);

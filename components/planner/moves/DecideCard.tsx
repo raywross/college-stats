@@ -10,7 +10,7 @@
 import { ChooseButton } from "@/components/planner/ChooseButton";
 import { CollegeChip } from "@/components/planner/CollegeChip";
 import { MetricLabel } from "@/components/ui/info-tip";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { isEdChoice, isPending } from "@/lib/planner/generators/offers";
 import { taskDateLabel } from "@/lib/planner/tasks";
 import type { MoveCardProps } from "./types";
@@ -23,7 +23,7 @@ export function DecideCard({ task, ctx }: MoveCardProps) {
     const item = ctx.items.find((i) => i.id === task.item_id) ?? null;
     const school = item ? ctx.schools[item.unit_id] : null;
     if (!item || !school) return null;
-    const cited = (task.source_field ? school.cites[task.source_field] : undefined) as AnyCited | undefined;
+    const cited = (task.source_field ? school.cites[task.source_field] : undefined) as CiteLike | undefined;
     return (
       <div className="rounded-xl bg-card p-4 ring-1 ring-border">
         <div className="flex items-baseline justify-between gap-3">

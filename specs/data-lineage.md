@@ -120,6 +120,22 @@ nothing was replaced).
 | `college-site` value, newer than federal (college-reported-round-2.md) | **Is** the value, in every view: `applyNewest` writes it into `school.admissions` with its lineage and keeps the replaced funnel in `admissions.federal`; nothing resolves at render time | `lib/newest.ts`, run by `merge-reported` and `sync-data` |
 | `college-site` value that's newer but not a full funnel (e.g. applicants only) | A line under the federal funnel: "Fall 2026: 46,618 applied · reported by the college", each present number cited | `PartialReportedLine` (`components/profile/ReportedAdmissions.tsx`) |
 
+### Citations on the plan (2026-11-08)
+The plan (and anything else built from `planSchoolFor`) ships each citation as a reference, `CiteRef` in
+`lib/lineage.ts` (`{ ref, unit, path, key, year, sourceKind?, cdsEdition? }`), and its ⓘ loads the rest when it
+opens: `MetricLabel`, `InfoTip`, `SourceTip`, and `Term` take a `CiteLike` (full or reference), and for a reference the
+popover calls `useCite` (`components/ui/info-tip.tsx`: one module-level cache keyed `unit|path`, fetches in flight
+shared), shows "Loading the source…", then the same `SourceBlock`; on a failed fetch it shows the field and year it
+already has. A link that is always on screen (a calendar row's "Source") goes to `citeLinkHref(cite)`, which for a
+reference is the API's redirect, so nothing is fetched until it is followed. The print page alone loads full citations
+(`cites: "full"`).
+
+`GET /api/cite?unit=<unit_id>&path=<field path>` answers the full citation as JSON, exactly what the plan would have
+carried (`lib/planner/plan-cites.ts planCiteFor`: `citeField`, and for the GPA fields the fitted model's formula), with
+`Cache-Control: public, max-age=86400, stale-while-revalidate=604800` and the snapshot id in its `ETag` (304 when it
+matches). 400 for a malformed unit or path, 404 for a college the dataset lacks or a path the registry doesn't list (or
+hides); `&go=1` redirects to the source's page instead. It reads the dataset only, never a session.
+
 ## Enforcement
 Each guard below was verified by breaking the rule on purpose and confirming the check fails (2026-09-28).
 

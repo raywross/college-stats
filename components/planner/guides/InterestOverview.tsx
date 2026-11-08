@@ -10,7 +10,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { edOpportunities } from "@/lib/planner/ed-opportunities";
 import { guideHref } from "@/lib/planner/guides";
 import { INTEREST_FIELD } from "@/lib/planner/interest";
@@ -27,7 +27,7 @@ export function InterestOverview({ ctx, view, person, notOnList = false }: Guide
   const row = (r: OverviewRow) => {
     const school = ctx.schools[r.unitId];
     const item = ctx.items.find((i) => i.id === r.itemId);
-    const cited = school?.cites[INTEREST_FIELD] as AnyCited | undefined;
+    const cited = school?.cites[INTEREST_FIELD] as CiteLike | undefined;
     const word = c7Word(r.factor);
     const logged = item ? loggedParts(item, ctx.visits.filter((v) => v.item_id === item.id), ctx.today) : [];
     return (

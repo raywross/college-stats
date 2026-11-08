@@ -7,7 +7,7 @@ import { AlarmClockOff, Check } from "lucide-react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
 import { CollegeChip } from "@/components/planner/CollegeChip";
 import { track } from "@/lib/analytics";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { snooze, tick, untick } from "@/lib/planner/store";
 import { addDays } from "@/lib/planner/stage";
 import { assigneeLabel, dateNoteLabel, isOverdue, taskDateLabel } from "@/lib/planner/tasks";
@@ -92,7 +92,7 @@ export function TaskRow({
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           {showCollege && <CollegeChip school={school} className="text-xs" />}
           {date && (
-            <MetricLabel cited={(cited ?? undefined) as AnyCited | undefined} className={cn(overdue && "font-semibold text-destructive")}>
+            <MetricLabel cited={(cited ?? undefined) as CiteLike | undefined} className={cn(overdue && "font-semibold text-destructive")}>
               <span>
                 {overdue ? "Overdue · " : ""}
                 {date}

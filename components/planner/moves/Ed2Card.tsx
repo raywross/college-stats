@@ -9,7 +9,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MetricLabel } from "@/components/ui/info-tip";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { track } from "@/lib/analytics";
 import { setPlanRound } from "@/lib/planner/store-plan";
 import { taskDateLabel } from "@/lib/planner/tasks";
@@ -24,7 +24,7 @@ export function Ed2Card({ task, ctx, onSkip, pending: skipPending }: MoveCardPro
 
   if (!item || !school) return null;
   const date = taskDateLabel(task, ctx.today);
-  const cited = (task.source_field ? school.cites[task.source_field] : undefined) as AnyCited | undefined;
+  const cited = (task.source_field ? school.cites[task.source_field] : undefined) as CiteLike | undefined;
   const already = started || item.round === "ed2";
 
   const start = () =>

@@ -22,7 +22,9 @@ import { CATEGORY_LABELS, OUTCOME_LABELS, ROUND_LABELS, STATUS_LABELS, type List
 import { effectiveGradYear, profileForViewer, sanitizeProfile, type StudentProfileData } from "./student-profile.ts";
 import type { StandingLevel } from "./chances/types.ts";
 import { ADVISOR_STATUS_LABEL, type AdvisorStatus } from "./entitlements.ts";
-import type { OpenOrgAsk, OrgAsk, OrgAskKind, OrgRosterRow } from "./org-rules.ts";
+import type { OpenOrgAsk, OrgAsk, OrgAskKind, OrgNote, OrgRosterRow, Organization } from "./org-rules.ts";
+import type { OrgCaseloadBundle, OrgStudentBundle } from "./bundle-read.ts";
+import { parseTodaySetting } from "./planner/today.ts";
 
 /* ------------------------------------------------------------------ */
 /* The record's sections and asks                                      */
@@ -675,4 +677,60 @@ export function parseStudentLines(text: string): { rows: StudentInviteLine[]; er
     rows.push({ firstName, lastName, email: email.toLowerCase(), gradYear });
   });
   return { rows, errors };
+}
+
+/* ------------------------------------------------------------------ */
+/* The pages' data, from a bundle or from the table reads              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * What the caseload page and the export show (lib/orgs.ts caseloadData), the same shape whether it came from
+ * org_caseload_bundle() or from the table reads it replaced.
+ */
+export interface CaseloadData {
+  org: Organization;
+  /** Every roster row, every status, in org_roster's order. */
+  roster: OrgRosterRow[];
+  students: CaseloadStudent[];
+  /** The planner's today: the pretend day when one is set, else the real one. */
+  today: string;
+  /** The pretend day itself, or null (PretendTodayBanner's `day`). */
+  pretendDay: string | null;
+}
+
+/** One student's page (lib/orgs.ts studentData). `entry` null: not on the caseload (the page 404s). */
+export interface StudentData {
+  org: Organization;
+  entry: OrgRosterRow | null;
+  /** Null when `entry` is null. */
+  student: CaseloadStudent | null;
+  notes: OrgNote[];
+  asks: OrgAsk[];
+  today: string;
+}
+
+/** Note rows as read (they carry no names), each author named from the organization's members as orgNotes names them. */
+export function namedNotes(org: Pick<Organization, "id" | "members"> | null, orgId: string, rows: readonly Omit<OrgNote, "author_name">[]): OrgNote[] {
+  const names = new Map((org?.id === orgId ? org.members : []).map((m) => [m.user_id, m.display_name]));
+  return rows.map((n) => ({ ...n, author_name: (n.author_id && names.get(n.author_id)) || null }));
+}
+
+/**
+ * The caseload from org_caseload_bundle(): its rows go through assembleCaseloadStudents exactly as the table reads'
+ * rows do, so both paths give the same students. `realToday` is the clock's day; the bundle's `planner.today` setting
+ * (parsed as plannerTodayOverride parses it) wins when set. `env` is for tests (VERCEL_ENV).
+ */
+export function caseloadFromBundle(b: OrgCaseloadBundle, realToday: string, env?: string): CaseloadData {
+  const pretendDay = parseTodaySetting(b.today, env);
+  const roster = b.roster ?? [];
+  const students = assembleCaseloadStudents(roster, { profiles: b.profiles ?? [], lists: b.lists ?? [], essays: b.essays ?? [] });
+  return { org: b.org, roster, students, today: pretendDay ?? realToday, pretendDay };
+}
+
+/** One student's page from org_student_bundle(): the student assembled as the caseload's are, notes named. */
+export function studentFromBundle(b: OrgStudentBundle, realToday: string, env?: string): StudentData {
+  const today = parseTodaySetting(b.today, env) ?? realToday;
+  if (!b.entry) return { org: b.org, entry: null, student: null, notes: [], asks: [], today };
+  const [student = null] = assembleCaseloadStudents([b.entry], { profiles: b.profile ? [b.profile] : [], lists: b.list ? [b.list] : [], essays: b.essays ?? [] });
+  return { org: b.org, entry: b.entry, student, notes: namedNotes(b.org, b.org.id, b.notes ?? []), asks: b.asks ?? [], today };
 }

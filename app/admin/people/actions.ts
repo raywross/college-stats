@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { callAdminRpc, runAuth, withAdmin } from "@/lib/admin/console-actions";
 import {
   BAD_FORM_MESSAGE,
+  CONFIRM_DEACTIVATE,
   CONFIRM_DELETE,
   formId,
   parseEmailChange,
@@ -74,11 +75,16 @@ export async function signOutEverywhere(_prev: AdminActionState, form: FormData)
   });
 }
 
-/** Deactivate: ban, end sessions, set suspended_at. A reason is required and goes in the log. */
+/**
+ * Deactivate: ban, end sessions, set suspended_at. A reason is required and goes in the log; the typed word "pause"
+ * (specs/product/admin-redesign.md "People") is checked again here, since the disabled button in the browser isn't
+ * the rule.
+ */
 export async function deactivate(_prev: AdminActionState, form: FormData): Promise<AdminActionState> {
   return withAdmin("deactivate", async (ctx) => {
     const user = formId(form, "user");
     if (!user) return badForm;
+    if (!typedMatches(form.get("confirm"), CONFIRM_DEACTIVATE)) return { status: "error", message: `Type "${CONFIRM_DEACTIVATE}" to confirm.` };
     const reason = parseReason(form);
     if (!reason.ok) return { status: "error", message: reason.message };
     return runAuth(ctx, { op: "suspend", user, reason: reason.value }, "Account deactivated.");

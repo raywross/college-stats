@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { AdminForm } from "@/components/admin/AdminForm";
+import { ConfirmTyped } from "@/components/admin/ConfirmTyped";
 import { Empty, PageHeader, Panel } from "@/components/admin/Panel";
 import { PersonPicker } from "@/components/admin/PersonPicker";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { requireAdmin } from "@/lib/admin/auth";
-import { fmtDate } from "@/lib/admin/console";
+import { CONFIRM_GRANT, CONFIRM_REVOKE, fmtDate } from "@/lib/admin/console";
 import { findPeople } from "@/lib/admin/console-reads";
 import { adminsList, type SearchRow } from "@/lib/admin/people";
 import { grantAdmin, revokeAdmin } from "./actions";
@@ -62,12 +62,12 @@ export default async function AdminsPage({ searchParams }: PageProps<"/admin/adm
                   ) : last ? (
                     <p className="max-w-56 text-xs text-muted-foreground">The last admin can&apos;t be revoked.</p>
                   ) : (
-                    <AdminForm
+                    <ConfirmTyped
                       action={revokeAdmin}
                       hidden={{ user: a.user_id }}
                       trigger="Revoke"
                       submit="Revoke admin"
-                      tone="danger"
+                      expected={CONFIRM_REVOKE}
                       description={`${a.name ?? "They"} will no longer be able to open the console. This takes effect on their next page load.`}
                     />
                   )}
@@ -99,12 +99,13 @@ export default async function AdminsPage({ searchParams }: PageProps<"/admin/adm
             label="Search a person by name, email, or id"
             rows={found}
             renderAction={(r) => (
-              <AdminForm
+              <ConfirmTyped
                 action={grantAdmin}
                 hidden={{ user: r.id }}
                 trigger="Make admin"
                 submit="Make admin"
                 tone="primary"
+                expected={CONFIRM_GRANT}
                 description={`${r.name ?? "They"} will be able to read every family's information in the console. They set up an authenticator app the first time they open it.`}
                 fields={[{ name: "note", label: "Note (optional, shown on this page)", maxLength: 200 }]}
               />

@@ -158,6 +158,32 @@ export const HELP = {
     do: "Fill the inputs and press the button; the run appears in History within a minute.",
     door: "steward",
   },
+  review: {
+    title: "Job review",
+    short: "After every job's run, the Steward reads its record (how it ended, how long it took, what it did and wrote) and compares it with what the job is expected to do.",
+    long: "A Vercel job's run is reviewed from its recorded row; a GitHub job's from the workflow run, its steps, and the changes it wrote. A run that looks wrong gets a one-sentence note from a small model (at most $0.10 a run and $3 a week) and a finding under Findings, kind Job. The half-hourly collect that finds nothing isn't reviewed.",
+    do: "Open a flagged or failed run for the reasons; the Inbox lists them under Needs you.",
+    see: "specs/product/admin-redesign.md#what-the-steward-reviews-after-this-spec",
+    door: "steward",
+  },
+  verdict: {
+    title: "The Steward's reading",
+    short: "What the Steward made of a run: Looked fine, Flagged (it ran but something is off: too long, did nothing it should have, a held change), or Failed.",
+    do: "A flagged or failed run's note says what to look at first.",
+    door: "steward",
+  },
+  repair: {
+    title: "Repair",
+    short: "The one fix the Steward may make itself: start a failed job again (only a job safe to repeat, once a day), ask the publisher for a version when a change wasn't published, or leave a finding on a held change.",
+    long: "Never the college-reported pipeline, which spends money, and never anything else: every other change is a proposal for you. Each repair is noted on the Steward's change and shown with the run.",
+    door: "steward",
+  },
+  expectation: {
+    title: "What the Steward expects",
+    short: "How a good run of this job looks: how long it usually takes, what a scheduled run should show work in, whether it writes a change, and when doing nothing is right.",
+    do: "If a job's normal changed, the expectations are changed in the code, beside the job's schedule.",
+    door: "steward",
+  },
   "pull-requests": {
     title: "Pull requests",
     short: "Code changes are reviewed on GitHub, not in the console. Data arrives without a pull request.",

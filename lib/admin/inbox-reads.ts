@@ -11,12 +11,11 @@ import "server-only";
 import { adminCounts } from "@/lib/admin/console-reads";
 import { heldChangeSets, lastPublishedSnapshot } from "@/lib/admin/data-reads";
 import { healthOverview } from "@/lib/admin/health";
-import { INVITATION_WAIT_DAYS, needsYou, type InboxDeletion, type InboxInput, type InboxInvitation, type InboxJob } from "@/lib/admin/inbox";
+import { INVITATION_WAIT_DAYS, inboxJob, needsYou, type InboxDeletion, type InboxInput, type InboxInvitation } from "@/lib/admin/inbox";
 import { adminSupabase } from "@/lib/admin/people";
 import { readQueue, type StoreClient } from "@/lib/admin/review-queue";
 import { readDecisions, readProposals, readRuns, readTodo } from "@/lib/admin/steward-reads";
-import { loadJobsOverview, type JobOverviewRow } from "@/lib/jobs/runs";
-import { lastOutcome } from "@/lib/jobs/view";
+import { loadJobsOverview } from "@/lib/jobs/runs";
 
 async function soft<T>(what: string, read: () => Promise<T>): Promise<T | null> {
   try {
@@ -54,14 +53,6 @@ async function organizationCount(s: Db): Promise<number> {
   const { count, error } = await s.from("organizations").select("id", { count: "exact", head: true });
   if (error) throw new Error(error.message);
   return count ?? 0;
-}
-
-/** A job overview row as the Inbox reads it. */
-export function inboxJob(row: JobOverviewRow): InboxJob {
-  const outcome = lastOutcome(row.last).key;
-  const at = row.last === null ? null : row.last.kind === "stored" ? row.last.run.startedAt : (row.last.run.startedAt ?? row.last.run.createdAt);
-  const note = row.last?.kind === "stored" && outcome === "failed" ? row.last.run.error : null;
-  return { id: row.job.id, name: row.job.name, outcome, at, note };
 }
 
 /** Everything the Inbox shows. */

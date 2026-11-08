@@ -505,3 +505,62 @@ Recommended defaults; the build proceeds on them unless the owner says otherwise
   `typeof` checks, not the strict `StudentProfileData`/`PlanOffer` types), since the admin console reads these tables
   directly rather than through the sanitizers the family-facing forms use; a key the formatter doesn't recognize is
   never hidden, only pushed into Details.
+
+### Unit 5: Steward job review (2026-11-08, `feature/admin-redesign-jobs2`)
+
+- **Expectations.** Every job in `lib/jobs/registry.ts` has `expects: JobExpectations` (tested, with each GitHub
+  job's `nonzero` names checked against its workflow's step names). Restartable: the four Vercel jobs that can't send
+  twice (digests, visit alerts, interest confirmations, day-before texts), identity refresh, visit events, and the
+  publisher. Not restartable: Weekly emails and texts (no sent-this-week record, so a rerun emails every student again),
+  college-reported (spends money), the Steward, and every hand-run workflow. The job's page shows them in sentences
+  under "What the Steward expects" (`expectationLines`).
+- **The review** (`lib/steward/job-review.ts`, pure). Rules in order: failed → `failed`; cancelled or still running →
+  flagged; past the longest usual duration → flagged; a scheduled run with no `nonzero` work → flagged unless nothing
+  is right for that firing (a housekeeping firing, a firing out of its season, or the job's `nothingOkWhen` when it has
+  no shaped firings); a run that worked and should have written a change but wrote none → flagged; a held change →
+  flagged. A run started by hand or by another workflow isn't held to `nonzero`. Repairs, the first that applies:
+  `hold-finding`, then `restart` (restartable and no carried-out restart of the job in 24 hours, read from the job's
+  reviews), then `publish` (an applied change with a failed "Ask for a snapshot" step, or two hours with no publish;
+  never for the publisher itself; a publish that can't be read isn't assumed missing).
+- **The script.** `scripts/steward.mts --mode review --job <id> --run <ref>` (plus `--run-file` for a recorded run, the
+  dry runs' way in). It skips a run already reviewed before opening anything; a housekeeping firing that looked fine is
+  not written (the half-hourly collect would fill the collection); a fine review writes only `steward.reviews` and
+  leaves no `steward.runs` row (it spent nothing), so the Runs page lists flagged and failed reviews only. The note is one
+  Haiku 4.5 call with a $0.10 budget cut by the week's $3 for reviews and the week's $40 (`reviewBudget`); without the
+  API key or past the cap the review is written with no note. The finding is one `steward.issues` document per job
+  (`job|<job id>`, kind `job`, `family` the job id) whose findings keep the last 20 flagged or failed runs' lines; a held
+  change gets its own (`change|<id>`). The repair tools are `dispatch_workflow` (an allowlist: the restartable GitHub
+  jobs' own workflows and `publish-snapshot.yml`; `dispatchRefusal` refuses anything else) and a POST to a restartable
+  Vercel job's own route with `CRON_SECRET` and `SITE_URL` (both optional in the workflow; without them the restart is
+  recorded as wanted and not done). Each repair is a `steward.repair: …` line in the writer's notes, kept on the review's
+  change set summary. The Sunday audit run also writes `jobs-<run>` (`AuditDoc.family: "jobs"`, `jobs: JobsWeek`), shown
+  on Audits as its own panel.
+- **The workflow.** `steward.yml`'s `workflow_run` lists the six scheduled workflows by name (the Steward's own is left
+  out so it never triggers itself); a new `review` job maps the completed workflow's file to its job id and runs
+  `--mode review`; college-reported keeps the `steward` job's run path too, and its idle half-hourly collect is skipped
+  before checkout. `workflow_dispatch` gained `review` and the `job` and `run` inputs. The `steward` concurrency group
+  moved from the workflow onto the `steward` job, so a review never waits behind a 90-minute run. The review job has
+  `actions: write` (for its two dispatches) and reads `CRON_SECRET`; tests/steward-workflow.test.mts keeps the list and
+  the case map in step with the registry.
+- **The after hook.** `withJobRun` takes `deps.afterFinish`; the default (only with the real recorder) is
+  `lib/jobs/review-dispatch.ts` `requestReview`: a `workflow_dispatch` of `steward.yml` through `lib/github-app.ts`,
+  nothing without credentials, collapsed when another run of the same job finished in the last 10 minutes, never
+  throwing into the job's answer.
+- **Console.** The Jobs list's Steward column (`StewardCell`: the verdict chip with its help, the note or first reason,
+  the repair, and a line when the review is of an earlier run); a run's page opens with "The Steward's reading";
+  `/admin/steward/runs` lists every Steward run with its kind, spend against budget, repairs, and the week's total by
+  kind, with the reviews' own $3; Findings lists job findings in their own panel (kind Job); the Inbox's job rows read
+  the review's verdict when the last run has one (`inboxJob`, now in the pure `lib/admin/inbox.ts`): flagged stays
+  flagged, a fine review never hides a failed run, a review of an earlier run doesn't decide. Help entries: `review`,
+  `verdict`, `repair`, `expectation`.
+- **Tests.** `tests/steward-job-review.test.mts` runs the six recorded cases in `tests/fixtures/steward/review/` (plus
+  the second half of the repairable failure), the review mode as dry runs over a file store with the notes in
+  `tests/fixtures/steward/answers/` (written for the fixtures, marked so in each answer's `note`), the repairs, the
+  budget, the weekly summary, the dispatch, the after hook, and the Inbox mapping; `tests/jobs-pages.test.mts` renders
+  the Steward column and a run's review.
+
+#### Left for later
+
+- No migration: `steward.reviews` is a new collection of `data_documents`. The workflow change needs no new secret;
+  `CRON_SECRET` (already a secret) and a `SITE_URL` repository variable are optional for restarting a Vercel job.
+- Reviews of the Steward's own runs: by hand only (`--job data-steward`), never from `workflow_run`.

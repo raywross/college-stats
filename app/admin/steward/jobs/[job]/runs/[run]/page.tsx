@@ -9,7 +9,10 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { formatDuration, runOutcome, timeLabel } from "@/lib/admin/ops-view";
 import type { RunJob, RunStep, WorkflowRun } from "@/lib/github-app";
 import { jobById, type JobDef } from "@/lib/jobs/registry";
-import { githubRunDetail, storedRun, type RunChangeSet, type StoredRun } from "@/lib/jobs/runs";
+import { githubRunDetail, reviewsOfRuns, storedRun, type RunChangeSet, type StoredRun } from "@/lib/jobs/runs";
+import { ReviewBody } from "@/components/admin/jobs/StewardReview";
+import { reviewKey } from "@/lib/steward/job-review";
+import type { ReviewDoc } from "@/lib/steward/types";
 import { TRIGGER_LABEL, jobHref, parseRunId, storedOutcome } from "@/lib/jobs/view";
 
 export const metadata: Metadata = { title: "Run", robots: { index: false, follow: false } };
@@ -29,14 +32,24 @@ export default async function RunPage({ params }: { params: Promise<{ job: strin
   const job = jobById(jobId);
   const runId = parseRunId(rawRun);
   if (!job || runId === null) notFound();
+  const review = (await reviewsOfRuns(job, [String(runId)])).get(reviewKey(job.id, String(runId))) ?? null;
   if (job.runner === "vercel") {
     const run = await storedRun(job.id, runId);
     if (!run) notFound();
-    return <StoredRunView job={job} run={run} />;
+    return <StoredRunView job={job} run={run} review={review} />;
   }
   const detail = await githubRunDetail(job, runId);
   if (!detail) notFound();
-  return <GithubRunView job={job} {...detail} />;
+  return <GithubRunView job={job} {...detail} review={review} />;
+}
+
+/** The Steward's reading of the run and its repair (specs/product/admin-redesign.md "The screens", Jobs). */
+function StewardPanel({ review }: { review: ReviewDoc | null }) {
+  return (
+    <Panel help="review" title="The Steward's reading">
+      <ReviewBody review={review} />
+    </Panel>
+  );
 }
 
 function Back({ job }: { job: JobDef }) {
@@ -47,12 +60,13 @@ function Back({ job }: { job: JobDef }) {
   );
 }
 
-function StoredRunView({ job, run }: { job: JobDef; run: StoredRun }) {
+function StoredRunView({ job, run, review }: { job: JobDef; run: StoredRun; review: ReviewDoc | null }) {
   const outcome = storedOutcome(run.status);
   return (
     <>
       <PageHeader help="run" title={`${job.name}: run ${run.id}`} chips={<RunChip label={outcome.label} tone={outcome.tone} />} back={<Back job={job} />} subtitle={`${TRIGGER_LABEL[run.trigger]} · ${timeLabel(run.startedAt)}`} />
       <div className="space-y-5">
+        <StewardPanel review={review} />
         <Panel help="run" title="Run">
           <Fields
             items={[
@@ -121,12 +135,13 @@ function JobSteps({ job }: { job: RunJob }) {
   );
 }
 
-function GithubRunView({ job, run, jobs, changeSets }: { job: JobDef; run: WorkflowRun; jobs: RunJob[]; changeSets: RunChangeSet[] }) {
+function GithubRunView({ job, run, jobs, changeSets, review }: { job: JobDef; run: WorkflowRun; jobs: RunJob[]; changeSets: RunChangeSet[]; review: ReviewDoc | null }) {
   const outcome = runOutcome(run);
   return (
     <>
       <PageHeader help="run" title={`${job.name}: run #${run.runNumber}`} chips={<RunChip label={outcome.label} tone={outcome.tone} />} back={<Back job={job} />} subtitle={run.title && run.title !== run.name ? run.title : undefined} />
       <div className="space-y-5">
+        <StewardPanel review={review} />
         <Panel help="run"
           title="Run"
           aside={

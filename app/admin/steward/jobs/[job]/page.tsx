@@ -17,6 +17,7 @@ import { describeCron } from "@/lib/jobs/cron";
 import { jobById, nextJobRun, nextScheduleRun, scheduleOfRun, type JobDef } from "@/lib/jobs/registry";
 import { RUNS_PAGE, githubRuns, storedRuns, type StoredRuns } from "@/lib/jobs/runs";
 import { JOBS_HREF, RUNNER_LABEL, relativeLabel } from "@/lib/jobs/view";
+import { expectationLines } from "@/lib/steward/job-review";
 
 export const metadata: Metadata = { title: "Job", robots: { index: false, follow: false } };
 
@@ -114,6 +115,15 @@ export default async function JobPage({ params, searchParams }: { params: Promis
             </ul>
           )}
           {job.gate && <p className="mt-3 text-sm text-muted-foreground">{job.gate}</p>}
+        </Panel>
+
+        <Panel help="expectation" title="What the Steward expects">
+          <ul className="list-disc space-y-1 pl-5 text-sm">
+            {expectationLines(job).map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm text-muted-foreground">The Steward reads every run against these when it finishes; open a run for its reading.</p>
         </Panel>
 
         {runNow && <RunNow data={runNow} prefillUnit={prefillUnit} />}

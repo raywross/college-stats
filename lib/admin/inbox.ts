@@ -11,6 +11,8 @@ import type { HelpKey } from "./help.ts";
 import { TODO_WHY_LABEL, proposalHref, reviewHref } from "./steward-view.ts";
 import { DELETE_GRACE_DAYS } from "../household-rules.ts";
 import type { DecisionDoc, ProposalDoc, RunDoc, TodoDoc } from "../steward/types.ts";
+import type { JobOverviewRow } from "../jobs/runs.ts";
+import { lastOutcome } from "../jobs/view.ts";
 
 export interface InboxItem {
   kind: "decision" | "proposal" | "todo" | "job" | "deletion" | "invitation" | "held-change";
@@ -88,6 +90,24 @@ export interface InboxInput {
   queue: { open: number; newThisWeek: number } | null;
   /** Colleges by overall data health. */
   health: { fresh: number; watch: number; stale: number; failing: number } | null;
+}
+
+/**
+ * A job overview row as the Inbox reads it. When the Steward reviewed the last run, its verdict decides (a run that
+ * ended well but was flagged is `flagged`; failed stays failed) and its note is the row's sentence; otherwise the run's
+ * own outcome, as before any review.
+ */
+export function inboxJob(row: JobOverviewRow): InboxJob {
+  const outcome = lastOutcome(row.last).key;
+  const at = row.last === null ? null : row.last.kind === "stored" ? row.last.run.startedAt : (row.last.run.startedAt ?? row.last.run.createdAt);
+  const reviewed = row.review?.ofLastRun ? row.review.review : null;
+  if (reviewed) {
+    const verdict = reviewed.verdict === "failed" ? "failed" : reviewed.verdict === "flagged" ? "flagged" : outcome === "failed" ? "failed" : outcome;
+    const note = verdict === "ok" || verdict === "other" || verdict === "running" || verdict === "none" ? null : (reviewed.note ?? reviewed.reasons[0] ?? null);
+    return { id: row.job.id, name: row.job.name, outcome: verdict, at, note };
+  }
+  const note = row.last?.kind === "stored" && outcome === "failed" ? row.last.run.error : null;
+  return { id: row.job.id, name: row.job.name, outcome, at, note };
 }
 
 /** How many To do rows Needs you lists (the highest reach); the rest are one click away on To do. */
@@ -330,8 +350,18 @@ export function runWrote(r: RunDoc): string {
     r.todo ? plural(r.todo, "To do row") : null,
     r.decisions ? plural(r.decisions, "question") : null,
     r.audits ? plural(r.audits, "audit") : null,
+    r.reviews ? plural(r.reviews, "job review") : null,
   ].filter(Boolean);
-  return parts.length ? `Wrote ${parts.join(", ")}` : "Wrote nothing new";
+  const wrote = parts.length ? `Wrote ${parts.join(", ")}` : "Wrote nothing new";
+  return r.repairs ? `${wrote}; made ${plural(r.repairs, "repair")}` : wrote;
 }
+
+/** Dollars the job reviews spent in the seven days before `now` (their own $3 a week). */
+export function weeklyReviewSpend(runs: readonly RunDoc[], now: Date): number {
+  return weeklySpend(runs.filter((r) => r.mode === "review"), now);
+}
+
+/** The job reviews' weekly budget (scripts/lib/steward/budget.mts `REVIEW_BUDGETS.week`; a test checks they agree). */
+export const REVIEW_WEEKLY_CAP_USD = 3;
 
 export const RUN_MODE_LABEL: Readonly<Record<string, string>> = { run: "Run", audit: "Audit", apply: "Apply", answer: "Answer", review: "Job review" };

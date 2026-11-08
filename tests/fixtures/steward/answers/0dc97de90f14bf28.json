@@ -1,0 +1,23 @@
+{
+  "key": "0dc97de90f14bf28",
+  "model": "claude-haiku-4-5-20251001",
+  "note": "review note, 1-failed (written for the fixture, not recorded)",
+  "response": {
+    "id": "msg_dry_0dc97de90f14bf28",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-haiku-4-5-20251001",
+    "content": [
+      {
+        "type": "text",
+        "text": "The Monday college-reported run failed while reading colleges; open its log on GitHub at the ingestion step before starting it again, since a run spends money."
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 420,
+      "output_tokens": 38
+    }
+  }
+}

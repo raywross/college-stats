@@ -1,0 +1,23 @@
+{
+  "key": "123dca009c5a331a",
+  "model": "claude-haiku-4-5-20251001",
+  "note": "review note, 5-repairable-again (written for the fixture, not recorded)",
+  "response": {
+    "id": "msg_dry_123dca009c5a331a",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-haiku-4-5-20251001",
+    "content": [
+      {
+        "type": "text",
+        "text": "The digest run failed again on the email service's 503 after the Steward's restart; check the email service's status before starting it by hand."
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 420,
+      "output_tokens": 38
+    }
+  }
+}

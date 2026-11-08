@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import type { CalendarChild } from "@/components/planner/tabs/types";
 import type { EssaysTabData } from "@/lib/essays/tab-view";
 import { ImportLocalPlan } from "@/components/planner/ImportLocalPlan";
@@ -8,12 +7,13 @@ import PlanIntake from "@/components/planner/intake/PlanIntake";
 import { PlanNotice } from "@/components/planner/PlanNotice";
 import { planEssayCount } from "@/lib/essays/summary";
 import { PlanTabPills, PlanTabs } from "@/components/planner/PlanTabs";
+import { PlanTabLink, PlanTabProvider } from "@/components/planner/PlanTabSwitch";
 import { UpcomingList } from "@/components/planner/calendar/UpcomingList";
 import { intakeNeeded } from "@/lib/planner/intake";
 import type { RecordBack } from "@/lib/planner/record";
 import { roundsPicked } from "@/lib/planner/list-row";
 import { nextUpInfo } from "@/lib/planner/plan-frame";
-import { defaultTab, planHref, tabsFor, type PlanTab } from "@/lib/planner/plan-tabs";
+import { defaultTab, planHref, switchableTabs, tabsFor, type PlanTab } from "@/lib/planner/plan-tabs";
 import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { viewerRole, type ViewerRelation } from "@/lib/viewer-relation";
@@ -58,7 +58,7 @@ export function PlanFrame({
   back?: RecordBack;
   /** The plan's one top line (components/planner/PlanPeople.tsx), built by the page. */
   people?: ReactNode;
-  /** The Essays tab's read (lib/essays/tab-data.ts), passed only when that tab is open (specs/product/essays/tab.md). */
+  /** The Essays tab's read (lib/essays/tab-data.ts), made with the plan on every render (round 4: tabs switch in place). */
   essays?: EssaysTabData | null;
 }) {
   const today = ctx.today;
@@ -72,7 +72,11 @@ export function PlanFrame({
   const hasDecision = ctx.items.some((i) => i.status === "decided" || i.decision_date !== null);
   const tabs = tabsFor({ everyone: false, hasDecision });
   const viewer = viewerRole(relation);
-  const openTab = tabs.includes(tab) ? tab : defaultTab(viewer, false);
+  const fallbackTab = defaultTab(viewer, false);
+  const openTab = tabs.includes(tab) ? tab : fallbackTab;
+  // Which tabs switch in the browser (page.md "Tabs switch in place"): every one whose panel needs nothing past this
+  // plan. The asks notice on Next steps reads for a student or a parent (components/org/AskNotice.tsx), not a counselor.
+  const local = switchableTabs({ tabs, opened: openTab, asksRead: !!ctx.student && !ctx.viewer.isCounselor });
 
   const calendarChild: CalendarChild = { studentId, name: firstName ?? "Student", colorSlot, ring: true, gradYear, ctx, view };
 
@@ -109,30 +113,32 @@ export function PlanFrame({
   const essayCount = planEssayCount(view.rows.map((r) => r.school?.essays ?? null));
 
   return (
-    <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0 flex-1">{people}</div>
-          <div className="hidden shrink-0 lg:block">{pills}</div>
+    <PlanTabProvider tabs={tabs} opened={openTab} fallback={fallbackTab} local={local}>
+      <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-6">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">{people}</div>
+            <div className="hidden shrink-0 lg:block">{pills}</div>
+          </div>
+          {nextUpCard && <div className="lg:hidden">{nextUpCard}</div>}
+          {relation === "self" && <ImportLocalPlan studentId={studentId} canEdit={ctx.viewer.canEdit} />}
+          <div className="space-y-4">
+            <div className="lg:hidden">{pills}</div>
+            <PlanTabs ctx={ctx} view={view} tab={openTab} local={local} calendarChild={calendarChild} viewer={viewer} essays={essays} person={personId} />
+          </div>
         </div>
-        {nextUpCard && <div className="lg:hidden">{nextUpCard}</div>}
-        {relation === "self" && <ImportLocalPlan studentId={studentId} canEdit={ctx.viewer.canEdit} />}
-        <div className="space-y-4">
-          <div className="lg:hidden">{pills}</div>
-          <PlanTabs ctx={ctx} view={view} tab={openTab} calendarChild={calendarChild} viewer={viewer} essays={essays} person={personId} />
-        </div>
+        <aside className="mt-6 hidden space-y-4 lg:top-6 lg:mt-0 lg:block lg:sticky">
+          {nextUpCard}
+          <UpcomingList ctx={ctx} view={view} studentId={studentId} variant="aside" fullYearHref={fullYearHref} />
+          <PlanNotice ctx={ctx} view={view} />
+          {/* The count line opens the Essays tab (specs/product/essays/tab.md "Where it is reached from"). */}
+          {essayCount && (
+            <PlanTabLink tab="essays" person={personId} className="block text-sm text-muted-foreground hover:text-foreground hover:underline">
+              Your list asks for {essayCount}.
+            </PlanTabLink>
+          )}
+        </aside>
       </div>
-      <aside className="mt-6 hidden space-y-4 lg:top-6 lg:mt-0 lg:block lg:sticky">
-        {nextUpCard}
-        <UpcomingList ctx={ctx} view={view} studentId={studentId} variant="aside" fullYearHref={fullYearHref} />
-        <PlanNotice ctx={ctx} view={view} />
-        {/* The count line opens the Essays tab (specs/product/essays/tab.md "Where it is reached from"). */}
-        {essayCount && (
-          <Link href={planHref({ person: personId, tab: "essays" })} className="block text-sm text-muted-foreground hover:text-foreground hover:underline">
-            Your list asks for {essayCount}.
-          </Link>
-        )}
-      </aside>
-    </div>
+    </PlanTabProvider>
   );
 }

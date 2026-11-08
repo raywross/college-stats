@@ -7,8 +7,9 @@ import "server-only";
  * are off the list), whose one read, the open cycle's hand-read prompts, the loader also started in its first wave
  * (specs/serving-architecture.md: /advisor in two database waves). When the plan carries no drafts (`ctx.essays` null:
  * the tables aren't there, or the read failed) or no counts' rows, it falls back to `readEssays`, which says whether the
- * workspace is set up. Read only when the open tab is Essays. Runs with the viewer's session, so row-level security
- * decides.
+ * workspace is set up. Read with every plan, whatever tab opens (round 4: the tabs switch in place; a guardian's or a
+ * counselor's read is logged each time, since the drafts' list ships with the page). Runs with the viewer's session,
+ * so row-level security decides.
  */
 import type { PlanContext } from "@/lib/planner/types";
 import { scheduleStudentReadLog } from "@/lib/households";

@@ -257,10 +257,9 @@ test("the plan opens on Next steps (owner, 2026-10-14): the page and the frame f
   const page = read("app/advisor/page.tsx");
   assert.match(page, /tab=\{tab \?\? defaultTab\("student", false\)\}/);
   assert.match(page, /tab=\{tab \?\? defaultTab\("guardian", false\)\}/);
-  assert.match(read("components/planner/PlanFrame.tsx"), /: defaultTab\(viewer, false\)/);
-  const tabs = read("components/planner/PlanTabs.tsx");
-  assert.match(tabs, /next: Footprints/);
-  assert.match(tabs, /tab === "next" && <NextSteps /);
+  assert.match(read("components/planner/PlanFrame.tsx"), /const fallbackTab = defaultTab\(viewer, false\);\s*const openTab = tabs\.includes\(tab\) \? tab : fallbackTab;/);
+  assert.match(read("components/planner/PlanTabSwitch.tsx"), /next: Footprints/);
+  assert.match(read("components/planner/PlanTabs.tsx"), /<NextSteps ctx=\{ctx\} view=\{view\} \/>/);
 });
 
 test("the Essays tab (specs/product/essays/tab.md): ?tab=essays opens it on every plan, third with PenLine, and PlanTabs renders EssaysTab with the tab's read", async () => {
@@ -268,19 +267,21 @@ test("the Essays tab (specs/product/essays/tab.md): ?tab=essays opens it on ever
   assert.equal(parseTab("essays"), "essays");
   assert.equal(tabsFor({ everyone: false, hasDecision: false })[2], "essays");
   assert.equal(planHref({ tab: "essays", college: "198419" }), "/advisor?tab=essays#college-198419");
+  assert.match(read("components/planner/PlanTabSwitch.tsx"), /essays: PenLine/);
   const tabs = read("components/planner/PlanTabs.tsx");
-  assert.match(tabs, /essays: PenLine/);
-  assert.match(tabs, /tab === "essays" && <EssaysTab /);
-  // The page reads the drafts only for this tab and hands them to the frame, which passes them to the tab.
+  assert.match(tabs, /essays: \(\) => <EssaysTab /);
+  // The page reads the drafts with every plan (round 4: the tab switches in place) and hands them to the frame, which
+  // passes them to the tabs.
   const page = read("app/advisor/page.tsx");
-  assert.match(page, /const essays = await essaysFor\(loaded, tab, "student"\);/);
-  assert.match(page, /const essays = await essaysFor\(load, tab, "guardian"\);/);
+  assert.match(page, /const essays = await essaysFor\(loaded, "student"\);/);
+  assert.match(page, /const essays = await essaysFor\(load, "guardian"\);/);
+  assert.match(page, /const essays = await essaysFor\(loaded, "counselor"\);/);
   assert.match(read("components/planner/PlanFrame.tsx"), /<PlanTabs [^>]*essays=\{essays\} person=\{personId\} \/>/);
 });
 
-test("guard: a PlanTabs without the essays branch fails the routing check", () => {
-  const without = read("components/planner/PlanTabs.tsx").replace(/tab === "essays" && <EssaysTab [^\n]*/, "");
-  assert.doesNotMatch(without, /tab === "essays" && <EssaysTab /);
+test("guard: a PlanTabs without the essays panel fails the routing check", () => {
+  const without = read("components/planner/PlanTabs.tsx").replace(/essays: \(\) => <EssaysTab [^\n]*/, "");
+  assert.doesNotMatch(without, /essays: \(\) => <EssaysTab /);
 });
 
 test("guard: a header missing Advisor, or out of order, is caught by the label check", () => {

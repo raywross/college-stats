@@ -4,9 +4,9 @@
  * answers a plan reference (lib/lineage.ts `CiteRef`) with this, so the ⓘ that opens one shows exactly what the plan
  * used to ship. Pure: the caller passes the dataset's `citeField` and the fitted models.
  */
-import type { FieldPath } from "../fields.ts";
+import { HIDDEN_FIELDS, isFieldPath, type FieldPath } from "../fields.ts";
 import type { School } from "../types.ts";
-import type { AnyCited, Cited } from "../lineage.ts";
+import { citeRefOf, type AnyCited, type Cited, type CiteLike } from "../lineage.ts";
 import { collegeGpa, gpaCites, type GpaCurve, type GpaModel } from "./gpa-model.ts";
 
 /** Whether a plan carries full citations (the print page) or references the ⓘ fetches on open (everything else). */
@@ -32,4 +32,17 @@ export function planCiteFor(
     if (cited) return cited;
   }
   return citeField(path, school);
+}
+
+const HIDDEN: ReadonlySet<string> = new Set(HIDDEN_FIELDS);
+
+/**
+ * A page's citation (`citeField(path, school)`, nothing changed after it) as a reference the ⓘ fetches on open, where
+ * `GET /api/cite` answers that same citation (round 4: the list page, the offers facts, the college page's estimate
+ * facts; specs/data-lineage.md "Citations on the plan"). Kept whole where it wouldn't: a GPA field (the API answers
+ * with the fitted model's formula, `planCiteFor`), a path the registry hides or doesn't list (the API's 404).
+ */
+export function citeRefWhereSame(cited: AnyCited, unit: string): CiteLike {
+  if (GPA_CITE_PATHS.has(cited.path) || !isFieldPath(cited.path) || HIDDEN.has(cited.path)) return cited;
+  return citeRefOf(cited, unit);
 }

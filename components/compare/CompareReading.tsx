@@ -4,7 +4,7 @@ import type { Dataset } from "@/lib/data";
 import { SLOT_COLORS, shortName } from "@/lib/brand";
 import { readingLines, type ReadingPart as ReadingPartData } from "@/lib/chances/reading";
 import { SourceTip, Term } from "@/components/ui/info-tip";
-import { lineCitations } from "@/components/school/ReadingTheRecord";
+import { lineCitations } from "@/lib/chances/reading-cites";
 
 const KEYS = new Set(["emphasis", "crowding", "weighted"]);
 
@@ -38,8 +38,8 @@ export function CompareReading({ schools, citeField }: { schools: School[]; cite
                       {line.parts.map((part, j) => (
                         <Part key={j} part={part} />
                       ))}
-                      {lineCitations(line, s, citeField).map((cited) => (
-                        <SourceTip key={`${cited.path}|${cited.url}`} cited={cited} className="mx-0.5" />
+                      {lineCitations(line, s, citeField).map((cited, k) => (
+                        <SourceTip key={`${cited.path}|${k}`} cited={cited} className="mx-0.5" />
                       ))}{" "}
                     </Fragment>
                   ))}

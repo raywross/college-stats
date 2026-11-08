@@ -81,7 +81,9 @@ const STUB_DIR = join(ROOT, "__tab_strip_stubs__");
 const NOTHING = `export default function X() { return null; }`;
 const STUBS: Record<string, string> = {
   "next/link": `import React from "react";
-export default function Link({ href, children, ...rest }) { return React.createElement("a", { href, ...rest }, children); }`,
+export default function Link({ href, children, prefetch, ...rest }) { return React.createElement("a", { href, ...rest }, children); }`,
+  // The pills read the open tab from the URL (components/planner/PlanTabSwitch.tsx); none here, so the `tab` prop.
+  "next/navigation": `export function useSearchParams() { return new URLSearchParams(); }`,
   "@/components/planner/FamilyCalendar": NOTHING,
   "@/components/planner/NextSteps": `export function NextSteps() { return null; }`,
   "@/components/planner/PlanOpened": `export function PlanOpened() { return null; }`,

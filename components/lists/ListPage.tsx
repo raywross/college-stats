@@ -28,6 +28,7 @@ import type { StudentProfileData } from "@/lib/student-profile";
 import { suggestCategory } from "@/lib/planner/suggest";
 import { SortMenu } from "@/components/lists/SortMenu";
 import type { CiteLike } from "@/lib/lineage";
+import { citeRefWhereSame } from "@/lib/planner/plan-cites";
 import { cfpView, isEnteredOffer } from "@/lib/planner/offers";
 import type { PlanOffer } from "@/lib/planner/types";
 
@@ -202,11 +203,11 @@ export async function ListPage({
         state: school?.location.state ?? null,
         brand: school ? crestBrand(school) : undefined,
         admitRate: school?.admissions.acceptance_rate ?? null,
-        admitRateCited: school ? citeField("admissions.acceptance_rate", school) : null,
+        admitRateCited: school ? citeRefWhereSame(citeField("admissions.acceptance_rate", school), school.unit_id) : null,
         avgCost: school?.cost?.avg_paid_all ?? null,
-        avgCostCited: school ? citeField("cost.avg_paid_all", school) : null,
+        avgCostCited: school ? citeRefWhereSame(citeField("cost.avg_paid_all", school), school.unit_id) : null,
         distance: home && school ? distanceFromHome(school.location, home) : null,
-        distanceCited: school ? citeField("location.lat", school) : null,
+        distanceCited: school ? citeRefWhereSame(citeField("location.lat", school), school.unit_id) : null,
         deadline,
         next: nextLine(nextTask, planSchool, today),
       },

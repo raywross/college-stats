@@ -393,14 +393,16 @@ test("the privacy page's essays paragraph: guardians and counselors can propose 
   assert.match(page, /propose changes as a\s*\n?\s*suggestion, but only the student decides what is accepted, and the text in the draft stays the student&apos;s\./);
 });
 
-test("the wiring: the page reads the tab's data only on the Essays tab, PlanTabs renders EssaysTab with the student-only write rule", () => {
+test("the wiring: the page reads the tab's data with every plan (round 4: tabs switch in place), PlanTabs renders EssaysTab with the student-only write rule", () => {
   const page = readFileSync(join(ROOT, "app/advisor/page.tsx"), "utf8");
-  assert.match(page, /if \(tab !== "essays" \|\| load\.kind !== "ready"\) return null;/);
+  assert.match(page, /async function essaysFor\(load: PlanLoad, viewer: ViewerRole\)[^{]*\{\s*if \(load\.kind !== "ready"\) return null;/);
+  assert.doesNotMatch(page, /tab !== "essays"/);
   assert.match(page, /essays=\{essays\}/);
   const tabs = readFileSync(join(ROOT, "components/planner/PlanTabs.tsx"), "utf8");
-  assert.match(tabs, /tab === "essays" && <EssaysTab ctx=\{ctx\} essays=\{essays\} person=\{person\} canWrite=\{viewer === "student"\} \/>/);
+  assert.match(tabs, /essays: \(\) => <EssaysTab ctx=\{ctx\} essays=\{essays\} person=\{person\} canWrite=\{viewer === "student"\} \/>/);
+  // The count lines switch to the tab in place when they can (PlanTabLink), and stay links with the plan's person.
   const frame = readFileSync(join(ROOT, "components/planner/PlanFrame.tsx"), "utf8");
-  assert.match(frame, /<Link href=\{planHref\(\{ person: personId, tab: "essays" \}\)\}[^>]*>\s*Your list asks for \{essayCount\}\./);
-  assert.match(readFileSync(join(ROOT, "components/planner/PlanList.tsx"), "utf8"), /<Link href=\{planHref\(\{ person, tab: "essays" \}\)\}[^>]*>\s*Your list asks for \{essayCount\}\./);
+  assert.match(frame, /<PlanTabLink tab="essays" person=\{personId\}[^>]*>\s*Your list asks for \{essayCount\}\./);
+  assert.match(readFileSync(join(ROOT, "components/planner/PlanList.tsx"), "utf8"), /<PlanTabLink tab="essays" person=\{person\}[^>]*>\s*Your list asks for \{essayCount\}\./);
   assert.match(readFileSync(join(ROOT, "components/planner/guides/StoryGuide.tsx"), "utf8"), /href=\{personalEssayHref\(ctx, person\)\}/);
 });

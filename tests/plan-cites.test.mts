@@ -9,6 +9,9 @@
  * - the size guard: `planSchools` for the mini fixture's colleges under `"ref"` is under a tenth of `"full"`, for its
  *   citations, and the whole slice is smaller too (the numbers are printed);
  * - only the print page asks for `"full"` (source);
+ * - round 4: `citeRefWhereSame` (lib/planner/plan-cites.ts) makes the list page's row citations, the offers and
+ *   wait-list facts, the college page's estimate facts, and the reading lines references, each resolving through
+ *   `GET /api/cite` to the citation the page shipped before; the GPA fields and a major unit's own stay whole;
  * - `GET /api/cite`: 200 with the citation, the cache header and the snapshot ETag; 304 on a matching ETag; 404 for an
  *   unknown college or an unregistered path; 400 for a malformed one; `go=1` redirects to the source;
  * - components/ui/info-tip.tsx: one module-level cache and in-flight map, "Loading the source…", the API (source).
@@ -311,4 +314,129 @@ test("the calendar's always-visible source links go through citeLinkHref, never 
     assert.match(src, /citeLinkHref\(cited\)/, f);
     assert.doesNotMatch(src, /cited\?\.url/, f);
   }
+});
+
+/* ------------------------------------------------------------------ */
+/* Round 4: the list page, the offers facts, the college page's estimate facts                                    */
+/* ------------------------------------------------------------------ */
+
+const { citeRefWhereSame, GPA_CITE_PATHS } = await import("../lib/planner/plan-cites.ts");
+const { offerFacts, waitListFacts } = await import("../lib/planner/offers-server.ts");
+const { estimateFactCites } = await import("../lib/chances/fact-cites.ts");
+const { lineCitations } = await import("../lib/chances/reading-cites.ts");
+const { readingWithMajor } = await import("../lib/chances/reading-major.ts");
+
+/** What `GET /api/cite` answers for a reference, as the ⓘ would receive it. */
+async function resolved(ref: CiteRef): Promise<unknown> {
+  const res = await get(`unit=${ref.unit}&path=${ref.path}`);
+  assert.equal(res.status, 200, `${ref.unit} ${ref.path}`);
+  return res.json();
+}
+const asJson = (v: unknown) => JSON.parse(JSON.stringify(v));
+
+test("citeRefWhereSame: a reference where /api/cite answers the same citation; whole for a GPA field and a hidden or unlisted path", async () => {
+  const vandy = data.getSchoolById("221999")!;
+  for (const path of ["admissions.acceptance_rate", "cost.avg_paid_all", "location.lat"] as const) {
+    const full = data.citeField(path, vandy);
+    const ref = citeRefWhereSame(full, "221999");
+    assert.ok(isCiteRef(ref), path);
+    assert.deepEqual(await resolved(ref as CiteRef), asJson(full), `${path}: the ⓘ shows what the page used to ship`);
+  }
+  for (const path of GPA_CITE_PATHS) {
+    const full = data.citeField(path as never, vandy);
+    assert.equal(citeRefWhereSame(full, "221999"), full, `${path} stays whole (the API answers with the model's formula)`);
+  }
+  const unlisted = { ...data.citeField("admissions.acceptance_rate", vandy), path: "admissions.not_a_field" } as unknown as AnyCited;
+  assert.equal(citeRefWhereSame(unlisted, "221999"), unlisted);
+});
+
+test("the list page's three row citations are references that resolve to the citations it shipped before (source + resolution, sizes printed)", async () => {
+  const src = read("components/lists/ListPage.tsx");
+  for (const [field, path] of [["admitRateCited", "admissions.acceptance_rate"], ["avgCostCited", "cost.avg_paid_all"], ["distanceCited", "location.lat"]])
+    assert.match(src, new RegExp(`${field}: school \\? citeRefWhereSame\\(citeField\\("${path.replace(".", "\\.")}", school\\), school\\.unit_id\\) : null,`), field);
+  // Guard: a row that ships the full citation again fails the check above.
+  assert.doesNotMatch(src.replace(/citeRefWhereSame\(citeField\("admissions\.acceptance_rate", school\), school\.unit_id\)/, 'citeField("admissions.acceptance_rate", school)'), /admitRateCited: school \? citeRefWhereSame/);
+  let full = 0;
+  let refs = 0;
+  for (const unit of units) {
+    const school = data.getSchoolById(unit)!;
+    for (const path of ["admissions.acceptance_rate", "cost.avg_paid_all", "location.lat"] as const) {
+      const f = data.citeField(path, school);
+      const r = citeRefWhereSame(f, unit) as CiteRef;
+      full += JSON.stringify(f).length;
+      refs += JSON.stringify(r).length;
+      if (unit === units[0] || unit === units[units.length - 1]) assert.deepEqual(await resolved(r), asJson(f), `${unit} ${path}`);
+    }
+  }
+  console.log(`[plan-cites] the list page's row citations, ${units.length} rows: ${full} → ${refs} bytes`);
+  assert.ok(refs * 3 < full, `references ${refs} bytes are not under a third of ${full}`);
+});
+
+test("the offers facts and the wait-list facts carry references that resolve to the full citations (fullPrice's year kept)", async () => {
+  const facts = await offerFacts([...units], null);
+  let checked = 0;
+  for (const [unit, f] of Object.entries(facts)) {
+    const school = data.getSchoolById(unit)!;
+    const pairs: [unknown, string][] = [
+      [f.fullPriceCite, "cost.sticker"],
+      [f.avgCostCite, "cost.avg_paid_all"],
+      [f.generosity?.cite, "derived.aid_generosity"],
+      [f.earningsCite, "outcomes.median_earnings_10yr"],
+      [f.debtCite, "outcomes.median_debt"],
+      [f.gradRateCite, "outcomes.graduation_rate"],
+    ];
+    for (const [cite, path] of pairs) {
+      if (cite == null) continue;
+      assert.ok(isCiteRef(cite), `${unit} ${path} is a reference`);
+      for (const k of HEAVY) assert.equal(k in (cite as object), false, `${unit} ${path} carries no ${k}`);
+      if (checked < 12) assert.deepEqual(await resolved(cite as CiteRef), asJson(data.citeField(path as never, school)), `${unit} ${path}`);
+      checked++;
+    }
+    if (f.fullPriceCite) assert.equal(f.fullPrice.year, (f.fullPriceCite as CiteRef).year);
+  }
+  assert.ok(checked > 20, `checked ${checked}`);
+  const waits = await waitListFacts([...units]);
+  let waitChecked = 0;
+  for (const w of Object.values(waits))
+    for (const c of Object.values(w.cites)) {
+      if (!c) continue;
+      assert.ok(isCiteRef(c));
+      waitChecked++;
+    }
+  assert.ok(waitChecked > 0, "a mini-fixture college publishes its wait list");
+});
+
+test("the college page's estimate facts: references except the GPA fields; reading lines: references except a major unit's own", async () => {
+  const src = read("components/chances/StandingSection.tsx");
+  assert.match(src, /const factCites = Object\.fromEntries\(Object\.entries\(estimateFactCites\(school, citeField\)\)\.map\(\(\[path, cited\]\) => \[path, citeRefWhereSame\(cited, school\.unit_id\)\]\)\);/);
+  assert.match(src, /cites=\{factCites\}/);
+  let refs = 0;
+  let whole = 0;
+  for (const unit of units.slice(0, 6)) {
+    const school = data.getSchoolById(unit)!;
+    for (const [path, cited] of Object.entries(estimateFactCites(school, data.citeField))) {
+      const c = citeRefWhereSame(cited, unit);
+      if (isCiteRef(c)) {
+        refs++;
+        if (refs <= 10) assert.deepEqual(await resolved(c), asJson(cited), `${unit} ${path}`);
+      } else {
+        whole++;
+        assert.ok(GPA_CITE_PATHS.has(path), `${unit} ${path} kept whole only for a GPA field`);
+      }
+    }
+  }
+  assert.ok(refs > 50 && whole > 0, `${refs} references, ${whole} whole`);
+  let lines = 0;
+  for (const unit of units) {
+    const school = data.getSchoolById(unit)!;
+    const reading = readingWithMajor(school, { name: school.name });
+    for (const line of reading?.lines ?? []) {
+      for (const c of lineCitations(line, school, data.citeField)) {
+        lines++;
+        if (!line.unitCites) assert.ok(isCiteRef(c) || GPA_CITE_PATHS.has(c.path), `${unit} ${line.key} ${c.path}`);
+        else assert.equal(isCiteRef(c), false, `${unit} ${line.key}: a major unit's citation stays whole`);
+      }
+    }
+  }
+  assert.ok(lines > 10, `${lines} reading citations`);
 });

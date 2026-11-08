@@ -145,6 +145,22 @@ carried (`lib/planner/plan-cites.ts planCiteFor`: `citeField`, and for the GPA f
 matches). 400 for a malformed unit or path, 404 for a college the dataset lacks or a path the registry doesn't list (or
 hides); `&go=1` redirects to the source's page instead. It reads the dataset only, never a session.
 
+**Beyond the plan (round 4, 2026-11-08).** The other pages that shipped full citations to an ⓘ send references too,
+through `citeRefWhereSame(cited, unit)` (`lib/planner/plan-cites.ts`): a reference wherever `GET /api/cite` answers
+that same citation, the citation whole where it wouldn't (a GPA field, whose API answer carries the fitted model's
+formula; a path the registry hides or doesn't list).
+- The list page (`components/lists/ListPage.tsx`): each row's admit rate, average cost, and distance. Over the
+  mini fixture's 38 colleges the three rows' citations go from 79 KB to 11 KB of JSON (15 rows: 32.9 → 4.4 KB).
+- The offers facts (`lib/planner/offers-server.ts` `offerFacts`, `waitListFacts`): full price (its year kept on
+  `fullPrice.year`), average cost, aid generosity, earnings, debt, graduation rate, and the wait-list counts. The
+  signed-out sample (`components/advisor/Splash.tsx`) reads the same facts; `components/advisor/sample.ts` still
+  builds its own `{ url }` for its made-up frames.
+- The college page's estimate facts (`components/chances/StandingSection.tsx`, every field an estimate can cite) and
+  the reading lines ("How {college} reads a record", `lib/chances/reading-cites.ts` `lineCitations`, on the college
+  page and the compare page). A major unit's citation stays whole (`majorUnitCites`, a major line's unit cites): it
+  carries that unit's page and quote, which the API, one citation per college and path, doesn't know.
+`tests/plan-cites.test.mts` resolves each kind through the API and compares it with what the page shipped before.
+
 ## Enforcement
 Each guard below was verified by breaking the rule on purpose and confirming the check fails (2026-09-28).
 

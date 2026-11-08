@@ -7,6 +7,7 @@ import { retryOnStatementTimeout } from "./supabase-retry.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HighSchoolDetail, HighSchoolHit, HighSchoolMeta, PublishedHighSchool, StateMedians } from "./high-school-types";
 import { clampLimit, hsSearchKey } from "./high-school-core.ts";
+import { callBundle } from "./bundle-read.ts";
 
 /** Rows per page: ~2–4 KB each with the AP Course Ledger's list on the row; a page retries on a statement timeout. */
 const PAGE_SIZE = 500;
@@ -53,6 +54,48 @@ export async function fetchHighSchoolFile<N extends HighSchoolFileName>(client: 
   const { data, error } = await client.from("high_school_files").select("data").eq("name", name).maybeSingle();
   if (error) throw new Error(`Supabase: reading high school file ${name} failed: ${error.message}`);
   return (data?.data as HighSchoolFiles[N] | undefined) ?? null;
+}
+
+/**
+ * One school's rows as high_school_bundle() returns them (supabase/migrations/20261109120000_high_school_bundle.sql):
+ * the published row, its profile detail, and the pooled course list (school_course_list(), the raw keys, possibly
+ * empty) or null when the detail has an AP list of its own.
+ */
+export interface HighSchoolRows {
+  school: PublishedHighSchool | null;
+  detail: HighSchoolDetail | null;
+  courses: string[] | null;
+}
+
+/** high_school_bundle(id) in one call; "missing" until the migration is applied (remembered a minute per instance). */
+export async function fetchHighSchoolBundle(client: SupabaseClient, id: string): Promise<HighSchoolRows | "missing"> {
+  const r = await callBundle<Partial<HighSchoolRows> | null>(client, "high_school_bundle", { p_id: id });
+  if (r.kind === "missing") return "missing";
+  if (r.kind === "error") throw new Error(`Supabase: reading high school ${id} failed: ${r.error.message}`);
+  const b = r.data ?? {};
+  return { school: b.school ?? null, detail: b.detail ?? null, courses: Array.isArray(b.courses) ? b.courses : null };
+}
+
+/** school_course_list(id): the pooled course keys (three or more students), raw; null when the call fails. */
+export async function fetchSchoolCourseList(client: SupabaseClient, id: string): Promise<string[] | null> {
+  const { data, error } = await client.rpc("school_course_list", { p_high_school_id: id });
+  return error || !Array.isArray(data) ? null : (data as string[]);
+}
+
+/**
+ * One school's rows: the bundle when the function is there (one call), else the three reads it replaces (the row and
+ * the detail together, then the course list when there is a school and its detail has no AP list). A failed detail
+ * read in the fallback reads as no detail (`onDetailError` hears it), as it always did.
+ */
+export async function fetchHighSchoolRows(client: SupabaseClient, id: string, onDetailError?: (err: unknown) => void): Promise<HighSchoolRows> {
+  const bundle = await fetchHighSchoolBundle(client, id);
+  if (bundle !== "missing") return bundle;
+  const [school, detail] = await Promise.all([
+    fetchHighSchool(client, id),
+    fetchHighSchoolDetail(client, id).catch((err) => (onDetailError?.(err), null)),
+  ]);
+  const courses = school && !detail?.ap_courses?.length ? await fetchSchoolCourseList(client, id) : null;
+  return { school, detail, courses };
 }
 
 /** Name/city search through `search_high_schools` (trigram + prefix match, state filter). */

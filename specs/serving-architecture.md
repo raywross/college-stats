@@ -908,3 +908,11 @@ new code falls back to today's reads while a function is missing):
   `, lineage lazy`.
 - Closed in round 3: the pointer check runs under `after()` (`lib/data.ts getServed`), so it no longer dies with the
   response (`checking for a newer snapshot failed … timed out` / `write EPIPE`).
+- Closed in round 4: the plan's last database wave, the estimate's high-school reads (`high_schools 51 ‖
+  high_school_details 95 ‖ high_school_files 80 ‖ high_school_files 37 … rpc school_course_list 58`, inside
+  `estimates.context` 90–200 ms), is one call: `high_school_bundle(id)`
+  (`supabase/migrations/20261109120000_high_school_bundle.sql`; the row, its detail, and the pooled course list when
+  the detail has no AP list), read once per request by `lib/high-schools.ts getHighSchoolRecord` and shared by the
+  rigor reading (`offeringFor`) and `highSchoolState`. `meta` and `medians` are held once per instance per served
+  snapshot id (`lib/snapshot-memo.ts`, keyed by `currentSnapshotId()`), so a warm instance reads neither. Until the
+  migration is applied the three reads run as before (`isMissingFunction`, one wasted call a minute).

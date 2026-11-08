@@ -52,7 +52,7 @@ export function DocumentsPanel({ unit, docs, compare, template }: { unit: string
             {documents.map((d) => (
               <li key={d.sha256} className="min-w-0 rounded-xl border border-border p-3 text-sm">
                 <p className="font-semibold">
-                  {editionLabel(d.edition)} · {facts(d).source.host}
+                  {editionLabel(facts(d).filedAs)} · {facts(d).source.host}
                 </p>
                 <FileFacts f={facts(d)} queue={docs.queue.get(d.sha256) ?? 0} doc={d} />
               </li>
@@ -136,8 +136,8 @@ function Fact({ label, help, children }: { label: string; help?: "pulled-from" |
 function CompareBlock({ unit, a, b, docs, template, more }: { unit: string; a: DocumentRecord; b: DocumentRecord; docs: CollegeDocuments; template: Pick<TemplateTable, "items" | "byCode">; more: number }) {
   const [fa, fb] = [documentFacts(a, docs.manifest.get(a.sha256) ?? null, template), documentFacts(b, docs.manifest.get(b.sha256) ?? null, template)];
   const cmp = compareDocuments(a, b, template);
-  const same = a.edition === b.edition;
-  const title = same ? `Two files claim ${editionLabel(a.edition)}` : "Compare two files";
+  const same = fa.filedAs === fb.filedAs;
+  const title = same ? `Two files claim ${editionLabel(fa.filedAs)}` : "Compare two files";
   const files = [
     { label: "File A", doc: a, f: fa, other: fb, otherDoc: b },
     { label: "File B", doc: b, f: fb, other: fa, otherDoc: a },
@@ -156,8 +156,8 @@ function CompareBlock({ unit, a, b, docs, template, more }: { unit: string; a: D
         </h3>
         <p className="text-sm text-muted-foreground">
           {same
-            ? `Both files are filed under ${editionLabel(a.edition)}. Read when and where each was pulled, then keep one; the other is dropped.`
-            : `File A is filed under ${editionLabel(a.edition)}, File B under ${editionLabel(b.edition)}. Keep one; the other is dropped.`}
+            ? `Both files are filed under ${editionLabel(fa.filedAs)}. Read when and where each was pulled, then keep one; the other is dropped.`
+            : `File A is filed under ${editionLabel(fa.filedAs)}, File B under ${editionLabel(fb.filedAs)}. Keep one; the other is dropped.`}
           {more > 0 ? ` ${more} more file${more === 1 ? "" : "s"} claim${more === 1 ? "s" : ""} it too; they are listed below.` : ""}
         </p>
       </div>

@@ -11,7 +11,7 @@
  * failure before the first write closes the empty set applied (it blocks nothing); one after it closes the set held
  * with the reason, for a person to judge, as the Steward's apply job does.
  */
-import type { CollegeRecord, ManifestEntry } from "../cds-sections.ts";
+import type { CollegeRecord } from "../cds-sections.ts";
 import type { IssueDoc, ProposalDoc, ProposalStatus } from "../steward/types.ts";
 import type { dropDocument } from "../../scripts/drop-document.mts";
 import type { setProposalStatus } from "../../scripts/lib/steward/proposals.mts";

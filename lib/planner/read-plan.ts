@@ -20,6 +20,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ListRecord } from "../list-rules.ts";
 import type { EssayLinkRow, EssayRow } from "../essays/rows.ts";
+import type { OpenCommentRow, SuggestionCountRow } from "../essays/counts.ts";
 import type { ListSort, PlanEssays, PlanItem, PlanNudge, PlanOffer, PlanTask, PlanVisit } from "./types.ts";
 
 export const PLAN_LIST_COLUMNS = "id, student_id, user_id, name, is_default, share_enabled, created_by, created, sort, rounds_plan_accepted_at";
@@ -71,16 +72,25 @@ export interface PlanData {
 export const PLAN_ESSAY_COLUMNS = "id, student_id, prompt_ref, title, count_kind, count, limit_max, limit_min, status, kind, base_id, created, updated";
 
 /**
- * The student's drafts and their links (specs/product/essays/moves.md "Files"): two reads side by side, the links
- * joined to their drafts by the student (the `essays!inner` filter lib/essays/store.ts uses). Null without a student
- * and while the essays tables aren't set up (the `isMissingTable` pattern of lib/essays/load.ts); a failed read logs
- * and reads as null rather than failing the plan. Row-level security decides: a guardian in the household reads them.
+ * The student's drafts and their links (specs/product/essays/moves.md "Files"), and with `counts` (the default) their
+ * open comments and their suggestions not withdrawn: side by side in one round, each joined to its draft by the student
+ * (the `essays!inner` filter lib/essays/store.ts uses), so the Essays tab counts them without reading again
+ * (specs/serving-architecture.md: /advisor in two database waves). Null without a student and while the essays tables
+ * aren't set up (the `isMissingTable` pattern of lib/essays/load.ts); a failed read logs and reads as null rather than
+ * failing the plan. A failed comments or suggestions read (the suggestions table is newer) reads as no rows, as the
+ * counts did on their own. Row-level security decides: a guardian in the household reads them.
  */
-export async function readPlanEssays(supabase: SupabaseClient, studentId: string | null | undefined): Promise<PlanEssays | null> {
+export async function readPlanEssays(supabase: SupabaseClient, studentId: string | null | undefined, opts: { counts?: boolean } = {}): Promise<PlanEssays | null> {
   if (!studentId) return null;
-  const [essays, links] = await Promise.all([
+  const counts = opts.counts ?? true;
+  const none = Promise.resolve({ data: [] as unknown[], error: null });
+  const [essays, links, comments, suggestions] = await Promise.all([
     supabase.from("essays").select(PLAN_ESSAY_COLUMNS).eq("student_id", studentId).order("updated", { ascending: false }),
     supabase.from("essay_links").select("essay_id, prompt_ref, created, essays!inner(student_id)").eq("essays.student_id", studentId),
+    counts ? supabase.from("essay_comments").select("essay_id, resolved_at, essays!inner(student_id)").eq("essays.student_id", studentId).is("resolved_at", null) : none,
+    counts
+      ? supabase.from("essay_suggestions").select("essay_id, author_id, status, created, essays!inner(student_id)").eq("essays.student_id", studentId).neq("status", "withdrawn").order("created", { ascending: false })
+      : none,
   ]);
   for (const r of [essays, links]) {
     if (r.error) {
@@ -90,7 +100,15 @@ export async function readPlanEssays(supabase: SupabaseClient, studentId: string
   }
   const rows = (essays.data ?? []) as unknown as EssayRow[];
   const linkRows = ((links.data ?? []) as unknown as (EssayLinkRow & { essays?: unknown })[]).map(({ essay_id, prompt_ref, created }) => ({ essay_id, prompt_ref, created }));
-  return { rows, links: linkRows };
+  if (!counts) return { rows, links: linkRows };
+  for (const r of [comments, suggestions]) {
+    if (r.error && !isMissing(r.error)) console.error(`planner: reading the essays' comments or suggestions failed: ${r.error.message}`);
+  }
+  const commentRows = comments.error ? [] : ((comments.data ?? []) as unknown as (OpenCommentRow & { essays?: unknown })[]).map(({ essay_id, resolved_at }) => ({ essay_id, resolved_at: resolved_at ?? null }));
+  const suggestionRows = suggestions.error
+    ? []
+    : ((suggestions.data ?? []) as unknown as (SuggestionCountRow & { essays?: unknown })[]).map(({ essay_id, author_id, status, created }) => ({ essay_id, author_id, status, created }));
+  return { rows, links: linkRows, comments: commentRows, suggestions: suggestionRows };
 }
 
 type PgError = { code?: string; message?: string };

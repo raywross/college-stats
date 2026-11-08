@@ -164,6 +164,13 @@ export interface PlanContext {
 export interface PlanEssays {
   rows: import("../essays/rows").EssayRow[];
   links: import("../essays/rows").EssayLinkRow[];
+  /**
+   * The drafts' open comments and their suggestions not withdrawn (newest first), read with the drafts by student
+   * (read-plan.ts readPlanEssays) so the Essays tab counts them without another read (lib/essays/counts.ts). Absent
+   * when the caller didn't ask for them (lib/essays/move-tick.ts); the tab then reads them itself.
+   */
+  comments?: import("../essays/counts").OpenCommentRow[];
+  suggestions?: import("../essays/counts").SuggestionCountRow[];
 }
 /** The college facts stages read, cut from School on the server with citations already resolved
  *  (`citeField` → the serializable Citation the InfoTip takes). U1 defines and fills it; add fields additively. `cites`

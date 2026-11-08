@@ -40,7 +40,8 @@ export async function tickEssaysMove(supabase: SupabaseClient, studentId: string
   const key = taskKey(listId, "essays", "next");
   const [items, essays, task] = await Promise.all([
     readItems(supabase, listId),
-    readPlanEssays(supabase, studentId),
+    // The tick needs the drafts and links only, not the Essays tab's counts.
+    readPlanEssays(supabase, studentId, { counts: false }),
     supabase.from("plan_tasks").select("id, done_at").eq("list_id", listId).eq("key", key).maybeSingle(),
   ]);
   if (items.error || task.error) return { ticked: false, reason: "failed", remaining: null };

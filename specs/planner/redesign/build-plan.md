@@ -123,6 +123,11 @@ Round, test, money, and child colors move from the preview's `--pv-*` into `app/
 `loadPlanFor(studentId, viewer)` → `{ ctx, view } | { empty | setup-missing }` (moves the body of today's
 `PlanPage` read/regenerate/context code here, plus `syncAuto`), and `myPlanChildren()` → the students the signed-in
 user can see as a guardian (from `myHouseholds()`), with color slots in the order they were added.
+Since round 2 of the plan and essay speed build (`specs/serving-architecture.md` "Left, after this PR"), a reader's
+load is two database waves: everything that needs only the ids starts at once (the plan and viewer bundles, profile,
+home, the planner's settings in one read, the essays with their comments and suggestions, the open cycle's hand-read
+prompts), and the estimate's high-school reads start the moment the profile resolves (`planEstimates` takes that
+started context). The Essays tab counts what the plan read, so opening it adds no read (`tests/plan-waves.test.mts`).
 
 ## Units
 

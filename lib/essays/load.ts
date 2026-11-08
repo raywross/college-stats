@@ -23,6 +23,7 @@ import { readEssayOverrides, withOverride } from "./overrides";
 import { asPlatformPrompts, type PlatformPrompts, type PromptLookup } from "./prompts";
 import type { CommentRow, EssayLinkRow, EssayRow, VersionRow } from "./rows";
 import type { SuggestionRow } from "./suggestions";
+import { openCommentCounts, suggestionCounts, type OpenCommentRow, type SuggestionCountRow, type SuggestionCounts } from "./counts";
 
 /** Set by PlanPeople.tsx on every pick (app/advisor/page.tsx reads it the same way). */
 const PLAN_CHILD_COOKIE = "plan_child";
@@ -119,32 +120,9 @@ export function isMissingTable(error: { code?: string; message?: string } | null
   return !!error && (error.code === "42P01" || error.code === "PGRST205" || /does not exist|schema cache/i.test(error.message ?? ""));
 }
 
-/** Open suggestions per draft, and a guardian's own newest suggestion's state per draft (editors.md "Where it shows"). */
-export interface SuggestionCounts {
-  openSuggestions: Record<string, number>;
-  mySuggestions: Record<string, "open" | "decided">;
-}
-
-/**
- * The suggestion counts for the drafts `ids` (the Essays tab's rows): how many are open on each, and for a guardian
- * (`userId` given) the state of their own newest suggestion on each, withdrawn ones skipped. No table yet (the
- * migration not applied) or a failed read: no counts, never a failed page.
- */
-export async function suggestionCounts(ids: readonly string[], viewer: { role: ViewerRole; userId?: string | null }): Promise<SuggestionCounts> {
-  const out: SuggestionCounts = { openSuggestions: {}, mySuggestions: {} };
-  if (ids.length === 0) return out;
-  const supabase = await createServerSupabase();
-  const { data, error } = await supabase.from("essay_suggestions").select("essay_id, author_id, status, created").in("essay_id", [...ids]).neq("status", "withdrawn").order("created", { ascending: false });
-  if (error) {
-    if (!isMissingTable(error)) console.error(`essays: reading suggestion counts failed: ${error.message}`);
-    return out;
-  }
-  for (const s of (data ?? []) as { essay_id: string; author_id: string | null; status: "open" | "decided"; created: string }[]) {
-    if (s.status === "open") out.openSuggestions[s.essay_id] = (out.openSuggestions[s.essay_id] ?? 0) + 1;
-    if (viewer.role !== "student" && viewer.userId && s.author_id === viewer.userId && !out.mySuggestions[s.essay_id]) out.mySuggestions[s.essay_id] = s.status;
-  }
-  return out;
-}
+// The counts are pure over rows (lib/essays/counts.ts): the Essays tab counts the rows the plan loader read in its first
+// wave; readEssays (below) counts the rows it reads by id.
+export { suggestionCounts, type SuggestionCounts } from "./counts";
 
 export type EssaysRead =
   | ({ kind: "ready"; essays: EssayRow[]; links: EssayLinkRow[]; openComments: Record<string, number> } & SuggestionCounts)
@@ -163,14 +141,15 @@ export async function readEssays(studentId: string, viewer: { role: ViewerRole; 
   // A parent's or a counselor's read goes in the student's access log.
   if (viewer.role !== "student") void scheduleStudentReadLog(studentId, "essays");
   if (ids.length === 0) return { kind: "ready", essays: [], links: [], openComments: {}, openSuggestions: {}, mySuggestions: {} };
-  const [links, comments, counts] = await Promise.all([
+  const [links, comments, suggestions] = await Promise.all([
     supabase.from("essay_links").select("essay_id, prompt_ref, created").in("essay_id", ids),
     supabase.from("essay_comments").select("essay_id").in("essay_id", ids).is("resolved_at", null),
-    suggestionCounts(ids, viewer),
+    supabase.from("essay_suggestions").select("essay_id, author_id, status, created").in("essay_id", ids).neq("status", "withdrawn").order("created", { ascending: false }),
   ]);
-  const openComments: Record<string, number> = {};
-  for (const c of (comments.data ?? []) as { essay_id: string }[]) openComments[c.essay_id] = (openComments[c.essay_id] ?? 0) + 1;
-  return { kind: "ready", essays: rows, links: (links.data ?? []) as EssayLinkRow[], openComments, ...counts };
+  // No suggestions table yet (the migration not applied) or a failed read: no counts, never a failed page.
+  if (suggestions.error && !isMissingTable(suggestions.error)) console.error(`essays: reading suggestion counts failed: ${suggestions.error.message}`);
+  const counts = suggestionCounts(suggestions.error ? [] : ((suggestions.data ?? []) as SuggestionCountRow[]), viewer);
+  return { kind: "ready", essays: rows, links: (links.data ?? []) as EssayLinkRow[], openComments: openCommentCounts((comments.data ?? []) as OpenCommentRow[]), ...counts };
 }
 
 export type EssayRead =

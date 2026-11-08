@@ -488,7 +488,9 @@ Preview or Production, then redeploy; locally `QUAD_TIMING=1 npx next start`). T
   is what the person waited for; `+N ms after` is work that ran after the response. `db N× in W waves` counts the
   Supabase round trips by table or function name; `‖` joins calls that ran in parallel and `;` separates waves (calls
   that waited for the one before), so waves × the region's round trip is the database's share. Then each span:
-  `access+plan`, `readPlan`, `dataset`, `planSchools`, `estimates`, `sync`, `revalidate`, `followUp`.
+  `access+plan`, `readPlan`, `dataset`, `planSchools`, `estimates`, `sync`, `revalidate`, `followUp`. Inside
+  `estimates` (since round 2 of the plan and essay speed build), `estimates.context` is the wait for the estimate's
+  reads (the high school's, started with the profile) and `estimates.compute` the per-college math.
 - the counselor pages log under `/org`, `/org/students/[id]`, and `/org/export` (since 2026-11-08; each is the
   session's viewer bundle beside one org bundle, so two waves, `specs/product/counselor-portal.md` "The reads"), and one
   essay under `/advisor/essays/[id]` with the spans `essay viewer`, `essay read`, and `essay colleges`.
@@ -744,6 +746,13 @@ the functions are missing and tolerates a bundle without profiles; the code depl
 `bundle.student_profiles` and would break on the new bundle.
 
 ### Left, after this PR
+- Closed in round 2 (plan and essay speed): `/advisor` read 16 times in 4 waves. It now reads in two
+  (`lib/planner/load.ts` loadPlanFor): the first holds every read that needs only the ids (the plan and viewer
+  bundles, the profile, home, the planner's two settings in one `app_settings` read, the student's essays with their
+  links, open comments, and suggestions, and the open cycle's `essay_prompt_overrides` once per request, shared by the
+  plan's colleges and the Essays tab); the second is the estimate's high-school reads, started as soon as the profile
+  resolves. The Essays tab counts the plan's rows and reads nothing more. Measured locally over the mini fixture (warm):
+  `estimates.compute` about 9 ms for ten colleges and 11 to 30 ms for 38; the first call about 76 ms for 38.
 - `/api/me` still loads the viewer bundle through `householdChildren()` (same wave as the profile read; a
   profile-only children count would remove it).
 - The essay page still makes a second request for its reviews (`/api/essays/review`, 0.7 s).

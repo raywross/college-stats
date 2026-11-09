@@ -6,7 +6,10 @@
 > do we implement? Ideally we'd drive the whole thing from the admin functions on the site." This is the plan; the other
 > three specs in this folder are what gets built for it: [measurement.md](measurement.md) (attribution, PostHog in the
 > console), [seo.md](seo.md) (search, driven from the console), and [console.md](console.md) (the Growth door: campaigns,
-> links, pages, emails, spend). Part of [product](../README.md); the product being sold is in
+> links, pages, emails, spend). **Revised the same day on the owner's decisions:** the first push runs on Google and
+> Meta only, with everything else [layered in later](#layered-in-later) if those two don't carry it; and students 13
+> to 17 may be reached with contextual ads (no behavioral targeting), since the law and the platforms allow it and the
+> earlier blanket line was a choice, not a rule. Part of [product](../README.md); the product being sold is in
 > [commercialization.md](../commercialization.md) and [advisor.md](../advisor.md).
 
 ## Where we stand (2026-11-09)
@@ -32,11 +35,19 @@
 
 1. **Search is the engine; ads are the tests.** At $20 a year, paid acquisition cannot carry the business (the math is
    [below](#the-economics)). The pages we already have, made findable, plus the counselor channel, are the volume;
-   paid campaigns are small, seasonal, and killed or scaled by their measured cost per trial.
+   paid campaigns are small, seasonal, and killed or scaled by their measured cost per trial. **The first push runs on
+   two platforms, Google and Meta** (owner, 2026-11-09): Google Ads for Search and YouTube, Meta for Facebook and
+   Instagram. Nothing else is paid for or staffed until those two have been read for a season
+   ([Layered in later](#layered-in-later)).
 2. **Nothing we would not say on the privacy page.** No ad pixels, no Meta or Google tags, no conversion APIs that send
-   hashed emails, no retargeting, no lookalike audiences built from our users, no ads aimed at anyone under 18
-   ([telemetry.md](../telemetry.md#privacy); [measurement.md](measurement.md#what-we-do-not-do)). Attribution is a
-   first-party campaign code and our own numbers. We accept that ad platforms optimize worse without their pixels.
+   hashed emails, no retargeting, no lookalike or custom audiences built from our users, and **no behavioral targeting
+   of anyone**: an ad reaches a person because of the query, the video, or the page it sits beside, never because of
+   who the platform thinks they are ([telemetry.md](../telemetry.md#privacy);
+   [measurement.md](measurement.md#what-we-do-not-do)). Students 13 to 17 may be reached this way; the law restricts
+   targeted advertising to minors, not advertising, and both platforms already limit teen targeting to age and
+   location. Ad copy to students never presses a minor to spend: the ask is an account and a parent invited.
+   Attribution is a first-party campaign code and our own numbers. We accept that ad platforms optimize worse without
+   their pixels.
 3. **The data does the talking.** Every ad, post, and email leads with a number the site can cite: a college's admit
    rate for its pool, a trend study, a price gap. No "boost your chances" and no percentage chances, ever
    ([chances/README.md](../../chances/README.md)).
@@ -88,75 +99,105 @@ test budget, and a rule for when it stops or grows. The landing pages are the co
 | When | **January to March** (junior-year planning, the biggest window), **August to October** (senior fall), **late March to April** (offers side by side). Quiet in summer and December |
 | Message | *An advisor for the whole road to college, for less than one test-prep book.* Where your kid stands at every college on the list, the three things to do this season, every date, offers side by side. $20 a year, 14 days free |
 | Proof | The splash page's real frames; a trend study a parent recognizes ("test-optional colleges, this cycle"); the "never does" list (no ads, no leads sold) |
-| Channels, paid | **Google Search**, exact and phrase match on high-intent queries: "{college} acceptance rate", "{college} chances", "is {college} a reach", "college list builder", "net price {college}", "ED vs EA"; landing on the college's own page with the advisor's card, not on a generic page. **Meta (Facebook and Instagram)**, interest targeting only (parents, college planning; no custom or lookalike audiences, no retargeting), static ads built from the data. **Podcast and newsletter sponsorships** for parents of teens (one or two tests at $300 to $1,000 each) |
-| Channels, free | The trends studies as shareable posts; a monthly "what changed in the data" email a parent can subscribe to without an account; parent Facebook groups and Reddit (r/Parenting, state and school groups) only as a participant answering questions with cited pages, never as ads |
+| Google | **Search**, exact and phrase match on high-intent queries: "{college} acceptance rate", "{college} chances", "is {college} a reach", "college list builder", "net price {college}", "ED vs EA"; landing on the college's own page with the advisor's card, not on a generic page. No Display Network, no Performance Max, no remarketing |
+| Meta | **Facebook and Instagram feeds**, age 35 to 60 and U.S. as the only targeting plus Meta's own interest categories for parenting and college planning (contextual, not built from our users); static ads built from the data, three creatives rotated; no Advantage+ audiences, no custom or lookalike audiences |
 | Landing | `/for/parents` (the console's page, [console.md](console.md#pages)): the splash page's parent sections first (For parents, Never miss a date, Offers), the price, the trial button |
 | Conversion | `trial_started` with `product` and `campaign`; until Stripe ships, `signup_completed` with `role_hint: guardian` |
-| Test budget | $1,500 a month for three months, January to March 2027: $1,000 Search, $500 Meta; one sponsorship test in February |
+| Test budget | $1,500 a month for three months, January to March 2027: $1,000 Google Search, $500 Meta |
 | Stop or grow | Stop a channel above $20 per trial after two weeks of spend; double a channel under $12 per trial for a month, then re-read |
 
-### Students: earn their attention, convert the household
+### Students: reach them where they search and watch, convert the household
 
 Students under 16 cannot buy; those 16 and over may with a parent's permission ([advisor.md](../advisor.md#2-the-trial)).
 A student campaign therefore ends in an account and a parent invited, and the household converts on the parent's side.
-Paid ads to minors are out by principle 2, so this campaign is content and presence, not spend.
+Ads reach students contextually (principle 2): by the query they typed or the video they are watching, with age and
+country as the only targeting, which is all Google and Meta allow for teens anyway.
 
 | | |
 |---|---|
-| Who | 10th to 12th graders doing their own research; they arrive from search on a college's name, from Reddit, and from short video |
-| When | August to November (seniors), January to May (juniors), and the days after decisions (late March) |
-| Message | *The numbers colleges publish about who they admit, with the source on every one.* Where you stand, no percentage games, the three things to do this season |
-| Channels | **Search** (the college pages, the glossary, the trends: [seo.md](seo.md)). **Short video** from the data: one chart, one fact, 20 seconds (the trends studies are a year of material: shrinking colleges, where the students went, the price gap), posted to TikTok, Instagram Reels, and YouTube Shorts from one account, two a week, with the page linked. **Reddit** r/ApplyingToCollege and r/chanceme as a named, declared participant answering with cited pages, within the subreddits' rules; no ads. **School newspapers and counseling offices** through the counselor campaign |
+| Who | 10th to 12th graders doing their own research, 13 to 17 and the 18-year-old seniors; they arrive from search on a college's name and from short video |
+| When | **January to March** (juniors, in the first push), then August to November (seniors) and the days after decisions (late March) in the next cycle |
+| Message | *The numbers colleges publish about who they admit, with the source on every one.* Where you stand, no percentage games, the three things to do this season. Never "subscribe" or a price to a student; the buttons are "See where you stand" and "Invite a parent" |
+| Google | **Search** on the same college-name queries as the parents' campaign (one ad group serves both; a query has no age), plus student-shaped queries: "{college} SAT range", "is {college} test optional", "what is yield rate". **YouTube Shorts** ads, 15 to 20 seconds, one chart and one fact from a trends study, age 13-plus and U.S. as the only targeting, placed on college and study-channel content |
+| Meta | **Instagram Reels** ads, the same video cuts, age 13 to 19 and U.S. as the only targeting (Meta allows age and location for teens and nothing else) |
 | Landing | `/for/students`: the Where you stand strip, the season's three things, "Invite a parent" as the second button |
-| Conversion | `signup_completed` with `role_hint: student`, then `household_invite_sent` (a new event, [measurement.md](measurement.md#new-events)) |
-| Budget | $0 in ads; about $300 a quarter for video tooling and stock music; the owner's time, two posts a week |
-| Stop or grow | Judged by organic student sign-ups and the share who invite a parent within 30 days; the video account is dropped after six months if it sends under 2% of student sign-ups |
+| Conversion | `signup_completed` with `role_hint: student`, then `household_invite_sent` (a new event, [measurement.md](measurement.md#new-events)) within 30 days |
+| Test budget | $500 a month for three months, January to March 2027: $250 Google (Search and Shorts), $250 Meta Reels |
+| Stop or grow | Judged by cost per student sign-up and the share who invite a parent within 30 days; a household that converts counts as the student campaign's trial for cost per trial. Stop a placement above $8 per student sign-up or under 15% inviting a parent after a month; double one under $4 per sign-up with 25% inviting |
 
 ### Counselors: the free portal, office by office
 
 | | |
 |---|---|
 | Who | Independent educational consultants (about 2,000 IECA members, about 1,000 HECA, and many more unaffiliated), then high school counseling offices (ASCA's 40,000-plus members; a few counselors per public high school) |
-| When | **May to August** (consultants plan the next cycle; offices are quiet), **September** (offices set up the year), and the two national conferences (IECA's spring and fall conferences, NACAC's September national conference) |
+| When | **January to March** in the first push (consultants are mid-cycle and feel the caseload pain), then **May to August** (they plan the next cycle) and **September** (offices set up the year) |
 | Message | *See every student's plan in one place, free.* The caseload, asks, notes, the export; your families pay $20 a year for the advisor, you pay nothing, and nothing about money reaches you |
-| Channels | **Direct email** to consultants from public directories, one at a time with the person's name and a sentence about their practice (an hour a day, 20 a day, from the owner's own mailbox, never a blast). **A 20-minute demo** on a standing weekly slot. **Membership** in IECA or HECA as an associate or affiliate where allowed, for the directory listing and the newsletter. **One conference table** in 2027 if the first fifty emails convert at 10% or better. **LinkedIn** posts from the data, aimed at counselors. **A counselor newsletter**, monthly: what changed in the data, with the Data Steward's own findings as the material |
-| Landing | `/for/counselors`: the caseload in one frame, the free line, "Start an organization" (the portal's `/org`), the privacy rules a school will ask about, a demo link |
+| Google | **Search** on the queries a consultant types: "college counseling software", "independent educational consultant software", "college list tool for counselors", "Common Data Set {college}" (the data pages are a draw for professionals), "caseload management IEC". Small, exact-match, with the free line in the ad |
+| Meta | **Facebook feed**, interest categories for education and counseling professions as Meta offers them (contextual), U.S., 25 to 65; a single creative showing the caseload. A $100-a-month test; if Meta cannot find counselors, Google alone carries this audience |
+| Landing | `/for/counselors`: the caseload in one frame, the free line, "Start an organization" (the portal's `/org`), the privacy rules a school will ask about, and a link to book a 20-minute demo on a standing weekly slot |
 | Conversion | `org_created {kind}`, then `org_student_joined` (both exist); the console counts organizations with five or more students as a working office |
-| Budget | $0 to $500 a month: memberships (IECA associate membership is in the low hundreds a year), a demo tool, a conference table in 2027 at $2,000 to $5,000 if the email test earns it |
-| Stop or grow | Fifty emails a month; grow when one email in ten becomes an organization with students; the conference waits for that |
+| Test budget | $300 a month for three months, January to March 2027: $200 Google Search, $100 Meta |
+| Stop or grow | Judged by cost per organization created and the share that reach five students in 60 days. Stop above $60 per organization; double under $30 with a third reaching five students |
 
 ## Calendar
 
 | Month | Build ([console.md](console.md#build-plan)) | Parents | Students | Counselors |
 |---|---|---|---|---|
-| Nov 2026 | Wave 1: sitemap, robots, metadata, Open Graph, structured data; campaign links and the cookie; the Growth overview | | Video account opens; two posts a week from the trends | First 50 consultant emails; the demo slot |
-| Dec 2026 | Wave 2: Search Console in the console, SEO templates, the Steward's SEO audit, landing pages | Parent newsletter opens (no account needed) | Decision-season posts | Newsletter issue 1 |
-| Jan 2027 | Stripe and the trial ship ([commercialization.md](../commercialization.md)); wave 3: lifecycle emails, spend and cost per trial | **Search and Meta tests start**, $1,500 a month | Junior-season posts | 50 emails; offices after winter break |
-| Feb–Mar 2027 | Read the numbers weekly; kill or double | Sponsorship test; offers-season creative ready | | IECA spring conference as an attendee |
-| Apr–May 2027 | | Offers side by side campaign, small | Decision posts | Consultants plan the next cycle: the big push |
-| Jun–Aug 2027 | Review the cycle; set the 2027–28 budget | Quiet | Quiet | Emails and demos continue; conference table decision for NACAC in September |
+| Nov 2026 | Wave 1: sitemap, robots, metadata, Open Graph, structured data; campaign links and the cookie; the Growth overview | Google Ads and Meta accounts opened; creatives drafted from the data | Three 15-second cuts from the trends studies | The counselor landing page's words |
+| Dec 2026 | Wave 2: Search Console in the console, SEO templates, the Steward's SEO audit, landing pages | Keyword lists built from the college pages; ads written and reviewed against principle 3 | | Keyword list; demo slot set up |
+| Jan 2027 | Stripe and the trial ship ([commercialization.md](../commercialization.md)); wave 3: lifecycle emails, spend and cost per trial | **Search and Meta start**, $1,500 a month | **Search, Shorts, and Reels start**, $500 a month | **Search and a Meta test start**, $300 a month |
+| Feb–Mar 2027 | Read the numbers every Monday; kill or double | Offers-season creative ready for April | Swap creatives at week four | |
+| Apr 2027 | **Read the push:** which placements came in under their lines; decide what to [layer in](#layered-in-later) | Offers side by side ads, small, if under the line | Decision-week Shorts if under the line | |
+| May–Aug 2027 | Review the cycle; set the 2027–28 budget | Quiet | Quiet | Consultants plan the next cycle: Search continues if it worked |
 
 ## Budget
 
 Six months, November 2026 to April 2027, planning figures:
 
-| Item | Monthly | Six months | Notes |
+Two platforms, three audiences, three months of spend (January to March 2027), and the tooling around them:
+
+| Item | Monthly (Jan–Mar) | Six months | Notes |
 |---|---|---|---|
-| Google Search ads (parents, Jan–Mar) | $1,000 | $3,000 | Exact and phrase match; no display network; no remarketing |
-| Meta ads (parents, Jan–Mar) | $500 | $1,500 | Interest targeting only; no pixel, so judged by our numbers |
-| Sponsorships (one or two tests) | | $1,000 | A parent newsletter or podcast, February |
-| Counselor memberships and tools | $100 | $600 | IECA or HECA associate membership, a demo tool |
-| Video and creative tooling | $100 | $600 | Editing app, music, a template set |
-| Conference travel (attendee, spring) | | $1,500 | One person, one conference |
+| Google Ads: parents (Search) | $1,000 | $3,000 | Exact and phrase match; no Display Network, no Performance Max, no remarketing |
+| Google Ads: students (Search and YouTube Shorts) | $250 | $750 | Age 13-plus and U.S. as the only targeting; placements on college and study content |
+| Google Ads: counselors (Search) | $200 | $600 | Exact match on counseling-software and Common Data Set queries |
+| Meta: parents (Facebook and Instagram feeds) | $500 | $1,500 | Age, country, and Meta's parenting and college-planning interest categories; no custom, lookalike, or Advantage+ audiences |
+| Meta: students (Instagram Reels) | $250 | $750 | Age 13 to 19 and U.S.; the Shorts cuts reused |
+| Meta: counselors (Facebook feed) | $100 | $300 | A test; dropped if Meta cannot find counselors |
+| Creative tooling | $50 | $300 | An editing app, music, a template set for the static ads and the three video cuts |
 | PostHog | $0 | $0 | The free tier is 1 million events a month; the site is far under it. The Query API is included |
 | Google Search Console, IndexNow, Bing Webmaster Tools | $0 | $0 | |
-| Resend | $20 | $120 | 50,000 emails a month on the first paid tier; lifecycle and newsletter mail |
-| **Total** | | **about $8,300** | About $1,400 a month across the six months, $2,300 in the three ad months |
+| Resend | $20 | $120 | 50,000 emails a month on the first paid tier; lifecycle mail |
+| **Total** | **$2,370 in each ad month** | **about $7,300** | $6,900 of it is ad spend across the three months |
 
-Not in the table: the owner's time (an hour a day for counselor email and posting), and the engineering, which is the
-build plan in [console.md](console.md#build-plan) and is done by the owner with coding agents at the usual cost of a
-session. Everything in the table stops in a day if the numbers say so. The reserve for a channel that works is another
-$5,000 in spring 2027, released only by a measured cost per trial under $12.
+What it buys is information at a known price: by April we know each platform's cost per trial for parents, cost per
+student sign-up and the share who invite a parent, and cost per counselor organization, each against the line that
+stops or doubles it. Google Ads is the larger share because a search ad is matched to a question someone is asking
+right now; Meta's share is a test of whether a feed ad can create the question.
+
+Not in the table: the owner's time (an hour a week per platform to read the numbers and swap creatives), and the
+engineering, which is the build plan in [console.md](console.md#build-plan) and is done by the owner with coding agents
+at the usual cost of a session. Everything in the table stops in a day if the numbers say so. The reserve for a
+placement that works is another $5,000 in spring 2027, released only by a measured cost under its line.
+
+## Layered in later
+
+Everything below was in the first draft of this plan and was set aside on the owner's decision (2026-11-09) to run the
+first push on Google and Meta alone. Each has a trigger: the reading in April 2027 that would bring it in.
+
+| Channel | What it would be | Bring it in when |
+|---|---|---|
+| Direct email to consultants | Twenty personal emails a day from the owner's mailbox to consultants in public directories, with a sentence about their practice; a standing demo slot | Google Search finds counselors at under $30 an organization but too few of them (the queries are thin); email is the way to reach the rest |
+| IECA or HECA membership; a conference table | Associate membership for the directory and newsletter; a table at IECA's spring or NACAC's September conference ($2,000 to $5,000) | Twenty-five working offices exist and a third came from consultants, so the audience is proven and worth meeting in person |
+| Sponsorships | A parent newsletter or podcast placement, $300 to $1,000 a test | Meta's parent cost per trial lands between $12 and $20: the message works and needs a cheaper, more trusted carrier |
+| Organic short video | One account on TikTok, Instagram, and YouTube Shorts, two posts a week from the trends studies | Paid Shorts and Reels bring students under $4 a sign-up: the cuts work and an organic account would compound them |
+| Reddit | Ads placed in r/ApplyingToCollege and r/chanceme, and a named, declared participant answering with cited pages | Student search ads work and a second contextual student placement is wanted |
+| LinkedIn | Posts and a small ad test aimed at counselors | Meta cannot find counselors and the Search queries are exhausted |
+| The newsletter | A monthly "what changed in the data" issue for parents and counselors who opt in ([console.md](console.md#emails)) | There are 500 adult accounts to send it to, or the parent campaign shows that the data stories are what people respond to |
+| Community participation | Parent Facebook groups and Reddit's parent subreddits, answering with cited pages, never ads | Any time the owner has the hour; it costs nothing but is not counted on |
+
+Nothing in this table is built or bought until its trigger is read on the Growth overview and the decision is written
+in the log.
 
 ## How we know it is working
 
@@ -177,7 +218,9 @@ The numbers that decide things, with the first targets:
 |---|---|---|
 | Organic search clicks a week (Search Console) | 5,000, from near zero | The engine; the SEO work's direct result |
 | Sign-ups a week from organic search | 150 | Search sending the right people |
-| Cost per trial started, by paid campaign | under $12 to grow, over $20 to stop | The only number that lets ads scale |
+| Cost per trial started, by paid placement (parents) | under $12 to grow, over $20 to stop | The only number that lets ads scale |
+| Cost per student sign-up, by placement | under $4 to grow, over $8 to stop | The student campaign's price, since a student's conversion is an account, not a payment |
+| Cost per counselor organization, by placement | under $30 to grow, over $60 to stop | One organization is many families |
 | Trial to paid | 40% or better | The product's job; below 30%, fix the trial before spending more |
 | Working offices (organizations with five or more students) | 25 | The counselor channel's unit |
 | Students who invite a parent within 30 days | 25% | Whether the student campaign converts households |
@@ -194,9 +237,11 @@ history of the plan is on the site with everything else.
 2. **Before paid parent campaigns:** Stripe, the trial, and `/pricing` ([commercialization.md](../commercialization.md));
    the page at `/for/parents` and the lifecycle emails; the legal pages (terms, refund, privacy extended with the
    campaign cookie).
-3. **Before conference spending:** fifty counselor emails and their measured outcome.
-4. **Before anything aimed at students:** the design rules in principle 2, and the "Invite a parent" step on the student
-   landing page.
+3. **Before any student placement runs:** the ads carry no price and no "subscribe"; targeting is age and country
+   only, checked in each platform's settings; the student landing page has its "Invite a parent" button and the
+   `household_invite_sent` event, so the campaign's conversion can be counted.
+4. **Before anything is layered in:** the April 2027 reading of the Google and Meta push, with its trigger met
+   ([Layered in later](#layered-in-later)).
 
 ## Owner decisions
 
@@ -206,9 +251,9 @@ history of the plan is on the site with everything else.
 2. **AI crawlers** (GPTBot, ClaudeBot, PerplexityBot and the rest) in `robots.txt`: allow, so answers cite Quad, or
    block ([seo.md](seo.md#crawlers)). The plan's default is allow for the public data pages and block for everything
    signed in.
-3. **The ad ceiling.** $1,500 a month for three months as the test, $5,000 in reserve. Confirm or change.
-4. **Memberships and the conference.** IECA or HECA associate membership in 2027, and whether a conference table is on
-   the table at all.
+3. **The ad ceiling.** $2,300 a month for three months across the two platforms and three audiences, $5,000 in
+   reserve. Confirm or change.
+4. ~~Memberships and the conference~~ Set aside 2026-11-09: in [Layered in later](#layered-in-later) with its trigger.
 5. **A "counselor recommended" code** for a first-year discount ([commercialization.md](../commercialization.md#open-questions),
    question 4): the campaign links can carry a Stripe promotion code the day the owner wants one; nothing here needs it.
 6. **The fifth door.** Growth as its own door in the console and a fifth tab on a phone, or under More

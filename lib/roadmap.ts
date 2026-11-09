@@ -231,7 +231,7 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/product/marketing/plan.md",
     group: "business",
     summary:
-      "How Quad reaches parents, students, and counselors: search as the engine, small measured ad tests, the free counselor portal as the channel, no pixels or ads aimed at minors, and a budget and calendar through 2027.",
+      "How Quad reaches parents, students, and counselors: search as the engine, small measured ad tests on Google and Meta first, the free counselor portal as the channel, no pixels and no behavioral targeting, and a budget and calendar through 2027.",
     complexity: 1,
     complexityNote: "A plan, not code: the campaigns, their seasons and budgets, the metrics that judge them, and what must be built first.",
     status: "planned",

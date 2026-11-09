@@ -13,8 +13,10 @@ people, and what it will and won't do along the way:
 
 - **The plan.** Three audiences, each with its own season and message: parents of 10th and 11th graders, students
   doing their own research, and the counselors and consultants who use Quad's portal free. Search engines are the main
-  road, since every college page here answers questions people actually type. Paid ads are small, seasonal tests
-  judged by their measured cost. No ads will ever be aimed at anyone under 18.
+  road, since every college page here answers questions people actually type. Paid ads are small, seasonal tests on
+  Google and Meta only at first, judged by their measured cost, with other channels added later only if those two earn
+  it. An ad reaches someone because of what they searched or watched, never because of who a platform thinks they
+  are; ads that students may see carry no price and ask only that they look and invite a parent.
 - **Measuring without tracking.** When you follow one of Quad's own links, a 30-day cookie remembers only the link's
   name, so Quad can count which campaign brought a sign-up. It holds no identifier, isn't shared with anyone, and is
   removed when you sign up. No ad pixels, no Meta or Google tags, no retargeting. The privacy page will say all of

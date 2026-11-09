@@ -267,6 +267,9 @@ export const CONFIRM_APPROVE = "approve";
 /** The word typed to Decide a Steward's question (a policy answer the Steward follows for many colleges at once). */
 export const CONFIRM_DECIDE = "decide";
 
+/** The word typed to Keep this file when two files collide (the other is dropped; specs/product/document-collisions.md). */
+export const CONFIRM_KEEP = "keep";
+
 /**
  * The typed-word rule (specs/product/admin-redesign.md "Owner decisions" 6): Grant and Revoke admin, Close household,
  * and Deactivate join the typed-word list beside Delete. Deactivate keeps its typed reason (parseReason) and adds

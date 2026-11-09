@@ -11,12 +11,13 @@ import type { HelpKey } from "./help.ts";
 import { TODO_WHY_LABEL, proposalHref, reviewHref } from "./steward-view.ts";
 import { stewardText } from "./words.ts";
 import { DELETE_GRACE_DAYS } from "../household-rules.ts";
-import type { DecisionDoc, ProposalDoc, RunDoc, TodoDoc } from "../steward/types.ts";
+import type { DecisionDoc, IssueDoc, ProposalDoc, RunDoc, TodoDoc } from "../steward/types.ts";
+import { CHOOSE_THE_FILE, collisionNamedIn, compareLinkIn } from "./document-compare.ts";
 import type { JobOverviewRow } from "../jobs/runs.ts";
 import { lastOutcome } from "../jobs/view.ts";
 
 export interface InboxItem {
-  kind: "decision" | "proposal" | "todo" | "job" | "deletion" | "invitation" | "held-change";
+  kind: "decision" | "proposal" | "todo" | "job" | "deletion" | "invitation" | "held-change" | "collision";
   title: string;
   why: string;
   href: string;
@@ -74,6 +75,8 @@ export interface InboxHeldChange {
   source: string;
   held_reason: string | null;
   created_at: string;
+  /** The change set's summary: an apply's `proposal` and `refused` message, when it carries them. */
+  summary?: Record<string, unknown> | null;
 }
 
 export interface InboxCounts {
@@ -99,6 +102,8 @@ export interface InboxInput {
   queue: { open: number; newThisWeek: number } | null;
   /** Colleges by overall data health. */
   health: { fresh: number; watch: number; stale: number; failing: number } | null;
+  /** The Steward's collision findings (`steward.issues` keyed `collision|…`); the Inbox never scans records itself. */
+  collisions?: readonly IssueDoc[] | null;
 }
 
 /**
@@ -152,23 +157,55 @@ function inboxOrder(x: { item: InboxItem; order: number }, y: { item: InboxItem;
 }
 
 /**
- * What needs a person, the most consequential first (severity), then the oldest. Held changes and failed jobs stop
- * the site's data from moving (severity 1); decisions, systemic proposals, flagged jobs, and accounts being deleted
- * wait on an answer (2); value proposals, invitations, and To do rows are chores (3).
+ * What needs a person, the most consequential first (severity), then the oldest. Held changes, failed jobs, and
+ * proposals whose apply failed stop the site's data from moving (severity 1; a collision's opens the comparison with
+ * "Choose the file"); decisions, systemic proposals, flagged jobs, the Steward's collision findings, and accounts being
+ * deleted wait on an answer (2); value proposals, invitations, and To do rows are chores (3).
  */
 export function needsYou(input: InboxInput): InboxItem[] {
   const items: InboxItem[] = [];
   const now = input.now.getTime();
 
   for (const h of input.heldChanges ?? []) {
+    // A held change that a collision caused (an apply refused into a taken edition) opens the comparison, or the
+    // proposal when the message predates the link (specs/product/document-collisions.md "The Inbox").
+    const refused = typeof h.summary?.refused === "string" ? h.summary.refused : null;
+    const proposal = typeof h.summary?.proposal === "string" ? h.summary.proposal : null;
+    const text = [h.held_reason, refused].filter(Boolean).join(" ");
+    const link = compareLinkIn(text) ?? (collisionNamedIn(text) && proposal ? proposalHref(proposal) : null);
     items.push({
       kind: "held-change",
       title: `Change #${h.id} is held`,
       why: `${h.held_reason?.trim() || "No reason recorded."} A held change stops every publish.`,
-      href: `/admin/data/changes/${h.id}`,
-      action: "Review",
+      href: link ?? `/admin/data/changes/${h.id}`,
+      action: link ? CHOOSE_THE_FILE : "Review",
       severity: 1,
       at: h.created_at,
+    });
+  }
+
+  for (const p of input.proposals ?? []) {
+    if (p.status !== "failed") continue;
+    const link = compareLinkIn(p.failed_reason);
+    items.push({
+      kind: "proposal",
+      ...stewardLines(`Apply failed: ${p.summary}`, p.failed_reason?.trim() || "The apply job didn't finish; the proposal says why."),
+      href: link ?? proposalHref(p.key),
+      action: link ? CHOOSE_THE_FILE : "See why it failed",
+      severity: 1,
+      at: p.decided_at ?? p.created,
+    });
+  }
+
+  for (const c of input.collisions ?? []) {
+    if (c.kind !== "collision" || c.status === "left") continue;
+    items.push({
+      kind: "collision",
+      ...stewardLines(c.hypothesis, "Only one file can be read for an edition. Compare when and where each was pulled, and keep one."),
+      href: c.href ?? "/admin/steward/findings?kind=collision",
+      action: c.action ?? CHOOSE_THE_FILE,
+      severity: 2,
+      at: c.updated,
     });
   }
 

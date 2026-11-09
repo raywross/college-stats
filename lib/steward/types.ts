@@ -7,11 +7,12 @@
 /**
  * The four kinds of issue, each resolved its own way, plus `job`: a finding from the Steward's job review
  * (specs/product/admin-redesign.md "What the Steward reviews"), keyed `job|<job id>` or `change|<id>`, with `family`
- * naming the job.
+ * naming the job; and `collision`: two files claim one edition of a college (specs/product/document-collisions.md), keyed
+ * `collision|<unit>|<edition>`, written by the Steward's writer when it refuses a refile into a taken edition.
  */
-export type IssueKind = "value" | "systemic" | "acquisition" | "policy" | "job";
-export const ISSUE_KINDS: readonly IssueKind[] = ["value", "systemic", "acquisition", "policy", "job"];
-export const ISSUE_KIND_LABEL: Record<IssueKind, string> = { value: "Value", systemic: "Systemic", acquisition: "Acquisition", policy: "Policy", job: "Job" };
+export type IssueKind = "value" | "systemic" | "acquisition" | "policy" | "job" | "collision";
+export const ISSUE_KINDS: readonly IssueKind[] = ["value", "systemic", "acquisition", "policy", "job", "collision"];
+export const ISSUE_KIND_LABEL: Record<IssueKind, string> = { value: "Value", systemic: "Systemic", acquisition: "Acquisition", policy: "Policy", job: "Job", collision: "Two files" };
 
 export type IssueStatus = "new" | "investigating" | "proposed" | "waiting" | "left";
 export const ISSUE_STATUS_LABEL: Record<IssueStatus, string> = {
@@ -57,6 +58,9 @@ export interface IssueDoc {
   updated: string;
   /** A job finding's job id (lib/jobs/registry.ts); absent on the review queue's kinds. */
   family?: string;
+  /** Where a person acts on it (a collision's compare link), and the button's words ("Choose the file"). */
+  href?: string;
+  action?: string;
 }
 
 /** One document read: college, edition, the document, where, and what it shows. */
@@ -81,7 +85,8 @@ export const PROPOSAL_KIND_LABEL: Record<ProposalKind, string> = {
   reread: "Re-read",
   systemic: "Fix a rule",
 };
-export type ProposalStatus = "open" | "approved" | "declined" | "applied" | "asked";
+/** `failed`: approved, but the apply job refused or broke part way (`failed_reason` says why); a person decides what next. */
+export type ProposalStatus = "open" | "approved" | "declined" | "applied" | "asked" | "failed";
 export type Recommendation = "approve" | "your-call";
 export type RowDecision = "approved" | "declined";
 
@@ -132,6 +137,8 @@ export interface ProposalDoc {
   decided_by?: string | null;
   decided_at?: string | null;
   decision_note?: string | null;
+  /** Status `failed`: the apply job's refusal or error, word for word (scripts/lib/steward/proposals.mts). */
+  failed_reason?: string | null;
 }
 
 export type TodoWhy = "robots-path" | "robots-host" | "challenge" | "bot-check" | "viewer" | "js-only" | "terms" | "login" | "not-found" | "no-document" | "unknown";
@@ -269,4 +276,5 @@ export const PROPOSAL_STATUS_LABEL: Record<ProposalStatus, string> = {
   declined: "Declined",
   applied: "Applied",
   asked: "Asked",
+  failed: "Apply failed",
 };

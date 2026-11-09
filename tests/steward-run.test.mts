@@ -332,6 +332,40 @@ test("apply: a reject proposal resolves its items rejected and asks for no publi
   assert.match(refused.message ?? "", /applied by the console/);
 });
 
+test("apply: a refile into a taken edition is refused with the comparison's link (its set closes applied, never held) and the proposal marked failed", async () => {
+  const s = await seededStore();
+  const rec = (await s.store.readOne<CollegeRecord>(COLLECTIONS.reported.cdsRecords, "145637"))!;
+  const [first] = rec.documents;
+  const copy = { ...structuredClone(first), sha256: "f".repeat(64), edition: first.edition === "2025-26" ? "2024-25" : "2025-26" };
+  const seed = await s.store.open("pipeline", "test", "two-docs");
+  await seed.write(COLLECTIONS.reported.cdsRecords, [{ key: "145637", body: { ...rec, documents: [first, copy] } }]);
+  await seed.close("applied");
+  const refile: ProposalRow = { unit_id: "145637", field: null, code: null, edition: first.edition, sha256: copy.sha256, now: copy.edition, proposed: "the cover says otherwise", source: { page: null, line: null, quote: "cover", url: null }, recommends: "approve", item: null, decision: "approved" };
+  await seedProposal(s, { key: "refile-1", kind: "refile", cause: null, status: "approved", summary: "s", evidence: [finding], rows: [refile], run: "r", created: "2026-11-01T00:00:00Z" });
+  const res = await runSteward({ mode: "apply", store: s.store, proposal: "refile-1", runRef: "apply-f", now: NOW, env: {}, log: () => {} });
+  assert.equal(res.exit, 1);
+  assert.match(res.message ?? "", new RegExp(`already has a ${first.edition} document`));
+  assert.ok((res.message ?? "").includes(`/admin/data/colleges/145637?compare=ffffffffff,${first.sha256.slice(0, 10)}#documents`), "the link to choose the file");
+  const sets = fileStoreChangeSets(join(s.dir, "layers"));
+  assert.equal(sets.find((c) => c.id === res.changeSet)!.status, "applied", "a refusal writes nothing and blocks no publish");
+  const p = (await s.store.readOne<ProposalDoc>(COLLECTIONS.steward.proposals, "refile-1"))!;
+  assert.equal(p.status, "failed");
+  assert.equal(p.failed_reason, res.message);
+  assert.deepEqual([sets.at(-1)!.source, sets.at(-1)!.status], ["steward-status", "applied"]);
+
+  // An apply that breaks (not a refusal: a refile of a file the record doesn't hold) closes its set held.
+  await seedProposal(s, { key: "refile-2", kind: "refile", cause: null, status: "approved", summary: "s", evidence: [finding], rows: [{ ...refile, sha256: "e".repeat(64), edition: "2019-20" }], run: "r", created: "2026-11-01T00:00:00Z" });
+  const broke = await runSteward({ mode: "apply", store: s.store, proposal: "refile-2", runRef: "apply-g", now: NOW, env: {}, log: () => {} });
+  assert.equal(broke.exit, 1);
+  assert.match(broke.message ?? "", /no document e{10}/);
+  assert.equal(fileStoreChangeSets(join(s.dir, "layers")).find((c) => c.id === broke.changeSet)!.status, "held");
+  assert.equal((await s.store.readOne<ProposalDoc>(COLLECTIONS.steward.proposals, "refile-2"))!.status, "failed");
+  // A refusal of a proposal that isn't approved leaves its status alone.
+  const again = await runSteward({ mode: "apply", store: s.store, proposal: "refile-1", runRef: "apply-f2", now: NOW, env: {}, log: () => {} });
+  assert.match(again.message ?? "", /is failed; only an approved proposal/);
+  assert.equal((await s.store.readOne<ProposalDoc>(COLLECTIONS.steward.proposals, "refile-1"))!.status, "failed");
+});
+
 test("apply: a recipe row adds or drops a link, or clears the not-found mark for rediscovery", () => {
   const before = { unit_id: "100751", sources: [{ kind: "cds" as const, url: "https://a.edu/old.pdf", format: "pdf" as const }], index_urls: [], learned: "2026-10-01", model: "m", none_found: true as const, discovery: { path: "none" as const, tried: [], next_attempt: "2026-12-01" } };
   const added = recipeAfter(before, "100751", { field: "sources.add", value: "https://a.edu/cds-2025-26.xlsx" }, "2026-11-01")!;

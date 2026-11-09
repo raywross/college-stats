@@ -676,3 +676,9 @@ a cluster's check id). All four are built; the polish section's "Left" line is s
   college's Review groups fold the same way. The Colleges list is
   not a `ResponsiveTable` and is unchanged. `tests/admin-phone.test.mts` renders the real component (HelpTip and `cn`
   stood in for) with 0, 25, 26, 1,000 and 1,300 rows and a page's own `foldAfter`.
+
+### Document collisions (2026-11-08, `feature/document-collisions-view`)
+
+- The college page's **Documents** panel, the side-by-side comparison when two files claim one edition, **Keep this
+  file** (`keep`), the Steward's collision finding, and the Inbox's "Choose the file" rows: see
+  [document-collisions.md](document-collisions.md).

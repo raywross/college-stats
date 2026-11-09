@@ -20,6 +20,7 @@ import type {
   RecipeSource,
 } from "../../../lib/reported.ts";
 import type { School } from "../../../lib/types";
+import { withoutDropped } from "../../../lib/reported.ts";
 import { onlyBlockedCandidates, recordBlocked } from "./blocked.mts";
 import { entryYearOf, linkKind, type FoundLink } from "./documents.mts";
 import { tierOf, type Tier } from "./pilot.mts";
@@ -250,10 +251,12 @@ export async function ladder(college: LadderCollege, state: LadderState, deps: L
     tried.push({ step, ...(via ? { via } : {}), at: today, result, ...(detail ? { detail } : {}), cost_usd: Math.round(cost * 10000) / 10000 });
 
   const merge = (find: StepFind) => {
-    const { keep, retire } = retireSuperseded({ sources }, find.sources);
+    // A URL a person dropped (Recipe.dropped, npm run drop-document) never comes back, whichever step finds it.
+    const incoming = withoutDropped(find.sources, base?.dropped);
+    const { keep, retire } = retireSuperseded({ sources }, incoming);
     retired.push(...retire);
     const urls = new Set(keep.map((s) => s.url));
-    sources = [...find.sources.filter((s) => !urls.has(s.url)), ...keep];
+    sources = [...incoming.filter((s) => !urls.has(s.url)), ...keep];
     for (const u of find.index_urls) index.add(u);
     for (const h of find.answered ?? []) answered.add(h);
     pages.push(...(find.pages ?? []));

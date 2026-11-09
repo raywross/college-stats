@@ -1,0 +1,235 @@
+{
+ "record": {
+  "unit_id": "110714",
+  "documents": [
+   {
+    "sha256": "f38e8289ef0123456789abcdef0123456789abcdef0123456789abcdef012345",
+    "edition": "2025-26",
+    "type": "pdf-flat",
+    "url": "https://drive.google.com/file/d/1UCSCcds/view",
+    "final_url": "https://drive.usercontent.google.com/download?id=1UCSCcds",
+    "retrieved": "2026-10-26",
+    "reads": {
+     "C": {
+      "schema_version": 3,
+      "read_by": "claude-sonnet-4-5",
+      "mode": "interactive",
+      "extracted": "2026-10-26"
+     }
+    },
+    "years": {},
+    "items": {
+     "C.101": {
+      "v": 30120,
+      "page": 4,
+      "line": 40,
+      "status": "failed",
+      "failures": [
+       {
+        "check": "edition-mismatch",
+        "detail": "the document states no edition; filed as 2025-26 until an item's text (B22, H4, I-2) confirms it"
+       }
+      ]
+     },
+     "C.102": {
+      "v": 35100,
+      "page": 4,
+      "line": 41,
+      "status": "failed",
+      "failures": [
+       {
+        "check": "edition-mismatch",
+        "detail": "the document states no edition; filed as 2025-26 until an item's text (B22, H4, I-2) confirms it"
+       }
+      ]
+     },
+     "C.116": {
+      "v": 66014,
+      "page": 4,
+      "line": 44,
+      "status": "failed",
+      "failures": [
+       {
+        "check": "edition-mismatch",
+        "detail": "the document states no edition; filed as 2025-26 until an item's text (B22, H4, I-2) confirms it"
+       }
+      ]
+     },
+     "C.901": {
+      "v": 0.06,
+      "page": 4,
+      "line": 80,
+      "status": "failed",
+      "failures": [
+       {
+        "check": "edition-mismatch",
+        "detail": "the document states no edition; filed as 2025-26 until an item's text (B22, H4, I-2) confirms it"
+       }
+      ]
+     },
+     "C.905": {
+      "v": 1200,
+      "page": 4,
+      "line": 85,
+      "status": "failed",
+      "failures": [
+       {
+        "check": "edition-mismatch",
+        "detail": "the document states no edition; filed as 2025-26 until an item's text (B22, H4, I-2) confirms it"
+       }
+      ]
+     },
+     "G.101": {
+      "v": 14523,
+      "page": 4,
+      "line": 120,
+      "status": "failed",
+      "failures": [
+       {
+        "check": "edition-mismatch",
+        "detail": "the document states no edition; filed as 2025-26 until an item's text (B22, H4, I-2) confirms it"
+       }
+      ]
+     },
+     "H.101": {
+      "v": "2024-2025",
+      "page": 4,
+      "line": 140,
+      "status": "failed",
+      "failures": [
+       {
+        "check": "edition-mismatch",
+        "detail": "the document states no edition; filed as 2025-26 until an item's text (B22, H4, I-2) confirms it"
+       }
+      ]
+     },
+     "B.2201": {
+      "v": 4000,
+      "page": 4,
+      "line": 30,
+      "status": "failed",
+      "failures": [
+       {
+        "check": "edition-mismatch",
+        "detail": "the document states no edition; filed as 2025-26 until an item's text (B22, H4, I-2) confirms it"
+       }
+      ]
+     }
+    }
+   },
+   {
+    "sha256": "420859b8b60123456789abcdef0123456789abcdef0123456789abcdef012345",
+    "edition": "2024-25",
+    "type": "pdf-flat",
+    "url": "https://www.ucsc.edu/about/cds/cds-2024-2025.pdf",
+    "retrieved": "2026-10-19",
+    "reads": {
+     "C": {
+      "schema_version": 3,
+      "read_by": "claude-sonnet-4-5",
+      "mode": "batch",
+      "extracted": "2026-10-19"
+     },
+     "rest": {
+      "schema_version": 3,
+      "read_by": "claude-haiku-4-5",
+      "mode": "batch",
+      "extracted": "2026-10-18"
+     }
+    },
+    "years": {},
+    "items": {
+     "B.101": {
+      "v": 4512,
+      "page": 5,
+      "line": 10,
+      "status": "passed"
+     },
+     "C.101": {
+      "v": 30012,
+      "page": 5,
+      "line": 40,
+      "status": "passed"
+     },
+     "C.102": {
+      "v": 35100,
+      "page": 5,
+      "line": 41,
+      "status": "passed"
+     },
+     "C.116": {
+      "v": 66014,
+      "page": 5,
+      "line": 44,
+      "status": "passed"
+     },
+     "C.901": {
+      "v": 0.05,
+      "page": 5,
+      "line": 80,
+      "status": "passed"
+     },
+     "C.905": {
+      "v": 1200,
+      "page": 4,
+      "line": 85,
+      "status": "failed",
+      "failures": [
+       {
+        "check": "type-range",
+        "detail": "the 25th percentile is below the floor"
+       }
+      ]
+     },
+     "C.1001": {
+      "v": 0.95,
+      "page": 5,
+      "line": 90,
+      "status": "passed"
+     },
+     "G.101": {
+      "v": 14100,
+      "page": 5,
+      "line": 120,
+      "status": "passed"
+     },
+     "H.101": {
+      "v": "2024-2025",
+      "page": 5,
+      "line": 140,
+      "status": "passed"
+     }
+    }
+   }
+  ]
+ },
+ "manifest": [
+  {
+   "sha256": "420859b8b60123456789abcdef0123456789abcdef0123456789abcdef012345",
+   "unit_id": "110714",
+   "url": "https://www.ucsc.edu/about/cds/cds-2024-2025.pdf",
+   "kind": "cds",
+   "type": "pdf-flat",
+   "edition": "2024-25",
+   "edition_from": "cover",
+   "retrieved": "2026-10-19",
+   "bytes": 812345,
+   "pages": 40,
+   "archive": "gh:docs-2026-10/420859b8b60123456789abcdef0123456789abcdef0123456789abcdef012345.pdf"
+  },
+  {
+   "sha256": "f38e8289ef0123456789abcdef0123456789abcdef0123456789abcdef012345",
+   "unit_id": "110714",
+   "url": "https://drive.google.com/file/d/1UCSCcds/view",
+   "final_url": "https://drive.usercontent.google.com/download?id=1UCSCcds",
+   "kind": "cds",
+   "type": "pdf-flat",
+   "edition": "2025-26",
+   "edition_from": "assumed",
+   "retrieved": "2026-10-26",
+   "bytes": 1203456,
+   "pages": 38,
+   "archive": "gh:docs-2026-10/f38e8289ef0123456789abcdef0123456789abcdef0123456789abcdef012345.pdf"
+  }
+ ]
+}

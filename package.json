@@ -57,6 +57,7 @@
     "purge-accounts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/purge-accounts.mts",
     "check-cds-records": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/check-cds-records.mts",
     "check-grid-columns": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/check-grid-columns.mts",
+    "drop-document": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/drop-document.mts",
     "refile-document": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/refile-document.mts",
     "hold-misread": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/hold-misread.mts",
     "steward": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local scripts/steward.mts",

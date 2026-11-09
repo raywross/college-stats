@@ -100,6 +100,26 @@ export interface Recipe {
   notes?: string;
   /** How the round-3 discovery ladder found this recipe, what it tried, and when to try again (Decisions 6–7). */
   discovery?: RecipeDiscovery;
+  /**
+   * Documents a person dropped (`npm run drop-document`): their URLs left `sources` and are listed here so discovery and
+   * index re-scans never add them back (`withoutDropped`).
+   */
+  dropped?: RecipeDrop[];
+}
+
+/** A source a person dropped: its URL, the sha256 of the document read from it, the ISO date, and why. */
+export interface RecipeDrop {
+  url: string;
+  sha256: string;
+  on: string;
+  why: string;
+}
+
+/** `sources` without the URLs a recipe dropped (every place that adds sources filters through this). */
+export function withoutDropped<S extends { url: string }>(sources: readonly S[], dropped: readonly RecipeDrop[] | undefined): S[] {
+  if (!dropped?.length) return [...sources];
+  const urls = new Set(dropped.map((d) => d.url));
+  return sources.filter((s) => !urls.has(s.url));
 }
 
 /**

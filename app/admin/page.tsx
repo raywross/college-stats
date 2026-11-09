@@ -20,6 +20,7 @@ const KIND_LABEL: Record<InboxItem["kind"], string> = {
   deletion: "Being deleted",
   todo: "To do",
   invitation: "Invitation",
+  collision: "Two files",
 };
 
 const SEVERITY_TONE = { 1: "danger", 2: "warn", 3: "neutral" } as const;

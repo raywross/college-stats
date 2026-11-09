@@ -80,6 +80,7 @@ export const ADMIN_DOORS: readonly AdminDoor[] = [
     href: "/admin/data",
     hint: "What the site holds, and what it hides",
     screens: [
+      { key: "data-overview", label: "Overview", href: "/admin/data", under: [], hint: "Live version, Publish now, what waits", help: "data" },
       { key: "colleges", label: "Colleges", href: "/admin/data/colleges", under: ["/admin/data/high-schools"], hint: "Hidden values, edits, review", help: "colleges" },
       { key: "health", label: "Health", href: "/admin/data/health", under: [], hint: "Which data is fresh", help: "data-health" },
       { key: "selectivity", label: "Selectivity", href: "/admin/data/selectivity", under: [], hint: "Tiers and how they moved", help: "selectivity" },
@@ -112,7 +113,10 @@ function onScreen(pathname: string, screen: AdminScreen): boolean {
   return within(pathname, screen.href) || screen.under.some((p) => within(pathname, p));
 }
 
-/** The screen a path belongs to (the longest href wins); null for a door's landing page and for unknown paths. */
+/**
+ * The screen a path belongs to (the longest href wins, so /admin/data/colleges is Colleges, not Data's Overview); null
+ * for a landing page that isn't a screen (/admin/more) and for unknown paths.
+ */
 export function activeScreen(pathname: string): AdminScreen | null {
   const path = trimmed(pathname);
   let best: AdminScreen | null = null;

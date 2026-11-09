@@ -100,7 +100,7 @@ test("the four doors, in order, each with its landing page and screens; every sc
   );
   assert.deepEqual(ADMIN_DOORS.find((d) => d.key === "steward")!.screens.map((s) => s.label), ["Inbox", "Findings", "Proposals", "To do", "Decisions", "Audits", "Jobs", "Runs"]);
   assert.deepEqual(ADMIN_DOORS.find((d) => d.key === "people")!.screens.map((s) => s.label), ["People", "Households", "Organizations"]);
-  assert.deepEqual(ADMIN_DOORS.find((d) => d.key === "data")!.screens.map((s) => s.label), ["Colleges", "Health", "Selectivity", "Essays", "Reference", "Changes", "Published versions"]);
+  assert.deepEqual(ADMIN_DOORS.find((d) => d.key === "data")!.screens.map((s) => s.label), ["Overview", "Colleges", "Health", "Selectivity", "Essays", "Reference", "Changes", "Published versions"]);
   assert.deepEqual(ADMIN_DOORS.find((d) => d.key === "more")!.screens.map((s) => s.label), ["Admins", "Settings", "Log", "Help"]);
   for (const d of ADMIN_DOORS) {
     assert.ok(isPage(d.href), `${d.label}'s landing ${d.href} is a page`);
@@ -123,7 +123,11 @@ test("every console page and route belongs to a door; every page but a door's la
     if (!landings.has(route) && route !== "/admin") assert.ok(activeScreen(path), `${route} belongs to a screen`);
   }
   assert.equal(activeScreen("/admin")?.key, "inbox");
-  assert.equal(activeScreen("/admin/data"), null, "a door's landing is no screen");
+  assert.equal(activeScreen("/admin/data")?.key, "data-overview", "Data's landing is its Overview screen");
+  assert.equal(activeScreen("/admin/data/")?.key, "data-overview");
+  assert.equal(activeScreen("/admin/data/colleges")?.key, "colleges", "the longest href wins");
+  assert.equal(activeScreen("/admin/data/versions")?.key, "versions");
+  assert.equal(activeScreen("/admin/more"), null, "More's landing (for phones) is no screen");
   assert.equal(activeDoor("/admin/data"), "data");
   assert.equal(activeDoor("/admin/more"), "more");
   assert.equal(activeDoor("/admin/steward"), "steward");
@@ -590,6 +594,7 @@ test("each door has a landing that lists its screens; the Inbox is the Steward's
   assert.match(read("app/admin/data/page.tsx"), /<DoorScreens door="data"/);
   assert.match(read("app/admin/more/page.tsx"), /<DoorScreens door="more"/);
   assert.match(read("app/admin/people/page.tsx"), /<DoorScreens door="people"/);
+  assert.match(read("components/admin/DoorScreens.tsx"), /\.filter\(\(s\) => s\.href !== d\.href/, "a landing never lists itself as a card");
   assert.match(read("app/admin/page.tsx"), /needsYou\(input\)/);
 });
 

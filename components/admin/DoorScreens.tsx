@@ -6,12 +6,14 @@ import { cn } from "@/lib/utils";
 /**
  * A door's screens as a card list, one line each (specs/product/admin-redesign.md "Navigation": each tab opens its
  * door's landing page, which lists its screens). The People door's landing is the People list, so it shows this only
- * below `lg` where the rail doesn't list the screens (`compact`).
+ * below `lg` where the rail doesn't list the screens (`compact`). A screen whose href is the landing itself is left out.
  */
 export function DoorScreens({ door, skip, compact = false, className }: { door: AdminDoorKey; skip?: readonly string[]; compact?: boolean; className?: string }) {
-  const screens = doorByKey(door).screens.filter((s) => !skip?.includes(s.key));
+  const d = doorByKey(door);
+  // The landing never lists itself: People's People list and Data's Overview are the page the cards sit on.
+  const screens = d.screens.filter((s) => s.href !== d.href && !skip?.includes(s.key));
   return (
-    <nav aria-label={`${doorByKey(door).label} screens`} className={cn(compact && "lg:hidden", className)}>
+    <nav aria-label={`${d.label} screens`} className={cn(compact && "lg:hidden", className)}>
       <ul className={cn("grid gap-2", compact ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
         {screens.map((s) => (
           <li key={s.key}>

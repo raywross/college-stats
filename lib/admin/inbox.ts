@@ -17,7 +17,7 @@ import type { JobOverviewRow } from "../jobs/runs.ts";
 import { lastOutcome } from "../jobs/view.ts";
 
 export interface InboxItem {
-  kind: "decision" | "proposal" | "todo" | "job" | "deletion" | "invitation" | "held-change" | "collision";
+  kind: "decision" | "proposal" | "todo" | "job" | "deletion" | "invitation" | "held-change" | "collision" | "publish";
   title: string;
   why: string;
   href: string;
@@ -104,6 +104,18 @@ export interface InboxInput {
   health: { fresh: number; watch: number; stale: number; failing: number } | null;
   /** The Steward's collision findings (`steward.issues` keyed `collision|…`); the Inbox never scans records itself. */
   collisions?: readonly IssueDoc[] | null;
+  /**
+   * Applied change sets newer than the last published version (what Publish now would carry): how many, when the
+   * oldest was written, and when the last publish was; null when it couldn't be read (the row and the tile's note are
+   * left out).
+   */
+  publish?: InboxPublish | null;
+}
+
+export interface InboxPublish {
+  waiting: number;
+  oldestAt: string | null;
+  lastPublishedAt: string | null;
 }
 
 /**
@@ -128,10 +140,16 @@ export function inboxJob(row: JobOverviewRow): InboxJob {
 export const INBOX_TODO_LIMIT = 5;
 /** An invitation waiting longer than this many days is listed. */
 export const INVITATION_WAIT_DAYS = 7;
+/**
+ * Changes waiting longer than this many hours for a publish are listed. A pipeline asks for a publish right after it
+ * writes, so a change older than this means nothing is coming until the nightly publish (08:00 UTC).
+ */
+export const PUBLISH_WAIT_HOURS = 2;
 /** The Steward's weekly budget in US dollars (scripts/lib/steward/budget.mts `WEEKLY_CAP_USD`; a test checks they agree). */
 export const STEWARD_WEEKLY_CAP_USD = 40;
 
 const DAY = 86_400_000;
+const HOUR = 3_600_000;
 
 /** The id a decision's panel carries on the Decisions page, so the Inbox can open it there. */
 export function decisionAnchor(key: string): string {
@@ -159,8 +177,9 @@ function inboxOrder(x: { item: InboxItem; order: number }, y: { item: InboxItem;
 /**
  * What needs a person, the most consequential first (severity), then the oldest. Held changes, failed jobs, and
  * proposals whose apply failed stop the site's data from moving (severity 1; a collision's opens the comparison with
- * "Choose the file"); decisions, systemic proposals, flagged jobs, the Steward's collision findings, and accounts being
- * deleted wait on an answer (2); value proposals, invitations, and To do rows are chores (3).
+ * "Choose the file"); decisions, systemic proposals, flagged jobs, the Steward's collision findings, accounts being
+ * deleted, and applied changes waiting more than PUBLISH_WAIT_HOURS for a publish wait on an answer (2); value
+ * proposals, invitations, and To do rows are chores (3).
  */
 export function needsYou(input: InboxInput): InboxItem[] {
   const items: InboxItem[] = [];
@@ -181,6 +200,21 @@ export function needsYou(input: InboxInput): InboxItem[] {
       action: link ? CHOOSE_THE_FILE : "Review",
       severity: 1,
       at: h.created_at,
+    });
+  }
+
+  // Applied changes no publish has carried: one row once the oldest has waited past PUBLISH_WAIT_HOURS (held changes
+  // keep their own rows above; they stop the publish, this one only waits for it).
+  const pub = input.publish;
+  if (pub && pub.waiting > 0 && pub.oldestAt && now - new Date(pub.oldestAt).getTime() > PUBLISH_WAIT_HOURS * HOUR) {
+    items.push({
+      kind: "publish",
+      title: `${plural(pub.waiting, "change is", "changes are")} waiting for a publish`,
+      why: `The oldest has waited since ${fmtDateTime(pub.oldestAt)}. Nothing has published them; the next automatic publish is the nightly one.`,
+      href: "/admin/data#publish",
+      action: "Publish now",
+      severity: 2,
+      at: pub.oldestAt,
     });
   }
 
@@ -326,7 +360,11 @@ export function tiles(input: InboxInput): InboxTile[] {
     {
       label: "Live version",
       value: lp === undefined ? COULDNT : lp === null ? "None yet" : `#${lp.id}`,
-      note: lp ? [`Published ${fmtDate(lp.created_at)}`, lp.colleges !== null ? plural(lp.colleges, "college") : null].filter(Boolean).join(" · ") : undefined,
+      note: lp
+        ? [`Published ${fmtDate(lp.created_at)}`, lp.colleges !== null ? plural(lp.colleges, "college") : null, input.publish && input.publish.waiting > 0 ? `${input.publish.waiting.toLocaleString("en-US")} waiting` : null]
+            .filter(Boolean)
+            .join(" · ")
+        : undefined,
       href: "/admin/data/versions",
       help: "published-version",
     },

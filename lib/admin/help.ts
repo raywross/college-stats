@@ -35,7 +35,7 @@ export const HELP = {
   inbox: {
     title: "Inbox",
     short: "The console's home: what needs a person, in order of consequence, then what the Steward did, then how things are.",
-    long: "Needs you lists decisions waiting, open proposals (systemic first), To do rows by reach, jobs whose last run failed, accounts being deleted inside the 30 days, invitations waiting past a week, and held changes. Each row has one action. The Steward did lists its last runs. How things are is six tiles, each a link into its door.",
+    long: "Needs you lists decisions waiting, open proposals (systemic first), To do rows by reach, jobs whose last run failed, accounts being deleted inside the 30 days, invitations waiting past a week, held changes, and applied changes that have waited more than two hours for a publish. Each row has one action. The Steward did lists its last runs. How things are is six tiles, each a link into its door.",
     do: "Open the row's action; the rest of the page is for reading.",
     see: "specs/product/admin-redesign.md#the-home-steward--inbox",
     door: "steward",
@@ -43,7 +43,7 @@ export const HELP = {
   "needs-you": {
     title: "Needs you",
     short: "Everything that waits on a person, the most consequential first, then the oldest.",
-    long: "Read from what exists: the Steward's decisions, proposals and To do rows; each job's last run; accounts being deleted; invitations nobody accepted; held changes. Nothing here is computed by a model.",
+    long: "Read from what exists: the Steward's decisions, proposals and To do rows; each job's last run; accounts being deleted; invitations nobody accepted; held changes; applied changes no publish has carried for two hours (a pipeline asks for a publish right after it writes, so past that only the nightly one is coming). Nothing here is computed by a model.",
     do: "Press the row's button to open the page where it is decided.",
     door: "steward",
   },

@@ -393,11 +393,18 @@ moves into a section above.
     shared files held per instance; the signing keys bundled at build so a fresh instance verifies tokens without a
     fetch; plan tabs switch in place; the list page's, offers', chances', and reading-line citations as references;
     the `sfo1` request explained (Vercel's regional failover, nothing to change).
-  - [ ] **Left** (serving-architecture.md "Left, after this PR"): `GpaPanel`'s citations on the admissions page are
-    still full; the Offers tab still navigates (its own reads), and Next steps navigates for a family that landed on
-    another tab (its ask notice marks asks seen); a key revoked in the Supabase dashboard stays accepted by the session
-    check until the next deploy (row-level security still refuses it); re-measure production after the round-4 deploy
-    (the `estimates.context` span and the cold `auth` span should both fall).
+  - [x] **Round 5** (PR #234, same day): the header right at first paint (a `quad_me` hint cookie, an inline script,
+    `useMe` seeded); the prefetch diet (`HoverPrefetchLink`; `/compare` 644 → 56 KB of background fetches); the
+    public pages' payload (every server ⓘ a reference, the slim pool, client-drawn source rows; Harvard overview
+    171 → 135 KB inline, compare admissions 268 → 142 KB, text identical); Offers and Next steps tabs in place; an
+    hourly signing-key refresh per instance. Round 4 measured on production: plan 252–332 ms in 1–2 waves, no cold
+    `auth` span, `estimates.context` 9–54 ms.
+  - [ ] **Left** (serving-architecture.md "Round 5: the public pages' payload" → what remains): the profile and compare
+    inline payloads are still over their 80/70 KB targets (server markup and per-client-reference chunk lists: fewer
+    distinct client exports per page, the overview's topic cards as client components fed compact data); a parent's
+    role item points at `/household` instead of `/advisor` until `/api/me` answers; a browser with JavaScript off
+    never marks a student's asks seen; sessions from before the deploy show an empty avatar circle until their first
+    `/api/me` answer; measure the header's first paint and the prefetch bytes on production after the deploy.
 - [x] Deploy to Vercel: pre-release dev site at https://college-stats-nine.vercel.app, reading the Supabase dev
   project (2026-09-28; [supabase.md](supabase.md#current-state-pre-release-dev-only)).
 - [ ] **Formal release** (after the planned feature set is in, before circulating the site more widely): create the

@@ -15,6 +15,7 @@ import { TODO_KIND_LABEL, linkCls, pageParam, param } from "@/lib/admin/steward-
 import { dayLabel } from "@/lib/admin/ops-view";
 import { pageOf } from "@/lib/admin/health-view";
 import { ASSISTANT_BATCH, assistantRows } from "@/lib/steward/todo-assistant";
+import { WORK_TODO_ZIP_PATH } from "@/lib/steward/work-todo-skill";
 import type { LoginDoc, TodoDoc } from "@/lib/steward/types";
 
 export const metadata: Metadata = { title: "To do", robots: { index: false, follow: false } };
@@ -62,7 +63,18 @@ export default async function TodoPage({ searchParams }: { searchParams: Promise
 
   return (
     <>
-      <PageHeader help={assistant ? "to-do-assistant" : "to-do"} title={assistant ? "To do · assistant view" : "To do"} back={<StewardBack />} subtitle={subtitle} />
+      <PageHeader
+        help={assistant ? "to-do-assistant" : "to-do"}
+        title={assistant ? "To do · assistant view" : "To do"}
+        back={<StewardBack />}
+        subtitle={subtitle}
+        chips={
+          <Link href={href({ assistant: !assistant, page: 1 })} className={`inline-flex h-11 items-center rounded-full px-5 text-sm font-semibold ${assistant ? "border hover:bg-muted" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}>
+            {assistant ? "The whole list" : "Assistant view"}
+          </Link>
+        }
+      />
+      {assistant && <SetUpPanel />}
       <Panel help={assistant ? "to-do-assistant" : "to-do"} title={kind ? TODO_KIND_LABEL[kind] : "Every kind"} aside={<span className="text-sm text-muted-foreground">{rows.length.toLocaleString("en-US")} rows</span>}>
         <nav aria-label="Kinds" className="mb-3 flex flex-wrap gap-2 text-sm">
           {[null, ...KINDS].map((k) => (
@@ -75,9 +87,6 @@ export default async function TodoPage({ searchParams }: { searchParams: Promise
               {closed ? "Hide closed rows" : "Show closed rows"}
             </Link>
           )}
-          <Link href={href({ assistant: !assistant, page: 1 })} className={`inline-flex min-h-11 items-center px-2 ${linkCls}`}>
-            {assistant ? "The whole list" : "Assistant view"}
-          </Link>
         </nav>
         <p className="mb-3 text-sm text-muted-foreground" role="status">
           Highest reach first{lists ? ", then most-listed" : ""}
@@ -109,6 +118,35 @@ export default async function TodoPage({ searchParams }: { searchParams: Promise
       </Panel>
       {!assistant && <LoginsPanel logins={logins} />}
     </>
+  );
+}
+
+/** How the assistant gets its playbook: nothing to do in Claude Code; in Claude itself, download the skill and upload it once. */
+function SetUpPanel() {
+  return (
+    <Panel help="to-do-assistant" title="Setting up the assistant" className="mb-5">
+      <div className="grid gap-4 text-sm sm:grid-cols-2">
+        <div>
+          <p className="font-semibold">From Claude Code</p>
+          <p className="mt-1 text-muted-foreground">Open Claude Code in the repository with Claude in Chrome connected and say &ldquo;work the To do list&rdquo;. The playbook loads by itself.</p>
+        </div>
+        <div>
+          <p className="font-semibold">From Claude</p>
+          <ol className="mt-1 list-decimal space-y-1 pl-5 text-muted-foreground">
+            <li>
+              <a href={WORK_TODO_ZIP_PATH} className={`inline-flex min-h-11 items-center ${linkCls}`}>
+                Download the playbook
+              </a>{" "}
+              (a skill file; keep it zipped).
+            </li>
+            <li>
+              In Claude, open <b>Customize → Skills</b>, press <b>+ → Create skill → Upload a skill</b>, choose the zip, and turn it on. It syncs into Claude Code too.
+            </li>
+            <li>With Claude in Chrome on, open this view in that Chrome and say &ldquo;work the To do list&rdquo;.</li>
+          </ol>
+        </div>
+      </div>
+    </Panel>
   );
 }
 

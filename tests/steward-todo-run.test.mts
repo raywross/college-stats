@@ -11,6 +11,10 @@ import { foundEntries, isRunnableFound, settleFound, withFound } from "../lib/st
 import { classifyAnswer, errorVerdict, isPublicAddress, verdictMessage, verdictRecord } from "../lib/steward/todo-verify.ts";
 import { ASSISTANT_BATCH, assistantCanWork, assistantRows, loginFor, loginFromFields, loginKey } from "../lib/steward/todo-assistant.ts";
 import { PROBE_USER_AGENT, probeDocument } from "../lib/admin/todo-probe.ts";
+import { WORK_TODO_SKILL_NAME, WORK_TODO_ZIP_PATH, buildWorkTodoZip, workTodoSkillMarkdown } from "../lib/steward/work-todo-skill.ts";
+import { zipNames, zipRead } from "../lib/api/zip.ts";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { USER_AGENT } from "../scripts/lib/college-reported/http.mts";
 import type { LoginDoc, TodoDoc } from "../lib/steward/types.ts";
 
@@ -204,4 +208,26 @@ test("loginFromFields: a host name becomes a login document; anything else is re
   assert.equal(loginFromFields({ host: "not a host", account: "x", may_use: true, note: null, at: "t", by: null }), null);
   assert.equal(loginFromFields({ host: "https://portal.example.edu/path", account: "x", may_use: true, note: null, at: "t", by: null }), null, "a URL is not a host");
   assert.equal(loginFromFields({ host: "localhost", account: "x", may_use: true, note: null, at: "t", by: null }), null, "one label is not a host");
+});
+
+/* ------------------------------------------------------------------ */
+/* The playbook                                                         */
+/* ------------------------------------------------------------------ */
+
+const ROOT = join(import.meta.dirname, "..");
+
+test("the repository's work-todo skill is the playbook text with no origin; the console's zip is the same text naming the deployment", () => {
+  const file = readFileSync(join(ROOT, ".claude", "skills", WORK_TODO_SKILL_NAME, "SKILL.md"), "utf8");
+  assert.equal(file, workTodoSkillMarkdown(""), "regenerate .claude/skills/work-todo/SKILL.md from lib/steward/work-todo-skill.ts");
+  assert.match(file, /^---\nname: work-todo\ndescription: /, "Agent Skills frontmatter");
+  for (const rule of ["No sign-in anywhere", "no CAPTCHA", "Never press **Done**", 'never press "I have a login here"', "robots.txt does not bind you"]) assert.ok(file.includes(rule), rule);
+  const zip = buildWorkTodoZip("https://quad.example");
+  assert.deepEqual(zipNames(zip), ["work-todo/SKILL.md"]);
+  const text = new TextDecoder().decode(zipRead(zip, "work-todo/SKILL.md")!);
+  assert.match(text, /Open `https:\/\/quad\.example\/admin\/steward\/todo\?assistant=1`, the \*\*assistant view\*\*/);
+  assert.equal(text, workTodoSkillMarkdown("https://quad.example"));
+  const route = readFileSync(join(ROOT, "app", "admin", "steward", "todo", "work-todo.zip", "route.ts"), "utf8");
+  assert.match(route, /export async function GET\([^)]*\) \{\n\s+await requireAdmin\(\);/, "the zip is admin only, checked first");
+  assert.match(route, /buildWorkTodoZip\(request\.nextUrl\.origin\)/, "its links name the deployment");
+  assert.equal(WORK_TODO_ZIP_PATH, "/admin/steward/todo/work-todo.zip");
 });

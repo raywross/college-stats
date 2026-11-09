@@ -149,9 +149,19 @@ Taken 2026-11-08, the day the question was asked.
 Steps 1 and 2 and the Logins list, in one change. Nothing in the crawlers' rules moved: no machine fetches a blocked
 host or changes its user agent.
 
-**Step 1, the playbook.** `.claude/skills/work-todo/SKILL.md`: where to start (the assistant view), the order per
-row, the rules (no sign-in, no CAPTCHA, robots.txt doesn't bind the assistant, never press Done, never list a login),
-the report. The help entry `to-do-assistant` on the view names it.
+**Step 1, the playbook.** `lib/steward/work-todo-skill.ts` holds the text, one SKILL.md in the Agent Skills format:
+where to start (the assistant view), the order per row, the rules (no sign-in, no CAPTCHA, robots.txt doesn't bind the
+assistant, never press Done, never list a login), the report. It reaches the assistant two ways, and the assistant
+view's "Setting up the assistant" panel says both:
+- **Claude Code** in the repository loads `.claude/skills/work-todo/SKILL.md` by itself (the text with no origin; a
+  test holds the file to the module), and drives Claude in Chrome from there.
+- **Claude itself** (the app, with the extension) knows nothing of the repository, so the console serves the same
+  text with the deployment's address in its links as a skill zip, `/admin/steward/todo/work-todo.zip` (admin only,
+  built like the public Quad skill, lib/api/skill.ts), for Customize → Skills → Upload a skill, once; a skill turned on
+  in Claude syncs into Claude Code too.
+
+**Where it is.** Steward → To do has an **Assistant view** button in its header (and the view a **The whole list**
+button back); the Inbox's Needs you ends with "open the assistant view" whenever it lists To do rows.
 
 **Step 2, item 1: Found is wired into the run.** `lib/steward/todo-run.ts` (pure): a `steward.todo` row with
 `status: found`, a college, a kind the run fetches (CDS, class profile) and an http(s) address becomes an entry of the

@@ -802,7 +802,9 @@ test("the assistant view: one batch of rows it may work, every form saying so, n
   assert.match(a, /To do · assistant view/);
   assert.match(a, /terms rows and logins on unlisted hosts left out/);
   assert.doesNotMatch(a, /&quot;help&quot;:&quot;steward-logins&quot;/, "no Logins panel in the assistant view");
-  assert.match(a, /href="\/admin\/steward\/todo"[^>]*>The whole list</);
+  assert.match(a, /href="\/admin\/steward\/todo\/work-todo\.zip"[^>]*>Download the playbook</, "the skill zip, from the set-up panel");
+  assert.match(a, /Customize → Skills/);
+  assert.ok(stubsIn(a).some((s) => s.name === "Panel" && s.props.title === "Setting up the assistant" && s.props.help === "to-do-assistant"));
 
   const tt = (await loadTsx("components/admin/steward/TodoTable.tsx")) as { TodoTable: (p: unknown) => import("react").ReactElement };
   const logins = new Map([[login.host, login]]);
@@ -818,6 +820,8 @@ test("the assistant view: one batch of rows it may work, every form saying so, n
 
   const whole = html(await page({ searchParams: Promise.resolve({}) }));
   assert.match(whole, /&quot;help&quot;:&quot;steward-logins&quot;/);
+  assert.doesNotMatch(whole, /Setting up the assistant/);
+  assert.doesNotMatch(whole, /Download the playbook/);
   assert.match(whole, /portal\.example\.edu/);
   assert.match(whole, /documents may be used/);
   assert.ok(stubsIn(whole).some((s) => s.name === "AdminForm" && s.props.trigger === "Add a host"));

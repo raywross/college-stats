@@ -233,7 +233,7 @@ export function needsYou(input: InboxInput): InboxItem[] {
     items.push({
       kind: "todo",
       title: t.subject,
-      why: `Only a person can fetch it: ${TODO_WHY_LABEL[t.why] ?? "not recorded"}. Covers ${plural(t.reach, "college")}.`,
+      why: `A machine couldn't fetch it: ${TODO_WHY_LABEL[t.why] ?? "not recorded"}. Covers ${plural(t.reach, "college")}.`,
       href: t.unit_id ? reviewHref(t.unit_id) : "/admin/steward/todo",
       action: "Open",
       severity: 3,

@@ -66,6 +66,15 @@ export default async function InboxPage() {
               ))}
             </ul>
           )}
+          {items.some((i) => i.kind === "todo") && (
+            <p className="mt-3 text-sm text-muted-foreground">
+              The To do rows can be worked by the assistant in your browser:{" "}
+              <Link href="/admin/steward/todo?assistant=1" className="inline-flex min-h-11 items-center underline decoration-dotted underline-offset-2">
+                open the assistant view
+              </Link>
+              .
+            </p>
+          )}
           {(input.jobs === null || input.todo === null || input.decisions === null || input.proposals === null) && (
             <p role="note" className="mt-3 text-xs text-muted-foreground">
               Some sources couldn&apos;t be read just now ({[input.jobs === null && "jobs", input.todo === null && "To do", input.decisions === null && "decisions", input.proposals === null && "proposals"].filter(Boolean).join(", ")}); their rows may be missing.

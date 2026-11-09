@@ -146,12 +146,18 @@ test("payload guard: the compare overview stays under its ceiling with no whole 
 
 const req = createRequire(join(ROOT, "package.json"));
 const tmp = mkdtempSync(join(tmpdir(), "public-payload-"));
-writeFileSync(join(tmp, "link.mjs"), `import React from ${JSON.stringify(pathToFileURL(req.resolve("react")).href)};\nexport default ({ href, children, prefetch: _p, ...rest }) => React.createElement("a", { href, ...rest }, children);`);
+// next/link and the hover-prefetch wrapper (round 5's prefetch diet) both render a plain anchor here: the markup the
+// identity checks compare carries no prefetch behaviour.
+writeFileSync(
+  join(tmp, "link.mjs"),
+  `import React from ${JSON.stringify(pathToFileURL(req.resolve("react")).href)};\nconst A = ({ href, children, prefetch: _p, ...rest }) => React.createElement("a", { href, ...rest }, children);\nexport default A;\nexport const HoverPrefetchLink = A;`,
+);
 const BARE: Record<string, string> = {
   react: pathToFileURL(req.resolve("react")).href,
   "lucide-react": pathToFileURL(join(ROOT, "node_modules", "lucide-react", "dist", "esm", "lucide-react.mjs")).href,
   "@base-ui/react/popover": pathToFileURL(req.resolve("@base-ui/react/popover")).href,
   "next/link": pathToFileURL(join(tmp, "link.mjs")).href,
+  "@/components/ui/hover-prefetch-link": pathToFileURL(join(tmp, "link.mjs")).href,
 };
 
 /** Transpiles TSX (a file or a source string) to a module in a temp folder and imports it. */

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { INCOME_MAX, priceAt, type CostCurve as Curve } from "@/lib/cost-curve";
 import type { MeritInfo } from "@/lib/merit";
 import type { AidPolicy } from "@/lib/aid-policies";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { changeNotes, incomeLabel, meritFloorLabel, needAidView, partOfCurve, readout } from "@/lib/cost-display";
 import { CostCurve, type CostCurveCitations } from "@/components/charts/CostCurve";
 import { SourceTip } from "@/components/ui/info-tip";
@@ -36,7 +36,7 @@ export function CostAtIncome({
   policy: AidPolicy | null;
   methodology: "federal" | "institutional" | "both" | null;
   /** Citations for the notes that state a source's fact, by field path. */
-  noteCited: Record<string, AnyCited | undefined>;
+  noteCited: Record<string, CiteLike | undefined>;
 }) {
   const [income, setIncome] = useState(DEFAULT_INCOME);
   const phrase = readout(curve, income, showEstimates);

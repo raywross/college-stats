@@ -14,6 +14,7 @@
  * How the rate moves an estimate is the method's (specs/chances/method/standing.md, server-only).
  */
 import type { School } from "../types";
+import type { FieldPath } from "../fields.ts";
 import { edRate, sameDocumentRate } from "../cds/admissions.ts";
 import { OUTSIDE_US as GRID_OUTSIDE_US, rateForStudent } from "../cds/residency-display.ts";
 import { pctSmart } from "../format.ts";
@@ -41,6 +42,30 @@ export const POOL_FIELDS = {
   overall: "admissions.acceptance_rate",
   earlyDecision: "derived.ed_admit_rate",
 } as const;
+
+/**
+ * The lineage records the pool reads (here and in compared-with.ts, through lib/cds/admissions.ts `sameDocumentRate`):
+ * the overall rate's year, the ED counts' year and document, and the funnel's documents. A college's whole lineage is
+ * tens of kilobytes (every value's quote and url), most of the plan's payload when it rode along in `poolSchool`, and
+ * of the college and compare admissions pages' (round 5); tests/plan-cites.test.mts shows the pool reads the same with
+ * only these.
+ */
+export const POOL_LINEAGE_PATHS = [
+  POOL_FIELDS.overall,
+  "reported.admission_profile.early_decision.applicants",
+  "admissions.applicants",
+  "admissions.admitted",
+] as const satisfies readonly FieldPath[];
+
+/** The college as the pool reads it, with only the lineage records it reads (POOL_LINEAGE_PATHS). */
+export function slimPoolSchool(school: School): PoolSchool {
+  const lineage: NonNullable<School["lineage"]> = {};
+  for (const path of POOL_LINEAGE_PATHS) {
+    const rec = school.lineage?.[path];
+    if (rec) lineage[path] = rec;
+  }
+  return { unit_id: school.unit_id, name: school.name, location: school.location, admissions: school.admissions, reported: school.reported, lineage };
+}
 
 /** Whether a program applies to the student: "not_eligible" (another state's program), "not_met" (a stated threshold missed). */
 export type ProgramStatus = "applies" | "may_qualify" | "not_met" | "not_eligible";

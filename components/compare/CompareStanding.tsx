@@ -11,7 +11,7 @@ import type { PoolSchool } from "@/lib/chances/pool-rate";
 import { myStandingInput } from "@/lib/chances/standing-store";
 import { compareShortLine } from "@/lib/chances/what-went-in";
 import type { EstimateResult, EstimateStudent } from "@/lib/chances/types";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { cn } from "@/lib/utils";
 
 /**
@@ -30,8 +30,8 @@ export function CompareStanding({
   colleges: { id: string; name: string }[];
   /** The college's own published rates, for the panel (pool-explainer.md). */
   poolSchools: Record<string, PoolSchool>;
-  /** Citations for every field the panel can cite, resolved on the server (lib/chances/fact-cites.ts). */
-  cites: Record<string, Record<string, AnyCited>>;
+  /** Citations for every field the panel can cite, resolved on the server (lib/chances/fact-cites.ts); references where they can be. */
+  cites: Record<string, Record<string, CiteLike>>;
   className?: string;
 }) {
   const [results, setResults] = useState<Record<string, EstimateResult> | null>(null);

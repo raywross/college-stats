@@ -16,7 +16,8 @@ import { CompareReading, hasReading } from "@/components/compare/CompareReading"
 import { CompareStanding } from "@/components/compare/CompareStanding";
 import { InfoTip } from "@/components/ui/info-tip";
 import { estimateFactCites } from "@/lib/chances/fact-cites";
-import type { PoolSchool } from "@/lib/chances/pool-rate";
+import { slimPoolSchool } from "@/lib/chances/pool-rate";
+import { asCiteRef } from "@/lib/cite-origin";
 import { SelectivityChip } from "@/components/school/SelectivityChip";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -209,14 +210,15 @@ export default async function CompareAdmissionsPage({ searchParams }: Props) {
             {/*
              * Quad's estimate for a signed-in student with numbers; absent for everyone else (fills in after
              * mount). `poolSchools` and `cites` let the "Who you're compared with" panel (pool-explainer.md) build
-             * client-side from the student's own numbers without recomputing any citation.
+             * client-side from the student's own numbers without recomputing any citation: each college with only the
+             * lineage the pool reads, each citation a reference the ⓘ fetches on open (round 5).
              */}
             <CompareStanding
               colleges={schools.map((s) => ({ id: s.unit_id, name: shortName(s) }))}
-              poolSchools={Object.fromEntries(
-                schools.map((s) => [s.unit_id, { unit_id: s.unit_id, name: s.name, location: s.location, admissions: s.admissions, reported: s.reported, lineage: s.lineage } satisfies PoolSchool])
+              poolSchools={Object.fromEntries(schools.map((s) => [s.unit_id, slimPoolSchool(s)]))}
+              cites={Object.fromEntries(
+                schools.map((s) => [s.unit_id, Object.fromEntries(Object.entries(estimateFactCites(s, citeField)).map(([path, cited]) => [path, asCiteRef(cited)]))])
               )}
-              cites={Object.fromEntries(schools.map((s) => [s.unit_id, estimateFactCites(s, citeField)]))}
               className={COMPARE_BLOCK_SCROLL}
             />
 

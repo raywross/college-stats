@@ -7,6 +7,7 @@ import { chipTiers, tierRank } from "@/lib/selectivity-tier";
 import { SELECTIVITY_TIER_LABELS } from "@/lib/chances/levels";
 import { shortName } from "@/lib/brand";
 import { cn } from "@/lib/utils";
+import { asCiteRef } from "@/lib/cite-origin";
 import { SelectivityPanel } from "./SelectivityPanel";
 
 /** One tier as a pill: deeper for a harder tier, the word always carrying the meaning. */
@@ -35,7 +36,9 @@ export function TierPill({ tier, pool, className }: { tier: SelectivityTier; poo
 export function SelectivityChip({ school, citeField, label = true, className }: { school: School; citeField: (path: FieldPath, s?: School) => Cited; label?: boolean; className?: string }) {
   const tiers = chipTiers(school);
   if (!tiers.length) return null;
-  const facts = selectivityFacts(school).map(({ field, ...f }) => ({ ...f, cited: citeField(field, school) }));
+  // Each citation a reference the popover fetches when it opens (round 5): the popover isn't in the page's HTML, and
+  // whole citations were most of these facts' payload.
+  const facts = selectivityFacts(school).map(({ field, ...f }) => ({ ...f, cited: asCiteRef(citeField(field, school)) }));
   return (
     <span className={cn("inline-flex flex-wrap items-center gap-1.5", className)}>
       {label && <span className="text-xs font-semibold text-muted-foreground">Quad&apos;s selectivity</span>}

@@ -3,12 +3,13 @@ import { getData } from "@/lib/data";
 import { aidPolicyFor, aidYearLabel } from "@/lib/aid-policies";
 import { aidMethodology } from "@/lib/cds/financial-aid";
 import { meritCitedField } from "@/lib/cost-display";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
+import { asCiteRef } from "@/lib/cite-origin";
 import { CostAtIncome } from "./CostAtIncome";
 
 /**
  * The cost curve with its slider and notes, with every citation looked up on the server (the client components get
- * plain data). Null when the college has no full price to draw a curve from.
+ * plain data, each citation a reference where it can be). Null when the college has no full price to draw a curve from.
  */
 export async function CostByIncome({ school, showEstimates }: { school: School; showEstimates: boolean }) {
   const data = await getData();
@@ -16,7 +17,8 @@ export async function CostByIncome({ school, showEstimates }: { school: School; 
   if (!curve) return null;
   const merit = data.meritInfoFor(school);
   const policy = aidPolicyFor(school.unit_id);
-  const cite = (path: Parameters<typeof data.citeField>[0]): AnyCited => data.citeField(path, school);
+  // Every one feeds a SourceTip: a reference the ⓘ fetches on open where it can be (round 5, `asCiteRef`).
+  const cite = (path: Parameters<typeof data.citeField>[0]): CiteLike => asCiteRef(data.citeField(path, school));
   const promise = curve.promises[0];
   const methodology = aidMethodology(school.reported?.aid)?.value ?? null;
   return (

@@ -985,3 +985,63 @@ Measured on `next build && next start` over the mini fixture, signed out, Chrome
 
 What is left is the shells above plus Next's 0–1 KB route-tree requests, which ride with every prefetchable link.
 Hovering a college name on `/compare` fetches its 140 KB then, and the click that follows fetches nothing more.
+
+## Round 5: the public pages' payload (2026-11-08)
+The college profile and compare pages carried more than they show. Measured on a local production build (`next build
+&& next start`) over the mini fixture, signed out, with `scripts/measure-page-payload.mts`, which fetches each page,
+rebuilds the Flight stream from its `self.__next_f.push` scripts, and ranks every client element's props by size,
+naming the component (from `.next`'s client-reference manifests) and the prop (`scripts/lib/page-payload.mts`).
+"Inline" is the sum of the `<script>` tags without `src` (the escaped Flight stream plus Next's bootstrap).
+
+| Page | HTML before → after | Inline before → after | Flight before → after |
+|---|---|---|---|
+| `/schools/166027` (Harvard overview) | 332.0 → 295.9 KB | **170.7 → 134.5 KB** | 153.2 → 120.6 KB |
+| `/schools/166027/admissions` | 470.6 → 410.3 KB | 233.6 → 173.2 KB | 208.1 → 153.5 KB |
+| `/schools/166027/cost` | 268.6 → 253.2 KB | 125.2 → 109.7 KB | 111.8 → 97.6 KB |
+| `/schools/204796` (Ohio State overview) | 296.3 → 265.5 KB | 154.9 → 124.0 KB | 139.0 → 111.2 KB |
+| `/schools/204796/admissions` | 274.5 → 265.4 KB | 121.5 → 112.4 KB | 108.3 → 100.1 KB |
+| `/schools/204796/cost` | 189.8 → 180.1 KB | 90.5 → 80.7 KB | 80.8 → 71.9 KB |
+| `/compare?ids=110662,166027,204796` | 244.4 → 223.2 KB | **127.6 → 106.3 KB** | 115.0 → 95.6 KB |
+| `/compare/admissions?ids=…` | 374.6 → 249.3 KB | 267.6 → 142.3 KB | 241.2 → 127.1 KB |
+
+Every page's text and markup (scripts stripped, asset paths normalized) is identical before and after
+(`--save` before, `--diff` after). Gzipped, the Harvard overview's HTML went 43.2 → 39.3 KB and the compare overview's
+27.2 → 25.0 KB.
+
+**What was in it.** The largest props before: on the compare admissions page `CompareStanding.poolSchools` (79 KB: each
+college's whole lineage) and `CompareStanding.cites` (62 KB of whole citations); on Harvard's admissions page
+`StandingCard.poolSchool` (41 KB, the same lineage) and `MetricLabel.cited` (29 KB over 63 labels); on the overviews
+`MetricLabel.cited` (12–15 KB), `SelectivityPanel.facts` (7–11 KB), and `InfoTip`/`SourceTip.cited`; on the cost page the
+cost curve's citations. The rest of the stream is not props at all: it is the server-rendered tree (Tailwind class
+strings alone are 32–38 KB of an overview's stream) and one client-reference row per client export, each repeating
+the root layout's chunk list (37 rows, 20.6 KB on the Harvard overview; 26 rows, 12.6 KB on compare).
+
+**Built.**
+- **Citations by reference on every public ⓘ** without touching call sites: `components/ui/info-tip.tsx` is now a
+  server-safe wrapper over `components/ui/info-tip-client.tsx`, and the dataset marks its citations so `asCiteRef`
+  (`lib/cite-origin.ts`) can swap one for a reference exactly when `GET /api/cite` answers the same citation
+  ([data-lineage.md](data-lineage.md) "On the public pages"). `/api/cite` also answers a field's default citation
+  (`unit=` empty), which the compare cards cite.
+- **The pool's slim college** (`slimPoolSchool`, moved to `lib/chances/pool-rate.ts`) on the college and compare
+  admissions pages: 41 → 8 KB and 79 → 17 KB.
+- **Estimate, cost-curve, and selectivity-fact citations** as references at their server call sites (the selectivity
+  panel resolves each with `useCite` when it opens).
+- **Source rows drawn on the client**: `SourceItem` (`components/sources/SourceItem.tsx`, every source line) and the
+  profile's numbered list (`SourceListItems`) take each source's few strings instead of shipping their markup; the
+  list was 21 KB of the overview's stream, now 6.6 KB of props. `tests/public-payload.test.mts` renders both against the
+  pre-round-5 JSX and requires the same markup.
+- **Compare reads**: `loadComparison` starts the history files beside the live-edit overlay (one wait instead of two).
+  Nothing else on the compare page is worth precomputing per snapshot: ranks come from the dataset's sorted-value
+  cache, sources from its per-college memo, and the rest is arithmetic over two to four colleges.
+- **Guard**: `scripts/render-page-flight.mts` renders a page offline through React's Flight server (no build, no
+  layout); `tests/public-payload.test.mts` keeps the Harvard overview under 95,000 bytes (86,470 now) and the compare
+  overview under 82,000 (74,736), and fails if a whole citation other than the kinds kept on purpose reaches a client
+  component there or on compare admissions.
+
+**Targets not reached.** The brief's targets were inline RSC under 80 KB (profile overview) and 70 KB (compare overview);
+this round reached 134.5 and 106.3 KB. What remains is mostly the server-rendered markup itself, which a page needs to
+hydrate, and the per-client-reference chunk lists. Next levers, by size: (1) fewer distinct client exports per page (each
+costs ~560 bytes of chunk list: lucide's `Icon` alone is one row, every `info-tip-client` export another), or a Next
+option that stops repeating the list; (2) the overview's topic cards (47 KB of stream) and hero links as client
+components fed compact data, as the source rows now are; (3) shorter repeated class strings (a component class in
+`globals.css` for the card shells that repeat on every card).

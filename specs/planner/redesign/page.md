@@ -131,11 +131,22 @@ Phone                                   Desktop (lg:)
   opens on, and the browser shows the one the URL's `?tab=` names:
   - Colleges, Essays, and Calendar always switch in place. The Essays tab's data (`essaysTabData`) is made with every
     plan, whatever tab opens: its drafts come in the plan's first wave and its prompt lookup's read is shared.
-  - Next steps switches in place unless its asks notice needs its own read: for a student or a parent,
-    `AskNotice` reads `org_open_asks` and marks the asks seen, so it runs only when the page opens on Next steps;
-    landing on another tab, the Next steps pill stays a navigation. A counselor's Next steps (no notice) always
-    switches in place.
-  - Offers always navigates: its stage reads the letters, the cost history, and the outcome flag itself.
+  - Next steps switches in place for everyone (round 5). The asks notice above it no longer reads or writes while
+    rendering: the plan load (`lib/planner/load.ts`, `opts.tabs`, which only the advisor page passes) reads
+    `org_open_asks` in its first wave, one more call in the same `Promise.all` (not for a counselor, who reads asks on
+    the caseload), closes the asks the plan's facts already satisfy after the response (`org_ask_done`, as the notice
+    did; `splitAsks` in `lib/org-caseload.ts`), and hands the rest to `AskNotice`. The ones the family hasn't seen
+    are marked seen by a Server Action (`markAsksSeen`, `app/org/actions.ts`) that a client effect
+    (`components/org/MarkAsksSeen.tsx`) calls once when the notice mounts, and a panel mounts the first time it is
+    shown, so "Seen" still means the notice was on screen: on a page opened on Next steps, or on the switch to it. A
+    failed read shows no notice, as before.
+  - Offers switches in place once the plan has a decision (round 5). Its stage's reads (the admits' cost facts and
+    history from the snapshot shards, the wait lists' C2 history, `plan_letters` by the plan's item ids, and the
+    list's `outcome_share_consented_at`; `readOffers`, `lib/planner/offers-server.ts`) start the moment the plan
+    bundle and the profile resolve (`afterOne`), run beside the colleges and the estimate, and add no wave; they run
+    only when the tab can show (`hasDecision`, the tab's own gate), so a plan without a decision reads nothing more.
+    The data goes to `OffersStage` as `read` (kept out of `ctx`, which the client components receive). If that read
+    fails, the stage reads for itself and the Offers pill stays a navigation.
   - A pill is still a link to `?tab=…`, so a full load, a new window, the back button, and a browser without
     JavaScript work as before; a plain click on a tab whose panel is on the page calls `window.history.pushState`
     with that href instead (no prefetch for those), and `useSearchParams`, which Next keeps in step with `pushState`
@@ -150,7 +161,10 @@ Phone                                   Desktop (lg:)
     React's Flight serializer): before, a Next steps page was 323 KB (43.5 KB gzipped) and each switch shipped
     another (the Essays tab 364 KB with its data); after, a page carrying the Next steps, Colleges, Essays, and
     Calendar panels with the essays data is 370 KB (48.2 KB gzipped), and a switch ships nothing. The plan's
-    `ctx` and `view` are shared by every panel and serialized once.
+    `ctx` and `view` are shared by every panel and serialized once. Round 5, a plan with decisions (three admits, one
+    entered offer, a wait list, a denial): Offers in place adds its panel to every tab, 372 KB to 398 KB (48.5 to
+    52.9 KB gzipped, +4.4 KB) on Next steps or Colleges, and the switch to Offers ships nothing (it was a 398 KB page).
+    A plan without a decision is unchanged.
 - **Layout**: two columns on desktop (`lg:`) — left, the header with the tabs beside it, then the open tab's body;
   right (~380px, sticky), Next up/NothingDue, then the 8-week "Coming up" list (`UpcomingList` `variant="aside"`,
   [calendar.md](calendar.md)), then the one notice (`PlanNotice`, [list.md](list.md) `view.notices[0]`). On a phone

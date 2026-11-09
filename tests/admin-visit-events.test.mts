@@ -35,6 +35,8 @@ registerHooks({
     if (specifier === "server-only") return { url: "data:text/javascript,export {}", shortCircuit: true };
     if (specifier === "@/lib/supabase-server") return { url: `data:text/javascript,${encodeURIComponent(FAKE_SUPABASE)}`, shortCircuit: true };
     if (specifier === "@/lib/bundles") return { url: `data:text/javascript,${encodeURIComponent(FAKE_BUNDLES)}`, shortCircuit: true };
+    // The session check's hourly key refresh runs under next/server's after() (round 5): nothing to refresh here.
+    if (specifier === "@/lib/auth-jwks-after") return { url: "data:text/javascript,export function scheduleJwksRefresh(){}", shortCircuit: true };
     if (specifier === "next/navigation") return { url: `data:text/javascript,${encodeURIComponent(FAKE_NAVIGATION)}`, shortCircuit: true };
     let spec = specifier;
     if (spec.startsWith("@/")) spec = pathToFileURL(join(ROOT, spec.slice(2))).href;

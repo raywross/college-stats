@@ -16,7 +16,7 @@ import { pathToFileURL } from "node:url";
 import ts from "typescript";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement, type ReactElement } from "react";
-import { caseloadCounts, caseloadRows, invitedStudents, type CaseloadItem, type CaseloadStudent, type CaseloadTask } from "../lib/org-caseload.ts";
+import { caseloadCounts, caseloadRows, invitedStudents, splitAsks, type CaseloadItem, type CaseloadStudent, type CaseloadTask } from "../lib/org-caseload.ts";
 import type { OpenOrgAsk, OrgAsk, OrgNote, Organization, OrgRosterRow } from "../lib/org-rules.ts";
 import { emptyProfile } from "../lib/student-profile.ts";
 
@@ -41,7 +41,7 @@ const STUBS: Record<string, string> = {
   "@/components/high-schools/HighSchoolPicker": stub("picker.mjs", `import React from "react";\nexport const HighSchoolPicker = ({ idName }) => React.createElement("input", { name: idName, "data-picker": "1" });`),
   "@/app/org/actions": stub(
     "org-actions.mjs",
-    ["createOrganization", "updateOrganization", "regenerateJoinCode", "setMemberRole", "removeMember", "leaveOrganization", "deleteOrganization", "inviteStudents", "resendStudentInvitation", "cancelOrgInvitation", "inviteCounselor", "askStudent", "completeAsk", "addOrgNote", "deleteOrgNote"]
+    ["createOrganization", "updateOrganization", "regenerateJoinCode", "setMemberRole", "removeMember", "leaveOrganization", "deleteOrganization", "inviteStudents", "resendStudentInvitation", "cancelOrgInvitation", "inviteCounselor", "askStudent", "completeAsk", "markAsksSeen", "addOrgNote", "deleteOrgNote"]
       .map((n) => `export async function ${n}() { return { status: "idle" }; }`)
       .join("\n"),
   ),
@@ -99,6 +99,7 @@ const views = {
   caseload: await load("components/org/CaseloadView.tsx"),
   student: await load("components/org/StudentView.tsx"),
   notice: await load("components/org/AskNoticeList.tsx"),
+  askNotice: await load("components/org/AskNotice.tsx"),
   members: await load("components/org/MembersView.tsx"),
   banner: await load("components/account/ViewerBanner.tsx"),
 };
@@ -270,10 +271,63 @@ test("the portal reads with the counselor's own session and never runs an estima
 
 test("the ask notice sits at the top of Next steps, for the family and not a counselor", () => {
   const tabs = read("components/planner/PlanTabs.tsx");
-  assert.match(tabs, /next: \(\) => \(\s*<>[\s\S]*?<AskNotice ctx=\{ctx\} \/>\s*<NextSteps ctx=\{ctx\} view=\{view\} \/>\s*<\/>/);
-  // Its read runs only when the page opens on Next steps for the family: that tab then navigates instead of switching.
-  assert.match(read("components/planner/PlanFrame.tsx"), /asksRead: !!ctx\.student && !ctx\.viewer\.isCounselor/);
-  assert.match(read("components/org/AskNotice.tsx"), /ctx\.viewer\.isCounselor\) return null/);
+  assert.match(tabs, /next: \(\) => \(\s*<>[\s\S]*?<AskNotice asks=\{tabsRead\?\.asks \?\? null\} ctx=\{ctx\} \/>\s*<NextSteps ctx=\{ctx\} view=\{view\} \/>\s*<\/>/);
+  assert.match(read("components/org/AskNotice.tsx"), /ctx\.viewer\.isCounselor \|\| !asks \|\| asks\.length === 0\) return null/);
+  // The load reads the asks only for the family (a counselor reads them on the caseload).
+  assert.match(read("lib/planner/load.ts"), /const asksP = opts\.tabs && viewer\?\.relation !== "counselor" \? asksFor\(studentId\) : Promise\.resolve\(null\);/);
+});
+
+/* Round 5: the notice renders from the plan load's read; marking seen is the browser's, once the notice shows. */
+
+const ask = (id: string, over: Partial<OpenOrgAsk> = {}): OpenOrgAsk => ({ id, org_id: "o1", org_name: "Rivera Advising", asked_by_name: "Ms. Rivera", created: "2026-10-30T12:00:00Z", seen_at: null, kind: "custom", section: null, note: "Send me your activities", ...over });
+const familyCtx = { student: { id: "kid-1" }, viewer: { isCounselor: false, relation: "self", canEdit: true } };
+
+test("splitAsks: satisfied asks are done, the rest shown in order, the shown ones not yet seen are unseen", () => {
+  const asks = [ask("a1", { kind: "list", note: null }), ask("a2", { seen_at: "2026-11-01T00:00:00Z" }), ask("a3")];
+  const empty = splitAsks(asks, { profile: null, listCount: 0 });
+  assert.deepEqual(empty.done.map((a) => a.id), []);
+  assert.deepEqual(empty.shown.map((a) => a.id), ["a1", "a2", "a3"]);
+  assert.deepEqual(empty.unseen.map((a) => a.id), ["a1", "a3"]);
+  // A list ask is done once the list has a college: closed, not shown, not marked seen.
+  const listed = splitAsks(asks, { profile: null, listCount: 2 });
+  assert.deepEqual(listed.done.map((a) => a.id), ["a1"]);
+  assert.deepEqual(listed.shown.map((a) => a.id), ["a2", "a3"]);
+  assert.deepEqual(listed.unseen.map((a) => a.id), ["a3"]);
+});
+
+test("AskNotice renders the asks it is given, reads and writes nothing; none for a counselor, no asks, or a failed read", () => {
+  const html = render(views.askNotice.AskNotice, { asks: [ask("a1")], ctx: familyCtx });
+  assert.match(text(html), /Ms\. Rivera asked: “Send me your activities” Done/);
+  assert.equal(render(views.askNotice.AskNotice, { asks: [ask("a1")], ctx: { ...familyCtx, viewer: { ...familyCtx.viewer, isCounselor: true } } }), "");
+  assert.equal(render(views.askNotice.AskNotice, { asks: null, ctx: familyCtx }), "");
+  assert.equal(render(views.askNotice.AskNotice, { asks: [], ctx: familyCtx }), "");
+  const src = read("components/org/AskNotice.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
+  // Guard: no read and no write while rendering (that kept Next steps a navigation before round 5).
+  assert.doesNotMatch(src, /openAsksForStudent|createServerSupabase|\.rpc\(|after\(|async function/);
+  // The unseen ones go to the browser's one-time mark.
+  assert.match(src, /const unseen = asks\.filter\(\(a\) => a\.seen_at === null\)\.map\(\(a\) => a\.id\);/);
+  assert.match(src, /\{unseen\.length > 0 && <MarkAsksSeen ids=\{unseen\} \/>\}/);
+});
+
+test("MarkAsksSeen: a client effect that calls the markAsksSeen action once, when the notice first shows", () => {
+  const src = read("components/org/MarkAsksSeen.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.match(src, /^"use client";/);
+  assert.match(src, /useEffect\(\(\) => \{\s*if \(sent\.current \|\| key === ""\) return;\s*sent\.current = true;\s*markAsksSeen\(key\.split\(","\)\)\.catch\(\(\) => \{\}\);\s*\}, \[key\]\);/);
+  assert.match(src, /return null;/);
+  // It mounts with its panel, and a panel mounts the first time it shows (never while hidden).
+  assert.match(read("components/planner/PlanTabSwitch.tsx"), /\.filter\(\(t\) => shown\.has\(t\) \|\| t === open\)/);
+});
+
+test("markAsksSeen: signed in, ids only (uuids, deduplicated, bounded), org_ask_seen per ask, no refresh", () => {
+  const actions = read("app/org/actions.ts");
+  const body = /export async function markAsksSeen\(requests: string\[\]\): Promise<number> \{([\s\S]*?)\n\}/.exec(actions)?.[1] ?? "";
+  assert.ok(body.length > 0, "markAsksSeen exists");
+  assert.match(body, /if \(!Array\.isArray\(requests\) \|\| !\(await signedIn\(\)\)\) return 0;/);
+  assert.match(body, /\[\.\.\.new Set\(requests\.filter\(\(r\) => isUuid\(r\)\)\)\]\.slice\(0, MARK_SEEN_MAX\)/);
+  assert.match(body, /supabase\.rpc\("org_ask_seen", \{ p_request: request \}\)/);
+  assert.doesNotMatch(body, /refresh\(\)|org_ask_done/);
+  // The load closes the satisfied ones after the response, as the notice did.
+  assert.match(read("lib/planner/load.ts"), /const \{ done, shown \} = splitAsks\(asks, facts\);[\s\S]*?supabase\.rpc\("org_ask_done", \{ p_request: a\.id \}\)[\s\S]*?after\(close\);/);
 });
 
 test("the caseload's export never carries a GPA or a score column", () => {

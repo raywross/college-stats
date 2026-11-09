@@ -88,9 +88,16 @@ federal number ([commercialization.md](commercialization.md#what-stays-free)).
   cache, then fetches, so a key rotated in since the build costs one fetch, as before, and never signs anyone out.
   What still goes to the network: a token within 90 seconds of expiry is refreshed first (`POST /auth/v1/token`; the
   proxy does it, so the page's check sees the new token), and a project signing with a symmetric secret asks the Auth
-  server. One trade: a key *revoked* in the dashboard is still accepted by this check until the next deploy (the
-  library's cache would have dropped it within ten minutes); row-level security checks the same token against the
-  project's live keys, so no read succeeds with it. Redeploy after revoking a key.
+  server. A key *revoked* in the dashboard leaves within the hour without a deploy (round 5): each instance holds its
+  own copy of the set (`instanceJwks()`, the bundled one at start), and after a checked response, at most once an hour
+  per instance, it downloads the live set and replaces its copy (`lib/jwks-refresh.ts` `createJwksHolder`, scheduled
+  by `lib/auth-jwks-after.ts` `scheduleJwksRefresh` under Next's `after()` from `lib/auth.ts` and `proxy.ts`, the
+  same filter as the build through `lib/jwks-public.ts`). A fresh instance's first checked request claims it, so a
+  bundle days old is replaced within one response. Never on the request path: the request that claims the refresh is
+  already answered; a refresh already running isn't started again; a failed or slow download (5-second timeout) keeps
+  the set the instance had and waits out the hour; outside a request it doesn't run. A key rotated in since the build
+  arrives the same way, so it stops costing the library's own fetch. Until the refresh lands, row-level security
+  still checks the same token against the project's live keys, so no read succeeds with a revoked one.
 - **Anonymous first.** Tools work signed out with state in `localStorage` (the compare list already does).
   On sign-in, local state is offered for import once ("Save these 4 colleges to your list?"), then cleared.
 - The header gains an avatar menu (desktop) and the phone More sheet gains "Account" ([mobile.md](../mobile.md)). Since 2026-11-08 the header's second item is the role item, Advisor / Household / Caseload by who is signed in ([role-nav.md](role-nav.md)).

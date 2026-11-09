@@ -56,15 +56,16 @@ function stubAll(rel: string, bodies: Record<string, string>): string {
 /** Modules that would reach the database, the session, or the request: none here. */
 const STUBS: Record<string, string> = {
   "server-only": "export {}",
-  "@/lib/supabase-server": "export async function createServerSupabase(){ throw new Error('no database here'); } export function supabaseAuthEnv(){ return null; }",
+  // A database that answers every query with no rows (the Offers stage, opened without the load's data, reads itself).
+  "@/lib/supabase-server": "const q = { select: () => q, in: () => q, eq: () => q, order: () => q, maybeSingle: async () => ({ data: null, error: null }), then: (f) => Promise.resolve({ data: [], error: null }).then(f) }; export async function createServerSupabase(){ return { from: () => q }; } export function supabaseAuthEnv(){ return null; }",
   "@/lib/essays/overrides": "export async function readEssayOverrides(){ return new Map(); } export function withOverride(s){ return s; }",
   "@/lib/analytics-server": "export async function trackServer(){}",
   "@/lib/app-settings": "export async function appSettings(){ return null; } export async function plannerToday(){ return null; }",
   "@/lib/households": stubAll("lib/households.ts", {}),
   "@/lib/auth": stubAll("lib/auth.ts", { getUser: "async () => ({ id: 'u-guardian' })", authConfigured: "() => true" }),
-  // A server component with its own read (org_open_asks) and one with several (the offers stage): stand-ins.
+  // The asks notice renders from the load's read since round 5, but its list imports the org Server Actions: a stand-in
+  // (a few hundred bytes per ask; the fixture has none). The Offers stage runs for real, from the data handed to it.
   "@/components/org/AskNotice": "export function AskNotice(){ return null; }",
-  "@/components/planner/stages/OffersStage": "export default function OffersStage(){ return null; }",
 };
 const STUB_URL = (name: string) => `file:///__measure_stubs__/${name.replace(/[^a-z]/gi, "_")}.mjs`;
 const STUB_SOURCES = new Map(Object.entries(STUBS).map(([k, v]) => [STUB_URL(k), v]));
@@ -109,7 +110,8 @@ registerHooks({
   resolve(specifier, context, next) {
     if (specifier in STUBS) return { url: STUB_URL(specifier), shortCircuit: true, format: "module" };
     if (specifier in REACT) return { url: pathToFileURL(REACT[specifier]).href, shortCircuit: true };
-    if (specifier === "next/link") return { url: pathToFileURL(join(ROOT, "__measure_next_link__.tsx")).href, shortCircuit: true };
+    // next/link and next/image are client components in Next's own build: client references here too.
+    if (specifier === "next/link" || specifier === "next/image") return { url: pathToFileURL(join(ROOT, `__measure_${specifier.slice(5)}__.tsx`)).href, shortCircuit: true };
     if (specifier === "lucide-react") return { url: pathToFileURL(join(NODE_MODULES, "lucide-react", "dist", "esm", "lucide-react.mjs")).href, shortCircuit: true };
     let b: string | null = null;
     if (specifier.startsWith("@/")) b = join(ROOT, specifier.slice(2));
@@ -124,7 +126,8 @@ registerHooks({
   load(url, context, next) {
     const stub = STUB_SOURCES.get(url);
     if (stub) return { format: "module", source: stub, shortCircuit: true };
-    if (url.endsWith("/__measure_next_link__.tsx")) return { format: "module", source: clientRefModule("next/link", ["default"]), shortCircuit: true };
+    const nextClient = /\/__measure_(link|image)__\.tsx$/.exec(url);
+    if (nextClient) return { format: "module", source: clientRefModule(`next/${nextClient[1]}`, ["default"]), shortCircuit: true };
     // lucide-react's ESM build marks its Icon "use client", as Next's bundler sees it: an icon is a client reference.
     if (url.includes("/node_modules/lucide-react/") && url.endsWith(".mjs")) {
       const file = fileURLToPath(url);
@@ -241,6 +244,44 @@ for (const tab of PLAN_TABS.filter((t) => t !== "offers")) {
   const without = await flightBytes(React.createElement(PlanFrame as never, { ...base, essays: null } as never));
   const withE = await flightBytes(React.createElement(PlanFrame as never, { ...base, essays } as never));
   console.log(`  tab=${tab.padEnd(8)} without essays data ${kb(without.raw)} / ${kb(without.gz)}; with ${kb(withE.raw)} / ${kb(withE.gz)}`);
+}
+
+/*
+ * Round 5, U4: a plan with decisions (three admits, one with an entered offer, a wait list, a denial), with the Offers
+ * stage's data read the way the load reads it (lib/planner/offers-server.ts readOffers, over a database that answers no
+ * letters) and without it. Without it (before round 5) Offers navigates, so its panel is on the page only when opened;
+ * with it, the panel rides on every tab so the switch is in place.
+ */
+const { readOffers } = await import("../lib/planner/offers-server.ts");
+const decidedItems = items.map((it, i) =>
+  i < 3 ? { ...it, status: "applied", outcome: "admitted", decision_date: "2027-03-20" } : i === 3 ? { ...it, status: "applied", outcome: "waitlisted", decision_date: "2027-03-20" } : i === 4 ? { ...it, status: "applied", outcome: "denied", decision_date: "2027-03-20" } : it,
+);
+const offer = {
+  id: "offer-1", item_id: decidedItems[0].id, award_year: 2027, letter_date: "2027-03-25", source: "form", quotes: null, pros: "Close to home", cons: null, confirmed_at: "2027-03-26T00:00:00Z", created_by: "u-guardian", created_at: "2027-03-26T00:00:00Z",
+  coa: { tuition_fees: 58000, housing_food: 19000, books: 1200, transport: 900, personal: 2000, other: null, total: 81100, stated_by_college: true },
+  gift: [{ kind: "college_need", name: "University Grant", amount: 42000, renewable: true, renewal_condition: null, years: 4 }], work_study: 2500, loans: [{ kind: "direct_sub", amount: 3500 }],
+};
+const decidedPlan = { ...(plan as object), items: decidedItems, offers: [offer] } as never;
+const decidedInput = await generatorInputFor(decidedPlan, { gradYear: GRAD, profile, home: null, today: "2027-04-01" });
+const decidedTasks = applyMerge(LIST, [], mergeTasks([], generateTasks(decidedInput)), "2027-04-01T00:00:00Z", (k) => `task-${k}`);
+const decidedCtx = planContextFrom(decidedInput, { ...(decidedPlan as object), tasks: decidedTasks } as never, {
+  student: { id: STUDENT, display_name: "Jordan Lee", grad_year: GRAD, user_id: null },
+  home: null,
+  viewer: { userId: "u-guardian", firstName: "Sam", canEdit: true, relation: "guardian", isGuardian: true, isCounselor: false },
+});
+const decidedView = planView({ items: decidedCtx.items, schools: decidedCtx.schools, profile: decidedCtx.profile, estimates: {}, today: "2027-04-01" });
+/** The database as the stage reads it: no letters shared, the consent column present and unset. */
+const builder: Record<string, unknown> = {};
+for (const m of ["select", "in", "eq", "order"]) builder[m] = () => builder;
+builder.then = (done: (v: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(done);
+builder.maybeSingle = () => Promise.resolve({ data: { outcome_share_consented_at: null }, error: null });
+const offersData = await readOffers({ from: () => builder } as never, decidedCtx, decidedCtx.profile);
+console.log(`[offers] a decided plan: ${Object.keys(offersData.facts).length} admits' facts, ${Object.keys(offersData.waits).length} wait lists; as JSON ${kb(JSON.stringify(offersData).length)}`);
+for (const tab of ["next", "colleges", "offers"] as const) {
+  const base = { people: null, ctx: decidedCtx, view: decidedView, relation: "guardian", firstName: "Jordan", colorSlot: 0, personId: STUDENT, tab, setup: false, back: "plan", essays };
+  const before = await flightBytes(React.createElement(PlanFrame as never, { ...base, tabsRead: null } as never));
+  const after = await flightBytes(React.createElement(PlanFrame as never, { ...base, tabsRead: { offers: offersData, asks: null } } as never));
+  console.log(`  tab=${tab.padEnd(8)} Offers navigates ${kb(before.raw)} / ${kb(before.gz)}; Offers in place ${kb(after.raw)} / ${kb(after.gz)} (+${kb(after.raw - before.raw)} / +${kb(after.gz - before.gz)})`);
 }
 
 /* The list page's school facts (ListPage.tsx boardItems): the three citations per row, full and as references. */

@@ -14,7 +14,13 @@ import { myHome } from "@/lib/home-store";
 import { getOrCreateDefaultList, myLists } from "@/lib/lists";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { profileFor } from "@/lib/student-profile-store";
-import { effectiveGradYear } from "@/lib/student-profile";
+import { effectiveGradYear, type StudentProfileData } from "@/lib/student-profile";
+import { after } from "next/server";
+import { openAsksForStudent } from "@/lib/orgs";
+import { splitAsks } from "@/lib/org-caseload";
+import type { OpenOrgAsk } from "@/lib/org-rules";
+import { readOffers, type OffersRead } from "./offers-server";
+import { hasDecision } from "./plan-tabs";
 import { generatorInputFor, planContextFrom, PlannerSetupError, readItems, readPlan, readTasks, writeAutoWrites, writeMerge } from "./context";
 import { autoWrites, planView, type PlanView } from "./plan-view";
 import { planEstimates, startEstimateContext } from "./plan-estimates";
@@ -36,8 +42,8 @@ import { isUuid } from "./plan-writes";
 import { plannerToday } from "./today-server";
 
 export type PlanLoad =
-  /** The plan, ready for the tabs. */
-  | { kind: "ready"; ctx: PlanContext; view: PlanView; access: StudentAccess }
+  /** The plan, ready for the tabs. `tabs` is what the advisor's panels read besides it, when asked for (`opts.tabs`). */
+  | { kind: "ready"; ctx: PlanContext; view: PlanView; access: StudentAccess; tabs?: PlanTabsRead }
   /** No list yet (and the viewer can't start one), or the list isn't readable. */
   | { kind: "empty"; access: StudentAccess }
   /** The planner's tables aren't in the database yet. */
@@ -45,7 +51,61 @@ export type PlanLoad =
   /** The viewer can't see this student. */
   | { kind: "not-found" };
 
+/**
+ * What the advisor's tab panels read besides the plan (round 5; specs/planner/redesign/page.md "Tabs switch in place"),
+ * read with it so every panel renders from the load and the tabs switch in place. Kept out of `ctx`, which the client
+ * components receive.
+ */
+export interface PlanTabsRead {
+  /** The Offers stage's reads (lib/planner/offers-server.ts readOffers): only when the plan has a decision (the tab's
+   * own gate, plan-tabs.ts hasDecision); null without one, or when the read failed (the stage then reads itself). */
+  offers: OffersRead | null;
+  /** The open asks the notice above Next steps shows (components/org/AskNotice.tsx), the satisfied ones already
+   * closed; null for a counselor (who reads asks on the caseload) or a failed read (no notice, as before). */
+  asks: OpenOrgAsk[] | null;
+}
+
 const firstName = (name: string | null | undefined) => name?.trim().split(/\s+/)[0] || null;
+
+/** The Offers stage's reads when the plan has a decision, else null; fails soft (logged, null). */
+function offersFor(supabase: Awaited<ReturnType<typeof createServerSupabase>>, plan: PlanData, profile: StudentProfileData | null): Promise<OffersRead | null> {
+  if (!hasDecision(plan.items)) return Promise.resolve(null);
+  return readOffers(supabase, plan, profile).catch((err) => {
+    console.error(`plan: reading the offers stage failed: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  });
+}
+
+/** The student's open asks with the viewer's session; null on a failed read (no notice, never a broken plan). */
+function asksFor(studentId: string): Promise<OpenOrgAsk[] | null> {
+  return openAsksForStudent(studentId).catch((err) => {
+    console.error(`org: reading the open asks failed: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  });
+}
+
+/**
+ * The asks the notice shows: the open ones minus those the plan's facts already satisfy, which are closed after the
+ * response (org_ask_done; the notice "checks when it renders", specs/product/counselor-portal.md). Marking the shown
+ * ones seen is the browser's (components/org/MarkAsksSeen.tsx), the first time Next steps shows.
+ */
+function shownAsks(asks: OpenOrgAsk[], supabase: Awaited<ReturnType<typeof createServerSupabase>>, facts: Parameters<typeof splitAsks>[1]): OpenOrgAsk[] {
+  const { done, shown } = splitAsks(asks, facts);
+  if (done.length > 0) {
+    const close = async () => {
+      for (const a of done) {
+        const { error } = await supabase.rpc("org_ask_done", { p_request: a.id });
+        if (error) console.error(`org: org_ask_done failed: ${error.message}`);
+      }
+    };
+    try {
+      after(close);
+    } catch {
+      void close().catch(() => {});
+    }
+  }
+  return shown;
+}
 
 /**
  * The course-plan card's windows (specs/chances/course-plan.md; next-steps U1b): freshman and sophomore only in the
@@ -78,11 +138,15 @@ function inCoursePlanWindow(season: Season, today: string): boolean {
  * and the Essays tab's prompt lookup share). Wave 2 is the estimate's high-school reads, chained on the profile alone
  * (load-waves.ts afterOne), so they start the moment it resolves. Nothing else reads after that; an editor's open still
  * writes the suggested groups, rounds, and tasks when they changed (syncOnOpen).
+ *
+ * `tabs` (round 5, the advisor page): also what its tab panels read besides the plan (PlanTabsRead), so every tab
+ * switches in place: the open asks in wave 1, and the Offers stage's reads chained on the bundle and the profile, only
+ * when the plan has a decision. Neither adds a wave.
  */
 export async function loadPlanFor(
   studentId: string,
   viewer?: StudentAccess | null,
-  opts: { early?: Promise<PlanBundle | null>; cites?: CiteMode } = {},
+  opts: { early?: Promise<PlanBundle | null>; cites?: CiteMode; tabs?: boolean } = {},
 ): Promise<PlanLoad> {
   const owner = { kind: "student" as const, id: studentId };
   const bundleP = (async () => {
@@ -99,8 +163,19 @@ export async function loadPlanFor(
   const profileP = profileFor(studentId);
   // Wave 2, started as soon as the profile resolves (not the whole first wave): the estimate's high-school reads.
   const estimateContextP = afterOne(profileP, (p) => startEstimateContext(p?.data ?? null));
-  const [accessList, account, profile, home, bundle] = await span("access+plan", () =>
-    Promise.all([viewer ? Promise.resolve(null) : studentsICanSee(), getAccount(), profileP, myHome(), bundleP, essaysP, appSettings(), readEssayOverrides(null)]),
+  // Round 5, the tab panels' own reads (`opts.tabs`, the advisor page; PlanTabsRead): the student's open asks in this
+  // wave (not for a counselor, who never sees the notice), and the Offers stage's reads chained on the plan bundle and
+  // the profile alone (afterOne), so they start the moment those two resolve, run beside the colleges and the
+  // estimate, and only when the plan has a decision. `undefined`: no bundle, so they wait for the per-table plan read.
+  const asksP = opts.tabs && viewer?.relation !== "counselor" ? asksFor(studentId) : Promise.resolve(null);
+  const offersEarlyP = opts.tabs
+    ? afterOne(Promise.all([bundleP, profileP, supabaseP]), ([b, p, s]) => {
+        const fromBundle = b?.list ? planDataFromBundle(b) : null;
+        return fromBundle ? offersFor(s, fromBundle, p?.data ?? null) : Promise.resolve(undefined);
+      })
+    : null;
+  const [accessList, account, profile, home, bundle, , , , asks] = await span("access+plan", () =>
+    Promise.all([viewer ? Promise.resolve(null) : studentsICanSee(), getAccount(), profileP, myHome(), bundleP, essaysP, appSettings(), readEssayOverrides(null), asksP]),
   );
   const access = viewer ?? accessList?.find((a) => a.student.id === studentId) ?? null;
   if (!access || access.student.id !== studentId) return { kind: "not-found" };
@@ -143,9 +218,13 @@ export async function loadPlanFor(
   // Quad's estimate for every college, on the server (specs/chances/estimate.md "In the planner"): the same for the
   // student and a guardian, who sees the student's AP exam scores too (owner, 2026-10-11). Beside the school slices; its
   // high-school reads started with the profile (estimateContextP), so here it only waits for what's left of them.
-  const [schoolsInput, estimates] = await Promise.all([
+  // The Offers stage's reads (round 5), already running since the bundle resolved; without the bundle, started now.
+  const offersP: Promise<OffersRead | null> =
+    offersEarlyP === null ? Promise.resolve(null) : offersEarlyP.then((early) => (early !== undefined ? early : offersFor(supabase, read, profileData))).catch(() => null);
+  const [schoolsInput, estimates, offers] = await Promise.all([
     span("planSchools", () => generatorInputFor(read, { gradYear, profile: profileData, home, today, cites: opts.cites })),
     span("estimates", () => planEstimates(profileData, read.items, { gradYear, today, visits: read.visits, context: estimateContextP })),
+    offersP,
   ]);
   let input = schoolsInput;
   // Next steps (build-plan.md review note 3): the generators read each college's level, closeness, and ED verdict.
@@ -178,7 +257,10 @@ export async function loadPlanFor(
     profileData && inCoursePlanWindow(input.season, today)
       ? await span("coursePlan", () => coursePlanViewFor({ profile: profileData, gradYear, items: ctx.items, today, canEdit }))
       : null;
-  return { kind: "ready", ctx: { ...ctx, coursePlan }, view, access };
+  const tabs: PlanTabsRead | undefined = opts.tabs
+    ? { offers, asks: asks && !ctx.viewer.isCounselor ? shownAsks(asks, supabase, { profile: ctx.profile, listCount: ctx.items.length }) : null }
+    : undefined;
+  return { kind: "ready", ctx: { ...ctx, coursePlan }, view, access, ...(tabs ? { tabs } : {}) };
 }
 
 /**

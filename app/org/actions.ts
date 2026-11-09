@@ -388,6 +388,30 @@ export async function completeAsk(_prev: OrgActionState, form: FormData): Promis
   return { status: "done" };
 }
 
+/** The most asks one call marks seen (a student has at most three a week from one office; this only bounds the loop). */
+const MARK_SEEN_MAX = 20;
+
+/**
+ * Marks the family's asks seen, so the office reads "Seen" (specs/product/counselor-portal.md "Asking a student for
+ * something"). Called once from the browser the first time the student's Next steps panel shows its asks notice
+ * (components/org/AskNotice.tsx; round 5: reading the plan no longer writes). org_ask_seen checks the caller is the
+ * student's family and the asking office still has the student; it only ever sets `seen_at` once. No refresh: nothing
+ * the family sees changes. Returns how many were marked.
+ */
+export async function markAsksSeen(requests: string[]): Promise<number> {
+  if (!Array.isArray(requests) || !(await signedIn())) return 0;
+  const ids = [...new Set(requests.filter((r) => isUuid(r)))].slice(0, MARK_SEEN_MAX);
+  if (ids.length === 0) return 0;
+  const supabase = await createServerSupabase();
+  let marked = 0;
+  for (const request of ids) {
+    const { error } = await supabase.rpc("org_ask_seen", { p_request: request });
+    if (error) console.error(`org: org_ask_seen failed: ${error.message}`);
+    else marked++;
+  }
+  return marked;
+}
+
 /** A note the office keeps on a student (the family never sees it). The author is stamped by the database. */
 export async function addOrgNote(_prev: OrgActionState, form: FormData): Promise<OrgActionState> {
   if (!(await signedIn())) return SESSION_ENDED;

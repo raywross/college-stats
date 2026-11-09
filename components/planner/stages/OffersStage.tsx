@@ -16,7 +16,7 @@ import { compareHref } from "@/lib/compare-routes";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { chosenItem, isEdChoice, isPending } from "@/lib/planner/generators/offers";
 import { appealSummary, questionsToAsk, usd, waitListLine, waitListOdds } from "@/lib/planner/offers";
-import { offerColumns, offerFacts, waitListFacts } from "@/lib/planner/offers-server";
+import { offerColumns, readOffers, type OffersRead } from "@/lib/planner/offers-server";
 import type { PlanContext, PlanTask, TaskKind } from "@/lib/planner/types";
 
 const cited = (c: unknown) => (c ?? undefined) as CiteLike | undefined;
@@ -32,9 +32,10 @@ function fours(ids: string[]): string[][] {
 }
 
 /**
- * Stage 6, decisions, offers, and the choice (specs/planner/offers.md "Display"). A server component: it reads the
- * admitted colleges' cost facts and history (lib/planner/offers-server.ts), the wait-listed colleges' C2 history, the
- * shared letters, and the outcome-share flag with the viewer's own session, then renders
+ * Stage 6, decisions, offers, and the choice (specs/planner/offers.md "Display"). A server component: it takes the
+ * admitted colleges' cost facts and history, the wait-listed colleges' C2 history, the shared letters, and the
+ * outcome-share flag as `read` (lib/planner/offers-server.ts readOffers, run by the plan load when the plan has a
+ * decision, round 5, so the tab switches in place), reading them itself with the viewer's session without it, then renders
  *
  *   the decisions row (each college's outcome and date; before any, "Decisions start arriving {date}", cited)
  *   wait lists with their history (cited)
@@ -44,8 +45,7 @@ function fours(ids: string[]): string[][] {
  *   the choice ("I'm going to {College}"), then the household card, the after-the-choice steps, the summer list, and
  *     the opt-in to share where the student went.
  */
-export default async function OffersStage({ ctx }: { ctx: PlanContext }) {
-  const supabase = await createServerSupabase();
+export default async function OffersStage({ ctx, read = null }: { ctx: PlanContext; read?: OffersRead | null }) {
   const studentFirst = ctx.student?.display_name?.trim().split(/\s+/)[0] ?? null;
   const self = ctx.viewer.relation === "self";
   const nameOf = (unitId: string) => ctx.schools[unitId]?.name ?? "A college";
@@ -56,21 +56,10 @@ export default async function OffersStage({ ctx }: { ctx: PlanContext }) {
   const anyDecided = ctx.items.some((i) => i.status === "decided" || i.decision_date !== null);
   const chosen = chosenItem(ctx.items);
 
-  const [facts, waits, letterRows, consentRow] = await Promise.all([
-    offerFacts(admitted.map((i) => i.unit_id), ctx.profile),
-    waitListFacts(waitlisted.map((i) => i.unit_id)),
-    ctx.items.length
-      ? supabase.from("plan_letters").select("id, item_id, kind, uploaded_by, created_at").in("item_id", ctx.items.map((i) => i.id)).order("created_at")
-      : Promise.resolve({ data: [] }),
-    supabase.from("lists").select("outcome_share_consented_at").eq("id", ctx.list.id).maybeSingle(),
-  ]);
-  const letters = ((letterRows.data ?? []) as { id: string; item_id: string; kind: SharedLetter["kind"]; uploaded_by: string; created_at: string }[]).map((l) => ({
-    ...l,
-    mine: l.uploaded_by === ctx.viewer.userId,
-  }));
-  // The column arrives with this unit's migration; until it's applied, the opt-in is hidden rather than broken.
-  const consentReady = !consentRow.error;
-  const consented = Boolean((consentRow.data as { outcome_share_consented_at: string | null } | null)?.outcome_share_consented_at);
+  // The plan load reads these with the plan when the plan has a decision (round 5; lib/planner/load.ts), so the tab
+  // switches in place; without that read (it failed, or another caller) the stage reads them itself.
+  const { facts, waits, letters: letterRows, consentReady, consented } = read ?? (await readOffers(await createServerSupabase(), ctx, ctx.profile));
+  const letters: (SharedLetter & { item_id: string })[] = letterRows.map((l) => ({ id: l.id, item_id: l.item_id, kind: l.kind, created_at: l.created_at, mine: l.uploaded_by === ctx.viewer.userId }));
 
   const columns = offerColumns(ctx, facts);
   const awardYear = ctx.cycle.startYear + 1;

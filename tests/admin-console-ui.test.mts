@@ -29,6 +29,8 @@ const FAKES: Record<string, string> = {
   "next/navigation":
     "export function redirect(u){const e=new Error('NEXT_REDIRECT');e.digest='NEXT_REDIRECT;replace;'+u+';307;';throw e} export function notFound(){const e=new Error('NEXT_HTTP_ERROR_FALLBACK;404');e.digest='NEXT_HTTP_ERROR_FALLBACK;404';throw e}",
   "next/cache": "export function refresh(){globalThis.__ui.refreshed++}",
+  // The session check's hourly key refresh runs under next/server's after() (round 5): nothing to refresh here.
+  "@/lib/auth-jwks-after": "export function scheduleJwksRefresh(){}",
   "next/headers": "export async function headers(){return globalThis.__ui.requestHeaders} export async function cookies(){return {getAll(){return []},set(){}}}",
 };
 registerHooks({

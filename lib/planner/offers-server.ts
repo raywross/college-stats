@@ -17,6 +17,7 @@ import { cfpView, fourYears, growthRate, isEnteredOffer, offerFlags, type CfpVie
 import type { PlanContext, PlanItem, PlanOffer, PlanSchool } from "./types";
 import { citeRefWhereSame } from "./plan-cites";
 import type { AnyCited } from "@/lib/lineage";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Which price applies to this student at this college. */
 export function residencyFor(school: Pick<School, "type" | "location" | "cost">, profile: StudentProfileData | null): OfferFacts["residency"] {
@@ -121,6 +122,61 @@ export async function waitListFacts(unitIds: string[]): Promise<Record<string, W
     };
   }
   return out;
+}
+
+/* ------------------------------------------------------------------ */
+/* The stage's reads                                                   */
+/* ------------------------------------------------------------------ */
+
+/** A shared award letter's row (plan_letters), as the stage lists it; `mine` is the viewer's, decided by the stage. */
+export interface OfferLetterRow {
+  id: string;
+  item_id: string;
+  kind: "admission" | "aid" | "other";
+  uploaded_by: string;
+  created_at: string;
+}
+
+/**
+ * Everything the Offers stage reads besides the plan (components/planner/stages/OffersStage.tsx): the admitted
+ * colleges' cost facts and history, the wait-listed colleges' C2 history, the shared letters, and the outcome-share
+ * flag. Serializable; the plan loader reads it in its first wave when the plan has a decision (round 5,
+ * lib/planner/load.ts), so the tab switches in place.
+ */
+export interface OffersRead {
+  facts: Record<string, OfferFacts>;
+  waits: Record<string, WaitListFacts>;
+  letters: OfferLetterRow[];
+  /** False until the outcome-share migration is applied: the opt-in is hidden rather than broken. */
+  consentReady: boolean;
+  consented: boolean;
+}
+
+type Db = Pick<SupabaseClient, "from">;
+
+/**
+ * The Offers stage's reads, side by side: the cost facts and history (snapshot shards, no database), the wait lists'
+ * history, `plan_letters` by the plan's item ids, and the list's `outcome_share_consented_at`, the last two with the
+ * viewer's session (row-level security decides). A failed letters read lists none and a failed flag read hides the
+ * opt-in, as the stage always did; a history read fails soft inside getHistory.
+ */
+export async function readOffers(supabase: Db, plan: { list: { id: string }; items: readonly Pick<PlanItem, "id" | "unit_id" | "outcome" | "withdrawn_on">[] }, profile: StudentProfileData | null): Promise<OffersRead> {
+  const admitted = plan.items.filter((i) => i.outcome === "admitted").map((i) => i.unit_id);
+  const waitlisted = plan.items.filter((i) => i.outcome === "waitlisted" && !i.withdrawn_on).map((i) => i.unit_id);
+  const ids = plan.items.map((i) => i.id);
+  const [facts, waits, letterRows, consentRow] = await Promise.all([
+    offerFacts(admitted, profile),
+    waitListFacts(waitlisted),
+    ids.length ? supabase.from("plan_letters").select("id, item_id, kind, uploaded_by, created_at").in("item_id", ids).order("created_at") : Promise.resolve({ data: [], error: null }),
+    supabase.from("lists").select("outcome_share_consented_at").eq("id", plan.list.id).maybeSingle(),
+  ]);
+  return {
+    facts,
+    waits,
+    letters: (letterRows.data ?? []) as OfferLetterRow[],
+    consentReady: !consentRow.error,
+    consented: Boolean((consentRow.data as { outcome_share_consented_at: string | null } | null)?.outcome_share_consented_at),
+  };
 }
 
 /* ------------------------------------------------------------------ */

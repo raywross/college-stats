@@ -131,9 +131,12 @@ const ROOT = join(import.meta.dirname, "..");
 const src = (rel: string) => readFileSync(join(ROOT, rel), "utf8");
 const ROW_FILES = ["list", "rounds", "actions", "apply", "offers"];
 
-test("OffersStage exists and default-exports a component taking { ctx }", () => {
+test("OffersStage exists and default-exports a component taking { ctx, read } (read: the load's Offers data, round 5)", () => {
   const code = src(`components/planner/stages/OffersStage.tsx`);
-  assert.match(code, /export default (async )?function OffersStage\(\{ ctx \}: \{ ctx: PlanContext \}\)/, `OffersStage's signature`);
+  assert.match(code, /export default (async )?function OffersStage\(\{ ctx, read = null \}: \{ ctx: PlanContext; read\?: OffersRead \| null \}\)/, `OffersStage's signature`);
+  // With the load's data it reads nothing; without it, the same reads itself.
+  assert.match(code, /read \?\? \(await readOffers\(await createServerSupabase\(\), ctx, ctx\.profile\)\)/);
+  assert.doesNotMatch(code.replace(/read \?\? \(await readOffers\([^)]*\)[^)]*\)\)/, ""), /\.from\("|readOffers\(|offerFacts\(|waitListFacts\(/);
 });
 
 test("every row control exists as a client component with the shared props; RowControls renders them in stage order", () => {

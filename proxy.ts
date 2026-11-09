@@ -16,6 +16,7 @@ import { signedInCookieFor } from "@/lib/accounts";
 import { meHintClearFor } from "@/lib/me-hint";
 import { AUTH_COOKIE_OPTIONS } from "@/lib/supabase-server";
 import { getClaimsWithKeys } from "@/lib/auth-jwks";
+import { scheduleJwksRefresh } from "@/lib/auth-jwks-after";
 import { timingEnabled } from "@/lib/timing";
 
 export async function proxy(request: NextRequest) {
@@ -48,6 +49,8 @@ export async function proxy(request: NextRequest) {
   // the page decide.
   const started = performance.now();
   await getClaimsWithKeys(supabase.auth).catch(() => null);
+  // The instance's hourly key refresh (round 5), run by after() once this response is sent: never on the request path.
+  scheduleJwksRefresh();
   // QUAD_TIMING=1 (specs/serving-architecture.md "Timing a request"): the session check's time as a Server-Timing
   // header, the one part of the request known before the page starts streaming. Off by default; a duration only.
   if (timingEnabled()) response.headers.set("Server-Timing", `proxy;dur=${Math.round(performance.now() - started)};desc="session check"`);

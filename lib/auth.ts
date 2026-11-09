@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabase, supabaseAuthEnv } from "@/lib/supabase-server";
 import { getClaimsWithKeys } from "@/lib/auth-jwks";
+import { scheduleJwksRefresh } from "@/lib/auth-jwks-after";
 import { PAUSED_LOGIN_PATH } from "@/lib/admin/constants";
 import { viewerBundle } from "@/lib/bundles";
 import { requestMemo } from "@/lib/request-memo";
@@ -60,13 +61,16 @@ export type SessionUser = { id: string; email: string | null };
  *
  * The keys come bundled with the deploy (lib/auth-jwks.ts, written by scripts/fetch-jwks.mts at build time), so even a
  * fresh instance, whose in-memory cache is empty, verifies without fetching them; a key rotated in since the build
- * falls through to the library's cache and fetch.
+ * falls through to the library's cache and fetch. Round 5: each instance swaps in the live key set at most once an hour,
+ * after a response (lib/auth-jwks-after.ts), so a revoked key stops verifying without a deploy.
  */
 const sessionClaims = cache(async (): Promise<{ sub: string; email: string | null; aal: string | null } | null> => {
   if (!authConfigured()) return null;
   const supabase = await createServerSupabase();
   // A malformed token (an unknown alg, a key that won't import) can throw instead of returning an error: signed out.
   const { data, error } = await getClaimsWithKeys(supabase.auth).catch(() => ({ data: null, error: true }));
+  // The instance's hourly key refresh, after the response (round 5; lib/auth-jwks-after.ts): never on this path.
+  scheduleJwksRefresh();
   if (error || !data) return null;
   const { sub, email, aal } = data.claims;
   if (typeof sub !== "string" || sub === "") return null;

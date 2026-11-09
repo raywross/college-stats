@@ -92,15 +92,24 @@ export function openTabFor(param: string | null | undefined, tabs: readonly Plan
 }
 
 /**
- * The tabs that switch in the browser, over panels the server already rendered (specs/planner/redesign/page.md "Tabs
- * switch in place"): Colleges, Essays, and Calendar always (they read only the plan); Next steps unless the asks
- * notice above it needs its own read (`asksRead`: a student or a parent looking; components/org/AskNotice.tsx reads
- * `org_open_asks` and marks the asks seen, so it runs only when the page opens on Next steps); Offers never (its stage
- * reads the letters, the cost history, and the outcome flag itself). The tab the page opened on is always among them,
- * since its panel is on the page. Every other tab's pill stays a plain link: a server render, as before.
+ * Whether the plan has a decision recorded (a college answered, or the student decided): the Offers tab's gate
+ * (`tabsFor`'s `hasDecision`), shared by the frame (components/planner/PlanFrame.tsx) and the plan loader, which reads
+ * the Offers stage's data only then (lib/planner/load.ts; round 5).
  */
-export function switchableTabs(opts: { tabs: readonly PlanTab[]; opened: PlanTab; asksRead: boolean }): PlanTab[] {
-  return opts.tabs.filter((t) => t === opts.opened || t === "colleges" || t === "essays" || t === "calendar" || (t === "next" && !opts.asksRead));
+export function hasDecision(items: readonly { status: string; decision_date: string | null }[]): boolean {
+  return items.some((i) => i.status === "decided" || i.decision_date !== null);
+}
+
+/**
+ * The tabs that switch in the browser, over panels the server already rendered (specs/planner/redesign/page.md "Tabs
+ * switch in place"): Next steps, Colleges, Essays, and Calendar always (they read only what the plan load read: since
+ * round 5 the asks notice above Next steps renders from the load's first wave and the asks are marked seen from the
+ * browser, components/org/AskNotice.tsx); Offers when the load read its stage's data (`offersRead`: the plan has a
+ * decision and the read succeeded; otherwise its stage reads for itself, so the pill stays a navigation). The tab the
+ * page opened on is always among them, since its panel is on the page. Every other pill stays a plain link.
+ */
+export function switchableTabs(opts: { tabs: readonly PlanTab[]; opened: PlanTab; offersRead: boolean }): PlanTab[] {
+  return opts.tabs.filter((t) => t === opts.opened || t !== "offers" || opts.offersRead);
 }
 
 /**

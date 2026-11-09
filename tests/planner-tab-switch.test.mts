@@ -1,7 +1,7 @@
 /**
  * The advisor's tabs switch in the browser (round 4, U3; specs/planner/redesign/page.md "Tabs switch in place"):
  * - lib/planner/plan-tabs.ts: `openTabFor` (the server's choice from the URL), `switchableTabs` (which tabs' panels are
- *   on the page: never Offers, Next steps only when its asks notice needs no read), `panelOnceKey`;
+ *   on the page: Next steps always since round 5, Offers when the load read its stage's data), `hasDecision`, `panelOnceKey`;
  * - the rendered frame (PlanTabProvider + PlanTabPills + PlanTabs, through React's server renderer with the panel
  *   bodies stubbed): `?tab=essays` renders the Essays panel visible on the server and mounts no other; a URL naming a
  *   switchable tab shows that panel; one naming a tab without a panel here shows the opened one; the pills are links
@@ -18,7 +18,7 @@ import { dirname, join, resolve as resolvePath } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import ts from "typescript";
 import type { ReactElement, ReactNode } from "react";
-import { openTabFor, panelOnceKey, PANEL_ONCE_PARAMS, switchableTabs, tabsFor, type PlanTab } from "../lib/planner/plan-tabs.ts";
+import { hasDecision, openTabFor, panelOnceKey, PANEL_ONCE_PARAMS, switchableTabs, tabsFor, type PlanTab } from "../lib/planner/plan-tabs.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
@@ -39,16 +39,31 @@ test("openTabFor: the URL's tab when this view shows it, else the fallback (as t
   assert.equal(openTabFor("", FIVE, "colleges"), "colleges");
 });
 
-test("switchableTabs: Colleges, Essays, Calendar always; Next steps without the asks read or when opened on it; Offers only when opened on it", () => {
-  assert.deepEqual(switchableTabs({ tabs: FIVE, opened: "next", asksRead: true }), ["next", "colleges", "essays", "calendar"]);
-  assert.deepEqual(switchableTabs({ tabs: FIVE, opened: "colleges", asksRead: true }), ["colleges", "essays", "calendar"]);
-  assert.deepEqual(switchableTabs({ tabs: FIVE, opened: "colleges", asksRead: false }), ["next", "colleges", "essays", "calendar"]);
-  assert.deepEqual(switchableTabs({ tabs: FIVE, opened: "offers", asksRead: false }), ["next", "colleges", "essays", "calendar", "offers"]);
-  assert.deepEqual(switchableTabs({ tabs: FOUR, opened: "essays", asksRead: true }), ["colleges", "essays", "calendar"]);
+test("switchableTabs: Next steps, Colleges, Essays, Calendar always (round 5); Offers when its data came with the plan, or when opened on it", () => {
+  assert.deepEqual(switchableTabs({ tabs: FIVE, opened: "next", offersRead: false }), ["next", "colleges", "essays", "calendar"]);
+  assert.deepEqual(switchableTabs({ tabs: FIVE, opened: "colleges", offersRead: false }), ["next", "colleges", "essays", "calendar"]);
+  assert.deepEqual(switchableTabs({ tabs: FIVE, opened: "colleges", offersRead: true }), ["next", "colleges", "essays", "calendar", "offers"]);
+  assert.deepEqual(switchableTabs({ tabs: FIVE, opened: "offers", offersRead: false }), ["next", "colleges", "essays", "calendar", "offers"]);
+  assert.deepEqual(switchableTabs({ tabs: FOUR, opened: "essays", offersRead: false }), ["next", "colleges", "essays", "calendar"]);
   // Guard: the opened tab is always among them (its panel is on the page), whatever the view.
-  for (const tabs of [FOUR, FIVE]) for (const opened of tabs) for (const asksRead of [true, false]) assert.ok(switchableTabs({ tabs, opened, asksRead }).includes(opened));
-  // Guard: Offers reads on its own, so it never switches in place unless the page opened on it.
-  for (const opened of FIVE.filter((t) => t !== "offers")) assert.ok(!switchableTabs({ tabs: FIVE, opened, asksRead: false }).includes("offers"));
+  for (const tabs of [FOUR, FIVE]) for (const opened of tabs) for (const offersRead of [true, false]) assert.ok(switchableTabs({ tabs, opened, offersRead }).includes(opened));
+  // Guard: Next steps switches in place for everyone now (the asks come with the load; seen is marked from the browser).
+  for (const tabs of [FOUR, FIVE]) for (const opened of tabs) for (const offersRead of [true, false]) assert.ok(switchableTabs({ tabs, opened, offersRead }).includes("next"));
+  // Guard: without its data, Offers' stage reads on its own, so it never switches in place unless the page opened on it.
+  for (const opened of FIVE.filter((t) => t !== "offers")) assert.ok(!switchableTabs({ tabs: FIVE, opened, offersRead: false }).includes("offers"));
+  // Never a tab the view doesn't show.
+  assert.ok(!switchableTabs({ tabs: FOUR, opened: "next", offersRead: true }).includes("offers"));
+});
+
+test("hasDecision: a college answered (a decision date) or the student decided; the Offers tab's gate and the load's", () => {
+  assert.equal(hasDecision([]), false);
+  assert.equal(hasDecision([{ status: "applied", decision_date: null }, { status: "considering", decision_date: null }]), false);
+  assert.equal(hasDecision([{ status: "applied", decision_date: "2026-12-15" }]), true);
+  assert.equal(hasDecision([{ status: "decided", decision_date: null }]), true);
+  assert.deepEqual(tabsFor({ everyone: false, hasDecision: hasDecision([{ status: "decided", decision_date: null }]) }), FIVE);
+  // The frame and the loader share it (one gate, so the load reads the stage's data exactly when the tab shows).
+  assert.match(read("components/planner/PlanFrame.tsx"), /tabsFor\(\{ everyone: false, hasDecision: hasDecision\(ctx\.items\) \}\)/);
+  assert.match(read("lib/planner/load.ts"), /if \(!hasDecision\(plan\.items\)\) return Promise\.resolve\(null\);/);
 });
 
 test("panelOnceKey: changes with a move, a row's ED sheet, or the calendar range; not with the tab or the person", () => {
@@ -128,9 +143,9 @@ const { PlanTabs } = (await import("../components/planner/PlanTabs.tsx")) as unk
 const ctx = { student: { id: "s1" }, viewer: { isCounselor: false } };
 
 /** The frame's tab part for a page the server rendered `opened`, read with the browser on `url`. */
-function frame(opts: { tabs?: readonly PlanTab[]; opened: PlanTab; url?: string; asksRead?: boolean }): string {
+function frame(opts: { tabs?: readonly PlanTab[]; opened: PlanTab; url?: string; offersRead?: boolean }): string {
   const tabs = opts.tabs ?? FIVE;
-  const local = switchableTabs({ tabs, opened: opts.opened, asksRead: opts.asksRead ?? true });
+  const local = switchableTabs({ tabs, opened: opts.opened, offersRead: opts.offersRead ?? false });
   (globalThis as { __tabSwitchUrl?: string }).__tabSwitchUrl = opts.url ?? `tab=${opts.opened}`;
   return renderToStaticMarkup(
     React.createElement(
@@ -160,12 +175,12 @@ test("the pills: real links to ?tab=, the open one selected; client-side for pan
   const p = pills(html);
   assert.deepEqual(p.map((x) => x.href), ["/advisor?for=s1&tab=next", "/advisor?for=s1&tab=colleges", "/advisor?for=s1&tab=essays", "/advisor?for=s1&tab=calendar", "/advisor?for=s1&tab=offers"]);
   assert.deepEqual(p.map((x) => x.selected), [false, false, true, false, false]);
-  // Opened on Essays for a family: Next steps' asks read and Offers' own reads keep those two as navigations.
-  assert.deepEqual(p.map((x) => x.via), ["server", "client", "client", "client", "server"]);
+  // Opened on Essays without the Offers data: only Offers stays a navigation (its stage reads for itself).
+  assert.deepEqual(p.map((x) => x.via), ["client", "client", "client", "client", "server"]);
   // A switched tab needs no prefetch; a navigating one keeps Next's default.
-  assert.deepEqual(p.map((x) => x.prefetch), ["undefined", "false", "false", "false", "undefined"]);
-  // Opened on Next steps, everything but Offers switches in place.
-  assert.deepEqual(pills(frame({ opened: "next" })).map((x) => x.via), ["client", "client", "client", "client", "server"]);
+  assert.deepEqual(p.map((x) => x.prefetch), ["false", "false", "false", "false", "undefined"]);
+  // With the Offers data read with the plan (round 5), every tab switches in place.
+  assert.deepEqual(pills(frame({ opened: "next", offersRead: true })).map((x) => x.via), ["client", "client", "client", "client", "client"]);
 });
 
 test("after a switch (the URL says calendar), the calendar panel shows, its pill is selected, and the opened panel stays mounted, hidden", () => {
@@ -175,20 +190,23 @@ test("after a switch (the URL says calendar), the calendar panel shows, its pill
   assert.deepEqual(pills(html).map((x) => x.selected), [false, false, false, true, false]);
   // No ?tab= at all: the viewer's default, as a full load of that URL opens.
   assert.deepEqual(panels(frame({ opened: "next", url: "" })), [{ tab: "next", hidden: false }]);
-  // A URL naming a tab whose panel isn't here (Offers) shows the opened one rather than nothing.
+  // A URL naming a tab whose panel isn't here (Offers without its data) shows the opened one rather than nothing.
   assert.deepEqual(panels(frame({ opened: "colleges", url: "tab=offers" })), [{ tab: "colleges", hidden: false }]);
-  assert.deepEqual(panels(frame({ opened: "colleges", url: "tab=next" })), [{ tab: "colleges", hidden: false }], "Next steps reads asks here: not on the page");
-  assert.deepEqual(panels(frame({ opened: "colleges", url: "tab=next", asksRead: false })), [{ tab: "next", hidden: false }]);
+  assert.deepEqual(panels(frame({ opened: "colleges", url: "tab=offers", offersRead: true })), [{ tab: "offers", hidden: false }]);
+  // Next steps is on the page for everyone now (round 5).
+  assert.deepEqual(panels(frame({ opened: "colleges", url: "tab=next" })), [{ tab: "next", hidden: false }]);
 });
 
 test("PlanTabs renders the panels on the page: the opened one first, then the switchable ones; Next steps with its asks notice above", () => {
   const src = read("components/planner/PlanTabs.tsx");
   assert.match(src, /for \(const t of \[tab, \.\.\.local\]\) if \(!\(t in panels\)\) panels\[t\] = panel\[t\]\(\);/);
   assert.match(src, /return <PlanTabPanels panels=\{panels\} /);
-  assert.match(src, /next: \(\) => \(\s*<>[\s\S]*?<AskNotice ctx=\{ctx\} \/>\s*<NextSteps ctx=\{ctx\} view=\{view\} \/>/);
+  assert.match(src, /next: \(\) => \(\s*<>[\s\S]*?<AskNotice asks=\{tabsRead\?\.asks \?\? null\} ctx=\{ctx\} \/>\s*<NextSteps ctx=\{ctx\} view=\{view\} \/>/);
+  assert.match(src, /offers: \(\) => <OffersStage ctx=\{ctx\} read=\{tabsRead\?\.offers \?\? null\} \/>/);
   // The frame decides which tabs are local and wraps the pills and the panels in one provider.
   const f = read("components/planner/PlanFrame.tsx");
-  assert.match(f, /const local = switchableTabs\(\{ tabs, opened: openTab, asksRead: !!ctx\.student && !ctx\.viewer\.isCounselor \}\);/);
+  assert.match(f, /const local = switchableTabs\(\{ tabs, opened: openTab, offersRead: tabsRead\?\.offers != null \}\);/);
+  assert.match(f, /<PlanTabs [^>]*tabsRead=\{tabsRead\}/);
   assert.match(f, /<PlanTabProvider tabs=\{tabs\} opened=\{openTab\} fallback=\{fallbackTab\} local=\{local\}>/);
   assert.match(f, /<PlanTabs [^>]*local=\{local\}/);
 });

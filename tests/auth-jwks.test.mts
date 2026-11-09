@@ -11,8 +11,9 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFile
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServerClient } from "@supabase/ssr";
-import { bundledJwks, getClaimsWithKeys, type Jwks } from "../lib/auth-jwks.ts";
-import { jwksUrl, main as fetchJwks, publicKeys } from "../scripts/fetch-jwks.mts";
+import { bundledJwks, claimJwksRefresh, getClaimsWithKeys, instanceJwks, type Jwks } from "../lib/auth-jwks.ts";
+import { createJwksHolder, JWKS_REFRESH_EVERY_MS } from "../lib/jwks-refresh.ts";
+import { downloadJwks, jwksUrl, main as fetchJwks, publicKeys } from "../scripts/fetch-jwks.mts";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -265,4 +266,144 @@ test("package.json runs fetch-jwks in the prebuild and, with --ensure, in the po
   const scripts = (JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> }).scripts;
   assert.match(scripts.prebuild, /scripts\/fetch-jwks\.mts(?! --ensure)/);
   assert.match(scripts.postinstall, /scripts\/fetch-jwks\.mts --ensure/);
+});
+
+/* ------------------------------------------------------------------ */
+/* Round 5: the per-instance refresh (lib/jwks-refresh.ts)             */
+/* ------------------------------------------------------------------ */
+
+const HOUR = 60 * 60 * 1000;
+
+/** A holder over a fake clock and a fake download; `loads` counts the downloads. */
+function fakeHolder(initial: Jwks, live: () => Promise<Jwks>) {
+  let t = 1_000_000;
+  let loads = 0;
+  const holder = createJwksHolder<Jwks>({
+    initial,
+    load: () => {
+      loads++;
+      return live();
+    },
+    now: () => t,
+  });
+  return { holder, tick: (ms: number) => (t += ms), loads: () => loads };
+}
+
+const silently = async <T,>(run: () => Promise<T>): Promise<T> => {
+  const { warn } = console;
+  console.warn = () => {};
+  try {
+    return await run();
+  } finally {
+    console.warn = warn;
+  }
+};
+
+test("the refresh is claimed at most once an hour per instance: a fresh instance's first claim, then none until the hour is out", () => {
+  const { holder, tick } = fakeHolder({ keys: [] }, async () => ({ keys: [] }));
+  assert.equal(holder.claim(), true, "a fresh instance refreshes after its first checked response (the bundle may be days old)");
+  assert.equal(holder.claim(), false, "a second request on the instance doesn't schedule another");
+  tick(HOUR - 1);
+  assert.equal(holder.claim(), false);
+  tick(1);
+  assert.equal(holder.claim(), true);
+  assert.equal(holder.claim(), false);
+  assert.equal(JWKS_REFRESH_EVERY_MS, HOUR);
+});
+
+test("a refresh replaces the instance's set with the live one; concurrent refreshes share one download; none is claimed while one runs", async () => {
+  const a = await signingKey("kid-a");
+  const b = await signingKey("kid-b");
+  let release: () => void = () => {};
+  const gate = new Promise<void>((r) => (release = r));
+  const { holder, tick, loads } = fakeHolder({ keys: [a.jwk] }, async () => {
+    await gate;
+    return { keys: [b.jwk] };
+  });
+  assert.deepEqual(holder.current(), { keys: [a.jwk] }, "the bundled set until the first refresh lands");
+  assert.equal(holder.claim(), true);
+  const first = holder.refresh();
+  const second = holder.refresh();
+  tick(2 * HOUR);
+  assert.equal(holder.claim(), false, "never while a refresh is running");
+  release();
+  assert.equal(await first, true);
+  assert.equal(await second, true);
+  assert.equal(loads(), 1);
+  assert.deepEqual(holder.current(), { keys: [b.jwk] });
+});
+
+test("a failed refresh keeps the set the instance had (fail soft) and waits out the hour before trying again", async () => {
+  const a = await signingKey("kid-a");
+  const { holder, tick, loads } = fakeHolder({ keys: [a.jwk] }, async () => {
+    throw new Error("GET …/jwks.json: 503");
+  });
+  assert.equal(holder.claim(), true);
+  assert.equal(await silently(() => holder.refresh()), false);
+  assert.deepEqual(holder.current(), { keys: [a.jwk] });
+  assert.equal(holder.claim(), false);
+  tick(HOUR);
+  assert.equal(holder.claim(), true);
+  await silently(() => holder.refresh());
+  assert.equal(loads(), 2);
+});
+
+test("after the refresh a revoked key stops verifying, without a deploy; before it, the bundled set still had it", async () => {
+  const revoked = await signingKey("kid-revoked");
+  const current = await signingKey("kid-current");
+  const ref = freshRef();
+  // The project's live set no longer has the revoked key; the bundle (built before the revocation) still does.
+  const live: Jwks = { keys: [current.jwk] };
+  const liveFetch = async (url: string) => (url === jwksUrl(`https://${ref}.supabase.co`) ? Response.json(live) : new Response("", { status: 404 }));
+  const { holder } = fakeHolder({ keys: [revoked.jwk, current.jwk] }, async () => (await downloadJwks(`https://${ref}.supabase.co`, liveFetch)) as unknown as Jwks);
+  const before = client(ref, await session(revoked), live);
+  assert.equal((await getClaimsWithKeys(before.supabase.auth, holder.current())).data?.claims.sub, "user-1", "the build-time set still trusts it");
+  assert.equal(await holder.refresh(), true);
+  assert.deepEqual(holder.current(), live);
+  const later = client(ref, await session(revoked), live);
+  const { data, error } = await getClaimsWithKeys(later.supabase.auth, holder.current());
+  assert.equal(data, null);
+  assert.ok(error, "a token signed by the revoked key is refused once the instance has the live set");
+  // The current key still verifies locally, with no request.
+  const ok = client(freshRef(), await session(current), live);
+  assert.equal((await getClaimsWithKeys(ok.supabase.auth, holder.current())).data?.claims.sub, "user-1");
+  assert.deepEqual(ok.calls, []);
+});
+
+test("after the refresh a key rotated in since the build verifies without the library's fetch", async () => {
+  const old = await signingKey("kid-old");
+  const rotated = await signingKey("kid-rotated");
+  const { holder } = fakeHolder({ keys: [old.jwk] }, async () => ({ keys: [old.jwk, rotated.jwk] }));
+  await holder.refresh();
+  const { supabase, calls } = client(freshRef(), await session(rotated), { keys: [old.jwk, rotated.jwk] });
+  assert.equal((await getClaimsWithKeys(supabase.auth, holder.current())).data?.claims.sub, "user-1");
+  assert.deepEqual(calls, [], "no fetch: the instance's set has the rotated key");
+});
+
+test("the instance's set: the bundled one at start, the default for every session check; no claim without SUPABASE_URL", () => {
+  assert.deepEqual(instanceJwks(), bundledJwks());
+  const saved = process.env.SUPABASE_URL;
+  delete process.env.SUPABASE_URL;
+  try {
+    assert.equal(claimJwksRefresh(), false);
+  } finally {
+    if (saved !== undefined) process.env.SUPABASE_URL = saved;
+  }
+  const source = readFileSync(join(ROOT, "lib", "auth-jwks.ts"), "utf8");
+  assert.match(source, /export function getClaimsWithKeys\(auth: Pick<SupabaseClient\["auth"\], "getClaims">, jwks: Jwks = instanceJwks\(\)\)/);
+  assert.match(source, /initial: BUNDLED,/);
+  assert.match(source, /downloadJwks\(url, fetch, REFRESH_TIMEOUT_MS\)/);
+});
+
+test("the refresh runs after the response, never on the request path: both session checks schedule it right after verifying", () => {
+  const scheduler = readFileSync(join(ROOT, "lib", "auth-jwks-after.ts"), "utf8");
+  assert.match(scheduler, /import \{ after \} from "next\/server";/);
+  assert.match(scheduler, /if \(!claimJwksRefresh\(\)\) return;\s*try \{\s*after\(\(\) => refreshInstanceJwks\(\)\);/);
+  // Guard: nothing awaits the download.
+  assert.doesNotMatch(scheduler.replace(/\/\*[\s\S]*?\*\//g, ""), /await /);
+  const scheduled = /await getClaimsWithKeys\(supabase\.auth\)[^\n]*\n(\s*\/\/[^\n]*\n)*\s*scheduleJwksRefresh\(\);/;
+  assert.match(readFileSync(join(ROOT, "lib", "auth.ts"), "utf8"), scheduled);
+  assert.match(readFileSync(join(ROOT, "proxy.ts"), "utf8"), scheduled);
+  // The build and the refresh keep the same keys (one filter).
+  assert.match(readFileSync(join(ROOT, "scripts", "fetch-jwks.mts"), "utf8"), /from "\.\.\/lib\/jwks-public\.ts"/);
 });

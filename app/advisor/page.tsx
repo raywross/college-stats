@@ -148,7 +148,7 @@ async function counselorPlan(
 ): Promise<ReactNode> {
   const id = access.student.id;
   const first = firstNameOf(access.student.display_name);
-  const loaded = await loadPlanFor(id, access, opts.early ? { early: opts.early } : {});
+  const loaded = await loadPlanFor(id, access, { tabs: true, ...(opts.early ? { early: opts.early } : {}) });
   const top = (
     <div className="space-y-3">
       <Link href={orgStudentHref(id)} className="-ml-2 inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-sm font-semibold text-primary hover:underline print:hidden">
@@ -197,6 +197,7 @@ async function counselorPlan(
         setup={opts.setup}
         back={opts.back}
         essays={essays}
+        tabsRead={loaded.tabs ?? null}
       />
     </div>
   );
@@ -270,7 +271,7 @@ async function renderPlan({
 
   const viewer = await planViewer();
   if (viewer.kind === "self") {
-    const loaded = await loadPlanFor(viewer.student.id, undefined, candidate === null ? { early } : {});
+    const loaded = await loadPlanFor(viewer.student.id, undefined, { tabs: true, ...(candidate === null ? { early } : {}) });
     const fallback = planFallback(loaded, null);
     if (fallback || loaded.kind !== "ready") return fallback;
     const self: PlanPerson = { studentId: null, name: loaded.ctx.student?.display_name ?? "You", gradYear: loaded.ctx.student?.grad_year ?? null, colorSlot: 0, href: planHref({}) };
@@ -299,6 +300,7 @@ async function renderPlan({
         setup={setup}
         back={back}
         essays={essays}
+        tabsRead={loaded.tabs ?? null}
       />
     );
   }
@@ -317,7 +319,7 @@ async function renderPlan({
   const named = resolveSelectedChild({ forParam: forParam ?? null, children: children.map((c) => ({ studentId: c.studentId, nextDeadline: null })), lastViewed });
   const decided = named !== null && (named === forParam || named === lastViewed);
   const toLoad = decided ? children.filter((c) => c.studentId === named) : children;
-  const [loads, profiles] = await Promise.all([Promise.all(toLoad.map((c) => loadPlanFor(c.studentId, undefined, c.studentId === candidate ? { early } : {}))), profilesICanSee()]);
+  const [loads, profiles] = await Promise.all([Promise.all(toLoad.map((c) => loadPlanFor(c.studentId, undefined, { tabs: true, ...(c.studentId === candidate ? { early } : {}) }))), profilesICanSee()]);
   const byId = new Map<string, PlanLoad>(toLoad.map((c, i) => [c.studentId, loads[i]]));
 
   const switchable: SwitchableChild[] = children.map((c) => ({ studentId: c.studentId, nextDeadline: nextDeadlineOf(byId.get(c.studentId)) }));
@@ -377,6 +379,7 @@ async function renderPlan({
       setup={setup}
       back={back}
       essays={essays}
+      tabsRead={load.tabs ?? null}
     />
   );
 }

@@ -276,7 +276,7 @@ test("the Essays tab (specs/product/essays/tab.md): ?tab=essays opens it on ever
   assert.match(page, /const essays = await essaysFor\(loaded, "student"\);/);
   assert.match(page, /const essays = await essaysFor\(load, "guardian"\);/);
   assert.match(page, /const essays = await essaysFor\(loaded, "counselor"\);/);
-  assert.match(read("components/planner/PlanFrame.tsx"), /<PlanTabs [^>]*essays=\{essays\} person=\{personId\} \/>/);
+  assert.match(read("components/planner/PlanFrame.tsx"), /<PlanTabs [^>]*essays=\{essays\} person=\{personId\}( tabsRead=\{tabsRead\})? \/>/);
 });
 
 test("guard: a PlanTabs without the essays panel fails the routing check", () => {

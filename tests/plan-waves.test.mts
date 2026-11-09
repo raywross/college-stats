@@ -147,6 +147,27 @@ test("loadPlanFor starts every first-wave read, and the high-school chain, befor
   assert.match(read("lib/essays/load.ts"), /readEssayOverrides\(null\)/);
 });
 
+test("round 5: the tab panels' reads add no wave: the asks in the first wave's gather, the Offers reads chained on the bundle and the profile", () => {
+  const src = read("lib/planner/load.ts");
+  const { before, gather } = firstWaveSource(src);
+  // The asks: one call in the same Promise.all, only when the advisor asks for the tabs and the viewer isn't a counselor.
+  assert.match(before, /const asksP = opts\.tabs && viewer\?\.relation !== "counselor" \? asksFor\(studentId\) : Promise\.resolve\(null\);/);
+  assert.ok(gather.includes("asksP"), "the first wave gathers the asks");
+  // The Offers reads start the moment the bundle and the profile resolve (not the whole first wave)...
+  assert.match(before, /const offersEarlyP = opts\.tabs\s*\? afterOne\(Promise\.all\(\[bundleP, profileP, supabaseP\]\), \(\[b, p, s\]\) => \{[\s\S]*?offersFor\(s, fromBundle, p\?\.data \?\? null\)/);
+  // ...run beside the colleges and the estimate, never after them...
+  assert.match(src, /const \[schoolsInput, estimates, offers\] = await Promise\.all\(\[[\s\S]*?span\("planSchools"[\s\S]*?span\("estimates"[\s\S]*?offersP,\s*\]\);/);
+  // ...and only when the plan has a decision (the tab's own gate); a failed read is logged and leaves the stage to read.
+  assert.match(src, /function offersFor\([^)]*\): Promise<OffersRead \| null> \{\s*if \(!hasDecision\(plan\.items\)\) return Promise\.resolve\(null\);\s*return readOffers\(supabase, plan, profile\)\.catch\(/);
+  // Only the advisor page asks for them (not the print page, the guides, the record, or the APIs).
+  const page = read("app/advisor/page.tsx");
+  assert.equal((page.match(/loadPlanFor\([^\n]*\{ tabs: true/g) ?? []).length, 3);
+  assert.equal((page.match(/tabsRead=\{(loaded|load)\.tabs \?\? null\}/g) ?? []).length, 3);
+  for (const other of ["app/advisor/print/page.tsx", "app/advisor/guide/[slug]/page.tsx", "app/household/[person]/record/page.tsx", "app/api/plan/levels/route.ts"]) {
+    assert.doesNotMatch(read(other), /tabs: true/, `${other} reads no tab panels`);
+  }
+});
+
 test("guard: an await before the first wave's gather is caught", () => {
   const broken = read("lib/planner/load.ts").replace("const profileP = profileFor(studentId);", "const profileP = Promise.resolve(await profileFor(studentId));");
   const { before } = firstWaveSource(broken);

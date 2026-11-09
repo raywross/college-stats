@@ -1,6 +1,8 @@
 # Launch database: a production Supabase project next to Vercel
 
-> Status: **planned** 2026-10-12 (owner). Do it just before the formal release. Extends
+> Status: **planned** 2026-10-12 (owner). ~~Do it just before the formal release.~~ **Pulled forward 2026-11-09:**
+> it is step A1 of [product/open-doors.md](product/open-doors.md), done before the site opens to the public free of
+> charge; prod starts empty but for the owner's account, and the user-testing personas stay on dev. Extends
 > [supabase.md](supabase.md) "Setup at the formal release". Note (2026-10-31, [data-platform/](data-platform/README.md)
 > built through phase 4, 2026-11-01): the public dataset now has **one store** for both environments, named by
 > `DATA_SUPABASE_URL` (today the dev project). It can stay in the dev project or move with this step; either way the

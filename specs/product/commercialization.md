@@ -146,6 +146,9 @@ household keeps their own plan's data under their own account, as the accounts s
   asks the student to confirm it. Under 16, the trial starts from a parent's account ([advisor.md](advisor.md#2-the-trial)). **Apple's in-app purchase rules** apply the day
   the iPhone app ships ([../iphone-app/app.md](../iphone-app/app.md#in-app-purchase)): the app either sells the advisor
   through StoreKit with the same two products or sells nothing and the site sells; decided with the app.
+- **Early accounts** ([open-doors.md](open-doors.md)): an account created before the `advisor.price_live_at` setting
+  (`isEarly()`) keeps the Advisor free through 2027-08-31 with no card and no trial, then renews at the list price in
+  force after the ordinary renewal notice; early accounts are reported apart and left out of the price test.
 - Telemetry events `trial_started`, `trial_reminder_sent`, `trial_converted`, `trial_cancelled`, and
   `subscription_cancelled` from the server ([telemetry.md](telemetry.md#event-registry)), with `product` and never an
   amount beyond the two list prices.

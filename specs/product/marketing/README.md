@@ -12,6 +12,7 @@ driven from the console too. Four specs; the plan first, then the three things t
 | [seo.md](seo.md) | Search from the console: today's gaps (no sitemap, robots, descriptions, Open Graph, or structured data), what search can send, the code built once (sitemap, robots from switches, metadata templates, canonical, Open Graph images, JSON-LD, IndexNow), the Search screen (templates with live preview, per-page overrides, crawler switches including AI crawlers, Search Console numbers, indexing, sharing preview), the Steward's weekly SEO audit, the content program |
 | [console.md](console.md) | The Growth door: Overview, Campaigns with the link builder and QR codes, **the ad platforms** (Google Ads and Meta campaigns written, launched, paused, and re-budgeted from the console through their APIs, with a dry run, a spending ceiling, an hourly sync, and alerts to the owner's phone, because the platforms' consoles are blocked at the owner's day job), Pages (editable landing-page copy), Search, Emails (lifecycle sequences and a double-opt-in newsletter for adults), Spend; the tables, jobs, help entries, owner steps, and the four-wave build plan with a model per unit |
 
-Order: wave 1 (findable, measurable, landing pages) and wave 2 (the ad platforms) before the January 2027 push;
+Order: wave 1 (findable, measurable, landing pages) ships with [open-doors.md](../open-doors.md), the public opening
+before the price (target 2026-12-01); wave 2 (the ad platforms) before the January 2027 push;
 wave 3 (search in the console, sharing); wave 4 (spend, lifecycle mail, newsletter) after Stripe and the trial ship
 ([../commercialization.md](../commercialization.md)).

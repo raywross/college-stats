@@ -407,7 +407,8 @@ moves into a section above.
     `/api/me` answer; measure the header's first paint and the prefetch bytes on production after the deploy.
 - [x] Deploy to Vercel: pre-release dev site at https://college-stats-nine.vercel.app, reading the Supabase dev
   project (2026-09-28; [supabase.md](supabase.md#current-state-pre-release-dev-only)).
-- [ ] **Formal release** (after the planned feature set is in, before circulating the site more widely): create the
+- [ ] **Formal release** (after the planned feature set is in, before circulating the site more widely; the prod
+  project and the public opening are pulled forward by [product/open-doors.md](product/open-doors.md), 2026-11-09): create the
   prod Supabase project and split dev/prod (apply both migrations: dataset and history), run `npm run sync-history` if
   the committed history is stale, point Vercel Production at prod, turn on publish-on-merge and
   revalidation secrets ([setup](supabase.md#setup-phase-3)), and put control procedures in place (who may publish to

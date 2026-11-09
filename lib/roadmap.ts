@@ -198,6 +198,19 @@ export const ROADMAP: RoadmapSpec[] = [
       "A new Supabase project, every migration in one tested script, an account dump and restore, auth settings, and swapping the keys in Vercel; mostly careful steps, little new code.",
     status: "planned",
   },
+  // Open the doors (2026-11-09, owner): the public site, free, before the price; pulls launch-database forward.
+  {
+    slug: "open-doors",
+    file: "specs/product/open-doors.md",
+    group: "business",
+    summary:
+      "The site opens to the public and to search engines before there is a price: Quad Advisor free while in early access, early accounts keeping it free through the 2026–27 cycle, a terms page, the production database, and the site made findable and counted.",
+    complexity: 2,
+    complexityNote:
+      "Five small obligations (terms, privacy wording, the free-for-now notice, an early-account rule, hosting tiers checked), the production database from launch-database, and wave 1 of the Growth console as written; the owner's decisions on the date and what early accounts keep.",
+    status: "planned",
+    after: ["launch-database"],
+  },
   // The Data Steward (specs/product/data-steward.md, group "business") was built 2026-11-01 on feature/data-steward
   // after a revision against the data platform: clusters by cause, the Steward's run with fixed tools and a budget,
   // the Issues / Proposals / To do / Decisions / Audits screens and the college Review page. Phase C (the automated

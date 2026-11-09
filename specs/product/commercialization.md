@@ -47,6 +47,32 @@ subscribe in December and leave in May. At $20, Stripe's $0.30 + 2.9% is about 4
 the pricing page. Stripe Tax handles sales tax where digital goods are taxed. Renewal is yearly with a reminder email
 two weeks before; a plan that lapses keeps its data and turns read-only ([below](#when-a-plan-lapses)).
 
+### Price tests (owner, 2026-11-09)
+The list price is $20 and $30, and the first campaigns run at it to gather data; a **price test** runs beside them
+from the first push, and the owner adapts from what it shows. The marketing plan's arithmetic
+([marketing/plan.md](marketing/plan.md#the-economics)) says a $20 plan can afford about $12 per trial, which paid
+search rarely reaches, while $49 and $79 would afford about $20; the test measures the conversion curve instead of
+assuming it.
+
+- **A price variant is a property of a campaign** ([marketing/console.md](marketing/console.md#campaigns)): the
+  campaign's row names the student and family prices its visitors see (`price_variant`, defaulting to the list
+  price). The campaign cookie ([marketing/measurement.md](marketing/measurement.md#the-campaign-cookie)) already
+  carries the campaign code for 30 days, so a visitor sees one price consistently from the ad to the pricing page to
+  the checkout; a visitor with no campaign sees the list price. Each variant is a Stripe Price on the same two
+  Products, so the checkout, webhooks, and entitlements are unchanged; `lib/entitlements.ts` exposes `priceFor(variant)`
+  and the pricing page, the splash page, and the upgrade sheet render from it instead of a constant.
+- **What the console shows:** trials started, trials converted, and the first-year cash per trial by price variant
+  on the Growth overview, so two cohorts of equal size can be compared after a season.
+- **Rules:** at most three variants live at once; a variant is never below the list price (a discount is a promotion
+  code, question 4, not a variant); the price a person started a trial at is the price they renew at, stored on the
+  subscription, so a test never raises an existing family's bill; nothing about a person decides the price they see,
+  only the link they arrived by; and the pricing page states that prices may differ by offer and that the price shown
+  is the one charged. Same-price-for-same-offer keeps this on the right side of the state price-discrimination
+  rules, which concern protected characteristics, not referral source.
+- **First test** (January to March 2027): the list price for every organic visitor and for half the paid campaigns'
+  links; $49 and $79 for the other half, split by link within each campaign so the audiences match. Decided from the
+  Growth overview in April 2027 with the rest of the push ([marketing/plan.md](marketing/plan.md#calendar)).
+
 ## Feature map
 Each feature's own spec says what's free; this table is the single list the entitlement code reads from
 (`lib/entitlements.ts`, one typed object, tested). The planner's eight capability names
@@ -166,3 +192,7 @@ is a prerequisite, and the estimate's method moves private at launch ([../chance
    the first build; the owner's model is that families pay. Revisit if offices ask.
 4. A "counselor recommended" code for a first-year discount is cheap in Stripe (promotion codes) and fits the channel;
    the owner decides whether the first year is ever less than $20.
+5. ~~Is $20 the right price?~~ Decided 2026-11-09: launch at $20 and $30 and run the price test above ($49 and $79 on
+   half the paid links) through the first push; the owner reads the curve in April 2027 and adapts. The marketing
+   plan's recommendation on the table is $49 and $79 with a counselor-recommended code toward $35
+   ([marketing/plan.md](marketing/plan.md#owner-decisions)).

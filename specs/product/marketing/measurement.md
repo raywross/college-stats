@@ -78,7 +78,7 @@ booleans; no free text; the denied-token test gains nothing because `campaign`, 
 | `landing_cta_clicked` | `page`, `cta`: trial / signup / invite-parent / start-org / demo | The pages' buttons | Whether the page moves people |
 | `signup_completed` (exists) | gains `campaign`, `campaign_age_days` (0–30) | The auth callback | The join between the click and the account |
 | `household_invite_sent` (server) | `by`: student / guardian; `campaign` | The household invitation action | The student campaign's conversion |
-| `trial_started`, `trial_converted`, `trial_cancelled`, `subscription_cancelled`, `subscription_renewed` (server) | `product`: student / family; `campaign` | [commercialization.md](../commercialization.md), when built; the names there are kept and gain `campaign` | The money funnel, by campaign |
+| `trial_started`, `trial_converted`, `trial_cancelled`, `subscription_cancelled`, `subscription_renewed` (server) | `product`: student / family; `campaign`; `price_variant` (the variant key, or `list`; never an amount beyond the published prices) | [commercialization.md](../commercialization.md), when built; the names there are kept and gain `campaign` and `price_variant` | The money funnel, by campaign and by price ([commercialization.md](../commercialization.md#price-tests-owner-2026-11-09)) |
 | `share_created` | `kind`: list / compare / trend; `channel`: link / x / facebook / copy | The share buttons ([console.md](console.md#sharing)) | Word of mouth, counted |
 
 `campaign` is a registered property name on every event that carries it, and its value is always a code the console
@@ -132,7 +132,7 @@ Some numbers never pass through PostHog, or cannot be trusted to (a parent with 
 | `marketing_links` | code → destination path, UTM source and medium, created by, the QR's rendered SVG | The console's link builder |
 | `marketing_link_opens` | code, day, count | `/go/{code}` (an upsert that increments) |
 | `marketing_spend` | campaign, month, amount, source (`google` / `meta` / `manual` / `csv`), note | The hourly `ads-sync` for platform campaigns ([console.md](console.md#sync-alerts-and-drift)); the console's Spend screen or a CSV for anything else |
-| `marketing_daily` | day, campaign, audience, step, count, source (`posthog` / `db`) | `marketing-pull`, which also counts `profiles.acquired_via` and the subscriptions table directly (the `db` rows), so the account and money steps have a number the browser cannot block |
+| `marketing_daily` | day, campaign, audience, price_variant, step, count, source (`posthog` / `db`) | `marketing-pull`, which also counts `profiles.acquired_via` and the subscriptions table directly (the `db` rows), so the account and money steps have a number the browser cannot block; the price test's rows come from the subscriptions table's stored variant |
 | `seo_daily` | day, page or query, clicks, impressions, CTR, position | `search-console-pull` ([seo.md](seo.md#search-performance)) |
 
 **Cost per trial** is `marketing_spend` for the campaign's month divided by the `db` count of trials for that campaign

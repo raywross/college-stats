@@ -91,6 +91,12 @@ So a trial is worth about $19 to $40 over its life, and a first year's cash is $
   trials, about $400 of first-year revenue, for an email, a demo, and a free account.
 - The first full cycle (September 2027 to August 2028) aims at 2,000 paid plans, about $45,000, from roughly 5,000
   trials. The channels are sized to that, not to a venture-scale number.
+- **The price is being tested, not assumed** (owner, 2026-11-09). The list price stays $20 and $30 and the first
+  campaigns run at it; half of each paid campaign's links show $49 and $79 instead, the price riding on the campaign
+  code so a visitor sees one price throughout ([commercialization.md](../commercialization.md#price-tests-owner-2026-11-09)).
+  At $49 a trial is worth about $17 in first-year cash and the ceiling per trial rises to about $20; at $99 to about
+  $30. The April 2027 reading of trials and conversions by price decides the list price for the next cycle, and the
+  recommendation on the table is $49 and $79 with a counselor-recommended code toward $35.
 
 ## The three campaigns
 
@@ -267,3 +273,6 @@ history of the plan is on the site with everything else.
    question 4): the campaign links can carry a Stripe promotion code the day the owner wants one; nothing here needs it.
 6. **The fifth door.** Growth as its own door in the console and a fifth tab on a phone, or under More
    ([console.md](console.md#placement)).
+7. ~~The price~~ Decided 2026-11-09: test at $20 first and adapt. The list price stays $20 and $30 through the first
+   push, with $49 and $79 shown on half of each paid campaign's links as a price test; the April 2027 reading decides
+   ([commercialization.md](../commercialization.md#price-tests-owner-2026-11-09)).

@@ -41,6 +41,7 @@ through the admin log, as the redesign's rules require.
 |---|---|
 | **This week** | The funnel table from [plan.md](plan.md#how-we-know-it-is-working): arrived, engaged, account, trial, paid, as three columns (parents, students, counselors) with this week, last week, and the change; each number says its source (`PostHog` or `db`) on hover and in the card list |
 | **Paid campaigns** | One row per active campaign with spend this month, trials, cost per trial, and a chip: green under $12, amber to $20, red above; the Decision box (kill / hold / double, a sentence) that writes the log and the campaign's status |
+| **Price test** | One row per live price variant: links showing it, visitors, trials started, trials converted, first-year cash per trial, and the cost per trial the variant can afford; the comparison the April 2027 price decision reads ([commercialization.md](../commercialization.md#price-tests-owner-2026-11-09)) |
 | **Search** | Clicks and sign-ups from organic search this week against last; a link to Growth › Search |
 | **Counselors** | Organizations created, students joined, working offices (five or more students); a link to People › Organizations |
 | **Targets** | The seven metrics of the plan with their April 2027 targets and where each stands, so the plan's promise is on the screen that judges it |
@@ -54,9 +55,12 @@ so the preview deployment shows real sign-up counts and no analytics.
 
 `/admin/growth/campaigns`. The registry and the link builder.
 
-**The table** (`marketing_campaigns`): code, name, audience (parents / students / counselors), channel (search /
-meta / sponsorship / video / reddit / email / directory / conference / newsletter / other), status (draft / live /
-paused / ended), start, end, planned monthly budget, landing page, and the week's opens, sign-ups, trials. Filters by
+**The table** (`marketing_campaigns`): code, name, audience (parents / students / counselors), channel (google-search /
+google-shorts / meta-feed / meta-reels / other), status (draft / live / paused / ended), start, end, planned monthly
+budget, landing page, **price variant** (the student and family prices this campaign's visitors see; the list price by
+default; [commercialization.md](../commercialization.md#price-tests-owner-2026-11-09)), and the week's opens, sign-ups,
+trials. A link may override its campaign's variant, which is how half a campaign's links show the test price while
+the audience stays the same. Filters by
 audience and status. A campaign's page shows its links, its daily series (opens, sign-ups, trials, from
 `marketing_daily` and `marketing_link_opens`), its spend by month, the decisions taken with their sentences, and a
 notes field.
@@ -261,8 +265,8 @@ no rewards, no "invite three friends": the share is a courtesy, and the count te
 
 | Table | Columns | Notes |
 |---|---|---|
-| `marketing_campaigns` | id, code (unique), name, audience, channel, status, starts_on, ends_on, monthly_budget_cents, landing_path, notes, created_by, created_at | Decisions are admin-log rows with `action: campaign_decision` and the sentence |
-| `marketing_links` | id, campaign_id, code (unique), destination_path, utm_source, utm_medium, promo_code, qr_svg, created_at | `code` defaults to the campaign's; sub-links append a suffix |
+| `marketing_campaigns` | id, code (unique), name, audience, channel, status, starts_on, ends_on, monthly_budget_cents, landing_path, price_variant (a key into the entitlements map's variants; null is the list price), notes, created_by, created_at | Decisions are admin-log rows with `action: campaign_decision` and the sentence |
+| `marketing_links` | id, campaign_id, code (unique), destination_path, utm_source, utm_medium, promo_code, price_variant (overrides the campaign's), qr_svg, created_at | `code` defaults to the campaign's; sub-links append a suffix |
 | `marketing_link_opens` | link_code, day, count | `increment_link_open(code)` security-definer function, callable by the anon role from the route handler, increments or inserts; nothing else about the open is kept |
 | `marketing_spend` | campaign_id, month (date, first of month), amount_cents, source, note, updated_at | |
 | `marketing_daily` | day, campaign (code or `organic:*` or `all`), audience, step, count, source | Written by `marketing-pull`; the overview and campaign pages read it |

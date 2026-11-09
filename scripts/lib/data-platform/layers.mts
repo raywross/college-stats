@@ -123,6 +123,7 @@ export const COLLECTIONS = {
     audits: "steward.audits",
     runs: "steward.runs",
     reviews: "steward.reviews",
+    logins: "steward.logins",
   },
 } as const;
 

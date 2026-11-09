@@ -56,7 +56,7 @@ export const ADMIN_DOORS: readonly AdminDoor[] = [
       { key: "inbox", label: "Inbox", href: "/admin", under: [], hint: "What needs you today", help: "inbox" },
       { key: "findings", label: "Findings", href: "/admin/steward/findings", under: [], hint: "What the Steward found", help: "finding" },
       { key: "proposals", label: "Proposals", href: "/admin/steward/proposals", under: [], hint: "Changes it wants to make", help: "proposal" },
-      { key: "todo", label: "To do", href: "/admin/steward/todo", under: [], hint: "What only a person can do", help: "to-do" },
+      { key: "todo", label: "To do", href: "/admin/steward/todo", under: [], hint: "Documents to fetch by hand", help: "to-do" },
       { key: "decisions", label: "Decisions", href: "/admin/steward/decisions", under: [], hint: "Policy waiting on you", help: "decision" },
       { key: "audits", label: "Audits", href: "/admin/steward/audits", under: [], hint: "Is what we publish right?", help: "audit" },
       { key: "jobs", label: "Jobs", href: "/admin/steward/jobs", under: [], hint: "Did everything run?", help: "job" },

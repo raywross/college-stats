@@ -31,6 +31,8 @@
  * checked against the cap: over it, nothing is spent and the run ends with exit 3.
  */
 import { DEFAULT_ANCHORS, REPORTED_MODELS, ROUND3_MODELS, enqueueItems, fallYear, withoutDropped, type BatchEntry, type BatchesFile, type BlockedHostsFile, type CallLog, type CdsUrlEntry, type CheckFailure, type CostProjection, type Extraction, type Recipe, type RecipeSource, type ReportedEntry, type ReportedFile, type ReportedTier, type ReviewItem, type ReviewQueueFile, type RunSummaryV3, type SourcesFile } from "../../../lib/reported.ts";
+import { settleFound } from "../../../lib/steward/todo-run.ts";
+import type { TodoDoc } from "../../../lib/steward/types.ts";
 import type { School } from "../../../lib/types";
 import { CALL_KEYS, SCHEMA_VERSIONS, codesFor, normalizeValue, yearsForEdition, type CallKey, type CdsCode, type CollegeDocsFile, type CollegeRecord, type DocumentRecord, type DocumentType, type ItemResult, type ManifestEntry, type TemplateTable } from "../../../lib/cds-sections.ts";
 import { compareDocuments } from "../../../lib/cds-records.ts";
@@ -78,8 +80,10 @@ export interface Round3State {
   batches: BatchesFile;
   /** data/reference/blocked-hosts.json */
   blocked: BlockedHostsFile;
-  /** data/reference/cds-urls.json entries (read only). */
+  /** data/reference/cds-urls.json entries (read only), plus the To do rows marked Found (lib/steward/todo-run.ts). */
   manual: CdsUrlEntry[];
+  /** The To do rows marked Found when the state was loaded; a row becomes done here once its document is archived. */
+  todoFound?: TodoDoc[];
   summary: RunSummaryV3;
   /** Unit ids whose record changed since the CLI last wrote them (the CLI clears it after writing). */
   dirty: Set<string>;
@@ -593,6 +597,15 @@ export function createRound3(deps: Round3Deps) {
       }
     }
 
+    /** A To do row marked Found at one of these addresses is done once the run holds the document (lib/steward/todo-run.ts). */
+    function settleFoundRows(school: School, urls: string[], sha: string) {
+      if (!state.todoFound?.length) return;
+      const { rows, settled } = settleFound(state.todoFound, { unit_id: school.unit_id, urls, sha256: sha, at: deps.now().toISOString() });
+      if (!settled.length) return;
+      state.todoFound = rows;
+      for (const r of settled) log(`  ${school.name}: To do ${r.key} done (the document a person found is archived)`);
+    }
+
     /**
      * One source: fetch only when new or changed, then archive, type, and read what code can read. A known document
      * counts as unchanged only once it has been read; one that never was is read from the archive, or fetched again
@@ -659,6 +672,7 @@ export function createRound3(deps: Round3Deps) {
       }
       const sha = sha256(bytes);
       src.sha256 = sha;
+      settleFoundRows(school, [src.url, fetchUrl, finalUrl], sha);
       if (fetchOutcome(state.manifest, { status: 200, sha256: sha }) === "unchanged") {
         const was = state.manifest.documents.find((d) => d.sha256 === sha)!;
         if (unread(was, src)) return readKnown(school, src, was, bytes, true);

@@ -13,6 +13,8 @@
  *   reported.failures      unit id      the college's failure rows (data/college-failures.json), in file order
  *   reported.reports       file name    the run summary (parsed JSON) and the calls log ({text})
  *   reference.files        blocked-hosts, cds-urls, college-reported-pilot (data/reference/<name>.json)
+ *   steward.todo           To do key    the rows marked Found (read into the owner's list; written back done once the
+ *                                       document is archived; lib/steward/todo-run.ts)
  *   import.headers         file name    each file's top-level fields (`updated`, …): read here, never written
  *
  * `StateWriter` writes after every college as the files were: it compares each document with what it last wrote and
@@ -22,6 +24,8 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { reviewKey, type BatchEntry, type BlockedHostsFile, type CallLog, type CdsUrlEntry, type CdsUrlsFile, type Recipe, type ReportedEntry, type ReviewItem, type RunSummary, type RunSummaryV3 } from "../../../lib/reported.ts";
+import { isRunnableFound, withFound } from "../../../lib/steward/todo-run.ts";
+import type { TodoDoc } from "../../../lib/steward/types.ts";
 import type { CollegeRecord, ManifestEntry } from "../../../lib/cds-sections.ts";
 import type { DatasetMeta, School } from "../../../lib/types";
 import { federalYears } from "../../../lib/newest-groups.ts";
@@ -68,6 +72,9 @@ export async function loadReportedState(store: DataStore, summary: Round3State["
   const [reportedH, sourcesH, docsH, batchesH, queueH] = await Promise.all([HEADER_KEYS.reported, HEADER_KEYS.sources, HEADER_KEYS.docs, HEADER_KEYS.batches, HEADER_KEYS.queue].map(header));
   const blocked = await store.readOne<BlockedHostsFile>(COLLECTIONS.reference.files, REFERENCE_KEYS.blocked);
   const manual = await store.readOne<CdsUrlsFile>(COLLECTIONS.reference.files, REFERENCE_KEYS.manual);
+  // The To do rows a person (or the assistant in their browser) marked Found: their addresses join the owner's list
+  // for step 0, and the rows themselves are kept so the run can mark them done (specs/product/todo-browser-agent.md).
+  const todoFound = values(await readLayer<TodoDoc>(store, COLLECTIONS.steward.todo)).filter(isRunnableFound);
   return {
     sources: { updated: sourcesH.updated ?? "", recipes: values(await readLayer<Recipe>(store, COLLECTIONS.reported.sources)) },
     reported: { updated: reportedH.updated ?? null, entries: values(await readLayer<ReportedEntry>(store, COLLECTIONS.reported.entries)) },
@@ -76,7 +83,8 @@ export async function loadReportedState(store: DataStore, summary: Round3State["
     records: await readLayer<CollegeRecord>(store, COLLECTIONS.reported.cdsRecords),
     batches: { updated: batchesH.updated ?? null, batches: values(await readLayer<BatchEntry>(store, COLLECTIONS.reported.batches)) },
     blocked: blocked ?? { hosts: [] },
-    manual: manual?.entries ?? ([] as CdsUrlEntry[]),
+    manual: withFound(manual?.entries ?? ([] as CdsUrlEntry[]), todoFound),
+    todoFound,
     summary,
     dirty: new Set(),
   };
@@ -110,6 +118,7 @@ export function stateDocuments(s: Round3State, recordIds: Iterable<string>): Map
     [COLLECTIONS.reported.batches, by(s.batches.batches, (b) => b.id)],
     [COLLECTIONS.reported.cdsRecords, records],
     [COLLECTIONS.reference.files, new Map([[REFERENCE_KEYS.blocked, s.blocked as unknown]])],
+    [COLLECTIONS.steward.todo, by(s.todoFound ?? [], (r) => r.key)],
   ]);
 }
 

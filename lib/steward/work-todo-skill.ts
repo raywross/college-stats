@@ -60,7 +60,8 @@ design and the owner's decisions are in \`specs/product/todo-browser-agent.md\`;
   continue. Never type a password, and never press "I have a login here": only a person lists a login.
 - A page that says the document is for counselors, members, or staff: do not record it as Found; leave the row and
   name the page in the report.
-- robots.txt does not bind you (the owner's decision, 2026-11-08): you open what the page links, as the owner would.
+- robots.txt does not bind you (the owner's decision, recorded in the spec): you open what the page links, as the owner
+  would.
 - Never change what a row already says without a reason in the note.
 - Do not wander: the task is the rows in the batch, not the site around them.
 

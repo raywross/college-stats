@@ -6,8 +6,8 @@
  * screen read-only with the lead line "Only {first} edits a draft; you can read and comment." No essay text: titles,
  * counts, and statuses only. Server component; the cards are client components (Start, the picker).
  *
- * The drafts come from the tab's own read (`essays`, lib/essays/tab-data.ts, read by app/advisor/page.tsx only when
- * this tab is open), else from the plan's `ctx.essays` when that carries them.
+ * The drafts come from the tab's own read (`essays`, lib/essays/tab-data.ts, read by app/advisor/page.tsx with every
+ * plan since the tabs switch in place), else from the plan's `ctx.essays` when that carries them.
  */
 import Link from "next/link";
 import { CollegeEssayCard, MainEssayCard, PromptRow } from "@/components/essays/CollegeEssayCard";

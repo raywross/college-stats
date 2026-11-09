@@ -49,6 +49,7 @@ import { COLLECTIONS, readLayer } from "./lib/data-platform/layers.mts";
 import { runRef as defaultRunRef } from "./lib/data-platform/producer.mts";
 import { dataProjectEnv, storeFromFlag, type ChangeSetHandle, type DataStore, type Env } from "./lib/data-platform/store.mts";
 import { applyProposal, ApplyRefused, APPLY_SOURCE } from "./lib/steward/apply.mts";
+import { setProposalStatus } from "./lib/steward/proposals.mts";
 import { Budget, BudgetStop, DEFAULT_BUDGETS, reviewBudget, runBudget, tokensOf, weeklySpent, WEEKLY_CAP_USD } from "./lib/steward/budget.mts";
 import { DRY_TOOLS, lastRestart, liveSources, liveTools, performRepair, reviewContext, writeJobIssue, writeNote, type RepairTools, type ReviewDb, type ReviewSources, type RunFile } from "./lib/steward/review.mts";
 import { slug } from "./lib/steward/writer.mts";
@@ -511,6 +512,15 @@ async function runApply(o: StewardOptions, key: string, started: Date, requestId
     const refused = err instanceof ApplyRefused;
     await handle.close(refused ? "applied" : "held", refused ? undefined : `steward apply ${o.proposal} failed: ${message}`.slice(0, 500), { proposal: o.proposal, refused: message }).catch(() => {});
     log(`apply ${o.proposal} failed: ${message}`);
+    // An approved proposal that didn't apply says so on its page (status failed, the message as its reason), in a set
+    // of its own, so the console shows it failed rather than approved and waiting. A proposal in any other status (a
+    // refusal because it isn't approved) keeps its status.
+    try {
+      const p = await o.store.readOne<ProposalDoc>(COLLECTIONS.steward.proposals, o.proposal);
+      if (p?.status === "approved") await setProposalStatus(o.store, o.proposal, "failed", message, { now, log });
+    } catch (e) {
+      log(`apply ${o.proposal}: couldn't mark the proposal failed: ${e instanceof Error ? e.message : e}`);
+    }
     return { exit, run: { ...run, stopped: message }, changeSet: handle.id, publish: false, message };
   }
 }

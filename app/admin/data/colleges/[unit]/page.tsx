@@ -7,6 +7,11 @@ import { RecordActions } from "@/components/admin/RecordActions";
 import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
 import { HealthChip } from "@/components/admin/ops/OpsStatusChip";
 import { EstimateInputsPanel } from "@/components/admin/EstimateInputsPanel";
+import { DocumentsPanel } from "@/components/admin/DocumentsPanel";
+import { collisions, parseCompare } from "@/lib/admin/document-compare";
+import { readCollegeDocuments, type DocumentsClient } from "@/lib/admin/document-reads";
+import { adminSupabase } from "@/lib/admin/people";
+import { CDS_TEMPLATE } from "@/lib/cds-template";
 import { collegeInputsFor } from "@/lib/admin/estimate-inputs-load";
 import { DailyViews, TopBars } from "@/components/admin/ViewCharts";
 import { SelectivityHistory } from "@/components/admin/SelectivityHistory";
@@ -38,7 +43,9 @@ export const metadata: Metadata = { title: "College", robots: { index: false, fo
  * GPA the standing model reads, and every hidden registry field with its lineage, all below the facts the estimate reads with
  * their sources and dates (specs/product/admin-health-views.md); then the college's data health card
  * with its open failures and review-queue items, a Rerun link that opens the college-reported job's Run now with this college filled in, and
- * Review (the college's pending rows, /admin/data/colleges/[unit]/review), also beside Edit in the header.
+ * Review (the college's pending rows, /admin/data/colleges/[unit]/review), also beside Edit in the header. The
+ * Documents panel (specs/product/document-collisions.md) lists the college's CDS files; a collision, or a
+ * `?compare=<a>,<b>` link, puts it first with the two files side by side and Keep this file under each.
  * Server-rendered behind requireAdmin(); nothing here reaches a client bundle.
  */
 export default async function CollegePage({ params, searchParams }: PageProps<"/admin/data/colleges/[unit]">) {
@@ -54,7 +61,11 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
   const opsHref = `/admin/steward/jobs/college-reported?unit=${unit}#run-now`;
   const looking = await collegeViewers(unit);
   const history = (await historyInstalled()) ? await collegeHistory(unit) : null;
-  const every = (await searchParams).every === "1";
+  const query = await searchParams;
+  const every = query.every === "1";
+  const compare = parseCompare(query.compare);
+  const documents = await readCollegeDocuments((await adminSupabase()) as unknown as DocumentsClient, unit);
+  const docsFirst = compare !== null || collisions(documents?.record).length > 0;
   const inputs = await collegeInputsFor(unit).catch((err) => {
     console.error("[admin college] the estimate inputs could not be worked out; the panel is left out.", err);
     return null;
@@ -91,7 +102,10 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="min-w-0 space-y-5">
+          {/* A collision, or a compare link, puts the two files first; otherwise the files sit after the estimate's facts. */}
+          {docsFirst && <DocumentsPanel unit={unit} docs={documents} compare={compare} template={CDS_TEMPLATE} />}
           <EstimateInputsPanel inputs={inputs} />
+          {!docsFirst && <DocumentsPanel unit={unit} docs={documents} compare={null} template={CDS_TEMPLATE} />}
           <SelectivityBlock panel={selectivity} school={school} />
           <HistoryBlock points={history} every={every} unit={unit} />
           <GpaBlock panel={gpa} school={school} />

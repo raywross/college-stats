@@ -41,6 +41,9 @@ const DOC_KEYS: (keyof DocumentRecord)[] = ["sha256", "edition", "type", "url", 
 const ordered = <T extends object>(o: T, keys: (keyof T)[]) =>
   Object.fromEntries(keys.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]));
 
+/** A record as the import stores it: the parsed text of data/cds-records/<unit>.json (fixed key and document order). */
+export const recordBody = (record: CollegeRecord): CollegeRecord => JSON.parse(serializeRecord(record)) as CollegeRecord;
+
 /** A record as text: fixed key order, documents newest first, items in template order, one item per line. */
 export function serializeRecord(record: CollegeRecord): string {
   const docs = [...record.documents].sort(compareDocuments).map((doc) => {

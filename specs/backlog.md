@@ -387,10 +387,17 @@ moves into a section above.
     waves (one settings read, essays with their counts by student, overrides once per request, the high-school reads
     chained on the profile); `/advisor/essays/[id]` on `essay_bundle(id)` in one wave with the notes in it; `/api/me`
     on `me_bundle()`; the cold start measured (36 MB `colleges.json`, `JSON.parse` is the cost) and the read path trimmed.
-  - [ ] **Left** (serving-architecture.md "Left, after this PR"): publish `lineage` as its own snapshot object so the
-    cold start halves (a publisher and `fetch-snapshot` change); keep the snapshot pointer check alive with `after()`;
-    the list page's own row citations and the offers and chances citations are still full; a plan tab switch is still
-    a server render; one `/explore` request ran in `sfo1`.
+  - [x] **Round 3** (PR #228, same day): `lineage` as its own snapshot object, loaded per college on first access; the
+    cold start measured 882–1,215 → 552–603 ms on production after snapshot 7; the pointer check under `after()`.
+  - [x] **Round 4** (PR #231, same day): the estimate's high-school reads in one call (`high_school_bundle`) with the
+    shared files held per instance; the signing keys bundled at build so a fresh instance verifies tokens without a
+    fetch; plan tabs switch in place; the list page's, offers', chances', and reading-line citations as references;
+    the `sfo1` request explained (Vercel's regional failover, nothing to change).
+  - [ ] **Left** (serving-architecture.md "Left, after this PR"): `GpaPanel`'s citations on the admissions page are
+    still full; the Offers tab still navigates (its own reads), and Next steps navigates for a family that landed on
+    another tab (its ask notice marks asks seen); a key revoked in the Supabase dashboard stays accepted by the session
+    check until the next deploy (row-level security still refuses it); re-measure production after the round-4 deploy
+    (the `estimates.context` span and the cold `auth` span should both fall).
 - [x] Deploy to Vercel: pre-release dev site at https://college-stats-nine.vercel.app, reading the Supabase dev
   project (2026-09-28; [supabase.md](supabase.md#current-state-pre-release-dev-only)).
 - [ ] **Formal release** (after the planned feature set is in, before circulating the site more widely): create the

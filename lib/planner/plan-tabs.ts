@@ -79,3 +79,37 @@ export function planPrintHref(opts: { person?: string | null; each?: boolean } =
   const s = q.toString();
   return s ? `${ADVISOR_PATH}/print?${s}` : `${ADVISOR_PATH}/print`;
 }
+
+/**
+ * The tab a URL's `?tab=` opens (round 4: the tab switch is client-side, components/planner/PlanTabSwitch.tsx): the
+ * named tab when this view shows it, else `fallback` (the viewer's default, `defaultTab`). The same decision
+ * app/advisor/page.tsx and PlanFrame.tsx make on the server, so the browser, reading the URL after a `pushState` or
+ * the back button, lands on the tab a full load of that URL would open.
+ */
+export function openTabFor(param: string | null | undefined, tabs: readonly PlanTab[], fallback: PlanTab): PlanTab {
+  const t = parseTab(param);
+  return t !== null && tabs.includes(t) ? t : fallback;
+}
+
+/**
+ * The tabs that switch in the browser, over panels the server already rendered (specs/planner/redesign/page.md "Tabs
+ * switch in place"): Colleges, Essays, and Calendar always (they read only the plan); Next steps unless the asks
+ * notice above it needs its own read (`asksRead`: a student or a parent looking; components/org/AskNotice.tsx reads
+ * `org_open_asks` and marks the asks seen, so it runs only when the page opens on Next steps); Offers never (its stage
+ * reads the letters, the cost history, and the outcome flag itself). The tab the page opened on is always among them,
+ * since its panel is on the page. Every other tab's pill stays a plain link: a server render, as before.
+ */
+export function switchableTabs(opts: { tabs: readonly PlanTab[]; opened: PlanTab; asksRead: boolean }): PlanTab[] {
+  return opts.tabs.filter((t) => t === opts.opened || t === "colleges" || t === "essays" || t === "calendar" || (t === "next" && !opts.asksRead));
+}
+
+/**
+ * The URL parameters a panel reads once, when it mounts: `move` scrolls Next steps to a card, `row`/`panel` open a
+ * row's ED sheet, `range` picks the calendar's view. When a navigation brings new ones the panels mount again so they
+ * act on them; a tab switch (whose URL drops them) doesn't remount anything.
+ */
+export const PANEL_ONCE_PARAMS = ["move", "row", "panel", "range"] as const;
+
+export function panelOnceKey(get: (name: string) => string | null): string {
+  return PANEL_ONCE_PARAMS.map((k) => `${k}=${get(k) ?? ""}`).join("&");
+}

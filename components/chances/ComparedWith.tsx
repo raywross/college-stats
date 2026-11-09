@@ -6,7 +6,7 @@ import { Info } from "lucide-react";
 import { SourceTip } from "@/components/ui/info-tip";
 import type { ComparedRow, ComparedWith as ComparedWithData } from "@/lib/chances/compared-with";
 import { track } from "@/lib/analytics";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import { cn } from "@/lib/utils";
 
 /**
@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
  * `lib/chances/compared-with.ts`) already carries every word and number, so nothing here can say more than the
  * catalog allows.
  */
-export function ComparedWithTip({ data, cite, className }: { data: ComparedWithData; cite: (path: string) => AnyCited | undefined; className?: string }) {
+export function ComparedWithTip({ data, cite, className }: { data: ComparedWithData; cite: (path: string) => CiteLike | undefined; className?: string }) {
   return (
     <Popover.Root onOpenChange={(open) => open && track("term_opened", { term: "applicants-like-you" })}>
       <Popover.Trigger
@@ -70,7 +70,7 @@ export function ComparedWithTip({ data, cite, className }: { data: ComparedWithD
   );
 }
 
-function ComparedRowLine({ row, cite }: { row: ComparedRow; cite: (path: string) => AnyCited | undefined }) {
+function ComparedRowLine({ row, cite }: { row: ComparedRow; cite: (path: string) => CiteLike | undefined }) {
   const cited = row.cite ? cite(row.cite) : undefined;
   return (
     <tr className={cn("border-t first:border-t-0", row.applies && "font-semibold text-foreground")}>

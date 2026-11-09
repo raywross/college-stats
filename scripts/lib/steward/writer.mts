@@ -6,14 +6,19 @@
  * - a `correct` or `publish` row without `value`, or without `source.page` (a workbook's row cites `source.quote`
  *   with its cell instead), or whose `field` isn't a registered field an admin edit may set;
  * - any row whose `now` (what the site shows) is empty;
- * - a systemic proposal without its change (what, how, revert).
+ * - a systemic proposal without its change (what, how, revert);
+ * - a refile row whose target edition already has a document on the record: the writer leaves a collision finding
+ *   (`collision|<unit>|<edition>`, linking the college page's comparison) in its place and the refusal names both files
+ *   (specs/product/document-collisions.md "The Steward side").
  *
  * And what the owner already decided stays decided: a row the owner declined (same college, field or code, and
  * document) isn't proposed again; an issue the owner left keeps its status and reason; a To do row a person settled
  * keeps its status. Every document gets the run's id and the clock's time.
  */
 import type { DecisionDoc, AuditDoc, Finding, IssueDoc, ProposalDoc, ProposalRow, TodoDoc } from "../../../lib/steward/types.ts";
-import type { ManifestEntry } from "../../../lib/cds-sections.ts";
+import { parseEdition, type CollegeRecord, type ManifestEntry } from "../../../lib/cds-sections.ts";
+import { CDS_TEMPLATE } from "../../../lib/cds-template.ts";
+import { CHOOSE_THE_FILE, collisionIssueKey, compareHref, documentFacts, factsSentence, filedWords, findDocument, LINK_SHA, refileCollision, type DocumentFacts } from "../../../lib/admin/document-compare.ts";
 import { editProblem } from "../../../lib/data-platform/edits.ts";
 import { COLLECTIONS } from "../data-platform/layers.mts";
 import { KEY_MAX, type ChangeSetHandle, type DataStore } from "../data-platform/store.mts";
@@ -127,6 +132,8 @@ export class StewardWriter {
       run: this.opts.run,
       updated: this.stamp(),
       ...(input.family ? { family: input.family } : {}),
+      ...(input.href ? { href: input.href } : {}),
+      ...(input.action ? { action: input.action } : {}),
     };
     await this.put(COLLECTIONS.steward.issues, doc.key, doc);
     this.counts.issues++;
@@ -166,9 +173,43 @@ export class StewardWriter {
     if ((kind === "hold" || kind === "reject") && !r.code && !r.item) return `${at}: a ${kind} row names the code or the queue item`;
     if (kind === "hold" && (!r.edition || !r.code)) return `${at}: a hold names the code and the edition`;
     if (kind === "refile" && (!r.sha256 || !r.edition)) return `${at}: a refile names the document (sha256) and the edition it belongs under`;
+    if (kind === "refile") {
+      const clash = await this.refileClash(r.unit_id, r.sha256!, r.edition!);
+      if (clash) return `${at}: ${clash}`;
+    }
     if (kind === "recipe" && !["sources.add", "sources.drop", "rediscover"].includes(r.field ?? "")) return `${at}: a recipe row's field is sources.add, sources.drop, or rediscover`;
     if (kind === "recipe" && r.field !== "rediscover" && (typeof r.value !== "string" || !/^https?:\/\//.test(r.value))) return `${at}: ${r.field} needs the URL as value`;
     return null;
+  }
+
+  /**
+   * A refile into an edition that already has a document on the record (specs/product/document-collisions.md "The
+   * Steward side"): the refusal naming both files, after leaving the collision finding (`collision|<unit>|<edition>`,
+   * its link the college page's comparison, its action "Choose the file") in the refile's place. Null when the edition
+   * is free (or the record or the document isn't there: the apply's own refusal says so).
+   */
+  async refileClash(unit: string, sha: string, edition: string): Promise<string | null> {
+    const record = await this.store.readOne<CollegeRecord>(COLLECTIONS.reported.cdsRecords, unit);
+    const otherSha = refileCollision(record, sha, edition);
+    const moving = findDocument(record, sha);
+    const there = record?.documents.find((d) => d.sha256 === otherSha);
+    if (!otherSha || !moving || !there) return null;
+    const to = parseEdition(edition)?.key ?? edition;
+    const facts = async (d: typeof moving) => documentFacts(d, this.opts.manifest ? await this.opts.manifest(d.sha256) : null, CDS_TEMPLATE);
+    const [fm, ft] = [await facts(moving), await facts(there)];
+    const href = compareHref(unit, moving.sha256, there.sha256);
+    const name = (f: DocumentFacts) => `${f.sha256.slice(0, LINK_SHA)} (pulled ${f.retrieved} from ${f.source.host}, ${filedWords(f)})`;
+    const finding = (d: typeof moving, f: DocumentFacts): Finding => ({ unit_id: unit, edition: d.edition, sha256: d.sha256, url: d.url, page: null, line: null, shows: factsSentence(f) });
+    await this.writeIssue({
+      key: collisionIssueKey(unit, to),
+      kind: "collision",
+      hypothesis: `Two files claim ${to} for ${unit}: ${name(ft)} is filed there, and a refile would move ${name(fm)} there too. A person chooses which file to read.`,
+      findings: [finding(there, ft), finding(moving, fm)],
+      status: "waiting",
+      href,
+      action: CHOOSE_THE_FILE,
+    });
+    return `${unit} already has a ${to} document, ${name(ft)}, so ${name(fm)} can't be refiled there. A finding was left for the owner to choose the file (${href}); don't propose this refile`;
   }
 
   async writeProposal(input: ProposalInput): Promise<{ doc: ProposalDoc; dropped: number }> {

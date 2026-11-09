@@ -34,7 +34,7 @@ import { COLLECTIONS, readLayer, type TextDocument } from "../data-platform/laye
 import type { ChangeSetHandle, DataStore } from "../data-platform/store.mts";
 import { bundledDir, readBundledColleges, readBundledMeta, readCollegesFile } from "../data-platform/bundled.mts";
 import { BUNDLED_SNAPSHOT_DIR } from "../../../lib/data-platform/snapshot.ts";
-import { serializeRecord } from "./records.mts";
+import { recordBody } from "./records.mts";
 import { emptySummaryV3, memoryCallLogWriter, roundUsd, summaryCost, type CallLogWriter } from "./models.mts";
 import { writeDerived } from "./derived.mts";
 import type { Round3State } from "./phases.mts";
@@ -60,8 +60,8 @@ export const summaryKey = (run: string) => `college-reported-run-${run.replace(/
 /** data/reports/college-reported-calls-<run>.jsonl's name, the `reported.reports` key of the calls log. */
 export const callsKey = (run: string) => `college-reported-calls-${run.replace(/[:]/g, "-")}.jsonl`;
 
-/** A record as the import stores it: the parsed text of data/cds-records/<unit>.json (fixed key and document order). */
-export const recordBody = (record: CollegeRecord): CollegeRecord => JSON.parse(serializeRecord(record)) as CollegeRecord;
+/** A record as the import stores it (defined in records.mts, which has no module-load reads, so the console can import it). */
+export { recordBody };
 
 type Header = { updated?: string | null };
 

@@ -30,7 +30,7 @@
  * Before any model call the run's projection (documents by type × per-document estimate, discovery steps × theirs) is
  * checked against the cap: over it, nothing is spent and the run ends with exit 3.
  */
-import { DEFAULT_ANCHORS, REPORTED_MODELS, ROUND3_MODELS, enqueueItems, fallYear, type BatchEntry, type BatchesFile, type BlockedHostsFile, type CallLog, type CdsUrlEntry, type CheckFailure, type CostProjection, type Extraction, type Recipe, type RecipeSource, type ReportedEntry, type ReportedFile, type ReportedTier, type ReviewItem, type ReviewQueueFile, type RunSummaryV3, type SourcesFile } from "../../../lib/reported.ts";
+import { DEFAULT_ANCHORS, REPORTED_MODELS, ROUND3_MODELS, enqueueItems, fallYear, withoutDropped, type BatchEntry, type BatchesFile, type BlockedHostsFile, type CallLog, type CdsUrlEntry, type CheckFailure, type CostProjection, type Extraction, type Recipe, type RecipeSource, type ReportedEntry, type ReportedFile, type ReportedTier, type ReviewItem, type ReviewQueueFile, type RunSummaryV3, type SourcesFile } from "../../../lib/reported.ts";
 import { settleFound } from "../../../lib/steward/todo-run.ts";
 import type { TodoDoc } from "../../../lib/steward/types.ts";
 import type { School } from "../../../lib/types";
@@ -821,10 +821,10 @@ export function createRound3(deps: Round3Deps) {
             const fixed = replaceUnlisted(recipe.sources, findLinks(html, res.url || idx), (u) => state.manifest.documents.some((d) => d.url === u || d.final_url === u));
             for (const [from, to] of fixed.replaced) log(`  ${school.name}: ${from} was never fetched and ${idx} doesn't list it; using ${to}, the same edition there`);
             if (fixed.replaced.length) {
-              recipe.sources = fixed.sources;
+              recipe.sources = withoutDropped(fixed.sources, recipe.dropped);
               indexChanged = true;
             }
-            const fresh = newSourcesFromIndex(html, idx, recipe.sources);
+            const fresh = withoutDropped(newSourcesFromIndex(html, idx, recipe.sources), recipe.dropped);
             if (fresh.length) {
               const { keep, retire } = retireSuperseded(recipe, fresh);
               for (const s of fresh) log(`  ${school.name}: new ${s.kind} link on ${idx}: ${s.url}`);
@@ -852,6 +852,8 @@ export function createRound3(deps: Round3Deps) {
           log(`  ${school.name}: rediscovered by ${r.path}${stored.sources.some((s) => s.kind === "cds") ? (same ? " (same CDS link as the old recipe)" : " (the old recipe's CDS link was not found)") : ""}`);
           if (!r.found && !r.blockedHosts) next = { ...next, sources: next.sources.length ? next.sources : stored.sources };
         }
+        // A rediscovery starts the ladder without the stored recipe: its dropped URLs carry over and stay out.
+        if (stored?.dropped?.length) next = { ...next, dropped: stored.dropped, sources: withoutDropped(next.sources, stored.dropped) };
         recipe = next;
         prefetched = r.prefetched;
         noteLadder(school, r, false);

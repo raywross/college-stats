@@ -1,7 +1,8 @@
 import "server-only";
 /**
  * The college facts the offers stage reads beside each offer (specs/planner/offers.md "Computation", "Context lines"),
- * cut from the dataset and the year-by-year history on the server with every figure cited (`citeField`). History is
+ * cut from the dataset and the year-by-year history on the server with every figure cited (`citeField`, shipped as a
+ * reference the ⓘ fetches on open: `citeRefWhereSame`, lib/planner/plan-cites.ts; round 4). History is
  * read only for admitted colleges (one small file each). Not a "use server" module: OffersStage and the dossier call it.
  *
  * The cost trend is nominal (not inflation-adjusted): what the bill does. History has tuition and full-price series by
@@ -14,6 +15,8 @@ import type { School } from "@/lib/types";
 import type { StudentProfileData } from "@/lib/student-profile";
 import { cfpView, fourYears, growthRate, isEnteredOffer, offerFlags, type CfpView, type FourYears, type OfferDraft, type OfferFacts, type OfferFlag, type OfferTrend, type WaitListFacts } from "./offers";
 import type { PlanContext, PlanItem, PlanOffer, PlanSchool } from "./types";
+import { citeRefWhereSame } from "./plan-cites";
+import type { AnyCited } from "@/lib/lineage";
 
 /** Which price applies to this student at this college. */
 export function residencyFor(school: Pick<School, "type" | "location" | "cost">, profile: StudentProfileData | null): OfferFacts["residency"] {
@@ -64,6 +67,7 @@ export async function offerFacts(unitIds: string[], profile: StudentProfileData 
   await Promise.all(
     [...new Set(unitIds)].map(async (id) => {
       const school = getSchoolById(id);
+      const ref = (c: AnyCited) => citeRefWhereSame(c, id);
       if (!school) return;
       const residency = residencyFor(school, profile);
       const sticker = school.cost?.sticker;
@@ -76,18 +80,18 @@ export async function offerFacts(unitIds: string[], profile: StudentProfileData 
         unit_id: id,
         residency,
         fullPrice: { amount: amount ?? null, year: stickerCite?.year ?? null },
-        fullPriceCite: stickerCite,
+        fullPriceCite: stickerCite && ref(stickerCite),
         trend: t?.trend ?? null,
         trendSources: t && files ? historySources(t.keys, files.meta, getMeta(), { academic: t.range }).map((s) => ({ label: s.label, years: s.years, url: s.url })) : [],
         avgCost: school.cost?.avg_paid_all ?? null,
-        avgCostCite: school.cost?.avg_paid_all != null ? citeField("cost.avg_paid_all", school) : null,
-        generosity: share !== null ? { share, label: generosityTier(share).label, cite: citeField("derived.aid_generosity", school) } : null,
+        avgCostCite: school.cost?.avg_paid_all != null ? ref(citeField("cost.avg_paid_all", school)) : null,
+        generosity: share !== null ? { share, label: generosityTier(share).label, cite: ref(citeField("derived.aid_generosity", school)) } : null,
         earnings: o?.median_earnings_10yr ?? null,
-        earningsCite: o?.median_earnings_10yr != null ? citeField("outcomes.median_earnings_10yr", school) : null,
+        earningsCite: o?.median_earnings_10yr != null ? ref(citeField("outcomes.median_earnings_10yr", school)) : null,
         debt: o?.median_debt ?? null,
-        debtCite: o?.median_debt != null ? citeField("outcomes.median_debt", school) : null,
+        debtCite: o?.median_debt != null ? ref(citeField("outcomes.median_debt", school)) : null,
         gradRate: o?.graduation_rate ?? null,
-        gradRateCite: o?.graduation_rate != null ? citeField("outcomes.graduation_rate", school) : null,
+        gradRateCite: o?.graduation_rate != null ? ref(citeField("outcomes.graduation_rate", school)) : null,
       };
     }),
   );
@@ -101,6 +105,7 @@ export async function waitListFacts(unitIds: string[]): Promise<Record<string, W
   const out: Record<string, WaitListFacts> = {};
   for (const id of new Set(unitIds)) {
     const school = getSchoolById(id);
+    const ref = (c: AnyCited) => citeRefWhereSame(c, id);
     const w = school?.reported?.admission_profile?.wait_list;
     if (!school || !w || (w.offered === null && w.accepted === null && w.admitted === null)) continue;
     out[id] = {
@@ -109,9 +114,9 @@ export async function waitListFacts(unitIds: string[]): Promise<Record<string, W
       accepted: w.accepted,
       admitted: w.admitted,
       cites: {
-        offered: w.offered !== null ? citeField("reported.admission_profile.wait_list.offered", school) : undefined,
-        accepted: w.accepted !== null ? citeField("reported.admission_profile.wait_list.accepted", school) : undefined,
-        admitted: w.admitted !== null ? citeField("reported.admission_profile.wait_list.admitted", school) : undefined,
+        offered: w.offered !== null ? ref(citeField("reported.admission_profile.wait_list.offered", school)) : undefined,
+        accepted: w.accepted !== null ? ref(citeField("reported.admission_profile.wait_list.accepted", school)) : undefined,
+        admitted: w.admitted !== null ? ref(citeField("reported.admission_profile.wait_list.admitted", school)) : undefined,
       },
     };
   }

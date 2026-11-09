@@ -5,11 +5,11 @@ import "server-only";
  * its sentences. Server only: it imports the rules. Called by the Plan loader, by the Server Actions in rigor-store.ts
  * (signed-out visitors send their browser-kept list), and by the high school page's line.
  */
-import { getHighSchool } from "@/lib/high-schools";
+import { getHighSchoolRecord } from "@/lib/high-schools";
 import { citeHsView, type HsFieldPath } from "@/lib/hs-fields";
 import type { CoreAtTopLevel } from "@/lib/student-profile";
 import { schoolOffering } from "./offering";
-import { pooledCourseKeys } from "./school-courses";
+import { apCourseKeys, pooledCourseKeys } from "./school-courses";
 import { rigorReading } from "./rigor";
 import { offeringLines, sentencesFrom, type OfferingView, type RigorView } from "./rigor-view";
 import type { CourseEntry, SchoolOffering } from "./types";
@@ -23,10 +23,12 @@ const NOTHING: SchoolOffering = { apCount: null, apKeys: null, ib: null, dual: n
  */
 export async function offeringFor(highSchoolId: string | null, opts: { studentMarks?: readonly string[] | null } = {}): Promise<{ offering: SchoolOffering; view: OfferingView | null }> {
   if (!highSchoolId) return { offering: NOTHING, view: null };
-  const hs = await getHighSchool(highSchoolId).catch(() => null);
+  const record = await getHighSchoolRecord(highSchoolId).catch(() => null);
   // No record for the school: only the student's own marks can say what it offers.
-  if (!hs) return { offering: opts.studentMarks?.length ? schoolOffering({ school: null, detail: null, studentMarks: opts.studentMarks }) : NOTHING, view: null };
-  const pooled = hs.detail?.ap_courses?.length ? null : await pooledCourseKeys(highSchoolId);
+  if (!record) return { offering: opts.studentMarks?.length ? schoolOffering({ school: null, detail: null, studentMarks: opts.studentMarks }) : NOTHING, view: null };
+  const hs = record.view;
+  // The pooled list came with the school (high_school_bundle()); only the `json` source leaves it to a call of its own.
+  const pooled = hs.detail?.ap_courses?.length ? null : record.courses === "unread" ? await pooledCourseKeys(highSchoolId) : apCourseKeys(record.courses);
   const offering = schoolOffering({ school: hs.school, detail: hs.detail, studentMarks: opts.studentMarks ?? null }, pooled);
   const cite = offering.field ? citeHsView(offering.field as HsFieldPath, hs) : null;
   return {

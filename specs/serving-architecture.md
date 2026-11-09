@@ -895,11 +895,30 @@ new code falls back to today's reads while a function is missing):
 - Closed in round 2: `/api/me` answers from `me_bundle()` in one call (no viewer bundle), and the essay page reads
   `essay_bundle(id)` in one database wave beside the viewer check and the overrides, with the reviews in it, so the
   notes panel no longer makes a second request (`specs/product/essays/workspace.md` "Where it lives").
-- The list page's own row citations (`admitRateCited`, `avgCostCited`, `distanceCited`), the offers facts' citations
-  (`offers-server`), and the chances page's are still full; `components/advisor/sample.ts` builds its own `{url}`.
-- A plan tab switch is still a server render; with the payload down, prefetching the other tabs or a client-side
-  switch is the next step if it still reads slow.
-- Measure after the deploy and the migration: the EXPLAIN recipe above as Maria, then the same browser paths.
+- Closed in round 4: the list page's row citations (`admitRateCited`, `avgCostCited`, `distanceCited`: 33 KB → 4 KB
+  of JSON for 15 rows), the offers facts' (`offers-server`, the signed-out splash included), the chances section's
+  (`StandingSection`, `StandingCard`, `WhatWentIn`, `ComparedWith`), and the reading lines shared by the college and
+  compare pages (`lib/chances/reading-cites.ts`) are references through the same ⓘ and `/api/cite`
+  (`lib/planner/plan-cites.ts citeRefWhereSame`). Still full on purpose: the GPA fields (the API answers them with the
+  fitted model's formula, not the college page's), major-unit citations (a unit page and quote the API can't produce),
+  hidden or unregistered paths, `components/advisor/sample.ts`, and `GpaPanel` on the admissions page (outside this
+  round's scope).
+- Closed in round 4: a plan tab switch happens in the browser (`components/planner/PlanTabSwitch.tsx`;
+  [page.md](planner/redesign/page.md) "Tabs switch in place"). Every panel the page can build is rendered once; the
+  pills stay real links and `pushState` keeps `?tab=` and the back button right; a panel mounts the first time it is
+  shown and stays mounted hidden after, so first paint and hydration cover the open tab only. Colleges, Essays, and
+  Calendar always switch in place; Next steps switches in place when the page opened on it or for a counselor (its
+  `AskNotice` marks a student's asks seen, so it runs only when that tab is opened); Offers still navigates (its own
+  reads). First load grows 5–7 KB gzipped (the essays data now rides with every plan render, so a guardian's or
+  counselor's essays access log is written on every plan view); a switch ships nothing where it shipped a whole page.
+  `scripts/measure-plan-payload.mts` reproduces the numbers offline.
+- Measured after the deploy and the migration: see "Measured after the deploy and the migration (2026-11-08)" above
+  and round 3's production line.
+- Answered in round 4: the `/explore` request that ran in `sfo1` was the platform's regional failover (Vercel's docs:
+  Fluid compute falls over to the next closest region when a zone or region is unavailable; for `iad1` the order is
+  `cle1`, `yul1`, `sfo1`). The project is pinned to `iad1`, nothing in it allows another region, and the explicit
+  failover controls are Enterprise-only; a request served from `sfo1` pays about 70 ms a database wave. No change; a
+  Vercel support ticket with request ids if it recurs.
 - Closed in round 3 (2026-11-08): the cold start's `JSON.parse` of the whole 35.7 MB `colleges.json`. `lineage` is
   its own object (`lineage.json.gz`, exploded into `.data/snapshot/lineage/<unit_id>.json` in the bundled copy) and
   loads per college on first access; the first load measured 136 → 87 ms wall (134 → 85 ms CPU) on the real snapshot
@@ -908,3 +927,18 @@ new code falls back to today's reads while a function is missing):
   `, lineage lazy`.
 - Closed in round 3: the pointer check runs under `after()` (`lib/data.ts getServed`), so it no longer dies with the
   response (`checking for a newer snapshot failed … timed out` / `write EPIPE`).
+- Closed in round 4: the plan's last database wave, the estimate's high-school reads (`high_schools 51 ‖
+  high_school_details 95 ‖ high_school_files 80 ‖ high_school_files 37 … rpc school_course_list 58`, inside
+  `estimates.context` 90–200 ms), is one call: `high_school_bundle(id)`
+  (`supabase/migrations/20261109120000_high_school_bundle.sql`; the row, its detail, and the pooled course list when
+  the detail has no AP list), read once per request by `lib/high-schools.ts getHighSchoolRecord` and shared by the
+  rigor reading (`offeringFor`) and `highSchoolState`. `meta` and `medians` are held once per instance per served
+  snapshot id (`lib/snapshot-memo.ts`, keyed by `currentSnapshotId()`), so a warm instance reads neither. Until the
+  migration is applied the three reads run as before (`isMissingFunction`, one wasted call a minute).
+- Closed in round 4: the session check's cold `auth` call (`/advisor 2109ms: … (auth 1175; …)`, `auth 1623` on the
+  preview). It was the signing-key fetch: auth-js caches the JWKS module-wide per instance (ten minutes), so warm
+  instances showed no `auth` call and fresh ones paid the fetch first. The keys are bundled at build time
+  (`scripts/fetch-jwks.mts` → `.data/auth/jwks.json`, imported by `lib/auth-jwks.ts`) and passed to `getClaims` as
+  `{ jwks }` in `lib/auth.ts` and `proxy.ts`; a rotated-in `kid` falls through to the library's fetch
+  ([accounts.md](product/accounts.md) "Checking the session without fetching the keys"). An `auth` span left after
+  the deploy is a token refresh (within 90 s of expiry), not the keys.

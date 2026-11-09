@@ -1,31 +1,11 @@
 import { Fragment } from "react";
 import type { School } from "@/lib/types";
-import type { Cited } from "@/lib/lineage";
-import { majorUnitCitation } from "@/lib/lineage";
-import type { FieldPath } from "@/lib/fields";
 import { getData } from "@/lib/data";
 import { shortName } from "@/lib/brand";
-import type { ReadingBlock, ReadingLine, ReadingPart } from "@/lib/chances/reading";
+import type { ReadingBlock, ReadingPart } from "@/lib/chances/reading";
 import { readingWithMajor } from "@/lib/chances/reading-major";
-import { majorUnitById } from "@/lib/chances/major-admission";
+import { lineCitations } from "@/lib/chances/reading-cites";
 import { InfoTip, SourceTip, Term } from "@/components/ui/info-tip";
-
-type CiteField = (path: FieldPath, school?: School) => Cited;
-
-/** A line's citations: one per distinct source and year, so a line with two shares from one filing shows one (i). */
-export function lineCitations(line: ReadingLine, school: School, citeField: CiteField): Cited[] {
-  const out = new Map<string, Cited>();
-  // A major line cites each unit it quotes, not whichever unit the college's first citation would name.
-  const wanted = line.unitCites ?? line.cites.map((path) => ({ path, unitId: null }));
-  for (const { path, unitId } of wanted) {
-    const base = citeField(path, school);
-    const unit = unitId ? majorUnitById(unitId) : null;
-    const unitCite = unit ? majorUnitCitation(path, unit, school) : null;
-    const cited = unitCite ? { ...base, ...unitCite.source, quote: unitCite.quote } : base;
-    out.set(`${cited.key}|${cited.url ?? ""}|${cited.year ?? ""}`, cited);
-  }
-  return [...out.values()];
-}
 
 function Part({ part }: { part: ReadingPart }) {
   const inner = part.style === "strong" ? <strong className="font-bold">{part.text}</strong> : part.style === "em" ? <em className="font-semibold">{part.text}</em> : part.text;
@@ -53,8 +33,8 @@ export async function ReadingTheRecord({ school, block, className }: { school: S
             {line.parts.map((part, i) => (
               <Part key={i} part={part} />
             ))}
-            {lineCitations(line, school, citeField).map((cited) => (
-              <SourceTip key={`${cited.path}|${cited.url}`} cited={cited} className="mx-0.5" />
+            {lineCitations(line, school, citeField).map((cited, i) => (
+              <SourceTip key={`${cited.path}|${i}`} cited={cited} className="mx-0.5" />
             ))}
             {line.href && (
               <>

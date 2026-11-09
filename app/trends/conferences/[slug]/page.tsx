@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Trophy } from "lucide-react";
 import { getData, getHistoryFiles, getTrendFile } from "@/lib/data";
@@ -153,7 +154,7 @@ export default async function ConferencePage({ params }: Props) {
               const fb = row.football[id];
               return (
                 <li key={id}>
-                  <Link href={`/schools/${id}`} className="flex min-w-0 items-center gap-3 rounded-2xl border bg-card p-2.5 transition-colors hover:border-primary">
+                  <HoverPrefetchLink href={`/schools/${id}`} className="flex min-w-0 items-center gap-3 rounded-2xl border bg-card p-2.5 transition-colors hover:border-primary">
                     <Crest id={id} name={nameOf(id)} size="sm" brand={s ? crestBrand(s) : undefined} />
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold">{nameOf(id)}</span>
@@ -168,7 +169,7 @@ export default async function ConferencePage({ params }: Props) {
                           .join(" · ")}
                       </span>
                     </span>
-                  </Link>
+                  </HoverPrefetchLink>
                 </li>
               );
             })}
@@ -257,9 +258,9 @@ export default async function ConferencePage({ params }: Props) {
                   <b className="tabular-nums">{historyYearLabel(g.year, "academic")}:</b>{" "}
                   {g.ids.map((id, i) => (
                     <span key={id}>
-                      <Link href={`/schools/${id}`} className="font-semibold hover:text-primary hover:underline">
+                      <HoverPrefetchLink href={`/schools/${id}`} className="font-semibold hover:text-primary hover:underline">
                         {nameOf(id)}
-                      </Link>
+                      </HoverPrefetchLink>
                       {i < g.ids.length - 2 ? ", " : i === g.ids.length - 2 ? " and " : ""}
                     </span>
                   ))}{" "}

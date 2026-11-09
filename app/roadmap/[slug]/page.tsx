@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, ExternalLink } from "lucide-react";
 import { ComplexityMeter } from "@/components/roadmap/ComplexityMeter";
@@ -37,9 +37,9 @@ export default async function RoadmapSpecPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 pb-12 sm:px-6 sm:pt-8">
       <nav aria-label="Breadcrumb" className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-        <Link href="/roadmap" className="inline-flex items-center gap-1.5 font-semibold hover:text-foreground">
+        <HoverPrefetchLink href="/roadmap" className="inline-flex items-center gap-1.5 font-semibold hover:text-foreground">
           <ArrowLeft className="size-4" /> Roadmap
-        </Link>
+        </HoverPrefetchLink>
         {group && (
           <>
             <span aria-hidden>·</span>
@@ -71,9 +71,9 @@ export default async function RoadmapSpecPage({ params }: Props) {
                 {after.map((s, i) => (
                   <span key={s.slug}>
                     {i > 0 && ", "}
-                    <Link href={`/roadmap/${s.slug}`} className="font-medium text-foreground underline underline-offset-2 hover:text-primary">
+                    <HoverPrefetchLink href={`/roadmap/${s.slug}`} className="font-medium text-foreground underline underline-offset-2 hover:text-primary">
                       {getRoadmapDoc(s.slug)?.title}
-                    </Link>
+                    </HoverPrefetchLink>
                   </span>
                 ))}
               </dd>
@@ -143,7 +143,7 @@ function PagerLink({ slug, direction }: { slug: string; direction: "prev" | "nex
   const title = getRoadmapDoc(slug)?.title ?? slug;
   const Icon = direction === "prev" ? ArrowLeft : ArrowRight;
   return (
-    <Link
+    <HoverPrefetchLink
       href={`/roadmap/${slug}`}
       className={`group rounded-2xl border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/50 ${direction === "next" ? "sm:col-start-2 sm:text-right" : ""}`}
     >
@@ -154,6 +154,6 @@ function PagerLink({ slug, direction }: { slug: string; direction: "prev" | "nex
       </span>
       <span className="mt-1 block font-semibold group-hover:text-primary">{title}</span>
       {spec && <span className="mt-0.5 block text-xs text-muted-foreground">{COMPLEXITY[spec.complexity].label}</span>}
-    </Link>
+    </HoverPrefetchLink>
   );
 }

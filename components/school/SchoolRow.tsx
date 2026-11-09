@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import type { School } from "@/lib/types";
 import { DOMAINS, satComposite } from "@/lib/metrics";
 import { compact, moneyCompact, pctSmart, range, typeShort } from "@/lib/format";
@@ -32,7 +32,7 @@ export function SchoolRow({ school, home = null, priceAt = null, level = null }:
 
   return (
     <article className="relative flex items-center gap-3 rounded-2xl border bg-card p-3 transition-colors active:bg-muted/60">
-      <Link href={`/schools/${school.unit_id}`} className="absolute inset-0 z-10 rounded-2xl" aria-label={`View ${school.name}`} />
+      <HoverPrefetchLink href={`/schools/${school.unit_id}`} className="absolute inset-0 z-10 rounded-2xl" aria-label={`View ${school.name}`} />
       <Crest id={school.unit_id} name={school.name} size="sm" brand={crestBrand(school)} />
       <div className="min-w-0 flex-1">
         <h3 className="line-clamp-2 font-display text-[15px] leading-snug font-bold">{school.name}</h3>

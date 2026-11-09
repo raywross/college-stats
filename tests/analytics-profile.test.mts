@@ -79,7 +79,7 @@ test("pills report through PillRow's onSelect (from pill), and only for topics, 
   const row = code(PILL_ROW);
   assert.match(row, /onSelect\?: \(key: string\) => void/);
   assert.match(row, /onClick=\{\(\) => onSelect\?\.\(p\.key\)\}/, "each pill's click calls onSelect");
-  assert.match(row, /<Link\b/, "the pill is still a link");
+  assert.match(row, /<PillLink\b/, "the pill is still a link (Link, or HoverPrefetchLink on the profile)");
   const pills = code(TOPIC_PILLS);
   assert.match(pills, /onSelect=\{onSelect\}/);
   assert.match(pills, /isTopicKey\(key\)/, "Overview is filtered out by narrowing to a topic key");

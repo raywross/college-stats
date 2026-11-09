@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { cn } from "@/lib/utils";
 
 /** NPR-style tile grid: [col, row] for each state + DC. */
@@ -116,7 +116,7 @@ export function StateTileMap({
               </>
             );
             return href ? (
-              <Link
+              <HoverPrefetchLink
                 key={state}
                 role="listitem"
                 href={href(state)}
@@ -125,7 +125,7 @@ export function StateTileMap({
                 style={{ ...style, backgroundColor: rg.bg }}
               >
                 {inner}
-              </Link>
+              </HoverPrefetchLink>
             ) : (
               <span key={state} role="listitem" title={title} className={cn(base, rg.ink)} style={{ ...style, backgroundColor: rg.bg }}>
                 {inner}
@@ -150,7 +150,7 @@ export function StateTileMap({
             </>
           );
           return href ? (
-            <Link
+            <HoverPrefetchLink
               key={state}
               role="listitem"
               href={href(state)}
@@ -159,7 +159,7 @@ export function StateTileMap({
               style={{ ...style, backgroundColor: lv.bg }}
             >
               {inner}
-            </Link>
+            </HoverPrefetchLink>
           ) : (
             <span key={state} role="listitem" title={title} className={cn(base, lv.ink)} style={{ ...style, backgroundColor: lv.bg }}>
               {inner}

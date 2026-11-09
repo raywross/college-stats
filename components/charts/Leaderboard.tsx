@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import type { School } from "@/lib/types";
 import { Crest } from "@/components/school/Crest";
 import { crestBrand } from "@/lib/brand";
@@ -24,7 +24,7 @@ export function Leaderboard({
         const v = get(s) ?? 0;
         return (
           <li key={s.unit_id}>
-            <Link
+            <HoverPrefetchLink
               href={`/schools/${s.unit_id}`}
               className="group flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-muted/70"
             >
@@ -42,7 +42,7 @@ export function Leaderboard({
                   />
                 </span>
               </span>
-            </Link>
+            </HoverPrefetchLink>
           </li>
         );
       })}

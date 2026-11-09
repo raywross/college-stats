@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import type { School } from "@/lib/types";
 import { getData } from "@/lib/data";
 import { standouts } from "@/lib/insights";
@@ -83,7 +83,7 @@ export async function SchoolCard({
         className="pointer-events-none absolute -top-16 -right-16 size-40 rounded-full opacity-60 blur-2xl transition-opacity [--tint:var(--tint-light)] group-hover:opacity-100 dark:[--tint:var(--tint-dark)]"
         style={{ "--tint-light": tint.light, "--tint-dark": tint.dark, backgroundColor: "var(--tint)" } as CSSProperties}
       />
-      <Link href={`/schools/${school.unit_id}`} className="absolute inset-0 z-10 rounded-3xl" aria-label={`View ${school.name}`} />
+      <HoverPrefetchLink href={`/schools/${school.unit_id}`} className="absolute inset-0 z-10 rounded-3xl" aria-label={`View ${school.name}`} />
 
       <div className="relative flex items-start gap-3">
         <Crest id={school.unit_id} name={school.name} size="md" brand={crestBrand(school)} />

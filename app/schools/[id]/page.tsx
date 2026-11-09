@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { notFound } from "next/navigation";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { getData } from "@/lib/data";
@@ -79,7 +80,7 @@ export default async function SchoolPage({ params }: Props) {
             <div className="grid gap-3 max-sm:rail max-sm:[--rail-item:72%] sm:grid-cols-2 lg:grid-cols-4">
               {similar.map(({ school: s, reasons }) => (
                 <div key={s.unit_id} className="group relative flex flex-col rounded-3xl border bg-card p-5 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10">
-                  <Link href={`/schools/${s.unit_id}`} className="absolute inset-0 z-10 rounded-3xl" aria-label={s.name} />
+                  <HoverPrefetchLink href={`/schools/${s.unit_id}`} className="absolute inset-0 z-10 rounded-3xl" aria-label={s.name} />
                   <div className="flex items-start justify-between gap-2">
                     <Crest id={s.unit_id} name={s.name} size="md" brand={crestBrand(s)} />
                     <CompareButton id={s.unit_id} variant="icon" />

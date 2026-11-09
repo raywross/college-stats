@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import type { ReactNode } from "react";
 import { Bot, Code2, Fingerprint, KeyRound, Route, Scale, ShieldCheck, Table2 } from "lucide-react";
 import { ConnectionSnippets } from "@/components/api/ConnectionSnippets";
@@ -378,9 +379,9 @@ export default async function DevelopersPage() {
           The lineage endpoint resolves each field a college has a value for to its source, year, and, for calculated values, the formula and the
           inputs. Fields used only inside Quad&apos;s own method are never listed or returned. How new each dataset is, and when the next releases are due,
           is on the{" "}
-          <Link href="/data" className={link}>
+          <HoverPrefetchLink href="/data" className={link}>
             Data page
-          </Link>
+          </HoverPrefetchLink>
           .
         </p>
       </Section>

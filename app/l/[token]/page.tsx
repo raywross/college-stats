@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { notFound } from "next/navigation";
 import { Crest } from "@/components/school/Crest";
 import { crestBrand } from "@/lib/brand";
@@ -55,7 +55,7 @@ export default async function SharedListPage({ params }: { params: Promise<{ tok
                   const school = getSchoolById(item.unit_id);
                   if (!school) return null;
                   return (
-                    <Link key={item.unit_id} href={`/schools/${item.unit_id}`} className="flex items-center gap-3 rounded-2xl border bg-card p-3 hover:border-primary/40">
+                    <HoverPrefetchLink key={item.unit_id} href={`/schools/${item.unit_id}`} className="flex items-center gap-3 rounded-2xl border bg-card p-3 hover:border-primary/40">
                       <Crest id={school.unit_id} name={school.name} size="sm" brand={crestBrand(school)} />
                       <div className="min-w-0 flex-1">
                         <p className="font-display font-bold">{school.name}</p>
@@ -64,7 +64,7 @@ export default async function SharedListPage({ params }: { params: Promise<{ tok
                           {item.round && isListRound(item.round) ? ` · ${ROUND_LABELS[item.round]}` : ""}
                         </p>
                       </div>
-                    </Link>
+                    </HoverPrefetchLink>
                   );
                 })}
               </div>

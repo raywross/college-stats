@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { ArrowLeft, ArrowRight, LineChart } from "lucide-react";
 import { getHistoryFiles } from "@/lib/data";
 import { historyYearLabel } from "@/lib/history";
@@ -66,9 +67,9 @@ export async function StudyPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
-      <Link href="/trends" className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-primary">
+      <HoverPrefetchLink href="/trends" className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-primary">
         <ArrowLeft className="size-4" /> National trends
-      </Link>
+      </HoverPrefetchLink>
       <header className="mt-4 mb-8 max-w-3xl sm:mb-10">
         <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.18em] text-primary uppercase max-sm:hidden">
           <LineChart className="size-4" /> Study {study.number}
@@ -81,9 +82,9 @@ export async function StudyPage({
         <div className="rounded-3xl border border-dashed p-6 text-muted-foreground sm:p-8">
           <p className="font-semibold text-foreground">This study isn&apos;t available yet.</p>
           <p className="mt-1 text-sm">It&apos;s computed from the site&apos;s year-by-year history, and appears once that data is published.</p>
-          <Link href="/trends" className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
+          <HoverPrefetchLink href="/trends" className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
             All national trends <ArrowRight className="size-4" />
-          </Link>
+          </HoverPrefetchLink>
         </div>
       ) : (
         <div className="space-y-14 sm:space-y-20">

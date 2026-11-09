@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { formatBy } from "@/lib/format";
 import type { ConferenceGlanceKey } from "@/lib/trends";
 import { Term } from "@/components/ui/info-tip";
@@ -36,9 +36,9 @@ export function MembersCompared({
             <ul className="relative mt-3 space-y-1">
               {rows.map((r) => (
                 <li key={r.id} className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_3.5rem] items-center gap-2 text-xs">
-                  <Link href={`/schools/${r.id}`} className="truncate hover:text-primary hover:underline" title={r.name}>
+                  <HoverPrefetchLink href={`/schools/${r.id}`} className="truncate hover:text-primary hover:underline" title={r.name}>
                     {r.name}
-                  </Link>
+                  </HoverPrefetchLink>
                   <span className="relative h-2.5">
                     <span className="absolute inset-y-0 left-0 rounded-r-[4px]" style={{ width: `${Math.max(1, (r.value! / hi) * 100)}%`, background: info.color }} />
                     {m.median !== null && (

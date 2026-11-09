@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { Logo } from "@/components/layout/Logo";
 import { ThemeSegmented } from "@/components/ThemeToggle";
 import { Term } from "@/components/ui/info-tip";
@@ -23,16 +23,16 @@ export function Footer() {
         <div className="hidden md:block">
           <h3 className="mb-3 text-sm font-bold">Explore</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><Link className="hover:text-foreground" href="/explore">All schools</Link></li>
-            <li><Link className="hover:text-foreground" href="/explore?view=chart">Admissions landscape</Link></li>
-            <li><Link className="hover:text-foreground" href="/compare">Compare side-by-side</Link></li>
-            <li><Link className="hover:text-foreground" href="/trends">National trends: how college is changing</Link></li>
-            <li><Link className="hover:text-foreground" href="/glossary">Glossary of terms</Link></li>
-            <li><Link className="hover:text-foreground" href="/data">Data: sources, years &amp; updates</Link></li>
-            <li><Link className="hover:text-foreground" href="/developers">Developers: API and MCP</Link></li>
-            <li><Link className="hover:text-foreground" href="/roadmap">Roadmap: what&apos;s coming</Link></li>
-            <li><Link className="hover:text-foreground" href="/release-notes">Release notes: what&apos;s new</Link></li>
-            <li><Link className="hover:text-foreground" href="/connect">Connect Quad to ChatGPT, Claude &amp; Gemini</Link></li>
+            <li><HoverPrefetchLink className="hover:text-foreground" href="/explore">All schools</HoverPrefetchLink></li>
+            <li><HoverPrefetchLink className="hover:text-foreground" href="/explore?view=chart">Admissions landscape</HoverPrefetchLink></li>
+            <li><HoverPrefetchLink className="hover:text-foreground" href="/compare">Compare side-by-side</HoverPrefetchLink></li>
+            <li><HoverPrefetchLink className="hover:text-foreground" href="/trends">National trends: how college is changing</HoverPrefetchLink></li>
+            <li><HoverPrefetchLink className="hover:text-foreground" href="/glossary">Glossary of terms</HoverPrefetchLink></li>
+            <li><HoverPrefetchLink className="hover:text-foreground" href="/data">Data: sources, years &amp; updates</HoverPrefetchLink></li>
+            <li><HoverPrefetchLink className="hover:text-foreground" href="/developers">Developers: API and MCP</HoverPrefetchLink></li>
+            <li><HoverPrefetchLink className="hover:text-foreground" href="/roadmap">Roadmap: what&apos;s coming</HoverPrefetchLink></li>
+            <li><HoverPrefetchLink className="hover:text-foreground" href="/release-notes">Release notes: what&apos;s new</HoverPrefetchLink></li>
+            <li><HoverPrefetchLink className="hover:text-foreground" href="/connect">Connect Quad to ChatGPT, Claude &amp; Gemini</HoverPrefetchLink></li>
           </ul>
         </div>
         <div>
@@ -41,14 +41,14 @@ export function Footer() {
             Every operating 4-year U.S. college, from the <Term term="scorecard">College Scorecard</Term> and{" "}
             <Term term="ipeds">IPEDS</Term> admissions survey. Ranks and medians compare each college against all
             others that report the same measure.{" "}
-            <Link href="/data" className="font-semibold text-foreground hover:text-primary">
+            <HoverPrefetchLink href="/data" className="font-semibold text-foreground hover:text-primary">
               See all sources
-            </Link>
+            </HoverPrefetchLink>
           </p>
           <p className="mt-3 text-sm text-muted-foreground">
-            <Link href="/privacy" className="font-semibold text-foreground hover:text-primary">
+            <HoverPrefetchLink href="/privacy" className="font-semibold text-foreground hover:text-primary">
               Privacy
-            </Link>
+            </HoverPrefetchLink>
             : how we count visits, and what we never record.
           </p>
         </div>

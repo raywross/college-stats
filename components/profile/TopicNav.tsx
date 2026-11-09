@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { DOMAINS } from "@/lib/metrics";
 import { adjacentTopics, overviewHref, topicHref, type ProfileTopic, type TopicKey } from "@/lib/profile-topics";
@@ -32,13 +33,13 @@ export function TopicNav({ unitId, current, available }: { unitId: string; curre
       {prev ? (
         <TopicLink unitId={unitId} topic={prev} dir="prev" />
       ) : (
-        <Link href={overviewHref(unitId)} className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl border bg-card p-4 transition-colors hover:border-primary/40">
+        <HoverPrefetchLink href={overviewHref(unitId)} className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl border bg-card p-4 transition-colors hover:border-primary/40">
           <ArrowLeft className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-0.5" />
           <span>
             <span className="block text-[11px] font-semibold text-muted-foreground">Back to</span>
             <span className="font-display font-bold group-hover:text-primary">Overview</span>
           </span>
-        </Link>
+        </HoverPrefetchLink>
       )}
       {next && <TopicLink unitId={unitId} topic={next} dir="next" />}
     </nav>

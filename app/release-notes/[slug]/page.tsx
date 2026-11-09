@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, ExternalLink } from "lucide-react";
 import { KindTag } from "@/components/release-notes/KindTag";
@@ -36,9 +36,9 @@ export default async function ReleaseNotePage({ params }: Props) {
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 pb-12 sm:px-6 sm:pt-8">
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-muted-foreground">
-        <Link href="/release-notes" className="inline-flex items-center gap-1.5 font-semibold hover:text-foreground">
+        <HoverPrefetchLink href="/release-notes" className="inline-flex items-center gap-1.5 font-semibold hover:text-foreground">
           <ArrowLeft className="size-4" /> Release notes
-        </Link>
+        </HoverPrefetchLink>
       </nav>
 
       <header className="max-w-3xl">
@@ -93,7 +93,7 @@ export default async function ReleaseNotePage({ params }: Props) {
 function PagerLink({ note, direction }: { note: ReleaseNote; direction: "older" | "newer" }) {
   const newer = direction === "newer";
   return (
-    <Link
+    <HoverPrefetchLink
       href={`/release-notes/${note.slug}`}
       className={`group rounded-2xl border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/50 ${newer ? "sm:col-start-2 sm:text-right" : ""}`}
     >
@@ -104,6 +104,6 @@ function PagerLink({ note, direction }: { note: ReleaseNote; direction: "older" 
       </span>
       <span className="mt-1 block font-semibold group-hover:text-primary">{note.title}</span>
       <span className="mt-0.5 block text-xs text-muted-foreground">{formatReleaseDate(note.date)}</span>
-    </Link>
+    </HoverPrefetchLink>
   );
 }

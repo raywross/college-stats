@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import type { School } from "@/lib/types";
 import type { FieldPath } from "@/lib/fields";
 import { getData } from "@/lib/data";
@@ -29,9 +29,9 @@ export async function MultiSourceNote({ schools, fields, className }: { schools:
 function SourceItemSummary({ count }: { count: number }) {
   return (
     <span>
-      <Link href="/data#cds-list" className="font-medium text-foreground/80 underline decoration-dotted underline-offset-2 hover:text-primary">
+      <HoverPrefetchLink href="/data#cds-list" className="font-medium text-foreground/80 underline decoration-dotted underline-offset-2 hover:text-primary">
         Common Data Sets from {count} colleges
-      </Link>
+      </HoverPrefetchLink>
     </span>
   );
 }

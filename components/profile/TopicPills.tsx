@@ -23,5 +23,5 @@ export function TopicPills({ unitId, current, pills, className }: { unitId: stri
   const onSelect = (key: string) => {
     if (key !== current && isTopicKey(key)) track("profile_card_opened", { unit_id: unitId, topic: key, from: "pill" });
   };
-  return <PillRow items={items} current={current} ariaLabel="Profile topics" className={className} onSelect={onSelect} />;
+  return <PillRow items={items} current={current} ariaLabel="Profile topics" className={className} onSelect={onSelect} hoverPrefetch />;
 }

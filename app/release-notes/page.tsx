@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { KindTag } from "@/components/release-notes/KindTag";
 import { getReleaseNotes } from "@/lib/release-notes-docs";
@@ -26,9 +26,9 @@ export default function ReleaseNotesPage() {
           <p className="mt-3 max-w-2xl text-muted-foreground">
             Every change to the site, newest first: new features, newer data, fixes, and the plans behind what&apos;s
             coming. Each one links to the full notes. For what&apos;s next, see the{" "}
-            <Link href="/roadmap" className="font-semibold text-foreground hover:text-primary">
+            <HoverPrefetchLink href="/roadmap" className="font-semibold text-foreground hover:text-primary">
               roadmap
-            </Link>
+            </HoverPrefetchLink>
             .
           </p>
         </div>
@@ -74,7 +74,7 @@ export default function ReleaseNotesPage() {
                 .filter((n) => n.date === day)
                 .map((note) => (
                   <li key={note.slug}>
-                    <Link
+                    <HoverPrefetchLink
                       href={`/release-notes/${note.slug}`}
                       className="group grid gap-3 p-5 transition-colors hover:bg-muted/60 sm:grid-cols-[minmax(0,1fr)_1.25rem] sm:items-center sm:gap-6"
                     >
@@ -87,7 +87,7 @@ export default function ReleaseNotesPage() {
                         <p className="mt-1 text-sm text-muted-foreground">{note.summary}</p>
                       </div>
                       <ArrowRight className="hidden size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary sm:block" />
-                    </Link>
+                    </HoverPrefetchLink>
                   </li>
                 ))}
             </ul>

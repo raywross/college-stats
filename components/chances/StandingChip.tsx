@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { standingWords, StandingBadge } from "@/components/chances/StandingBadge";
 import { useStanding } from "@/components/chances/useStanding";
 import { InfoTip } from "@/components/ui/info-tip";
@@ -18,14 +18,14 @@ export function StandingChip({ unitId, className }: { unitId: string; className?
   if (s.status !== "ready" || !s.result.group) return null;
   return (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
-      <Link
+      <HoverPrefetchLink
         href={`/schools/${unitId}/admissions#standing`}
         aria-label={`${noteText({ key: "estimate.card_title", values: {} })}: ${noteText({ key: "estimate.card_chip", values: { group: standingWords(s.result) ?? "" } })}`}
         className="inline-flex items-center gap-1.5 rounded-full text-xs font-semibold"
       >
         <span className="text-muted-foreground">{noteText({ key: "estimate.card_title", values: {} })}</span>
         <StandingBadge result={s.result} />
-      </Link>
+      </HoverPrefetchLink>
       <InfoTip term="quads-estimate" />
     </span>
   );

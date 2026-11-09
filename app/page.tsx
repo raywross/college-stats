@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { ArrowRight, BookOpen, Building2, Crown, FlaskConical, HeartHandshake, Landmark, PiggyBank, Sprout, Target, Swords, TrendingUp } from "lucide-react";
 import { getData } from "@/lib/data";
 import { parseFilters } from "@/lib/params";
@@ -114,9 +115,9 @@ export default async function HomePage() {
               <div className="no-scrollbar mt-3 flex items-center gap-1.5 text-xs max-sm:-mx-4 max-sm:overflow-x-auto max-sm:px-4 sm:flex-wrap">
                 <span className="text-muted-foreground">Try:</span>
                 {getSchoolsByIds(["166027", "110662", "170976", "131520", "221999"]).map((s) => (
-                  <Link key={s.unit_id} href={`/schools/${s.unit_id}`} className="shrink-0 rounded-full border bg-card/70 px-2.5 py-1 font-medium backdrop-blur hover:border-primary/40 hover:text-primary">
+                  <HoverPrefetchLink key={s.unit_id} href={`/schools/${s.unit_id}`} className="shrink-0 rounded-full border bg-card/70 px-2.5 py-1 font-medium backdrop-blur hover:border-primary/40 hover:text-primary">
                     {shortName(s)}
-                  </Link>
+                  </HoverPrefetchLink>
                 ))}
               </div>
               {/* The advisor's one line on the home page (specs/product/advisor.md "3. The page"); the trial's "free for

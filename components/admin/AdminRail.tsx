@@ -39,7 +39,7 @@ export function AdminRail({ needsYou }: { needsYou?: number | null }) {
               <h2 id={`rail-${d.key}`} className="pb-0.5">
                 <Link
                   href={d.href}
-                  aria-current={pathname === d.href ? "page" : undefined}
+                  aria-current={pathname === d.href && !d.screens.some((s) => s.href === d.href) ? "page" : undefined}
                   className="flex min-h-11 items-center gap-2 rounded-xl px-3.5 text-xs font-bold tracking-wide text-muted-foreground uppercase transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <Icon className="size-3.5" aria-hidden />

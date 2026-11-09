@@ -584,7 +584,7 @@ test("the wide rail's door headings link to every door's landing (owner, 2026-11
   const heading = wide.match(/<h2 id=\{`rail-\$\{d\.key\}`\}[^>]*>([\s\S]*?)<\/h2>/);
   assert.ok(heading, "each door's heading is an <h2> the section is labelled by");
   assert.match(heading[1], /<Link\s+href=\{d\.href\}/, "the heading is a link to the door's href");
-  assert.match(heading[1], /aria-current=\{pathname === d\.href \? "page" : undefined\}/);
+  assert.match(heading[1], /aria-current=\{pathname === d\.href && !d\.screens\.some\(\(s\) => s\.href === d\.href\) \? "page" : undefined\}/, "the heading is current only when no screen shares its address (the Inbox and Overview mark themselves)");
   assert.match(heading[1], /min-h-11/, "a 44 px hit");
   assert.match(wide, /ADMIN_DOORS\.map\(\(d\)/, "every door gets one");
   assert.deepEqual(ADMIN_DOORS.map((d) => d.href), ["/admin", "/admin/people", "/admin/data", "/admin/more"]);

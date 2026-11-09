@@ -134,7 +134,7 @@ country as the only targeting, which is all Google and Meta allow for teens anyw
 | Message | *An advisor that knows where you stand at every college on your list, and what to do this season.* The list sorted by level, the three cards with their guides, the text the day before a deadline; no percentage games, every number with its source. Never "subscribe" or a price to a student; the buttons are "See where you stand" and "Invite a parent" |
 | Google | **Search** on the same college-name queries as the parents' campaign (one ad group serves both; a query has no age), plus student-shaped queries: "{college} SAT range", "is {college} test optional", "how many colleges should I apply to". **YouTube Shorts** ads, 15 to 20 seconds: a screen recording of the advisor for the sample student (the list re-sorting by level, a Now card opening its guide, a text arriving), age 13-plus and U.S. as the only targeting, placed on college and study-channel content |
 | Meta | **Instagram Reels** ads, the same advisor cuts, age 13 to 19 and U.S. as the only targeting (Meta allows age and location for teens and nothing else) |
-| Landing | `/for/students`: the Where you stand strip, the season's three things, "Invite a parent" as the second button |
+| Landing | `/for/students`: the Where you stand strip, the season's three things, "Invite a parent" as the second button, and the "Ask your assistant with Quad's numbers" block ([seo.md](seo.md#assistants-and-ai-search)) |
 | Conversion | `signup_completed` with `role_hint: student`, then `household_invite_sent` (a new event, [measurement.md](measurement.md#new-events)) within 30 days |
 | Test budget | $500 a month for three months, January to March 2027: $250 Google (Search and Shorts), $250 Meta Reels |
 | Stop or grow | Judged by cost per student sign-up and the share who invite a parent within 30 days; a household that converts counts as the student campaign's trial for cost per trial. Stop a placement above $8 per student sign-up or under 15% inviting a parent after a month; double one under $4 per sign-up with 25% inviting |
@@ -209,6 +209,7 @@ first push on Google and Meta alone. Each has a trigger: the reading in April 20
 | LinkedIn | Posts and a small ad test aimed at counselors | Meta cannot find counselors and the Search queries are exhausted |
 | The newsletter | A monthly "what changed in the data" issue for parents and counselors who opt in ([console.md](console.md#emails)) | There are 500 adult accounts to send it to, or the parent campaign shows that the data stories are what people respond to |
 | Community participation | Parent Facebook groups and Reddit's parent subreddits, answering with cited pages, never ads | Any time the owner has the hour; it costs nothing but is not counted on |
+| The assistant connector as a message | Ads and a landing section built on "Ask ChatGPT, Claude, or Gemini about colleges with Quad's numbers" ([seo.md](seo.md#assistants-and-ai-search); the connector itself is built, [assistants.md](../assistants.md)) | The Assistants referrer group shows citations arriving (50 sessions a week), or 5% of landing-page visitors open the connector block |
 
 Nothing in this table is built or bought until its trigger is read on the Growth overview and the decision is written
 in the log.

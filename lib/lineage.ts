@@ -90,7 +90,7 @@ export type AnyCited = Cited<AnySourceKey, string>;
  */
 export interface CiteRef {
   ref: true;
-  /** The college's IPEDS unit id. */
+  /** The college's IPEDS unit id; "" for a field's default citation (no college, `citeField(path)`). */
   unit: string;
   /** The field path the citation answers (`GET /api/cite?unit=…&path=…`). */
   path: string;

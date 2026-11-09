@@ -14,7 +14,7 @@
  *   `GET /api/cite` to the citation the page shipped before; the GPA fields and a major unit's own stay whole;
  * - `GET /api/cite`: 200 with the citation, the cache header and the snapshot ETag; 304 on a matching ETag; 404 for an
  *   unknown college or an unregistered path; 400 for a malformed one; `go=1` redirects to the source;
- * - components/ui/info-tip.tsx: one module-level cache and in-flight map, "Loading the source…", the API (source).
+ * - components/ui/info-tip-client.tsx: one module-level cache and in-flight map, "Loading the source…", the API (source).
  * `npm test`. Reads the mini fixture; no network, no database.
  */
 import { test } from "node:test";
@@ -290,11 +290,11 @@ test("the route reads nothing personal: no session, no Supabase, no cookies", ()
 });
 
 /* ------------------------------------------------------------------ */
-/* components/ui/info-tip.tsx (source: pages don't render under node)  */
+/* components/ui/info-tip-client.tsx (source: pages don't render under node) */
 /* ------------------------------------------------------------------ */
 
 test("the ⓘ: one loader with a module-level cache and shared in-flight fetches, a loading line, a fallback", () => {
-  const src = read("components/ui/info-tip.tsx");
+  const src = read("components/ui/info-tip-client.tsx");
   assert.match(src, /^const citeCache = new Map<string, AnyCited>\(\);$/m);
   assert.match(src, /^const citeInflight = new Map<string, Promise<AnyCited>>\(\);$/m);
   assert.match(src, /fetch\(citeApiHref\(ref\)\)/);
@@ -408,7 +408,7 @@ test("the offers facts and the wait-list facts carry references that resolve to 
 
 test("the college page's estimate facts: references except the GPA fields; reading lines: references except a major unit's own", async () => {
   const src = read("components/chances/StandingSection.tsx");
-  assert.match(src, /const factCites = Object\.fromEntries\(Object\.entries\(estimateFactCites\(school, citeField\)\)\.map\(\(\[path, cited\]\) => \[path, citeRefWhereSame\(cited, school\.unit_id\)\]\)\);/);
+  assert.match(src, /const factCites = Object\.fromEntries\(Object\.entries\(estimateFactCites\(school, citeField\)\)\.map\(\(\[path, cited\]\) => \[path, asCiteRef\(cited\)\]\)\);/);
   assert.match(src, /cites=\{factCites\}/);
   let refs = 0;
   let whole = 0;
@@ -439,4 +439,105 @@ test("the college page's estimate facts: references except the GPA fields; readi
     }
   }
   assert.ok(lines > 10, `${lines} reading citations`);
+});
+
+/* ------------------------------------------------------------------ */
+/* Round 5: the public pages (lib/cite-origin.ts, the ⓘ wrappers)      */
+/* ------------------------------------------------------------------ */
+
+const { asCiteRef, hasCiteOrigin } = await import("../lib/cite-origin.ts");
+const { withEdits } = await import("../lib/data-platform/edits.ts");
+
+test("asCiteRef: a dataset college's citation becomes the reference /api/cite answers with that same citation", async () => {
+  let checked = 0;
+  for (const unit of units.slice(0, 4)) {
+    const school = data.getSchoolById(unit)!;
+    for (const path of ["admissions.acceptance_rate", "cost.avg_paid_all", "outcomes.graduation_rate", "admissions.test_policy"] as const) {
+      const full = data.citeField(path, school);
+      assert.ok(hasCiteOrigin(full), `${unit} ${path} is marked`);
+      const ref = asCiteRef(full);
+      assert.ok(isCiteRef(ref), `${unit} ${path}`);
+      assert.deepEqual(ref, citeRefWhereSame(full, unit), "the same reference round 4 builds");
+      assert.deepEqual(await resolved(ref as CiteRef), asJson(full), `${unit} ${path}: the ⓘ shows what the page used to ship`);
+      checked++;
+    }
+  }
+  assert.ok(checked >= 12);
+});
+
+test("asCiteRef: a field's default citation (no college) is a reference with unit \"\", answered by /api/cite?unit=&path=", async () => {
+  for (const path of ["admissions.acceptance_rate", "cost.avg_paid_all", "outcomes.median_earnings_10yr"] as const) {
+    const generic = data.citeField(path);
+    assert.ok(hasCiteOrigin(generic), path);
+    const ref = asCiteRef(generic) as CiteRef;
+    assert.ok(isCiteRef(ref), path);
+    assert.equal(ref.unit, "");
+    assert.deepEqual(await resolved(ref), asJson(generic), `${path}: the default citation`);
+  }
+  // A GPA field's default citation stays whole (the API's GPA answer needs a college).
+  const gpa = data.citeField("derived.gpa_estimate" as never);
+  assert.equal(asCiteRef(gpa), gpa);
+  // A missing unit is still a malformed request; only an empty one asks for the default citation.
+  assert.equal((await get("path=admissions.acceptance_rate")).status, 400);
+  assert.equal((await get("unit=&path=admissions.no_such_field")).status, 404);
+});
+
+test("asCiteRef keeps a citation whole when a reference wouldn't give it back", () => {
+  const vandy = data.getSchoolById("221999")!;
+  // A GPA field: the API answers with the fitted model's formula.
+  for (const path of GPA_CITE_PATHS) {
+    const full = data.citeField(path as never, vandy);
+    assert.equal(asCiteRef(full), full, path);
+  }
+  // A copy with a new label, and a citation changed after it was made (guard: the resolver compares, not trusts).
+  const copy = { ...data.citeField("admissions.acceptance_rate", vandy), label: "Someone else" };
+  assert.equal(asCiteRef(copy), copy);
+  const changed = data.citeField("admissions.acceptance_rate", vandy);
+  changed.year = "1999";
+  assert.equal(asCiteRef(changed), changed, "a mutated citation stays whole");
+  // A live-edited copy of the college (lib/data-platform/live-edits.ts): the API reads the snapshot's, so no reference.
+  const edited = withEdits(vandy, [{ id: 1, unit_id: "221999", path: "admissions.acceptance_rate", value: 0.05, created_at: "2026-11-08T00:00:00Z" }]);
+  assert.notEqual(edited, vandy);
+  const fromEdited = data.citeField("admissions.acceptance_rate", edited);
+  assert.equal(hasCiteOrigin(fromEdited), false);
+  assert.equal(asCiteRef(fromEdited), fromEdited);
+  // Nothing, or a reference already, passes through.
+  assert.equal(asCiteRef(undefined), undefined);
+  assert.equal(asCiteRef(null), null);
+  const ref = citeRefOf(data.citeField("admissions.acceptance_rate", vandy), "221999");
+  assert.equal(asCiteRef(ref), ref);
+});
+
+test("the ⓘ wrappers: info-tip.tsx runs on the server (no \"use client\") and hands every citation through asCiteRef", () => {
+  const wrapper = read("components/ui/info-tip.tsx");
+  const client = read("components/ui/info-tip-client.tsx");
+  assert.match(client, /^"use client";/);
+  assert.doesNotMatch(wrapper, /^["']use client["']/m);
+  for (const name of ["InfoTip", "Term", "MetricLabel"])
+    assert.match(wrapper, new RegExp(`export function ${name}\\(\\{ cited, \\.\\.\\.props \\}[^)]*\\) \\{\\s*return <${name}Client \\{\\.\\.\\.props\\} \\{\\.\\.\\.citedProp\\(cited\\)\\} />;`), name);
+  assert.match(wrapper, /export function SourceTip\(\{ cited, \.\.\.props \}[^)]*\) \{\s*return <SourceTipClient \{\.\.\.props\} cited=\{asCiteRef\(cited\)\} \/>;/);
+  assert.match(wrapper, /return cited === undefined \? \{\} : \{ cited: asCiteRef\(cited\) \};/);
+  // Nothing else is defined in the wrapper: every other export is the client module's.
+  assert.equal((wrapper.match(/^export function /gm) ?? []).length, 4);
+  // lib/cite-origin.ts stays free of runtime imports (it is in the client bundle through the wrapper).
+  assert.doesNotMatch(read("lib/cite-origin.ts").replace(/^import type .*$/gm, ""), /^import /m);
+  // The dataset marks only its own colleges' citations and the default ones (no college).
+  assert.match(read("lib/dataset.ts"), /if \(!school \|\| byId\.get\(school\.unit_id\) === school\) markCiteOrigin\(cited, /);
+});
+
+test("the college and compare pages' client props: slim pool colleges, referenced estimate and cost citations, cut selectivity facts", () => {
+  const section = read("components/chances/StandingSection.tsx");
+  assert.match(section, /const poolSchool = slimPoolSchool\(school\);/);
+  assert.doesNotMatch(section, /lineage: school\.lineage/);
+  const compare = read("app/compare/admissions/page.tsx");
+  assert.match(compare, /poolSchools=\{Object\.fromEntries\(schools\.map\(\(s\) => \[s\.unit_id, slimPoolSchool\(s\)\]\)\)\}/);
+  assert.match(compare, /\[path, asCiteRef\(cited\)\]/);
+  assert.doesNotMatch(compare, /lineage: s\.lineage/);
+  assert.match(read("components/school/CostByIncome.tsx"), /=> asCiteRef\(data\.citeField\(path, school\)\)/);
+  assert.match(read("components/school/SelectivityChip.tsx"), /cited: asCiteRef\(citeField\(field, school\)\)/);
+  for (const unit of units) {
+    const school = data.getSchoolById(unit)!;
+    const slim = planSchoolFor(school, data.citeField, { studentCycleStart: 2026, home: null, ...models }).poolSchool;
+    for (const path of POOL_LINEAGE_PATHS) assert.deepEqual(slim.lineage?.[path], school.lineage?.[path], `${unit} ${path}`);
+  }
 });

@@ -13,8 +13,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { signedInCookieFor } from "@/lib/accounts";
+import { meHintClearFor } from "@/lib/me-hint";
 import { AUTH_COOKIE_OPTIONS } from "@/lib/supabase-server";
 import { getClaimsWithKeys } from "@/lib/auth-jwks";
+import { scheduleJwksRefresh } from "@/lib/auth-jwks-after";
 import { timingEnabled } from "@/lib/timing";
 
 export async function proxy(request: NextRequest) {
@@ -31,9 +33,9 @@ export async function proxy(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(toSet, headers) {
-        // The signed-in marker (lib/accounts.ts SIGNED_IN_COOKIE) travels with the session cookies it mirrors.
-        const marker = signedInCookieFor(toSet);
-        const all = marker ? [...toSet, marker] : toSet;
+        // The signed-in marker (lib/accounts.ts SIGNED_IN_COOKIE) travels with the session cookies it mirrors; the
+        // header's hint (lib/me-hint.ts) is cleared with them.
+        const all = [...toSet, ...[signedInCookieFor(toSet), meHintClearFor(toSet)].filter((c) => c !== null)];
         for (const { name, value } of all) request.cookies.set(name, value);
         response = NextResponse.next({ request });
         for (const { name, value, options } of all) response.cookies.set(name, value, options);
@@ -47,6 +49,8 @@ export async function proxy(request: NextRequest) {
   // the page decide.
   const started = performance.now();
   await getClaimsWithKeys(supabase.auth).catch(() => null);
+  // The instance's hourly key refresh (round 5), run by after() once this response is sent: never on the request path.
+  scheduleJwksRefresh();
   // QUAD_TIMING=1 (specs/serving-architecture.md "Timing a request"): the session check's time as a Server-Timing
   // header, the one part of the request known before the page starts streaming. Off by default; a duration only.
   if (timingEnabled()) response.headers.set("Server-Timing", `proxy;dur=${Math.round(performance.now() - started)};desc="session check"`);

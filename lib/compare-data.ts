@@ -32,8 +32,9 @@ export const loadComparison = cache(async (idsParam: string): Promise<Comparison
   const data = await getData();
   const wanted = [...new Set(idsParam.split(",").map((id) => id.trim()).filter(Boolean))];
   // With their live edits (lib/data-platform/live-edits.ts), like the profile.
-  const schools = await withLiveEditsAll(data.getSchoolsByIds(wanted).slice(0, MAX_IDS));
-  const historyFiles = schools.length > 0 ? await getHistoryFiles() : null;
+  // The history files start beside the live edits (round 5): two independent reads, one wait.
+  const stored = data.getSchoolsByIds(wanted).slice(0, MAX_IDS);
+  const [schools, historyFiles] = await Promise.all([withLiveEditsAll(stored), stored.length > 0 ? getHistoryFiles() : null]);
   return { data, ids: schools.map((s) => s.unit_id), schools, historyFiles };
 });
 

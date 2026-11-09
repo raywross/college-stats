@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import type { ReactNode } from "react";
 import { ArrowRight, BookMarked, Calculator, CalendarClock, ClipboardCheck, ExternalLink, Eye, GraduationCap, Hourglass, RefreshCw, Scale, Target, TriangleAlert } from "lucide-react";
 import { getData } from "@/lib/data";
@@ -400,9 +401,9 @@ export default async function DataPage() {
               . Either way, the ⓘ on the value itself says which document it came from and what it replaced.
             </p>
             {example && (
-              <Link href={`/schools/${example.unit_id}`} className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
+              <HoverPrefetchLink href={`/schools/${example.unit_id}`} className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
                 See an example: {example.name} <ArrowRight className="size-3.5" aria-hidden />
-              </Link>
+              </HoverPrefetchLink>
             )}
           </div>
         </div>
@@ -514,9 +515,9 @@ export default async function DataPage() {
       <Section id="sources" eyebrow="Sources" title="The datasets" icon={<BookMarked className="size-4" aria-hidden />}>
         <p className="max-w-3xl text-sm text-muted-foreground">
           Want these numbers in a spreadsheet or an assistant?{" "}
-          <Link href="/developers" className="font-semibold text-primary hover:underline">
+          <HoverPrefetchLink href="/developers" className="font-semibold text-primary hover:underline">
             Developers: the same data by API
-          </Link>
+          </HoverPrefetchLink>
           .
         </p>
         <p id="edits" className="max-w-3xl scroll-mt-24 text-sm text-muted-foreground">
@@ -581,9 +582,9 @@ export default async function DataPage() {
             <li key={s.unit_id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
               <Crest id={s.unit_id} name={s.name} size="sm" brand={crestBrand(s)} />
               <div className="min-w-0 flex-1">
-                <Link href={`/schools/${s.unit_id}`} className="block truncate text-sm font-semibold hover:text-primary">
+                <HoverPrefetchLink href={`/schools/${s.unit_id}`} className="block truncate text-sm font-semibold hover:text-primary">
                   {s.name}
-                </Link>
+                </HoverPrefetchLink>
                 <a href={s.cds!.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
                   Common Data Set {s.cds!.edition} <ExternalLink className="size-3" />
                 </a>

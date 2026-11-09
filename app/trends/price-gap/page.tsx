@@ -12,7 +12,7 @@ import { StudyPage } from "@/components/trends/StudyPage";
 import { TrendStat } from "@/components/trends/TrendStat";
 import { direction, groupingTiles } from "@/components/trends/tiles";
 import { Term } from "@/components/ui/info-tip";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 
 const study = studyBySlug("price-gap")!;
 
@@ -155,9 +155,9 @@ export default async function PriceGapPage() {
               <ul className="mt-3 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
                 {file.resets.map((r) => (
                   <li key={r.unitId} className="flex items-baseline justify-between gap-3">
-                    <Link href={`/schools/${r.unitId}/cost`} className="truncate font-medium hover:text-primary hover:underline" title={r.name}>
+                    <HoverPrefetchLink href={`/schools/${r.unitId}/cost`} className="truncate font-medium hover:text-primary hover:underline" title={r.name}>
                       {r.name}
-                    </Link>
+                    </HoverPrefetchLink>
                     <span className="shrink-0 tabular-nums text-muted-foreground">
                       {pct(r.drop)} in {year(r.year + 1)}
                     </span>

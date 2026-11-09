@@ -226,7 +226,7 @@ test("/api/me reads the profile row, not the account, and answers a paused profi
   const src = read("app/api/me/route.ts");
   assert.doesNotMatch(src, /\bgetAccount\b/);
   assert.match(src, /readProfileRow\(\)/);
-  assert.match(src, /if \(profile\.paused\) return Response\.json\(signedOut\(true\)/);
+  assert.match(src, /if \(profile\.paused\) return answer\(signedOut\(true\), headers\)/);
   const auth = read("lib/auth.ts");
   assert.match(auth, /export async function readProfileRow\(\)[\s\S]*?\$\{PROFILE_COLUMNS\}, suspended_at[\s\S]*?isMissingSuspension/);
 });

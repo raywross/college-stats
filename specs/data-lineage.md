@@ -121,7 +121,7 @@ nothing was replaced).
 |---|---|---|
 | Section values | Footnote listing each source **with its year**, built from the section's `fields` | `SourceNote`; profile `Panel` requires `fields` |
 | Any metric label | The glossary ⓘ popover gains a **Source** block: "Reported in … , Fall 2024" or "Calculated: formula. From …", retrieved date | `MetricLabel` / `InfoTip` `cited` prop; `SourceTip` when there's no glossary term |
-| Value from a non-default source or year | **Nothing visible next to the value** (chips and the "Figures marked like this…" line were removed 2026-10-03 at the owner's request); the ⓘ popover carries the source, the kind of document ("in its Common Data Set 2025–26", "in its class profile for the Fall 2026 class"), the year, the quote, the link, the retrieval date, and the replaced figure ("Federal data, Fall 2024: 5.8%", from `Cited.replaces`) | `SourceBlock` in `components/ui/info-tip.tsx`; `tests/reported-guards.test.mts` bans `SourceChip`, `SourceExceptions`, and `chip=` from `app/` and `components/` |
+| Value from a non-default source or year | **Nothing visible next to the value** (chips and the "Figures marked like this…" line were removed 2026-10-03 at the owner's request); the ⓘ popover carries the source, the kind of document ("in its Common Data Set 2025–26", "in its class profile for the Fall 2026 class"), the year, the quote, the link, the retrieval date, and the replaced figure ("Federal data, Fall 2024: 5.8%", from `Cited.replaces`) | `SourceBlock` in `components/ui/info-tip-client.tsx`; `tests/reported-guards.test.mts` bans `SourceChip`, `SourceExceptions`, and `chip=` from `app/` and `components/` |
 | Compare "All the numbers" | Each row has a field; a cell whose cited year differs from the row's default year gets a small muted year after the value; row ⓘ shows the default source | `TABLE_GROUPS` in `lib/compare-topics.ts`, rendered by `app/compare/table/page.tsx` |
 | Many schools (Explore, Home, Compare) | Union of sources; more than 3 CDS files collapse to "Common Data Sets from N colleges" | `MultiSourceNote` |
 | Explore and Compare, near `MultiSourceNote` | Quiet note: figures are the newest each college has published, years can differ between colleges, each value's ⓘ shows its source and year | `BaselineNote` (revised 2026-10-03) |
@@ -133,7 +133,7 @@ nothing was replaced).
 The plan (and anything else built from `planSchoolFor`) ships each citation as a reference, `CiteRef` in
 `lib/lineage.ts` (`{ ref, unit, path, key, year, sourceKind?, cdsEdition? }`), and its ⓘ loads the rest when it
 opens: `MetricLabel`, `InfoTip`, `SourceTip`, and `Term` take a `CiteLike` (full or reference), and for a reference the
-popover calls `useCite` (`components/ui/info-tip.tsx`: one module-level cache keyed `unit|path`, fetches in flight
+popover calls `useCite` (`components/ui/info-tip-client.tsx`: one module-level cache keyed `unit|path`, fetches in flight
 shared), shows "Loading the source…", then the same `SourceBlock`; on a failed fetch it shows the field and year it
 already has. A link that is always on screen (a calendar row's "Source") goes to `citeLinkHref(cite)`, which for a
 reference is the API's redirect, so nothing is fetched until it is followed. The print page alone loads full citations
@@ -160,6 +160,25 @@ formula; a path the registry hides or doesn't list).
   page and the compare page). A major unit's citation stays whole (`majorUnitCites`, a major line's unit cites): it
   carries that unit's page and quote, which the API, one citation per college and path, doesn't know.
 `tests/plan-cites.test.mts` resolves each kind through the API and compares it with what the page shipped before.
+
+**On the public pages (round 5, 2026-11-08).** Every ⓘ a server component renders now ships a reference wherever it
+can, without a change at the call site: `components/ui/info-tip.tsx` is a thin wrapper (no `"use client"`) over the
+client module `components/ui/info-tip-client.tsx`, and its `MetricLabel`, `InfoTip`, `SourceTip`, and `Term` pass
+`cited` through `asCiteRef` (`lib/cite-origin.ts`). The dataset's `citeField(path, school)` marks each citation it
+returns for one of its own colleges (or with no college: a field's default citation, `unit: ""`) with a resolver, and
+`asCiteRef` gives the reference only while the object still equals a fresh `citeField` and `citeRefWhereSame` allows
+it. So a citation stays whole when it is a copy or was changed after it was made (the CDS aid table's per-line quotes,
+the HS-prep table's), comes from a live-edited copy of a college (the API reads the snapshot's; such a college's pages
+keep whole citations until the snapshot carries the edit), is a GPA field, or is rendered by a client component
+(nothing is marked on the client). `GET /api/cite?unit=&path=…` (an empty unit, distinct from a missing one, which is
+400) answers a field's default citation, `citeField(path)`, which the compare cards cite. Client components that take
+citations as data convert them at the server call site: the cost curve's (`components/school/CostByIncome.tsx`), the
+compare page's estimate facts (`app/compare/admissions/page.tsx`), and the selectivity chip's facts
+(`components/school/SelectivityChip.tsx`; the panel resolves each with `useCite` when it opens, "Loading the source…"
+meanwhile). Kept whole: the GPA fields, the hero's `SourcesTip` groups (one popover listing several sources), and the
+custom citations above. `tests/plan-cites.test.mts` ("Round 5") covers the marking, the cases kept whole, the default
+citation through the API, and the wrappers; `tests/public-payload.test.mts` checks that no other whole citation reaches a
+client component on the Harvard overview and the compare pages, and that an ⓘ renders the same markup from either.
 
 ## Enforcement
 Each guard below was verified by breaking the rule on purpose and confirming the check fails (2026-09-28).

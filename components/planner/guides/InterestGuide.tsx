@@ -14,7 +14,7 @@
  * never says a visit improves anything, only what the college reports and what colleges log.
  */
 import { useState, useTransition, type ReactNode } from "react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
@@ -262,9 +262,9 @@ function VisitSection({ item, school, data, canEdit }: { item: PlanItem; school:
       )}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {events.length > 0 && (
-          <Link href={`/schools/${school.unit_id}/events`} className={SECONDARY}>
+          <HoverPrefetchLink href={`/schools/${school.unit_id}/events`} className={SECONDARY}>
             All of {name}&apos;s events
-          </Link>
+          </HoverPrefetchLink>
         )}
         {page && page.label === "Campus visit page" && (
           <ActButton href={page.href} itemId={item.id} act="tour" track={canEdit} className={SECONDARY}>

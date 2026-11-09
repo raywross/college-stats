@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { Popover } from "@base-ui/react/popover";
 import { ArrowRight, Info } from "lucide-react";
-import type { AnyCited } from "@/lib/lineage";
-import { SourceLink } from "@/components/ui/info-tip";
+import { citeFieldLabel, citesYear, yearLabel, type CiteLike } from "@/lib/lineage";
+import { SourceLink, useCite } from "@/components/ui/info-tip";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,24 @@ export interface PanelFact {
   label: string;
   value: string;
   note?: string;
-  cited: AnyCited;
+  /** A reference the popover fetches when it opens (round 5), or the whole citation (a GPA field). */
+  cited: CiteLike;
+}
+
+/**
+ * A fact's source line: the link and year once the citation is at hand (at once for a whole one, on open for a
+ * reference, `useCite`), "Loading the source…" meanwhile, and the field and year it already carries if the fetch fails.
+ */
+function FactSource({ cited }: { cited: CiteLike }) {
+  const state = useCite(cited);
+  if (state.status === "ready") return <SourceLink s={state.cited} />;
+  if (state.status === "loading") return <>Loading the source…</>;
+  return (
+    <>
+      {citeFieldLabel(cited)}
+      {citesYear(cited) && `, ${yearLabel(cited)}`}
+    </>
+  );
 }
 
 /** The sentence every panel ends on (specs/chances/selectivity-index.md "Where it shows"). */
@@ -63,7 +80,7 @@ export function SelectivityPanel({ college, facts, className }: { college: strin
                       {f.note && <span className="text-muted-foreground"> {f.note}</span>}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      <SourceLink s={f.cited} />
+                      <FactSource cited={f.cited} />
                     </p>
                   </li>
                 ))}

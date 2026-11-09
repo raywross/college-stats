@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { mailto, PRIVACY_EMAIL, SUPPORT_EMAIL } from "@/lib/contacts";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import type { ReactNode } from "react";
 import { Clock, EyeOff, Gauge, History, ListChecks, ServerCog, ShieldCheck, SlidersHorizontal, UserRound } from "lucide-react";
 import { SITE_NAME } from "@/lib/brand";
@@ -234,9 +235,9 @@ export default function PrivacyPage() {
         </ul>
         <p>
           The college figures themselves are public data, with sources and years listed on the{" "}
-          <Link href="/data#method" className={link}>
+          <HoverPrefetchLink href="/data#method" className={link}>
             Data page
-          </Link>
+          </HoverPrefetchLink>
           .
         </p>
       </Section>
@@ -252,9 +253,9 @@ export default function PrivacyPage() {
         <p>
           Last updated: October 2026. If we ever want to measure something new about people, rather than about pages, we will change this
           page first and say what changed in the{" "}
-          <Link href="/release-notes" className={link}>
+          <HoverPrefetchLink href="/release-notes" className={link}>
             release notes
-          </Link>
+          </HoverPrefetchLink>
           .
         </p>
       </Section>

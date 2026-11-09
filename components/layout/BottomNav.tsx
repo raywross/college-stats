@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { BookOpen, Compass, Database, Ellipsis, GitCompareArrows, GraduationCap, LineChart, LogIn, Map as MapIcon, Search, ShieldCheck, Sparkles, UserRound, X } from "lucide-react";
@@ -199,7 +200,7 @@ function Tab({
 
 function MoreLink({ href, icon, title, sub, active }: { href: string; icon: ReactNode; title: string; sub: string; active: boolean }) {
   return (
-    <Link
+    <HoverPrefetchLink
       href={href}
       className={cn("flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors", active ? "bg-foreground text-background" : "bg-muted/60 hover:bg-muted")}
     >
@@ -208,6 +209,6 @@ function MoreLink({ href, icon, title, sub, active }: { href: string; icon: Reac
         <span className="block text-base font-semibold">{title}</span>
         <span className={cn("block truncate text-xs", active ? "text-background/70" : "text-muted-foreground")}>{sub}</span>
       </span>
-    </Link>
+    </HoverPrefetchLink>
   );
 }

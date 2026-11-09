@@ -14,6 +14,11 @@ Every term of art gets an explanation one hover or tap away, backed by a full gl
 To add a term, add an entry; `TermKey` updates automatically and TypeScript flags any unknown key.
 
 ## Components (`components/ui/info-tip.tsx`)
+Import them from `components/ui/info-tip.tsx` as before. Since round 5 that module is a server-safe wrapper over the
+client module `components/ui/info-tip-client.tsx` (where the popovers live): rendered by a server component, it hands a
+dataset citation on as a reference the popover fetches when it opens ([data-lineage.md](data-lineage.md) "Citations on
+the plan", "On the public pages").
+
 | Component | Look | Use |
 |---|---|---|
 | `<InfoTip term="yield" />` | small (i) icon | After a metric label or chart title |

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { ArrowRight, Map as MapIcon } from "lucide-react";
 import { ComplexityMeter } from "@/components/roadmap/ComplexityMeter";
 import { getRoadmapDoc } from "@/lib/roadmap-docs";
@@ -81,12 +81,12 @@ export default function RoadmapPage() {
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">{group.description}</p>
                 {overview && (
-                  <Link
+                  <HoverPrefetchLink
                     href={`/roadmap/${overview.slug}`}
                     className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
                   >
                     Read the {overview.title.toLowerCase()} <ArrowRight className="size-3.5" />
-                  </Link>
+                  </HoverPrefetchLink>
                 )}
               </div>
               <ul className="divide-y overflow-hidden rounded-3xl border bg-card">
@@ -95,7 +95,7 @@ export default function RoadmapPage() {
                   const after = (spec.after ?? []).map((slug) => roadmapSpec(slug)).filter((s) => s != null);
                   return (
                     <li key={spec.slug}>
-                      <Link
+                      <HoverPrefetchLink
                         href={`/roadmap/${spec.slug}`}
                         className="group grid gap-3 p-5 transition-colors hover:bg-muted/60 sm:grid-cols-[minmax(0,1fr)_9rem_1.25rem] sm:items-center sm:gap-6"
                       >
@@ -118,7 +118,7 @@ export default function RoadmapPage() {
                         </div>
                         <ComplexityMeter value={spec.complexity} />
                         <ArrowRight className="hidden size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary sm:block" />
-                      </Link>
+                      </HoverPrefetchLink>
                     </li>
                   );
                 })}

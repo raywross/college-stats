@@ -126,6 +126,18 @@ export function askSatisfied(ask: Pick<OpenOrgAsk, "kind" | "section">, facts: {
   return false;
 }
 
+/**
+ * A student's open asks split for the notice (round 5: the plan load reads them, lib/planner/load.ts): `done` are
+ * satisfied by the facts and closed after the response (org_ask_done), `shown` the rest, in order, and `unseen` the
+ * shown ones the family hasn't seen yet, marked seen from the browser the first time Next steps shows
+ * (components/org/AskNotice.tsx, `markAsksSeen`).
+ */
+export function splitAsks<A extends Pick<OpenOrgAsk, "kind" | "section" | "seen_at">>(asks: readonly A[], facts: { profile: StudentProfileData | null; listCount: number }): { done: A[]; shown: A[]; unseen: A[] } {
+  const done = asks.filter((a) => askSatisfied(a, facts));
+  const shown = asks.filter((a) => !askSatisfied(a, facts));
+  return { done, shown, unseen: shown.filter((a) => a.seen_at === null) };
+}
+
 /* ------------------------------------------------------------------ */
 /* The caseload                                                        */
 /* ------------------------------------------------------------------ */

@@ -269,7 +269,7 @@ test("/api/me answers from me_bundle() when it answers, and keeps the four calls
   const bundle = get.indexOf("await meBundle()");
   assert.ok(bundle > get.indexOf("await getUser()"), "after the sign-in check (the function is closed to anon)");
   assert.ok(bundle < get.indexOf("Promise.all(["), "before the fallback's reads");
-  assert.match(get, /if \(bundle\) return Response\.json\(fromBundle\(bundle, user\)/);
+  assert.match(get, /if \(bundle\) return answer\(fromBundle\(bundle, user\), headers\)/, "through answer(), which keeps the header's hint cookie in step");
   for (const call of ["readProfileRow()", "myOrganization()", 'rpc("is_admin_any_aal")', "householdChildren()"]) assert.ok(get.includes(call), `fallback keeps ${call}`);
   // A paused profile is signed out on both paths; the role and the state's shape come from the same rule.
   const from = src.slice(src.indexOf("function fromBundle("), src.indexOf("export async function GET()"));

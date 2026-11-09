@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { crestBrand } from "@/lib/brand";
 import { historyYearLabel } from "@/lib/history";
 import { formatMoverChange, formatMoverValue, type MoverEntry, type MoverListDef, type MoverResult } from "@/lib/movers";
@@ -33,7 +33,7 @@ export function MoverRows({
         const width = max > 0 ? Math.max(3, (Math.abs(e.change) / max) * 100) : 3;
         return (
           <li key={e.unit_id}>
-            <Link href={`/schools/${e.unit_id}`} className="group flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-muted/70">
+            <HoverPrefetchLink href={`/schools/${e.unit_id}`} className="group flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-muted/70">
               <span className="w-5 shrink-0 text-right text-xs font-bold text-muted-foreground tabular-nums">{e.rank}</span>
               <Crest id={e.unit_id} name={e.name} size="xs" brand={school ? crestBrand(school) : undefined} />
               <span className="min-w-0 flex-1">
@@ -52,7 +52,7 @@ export function MoverRows({
                   />
                 </span>
               </span>
-            </Link>
+            </HoverPrefetchLink>
           </li>
         );
       })}

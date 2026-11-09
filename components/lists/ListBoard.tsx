@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition, type ReactNode } from "react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { ArrowDown, ArrowUp, ChevronDown, GripVertical, Lock, Trash2 } from "lucide-react";
 import { Crest } from "@/components/school/Crest";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
@@ -331,9 +331,9 @@ function ItemRow({
         )}
         <Crest id={s.unit_id} name={s.name} size="sm" brand={s.brand} />
         <div className="min-w-0 flex-1">
-          <Link href={`/schools/${s.unit_id}`} className="font-display font-bold break-words hover:text-primary">
+          <HoverPrefetchLink href={`/schools/${s.unit_id}`} className="font-display font-bold break-words hover:text-primary">
             {s.name}
-          </Link>
+          </HoverPrefetchLink>
           <FactsLine s={s} />
         </div>
         <div className="flex shrink-0 items-center gap-0.5">

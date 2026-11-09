@@ -2,6 +2,7 @@
 
 import { authConfigured } from "@/lib/auth";
 import { createServerSupabase } from "@/lib/supabase-server";
+import { writeMeHintAfterSignIn } from "@/lib/me-hint-server";
 import { trackSignupIfNew } from "@/lib/signup-events";
 import { isFreshConfirmation } from "@/lib/signup-events-rules";
 import { firstLanding, safeNextPath } from "@/lib/accounts";
@@ -26,6 +27,8 @@ export async function completeSignIn(accessToken: string, refreshToken: string, 
     await supabase.auth.signOut({ scope: "local" });
     return { ok: false };
   }
+  // The header's hint (lib/me-hint.ts), so the landing page paints the avatar before any script loads.
+  await writeMeHintAfterSignIn(supabase, data.user);
   // A first confirmation counts as a sign-up. The link's own next path isn't known here, so has_invite is false.
   await trackSignupIfNew(data.user, "magic_link", "");
   const target = safeNextPath(next, "/account");

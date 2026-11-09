@@ -3,7 +3,7 @@
 import { useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { FEDERAL_TOP, INCOME_MAX, curvePoints, priceAt, type CostCurve as Curve } from "@/lib/cost-curve";
 import type { MeritInfo } from "@/lib/merit";
-import type { AnyCited } from "@/lib/lineage";
+import type { CiteLike } from "@/lib/lineage";
 import {
   ESTIMATE_WORD,
   breakIncomeLabel,
@@ -24,11 +24,11 @@ import { useWidth } from "./useWidth";
 
 /** Where each part of the legend gets its citation (the page passes `citeField` results). */
 export interface CostCurveCitations {
-  published?: AnyCited;
-  estimate?: AnyCited;
-  breakPoint?: AnyCited;
-  merit?: AnyCited;
-  promise?: AnyCited;
+  published?: CiteLike;
+  estimate?: CiteLike;
+  breakPoint?: CiteLike;
+  merit?: CiteLike;
+  promise?: CiteLike;
 }
 
 const STEP = 5_000;

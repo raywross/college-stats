@@ -582,3 +582,21 @@
     font-size: max(16px, 1em);
   }
 }
+
+/*
+ * The header's account slot at first paint (specs/product/accounts.md "Header state"): AccountMenu's server HTML
+ * holds both "Sign in" and an avatar placeholder, hidden until the inline script (components/layout/MeFirstPaint.tsx)
+ * sets <html data-me="in|out"> from the cookies; then one shows, before any bundle loads. The placeholder prints the
+ * hint's initials from --me-initials, so no text React renders is touched. Unlayered on purpose, so these display
+ * rules outrank utilities. Once AccountMenu knows the state it renders the real control in the slot instead.
+ */
+[data-me-show] {
+  display: none;
+}
+html[data-me="out"] [data-me-show="out"],
+html[data-me="in"] [data-me-show="in"] {
+  display: inline-flex;
+}
+[data-me-show="in"]::after {
+  content: var(--me-initials, "");
+}

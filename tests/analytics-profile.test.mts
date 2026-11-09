@@ -28,7 +28,7 @@ const PILL_ROW = "components/ui/pill-row.tsx";
 const ANCHOR = "components/profile/AnchorRedirect.tsx";
 const BLOCK_VIEWS = "components/profile/BlockViews.tsx";
 const TOPIC_PAGE = "components/profile/TopicPage.tsx";
-const INFO_TIP = "components/ui/info-tip.tsx";
+const INFO_TIP = "components/ui/info-tip-client.tsx";
 const GROUP_NAV = "components/profile/HistoryGroupNav.tsx";
 const OVER_TIME = "components/history/OverTime.tsx";
 const HISTORY_PAGE = "app/schools/[id]/history/page.tsx";
@@ -79,7 +79,7 @@ test("pills report through PillRow's onSelect (from pill), and only for topics, 
   const row = code(PILL_ROW);
   assert.match(row, /onSelect\?: \(key: string\) => void/);
   assert.match(row, /onClick=\{\(\) => onSelect\?\.\(p\.key\)\}/, "each pill's click calls onSelect");
-  assert.match(row, /<Link\b/, "the pill is still a link");
+  assert.match(row, /<PillLink\b/, "the pill is still a link (Link, or HoverPrefetchLink on the profile)");
   const pills = code(TOPIC_PILLS);
   assert.match(pills, /onSelect=\{onSelect\}/);
   assert.match(pills, /isTopicKey\(key\)/, "Overview is filtered out by narrowing to a topic key");
@@ -109,7 +109,7 @@ test("BlockViews observes at half visibility, once per block, and cleans up; Top
   assert.match(page, /items\.length > 0 && <BlockViews/, "skipped when the page lists no blocks");
 });
 
-test("every popover in info-tip.tsx counts its opening through the shared onOpen helper", () => {
+test("every popover in info-tip-client.tsx counts its opening through the shared onOpen helper", () => {
   const src = code(INFO_TIP);
   const roots = count(src, /<Popover\.Root\b/g);
   assert.equal(roots, 4, "InfoTip, SourceTip, SourcesTip, and Term");

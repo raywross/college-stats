@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Search } from "lucide-react";
@@ -18,14 +19,16 @@ import { usePlanDot } from "./usePlanDot";
 
 // The Plan dot's hook lives in ./usePlanDot.ts (shared with BottomNav.tsx; one fetch per page at most).
 
-/** The second item is the role item (specs/product/role-nav.md): Advisor here names its slot; `roleNav(me)` fills it. */
+/** The second item is the role item (specs/product/role-nav.md): Advisor here names its slot; `roleNav(me)` fills it.
+ * `hover`: prefetched on hover only (specs/serving-architecture.md "Prefetching"): rarely the next click, and /data
+ * alone is 184 KB of payload, fetched on every page. The others are dynamic shells of 3–17 KB. */
 const NAV_ITEMS = [
   { label: "Explore", href: "/explore" },
   { label: ADVISOR_SHORT, href: ADVISOR_PATH },
   { label: "Compare", href: "/compare" },
   { label: "High schools", href: "/high-schools" },
-  { label: "Glossary", href: "/glossary" },
-  { label: "Data", href: "/data" },
+  { label: "Glossary", href: "/glossary", hover: true },
+  { label: "Data", href: "/data", hover: true },
 ];
 
 /** Top bar. On phones it's the logo and the account control, at the top of the page and scrolling away with it
@@ -71,15 +74,23 @@ export function Header() {
           {NAV_ITEMS.map((item) => {
             if (item.href === ADVISOR_PATH) return <RoleNavItem key={item.href} nav={role} dot={planDot} />;
             const active = isActive(item.href);
+            const cls = cn(
+              "relative inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold transition-colors",
+              active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            );
+            if (item.hover) {
+              return (
+                <HoverPrefetchLink key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={cls}>
+                  {item.label}
+                </HoverPrefetchLink>
+              );
+            }
             return (
               <Link
                 key={item.href}
                 href={item.href === "/compare" ? compareHref : item.href}
                 aria-current={active ? "page" : undefined}
-                className={cn(
-                  "relative inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold transition-colors",
-                  active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
+                className={cls}
               >
                 {item.label}
                 {item.href === "/compare" && compareIds.length > 0 && (

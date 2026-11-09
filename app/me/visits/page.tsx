@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { connection } from "next/server";
 import { AuthUnavailable } from "@/components/account/AuthUnavailable";
 import { VisitEventList } from "@/components/visits/VisitEventList";
@@ -92,9 +93,9 @@ export default async function MyVisitsPage() {
               return (
                 <div key={f.unit_id} className="rounded-3xl border bg-card p-4 sm:p-5">
                   <div className="flex items-center justify-between gap-3">
-                    <Link href={`/schools/${f.unit_id}`} className="font-display font-bold hover:text-primary">
+                    <HoverPrefetchLink href={`/schools/${f.unit_id}`} className="font-display font-bold hover:text-primary">
                       {name}
-                    </Link>
+                    </HoverPrefetchLink>
                     <MuteSwitch unitId={f.unit_id} schoolName={name} initiallyMuted={mutedSet.has(f.unit_id)} />
                   </div>
                   <div className="mt-2">

@@ -11,6 +11,7 @@ import type { EssaysTabData } from "@/lib/essays/tab-view";
 import type { PlanTab } from "@/lib/planner/plan-tabs";
 import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
+import type { PlanTabsRead } from "@/lib/planner/load";
 import type { ViewerRole } from "@/lib/viewer-relation";
 
 // The pills and the strip's classes live with the client-side switch; re-exported for the frame and the tests.
@@ -31,6 +32,7 @@ export function PlanTabs({
   viewer,
   essays = null,
   person = null,
+  tabsRead = null,
 }: {
   ctx: PlanContext;
   view: PlanView;
@@ -44,12 +46,14 @@ export function PlanTabs({
   essays?: EssaysTabData | null;
   /** The `?for=` links keep (null for a student's own plan). */
   person?: string | null;
+  /** The asks and the Offers stage's data, read with the plan (round 5, lib/planner/load.ts PlanTabsRead). */
+  tabsRead?: PlanTabsRead | null;
 }) {
   const panel: Record<PlanTab, () => ReactNode> = {
     next: () => (
       <>
         {/* A counselor's asks (specs/product/counselor-portal.md "Asking a student for something"), above the cards. */}
-        <AskNotice ctx={ctx} />
+        <AskNotice asks={tabsRead?.asks ?? null} ctx={ctx} />
         <NextSteps ctx={ctx} view={view} />
       </>
     ),
@@ -58,7 +62,7 @@ export function PlanTabs({
     essays: () => <EssaysTab ctx={ctx} essays={essays} person={person} canWrite={viewer === "student"} />,
     // eslint-disable-next-line react/no-children-prop -- CalendarTabProps.children is the list of child lanes, by contract
     calendar: () => <FamilyCalendar children={[calendarChild]} viewer={viewer} everyone={false} />,
-    offers: () => <OffersStage ctx={ctx} />,
+    offers: () => <OffersStage ctx={ctx} read={tabsRead?.offers ?? null} />,
   };
   const panels: Partial<Record<PlanTab, ReactNode>> = {};
   for (const t of [tab, ...local]) if (!(t in panels)) panels[t] = panel[t]();

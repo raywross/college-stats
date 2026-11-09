@@ -37,7 +37,7 @@ export default async function EditCollegePage({ params }: PageProps<"/admin/data
         subtitle={
           <>
             Any registered value, cited as edited by Quad on the day it was saved · unit {unit} ·{" "}
-            <Link href={`/schools/${unit}`} className="underline-offset-4 hover:underline">
+            <Link href={`/schools/${unit}`} prefetch={false} className="underline-offset-4 hover:underline">
               Public profile
             </Link>
           </>

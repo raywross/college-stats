@@ -32,7 +32,7 @@ import { readEssayOverrides, withOverride } from "@/lib/essays/overrides";
 import type { EstimateResult } from "@/lib/chances/types";
 import { citeRefOf, type AnyCited, type CiteLike } from "@/lib/lineage";
 import type { CiteMode } from "./plan-cites";
-import { POOL_FIELDS, type PoolSchool } from "@/lib/chances/pool-rate";
+import { POOL_LINEAGE_PATHS, slimPoolSchool } from "@/lib/chances/pool-rate";
 
 export {
   isMissing,
@@ -129,28 +129,9 @@ export const PLAN_CITE_PATHS = [
 /** Cited by hand in planSchoolFor: not real dot paths on School. */
 const HAND_CITED: ReadonlySet<string> = new Set(["derived.sat_total", "derived.gpa_band_mean", "derived.gpa_middle_half", "derived.gpa_estimate"]);
 
-/**
- * The lineage records the pool reads (lib/chances/pool-rate.ts and compared-with.ts, through lib/cds/admissions.ts
- * `sameDocumentRate`): the overall rate's year, the ED counts' year and document, and the funnel's documents. A
- * college's whole lineage is tens of kilobytes (every value's quote and url), most of the plan's payload when it rode
- * along in `poolSchool`; tests/plan-cites.test.mts shows the pool reads the same with only these.
- */
-export const POOL_LINEAGE_PATHS = [
-  POOL_FIELDS.overall,
-  "reported.admission_profile.early_decision.applicants",
-  "admissions.applicants",
-  "admissions.admitted",
-] as const satisfies readonly FieldPath[];
-
-/** The college as the pool reads it, with only the lineage records it reads (POOL_LINEAGE_PATHS). */
-export function slimPoolSchool(school: School): PoolSchool {
-  const lineage: NonNullable<School["lineage"]> = {};
-  for (const path of POOL_LINEAGE_PATHS) {
-    const rec = school.lineage?.[path];
-    if (rec) lineage[path] = rec;
-  }
-  return { unit_id: school.unit_id, name: school.name, location: school.location, admissions: school.admissions, reported: school.reported, lineage };
-}
+// The pool's slim college (only the lineage records it reads) lives with the pool since round 5, which gives it to the
+// college and compare pages too; re-exported here for the plan and its tests.
+export { POOL_LINEAGE_PATHS, slimPoolSchool };
 
 function valueAt(obj: unknown, path: string): unknown {
   let cur: unknown = obj;

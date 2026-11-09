@@ -1,6 +1,8 @@
 import type { DatasetMeta, School, SearchFilters, SchoolType, SortKey } from "./types";
 import type { FieldPath } from "./fields";
-import { lineageFor, sourcesForFields as sourcesForFieldsPure, type Cited, type CitedSource } from "./lineage";
+import { lineageFor, sourcesForFields as sourcesForFieldsPure, type Cited, type CitedSource, type CiteLike } from "./lineage";
+import { markCiteOrigin } from "./cite-origin";
+import { citeRefWhereSame } from "./planner/plan-cites";
 import type { ReleaseCalendar } from "./releases";
 import { crestBrand, type CrestBrand } from "./brand";
 import { compareMatches, scoreSchool, type AliasRow } from "./aliases";
@@ -217,9 +219,20 @@ export function createDataset({ schools, meta, releaseCalendar, aliases = [] }: 
     return meta;
   }
 
-  /** Full citation for one value: source, year, method, formula and inputs. Default source without a school. */
+  /**
+   * Full citation for one value: source, year, method, formula and inputs. Default source without a school. A citation
+   * of one of this dataset's own colleges (not a live-edited copy), or a field's default one (no college: unit ""), is
+   * marked so a ⓘ can ship it as a reference (lib/cite-origin.ts `asCiteRef`): the reference `GET /api/cite` answers
+   * with this same citation, given only while the object still equals a fresh one.
+   */
   function citeField(path: FieldPath, school?: School): Cited {
-    return lineageFor(path, school, meta);
+    const cited = lineageFor(path, school, meta);
+    if (!school || byId.get(school.unit_id) === school) markCiteOrigin(cited, (c) => citeRefIfFresh(c as Cited, path, school));
+    return cited;
+  }
+
+  function citeRefIfFresh(cited: Cited, path: FieldPath, school: School | undefined): CiteLike {
+    return JSON.stringify(cited) === JSON.stringify(lineageFor(path, school, meta)) ? citeRefWhereSame(cited, school?.unit_id ?? "") : cited;
   }
 
   /** Distinct sources behind the values a section shows (derived values cite their inputs). */

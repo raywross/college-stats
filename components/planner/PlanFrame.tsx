@@ -13,7 +13,8 @@ import { intakeNeeded } from "@/lib/planner/intake";
 import type { RecordBack } from "@/lib/planner/record";
 import { roundsPicked } from "@/lib/planner/list-row";
 import { nextUpInfo } from "@/lib/planner/plan-frame";
-import { defaultTab, planHref, switchableTabs, tabsFor, type PlanTab } from "@/lib/planner/plan-tabs";
+import { defaultTab, hasDecision, planHref, switchableTabs, tabsFor, type PlanTab } from "@/lib/planner/plan-tabs";
+import type { PlanTabsRead } from "@/lib/planner/load";
 import type { PlanView } from "@/lib/planner/plan-view";
 import type { PlanContext } from "@/lib/planner/types";
 import { viewerRole, type ViewerRelation } from "@/lib/viewer-relation";
@@ -41,6 +42,7 @@ export function PlanFrame({
   back,
   people,
   essays = null,
+  tabsRead = null,
 }: {
   ctx: PlanContext;
   view: PlanView;
@@ -60,6 +62,9 @@ export function PlanFrame({
   people?: ReactNode;
   /** The Essays tab's read (lib/essays/tab-data.ts), made with the plan on every render (round 4: tabs switch in place). */
   essays?: EssaysTabData | null;
+  /** What the panels read besides the plan, read with it (round 5, lib/planner/load.ts PlanTabsRead): the asks and the
+   * Offers stage's data. Null when not read: no asks notice, and Offers navigates (its stage reads for itself). */
+  tabsRead?: PlanTabsRead | null;
 }) {
   const today = ctx.today;
   const studentId = ctx.student?.id ?? personId ?? "";
@@ -69,14 +74,13 @@ export function PlanFrame({
   // round's dates are a guess that would otherwise surface as Next up (QA 2026-10-11).
   const roundsOpen = roundsPicked(ctx.grade);
 
-  const hasDecision = ctx.items.some((i) => i.status === "decided" || i.decision_date !== null);
-  const tabs = tabsFor({ everyone: false, hasDecision });
+  const tabs = tabsFor({ everyone: false, hasDecision: hasDecision(ctx.items) });
   const viewer = viewerRole(relation);
   const fallbackTab = defaultTab(viewer, false);
   const openTab = tabs.includes(tab) ? tab : fallbackTab;
-  // Which tabs switch in the browser (page.md "Tabs switch in place"): every one whose panel needs nothing past this
-  // plan. The asks notice on Next steps reads for a student or a parent (components/org/AskNotice.tsx), not a counselor.
-  const local = switchableTabs({ tabs, opened: openTab, asksRead: !!ctx.student && !ctx.viewer.isCounselor });
+  // Which tabs switch in the browser (page.md "Tabs switch in place"): every one whose panel needs nothing past what the
+  // load read; Offers once its stage's data came with the plan (round 5).
+  const local = switchableTabs({ tabs, opened: openTab, offersRead: tabsRead?.offers != null });
 
   const calendarChild: CalendarChild = { studentId, name: firstName ?? "Student", colorSlot, ring: true, gradYear, ctx, view };
 
@@ -124,7 +128,7 @@ export function PlanFrame({
           {relation === "self" && <ImportLocalPlan studentId={studentId} canEdit={ctx.viewer.canEdit} />}
           <div className="space-y-4">
             <div className="lg:hidden">{pills}</div>
-            <PlanTabs ctx={ctx} view={view} tab={openTab} local={local} calendarChild={calendarChild} viewer={viewer} essays={essays} person={personId} />
+            <PlanTabs ctx={ctx} view={view} tab={openTab} local={local} calendarChild={calendarChild} viewer={viewer} essays={essays} person={personId} tabsRead={tabsRead} />
           </div>
         </div>
         <aside className="mt-6 hidden space-y-4 lg:top-6 lg:mt-0 lg:block lg:sticky">

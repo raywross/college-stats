@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { useActionState, useState } from "react";
 import { TriangleAlert } from "lucide-react";
 import { createKey, type CreateKeyState } from "@/app/account/api-keys/actions";
@@ -96,9 +97,9 @@ export function MakeKeyForm({ origin, activeKeys }: { origin: string; activeKeys
       </div>
       <p className="text-xs text-muted-foreground">
         {TERMS_LINE}{" "}
-        <Link href="/developers#terms" className="font-semibold text-primary hover:underline">
+        <HoverPrefetchLink href="/developers#terms" className="font-semibold text-primary hover:underline">
           Read the terms
-        </Link>
+        </HoverPrefetchLink>
       </p>
       {state.status === "error" && (
         <p className="text-sm font-medium text-destructive" role="alert">

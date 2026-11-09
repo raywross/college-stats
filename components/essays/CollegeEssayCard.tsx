@@ -18,7 +18,7 @@
  * Start and Add hidden (only the student writes).
  */
 import { useState, useTransition } from "react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { useRouter } from "next/navigation";
 import { Check, ChevronDown } from "lucide-react";
 import { PromptPicker } from "@/components/essays/PromptPicker";
@@ -144,7 +144,7 @@ export function PromptRow({
     </span>
   );
   const status = p.essayId ? (
-    <Link
+    <HoverPrefetchLink
       href={editorHref(p.essayId, person)}
       className={cn(
         "inline-flex min-h-11 shrink-0 items-center self-start rounded-full px-2 text-sm tabular-nums hover:bg-muted/50 hover:underline",
@@ -154,7 +154,7 @@ export function PromptRow({
     >
       {right}
       <span className="sr-only">: open the draft</span>
-    </Link>
+    </HoverPrefetchLink>
   ) : canWrite ? (
     <span className="shrink-0 self-start">
       <StartButton promptRef={p.ref} person={person} />
@@ -209,9 +209,9 @@ export function MainEssayCard({
   return (
     <section aria-label="Personal essay" data-main-essay className="rounded-3xl border bg-card">
       {main.essayId ? (
-        <Link href={editorHref(main.essayId, person)} className="flex min-h-14 items-center justify-between gap-3 rounded-3xl px-4 py-3 hover:bg-muted/50 sm:px-5">
+        <HoverPrefetchLink href={editorHref(main.essayId, person)} className="flex min-h-14 items-center justify-between gap-3 rounded-3xl px-4 py-3 hover:bg-muted/50 sm:px-5">
           {body}
-        </Link>
+        </HoverPrefetchLink>
       ) : (
         <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5">
           {body}
@@ -289,9 +289,9 @@ export function CollegeEssayCard({
           {anyStarted(c) && (
             <>
               <span aria-hidden>·</span>
-              <Link href={packageHref(c.unit_id, person)} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
+              <HoverPrefetchLink href={packageHref(c.unit_id, person)} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
                 Package
-              </Link>
+              </HoverPrefetchLink>
             </>
           )}
         </p>
@@ -314,13 +314,13 @@ export function CollegeEssayCard({
           {c.own.length > 0 && sub("Your own")}
           {c.own.map((o) => (
             <li key={o.id} data-prompt-row={o.state}>
-              <Link href={editorHref(o.id, person)} className={cn(ROW, "hover:bg-muted/50")}>
+              <HoverPrefetchLink href={editorHref(o.id, person)} className={cn(ROW, "hover:bg-muted/50")}>
                 <span className="flex min-w-0 flex-1 items-start gap-2.5">
                   <Glyph state={o.state} />
                   <span className="block min-w-0 font-semibold break-words">{o.title}</span>
                 </span>
                 <span className="shrink-0 text-sm text-muted-foreground tabular-nums">{o.state === "ready" ? STATE_WORD.ready : `${STATE_WORD[o.state]}${o.count !== null ? ` · ${countLabel(o.count, null)}` : ""}`}</span>
-              </Link>
+              </HoverPrefetchLink>
             </li>
           ))}
         </ul>

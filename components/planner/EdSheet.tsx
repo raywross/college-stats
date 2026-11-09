@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { useRouter } from "next/navigation";
 import { Check, ExternalLink, X } from "lucide-react";
 import { MetricLabel, Term } from "@/components/ui/info-tip";
@@ -255,9 +256,9 @@ export function EdSheet({
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
 
-      <Link href={facts.profileHref} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
+      <HoverPrefetchLink href={facts.profileHref} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline">
         {facts.profileLabel}
-      </Link>
+      </HoverPrefetchLink>
     </section>
   );
 }

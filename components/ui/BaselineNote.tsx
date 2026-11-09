@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { cn } from "@/lib/utils";
 
 /**
@@ -11,9 +11,9 @@ export function BaselineNote({ className }: { className?: string }) {
     <p className={cn("text-[11px] leading-relaxed text-muted-foreground", className)}>
       Figures are the newest each college has published; years can differ between colleges. Each value&apos;s{" "}
       <span className="font-semibold">ⓘ</span> shows its source and year.{" "}
-      <Link href="/data#compare" className="font-medium hover:text-primary hover:underline">
+      <HoverPrefetchLink href="/data#compare" className="font-medium hover:text-primary hover:underline">
         Why
-      </Link>
+      </HoverPrefetchLink>
     </p>
   );
 }

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { Crest } from "@/components/school/Crest";
 import type { CrestBrand } from "@/lib/brand";
 import type { PlanSchool } from "@/lib/planner/types";
@@ -28,9 +28,9 @@ export function CollegeChip({
     <span className={cn("inline-flex min-w-0 items-center gap-1.5 text-sm font-semibold", className)}>
       <Crest id={school.unit_id} name={school.name} size={size} brand={school.brand as CrestBrand | undefined} />
       {link ? (
-        <Link href={`/schools/${school.unit_id}`} className="min-w-0 truncate hover:text-primary">
+        <HoverPrefetchLink href={`/schools/${school.unit_id}`} className="min-w-0 truncate hover:text-primary">
           {school.name}
-        </Link>
+        </HoverPrefetchLink>
       ) : (
         name
       )}

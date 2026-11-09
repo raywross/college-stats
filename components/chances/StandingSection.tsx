@@ -4,8 +4,9 @@ import { InfoTip } from "@/components/ui/info-tip";
 import { shortName } from "@/lib/brand";
 import { getData } from "@/lib/data";
 import { estimateFactCites, majorUnitCites } from "@/lib/chances/fact-cites";
-import { citeRefWhereSame } from "@/lib/planner/plan-cites";
+import { asCiteRef } from "@/lib/cite-origin";
 import { majorUnitsFor } from "@/lib/chances/major-admission";
+import { slimPoolSchool } from "@/lib/chances/pool-rate";
 import { noteText } from "@/lib/chances/notes";
 import { majorFamilyName } from "@/lib/majors";
 import type { School } from "@/lib/types";
@@ -23,11 +24,13 @@ export async function StandingSection({ school, id, className }: { school: Schoo
     .filter((f): f is { family: string; name: string } => f.name !== null);
   // The "Who you're compared with" panel (pool-explainer.md) is built client-side from the student's own numbers,
   // so it needs the college's own published rates: a serializable slice of School, nothing the method computes.
-  const poolSchool = { unit_id: school.unit_id, name: school.name, location: school.location, admissions: school.admissions, reported: school.reported, lineage: school.lineage };
+  // Only the lineage records the pool reads (round 5: the whole lineage was most of the admissions page's payload).
+  const poolSchool = slimPoolSchool(school);
   // Every fact's citation as a reference the ⓘ fetches on open (round 4; specs/data-lineage.md "Citations on the plan"),
-  // except where /api/cite would answer differently (the GPA fields). The major units' citations stay whole: each
-  // carries its own unit's page and quote, which the API (one citation per college and path) doesn't know.
-  const factCites = Object.fromEntries(Object.entries(estimateFactCites(school, citeField)).map(([path, cited]) => [path, citeRefWhereSame(cited, school.unit_id)]));
+  // except where /api/cite would answer differently (the GPA fields, a live-edited college: `asCiteRef`, round 5). The
+  // major units' citations stay whole: each carries its own unit's page and quote, which the API (one citation per
+  // college and path) doesn't know.
+  const factCites = Object.fromEntries(Object.entries(estimateFactCites(school, citeField)).map(([path, cited]) => [path, asCiteRef(cited)]));
   return (
     <Block
       id={id}

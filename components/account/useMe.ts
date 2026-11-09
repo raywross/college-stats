@@ -3,6 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { SIGNED_IN_COOKIE, type MeState } from "@/lib/accounts";
+import { firstMeState, meFromHint, paintMeHint, readMeHint } from "@/lib/me-hint";
 
 /**
  * The signed-in state for the header, the More sheet, and everything that changes with it, kept so the header never
@@ -12,6 +13,9 @@ import { SIGNED_IN_COOKIE, type MeState } from "@/lib/accounts";
  *   request is made beyond one per tab, to learn whether sign-in is configured here.
  * - With it, the last answer from /api/me (kept in sessionStorage) shows at hydration and is asked again only once
  *   it is MEMO_TTL_MS old, after refreshMe(), or when the cookie and the answer disagree (just signed in or out).
+ *   With no remembered answer, the header's hint cookie (`quad_me`, lib/me-hint.ts: the initials and the role) seeds
+ *   the first state, so the avatar and the role item are right at hydration; /api/me is asked at once and replaces it.
+ *   Before hydration, the header's inline script (components/layout/MeFirstPaint.tsx) paints from the same cookies.
  * Public pages never read cookies on the server, so they stay static. One shared copy for every caller; null until
  * the first answer (a signed-in person's first page in a new tab, while /api/me answers).
  */
@@ -49,15 +53,15 @@ let answeredAt = 0;
 let inflight: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 
-/** The first answer, before any request: a stored one that agrees with the cookie, else what the cookie says. */
+/**
+ * The first answer, before any request (lib/me-hint.ts firstMeState): a stored one that agrees with the cookie, else
+ * the hint's seed when signed in (null without one), else signed out. A seed doesn't count as answered.
+ */
 function initial(): MeState | null {
-  const signedIn = hasSignedInCookie();
   const stored = readStored();
-  if (stored && stored.data.signedIn === signedIn && Date.now() - stored.at < MEMO_TTL_MS) {
-    answeredAt = stored.at;
-    return stored.data;
-  }
-  return signedIn ? null : SIGNED_OUT;
+  const { me, fromStore } = firstMeState(document.cookie, stored, Date.now(), MEMO_TTL_MS);
+  if (fromStore && stored) answeredAt = stored.at;
+  return me;
 }
 
 // Module code runs once per page load in the browser, before any render; on the server there is no cookie to read.
@@ -71,9 +75,12 @@ function set(me: MeState | null, at: number) {
 
 function load(force = false) {
   const signedIn = hasSignedInCookie();
-  if (current && current.signedIn !== signedIn) {
-    // Just signed in (show the placeholder while /api/me answers) or out (no request needed).
-    set(signedIn ? null : SIGNED_OUT, 0);
+  if ((current?.signedIn ?? true) !== signedIn) {
+    // Just signed in (the hint's seed, or the placeholder, while /api/me answers) or out (no request needed). The
+    // page didn't reload, so the first-paint attributes on <html> follow too (they pick the placeholder's state).
+    const hint = readMeHint(document.cookie);
+    paintMeHint(document.documentElement, hint);
+    set(signedIn ? meFromHint(hint) : SIGNED_OUT, 0);
   }
   const answered = answeredAt > 0;
   // Signed out and already answered (configured or not): the cookie is the only thing that can change that.

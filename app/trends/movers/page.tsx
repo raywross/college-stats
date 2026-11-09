@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { ArrowLeft, ArrowRight, TrendingUp } from "lucide-react";
 import { getData, getHistoryFiles, getTrendFile } from "@/lib/data";
 import { MOVER_LISTS, MOVER_WINDOWS, isMoverWindow, type MoverListDef, type MoverWindow } from "@/lib/movers";
@@ -32,9 +33,9 @@ export default async function MoversPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
-      <Link href="/trends" className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-primary">
+      <HoverPrefetchLink href="/trends" className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-primary">
         <ArrowLeft className="size-4" /> National trends
-      </Link>
+      </HoverPrefetchLink>
       <header className="mt-4 mb-6 max-w-3xl sm:mb-8">
         <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.18em] text-primary uppercase max-sm:hidden">
           <TrendingUp className="size-4" /> National trends
@@ -51,9 +52,9 @@ export default async function MoversPage({ searchParams }: { searchParams: Promi
         <div className="rounded-3xl border border-dashed p-6 text-muted-foreground sm:p-8">
           <p className="font-semibold text-foreground">The lists aren&apos;t available yet.</p>
           <p className="mt-1 text-sm">They&apos;re computed from the site&apos;s year-by-year history, and appear once that data is published.</p>
-          <Link href="/trends" className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
+          <HoverPrefetchLink href="/trends" className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
             All national trends <ArrowRight className="size-4" />
-          </Link>
+          </HoverPrefetchLink>
         </div>
       ) : (
         <>

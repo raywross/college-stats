@@ -11,9 +11,10 @@ import { cn } from "@/lib/utils";
 /**
  * The console's navigation from `md` (specs/product/admin-redesign.md "Navigation"). From `lg`, a left rail: the
  * search at the top, then the four doors as groups with every screen under its door and its hint beneath, so nothing
- * is a second level to discover. From `md` to `lg`, a compact rail: each door's icon and label, and the current
- * door's screens under it. Below `md` the rail is hidden and the tab bar (AdminTabBar) takes its place. The active door
- * and screen are `aria-current`; every link is 44px tall.
+ * is a second level to discover; each door's heading links to its landing page (the Inbox for the Steward). From `md`
+ * to `lg`, a compact rail: each door's icon and label, and the current door's screens under it. Below `md` the rail is
+ * hidden and the tab bar (AdminTabBar) takes its place. The active door and screen are `aria-current`; every link is
+ * 44px tall.
  */
 export function AdminRail({ needsYou }: { needsYou?: number | null }) {
   const pathname = usePathname();
@@ -35,9 +36,15 @@ export function AdminRail({ needsYou }: { needsYou?: number | null }) {
           const Icon = DOOR_ICONS[d.key];
           return (
             <section key={d.key} aria-labelledby={`rail-${d.key}`} className="mt-4 first:mt-0">
-              <h2 id={`rail-${d.key}`} className="flex items-center gap-2 px-3.5 pb-1 text-xs font-bold tracking-wide text-muted-foreground uppercase">
-                <Icon className="size-3.5" aria-hidden />
-                {d.label}
+              <h2 id={`rail-${d.key}`} className="pb-0.5">
+                <Link
+                  href={d.href}
+                  aria-current={pathname === d.href ? "page" : undefined}
+                  className="flex min-h-11 items-center gap-2 rounded-xl px-3.5 text-xs font-bold tracking-wide text-muted-foreground uppercase transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <Icon className="size-3.5" aria-hidden />
+                  {d.label}
+                </Link>
               </h2>
               <ul className="space-y-0.5">
                 {d.screens.map((s) => {

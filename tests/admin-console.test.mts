@@ -573,6 +573,19 @@ test("the site's tab bar renders nothing under /admin, after its hooks; the cons
   assert.match(rail, /lg:hidden/, "the compact rail from md to lg");
 });
 
+test("the wide rail's door headings link to every door's landing (owner, 2026-11-08: /admin/data had no link on a desktop)", () => {
+  const rail = stripComments(read("components/admin/AdminRail.tsx"));
+  const wide = rail.slice(rail.indexOf('aria-label="Admin"'), rail.indexOf('aria-label="Admin doors"'));
+  assert.ok(wide.length > 0, "found the wide rail");
+  const heading = wide.match(/<h2 id=\{`rail-\$\{d\.key\}`\}[^>]*>([\s\S]*?)<\/h2>/);
+  assert.ok(heading, "each door's heading is an <h2> the section is labelled by");
+  assert.match(heading[1], /<Link\s+href=\{d\.href\}/, "the heading is a link to the door's href");
+  assert.match(heading[1], /aria-current=\{pathname === d\.href \? "page" : undefined\}/);
+  assert.match(heading[1], /min-h-11/, "a 44 px hit");
+  assert.match(wide, /ADMIN_DOORS\.map\(\(d\)/, "every door gets one");
+  assert.deepEqual(ADMIN_DOORS.map((d) => d.href), ["/admin", "/admin/people", "/admin/data", "/admin/more"]);
+});
+
 test("each door has a landing that lists its screens; the Inbox is the Steward's", () => {
   assert.match(read("app/admin/data/page.tsx"), /<DoorScreens door="data"/);
   assert.match(read("app/admin/more/page.tsx"), /<DoorScreens door="more"/);

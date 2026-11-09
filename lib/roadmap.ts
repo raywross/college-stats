@@ -225,6 +225,51 @@ export const ROADMAP: RoadmapSpec[] = [
     status: "planned",
     after: ["advisor"],
   },
+  // Marketing (2026-11-09): the plan and the three things built for it, in build order.
+  {
+    slug: "marketing-plan",
+    file: "specs/product/marketing/plan.md",
+    group: "business",
+    summary:
+      "How Quad reaches parents, students, and counselors: search as the engine, small measured ad tests, the free counselor portal as the channel, no pixels or ads aimed at minors, and a budget and calendar through 2027.",
+    complexity: 1,
+    complexityNote: "A plan, not code: the campaigns, their seasons and budgets, the metrics that judge them, and what must be built first.",
+    status: "planned",
+  },
+  {
+    slug: "marketing-measurement",
+    file: "specs/product/marketing/measurement.md",
+    group: "business",
+    summary:
+      "Knowing which campaign brought a sign-up or a paid year without tracking anyone: short campaign links, a 30-day cookie holding only the link's name, and PostHog's numbers pulled into the console.",
+    complexity: 2,
+    complexityNote:
+      "A redirect route, a cookie read once at sign-up, new funnel events, a daily job against PostHog's Query API, and five admin-only tables.",
+    status: "planned",
+  },
+  {
+    slug: "seo",
+    file: "specs/product/marketing/seo.md",
+    group: "business",
+    summary:
+      "Every public page announced and described to search engines (sitemap, robots, titles and descriptions from templates an admin edits, shared-link images, structured data), with Google's search numbers and a weekly audit in the console.",
+    complexity: 3,
+    complexityNote:
+      "Metadata templates behind every public page, on-demand Open Graph images, JSON-LD per page type, a Search Console pull, crawler switches, and a Steward audit job.",
+    status: "planned",
+  },
+  {
+    slug: "growth-console",
+    file: "specs/product/marketing/console.md",
+    group: "business",
+    summary:
+      "A Growth door in the admin console: campaigns and their links, editable landing pages, search, lifecycle emails and a newsletter for adults, and what each campaign cost per trial.",
+    complexity: 3,
+    complexityNote:
+      "Six console screens, nine tables, four jobs, three landing pages, and email sequences; built in three waves, the last after Stripe.",
+    status: "planned",
+    after: ["marketing-measurement", "seo"],
+  },
   {
     slug: "scattergrams",
     file: "specs/product/scattergrams.md",

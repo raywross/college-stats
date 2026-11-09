@@ -73,7 +73,7 @@ export default async function CollegePage({ params, searchParams }: PageProps<"/
         subtitle={
           <>
             {school.location.city}, {school.location.state} · {rate === null ? "No admit rate" : `${pctSmart(rate)} admitted`} · unit {unit} ·{" "}
-            <Link href={`/schools/${unit}`} className="underline-offset-4 hover:underline">
+            <Link href={`/schools/${unit}`} prefetch={false} className="underline-offset-4 hover:underline">
               Public profile
             </Link>
           </>

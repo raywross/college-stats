@@ -56,7 +56,7 @@ export default async function EssayFormPage({ params }: PageProps<"/admin/data/e
         subtitle={
           <>
             Essay questions for {cycle} · unit {unit} ·{" "}
-            <Link href={`/schools/${unit}`} className="underline-offset-4 hover:underline">
+            <Link href={`/schools/${unit}`} prefetch={false} className="underline-offset-4 hover:underline">
               Public profile
             </Link>
           </>

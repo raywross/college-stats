@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -57,9 +58,9 @@ export default async function ApiKeysPage() {
         <p className="mt-2 max-w-2xl text-muted-foreground">
           A key lets a script, a spreadsheet, Claude Code, Claude Desktop, or Cursor ask Quad for the same numbers the site shows, with the source
           and year of each. It is yours: it counts against your limits, and anything done with it is done as you. How to use one is on the{" "}
-          <Link href="/developers" className={link}>
+          <HoverPrefetchLink href="/developers" className={link}>
             developers page
-          </Link>
+          </HoverPrefetchLink>
           .
         </p>
         <p className="mt-2 max-w-2xl text-muted-foreground">
@@ -102,9 +103,9 @@ export default async function ApiKeysPage() {
         </ul>
         <p className="mt-3 text-xs text-muted-foreground">
           Over a limit, the API answers 429 and says when to try again.{" "}
-          <Link href="/developers#authentication" className={link}>
+          <HoverPrefetchLink href="/developers#authentication" className={link}>
             See the errors
-          </Link>
+          </HoverPrefetchLink>
         </p>
       </AccountSection>
     </div>

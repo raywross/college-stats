@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import type { ReactNode } from "react";
 import { Bot, Code2, ExternalLink, Plug, ShieldCheck, Sparkles } from "lucide-react";
 import { ClaudeInstallButton, GeminiSnippets, McpAddress, QuadAddresses, SkillDownloadButton } from "@/components/connect/ConnectAddresses";
@@ -211,18 +211,18 @@ export default function ConnectPage() {
           With a Quad account you can make an API key and get the same tools, plus plain JSON over GET (a college&apos;s
           record, its year-by-year history, the source behind each value, Explore&apos;s filters), at{" "}
           {API_KEY_LIMITS.perDay.toLocaleString("en-US")} requests a day per key. The{" "}
-          <Link href="/developers" className="font-semibold text-foreground underline-offset-2 hover:underline">
+          <HoverPrefetchLink href="/developers" className="font-semibold text-foreground underline-offset-2 hover:underline">
             Developers page
-          </Link>{" "}
+          </HoverPrefetchLink>{" "}
           has the endpoints, the MCP tools, the field registry, and how to connect Claude Code, Claude Desktop, and
           Cursor with your key.
         </P>
         <P>
           Please credit the data as Quad gives it: &quot;Data: Quad, from College Scorecard and IPEDS&quot;, with the retrieved
           date each response carries. Where the numbers come from, and how often they update, is on the{" "}
-          <Link href="/data" className="font-semibold text-foreground underline-offset-2 hover:underline">
+          <HoverPrefetchLink href="/data" className="font-semibold text-foreground underline-offset-2 hover:underline">
             Data page
-          </Link>
+          </HoverPrefetchLink>
           .
         </P>
       </Section>

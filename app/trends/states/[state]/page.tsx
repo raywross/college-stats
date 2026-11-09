@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, MapPin } from "lucide-react";
 import { getData, getHistoryFiles, getTrendFile } from "@/lib/data";
@@ -149,9 +150,9 @@ function FlowsBlock({ stateName, flows }: { stateName: string; flows: StateFlows
           <ol className="mt-1.5 space-y-1.5">
             {flows.receiving.map((r) => (
               <li key={r.unit_id} className="flex items-baseline justify-between gap-2 text-sm">
-                <Link href={`/schools/${r.unit_id}`} className="min-w-0 truncate hover:text-primary hover:underline">
+                <HoverPrefetchLink href={`/schools/${r.unit_id}`} className="min-w-0 truncate hover:text-primary hover:underline">
                   {r.name}
-                </Link>
+                </HoverPrefetchLink>
                 <b className="shrink-0 tabular-nums">{pct(r.share)}</b>
               </li>
             ))}
@@ -243,9 +244,9 @@ export default async function StatePage({ params }: Props) {
           <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
             {entry.members.map((m) => (
               <li key={m.unit_id}>
-                <Link href={`/schools/${m.unit_id}`} className="text-sm hover:text-primary hover:underline">
+                <HoverPrefetchLink href={`/schools/${m.unit_id}`} className="text-sm hover:text-primary hover:underline">
                   {m.name}
-                </Link>
+                </HoverPrefetchLink>
               </li>
             ))}
           </ul>
@@ -421,9 +422,9 @@ export default async function StatePage({ params }: Props) {
             {entry.researchUnis.map((r) => (
               <li key={r.unit_id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                 <span className="min-w-0">
-                  <Link href={`/schools/${r.unit_id}`} className="font-semibold hover:text-primary hover:underline">
+                  <HoverPrefetchLink href={`/schools/${r.unit_id}`} className="font-semibold hover:text-primary hover:underline">
                     {r.name}
-                  </Link>
+                  </HoverPrefetchLink>
                   <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold">{r.tier}</span>
                 </span>
                 <b className="shrink-0 tabular-nums">{r.change === null ? "—" : changeText(r.change)}</b>
@@ -475,9 +476,9 @@ export default async function StatePage({ params }: Props) {
         <Link href="/trends/states" className="group inline-flex items-center gap-1 rounded-full border bg-card px-4 py-2 text-sm font-semibold hover:border-primary hover:text-primary">
           Every state <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
         </Link>
-        <Link href="/trends" className="group inline-flex items-center gap-1 rounded-full border bg-card px-4 py-2 text-sm font-semibold hover:border-primary hover:text-primary">
+        <HoverPrefetchLink href="/trends" className="group inline-flex items-center gap-1 rounded-full border bg-card px-4 py-2 text-sm font-semibold hover:border-primary hover:text-primary">
           All national trends <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-        </Link>
+        </HoverPrefetchLink>
       </nav>
     </div>
   );

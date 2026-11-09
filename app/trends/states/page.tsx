@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { ArrowLeft, ArrowRight, Map as MapIcon } from "lucide-react";
 import { getHistoryFiles, getTrendFile } from "@/lib/data";
 import { historyYearLabel } from "@/lib/history";
@@ -72,9 +72,9 @@ export default async function StatesIndexPage() {
   if (!file || !files) {
     return (
       <div className="mx-auto max-w-6xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
-        <Link href="/trends" className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-primary">
+        <HoverPrefetchLink href="/trends" className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-primary">
           <ArrowLeft className="size-4" /> National trends
-        </Link>
+        </HoverPrefetchLink>
         <div className="mt-6 rounded-3xl border border-dashed p-6 text-muted-foreground sm:p-8">
           <p className="font-semibold text-foreground">Trends by state aren&apos;t available yet.</p>
           <p className="mt-1 text-sm">They&apos;re computed from the site&apos;s year-by-year history, and appear once that data is published.</p>
@@ -169,9 +169,9 @@ export default async function StatesIndexPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-8 pb-12 sm:px-6 sm:pt-10">
-      <Link href="/trends" className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-primary">
+      <HoverPrefetchLink href="/trends" className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-primary">
         <ArrowLeft className="size-4" /> National trends
-      </Link>
+      </HoverPrefetchLink>
       <header className="mt-4 mb-8 max-w-3xl sm:mb-10">
         <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.18em] text-primary uppercase max-sm:hidden">
           <MapIcon className="size-4" /> National trends
@@ -236,9 +236,9 @@ export default async function StatesIndexPage() {
       </section>
 
       <nav aria-label="Related" className="mt-10 flex flex-wrap gap-2">
-        <Link href="/trends" className="group inline-flex items-center gap-1 rounded-full border bg-card px-4 py-2 text-sm font-semibold hover:border-primary hover:text-primary">
+        <HoverPrefetchLink href="/trends" className="group inline-flex items-center gap-1 rounded-full border bg-card px-4 py-2 text-sm font-semibold hover:border-primary hover:text-primary">
           All national trends <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-        </Link>
+        </HoverPrefetchLink>
       </nav>
     </div>
   );

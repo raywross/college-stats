@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { LogoMark } from "@/components/layout/Logo";
 import { ErrorTracker } from "@/components/analytics/ErrorTracker";
 
@@ -15,9 +16,9 @@ export default function NotFound() {
         <Link href="/explore" className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">
           Explore schools
         </Link>
-        <Link href="/" className="rounded-full border px-5 py-2.5 text-sm font-semibold">
+        <HoverPrefetchLink href="/" className="rounded-full border px-5 py-2.5 text-sm font-semibold">
           Home
-        </Link>
+        </HoverPrefetchLink>
       </div>
     </div>
   );

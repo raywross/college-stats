@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { useEffect, useRef } from "react";
 import { ComparedWithTip } from "@/components/chances/ComparedWith";
 import { MajorLines, type MajorCites } from "@/components/chances/MajorLines";
@@ -104,9 +105,9 @@ export function StandingCard({ unitId, college, cites, majorCites, families, poo
               {k === "estimate.caveat.afford" && (
                 <>
                   {" "}
-                  <Link href={`/schools/${unitId}/cost`} className="font-semibold text-primary hover:underline">
+                  <HoverPrefetchLink href={`/schools/${unitId}/cost`} className="font-semibold text-primary hover:underline">
                     See the cost
-                  </Link>
+                  </HoverPrefetchLink>
                 </>
               )}
             </li>

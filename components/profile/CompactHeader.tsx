@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { Globe } from "lucide-react";
 import { DOMAINS } from "@/lib/metrics";
 import { typeLabel } from "@/lib/format";
@@ -32,7 +32,7 @@ export function CompactHeader({ profile, current }: { profile: Profile; current:
       style={{ top: "calc(env(safe-area-inset-top, 0px) + var(--header-offset))" }}
     >
       <div className="flex h-12 items-center gap-3">
-        <Link href={overviewHref(school.unit_id)} className="group flex min-w-0 flex-1 items-center gap-2.5" aria-label={`${school.name} overview`}>
+        <HoverPrefetchLink href={overviewHref(school.unit_id)} className="group flex min-w-0 flex-1 items-center gap-2.5" aria-label={`${school.name} overview`}>
           <Crest id={school.unit_id} name={school.name} size="sm" brand={crestBrand(school)} className="shrink-0" />
           <span className="min-w-0">
             <span className="block truncate font-display text-base leading-tight font-extrabold group-hover:text-primary sm:text-lg">{school.name}</span>
@@ -40,7 +40,7 @@ export function CompactHeader({ profile, current }: { profile: Profile; current:
               {school.location.city}, {school.location.state} · {typeLabel(school.type)}
             </span>
           </span>
-        </Link>
+        </HoverPrefetchLink>
         {/* One-tap way back to the college's own site from any topic page (specs/school-identity/links.md). */}
         {school.links?.website && (
           <a

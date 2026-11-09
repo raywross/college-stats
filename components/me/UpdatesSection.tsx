@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { AccountSection } from "@/components/account/AccountSection";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { myFollows } from "@/lib/follows";
@@ -91,9 +91,9 @@ export async function UpdatesSection({ userId, siteUrl, unitIds }: { userId: str
               <div className="mt-3 space-y-4">
                 {built.colleges.map((c) => (
                   <div key={c.unit_id}>
-                    <Link href={`/schools/${c.unit_id}`} className="font-display font-bold hover:text-primary">
+                    <HoverPrefetchLink href={`/schools/${c.unit_id}`} className="font-display font-bold hover:text-primary">
                       {c.name}
-                    </Link>
+                    </HoverPrefetchLink>
                     <ul className="mt-1 space-y-1.5 text-sm">
                       {c.changes.map((change, i) => (
                         <li key={i}>
@@ -118,9 +118,9 @@ export async function UpdatesSection({ userId, siteUrl, unitIds }: { userId: str
           <ul className="space-y-3">
             {disappeared.map((d) => (
               <li key={d.unit_id}>
-                <Link href={`/schools/${d.unit_id}`} className="font-semibold hover:text-primary">
+                <HoverPrefetchLink href={`/schools/${d.unit_id}`} className="font-semibold hover:text-primary">
                   {d.name}
-                </Link>
+                </HoverPrefetchLink>
                 <ul className="mt-1 space-y-1 text-sm text-muted-foreground">
                   {d.changes.map((change, i) => (
                     <li key={i}>{describeChange(change)}</li>

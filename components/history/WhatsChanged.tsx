@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { ArrowRight } from "lucide-react";
 import { getHistoryFiles } from "@/lib/data";
 import { formatChange, historyYearLabel, majorSeriesKey } from "@/lib/history";
@@ -79,9 +80,9 @@ export async function WhatsChanged({
             money <Term term="inflation-adjusted">after inflation</Term>.
           </p>
         </div>
-        <Link href="/trends" className="group inline-flex shrink-0 items-center gap-1 self-start text-sm font-bold text-primary hover:underline sm:self-auto">
+        <HoverPrefetchLink href="/trends" className="group inline-flex shrink-0 items-center gap-1 self-start text-sm font-bold text-primary hover:underline sm:self-auto">
           All trends <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-        </Link>
+        </HoverPrefetchLink>
       </div>
       {/* Four facts sit 2 × 2 rather than three and an orphan. */}
       <div className={cn("grid gap-4 max-sm:gap-3 max-sm:rail md:grid-cols-2", count === 3 && "xl:grid-cols-3")}>

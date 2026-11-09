@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Popover } from "@base-ui/react/popover";
@@ -158,7 +158,7 @@ export function CompareHeader({ schools, current }: { schools: SchoolIndexEntry[
           >
             <span className="absolute inset-x-3 top-0 hidden h-1 rounded-b-full md:block" style={{ backgroundColor: SLOT_COLORS[i] }} />
             <Crest id={s.id} name={s.name} size="sm" brand={s.brand} className="size-8 rounded-full text-[10px] md:size-9 md:rounded-lg md:text-[11px]" />
-            <Link href={`/schools/${s.id}`} className="min-w-0 hover:text-primary">
+            <HoverPrefetchLink href={`/schools/${s.id}`} className="min-w-0 hover:text-primary">
               <span className="flex items-center gap-1.5">
                 <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: SLOT_COLORS[i] }} />
                 <span className="truncate text-sm font-bold">{shortName({ unit_id: s.id, name: s.name })}</span>
@@ -166,7 +166,7 @@ export function CompareHeader({ schools, current }: { schools: SchoolIndexEntry[
               <span className="hidden truncate text-[11px] text-muted-foreground md:block">
                 {s.city}, {s.state}
               </span>
-            </Link>
+            </HoverPrefetchLink>
             <div className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-1 md:top-2 md:right-2 md:translate-y-0">
               <button
                 type="button"

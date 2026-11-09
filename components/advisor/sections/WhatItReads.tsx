@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { SplashSection } from "@/components/advisor/Frame";
 import { MetricLabel } from "@/components/ui/info-tip";
 import type { SplashData } from "@/components/advisor/sample";
@@ -15,9 +15,9 @@ export function WhatItReads({ data }: { data: SplashData }) {
         <li className={CARD}>
           <p className="font-display text-3xl font-extrabold">{num(r.colleges)} colleges</p>
           <p className="mt-1 text-sm text-muted-foreground">Every number with its source and year.</p>
-          <Link href="/data" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline">
+          <HoverPrefetchLink href="/data" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline">
             Sources, years &amp; updates
-          </Link>
+          </HoverPrefetchLink>
         </li>
         <li className={CARD} style={{ animationDelay: "90ms" }}>
           <p className="font-display text-3xl font-extrabold">Their own filings</p>

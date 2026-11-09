@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
@@ -328,12 +328,12 @@ export function DotCard({
                 </div>
               ))}
             </dl>
-            <Link
+            <HoverPrefetchLink
               href={`/schools/${active.id}`}
               className="mt-2.5 flex items-center justify-center gap-1 rounded-lg bg-primary py-1.5 text-xs font-semibold text-primary-foreground"
             >
               View profile <ArrowRight className="size-3.5" />
-            </Link>
+            </HoverPrefetchLink>
     </>
   );
 }

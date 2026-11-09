@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { Download, Search, UserPlus, Users } from "lucide-react";
 import { HouseholdActionButton } from "@/components/account/HouseholdActionButton";
 import { JoinCode } from "@/components/org/JoinCode";
@@ -130,7 +131,7 @@ export function CaseloadRowItem({ row }: { row: CaseloadRow }) {
   const missing = row.record.missingLabels.length > 0 ? `Missing: ${row.record.missingLabels.join(", ")}` : "Every section is in";
   return (
     <li>
-      <Link href={orgStudentHref(row.studentId)} className="block p-3.5 hover:bg-muted/50 sm:p-4">
+      <HoverPrefetchLink href={orgStudentHref(row.studentId)} className="block p-3.5 hover:bg-muted/50 sm:p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="flex flex-wrap items-center gap-2">
@@ -172,7 +173,7 @@ export function CaseloadRowItem({ row }: { row: CaseloadRow }) {
             ))}
           </ul>
         )}
-      </Link>
+      </HoverPrefetchLink>
     </li>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { ArrowRight, MapPin } from "lucide-react";
@@ -351,9 +352,9 @@ export default async function HighSchoolPage({ params }: Props) {
                       <tr key={e.name}>
                         <td className="px-4 py-2.5">
                           {e.unit_id ? (
-                            <Link href={`/schools/${e.unit_id}`} className="font-semibold text-primary hover:underline">
+                            <HoverPrefetchLink href={`/schools/${e.unit_id}`} className="font-semibold text-primary hover:underline">
                               {e.name}
-                            </Link>
+                            </HoverPrefetchLink>
                           ) : (
                             e.name
                           )}
@@ -377,9 +378,9 @@ export default async function HighSchoolPage({ params }: Props) {
                   {detail.admitted.entries.map((e) => (
                     <li key={e.name} className="min-w-0 truncate">
                       {e.unit_id ? (
-                        <Link href={`/schools/${e.unit_id}`} className="text-primary hover:underline">
+                        <HoverPrefetchLink href={`/schools/${e.unit_id}`} className="text-primary hover:underline">
                           {e.name}
-                        </Link>
+                        </HoverPrefetchLink>
                       ) : (
                         <span className="text-muted-foreground">{e.name}</span>
                       )}
@@ -447,9 +448,9 @@ export default async function HighSchoolPage({ params }: Props) {
         />
         <p className="mt-2 text-[11px] text-muted-foreground">
           NCES school ID <span className="font-mono">{school.id}</span> · Data generated {meta.generated}.{" "}
-          <Link href="/data#high-schools" className="font-medium hover:text-primary hover:underline">
+          <HoverPrefetchLink href="/data#high-schools" className="font-medium hover:text-primary hover:underline">
             About high school data <ArrowRight className="inline size-3" />
-          </Link>
+          </HoverPrefetchLink>
         </p>
       </div>
     </div>

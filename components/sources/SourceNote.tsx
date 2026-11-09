@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { BookMarked, ExternalLink } from "lucide-react";
 import type { School } from "@/lib/types";
 import type { FieldPath } from "@/lib/fields";
@@ -12,9 +12,9 @@ export function SourceItem({ s, last }: { s: AnyCitedSource; last: boolean }) {
   if (isEditedSource(s)) {
     return (
       <span>
-        <Link href="/data#edits" className="font-medium text-foreground/80 underline decoration-dotted underline-offset-2 hover:text-primary">
+        <HoverPrefetchLink href="/data#edits" className="font-medium text-foreground/80 underline decoration-dotted underline-offset-2 hover:text-primary">
           Edited by Quad
-        </Link>
+        </HoverPrefetchLink>
         {last ? "" : ";"}
       </span>
     );
@@ -68,9 +68,9 @@ export async function SourceLine({ sources, prefix = "Source", className, extra 
       ))}
       {extra}
       <span aria-hidden>·</span>
-      <Link href="/data" className="font-medium hover:text-primary hover:underline">
+      <HoverPrefetchLink href="/data" className="font-medium hover:text-primary hover:underline">
         About the data
-      </Link>
+      </HoverPrefetchLink>
       <span className="sr-only">(retrieved {getMeta().retrieved})</span>
     </p>
   );
@@ -117,9 +117,9 @@ export async function SourceList({ school, fields }: { school: School; fields: r
           <span className="text-muted-foreground">
             {" "}
             · where a source&apos;s value was missing or wrong, Quad&apos;s editors set it by hand. Each one&apos;s ⓘ says when.{" "}
-            <Link href="/data#edits" className="font-semibold text-primary hover:underline">
+            <HoverPrefetchLink href="/data#edits" className="font-semibold text-primary hover:underline">
               About edits
-            </Link>
+            </HoverPrefetchLink>
           </span>
         </p>
       )}
@@ -127,9 +127,9 @@ export async function SourceList({ school, fields }: { school: School; fields: r
         IPEDS unit ID {school.unit_id} · Data retrieved {meta.retrieved}. Tap any <span className="font-semibold">ⓘ</span> to see
         where that number came from and what year it describes. National ranks and medians include every 4-year college that
         reports the measure.{" "}
-        <Link href="/data" className="font-semibold text-primary hover:underline">
+        <HoverPrefetchLink href="/data" className="font-semibold text-primary hover:underline">
           How we source and calculate everything
-        </Link>
+        </HoverPrefetchLink>
       </p>
     </section>
   );

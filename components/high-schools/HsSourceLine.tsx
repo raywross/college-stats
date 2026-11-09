@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { BookMarked } from "lucide-react";
 import type { HighSchoolMeta, HighSchoolView } from "@/lib/high-school-types";
 import { hsSourcesForFields, type HsFieldPath } from "@/lib/hs-fields";
@@ -28,9 +28,9 @@ export function HsSourceLine({
         <SourceItem key={`${s.key}${s.url}${s.year}`} s={s} last={i === sources.length - 1} />
       ))}
       <span aria-hidden>·</span>
-      <Link href="/data#high-schools" className="font-medium hover:text-primary hover:underline">
+      <HoverPrefetchLink href="/data#high-schools" className="font-medium hover:text-primary hover:underline">
         About the data
-      </Link>
+      </HoverPrefetchLink>
     </p>
   );
 }

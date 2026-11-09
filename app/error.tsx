@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { LogoMark } from "@/components/layout/Logo";
 import { ErrorTracker } from "@/components/analytics/ErrorTracker";
 
@@ -30,9 +30,9 @@ export default function ErrorPage({ error, retry }: { error: Error & { digest?: 
         >
           Try again
         </button>
-        <Link href="/" className="rounded-full border px-5 py-2.5 text-sm font-semibold">
+        <HoverPrefetchLink href="/" className="rounded-full border px-5 py-2.5 text-sm font-semibold">
           Home
-        </Link>
+        </HoverPrefetchLink>
       </div>
     </div>
   );

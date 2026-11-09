@@ -942,3 +942,43 @@ new code falls back to today's reads while a function is missing):
   `{ jwks }` in `lib/auth.ts` and `proxy.ts`; a rotated-in `kid` falls through to the library's fetch
   ([accounts.md](product/accounts.md) "Checking the session without fetching the keys"). An `auth` span left after
   the deploy is a token refresh (within 90 s of expiry), not the keys.
+
+## Prefetching (round 5, 2026-11-08)
+Next's `Link` prefetches the page behind it as soon as the link enters the viewport (production only): a static page in
+full, a dynamic page only its shell (down to its `loading.tsx`, or its route tree). Every college profile, `/data`,
+and the home page are static, so the compare page alone downloaded 37 other pages' payloads on load (661 KB in
+production), and every page paid 171 KB for the header's Data link.
+
+**The rule.** A link prefetches on viewport only when the next click is likely and the payload small: dynamic pages'
+shells (Explore 17 KB, the advisor 7 KB, compare topics and High schools 3 KB) and `/glossary` (20 KB, static, one
+fetch for any number of links to it). Everything else prefetches **on intent** (hover, touch, or focus) through
+`HoverPrefetchLink` (`components/ui/hover-prefetch-link.tsx`: `prefetch={false}` until the first `mouseenter`,
+`touchstart`, or `focus`, then Next's default, so the payload starts a few hundred ms before the click and the click
+reuses it). `prefetch={false}` alone also turns off hover prefetching in this Next version, so it is kept only for
+the logo (the home page, 218 KB) and the plan's in-place tabs.
+- **Hover only:** any link to a heavy static page (over ~40 KB, measured from `next build`'s `.rsc` files): a college
+  profile (125–210 KB), `/data` (184 KB), `/developers` (493 KB), `/release-notes` (329 KB) and its notes (24 KB
+  each, in a list), `/roadmap` (54–67 KB), `/trends` (44 KB), and the home page; the header's Glossary and Data, the
+  footer, the phone's More sheet (it mounts ten links at once), the profile's topic pills (`PillRow hoverPrefetch`),
+  the compare cards' college names, Explore's rows and cards, the home page's leaderboards and chips, the state tile
+  map, and the plan's college, essay, and caseload rows.
+- **Viewport:** the header's Explore, role item, Compare, and High schools; the tab bar's tabs; the compare topic
+  pills, cards, and next/previous links; Explore's sort and paging; the home page's Explore lists, matchups, and
+  glossary cards. The full list with reasons is `VIEWPORT_ALLOWLIST` in `tests/prefetch-diet.test.mts`.
+- **Guards** (`tests/prefetch-diet.test.mts`): no `<Link>` anywhere in `app/` or `components/` points at a heavy static
+  page without `prefetch`; in the inventoried files every `<Link>` that still prefetches on viewport is on the
+  allowlist, and no entry is stale.
+
+Measured on `next build && next start` over the mini fixture, signed out, Chrome at 1440×900 (desktop) and 390×844
+(phone): every `_rsc` request in the first five seconds after load (`performance.getEntriesByType("resource")`).
+
+| Page | Before (desktop) | After (desktop) | Before (phone) | After (phone) |
+| --- | --- | --- | --- | --- |
+| `/compare?ids=110662,166027,204796` | 42 fetches, 644 KB | 31, 56 KB | 22, 325 KB | 17, 40 KB |
+| `/schools/166027` | 20, 229 KB | 16, 41 KB | 15, 218 KB | 12, 34 KB |
+| `/schools/166027/admissions` | 24, 371 KB | 13, 36 KB | 16, 188 KB | 11, 34 KB |
+| `/explore` | 22, 765 KB | 10, 19 KB | 19, 849 KB | 8, 16 KB |
+| `/` | 24, 896 KB | 11, 33 KB | 23, 722 KB | 13, 36 KB |
+
+What is left is the shells above plus Next's 0–1 KB route-tree requests, which ride with every prefetchable link.
+Hovering a college name on `/compare` fetches its 140 KB then, and the click that follows fetches nothing more.

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { getHistoryFiles, getTrendFile } from "@/lib/data";
 import { pct } from "@/lib/format";
 import { historyYearLabel } from "@/lib/history";
@@ -262,9 +262,9 @@ export default async function TestOptionalPage() {
               <ul className="mt-3 divide-y rounded-3xl border bg-card">
                 {tc.backToRequiring.map((c) => (
                   <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                    <Link href={`/schools/${c.id}`} className="font-semibold hover:text-primary hover:underline">
+                    <HoverPrefetchLink href={`/schools/${c.id}`} className="font-semibold hover:text-primary hover:underline">
                       {c.name}
-                    </Link>
+                    </HoverPrefetchLink>
                     <span className="shrink-0 text-muted-foreground">
                       {c.thenLabel} in {fall(tc.then.fall)}
                     </span>
@@ -363,9 +363,9 @@ export default async function TestOptionalPage() {
           <ul className="mt-4 divide-y rounded-3xl border bg-card">
             {file.wentBackToRequiring.map((c) => (
               <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                <Link href={`/schools/${c.id}`} className="font-semibold hover:text-primary hover:underline">
+                <HoverPrefetchLink href={`/schools/${c.id}`} className="font-semibold hover:text-primary hover:underline">
                   {c.name}
-                </Link>
+                </HoverPrefetchLink>
                 <span className="shrink-0 text-muted-foreground">{c.policyNow}</span>
               </li>
             ))}

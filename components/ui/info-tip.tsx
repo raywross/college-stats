@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { useEffect, useState, type ReactNode } from "react";
 import { Popover } from "@base-ui/react/popover";
 import { Info, ArrowRight, BookMarked, ExternalLink } from "lucide-react";
@@ -98,9 +99,9 @@ function SourceBlock({ cited, heading = true }: { cited: AnyCited; heading?: boo
           </p>
         )}
         <p>
-          <Link href="/data#edits" className="font-semibold text-foreground hover:text-primary hover:underline">
+          <HoverPrefetchLink href="/data#edits" className="font-semibold text-foreground hover:text-primary hover:underline">
             {editedOn(cited)}
-          </Link>
+          </HoverPrefetchLink>
           .
         </p>
         {cited.note && <p>{cited.note}</p>}

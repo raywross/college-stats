@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ export function PillRow({
   ariaLabel,
   className,
   onSelect,
+  hoverPrefetch = false,
 }: {
   items: PillItem[];
   current: string;
@@ -29,7 +31,12 @@ export function PillRow({
   className?: string;
   /** Called with the pill's key when it's clicked (usage measurement, specs/product/telemetry.md); the link still navigates. */
   onSelect?: (key: string) => void;
+  /** Prefetch each pill's page on hover only, not when the row comes into view (specs/serving-architecture.md
+   * "Prefetching"): the profile's pills, whose overview is a 125–210 KB static page. The compare pills' pages are
+   * dynamic shells of about 3 KB each, so they keep viewport prefetching. */
+  hoverPrefetch?: boolean;
 }) {
+  const PillLink = hoverPrefetch ? HoverPrefetchLink : Link;
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,7 +53,7 @@ export function PillRow({
         {items.map((p) => {
           const active = p.key === current;
           return (
-            <Link
+            <PillLink
               key={p.key}
               data-key={p.key}
               href={p.href}
@@ -59,7 +66,7 @@ export function PillRow({
             >
               {p.color && <span className="size-2 rounded-full" style={{ backgroundColor: p.color }} />}
               {p.label}
-            </Link>
+            </PillLink>
           );
         })}
       </div>

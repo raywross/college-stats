@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/ui/hover-prefetch-link";
 import { BookMarked, ExternalLink } from "lucide-react";
 import { getData } from "@/lib/data";
 import { SERIES, historySources, type HistoryRange, type SeriesKey } from "@/lib/history";
@@ -61,9 +61,9 @@ export async function HistorySourceNote({
         </span>
       )}
       <span aria-hidden>·</span>
-      <Link href="/data" className="font-medium hover:text-primary hover:underline">
+      <HoverPrefetchLink href="/data" className="font-medium hover:text-primary hover:underline">
         About the data
-      </Link>
+      </HoverPrefetchLink>
       <span className="sr-only">(built {files.meta.built}; CPI retrieved {files.cpi.retrieved})</span>
     </p>
   );

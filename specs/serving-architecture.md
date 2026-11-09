@@ -922,9 +922,12 @@ new code falls back to today's reads while a function is missing):
 - Closed in round 3 (2026-11-08): the cold start's `JSON.parse` of the whole 35.7 MB `colleges.json`. `lineage` is
   its own object (`lineage.json.gz`, exploded into `.data/snapshot/lineage/<unit_id>.json` in the bundled copy) and
   loads per college on first access; the first load measured 136 → 87 ms wall (134 → 85 ms CPU) on the real snapshot
-  locally ([section 6](#6-cold-starts-measure-then-decide) has the table). Production's line, after the first publish
-  with the new renderer and the deploy that bundles it, should read about a third under today's 953 ms and end in
-  `, lineage lazy`.
+  locally ([section 6](#6-cold-starts-measure-then-decide) has the table). **Measured on production the same
+  evening**, after a forced publish (snapshot 7: `colleges.json.gz` 3.3 MB, `lineage.json.gz` 1.6 MB) and the deploy
+  its hook fired: eight fresh instances logged `[data] loaded 1893 colleges (snapshot 7) in 552–603 ms, lineage lazy`,
+  against 882–1,215 ms on snapshot 6 earlier in the day. The running instances had swapped to snapshot 7 in the
+  background first and kept every citation (Harvard's admissions page: 77 source icons), so the attach-on-swap path
+  held. A cold full page load of `/org` or `/advisor` now takes about 1.1 s, from 1.5–2.7 s.
 - Closed in round 3: the pointer check runs under `after()` (`lib/data.ts getServed`), so it no longer dies with the
   response (`checking for a newer snapshot failed … timed out` / `write EPIPE`).
 - Closed in round 4: the plan's last database wave, the estimate's high-school reads (`high_schools 51 ‖

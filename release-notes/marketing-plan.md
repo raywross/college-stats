@@ -30,10 +30,13 @@ people, and what it will and won't do along the way:
 ## Behind the scenes
 
 - `specs/product/marketing/`: `plan.md`, `measurement.md`, `seo.md`, `console.md`, with an index.
-- The console gains a planned fifth door, Growth: campaigns and their `/go/{code}` links with QR codes, editable
-  landing pages, the Search screen (templates, crawler switches, Search Console numbers, indexing), lifecycle emails
-  and a double-opt-in newsletter for adults, and spend with cost per trial. PostHog's Query API is pulled daily into
-  the site's own tables by a job the Steward reviews like every other.
-- Three build waves; the first (sitemap, robots, metadata, Open Graph, structured data, attribution, the overview)
-  has no dependency on anything unbuilt, and the third waits for Stripe and the trial.
+- The console gains a planned fifth door, Growth: campaigns and their `/go/{code}` links with QR codes, the Google and
+  Meta campaigns themselves (written from the college data, launched after a dry run, paused and re-budgeted from a
+  phone, synced hourly, with a spending ceiling and alerts by email and text), editable landing pages, the Search
+  screen (templates, crawler switches, Search Console numbers, indexing), lifecycle emails and a double-opt-in
+  newsletter for adults, and spend with cost per trial. PostHog's Query API is pulled daily into the site's own tables
+  by a job the Steward reviews like every other.
+- Four build waves; the first two (sitemap, robots, metadata, Open Graph, structured data, attribution, the overview,
+  the landing pages, then the ad platforms) are due before the January 2027 push, and the fourth waits for Stripe and
+  the trial.
 - Registered in `lib/roadmap.ts` (four entries in the business group) and noted in the telemetry registry.

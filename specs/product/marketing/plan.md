@@ -48,9 +48,12 @@
    location. Ad copy to students never presses a minor to spend: the ask is an account and a parent invited.
    Attribution is a first-party campaign code and our own numbers. We accept that ad platforms optimize worse without
    their pixels.
-3. **The data does the talking.** Every ad, post, and email leads with a number the site can cite: a college's admit
-   rate for its pool, a trend study, a price gap. No "boost your chances" and no percentage chances, ever
-   ([chances/README.md](../../chances/README.md)).
+3. **Sell the advisor and the caseload; the data is the proof** (owner, 2026-11-09). To parents and students, every ad
+   shows the advisor doing its job: the list sorted by where the student stands, the three things to do this season
+   with a guide for each, the calendar that texts the day before, offers side by side, the parent's view. To
+   counselors, every ad shows the caseload: every student's plan in one place, asks, notes, the export, free. A cited
+   number from the site (a college's admit rate for its pool, a trend) backs the claim and never replaces it. No
+   "boost your chances" and no percentage chances, ever ([chances/README.md](../../chances/README.md)).
 4. **The counselor is the channel, not the customer.** A counselor who runs a caseload on Quad brings dozens of
    families; the portal is free and the student's path is the ordinary one
    ([counselor-portal.md](../counselor-portal.md#the-channel)). We never pay counselors, show them who has not paid,
@@ -59,6 +62,11 @@
    audience, in the console, with no spreadsheet ([measurement.md](measurement.md)).
 6. **One owner, part time.** The plan assumes one person and coding agents. Anything that needs a daily hand (bidding,
    posting, replying) is sized for an hour a day or dropped.
+7. **Everything runs from the console** (owner, 2026-11-09). The owner's day-job network blocks Google's and Meta's ad
+   consoles and not the site, so the campaigns are written, launched, watched, paused, and re-budgeted from the Growth
+   door through the platforms' APIs, on a phone, with alerts that arrive without the console open
+   ([console.md](console.md#ad-platforms-the-campaigns-run-from-here)). The platforms' own consoles are for one-time
+   setup from home.
 
 ## The economics
 
@@ -100,7 +108,7 @@ test budget, and a rule for when it stops or grows. The landing pages are the co
 | Message | *An advisor for the whole road to college, for less than one test-prep book.* Where your kid stands at every college on the list, the three things to do this season, every date, offers side by side. $20 a year, 14 days free |
 | Proof | The splash page's real frames; a trend study a parent recognizes ("test-optional colleges, this cycle"); the "never does" list (no ads, no leads sold) |
 | Google | **Search**, exact and phrase match on high-intent queries: "{college} acceptance rate", "{college} chances", "is {college} a reach", "college list builder", "net price {college}", "ED vs EA"; landing on the college's own page with the advisor's card, not on a generic page. No Display Network, no Performance Max, no remarketing |
-| Meta | **Facebook and Instagram feeds**, age 35 to 60 and U.S. as the only targeting plus Meta's own interest categories for parenting and college planning (contextual, not built from our users); static ads built from the data, three creatives rotated; no Advantage+ audiences, no custom or lookalike audiences |
+| Meta | **Facebook and Instagram feeds**, age 35 to 60 and U.S. as the only targeting plus Meta's own interest categories for parenting and college planning (contextual, not built from our users); three creatives rotated, each a frame of the advisor rendered by the site (the list by level with the shape line, the parent's season view, offers side by side) with one cited number as the caption; no Advantage+ audiences, no custom or lookalike audiences |
 | Landing | `/for/parents` (the console's page, [console.md](console.md#pages)): the splash page's parent sections first (For parents, Never miss a date, Offers), the price, the trial button |
 | Conversion | `trial_started` with `product` and `campaign`; until Stripe ships, `signup_completed` with `role_hint: guardian` |
 | Test budget | $1,500 a month for three months, January to March 2027: $1,000 Google Search, $500 Meta |
@@ -117,9 +125,9 @@ country as the only targeting, which is all Google and Meta allow for teens anyw
 |---|---|
 | Who | 10th to 12th graders doing their own research, 13 to 17 and the 18-year-old seniors; they arrive from search on a college's name and from short video |
 | When | **January to March** (juniors, in the first push), then August to November (seniors) and the days after decisions (late March) in the next cycle |
-| Message | *The numbers colleges publish about who they admit, with the source on every one.* Where you stand, no percentage games, the three things to do this season. Never "subscribe" or a price to a student; the buttons are "See where you stand" and "Invite a parent" |
-| Google | **Search** on the same college-name queries as the parents' campaign (one ad group serves both; a query has no age), plus student-shaped queries: "{college} SAT range", "is {college} test optional", "what is yield rate". **YouTube Shorts** ads, 15 to 20 seconds, one chart and one fact from a trends study, age 13-plus and U.S. as the only targeting, placed on college and study-channel content |
-| Meta | **Instagram Reels** ads, the same video cuts, age 13 to 19 and U.S. as the only targeting (Meta allows age and location for teens and nothing else) |
+| Message | *An advisor that knows where you stand at every college on your list, and what to do this season.* The list sorted by level, the three cards with their guides, the text the day before a deadline; no percentage games, every number with its source. Never "subscribe" or a price to a student; the buttons are "See where you stand" and "Invite a parent" |
+| Google | **Search** on the same college-name queries as the parents' campaign (one ad group serves both; a query has no age), plus student-shaped queries: "{college} SAT range", "is {college} test optional", "how many colleges should I apply to". **YouTube Shorts** ads, 15 to 20 seconds: a screen recording of the advisor for the sample student (the list re-sorting by level, a Now card opening its guide, a text arriving), age 13-plus and U.S. as the only targeting, placed on college and study-channel content |
+| Meta | **Instagram Reels** ads, the same advisor cuts, age 13 to 19 and U.S. as the only targeting (Meta allows age and location for teens and nothing else) |
 | Landing | `/for/students`: the Where you stand strip, the season's three things, "Invite a parent" as the second button |
 | Conversion | `signup_completed` with `role_hint: student`, then `household_invite_sent` (a new event, [measurement.md](measurement.md#new-events)) within 30 days |
 | Test budget | $500 a month for three months, January to March 2027: $250 Google (Search and Shorts), $250 Meta Reels |
@@ -143,9 +151,9 @@ country as the only targeting, which is all Google and Meta allow for teens anyw
 
 | Month | Build ([console.md](console.md#build-plan)) | Parents | Students | Counselors |
 |---|---|---|---|---|
-| Nov 2026 | Wave 1: sitemap, robots, metadata, Open Graph, structured data; campaign links and the cookie; the Growth overview | Google Ads and Meta accounts opened; creatives drafted from the data | Three 15-second cuts from the trends studies | The counselor landing page's words |
-| Dec 2026 | Wave 2: Search Console in the console, SEO templates, the Steward's SEO audit, landing pages | Keyword lists built from the college pages; ads written and reviewed against principle 3 | | Keyword list; demo slot set up |
-| Jan 2027 | Stripe and the trial ship ([commercialization.md](../commercialization.md)); wave 3: lifecycle emails, spend and cost per trial | **Search and Meta start**, $1,500 a month | **Search, Shorts, and Reels start**, $500 a month | **Search and a Meta test start**, $300 a month |
+| Nov 2026 | Wave 1: sitemap, robots, metadata, Open Graph and the image renderer, structured data; campaign links and the cookie; the Growth overview; the three landing pages. Owner, from home: ad accounts, the Google developer-token application, the Meta app ([console.md](console.md#owner-steps)) | Advisor frames rendered for the feed ads; words drafted | Three 15-second advisor cuts recorded | The counselor landing page's words; the caseload frame |
+| Dec 2026 | Wave 2: the ad platforms in the console: connections, authoring with the dry run, the creative library, operate, sync, alerts, the ceiling | Campaigns authored in the console against the test account: colleges and query patterns picked, ads rendered and reviewed against principle 3 | Shorts uploaded unlisted; Reels set authored | Search campaign authored; demo slot set up |
+| Jan 2027 | Stripe and the trial ship ([commercialization.md](../commercialization.md)); wave 3: Search Console in the console, the Steward's SEO audit, sharing | **Launched from the console**: Search and Meta, $1,500 a month | **Launched from the console**: Search, Shorts, and Reels, $500 a month | **Launched from the console**: Search and a Meta test, $300 a month |
 | Feb–Mar 2027 | Read the numbers every Monday; kill or double | Offers-season creative ready for April | Swap creatives at week four | |
 | Apr 2027 | **Read the push:** which placements came in under their lines; decide what to [layer in](#layered-in-later) | Offers side by side ads, small, if under the line | Decision-week Shorts if under the line | |
 | May–Aug 2027 | Review the cycle; set the 2027–28 budget | Quiet | Quiet | Consultants plan the next cycle: Search continues if it worked |
@@ -231,9 +239,10 @@ history of the plan is on the site with everything else.
 
 ## What must exist first
 
-1. **Before any spend:** wave 1 of [console.md](console.md#build-plan): the campaign cookie and `acquired_via`, the
-   `/go/{code}` links, the funnel events, and the Growth overview reading PostHog. Spending before this is spending
-   blind.
+1. **Before any spend:** waves 1 and 2 of [console.md](console.md#build-plan): the campaign cookie and `acquired_via`,
+   the `/go/{code}` links, the funnel events, the Growth overview reading PostHog, the landing pages, and the ad
+   platforms connected with the ceiling set, so the campaigns can be launched, watched, and paused from the console.
+   Spending before this is spending blind, or spending from a console the owner cannot reach at work.
 2. **Before paid parent campaigns:** Stripe, the trial, and `/pricing` ([commercialization.md](../commercialization.md));
    the page at `/for/parents` and the lifecycle emails; the legal pages (terms, refund, privacy extended with the
    campaign cookie).

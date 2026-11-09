@@ -263,10 +263,10 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/product/marketing/console.md",
     group: "business",
     summary:
-      "A Growth door in the admin console: campaigns and their links, editable landing pages, search, lifecycle emails and a newsletter for adults, and what each campaign cost per trial.",
-    complexity: 3,
+      "A Growth door in the admin console: the Google and Meta campaigns written, launched, paused, and re-budgeted from the console with alerts to a phone, campaign links, editable landing pages, search, lifecycle emails and a newsletter for adults, and what each campaign cost per trial.",
+    complexity: 4,
     complexityNote:
-      "Six console screens, nine tables, four jobs, three landing pages, and email sequences; built in three waves, the last after Stripe.",
+      "Two ad-platform APIs behind a five-step authoring flow with a dry run and a spending ceiling, an hourly sync with drift detection and alerts, seven console screens, fifteen tables, five jobs, three landing pages, and email sequences; four waves, the last after Stripe.",
     status: "planned",
     after: ["marketing-measurement", "seo"],
   },

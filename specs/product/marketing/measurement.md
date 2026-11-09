@@ -131,7 +131,7 @@ Some numbers never pass through PostHog, or cannot be trusted to (a parent with 
 | `marketing_campaigns` | code, name, audience, channel, start and end, planned budget, status, landing page, notes | The console |
 | `marketing_links` | code → destination path, UTM source and medium, created by, the QR's rendered SVG | The console's link builder |
 | `marketing_link_opens` | code, day, count | `/go/{code}` (an upsert that increments) |
-| `marketing_spend` | campaign, month, amount, source (`manual` / `csv`), note | The console's Spend screen; a CSV import of an ad platform's monthly export |
+| `marketing_spend` | campaign, month, amount, source (`google` / `meta` / `manual` / `csv`), note | The hourly `ads-sync` for platform campaigns ([console.md](console.md#sync-alerts-and-drift)); the console's Spend screen or a CSV for anything else |
 | `marketing_daily` | day, campaign, audience, step, count, source (`posthog` / `db`) | `marketing-pull`, which also counts `profiles.acquired_via` and the subscriptions table directly (the `db` rows), so the account and money steps have a number the browser cannot block |
 | `seo_daily` | day, page or query, clicks, impressions, CTR, position | `search-console-pull` ([seo.md](seo.md#search-performance)) |
 

@@ -204,7 +204,7 @@ export const ROADMAP: RoadmapSpec[] = [
     file: "specs/product/open-doors.md",
     group: "business",
     summary:
-      "The site opens to the public and to search engines before there is a price: Quad Advisor free while in early access, early accounts keeping it free through the 2026–27 cycle, a terms page, the production database, and the site made findable and counted.",
+      "The site opens to the public and to search engines before there is a price: Quad Advisor free while in early access, early accounts keeping it free through the end of this application cycle, a terms page, the production database, and the site made findable and counted.",
     complexity: 2,
     complexityNote:
       "Five small obligations (terms, privacy wording, the free-for-now notice, an early-account rule, hosting tiers checked), the production database from launch-database, and wave 1 of the Growth console as written; the owner's decisions on the date and what early accounts keep.",

@@ -219,6 +219,10 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           COLLEGE_REPORTED_POLL_UNTIL: ${{ steps.run_id.outputs.poll_until }}
+          # The permanent document archive (specs/college-reported-setup.md §9): release assets in the private repo
+          # named by the variable; unset, documents live only in the Actions cache above (evicted after 7 days).
+          COLLEGE_DOCS_REPO: ${{ vars.COLLEGE_DOCS_REPO }}
+          COLLEGE_REPORTED_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN }}
         run: |
           set +e
           npm run sync-college-reported -- ${{ steps.flags.outputs.flags }}
@@ -341,6 +345,9 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           RUN_ID: ${{ steps.find.outputs.run_id }}
+          # Escalation re-reads archived line text, so the collect job reaches the same archive as the run job.
+          COLLEGE_DOCS_REPO: ${{ vars.COLLEGE_DOCS_REPO }}
+          COLLEGE_REPORTED_TOKEN: ${{ secrets.COLLEGE_REPORTED_TOKEN }}
         run: |
           set +e
           npm run sync-college-reported -- --store supabase --phase collect --run "$RUN_ID"

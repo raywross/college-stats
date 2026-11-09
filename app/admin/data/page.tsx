@@ -54,7 +54,7 @@ export default async function DataOverviewPage() {
           )}
         </Panel>
 
-        <Panel title="The last publish" help="publish-now" aside={<AdminForm
+        <Panel title="The last publish" id="publish" help="publish-now" aside={<AdminForm
               action={publishNowAction}
               trigger="Publish now"
               tone="primary"

@@ -80,18 +80,18 @@ Found by reading every screen (2026-11-08):
 ### Navigation
 
 From `lg`, a left rail with four groups and their screens, every screen visible (no second-level navigation to
-discover):
+discover). Each group's heading is a link to its door's landing page (the Inbox for the Steward):
 
 ```
 Steward            People              Data                 More
-  Inbox              People              Colleges             Who is an admin
-  Findings           Households          Health               Settings
-  Proposals          Organizations       Selectivity          Log
-  To do                                  Essays               Help
-  Decisions                              Reference
-  Audits                                 Changes
-  Jobs                                   Published versions
-  Runs
+  Inbox              People              Overview             Who is an admin
+  Findings           Households          Colleges             Settings
+  Proposals          Organizations       Health               Log
+  To do                                  Selectivity          Help
+  Decisions                              Essays
+  Audits                                 Reference
+  Jobs                                   Changes
+  Runs                                   Published versions
 ```
 
 Below `lg`, a **bottom tab bar** with four tabs, Steward · People · Data · More, the pattern the site already uses
@@ -109,7 +109,7 @@ things are**. It replaces the counts page.
 
 | Block | Shows | Each row |
 |---|---|---|
-| **Needs you** | Decisions waiting; proposals open, systemic first; To do rows by reach; jobs whose last run failed or was flagged; accounts being deleted inside the 30 days; invitations waiting past 7 days | one line, what it is and why it matters, one primary action ("Decide", "Review", "Open") |
+| **Needs you** | Decisions waiting; proposals open, systemic first; To do rows by reach; jobs whose last run failed or was flagged; accounts being deleted inside the 30 days; invitations waiting past 7 days; applied changes waiting more than 2 hours for a publish | one line, what it is and why it matters, one primary action ("Decide", "Review", "Open") |
 | **The Steward did** | The last run of each mode (run, audit, job review) with spend, what it wrote, and what it fixed itself | links to Runs |
 | **How things are** | Six tiles: published version (when, how many colleges), review queue open and its trend over 7 days, data health (fresh / stale / failing colleges), jobs (ok / failed in 7 days), people (accounts, households, organizations), spend this week against the $40 budget | each a link into its door |
 
@@ -682,3 +682,28 @@ a cluster's check id). All four are built; the polish section's "Left" line is s
 - The college page's **Documents** panel, the side-by-side comparison when two files claim one edition, **Keep this
   file** (`keep`), the Steward's collision finding, and the Inbox's "Choose the file" rows: see
   [document-collisions.md](document-collisions.md).
+
+### Fixes (2026-11-09, `fix/data-door-reachable`)
+
+The owner (2026-11-08): "There's no way to get to the /admin/data page … I don't see a link in the side menu bar", and
+"is there a place to see any pending publishes? How would I know it's waiting?"
+
+- **The wide rail's door headings are links.** From `lg`, each door's `<h2>` (still the `aria-labelledby` of its
+  group) holds a 44 px link to the door's href, icon and uppercase style kept, `aria-current="page"` on its own page:
+  Steward to `/admin` (the Inbox), People, Data, More to their landings. Before, only the compact rail (md to lg) and
+  the phone tab bar linked a door, so `/admin/data` and `/admin/more` couldn't be reached on a desktop. The heading
+  stays exempt from the HelpTip rule. `tests/admin-console.test.mts` reads the wide rail's source for the link.
+- **Data has an Overview screen.** `data-overview` ("Overview", `/admin/data`, help `data`) is the Data door's first
+  screen, so every rail width lists the page with Publish now. `activeScreen("/admin/data")` is Overview and the
+  longest href still wins (`/admin/data/colleges` is Colleges). `DoorScreens` leaves out a screen whose href is the
+  landing it sits on (Data's Overview, People's People list), for every door. More needs no Overview: its landing is
+  for phones and the heading link reaches it.
+- **The Inbox says when changes wait for a publish.** `needsYou` emits one `publish` row (severity 2) when applied
+  change sets newer than the last published version exist and the oldest is more than `PUBLISH_WAIT_HOURS` (2) old: a
+  pipeline asks for a publish right after it writes, so past that nothing is coming until the nightly one (08:00 UTC).
+  The row reads "N changes are waiting for a publish", "The oldest has waited since {time}. Nothing has published them;
+  the next automatic publish is the nightly one.", with **Publish now** opening `/admin/data#publish` (The last publish
+  panel). Held changes keep their own rows. `InboxInput.publish` (`{ waiting, oldestAt, lastPublishedAt }`) comes from
+  `lastPublishAndWaiting()` in `lib/admin/data-reads.ts`, the Data landing's own read: `changeSetsSince()` gives the
+  by-source counts and the waiting applied sets from one query (`changeSetCounts` is a wrapper). The tab bar's count
+  reads it too. The Live version tile's note adds "N waiting" when any wait.

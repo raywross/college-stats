@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   INBOX_TODO_LIMIT,
+  PUBLISH_WAIT_HOURS,
   STEWARD_WEEKLY_CAP_USD,
   decisionAnchor,
   lastRunsByMode,
@@ -25,6 +26,7 @@ import type { DecisionDoc, ProposalDoc, RunDoc, TodoDoc } from "../lib/steward/t
 const ROOT = join(import.meta.dirname, "..");
 const NOW = new Date("2026-11-08T15:00:00Z");
 const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
+const hoursAgo = (n: number) => new Date(NOW.getTime() - n * 3_600_000).toISOString();
 
 const empty = (over: Partial<InboxInput> = {}): InboxInput => ({
   now: NOW,
@@ -187,6 +189,40 @@ test("a held change stops every publish, so it leads; it opens the change", () =
   assert.equal(items[0].why, "The breaker tripped: 412 values changed. A held change stops every publish.");
   assert.equal(items[0].href, "/admin/data/changes/7");
   assert.equal(items[0].action, "Review");
+});
+
+test("changes waiting for a publish: one row once the oldest has waited past 2 hours, not before, not when nothing waits", () => {
+  assert.equal(PUBLISH_WAIT_HOURS, 2, "a pipeline asks for a publish right after it writes; past this, only the nightly one is coming");
+  const waiting = (n: number, oldestAt: string | null) => empty({ publish: { waiting: n, oldestAt, lastPublishedAt: daysAgo(1) } });
+
+  const items = needsYou(waiting(3, hoursAgo(5)));
+  assert.equal(items.length, 1);
+  const [row] = items;
+  assert.equal(row.kind, "publish");
+  assert.equal(row.title, "3 changes are waiting for a publish");
+  assert.match(row.why, /^The oldest has waited since Nov 8, 2026, 5:00 AM\. Nothing has published them; the next automatic publish is the nightly one\.$/);
+  assert.equal(row.href, "/admin/data#publish");
+  assert.equal(row.action, "Publish now");
+  assert.equal(row.severity, 2);
+  assert.equal(row.at, hoursAgo(5));
+  assert.equal(needsYou(waiting(1, hoursAgo(3)))[0].title, "1 change is waiting for a publish");
+
+  assert.deepEqual(needsYou(waiting(3, hoursAgo(1))), [], "an hour old: the pipeline's own publish may still be on its way");
+  assert.deepEqual(needsYou(waiting(3, hoursAgo(2))), [], "exactly 2 hours is not past them");
+  assert.deepEqual(needsYou(waiting(0, null)), [], "nothing waits");
+  assert.deepEqual(needsYou(empty({ publish: null })), [], "a read that failed leaves the row out");
+  assert.deepEqual(needsYou(empty()), [], "no publish read at all");
+
+  // Held changes keep their own rows, first; the publish row waits behind them.
+  const both = needsYou(empty({ publish: { waiting: 2, oldestAt: daysAgo(2), lastPublishedAt: daysAgo(3) }, heldChanges: [{ id: 7, kind: "pipeline", source: "college-reported", held_reason: "The breaker tripped.", created_at: daysAgo(1) }] }));
+  assert.deepEqual(both.map((i) => i.kind), ["held-change", "publish"]);
+});
+
+test("the Live version tile says how many changes wait, when any do", () => {
+  const note = (publish: InboxInput["publish"]) => tiles(empty({ publish }))[0].note;
+  assert.equal(note({ waiting: 4, oldestAt: hoursAgo(1), lastPublishedAt: daysAgo(1) }), "Published Nov 7, 2026 · 1,903 colleges · 4 waiting");
+  assert.equal(note({ waiting: 0, oldestAt: null, lastPublishedAt: daysAgo(1) }), "Published Nov 7, 2026 · 1,903 colleges");
+  assert.equal(note(null), "Published Nov 7, 2026 · 1,903 colleges");
 });
 
 test("proposals: systemic before value; only open ones; To do capped at the highest reach; invitations only past 7 days", () => {

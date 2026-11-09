@@ -228,6 +228,25 @@ test("changeSetCounts: by source and status, most first; 'since' filters to crea
   assert.equal(all.reduce((n, c) => n + c.count, 0), 4, "null reads every change set, not only the ones since a publish");
 });
 
+test("changeSetsSince: one read gives the counts and the applied sets waiting for a publish, with the oldest's time", async () => {
+  const client = fakeSupabase({
+    data_snapshots: [snapshot(1, { created_at: "2026-10-15T00:00:00Z" })],
+    data_change_sets: [
+      changeSet(1, { status: "applied", created_at: "2026-10-17T00:00:00Z" }),
+      changeSet(2, { status: "applied", created_at: "2026-10-16T00:00:00Z" }),
+      changeSet(3, { source: "identity", status: "held", created_at: "2026-10-15T12:00:00Z" }),
+      changeSet(4, { status: "applied", created_at: "2026-10-10T00:00:00Z" }),
+    ],
+  });
+  const since = await reads.changeSetsSince(client as never, "2026-10-15T00:00:00Z");
+  assert.deepEqual(since.waiting, { count: 2, oldestAt: "2026-10-16T00:00:00Z" }, "applied only, and only since the publish");
+  assert.equal(since.counts.reduce((n, c) => n + c.count, 0), 3);
+  const both = await reads.lastPublishAndWaiting(client as never);
+  assert.equal(both.lastPublished?.id, 1);
+  assert.deepEqual(both.waiting, since.waiting);
+  assert.deepEqual(reads.summarizeChangeSets([]).waiting, { count: 0, oldestAt: null });
+});
+
 test("heldChangeSets: held sets only, newest first", async () => {
   const client = fakeSupabase({
     data_change_sets: [
@@ -258,6 +277,7 @@ test("loadDataOverview reads the environments, the last publish, the change sets
     "both change sets since the publish, by source and status (the held one is also a hold, below)",
   );
   assert.equal(overview.holds.length, 1);
+  assert.deepEqual(overview.waiting, { count: 1, oldestAt: "2026-10-12T00:00:00Z" });
   assert.equal(overview.environments[0].snapshot, "1");
 });
 

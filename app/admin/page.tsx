@@ -21,6 +21,7 @@ const KIND_LABEL: Record<InboxItem["kind"], string> = {
   todo: "To do",
   invitation: "Invitation",
   collision: "Two files",
+  publish: "Waiting to publish",
 };
 
 const SEVERITY_TONE = { 1: "danger", 2: "warn", 3: "neutral" } as const;

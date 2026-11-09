@@ -129,22 +129,60 @@ export async function lastPublishedSnapshot(supabase: SupabaseClient): Promise<S
   return (data as SnapshotRow | null) ?? null;
 }
 
-/** Change sets created after `after` (the last publish's time), by source and status, most first. All of them when `after` is null. */
-export async function changeSetCounts(supabase: SupabaseClient, after: string | null): Promise<ChangeSetCount[]> {
-  let query = supabase.from("data_change_sets").select("source, status");
-  if (after) query = query.gt("created_at", after);
-  const found = await rows<{ source: string; status: string }>("data_change_sets", query);
+/** Applied change sets no publish has carried yet: how many, and when the oldest was written (null when none). */
+export interface PublishWaiting {
+  count: number;
+  oldestAt: string | null;
+}
+
+export interface ChangeSetsSince {
+  counts: ChangeSetCount[];
+  waiting: PublishWaiting;
+}
+
+/** By source and status, most first; and the applied ones waiting for a publish (pure, over the rows read). */
+export function summarizeChangeSets(found: readonly { source: string; status: string; created_at?: string | null }[]): ChangeSetsSince {
   const counts = new Map<string, number>();
+  let waiting = 0;
+  let oldestAt: string | null = null;
   for (const r of found) {
     const key = `${r.source}\u0000${r.status}`;
     counts.set(key, (counts.get(key) ?? 0) + 1);
+    if (r.status !== "applied") continue;
+    waiting += 1;
+    if (r.created_at && (oldestAt === null || Date.parse(r.created_at) < Date.parse(oldestAt))) oldestAt = r.created_at;
   }
-  return [...counts.entries()]
-    .map(([key, count]) => {
-      const [source, status] = key.split("\u0000");
-      return { source, status, count };
-    })
-    .sort((a, b) => b.count - a.count);
+  return {
+    counts: [...counts.entries()]
+      .map(([key, count]) => {
+        const [source, status] = key.split("\u0000");
+        return { source, status, count };
+      })
+      .sort((a, b) => b.count - a.count),
+    waiting: { count: waiting, oldestAt },
+  };
+}
+
+/**
+ * Change sets created after `after` (the last publish's time): by source and status, and the applied ones a publish
+ * would carry (the Inbox's "waiting for a publish" row). All of them when `after` is null. One read for both.
+ */
+export async function changeSetsSince(supabase: SupabaseClient, after: string | null): Promise<ChangeSetsSince> {
+  let query = supabase.from("data_change_sets").select("source, status, created_at");
+  if (after) query = query.gt("created_at", after);
+  return summarizeChangeSets(await rows<{ source: string; status: string; created_at: string }>("data_change_sets", query));
+}
+
+/** Change sets created after `after` (the last publish's time), by source and status, most first. All of them when `after` is null. */
+export async function changeSetCounts(supabase: SupabaseClient, after: string | null): Promise<ChangeSetCount[]> {
+  return (await changeSetsSince(supabase, after)).counts;
+}
+
+/** The last publish and the applied changes waiting since it (the Inbox's publish row and its Live version tile). */
+export async function lastPublishAndWaiting(supabase: SupabaseClient): Promise<{ lastPublished: SnapshotRow | null; waiting: PublishWaiting }> {
+  const lastPublished = await lastPublishedSnapshot(supabase);
+  const { waiting } = await changeSetsSince(supabase, lastPublished?.created_at ?? null);
+  return { lastPublished, waiting };
 }
 
 /** Held change sets, newest first: the run as a whole looked wrong and nothing from it publishes until an admin acts. */
@@ -156,14 +194,16 @@ export interface DataOverview {
   environments: EnvironmentSnapshot[];
   lastPublished: SnapshotRow | null;
   changeSets: ChangeSetCount[];
+  /** The applied change sets since the last publish, which Publish now would carry. */
+  waiting: PublishWaiting;
   holds: HeldChangeSet[];
 }
 
 /** Everything the Overview screen shows, read in parallel. */
 export async function loadDataOverview(supabase: SupabaseClient, fetchImpl?: typeof fetch): Promise<DataOverview> {
   const [environments, lastPublished] = await Promise.all([loadEnvironmentSnapshots(fetchImpl), lastPublishedSnapshot(supabase)]);
-  const [changeSets, holds] = await Promise.all([changeSetCounts(supabase, lastPublished?.created_at ?? null), heldChangeSets(supabase)]);
-  return { environments, lastPublished, changeSets, holds };
+  const [since, holds] = await Promise.all([changeSetsSince(supabase, lastPublished?.created_at ?? null), heldChangeSets(supabase)]);
+  return { environments, lastPublished, changeSets: since.counts, waiting: since.waiting, holds };
 }
 
 /** The newest 50 snapshots, newest first. */

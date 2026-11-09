@@ -5,13 +5,14 @@ import "server-only";
  * one source is down. Admin only: callers check requireAdmin() first; every read goes through the admin's own session.
  *
  * `needsYouCount` is the tab bar's badge, read by app/admin/layout.tsx on every console page, so it reads only the
- * cheap sources (the Steward's decisions and proposals, held changes, deletions, invitations) and not the jobs (a
- * GitHub call per workflow) or To do (the engines' records); the Inbox itself lists those too.
+ * cheap sources (the Steward's decisions and proposals, held changes, deletions, invitations, the changes waiting for
+ * a publish) and not the jobs (a GitHub call per workflow) or To do (the engines' records); the Inbox itself lists
+ * those too.
  */
 import { adminCounts } from "@/lib/admin/console-reads";
-import { heldChangeSets, lastPublishedSnapshot } from "@/lib/admin/data-reads";
+import { heldChangeSets, lastPublishAndWaiting } from "@/lib/admin/data-reads";
 import { healthOverview } from "@/lib/admin/health";
-import { INVITATION_WAIT_DAYS, inboxJob, needsYou, type InboxDeletion, type InboxInput, type InboxInvitation } from "@/lib/admin/inbox";
+import { INVITATION_WAIT_DAYS, inboxJob, needsYou, type InboxDeletion, type InboxInput, type InboxInvitation, type InboxPublish } from "@/lib/admin/inbox";
 import { adminSupabase } from "@/lib/admin/people";
 import { readCollisionIssues, type DocumentsClient } from "@/lib/admin/document-reads";
 import { readQueue, type StoreClient } from "@/lib/admin/review-queue";
@@ -28,6 +29,11 @@ async function soft<T>(what: string, read: () => Promise<T>): Promise<T | null> 
 }
 
 type Db = Awaited<ReturnType<typeof adminSupabase>>;
+
+/** The applied changes waiting since the last publish, as the Inbox reads them (the same read as /admin/data's). */
+function inboxPublish(read: Awaited<ReturnType<typeof lastPublishAndWaiting>>): InboxPublish {
+  return { waiting: read.waiting.count, oldestAt: read.waiting.oldestAt, lastPublishedAt: read.lastPublished?.created_at ?? null };
+}
 
 async function deletions(s: Db): Promise<InboxDeletion[]> {
   const { data, error } = await s.from("profiles").select("id, display_name, deleted_at").not("deleted_at", "is", null).order("deleted_at", { ascending: true }).limit(50);
@@ -71,7 +77,7 @@ export async function loadInboxInput(now: Date = new Date()): Promise<InboxInput
     soft("held changes", () => heldChangeSets(s)),
     soft("counts", () => adminCounts()),
     soft("organizations", () => organizationCount(s)),
-    soft("the last publish", () => lastPublishedSnapshot(s)),
+    soft("the last publish", () => lastPublishAndWaiting(s)),
     soft("the review queue", async () => {
       const q = await readQueue(client);
       if (!q.ok) throw new Error(q.reason);
@@ -96,10 +102,11 @@ export async function loadInboxInput(now: Date = new Date()): Promise<InboxInput
     invitations: invites,
     heldChanges: held,
     counts: counts ? { people: counts.people, households: counts.households, organizations: orgs } : null,
-    lastPublished: published === null ? undefined : published ? { id: published.id, created_at: published.created_at, colleges: published.manifest?.colleges ?? null } : null,
+    lastPublished: published === null ? undefined : published.lastPublished ? { id: published.lastPublished.id, created_at: published.lastPublished.created_at, colleges: published.lastPublished.manifest?.colleges ?? null } : null,
     queue,
     health,
     collisions,
+    publish: published ? inboxPublish(published) : null,
   };
 }
 
@@ -108,13 +115,14 @@ export async function needsYouCount(now: Date = new Date()): Promise<number | nu
   try {
     const s = await adminSupabase();
     const client = s as unknown as StoreClient;
-    const [decisions, proposals, dels, invites, held, collisions] = await Promise.all([
+    const [decisions, proposals, dels, invites, held, collisions, published] = await Promise.all([
       soft("decisions", () => readDecisions(client)),
       soft("proposals", () => readProposals(client)),
       soft("deletions", () => deletions(s)),
       soft("invitations", () => waitingInvitations(s, now)),
       soft("held changes", () => heldChangeSets(s)),
       soft("collision findings", () => readCollisionIssues(client as unknown as DocumentsClient)),
+      soft("the last publish", () => lastPublishAndWaiting(s)),
     ]);
     if ([decisions, proposals, dels, invites, held].every((r) => r === null)) return null;
     return needsYou({
@@ -132,6 +140,7 @@ export async function needsYouCount(now: Date = new Date()): Promise<number | nu
       queue: null,
       health: null,
       collisions,
+      publish: published ? inboxPublish(published) : null,
     }).length;
   } catch {
     return null;

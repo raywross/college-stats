@@ -6,6 +6,7 @@ import { authConfigured } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
 import { createServerSupabase, supabaseAuthEnv } from "@/lib/supabase-server";
 import { passwordProblems } from "@/lib/password";
+import { writeMeHintAfterSignIn } from "@/lib/me-hint-server";
 import { trackServer } from "@/lib/analytics-server";
 import { AGE_GATE_COOKIE, birthYearAllowed, firstLanding, isRoleHint, parseBirthYear, safeNextPath } from "@/lib/accounts";
 
@@ -130,7 +131,7 @@ export async function signInWithPassword(_prev: PasswordState, form: FormData): 
   if (!EMAIL_RE.test(email) || !password) return { status: "error", message: "Enter your email and password.", email };
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     if (error.code === "email_not_confirmed") return { status: "unconfirmed", email };
     if (rateLimited(error)) return { status: "error", message: "Too many tries. Wait a few minutes, then try again.", email };
@@ -141,6 +142,8 @@ export async function signInWithPassword(_prev: PasswordState, form: FormData): 
       email,
     };
   }
+  // The header's hint (lib/me-hint.ts): the next page paints the avatar with its initials before any script loads.
+  if (data.user) await writeMeHintAfterSignIn(supabase, data.user);
   redirect(next);
 }
 
@@ -194,6 +197,7 @@ export async function signUpWithPassword(_prev: PasswordState, form: FormData): 
     // Email confirmation is off on this project: sign straight in.
     const supabase = await createServerSupabase();
     await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    await writeMeHintAfterSignIn(supabase, data.session.user);
     redirect(firstLanding(next, role, true));
   }
   return { status: "confirm-email", email };

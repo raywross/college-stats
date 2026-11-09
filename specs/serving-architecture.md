@@ -606,6 +606,9 @@ person made one Supabase round trip per page for the header alone; a cold functi
 instance) or a cold Supabase project (the free plan pauses after a week; a Nano instance) turned the wait into
 seconds. The dataset itself never entered this path.
 
+**Round 5 (2026-11-08): the header no longer waits on scripts either.** A `quad_me` hint cookie (initials and role) and
+an inline script ahead of the header paint "Sign in" or the avatar with its initials from the HTML itself; `/api/me` only fills in the menu (specs/product/accounts.md "Header state").
+
 ### Built (this PR)
 1. **The header knows the state at hydration.** `lib/supabase-server.ts` and `proxy.ts` set a plain `quad_signed_in`
    cookie ("1", the session cookies' lifetime, not httpOnly) whenever they write the `sb-` session cookies, and clear

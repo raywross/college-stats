@@ -13,6 +13,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { signedInCookieFor } from "@/lib/accounts";
+import { meHintClearFor } from "@/lib/me-hint";
 import { AUTH_COOKIE_OPTIONS } from "@/lib/supabase-server";
 import { getClaimsWithKeys } from "@/lib/auth-jwks";
 import { timingEnabled } from "@/lib/timing";
@@ -31,9 +32,9 @@ export async function proxy(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(toSet, headers) {
-        // The signed-in marker (lib/accounts.ts SIGNED_IN_COOKIE) travels with the session cookies it mirrors.
-        const marker = signedInCookieFor(toSet);
-        const all = marker ? [...toSet, marker] : toSet;
+        // The signed-in marker (lib/accounts.ts SIGNED_IN_COOKIE) travels with the session cookies it mirrors; the
+        // header's hint (lib/me-hint.ts) is cleared with them.
+        const all = [...toSet, ...[signedInCookieFor(toSet), meHintClearFor(toSet)].filter((c) => c !== null)];
         for (const { name, value } of all) request.cookies.set(name, value);
         response = NextResponse.next({ request });
         for (const { name, value, options } of all) response.cookies.set(name, value, options);

@@ -4,6 +4,7 @@ import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Header } from "@/components/layout/Header";
+import { MeFirstPaint } from "@/components/layout/MeFirstPaint";
 import { Footer } from "@/components/layout/Footer";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { CompareTray } from "@/components/compare/CompareTray";
@@ -68,6 +69,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <ThemeProvider>
           <TooltipProvider>
+            {/* The header's signed-in state before any bundle (components/layout/MeFirstPaint.tsx). */}
+            <MeFirstPaint />
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />

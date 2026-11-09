@@ -11,6 +11,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { signedInCookieFor } from "@/lib/accounts";
+import { meHintClearFor } from "@/lib/me-hint";
 import { timedFetch, timingEnabled } from "@/lib/timing";
 
 /** SUPABASE_URL + SUPABASE_PUBLISHABLE_KEY, or null when sign-in isn't configured (e.g. CI builds). */
@@ -46,9 +47,10 @@ export async function createServerSupabase({ headers }: { headers?: Record<strin
       },
       setAll(toSet) {
         try {
-          // The signed-in marker (lib/accounts.ts SIGNED_IN_COOKIE) is written and cleared with the session cookies.
-          const marker = signedInCookieFor(toSet);
-          for (const { name, value, options } of marker ? [...toSet, marker] : toSet) store.set(name, value, options);
+          // The signed-in marker (lib/accounts.ts SIGNED_IN_COOKIE) is written and cleared with the session cookies;
+          // the header's hint (lib/me-hint.ts) is cleared with them.
+          const extra = [signedInCookieFor(toSet), meHintClearFor(toSet)].filter((c) => c !== null);
+          for (const { name, value, options } of [...toSet, ...extra]) store.set(name, value, options);
         } catch {
           // Called from a Server Component render, where cookies are read-only; proxy.ts keeps the session fresh.
         }

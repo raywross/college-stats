@@ -231,6 +231,25 @@ allowed; name, inviter, side, expiry, state; never the email), `log_access(stude
   installed the route makes its four reads as before, and a paused profile answers signed out on either path. Public pages never read cookies,
   so they keep their static/ISR rendering (checked with `next build`; a test fails if a page outside the account
   routes imports `next/headers`, `lib/auth`, or `lib/supabase-server`).
+- **The header is right at first paint, before any JavaScript** (round 5, 2026-11-08). A second plain cookie,
+  `quad_me`, carries only what the header shows: the avatar's initials (`initialsFor`) and the navigation role
+  (`meRoleOf`), as `M.counselor` (no name, email, or id; `lib/me-hint.ts`). It is written after every sign-in
+  (`app/login/actions.ts`, `app/auth/confirm/actions.ts`: one `me_bundle()` call with the new session,
+  `lib/me-hint-server.ts`) and on every signed-in `/api/me` answer (`Set-Cookie` only when it changes), with the
+  marker's options (not httpOnly, 400 days); it is cleared wherever the marker is (`meHintClearFor` beside
+  `signedInCookieFor`: sign-out, account deletion, an expired session in `proxy.ts`) and by a signed-out `/api/me`
+  answer. The server never trusts it. The page: `AccountMenu`'s server HTML holds both "Sign in" and an avatar
+  placeholder (`data-me-show="out"` / `"in"`, plain links to `/login?next=…` and `/account`), and a plain inline
+  `<script>` in the root layout just before the header (`components/layout/MeFirstPaint.tsx`, a Server Component; not
+  `next/script`, whose `beforeInteractive` waits for Next's bootstrap in the App Router) reads the two cookies and sets
+  `<html data-me="in|out">` and a `--me-initials` custom property. `app/globals.css` hides both until the attribute is
+  set and then shows one; the placeholder prints the initials with `::after { content: var(--me-initials) }`, so the
+  script touches only `<html>` and hydration sees the server's tree. At hydration `useMe()`'s first state is a fresh
+  remembered answer, else the hint's seed (signed in, the initials, the role: the role item and the phone's middle tab
+  say Household or Caseload at once), and `/api/me` replaces the seed with the name, email, admin flag, and children
+  (the avatar menu's popup and a guardian's child entries wait for it). A signed-in session from before the hint shows
+  an empty avatar circle until its first `/api/me` answer writes one; where sign-in isn't configured there is no
+  script and the slot stays empty.
 - **`proxy.ts` runs only on** `/login`, `/auth/*`, `/account/*`, `/me/*`, `/invite/*`, `/api/me`, and only when an
   `sb-` cookie is present. Later account routes add their prefix to the matcher and to `ACCOUNT_ROUTES` in
   `tests/accounts.test.mts`. Server Actions on public pages (Follow, Add to list) refresh the session themselves.

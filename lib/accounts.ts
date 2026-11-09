@@ -318,6 +318,9 @@ export interface MeState {
   role: MeRole | null;
   /** The students the person sees as a guardian, in roster order (householdChildren); empty when signed out. */
   children: MeChild[];
+  /** Only on the state seeded from the header's hint cookie before /api/me answers (lib/me-hint.ts meFromHint): the
+   * avatar's initials, which an answer derives from the name and email instead. */
+  initials?: string;
 }
 
 /**

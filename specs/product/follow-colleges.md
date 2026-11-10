@@ -228,7 +228,9 @@ publish records zero changes.
   FollowResult`, `myFollows() → FollowRow[]`; types and the rules (`followWrite`: a `list` follow becomes `manual`
   on an explicit follow) in `lib/follow-state.ts`. Unconfigured, signed out, or before the migration, they say so
   instead of throwing.
-- `components/profile/ProfileChanges.tsx`: the What changed panel, between the hero and the topic cards. Reads
+- `components/profile/ProfileChanges.tsx`: the What changed panel, the last panel on the overview, after "Schools like
+  this one" and before the sources block (owner, 2026-11-09: the profile should lead with the college, not with what
+  changed; until then it sat between the hero and the topic cards). Reads
   `getSchoolChanges(unitId)` (`lib/data.ts`, publishable key, fail-soft), so profiles stay static and regenerate with
   the deploy. Without `SUPABASE_URL` (CI, a keyless Preview, local work) there are no changes (they belong to
   recorded publishes, so they aren't committed); `CHANGES_FIXTURE=<file of rows>` shows the panel locally for QA. Each sentence has its source; the newest

@@ -11,7 +11,7 @@ import { pathToFileURL } from "node:url";
 import * as nodeModule from "node:module";
 import type { VisitEventRow } from "../lib/visit-events/types.ts";
 import { measuringPoint, type MeasuringPoint } from "../lib/visit-events/measure.ts";
-import { dayKey, dayLabel, groupEventsByDay, localDateParts, matchesChip, nearYouEvents, onCampusEvents, readTimeLine, signedOutLine, timeLabel, VISIT_CHIPS } from "../lib/visit-events/view.ts";
+import { chipEvents, dayKey, dayLabel, groupEventsByDay, localDateParts, matchesChip, nearYouEvents, onCampusEvents, readTimeLine, signedOutLine, timeLabel, VISIT_CHIPS } from "../lib/visit-events/view.ts";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -97,8 +97,33 @@ test("localDateParts: the floating local date and 24-hour time an .ics file need
 test("VISIT_CHIPS: the five chips in the spec's order", () => {
   assert.deepEqual(
     VISIT_CHIPS.map((c) => c.label),
-    ["Campus tours", "Sessions", "Near you", "Online", "Everything"],
+    ["Campus tours", "Sessions", "Near me", "Online", "Everything"],
   );
+});
+
+test("chipEvents: Near me is the travel calendar within the viewer's radius; a picked state widens to that state at any distance", () => {
+  const events = [
+    { ...row({ id: "ny-near", kind: "travel", starts_at: "2026-10-20T15:00:00Z", state: "NY" }), distanceMiles: 12 },
+    { ...row({ id: "nj-far", kind: "travel", starts_at: "2026-10-21T15:00:00Z", state: "NJ" }), distanceMiles: 48 },
+    { ...row({ id: "tx", kind: "travel", starts_at: "2026-10-22T15:00:00Z", state: "TX" }), distanceMiles: 1500 },
+    { ...row({ id: "unplaced", kind: "travel", starts_at: "2026-10-23T15:00:00Z", state: null }), distanceMiles: null },
+    { ...row({ id: "tour", kind: "tour", starts_at: "2026-10-20T14:00:00Z" }), distanceMiles: 3 },
+  ];
+  const near = { label: "home in Roslyn, NY", radiusMiles: 30 };
+  assert.deepEqual(
+    chipEvents(events, "travel", { near }).map((e) => e.id),
+    ["ny-near"],
+    "within the radius only: the far travel events and the unplaced one are out, and so is the nearby campus tour",
+  );
+  assert.deepEqual(chipEvents(events, "travel", { near, state: "TX" }).map((e) => e.id), ["tx"], "a state overrides the radius");
+  assert.deepEqual(
+    chipEvents(events, "travel", { near: null }).map((e) => e.id),
+    ["ny-near", "nj-far", "tx", "unplaced"],
+    "no measuring point: the whole travel calendar",
+  );
+  assert.deepEqual(chipEvents(events, "travel", { near: null, state: "NJ" }).map((e) => e.id), ["nj-far"]);
+  assert.deepEqual(chipEvents(events, "tour", { near, state: "TX" }).map((e) => e.id), ["tour"], "other chips ignore the radius and the state");
+  assert.equal(chipEvents(events, "all", { near }).length, 5);
 });
 
 test("matchesChip: Sessions covers info sessions and open houses, never the hidden other kind; Everything matches everything", () => {

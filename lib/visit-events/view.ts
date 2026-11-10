@@ -68,7 +68,7 @@ export function groupEventsByDay<T extends DayTimeInput>(events: readonly T[]): 
 }
 
 /* ------------------------------------------------------------------ */
-/* Kind chips (specs/product/visit-events.md "Display": Campus tours · Sessions · Near you · Online · Everything)   */
+/* Kind chips (specs/product/visit-events.md "Display": Campus tours · Sessions · Near me · Online · Everything)    */
 /* ------------------------------------------------------------------ */
 
 export type VisitChipKey = "tour" | "info_session" | "travel" | "online" | "all";
@@ -76,7 +76,7 @@ export type VisitChipKey = "tour" | "info_session" | "travel" | "online" | "all"
 export const VISIT_CHIPS: { key: VisitChipKey; label: string }[] = [
   { key: "tour", label: "Campus tours" },
   { key: "info_session", label: "Sessions" },
-  { key: "travel", label: "Near you" },
+  { key: "travel", label: "Near me" },
   { key: "online", label: "Online" },
   { key: "all", label: "Everything" },
 ];
@@ -86,6 +86,31 @@ export function matchesChip(kind: VisitEventKind, chip: VisitChipKey): boolean {
   if (chip === "all") return true;
   if (chip === "info_session") return kind === "info_session" || kind === "open_house";
   return kind === chip;
+}
+
+/** What "Near me" measures from: the viewer's alert radius (visit_alert_prefs) around their measuring point. */
+export interface NearMeScope {
+  /** The point's name for the page: "home in Roslyn, NY" or "Roslyn High School". */
+  label: string;
+  radiusMiles: number;
+}
+
+/**
+ * The rows a chip shows (specs/product/visit-events.md "Display"). "Near me" is the travel calendar measured from the
+ * viewer: the events within their radius, or, when they pick a state instead, that state's events at any distance.
+ * A viewer with no measuring point sees the whole travel calendar, or one state of it. Every other chip is its kind.
+ */
+export function chipEvents<T extends Pick<VisitEventRow, "kind" | "state"> & { distanceMiles?: number | null }>(
+  events: readonly T[],
+  chip: VisitChipKey,
+  opts: { state?: string | null; near?: NearMeScope | null } = {},
+): T[] {
+  const byKind = events.filter((e) => matchesChip(e.kind, chip));
+  if (chip !== "travel") return byKind;
+  if (opts.state) return byKind.filter((e) => e.state === opts.state);
+  if (!opts.near) return byKind;
+  const radius = opts.near.radiusMiles;
+  return byKind.filter((e) => e.distanceMiles != null && e.distanceMiles <= radius);
 }
 
 /* ------------------------------------------------------------------ */

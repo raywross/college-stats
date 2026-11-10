@@ -1,7 +1,7 @@
 "use client";
 /**
  * The kind chips and travel-calendar state select (specs/product/visit-events.md "Display": Campus tours · Sessions
- * · Near you · Online · Everything). URL-free state: the caller owns the selection and passes it back down, so this
+ * · Near me · Online · Everything). URL-free state: the caller owns the selection and passes it back down, so this
  * works both on the college page's in-place expansion and on /me/visits. Phones: chips scroll (specs/mobile.md).
  */
 import { VISIT_CHIPS, type VisitChipKey } from "@/lib/visit-events/view";
@@ -13,14 +13,17 @@ export function VisitFilters({
   stateValue,
   onStateChange,
   counts,
+  allStatesLabel = "Every state",
 }: {
   value: VisitChipKey;
   onChange: (chip: VisitChipKey) => void;
-  /** States with at least one travel-calendar event, for the state select shown once "Near you" is picked. */
+  /** States with at least one travel-calendar event, for the state select shown once "Near me" is picked. */
   states?: string[];
   stateValue?: string | null;
   onStateChange?: (state: string | null) => void;
   counts?: Partial<Record<VisitChipKey, number>>;
+  /** The select's first option, the no-state choice: "Within 30 miles" for a viewer with a measuring point, else "Every state". */
+  allStatesLabel?: string;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -52,7 +55,7 @@ export function VisitFilters({
           aria-label="Filter by state"
           className="h-11 rounded-full border bg-card px-3 text-xs font-semibold sm:h-8"
         >
-          <option value="">Every state</option>
+          <option value="">{allStatesLabel}</option>
           {states.map((s) => (
             <option key={s} value={s}>
               {s}

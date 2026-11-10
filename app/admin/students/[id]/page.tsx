@@ -18,6 +18,8 @@ import { offers as offerFields, snapshot as snapshotFields, studentNumbers } fro
 import { studentOrganizationGrants } from "@/lib/admin/organizations";
 import { getData } from "@/lib/data";
 import { isUuid } from "@/lib/household-hub";
+import { standingForStudent } from "@/lib/admin/standing";
+import { withTiming } from "@/lib/timing-server";
 import { attachStudent, deleteStudent, editStudent } from "./actions";
 
 export const metadata: Metadata = { title: "Student", robots: { index: false, follow: false } };
@@ -28,7 +30,18 @@ export const metadata: Metadata = { title: "Student", robots: { index: false, fo
  * the access row first (admin_log_access, once per render): the student sees "Quad support viewed your information",
  * and nothing is read until the row exists, so a failed log means a failed page, not an unlogged view.
  */
-export default async function StudentPage({ params, searchParams }: PageProps<"/admin/students/[id]">) {
+export default async function StudentPage(props: PageProps<"/admin/students/[id]">) {
+  return withTiming("/admin/students/[id]", () => renderStudent(props));
+}
+
+/**
+ * The reads (specs/product/admin-speed.md "Waves"): the admin check; the access row (nothing is read before it
+ * exists); then at once the record and its data (adminStudent, four waves of its own), the standing panel's estimate
+ * (standingForStudent, which shares the record, profile, lists, items, and visits reads with adminStudent through
+ * cache(); the slots below read its memoized answer), the organization grants, the dataset, and, when the attach
+ * search is open, the people search (shown only for a managed, undeleted record).
+ */
+async function renderStudent({ params, searchParams }: PageProps<"/admin/students/[id]">) {
   await connection();
   await requireAdmin();
   const { id } = await params;
@@ -40,22 +53,27 @@ export default async function StudentPage({ params, searchParams }: PageProps<"/
     if (err instanceof Error && /student_not_found/.test(err.message)) notFound();
     throw err;
   }
-  const student = await adminStudent(id);
-  if (!student) notFound();
 
   const sp = await searchParams;
   const q = (Array.isArray(sp.q) ? sp.q[0] : sp.q)?.trim() ?? "";
   const attaching = (Array.isArray(sp.attach) ? sp.attach[0] : sp.attach) === "1";
 
+  const [student, , searched, orgGrants, { getSchoolsByIds }] = await Promise.all([
+    adminStudent(id),
+    standingForStudent(id),
+    attaching && q ? findPeople(q, ["user"]) : Promise.resolve(null),
+    studentOrganizationGrants(id),
+    getData(),
+  ]);
+  if (!student) notFound();
+
   const { record } = student;
   const deleted = record.deleted_at !== null;
   const managed = record.user_id === null;
-  const found: SearchRow[] | null = attaching && q && managed && !deleted ? await findPeople(q, ["user"]) : null;
+  const found: SearchRow[] | null = managed && !deleted ? searched : null;
 
-  const { getSchoolsByIds } = await getData();
   const unitIds = [...new Set(student.lists.flatMap((l) => l.items.map((i) => i.unit_id)))];
   const names = new Map(getSchoolsByIds(unitIds).map((s) => [s.unit_id, s.name]));
-  const orgGrants = await studentOrganizationGrants(id);
 
   return (
     <>

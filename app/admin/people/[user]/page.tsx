@@ -18,6 +18,7 @@ import { DailyViews, TopBars } from "@/components/admin/ViewCharts";
 import { emailConfigured } from "@/lib/email";
 import { isUuid } from "@/lib/household-hub";
 import { removeMember } from "@/app/admin/households/[id]/actions";
+import { withTiming } from "@/lib/timing-server";
 import {
   changeEmail,
   copyResetLink,
@@ -40,12 +41,21 @@ export const metadata: Metadata = { title: "Person", robots: { index: false, fol
  * this page is the person's own account information, not their student data: lists are counted here and opened on
  * the student page, which logs the view.
  */
-export default async function PersonPage({ params }: PageProps<"/admin/people/[user]">) {
+export default async function PersonPage(props: PageProps<"/admin/people/[user]">) {
+  return withTiming("/admin/people/[user]", () => renderPerson(props));
+}
+
+/**
+ * The reads (specs/product/admin-speed.md "Waves"): the admin check, then adminPerson (four waves of its own) beside
+ * the college views, the sign-in activity, and the organization, which need only the id; then the view record, a
+ * write that waits for the college views.
+ */
+async function renderPerson({ params }: PageProps<"/admin/people/[user]">) {
   await connection();
   const me = await requireAdmin();
   const { user } = await params;
   if (!isUuid(user)) notFound();
-  const person = await adminPerson(user);
+  const [person, views, activity, organization] = await Promise.all([adminPerson(user), personCollegeViews(user), authActivity(user), personOrganization(user)]);
   if (!person) notFound();
 
   const { profile, auth } = person;
@@ -53,7 +63,6 @@ export default async function PersonPage({ params }: PageProps<"/admin/people/[u
   const self = profile.id === me.userId;
   const deleted = profile.deleted_at !== null;
   const now = new Date();
-  const [views, activity, organization] = await Promise.all([personCollegeViews(profile.id), authActivity(profile.id), personOrganization(profile.id)]);
   // Which colleges a student opens is their information: showing it is a view the student is told about, as on the
   // student page (specs/product/college-views.md).
   if (person.ownStudent && views.colleges.length > 0) await logStudentView(person.ownStudent.id, "college views");

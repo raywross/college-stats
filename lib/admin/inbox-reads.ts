@@ -4,18 +4,26 @@ import "server-only";
  * made soft (a failed read is null, and the Inbox leaves its rows or tile out), so the home page never fails because
  * one source is down. Admin only: callers check requireAdmin() first; every read goes through the admin's own session.
  *
+ * Every read is a React `cache()`d function (per request; specs/product/admin-speed.md "Wave 1" fix 4), so the
+ * layout's badge (`needsYouCount`) and the Inbox's three panels, rendering in the same request, read each source once:
+ * the badge's seven reads (decisions, proposals, deletions, invitations, held changes, collisions, the last publish)
+ * are the same promises the "Needs you" and "How things are" panels await. A cached read keeps its soft null, so a
+ * source that failed for the badge isn't asked again by the page.
+ *
  * `needsYouCount` is the tab bar's badge, read by app/admin/layout.tsx on every console page, so it reads only the
- * cheap sources (the Steward's decisions and proposals, held changes, deletions, invitations, the changes waiting for
- * a publish) and not the jobs (a GitHub call per workflow) or To do (the engines' records); the Inbox itself lists
- * those too.
+ * cheap sources and not the jobs (GitHub, through lib/jobs/github-memo.ts) or To do (the engines' records); the Inbox
+ * itself lists those too. The page's panels each have a loader: `loadNeedsYou`, `loadStewardDid`, `loadHowThingsAre`
+ * (app/admin/page.tsx streams each under its own <Suspense>). The review queue's tile reads the counts
+ * (`readQueueCounts`, one call), never the whole queue.
  */
+import { cache } from "react";
 import { adminCounts } from "@/lib/admin/console-reads";
 import { heldChangeSets, lastPublishAndWaiting } from "@/lib/admin/data-reads";
 import { healthOverview } from "@/lib/admin/health";
 import { INVITATION_WAIT_DAYS, inboxJob, needsYou, type InboxDeletion, type InboxInput, type InboxInvitation, type InboxPublish } from "@/lib/admin/inbox";
 import { adminSupabase } from "@/lib/admin/people";
 import { readCollisionIssues, type DocumentsClient } from "@/lib/admin/document-reads";
-import { readQueue, type StoreClient } from "@/lib/admin/review-queue";
+import { readQueueCounts, type StoreClient } from "@/lib/admin/review-queue";
 import { readDecisions, readProposals, readRuns, readTodo } from "@/lib/admin/steward-reads";
 import { loadJobsOverview } from "@/lib/jobs/runs";
 
@@ -29,6 +37,10 @@ async function soft<T>(what: string, read: () => Promise<T>): Promise<T | null> 
 }
 
 type Db = Awaited<ReturnType<typeof adminSupabase>>;
+
+/** The admin's client, once per request. */
+const db = cache((): Promise<Db> => adminSupabase());
+const store = async () => (await db()) as unknown as StoreClient;
 
 /** The applied changes waiting since the last publish, as the Inbox reads them (the same read as /admin/data's). */
 function inboxPublish(read: Awaited<ReturnType<typeof lastPublishAndWaiting>>): InboxPublish {
@@ -62,50 +74,93 @@ async function organizationCount(s: Db): Promise<number> {
   return count ?? 0;
 }
 
-/** Everything the Inbox shows. */
-export async function loadInboxInput(now: Date = new Date()): Promise<InboxInput> {
-  const s = await adminSupabase();
-  const client = s as unknown as StoreClient;
-  const [decisions, proposals, todo, runs, jobs, dels, invites, held, counts, orgs, published, queue, health, collisions] = await Promise.all([
-    soft("decisions", () => readDecisions(client)),
-    soft("proposals", () => readProposals(client)),
-    soft("to do", () => readTodo(client)),
-    soft("steward runs", () => readRuns(client, 50)),
-    soft("jobs", async () => (await loadJobsOverview(now)).rows.map(inboxJob)),
-    soft("deletions", () => deletions(s)),
-    soft("invitations", () => waitingInvitations(s, now)),
-    soft("held changes", () => heldChangeSets(s)),
-    soft("counts", () => adminCounts()),
-    soft("organizations", () => organizationCount(s)),
-    soft("the last publish", () => lastPublishAndWaiting(s)),
-    soft("the review queue", async () => {
-      const q = await readQueue(client);
-      if (!q.ok) throw new Error(q.reason);
-      const week = now.getTime() - 7 * 86_400_000;
-      const open = q.rows.filter((r) => r.status === "open");
-      return { open: open.length, newThisWeek: open.filter((r) => Date.parse(r.item.queued) >= week).length };
-    }),
-    soft("data health", async () => {
-      const o = (await healthOverview()).counts.overall;
-      return { fresh: o.fresh, watch: o.watch, stale: o.stale, failing: o.failing };
-    }),
-    soft("collision findings", () => readCollisionIssues(client as unknown as DocumentsClient)),
-  ]);
+/* ------------------------------------------------------------------ */
+/* The per-request reads (each soft, each once)                         */
+/* ------------------------------------------------------------------ */
+
+// The badge's seven.
+const decisionsRead = cache(() => soft("decisions", async () => readDecisions(await store())));
+const proposalsRead = cache(() => soft("proposals", async () => readProposals(await store())));
+const deletionsRead = cache(() => soft("deletions", async () => deletions(await db())));
+// Invitations waiting a week or more: the cutoff is taken when the read starts (a request's few milliseconds apart don't matter).
+const invitationsRead = cache(() => soft("invitations", async () => waitingInvitations(await db(), new Date())));
+const heldRead = cache(() => soft("held changes", async () => heldChangeSets(await db())));
+const collisionsRead = cache(() => soft("collision findings", async () => readCollisionIssues((await store()) as unknown as DocumentsClient)));
+const publishRead = cache(() => soft("the last publish", async () => lastPublishAndWaiting(await db())));
+
+// The page's others.
+const todoRead = cache(() => soft("to do", async () => readTodo(await store())));
+const runsRead = cache(() => soft("steward runs", async () => readRuns(await store(), 50)));
+const jobsRead = cache(() => soft("jobs", async () => (await loadJobsOverview(new Date())).rows.map(inboxJob)));
+const countsRead = cache(() => soft("counts", () => adminCounts()));
+const organizationsRead = cache(() => soft("organizations", async () => organizationCount(await db())));
+const queueRead = cache(() =>
+  soft("the review queue", async () => {
+    const c = await readQueueCounts(await store());
+    if (!c) throw new Error("the counts couldn't be read");
+    return { open: c.open, newThisWeek: c.newWeek };
+  }),
+);
+const healthRead = cache(() =>
+  soft("data health", async () => {
+    const o = (await healthOverview()).counts.overall;
+    return { fresh: o.fresh, watch: o.watch, stale: o.stale, failing: o.failing };
+  }),
+);
+
+/** An InboxInput with nothing read: each panel fills in what it shows. */
+function blank(now: Date): InboxInput {
   return {
     now,
-    decisions,
-    proposals,
-    todo,
-    runs,
-    jobs,
-    deletions: dels,
-    invitations: invites,
-    heldChanges: held,
+    decisions: null,
+    proposals: null,
+    todo: null,
+    jobs: null,
+    deletions: null,
+    invitations: null,
+    heldChanges: null,
+    runs: null,
+    counts: null,
+    lastPublished: null,
+    queue: null,
+    health: null,
+    collisions: null,
+    publish: null,
+  };
+}
+
+/** The badge's seven reads, as one InboxInput (the rest left null). */
+async function cheapInput(now: Date): Promise<InboxInput> {
+  const [decisions, proposals, dels, invites, held, collisions, published] = await Promise.all([decisionsRead(), proposalsRead(), deletionsRead(), invitationsRead(), heldRead(), collisionsRead(), publishRead()]);
+  return { ...blank(now), decisions, proposals, deletions: dels, invitations: invites, heldChanges: held, collisions, publish: published ? inboxPublish(published) : null };
+}
+
+/* ------------------------------------------------------------------ */
+/* The panels' loaders                                                  */
+/* ------------------------------------------------------------------ */
+
+/** "Needs you": the badge's seven, To do, the jobs, and the Steward's runs (for the empty line's "last looked at"). */
+export async function loadNeedsYou(now: Date = new Date()): Promise<InboxInput> {
+  const [cheap, todo, jobs, runs] = await Promise.all([cheapInput(now), todoRead(), jobsRead(), runsRead()]);
+  return { ...cheap, todo, jobs, runs };
+}
+
+/** "The Steward did": its runs. */
+export async function loadStewardDid(now: Date = new Date()): Promise<InboxInput> {
+  return { ...blank(now), runs: await runsRead() };
+}
+
+/** "How things are": the six tiles' reads (the last publish, the queue's counts, health, the jobs, people, the Steward's spend). */
+export async function loadHowThingsAre(now: Date = new Date()): Promise<InboxInput> {
+  const [counts, orgs, published, queue, health, jobs, runs] = await Promise.all([countsRead(), organizationsRead(), publishRead(), queueRead(), healthRead(), jobsRead(), runsRead()]);
+  return {
+    ...blank(now),
     counts: counts ? { people: counts.people, households: counts.households, organizations: orgs } : null,
     lastPublished: published === null ? undefined : published.lastPublished ? { id: published.lastPublished.id, created_at: published.lastPublished.created_at, colleges: published.lastPublished.manifest?.colleges ?? null } : null,
     queue,
     health,
-    collisions,
+    jobs,
+    runs,
     publish: published ? inboxPublish(published) : null,
   };
 }
@@ -113,35 +168,9 @@ export async function loadInboxInput(now: Date = new Date()): Promise<InboxInput
 /** The tab bar's count: Needs you over the cheap reads; null when nothing could be read. */
 export async function needsYouCount(now: Date = new Date()): Promise<number | null> {
   try {
-    const s = await adminSupabase();
-    const client = s as unknown as StoreClient;
-    const [decisions, proposals, dels, invites, held, collisions, published] = await Promise.all([
-      soft("decisions", () => readDecisions(client)),
-      soft("proposals", () => readProposals(client)),
-      soft("deletions", () => deletions(s)),
-      soft("invitations", () => waitingInvitations(s, now)),
-      soft("held changes", () => heldChangeSets(s)),
-      soft("collision findings", () => readCollisionIssues(client as unknown as DocumentsClient)),
-      soft("the last publish", () => lastPublishAndWaiting(s)),
-    ]);
-    if ([decisions, proposals, dels, invites, held].every((r) => r === null)) return null;
-    return needsYou({
-      now,
-      decisions,
-      proposals,
-      todo: null,
-      jobs: null,
-      deletions: dels,
-      invitations: invites,
-      heldChanges: held,
-      runs: null,
-      counts: null,
-      lastPublished: null,
-      queue: null,
-      health: null,
-      collisions,
-      publish: published ? inboxPublish(published) : null,
-    }).length;
+    const input = await cheapInput(now);
+    if ([input.decisions, input.proposals, input.deletions, input.invitations, input.heldChanges].every((r) => r === null)) return null;
+    return needsYou(input).length;
   } catch {
     return null;
   }

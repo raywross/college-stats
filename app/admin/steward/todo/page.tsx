@@ -14,6 +14,7 @@ import { readLogins, readTodo } from "@/lib/admin/steward-reads";
 import { TODO_KIND_LABEL, linkCls, pageParam, param } from "@/lib/admin/steward-view";
 import { dayLabel } from "@/lib/admin/ops-view";
 import { pageOf } from "@/lib/admin/health-view";
+import { withTiming } from "@/lib/timing-server";
 import { ASSISTANT_BATCH, assistantRows } from "@/lib/steward/todo-assistant";
 import { WORK_TODO_ZIP_PATH } from "@/lib/steward/work-todo-skill";
 import type { LoginDoc, TodoDoc } from "@/lib/steward/types";
@@ -32,9 +33,15 @@ const PER_PAGE = 100;
  * the rows the assistant in the owner's browser may work, with every form saying so. The Logins panel lists the hosts
  * the owner has an account on (`steward.logins`).
  */
-export default async function TodoPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function TodoPage({ searchParams }: { searchParams: Promise<Params> }) {
   await connection();
   await requireAdmin();
+  return withTiming("/admin/steward/todo", () => renderTodo(searchParams));
+}
+
+type Params = Record<string, string | string[] | undefined>;
+
+async function renderTodo(searchParams: Promise<Params>) {
   const params = await searchParams;
   const rawKind = param(params.kind);
   const kind = KINDS.includes(rawKind as TodoDoc["kind"]) ? (rawKind as TodoDoc["kind"]) : null;
@@ -42,8 +49,8 @@ export default async function TodoPage({ searchParams }: { searchParams: Promise
   const assistant = param(params.assistant) === "1";
   const supabase = await adminSupabase();
   const client = supabase as unknown as StoreClient;
-  const lists = await listsByUnit();
-  const [all, logins] = await Promise.all([readTodo(client, { demand: lists }), readLogins(client)]);
+  // The logins don't wait on the lists (readTodo needs them for its order).
+  const [{ lists, all }, logins] = await Promise.all([listsByUnit().then(async (lists) => ({ lists, all: await readTodo(client, { demand: lists }) })), readLogins(client)]);
   const byKind = all.filter((r) => !kind || r.kind === kind);
   const rows = assistant ? assistantRows(byKind, logins) : byKind.filter((r) => closed || r.status === "open" || r.status === "found");
   const page = assistant ? { rows, page: 1, pages: 1, total: rows.length, from: rows.length ? 1 : 0, to: rows.length } : pageOf(rows, pageParam(params.page), PER_PAGE);

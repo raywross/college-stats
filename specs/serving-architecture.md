@@ -558,6 +558,17 @@ Preview or Production, then redeploy; locally `QUAD_TIMING=1 npx next start`). T
 - the counselor pages log under `/org`, `/org/students/[id]`, and `/org/export` (since 2026-11-08; each is the
   session's viewer bundle beside one org bundle, so two waves, `specs/product/counselor-portal.md` "The reads"), and one
   essay under `/advisor/essays/[id]` with the spans `essay viewer`, `essay read`, and `essay colleges`.
+- the admin console's heavier pages log under their route patterns (since 2026-11-10, `specs/product/admin-speed.md`):
+  `/admin/data/colleges/[unit]`, `/admin/people/[user]`, `/admin/students/[id]`, `/admin/households/[id]`,
+  `/admin/data`, `/admin/data/health`, and `/admin/steward/jobs`. Each wraps the page's whole data work, the admin
+  check included, so the line's waves are the page's: a college reads in two (the check, then one parallel wave), a
+  household in three, a person in five (six when the college-views record is written), a student in six (the check,
+  the access row, then four). `tests/admin-waves.test.mts` checks that each label is a route pattern.
+  `/admin/steward/findings` and `/admin/steward/todo` wrap their data work after the admin check. The Inbox (`/admin`)
+  streams three panels that React renders after the page function returns, so each logs its own line:
+  `/admin needs-you`, `/admin steward-did`, `/admin how-things-are` (the reads are shared per request with the
+  layout's badge, which isn't timed, so a round trip the badge started shows on no line; the panel's time still
+  includes waiting for it).
 - signed-in routes that go through `proxy.ts` carry a `Server-Timing: proxy;dur=…` response header (the session
   check), visible in the browser's network panel. The page's own timings can't ride in a header: the page streams
   (its headers leave before the render finishes), so they go to the log line.

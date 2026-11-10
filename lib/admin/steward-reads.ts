@@ -6,6 +6,10 @@
  * review". Server code: every read takes the admin's client (`adminSupabase()`, lib/admin/people.ts), and the callers
  * check `requireAdmin()` first. `data_documents` selects for everyone, so the reads need no service key.
  *
+ * Only the clusters (and "Colleges to review" when not handed the clusters' items) read the whole queue; To do reads
+ * the few hundred items with an acquisition check, and a college's Review page reads that college's items
+ * (lib/admin/review-queue.ts `readAcquisitionQueueItems`, `readCollegeQueueItems`; specs/product/admin-speed.md).
+ *
  * Fail soft: a missing table (a project before the data platform's migration) reads as empty. Pure but for the reads.
  */
 import { CDS_TEMPLATE } from "../cds-template.ts";
@@ -19,7 +23,7 @@ import { kindContext, kindOf } from "../steward/kinds.ts";
 import { reviewColleges, reviewRows, type CollegeToReview, type ReviewGroup } from "../steward/review-rows.ts";
 import { mergeTodo, todoRows, type BlockedDirectoryLike, type FailureRowLike } from "../steward/todo-sources.ts";
 import type { AuditDoc, Cluster, DecisionDoc, IssueDoc, IssueKind, LoginDoc, ProposalDoc, ProposalStatus, RunDoc, TodoDoc } from "../steward/types.ts";
-import { readCollection, readDocuments, readQueue, type StoreClient } from "./review-queue.ts";
+import { readAcquisitionQueueItems, readCollection, readCollegeQueueItems, readDocuments, readQueue, type StoreClient } from "./review-queue.ts";
 
 /** The collections these reads use (scripts/lib/data-platform/layers.mts `COLLECTIONS.steward`; a test checks they agree). */
 export const STEWARD_COLLECTIONS = {
@@ -117,11 +121,16 @@ export type ClustersRead =
     }
   | { ok: false; reason: string };
 
-let clusterCache: { items: ReviewItem[]; clusters: ClusterView[]; free: Set<string> } | null = null;
+let clusterCache: { items: ReviewItem[]; updated: string | null; clusters: ClusterView[]; free: Set<string> } | null = null;
 
 /** Forgets the cached clusters (tests; the queue's own cache is `resetQueueCache`). */
 export function resetClusterCache(): void {
   clusterCache = null;
+}
+
+/** The clusters this instance last computed, without reading anything; null when none are cached. */
+export function cachedClusters(): ClustersRead | null {
+  return clusterCache ? { ok: true, updated: clusterCache.updated, clusters: clusterCache.clusters, items: clusterCache.items, free: clusterCache.free } : null;
 }
 
 /**
@@ -136,8 +145,9 @@ export async function readClusters(client: StoreClient, now: () => number = Date
     const docs = await readKeys(client, SOURCE_COLLECTIONS.docs);
     const context = kindContext(queue.items, { fetched: docs && docs.size ? (sha) => docs.has(sha) : undefined });
     const clusters = clusterQueue(queue.items, { publishedBy: shownOnSite }).map((cluster) => ({ cluster, kind: kindOf(cluster, context) }));
-    clusterCache = { items: queue.items, clusters, free: freeDetailChecks(queue.items) };
+    clusterCache = { items: queue.items, updated: queue.updated, clusters, free: freeDetailChecks(queue.items) };
   }
+  clusterCache.updated = queue.updated;
   return { ok: true, updated: queue.updated, clusters: clusterCache.clusters, items: queue.items, free: clusterCache.free };
 }
 
@@ -207,18 +217,23 @@ function failureRows(body: unknown): FailureRowLike[] {
 /**
  * Every To do row: the stored `steward.todo` documents over the rows the engines' records give (`reported.failures`,
  * the queue's unreachable and not-a-url items, `directories.blocked`), highest reach first. `demand` (unit id → the
- * families' lists it is on: lib/admin/essays.ts `listsByUnit`) fills each college's demand when given.
+ * families' lists it is on: lib/admin/essays.ts `listsByUnit`) fills each college's demand when given. The queue's
+ * items are only those with an acquisition check (`readAcquisitionQueueItems`), never the whole queue; when they can't
+ * be read, the rows come from the other sources alone.
  */
 export async function readTodo(client: StoreClient, opts: { demand?: ReadonlyMap<string, number> | null; now?: () => number } = {}): Promise<TodoDoc[]> {
-  const [stored, failures, blocked, queue] = await Promise.all([
+  const [stored, failures, blocked, queueItems] = await Promise.all([
     readSoft<TodoDoc>(client, STEWARD_COLLECTIONS.todo),
     readSoft<unknown>(client, SOURCE_COLLECTIONS.failures),
     readSomeSoft<{ blocked?: BlockedDirectoryLike[] }>(client, SOURCE_COLLECTIONS.blocked, ["blocked"]),
-    readQueue(client, opts.now),
+    readAcquisitionQueueItems(client).catch((e: unknown) => {
+      if (!isMissingTable(e)) console.error("[steward] To do: the review queue's acquisition items could not be read", e);
+      return [] as ReviewItem[];
+    }),
   ]);
   const generated = todoRows({
     failures: [...failures.values()].flatMap(failureRows),
-    queueItems: queue.ok ? queue.items : [],
+    queueItems,
     blockedDirectories: blocked.get("blocked")?.blocked ?? [],
   });
   return mergeTodo(generated, stored.values(), opts.demand);
@@ -248,16 +263,27 @@ export interface ReviewRead {
   queueOk: boolean;
 }
 
-/** One college's Review page: its To do rows, then its open items and pending proposal rows grouped by code. */
-export async function readReviewRows(client: StoreClient, unit: string, data: ReviewData, opts: { now?: () => number } = {}): Promise<ReviewRead> {
-  const [clusters, records, proposals, failures, stored] = await Promise.all([
-    readClusters(client, opts.now),
+/**
+ * One college's Review page: its To do rows, then its open items and pending proposal rows grouped by code. Reads the
+ * college's own items (`readCollegeQueueItems`), never the whole queue; the issues' cluster keys use the queue-wide
+ * "free" checks only when this instance already has the clusters (`cachedClusters`), else the college's own.
+ */
+export async function readReviewRows(client: StoreClient, unit: string, data: ReviewData): Promise<ReviewRead> {
+  const [queue, records, proposals, failures, stored] = await Promise.all([
+    readCollegeQueueItems(client, unit).then(
+      (items) => ({ ok: true as const, items }),
+      (e: unknown) => {
+        if (!isMissingTable(e)) console.error(`[steward] ${unit}'s review items could not be read`, e);
+        return { ok: false as const, items: [] as ReviewItem[] };
+      },
+    ),
     readSomeSoft<CollegeRecord>(client, SOURCE_COLLECTIONS.cdsRecords, [unit]),
     readProposals(client),
     readSomeSoft<unknown>(client, SOURCE_COLLECTIONS.failures, [unit]),
     readSoft<TodoDoc>(client, STEWARD_COLLECTIONS.todo),
   ]);
-  const items = clusters.ok ? clusters.items.filter((i) => i.unit_id === unit) : [];
+  const items = queue.items.filter((i) => i.unit_id === unit);
+  const clusters = cachedClusters();
   const generated = todoRows({ failures: failureRows(failures.get(unit)), queueItems: items, blockedDirectories: [] });
   const todo = mergeTodo(generated, [...stored.values()].filter((t) => t.unit_id === unit)).filter((t) => t.status === "open" || t.status === "found");
   const groups = reviewRows(unit, {
@@ -266,14 +292,23 @@ export async function readReviewRows(client: StoreClient, unit: string, data: Re
     proposals,
     citeField: data.citeField,
     school: data.getSchoolById(unit) ?? null,
-    free: clusters.ok ? clusters.free : undefined,
+    free: clusters?.ok ? clusters.free : undefined,
     template: CDS_TEMPLATE,
   });
-  return { todo, groups, queueOk: clusters.ok };
+  return { todo, groups, queueOk: queue.ok };
 }
 
-/** Colleges with pending rows, most visible changes first, then "your call" rows (the Issues screen). */
-export async function collegesToReview(client: StoreClient, opts: { names?: ReadonlyMap<string, string>; now?: () => number } = {}): Promise<CollegeToReview[]> {
-  const [queue, proposals] = await Promise.all([readQueue(client, opts.now), readProposals(client)]);
-  return reviewColleges(queue.ok ? queue.items : [], proposals, opts.names);
+/**
+ * Colleges with pending rows, most visible changes first, then "your call" rows (the Issues screen). `items` are the
+ * queue's items when the caller already has them (`readClusters`'s `items`), so the queue isn't read again.
+ */
+export async function collegesToReview(
+  client: StoreClient,
+  opts: { names?: ReadonlyMap<string, string>; now?: () => number; items?: readonly ReviewItem[] } = {},
+): Promise<CollegeToReview[]> {
+  const [items, proposals] = await Promise.all([
+    opts.items ? Promise.resolve(opts.items) : readQueue(client, opts.now).then((q) => (q.ok ? q.items : [])),
+    readProposals(client),
+  ]);
+  return reviewColleges(items, proposals, opts.names);
 }

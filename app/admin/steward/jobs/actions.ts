@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 import { requireAdmin } from "@/lib/admin/auth";
 import { realOpsDeps } from "@/lib/admin/ops";
+import { resetJobsMemo } from "@/lib/jobs/github-memo";
 import { closeDataPull, dispatchRun, holdDataPull, mergeDataPull, pullNumber, readDispatchForm, type OpsState } from "@/lib/admin/ops-actions";
 
 /**
@@ -16,9 +17,16 @@ import { closeDataPull, dispatchRun, holdDataPull, mergeDataPull, pullNumber, re
 
 const BAD_FORM: OpsState = { status: "error", message: "That form wasn't complete. Reload the page and try again." };
 
-/** A finished action shows its result; the page re-reads GitHub so the lists catch up. */
+/**
+ * A finished action shows its result; the page re-reads GitHub so the lists catch up. The last-runs memo
+ * (lib/jobs/github-memo.ts) is dropped first, so the refreshed list asks GitHub instead of serving the
+ * minute-old answer from before the dispatch.
+ */
 function finish(state: OpsState): OpsState {
-  if (state.status === "done") refresh();
+  if (state.status === "done") {
+    resetJobsMemo();
+    refresh();
+  }
   return state;
 }
 

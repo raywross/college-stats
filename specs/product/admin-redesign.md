@@ -330,6 +330,9 @@ Recommended defaults; the build proceeds on them unless the owner says otherwise
 
 ## As built
 
+Since 2026-11-10 the Inbox streams its three panels and shares the badge's reads within a request; the words, order,
+links, and help ids are unchanged ([admin-speed.md "As built: U3"](admin-speed.md#as-built-u3-inbox-2026-11-10)).
+
 ### Unit 1: shell and words (2026-11-08, `feature/admin-redesign-shell`)
 
 - **Doors.** `lib/admin/console.ts` exports `ADMIN_DOORS` (Steward, People, Data, More), `activeDoor()`,

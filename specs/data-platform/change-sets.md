@@ -28,6 +28,39 @@ There are two kinds of hold, kept distinct because they mean different things:
   writes a **field edit** (source `quad-edit`, note "Accepted from the review queue: {document}"); *Reject* resolves
   the item (`admin_data_resolve_review`); *Re-run discovery* dispatches the workflow as today. No PR is made.
 
+### The review queue's read model (2026-11-10)
+The console reads the review queue from a table, `public.review_items`, not from its documents
+(`supabase/migrations/20261110120000_admin_speed.sql`; why: `specs/product/admin-speed.md` "What was measured": the
+queue was 21,977 documents, 11 MB, read whole in 22 sequential pages twice per Inbox, behind an un-indexed
+newest-write scan of 230 ms idle to 2 s under load).
+- **The documents stay the write path and the history.** `data_write_documents` (the pipeline, the Steward's tools),
+  `admin_data_resolve_review`, and every script still write `reported.review_queue` documents with their versions and
+  change sets, unchanged. Two row triggers on `data_documents` (`review_items_sync` after insert or update,
+  `review_items_sync_delete` after delete; one trigger can't, because an insert trigger's `WHEN` can't read `OLD`)
+  keep one row per queue document through `review_items_put`: `key`, `unit_id` (the body's, else the key's first
+  part), `edition` and `code` (the key's parts, null when empty), `sha256`, `status` (`open`, `accepted`,
+  `rejected` from the body's `resolved`, `open` otherwise), `checks` (the distinct `failures[].check`, in order),
+  `queued` (a date, null when it doesn't parse), the whole `body` (jsonb), `version`, `updated_at`. Indexed on
+  `(status, queued desc)`, `unit_id`, `updated_at desc`, and `checks` (gin). Selects for everyone, as
+  `data_documents` does; nobody writes it directly.
+- **The sync never blocks a write.** A body it can't read (not an object, or `failures` not an array) is left out,
+  its old row removed, with a `WARNING review_items_sync: …` in the database log; the document still commits. The
+  migration backfills through the same function, so the backfill and the trigger give identical rows (tested).
+  A `truncate` of `data_documents` fires no row trigger; nothing truncates it (the store deletes through
+  `data_write_documents`), and re-applying the migration rebuilds the table if it ever drifts.
+- **The reads** (`lib/admin/review-queue.ts`): `review_items_counts()` (open, accepted, rejected, new this week, the
+  newest write: the Inbox tile and the cache key) and `review_items_light(p_status)` (the whole queue, or one status,
+  as one JSON array of the fields the clusters need: `unit_id`, `name`, `failures`, `code`, `edition`, `sha256`,
+  `resolved`; 8 MB in 0.3 s of Postgres time) are one round trip each; `readQueue` shares one read in flight per
+  instance. To do reads only the open items whose `checks` overlap `unreachable`/`not-a-url`; a college's Review
+  page reads only that college's rows. The newest-write check on documents is an index lookup
+  (`data_documents_collection_updated`).
+- **Fallback.** Code deployed before the migration is applied reads the documents as before (a missing function or
+  table, `PGRST202`/`PGRST205`, logs one warning per instance), so the migration and the deploy can go in either order.
+- **Retention, an owner decision** (`admin-speed.md` "Owner decisions" 2): every item is open and the table grows by
+  about a run's new items. A rule (delete resolved items after 90 days, or close superseded ones as `expired`) would be
+  a `delete … where` on the documents through a change set; the triggers carry it to the table.
+
 ## Revert
 `admin_data_revert(change_set)` writes a new change set of kind `revert` whose documents are, for every document the
 original touched, the version just before it (or a deletion when the original created it). It refuses when a later

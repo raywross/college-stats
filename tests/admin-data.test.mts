@@ -37,7 +37,7 @@ const STUBS: Record<string, string> = {
   "server-only": "export {}",
   "next/navigation": `export function notFound(){${NOT_FOUND}} export function redirect(u){throw new Error('redirect '+u)}`,
   "next/cache": "export function refresh(){globalThis.__world.refreshed++}",
-  "next/server": "export async function connection(){}",
+  "next/server": "export async function connection(){} export function after(){}",
   "@/lib/admin/auth": `export async function requireAdmin(){globalThis.__world.calls.push('requireAdmin'); if(!globalThis.__world.admin){${NOT_FOUND}} return {userId:'admin-1'}}`,
   "@/lib/admin/people": "export async function adminSupabase(){globalThis.__world.calls.push('adminSupabase'); return globalThis.__world.supabase()}",
   // The pages' data-reads: the Overview and Snapshots loaders stubbed as before; everything else (the Change sets
@@ -47,7 +47,7 @@ const STUBS: Record<string, string> = {
     "export async function loadDataOverview(){globalThis.__world.calls.push('loadDataOverview'); return globalThis.__world.overview} " +
     "export async function loadSnapshots(){globalThis.__world.calls.push('loadSnapshots'); return globalThis.__world.snapshots} " +
     "export function currentSnapshotId(rows){return globalThis.__world.currentId} " +
-    "export function formatBytes(n){return n + ' B'} export function manifestBytes(m){return (m && m.colleges) || 0} " +
+    "export function formatBytes(n){return n + ' B'} export function manifestBytes(m){return (m && m.colleges) || 0} export function snapshotBytes(s){return (s && s.manifest && s.manifest.colleges) || 0} " +
     "export function manifestDownloadUrl(id){return 'https://example.test/snapshots/'+id+'/manifest.json'}",
   // Families' lists (lib/admin/essays.ts listsByUnit reads list_items with the admin's session): driven by `world`.
   "@/lib/admin/essays": "export async function listsByUnit(){globalThis.__world.calls.push('listsByUnit'); return globalThis.__world.lists}; export const ESSAY_STATUS_LABELS = { refers_to_form: 'Refers to the form', not_read: 'Not read' };",
@@ -138,17 +138,68 @@ test("fetchEnvironmentSnapshot reads the meta tag over a fake fetch, and fails s
   assert.equal((await reads.fetchEnvironmentSnapshot(env, (async () => { throw new Error("timed out"); }) as unknown as typeof fetch)).snapshot, "unknown", "a thrown error (a timeout)");
 });
 
+test("fetchEnvironmentSnapshot asks /api/snapshot first and reads the home page only when the deploy has no such endpoint", async () => {
+  const env = { label: "usequad.app", url: "https://usequad.app/" };
+  const seen: string[] = [];
+  const serve = (routes: Record<string, () => Response>) =>
+    (async (url: string) => {
+      seen.push(url);
+      const r = routes[url];
+      if (!r) throw new Error(`unexpected ${url}`);
+      return r();
+    }) as unknown as typeof fetch;
+  const json = (body: unknown, status = 200) => () => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+  const html = (body: string, status = 200) => () => new Response(body, { status });
+
+  seen.length = 0;
+  assert.equal((await reads.fetchEnvironmentSnapshot(env, serve({ "https://usequad.app/api/snapshot": json({ snapshot: "12" }) }))).snapshot, "12");
+  assert.deepEqual(seen, ["https://usequad.app/api/snapshot"], "one small request; the home page is never fetched");
+
+  seen.length = 0;
+  assert.equal((await reads.fetchEnvironmentSnapshot(env, serve({ "https://usequad.app/api/snapshot": json({ snapshot: null }) }))).snapshot, "unknown", "null: the deploy can't tell");
+  assert.deepEqual(seen, ["https://usequad.app/api/snapshot"]);
+
+  seen.length = 0;
+  const older = serve({ "https://usequad.app/api/snapshot": html("Not found", 404), "https://usequad.app/": html('<meta name="x-quad-snapshot" content="7">') });
+  assert.equal((await reads.fetchEnvironmentSnapshot(env, older)).snapshot, "7", "an older deploy (404) falls back to the meta tag");
+  assert.deepEqual(seen, ["https://usequad.app/api/snapshot", "https://usequad.app/"]);
+
+  seen.length = 0;
+  const catchAll = serve({ "https://usequad.app/api/snapshot": html("<html>a page</html>"), "https://usequad.app/": html('<meta name="x-quad-snapshot" content="6">') });
+  assert.equal((await reads.fetchEnvironmentSnapshot(env, catchAll)).snapshot, "6", "a 200 that isn't the JSON also falls back, once");
+
+  seen.length = 0;
+  const timedOut = (async (url: string) => {
+    seen.push(url);
+    throw new DOMException("timed out", "TimeoutError");
+  }) as unknown as typeof fetch;
+  assert.equal((await reads.fetchEnvironmentSnapshot(env, timedOut)).snapshot, "unknown");
+  assert.deepEqual(seen, ["https://usequad.app/api/snapshot"], "a timeout is 'unknown' at once, not a second, slower request");
+
+  const src = read("lib/admin/data-reads.ts");
+  assert.match(src, /const ENVIRONMENT_FETCH_TIMEOUT_MS = 2_000;/, "the endpoint's timeout is 2 s");
+});
+
+test("app/api/snapshot answers the served snapshot id as JSON, never cached, from the same source as the meta tag", async () => {
+  const src = read("app/api/snapshot/route.ts");
+  assert.match(src, /export const dynamic = "force-dynamic"/);
+  assert.match(src, /"Cache-Control": "no-store"/);
+  assert.match(src, /getSnapshotId\(\)/, "the layout's meta tag reads getSnapshotId (app/layout.tsx)");
+  assert.match(read("app/layout.tsx"), /getSnapshotId\(\)/);
+  assert.doesNotMatch(src, /requireAdmin|getUser|cookies\(/, "no auth: the id is in every page's HTML already");
+});
+
 test("loadEnvironmentSnapshots probes every configured environment in parallel and never throws", async () => {
   const before = process.env.DATA_ENVIRONMENTS;
   process.env.DATA_ENVIRONMENTS = "usequad.app=https://usequad.app,this preview=https://pr-1.vercel.app";
   const seen: string[] = [];
   const fake = (async (url: string) => {
     seen.push(url);
-    return { ok: true, text: async () => `<meta name="x-quad-snapshot" content="${url.includes("pr-1") ? "9" : "8"}">` } as unknown as Response;
+    return new Response(JSON.stringify({ snapshot: url.includes("pr-1") ? "9" : "8" }), { status: 200 });
   }) as typeof fetch;
   const out = await reads.loadEnvironmentSnapshots(fake);
   process.env.DATA_ENVIRONMENTS = before;
-  assert.deepEqual(seen.sort(), ["https://pr-1.vercel.app", "https://usequad.app"]);
+  assert.deepEqual(seen.sort(), ["https://pr-1.vercel.app/api/snapshot", "https://usequad.app/api/snapshot"]);
   assert.deepEqual(out, [
     { label: "usequad.app", url: "https://usequad.app", snapshot: "8" },
     { label: "this preview", url: "https://pr-1.vercel.app", snapshot: "9" },
@@ -279,6 +330,103 @@ test("loadDataOverview reads the environments, the last publish, the change sets
   assert.equal(overview.holds.length, 1);
   assert.deepEqual(overview.waiting, { count: 1, oldestAt: "2026-10-12T00:00:00Z" });
   assert.equal(overview.environments[0].snapshot, "1");
+});
+
+/* The snapshot row, read small (specs/product/admin-speed.md wave 1, fix 2) */
+
+/** A client that records each select string and answers like PostgREST: the aliased JSON paths as top-level keys. */
+function snapshotClient(opts: { bytesMissing?: boolean; row?: Record<string, unknown> } = {}) {
+  const selects: string[] = [];
+  const row = opts.row ?? { id: 7, created_at: "2026-11-08T00:00:00Z", created_by: null, status: "published", change_set_ids: [1, 2], previous_id: 6, pointer_at: "2026-11-08T00:00:00Z", notes: null };
+  const answer = (cols: string) => {
+    if (opts.bytesMissing && cols.includes("snapshot_bytes")) return { data: null, error: { code: "PGRST100", message: "could not find snapshot_bytes" } };
+    const out: Record<string, unknown> = { ...row, colleges: 1893, layers: { "base.colleges": 4 } };
+    if (cols.includes("bytes:snapshot_bytes")) out.bytes = 6_100_000;
+    if (cols.includes("objects:manifest->objects")) out.objects = { "colleges.json.gz": { bytes: 100, sha256: "a" }, "lineage/1.json": { bytes: 50, sha256: "b" } };
+    return { data: out, error: null };
+  };
+  const chain = (cols: string, single: boolean): Record<string, unknown> => {
+    const self: Record<string, unknown> = {
+      eq: () => self,
+      order: () => self,
+      limit: () => self,
+      maybeSingle: () => chain(cols, true),
+      then: (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) => {
+        const a = answer(cols);
+        return Promise.resolve(single || a.error ? a : { data: [a.data], error: null }).then(resolve, reject);
+      },
+    };
+    return self;
+  };
+  return {
+    selects,
+    client: {
+      from: (table: string) => {
+        assert.equal(table, "data_snapshots");
+        return { select: (cols: string) => (selects.push(cols), chain(cols, false)) };
+      },
+    } as never,
+  };
+}
+
+test("the snapshot reads select columns, never the manifest's objects map; the manifest is rebuilt from the JSON paths", async () => {
+  assert.doesNotMatch(reads.SNAPSHOT_COLUMNS, /(^|[ ,])(manifest|\*)([ ,]|$)/, "never the whole manifest or every column");
+  assert.doesNotMatch(reads.SNAPSHOT_COLUMNS, /objects/, "never the objects map");
+  assert.match(reads.SNAPSHOT_COLUMNS, /colleges:manifest->colleges/);
+  assert.match(reads.SNAPSHOT_COLUMNS, /layers:manifest->layers/);
+  const src = read("lib/admin/data-reads.ts");
+  assert.doesNotMatch(src, /from\("data_snapshots"\)\.select\("\*"\)/, "no select * of data_snapshots anywhere in the console's reads");
+
+  reads.resetSnapshotBytesProbe();
+  const badge = snapshotClient();
+  const last = await reads.lastPublishedSnapshot(badge.client);
+  assert.deepEqual(badge.selects, [reads.SNAPSHOT_COLUMNS], "the badge and the Inbox: the small columns, no size");
+  assert.equal(last?.id, 7);
+  assert.deepEqual(last?.manifest, { colleges: 1893, layers: { "base.colleges": 4 } }, "manifest.colleges is where the Inbox tile and the pages read it");
+  assert.equal("colleges" in (last as object), false, "the aliased keys move under manifest");
+
+  const overview = snapshotClient();
+  const withSize = await reads.lastPublishedSnapshot(overview.client, { bytes: true });
+  assert.deepEqual(overview.selects, [`${reads.SNAPSHOT_COLUMNS}, bytes:snapshot_bytes`], "the size is computed in Postgres");
+  assert.equal(withSize?.bytes, 6_100_000);
+  assert.equal(reads.snapshotBytes(withSize!), 6_100_000);
+
+  const versions = snapshotClient();
+  const list = await reads.loadSnapshots(versions.client);
+  assert.deepEqual(versions.selects, [`${reads.SNAPSHOT_COLUMNS}, bytes:snapshot_bytes`]);
+  assert.equal(list[0].manifest.colleges, 1893);
+  assert.equal(reads.snapshotBytes(list[0]), 6_100_000);
+});
+
+test("before the size function exists, the two screens that show a size read the objects map once more, and only once per instance ask for the function", async () => {
+  reads.resetSnapshotBytesProbe();
+  const warned: string[] = [];
+  const warn = console.warn;
+  console.warn = (m: string) => void warned.push(m);
+  try {
+    const missing = snapshotClient({ bytesMissing: true });
+    const row = await reads.lastPublishedSnapshot(missing.client, { bytes: true });
+    assert.deepEqual(missing.selects, [`${reads.SNAPSHOT_COLUMNS}, bytes:snapshot_bytes`, `${reads.SNAPSHOT_COLUMNS}, objects:manifest->objects`]);
+    assert.equal(reads.snapshotBytes(row!), 150, "summed from the objects map");
+    assert.equal(warned.length, 1);
+    const again = snapshotClient({ bytesMissing: true });
+    await reads.loadSnapshots(again.client);
+    assert.deepEqual(again.selects, [`${reads.SNAPSHOT_COLUMNS}, objects:manifest->objects`], "the probe isn't repeated");
+    const badge = snapshotClient({ bytesMissing: true });
+    await reads.lastPublishedSnapshot(badge.client);
+    assert.deepEqual(badge.selects, [reads.SNAPSHOT_COLUMNS], "the badge never reads the objects map, function or not");
+  } finally {
+    console.warn = warn;
+    reads.resetSnapshotBytesProbe();
+  }
+});
+
+test("the pages show the size through snapshotBytes, never by summing a manifest they no longer read", () => {
+  for (const f of ["app/admin/data/page.tsx", "components/admin/Snapshots.tsx"]) {
+    const src = read(f);
+    assert.match(src, /snapshotBytes\(/, f);
+    assert.doesNotMatch(src, /manifestBytes\(/, f);
+  }
 });
 
 test("loadSnapshots: the newest 50, newest first", async () => {
@@ -837,13 +985,13 @@ test("readCollection pages through a whole collection by key (keyset), and readD
   assert.deepEqual([...some.keys()], ["100001|2025-26|C.116"]);
 });
 
-test("readQueue: rows from the store, read whole again only after a new write (or once the cache is old), never throwing", async () => {
+test("readQueue without the read model (a project before 20261110120000_admin_speed.sql): rows from the documents, read whole again only after a new write (or once the cache is old), never throwing", async () => {
   reviewQueue.resetQueueCache();
   const rejected = { ...c1Item("C.901", 0.3), resolved: "rejected" as const, resolved_on: "2026-10-30" };
   const tables = { data_documents: [...TRIO, HELD, rejected].map((i) => doc("reported.review_queue", reviewKey(i), i)) };
   const client = fakeSupabase(tables);
   let selects = 0;
-  const counting = { from: (t: string) => ({ select: () => (selects++, client.from(t).select()) }) };
+  const counting = { from: (t: string) => ({ select: () => (selects++, client.from(t).select()) }), rpc: client.rpc };
   let now = 1_000_000;
   const first = await reviewQueue.readQueue(counting as never, () => now);
   assert.ok(first.ok);
@@ -861,7 +1009,7 @@ test("readQueue: rows from the store, read whole again only after a new write (o
   const before = selects;
   await reviewQueue.readQueue(counting as never, () => now);
   assert.ok(selects > before + 1, "an old cache is read again even without a new write (a deletion moves no updated_at)");
-  const broken = { from: () => ({ select: () => ({ eq: () => ({ order: () => ({ limit: async () => ({ data: null, error: { message: "paused" } }) }) }) }) }) };
+  const broken = { from: () => ({ select: () => ({ eq: () => ({ order: () => ({ limit: async () => ({ data: null, error: { message: "paused" } }) }) }) }) }), rpc: client.rpc };
   assert.deepEqual(await reviewQueue.readQueue(broken as never), { ok: false, reason: "admin: reading reported.review_queue failed: paused" });
   reviewQueue.resetQueueCache();
 });

@@ -16,7 +16,7 @@ run-name: "${{ inputs.request_id && format('{0} · {1}', github.workflow, inputs
 
 on:
   schedule:
-    - cron: "0 7 * * *" # 07:00 UTC daily: 3 am Eastern, after the colleges' own overnight changes
+    - cron: "23 6 * * *" # 06:23 UTC daily: about 2 am Eastern. Off the hour: GitHub starts ":00" schedules hours late (every run of the first week of November 2026 began between 13:47 and 17:16 UTC, in the owner's working day)
   workflow_dispatch:
     inputs:
       target:

@@ -10,7 +10,7 @@ import { ViewedBeacon } from "@/components/visits/ViewedBeacon";
 import { authConfigured, requireUser } from "@/lib/auth";
 import { myFollows } from "@/lib/follows";
 import { getData } from "@/lib/data";
-import { eventsForMe, myMeasuringPoint, myVisitMutes, myVisitPrefs, readTimeLine } from "@/lib/visit-events/read";
+import { eventsForMe, myMeasuringPoint, myVisitMutes, myVisitPrefs, readAtFor, readTimeLine } from "@/lib/visit-events/read";
 import { nearYouEvents } from "@/lib/visit-events/view";
 import { isShownKind } from "@/lib/visit-events/types";
 
@@ -38,7 +38,7 @@ export default async function MyVisitsPage() {
   const nonStaff = events.filter((e) => isShownKind(e.kind));
   const near = nearYouEvents(nonStaff, point).filter((e) => e.distanceMiles != null && e.distanceMiles <= prefs.radius_miles);
   // Every list shows when it was read (the spec's display rule): the newest read among the colleges on the page.
-  const lastSeen = nonStaff.reduce<string | null>((max, e) => (max == null || e.last_seen > max ? e.last_seen : max), null);
+  const lastSeen = await readAtFor([...new Set(nonStaff.map((e) => e.unit_id))]);
   const readLine = readTimeLine("each college", lastSeen);
 
   return (

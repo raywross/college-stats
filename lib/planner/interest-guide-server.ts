@@ -6,7 +6,7 @@ import "server-only";
  * acts for that college with each event's zone. Without a college (the overview) it reads nothing.
  */
 import { createServerSupabase } from "@/lib/supabase-server";
-import { eventsForUnit, myMeasuringPoint, myVisitPrefs, readTimeLine } from "@/lib/visit-events/read";
+import { eventsForUnit, myMeasuringPoint, myVisitPrefs, readAt, readTimeLine } from "@/lib/visit-events/read";
 import type { GuideQuery } from "@/components/planner/guides/types";
 import { guideEvents, type InterestGuideData } from "./interest-guide";
 export type { InterestGuideData };
@@ -21,14 +21,12 @@ export async function loadInterestGuide(ctx: PlanContext, _view: PlanView, query
   const school = ctx.schools[query.college];
   if (!item || !school) return null;
 
-  const [events, point, prefs, pending] = await Promise.all([eventsForUnit(query.college, { limit: 50 }), myMeasuringPoint(), myVisitPrefs(), pendingActs(item.id)]);
+  const [events, point, prefs, pending, lastSeen] = await Promise.all([eventsForUnit(query.college, { limit: 50 }), myMeasuringPoint(), myVisitPrefs(), pendingActs(item.id), readAt(query.college)]);
   const picked = guideEvents(events, point, prefs.radius_miles);
   const zones: Record<string, string> = {};
   for (const e of events) if (e.timezone) zones[e.id] = e.timezone;
   const missing = pending.map((p) => p.event_id).filter((id): id is string => Boolean(id) && !zones[id!]);
   if (missing.length) Object.assign(zones, await zonesForEvents(await createServerSupabase(), missing));
-  const lastSeen = events.reduce<string | null>((max, e) => (max == null || e.last_seen > max ? e.last_seen : max), null);
-
   return {
     events: picked,
     readLine: readTimeLine(school.name, lastSeen),

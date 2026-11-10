@@ -97,7 +97,14 @@ visit_event_sync   (id, ran_at, hosts_read, events_new, events_changed, events_r
 - RLS: `authenticated` reads `visit_events` rows that aren't `staff` and aren't past; `anon` reads nothing. Only
   the secret key writes. A signed-out college page learns only a count, through a server call.
 - Lineage ([data-lineage.md](../data-lineage.md)): every row keeps `source_url` and `last_seen`; the display says
-  "Read from UF's event calendar this morning" with the time, never a bare list.
+  "Read from UF's event calendar this morning" with the time, never a bare list. Since 2026-11-10 that time is the
+  host's `slate_hosts.last_read` (`readAt`, `readAtFor` in `lib/visit-events/read.ts`), because the sync writes only
+  the rows that changed: a row seen again with nothing different is not written and its `last_seen` stays (it says
+  when the row was last written). Before, every seen row was rewritten to move `last_seen`, about 220,000 upserts a
+  night for about 1,300 real changes; on the Nano database those upserts ran a second each per 500-row batch, the
+  per-host reads hit the 8-second statement timeout behind them, and signed-in pages timed out while the run lasted
+  (the login hang of 2026-11-10, 15:27–15:43 UTC). The schedule moved to 06:23 UTC: GitHub starts a ":00" schedule
+  hours late (every run of 2026-11-03 to 11-10 began between 13:47 and 17:16 UTC).
 
 ### People's data
 ```
@@ -557,7 +564,7 @@ untouched.
 **Second migration** (`20261013190000_visit_events_moved.sql`): `visit_events.moved_at`, `visit_alert_prefs.created`
 (the first-night rule reads it, so a radius change skips nothing), admin read policies on the three alert tables.
 
-**Workflow** `.github/workflows/visit-events.yml`: 07:00 UTC, target `dev` during the pilot (`DEV_SUPABASE_*`
+**Workflow** `.github/workflows/visit-events.yml`: 06:23 UTC since 2026-11-10 (was 07:00; see "Lineage" above), target `dev` during the pilot (`DEV_SUPABASE_*`
 repository secrets), `prod` by dispatch or by changing `SCHEDULE_TARGET`; skips cleanly without secrets.
 
 **Open from the build:** UNC's stored visit link is a video-tours page (discovery coped; the links data could be

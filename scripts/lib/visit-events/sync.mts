@@ -49,11 +49,33 @@ export type ReadEvent = Omit<VisitEventRow, "first_seen" | "last_seen" | "change
 /* ------------------------------------------------------------------ */
 
 export interface EventDiff {
-  /** Rows to upsert: new, seen again (last_seen moves), changed. */
+  /**
+   * Rows to upsert: new, changed, or seen again with something to reset (a miss count, a removal, a field the page
+   * now reads differently). A row seen again with nothing different is not written (2026-11-10: writing every seen
+   * row moved `last_seen` on ~220,000 rows a night for ~1,300 real changes, and the upserts saturated the database for
+   * a quarter of an hour; a college's "read at" time comes from `slate_hosts.last_read` instead).
+   */
   upserts: StoredEvent[];
   /** Stored rows not seen tonight, with `misses + 1` and `removed_at` at two misses. */
   missed: StoredEvent[];
-  counts: { new: number; changed: number; removed: number; seen: number };
+  counts: { new: number; changed: number; removed: number; seen: number; unchanged: number };
+}
+
+/** Timestamp columns compared by instant (the reader's ISO form and Postgres's differ in text). */
+const INSTANT_FIELDS: ReadonlySet<string> = new Set(["starts_at", "ends_at", "first_seen", "changed_at", "moved_at", "removed_at"]);
+
+/** Whether two stored rows say the same thing, `last_seen` aside (it moves only when a row is written). */
+export function sameStored(a: StoredEvent, b: StoredEvent): boolean {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const k of keys) {
+    if (k === "last_seen") continue;
+    const x = (a as unknown as Record<string, unknown>)[k] ?? null;
+    const y = (b as unknown as Record<string, unknown>)[k] ?? null;
+    if (INSTANT_FIELDS.has(k)) {
+      if (!sameInstant(x as string | null, y as string | null)) return false;
+    } else if (x !== y) return false;
+  }
+  return true;
 }
 
 /** Misses before a row counts as removed: one missed read can be a host hiccup. */
@@ -73,7 +95,7 @@ export function diffEvents(stored: readonly StoredEvent[], read: readonly ReadEv
   const byId = new Map(stored.map((s) => [s.id, s]));
   const seen = new Set<string>();
   const upserts: StoredEvent[] = [];
-  const counts = { new: 0, changed: 0, removed: 0, seen: 0 };
+  const counts = { new: 0, changed: 0, removed: 0, seen: 0, unchanged: 0 };
   for (const r of read) {
     if (seen.has(r.id)) continue;
     seen.add(r.id);
@@ -85,7 +107,7 @@ export function diffEvents(stored: readonly StoredEvent[], read: readonly ReadEv
       continue;
     }
     counts.seen++;
-    const next: StoredEvent = { ...old, ...fresh, first_seen: old.first_seen, last_seen: now, removed_at: null, misses: 0, changed_at: old.changed_at };
+    const next: StoredEvent = { ...old, ...fresh, first_seen: old.first_seen, last_seen: old.last_seen, removed_at: null, misses: 0, changed_at: old.changed_at };
     if (!pageRead) {
       for (const f of PAGE_FIELDS) (next as unknown as Record<string, unknown>)[f] = old[f];
       // A row stored without coordinates (its page failed, or it predates the campus rule) takes the listing's: the
@@ -115,6 +137,13 @@ export function diffEvents(stored: readonly StoredEvent[], read: readonly ReadEv
       old.date_confirmed &&
       (!sameInstant(next.starts_at, old.starts_at) || next.venue !== old.venue || next.address !== old.address || next.city !== old.city);
     next.moved_at = moved ? now : (old.moved_at ?? null);
+    // Written only when something differs (a change, a reset miss count, a reopened removal, a field the page
+    // now says differently); then last_seen moves with the write. The same row read again costs no write.
+    if (sameStored(old, next)) {
+      counts.unchanged++;
+      continue;
+    }
+    next.last_seen = now;
     upserts.push(next);
   }
   const missed: StoredEvent[] = [];

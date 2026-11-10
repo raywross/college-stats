@@ -190,9 +190,12 @@ where not exists (select 1 from public.data_documents d where d.collection = 're
 /* The console's reads                                                 */
 /* ------------------------------------------------------------------ */
 
--- The items of a status (null: every status) as one JSON array in key order: each element the document's fields the
--- console's whole-queue readers use (lib/admin/review-queue.ts `LIGHT_FIELDS`), plus `key`. Not `extraction`: only an
--- Accept reads it, by key through the documents. A field the document doesn't have stays absent.
+-- The items of a status (null: every status) as one JSON array in key order: each element the document minus the
+-- fields no whole-queue reader uses (lib/admin/review-queue.ts `LIGHT_DROPPED`; what stays is `LIGHT_FIELDS`: the
+-- clusters, the kinds, and Colleges to review read `unit_id`, `name`, `failures`, `code`, `edition`, `sha256`,
+-- `resolved`), plus `key`. Accept reads its items whole, by key through the documents. A field the document doesn't
+-- have stays absent. The subtraction is one jsonb operation per row: measured on dev 2026-11-10, a per-row
+-- `jsonb_each` filter took 3.8–6.6 s for 12.5 MB; this form 0.32 s in Postgres for 8.3 MB.
 create or replace function public.review_items_light(p_status text default 'open')
 returns jsonb
 language sql
@@ -202,12 +205,8 @@ set search_path = ''
 as $$
   select coalesce(
     jsonb_agg(
-      jsonb_build_object('key', r.key) || (
-        select coalesce(jsonb_object_agg(e.key, e.value), '{}'::jsonb)
-        from jsonb_each(r.body) e
-        where e.key in ('unit_id', 'name', 'urls', 'entering_term', 'failures', 'queued', 'run', 'code', 'edition',
-                        'sha256', 'value', 'resolved', 'resolved_on', 'resolved_note')
-      )
+      (r.body - array['extraction', 'urls', 'entering_term', 'queued', 'run', 'value', 'resolved_on', 'resolved_note'])
+        || jsonb_build_object('key', r.key)
       order by r.key
     ),
     '[]'::jsonb

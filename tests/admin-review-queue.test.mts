@@ -239,11 +239,15 @@ test("isMissingReadModel: PGRST202, PGRST205, 42P01, 42883 by code or message; n
   for (const e of [{ code: "57014", message: "statement timeout" }, { message: "permission denied for table review_items" }, null]) assert.ok(!rq.isMissingReadModel(e), JSON.stringify(e));
 });
 
-test("LIGHT_FIELDS is the migration's review_items_light field list, without extraction", () => {
+test("LIGHT_DROPPED is the migration's review_items_light subtraction list; LIGHT_FIELDS is what stays, without extraction", () => {
   const sql = readFileSync(join(ROOT, "supabase/migrations/20261110120000_admin_speed.sql"), "utf8");
   const fn = sql.slice(sql.indexOf("create or replace function public.review_items_light"));
-  const list = /where e\.key in \(([^)]*)\)/.exec(fn)?.[1] ?? "";
-  const fields = [...list.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1]);
-  assert.deepEqual(fields, [...rq.LIGHT_FIELDS]);
-  assert.ok(!(fields as string[]).includes("extraction"));
+  const list = /r\.body - array\[([^\]]*)\]/.exec(fn)?.[1] ?? "";
+  const dropped = [...list.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1]);
+  assert.deepEqual(dropped, [...rq.LIGHT_DROPPED]);
+  assert.ok(dropped.includes("extraction"));
+  for (const f of rq.LIGHT_FIELDS) assert.ok(!dropped.includes(f), `${f} is kept`);
+  // Every ReviewItem field is on one list or the other (lib/reported.ts ReviewItem).
+  const all = ["unit_id", "name", "urls", "entering_term", "extraction", "failures", "queued", "run", "code", "edition", "sha256", "value", "resolved", "resolved_on", "resolved_note"];
+  assert.deepEqual([...rq.LIGHT_FIELDS, ...rq.LIGHT_DROPPED].sort(), all.sort());
 });

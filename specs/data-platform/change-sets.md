@@ -50,7 +50,8 @@ newest-write scan of 230 ms idle to 2 s under load).
   `data_write_documents`), and re-applying the migration rebuilds the table if it ever drifts.
 - **The reads** (`lib/admin/review-queue.ts`): `review_items_counts()` (open, accepted, rejected, new this week, the
   newest write: the Inbox tile and the cache key) and `review_items_light(p_status)` (the whole queue, or one status,
-  as one JSON array without the C1 `extraction`) are one round trip each; `readQueue` shares one read in flight per
+  as one JSON array of the fields the clusters need: `unit_id`, `name`, `failures`, `code`, `edition`, `sha256`,
+  `resolved`; 8 MB in 0.3 s of Postgres time) are one round trip each; `readQueue` shares one read in flight per
   instance. To do reads only the open items whose `checks` overlap `unreachable`/`not-a-url`; a college's Review
   page reads only that college's rows. The newest-write check on documents is an index lookup
   (`data_documents_collection_updated`).

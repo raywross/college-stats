@@ -159,7 +159,14 @@ export type QueueRead = { ok: true; updated: string | null; rows: QueueRow[]; it
  * whole-queue readers use (`queueRows`, `clusterQueue`, `kindContext`, `todoRows`, `reviewColleges`). Not
  * `extraction`: only an Accept reads it, by key (`readDocuments`), and the Review page reads its college's whole items.
  */
-export const LIGHT_FIELDS = ["unit_id", "name", "urls", "entering_term", "failures", "queued", "run", "code", "edition", "sha256", "value", "resolved", "resolved_on", "resolved_note"] as const;
+export const LIGHT_FIELDS = ["unit_id", "name", "failures", "code", "edition", "sha256", "resolved"] as const;
+/**
+ * The fields `review_items_light` subtracts from each document (the migration's array; a test checks they agree):
+ * `extraction`, and the ones only Holds' Accept or To do read (`urls`, `entering_term`, `queued`, `run`, `value`,
+ * `resolved_on`, `resolved_note`); those paths read their items by key or through the narrow readers. Without `urls`,
+ * `acceptPlan` over these items refuses every row ("names no document"); nothing renders `readQueue().rows[].accept`.
+ */
+export const LIGHT_DROPPED = ["extraction", "urls", "entering_term", "queued", "run", "value", "resolved_on", "resolved_note"] as const;
 
 export interface QueueCounts {
   open: number;

@@ -328,8 +328,12 @@ console (the Steward's `steward.clusters` document is left for later).
   `review_items_sync_delete`); the backfill; `review_items_light(p_status)` and `review_items_counts()`.
 - **The reads** (`lib/admin/review-queue.ts`): `readQueue` is one counts call (the cache key) plus, on a miss, one
   `review_items_light(null)` call in place of the 22 pages, and concurrent callers share the read in flight. The
-  items carry no `extraction` (nothing that reads the whole queue uses it; Accept reads its items by key, and the
-  Review page reads its college's whole items). New: `readQueueCounts`, `readCollegeQueueItems`,
+  items carry only what the whole-queue readers use (`LIGHT_FIELDS`: `unit_id`, `name`, `failures`, `code`,
+  `edition`, `sha256`, `resolved`); `extraction`, `urls`, and the rest are subtracted in SQL (`LIGHT_DROPPED`).
+  Measured on dev 2026-11-10 by the integrator: the first form of the function (a per-row `jsonb_each` filter
+  keeping 14 fields) took 3.8–6.6 s for 12.5 MB, slower than the 22 pages it replaced; the subtraction form runs
+  in 0.32 s in Postgres and returns 8.3 MB (the failures' details are 3.5 MB of it). Accept reads its items by
+  key, and the Review page reads its college's whole items. New: `readQueueCounts`, `readCollegeQueueItems`,
   `readAcquisitionQueueItems`. `readTodo` and `readReviewRows` (lib/admin/steward-reads.ts) no longer read the whole
   queue; `collegesToReview` takes the clusters' items. Each falls back to the documents when the migration isn't
   applied.

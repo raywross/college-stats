@@ -165,7 +165,7 @@ test("the backfill gives the same rows as the trigger", async () => {
   assert.deepEqual(await rows(w), byTrigger);
 });
 
-test("review_items_light: the light fields in key order, no extraction, absent fields stay absent; by status or every status", async () => {
+test("review_items_light: the light fields in key order, the dropped ones subtracted, absent fields stay absent; by status or every status", async () => {
   const w = await bootDataDb();
   const c1 = { unit_id: "100663", name: "UAB", urls: ["https://uab.edu/cds.pdf"], entering_term: "Fall 2025", extraction: { applicants: 100, admitted: 50, enrolled: 20 }, failures: [{ check: "sum", detail: "x" }], queued: today(), run: "r" };
   await writeAll(w, [
@@ -175,12 +175,14 @@ test("review_items_light: the light fields in key order, no extraction, absent f
   ]);
   const open = await value<Record<string, unknown>[]>(w.db, user(w.eve), "public.review_items_light()");
   assert.deepEqual(open.map((i) => i.key), ["100654|2025-26|C.116", "100663||"]);
-  assert.deepEqual(Object.keys(open[0]).sort(), ["code", "edition", "entering_term", "failures", "key", "name", "queued", "run", "sha256", "unit_id", "urls", "value"]);
-  assert.deepEqual(open[1], { key: "100663||", ...(({ extraction: _, ...rest }) => rest)(c1) });
+  // A subtraction, not a pick: the kept fields and anything the document carries beyond ReviewItem's shape stay.
+  assert.deepEqual(Object.keys(open[0]).sort(), ["code", "edition", "extra_field", "failures", "key", "name", "sha256", "unit_id"]);
+  assert.deepEqual(open[1], { key: "100663||", unit_id: c1.unit_id, name: c1.name, failures: c1.failures });
   const all = await value<Record<string, unknown>[]>(w.db, anon, "public.review_items_light(null)");
   assert.deepEqual(all.map((i) => i.key), ["100654|2025-26|C.116", "100663||", "100706|2025-26|C.901"]);
   assert.equal(all[2].resolved, "rejected");
-  assert.equal(all[2].resolved_note, "no");
+  assert.equal("resolved_note" in all[2], false);
+  assert.equal("urls" in all[2], false);
   const rejected = await value<unknown[]>(w.db, service, "public.review_items_light('rejected')");
   assert.equal(rejected.length, 1);
   assert.deepEqual(await value<unknown[]>(w.db, service, "public.review_items_light('accepted')"), []);

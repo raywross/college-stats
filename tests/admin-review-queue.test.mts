@@ -246,7 +246,7 @@ test("LIGHT_DROPPED is the migration's review_items_light subtraction list; LIGH
   const dropped = [...list.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1]);
   assert.deepEqual(dropped, [...rq.LIGHT_DROPPED]);
   assert.ok(dropped.includes("extraction"));
-  for (const f of rq.LIGHT_FIELDS) assert.ok(!dropped.includes(f), `${f} is kept`);
+  for (const f of rq.LIGHT_FIELDS) assert.ok(!(dropped as string[]).includes(f), `${f} is kept`);
   // Every ReviewItem field is on one list or the other (lib/reported.ts ReviewItem).
   const all = ["unit_id", "name", "urls", "entering_term", "extraction", "failures", "queued", "run", "code", "edition", "sha256", "value", "resolved", "resolved_on", "resolved_note"];
   assert.deepEqual([...rq.LIGHT_FIELDS, ...rq.LIGHT_DROPPED].sort(), all.sort());

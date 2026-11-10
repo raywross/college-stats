@@ -98,6 +98,8 @@ const TIMED: [string, string][] = [
   ["app/admin/data/page.tsx", "/admin/data"],
   ["app/admin/data/health/page.tsx", "/admin/data/health"],
   ["app/admin/steward/jobs/page.tsx", "/admin/steward/jobs"],
+  ["app/admin/steward/findings/page.tsx", "/admin/steward/findings"],
+  ["app/admin/steward/todo/page.tsx", "/admin/steward/todo"],
 ];
 
 /** A label is a route pattern: literal path segments and [param] names, nothing interpolated. */
@@ -114,4 +116,27 @@ test("each timed admin page wraps its data work in withTiming under its route pa
   assert.equal(isRouteLabel("/admin/students/56e84181-28ab-49c1-9eb1-9e1fcb350473"), false, "an id fails");
   assert.equal(isRouteLabel("/admin/data/colleges/166027"), false, "a unit id fails");
   assert.equal(isRouteLabel("`/admin/students/${id}`"), false, "a template fails");
+});
+
+/**
+ * The Inbox (`/admin`) streams three panels (admin-speed U3); React renders them after the page function has returned,
+ * outside any timing the page could start, so each panel times its own reads: the route, a space, the panel's id.
+ */
+const isPanelLabel = (label: string) => {
+  const [route, panel, ...rest] = label.split(" ");
+  return rest.length === 0 && isRouteLabel(route) && /^[a-z]+(-[a-z]+)*$/.test(panel ?? "");
+};
+
+test("the Inbox's three panels each time their reads under /admin and the panel's id", () => {
+  const src = read("app/admin/page.tsx");
+  assert.match(src, /import \{ withTiming \} from "@\/lib\/timing-server";/);
+  const calls = [...src.matchAll(/withTiming\(([^,]+),/g)].map((m) => JSON.parse(m[1].trim()) as string);
+  assert.deepEqual(calls, ["/admin needs-you", "/admin steward-did", "/admin how-things-are"]);
+  for (const label of calls) {
+    assert.ok(isPanelLabel(label), label);
+    const id = label.split(" ")[1];
+    assert.ok(src.includes(`id="${id}"`) || src.includes(`id="${id}-title"`), `${label} names a panel on the page`);
+  }
+  assert.equal(isPanelLabel("/admin needs you"), false, "one word after the route");
+  assert.equal(isPanelLabel("/admin/students/56e84181-28ab-49c1-9eb1-9e1fcb350473 x"), false, "an id fails");
 });

@@ -17,6 +17,7 @@ import { runById } from "@/lib/admin/workflows";
 import { dayLabel, timeLabel, usd } from "@/lib/admin/ops-view";
 import { pageOf } from "@/lib/admin/health-view";
 import { getData } from "@/lib/data";
+import { withTiming } from "@/lib/timing-server";
 import { ISSUE_KINDS, ISSUE_KIND_LABEL, type IssueKind } from "@/lib/steward/types";
 
 export const metadata: Metadata = { title: "Findings", robots: { index: false, follow: false } };
@@ -30,15 +31,29 @@ const COLLEGES_SHOWN = 25;
  * joined with the Steward's issue documents; the last run's summary; Run the Data Steward (steward.yml through the
  * console's dispatch, logged first); and Colleges to review. `?kind=` narrows the causes; `?page=` pages them.
  */
-export default async function IssuesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function IssuesPage({ searchParams }: { searchParams: Promise<Params> }) {
   await connection();
   await requireAdmin();
+  return withTiming("/admin/steward/findings", () => renderFindings(searchParams));
+}
+
+type Params = Record<string, string | string[] | undefined>;
+
+async function renderFindings(searchParams: Promise<Params>) {
   const params = await searchParams;
   const kindParam = param(params.kind);
   const kind = ISSUE_KINDS.includes(kindParam as IssueKind) ? (kindParam as IssueKind) : null;
   const supabase = await adminSupabase();
   const client = supabase as unknown as StoreClient;
-  const [clusters, issues, runs, colleges, data] = await Promise.all([readClusters(client), readIssues(client), readRuns(client, 1), collegesToReview(client), getData()]);
+  // The queue is read once: Colleges to review counts the clusters' own items (specs/product/admin-speed.md "As built: U3").
+  const clustersRead = readClusters(client);
+  const [clusters, issues, runs, colleges, data] = await Promise.all([
+    clustersRead,
+    readIssues(client),
+    readRuns(client, 1),
+    clustersRead.then((c) => collegesToReview(client, { items: c.ok ? c.items : [] })),
+    getData(),
+  ]);
   const last = runs[0] ?? null;
   const run = runById("steward");
 

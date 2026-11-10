@@ -391,3 +391,56 @@ database yet (the integrator measures); the numbers below are wave counts read f
 - **Timing lines** (`withTiming`, labels are route patterns): `/admin/data/colleges/[unit]`, `/admin/people/[user]`,
   `/admin/students/[id]`, `/admin/households/[id]`, `/admin/data`, `/admin/data/health`, `/admin/steward/jobs`
   (`serving-architecture.md` "Timing a request").
+
+### As built: U3 (Inbox), 2026-11-10
+
+Wave 1's fixes 3 (Findings), 4, and 5, and the timing lines for the three Steward screens. The Inbox's words, order,
+links, and help ids are as they were (`admin-redesign.md` "The home: Steward › Inbox"). Nothing measured against the
+live database yet (the integrator measures).
+
+- **Shared reads** (`lib/admin/inbox-reads.ts`). Every read is a React `cache()`d, soft function with no arguments:
+  the client (`adminSupabase`), the badge's seven (decisions, proposals, deletions, invitations, held changes,
+  collisions, the last publish), and the page's others (To do, the runs, the jobs, people, organizations, the queue's
+  counts, health). The layout's `needsYouCount` and the Inbox's panels render in the same request, so each source is
+  read once and the client made once; a source that failed is null for every reader and isn't asked again in that
+  request. The badge keeps its meaning: it awaits only the seven (`cheapInput`) and is null only when decisions,
+  proposals, deletions, invitations, and held changes all failed. The invitations' seven-day cutoff is taken when the
+  read starts, so the badge and the page share one read rather than each passing its own `now`.
+- **Three loaders** in place of `loadInboxInput`: `loadNeedsYou` (the seven, To do, the jobs, and the runs for the
+  empty line's "The Steward last looked at"), `loadStewardDid` (the runs), `loadHowThingsAre` (people, organizations,
+  the last publish, the queue's counts, health, the jobs and the runs for their tiles). The queue tile reads
+  `readQueueCounts` (`open`, `newWeek`), never the whole queue; To do reads the acquisition items only (U1). Until the
+  read model's migration is applied, the counts are null and the tile says "Couldn't read" (the rest of the Inbox is
+  unaffected); it no longer falls back to the 22-page read.
+- **Streaming** (`app/admin/page.tsx`). The shell (the phone's search and the header) waits only on `connection()` and
+  the admin check; "Needs you", "The Steward did", and "How things are" are async components, each under its own
+  `<Suspense>` with its frame as the fallback (`components/admin/InboxSkeletons.tsx`: the same `Panel` title, id, help,
+  and the "Every run" link; the tiles' heading and six frames at the tiles' heights, two across on a phone). Each
+  streams when its reads finish; the jobs (GitHub, now behind U2's memo) hold only the panels that show them.
+  `app/admin/loading.tsx` (`ConsolePageSkeleton`: a header and three panel frames) sits inside the layout, so the
+  rail and tab bar stay and every console navigation paints a frame at once. The layout's guards (the 404, the
+  second-factor step) run before it, so non-admins still get a real 404; the layout still awaits the badge (the seven
+  cheap reads, ~1 KB snapshot row since U2) before the frame, and the Inbox's "Needs you" then answers from the same
+  promises.
+- **Findings** (`app/admin/steward/findings/page.tsx`) passes the clusters' items to `collegesToReview(client, { items })`,
+  chained on `readClusters` inside the page's one `Promise.all`, so the queue is read once. **To do**
+  (`app/admin/steward/todo/page.tsx`) reads the logins beside the lists instead of after them.
+- **Timing lines.** `/admin/steward/findings` and `/admin/steward/todo` wrap the page's data work after the admin check
+  (the Steward screens' test pins `connection()` and `requireAdmin()` as the page's first lines). The Inbox's panels
+  render after the page function has returned, outside any timing the page could start, so each times its own loader:
+  `/admin needs-you`, `/admin steward-did`, `/admin how-things-are` (three lines per Inbox load). The layout's badge
+  isn't timed, so a round trip it started (the seven cheap reads) shows on no line; "Needs you"'s time still includes
+  waiting for them.
+- **Actions stay current:** the console's Server Actions already call `revalidatePath`/`refresh()`; the per-request
+  memo can't outlive the request, so the badge and the panels re-read on the re-render.
+- **Not done:** the spec's 30-second per-instance memo for the badge (fix 4's last sentence) was left out: with the
+  snapshot row small and the reads shared, the badge's cost is the seven small reads in one wave.
+- **Tested:** `tests/admin-inbox-reads.test.mts` (6 tests, every read a counting stand-in and `cache()` with React's
+  per-request contract: the badge and the three panels in one request read each source once and make one client; the
+  badge alone reads only the seven; a new request reads again; a failed source is shared, not retried, and the others
+  answer; null counts are "Couldn't read", never the whole queue); `tests/admin-console-ui.test.mts` (`loading.tsx`
+  and the skeletons read nothing; three `<Suspense>` boundaries in order with their fallbacks; the shell awaits only
+  the admin check; each panel calls one loader under its label; the skeletons' titles, ids, and help match the panels;
+  the seven badge reads are `cache()`d and the tile never calls `readQueue`; Findings passes the items);
+  `tests/admin-waves.test.mts` (the Findings and To do labels; the Inbox's panel labels are `/admin` and a panel id
+  on the page); `tests/admin-steward.test.mts` renders Findings and To do through a `withTiming` stand-in.

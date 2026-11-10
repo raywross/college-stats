@@ -1044,7 +1044,108 @@ test("isNextControlFlow recognizes redirect() and notFound(), and nothing a data
 });
 
 test("the console files are all under the paths this unit owns", () => {
-  const owned = ["app/admin/layout.tsx", "app/admin/page.tsx"];
+  const owned = ["app/admin/layout.tsx", "app/admin/page.tsx", "app/admin/loading.tsx"];
   const dirs = ["people", "households", "organizations", "students", "log", "admins", "settings", "more", "help"].map((d) => `app/admin/${d}/`);
   for (const f of adminFiles) assert.ok(owned.includes(f) || dirs.some((d) => f.startsWith(d)) || /^app\/admin\/(steward|data)\//.test(f), relative(ROOT, join(ROOT, f)));
+});
+
+/* ------------------------------------------------------------------ */
+/* The Inbox streams; the badge and the panels share reads (admin-speed U3) */
+/* ------------------------------------------------------------------ */
+
+/** The body of a top-level function in a source file, up to the next top-level declaration. */
+function fnBody(src: string, name: string): string {
+  const at = src.search(new RegExp(`(export )?(default )?(async )?function ${name}\\(`));
+  assert.ok(at >= 0, `found ${name}`);
+  const rest = src.slice(at);
+  const end = rest.slice(1).search(/\n(export |async function |function |const |type )/);
+  return end < 0 ? rest : rest.slice(0, end + 1);
+}
+
+/** The panel components the Inbox page streams, in the order their <Suspense> boundaries appear, with their fallbacks. */
+function streamedPanels(page: string): { fallback: string; panel: string }[] {
+  return [...page.matchAll(/<Suspense fallback=\{<(\w+) \/>\}>\s*<(\w+) \/>\s*<\/Suspense>/g)].map((m) => ({ fallback: m[1], panel: m[2] }));
+}
+
+test("app/admin/loading.tsx paints the console page frame and reads nothing", () => {
+  assert.ok(existsSync(join(ROOT, "app/admin/loading.tsx")));
+  const loading = read("app/admin/loading.tsx");
+  assert.match(loading, /export default function AdminLoading\(\) \{\n\s+return <ConsolePageSkeleton \/>;/);
+  const skeletons = read("components/admin/InboxSkeletons.tsx");
+  for (const src of [loading, skeletons]) {
+    assert.doesNotMatch(src, /^\s*["']use client["']/m);
+    assert.doesNotMatch(src, /\bawait\b|\basync\b|@\/lib\/(admin\/(auth|people|inbox-reads)|supabase)|cookies\(|headers\(/, "a skeleton reads no data or session");
+  }
+  assert.match(skeletons, /export function ConsolePageSkeleton\(\)/);
+  assert.match(skeletons, /aria-busy="true"/);
+});
+
+test("the Inbox page renders its shell at once and streams three panels, each under its own <Suspense>, in order", () => {
+  const page = read("app/admin/page.tsx");
+  assert.equal((page.match(/<Suspense fallback=/g) ?? []).length, 3, "three boundaries");
+  assert.deepEqual(streamedPanels(page), [
+    { fallback: "NeedsYouSkeleton", panel: "NeedsYouPanel" },
+    { fallback: "StewardDidSkeleton", panel: "StewardDidPanel" },
+    { fallback: "HowThingsAreSkeleton", panel: "HowThingsArePanel" },
+  ]);
+  const shell = fnBody(page, "InboxPage");
+  assert.deepEqual([...shell.matchAll(/await (\w+)\(/g)].map((m) => m[1]), ["connection", "requireAdmin"], "the shell waits only on the admin check");
+  assert.ok(shell.indexOf("<AdminSearch") < shell.indexOf("<PageHeader") && shell.indexOf("<PageHeader") < shell.indexOf("<Suspense"), "search and header before the panels");
+  // Each panel reads only its own loader, timed under its own label.
+  const panels: [string, string, string][] = [
+    ["NeedsYouPanel", "loadNeedsYou", "/admin needs-you"],
+    ["StewardDidPanel", "loadStewardDid", "/admin steward-did"],
+    ["HowThingsArePanel", "loadHowThingsAre", "/admin how-things-are"],
+  ];
+  for (const [name, loader, label] of panels) {
+    const body = fnBody(page, name);
+    assert.match(body, new RegExp(`const input = await withTiming\\(${JSON.stringify(label)}, \\(\\) => ${loader}\\(\\)\\);`), name);
+    assert.equal((body.match(/\bload\w+\(/g) ?? []).length, 1, `${name} calls one loader`);
+  }
+  assert.doesNotMatch(page, /loadInboxInput/);
+  // Guard: a page that awaits a loader in the shell is caught.
+  const blocking = page.replace("await requireAdmin();\n", "await requireAdmin();\n  await loadNeedsYou();\n");
+  assert.notDeepEqual([...fnBody(blocking, "InboxPage").matchAll(/await (\w+)\(/g)].map((m) => m[1]), ["connection", "requireAdmin"]);
+});
+
+test("each Inbox skeleton is its panel's frame: the same title, id, help, and the Every run link", () => {
+  const page = read("app/admin/page.tsx");
+  const skeletons = read("components/admin/InboxSkeletons.tsx");
+  for (const [panel, skeleton] of [
+    ["NeedsYouPanel", "NeedsYouSkeleton"],
+    ["StewardDidPanel", "StewardDidSkeleton"],
+  ]) {
+    const real = fnBody(page, panel).match(/<Panel\s+title="([^"]+)"\s+id="([^"]+)"\s+help="([^"]+)"/);
+    const frame = fnBody(skeletons, skeleton).match(/<Panel\s+title="([^"]+)"\s+id="([^"]+)"\s+help="([^"]+)"/);
+    assert.ok(real && frame, panel);
+    assert.deepEqual(frame.slice(1), real.slice(1), panel);
+  }
+  assert.match(fnBody(skeletons, "StewardDidSkeleton"), /href="\/admin\/steward\/runs"[\s\S]*Every run/);
+  const heading = (src: string) => src.match(/<h2 id="how-things-are-title"[^>]*>\s*How things are\s*<HelpTip help="how-things-are" \/>/)?.[0];
+  assert.equal(heading(fnBody(skeletons, "HowThingsAreSkeleton")), heading(fnBody(page, "HowThingsArePanel")));
+  assert.match(fnBody(skeletons, "HowThingsAreSkeleton"), /grid grid-cols-2 gap-3 lg:grid-cols-3/, "the tiles' grid, two across on a phone");
+  assert.match(fnBody(skeletons, "HowThingsAreSkeleton"), /\[0, 1, 2, 3, 4, 5\]/, "six tiles");
+});
+
+test("inbox-reads: the badge's seven reads and the page's are React cache()d, the queue tile reads counts, and the badge reads only the cheap seven", () => {
+  const src = read("lib/admin/inbox-reads.ts");
+  assert.match(src, /import \{ cache \} from "react";/);
+  const cached = new Map([...src.matchAll(/^const (\w+) = cache\(/gm)].map((m) => [m[1], true]));
+  const badge = ["decisionsRead", "proposalsRead", "deletionsRead", "invitationsRead", "heldRead", "collisionsRead", "publishRead"];
+  for (const name of [...badge, "todoRead", "runsRead", "jobsRead", "countsRead", "organizationsRead", "queueRead", "healthRead", "db"]) assert.ok(cached.has(name), `${name} is cache()d`);
+  const cheap = fnBody(src, "cheapInput");
+  assert.deepEqual([...cheap.matchAll(/(\w+Read)\(\)/g)].map((m) => m[1]), badge, "the badge's seven, in one wave");
+  const count = fnBody(src, "needsYouCount");
+  assert.match(count, /cheapInput\(now\)/);
+  assert.doesNotMatch(count, /todoRead|jobsRead|runsRead/, "never To do, the jobs, or the runs");
+  assert.match(fnBody(src, "loadNeedsYou"), /cheapInput\(now\)/, "Needs you awaits the badge's own reads");
+  assert.doesNotMatch(src, /readQueue\(/, "the tile reads the counts, never the whole queue");
+  assert.match(src, /readQueueCounts\(/);
+  for (const loader of ["loadNeedsYou", "loadStewardDid", "loadHowThingsAre", "needsYouCount"]) assert.match(src, new RegExp(`export async function ${loader}\\(`));
+});
+
+test("Findings reads the review queue once: Colleges to review counts the clusters' own items", () => {
+  const src = read("app/admin/steward/findings/page.tsx");
+  assert.match(src, /clustersRead\.then\(\(c\) => collegesToReview\(client, \{ items: c\.ok \? c\.items : \[\] \}\)\)/);
+  assert.doesNotMatch(src, /collegesToReview\(client\)/, "never without the items (that reads the whole queue again)");
 });

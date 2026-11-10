@@ -36,6 +36,7 @@ const STUBS: Record<string, string> = {
   "next/navigation": `export function notFound(){${NOT_FOUND}} export function redirect(u){throw new Error('redirect '+u)}`,
   "next/cache": "export function refresh(){}",
   "next/server": "export async function connection(){}",
+  "@/lib/timing-server": "export async function withTiming(_label, fn){return fn()}",
   "@/lib/admin/auth": `export async function requireAdmin(){globalThis.__world.calls.push('requireAdmin'); if(!globalThis.__world.admin){${NOT_FOUND}} return {userId:'admin-1'}}`,
   "@/lib/admin/people": "export async function adminSupabase(){globalThis.__world.calls.push('adminSupabase'); return globalThis.__world.supabase()}",
   "@/lib/admin/essays": "export async function listsByUnit(){globalThis.__world.calls.push('listsByUnit'); return null}",

@@ -182,7 +182,7 @@ export const JOBS: readonly JobDef[] = [
     description: "Reads every known Slate host's event calendar and records what is new, changed, or gone.",
     runner: "github",
     workflow: "visit-events.yml",
-    schedules: [{ cron: "0 7 * * *" }],
+    schedules: [{ cron: "23 6 * * *" }],
     spec: "specs/product/visit-events.md",
     dispatch: "visit-events",
     // Writes the visit-event tables, not the data store, so no change; a reread is idempotent.

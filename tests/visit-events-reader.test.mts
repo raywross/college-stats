@@ -345,19 +345,41 @@ function apply(stored: StoredEvent[], diff: ReturnType<typeof diffEvents>): Stor
   return [...by.values()];
 }
 
-test("diffEvents: a new row gets first_seen, last_seen, and changed_at now; a second identical read changes nothing", () => {
+test("diffEvents: a new row gets first_seen, last_seen, and changed_at now; a second identical read writes nothing", () => {
   const first = diffEvents([], [readEvent()], NOW);
-  assert.deepEqual(first.counts, { new: 1, changed: 0, removed: 0, seen: 0 });
+  assert.deepEqual(first.counts, { new: 1, changed: 0, removed: 0, seen: 0, unchanged: 0 });
   assert.equal(first.upserts[0].first_seen, NOW);
   assert.equal(first.upserts[0].changed_at, NOW);
   assert.equal(first.upserts[0].misses, 0);
   const stored = apply([], first);
   const second = diffEvents(stored, [readEvent()], LATER);
-  assert.deepEqual(second.counts, { new: 0, changed: 0, removed: 0, seen: 1 });
-  assert.equal(second.upserts[0].first_seen, NOW);
-  assert.equal(second.upserts[0].changed_at, NOW);
-  assert.equal(second.upserts[0].last_seen, LATER);
+  assert.deepEqual(second.counts, { new: 0, changed: 0, removed: 0, seen: 1, unchanged: 1 });
+  assert.deepEqual(second.upserts, [], "a row seen again with nothing different costs no write (2026-11-10)");
   assert.equal(second.missed.length, 0);
+});
+
+test("diffEvents: a seen row is written again only when something differs: a reset miss count, a reopened removal, a changed field, a timestamp in another text form is not a difference", () => {
+  const stored = apply([], diffEvents([], [readEvent()], NOW));
+  // Postgres hands back "+00:00"; the reader builds ".000Z": the same instant, no write.
+  const asPostgres = { ...stored[0], starts_at: "2026-10-19T15:40:00+00:00", ends_at: null };
+  assert.deepEqual(diffEvents([asPostgres], [readEvent()], LATER).upserts, []);
+  // A miss count is reset by a write, and last_seen moves with it.
+  const missedOnce = { ...stored[0], misses: 1 };
+  const reset = diffEvents([missedOnce], [readEvent()], LATER);
+  assert.equal(reset.upserts.length, 1);
+  assert.equal(reset.upserts[0].misses, 0);
+  assert.equal(reset.upserts[0].last_seen, LATER);
+  assert.deepEqual(reset.counts, { new: 0, changed: 0, removed: 0, seen: 1, unchanged: 0 });
+  // A removed row seen again comes back.
+  const removed = { ...stored[0], misses: 2, removed_at: NOW };
+  const back = diffEvents([removed], [readEvent()], LATER);
+  assert.equal(back.upserts.length, 1);
+  assert.equal(back.upserts[0].removed_at, null);
+  // A description change alone (not a "change" for changed_at) is still a difference worth writing.
+  const words = diffEvents(stored, [readEvent({ description: "New words" })], LATER);
+  assert.equal(words.upserts.length, 1);
+  assert.equal(words.upserts[0].changed_at, NOW);
+  assert.equal(words.upserts[0].last_seen, LATER);
 });
 
 test("diffEvents: changed_at moves on title, start, venue, or availability, not on the description", () => {
@@ -388,7 +410,9 @@ test("diffEvents: moved_at moves on a new start, venue, address, or city; not on
   }
   // An earlier move is kept when nothing moves tonight.
   const moved = apply(stored, diffEvents(stored, [readEvent({ venue: "Gym" })], LATER));
-  assert.equal(diffEvents(moved, [readEvent({ venue: "Gym" })], LATEST).upserts[0].moved_at, LATER);
+  const again = diffEvents(moved, [readEvent({ venue: "Gym" })], LATEST);
+  assert.deepEqual(again.upserts, [], "nothing moved, nothing written");
+  assert.equal(apply(moved, again)[0].moved_at, LATER);
   // A search row's guessed start corrected by its first page read is not a move.
   const guessed = apply([], diffEvents([], [readEvent({ date_confirmed: false, pageRead: false, starts_at: "2026-10-19T16:40:00.000Z" })], NOW));
   assert.equal(diffEvents(guessed, [readEvent()], LATER).upserts[0].moved_at, null);
@@ -399,14 +423,16 @@ test("diffEvents: a known row read from the listing alone keeps the page's field
   const listingOnly = readEvent({ pageRead: false, date_confirmed: false, venue: null, zip: null, lat: null, lng: null, timezone: null, starts_at: "2026-10-19T15:40:00.000Z" });
   const d = diffEvents(stored, [listingOnly], LATER);
   assert.equal(d.counts.changed, 0);
-  assert.equal(d.upserts[0].venue, "Marietta High School");
-  assert.equal(d.upserts[0].zip, "30064");
-  assert.equal(d.upserts[0].date_confirmed, true);
-  assert.equal(d.upserts[0].timezone, "America/New_York");
+  assert.deepEqual(d.upserts, [], "the page's fields kept, nothing differs, nothing written");
+  const row = apply(stored, d)[0];
+  assert.equal(row.venue, "Marietta High School");
+  assert.equal(row.zip, "30064");
+  assert.equal(row.date_confirmed, true);
+  assert.equal(row.timezone, "America/New_York");
   // The page's "closed" outranks the widget's "full" on a night the page isn't read; the widget's "open" reopens it.
   const closed = apply([], diffEvents([], [readEvent({ availability: "closed" })], NOW));
   const full = diffEvents(closed, [{ ...listingOnly, availability: "full" }], LATER);
-  assert.equal(full.upserts[0].availability, "closed");
+  assert.equal(apply(closed, full)[0].availability, "closed");
   assert.equal(full.counts.changed, 0);
   assert.equal(diffEvents(closed, [{ ...listingOnly, availability: "open" }], LATER).upserts[0].availability, "open");
   // A row stored without coordinates (its page failed on the first read) takes the listing's campus coordinates on a
@@ -415,8 +441,9 @@ test("diffEvents: a known row read from the listing alone keeps the page's field
   const campus = diffEvents(unplaced, [{ ...listingOnly, lat: 29.64629, lng: -82.347911 }], LATER).upserts[0];
   assert.equal(campus.lat, 29.64629);
   assert.equal(campus.lng, -82.347911);
-  const placed = diffEvents(stored, [{ ...listingOnly, lat: 29.64629, lng: -82.347911 }], LATER).upserts[0];
-  assert.equal(placed.lat, stored[0].lat, "the page's coordinates are kept");
+  const placedDiff = diffEvents(stored, [{ ...listingOnly, lat: 29.64629, lng: -82.347911 }], LATER);
+  assert.deepEqual(placedDiff.upserts, [], "the page's coordinates are kept, so nothing differs");
+  assert.equal(apply(stored, placedDiff)[0].lat, stored[0].lat, "the page's coordinates are kept");
 });
 
 test("diffEvents: removed only after two missed reads; a row seen again comes back; past rows and skipped rows are never missed", () => {

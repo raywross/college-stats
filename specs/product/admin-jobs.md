@@ -30,7 +30,7 @@ Two runners, one table (`lib/jobs/registry.ts` `JOBS`):
 | College-reported data | GitHub | Mondays 13:00 (Aug–Nov); the 1st 13:00 (Dec–Jul); every 30 min (collect) | the collect firing is housekeeping |
 | Data Steward | GitHub | Sundays 09:00 (the weekly audit) | also runs after every college-reported run that read or collected something (`workflow_run`, not a schedule of its own); by hand or from the console |
 | Identity refresh | GitHub | every day 06:00 | does the refresh only when the last probe is 28+ days old |
-| Visit events | GitHub | every day 07:00 | |
+| Visit events | GitHub | every day 06:23 | |
 | Publish snapshot | GitHub | every day 08:00 | pipelines also start it (`repository_dispatch`) |
 | Sync data | GitHub | Mondays 09:00 | on the schedule, the release-calendar check only |
 | Sync history | GitHub | the 3rd 09:00 | |

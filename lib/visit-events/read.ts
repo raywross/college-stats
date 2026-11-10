@@ -64,18 +64,35 @@ export async function eventsForUnit(unitId: string, opts: { limit?: number } = {
   return (data ?? []) as VisitEventRow[];
 }
 
-/** The latest `last_seen` among a college's events: "Read from UF's calendar at 3:10 am". Null before any sync. */
+/**
+ * When a college's calendar was last read: "Read from UF's calendar at 3:10 am". The host's `last_read`
+ * (`slate_hosts`, set by every answered read), not the events' `last_seen`: since 2026-11-10 the sync writes only the
+ * rows that changed, so an event's `last_seen` says when it was last written, not when its calendar was last read.
+ * Null before any sync.
+ */
 export async function readAt(unitId: string): Promise<string | null> {
-  if (!authConfigured()) return null;
+  return readAtFor([unitId]);
+}
+
+/** The newest read among several colleges' calendars (the "each college" line on /me/visits). Null before any sync. */
+export async function readAtFor(unitIds: readonly string[]): Promise<string | null> {
+  if (!authConfigured() || unitIds.length === 0) return null;
   const user = await getUser();
   if (!user) return null;
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.from("visit_events").select("last_seen").eq("unit_id", unitId).order("last_seen", { ascending: false }).limit(1).maybeSingle();
+  const { data, error } = await supabase
+    .from("slate_hosts")
+    .select("last_read")
+    .in("unit_id", [...new Set(unitIds)])
+    .not("last_read", "is", null)
+    .order("last_read", { ascending: false })
+    .limit(1)
+    .maybeSingle();
   if (error) {
-    console.error(`visit_events: reading last_seen for ${unitId} failed: ${error.message}`);
+    console.error(`slate_hosts: reading last_read failed: ${error.message}`);
     return null;
   }
-  return (data as { last_seen: string } | null)?.last_seen ?? null;
+  return (data as { last_read: string } | null)?.last_read ?? null;
 }
 
 /** The signed-in user's visit-alert preferences, or the defaults when no row exists yet (the trigger creates one on a first follow). */

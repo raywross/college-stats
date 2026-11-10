@@ -751,7 +751,10 @@ test("logStudentView records one access row through admin_log_access, with a fix
 function logsOnceBeforeReading(src: string): boolean {
   const calls = [...src.matchAll(/logStudentView\(/g)].length;
   const logAt = src.indexOf("await logStudentView(");
-  const readAt = src.indexOf("await adminStudent(");
+  // The page reads the record in a Promise.all with the rest (specs/product/admin-speed.md "Waves"); the first read
+  // of anything is the earliest of them.
+  const reads = ["adminStudent(", "standingForStudent(", "studentOrganizationGrants(", "findPeople("].map((r) => src.indexOf(r, src.indexOf("async function renderStudent"))).filter((i) => i >= 0);
+  const readAt = reads.length ? Math.min(...reads) : -1;
   return calls === 1 && logAt > 0 && readAt > logAt;
 }
 
@@ -761,10 +764,16 @@ test("the student page calls logStudentView() exactly once per render, before it
   assert.match(page, /student_not_found[\s\S]*notFound\(\)/);
   assert.match(page, /logStudentView\(id, STUDENT_PAGE_VIEW\)/);
   // Guards: logging twice, or after the read, or not at all, is caught.
-  assert.ok(!logsOnceBeforeReading(page.replace("await adminStudent(id);", "await adminStudent(id); await logStudentView(id, STUDENT_PAGE_VIEW);")));
-  assert.ok(!logsOnceBeforeReading(page.replace("await logStudentView(id, STUDENT_PAGE_VIEW);", "")));
-  const swapped = page.replace("await logStudentView(id, STUDENT_PAGE_VIEW);", "").replace("const student = await adminStudent(id);", "const student = await adminStudent(id); await logStudentView(id, STUDENT_PAGE_VIEW);");
+  const edit = (from: string, to: string, src = page) => {
+    assert.ok(src.includes(from), `the guard's edit applies: ${from}`);
+    return src.replace(from, to);
+  };
+  assert.ok(!logsOnceBeforeReading(edit("if (!student) notFound();", "if (!student) notFound(); await logStudentView(id, STUDENT_PAGE_VIEW);")));
+  assert.ok(!logsOnceBeforeReading(edit("await logStudentView(id, STUDENT_PAGE_VIEW);", "")));
+  const swapped = edit("if (!student) notFound();", "if (!student) notFound(); await logStudentView(id, STUDENT_PAGE_VIEW);", edit("await logStudentView(id, STUDENT_PAGE_VIEW);", ""));
   assert.ok(!logsOnceBeforeReading(swapped));
+  const readFirst = edit("  try {\n    await logStudentView(", "  void adminStudent(id);\n  try {\n    await logStudentView(");
+  assert.ok(!logsOnceBeforeReading(readFirst), "a read started before the log is caught");
 });
 
 test("no other console page shows a student's lists, numbers, or plan (only the student page does, and it logs)", () => {

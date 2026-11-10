@@ -28,6 +28,7 @@ import { VisitEventsCard } from "@/components/admin/VisitEventsCard";
 import { MultiSourceNote } from "@/components/sources/MultiSourceNote";
 import { PageHeader } from "@/components/admin/Panel";
 import { HelpTip } from "@/components/admin/HelpTip";
+import { withTiming } from "@/lib/timing-server";
 
 export const metadata: Metadata = { title: "Data health", robots: { index: false, follow: false } };
 
@@ -52,6 +53,10 @@ interface TabView {
  * that table lives; /admin/health and /admin/health/files redirect here with their query strings.
  */
 export default async function HealthPage({ searchParams }: { searchParams: Promise<Params> }) {
+  return withTiming("/admin/data/health", () => renderHealth(searchParams));
+}
+
+async function renderHealth(searchParams: Promise<Params>) {
   await requireAdmin();
   const params = await searchParams;
   const tab = healthTab(params);

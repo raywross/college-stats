@@ -10,8 +10,9 @@ import { CONFIRM_PUBLISH, fmtDateTime } from "@/lib/admin/console";
 import { changeKindLabel } from "@/lib/admin/words";
 import { statusLabel } from "@/lib/admin/change-set-view";
 import { adminSupabase } from "@/lib/admin/people";
-import { formatBytes, loadDataOverview, manifestBytes } from "@/lib/admin/data-reads";
+import { formatBytes, loadDataOverview, snapshotBytes } from "@/lib/admin/data-reads";
 import { publishNowAction } from "@/app/admin/data/actions";
+import { withTiming } from "@/lib/timing-server";
 
 export const metadata: Metadata = { title: "Data", robots: { index: false, follow: false } };
 
@@ -23,6 +24,10 @@ export const metadata: Metadata = { title: "Data", robots: { index: false, follo
  * the site reads, not a Vercel deploy.
  */
 export default async function DataOverviewPage() {
+  return withTiming("/admin/data", renderDataOverview);
+}
+
+async function renderDataOverview() {
   await connection();
   await requireAdmin();
   const supabase = await adminSupabase();
@@ -70,7 +75,7 @@ export default async function DataOverviewPage() {
                 { label: "Published version", value: `#${lastPublished.id}` },
                 { label: "Published", value: fmtDateTime(lastPublished.created_at) },
                 { label: "Colleges", value: lastPublished.manifest.colleges?.toLocaleString("en-US") ?? "—" },
-                { label: "Size", value: formatBytes(manifestBytes(lastPublished.manifest)) },
+                { label: "Size", value: formatBytes(snapshotBytes(lastPublished)) },
                 { label: "Changes carried", value: String(lastPublished.change_set_ids.length) },
               ]}
             />

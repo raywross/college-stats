@@ -53,6 +53,8 @@ const STUBS: Record<string, string> = {
   "server-only": "export {}",
   "next/navigation": `export function notFound(){${NOT_FOUND}}`,
   "next/server": "export async function connection(){}",
+  // Request timing (lib/timing-server.ts): off in tests, so withTiming is the page's own work.
+  "@/lib/timing-server": "export async function withTiming(label, fn){return fn()} export async function afterResponse(name, fn){return fn()}",
   "@/lib/admin/auth": "export async function requireAdmin(){globalThis.__world.calls.push('requireAdmin'); if(!globalThis.__world.admin){" + NOT_FOUND + "} return {userId:'admin-1'}}",
   "@/lib/jobs/runs":
     "const w=()=>globalThis.__world; export const RUNS_PAGE=30;" +

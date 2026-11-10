@@ -38,6 +38,8 @@ const STUBS: Record<string, string> = {
   "server-only": "export {}",
   "next/navigation": `export function notFound(){${NOT_FOUND}} export function redirect(u){throw new Error('redirect '+u)}`,
   "next/cache": "export function refresh(){globalThis.__world.refreshed++}",
+  // Request timing (lib/timing-server.ts): off in tests, so withTiming is the page's own work.
+  "@/lib/timing-server": "export async function withTiming(label, fn){return fn()} export async function afterResponse(name, fn){return fn()}",
   "@/lib/admin/auth": "export async function requireAdmin(){globalThis.__world.calls.push('requireAdmin'); if(!globalThis.__world.admin){" + NOT_FOUND + "} return {userId:'admin-1'}}",
   "@/lib/admin/people": "export async function adminSupabase(){globalThis.__world.calls.push('adminSupabase'); return globalThis.__world.supabase()}",
   "@/lib/admin/ops": "export function realOpsDeps(a){globalThis.__world.calls.push('realOpsDeps'); return globalThis.__world.deps(a)} export async function loadOperations(){return globalThis.__world.operations()}",

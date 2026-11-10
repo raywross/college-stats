@@ -34,6 +34,7 @@ import { pctSmart } from "@/lib/format";
 import { tierText } from "@/lib/selectivity-tier";
 import { SELECTIVITY_TIER_LABELS } from "@/lib/chances/levels";
 import type { School } from "@/lib/types";
+import { withTiming } from "@/lib/timing-server";
 
 export const metadata: Metadata = { title: "College", robots: { index: false, follow: false } };
 
@@ -48,28 +49,40 @@ export const metadata: Metadata = { title: "College", robots: { index: false, fo
  * `?compare=<a>,<b>` link, puts it first with the two files side by side and Keep this file under each.
  * Server-rendered behind requireAdmin(); nothing here reaches a client bundle.
  */
-export default async function CollegePage({ params, searchParams }: PageProps<"/admin/data/colleges/[unit]">) {
+export default async function CollegePage(props: PageProps<"/admin/data/colleges/[unit]">) {
+  return withTiming("/admin/data/colleges/[unit]", () => renderCollege(props));
+}
+
+/**
+ * The reads, in two waves (specs/product/admin-speed.md "Waves"): the admin check, then the college and everything
+ * else about it at once (viewers, the selectivity history with its installed check chained inside, the documents, the
+ * estimate inputs). None of them needs the college's record, so they start beside `adminCollege` instead of after it;
+ * a unit with no college still 404s (the others' results are dropped). Each read is the same call as before.
+ */
+async function renderCollege({ params, searchParams }: PageProps<"/admin/data/colleges/[unit]">) {
   await connection();
   await requireAdmin();
   const { unit } = await params;
   if (!/^\d{6,8}$/.test(unit)) notFound();
-  const college = await adminCollege(unit);
+  const [college, looking, history, documents, inputs, query] = await Promise.all([
+    adminCollege(unit),
+    collegeViewers(unit),
+    historyInstalled().then((installed) => (installed ? collegeHistory(unit) : null)),
+    adminSupabase().then((supabase) => readCollegeDocuments(supabase as unknown as DocumentsClient, unit)),
+    collegeInputsFor(unit).catch((err) => {
+      console.error("[admin college] the estimate inputs could not be worked out; the panel is left out.", err);
+      return null;
+    }),
+    searchParams,
+  ]);
   if (!college) notFound();
   const { school, selectivity, gpa, hidden, health, healthGenerated } = college;
   const rate = school.admissions.acceptance_rate;
   const tier = tierText(school);
   const opsHref = `/admin/steward/jobs/college-reported?unit=${unit}#run-now`;
-  const looking = await collegeViewers(unit);
-  const history = (await historyInstalled()) ? await collegeHistory(unit) : null;
-  const query = await searchParams;
   const every = query.every === "1";
   const compare = parseCompare(query.compare);
-  const documents = await readCollegeDocuments((await adminSupabase()) as unknown as DocumentsClient, unit);
   const docsFirst = compare !== null || collisions(documents?.record).length > 0;
-  const inputs = await collegeInputsFor(unit).catch((err) => {
-    console.error("[admin college] the estimate inputs could not be worked out; the panel is left out.", err);
-    return null;
-  });
 
   return (
     <>

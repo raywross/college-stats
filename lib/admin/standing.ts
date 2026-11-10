@@ -14,7 +14,7 @@ import "server-only";
  */
 import { cache } from "react";
 import { requireAdmin } from "@/lib/admin/auth";
-import { adminSupabase } from "@/lib/admin/people";
+import { adminSupabase, readStudentItems, readStudentLists, readStudentProfile, readStudentRecord, readStudentVisits } from "@/lib/admin/people";
 import { baselineEstimate } from "@/lib/chances/baseline";
 import { gradeNow } from "@/lib/chances/courses";
 import { estimateContext, estimateWithDetail } from "@/lib/chances/estimate";
@@ -24,39 +24,45 @@ import { effectiveGradYear, sanitizeProfile, withHomeState } from "@/lib/student
 import { homeStateForStudent } from "@/lib/home-state";
 import { standingPanel, type StandingPanelView } from "./hidden";
 
-/** The list-item columns the hooks read (lib/planner/read-plan.ts PLAN_ITEM_HOOKS_COLUMNS and its neighbours). */
-const HOOK_COLUMNS = "id, list_id, unit_id, visited_on, follows_social, followed_networks, info_requested_on, legacy, recruited, legacy_sibling";
-
 export type StudentStanding = { ok: true; byItem: ReadonlyMap<string, StandingPanelView> } | { ok: false; reason: string };
 
 /** Today in the site's home zone (lib/planner/context.ts todayIso, which is server-only alongside the planner's reads). */
 const todayIso = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
+/**
+ * Two waves of reads, then the estimate (specs/product/admin-speed.md "Waves"; it was five): the profile, record,
+ * lists, and the household's home state at once; then the estimate's context beside the items and their visits (the
+ * context needs the profile, the items only the lists). The profile, record, lists, items, and visits are the student
+ * page's own reads (lib/admin/people.ts readStudent*, cache()d per request), so the page and this panel read each once.
+ */
 async function compute(studentId: string): Promise<StudentStanding> {
   await requireAdmin();
   const supabase = await adminSupabase();
-  const [profileRes, studentRes, listsRes] = await Promise.all([
-    supabase.from("student_profiles").select("data").eq("student_id", studentId).maybeSingle(),
-    supabase.from("students").select("grad_year").eq("id", studentId).maybeSingle(),
-    supabase.from("lists").select("id").eq("student_id", studentId),
+  const [profileRes, studentRes, listsRes, homeState] = await Promise.all([
+    readStudentProfile(studentId),
+    readStudentRecord(studentId),
+    readStudentLists(studentId),
+    homeStateForStudent(supabase, studentId),
   ]);
   const failed = profileRes.error ?? studentRes.error ?? listsRes.error;
   if (failed) return { ok: false, reason: `Reading the student's profile or lists failed: ${failed.message}` };
-  const listIds = ((listsRes.data ?? []) as { id: string }[]).map((l) => l.id);
+  const listIds = (listsRes.data ?? []).map((l) => l.id);
   if (listIds.length === 0) return { ok: true, byItem: new Map() };
-  const itemsRes = await supabase.from("list_items").select(HOOK_COLUMNS).in("list_id", listIds);
-  if (itemsRes.error) return { ok: false, reason: `Reading the list's colleges failed: ${itemsRes.error.message}` };
-  const items = (itemsRes.data ?? []) as unknown as (HooksItem & { list_id: string })[];
-  const visitsRes = items.length ? await supabase.from("plan_visits").select("item_id").in("item_id", items.map((i) => i.id)) : { data: [], error: null };
-  if (visitsRes.error) return { ok: false, reason: `Reading the visits failed: ${visitsRes.error.message}` };
-  const visits = (visitsRes.data ?? []) as { item_id: string }[];
 
   // Residency from the household's address when the record has none (owner, 2026-10-16), as profilesICanSee does.
-  const profileData = profileRes.data ? withHomeState(sanitizeProfile((profileRes.data as { data: unknown }).data), await homeStateForStudent(supabase, studentId)) : null;
+  const profileData = profileRes.data ? withHomeState(sanitizeProfile((profileRes.data as { data: unknown }).data), homeState) : null;
   const gradYear = (studentRes.data as { grad_year: number | null } | null)?.grad_year ?? null;
   const grade = gradeNow(profileData ? effectiveGradYear(profileData.basics, gradYear) : gradYear, todayIso());
   const student = estimateInputFromProfile(profileData, "", null).student;
-  const ctx = await estimateContext(student, { coreAtTopLevel: profileData?.academics.coreAtTopLevel ?? null, grade });
+  const [ctx, itemsRes, visitsRes] = await Promise.all([
+    estimateContext(student, { coreAtTopLevel: profileData?.academics.coreAtTopLevel ?? null, grade }),
+    readStudentItems(studentId),
+    readStudentVisits(studentId),
+  ]);
+  if (itemsRes.error) return { ok: false, reason: `Reading the list's colleges failed: ${itemsRes.error.message}` };
+  const items = (itemsRes.data ?? []) as unknown as (HooksItem & { list_id: string })[];
+  if (visitsRes.error) return { ok: false, reason: `Reading the visits failed: ${visitsRes.error.message}` };
+  const visits = (visitsRes.data ?? []) as { item_id: string }[];
 
   const byItem = new Map<string, StandingPanelView>();
   for (const listId of listIds) {

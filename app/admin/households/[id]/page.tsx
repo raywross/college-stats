@@ -14,6 +14,7 @@ import { findPeople } from "@/lib/admin/console-reads";
 import { adminHousehold, type AdminHousehold, type AdminInvitation, type AdminMember, type SearchRow } from "@/lib/admin/people";
 import { isUuid } from "@/lib/household-hub";
 import { HOUSEHOLD_MAX_MEMBERS } from "@/lib/household-rules";
+import { withTiming } from "@/lib/timing-server";
 import { addToHousehold, cancelInvitation, closeHousehold, removeMember, renameHousehold } from "./actions";
 
 export const metadata: Metadata = { title: "Household", robots: { index: false, follow: false } };
@@ -26,19 +27,23 @@ const INVITATION_LABEL = { pending: "Waiting", expired: "Expired", accepted: "Ac
  * (never the token), the seat count, and every household action. Adding a student or a parent searches on this page
  * (`?add=student|parent&q=…`); someone already in another household is moved, and the button says which household.
  */
-export default async function HouseholdPage({ params, searchParams }: PageProps<"/admin/households/[id]">) {
+export default async function HouseholdPage(props: PageProps<"/admin/households/[id]">) {
+  return withTiming("/admin/households/[id]", () => renderHousehold(props));
+}
+
+async function renderHousehold({ params, searchParams }: PageProps<"/admin/households/[id]">) {
   await connection();
   await requireAdmin();
   const { id } = await params;
   if (!isUuid(id)) notFound();
-  const household = await adminHousehold(id);
-  if (!household) notFound();
-
   const sp = await searchParams;
   const pick = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)?.trim() ?? "";
   const add = pick(sp.add) === "student" ? "student" : pick(sp.add) === "parent" ? "parent" : null;
   const q = pick(sp.q);
-  const found: SearchRow[] | null = add && q ? (await findPeople(q, [add === "student" ? "student" : "user"])).filter((r) => r.household_id !== id) : null;
+  // The add search needs only the query, so it runs beside the household's reads.
+  const [household, searched] = await Promise.all([adminHousehold(id), add && q ? findPeople(q, [add === "student" ? "student" : "user"]) : Promise.resolve(null)]);
+  if (!household) notFound();
+  const found: SearchRow[] | null = searched ? searched.filter((r) => r.household_id !== id) : null;
 
   const closed = household.deleted_at !== null;
   const empty = household.members.length === 0;

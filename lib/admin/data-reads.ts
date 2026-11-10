@@ -58,12 +58,43 @@ export function parseSnapshotMeta(html: string): string | null {
   return null;
 }
 
-const ENVIRONMENT_FETCH_TIMEOUT_MS = 4_000;
+const ENVIRONMENT_FETCH_TIMEOUT_MS = 2_000;
+/** An older deploy has no /api/snapshot; its home page's meta tag is read instead, with the old, longer timeout. */
+const ENVIRONMENT_PAGE_TIMEOUT_MS = 4_000;
 
-/** One environment's live snapshot, fetched with a short timeout; failing soft to "unknown" (publish.md "The loader"). */
+/** The id in `/api/snapshot`'s answer (null when it says null), or undefined when the answer isn't that JSON. */
+function snapshotFromJson(body: unknown): string | null | undefined {
+  if (!body || typeof body !== "object" || !("snapshot" in body)) return undefined;
+  const v = (body as { snapshot: unknown }).snapshot;
+  if (v === null) return null;
+  return typeof v === "string" || typeof v === "number" ? String(v).trim() || null : undefined;
+}
+
+/**
+ * One environment's live snapshot (publish.md "The loader"; admin-speed.md wave 1, fix 8): `GET <url>/api/snapshot`,
+ * a few bytes of JSON with a 2 s timeout. When the deploy has no such endpoint (older than it: a non-200, or not the
+ * JSON it should be), once more the old way: the home page's `<meta name="x-quad-snapshot">` tag. Fails soft to
+ * "unknown"; a timeout or network error on the endpoint is "unknown" at once (the home page wouldn't answer faster).
+ */
 export async function fetchEnvironmentSnapshot(env: DataEnvironment, fetchImpl: typeof fetch = fetch): Promise<EnvironmentSnapshot> {
+  let res: Response;
   try {
-    const res = await fetchImpl(env.url, { signal: AbortSignal.timeout(ENVIRONMENT_FETCH_TIMEOUT_MS), redirect: "follow" });
+    res = await fetchImpl(`${env.url.replace(/\/+$/, "")}/api/snapshot`, { signal: AbortSignal.timeout(ENVIRONMENT_FETCH_TIMEOUT_MS), redirect: "follow", cache: "no-store" });
+  } catch {
+    return { ...env, snapshot: "unknown" };
+  }
+  if (res.ok) {
+    let body: unknown;
+    try {
+      body = await res.json();
+    } catch {
+      body = undefined; // not JSON: a deploy whose catch-all page answered the path
+    }
+    const found = snapshotFromJson(body);
+    if (found !== undefined) return { ...env, snapshot: found ?? "unknown" };
+  }
+  try {
+    const res = await fetchImpl(env.url, { signal: AbortSignal.timeout(ENVIRONMENT_PAGE_TIMEOUT_MS), redirect: "follow" });
     if (!res.ok) return { ...env, snapshot: "unknown" };
     const html = await res.text();
     return { ...env, snapshot: parseSnapshotMeta(html) ?? "unknown" };
@@ -82,6 +113,10 @@ export async function loadEnvironmentSnapshots(fetchImpl: typeof fetch = fetch):
 /* data_snapshots and data_change_sets                                 */
 /* ------------------------------------------------------------------ */
 
+/**
+ * The parts of a snapshot's manifest the console reads. The reads select `colleges` and `layers` by JSON path
+ * (SNAPSHOT_COLUMNS), never `objects`; `objects` is here only when the size fallback read it (snapshotQuery).
+ */
 export interface SnapshotManifestLike {
   colleges?: number;
   objects?: Record<string, { bytes: number; sha256: string }>;
@@ -98,6 +133,8 @@ export interface SnapshotRow {
   previous_id: number | null;
   pointer_at: string | null;
   notes: string | null;
+  /** The snapshot's total object size (`snapshot_bytes`), when the read asked for it; see snapshotBytes. */
+  bytes?: number | null;
 }
 
 export interface ChangeSetCount {
@@ -122,11 +159,91 @@ async function rows<T>(what: string, query: PromiseLike<{ data: T[] | null; erro
   return data ?? [];
 }
 
-/** The newest published snapshot, or null before the first publish. */
-export async function lastPublishedSnapshot(supabase: SupabaseClient): Promise<SnapshotRow | null> {
-  const { data, error } = await supabase.from("data_snapshots").select("*").eq("status", "published").order("created_at", { ascending: false }).limit(1).maybeSingle();
-  if (error) throw new Error(`admin: reading data_snapshots failed: ${error.message}`);
-  return (data as SnapshotRow | null) ?? null;
+/* The snapshot row, read small (specs/product/admin-speed.md wave 1, fix 2) */
+
+/**
+ * The columns every snapshot read selects: the row's own, and the manifest's `colleges` and `layers` by PostgREST's
+ * JSON path (aliased, so they come back as top-level keys; snapshotRow() puts them back under `manifest`). Never
+ * `objects`: one entry per object in the snapshot, 446 KB a row since the lineage shards (2026-11-08), which every
+ * console page used to read for the badge. tests/admin-data.test.mts checks this list.
+ */
+export const SNAPSHOT_COLUMNS = "id, created_at, created_by, status, change_set_ids, previous_id, pointer_at, notes, colleges:manifest->colleges, layers:manifest->layers";
+/** The size, computed in Postgres (supabase/migrations/20261110130000_snapshot_bytes.sql) as a PostgREST computed field. */
+export const SNAPSHOT_BYTES_COLUMN = "bytes:snapshot_bytes";
+/** The size fallback before that migration is applied: the objects map itself, for the rows that show a size. */
+export const SNAPSHOT_OBJECTS_COLUMN = "objects:manifest->objects";
+
+interface SnapshotDbRow extends Omit<SnapshotRow, "manifest" | "bytes"> {
+  colleges?: number | null;
+  layers?: Record<string, number> | null;
+  objects?: Record<string, { bytes: number; sha256: string }> | null;
+  bytes?: number | string | null;
+  /** Only from a `select *` (a test's fake client); the console's reads never select it. */
+  manifest?: SnapshotManifestLike | null;
+}
+
+/** A row as selected (aliased JSON paths) back in the SnapshotRow shape callers use. */
+export function snapshotRow(r: SnapshotDbRow): SnapshotRow {
+  const { colleges, layers, objects, bytes, manifest, ...rest } = r;
+  const m: SnapshotManifestLike = { ...(manifest ?? {}) };
+  if (colleges != null) m.colleges = colleges;
+  if (layers != null) m.layers = layers;
+  if (objects != null) m.objects = objects;
+  const out: SnapshotRow = { ...rest, manifest: m };
+  if (bytes != null && Number.isFinite(Number(bytes))) out.bytes = Number(bytes);
+  return out;
+}
+
+/** A snapshot's total size: `snapshot_bytes` when read, else summed from the manifest's objects (the fallback). */
+export function snapshotBytes(row: Pick<SnapshotRow, "manifest" | "bytes">): number {
+  return row.bytes ?? manifestBytes(row.manifest);
+}
+
+/** Set once a read finds snapshot_bytes missing (its migration not applied): later reads go straight to the fallback. */
+let bytesMissing = false;
+
+/** Whether an error says the computed field is missing (PostgREST doesn't know the function or the column). */
+function isMissingBytes(error: { message: string; code?: string }): boolean {
+  return ["42703", "42883", "PGRST100", "PGRST200", "PGRST202"].includes(error.code ?? "") || /snapshot_bytes/.test(error.message);
+}
+
+type SnapshotQuery = (columns: string) => PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
+
+/**
+ * A snapshot query with the small columns, plus the size when `withBytes`: through `snapshot_bytes`, or, when
+ * that function is missing, by reading the `objects` maps (the old cost, on the two screens that show a size, until
+ * the migration is applied). One `console.warn` per instance names the fallback.
+ */
+async function snapshotQuery(what: string, query: SnapshotQuery, withBytes: boolean): Promise<SnapshotDbRow[]> {
+  const asRows = (data: unknown): SnapshotDbRow[] => (Array.isArray(data) ? data : data ? [data] : []) as SnapshotDbRow[];
+  if (withBytes && !bytesMissing) {
+    const { data, error } = await query(`${SNAPSHOT_COLUMNS}, ${SNAPSHOT_BYTES_COLUMN}`);
+    if (!error) return asRows(data);
+    if (!isMissingBytes(error)) throw new Error(`admin: reading ${what} failed: ${error.message}`);
+    bytesMissing = true;
+    console.warn(`admin: snapshot_bytes is missing (${error.message}); reading the manifests' objects for the size until supabase/migrations/20261110130000_snapshot_bytes.sql is applied`);
+  }
+  const { data, error } = await query(withBytes ? `${SNAPSHOT_COLUMNS}, ${SNAPSHOT_OBJECTS_COLUMN}` : SNAPSHOT_COLUMNS);
+  if (error) throw new Error(`admin: reading ${what} failed: ${error.message}`);
+  return asRows(data);
+}
+
+/** For tests: forget that snapshot_bytes was found missing. */
+export function resetSnapshotBytesProbe(): void {
+  bytesMissing = false;
+}
+
+/**
+ * The newest published snapshot, or null before the first publish. Small columns only (the badge and the Inbox read
+ * it on every console page); `{ bytes: true }` adds the size, for the Data overview.
+ */
+export async function lastPublishedSnapshot(supabase: SupabaseClient, opts: { bytes?: boolean } = {}): Promise<SnapshotRow | null> {
+  const found = await snapshotQuery(
+    "data_snapshots",
+    (columns) => supabase.from("data_snapshots").select(columns).eq("status", "published").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    opts.bytes === true,
+  );
+  return found[0] ? snapshotRow(found[0]) : null;
 }
 
 /** Applied change sets no publish has carried yet: how many, and when the oldest was written (null when none). */
@@ -201,14 +318,15 @@ export interface DataOverview {
 
 /** Everything the Overview screen shows, read in parallel. */
 export async function loadDataOverview(supabase: SupabaseClient, fetchImpl?: typeof fetch): Promise<DataOverview> {
-  const [environments, lastPublished] = await Promise.all([loadEnvironmentSnapshots(fetchImpl), lastPublishedSnapshot(supabase)]);
+  const [environments, lastPublished] = await Promise.all([loadEnvironmentSnapshots(fetchImpl), lastPublishedSnapshot(supabase, { bytes: true })]);
   const [since, holds] = await Promise.all([changeSetsSince(supabase, lastPublished?.created_at ?? null), heldChangeSets(supabase)]);
   return { environments, lastPublished, changeSets: since.counts, waiting: since.waiting, holds };
 }
 
-/** The newest 50 snapshots, newest first. */
+/** The newest 50 snapshots, newest first: the small columns and each one's size. */
 export async function loadSnapshots(supabase: SupabaseClient): Promise<SnapshotRow[]> {
-  return rows<SnapshotRow>("data_snapshots", supabase.from("data_snapshots").select("*").order("created_at", { ascending: false }).limit(50));
+  const found = await snapshotQuery("data_snapshots", (columns) => supabase.from("data_snapshots").select(columns).order("created_at", { ascending: false }).limit(50), true);
+  return found.map(snapshotRow);
 }
 
 /**
@@ -221,7 +339,7 @@ export function currentSnapshotId(snapshots: readonly SnapshotRow[]): number | n
   return pointed.reduce((latest, row) => (new Date(row.pointer_at!).getTime() > new Date(latest.pointer_at!).getTime() ? row : latest)).id;
 }
 
-/** A manifest's total object size, summed from its per-object entry. */
+/** A manifest's total object size, summed from its per-object entry (snapshotBytes' fallback). */
 export function manifestBytes(manifest: SnapshotManifestLike | null | undefined): number {
   return Object.values(manifest?.objects ?? {}).reduce((sum, o) => sum + (o?.bytes ?? 0), 0);
 }

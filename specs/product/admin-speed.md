@@ -340,3 +340,54 @@ console (the Steward's `steward.clusters` document is left for later).
   readers' queries, `LIGHT_FIELDS` equal to the migration's list); `tests/steward-review-rows.test.mts` (To do and
   Review never touch the whole queue; with and without the read model the pages agree). Measured on dev by the
   integrator.
+
+### As built: U2 (reads), 2026-11-10
+
+Wave 1's fixes 2, 6, 7, and 8, and the timing lines for the pages they touch. Nothing measured against the live
+database yet (the integrator measures); the numbers below are wave counts read from the code.
+
+- **The snapshot row, read small** (`lib/admin/data-reads.ts`). Every snapshot read selects `SNAPSHOT_COLUMNS`:
+  `id, created_at, created_by, status, change_set_ids, previous_id, pointer_at, notes, colleges:manifest->colleges,
+  layers:manifest->layers`, and `snapshotRow()` puts the two JSON paths back under `manifest`, so callers
+  (`manifest.colleges` on the Inbox tile, the Data overview, Published versions) didn't change. The brief's
+  `manifest->tables` is left out: a manifest has no `tables` key (`lib/data-platform/snapshot.ts SnapshotManifest`).
+  The badge and the Inbox (`lastPublishAndWaiting`) read only these columns: ~1 KB instead of 446 KB.
+- **The size, in Postgres.** The Data overview's Size and every row of Published versions show a snapshot's total
+  bytes, which used to be summed from the `objects` map (446 KB a row; 50 rows on Versions). A small additive
+  migration, `supabase/migrations/20261110130000_snapshot_bytes.sql`, adds `snapshot_bytes(data_snapshots)`, a
+  PostgREST computed field (`bytes:snapshot_bytes`; `security invoker`, never raises on a malformed manifest),
+  and those two reads (`lastPublishedSnapshot(…, { bytes: true })`, `loadSnapshots`) select it. Until the migration
+  is applied they fall back to selecting `objects:manifest->objects` for the rows they show (the old cost, those two
+  screens only), with one `console.warn` per instance; the badge never reads `objects` either way.
+  `tests/snapshot-bytes.test.mts` (PGlite), `tests/admin-data.test.mts`.
+- **`GET /api/snapshot`** (`app/api/snapshot/route.ts`): `{ "snapshot": "<id>" | null }` from `getSnapshotId()`, the
+  same source as the `x-quad-snapshot` meta tag; `force-dynamic`, `Cache-Control: no-store`, no auth.
+  `fetchEnvironmentSnapshot` asks it with a 2 s timeout; a non-200 or an answer that isn't that JSON (a deploy from
+  before the endpoint) falls back once to the home page's meta tag (4 s, as before); a timeout or network error is
+  "unknown" at once.
+- **GitHub off the response path** (`lib/jobs/github-memo.ts latestGithubRuns`, free of Next and the GitHub client
+  so a Server Action can import its reset; `lib/jobs/runs.ts loadJobsOverview` passes `listRuns` and `after()`).
+  The newest run of each workflow, memoized
+  per instance for `GITHUB_MEMO_MS` (60 s). The first call on a cold instance waits for GitHub, and concurrent first
+  calls share that one fill; within the minute every call answers from the memo with no GitHub call; after it, the
+  stale memo answers at once and one refresh is scheduled with `after()` (stale-while-revalidate), so no page waits on
+  GitHub once the instance has an answer. A refresh never throws, and a workflow GitHub answered nothing for (listRuns
+  answers an empty list on any failure) keeps the run the memo had, so a failed refresh keeps the old memo. The Jobs
+  actions (`app/admin/steward/jobs/actions.ts`, Run now and the pull-request actions) call `resetJobsMemo()` before
+  `refresh()`, so the re-rendered list shows the dispatched run; a refresh that started before the reset can't
+  overwrite the newer answer (a generation counter). Other screens that dispatch workflows (Publish now, the Steward's
+  actions) don't reset it: their runs show within a minute. A job's page and a run's page still ask GitHub for their
+  detail. `tests/admin-jobs.test.mts`.
+- **Fewer waves** (a wave is an `await` that waits on the one before; counted from the code, the admin check
+  included; `tests/admin-waves.test.mts` reads the source):
+
+  | Page | Before | After | How |
+  |---|---|---|---|
+  | A college | 7 | **2** | after the check, `adminCollege`, viewers, `historyInstalled` → history (chained inside), the documents, and the inputs in one `Promise.all`; none needs the college's record, so they start beside it |
+  | A person | 12 (13 with the college-views record) | **5** (6) | `adminPerson`: the profile beside the eight account reads; then own memberships, lists, and the access log; then households, members, and list items; then one `namesFor` over every id beside the members' student records (it was ten waves; `withNames` twice and `accessFor`'s second names read are gone). The page reads college views, sign-in activity, and the organization beside `adminPerson` |
+  | A student | ~16 (the page's 9 and the standing panel's ~6, in series, plus the grants) | **6** | the check; the access row (still first: nothing is read before it exists); then `adminStudent` (four waves: record, profile, lists, membership, snapshots, access log; items, tasks, household; notes, visits, offers, letters; one names read), `standingForStudent`, the organization grants, the dataset, and the attach search (when open) in one `Promise.all`. The record, profile, lists, items, and visits are `cache()`d readers in `lib/admin/people.ts` (`readStudent*`) that both use, so each runs once per request; their columns are the union of what both read (the items add the five hook columns; the page still shows only its own). The panel reads its household's home state in its first wave and builds the estimate's context beside the items |
+  | A household | 5 (6 with the add search) | **3** | the household beside its members, invitations, and home; then one names read beside the students; the add search beside it all |
+
+- **Timing lines** (`withTiming`, labels are route patterns): `/admin/data/colleges/[unit]`, `/admin/people/[user]`,
+  `/admin/students/[id]`, `/admin/households/[id]`, `/admin/data`, `/admin/data/health`, `/admin/steward/jobs`
+  (`serving-architecture.md` "Timing a request").

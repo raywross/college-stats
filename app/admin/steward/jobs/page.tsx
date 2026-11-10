@@ -9,6 +9,7 @@ import { JobsStatusStrip, JobsTabs } from "@/components/admin/jobs/JobsViews";
 import { requireAdmin } from "@/lib/admin/auth";
 import { loadJobsOverview } from "@/lib/jobs/runs";
 import { parseJobsView, sortJobs, sortJobsByOutcome } from "@/lib/jobs/view";
+import { withTiming } from "@/lib/timing-server";
 
 export const metadata: Metadata = { title: "Jobs", robots: { index: false, follow: false } };
 
@@ -20,6 +21,10 @@ export const metadata: Metadata = { title: "Jobs", robots: { index: false, follo
  * opens its page with the full history.
  */
 export default async function JobsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  return withTiming("/admin/steward/jobs", () => renderJobs(searchParams));
+}
+
+async function renderJobs(searchParams: Promise<Record<string, string | string[] | undefined>>) {
   await connection();
   await requireAdmin();
   const view = parseJobsView((await searchParams).view);

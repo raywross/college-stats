@@ -11,6 +11,7 @@ import "server-only";
  * Writes are not here: Server Actions call the admin_*() functions directly (each writes its own admin_log row).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { cache } from "react";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { requireAdmin } from "@/lib/admin/auth";
 import { ADMIN_CONSOLE_HEADER, ADMIN_LOG_PAGE, SUPPORT_VIEWER_NAME } from "@/lib/admin/constants";
@@ -228,12 +229,21 @@ const MEMBER_COLUMNS = "id, household_id, user_id, student_id, role, status, can
 
 type MemberRow = { id: string; household_id: string; user_id: string | null; student_id: string | null; role: "guardian" | "student"; status: string; can_edit: boolean; created: string; accepted_at: string | null };
 
+type MemberStudent = { id: string; display_name: string | null; user_id: string | null };
+
+/** The students a set of member rows names (their display name and whether they have their own account). */
+async function memberStudents(supabase: SupabaseClient, members: MemberRow[]): Promise<MemberStudent[]> {
+  return rows<MemberStudent>("students", supabase.from("students").select("id, display_name, user_id").in("id", inList(members.map((m) => m.student_id))));
+}
+
 /** Member rows with names: guardians from profiles, students from their record. */
 async function withNames(supabase: SupabaseClient, members: MemberRow[]): Promise<AdminMember[]> {
-  const [names, students] = await Promise.all([
-    namesFor(supabase, members.map((m) => m.user_id)),
-    rows<{ id: string; display_name: string | null; user_id: string | null }>("students", supabase.from("students").select("id, display_name, user_id").in("id", inList(members.map((m) => m.student_id)))),
-  ]);
+  const [names, students] = await Promise.all([namesFor(supabase, members.map((m) => m.user_id)), memberStudents(supabase, members)]);
+  return nameMembers(members, names, students);
+}
+
+/** Member rows named from names and students already read (pure). */
+function nameMembers(members: MemberRow[], names: Map<string, string | null>, students: MemberStudent[]): AdminMember[] {
   const byStudent = new Map(students.map((s) => [s.id, s]));
   return members.map((m) => {
     const s = m.student_id ? byStudent.get(m.student_id) : undefined;
@@ -252,14 +262,18 @@ async function withNames(supabase: SupabaseClient, members: MemberRow[]): Promis
   });
 }
 
-/** access_log rows for these student records, newest first, with viewer names and which viewers were admins. */
-async function accessFor(supabase: SupabaseClient, studentIds: string[], limit = 200): Promise<AdminAccessRow[]> {
+type AccessLogRow = { at: string; table_name: string; viewer_id: string };
+
+/**
+ * access_log rows for these student records, newest first. The pages name the viewers (nameAccess) from the one names
+ * read they make for everything else, and mark which viewers were admins.
+ */
+async function accessRows(supabase: SupabaseClient, studentIds: string[], limit = 200): Promise<AccessLogRow[]> {
   if (studentIds.length === 0) return [];
-  const log = await rows<{ at: string; table_name: string; viewer_id: string }>(
-    "access log",
-    supabase.from("access_log").select("at, table_name, viewer_id").in("student_id", studentIds).order("at", { ascending: false }).limit(limit),
-  );
-  const names = await namesFor(supabase, log.map((r) => r.viewer_id));
+  return rows<AccessLogRow>("access log", supabase.from("access_log").select("at, table_name, viewer_id").in("student_id", studentIds).order("at", { ascending: false }).limit(limit));
+}
+
+function nameAccess(log: AccessLogRow[], names: Map<string, string | null>): AdminAccessRow[] {
   return log.map((r) => ({ ...r, viewer_name: names.get(r.viewer_id) ?? null, by_admin: r.table_name === "admin" }));
 }
 
@@ -268,13 +282,17 @@ function purgeDate(deletedAt: string | null): string | null {
   return new Date(new Date(deletedAt).getTime() + DELETE_GRACE_DAYS * 86_400_000).toISOString();
 }
 
-/** Everything the person page shows, or null when there's no such profile. */
+/**
+ * Everything the person page shows, or null when there's no such profile. Four waves after the admin check
+ * (specs/product/admin-speed.md "Waves"; it was ten): (1) the profile beside the eight account reads, none of which
+ * needs it; (2) what needs the person's own student record: the memberships as a student, the lists, the access log;
+ * (3) the households and their active members, and the lists' items; (4) one names read over every user id the page
+ * names (members, the person's memberships, the access log's viewers) beside the members' student records.
+ */
 export async function adminPerson(userId: string): Promise<AdminPerson | null> {
   const supabase = await db();
-  const profile = await maybe<AdminProfile>("profile", supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", userId).maybeSingle());
-  if (!profile) return null;
-
-  const [authRows, admin, own, managed, guardianRows, prefs, digests, sms] = await Promise.all([
+  const [profile, authRows, admin, own, managed, guardianRows, prefs, digests, sms] = await Promise.all([
+    maybe<AdminProfile>("profile", supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", userId).maybeSingle()),
     rows<AdminAuthInfo>("auth", supabase.rpc("admin_user_auth", { p_user: userId })),
     maybe<{ user_id: string }>("admins", supabase.from("admins").select("user_id").eq("user_id", userId).is("revoked_at", null).maybeSingle()),
     maybe<AdminStudentRef>("own student", supabase.from("students").select(STUDENT_COLUMNS).eq("user_id", userId).maybeSingle()),
@@ -284,28 +302,38 @@ export async function adminPerson(userId: string): Promise<AdminPerson | null> {
     rows<AdminPerson["notifications"]["digests"][number]>("digests", supabase.from("digests").select("published_at, sent_at, college_count, change_count").eq("user_id", userId).order("published_at", { ascending: false }).limit(20)),
     rows<AdminPerson["notifications"]["smsConsents"][number]>("text consents", supabase.from("sms_consents").select("id, phone, consented_at, revoked_at, provider_opt_out_at").eq("user_id", userId).order("consented_at", { ascending: false })),
   ]);
+  if (!profile) return null;
 
-  const ownRows = own ? await rows<MemberRow>("memberships", supabase.from("household_members").select(MEMBER_COLUMNS).eq("student_id", own.id)) : [];
+  const studentIds = [own?.id, ...managed.map((s) => s.id)].filter((id): id is string => Boolean(id));
+  const [ownRows, lists, accessLog] = await Promise.all([
+    own ? rows<MemberRow>("memberships", supabase.from("household_members").select(MEMBER_COLUMNS).eq("student_id", own.id)) : Promise.resolve([] as MemberRow[]),
+    rows<{ id: string; name: string; student_id: string | null; user_id: string | null; is_default: boolean }>(
+      "lists",
+      supabase.from("lists").select("id, name, student_id, user_id, is_default").or(`user_id.eq.${userId},student_id.in.(${inList(studentIds).join(",")})`),
+    ),
+    own ? accessRows(supabase, [own.id]) : Promise.resolve([] as AccessLogRow[]),
+  ]);
+
   const mine = [...guardianRows, ...ownRows];
   const householdIds = [...new Set(mine.map((m) => m.household_id))];
-  const [households, allMembers] = await Promise.all([
+  const [households, allMembers, items] = await Promise.all([
     rows<{ id: string; name: string; deleted_at: string | null }>("households", supabase.from("households").select("id, name, deleted_at").in("id", inList(householdIds))),
     rows<MemberRow>("members", supabase.from("household_members").select(MEMBER_COLUMNS).in("household_id", inList(householdIds)).eq("status", "active")),
+    rows<{ list_id: string }>("list items", supabase.from("list_items").select("list_id").in("list_id", inList(lists.map((l) => l.id)))),
   ]);
-  const named = await withNames(supabase, allMembers);
-  const mineNamed = await withNames(supabase, mine);
+
+  const [names, students] = await Promise.all([
+    namesFor(supabase, [...allMembers.map((m) => m.user_id), ...mine.map((m) => m.user_id), ...accessLog.map((r) => r.viewer_id)]),
+    memberStudents(supabase, [...allMembers, ...mine]),
+  ]);
+  const named = nameMembers(allMembers, names, students);
+  const mineNamed = nameMembers(mine, names, students);
   const memberships = mineNamed.flatMap((member): AdminMembership[] => {
     const household = households.find((h) => h.id === member.household_id);
     if (!household) return [];
     return [{ member, household, others: named.filter((m) => m.household_id === member.household_id && m.id !== member.id) }];
   });
 
-  const studentIds = [own?.id, ...managed.map((s) => s.id)].filter((id): id is string => Boolean(id));
-  const lists = await rows<{ id: string; name: string; student_id: string | null; user_id: string | null; is_default: boolean }>(
-    "lists",
-    supabase.from("lists").select("id, name, student_id, user_id, is_default").or(`user_id.eq.${userId},student_id.in.(${inList(studentIds).join(",")})`),
-  );
-  const items = await rows<{ list_id: string }>("list items", supabase.from("list_items").select("list_id").in("list_id", inList(lists.map((l) => l.id))));
   const counts = new Map<string, number>();
   for (const i of items) counts.set(i.list_id, (counts.get(i.list_id) ?? 0) + 1);
 
@@ -319,7 +347,7 @@ export async function adminPerson(userId: string): Promise<AdminPerson | null> {
     managedStudents: managed,
     lists: lists.map((l) => ({ ...l, items: counts.get(l.id) ?? 0 })),
     notifications: { prefs, digests, smsConsents: sms },
-    accessLog: own ? await accessFor(supabase, [own.id]) : [],
+    accessLog: nameAccess(accessLog, names),
   };
 }
 
@@ -365,14 +393,18 @@ export function invitationState(i: { accepted_at: string | null; revoked_at: str
   return new Date(i.expires_at) <= now ? "expired" : "pending";
 }
 
+/**
+ * A household with its roster, invitations, and home. Two waves after the admin check (specs/product/admin-speed.md
+ * "Waves"; it was four): the household beside its members, invitations, and home; then one names read (members,
+ * the creator, the inviters) beside the members' student records.
+ */
 export async function adminHousehold(householdId: string): Promise<AdminHousehold | null> {
   const supabase = await db();
-  const household = await maybe<{ id: string; name: string; created: string; created_by: string | null; deleted_at: string | null }>(
-    "household",
-    supabase.from("households").select("id, name, created, created_by, deleted_at").eq("id", householdId).maybeSingle(),
-  );
-  if (!household) return null;
-  const [members, invitations, homes] = await Promise.all([
+  const [household, members, invitations, homes] = await Promise.all([
+    maybe<{ id: string; name: string; created: string; created_by: string | null; deleted_at: string | null }>(
+      "household",
+      supabase.from("households").select("id, name, created, created_by, deleted_at").eq("id", householdId).maybeSingle(),
+    ),
     rows<MemberRow>("members", supabase.from("household_members").select(MEMBER_COLUMNS).eq("household_id", householdId).eq("status", "active")),
     rows<Omit<AdminInvitation, "invited_by_name" | "state">>(
       "invitations",
@@ -380,8 +412,12 @@ export async function adminHousehold(householdId: string): Promise<AdminHousehol
     ),
     rows<{ place: string; set_by_name: string | null; updated_at: string }>("home", supabase.from("household_homes_admin").select("place, set_by_name, updated_at").eq("household_id", householdId)),
   ]);
-  const named = (await withNames(supabase, members)).sort((a, b) => (a.role === b.role ? a.since.localeCompare(b.since) : a.role === "student" ? -1 : 1));
-  const names = await namesFor(supabase, [household.created_by, ...invitations.map((i) => i.invited_by)]);
+  if (!household) return null;
+  const [names, students] = await Promise.all([
+    namesFor(supabase, [...members.map((m) => m.user_id), household.created_by, ...invitations.map((i) => i.invited_by)]),
+    memberStudents(supabase, members),
+  ]);
+  const named = nameMembers(members, names, students).sort((a, b) => (a.role === b.role ? a.since.localeCompare(b.since) : a.role === "student" ? -1 : 1));
   const now = new Date();
   const invites = invitations.map((i) => ({ ...i, invited_by_name: names.get(i.invited_by ?? "") ?? null, state: invitationState(i, now) }));
   return {
@@ -451,36 +487,101 @@ export interface AdminStudent {
 
 const ITEM_COLUMNS =
   "id, list_id, unit_id, category, status, outcome, round, position, added_at, added_by, decision_date, deadline_text, deadline_date, enrolling, updates, visited_on, follows_social, applied_on";
+/** The columns lib/admin/standing.ts's hooks read beyond ITEM_COLUMNS (lib/planner/hooks.ts HooksItem and the hook flags). */
+const ITEM_HOOK_COLUMNS = "followed_networks, info_requested_on, legacy, recruited, legacy_sibling";
 
-/** The student record and its data as the family sees it, read-only. Call logStudentView() once per render too. */
+/* ------------------------------------------------------------------ */
+/* A student's reads, shared within a request                          */
+/* ------------------------------------------------------------------ */
+
+/*
+ * The student page (adminStudent) and its standing panel (lib/admin/standing.ts standingForStudent) read the same
+ * record, profile, lists, list items, and visits. Each is one React cache()d function (per request, keyed by the
+ * student id), so the two read each once (specs/product/admin-speed.md "Waves"). Each answers the query's own
+ * `{ data, error }`; the page throws on an error and the panel shows it, as each did before. Each checks the admin
+ * first (adminState is cached, so that is no extra round trip). The columns are the union of what both read.
+ */
+type QueryResult<T> = { data: T | null; error: { message: string } | null };
+
+async function studentDb(): Promise<SupabaseClient> {
+  await requireAdmin();
+  return adminSupabase();
+}
+
+/** The student record. */
+export const readStudentRecord = cache(async (studentId: string): Promise<QueryResult<AdminStudentRef>> => (await studentDb()).from("students").select(STUDENT_COLUMNS).eq("id", studentId).maybeSingle());
+
+/** The saved profile (the standing panel reads `data`; the page also the update stamp). */
+export const readStudentProfile = cache(
+  async (studentId: string): Promise<QueryResult<{ data: Record<string, unknown>; updated_at: string; updated_by: string | null }>> =>
+    (await studentDb()).from("student_profiles").select("data, updated_at, updated_by").eq("student_id", studentId).maybeSingle(),
+);
+
+type StudentListRow = { id: string; name: string; is_default: boolean; share_enabled: boolean; created: string };
+
+/** The student's lists, oldest first. */
+export const readStudentLists = cache(
+  async (studentId: string): Promise<QueryResult<StudentListRow[]>> => (await studentDb()).from("lists").select("id, name, is_default, share_enabled, created").eq("student_id", studentId).order("created"),
+);
+
+/** Every item on the student's lists, by position: the page's columns and the hooks'. Waits for the lists. */
+export const readStudentItems = cache(async (studentId: string): Promise<QueryResult<(Omit<AdminListItem, "notes"> & Record<string, unknown>)[]>> => {
+  const lists = await readStudentLists(studentId);
+  if (lists.error) return { data: null, error: lists.error };
+  return (await studentDb())
+    .from("list_items")
+    .select(`${ITEM_COLUMNS}, ${ITEM_HOOK_COLUMNS}`)
+    .in("list_id", inList((lists.data ?? []).map((l) => l.id)))
+    .order("position");
+});
+
+/** Every visit to a college on those lists, by date. Waits for the items. */
+export const readStudentVisits = cache(async (studentId: string): Promise<QueryResult<Record<string, unknown>[]>> => {
+  const items = await readStudentItems(studentId);
+  if (items.error) return { data: null, error: items.error };
+  return (await studentDb())
+    .from("plan_visits")
+    .select("*")
+    .in("item_id", inList((items.data ?? []).map((i) => i.id)))
+    .order("on_date");
+});
+
+/**
+ * The student record and its data as the family sees it, read-only. Call logStudentView() once per render too. Four
+ * waves after the admin check (specs/product/admin-speed.md "Waves"; it was seven): (1) the record, profile, lists,
+ * membership, snapshots, and access log, none of which needs another; (2) the items and tasks (they need the lists)
+ * and the household (it needs the membership); (3) the notes, visits, offers, and letters (they need the items);
+ * (4) one names read for the owner, the manager, the notes' authors, and the access log's viewers.
+ */
 export async function adminStudent(studentId: string): Promise<AdminStudent | null> {
   const supabase = await db();
-  const record = await maybe<AdminStudentRef>("student", supabase.from("students").select(STUDENT_COLUMNS).eq("id", studentId).maybeSingle());
+  const [record, profile, lists, membership, snapshots, access] = await Promise.all([
+    maybe<AdminStudentRef>("student", readStudentRecord(studentId)),
+    maybe<AdminStudent["profile"]>("student profile", readStudentProfile(studentId) as Result<AdminStudent["profile"]>),
+    rows<StudentListRow>("lists", readStudentLists(studentId)),
+    rows<{ household_id: string }>("membership", supabase.from("household_members").select("household_id").eq("student_id", studentId).eq("status", "active").limit(1)),
+    rows<Record<string, unknown>>("snapshots", supabase.from("application_snapshots").select("*").eq("student_id", studentId).order("applied_on")),
+    accessRows(supabase, [studentId]),
+  ]);
   if (!record) return null;
 
-  const [profile, lists, membership] = await Promise.all([
-    maybe<AdminStudent["profile"]>("student profile", supabase.from("student_profiles").select("data, updated_at, updated_by").eq("student_id", studentId).maybeSingle()),
-    rows<{ id: string; name: string; is_default: boolean; share_enabled: boolean; created: string }>(
-      "lists",
-      supabase.from("lists").select("id, name, is_default, share_enabled, created").eq("student_id", studentId).order("created"),
-    ),
-    rows<{ household_id: string }>("membership", supabase.from("household_members").select("household_id").eq("student_id", studentId).eq("status", "active").limit(1)),
-  ]);
   const listIds = inList(lists.map((l) => l.id));
-  const [items, tasks] = await Promise.all([
-    rows<Omit<AdminListItem, "notes">>("list items", supabase.from("list_items").select(ITEM_COLUMNS).in("list_id", listIds).order("position")),
+  const [allItems, tasks, household] = await Promise.all([
+    rows<Omit<AdminListItem, "notes"> & Record<string, unknown>>("list items", readStudentItems(studentId)),
     rows<Record<string, unknown>>("plan tasks", supabase.from("plan_tasks").select("*").in("list_id", listIds).order("due_on", { ascending: true, nullsFirst: false })),
-  ]);
-  const itemIds = inList(items.map((i) => i.id));
-  const [notes, visits, offers, letters, snapshots, household] = await Promise.all([
-    rows<{ id: string; item_id: string; author_id: string; body: string; private: boolean; created: string }>("notes", supabase.from("list_notes").select("id, item_id, author_id, body, private, created").in("item_id", itemIds).order("created")),
-    rows<Record<string, unknown>>("visits", supabase.from("plan_visits").select("*").in("item_id", itemIds).order("on_date")),
-    rows<Record<string, unknown>>("offers", supabase.from("plan_offers").select("*").in("item_id", itemIds)),
-    rows<AdminStudent["plan"]["letters"][number]>("letters", supabase.from("plan_letters").select("id, item_id, kind, storage_path, uploaded_by, created_at, confirmed_at").in("item_id", itemIds)),
-    rows<Record<string, unknown>>("snapshots", supabase.from("application_snapshots").select("*").eq("student_id", studentId).order("applied_on")),
     membership[0] ? maybe<{ id: string; name: string }>("household", supabase.from("households").select("id, name").eq("id", membership[0].household_id).maybeSingle()) : Promise.resolve(null),
   ]);
-  const names = await namesFor(supabase, [record.user_id, record.managed_by, ...notes.map((n) => n.author_id)]);
+  // The page shows the item columns it always did; the hook flags were read for the standing panel only.
+  const itemColumns = ITEM_COLUMNS.split(", ");
+  const items = allItems.map((i) => Object.fromEntries(itemColumns.map((c) => [c, i[c]])) as Omit<AdminListItem, "notes">);
+  const itemIds = inList(items.map((i) => i.id));
+  const [notes, visits, offers, letters] = await Promise.all([
+    rows<{ id: string; item_id: string; author_id: string; body: string; private: boolean; created: string }>("notes", supabase.from("list_notes").select("id, item_id, author_id, body, private, created").in("item_id", itemIds).order("created")),
+    rows<Record<string, unknown>>("visits", readStudentVisits(studentId)),
+    rows<Record<string, unknown>>("offers", supabase.from("plan_offers").select("*").in("item_id", itemIds)),
+    rows<AdminStudent["plan"]["letters"][number]>("letters", supabase.from("plan_letters").select("id, item_id, kind, storage_path, uploaded_by, created_at, confirmed_at").in("item_id", itemIds)),
+  ]);
+  const names = await namesFor(supabase, [record.user_id, record.managed_by, ...notes.map((n) => n.author_id), ...access.map((r) => r.viewer_id)]);
 
   // Your story (next-steps/your-story.md): never in the admin console's household view, same as a guardian — the
   // text is stripped, `updatedAt` kept, so the console can still say whether it's written.
@@ -500,7 +601,7 @@ export async function adminStudent(studentId: string): Promise<AdminStudent | nu
     })),
     plan: { tasks, visits, offers, letters },
     snapshots,
-    accessLog: await accessFor(supabase, [studentId]),
+    accessLog: nameAccess(access, names),
   };
 }
 

@@ -103,7 +103,9 @@ write policy for the service role only.
   a `data_snapshot_swap` server event with `{from, to, ms}`; the console shows which snapshot each environment serves
   by reading the `<meta name="x-quad-snapshot">` tag every page carries (as built: a response header can't follow a
   swap because `proxy.ts` and `headers()` can't see the loader's state; the header exists only where the id is fixed
-  for the deploy, and on `/search-index.json`).
+  for the deploy, and on `/search-index.json`). Since 2026-11-10 the console asks `GET /api/snapshot` first
+  (`{ "snapshot": "<id>" | null }`, never cached, the same `getSnapshotId()` the tag reads, 2 s timeout) and reads the
+  tag from the home page only when a deploy is older than the endpoint (`specs/product/admin-speed.md` "As built: U2").
 - **Lineage loads lazily** (2026-11-08; `lib/data-platform/loader.ts readBundledSchools`, `lib/data-platform/lineage-split.ts`).
   The bundled source parses `colleges.json` (no `lineage`), then gives every college that has a
   `lineage/<unit_id>.json` a `lineage` accessor: the first read loads that file synchronously (`readFileSync`, the

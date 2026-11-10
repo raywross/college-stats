@@ -2,7 +2,7 @@ import { AdminForm } from "@/components/admin/AdminForm";
 import { StatusChip } from "@/components/admin/StatusChip";
 import { ResponsiveTable, type Column } from "@/components/admin/ResponsiveTable";
 import { fmtDateTime, type ChipTone } from "@/lib/admin/console";
-import { formatBytes, manifestBytes, manifestDownloadUrl, type SnapshotRow } from "@/lib/admin/data-reads";
+import { formatBytes, manifestDownloadUrl, snapshotBytes, type SnapshotRow } from "@/lib/admin/data-reads";
 import { CONFIRM_MAKE_LIVE } from "@/lib/admin/data-actions";
 import { pointBackAction } from "@/app/admin/data/actions";
 
@@ -49,7 +49,7 @@ export function SnapshotsTable({ snapshots, currentId }: { snapshots: SnapshotRo
       ),
     },
     { key: "colleges", header: "Colleges", cell: (s) => s.manifest.colleges?.toLocaleString("en-US") ?? "—" },
-    { key: "size", header: "Size", role: "detail", cell: (s) => formatBytes(manifestBytes(s.manifest)) },
+    { key: "size", header: "Size", role: "detail", cell: (s) => formatBytes(snapshotBytes(s)) },
     { key: "changes", header: "Changes", cell: (s) => s.change_set_ids.length },
     {
       key: "actions",

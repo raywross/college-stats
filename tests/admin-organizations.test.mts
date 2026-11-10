@@ -349,7 +349,7 @@ test("the organizations page never shows a student's lists, numbers, or plan (th
 
 test("the person page reads personOrganization and names it 'Counselor organization', linking to the organization", () => {
   const src = read("app/admin/people/[user]/page.tsx");
-  assert.match(src, /personOrganization\(profile\.id\)/);
+  assert.match(src, /personOrganization\((profile\.id|user)\)/);
   assert.match(src, /Counselor organization/);
   assert.match(src, /\/admin\/organizations\/\$\{organization\.org_id\}/);
 });

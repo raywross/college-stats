@@ -5,7 +5,9 @@ import "server-only";
  * (lib/github-app.ts). Nothing here throws into a page: a table or GitHub that can't be read gives an empty list and
  * the page says so. Server only.
  */
+import { after } from "next/server";
 import * as gh from "@/lib/github-app";
+import { latestGithubRuns as memoizedGithubRuns } from "@/lib/jobs/github-memo";
 import { adminSupabase } from "@/lib/admin/people";
 import { JOBS, githubWorkflows, nextJobRun, type JobDef } from "@/lib/jobs/registry";
 import type { RunTrigger, StoredRunStatus } from "@/lib/jobs/record";
@@ -141,15 +143,28 @@ export interface JobsOverview {
   githubConfigured: boolean;
 }
 
-/** Every job with its next run and its last one, read in parallel. */
+/** Runs a memo refresh once the response has gone; outside a request (a script), in the background. */
+function scheduleAfterResponse(task: () => Promise<void>): void {
+  try {
+    after(task);
+  } catch {
+    void task();
+  }
+}
+
+/** The newest run of each GitHub workflow, from the per-instance memo (lib/jobs/github-memo.ts). */
+function latestGithubRuns(workflows: readonly string[]): Promise<Map<string, gh.WorkflowRun | null>> {
+  return memoizedGithubRuns(workflows, { listRuns: (opts) => gh.listRuns(opts), schedule: scheduleAfterResponse });
+}
+
+/** Every job with its next run and its last one, read in parallel; GitHub's from the per-instance memo. */
 export async function loadJobsOverview(now: Date): Promise<JobsOverview> {
   const vercelJobs = JOBS.filter((j) => j.runner === "vercel").map((j) => j.id);
   const configured = gh.githubConfigured() !== null;
-  const [stored, githubLatest] = await Promise.all([
+  const [stored, byWorkflow] = await Promise.all([
     latestStoredRuns(vercelJobs),
-    configured ? Promise.all(githubWorkflows().map(async (file) => [file, (await gh.listRuns({ workflows: [file], perPage: 1 }))[0] ?? null] as const)) : Promise.resolve([]),
+    configured ? latestGithubRuns(githubWorkflows()) : Promise.resolve(new Map<string, gh.WorkflowRun | null>()),
   ]);
-  const byWorkflow = new Map<string, gh.WorkflowRun | null>(githubLatest);
   const rows: JobOverviewRow[] = JOBS.map((job) => {
     const last: LastRun =
       job.runner === "vercel"

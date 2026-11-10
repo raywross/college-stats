@@ -44,5 +44,8 @@ test("every profile reader attaches it: the store, the estimate snapshot, and th
   const read = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
   assert.match(read("lib/student-profile-store.ts"), /withHomeState\(profileForViewer\(sanitizeProfile\(raw\), a\.relation\), homeState\)/);
   assert.match(read("lib/chances/snapshot-write.ts"), /withHomeState\(sanitizeProfile\(raw\), await homeStateForStudent\(supabase, studentId\)\)/);
-  assert.match(read("lib/admin/standing.ts"), /withHomeState\(sanitizeProfile\(.*\), await homeStateForStudent\(supabase, studentId\)\)/);
+  // The standing view reads the home state in its first wave (specs/product/admin-speed.md "Waves") and attaches it.
+  const standing = read("lib/admin/standing.ts");
+  assert.match(standing, /homeState\] = await Promise\.all\(\[[\s\S]*?homeStateForStudent\(supabase, studentId\),\s*\]\)/);
+  assert.match(standing, /withHomeState\(sanitizeProfile\(.*\), homeState\)/);
 });

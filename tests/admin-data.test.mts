@@ -837,13 +837,13 @@ test("readCollection pages through a whole collection by key (keyset), and readD
   assert.deepEqual([...some.keys()], ["100001|2025-26|C.116"]);
 });
 
-test("readQueue: rows from the store, read whole again only after a new write (or once the cache is old), never throwing", async () => {
+test("readQueue without the read model (a project before 20261110120000_admin_speed.sql): rows from the documents, read whole again only after a new write (or once the cache is old), never throwing", async () => {
   reviewQueue.resetQueueCache();
   const rejected = { ...c1Item("C.901", 0.3), resolved: "rejected" as const, resolved_on: "2026-10-30" };
   const tables = { data_documents: [...TRIO, HELD, rejected].map((i) => doc("reported.review_queue", reviewKey(i), i)) };
   const client = fakeSupabase(tables);
   let selects = 0;
-  const counting = { from: (t: string) => ({ select: () => (selects++, client.from(t).select()) }) };
+  const counting = { from: (t: string) => ({ select: () => (selects++, client.from(t).select()) }), rpc: client.rpc };
   let now = 1_000_000;
   const first = await reviewQueue.readQueue(counting as never, () => now);
   assert.ok(first.ok);
@@ -861,7 +861,7 @@ test("readQueue: rows from the store, read whole again only after a new write (o
   const before = selects;
   await reviewQueue.readQueue(counting as never, () => now);
   assert.ok(selects > before + 1, "an old cache is read again even without a new write (a deletion moves no updated_at)");
-  const broken = { from: () => ({ select: () => ({ eq: () => ({ order: () => ({ limit: async () => ({ data: null, error: { message: "paused" } }) }) }) }) }) };
+  const broken = { from: () => ({ select: () => ({ eq: () => ({ order: () => ({ limit: async () => ({ data: null, error: { message: "paused" } }) }) }) }) }), rpc: client.rpc };
   assert.deepEqual(await reviewQueue.readQueue(broken as never), { ok: false, reason: "admin: reading reported.review_queue failed: paused" });
   reviewQueue.resetQueueCache();
 });

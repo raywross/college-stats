@@ -313,3 +313,30 @@ Expected after wave 2: no console page reads more than a few hundred queue rows;
 Tests to add with each wave: the in-flight sharing and the per-request sharing (`tests/admin-inbox-reads.test.mts`),
 the column list of the snapshot read (no `objects`), the `review_items` reads against the mini fixture, and a
 `tests/timing.test.mts` case for the admin labels.
+
+## As built
+
+### The store (2026-11-10)
+Wave 2's table landed with wave 1, as a **read model** rather than a move: the queue's documents stay the write path
+and the version history, and `public.review_items` follows them by trigger
+(`supabase/migrations/20261110120000_admin_speed.sql`; the details are in `data-platform/change-sets.md` "The review
+queue's read model"). So no pipeline, script, or Steward tool changed, and the clusters are still computed in the
+console (the Steward's `steward.clusters` document is left for later).
+- **The migration:** the `data_documents (collection, updated_at desc)` index; the `review_items` table with four
+  indexes, a select-for-everyone policy, and no write grant; `review_items_put` (the one row-writer, never raises),
+  `review_items_date`, and the trigger function behind two triggers (`review_items_sync`,
+  `review_items_sync_delete`); the backfill; `review_items_light(p_status)` and `review_items_counts()`.
+- **The reads** (`lib/admin/review-queue.ts`): `readQueue` is one counts call (the cache key) plus, on a miss, one
+  `review_items_light(null)` call in place of the 22 pages, and concurrent callers share the read in flight. The
+  items carry no `extraction` (nothing that reads the whole queue uses it; Accept reads its items by key, and the
+  Review page reads its college's whole items). New: `readQueueCounts`, `readCollegeQueueItems`,
+  `readAcquisitionQueueItems`. `readTodo` and `readReviewRows` (lib/admin/steward-reads.ts) no longer read the whole
+  queue; `collegesToReview` takes the clusters' items. Each falls back to the documents when the migration isn't
+  applied.
+- **Tested:** `tests/review-items.test.mts` (PGlite, 9 tests: the trigger on insert, resolution, delete and other
+  collections; a malformed body warns and the write commits, with a guard that a raising sync would block it; the
+  backfill equals the trigger; the two functions; no direct writes); `tests/admin-review-queue.test.mts` (9 tests:
+  one RPC per read, two concurrent reads share one, the cache keyed on the newest write, the fallback, the narrow
+  readers' queries, `LIGHT_FIELDS` equal to the migration's list); `tests/steward-review-rows.test.mts` (To do and
+  Review never touch the whole queue; with and without the read model the pages agree). Measured on dev by the
+  integrator.

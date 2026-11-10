@@ -158,9 +158,34 @@ test("Colleges to review: most visible changes first, then 'your call', then ope
 
 type Docs = Map<string, Map<string, unknown>>;
 
-/** The slice of PostgREST the reads use, over in-memory collections; `missing` makes every read fail as a missing table. */
-function fakeClient(docs: Docs, opts: { missing?: boolean; reads?: string[] } = {}): StoreClient {
+/** A queue document as its `review_items` row (supabase/migrations/20261110120000_admin_speed.sql `review_items_put`). */
+function readModelRow(key: string, body: ReviewItem): Record<string, unknown> {
+  const status = body.resolved === "accepted" || body.resolved === "rejected" ? body.resolved : "open";
+  return { collection: "review_items", key, unit_id: body.unit_id, status, checks: [...new Set(body.failures.map((f) => f.check))], body, updated_at: "2026-11-01T00:00:00Z" };
+}
+
+/**
+ * The slice of PostgREST the reads use, over in-memory collections and the queue's read model (`review_items` and its
+ * two functions, derived from the queue's documents); `missing` makes every read fail as a missing table, and
+ * `noReadModel` leaves the read model out (a project before the migration). `reads` logs each read's source.
+ */
+function fakeClient(docs: Docs, opts: { missing?: boolean; noReadModel?: boolean; reads?: string[] } = {}): StoreClient {
+  const queue = () => [...(docs.get("reported.review_queue") ?? new Map<string, unknown>())] as [string, ReviewItem][];
   return {
+    rpc(fn: string, args?: Record<string, unknown>) {
+      opts.reads?.push(`rpc ${fn}`);
+      if (opts.missing || opts.noReadModel) return Promise.resolve({ data: null, error: { code: "PGRST202", message: `Could not find the function public.${fn} in the schema cache` } });
+      const rows = queue().map(([key, body]) => readModelRow(key, body)).sort((a, b) => (String(a.key) < String(b.key) ? -1 : 1));
+      if (fn === "review_items_counts") {
+        const n = (s: string) => rows.filter((r) => r.status === s).length;
+        return Promise.resolve({ data: { open: n("open"), accepted: n("accepted"), rejected: n("rejected"), new_week: 0, newest: rows.length ? "2026-11-01T00:00:00+00:00" : null }, error: null });
+      }
+      if (fn === "review_items_light") {
+        const status = args?.p_status ?? null;
+        return Promise.resolve({ data: rows.filter((r) => status === null || r.status === status).map((r) => ({ key: r.key, ...(({ extraction: _, ...rest }) => rest)(r.body as ReviewItem) })), error: null });
+      }
+      return Promise.resolve({ data: null, error: { message: `unknown function ${fn}` } });
+    },
     from(table: string) {
       return {
         select(columns: string) {
@@ -180,6 +205,16 @@ function fakeClient(docs: Docs, opts: { missing?: boolean; reads?: string[] } = 
               filters.push((r) => String(r[col]) > v);
               return q;
             },
+            like(col: string, pattern: string) {
+              assert.match(pattern, /%$/, "a prefix pattern");
+              const prefix = pattern.slice(0, -1).replace(/\\(.)/g, "$1");
+              filters.push((r) => String(r[col]).startsWith(prefix));
+              return q;
+            },
+            overlaps(col: string, vs: readonly string[]) {
+              filters.push((r) => Array.isArray(r[col]) && (r[col] as string[]).some((v) => vs.includes(v)));
+              return q;
+            },
             order(_col: string, o?: { ascending?: boolean }) {
               desc = o?.ascending === false;
               return q;
@@ -188,13 +223,16 @@ function fakeClient(docs: Docs, opts: { missing?: boolean; reads?: string[] } = 
               limit = n;
               return q;
             },
-            then(resolve: (x: { data: Record<string, unknown>[] | null; error: { message: string } | null }) => unknown) {
-              if (opts.missing || table !== "data_documents") return Promise.resolve({ data: null, error: { message: `relation "public.${table}" does not exist` } }).then(resolve);
-              const rows = [...docs].flatMap(([collection, m]) => [...m].map(([key, body]) => ({ collection, key, body, updated_at: "2026-11-01T00:00:00Z" })));
-              const found = rows.filter((r) => filters.every((f) => f(r))).sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+            then(resolve: (x: { data: Record<string, unknown>[] | null; error: { message: string; code?: string } | null }) => unknown) {
+              const readModel = table === "review_items" && !opts.noReadModel;
+              if (opts.missing || (table !== "data_documents" && !readModel)) return Promise.resolve({ data: null, error: { code: "PGRST205", message: `relation "public.${table}" does not exist` } }).then(resolve);
+              const rows: Record<string, unknown>[] = readModel
+                ? queue().map(([key, body]) => readModelRow(key, body))
+                : [...docs].flatMap(([collection, m]) => [...m].map(([key, body]) => ({ collection, key, body, updated_at: "2026-11-01T00:00:00Z" })));
+              const found = rows.filter((r) => filters.every((f) => f(r))).sort((a, b) => (String(a.key) < String(b.key) ? -1 : String(a.key) > String(b.key) ? 1 : 0));
               if (desc) found.reverse();
-              const picked = found.slice(0, limit).map((r) => Object.fromEntries(columns.split(",").map((c) => c.trim()).map((c) => [c, r[c as keyof typeof r]])));
-              opts.reads?.push(String(found[0]?.collection ?? ""));
+              const picked = found.slice(0, limit).map((r) => Object.fromEntries(columns.split(",").map((c) => c.trim()).map((c) => [c, r[c]])));
+              opts.reads?.push(readModel ? "review_items" : String(found[0]?.collection ?? ""));
               return Promise.resolve({ data: picked, error: null }).then(resolve);
             },
           };
@@ -290,4 +328,48 @@ test("readReviewRows: one college's To do rows on top and its rows by code; coll
   assert.equal(uiuc.groups.length, 14);
   const list = await collegesToReview(client);
   assert.deepEqual(list.map((c) => c.unit_id), ["221999", "145637", "231624", "190415"]);
+});
+
+test("To do and the Review page never read the whole queue: To do reads the open acquisition items, Review the college's items", async () => {
+  resetQueueCache();
+  resetClusterCache();
+  const reads: string[] = [];
+  const client = fakeClient(world(), { reads });
+  const todo = await readTodo(client, { demand: new Map([["190415", 3]]) });
+  assert.ok(!reads.some((r) => r.startsWith("rpc ")), `no queue RPC: ${reads.join(", ")}`);
+  assert.ok(!reads.includes("reported.review_queue"), "no queue document");
+  assert.ok(reads.includes("review_items"));
+  assert.ok(todo.some((t) => t.key === "other:190415:2025-26"), "the not-a-url item is a To do row");
+
+  reads.length = 0;
+  const page = await readReviewRows(client, "145637", data);
+  assert.deepEqual(reads.filter((r) => r.startsWith("rpc ") || r === "reported.review_queue"), [], "no whole-queue read");
+  assert.equal(page.groups.length, 14);
+  assert.ok(page.groups.flatMap((g) => g.rows).every((r) => r.item?.unit_id === "145637" || r.item === null));
+
+  // collegesToReview with the clusters' items reads only the proposals.
+  const clusters = await readClusters(client);
+  assert.ok(clusters.ok);
+  reads.length = 0;
+  const list = await collegesToReview(client, { items: clusters.items });
+  assert.deepEqual(reads.filter((r) => r.startsWith("rpc ")), []);
+  assert.deepEqual(list.map((c) => c.unit_id), ["221999", "145637", "231624", "190415"]);
+});
+
+test("without the read model (a project before the migration) To do, Review, and the clusters read the documents and agree", async () => {
+  const run = async (noReadModel: boolean) => {
+    resetQueueCache();
+    resetClusterCache();
+    const client = fakeClient(world(), { noReadModel });
+    const todo = await readTodo(client, { demand: new Map([["190415", 3]]) });
+    const review = await readReviewRows(client, "190415", data);
+    const uiuc = await readReviewRows(client, "145637", data);
+    const clusters = await readClusters(client);
+    assert.ok(clusters.ok);
+    return { todo: todo.map((t) => t.key), review: review.groups, uiuc: uiuc.groups, queueOk: review.queueOk, clusters: clusters.clusters.map((c) => [c.cluster.key, c.kind]) };
+  };
+  const withModel = await run(false);
+  const without = await run(true);
+  assert.equal(without.queueOk, true);
+  assert.deepEqual(without, withModel);
 });

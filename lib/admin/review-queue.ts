@@ -14,11 +14,18 @@
  *   doesn't queue the same document's value again.
  * - **Re-run discovery** dispatches a `college` run with `rediscover: true`, as before.
  *
+ * The queue is read from its read model, `public.review_items` (supabase/migrations/20261110120000_admin_speed.sql,
+ * specs/data-platform/change-sets.md "The review queue's read model"): `readQueue` in one round trip
+ * (`review_items_light`, keyed for its cache on `review_items_counts`'s newest write, one read in flight per instance),
+ * and the narrow readers (`readQueueCounts`, `readCollegeQueueItems`, `readAcquisitionQueueItems`) never touch the
+ * whole queue. On a project without the migration each falls back to the documents, as before.
+ *
  * Pure but for the reads, which take the client as an argument.
  */
 import { editProblem } from "../data-platform/edits.ts";
 import { labelYear } from "../newest-groups.ts";
 import { reviewKey, type ReviewItem } from "../reported.ts";
+import { ACQUISITION_QUEUE_CHECKS } from "../steward/todo-sources.ts";
 
 /** The collections these reads use (scripts/lib/data-platform/layers.mts `COLLECTIONS`; a test checks they agree). */
 export const REVIEW_QUEUE_COLLECTION = "reported.review_queue";
@@ -53,17 +60,44 @@ export function queueRows(docs: ReadonlyMap<string, ReviewItem> | readonly Revie
 /* Reads                                                               */
 /* ------------------------------------------------------------------ */
 
-type Result<T> = PromiseLike<{ data: T | null; error: { message: string } | null }>;
+/** A PostgREST error: `code` is PostgREST's (`PGRST202`) or Postgres's SQLSTATE (`42P01`). */
+export type StoreError = { message: string; code?: string };
+type Result<T> = PromiseLike<{ data: T | null; error: StoreError | null }>;
 interface Query<T> extends Result<T[]> {
   eq(column: string, value: unknown): Query<T>;
   in(column: string, values: unknown[]): Query<T>;
   gt(column: string, value: string): Query<T>;
+  /** `like` (PostgREST `like`): the documents' key-prefix fallback. */
+  like(column: string, pattern: string): Query<T>;
+  /** Array overlap (PostgREST `ov`): `review_items.checks` against a list. */
+  overlaps(column: string, values: readonly string[]): Query<T>;
   order(column: string, opts?: { ascending?: boolean }): Query<T>;
   limit(n: number): Query<T>;
 }
 /** The slice of a Supabase client these reads use (the admin's session: `adminSupabase()`). */
 export interface StoreClient {
   from(table: string): { select(columns: string): Query<Record<string, unknown>> };
+  rpc(fn: string, args?: Record<string, unknown>): PromiseLike<{ data: unknown; error: StoreError | null }>;
+}
+
+/**
+ * Whether an error says the read model isn't there: a missing function (PostgREST `PGRST202`, Postgres `42883`) or
+ * table (`PGRST205`, `42P01`), by its code or its message. A project before 20261110120000_admin_speed.sql.
+ */
+export function isMissingReadModel(error: unknown): boolean {
+  if (!error) return false;
+  const obj = typeof error === "object" ? (error as { code?: unknown; message?: unknown }) : null;
+  if (/^(PGRST202|PGRST205|42P01|42883)$/.test(String(obj?.code ?? ""))) return true;
+  const message = error instanceof Error ? error.message : obj ? String(obj.message ?? "") : String(error);
+  return /PGRST202|PGRST205|42P01|42883|does not exist|schema cache|could not find the function/i.test(message);
+}
+
+let warnedFallback = false;
+/** One warning per instance that the read model is missing and the documents are read instead. */
+function warnFallback(what: string): void {
+  if (warnedFallback) return;
+  warnedFallback = true;
+  console.warn(`[admin] review_items is missing (apply supabase/migrations/20261110120000_admin_speed.sql); ${what} reads the queue's documents instead`);
 }
 
 const PAGE = 1000;
@@ -97,7 +131,7 @@ export async function readDocuments<T>(client: StoreClient, collection: string, 
   return out;
 }
 
-/** The newest write to a collection (any document's `updated_at`), or null when it is empty. */
+/** The newest write to a collection (any document's `updated_at`), or null when it is empty (an index lookup since 20261110120000). */
 async function newestWrite(client: StoreClient, collection: string): Promise<string | null> {
   const { data, error } = await client.from("data_documents").select("updated_at").eq("collection", collection).order("updated_at", { ascending: false }).limit(1);
   if (error) throw new Error(`admin: reading ${collection} failed: ${error.message}`);
@@ -108,30 +142,196 @@ async function newestWrite(client: StoreClient, collection: string): Promise<str
 export const QUEUE_CACHE_MS = 5 * 60_000;
 
 let cache: { newest: string | null; at: number; rows: QueueRow[]; items: ReviewItem[] } | null = null;
+/** The read under way, which every caller meanwhile awaits instead of starting another. */
+let inflight: Promise<QueueRead> | null = null;
 
-/** Forgets the cached queue (tests; and after an action, so the page shows it at once). */
+/** Forgets the cached queue and any read in flight (tests; and after an action, so the page shows it at once). */
 export function resetQueueCache(): void {
   cache = null;
+  inflight = null;
+  warnedFallback = false;
 }
 
 export type QueueRead = { ok: true; updated: string | null; rows: QueueRow[]; items: ReviewItem[] } | { ok: false; reason: string };
 
 /**
- * The review queue from the store as rows. About 15,000 documents (11 MB), so it is read whole only when a document
- * was written since the last read (one small query on `updated_at` per call) or the cache is older than
- * `QUEUE_CACHE_MS`; cached per instance. Never throws.
+ * The fields of an item `review_items_light` returns (the migration's list; a test checks they agree): what the
+ * whole-queue readers use (`queueRows`, `clusterQueue`, `kindContext`, `todoRows`, `reviewColleges`). Not
+ * `extraction`: only an Accept reads it, by key (`readDocuments`), and the Review page reads its college's whole items.
  */
-export async function readQueue(client: StoreClient, now: () => number = Date.now): Promise<QueueRead> {
+export const LIGHT_FIELDS = ["unit_id", "name", "urls", "entering_term", "failures", "queued", "run", "code", "edition", "sha256", "value", "resolved", "resolved_on", "resolved_note"] as const;
+
+export interface QueueCounts {
+  open: number;
+  accepted: number;
+  rejected: number;
+  /** Open items queued in the last seven days. */
+  newWeek: number;
+  /** The queue's newest write (ISO), or null when it is empty. */
+  newest: string | null;
+}
+
+/** `review_items_counts()`'s answer, or null when it isn't one. */
+function parseCounts(data: unknown): QueueCounts | null {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const d = data as Record<string, unknown>;
+  const n = (k: string): number | null => (typeof d[k] === "number" && Number.isInteger(d[k]) && (d[k] as number) >= 0 ? (d[k] as number) : null);
+  const [open, accepted, rejected, newWeek] = [n("open"), n("accepted"), n("rejected"), n("new_week")];
+  if (open === null || accepted === null || rejected === null || newWeek === null) return null;
+  return { open, accepted, rejected, newWeek, newest: typeof d.newest === "string" ? d.newest : null };
+}
+
+/** Marks "the read model is missing", so the caller falls back to the documents. */
+class MissingReadModel extends Error {}
+
+async function countsOrMissing(client: StoreClient): Promise<QueueCounts> {
+  const { data, error } = await client.rpc("review_items_counts");
+  if (error) {
+    if (isMissingReadModel(error)) throw new MissingReadModel(error.message);
+    throw new Error(`admin: reading the review queue's counts failed: ${error.message}`);
+  }
+  const counts = parseCounts(data);
+  if (!counts) throw new Error("admin: review_items_counts gave an unexpected answer");
+  return counts;
+}
+
+/** The queue's items from `review_items_light(null)` (every status), by key. */
+async function lightItems(client: StoreClient): Promise<Map<string, ReviewItem>> {
+  const { data, error } = await client.rpc("review_items_light", { p_status: null });
+  if (error) {
+    if (isMissingReadModel(error)) throw new MissingReadModel(error.message);
+    throw new Error(`admin: reading the review queue failed: ${error.message}`);
+  }
+  if (!Array.isArray(data)) throw new Error("admin: review_items_light gave an unexpected answer");
+  const out = new Map<string, ReviewItem>();
+  for (const el of data as unknown[]) {
+    if (!el || typeof el !== "object" || typeof (el as { key?: unknown }).key !== "string") continue;
+    const { key, ...item } = el as { key: string } & ReviewItem;
+    out.set(key, item);
+  }
+  return out;
+}
+
+function remember(newest: string | null, at: number, docs: ReadonlyMap<string, ReviewItem>): QueueRead {
+  const rows = queueRows(docs);
+  cache = { newest, at, rows, items: [...docs.values()] };
+  return { ok: true, updated: newest, rows, items: cache.items };
+}
+
+/** The cached queue when it is still good for this newest write. */
+function cached(newest: string | null, now: number): QueueRead | null {
+  return cache && cache.newest === newest && now - cache.at < QUEUE_CACHE_MS ? { ok: true, updated: newest, rows: cache.rows, items: cache.items } : null;
+}
+
+/** Today's path on a project without the read model: the newest write, then every document a page at a time. */
+async function readQueueFromDocuments(client: StoreClient, now: () => number): Promise<QueueRead> {
+  const newest = await newestWrite(client, REVIEW_QUEUE_COLLECTION);
+  return cached(newest, now()) ?? remember(newest, now(), await readCollection<ReviewItem>(client, REVIEW_QUEUE_COLLECTION));
+}
+
+async function readQueueOnce(client: StoreClient, now: () => number): Promise<QueueRead> {
   try {
-    const newest = await newestWrite(client, REVIEW_QUEUE_COLLECTION);
-    if (cache && cache.newest === newest && now() - cache.at < QUEUE_CACHE_MS) return { ok: true, updated: newest, rows: cache.rows, items: cache.items };
-    const docs = await readCollection<ReviewItem>(client, REVIEW_QUEUE_COLLECTION);
-    const rows = queueRows(docs);
-    cache = { newest, at: now(), rows, items: [...docs.values()] };
-    return { ok: true, updated: newest, rows, items: cache.items };
+    try {
+      const { newest } = await countsOrMissing(client);
+      return cached(newest, now()) ?? remember(newest, now(), await lightItems(client));
+    } catch (e) {
+      if (!(e instanceof MissingReadModel)) throw e;
+      warnFallback("readQueue");
+      return await readQueueFromDocuments(client, now);
+    }
   } catch (e) {
     return { ok: false, reason: e instanceof Error ? e.message : String(e) };
   }
+}
+
+/**
+ * The review queue as rows, every status (the rows carry resolutions), each item without its `extraction`
+ * (`LIGHT_FIELDS`). One call for the counts (whose newest write is the cache key) and, when that changed or the cache
+ * is older than `QUEUE_CACHE_MS`, one call for the items; cached per instance, and a caller arriving while a read is
+ * under way awaits that read instead of starting another. Without the read model: the documents, as before. Never
+ * throws.
+ */
+export function readQueue(client: StoreClient, now: () => number = Date.now): Promise<QueueRead> {
+  if (inflight) return inflight;
+  const p: Promise<QueueRead> = readQueueOnce(client, now).finally(() => {
+    if (inflight === p) inflight = null;
+  });
+  inflight = p;
+  return p;
+}
+
+/** The queue's counts and newest write in one call; null when they couldn't be read (the read model missing included). Never cached. */
+export async function readQueueCounts(client: StoreClient): Promise<QueueCounts | null> {
+  try {
+    return await countsOrMissing(client);
+  } catch {
+    return null;
+  }
+}
+
+const likePrefix = (s: string) => `${s.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+
+type Page = PromiseLike<{ data: Record<string, unknown>[] | null; error: StoreError | null }>;
+
+/** Every row of a query, paged by key (keyset, `PAGE` at a time); the error of the first page that failed. */
+async function pagedByKey(page: (after: string | null) => Page): Promise<{ rows: { key: string; body: unknown }[]; error: StoreError | null }> {
+  const rows: { key: string; body: unknown }[] = [];
+  let after: string | null = null;
+  for (let i = 0; i < MAX_PAGES; i++) {
+    const { data, error } = await page(after);
+    if (error) return { rows, error };
+    const got = (data ?? []) as { key: string; body: unknown }[];
+    rows.push(...got);
+    if (got.length < PAGE) return { rows, error: null };
+    after = got[got.length - 1].key;
+  }
+  return { rows, error: null };
+}
+
+/**
+ * One college's queue items, every status, whole (with `extraction`: the Review page's Accept plan reads it), in key
+ * order: `review_items` by `unit_id`, or the documents by key prefix `unit|` without the read model. Never cached;
+ * throws on failure.
+ */
+export async function readCollegeQueueItems(client: StoreClient, unit: string): Promise<ReviewItem[]> {
+  const table = await pagedByKey((after) => {
+    let q = client.from("review_items").select("key, body").eq("unit_id", unit);
+    if (after !== null) q = q.gt("key", after);
+    return q.order("key", { ascending: true }).limit(PAGE);
+  });
+  if (!table.error) return table.rows.map((r) => r.body as ReviewItem);
+  if (!isMissingReadModel(table.error)) throw new Error(`admin: reading ${unit}'s review items failed: ${table.error.message}`);
+  warnFallback("a college's Review page");
+  const docs = await pagedByKey((after) => {
+    let q = client.from("data_documents").select("key, body").eq("collection", REVIEW_QUEUE_COLLECTION).like("key", likePrefix(`${unit}|`));
+    if (after !== null) q = q.gt("key", after);
+    return q.order("key", { ascending: true }).limit(PAGE);
+  });
+  if (docs.error) throw new Error(`admin: reading ${REVIEW_QUEUE_COLLECTION} failed: ${docs.error.message}`);
+  return docs.rows.map((r) => r.body as ReviewItem);
+}
+
+/** An open item that failed a check To do acts on (`ACQUISITION_QUEUE_CHECKS`: unreachable, not-a-url). */
+const isAcquisition = (i: ReviewItem) => !i.resolved && Array.isArray(i.failures) && i.failures.some((f) => ACQUISITION_QUEUE_CHECKS.has(f.check));
+
+/**
+ * The open items To do acts on (a failure of an `ACQUISITION_QUEUE_CHECKS` check: a few hundred), whole, in key order:
+ * `review_items` where `status = 'open'` and `checks` overlaps them; without the read model, the whole queue through
+ * `readQueue`, filtered the same way. Never cached; throws on failure.
+ */
+export async function readAcquisitionQueueItems(client: StoreClient): Promise<ReviewItem[]> {
+  const checks = [...ACQUISITION_QUEUE_CHECKS];
+  const table = await pagedByKey((after) => {
+    let q = client.from("review_items").select("key, body").eq("status", "open").overlaps("checks", checks);
+    if (after !== null) q = q.gt("key", after);
+    return q.order("key", { ascending: true }).limit(PAGE);
+  });
+  if (!table.error) return table.rows.map((r) => r.body as ReviewItem).filter(isAcquisition);
+  if (!isMissingReadModel(table.error)) throw new Error(`admin: reading the review queue failed: ${table.error.message}`);
+  warnFallback("To do");
+  const queue = await readQueue(client);
+  if (!queue.ok) throw new Error(queue.reason);
+  return queue.items.filter(isAcquisition);
 }
 
 /** An essay record the reader held (scripts/lib/essay-prompts/store.mts `HeldRecord`), as Holds shows it. */

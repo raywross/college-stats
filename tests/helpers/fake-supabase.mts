@@ -1,8 +1,11 @@
 /**
  * A small in-memory stand-in for the Supabase client's query builder, enough for the act-tracking writers and the
  * morning job (lib/planner/interest-acts-server.ts): `from(table)` with select / insert / update / upsert, the filters
- * eq, neq, is, in, gt, lt, gte, lte, order, limit, maybeSingle, single, and `await`. Every write is logged in `writes`
- * so a test can prove what was (and wasn't) written. Not a test file (no `.test.mts`).
+ * eq, neq, is, in, gt, lt, gte, lte, like, overlaps, order, limit, maybeSingle, single, and `await`. Every write is logged
+ * in `writes` so a test can prove what was (and wasn't) written. Like a project before
+ * supabase/migrations/20261110120000_admin_speed.sql, a `review_items` table the test didn't give is missing
+ * (PostgREST's PGRST205) and so are the `review_items_*` functions (PGRST202), so the console's queue reads fall back to
+ * the documents. Not a test file (no `.test.mts`).
  */
 type Row = Record<string, unknown>;
 type Filter = (r: Row) => boolean;
@@ -18,7 +21,7 @@ export interface FakeClient {
   tables: Record<string, Row[]>;
   writes: FakeWrite[];
   from: (table: string) => Builder;
-  rpc: (fn: string, args: Row) => Promise<{ data: unknown; error: null }>;
+  rpc: (fn: string, args?: Row) => Promise<{ data: unknown; error: { message: string; code?: string } | null }>;
 }
 
 let seq = 0;
@@ -81,6 +84,23 @@ class Builder implements PromiseLike<{ data: unknown; error: { message: string }
     this.filters.push((r) => String(r[col]) > v);
     return this;
   }
+  like(col: string, pattern: string) {
+    let source = "";
+    for (let i = 0; i < pattern.length; i++) {
+      const c = pattern[i];
+      if (c === "\\" && i + 1 < pattern.length) source += pattern[++i].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      else if (c === "%") source += ".*";
+      else if (c === "_") source += ".";
+      else source += c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+    const re = new RegExp(`^${source}$`, "s");
+    this.filters.push((r) => re.test(String(r[col] ?? "")));
+    return this;
+  }
+  overlaps(col: string, vs: readonly unknown[]) {
+    this.filters.push((r) => Array.isArray(r[col]) && (r[col] as unknown[]).some((v) => vs.includes(v)));
+    return this;
+  }
   lt(col: string, v: string) {
     this.filters.push((r) => String(r[col]) < v);
     return this;
@@ -111,7 +131,10 @@ class Builder implements PromiseLike<{ data: unknown; error: { message: string }
     return this;
   }
 
-  private run(): { data: unknown; error: { message: string } | null } {
+  private run(): { data: unknown; error: { message: string; code?: string } | null } {
+    if (this.table === "review_items" && !(this.table in this.client.tables)) {
+      return { data: null, error: { code: "PGRST205", message: "Could not find the table 'public.review_items' in the schema cache" } };
+    }
     const rows = (this.client.tables[this.table] ??= []);
     let out: Row[];
     if (this.op === "insert") {
@@ -162,7 +185,10 @@ export function fakeSupabase(tables: Record<string, Row[]> = {}): FakeClient {
     tables,
     writes: [],
     from: (table: string) => new Builder(client, table),
-    rpc: async () => ({ data: true, error: null }),
+    rpc: async (fn: string) =>
+      fn.startsWith("review_items_") && !("review_items" in tables)
+        ? { data: null, error: { code: "PGRST202", message: `Could not find the function public.${fn} in the schema cache` } }
+        : { data: true, error: null },
   };
   return client;
 }

@@ -424,10 +424,17 @@ pure in `lib/emails/visit-alert.ts` like `lib/digest.ts`, with the HTML and plai
   upcoming events (owner, 2026-10-13: the calendar shows only when asked for, never as the first thing on the page).
   It opens the calendar route, `/schools/<id>/events` (until 2026-10-25 the same page with `?view=events`, which now
   redirects there, so the overview can stay prerendered): the college's header stays, and the stats below are replaced
-  by the calendar: a "Back to the college" link, the next three on-campus events and the next three near the family ("Near
-  you: Decatur High School, Mon 19 Oct, 14 miles"), each with the date, time, place, open/full, and a Sign up link,
-  then the whole calendar with the kind chips (Campus tours · Sessions · Near you · Online · Everything) and a state
-  filter for the travel calendar. The button turns into "Back to the college" while the view is open. Signed out, the
+  by the calendar: a "Back to the college" link, then one list with the kind chips (Campus tours · Sessions · Near me ·
+  Online · Everything) open from the start, each event with the date, time, place, distance, open/full, and a Sign up
+  link. **Near me** is the travel calendar measured from the family: the rep visits and fairs within the person's
+  alert radius of their home or high school ("Measuring from home in Roslyn, NY"), nearest with its miles on the row;
+  the select beside the chips starts at "Within 30 miles" and lists the states the college visits, and picking one
+  shows that state's events at any distance. Someone with neither a home nor a located high school sees the whole
+  travel calendar with a line asking for one. (Until 2026-11-09 the page opened with "Next on campus" and "Near you"
+  columns of three above an "Everything on the calendar" list, and the chip, then labeled "Near you", was the travel
+  kind alone with no distance: a Roslyn student looking at UT Austin saw Texas high schools under "Near you". The
+  owner dropped the columns, since the chips do the same job, and renamed the chip.) The button turns into "Back to
+  the college" while the view is open. Signed out, the
   calendar route goes to the sign-up form (`/login?mode=signup`) and returns to the calendar afterwards; the button
   itself reads no session (the overview is served from the cache), and the count is the one public figure.
 - **`/me/visits`**: every upcoming event at the colleges on the person's lists, nearest first, then by date; a
@@ -531,7 +538,8 @@ The first build put an "Upcoming visits" block under the hero; the owner's revie
 (`VisitCalendar`, first rendered by `app/schools/[id]/page.tsx` for `?view=events`; since 2026-10-25 by its own route,
 `app/schools/[id]/events/page.tsx`, under the shared `ProfileHero`, because the session read had made every college
 overview render per request: [serving-architecture.md](../serving-architecture.md#follow-up-2026-10-25-launch-performance-review)). `/login` gained `?mode=signup`,
-which opens the form on "Create an account". Chips: Sessions = `info_session` + `open_house` + `other`; Near you = `travel`. "Add to calendar" is
+which opens the form on "Create an account". Chips: Sessions = `info_session` + `open_house` + `other`; Near me = `travel` within the
+viewer's radius (`chipEvents` in `lib/visit-events/view.ts`, since 2026-11-09; "Near you" = every `travel` row before). "Add to calendar" is
 a client-side `.ics` from `lib/ics.ts`. No React render test (the repo's only pattern compiles `.tsx` by hand).
 
 **Alerts** (U3): `lib/visit-events/alerts.ts` (`selectAlerts`), `lib/emails/visit-alert.ts`, `/api/cron/visit-alerts`

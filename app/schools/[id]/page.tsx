@@ -64,9 +64,6 @@ export default async function SchoolPage({ params }: Props) {
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="space-y-14 pt-2 sm:space-y-16 sm:pt-4">
-          {/* ============================== WHAT CHANGED (nothing without a change in the last year) ============================== */}
-          <ProfileChanges school={school} data={data} />
-
           {/* Quiet, renders nothing unless the signed-in student's high school lists this college (specs/product/high-school-data.md). */}
           <MyHighSchoolLine unitId={school.unit_id} />
 
@@ -108,9 +105,14 @@ export default async function SchoolPage({ params }: Props) {
                 </div>
               ))}
             </div>
+          </Panel>
 
-            {/* One sources block for the overview: every number's own source is in its (i) popover. */}
-            <details className="group mt-10 rounded-2xl border border-dashed bg-card/50 open:border-solid sm:mt-12">
+          {/* ============================== WHAT CHANGED (last, so the profile leads with the college, not its edits; nothing without a change in the last year) ============================== */}
+          <ProfileChanges school={school} data={data} />
+
+          {/* One sources block for the overview, always last: every number's own source is in its (i) popover. */}
+          <div>
+            <details className="group rounded-2xl border border-dashed bg-card/50 open:border-solid">
               <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-primary">Sources for this overview</span>
@@ -122,7 +124,7 @@ export default async function SchoolPage({ params }: Props) {
                 <SourceList school={school} fields={PROFILE_FIELDS} />
               </div>
             </details>
-          </Panel>
+          </div>
         </div>
       </div>
     </div>

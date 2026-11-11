@@ -115,9 +115,13 @@ export function runChecks(x: Extraction, school: School, others?: Extraction[]):
     }
   }
 
-  // 7. Two sources for the same term agree within 1% on every number both have.
+  // 7. Two sources for the same term, cohort, and scope agree on every number both have: counts within 1%, the rate
+  // within the tolerance of how it was printed (a profile's "5%" is 4.5–5.5%, as in check 4). A regular-decision
+  // summary (scope regular-only) or a source whose scope is unknown is never held against a whole-cycle Common Data
+  // Set: the numbers describe different pools, so a gap between them is not a disagreement (Vanderbilt, 2026-11-10).
   for (const other of others ?? []) {
     if (other.entering_term !== x.entering_term) continue;
+    if (other.cohort !== x.cohort || other.scope !== x.scope) continue;
     for (const key of ["applicants", "admitted", "enrolled"] as const) {
       const a = x[key];
       const b = other[key];
@@ -129,9 +133,11 @@ export function runChecks(x: Extraction, school: School, others?: Extraction[]):
     const ra = effectiveRate(x);
     const rb = effectiveRate(other);
     if (ra !== null && rb !== null) {
-      const denom = Math.max(Math.abs(ra), Math.abs(rb), 0.0001);
-      const rel = Math.abs(ra - rb) / denom;
-      if (rel > 0.01) failures.push(fail("sources-agree", `acceptance_rate ${(ra * 100).toFixed(2)}% vs other source's ${(rb * 100).toFixed(2)}% (${(rel * 100).toFixed(1)}% apart)`));
+      const diffPts = Math.abs(ra - rb) * 100;
+      const tolerance = Math.max(rateTolerancePts(x.quotes.acceptance_rate), rateTolerancePts(other.quotes.acceptance_rate));
+      if (diffPts > tolerance) {
+        failures.push(fail("sources-agree", `acceptance_rate ${(ra * 100).toFixed(2)}% vs other source's ${(rb * 100).toFixed(2)}% (diff ${diffPts.toFixed(2)} pt, allowed ${tolerance})`));
+      }
     }
   }
 

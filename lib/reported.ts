@@ -10,7 +10,7 @@
  *   reported.reports       per-run summaries and accuracy reports
  * Every shape here is the parsed document: callers read it from the store (or a test fixture) and pass it in.
  */
-import type { LineageRecord, ReportedAdmissions, ReportedSourceKind, SourceInfo } from "./types";
+import type { FigureQualifier, LineageRecord, ReportedAdmissions, ReportedSourceKind, SourceInfo } from "./types";
 import type { CallKey, DocumentType } from "./cds-sections";
 
 /** `meta.sources["college-site"]`, written by the sync; the app's placeholder when a publish is mid-flight. */
@@ -40,14 +40,20 @@ export const REPORTED_MODELS = {
   escalation: "claude-sonnet-5",
 } as const;
 
-/** The extractor's section anchors when a recipe source has none (discovery returns links only since round 2). */
-export const DEFAULT_ANCHORS: Record<ReportedSourceKind, string> = { cds: "C1", "class-profile": "appl" };
+/**
+ * The extractor's section anchors when a recipe source has none (discovery returns links only since round 2). A notice
+ * has none: its text is windowed around its term's tokens (lib/seasons.ts noticePatterns), not around "appl".
+ */
+export const DEFAULT_ANCHORS: Record<ReportedSourceKind, string> = { cds: "C1", "class-profile": "appl", notice: "" };
 
 /* ------------------------------------------------------------------ */
 /* Recipes: reported.sources                                           */
 /* ------------------------------------------------------------------ */
 
 export type DocumentFormat = "pdf" | "html" | "xlsx";
+
+/** What a notice looks like (specs/college-reported-fall-figures.md Decision 1). */
+export type NoticeForm = "release" | "profile" | "pdf" | "fact-page" | "newsletter" | "system-sheet" | "other";
 
 /** One document a college publishes, as discovery found it, with what we know about the copy we last read. */
 export interface RecipeSource {
@@ -83,6 +89,22 @@ export interface RecipeSource {
    * monthly (lib/cds-reads.ts needsFetch, Decision 10). Absent: the manifest's `retrieved` is used.
    */
   checked?: string;
+  /** Notices: the entering term the page names ("Fall 2026"), set by discovery (from the link text/URL) or the read. */
+  term?: string;
+  /** Notices: ISO date the page was published, from the page or its URL; absent when unknown. */
+  published?: string;
+  form?: NoticeForm;
+  /** How a notice got on the recipe: a season pass, a news-index scan, a dated class-profile reclassified, the owner's list. */
+  found_by?: "season" | "index" | "reclassified" | "manual";
+}
+
+/** The three discovery seasons (specs/college-reported-fall-figures.md Decision 4; lib/seasons.ts). */
+export type SeasonKey = "admits" | "systems" | "census";
+/** One season's last pass for a college: the term it looked for, the ISO date, and whether it found a notice. */
+export interface SeasonRecord {
+  term: string;
+  checked: string;
+  found: boolean;
 }
 
 /** Where one college publishes its newer figures. Written by discovery; `sources` updated by every run. */
@@ -105,6 +127,10 @@ export interface Recipe {
    * index re-scans never add them back (`withoutDropped`).
    */
   dropped?: RecipeDrop[];
+  /** The college's news office listing pages, scanned at step 0 of every season pass (conditional GET). */
+  news_index_urls?: string[];
+  /** Per season: the term the last pass looked for, when, and whether it found a notice (the season back-off). */
+  seasons?: Partial<Record<SeasonKey, SeasonRecord>>;
 }
 
 /** A source a person dropped: its URL, the sha256 of the document read from it, the ISO date, and why. */
@@ -172,7 +198,11 @@ export interface SourcesFile {
 /* Extraction: the model's fixed output schema (phase 1: admissions)   */
 /* ------------------------------------------------------------------ */
 
-export type Cohort = "first-year" | "transfer" | "unknown";
+/**
+ * Who the figures describe. `multi-campus` (a system or several campuses) and `all-undergraduates` (new students of
+ * every level, or the whole student body) are never first-year figures: check 1 fails them.
+ */
+export type Cohort = "first-year" | "transfer" | "multi-campus" | "all-undergraduates" | "unknown";
 export type Scope = "all-rounds" | "early-only" | "regular-only" | "unknown";
 
 /** What the extraction model returns for one document (structured output; every field required, nulls allowed). */
@@ -186,25 +216,58 @@ export interface Extraction {
   enrolled: number | null;
   /** As stated, as a fraction (0.04 for "4.0%"); null when not stated. */
   acceptance_rate: number | null;
+  /**
+   * Per figure; absent key = exact. The model sets "approx" for "more than", "nearly", "about", "over", "roughly", and
+   * reports the printed number (82,000 for "more than 82,000"). Old stored extractions lack it: read them through
+   * `normalizeExtraction` (lib/reported-checks.ts).
+   */
+  qualifiers: Partial<Record<"applicants" | "admitted" | "enrolled" | "acceptance_rate", FigureQualifier>>;
+  /** A class size the document calls a goal or target; never reported as enrolled. */
+  enrollment_target: number | null;
+  /** First-year deposits or commitments; never reported as enrolled. */
+  deposits: number | null;
   /** Verbatim text each number came from; a number without a quote is never published. */
-  quotes: { applicants?: string; admitted?: string; enrolled?: string; acceptance_rate?: string };
+  quotes: { applicants?: string; admitted?: string; enrolled?: string; acceptance_rate?: string; enrollment_target?: string; deposits?: string };
   /** PDF page the figures are on, 1-based. */
   page?: number | null;
 }
+
+/** The figures an extraction may mark approximate (`Extraction.qualifiers`, `ReportedAdmissions.approx`). */
+export type QualifiedFigure = "applicants" | "admitted" | "enrolled" | "acceptance_rate";
+
+/**
+ * An extraction as stored before the fall-figures build (2026-11-11): no `qualifiers`, `enrollment_target`, or
+ * `deposits`. Read it through `normalizeExtraction` (lib/reported-checks.ts): missing qualifiers are all exact, missing
+ * fields null.
+ */
+export type StoredExtraction = Omit<Extraction, "qualifiers" | "enrollment_target" | "deposits"> & Partial<Pick<Extraction, "qualifiers" | "enrollment_target" | "deposits">>;
 
 /** JSON Schema for `Extraction`, sent as the structured-output format. Keep in step with the interface. */
 export const EXTRACTION_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["cohort", "scope", "entering_term", "applicants", "admitted", "enrolled", "acceptance_rate", "quotes", "page"],
+  required: ["cohort", "scope", "entering_term", "applicants", "admitted", "enrolled", "acceptance_rate", "qualifiers", "enrollment_target", "deposits", "quotes", "page"],
   properties: {
-    cohort: { type: "string", enum: ["first-year", "transfer", "unknown"] },
+    cohort: { type: "string", enum: ["first-year", "transfer", "multi-campus", "all-undergraduates", "unknown"] },
     scope: { type: "string", enum: ["all-rounds", "early-only", "regular-only", "unknown"] },
     entering_term: { type: ["string", "null"], description: 'The fall the class entered, as "Fall YYYY"' },
     applicants: { type: ["integer", "null"] },
     admitted: { type: ["integer", "null"] },
     enrolled: { type: ["integer", "null"] },
     acceptance_rate: { type: ["number", "null"], description: "As stated in the document, as a fraction between 0 and 1" },
+    qualifiers: {
+      type: "object",
+      additionalProperties: false,
+      description: 'Per reported figure: "exact" when the document prints the number itself, "approx" for "more than", "over", "nearly", "about", "roughly"',
+      properties: {
+        applicants: { type: "string", enum: ["exact", "approx"] },
+        admitted: { type: "string", enum: ["exact", "approx"] },
+        enrolled: { type: "string", enum: ["exact", "approx"] },
+        acceptance_rate: { type: "string", enum: ["exact", "approx"] },
+      },
+    },
+    enrollment_target: { type: ["integer", "null"], description: "A class size the document calls a goal or target; never the enrolled count" },
+    deposits: { type: ["integer", "null"], description: "First-year deposits or commitments; never the enrolled count" },
     quotes: {
       type: "object",
       additionalProperties: false,
@@ -213,6 +276,8 @@ export const EXTRACTION_SCHEMA = {
         admitted: { type: "string" },
         enrolled: { type: "string" },
         acceptance_rate: { type: "string" },
+        enrollment_target: { type: "string" },
+        deposits: { type: "string" },
       },
     },
     page: { type: ["integer", "null"] },
@@ -224,8 +289,8 @@ export const EXTRACTION_SCHEMA = {
 /* ------------------------------------------------------------------ */
 
 /**
- * Every path the pipeline publishes, keyed as in `school.lineage`: the four figures plus the block's own metadata
- * (entering_term, year, source_kind), each registered in lib/fields.ts and each needing its own `extracted` record
+ * Every path the pipeline publishes, keyed as in `school.lineage`: the four figures, the announced class goal and
+ * deposits, plus the block's own metadata (entering_term, year, source_kind), each registered in lib/fields.ts and each needing its own `extracted` record
  * (lib/lineage.ts validateSchool).
  */
 export type ReportedValuePath =
@@ -235,7 +300,10 @@ export type ReportedValuePath =
   | "reported.admissions.admitted"
   | "reported.admissions.enrolled"
   | "reported.admissions.acceptance_rate"
-  | "reported.admissions.source_kind";
+  | "reported.admissions.source_kind"
+  | "reported.admissions.enrollment_target"
+  | "reported.admissions.deposits"
+  | "reported.admissions.approx";
 
 /** One college's published values, ready for the sync to merge: the block plus a lineage record per value. */
 export interface ReportedEntry {
@@ -323,8 +391,8 @@ export interface ReviewItem {
   urls: string[];
   /** C1 entries: the class the figures describe. Per-item entries: the item group's year label ("Fall 2025"). */
   entering_term: string | null;
-  /** C1 entries only: the model's extraction. Per-item entries carry `code` and `value` instead. */
-  extraction?: Extraction;
+  /** C1 entries only: the model's extraction (an old item's lacks the fall-figures keys). Per-item entries carry `code` and `value` instead. */
+  extraction?: StoredExtraction;
   failures: CheckFailure[];
   queued: string;
   run: string;

@@ -27,6 +27,7 @@ export const TODO_STATUS_LABEL: Record<TodoStatus, string> = { open: "Open", fou
 export const TODO_KIND_LABEL: Record<TodoDoc["kind"], string> = {
   cds: "Common Data Set",
   "class-profile": "Class profile",
+  notice: "Announcement",
   "campus-page": "Campus page",
   "hs-profile": "High school profile",
   other: "Other",

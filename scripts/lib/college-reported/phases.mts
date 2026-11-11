@@ -284,6 +284,9 @@ export function c1FromDocument(doc: DocumentRecord): Extraction | null {
     admitted: (b?.v as number | undefined) ?? null,
     enrolled: (c?.v as number | undefined) ?? null,
     acceptance_rate: null,
+    qualifiers: {},
+    enrollment_target: null,
+    deposits: null,
     quotes,
     page: a?.page ?? b?.page ?? null,
   };

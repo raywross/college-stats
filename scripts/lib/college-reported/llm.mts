@@ -269,10 +269,13 @@ export function normalizeExtraction(e: Partial<Extraction>): Extraction {
   let rate = typeof e.acceptance_rate === "number" && Number.isFinite(e.acceptance_rate) ? e.acceptance_rate : null;
   if (rate !== null && rate > 1) rate = rate / 100;
   const quotes: Extraction["quotes"] = {};
-  for (const k of ["applicants", "admitted", "enrolled", "acceptance_rate"] as const) {
+  for (const k of ["applicants", "admitted", "enrolled", "acceptance_rate", "enrollment_target", "deposits"] as const) {
     const q = e.quotes?.[k];
     if (typeof q === "string" && q.trim()) quotes[k] = q.trim();
   }
+  // Fall figures (specs/college-reported-fall-figures.md Decision 3): absent qualifier = exact; only "approx" is kept.
+  const qualifiers: Extraction["qualifiers"] = {};
+  for (const k of ["applicants", "admitted", "enrolled", "acceptance_rate"] as const) if (e.qualifiers?.[k] === "approx") qualifiers[k] = "approx";
   return {
     cohort: e.cohort ?? "unknown",
     scope: e.scope ?? "unknown",
@@ -281,6 +284,9 @@ export function normalizeExtraction(e: Partial<Extraction>): Extraction {
     admitted: int(e.admitted),
     enrolled: int(e.enrolled),
     acceptance_rate: rate,
+    qualifiers,
+    enrollment_target: int(e.enrollment_target),
+    deposits: int(e.deposits),
     quotes,
     page: int(e.page),
   };

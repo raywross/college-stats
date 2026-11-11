@@ -147,7 +147,7 @@ export type TodoStatus = "open" | "found" | "no-document" | "done";
 /** An acquisition row (`steward.todo`): a document only a person can fetch. */
 export interface TodoDoc {
   key: string;
-  kind: "cds" | "class-profile" | "campus-page" | "hs-profile" | "other";
+  kind: "cds" | "class-profile" | "notice" | "campus-page" | "hs-profile" | "other";
   unit_id: string | null;
   subject: string;
   edition: string | null;
